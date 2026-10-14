@@ -1,0 +1,2 @@
+ALTER TABLE "task_items" DROP CONSTRAINT "task_items_provider_task_unique";--> statement-breakpoint
+CREATE INDEX "task_items_provider_task_idx" ON "task_items" USING btree ("provider","provider_task_id");

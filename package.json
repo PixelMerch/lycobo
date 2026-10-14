@@ -1,0 +1,43 @@
+{
+  "name": "lycoboai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.34.7",
+  "engines": {
+    "node": ">=24.13.0 <25",
+    "pnpm": ">=10.34.7 <11"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @lycoboai/web --filter @lycoboai/api dev",
+    "dev:worker": "pnpm --filter @lycoboai/worker dev",
+    "build": "pnpm -r --if-present build",
+    "typecheck": "tsc -p tsconfig.tools.json --noEmit && pnpm -r typecheck",
+    "lint": "biome check . && node scripts/check-boundaries.mjs",
+    "format": "biome check --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "check:release": "pnpm check && pnpm test:e2e",
+    "db:generate": "pnpm --filter @lycoboai/db db:generate",
+    "db:migrate": "pnpm --filter @lycoboai/db db:migrate",
+    "infra:up": "docker compose up -d --wait",
+    "infra:down": "docker compose down",
+    "prepare": "node scripts/setup-hooks.mjs",
+    "test:integration": "pnpm --filter @lycoboai/worker test:integration"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vitest": "4.1.11",
+    "@types/node": "24.19.2",
+    "@biomejs/biome": "2.5.15",
+    "@commitlint/cli": "21.2.3",
+    "@commitlint/config-conventional": "21.2.3",
+    "lint-staged": "17.6.0",
+    "@playwright/test": "1.64.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,json,css}": "biome check --write --no-errors-on-unmatched"
+  }
+}

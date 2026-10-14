@@ -1,0 +1,19 @@
+name: 缺陷报告
+description: 记录可复现的问题
+body:
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤
+      description: 写明页面、操作、预期和实际结果。不要上传密钥或用户敏感素材。
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 环境
+      placeholder: 浏览器 / 操作系统 / 版本或提交
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 截图或脱敏错误标识

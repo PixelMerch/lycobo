@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+saveExact: true
+strictPeerDependencies: true
+autoInstallPeers: true
+onlyBuiltDependencies:
+  - esbuild
+ignoredBuiltDependencies:
+  - msgpackr-extract

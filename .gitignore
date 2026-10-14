@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.vite/
+.pnpm-store/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.DS_Store
+playwright-report/
+test-results/
+*.log
+# Generated design binaries remain local; approved references are copied to docs/design.
+design/

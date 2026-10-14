@@ -1,0 +1,25 @@
+{
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "name": "@lycoboai/worker",
+  "scripts": {
+    "dev": "node --env-file-if-exists=../../.env --import tsx --watch src/index.ts",
+    "build": "tsup",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test:integration": "node --env-file-if-exists=../../.env --import tsx scripts/check-integration.ts"
+  },
+  "dependencies": {
+    "bullmq": "6.3.15",
+    "pino": "10.4.0",
+    "zod": "4.6.7",
+    "@lycoboai/queue": "workspace:*",
+    "@lycoboai/db": "workspace:*",
+    "postgres": "3.4.9"
+  },
+  "devDependencies": {
+    "tsx": "4.23.15",
+    "tsup": "8.5.1"
+  }
+}
