@@ -13,3 +13,6 @@ test-results/
 *.log
 # Generated design binaries remain local; approved references are copied to docs/design.
 /design/
+
+# Local design iteration memory
+.finesse/

@@ -26,8 +26,11 @@ Read relevant project skills before work:
 
 - HeroUI is the only interactive component system. Compose official components; no shadcn,
   second primitive system, homemade dialogs, focus traps or dropdown keyboards.
-- DESIGN.md and its V3 screenshots are the reference. Reuse semantic CSS tokens. Preserve neutral
-  white/gray cards, dark primary actions and image-led content. Do not import bonko's lime branding.
+- DESIGN.md and docs/design are the active reference (OiiOii-inspired dark studio, replacing V3).
+  Reuse near-black surfaces, subtle dot grid, thin neutral borders and restrained soda-green accents (#A8FF00).
+  Image content stays primary. Do not restore the retired light theme or import bonko branding.
+- The default workspace is an interactive design implementation with ephemeral fixtures documented in DESIGN.md. Keep it
+  separate from production APIs. Never represent its sample queue or notifications as durable services.
 - Use TanStack Query for server data, Zustand only for client interaction state. Derive values during
   render; effects synchronize external systems, not redundant state.
 - Lazy-load heavy canvas/editor routes. Do not load original full-resolution images into grid cards.
@@ -77,3 +80,9 @@ Read relevant project skills before work:
 - Check git diff --check. Report actual executed checks, skipped external integrations and limitations.
 - Keep relevant documents synchronized. Initialization is not production readiness.
 - Preserve design/ local archive. Only approved docs/design references are versioned.
+
+- Product screens use end-user language. Keep preview/debug/reset notes in developer documentation, not headers, cards or dialogs. Never infer production readiness from clean UI copy.
+
+- Keep OiiOii-inspired navigation compact: desktop rows 40px, padding 10px, gap 4px, radius 10px. Hover/active must never change geometry; mobile touch targets stay 44px. See DESIGN.md.
+
+- Use Tabler business icons through components/ui-icon.tsx. Sizes: 14 / 18 / 20 / 22 / 28px, stroke 2. Keep icon sizing independent of compact control geometry; do not add another icon library.
