@@ -2,3 +2,5 @@
 *.png binary
 *.jpg binary
 *.zip binary
+# Preserve upstream skill snapshots, including Markdown hard-break whitespace.
+.agents/skills/** whitespace=-blank-at-eol

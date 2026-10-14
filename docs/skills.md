@@ -18,6 +18,7 @@ HeroUI 使用已安装版本的官方文档；禁止混用其他 UI 系统。
 ## 更新
 
 技能变更走独立 PR，先查看上游差异、license、权限与网络动作，再更新快照和 lock。
-不要在 CI 自动下载 latest 技能。不要让技能重写用户需求或自动触发外部发布/消息。
+不要在 CI 自动下载 latest 技能。上游快照不做本地格式化；
+.gitattributes 仅对技能目录保留原有行尾空格（包含 Markdown 换行语法），应用代码仍做正常空白检查。不要让技能重写用户需求或自动触发外部发布/消息。
 安装使用 Codex skill-installer 的 install-skill-from-github.py，指定 --ref 固定 SHA
 和 --dest <repo>/.agents/skills。已有目录不自动覆盖，更新前审查并保留历史。
