@@ -100,6 +100,8 @@ Read relevant project skills before work:
 
 - Product screens use end-user language. Keep preview/debug/reset notes in developer documentation, not headers, cards or dialogs. Never infer production readiness from clean UI copy.
 
-- Keep navigation compact: desktop rows 40px, padding 10px, gap 4px, radius 10px. Hover/active must never change geometry; mobile touch targets stay 44px. See DESIGN.md.
+- Keep navigation compact: desktop rows 40px, padding 10px, row gap 12px, icon/text gap 12px, radius 10px. Hover/active must never change geometry; mobile touch targets stay 44px. See DESIGN.md.
 
 - Use Tabler business icons through components/ui-icon.tsx. Sizes: 14 / 18 / 20 / 22 / 28px, stroke 2. Keep icon sizing independent of compact control geometry; do not add another icon library.
+
+- Sidebar active fill is neutral gray; only the business icon and label use purple. Chevrons stay muted, rotate left on expansion, and respect reduced motion. Tool selectors use spacing instead of extra divider lines.
