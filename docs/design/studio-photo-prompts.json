@@ -1,0 +1,14 @@
+{
+  "method": "built-in image_gen",
+  "prompts": [
+    "Photorealistic ecommerce bedding photograph, square composition. One cream ivory diamond-quilted comforter on low warm oak bed, EXACTLY two matching ivory pillow shams side by side, no other pillows, no separate sheet accessories, elegant natural sunlit bedroom, plaster ivory wall, oak nightstand, simple ceramiclamp, window atleft, premium soft realistic cotton texture, bed entire visible threequarter front view, no text, logos or UI. Match calm warm cream bedding photography used in a dark creative SaaS UI. Asset for product example, not actual product evidence.",
+    "Photorealistic ecommerce bedding photograph, square composition. A folded cream ivory diamond-quilted comforter and EXACTLY TWO matching pillow shams standing behind it. White seamless studio background, entire threepiece set visible, realistic cottontexture, subtle soft shadows, no bedframe, no additional bedding items, no tags, text, logos or UI. Clean product packshot.",
+    "Photorealistic ecommerce bedding photograph, square composition. One light lavender diamond-quilted comforter on low warm oak bed with EXACTLY two matching lavender pillow shams side by side and nootherpillows. Plaster cream wall, oak nightstand, window daylight, complete bed visible frontthreequarter, beautiful real fabric texture, quiet warm room. No text, logos, UI, watermarks. Product visual example."
+  ],
+  "assets": [
+    "bedroom",
+    "set",
+    "lavender"
+  ],
+  "optimization": "WebP, 960px preview and 480px thumbnail"
+}
