@@ -6,7 +6,7 @@
 | 路径 | 职责 |
 | --- | --- |
 | apps/web/src/app | 路由、应用壳、providers |
-| apps/web/src/features | 按业务组织页面和局部组件 |
+| apps/web/src/features/studio | 紫色首页、模型选择层、图片创作工作台与客户端草稿；已删除旧 design 预览目录 |
 | apps/web/src/lib | 浏览器 API 客户端与工具 |
 | apps/web/src/styles | 共享设计 tokens 与全局基础样式 |
 | apps/api/src | Hono 入口、应用工厂、配置；后续 feature routers/services |
