@@ -47,7 +47,16 @@ test("running images animate with the model icon and stop for reduced motion", a
   );
   expect(boxes[0]?.top).toBe(boxes[2]?.top);
   expect(boxes[3]?.top).toBeGreaterThan(boxes[0]?.top ?? 0);
+  const borderAngle = () =>
+    placeholders
+      .first()
+      .evaluate((element) =>
+        getComputedStyle(element, "::before").getPropertyValue("--generation-angle"),
+      );
+  const initialAngle = await borderAngle();
+  await expect.poll(borderAngle).not.toBe(initialAngle);
   await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect.poll(borderAngle).toBe("0deg");
   await expect(loading.first()).toHaveCSS("animation-name", "none");
   await expect(loading.first()).toBeVisible();
   await expect(placeholders.first()).toHaveCSS("aspect-ratio", "1 / 1");

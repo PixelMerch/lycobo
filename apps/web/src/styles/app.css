@@ -1901,24 +1901,60 @@ small {
   font-size: 12px;
 }
 .generation-loading-icon {
+  position: relative;
   display: flex;
   color: var(--focus);
-  animation: generation-breathe 1.6s ease-in-out infinite;
+  animation: generation-breathe 2.8s ease-in-out infinite;
+}
+.generation-loading-icon::before,
+.generation-loading-icon::after {
+  content: "";
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: currentColor;
+  clip-path: polygon(50% 0, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0 50%, 35% 35%);
+  animation: generation-twinkle 2.8s ease-in-out infinite;
+}
+.generation-loading-icon::before {
+  top: -5px;
+  left: 1px;
+}
+.generation-loading-icon::after {
+  right: -5px;
+  bottom: 2px;
+  animation-delay: -1.4s;
+}
+@keyframes generation-twinkle {
+  0%,
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  35% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
 }
 @keyframes generation-breathe {
   0%,
   100% {
-    opacity: 0.45;
-    transform: scale(0.92);
+    opacity: 0.65;
+    transform: translateY(1px) scale(0.96);
   }
   50% {
     opacity: 1;
-    transform: scale(1.08);
+    transform: translateY(-1px) scale(1.04);
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .generation-loading-icon {
     animation: none;
+  }
+  .generation-loading-icon::before,
+  .generation-loading-icon::after {
+    display: none;
   }
 }
 @media (max-width: 767px) {
@@ -2192,6 +2228,11 @@ small {
   line-height: 16px;
 }
 
+@property --generation-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
 .generation-pending {
   position: relative;
 }
@@ -2207,26 +2248,26 @@ small {
   inset: 0;
   padding: 2px;
   border-radius: inherit;
-  background: linear-gradient(
-    110deg,
-    var(--accent),
-    #baa4ff,
-    var(--accent),
-    #baa4ff,
-    var(--accent)
+  background: conic-gradient(
+    from var(--generation-angle),
+    #baa4ff26 0deg,
+    #baa4ff26 235deg,
+    #8b5cf680 280deg,
+    #baa4ff 325deg,
+    #eee7ff 345deg,
+    #baa4ff26 360deg
   );
-  background-size: 300% 100%;
   mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   mask-composite: exclude;
   pointer-events: none;
-  animation: generation-border-flow 2.4s linear infinite;
+  animation: generation-border-flow 3.6s linear infinite;
   z-index: 1;
 }
 @keyframes generation-border-flow {
   to {
-    background-position: 150% 0;
+    --generation-angle: 360deg;
   }
 }
 @media (prefers-reduced-motion: reduce) {
