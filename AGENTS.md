@@ -67,22 +67,22 @@ Read relevant project skills before work:
 ## Collaboration and Git
 
 - Every new task, including documentation-only changes, must start on a new branch from the
-  latest origin/main. Inspect status, fetch origin with pruning, switch to main and update it
+  latest origin/dev. Inspect status, fetch origin with pruning, switch to dev and update it
   with a fast-forward-only merge before creating the branch. Preserve unrelated local changes;
-  never discard them to switch branches. Do not edit or commit directly on main.
+  never discard them to switch branches. Do not edit or commit directly on main or dev.
 - Keep one concern per branch/PR. Use feat/*, fix/*, chore/* or docs/*;
   codex/* is accepted for agent branches. Do not reuse a branch from a merged PR.
 - Use Conventional Commits and the configured scopes. Stage only explicit task-related paths.
 - After completing and verifying requested changes, make a local commit on the task branch.
   Stop at the local commit by default. Do not push, open a PR or merge automatically; wait for
   the user's explicit instruction for those actions. This supersedes prior workflow authorization.
-- When the user requests a merge, use a PR targeting main. Merge only after required CI checks
-  pass, branch protection requirements are satisfied and review discussions are resolved. If main
+- When the user requests a merge, use a PR targeting dev unless the user explicitly requests a release PR to main. Merge only after required CI checks
+  pass, branch protection requirements are satisfied and review discussions are resolved. If the target branch
   advances, update the task branch and rerun required checks; never bypass protection.
 - After the PR is merged, delete its remote source branch (normally automatic), switch the local
-  checkout to main, fetch with pruning, fast-forward to origin/main and delete the merged local
-  task branch. Verify its commits are included in main before deleting; do not force-delete
-  branches with unmerged work. Finish with local main synchronized and report any cleanup blockers.
+  checkout to dev, fetch with pruning, fast-forward to origin/dev and delete the merged local
+  task branch. Verify its commits are included in dev before deleting; do not force-delete
+  branches with unmerged work. Finish with local dev synchronized and report any cleanup blockers.
 - Publishing tags and deployment require separate explicit user authorization.
 - Do not rewrite another contributor's work, force-push shared branches, amend existing commits
   or reset unknown changes.
