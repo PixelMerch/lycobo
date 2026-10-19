@@ -289,9 +289,16 @@ function RatioPicker({ value, onChange }: { value: string; onChange: (ratio: str
       <Popover isOpen={open} onOpenChange={setOpen}>
         <div className="ratio-heading">
           <h2>图片比例</h2>
-          <Button className="ratio-expand" variant="tertiary" aria-label="展开全部图片比例">
+          <Button
+            className="ratio-expand"
+            variant="tertiary"
+            aria-label="展开全部图片比例"
+            aria-expanded={open}
+          >
             <span>{value}</span>
-            <UiIcon icon={IconChevronRight} size="small" />
+            <span className="ratio-chevron">
+              <UiIcon icon={IconChevronRight} size="small" />
+            </span>
           </Button>
         </div>
         <Popover.Content
@@ -311,7 +318,9 @@ function RatioPicker({ value, onChange }: { value: string; onChange: (ratio: str
                 aria-label="关闭图片比例"
                 onPress={() => setOpen(false)}
               >
-                <UiIcon icon={IconX} size="action" />
+                <span className="ratio-close-visual">
+                  <UiIcon icon={IconX} />
+                </span>
               </Button>
             </div>
             <div className="parameter-options ratio-options ratio-extra-options">

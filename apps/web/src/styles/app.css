@@ -1689,7 +1689,6 @@ small {
   color: var(--muted);
 }
 @media (hover: hover) {
-  .ratio-popover .ratio-close:hover,
   .parameter-options.ratio-options .button:hover {
     background: color-mix(in srgb, var(--surface-tertiary) 92%, var(--foreground));
     color: var(--foreground);
@@ -1697,7 +1696,7 @@ small {
 }
 .ratio-popover .ratio-close:active,
 .ratio-popover .ratio-close[data-pressed="true"] {
-  background: var(--surface-secondary);
+  background: transparent;
 }
 
 /* Compact model menu: text rows and a restrained corner radius. */
@@ -1873,5 +1872,41 @@ small {
 @media (max-width: 767px) {
   .composer-panel .model-field {
     padding-block: 0;
+  }
+}
+
+.ratio-chevron {
+  display: inline-flex;
+  color: var(--muted);
+  transition: transform 160ms ease;
+}
+.ratio-expand[aria-expanded="true"] .ratio-chevron {
+  transform: rotate(180deg);
+}
+.ratio-close-visual {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  transition: background-color 150ms ease;
+}
+@media (hover: hover) {
+  .ratio-popover .ratio-close:hover {
+    background: transparent;
+    color: var(--foreground);
+  }
+  .ratio-close:hover .ratio-close-visual {
+    background: color-mix(in srgb, var(--surface-tertiary) 92%, var(--foreground));
+  }
+}
+.ratio-close:active .ratio-close-visual,
+.ratio-close[data-pressed="true"] .ratio-close-visual {
+  background: var(--surface-secondary);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ratio-chevron,
+  .ratio-close-visual {
+    transition: none;
   }
 }
