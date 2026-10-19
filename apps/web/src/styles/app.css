@@ -889,12 +889,13 @@ small {
   min-height: 24px;
   padding: 0;
   position: absolute;
-  top: -6px;
-  right: -6px;
+  top: 0;
+  right: 0;
   z-index: 1;
-  border: 1px solid #ffffff;
-  color: #ffffff;
-  background: #12121666;
+  border: 1px solid #ffffff59;
+  color: #ffffffa6;
+  background: var(--composer-group);
+  box-shadow: 0 0 0 3px var(--composer-group);
   border-radius: 50%;
 }
 .add-reference {
@@ -1403,9 +1404,11 @@ small {
     width: 44px;
     height: 44px;
   }
-  .reference-tile .remove-reference {
-    width: 44px;
-    height: 44px;
+  .reference-tile .remove-reference::after {
+    content: "";
+    position: absolute;
+    inset: -10px;
+    border-radius: inherit;
   }
 }
 
@@ -1844,8 +1847,9 @@ small {
 
 @media (hover: hover) {
   .reference-tile .remove-reference:hover {
-    background: #121216b3;
-    color: #ffffff;
+    background: #121216e6;
+    border-color: #ffffff99;
+    color: #ffffffd9;
   }
 }
 
