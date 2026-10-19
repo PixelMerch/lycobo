@@ -40,7 +40,10 @@ test("preview queues independent tasks, keeps drafts across navigation and compl
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "商品场景", exact: true }).click();
+  await page
+    .getByRole("link", { name: /做同款/ })
+    .first()
+    .click();
   await page.getByRole("button", { name: "生成图片" }).click();
   await expect(page.getByRole("status")).toContainText("可以继续创作");
   await expect(page).toHaveURL(/\/$/);
@@ -99,7 +102,10 @@ test("generation settings survive navigation and are captured per task; account 
   await page.getByRole("button", { name: "分辨率 4K", exact: true }).click();
   await page.getByRole("button", { name: "生成张数 3张", exact: true }).click();
   await page.getByRole("dialog", { name: "图像设置", exact: true }).press("Escape");
-  await page.getByRole("button", { name: "商品场景", exact: true }).click();
+  await page
+    .getByRole("link", { name: /做同款/ })
+    .first()
+    .click();
   await page.getByRole("button", { name: "生成图片" }).click();
   await page.getByRole("button", { name: "图像设置", exact: true }).click();
   await page.getByRole("button", { name: "分辨率 1K", exact: true }).click();
@@ -152,9 +158,10 @@ test("references enforce five-image limit, support mentions and snapshot submitt
   expect(Math.abs(inputBox.y - tagBox.y)).toBeLessThan(2);
   await prompt.pressSequentially("保留商品细节");
   await expect(prompt).toHaveValue("参考 保留商品细节");
-  await page.getByRole("button", { name: "引用图片", exact: true }).click();
+  await prompt.pressSequentially("@");
   await expect(page.getByRole("option", { name: "图片2", exact: true })).toBeDisabled();
   await page.getByRole("dialog", { name: "选择引用图片" }).press("Escape");
+  await prompt.press("Backspace");
   await page.getByRole("button", { name: "移除图片2", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "添加参考图，最多5张", exact: true }),
@@ -190,7 +197,7 @@ test("reference tags deduplicate pasted mentions and can be removed without dele
   await expect(page.locator(".prompt-mention-tag")).toHaveCount(0);
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await expect(prompt).toHaveValue("保留商品细节");
-  await page.getByRole("button", { name: "引用图片", exact: true }).click();
+  await prompt.pressSequentially("@");
   await expect(page.getByRole("option", { name: "图片1", exact: true })).toBeEnabled();
   await page.getByRole("option", { name: "图片1", exact: true }).click();
   await expect(prompt).toHaveValue(" 保留商品细节");

@@ -1,5 +1,5 @@
 import { Button, ListBox, Popover, TextArea } from "@heroui/react";
-import { IconAt, IconPlus, IconX } from "@tabler/icons-react";
+import { IconPlus, IconX } from "@tabler/icons-react";
 import { useRef, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { type ReferenceImage, type ReferenceUpload, useDesignStore } from "./design-data";
@@ -233,17 +233,11 @@ export function ReferenceInput({ compact }: { compact: boolean }) {
           if (!open) setReplaceAt(false);
         }}
       >
-        <Button
-          variant="tertiary"
-          className="reference-mention-trigger"
-          aria-label="引用图片"
-          isDisabled={references.length === 0}
-          onPress={() => setReplaceAt(false)}
+        <Popover.Content
+          triggerRef={textarea}
+          className="reference-mention-popover"
+          placement="bottom start"
         >
-          <UiIcon icon={IconAt} size="small" />
-          引用图片
-        </Button>
-        <Popover.Content className="reference-mention-popover" placement="bottom start">
           <Popover.Dialog aria-label="选择引用图片" className="reference-mention-dialog">
             <p className="reference-mention-heading">图片</p>
             <ListBox

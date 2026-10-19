@@ -214,26 +214,30 @@ function Gallery({ full = false }: { full?: boolean }) {
     <section className="example-section">
       <div className="section-heading">
         <div>
-          <h2>{full ? "案例灵感" : "找一点灵感"}</h2>
+          <h2 style={full ? undefined : { marginTop: 12 }}>{full ? "案例灵感" : "找一点灵感"}</h2>
         </div>
-        <Link className="text-link" to={full ? "/" : "/inspiration"}>
-          {full ? "开始创作" : "全部案例"}
-          <UiIcon icon={IconArrowRight} size="small" />
-        </Link>
+        {full ? (
+          <Link className="text-link" to="/">
+            开始创作
+            <UiIcon icon={IconArrowRight} size="small" />
+          </Link>
+        ) : null}
       </div>
-      <div className="filter-row">
-        {["全部", "美妆个护", "服饰鞋包"].map((c) => (
-          <Button
-            key={c}
-            variant="tertiary"
-            aria-pressed={c === category}
-            className={c === category ? "filter active" : "filter"}
-            onPress={() => setCategory(c)}
-          >
-            {c}
-          </Button>
-        ))}
-      </div>
+      {full ? (
+        <div className="filter-row">
+          {["全部", "美妆个护", "服饰鞋包"].map((c) => (
+            <Button
+              key={c}
+              variant="tertiary"
+              aria-pressed={c === category}
+              className={c === category ? "filter active" : "filter"}
+              onPress={() => setCategory(c)}
+            >
+              {c}
+            </Button>
+          ))}
+        </div>
+      ) : null}
       <div className="example-grid">
         {products
           .filter((p) => category === "全部" || p.category === category)
@@ -258,59 +262,14 @@ function Gallery({ full = false }: { full?: boolean }) {
   );
 }
 function DesignHome() {
-  const tasks = useDesignStore((s) => s.tasks);
   return (
     <>
       <section className="design-hero">
         <div className="hero-heading">
-          <h1>好商品，值得一张好图</h1>
-          <p>参考图 + 描述，开始创作。</p>
+          <h1>一张好图，让好商品更动人</h1>
+          <p>上传参考图、描述构想，瞬间生成专属好图。</p>
         </div>
         <Composer />
-        <div className="quick-actions">
-          <Link to="/canvas" className="pill-button">
-            <UiIcon icon={IconGridDots} size="default" />
-            自由画布
-          </Link>
-          <Button
-            variant="tertiary"
-            onPress={() => useDesignStore.getState().setDraft(products[0].description, 0)}
-          >
-            商品场景
-          </Button>
-          <Button
-            variant="tertiary"
-            onPress={() => useDesignStore.getState().setDraft(products[2].description, 2)}
-          >
-            服饰鞋包
-          </Button>
-          <Button
-            variant="tertiary"
-            onPress={() => useDesignStore.getState().setDraft(products[1].description, 1)}
-          >
-            质感主图
-          </Button>
-        </div>
-      </section>
-      <section className="ongoing-section">
-        <div className="section-heading">
-          <h2>最近创作</h2>
-          <Link className="text-link" to="/tasks">
-            全部任务 <UiIcon icon={IconArrowRight} size="small" />
-          </Link>
-        </div>
-        <div className="ongoing-grid">
-          {tasks.slice(0, 3).map((t) => (
-            <Link className="ongoing-task" key={t.id} to={`/canvas?task=${t.id}`}>
-              <ProductShot shot={t.shot} />
-              <span>
-                <strong>{t.title}</strong>
-                <Status task={t} />
-              </span>
-              <UiIcon icon={IconChevronRight} size="small" />
-            </Link>
-          ))}
-        </div>
       </section>
       <Gallery />
     </>
