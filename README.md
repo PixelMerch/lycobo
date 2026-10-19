@@ -65,7 +65,7 @@ Worker 当前仅处理隔离的诊断队列，不会调用生图 API。详见 [�
 - [技术栈](docs/tech-stack.md)：选择、版本策略、SSR 与国内部署。
 - [架构与目录](PROJECT_STRUCTURE.md)：包边界与运行方式。
 - [产品范围](PRD.md)：连续提交、持久任务、画布与通知。
-- [设计规范](DESIGN.md)：OiiOii 深色工作室方向、tokens、状态与响应式。
+- [设计规范](DESIGN.md)：HeroUI v3 深色紫色工作台、tokens、状态与响应式。
 - [协作规范](CONTRIBUTING.md)：分支、提交、PR、代码审查与迁移协调。
 - [Agent 规则](AGENTS.md)：自动化开发与技能使用边界。
 - [异步任务设计](docs/task-lifecycle.md)：幂等、outbox、重试和通知。
@@ -80,4 +80,4 @@ Worker 当前仅处理隔离的诊断队列，不会调用生图 API。详见 [�
 创作首页、任务中心、项目、案例、作品库和画布共用深色设计系统。
 当前默认工作台为交互设计阶段：数据仅存在当前页面会话，刷新重置；不会调用生图、上传或计费 API。
 示例图支持本地亮度调整和 PNG 下载。旧版工作台代码已删除；`/design` 地址兼容跳转到新版对应页面。真实生成服务尚未接入。
-页面截图与来源说明见 [设计索引](docs/design/README.md)。
+当前视觉规范与交互研究见 [设计索引](docs/design/README.md)。
