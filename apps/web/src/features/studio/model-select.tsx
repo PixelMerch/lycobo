@@ -36,7 +36,12 @@ function ModelSelectControl({
       <Select.Popover placement="bottom start">
         <ListBox aria-label="创作模型">
           {models.map((model) => (
-            <ListBox.Item key={model.id} id={model.id} textValue={model.name}>
+            <ListBox.Item
+              className="model-options"
+              key={model.id}
+              id={model.id}
+              textValue={model.name}
+            >
               <UiIcon icon={model.id === "banana" ? IconBanana : IconPhoto} />
               <span>{model.name}</span>
               <ListBox.ItemIndicator />
