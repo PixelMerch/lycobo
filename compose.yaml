@@ -1,6 +1,16 @@
 name: lycoboai
 services:
+  addresses:
+    image: redis:7.4-alpine
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        printf '\nWeb: http://127.0.0.1:5173/\nAPI: http://127.0.0.1:8787/api\nAPI health: http://127.0.0.1:8787/api/health/live\nWeb/API 请另行运行 pnpm dev 启动。\n\n'
+    restart: "no"
   postgres:
+    depends_on:
+      addresses:
+        condition: service_completed_successfully
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: lycoboai
@@ -16,6 +26,9 @@ services:
       timeout: 3s
       retries: 10
   redis:
+    depends_on:
+      addresses:
+        condition: service_completed_successfully
     image: redis:7.4-alpine
     command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
     ports:

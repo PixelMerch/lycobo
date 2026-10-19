@@ -20,6 +20,9 @@ Vite 的 /api 代理固定指向本地 8787；更改 API_PORT 时需同步开发
 Compose 项目名 lycoboai，PostgreSQL 55432、Redis 56379，仅绑定 127.0.0.1。
 必须使用本项目服务，不连接 bonko 的服务，不读取其 .env。
 pnpm infra:up 启动并等待健康检查；pnpm infra:down 停止但不删除卷。
+直接运行 docker compose up 时，addresses 一次性服务会在日志中打印 Web、API 和 API 健康检查地址，随后正常退出。
+该服务复用 Redis 镜像，仅输出本地开发入口，不启动 Web/API；两者仍需 pnpm dev。
+使用后台模式 docker compose up -d --wait 或 pnpm infra:up 时，通过 docker compose logs addresses 查看地址。
 禁止把 docker compose down -v 当作普通清理命令。
 
 数据库：
