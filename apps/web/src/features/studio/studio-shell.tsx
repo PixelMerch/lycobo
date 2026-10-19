@@ -14,11 +14,15 @@ import {
   IconSparkles,
   IconUser,
 } from "@tabler/icons-react";
-import { useState } from "react";
+import { type CSSProperties, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { CaseGallery } from "./case-gallery";
-import { models, photo, useStudioStore } from "./studio-state";
+import { cases, models, photo, useStudioStore } from "./studio-state";
+
+const chooserLayout: CSSProperties & { "--tool-columns": number } = {
+  "--tool-columns": Math.min(4, Math.max(models.length, cases.length)),
+};
 
 export function StudioShell() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -197,7 +201,7 @@ export function StudioShell() {
         <Outlet />
       </main>
       <Modal isOpen={chooserOpen} onOpenChange={setChooserOpen}>
-        <Modal.Backdrop className="chooser-backdrop" variant="transparent">
+        <Modal.Backdrop className="chooser-backdrop" variant="transparent" style={chooserLayout}>
           <Modal.Container className="chooser-container" scroll="inside">
             <Modal.Dialog className="model-chooser">
               <Modal.Header>
