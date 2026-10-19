@@ -173,4 +173,7 @@ test("extended ratios preserve selection and composer scroll stays independent",
   const after = await generate.boundingBox();
   expect(before && after && Math.abs(before.y - after.y)).toBeLessThan(1);
   await expect(generate).toBeInViewport();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "更多图片比例", exact: true }).click();
+  await expect(picker).toBeInViewport({ ratio: 1 });
 });
