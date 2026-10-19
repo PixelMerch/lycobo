@@ -3,33 +3,18 @@ import { createBrowserRouter, Link, redirect } from "react-router";
 export const router = createBrowserRouter([
   {
     path: "/chatdraw",
-    loader: ({ request }) => redirect(`/canvas${new URL(request.url).search}`),
+    loader: ({ request }) => redirect(`/create/gpt-image${new URL(request.url).search}`),
   },
   {
     path: "/design/:view?",
-    loader: ({ params, request }) =>
-      redirect(`/${params.view ?? ""}${new URL(request.url).search}`),
+    loader: ({ params }) => redirect(params.view === "assets" ? "/assets" : "/"),
   },
+  ...["history", "canvas", "projects", "inspiration", "templates", "library"].map((path) => ({
+    path,
+    loader: () => redirect("/"),
+  })),
   {
-    path: "/:view?",
-    loader: ({ params }) => {
-      if (
-        params.view &&
-        ![
-          "tasks",
-          "history",
-          "projects",
-          "inspiration",
-          "templates",
-          "assets",
-          "library",
-          "canvas",
-        ].includes(params.view)
-      ) {
-        throw new Response("Not found", { status: 404 });
-      }
-      return null;
-    },
+    path: "/",
     HydrateFallback: () => (
       <main className="empty-state" role="status">
         正在加载…
@@ -38,11 +23,43 @@ export const router = createBrowserRouter([
     errorElement: (
       <main className="empty-state">
         <h1>页面暂时无法打开</h1>
-        <Link to="/">返回创作首页</Link>
+        <Link to="/">返回首页</Link>
       </main>
     ),
     lazy: async () => ({
-      Component: (await import("../features/design/design-page")).DesignPage,
+      Component: (await import("../features/studio/studio-shell")).StudioShell,
     }),
+    children: [
+      {
+        index: true,
+        lazy: async () => ({ Component: (await import("../features/studio/home-page")).HomePage }),
+      },
+      {
+        path: "create/:model",
+        loader: ({ params }) => {
+          if (!["gpt-image", "banana"].includes(params.model ?? ""))
+            throw new Response("Not found", { status: 404 });
+          return null;
+        },
+        lazy: async () => ({
+          Component: (await import("../features/studio/workspace-page")).WorkspacePage,
+        }),
+      },
+      {
+        path: "assets",
+        lazy: async () => ({
+          Component: (await import("../features/studio/assets-page")).AssetsPage,
+        }),
+      },
+      {
+        path: "*",
+        element: (
+          <section className="empty-state">
+            <h1>页面不存在</h1>
+            <Link to="/">返回首页</Link>
+          </section>
+        ),
+      },
+    ],
   },
 ]);

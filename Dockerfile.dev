@@ -1,0 +1,8 @@
+FROM node:24.13.0-bookworm-slim
+WORKDIR /workspace
+RUN corepack enable && corepack prepare pnpm@10.34.7 --activate
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc tsconfig.base.json ./
+COPY apps ./apps
+COPY packages ./packages
+COPY scripts ./scripts
+RUN pnpm install --frozen-lockfile

@@ -1,0 +1,17 @@
+**/node_modules
+**/dist
+**/.vite
+**/*.tsbuildinfo
+.git
+.env
+.env.*
+!.env.example
+.trae
+.agents
+design
+docs
+test-results
+playwright-report
+coverage
+.pnpm-store
+.finesse

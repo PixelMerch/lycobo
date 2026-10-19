@@ -14,6 +14,18 @@
   SSE 推送、持久画布、完整设计稿页面。生成按钮禁用，提交 API 返回 503，绝不模拟成功。
 - 草稿只存在当前浏览器会话内存；图片只在本地预览，刷新后不保证保留。
 
+## Compose 启动（支持实时更新）
+
+```sh
+docker compose up --build
+```
+
+启动 Web、API、PostgreSQL 和 Redis，日志打印访问地址：Web <http://127.0.0.1:5173/>，
+API <http://127.0.0.1:8787/api/health/live>。修改本地页面 TSX/CSS 自动热更新，API 源码修改自动重启。
+首次构建后可直接 `docker compose up`；依赖变化时重新加 `--build`。
+后台启动使用 `docker compose up -d --build --wait`，日志用 `docker compose logs -f web api` 查看。
+请先停止占用同一端口的 `pnpm dev`。细节见 [本地开发](docs/development.md)。
+
 ## 本地启动
 
 要求 Node.js 24（至少 24.13.0）、pnpm 10.34.7；Docker 仅在使用本地数据库/队列时需要。
@@ -64,8 +76,8 @@ Worker 当前仅处理隔离的诊断队列，不会调用生图 API。详见 [�
 
 - [技术栈](docs/tech-stack.md)：选择、版本策略、SSR 与国内部署。
 - [架构与目录](PROJECT_STRUCTURE.md)：包边界与运行方式。
-- [产品范围](PRD.md)：连续提交、持久任务、画布与通知。
-- [设计规范](DESIGN.md)：OiiOii 深色工作室方向、tokens、状态与响应式。
+- [产品范围](PRD.md)：家纺跨境定位、左侧导航、AI 电商与 TK 专区规划。
+- [设计规范](DESIGN.md)：HeroUI v3 深色紫色工作台、tokens、状态与响应式。
 - [协作规范](CONTRIBUTING.md)：分支、提交、PR、代码审查与迁移协调。
 - [Agent 规则](AGENTS.md)：自动化开发与技能使用边界。
 - [异步任务设计](docs/task-lifecycle.md)：幂等、outbox、重试和通知。
@@ -77,7 +89,7 @@ Worker 当前仅处理隔离的诊断队列，不会调用生图 API。详见 [�
 ## 默认工作台
 
 启动 `pnpm dev` 后访问 <http://127.0.0.1:5173/>。
-创作首页、任务中心、项目、案例、作品库和画布共用深色设计系统。
-当前默认工作台为交互设计阶段：数据仅存在当前页面会话，刷新重置；不会调用生图、上传或计费 API。
-示例图支持本地亮度调整和 PNG 下载。旧版工作台代码已删除；`/design` 地址兼容跳转到新版对应页面。真实生成服务尚未接入。
-页面截图与来源说明见 [设计索引](docs/design/README.md)。
+新版首页 → 图片创作模型选择层 → GPT Image／香蕉模型工作台已按紫色 HeroUI 设计实现。
+参考图、参数、收藏与最近使用仅存在当前页面会话，刷新重置；案例可预览与下载，真实生成保持禁用，未调用上传或计费 API。
+旧设计页面、模拟队列及独立画布代码已删除，旧入口重定向至新版。详情见 [实现与验收](docs/image-studio-implementation.md)。
+当前视觉规范与交互研究见 [设计索引](docs/design/README.md)。

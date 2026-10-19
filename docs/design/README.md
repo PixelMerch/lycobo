@@ -1,41 +1,15 @@
-# OiiOii 方向的新设计
+# 设计规范与交互研究
 
-这一版替换浅色 V3，并按最新反馈改为汽水绿、紧凑圆角卡片与单行标题。以 [DESIGN.md](../../DESIGN.md) 为规格，以可点击页面为布局真相。
-下列 JPG 是本地 React 预览的实际浏览器截图；任务、商品与进度均为设计示例。
+[DESIGN.md](../../DESIGN.md) 是唯一视觉规范：HeroUI v3、深色中性表面、#BAA4FF → #8B5CF6 紫色渐变、统一字体／边框／圆角。
 
-启动 `pnpm dev`，进入 <http://127.0.0.1:5173/design>。
+## 当前材料
 
-| 页面 | 预览路径 | 设计图 |
-| --- | --- | --- |
-| 创作首页 | /design | [01-home.jpg](01-home.jpg) |
-| 任务中心 | /design/tasks | [02-task-center.jpg](02-task-center.jpg) |
-| 结果画布 | /design/canvas?task=demo-skin | [03-canvas.jpg](03-canvas.jpg) |
-| 全局任务抽屉 | 右上角「全部任务」 | [04-task-drawer.jpg](04-task-drawer.jpg) |
-| 案例灵感 | /design/inspiration | [05-inspiration.jpg](05-inspiration.jpg) |
-| 我的项目 | /design/projects | [06-projects.jpg](06-projects.jpg) |
-| 作品库 | /design/assets | [07-assets.jpg](07-assets.jpg) |
-| 图片调整 | 结果画布 → 调整图片 | [08-image-edit.jpg](08-image-edit.jpg) |
-| 新结果通知 | 右上角铃铛 | [09-notifications.jpg](09-notifications.jpg) |
-| 个人账户 | 右上角头像 | [11-account.jpg](11-account.jpg) |
-| 空输入状态 | 首页未填写描述 | [13-composer-empty.jpg](13-composer-empty.jpg) |
-| 模型选择 | 输入区左下角 | [14-model-picker.jpg](14-model-picker.jpg) |
-| 生成参数 | 输入区底部 | [12-generation-settings.jpg](12-generation-settings.jpg) |
-| 移动端 | 390px 首页 | [10-mobile.jpg](10-mobile.jpg) |
+- [图片创作三步 UI](image-creation-flow.md)：完整首页 → 两模型选择层 → GPT Image 三栏工作台；模型卡片已按最新反馈改为紧凑竖版、整卡点击，图片中的独立按钮已取消。
+- [当前导航与 TK 专区 UI 图](navigation-and-tk.md)：AI 电商工具选择层 V3（主内容 padding 对齐、外围纯黑）、TK 自动发布；当前信息架构以此及 PRD 为准。
+- [紫色工作台首轮探索](purple-studio-mockups.md)：保留三栏布局探索，家纺工具的导航归属已由当前方案更正。
+- [艺栢页面与操作逻辑研究](yibai-page-logic.md)：分类展开、功能选择层、画图三栏、案例回填和历史联动；区分实测、代码与未验证行为。
+- [当前家纺素材提示词](studio-photo-prompts.json)：三组独立商品照片的来源；旧四宫格素材已从应用删除。
 
-## 可操作范围
+旧版 UI 截图和风格提取文档已删除；不能用现有预览代码代替新规范的视觉验收。新 UI 图是布局与视觉目标，具体 token、组件和交互需在实现中验证。
 
-- 案例分类，点击填入参考与描述，模拟连续提交，保持当前页。
-- 跨页保留当前描述，筛选和搜索示例任务。
-- 点击任务进画布；查看完成结果时取消该任务未读标记。
-- 画布缩放、切换参考商品、调整示例图片亮度、下载真实 PNG。
-- 抽屉使用 HeroUI 的焦点管理与 Escape 关闭。
-
-## 明确边界
-
-预览是临时内存状态，刷新恢复默认；支持最多 5 张本地图片读取与 @图片 引用；没有真实模型调用、收费、服务器上传或持久化存储。
-画布当前是单图视觉与操作预览；拖拽无限画布、版本系统与多任务分组仍按产品规格后续实现。
-正式工作台 `/` 的真实生成依然禁用。
-
-[风格提取记录](oiioii-style-extraction.md) · [素材来源与提示词](asset-prompt.md)
-
-- [15 · 多图参考与 @ 图片选择](15-image-mentions.jpg)
+当前页面已实现，草稿、收藏及最近使用为会话内状态；生成历史与任务中心为空，没有模拟生成。具体范围见 [实现与验收](../image-studio-implementation.md)。
