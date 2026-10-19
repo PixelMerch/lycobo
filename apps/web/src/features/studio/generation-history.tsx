@@ -1,13 +1,16 @@
-import { Button } from "@heroui/react";
+import { Button, Tooltip } from "@heroui/react";
 import type { ImageJob } from "@lycoboai/contracts";
 import {
   IconAspectRatio,
   IconClock,
+  IconDownload,
   IconHash,
   IconLayersIntersect,
   IconMaximize,
   IconPhoto,
   IconSparkles,
+  IconStar,
+  IconStarFilled,
 } from "@tabler/icons-react";
 import { useEffect, useRef } from "react";
 import { UiIcon } from "../../components/ui-icon";
@@ -31,6 +34,75 @@ const errorLabel = (code: string | null) => {
     return "模型服务不支持这组参数或参考图，请调整后新建任务。";
   return "本张图片未生成成功，请检查服务配置。";
 };
+function ResultImage({
+  assetId,
+  position,
+  prompt,
+  width,
+  height,
+}: {
+  assetId: string;
+  position: number;
+  prompt: string;
+  width: number | null;
+  height: number | null;
+}) {
+  const favorite = useStudioStore((s) => s.favorites.includes(assetId));
+  const toggleFavorite = useStudioStore((s) => s.toggleFavorite);
+  return (
+    <>
+      <div className="generation-media">
+        <a
+          href={assetContentUrl(assetId)}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`查看原图 ${position + 1}`}
+        >
+          <img
+            src={assetContentUrl(assetId, true)}
+            loading="lazy"
+            alt={`${prompt}，图片${position + 1}`}
+          />
+        </a>
+        <div className="generation-media-actions">
+          <Tooltip delay={0}>
+            <Button
+              isIconOnly
+              variant="tertiary"
+              className="generation-media-action"
+              aria-label="下载原图"
+              onPress={() => {
+                const link = document.createElement("a");
+                link.href = assetContentUrl(assetId);
+                link.download = `${assetId}.png`;
+                link.click();
+              }}
+            >
+              <UiIcon icon={IconDownload} />
+            </Button>
+            <Tooltip.Content placement="top">下载原图</Tooltip.Content>
+          </Tooltip>
+          <Tooltip delay={0}>
+            <Button
+              isIconOnly
+              variant="tertiary"
+              className="generation-media-action"
+              aria-label={favorite ? "取消收藏" : "收藏图片"}
+              aria-pressed={favorite}
+              onPress={() => toggleFavorite(assetId)}
+            >
+              <UiIcon icon={favorite ? IconStarFilled : IconStar} />
+            </Button>
+            <Tooltip.Content placement="top">{favorite ? "取消收藏" : "收藏"}</Tooltip.Content>
+          </Tooltip>
+        </div>
+      </div>
+      <small>
+        {width} × {height}
+      </small>
+    </>
+  );
+}
 export function GenerationHistory({ compact = false }: { compact?: boolean }) {
   const session = useImageSession();
   const query = useImageHistory();
@@ -178,29 +250,13 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
               {job.items.map((item) => (
                 <div key={item.id} id={`result-${item.id}`}>
                   {item.output_asset_id ? (
-                    <>
-                      <a
-                        href={assetContentUrl(item.output_asset_id)}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label={`查看原图 ${item.position + 1}`}
-                      >
-                        <img
-                          src={assetContentUrl(item.output_asset_id, true)}
-                          loading="lazy"
-                          alt={`${job.prompt}，图片${item.position + 1}`}
-                        />
-                      </a>
-                      <a
-                        href={assetContentUrl(item.output_asset_id)}
-                        download={`${item.output_asset_id}.png`}
-                      >
-                        下载原图
-                      </a>
-                      <small>
-                        {item.width} × {item.height}
-                      </small>
-                    </>
+                    <ResultImage
+                      assetId={item.output_asset_id}
+                      position={item.position}
+                      prompt={job.prompt}
+                      width={item.width}
+                      height={item.height}
+                    />
                   ) : (
                     <div className="generation-placeholder" role="status">
                       {item.status === "running" ? (
