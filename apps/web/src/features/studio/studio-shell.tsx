@@ -1,7 +1,6 @@
 import { Button, Drawer, Modal, Popover } from "@heroui/react";
 import {
   IconBell,
-  IconChevronDown,
   IconChevronRight,
   IconFolder,
   IconHelpCircle,
@@ -39,7 +38,7 @@ export function StudioShell() {
       </NavLink>
       <Button
         variant="tertiary"
-        className={`nav-row ${chooserOpen || currentModel ? "active" : ""}`}
+        className={`nav-row ${chooserOpen || (currentModel && !tkOpen && info !== "AI 电商") ? "active" : ""}`}
         onPress={() => {
           setMenuOpen(false);
           setChooserOpen(true);
@@ -49,11 +48,15 @@ export function StudioShell() {
       >
         <UiIcon icon={IconPhoto} size="navigation" />
         图片创作
-        <UiIcon icon={IconChevronRight} size="small" />
+        <span className="nav-chevron">
+          <UiIcon icon={IconChevronRight} size="small" />
+        </span>
       </Button>
       <Button
         variant="tertiary"
-        className="nav-row"
+        className={`nav-row ${info === "AI 电商" ? "active" : ""}`}
+        aria-haspopup="dialog"
+        aria-expanded={info === "AI 电商"}
         onPress={() => {
           setMenuOpen(false);
           setInfo("AI 电商");
@@ -61,17 +64,21 @@ export function StudioShell() {
       >
         <UiIcon icon={IconShoppingBag} size="navigation" />
         AI 电商
-        <UiIcon icon={IconChevronRight} size="small" />
+        <span className="nav-chevron">
+          <UiIcon icon={IconChevronRight} size="small" />
+        </span>
       </Button>
       <Button
         variant="tertiary"
-        className="nav-row"
+        className={`nav-row ${tkOpen ? "active" : ""}`}
         aria-expanded={tkOpen}
         onPress={() => setTkOpen(!tkOpen)}
       >
         <UiIcon icon={IconPlayerPlay} size="navigation" />
         TK 专区
-        <UiIcon icon={tkOpen ? IconChevronDown : IconChevronRight} size="small" />
+        <span className="nav-chevron">
+          <UiIcon icon={IconChevronRight} size="small" />
+        </span>
       </Button>
       {tkOpen ? (
         <div className="tk-submenu">
