@@ -487,14 +487,14 @@ function ReferencePicker({
         }}
       />
       <div className="reference-grid">
-        {references.map((image) => (
+        {references.map((image, index) => (
           <div className="reference-tile" key={image.id}>
-            <img src={image.src} alt={image.name} />
+            <img src={image.src} alt={`图片${index + 1}`} />
             <Button
               isIconOnly
               variant="secondary"
               className="remove-reference"
-              aria-label={`移除参考图：${image.name}`}
+              aria-label={`移除参考图：图片${index + 1}`}
               onPress={() =>
                 updateDraft(model, {
                   references: references.filter((item) => item.id !== image.id),
@@ -503,7 +503,7 @@ function ReferencePicker({
             >
               <UiIcon icon={IconX} size="small" />
             </Button>
-            <span>{image.name}</span>
+            <span className="reference-number">图片{index + 1}</span>
           </div>
         ))}
         {references.length < 5 ? (
