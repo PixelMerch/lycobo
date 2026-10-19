@@ -11,13 +11,11 @@ import {
   IconGridDots,
   IconHome,
   IconListCheck,
-  IconMinus,
   IconPhoto,
   IconPlus,
   IconSearch,
-  IconX,
 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useParams, useSearchParams } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { AccountMenu } from "./account-menu";
@@ -151,6 +149,7 @@ function Composer({ compact = false, currentShot }: { compact?: boolean; current
   const shot = useDesignStore((s) => s.shot);
   const setDraft = useDesignStore((s) => s.setDraft);
   const addTask = useDesignStore((s) => s.addTask);
+  const hasUpload = useDesignStore((s) => s.references.some((image) => Boolean(image.src)));
   const [submitted, setSubmitted] = useState<string>();
   const mode = currentShot === undefined || shot === currentShot ? "继续当前商品" : "换个商品";
   return (
@@ -175,7 +174,10 @@ function Composer({ compact = false, currentShot }: { compact?: boolean; current
       ) : null}
       <ReferenceInput compact={compact} />
       <div className="demo-composer-footer">
-        <ComposerSettings />
+        <details>
+          <summary>更多设置</summary>
+          <ComposerSettings />
+        </details>
         <div className="send-control">
           <span
             className="bean-cost"
@@ -190,8 +192,11 @@ function Composer({ compact = false, currentShot }: { compact?: boolean; current
             className="send-button"
             isIconOnly
             aria-label="生成图片"
-            isDisabled={!prompt.trim()}
-            onPress={() => setSubmitted(addTask())}
+            isDisabled={!prompt.trim() && !hasUpload}
+            onPress={() => {
+              const id = addTask();
+              setSubmitted(id);
+            }}
           >
             <UiIcon icon={IconArrowUp} size="navigation" />
           </Button>
@@ -214,26 +219,30 @@ function Gallery({ full = false }: { full?: boolean }) {
     <section className="example-section">
       <div className="section-heading">
         <div>
-          <h2>{full ? "案例灵感" : "找一点灵感"}</h2>
+          <h2 style={full ? undefined : { marginTop: 12 }}>{full ? "案例灵感" : "找一点灵感"}</h2>
         </div>
-        <Link className="text-link" to={full ? "/" : "/inspiration"}>
-          {full ? "开始创作" : "全部案例"}
-          <UiIcon icon={IconArrowRight} size="small" />
-        </Link>
+        {full ? (
+          <Link className="text-link" to="/">
+            开始创作
+            <UiIcon icon={IconArrowRight} size="small" />
+          </Link>
+        ) : null}
       </div>
-      <div className="filter-row">
-        {["全部", "美妆个护", "服饰鞋包"].map((c) => (
-          <Button
-            key={c}
-            variant="tertiary"
-            aria-pressed={c === category}
-            className={c === category ? "filter active" : "filter"}
-            onPress={() => setCategory(c)}
-          >
-            {c}
-          </Button>
-        ))}
-      </div>
+      {full ? (
+        <div className="filter-row">
+          {["全部", "美妆个护", "服饰鞋包"].map((c) => (
+            <Button
+              key={c}
+              variant="tertiary"
+              aria-pressed={c === category}
+              className={c === category ? "filter active" : "filter"}
+              onPress={() => setCategory(c)}
+            >
+              {c}
+            </Button>
+          ))}
+        </div>
+      ) : null}
       <div className="example-grid">
         {products
           .filter((p) => category === "全部" || p.category === category)
@@ -258,59 +267,14 @@ function Gallery({ full = false }: { full?: boolean }) {
   );
 }
 function DesignHome() {
-  const tasks = useDesignStore((s) => s.tasks);
   return (
     <>
       <section className="design-hero">
         <div className="hero-heading">
-          <h1>好商品，值得一张好图</h1>
-          <p>参考图 + 描述，开始创作。</p>
+          <h1>一张好图，让好商品更动人</h1>
+          <p>上传参考图、描述构想，瞬间生成专属好图。</p>
         </div>
         <Composer />
-        <div className="quick-actions">
-          <Link to="/canvas" className="pill-button">
-            <UiIcon icon={IconGridDots} size="default" />
-            自由画布
-          </Link>
-          <Button
-            variant="tertiary"
-            onPress={() => useDesignStore.getState().setDraft(products[0].description, 0)}
-          >
-            商品场景
-          </Button>
-          <Button
-            variant="tertiary"
-            onPress={() => useDesignStore.getState().setDraft(products[2].description, 2)}
-          >
-            服饰鞋包
-          </Button>
-          <Button
-            variant="tertiary"
-            onPress={() => useDesignStore.getState().setDraft(products[1].description, 1)}
-          >
-            质感主图
-          </Button>
-        </div>
-      </section>
-      <section className="ongoing-section">
-        <div className="section-heading">
-          <h2>最近创作</h2>
-          <Link className="text-link" to="/tasks">
-            全部任务 <UiIcon icon={IconArrowRight} size="small" />
-          </Link>
-        </div>
-        <div className="ongoing-grid">
-          {tasks.slice(0, 3).map((t) => (
-            <Link className="ongoing-task" key={t.id} to={`/canvas?task=${t.id}`}>
-              <ProductShot shot={t.shot} />
-              <span>
-                <strong>{t.title}</strong>
-                <Status task={t} />
-              </span>
-              <UiIcon icon={IconChevronRight} size="small" />
-            </Link>
-          ))}
-        </div>
       </section>
       <Gallery />
     </>
@@ -333,12 +297,12 @@ function DesignTasks() {
     <section className="design-task-page">
       <div className="page-heading">
         <div>
-          <h1>任务中心</h1>
-          <p>每一次创作，都能在这里找回。</p>
+          <h1>历史记录</h1>
+          <p>之前生成的图片，都在这里找回。</p>
         </div>
         <Link className="pill-button primary-link" to="/">
           <UiIcon icon={IconPlus} size="default" />
-          新建创作
+          开始创作
         </Link>
       </div>
       <div className="tasks-toolbar">
@@ -404,11 +368,11 @@ function DesignLibrary({ view }: { view: string }) {
     <section>
       <div className="page-heading">
         <div>
-          <h1>{view === "projects" ? "我的项目" : "作品库"}</h1>
+          <h1>{view === "projects" ? "我的项目" : "素材库"}</h1>
           <p>
             {view === "projects"
               ? "按商品归档，接着上一次的画布继续创作。"
-              : "查看图片，进入画布继续调整。"}
+              : "保存过的商品图和参考图，随时可以继续使用。"}
           </p>
         </div>
         <Link to="/" className="pill-button">
@@ -434,23 +398,95 @@ function DesignCanvas() {
   const tasks = useDesignStore((s) => s.tasks);
   const markRead = useDesignStore((s) => s.markRead);
   const setDraft = useDesignStore((s) => s.setDraft);
+  const addTask = useDesignStore((s) => s.addTask);
+  const prompt = useDesignStore((s) => s.prompt);
+  const references = useDesignStore((s) => s.references);
   const [search] = useSearchParams();
   const selected =
     tasks.find((t) => t.id === search.get("task")) ??
     tasks.find((t) => t.shot === Number(search.get("shot") ?? 0));
-  const task = selected ?? tasks[0];
-  const [zoom, setZoom] = useState(100);
-  const [edit, setEdit] = useState(false);
+  const [activeId, setActiveId] = useState(selected?.id ?? tasks[0]?.id);
+  const previews = useRef<HTMLDivElement>(null);
+  const [editingId, setEditingId] = useState<string>();
   const [brightness, setBrightness] = useState(100);
   const [downloadError, setDownloadError] = useState("");
-  const taskId = task?.id;
+  const [submitted, setSubmitted] = useState(false);
+  const feed = useRef<HTMLDivElement>(null);
+  const records = useRef(new Map<string, HTMLElement>());
+  const taskId = selected?.id;
+
+  // URL navigation and thumbnail navigation target the same result list.
   useEffect(() => {
-    if (taskId) markRead(taskId);
+    if (taskId) {
+      if (window.matchMedia("(min-width: 851px)").matches) {
+        records.current.get(taskId)?.scrollIntoView({ block: "start" });
+      }
+      setActiveId(taskId);
+      markRead(taskId);
+    }
   }, [taskId, markRead]);
-  if (!task) return null;
-  const ready = task.status === "已完成";
-  async function download() {
-    if (!task) return;
+
+  useEffect(() => {
+    const list = feed.current;
+    function syncVisibleRecord() {
+      const desktop = window.matchMedia("(min-width: 851px)").matches;
+      const top = desktop ? (list?.getBoundingClientRect().top ?? 0) : 0;
+      const bottom = desktop
+        ? (list?.getBoundingClientRect().bottom ?? window.innerHeight)
+        : window.innerHeight;
+      const visible = [...records.current.entries()]
+        .map(([id, element]) => ({ id, rect: element.getBoundingClientRect() }))
+        .filter(({ rect }) => rect.bottom > top + 1 && rect.top < bottom)
+        .sort((a, b) => Math.abs(a.rect.top - top) - Math.abs(b.rect.top - top))[0];
+      if (visible) {
+        setActiveId(visible.id);
+        markRead(visible.id);
+      }
+    }
+    list?.addEventListener("scroll", syncVisibleRecord, { passive: true });
+    window.addEventListener("scroll", syncVisibleRecord, { passive: true });
+    return () => {
+      list?.removeEventListener("scroll", syncVisibleRecord);
+      window.removeEventListener("scroll", syncVisibleRecord);
+    };
+  }, [markRead]);
+
+  useEffect(() => {
+    if (!activeId) return;
+    const list = previews.current;
+    const thumbnail = list?.querySelector<HTMLElement>('[aria-pressed="true"]');
+    if (!list || !thumbnail) return;
+    const bounds = list.getBoundingClientRect();
+    const item = thumbnail.getBoundingClientRect();
+    const horizontal = window.matchMedia("(max-width: 850px)").matches;
+    if (horizontal) {
+      if (item.left < bounds.left || item.right > bounds.right)
+        list.scrollBy({ left: item.left - bounds.left });
+    } else if (item.top < bounds.top || item.bottom > bounds.bottom) {
+      list.scrollBy({ top: item.top - bounds.top });
+    }
+  }, [activeId]);
+
+  function locate(id: string) {
+    setActiveId(id);
+    markRead(id);
+    const record = records.current.get(id);
+    record?.scrollIntoView({
+      block: "start",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+    });
+    record?.focus({ preventScroll: true });
+  }
+
+  function continueTask(item: DemoTask) {
+    setDraft("", item.shot);
+    if (item.references) useDesignStore.getState().setReferences(item.references);
+    if (item.settings) useDesignStore.getState().setSettings(item.settings);
+    document.getElementById("canvas-prompt")?.focus();
+  }
+  async function downloadResult(task: DemoTask) {
     try {
       const source = new Image();
       source.src = "/design/product-studies.png";
@@ -461,7 +497,7 @@ function DesignCanvas() {
       canvas.height = side;
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("canvas-unavailable");
-      ctx.filter = `brightness(${brightness}%)`;
+      ctx.filter = `brightness(${task.id === editingId ? brightness : 100}%)`;
       ctx.drawImage(
         source,
         (task.shot % 2) * side,
@@ -487,190 +523,259 @@ function DesignCanvas() {
       setDownloadError("导出失败，请重试。");
     }
   }
+
   return (
-    <div className="canvas-workbench">
-      <a className="skip-link" href="#canvas-main">
-        跳转到画布
+    <div className="generation-studio">
+      <a className="skip-link" href="#generation-feed">
+        跳转到生成记录
       </a>
-      <header className="canvas-topbar">
-        <div className="project-capsule">
-          <Link className="canvas-brand" to="/" aria-label="返回创作首页">
-            lyco<span>·</span>
-          </Link>
-          <span>{task.title}</span>
-        </div>
-        <div className="canvas-header-actions">
+      <header className="studio-header">
+        <Link className="brand" to="/">
+          lycoboai<span className="brand-period">·</span>
+        </Link>
+        <span className="studio-title">图片创作</span>
+        <div className="studio-header-actions">
           <TaskDrawer />
           <Notifications />
           <AccountMenu />
         </div>
       </header>
-      <main id="canvas-main" className="canvas-main">
-        <div className="canvas-floating-tools">
-          <Link className="pill-button" to="/">
-            <UiIcon icon={IconPlus} size="default" />
-            新建创作
-          </Link>
-          <Link className="pill-button" to="/projects">
-            <UiIcon icon={IconFolder} size="default" />
-            项目
+      <nav className="studio-nav" aria-label="主导航">
+        <Link className="nav-item" to="/">
+          <UiIcon icon={IconHome} size="navigation" />
+          首页
+        </Link>
+        <Link className="nav-item active" aria-current="page" to="/canvas">
+          <UiIcon icon={IconPhoto} size="navigation" />
+          图片创作
+        </Link>
+        <Link className="nav-item" to="/assets">
+          <UiIcon icon={IconFolder} size="navigation" />
+          作品库
+        </Link>
+        <Link className="nav-item" to="/inspiration">
+          <UiIcon icon={IconGridDots} size="navigation" />
+          案例灵感
+        </Link>
+        <Link className="nav-item" to="/projects">
+          <UiIcon icon={IconFolder} size="navigation" />
+          我的项目
+        </Link>
+      </nav>
+      <aside className="studio-input" aria-label="创作功能区">
+        <div className="studio-input-heading">
+          <h1>图片创作</h1>
+          <p>上传参考图，描述你想要的画面</p>
+        </div>
+        <details className="studio-parameters">
+          <summary>更多设置</summary>
+          <ComposerSettings />
+        </details>
+        <div className="studio-submit">
+          <div className="studio-reference-input">
+            <h2>
+              提示词 <span>参考图最多 5 张</span>
+            </h2>
+            <ReferenceInput compact />
+          </div>
+          <div className="studio-inline-settings"></div>
+          <Button
+            className="studio-generate"
+            aria-label="生成图片"
+            isDisabled={!prompt.trim() && !references.some((image) => image.src)}
+            onPress={() => {
+              const id = addTask();
+              setSubmitted(true);
+              setActiveId(id);
+              requestAnimationFrame(() => {
+                records.current.get(id)?.scrollIntoView({ block: "start", behavior: "instant" });
+                document.getElementById("canvas-prompt")?.focus({ preventScroll: true });
+              });
+            }}
+          >
+            <UiIcon icon={IconArrowUp} size="navigation" />
+            生成图片
+          </Button>
+          <span className="studio-cost">
+            <UiIcon icon={IconCoins} size="small" />
+            预计消耗 —
+          </span>
+          <p className="submission-note" role="status">
+            {submitted ? "任务已加入队列，可以继续创作。" : ""}
+          </p>
+        </div>
+      </aside>
+      <main className="studio-results" aria-label="图片生成记录">
+        <div className="studio-feed-heading">
+          <h2>
+            生成记录 <span>{tasks.length}</span>
+          </h2>
+          <Link className="pill-button" to="/inspiration">
+            案例灵感
+            <UiIcon icon={IconChevronRight} size="small" />
           </Link>
         </div>
-        <div className="canvas-artboard" style={{ transform: `scale(${zoom / 100})` }}>
-          <div className="artboard-title">
-            <span>{ready ? "场景主图" : "商品参考"}</span>
-            <span>{ready ? "627 × 627" : "等待生成结果"}</span>
-          </div>
-          <div
-            className={`artboard-image ${edit ? "editing" : ""}`}
-            style={{ filter: `brightness(${brightness}%)` }}
-          >
-            <ProductShot shot={task.shot} />
-          </div>
-          {ready ? (
-            <div className="image-actions">
-              <Button variant="secondary" onPress={() => setEdit((v) => !v)}>
-                调整图片
-              </Button>
-              <Button
-                variant="secondary"
-                onPress={() => {
-                  setDraft(task.prompt, task.shot);
-                  if (task.references) useDesignStore.getState().setReferences(task.references);
+        <div className="generation-feed" id="generation-feed" ref={feed}>
+          {tasks.map((item) => {
+            const ready = item.status === "已完成";
+            const isEditing = editingId === item.id;
+            const source = item.references?.find((image) => image.src) ?? item.references?.[0];
+            return (
+              <article
+                key={item.id}
+                className="generation-record"
+                data-active={activeId === item.id}
+                data-task-id={item.id}
+                tabIndex={-1}
+                aria-label={`${item.title} · ${item.prompt || "参考图片创作"}`}
+                ref={(element) => {
+                  if (element) records.current.set(item.id, element);
+                  else records.current.delete(item.id);
                 }}
               >
-                作为参考
-              </Button>
-              <Button variant="secondary" onPress={() => void download()}>
-                <UiIcon icon={IconDownload} size="default" />
-                下载图片
-              </Button>
-            </div>
-          ) : (
-            <p className="canvas-waiting">
-              <Status task={task} />
-              可以继续处理其他商品
-            </p>
-          )}
-        </div>
-        <div className="zoom-controls">
-          <Button
-            isIconOnly
-            variant="tertiary"
-            aria-label="缩小画布"
-            isDisabled={zoom <= 50}
-            onPress={() => setZoom((v) => v - 10)}
-          >
-            <UiIcon icon={IconMinus} size="default" />
-          </Button>
-          <Button variant="tertiary" onPress={() => setZoom(100)}>
-            {zoom}%
-          </Button>
-          <Button
-            isIconOnly
-            variant="tertiary"
-            aria-label="放大画布"
-            isDisabled={zoom >= 130}
-            onPress={() => setZoom((v) => v + 10)}
-          >
-            <UiIcon icon={IconPlus} size="default" />
-          </Button>
-        </div>
-      </main>
-      <aside className="canvas-panel">
-        <div className="panel-heading">
-          <h1>{edit ? "调整图片" : "创作记录"}</h1>
-          <span className="muted">当前项目</span>
-          {edit ? (
-            <Button
-              isIconOnly
-              variant="tertiary"
-              aria-label="关闭调整"
-              onPress={() => setEdit(false)}
-            >
-              <UiIcon icon={IconX} size="default" />
-            </Button>
-          ) : null}
-        </div>
-        <div className="canvas-history">
-          {edit ? (
-            <div className="edit-settings">
-              <label htmlFor="brightness">
-                亮度 <span>{brightness}%</span>
-              </label>
-              <input
-                id="brightness"
-                type="range"
-                min="60"
-                max="140"
-                value={brightness}
-                onChange={(e) => setBrightness(Number(e.target.value))}
-              />
-              <p className="muted">原素材保持不变，下载包含本次亮度调整。</p>
-              <Button variant="secondary" onPress={() => setBrightness(100)}>
-                重置调整
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className="history-reference">
-                {task.references ? (
-                  task.references.map((image) => (
-                    <ReferenceThumbnail key={image.id} image={image} />
-                  ))
-                ) : (
-                  <ProductShot shot={task.shot} />
-                )}
-                <span>
-                  参考图
-                  <small>{task.references ? `${task.references.length} 张` : "商品外观参考"}</small>
-                </span>
-              </div>
-              <p className="history-prompt">{task.prompt}</p>
-              {task.settings ? (
-                <p className="muted">
-                  {task.settings.model} · {task.settings.ratio} · {task.settings.resolution} ·{" "}
-                  {task.settings.count}
-                </p>
-              ) : null}
-              <div className="history-result">
-                <Status task={task} />
-                <p>
-                  {ready
-                    ? "结果已放到画布，可以调整、下载，或用作下一轮参考。"
-                    : task.status === "部分失败"
-                      ? "部分图片生成失败，参考图已保留。"
-                      : "任务在后台处理。你可以直接换个商品继续创作。"}
-                </p>
+                <header className="record-heading">
+                  <h3>{item.title}</h3>
+                  <Status task={item} />
+                </header>
+                <div className="record-settings">
+                  <span className="record-model">{item.settings?.model ?? "模型未记录"}</span>
+                  <time dateTime={item.createdAt}>
+                    {item.createdAt
+                      ? new Date(item.createdAt).toLocaleString("zh-CN", { hour12: false })
+                      : "时间未记录"}
+                  </time>
+                  <span className="record-task-id" title={item.id}>
+                    任务 ID：{item.id}
+                  </span>
+                  <span className="record-ratio" title="图片比例">
+                    {item.settings?.ratio ?? "—"}
+                  </span>
+                  <span className="record-resolution" title="分辨率">
+                    {item.settings?.resolution ?? "—"}
+                  </span>
+                  <span className="record-count" title="生成张数">
+                    {item.settings?.count ?? "—"}
+                  </span>
+                </div>
+                <p className="history-prompt">{item.prompt || "使用上传的参考图片进行创作"}</p>
+                {item.references?.length ? (
+                  <div className="history-reference">
+                    {item.references.map((image) => (
+                      <ReferenceThumbnail key={image.id} image={image} />
+                    ))}
+                  </div>
+                ) : null}
                 {ready ? (
-                  <ProductShot shot={task.shot} />
+                  <>
+                    <div
+                      className="record-result"
+                      style={{ filter: `brightness(${isEditing ? brightness : 100}%)` }}
+                    >
+                      <ProductShot shot={item.shot} />
+                    </div>
+                    <div className="record-actions">
+                      <Button variant="secondary" onPress={() => continueTask(item)}>
+                        继续修改
+                      </Button>
+                      <Button
+                        variant="tertiary"
+                        onPress={() => {
+                          setEditingId(isEditing ? undefined : item.id);
+                          setBrightness(100);
+                        }}
+                      >
+                        调整图片
+                      </Button>
+                      <Button
+                        variant="tertiary"
+                        onPress={() => {
+                          void downloadResult(item);
+                        }}
+                      >
+                        <UiIcon icon={IconDownload} size="default" />
+                        下载图片
+                      </Button>
+                    </div>
+                    {isEditing ? (
+                      <div className="record-adjustment">
+                        <label htmlFor={`brightness-${item.id}`}>亮度 {brightness}%</label>
+                        <input
+                          id={`brightness-${item.id}`}
+                          type="range"
+                          min="60"
+                          max="140"
+                          value={brightness}
+                          onChange={(event) => setBrightness(Number(event.target.value))}
+                        />
+                      </div>
+                    ) : null}
+                  </>
                 ) : (
-                  <div className="waiting-stages">
-                    <span>
-                      <UiIcon icon={IconCheck} size="small" />
-                      已提交
-                    </span>
-                    <span>等待结果</span>
+                  <div className="record-pending">
+                    {source ? (
+                      <div className="record-source">
+                        <ReferenceThumbnail image={source} />
+                        <span>商品参考</span>
+                      </div>
+                    ) : (
+                      <UiIcon icon={IconPhoto} size="illustration" />
+                    )}
+                    <div>
+                      <strong>
+                        {item.status === "部分失败" ? "部分图片未能生成" : "等待生成结果"}
+                      </strong>
+                      <p>
+                        {item.status === "部分失败"
+                          ? "参考图与描述已保留，可继续修改。"
+                          : "参考图与描述已保留，可以继续输入下一轮要求。"}
+                      </p>
+                      <Button variant="tertiary" onPress={() => continueTask(item)}>
+                        继续修改
+                      </Button>
+                    </div>
                   </div>
                 )}
-              </div>
-            </>
-          )}
-          {downloadError ? (
-            <p role="alert" className="field-error">
-              {downloadError}
-            </p>
-          ) : null}
+              </article>
+            );
+          })}
         </div>
-        <Composer compact currentShot={task.shot} />
+        {downloadError ? (
+          <p role="alert" className="field-error">
+            {downloadError}
+          </p>
+        ) : null}
+      </main>
+      <aside className="studio-previews" aria-label="历史预览">
+        <h2>历史记录</h2>
+        <div className="studio-preview-list" ref={previews}>
+          {tasks.map((item, index) => (
+            <Button
+              variant="tertiary"
+              key={item.id}
+              className="studio-preview"
+              aria-label={`定位记录 ${index + 1}：${item.title}`}
+              aria-pressed={activeId === item.id}
+              onPress={() => locate(item.id)}
+            >
+              {item.status === "已完成" ? (
+                <ProductShot shot={item.shot} />
+              ) : item.references?.[0] ? (
+                <ReferenceThumbnail image={item.references[0]} />
+              ) : (
+                <UiIcon icon={IconPhoto} size="action" />
+              )}
+              <span>{item.status}</span>
+            </Button>
+          ))}
+        </div>
       </aside>
     </div>
   );
 }
+
 export function DesignPage() {
   const { view } = useParams();
-  const [search] = useSearchParams();
-  if (view === "canvas") return <DesignCanvas key={search.toString()} />;
+  if (view === "canvas") return <DesignCanvas />;
   return (
     <div className="app-shell design-shell">
       <a className="skip-link" href="#design-main">
@@ -686,11 +791,10 @@ export function DesignPage() {
         </Link>
         <nav aria-label="主导航">
           {[
-            { path: "", label: "创作工作室", Icon: IconHome },
-            { path: "tasks", label: "任务中心", Icon: IconListCheck },
-            { path: "inspiration", label: "案例灵感", Icon: IconGridDots },
-            { path: "assets", label: "作品库", Icon: IconPhoto },
-            { path: "projects", label: "我的项目", Icon: IconFolder },
+            { path: "", label: "图片创作", Icon: IconHome },
+            { path: "history", label: "历史记录", Icon: IconListCheck },
+            { path: "assets", label: "素材库", Icon: IconPhoto },
+            { path: "templates", label: "模板灵感", Icon: IconGridDots },
           ].map(({ path, label, Icon }) => (
             <NavLink
               end
@@ -724,11 +828,11 @@ export function DesignPage() {
           </div>
         </header>
         <main id="design-main" className="main-content">
-          {view === "tasks" ? (
+          {view === "tasks" || view === "history" ? (
             <DesignTasks />
-          ) : view === "inspiration" ? (
+          ) : view === "inspiration" || view === "templates" ? (
             <Gallery full />
-          ) : view === "projects" || view === "assets" ? (
+          ) : view === "projects" || view === "assets" || view === "library" ? (
             <DesignLibrary view={view} />
           ) : (
             <DesignHome />

@@ -11,7 +11,16 @@ export const router = createBrowserRouter([
     loader: ({ params }) => {
       if (
         params.view &&
-        !["tasks", "projects", "inspiration", "assets", "canvas"].includes(params.view)
+        ![
+          "tasks",
+          "history",
+          "projects",
+          "inspiration",
+          "templates",
+          "assets",
+          "library",
+          "canvas",
+        ].includes(params.view)
       ) {
         throw new Response("Not found", { status: 404 });
       }
@@ -28,6 +37,8 @@ export const router = createBrowserRouter([
         <Link to="/">返回创作首页</Link>
       </main>
     ),
-    lazy: async () => ({ Component: (await import("../features/design/design-page")).DesignPage }),
+    lazy: async () => ({
+      Component: (await import("../features/design/design-page")).DesignPage,
+    }),
   },
 ]);

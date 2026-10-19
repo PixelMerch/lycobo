@@ -43,6 +43,7 @@ export type ReferenceImage = { id: string; number: number; name: string } & (
 );
 export type ReferenceUpload = { id: string; name: string; src: string };
 export type DemoTask = {
+  createdAt?: string;
   references?: ReferenceImage[];
   settings?: GenerationSettings;
   id: string;
@@ -148,6 +149,7 @@ export const useDesignStore = create<{
       tasks: [
         {
           id,
+          createdAt: new Date().toISOString(),
           title: products[shot]?.title ?? "新商品",
           prompt,
           shot,

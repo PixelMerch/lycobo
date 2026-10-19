@@ -40,20 +40,23 @@ test("preview queues independent tasks, keeps drafts across navigation and compl
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "商品场景", exact: true }).click();
+  await page
+    .getByRole("link", { name: /做同款/ })
+    .first()
+    .click();
   await page.getByRole("button", { name: "生成图片" }).click();
   await expect(page.getByRole("status")).toContainText("可以继续创作");
   await expect(page).toHaveURL(/\/$/);
   await page.getByRole("textbox", { name: "描述想要的画面" }).fill("第二件商品的草稿");
-  await page.getByRole("link", { name: "任务中心", exact: true }).click();
+  await page.getByRole("link", { name: "历史记录", exact: true }).click();
   await expect(page.getByText("5 个任务")).toBeVisible();
   await page.getByRole("button", { name: "全部任务 5", exact: true }).click();
-  await expect(page).toHaveURL(/\/tasks$/);
+  await expect(page).toHaveURL(/\/history$/);
   await page.getByRole("button", { name: "关闭任务抽屉" }).click();
   await expect(page.getByRole("button", { name: "通知，1 个新结果" })).toBeVisible();
   await page.getByRole("button", { name: "新结果", exact: true }).click();
   await expect(page.getByText("1 个任务")).toBeVisible();
-  await page.getByRole("link", { name: "创作工作室", exact: true }).click();
+  await page.getByRole("link", { name: "图片创作", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "描述想要的画面" })).toHaveValue(
     "第二件商品的草稿",
   );
@@ -92,6 +95,7 @@ test("generation settings survive navigation and are captured per task; account 
   page,
 }) => {
   await page.goto("/");
+  await page.getByText("更多设置", { exact: true }).click();
   await page.getByRole("button", { name: "香蕉 2.1版 模型", exact: true }).click();
   await page.getByRole("option", { name: "Seedream 5.0 P", exact: true }).click();
   await page.getByRole("button", { name: "图像设置", exact: true }).click();
@@ -99,13 +103,20 @@ test("generation settings survive navigation and are captured per task; account 
   await page.getByRole("button", { name: "分辨率 4K", exact: true }).click();
   await page.getByRole("button", { name: "生成张数 3张", exact: true }).click();
   await page.getByRole("dialog", { name: "图像设置", exact: true }).press("Escape");
-  await page.getByRole("button", { name: "商品场景", exact: true }).click();
+  await page
+    .getByRole("link", { name: /做同款/ })
+    .first()
+    .click();
   await page.getByRole("button", { name: "生成图片" }).click();
   await page.getByRole("button", { name: "图像设置", exact: true }).click();
   await page.getByRole("button", { name: "分辨率 1K", exact: true }).click();
   await page.getByRole("dialog", { name: "图像设置", exact: true }).press("Escape");
   await page.getByRole("status").getByRole("link", { name: "查看", exact: true }).click();
-  await expect(page.getByText("Seedream 5.0 P · 3:4 · 4K · 3张", { exact: true })).toBeVisible();
+  const record = page.locator(".generation-record").first();
+  await expect(record.locator(".record-settings")).toContainText("Seedream 5.0 P");
+  await expect(record.locator(".record-settings")).toContainText("4K");
+  await expect(record.locator(".record-settings")).toContainText("3张");
+  await page.getByText("更多设置", { exact: true }).click();
   await expect(page.getByRole("button", { name: "图像设置", exact: true })).toContainText(
     "3:4 · 1K · 3张",
   );
@@ -152,9 +163,10 @@ test("references enforce five-image limit, support mentions and snapshot submitt
   expect(Math.abs(inputBox.y - tagBox.y)).toBeLessThan(2);
   await prompt.pressSequentially("保留商品细节");
   await expect(prompt).toHaveValue("参考 保留商品细节");
-  await page.getByRole("button", { name: "引用图片", exact: true }).click();
+  await prompt.pressSequentially("@");
   await expect(page.getByRole("option", { name: "图片2", exact: true })).toBeDisabled();
   await page.getByRole("dialog", { name: "选择引用图片" }).press("Escape");
+  await prompt.press("Backspace");
   await page.getByRole("button", { name: "移除图片2", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "添加参考图，最多5张", exact: true }),
@@ -173,7 +185,9 @@ test("references enforce five-image limit, support mentions and snapshot submitt
       .locator(".history-reference")
       .getByRole("img", { name: "图片3 · reference-1.png", exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".history-prompt")).toHaveText("@图片3 参考");
+  await expect(page.locator(".generation-record").first().locator(".history-prompt")).toHaveText(
+    "@图片3 参考",
+  );
 });
 
 test("reference tags deduplicate pasted mentions and can be removed without deleting images", async ({
@@ -185,12 +199,12 @@ test("reference tags deduplicate pasted mentions and can be removed without dele
   await expect(page.locator(".prompt-mention-tag")).toHaveCount(1);
   await expect(prompt).toHaveValue("保留商品细节");
   await expect(page.getByRole("button", { name: "取消引用图片1", exact: true })).toHaveCount(0);
-  await prompt.press("ControlOrMeta+Home");
+  await prompt.press(process.platform === "darwin" ? "Meta+ArrowLeft" : "Control+Home");
   await prompt.press("Backspace");
   await expect(page.locator(".prompt-mention-tag")).toHaveCount(0);
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await expect(prompt).toHaveValue("保留商品细节");
-  await page.getByRole("button", { name: "引用图片", exact: true }).click();
+  await prompt.pressSequentially("@");
   await expect(page.getByRole("option", { name: "图片1", exact: true })).toBeEnabled();
   await page.getByRole("option", { name: "图片1", exact: true }).click();
   await expect(prompt).toHaveValue(" 保留商品细节");
