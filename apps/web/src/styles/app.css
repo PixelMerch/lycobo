@@ -1725,6 +1725,9 @@ small {
   padding: 0;
   gap: 0;
 }
+.model-menu .list-box > * + * {
+  margin-top: 0;
+}
 .model-menu .model-options {
   height: 40px;
   min-height: 40px;
