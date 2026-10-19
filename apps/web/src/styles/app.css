@@ -592,7 +592,7 @@ small {
   min-width: 0;
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
   background: var(--surface);
   color: var(--foreground);
@@ -604,7 +604,7 @@ small {
   width: 100%;
   aspect-ratio: 3 / 4;
   height: auto;
-  border-radius: 8px;
+  border-radius: 8px 8px 0 0;
 }
 .model-card-body {
   display: flex;
@@ -635,18 +635,22 @@ small {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
+@media (hover: hover) {
+  .model-card:hover,
+  .case-card-link:hover {
+    border-color: var(--foreground);
+  }
+  .model-card:hover .model-card-body,
+  .case-card-link:hover .case-card-title {
+    background: var(--surface-tertiary);
+  }
+}
+.model-card[aria-pressed="true"],
 .model-card:active,
 .model-card[data-pressed="true"],
 .case-card-link:active,
 .case-card-link[data-pressed="true"] {
-  background: var(--surface-secondary);
-}
-@media (hover: hover) {
-  .model-card:hover,
-  .case-card-link:hover {
-    border-color: var(--focus);
-    background: var(--surface-secondary);
-  }
+  border-color: var(--accent);
 }
 .model-chooser .case-gallery {
   padding-top: 0;
@@ -668,7 +672,7 @@ small {
   width: 100%;
   height: auto;
   aspect-ratio: 4 / 3;
-  border-radius: 8px;
+  border-radius: 8px 8px 0 0;
 }
 .case-card-title {
   padding: 8px 10px;
