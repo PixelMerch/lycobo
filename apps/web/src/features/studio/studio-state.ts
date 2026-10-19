@@ -63,6 +63,8 @@ const emptyDraft = (): Draft => ({
 export const useStudioStore = create<{
   chooserOpen: boolean;
   setChooserOpen: (open: boolean) => void;
+  activeModel: ModelId;
+  setActiveModel: (model: ModelId) => void;
   drafts: Record<ModelId, Draft>;
   updateDraft: (model: ModelId, patch: Partial<Draft>) => void;
   addReferences: (model: ModelId, references: ReferenceImage[]) => void;
@@ -73,6 +75,8 @@ export const useStudioStore = create<{
 }>((set) => ({
   chooserOpen: false,
   setChooserOpen: (chooserOpen) => set({ chooserOpen }),
+  activeModel: "gpt-image",
+  setActiveModel: (activeModel) => set({ activeModel }),
   drafts: { "gpt-image": emptyDraft(), banana: emptyDraft() },
   updateDraft: (model, patch) =>
     set((state) => ({

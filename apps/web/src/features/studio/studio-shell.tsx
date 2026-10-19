@@ -30,9 +30,11 @@ export function StudioShell() {
   const [info, setInfo] = useState<string | null>(null);
   const chooserOpen = useStudioStore((s) => s.chooserOpen);
   const setChooserOpen = useStudioStore((s) => s.setChooserOpen);
+  const activeModel = useStudioStore((s) => s.activeModel);
+  const setActiveModel = useStudioStore((s) => s.setActiveModel);
   const location = useLocation();
-  const modelId = location.pathname.split("/")[2];
-  const currentModel = models.find((m) => m.id === modelId);
+  const inWorkspace = location.pathname === "/create";
+  const currentModel = inWorkspace ? models.find((m) => m.id === activeModel) : undefined;
   const navigate = useNavigate();
   const nav = (
     <>
@@ -221,7 +223,8 @@ export function StudioShell() {
                       aria-pressed={currentModel?.id === model.id}
                       onPress={() => {
                         setChooserOpen(false);
-                        navigate(`/create/${model.id}`);
+                        setActiveModel(model.id);
+                        navigate("/create");
                       }}
                     >
                       <img src={photo(model.image, true)} alt="" width="480" height="480" />

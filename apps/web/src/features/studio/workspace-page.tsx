@@ -9,16 +9,9 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { useNavigate, useParams } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { ModelSelect } from "./model-select";
-import {
-  type Draft,
-  isModelId,
-  type ModelId,
-  type ReferenceImage,
-  useStudioStore,
-} from "./studio-state";
+import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "./studio-state";
 
 const fields = [
   { key: "resolution", label: "分辨率", values: ["1K", "2K", "4K"] },
@@ -26,15 +19,14 @@ const fields = [
 ] as const;
 
 export function WorkspacePage() {
-  const { model } = useParams();
-  if (!isModelId(model)) return null;
+  const model = useStudioStore((s) => s.activeModel);
   return <Workspace model={model} />;
 }
 function Workspace({ model }: { model: ModelId }) {
   const draft = useStudioStore((s) => s.drafts[model]);
   const updateDraft = useStudioStore((s) => s.updateDraft);
+  const setActiveModel = useStudioStore((s) => s.setActiveModel);
   const visitModel = useStudioStore((s) => s.visitModel);
-  const navigate = useNavigate();
   const inputId = useRef<HTMLTextAreaElement>(null);
   const canGenerate = draft.references.length > 0 && draft.prompt.trim().length > 0;
   useEffect(() => {
@@ -44,7 +36,7 @@ function Workspace({ model }: { model: ModelId }) {
     <div className="workspace">
       <section className="composer-panel" aria-label="创作设置">
         <section className="composer-scroll" aria-label="创作参数">
-          <ModelSelect value={model} onChange={(id) => navigate(`/create/${id}`)} />
+          <ModelSelect value={model} onChange={setActiveModel} />
           <ReferencePicker model={model} references={draft.references} />
           <TextField className="prompt-field">
             <Label>提示词</Label>

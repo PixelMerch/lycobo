@@ -26,9 +26,9 @@ test("home to two-model chooser to workspace, with correctly anchored panel and 
   const modelCard = chooser.getByRole("button", { name: "进入 GPT Image 创作" });
   await modelCard.focus();
   await modelCard.press("Enter");
-  await expect(page).toHaveURL(/\/create\/gpt-image$/);
+  await expect(page).toHaveURL(/\/create$/);
   await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "生成图片", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
   await expect(
     page.getByRole("region", { name: "创作参数", exact: true }).getByText("模型", { exact: true }),
   ).toBeVisible();
@@ -48,7 +48,7 @@ test("legacy image creation URL opens the workspace and preserves task context",
   page,
 }) => {
   await page.goto("/chatdraw?task=demo-skin");
-  await expect(page).toHaveURL(/\/create\/gpt-image\?task=demo-skin$/);
+  await expect(page).toHaveURL(/\/create\?task=demo-skin$/);
   await expect(page.getByRole("heading", { name: "页面暂时无法打开" })).toHaveCount(0);
   await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
 });

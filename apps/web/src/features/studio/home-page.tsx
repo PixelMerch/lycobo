@@ -13,6 +13,7 @@ import { CaseGallery } from "./case-gallery";
 import { models, useStudioStore } from "./studio-state";
 export function HomePage() {
   const setChooserOpen = useStudioStore((s) => s.setChooserOpen);
+  const setActiveModel = useStudioStore((s) => s.setActiveModel);
   const recentModels = useStudioStore((s) => s.recentModels);
   return (
     <section className="home-page page-panel">
@@ -61,7 +62,7 @@ export function HomePage() {
           recentModels.map((id) => {
             const model = models.find((item) => item.id === id);
             return model ? (
-              <Link className="recent-row" to={`/create/${id}`} key={id}>
+              <Link className="recent-row" to="/create" key={id} onClick={() => setActiveModel(id)}>
                 <UiIcon icon={id === "banana" ? IconBanana : IconPhoto} size="action" />
                 <strong>{model.name}</strong>
                 <span>进入创作</span>

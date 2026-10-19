@@ -8,7 +8,7 @@ const png = Buffer.from(
 test("drafts, references and output choices stay independent per model and survive page navigation", async ({
   page,
 }) => {
-  await page.goto("/create/gpt-image");
+  await page.goto("/create");
   const prompt = page.getByLabel("提示词", { exact: true });
   await prompt.fill("保留我的商品草稿");
   await page.getByRole("button", { name: "展开全部图片比例", exact: true }).click();
@@ -38,7 +38,7 @@ test("drafts, references and output choices stay independent per model and survi
 });
 
 test("invalid references and limit errors do not destroy valid images", async ({ page }) => {
-  await page.goto("/create/gpt-image");
+  await page.goto("/create");
   const input = page.getByLabel("添加参考图片", { exact: true });
   await input.setInputFiles({
     name: "broken.png",
@@ -65,7 +65,7 @@ test("generate button reflects completed inputs without submitting generation", 
     if (request.url().includes("/api/") && request.method() !== "GET")
       generationRequests.push(request.url());
   });
-  await page.goto("/create/gpt-image");
+  await page.goto("/create");
   const prompt = page.getByLabel("提示词", { exact: true });
   const generate = page.getByRole("button", { name: "立即生成", exact: true });
   await expect(generate).toBeDisabled();
@@ -88,7 +88,7 @@ test("generate button reflects completed inputs without submitting generation", 
 });
 
 test("case reuse requires confirmation before replacing an existing draft", async ({ page }) => {
-  await page.goto("/create/gpt-image");
+  await page.goto("/create");
   await page.getByLabel("提示词", { exact: true }).fill("重要草稿");
   await page.getByRole("link", { name: "首页", exact: true }).first().click();
   await page.getByRole("button", { name: "查看案例：原木卧室" }).click();
@@ -109,7 +109,7 @@ test("responsive pages, model chooser and global tasks stay reachable without ho
 }) => {
   for (const width of [320, 390, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const path of ["/", "/create/gpt-image", "/assets"]) {
+    for (const path of ["/", "/create", "/assets"]) {
       await page.goto(path);
       await expect(page.getByRole("button", { name: "任务中心", exact: true })).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -123,7 +123,7 @@ test("responsive pages, model chooser and global tasks stay reachable without ho
     const box = await dialog.boundingBox();
     expect(box && box.x >= 0 && box.x + box.width <= width).toBe(true);
     await page.getByRole("button", { name: "进入 香蕉模型 创作" }).click();
-    await expect(page).toHaveURL(/\/create\/banana$/);
+    await expect(page).toHaveURL(/\/create$/);
   }
 });
 
@@ -140,7 +140,7 @@ test("compact model cards open from their covers and case cards restore focus", 
   await detail.press("Escape");
   await expect(caseCard).toBeFocused();
   await chooser.getByRole("button", { name: "进入 香蕉模型 创作" }).locator("img").click();
-  await expect(page).toHaveURL(/\/create\/banana$/);
+  await expect(page).toHaveURL(/\/create$/);
   await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
 });
 
@@ -148,7 +148,7 @@ test("extended ratios preserve selection and composer scroll stays independent",
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 600 });
-  await page.goto("/create/gpt-image");
+  await page.goto("/create");
   await expect(page.getByText("更多设置", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "更多图片比例", exact: true }).click();
   const picker = page.getByRole("dialog", { name: "更多图片比例", exact: true });
@@ -199,7 +199,7 @@ test("extended ratios preserve selection and composer scroll stays independent",
 test("reference limit hides add control and clearing keeps prompt and other model drafts", async ({
   page,
 }) => {
-  await page.goto("/create/gpt-image");
+  await page.goto("/create");
   const prompt = page.getByLabel("提示词", { exact: true });
   await prompt.fill("保留提示词");
   await page.getByLabel("添加参考图片", { exact: true }).setInputFiles(
@@ -224,7 +224,7 @@ test("reference limit hides add control and clearing keeps prompt and other mode
   await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /创作模型/ }).click();
   await page.getByRole("option", { name: "香蕉模型", exact: true }).click();
-  await expect(page).toHaveURL(/\/create\/banana$/);
+  await expect(page).toHaveURL(/\/create$/);
   await expect(page.locator(".reference-tile")).toHaveCount(0);
   await page
     .getByLabel("添加参考图片", { exact: true })

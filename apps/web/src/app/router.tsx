@@ -1,9 +1,10 @@
 import { createBrowserRouter, Link, redirect } from "react-router";
+import { isModelId, useStudioStore } from "../features/studio/studio-state";
 
 export const router = createBrowserRouter([
   {
     path: "/chatdraw",
-    loader: ({ request }) => redirect(`/create/gpt-image${new URL(request.url).search}`),
+    loader: ({ request }) => redirect(`/create${new URL(request.url).search}`),
   },
   {
     path: "/design/:view?",
@@ -35,15 +36,18 @@ export const router = createBrowserRouter([
         lazy: async () => ({ Component: (await import("../features/studio/home-page")).HomePage }),
       },
       {
-        path: "create/:model",
-        loader: ({ params }) => {
-          if (!["gpt-image", "banana"].includes(params.model ?? ""))
-            throw new Response("Not found", { status: 404 });
-          return null;
-        },
+        path: "create",
         lazy: async () => ({
           Component: (await import("../features/studio/workspace-page")).WorkspacePage,
         }),
+      },
+      {
+        path: "create/:model",
+        loader: ({ params, request }) => {
+          if (!isModelId(params.model)) throw new Response("Not found", { status: 404 });
+          useStudioStore.getState().setActiveModel(params.model);
+          return redirect(`/create${new URL(request.url).search}`);
+        },
       },
       {
         path: "assets",

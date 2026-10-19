@@ -105,9 +105,10 @@ function CaseDetail({ item, onClose }: { item: StudioCase | null; onClose: () =>
       references: [{ id: `case-${item.id}`, name: item.title, src: photo(item.image) }],
     });
     useStudioStore.getState().setChooserOpen(false);
+    useStudioStore.getState().setActiveModel(model);
     setReplaceModel(null);
     onClose();
-    navigate(`/create/${model}`);
+    navigate("/create");
   }
   return (
     <Modal
