@@ -1698,7 +1698,9 @@ small {
   padding-block: 8px;
 }
 .composer-panel .model-field .model-select {
-  width: 144px;
+  width: max-content;
+  flex: 0 1 auto;
+  gap: 8px;
   height: 36px;
   min-height: 36px;
   padding: 6px 10px;
@@ -1709,8 +1711,9 @@ small {
   font-weight: var(--weight-regular);
 }
 .model-menu {
-  width: var(--trigger-width);
+  width: max-content;
   min-width: var(--trigger-width);
+  max-width: calc(100vw - 24px);
   padding: 0;
   border: 0;
   border-radius: 6px;
@@ -1752,4 +1755,24 @@ small {
     height: 44px;
     min-height: 44px;
   }
+}
+
+.model-menu .model-options:focus-visible,
+.model-menu .model-options[data-focus-visible="true"] {
+  outline: 2px solid var(--muted);
+  outline-offset: -2px;
+}
+
+.model-field .model-select .select__value {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+.model-field .model-select .select__indicator {
+  position: static;
+  inset: auto;
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  flex: none;
 }
