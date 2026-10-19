@@ -11,4 +11,4 @@
 - supabase/agent-skills：保留上游 LICENSE 至 .agents/licenses/supabase-postgres-best-practices.txt。
 
 来源和准确 SHA 见 .agents/skills-lock.json，未经审查不变更原始材料。
-docs/design 的图像为本次产品设计参考；不作为真实品牌素材授权或案例来源。
+docs/design 的参考站交互研究不构成品牌素材授权；实际示例素材的生成来源单独记录，不冒充真实客户案例。
