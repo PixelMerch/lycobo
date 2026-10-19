@@ -36,6 +36,7 @@ function Workspace({ model }: { model: ModelId }) {
   const visitModel = useStudioStore((s) => s.visitModel);
   const navigate = useNavigate();
   const inputId = useRef<HTMLTextAreaElement>(null);
+  const canGenerate = draft.references.length > 0 && draft.prompt.trim().length > 0;
   useEffect(() => {
     visitModel(model);
   }, [model, visitModel]);
@@ -67,9 +68,9 @@ function Workspace({ model }: { model: ModelId }) {
           ))}
         </section>
         <div className="generate-area">
-          <Button className="primary-action" isDisabled>
+          <Button className="primary-action" isDisabled={!canGenerate}>
             <UiIcon icon={IconSparkles} />
-            生成图片
+            {canGenerate ? "立即生成" : "生成图片"}
           </Button>
         </div>
       </section>

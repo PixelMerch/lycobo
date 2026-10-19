@@ -57,7 +57,7 @@ test("invalid references and limit errors do not destroy valid images", async ({
   await expect(page.locator(".reference-tile")).toHaveCount(0);
 });
 
-test("case navigation never replaces draft, favorites filter and download operate on real sample assets", async ({
+test("generate button reflects completed inputs without submitting generation", async ({
   page,
 }) => {
   const generationRequests: string[] = [];
@@ -67,25 +67,25 @@ test("case navigation never replaces draft, favorites filter and download operat
   });
   await page.goto("/create/gpt-image");
   const prompt = page.getByLabel("提示词", { exact: true });
+  const emptyButton = page.getByRole("button", { name: "生成图片", exact: true });
+  await expect(emptyButton).toBeDisabled();
   await prompt.fill("不要覆盖这段输入");
-  await page.getByRole("button", { name: "定位案例：浅紫配色" }).click();
-  await expect(prompt).toHaveValue("不要覆盖这段输入");
-  await expect(page.getByRole("heading", { name: "浅紫配色", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "收藏", exact: true }).click();
-  await page.getByText("仅看收藏", { exact: true }).click();
-  await expect(page.getByRole("checkbox", { name: "仅看收藏", exact: true })).toBeChecked();
-  await expect(page.locator(".history-thumb")).toHaveCount(1);
-  const download = page.waitForEvent("download");
-  await page.getByRole("link", { name: "下载", exact: true }).click();
-  expect((await download).suggestedFilename()).toBe("lycoboai-浅紫配色.webp");
-  await page.getByRole("tab", { name: "历史记录", exact: true }).click();
+  await expect(emptyButton).toBeDisabled();
+  await page
+    .getByLabel("添加参考图片", { exact: true })
+    .setInputFiles({ name: "quilt.png", mimeType: "image/png", buffer: png });
+  const readyButton = page.getByRole("button", { name: "立即生成", exact: true });
+  await expect(readyButton).toBeEnabled();
+  await readyButton.click();
+  expect(generationRequests).toEqual([]);
+  await expect(page.getByRole("tab", { name: "历史记录", exact: true })).toBeVisible();
   await expect(page.getByText("还没有生成记录")).toBeVisible();
+  await expect(page.getByRole("tab", { name: "案例库", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "任务中心", exact: true }).click();
   const drawer = page.getByRole("dialog", { name: "任务中心", exact: true });
   await expect(drawer.getByText("暂无任务")).toBeVisible();
   await drawer.press("Escape");
   await expect(page.getByRole("button", { name: "任务中心", exact: true })).toBeFocused();
-  expect(generationRequests).toEqual([]);
 });
 
 test("case reuse requires confirmation before replacing an existing draft", async ({ page }) => {
