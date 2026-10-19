@@ -255,7 +255,7 @@ function ParameterGroup({
   return (
     <fieldset className="parameter-group">
       <legend>{label}</legend>
-      <div className="parameter-options">
+      <div className={`parameter-options ${label === "图片比例" ? "ratio-options" : ""}`}>
         {values.map((option) => (
           <Button
             key={option}
@@ -264,13 +264,36 @@ function ParameterGroup({
             aria-pressed={value === option}
             onPress={() => onChange(option)}
           >
-            {option}
+            {label === "图片比例" ? <RatioPreview ratio={option} /> : null}
+            <span>{option}</span>
           </Button>
         ))}
       </div>
     </fieldset>
   );
 }
+function RatioPreview({ ratio }: { ratio: string }) {
+  const [horizontal = 1, vertical = 1] = ratio.split(":").map(Number);
+  const proportion = horizontal / vertical;
+  const width = 24 * Math.min(1, proportion);
+  const height = 24 * Math.min(1, 1 / proportion);
+  return (
+    <svg className="ratio-preview" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+      <rect
+        x={(32 - width) / 2}
+        y={(32 - height) / 2}
+        width={width}
+        height={height}
+        rx="2"
+        fill="currentColor"
+        fillOpacity="0.08"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
+}
+
 function ReferencePicker({
   model,
   references,
