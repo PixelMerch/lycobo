@@ -99,6 +99,44 @@ test("edit restores the original references and parameters while preserving an e
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
 });
 
+test("edited history references and prompt survive all model switches", async ({ page }) => {
+  const { input } = await historyFixture(page);
+  await page.getByRole("button", { name: "重新编辑", exact: true }).click();
+  const composer = page.getByRole("region", { name: "创作设置", exact: true });
+  const reference = composer.locator(".reference-tile img");
+  const source = await reference.getAttribute("src");
+  for (const model of [
+    "gpt-image-2-4K",
+    "gpt-image-2.5-flare",
+    "gpt-image-2.5-sunburst",
+    "gpt-image-2",
+    "gpt-image-2.5",
+  ]) {
+    await page.getByRole("button", { name: /创作模型/ }).click();
+    await page.getByRole("option", { name: model, exact: true }).click();
+    await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
+    await expect(reference).toHaveAttribute("src", source ?? "");
+    await expect(page.getByRole("button", { name: "展开全部图片比例", exact: true })).toContainText(
+      "3:4",
+    );
+    await expect(page.getByRole("button", { name: "分辨率 1K", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  }
+  await page.getByRole("button", { name: /创作模型/ }).click();
+  await page.getByRole("option", { name: "gpt-image-2-4K", exact: true }).click();
+  await page.getByRole("button", { name: "分辨率 4K", exact: true }).click();
+  await page.getByRole("button", { name: /创作模型/ }).click();
+  await page.getByRole("option", { name: "gpt-image-2.5", exact: true }).click();
+  await expect(page.getByRole("button", { name: "分辨率 1K", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
+  await expect(reference).toHaveAttribute("src", source ?? "");
+});
+
 test("regenerate submits the original snapshot once and leaves the composer draft intact", async ({
   page,
 }) => {

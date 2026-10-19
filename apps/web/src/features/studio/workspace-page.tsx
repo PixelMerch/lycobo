@@ -56,7 +56,22 @@ function Workspace({ model }: { model: ModelId }) {
     <div className="workspace">
       <section className="composer-panel" aria-label="创作设置">
         <section className="composer-scroll" aria-label="创作参数">
-          <ModelSelect value={model} onChange={setActiveModel} />
+          <ModelSelect
+            value={model}
+            onChange={(nextModel) => {
+              if (nextModel === model) return;
+              const supported = modelQuery.data?.models.find(
+                (entry) => entry.id === nextModel,
+              )?.enabledResolutions;
+              updateDraft(nextModel, {
+                ...draft,
+                resolution: supported?.some((value) => value === draft.resolution)
+                  ? draft.resolution
+                  : "1K",
+              });
+              setActiveModel(nextModel);
+            }}
+          />
           <ReferencePicker model={model} references={draft.references} />
           <TextField className="prompt-field">
             <Label>提示词</Label>
