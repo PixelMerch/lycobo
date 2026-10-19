@@ -197,7 +197,7 @@ test("reference tags deduplicate pasted mentions and can be removed without dele
   await expect(page.locator(".prompt-mention-tag")).toHaveCount(1);
   await expect(prompt).toHaveValue("保留商品细节");
   await expect(page.getByRole("button", { name: "取消引用图片1", exact: true })).toHaveCount(0);
-  await prompt.press("ControlOrMeta+Home");
+  await prompt.press(process.platform === "darwin" ? "Meta+ArrowLeft" : "Control+Home");
   await prompt.press("Backspace");
   await expect(page.locator(".prompt-mention-tag")).toHaveCount(0);
   await expect(page.locator(".reference-tile")).toHaveCount(1);

@@ -1949,24 +1949,31 @@ textarea:focus-visible {
 .prompt-field {
   position: relative;
   min-width: 0;
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px;
   padding: 17px 0 8px;
+}
+.prompt-selected-references {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  max-width: 100%;
+  flex: 0 1 auto;
 }
 .prompt-field .demo-prompt {
   position: relative;
   display: block;
-  width: 100%;
-  min-width: 0;
+  flex: 1 1 120px;
+  width: 0;
+  min-width: 120px;
   padding: 0;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
   caret-color: var(--app-brand);
   scrollbar-width: none;
-}
-.prompt-field .demo-prompt:empty::before {
-  content: attr(data-placeholder);
-  color: var(--muted);
-  pointer-events: none;
 }
 .prompt-field .demo-prompt::-webkit-scrollbar {
   display: none;
