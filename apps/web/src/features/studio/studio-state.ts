@@ -2,12 +2,35 @@ import { create } from "zustand";
 
 export const models = [
   {
-    id: "gpt-image",
-    name: "GPT Image",
+    id: "gpt-image-2.5",
+    name: "gpt-image-2.5",
     image: "bedroom",
     description: "上传参考图，描述想要的画面",
   },
-  { id: "banana", name: "香蕉模型", image: "lavender", description: "选择模型，开始图片创作" },
+  {
+    id: "gpt-image-2.5-flare",
+    name: "gpt-image-2.5-flare",
+    image: "lavender",
+    description: "上传参考图，描述想要的画面",
+  },
+  {
+    id: "gpt-image-2.5-sunburst",
+    name: "gpt-image-2.5-sunburst",
+    image: "set",
+    description: "上传参考图，描述想要的画面",
+  },
+  {
+    id: "gpt-image-2",
+    name: "gpt-image-2",
+    image: "bedroom",
+    description: "上传参考图，描述想要的画面",
+  },
+  {
+    id: "gpt-image-2-4K",
+    name: "gpt-image-2-4K",
+    image: "set",
+    description: "上传参考图，描述想要的画面",
+  },
 ] as const;
 export type ModelId = (typeof models)[number]["id"];
 export const isModelId = (value: unknown): value is ModelId =>
@@ -75,9 +98,15 @@ export const useStudioStore = create<{
 }>((set) => ({
   chooserOpen: false,
   setChooserOpen: (chooserOpen) => set({ chooserOpen }),
-  activeModel: "gpt-image",
+  activeModel: "gpt-image-2",
   setActiveModel: (activeModel) => set({ activeModel }),
-  drafts: { "gpt-image": emptyDraft(), banana: emptyDraft() },
+  drafts: {
+    "gpt-image-2.5": emptyDraft(),
+    "gpt-image-2.5-flare": emptyDraft(),
+    "gpt-image-2.5-sunburst": emptyDraft(),
+    "gpt-image-2": emptyDraft(),
+    "gpt-image-2-4K": emptyDraft(),
+  },
   updateDraft: (model, patch) =>
     set((state) => ({
       drafts: { ...state.drafts, [model]: { ...state.drafts[model], ...patch } },

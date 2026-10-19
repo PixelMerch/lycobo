@@ -44,8 +44,9 @@ export const router = createBrowserRouter([
       {
         path: "create/:model",
         loader: ({ params, request }) => {
-          if (!isModelId(params.model)) throw new Response("Not found", { status: 404 });
-          useStudioStore.getState().setActiveModel(params.model);
+          const model = params.model === "gpt-image" ? "gpt-image-2" : params.model;
+          if (!isModelId(model)) throw new Response("Not found", { status: 404 });
+          useStudioStore.getState().setActiveModel(model);
           return redirect(`/create${new URL(request.url).search}`);
         },
       },

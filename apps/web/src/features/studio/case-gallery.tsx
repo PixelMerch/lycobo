@@ -1,5 +1,5 @@
 import { Button, Modal, Tabs } from "@heroui/react";
-import { IconBanana, IconPhoto } from "@tabler/icons-react";
+import { IconPhoto } from "@tabler/icons-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
@@ -154,7 +154,7 @@ function CaseDetail({ item, onClose }: { item: StudioCase | null; onClose: () =>
                             else apply(model.id);
                           }}
                         >
-                          <UiIcon icon={model.id === "banana" ? IconBanana : IconPhoto} />
+                          <UiIcon icon={IconPhoto} />
                           使用 {model.name} 创作
                         </Button>
                       ))}

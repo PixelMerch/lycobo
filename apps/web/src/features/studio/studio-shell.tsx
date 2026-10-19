@@ -21,7 +21,7 @@ import { CaseGallery } from "./case-gallery";
 import { cases, models, photo, useStudioStore } from "./studio-state";
 
 const chooserLayout: CSSProperties & { "--tool-columns": number } = {
-  "--tool-columns": Math.min(4, Math.max(models.length, cases.length)),
+  "--tool-columns": Math.min(5, Math.max(models.length, cases.length)),
 };
 
 export function StudioShell() {

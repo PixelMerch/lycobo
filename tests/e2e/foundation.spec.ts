@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("home to two-model chooser to workspace, with correctly anchored panel and focus recovery", async ({
+test("home to five-model chooser to workspace, with correctly anchored panel and focus recovery", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1584, height: 993 });
@@ -10,7 +10,7 @@ test("home to two-model chooser to workspace, with correctly anchored panel and 
   await trigger.click();
   const chooser = page.getByRole("dialog", { name: "图片创作", exact: true });
   await expect(chooser).toBeVisible();
-  await expect(chooser.locator(".model-card")).toHaveCount(2);
+  await expect(chooser.locator(".model-card")).toHaveCount(5);
   const box = await chooser.boundingBox();
   const sidebar = await page.locator(".sidebar").boundingBox();
   expect(box && sidebar && Math.abs(box.x - sidebar.width - 24)).toBeLessThan(1);
@@ -23,7 +23,7 @@ test("home to two-model chooser to workspace, with correctly anchored panel and 
   await expect(chooser).not.toBeVisible();
   await expect(trigger).toBeFocused();
   await trigger.click();
-  const modelCard = chooser.getByRole("button", { name: "进入 GPT Image 创作" });
+  const modelCard = chooser.getByRole("button", { name: "进入 gpt-image-2 创作" });
   await modelCard.focus();
   await modelCard.press("Enter");
   await expect(page).toHaveURL(/\/create$/);

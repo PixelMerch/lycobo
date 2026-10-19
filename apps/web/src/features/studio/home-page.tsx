@@ -1,7 +1,6 @@
 import { Button } from "@heroui/react";
 import {
   IconArrowRight,
-  IconBanana,
   IconChevronRight,
   IconFolder,
   IconPhoto,
@@ -63,7 +62,7 @@ export function HomePage() {
             const model = models.find((item) => item.id === id);
             return model ? (
               <Link className="recent-row" to="/create" key={id} onClick={() => setActiveModel(id)}>
-                <UiIcon icon={id === "banana" ? IconBanana : IconPhoto} size="action" />
+                <UiIcon icon={IconPhoto} size="action" />
                 <strong>{model.name}</strong>
                 <span>进入创作</span>
                 <UiIcon icon={IconArrowRight} size="small" />
