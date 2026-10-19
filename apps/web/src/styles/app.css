@@ -777,12 +777,14 @@ small {
   min-width: 0;
 }
 .composer-panel {
+  --composer-group: var(--overlay);
+  --composer-selected: color-mix(in srgb, var(--surface-tertiary) 92%, var(--foreground));
   background: var(--surface);
   border-radius: 8px;
-  padding: 16px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 12px;
   min-height: calc(100dvh - var(--header-height) - 2 * var(--content-padding));
   position: sticky;
   top: calc(var(--header-height) + var(--content-padding));
@@ -1192,7 +1194,7 @@ small {
   }
   .composer-panel {
     padding: 12px;
-    gap: 20px;
+    gap: 12px;
   }
   .page-panel {
     padding: 20px;
@@ -1307,7 +1309,7 @@ small {
     grid-row: auto;
     position: static;
     min-height: auto;
-    padding: 16px;
+    padding: 12px;
   }
   .results-panel {
     min-height: 380px;
@@ -1443,4 +1445,38 @@ small {
   .model-card-title {
     font-size: 13px;
   }
+}
+
+/* Workspace layers: clear groups without restoring panel borders. */
+.composer-panel .reference-picker,
+.composer-panel .prompt-field,
+.composer-panel .parameter-group {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--composer-group);
+}
+.composer-panel .parameter-group legend {
+  float: left;
+  width: 100%;
+}
+.composer-panel .parameter-options {
+  clear: both;
+  background: var(--surface);
+}
+.composer-panel .parameter-options .button[aria-pressed="true"] {
+  background: var(--composer-selected);
+}
+.composer-panel .model-select {
+  background: var(--surface-tertiary);
+}
+.composer-panel .more-settings {
+  padding-inline: 12px;
+}
+.composer-panel .generate-area {
+  padding-top: 8px;
+}
+
+.main-content:has(> .workspace) {
+  --content-padding: 12px;
+  padding: var(--content-padding);
 }
