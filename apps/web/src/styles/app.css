@@ -1553,7 +1553,7 @@ small {
 .ratio-heading,
 .ratio-popover-heading {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 8px;
@@ -1702,7 +1702,7 @@ small {
 
 /* Compact model menu: text rows and a restrained corner radius. */
 .composer-panel .model-field {
-  padding-block: 8px;
+  padding-block: 4px;
 }
 .composer-panel .model-field .model-select {
   width: max-content;
@@ -1868,4 +1868,10 @@ small {
 .model-field .model-select:focus-visible,
 .model-field .model-select[data-focus-visible="true"] {
   background: var(--surface-secondary);
+}
+
+@media (max-width: 767px) {
+  .composer-panel .model-field {
+    padding-block: 0;
+  }
 }
