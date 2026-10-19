@@ -16,10 +16,10 @@ import {
   IconSearch,
 } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, NavLink, useNavigate, useParams, useSearchParams } from "react-router";
+import { Link, NavLink, useParams, useSearchParams } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { AccountMenu } from "./account-menu";
-import { ComposerSettings, ParameterFields } from "./composer-settings";
+import { ComposerSettings } from "./composer-settings";
 import { type DemoTask, products, useDesignStore } from "./design-data";
 import { ReferenceInput, ReferenceThumbnail } from "./reference-input";
 
@@ -174,7 +174,10 @@ function Composer({ compact = false, currentShot }: { compact?: boolean; current
       ) : null}
       <ReferenceInput compact={compact} />
       <div className="demo-composer-footer">
-        <ComposerSettings />
+        <details>
+          <summary>更多设置</summary>
+          <ComposerSettings />
+        </details>
         <div className="send-control">
           <span
             className="bean-cost"
@@ -403,7 +406,6 @@ function DesignCanvas() {
     tasks.find((t) => t.id === search.get("task")) ??
     tasks.find((t) => t.shot === Number(search.get("shot") ?? 0));
   const [activeId, setActiveId] = useState(selected?.id ?? tasks[0]?.id);
-  const [contextId, setContextId] = useState(selected?.id ?? tasks[0]?.id);
   const previews = useRef<HTMLDivElement>(null);
   const [editingId, setEditingId] = useState<string>();
   const [brightness, setBrightness] = useState(100);
@@ -420,7 +422,6 @@ function DesignCanvas() {
         records.current.get(taskId)?.scrollIntoView({ block: "start" });
       }
       setActiveId(taskId);
-      setContextId(taskId);
       markRead(taskId);
     }
   }, [taskId, markRead]);
@@ -480,7 +481,6 @@ function DesignCanvas() {
   }
 
   function continueTask(item: DemoTask) {
-    setContextId(item.id);
     setDraft("", item.shot);
     if (item.references) useDesignStore.getState().setReferences(item.references);
     if (item.settings) useDesignStore.getState().setSettings(item.settings);
@@ -567,9 +567,10 @@ function DesignCanvas() {
           <h1>图片创作</h1>
           <p>上传参考图，描述你想要的画面</p>
         </div>
-        <div className="studio-parameters">
-          <ComposerSettings controlSize="navigation" modelOnly />
-        </div>
+        <details className="studio-parameters">
+          <summary>更多设置</summary>
+          <ComposerSettings />
+        </details>
         <div className="studio-submit">
           <div className="studio-reference-input">
             <h2>
@@ -577,16 +578,13 @@ function DesignCanvas() {
             </h2>
             <ReferenceInput compact />
           </div>
-          <div className="studio-inline-settings">
-            <ParameterFields />
-          </div>
+          <div className="studio-inline-settings"></div>
           <Button
             className="studio-generate"
             aria-label="生成图片"
             isDisabled={!prompt.trim() && !references.some((image) => image.src)}
             onPress={() => {
-              const id = addTask(contextId);
-              setContextId(id);
+              const id = addTask();
               setSubmitted(true);
               setActiveId(id);
               requestAnimationFrame(() => {

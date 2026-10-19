@@ -429,11 +429,6 @@ textarea:focus-visible {
   max-width: 940px;
   margin: 32px auto 0;
 }
-.design-hero .composer-settings,
-.generation-studio .studio-parameters,
-.generation-studio .studio-inline-settings {
-  display: none;
-}
 .design-hero .demo-composer,
 .example-card .product-shot,
 .library-card .product-shot,

@@ -48,15 +48,15 @@ test("preview queues independent tasks, keeps drafts across navigation and compl
   await expect(page.getByRole("status")).toContainText("可以继续创作");
   await expect(page).toHaveURL(/\/$/);
   await page.getByRole("textbox", { name: "描述想要的画面" }).fill("第二件商品的草稿");
-  await page.getByRole("link", { name: "任务中心", exact: true }).click();
+  await page.getByRole("link", { name: "历史记录", exact: true }).click();
   await expect(page.getByText("5 个任务")).toBeVisible();
   await page.getByRole("button", { name: "全部任务 5", exact: true }).click();
-  await expect(page).toHaveURL(/\/tasks$/);
+  await expect(page).toHaveURL(/\/history$/);
   await page.getByRole("button", { name: "关闭任务抽屉" }).click();
   await expect(page.getByRole("button", { name: "通知，1 个新结果" })).toBeVisible();
   await page.getByRole("button", { name: "新结果", exact: true }).click();
   await expect(page.getByText("1 个任务")).toBeVisible();
-  await page.getByRole("link", { name: "创作工作室", exact: true }).click();
+  await page.getByRole("link", { name: "图片创作", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "描述想要的画面" })).toHaveValue(
     "第二件商品的草稿",
   );
@@ -95,6 +95,7 @@ test("generation settings survive navigation and are captured per task; account 
   page,
 }) => {
   await page.goto("/");
+  await page.getByText("更多设置", { exact: true }).click();
   await page.getByRole("button", { name: "香蕉 2.1版 模型", exact: true }).click();
   await page.getByRole("option", { name: "Seedream 5.0 P", exact: true }).click();
   await page.getByRole("button", { name: "图像设置", exact: true }).click();
@@ -111,7 +112,11 @@ test("generation settings survive navigation and are captured per task; account 
   await page.getByRole("button", { name: "分辨率 1K", exact: true }).click();
   await page.getByRole("dialog", { name: "图像设置", exact: true }).press("Escape");
   await page.getByRole("status").getByRole("link", { name: "查看", exact: true }).click();
-  await expect(page.getByText("Seedream 5.0 P · 3:4 · 4K · 3张", { exact: true })).toBeVisible();
+  const record = page.locator(".generation-record").first();
+  await expect(record.locator(".record-settings")).toContainText("Seedream 5.0 P");
+  await expect(record.locator(".record-settings")).toContainText("4K");
+  await expect(record.locator(".record-settings")).toContainText("3张");
+  await page.getByText("更多设置", { exact: true }).click();
   await expect(page.getByRole("button", { name: "图像设置", exact: true })).toContainText(
     "3:4 · 1K · 3张",
   );
