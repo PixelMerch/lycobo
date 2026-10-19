@@ -1,9 +1,18 @@
 import { Button } from "@heroui/react";
 import type { ImageJob } from "@lycoboai/contracts";
-import { IconPhoto } from "@tabler/icons-react";
+import {
+  IconAspectRatio,
+  IconClock,
+  IconHash,
+  IconLayersIntersect,
+  IconMaximize,
+  IconPhoto,
+  IconSparkles,
+} from "@tabler/icons-react";
 import { useEffect, useRef } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { assetContentUrl, useImageHistory, useImageSession } from "./generation-client";
+import { HistoryPrompt, HistoryTaskActions } from "./history-task-tools";
 import { useStudioStore } from "./studio-state";
 
 export const statusLabel: Record<ImageJob["status"], string> = {
@@ -105,14 +114,20 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
           data-active={!compact && activeHistoryId === job.id ? "true" : undefined}
         >
           <header>
-            <span role="status">{statusLabel[job.status]}</span>
+            {job.status !== "succeeded" && <span role="status">{statusLabel[job.status]}</span>}
             <dl className="generation-meta" aria-label="任务信息">
               <div>
-                <dt>任务 ID</dt>
+                <dt title="任务 ID">
+                  <UiIcon icon={IconHash} size="small" />
+                  <span className="sr-only">任务 ID</span>
+                </dt>
                 <dd>{job.id}</dd>
               </div>
               <div>
-                <dt>时间</dt>
+                <dt title="时间">
+                  <UiIcon icon={IconClock} size="small" />
+                  <span className="sr-only">时间</span>
+                </dt>
                 <dd>
                   <time dateTime={job.created_at}>
                     {new Date(job.created_at).toLocaleString("zh-CN")}
@@ -120,31 +135,48 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
                 </dd>
               </div>
               <div>
-                <dt>模型</dt>
+                <dt title="模型">
+                  <UiIcon icon={IconSparkles} size="small" />
+                  <span className="sr-only">模型</span>
+                </dt>
                 <dd>{job.model}</dd>
               </div>
               <div>
-                <dt>比例</dt>
+                <dt title="比例">
+                  <UiIcon icon={IconAspectRatio} size="small" />
+                  <span className="sr-only">比例</span>
+                </dt>
                 <dd>{job.aspect_ratio}</dd>
               </div>
               <div>
-                <dt>分辨率</dt>
+                <dt title="分辨率">
+                  <UiIcon icon={IconMaximize} size="small" />
+                  <span className="sr-only">分辨率</span>
+                </dt>
                 <dd>{job.resolution}</dd>
               </div>
               <div>
-                <dt>张数</dt>
+                <dt title="张数">
+                  <UiIcon icon={IconLayersIntersect} size="small" />
+                  <span className="sr-only">张数</span>
+                </dt>
                 <dd>{job.requested_count} 张</dd>
               </div>
             </dl>
+            {!compact && <HistoryTaskActions job={job} />}
           </header>
-          <p className="generation-prompt">{job.prompt}</p>
+          {compact ? (
+            <p className="generation-prompt">{job.prompt}</p>
+          ) : (
+            <HistoryPrompt job={job} />
+          )}
           {job.status === "needs_reconciliation" && (
             <p role="alert">本次调用结果尚未确认，需要核对服务商记录，请勿重复生成。</p>
           )}
           {!compact && (
             <div className="generation-results">
               {job.items.map((item) => (
-                <div key={item.id}>
+                <div key={item.id} id={`result-${item.id}`}>
                   {item.output_asset_id ? (
                     <>
                       <a

@@ -73,6 +73,7 @@ export const imageItemStatusSchema = z.enum([
   "needs_reconciliation",
 ]);
 export const imageJobSchema = z.object({
+  input: imageGenerationInputSchema.optional(),
   id: z.uuid(),
   organization_id: z.uuid(),
   user_id: z.uuid(),

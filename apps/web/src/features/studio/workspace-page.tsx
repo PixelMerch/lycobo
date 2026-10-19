@@ -10,10 +10,10 @@ import {
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import {
-  hasPendingSubmission,
   useGenerateImage,
   useImageModels,
   useImageSession,
+  usePendingSubmission,
 } from "./generation-client";
 import { GenerationHistory, HistoryIndex } from "./generation-history";
 import { ModelSelect } from "./model-select";
@@ -39,7 +39,7 @@ function Workspace({ model }: { model: ModelId }) {
   const generate = useGenerateImage();
   const resolutions =
     modelQuery.data?.models.find((entry) => entry.id === model)?.enabledResolutions ?? [];
-  const pending = hasPendingSubmission(session.data);
+  const pending = usePendingSubmission(session.data);
   const canGenerate =
     session.isSuccess &&
     modelQuery.data?.enabled &&

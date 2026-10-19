@@ -9,6 +9,7 @@ import {
   imageUploadResponseSchema,
 } from "@lycoboai/contracts";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSyncExternalStore } from "react";
 import type { Draft, ModelId } from "./studio-state";
 
 export class ImageApiError extends Error {
@@ -127,6 +128,22 @@ function pendingSubmission(
 export function hasPendingSubmission(scope?: SessionScope) {
   return !!scope && sessionStorage.getItem(pendingStorageKey(scope)) !== null;
 }
+const pendingEvent = "lycobo-image-submission-change";
+function subscribePending(listener: () => void) {
+  window.addEventListener(pendingEvent, listener);
+  window.addEventListener("storage", listener);
+  return () => {
+    window.removeEventListener(pendingEvent, listener);
+    window.removeEventListener("storage", listener);
+  };
+}
+export function usePendingSubmission(scope?: SessionScope) {
+  return useSyncExternalStore(
+    subscribePending,
+    () => hasPendingSubmission(scope),
+    () => false,
+  );
+}
 export function useGenerateImage() {
   const session = useImageSession();
   const client = useQueryClient();
@@ -164,6 +181,7 @@ export function useGenerateImage() {
         pending = { key: crypto.randomUUID(), input };
         // Retain the same request after a lost response or reload: never create another paid task blindly.
         sessionStorage.setItem(pendingKey, JSON.stringify(pending));
+        window.dispatchEvent(new Event(pendingEvent));
       }
       try {
         const result = imageSubmissionResponseSchema.parse(
@@ -176,10 +194,13 @@ export function useGenerateImage() {
           ).json(),
         );
         sessionStorage.removeItem(pendingKey);
+        window.dispatchEvent(new Event(pendingEvent));
         return result;
       } catch (error) {
-        if (error instanceof ImageApiError && [400, 409, 413, 415, 422].includes(error.status))
+        if (error instanceof ImageApiError && [400, 409, 413, 415, 422].includes(error.status)) {
           sessionStorage.removeItem(pendingKey);
+          window.dispatchEvent(new Event(pendingEvent));
+        }
         throw error;
       }
     },

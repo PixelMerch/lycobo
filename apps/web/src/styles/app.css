@@ -1858,7 +1858,7 @@ small {
   display: flex;
   flex: 1;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 6px 12px;
   margin: 0;
   min-width: 0;
@@ -1883,12 +1883,11 @@ small {
   height: auto;
   min-width: 0;
   padding: 3px;
-  border: 2px solid transparent;
+  border: 0;
   border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
   white-space: normal;
-}
-.history-thumbnail[aria-pressed="true"] {
-  border-color: var(--focus);
 }
 .history-thumbnail:focus-visible {
   outline: 2px solid var(--focus);
@@ -1910,5 +1909,98 @@ small {
   .generation-meta {
     justify-content: flex-start;
     flex-basis: 100%;
+  }
+}
+
+.generation-meta dt {
+  display: flex;
+  align-items: center;
+}
+.history-task-actions {
+  display: flex;
+  flex: none;
+  gap: 4px;
+  align-items: center;
+  margin-left: auto;
+  position: relative;
+}
+.history-icon-action {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 6px;
+  border-radius: 6px;
+}
+.history-action-error {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  width: min(320px, 60vw);
+  padding: 8px;
+  background: var(--surface-secondary);
+  font-size: 12px;
+  z-index: 1;
+}
+.history-confirm-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.prompt-collapsed {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.prompt-toggle {
+  display: flex;
+  min-height: 28px;
+  width: max-content;
+  padding: 0;
+  color: var(--focus);
+  background: transparent;
+}
+.copy-prompt {
+  display: flex;
+  width: max-content;
+  margin-top: 12px;
+  gap: 8px;
+  font-size: 13px;
+}
+.generation-output-thumbnails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.generation-output-thumbnail {
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
+  padding: 0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.generation-output-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.history-thumbnail:hover,
+.history-thumbnail[data-hovered="true"] {
+  background: transparent;
+  box-shadow: none;
+}
+.history-thumbnail[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+@media (max-width: 767px) {
+  .history-icon-action {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+  }
+  .prompt-toggle {
+    min-height: 44px;
   }
 }
