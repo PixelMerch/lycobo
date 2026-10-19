@@ -14,3 +14,12 @@ test("default workspace uses the new design and old links preserve task context"
   await page.goto("/design/canvas?task=demo-skin");
   await expect(page).toHaveURL(/\/canvas\?task=demo-skin$/);
 });
+
+test("legacy image creation URL opens the workspace and preserves task context", async ({
+  page,
+}) => {
+  await page.goto("/chatdraw?task=demo-skin");
+  await expect(page).toHaveURL(/\/canvas\?task=demo-skin$/);
+  await expect(page.getByRole("heading", { name: "页面暂时无法打开" })).toHaveCount(0);
+  await expect(page.getByRole("main", { name: "图片生成记录" })).toBeVisible();
+});

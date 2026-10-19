@@ -2,6 +2,10 @@ import { createBrowserRouter, Link, redirect } from "react-router";
 
 export const router = createBrowserRouter([
   {
+    path: "/chatdraw",
+    loader: ({ request }) => redirect(`/canvas${new URL(request.url).search}`),
+  },
+  {
     path: "/design/:view?",
     loader: ({ params, request }) =>
       redirect(`/${params.view ?? ""}${new URL(request.url).search}`),
