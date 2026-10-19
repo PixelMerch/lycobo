@@ -1,6 +1,5 @@
 import { Button, Drawer, Modal, Popover } from "@heroui/react";
 import {
-  IconArrowRight,
   IconBell,
   IconChevronDown,
   IconChevronRight,
@@ -202,34 +201,23 @@ export function StudioShell() {
               <Modal.Body>
                 <div className="section-tab">模型</div>
                 <div className="model-grid">
-                  {models.map((model, index) => (
-                    <article
-                      className={`model-card ${index === 0 ? "featured" : ""}`}
+                  {models.map((model) => (
+                    <Button
+                      className="model-card"
+                      variant="tertiary"
                       key={model.id}
+                      aria-label={`进入 ${model.name} 创作`}
+                      onPress={() => {
+                        setChooserOpen(false);
+                        navigate(`/create/${model.id}`);
+                      }}
                     >
-                      <img
-                        src={photo(model.image, true)}
-                        alt={`${model.name} 创作案例`}
-                        width="480"
-                        height="480"
-                      />
-                      <div className="model-card-body">
-                        <h2>{model.name}</h2>
-                        <p>{model.description}</p>
-                        <Button
-                          className={index === 0 ? "primary-action" : "neutral-button"}
-                          variant="secondary"
-                          aria-label={`进入 ${model.name} 创作`}
-                          onPress={() => {
-                            setChooserOpen(false);
-                            navigate(`/create/${model.id}`);
-                          }}
-                        >
-                          进入创作
-                          <UiIcon icon={IconArrowRight} size="small" />
-                        </Button>
-                      </div>
-                    </article>
+                      <img src={photo(model.image, true)} alt="" width="480" height="480" />
+                      <span className="model-card-body">
+                        <span className="model-card-title">{model.name}</span>
+                        <span className="model-card-description">{model.description}</span>
+                      </span>
+                    </Button>
                   ))}
                 </div>
                 <CaseGallery compact />
