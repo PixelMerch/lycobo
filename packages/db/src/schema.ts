@@ -152,3 +152,217 @@ export const outboxEvents = pgTable(
     index("outbox_task_idx").on(t.taskId),
   ],
 );
+
+// Image API tables are additive; existing project/task contracts remain unchanged.
+export const organizations = pgTable(
+  "organizations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    availableCredits: integer("available_credits").notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [check("organizations_credits_nonnegative", sql`${t.availableCredits} >= 0`)],
+);
+export const organizationMembers = pgTable(
+  "organization_members",
+  {
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    role: text("role").notNull().default("member"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    unique("organization_members_org_user_unique").on(t.organizationId, t.userId),
+    index("organization_members_user_idx").on(t.userId),
+    check("organization_members_role_check", sql`${t.role} in ('admin','member')`),
+  ],
+);
+export const imageApiKeys = pgTable(
+  "image_api_keys",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    tokenHash: text("token_hash").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.organizationId, t.userId],
+      foreignColumns: [organizationMembers.organizationId, organizationMembers.userId],
+      name: "image_keys_membership_fk",
+    }),
+    index("image_keys_member_idx").on(t.organizationId, t.userId),
+  ],
+);
+export const imageAssets = pgTable(
+  "image_assets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    kind: text("kind").notNull(),
+    objectKey: text("object_key").notNull().unique(),
+    mimeType: text("mime_type").notNull(),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    bytes: integer("bytes").notNull(),
+    sha256: text("sha256").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.organizationId, t.userId],
+      foreignColumns: [organizationMembers.organizationId, organizationMembers.userId],
+      name: "image_assets_membership_fk",
+    }),
+    unique("image_assets_id_org_unique").on(t.id, t.organizationId),
+    index("image_assets_org_created_idx").on(t.organizationId, t.createdAt),
+    index("image_assets_member_idx").on(t.organizationId, t.userId),
+    check(
+      "image_assets_dimensions_check",
+      sql`${t.width} > 0 and ${t.height} > 0 and ${t.bytes} > 0`,
+    ),
+    check("image_assets_kind_check", sql`${t.kind} in ('reference','output')`),
+  ],
+);
+export const imageJobs = pgTable(
+  "image_jobs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    idempotencyKey: uuid("idempotency_key").notNull(),
+    inputHash: text("input_hash").notNull(),
+    input: jsonb("input").$type<Record<string, unknown>>().notNull(),
+    model: text("model").notNull(),
+    prompt: text("prompt").notNull(),
+    resolution: text("resolution").notNull(),
+    aspectRatio: text("aspect_ratio").notNull(),
+    requestedCount: integer("requested_count").notNull(),
+    unitCredits: integer("unit_credits").notNull(),
+    status: text("status").notNull().default("queued"),
+    createdAt: createdAt(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.organizationId, t.userId],
+      foreignColumns: [organizationMembers.organizationId, organizationMembers.userId],
+      name: "image_jobs_membership_fk",
+    }),
+    unique("image_jobs_scope_key_unique").on(t.organizationId, t.userId, t.idempotencyKey),
+    unique("image_jobs_id_org_unique").on(t.id, t.organizationId),
+    index("image_jobs_org_created_idx").on(t.organizationId, t.createdAt, t.id),
+    index("image_jobs_member_idx").on(t.organizationId, t.userId),
+    check(
+      "image_jobs_count_check",
+      sql`${t.requestedCount} between 1 and 4 and ${t.unitCredits} > 0`,
+    ),
+    check(
+      "image_jobs_status_check",
+      sql`${t.status} in ('queued','running','succeeded','partially_failed','failed','needs_reconciliation')`,
+    ),
+  ],
+);
+export const imageJobItems = pgTable(
+  "image_job_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    jobId: uuid("job_id").notNull(),
+    organizationId: uuid("organization_id").notNull(),
+    position: integer("position").notNull(),
+    status: text("status").notNull().default("queued"),
+    workerId: text("worker_id"),
+    executionToken: uuid("execution_token"),
+    provider: text("provider").notNull().default("vakv"),
+    providerRequestId: text("provider_request_id"),
+    attempts: integer("attempts").notNull().default(0),
+    outputAssetId: uuid("output_asset_id"),
+    errorCode: text("error_code"),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+    reconciledBy: uuid("reconciled_by").references(() => users.id),
+    reconciliationEvidence: text("reconciliation_evidence"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.jobId, t.organizationId],
+      foreignColumns: [imageJobs.id, imageJobs.organizationId],
+      name: "image_items_job_org_fk",
+    }),
+    foreignKey({
+      columns: [t.outputAssetId, t.organizationId],
+      foreignColumns: [imageAssets.id, imageAssets.organizationId],
+      name: "image_items_output_org_fk",
+    }),
+    unique("image_items_job_position_unique").on(t.jobId, t.position),
+    index("image_items_output_idx").on(t.outputAssetId, t.organizationId),
+    index("image_items_reconciler_idx").on(t.reconciledBy),
+    index("image_items_lease_idx").on(t.leaseExpiresAt).where(sql`${t.status} = 'running'`),
+    check("image_items_position_check", sql`${t.position} between 0 and 3 and ${t.attempts} >= 0`),
+    check(
+      "image_items_status_check",
+      sql`${t.status} in ('queued','running','succeeded','failed','needs_reconciliation')`,
+    ),
+    check(
+      "image_items_output_check",
+      sql`${t.status} <> 'succeeded' or ${t.outputAssetId} is not null`,
+    ),
+  ],
+);
+export const imageOutbox = pgTable(
+  "image_outbox",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    itemId: uuid("item_id")
+      .notNull()
+      .unique()
+      .references(() => imageJobItems.id),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+    leaseToken: uuid("lease_token"),
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+    dispatchedAt: timestamp("dispatched_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("image_outbox_due_idx").on(t.nextAttemptAt)],
+);
+export const imageCreditLedger = pgTable(
+  "image_credit_ledger",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    jobId: uuid("job_id").notNull(),
+    itemId: uuid("item_id").references(() => imageJobItems.id),
+    eventType: text("event_type").notNull(),
+    amount: integer("amount").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.jobId, t.organizationId],
+      foreignColumns: [imageJobs.id, imageJobs.organizationId],
+      name: "image_ledger_job_org_fk",
+    }),
+    uniqueIndex("image_ledger_refund_unique").on(t.itemId).where(sql`${t.eventType} = 'refund'`),
+    uniqueIndex("image_ledger_reserve_unique").on(t.jobId).where(sql`${t.eventType} = 'reserve'`),
+    index("image_ledger_org_created_idx").on(t.organizationId, t.createdAt),
+    index("image_ledger_job_idx").on(t.jobId, t.organizationId),
+    check(
+      "image_ledger_amount_check",
+      sql`(${t.eventType} = 'reserve' and ${t.amount} < 0) or (${t.eventType} = 'refund' and ${t.amount} > 0)`,
+    ),
+  ],
+);

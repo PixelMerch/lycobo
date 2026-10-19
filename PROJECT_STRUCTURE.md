@@ -9,13 +9,13 @@
 | apps/web/src/features/studio | 紫色首页、模型选择层、图片创作工作台与客户端草稿；已删除旧 design 预览目录 |
 | apps/web/src/lib | 浏览器 API 客户端与工具 |
 | apps/web/src/styles | 共享设计 tokens 与全局基础样式 |
-| apps/api/src | Hono 入口、应用工厂、配置；后续 feature routers/services |
+| apps/api/src | Hono 入口、应用工厂、配置与组织隔离的生图 feature API |
 | apps/worker/src | 队列消费者、生命周期与任务执行 |
 | packages/contracts | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖 |
 | packages/db | PostgreSQL pool、Drizzle schema、迁移 |
 | packages/queue | 队列名、payload、连接配置 |
-| packages/generation | 生图服务商接口，当前没有真实适配器 |
-| packages/storage | 文件授权/存储接口，当前没有真实适配器 |
+| packages/generation | 服务商契约、Vakv 同步生图适配与能力校验（真实渠道待验收） |
+| packages/storage | 对象存储契约与私有本地图片存储/校验；签名对象存储待接入 |
 | tests/e2e | 浏览器关键路径验收 |
 | docs/design | 当前认可的设计参考 |
 | .agents/skills | 锁定来源的团队技能快照 |
@@ -48,3 +48,14 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 静态前端独立部署，网关将同域名 /api/* 转发 Hono。API 和 Worker 可先在同机不同容器，
 后续独立扩容。数据库池按进程管理；池大小 × 副本数必须小于数据库连接预算。
 初始化尚未提供生产部署授权、域名绑定或上线认证。
+
+## 生图服务端接入
+
+- apps/api/src/features/images：组织访问令牌鉴权、图片上传/读取、模型能力、任务提交/查询、管理员核对。
+- packages/contracts/src/image-generation.ts：独立生图输入契约与公开模型目录；不改变既有任务契约。
+- packages/db/src/image-repository.ts：组织、令牌、任务、逐图 outbox 与积分账本持久化。
+- packages/generation/src/vakv-provider.ts：Vakv 同步生图、能力开关、尺寸映射与不确定结果分类。
+- apps/worker/src/image-worker.ts / image-processor.ts：独立生图队列、投递器、并发执行与租约处理。
+- packages/storage/src/image-store.ts：服务端图片解码、去元数据、私有 PNG 文件与实际尺寸/哈希。
+
+接口与当前未接通的生产能力边界见 [生图 API 文档](docs/image-generation-api.md)。

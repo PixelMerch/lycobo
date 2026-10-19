@@ -21,4 +21,6 @@ export interface ObjectStorage {
   }): Promise<{ url: string; expiresAt: string }>;
   signDownload(objectKey: string): Promise<{ url: string; expiresAt: string }>;
 }
-// No implementation yet. Server-side ownership/type/size checks are required before signing.
+// Signed object storage is not implemented; the private local image store is exported separately.
+
+export * from "./image-store";

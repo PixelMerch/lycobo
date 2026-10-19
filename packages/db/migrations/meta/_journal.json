@@ -15,6 +15,13 @@
       "when": 1791952368637,
       "tag": "0001_faithful_stature",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792426018547,
+      "tag": "0002_fuzzy_wolverine",
+      "breakpoints": true
     }
   ]
 }

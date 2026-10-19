@@ -7,5 +7,6 @@ export default defineConfig({
   outDir: "dist",
   clean: true,
   sourcemap: true,
+  external: ["sharp", "postgres"],
   noExternal: [/^@lycoboai\//],
 });

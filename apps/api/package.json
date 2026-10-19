@@ -7,7 +7,8 @@
     "dev": "node --env-file-if-exists=../../.env --import tsx --watch src/index.ts",
     "build": "tsup",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "images:provision": "node --env-file-if-exists=../../.env --import tsx scripts/provision-images.ts"
   },
   "dependencies": {
     "hono": "4.13.13",
@@ -15,7 +16,12 @@
     "@hono/zod-validator": "0.9.1",
     "pino": "10.4.0",
     "zod": "4.6.7",
-    "@lycoboai/contracts": "workspace:*"
+    "@lycoboai/contracts": "workspace:*",
+    "@lycoboai/db": "workspace:*",
+    "@lycoboai/storage": "workspace:*",
+    "@lycoboai/generation": "workspace:*",
+    "sharp": "0.35.5",
+    "postgres": "3.4.9"
   },
   "devDependencies": {
     "tsx": "4.23.15",
