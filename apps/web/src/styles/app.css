@@ -925,21 +925,6 @@ small {
     background: var(--surface-tertiary);
   }
 }
-.more-settings {
-  color: var(--muted);
-  font-size: 13px;
-}
-.more-settings summary {
-  list-style: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  padding-block: 4px;
-}
-.more-settings p {
-  margin-top: 8px;
-}
 .generate-area {
   margin-top: auto;
 }
@@ -1469,9 +1454,6 @@ small {
 .composer-panel .model-select {
   background: var(--surface-tertiary);
 }
-.composer-panel .more-settings {
-  padding-inline: 12px;
-}
 .composer-panel .generate-area {
   padding-top: 8px;
 }
@@ -1494,4 +1476,78 @@ small {
   width: 32px;
   height: 32px;
   flex: none;
+}
+
+.composer-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  min-width: 0;
+}
+.ratio-heading,
+.ratio-popover-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ratio-heading h2 {
+  font-size: 13px;
+  font-weight: 500;
+}
+.ratio-heading .ratio-expand {
+  min-height: 28px;
+  height: 28px;
+  min-width: 0;
+  padding: 0 2px 0 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+.ratio-preview {
+  max-width: 100%;
+}
+.ratio-more-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ratio-popover {
+  width: min(440px, calc(100vw - 24px));
+  padding: 16px;
+  background: var(--overlay);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.ratio-extra-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.ratio-popover .parameter-options .button[aria-pressed="true"] {
+  background: var(--surface-tertiary);
+}
+@media (min-width: 768px) {
+  .composer-panel {
+    height: calc(100dvh - var(--header-height) - 2 * var(--content-padding));
+    min-height: 0;
+    overflow: hidden;
+  }
+  .composer-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-tertiary) transparent;
+    scrollbar-gutter: stable;
+  }
+  .composer-scroll > * {
+    flex-shrink: 0;
+  }
+  .composer-panel .generate-area {
+    flex: none;
+    margin-top: 0;
+  }
 }
