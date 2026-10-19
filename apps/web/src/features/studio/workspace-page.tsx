@@ -1,8 +1,6 @@
-import { Button, Checkbox, Label, Popover, Tabs, TextArea, TextField } from "@heroui/react";
+import { Button, Label, Popover, Tabs, TextArea, TextField } from "@heroui/react";
 import {
   IconChevronRight,
-  IconDownload,
-  IconHeart,
   IconLayersIntersect,
   IconPhoto,
   IconPlus,
@@ -15,13 +13,10 @@ import { useNavigate, useParams } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { ModelSelect } from "./model-select";
 import {
-  cases,
   type Draft,
   isModelId,
   type ModelId,
-  photo,
   type ReferenceImage,
-  type StudioCase,
   useStudioStore,
 } from "./studio-state";
 
@@ -39,24 +34,11 @@ function Workspace({ model }: { model: ModelId }) {
   const draft = useStudioStore((s) => s.drafts[model]);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const visitModel = useStudioStore((s) => s.visitModel);
-  const favorites = useStudioStore((s) => s.favorites);
-  const toggleFavorite = useStudioStore((s) => s.toggleFavorite);
-  const [tab, setTab] = useState("cases");
-  const [onlyFavorites, setOnlyFavorites] = useState(false);
-  const [currentOnly, setCurrentOnly] = useState(true);
-  const [selectedCase, setSelectedCase] = useState<string>(cases[0].id);
   const navigate = useNavigate();
   const inputId = useRef<HTMLTextAreaElement>(null);
-  const visibleCases = cases.filter((item) => !onlyFavorites || favorites.includes(item.id));
-  const current = visibleCases.find((item) => item.id === selectedCase) ?? visibleCases[0];
   useEffect(() => {
     visitModel(model);
   }, [model, visitModel]);
-  function appendCase(item: StudioCase) {
-    // Additive reuse retains existing input instead of silently replacing a pending draft.
-    updateDraft(model, { prompt: draft.prompt ? `${draft.prompt}\n${item.prompt}` : item.prompt });
-    inputId.current?.focus();
-  }
   return (
     <div className="workspace">
       <section className="composer-panel" aria-label="创作设置">
@@ -92,146 +74,27 @@ function Workspace({ model }: { model: ModelId }) {
         </div>
       </section>
       <section className="results-panel" aria-label="创作内容">
-        <Tabs
-          selectedKey={tab}
-          onSelectionChange={(key) => setTab(String(key))}
-          className="workspace-tabs"
-        >
-          <div className="results-toolbar">
-            <Tabs.List aria-label="工作区内容">
-              <Tabs.Tab id="history">
-                历史记录
-                <Tabs.Indicator />
-              </Tabs.Tab>
-              <Tabs.Tab id="cases">
-                案例库
-                <Tabs.Indicator />
-              </Tabs.Tab>
-            </Tabs.List>
-            <div className="history-filters">
-              <StudioCheckbox selected={currentOnly} onChange={setCurrentOnly}>
-                仅看当前模型
-              </StudioCheckbox>
-              <StudioCheckbox selected={onlyFavorites} onChange={setOnlyFavorites}>
-                仅看收藏
-              </StudioCheckbox>
-            </div>
-          </div>
+        <Tabs className="workspace-tabs">
+          <Tabs.List aria-label="工作区内容">
+            <Tabs.Tab id="history">
+              历史记录
+              <Tabs.Indicator />
+            </Tabs.Tab>
+          </Tabs.List>
           <Tabs.Panel id="history">
             <div className="empty-state">
               <UiIcon icon={IconPhoto} size="illustration" />
               <h2>还没有生成记录</h2>
               <p>你的生成结果会保留在这里。</p>
-              <Button variant="secondary" onPress={() => setTab("cases")}>
-                浏览创作案例
-              </Button>
             </div>
-          </Tabs.Panel>
-          <Tabs.Panel id="cases">
-            {current ? (
-              <article className="result-record">
-                <div className="record-header">
-                  <div>
-                    <h1>{current.title}</h1>
-                    <div className="metadata">
-                      <span>创作案例</span>
-                      <span>1:1</span>
-                      <span>家纺三件套</span>
-                    </div>
-                  </div>
-                  <Button
-                    variant="tertiary"
-                    className="small-button"
-                    onPress={() => appendCase(current)}
-                  >
-                    引用提示词
-                  </Button>
-                </div>
-                <p className="record-prompt">{current.prompt}</p>
-                <div className="reference-context">
-                  <img src={photo("set", true)} alt="三件套参考案例" width="56" height="56" />
-                  <img src={photo(current.image, true)} alt="场景参考案例" width="56" height="56" />
-                </div>
-                <img
-                  className="result-image"
-                  src={photo(current.image)}
-                  alt={current.title}
-                  width="960"
-                  height="960"
-                />
-                <div className="result-actions">
-                  <a
-                    className="neutral-button"
-                    href={photo(current.image)}
-                    download={`lycoboai-${current.title}.webp`}
-                  >
-                    <UiIcon icon={IconDownload} />
-                    下载
-                  </a>
-                  <Button
-                    variant="tertiary"
-                    aria-pressed={favorites.includes(current.id)}
-                    onPress={() => toggleFavorite(current.id)}
-                  >
-                    <UiIcon icon={IconHeart} />
-                    {favorites.includes(current.id) ? "已收藏" : "收藏"}
-                  </Button>
-                  <Button variant="tertiary" onPress={() => appendCase(current)}>
-                    引用提示词
-                  </Button>
-                </div>
-              </article>
-            ) : (
-              <div className="empty-state">
-                <h2>还没有收藏案例</h2>
-                <Button variant="secondary" onPress={() => setOnlyFavorites(false)}>
-                  查看全部案例
-                </Button>
-              </div>
-            )}
           </Tabs.Panel>
         </Tabs>
       </section>
-      <aside className="history-rail" aria-label="案例索引">
-        <h2>{tab === "history" ? "历史" : "案例"}</h2>
-        {tab === "cases" ? (
-          visibleCases.map((item) => (
-            <Button
-              key={item.id}
-              variant="tertiary"
-              className="history-thumb"
-              aria-label={`定位案例：${item.title}`}
-              aria-pressed={current?.id === item.id}
-              onPress={() => setSelectedCase(item.id)}
-            >
-              <img src={photo(item.image, true)} alt={item.title} width="96" height="96" />
-            </Button>
-          ))
-        ) : (
-          <p>暂无记录</p>
-        )}
+      <aside className="history-rail" aria-label="历史索引">
+        <h2>历史</h2>
+        <p>暂无记录</p>
       </aside>
     </div>
-  );
-}
-function StudioCheckbox({
-  children,
-  selected,
-  onChange,
-}: {
-  children: string;
-  selected: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <Checkbox isSelected={selected} onChange={onChange}>
-      <Checkbox.Content>
-        <Checkbox.Control>
-          <Checkbox.Indicator />
-        </Checkbox.Control>
-        <Label>{children}</Label>
-      </Checkbox.Content>
-    </Checkbox>
   );
 }
 function ParameterGroup({
