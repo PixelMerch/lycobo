@@ -771,12 +771,14 @@ small {
 .composer-panel,
 .results-panel,
 .history-rail {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   min-width: 0;
 }
 .composer-panel {
+  background: var(--surface);
+  border-radius: 8px;
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -791,9 +793,10 @@ small {
   width: max-content;
   max-width: 100%;
   padding: 8px 12px;
-  border: 1px solid #ffffff1a;
+  border: 1px solid transparent;
   border-radius: 8px;
-  background: transparent;
+  background: var(--surface-secondary);
+  box-shadow: none;
   font-size: 18px;
   font-weight: 600;
 }
@@ -871,8 +874,9 @@ small {
   min-height: 124px;
   max-height: 280px;
   background: var(--field-background);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 1px solid transparent;
+  box-shadow: none;
+  border-radius: 8px;
   width: 100%;
   padding: 12px;
   font-size: 14px;
@@ -889,22 +893,35 @@ small {
 }
 .parameter-options {
   display: flex;
-  gap: 6px;
+  gap: 2px;
+  padding: 3px;
+  background: var(--field-background);
+  border-radius: 8px;
 }
 .parameter-options .button {
   min-width: 0;
   flex: 1;
   padding: 8px 4px;
-  border: 1px solid #ffffff1a;
+  border: 1px solid transparent;
+  border-radius: 6px;
   background: transparent;
+  box-shadow: none;
+  color: var(--muted);
   font-size: 12px;
   height: 36px;
   min-height: 36px;
 }
 .parameter-options .button[aria-pressed="true"] {
-  border-color: #a78bfa;
-  color: #c4b5fd;
-  background: var(--accent-soft);
+  color: var(--link);
+  background: var(--surface-tertiary);
+}
+@media (hover: hover) {
+  .parameter-options .button:hover {
+    background: var(--surface-secondary);
+  }
+  .parameter-options .button[aria-pressed="true"]:hover {
+    background: var(--surface-tertiary);
+  }
 }
 .more-settings {
   color: var(--muted);
@@ -979,8 +996,6 @@ small {
 }
 .result-record {
   padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
 }
 .record-header {
   display: flex;
@@ -995,19 +1010,18 @@ small {
 }
 .record-header .small-button {
   font-size: 11px;
+  border-color: transparent;
+  background: transparent;
 }
 .metadata {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 12px;
   margin: 8px 0;
 }
 .metadata span {
   font-size: 11px;
-  padding: 1px 6px;
-  background: var(--surface-secondary);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  padding: 1px 0;
   color: var(--muted);
 }
 .record-prompt {
@@ -1037,13 +1051,25 @@ small {
   margin-top: 12px;
 }
 .result-actions > * {
-  flex: 1;
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
   min-width: 0;
   font-size: 12px;
-  padding-inline: 4px;
+  padding-inline: 12px;
+}
+.result-actions .neutral-button,
+.result-actions .button {
+  border-color: transparent;
+  background: transparent;
+}
+@media (hover: hover) {
+  .result-actions .neutral-button:hover,
+  .result-actions .button:hover,
+  .record-header .small-button:hover {
+    background: var(--surface-secondary);
+  }
 }
 .result-actions .button[aria-pressed="true"] {
   color: #c4b5fd;
