@@ -1480,3 +1480,18 @@ small {
   --content-padding: 12px;
   padding: var(--content-padding);
 }
+
+.parameter-options.ratio-options .button {
+  flex-direction: column;
+  gap: 2px;
+  height: 64px;
+  min-height: 64px;
+  padding: 6px 2px;
+  line-height: 18px;
+}
+.ratio-preview {
+  display: block;
+  width: 32px;
+  height: 32px;
+  flex: none;
+}
