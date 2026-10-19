@@ -70,7 +70,7 @@ function Workspace({ model }: { model: ModelId }) {
         <div className="generate-area">
           <Button className="primary-action" isDisabled={!canGenerate}>
             <UiIcon icon={IconSparkles} />
-            {canGenerate ? "立即生成" : "生成图片"}
+            立即生成
           </Button>
         </div>
       </section>

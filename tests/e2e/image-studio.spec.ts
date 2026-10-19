@@ -67,16 +67,15 @@ test("generate button reflects completed inputs without submitting generation", 
   });
   await page.goto("/create/gpt-image");
   const prompt = page.getByLabel("提示词", { exact: true });
-  const emptyButton = page.getByRole("button", { name: "生成图片", exact: true });
-  await expect(emptyButton).toBeDisabled();
+  const generate = page.getByRole("button", { name: "立即生成", exact: true });
+  await expect(generate).toBeDisabled();
   await prompt.fill("不要覆盖这段输入");
-  await expect(emptyButton).toBeDisabled();
+  await expect(generate).toBeDisabled();
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles({ name: "quilt.png", mimeType: "image/png", buffer: png });
-  const readyButton = page.getByRole("button", { name: "立即生成", exact: true });
-  await expect(readyButton).toBeEnabled();
-  await readyButton.click();
+  await expect(generate).toBeEnabled();
+  await generate.click();
   expect(generationRequests).toEqual([]);
   await expect(page.getByRole("tab", { name: "历史记录", exact: true })).toBeVisible();
   await expect(page.getByText("还没有生成记录")).toBeVisible();
@@ -182,7 +181,7 @@ test("extended ratios preserve selection and composer scroll stays independent",
   await picker.press("Escape");
   await expect(page.getByRole("button", { name: "展开全部图片比例", exact: true })).toBeFocused();
   const parameters = page.getByRole("region", { name: "创作参数", exact: true });
-  const generate = page.getByRole("button", { name: "生成图片", exact: true });
+  const generate = page.getByRole("button", { name: "立即生成", exact: true });
   const before = await generate.boundingBox();
   const pageScroll = await page.evaluate(() => window.scrollY);
   await parameters.hover();

@@ -981,18 +981,11 @@ small {
 }
 .generate-area .primary-action {
   border: 0;
-  box-shadow:
-    0 0 10px #ffffff4d,
-    0 0 32px #ffffff73;
-}
-.generate-area .primary-action:hover {
-  box-shadow:
-    0 0 12px #ffffff66,
-    0 0 38px #ffffff8c;
+  color: #ffffff;
 }
 .generate-area .primary-action:disabled,
 .generate-area .primary-action[data-disabled="true"] {
-  box-shadow: none;
+  color: #8b8794;
 }
 .field-error {
   color: #fda4af;
