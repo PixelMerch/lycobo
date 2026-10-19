@@ -39,3 +39,7 @@
 [风格提取记录](oiioii-style-extraction.md) · [素材来源与提示词](asset-prompt.md)
 
 - [15 · 多图参考与 @ 图片选择](15-image-mentions.jpg)
+
+## 交互研究参考
+
+- [艺栢页面与操作逻辑研究](yibai-page-logic.md)：分类展开、效果卡片进入工具、画图三栏、案例回填和历史联动；区分实测、发布代码与未验证行为，供后续 PRD 和 UI 设计借鉴，不代表本项目已实现。
