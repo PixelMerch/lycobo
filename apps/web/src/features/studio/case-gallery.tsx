@@ -39,7 +39,7 @@ export function CaseGallery({ compact = false }: { compact?: boolean }) {
           </Tabs.Panel>
         </Tabs>
       ) : (
-        <CaseCards items={cases} onSelect={setSelected} />
+        <CaseCards items={cases} onSelect={setSelected} compact />
       )}
       <CaseDetail item={selected} onClose={() => setSelected(null)} />
     </section>
@@ -48,34 +48,49 @@ export function CaseGallery({ compact = false }: { compact?: boolean }) {
 function CaseCards({
   items,
   onSelect,
+  compact = false,
 }: {
   items: readonly StudioCase[];
   onSelect: (item: StudioCase) => void;
+  compact?: boolean;
 }) {
   return (
     <div className="case-grid">
-      {items.map((item) => (
-        <article className="case-card" key={item.id}>
-          <img
-            src={photo(item.image, true)}
-            alt={item.title}
-            width="480"
-            height="480"
-            loading="lazy"
-          />
-          <div>
-            <h3>{item.title}</h3>
-            <Button
-              variant="tertiary"
-              className="small-button"
-              aria-label={`查看案例：${item.title}`}
-              onPress={() => onSelect(item)}
-            >
-              查看案例
-            </Button>
-          </div>
-        </article>
-      ))}
+      {items.map((item) =>
+        compact ? (
+          <Button
+            key={item.id}
+            variant="tertiary"
+            className="case-card case-card-link"
+            aria-label={`查看案例：${item.title}`}
+            onPress={() => onSelect(item)}
+          >
+            <img src={photo(item.image, true)} alt="" width="480" height="480" loading="lazy" />
+            <span className="case-card-title">{item.title}</span>
+          </Button>
+        ) : (
+          <article className="case-card" key={item.id}>
+            <img
+              src={photo(item.image, true)}
+              alt={item.title}
+              width="480"
+              height="480"
+              loading="lazy"
+            />
+            <div>
+              <h3>{item.title}</h3>
+              <Button
+                variant="tertiary"
+                className="small-button"
+                aria-label={`查看案例：${item.title}`}
+                onPress={() => onSelect(item)}
+              >
+                查看案例
+              </Button>
+            </div>
+          </article>
+        ),
+      )}
     </div>
   );
 }
