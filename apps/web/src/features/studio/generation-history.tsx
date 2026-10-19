@@ -174,7 +174,7 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
             <p role="alert">本次调用结果尚未确认，需要核对服务商记录，请勿重复生成。</p>
           )}
           {!compact && (
-            <div className="generation-results">
+            <div className="generation-results" data-count={job.items.length}>
               {job.items.map((item) => (
                 <div key={item.id} id={`result-${item.id}`}>
                   {item.output_asset_id ? (
@@ -203,7 +203,16 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
                     </>
                   ) : (
                     <div className="generation-placeholder" role="status">
-                      {statusLabel[item.status]}
+                      {item.status === "running" ? (
+                        <>
+                          <div className="generation-loading-icon">
+                            <UiIcon icon={IconSparkles} size="illustration" />
+                          </div>
+                          <span>正在生成中</span>
+                        </>
+                      ) : (
+                        statusLabel[item.status]
+                      )}
                       {item.status === "failed" && (
                         <p role="alert">{errorLabel(item.error_code)}</p>
                       )}

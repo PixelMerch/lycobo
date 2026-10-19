@@ -1,0 +1,53 @@
+import { expect, test } from "@playwright/test";
+import { mockImageApi } from "./image-api-fixture";
+
+test("running images animate with the model icon and stop for reduced motion", async ({ page }) => {
+  await mockImageApi(page);
+  const job = {
+    id: crypto.randomUUID(),
+    organization_id: crypto.randomUUID(),
+    user_id: crypto.randomUUID(),
+    model: "gpt-image-2.5",
+    prompt: "商品场景图",
+    resolution: "1K",
+    aspect_ratio: "1:1",
+    requested_count: 4,
+    status: "running",
+    created_at: "2026-10-20T01:00:00.000Z",
+    completed_at: null,
+    items: Array.from({ length: 4 }, (_, position) => ({
+      id: crypto.randomUUID(),
+      position,
+      status: position === 0 ? "running" : "queued",
+      output_asset_id: null,
+      error_code: null,
+      width: null,
+      height: null,
+      worker_id: position === 0 ? "fixture-worker" : null,
+    })),
+  };
+  await page.route("**/api/v1/image-tasks*", (route) => route.fulfill({ json: { data: [job] } }));
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/create");
+  await expect(page.getByText("正在生成中", { exact: true })).toBeVisible();
+  const loading = page.locator(".generation-loading-icon");
+  await expect(loading).toHaveCSS("animation-name", "generation-breathe");
+  await expect(loading.locator("svg")).toHaveClass(/icon-sparkles/);
+  const placeholders = page.locator(".generation-placeholder");
+  await expect(placeholders).toHaveCount(4);
+  await expect(placeholders.filter({ hasText: "排队中" })).toHaveCount(3);
+  const boxes = await placeholders.evaluateAll((elements) =>
+    elements.map((element) => ({
+      top: element.getBoundingClientRect().top,
+      width: element.getBoundingClientRect().width,
+    })),
+  );
+  expect(boxes[0]?.top).toBe(boxes[2]?.top);
+  expect(boxes[3]?.top).toBeGreaterThan(boxes[0]?.top ?? 0);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(loading).toHaveCSS("animation-name", "none");
+  await expect(page.getByText("正在生成中", { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
