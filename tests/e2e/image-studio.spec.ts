@@ -126,3 +126,20 @@ test("responsive pages, model chooser and global tasks stay reachable without ho
     await expect(page).toHaveURL(/\/create\/banana$/);
   }
 });
+
+test("compact model cards open from their covers and case cards restore focus", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "开始创作", exact: true }).click();
+  const chooser = page.getByRole("dialog", { name: "图片创作", exact: true });
+  const caseCard = chooser.getByRole("button", { name: "查看案例：原木卧室" });
+  await caseCard.click();
+  const detail = page.getByRole("dialog", { name: "原木卧室", exact: true });
+  await expect(detail).toBeVisible();
+  await detail.press("Escape");
+  await expect(caseCard).toBeFocused();
+  await chooser.getByRole("button", { name: "进入 香蕉模型 创作" }).locator("img").click();
+  await expect(page).toHaveURL(/\/create\/banana$/);
+  await expect(page.getByLabel("画面要求", { exact: true })).toBeVisible();
+});
