@@ -1,8 +1,9 @@
-import { Button, Checkbox, Label, Tabs, TextArea, TextField } from "@heroui/react";
+import { Button, Checkbox, Label, Popover, Tabs, TextArea, TextField } from "@heroui/react";
 import {
-  IconChevronDown,
+  IconChevronRight,
   IconDownload,
   IconHeart,
+  IconLayersIntersect,
   IconPhoto,
   IconPlus,
   IconSparkles,
@@ -24,7 +25,6 @@ import {
 } from "./studio-state";
 
 const fields = [
-  { key: "ratio", label: "图片比例", values: ["1:1", "3:4", "4:5", "9:16", "16:9"] },
   { key: "resolution", label: "分辨率", values: ["1K", "2K", "4K"] },
   { key: "count", label: "生成张数", values: ["1", "2", "3", "4"] },
 ] as const;
@@ -59,34 +59,30 @@ function Workspace({ model }: { model: ModelId }) {
   return (
     <div className="workspace">
       <section className="composer-panel" aria-label="创作设置">
-        <ModelSelect value={model} onChange={(id) => navigate(`/create/${id}`)} />
-        <ReferencePicker model={model} references={draft.references} />
-        <TextField className="prompt-field">
-          <Label>画面要求</Label>
-          <TextArea
-            ref={inputId}
-            value={draft.prompt}
-            onChange={(event) => updateDraft(model, { prompt: event.target.value })}
-            placeholder="描述你想要的画面，例如：保留商品，替换为原木卧室场景"
-            maxLength={9000}
-          />
-        </TextField>
-        {fields.map((field) => (
-          <ParameterGroup
-            key={field.key}
-            label={field.label}
-            values={field.values}
-            value={draft[field.key]}
-            onChange={(value) => updateDraft(model, { [field.key]: value })}
-          />
-        ))}
-        <details className="more-settings">
-          <summary>
-            更多设置
-            <UiIcon icon={IconChevronDown} size="small" />
-          </summary>
-          <p>当前没有更多可用设置。</p>
-        </details>
+        <section className="composer-scroll" aria-label="创作参数">
+          <ModelSelect value={model} onChange={(id) => navigate(`/create/${id}`)} />
+          <ReferencePicker model={model} references={draft.references} />
+          <TextField className="prompt-field">
+            <Label>画面要求</Label>
+            <TextArea
+              ref={inputId}
+              value={draft.prompt}
+              onChange={(event) => updateDraft(model, { prompt: event.target.value })}
+              placeholder="描述你想要的画面，例如：保留商品，替换为原木卧室场景"
+              maxLength={9000}
+            />
+          </TextField>
+          <RatioPicker value={draft.ratio} onChange={(ratio) => updateDraft(model, { ratio })} />
+          {fields.map((field) => (
+            <ParameterGroup
+              key={field.key}
+              label={field.label}
+              values={field.values}
+              value={draft[field.key]}
+              onChange={(value) => updateDraft(model, { [field.key]: value })}
+            />
+          ))}
+        </section>
         <div className="generate-area">
           <Button className="primary-action" isDisabled aria-describedby="generation-unavailable">
             <UiIcon icon={IconSparkles} />
@@ -255,7 +251,7 @@ function ParameterGroup({
   return (
     <fieldset className="parameter-group">
       <legend>{label}</legend>
-      <div className={`parameter-options ${label === "图片比例" ? "ratio-options" : ""}`}>
+      <div className="parameter-options">
         {values.map((option) => (
           <Button
             key={option}
@@ -264,7 +260,6 @@ function ParameterGroup({
             aria-pressed={value === option}
             onPress={() => onChange(option)}
           >
-            {label === "图片比例" ? <RatioPreview ratio={option} /> : null}
             <span>{option}</span>
           </Button>
         ))}
@@ -272,6 +267,91 @@ function ParameterGroup({
     </fieldset>
   );
 }
+const commonRatios = ["1:1", "16:9", "2:1", "3:2", "4:3"];
+const additionalRatios = ["21:9", "9:16", "1:2", "2:3", "3:4", "9:21", "4:5"];
+
+function RatioPicker({ value, onChange }: { value: string; onChange: (ratio: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const extendedSelected = additionalRatios.includes(value);
+  return (
+    <section className="parameter-group ratio-group" aria-label="图片比例">
+      <Popover isOpen={open} onOpenChange={setOpen}>
+        <div className="ratio-heading">
+          <h2>图片比例</h2>
+          <Button className="ratio-expand" variant="tertiary" aria-label="展开全部图片比例">
+            <span>{value}</span>
+            <UiIcon icon={IconChevronRight} size="small" />
+          </Button>
+        </div>
+        <Popover.Content placement="right top" className="ratio-popover">
+          <Popover.Dialog aria-label="更多图片比例">
+            <div className="ratio-popover-heading">
+              <Popover.Heading>图片比例</Popover.Heading>
+              <Button
+                isIconOnly
+                variant="tertiary"
+                className="icon-button"
+                aria-label="关闭图片比例"
+                onPress={() => setOpen(false)}
+              >
+                <UiIcon icon={IconX} />
+              </Button>
+            </div>
+            <div className="parameter-options ratio-options ratio-extra-options">
+              {additionalRatios.map((ratio) => (
+                <Button
+                  key={ratio}
+                  variant="tertiary"
+                  aria-label={`图片比例 ${ratio}`}
+                  aria-pressed={value === ratio}
+                  onPress={() => {
+                    onChange(ratio);
+                    setOpen(false);
+                  }}
+                >
+                  <RatioPreview ratio={ratio} />
+                  <span>{ratio}</span>
+                </Button>
+              ))}
+            </div>
+          </Popover.Dialog>
+        </Popover.Content>
+      </Popover>
+      <div className="parameter-options ratio-options">
+        {commonRatios.map((ratio) => (
+          <Button
+            key={ratio}
+            variant="tertiary"
+            aria-label={`图片比例 ${ratio}`}
+            aria-pressed={value === ratio}
+            onPress={() => onChange(ratio)}
+          >
+            <RatioPreview ratio={ratio} />
+            <span>{ratio}</span>
+          </Button>
+        ))}
+        <Button
+          variant="tertiary"
+          aria-label="更多图片比例"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-pressed={extendedSelected}
+          onPress={() => setOpen(true)}
+        >
+          {extendedSelected ? (
+            <RatioPreview ratio={value} />
+          ) : (
+            <span className="ratio-preview ratio-more-icon">
+              <UiIcon icon={IconLayersIntersect} />
+            </span>
+          )}
+          <span>{extendedSelected ? value : "更多"}</span>
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 function RatioPreview({ ratio }: { ratio: string }) {
   const [horizontal = 1, vertical = 1] = ratio.split(":").map(Number);
   const proportion = horizontal / vertical;
