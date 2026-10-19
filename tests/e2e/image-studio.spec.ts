@@ -11,6 +11,7 @@ test("drafts, references and output choices stay independent per model and survi
   await page.goto("/create/gpt-image");
   const prompt = page.getByLabel("画面要求", { exact: true });
   await prompt.fill("保留我的商品草稿");
+  await page.getByRole("button", { name: "展开全部图片比例", exact: true }).click();
   await page.getByRole("button", { name: "图片比例 3:4", exact: true }).click();
   await page
     .getByLabel("添加参考图片", { exact: true })
@@ -24,7 +25,7 @@ test("drafts, references and output choices stay independent per model and survi
   await page.getByRole("button", { name: /创作模型/ }).click();
   await page.getByRole("option", { name: "GPT Image", exact: true }).click();
   await expect(prompt).toHaveValue("保留我的商品草稿");
-  await expect(page.getByRole("button", { name: "图片比例 3:4", exact: true })).toHaveAttribute(
+  await expect(page.getByRole("button", { name: "更多图片比例", exact: true })).toHaveAttribute(
     "aria-pressed",
     "true",
   );
@@ -142,4 +143,34 @@ test("compact model cards open from their covers and case cards restore focus", 
   await chooser.getByRole("button", { name: "进入 香蕉模型 创作" }).locator("img").click();
   await expect(page).toHaveURL(/\/create\/banana$/);
   await expect(page.getByLabel("画面要求", { exact: true })).toBeVisible();
+});
+
+test("extended ratios preserve selection and composer scroll stays independent", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 600 });
+  await page.goto("/create/gpt-image");
+  await expect(page.getByText("更多设置", { exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "更多图片比例", exact: true }).click();
+  const picker = page.getByRole("dialog", { name: "更多图片比例", exact: true });
+  await expect(picker).toBeVisible();
+  await picker.getByRole("button", { name: "图片比例 9:16", exact: true }).click();
+  await expect(picker).not.toBeVisible();
+  await expect(page.getByRole("button", { name: "更多图片比例", exact: true })).toContainText(
+    "9:16",
+  );
+  await page.getByRole("button", { name: "展开全部图片比例", exact: true }).click();
+  await picker.press("Escape");
+  await expect(page.getByRole("button", { name: "展开全部图片比例", exact: true })).toBeFocused();
+  const parameters = page.getByRole("region", { name: "创作参数", exact: true });
+  const generate = page.getByRole("button", { name: "生成图片", exact: true });
+  const before = await generate.boundingBox();
+  const pageScroll = await page.evaluate(() => window.scrollY);
+  await parameters.hover();
+  await page.mouse.wheel(0, 2000);
+  await expect.poll(() => parameters.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.scrollY)).toBe(pageScroll);
+  const after = await generate.boundingBox();
+  expect(before && after && Math.abs(before.y - after.y)).toBeLessThan(1);
+  await expect(generate).toBeInViewport();
 });
