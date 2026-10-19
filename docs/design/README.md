@@ -4,7 +4,7 @@
 
 ## 当前材料
 
-- [图片创作三步 UI](image-creation-flow.md)：完整首页 → 两模型选择层 → GPT Image 三栏工作台；本轮图片创作评审目标。
+- [图片创作三步 UI](image-creation-flow.md)：完整首页 → 两模型选择层 → GPT Image 三栏工作台；模型卡片已按最新反馈改为紧凑竖版、整卡点击，图片中的独立按钮已取消。
 - [当前导航与 TK 专区 UI 图](navigation-and-tk.md)：AI 电商工具选择层 V3（主内容 padding 对齐、外围纯黑）、TK 自动发布；当前信息架构以此及 PRD 为准。
 - [紫色工作台首轮探索](purple-studio-mockups.md)：保留三栏布局探索，家纺工具的导航归属已由当前方案更正。
 - [艺栢页面与操作逻辑研究](yibai-page-logic.md)：分类展开、功能选择层、画图三栏、案例回填和历史联动；区分实测、代码与未验证行为。
