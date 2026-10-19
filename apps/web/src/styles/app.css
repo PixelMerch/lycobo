@@ -1578,10 +1578,11 @@ small {
   width: min(368px, calc(100vw - 24px));
   padding: 0;
   background: var(--overlay);
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: 12px;
 }
 .ratio-popover .ratio-popover-dialog {
+  position: relative;
   padding: 12px;
 }
 .ratio-extra-options {
@@ -1660,4 +1661,34 @@ small {
   width: 160px;
   max-width: calc(100% - 40px);
   margin-left: auto;
+}
+
+.ratio-popover-heading {
+  align-items: flex-start;
+  min-height: 28px;
+  padding-right: 36px;
+}
+.ratio-popover .ratio-close {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+}
+@media (hover: hover) {
+  .ratio-popover .ratio-close:hover,
+  .parameter-options.ratio-options .button:hover {
+    background: color-mix(in srgb, var(--surface-tertiary) 92%, var(--foreground));
+    color: var(--foreground);
+  }
+}
+.ratio-popover .ratio-close:active,
+.ratio-popover .ratio-close[data-pressed="true"] {
+  background: var(--surface-secondary);
 }
