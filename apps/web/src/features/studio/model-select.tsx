@@ -1,4 +1,4 @@
-import { ListBox, Select } from "@heroui/react";
+import { Label, ListBox, Select } from "@heroui/react";
 import { IconBanana, IconPhoto } from "@tabler/icons-react";
 import { UiIcon } from "../../components/ui-icon";
 import { isModelId, models } from "./studio-state";
@@ -23,12 +23,14 @@ function ModelSelectControl({
 }) {
   return (
     <Select
+      className="model-field"
       aria-label="创作模型"
       value={value}
       onChange={(key) => {
         if (isModelId(key)) onChange(key);
       }}
     >
+      <Label className="model-field-label">模型</Label>
       <Select.Trigger className="model-select">
         <Select.Value>{models.find((model) => model.id === value)?.name}</Select.Value>
         <Select.Indicator />
