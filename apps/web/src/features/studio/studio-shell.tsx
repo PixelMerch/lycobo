@@ -214,6 +214,7 @@ export function StudioShell() {
                       variant="tertiary"
                       key={model.id}
                       aria-label={`进入 ${model.name} 创作`}
+                      aria-pressed={currentModel?.id === model.id}
                       onPress={() => {
                         setChooserOpen(false);
                         navigate(`/create/${model.id}`);
