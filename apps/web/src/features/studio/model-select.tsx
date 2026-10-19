@@ -1,6 +1,4 @@
 import { Label, ListBox, Select } from "@heroui/react";
-import { IconBanana, IconPhoto } from "@tabler/icons-react";
-import { UiIcon } from "../../components/ui-icon";
 import { isModelId, models } from "./studio-state";
 export function ModelSelect({
   value,
@@ -35,7 +33,7 @@ function ModelSelectControl({
         <Select.Value>{models.find((model) => model.id === value)?.name}</Select.Value>
         <Select.Indicator />
       </Select.Trigger>
-      <Select.Popover placement="bottom start">
+      <Select.Popover className="model-menu" placement="bottom start">
         <ListBox aria-label="创作模型">
           {models.map((model) => (
             <ListBox.Item
@@ -44,9 +42,7 @@ function ModelSelectControl({
               id={model.id}
               textValue={model.name}
             >
-              <UiIcon icon={model.id === "banana" ? IconBanana : IconPhoto} />
               <span>{model.name}</span>
-              <ListBox.ItemIndicator />
             </ListBox.Item>
           ))}
         </ListBox>
