@@ -7,6 +7,7 @@ import {
   IconPhoto,
   IconPlus,
   IconSparkles,
+  IconTrash,
   IconX,
 } from "@tabler/icons-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -63,7 +64,7 @@ function Workspace({ model }: { model: ModelId }) {
           <ModelSelect value={model} onChange={(id) => navigate(`/create/${id}`)} />
           <ReferencePicker model={model} references={draft.references} />
           <TextField className="prompt-field">
-            <Label>画面要求</Label>
+            <Label>提示词</Label>
             <TextArea
               ref={inputId}
               value={draft.prompt}
@@ -143,7 +144,7 @@ function Workspace({ model }: { model: ModelId }) {
                     className="small-button"
                     onPress={() => appendCase(current)}
                   >
-                    引用画面要求
+                    引用提示词
                   </Button>
                 </div>
                 <p className="record-prompt">{current.prompt}</p>
@@ -176,7 +177,7 @@ function Workspace({ model }: { model: ModelId }) {
                     {favorites.includes(current.id) ? "已收藏" : "收藏"}
                   </Button>
                   <Button variant="tertiary" onPress={() => appendCase(current)}>
-                    引用画面要求
+                    引用提示词
                   </Button>
                 </div>
               </article>
@@ -453,8 +454,23 @@ function ReferencePicker({
   return (
     <section className="reference-picker">
       <div className="field-title">
-        <h2>参考图片</h2>
-        <small>{references.length} / 5</small>
+        <h2>
+          上传图片<small>（最多上传5张参考图）</small>
+        </h2>
+        <Button
+          variant="tertiary"
+          className="clear-references"
+          aria-label="清除全部参考图片"
+          isDisabled={reading || references.length === 0}
+          onPress={() => {
+            updateDraft(model, { references: [] });
+            setError("");
+            if (input.current) input.current.value = "";
+          }}
+        >
+          <UiIcon icon={IconTrash} size="small" />
+          清除
+        </Button>
       </div>
       <input
         ref={input}
@@ -490,16 +506,18 @@ function ReferencePicker({
             <span>{image.name}</span>
           </div>
         ))}
-        <Button
-          variant="tertiary"
-          className="add-reference"
-          isDisabled={reading || references.length >= 5}
-          aria-label="添加参考图"
-          onPress={() => input.current?.click()}
-        >
-          <UiIcon icon={IconPlus} size="action" />
-          <span>{reading ? "读取中…" : "添加图片"}</span>
-        </Button>
+        {references.length < 5 ? (
+          <Button
+            variant="tertiary"
+            className="add-reference"
+            isDisabled={reading || references.length >= 5}
+            aria-label="添加参考图"
+            onPress={() => input.current?.click()}
+          >
+            <UiIcon icon={IconPlus} size="action" />
+            <span>{reading ? "读取中…" : "添加图片"}</span>
+          </Button>
+        ) : null}
       </div>
       {error ? (
         <p className="field-error" role="alert">
