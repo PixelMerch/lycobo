@@ -53,7 +53,7 @@ test("invalid references and limit errors do not destroy valid images", async ({
   );
   await expect(page.getByRole("alert")).toContainText("最多添加 5 张");
   await expect(page.locator(".reference-tile")).toHaveCount(1);
-  await page.getByRole("button", { name: "移除参考图：valid.png" }).click();
+  await page.getByRole("button", { name: "移除参考图：图片1" }).click();
   await expect(page.locator(".reference-tile")).toHaveCount(0);
 });
 
@@ -203,22 +203,35 @@ test("reference limit hides add control and clearing keeps prompt and other mode
     })),
   );
   await expect(page.locator(".reference-tile")).toHaveCount(5);
+  await expect(page.locator(".reference-number")).toHaveText([
+    "图片1",
+    "图片2",
+    "图片3",
+    "图片4",
+    "图片5",
+  ]);
+  await expect(page.getByText("quilt-0.png", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "移除参考图：quilt-0.png", exact: true }).click();
+  await page.getByRole("button", { name: "移除参考图：图片1", exact: true }).click();
+  await expect(page.locator(".reference-number")).toHaveText(["图片1", "图片2", "图片3", "图片4"]);
   await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /创作模型/ }).click();
   await page.getByRole("option", { name: "香蕉模型", exact: true }).click();
+  await expect(page).toHaveURL(/\/create\/banana$/);
+  await expect(page.locator(".reference-tile")).toHaveCount(0);
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles({ name: "banana.png", mimeType: "image/png", buffer: png });
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await page.getByRole("button", { name: /创作模型/ }).click();
   await page.getByRole("option", { name: "GPT Image", exact: true }).click();
+  await expect(page.locator(".reference-tile")).toHaveCount(4);
+  await expect(prompt).toHaveValue("保留提示词");
   await page.getByRole("button", { name: "清除全部参考图片", exact: true }).click();
   await expect(page.locator(".reference-tile")).toHaveCount(0);
   await expect(prompt).toHaveValue("保留提示词");
   await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /创作模型/ }).click();
   await page.getByRole("option", { name: "香蕉模型", exact: true }).click();
-  await expect(page.getByRole("img", { name: "banana.png", exact: true })).toBeVisible();
+  await expect(page.getByRole("img", { name: "图片1", exact: true })).toBeVisible();
 });
