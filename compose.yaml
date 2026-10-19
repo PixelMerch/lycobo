@@ -1,16 +1,52 @@
 name: lycoboai
 services:
-  addresses:
-    image: redis:7.4-alpine
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        printf '\nWeb: http://127.0.0.1:5173/\nAPI: http://127.0.0.1:8787/api\nAPI health: http://127.0.0.1:8787/api/health/live\nWeb/API 请另行运行 pnpm dev 启动。\n\n'
-    restart: "no"
-  postgres:
+  api:
+    build: &dev-build
+      context: .
+      dockerfile: Dockerfile.dev
+    init: true
+    working_dir: /workspace/apps/api
+    command: ["node", "--import", "tsx", "--watch", "src/index.ts"]
+    environment:
+      NODE_ENV: development
+      API_HOST: 0.0.0.0
+      API_PORT: "8787"
+      LOG_LEVEL: info
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - ./apps/api/src:/workspace/apps/api/src:ro
+      - ./packages/contracts/src:/workspace/packages/contracts/src:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/api/health/live').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  web:
+    build: *dev-build
+    init: true
+    working_dir: /workspace/apps/web
+    command: ["pnpm", "exec", "vite", "--host", "0.0.0.0"]
+    environment:
+      DEV_API_PROXY_TARGET: http://api:8787
+      DEV_USE_POLLING: "true"
+    ports:
+      - "127.0.0.1:5173:5173"
+    volumes:
+      - ./apps/web/src:/workspace/apps/web/src:ro
+      - ./apps/web/public:/workspace/apps/web/public:ro
+      - ./apps/web/index.html:/workspace/apps/web/index.html:ro
+      - ./apps/web/vite.config.ts:/workspace/apps/web/vite.config.ts:ro
+      - ./packages/contracts/src:/workspace/packages/contracts/src:ro
     depends_on:
-      addresses:
-        condition: service_completed_successfully
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5173/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  postgres:
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: lycoboai
@@ -26,9 +62,6 @@ services:
       timeout: 3s
       retries: 10
   redis:
-    depends_on:
-      addresses:
-        condition: service_completed_successfully
     image: redis:7.4-alpine
     command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
     ports:

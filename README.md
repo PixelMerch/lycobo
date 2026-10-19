@@ -14,6 +14,18 @@
   SSE 推送、持久画布、完整设计稿页面。生成按钮禁用，提交 API 返回 503，绝不模拟成功。
 - 草稿只存在当前浏览器会话内存；图片只在本地预览，刷新后不保证保留。
 
+## Compose 启动（支持实时更新）
+
+```sh
+docker compose up --build
+```
+
+启动 Web、API、PostgreSQL 和 Redis，日志打印访问地址：Web <http://127.0.0.1:5173/>，
+API <http://127.0.0.1:8787/api/health/live>。修改本地页面 TSX/CSS 自动热更新，API 源码修改自动重启。
+首次构建后可直接 `docker compose up`；依赖变化时重新加 `--build`。
+后台启动使用 `docker compose up -d --build --wait`，日志用 `docker compose logs -f web api` 查看。
+请先停止占用同一端口的 `pnpm dev`。细节见 [本地开发](docs/development.md)。
+
 ## 本地启动
 
 要求 Node.js 24（至少 24.13.0）、pnpm 10.34.7；Docker 仅在使用本地数据库/队列时需要。

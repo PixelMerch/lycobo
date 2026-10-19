@@ -15,14 +15,28 @@ pnpm install 的 prepare 会配置此仓库专用 .githooks，不修改用户全
 Vite 的 /api 代理固定指向本地 8787；更改 API_PORT 时需同步开发代理或独立配置。
 本地 preview 仅预览静态产物，不自动代理 API；正式使用网关。
 
+## Compose 开发模式
+
+运行 `docker compose up --build` 可同时启动 Web、API、PostgreSQL 和 Redis；后续直接 `docker compose up`。
+Web 地址为 http://127.0.0.1:5173/，API 地址为 http://127.0.0.1:8787/api；启动日志会输出访问地址。
+后台运行使用 `docker compose up -d --build --wait`，通过 `docker compose logs -f web api` 跟踪日志。
+不要同时运行占用相同端口的本地 `pnpm dev`。
+
+Web 的 src、public、index.html、vite.config.ts，以及 API 和 contracts 的 src 以只读方式挂载到容器。
+修改页面 TSX/CSS 后 Vite 自动热更新；容器启用文件轮询以兼容 Docker Desktop。API 使用 Node watch 自动重启。
+依赖在 Linux 镜像内安装，不共享宿主机 node_modules；修改 package.json、pnpm-lock.yaml、构建配置或未挂载目录后运行 `docker compose up --build`。
+Vite 在容器内通过 api:8787 代理 /api，本地 pnpm dev 继续使用 127.0.0.1:8787。
+DEV_API_PROXY_TARGET 和 DEV_USE_POLLING 仅用于 Vite 开发服务器配置，不作为浏览器环境变量公开。
+
+容器端口只发布到宿主机 127.0.0.1。开发镜像不包含本地 .env；API 使用 Compose 声明的开发配置。
+当前 API 没有数据库业务读写，Worker 不随 Compose 自动启动；服务监听不代表已接通真实生成。
+Compose 不自动迁移数据库或删除数据卷。仅需基础设施时继续使用 `pnpm infra:up`。
+
 ## 可选基础设施
 
 Compose 项目名 lycoboai，PostgreSQL 55432、Redis 56379，仅绑定 127.0.0.1。
 必须使用本项目服务，不连接 bonko 的服务，不读取其 .env。
-pnpm infra:up 启动并等待健康检查；pnpm infra:down 停止但不删除卷。
-直接运行 docker compose up 时，addresses 一次性服务会在日志中打印 Web、API 和 API 健康检查地址，随后正常退出。
-该服务复用 Redis 镜像，仅输出本地开发入口，不启动 Web/API；两者仍需 pnpm dev。
-使用后台模式 docker compose up -d --wait 或 pnpm infra:up 时，通过 docker compose logs addresses 查看地址。
+pnpm infra:up 只启动 PostgreSQL/Redis 并等待健康检查；pnpm infra:down 停止此 Compose 项目（含已启动的 Web/API）但不删除卷。
 禁止把 docker compose down -v 当作普通清理命令。
 
 数据库：
