@@ -84,14 +84,10 @@ function Workspace({ model }: { model: ModelId }) {
           ))}
         </section>
         <div className="generate-area">
-          <Button className="primary-action" isDisabled aria-describedby="generation-unavailable">
+          <Button className="primary-action" isDisabled>
             <UiIcon icon={IconSparkles} />
             生成图片
           </Button>
-          <div className="generation-note">
-            <span>费用 —</span>
-            <small id="generation-unavailable">生成服务尚未开放</small>
-          </div>
         </div>
       </section>
       <section className="results-panel" aria-label="创作内容">
