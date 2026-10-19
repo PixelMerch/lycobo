@@ -64,7 +64,7 @@ Worker 当前仅处理隔离的诊断队列，不会调用生图 API。详见 [�
 
 - [技术栈](docs/tech-stack.md)：选择、版本策略、SSR 与国内部署。
 - [架构与目录](PROJECT_STRUCTURE.md)：包边界与运行方式。
-- [产品范围](PRD.md)：连续提交、持久任务、画布与通知。
+- [产品范围](PRD.md)：家纺跨境定位、左侧导航、AI 电商与 TK 专区规划。
 - [设计规范](DESIGN.md)：HeroUI v3 深色紫色工作台、tokens、状态与响应式。
 - [协作规范](CONTRIBUTING.md)：分支、提交、PR、代码审查与迁移协调。
 - [Agent 规则](AGENTS.md)：自动化开发与技能使用边界。
