@@ -268,7 +268,7 @@ function ParameterGroup({
   );
 }
 const commonRatios = ["1:1", "16:9", "2:1", "3:2", "4:3"];
-const additionalRatios = ["21:9", "9:16", "1:2", "2:3", "3:4", "9:21", "4:5"];
+const additionalRatios = ["21:9", "9:16", "1:2", "2:3", "3:4", "9:21"];
 
 function RatioPicker({ value, onChange }: { value: string; onChange: (ratio: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -284,7 +284,7 @@ function RatioPicker({ value, onChange }: { value: string; onChange: (ratio: str
           </Button>
         </div>
         <Popover.Content placement="bottom start" className="ratio-popover">
-          <Popover.Dialog aria-label="更多图片比例">
+          <Popover.Dialog className="ratio-popover-dialog" aria-label="更多图片比例">
             <div className="ratio-popover-heading">
               <Popover.Heading>图片比例</Popover.Heading>
               <Button
