@@ -986,15 +986,28 @@ small {
   margin-top: 8px;
 }
 .results-panel {
+  display: flex;
+  flex-direction: column;
   padding: 0 12px 12px;
   min-height: calc(100dvh - var(--header-height) - 2 * var(--content-padding));
 }
 .workspace-tabs {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   gap: 0;
 }
 :where(.workspace-tabs) > .tabs__list {
   border-bottom: 0;
   margin-bottom: 12px;
+}
+:where(.workspace-tabs) > .tabs__panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+.workspace-tabs .empty-state {
+  flex: 1;
 }
 .history-rail {
   padding: 12px 8px;
