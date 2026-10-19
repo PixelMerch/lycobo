@@ -1,11 +1,11 @@
 import { Label, ListBox, Select } from "@heroui/react";
-import { isModelId, models } from "./studio-state";
+import { isModelId, type ModelId, models } from "./studio-state";
 export function ModelSelect({
   value,
   onChange,
 }: {
   value: string;
-  onChange: (model: "gpt-image" | "banana") => void;
+  onChange: (model: ModelId) => void;
 }) {
   // Imported here keeps model choice identical wherever it is presented.
   const selected = models.find((m) => m.id === value) ?? models[0];
@@ -17,7 +17,7 @@ function ModelSelectControl({
   onChange,
 }: {
   value: string;
-  onChange: (model: "gpt-image" | "banana") => void;
+  onChange: (model: ModelId) => void;
 }) {
   return (
     <Select

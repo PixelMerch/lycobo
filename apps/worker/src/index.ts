@@ -50,3 +50,11 @@ if (env.data.WORKER_ENABLED === "false") {
     void close();
   });
 }
+
+if (process.env.IMAGE_WORKER_ENABLED === "true") {
+  const { startImageWorker } = await import("./image-worker");
+  await startImageWorker().catch(() => {
+    logger.error("Image worker configuration/startup failed");
+    process.exitCode = 1;
+  });
+}

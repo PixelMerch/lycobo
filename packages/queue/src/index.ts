@@ -28,3 +28,21 @@ export function createDiagnosticQueue(url: string) {
     },
   });
 }
+
+export const imageQueueName = "lycoboai-image-generation";
+export const imageQueueJobSchema = z.strictObject({ itemId: z.uuid() });
+export function createImageQueue(url: string, name = imageQueueName) {
+  return new Queue<z.infer<typeof imageQueueJobSchema>>(name, {
+    connection: {
+      ...redisConnection(url),
+      maxRetriesPerRequest: 1,
+      enableOfflineQueue: false,
+      connectTimeout: 5000,
+    },
+    defaultJobOptions: {
+      attempts: 1,
+      removeOnComplete: true,
+      removeOnFail: { count: 100 },
+    },
+  });
+}

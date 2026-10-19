@@ -7,21 +7,57 @@ services:
     init: true
     working_dir: /workspace/apps/api
     command: ["node", "--import", "tsx", "--watch", "src/index.ts"]
+    env_file:
+      - path: .env
+        required: false
     environment:
+      DATABASE_URL: ${IMAGE_COMPOSE_DATABASE_URL:-postgresql://lycoboai:local_dev_only@postgres:5432/lycoboai}
+      REDIS_URL: redis://redis:6379
+      IMAGE_DATA_DIR: /workspace/data/images
       NODE_ENV: development
       API_HOST: 0.0.0.0
       API_PORT: "8787"
       LOG_LEVEL: info
     ports:
-      - "127.0.0.1:8787:8787"
+      - "127.0.0.1:${API_PUBLIC_PORT:-8788}:8787"
     volumes:
       - ./apps/api/src:/workspace/apps/api/src:ro
       - ./packages/contracts/src:/workspace/packages/contracts/src:ro
+      - ./packages/db/src:/workspace/packages/db/src:ro
+      - ./packages/generation/src:/workspace/packages/generation/src:ro
+      - ./packages/storage/src:/workspace/packages/storage/src:ro
+      - ./data/images:/workspace/data/images
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/api/health/live').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 5s
       timeout: 3s
       retries: 10
+  worker:
+    build: *dev-build
+    init: true
+    working_dir: /workspace/apps/worker
+    command: ["node", "--import", "tsx", "--watch", "src/index.ts"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: ${IMAGE_COMPOSE_DATABASE_URL:-postgresql://lycoboai:local_dev_only@postgres:5432/lycoboai}
+      REDIS_URL: redis://redis:6379
+      IMAGE_DATA_DIR: /workspace/data/images
+    volumes:
+      - ./apps/worker/src:/workspace/apps/worker/src:ro
+      - ./packages/contracts/src:/workspace/packages/contracts/src:ro
+      - ./packages/db/src:/workspace/packages/db/src:ro
+      - ./packages/generation/src:/workspace/packages/generation/src:ro
+      - ./packages/storage/src:/workspace/packages/storage/src:ro
+      - ./packages/queue/src:/workspace/packages/queue/src:ro
+      - ./data/images:/workspace/data/images
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
   web:
     build: *dev-build
     init: true
@@ -31,7 +67,7 @@ services:
       DEV_API_PROXY_TARGET: http://api:8787
       DEV_USE_POLLING: "true"
     ports:
-      - "127.0.0.1:5173:5173"
+      - "127.0.0.1:${WEB_PORT:-8080}:5173"
     volumes:
       - ./apps/web/src:/workspace/apps/web/src:ro
       - ./apps/web/public:/workspace/apps/web/public:ro

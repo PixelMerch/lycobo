@@ -66,23 +66,20 @@ Read relevant project skills before work:
 
 ## Collaboration and Git
 
-- Every new task, including documentation-only changes, must start on a new branch from the
-  latest origin/dev. Inspect status, fetch origin with pruning, switch to dev and update it
-  with a fast-forward-only merge before creating the branch. Preserve unrelated local changes;
-  never discard them to switch branches. Do not edit or commit directly on main or dev.
-- Keep one concern per branch/PR. Use feat/*, fix/*, chore/* or docs/*;
-  codex/* is accepted for agent branches. Do not reuse a branch from a merged PR.
-- Use Conventional Commits and the configured scopes. Stage only explicit task-related paths.
-- After completing and verifying requested changes, make a local commit on the task branch.
-  Stop at the local commit by default. Do not push, open a PR or merge automatically; wait for
-  the user's explicit instruction for those actions. This supersedes prior workflow authorization.
-- When the user requests a merge, use a PR targeting dev unless the user explicitly requests a release PR to main. Merge only after required CI checks
-  pass, branch protection requirements are satisfied and review discussions are resolved. If the target branch
-  advances, update the task branch and rerun required checks; never bypass protection.
-- After the PR is merged, delete its remote source branch (normally automatic), switch the local
-  checkout to dev, fetch with pruning, fast-forward to origin/dev and delete the merged local
-  task branch. Verify its commits are included in dev before deleting; do not force-delete
-  branches with unmerged work. Finish with local dev synchronized and report any cleanup blockers.
+- Develop directly on the local dev branch by default. Before work, inspect status, fetch
+  origin with pruning and fast-forward dev when possible. Preserve local changes and commits;
+  never reset them to synchronize. Create another branch or worktree only when the user asks.
+- Keep local dev and main as the normal long-lived branches. main tracks origin/main and
+  is not a development branch. Keep one concern per commit and use Conventional Commits
+  with configured scopes. Stage only explicit task-related paths.
+- After completing and verifying requested changes, make a local commit on dev. Stop at
+  the local commit by default; push, open PRs or merge only when explicitly authorized.
+- Feature PRs target dev when requested; releases use a dev-to-main PR when requested.
+  Merge only after required CI checks pass, branch protection requirements are satisfied
+  and review discussions are resolved. Never bypass protection.
+- After an authorized merge, fetch and fast-forward the corresponding local dev/main.
+  Finish on dev. Remove temporary local branches when their changes are merged or verified
+  superseded and the user requests cleanup; preserve unrelated worktree files and commits.
 - Publishing tags and deployment require separate explicit user authorization.
 - Do not rewrite another contributor's work, force-push shared branches, amend existing commits
   or reset unknown changes.

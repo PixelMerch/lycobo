@@ -9,9 +9,10 @@
 
 - 已实现：React/HeroUI 应用壳、路由、本地参考图预览、描述草稿、Hono 健康与能力接口、
   请求校验和统一错误、数据库初始迁移、独立诊断 Worker、CI 与团队规范。
-- 已准备但未接通：生成服务和对象存储接口、任务/结果/通知/outbox 数据表。
-- 未实现：身份认证、真实上传、生图服务、任务业务 API、outbox 派发器、积分/支付、
-  SSE 推送、持久画布、完整设计稿页面。生成按钮禁用，提交 API 返回 503，绝不模拟成功。
+- 已编码、默认关闭：组织访问令牌、Vakv 生图 API、PostgreSQL 任务/outbox/积分账本、Redis 生图队列、
+  独立图片 Worker、私有本地图片存储；通过本地 fixture 集成测试，尚未用真实渠道验收。详见 [生图 API](docs/image-generation-api.md)。
+- 尚未接通：前端与新生图 API、正式用户登录/邀请、在线支付、对象存储签名服务、SSE 推送和持久画布。
+  前端生成按钮保持禁用；旧 `/api/v1/tasks` 继续返回 503，新生图 API 需显式配置后启用，不模拟成功。
 - 草稿只存在当前浏览器会话内存；图片只在本地预览，刷新后不保证保留。
 
 ## Compose 启动（支持实时更新）
@@ -54,7 +55,8 @@ pnpm db:migrate
 WORKER_ENABLED=true pnpm dev:worker
 ```
 
-Worker 当前仅处理隔离的诊断队列，不会调用生图 API。详见 [本地开发](docs/development.md)。
+上面的 WORKER_ENABLED 仅启动诊断队列，不调用模型。
+生图 Worker 使用独立的 IMAGE_WORKER_ENABLED 与 IMAGE_GENERATION_ENABLED，配置和令牌签发见 [生图 API](docs/image-generation-api.md)。
 
 ## 常用命令
 

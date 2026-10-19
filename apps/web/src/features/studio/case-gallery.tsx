@@ -1,5 +1,5 @@
 import { Button, Modal, Tabs } from "@heroui/react";
-import { IconBanana, IconPhoto } from "@tabler/icons-react";
+import { IconPhoto } from "@tabler/icons-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
@@ -105,9 +105,10 @@ function CaseDetail({ item, onClose }: { item: StudioCase | null; onClose: () =>
       references: [{ id: `case-${item.id}`, name: item.title, src: photo(item.image) }],
     });
     useStudioStore.getState().setChooserOpen(false);
+    useStudioStore.getState().setActiveModel(model);
     setReplaceModel(null);
     onClose();
-    navigate(`/create/${model}`);
+    navigate("/create");
   }
   return (
     <Modal
@@ -153,7 +154,7 @@ function CaseDetail({ item, onClose }: { item: StudioCase | null; onClose: () =>
                             else apply(model.id);
                           }}
                         >
-                          <UiIcon icon={model.id === "banana" ? IconBanana : IconPhoto} />
+                          <UiIcon icon={IconPhoto} />
                           使用 {model.name} 创作
                         </Button>
                       ))}

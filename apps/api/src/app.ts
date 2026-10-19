@@ -5,10 +5,12 @@ import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
 import { secureHeaders } from "hono/secure-headers";
 
+import { type ImageApiDependencies, imageRoutes } from "./features/images/routes";
+
 type ApiEnv = { Variables: { requestId: string } };
 type ErrorReporter = (event: { requestId: string; name: string }) => void;
 
-export function createApp(reportError: ErrorReporter = () => {}) {
+export function createApp(reportError: ErrorReporter = () => {}, images?: ImageApiDependencies) {
   const app = new Hono<ApiEnv>();
   app.use("*", async (c, next) => {
     c.set("requestId", crypto.randomUUID());
@@ -20,7 +22,7 @@ export function createApp(reportError: ErrorReporter = () => {}) {
   app.use(
     "/api/*",
     bodyLimit({
-      maxSize: 32 * 1024,
+      maxSize: 11 * 1024 * 1024,
       onError: (c) =>
         c.json(
           {
@@ -34,6 +36,26 @@ export function createApp(reportError: ErrorReporter = () => {}) {
         ),
     }),
   );
+  app.use("/api/*", async (c, next) => {
+    if (c.req.path !== "/api/v1/image-assets") {
+      return bodyLimit({
+        maxSize: 32 * 1024,
+        onError: (ctx) =>
+          ctx.json(
+            {
+              error: {
+                code: "PAYLOAD_TOO_LARGE",
+                message: "请求内容过大",
+                requestId: c.get("requestId"),
+              },
+            },
+            413,
+          ),
+      })(c, next);
+    }
+    await next();
+  });
+  if (images) app.route("/api/v1", imageRoutes(images));
   app.get("/api/health/live", (c) => c.json({ status: "ok", service: "lycoboai-api" }));
   app.get("/api/v1/system/capabilities", (c) => {
     const capabilities: Capabilities = {

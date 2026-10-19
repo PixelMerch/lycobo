@@ -18,10 +18,11 @@ import { type CSSProperties, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { CaseGallery } from "./case-gallery";
+import { GenerationHistory } from "./generation-history";
 import { cases, models, photo, useStudioStore } from "./studio-state";
 
 const chooserLayout: CSSProperties & { "--tool-columns": number } = {
-  "--tool-columns": Math.min(4, Math.max(models.length, cases.length)),
+  "--tool-columns": Math.min(5, Math.max(models.length, cases.length)),
 };
 
 export function StudioShell() {
@@ -30,9 +31,11 @@ export function StudioShell() {
   const [info, setInfo] = useState<string | null>(null);
   const chooserOpen = useStudioStore((s) => s.chooserOpen);
   const setChooserOpen = useStudioStore((s) => s.setChooserOpen);
+  const activeModel = useStudioStore((s) => s.activeModel);
+  const setActiveModel = useStudioStore((s) => s.setActiveModel);
   const location = useLocation();
-  const modelId = location.pathname.split("/")[2];
-  const currentModel = models.find((m) => m.id === modelId);
+  const inWorkspace = location.pathname === "/create";
+  const currentModel = inWorkspace ? models.find((m) => m.id === activeModel) : undefined;
   const navigate = useNavigate();
   const nav = (
     <>
@@ -221,7 +224,8 @@ export function StudioShell() {
                       aria-pressed={currentModel?.id === model.id}
                       onPress={() => {
                         setChooserOpen(false);
-                        navigate(`/create/${model.id}`);
+                        setActiveModel(model.id);
+                        navigate("/create");
                       }}
                     >
                       <img src={photo(model.image, true)} alt="" width="480" height="480" />
@@ -292,11 +296,7 @@ function TaskCenter() {
               <Drawer.CloseTrigger aria-label="关闭任务中心" />
             </Drawer.Header>
             <Drawer.Body>
-              <div className="empty-state">
-                <UiIcon icon={IconListCheck} size="illustration" />
-                <h2>暂无任务</h2>
-                <p>提交后的任务会显示在这里。</p>
-              </div>
+              <GenerationHistory compact />
             </Drawer.Body>
           </Drawer.Dialog>
         </Drawer.Content>

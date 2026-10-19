@@ -2,12 +2,35 @@ import { create } from "zustand";
 
 export const models = [
   {
-    id: "gpt-image",
-    name: "GPT Image",
+    id: "gpt-image-2.5",
+    name: "gpt-image-2.5",
     image: "bedroom",
     description: "上传参考图，描述想要的画面",
   },
-  { id: "banana", name: "香蕉模型", image: "lavender", description: "选择模型，开始图片创作" },
+  {
+    id: "gpt-image-2.5-flare",
+    name: "gpt-image-2.5-flare",
+    image: "lavender",
+    description: "上传参考图，描述想要的画面",
+  },
+  {
+    id: "gpt-image-2.5-sunburst",
+    name: "gpt-image-2.5-sunburst",
+    image: "set",
+    description: "上传参考图，描述想要的画面",
+  },
+  {
+    id: "gpt-image-2",
+    name: "gpt-image-2",
+    image: "bedroom",
+    description: "上传参考图，描述想要的画面",
+  },
+  {
+    id: "gpt-image-2-4K",
+    name: "gpt-image-2-4K",
+    image: "set",
+    description: "上传参考图，描述想要的画面",
+  },
 ] as const;
 export type ModelId = (typeof models)[number]["id"];
 export const isModelId = (value: unknown): value is ModelId =>
@@ -43,7 +66,7 @@ export const cases = [
   },
 ] as const;
 export type StudioCase = (typeof cases)[number];
-export type ReferenceImage = { id: string; name: string; src: string };
+export type ReferenceImage = { id: string; name: string; src: string; assetId?: string };
 export type Draft = {
   prompt: string;
   references: ReferenceImage[];
@@ -55,7 +78,7 @@ const emptyDraft = (): Draft => ({
   prompt: "",
   references: [],
   ratio: "1:1",
-  resolution: "2K",
+  resolution: "1K",
   count: "1",
 });
 
@@ -63,6 +86,10 @@ const emptyDraft = (): Draft => ({
 export const useStudioStore = create<{
   chooserOpen: boolean;
   setChooserOpen: (open: boolean) => void;
+  activeHistoryId: string | null;
+  setActiveHistoryId: (id: string) => void;
+  activeModel: ModelId;
+  setActiveModel: (model: ModelId) => void;
   drafts: Record<ModelId, Draft>;
   updateDraft: (model: ModelId, patch: Partial<Draft>) => void;
   addReferences: (model: ModelId, references: ReferenceImage[]) => void;
@@ -73,7 +100,17 @@ export const useStudioStore = create<{
 }>((set) => ({
   chooserOpen: false,
   setChooserOpen: (chooserOpen) => set({ chooserOpen }),
-  drafts: { "gpt-image": emptyDraft(), banana: emptyDraft() },
+  activeHistoryId: null,
+  setActiveHistoryId: (activeHistoryId) => set({ activeHistoryId }),
+  activeModel: "gpt-image-2",
+  setActiveModel: (activeModel) => set({ activeModel }),
+  drafts: {
+    "gpt-image-2.5": emptyDraft(),
+    "gpt-image-2.5-flare": emptyDraft(),
+    "gpt-image-2.5-sunburst": emptyDraft(),
+    "gpt-image-2": emptyDraft(),
+    "gpt-image-2-4K": emptyDraft(),
+  },
   updateDraft: (model, patch) =>
     set((state) => ({
       drafts: { ...state.drafts, [model]: { ...state.drafts[model], ...patch } },
