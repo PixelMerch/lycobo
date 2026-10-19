@@ -974,19 +974,6 @@ small {
   width: 100%;
   height: 44px;
 }
-.generation-note {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  color: var(--muted);
-  margin-top: 8px;
-}
-.generation-note small {
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
 .field-error {
   color: #fda4af;
   font-size: var(--text-xs);
@@ -1649,4 +1636,28 @@ small {
 }
 .ratio-popover {
   box-shadow: var(--overlay-shadow);
+}
+
+.composer-panel .model-field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  background: var(--composer-group);
+  border-radius: 8px;
+}
+.model-field-label {
+  flex: none;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
+}
+.model-field .model-select {
+  min-width: 0;
+  width: 160px;
+  max-width: calc(100% - 40px);
+  margin-left: auto;
 }
