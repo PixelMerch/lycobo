@@ -23,7 +23,9 @@ test("home to two-model chooser to workspace, with correctly anchored panel and 
   await expect(chooser).not.toBeVisible();
   await expect(trigger).toBeFocused();
   await trigger.click();
-  await page.getByRole("button", { name: "进入 GPT Image 创作" }).click();
+  const modelCard = chooser.getByRole("button", { name: "进入 GPT Image 创作" });
+  await modelCard.focus();
+  await modelCard.press("Enter");
   await expect(page).toHaveURL(/\/create\/gpt-image$/);
   await expect(page.getByLabel("画面要求", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "生成图片", exact: true })).toBeDisabled();
