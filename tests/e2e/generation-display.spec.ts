@@ -30,13 +30,15 @@ test("running images animate with the model icon and stop for reduced motion", a
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/create");
-  await expect(page.getByText("正在生成中", { exact: true })).toBeVisible();
-  const loading = page.locator(".generation-loading-icon");
-  await expect(loading).toHaveCSS("animation-name", "generation-breathe");
-  await expect(loading.locator("svg")).toHaveClass(/icon-sparkles/);
+  const loading = page.locator(".generation-results .generation-loading-icon");
+  await expect(loading).toHaveCount(4);
+  await expect(loading.first()).toHaveCSS("animation-name", "generation-breathe");
+  await expect(loading.first().locator("svg")).toHaveClass(/icon-sparkles/);
   const placeholders = page.locator(".generation-placeholder");
   await expect(placeholders).toHaveCount(4);
-  await expect(placeholders.filter({ hasText: "排队中" })).toHaveCount(3);
+  await expect(placeholders).toHaveText(["", "", "", ""]);
+  await expect(page.locator('.generation-results [aria-label="排队中"]')).toHaveCount(3);
+  await expect(page.locator(".history-thumbnail .generation-loading-icon")).toBeVisible();
   const boxes = await placeholders.evaluateAll((elements) =>
     elements.map((element) => ({
       top: element.getBoundingClientRect().top,
@@ -46,8 +48,18 @@ test("running images animate with the model icon and stop for reduced motion", a
   expect(boxes[0]?.top).toBe(boxes[2]?.top);
   expect(boxes[3]?.top).toBeGreaterThan(boxes[0]?.top ?? 0);
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(loading).toHaveCSS("animation-name", "none");
-  await expect(page.getByText("正在生成中", { exact: true })).toBeVisible();
+  await expect(loading.first()).toHaveCSS("animation-name", "none");
+  await expect(loading.first()).toBeVisible();
+  await expect(placeholders.first()).toHaveCSS("aspect-ratio", "1 / 1");
+  job.items = job.items.slice(0, 1);
+  job.requested_count = 1;
+  await page.reload();
+  await expect(placeholders).toHaveCount(1);
+  const box = await placeholders.first().boundingBox();
+  expect(box?.width).toBe(400);
+  expect(box?.height).toBe(400);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.screenshot({ path: "/tmp/lycobo-generation-pending.png" });
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

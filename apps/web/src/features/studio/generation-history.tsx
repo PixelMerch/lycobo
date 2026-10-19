@@ -94,6 +94,13 @@ function ResultImage({
     </div>
   );
 }
+function GenerationLoading() {
+  return (
+    <div className="generation-loading-icon">
+      <UiIcon icon={IconSparkles} size="illustration" />
+    </div>
+  );
+}
 export function GenerationHistory({ compact = false }: { compact?: boolean }) {
   const session = useImageSession();
   const query = useImageHistory();
@@ -247,14 +254,13 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
                       prompt={job.prompt}
                     />
                   ) : (
-                    <div className="generation-placeholder" role="status">
-                      {item.status === "running" ? (
-                        <>
-                          <div className="generation-loading-icon">
-                            <UiIcon icon={IconSparkles} size="illustration" />
-                          </div>
-                          <span>正在生成中</span>
-                        </>
+                    <div
+                      className={`generation-placeholder${item.status === "running" || item.status === "queued" ? " generation-pending" : ""}`}
+                      role="status"
+                      aria-label={statusLabel[item.status]}
+                    >
+                      {item.status === "running" || item.status === "queued" ? (
+                        <GenerationLoading />
                       ) : (
                         statusLabel[item.status]
                       )}
@@ -307,11 +313,12 @@ export function HistoryIndex() {
       {jobs.length ? (
         jobs.map((job) => {
           const image = job.items.find((item) => item.output_asset_id)?.output_asset_id;
+          const generating = job.status === "running" || job.status === "queued";
           return (
             <Button
               key={job.id}
               variant="tertiary"
-              className="history-thumbnail"
+              className={`history-thumbnail${generating ? " generation-pending" : ""}`}
               aria-label={`查看任务 ${job.id}`}
               aria-pressed={selectedId === job.id}
               onPress={() => {
@@ -321,7 +328,11 @@ export function HistoryIndex() {
                   ?.scrollIntoView({ block: "start", behavior: "instant" });
               }}
             >
-              {image ? (
+              {generating ? (
+                <span role="status" aria-label={statusLabel[job.status]}>
+                  <GenerationLoading />
+                </span>
+              ) : image ? (
                 <img src={assetContentUrl(image, true)} alt={job.model} loading="lazy" />
               ) : (
                 <span>{statusLabel[job.status]}</span>

@@ -20,6 +20,13 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
   const [expanded, setExpanded] = useState(false);
   const [overflow, setOverflow] = useState(false);
   const [copied, setCopied] = useState(false);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+    },
+    [],
+  );
   const [error, setError] = useState("");
   useEffect(() => {
     const node = text.current;
@@ -59,6 +66,8 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
             await navigator.clipboard.writeText(job.prompt);
             setCopied(true);
             setError("");
+            if (copyTimer.current) clearTimeout(copyTimer.current);
+            copyTimer.current = setTimeout(() => setCopied(false), 3000);
           } catch {
             setError("复制失败，请手动选择提示词复制。");
           }

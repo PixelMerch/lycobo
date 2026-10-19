@@ -108,7 +108,18 @@ function Workspace({ model }: { model: ModelId }) {
           <Button
             className="primary-action"
             isDisabled={!canGenerate}
-            onPress={() => generate.mutate({ model, draft })}
+            onPress={() =>
+              generate.mutate(
+                { model, draft },
+                {
+                  onSuccess: () => {
+                    if (!pending && useStudioStore.getState().drafts[model] === draft) {
+                      updateDraft(model, { prompt: "", references: [] });
+                    }
+                  },
+                },
+              )
+            }
           >
             <UiIcon icon={IconSparkles} />
             {generate.isPending ? "正在提交…" : pending ? "确认上次提交" : "立即生成"}

@@ -64,9 +64,13 @@ test("history prompt expands, copies in full and locates the output; icon action
   await expect(article.locator(".generation-prompt")).not.toHaveClass(/prompt-collapsed/);
   await article.getByRole("button", { name: "收起", exact: true }).click();
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.clock.install();
   await article.getByRole("button", { name: "复制提示词", exact: true }).click();
   await expect(article.getByRole("button", { name: "已复制", exact: true })).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(input.prompt);
+  await page.clock.fastForward(3100);
+  await expect(article.getByRole("button", { name: "复制提示词", exact: true })).toBeVisible();
+  await page.clock.resume();
   await article.getByRole("button", { name: "重新编辑", exact: true }).hover();
   await expect(page.getByRole("tooltip").filter({ hasText: "重新编辑" })).toBeVisible();
   await article.getByRole("button", { name: "重新生成", exact: true }).hover();

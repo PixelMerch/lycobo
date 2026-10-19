@@ -71,7 +71,9 @@ Read relevant project skills before work:
   never reset them to synchronize. Create another branch or worktree only when the user asks.
 - Keep local dev and main as the normal long-lived branches. main tracks origin/main and
   is not a development branch. Keep one concern per commit and use Conventional Commits
-  with configured scopes. Stage only explicit task-related paths.
+  with configured scopes. Commit messages follow Angular-style English `type(scope): subject`:
+  use an imperative English subject without a trailing period; keep scopes in the configured list.
+  Stage only explicit task-related paths.
 - After completing and verifying requested changes, make a local commit on dev. Stop at
   the local commit by default; push, open PRs or merge only when explicitly authorized.
 - Feature PRs target dev when requested; releases use a dev-to-main PR when requested.

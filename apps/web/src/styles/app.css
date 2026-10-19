@@ -2191,3 +2191,46 @@ small {
   font-size: 12px;
   line-height: 16px;
 }
+
+.generation-pending {
+  position: relative;
+}
+.generation-placeholder.generation-pending {
+  aspect-ratio: 1;
+  min-height: 0;
+  border-color: transparent;
+  border-radius: 0;
+}
+.generation-pending::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  border-radius: inherit;
+  background: linear-gradient(
+    110deg,
+    var(--accent),
+    #baa4ff,
+    var(--accent),
+    #baa4ff,
+    var(--accent)
+  );
+  background-size: 300% 100%;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: generation-border-flow 2.4s linear infinite;
+  z-index: 1;
+}
+@keyframes generation-border-flow {
+  to {
+    background-position: 150% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .generation-pending::before {
+    animation: none;
+  }
+}

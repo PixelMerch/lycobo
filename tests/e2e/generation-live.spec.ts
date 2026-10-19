@@ -90,6 +90,8 @@ test("five models submit at 1K, queued results become durable history and librar
     await page.getByLabel("提示词", { exact: true }).fill(`陶瓷杯 ${model}`);
     await page.getByRole("button", { name: "立即生成", exact: true }).click();
     await expect(page.locator(".generation-job")).toHaveCount(submissions.length);
+    await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("");
+    await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
   }
   expect(submissions.map((input) => input.model)).toEqual(modelNames);
   expect(
@@ -129,6 +131,7 @@ for (const outcome of ["disconnect", "timeout", "auth"] as const) {
     await page.getByLabel("提示词", { exact: true }).fill("保留同一次提交");
     await page.getByRole("button", { name: "立即生成", exact: true }).click();
     await expect(page.getByRole("button", { name: "确认上次提交", exact: true })).toBeEnabled();
+    await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("保留同一次提交");
     await page.reload();
     await page.getByRole("button", { name: "确认上次提交", exact: true }).click();
     await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
@@ -173,5 +176,28 @@ test("reference images are uploaded before submitting their server asset IDs", a
   await page.getByLabel("提示词", { exact: true }).fill("保留杯子外形，放在白色置物架上");
   await page.getByRole("button", { name: "立即生成", exact: true }).click();
   await expect.poll(() => uploaded).toBe(true);
+  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("");
+  await expect(page.locator(".reference-tile")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
+});
+
+test("submission success preserves edits made while the request is pending", async ({ page }) => {
+  await mockImageApi(page);
+  let accept: (() => void) | undefined;
+  const response = new Promise<void>((resolve) => {
+    accept = resolve;
+  });
+  await page.route("**/api/v1/image-tasks", async (route) => {
+    if (route.request().method() !== "POST") return route.fulfill({ json: { data: [] } });
+    await response;
+    await route.fulfill({ status: 202, json: { id: crypto.randomUUID(), replayed: false } });
+  });
+  await page.goto("/create");
+  await page.getByLabel("提示词", { exact: true }).fill("提交的商品图");
+  await page.getByRole("button", { name: "立即生成", exact: true }).click();
+  await expect(page.getByRole("button", { name: "正在提交…", exact: true })).toBeVisible();
+  await page.getByLabel("提示词", { exact: true }).fill("下一张商品图的新要求");
+  accept?.();
   await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeEnabled();
+  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("下一张商品图的新要求");
 });
