@@ -283,7 +283,7 @@ function RatioPicker({ value, onChange }: { value: string; onChange: (ratio: str
             <UiIcon icon={IconChevronRight} size="small" />
           </Button>
         </div>
-        <Popover.Content placement="right top" className="ratio-popover">
+        <Popover.Content placement="bottom start" className="ratio-popover">
           <Popover.Dialog aria-label="更多图片比例">
             <div className="ratio-popover-heading">
               <Popover.Heading>图片比例</Popover.Heading>
