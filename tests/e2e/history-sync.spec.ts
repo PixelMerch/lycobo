@@ -44,6 +44,7 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await page.goto("/create");
   const articles = page.locator(".generation-job");
   await expect(articles).toHaveCount(3);
+  await expect(page.getByRole("button", { name: "回到顶部", exact: true })).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: `查看任务 ${jobs[0]?.id}`, exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
@@ -61,7 +62,23 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
     "1K",
     "1 张",
   ]);
-  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  const backToTop = page.getByRole("button", { name: "回到顶部", exact: true });
+  await expect(backToTop).toBeVisible();
+  const backBox = await backToTop.boundingBox();
+  const regenerateBox = await articles.nth(1).getByLabel("重新生成", { exact: true }).boundingBox();
+  expect(backBox?.y).toBeGreaterThan(820);
+  expect(
+    Math.abs(
+      (backBox?.x ?? 0) +
+        (backBox?.width ?? 0) / 2 -
+        (regenerateBox?.x ?? 0) -
+        (regenerateBox?.width ?? 0) / 2,
+    ),
+  ).toBeLessThan(1);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await backToTop.click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(backToTop).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: `查看任务 ${jobs[0]?.id}`, exact: true }),
   ).toHaveAttribute("aria-pressed", "true");

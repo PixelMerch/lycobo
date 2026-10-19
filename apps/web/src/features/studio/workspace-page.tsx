@@ -1,5 +1,6 @@
-import { Button, Label, Popover, Tabs, TextArea, TextField } from "@heroui/react";
+import { Button, Label, Popover, Tabs, TextArea, TextField, Tooltip } from "@heroui/react";
 import {
+  IconArrowBarToUp,
   IconChevronRight,
   IconLayersIntersect,
   IconPlus,
@@ -137,7 +138,39 @@ function Workspace({ model }: { model: ModelId }) {
         </Tabs>
       </section>
       <HistoryIndex />
+      <BackToTopButton />
     </div>
+  );
+}
+function BackToTopButton() {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const update = () => setVisible(window.scrollY > 240);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
+  if (!visible) return null;
+  return (
+    <Tooltip delay={0}>
+      <Button
+        isIconOnly
+        variant="tertiary"
+        className="back-to-top-button"
+        aria-label="回到顶部"
+        onPress={() =>
+          window.scrollTo({
+            top: 0,
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+              ? "instant"
+              : "smooth",
+          })
+        }
+      >
+        <UiIcon icon={IconArrowBarToUp} size="illustration" />
+      </Button>
+      <Tooltip.Content placement="bottom">回到顶部</Tooltip.Content>
+    </Tooltip>
   );
 }
 function ParameterGroup({
