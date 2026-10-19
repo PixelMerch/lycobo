@@ -68,15 +68,17 @@ Read relevant project skills before work:
 - Keep one concern per branch/PR. Use feat/*, fix/*, chore/* or docs/*;
   codex/* is accepted for agent branches. Do not reuse a branch from a merged PR.
 - Use Conventional Commits and the configured scopes. Stage only explicit task-related paths.
-- Push the task branch and open a PR targeting main. Merge only after required CI checks pass,
-  branch protection requirements are satisfied and review discussions are resolved. If main
+- After completing and verifying requested changes, make a local commit on the task branch.
+  Stop at the local commit by default. Do not push, open a PR or merge automatically; wait for
+  the user's explicit instruction for those actions. This supersedes prior workflow authorization.
+- When the user requests a merge, use a PR targeting main. Merge only after required CI checks
+  pass, branch protection requirements are satisfied and review discussions are resolved. If main
   advances, update the task branch and rerun required checks; never bypass protection.
 - After the PR is merged, delete its remote source branch (normally automatic), switch the local
   checkout to main, fetch with pruning, fast-forward to origin/main and delete the merged local
   task branch. Verify its commits are included in main before deleting; do not force-delete
   branches with unmerged work. Finish with local main synchronized and report any cleanup blockers.
-- The user has authorized this branch/PR/merge/cleanup workflow for requested repository work.
-  Publishing tags and deployment still require separate explicit user authorization.
+- Publishing tags and deployment require separate explicit user authorization.
 - Do not rewrite another contributor's work, force-push shared branches, amend existing commits
   or reset unknown changes.
 - Changes to contracts, migrations, root lockfile and shared design tokens require coordination
