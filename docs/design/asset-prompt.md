@@ -1,3 +1,5 @@
+> 历史素材记录：对应的旧版四宫格运行素材已随旧页面删除，当前家纺图片来源见 studio-photo-prompts.json。
+
 # 商品示例素材生成记录
 
 工具：内置 imagegen；用途：product-mockup；生成日期：2026-10-14。
