@@ -39,6 +39,22 @@
   --overlay-shadow: 0 16px 48px #00000059;
   --radius: 8px;
   --field-radius: 10px;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-2xl: 24px;
+  --text-page-mobile: 22px;
+  --leading-xs: 18px;
+  --leading-sm: 20px;
+  --leading-base: 22px;
+  --leading-lg: 24px;
+  --leading-xl: 26px;
+  --leading-2xl: 32px;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
   --app-primary-gradient: linear-gradient(180deg, #baa4ff 0, var(--accent) 100%);
   --sidebar-width: 200px;
   --header-height: 64px;
@@ -55,8 +71,9 @@ body,
 }
 body {
   font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.57;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-variant-numeric: tabular-nums;
   background: var(--background);
   color: var(--foreground);
 }
@@ -89,21 +106,23 @@ p {
   margin: 0;
 }
 h1 {
-  font-size: 24px;
-  line-height: 32px;
-  font-weight: 600;
+  font-size: var(--text-2xl);
+  line-height: var(--leading-2xl);
+  font-weight: var(--weight-semibold);
 }
 h2 {
-  font-size: 18px;
-  line-height: 26px;
-  font-weight: 600;
+  font-size: var(--text-xl);
+  line-height: var(--leading-xl);
+  font-weight: var(--weight-semibold);
 }
 h3 {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-medium);
 }
 small {
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 .ui-icon {
   flex: none;
@@ -119,14 +138,15 @@ small {
   min-height: 40px;
   border-radius: 8px;
   transform: none;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   transition:
     background-color 150ms,
     border-color 150ms,
     color 150ms;
 }
 .button {
-  font-size: 14px;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
 }
 .button:disabled,
 .button[data-disabled="true"] {
@@ -139,7 +159,7 @@ small {
   background: var(--app-primary-gradient);
   color: #09070d;
   border: 1px solid transparent;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   padding-inline: 24px;
 }
 .primary-action:hover {
@@ -179,7 +199,8 @@ small {
   min-height: 32px;
   height: 32px;
   padding: 4px 12px;
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   border: 1px solid #ffffff20;
   background: transparent;
 }
@@ -204,8 +225,9 @@ small {
   align-items: center;
   gap: 8px;
   padding-left: 12px;
-  font-weight: 600;
-  font-size: 24px;
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-2xl);
+  line-height: var(--leading-2xl);
   letter-spacing: -0.6px;
 }
 .brand-mark {
@@ -232,7 +254,8 @@ small {
   border-radius: 10px;
   color: var(--muted);
   background: transparent;
-  font-size: 14px;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
   margin-bottom: 12px;
   white-space: nowrap;
 }
@@ -273,7 +296,8 @@ small {
   padding-block: 8px 4px;
 }
 .tk-submenu .button {
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   display: flex;
   justify-content: flex-start;
   min-height: 32px;
@@ -301,12 +325,13 @@ small {
   gap: 12px;
   color: var(--muted);
   min-width: 0;
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
   white-space: nowrap;
 }
 .breadcrumb strong {
   color: var(--foreground);
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -319,7 +344,8 @@ small {
 .task-trigger {
   background: transparent;
   border: 0;
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 .avatar {
   height: 32px;
@@ -355,7 +381,8 @@ small {
 }
 .page-heading p {
   margin-top: 6px;
-  font-size: 14px;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
 }
 .quick-section > h2 {
   margin-bottom: 12px;
@@ -392,11 +419,13 @@ small {
   min-width: 0;
 }
 .quick-card strong {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
+  font-weight: var(--weight-medium);
 }
 .quick-card small {
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -405,7 +434,8 @@ small {
   margin-left: auto;
 }
 .quiet-label {
-  font-size: 11px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   color: var(--muted);
   margin-left: auto;
   flex: none;
@@ -421,7 +451,8 @@ small {
 }
 .section-heading p {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 .tabs__list {
   background: transparent;
@@ -433,7 +464,8 @@ small {
 .tabs__tab {
   padding-inline: 16px;
   height: 40px;
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
   color: var(--muted);
   background: transparent;
   border-radius: 0;
@@ -502,10 +534,11 @@ small {
 .recent-row > span {
   margin-left: auto;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 .recent-row strong {
-  font-weight: 500;
+  font-weight: var(--weight-medium);
 }
 .chooser-backdrop {
   isolation: isolate;
@@ -558,14 +591,15 @@ small {
   padding: 24px 24px 0;
 }
 .model-chooser .modal__heading {
-  font-size: 18px;
-  line-height: 26px;
-  font-weight: 600;
+  font-size: var(--text-xl);
+  line-height: var(--leading-xl);
+  font-weight: var(--weight-semibold);
 }
 .model-chooser :where(.modal__header) p {
   color: var(--muted);
   margin-top: 4px;
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 .model-chooser .modal__body {
   padding: 16px 24px 24px;
@@ -582,7 +616,8 @@ small {
 .section-tab {
   height: 20px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   margin-bottom: 12px;
 }
 .model-grid {
@@ -625,9 +660,9 @@ small {
   padding: 10px;
 }
 .model-card-title {
-  font-size: 14px;
-  line-height: 22px;
-  font-weight: 500;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-medium);
 }
 .model-card-description {
   display: -webkit-box;
@@ -635,10 +670,10 @@ small {
   -webkit-box-orient: vertical;
   overflow: hidden;
   min-height: 36px;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   color: var(--muted);
-  font-weight: 400;
+  font-weight: var(--weight-regular);
 }
 .model-card:focus-visible,
 .model-card[data-focus-visible="true"],
@@ -673,12 +708,13 @@ small {
   gap: var(--tool-card-gap);
 }
 :where(.model-chooser) .section-heading h2 {
-  font-size: 14px;
-  line-height: 22px;
-  font-weight: 500;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-medium);
 }
 :where(.model-chooser) .section-heading p {
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 .case-card-link > img {
   width: 100%;
@@ -688,8 +724,8 @@ small {
 }
 .case-card-title {
   padding: 8px 10px;
-  font-size: 12px;
-  line-height: 20px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -760,7 +796,8 @@ small {
 .empty-state h1,
 .empty-state h2 {
   color: var(--foreground);
-  font-size: 18px;
+  font-size: var(--text-xl);
+  line-height: var(--leading-xl);
 }
 .workspace {
   display: grid;
@@ -799,8 +836,9 @@ small {
   border-radius: 8px;
   background: var(--surface-secondary);
   box-shadow: none;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-medium);
 }
 .field-title {
   display: flex;
@@ -811,8 +849,9 @@ small {
 .field-title h2,
 .prompt-field > label,
 .parameter-group legend {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
 }
 .field-title small {
   color: var(--muted);
@@ -838,7 +877,8 @@ small {
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  font-size: 11px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   color: var(--muted);
 }
 .reference-tile .remove-reference {
@@ -861,7 +901,8 @@ small {
   flex-direction: column;
   background: var(--field-background);
   width: 100%;
-  font-size: 11px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 .add-reference > span {
   white-space: normal;
@@ -881,8 +922,8 @@ small {
   border-radius: 8px;
   width: 100%;
   padding: 12px;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
 }
 .parameter-group {
   border: 0;
@@ -909,7 +950,8 @@ small {
   background: transparent;
   box-shadow: none;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   height: 36px;
   min-height: 36px;
 }
@@ -936,16 +978,19 @@ small {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   color: var(--muted);
   margin-top: 8px;
 }
 .generation-note small {
-  font-size: 11px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 .field-error {
   color: #fda4af;
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   margin-top: 8px;
 }
 .results-panel {
@@ -974,11 +1019,13 @@ small {
   padding: 8px 0;
 }
 .history-filters .checkbox {
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   gap: 6px;
 }
 .history-filters label {
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   color: var(--muted);
 }
 .result-record {
@@ -991,12 +1038,13 @@ small {
   gap: 12px;
 }
 .record-header h1 {
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 500;
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
+  font-weight: var(--weight-medium);
 }
 .record-header .small-button {
-  font-size: 11px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   border-color: transparent;
   background: transparent;
 }
@@ -1007,13 +1055,15 @@ small {
   margin: 8px 0;
 }
 .metadata span {
-  font-size: 11px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   padding: 1px 0;
   color: var(--muted);
 }
 .record-prompt {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
   margin: 4px 0 12px;
 }
 .reference-context {
@@ -1043,7 +1093,8 @@ small {
   align-items: center;
   justify-content: center;
   min-width: 0;
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   padding-inline: 12px;
 }
 .result-actions .neutral-button,
@@ -1071,11 +1122,13 @@ small {
   top: calc(var(--header-height) + var(--content-padding));
 }
 .history-rail h2 {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
 }
 .history-rail p {
-  font-size: 11px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   color: var(--muted);
 }
 .history-thumb {
@@ -1102,7 +1155,8 @@ small {
   gap: 16px;
 }
 .asset-grid h2 {
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1163,7 +1217,8 @@ small {
     --content-padding: 16px;
   }
   .brand {
-    font-size: 22px;
+    font-size: var(--text-page-mobile);
+    line-height: var(--leading-2xl);
   }
   .quick-grid {
     grid-template-columns: 1fr;
@@ -1214,7 +1269,8 @@ small {
   }
   .breadcrumb {
     gap: 6px;
-    font-size: 12px;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
     flex: 1;
   }
   .breadcrumb > a,
@@ -1247,14 +1303,16 @@ small {
     gap: 10px;
   }
   .page-heading h1 {
-    font-size: 22px;
+    font-size: var(--text-page-mobile);
+    line-height: var(--leading-2xl);
   }
   :where(.page-heading) .button {
     padding-inline: 12px;
     flex: none;
   }
   .page-heading p {
-    font-size: 12px;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
   }
   .quick-card {
     min-height: 76px;
@@ -1263,12 +1321,14 @@ small {
     gap: 8px;
   }
   .case-card h3 {
-    font-size: 12px;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
   }
   .case-card .small-button {
     height: 44px;
     min-height: 44px;
-    font-size: 11px;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
   }
   .section-heading {
     flex-wrap: wrap;
@@ -1284,7 +1344,8 @@ small {
     padding: 16px;
   }
   .model-chooser :where(.modal__header) p {
-    font-size: 12px;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
     padding-right: 24px;
   }
   .workspace {
@@ -1304,7 +1365,8 @@ small {
     grid-row: 2;
   }
   .composer-panel textarea {
-    font-size: 16px;
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
   }
   .button,
   .neutral-button,
@@ -1322,7 +1384,8 @@ small {
     padding: 8px;
   }
   .record-header h1 {
-    font-size: 15px;
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
   }
   .history-filters {
     padding-bottom: 12px;
@@ -1388,7 +1451,14 @@ small {
   height: 40px;
 }
 .model-select .select__value {
-  font-size: 18px;
+  font-size: inherit;
+  line-height: inherit;
+  font-weight: inherit;
+}
+.model-options {
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-regular);
 }
 .history-filters .checkbox__content {
   display: inline-flex;
@@ -1428,7 +1498,8 @@ small {
     padding: 8px;
   }
   .model-card-title {
-    font-size: 13px;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
   }
 }
 
@@ -1469,7 +1540,7 @@ small {
   height: 64px;
   min-height: 64px;
   padding: 6px 2px;
-  line-height: 18px;
+  line-height: var(--leading-xs);
 }
 .ratio-preview {
   display: block;
@@ -1494,8 +1565,9 @@ small {
   margin-bottom: 8px;
 }
 .ratio-heading h2 {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
 }
 .ratio-heading .ratio-expand {
   min-height: 28px;
@@ -1504,7 +1576,8 @@ small {
   padding: 0 2px 0 8px;
   background: transparent;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 .ratio-preview {
   max-width: 100%;
