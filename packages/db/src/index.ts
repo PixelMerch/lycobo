@@ -10,4 +10,6 @@ export function openDatabase(url: string) {
   const client = postgres(url, { max: 10, idle_timeout: 20, connect_timeout: 10 });
   return { db: drizzle(client, { schema }), close: () => client.end({ timeout: 5 }) };
 }
+
+export * from "./image-repository";
 export { schema };

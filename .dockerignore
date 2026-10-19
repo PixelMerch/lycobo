@@ -15,3 +15,5 @@ playwright-report
 coverage
 .pnpm-store
 .finesse
+
+data

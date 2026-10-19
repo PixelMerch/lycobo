@@ -1,6 +1,6 @@
 import type { CreateTaskInput } from "@lycoboai/contracts";
 
-// A contract only: provider integration must be explicit; never silently return demo images.
+// Legacy asynchronous provider contract; the synchronous Vakv adapter is exported separately.
 export interface GenerationProvider {
   readonly name: string;
   submit(
@@ -16,3 +16,5 @@ export interface GenerationProvider {
     | { status: "failed"; code: string; retryable: boolean }
   >;
 }
+
+export * from "./vakv-provider";

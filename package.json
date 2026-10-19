@@ -9,7 +9,7 @@
     "pnpm": ">=10.34.7 <11"
   },
   "scripts": {
-    "dev": "pnpm --parallel --filter @lycoboai/web --filter @lycoboai/api dev",
+    "dev": "pnpm --parallel --filter @lycoboai/web --filter @lycoboai/api --filter @lycoboai/worker dev",
     "dev:worker": "pnpm --filter @lycoboai/worker dev",
     "build": "pnpm -r --if-present build",
     "typecheck": "tsc -p tsconfig.tools.json --noEmit && pnpm -r typecheck",
@@ -25,7 +25,7 @@
     "infra:up": "docker compose up -d --wait postgres redis",
     "infra:down": "docker compose down",
     "prepare": "node scripts/setup-hooks.mjs",
-    "test:integration": "pnpm --filter @lycoboai/worker test:integration"
+    "test:integration": "pnpm --filter @lycoboai/worker test:integration && pnpm --filter @lycoboai/worker test:images"
   },
   "devDependencies": {
     "typescript": "5.9.3",

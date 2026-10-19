@@ -1,95 +1,175 @@
-# lycoboai
+# LycoBo
 
-面向国内电商运营的商品生图工作台。运营可以连续提交不同商品，后台执行生成，
-通过任务中心找回结果，再进入画布编辑、下载。产品交互与视觉以 [DESIGN.md](DESIGN.md) 为准。
+[![CI](https://github.com/PixelMerch/lycobo/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/PixelMerch/lycobo/actions/workflows/ci.yml?query=branch%3Adev)
+[![Node.js](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![pnpm](https://img.shields.io/badge/pnpm-10-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![HeroUI](https://img.shields.io/badge/HeroUI-3-BAA4FF)](https://heroui.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
-## 当前实现状态
+**面向电商商家团队的 AI 商品图片工作台。**
 
-这是可运行、可检查的工程基础版本，不是已接通模型的完整产品。
+上传商品参考图、描述画面，后台生成图片，结果自动进入历史记录和素材库。以商品图片生产为起点，逐步整合 TikTok 带货素材、视频制作、批量发布与效果分析。
 
-- 已实现：React/HeroUI 应用壳、路由、本地参考图预览、描述草稿、Hono 健康与能力接口、
-  请求校验和统一错误、数据库初始迁移、独立诊断 Worker、CI 与团队规范。
-- 已准备但未接通：生成服务和对象存储接口、任务/结果/通知/outbox 数据表。
-- 未实现：身份认证、真实上传、生图服务、任务业务 API、outbox 派发器、积分/支付、
-  SSE 推送、持久画布、完整设计稿页面。生成按钮禁用，提交 API 返回 503，绝不模拟成功。
-- 草稿只存在当前浏览器会话内存；图片只在本地预览，刷新后不保证保留。
+[快速开始](#快速开始) · [启用真实生图](#启用真实生图) · [技术栈](#技术栈) · [文档](#文档)
 
-## Compose 启动（支持实时更新）
+## 当前能力
+
+| 模块 | 已实现 |
+| --- | --- |
+| 图片创作 | 文生图、参考图编辑，五个 GPT 图片模型，新草稿默认 1K |
+| 任务执行 | PostgreSQL 任务与 outbox、BullMQ 队列、独立 Worker，记录用户、组织、提示词、参数、时间及实际图片尺寸 |
+| 历史记录 | 任务与右侧缩略图联动，提示词展开／复制、恢复编辑、确认后重新生成 |
+| 素材管理 | 生成结果自动保存，鉴权缩略图预览、原图下载；收藏保留在当前浏览器会话 |
+| 创作体验 | 深色紫色三栏布局、生成状态动画、提交成功清空输入、滚动回顶与窄屏适配 |
+| 调用核对 | 内部积分预留／释放，不确定的服务商结果进入待核对，避免盲目重发付费请求 |
+
+**后续规划：** 带货视频、爆款复刻、TikTok 定时批量发布与效果数据；正式团队登录／邀请、在线支付和对象存储。这些能力目前不能作为已上线功能使用。
+
+### 图片模型
+
+| 模型 | 可选分辨率 |
+| --- | --- |
+| `gpt-image-2.5` | 1K |
+| `gpt-image-2.5-flare` | 1K |
+| `gpt-image-2.5-sunburst` | 1K |
+| `gpt-image-2` | 1K |
+| `gpt-image-2-4K` | 1K、2K、4K |
+
+五个模型的 1K 与一次 `gpt-image-2.5` 参考编辑已有真实调用记录；其他模型编辑、高分辨率及非方形输出仍需逐项验收。请求档位与返回图片的实际宽高分别保存，详细能力与边界见 [生图接入](docs/image-generation-api.md)。
+
+## 快速开始
+
+从仓库根目录执行。首次创建 `.env`，保留已有配置：
 
 ```sh
-docker compose up --build
+test -f .env || cp .env.example .env
 ```
 
-启动 Web、API、PostgreSQL 和 Redis，日志打印访问地址：Web <http://127.0.0.1:5173/>，
-API <http://127.0.0.1:8787/api/health/live>。修改本地页面 TSX/CSS 自动热更新，API 源码修改自动重启。
-首次构建后可直接 `docker compose up`；依赖变化时重新加 `--build`。
-后台启动使用 `docker compose up -d --build --wait`，日志用 `docker compose logs -f web api` 查看。
-请先停止占用同一端口的 `pnpm dev`。细节见 [本地开发](docs/development.md)。
+### Docker Compose
 
-## 本地启动
+需要 Docker 与 Compose 插件：
 
-要求 Node.js 24（至少 24.13.0）、pnpm 10.34.7；Docker 仅在使用本地数据库/队列时需要。
+```sh
+docker compose up -d --build --wait
+```
+
+| 服务 | 默认地址 |
+| --- | --- |
+| Web | <http://localhost:8080/> |
+| API 健康检查 | <http://127.0.0.1:8788/api/health/live> |
+| PostgreSQL | `127.0.0.1:55432` |
+| Redis | `127.0.0.1:56379` |
+
+Compose 启动 Web、API、Worker、PostgreSQL 和 Redis。页面 TSX/CSS 支持热更新，API／Worker 源码修改自动重启；依赖或构建配置变化后重新构建。生图默认关闭，启用步骤见下一节。
+
+```sh
+# 查看运行日志
+docker compose logs -f web api worker
+
+# 停止服务，保留数据库与图片
+docker compose down
+```
+
+### 本机开发
+
+固定使用 **Node.js 24.13.0+（24.x）** 和 **pnpm 10.34.7**：
 
 ```sh
 corepack enable
 corepack install
 pnpm install --frozen-lockfile
-cp .env.example .env
 pnpm dev
 ```
 
-已安装其他 pnpm 版本时，也可使用 `npx pnpm@10.34.7 install --frozen-lockfile`。
-不要覆盖已有 `.env`。配置只用模板中的本地凭据，不能复制 bonko 或线上配置。
+本机 Web 为 <http://127.0.0.1:5173/>，API 为 <http://127.0.0.1:8787/api/health/live>。`pnpm dev` 同时启动 Web、API 和 Worker；浏览器的 `/api` 通过 Vite 代理到 API，不向前端公开服务商密钥。
 
-- Web：http://127.0.0.1:5173
-- API：http://127.0.0.1:8787/api/health/live
-- Web 的 `/api` 通过 Vite 代理到 API；无生产级跨域通配设置。
-- 不启动 Docker 也能运行应用壳和单元测试。
+本机与 Compose 使用不同的 Web／API 默认端口；如需同时运行，应保持数据库、队列及图片目录配置一致。启动与代理说明见 [本地开发](docs/development.md)。
 
-可选本地基础设施：
+## 启用真实生图
+
+安装依赖、确认 `.env` 的本地数据库配置，并填写服务端 `VAKV_API_KEY` 后执行：
 
 ```sh
 pnpm infra:up
 pnpm db:migrate
-WORKER_ENABLED=true pnpm dev:worker
+pnpm --filter @lycoboai/api images:setup
+pnpm dev
 ```
 
-Worker 当前仅处理隔离的诊断队列，不会调用生图 API。详见 [本地开发](docs/development.md)。
+`images:setup` 仅供本机开发：创建或复用工作台身份，将应用令牌、图片目录与生图开关写入 `.env`，不输出密钥；本地令牌有效期为 7 天。若使用 Compose，初始化后执行 `docker compose up -d --build --wait` 应用配置。
 
-## 常用命令
+任务和图片元数据持久化到 PostgreSQL，图片保存到私有 `data/images` 目录，API 与 Worker 共用存储。提示词草稿与收藏仍属于客户端会话状态；正式身份、支付与分布式存储接入见 [API 文档](docs/image-generation-api.md)。
+
+## 技术栈
+
+| 层级 | 技术 |
+| --- | --- |
+| 运行环境 | Node.js 24 · pnpm 10 workspace · TypeScript 5.9 |
+| 前端 | React 19 · Vite 8 · React Router 8 |
+| 界面 | HeroUI 3 · Tailwind CSS 4 · Tabler Icons |
+| 状态管理 | TanStack Query 5（服务端数据）· Zustand 5（客户端交互） |
+| API 与校验 | Hono 4 · Zod 4 · Pino |
+| 数据与任务 | PostgreSQL 17 · Drizzle ORM · Redis 7.4 · BullMQ 6 |
+| 图片处理 | Sharp · 私有本地图片与缩略图存储 |
+| 质量检查 | Biome · Vitest · Playwright · commitlint · GitHub Actions |
+
+精确版本以各应用的 `package.json` 和 [pnpm-lock.yaml](pnpm-lock.yaml) 为准。技术选择见 [技术栈与决策](docs/tech-stack.md)。
+
+### 项目结构
+
+```text
+apps/
+  web/          React 创作工作台
+  api/          Hono 鉴权、上传与任务接口
+  worker/       独立队列消费者与图片生成
+packages/
+  contracts/    浏览器安全的共享契约
+  db/           PostgreSQL schema、迁移与持久化
+  generation/   模型服务商适配
+  queue/        队列契约
+  storage/      私有图片存储
+```
+
+进程与模块边界见 [架构与目录](PROJECT_STRUCTURE.md)。
+
+## 验证与构建
+
+CI 徽章关联 `dev` 分支的实际工作流，包含 Quality（类型、测试与构建）、Browser、Infrastructure 等检查。
 
 | 命令 | 用途 |
 | --- | --- |
-| `pnpm dev` | 同时启动 Web 与 API |
-| `pnpm dev:worker` | 单独启动 Worker，默认关闭，需要显式启用 |
-| `pnpm check` | 格式/边界、类型、单测、构建 |
-| `pnpm test:e2e` | Chromium 浏览器验收 |
-| `pnpm check:release` | 全部本地发布检查 |
-| `pnpm format` | 统一格式和安全自动修复 |
-| `pnpm db:generate` | 生成迁移，必须人工检查 SQL |
-| `pnpm db:migrate` | 对 DATABASE_URL 指向的库执行迁移 |
-| `pnpm infra:down` | 停止本项目基础设施，不删除数据卷 |
+| `pnpm check` | lint／边界、类型检查、单元测试和生产构建 |
+| `pnpm test:e2e` | 浏览器行为与响应式验收 |
+| `pnpm test:integration` | 隔离数据库／队列集成检查，需显式本地配置 |
+| `pnpm check:release` | 代码检查与浏览器验收 |
+| `pnpm build` | 构建 Web、API 和 Worker 等工作区包 |
+| `pnpm dev:worker` | 单独启动 Worker |
+| `pnpm db:generate` | 生成待审查的数据库迁移 |
+| `pnpm db:migrate` | 对指定数据库执行迁移 |
 
-首次浏览器测试：`pnpm exec playwright install chromium`。
+首次运行浏览器测试前安装 Chromium：`pnpm exec playwright install chromium`。集成测试的隔离环境要求见 [测试说明](docs/testing.md)。
 
-## 文档入口
+## 开发与提交
 
-- [技术栈](docs/tech-stack.md)：选择、版本策略、SSR 与国内部署。
-- [架构与目录](PROJECT_STRUCTURE.md)：包边界与运行方式。
-- [产品范围](PRD.md)：家纺跨境定位、左侧导航、AI 电商与 TK 专区规划。
-- [设计规范](DESIGN.md)：HeroUI v3 深色紫色工作台、tokens、状态与响应式。
-- [协作规范](CONTRIBUTING.md)：分支、提交、PR、代码审查与迁移协调。
-- [Agent 规则](AGENTS.md)：自动化开发与技能使用边界。
-- [异步任务设计](docs/task-lifecycle.md)：幂等、outbox、重试和通知。
-- [测试](docs/testing.md)、[发布](docs/releasing.md)、[安全](SECURITY.md)。
-- [技能与来源](docs/skills.md)：项目级技能和适用范围。
+默认直接在本地 `dev` 开发，`main` 用于稳定版本；仅在明确要求时新建分支。验证完成后提交本地，按需推送并创建或更新 `dev → main` 的 PR。
 
-项目基于 bonko 的工程规范整理，但不复用其 Astro/Cloudflare 部署、品牌、用户数据或密钥。
+提交信息使用 Angular 风格英文格式：
 
-## 默认工作台
+```text
+feat(web): add floating back-to-top control
+fix(worker): preserve successful image outputs
+docs(repo): refresh project readme
+```
 
-启动 `pnpm dev` 后访问 <http://127.0.0.1:5173/>。
-新版首页 → 图片创作模型选择层 → GPT Image／香蕉模型工作台已按紫色 HeroUI 设计实现。
-参考图、参数、收藏与最近使用仅存在当前页面会话，刷新重置；案例可预览与下载，真实生成保持禁用，未调用上传或计费 API。
-旧设计页面、模拟队列及独立画布代码已删除，旧入口重定向至新版。详情见 [实现与验收](docs/image-studio-implementation.md)。
-当前视觉规范与交互研究见 [设计索引](docs/design/README.md)。
+使用 `type(scope): subject`，英文描述以动词原形开头、不加句号。适用范围与审查规则见 [协作规范](CONTRIBUTING.md) 和 [Agent 规则](AGENTS.md)。
+
+## 文档
+
+- [产品范围](PRD.md)：目标用户、导航与首版范围。
+- [设计规范](DESIGN.md)：深色紫色工作台、组件状态与响应式。
+- [生图接入](docs/image-generation-api.md)：模型能力、鉴权、任务、存储与本地身份。
+- [实现与验收](docs/image-studio-implementation.md)：当前工作台交互与边界。
+- [本地开发](docs/development.md) · [技术栈](docs/tech-stack.md) · [架构](PROJECT_STRUCTURE.md)。
+- [测试](docs/testing.md) · [发布](docs/releasing.md) · [安全](SECURITY.md)。

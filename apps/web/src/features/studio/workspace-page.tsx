@@ -1,29 +1,24 @@
-import { Button, Checkbox, Label, Popover, Tabs, TextArea, TextField } from "@heroui/react";
+import { Button, Label, Popover, Tabs, TextArea, TextField, Tooltip } from "@heroui/react";
 import {
+  IconArrowBarToUp,
   IconChevronRight,
-  IconDownload,
-  IconHeart,
   IconLayersIntersect,
-  IconPhoto,
   IconPlus,
   IconSparkles,
   IconTrash,
   IconX,
 } from "@tabler/icons-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { useNavigate, useParams } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
-import { ModelSelect } from "./model-select";
 import {
-  cases,
-  type Draft,
-  isModelId,
-  type ModelId,
-  photo,
-  type ReferenceImage,
-  type StudioCase,
-  useStudioStore,
-} from "./studio-state";
+  useGenerateImage,
+  useImageModels,
+  useImageSession,
+  usePendingSubmission,
+} from "./generation-client";
+import { GenerationHistory, HistoryIndex } from "./generation-history";
+import { ModelSelect } from "./model-select";
+import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "./studio-state";
 
 const fields = [
   { key: "resolution", label: "分辨率", values: ["1K", "2K", "4K"] },
@@ -31,37 +26,52 @@ const fields = [
 ] as const;
 
 export function WorkspacePage() {
-  const { model } = useParams();
-  if (!isModelId(model)) return null;
+  const model = useStudioStore((s) => s.activeModel);
   return <Workspace model={model} />;
 }
 function Workspace({ model }: { model: ModelId }) {
   const draft = useStudioStore((s) => s.drafts[model]);
   const updateDraft = useStudioStore((s) => s.updateDraft);
+  const setActiveModel = useStudioStore((s) => s.setActiveModel);
   const visitModel = useStudioStore((s) => s.visitModel);
-  const favorites = useStudioStore((s) => s.favorites);
-  const toggleFavorite = useStudioStore((s) => s.toggleFavorite);
-  const [tab, setTab] = useState("cases");
-  const [onlyFavorites, setOnlyFavorites] = useState(false);
-  const [currentOnly, setCurrentOnly] = useState(true);
-  const [selectedCase, setSelectedCase] = useState<string>(cases[0].id);
-  const navigate = useNavigate();
   const inputId = useRef<HTMLTextAreaElement>(null);
-  const visibleCases = cases.filter((item) => !onlyFavorites || favorites.includes(item.id));
-  const current = visibleCases.find((item) => item.id === selectedCase) ?? visibleCases[0];
+  const session = useImageSession();
+  const modelQuery = useImageModels();
+  const generate = useGenerateImage();
+  const resolutions =
+    modelQuery.data?.models.find((entry) => entry.id === model)?.enabledResolutions ?? [];
+  const pending = usePendingSubmission(session.data);
+  const canGenerate =
+    session.isSuccess &&
+    modelQuery.data?.enabled &&
+    !generate.isPending &&
+    (pending ||
+      (draft.prompt.trim().length > 0 &&
+        resolutions.some((value) => value === draft.resolution) &&
+        (!draft.references.length || modelQuery.data.editsEnabled)));
   useEffect(() => {
     visitModel(model);
   }, [model, visitModel]);
-  function appendCase(item: StudioCase) {
-    // Additive reuse retains existing input instead of silently replacing a pending draft.
-    updateDraft(model, { prompt: draft.prompt ? `${draft.prompt}\n${item.prompt}` : item.prompt });
-    inputId.current?.focus();
-  }
   return (
     <div className="workspace">
       <section className="composer-panel" aria-label="创作设置">
         <section className="composer-scroll" aria-label="创作参数">
-          <ModelSelect value={model} onChange={(id) => navigate(`/create/${id}`)} />
+          <ModelSelect
+            value={model}
+            onChange={(nextModel) => {
+              if (nextModel === model) return;
+              const supported = modelQuery.data?.models.find(
+                (entry) => entry.id === nextModel,
+              )?.enabledResolutions;
+              updateDraft(nextModel, {
+                ...draft,
+                resolution: supported?.some((value) => value === draft.resolution)
+                  ? draft.resolution
+                  : "1K",
+              });
+              setActiveModel(nextModel);
+            }}
+          />
           <ReferencePicker model={model} references={draft.references} />
           <TextField className="prompt-field">
             <Label>提示词</Label>
@@ -80,158 +90,102 @@ function Workspace({ model }: { model: ModelId }) {
               label={field.label}
               values={field.values}
               value={draft[field.key]}
+              disabledValues={
+                field.key === "resolution"
+                  ? field.values.filter(
+                      (value) => !resolutions.some((enabled) => enabled === value),
+                    )
+                  : []
+              }
               onChange={(value) => updateDraft(model, { [field.key]: value })}
             />
           ))}
         </section>
         <div className="generate-area">
-          <Button className="primary-action" isDisabled>
+          {(session.isError || modelQuery.isError || generate.isError) && (
+            <p className="generation-message" role="alert">
+              {session.error?.message ??
+                modelQuery.error?.message ??
+                (pending
+                  ? "提交结果待确认，请点击确认上次提交，避免重复生成。"
+                  : generate.error?.message)}
+            </p>
+          )}
+          {modelQuery.data && !modelQuery.data.enabled && (
+            <p className="generation-message" role="status">
+              生图服务尚未启用
+            </p>
+          )}
+          {draft.references.length > 0 && modelQuery.data && !modelQuery.data.editsEnabled && (
+            <p className="generation-message" role="status">
+              当前服务尚未启用参考图编辑，可先不上传图片进行创作。
+            </p>
+          )}
+          <Button
+            className="primary-action"
+            isDisabled={!canGenerate}
+            onPress={() =>
+              generate.mutate(
+                { model, draft },
+                {
+                  onSuccess: () => {
+                    if (!pending && useStudioStore.getState().drafts[model] === draft) {
+                      updateDraft(model, { prompt: "", references: [] });
+                    }
+                  },
+                },
+              )
+            }
+          >
             <UiIcon icon={IconSparkles} />
-            生成图片
+            {generate.isPending ? "正在提交…" : pending ? "确认上次提交" : "立即生成"}
           </Button>
         </div>
       </section>
       <section className="results-panel" aria-label="创作内容">
-        <Tabs
-          selectedKey={tab}
-          onSelectionChange={(key) => setTab(String(key))}
-          className="workspace-tabs"
-        >
-          <div className="results-toolbar">
-            <Tabs.List aria-label="工作区内容">
-              <Tabs.Tab id="history">
-                历史记录
-                <Tabs.Indicator />
-              </Tabs.Tab>
-              <Tabs.Tab id="cases">
-                案例库
-                <Tabs.Indicator />
-              </Tabs.Tab>
-            </Tabs.List>
-            <div className="history-filters">
-              <StudioCheckbox selected={currentOnly} onChange={setCurrentOnly}>
-                仅看当前模型
-              </StudioCheckbox>
-              <StudioCheckbox selected={onlyFavorites} onChange={setOnlyFavorites}>
-                仅看收藏
-              </StudioCheckbox>
-            </div>
-          </div>
+        <Tabs className="workspace-tabs">
+          <Tabs.List aria-label="工作区内容">
+            <Tabs.Tab id="history">历史记录</Tabs.Tab>
+          </Tabs.List>
           <Tabs.Panel id="history">
-            <div className="empty-state">
-              <UiIcon icon={IconPhoto} size="illustration" />
-              <h2>还没有生成记录</h2>
-              <p>你的生成结果会保留在这里。</p>
-              <Button variant="secondary" onPress={() => setTab("cases")}>
-                浏览创作案例
-              </Button>
-            </div>
-          </Tabs.Panel>
-          <Tabs.Panel id="cases">
-            {current ? (
-              <article className="result-record">
-                <div className="record-header">
-                  <div>
-                    <h1>{current.title}</h1>
-                    <div className="metadata">
-                      <span>创作案例</span>
-                      <span>1:1</span>
-                      <span>家纺三件套</span>
-                    </div>
-                  </div>
-                  <Button
-                    variant="tertiary"
-                    className="small-button"
-                    onPress={() => appendCase(current)}
-                  >
-                    引用提示词
-                  </Button>
-                </div>
-                <p className="record-prompt">{current.prompt}</p>
-                <div className="reference-context">
-                  <img src={photo("set", true)} alt="三件套参考案例" width="56" height="56" />
-                  <img src={photo(current.image, true)} alt="场景参考案例" width="56" height="56" />
-                </div>
-                <img
-                  className="result-image"
-                  src={photo(current.image)}
-                  alt={current.title}
-                  width="960"
-                  height="960"
-                />
-                <div className="result-actions">
-                  <a
-                    className="neutral-button"
-                    href={photo(current.image)}
-                    download={`lycoboai-${current.title}.webp`}
-                  >
-                    <UiIcon icon={IconDownload} />
-                    下载
-                  </a>
-                  <Button
-                    variant="tertiary"
-                    aria-pressed={favorites.includes(current.id)}
-                    onPress={() => toggleFavorite(current.id)}
-                  >
-                    <UiIcon icon={IconHeart} />
-                    {favorites.includes(current.id) ? "已收藏" : "收藏"}
-                  </Button>
-                  <Button variant="tertiary" onPress={() => appendCase(current)}>
-                    引用提示词
-                  </Button>
-                </div>
-              </article>
-            ) : (
-              <div className="empty-state">
-                <h2>还没有收藏案例</h2>
-                <Button variant="secondary" onPress={() => setOnlyFavorites(false)}>
-                  查看全部案例
-                </Button>
-              </div>
-            )}
+            <GenerationHistory />
           </Tabs.Panel>
         </Tabs>
       </section>
-      <aside className="history-rail" aria-label="案例索引">
-        <h2>{tab === "history" ? "历史" : "案例"}</h2>
-        {tab === "cases" ? (
-          visibleCases.map((item) => (
-            <Button
-              key={item.id}
-              variant="tertiary"
-              className="history-thumb"
-              aria-label={`定位案例：${item.title}`}
-              aria-pressed={current?.id === item.id}
-              onPress={() => setSelectedCase(item.id)}
-            >
-              <img src={photo(item.image, true)} alt={item.title} width="96" height="96" />
-            </Button>
-          ))
-        ) : (
-          <p>暂无记录</p>
-        )}
-      </aside>
+      <HistoryIndex />
+      <BackToTopButton />
     </div>
   );
 }
-function StudioCheckbox({
-  children,
-  selected,
-  onChange,
-}: {
-  children: string;
-  selected: boolean;
-  onChange: (value: boolean) => void;
-}) {
+function BackToTopButton() {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const update = () => setVisible(window.scrollY > 240);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
+  if (!visible) return null;
   return (
-    <Checkbox isSelected={selected} onChange={onChange}>
-      <Checkbox.Content>
-        <Checkbox.Control>
-          <Checkbox.Indicator />
-        </Checkbox.Control>
-        <Label>{children}</Label>
-      </Checkbox.Content>
-    </Checkbox>
+    <Tooltip delay={0}>
+      <Button
+        isIconOnly
+        variant="tertiary"
+        className="back-to-top-button"
+        aria-label="回到顶部"
+        onPress={() =>
+          window.scrollTo({
+            top: 0,
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+              ? "instant"
+              : "smooth",
+          })
+        }
+      >
+        <UiIcon icon={IconArrowBarToUp} size="illustration" />
+      </Button>
+      <Tooltip.Content placement="bottom">回到顶部</Tooltip.Content>
+    </Tooltip>
   );
 }
 function ParameterGroup({
@@ -239,9 +193,11 @@ function ParameterGroup({
   values,
   value,
   onChange,
+  disabledValues = [],
 }: {
   label: string;
   values: readonly string[];
+  disabledValues?: readonly string[];
   value: string;
   onChange: (value: string) => void;
 }) {
@@ -253,6 +209,7 @@ function ParameterGroup({
           <Button
             key={option}
             variant="tertiary"
+            isDisabled={disabledValues.includes(option)}
             aria-label={`${label} ${option}`}
             aria-pressed={value === option}
             onPress={() => onChange(option)}

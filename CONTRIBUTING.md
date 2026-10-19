@@ -4,17 +4,16 @@
 
 1. 阅读 README、AGENTS、对应设计/架构文档。
 2. 使用固定 Node/pnpm，执行 pnpm install --frozen-lockfile。
-3. 从 main 创建 feat/<topic>、fix/<topic>、chore/<topic>、docs/<topic>；
-   Agent 可使用 codex/<topic>。初始化首次提交是直接 main 的唯一默认例外。
-4. 一次 PR 解决一个完整问题。多人并行建议每人一个 worktree/分支，避免共享 checkout 互相覆盖。
+3. 默认直接在本地 dev 开发，开始前检查状态、fetch origin，并在可快进时同步 origin/dev；保留本地未提交内容与提交。只有用户明确要求时才创建额外分支或 worktree。
+4. 一次提交解决一个完整问题。完成验证后默认只提交本地；推送、PR、合并与发布需要明确授权。
 
-采用短分支 → PR → main，不额外维护长期 dev 分支。main 应始终能通过 CI。
+长期分支仅保留 dev（日常开发）与 main（稳定版本）；按需创建或更新 dev → main 的 PR，CI 与审查通过后再合并。
 不要修改别人的未提交工作、强推共享分支或把无关格式化混进功能 PR。
 
 ## Conventional Commits
 
 ```text
-<type>(<scope>): <简短说明>
+<type>(<scope>): <imperative English subject>
 
 可选正文：问题、行为、重要约束。
 BREAKING CHANGE: 如有不兼容变更，明确迁移方法。
@@ -22,12 +21,12 @@ BREAKING CHANGE: 如有不兼容变更，明确迁移方法。
 
 type 使用 feat、fix、docs、refactor、perf、test、build、ci、chore、revert。
 scope：web、api、worker、contracts、db、queue、generation、storage、design、
-docs、deps、ci、repo、skills。说明可用中文，描述实际结果。
+docs、deps、ci、repo、skills。说明必须使用英文、以动词原形开头，不加句号。
 
 例：
-- feat(web): 增加未查看任务筛选
-- fix(worker): 避免重复回调重复生成结果
-- docs(repo): 说明本地启动与迁移流程
+- feat(web): add unseen task filter
+- fix(worker): prevent duplicate generation callbacks
+- docs(repo): document local setup and migrations
 
 pre-commit 检查暂存文件；commit-msg 校验提交格式。不要靠跳过 hook 达成交付。
 GitHub 使用 squash merge 时，PR 标题也必须满足该规范，CI 会检查标题。
@@ -46,7 +45,7 @@ GitHub 使用 squash merge 时，PR 标题也必须满足该规范，CI 会检�
 ## 多人协作的共享文件
 
 修改根依赖/锁文件、contracts、DB schema/migrations、共享 tokens 前，在 PR/任务中声明影响。
-同一个数据库迁移序列由一位作者协调；合并前先同步 main，按最新 schema 重新生成尚未合并的迁移。
+同一个数据库迁移序列由一位作者协调；合并前先同步 dev，按最新 schema 重新生成尚未合并的迁移。
 已经合并的迁移绝不改写。不要手工拼接 lockfile；解决 package.json 后用固定 pnpm 重建并审查差异。
 组件约定见 DESIGN.md，不能各自引入不同 UI 库。
 

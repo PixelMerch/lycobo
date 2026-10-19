@@ -38,3 +38,9 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:integration
 按 DESIGN.md 检查 390/768/1280/1440px、键盘操作、焦点返回、错误与空状态。
 真实生图需使用明确授权的测试账户和限额，记录 provider 返回和结果存储证据。
 不要把模拟完成动画或静态图称为端到端生成测试。
+
+## 生图 API 集成
+
+`pnpm test:integration` 现在同时运行诊断检查与 `@lycoboai/worker test:images`。
+新增检查使用真实 PostgreSQL/Redis、独立 UUID 队列、临时私有图片目录和 loopback HTTP fixture；不调用付费模型。
+配置、模型能力证据、身份签发和迁移边界见 [生图 API](image-generation-api.md)。

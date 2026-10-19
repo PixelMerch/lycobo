@@ -2,9 +2,7 @@
 
 ## 分支流程
 
-长期分支为 main（稳定）与 dev（日常集成）。新任务从最新 origin/dev 创建短分支；
-完成验证后默认只提交本地，推送和 PR 合并需要用户明确指示。日常 PR 目标为 dev，
-CI 通过后再合并、删除源分支，本地切回并同步 dev。dev 合入 main 单独由用户决定。
+长期分支为 dev（日常开发）与 main（稳定版本）。默认直接在本地 dev 开发，先检查状态、fetch origin 并在可快进时同步远端；保留本地提交与未提交内容。只有用户明确要求时才新建分支或 worktree。验证后默认只提交本地；推送、创建或更新 dev → main PR、合并和发布均按明确授权执行。提交信息采用 Angular 风格英文 `type(scope): subject`，见 CONTRIBUTING.md。
 
 ## 环境
 
@@ -14,19 +12,19 @@ pnpm install 的 prepare 会配置此仓库专用 .githooks，不修改用户全
 
 1. pnpm install --frozen-lockfile
 2. 首次将 .env.example 复制为 .env，不覆盖已有配置。
-3. pnpm dev：启动 Web 5173、API 8787。
+3. pnpm dev：启动 Web 5173、API 8787 与 Worker；是否消费生图队列由独立开关控制。
 4. 浏览器打开 http://127.0.0.1:5173。
 
 .env 只由 API/Worker/DB CLI 显式读取；前端不读取整份服务器配置。
-Vite 的 /api 代理固定指向本地 8787；更改 API_PORT 时需同步开发代理或独立配置。
+Vite 的 /api 默认代理到本地 8787，可通过 DEV_API_PROXY_TARGET 调整；更改 API_PORT 时需同步代理。
 本地 preview 仅预览静态产物，不自动代理 API；正式使用网关。
 
 ## Compose 开发模式
 
-运行 `docker compose up --build` 可同时启动 Web、API、PostgreSQL 和 Redis；后续直接 `docker compose up`。
-Web 地址为 http://127.0.0.1:5173/，API 地址为 http://127.0.0.1:8787/api；启动日志会输出访问地址。
-后台运行使用 `docker compose up -d --build --wait`，通过 `docker compose logs -f web api` 跟踪日志。
-不要同时运行占用相同端口的本地 `pnpm dev`。
+运行 `docker compose up --build` 可同时启动 Web、API、Worker、PostgreSQL 和 Redis；后续直接 `docker compose up`。
+Web 地址为 http://localhost:8080/，API 地址为 http://127.0.0.1:8788/api。
+后台运行使用 `docker compose up -d --build --wait`，通过 `docker compose logs -f web api worker` 跟踪日志。
+默认 Web/API 端口与本地 `pnpm dev` 不冲突；同时运行时须保持数据库、队列和图片目录一致。
 
 Web 的 src、public、index.html、vite.config.ts，以及 API 和 contracts 的 src 以只读方式挂载到容器。
 修改页面 TSX/CSS 后 Vite 自动热更新；容器启用文件轮询以兼容 Docker Desktop。API 使用 Node watch 自动重启。
@@ -34,8 +32,8 @@ Web 的 src、public、index.html、vite.config.ts，以及 API 和 contracts �
 Vite 在容器内通过 api:8787 代理 /api，本地 pnpm dev 继续使用 127.0.0.1:8787。
 DEV_API_PROXY_TARGET 和 DEV_USE_POLLING 仅用于 Vite 开发服务器配置，不作为浏览器环境变量公开。
 
-容器端口只发布到宿主机 127.0.0.1。开发镜像不包含本地 .env；API 使用 Compose 声明的开发配置。
-当前 API 没有数据库业务读写，Worker 不随 Compose 自动启动；服务监听不代表已接通真实生成。
+容器端口只发布到宿主机 127.0.0.1。开发镜像不包含本地 .env；API/Worker 通过 env_file 读取本地配置，Compose 覆盖容器内数据库、Redis 和图片目录。
+API 已接入图片上传、任务与素材查询；独立 Worker 消费生图队列。服务监听不等于已配置模型，首次启用需完成迁移、本地身份签发与服务商 key 配置，详见 image-generation-api.md。
 Compose 不自动迁移数据库或删除数据卷。仅需基础设施时继续使用 `pnpm infra:up`。
 
 ## 可选基础设施
@@ -54,7 +52,8 @@ pnpm infra:up 只启动 PostgreSQL/Redis 并等待健康检查；pnpm infra:down
 Worker：
 - 默认 WORKER_ENABLED=false，不连接 Redis。
 - 本地基础设施启动后使用 WORKER_ENABLED=true pnpm dev:worker。
-- 当前消费者仅支持 healthcheck 诊断队列，不能处理 generation。
+- 生图使用独立的 IMAGE_WORKER_ENABLED 与 IMAGE_GENERATION_ENABLED 开关，配置 VAKV_API_KEY 后执行真实模型调用。
+- pnpm --filter @lycoboai/api images:setup 初始化本地工作台身份、图片目录与开关；执行前先完成迁移。
 - 日志说明 Worker 就绪不代表业务生图就绪。
 
 ## 日常命令
