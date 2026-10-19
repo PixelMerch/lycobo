@@ -883,10 +883,10 @@ small {
   pointer-events: none;
 }
 .reference-tile .remove-reference {
-  min-width: 24px;
-  width: 24px;
-  height: 24px;
-  min-height: 24px;
+  min-width: 21.6px;
+  width: 21.6px;
+  height: 21.6px;
+  min-height: 21.6px;
   padding: 0;
   position: absolute;
   top: 0;
