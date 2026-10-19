@@ -133,7 +133,7 @@ function CaseDetail({ item, onClose }: { item: StudioCase | null; onClose: () =>
                   <p>{item.prompt}</p>
                   {replaceModel ? (
                     <div className="replace-confirm" role="alert">
-                      <p>此模型已有草稿，是否替换参考图与画面要求？</p>
+                      <p>此模型已有草稿，是否替换参考图与提示词？</p>
                       <Button variant="secondary" onPress={() => setReplaceModel(null)}>
                         保留草稿
                       </Button>
