@@ -9,7 +9,7 @@ test("drafts, references and output choices stay independent per model and survi
   page,
 }) => {
   await page.goto("/create/gpt-image");
-  const prompt = page.getByLabel("画面要求", { exact: true });
+  const prompt = page.getByLabel("提示词", { exact: true });
   await prompt.fill("保留我的商品草稿");
   await page.getByRole("button", { name: "展开全部图片比例", exact: true }).click();
   await page.getByRole("button", { name: "图片比例 3:4", exact: true }).click();
@@ -66,7 +66,7 @@ test("case navigation never replaces draft, favorites filter and download operat
       generationRequests.push(request.url());
   });
   await page.goto("/create/gpt-image");
-  const prompt = page.getByLabel("画面要求", { exact: true });
+  const prompt = page.getByLabel("提示词", { exact: true });
   await prompt.fill("不要覆盖这段输入");
   await page.getByRole("button", { name: "定位案例：浅紫配色" }).click();
   await expect(prompt).toHaveValue("不要覆盖这段输入");
@@ -90,7 +90,7 @@ test("case navigation never replaces draft, favorites filter and download operat
 
 test("case reuse requires confirmation before replacing an existing draft", async ({ page }) => {
   await page.goto("/create/gpt-image");
-  await page.getByLabel("画面要求", { exact: true }).fill("重要草稿");
+  await page.getByLabel("提示词", { exact: true }).fill("重要草稿");
   await page.getByRole("link", { name: "首页", exact: true }).first().click();
   await page.getByRole("button", { name: "查看案例：原木卧室" }).click();
   const dialog = page.getByRole("dialog", { name: "原木卧室", exact: true });
@@ -102,7 +102,7 @@ test("case reuse requires confirmation before replacing an existing draft", asyn
     .getByRole("link", { name: /进入创作/ })
     .first()
     .click();
-  await expect(page.getByLabel("画面要求", { exact: true })).toHaveValue("重要草稿");
+  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("重要草稿");
 });
 
 test("responsive pages, model chooser and global tasks stay reachable without horizontal overflow", async ({
@@ -142,7 +142,7 @@ test("compact model cards open from their covers and case cards restore focus", 
   await expect(caseCard).toBeFocused();
   await chooser.getByRole("button", { name: "进入 香蕉模型 创作" }).locator("img").click();
   await expect(page).toHaveURL(/\/create\/banana$/);
-  await expect(page.getByLabel("画面要求", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
 });
 
 test("extended ratios preserve selection and composer scroll stays independent", async ({
@@ -187,4 +187,38 @@ test("extended ratios preserve selection and composer scroll stays independent",
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "更多图片比例", exact: true }).click();
   await expect(picker).toBeInViewport({ ratio: 1 });
+});
+
+test("reference limit hides add control and clearing keeps prompt and other model drafts", async ({
+  page,
+}) => {
+  await page.goto("/create/gpt-image");
+  const prompt = page.getByLabel("提示词", { exact: true });
+  await prompt.fill("保留提示词");
+  await page.getByLabel("添加参考图片", { exact: true }).setInputFiles(
+    Array.from({ length: 5 }, (_, i) => ({
+      name: `quilt-${i}.png`,
+      mimeType: "image/png",
+      buffer: png,
+    })),
+  );
+  await expect(page.locator(".reference-tile")).toHaveCount(5);
+  await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "移除参考图：quilt-0.png", exact: true }).click();
+  await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /创作模型/ }).click();
+  await page.getByRole("option", { name: "香蕉模型", exact: true }).click();
+  await page
+    .getByLabel("添加参考图片", { exact: true })
+    .setInputFiles({ name: "banana.png", mimeType: "image/png", buffer: png });
+  await expect(page.locator(".reference-tile")).toHaveCount(1);
+  await page.getByRole("button", { name: /创作模型/ }).click();
+  await page.getByRole("option", { name: "GPT Image", exact: true }).click();
+  await page.getByRole("button", { name: "清除全部参考图片", exact: true }).click();
+  await expect(page.locator(".reference-tile")).toHaveCount(0);
+  await expect(prompt).toHaveValue("保留提示词");
+  await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /创作模型/ }).click();
+  await page.getByRole("option", { name: "香蕉模型", exact: true }).click();
+  await expect(page.getByRole("img", { name: "banana.png", exact: true })).toBeVisible();
 });
