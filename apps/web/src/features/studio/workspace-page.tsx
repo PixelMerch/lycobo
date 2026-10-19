@@ -306,11 +306,11 @@ function RatioPicker({ value, onChange }: { value: string; onChange: (ratio: str
               <Button
                 isIconOnly
                 variant="tertiary"
-                className="icon-button"
+                className="icon-button ratio-close"
                 aria-label="关闭图片比例"
                 onPress={() => setOpen(false)}
               >
-                <UiIcon icon={IconX} />
+                <UiIcon icon={IconX} size="action" />
               </Button>
             </div>
             <div className="parameter-options ratio-options ratio-extra-options">
