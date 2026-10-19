@@ -5,9 +5,14 @@
 
 ## 合并
 
-短分支向 main 提 PR，填写模板，运行 pnpm check:release。
-契约/数据库/计费变更安排领域审查；合并前同步 main，不覆盖其他作者的迁移。
-推荐 squash merge，PR 标题采用 Conventional Commits。保护 main 的规则需管理员在远程实际开启。
+日常开发从最新 origin/dev 创建短分支，完成验证后默认只做本地提交。
+用户明确要求推送、PR 或合并后，短分支向 dev 提 PR，填写模板，运行 pnpm check:release。
+main 为稳定分支，只有用户明确要求发布集成时才由 dev 向 main 提 PR，不自动部署。
+契约/数据库/计费变更安排领域审查；合并前同步目标分支，不覆盖其他作者的迁移。
+PR 标题采用 Conventional Commits，合并前必须等 CI 通过并满足目标分支保护。
+本次整合使用 merge commit 保留各本地分支的提交祖先关系；后续普通功能 PR 可使用 squash。
+合并后删除源分支，本地回到 dev 并快进同步 origin/dev，确认代码已纳入后再清理本地短分支。
+长期仅保留 main 与 dev；不删除未核实合入的独立工作。
 
 ## 版本与构建
 
