@@ -86,6 +86,8 @@ const emptyDraft = (): Draft => ({
 export const useStudioStore = create<{
   chooserOpen: boolean;
   setChooserOpen: (open: boolean) => void;
+  activeHistoryId: string | null;
+  setActiveHistoryId: (id: string) => void;
   activeModel: ModelId;
   setActiveModel: (model: ModelId) => void;
   drafts: Record<ModelId, Draft>;
@@ -98,6 +100,8 @@ export const useStudioStore = create<{
 }>((set) => ({
   chooserOpen: false,
   setChooserOpen: (chooserOpen) => set({ chooserOpen }),
+  activeHistoryId: null,
+  setActiveHistoryId: (activeHistoryId) => set({ activeHistoryId }),
   activeModel: "gpt-image-2",
   setActiveModel: (activeModel) => set({ activeModel }),
   drafts: {

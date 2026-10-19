@@ -275,3 +275,5 @@ HeroUI 基础变量固定为 `--radius: 8px`、`--field-radius: 10px`。以安�
 验收：主题只使用本规范；渐变方向和两端正确；无冲突颜色／圆角；HeroUI 弹层焦点和键盘正常；交互几何稳定；高频参数可达；草稿可恢复；窄屏和减少动态效果通过；真实实现状态如实报告。
 
 参考：[HeroUI v3 Colors](https://heroui.com/en/docs/react/getting-started/colors)、[HeroUI v3 Styling & Theming](https://heroui.com/en/docs/react/migration/styling)。项目具体值与范围以本文件为准。
+
+历史记录的任务状态位于左侧，右侧紧凑排列任务 ID、时间、模型、比例、分辨率与张数。右侧历史缩略图点击定位中间对应任务，页面滚动同步选中项；选中使用 2px 浅紫主题色边框，并预留透明边框避免尺寸变化。历史索引顶部 padding 为 6px（原 12px 减半），缩略图不额外添加顶部 margin。
