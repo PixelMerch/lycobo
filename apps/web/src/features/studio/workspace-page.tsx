@@ -9,7 +9,7 @@ import {
   IconSparkles,
   IconX,
 } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useNavigate, useParams } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { ModelSelect } from "./model-select";
@@ -270,11 +270,25 @@ function ParameterGroup({
 const commonRatios = ["1:1", "16:9", "2:1", "3:2", "4:3"];
 const additionalRatios = ["21:9", "9:16", "1:2", "2:3", "3:4", "9:21"];
 
+function subscribeRatioViewport(onChange: () => void) {
+  const media = window.matchMedia("(min-width: 900px)");
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+}
+const getRatioViewport = () => window.matchMedia("(min-width: 900px)").matches;
+const getServerRatioViewport = () => false;
+
 function RatioPicker({ value, onChange }: { value: string; onChange: (ratio: string) => void }) {
   const [open, setOpen] = useState(false);
+  const groupRef = useRef<HTMLElement>(null);
+  const wideViewport = useSyncExternalStore(
+    subscribeRatioViewport,
+    getRatioViewport,
+    getServerRatioViewport,
+  );
   const extendedSelected = additionalRatios.includes(value);
   return (
-    <section className="parameter-group ratio-group" aria-label="图片比例">
+    <section ref={groupRef} className="parameter-group ratio-group" aria-label="图片比例">
       <Popover isOpen={open} onOpenChange={setOpen}>
         <div className="ratio-heading">
           <h2>图片比例</h2>
@@ -283,7 +297,13 @@ function RatioPicker({ value, onChange }: { value: string; onChange: (ratio: str
             <UiIcon icon={IconChevronRight} size="small" />
           </Button>
         </div>
-        <Popover.Content placement="bottom start" className="ratio-popover">
+        <Popover.Content
+          triggerRef={groupRef}
+          placement={wideViewport ? "right top" : "bottom start"}
+          offset={wideViewport ? 32 : 8}
+          shouldFlip={!wideViewport}
+          className="ratio-popover"
+        >
           <Popover.Dialog className="ratio-popover-dialog" aria-label="更多图片比例">
             <div className="ratio-popover-heading">
               <Popover.Heading>图片比例</Popover.Heading>
