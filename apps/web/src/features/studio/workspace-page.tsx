@@ -2,7 +2,6 @@ import { Button, Label, Popover, Tabs, TextArea, TextField } from "@heroui/react
 import {
   IconChevronRight,
   IconLayersIntersect,
-  IconPhoto,
   IconPlus,
   IconSparkles,
   IconTrash,
@@ -10,6 +9,13 @@ import {
 } from "@tabler/icons-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { UiIcon } from "../../components/ui-icon";
+import {
+  hasPendingSubmission,
+  useGenerateImage,
+  useImageModels,
+  useImageSession,
+} from "./generation-client";
+import { GenerationHistory, HistoryIndex } from "./generation-history";
 import { ModelSelect } from "./model-select";
 import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "./studio-state";
 
@@ -28,7 +34,20 @@ function Workspace({ model }: { model: ModelId }) {
   const setActiveModel = useStudioStore((s) => s.setActiveModel);
   const visitModel = useStudioStore((s) => s.visitModel);
   const inputId = useRef<HTMLTextAreaElement>(null);
-  const canGenerate = draft.references.length > 0 && draft.prompt.trim().length > 0;
+  const session = useImageSession();
+  const modelQuery = useImageModels();
+  const generate = useGenerateImage();
+  const resolutions =
+    modelQuery.data?.models.find((entry) => entry.id === model)?.enabledResolutions ?? [];
+  const pending = hasPendingSubmission(session.data);
+  const canGenerate =
+    session.isSuccess &&
+    modelQuery.data?.enabled &&
+    !generate.isPending &&
+    (pending ||
+      (draft.prompt.trim().length > 0 &&
+        resolutions.some((value) => value === draft.resolution) &&
+        (!draft.references.length || modelQuery.data.editsEnabled)));
   useEffect(() => {
     visitModel(model);
   }, [model, visitModel]);
@@ -55,14 +74,44 @@ function Workspace({ model }: { model: ModelId }) {
               label={field.label}
               values={field.values}
               value={draft[field.key]}
+              disabledValues={
+                field.key === "resolution"
+                  ? field.values.filter(
+                      (value) => !resolutions.some((enabled) => enabled === value),
+                    )
+                  : []
+              }
               onChange={(value) => updateDraft(model, { [field.key]: value })}
             />
           ))}
         </section>
         <div className="generate-area">
-          <Button className="primary-action" isDisabled={!canGenerate}>
+          {(session.isError || modelQuery.isError || generate.isError) && (
+            <p className="generation-message" role="alert">
+              {session.error?.message ??
+                modelQuery.error?.message ??
+                (pending
+                  ? "提交结果待确认，请点击确认上次提交，避免重复生成。"
+                  : generate.error?.message)}
+            </p>
+          )}
+          {modelQuery.data && !modelQuery.data.enabled && (
+            <p className="generation-message" role="status">
+              生图服务尚未启用
+            </p>
+          )}
+          {draft.references.length > 0 && modelQuery.data && !modelQuery.data.editsEnabled && (
+            <p className="generation-message" role="status">
+              当前服务尚未启用参考图编辑，可先不上传图片进行创作。
+            </p>
+          )}
+          <Button
+            className="primary-action"
+            isDisabled={!canGenerate}
+            onPress={() => generate.mutate({ model, draft })}
+          >
             <UiIcon icon={IconSparkles} />
-            立即生成
+            {generate.isPending ? "正在提交…" : pending ? "确认上次提交" : "立即生成"}
           </Button>
         </div>
       </section>
@@ -75,18 +124,11 @@ function Workspace({ model }: { model: ModelId }) {
             </Tabs.Tab>
           </Tabs.List>
           <Tabs.Panel id="history">
-            <div className="empty-state">
-              <UiIcon icon={IconPhoto} size="illustration" />
-              <h2>还没有生成记录</h2>
-              <p>你的生成结果会保留在这里。</p>
-            </div>
+            <GenerationHistory />
           </Tabs.Panel>
         </Tabs>
       </section>
-      <aside className="history-rail" aria-label="历史索引">
-        <h2>历史</h2>
-        <p>暂无记录</p>
-      </aside>
+      <HistoryIndex />
     </div>
   );
 }
@@ -95,9 +137,11 @@ function ParameterGroup({
   values,
   value,
   onChange,
+  disabledValues = [],
 }: {
   label: string;
   values: readonly string[];
+  disabledValues?: readonly string[];
   value: string;
   onChange: (value: string) => void;
 }) {
@@ -109,6 +153,7 @@ function ParameterGroup({
           <Button
             key={option}
             variant="tertiary"
+            isDisabled={disabledValues.includes(option)}
             aria-label={`${label} ${option}`}
             aria-pressed={value === option}
             onPress={() => onChange(option)}

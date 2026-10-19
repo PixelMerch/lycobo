@@ -107,6 +107,9 @@ try {
   await events.waitUntilReady();
   await worker.waitUntilReady();
   const first = await repository.provision(`test-${runId}`, "test-team", 20);
+  const renewed = await repository.provision(`test-${runId}`, "test-team", 999, true);
+  assert.equal(renewed.organizationId, first.organizationId);
+  assert.equal((await repository.authenticate(renewed.token))?.userId, first.userId);
   organizations.push(first.organizationId);
   users.push(first.userId);
   const second = await repository.provision(`other-${runId}`, "other-team", 10);
@@ -132,7 +135,7 @@ try {
       await app.request("/api/v1/image-tasks", {
         method: "POST",
         headers: { ...headers, "Idempotency-Key": crypto.randomUUID() },
-        body: JSON.stringify({ ...input("test"), model: "gpt-image-2.5-flare" }),
+        body: JSON.stringify({ ...input("test"), model: "gpt-image-2.5-flare", resolution: "4K" }),
       })
     ).status,
     400,
@@ -290,6 +293,78 @@ try {
   assert.equal((await repository.get(first, crashed.id))?.status, "needs_reconciliation");
   assert.equal(await repository.claim(crashItem.id, "worker-c", 1000), null);
   assert.equal(calls, 4);
+  const browserApp = createApp(() => {}, {
+    repository,
+    store,
+    enabled: true,
+    editsEnabled: true,
+    unitCredits: 1,
+    validate: (value) => validateModelInput(value, {}, true),
+    resolutions: supportedResolutions,
+    session: { token: first.token, origins: ["http://localhost:5173"] },
+  });
+  assert.equal(
+    (
+      await browserApp.request("/api/v1/image-session", {
+        method: "POST",
+        headers: { Origin: "https://attacker.example" },
+      })
+    ).status,
+    401,
+  );
+  const login = await browserApp.request("/api/v1/image-session", {
+    method: "POST",
+    headers: { Origin: "http://localhost:5173" },
+  });
+  assert.equal(login.status, 200);
+  const cookie = login.headers.get("set-cookie")?.split(";")[0];
+  assert.ok(cookie);
+  assert.match(login.headers.get("set-cookie") ?? "", /HttpOnly/i);
+  assert.match(login.headers.get("set-cookie") ?? "", /SameSite=Strict/i);
+  const cookieHeaders = {
+    Cookie: cookie,
+    Origin: "http://localhost:5173",
+    "Content-Type": "application/json",
+  };
+  assert.equal(
+    (
+      await browserApp.request("/api/v1/image-tasks", {
+        method: "POST",
+        headers: { Cookie: cookie, Origin: "https://attacker.example" },
+        body: "{}",
+      })
+    ).status,
+    401,
+  );
+  for (const model of [
+    "gpt-image-2",
+    "gpt-image-2-4K",
+    "gpt-image-2.5",
+    "gpt-image-2.5-flare",
+    "gpt-image-2.5-sunburst",
+  ] as const) {
+    const submitted = await browserApp.request("/api/v1/image-tasks", {
+      method: "POST",
+      headers: { ...cookieHeaders, "Idempotency-Key": crypto.randomUUID() },
+      body: JSON.stringify({ ...input("browser-flow"), model }),
+    });
+    assert.equal(submitted.status, 202);
+    const task = z.object({ id: z.uuid() }).parse(await submitted.json());
+    await dispatch();
+    assert.equal((await repository.get(first, task.id))?.status, "succeeded");
+  }
+  const library = await browserApp.request("/api/v1/image-assets", { headers: { Cookie: cookie } });
+  const saved = z
+    .object({ data: z.array(z.object({ id: z.uuid(), kind: z.string() })) })
+    .parse(await library.json());
+  assert.equal(saved.data.filter((asset) => asset.kind === "output").length, 7);
+  assert.equal((await repository.listAssets(second, 30)).length, 0);
+  const thumbnail = await browserApp.request(
+    `/api/v1/image-assets/${asset.id}/content?thumbnail=1`,
+    { headers: { Cookie: cookie } },
+  );
+  assert.equal(thumbnail.status, 200);
+  assert.equal(thumbnail.headers.get("content-type"), "image/png");
   // Retry the already-reserved idempotency key even when the available balance has become zero.
   await sql`update organizations set available_credits=0 where id=${first.organizationId}`;
   assert.equal((await repository.create(first, input("mixed", 2), key, 1)).replayed, true);

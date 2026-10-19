@@ -6,7 +6,7 @@
 | 路径 | 职责 |
 | --- | --- |
 | apps/web/src/app | 路由、应用壳、providers |
-| apps/web/src/features/studio | 紫色首页、模型选择层、图片创作工作台与客户端草稿；已删除旧 design 预览目录 |
+| apps/web/src/features/studio | 紫色首页、五模型工作台、客户端草稿、真实生图查询与素材库 |
 | apps/web/src/lib | 浏览器 API 客户端与工具 |
 | apps/web/src/styles | 共享设计 tokens 与全局基础样式 |
 | apps/api/src | Hono 入口、应用工厂、配置与组织隔离的生图 feature API |
@@ -58,4 +58,4 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 - apps/worker/src/image-worker.ts / image-processor.ts：独立生图队列、投递器、并发执行与租约处理。
 - packages/storage/src/image-store.ts：服务端图片解码、去元数据、私有 PNG 文件与实际尺寸/哈希。
 
-接口与当前未接通的生产能力边界见 [生图 API 文档](docs/image-generation-api.md)。
+接口、本地工作台接入及正式登录等尚未完成的生产能力边界见 [生图 API 文档](docs/image-generation-api.md)。

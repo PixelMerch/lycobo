@@ -6,6 +6,7 @@ import { imageStore } from "@lycoboai/storage";
 import pino from "pino";
 import { createApp } from "./app";
 import { readEnv } from "./env";
+import { readWorkbenchSession } from "./features/images/session";
 
 const env = readEnv(process.env);
 const logger = pino({ level: env.LOG_LEVEL });
@@ -24,6 +25,8 @@ const app = createApp(
         store,
         enabled: policy.enabled,
         unitCredits: policy.unitCredits,
+        editsEnabled: policy.editsEnabled,
+        session: readWorkbenchSession(process.env),
         validate: (input) => validateModelInput(input, policy.overrides, policy.editsEnabled),
         resolutions: (model) => supportedResolutions(model, policy.overrides),
       }

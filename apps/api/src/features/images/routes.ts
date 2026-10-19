@@ -6,13 +6,22 @@ import {
 import { type ImagePrincipal, type ImageRepository, ImageRepositoryError } from "@lycoboai/db";
 import { type ImageStore, ImageValidationError, maxImageBytes } from "@lycoboai/storage";
 import { type Context, Hono } from "hono";
+import sharp from "sharp";
 import { z } from "zod";
+import {
+  setWorkbenchCookie,
+  trustedWorkbenchRequest,
+  type WorkbenchSession,
+  workbenchPrincipal,
+} from "./session";
 
 export type ImageApiDependencies = {
   repository: ImageRepository;
   store: ImageStore;
   enabled: boolean;
   unitCredits: number;
+  editsEnabled?: boolean;
+  session?: WorkbenchSession | undefined;
   // Capability policy is shared with the Worker and injected at startup.
   validate: (input: z.infer<typeof imageGenerationInputSchema>) => void;
   resolutions: (model: z.infer<typeof imageGenerationInputSchema>["model"]) => string[];
@@ -27,11 +36,16 @@ export function imageRoutes(deps: ImageApiDependencies) {
     message: string,
     status: 400 | 401 | 403 | 404 | 409 | 413 | 503,
   ) => c.json({ error: { code, message, requestId: c.get("requestId") } }, status);
+  app.post("/image-session", async (c) => {
+    if (!deps.session || !trustedWorkbenchRequest(c, deps.session))
+      return fail(c, "UNAUTHORIZED", "请先登录工作台", 401);
+    const principal = await deps.repository.authenticate(deps.session.token);
+    if (!principal) return fail(c, "UNAUTHORIZED", "工作台身份已过期，请重新配置", 401);
+    setWorkbenchCookie(c, deps.session);
+    return c.json({ userId: principal.userId, organizationId: principal.organizationId });
+  });
   app.use("*", async (c, next) => {
-    const auth = c.req.header("Authorization");
-    const principal = auth?.startsWith("Bearer ")
-      ? await deps.repository.authenticate(auth.slice(7))
-      : null;
+    const principal = await workbenchPrincipal(c, deps.repository, deps.session);
     if (!principal) return fail(c, "UNAUTHORIZED", "请先验证身份", 401);
     c.set("principal", principal);
     await next();
@@ -54,6 +68,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
   app.get("/image-models", (c) =>
     c.json({
       enabled: deps.enabled,
+      editsEnabled: deps.editsEnabled ?? false,
       unitCredits: deps.unitCredits,
       models: imageModelCatalog.map((m) => ({ ...m, enabledResolutions: deps.resolutions(m.id) })),
     }),
@@ -97,6 +112,20 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const job = await deps.repository.get(c.get("principal"), parsed.data);
     return job ? c.json(job) : fail(c, "NOT_FOUND", "任务不存在", 404);
   });
+  app.get("/image-assets", async (c) => {
+    const limit = z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .default(30)
+      .safeParse(c.req.query("limit"));
+    const before = id.optional().safeParse(c.req.query("before"));
+    if (!limit.success || !before.success) return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
+    return c.json({
+      data: await deps.repository.listAssets(c.get("principal"), limit.data, before.data),
+    });
+  });
   app.post("/image-assets", async (c) => {
     if (!["image/png", "image/jpeg", "image/webp"].includes(c.req.header("Content-Type") ?? ""))
       return fail(c, "INVALID_IMAGE", "仅支持 PNG、JPEG、WebP", 400);
@@ -132,7 +161,14 @@ export function imageRoutes(deps: ImageApiDependencies) {
     if (!parsed.success) return fail(c, "NOT_FOUND", "图片不存在", 404);
     const asset = await deps.repository.asset(c.get("principal"), parsed.data);
     if (!asset) return fail(c, "NOT_FOUND", "图片不存在", 404);
-    const bytes = await deps.store.read(asset);
+    const original = await deps.store.read(asset);
+    const bytes =
+      c.req.query("thumbnail") === "1"
+        ? await sharp(original)
+            .resize({ width: 512, height: 512, fit: "inside", withoutEnlargement: true })
+            .png()
+            .toBuffer()
+        : original;
     c.header("Content-Type", "image/png");
     c.header("Content-Disposition", `inline; filename="${asset.id}.png"`);
     return c.body(new Uint8Array(bytes));

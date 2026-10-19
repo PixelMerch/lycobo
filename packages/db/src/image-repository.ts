@@ -58,17 +58,30 @@ export function openImageRepository(url: string) {
       from image_job_items i left join image_assets a on a.id=i.output_asset_id and a.organization_id=i.organization_id where i.job_id=j.id) as items`;
   return {
     close: () => sql.end({ timeout: 5 }),
-    async provision(subject: string, organizationName: string, credits: number) {
+    async provision(
+      subject: string,
+      organizationName: string,
+      credits: number,
+      reuseOrganization = false,
+    ) {
       const token = randomBytes(32).toString("base64url");
       return sql.begin(async (tx) => {
         const [user] =
           await tx`insert into users (auth_subject) values (${subject}) on conflict (auth_subject)
           do update set auth_subject=excluded.auth_subject returning id`;
         if (!user) throw new Error("PROVISION_FAILED");
-        const [org] =
-          await tx`insert into organizations (name,available_credits) values (${organizationName},${credits}) returning id`;
-        if (!org) throw new Error("PROVISION_FAILED");
-        await tx`insert into organization_members (organization_id,user_id,role) values (${org.id},${user.id},'admin')`;
+        let org = reuseOrganization
+          ? (
+              await tx`select o.id from organizations o join organization_members m on m.organization_id=o.id
+              where m.user_id=${user.id} and m.role='admin' and o.name=${organizationName} order by o.created_at limit 1`
+            )[0]
+          : undefined;
+        if (!org) {
+          [org] =
+            await tx`insert into organizations (name,available_credits) values (${organizationName},${credits}) returning id`;
+          if (!org) throw new Error("PROVISION_FAILED");
+          await tx`insert into organization_members (organization_id,user_id,role) values (${org.id},${user.id},'admin')`;
+        }
         const [key] =
           await tx`insert into image_api_keys (organization_id,user_id,token_hash,expires_at)
           values (${org.id},${user.id},${hash(token)},now()+interval '7 days') returning id`;
@@ -142,6 +155,14 @@ export function openImageRepository(url: string) {
     async addReference(scope: ImageScope, image: StoredImage) {
       await sql`insert into image_assets (id,organization_id,user_id,kind,object_key,mime_type,width,height,bytes,sha256)
         values (${image.id},${scope.organizationId},${scope.userId},'reference',${image.objectKey},${image.mimeType},${image.width},${image.height},${image.bytes},${image.sha256})`;
+    },
+    async listAssets(scope: ImageScope, limit: number, before?: string) {
+      return sql`select a.id,a.kind,a.width,a.height,a.bytes,a.created_at,j.model,j.prompt
+        from image_assets a left join image_job_items i on i.output_asset_id=a.id and i.organization_id=a.organization_id
+        left join image_jobs j on j.id=i.job_id and j.organization_id=a.organization_id
+        where a.organization_id=${scope.organizationId}
+        ${before ? sql`and (a.created_at,a.id) < (select created_at,id from image_assets where id=${before} and organization_id=${scope.organizationId})` : sql``}
+        order by a.created_at desc,a.id desc limit ${limit}`;
     },
     async asset(scope: ImageScope, id: string): Promise<StoredImage | null> {
       const [row] =

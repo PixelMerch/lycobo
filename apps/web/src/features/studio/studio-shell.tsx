@@ -18,6 +18,7 @@ import { type CSSProperties, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { CaseGallery } from "./case-gallery";
+import { GenerationHistory } from "./generation-history";
 import { cases, models, photo, useStudioStore } from "./studio-state";
 
 const chooserLayout: CSSProperties & { "--tool-columns": number } = {
@@ -295,11 +296,7 @@ function TaskCenter() {
               <Drawer.CloseTrigger aria-label="关闭任务中心" />
             </Drawer.Header>
             <Drawer.Body>
-              <div className="empty-state">
-                <UiIcon icon={IconListCheck} size="illustration" />
-                <h2>暂无任务</h2>
-                <p>提交后的任务会显示在这里。</p>
-              </div>
+              <GenerationHistory compact />
             </Drawer.Body>
           </Drawer.Dialog>
         </Drawer.Content>

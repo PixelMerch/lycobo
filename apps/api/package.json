@@ -8,7 +8,8 @@
     "build": "tsup",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "images:provision": "node --env-file-if-exists=../../.env --import tsx scripts/provision-images.ts"
+    "images:provision": "node --env-file-if-exists=../../.env --import tsx scripts/provision-images.ts",
+    "images:setup": "node --env-file-if-exists=../../.env --import tsx scripts/setup-workbench.ts"
   },
   "dependencies": {
     "hono": "4.13.13",

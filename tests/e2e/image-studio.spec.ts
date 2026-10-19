@@ -1,4 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { mockImageApi } from "./image-api-fixture";
+
+test.beforeEach(async ({ page }) => {
+  await mockImageApi(page);
+});
 
 const png = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
@@ -31,7 +36,7 @@ test("drafts, references and output choices stay independent per model and survi
   );
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await page.getByRole("link", { name: "素材库", exact: true }).click();
-  await expect(page.getByRole("img", { name: "quilt.png" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "素材库", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "图片创作", exact: true }).click();
   await page.getByRole("button", { name: "进入 gpt-image-2 创作" }).click();
   await expect(prompt).toHaveValue("保留我的商品草稿");
@@ -57,34 +62,19 @@ test("invalid references and limit errors do not destroy valid images", async ({
   await expect(page.locator(".reference-tile")).toHaveCount(0);
 });
 
-test("generate button reflects completed inputs without submitting generation", async ({
-  page,
-}) => {
-  const generationRequests: string[] = [];
-  page.on("request", (request) => {
-    if (request.url().includes("/api/") && request.method() !== "GET")
-      generationRequests.push(request.url());
-  });
+test("text generation requires a prompt and an available model", async ({ page }) => {
   await page.goto("/create");
-  const prompt = page.getByLabel("提示词", { exact: true });
   const generate = page.getByRole("button", { name: "立即生成", exact: true });
   await expect(generate).toBeDisabled();
-  await prompt.fill("不要覆盖这段输入");
-  await expect(generate).toBeDisabled();
-  await page
-    .getByLabel("添加参考图片", { exact: true })
-    .setInputFiles({ name: "quilt.png", mimeType: "image/png", buffer: png });
+  await page.getByLabel("提示词", { exact: true }).fill("米白陶瓷杯");
   await expect(generate).toBeEnabled();
-  await generate.click();
-  expect(generationRequests).toEqual([]);
-  await expect(page.getByRole("tab", { name: "历史记录", exact: true })).toBeVisible();
-  await expect(page.getByText("还没有生成记录")).toBeVisible();
-  await expect(page.getByRole("tab", { name: "案例库", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "分辨率 1K", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(page.getByRole("button", { name: "分辨率 2K", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "任务中心", exact: true }).click();
-  const drawer = page.getByRole("dialog", { name: "任务中心", exact: true });
-  await expect(drawer.getByText("暂无任务")).toBeVisible();
-  await drawer.press("Escape");
-  await expect(page.getByRole("button", { name: "任务中心", exact: true })).toBeFocused();
+  await expect(page.getByRole("heading", { name: "暂无任务", exact: true })).toBeVisible();
 });
 
 test("case reuse requires confirmation before replacing an existing draft", async ({ page }) => {

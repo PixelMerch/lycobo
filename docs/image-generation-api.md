@@ -1,6 +1,6 @@
 # Vakv 生图 API、队列与持久化
 
-本实现是服务端接入，不修改前端。默认关闭生图，未使用真实密钥调用付费模型。
+生图服务已接到当前工作台；服务端默认关闭，需显式配置后启用。本地真实调用验收见文末。
 接口以组织为数据边界，用户身份来自服务端验证的访问令牌与数据库成员关系；请求体不得提供 userId、organizationId 或 workerId。
 既有 `/api/v1/tasks` 契约和前端演示保持原状，新接口使用独立路径与新增数据库表。
 
@@ -12,10 +12,11 @@
 | --- | --- | --- |
 | gpt-image-2 | 仅 1K | 1K |
 | gpt-image-2-4K | 1K、2K、4K；高分辨率为增强放大，不是原生 4K | 1K、2K、4K |
-| gpt-image-2.5-flare | 价格目录存在，文档及价格接口未提供分辨率能力 | 暂不开放 |
-| gpt-image-2.5-sunburst | 价格目录存在，文档及价格接口未提供分辨率能力 | 暂不开放 |
+| gpt-image-2.5 | 本次 1K 实测成功 | 1K |
+| gpt-image-2.5-flare | 本次 1K 实测成功 | 1K |
+| gpt-image-2.5-sunburst | 本次 1K 实测成功 | 1K |
 
-四个模型共用 `POST /v1/images/generations` 适配器。未知渠道完成代码适配，但须向服务商确认能力后由运维设置 `VAKV_CAPABILITY_OVERRIDES`，例如仅在确认后设置某渠道的 `["1K"]`；不能通过配置扩展基础版已知的 1K 限制。
+五个模型共用 `POST /v1/images/generations` 适配器。2.5 系列默认开放 1K，其他未确认档位须向服务商确认能力后由运维设置 `VAKV_CAPABILITY_OVERRIDES`，例如仅在确认后设置某渠道的 `["1K"]`；不能通过配置扩展基础版已知的 1K 限制。
 
 分辨率转尺寸目前采用长边 1024 / 2048 / 4096、短边按比例对齐到 16 像素；文档仅展示了 `1024x1024` 示例，没有穷举各比例尺寸。此尺寸映射及所有高分辨率仍需真实渠道验收。保存返回图片的实际宽高，不将请求档位当作实际像素证据。
 
@@ -56,7 +57,7 @@ Worker 缺少密钥/数据库/Redis 时启动失败，不以演示结果代替�
 
 | 方法与路径 | 功能 |
 | --- | --- |
-| GET /api/v1/image-models | 四个模型、文档能力、实际启用档位与每张积分；enabled 仅代表配置开关，不代表 Worker 在线 |
+| GET /api/v1/image-models | 五个模型、文档能力、实际启用档位与每张积分；enabled 仅代表配置开关，不代表 Worker 在线 |
 | POST /api/v1/image-tasks | 创建任务，原子保存任务/图片项/outbox/积分预留，202；同 key 同参数重放返回 200 |
 | GET /api/v1/image-tasks?limit=20&before=任务UUID | 组织内任务列表，按创建时间/ID 倒序，最大 100 条 |
 | GET /api/v1/image-tasks/:id | 组织内任务、输入快照、逐图状态与输出元数据 |
@@ -99,3 +100,34 @@ curl http://127.0.0.1:8787/api/v1/image-tasks \
 - 新集成覆盖访问令牌、伪造身份、组织隔离、参考图越权、并发幂等、积分预留/释放、实际文件与元数据、重复队列消息、部分失败、服务商不确定结果、Worker 租约到期和令牌撤销。
 - 新增 `0002_fuzzy_wolverine.sql` 与对应 Drizzle snapshot/journal；保留已合并的 0000/0001。它基于远端 dev 的迁移顺序，不包含主工作区未跟踪的其他 0002 草稿，合并前必须协调迁移编号。
 - 真实渠道的 1K/2K/4K 输出像素、参考编辑以及 flare/sunburst 支持范围需在配置密钥后另行限额验收。模拟图片或静态页面不作为真实渠道证据。
+
+## 当前工作台接入与实测（2026-10-20）
+
+- `/create` 已调用真实提交接口；支持纯文生图，参考图先上传并校验，再以资产 ID 提交。所有新草稿默认 1K。
+- gpt-image-2、gpt-image-2-4K、gpt-image-2.5、gpt-image-2.5-flare、gpt-image-2.5-sunburst 各一次真实 1K 调用均成功；4K 模型该次实际为 1024×1024，其余四个为 1254×1254。请求档位与返回像素分别保存。
+- gpt-image-2.5 的单参考图编辑另做一次真实调用成功。其余模型的编辑、高分辨率及非方形尺寸未逐一实测，不扩大为已验收能力。
+- 2.5 系列按用户要求开放 1K 路由，保留能力来源标记；2K/4K 默认不开放。参考编辑使用 OpenAI 兼容 `/v1/images/edits` 协议，需启用 `VAKV_ENABLE_IMAGE_EDITS`。
+- 历史记录、任务中心、右侧索引每 3 秒查询数据库任务；素材库每 5 秒查询已保存资产。两者都支持游标加载更多。列表使用鉴权后 512px 缩略图，下载读取原图。
+- 提交响应不确定时，浏览器会按用户和组织在 sessionStorage 保留同一请求快照与幂等编号，刷新后通过“确认上次提交”复用请求；不会自动重新生成。已运行但结果不确定的任务仍需运维核对。
+- 新增 `GET /api/v1/image-assets?limit=30&before=UUID`，返回组织内资产元数据；`content?thumbnail=1` 返回缩略图。原图与缩略图均验证组织归属。
+
+### 本地启动
+
+在根目录 `.env` 填写 `VAKV_API_KEY`。API key 不使用 VITE 前缀、不进入浏览器或 Git。
+首次配置数据库后执行迁移与本地身份签发：
+
+```sh
+pnpm infra:up
+pnpm db:migrate
+pnpm --filter @lycoboai/api images:setup
+pnpm dev
+```
+
+`images:setup` 仅供本机开发：生成数据库成员身份与 7 天应用令牌，将令牌、持久图片目录及开关写入 `.env`，不打印令牌、不覆盖 Vakv key。续期复用原组织、历史与剩余额度；初始化额度是内部开发配额，不是充值或服务商货币余额。
+当前机器使用独立 `lycobo_workbench` 数据库，旧 `lycoboai` 库保持原状。
+
+本地浏览器通过 `POST /api/v1/image-session` 换取 HttpOnly、SameSite=Strict Cookie。仅 NODE_ENV=development 且配置应用令牌时开放，Origin 必须是明确配置的 localhost/127.0.0.1；Cookie 写请求同样校验 Origin。服务端从数据库解析用户和组织。正式用户登录、团队邀请尚未接入，不能把该本地会话方式部署为公开注册系统。
+
+也可 `docker compose up -d --build --wait`：8080 为网页，8788 为容器 API 的本地端口，避免和 pnpm 的 8787 冲突。API 与 Worker 挂载同一 `data/images` 目录，读取同一数据库与队列；`.env` 中的 `IMAGE_COMPOSE_DATABASE_URL` 由 setup 命令配置。修改 `.env` 后需重建服务配置或重启本地进程；不要把提供商 key 写到前端。
+
+浏览器通过 8080 工作台额外提交的一次 gpt-image-2 请求收到无法按图片协议解析的响应，任务 `8c2aeb53-4856-4da4-b85c-9e90d1909139` 已进入 needs_reconciliation，保留额度并等待服务商核对，没有自动重发。不能将这次调用计入成功数。

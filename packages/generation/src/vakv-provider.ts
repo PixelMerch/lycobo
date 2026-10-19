@@ -18,7 +18,7 @@ export function supportedResolutions(
 ) {
   const documented = imageModelCatalog.find((m) => m.id === model)?.documentedResolutions ?? [];
   // Operator assertions are only permitted for undocumented channels, never to expand known limits.
-  return documented.length ? documented : (overrides[model] ?? []);
+  return documented.length ? documented : (overrides[model] ?? ["1K"]);
 }
 export function validateModelInput(
   input: ImageGenerationInput,

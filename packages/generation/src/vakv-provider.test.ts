@@ -10,13 +10,21 @@ import {
 const input = imageGenerationInputSchema.parse({ model: "gpt-image-2", prompt: "coffee" });
 const config = { key: "test-not-a-secret", baseUrl: "https://api.vakv.cn", timeoutMs: 1000 };
 describe("Vakv adapter and capability evidence", () => {
-  it("enforces documented limits and keeps unknown channels closed", () => {
+  it("enforces documented limits and enables requested 2.5 channels at 1K only", () => {
     expect(supportedResolutions("gpt-image-2")).toEqual(["1K"]);
     expect(supportedResolutions("gpt-image-2-4K")).toEqual(["1K", "2K", "4K"]);
     expect(() => validateModelInput({ ...input, resolution: "4K" })).toThrow(
       "MODEL_RESOLUTION_UNVERIFIED",
     );
-    expect(() => validateModelInput({ ...input, model: "gpt-image-2.5-flare" })).toThrow();
+    for (const model of [
+      "gpt-image-2.5",
+      "gpt-image-2.5-flare",
+      "gpt-image-2.5-sunburst",
+    ] as const) {
+      expect(supportedResolutions(model)).toEqual(["1K"]);
+      expect(() => validateModelInput({ ...input, model })).not.toThrow();
+      expect(() => validateModelInput({ ...input, model, resolution: "2K" })).toThrow();
+    }
     expect(
       supportedResolutions("gpt-image-2.5-sunburst", { "gpt-image-2.5-sunburst": ["1K"] }),
     ).toEqual(["1K"]);
