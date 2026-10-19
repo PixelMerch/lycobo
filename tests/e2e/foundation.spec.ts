@@ -43,3 +43,12 @@ test("old entry links recover to current home; unknown model is rejected", async
   await page.goto("/create/not-a-model");
   await expect(page.getByRole("heading", { name: "页面暂时无法打开" })).toBeVisible();
 });
+
+test("legacy image creation URL opens the workspace and preserves task context", async ({
+  page,
+}) => {
+  await page.goto("/chatdraw?task=demo-skin");
+  await expect(page).toHaveURL(/\/create\/gpt-image\?task=demo-skin$/);
+  await expect(page.getByRole("heading", { name: "页面暂时无法打开" })).toHaveCount(0);
+  await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
+});
