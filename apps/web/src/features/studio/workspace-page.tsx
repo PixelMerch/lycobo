@@ -118,10 +118,7 @@ function Workspace({ model }: { model: ModelId }) {
       <section className="results-panel" aria-label="创作内容">
         <Tabs className="workspace-tabs">
           <Tabs.List aria-label="工作区内容">
-            <Tabs.Tab id="history">
-              历史记录
-              <Tabs.Indicator />
-            </Tabs.Tab>
+            <Tabs.Tab id="history">历史记录</Tabs.Tab>
           </Tabs.List>
           <Tabs.Panel id="history">
             <GenerationHistory />

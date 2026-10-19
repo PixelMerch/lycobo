@@ -94,10 +94,10 @@ test("case reuse requires confirmation before replacing an existing draft", asyn
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("重要草稿");
 });
 
-test("responsive pages, model chooser and global tasks stay reachable without horizontal overflow", async ({
-  page,
-}) => {
-  for (const width of [320, 390, 768, 1024, 1440]) {
+for (const width of [320, 390, 768, 1024, 1440]) {
+  test(`responsive pages, model chooser and tasks stay reachable at ${width}px`, async ({
+    page,
+  }) => {
     await page.setViewportSize({ width, height: 900 });
     for (const path of ["/", "/create", "/assets"]) {
       await page.goto(path);
@@ -114,8 +114,8 @@ test("responsive pages, model chooser and global tasks stay reachable without ho
     expect(box && box.x >= 0 && box.x + box.width <= width).toBe(true);
     await page.getByRole("button", { name: "进入 gpt-image-2-4K 创作" }).click();
     await expect(page).toHaveURL(/\/create$/);
-  }
-});
+  });
+}
 
 test("compact model cards open from their covers and case cards restore focus", async ({
   page,

@@ -108,6 +108,14 @@ test("regenerate submits the original snapshot once and leaves the composer draf
   });
   await page.getByLabel("提示词", { exact: true }).fill("不要覆盖我的草稿");
   await page.getByRole("button", { name: "重新生成", exact: true }).click();
+  const confirm = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
+  await expect(confirm).toBeVisible();
+  expect(requests).toBe(0);
+  await confirm.getByRole("button", { name: "取消", exact: true }).click();
+  await expect(confirm).not.toBeVisible();
+  expect(requests).toBe(0);
+  await page.getByRole("button", { name: "重新生成", exact: true }).click();
+  await confirm.getByRole("button", { name: "重新生成", exact: true }).click();
   await expect.poll(() => requests).toBe(1);
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("不要覆盖我的草稿");
 });
@@ -121,8 +129,12 @@ test("an uncertain history submission exposes the same pending request in the co
     await route.abort("failed");
   });
   await page.getByRole("button", { name: "重新生成", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "重新生成这张图片？", exact: true })
+    .getByRole("button", { name: "重新生成", exact: true })
+    .click();
   await expect(page.getByRole("button", { name: "确认上次提交", exact: true })).toBeEnabled();
-  await expect(page.getByRole("button", { name: "重新生成", exact: true })).toBeDisabled();
+  await expect(page.getByLabel("重新生成", { exact: true })).toBeDisabled();
 });
 
 test("legacy history reads the original task snapshot before restoring a draft", async ({

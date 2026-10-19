@@ -53,6 +53,7 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
       <Button
         variant="secondary"
         className="copy-prompt"
+        data-copied={copied || undefined}
         onPress={async () => {
           try {
             await navigator.clipboard.writeText(job.prompt);
@@ -130,6 +131,7 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
   const [replacement, setReplacement] = useState<Awaited<ReturnType<typeof taskDraft>> | null>(
     null,
   );
+  const [regenerateOpen, setRegenerateOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const generation = useGenerateImage();
@@ -154,6 +156,18 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
         .querySelector<HTMLTextAreaElement>(".composer-panel textarea")
         ?.focus({ preventScroll: true }),
     );
+  };
+  const regenerate = async () => {
+    if (hasPendingSubmission(session.data)) return;
+    setLoading(true);
+    setError("");
+    try {
+      generation.mutate(await taskDraft(job, client));
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "无法读取任务。");
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <div className="history-task-actions">
@@ -190,18 +204,7 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
           className="history-icon-action"
           aria-label="重新生成"
           isDisabled={blocked || !configured || generation.isPending || loading}
-          onPress={async () => {
-            if (hasPendingSubmission(session.data)) return;
-            setLoading(true);
-            setError("");
-            try {
-              generation.mutate(await taskDraft(job, client));
-            } catch (failure) {
-              setError(failure instanceof Error ? failure.message : "无法读取任务。");
-            } finally {
-              setLoading(false);
-            }
-          }}
+          onPress={() => setRegenerateOpen(true)}
         >
           <UiIcon icon={IconRefresh} size="action" />
         </Button>
@@ -215,6 +218,40 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
               : generation.error?.message)}
         </p>
       )}
+      <Modal
+        isOpen={regenerateOpen}
+        onOpenChange={(open) => {
+          if (!open) setRegenerateOpen(false);
+        }}
+      >
+        <Modal.Backdrop>
+          <Modal.Container>
+            <Modal.Dialog className="info-dialog">
+              <Modal.Header>
+                <Modal.Heading>重新生成这张图片？</Modal.Heading>
+                <Modal.CloseTrigger aria-label="关闭重新生成确认" />
+              </Modal.Header>
+              <Modal.Body>
+                <p>将使用相同的提示词、参考图和参数新建一个生成任务。</p>
+                <div className="history-confirm-actions">
+                  <Button variant="secondary" onPress={() => setRegenerateOpen(false)}>
+                    取消
+                  </Button>
+                  <Button
+                    className="primary-action"
+                    onPress={() => {
+                      setRegenerateOpen(false);
+                      void regenerate();
+                    }}
+                  >
+                    重新生成
+                  </Button>
+                </div>
+              </Modal.Body>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
       <Modal
         isOpen={replacement !== null}
         onOpenChange={(open) => {

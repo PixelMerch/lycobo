@@ -38,69 +38,60 @@ function ResultImage({
   assetId,
   position,
   prompt,
-  width,
-  height,
 }: {
   assetId: string;
   position: number;
   prompt: string;
-  width: number | null;
-  height: number | null;
 }) {
   const favorite = useStudioStore((s) => s.favorites.includes(assetId));
   const toggleFavorite = useStudioStore((s) => s.toggleFavorite);
   return (
-    <>
-      <div className="generation-media">
-        <a
-          href={assetContentUrl(assetId)}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={`查看原图 ${position + 1}`}
-        >
-          <img
-            src={assetContentUrl(assetId, true)}
-            loading="lazy"
-            alt={`${prompt}，图片${position + 1}`}
-          />
-        </a>
-        <div className="generation-media-actions">
-          <Tooltip delay={0}>
-            <Button
-              isIconOnly
-              variant="tertiary"
-              className="generation-media-action"
-              aria-label="下载原图"
-              onPress={() => {
-                const link = document.createElement("a");
-                link.href = assetContentUrl(assetId);
-                link.download = `${assetId}.png`;
-                link.click();
-              }}
-            >
-              <UiIcon icon={IconDownload} />
-            </Button>
-            <Tooltip.Content placement="top">下载原图</Tooltip.Content>
-          </Tooltip>
-          <Tooltip delay={0}>
-            <Button
-              isIconOnly
-              variant="tertiary"
-              className="generation-media-action"
-              aria-label={favorite ? "取消收藏" : "收藏图片"}
-              aria-pressed={favorite}
-              onPress={() => toggleFavorite(assetId)}
-            >
-              <UiIcon icon={favorite ? IconStarFilled : IconStar} />
-            </Button>
-            <Tooltip.Content placement="top">{favorite ? "取消收藏" : "收藏"}</Tooltip.Content>
-          </Tooltip>
-        </div>
+    <div className="generation-media">
+      <a
+        href={assetContentUrl(assetId)}
+        target="_blank"
+        rel="noreferrer"
+        aria-label={`查看原图 ${position + 1}`}
+      >
+        <img
+          src={assetContentUrl(assetId, true)}
+          loading="lazy"
+          alt={`${prompt}，图片${position + 1}`}
+        />
+      </a>
+      <div className="generation-media-actions">
+        <Tooltip delay={0}>
+          <Button
+            isIconOnly
+            variant="tertiary"
+            className="generation-media-action"
+            aria-label="下载原图"
+            onPress={() => {
+              const link = document.createElement("a");
+              link.href = assetContentUrl(assetId);
+              link.download = `${assetId}.png`;
+              link.click();
+            }}
+          >
+            <UiIcon icon={IconDownload} />
+          </Button>
+          <Tooltip.Content placement="top">下载原图</Tooltip.Content>
+        </Tooltip>
+        <Tooltip delay={0}>
+          <Button
+            isIconOnly
+            variant="tertiary"
+            className="generation-media-action"
+            aria-label={favorite ? "取消收藏" : "收藏图片"}
+            aria-pressed={favorite}
+            onPress={() => toggleFavorite(assetId)}
+          >
+            <UiIcon icon={favorite ? IconStarFilled : IconStar} />
+          </Button>
+          <Tooltip.Content placement="top">{favorite ? "取消收藏" : "收藏"}</Tooltip.Content>
+        </Tooltip>
       </div>
-      <small>
-        {width} × {height}
-      </small>
-    </>
+    </div>
   );
 }
 export function GenerationHistory({ compact = false }: { compact?: boolean }) {
@@ -254,8 +245,6 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
                       assetId={item.output_asset_id}
                       position={item.position}
                       prompt={job.prompt}
-                      width={item.width}
-                      height={item.height}
                     />
                   ) : (
                     <div className="generation-placeholder" role="status">
