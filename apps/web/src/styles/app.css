@@ -1776,3 +1776,61 @@ small {
   height: 16px;
   flex: none;
 }
+
+/* Upload actions and prompt focus stay local to the composer. */
+.reference-picker .field-title {
+  gap: 8px;
+  align-items: flex-start;
+}
+.reference-picker .field-title h2 {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  row-gap: 2px;
+}
+.reference-picker .field-title small {
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-weight: var(--weight-regular);
+}
+.reference-picker .clear-references {
+  flex: none;
+  gap: 4px;
+  min-width: 0;
+  min-height: 28px;
+  height: 28px;
+  padding: 0 2px;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-weight: var(--weight-regular);
+}
+.reference-picker .clear-references[data-disabled="true"] {
+  background: transparent;
+  opacity: 0.5;
+}
+@media (hover: hover) {
+  .reference-picker .clear-references:hover:not([data-disabled="true"]) {
+    color: var(--foreground);
+    background: var(--surface-tertiary);
+  }
+}
+.prompt-field textarea {
+  caret-color: var(--accent);
+}
+.prompt-field textarea:focus,
+.prompt-field textarea:focus-visible,
+.prompt-field textarea[data-focused="true"] {
+  outline: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+@media (max-width: 767px) {
+  .reference-picker .clear-references {
+    min-height: 44px;
+    height: 44px;
+  }
+}

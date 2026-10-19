@@ -27,7 +27,7 @@ test("home to two-model chooser to workspace, with correctly anchored panel and 
   await modelCard.focus();
   await modelCard.press("Enter");
   await expect(page).toHaveURL(/\/create\/gpt-image$/);
-  await expect(page.getByLabel("画面要求", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "生成图片", exact: true })).toBeDisabled();
   await expect(
     page.getByRole("region", { name: "创作参数", exact: true }).getByText("模型", { exact: true }),
