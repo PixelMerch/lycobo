@@ -78,7 +78,7 @@ const emptyDraft = (): Draft => ({
   prompt: "",
   references: [],
   ratio: "1:1",
-  resolution: "2K",
+  resolution: "1K",
   count: "1",
 });
 
