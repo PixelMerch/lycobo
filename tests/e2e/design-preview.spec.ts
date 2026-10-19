@@ -185,7 +185,9 @@ test("references enforce five-image limit, support mentions and snapshot submitt
       .locator(".history-reference")
       .getByRole("img", { name: "图片3 · reference-1.png", exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".history-prompt")).toHaveText("@图片3 参考");
+  await expect(page.locator(".generation-record").first().locator(".history-prompt")).toHaveText(
+    "@图片3 参考",
+  );
 });
 
 test("reference tags deduplicate pasted mentions and can be removed without deleting images", async ({
