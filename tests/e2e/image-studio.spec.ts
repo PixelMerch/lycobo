@@ -154,6 +154,8 @@ test("extended ratios preserve selection and composer scroll stays independent",
   await page.getByRole("button", { name: "更多图片比例", exact: true }).click();
   const picker = page.getByRole("dialog", { name: "更多图片比例", exact: true });
   await expect(picker).toBeVisible();
+  await expect(picker.getByRole("button", { name: /^图片比例 / })).toHaveCount(6);
+  await expect(picker.getByRole("button", { name: "图片比例 4:5", exact: true })).toHaveCount(0);
   await picker.getByRole("button", { name: "图片比例 9:16", exact: true }).click();
   await expect(picker).not.toBeVisible();
   await expect(page.getByRole("button", { name: "更多图片比例", exact: true })).toContainText(
