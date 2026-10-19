@@ -1834,9 +1834,9 @@ small {
   display: flex;
   width: max-content;
   justify-content: center;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 8px;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 6px;
   background: rgb(0 0 0 / 70%);
   opacity: 0;
   pointer-events: none;
@@ -1851,8 +1851,9 @@ small {
   width: 32px;
   height: 32px;
   min-width: 32px;
+  min-height: 32px;
   padding: 4px;
-  border-radius: 6px;
+  border-radius: 4px;
   color: #ffffff;
   background: transparent;
   box-shadow: none;
@@ -2141,4 +2142,11 @@ small {
   border-bottom: 0;
   margin-bottom: 12px;
   background: var(--background);
+}
+
+.tooltip {
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 16px;
 }
