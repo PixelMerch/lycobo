@@ -1766,8 +1766,8 @@ small {
 
 .model-menu .model-options:focus-visible,
 .model-menu .model-options[data-focus-visible="true"] {
-  outline: 2px solid var(--muted);
-  outline-offset: -2px;
+  outline: none;
+  background: color-mix(in srgb, var(--surface-tertiary) 92%, var(--foreground));
 }
 
 .model-field .model-select .select__value {
@@ -1847,4 +1847,21 @@ small {
     background: #121216b3;
     color: #ffffff;
   }
+}
+
+/* Model choice uses a surface change instead of an outline in every state. */
+.composer-panel .model-field .model-select,
+.model-menu,
+.model-menu .list-box,
+.model-menu .model-options {
+  outline: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+.model-menu {
+  box-shadow: var(--overlay-shadow);
+}
+.model-field .model-select:focus-visible,
+.model-field .model-select[data-focus-visible="true"] {
+  background: var(--surface-secondary);
 }
