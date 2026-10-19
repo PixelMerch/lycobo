@@ -1635,3 +1635,18 @@ small {
     margin-top: 0;
   }
 }
+
+.ratio-popover-heading .popover__heading {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
+}
+.composer-panel .ratio-options {
+  background: transparent;
+}
+.parameter-options.ratio-options .button {
+  background: var(--surface-secondary);
+}
+.ratio-popover {
+  box-shadow: var(--overlay-shadow);
+}
