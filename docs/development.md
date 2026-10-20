@@ -2,6 +2,8 @@
 
 ## 分支流程
 
+本地与远程必须长期保留 `main`、`dev`。`dev` 合并到 `main` 后仍保留源分支，不使用 `--delete-branch` 删除 `dev`；同步后继续在本地 `dev` 开发。分支清理始终排除 `main`、`dev`，其他本地分支仅在确认已合入或已被替代且用户要求清理时删除。
+
 长期分支为 dev（日常开发）与 main（稳定版本）。默认直接在本地 dev 开发，先检查状态、fetch origin 并在可快进时同步远端；保留本地提交与未提交内容。只有用户明确要求时才新建分支或 worktree。验证后默认只提交本地；推送、创建或更新 dev → main PR、合并和发布均按明确授权执行。提交信息采用 Angular 风格英文 `type(scope): subject`，见 CONTRIBUTING.md。
 
 ## 环境

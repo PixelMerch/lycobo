@@ -69,6 +69,9 @@ Read relevant project skills before work:
 - Develop directly on the local dev branch by default. Before work, inspect status, fetch
   origin with pruning and fast-forward dev when possible. Preserve local changes and commits;
   never reset them to synchronize. Create another branch or worktree only when the user asks.
+- Always retain main and dev locally and on origin, including after a dev-to-main PR merges.
+  Never delete dev as a merged source branch or use --delete-branch for dev-to-main PRs.
+  Keep developing on local dev; synchronize it after release merges without resetting local work.
 - Keep local dev and main as the normal long-lived branches. main tracks origin/main and
   is not a development branch. Keep one concern per commit and use Conventional Commits
   with configured scopes. Commit messages follow Angular-style English `type(scope): subject`:
@@ -80,7 +83,8 @@ Read relevant project skills before work:
   Merge only after required CI checks pass, branch protection requirements are satisfied
   and review discussions are resolved. Never bypass protection.
 - After an authorized merge, fetch and fast-forward the corresponding local dev/main.
-  Finish on dev. Remove temporary local branches when their changes are merged or verified
+  Finish on dev. Branch cleanup must always exclude main and dev, locally and remotely.
+  Remove temporary local branches when their changes are merged or verified
   superseded and the user requests cleanup; preserve unrelated worktree files and commits.
 - Publishing tags and deployment require separate explicit user authorization.
 - Do not rewrite another contributor's work, force-push shared branches, amend existing commits
