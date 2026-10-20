@@ -47,10 +47,10 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await expect(page.getByRole("button", { name: "回到顶部", exact: true })).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: `查看任务 ${jobs[0]?.id}`, exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
+  ).toHaveAttribute("aria-current", "true");
   const target = page.getByRole("button", { name: `查看任务 ${jobs[1]?.id}`, exact: true });
   await target.click();
-  await expect(target).toHaveAttribute("aria-pressed", "true");
+  await expect(target).toHaveAttribute("aria-current", "true");
   await expect(articles.nth(1)).toHaveAttribute("data-active", "true");
   await expect.poll(async () => (await articles.nth(1).boundingBox())?.y).toBeLessThan(110);
   const info = articles.nth(1).getByRole("definition");
@@ -81,13 +81,13 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await expect(backToTop).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: `查看任务 ${jobs[0]?.id}`, exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
-  await expect(target).toHaveAttribute("aria-pressed", "false");
+  ).toHaveAttribute("aria-current", "true");
+  await expect(target).toHaveAttribute("aria-current", "false");
   await expect(page.locator(".history-rail")).toHaveCSS("padding-top", "6px");
   const width = (await target.boundingBox())?.width;
   await target.focus();
   await target.press("Enter");
-  await expect(target).toHaveAttribute("aria-pressed", "true");
+  await expect(target).toHaveAttribute("aria-current", "true");
   expect((await target.boundingBox())?.width).toBe(width);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

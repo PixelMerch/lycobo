@@ -1,4 +1,4 @@
-import { Alert, Button, EmptyState, Spinner, Tooltip } from "@heroui/react";
+import { Alert, Button, EmptyState, Link, Spinner, ToggleButton, Tooltip } from "@heroui/react";
 import type { ImageJob } from "@lycoboai/contracts";
 import {
   IconAspectRatio,
@@ -53,7 +53,7 @@ function ResultImage({
   const toggleFavorite = useStudioStore((s) => s.toggleFavorite);
   return (
     <div className="generation-media">
-      <a
+      <Link
         href={assetContentUrl(assetId)}
         target="_blank"
         rel="noreferrer"
@@ -64,7 +64,7 @@ function ResultImage({
           loading="lazy"
           alt={`${prompt}，图片${position + 1}`}
         />
-      </a>
+      </Link>
       <div className="generation-media-actions">
         <Tooltip delay={0}>
           <Button
@@ -79,16 +79,16 @@ function ResultImage({
           <Tooltip.Content placement="top">下载原图</Tooltip.Content>
         </Tooltip>
         <Tooltip delay={0}>
-          <Button
+          <ToggleButton
             isIconOnly
-            variant="tertiary"
+            variant="ghost"
             className="generation-media-action"
             aria-label={favorite ? "取消收藏" : "收藏图片"}
-            aria-pressed={favorite}
-            onPress={() => toggleFavorite(assetId)}
+            isSelected={favorite}
+            onChange={() => toggleFavorite(assetId)}
           >
             <UiIcon icon={favorite ? IconStarFilled : IconStar} />
-          </Button>
+          </ToggleButton>
           <Tooltip.Content placement="top">{favorite ? "取消收藏" : "收藏"}</Tooltip.Content>
         </Tooltip>
       </div>
@@ -311,7 +311,7 @@ export function HistoryIndex() {
   const selectedId = jobs.some((job) => job.id === activeId) ? activeId : jobs[0]?.id;
   useEffect(() => {
     const container = rail.current;
-    const selected = container?.querySelector<HTMLElement>('[aria-pressed="true"]');
+    const selected = container?.querySelector<HTMLElement>('[aria-current="true"]');
     if (!container || !selected || !selectedId) return;
     const box = selected.getBoundingClientRect(),
       bounds = container.getBoundingClientRect();
@@ -333,7 +333,7 @@ export function HistoryIndex() {
               variant="tertiary"
               className={`history-thumbnail${generating ? " generation-pending" : ""}`}
               aria-label={`查看任务 ${job.id}`}
-              aria-pressed={selectedId === job.id}
+              aria-current={selectedId === job.id ? "true" : "false"}
               onPress={() => {
                 setActiveId(job.id);
                 document

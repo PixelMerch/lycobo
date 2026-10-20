@@ -139,7 +139,23 @@ HeroUI 基础变量固定为 `--radius: 8px`、`--field-radius: 10px`。以安�
 
 不把所有按钮做胶囊，不随意新增 18、20、24px 等容器圆角。内层圆角不得大于外层：普通 12px 卡片配 8px 图片；二级工具选择层使用 8px 卡片。封面与文字区直接拼接时，图片上方两角与卡片一致（8px），下方两角为 0，文字区不留缝隙；外层卡片裁切溢出内容。不得对整张封面使用四角圆角。
 
-桌面标准按钮／输入高 40px；紧凑工具栏按钮 36px；触屏交互至少 44px。图标按钮与相邻文字按钮对齐，关闭按钮具有至少 40px 桌面点击区、44px 触屏点击区。
+桌面普通按钮高 36px，紧凑按钮 32px，大按钮 40px；普通输入仍为 40px，登录输入为 44px。触屏交互至少 44px。按钮使用下面统一档位，不以单个页面的视觉判断新增一套尺寸。图标按钮与相邻文字按钮对齐，关闭按钮保留既有至少 40px 桌面／44px 触屏命中区。
+
+### 按钮尺寸与 padding（统一入口）
+
+| HeroUI 用法 | 高度 token／值 | 左右 padding token／值 | 字号 | 场景 |
+| --- | --- | --- | --- | --- |
+| `Button size="sm"` | `--control-height-sm` / 32px | `--control-padding-sm` / 8px | 13px | 紧凑工具栏、次要操作 |
+| `Button` / `size="md"` | `--control-height-md` / 36px | `--control-padding-md` / 12px | 14px | 默认操作、确认弹窗、加载更多 |
+| `Button size="lg"` | `--control-height-lg` / 40px | `--control-padding-lg` / 16px | 14px | 明确需要强调的单个主动作 |
+| `Button isIconOnly` | 同所选 size，宽高相等 | 0 | 图标独立定档 | 图标操作，不能额外增加左右留白 |
+| 窄屏／粗指针 | `--control-touch-target` / 至少 44px | 沿用当前档 | 沿用当前档 | 不用缩小触控目标换取紧凑感 |
+
+统一垂直 padding 为 0，以固定高度与 flex 居中排版；图文间距 `--control-gap: 6px`，普通圆角 `--control-radius: 8px`。全局不再给所有按钮设置 40px min-height；否则 32px 控件会被撑大。主按钮仅定义颜色和字重，不额外叠加 24px 横向 padding。Hover／Pressed 不改变 padding、边框宽度、缩放或位置，Focus-visible 保持清楚反馈。
+
+已有业务尺寸是具名例外：导航 40px／padding 10px；header 登录胶囊 32px／左右 12px；登录和生成提交动作 44px；图片悬浮操作 32px；历史编辑图标 36px；比例图案选项 64px；卡片按封面和正文布局自适应；上传删除按钮保留 24px 可见圆形与透明 44px 触控区；回到顶部按既有 48px 规范。例外必须有对应的功能 class 和本文件记录，不能修改全局 size 含义。
+
+每次新增按钮先选 `size`、`variant`、`isIconOnly`，只有具名业务例外才添加几何 class。不要创建另一层 AppButton／自制基础按钮，不在 TSX 内联写 padding、height、borderRadius。样式只在共享 CSS 中定义，组件交互由 HeroUI 承担。
 
 ## 7. 间距、密度和导航
 
@@ -165,7 +181,7 @@ HeroUI 基础变量固定为 `--radius: 8px`、`--field-radius: 10px`。以安�
 | 加载与空状态 | Spinner、Skeleton、EmptyState |
 | 区块错误与字段错误 | Alert、FieldError／ErrorMessage |
 | 内容卡片、面包屑与可点击文本 | Card、Breadcrumbs、Link（可用 `render` 接 react-router） |
-| 全局任务／通知 | Drawer，关闭后恢复焦点 |
+| 经产品确认的侧滑内容 | Drawer，关闭后恢复焦点；当前 header 不放任务／通知入口 |
 | 辅助提示 | Tooltip，不能承载唯一必要说明 |
 
 不引入第二套组件基础库，不手写焦点陷阱、模态键盘或菜单键盘。CSS 负责主题与尺寸；HeroUI 负责交互语义。安装版本已提供的组件与用法见 `docs/heroui-components.md`，实现前先查该清单，已有能力不再自己实现。业务图标统一 Tabler，通过 `components/ui-icon.tsx` 使用，尺寸 14 / 18 / 20 / 22 / 28px、stroke 2，颜色继承状态；不得引入另一套业务图标库。
@@ -306,3 +322,10 @@ Header 右侧只保留清晰的“登录领积分”按钮，移除任务中心�
 弹窗宽度最大 880px，左右两栏，外侧 padding 8px、圆角 16px；图片圆角 10px，桌面最小高 540px。右侧 padding 40px，标题 24px，字段标签 13px，账号／密码输入与主按钮高至少 44px。700px 及以下隐藏图片区，仅保留表单，宽度不超过视口减 24px，输入文字至少 16px。默认显示微信扫码登录，表单上方提供 HeroUI ToggleButtonGroup 三档切换（微信扫码／手机号／企业账号），选中项使用 `--accent-soft` 底色与浅紫文字，未选中为透明底中性文字；切换只改变表单，不改变弹窗几何尺寸。企业账号使用账号＋密码，手机号使用手机号＋6位短信验证码；支持校验、密码显隐、自动填充与 Enter 提交，切换方式清空密码和验证码。密码显隐使用 ToggleButton，选中态仅提亮图标，不显示额外底板。关闭即清除本次密码，不写入 URL、日志或浏览器存储。输入框与 InputGroup 统一为单层 1px 中性边框，聚焦仅将边框改为主题色；移除阴影和叠加外轮廓，保持可见焦点且几何尺寸不变。
 
 当前仅完成登录界面与表单交互，微信扫码、短信验证码和正式企业账号验证接口均未接入。扫码区用带边角的占位框显示“扫码登录暂未开放”和“即将开放”标签，不生成假二维码、不复用第三方二维码；发送验证码和提交表单均明确反馈服务未开放，不展示已发送、倒计时或模拟登录成功。已有本地生图工作台会话与正式账号登录分开，不因本地会话可用而显示已登录账户。
+
+
+## 维护流程与自动约束
+
+先读本文件和 `docs/heroui-components.md`，再按已安装版本查 `.agents/skills/heroui-react/SKILL.md` 与官方组件文档。设计参考用于解释行为，不能覆盖本站 token；React 技能用于实现质量，不能引入第二套视觉规范。整站审查结果和执行清单见 `docs/ui-consistency.md`。
+
+`pnpm lint` 已包含 `scripts/check-ui-conventions.mjs` 的 AST 检查：拒绝原生交互控件、原生元素伪造交互 role、第二套组件库、Button 手写 aria-pressed、Button onClick 及内联几何。允许唯一的隐藏文件 input（HeroUI 无文件选择器）；可见入口仍用 HeroUI Button。当前导航用 aria-current，收藏等切换用 ToggleButton；不得用更换属性名或禁用检查绕过约束。自动检查负责组件边界，实际密度、内容长度、无障碍与移动端仍需浏览器验收。

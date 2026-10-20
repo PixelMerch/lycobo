@@ -143,7 +143,7 @@ small {
 }
 .button,
 .toggle-button,
-.neutral-button,
+.close-button,
 .nav-row {
   min-height: 0;
   border-radius: var(--control-radius);
@@ -207,21 +207,6 @@ small {
   background: #2a2a32;
   filter: none;
 }
-.neutral-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--control-gap);
-  height: var(--control-height-md);
-  padding: 0 var(--control-padding-md);
-  background: #ffffff04;
-  border: 1px solid var(--border);
-  color: var(--foreground);
-}
-.neutral-button:hover {
-  background: var(--surface-secondary);
-  border-color: #ffffff29;
-}
 .icon-button {
   width: var(--control-height-md);
   height: var(--control-height-md);
@@ -232,15 +217,6 @@ small {
   background: transparent;
   border: 0;
   flex: none;
-}
-.small-button {
-  min-height: var(--control-height-sm);
-  height: var(--control-height-sm);
-  padding: 0 var(--control-padding-sm);
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  border: 1px solid #ffffff20;
-  background: transparent;
 }
 .muted,
 .page-heading p {
@@ -378,22 +354,6 @@ small {
   align-items: center;
   gap: 12px;
   flex: none;
-}
-.task-trigger {
-  background: transparent;
-  border: 0;
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-}
-.avatar {
-  height: 32px;
-  min-height: 32px;
-  width: 32px;
-  min-width: 32px;
-  border-radius: 50%;
-  background: #2a2937;
-  color: #d3c8ed;
-  padding: 0;
 }
 .mobile-menu {
   display: none;
@@ -553,10 +513,6 @@ small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.case-card .small-button {
-  padding-inline: 8px;
-  flex: none;
 }
 .recent-section {
   margin-top: 24px;
@@ -814,15 +770,8 @@ small {
   color: var(--muted);
   margin: 8px 0 16px;
 }
-.task-drawer,
 .mobile-nav {
   background: var(--surface);
-}
-.task-drawer {
-  width: min(420px, 100vw);
-}
-.task-drawer .drawer__header {
-  padding: 24px;
 }
 .empty-state {
   min-height: 260px;
@@ -1209,16 +1158,6 @@ small {
   .header-actions .icon-button {
     width: 32px;
   }
-  .task-trigger {
-    padding: 4px 6px;
-    min-height: 44px;
-  }
-  .task-trigger .ui-icon {
-    display: none;
-  }
-  .avatar {
-    margin-left: 4px;
-  }
   .main-content {
     padding: 16px;
   }
@@ -1247,12 +1186,6 @@ small {
     gap: 8px;
   }
   .case-card h3 {
-    font-size: var(--text-xs);
-    line-height: var(--leading-xs);
-  }
-  .case-card .small-button {
-    height: 44px;
-    min-height: 44px;
     font-size: var(--text-xs);
     line-height: var(--leading-xs);
   }
@@ -1295,7 +1228,6 @@ small {
     line-height: var(--leading-lg);
   }
   .button,
-  .neutral-button,
   .nav-row {
     min-height: 44px;
   }
@@ -1905,6 +1837,7 @@ small {
 }
 .generation-media > a {
   display: block;
+  width: 100%;
 }
 .generation-media-actions {
   position: absolute;
@@ -2514,7 +2447,7 @@ html:has(.workspace)::-webkit-scrollbar,
 /* Login dialog: split layout on top of HeroUI Modal, ToggleButtonGroup switches methods. */
 .header-login {
   min-width: 64px;
-  height: 32px;
+  height: var(--control-height-sm);
   padding: 0 var(--control-padding-md);
   font-size: var(--text-sm);
   border: 0;
@@ -2735,7 +2668,7 @@ html:has(.workspace)::-webkit-scrollbar,
 .login-input-group .login-send-code {
   width: auto;
   min-width: 0;
-  padding: 0 10px;
+  padding: 0 var(--control-padding-sm);
   color: var(--link);
   font-size: var(--text-xs);
 }

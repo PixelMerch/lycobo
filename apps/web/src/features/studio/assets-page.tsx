@@ -65,11 +65,7 @@ export function AssetsPage() {
                     {asset.width} × {asset.height} ·{" "}
                     {new Date(asset.created_at).toLocaleString("zh-CN")}
                   </small>
-                  <Button
-                    variant="tertiary"
-                    className="small-button"
-                    onPress={() => downloadAsset(asset.id)}
-                  >
+                  <Button variant="outline" size="sm" onPress={() => downloadAsset(asset.id)}>
                     下载原图
                   </Button>
                 </Card.Content>

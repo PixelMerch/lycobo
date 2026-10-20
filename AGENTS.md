@@ -29,7 +29,10 @@ Read relevant project skills before work:
 - HeroUI is the only interactive component system. Compose official components; no shadcn,
   second primitive system, homemade dialogs, focus traps or dropdown keyboards.
   Check docs/heroui-components.md for the installed component inventory before building
-  any control, overlay, field, state or navigation element by hand.
+  any control, overlay, field, state or navigation element by hand. Read docs/ui-consistency.md
+  for the shared control density and audit workflow. Use HeroUI size/variant/isIconOnly;
+  geometry belongs to DESIGN.md tokens, not inline styles or a new AppButton wrapper.
+  pnpm lint enforces scripts/check-ui-conventions.mjs; do not bypass its component checks.
 - Follow PRD.md for navigation: Home, Image Creation, AI Commerce, TK Zone, Asset Library.
   Home-textile tools belong to AI Commerce. Image tools use a category selection overlay;
   TK uses grouped sidebar navigation. UI mockups in docs/design are review targets, not services.

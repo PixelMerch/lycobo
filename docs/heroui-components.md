@@ -102,3 +102,11 @@ CSS 仍负责主题与尺寸，见 DESIGN.md 第 8 节。
 
 DESIGN.md 决定视觉与几何，本文件决定“用什么组件”与“不要自己实现什么”。
 两者冲突时以 DESIGN.md 的视觉规范为准，但不得据此重新手写交互组件。
+
+
+## 按钮统一入口与检查
+
+按钮档位、padding、圆角的唯一数值表在 DESIGN.md 第 6 节；不要在本文件另建一套数值。
+使用 Button 的 size="sm" / "md" / "lg" 与 isIconOnly，不以业务主色推断按钮一定需要更大 padding。
+切换使用 ToggleButton／ToggleButtonGroup，导航当前项使用 aria-current。
+审查步骤见 docs/ui-consistency.md，pnpm lint 自动运行 AST 组件检查。

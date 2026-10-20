@@ -173,7 +173,12 @@ export function StudioShell() {
           )}
         </nav>
         <div className="header-actions">
-          <Button variant="tertiary" className="header-login" onPress={() => setLoginOpen(true)}>
+          <Button
+            variant="tertiary"
+            size="sm"
+            className="header-login"
+            onPress={() => setLoginOpen(true)}
+          >
             登录领积分
           </Button>
         </div>
@@ -200,7 +205,7 @@ export function StudioShell() {
                       variant="tertiary"
                       key={model.id}
                       aria-label={`进入 ${model.name} 创作`}
-                      aria-pressed={currentModel?.id === model.id}
+                      aria-current={currentModel?.id === model.id ? "true" : "false"}
                       onPress={() => {
                         setChooserOpen(false);
                         setActiveModel(model.id);

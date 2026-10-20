@@ -82,8 +82,8 @@ function CaseCards({
             <Card.Header className="case-card-body">
               <Card.Title>{item.title}</Card.Title>
               <Button
-                variant="tertiary"
-                className="small-button"
+                variant="outline"
+                size="sm"
                 aria-label={`查看案例：${item.title}`}
                 onPress={() => onSelect(item)}
               >
