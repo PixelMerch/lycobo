@@ -1,7 +1,7 @@
 .reference-mention-popover.popover {
   width: min(280px, calc(100vw - 32px));
   padding: 10px;
-  border: 1px solid #ffffff14;
+  border: 0;
   border-radius: 12px;
   background: #202020;
 }
@@ -51,4 +51,48 @@
   outline: none;
   box-shadow: none;
   background: #343434;
+}
+
+.reference-mention-popover.popover,
+.reference-mention-popover .popover__dialog,
+.reference-mention-popover .list-box {
+  outline: none;
+  box-shadow: none;
+}
+.reference-prompt-editor {
+  position: relative;
+  width: 100%;
+}
+.reference-prompt-mirror {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  white-space: pre-wrap;
+  border-style: solid;
+  border-color: transparent;
+  pointer-events: none;
+  color: var(--foreground);
+  visibility: hidden;
+}
+.reference-prompt-editor[data-has-references] .reference-prompt-mirror {
+  visibility: visible;
+}
+.reference-prompt-editor[data-has-references] .textarea {
+  color: transparent;
+  caret-color: var(--accent);
+}
+.reference-prompt-editor .textarea {
+  position: relative;
+  width: 100%;
+}
+.reference-prompt-editor[data-has-references] .textarea {
+  background: transparent;
+}
+.reference-prompt-mirror mark {
+  color: #a8ff00;
+  background: #343434;
+  border-radius: 4px;
+  font: inherit;
+  padding: 0;
+  box-decoration-break: clone;
 }

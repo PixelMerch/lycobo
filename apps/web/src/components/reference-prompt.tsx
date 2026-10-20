@@ -1,5 +1,5 @@
 import { Label, ListBox, Popover, TextArea, TextField } from "@heroui/react";
-import { type RefObject, useRef, useState } from "react";
+import { type RefObject, useLayoutEffect, useRef, useState } from "react";
 import "./reference-prompt.css";
 import "./studio-control-feedback.css";
 
@@ -21,9 +21,44 @@ export function ReferencePrompt({
   placeholder: string;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
 }) {
+  const mirrorRef = useRef<HTMLDivElement>(null);
+  const parts = Array.from(value.matchAll(/@图片[1-9]\d*|[^@]+|@/g), (match) => ({
+    text: match[0],
+    offset: match.index,
+  }));
+  const isReference = (text: string) =>
+    /^@图片[1-9]\d*$/.test(text) && Number(text.slice(3)) <= references.length;
+  const hasReferences = parts.some((part) => isReference(part.text));
   const composing = useRef(false);
   const ownRef = useRef<HTMLTextAreaElement>(null);
   const ref = inputRef ?? ownRef;
+  useLayoutEffect(() => {
+    const input = ref.current;
+    const mirror = mirrorRef.current;
+    if (!input || !mirror) return;
+    const sync = () => {
+      const style = getComputedStyle(input);
+      for (const property of [
+        "font",
+        "letter-spacing",
+        "padding",
+        "border-width",
+        "box-sizing",
+        "text-align",
+        "word-break",
+        "overflow-wrap",
+        "tab-size",
+      ]) {
+        mirror.style.setProperty(property, style.getPropertyValue(property));
+      }
+      mirror.scrollTop = input.scrollTop;
+      mirror.scrollLeft = input.scrollLeft;
+    };
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(input);
+    return () => observer.disconnect();
+  }, [ref]);
   const [mention, setMention] = useState<{ start: number; end: number } | null>(null);
   function detect(input: HTMLTextAreaElement) {
     const cursor = input.selectionStart;
@@ -49,24 +84,38 @@ export function ReferencePrompt({
     <>
       <TextField className={className} aria-label={label ?? "创作需求"}>
         {label && <Label>{label}</Label>}
-        <TextArea
-          ref={ref}
-          aria-label={label ?? "创作需求"}
-          value={value}
-          onChange={(event) => {
-            onChange(event.target.value);
-            if (!composing.current) detect(event.currentTarget);
-          }}
-          onCompositionStart={() => {
-            composing.current = true;
-          }}
-          onCompositionEnd={(event) => {
-            composing.current = false;
-            detect(event.currentTarget);
-          }}
-          placeholder={placeholder}
-          maxLength={9000}
-        />
+        <div className="reference-prompt-editor" data-has-references={hasReferences || undefined}>
+          <div ref={mirrorRef} className="reference-prompt-mirror" aria-hidden="true">
+            {parts.map((part) =>
+              isReference(part.text) ? <mark key={part.offset}>{part.text}</mark> : part.text,
+            )}
+            {"\n"}
+          </div>
+          <TextArea
+            ref={ref}
+            aria-label={label ?? "创作需求"}
+            value={value}
+            onChange={(event) => {
+              onChange(event.target.value);
+              if (!composing.current) detect(event.currentTarget);
+            }}
+            onCompositionStart={() => {
+              composing.current = true;
+            }}
+            onCompositionEnd={(event) => {
+              composing.current = false;
+              detect(event.currentTarget);
+            }}
+            onScroll={(event) => {
+              if (mirrorRef.current) {
+                mirrorRef.current.scrollTop = event.currentTarget.scrollTop;
+                mirrorRef.current.scrollLeft = event.currentTarget.scrollLeft;
+              }
+            }}
+            placeholder={placeholder}
+            maxLength={9000}
+          />
+        </div>
       </TextField>
       <Popover
         isOpen={mention !== null}
