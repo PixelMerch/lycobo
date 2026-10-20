@@ -10,7 +10,7 @@ test("header login opens account/password dialog and validates without faking au
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
-  const entry = page.getByRole("button", { name: "登录", exact: true });
+  const entry = page.getByRole("button", { name: "登录领积分", exact: true });
   await entry.click();
   const dialog = page.getByRole("dialog", { name: "欢迎使用 lycoboai" });
   await expect(dialog).toBeVisible();
@@ -53,7 +53,7 @@ test("mobile login closes without losing the current creation draft", async ({ p
   await page.goto("/create");
   const prompt = page.getByLabel("提示词", { exact: true });
   await prompt.fill("保留当前创作草稿");
-  await page.getByRole("button", { name: "登录", exact: true }).click();
+  await page.getByRole("button", { name: "登录领积分", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "欢迎使用 lycoboai" });
   await expect(dialog).toBeVisible();
   await expect
@@ -69,7 +69,7 @@ test("phone login validates the phone and code without pretending to send SMS", 
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "登录", exact: true }).click();
+  await page.getByRole("button", { name: "登录领积分", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("button", { name: "手机号登录", exact: true }).click();
   const phone = dialog.getByLabel("手机号", { exact: true });

@@ -173,8 +173,8 @@ export function StudioShell() {
           )}
         </nav>
         <div className="header-actions">
-          <Button className="primary-action header-login" onPress={() => setLoginOpen(true)}>
-            登录
+          <Button variant="tertiary" className="header-login" onPress={() => setLoginOpen(true)}>
+            登录领积分
           </Button>
         </div>
       </header>

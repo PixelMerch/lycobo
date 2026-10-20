@@ -102,7 +102,7 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     for (const path of ["/", "/create", "/assets"]) {
       await page.goto(path);
-      await expect(page.getByRole("button", { name: "登录", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();
       await expect(
         page.locator("header").getByRole("button", { name: /任务中心|通知/ }),
       ).toHaveCount(0);
