@@ -134,7 +134,7 @@ test("edited history references and prompt survive all model switches", async ({
   await page.getByRole("radio", { name: "4K", exact: true }).click();
   await page.getByRole("button", { name: /创作模型/ }).click();
   await page.getByRole("option", { name: "gpt-image-2.5", exact: true }).click();
-  await expect(page.getByRole("radio", { name: "1K", exact: true })).toHaveAttribute(
+  await expect(page.getByRole("radio", { name: "4K", exact: true })).toHaveAttribute(
     "aria-checked",
     "true",
   );

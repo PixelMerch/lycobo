@@ -1,4 +1,4 @@
-import { unwrapApiData } from "@lycoboai/contracts";
+import { imageModelsResponseSchema, unwrapApiData } from "@lycoboai/contracts";
 import type { ImageRepository } from "@lycoboai/db";
 import { supportedResolutions, validateModelInput } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
@@ -61,7 +61,7 @@ function fixture() {
         ...(quality === undefined ? {} : { quality }),
       }),
     });
-  return { create, submit };
+  return { create, submit, app };
 }
 it.each(["low", "medium", "high"])(
   "validates and forwards %s quality to task persistence",
@@ -79,4 +79,24 @@ it("rejects unknown quality before creating a task and accepts legacy omitted qu
   expect(create).not.toHaveBeenCalled();
   expect((await submit()).status).toBe(202);
   expect(create.mock.calls[0]?.[1]).not.toHaveProperty("quality");
+});
+
+it("advertises and enforces the same per-model resolution policy", async () => {
+  const { app, create } = fixture();
+  const headers = { Authorization: "Bearer fixture", "Content-Type": "application/json" };
+  const response = await app.request("/api/v1/image-models", { headers });
+  const body = imageModelsResponseSchema.parse(unwrapApiData(await response.json()));
+  for (const model of body.models) {
+    const expected = model.id === "gpt-image-2" ? ["1K"] : ["1K", "2K", "4K"];
+    expect(model.enabledResolutions).toEqual(expected);
+    for (const resolution of ["1K", "2K", "4K"]) {
+      const result = await app.request("/api/v1/image-tasks", {
+        method: "POST",
+        headers: { ...headers, "Idempotency-Key": crypto.randomUUID() },
+        body: JSON.stringify({ model: model.id, prompt: "fixture", resolution }),
+      });
+      expect(result.status).toBe(expected.includes(resolution) ? 202 : 400);
+    }
+  }
+  expect(create).toHaveBeenCalledTimes(13);
 });

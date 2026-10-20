@@ -10,7 +10,7 @@ import {
 const input = imageGenerationInputSchema.parse({ model: "gpt-image-2", prompt: "coffee" });
 const config = { key: "test-not-a-secret", baseUrl: "https://api.vakv.cn", timeoutMs: 1000 };
 describe("Vakv adapter and capability evidence", () => {
-  it("enforces documented limits and enables requested 2.5 channels at 1K only", () => {
+  it("allows 1K only for image-2 and all three resolutions for the remaining models", () => {
     expect(supportedResolutions("gpt-image-2")).toEqual(["1K"]);
     expect(supportedResolutions("gpt-image-2-4K")).toEqual(["1K", "2K", "4K"]);
     expect(() => validateModelInput({ ...input, resolution: "4K" })).toThrow(
@@ -21,13 +21,14 @@ describe("Vakv adapter and capability evidence", () => {
       "gpt-image-2.5-flare",
       "gpt-image-2.5-sunburst",
     ] as const) {
-      expect(supportedResolutions(model)).toEqual(["1K"]);
+      expect(supportedResolutions(model)).toEqual(["1K", "2K", "4K"]);
       expect(() => validateModelInput({ ...input, model })).not.toThrow();
-      expect(() => validateModelInput({ ...input, model, resolution: "2K" })).toThrow();
+      for (const resolution of ["2K", "4K"] as const)
+        expect(() => validateModelInput({ ...input, model, resolution })).not.toThrow();
     }
     expect(
       supportedResolutions("gpt-image-2.5-sunburst", { "gpt-image-2.5-sunburst": ["1K"] }),
-    ).toEqual(["1K"]);
+    ).toEqual(["1K", "2K", "4K"]);
     expect(supportedResolutions("gpt-image-2", { "gpt-image-2": ["4K"] })).toEqual(["1K"]);
     expect(readImagePolicy({}).enabled).toBe(false);
     expect(() =>

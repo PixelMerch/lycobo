@@ -12,11 +12,11 @@
 | --- | --- | --- |
 | gpt-image-2 | 仅 1K | 1K |
 | gpt-image-2-4K | 1K、2K、4K；高分辨率为增强放大，不是原生 4K | 1K、2K、4K |
-| gpt-image-2.5 | 本次 1K 实测成功 | 1K |
-| gpt-image-2.5-flare | 本次 1K 实测成功 | 1K |
-| gpt-image-2.5-sunburst | 本次 1K 实测成功 | 1K |
+| gpt-image-2.5 | 本次 1K 实测成功 | 1K、2K、4K |
+| gpt-image-2.5-flare | 本次 1K 实测成功 | 1K、2K、4K |
+| gpt-image-2.5-sunburst | 本次 1K 实测成功 | 1K、2K、4K |
 
-五个模型共用 `POST /v1/images/generations` 适配器。2.5 系列默认开放 1K，其他未确认档位须向服务商确认能力后由运维设置 `VAKV_CAPABILITY_OVERRIDES`，例如仅在确认后设置某渠道的 `["1K"]`；不能通过配置扩展基础版已知的 1K 限制。
+五个模型共用 `POST /v1/images/generations` 适配器。按用户于 2026-10-20 确认的产品规则，gpt-image-2 仅开放 1K，其余模型默认开放 1K、2K、4K。API 的 image-models、提交校验与 Worker 共用 catalog.allowedResolutions；documentedResolutions 继续只记录已有文档证据，不把产品开放范围冒充付费实测结果。旧 VAKV_CAPABILITY_OVERRIDES 仍可解析以兼容现有环境文件，但不再缩小 2.5 系列的档位，也不能扩展 image-2 的 1K 限制。
 
 分辨率转尺寸目前采用长边 1024 / 2048 / 4096、短边按比例对齐到 16 像素；文档仅展示了 `1024x1024` 示例，没有穷举各比例尺寸。此尺寸映射及所有高分辨率仍需真实渠道验收。保存返回图片的实际宽高，不将请求档位当作实际像素证据。
 

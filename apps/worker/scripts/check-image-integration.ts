@@ -135,7 +135,7 @@ try {
       await app.request("/api/v1/image-tasks", {
         method: "POST",
         headers: { ...headers, "Idempotency-Key": crypto.randomUUID() },
-        body: JSON.stringify({ ...input("test"), model: "gpt-image-2.5-flare", resolution: "4K" }),
+        body: JSON.stringify({ ...input("test"), model: "gpt-image-2", resolution: "4K" }),
       })
     ).status,
     400,

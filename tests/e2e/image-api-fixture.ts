@@ -36,7 +36,7 @@ export async function mockImageApi(page: Page) {
         unitCredits: 1,
         models: modelNames.map((id) => ({
           id,
-          enabledResolutions: id === "gpt-image-2-4K" ? ["1K", "2K", "4K"] : ["1K"],
+          enabledResolutions: id === "gpt-image-2" ? ["1K"] : ["1K", "2K", "4K"],
         })),
       };
     else if (path.endsWith("/image-tasks") || path.endsWith("/image-assets")) body = { data: [] };

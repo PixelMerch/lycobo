@@ -14,11 +14,11 @@ export const capabilityOverridesSchema = z.partialRecord(
 export type CapabilityOverrides = z.infer<typeof capabilityOverridesSchema>;
 export function supportedResolutions(
   model: ImageGenerationInput["model"],
-  overrides: CapabilityOverrides = {},
+  _overrides: CapabilityOverrides = {},
 ) {
-  const documented = imageModelCatalog.find((m) => m.id === model)?.documentedResolutions ?? [];
-  // Operator assertions are only permitted for undocumented channels, never to expand known limits.
-  return documented.length ? documented : (overrides[model] ?? ["1K"]);
+  // Product-confirmed policy is shared by the API and Worker. Legacy overrides no longer
+  // restrict the 2.5 channels or expand the base model beyond 1K.
+  return imageModelCatalog.find((m) => m.id === model)?.allowedResolutions ?? [];
 }
 export function validateModelInput(
   input: ImageGenerationInput,

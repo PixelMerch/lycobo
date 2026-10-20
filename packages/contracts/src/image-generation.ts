@@ -60,6 +60,7 @@ export type StoredImage = {
 };
 export const imageModelCatalog = imageModelIds.map((id) => ({
   id,
+  allowedResolutions: (id === "gpt-image-2" ? ["1K"] : ["1K", "2K", "4K"]) as ImageResolution[],
   documentedResolutions: (id === "gpt-image-2"
     ? ["1K"]
     : id === "gpt-image-2-4K"
