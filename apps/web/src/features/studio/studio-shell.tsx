@@ -1,4 +1,4 @@
-import { Button, Drawer, Modal, Popover } from "@heroui/react";
+import { Button, Drawer, Modal } from "@heroui/react";
 import {
   IconBell,
   IconChevronRight,
@@ -12,13 +12,13 @@ import {
   IconSettings,
   IconShoppingBag,
   IconSparkles,
-  IconUser,
 } from "@tabler/icons-react";
 import { type CSSProperties, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { CaseGallery } from "./case-gallery";
 import { GenerationHistory } from "./generation-history";
+import { LoginDialog } from "./login-dialog";
 import { cases, models, photo, useStudioStore } from "./studio-state";
 
 const chooserLayout: CSSProperties & { "--tool-columns": number } = {
@@ -29,6 +29,7 @@ export function StudioShell() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [tkOpen, setTkOpen] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
+  const [loginOpen, setLoginOpen] = useState(false);
   const chooserOpen = useStudioStore((s) => s.chooserOpen);
   const setChooserOpen = useStudioStore((s) => s.setChooserOpen);
   const activeModel = useStudioStore((s) => s.activeModel);
@@ -184,22 +185,12 @@ export function StudioShell() {
           >
             <UiIcon icon={IconBell} size="navigation" />
           </Button>
-          <Popover>
-            <Button isIconOnly variant="tertiary" className="avatar" aria-label="个人账户">
-              <UiIcon icon={IconUser} size="navigation" />
-            </Button>
-            <Popover.Content placement="bottom end">
-              <Popover.Dialog className="account-panel" aria-label="个人账户">
-                <Popover.Heading>未登录</Popover.Heading>
-                <p>登录服务开放后，可管理账户与云端作品。</p>
-                <Button variant="secondary" isDisabled>
-                  登录账户
-                </Button>
-              </Popover.Dialog>
-            </Popover.Content>
-          </Popover>
+          <Button className="primary-action header-login" onPress={() => setLoginOpen(true)}>
+            登录
+          </Button>
         </div>
       </header>
+      {loginOpen && <LoginDialog onClose={() => setLoginOpen(false)} />}
       <main className="main-content">
         <Outlet />
       </main>
