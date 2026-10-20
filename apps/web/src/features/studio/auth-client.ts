@@ -62,8 +62,10 @@ export function useEnterpriseLogin() {
     },
     onSuccess: async (user) => {
       await client.cancelQueries();
-      client.removeQueries();
       client.setQueryData(authKey, user);
+      // Reset notifies mounted observers and refetches active queries with the new cookie.
+      // Removing queries leaves those observers attached to the previous login state.
+      await client.resetQueries({ predicate: (query) => query.queryKey[0] !== authKey[0] });
     },
   });
 }
@@ -76,8 +78,8 @@ export function useEnterpriseLogout() {
     },
     onSuccess: async () => {
       await client.cancelQueries();
-      client.removeQueries();
       client.setQueryData(authKey, null);
+      await client.resetQueries({ predicate: (query) => query.queryKey[0] !== authKey[0] });
     },
   });
 }
