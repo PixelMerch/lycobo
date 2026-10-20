@@ -66,23 +66,35 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
         if (!open) requestClose();
       }}
     >
-      <Modal.Backdrop className="login-backdrop">
+      <Modal.Backdrop className={`login-backdrop${phase === "closed" ? " is-closing" : ""}`}>
         <Modal.Container className="login-container">
           <Modal.Dialog className="login-dialog">
-            <Modal.CloseTrigger className="login-close" aria-label="关闭登录" />
             <motion.div
               className="login-panel"
               initial={reduceMotion ? false : "closed"}
               animate={phase}
-              transition={{ type: "spring", stiffness: 320, damping: 30, mass: 0.9 }}
               variants={{
-                open: { opacity: 1, scale: 1, y: 0 },
-                closed: { opacity: 0, scale: 0.96, y: 12 },
+                // Entry settles with a soft spring; exit is a short tween so the
+                // dismissal never feels slower than the open.
+                open: {
+                  opacity: 1,
+                  scale: 1,
+                  y: 0,
+                  transition: { type: "spring", stiffness: 320, damping: 30, mass: 0.9 },
+                },
+                closed: {
+                  opacity: 0,
+                  scale: 0.98,
+                  y: 6,
+                  transition: { duration: 0.14, ease: [0.3, 0, 0.7, 1] },
+                },
               }}
               onAnimationComplete={() => {
                 if (phase === "closed") onClose();
               }}
             >
+              {/* Inside the panel so the close control leaves with everything else. */}
+              <Modal.CloseTrigger className="login-close" aria-label="关闭登录" />
               <div className="login-banner">
                 <UiIcon icon={IconSparkles} size="small" />
                 <p>从商品参考到场景创作，让灵感拥有新的画面</p>

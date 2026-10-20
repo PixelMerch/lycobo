@@ -2476,6 +2476,14 @@ html:has(.workspace)::-webkit-scrollbar,
 }
 .login-backdrop {
   backdrop-filter: blur(10px);
+  /* Fades with the panel so the page is never dimmed with nothing inside. */
+  transition:
+    opacity 140ms ease,
+    backdrop-filter 140ms ease;
+}
+.login-backdrop.is-closing {
+  opacity: 0;
+  backdrop-filter: blur(0);
 }
 .login-container {
   padding: 24px 60px;
@@ -2492,35 +2500,37 @@ html:has(.workspace)::-webkit-scrollbar,
   overflow: visible;
 }
 .login-panel {
+  position: relative;
   overflow: hidden;
   border: 0;
   border-radius: 28px;
   background: #fff;
   transform-origin: 50% 60%;
 }
+/* Sits inside the animated panel, on the light banner. */
 .login-close {
   position: absolute;
-  top: 0;
-  right: -48px;
+  top: 8px;
+  right: 8px;
   z-index: 3;
-  width: 40px;
-  height: 40px;
-  min-height: 40px;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
   border: 0;
-  border-radius: 10px;
-  background: #ffffff24;
-  color: #fff;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  color: #29232f;
 }
 .login-close:hover,
 .login-close[data-hovered="true"] {
-  background: #ffffff40;
+  background: rgba(0, 0, 0, 0.12);
 }
 .login-banner {
   display: flex;
   align-items: center;
   gap: 8px;
   min-height: 52px;
-  padding: 12px 32px;
+  padding: 12px 56px 12px 32px;
   background: #e9dfff;
   color: #29232f;
   font-size: var(--text-sm);
