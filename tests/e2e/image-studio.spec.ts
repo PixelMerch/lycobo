@@ -109,11 +109,13 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     }
     await page.goto("/");
     await page.getByRole("button", { name: "选择创作模型", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "图片创作", exact: true });
+    const dialog = page.getByRole("dialog", { name: "模型和画面设置", exact: true });
     await expect(dialog).toBeVisible();
     const box = await dialog.boundingBox();
     expect(box && box.x >= 0 && box.x + box.width <= width).toBe(true);
-    await page.getByRole("button", { name: "进入 gpt-image-2-4K 创作" }).click();
+    await dialog.getByRole("button", { name: /gpt-image-2-4K/ }).click();
+    await dialog.press("Escape");
+    await page.getByRole("button", { name: "开始创作", exact: true }).click();
     await expect(page).toHaveURL(/\/create$/);
   });
 }
@@ -122,7 +124,7 @@ test("compact model cards open from their covers and case cards restore focus", 
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "选择创作模型", exact: true }).click();
+  await page.getByRole("button", { name: "图片创作", exact: true }).click();
   const chooser = page.getByRole("dialog", { name: "图片创作", exact: true });
   const caseCard = chooser.getByRole("button", { name: "查看案例：原木卧室" });
   await caseCard.click();

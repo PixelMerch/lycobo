@@ -41,17 +41,17 @@ test("case filters combine, empty results recover and reuse preserves references
   await page.getByRole("button", { name: "查看全部", exact: true }).click();
   await expect(page.locator(".commerce-case")).toHaveCount(4);
   await page.getByRole("textbox", { name: "创作需求" }).fill("已有草稿");
-  await page.getByRole("button", { name: "做同款：香水 · 自然光场景" }).click();
-  const dialog = page.getByRole("dialog", { name: "香水 · 自然光场景" });
+  await page.getByRole("button", { name: "做同款：床品 · 自然光场景" }).click();
+  const dialog = page.getByRole("dialog", { name: "床品 · 自然光场景" });
   await dialog.getByRole("button", { name: "用这个提示词创作" }).click();
   await expect(dialog.getByRole("alert")).toContainText("已有草稿");
   await dialog.getByRole("button", { name: "保留草稿" }).click();
   await dialog.press("Escape");
   await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("已有草稿");
-  await page.getByRole("button", { name: "做同款：香水 · 自然光场景" }).click();
+  await page.getByRole("button", { name: "做同款：床品 · 自然光场景" }).click();
   await dialog.getByRole("button", { name: "用这个提示词创作" }).click();
   await dialog.getByRole("button", { name: "替换并进入" }).click();
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(/保留参考商品的瓶身/);
+  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(/保留参考床品的颜色/);
   await expect(page.locator(".reference-tile")).toHaveCount(0);
 });
 
@@ -65,11 +65,11 @@ for (const width of [320, 390, 768, 1440, 1920]) {
     ).toBe(true);
     if (width === 390 || width === 1920)
       await page.screenshot({ path: `/tmp/lycobo-home-${width}.png`, fullPage: true });
-    await page.getByRole("button", { name: "查看案例：香水 · 自然光场景" }).click();
-    const dialog = page.getByRole("dialog", { name: "香水 · 自然光场景" });
+    await page.getByRole("button", { name: "查看案例：床品 · 自然光场景" }).click();
+    const dialog = page.getByRole("dialog", { name: "床品 · 自然光场景" });
     await expect(dialog).toBeVisible();
     await dialog.press("Escape");
-    await expect(page.getByRole("button", { name: "查看案例：香水 · 自然光场景" })).toBeFocused();
+    await expect(page.getByRole("button", { name: "查看案例：床品 · 自然光场景" })).toBeFocused();
   });
 }
 
@@ -129,4 +129,26 @@ test("recent works loads only authenticated output thumbnails and recovers from 
   await expect(recent.getByRole("link", { name: "查看作品：我的商品作品" })).toBeVisible();
   await expect(recent.locator("img")).toHaveAttribute("src", new RegExp(`${outputId}.*thumbnail`));
   await expect(recent.getByText("不能当成作品的参考图")).toHaveCount(0);
+});
+
+test("home settings preserve drafts and video cannot submit image tasks", async ({ page }) => {
+  await mockImageApi(page);
+  await page.goto("/");
+  await page.getByRole("textbox", { name: "创作需求" }).fill("保留绗缝与面料细节");
+  await page.getByRole("button", { name: "选择创作模型", exact: true }).click();
+  const panel = page.getByRole("dialog", { name: "模型和画面设置" });
+  await expect(panel).toBeVisible();
+  await panel.getByRole("radio", { name: "16:9", exact: true }).click();
+  await panel.getByRole("button", { name: /gpt-image-2.5-flare/ }).click();
+  await panel.press("Escape");
+  await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("保留绗缝与面料细节");
+  await expect(page.getByRole("button", { name: "选择创作模型", exact: true })).toContainText(
+    "16:9",
+  );
+  await page.getByRole("radio", { name: "商品视频", exact: true }).click();
+  await expect(page.getByRole("button", { name: "开始创作", exact: true })).toBeDisabled();
+  await expect(page.getByRole("status").filter({ hasText: "视频生成即将开放" })).toBeVisible();
+  await page.getByRole("radio", { name: "家纺生图", exact: true }).click();
+  await page.getByRole("button", { name: "开始创作", exact: true }).click();
+  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("保留绗缝与面料细节");
 });

@@ -1,0 +1,197 @@
+import {
+  Button,
+  Popover,
+  TextArea,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+} from "@heroui/react";
+import {
+  IconArrowUp,
+  IconCheck,
+  IconChevronDown,
+  IconPhoto,
+  IconSparkles,
+} from "@tabler/icons-react";
+import { useState } from "react";
+import { useNavigate } from "react-router";
+import { UiIcon } from "../../components/ui-icon";
+import { useImageModels } from "./generation-client";
+import { ReferencePicker } from "./reference-picker";
+import { models, useStudioStore } from "./studio-state";
+
+export function HomeComposer() {
+  const model = useStudioStore((s) => s.activeModel);
+  const draft = useStudioStore((s) => s.drafts[model]);
+  const updateDraft = useStudioStore((s) => s.updateDraft);
+  const setModel = useStudioStore((s) => s.setActiveModel);
+  const catalog = useImageModels();
+  const navigate = useNavigate();
+  const [mode, setMode] = useState("图片生成");
+  const resolutions =
+    catalog.data?.models.find((item) => item.id === model)?.enabledResolutions ?? [];
+  return (
+    <>
+      <div className="home-intro">
+        <span>和 Lycobo</span>
+        <ToggleButtonGroup
+          aria-label="创作类型"
+          selectionMode="single"
+          disallowEmptySelection
+          selectedKeys={[mode]}
+          onSelectionChange={(keys) => setMode(String([...keys][0]))}
+        >
+          <ToggleButton id="图片生成">家纺生图</ToggleButton>
+          <ToggleButton id="视频生成">商品视频</ToggleButton>
+        </ToggleButtonGroup>
+        <span>聊聊创作想法</span>
+      </div>
+      <div className="home-composer">
+        <TextField className="home-prompt" aria-label="创作需求">
+          <TextArea
+            aria-label="创作需求"
+            value={draft.prompt}
+            onChange={(event) => updateDraft(model, { prompt: event.target.value })}
+            placeholder={
+              mode === "图片生成"
+                ? "描述你想要的画面，上传床品、窗帘或面料作为参考"
+                : "描述商品镜头、运镜与面料细节，构思你的家纺视频"
+            }
+            maxLength={9000}
+          />
+        </TextField>
+        <div className="home-composer-tools">
+          <div className="home-upload">
+            <ReferencePicker compact model={model} references={draft.references} />
+          </div>
+          <span className="home-mode-label">
+            <UiIcon icon={IconPhoto} />
+            {mode}
+          </span>
+          <Popover>
+            <Button className="home-settings-trigger" variant="ghost" aria-label="选择创作模型">
+              <UiIcon icon={IconSparkles} />
+              <span>{model}</span>
+              <span>·</span>
+              <span>{draft.ratio}</span>
+              <span>·</span>
+              <span>{draft.resolution}</span>
+              <UiIcon icon={IconChevronDown} size="small" />
+            </Button>
+            <Popover.Content className="home-settings" placement="bottom" offset={8}>
+              <Popover.Dialog aria-label="模型和画面设置">
+                <div className="home-settings-models">
+                  <Popover.Heading>模型</Popover.Heading>
+                  {models.map((item) => (
+                    <ToggleButton
+                      key={item.id}
+                      variant="ghost"
+                      className="home-model-option"
+                      isSelected={item.id === model}
+                      onPress={() => {
+                        if (item.id === model) return;
+                        const supported = catalog.data?.models.find(
+                          (entry) => entry.id === item.id,
+                        )?.enabledResolutions;
+                        updateDraft(item.id, {
+                          ...draft,
+                          resolution: supported?.some((value) => value === draft.resolution)
+                            ? draft.resolution
+                            : "1K",
+                        });
+                        setModel(item.id);
+                      }}
+                    >
+                      <span className="home-model-check">
+                        {item.id === model && <UiIcon icon={IconCheck} />}
+                      </span>
+                      <span>
+                        <strong>{item.name}</strong>
+                        <small>{item.description}</small>
+                      </span>
+                    </ToggleButton>
+                  ))}
+                </div>
+                <div className="home-settings-options">
+                  <h3>画面比例</h3>
+                  <ToggleButtonGroup
+                    aria-label="画面比例"
+                    selectionMode="single"
+                    disallowEmptySelection
+                    selectedKeys={[draft.ratio]}
+                    onSelectionChange={(keys) =>
+                      updateDraft(model, { ratio: String([...keys][0]) })
+                    }
+                  >
+                    {["1:1", "16:9", "9:16", "4:3", "3:4"].map((ratio) => (
+                      <ToggleButton key={ratio} id={ratio}>
+                        <span
+                          className="home-ratio-shape"
+                          style={{ aspectRatio: ratio.replace(":", "/") }}
+                        />
+                        {ratio}
+                      </ToggleButton>
+                    ))}
+                  </ToggleButtonGroup>
+                  <h3>图片分辨率</h3>
+                  <ToggleButtonGroup
+                    aria-label="图片分辨率"
+                    selectionMode="single"
+                    disallowEmptySelection
+                    selectedKeys={[draft.resolution]}
+                    onSelectionChange={(keys) =>
+                      updateDraft(model, { resolution: String([...keys][0]) })
+                    }
+                  >
+                    {["1K", "2K", "4K"].map((resolution) => (
+                      <ToggleButton
+                        id={resolution}
+                        key={resolution}
+                        isDisabled={!resolutions.some((value) => value === resolution)}
+                      >
+                        {resolution}
+                      </ToggleButton>
+                    ))}
+                  </ToggleButtonGroup>
+                  {!resolutions.length && (
+                    <p className="home-settings-note">模型可用规格将在服务连接后显示。</p>
+                  )}
+                  <h3>生成张数</h3>
+                  <ToggleButtonGroup
+                    aria-label="生成张数"
+                    selectionMode="single"
+                    disallowEmptySelection
+                    selectedKeys={[draft.count]}
+                    onSelectionChange={(keys) =>
+                      updateDraft(model, { count: String([...keys][0]) })
+                    }
+                  >
+                    {["1", "2", "3", "4"].map((count) => (
+                      <ToggleButton id={count} key={count}>
+                        {count} 张
+                      </ToggleButton>
+                    ))}
+                  </ToggleButtonGroup>
+                </div>
+              </Popover.Dialog>
+            </Popover.Content>
+          </Popover>
+          <Button
+            isIconOnly
+            className="home-submit"
+            aria-label="开始创作"
+            isDisabled={mode === "视频生成"}
+            onPress={() => navigate("/create")}
+          >
+            <UiIcon icon={IconArrowUp} size="action" />
+          </Button>
+        </div>
+      </div>
+      {mode === "视频生成" && (
+        <p className="home-video-note" role="status">
+          视频生成即将开放，已保留你的创作需求。
+        </p>
+      )}
+    </>
+  );
+}

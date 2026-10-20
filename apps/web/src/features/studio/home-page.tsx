@@ -6,8 +6,6 @@ import {
   Modal,
   Select,
   Spinner,
-  TextArea,
-  TextField,
   ToggleButton,
   ToggleButtonGroup,
 } from "@heroui/react";
@@ -26,7 +24,7 @@ import { UiIcon } from "../../components/ui-icon";
 import { useEnterpriseSession } from "./auth-client";
 import { type CommerceCase, commerceCases } from "./commerce-cases";
 import { assetContentUrl, useImageAssets, useImageSession } from "./generation-client";
-import { ReferencePicker } from "./reference-picker";
+import { HomeComposer } from "./home-composer";
 import { useStudioStore } from "./studio-state";
 import "../../styles/home.css";
 
@@ -58,7 +56,6 @@ export function HomePage() {
   const model = useStudioStore((s) => s.activeModel);
   const draft = useStudioStore((s) => s.drafts[model]);
   const updateDraft = useStudioStore((s) => s.updateDraft);
-  const setChooserOpen = useStudioStore((s) => s.setChooserOpen);
   const identity = useEnterpriseSession();
   const navigate = useNavigate();
   const [purpose, setPurpose] = useState("全部");
@@ -87,37 +84,10 @@ export function HomePage() {
   return (
     <section className="commerce-home page-panel">
       <section className="home-start" aria-labelledby="home-title">
-        <h1 id="home-title">为你的商品，创作下一张好图</h1>
-        <div className="home-composer">
-          <TextField className="home-prompt" aria-label="创作需求">
-            <TextArea
-              aria-label="创作需求"
-              value={draft.prompt}
-              onChange={(event) => updateDraft(model, { prompt: event.target.value })}
-              placeholder="上传商品图片，描述你想要的画面"
-              maxLength={9000}
-            />
-          </TextField>
-          {!draft.prompt && (
-            <p className="home-prompt-example">例如：保留香水瓶身与标签，生成自然光商品主图</p>
-          )}
-          <div className="home-composer-tools">
-            <div className="home-upload">
-              <ReferencePicker model={model} references={draft.references} compact />
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              aria-label="选择创作模型"
-              onPress={() => setChooserOpen(true)}
-            >
-              图片创作 <UiIcon icon={IconArrowRight} size="small" />
-            </Button>
-            <Button className="primary-action home-start-button" onPress={() => start()}>
-              开始创作 <UiIcon icon={IconArrowRight} size="default" />
-            </Button>
-          </div>
-        </div>
+        <h1 id="home-title" className="sr-only">
+          为你的商品，创作下一张好图
+        </h1>
+        <HomeComposer />
         <section className="home-shortcuts" aria-label="创作用途">
           {shortcuts.map((item) => (
             <Button variant="ghost" key={item.name} onPress={() => start(item.prompt)}>
@@ -370,7 +340,9 @@ function CasePhoto({ item, original = false }: { item: CommerceCase; original?: 
       role="img"
       aria-label={`${item.title}${original ? "参考示例" : "效果示例"}`}
       style={{
-        backgroundPosition: `${(commerceCases.indexOf(item) * 100) / 3}% ${original ? 100 : 0}%`,
+        backgroundImage: `url(/studio/${original || item.id === "bag" ? "set" : item.id === "drink" ? "lavender" : "bedroom"}-thumb.webp)`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
       }}
     />
   );
