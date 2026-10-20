@@ -1,11 +1,8 @@
 import {
   Alert,
   Button,
-  Label,
   Popover,
   Tabs,
-  TextArea,
-  TextField,
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
@@ -18,6 +15,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { type Key, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
 import {
   useGenerateImage,
@@ -83,16 +81,15 @@ function Workspace({ model }: { model: ModelId }) {
             }}
           />
           <ReferencePicker model={model} references={draft.references} />
-          <TextField className="prompt-field">
-            <Label>提示词</Label>
-            <TextArea
-              ref={inputId}
-              value={draft.prompt}
-              onChange={(event) => updateDraft(model, { prompt: event.target.value })}
-              placeholder="描述你想要的画面，例如：保留商品，替换为原木卧室场景"
-              maxLength={9000}
-            />
-          </TextField>
+          <ReferencePrompt
+            className="prompt-field"
+            label="提示词"
+            inputRef={inputId}
+            value={draft.prompt}
+            onChange={(prompt) => updateDraft(model, { prompt })}
+            references={draft.references}
+            placeholder="描述你想要的画面，输入 @ 引用已上传图片"
+          />
           <RatioPicker value={draft.ratio} onChange={(ratio) => updateDraft(model, { ratio })} />
           {fields.map((field) => (
             <ParameterGroup

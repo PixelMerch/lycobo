@@ -1,11 +1,4 @@
-import {
-  Button,
-  Popover,
-  TextArea,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-} from "@heroui/react";
+import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import {
   IconArrowUp,
   IconCheck,
@@ -14,6 +7,7 @@ import {
   IconSparkles,
 } from "@tabler/icons-react";
 import { useNavigate } from "react-router";
+import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
 import { useImageModels } from "./generation-client";
 import { ReferencePicker } from "./reference-picker";
@@ -38,15 +32,13 @@ export function HomeComposer() {
         <div className="home-upload">
           <ReferencePicker compact model={model} references={draft.references} />
         </div>
-        <TextField className="home-prompt" aria-label="创作需求">
-          <TextArea
-            aria-label="创作需求"
-            value={draft.prompt}
-            onChange={(event) => updateDraft(model, { prompt: event.target.value })}
-            placeholder="描述你想要的画面，上传床品、窗帘或面料作为参考"
-            maxLength={9000}
-          />
-        </TextField>
+        <ReferencePrompt
+          className="home-prompt"
+          value={draft.prompt}
+          onChange={(prompt) => updateDraft(model, { prompt })}
+          references={draft.references}
+          placeholder="描述你想要的画面，输入 @ 引用已上传图片"
+        />
         <div className="home-composer-tools">
           <span className="home-mode-label">
             <UiIcon icon={IconPhoto} />

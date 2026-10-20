@@ -30,3 +30,5 @@
 参考图卡片封装在 `apps/web/src/components/reference-image-card.tsx`，通过 src、number、onRemove、isDisabled 属性复用；不依赖业务 store。首页与 create 页通过 ReferencePicker 共用卡片及文件校验逻辑，首页上传入口在前、缩略图 57.12px（54.4px 基础上增大 5%），首页编号为 10px / 14px，create 保持三列布局。
 
 共享参考图使用 contain 显示完整图片；编号降低为白色 65% 透明度。桌面删除按钮仅 hover／键盘聚焦显示，贴合图片右上角覆盖显示，右上圆角与图片一致，无白色边框和阴影；触屏保留删除入口。
+
+`ReferencePrompt` 为首页和 create 页共享的提示词输入组件，输入 @ 打开紧凑的已上传图片列表，选择后插入 @图片N 文本。引用沿用当前参考图顺序，不新增上传或 API 字段；不将文本引用宣称为供应商原生实体绑定。中文输入法组合期间不触发选择层，选择、Esc、键盘 Tab/Enter 和光标中间插入均纳入 UI 验收。

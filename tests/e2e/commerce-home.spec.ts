@@ -171,3 +171,40 @@ test("home settings preserve drafts and only image creation is offered", async (
   await page.getByRole("button", { name: "开始创作", exact: true }).click();
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("保留绗缝与面料细节");
 });
+
+test("image mentions insert at the cursor and preserve surrounding text", async ({ page }) => {
+  await mockImageApi(page);
+  await page.goto("/");
+  const prompt = page.getByRole("textbox", { name: "创作需求" });
+  await prompt.fill("@");
+  const menu = page.getByRole("dialog", { name: "引用已上传图片" });
+  await expect(menu).toContainText("请先上传参考图片");
+  await menu.press("Escape");
+  const png = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+    "base64",
+  );
+  await page.getByLabel("添加参考图片", { exact: true }).setInputFiles([
+    { name: "a.png", mimeType: "image/png", buffer: png },
+    { name: "b.png", mimeType: "image/png", buffer: png },
+  ]);
+  await expect(page.locator(".reference-tile")).toHaveCount(2);
+  await prompt.fill("保留 面料");
+  await prompt.press("Home");
+  await prompt.press("ArrowRight");
+  await prompt.press("ArrowRight");
+  await prompt.press("@");
+  await expect(menu).toBeVisible();
+  await page.getByRole("option", { name: "图片2", exact: true }).click();
+  await expect(prompt).toHaveValue("保留@图片2  面料");
+  await expect(prompt).toBeFocused();
+  await page.getByRole("button", { name: "开始创作", exact: true }).click();
+  const workspacePrompt = page.getByLabel("提示词", { exact: true });
+  await expect(workspacePrompt).toHaveValue("保留@图片2  面料");
+  await workspacePrompt.fill("@");
+  await expect(menu).toBeVisible();
+  await menu.press("Tab");
+  await expect(page.getByRole("option", { name: "图片1", exact: true })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(workspacePrompt).toHaveValue("@图片1 ");
+});
