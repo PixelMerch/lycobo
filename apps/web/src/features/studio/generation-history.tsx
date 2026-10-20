@@ -8,6 +8,7 @@ import {
   IconLayersIntersect,
   IconMaximize,
   IconPhoto,
+  IconRefresh,
   IconSparkles,
   IconStar,
   IconStarFilled,
@@ -335,6 +336,11 @@ export function HistoryIndex() {
                 </span>
               ) : image ? (
                 <img src={assetContentUrl(image, true)} alt={job.model} loading="lazy" />
+              ) : job.status !== "succeeded" ? (
+                <span className="history-retry-hint" title="生成失败，点击查看详情和重试入口">
+                  <UiIcon icon={IconRefresh} />
+                  <span>重试</span>
+                </span>
               ) : (
                 <span>{statusLabel[job.status]}</span>
               )}

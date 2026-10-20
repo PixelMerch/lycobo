@@ -2070,6 +2070,11 @@ small {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
+.history-thumbnail > .history-retry-hint {
+  align-content: center;
+  gap: 6px;
+  color: var(--danger);
+}
 .history-thumbnail > span {
   display: grid;
   place-items: center;

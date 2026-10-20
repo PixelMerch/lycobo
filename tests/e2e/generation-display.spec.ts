@@ -116,7 +116,10 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     const retry = preview.getByRole("button", { name: "重试", exact: true });
     await expect(retry).toBeVisible();
     await expect(retry.locator("svg")).toHaveClass(/icon-refresh/);
-    await expect(page.locator(".history-thumbnail")).toHaveText("失败");
+    await expect(page.locator(".history-thumbnail")).toHaveText("重试");
+    await expect(page.locator(".history-thumbnail .history-retry-hint svg")).toHaveClass(
+      /icon-refresh/,
+    );
     await expect(page.getByText(/结果待核对|本次调用结果尚未确认|部分完成/)).toHaveCount(0);
     if (status === "needs_reconciliation") {
       await expect(retry).toBeDisabled();
