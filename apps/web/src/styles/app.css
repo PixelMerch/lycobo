@@ -59,6 +59,15 @@
   --sidebar-width: 200px;
   --header-height: 64px;
   --content-padding: 24px;
+  --control-height-sm: 32px;
+  --control-height-md: 36px;
+  --control-height-lg: 40px;
+  --control-touch-target: 44px;
+  --control-padding-sm: 8px;
+  --control-padding-md: 12px;
+  --control-padding-lg: 16px;
+  --control-gap: 6px;
+  --control-radius: 8px;
 }
 * {
   box-sizing: border-box;
@@ -133,10 +142,11 @@ small {
   outline-offset: 2px;
 }
 .button,
+.toggle-button,
 .neutral-button,
 .nav-row {
-  min-height: 40px;
-  border-radius: 8px;
+  min-height: 0;
+  border-radius: var(--control-radius);
   transform: none;
   font-weight: var(--weight-medium);
   transition:
@@ -144,9 +154,36 @@ small {
     border-color 150ms,
     color 150ms;
 }
-.button {
+.button,
+.toggle-button {
+  height: var(--control-height-md);
+  padding: 0 var(--control-padding-md);
+  gap: var(--control-gap);
   font-size: var(--text-base);
   line-height: var(--leading-base);
+}
+.button--sm {
+  height: var(--control-height-sm);
+  padding-inline: var(--control-padding-sm);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.button--lg {
+  height: var(--control-height-lg);
+  padding-inline: var(--control-padding-lg);
+}
+.button--icon-only {
+  width: var(--control-height-md);
+  min-width: var(--control-height-md);
+  padding: 0;
+}
+.button--sm.button--icon-only {
+  width: var(--control-height-sm);
+  min-width: var(--control-height-sm);
+}
+.button--lg.button--icon-only {
+  width: var(--control-height-lg);
+  min-width: var(--control-height-lg);
 }
 .button:disabled,
 .button[data-disabled="true"] {
@@ -160,7 +197,7 @@ small {
   color: #09070d;
   border: 1px solid transparent;
   font-weight: var(--weight-semibold);
-  padding-inline: 24px;
+  padding-inline: var(--control-padding-md);
 }
 .primary-action:hover {
   filter: brightness(1.05);
@@ -174,8 +211,9 @@ small {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 8px 14px;
+  gap: var(--control-gap);
+  height: var(--control-height-md);
+  padding: 0 var(--control-padding-md);
   background: #ffffff04;
   border: 1px solid var(--border);
   color: var(--foreground);
@@ -185,8 +223,8 @@ small {
   border-color: #ffffff29;
 }
 .icon-button {
-  width: 40px;
-  height: 40px;
+  width: var(--control-height-md);
+  height: var(--control-height-md);
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -196,9 +234,9 @@ small {
   flex: none;
 }
 .small-button {
-  min-height: 32px;
-  height: 32px;
-  padding: 4px 12px;
+  min-height: var(--control-height-sm);
+  height: var(--control-height-sm);
+  padding: 0 var(--control-padding-sm);
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
   border: 1px solid #ffffff20;
@@ -696,7 +734,7 @@ small {
     background: color-mix(in srgb, var(--surface) 94%, var(--foreground));
   }
 }
-.model-card[aria-pressed="true"],
+.model-card[aria-current="true"],
 .model-card:active,
 .model-card[data-pressed="true"],
 .case-card-link:active,
@@ -1905,7 +1943,7 @@ small {
   color: #ffffff;
   background: rgb(255 255 255 / 16%);
 }
-.generation-media-action[aria-pressed="true"] {
+.generation-media-action[data-selected="true"] {
   color: #f6d78b;
 }
 @media (hover: none) {
@@ -2245,7 +2283,7 @@ small {
   background: transparent;
   box-shadow: none;
 }
-.history-thumbnail[aria-pressed="true"] {
+.history-thumbnail[aria-current="true"] {
   box-shadow: inset 0 0 0 2px var(--focus);
 }
 @media (max-width: 767px) {
@@ -2477,7 +2515,7 @@ html:has(.workspace)::-webkit-scrollbar,
 .header-login {
   min-width: 64px;
   height: 32px;
-  padding: 0 16px;
+  padding: 0 var(--control-padding-md);
   font-size: var(--text-sm);
   border: 0;
   border-radius: 999px;
@@ -2603,7 +2641,8 @@ html:has(.workspace)::-webkit-scrollbar,
   display: flex;
   flex-direction: column;
   gap: 20px;
-  min-height: 316px;
+  /* Locked to the tallest method so switching never changes the dialog height. */
+  block-size: 368px;
 }
 /* Method switcher: compact three-up track, selected item uses the accent soft fill. */
 .login-modes {
@@ -2659,10 +2698,18 @@ html:has(.workspace)::-webkit-scrollbar,
   outline: none;
   box-shadow: none;
 }
-.login-form .input-group .input {
+.login-form .input-group .input,
+.login-form .input-group :is(.input-group__input, [data-slot="input-group-input"]) {
   min-width: 0;
   border: 0;
+  border-radius: inherit;
   background: transparent;
+  outline: none;
+  box-shadow: none;
+}
+/* One visible indicator only: the group border. */
+.login-form .input-group :is(.input-group__input, [data-slot="input-group-input"]):focus,
+.login-form .input-group :is(.input-group__input, [data-slot="input-group-input"]):focus-visible {
   outline: none;
   box-shadow: none;
 }
@@ -2698,16 +2745,18 @@ html:has(.workspace)::-webkit-scrollbar,
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 16px;
+  min-height: 0;
   text-align: center;
 }
 .login-qr-unavailable {
   position: relative;
   display: grid;
+  flex: none;
   place-content: center;
   justify-items: center;
   gap: 12px;
-  width: 184px;
+  width: 168px;
   aspect-ratio: 1;
   border: 1px dashed var(--border);
   border-radius: 12px;
@@ -2785,7 +2834,7 @@ html:has(.workspace)::-webkit-scrollbar,
     font-size: var(--text-page-mobile);
   }
   .login-body {
-    min-height: 0;
+    block-size: 368px;
   }
   .login-form :is(.input, .input-group, .input-group .input) {
     font-size: 16px;
@@ -2828,4 +2877,19 @@ html:has(.workspace)::-webkit-scrollbar,
   color: var(--danger);
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
+}
+
+/* Preserve compact desktop density while providing touch targets. Upload removal
+ * uses its existing transparent 44px hit area around the visible 24px circle. */
+@media (max-width: 767px), (pointer: coarse) {
+  .button:not(.remove-reference),
+  .toggle-button,
+  .icon-button {
+    min-height: var(--control-touch-target);
+  }
+  .button--icon-only:not(.remove-reference),
+  .toggle-button--icon-only,
+  .icon-button {
+    min-width: var(--control-touch-target);
+  }
 }

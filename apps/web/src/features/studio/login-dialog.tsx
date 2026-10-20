@@ -109,8 +109,7 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                       <Chip color="accent" size="sm" variant="tertiary">
                         即将开放
                       </Chip>
-                      <p>开放后，用微信扫描二维码即可进入创作工作台。</p>
-                      <p>现在可以先用手机号或企业账号登录。</p>
+                      <p>开放后可用微信扫码进入工作台，现在请先用手机号或企业账号登录。</p>
                     </div>
                   </div>
                 ) : (

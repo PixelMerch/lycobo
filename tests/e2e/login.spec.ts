@@ -48,6 +48,42 @@ test("header login opens account/password dialog and validates without faking au
   await expect(dialog.getByLabel("密码", { exact: true })).toHaveValue("");
 });
 
+test("switching login methods keeps the dialog height and draws a single focus border", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "登录领积分", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "欢迎使用 lycoboai" });
+  await expect(dialog).toBeVisible();
+  const heights: number[] = [];
+  for (const label of ["微信扫码", "手机号", "企业账号"]) {
+    await dialog.getByRole("radio", { name: label, exact: true }).click();
+    await expect
+      .poll(async () => {
+        const box = await dialog.boundingBox();
+        heights.push(Math.round(box?.height ?? 0));
+        return heights.at(-1);
+      })
+      .toBeGreaterThan(0);
+  }
+  expect(new Set(heights).size).toBe(1);
+  // The method body is tall enough for every method, so nothing scrolls or clips.
+  expect(
+    await dialog.locator(".login-body").evaluate((node) => node.scrollHeight - node.clientHeight),
+  ).toBe(0);
+  // Grouped fields keep a single border: the shell, never an inner outline.
+  const grouped = dialog.locator(".login-input-group");
+  await dialog.getByLabel("密码", { exact: true }).focus();
+  await expect(grouped).toHaveCSS("border-top-width", "1px");
+  await expect(grouped.locator("input")).toHaveCSS("outline-style", "none");
+  await expect(grouped.locator("input")).toHaveCSS("border-top-width", "0px");
+  await dialog.getByRole("radio", { name: "手机号", exact: true }).click();
+  await dialog.getByLabel("验证码", { exact: true }).focus();
+  await expect(grouped).toHaveCSS("border-top-width", "1px");
+  await expect(grouped.locator("input")).toHaveCSS("outline-style", "none");
+});
+
 test("mobile login closes without losing the current creation draft", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/create");
