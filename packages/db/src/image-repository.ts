@@ -49,12 +49,12 @@ export function openImageRepository(url: string) {
     if (credit)
       await tx`update organizations set available_credits=available_credits+${credit.amount} where id=${credit.organization_id}`;
   };
-  const jobView = sql`j.id,j.organization_id,j.user_id,j.model,j.prompt,j.resolution,j.aspect_ratio,
+  const jobView = sql`j.display_number::text as public_id,j.id,j.organization_id,j.user_id,j.model,j.prompt,j.resolution,j.aspect_ratio,
     j.requested_count,j.unit_credits,j.status,j.input,j.created_at,j.updated_at,j.completed_at,
     (select coalesce(json_agg(json_build_object('id',i.id,'position',i.position,'status',i.status,
       'worker_id',i.worker_id,'provider',i.provider,'provider_request_id',i.provider_request_id,
       'attempts',i.attempts,'error_code',i.error_code,'started_at',i.started_at,'completed_at',i.completed_at,
-      'output_asset_id',i.output_asset_id,'width',a.width,'height',a.height,'bytes',a.bytes) order by i.position),'[]')
+      'output_asset_id',i.output_asset_id,'output_public_id',case when a.id is not null then 'L' || a.display_number::text else null end,'width',a.width,'height',a.height,'bytes',a.bytes) order by i.position),'[]')
       from image_job_items i left join image_assets a on a.id=i.output_asset_id and a.organization_id=i.organization_id where i.job_id=j.id) as items`;
   return {
     close: () => sql.end({ timeout: 5 }),
@@ -157,7 +157,7 @@ export function openImageRepository(url: string) {
         values (${image.id},${scope.organizationId},${scope.userId},'reference',${image.objectKey},${image.mimeType},${image.width},${image.height},${image.bytes},${image.sha256})`;
     },
     async listAssets(scope: ImageScope, limit: number, before?: string) {
-      return sql`select a.id,a.kind,a.width,a.height,a.bytes,a.created_at,j.model,j.prompt
+      return sql`select 'L' || a.display_number::text as public_id,a.id,a.kind,a.width,a.height,a.bytes,a.created_at,j.model,j.prompt
         from image_assets a left join image_job_items i on i.output_asset_id=a.id and i.organization_id=a.organization_id
         left join image_jobs j on j.id=i.job_id and j.organization_id=a.organization_id
         where a.organization_id=${scope.organizationId}

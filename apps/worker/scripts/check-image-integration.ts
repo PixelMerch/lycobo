@@ -4,7 +4,13 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { apiErrorSchema, imageGenerationInputSchema, unwrapApiData } from "@lycoboai/contracts";
+import {
+  apiErrorSchema,
+  imageAssetsResponseSchema,
+  imageGenerationInputSchema,
+  imageJobSchema,
+  unwrapApiData,
+} from "@lycoboai/contracts";
 import { openImageRepository } from "@lycoboai/db";
 import { supportedResolutions, validateModelInput } from "@lycoboai/generation";
 import { createImageQueue, imageQueueJobSchema, redisConnection } from "@lycoboai/queue";
@@ -271,6 +277,41 @@ try {
   assert.equal(record.status, "succeeded");
   assert.equal(record.organization_id, first.organizationId);
   assert.equal(record.user_id, first.userId);
+  const detailed = imageJobSchema.parse(
+    JSON.parse(JSON.stringify(await repository.get(first, acceptedJob.id))),
+  );
+  assert.match(detailed.public_id ?? "", /^[1-9][0-9]{9}$/);
+  const output = detailed.items[0];
+  assert.match(output?.output_public_id ?? "", /^L[1-9][0-9]{8}$/);
+  const assetResponse = await app.request("/api/v1/image-assets?limit=100", { headers });
+  const assetList = imageAssetsResponseSchema.parse(unwrapApiData(await assetResponse.json())).data;
+  assert.equal(
+    assetList.find((asset) => asset.id === output?.output_asset_id)?.public_id,
+    output?.output_public_id,
+  );
+  assert.equal(new Set(assetList.map((asset) => asset.public_id)).size, assetList.length);
+  const reconnected = openImageRepository(databaseUrl);
+  try {
+    const reread = imageJobSchema.parse(
+      JSON.parse(JSON.stringify(await reconnected.get(first, acceptedJob.id))),
+    );
+    assert.equal(reread.public_id, detailed.public_id);
+    assert.equal(reread.items[0]?.output_public_id, output?.output_public_id);
+    assert.equal(await reconnected.get(second, acceptedJob.id), null);
+  } finally {
+    await reconnected.close();
+  }
+  const sequenceBounds =
+    await sql`select sequencename,min_value::text,max_value::text,cycle from pg_sequences where schemaname='public' and sequencename in ('image_assets_display_number_seq','image_jobs_display_number_seq')`;
+  assert.equal(sequenceBounds.length, 2);
+  for (const sequence of sequenceBounds) {
+    assert.equal(sequence.cycle, false);
+    assert.equal(
+      sequence.max_value,
+      sequence.sequencename === "image_assets_display_number_seq" ? "999999999" : "9999999999",
+    );
+  }
+
   assert.equal((await app.request("/api/v1/image-tasks", apiSubmission())).status, 200);
   const conflict = await app.request("/api/v1/image-tasks", {
     ...apiSubmission(),

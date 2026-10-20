@@ -13,6 +13,7 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await mockImageApi(page);
   const jobs = Array.from({ length: 3 }, (_, index) => ({
     id: crypto.randomUUID(),
+    public_id: String(1000000000 + index),
     organization_id: crypto.randomUUID(),
     user_id: crypto.randomUUID(),
     model: "gpt-image-2.5",
@@ -55,7 +56,7 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await expect.poll(async () => (await articles.nth(1).boundingBox())?.y).toBeLessThan(110);
   const info = articles.nth(1).getByRole("definition");
   await expect(info).toHaveText([
-    jobs[1]?.id ?? "",
+    jobs[1]?.public_id ?? "",
     "2026/10/20 09:00:00",
     "gpt-image-2.5",
     "1:1",

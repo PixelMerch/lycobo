@@ -1,12 +1,7 @@
 import { Alert, Button, EmptyState, Link, Spinner, ToggleButton, Tooltip } from "@heroui/react";
 import type { ImageJob } from "@lycoboai/contracts";
 import {
-  IconAspectRatio,
-  IconClock,
   IconDownload,
-  IconHash,
-  IconLayersIntersect,
-  IconMaximize,
   IconPhoto,
   IconRefresh,
   IconSparkles,
@@ -14,6 +9,7 @@ import {
   IconStarFilled,
 } from "@tabler/icons-react";
 import { useEffect, useRef } from "react";
+import "./image-public-id.css";
 import { UiIcon } from "../../components/ui-icon";
 import {
   assetContentUrl,
@@ -42,57 +38,62 @@ const errorLabel = (code: string | null) => {
 };
 function ResultImage({
   assetId,
+  publicId,
   position,
   prompt,
 }: {
   assetId: string;
+  publicId?: string | null | undefined;
   position: number;
   prompt: string;
 }) {
   const favorite = useStudioStore((s) => s.favorites.includes(assetId));
   const toggleFavorite = useStudioStore((s) => s.toggleFavorite);
   return (
-    <div className="generation-media">
-      <Link
-        href={assetContentUrl(assetId)}
-        target="_blank"
-        rel="noreferrer"
-        aria-label={`查看原图 ${position + 1}`}
-      >
-        <img
-          src={assetContentUrl(assetId, true)}
-          loading="lazy"
-          alt={`${prompt}，图片${position + 1}`}
-        />
-      </Link>
-      <div className="generation-media-actions">
-        <Tooltip delay={0}>
-          <Button
-            isIconOnly
-            variant="tertiary"
-            className="generation-media-action"
-            aria-label="下载原图"
-            onPress={() => downloadAsset(assetId)}
-          >
-            <UiIcon icon={IconDownload} />
-          </Button>
-          <Tooltip.Content placement="top">下载原图</Tooltip.Content>
-        </Tooltip>
-        <Tooltip delay={0}>
-          <ToggleButton
-            isIconOnly
-            variant="ghost"
-            className="generation-media-action"
-            aria-label={favorite ? "取消收藏" : "收藏图片"}
-            isSelected={favorite}
-            onChange={() => toggleFavorite(assetId)}
-          >
-            <UiIcon icon={favorite ? IconStarFilled : IconStar} />
-          </ToggleButton>
-          <Tooltip.Content placement="top">{favorite ? "取消收藏" : "收藏"}</Tooltip.Content>
-        </Tooltip>
+    <>
+      <div className="generation-media">
+        <Link
+          href={assetContentUrl(assetId)}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`查看原图 ${position + 1}`}
+        >
+          <img
+            src={assetContentUrl(assetId, true)}
+            loading="lazy"
+            alt={`${prompt}，图片${position + 1}`}
+          />
+        </Link>
+        <div className="generation-media-actions">
+          <Tooltip delay={0}>
+            <Button
+              isIconOnly
+              variant="tertiary"
+              className="generation-media-action"
+              aria-label="下载原图"
+              onPress={() => downloadAsset(assetId)}
+            >
+              <UiIcon icon={IconDownload} />
+            </Button>
+            <Tooltip.Content placement="top">下载原图</Tooltip.Content>
+          </Tooltip>
+          <Tooltip delay={0}>
+            <ToggleButton
+              isIconOnly
+              variant="ghost"
+              className="generation-media-action"
+              aria-label={favorite ? "取消收藏" : "收藏图片"}
+              isSelected={favorite}
+              onChange={() => toggleFavorite(assetId)}
+            >
+              <UiIcon icon={favorite ? IconStarFilled : IconStar} />
+            </ToggleButton>
+            <Tooltip.Content placement="top">{favorite ? "取消收藏" : "收藏"}</Tooltip.Content>
+          </Tooltip>
+        </div>
       </div>
-    </div>
+      {publicId && <p className="image-public-id">图片 ID：{publicId}</p>}
+    </>
   );
 }
 function GenerationLoading() {
@@ -145,6 +146,14 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
       window.removeEventListener("resize", schedule);
     };
   }, [compact, jobIds, setActiveHistoryId]);
+  if (session.isError && /请先登录|登录已过期|重新登录/.test(session.error?.message ?? ""))
+    return (
+      <EmptyState className="empty-state">
+        <UiIcon icon={IconPhoto} size="illustration" />
+        <h2>登录后查看生成记录</h2>
+        <p>登录账号后，生成结果会保存在这里。</p>
+      </EmptyState>
+    );
   if (session.isError || query.isError)
     return (
       <Alert className="generation-message" role="alert" status="danger">
@@ -164,9 +173,8 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
     );
   if (session.isPending || query.isPending)
     return (
-      <p className="generation-message" role="status">
+      <p className="generation-message" role="status" aria-label="正在加载记录">
         <Spinner aria-hidden size="sm" />
-        正在加载记录…
       </p>
     );
   if (!jobs.length)
@@ -191,17 +199,11 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
             {job.status !== "succeeded" && <span role="status">{statusLabel[job.status]}</span>}
             <dl className="generation-meta" aria-label="任务信息">
               <div>
-                <dt title="任务 ID">
-                  <UiIcon icon={IconHash} size="small" />
-                  <span className="sr-only">任务 ID</span>
-                </dt>
-                <dd>{job.id}</dd>
+                <dt className="sr-only">任务 ID</dt>
+                <dd>{job.public_id ?? "待同步"}</dd>
               </div>
               <div>
-                <dt title="时间">
-                  <UiIcon icon={IconClock} size="small" />
-                  <span className="sr-only">时间</span>
-                </dt>
+                <dt className="sr-only">时间</dt>
                 <dd>
                   <time dateTime={job.created_at}>
                     {new Date(job.created_at).toLocaleString("zh-CN")}
@@ -209,31 +211,19 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
                 </dd>
               </div>
               <div>
-                <dt title="模型">
-                  <UiIcon icon={IconSparkles} size="small" />
-                  <span className="sr-only">模型</span>
-                </dt>
+                <dt className="sr-only">模型</dt>
                 <dd>{job.model}</dd>
               </div>
               <div>
-                <dt title="比例">
-                  <UiIcon icon={IconAspectRatio} size="small" />
-                  <span className="sr-only">比例</span>
-                </dt>
+                <dt className="sr-only">比例</dt>
                 <dd>{job.aspect_ratio}</dd>
               </div>
               <div>
-                <dt title="分辨率">
-                  <UiIcon icon={IconMaximize} size="small" />
-                  <span className="sr-only">分辨率</span>
-                </dt>
+                <dt className="sr-only">分辨率</dt>
                 <dd>{job.resolution}</dd>
               </div>
               <div>
-                <dt title="张数">
-                  <UiIcon icon={IconLayersIntersect} size="small" />
-                  <span className="sr-only">张数</span>
-                </dt>
+                <dt className="sr-only">张数</dt>
                 <dd>{job.requested_count} 张</dd>
               </div>
             </dl>
@@ -251,6 +241,7 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
                   {item.output_asset_id ? (
                     <ResultImage
                       assetId={item.output_asset_id}
+                      publicId={item.output_public_id}
                       position={item.position}
                       prompt={job.prompt}
                     />

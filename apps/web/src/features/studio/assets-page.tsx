@@ -1,4 +1,5 @@
-import { Alert, Button, Card, EmptyState, Link, Spinner } from "@heroui/react";
+import "./image-public-id.css";
+import { Alert, Button, Card, EmptyState, Link } from "@heroui/react";
 import { IconFolder } from "@tabler/icons-react";
 import { UiIcon } from "../../components/ui-icon";
 import {
@@ -35,12 +36,7 @@ export function AssetsPage() {
             </Button>
           </Alert.Content>
         </Alert>
-      ) : session.isPending || query.isPending ? (
-        <p className="generation-message" role="status">
-          <Spinner aria-hidden size="sm" />
-          正在加载素材…
-        </p>
-      ) : assets.length ? (
+      ) : session.isPending || query.isPending ? null : assets.length ? (
         <>
           <div className="asset-grid">
             {assets.map((asset) => (
@@ -61,6 +57,7 @@ export function AssetsPage() {
                 <Card.Content className="asset-card-details">
                   <Card.Title>{asset.kind === "output" ? "生成图片" : "参考图片"}</Card.Title>
                   <Card.Description>{asset.model}</Card.Description>
+                  {asset.public_id && <p className="image-public-id">图片 ID：{asset.public_id}</p>}
                   <small>
                     {asset.width} × {asset.height} ·{" "}
                     {new Date(asset.created_at).toLocaleString("zh-CN")}

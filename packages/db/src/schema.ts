@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   check,
   foreignKey,
   index,
@@ -206,6 +207,14 @@ export const imageAssets = pgTable(
   "image_assets",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    displayNumber: bigint("display_number", { mode: "bigint" })
+      .generatedAlwaysAsIdentity({
+        startWith: 100000000,
+        minValue: 100000000,
+        maxValue: 999999999,
+        cycle: false,
+      })
+      .unique(),
     organizationId: uuid("organization_id").notNull(),
     userId: uuid("user_id").notNull(),
     kind: text("kind").notNull(),
@@ -237,6 +246,14 @@ export const imageJobs = pgTable(
   "image_jobs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    displayNumber: bigint("display_number", { mode: "bigint" })
+      .generatedAlwaysAsIdentity({
+        startWith: 1000000000,
+        minValue: 1000000000,
+        maxValue: 9999999999,
+        cycle: false,
+      })
+      .unique(),
     organizationId: uuid("organization_id").notNull(),
     userId: uuid("user_id").notNull(),
     idempotencyKey: uuid("idempotency_key").notNull(),

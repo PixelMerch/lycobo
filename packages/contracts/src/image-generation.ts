@@ -77,7 +77,10 @@ export const imageItemStatusSchema = z.enum([
   "failed",
   "needs_reconciliation",
 ]);
+export const imageTaskPublicIdSchema = z.string().regex(/^[1-9][0-9]{9}$/);
+export const imagePublicIdSchema = z.string().regex(/^L[1-9][0-9]{8}$/);
 export const imageJobSchema = z.object({
+  public_id: imageTaskPublicIdSchema.optional(),
   input: imageGenerationInputSchema.optional(),
   id: z.uuid(),
   organization_id: z.uuid(),
@@ -103,6 +106,7 @@ export const imageJobSchema = z.object({
       position: z.number(),
       status: imageItemStatusSchema,
       output_asset_id: z.uuid().nullable(),
+      output_public_id: imagePublicIdSchema.nullable().optional(),
       error_code: z.string().nullable(),
       width: z.number().nullable(),
       height: z.number().nullable(),
@@ -113,6 +117,7 @@ export const imageJobSchema = z.object({
 export type ImageJob = z.infer<typeof imageJobSchema>;
 export const imageTasksResponseSchema = z.object({ data: z.array(imageJobSchema) });
 export const imageAssetSchema = z.object({
+  public_id: imagePublicIdSchema.optional(),
   id: z.uuid(),
   kind: z.enum(["reference", "output"]),
   width: z.number(),
