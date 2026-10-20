@@ -333,27 +333,14 @@ small {
   padding: 0 var(--content-padding);
   z-index: 15;
 }
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--muted);
-  min-width: 0;
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-  white-space: nowrap;
-}
-.breadcrumb strong {
-  color: var(--foreground);
-  font-weight: var(--weight-medium);
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+/* Header keeps only the mobile menu and the account/login actions. */
 .header-actions {
   display: flex;
   align-items: center;
   gap: 12px;
   flex: none;
+  /* The breadcrumb is gone, so the actions pin themselves to the right edge. */
+  margin-inline-start: auto;
 }
 .mobile-menu {
   display: none;
@@ -1145,16 +1132,6 @@ small {
   .topbar {
     gap: 6px;
     padding: 0 12px;
-  }
-  .breadcrumb {
-    gap: 6px;
-    font-size: var(--text-xs);
-    line-height: var(--leading-xs);
-    flex: 1;
-  }
-  .breadcrumb > a,
-  .breadcrumb > .ui-icon {
-    display: none;
   }
   .header-actions {
     gap: 4px;

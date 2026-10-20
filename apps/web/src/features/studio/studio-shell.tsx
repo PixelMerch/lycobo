@@ -160,21 +160,6 @@ export function StudioShell() {
             </Drawer.Content>
           </Drawer.Backdrop>
         </Drawer>
-        <nav className="breadcrumb" aria-label="面包屑">
-          <RouteLink to="/" aria-label="首页">
-            <UiIcon icon={IconHome} size="default" />
-          </RouteLink>
-          <UiIcon icon={IconChevronRight} size="small" />
-          {currentModel ? (
-            <>
-              <span>图片创作</span>
-              <span>/</span>
-              <strong>{currentModel.name}</strong>
-            </>
-          ) : (
-            <strong>{location.pathname === "/assets" ? "素材库" : "首页"}</strong>
-          )}
-        </nav>
         <div className="header-actions">
           {accountSession.data ? (
             <>

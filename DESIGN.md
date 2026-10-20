@@ -97,7 +97,7 @@
 | 结果标题、首页功能卡片名称 | 16px / 24px | 500 |
 | 正文、输入、导航、主要按钮、模型卡片名称 | 14px / 22px | 正文 400；导航、按钮、名称 500 |
 | 模型选择器当前值、模型下拉选项 | **13px / 20px** | 400 |
-| 字段标签、面包屑、紧凑工具栏 | 13px / 20px | 标签 500；辅助导航 400 |
+| 字段标签、紧凑工具栏 | 13px / 20px | 标签 500 |
 | 辅助说明、时间、角标、参数数值、案例索引 | 12px / 18px | 400；可操作选项 500 |
 
 全站字号使用 `--text-xs`（12）、`--text-sm`（13）、`--text-base`（14）、`--text-lg`（16）、`--text-xl`（18）、`--text-2xl`（24）六档 token；仅窄屏页面标题及品牌字标允许 `--text-page-mobile`（22）。行高使用相应的 `--leading-*`：18／20／22／24／26／32px。不要为单个模型、卡片或按钮自行新增字号；原有 11px 辅助文字与 15px 结果标题已分别统一到 12px、16px。
@@ -180,7 +180,7 @@ HeroUI 基础变量固定为 `--radius: 8px`、`--field-radius: 10px`。以安�
 | 参数互斥选项（分辨率、张数、比例） | ToggleButtonGroup＋ToggleButton，`selectionMode="single"` |
 | 加载与空状态 | Spinner、Skeleton、EmptyState |
 | 区块错误与字段错误 | Alert、FieldError／ErrorMessage |
-| 内容卡片、面包屑与可点击文本 | Card、Breadcrumbs、Link（可用 `render` 接 react-router） |
+| 内容卡片与可点击文本 | Card、Link（可用 `render` 接 react-router）；顶栏不使用 Breadcrumbs |
 | 经产品确认的侧滑内容 | Drawer，关闭后恢复焦点；当前 header 不放任务／通知入口 |
 | 辅助提示 | Tooltip，不能承载唯一必要说明 |
 
