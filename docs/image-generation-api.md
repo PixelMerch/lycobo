@@ -137,3 +137,7 @@ pnpm dev
 本次检查时 `.env` 缺少工作台身份且生图开关为 false，当前 PostgreSQL 的 `lycoboai` 数据库尚无生图表。执行已有迁移和 `images:setup` 后，API 与 Worker 使用同一数据库及 `data/images`，生图开关为 true，工作台会话验证通过，Worker 已启动。
 
 一次 gpt-image-2、1K、1:1、单图真实验收任务 `c8721224-53b2-4d0c-9d32-60e906527bbb` 已从 queued 进入 running，实际尝试一次。服务商请求 ID 为 `8c0f8d42`，响应未通过当前单张 base64 图片协议校验，错误码 `PROVIDER_INVALID_IMAGE_RESPONSE`，最终为 needs_reconciliation，没有输出资产，也没有重发或按失败退款。需在服务商控制台核对该请求的结果与消耗；本次仅证明提交、持久化和消费链路可用，不能计为生图成功。
+
+## 企业账号身份
+
+企业密码登录与 JWT 已接入，配置、Cookie／Bearer、安全边界与创建账号见 [企业鉴权](enterprise-auth.md)。启用后浏览器不再自动使用本地工作台身份；既有服务端 API key 保持兼容。

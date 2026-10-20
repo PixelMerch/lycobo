@@ -11,6 +11,15 @@ export async function mockImageApi(page: Page) {
     organizationId = crypto.randomUUID();
   await page.route("**/api/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
+    if (path.startsWith("/api/v1/auth/")) {
+      await route.fulfill({
+        status: path.endsWith("/session") ? 401 : 503,
+        json: {
+          error: { code: "AUTH_NOT_CONFIGURED", message: "企业账号登录服务暂未开放，请稍后再试。" },
+        },
+      });
+      return;
+    }
     let body: object = { userId, organizationId };
     if (path.endsWith("/image-models"))
       body = {

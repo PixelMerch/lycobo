@@ -15,6 +15,7 @@ import { type CSSProperties, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { RouteLink } from "../../components/router-link";
 import { UiIcon } from "../../components/ui-icon";
+import { useEnterpriseLogout, useEnterpriseSession } from "./auth-client";
 import { CaseGallery } from "./case-gallery";
 import { LoginDialog } from "./login-dialog";
 import { cases, models, photo, useStudioStore } from "./studio-state";
@@ -24,6 +25,8 @@ const chooserLayout: CSSProperties & { "--tool-columns": number } = {
 };
 
 export function StudioShell() {
+  const accountSession = useEnterpriseSession();
+  const logout = useEnterpriseLogout();
   const [menuOpen, setMenuOpen] = useState(false);
   const [tkOpen, setTkOpen] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
@@ -173,14 +176,29 @@ export function StudioShell() {
           )}
         </nav>
         <div className="header-actions">
-          <Button
-            variant="tertiary"
-            size="sm"
-            className="header-login"
-            onPress={() => setLoginOpen(true)}
-          >
-            登录领积分
-          </Button>
+          {accountSession.data ? (
+            <>
+              <span>{accountSession.data.account}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                isPending={logout.isPending}
+                onPress={() => logout.mutate()}
+              >
+                退出登录
+              </Button>
+              {logout.isError && <span role="alert">退出失败，请重试</span>}
+            </>
+          ) : (
+            <Button
+              variant="tertiary"
+              size="sm"
+              className="header-login"
+              onPress={() => setLoginOpen(true)}
+            >
+              登录领积分
+            </Button>
+          )}
         </div>
       </header>
       {loginOpen && <LoginDialog onClose={() => setLoginOpen(false)} />}

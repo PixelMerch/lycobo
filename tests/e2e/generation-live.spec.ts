@@ -150,7 +150,7 @@ test("unavailable authentication does not show fabricated history or enable gene
   await page.getByLabel("提示词", { exact: true }).fill("陶瓷杯");
   await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
   await expect(page.locator(".generation-results img")).toHaveCount(0);
-  await expect(page.getByText("请先登录工作台，或检查本地身份配置。").first()).toBeVisible();
+  await expect(page.getByText("登录已过期，请重新登录工作台。").first()).toBeVisible();
 });
 
 test("reference images are uploaded before submitting their server asset IDs", async ({ page }) => {

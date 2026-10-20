@@ -22,6 +22,13 @@
       "when": 1792426018547,
       "tag": "0002_fuzzy_wolverine",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792466627273,
+      "tag": "0003_silent_ben_grimm",
+      "breakpoints": true
     }
   ]
 }

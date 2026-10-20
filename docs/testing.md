@@ -44,3 +44,5 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:integration
 `pnpm test:integration` 现在同时运行诊断检查与 `@lycoboai/worker test:images`。
 新增检查使用真实 PostgreSQL/Redis、独立 UUID 队列、临时私有图片目录和 loopback HTTP fixture；不调用付费模型。
 配置、模型能力证据、身份签发和迁移边界见 [生图 API](image-generation-api.md)。
+
+企业账号与 JWT 的隔离数据库测试已接入根集成命令，具体覆盖与运行边界见 [企业鉴权](enterprise-auth.md)。

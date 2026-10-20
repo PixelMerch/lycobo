@@ -5,12 +5,19 @@ import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
 import { secureHeaders } from "hono/secure-headers";
 
+import { authRoutes } from "./features/auth/routes";
+import type { EnterpriseAuth } from "./features/auth/service";
+
 import { type ImageApiDependencies, imageRoutes } from "./features/images/routes";
 
 type ApiEnv = { Variables: { requestId: string } };
 type ErrorReporter = (event: { requestId: string; name: string }) => void;
 
-export function createApp(reportError: ErrorReporter = () => {}, images?: ImageApiDependencies) {
+export function createApp(
+  reportError: ErrorReporter = () => {},
+  images?: ImageApiDependencies,
+  auth?: EnterpriseAuth,
+) {
   const app = new Hono<ApiEnv>();
   app.use("*", async (c, next) => {
     c.set("requestId", crypto.randomUUID());
@@ -55,6 +62,7 @@ export function createApp(reportError: ErrorReporter = () => {}, images?: ImageA
     }
     await next();
   });
+  app.route("/api/v1/auth", authRoutes(auth));
   if (images) app.route("/api/v1", imageRoutes(images));
   app.get("/api/health/live", (c) => c.json({ status: "ok", service: "lycoboai-api" }));
   app.get("/api/v1/system/capabilities", (c) => {
@@ -63,6 +71,7 @@ export function createApp(reportError: ErrorReporter = () => {}, images?: ImageA
       stage: "foundation",
       generationEnabled: false,
       authenticationEnabled: false,
+      enterprisePasswordLoginEnabled: !!auth,
     };
     return c.json(capabilities);
   });

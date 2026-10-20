@@ -171,3 +171,54 @@ test("phone login validates the phone and code without pretending to send SMS", 
   await expect(dialog.getByRole("textbox")).toHaveCount(0);
   await expect(dialog.getByRole("status", { name: "扫码登录暂未开放" })).toBeVisible();
 });
+
+test("enterprise login updates the header, refreshes its session and clears the user on logout", async ({
+  page,
+}) => {
+  const user = {
+    userId: crypto.randomUUID(),
+    organizationId: crypto.randomUUID(),
+    role: "member",
+    account: "merchant-fixture",
+  };
+  let loggedIn = false;
+  await page.route("**/api/v1/auth/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/enterprise/login")) {
+      expect(route.request().postDataJSON()).toEqual({
+        account: "merchant-fixture",
+        password: "fixture-password",
+      });
+      loggedIn = true;
+      return route.fulfill({
+        json: { user, accessToken: "fixture-token", tokenType: "Bearer", expiresIn: 900 },
+      });
+    }
+    if (path.endsWith("/logout")) {
+      loggedIn = false;
+      return route.fulfill({ status: 204 });
+    }
+    return route.fulfill({
+      status: loggedIn ? 200 : 401,
+      json: loggedIn ? user : { error: { message: "请先登录" } },
+    });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "登录领积分", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "企业账号登录", exact: true }).click();
+  await dialog.getByLabel("企业账号", { exact: true }).fill("merchant-fixture");
+  await dialog.getByLabel("密码", { exact: true }).fill("fixture-password");
+  await dialog.getByRole("button", { name: "登录", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator(".header-actions")).toContainText("merchant-fixture");
+  expect(
+    await page.evaluate(() =>
+      Object.keys(localStorage).some((key) => /token|jwt|password/i.test(key)),
+    ),
+  ).toBe(false);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "退出登录", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "退出登录", exact: true }).click();
+  await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();
+});

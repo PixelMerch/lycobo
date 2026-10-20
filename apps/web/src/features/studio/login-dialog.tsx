@@ -18,8 +18,9 @@ import {
   IconSparkles,
 } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
+import { useEnterpriseLogin } from "./auth-client";
 import { photo } from "./studio-state";
 
 type LoginMode = "wechat" | "phone" | "enterprise";
@@ -31,6 +32,8 @@ const loginMethods: { mode: LoginMode; label: string; hint: string }[] = [
 
 export function LoginDialog({ onClose }: { onClose: () => void }) {
   const reduceMotion = useReducedMotion();
+  const login = useEnterpriseLogin();
+  const passwordInput = useRef<HTMLInputElement>(null);
   const [phase, setPhase] = useState<"open" | "closed">("open");
   const [mode, setMode] = useState<LoginMode>("wechat");
   const [account, setAccount] = useState("");
@@ -141,12 +144,28 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                           key={mode}
                           className="login-fields"
                           validationBehavior="aria"
-                          onSubmit={(event) => {
+                          onSubmit={async (event) => {
                             event.preventDefault();
+                            if (login.isPending) return;
                             setSubmitted(true);
                             if (mode === "enterprise") {
                               if (!account.trim() || !password) return;
-                              setError("企业账号登录服务暂未开放，请稍后再试。");
+                              setSubmitted(false);
+                              const credentials = { account: account.trim(), password };
+                              setPassword("");
+                              try {
+                                await login.mutateAsync(credentials);
+                                onClose();
+                              } catch (cause) {
+                                passwordInput.current?.focus();
+                                setError(
+                                  cause instanceof Error
+                                    ? cause.message
+                                    : "登录服务暂时不可用，请稍后重试。",
+                                );
+                              } finally {
+                                login.reset();
+                              }
                             } else {
                               if (!phoneValid || !/^\d{6}$/.test(code)) return;
                               setError("手机号登录服务暂未开放，请稍后再试。");
@@ -188,6 +207,7 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                                 <Label>密码</Label>
                                 <InputGroup className="login-input-group">
                                   <InputGroup.Input
+                                    ref={passwordInput}
                                     autoComplete="current-password"
                                     placeholder="请输入密码"
                                     maxLength={256}
@@ -276,8 +296,12 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                               </Alert.Content>
                             </Alert>
                           )}
-                          <Button type="submit" className="login-submit">
-                            登录
+                          <Button
+                            type="submit"
+                            className="login-submit"
+                            isPending={login.isPending}
+                          >
+                            {login.isPending ? "登录中…" : "登录"}
                           </Button>
                         </Form>
                       )}

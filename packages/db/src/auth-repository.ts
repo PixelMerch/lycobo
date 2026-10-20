@@ -1,0 +1,92 @@
+import { createHash } from "node:crypto";
+import postgres from "postgres";
+import { z } from "zod";
+import type { ImagePrincipal } from "./image-repository";
+
+const accountRow = z.object({
+  id: z.uuid(),
+  account: z.string(),
+  user_id: z.uuid(),
+  organization_id: z.uuid(),
+  password_hash: z.string(),
+});
+const principalRow = z.object({
+  user_id: z.uuid(),
+  organization_id: z.uuid(),
+  role: z.enum(["admin", "member"]),
+  account: z.string(),
+});
+export type EnterpriseCredential = z.infer<typeof accountRow>;
+export type EnterpriseIdentity = ImagePrincipal & { account: string };
+export function openAuthRepository(url: string) {
+  const sql = postgres(url, {
+    max: 3,
+    idle_timeout: 20,
+    connect_timeout: 10,
+    connection: { statement_timeout: 15000, lock_timeout: 5000 },
+  });
+  const consume = async (key: string, seconds: number, limit: number) => {
+    const rows =
+      await sql`insert into login_rate_limits (key,window_start,attempts) values (${key},now(),1)
+      on conflict (key) do update set
+      attempts=case when login_rate_limits.window_start < now()-${seconds}*interval '1 second' then 1 else login_rate_limits.attempts+1 end,
+      window_start=case when login_rate_limits.window_start < now()-${seconds}*interval '1 second' then now() else login_rate_limits.window_start end returning attempts`;
+    return z.coerce.number().parse(rows[0]?.attempts) <= limit;
+  };
+  return {
+    close: () => sql.end({ timeout: 5 }),
+    async allowLogin(account: string) {
+      if (!(await consume("global", 60, 200))) return false;
+      // Hash the account identifier; never persist submitted passwords or raw request bodies.
+      const key = createHash("sha256").update(account).digest("hex");
+      await sql`delete from login_rate_limits where window_start < now()-interval '1 day'`;
+      return consume(key, 900, 10);
+    },
+    async credential(account: string): Promise<EnterpriseCredential | null> {
+      const rows =
+        await sql`select id,account,user_id,organization_id,password_hash from enterprise_accounts where account=${account} and disabled_at is null`;
+      return rows[0] ? accountRow.parse(rows[0]) : null;
+    },
+    async createSession(id: string, credential: EnterpriseCredential, expiresAt: Date) {
+      const rows =
+        await sql`insert into enterprise_sessions (id,account_id,expires_at,credential_version)
+        select ${id},id,${expiresAt},credential_version from enterprise_accounts where id=${credential.id} and disabled_at is null and password_hash=${credential.password_hash} returning id`;
+      return rows.length === 1;
+    },
+    async identity(sessionId: string): Promise<EnterpriseIdentity | null> {
+      const rows =
+        await sql`select a.account,a.user_id,a.organization_id,m.role from enterprise_sessions s
+        join enterprise_accounts a on a.id=s.account_id
+        join organization_members m on m.user_id=a.user_id and m.organization_id=a.organization_id
+        where s.id=${sessionId} and s.revoked_at is null and s.expires_at>now() and a.disabled_at is null and s.credential_version=a.credential_version`;
+      if (!rows[0]) return null;
+      const row = principalRow.parse(rows[0]);
+      return {
+        userId: row.user_id,
+        organizationId: row.organization_id,
+        role: row.role,
+        account: row.account,
+      };
+    },
+    async revoke(sessionId: string) {
+      await sql`update enterprise_sessions set revoked_at=now() where id=${sessionId} and revoked_at is null`;
+    },
+    async setCredential(
+      account: string,
+      userId: string,
+      organizationId: string,
+      passwordHash: string,
+    ) {
+      await sql.begin(async (tx) => {
+        // An account cannot silently be reassigned to a different user/enterprise.
+        const rows =
+          await tx`insert into enterprise_accounts (account,user_id,organization_id,password_hash) values (${account},${userId},${organizationId},${passwordHash})
+          on conflict (account) do update set password_hash=excluded.password_hash, credential_version=gen_random_uuid(), disabled_at=null
+          where enterprise_accounts.user_id=excluded.user_id and enterprise_accounts.organization_id=excluded.organization_id returning id`;
+        if (!rows[0]) throw new Error("ACCOUNT_IDENTITY_CONFLICT");
+        await tx`delete from enterprise_sessions where account_id=${rows[0].id}`;
+      });
+    },
+  };
+}
+export type AuthRepository = ReturnType<typeof openAuthRepository>;

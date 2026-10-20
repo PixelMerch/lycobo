@@ -30,7 +30,7 @@ export async function imageRequest(path: string, init: RequestInit = {}) {
   });
   if (!response.ok) {
     const messages: Record<number, string> = {
-      401: "请先登录工作台，或检查本地身份配置。",
+      401: "登录已过期，请重新登录工作台。",
       403: "当前操作没有权限。",
       400: "模型参数或参考图不受支持，请调整后重试。",
       409: "额度不足或提交参数冲突，请检查后重试。",

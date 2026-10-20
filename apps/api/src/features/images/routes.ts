@@ -8,6 +8,8 @@ import { type ImageStore, ImageValidationError, maxImageBytes } from "@lycoboai/
 import { type Context, Hono } from "hono";
 import sharp from "sharp";
 import { z } from "zod";
+import { enterprisePrincipal } from "../auth/routes";
+import type { EnterpriseAuth } from "../auth/service";
 import {
   setWorkbenchCookie,
   trustedWorkbenchRequest,
@@ -17,6 +19,7 @@ import {
 
 export type ImageApiDependencies = {
   repository: ImageRepository;
+  auth?: EnterpriseAuth | undefined;
   store: ImageStore;
   enabled: boolean;
   unitCredits: number;
@@ -36,7 +39,22 @@ export function imageRoutes(deps: ImageApiDependencies) {
     message: string,
     status: 400 | 401 | 403 | 404 | 409 | 413 | 503,
   ) => c.json({ error: { code, message, requestId: c.get("requestId") } }, status);
+  const resolvePrincipal = async (c: Context) => {
+    const bearer = c.req.header("Authorization");
+    // Keep existing service API keys compatible; browser sessions never fall back to local identity.
+    if (deps.auth && bearer && /^Bearer [\w-]{43}$/.test(bearer))
+      return deps.repository.authenticate(bearer.slice(7));
+    return deps.auth
+      ? (await enterprisePrincipal(c, deps.auth))?.user
+      : workbenchPrincipal(c, deps.repository, deps.session);
+  };
   app.post("/image-session", async (c) => {
+    if (deps.auth) {
+      const principal = await resolvePrincipal(c);
+      return principal
+        ? c.json({ userId: principal.userId, organizationId: principal.organizationId })
+        : fail(c, "UNAUTHORIZED", "请先登录", 401);
+    }
     if (!deps.session || !trustedWorkbenchRequest(c, deps.session))
       return fail(c, "UNAUTHORIZED", "请先登录工作台", 401);
     const principal = await deps.repository.authenticate(deps.session.token);
@@ -45,7 +63,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
     return c.json({ userId: principal.userId, organizationId: principal.organizationId });
   });
   app.use("*", async (c, next) => {
-    const principal = await workbenchPrincipal(c, deps.repository, deps.session);
+    const principal = await resolvePrincipal(c);
     if (!principal) return fail(c, "UNAUTHORIZED", "请先验证身份", 401);
     c.set("principal", principal);
     await next();

@@ -366,3 +366,58 @@ export const imageCreditLedger = pgTable(
     ),
   ],
 );
+
+export const enterpriseAccounts = pgTable(
+  "enterprise_accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    account: text("account").notNull().unique(),
+    userId: uuid("user_id").notNull(),
+    organizationId: uuid("organization_id").notNull(),
+    passwordHash: text("password_hash").notNull(),
+    credentialVersion: uuid("credential_version").notNull().defaultRandom(),
+    disabledAt: timestamp("disabled_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.organizationId, t.userId],
+      foreignColumns: [organizationMembers.organizationId, organizationMembers.userId],
+      name: "enterprise_account_member_fk",
+    }).onDelete("cascade"),
+    index("enterprise_accounts_member_idx").on(t.organizationId, t.userId),
+    check(
+      "enterprise_account_normalized",
+      sql`${t.account} = lower(trim(${t.account})) and length(${t.account}) between 3 and 128`,
+    ),
+  ],
+);
+export const enterpriseSessions = pgTable(
+  "enterprise_sessions",
+  {
+    id: uuid("id").primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => enterpriseAccounts.id, { onDelete: "cascade" }),
+    credentialVersion: uuid("credential_version").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("enterprise_sessions_account_idx").on(t.accountId),
+    index("enterprise_sessions_expiry_idx").on(t.expiresAt),
+  ],
+);
+export const loginRateLimits = pgTable(
+  "login_rate_limits",
+  {
+    key: text("key").primaryKey(),
+    windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+    attempts: integer("attempts").notNull(),
+  },
+  (t) => [
+    index("login_rate_limits_window_idx").on(t.windowStart),
+    check("login_rate_limits_attempts_check", sql`${t.attempts} > 0`),
+  ],
+);
