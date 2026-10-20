@@ -48,10 +48,29 @@ describe("Vakv adapter and capability evidence", () => {
     expect(JSON.parse(String(options?.body))).toMatchObject({
       model: "gpt-image-2",
       size: "1024x1024",
+      quality: "medium",
       n: 1,
     });
     expect(request).toHaveBeenCalledTimes(1);
   });
+  it.each(["low", "medium", "high"] as const)(
+    "forwards %s quality in JSON and multipart requests",
+    async (quality) => {
+      for (const references of [[], [new Uint8Array([1, 2, 3])]]) {
+        const request = vi
+          .fn<typeof fetch>()
+          .mockResolvedValue(new Response(JSON.stringify({ data: [{ b64_json: "aGVsbG8=" }] })));
+        await generateVakvImage({ ...input, quality }, references, config, "quality-item", request);
+        const options = request.mock.calls[0]?.[1];
+        if (references.length) {
+          expect(options?.body).toBeInstanceOf(FormData);
+          const body = options?.body;
+          if (!(body instanceof FormData)) throw new Error("Expected multipart body");
+          expect(body.get("quality")).toBe(quality);
+        } else expect(JSON.parse(String(options?.body)).quality).toBe(quality);
+      }
+    },
+  );
   it("never retries ambiguous submissions or downloads arbitrary output URLs", async () => {
     const request = vi.fn<typeof fetch>().mockRejectedValue(new Error("sensitive provider body"));
     await expect(generateVakvImage(input, [], config, "id", request)).rejects.toMatchObject({

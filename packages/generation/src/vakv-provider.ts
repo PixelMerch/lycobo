@@ -88,6 +88,7 @@ export async function generateVakvImage(
       size,
       n: "1",
       response_format: "b64_json",
+      quality: input.quality ?? "medium",
     }))
       form.set(key, value);
     for (const bytes of references)
@@ -104,6 +105,7 @@ export async function generateVakvImage(
       n: 1,
       size,
       response_format: "b64_json",
+      quality: input.quality ?? "medium",
     });
   try {
     const response = await request(

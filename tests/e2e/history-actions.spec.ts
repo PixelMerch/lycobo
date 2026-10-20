@@ -5,7 +5,7 @@ const png = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
   "base64",
 );
-async function historyFixture(page: Page) {
+async function historyFixture(page: Page, quality: "high" | null = "high") {
   await mockImageApi(page);
   const reference = crypto.randomUUID();
   const input = {
@@ -14,6 +14,7 @@ async function historyFixture(page: Page) {
     aspectRatio: "3:4",
     resolution: "1K",
     count: 1,
+    ...(quality ? { quality } : {}),
     referenceAssetIds: [reference],
   };
   const job = {
@@ -87,6 +88,10 @@ test("edit restores the original references and parameters while preserving an e
   await edit.click();
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
   await expect(page.locator(".reference-tile")).toHaveCount(1);
+  await expect(page.getByRole("radio", { name: "高", exact: true })).toHaveAttribute(
+    "aria-checked",
+    "true",
+  );
   await expect(page.getByRole("button", { name: /创作模型/ })).toContainText(input.model);
   await page.getByLabel("提示词", { exact: true }).fill("我的新草稿");
   await edit.click();
@@ -196,4 +201,13 @@ test("legacy history reads the original task snapshot before restoring a draft",
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
   expect(details).toBe(1);
   await expect(page.locator(".reference-tile")).toHaveCount(1);
+});
+
+test("legacy history without quality restores standard quality", async ({ page }) => {
+  await historyFixture(page, null);
+  await page.getByRole("button", { name: "重新编辑", exact: true }).click();
+  await expect(page.getByRole("radio", { name: "标准", exact: true })).toHaveAttribute(
+    "aria-checked",
+    "true",
+  );
 });

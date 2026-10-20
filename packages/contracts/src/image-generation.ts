@@ -15,6 +15,8 @@ export const imageModelIds = [
 ] as const;
 export const imageResolutionSchema = z.enum(["1K", "2K", "4K"]);
 export type ImageResolution = z.infer<typeof imageResolutionSchema>;
+export const imageQualitySchema = z.enum(["low", "medium", "high"]);
+export type ImageQuality = z.infer<typeof imageQualitySchema>;
 export const imageGenerationInputSchema = z.strictObject({
   model: z.enum(imageModelIds),
   prompt: z.string().trim().min(1).max(9000),
@@ -42,6 +44,8 @@ export const imageGenerationInputSchema = z.strictObject({
     .default([])
     .refine((ids) => new Set(ids).size === ids.length, "Duplicate references"),
   count: z.number().int().min(1).max(4).default(1),
+  // Keep absent on legacy snapshots so their stored idempotency hashes remain valid.
+  quality: imageQualitySchema.optional(),
 });
 export type ImageGenerationInput = z.infer<typeof imageGenerationInputSchema>;
 export type ImageScope = { userId: string; organizationId: string };

@@ -14,6 +14,16 @@ describe("image submission", () => {
       }).success,
     ).toBe(false);
   });
+  it("validates quality and leaves legacy snapshots unchanged", () => {
+    const legacy = { model: "gpt-image-2", prompt: "hello" };
+    expect(imageGenerationInputSchema.parse(legacy)).not.toHaveProperty("quality");
+    for (const quality of ["low", "medium", "high"]) {
+      expect(imageGenerationInputSchema.parse({ ...legacy, quality }).quality).toBe(quality);
+    }
+    for (const quality of ["auto", "标准", "", null, 1]) {
+      expect(imageGenerationInputSchema.safeParse({ ...legacy, quality }).success).toBe(false);
+    }
+  });
   it("rejects duplicate assets and oversized batches", () => {
     const id = crypto.randomUUID();
     expect(

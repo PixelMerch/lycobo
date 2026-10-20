@@ -131,6 +131,7 @@ async function taskDraft(
       prompt: input.prompt,
       ratio: input.aspectRatio,
       resolution: input.resolution,
+      quality: input.quality === "low" ? "低" : input.quality === "high" ? "高" : "标准",
       count: String(input.count),
       references: input.referenceAssetIds.map((id, index) => ({
         id,

@@ -72,6 +72,7 @@ export type Draft = {
   references: ReferenceImage[];
   ratio: string;
   resolution: string;
+  quality: string;
   count: string;
 };
 const emptyDraft = (): Draft => ({
@@ -79,6 +80,7 @@ const emptyDraft = (): Draft => ({
   references: [],
   ratio: "1:1",
   resolution: "1K",
+  quality: "标准",
   count: "1",
 });
 

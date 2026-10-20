@@ -179,6 +179,14 @@ export function useGenerateImage() {
           model,
           prompt: draft.prompt,
           resolution: draft.resolution,
+          quality:
+            draft.quality === "低"
+              ? "low"
+              : draft.quality === "标准"
+                ? "medium"
+                : draft.quality === "高"
+                  ? "high"
+                  : draft.quality,
           aspectRatio: draft.ratio,
           count: Number(draft.count),
           referenceAssetIds,
