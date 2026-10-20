@@ -131,7 +131,7 @@ test("recent works loads only authenticated output thumbnails and recovers from 
   await expect(recent.getByText("不能当成作品的参考图")).toHaveCount(0);
 });
 
-test("home settings preserve drafts and video cannot submit image tasks", async ({ page }) => {
+test("home settings preserve drafts and only image creation is offered", async ({ page }) => {
   await mockImageApi(page);
   await page.goto("/");
   await page.getByRole("textbox", { name: "创作需求" }).fill("保留绗缝与面料细节");
@@ -145,10 +145,8 @@ test("home settings preserve drafts and video cannot submit image tasks", async 
   await expect(page.getByRole("button", { name: "选择创作模型", exact: true })).toContainText(
     "16:9",
   );
-  await page.getByRole("radio", { name: "商品视频", exact: true }).click();
-  await expect(page.getByRole("button", { name: "开始创作", exact: true })).toBeDisabled();
-  await expect(page.getByRole("status").filter({ hasText: "视频生成即将开放" })).toBeVisible();
-  await page.getByRole("radio", { name: "家纺生图", exact: true }).click();
+  await expect(page.getByRole("radio", { name: "商品视频" })).toHaveCount(0);
+  await expect(page.getByText("视频生成即将开放", { exact: false })).toHaveCount(0);
   await page.getByRole("button", { name: "开始创作", exact: true }).click();
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("保留绗缝与面料细节");
 });

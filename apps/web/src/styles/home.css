@@ -481,7 +481,8 @@
   box-shadow: none;
 }
 .home-composer .home-prompt .textarea::placeholder {
-  color: rgb(203 213 225 / 56%);
+  color: #808080;
+  font-weight: 400;
   opacity: 1;
 }
 .home-composer .home-prompt .textarea:focus-visible {
@@ -648,8 +649,7 @@
   border: 1px solid currentColor;
   border-radius: 2px;
 }
-.home-settings-note,
-.home-video-note {
+.home-settings-note {
   color: #aaa;
   font-size: 12px;
   line-height: 20px;

@@ -13,7 +13,6 @@ import {
   IconPhoto,
   IconSparkles,
 } from "@tabler/icons-react";
-import { useState } from "react";
 import { useNavigate } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { useImageModels } from "./generation-client";
@@ -27,23 +26,12 @@ export function HomeComposer() {
   const setModel = useStudioStore((s) => s.setActiveModel);
   const catalog = useImageModels();
   const navigate = useNavigate();
-  const [mode, setMode] = useState("图片生成");
   const resolutions =
     catalog.data?.models.find((item) => item.id === model)?.enabledResolutions ?? [];
   return (
     <>
       <div className="home-intro">
         <span>和 Lycobo</span>
-        <ToggleButtonGroup
-          aria-label="创作类型"
-          selectionMode="single"
-          disallowEmptySelection
-          selectedKeys={[mode]}
-          onSelectionChange={(keys) => setMode(String([...keys][0]))}
-        >
-          <ToggleButton id="图片生成">家纺生图</ToggleButton>
-          <ToggleButton id="视频生成">商品视频</ToggleButton>
-        </ToggleButtonGroup>
         <span>聊聊创作想法</span>
       </div>
       <div className="home-composer">
@@ -52,11 +40,7 @@ export function HomeComposer() {
             aria-label="创作需求"
             value={draft.prompt}
             onChange={(event) => updateDraft(model, { prompt: event.target.value })}
-            placeholder={
-              mode === "图片生成"
-                ? "描述你想要的画面，上传床品、窗帘或面料作为参考"
-                : "描述商品镜头、运镜与面料细节，构思你的家纺视频"
-            }
+            placeholder="描述你想要的画面，上传床品、窗帘或面料作为参考"
             maxLength={9000}
           />
         </TextField>
@@ -66,7 +50,7 @@ export function HomeComposer() {
           </div>
           <span className="home-mode-label">
             <UiIcon icon={IconPhoto} />
-            {mode}
+            图片生成
           </span>
           <Popover>
             <Button className="home-settings-trigger" variant="ghost" aria-label="选择创作模型">
@@ -180,18 +164,12 @@ export function HomeComposer() {
             isIconOnly
             className="home-submit"
             aria-label="开始创作"
-            isDisabled={mode === "视频生成"}
             onPress={() => navigate("/create")}
           >
             <UiIcon icon={IconArrowUp} size="action" />
           </Button>
         </div>
       </div>
-      {mode === "视频生成" && (
-        <p className="home-video-note" role="status">
-          视频生成即将开放，已保留你的创作需求。
-        </p>
-      )}
     </>
   );
 }
