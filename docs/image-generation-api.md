@@ -124,10 +124,16 @@ pnpm dev
 ```
 
 `images:setup` 仅供本机开发：生成数据库成员身份与 7 天应用令牌，将令牌、持久图片目录及开关写入 `.env`，不打印令牌、不覆盖 Vakv key。续期复用原组织、历史与剩余额度；初始化额度是内部开发配额，不是充值或服务商货币余额。
-当前机器使用独立 `lycobo_workbench` 数据库，旧 `lycoboai` 库保持原状。
+目标数据库以本地 `.env` 的 `DATABASE_URL` 为准，Compose 对应 `IMAGE_COMPOSE_DATABASE_URL`。首次配置前核对数据库；setup 复用可用身份或原有本地组织，不因重启重新初始化额度。不要用 `.env.example` 覆盖已有身份和启用开关。
 
 本地浏览器通过 `POST /api/v1/image-session` 换取 HttpOnly、SameSite=Strict Cookie。仅 NODE_ENV=development 且配置应用令牌时开放，Origin 必须是明确配置的 localhost/127.0.0.1；Cookie 写请求同样校验 Origin。服务端从数据库解析用户和组织。正式用户登录、团队邀请尚未接入，不能把该本地会话方式部署为公开注册系统。
 
 也可 `docker compose up -d --build --wait`：8080 为网页，8788 为容器 API 的本地端口，避免和 pnpm 的 8787 冲突。API 与 Worker 挂载同一 `data/images` 目录，读取同一数据库与队列；`.env` 中的 `IMAGE_COMPOSE_DATABASE_URL` 由 setup 命令配置。修改 `.env` 后需重建服务配置或重启本地进程；不要把提供商 key 写到前端。
 
 浏览器通过 8080 工作台额外提交的一次 gpt-image-2 请求收到无法按图片协议解析的响应，任务 `8c2aeb53-4856-4da4-b85c-9e90d1909139` 已进入 needs_reconciliation，保留额度并等待服务商核对，没有自动重发。不能将这次调用计入成功数。
+
+### 本地配置恢复验收（2026-10-20）
+
+本次检查时 `.env` 缺少工作台身份且生图开关为 false，当前 PostgreSQL 的 `lycoboai` 数据库尚无生图表。执行已有迁移和 `images:setup` 后，API 与 Worker 使用同一数据库及 `data/images`，生图开关为 true，工作台会话验证通过，Worker 已启动。
+
+一次 gpt-image-2、1K、1:1、单图真实验收任务 `c8721224-53b2-4d0c-9d32-60e906527bbb` 已从 queued 进入 running，实际尝试一次。服务商请求 ID 为 `8c0f8d42`，响应未通过当前单张 base64 图片协议校验，错误码 `PROVIDER_INVALID_IMAGE_RESPONSE`，最终为 needs_reconciliation，没有输出资产，也没有重发或按失败退款。需在服务商控制台核对该请求的结果与消耗；本次仅证明提交、持久化和消费链路可用，不能计为生图成功。

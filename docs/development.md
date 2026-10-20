@@ -57,6 +57,8 @@ Worker：
 - 本地基础设施启动后使用 WORKER_ENABLED=true pnpm dev:worker。
 - 生图使用独立的 IMAGE_WORKER_ENABLED 与 IMAGE_GENERATION_ENABLED 开关，配置 VAKV_API_KEY 后执行真实模型调用。
 - pnpm --filter @lycoboai/api images:setup 初始化本地工作台身份、图片目录与开关；执行前先完成迁移。
+- `.env.example` 中生图默认关闭；首次执行 `images:setup` 后，本地 `.env` 的 `IMAGE_GENERATION_ENABLED`、`IMAGE_WORKER_ENABLED` 为 true，后续启动沿用该配置，无需每次设置。不要用示例文件覆盖已配置的 `.env`。Compose 修改环境变量后用 `docker compose up -d --wait api worker web` 重建容器配置，单纯 restart 不会加载新的环境变量。
+- `WORKER_ENABLED=false` 只关闭诊断队列，不影响已启用的生图 Worker；`Image worker started` 才是生图消费者启动日志。两个 Worker 均关闭时，Node watch 显示 `Completed running ... Waiting for file changes` 属于等待源码变化，不表示 API 卡死。
 - 日志说明 Worker 就绪不代表业务生图就绪。
 
 ## 日常命令
