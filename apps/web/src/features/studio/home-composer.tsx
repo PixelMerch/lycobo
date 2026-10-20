@@ -1,11 +1,5 @@
 import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import {
-  IconArrowUp,
-  IconCheck,
-  IconChevronDown,
-  IconPhoto,
-  IconSparkles,
-} from "@tabler/icons-react";
+import { IconArrowUp, IconCheck, IconChevronDown, IconSparkles } from "@tabler/icons-react";
 import { useNavigate } from "react-router";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
@@ -40,10 +34,6 @@ export function HomeComposer() {
           placeholder="描述你想要的画面，输入 @ 引用已上传图片"
         />
         <div className="home-composer-tools">
-          <span className="home-mode-label">
-            <UiIcon icon={IconPhoto} />
-            图片生成
-          </span>
           <Popover>
             <Button className="home-settings-trigger" variant="ghost" aria-label="选择创作模型">
               <UiIcon icon={IconSparkles} />
@@ -52,7 +42,9 @@ export function HomeComposer() {
               <span>{draft.ratio}</span>
               <span>·</span>
               <span>{draft.resolution}</span>
-              <UiIcon icon={IconChevronDown} size="small" />
+              <span className="home-settings-chevron">
+                <UiIcon icon={IconChevronDown} size="small" />
+              </span>
             </Button>
             <Popover.Content className="home-settings" placement="bottom" offset={8}>
               <Popover.Dialog aria-label="模型和画面设置">

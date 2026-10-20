@@ -486,18 +486,33 @@
   outline: none;
   box-shadow: none;
 }
-/* Three tracks so the settings pill stays centred in the row, not in the leftovers. */
+/* The settings pill owns the row centre; the submit action docks to the right. */
 .home-composer-tools {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
   position: relative;
+  gap: 8px;
+  min-height: 36px;
   margin-top: 12px;
 }
+/* The chevron turns over when the settings popover opens, matching the sidebar. */
+.home-settings-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  transition: transform 160ms ease;
+}
+.home-settings-trigger[aria-expanded="true"] .home-settings-chevron {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-settings-chevron {
+    transition: none;
+  }
+}
 .home-settings-trigger.button {
-  grid-column: 2;
-  justify-self: center;
   height: 32px;
   padding: 0 14px;
   background: #303030;
@@ -509,8 +524,10 @@
   gap: 8px;
 }
 .home-submit.button {
-  grid-column: 3;
-  justify-self: end;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
   width: 36px;
   min-width: 36px;
   height: 36px;
@@ -652,13 +669,24 @@
     padding: 0 12px;
     height: 44px;
   }
+  .home-composer-tools {
+    flex-wrap: wrap;
+    min-height: 44px;
+  }
+  /* The pill takes its own full-width row so it stays centred beside the 44px target. */
   .home-settings-trigger.button {
     order: 3;
     width: 100%;
-    margin-top: 4px;
     height: 44px;
+    margin-top: 4px;
+    padding: 0 12px;
+    gap: 6px;
+    font-size: var(--text-xs);
   }
   .home-submit.button {
+    position: static;
+    transform: none;
+    margin-left: auto;
     width: 44px;
     height: 44px;
   }
