@@ -1,11 +1,20 @@
 /* Shared thumbnail behavior for home and create. */
 .reference-tile.reference-image-card img {
-  object-fit: contain;
+  object-fit: cover;
   background: var(--composer-group, #1c1c1c);
 }
 .reference-tile.reference-image-card .reference-number {
   color: #ffffffa6;
   font-weight: 400;
+  inset: 0 auto auto 0;
+  display: grid;
+  place-items: center;
+  width: 21.6px;
+  height: 21.6px;
+  padding: 0;
+  border-radius: 8px 0 8px 0;
+  background: #1c1c1ce6;
+  z-index: 1;
 }
 .reference-tile.reference-image-card .remove-reference {
   top: 0;

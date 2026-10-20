@@ -116,7 +116,7 @@ Read relevant project skills before work:
 
 - Product screens use end-user language. Keep preview/debug/reset notes in developer documentation, not headers, cards or dialogs. Never infer production readiness from clean UI copy.
 
-- Match the measured shell rules in DESIGN.md: sidebar 274/288/320px by breakpoint, collapsed 72px; desktop rows 40/42/44px, row gap 6px, icon/text gap 8px, radius 16px, icons 18px. Header is 68px desktop/60px mobile. Hover/active never change geometry; mobile targets stay 44px.
+- Match the measured shell rules in DESIGN.md: sidebar 274/288/320px by breakpoint, collapsed 64px (2× the 32px icon background); desktop rows 40/42/44px, row gap 6px, icon/text gap 8px, radius 16px, icons 18px. Header is 68px desktop/60px mobile. Hover/active never change geometry; mobile targets stay 44px.
 
 - Use Tabler business icons through components/ui-icon.tsx. Sizes: 14 / 18 / 20 / 22 / 28px, stroke 2. Keep icon sizing independent of compact control geometry; do not add another icon library.
 

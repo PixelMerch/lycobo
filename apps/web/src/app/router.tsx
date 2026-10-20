@@ -1,6 +1,7 @@
-import { EmptyState, Link, Spinner } from "@heroui/react";
+import { EmptyState, Link } from "@heroui/react";
 import { createBrowserRouter, redirect } from "react-router";
 import { isModelId, useStudioStore } from "../features/studio/studio-state";
+import { PageLoading } from "./page-loading";
 
 export const router = createBrowserRouter([
   {
@@ -17,12 +18,7 @@ export const router = createBrowserRouter([
   })),
   {
     path: "/",
-    HydrateFallback: () => (
-      <EmptyState className="empty-state" role="status">
-        <Spinner size="sm" />
-        正在加载…
-      </EmptyState>
-    ),
+    HydrateFallback: PageLoading,
     errorElement: (
       <EmptyState className="empty-state">
         <h1>页面暂时无法打开</h1>

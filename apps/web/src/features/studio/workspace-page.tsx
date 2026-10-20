@@ -1,23 +1,18 @@
 import {
   Alert,
   Button,
-  Popover,
   Tabs,
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
+  toast,
 } from "@heroui/react";
-import {
-  IconArrowBarToUp,
-  IconChevronRight,
-  IconLayersIntersect,
-  IconSparkles,
-  IconX,
-} from "@tabler/icons-react";
-import { type Key, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { IconArrowBarToUp, IconSparkles } from "@tabler/icons-react";
+import { useEffect, useRef, useState } from "react";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
 import {
+  ImageApiError,
   useGenerateImage,
   useImageModels,
   useImageSession,
@@ -25,11 +20,14 @@ import {
 } from "./generation-client";
 import { GenerationHistory, HistoryIndex } from "./generation-history";
 import { ModelSelect } from "./model-select";
+import { HomeRatioPicker } from "./ratio-picker";
 import { ReferencePicker } from "./reference-picker";
+import { SelectionHighlight } from "./selection-highlight";
 import { type ModelId, useStudioStore } from "./studio-state";
 
 const fields = [
   { key: "resolution", label: "分辨率", values: ["1K", "2K", "4K"] },
+  { key: "quality", label: "质量", values: ["低", "标准", "高"] },
   { key: "count", label: "生成张数", values: ["1", "2", "3", "4"] },
 ] as const;
 
@@ -46,6 +44,15 @@ function Workspace({ model }: { model: ModelId }) {
   const session = useImageSession();
   const modelQuery = useImageModels();
   const generate = useGenerateImage();
+  const [submissionPhase, setSubmissionPhase] = useState<"idle" | "submitting" | "settled">("idle");
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const modelsToast = useRef<string | null>(null);
+  const activeSubmission = submissionPhase !== "idle" || generate.isPending;
+  const modelsError = modelQuery.isError
+    ? modelQuery.error instanceof ImageApiError
+      ? modelQuery.error.message
+      : "服务暂时不可用，请稍后重试。"
+    : null;
   const resolutions =
     modelQuery.data?.models.find((entry) => entry.id === model)?.enabledResolutions ?? [];
   const pending = usePendingSubmission(session.data);
@@ -60,6 +67,21 @@ function Workspace({ model }: { model: ModelId }) {
   useEffect(() => {
     visitModel(model);
   }, [model, visitModel]);
+  useEffect(
+    () => () => {
+      if (settleTimer.current) clearTimeout(settleTimer.current);
+    },
+    [],
+  );
+  useEffect(() => {
+    if (!modelsError) {
+      modelsToast.current = null;
+      return;
+    }
+    if (modelsToast.current === modelsError) return;
+    modelsToast.current = modelsError;
+    toast.danger(modelsError);
+  }, [modelsError]);
   return (
     <div className="workspace">
       <section className="composer-panel" aria-label="创作设置">
@@ -80,7 +102,7 @@ function Workspace({ model }: { model: ModelId }) {
               setActiveModel(nextModel);
             }}
           />
-          <ReferencePicker model={model} references={draft.references} />
+          <ReferencePicker compact model={model} references={draft.references} />
           <ReferencePrompt
             className="prompt-field"
             label="提示词"
@@ -90,13 +112,23 @@ function Workspace({ model }: { model: ModelId }) {
             references={draft.references}
             placeholder="描述你想要的画面，输入 @ 引用已上传图片"
           />
-          <RatioPicker value={draft.ratio} onChange={(ratio) => updateDraft(model, { ratio })} />
+          <section className="parameter-group ratio-group" aria-label="图片比例">
+            <div className="ratio-heading">
+              <h2>图片比例</h2>
+              <span className="ratio-current">{draft.ratio}</span>
+            </div>
+            <HomeRatioPicker
+              value={draft.ratio}
+              onChange={(ratio) => updateDraft(model, { ratio })}
+            />
+          </section>
           {fields.map((field) => (
             <ParameterGroup
               key={field.key}
               label={field.label}
               values={field.values}
               value={draft[field.key]}
+              selectionId={field.key}
               disabledValues={
                 field.key === "resolution"
                   ? field.values.filter(
@@ -109,12 +141,13 @@ function Workspace({ model }: { model: ModelId }) {
           ))}
         </section>
         <div className="generate-area">
-          {(session.isError || modelQuery.isError || generate.isError) && (
+          {((session.isError &&
+            !/请先登录|登录已过期|重新登录/.test(session.error?.message ?? "")) ||
+            generate.isError) && (
             <Alert className="generation-message" role="alert" status="danger">
               <Alert.Content>
                 <Alert.Description>
                   {session.error?.message ??
-                    modelQuery.error?.message ??
                     (pending
                       ? "提交结果待确认，请点击确认上次提交，避免重复生成。"
                       : generate.error?.message)}
@@ -139,23 +172,44 @@ function Workspace({ model }: { model: ModelId }) {
             </Alert>
           )}
           <Button
-            className="primary-action"
-            isDisabled={!canGenerate}
-            onPress={() =>
+            className={`primary-action${activeSubmission ? " generation-pending" : ""}`}
+            data-submitting={activeSubmission || undefined}
+            isDisabled={!canGenerate || activeSubmission}
+            onPress={() => {
+              setSubmissionPhase("submitting");
               generate.mutate(
                 { model, draft },
                 {
                   onSuccess: () => {
-                    if (!pending && useStudioStore.getState().drafts[model] === draft) {
+                    const cleared = !pending && useStudioStore.getState().drafts[model] === draft;
+                    if (cleared) {
                       updateDraft(model, { prompt: "", references: [] });
+                      setSubmissionPhase("settled");
+                      if (settleTimer.current) clearTimeout(settleTimer.current);
+                      settleTimer.current = setTimeout(() => {
+                        setSubmissionPhase("idle");
+                      }, 600);
+                    } else {
+                      setSubmissionPhase("idle");
                     }
                   },
+                  onError: () => setSubmissionPhase("idle"),
                 },
-              )
-            }
+              );
+            }}
           >
-            <UiIcon icon={IconSparkles} />
-            {generate.isPending ? "正在提交…" : pending ? "确认上次提交" : "立即生成"}
+            <span
+              className={`generate-button-icon${activeSubmission ? " generation-loading-icon" : ""}`}
+            >
+              <UiIcon icon={IconSparkles} />
+            </span>
+            {generate.isPending || submissionPhase === "submitting"
+              ? "正在提交…"
+              : submissionPhase === "settled"
+                ? "已提交"
+                : pending
+                  ? "确认上次提交"
+                  : "立即生成"}
           </Button>
         </div>
       </section>
@@ -212,12 +266,14 @@ function ParameterGroup({
   values,
   value,
   onChange,
+  selectionId,
   disabledValues = [],
 }: {
   label: string;
   values: readonly string[];
   disabledValues?: readonly string[];
   value: string;
+  selectionId: string;
   onChange: (value: string) => void;
 }) {
   return (
@@ -237,150 +293,16 @@ function ParameterGroup({
       >
         {values.map((option) => (
           <ToggleButton key={option} id={option} isDisabled={disabledValues.includes(option)}>
+            {option === value && (
+              <SelectionHighlight
+                layoutId={`workspace-${selectionId}-selection`}
+                layoutDependency={value}
+              />
+            )}
             <span>{option}</span>
           </ToggleButton>
         ))}
       </ToggleButtonGroup>
     </fieldset>
-  );
-}
-const commonRatios = ["1:1", "16:9", "2:1", "3:2", "4:3"];
-const additionalRatios = ["21:9", "9:16", "1:2", "2:3", "3:4", "9:21"];
-
-function subscribeRatioViewport(onChange: () => void) {
-  const media = window.matchMedia("(min-width: 900px)");
-  media.addEventListener("change", onChange);
-  return () => media.removeEventListener("change", onChange);
-}
-const getRatioViewport = () => window.matchMedia("(min-width: 900px)").matches;
-const getServerRatioViewport = () => false;
-
-function RatioPicker({ value, onChange }: { value: string; onChange: (ratio: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const groupRef = useRef<HTMLElement>(null);
-  const wideViewport = useSyncExternalStore(
-    subscribeRatioViewport,
-    getRatioViewport,
-    getServerRatioViewport,
-  );
-  const extendedSelected = additionalRatios.includes(value);
-  const select = (keys: Set<Key>) => {
-    const [next] = [...keys];
-    if (next === undefined) return;
-    onChange(String(next));
-    if (additionalRatios.includes(String(next))) setOpen(false);
-  };
-  return (
-    <section ref={groupRef} className="parameter-group ratio-group" aria-label="图片比例">
-      <div className="ratio-heading">
-        <h2>图片比例</h2>
-        <Popover isOpen={open} onOpenChange={setOpen}>
-          <Button className="ratio-expand" variant="tertiary" aria-label="展开全部图片比例">
-            <span>{value}</span>
-            <span className="ratio-chevron">
-              <UiIcon icon={IconChevronRight} size="small" />
-            </span>
-          </Button>
-          <Popover.Content
-            triggerRef={groupRef}
-            placement={wideViewport ? "right top" : "bottom start"}
-            offset={wideViewport ? 32 : 8}
-            shouldFlip={!wideViewport}
-            className="ratio-popover"
-          >
-            <Popover.Dialog className="ratio-popover-dialog" aria-label="更多图片比例">
-              <div className="ratio-popover-heading">
-                <Popover.Heading>图片比例</Popover.Heading>
-                <Button
-                  isIconOnly
-                  variant="tertiary"
-                  className="icon-button ratio-close"
-                  aria-label="关闭图片比例"
-                  onPress={() => setOpen(false)}
-                >
-                  <span className="ratio-close-visual">
-                    <UiIcon icon={IconX} />
-                  </span>
-                </Button>
-              </div>
-              <ToggleButtonGroup
-                aria-label="更多图片比例"
-                className="parameter-options ratio-options ratio-extra-options"
-                disallowEmptySelection
-                isDetached
-                selectedKeys={extendedSelected ? [value] : []}
-                selectionMode="single"
-                onSelectionChange={select}
-              >
-                {additionalRatios.map((ratio) => (
-                  <ToggleButton key={ratio} id={ratio}>
-                    <RatioPreview ratio={ratio} />
-                    <span>{ratio}</span>
-                  </ToggleButton>
-                ))}
-              </ToggleButtonGroup>
-            </Popover.Dialog>
-          </Popover.Content>
-        </Popover>
-      </div>
-      <div className="parameter-options ratio-options">
-        <ToggleButtonGroup
-          aria-label="常用图片比例"
-          className="ratio-common-options"
-          disallowEmptySelection
-          isDetached
-          selectedKeys={commonRatios.includes(value) ? [value] : []}
-          selectionMode="single"
-          onSelectionChange={select}
-        >
-          {commonRatios.map((ratio) => (
-            <ToggleButton key={ratio} id={ratio}>
-              <RatioPreview ratio={ratio} />
-              <span>{ratio}</span>
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
-        <Button
-          className="ratio-more"
-          variant="tertiary"
-          aria-label="更多图片比例"
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          data-selected={extendedSelected || undefined}
-          onPress={() => setOpen(true)}
-        >
-          {extendedSelected ? (
-            <RatioPreview ratio={value} />
-          ) : (
-            <span className="ratio-preview ratio-more-icon">
-              <UiIcon icon={IconLayersIntersect} />
-            </span>
-          )}
-          <span>{extendedSelected ? value : "更多"}</span>
-        </Button>
-      </div>
-    </section>
-  );
-}
-
-function RatioPreview({ ratio }: { ratio: string }) {
-  const [horizontal = 1, vertical = 1] = ratio.split(":").map(Number);
-  const proportion = horizontal / vertical;
-  const width = 24 * Math.min(1, proportion);
-  const height = 24 * Math.min(1, 1 / proportion);
-  return (
-    <svg className="ratio-preview" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-      <rect
-        x={(32 - width) / 2}
-        y={(32 - height) / 2}
-        width={width}
-        height={height}
-        rx="2"
-        fill="currentColor"
-        fillOpacity="0.08"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-    </svg>
   );
 }

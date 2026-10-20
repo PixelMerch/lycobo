@@ -73,12 +73,12 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
       .locator(".generation-job header")
       .getByRole("button", { name: "重新生成", exact: true })
       .click();
-    await dialog.getByRole("button", { name: "重新生成", exact: true }).click();
+    await dialog.getByRole("button", { name: "确认", exact: true }).click();
     await expect.poll(() => submissions.length).toBe(1);
     await rail.hover();
     await expect(rail.locator(".retry-label")).toBeVisible();
     await rail.getByRole("button", { name: "重试", exact: true }).click();
-    await dialog.getByRole("button", { name: "重新生成", exact: true }).click();
+    await dialog.getByRole("button", { name: "确认", exact: true }).click();
     await expect.poll(() => submissions.length).toBe(2);
     expect(new Set(submissions).size).toBe(2);
     await retry.focus();

@@ -1,8 +1,9 @@
-import { Alert, Button, Modal, Tooltip } from "@heroui/react";
+import { Alert, Button, Tooltip, toast } from "@heroui/react";
 import { type ImageJob, imageJobSchema } from "@lycoboai/contracts";
-import { IconCheck, IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
+import { IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { ConfirmDialog } from "../../components/confirm-dialog";
 import { UiIcon } from "../../components/ui-icon";
 import { FailureRetryLabel } from "./failure-retry-label";
 import {
@@ -20,14 +21,6 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
   const text = useRef<HTMLParagraphElement>(null);
   const [expanded, setExpanded] = useState(false);
   const [overflow, setOverflow] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(
-    () => () => {
-      if (copyTimer.current) clearTimeout(copyTimer.current);
-    },
-    [],
-  );
   const [error, setError] = useState("");
   useEffect(() => {
     const node = text.current;
@@ -61,21 +54,18 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
       <Button
         variant="secondary"
         className="copy-prompt"
-        data-copied={copied || undefined}
         onPress={async () => {
           try {
             await navigator.clipboard.writeText(job.prompt);
-            setCopied(true);
+            toast.success("复制成功");
             setError("");
-            if (copyTimer.current) clearTimeout(copyTimer.current);
-            copyTimer.current = setTimeout(() => setCopied(false), 3000);
           } catch {
             setError("复制失败，请手动选择提示词复制。");
           }
         }}
       >
-        <UiIcon icon={copied ? IconCheck : IconCopy} size="small" />
-        {copied ? "已复制" : "复制提示词"}
+        <UiIcon icon={IconCopy} size="small" />
+        复制提示词
       </Button>
       {error && (
         <Alert className="field-error" role="alert" status="danger">
@@ -253,73 +243,27 @@ export function HistoryTaskActions({
           </Alert.Content>
         </Alert>
       )}
-      <Modal
+      <ConfirmDialog
         isOpen={regenerateOpen}
-        onOpenChange={(open) => {
-          if (!open) setRegenerateOpen(false);
+        title="重新生成这张图片？"
+        content="将使用相同的提示词、参考图和参数新建一个生成任务。"
+        closeLabel="关闭重新生成确认"
+        onCancel={() => setRegenerateOpen(false)}
+        onConfirm={() => {
+          setRegenerateOpen(false);
+          void regenerate();
         }}
-      >
-        <Modal.Backdrop>
-          <Modal.Container>
-            <Modal.Dialog className="info-dialog">
-              <Modal.Header>
-                <Modal.Heading>重新生成这张图片？</Modal.Heading>
-                <Modal.CloseTrigger aria-label="关闭重新生成确认" />
-              </Modal.Header>
-              <Modal.Body>
-                <p>将使用相同的提示词、参考图和参数新建一个生成任务。</p>
-                <div className="history-confirm-actions">
-                  <Button variant="secondary" onPress={() => setRegenerateOpen(false)}>
-                    取消
-                  </Button>
-                  <Button
-                    className="primary-action"
-                    onPress={() => {
-                      setRegenerateOpen(false);
-                      void regenerate();
-                    }}
-                  >
-                    重新生成
-                  </Button>
-                </div>
-              </Modal.Body>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
-      <Modal
+      />
+      <ConfirmDialog
         isOpen={replacement !== null}
-        onOpenChange={(open) => {
-          if (!open) setReplacement(null);
+        title="替换当前草稿？"
+        content="该模型已有草稿，继续编辑将替换提示词、参考图和参数。"
+        closeLabel="关闭草稿确认"
+        onCancel={() => setReplacement(null)}
+        onConfirm={() => {
+          if (replacement) restore(replacement);
         }}
-      >
-        <Modal.Backdrop>
-          <Modal.Container>
-            <Modal.Dialog className="info-dialog">
-              <Modal.Header>
-                <Modal.Heading>替换当前草稿？</Modal.Heading>
-                <Modal.CloseTrigger aria-label="关闭草稿确认" />
-              </Modal.Header>
-              <Modal.Body>
-                <p>该模型已有草稿，继续编辑将替换提示词、参考图和参数。</p>
-                <div className="history-confirm-actions">
-                  <Button variant="secondary" onPress={() => setReplacement(null)}>
-                    保留草稿
-                  </Button>
-                  <Button
-                    className="primary-action"
-                    onPress={() => {
-                      if (replacement) restore(replacement);
-                    }}
-                  >
-                    替换并编辑
-                  </Button>
-                </div>
-              </Modal.Body>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
+      />
     </div>
   );
 }

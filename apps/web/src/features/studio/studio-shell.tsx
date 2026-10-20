@@ -1,7 +1,9 @@
-import { Button, Drawer, Modal, Tooltip } from "@heroui/react";
+import { Button, Drawer, Dropdown, Modal, Tooltip } from "@heroui/react";
 import "../../styles/brand.css";
 import {
+  IconChevronDown,
   IconChevronRight,
+  IconCoin,
   IconFolder,
   IconHelpCircle,
   IconHome,
@@ -13,10 +15,12 @@ import {
   IconSettings,
   IconShoppingBag,
 } from "@tabler/icons-react";
-import { type CSSProperties, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import { type CSSProperties, useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { RouteLink } from "../../components/router-link";
 import { UiIcon } from "../../components/ui-icon";
+import { AccountPanel, type AccountSection } from "./account-panel";
 import { useEnterpriseLogout, useEnterpriseSession } from "./auth-client";
 import { CaseGallery } from "./case-gallery";
 import { LoginDialog } from "./login-dialog";
@@ -31,9 +35,20 @@ export function StudioShell() {
   const logout = useEnterpriseLogout();
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
+  const reduceMotion = useReducedMotion();
+  useEffect(() => {
+    const update = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  const expandedSidebarWidth = viewportWidth >= 2560 ? 320 : viewportWidth >= 1800 ? 288 : 274;
+  const sidebarWidth =
+    viewportWidth < 768 ? "0px" : sidebarCollapsed ? "64px" : `${expandedSidebarWidth}px`;
   const [tkOpen, setTkOpen] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [accountSection, setAccountSection] = useState<AccountSection | null>(null);
   const chooserOpen = useStudioStore((s) => s.chooserOpen);
   const setChooserOpen = useStudioStore((s) => s.setChooserOpen);
   const activeModel = useStudioStore((s) => s.activeModel);
@@ -158,7 +173,12 @@ export function StudioShell() {
     </>
   );
   return (
-    <div className="studio-app" data-sidebar-collapsed={sidebarCollapsed}>
+    <motion.div
+      className="studio-app"
+      data-sidebar-collapsed={sidebarCollapsed}
+      animate={{ "--sidebar-width": sidebarWidth }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+    >
       <aside className="sidebar" aria-label="主导航">
         <div className="sidebar-header">
           <RouteLink to="/" className="brand">
@@ -251,16 +271,36 @@ export function StudioShell() {
         <div className="header-actions">
           {accountSession.data ? (
             <>
-              <span>{accountSession.data.account}</span>
               <Button
-                variant="ghost"
-                size="sm"
-                isPending={logout.isPending}
-                onPress={() => logout.mutate()}
+                variant="tertiary"
+                className="credit-pill"
+                onPress={() => setAccountSection("credits")}
               >
-                退出登录
+                <UiIcon icon={IconCoin} size="small" />
+                积分
+                <strong>—</strong>
               </Button>
-              {logout.isError && <span role="alert">退出失败，请重试</span>}
+              <Dropdown>
+                <Dropdown.Trigger className="account-trigger">
+                  <span className="account-initial" aria-hidden="true">
+                    {accountSession.data.account.slice(0, 1).toUpperCase()}
+                  </span>
+                  <span className="account-name">{accountSession.data.account}</span>
+                  <UiIcon icon={IconChevronDown} size="small" />
+                </Dropdown.Trigger>
+                <Dropdown.Popover className="account-menu">
+                  <Dropdown.Menu
+                    onAction={(key) => {
+                      if (key === "logout") logout.mutate();
+                      else setAccountSection(key as AccountSection);
+                    }}
+                  >
+                    <Dropdown.Item id="profile">个人信息</Dropdown.Item>
+                    <Dropdown.Item id="credits">积分与购买</Dropdown.Item>
+                    <Dropdown.Item id="logout">退出登录</Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown.Popover>
+              </Dropdown>
             </>
           ) : (
             <Button
@@ -275,6 +315,13 @@ export function StudioShell() {
         </div>
       </header>
       {loginOpen && <LoginDialog onClose={() => setLoginOpen(false)} />}
+      {accountSection ? (
+        <AccountPanel
+          key={accountSection}
+          section={accountSection}
+          onClose={() => setAccountSection(null)}
+        />
+      ) : null}
       <main className="main-content">
         <Outlet />
       </main>
@@ -357,6 +404,6 @@ export function StudioShell() {
           </Modal.Container>
         </Modal.Backdrop>
       </Modal>
-    </div>
+    </motion.div>
   );
 }

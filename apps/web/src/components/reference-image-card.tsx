@@ -28,7 +28,9 @@ export function ReferenceImageCard({
       >
         <UiIcon icon={IconX} size="small" />
       </Button>
-      <span className="reference-number">图片{number}</span>
+      <span className="reference-number" aria-hidden="true">
+        {number}
+      </span>
     </div>
   );
 }

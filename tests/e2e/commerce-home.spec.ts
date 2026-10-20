@@ -23,13 +23,14 @@ test("home composer shares prompt and real reference drafts without submitting g
   const uploadBox = await page.locator(".home-upload").boundingBox();
   const promptBox = await page.getByRole("textbox", { name: "创作需求" }).boundingBox();
   expect(uploadBox && promptBox && uploadBox.y + uploadBox.height <= promptBox.y).toBe(true);
-  await page.getByLabel("添加参考图片", { exact: true }).setInputFiles(
-    Array.from({ length: 4 }, (_, index) => ({
-      name: `product-${index}.png`,
-      mimeType: "image/png",
-      buffer: png,
-    })),
-  );
+  await page
+    .getByLabel("添加参考图片", { exact: true })
+    .setInputFiles([
+      "apps/web/public/studio/commerce-atlas.webp",
+      "apps/web/public/studio/bedroom.webp",
+      "apps/web/public/studio/lavender.webp",
+      "apps/web/public/studio/set.webp",
+    ]);
   await expect(page.locator(".reference-tile")).toHaveCount(5);
   await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toHaveCount(0);
   for (let number = 5; number > 1; number -= 1) {
@@ -172,6 +173,97 @@ test("home settings preserve drafts and only image creation is offered", async (
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("保留绗缝与面料细节");
 });
 
+test("ratio pager moves one page and keeps the selection", async ({ page }) => {
+  await mockImageApi(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "选择创作模型" }).click();
+  const panel = page.getByRole("dialog", { name: "模型和画面设置" });
+  const track = panel.locator(".home-ratio-track");
+  await expect(panel.getByRole("button", { name: "上一页画面比例" })).toHaveCount(0);
+  await expect(panel.getByRole("button", { name: "下一页画面比例" })).toBeVisible();
+  await panel.getByRole("button", { name: "下一页画面比例" }).click();
+  await expect.poll(() => track.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  await expect(panel.getByRole("button", { name: "上一页画面比例" })).toBeVisible();
+  await panel.getByRole("radio", { name: "3:4", exact: true }).click();
+  await expect(page.getByRole("button", { name: "选择创作模型" })).toContainText("3:4");
+});
+
+test("home model settings can change resolution and count with animated selection", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "选择创作模型" }).click();
+  const panel = page.getByRole("dialog", { name: "模型和画面设置" });
+  await panel.getByRole("button", { name: /gpt-image-2-4K/ }).click();
+  const resolution = panel.getByRole("radio", { name: "2K", exact: true });
+  await expect(resolution).toBeEnabled();
+  await resolution.click();
+  await expect(resolution).toHaveAttribute("data-selected", "true");
+  await expect(panel.locator(".toggle-selection")).toHaveCount(4);
+  await panel.getByRole("radio", { name: "3 张", exact: true }).click();
+  await expect(page.getByRole("button", { name: "选择创作模型" })).toContainText("2K");
+});
+
+test("reopening model settings restores the selected ratio page", async ({ page }) => {
+  await mockImageApi(page);
+  await page.goto("/");
+  const trigger = page.getByRole("button", { name: "选择创作模型" });
+  await trigger.click();
+  const panel = page.getByRole("dialog", { name: "模型和画面设置" });
+  const track = panel.locator(".home-ratio-track");
+  await panel.getByRole("button", { name: "下一页画面比例" }).click();
+  await panel.getByRole("radio", { name: "21:9", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await trigger.click();
+  await expect(panel).toBeVisible();
+  await expect.poll(() => track.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  await expect(panel.getByRole("radio", { name: "21:9", exact: true })).toBeInViewport();
+  await expect(panel.getByRole("button", { name: "上一页画面比例" })).toBeVisible();
+});
+
+test("duplicate reference uploads are filtered and announced", async ({ page }) => {
+  await mockImageApi(page);
+  await page.goto("/");
+  const png = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+    "base64",
+  );
+  const file = { name: "same.png", mimeType: "image/png", buffer: png };
+  await page.getByLabel("添加参考图片", { exact: true }).setInputFiles([file, file]);
+  await expect(page.locator(".reference-tile")).toHaveCount(1);
+  await expect(page.getByText("存在相同素材，已自动过滤")).toBeVisible();
+});
+
+test("removing a referenced image deletes its mention and renumbers later mentions", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  await page.goto("/");
+  await page
+    .getByLabel("添加参考图片", { exact: true })
+    .setInputFiles([
+      "apps/web/public/studio/commerce-atlas.webp",
+      "apps/web/public/studio/bedroom-thumb.webp",
+    ]);
+  const prompt = page.getByRole("textbox", { name: "创作需求" });
+  await prompt.fill("保留 @图片1 和 @图片2 的画面");
+  await expect(prompt.locator(".reference-prompt-chip")).toHaveCount(2);
+
+  await page.locator(".reference-tile").first().hover();
+  await page.getByRole("button", { name: "移除参考图：图片1", exact: true }).click();
+  await expect(prompt.locator(".reference-prompt-chip")).toHaveCount(1);
+  await expect(prompt.locator(".reference-prompt-chip")).toHaveAttribute(
+    "data-reference",
+    "@图片1",
+  );
+  await expect(prompt).not.toContainText("@图片2");
+
+  await page.locator(".reference-tile").first().hover();
+  await page.getByRole("button", { name: "移除参考图：图片1", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("保留 和 的画面");
+});
+
 test("image mentions insert at the cursor and preserve surrounding text", async ({ page }) => {
   await mockImageApi(page);
   await page.goto("/");
@@ -180,14 +272,12 @@ test("image mentions insert at the cursor and preserve surrounding text", async 
   const menu = page.getByRole("dialog", { name: "引用已上传图片" });
   await expect(menu).toContainText("请先上传参考图片");
   await menu.press("Escape");
-  const png = Buffer.from(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
-    "base64",
-  );
-  await page.getByLabel("添加参考图片", { exact: true }).setInputFiles([
-    { name: "a.png", mimeType: "image/png", buffer: png },
-    { name: "b.png", mimeType: "image/png", buffer: png },
-  ]);
+  await page
+    .getByLabel("添加参考图片", { exact: true })
+    .setInputFiles([
+      "apps/web/public/studio/commerce-atlas.webp",
+      "apps/web/public/studio/bedroom-thumb.webp",
+    ]);
   await expect(page.locator(".reference-tile")).toHaveCount(2);
   await prompt.fill("保留 面料");
   await prompt.press("Home");
@@ -196,15 +286,19 @@ test("image mentions insert at the cursor and preserve surrounding text", async 
   await prompt.press("@");
   await expect(menu).toBeVisible();
   await page.getByRole("option", { name: "图片2", exact: true }).click();
-  await expect(prompt).toHaveValue("保留@图片2  面料");
+  await expect(prompt).toBeFocused();
+  await expect(prompt).toHaveText("保留图片2  面料");
+  await expect(prompt.locator("[data-reference]")).toHaveAttribute("data-reference", "@图片2");
+  await prompt.pressSequentially("继续编辑");
+  await expect(prompt).toHaveText("保留图片2 继续编辑 面料");
   await expect(prompt).toBeFocused();
   await page.getByRole("button", { name: "开始创作", exact: true }).click();
   const workspacePrompt = page.getByLabel("提示词", { exact: true });
-  await expect(workspacePrompt).toHaveValue("保留@图片2  面料");
+  await expect(workspacePrompt).toHaveText("保留图片2 继续编辑 面料");
   await workspacePrompt.fill("@");
   await expect(menu).toBeVisible();
   await menu.press("Tab");
   await expect(page.getByRole("option", { name: "图片1", exact: true })).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(workspacePrompt).toHaveValue("@图片1 ");
+  await expect(workspacePrompt).toHaveText("图片1 ");
 });

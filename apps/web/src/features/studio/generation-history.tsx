@@ -1,12 +1,8 @@
-import { Alert, Button, EmptyState, Link, Spinner, ToggleButton, Tooltip } from "@heroui/react";
+import { Alert, Button, EmptyState, Link, ToggleButton, Tooltip, toast } from "@heroui/react";
 import type { ImageJob } from "@lycoboai/contracts";
 import {
   IconAspectRatio,
-  IconClock,
   IconDownload,
-  IconHash,
-  IconLayersIntersect,
-  IconMaximize,
   IconPhoto,
   IconSparkles,
   IconStar,
@@ -32,6 +28,15 @@ export const statusLabel: Record<ImageJob["status"], string> = {
   failed: "失败",
   needs_reconciliation: "失败",
 };
+async function copyTaskId(id: string | undefined) {
+  if (!id) return;
+  try {
+    await navigator.clipboard.writeText(id);
+    toast.success("复制成功");
+  } catch {
+    toast.danger("复制失败，请手动选择复制");
+  }
+}
 const errorLabel = (code: string | null) => {
   if (code === "PROVIDER_HTTP_401" || code === "PROVIDER_HTTP_403")
     return "模型服务鉴权失败，请检查 API key 和模型权限。";
@@ -150,6 +155,14 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
       window.removeEventListener("resize", schedule);
     };
   }, [compact, jobIds, setActiveHistoryId]);
+  if (session.isError && /请先登录|登录已过期|重新登录/.test(session.error?.message ?? ""))
+    return (
+      <EmptyState className="empty-state">
+        <UiIcon icon={IconPhoto} size="illustration" />
+        <h2>登录后查看生成记录</h2>
+        <p>登录账号后，生成结果会保存在这里。</p>
+      </EmptyState>
+    );
   if (session.isError || query.isError)
     return (
       <Alert className="generation-message" role="alert" status="danger">
@@ -167,13 +180,7 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
         </Alert.Content>
       </Alert>
     );
-  if (session.isPending || query.isPending)
-    return (
-      <p className="generation-message" role="status">
-        <Spinner aria-hidden size="sm" />
-        正在加载记录…
-      </p>
-    );
+  if (session.isPending || query.isPending) return null;
   if (!jobs.length)
     return (
       <EmptyState className="empty-state">
@@ -193,20 +200,30 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
           data-active={!compact && activeHistoryId === job.id ? "true" : undefined}
         >
           <header>
-            {job.status !== "succeeded" && <span role="status">{statusLabel[job.status]}</span>}
             <dl className="generation-meta" aria-label="任务信息">
-              <div>
-                <dt title="任务 ID">
-                  <UiIcon icon={IconHash} size="small" />
-                  <span className="sr-only">任务 ID</span>
-                </dt>
-                <dd>{job.public_id ?? "待同步"}</dd>
+              <div className="generation-task-id-field">
+                <dt>任务ID：</dt>
+                <dd>
+                  <Tooltip delay={0} isDisabled={!job.public_id}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="generation-task-id"
+                      isDisabled={!job.public_id}
+                      aria-label={job.public_id ? `复制任务 ID ${job.public_id}` : "任务 ID 待同步"}
+                      onPress={(event) => {
+                        if (event.pointerType !== "mouse") void copyTaskId(job.public_id);
+                      }}
+                      onDoubleClick={() => void copyTaskId(job.public_id)}
+                    >
+                      {job.public_id ?? "待同步"}
+                    </Button>
+                    <Tooltip.Content placement="top">双击复制任务 ID</Tooltip.Content>
+                  </Tooltip>
+                </dd>
               </div>
               <div>
-                <dt title="时间">
-                  <UiIcon icon={IconClock} size="small" />
-                  <span className="sr-only">时间</span>
-                </dt>
+                <dt className="sr-only">时间</dt>
                 <dd>
                   <time dateTime={job.created_at}>
                     {new Date(job.created_at).toLocaleString("zh-CN")}
@@ -214,31 +231,20 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
                 </dd>
               </div>
               <div>
-                <dt title="模型">
-                  <UiIcon icon={IconSparkles} size="small" />
-                  <span className="sr-only">模型</span>
-                </dt>
-                <dd>{job.model}</dd>
+                <dt className="sr-only">模型</dt>
+                <dd>
+                  <span className="generation-model-tag">{job.model}</span>
+                </dd>
               </div>
-              <div>
-                <dt title="比例">
-                  <UiIcon icon={IconAspectRatio} size="small" />
-                  <span className="sr-only">比例</span>
-                </dt>
+              <div className="generation-meta-ratio">
+                <dt className="sr-only">比例</dt>
+                <UiIcon icon={IconAspectRatio} size="small" />
                 <dd>{job.aspect_ratio}</dd>
               </div>
-              <div>
-                <dt title="分辨率">
-                  <UiIcon icon={IconMaximize} size="small" />
-                  <span className="sr-only">分辨率</span>
-                </dt>
+              <div className="generation-meta-units">
+                <dt className="sr-only">分辨率与张数</dt>
                 <dd>{job.resolution}</dd>
-              </div>
-              <div>
-                <dt title="张数">
-                  <UiIcon icon={IconLayersIntersect} size="small" />
-                  <span className="sr-only">张数</span>
-                </dt>
+                <span className="generation-meta-divider" aria-hidden="true" />
                 <dd>{job.requested_count} 张</dd>
               </div>
             </dl>
@@ -329,7 +335,7 @@ export function HistoryIndex() {
   return (
     <aside className="history-rail" aria-label="历史索引" ref={rail}>
       <h2>历史</h2>
-      {jobs.length ? (
+      {query.isLoading ? null : jobs.length ? (
         jobs.map((job) => {
           const image = job.items.find((item) => item.output_asset_id)?.output_asset_id;
           const generating = job.status === "running" || job.status === "queued";

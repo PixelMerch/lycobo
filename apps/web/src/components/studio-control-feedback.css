@@ -18,7 +18,7 @@
     .home-settings-trigger.button,
     .home-settings .toggle-button,
     .reference-mention-popover .list-box-item
-  ):not(:disabled):not([data-disabled]):is(:hover, [data-hovered]) {
+  ):not(:disabled):not([data-disabled]):not(.home-model-option):is(:hover, [data-hovered]) {
     background: var(--studio-control-hover);
   }
 }
@@ -26,11 +26,11 @@
   .home-settings-trigger.button,
   .home-settings .toggle-button,
   .reference-mention-popover .list-box-item
-):not(:disabled):not([data-disabled])[data-focus-visible] {
+):not(:disabled):not([data-disabled]):not(.home-model-option)[data-focus-visible] {
   background: var(--studio-control-hover);
 }
 .home-settings
-  .toggle-button[data-selected]:not(:disabled):not([data-disabled]):is(
+  .toggle-button[data-selected]:not(:disabled):not([data-disabled]):not(.home-model-option):is(
     :hover,
     [data-hovered],
     [data-focus-visible]
@@ -41,7 +41,7 @@
   .home-settings-trigger.button,
   .home-settings .toggle-button,
   .reference-mention-popover .list-box-item
-):not(:disabled):not([data-disabled]):is(:active, [data-pressed]) {
+):not(:disabled):not([data-disabled]):not(.home-model-option):is(:active, [data-pressed]) {
   background: var(--studio-control-pressed);
   scale: 0.98;
 }

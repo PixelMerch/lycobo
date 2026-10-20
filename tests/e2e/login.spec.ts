@@ -223,7 +223,7 @@ test("enterprise login updates the header, refreshes its session and clears the 
     ),
   ).toBe(false);
   await page.reload();
-  await expect(page.getByRole("button", { name: "退出登录", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "退出登录", exact: true }).click();
+  await page.locator(".account-trigger").click();
+  await page.getByRole("menuitem", { name: "退出登录", exact: true }).click();
   await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();
 });

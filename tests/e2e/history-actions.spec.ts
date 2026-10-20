@@ -67,10 +67,10 @@ test("history prompt expands, copies in full and locates the output; icon action
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.clock.install();
   await article.getByRole("button", { name: "复制提示词", exact: true }).click();
-  await expect(article.getByRole("button", { name: "已复制", exact: true })).toBeVisible();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(input.prompt);
-  await page.clock.fastForward(3100);
+  await expect(page.locator(".toast__title")).toHaveText("复制成功");
   await expect(article.getByRole("button", { name: "复制提示词", exact: true })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(input.prompt);
+  await page.clock.fastForward(4300);
   await page.clock.resume();
   await article.getByRole("button", { name: "重新编辑", exact: true }).hover();
   await expect(page.getByRole("tooltip").filter({ hasText: "重新编辑" })).toBeVisible();
@@ -97,10 +97,10 @@ test("edit restores the original references and parameters while preserving an e
   await edit.click();
   const dialog = page.getByRole("dialog", { name: "替换当前草稿？", exact: true });
   await expect(dialog).toBeVisible();
-  await dialog.getByRole("button", { name: "保留草稿", exact: true }).click();
+  await dialog.getByRole("button", { name: "取消", exact: true }).click();
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("我的新草稿");
   await edit.click();
-  await dialog.getByRole("button", { name: "替换并编辑", exact: true }).click();
+  await dialog.getByRole("button", { name: "确认", exact: true }).click();
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
 });
 
@@ -162,7 +162,7 @@ test("regenerate submits the original snapshot once and leaves the composer draf
   await expect(confirm).not.toBeVisible();
   expect(requests).toBe(0);
   await page.getByRole("button", { name: "重新生成", exact: true }).click();
-  await confirm.getByRole("button", { name: "重新生成", exact: true }).click();
+  await confirm.getByRole("button", { name: "确认", exact: true }).click();
   await expect.poll(() => requests).toBe(1);
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("不要覆盖我的草稿");
 });
@@ -178,7 +178,7 @@ test("an uncertain history submission exposes the same pending request in the co
   await page.getByRole("button", { name: "重新生成", exact: true }).click();
   await page
     .getByRole("dialog", { name: "重新生成这张图片？", exact: true })
-    .getByRole("button", { name: "重新生成", exact: true })
+    .getByRole("button", { name: "确认", exact: true })
     .click();
   await expect(page.getByRole("button", { name: "确认上次提交", exact: true })).toBeEnabled();
   await expect(page.getByLabel("重新生成", { exact: true })).toBeDisabled();

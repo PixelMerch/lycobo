@@ -5,7 +5,6 @@ import {
   ListBox,
   Modal,
   Select,
-  Spinner,
   ToggleButton,
   ToggleButtonGroup,
 } from "@heroui/react";
@@ -202,13 +201,11 @@ export function HomePage() {
             <RouteLink to="/assets">
               查看全部 <UiIcon icon={IconArrowRight} size="small" />
             </RouteLink>
-          ) : (
+          ) : identity.isPending ? null : (
             <span>登录后查看你的创作记录</span>
           )}
         </div>
-        {identity.isPending ? (
-          <p role="status">正在读取登录状态…</p>
-        ) : identity.isError ? (
+        {identity.isPending ? null : identity.isError ? (
           <p role="alert">
             登录状态暂时无法读取，
             <Button
@@ -371,13 +368,8 @@ function RecentWorks() {
         </Button>
       </p>
     );
-  if (query.isPending)
-    return (
-      <p role="status">
-        <Spinner size="sm" />
-        正在加载作品…
-      </p>
-    );
+  // The page is already visible while this query runs; only the entry loader is full-screen.
+  if (query.isPending) return null;
   if (!outputs.length)
     return (
       <div className="home-recent-empty">

@@ -16,11 +16,9 @@ test("current draft, references and output choices follow model switches and sur
   await page.goto("/create");
   const prompt = page.getByLabel("提示词", { exact: true });
   await prompt.fill("保留我的商品草稿");
-  await page.getByRole("button", { name: "展开全部图片比例", exact: true }).click();
-  await page
-    .getByRole("dialog", { name: "更多图片比例", exact: true })
-    .getByRole("radio", { name: "3:4", exact: true })
-    .click();
+  const ratioPicker = page.getByRole("region", { name: "图片比例", exact: true });
+  await ratioPicker.getByRole("button", { name: "下一页画面比例", exact: true }).click();
+  await ratioPicker.getByRole("radio", { name: "3:4", exact: true }).click();
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles({ name: "quilt.png", mimeType: "image/png", buffer: png });
@@ -33,10 +31,11 @@ test("current draft, references and output choices follow model switches and sur
   await page.getByRole("button", { name: /创作模型/ }).click();
   await page.getByRole("option", { name: "gpt-image-2", exact: true }).click();
   await expect(prompt).toHaveValue("保留我的商品草稿");
-  await expect(page.getByRole("button", { name: "更多图片比例", exact: true })).toHaveAttribute(
-    "data-selected",
-    "true",
-  );
+  await expect(
+    page
+      .getByRole("region", { name: "图片比例", exact: true })
+      .getByRole("radio", { name: "3:4", exact: true }),
+  ).toHaveAttribute("data-selected", "true");
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await page.getByRole("link", { name: "素材库", exact: true }).click();
   await expect(page.getByRole("heading", { name: "素材库", exact: true })).toBeVisible();
@@ -56,9 +55,13 @@ test("invalid references and limit errors do not destroy valid images", async ({
   await expect(page.getByRole("alert")).toContainText("图片无法读取");
   await input.setInputFiles({ name: "valid.png", mimeType: "image/png", buffer: png });
   await expect(page.locator(".reference-tile")).toHaveCount(1);
-  await input.setInputFiles(
-    Array.from({ length: 5 }, (_, i) => ({ name: `${i}.png`, mimeType: "image/png", buffer: png })),
-  );
+  await input.setInputFiles([
+    "apps/web/public/studio/commerce-atlas.webp",
+    "apps/web/public/studio/bedroom.webp",
+    "apps/web/public/studio/lavender.webp",
+    "apps/web/public/studio/set.webp",
+    "apps/web/public/studio/bedroom-thumb.webp",
+  ]);
   await expect(page.getByRole("alert")).toContainText("最多添加 5 张");
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await page.locator(".reference-tile").first().hover();
@@ -144,36 +147,20 @@ test("extended ratios preserve selection and composer scroll stays independent",
   await page.setViewportSize({ width: 1440, height: 600 });
   await page.goto("/create");
   await expect(page.getByText("更多设置", { exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "更多图片比例", exact: true }).click();
-  const picker = page.getByRole("dialog", { name: "更多图片比例", exact: true });
-  await expect(picker).toBeVisible();
-  await expect(page.getByRole("button", { name: "展开全部图片比例", exact: true })).toHaveAttribute(
-    "aria-expanded",
+  const ratioPicker = page.getByRole("region", { name: "图片比例", exact: true });
+  const track = ratioPicker.locator(".home-ratio-track");
+  await expect(ratioPicker.getByRole("radio")).toHaveCount(8);
+  await expect(ratioPicker.getByRole("radio", { name: "4:5", exact: true })).toHaveCount(0);
+  await ratioPicker.getByRole("button", { name: "下一页画面比例", exact: true }).click();
+  await expect.poll(() => track.evaluate((node) => node.scrollLeft)).toBeGreaterThan(0);
+  await ratioPicker.getByRole("radio", { name: "21:9", exact: true }).click();
+  await expect(ratioPicker.getByRole("radio", { name: "21:9", exact: true })).toHaveAttribute(
+    "data-selected",
     "true",
   );
-  await expect
-    .poll(async () => {
-      const group = await page.locator(".ratio-group").boundingBox();
-      const popup = await page.locator(".ratio-popover").boundingBox();
-      return (
-        !!group && !!popup && popup.x >= group.x + group.width && Math.abs(popup.y - group.y) < 1
-      );
-    })
-    .toBe(true);
-  await expect(picker.getByRole("radio")).toHaveCount(6);
-  await expect(picker.getByRole("radio", { name: "4:5", exact: true })).toHaveCount(0);
-  await picker.getByRole("radio", { name: "9:16", exact: true }).click();
-  await expect(picker).not.toBeVisible();
-  await expect(page.getByRole("button", { name: "展开全部图片比例", exact: true })).toHaveAttribute(
-    "aria-expanded",
-    "false",
-  );
-  await expect(page.getByRole("button", { name: "更多图片比例", exact: true })).toContainText(
-    "9:16",
-  );
-  await page.getByRole("button", { name: "展开全部图片比例", exact: true }).click();
-  await picker.press("Escape");
-  await expect(page.getByRole("button", { name: "展开全部图片比例", exact: true })).toBeFocused();
+  await expect(
+    ratioPicker.getByRole("button", { name: "上一页画面比例", exact: true }),
+  ).toBeVisible();
   const parameters = page.getByRole("region", { name: "创作参数", exact: true });
   const generate = page.getByRole("button", { name: "立即生成", exact: true });
   const before = await generate.boundingBox();
@@ -186,34 +173,42 @@ test("extended ratios preserve selection and composer scroll stays independent",
   expect(before && after && Math.abs(before.y - after.y)).toBeLessThan(1);
   await expect(generate).toBeInViewport();
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole("button", { name: "更多图片比例", exact: true }).click();
-  await expect(picker).toBeInViewport({ ratio: 1 });
+  await expect
+    .poll(() =>
+      track.evaluate((node) => {
+        const selected = node.querySelector('[data-selected="true"]');
+        if (!(selected instanceof HTMLElement)) return false;
+        const selectedRect = selected.getBoundingClientRect();
+        const trackRect = node.getBoundingClientRect();
+        return selectedRect.left >= trackRect.left - 1 && selectedRect.right <= trackRect.right + 1;
+      }),
+    )
+    .toBe(true);
 });
 
 test("reference limit and clearing remain consistent when switching models", async ({ page }) => {
   await page.goto("/create");
   const prompt = page.getByLabel("提示词", { exact: true });
   await prompt.fill("保留提示词");
-  await page.getByLabel("添加参考图片", { exact: true }).setInputFiles(
-    Array.from({ length: 5 }, (_, i) => ({
-      name: `quilt-${i}.png`,
-      mimeType: "image/png",
-      buffer: png,
-    })),
-  );
+  await page
+    .getByLabel("添加参考图片", { exact: true })
+    .setInputFiles([
+      "apps/web/public/studio/commerce-atlas.webp",
+      "apps/web/public/studio/bedroom.webp",
+      "apps/web/public/studio/lavender.webp",
+      "apps/web/public/studio/set.webp",
+      "apps/web/public/studio/bedroom-thumb.webp",
+    ]);
   await expect(page.locator(".reference-tile")).toHaveCount(5);
-  await expect(page.locator(".reference-number")).toHaveText([
-    "图片1",
-    "图片2",
-    "图片3",
-    "图片4",
-    "图片5",
-  ]);
+  await expect(page.locator(".reference-number")).toHaveText(["1", "2", "3", "4", "5"]);
   await expect(page.getByText("quilt-0.png", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toHaveCount(0);
+  const remove = page.getByRole("button", { name: "移除参考图：图片1", exact: true });
+  await expect(remove).toHaveCSS("opacity", "0");
   await page.locator(".reference-tile").first().hover();
-  await page.getByRole("button", { name: "移除参考图：图片1", exact: true }).click();
-  await expect(page.locator(".reference-number")).toHaveText(["图片1", "图片2", "图片3", "图片4"]);
+  await expect(remove).toHaveCSS("opacity", "1");
+  await remove.click();
+  await expect(page.locator(".reference-number")).toHaveText(["1", "2", "3", "4"]);
   await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /创作模型/ }).click();
   await page.getByRole("option", { name: "gpt-image-2-4K", exact: true }).click();

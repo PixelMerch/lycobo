@@ -35,6 +35,8 @@
   border-radius: 6px;
 }
 .reference-mention-popover .list-box-item[data-focused] {
+  outline: none;
+  box-shadow: none;
   background: #ffffff0d;
 }
 .reference-mention-empty {
@@ -59,65 +61,51 @@
   outline: none;
   box-shadow: none;
 }
-.reference-prompt-editor {
-  position: relative;
-  width: 100%;
-}
-.reference-prompt-mirror {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
+.reference-rich-editor.textarea {
+  display: block;
+  min-height: 124px;
+  max-height: 280px;
+  overflow: auto;
   white-space: pre-wrap;
-  border-style: solid;
-  border-color: transparent;
-  pointer-events: none;
-  color: var(--foreground);
-  visibility: hidden;
-}
-.reference-prompt-editor[data-has-references] .reference-prompt-mirror {
-  visibility: visible;
-}
-.reference-prompt-editor[data-has-references] .textarea {
-  color: transparent;
+  overflow-wrap: anywhere;
+  padding: 12px;
+  font-size: var(--text-base);
+  line-height: 26px;
+  background: var(--field-background);
+  border: 0;
+  outline: none;
+  box-shadow: none;
   caret-color: var(--accent);
 }
-.reference-prompt-editor .textarea {
-  position: relative;
-  width: 100%;
-}
-.reference-prompt-editor[data-has-references] .textarea {
+.home-composer .home-prompt .reference-rich-editor.textarea {
+  height: 138px;
+  min-height: 138px;
+  max-height: 138px;
+  padding: 10px 12px;
+  line-height: 26px;
+  overflow-y: auto;
   background: transparent;
-}
-/* Keep the native token's text advance so selection and the caret stay aligned. */
-.reference-prompt-mirror mark {
-  position: relative;
-  color: transparent;
-  background: transparent;
-  font: inherit;
-  padding: 0;
-}
-.reference-prompt-token-space {
-  color: transparent;
+  border-radius: 12px;
 }
 .reference-prompt-chip {
-  position: absolute;
-  inset: -3px 0;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 2px;
+  vertical-align: middle;
+  gap: 6px;
+  padding: 2px 6px 2px 2px;
   border-radius: 6px;
   color: #a8ff00;
   background: #343434;
   font-size: 12px;
   line-height: 18px;
   white-space: nowrap;
+  user-select: all;
+  transform: translateY(-2px);
 }
 .reference-prompt-chip img {
-  width: 16px;
-  min-width: 12px;
+  width: 18px;
   height: 18px;
-  flex-shrink: 1;
-  object-fit: contain;
-  border-radius: 3px;
+  object-fit: cover;
+  border-radius: 4px;
+  pointer-events: none;
 }

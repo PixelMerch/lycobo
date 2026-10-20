@@ -1,0 +1,109 @@
+.modal__backdrop.confirm-dialog__backdrop {
+  background: #000000c2;
+}
+.confirm-dialog {
+  width: min(480px, calc(100vw - 32px));
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+  background: #202020;
+  box-shadow: 0 24px 64px #00000080;
+  color: #eee;
+}
+.confirm-dialog .modal__header {
+  padding: 18px 18px 6px;
+}
+.confirm-dialog .modal__heading {
+  color: #eee;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+}
+.confirm-dialog .modal__body {
+  padding: 0 18px 18px;
+}
+.confirm-dialog__content {
+  color: #a8a8a8;
+  font-size: 13px;
+  line-height: 20px;
+}
+.confirm-dialog__content p {
+  margin: 0;
+}
+.confirm-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+.confirm-dialog__cancel.button,
+.confirm-dialog__confirm.button {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.confirm-dialog__cancel.button {
+  background: #2a2a2a;
+  color: #cfcfcf;
+}
+.confirm-dialog__cancel.button:is(:hover, [data-hovered="true"]) {
+  background: #343434;
+  color: #eee;
+}
+.confirm-dialog__confirm.button {
+  background: #8b5cf6;
+  color: #fff;
+}
+.confirm-dialog__confirm.button:is(:hover, [data-hovered="true"]) {
+  background: #7c4df0;
+  color: #fff;
+}
+.confirm-dialog[data-tone="danger"] .confirm-dialog__confirm.button {
+  background: #b42318;
+}
+.confirm-dialog[data-tone="danger"]
+  .confirm-dialog__confirm.button:is(:hover, [data-hovered="true"]) {
+  background: #991b1b;
+}
+.confirm-dialog .modal__close-trigger {
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #a8a8a8;
+  box-shadow: none;
+}
+.confirm-dialog
+  .modal__close-trigger:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
+  background: #2a2a2a;
+  color: #eee;
+}
+@media (max-width: 767px) {
+  .confirm-dialog {
+    width: min(480px, calc(100vw - 24px));
+  }
+  .confirm-dialog .modal__header {
+    padding: 16px 16px 4px;
+  }
+  .confirm-dialog .modal__body {
+    padding: 0 16px 16px;
+  }
+  .confirm-dialog__actions {
+    margin-top: 20px;
+  }
+  .confirm-dialog__cancel.button,
+  .confirm-dialog__confirm.button {
+    height: 44px;
+    min-height: 44px;
+    padding: 0 14px;
+  }
+}

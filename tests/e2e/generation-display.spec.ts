@@ -107,7 +107,7 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     await page.route("**/api/v1/image-tasks*", (route) => route.fulfill({ json: { data: [job] } }));
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto("/create");
-    await expect(page.locator(".generation-job header").getByRole("status")).toHaveText("失败");
+    await expect(page.locator(".generation-job header").getByRole("status")).toHaveCount(0);
     await expect(page.locator(".generation-placeholder")).toHaveAttribute("aria-label", "失败");
     const preview = page.locator(".generation-placeholder");
     const box = await preview.boundingBox();

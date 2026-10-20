@@ -1,10 +1,13 @@
-import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { Button, Popover, ToggleButton, ToggleButtonGroup, toast } from "@heroui/react";
 import { IconArrowUp, IconCheck, IconChevronDown, IconSparkles } from "@tabler/icons-react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
-import { useImageModels } from "./generation-client";
+import { ImageApiError, useImageModels } from "./generation-client";
+import { HomeRatioPicker } from "./ratio-picker";
 import { ReferencePicker } from "./reference-picker";
+import { SelectionHighlight } from "./selection-highlight";
 import { models, useStudioStore } from "./studio-state";
 
 export function HomeComposer() {
@@ -14,8 +17,23 @@ export function HomeComposer() {
   const setModel = useStudioStore((s) => s.setActiveModel);
   const catalog = useImageModels();
   const navigate = useNavigate();
-  const resolutions =
-    catalog.data?.models.find((item) => item.id === model)?.enabledResolutions ?? [];
+  const catalogToast = useRef<string | null>(null);
+  const catalogError = catalog.isError
+    ? catalog.error instanceof ImageApiError
+      ? catalog.error.message
+      : "服务暂时不可用，请稍后重试。"
+    : null;
+  useEffect(() => {
+    if (!catalogError) {
+      catalogToast.current = null;
+      return;
+    }
+    if (catalogToast.current === catalogError) return;
+    catalogToast.current = catalogError;
+    toast.danger(catalogError);
+  }, [catalogError]);
+  const canSubmit = draft.prompt.trim().length > 0 || draft.references.length > 0;
+  const resolutions = catalog.data?.models.find((item) => item.id === model)?.enabledResolutions;
   return (
     <>
       <div className="home-intro">
@@ -71,7 +89,11 @@ export function HomeComposer() {
                       }}
                     >
                       <span className="home-model-check">
-                        {item.id === model && <UiIcon icon={IconCheck} />}
+                        {item.id === model ? (
+                          <UiIcon icon={IconCheck} />
+                        ) : (
+                          <span className="home-model-dot" aria-hidden="true" />
+                        )}
                       </span>
                       <span>
                         <strong>{item.name}</strong>
@@ -82,25 +104,10 @@ export function HomeComposer() {
                 </div>
                 <div className="home-settings-options">
                   <h3>画面比例</h3>
-                  <ToggleButtonGroup
-                    aria-label="画面比例"
-                    selectionMode="single"
-                    disallowEmptySelection
-                    selectedKeys={[draft.ratio]}
-                    onSelectionChange={(keys) =>
-                      updateDraft(model, { ratio: String([...keys][0]) })
-                    }
-                  >
-                    {["1:1", "16:9", "9:16", "4:3", "3:4"].map((ratio) => (
-                      <ToggleButton key={ratio} id={ratio}>
-                        <span
-                          className="home-ratio-shape"
-                          style={{ aspectRatio: ratio.replace(":", "/") }}
-                        />
-                        {ratio}
-                      </ToggleButton>
-                    ))}
-                  </ToggleButtonGroup>
+                  <HomeRatioPicker
+                    value={draft.ratio}
+                    onChange={(ratio) => updateDraft(model, { ratio })}
+                  />
                   <h3>图片分辨率</h3>
                   <ToggleButtonGroup
                     aria-label="图片分辨率"
@@ -111,19 +118,44 @@ export function HomeComposer() {
                       updateDraft(model, { resolution: String([...keys][0]) })
                     }
                   >
-                    {["1K", "2K", "4K"].map((resolution) => (
+                    {(["1K", "2K", "4K"] as const).map((resolution) => (
                       <ToggleButton
                         id={resolution}
                         key={resolution}
-                        isDisabled={!resolutions.some((value) => value === resolution)}
+                        isDisabled={resolutions !== undefined && !resolutions.includes(resolution)}
                       >
+                        {resolution === draft.resolution && (
+                          <SelectionHighlight
+                            layoutId="home-resolution-selection"
+                            layoutDependency={draft.resolution}
+                          />
+                        )}
                         {resolution}
                       </ToggleButton>
                     ))}
                   </ToggleButtonGroup>
-                  {!resolutions.length && (
-                    <p className="home-settings-note">模型可用规格将在服务连接后显示。</p>
-                  )}
+                  <h3>质量</h3>
+                  <ToggleButtonGroup
+                    aria-label="质量"
+                    selectionMode="single"
+                    disallowEmptySelection
+                    selectedKeys={[draft.quality]}
+                    onSelectionChange={(keys) =>
+                      updateDraft(model, { quality: String([...keys][0]) })
+                    }
+                  >
+                    {["低", "标准", "高"].map((quality) => (
+                      <ToggleButton id={quality} key={quality}>
+                        {quality === draft.quality && (
+                          <SelectionHighlight
+                            layoutId="home-quality-selection"
+                            layoutDependency={draft.quality}
+                          />
+                        )}
+                        {quality}
+                      </ToggleButton>
+                    ))}
+                  </ToggleButtonGroup>
                   <h3>生成张数</h3>
                   <ToggleButtonGroup
                     aria-label="生成张数"
@@ -136,6 +168,12 @@ export function HomeComposer() {
                   >
                     {["1", "2", "3", "4"].map((count) => (
                       <ToggleButton id={count} key={count}>
+                        {count === draft.count && (
+                          <SelectionHighlight
+                            layoutId="home-count-selection"
+                            layoutDependency={draft.count}
+                          />
+                        )}
                         {count} 张
                       </ToggleButton>
                     ))}
@@ -147,6 +185,7 @@ export function HomeComposer() {
           <Button
             isIconOnly
             className="home-submit"
+            data-active={canSubmit || undefined}
             aria-label="开始创作"
             onPress={() => navigate("/create")}
           >

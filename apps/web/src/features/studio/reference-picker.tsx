@@ -1,9 +1,27 @@
-import { Alert, Button } from "@heroui/react";
+import { Alert, Button, toast } from "@heroui/react";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { useRef, useState } from "react";
 import { ReferenceImageCard } from "../../components/reference-image-card";
 import { UiIcon } from "../../components/ui-icon";
 import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "./studio-state";
+
+/** Drop the removed image mention and renumber later mentions to the new order. */
+function promptAfterReferenceRemoval(prompt: string, removedNumber: number) {
+  return prompt
+    .replace(new RegExp(`@图片${removedNumber}(?!\\d)`, "g"), "")
+    .replace(/@图片([1-9]\d*)/g, (token, raw: string) => {
+      const number = Number(raw);
+      return number > removedNumber ? `@图片${number - 1}` : token;
+    })
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/^[ \t]+/gm, "");
+}
+function promptWithoutReferences(prompt: string) {
+  return prompt
+    .replace(/@图片[1-9]\d*/g, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/^[ \t]+/gm, "");
+}
 
 export function ReferencePicker({
   model,
@@ -21,11 +39,6 @@ export function ReferencePicker({
   const updateDraft = useStudioStore((s) => s.updateDraft);
   async function readFiles(files: File[]) {
     if (reading) return;
-    const remaining = 5 - useStudioStore.getState().drafts[model].references.length;
-    if (files.length > remaining) {
-      setError("最多添加 5 张参考图，请减少文件后重试。");
-      return;
-    }
     if (
       files.some(
         (file) =>
@@ -59,7 +72,25 @@ export function ReferencePicker({
           return { id: crypto.randomUUID(), name: file.name, src };
         }),
       );
-      addReferences(model, images);
+      const current = useStudioStore.getState().drafts[model].references;
+      const seen = new Set(current.map((image) => image.src));
+      const unique: ReferenceImage[] = [];
+      let duplicates = 0;
+      for (const image of images) {
+        if (seen.has(image.src)) {
+          duplicates += 1;
+          continue;
+        }
+        seen.add(image.src);
+        unique.push(image);
+      }
+      if (duplicates > 0) toast.warning("存在相同素材，已自动过滤");
+      if (!unique.length) return;
+      if (unique.length > 5 - current.length) {
+        setError("最多添加 5 张参考图，请减少文件后重试。");
+        return;
+      }
+      addReferences(model, unique);
     } catch {
       setError("图片无法读取，请检查文件后重试。");
     } finally {
@@ -79,7 +110,8 @@ export function ReferencePicker({
           aria-label="清除全部参考图片"
           isDisabled={reading || references.length === 0}
           onPress={() => {
-            updateDraft(model, { references: [] });
+            const prompt = useStudioStore.getState().drafts[model].prompt;
+            updateDraft(model, { references: [], prompt: promptWithoutReferences(prompt) });
             setError("");
             if (input.current) input.current.value = "";
           }}
@@ -109,11 +141,13 @@ export function ReferencePicker({
             src={image.src}
             number={index + 1}
             isDisabled={reading}
-            onRemove={() =>
+            onRemove={() => {
+              const prompt = useStudioStore.getState().drafts[model].prompt;
               updateDraft(model, {
                 references: references.filter((item) => item.id !== image.id),
-              })
-            }
+                prompt: promptAfterReferenceRemoval(prompt, index + 1),
+              });
+            }}
           />
         ))}
         {references.length < 5 ? (
