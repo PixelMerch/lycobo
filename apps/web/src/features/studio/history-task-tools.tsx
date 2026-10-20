@@ -4,6 +4,7 @@ import { IconCheck, IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react"
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
+import { FailureRetryLabel } from "./failure-retry-label";
 import {
   assetContentUrl,
   hasPendingSubmission,
@@ -145,9 +146,11 @@ async function taskDraft(
 export function HistoryTaskActions({
   job,
   retryOnly = false,
+  compact = false,
 }: {
   job: ImageJob;
   retryOnly?: boolean;
+  compact?: boolean;
 }) {
   const client = useQueryClient();
   const [replacement, setReplacement] = useState<Awaited<ReturnType<typeof taskDraft>> | null>(
@@ -160,7 +163,7 @@ export function HistoryTaskActions({
   const session = useImageSession();
   const models = useImageModels();
   const pending = usePendingSubmission(session.data);
-  const blocked = ["queued", "running", "needs_reconciliation"].includes(job.status) || pending;
+  const blocked = ["queued", "running"].includes(job.status) || pending;
   const configured =
     models.data?.enabled &&
     models.data.models.some(
@@ -230,12 +233,13 @@ export function HistoryTaskActions({
           isDisabled={blocked || !configured || generation.isPending || loading}
           onPress={() => setRegenerateOpen(true)}
         >
-          <UiIcon icon={IconRefresh} size={retryOnly ? "illustration" : "action"} />
-          {retryOnly && <span>重试</span>}
+          {retryOnly ? (
+            <FailureRetryLabel compact={compact} />
+          ) : (
+            <UiIcon icon={IconRefresh} size="action" />
+          )}
         </Button>
-        <Tooltip.Content placement="bottom">
-          {retryOnly && job.status === "needs_reconciliation" ? "此任务暂不可重试" : "重新生成"}
-        </Tooltip.Content>
+        <Tooltip.Content placement="bottom">重新生成</Tooltip.Content>
       </Tooltip>
       {(error || generation.isError) && (
         <Alert className="history-action-error" role="alert" status="danger">

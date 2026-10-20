@@ -115,21 +115,17 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     expect(box?.height).toBe(400);
     const retry = preview.getByRole("button", { name: "重试", exact: true });
     await expect(retry).toBeVisible();
-    await expect(retry.locator("svg")).toHaveClass(/icon-refresh/);
-    await expect(page.locator(".history-thumbnail")).toHaveText("重试");
-    await expect(page.locator(".history-thumbnail .history-retry-hint svg")).toHaveClass(
-      /icon-refresh/,
-    );
+    await expect(retry.locator(".failure-label")).toBeVisible();
+    await expect(retry.locator(".retry-label")).toBeHidden();
+    await preview.hover();
+    await expect(retry.locator(".retry-label")).toBeVisible();
     await expect(page.getByText(/结果待核对|本次调用结果尚未确认|部分完成/)).toHaveCount(0);
-    if (status === "needs_reconciliation") {
-      await expect(retry).toBeDisabled();
-      await expect(page.getByRole("button", { name: "重新生成", exact: true })).toBeDisabled();
-    } else {
-      await retry.click();
-      await expect(page.getByRole("dialog")).toBeVisible();
-      await page.getByRole("button", { name: "取消", exact: true }).click();
-      await expect(page.getByRole("dialog")).toHaveCount(0);
-    }
+    await expect(retry).toBeEnabled();
+    await expect(page.getByRole("button", { name: "重新生成", exact: true })).toBeEnabled();
+    await retry.click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.getByRole("button", { name: "取消", exact: true }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
     await page.screenshot({ path: `/tmp/lycobo-generation-${status}.png` });
   });
 }

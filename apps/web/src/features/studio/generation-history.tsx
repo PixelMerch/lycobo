@@ -8,7 +8,6 @@ import {
   IconLayersIntersect,
   IconMaximize,
   IconPhoto,
-  IconRefresh,
   IconSparkles,
   IconStar,
   IconStarFilled,
@@ -334,6 +333,16 @@ export function HistoryIndex() {
         jobs.map((job) => {
           const image = job.items.find((item) => item.output_asset_id)?.output_asset_id;
           const generating = job.status === "running" || job.status === "queued";
+          if (!image && !generating && job.status !== "succeeded")
+            return (
+              <div
+                key={job.id}
+                className="history-thumbnail history-failure-thumbnail"
+                aria-current={selectedId === job.id ? "true" : "false"}
+              >
+                <HistoryTaskActions job={job} retryOnly compact />
+              </div>
+            );
           return (
             <Button
               key={job.id}
@@ -354,11 +363,6 @@ export function HistoryIndex() {
                 </span>
               ) : image ? (
                 <img src={assetContentUrl(image, true)} alt={job.model} loading="lazy" />
-              ) : job.status !== "succeeded" ? (
-                <span className="history-retry-hint" title="生成失败，点击查看详情和重试入口">
-                  <UiIcon icon={IconRefresh} />
-                  <span>重试</span>
-                </span>
               ) : (
                 <span>{statusLabel[job.status]}</span>
               )}
