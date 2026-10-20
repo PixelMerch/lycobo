@@ -42,8 +42,7 @@
   caret-color: var(--accent);
 }
 .home-prompt .textarea:focus-visible {
-  outline: 1px solid var(--field-placeholder);
-  outline-offset: 4px;
+  outline: none;
 }
 .home-prompt-example {
   margin: 0 0 16px;
@@ -477,7 +476,13 @@
   font: 400 14px / 21px var(--font-sans);
 }
 .home-composer:focus-within {
-  box-shadow: 0 0 0 1px #ffffff1a;
+  border: 0;
+  outline: none;
+  box-shadow: none;
+}
+.home-composer .home-prompt .textarea::placeholder {
+  color: rgb(203 213 225 / 56%);
+  opacity: 1;
 }
 .home-composer .home-prompt .textarea:focus-visible {
   outline: none;
