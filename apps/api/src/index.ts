@@ -36,6 +36,9 @@ const server = serve({ fetch: app.fetch, hostname: env.API_HOST, port: env.API_P
   const host = env.API_HOST === "0.0.0.0" || env.API_HOST === "::" ? "127.0.0.1" : env.API_HOST;
   const url = new URL(`http://localhost:${info.port}/api`);
   url.hostname = host.includes(":") ? `[${host}]` : host;
+  if (process.env.NODE_ENV === "development" && process.env.DEV_API_PUBLIC_PORT) {
+    url.port = process.env.DEV_API_PUBLIC_PORT;
+  }
   logger.info({ host: env.API_HOST, port: info.port, url: url.href }, `API: ${url.href}`);
 });
 let closing = false;

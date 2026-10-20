@@ -25,6 +25,7 @@ Vite 的 /api 默认代理到本地 8787，可通过 DEV_API_PROXY_TARGET 调整
 
 运行 `docker compose up --build` 可同时启动 Web、API、Worker、PostgreSQL 和 Redis；后续直接 `docker compose up`。
 Web 地址为 http://localhost:8080/，API 地址为 http://127.0.0.1:8788/api。
+启动日志会打印宿主机可访问的 Web 和 API URL，跟随 `.env` 的 `WEB_PORT`（默认 8080）与 `API_PUBLIC_PORT`（默认 8788）；端口被占用时可在 `.env` 修改后重新运行 Compose。
 后台运行使用 `docker compose up -d --build --wait`，通过 `docker compose logs -f web api worker` 跟踪日志。
 默认 Web/API 端口与本地 `pnpm dev` 不冲突；同时运行时须保持数据库、队列和图片目录一致。
 
