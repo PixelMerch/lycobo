@@ -20,6 +20,23 @@ test("home composer shares prompt and real reference drafts without submitting g
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles({ name: "product.png", mimeType: "image/png", buffer: png });
   await expect(page.locator(".reference-tile")).toHaveCount(1);
+  const uploadBox = await page.locator(".home-upload").boundingBox();
+  const promptBox = await page.getByRole("textbox", { name: "创作需求" }).boundingBox();
+  expect(uploadBox && promptBox && uploadBox.y + uploadBox.height <= promptBox.y).toBe(true);
+  await page.getByLabel("添加参考图片", { exact: true }).setInputFiles(
+    Array.from({ length: 4 }, (_, index) => ({
+      name: `product-${index}.png`,
+      mimeType: "image/png",
+      buffer: png,
+    })),
+  );
+  await expect(page.locator(".reference-tile")).toHaveCount(5);
+  await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toHaveCount(0);
+  for (let number = 5; number > 1; number -= 1) {
+    await page.getByRole("button", { name: `移除参考图：图片${number}`, exact: true }).click();
+  }
+  await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toBeVisible();
+
   await page.getByRole("button", { name: "开始创作", exact: true }).click();
   await expect(page).toHaveURL(/\/create$/);
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("为我的商品搭配自然光场景");

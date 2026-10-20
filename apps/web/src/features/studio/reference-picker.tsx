@@ -1,6 +1,7 @@
 import { Alert, Button } from "@heroui/react";
-import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
+import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { useRef, useState } from "react";
+import { ReferenceImageCard } from "../../components/reference-image-card";
 import { UiIcon } from "../../components/ui-icon";
 import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "./studio-state";
 
@@ -103,23 +104,17 @@ export function ReferencePicker({
       />
       <div className="reference-grid">
         {references.map((image, index) => (
-          <div className="reference-tile" key={image.id}>
-            <img src={image.src} alt={`图片${index + 1}`} />
-            <Button
-              isIconOnly
-              variant="secondary"
-              className="remove-reference"
-              aria-label={`移除参考图：图片${index + 1}`}
-              onPress={() =>
-                updateDraft(model, {
-                  references: references.filter((item) => item.id !== image.id),
-                })
-              }
-            >
-              <UiIcon icon={IconX} size="small" />
-            </Button>
-            <span className="reference-number">图片{index + 1}</span>
-          </div>
+          <ReferenceImageCard
+            key={image.id}
+            src={image.src}
+            number={index + 1}
+            isDisabled={reading}
+            onRemove={() =>
+              updateDraft(model, {
+                references: references.filter((item) => item.id !== image.id),
+              })
+            }
+          />
         ))}
         {references.length < 5 ? (
           <Button

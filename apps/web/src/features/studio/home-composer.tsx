@@ -35,6 +35,9 @@ export function HomeComposer() {
         <span>聊聊创作想法</span>
       </div>
       <div className="home-composer">
+        <div className="home-upload">
+          <ReferencePicker compact model={model} references={draft.references} />
+        </div>
         <TextField className="home-prompt" aria-label="创作需求">
           <TextArea
             aria-label="创作需求"
@@ -45,9 +48,6 @@ export function HomeComposer() {
           />
         </TextField>
         <div className="home-composer-tools">
-          <div className="home-upload">
-            <ReferencePicker compact model={model} references={draft.references} />
-          </div>
           <span className="home-mode-label">
             <UiIcon icon={IconPhoto} />
             图片生成
