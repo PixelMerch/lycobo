@@ -1,6 +1,7 @@
 import { Label, ListBox, Popover, TextArea, TextField } from "@heroui/react";
 import { type RefObject, useRef, useState } from "react";
 import "./reference-prompt.css";
+import "./studio-control-feedback.css";
 
 /** Mentions refer to the current ordered reference list; no files are uploaded here. */
 export function ReferencePrompt({

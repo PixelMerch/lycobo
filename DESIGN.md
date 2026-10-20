@@ -45,6 +45,13 @@
 
 - 输入 @ 引用：首页和 create 页复用 ReferencePrompt，仅列出当前已上传参考图。使用 HeroUI Popover + ListBox，宽 280px（受屏幕宽度约束）、内边距 10px、圆角 12px、列表行 40px、缩略图 32px、文字 13px；触屏行高 44px。选择后在光标位置插入 @图片N，保留前后文字并返回输入框；Esc 关闭，空列表提示先上传。只展示图片，不增加角色、演员库等未实现入口。
 
+#### 创作区控件的统一交互反馈
+
+- 模型设置胶囊、模型选项、比例／分辨率／张数选项与 @ 图片引用列表统一使用 `--studio-control-hover: #3C3C3C`，鼠标 hover 与键盘焦点使用相同中性背景，不加彩色描边。禁用项不响应。
+- 按下背景为 `--studio-control-pressed: #454545`，缩放至 0.98；松开恢复 1。背景过渡 140ms ease、缩放过渡 100ms ease，不修改 padding、尺寸或布局位置。
+- 已选择参数保留 `--studio-control-selected: #505050`，悬停不覆盖持久选择标记。按压期间使用统一按下背景，释放后恢复选中状态。
+- `prefers-reduced-motion: reduce` 下禁用过渡和缩放，只保留背景反馈。共享样式位于 `components/studio-control-feedback.css`，两类弹层不能再各自定义不同的 hover 色。
+
 ## 2. 主题色与渐变
 
 用户确认的主题为 `#BAA4FF → #8B5CF6`，角度和停靠点固定如下：

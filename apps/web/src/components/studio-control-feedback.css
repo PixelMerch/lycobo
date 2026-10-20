@@ -1,0 +1,57 @@
+/* Shared neutral feedback for settings and uploaded-image mentions. */
+:is(.home-settings, .home-settings-trigger, .reference-mention-popover) {
+  --studio-control-hover: #3c3c3c;
+  --studio-control-pressed: #454545;
+  --studio-control-selected: #505050;
+}
+:is(
+  .home-settings-trigger.button,
+  .home-settings .toggle-button,
+  .reference-mention-popover .list-box-item
+) {
+  transition:
+    background-color 140ms ease,
+    scale 100ms ease;
+}
+@media (hover: hover) {
+  :is(
+    .home-settings-trigger.button,
+    .home-settings .toggle-button,
+    .reference-mention-popover .list-box-item
+  ):not(:disabled):not([data-disabled]):is(:hover, [data-hovered]) {
+    background: var(--studio-control-hover);
+  }
+}
+:is(
+  .home-settings-trigger.button,
+  .home-settings .toggle-button,
+  .reference-mention-popover .list-box-item
+):not(:disabled):not([data-disabled])[data-focus-visible] {
+  background: var(--studio-control-hover);
+}
+.home-settings
+  .toggle-button[data-selected]:not(:disabled):not([data-disabled]):is(
+    :hover,
+    [data-hovered],
+    [data-focus-visible]
+  ) {
+  background: var(--studio-control-selected);
+}
+:is(
+  .home-settings-trigger.button,
+  .home-settings .toggle-button,
+  .reference-mention-popover .list-box-item
+):not(:disabled):not([data-disabled]):is(:active, [data-pressed]) {
+  background: var(--studio-control-pressed);
+  scale: 0.98;
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(
+    .home-settings-trigger.button,
+    .home-settings .toggle-button,
+    .reference-mention-popover .list-box-item
+  ) {
+    transition: none;
+    scale: 1 !important;
+  }
+}
