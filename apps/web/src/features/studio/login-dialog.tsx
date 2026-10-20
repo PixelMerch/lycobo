@@ -1,7 +1,6 @@
 import {
   Alert,
   Button,
-  Chip,
   FieldError,
   Form,
   Input,
@@ -10,18 +9,16 @@ import {
   Modal,
   TextField,
   ToggleButton,
-  ToggleButtonGroup,
 } from "@heroui/react";
 import {
   IconBrandWechat,
-  IconDeviceMobile,
   IconEye,
   IconEyeOff,
   IconQrcode,
   IconSparkles,
 } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
-import { type Key, useState } from "react";
+import { useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { photo } from "./studio-state";
 
@@ -31,12 +28,11 @@ const loginMethods: { mode: LoginMode; label: string; hint: string }[] = [
   { mode: "enterprise", label: "企业账号", hint: "使用企业账号和密码登录" },
   { mode: "wechat", label: "微信扫码", hint: "使用微信扫码登录创作工作台" },
 ];
-const gallery = ["bedroom", "lavender", "set"] as const;
 
 export function LoginDialog({ onClose }: { onClose: () => void }) {
   const reduceMotion = useReducedMotion();
   const [phase, setPhase] = useState<"open" | "closed">("open");
-  const [mode, setMode] = useState<LoginMode>("phone");
+  const [mode, setMode] = useState<LoginMode>("wechat");
   const [account, setAccount] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
@@ -89,11 +85,11 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
             >
               <div className="login-banner">
                 <UiIcon icon={IconSparkles} size="small" />
-                <p>登录服务尚未开放，当前可继续使用本地创作工作台</p>
+                <p>从商品参考到场景创作，让灵感拥有新的画面</p>
               </div>
               <div className="login-split">
                 <section className="login-visual" aria-label="创作案例预览">
-                  <img src={photo("bedroom")} alt="" width="880" height="1200" loading="lazy" />
+                  <img src={photo("bedroom")} alt="" width="880" height="1200" loading="eager" />
                   <div className="login-visual-copy">
                     <span className="login-kicker">LYCOBOAI · 创作工作台</span>
                     <h2>
@@ -103,19 +99,6 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                     </h2>
                     <p>参考图重绘、换色换花型与场景合成，都在同一处完成。</p>
                   </div>
-                  <ul className="login-gallery" aria-hidden="true">
-                    {gallery.map((image) => (
-                      <li key={image}>
-                        <img
-                          src={photo(image, true)}
-                          alt=""
-                          width="240"
-                          height="240"
-                          loading="lazy"
-                        />
-                      </li>
-                    ))}
-                  </ul>
                 </section>
                 <div className="login-content">
                   <Modal.Header className="login-header">
@@ -127,25 +110,6 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                   </Modal.Header>
                   <Modal.Body className="login-body">
                     <div className="login-form">
-                      <ToggleButtonGroup
-                        aria-label="登录方式"
-                        className="login-modes"
-                        disallowEmptySelection
-                        isDetached
-                        selectedKeys={[mode]}
-                        selectionMode="single"
-                        size="sm"
-                        onSelectionChange={(keys: Set<Key>) => {
-                          const [next] = [...keys];
-                          if (next !== undefined) switchMode(next as LoginMode);
-                        }}
-                      >
-                        {loginMethods.map((method) => (
-                          <ToggleButton key={method.mode} id={method.mode}>
-                            {method.label}
-                          </ToggleButton>
-                        ))}
-                      </ToggleButtonGroup>
                       {mode === "wechat" ? (
                         <div className="login-wechat">
                           <div
@@ -156,11 +120,8 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                             <UiIcon icon={IconQrcode} size="illustration" />
                             <span>扫码登录暂未开放</span>
                           </div>
-                          <Chip color="accent" size="sm" variant="tertiary">
-                            即将开放
-                          </Chip>
                           <p className="login-wechat-copy">
-                            开放后可用微信扫码进入工作台，现在请先用手机号或企业账号登录。
+                            请使用微信扫描公众号二维码登录。扫码服务暂未开放，请稍后再试。
                           </p>
                         </div>
                       ) : (
@@ -303,7 +264,7 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                               </Alert.Content>
                             </Alert>
                           )}
-                          <Button type="submit" className="primary-action login-submit">
+                          <Button type="submit" className="login-submit">
                             登录
                           </Button>
                         </Form>
@@ -311,14 +272,31 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                     </div>
                     <div className="login-alternative">
                       <span className="login-divider">或</span>
-                      <Button
-                        variant="secondary"
-                        className="login-other"
-                        onPress={() => switchMode(mode === "wechat" ? "phone" : "wechat")}
-                      >
-                        <UiIcon icon={mode === "wechat" ? IconDeviceMobile : IconBrandWechat} />
-                        {mode === "wechat" ? "使用手机号登录" : "通过微信扫码登录"}
-                      </Button>
+                      {mode !== "wechat" && (
+                        <Button
+                          variant="ghost"
+                          className="login-other"
+                          onPress={() => switchMode("wechat")}
+                        >
+                          <UiIcon icon={IconBrandWechat} />
+                          通过微信扫码登录
+                        </Button>
+                      )}
+                      <div className="login-secondary-methods">
+                        {loginMethods
+                          .filter((method) => method.mode !== "wechat")
+                          .map((method) => (
+                            <Button
+                              key={method.mode}
+                              variant="ghost"
+                              size="sm"
+                              aria-current={mode === method.mode}
+                              onPress={() => switchMode(method.mode)}
+                            >
+                              {method.label === "手机号" ? "手机号登录" : "企业账号登录"}
+                            </Button>
+                          ))}
+                      </div>
                     </div>
                     <p className="login-support">账号问题请联系管理员</p>
                   </Modal.Body>

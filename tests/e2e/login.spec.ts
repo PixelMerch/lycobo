@@ -14,22 +14,38 @@ test("header login opens account/password dialog and validates without faking au
   await entry.click();
   const dialog = page.getByRole("dialog", { name: "欢迎使用 lycoboai" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByLabel("手机号", { exact: true })).toBeVisible();
-  await page.screenshot({ path: "/tmp/lycoboai-login-phone-desktop.png" });
-  await dialog.getByRole("radio", { name: "企业账号", exact: true }).click();
+  await expect(dialog.getByRole("status", { name: "扫码登录暂未开放" })).toBeVisible();
+  await expect(dialog.locator(".login-content")).toHaveCSS(
+    "background-color",
+    "rgb(255, 255, 255)",
+  );
+  await expect
+    .poll(() =>
+      dialog.locator(".login-visual > img").evaluate((node: HTMLImageElement) => node.naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  await expect
+    .poll(() => dialog.locator(".login-panel").evaluate((node) => getComputedStyle(node).transform))
+    .toBe("none");
+  await page.screenshot({ path: "/tmp/lycoboai-login-wechat-desktop.png" });
+  await dialog.getByRole("button", { name: "企业账号登录", exact: true }).click();
   const account = dialog.getByRole("textbox", { name: "企业账号" });
   const password = dialog.getByLabel("密码", { exact: true });
   await expect(account).toBeFocused();
-  await expect(account).toHaveCSS("border-top-width", "1px");
-  await expect(account).toHaveCSS("outline-style", "none");
+  await expect(account).toHaveCSS("border-top-width", "0px");
+  await expect(account).toHaveCSS("outline-width", "1px");
   await expect(account).toHaveCSS("box-shadow", "none");
   await dialog.getByRole("button", { name: "登录", exact: true }).click();
   await expect(dialog.getByText("请输入企业账号", { exact: true })).toBeVisible();
   await expect(dialog.getByText("请输入密码", { exact: true })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "登录", exact: true })).toHaveCSS(
+    "background-color",
+    "rgb(0, 0, 0)",
+  );
   await account.fill("merchant-demo");
   await password.fill("example-password");
   await expect(password).toHaveCSS("border-top-width", "0px");
-  await expect(dialog.locator(".login-input-group")).toHaveCSS("border-top-width", "1px");
+  await expect(dialog.locator(".login-input-group")).toHaveCSS("border-top-width", "0px");
   await expect(dialog.locator(".login-input-group")).toHaveCSS("box-shadow", "none");
   await expect(password).toHaveAttribute("type", "password");
   await dialog.getByRole("button", { name: "显示密码" }).click();
@@ -42,12 +58,12 @@ test("header login opens account/password dialog and validates without faking au
   await expect(dialog).toHaveCount(0);
   await expect(entry).toBeFocused();
   await entry.click();
-  await expect(dialog.getByLabel("手机号", { exact: true })).toBeVisible();
-  await dialog.getByRole("radio", { name: "企业账号", exact: true }).click();
+  await expect(dialog.getByRole("status", { name: "扫码登录暂未开放" })).toBeVisible();
+  await dialog.getByRole("button", { name: "企业账号登录", exact: true }).click();
   await expect(dialog.getByLabel("密码", { exact: true })).toHaveValue("");
 });
 
-test("switching login methods keeps the dialog height and draws a single focus border", async ({
+test("switching login methods keeps the dialog height and uses borderless fields with one focus indicator", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
@@ -56,8 +72,8 @@ test("switching login methods keeps the dialog height and draws a single focus b
   const dialog = page.getByRole("dialog", { name: "欢迎使用 lycoboai" });
   await expect(dialog).toBeVisible();
   const heights: number[] = [];
-  for (const label of ["手机号", "企业账号", "微信扫码"]) {
-    await dialog.getByRole("radio", { name: label, exact: true }).click();
+  for (const label of ["手机号登录", "企业账号登录", "通过微信扫码登录"]) {
+    await dialog.getByRole("button", { name: label, exact: true }).click();
     await expect
       .poll(async () => {
         const box = await dialog.boundingBox();
@@ -73,14 +89,14 @@ test("switching login methods keeps the dialog height and draws a single focus b
   ).toBe(0);
   // Grouped fields keep a single border: the shell, never an inner outline.
   const grouped = dialog.locator(".login-input-group");
-  await dialog.getByRole("radio", { name: "企业账号", exact: true }).click();
+  await dialog.getByRole("button", { name: "企业账号登录", exact: true }).click();
   await dialog.getByLabel("密码", { exact: true }).focus();
-  await expect(grouped).toHaveCSS("border-top-width", "1px");
+  await expect(grouped).toHaveCSS("border-top-width", "0px");
   await expect(grouped.locator("input")).toHaveCSS("outline-style", "none");
   await expect(grouped.locator("input")).toHaveCSS("border-top-width", "0px");
-  await dialog.getByRole("radio", { name: "手机号", exact: true }).click();
+  await dialog.getByRole("button", { name: "手机号登录", exact: true }).click();
   await dialog.getByLabel("验证码", { exact: true }).focus();
-  await expect(grouped).toHaveCSS("border-top-width", "1px");
+  await expect(grouped).toHaveCSS("border-top-width", "0px");
   await expect(grouped.locator("input")).toHaveCSS("outline-style", "none");
 });
 
@@ -131,8 +147,10 @@ test("phone login validates the phone and code without pretending to send SMS", 
   await page.goto("/");
   await page.getByRole("button", { name: "登录领积分", exact: true }).click();
   const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "手机号登录", exact: true }).click();
   const phone = dialog.getByLabel("手机号", { exact: true });
   await expect(phone).toBeVisible();
+  await page.screenshot({ path: "/tmp/lycoboai-login-phone-desktop.png" });
   await phone.fill("123");
   await dialog.getByRole("button", { name: "发送验证码" }).click();
   await expect(dialog.getByText("请输入有效的中国大陆手机号", { exact: true })).toBeVisible();
