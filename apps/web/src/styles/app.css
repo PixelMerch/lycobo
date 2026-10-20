@@ -2645,8 +2645,8 @@ html:has(.workspace)::-webkit-scrollbar,
   display: flex;
   flex: none;
   flex-direction: column;
-  gap: 16px;
-  block-size: 352px;
+  gap: 6px;
+  block-size: 376px;
 }
 .login-form {
   display: flex;
@@ -2810,19 +2810,19 @@ html:has(.workspace)::-webkit-scrollbar,
   background: #fff;
   color: #000;
   font-family: var(--login-control-font);
-  font-size: 14px;
-  line-height: 22px;
-  font-weight: 600;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
   box-shadow: none;
 }
 .login-content .login-other[data-hovered="true"],
-.login-secondary-methods .button[data-hovered="true"],
-.login-secondary-methods .button[aria-current="true"] {
+.login-secondary-methods .button[data-hovered="true"] {
   background: #f7f7f7;
 }
 .login-secondary-methods {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 .login-error {

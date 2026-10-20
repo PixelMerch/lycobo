@@ -77,6 +77,10 @@ test("switching login methods keeps the dialog height and uses borderless fields
   const heights: number[] = [];
   for (const label of ["手机号登录", "企业账号登录", "通过微信扫码登录"]) {
     await dialog.getByRole("button", { name: label, exact: true }).click();
+    await expect(dialog.locator(".login-secondary-methods").getByRole("button")).toHaveCount(2);
+    await expect(
+      dialog.locator(".login-secondary-methods").getByRole("button", { name: label, exact: true }),
+    ).toHaveCount(0);
     await expect
       .poll(async () => {
         const box = await dialog.boundingBox();

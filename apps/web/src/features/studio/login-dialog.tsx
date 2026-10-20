@@ -272,28 +272,22 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                     </div>
                     <div className="login-alternative">
                       <span className="login-divider">或</span>
-                      {mode !== "wechat" && (
-                        <Button
-                          variant="ghost"
-                          className="login-other"
-                          onPress={() => switchMode("wechat")}
-                        >
-                          <UiIcon icon={IconBrandWechat} />
-                          通过微信扫码登录
-                        </Button>
-                      )}
                       <div className="login-secondary-methods">
                         {loginMethods
-                          .filter((method) => method.mode !== "wechat")
+                          .filter((method) => method.mode !== mode)
                           .map((method) => (
                             <Button
                               key={method.mode}
                               variant="ghost"
-                              size="sm"
-                              aria-current={mode === method.mode}
+                              className="login-other"
                               onPress={() => switchMode(method.mode)}
                             >
-                              {method.label === "手机号" ? "手机号登录" : "企业账号登录"}
+                              {method.mode === "wechat" && (
+                                <UiIcon icon={IconBrandWechat} size="small" />
+                              )}
+                              {method.mode === "wechat"
+                                ? "通过微信扫码登录"
+                                : `${method.label}登录`}
                             </Button>
                           ))}
                       </div>
