@@ -82,16 +82,13 @@ test("case reuse requires confirmation before replacing an existing draft", asyn
   await page.goto("/create");
   await page.getByLabel("提示词", { exact: true }).fill("重要草稿");
   await page.getByRole("link", { name: "首页", exact: true }).first().click();
-  await page.getByRole("button", { name: "查看案例：原木卧室" }).click();
-  const dialog = page.getByRole("dialog", { name: "原木卧室", exact: true });
-  await dialog.getByRole("button", { name: "使用 gpt-image-2 创作" }).click();
+  await page.getByRole("button", { name: "查看案例：家居家纺 · 卧室场景" }).click();
+  const dialog = page.getByRole("dialog", { name: "家居家纺 · 卧室场景", exact: true });
+  await dialog.getByRole("button", { name: "用这个提示词创作" }).click();
   await expect(dialog.getByRole("alert")).toContainText("已有草稿");
   await dialog.getByRole("button", { name: "保留草稿" }).click();
   await dialog.press("Escape");
-  await page
-    .getByRole("link", { name: /进入创作/ })
-    .first()
-    .click();
+  await page.getByRole("button", { name: "开始创作", exact: true }).click();
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("重要草稿");
 });
 
@@ -111,7 +108,7 @@ for (const width of [320, 390, 768, 1024, 1440]) {
       );
     }
     await page.goto("/");
-    await page.getByRole("button", { name: "开始创作", exact: true }).click();
+    await page.getByRole("button", { name: "选择创作模型", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "图片创作", exact: true });
     await expect(dialog).toBeVisible();
     const box = await dialog.boundingBox();
@@ -125,7 +122,7 @@ test("compact model cards open from their covers and case cards restore focus", 
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "开始创作", exact: true }).click();
+  await page.getByRole("button", { name: "选择创作模型", exact: true }).click();
   const chooser = page.getByRole("dialog", { name: "图片创作", exact: true });
   const caseCard = chooser.getByRole("button", { name: "查看案例：原木卧室" });
   await caseCard.click();

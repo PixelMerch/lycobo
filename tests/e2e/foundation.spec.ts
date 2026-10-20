@@ -5,7 +5,7 @@ test("home to five-model chooser to workspace, with correctly anchored panel and
 }) => {
   await page.setViewportSize({ width: 1584, height: 993 });
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "创作首页" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "为你的商品，创作下一张好图" })).toBeVisible();
   const trigger = page.getByRole("button", { name: "图片创作", exact: true });
   await trigger.click();
   const chooser = page.getByRole("dialog", { name: "图片创作", exact: true });
@@ -39,7 +39,7 @@ test("home to five-model chooser to workspace, with correctly anchored panel and
 test("old entry links recover to current home; unknown model is rejected", async ({ page }) => {
   await page.goto("/design/canvas?task=demo-skin");
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: "创作首页" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "为你的商品，创作下一张好图" })).toBeVisible();
   await page.goto("/create/not-a-model");
   await expect(page.getByRole("heading", { name: "页面暂时无法打开" })).toBeVisible();
 });
