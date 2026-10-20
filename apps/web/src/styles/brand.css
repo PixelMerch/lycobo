@@ -7,12 +7,16 @@
 }
 
 .brand .lycobo-logo {
-  width: 148px;
+  width: 128px;
 }
 
 .login-brand-mark img {
   display: block;
-  width: 25px;
-  height: 28px;
+  width: 28px;
+  height: 20px;
   object-fit: contain;
+}
+
+.mobile-nav .lycobo-logo {
+  width: 120px;
 }
