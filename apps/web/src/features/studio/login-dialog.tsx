@@ -1,6 +1,7 @@
 import {
   Alert,
   Button,
+  Chip,
   FieldError,
   Form,
   Input,
@@ -8,16 +9,18 @@ import {
   Label,
   Modal,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@heroui/react";
 import { IconEye, IconEyeOff, IconQrcode, IconSparkles } from "@tabler/icons-react";
-import { useState } from "react";
+import { type Key, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
 
 type LoginMode = "wechat" | "phone" | "enterprise";
-const loginMethods: { mode: LoginMode; label: string }[] = [
-  { mode: "wechat", label: "公众号扫码登录" },
-  { mode: "phone", label: "手机号登录" },
-  { mode: "enterprise", label: "企业账号登录" },
+const loginMethods: { mode: LoginMode; label: string; hint: string }[] = [
+  { mode: "wechat", label: "微信扫码", hint: "使用微信扫码登录创作工作台" },
+  { mode: "phone", label: "手机号", hint: "使用手机号和验证码登录" },
+  { mode: "enterprise", label: "企业账号", hint: "使用企业账号和密码登录" },
 ];
 export function LoginDialog({ onClose }: { onClose: () => void }) {
   const [mode, setMode] = useState<LoginMode>("wechat");
@@ -37,6 +40,8 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
     setCode("");
     setVisible(false);
   };
+  const current = loginMethods.find((method) => method.mode === mode);
+  const hint = current ? current.hint : loginMethods[0]?.hint;
   return (
     <Modal
       isOpen
@@ -61,14 +66,35 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
               </div>
             </div>
             <div className="login-content">
-              <Modal.Header>
-                <span className="login-brand-mark">
+              <Modal.Header className="login-header">
+                <span className="login-brand-mark" aria-hidden="true">
                   <UiIcon icon={IconSparkles} size="action" />
                 </span>
-                <Modal.Heading>欢迎使用 lycoboai</Modal.Heading>
-                <p>{loginMethods.find((method) => method.mode === mode)?.label}</p>
+                <div className="login-heading">
+                  <Modal.Heading>欢迎使用 lycoboai</Modal.Heading>
+                  <p>{hint}</p>
+                </div>
               </Modal.Header>
-              <Modal.Body>
+              <Modal.Body className="login-body">
+                <ToggleButtonGroup
+                  aria-label="登录方式"
+                  className="login-modes"
+                  disallowEmptySelection
+                  isDetached
+                  selectedKeys={[mode]}
+                  selectionMode="single"
+                  size="sm"
+                  onSelectionChange={(keys: Set<Key>) => {
+                    const [next] = [...keys];
+                    if (next !== undefined && next !== mode) switchMode(next as LoginMode);
+                  }}
+                >
+                  {loginMethods.map((method) => (
+                    <ToggleButton key={method.mode} id={method.mode}>
+                      {method.label}
+                    </ToggleButton>
+                  ))}
+                </ToggleButtonGroup>
                 {mode === "wechat" ? (
                   <div className="login-wechat">
                     <div
@@ -79,7 +105,13 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                       <UiIcon icon={IconQrcode} size="illustration" />
                       <span>扫码登录暂未开放</span>
                     </div>
-                    <p>微信扫码，登录创作工作台</p>
+                    <div className="login-wechat-copy">
+                      <Chip color="accent" size="sm" variant="tertiary">
+                        即将开放
+                      </Chip>
+                      <p>开放后，用微信扫描二维码即可进入创作工作台。</p>
+                      <p>现在可以先用手机号或企业账号登录。</p>
+                    </div>
                   </div>
                 ) : (
                   <Form
@@ -138,16 +170,15 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                               maxLength={256}
                             />
                             <InputGroup.Suffix>
-                              <Button
-                                type="button"
+                              <ToggleButton
                                 isIconOnly
-                                variant="tertiary"
+                                isSelected={visible}
+                                variant="ghost"
                                 aria-label={visible ? "隐藏密码" : "显示密码"}
-                                aria-pressed={visible}
-                                onPress={() => setVisible(!visible)}
+                                onChange={setVisible}
                               >
                                 <UiIcon icon={visible ? IconEyeOff : IconEye} />
-                              </Button>
+                              </ToggleButton>
                             </InputGroup.Suffix>
                           </InputGroup>
                           <FieldError>请输入密码</FieldError>
@@ -227,22 +258,6 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                     </Button>
                   </Form>
                 )}
-                <section className="login-methods" aria-label="其他登录方式">
-                  <span>其他登录方式</span>
-                  <div>
-                    {loginMethods
-                      .filter((method) => method.mode !== mode)
-                      .map((method) => (
-                        <Button
-                          key={method.mode}
-                          variant="tertiary"
-                          onPress={() => switchMode(method.mode)}
-                        >
-                          {method.label}
-                        </Button>
-                      ))}
-                  </div>
-                </section>
                 <p className="login-support">账号问题请联系管理员</p>
               </Modal.Body>
             </div>

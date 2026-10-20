@@ -2473,7 +2473,7 @@ html:has(.workspace)::-webkit-scrollbar,
   color: var(--foreground);
 }
 
-/* Account/password login: existing studio surfaces, Xiaoyunque split-dialog reference. */
+/* Login dialog: split layout on top of HeroUI Modal, ToggleButtonGroup switches methods. */
 .header-login {
   min-width: 64px;
   height: 32px;
@@ -2555,6 +2555,7 @@ html:has(.workspace)::-webkit-scrollbar,
 .login-visual-copy p {
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
+  max-width: 22ch;
 }
 .login-content {
   align-self: center;
@@ -2565,37 +2566,80 @@ html:has(.workspace)::-webkit-scrollbar,
 .login-content .modal__body {
   padding: 0;
 }
-.login-content .modal__header {
-  display: flex;
+.login-content .modal__header.login-header {
+  flex-direction: row;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
+}
+.login-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 .login-brand-mark {
   display: grid;
+  flex: none;
   place-items: center;
   width: 40px;
   height: 40px;
   border-radius: 10px;
   background: var(--app-primary-gradient);
   color: #09070d;
-  margin-bottom: 4px;
 }
 .login-content .modal__heading {
   font-size: var(--text-2xl);
   line-height: var(--leading-2xl);
   font-weight: var(--weight-semibold);
 }
-.login-content .modal__header p,
+.login-content .login-heading p,
 .login-support {
   color: var(--muted);
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
 }
+.login-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 316px;
+}
+/* Method switcher: compact three-up track, selected item uses the accent soft fill. */
+.login-modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  width: 100%;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--field-background);
+}
+.login-modes .toggle-button {
+  width: 100%;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
+}
+.login-modes .toggle-button[data-hovered="true"] {
+  background: var(--surface-secondary);
+  color: var(--foreground);
+}
+.login-modes .toggle-button[data-selected="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-soft-foreground);
+}
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 .login-form .text-field {
   width: 100%;
@@ -2622,59 +2666,91 @@ html:has(.workspace)::-webkit-scrollbar,
   outline: none;
   box-shadow: none;
 }
-.login-input-group .button {
+.login-input-group :is(.button, .toggle-button) {
   width: 40px;
   height: 40px;
+  min-width: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
   color: var(--muted);
+  box-shadow: none;
+}
+.login-input-group :is(.button, .toggle-button)[data-hovered="true"] {
+  background: var(--surface-secondary);
+  color: var(--foreground);
+}
+.login-input-group :is(.button, .toggle-button)[data-selected="true"] {
+  background: transparent;
+  color: var(--accent-soft-foreground);
 }
 .login-input-group .login-send-code {
   width: auto;
-  padding: 0 8px;
+  min-width: 0;
+  padding: 0 10px;
   color: var(--link);
   font-size: var(--text-xs);
 }
 .login-wechat {
-  display: grid;
-  justify-items: center;
-  gap: 16px;
-  padding: 4px 0;
-}
-.login-wechat > p {
-  color: var(--muted);
-  font-size: var(--text-sm);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  text-align: center;
 }
 .login-qr-unavailable {
+  position: relative;
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 16px;
+  gap: 12px;
   width: 184px;
   aspect-ratio: 1;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
   background: var(--field-background);
   color: var(--muted);
   font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
-.login-methods {
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-  margin-top: 28px;
-  color: var(--muted);
-  font-size: var(--text-xs);
+.login-qr-unavailable::before,
+.login-qr-unavailable::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--surface-tertiary);
+  border-radius: 4px;
 }
-.login-methods > div {
+.login-qr-unavailable::before {
+  top: 10px;
+  left: 10px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.login-qr-unavailable::after {
+  right: 10px;
+  bottom: 10px;
+  border-top: 0;
+  border-left: 0;
+}
+.login-wechat-copy {
   display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 4px;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 34ch;
 }
-.login-methods .button {
-  padding: 0 8px;
-  min-height: 36px;
-  color: var(--link);
+.login-wechat-copy p {
+  color: var(--muted);
   font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.login-wechat-copy .chip {
+  background: var(--accent-soft);
 }
 .login-submit {
   width: 100%;
@@ -2687,8 +2763,12 @@ html:has(.workspace)::-webkit-scrollbar,
   line-height: var(--leading-sm);
 }
 .login-support {
-  margin-top: 24px;
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid var(--separator);
   text-align: center;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 @media (max-width: 700px) {
   .login-dialog {
@@ -2699,16 +2779,29 @@ html:has(.workspace)::-webkit-scrollbar,
     display: none;
   }
   .login-content {
-    padding: 32px 16px 24px;
+    padding: 28px 16px 20px;
   }
   .login-content .modal__heading {
     font-size: var(--text-page-mobile);
   }
-  .login-form .input {
+  .login-body {
+    min-height: 0;
+  }
+  .login-form :is(.input, .input-group, .input-group .input) {
     font-size: 16px;
+  }
+  .login-modes .toggle-button {
+    height: 40px;
+    font-size: var(--text-xs);
   }
   .header-login {
     min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .login-dialog,
+  .login-modes .toggle-button {
+    transition: none;
   }
 }
 

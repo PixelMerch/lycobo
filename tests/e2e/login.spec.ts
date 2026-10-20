@@ -17,7 +17,7 @@ test("header login opens account/password dialog and validates without faking au
   await expect(dialog.getByRole("status", { name: "扫码登录暂未开放" })).toBeVisible();
   await expect(dialog.getByRole("textbox")).toHaveCount(0);
   await page.screenshot({ path: "/tmp/lycoboai-login-wechat-desktop.png" });
-  await dialog.getByRole("button", { name: "企业账号登录", exact: true }).click();
+  await dialog.getByRole("radio", { name: "企业账号", exact: true }).click();
   const account = dialog.getByRole("textbox", { name: "企业账号" });
   const password = dialog.getByLabel("密码", { exact: true });
   await expect(account).toBeFocused();
@@ -44,7 +44,7 @@ test("header login opens account/password dialog and validates without faking au
   await expect(entry).toBeFocused();
   await entry.click();
   await expect(dialog.getByRole("status", { name: "扫码登录暂未开放" })).toBeVisible();
-  await dialog.getByRole("button", { name: "企业账号登录", exact: true }).click();
+  await dialog.getByRole("radio", { name: "企业账号", exact: true }).click();
   await expect(dialog.getByLabel("密码", { exact: true })).toHaveValue("");
 });
 
@@ -71,7 +71,7 @@ test("phone login validates the phone and code without pretending to send SMS", 
   await page.goto("/");
   await page.getByRole("button", { name: "登录领积分", exact: true }).click();
   const dialog = page.getByRole("dialog");
-  await dialog.getByRole("button", { name: "手机号登录", exact: true }).click();
+  await dialog.getByRole("radio", { name: "手机号", exact: true }).click();
   const phone = dialog.getByLabel("手机号", { exact: true });
   await phone.fill("123");
   await dialog.getByRole("button", { name: "获取验证码" }).click();
@@ -82,7 +82,7 @@ test("phone login validates the phone and code without pretending to send SMS", 
   await dialog.getByLabel("验证码", { exact: true }).fill("123456");
   await dialog.getByRole("button", { name: "登录", exact: true }).click();
   await expect(dialog.getByRole("alert")).toContainText("手机号登录服务暂未开放");
-  await dialog.getByRole("button", { name: "公众号扫码登录", exact: true }).click();
+  await dialog.getByRole("radio", { name: "微信扫码", exact: true }).click();
   await expect(dialog.getByRole("textbox")).toHaveCount(0);
   await expect(dialog.getByRole("status", { name: "扫码登录暂未开放" })).toBeVisible();
 });
