@@ -11,6 +11,7 @@ const accountRow = z.object({
   password_hash: z.string(),
 });
 const principalRow = z.object({
+  uid: z.string().regex(/^[0-9]{10}$/),
   user_id: z.uuid(),
   organization_id: z.uuid(),
   role: z.enum(["admin", "member"]),
@@ -55,14 +56,16 @@ export function openAuthRepository(url: string) {
     },
     async identity(sessionId: string): Promise<EnterpriseIdentity | null> {
       const rows =
-        await sql`select a.account,a.user_id,a.organization_id,m.role from enterprise_sessions s
+        await sql`select a.account,a.user_id,a.organization_id,m.role,u.uid from enterprise_sessions s
         join enterprise_accounts a on a.id=s.account_id
+        join users u on u.id=a.user_id
         join organization_members m on m.user_id=a.user_id and m.organization_id=a.organization_id
         where s.id=${sessionId} and s.revoked_at is null and s.expires_at>now() and a.disabled_at is null and s.credential_version=a.credential_version`;
       if (!rows[0]) return null;
       const row = principalRow.parse(rows[0]);
       return {
         userId: row.user_id,
+        uid: row.uid,
         organizationId: row.organization_id,
         role: row.role,
         account: row.account,

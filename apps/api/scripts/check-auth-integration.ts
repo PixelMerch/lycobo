@@ -4,7 +4,11 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { enterpriseLoginResponseSchema, unwrapApiData } from "@lycoboai/contracts";
+import {
+  enterpriseIdentitySchema,
+  enterpriseLoginResponseSchema,
+  unwrapApiData,
+} from "@lycoboai/contracts";
 import { openAuthRepository, openImageRepository } from "@lycoboai/db";
 import { imageStore } from "@lycoboai/storage";
 import postgres from "postgres";
@@ -38,8 +42,22 @@ try {
   if (migrated.status !== 0) throw new Error("Isolated migration failed");
   authDb = openAuthRepository(testUrl.href);
   images = openImageRepository(testUrl.href);
-  const sql = postgres(testUrl.href, { max: 1 });
+  const sql = postgres(testUrl.href, { max: 5 });
   try {
+    for (const kind of ["user", "task", "image"]) {
+      const pattern =
+        kind === "user" ? /^[0-9]{10}$/ : kind === "task" ? /^W[0-9A-Z]{8}$/ : /^P[0-9A-Z]{8}$/;
+      const allocated = await Promise.all(
+        Array.from({ length: 50 }, async () => {
+          const [row] = await sql`select public.allocate_public_identifier(${kind}) as value`;
+          const value = String(row?.value);
+          assert.match(value, pattern);
+          return value;
+        }),
+      );
+      assert.equal(new Set(allocated).size, allocated.length);
+    }
+    await assert.rejects(sql`select public.allocate_public_identifier('invalid')`);
     const first = await images.provision(`test:${crypto.randomUUID()}`, "test-enterprise-one", 10);
     const second = await images.provision(`test:${crypto.randomUUID()}`, "test-enterprise-two", 10);
     const password = `test-only-${crypto.randomUUID()}`;
@@ -88,7 +106,14 @@ try {
     assert.equal(response.status, 200);
     const result = enterpriseLoginResponseSchema.parse(unwrapApiData(await response.json()));
     assert.equal(result.user.organizationId, first.organizationId);
+    assert.match(result.user.uid ?? "", /^[0-9]{10}$/);
+    assert.equal(result.user.uid, first.uid);
+    assert.notEqual(first.uid, second.uid);
     const headers = { Authorization: `Bearer ${result.accessToken}` };
+    const session = enterpriseIdentitySchema.parse(
+      unwrapApiData(await (await app.request("/api/v1/auth/session", { headers })).json()),
+    );
+    assert.equal(session.uid, first.uid);
     const cookie = response.headers.get("set-cookie")?.split(";")[0] ?? "";
     assert.equal((await app.request("/api/v1/image-models", { headers })).status, 200);
     assert.equal(
@@ -150,6 +175,7 @@ try {
     );
     assert.equal((await app.request("/api/v1/auth/session", { headers })).status, 401);
     const fresh = enterpriseLoginResponseSchema.parse(unwrapApiData(await (await login()).json()));
+    assert.equal(fresh.user.uid, first.uid);
     const freshHeaders = { Authorization: `Bearer ${fresh.accessToken}` };
     assert.equal(
       (await app.request("/api/v1/auth/logout", { method: "POST", headers: freshHeaders })).status,

@@ -280,9 +280,9 @@ try {
   const detailed = imageJobSchema.parse(
     JSON.parse(JSON.stringify(await repository.get(first, acceptedJob.id))),
   );
-  assert.match(detailed.public_id ?? "", /^[1-9][0-9]{9}$/);
+  assert.match(detailed.public_id ?? "", /^W[0-9A-Z]{8}$/);
   const output = detailed.items[0];
-  assert.match(output?.output_public_id ?? "", /^L[1-9][0-9]{8}$/);
+  assert.match(output?.output_public_id ?? "", /^P[0-9A-Z]{8}$/);
   const assetResponse = await app.request("/api/v1/image-assets?limit=100", { headers });
   const assetList = imageAssetsResponseSchema.parse(unwrapApiData(await assetResponse.json())).data;
   assert.equal(
@@ -306,10 +306,7 @@ try {
   assert.equal(sequenceBounds.length, 2);
   for (const sequence of sequenceBounds) {
     assert.equal(sequence.cycle, false);
-    assert.equal(
-      sequence.max_value,
-      sequence.sequencename === "image_assets_display_number_seq" ? "999999999" : "9999999999",
-    );
+    assert.equal(sequence.max_value, "9223372036854775807");
   }
 
   assert.equal((await app.request("/api/v1/image-tasks", apiSubmission())).status, 200);

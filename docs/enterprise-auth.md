@@ -49,3 +49,7 @@ JWT 有效期 15 分钟，固定 HS256，必须包含并验证 sub、org、jti�
 - 根 `pnpm test:integration` 已串联上述鉴权测试及原 DB／Redis／图片任务测试。
 
 依赖 API 依据：[Hono JWT](https://hono.dev/docs/helpers/jwt)、[Hono Cookie](https://hono.dev/docs/helpers/cookie)、[Node.js crypto](https://nodejs.org/docs/latest-v24.x/api/crypto.html)。
+
+## 用户公开 UID
+
+企业登录及会话身份返回 `uid`：随机 10 位纯数字字符串（例如 `0123456789`），允许前导 0，不随重新登录变化。内部 `userId`、JWT sub、成员关系及资源授权继续使用 UUID。迁移 0005 为已有用户补齐 UID，数据库唯一约束和原子号码登记防止重复分配；旧响应兼容允许缺省 UID。不得把公开 UID 作为授权依据，也不得转为数字存储。

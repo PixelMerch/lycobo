@@ -9,7 +9,9 @@ export const enterpriseAccountSchema = z
 export const enterpriseLoginSchema = z
   .object({ account: enterpriseAccountSchema, password: z.string().min(1).max(256) })
   .strict();
+export const userUidSchema = z.string().regex(/^[0-9]{10}$/);
 export const enterpriseIdentitySchema = z.object({
+  uid: userUidSchema.optional(),
   userId: z.uuid(),
   organizationId: z.uuid(),
   role: z.enum(["admin", "member"]),

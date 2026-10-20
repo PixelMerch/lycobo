@@ -13,7 +13,7 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await mockImageApi(page);
   const jobs = Array.from({ length: 3 }, (_, index) => ({
     id: crypto.randomUUID(),
-    public_id: String(1000000000 + index),
+    public_id: `W0000000${index}`,
     organization_id: crypto.randomUUID(),
     user_id: crypto.randomUUID(),
     model: "gpt-image-2.5",

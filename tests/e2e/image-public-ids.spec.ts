@@ -13,7 +13,7 @@ test("task and image IDs stay stable across history, reload and the asset librar
     assetId = crypto.randomUUID();
   const job = {
     id,
-    public_id: "1000000001",
+    public_id: "W07AZ9T2Q",
     organization_id: crypto.randomUUID(),
     user_id: crypto.randomUUID(),
     model: "gpt-image-2",
@@ -30,7 +30,7 @@ test("task and image IDs stay stable across history, reload and the asset librar
         position: 0,
         status: "succeeded",
         output_asset_id: assetId,
-        output_public_id: "L100000001",
+        output_public_id: "P82ZX19M4",
         error_code: null,
         width: 1024,
         height: 1024,
@@ -47,7 +47,7 @@ test("task and image IDs stay stable across history, reload and the asset librar
         data: [
           {
             id: assetId,
-            public_id: "L100000001",
+            public_id: "P82ZX19M4",
             kind: "output",
             width: 1024,
             height: 1024,
@@ -62,12 +62,12 @@ test("task and image IDs stay stable across history, reload and the asset librar
   });
   await page.goto("/create");
   const history = page.locator(".generation-job");
-  await expect(history).toContainText("1000000001");
-  await expect(history).toContainText("图片 ID：L100000001");
+  await expect(history).toContainText("W07AZ9T2Q");
+  await expect(history).toContainText("图片 ID：P82ZX19M4");
   await expect(history).not.toContainText(id);
   await expect(history).not.toContainText(job.items[0]?.worker_id ?? "missing");
   await page.reload();
-  await expect(history).toContainText("图片 ID：L100000001");
+  await expect(history).toContainText("图片 ID：P82ZX19M4");
   await page.getByRole("link", { name: "素材库", exact: true }).click();
-  await expect(page.locator(".asset-grid")).toContainText("图片 ID：L100000001");
+  await expect(page.locator(".asset-grid")).toContainText("图片 ID：P82ZX19M4");
 });

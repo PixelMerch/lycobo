@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { userUidSchema } from "./auth";
 import {
   imageGenerationInputSchema,
   imagePublicIdSchema,
@@ -45,10 +46,16 @@ describe("image submission", () => {
 });
 
 it("validates fixed-width task and image display IDs", () => {
-  for (const id of ["1000000000", "9999999999"]) expect(imageTaskPublicIdSchema.parse(id)).toBe(id);
-  for (const id of ["L100000000", "L999999999"]) expect(imagePublicIdSchema.parse(id)).toBe(id);
-  for (const id of ["123", "10000000000", "L100000000", crypto.randomUUID()])
+  for (const id of ["W00000000", "W9AZ09XYZ"]) expect(imageTaskPublicIdSchema.parse(id)).toBe(id);
+  for (const id of ["P00000000", "P9AZ09XYZ"]) expect(imagePublicIdSchema.parse(id)).toBe(id);
+  for (const id of ["123", "1000000000", "W9az09XYZ", "W123456789", crypto.randomUUID()])
     expect(imageTaskPublicIdSchema.safeParse(id).success).toBe(false);
-  for (const id of ["P100000000", "L123", "L1000000000", crypto.randomUUID()])
+  for (const id of ["P123", "P100000000", "P9az09XYZ", "L12345678", crypto.randomUUID()])
     expect(imagePublicIdSchema.safeParse(id).success).toBe(false);
+});
+
+it("preserves ten-digit user UIDs including leading zero", () => {
+  expect(userUidSchema.parse("0123456789")).toBe("0123456789");
+  for (const value of [1234567890, "123456789", "12345678901", "A123456789", crypto.randomUUID()])
+    expect(userUidSchema.safeParse(value).success).toBe(false);
 });

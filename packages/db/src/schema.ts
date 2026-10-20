@@ -31,8 +31,17 @@ export const itemStatus = pgEnum("item_status", [
   "failed",
   "cancelled",
 ]);
+export const publicIdentifiers = pgTable("public_identifiers", {
+  value: text("value").primaryKey(),
+  createdAt: createdAt(),
+});
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
+  uid: text("uid")
+    .notNull()
+    .unique()
+    .references(() => publicIdentifiers.value)
+    .default(sql`public.allocate_public_identifier('user')`),
   authSubject: text("auth_subject").notNull().unique(),
   createdAt: createdAt(),
 });
@@ -211,10 +220,15 @@ export const imageAssets = pgTable(
       .generatedAlwaysAsIdentity({
         startWith: 100000000,
         minValue: 100000000,
-        maxValue: 999999999,
+        maxValue: "9223372036854775807",
         cycle: false,
       })
       .unique(),
+    publicId: text("public_id")
+      .notNull()
+      .unique()
+      .references(() => publicIdentifiers.value)
+      .default(sql`public.allocate_public_identifier('image')`),
     organizationId: uuid("organization_id").notNull(),
     userId: uuid("user_id").notNull(),
     kind: text("kind").notNull(),
@@ -250,10 +264,15 @@ export const imageJobs = pgTable(
       .generatedAlwaysAsIdentity({
         startWith: 1000000000,
         minValue: 1000000000,
-        maxValue: 9999999999,
+        maxValue: "9223372036854775807",
         cycle: false,
       })
       .unique(),
+    publicId: text("public_id")
+      .notNull()
+      .unique()
+      .references(() => publicIdentifiers.value)
+      .default(sql`public.allocate_public_identifier('task')`),
     organizationId: uuid("organization_id").notNull(),
     userId: uuid("user_id").notNull(),
     idempotencyKey: uuid("idempotency_key").notNull(),
