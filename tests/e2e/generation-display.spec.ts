@@ -72,3 +72,46 @@ test("running images animate with the model icon and stop for reduced motion", a
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
+  test(`terminal ${status} displays failure without exposing internal reconciliation`, async ({
+    page,
+  }) => {
+    await mockImageApi(page);
+    const itemStatus = status === "partially_failed" ? "failed" : status;
+    const job = {
+      id: crypto.randomUUID(),
+      organization_id: crypto.randomUUID(),
+      user_id: crypto.randomUUID(),
+      model: "gpt-image-2",
+      prompt: "测试任务",
+      resolution: "1K",
+      aspect_ratio: "1:1",
+      requested_count: 1,
+      status,
+      created_at: "2026-10-20T01:00:00.000Z",
+      completed_at: "2026-10-20T01:01:00.000Z",
+      items: [
+        {
+          id: crypto.randomUUID(),
+          position: 0,
+          status: itemStatus,
+          output_asset_id: null,
+          error_code: "PROVIDER_INVALID_IMAGE_RESPONSE",
+          width: null,
+          height: null,
+          worker_id: "fixture-worker",
+        },
+      ],
+    };
+    await page.route("**/api/v1/image-tasks*", (route) => route.fulfill({ json: { data: [job] } }));
+    await page.goto("/create");
+    await expect(page.locator(".generation-job header").getByRole("status")).toHaveText("失败");
+    await expect(page.locator(".generation-placeholder")).toHaveAttribute("aria-label", "失败");
+    await expect(page.locator(".history-thumbnail")).toHaveText("失败");
+    await expect(page.getByText(/结果待核对|本次调用结果尚未确认|部分完成/)).toHaveCount(0);
+    if (status === "needs_reconciliation") {
+      await expect(page.getByRole("button", { name: "重新生成", exact: true })).toBeDisabled();
+    }
+  });
+}

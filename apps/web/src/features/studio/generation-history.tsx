@@ -21,10 +21,10 @@ import { useStudioStore } from "./studio-state";
 export const statusLabel: Record<ImageJob["status"], string> = {
   queued: "排队中",
   running: "生成中",
-  succeeded: "已完成",
-  partially_failed: "部分完成",
-  failed: "生成失败",
-  needs_reconciliation: "结果待核对",
+  succeeded: "成功",
+  partially_failed: "失败",
+  failed: "失败",
+  needs_reconciliation: "失败",
 };
 const errorLabel = (code: string | null) => {
   if (code === "PROVIDER_HTTP_401" || code === "PROVIDER_HTTP_403")
@@ -240,9 +240,6 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
           ) : (
             <HistoryPrompt job={job} />
           )}
-          {job.status === "needs_reconciliation" && (
-            <p role="alert">本次调用结果尚未确认，需要核对服务商记录，请勿重复生成。</p>
-          )}
           {!compact && (
             <div className="generation-results" data-count={job.items.length}>
               {job.items.map((item) => (
@@ -264,8 +261,12 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
                       ) : (
                         statusLabel[item.status]
                       )}
-                      {item.status === "failed" && (
-                        <p role="alert">{errorLabel(item.error_code)}</p>
+                      {(item.status === "failed" || item.status === "needs_reconciliation") && (
+                        <p role="alert">
+                          {item.status === "needs_reconciliation"
+                            ? "未能获取可用图片。"
+                            : errorLabel(item.error_code)}
+                        </p>
                       )}
                     </div>
                   )}
