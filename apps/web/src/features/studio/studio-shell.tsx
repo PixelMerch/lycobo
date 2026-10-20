@@ -1,11 +1,9 @@
 import { Button, Drawer, Modal } from "@heroui/react";
 import {
-  IconBell,
   IconChevronRight,
   IconFolder,
   IconHelpCircle,
   IconHome,
-  IconListCheck,
   IconMenu2,
   IconPhoto,
   IconPlayerPlay,
@@ -18,7 +16,6 @@ import { Outlet, useLocation, useNavigate } from "react-router";
 import { RouteLink } from "../../components/router-link";
 import { UiIcon } from "../../components/ui-icon";
 import { CaseGallery } from "./case-gallery";
-import { GenerationHistory } from "./generation-history";
 import { LoginDialog } from "./login-dialog";
 import { cases, models, photo, useStudioStore } from "./studio-state";
 
@@ -176,16 +173,6 @@ export function StudioShell() {
           )}
         </nav>
         <div className="header-actions">
-          <TaskCenter />
-          <Button
-            isIconOnly
-            variant="tertiary"
-            className="icon-button"
-            aria-label="通知"
-            onPress={() => setInfo("通知")}
-          >
-            <UiIcon icon={IconBell} size="navigation" />
-          </Button>
           <Button className="primary-action header-login" onPress={() => setLoginOpen(true)}>
             登录
           </Button>
@@ -270,29 +257,5 @@ export function StudioShell() {
         </Modal.Backdrop>
       </Modal>
     </div>
-  );
-}
-
-function TaskCenter() {
-  return (
-    <Drawer>
-      <Drawer.Trigger className="task-trigger neutral-button">
-        <UiIcon icon={IconListCheck} size="default" />
-        <span>任务中心</span>
-      </Drawer.Trigger>
-      <Drawer.Backdrop>
-        <Drawer.Content placement="right">
-          <Drawer.Dialog className="task-drawer">
-            <Drawer.Header>
-              <Drawer.Heading>任务中心</Drawer.Heading>
-              <Drawer.CloseTrigger aria-label="关闭任务中心" />
-            </Drawer.Header>
-            <Drawer.Body>
-              <GenerationHistory compact />
-            </Drawer.Body>
-          </Drawer.Dialog>
-        </Drawer.Content>
-      </Drawer.Backdrop>
-    </Drawer>
   );
 }

@@ -2479,6 +2479,9 @@ html:has(.workspace)::-webkit-scrollbar,
   height: 32px;
   padding: 0 16px;
   font-size: var(--text-sm);
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
 }
 .login-backdrop {
   backdrop-filter: blur(8px);

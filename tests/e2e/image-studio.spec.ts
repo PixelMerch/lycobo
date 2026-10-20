@@ -76,8 +76,6 @@ test("text generation requires a prompt and an available model", async ({ page }
     "true",
   );
   await expect(page.getByRole("radio", { name: "2K", exact: true })).toBeDisabled();
-  await page.getByRole("button", { name: "任务中心", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "暂无任务", exact: true })).toBeVisible();
 });
 
 test("case reuse requires confirmation before replacing an existing draft", async ({ page }) => {
@@ -98,13 +96,16 @@ test("case reuse requires confirmation before replacing an existing draft", asyn
 });
 
 for (const width of [320, 390, 768, 1024, 1440]) {
-  test(`responsive pages, model chooser and tasks stay reachable at ${width}px`, async ({
+  test(`responsive pages, model chooser and login stay reachable at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
     for (const path of ["/", "/create", "/assets"]) {
       await page.goto(path);
-      await expect(page.getByRole("button", { name: "任务中心", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: "登录", exact: true })).toBeVisible();
+      await expect(
+        page.locator("header").getByRole("button", { name: /任务中心|通知/ }),
+      ).toHaveCount(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
       );

@@ -44,7 +44,7 @@ Read relevant project skills before work:
   render; effects synchronize external systems, not redundant state.
 - Lazy-load heavy canvas/editor routes. Do not load original full-resolution images into grid cards.
 - Accessible labels, visible focus, semantic controls, reduced motion and narrow-screen behavior
-  are required. Keep task-center access available on every product page.
+  are required. The header keeps only the borderless pill-shaped login action; do not restore task-center or notification entries.
 - Preserve pending drafts when switching tasks. Never navigate users away when a background task completes.
 - No server modules or secrets in apps/web or packages/contracts. VITE_* is public.
 - UI mockups are references, never a screenshot used as a functional page.
