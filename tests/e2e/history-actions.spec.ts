@@ -119,18 +119,18 @@ test("edited history references and prompt survive all model switches", async ({
     await expect(page.getByRole("button", { name: "展开全部图片比例", exact: true })).toContainText(
       "3:4",
     );
-    await expect(page.getByRole("button", { name: "分辨率 1K", exact: true })).toHaveAttribute(
-      "aria-pressed",
+    await expect(page.getByRole("radio", { name: "1K", exact: true })).toHaveAttribute(
+      "aria-checked",
       "true",
     );
   }
   await page.getByRole("button", { name: /创作模型/ }).click();
   await page.getByRole("option", { name: "gpt-image-2-4K", exact: true }).click();
-  await page.getByRole("button", { name: "分辨率 4K", exact: true }).click();
+  await page.getByRole("radio", { name: "4K", exact: true }).click();
   await page.getByRole("button", { name: /创作模型/ }).click();
   await page.getByRole("option", { name: "gpt-image-2.5", exact: true }).click();
-  await expect(page.getByRole("button", { name: "分辨率 1K", exact: true })).toHaveAttribute(
-    "aria-pressed",
+  await expect(page.getByRole("radio", { name: "1K", exact: true })).toHaveAttribute(
+    "aria-checked",
     "true",
   );
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);

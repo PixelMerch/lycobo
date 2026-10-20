@@ -1,4 +1,4 @@
-import { Button, Tooltip } from "@heroui/react";
+import { Alert, Button, EmptyState, Spinner, Tooltip } from "@heroui/react";
 import type { ImageJob } from "@lycoboai/contracts";
 import {
   IconAspectRatio,
@@ -15,7 +15,12 @@ import {
 } from "@tabler/icons-react";
 import { useEffect, useRef } from "react";
 import { UiIcon } from "../../components/ui-icon";
-import { assetContentUrl, useImageHistory, useImageSession } from "./generation-client";
+import {
+  assetContentUrl,
+  downloadAsset,
+  useImageHistory,
+  useImageSession,
+} from "./generation-client";
 import { HistoryPrompt, HistoryTaskActions } from "./history-task-tools";
 import { useStudioStore } from "./studio-state";
 
@@ -67,12 +72,7 @@ function ResultImage({
             variant="tertiary"
             className="generation-media-action"
             aria-label="下载原图"
-            onPress={() => {
-              const link = document.createElement("a");
-              link.href = assetContentUrl(assetId);
-              link.download = `${assetId}.png`;
-              link.click();
-            }}
+            onPress={() => downloadAsset(assetId)}
           >
             <UiIcon icon={IconDownload} />
           </Button>
@@ -147,32 +147,35 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
   }, [compact, jobIds, setActiveHistoryId]);
   if (session.isError || query.isError)
     return (
-      <div className="generation-message" role="alert">
-        <p>{session.error?.message ?? query.error?.message}</p>
-        <Button
-          variant="secondary"
-          onPress={() => {
-            void session.refetch();
-            void query.refetch();
-          }}
-        >
-          重新连接
-        </Button>
-      </div>
+      <Alert className="generation-message" role="alert" status="danger">
+        <Alert.Content>
+          <Alert.Description>{session.error?.message ?? query.error?.message}</Alert.Description>
+          <Button
+            variant="secondary"
+            onPress={() => {
+              void session.refetch();
+              void query.refetch();
+            }}
+          >
+            重新连接
+          </Button>
+        </Alert.Content>
+      </Alert>
     );
   if (session.isPending || query.isPending)
     return (
       <p className="generation-message" role="status">
+        <Spinner aria-hidden size="sm" />
         正在加载记录…
       </p>
     );
   if (!jobs.length)
     return (
-      <div className="empty-state">
+      <EmptyState className="empty-state">
         <UiIcon icon={IconPhoto} size="illustration" />
         <h2>{compact ? "暂无任务" : "还没有生成记录"}</h2>
         <p>提交后的生成任务会保存在这里。</p>
-      </div>
+      </EmptyState>
     );
   return (
     <div className="generation-history" ref={listRef}>
@@ -263,11 +266,19 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
                         <HistoryTaskActions job={job} retryOnly />
                       )}
                       {(item.status === "failed" || item.status === "needs_reconciliation") && (
-                        <p role="alert">
-                          {item.status === "needs_reconciliation"
-                            ? "未能获取可用图片。"
-                            : errorLabel(item.error_code)}
-                        </p>
+                        <Alert
+                          className="generation-placeholder-error"
+                          role="alert"
+                          status="danger"
+                        >
+                          <Alert.Content>
+                            <Alert.Description>
+                              {item.status === "needs_reconciliation"
+                                ? "未能获取可用图片。"
+                                : errorLabel(item.error_code)}
+                            </Alert.Description>
+                          </Alert.Content>
+                        </Alert>
                       )}
                     </div>
                   )}

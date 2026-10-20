@@ -14,7 +14,8 @@ import {
   IconSparkles,
 } from "@tabler/icons-react";
 import { type CSSProperties, useState } from "react";
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
+import { Outlet, useLocation, useNavigate } from "react-router";
+import { RouteLink } from "../../components/router-link";
 import { UiIcon } from "../../components/ui-icon";
 import { CaseGallery } from "./case-gallery";
 import { GenerationHistory } from "./generation-history";
@@ -40,10 +41,10 @@ export function StudioShell() {
   const navigate = useNavigate();
   const nav = (
     <>
-      <NavLink to="/" end className="nav-row" onClick={() => setMenuOpen(false)}>
+      <RouteLink nav to="/" end className="nav-row" onClick={() => setMenuOpen(false)}>
         <UiIcon icon={IconHome} size="navigation" />
         首页
-      </NavLink>
+      </RouteLink>
       <Button
         variant="tertiary"
         className={`nav-row ${chooserOpen || (currentModel && !tkOpen && info !== "AI 电商") ? "active" : ""}`}
@@ -113,21 +114,21 @@ export function StudioShell() {
           ))}
         </div>
       ) : null}
-      <NavLink to="/assets" className="nav-row" onClick={() => setMenuOpen(false)}>
+      <RouteLink nav to="/assets" className="nav-row" onClick={() => setMenuOpen(false)}>
         <UiIcon icon={IconFolder} size="navigation" />
         素材库
-      </NavLink>
+      </RouteLink>
     </>
   );
   return (
     <div className="studio-app">
       <aside className="sidebar" aria-label="主导航">
-        <Link to="/" className="brand">
+        <RouteLink to="/" className="brand">
           <span className="brand-mark">
             <UiIcon icon={IconSparkles} size="small" />
           </span>
           lycoboai
-        </Link>
+        </RouteLink>
         <nav>{nav}</nav>
         <div className="sidebar-bottom">
           <Button variant="tertiary" className="nav-row" onPress={() => setInfo("帮助中心")}>
@@ -159,10 +160,10 @@ export function StudioShell() {
             </Drawer.Content>
           </Drawer.Backdrop>
         </Drawer>
-        <div className="breadcrumb">
-          <Link to="/" aria-label="首页">
+        <nav className="breadcrumb" aria-label="面包屑">
+          <RouteLink to="/" aria-label="首页">
             <UiIcon icon={IconHome} size="default" />
-          </Link>
+          </RouteLink>
           <UiIcon icon={IconChevronRight} size="small" />
           {currentModel ? (
             <>
@@ -173,7 +174,7 @@ export function StudioShell() {
           ) : (
             <strong>{location.pathname === "/assets" ? "素材库" : "首页"}</strong>
           )}
-        </div>
+        </nav>
         <div className="header-actions">
           <TaskCenter />
           <Button

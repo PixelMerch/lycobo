@@ -1,4 +1,4 @@
-import { Button, Modal, Tabs } from "@heroui/react";
+import { Alert, Button, Card, Modal, Tabs } from "@heroui/react";
 import { IconPhoto } from "@tabler/icons-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
@@ -23,14 +23,16 @@ export function CaseGallery({ compact = false }: { compact?: boolean }) {
       </div>
       {!compact ? (
         <Tabs selectedKey={category} onSelectionChange={(key) => setCategory(String(key))}>
-          <Tabs.List aria-label="案例分类">
-            {["全部", "场景", "配色", "图文"].map((name) => (
-              <Tabs.Tab id={name} key={name}>
-                {name}
-                <Tabs.Indicator />
-              </Tabs.Tab>
-            ))}
-          </Tabs.List>
+          <Tabs.ListContainer>
+            <Tabs.List aria-label="案例分类">
+              {["全部", "场景", "配色", "图文"].map((name) => (
+                <Tabs.Tab id={name} key={name}>
+                  {name}
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+              ))}
+            </Tabs.List>
+          </Tabs.ListContainer>
           <Tabs.Panel id={category}>
             <CaseCards
               items={cases.filter((item) => category === "全部" || item.category === category)}
@@ -69,7 +71,7 @@ function CaseCards({
             <span className="case-card-title">{item.title}</span>
           </Button>
         ) : (
-          <article className="case-card" key={item.id}>
+          <Card className="case-card" key={item.id} variant="transparent">
             <img
               src={photo(item.image, true)}
               alt={item.title}
@@ -77,8 +79,8 @@ function CaseCards({
               height="480"
               loading="lazy"
             />
-            <div>
-              <h3>{item.title}</h3>
+            <Card.Header className="case-card-body">
+              <Card.Title>{item.title}</Card.Title>
               <Button
                 variant="tertiary"
                 className="small-button"
@@ -87,8 +89,8 @@ function CaseCards({
               >
                 查看案例
               </Button>
-            </div>
-          </article>
+            </Card.Header>
+          </Card>
         ),
       )}
     </div>
@@ -133,15 +135,21 @@ function CaseDetail({ item, onClose }: { item: StudioCase | null; onClose: () =>
                   <img src={photo(item.image)} alt={item.title} width="960" height="960" />
                   <p>{item.prompt}</p>
                   {replaceModel ? (
-                    <div className="replace-confirm" role="alert">
-                      <p>此模型已有草稿，是否替换参考图与提示词？</p>
-                      <Button variant="secondary" onPress={() => setReplaceModel(null)}>
-                        保留草稿
-                      </Button>
-                      <Button className="primary-action" onPress={() => apply(replaceModel)}>
-                        替换并进入
-                      </Button>
-                    </div>
+                    <Alert className="replace-confirm" role="alert" status="warning">
+                      <Alert.Content>
+                        <Alert.Description>
+                          此模型已有草稿，是否替换参考图与提示词？
+                        </Alert.Description>
+                        <div className="history-confirm-actions">
+                          <Button variant="secondary" onPress={() => setReplaceModel(null)}>
+                            保留草稿
+                          </Button>
+                          <Button className="primary-action" onPress={() => apply(replaceModel)}>
+                            替换并进入
+                          </Button>
+                        </div>
+                      </Alert.Content>
+                    </Alert>
                   ) : (
                     <div className="case-model-actions">
                       {models.map((model) => (

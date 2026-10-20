@@ -1,4 +1,15 @@
-import { Button, Label, Popover, Tabs, TextArea, TextField, Tooltip } from "@heroui/react";
+import {
+  Alert,
+  Button,
+  Label,
+  Popover,
+  Tabs,
+  TextArea,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
+} from "@heroui/react";
 import {
   IconArrowBarToUp,
   IconChevronRight,
@@ -8,7 +19,7 @@ import {
   IconTrash,
   IconX,
 } from "@tabler/icons-react";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { type Key, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import {
   useGenerateImage,
@@ -103,23 +114,33 @@ function Workspace({ model }: { model: ModelId }) {
         </section>
         <div className="generate-area">
           {(session.isError || modelQuery.isError || generate.isError) && (
-            <p className="generation-message" role="alert">
-              {session.error?.message ??
-                modelQuery.error?.message ??
-                (pending
-                  ? "提交结果待确认，请点击确认上次提交，避免重复生成。"
-                  : generate.error?.message)}
-            </p>
+            <Alert className="generation-message" role="alert" status="danger">
+              <Alert.Content>
+                <Alert.Description>
+                  {session.error?.message ??
+                    modelQuery.error?.message ??
+                    (pending
+                      ? "提交结果待确认，请点击确认上次提交，避免重复生成。"
+                      : generate.error?.message)}
+                </Alert.Description>
+              </Alert.Content>
+            </Alert>
           )}
           {modelQuery.data && !modelQuery.data.enabled && (
-            <p className="generation-message" role="status">
-              生图服务尚未启用
-            </p>
+            <Alert className="generation-message" role="status" status="warning">
+              <Alert.Content>
+                <Alert.Description>生图服务尚未启用</Alert.Description>
+              </Alert.Content>
+            </Alert>
           )}
           {draft.references.length > 0 && modelQuery.data && !modelQuery.data.editsEnabled && (
-            <p className="generation-message" role="status">
-              当前服务尚未启用参考图编辑，可先不上传图片进行创作。
-            </p>
+            <Alert className="generation-message" role="status" status="warning">
+              <Alert.Content>
+                <Alert.Description>
+                  当前服务尚未启用参考图编辑，可先不上传图片进行创作。
+                </Alert.Description>
+              </Alert.Content>
+            </Alert>
           )}
           <Button
             className="primary-action"
@@ -144,9 +165,11 @@ function Workspace({ model }: { model: ModelId }) {
       </section>
       <section className="results-panel" aria-label="创作内容">
         <Tabs className="workspace-tabs">
-          <Tabs.List aria-label="工作区内容">
-            <Tabs.Tab id="history">历史记录</Tabs.Tab>
-          </Tabs.List>
+          <Tabs.ListContainer>
+            <Tabs.List aria-label="工作区内容">
+              <Tabs.Tab id="history">历史记录</Tabs.Tab>
+            </Tabs.List>
+          </Tabs.ListContainer>
           <Tabs.Panel id="history">
             <GenerationHistory />
           </Tabs.Panel>
@@ -204,20 +227,24 @@ function ParameterGroup({
   return (
     <fieldset className="parameter-group">
       <legend>{label}</legend>
-      <div className="parameter-options">
+      <ToggleButtonGroup
+        aria-label={label}
+        className="parameter-options"
+        disallowEmptySelection
+        isDetached
+        selectedKeys={[value]}
+        selectionMode="single"
+        onSelectionChange={(keys) => {
+          const [next] = [...keys];
+          if (next !== undefined) onChange(String(next));
+        }}
+      >
         {values.map((option) => (
-          <Button
-            key={option}
-            variant="tertiary"
-            isDisabled={disabledValues.includes(option)}
-            aria-label={`${label} ${option}`}
-            aria-pressed={value === option}
-            onPress={() => onChange(option)}
-          >
+          <ToggleButton key={option} id={option} isDisabled={disabledValues.includes(option)}>
             <span>{option}</span>
-          </Button>
+          </ToggleButton>
         ))}
-      </div>
+      </ToggleButtonGroup>
     </fieldset>
   );
 }
@@ -241,84 +268,89 @@ function RatioPicker({ value, onChange }: { value: string; onChange: (ratio: str
     getServerRatioViewport,
   );
   const extendedSelected = additionalRatios.includes(value);
+  const select = (keys: Set<Key>) => {
+    const [next] = [...keys];
+    if (next === undefined) return;
+    onChange(String(next));
+    if (additionalRatios.includes(String(next))) setOpen(false);
+  };
   return (
     <section ref={groupRef} className="parameter-group ratio-group" aria-label="图片比例">
-      <Popover isOpen={open} onOpenChange={setOpen}>
-        <div className="ratio-heading">
-          <h2>图片比例</h2>
-          <Button
-            className="ratio-expand"
-            variant="tertiary"
-            aria-label="展开全部图片比例"
-            aria-expanded={open}
-          >
+      <div className="ratio-heading">
+        <h2>图片比例</h2>
+        <Popover isOpen={open} onOpenChange={setOpen}>
+          <Button className="ratio-expand" variant="tertiary" aria-label="展开全部图片比例">
             <span>{value}</span>
             <span className="ratio-chevron">
               <UiIcon icon={IconChevronRight} size="small" />
             </span>
           </Button>
-        </div>
-        <Popover.Content
-          triggerRef={groupRef}
-          placement={wideViewport ? "right top" : "bottom start"}
-          offset={wideViewport ? 32 : 8}
-          shouldFlip={!wideViewport}
-          className="ratio-popover"
-        >
-          <Popover.Dialog className="ratio-popover-dialog" aria-label="更多图片比例">
-            <div className="ratio-popover-heading">
-              <Popover.Heading>图片比例</Popover.Heading>
-              <Button
-                isIconOnly
-                variant="tertiary"
-                className="icon-button ratio-close"
-                aria-label="关闭图片比例"
-                onPress={() => setOpen(false)}
-              >
-                <span className="ratio-close-visual">
-                  <UiIcon icon={IconX} />
-                </span>
-              </Button>
-            </div>
-            <div className="parameter-options ratio-options ratio-extra-options">
-              {additionalRatios.map((ratio) => (
-                <Button
-                  key={ratio}
-                  variant="tertiary"
-                  aria-label={`图片比例 ${ratio}`}
-                  aria-pressed={value === ratio}
-                  onPress={() => {
-                    onChange(ratio);
-                    setOpen(false);
-                  }}
-                >
-                  <RatioPreview ratio={ratio} />
-                  <span>{ratio}</span>
-                </Button>
-              ))}
-            </div>
-          </Popover.Dialog>
-        </Popover.Content>
-      </Popover>
-      <div className="parameter-options ratio-options">
-        {commonRatios.map((ratio) => (
-          <Button
-            key={ratio}
-            variant="tertiary"
-            aria-label={`图片比例 ${ratio}`}
-            aria-pressed={value === ratio}
-            onPress={() => onChange(ratio)}
+          <Popover.Content
+            triggerRef={groupRef}
+            placement={wideViewport ? "right top" : "bottom start"}
+            offset={wideViewport ? 32 : 8}
+            shouldFlip={!wideViewport}
+            className="ratio-popover"
           >
-            <RatioPreview ratio={ratio} />
-            <span>{ratio}</span>
-          </Button>
-        ))}
+            <Popover.Dialog className="ratio-popover-dialog" aria-label="更多图片比例">
+              <div className="ratio-popover-heading">
+                <Popover.Heading>图片比例</Popover.Heading>
+                <Button
+                  isIconOnly
+                  variant="tertiary"
+                  className="icon-button ratio-close"
+                  aria-label="关闭图片比例"
+                  onPress={() => setOpen(false)}
+                >
+                  <span className="ratio-close-visual">
+                    <UiIcon icon={IconX} />
+                  </span>
+                </Button>
+              </div>
+              <ToggleButtonGroup
+                aria-label="更多图片比例"
+                className="parameter-options ratio-options ratio-extra-options"
+                disallowEmptySelection
+                isDetached
+                selectedKeys={extendedSelected ? [value] : []}
+                selectionMode="single"
+                onSelectionChange={select}
+              >
+                {additionalRatios.map((ratio) => (
+                  <ToggleButton key={ratio} id={ratio}>
+                    <RatioPreview ratio={ratio} />
+                    <span>{ratio}</span>
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            </Popover.Dialog>
+          </Popover.Content>
+        </Popover>
+      </div>
+      <div className="parameter-options ratio-options">
+        <ToggleButtonGroup
+          aria-label="常用图片比例"
+          className="ratio-common-options"
+          disallowEmptySelection
+          isDetached
+          selectedKeys={commonRatios.includes(value) ? [value] : []}
+          selectionMode="single"
+          onSelectionChange={select}
+        >
+          {commonRatios.map((ratio) => (
+            <ToggleButton key={ratio} id={ratio}>
+              <RatioPreview ratio={ratio} />
+              <span>{ratio}</span>
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
         <Button
+          className="ratio-more"
           variant="tertiary"
           aria-label="更多图片比例"
           aria-haspopup="dialog"
           aria-expanded={open}
-          aria-pressed={extendedSelected}
+          data-selected={extendedSelected || undefined}
           onPress={() => setOpen(true)}
         >
           {extendedSelected ? (
@@ -486,9 +518,11 @@ function ReferencePicker({
         ) : null}
       </div>
       {error ? (
-        <p className="field-error" role="alert">
-          {error}
-        </p>
+        <Alert className="field-error" role="alert" status="danger">
+          <Alert.Content>
+            <Alert.Description>{error}</Alert.Description>
+          </Alert.Content>
+        </Alert>
       ) : null}
     </section>
   );

@@ -6,7 +6,7 @@ import {
   IconPhoto,
   IconShoppingBag,
 } from "@tabler/icons-react";
-import { Link } from "react-router";
+import { RouteLink } from "../../components/router-link";
 import { UiIcon } from "../../components/ui-icon";
 import { CaseGallery } from "./case-gallery";
 import { models, useStudioStore } from "./studio-state";
@@ -44,14 +44,14 @@ export function HomePage() {
             </span>
             <span className="quiet-label">即将开放</span>
           </div>
-          <Link to="/assets" className="quick-card">
+          <RouteLink to="/assets" className="quick-card">
             <UiIcon icon={IconFolder} size="illustration" />
             <span>
               <strong>素材库</strong>
               <small>整理与复用你的创作素材</small>
             </span>
             <UiIcon icon={IconChevronRight} />
-          </Link>
+          </RouteLink>
         </div>
       </section>
       <CaseGallery />
@@ -61,12 +61,17 @@ export function HomePage() {
           recentModels.map((id) => {
             const model = models.find((item) => item.id === id);
             return model ? (
-              <Link className="recent-row" to="/create" key={id} onClick={() => setActiveModel(id)}>
+              <RouteLink
+                className="recent-row"
+                to="/create"
+                key={id}
+                onClick={() => setActiveModel(id)}
+              >
                 <UiIcon icon={IconPhoto} size="action" />
                 <strong>{model.name}</strong>
                 <span>进入创作</span>
                 <UiIcon icon={IconArrowRight} size="small" />
-              </Link>
+              </RouteLink>
             ) : null;
           })
         ) : (

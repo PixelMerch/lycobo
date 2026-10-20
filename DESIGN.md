@@ -161,10 +161,14 @@ HeroUI 基础变量固定为 `--radius: 8px`、`--field-radius: 10px`。以安�
 | 小设置、模型说明 | Popover，使用官方 Dialog 区域 |
 | 工具选择层、大图／确认 | Modal／Dialog 的官方组合，依安装版本导出使用 |
 | 历史筛选／内容切换 | Tabs、Checkbox、Switch 等相应官方组件 |
+| 参数互斥选项（分辨率、张数、比例） | ToggleButtonGroup＋ToggleButton，`selectionMode="single"` |
+| 加载与空状态 | Spinner、Skeleton、EmptyState |
+| 区块错误与字段错误 | Alert、FieldError／ErrorMessage |
+| 内容卡片、面包屑与可点击文本 | Card、Breadcrumbs、Link（可用 `render` 接 react-router） |
 | 全局任务／通知 | Drawer，关闭后恢复焦点 |
 | 辅助提示 | Tooltip，不能承载唯一必要说明 |
 
-不引入第二套组件基础库，不手写焦点陷阱、模态键盘或菜单键盘。CSS 负责主题与尺寸；HeroUI 负责交互语义。业务图标统一 Tabler，通过 `components/ui-icon.tsx` 使用，尺寸 14 / 18 / 20 / 22 / 28px、stroke 2，颜色继承状态；不得引入另一套业务图标库。
+不引入第二套组件基础库，不手写焦点陷阱、模态键盘或菜单键盘。CSS 负责主题与尺寸；HeroUI 负责交互语义。安装版本已提供的组件与用法见 `docs/heroui-components.md`，实现前先查该清单，已有能力不再自己实现。业务图标统一 Tabler，通过 `components/ui-icon.tsx` 使用，尺寸 14 / 18 / 20 / 22 / 28px、stroke 2，颜色继承状态；不得引入另一套业务图标库。
 
 ### 主按钮状态
 

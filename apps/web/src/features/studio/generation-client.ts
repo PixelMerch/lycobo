@@ -212,3 +212,10 @@ export function useGenerateImage() {
 }
 export const assetContentUrl = (id: string, thumbnail = false) =>
   `/api/v1/image-assets/${id}/content${thumbnail ? "?thumbnail=1" : ""}`;
+/** Triggers the browser download for an owned asset without leaving the page. */
+export function downloadAsset(id: string) {
+  const link = document.createElement("a");
+  link.href = assetContentUrl(id);
+  link.download = `${id}.png`;
+  link.click();
+}

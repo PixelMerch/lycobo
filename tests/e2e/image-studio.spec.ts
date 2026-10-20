@@ -17,7 +17,10 @@ test("current draft, references and output choices follow model switches and sur
   const prompt = page.getByLabel("提示词", { exact: true });
   await prompt.fill("保留我的商品草稿");
   await page.getByRole("button", { name: "展开全部图片比例", exact: true }).click();
-  await page.getByRole("button", { name: "图片比例 3:4", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "更多图片比例", exact: true })
+    .getByRole("radio", { name: "3:4", exact: true })
+    .click();
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles({ name: "quilt.png", mimeType: "image/png", buffer: png });
@@ -31,7 +34,7 @@ test("current draft, references and output choices follow model switches and sur
   await page.getByRole("option", { name: "gpt-image-2", exact: true }).click();
   await expect(prompt).toHaveValue("保留我的商品草稿");
   await expect(page.getByRole("button", { name: "更多图片比例", exact: true })).toHaveAttribute(
-    "aria-pressed",
+    "data-selected",
     "true",
   );
   await expect(page.locator(".reference-tile")).toHaveCount(1);
@@ -68,11 +71,11 @@ test("text generation requires a prompt and an available model", async ({ page }
   await expect(generate).toBeDisabled();
   await page.getByLabel("提示词", { exact: true }).fill("米白陶瓷杯");
   await expect(generate).toBeEnabled();
-  await expect(page.getByRole("button", { name: "分辨率 1K", exact: true })).toHaveAttribute(
-    "aria-pressed",
+  await expect(page.getByRole("radio", { name: "1K", exact: true })).toHaveAttribute(
+    "aria-checked",
     "true",
   );
-  await expect(page.getByRole("button", { name: "分辨率 2K", exact: true })).toBeDisabled();
+  await expect(page.getByRole("radio", { name: "2K", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "任务中心", exact: true }).click();
   await expect(page.getByRole("heading", { name: "暂无任务", exact: true })).toBeVisible();
 });
@@ -156,9 +159,9 @@ test("extended ratios preserve selection and composer scroll stays independent",
       );
     })
     .toBe(true);
-  await expect(picker.getByRole("button", { name: /^图片比例 / })).toHaveCount(6);
-  await expect(picker.getByRole("button", { name: "图片比例 4:5", exact: true })).toHaveCount(0);
-  await picker.getByRole("button", { name: "图片比例 9:16", exact: true }).click();
+  await expect(picker.getByRole("radio")).toHaveCount(6);
+  await expect(picker.getByRole("radio", { name: "4:5", exact: true })).toHaveCount(0);
+  await picker.getByRole("radio", { name: "9:16", exact: true }).click();
   await expect(picker).not.toBeVisible();
   await expect(page.getByRole("button", { name: "展开全部图片比例", exact: true })).toHaveAttribute(
     "aria-expanded",

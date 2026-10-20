@@ -1,4 +1,4 @@
-import { Button, Modal, Tooltip } from "@heroui/react";
+import { Alert, Button, Modal, Tooltip } from "@heroui/react";
 import { type ImageJob, imageJobSchema } from "@lycoboai/contracts";
 import { IconCheck, IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
@@ -76,7 +76,13 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
         <UiIcon icon={copied ? IconCheck : IconCopy} size="small" />
         {copied ? "已复制" : "复制提示词"}
       </Button>
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <Alert className="field-error" role="alert" status="danger">
+          <Alert.Content>
+            <Alert.Description>{error}</Alert.Description>
+          </Alert.Content>
+        </Alert>
+      )}
       <div className="generation-output-thumbnails">
         {job.items.map((item) =>
           item.output_asset_id ? (
@@ -231,12 +237,16 @@ export function HistoryTaskActions({
         </Tooltip.Content>
       </Tooltip>
       {(error || generation.isError) && (
-        <p className="history-action-error" role="alert">
-          {error ||
-            (hasPendingSubmission(session.data)
-              ? "提交结果待确认，请在左侧确认上次提交。"
-              : generation.error?.message)}
-        </p>
+        <Alert className="history-action-error" role="alert" status="danger">
+          <Alert.Content>
+            <Alert.Description>
+              {error ||
+                (hasPendingSubmission(session.data)
+                  ? "提交结果待确认，请在左侧确认上次提交。"
+                  : generation.error?.message)}
+            </Alert.Description>
+          </Alert.Content>
+        </Alert>
       )}
       <Modal
         isOpen={regenerateOpen}
