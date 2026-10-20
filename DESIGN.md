@@ -53,7 +53,7 @@
 
 | Token／角色 | 值 | 用途 |
 | --- | --- | --- |
-| --background | #0F0F12 | 页面和侧栏 |
+| --background | #0F0F12 | 页面；侧栏与 Header 使用下述专用中性 token |
 | --app-canvas | #0B0B0E | 图片查看区 |
 | --surface | #17171B | 创作表单、普通卡片 |
 | --surface-secondary | #202026 | 内层控件、分组底轨 |
@@ -62,7 +62,7 @@
 | --default | #2A2A32 | HeroUI 次级按钮 |
 | --field-background | #121216 | 输入区 |
 | --foreground | #F3F1F7 | 正文、标题、主要图标 |
-| --muted | #AAA7B2 | 辅助说明、未选中导航 |
+| --muted | #AAA7B2 | 辅助说明；导航使用 #FFFFFFB3 |
 | --field-placeholder | #8B8794 | 输入提示，限用在足够深的输入底上 |
 | --app-disabled-foreground | #66636F | 不可用内容，不承担可操作说明 |
 | --link | #C4B5FD | 可点击品牌文字 |
@@ -131,7 +131,8 @@ HeroUI 基础变量固定为 `--radius: 8px`、`--field-radius: 10px`。以安�
 | 小角标、小图块 | 4px |
 | 图片、普通按钮、分段选项 | 8px |
 | 二级工具选择层的模型卡片、案例卡片 | 8px |
-| Input、TextArea、导航条目 | 10px |
+| Input、TextArea | 10px |
+| 侧栏导航条目 | 16px |
 | 卡片、创作面板、Popover、Menu | 12px |
 | Dialog、工具选择层、Drawer 外边缘 | 16px |
 | 头像、圆形图标按钮、编号 | 50% |
@@ -153,7 +154,7 @@ HeroUI 基础变量固定为 `--radius: 8px`、`--field-radius: 10px`。以安�
 
 统一垂直 padding 为 0，以固定高度与 flex 居中排版；图文间距 `--control-gap: 6px`，普通圆角 `--control-radius: 8px`。全局不再给所有按钮设置 40px min-height；否则 32px 控件会被撑大。主按钮仅定义颜色和字重，不额外叠加 24px 横向 padding。Hover／Pressed 不改变 padding、边框宽度、缩放或位置，Focus-visible 保持清楚反馈。
 
-已有业务尺寸是具名例外：导航 40px／padding 10px；header 登录胶囊 32px／左右 12px；登录桌面提交 40px／触屏 44px，生成提交 44px；图片悬浮操作 32px；历史编辑图标 36px；比例图案选项 64px；卡片按封面和正文布局自适应；上传删除按钮保留 24px 可见圆形与透明 44px 触控区；回到顶部按既有 48px 规范。例外必须有对应的功能 class 和本文件记录，不能修改全局 size 含义。
+已有业务尺寸是具名例外：导航按侧栏规则采用 40–44px／左右 14–20px；header 胶囊桌面 38px／手机 44px；登录桌面提交 40px／触屏 44px，生成提交 44px；图片悬浮操作 32px；历史编辑图标 36px；比例图案选项 64px；卡片按封面和正文布局自适应；上传删除按钮保留 24px 可见圆形与透明 44px 触控区；回到顶部按既有 48px 规范。例外必须有对应的功能 class 和本文件记录，不能修改全局 size 含义。
 
 每次新增按钮先选 `size`、`variant`、`isIconOnly`，只有具名业务例外才添加几何 class。不要创建另一层 AppButton／自制基础按钮，不在 TSX 内联写 padding、height、borderRadius。样式只在共享 CSS 中定义，组件交互由 HeroUI 承担。
 
@@ -161,9 +162,29 @@ HeroUI 基础变量固定为 `--radius: 8px`、`--field-radius: 10px`。以安�
 
 间距以 4px 为基准，使用 4 / 8 / 12 / 16 / 24 / 32px。输入 label 与控件 8px；表单组间 16px；卡片间 12px；普通面板 padding 16px，弹窗 padding 24px。
 
-桌面侧栏宽 200px，中等屏幕可 180px。导航条目固定高 40px，padding 10px，图文 gap 12px，条目间距 12px，radius 10px；hover、active、focus 不改变尺寸或位置。
+### 侧栏与 Header：小云雀实测规则（2026-10-20）
 
-导航默认 #AAA7B2，hover 中性 #2A2A32／正文色，选中采用中性灰 #2A2A32 背景，只有业务图标和文字使用品牌文字色 #C4B5FD；箭头始终使用 #AAA7B2，不随选中变色。展开时同一个右箭头在 160ms 内旋转 180° 指向左侧，收起反向恢复；不更换图标，不改变布局，减少动态效果时立即切换。导航顶部留白 16px，不使用实心渐变侧栏。顶部工具条高 64px；主内容 padding 24px，窄屏 16px。工作区默认静态纯色底，点阵不作为全局默认装饰。
+参考页面：<https://www.xiaoyunque.com/home?tab_name=home>。通过 Chrome 实际 DOM、computed style 及公开样式文件测量；营销横幅高度不计入产品 Header。保留本站菜单、登录及账户能力，不增加参考站的邀请、CLI、会员或消息功能。
+
+| 项目 | 实测及本站采用值 |
+| --- | --- |
+| 侧栏展开宽度 | 小于 1800px：274px；1800px 起：288px；2560px 起：320px |
+| 桌面收起宽度 | 72px；仅保留图标与官方 Tooltip，隐藏的子菜单不进入焦点顺序 |
+| 侧栏 / Header 底色 | #161616 / #111111；无侧栏右边框、无 Header 下边框 |
+| 导航高度 | 桌面 40px / 42px / 44px，对应上述三个档位；手机至少 44px |
+| 导航留白 | 左右各 12px；行间距 6px；导航顶部 16px |
+| 导航行内 | 左 padding 14px，右 16px / 18px / 20px；图标 18px，图文 gap 8px，圆角 16px |
+| 文字 | 14px / 19.6px、500；system-ui、系统中文字体；参考站的 Pippit Numeric 不作为可分发字体引入 |
+| 默认 / hover / active | 文字 #FFFFFFB3；hover 底 #FFFFFF0A；active 底 #FFFFFF14、文字与图标 #FFFFFF，取消紫色导航文字 |
+| 焦点 | 键盘聚焦有 1px 中性白描边；hover、选中、按压不改变几何尺寸 |
+| Header | 桌面 68px，手机 60px；桌面右侧留白 40px，手机 12px，按钮间距 8px |
+| Header 按钮 | 桌面 38px 高、20px 圆角、12px / 18px、500；登录保持已确认的白底黑字，账户胶囊为中性灰；手机 44px |
+| 收起按钮 | HeroUI Button，桌面 28px 命中区、8px 圆角、18px 图标；收起后默认显示品牌图形，hover 或键盘焦点显示展开图标 |
+
+侧栏收起只改变布局，保留当前页面、草稿、滚动和登录状态。模型选择层仍锚定实际侧栏右侧 + 内容留白；不能因门户弹层丢失收起状态而覆盖导航。手机沿用 HeroUI Drawer，不把桌面收起状态带成零宽内容区。TK 分组在收起侧栏中打开时先展开侧栏。颜色变化使用 160ms，减少动态效果时关闭过渡。
+
+
+主内容 padding 保持 24px，窄屏 16px。工作区保持纯色底，点阵不作为默认装饰。
 
 ## 8. 组件系统：HeroUI v3
 

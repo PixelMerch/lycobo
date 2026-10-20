@@ -56,9 +56,18 @@
   --weight-medium: 500;
   --weight-semibold: 600;
   --app-primary-gradient: linear-gradient(180deg, #baa4ff 0, var(--accent) 100%);
-  --sidebar-width: 200px;
-  --header-height: 64px;
+  --sidebar-width: 274px;
+  --header-height: 68px;
   --content-padding: 24px;
+  --shell-font-family:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "PingFang SC", sans-serif;
+  --shell-sidebar-background: #161616;
+  --shell-header-background: #111;
+  --shell-nav-foreground: #ffffffb3;
+  --shell-nav-hover: #ffffff0a;
+  --shell-nav-active: #ffffff14;
+  --shell-nav-height: 40px;
   --control-height-sm: 32px;
   --control-height-md: 36px;
   --control-height-lg: 40px;
@@ -222,56 +231,91 @@ small {
 .page-heading p {
   color: var(--muted);
 }
+/* App chrome is measured against the approved reference; business controls keep their theme. */
 .sidebar {
   width: var(--sidebar-width);
   position: fixed;
   inset: 0 auto 0 0;
-  border-right: 1px solid var(--separator);
+  border: 0;
   display: flex;
   flex-direction: column;
-  padding: 0 8px 12px;
-  background: var(--background);
+  padding: 0;
+  background: var(--shell-sidebar-background);
+  font-family: var(--shell-font-family);
   z-index: 20;
 }
-.brand {
+.sidebar-header {
   height: var(--header-height);
+  min-height: var(--header-height);
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-left: 12px;
-  font-weight: var(--weight-semibold);
-  font-size: var(--text-2xl);
-  line-height: var(--leading-2xl);
-  letter-spacing: -0.6px;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 20px;
 }
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 5px;
-  background: var(--app-primary-gradient);
+.brand {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.sidebar .sidebar-toggle {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--shell-nav-foreground);
+  box-shadow: none;
+}
+.sidebar .sidebar-toggle:is(:hover, [data-hovered="true"]) {
+  background: var(--shell-nav-active);
   color: #fff;
 }
+.sidebar-compact-mark {
+  display: none;
+  object-fit: contain;
+}
 .sidebar nav {
-  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 12px 0;
   overflow-y: auto;
+  min-height: 0;
 }
 .nav-row {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px;
+  gap: 8px;
+  flex: none;
   width: 100%;
-  height: 40px;
-  padding: 10px;
-  border-radius: 10px;
-  color: var(--muted);
+  height: var(--shell-nav-height);
+  min-height: var(--shell-nav-height);
+  padding: 0 16px 0 14px;
+  margin: 0;
+  border: 0;
+  border-radius: 16px;
+  box-shadow: none;
+  color: var(--shell-nav-foreground);
   background: transparent;
-  font-size: var(--text-base);
-  line-height: var(--leading-base);
-  margin-bottom: 12px;
+  font-family: var(--shell-font-family);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 19.6px;
+  letter-spacing: normal;
   white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+.nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .nav-chevron {
   display: inline-flex;
@@ -280,7 +324,7 @@ small {
   width: 14px;
   height: 14px;
   margin-left: auto;
-  color: var(--muted);
+  color: inherit;
   flex: none;
   transform: rotate(0deg);
   transition: transform 160ms ease;
@@ -288,52 +332,157 @@ small {
 .nav-row[aria-expanded="true"] .nav-chevron {
   transform: rotate(180deg);
 }
-.nav-row:hover {
-  background: var(--surface-tertiary);
-  color: var(--foreground);
+.nav-row:is(:hover, [data-hovered="true"]) {
+  background: var(--shell-nav-hover);
+  color: var(--shell-nav-foreground);
+  transform: none;
+  text-decoration: none;
 }
 .nav-row.active,
-.nav-row[aria-current="page"] {
-  background: var(--surface-tertiary);
-  color: var(--link);
+.nav-row[aria-current="page"],
+.nav-row:focus-visible,
+.nav-row[data-focus-visible="true"] {
+  background: var(--shell-nav-active);
+  color: #fff;
+}
+.nav-row:is(:focus-visible, [data-focus-visible="true"]) {
+  outline: 1px solid #ffffff66;
+  outline-offset: -1px;
 }
 .sidebar-bottom {
-  margin-top: auto;
-  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: auto 12px 16px;
+  padding-top: 8px;
+  border-top: 1px solid #ffffff0a;
 }
 .tk-submenu {
   padding-left: 28px;
 }
 .tk-submenu small {
-  color: var(--muted);
+  color: var(--shell-nav-foreground);
   display: block;
   padding-block: 8px 4px;
 }
 .tk-submenu .button {
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
+  font-size: 12px;
+  line-height: 18px;
   display: flex;
   justify-content: flex-start;
   min-height: 32px;
   width: 100%;
   background: transparent;
-  color: var(--muted);
+  color: var(--shell-nav-foreground);
 }
 .topbar {
   position: sticky;
   top: 0;
   height: var(--header-height);
   margin-left: var(--sidebar-width);
-  background: var(--background);
-  border-bottom: 1px solid var(--separator);
+  background: var(--shell-header-background);
+  border: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 var(--content-padding);
+  padding: 0 40px;
+  font-family: var(--shell-font-family);
   z-index: 15;
 }
+@media (min-width: 1800px) {
+  :root {
+    --sidebar-width: 288px;
+    --shell-nav-height: 42px;
+  }
+  .sidebar-header {
+    padding-top: 22px;
+  }
+  .nav-row {
+    padding-right: 18px;
+  }
+}
+@media (min-width: 2560px) {
+  :root {
+    --sidebar-width: 320px;
+    --shell-nav-height: 44px;
+  }
+  .sidebar-header {
+    padding-top: 24px;
+  }
+  .nav-row {
+    padding-right: 20px;
+  }
+}
+@media (min-width: 768px) {
+  .studio-app[data-sidebar-collapsed="true"],
+  .chooser-backdrop[data-sidebar-collapsed="true"] {
+    --sidebar-width: 72px;
+  }
+  .studio-app[data-sidebar-collapsed="true"] .sidebar {
+    background: var(--shell-header-background);
+  }
+  .studio-app[data-sidebar-collapsed="true"] .sidebar-header {
+    justify-content: center;
+    padding: 0;
+  }
+  .studio-app[data-sidebar-collapsed="true"] .sidebar .brand,
+  .studio-app[data-sidebar-collapsed="true"] .sidebar .nav-label,
+  .studio-app[data-sidebar-collapsed="true"] .sidebar .nav-chevron,
+  .studio-app[data-sidebar-collapsed="true"] .sidebar .tk-submenu {
+    display: none;
+  }
+  .studio-app[data-sidebar-collapsed="true"] .sidebar .nav-row {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+    margin: 4px auto;
+    padding: 0;
+    justify-content: center;
+    border-radius: 32px;
+  }
+  .studio-app[data-sidebar-collapsed="true"] .sidebar-toggle .ui-icon {
+    display: none;
+  }
+  .studio-app[data-sidebar-collapsed="true"] .sidebar-toggle .sidebar-compact-mark {
+    display: block;
+  }
+  .studio-app[data-sidebar-collapsed="true"]
+    .sidebar-toggle:is(:hover, [data-hovered="true"], :focus-visible, [data-focus-visible="true"])
+    .sidebar-compact-mark {
+    display: none;
+  }
+  .studio-app[data-sidebar-collapsed="true"]
+    .sidebar-toggle:is(:hover, [data-hovered="true"], :focus-visible, [data-focus-visible="true"])
+    .ui-icon {
+    display: block;
+  }
+}
 /* Header keeps only the mobile menu and the account/login actions. */
+.topbar :is(.credit-pill, .account-trigger, .header-login) {
+  height: 38px;
+  min-height: 38px;
+  border-radius: 20px;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+  font-family: var(--shell-font-family);
+}
+.topbar :is(.credit-pill, .account-trigger) {
+  background: #ffffff14;
+  border: 1px solid #ffffff0a;
+  color: #f4f4f5;
+}
+.topbar :is(.credit-pill, .account-trigger):is(:hover, [data-hovered="true"]) {
+  background: #ffffff1f;
+  border-color: #ffffff0a;
+}
+.topbar .account-initial {
+  background: #ffffff14;
+  color: #fff;
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -1088,7 +1237,6 @@ small {
 }
 @media (max-width: 1023px) {
   :root {
-    --sidebar-width: 180px;
     --content-padding: 16px;
   }
   .brand {
@@ -1127,7 +1275,17 @@ small {
     display: inline-flex;
   }
   .mobile-nav {
-    width: min(280px, 90vw);
+    width: min(274px, 90vw);
+    background: var(--shell-sidebar-background);
+    font-family: var(--shell-font-family);
+  }
+  .mobile-nav .nav-row {
+    min-height: 44px;
+    height: 44px;
+  }
+  .topbar :is(.credit-pill, .account-trigger, .header-login) {
+    min-height: 44px;
+    height: 44px;
   }
   .topbar {
     gap: 6px;
@@ -1305,7 +1463,7 @@ small {
 
 :is(.sidebar, .mobile-nav):has(.nav-row[aria-expanded="true"]) .nav-row[aria-current="page"] {
   background: transparent;
-  color: var(--muted);
+  color: var(--shell-nav-foreground);
 }
 
 @media (max-width: 767px) {
@@ -2350,7 +2508,6 @@ html:has(.workspace)::-webkit-scrollbar,
    are adjusted here. Do not reintroduce hand-built buttons, alerts or cards.
    --------------------------------------------------------------------------- */
 .brand,
-.nav-row,
 .quick-card,
 .recent-row,
 .asset-preview {

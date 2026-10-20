@@ -1,10 +1,12 @@
-import { Button, Drawer, Modal } from "@heroui/react";
+import { Button, Drawer, Modal, Tooltip } from "@heroui/react";
 import "../../styles/brand.css";
 import {
   IconChevronRight,
   IconFolder,
   IconHelpCircle,
   IconHome,
+  IconLayoutSidebarLeftCollapse,
+  IconLayoutSidebarLeftExpand,
   IconMenu2,
   IconPhoto,
   IconPlayerPlay,
@@ -28,6 +30,7 @@ export function StudioShell() {
   const accountSession = useEnterpriseSession();
   const logout = useEnterpriseLogout();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [tkOpen, setTkOpen] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -41,54 +44,79 @@ export function StudioShell() {
   const navigate = useNavigate();
   const nav = (
     <>
-      <RouteLink nav to="/" end className="nav-row" onClick={() => setMenuOpen(false)}>
-        <UiIcon icon={IconHome} size="navigation" />
-        首页
-      </RouteLink>
-      <Button
-        variant="tertiary"
-        className={`nav-row ${chooserOpen || (currentModel && !tkOpen && info !== "AI 电商") ? "active" : ""}`}
-        onPress={() => {
-          setMenuOpen(false);
-          setChooserOpen(true);
-        }}
-        aria-haspopup="dialog"
-        aria-expanded={chooserOpen}
-      >
-        <UiIcon icon={IconPhoto} size="navigation" />
-        图片创作
-        <span className="nav-chevron">
-          <UiIcon icon={IconChevronRight} size="small" />
-        </span>
-      </Button>
-      <Button
-        variant="tertiary"
-        className={`nav-row ${info === "AI 电商" ? "active" : ""}`}
-        aria-haspopup="dialog"
-        aria-expanded={info === "AI 电商"}
-        onPress={() => {
-          setMenuOpen(false);
-          setInfo("AI 电商");
-        }}
-      >
-        <UiIcon icon={IconShoppingBag} size="navigation" />
-        AI 电商
-        <span className="nav-chevron">
-          <UiIcon icon={IconChevronRight} size="small" />
-        </span>
-      </Button>
-      <Button
-        variant="tertiary"
-        className={`nav-row ${tkOpen ? "active" : ""}`}
-        aria-expanded={tkOpen}
-        onPress={() => setTkOpen(!tkOpen)}
-      >
-        <UiIcon icon={IconPlayerPlay} size="navigation" />
-        TK 专区
-        <span className="nav-chevron">
-          <UiIcon icon={IconChevronRight} size="small" />
-        </span>
-      </Button>
+      <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
+        <RouteLink
+          nav
+          to="/"
+          end
+          aria-label="首页"
+          className="nav-row"
+          onClick={() => setMenuOpen(false)}
+        >
+          <UiIcon icon={IconHome} size="default" />
+          <span className="nav-label">首页</span>
+        </RouteLink>
+        <Tooltip.Content placement="right">首页</Tooltip.Content>
+      </Tooltip>
+      <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
+        <Button
+          variant="tertiary"
+          aria-label="图片创作"
+          className={`nav-row ${chooserOpen || (currentModel && !tkOpen && info !== "AI 电商") ? "active" : ""}`}
+          onPress={() => {
+            setMenuOpen(false);
+            setChooserOpen(true);
+          }}
+          aria-haspopup="dialog"
+          aria-expanded={chooserOpen}
+        >
+          <UiIcon icon={IconPhoto} size="default" />
+          <span className="nav-label">图片创作</span>
+          <span className="nav-chevron">
+            <UiIcon icon={IconChevronRight} size="small" />
+          </span>
+        </Button>
+        <Tooltip.Content placement="right">图片创作</Tooltip.Content>
+      </Tooltip>
+      <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
+        <Button
+          variant="tertiary"
+          aria-label="AI 电商"
+          className={`nav-row ${info === "AI 电商" ? "active" : ""}`}
+          aria-haspopup="dialog"
+          aria-expanded={info === "AI 电商"}
+          onPress={() => {
+            setMenuOpen(false);
+            setInfo("AI 电商");
+          }}
+        >
+          <UiIcon icon={IconShoppingBag} size="default" />
+          <span className="nav-label">AI 电商</span>
+          <span className="nav-chevron">
+            <UiIcon icon={IconChevronRight} size="small" />
+          </span>
+        </Button>
+        <Tooltip.Content placement="right">AI 电商</Tooltip.Content>
+      </Tooltip>
+      <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
+        <Button
+          variant="tertiary"
+          aria-label="TK 专区"
+          className={`nav-row ${tkOpen ? "active" : ""}`}
+          aria-expanded={tkOpen}
+          onPress={() => {
+            setSidebarCollapsed(false);
+            setTkOpen(!tkOpen);
+          }}
+        >
+          <UiIcon icon={IconPlayerPlay} size="default" />
+          <span className="nav-label">TK 专区</span>
+          <span className="nav-chevron">
+            <UiIcon icon={IconChevronRight} size="small" />
+          </span>
+        </Button>
+        <Tooltip.Content placement="right">TK 专区</Tooltip.Content>
+      </Tooltip>
       {tkOpen ? (
         <div className="tk-submenu">
           {[
@@ -114,34 +142,83 @@ export function StudioShell() {
           ))}
         </div>
       ) : null}
-      <RouteLink nav to="/assets" className="nav-row" onClick={() => setMenuOpen(false)}>
-        <UiIcon icon={IconFolder} size="navigation" />
-        素材库
-      </RouteLink>
+      <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
+        <RouteLink
+          nav
+          to="/assets"
+          aria-label="素材库"
+          className="nav-row"
+          onClick={() => setMenuOpen(false)}
+        >
+          <UiIcon icon={IconFolder} size="default" />
+          <span className="nav-label">素材库</span>
+        </RouteLink>
+        <Tooltip.Content placement="right">素材库</Tooltip.Content>
+      </Tooltip>
     </>
   );
   return (
-    <div className="studio-app">
+    <div className="studio-app" data-sidebar-collapsed={sidebarCollapsed}>
       <aside className="sidebar" aria-label="主导航">
-        <RouteLink to="/" className="brand">
-          <img
-            className="lycobo-logo"
-            src="/brand/lycobo-logo-white.svg"
-            alt="Lycobo"
-            width="148"
-            height="46"
-          />
-        </RouteLink>
-        <nav>{nav}</nav>
+        <div className="sidebar-header">
+          <RouteLink to="/" className="brand">
+            <img
+              className="lycobo-logo"
+              src="/brand/lycobo-logo-white.svg"
+              alt="Lycobo"
+              width="88"
+              height="24"
+            />
+          </RouteLink>
+          <Button
+            isIconOnly
+            size="sm"
+            variant="ghost"
+            className="sidebar-toggle"
+            aria-label={sidebarCollapsed ? "展开导航栏" : "收起导航栏"}
+            aria-expanded={!sidebarCollapsed}
+            aria-controls="studio-sidebar-navigation"
+            onPress={() => setSidebarCollapsed((collapsed) => !collapsed)}
+          >
+            <img
+              className="sidebar-compact-mark"
+              src="/brand/lycobo-mark-white.svg"
+              alt=""
+              width="24"
+              height="24"
+            />
+            <UiIcon
+              icon={sidebarCollapsed ? IconLayoutSidebarLeftExpand : IconLayoutSidebarLeftCollapse}
+              size="default"
+            />
+          </Button>
+        </div>
+        <nav id="studio-sidebar-navigation">{nav}</nav>
         <div className="sidebar-bottom">
-          <Button variant="tertiary" className="nav-row" onPress={() => setInfo("帮助中心")}>
-            <UiIcon icon={IconHelpCircle} size="navigation" />
-            帮助中心
-          </Button>
-          <Button variant="tertiary" className="nav-row" onPress={() => setInfo("账户设置")}>
-            <UiIcon icon={IconSettings} size="navigation" />
-            账户设置
-          </Button>
+          <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
+            <Button
+              variant="tertiary"
+              className="nav-row"
+              aria-label="帮助中心"
+              onPress={() => setInfo("帮助中心")}
+            >
+              <UiIcon icon={IconHelpCircle} size="default" />
+              <span className="nav-label">帮助中心</span>
+            </Button>
+            <Tooltip.Content placement="right">帮助中心</Tooltip.Content>
+          </Tooltip>
+          <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
+            <Button
+              variant="tertiary"
+              className="nav-row"
+              aria-label="账户设置"
+              onPress={() => setInfo("账户设置")}
+            >
+              <UiIcon icon={IconSettings} size="default" />
+              <span className="nav-label">账户设置</span>
+            </Button>
+            <Tooltip.Content placement="right">账户设置</Tooltip.Content>
+          </Tooltip>
         </div>
       </aside>
       <header className="topbar">
@@ -202,7 +279,12 @@ export function StudioShell() {
         <Outlet />
       </main>
       <Modal isOpen={chooserOpen} onOpenChange={setChooserOpen}>
-        <Modal.Backdrop className="chooser-backdrop" variant="transparent" style={chooserLayout}>
+        <Modal.Backdrop
+          className="chooser-backdrop"
+          data-sidebar-collapsed={sidebarCollapsed}
+          variant="transparent"
+          style={chooserLayout}
+        >
           <Modal.Container className="chooser-container" scroll="inside">
             <Modal.Dialog className="model-chooser">
               <Modal.Header>
