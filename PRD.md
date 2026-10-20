@@ -26,7 +26,7 @@
 
 图片创作按通用能力组织，工具规划包括通用图生图、文生图、图片编辑、高清放大；模型入口和选项以实际接入能力为准。不能将尚未接入的模型显示为可用。
 
-本轮图片创作 UI 提供 **gpt-image-2.5、gpt-image-2.5-flare、gpt-image-2.5-sunburst、gpt-image-2、gpt-image-2-4K** 五个模型入口。流程为完整首页 → 点击图片创作展开模型选择层 → 点击模型进入工作台。模型的接口能力、参数与计费以服务端接入验证为准，UI 图不证明代码已接通。其他通用工具保留为规划，不在本轮模型选择层加入。连续页面见 [三步 UI 图](docs/design/image-creation-flow.md)。
+本轮图片创作 UI 提供 **gpt-image-2.5、gpt-image-2.5-flare、gpt-image-2.5-sunburst、gpt-image-2、gpt-image-2-4K** 五个模型入口。流程为完整首页 → 点击图片创作展开模型选择层 → 点击模型进入工作台。模型的接口能力、参数与计费以服务端接入验证为准，UI 图不证明代码已接通。其他通用工具保留为规划，不在本轮模型选择层加入。当前页面行为见 [工作台实现](docs/image-studio-implementation.md)。
 
 AI 电商按业务目标组织。即使底层共用图生图能力，家纺业务入口仍归 AI 电商，不能放回图片创作分类。
 
@@ -98,7 +98,7 @@ TK 专区采用展开的分组子菜单，不再弹出图片工具选择层。�
 
 ## 8. 视觉与实现边界
 
-视觉唯一规范为 [DESIGN.md](DESIGN.md)：HeroUI v3、深色中性表面、紫色渐变、紧凑导航、统一字体与圆角。交互证据见 [艺栢研究](docs/design/yibai-page-logic.md)，UI 图见 [导航与 TK 设计](docs/design/navigation-and-tk.md)。
+视觉唯一规范为 [DESIGN.md](DESIGN.md)：HeroUI v3、深色中性表面、紫色渐变、紧凑导航、统一字体与圆角。交互证据见 [艺栢研究](docs/design/yibai-page-logic.md)；导航与 TK 的目标范围以本文为准。
 
 当前默认工作台仍包含临时样例和会话内状态。真实生成、服务器上传、鉴权、持久化任务、计费与发布尚未完成；UI 图仅用于设计评审。
 

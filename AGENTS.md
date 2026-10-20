@@ -107,7 +107,9 @@ Read relevant project skills before work:
   Never use production or bonko services, and never delete shared volumes.
 - Check git diff --check. Report actual executed checks, skipped external integrations and limitations.
 - Keep relevant documents synchronized. Initialization is not production readiness.
-- Preserve design/ local archive. Only approved docs/design references are versioned.
+- Keep only current, referenced design evidence in docs/design; update its index when adding or
+  removing material. Retired mockups and exports must not become a second specification.
+  Do not recreate the removed design/ archive without an explicit request.
 
 - Product screens use end-user language. Keep preview/debug/reset notes in developer documentation, not headers, cards or dialogs. Never infer production readiness from clean UI copy.
 

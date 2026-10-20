@@ -167,6 +167,8 @@ docs(repo): refresh project readme
 
 ## 文档
 
+完整分类见 [文档索引](docs/README.md)。
+
 - [产品范围](PRD.md)：目标用户、导航与首版范围。
 - [设计规范](DESIGN.md)：深色紫色工作台、组件状态与响应式。
 - [生图接入](docs/image-generation-api.md)：模型能力、鉴权、任务、存储与本地身份。

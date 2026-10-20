@@ -11,7 +11,7 @@ coverage/
 playwright-report/
 test-results/
 *.log
-# Generated design binaries remain local; approved references are copied to docs/design.
+# Legacy design exports stay excluded; current reference evidence belongs in docs/design.
 /design/
 
 # Local design iteration memory
