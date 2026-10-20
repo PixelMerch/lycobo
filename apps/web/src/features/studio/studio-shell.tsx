@@ -1,4 +1,5 @@
 import { Button, Drawer, Modal } from "@heroui/react";
+import "../../styles/brand.css";
 import {
   IconChevronRight,
   IconFolder,
@@ -9,7 +10,6 @@ import {
   IconPlayerPlay,
   IconSettings,
   IconShoppingBag,
-  IconSparkles,
 } from "@tabler/icons-react";
 import { type CSSProperties, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
@@ -124,10 +124,13 @@ export function StudioShell() {
     <div className="studio-app">
       <aside className="sidebar" aria-label="主导航">
         <RouteLink to="/" className="brand">
-          <span className="brand-mark">
-            <UiIcon icon={IconSparkles} size="small" />
-          </span>
-          lycoboai
+          <img
+            className="lycobo-logo"
+            src="/brand/lycobo-logo-white.svg"
+            alt="Lycobo"
+            width="148"
+            height="46"
+          />
         </RouteLink>
         <nav>{nav}</nav>
         <div className="sidebar-bottom">
@@ -150,7 +153,15 @@ export function StudioShell() {
             <Drawer.Content placement="left">
               <Drawer.Dialog className="mobile-nav">
                 <Drawer.Header>
-                  <Drawer.Heading>lycoboai</Drawer.Heading>
+                  <Drawer.Heading>
+                    <img
+                      className="lycobo-logo"
+                      src="/brand/lycobo-logo-white.svg"
+                      alt="Lycobo"
+                      width="130"
+                      height="40"
+                    />
+                  </Drawer.Heading>
                   <Drawer.CloseTrigger aria-label="关闭导航" />
                 </Drawer.Header>
                 <Drawer.Body>

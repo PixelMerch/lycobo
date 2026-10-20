@@ -106,7 +106,7 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                 <section className="login-visual" aria-label="创作案例预览">
                   <img src={photo("bedroom")} alt="" width="880" height="1200" loading="eager" />
                   <div className="login-visual-copy">
-                    <span className="login-kicker">LYCOBOAI · 创作工作台</span>
+                    <span className="login-kicker">LYCOBO · 创作工作台</span>
                     <h2>
                       让家纺商品，
                       <br />
@@ -118,9 +118,9 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                 <div className="login-content">
                   <Modal.Header className="login-header">
                     <span className="login-brand-mark" aria-hidden="true">
-                      <UiIcon icon={IconSparkles} size="action" />
+                      <img src="/brand/lycobo-mark-white.svg" alt="" width="25" height="28" />
                     </span>
-                    <Modal.Heading>欢迎使用 lycoboai</Modal.Heading>
+                    <Modal.Heading>欢迎使用 Lycobo</Modal.Heading>
                     <p>{hint}</p>
                   </Modal.Header>
                   <Modal.Body className="login-body">

@@ -12,7 +12,7 @@ test("header login opens account/password dialog and validates without faking au
   await page.goto("/");
   const entry = page.getByRole("button", { name: "登录领积分", exact: true });
   await entry.click();
-  const dialog = page.getByRole("dialog", { name: "欢迎使用 lycoboai" });
+  const dialog = page.getByRole("dialog", { name: "欢迎使用 Lycobo" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("status", { name: "扫码登录暂未开放" })).toBeVisible();
   await expect(dialog.locator(".login-content")).toHaveCSS(
@@ -72,7 +72,7 @@ test("switching login methods keeps the dialog height and uses borderless fields
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
   await page.getByRole("button", { name: "登录领积分", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "欢迎使用 lycoboai" });
+  const dialog = page.getByRole("dialog", { name: "欢迎使用 Lycobo" });
   await expect(dialog).toBeVisible();
   const heights: number[] = [];
   for (const label of ["手机号登录", "企业账号登录", "通过微信扫码登录"]) {
@@ -137,7 +137,7 @@ test("mobile login closes without losing the current creation draft", async ({ p
   const prompt = page.getByLabel("提示词", { exact: true });
   await prompt.fill("保留当前创作草稿");
   await page.getByRole("button", { name: "登录领积分", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "欢迎使用 lycoboai" });
+  const dialog = page.getByRole("dialog", { name: "欢迎使用 Lycobo" });
   await expect(dialog).toBeVisible();
   await expect
     .poll(async () => (await dialog.boundingBox())?.width ?? Infinity)

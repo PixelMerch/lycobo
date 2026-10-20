@@ -334,3 +334,10 @@ Header 保留白底黑字、无边框的“登录领积分”胶囊按钮，桌�
 先读本文件和 `docs/heroui-components.md`，再按已安装版本查 `.agents/skills/heroui-react/SKILL.md` 与官方组件文档。设计参考用于解释行为，不能覆盖本站 token；React 技能用于实现质量，不能引入第二套视觉规范。整站审查结果和执行清单见 `docs/ui-consistency.md`。
 
 `pnpm lint` 已包含 `scripts/check-ui-conventions.mjs` 的 AST 检查：拒绝原生交互控件、原生元素伪造交互 role、第二套组件库、Button 手写 aria-pressed、Button onClick 及内联几何。允许唯一的隐藏文件 input（HeroUI 无文件选择器）；可见入口仍用 HeroUI Button。当前导航用 aria-current，收藏等切换用 ToggleButton；不得用更换属性名或禁用检查绕过约束。自动检查负责组件边界，实际密度、内容长度、无障碍与移动端仍需浏览器验收。
+
+## 品牌标识
+
+- 对外英文品牌名为 **Lycobo**，域名为 `lycobo.com`，面向全品类电商商品创作；中文名尚未确定，不自行加入。
+- 使用用户确认的第二版折面图形与横向字标，图形和文字统一纯白，透明背景。正式资源为 `apps/web/public/brand/lycobo-logo-white.svg`；独立图形为同目录 `lycobo-mark-white.svg`。均为矢量路径，不嵌入位图，不依赖系统字体。
+- 深色侧栏横版标识宽 148px，移动导航宽 130px，保持原始比例；登录页浅色区域使用深色底承载白色独立图形。浏览器使用独立 favicon。
+- 不再使用通用星光图标作为品牌标志，不给标识增加渐变、描边、阴影或非等比拉伸。品牌资源保持白色，不改变工作台紫色交互主题。
