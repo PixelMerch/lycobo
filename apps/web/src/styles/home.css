@@ -73,22 +73,22 @@
   margin-bottom: 12px;
 }
 .home-upload .reference-tile {
-  width: 54.4px;
-  height: 54.4px;
+  width: 57.12px;
+  height: 57.12px;
   aspect-ratio: 1;
   border-radius: 8px;
 }
 .home-upload .reference-number {
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
+  font-size: 10px;
+  line-height: 14px;
 }
 .home-upload .add-reference {
   order: -1;
   flex-shrink: 0;
-  width: 54.4px;
-  min-width: 54.4px;
-  height: 54.4px;
-  min-height: 54.4px;
+  width: 57.12px;
+  min-width: 57.12px;
+  height: 57.12px;
+  min-height: 57.12px;
   padding: 0;
   border: 1px dashed #ffffff29;
   border-radius: 12px;
