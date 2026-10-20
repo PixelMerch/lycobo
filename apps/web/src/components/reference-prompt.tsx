@@ -87,7 +87,17 @@ export function ReferencePrompt({
         <div className="reference-prompt-editor" data-has-references={hasReferences || undefined}>
           <div ref={mirrorRef} className="reference-prompt-mirror" aria-hidden="true">
             {parts.map((part) =>
-              isReference(part.text) ? <mark key={part.offset}>{part.text}</mark> : part.text,
+              isReference(part.text) ? (
+                <mark key={part.offset}>
+                  <span className="reference-prompt-token-space">{part.text}</span>
+                  <span className="reference-prompt-chip">
+                    <img src={references[Number(part.text.slice(3)) - 1]?.src} alt="" />
+                    <span>{part.text.slice(1)}</span>
+                  </span>
+                </mark>
+              ) : (
+                part.text
+              ),
             )}
             {"\n"}
           </div>

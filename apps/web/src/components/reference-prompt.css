@@ -88,11 +88,36 @@
 .reference-prompt-editor[data-has-references] .textarea {
   background: transparent;
 }
+/* Keep the native token's text advance so selection and the caret stay aligned. */
 .reference-prompt-mirror mark {
-  color: #a8ff00;
-  background: #343434;
-  border-radius: 4px;
+  position: relative;
+  color: transparent;
+  background: transparent;
   font: inherit;
   padding: 0;
-  box-decoration-break: clone;
+}
+.reference-prompt-token-space {
+  color: transparent;
+}
+.reference-prompt-chip {
+  position: absolute;
+  inset: -3px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 6px;
+  color: #a8ff00;
+  background: #343434;
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.reference-prompt-chip img {
+  width: 16px;
+  min-width: 12px;
+  height: 18px;
+  flex-shrink: 1;
+  object-fit: contain;
+  border-radius: 3px;
 }
