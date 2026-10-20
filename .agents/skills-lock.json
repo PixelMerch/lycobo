@@ -13,5 +13,10 @@
     "repository": "supabase/agent-skills",
     "path": "skills/supabase-postgres-best-practices",
     "commit": "c9be0e931b7930f7d02126d04774d904c381e7d7"
+  },
+  {
+    "repository": "heroui-inc/heroui",
+    "path": "skills/heroui-react",
+    "commit": "2e65a8b5a9043d62a5eaf9e5425de0be53861f37"
   }
 ]
