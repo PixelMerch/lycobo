@@ -66,6 +66,9 @@ Read relevant project skills before work:
   submissions must be reconciled before resubmission. Duplicate callbacks cannot duplicate charges.
 - Never log prompts, uploaded content, cookies, provider responses, credentials or signed URLs.
   Use request/task IDs and sanitized error codes. Return structured errors.
+- All JSON APIs use the shared request_id/code/message/data/error envelope from
+  docs/api-response.md. createApp owns wrapping; routes must not wrap it a second time.
+  Register numeric business codes in contracts; preserve HTTP statuses and binary downloads.
 - No wildcard credentialed CORS. Cookie auth requires trusted-origin/CSRF protection.
   Validate uploads at the server; MIME and extension checks in the browser are convenience only.
 - Database pools are process-scoped and closed on shutdown. No network calls inside DB transactions.

@@ -77,7 +77,7 @@ export function authRoutes(auth?: EnterpriseAuth) {
       httpOnly: true,
     });
     deleteCookie(c, "lycobo_image_session", { path: "/api" });
-    return c.body(null, 204);
+    return c.json({});
   });
   return app;
 }

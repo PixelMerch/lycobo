@@ -1,4 +1,4 @@
-import { enterpriseLoginResponseSchema } from "@lycoboai/contracts";
+import { enterpriseLoginResponseSchema, unwrapApiData } from "@lycoboai/contracts";
 import type { AuthRepository } from "@lycoboai/db";
 import { sign } from "hono/jwt";
 import { describe, expect, it, vi } from "vitest";
@@ -73,9 +73,9 @@ describe("enterprise JWT login", () => {
     const wrong = await request(user.account, "bad");
     const missing = await request("does-not-exist", "bad");
     expect(wrong.status).toBe(401);
-    const errorSchema = z.object({ error: z.object({ message: z.string() }) });
-    expect(errorSchema.parse(await wrong.json()).error.message).toBe(
-      errorSchema.parse(await missing.json()).error.message,
+    const errorSchema = z.object({ message: z.string() });
+    expect(errorSchema.parse(await wrong.json()).message).toBe(
+      errorSchema.parse(await missing.json()).message,
     );
     vi.mocked(repository.allowLogin).mockResolvedValue(false);
     const limited = await request(user.account, "fixture-password-123");
@@ -94,7 +94,7 @@ describe("enterprise JWT login", () => {
     });
     expect(response.status).toBe(200);
     const capabilities = await app.request("/api/v1/system/capabilities");
-    expect(await capabilities.json()).toMatchObject({
+    expect(unwrapApiData(await capabilities.json())).toMatchObject({
       authenticationEnabled: false,
       enterprisePasswordLoginEnabled: true,
     });
@@ -102,7 +102,9 @@ describe("enterprise JWT login", () => {
     const cookie = response.headers.get("set-cookie") ?? "";
     expect(cookie).toContain("HttpOnly");
     expect(cookie).toContain("SameSite=Strict");
-    const { accessToken } = enterpriseLoginResponseSchema.parse(await response.json());
+    const { accessToken } = enterpriseLoginResponseSchema.parse(
+      unwrapApiData(await response.json()),
+    );
     expect(accessToken.split(".")).toHaveLength(3);
     expect(
       (
@@ -129,7 +131,7 @@ describe("enterprise JWT login", () => {
           headers: { Origin: origin, Cookie: cookie },
         })
       ).status,
-    ).toBe(204);
+    ).toBe(200);
     expect(
       (
         await app.request("/api/v1/auth/session", {

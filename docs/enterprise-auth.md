@@ -22,11 +22,13 @@ Compose 修改环境变量后运行 `docker compose up -d --no-deps --wait api`�
 
 ## 接口
 
+所有 JSON 响应遵循 [统一返回格式](api-response.md)，下表业务结果均放在顶层 data 内。登录令牌读取 data.accessToken，用户信息读取 data.user。
+
 | 方法与路径 | 输入／行为 |
 | --- | --- |
 | POST /api/v1/auth/enterprise/login | JSON `{account,password}`；必须携带可信 Origin；成功返回 `{accessToken,tokenType:"Bearer",expiresIn:900,user}` 并写 HttpOnly Cookie |
 | GET /api/v1/auth/session | 验证 JWT 后返回 `{userId,organizationId,role,account}`；未登录／过期返回 401 |
-| POST /api/v1/auth/logout | 撤销服务端会话并删除 Cookie；重复退出可安全返回 204 |
+| POST /api/v1/auth/logout | 撤销服务端会话并删除 Cookie；重复退出可安全返回 HTTP 200、code=0、data={} |
 | POST /api/v1/image-session | 企业模式下读取当前 JWT 身份，不再创建本地身份 |
 
 兼容性：`system/capabilities` 保留旧 foundation 字段和值，新增加可选 `enterprisePasswordLoginEnabled` 标记企业登录是否已配置，旧客户端可忽略该字段。

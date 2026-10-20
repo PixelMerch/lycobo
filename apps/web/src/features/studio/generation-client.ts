@@ -1,4 +1,5 @@
 import {
+  apiErrorSchema,
   type ImageGenerationInput,
   imageAssetsResponseSchema,
   imageGenerationInputSchema,
@@ -10,6 +11,7 @@ import {
 } from "@lycoboai/contracts";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
+import { normalizeApiResponse } from "../../lib/api-response";
 import type { Draft, ModelId } from "./studio-state";
 
 export class ImageApiError extends Error {
@@ -37,12 +39,15 @@ export async function imageRequest(path: string, init: RequestInit = {}) {
       413: "图片超过大小限制。",
       503: "生图服务尚未启用，请检查服务端配置。",
     };
+    const failure = apiErrorSchema.safeParse(await response.json().catch(() => null));
     throw new ImageApiError(
-      messages[response.status] ?? "服务暂时不可用，请稍后重试。",
+      failure.success
+        ? failure.data.message
+        : (messages[response.status] ?? "服务暂时不可用，请稍后重试。"),
       response.status,
     );
   }
-  return response;
+  return normalizeApiResponse(response);
 }
 export function useImageSession() {
   return useQuery({

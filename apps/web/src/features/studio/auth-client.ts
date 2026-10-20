@@ -1,16 +1,25 @@
-import { enterpriseIdentitySchema, enterpriseLoginResponseSchema } from "@lycoboai/contracts";
+import {
+  apiErrorSchema,
+  enterpriseIdentitySchema,
+  enterpriseLoginResponseSchema,
+} from "@lycoboai/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { normalizeApiResponse } from "../../lib/api-response";
 
 const authKey = ["enterprise-session"];
 async function authRequest(path: string, init: RequestInit = {}) {
-  return fetch(`/api/v1/auth/${path}`, {
+  const response = await fetch(`/api/v1/auth/${path}`, {
     ...init,
     credentials: "same-origin",
     signal: init.signal ?? AbortSignal.timeout(15000),
   });
+  return normalizeApiResponse(response);
 }
 async function errorMessage(response: Response) {
   const body: unknown = await response.json().catch(() => null);
+  const envelope = apiErrorSchema.safeParse(body);
+  if (envelope.success) return envelope.data.message;
   if (typeof body === "object" && body !== null && "error" in body) {
     const error = body.error;
     if (

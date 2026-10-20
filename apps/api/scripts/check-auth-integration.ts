@@ -4,7 +4,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { enterpriseLoginResponseSchema } from "@lycoboai/contracts";
+import { enterpriseLoginResponseSchema, unwrapApiData } from "@lycoboai/contracts";
 import { openAuthRepository, openImageRepository } from "@lycoboai/db";
 import { imageStore } from "@lycoboai/storage";
 import postgres from "postgres";
@@ -86,7 +86,7 @@ try {
       });
     const response = await login();
     assert.equal(response.status, 200);
-    const result = enterpriseLoginResponseSchema.parse(await response.json());
+    const result = enterpriseLoginResponseSchema.parse(unwrapApiData(await response.json()));
     assert.equal(result.user.organizationId, first.organizationId);
     const headers = { Authorization: `Bearer ${result.accessToken}` };
     const cookie = response.headers.get("set-cookie")?.split(";")[0] ?? "";
@@ -149,11 +149,11 @@ try {
       await hashPassword(password),
     );
     assert.equal((await app.request("/api/v1/auth/session", { headers })).status, 401);
-    const fresh = enterpriseLoginResponseSchema.parse(await (await login()).json());
+    const fresh = enterpriseLoginResponseSchema.parse(unwrapApiData(await (await login()).json()));
     const freshHeaders = { Authorization: `Bearer ${fresh.accessToken}` };
     assert.equal(
       (await app.request("/api/v1/auth/logout", { method: "POST", headers: freshHeaders })).status,
-      204,
+      200,
     );
     assert.equal(
       (await app.request("/api/v1/auth/session", { headers: freshHeaders })).status,

@@ -4,7 +4,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { imageGenerationInputSchema } from "@lycoboai/contracts";
+import { apiErrorSchema, imageGenerationInputSchema, unwrapApiData } from "@lycoboai/contracts";
 import { openImageRepository } from "@lycoboai/db";
 import { supportedResolutions, validateModelInput } from "@lycoboai/generation";
 import { createImageQueue, imageQueueJobSchema, redisConnection } from "@lycoboai/queue";
@@ -146,7 +146,7 @@ try {
     body: new Uint8Array(png),
   });
   assert.equal(upload.status, 201);
-  const uploaded = z.object({ id: z.uuid() }).parse(await upload.json());
+  const uploaded = z.object({ id: z.uuid() }).parse(unwrapApiData(await upload.json()));
   assert.equal(
     (
       await app.request(`/api/v1/image-assets/${uploaded.id}/content`, {
@@ -257,7 +257,7 @@ try {
   assert.equal(accepted.status, 202);
   const acceptedJob = z
     .object({ id: z.uuid(), replayed: z.boolean() })
-    .parse(await accepted.json());
+    .parse(unwrapApiData(await accepted.json()));
   await dispatch();
   const response = await app.request(`/api/v1/image-tasks/${acceptedJob.id}`, { headers });
   const record = z
@@ -267,7 +267,7 @@ try {
       status: z.string(),
       created_at: z.string(),
     })
-    .parse(await response.json());
+    .parse(unwrapApiData(await response.json()));
   assert.equal(record.status, "succeeded");
   assert.equal(record.organization_id, first.organizationId);
   assert.equal(record.user_id, first.userId);
@@ -277,9 +277,7 @@ try {
     body: JSON.stringify(input("different")),
   });
   assert.equal(conflict.status, 409);
-  assert.ok(
-    z.object({ error: z.object({ requestId: z.string().min(1) }) }).parse(await conflict.json()),
-  );
+  assert.ok(apiErrorSchema.parse(await conflict.json()));
   const crashed = await repository.create(first, input("never-submit"), crypto.randomUUID(), 1);
   const [crashItem] = await sql`select id from image_job_items where job_id=${crashed.id}`;
   assert.ok(crashItem);
@@ -349,14 +347,14 @@ try {
       body: JSON.stringify({ ...input("browser-flow"), model }),
     });
     assert.equal(submitted.status, 202);
-    const task = z.object({ id: z.uuid() }).parse(await submitted.json());
+    const task = z.object({ id: z.uuid() }).parse(unwrapApiData(await submitted.json()));
     await dispatch();
     assert.equal((await repository.get(first, task.id))?.status, "succeeded");
   }
   const library = await browserApp.request("/api/v1/image-assets", { headers: { Cookie: cookie } });
   const saved = z
     .object({ data: z.array(z.object({ id: z.uuid(), kind: z.string() })) })
-    .parse(await library.json());
+    .parse(unwrapApiData(await library.json()));
   assert.equal(saved.data.filter((asset) => asset.kind === "output").length, 7);
   assert.equal((await repository.listAssets(second, 30)).length, 0);
   const thumbnail = await browserApp.request(

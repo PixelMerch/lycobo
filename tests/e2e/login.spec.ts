@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockImageApi } from "./image-api-fixture";
+import { apiFixture, mockImageApi } from "./image-api-fixture";
 
 test.beforeEach(async ({ page }) => {
   await mockImageApi(page);
@@ -191,16 +191,21 @@ test("enterprise login updates the header, refreshes its session and clears the 
       });
       loggedIn = true;
       return route.fulfill({
-        json: { user, accessToken: "fixture-token", tokenType: "Bearer", expiresIn: 900 },
+        json: apiFixture({
+          user,
+          accessToken: "fixture-token",
+          tokenType: "Bearer",
+          expiresIn: 900,
+        }),
       });
     }
     if (path.endsWith("/logout")) {
       loggedIn = false;
-      return route.fulfill({ status: 204 });
+      return route.fulfill({ json: apiFixture({}) });
     }
     return route.fulfill({
       status: loggedIn ? 200 : 401,
-      json: loggedIn ? user : { error: { message: "请先登录" } },
+      json: apiFixture(loggedIn ? user : {}, loggedIn ? 200 : 401),
     });
   });
   await page.goto("/");

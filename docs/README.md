@@ -7,6 +7,7 @@
 | 本地启动与配置 | [本地开发](development.md) |
 | 技术选择与边界 | [技术栈](tech-stack.md) |
 | 工作台状态与素材 | [工作台实现](image-studio-implementation.md) |
+| JSON 返回结构与业务码 | [API 返回规范](api-response.md) |
 | 企业账号密码与 JWT | [企业鉴权](enterprise-auth.md) |
 | 生图鉴权、任务、Worker 与存储 | [生图 API](image-generation-api.md) |
 | 任务生命周期 | [任务与幂等约束](task-lifecycle.md) |

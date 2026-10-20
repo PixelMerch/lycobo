@@ -30,9 +30,6 @@ export const capabilitiesSchema = z.object({
 });
 export type Capabilities = z.infer<typeof capabilitiesSchema>;
 
-export const apiErrorSchema = z.object({
-  error: z.object({ code: z.string(), message: z.string(), requestId: z.string() }),
-});
-
+export * from "./api-response";
 export * from "./auth";
 export * from "./image-generation";

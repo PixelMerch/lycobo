@@ -53,7 +53,7 @@ Worker 缺少密钥/数据库/Redis 时启动失败，不以演示结果代替�
 
 ## API
 
-以下全部要求 `Authorization: Bearer <LycoBo 访问令牌>`，不是 Vakv 密钥。未验证身份返回 401，跨组织资源返回 404，错误包含 code、message、requestId。采用显式 Bearer 鉴权，不使用 Cookie，不开放凭证通配 CORS。
+所有 JSON 响应遵循 [统一返回格式](api-response.md)，原业务结果放入顶层 data；错误使用 request_id、数字业务码和中文 message。未验证身份返回 401，跨组织资源返回 404。API 客户端使用 `Authorization: Bearer <LycoBo 访问令牌>`（不是 Vakv 密钥）；浏览器支持企业 JWT HttpOnly Cookie，不开放凭证通配 CORS。图片内容接口保留二进制响应。
 
 | 方法与路径 | 功能 |
 | --- | --- |
