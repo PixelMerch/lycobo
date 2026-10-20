@@ -28,3 +28,6 @@
   width: 100%;
   height: 100%;
 }
+.history-thumbnail.history-failure-thumbnail {
+  background: var(--surface);
+}
