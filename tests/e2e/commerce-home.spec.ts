@@ -33,6 +33,10 @@ test("home composer shares prompt and real reference drafts without submitting g
   await expect(page.locator(".reference-tile")).toHaveCount(5);
   await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toHaveCount(0);
   for (let number = 5; number > 1; number -= 1) {
+    await page
+      .locator(".reference-tile")
+      .nth(number - 1)
+      .hover();
     await page.getByRole("button", { name: `移除参考图：图片${number}`, exact: true }).click();
   }
   await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toBeVisible();

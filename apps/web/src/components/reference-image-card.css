@@ -1,0 +1,26 @@
+/* Shared thumbnail behavior for home and create. */
+.reference-tile.reference-image-card img {
+  object-fit: contain;
+  background: var(--composer-group, #1c1c1c);
+}
+.reference-tile.reference-image-card .reference-number {
+  color: #ffffffa6;
+  font-weight: 400;
+}
+.reference-tile.reference-image-card .remove-reference {
+  border: 0;
+  box-shadow: none;
+  opacity: 0;
+  pointer-events: none;
+}
+.reference-tile.reference-image-card:hover .remove-reference,
+.reference-tile.reference-image-card:focus-within .remove-reference {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (hover: none) {
+  .reference-tile.reference-image-card .remove-reference {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

@@ -50,12 +50,6 @@
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }
-.home-composer-tools {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: 8px;
-}
 .home-start-button {
   margin-left: auto;
 }
@@ -79,8 +73,8 @@
   margin-bottom: 12px;
 }
 .home-upload .reference-tile {
-  width: 64px;
-  height: 64px;
+  width: 54.4px;
+  height: 54.4px;
   aspect-ratio: 1;
   border-radius: 8px;
 }
@@ -91,10 +85,10 @@
 .home-upload .add-reference {
   order: -1;
   flex-shrink: 0;
-  width: 64px;
-  min-width: 64px;
-  height: 64px;
-  min-height: 64px;
+  width: 54.4px;
+  min-width: 54.4px;
+  height: 54.4px;
+  min-height: 54.4px;
   padding: 0;
   border: 1px dashed #ffffff29;
   border-radius: 12px;
@@ -492,21 +486,18 @@
   outline: none;
   box-shadow: none;
 }
+/* Three tracks so the settings pill stays centred in the row, not in the leftovers. */
 .home-composer-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   position: relative;
   margin-top: 12px;
 }
-.home-mode-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #aaa;
-}
 .home-settings-trigger.button {
-  margin-inline: auto;
+  grid-column: 2;
+  justify-self: center;
   height: 32px;
   padding: 0 14px;
   background: #303030;
@@ -518,7 +509,8 @@
   gap: 8px;
 }
 .home-submit.button {
-  margin-left: auto;
+  grid-column: 3;
+  justify-self: end;
   width: 36px;
   min-width: 36px;
   height: 36px;

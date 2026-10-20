@@ -27,4 +27,6 @@
 
 使用 [测试说明](testing.md) 中的 pnpm check、浏览器回归及隔离集成测试。代码、测试输出与实际服务端结果是功能证据；历史静态 UI 图不再作为实现或服务可用性依据。
 
-参考图卡片封装在 `apps/web/src/components/reference-image-card.tsx`，通过 src、number、onRemove、isDisabled 属性复用；不依赖业务 store。首页与 create 页通过 ReferencePicker 共用卡片及文件校验逻辑，首页上传入口在前、缩略图 64px，create 保持三列布局。
+参考图卡片封装在 `apps/web/src/components/reference-image-card.tsx`，通过 src、number、onRemove、isDisabled 属性复用；不依赖业务 store。首页与 create 页通过 ReferencePicker 共用卡片及文件校验逻辑，首页上传入口在前、缩略图 54.4px（缩小 15%），create 保持三列布局。
+
+共享参考图使用 contain 显示完整图片；编号降低为白色 65% 透明度。桌面删除按钮仅 hover／键盘聚焦显示，无白色边框和阴影；触屏保留删除入口。

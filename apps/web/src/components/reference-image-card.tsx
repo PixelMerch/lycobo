@@ -1,6 +1,7 @@
 import { Button } from "@heroui/react";
 import { IconX } from "@tabler/icons-react";
 import { UiIcon } from "./ui-icon";
+import "./reference-image-card.css";
 
 /** Shared reference thumbnail. The caller owns files, ordering and removal state. */
 export function ReferenceImageCard({
@@ -15,8 +16,8 @@ export function ReferenceImageCard({
   isDisabled?: boolean;
 }) {
   return (
-    <div className="reference-tile">
-      <img src={src} alt={`图片${number}`} style={{ objectFit: "cover" }} />
+    <div className="reference-tile reference-image-card">
+      <img src={src} alt={`图片${number}`} />
       <Button
         isIconOnly
         variant="secondary"

@@ -61,6 +61,7 @@ test("invalid references and limit errors do not destroy valid images", async ({
   );
   await expect(page.getByRole("alert")).toContainText("最多添加 5 张");
   await expect(page.locator(".reference-tile")).toHaveCount(1);
+  await page.locator(".reference-tile").first().hover();
   await page.getByRole("button", { name: "移除参考图：图片1" }).click();
   await expect(page.locator(".reference-tile")).toHaveCount(0);
 });
@@ -210,6 +211,7 @@ test("reference limit and clearing remain consistent when switching models", asy
   ]);
   await expect(page.getByText("quilt-0.png", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toHaveCount(0);
+  await page.locator(".reference-tile").first().hover();
   await page.getByRole("button", { name: "移除参考图：图片1", exact: true }).click();
   await expect(page.locator(".reference-number")).toHaveText(["图片1", "图片2", "图片3", "图片4"]);
   await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toBeVisible();
