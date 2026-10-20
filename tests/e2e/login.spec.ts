@@ -33,8 +33,8 @@ test("header login opens account/password dialog and validates without faking au
   const password = dialog.getByLabel("密码", { exact: true });
   await expect(account).toBeFocused();
   await expect(account).toHaveCSS("border-top-width", "0px");
-  await expect(account).toHaveCSS("outline-width", "1px");
-  await expect(account).toHaveCSS("box-shadow", "none");
+  await expect(account).toHaveCSS("outline-style", "none");
+  await expect(account).toHaveCSS("box-shadow", "rgba(0, 0, 0, 0.15) 0px 0px 0px 1px inset");
   await dialog.getByRole("button", { name: "登录", exact: true }).click();
   await expect(dialog.getByText("请输入企业账号", { exact: true })).toBeVisible();
   await expect(dialog.getByText("请输入密码", { exact: true })).toBeVisible();
@@ -46,7 +46,10 @@ test("header login opens account/password dialog and validates without faking au
   await password.fill("example-password");
   await expect(password).toHaveCSS("border-top-width", "0px");
   await expect(dialog.locator(".login-input-group")).toHaveCSS("border-top-width", "0px");
-  await expect(dialog.locator(".login-input-group")).toHaveCSS("box-shadow", "none");
+  await expect(dialog.locator(".login-input-group")).toHaveCSS(
+    "box-shadow",
+    "rgba(0, 0, 0, 0.15) 0px 0px 0px 1px inset",
+  );
   await expect(password).toHaveAttribute("type", "password");
   await dialog.getByRole("button", { name: "显示密码" }).click();
   await expect(password).toHaveAttribute("type", "text");

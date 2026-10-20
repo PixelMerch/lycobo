@@ -2584,21 +2584,27 @@ html:has(.workspace)::-webkit-scrollbar,
 }
 /* The login panel is an explicitly approved light surface; studio tokens stay dark. */
 .login-content {
-  --foreground: #141414;
-  --muted: #767676;
-  --field-background: #f5f5f5;
-  --field-foreground: #141414;
-  --field-placeholder: #767676;
-  --focus: #8b5cf6;
+  --foreground: #000;
+  --login-title-font: -apple-system, "system-ui", "SF Pro Display", "Helvetica Neue", sans-serif;
+  --login-control-font:
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --muted: rgba(0, 0, 0, 0.4);
+  --field-background: rgba(0, 0, 0, 0.05);
+  --field-foreground: #000;
+  --field-placeholder: rgba(0, 0, 0, 0.25);
+  --focus: rgba(0, 0, 0, 0.15);
+  --field-border-focus: rgba(0, 0, 0, 0.15);
   --danger: #c83245;
   --link: #8152df;
+  font-family: var(--login-control-font);
+  font-weight: 400;
   color-scheme: light;
   display: flex;
   flex-direction: column;
   min-width: 0;
   padding: 32px 36px 24px;
   background: #fff;
-  color: #141414;
+  color: #000;
 }
 .login-content .modal__header,
 .login-content .modal__body {
@@ -2623,14 +2629,16 @@ html:has(.workspace)::-webkit-scrollbar,
   box-shadow: 0 0 22px #bba1ff66;
 }
 .login-content .modal__heading {
-  color: #111;
-  font-size: 26px;
-  line-height: 36px;
-  font-weight: var(--weight-medium);
+  color: #000;
+  font-family: var(--login-title-font);
+  font-size: 30px;
+  line-height: 42px;
+  font-weight: 400;
 }
 .login-content .login-header p {
-  color: #767676;
-  font-size: var(--text-sm);
+  color: rgba(0, 0, 0, 0.4);
+  font-family: var(--login-title-font);
+  font-size: 14px;
   line-height: var(--leading-sm);
 }
 .login-body {
@@ -2665,23 +2673,28 @@ html:has(.workspace)::-webkit-scrollbar,
 }
 .login-fields :is(.input, .input-group) {
   width: 100%;
-  min-height: 44px;
-  padding-inline: 14px;
+  height: 40px;
+  min-height: 40px;
+  padding-inline: 16px;
+  font-family: var(--login-control-font);
+  font-size: 13px;
+  line-height: 20.4295px;
+  font-weight: 400;
   border: 0;
   border-radius: 12px;
-  background: #f5f5f5;
-  color: #141414;
+  background: rgba(0, 0, 0, 0.05);
+  color: #000;
   outline: none;
   box-shadow: none;
-  caret-color: #8b5cf6;
+  caret-color: #000;
 }
 .login-fields :is(.input, .input-group):focus-within {
-  outline: 1px solid #9c83cf;
-  outline-offset: -1px;
-  box-shadow: none;
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
 }
 .login-fields input::placeholder {
-  color: #767676;
+  color: rgba(0, 0, 0, 0.25);
+  opacity: 1;
 }
 .login-fields .input-group .input,
 .login-fields .input-group :is(.input-group__input, [data-slot="input-group-input"]) {
@@ -2715,9 +2728,10 @@ html:has(.workspace)::-webkit-scrollbar,
 .login-fields .login-input-group .login-send-code {
   width: auto;
   min-width: 0;
-  padding: 0 4px 0 12px;
-  color: #8152df;
-  font-size: var(--text-xs);
+  padding: 0 16px;
+  color: #8360ec;
+  font-size: 13px;
+  font-weight: 500;
 }
 .login-wechat {
   display: flex;
@@ -2736,7 +2750,7 @@ html:has(.workspace)::-webkit-scrollbar,
   aspect-ratio: 1;
   border: 0;
   border-radius: 12px;
-  background: #f5f5f5;
+  background: rgba(0, 0, 0, 0.05);
   color: #707070;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
@@ -2757,9 +2771,9 @@ html:has(.workspace)::-webkit-scrollbar,
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #bbb;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
+  color: rgba(0, 0, 0, 0.25);
+  font-size: 10px;
+  line-height: 16px;
 }
 .login-divider::before,
 .login-divider::after {
@@ -2770,45 +2784,46 @@ html:has(.workspace)::-webkit-scrollbar,
 }
 .login-content .login-submit {
   width: 100%;
-  height: 44px;
-  min-height: 44px;
+  height: 40px;
+  min-height: 40px;
   margin-top: 0;
   border: 0;
   border-radius: 999px;
   background: #000;
   color: #fff;
+  font-size: 13px;
+  line-height: 20.4295px;
+  font-weight: 600;
   box-shadow: none;
 }
 .login-content .login-submit[data-hovered="true"] {
   background: #292929;
 }
-.login-content .login-other {
-  width: 100%;
-  min-height: 44px;
-  border: 0;
-  border-radius: 999px;
-  background: #f5f5f5;
-  color: #222;
-}
-.login-content .login-other[data-hovered="true"] {
-  background: #eaeaea;
-}
-.login-secondary-methods {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-}
+.login-content .login-other,
 .login-secondary-methods .button {
-  border: 0;
-  background: transparent;
-  color: #707070;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-regular);
+  width: 100%;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 120px;
+  background: #fff;
+  color: #000;
+  font-family: var(--login-control-font);
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 600;
+  box-shadow: none;
 }
+.login-content .login-other[data-hovered="true"],
 .login-secondary-methods .button[data-hovered="true"],
 .login-secondary-methods .button[aria-current="true"] {
-  background: #f5f5f5;
-  color: #111;
+  background: #f7f7f7;
+}
+.login-secondary-methods {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 .login-error {
   color: #c83245;
@@ -2872,6 +2887,7 @@ html:has(.workspace)::-webkit-scrollbar,
     line-height: var(--leading-xs);
   }
   .login-fields :is(.input, .input-group, .input-group .input) {
+    min-height: 44px;
     font-size: 16px;
   }
   .header-login {
