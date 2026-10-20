@@ -135,7 +135,13 @@ async function taskDraft(
     },
   };
 }
-export function HistoryTaskActions({ job }: { job: ImageJob }) {
+export function HistoryTaskActions({
+  job,
+  retryOnly = false,
+}: {
+  job: ImageJob;
+  retryOnly?: boolean;
+}) {
   const client = useQueryClient();
   const [replacement, setReplacement] = useState<Awaited<ReturnType<typeof taskDraft>> | null>(
     null,
@@ -179,45 +185,50 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
     }
   };
   return (
-    <div className="history-task-actions">
+    <div className={retryOnly ? "generation-retry-actions" : "history-task-actions"}>
+      {!retryOnly && (
+        <Tooltip delay={0}>
+          <Button
+            isIconOnly
+            variant="tertiary"
+            className="history-icon-action"
+            aria-label="重新编辑"
+            isDisabled={loading}
+            onPress={async () => {
+              setLoading(true);
+              setError("");
+              try {
+                const value = await taskDraft(job, client);
+                const draft = useStudioStore.getState().drafts[value.model];
+                if (draft.prompt || draft.references.length) setReplacement(value);
+                else restore(value);
+              } catch (failure) {
+                setError(failure instanceof Error ? failure.message : "无法读取任务。");
+              } finally {
+                setLoading(false);
+              }
+            }}
+          >
+            <UiIcon icon={IconEdit} size="action" />
+          </Button>
+          <Tooltip.Content placement="bottom">重新编辑</Tooltip.Content>
+        </Tooltip>
+      )}
       <Tooltip delay={0}>
         <Button
-          isIconOnly
+          isIconOnly={!retryOnly}
           variant="tertiary"
-          className="history-icon-action"
-          aria-label="重新编辑"
-          isDisabled={loading}
-          onPress={async () => {
-            setLoading(true);
-            setError("");
-            try {
-              const value = await taskDraft(job, client);
-              const draft = useStudioStore.getState().drafts[value.model];
-              if (draft.prompt || draft.references.length) setReplacement(value);
-              else restore(value);
-            } catch (failure) {
-              setError(failure instanceof Error ? failure.message : "无法读取任务。");
-            } finally {
-              setLoading(false);
-            }
-          }}
-        >
-          <UiIcon icon={IconEdit} size="action" />
-        </Button>
-        <Tooltip.Content placement="bottom">重新编辑</Tooltip.Content>
-      </Tooltip>
-      <Tooltip delay={0}>
-        <Button
-          isIconOnly
-          variant="tertiary"
-          className="history-icon-action"
-          aria-label="重新生成"
+          className={retryOnly ? "generation-retry" : "history-icon-action"}
+          aria-label={retryOnly ? "重试" : "重新生成"}
           isDisabled={blocked || !configured || generation.isPending || loading}
           onPress={() => setRegenerateOpen(true)}
         >
-          <UiIcon icon={IconRefresh} size="action" />
+          <UiIcon icon={IconRefresh} size={retryOnly ? "illustration" : "action"} />
+          {retryOnly && <span>重试</span>}
         </Button>
-        <Tooltip.Content placement="bottom">重新生成</Tooltip.Content>
+        <Tooltip.Content placement="bottom">
+          {retryOnly && job.status === "needs_reconciliation" ? "此任务暂不可重试" : "重新生成"}
+        </Tooltip.Content>
       </Tooltip>
       {(error || generation.isError) && (
         <p className="history-action-error" role="alert">

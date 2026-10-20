@@ -105,13 +105,28 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
       ],
     };
     await page.route("**/api/v1/image-tasks*", (route) => route.fulfill({ json: { data: [job] } }));
+    await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto("/create");
     await expect(page.locator(".generation-job header").getByRole("status")).toHaveText("失败");
     await expect(page.locator(".generation-placeholder")).toHaveAttribute("aria-label", "失败");
+    const preview = page.locator(".generation-placeholder");
+    const box = await preview.boundingBox();
+    expect(box?.width).toBe(400);
+    expect(box?.height).toBe(400);
+    const retry = preview.getByRole("button", { name: "重试", exact: true });
+    await expect(retry).toBeVisible();
+    await expect(retry.locator("svg")).toHaveClass(/icon-refresh/);
     await expect(page.locator(".history-thumbnail")).toHaveText("失败");
     await expect(page.getByText(/结果待核对|本次调用结果尚未确认|部分完成/)).toHaveCount(0);
     if (status === "needs_reconciliation") {
+      await expect(retry).toBeDisabled();
       await expect(page.getByRole("button", { name: "重新生成", exact: true })).toBeDisabled();
+    } else {
+      await retry.click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await page.getByRole("button", { name: "取消", exact: true }).click();
+      await expect(page.getByRole("dialog")).toHaveCount(0);
     }
+    await page.screenshot({ path: `/tmp/lycobo-generation-${status}.png` });
   });
 }

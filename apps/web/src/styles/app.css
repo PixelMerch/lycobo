@@ -1893,12 +1893,39 @@ small {
   place-content: center;
   justify-items: center;
   gap: 12px;
-  min-height: 180px;
+  width: 100%;
+  aspect-ratio: 1;
+  min-height: 0;
   padding: 16px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 0;
   font-size: 12px;
+}
+.generation-retry-actions {
+  display: flex;
+  justify-content: center;
+}
+.generation-retry {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 72px;
+  height: 72px;
+  padding: 8px;
+  color: var(--danger);
+  background: transparent;
+  font-size: 13px;
+}
+.generation-retry:hover,
+.generation-retry[data-hovered="true"] {
+  background: var(--surface-secondary);
+}
+.generation-retry:disabled,
+.generation-retry[data-disabled="true"] {
+  color: var(--danger);
+  background: transparent;
+  opacity: 0.6;
 }
 .generation-loading-icon {
   position: relative;

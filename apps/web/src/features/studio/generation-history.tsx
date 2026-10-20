@@ -259,7 +259,7 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
                       {item.status === "running" || item.status === "queued" ? (
                         <GenerationLoading />
                       ) : (
-                        statusLabel[item.status]
+                        <HistoryTaskActions job={job} retryOnly />
                       )}
                       {(item.status === "failed" || item.status === "needs_reconciliation") && (
                         <p role="alert">
