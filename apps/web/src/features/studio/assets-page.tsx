@@ -1,5 +1,5 @@
 import "./image-public-id.css";
-import { Alert, Button, Card, EmptyState, Link } from "@heroui/react";
+import { Alert, Button, Card, EmptyState, Link, Spinner } from "@heroui/react";
 import { IconFolder } from "@tabler/icons-react";
 import { UiIcon } from "../../components/ui-icon";
 import {
@@ -36,7 +36,12 @@ export function AssetsPage() {
             </Button>
           </Alert.Content>
         </Alert>
-      ) : session.isPending || query.isPending ? null : assets.length ? (
+      ) : session.isPending || query.isPending ? (
+        <p className="generation-message" role="status">
+          <Spinner aria-hidden size="sm" />
+          正在加载素材…
+        </p>
+      ) : assets.length ? (
         <>
           <div className="asset-grid">
             {assets.map((asset) => (

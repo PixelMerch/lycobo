@@ -1,7 +1,12 @@
 import { Alert, Button, EmptyState, Link, Spinner, ToggleButton, Tooltip } from "@heroui/react";
 import type { ImageJob } from "@lycoboai/contracts";
 import {
+  IconAspectRatio,
+  IconClock,
   IconDownload,
+  IconHash,
+  IconLayersIntersect,
+  IconMaximize,
   IconPhoto,
   IconRefresh,
   IconSparkles,
@@ -146,14 +151,6 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
       window.removeEventListener("resize", schedule);
     };
   }, [compact, jobIds, setActiveHistoryId]);
-  if (session.isError && /请先登录|登录已过期|重新登录/.test(session.error?.message ?? ""))
-    return (
-      <EmptyState className="empty-state">
-        <UiIcon icon={IconPhoto} size="illustration" />
-        <h2>登录后查看生成记录</h2>
-        <p>登录账号后，生成结果会保存在这里。</p>
-      </EmptyState>
-    );
   if (session.isError || query.isError)
     return (
       <Alert className="generation-message" role="alert" status="danger">
@@ -173,8 +170,9 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
     );
   if (session.isPending || query.isPending)
     return (
-      <p className="generation-message" role="status" aria-label="正在加载记录">
+      <p className="generation-message" role="status">
         <Spinner aria-hidden size="sm" />
+        正在加载记录…
       </p>
     );
   if (!jobs.length)
@@ -199,11 +197,17 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
             {job.status !== "succeeded" && <span role="status">{statusLabel[job.status]}</span>}
             <dl className="generation-meta" aria-label="任务信息">
               <div>
-                <dt className="sr-only">任务 ID</dt>
+                <dt title="任务 ID">
+                  <UiIcon icon={IconHash} size="small" />
+                  <span className="sr-only">任务 ID</span>
+                </dt>
                 <dd>{job.public_id ?? "待同步"}</dd>
               </div>
               <div>
-                <dt className="sr-only">时间</dt>
+                <dt title="时间">
+                  <UiIcon icon={IconClock} size="small" />
+                  <span className="sr-only">时间</span>
+                </dt>
                 <dd>
                   <time dateTime={job.created_at}>
                     {new Date(job.created_at).toLocaleString("zh-CN")}
@@ -211,19 +215,31 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
                 </dd>
               </div>
               <div>
-                <dt className="sr-only">模型</dt>
+                <dt title="模型">
+                  <UiIcon icon={IconSparkles} size="small" />
+                  <span className="sr-only">模型</span>
+                </dt>
                 <dd>{job.model}</dd>
               </div>
               <div>
-                <dt className="sr-only">比例</dt>
+                <dt title="比例">
+                  <UiIcon icon={IconAspectRatio} size="small" />
+                  <span className="sr-only">比例</span>
+                </dt>
                 <dd>{job.aspect_ratio}</dd>
               </div>
               <div>
-                <dt className="sr-only">分辨率</dt>
+                <dt title="分辨率">
+                  <UiIcon icon={IconMaximize} size="small" />
+                  <span className="sr-only">分辨率</span>
+                </dt>
                 <dd>{job.resolution}</dd>
               </div>
               <div>
-                <dt className="sr-only">张数</dt>
+                <dt title="张数">
+                  <UiIcon icon={IconLayersIntersect} size="small" />
+                  <span className="sr-only">张数</span>
+                </dt>
                 <dd>{job.requested_count} 张</dd>
               </div>
             </dl>
