@@ -17,6 +17,7 @@ import {
 import { motion, useReducedMotion } from "motion/react";
 import { type CSSProperties, useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
+import { DialogClose } from "../../components/dialog-close";
 import { RouteLink } from "../../components/router-link";
 import { UiIcon } from "../../components/ui-icon";
 import { AccountPanel, type AccountSection } from "./account-panel";
@@ -293,7 +294,7 @@ export function StudioShell() {
             <Modal.Dialog className="model-chooser">
               <Modal.Header>
                 <Modal.Heading>创作</Modal.Heading>
-                <Modal.CloseTrigger aria-label="关闭模型选择" />
+                <DialogClose label="关闭模型选择" />
               </Modal.Header>
               <Modal.Body>
                 <div className="model-grid">

@@ -1054,18 +1054,9 @@ p.home-hero-kicker {
   color: #29232f;
   background: #0000000f;
 }
-.model-chooser .modal__close-trigger {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-}
-.model-chooser
-  .modal__close-trigger:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
-  background: #ffffff14;
+.model-chooser .modal__close-trigger.dialog-close {
+  position: absolute;
+  inset: 18px 18px auto auto;
 }
 /* finesse · focused product densification · existing purple tokens
  * whole-card navigation; portrait covers; stable hover/focus/pressed geometry */
