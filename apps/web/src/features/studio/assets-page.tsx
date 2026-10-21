@@ -1,7 +1,8 @@
 import "./image-public-id.css";
-import { Alert, Button, Card, EmptyState, Link } from "@heroui/react";
+import { Button, Card, EmptyState, Link } from "@heroui/react";
 import { IconFolder } from "@tabler/icons-react";
 import { UiIcon } from "../../components/ui-icon";
+import { useErrorToast } from "../../lib/error-toast";
 import {
   assetContentUrl,
   downloadAsset,
@@ -13,6 +14,11 @@ export function AssetsPage() {
   const session = useImageSession();
   const query = useImageAssets();
   const assets = query.data?.pages.flatMap((page) => page.data) ?? [];
+  useErrorToast(
+    session.isError || query.isError
+      ? (session.error?.message ?? query.error?.message ?? "服务暂时不可用，请稍后重试。")
+      : null,
+  );
   return (
     <section className="page-panel assets-page">
       <div className="page-heading">
@@ -21,22 +27,10 @@ export function AssetsPage() {
           <p>已保存的生成图片与参考图片</p>
         </div>
       </div>
-      {session.isError || query.isError ? (
-        <Alert className="generation-message" role="alert" status="danger">
-          <Alert.Content>
-            <Alert.Description>{session.error?.message ?? query.error?.message}</Alert.Description>
-            <Button
-              variant="secondary"
-              onPress={() => {
-                void session.refetch();
-                void query.refetch();
-              }}
-            >
-              重新连接
-            </Button>
-          </Alert.Content>
-        </Alert>
-      ) : session.isPending || query.isPending ? null : assets.length ? (
+      {session.isError ||
+      query.isError ||
+      session.isPending ||
+      query.isPending ? null : assets.length ? (
         <>
           <div className="asset-grid">
             {assets.map((asset) => (

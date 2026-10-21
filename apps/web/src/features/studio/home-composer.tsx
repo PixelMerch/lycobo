@@ -1,9 +1,9 @@
-import { Button, Popover, ToggleButton, ToggleButtonGroup, toast } from "@heroui/react";
+import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { IconArrowUp, IconCheck, IconChevronDown, IconSparkles } from "@tabler/icons-react";
-import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
+import { useErrorToast } from "../../lib/error-toast";
 import { ImageApiError, useImageModels } from "./generation-client";
 import { HomeRatioPicker } from "./ratio-picker";
 import { ReferencePicker } from "./reference-picker";
@@ -17,21 +17,12 @@ export function HomeComposer() {
   const setModel = useStudioStore((s) => s.setActiveModel);
   const catalog = useImageModels();
   const navigate = useNavigate();
-  const catalogToast = useRef<string | null>(null);
   const catalogError = catalog.isError
     ? catalog.error instanceof ImageApiError
       ? catalog.error.message
       : "服务暂时不可用，请稍后重试。"
     : null;
-  useEffect(() => {
-    if (!catalogError) {
-      catalogToast.current = null;
-      return;
-    }
-    if (catalogToast.current === catalogError) return;
-    catalogToast.current = catalogError;
-    toast.danger(catalogError);
-  }, [catalogError]);
+  useErrorToast(catalogError);
   const canSubmit = draft.prompt.trim().length > 0 || draft.references.length > 0;
   const resolutions = catalog.data?.models.find((item) => item.id === model)?.enabledResolutions;
   return (

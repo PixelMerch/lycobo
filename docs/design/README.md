@@ -6,7 +6,9 @@
 
 - [艺栢交互研究](yibai-page-logic.md)：工具选择、创作三栏与历史联动的参考依据。
 - [小云雀登录样式实测](xiaoyunque-login-measurements.md)：官方测量值与本站校准值，最终规则归入 DESIGN.md。
+- [参考站视觉语言实测](reference-style-dna.md)：艺栢与小云雀的色板、字号、圆角与密度实测，供视觉方向选择。
 - [家纺样例图片来源](studio-photo-prompts.json)：对应 apps/web/public/studio 下仍在使用的三组样例素材，不代表真实客户商品或生成结果。
+- 首页示例视频（`apps/web/public/studio/*-loop.mp4`、`*-detail.mp4`）由上述三组样图派生，为尚未挂载到页面的本地版式演示资源，不是用户作品，也不代表已接入视频生成。
 
 旧 UI 位图、版本对比稿、导出页面和一次性 UI 生图提示词已移出当前资料。不要重新以静态图维护第二份产品规范。新增参考只保留支撑当前决策的必要证据，先更新本索引并检查引用。
 

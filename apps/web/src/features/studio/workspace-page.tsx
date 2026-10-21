@@ -1,16 +1,9 @@
-import {
-  Alert,
-  Button,
-  Tabs,
-  ToggleButton,
-  ToggleButtonGroup,
-  Tooltip,
-  toast,
-} from "@heroui/react";
+import { Alert, Button, Tabs, ToggleButton, ToggleButtonGroup, Tooltip } from "@heroui/react";
 import { IconArrowBarToUp, IconSparkles } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
+import { useErrorToast } from "../../lib/error-toast";
 import {
   ImageApiError,
   useGenerateImage,
@@ -46,13 +39,22 @@ function Workspace({ model }: { model: ModelId }) {
   const generate = useGenerateImage();
   const [submissionPhase, setSubmissionPhase] = useState<"idle" | "submitting" | "settled">("idle");
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const modelsToast = useRef<string | null>(null);
   const activeSubmission = submissionPhase !== "idle" || generate.isPending;
   const modelsError = modelQuery.isError
     ? modelQuery.error instanceof ImageApiError
       ? modelQuery.error.message
       : "服务暂时不可用，请稍后重试。"
     : null;
+  useErrorToast(modelsError);
+  useErrorToast(
+    session.isError
+      ? (session.error?.message ?? "服务暂时不可用，请稍后重试。")
+      : generate.isError
+        ? generate.error instanceof ImageApiError
+          ? generate.error.message
+          : "服务暂时不可用，请稍后重试。"
+        : null,
+  );
   const resolutions =
     modelQuery.data?.models.find((entry) => entry.id === model)?.enabledResolutions ?? [];
   const pending = usePendingSubmission(session.data);
@@ -73,15 +75,6 @@ function Workspace({ model }: { model: ModelId }) {
     },
     [],
   );
-  useEffect(() => {
-    if (!modelsError) {
-      modelsToast.current = null;
-      return;
-    }
-    if (modelsToast.current === modelsError) return;
-    modelsToast.current = modelsError;
-    toast.danger(modelsError);
-  }, [modelsError]);
   return (
     <div className="workspace">
       <section className="composer-panel" aria-label="创作设置">
@@ -141,20 +134,6 @@ function Workspace({ model }: { model: ModelId }) {
           ))}
         </section>
         <div className="generate-area">
-          {((session.isError &&
-            !/请先登录|登录已过期|重新登录/.test(session.error?.message ?? "")) ||
-            generate.isError) && (
-            <Alert className="generation-message" role="alert" status="danger">
-              <Alert.Content>
-                <Alert.Description>
-                  {session.error?.message ??
-                    (pending
-                      ? "提交结果待确认，请点击确认上次提交，避免重复生成。"
-                      : generate.error?.message)}
-                </Alert.Description>
-              </Alert.Content>
-            </Alert>
-          )}
           {modelQuery.data && !modelQuery.data.enabled && (
             <Alert className="generation-message" role="status" status="warning">
               <Alert.Content>

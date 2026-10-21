@@ -1033,6 +1033,29 @@ p.home-hero-kicker {
   width: 40px;
   height: 40px;
 }
+/* Every dismiss control is a circle with a white icon. Approved light surfaces
+ * (login panel, account center) keep a dark icon so it stays visible. */
+.close-button,
+.modal__close-trigger,
+.drawer__close-trigger,
+.alert-dialog__close-trigger {
+  border-radius: 999px;
+  color: #ffffff;
+}
+.close-button:is(:hover, [data-hovered="true"]),
+.modal__close-trigger:is(:hover, [data-hovered="true"]),
+.drawer__close-trigger:is(:hover, [data-hovered="true"]),
+.alert-dialog__close-trigger:is(:hover, [data-hovered="true"]) {
+  color: #ffffff;
+  background: #ffffff14;
+}
+.account-dialog .modal__close-trigger {
+  color: #29232f;
+}
+.account-dialog .modal__close-trigger:is(:hover, [data-hovered="true"]) {
+  color: #29232f;
+  background: #0000000f;
+}
 /* finesse · focused product densification · existing purple tokens
  * whole-card navigation; portrait covers; stable hover/focus/pressed geometry */
 .section-tab {
@@ -1482,6 +1505,34 @@ p.home-hero-kicker {
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
   font-weight: var(--weight-medium);
+}
+/* The rail heading is the entry to the full-screen asset library. */
+.history-rail .history-rail-title {
+  margin-bottom: 10px;
+}
+.history-rail-open.button {
+  gap: 2px;
+  width: auto;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  box-shadow: none;
+  white-space: nowrap;
+}
+.history-rail-open.button:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
+  color: #fff;
+  background: transparent;
+}
+.history-rail-open.button .ui-icon {
+  color: inherit;
 }
 .history-rail p {
   font-size: var(--text-xs);
@@ -2114,9 +2165,9 @@ p.home-hero-kicker {
   min-height: 44px;
   padding: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius: 999px;
   background: transparent;
-  color: var(--muted);
+  color: #ffffff;
 }
 @media (hover: hover) {
   .parameter-options.ratio-options :is(.button, .toggle-button):hover {
@@ -2318,16 +2369,16 @@ p.home-hero-kicker {
   place-items: center;
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: 999px;
   transition: background-color 150ms ease;
 }
 @media (hover: hover) {
   .ratio-popover .ratio-close:hover {
     background: transparent;
-    color: var(--foreground);
+    color: #ffffff;
   }
   .ratio-close:hover .ratio-close-visual {
-    background: color-mix(in srgb, var(--surface-tertiary) 92%, var(--foreground));
+    background: #ffffff14;
   }
 }
 .ratio-close:active .ratio-close-visual,
@@ -2396,6 +2447,15 @@ p.home-hero-kicker {
   gap: 8px;
   min-width: 0;
 }
+/* A terminal failure spans the full history width, is one third shorter than a
+ * square result tile, and is ordered after any generated images. */
+.generation-results[data-failed][data-count="1"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.generation-results > .generation-failed-result {
+  grid-column: 1 / -1;
+  order: 1;
+}
 .generation-results img {
   display: block;
   width: 100%;
@@ -2407,9 +2467,20 @@ p.home-hero-kicker {
   position: relative;
   display: block;
 }
-.generation-media > a {
+.generation-media-open.button {
   display: block;
   width: 100%;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: hidden;
+}
+.generation-media-open.button:is(:hover, [data-hovered="true"]) {
+  background: transparent;
 }
 .generation-media-actions {
   position: absolute;
@@ -2476,30 +2547,25 @@ p.home-hero-kicker {
   border-radius: 0;
   font-size: 12px;
 }
-.generation-retry-actions {
-  display: flex;
-  justify-content: center;
-}
-.generation-retry {
+/* A terminal failure spans the whole history row, keeps the tile background
+ * and states the outcome in white text; height is one third shorter than a
+ * square result (400px → 267px, narrowing proportionally on small screens). */
+.generation-placeholder.generation-failed {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: 72px;
-  height: 72px;
-  padding: 8px;
-  color: var(--danger);
-  background: transparent;
-  font-size: 13px;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 3 / 2;
+  max-height: calc(400px * 2 / 3);
+  background: #343434;
+  border: 0;
 }
-.generation-retry:hover,
-.generation-retry[data-hovered="true"] {
-  background: var(--surface-secondary);
-}
-.generation-retry:disabled,
-.generation-retry[data-disabled="true"] {
-  color: var(--danger);
-  background: transparent;
-  opacity: 0.6;
+.generation-failure-message {
+  color: #ffffff;
+  font-size: var(--text-sm);
+  line-height: var(--leading-base);
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 .generation-loading-icon {
   position: relative;
@@ -2644,10 +2710,11 @@ p.home-hero-kicker {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
-.history-thumbnail > .history-retry-hint {
-  align-content: center;
-  gap: 6px;
-  color: var(--danger);
+.history-thumbnail > .history-failure-label {
+  display: grid;
+  place-items: center;
+  gap: 3px;
+  color: #fda4af;
 }
 .history-thumbnail > span {
   display: grid;
@@ -2905,16 +2972,23 @@ p.home-hero-kicker {
   color: #8f8f8f;
   cursor: default;
 }
-.generation-model-tag {
+/* 「模型标签 / Model tag」— 全站唯一表示模型名称的标签样式：`#242424` 实色底、
+ * 白色 13px / 18px / 500 文字、左右 8px 内边距、6px 圆角，文字水平与垂直居中。
+ * 历史记录等独立位置直接使用 `.model-tag`；贴图片角落时（资产管理）追加
+ * `.library-tile-badge` 只改位置、圆角与图上的半透明底。 */
+.model-tag {
   display: inline-flex;
   align-items: center;
-  min-height: 20px;
-  padding: 0 6px;
+  justify-content: center;
+  height: 20px;
+  padding: 0 8px;
   border-radius: 6px;
-  background: #343434;
+  background: #242424;
   color: #ffffff;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 18px;
+  font-weight: 500;
+  text-align: center;
 }
 .generation-meta .generation-meta-ratio {
   gap: 4px;
@@ -2988,6 +3062,12 @@ p.home-hero-kicker {
   font-size: 12px;
   line-height: 18px;
   font-weight: 500;
+}
+.history-rail .history-rail-title {
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
 }
 .history-rail p {
   color: #8f8f8f;
@@ -3670,22 +3750,6 @@ html:has(.workspace)::-webkit-scrollbar,
   }
 }
 
-.alert.generation-placeholder-error {
-  width: 100%;
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
-  text-align: center;
-  color: var(--muted);
-}
-.alert.generation-placeholder-error .alert__content {
-  align-items: center;
-}
-.alert.generation-placeholder-error .alert__description {
-  color: inherit;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
 .alert.login-error {
   padding: 0;
   border-radius: 0;
@@ -4162,5 +4226,11 @@ html:has(.workspace)::-webkit-scrollbar,
   .nav-row::before,
   .main-content {
     transition: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .history-rail-open.button {
+    min-height: 44px;
   }
 }

@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
 for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
-  test(`${status}: failure changes to retry on hover and explicit retries create new tasks`, async ({
+  test(`${status}: failure stays informational and confirmed regeneration creates a new task`, async ({
     page,
   }) => {
     await mockImageApi(page);
@@ -55,34 +55,25 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto("/create");
     const preview = page.locator(".generation-placeholder");
-    const retry = preview.getByRole("button", { name: "重试", exact: true });
     const rail = page.locator(".history-failure-thumbnail");
-    await expect(retry.locator(".failure-label")).toBeVisible();
-    await expect(retry.locator(".retry-label")).toBeHidden();
-    await expect(rail.locator(".failure-label")).toBeVisible();
-    await expect(rail.locator(".retry-label")).toBeHidden();
-    await preview.hover();
-    await expect(retry.locator(".retry-label")).toBeVisible();
-    await retry.click();
     const dialog = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
-    await expect(dialog).toBeVisible();
-    expect(submissions).toHaveLength(0);
-    await dialog.getByRole("button", { name: "取消", exact: true }).click();
+    // Failure results and rail thumbnails only report the state; they are not
+    // retry entries any more.
+    await expect(preview.getByRole("button", { name: "重试", exact: true })).toHaveCount(0);
+    await expect(preview.locator(".generation-failure-message")).toBeVisible();
+    await expect(rail.locator(".history-failure-label")).toBeVisible();
+    await expect(rail.getByRole("button", { name: "重试", exact: true })).toHaveCount(0);
+    await rail.click();
     await expect(dialog).toHaveCount(0);
+    await expect(rail).toHaveAttribute("aria-current", "true");
     await page
       .locator(".generation-job header")
       .getByRole("button", { name: "重新生成", exact: true })
       .click();
+    await expect(dialog).toBeVisible();
+    expect(submissions).toHaveLength(0);
     await dialog.getByRole("button", { name: "确认", exact: true }).click();
     await expect.poll(() => submissions.length).toBe(1);
-    await rail.hover();
-    await expect(rail.locator(".retry-label")).toBeVisible();
-    await rail.getByRole("button", { name: "重试", exact: true }).click();
-    await dialog.getByRole("button", { name: "确认", exact: true }).click();
-    await expect.poll(() => submissions.length).toBe(2);
-    expect(new Set(submissions).size).toBe(2);
-    await retry.focus();
-    await expect(retry.locator(".retry-label")).toBeVisible();
     await page.screenshot({ path: `/tmp/lycobo-failure-retry-${status}.png` });
   });
 }

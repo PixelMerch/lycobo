@@ -1,0 +1,474 @@
+.modal__backdrop.image-preview-backdrop {
+  background: #0b0b0e;
+}
+.image-preview-dialog {
+  width: 100vw;
+  height: 100dvh;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #0b0b0e;
+  box-shadow: none;
+  color: #eee;
+  overflow: hidden;
+}
+/* 左图 / 中信息 / 右缩略图：列宽固定，切换图片时两侧都不位移。 */
+.image-preview {
+  /* One inset for the picture, the first thumbnail and the close control, so the
+   * three share the same top edge. */
+  --image-preview-inset: 40px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px 96px;
+  grid-template-rows: minmax(0, 1fr) 70px;
+  width: 100%;
+  height: 100dvh;
+}
+.image-preview-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--image-preview-inset) 40px 48px;
+  overflow: hidden;
+}
+/* Clipping frame: the image is fitted here and only scaled inside it. */
+.image-preview-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+/* A magnified picture pans inside the frame: the hand cursor advertises the
+ * drag, and touch dragging must move the picture instead of scrolling. */
+.image-preview-frame[data-zoomed="true"] {
+  cursor: grab;
+  touch-action: none;
+}
+.image-preview-frame[data-dragging="true"] {
+  cursor: grabbing;
+}
+/* The picture keeps its fitted frame; zooming scales it in place so the stage
+ * crops into the details without the layout (or the bottom bar) moving. */
+.image-preview-image {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: scale 140ms ease;
+}
+.image-preview-frame[data-zoomed="true"] .image-preview-image {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.image-preview-hint {
+  position: absolute;
+  inset: auto 40px 14px;
+  margin: 0;
+  color: #6f6f78;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+}
+.image-preview-nav.button {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #000000a6;
+  color: #fff;
+  box-shadow: none;
+  translate: 0 -50%;
+}
+.image-preview-nav.button:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
+  background: #ffffff1f;
+  color: #fff;
+}
+.image-preview-prev {
+  left: 16px;
+}
+.image-preview-next {
+  right: 16px;
+}
+.image-preview-info {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  min-height: 0;
+  padding: var(--image-preview-inset) 30px 30px;
+  border-left: 1px solid #1f1f24;
+  overflow-y: auto;
+}
+/* Close sits on its own row, right-aligned; model + favourite/download follow. */
+.image-preview-close-row {
+  display: flex;
+  justify-content: flex-end;
+}
+.image-preview-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.image-preview-model {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #fff;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 500;
+}
+.image-preview-model span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.image-preview-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-inline-start: auto;
+}
+.image-preview-tool.button {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #ffffff;
+  box-shadow: none;
+}
+.image-preview-tool.button:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
+  background: #ffffff14;
+  color: #ffffff;
+}
+.image-preview-tool.button[data-selected="true"] {
+  background: transparent;
+  color: #baa4ff;
+}
+.image-preview-tool.button[aria-pressed="true"] {
+  color: #baa4ff;
+}
+.image-preview-facts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #1f1f24;
+  color: #8f8f8f;
+  font-size: 12px;
+  line-height: 18px;
+}
+.image-preview-fact-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.image-preview-time {
+  margin-inline-start: auto;
+  color: #8f8f8f;
+  white-space: nowrap;
+}
+.image-preview-copy.button {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #8f8f8f;
+  box-shadow: none;
+}
+.image-preview-copy.button:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
+  background: #ffffff14;
+  color: #eee;
+}
+.image-preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.image-preview-section .generation-output-thumbnails {
+  margin-top: 0;
+}
+.image-preview-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #cfcfcf;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.image-preview-section p {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #111114;
+  color: #cfcfcf;
+  font-size: 13px;
+  line-height: 20px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.image-preview-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  padding: 0 30px;
+  color: #8f8f8f;
+  font-size: 12px;
+  line-height: 18px;
+}
+.image-preview-bar-id {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.image-preview-bar-size {
+  margin-inline-start: auto;
+  color: #cfcfcf;
+  white-space: nowrap;
+}
+/* Official HeroUI Slider, themed: a 6px track whose fill and thumb are both the
+ * brand purple, with no border or dark ring around the thumb. */
+.image-preview-zoom {
+  width: 220px;
+  flex: none;
+}
+.image-preview-zoom.slider {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+.image-preview-zoom .slider__track {
+  height: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: #3a3a42;
+  box-shadow: none;
+}
+.image-preview-zoom .slider__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+}
+.image-preview-zoom .slider__thumb {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: none;
+  transition: transform 140ms ease;
+}
+.image-preview-zoom .slider__thumb::after {
+  content: none;
+  display: none;
+}
+.image-preview-zoom .slider__thumb:is(:hover, [data-hovered="true"], [data-dragging="true"]) {
+  transform: scale(1.12);
+}
+.image-preview-zoom .slider__thumb[data-focus-visible="true"] {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.image-preview-zoom-value {
+  width: 40px;
+  color: #cfcfcf;
+  text-align: right;
+}
+/* 右列缩略图：竖排、隐藏滚动条、选中内侧 2px 品牌紫框。 */
+.image-preview-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  min-height: 0;
+  padding: var(--image-preview-inset) 16px 24px;
+  border-left: 1px solid #1f1f24;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.image-preview-rail::-webkit-scrollbar {
+  display: none;
+}
+.image-preview-thumb.button {
+  width: 72px;
+  min-width: 72px;
+  height: 72px;
+  min-height: 72px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: #17171b;
+  box-shadow: none;
+  overflow: hidden;
+}
+.image-preview-thumb.button[aria-current="true"] {
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+.image-preview-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@media (prefers-reduced-motion: reduce) {
+  .image-preview-image {
+    transition: none;
+  }
+}
+@media (max-width: 1279px) {
+  .image-preview {
+    grid-template-columns: minmax(0, 1fr) 360px 88px;
+  }
+  .image-preview-info {
+    padding: 24px;
+  }
+  .image-preview-thumb.button {
+    width: 64px;
+    min-width: 64px;
+    height: 64px;
+    min-height: 64px;
+  }
+  .image-preview-zoom {
+    width: 120px;
+  }
+}
+@media (max-width: 1023px) {
+  .image-preview {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-rows: minmax(0, 1fr) 70px;
+  }
+  .image-preview-rail {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  /* 窄屏改为上下堆叠：图片、信息，最后是横向缩略图条。 */
+  .image-preview {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow-y: auto;
+  }
+  .image-preview-stage {
+    flex: none;
+    height: min(48dvh, 420px);
+    padding: 16px 16px 32px;
+  }
+  .image-preview-hint {
+    inset: auto 16px 8px;
+  }
+  /* Static so the close control anchors to the sheet, floating over the image
+   * instead of colliding with the favourite/download icons. */
+  .image-preview-info {
+    position: static;
+    flex: none;
+    gap: 16px;
+    padding: 0 16px 16px;
+    border-left: 0;
+    overflow: visible;
+  }
+  .image-preview-stage {
+    order: 0;
+  }
+  .image-preview-info {
+    order: 1;
+  }
+  .image-preview-rail {
+    order: 2;
+  }
+  .image-preview-bar {
+    order: 3;
+  }
+  /* On phones the close control floats over the image's top-right corner so it
+   * stays reachable without scrolling the sheet. */
+  .image-preview-close-row {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+  }
+  .image-preview-close.button {
+    background: #000000a6;
+  }
+  .image-preview-head {
+    padding-right: 0;
+  }
+  .image-preview-facts {
+    flex-wrap: wrap;
+  }
+  .image-preview-time {
+    margin-inline-start: 0;
+  }
+  .image-preview-rail {
+    display: flex;
+    flex: none;
+    flex-direction: row;
+    gap: 6px;
+    padding: 0 16px 16px;
+    border-left: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .image-preview-thumb.button {
+    width: 64px;
+    min-width: 64px;
+    height: 64px;
+    min-height: 64px;
+  }
+  .image-preview-bar {
+    flex: none;
+    height: auto;
+    min-height: 48px;
+    padding: 12px 16px;
+  }
+  .image-preview-zoom,
+  .image-preview-zoom-value {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .image-preview-tool.button,
+  .image-preview-copy.button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+}

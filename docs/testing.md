@@ -52,3 +52,10 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:integration
 图片 API／Worker 集成测试现在创建独立临时数据库并执行完整迁移，配合独立 Redis 队列与临时图片目录；避免本地运行中的真实 Worker 抢到 fixture outbox。最终关闭连接后删除测试数据库，不接触共享数据或卷。
 
 根 test:integration 已增加 `@lycoboai/api test:events`，覆盖 SSE 的持久化事件、跨连接通知、回滚、租户隔离、重连回放与身份撤销。运行需 loopback PostgreSQL、Redis 和 ALLOW_LOCAL_INTEGRATION=true；不会调用付费模型。
+
+
+## 工作台浏览器回归
+
+`tests/e2e/image-preview.spec.ts` 验证全屏预览、缩放拖动、移动布局和图片切换后的说明同步；`library-dialog.spec.ts` 验证筛选、延迟加载和弹层焦点恢复。接口均由浏览器 fixture 拦截，不调用模型。
+
+并行执行不同测试任务时，为每次运行设置独立 `--output=/tmp/<本次运行目录>`，避免 Playwright 清理其他运行的 trace。历史时间断言使用浏览器自身时区计算，不能写死本机的 UTC+8 时间。正式验收仍需运行完整 `pnpm test:e2e`，不能以跳过失败用例代替。

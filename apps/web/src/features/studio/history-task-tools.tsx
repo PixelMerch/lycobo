@@ -1,11 +1,10 @@
-import { Alert, Button, Link, Tooltip, toast } from "@heroui/react";
+import { Alert, Button, Tooltip, toast } from "@heroui/react";
 import { type ImageJob, imageJobSchema } from "@lycoboai/contracts";
 import { IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "../../components/confirm-dialog";
 import { UiIcon } from "../../components/ui-icon";
-import { FailureRetryLabel } from "./failure-retry-label";
 import {
   assetContentUrl,
   hasPendingSubmission,
@@ -15,6 +14,7 @@ import {
   useImageSession,
   usePendingSubmission,
 } from "./generation-client";
+import { ReferenceThumbnails } from "./reference-thumbnails";
 import { type Draft, type ModelId, useStudioStore } from "./studio-state";
 
 export function HistoryPrompt({ job }: { job: ImageJob }) {
@@ -74,26 +74,7 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
           </Alert.Content>
         </Alert>
       )}
-      {job.input?.referenceAssetIds.length ? (
-        <section className="generation-output-thumbnails" aria-label="任务参考图">
-          {job.input.referenceAssetIds.map((assetId, index) => (
-            <Link
-              key={assetId}
-              className="generation-output-thumbnail"
-              href={assetContentUrl(assetId)}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={`查看参考图片 ${index + 1}`}
-            >
-              <img
-                src={assetContentUrl(assetId, true)}
-                alt={`参考图片 ${index + 1} 缩略图`}
-                loading="lazy"
-              />
-            </Link>
-          ))}
-        </section>
-      ) : null}
+      <ReferenceThumbnails ids={job.input?.referenceAssetIds ?? []} label="任务参考图" />
     </div>
   );
 }
@@ -130,15 +111,7 @@ async function taskDraft(
     },
   };
 }
-export function HistoryTaskActions({
-  job,
-  retryOnly = false,
-  compact = false,
-}: {
-  job: ImageJob;
-  retryOnly?: boolean;
-  compact?: boolean;
-}) {
+export function HistoryTaskActions({ job }: { job: ImageJob }) {
   const client = useQueryClient();
   const [replacement, setReplacement] = useState<Awaited<ReturnType<typeof taskDraft>> | null>(
     null,
@@ -182,49 +155,43 @@ export function HistoryTaskActions({
     }
   };
   return (
-    <div className={retryOnly ? "generation-retry-actions" : "history-task-actions"}>
-      {!retryOnly && (
-        <Tooltip delay={0}>
-          <Button
-            isIconOnly
-            variant="tertiary"
-            className="history-icon-action"
-            aria-label="重新编辑"
-            isDisabled={loading}
-            onPress={async () => {
-              setLoading(true);
-              setError("");
-              try {
-                const value = await taskDraft(job, client);
-                const draft = useStudioStore.getState().drafts[value.model];
-                if (draft.prompt || draft.references.length) setReplacement(value);
-                else restore(value);
-              } catch (failure) {
-                setError(failure instanceof Error ? failure.message : "无法读取任务。");
-              } finally {
-                setLoading(false);
-              }
-            }}
-          >
-            <UiIcon icon={IconEdit} size="action" />
-          </Button>
-          <Tooltip.Content placement="bottom">重新编辑</Tooltip.Content>
-        </Tooltip>
-      )}
+    <div className="history-task-actions">
       <Tooltip delay={0}>
         <Button
-          isIconOnly={!retryOnly}
+          isIconOnly
           variant="tertiary"
-          className={retryOnly ? "generation-retry" : "history-icon-action"}
-          aria-label={retryOnly ? "重试" : "重新生成"}
+          className="history-icon-action"
+          aria-label="重新编辑"
+          isDisabled={loading}
+          onPress={async () => {
+            setLoading(true);
+            setError("");
+            try {
+              const value = await taskDraft(job, client);
+              const draft = useStudioStore.getState().drafts[value.model];
+              if (draft.prompt || draft.references.length) setReplacement(value);
+              else restore(value);
+            } catch (failure) {
+              setError(failure instanceof Error ? failure.message : "无法读取任务。");
+            } finally {
+              setLoading(false);
+            }
+          }}
+        >
+          <UiIcon icon={IconEdit} size="action" />
+        </Button>
+        <Tooltip.Content placement="bottom">重新编辑</Tooltip.Content>
+      </Tooltip>
+      <Tooltip delay={0}>
+        <Button
+          isIconOnly
+          variant="tertiary"
+          className="history-icon-action"
+          aria-label="重新生成"
           isDisabled={blocked || !configured || generation.isPending || loading}
           onPress={() => setRegenerateOpen(true)}
         >
-          {retryOnly ? (
-            <FailureRetryLabel compact={compact} />
-          ) : (
-            <UiIcon icon={IconRefresh} size="action" />
-          )}
+          <UiIcon icon={IconRefresh} size="action" />
         </Button>
         <Tooltip.Content placement="bottom">重新生成</Tooltip.Content>
       </Tooltip>

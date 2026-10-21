@@ -135,8 +135,9 @@ test("edited history references and prompt survive all model switches", async ({
     await page.getByRole("option", { name: model, exact: true }).click();
     await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
     await expect(reference).toHaveAttribute("src", source ?? "");
-    await expect(page.getByRole("button", { name: "展开全部图片比例", exact: true })).toContainText(
-      "3:4",
+    await expect(composer.getByRole("radio", { name: "3:4", exact: true })).toHaveAttribute(
+      "aria-checked",
+      "true",
     );
     await expect(page.getByRole("radio", { name: "1K", exact: true })).toHaveAttribute(
       "aria-checked",

@@ -70,7 +70,11 @@ test("running images animate with the model icon and stop for reduced motion", a
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.screenshot({ path: "/tmp/lycobo-generation-pending.png" });
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  // The resize re-lays out the composer; assert the settled layout, not a frame
+  // captured mid-reflow.
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+    .toBe(true);
 });
 
 for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
@@ -111,18 +115,23 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     await expect(page.locator(".generation-placeholder")).toHaveAttribute("aria-label", "失败");
     const preview = page.locator(".generation-placeholder");
     const box = await preview.boundingBox();
-    expect(box?.width).toBe(400);
-    expect(box?.height).toBe(400);
-    const retry = preview.getByRole("button", { name: "重试", exact: true });
-    await expect(retry).toBeVisible();
-    await expect(retry.locator(".failure-label")).toBeVisible();
-    await expect(retry.locator(".retry-label")).toBeHidden();
-    await preview.hover();
-    await expect(retry.locator(".retry-label")).toBeVisible();
+    const history = await page.locator(".generation-results").boundingBox();
+    expect(box?.width).toBe(history?.width);
+    expect(box?.height).toBeCloseTo(267, 0);
+    await expect(preview).toHaveCSS("border-top-width", "0px");
+    await expect(preview).toHaveCSS("background-color", "rgb(52, 52, 52)");
+    await expect(preview.getByRole("button", { name: "重试", exact: true })).toHaveCount(0);
+    const message = preview.locator(".generation-failure-message");
+    await expect(message).toHaveText(
+      status === "needs_reconciliation"
+        ? "任务未能完成，积分状态正在确认，请稍后查看。"
+        : "任务未能完成，积分已退回，请您稍后重试。",
+    );
+    await expect(message).toHaveCSS("color", "rgb(255, 255, 255)");
     await expect(page.getByText(/结果待核对|本次调用结果尚未确认|部分完成/)).toHaveCount(0);
-    await expect(retry).toBeEnabled();
-    await expect(page.getByRole("button", { name: "重新生成", exact: true })).toBeEnabled();
-    await retry.click();
+    const regenerate = page.getByRole("button", { name: "重新生成", exact: true });
+    await expect(regenerate).toBeEnabled();
+    await regenerate.click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.getByRole("button", { name: "取消", exact: true }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);

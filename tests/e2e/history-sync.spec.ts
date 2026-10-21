@@ -56,9 +56,9 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await expect.poll(async () => (await articles.nth(1).boundingBox())?.y).toBeLessThan(110);
   const info = articles.nth(1).getByRole("definition");
   await expect(info).toHaveText([
-    jobs[1]?.public_id ?? "",
-    "2026/10/20 09:00:00",
     "gpt-image-2.5",
+    await page.evaluate((iso) => new Date(iso).toLocaleString("zh-CN"), jobs[1]?.created_at ?? ""),
+    jobs[1]?.public_id ?? "",
     "1:1",
     "1K",
     "1 张",
@@ -91,5 +91,9 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await expect(target).toHaveAttribute("aria-current", "true");
   expect((await target.boundingBox())?.width).toBe(width);
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  // The resize re-lays out the composer; assert the settled layout, not a frame
+  // captured mid-reflow.
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+    .toBe(true);
 });

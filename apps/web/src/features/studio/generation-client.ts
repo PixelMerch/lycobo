@@ -107,12 +107,12 @@ export function useImageHistory({ poll = true } = {}) {
         : false,
   });
 }
-export function useImageAssets() {
+export function useImageAssets({ enabled = true }: { enabled?: boolean } = {}) {
   const session = useImageSession();
   const eventStatus = useImageEventState((state) => state.status);
   return useInfiniteQuery({
     queryKey: ["image-assets"],
-    enabled: session.isSuccess,
+    enabled: enabled && session.isSuccess,
     initialPageParam: "",
     retry: false,
     queryFn: async ({ pageParam, signal }) =>
