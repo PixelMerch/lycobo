@@ -61,6 +61,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   const historyDialog = page.getByRole("dialog", { name: "图片预览", exact: true });
   await page.getByRole("button", { name: "预览图片 2", exact: true }).click();
   await expect(historyDialog).toBeVisible();
+  await expect(historyDialog.locator(".image-preview")).toHaveCSS("transform", "none");
   const historyBox = await historyDialog.boundingBox();
   expect(historyBox?.width).toBe(1328);
   expect(historyBox?.height).toBe(906);
@@ -91,6 +92,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
     .click();
   const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
   await expect(viewer).toBeVisible();
+  await expect(viewer.locator(".image-preview")).toHaveCSS("transform", "none");
   // The preview and the asset library share the same close control size.
   const closeSizes = await page.evaluate(() => {
     const size = (selector: string) => {
@@ -212,6 +214,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   await page.setViewportSize({ width: 390, height: 844 });
   await libraryDialog.getByRole("button", { name: /查看图片：素材 1/ }).click();
   await expect(viewer).toBeVisible();
+  await expect(viewer.locator(".image-preview")).toHaveCSS("transform", "none");
   const close = await viewer
     .getByRole("button", { name: "关闭图片预览", exact: true })
     .boundingBox();

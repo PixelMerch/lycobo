@@ -8,7 +8,7 @@ import {
   IconStar,
   IconStarFilled,
 } from "@tabler/icons-react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
@@ -16,6 +16,7 @@ import { copyToClipboard } from "../../lib/clipboard";
 import { assetContentUrl, downloadAsset } from "./generation-client";
 import { ReferenceThumbnails } from "./reference-thumbnails";
 import { useStudioStore } from "./studio-state";
+import { useCenteredDialogMotion } from "./use-centered-dialog-motion";
 import "./fullscreen-dialog.css";
 import "./image-preview.css";
 
@@ -84,7 +85,7 @@ export function ImagePreviewDialog({
   initialIndex?: number;
   onClose: () => void;
 }) {
-  const reduceMotion = useReducedMotion();
+  const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
   const [index, setIndex] = useState(Math.min(Math.max(initialIndex, 0), images.length - 1));
   const [zoom, setZoom] = useState(100);
   const rail = useRef<HTMLElement>(null);
@@ -178,16 +179,11 @@ export function ImagePreviewDialog({
     }
   };
   return (
-    <Modal isOpen onOpenChange={(open) => (!open ? onClose() : undefined)}>
+    <Modal isOpen onOpenChange={(open) => (!open ? requestClose() : undefined)}>
       <Modal.Backdrop className="fullscreen-dialog__backdrop image-preview-backdrop">
         <Modal.Container size="full" className="fullscreen-dialog__container">
           <Modal.Dialog className="image-preview-dialog" aria-label="图片预览">
-            <motion.div
-              className="image-preview"
-              initial={reduceMotion ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.18 }}
-            >
+            <motion.div className="image-preview" data-dialog-phase={phase} {...surfaceMotion}>
               <section className="image-preview-stage" aria-label="图片预览" ref={stage}>
                 {/* The frame clips the zoom so a magnified picture never covers the
                  * hint text or the bottom bar. */}

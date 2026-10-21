@@ -1,12 +1,13 @@
 import { Button, EmptyState, ListBox, Modal, Select } from "@heroui/react";
 import { IconPhoto } from "@tabler/icons-react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 import { useState } from "react";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { assetContentUrl, useImageAssets } from "./generation-client";
 import { ImagePreviewDialog, type PreviewImage } from "./image-preview";
+import { useCenteredDialogMotion } from "./use-centered-dialog-motion";
 import "./fullscreen-dialog.css";
 import "./library-dialog.css";
 
@@ -22,9 +23,8 @@ const kinds: Array<{ id: KindFilter; label: string }> = [
 export function LibraryDialog({ onClose }: { onClose: () => void }) {
   const [kind, setKind] = useState<KindFilter>("all");
   const [model, setModel] = useState("all");
-  const [phase, setPhase] = useState<"open" | "closed">("open");
   const [preview, setPreview] = useState<{ images: PreviewImage[]; index: number } | null>(null);
-  const reduceMotion = useReducedMotion();
+  const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
   const query = useImageAssets();
   useErrorToast(query.isError ? query.error.message : null);
   const assets = query.data?.pages.flatMap((page) => page.data) ?? [];
@@ -35,15 +35,6 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
     (asset) =>
       (kind === "all" || asset.kind === kind) && (model === "all" || asset.model === model),
   );
-  // Dismissal collapses the surface back to the centre first; only then does the
-  // modal unmount and hand focus back to the rail entry.
-  const requestClose = () => {
-    if (reduceMotion) {
-      onClose();
-      return;
-    }
-    setPhase("closed");
-  };
   return (
     <Modal
       isOpen
@@ -54,27 +45,7 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
       <Modal.Backdrop className="fullscreen-dialog__backdrop library-backdrop">
         <Modal.Container size="full" className="fullscreen-dialog__container">
           <Modal.Dialog className="library-dialog" aria-label="资产管理">
-            <motion.div
-              className="library-shell"
-              initial={reduceMotion ? false : "closed"}
-              animate={phase}
-              variants={{
-                // Slides in from the right edge. Dismissal slides the opaque panel
-                // fully off-screen (no fade) so the workspace is never seen through
-                // a translucent surface; the modal unmounts only after it has left.
-                open: {
-                  x: "0%",
-                  transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] },
-                },
-                closed: {
-                  x: "100%",
-                  transition: { duration: 0.2, ease: [0.4, 0, 1, 1] },
-                },
-              }}
-              onAnimationComplete={() => {
-                if (phase === "closed") onClose();
-              }}
-            >
+            <motion.div className="library-shell" data-dialog-phase={phase} {...surfaceMotion}>
               <Modal.Header className="library-header">
                 <DialogClose label="关闭资产管理" className="library-close" />
                 <Modal.Heading>资产管理</Modal.Heading>

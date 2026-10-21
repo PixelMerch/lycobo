@@ -1,5 +1,5 @@
 .modal__backdrop.image-preview-backdrop {
-  background: #0b0b0e;
+  background: transparent;
 }
 .image-preview-dialog {
   width: 100vw;
@@ -8,7 +8,7 @@
   padding: 0;
   border: 0;
   border-radius: 0;
-  background: #0b0b0e;
+  background: transparent;
   box-shadow: none;
   color: #eee;
   overflow: hidden;
@@ -18,6 +18,7 @@
   /* One inset for the picture, the first thumbnail and the close control, so the
    * three share the same top edge. */
   --image-preview-inset: 40px;
+  background: #0b0b0e;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 420px 96px;
   grid-template-rows: minmax(0, 1fr) 70px;
