@@ -2,6 +2,8 @@
 
 ## 分支流程
 
+本地与远程必须长期保留 `main`、`dev`。`dev` 合并到 `main` 后仍保留源分支，不使用 `--delete-branch` 删除 `dev`；同步后继续在本地 `dev` 开发。分支清理始终排除 `main`、`dev`，其他本地分支仅在确认已合入或已被替代且用户要求清理时删除。
+
 长期分支为 dev（日常开发）与 main（稳定版本）。默认直接在本地 dev 开发，先检查状态、fetch origin 并在可快进时同步远端；保留本地提交与未提交内容。只有用户明确要求时才新建分支或 worktree。验证后默认只提交本地；推送、创建或更新 dev → main PR、合并和发布均按明确授权执行。提交信息采用 Angular 风格英文 `type(scope): subject`，见 CONTRIBUTING.md。
 
 ## 环境
@@ -23,6 +25,7 @@ Vite 的 /api 默认代理到本地 8787，可通过 DEV_API_PROXY_TARGET 调整
 
 运行 `docker compose up --build` 可同时启动 Web、API、Worker、PostgreSQL 和 Redis；后续直接 `docker compose up`。
 Web 地址为 http://localhost:8080/，API 地址为 http://127.0.0.1:8788/api。
+启动日志会打印宿主机可访问的 Web 和 API URL，跟随 `.env` 的 `WEB_PORT`（默认 8080）与 `API_PUBLIC_PORT`（默认 8788）；端口被占用时可在 `.env` 修改后重新运行 Compose。
 后台运行使用 `docker compose up -d --build --wait`，通过 `docker compose logs -f web api worker` 跟踪日志。
 默认 Web/API 端口与本地 `pnpm dev` 不冲突；同时运行时须保持数据库、队列和图片目录一致。
 
@@ -54,6 +57,8 @@ Worker：
 - 本地基础设施启动后使用 WORKER_ENABLED=true pnpm dev:worker。
 - 生图使用独立的 IMAGE_WORKER_ENABLED 与 IMAGE_GENERATION_ENABLED 开关，配置 VAKV_API_KEY 后执行真实模型调用。
 - pnpm --filter @lycoboai/api images:setup 初始化本地工作台身份、图片目录与开关；执行前先完成迁移。
+- `.env.example` 中生图默认关闭；首次执行 `images:setup` 后，本地 `.env` 的 `IMAGE_GENERATION_ENABLED`、`IMAGE_WORKER_ENABLED` 为 true，后续启动沿用该配置，无需每次设置。不要用示例文件覆盖已配置的 `.env`。Compose 修改环境变量后用 `docker compose up -d --wait api worker web` 重建容器配置，单纯 restart 不会加载新的环境变量。
+- `WORKER_ENABLED=false` 只关闭诊断队列，不影响已启用的生图 Worker；`Image worker started` 才是生图消费者启动日志。两个 Worker 均关闭时，Node watch 显示 `Completed running ... Waiting for file changes` 属于等待源码变化，不表示 API 卡死。
 - 日志说明 Worker 就绪不代表业务生图就绪。
 
 ## 日常命令

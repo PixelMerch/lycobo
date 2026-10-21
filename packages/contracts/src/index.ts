@@ -26,11 +26,13 @@ export const capabilitiesSchema = z.object({
   stage: z.literal("foundation"),
   generationEnabled: z.literal(false),
   authenticationEnabled: z.literal(false),
+  enterprisePasswordLoginEnabled: z.boolean().optional(),
 });
 export type Capabilities = z.infer<typeof capabilitiesSchema>;
 
-export const apiErrorSchema = z.object({
-  error: z.object({ code: z.string(), message: z.string(), requestId: z.string() }),
-});
-
+export * from "./api-response";
+export * from "./auth";
+export * from "./image-events";
 export * from "./image-generation";
+
+export * from "./wallet";

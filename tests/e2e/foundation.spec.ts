@@ -1,19 +1,29 @@
 import { expect, test } from "@playwright/test";
 
-test("home to five-model chooser to workspace, with correctly anchored panel and focus recovery", async ({
+test("home to model-family chooser to workspace, with correctly anchored panel and focus recovery", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1584, height: 993 });
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "创作首页" })).toBeVisible();
-  const trigger = page.getByRole("button", { name: "图片创作", exact: true });
+  await expect(page.getByRole("heading", { name: "为你的商品，创作下一张好图" })).toBeVisible();
+  const trigger = page.getByRole("button", { name: "创作", exact: true });
   await trigger.click();
-  const chooser = page.getByRole("dialog", { name: "图片创作", exact: true });
+  const chooser = page.getByRole("dialog", { name: "创作", exact: true });
   await expect(chooser).toBeVisible();
-  await expect(chooser.locator(".model-card")).toHaveCount(5);
+  await expect(chooser.locator(".model-card")).toHaveCount(3);
+  // Three public model entries share the compact chooser.
+  await expect(chooser.locator(".case-gallery")).toHaveCount(0);
+  await expect(chooser.getByRole("button", { name: "进入 nano-banana-2.1 创作" })).toBeEnabled();
+  const rows = await chooser.locator(".model-card").evaluateAll((cards) =>
+    cards.map((card) => {
+      const rect = card.getBoundingClientRect();
+      return `${Math.round(rect.top)}:${Math.round(rect.bottom)}`;
+    }),
+  );
+  expect(new Set(rows).size).toBe(1);
   const box = await chooser.boundingBox();
   const sidebar = await page.locator(".sidebar").boundingBox();
-  expect(box && sidebar && Math.abs(box.x - sidebar.width - 24)).toBeLessThan(1);
+  expect(box && sidebar && Math.abs(box.x - sidebar.width - 12)).toBeLessThan(1);
   expect(
     await page
       .locator(".chooser-backdrop")
@@ -39,7 +49,7 @@ test("home to five-model chooser to workspace, with correctly anchored panel and
 test("old entry links recover to current home; unknown model is rejected", async ({ page }) => {
   await page.goto("/design/canvas?task=demo-skin");
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: "创作首页" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "为你的商品，创作下一张好图" })).toBeVisible();
   await page.goto("/create/not-a-model");
   await expect(page.getByRole("heading", { name: "页面暂时无法打开" })).toBeVisible();
 });

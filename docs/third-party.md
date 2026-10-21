@@ -9,6 +9,8 @@
 - openai/skills / security-best-practices：保留技能自带 LICENSE.txt，
   同时归档至 .agents/licenses/security-best-practices.txt。
 - supabase/agent-skills：保留上游 LICENSE 至 .agents/licenses/supabase-postgres-best-practices.txt。
+- heroui-inc/heroui / react 技能：Apache License 2.0，保留技能自带 LICENSE.txt，
+  同时归档至 .agents/licenses/heroui-react.txt。
 
 来源和准确 SHA 见 .agents/skills-lock.json，未经审查不变更原始材料。
 docs/design 的参考站交互研究不构成品牌素材授权；实际示例素材的生成来源单独记录，不冒充真实客户案例。

@@ -12,11 +12,11 @@
 | --- | --- | --- |
 | gpt-image-2 | 仅 1K | 1K |
 | gpt-image-2-4K | 1K、2K、4K；高分辨率为增强放大，不是原生 4K | 1K、2K、4K |
-| gpt-image-2.5 | 本次 1K 实测成功 | 1K |
-| gpt-image-2.5-flare | 本次 1K 实测成功 | 1K |
-| gpt-image-2.5-sunburst | 本次 1K 实测成功 | 1K |
+| gpt-image-2.5 | 本次 1K 实测成功 | 1K、2K、4K |
+| gpt-image-2.5-flare | 本次 1K 实测成功 | 1K、2K、4K |
+| gpt-image-2.5-sunburst | 本次 1K 实测成功 | 1K、2K、4K |
 
-五个模型共用 `POST /v1/images/generations` 适配器。2.5 系列默认开放 1K，其他未确认档位须向服务商确认能力后由运维设置 `VAKV_CAPABILITY_OVERRIDES`，例如仅在确认后设置某渠道的 `["1K"]`；不能通过配置扩展基础版已知的 1K 限制。
+五个模型共用 `POST /v1/images/generations` 适配器。按用户于 2026-10-20 确认的产品规则，gpt-image-2 仅开放 1K，其余模型默认开放 1K、2K、4K。API 的 image-models、提交校验与 Worker 共用 catalog.allowedResolutions；documentedResolutions 继续只记录已有文档证据，不把产品开放范围冒充付费实测结果。旧 VAKV_CAPABILITY_OVERRIDES 仍可解析以兼容现有环境文件，但不再缩小 2.5 系列的档位，也不能扩展 image-2 的 1K 限制。
 
 分辨率转尺寸目前采用长边 1024 / 2048 / 4096、短边按比例对齐到 16 像素；文档仅展示了 `1024x1024` 示例，没有穷举各比例尺寸。此尺寸映射及所有高分辨率仍需真实渠道验收。保存返回图片的实际宽高，不将请求档位当作实际像素证据。
 
@@ -49,11 +49,11 @@ pnpm dev:worker
 ```
 
 Worker 缺少密钥/数据库/Redis 时启动失败，不以演示结果代替。API 本身不调用模型，也不把服务商密钥发给浏览器。
-`IMAGE_CREDITS_PER_IMAGE` 是工作区内部每张消耗的整数积分，与服务商货币价格无关。初始额度由运维分配，不代表在线充值或支付接入。
+当前每张固定20币，忽略旧 `IMAGE_CREDITS_PER_IMAGE` 定价。主子账号使用同一个组织钱包，提交扣费、确定失败按张退回。充值订单与账务只读接口已接入，真实支付未接入。详见 [企业钱包与模型路由](enterprise-wallet.md)。
 
 ## API
 
-以下全部要求 `Authorization: Bearer <LycoBo 访问令牌>`，不是 Vakv 密钥。未验证身份返回 401，跨组织资源返回 404，错误包含 code、message、requestId。采用显式 Bearer 鉴权，不使用 Cookie，不开放凭证通配 CORS。
+所有 JSON 响应遵循 [统一返回格式](api-response.md)，原业务结果放入顶层 data；错误使用 request_id、数字业务码和中文 message。未验证身份返回 401，跨组织资源返回 404。API 客户端使用 `Authorization: Bearer <LycoBo 访问令牌>`（不是 Vakv 密钥）；浏览器支持企业 JWT HttpOnly Cookie，不开放凭证通配 CORS。图片内容接口保留二进制响应。
 
 | 方法与路径 | 功能 |
 | --- | --- |
@@ -124,10 +124,99 @@ pnpm dev
 ```
 
 `images:setup` 仅供本机开发：生成数据库成员身份与 7 天应用令牌，将令牌、持久图片目录及开关写入 `.env`，不打印令牌、不覆盖 Vakv key。续期复用原组织、历史与剩余额度；初始化额度是内部开发配额，不是充值或服务商货币余额。
-当前机器使用独立 `lycobo_workbench` 数据库，旧 `lycoboai` 库保持原状。
+目标数据库以本地 `.env` 的 `DATABASE_URL` 为准，Compose 对应 `IMAGE_COMPOSE_DATABASE_URL`。首次配置前核对数据库；setup 复用可用身份或原有本地组织，不因重启重新初始化额度。不要用 `.env.example` 覆盖已有身份和启用开关。
 
 本地浏览器通过 `POST /api/v1/image-session` 换取 HttpOnly、SameSite=Strict Cookie。仅 NODE_ENV=development 且配置应用令牌时开放，Origin 必须是明确配置的 localhost/127.0.0.1；Cookie 写请求同样校验 Origin。服务端从数据库解析用户和组织。正式用户登录、团队邀请尚未接入，不能把该本地会话方式部署为公开注册系统。
 
 也可 `docker compose up -d --build --wait`：8080 为网页，8788 为容器 API 的本地端口，避免和 pnpm 的 8787 冲突。API 与 Worker 挂载同一 `data/images` 目录，读取同一数据库与队列；`.env` 中的 `IMAGE_COMPOSE_DATABASE_URL` 由 setup 命令配置。修改 `.env` 后需重建服务配置或重启本地进程；不要把提供商 key 写到前端。
 
 浏览器通过 8080 工作台额外提交的一次 gpt-image-2 请求收到无法按图片协议解析的响应，任务 `8c2aeb53-4856-4da4-b85c-9e90d1909139` 已进入 needs_reconciliation，保留额度并等待服务商核对，没有自动重发。不能将这次调用计入成功数。
+
+### 本地配置恢复验收（2026-10-20）
+
+本次检查时 `.env` 缺少工作台身份且生图开关为 false，当前 PostgreSQL 的 `lycoboai` 数据库尚无生图表。执行已有迁移和 `images:setup` 后，API 与 Worker 使用同一数据库及 `data/images`，生图开关为 true，工作台会话验证通过，Worker 已启动。
+
+一次 gpt-image-2、1K、1:1、单图真实验收任务 `c8721224-53b2-4d0c-9d32-60e906527bbb` 已从 queued 进入 running，实际尝试一次。服务商请求 ID 为 `8c0f8d42`，响应未通过当前单张 base64 图片协议校验，错误码 `PROVIDER_INVALID_IMAGE_RESPONSE`，最终为 needs_reconciliation，没有输出资产，也没有重发或按失败退款。需在服务商控制台核对该请求的结果与消耗；本次仅证明提交、持久化和消费链路可用，不能计为生图成功。
+
+## 企业账号身份
+
+企业密码登录与 JWT 已接入，配置、Cookie／Bearer、安全边界与创建账号见 [企业鉴权](enterprise-auth.md)。启用后浏览器不再自动使用本地工作台身份；既有服务端 API key 保持兼容。
+
+## 图片质量参数
+
+`POST /api/v1/image-tasks` 支持可选 `quality: "low" | "medium" | "high"`，对应界面「低／标准／高」。新提交从草稿发送该字段，非法值返回 400 及统一错误信封；参数由服务端契约校验。
+
+任务 input JSON 快照保存质量，Worker 文生图 JSON 和图生图 multipart 均传递同名参数；编辑历史任务恢复对应选择，重新生成沿用原任务快照。不同质量属于不同输入，不能复用同一个幂等键覆盖已有任务。
+
+兼容旧客户端及旧任务：缺省 quality 在解析后仍保持字段缺省，以保留旧任务的输入哈希；供应商调用时缺省按 medium，界面恢复为「标准」。无需数据库迁移，现有任务 input JSON 已支持保存此字段。
+
+本轮验证使用本地供应商请求 fixture，未调用付费服务；Vakv 各模型是否实际执行对应质量及成本差异，仍需服务商确认或另行授权实测。当前积分预留仍按现有每张配置，不能据此声称质量间成本相同。
+
+## 用户可见的任务与图片编号
+
+用户对外 UID 为随机 10 位纯数字字符串（允许首位为 0）。任务编号为 `W` + 8 位 `0–9A–Z`，例如 `W07AZ9T2Q`；生成图及素材编号为 `P` + 8 位 `0–9A–Z`，例如 `P82ZX19M4`。用户 UID 不编码进任务或图片编号，避免暴露关联和注册数量。API 任务 `public_id`、结果项 `output_public_id`、素材 `public_id` 返回这些字符串；原 UUID 主键、外键、路由及 Worker 进程 ID 保留。
+
+迁移 0005 在 0004 基础上新增随机编号列和 `public_identifiers` 登记表。数据库函数使用 `gen_random_uuid()` 的随机字节、跳过固定版本位，并用拒绝采样避免字符分布偏差；通过登记表主键原子预留号码，碰撞最多重新分配 32 次。业务表另有唯一约束与登记表外键。分配失败会中止当前事务，不会重试付费生图请求。记录删除后仍保留已提交编号的登记，避免重新使用。
+
+迁移为历史记录重新分配新格式编号；旧数字任务号及 L 图片号登记为退役号码，旧 display_number 列保留以兼容旧部署。客户端兼容读取旧格式及缺省字段，新增数据使用新格式。必须先部署迁移，再部署 API／Worker；内部路由及授权始终通过 UUID 与服务端成员关系执行，公开编号不是权限凭证。
+
+10 位数字空间为 100 亿个值，8 位 36 进制空间每类为 36^8 个值；容量有限，数据库唯一约束确保成功提交的数据不重复。备份恢复必须保留登记表，多库合并需要协调，不能承诺任意独立数据库或丢失历史登记后也永不重复。不要把 UID 解析为数字，否则会丢失前导 0。
+
+## 失败任务的主动重新生成
+
+失败预览默认显示“失败”，悬停／键盘聚焦时切换“重试”。大图重试、右侧历史失败缩略图及任务旁“重新生成”均打开 HeroUI 确认弹窗，确认后按原任务快照发起新任务。failed、partially_failed、needs_reconciliation 允许用户主动确认新建任务；不会把原任务改为排队、自动重发原服务商请求或修改原计费状态。队列中／生成中任务及当前会话未确认提交仍阻止重复提交，模型与额度继续由现有服务端规则验证。
+
+## 历史记录刷新策略
+
+工作台历史与右侧索引共享 TanStack Query 缓存，由历史区统一驱动轮询，索引不启动独立定时器。仅当已加载记录存在 queued／running 任务时每 3 秒刷新；全部任务结束、空历史或请求失败后停止定时请求，后台标签页不持续轮询。缓存新鲜期为 30 秒，减少重复挂载请求；登录切换、新任务提交、恢复焦点后的过期数据仍通过现有机制自动更新，不依赖无条件轮询。请求失败只在顶部弹出 danger toast，页面不显示错误文案或重新连接按钮，恢复后重新进入页面即重新请求。
+
+## SSE 实时通知（2026-10-21）
+
+`GET /api/v1/image-events` 使用现有 Cookie／Bearer 身份；事件范围与任务、素材读取一致，由服务端解析组织成员关系。`image-models` 增加可选 `eventsEnabled`，用于兼容旧部署。SSE 响应为 `text/event-stream`，不包装 JSON 信封；鉴权、参数和服务不可用错误仍使用统一信封。支持 Last-Event-ID 请求头或非敏感 cursor 查询参数，游标为十进制 bigint 字符串。
+
+通知链路为 PostgreSQL image_events 持久化日志＋事务内 NOTIFY＋API 进程级 LISTEN＋SSE，不新增 Redis 转发；Redis/BullMQ 继续承载生图任务。提交、开始、每张结果、租约到期与人工核对、参考图上传在对应事务末尾写事件，回滚不留事件或通知。每组织事务级 advisory lock 在事件追加前获取，确保同一组织已提交游标顺序，不把并发事务的序列分配顺序误当成提交顺序；锁后只追加事件并提交，不调用外部服务。事件只含编号、类型和资源 UUID，不保存提示词、图片内容、凭据或供应商响应。
+
+每个 API 进程共用一个专用 LISTEN 连接和固定大小查询池，不为每个浏览器占一条数据库连接。原生通知仅作唤醒，实际内容从持久化日志读取；监听自动恢复后唤醒已有连接补读。支持 ready、image.updated、resync、heartbeat、auth-expired 事件。正常事件带 id；ready／resync 要求客户端重新校准现有列表，超过 200 条补读时转为快照校准。Worker 每小时最多清理 1000 条超过 7 天的事件；旧游标重连仍校准快照。
+
+连接每 15 秒心跳，空闲时每分钟验证会话，每次实际补发事件前再次鉴权。会话失效发送 auth-expired 并关闭；连接最长 10 分钟，客户端带游标重连。每个用户每 API 实例最多 8 条连接，断开／流错误／关闭进程时释放监听和定时器。事件流断开不取消、不重发 Worker 中的生图请求。
+
+前端在 StudioShell 维护每页一条共享 EventSource，HttpOnly Cookie 自动携带，不把 Token 放在 URL。ready／resync／重新打开连接后校准历史与素材；同一任务的事件按 150ms 合并，获取该任务详情并更新共享 Query 缓存，未知任务再刷新列表，有输出时更新素材。游标用于去重，串行合并避免旧任务请求回写覆盖新结果。退出和身份切换关闭旧连接。正常 SSE 下关闭历史及素材轮询；连接失败时指数退避至 30 秒，并在有进行中任务时按 30 秒兜底刷新。旧 API 未返回 eventsEnabled 时暂保留旧版刷新策略，部署新 API 后自动采用推送。
+
+部署顺序：先执行迁移 0007，再更新 API 与 Worker，最后前端。`IMAGE_EVENTS_ENABLED=false` 可关闭实时通道；生产网关需支持流式响应、关闭 SSE 路径的代理缓冲，空闲超时大于心跳间隔，建议 HTTP/2。健康检查仍使用短请求。LISTEN 需要可保留会话的数据库连接，不能经 transaction 模式连接池。
+
+验证：`ALLOW_LOCAL_INTEGRATION=true pnpm --filter @lycoboai/api test:events` 在专用临时数据库执行迁移，验证隔离、提交／回滚、独立监听连接、任务生命周期、游标回放、撤销后停止发送。浏览器 fixture 验证共享连接、停止轮询、定向更新、去重、重连与低频兜底；不调用付费模型。
+
+## 当前公开模型（2026-10-21）
+
+前台仅显示 gpt-image-2、gpt-image-2.5、nano-banana-2.1；旧供应商ID保留历史兼容。最新映射、账务及迁移发布顺序以 [企业钱包](enterprise-wallet.md) 为准。
+
+## 生图耗时诊断（2026-10-21）
+
+Worker 以 `Image generation stage timing` 输出结构化分段计时，包含 itemId、stage、durationMs，必要时包含响应字节数与 HTTP 状态码。禁止输出提示词、参考图、响应正文、凭据或签名 URL。
+
+- claim / reference_read：领取任务与参考图片读取。
+- provider_request_started / provider_headers：开始请求与收到响应头；此段包含连接、上传、网关等待和模型执行，不能直接等同于模型推理时间。
+- provider_body / provider_decode：响应体接收与 base64 解码。
+- image_storage / database_finish：图片解码编码落盘与完成事务。
+- provider_complete / item_complete：供应商调用总耗时与本次处理总耗时，和子阶段重叠，不相加。
+- provider_error：供应商请求失败前累计耗时。日志接收器异常不能影响付费结果或触发重试。
+
+5分钟配置是请求超时上限，不是固定等待；前端使用SSE接收完成事件。已有历史任务只有开始/结束时间，无法事后恢复分段耗时。供应商控制台显示的耗时应使用同一请求的时间/ID核对，不能直接当作客户端端到端耗时。
+
+### 单次真实诊断结果：W174YOWZN
+
+用户授权沿用 WYVM6UO9A 生成1张、扣20币。2026-10-21 北京时间17:26提交；只执行一次，不重发。
+
+| 阶段 | 实测 |
+| --- | --- |
+| 领取任务 | 67ms |
+| 参考图读取 | 14ms |
+| 请求开始到响应头 | 63,719ms |
+| 响应体接收 | 209,034ms，3,290,644字节 |
+| 调用累计至校验失败 | 272,962ms |
+
+供应商控制台对应记录显示59秒、1张、medium；请求ID为 `202610210926065370041478268d9d6fUy0bGng`，上游ID为 `202610210926094198655368268d9d6mu9rqejz`。供应商耗时不包含客户端完整接收图片的209秒；已确认主要额外等待在响应体接收，未能仅凭这些证据进一步区分供应商发送限速、链路拥塞或本机网络转发。
+
+公网同源5MB静态资源对照发现速度明显波动；显式本机代理和Accept-Encoding调整均没有稳定改善，因此未修改全局代理、固定IP或盲目切换生成接口。不能宣称吞吐问题已修复。
+
+本次响应未通过图片结构或base64校验，状态保持 needs_reconciliation，没有保存成功图片，也没有自动重试/退费。旧日志没有保存响应正文，不能追溯具体格式差异。后续新增 provider_invalid_response_shape / provider_invalid_base64 安全分类，并兼容供应商 X-Oneapi-Request-Id 响应头，便于对照上游日志；不记录图片内容。

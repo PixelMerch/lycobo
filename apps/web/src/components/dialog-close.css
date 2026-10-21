@@ -1,0 +1,25 @@
+/* One close control for the studio's full-screen dialogs: circular, white
+ * glyph, no resting fill. HeroUI renders the trigger either as a plain button
+ * or with its modal-trigger class, so both selectors carry the shared look. */
+.button.dialog-close,
+.modal__close-trigger.dialog-close {
+  /* HeroUI anchors its close trigger to the dialog; the surrounding header or
+   * close row owns the position instead. */
+  position: static;
+  inset: auto;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #ffffff;
+  box-shadow: none;
+}
+.button.dialog-close:is(:hover, [data-hovered="true"], [data-focus-visible="true"]),
+.modal__close-trigger.dialog-close:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
+  background: #ffffff14;
+  color: #ffffff;
+}

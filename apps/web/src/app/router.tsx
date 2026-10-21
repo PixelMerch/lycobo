@@ -1,5 +1,7 @@
-import { createBrowserRouter, Link, redirect } from "react-router";
+import { EmptyState, Link } from "@heroui/react";
+import { createBrowserRouter, redirect } from "react-router";
 import { isModelId, useStudioStore } from "../features/studio/studio-state";
+import { PageLoading } from "./page-loading";
 
 export const router = createBrowserRouter([
   {
@@ -16,16 +18,12 @@ export const router = createBrowserRouter([
   })),
   {
     path: "/",
-    HydrateFallback: () => (
-      <main className="empty-state" role="status">
-        正在加载…
-      </main>
-    ),
+    HydrateFallback: PageLoading,
     errorElement: (
-      <main className="empty-state">
+      <EmptyState className="empty-state">
         <h1>页面暂时无法打开</h1>
-        <Link to="/">返回首页</Link>
-      </main>
+        <Link href="/">返回首页</Link>
+      </EmptyState>
     ),
     lazy: async () => ({
       Component: (await import("../features/studio/studio-shell")).StudioShell,
@@ -59,10 +57,10 @@ export const router = createBrowserRouter([
       {
         path: "*",
         element: (
-          <section className="empty-state">
+          <EmptyState className="empty-state">
             <h1>页面不存在</h1>
-            <Link to="/">返回首页</Link>
-          </section>
+            <Link href="/">返回首页</Link>
+          </EmptyState>
         ),
       },
     ],

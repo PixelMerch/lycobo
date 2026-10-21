@@ -11,5 +11,8 @@ export function openDatabase(url: string) {
   return { db: drizzle(client, { schema }), close: () => client.end({ timeout: 5 }) };
 }
 
+export * from "./auth-repository";
+export * from "./image-event-repository";
 export * from "./image-repository";
+export { WalletError } from "./wallet-repository";
 export { schema };

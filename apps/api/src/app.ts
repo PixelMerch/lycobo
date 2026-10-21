@@ -1,22 +1,55 @@
 import { type Hook, zValidator } from "@hono/zod-validator";
-import { type Capabilities, type CreateTaskInput, createTaskSchema } from "@lycoboai/contracts";
+import {
+  businessCodes,
+  type Capabilities,
+  type CreateTaskInput,
+  createTaskSchema,
+} from "@lycoboai/contracts";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
 import { secureHeaders } from "hono/secure-headers";
+import { z } from "zod";
+
+import { authRoutes } from "./features/auth/routes";
+import type { EnterpriseAuth } from "./features/auth/service";
 
 import { type ImageApiDependencies, imageRoutes } from "./features/images/routes";
 
 type ApiEnv = { Variables: { requestId: string } };
 type ErrorReporter = (event: { requestId: string; name: string }) => void;
 
-export function createApp(reportError: ErrorReporter = () => {}, images?: ImageApiDependencies) {
+export function createApp(
+  reportError: ErrorReporter = () => {},
+  images?: ImageApiDependencies,
+  auth?: EnterpriseAuth,
+) {
   const app = new Hono<ApiEnv>();
   app.use("*", async (c, next) => {
     c.set("requestId", crypto.randomUUID());
     c.header("X-Request-Id", c.get("requestId"));
     c.header("Cache-Control", "no-store");
     await next();
+    if (c.req.method === "HEAD" || !c.res.headers.get("Content-Type")?.includes("application/json"))
+      return;
+    const payload: unknown = await c.res.json();
+    const success = c.res.status >= 200 && c.res.status < 300;
+    const failure = z
+      .object({ error: z.object({ code: z.string(), message: z.string() }) })
+      .safeParse(payload);
+    const symbol = failure.success ? failure.data.error.code : "INTERNAL_ERROR";
+    const mapped = Object.entries(businessCodes).find(([name]) => name === symbol)?.[1];
+    const envelope = {
+      request_id: c.get("requestId"),
+      code: success ? 0 : (mapped ?? businessCodes.INTERNAL_ERROR),
+      message: success ? "成功" : failure.success ? failure.data.error.message : "服务暂时不可用",
+      data: success ? (payload ?? {}) : {},
+      error: success ? {} : { code: symbol },
+    };
+    const headers = new Headers(c.res.headers);
+    headers.delete("Content-Length");
+    headers.delete("ETag");
+    c.res = new Response(JSON.stringify(envelope), { status: c.res.status, headers });
   });
   app.use("*", secureHeaders());
   app.use(
@@ -55,6 +88,7 @@ export function createApp(reportError: ErrorReporter = () => {}, images?: ImageA
     }
     await next();
   });
+  app.route("/api/v1/auth", authRoutes(auth));
   if (images) app.route("/api/v1", imageRoutes(images));
   app.get("/api/health/live", (c) => c.json({ status: "ok", service: "lycoboai-api" }));
   app.get("/api/v1/system/capabilities", (c) => {
@@ -63,6 +97,7 @@ export function createApp(reportError: ErrorReporter = () => {}, images?: ImageA
       stage: "foundation",
       generationEnabled: false,
       authenticationEnabled: false,
+      enterprisePasswordLoginEnabled: !!auth,
     };
     return c.json(capabilities);
   });

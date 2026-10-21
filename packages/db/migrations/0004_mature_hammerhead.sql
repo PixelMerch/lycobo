@@ -1,0 +1,4 @@
+ALTER TABLE "image_assets" ADD COLUMN "display_number" bigint NOT NULL GENERATED ALWAYS AS IDENTITY (sequence name "image_assets_display_number_seq" INCREMENT BY 1 MINVALUE 100000000 MAXVALUE 999999999 START WITH 100000000 CACHE 1);--> statement-breakpoint
+ALTER TABLE "image_jobs" ADD COLUMN "display_number" bigint NOT NULL GENERATED ALWAYS AS IDENTITY (sequence name "image_jobs_display_number_seq" INCREMENT BY 1 MINVALUE 1000000000 MAXVALUE 9999999999 START WITH 1000000000 CACHE 1);--> statement-breakpoint
+ALTER TABLE "image_assets" ADD CONSTRAINT "image_assets_display_number_unique" UNIQUE("display_number");--> statement-breakpoint
+ALTER TABLE "image_jobs" ADD CONSTRAINT "image_jobs_display_number_unique" UNIQUE("display_number");

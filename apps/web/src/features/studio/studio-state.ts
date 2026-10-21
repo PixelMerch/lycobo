@@ -1,35 +1,13 @@
 import { create } from "zustand";
 
 export const models = [
+  { id: "gpt-image-2", name: "gpt-image-2", image: "bedroom", description: "通用图像生成与编辑" },
+  { id: "gpt-image-2.5", name: "gpt-image-2.5", image: "set", description: "写实质感与创意表达" },
   {
-    id: "gpt-image-2.5",
-    name: "gpt-image-2.5",
-    image: "bedroom",
-    description: "上传参考图，描述想要的画面",
-  },
-  {
-    id: "gpt-image-2.5-flare",
-    name: "gpt-image-2.5-flare",
+    id: "nano-banana-2.1",
+    name: "nano-banana-2.1",
     image: "lavender",
-    description: "上传参考图，描述想要的画面",
-  },
-  {
-    id: "gpt-image-2.5-sunburst",
-    name: "gpt-image-2.5-sunburst",
-    image: "set",
-    description: "上传参考图，描述想要的画面",
-  },
-  {
-    id: "gpt-image-2",
-    name: "gpt-image-2",
-    image: "bedroom",
-    description: "上传参考图，描述想要的画面",
-  },
-  {
-    id: "gpt-image-2-4K",
-    name: "gpt-image-2-4K",
-    image: "set",
-    description: "上传参考图，描述想要的画面",
+    description: "商品、人像与场景创作",
   },
 ] as const;
 export type ModelId = (typeof models)[number]["id"];
@@ -72,6 +50,7 @@ export type Draft = {
   references: ReferenceImage[];
   ratio: string;
   resolution: string;
+  quality: string;
   count: string;
 };
 const emptyDraft = (): Draft => ({
@@ -79,6 +58,7 @@ const emptyDraft = (): Draft => ({
   references: [],
   ratio: "1:1",
   resolution: "1K",
+  quality: "标准",
   count: "1",
 });
 
@@ -106,10 +86,8 @@ export const useStudioStore = create<{
   setActiveModel: (activeModel) => set({ activeModel }),
   drafts: {
     "gpt-image-2.5": emptyDraft(),
-    "gpt-image-2.5-flare": emptyDraft(),
-    "gpt-image-2.5-sunburst": emptyDraft(),
     "gpt-image-2": emptyDraft(),
-    "gpt-image-2-4K": emptyDraft(),
+    "nano-banana-2.1": emptyDraft(),
   },
   updateDraft: (model, patch) =>
     set((state) => ({
@@ -138,3 +116,72 @@ export const useStudioStore = create<{
 }));
 export const photo = (image: string, thumbnail = false) =>
   `/studio/${image}${thumbnail ? "-thumb" : ""}.webp`;
+
+/**
+ * 首页灵感素材：由已登记的样例图片与派生视频片段组成，
+ * 只用于展示版式与复用提示词，不代表任何用户的生成结果。
+ */
+export type ShowcaseItem = {
+  id: string;
+  kind: "image" | "video";
+  title: string;
+  meta: string;
+  image: string;
+  video?: string;
+  caseId: (typeof cases)[number]["id"];
+};
+export const showcase: ShowcaseItem[] = [
+  {
+    id: "oak",
+    kind: "image",
+    title: "原木卧室",
+    meta: "场景图",
+    image: "bedroom",
+    caseId: "oak",
+  },
+  {
+    id: "set-motion",
+    kind: "video",
+    title: "套件质感",
+    meta: "视频 · 4 秒",
+    image: "set",
+    video: "set-detail",
+    caseId: "set",
+  },
+  {
+    id: "purple",
+    kind: "image",
+    title: "浅紫配色",
+    meta: "换色",
+    image: "lavender",
+    caseId: "purple",
+  },
+  {
+    id: "bedroom-motion",
+    kind: "video",
+    title: "卧室运镜",
+    meta: "视频 · 4 秒",
+    image: "bedroom",
+    video: "bedroom-detail",
+    caseId: "oak",
+  },
+  {
+    id: "cream",
+    kind: "image",
+    title: "奶油白三件套",
+    meta: "图文",
+    image: "set",
+    caseId: "cream",
+  },
+  {
+    id: "lavender-motion",
+    kind: "video",
+    title: "花型特写",
+    meta: "视频 · 4 秒",
+    image: "lavender",
+    video: "lavender-detail",
+    caseId: "purple",
+  },
+];
+export const showcasePrompt = (item: ShowcaseItem) =>
+  cases.find((entry) => entry.id === item.caseId)?.prompt ?? "";

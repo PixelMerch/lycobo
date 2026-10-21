@@ -6,13 +6,13 @@
 | 路径 | 职责 |
 | --- | --- |
 | apps/web/src/app | 路由、应用壳、providers |
-| apps/web/src/features/studio | 紫色首页、五模型工作台、客户端草稿、真实生图查询与素材库 |
+| apps/web/src/features/studio | 紫色首页、三模型工作台、客户端草稿、真实生图查询与素材库 |
 | apps/web/src/lib | 浏览器 API 客户端与工具 |
 | apps/web/src/styles | 共享设计 tokens 与全局基础样式 |
 | apps/api/src | Hono 入口、应用工厂、配置与组织隔离的生图 feature API |
 | apps/worker/src | 队列消费者、生命周期与任务执行 |
 | packages/contracts | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖 |
-| packages/db | PostgreSQL pool、Drizzle schema、迁移 |
+| packages/db | PostgreSQL pool、Drizzle schema、迁移、持久化图片事件及 LISTEN/NOTIFY |
 | packages/queue | 队列名、payload、连接配置 |
 | packages/generation | 服务商契约、Vakv 同步生图适配与能力校验（真实渠道待验收） |
 | packages/storage | 对象存储契约与私有本地图片存储/校验；签名对象存储待接入 |
@@ -59,3 +59,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 - packages/storage/src/image-store.ts：服务端图片解码、去元数据、私有 PNG 文件与实际尺寸/哈希。
 
 接口、本地工作台接入及正式登录等尚未完成的生产能力边界见 [生图 API 文档](docs/image-generation-api.md)。
+
+实时任务通知入口为 apps/api/src/features/images/events.ts；apps/web/src/features/studio/use-image-events.ts 在应用壳维护共享 SSE 连接与 Query 缓存更新。事件日志和业务状态事务提交，独立于 Redis 生图执行队列；具体协议见 docs/image-generation-api.md。
+
+- packages/db/src/wallet-repository.ts：企业共享钱包、充值订单与只读账务查询。数据表与扣费规则见 [企业钱包](docs/enterprise-wallet.md)。

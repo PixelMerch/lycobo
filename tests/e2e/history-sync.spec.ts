@@ -13,6 +13,7 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await mockImageApi(page);
   const jobs = Array.from({ length: 3 }, (_, index) => ({
     id: crypto.randomUUID(),
+    public_id: `W0000000${index}`,
     organization_id: crypto.randomUUID(),
     user_id: crypto.randomUUID(),
     model: "gpt-image-2.5",
@@ -47,17 +48,17 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await expect(page.getByRole("button", { name: "回到顶部", exact: true })).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: `查看任务 ${jobs[0]?.id}`, exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
+  ).toHaveAttribute("aria-current", "true");
   const target = page.getByRole("button", { name: `查看任务 ${jobs[1]?.id}`, exact: true });
   await target.click();
-  await expect(target).toHaveAttribute("aria-pressed", "true");
+  await expect(target).toHaveAttribute("aria-current", "true");
   await expect(articles.nth(1)).toHaveAttribute("data-active", "true");
   await expect.poll(async () => (await articles.nth(1).boundingBox())?.y).toBeLessThan(110);
   const info = articles.nth(1).getByRole("definition");
   await expect(info).toHaveText([
-    jobs[1]?.id ?? "",
-    "2026/10/20 09:00:00",
     "gpt-image-2.5",
+    await page.evaluate((iso) => new Date(iso).toLocaleString("zh-CN"), jobs[1]?.created_at ?? ""),
+    jobs[1]?.public_id ?? "",
     "1:1",
     "1K",
     "1 张",
@@ -81,14 +82,18 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await expect(backToTop).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: `查看任务 ${jobs[0]?.id}`, exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
-  await expect(target).toHaveAttribute("aria-pressed", "false");
+  ).toHaveAttribute("aria-current", "true");
+  await expect(target).toHaveAttribute("aria-current", "false");
   await expect(page.locator(".history-rail")).toHaveCSS("padding-top", "6px");
   const width = (await target.boundingBox())?.width;
   await target.focus();
   await target.press("Enter");
-  await expect(target).toHaveAttribute("aria-pressed", "true");
+  await expect(target).toHaveAttribute("aria-current", "true");
   expect((await target.boundingBox())?.width).toBe(width);
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  // The resize re-lays out the composer; assert the settled layout, not a frame
+  // captured mid-reflow.
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+    .toBe(true);
 });

@@ -1,0 +1,41 @@
+/* Fit HeroUI toasts to their message, centre them in the content area and
+ * match the model selector surface. */
+:root {
+  --toast-sidebar-width: var(--sidebar-width);
+}
+@media (min-width: 768px) {
+  body:has(.studio-app[data-sidebar-collapsed="true"]) {
+    --toast-sidebar-width: 64px;
+  }
+}
+.toast-region {
+  left: calc(50% + var(--toast-sidebar-width) / 2);
+  width: fit-content;
+  min-width: 0;
+}
+.toast {
+  inset-inline: auto;
+  left: 50%;
+  width: max-content;
+  max-width: calc(100vw - var(--toast-sidebar-width) - 2rem);
+  background: #303030;
+  padding: 8px 16px;
+  gap: 3px;
+  translate: -50% 0;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.toast__indicator {
+  position: static;
+  transform: none;
+}
+.toast__content {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.toast__title,
+.toast__description {
+  text-align: center;
+}

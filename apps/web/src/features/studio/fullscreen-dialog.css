@@ -1,0 +1,19 @@
+/* Full-screen dialogs own their entrance motion, so HeroUI's container scale
+ * would only add a second, conflicting animation. */
+.modal__container.fullscreen-dialog__container[data-entering="true"],
+.modal__container.fullscreen-dialog__container[data-exiting="true"] {
+  animation: none;
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+.fullscreen-dialog__backdrop.modal__backdrop {
+  padding: 0;
+  backdrop-filter: none;
+}
+
+/* Both full-screen surfaces share the viewport centre as their motion origin. */
+.library-shell,
+.image-preview {
+  transform-origin: 50% 50%;
+}

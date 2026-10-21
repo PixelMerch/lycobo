@@ -1,0 +1,2 @@
+ALTER TABLE "enterprise_sessions" ADD COLUMN "refresh_token_hash" text;--> statement-breakpoint
+ALTER TABLE "enterprise_sessions" ADD CONSTRAINT "enterprise_sessions_refresh_token_hash_unique" UNIQUE("refresh_token_hash");

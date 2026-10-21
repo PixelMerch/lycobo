@@ -238,3 +238,7 @@ ID 可在本次研究会话中追溯，不是在线公开报告链接。临时�
 E09 来源：`IndexPage-Bovsl_Wz.js`、`useMainContent-gkTIBdkY.js`、`MainLayout-9szlyfG0.js`、`DemoPage-r33IA25t.js`、`CommonUploader-BiMIYUdd.js`、`promt-EfH76jiM.js`。布局另参考 `MainLayout-BEkcQ81W.css` 和 `ToolLayout-CVnEuUWN.css`。文件名含构建标识，站点更新后可能变化。REA 静态关系覆盖不完整，未分析依赖和服务端保持未知。
 
 未验证：登录后的完整卡片跳转、跨功能草稿恢复、真实上传、服务端校验、真实生成及失败、扣费退款、删除恢复、服务端持久化、提供商身份、平台规范、移动端布局，以及选择层全部退出和键盘行为。
+
+## 2026-10-21 图片预览动效补充实测
+
+Chrome 当前登录会话 `/pages/gpt-image-25`：打开一张已存在的结果图，再点击预览关闭按钮；未提交生成、上传或修改数据。关闭过程中 DOM 出现 `q-transition--scale-leave-active`，计算样式为 `opacity 0.3s, transform 0.3s cubic-bezier(0.215, 0.61, 0.355, 1)`，原点为视口中心；公开样式规则的 enter-from / leave-to 为 `opacity: 0; transform: scale3d(0,0,1)`。本站只借鉴这个中心缩放行为，仍使用 HeroUI Modal 和已有深色界面。

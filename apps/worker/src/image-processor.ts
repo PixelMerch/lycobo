@@ -2,6 +2,7 @@ import type { ImageRepository } from "@lycoboai/db";
 import {
   type CapabilityOverrides,
   generateVakvImage,
+  reportGenerationTiming,
   type VakvConfig,
   VakvError,
   validateModelInput,
@@ -18,17 +19,26 @@ export type ImageProcessorDependencies = {
   request?: typeof fetch;
 };
 export async function processImageItem(itemId: string, deps: ImageProcessorDependencies) {
+  const started = performance.now();
+  const timing = (stage: string, since: number) =>
+    reportGenerationTiming(deps.provider.onTiming, {
+      stage,
+      durationMs: Math.round(performance.now() - since),
+    });
   const job = await deps.repository.claim(itemId, deps.workerId, deps.provider.timeoutMs + 60000);
+  timing("claim", started);
   if (!job) return;
   let submitted = false;
   try {
     validateModelInput(job.input, deps.overrides, deps.editsEnabled);
+    const referencesStarted = performance.now();
     const references: Uint8Array[] = [];
     for (const id of job.input.referenceAssetIds) {
       const asset = await deps.repository.asset(job, id);
       if (!asset) throw new VakvError("REFERENCE_NOT_FOUND", false);
       references.push(await deps.store.read(asset));
     }
+    timing("reference_read", referencesStarted);
     submitted = true;
     const result = await generateVakvImage(
       job.input,
@@ -36,9 +46,15 @@ export async function processImageItem(itemId: string, deps: ImageProcessorDepen
       deps.provider,
       job.itemId,
       deps.request,
+      job.providerModel,
     );
+    const storageStarted = performance.now();
     const image = await deps.store.put(job, result.bytes, job.itemId);
+    timing("image_storage", storageStarted);
+    const finishStarted = performance.now();
     await deps.repository.finish(job, { image, requestId: result.requestId });
+    timing("database_finish", finishStarted);
+    timing("item_complete", started);
   } catch (error) {
     const known = error instanceof VakvError;
     await deps.repository.finish(job, {

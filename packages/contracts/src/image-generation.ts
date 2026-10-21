@@ -12,9 +12,13 @@ export const imageModelIds = [
   "gpt-image-2-4K",
   "gpt-image-2.5-flare",
   "gpt-image-2.5-sunburst",
+  "nano-banana-2.1",
+  "gemini-nano-banana-2.1",
 ] as const;
 export const imageResolutionSchema = z.enum(["1K", "2K", "4K"]);
 export type ImageResolution = z.infer<typeof imageResolutionSchema>;
+export const imageQualitySchema = z.enum(["low", "medium", "high"]);
+export type ImageQuality = z.infer<typeof imageQualitySchema>;
 export const imageGenerationInputSchema = z.strictObject({
   model: z.enum(imageModelIds),
   prompt: z.string().trim().min(1).max(9000),
@@ -42,6 +46,8 @@ export const imageGenerationInputSchema = z.strictObject({
     .default([])
     .refine((ids) => new Set(ids).size === ids.length, "Duplicate references"),
   count: z.number().int().min(1).max(4).default(1),
+  // Keep absent on legacy snapshots so their stored idempotency hashes remain valid.
+  quality: imageQualitySchema.optional(),
 });
 export type ImageGenerationInput = z.infer<typeof imageGenerationInputSchema>;
 export type ImageScope = { userId: string; organizationId: string };
@@ -54,15 +60,23 @@ export type StoredImage = {
   height: number;
   sha256: string;
 };
-export const imageModelCatalog = imageModelIds.map((id) => ({
+// Public choices are separate from provider aliases retained for historical tasks.
+export const publicImageModelIds = ["gpt-image-2", "gpt-image-2.5", "nano-banana-2.1"] as const;
+export type PublicImageModelId = (typeof publicImageModelIds)[number];
+export const imageUnitCredits = 20;
+export function publicImageModel(model: ImageGenerationInput["model"]): PublicImageModelId {
+  if (model.includes("banana")) return "nano-banana-2.1";
+  return model.startsWith("gpt-image-2.5") ? "gpt-image-2.5" : "gpt-image-2";
+}
+export function imageProviderModel(input: Pick<ImageGenerationInput, "model" | "resolution">) {
+  const model = publicImageModel(input.model);
+  if (model === "gpt-image-2") return input.resolution === "1K" ? "gpt-image-2" : "gpt-image-2-4K";
+  if (model === "gpt-image-2.5") return "gpt-image-2.5-sunburst";
+  return "gemini-nano-banana-2.1";
+}
+export const imageModelCatalog = publicImageModelIds.map((id) => ({
   id,
-  documentedResolutions: (id === "gpt-image-2"
-    ? ["1K"]
-    : id === "gpt-image-2-4K"
-      ? ["1K", "2K", "4K"]
-      : []) as ImageResolution[],
-  capabilityStatus: id.startsWith("gpt-image-2.5") ? "unverified" : "documented",
-  highResolutionMode: id === "gpt-image-2-4K" ? "enhanced" : null,
+  allowedResolutions: ["1K", "2K", "4K"] as ImageResolution[],
 }));
 
 export const imageItemStatusSchema = z.enum([
@@ -72,7 +86,10 @@ export const imageItemStatusSchema = z.enum([
   "failed",
   "needs_reconciliation",
 ]);
+export const imageTaskPublicIdSchema = z.string().regex(/^W[0-9A-Z]{8}$/);
+export const imagePublicIdSchema = z.string().regex(/^P[0-9A-Z]{8}$/);
 export const imageJobSchema = z.object({
+  public_id: z.union([imageTaskPublicIdSchema, z.string().regex(/^[1-9][0-9]{9}$/)]).optional(),
   input: imageGenerationInputSchema.optional(),
   id: z.uuid(),
   organization_id: z.uuid(),
@@ -98,6 +115,10 @@ export const imageJobSchema = z.object({
       position: z.number(),
       status: imageItemStatusSchema,
       output_asset_id: z.uuid().nullable(),
+      output_public_id: z
+        .union([imagePublicIdSchema, z.string().regex(/^L[1-9][0-9]{8}$/)])
+        .nullable()
+        .optional(),
       error_code: z.string().nullable(),
       width: z.number().nullable(),
       height: z.number().nullable(),
@@ -108,6 +129,7 @@ export const imageJobSchema = z.object({
 export type ImageJob = z.infer<typeof imageJobSchema>;
 export const imageTasksResponseSchema = z.object({ data: z.array(imageJobSchema) });
 export const imageAssetSchema = z.object({
+  public_id: z.union([imagePublicIdSchema, z.string().regex(/^L[1-9][0-9]{8}$/)]).optional(),
   id: z.uuid(),
   kind: z.enum(["reference", "output"]),
   width: z.number(),
@@ -120,6 +142,7 @@ export const imageAssetSchema = z.object({
 export type ImageAsset = z.infer<typeof imageAssetSchema>;
 export const imageAssetsResponseSchema = z.object({ data: z.array(imageAssetSchema) });
 export const imageModelsResponseSchema = z.object({
+  eventsEnabled: z.boolean().optional(),
   enabled: z.boolean(),
   editsEnabled: z.boolean(),
   unitCredits: z.number(),

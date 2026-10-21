@@ -3,7 +3,10 @@ import {
   imageLimits,
   imageModelCatalog,
   imageModelIds,
+  imageProviderModel,
   imageResolutionSchema,
+  imageUnitCredits,
+  publicImageModel,
 } from "@lycoboai/contracts";
 import { z } from "zod";
 
@@ -14,11 +17,10 @@ export const capabilityOverridesSchema = z.partialRecord(
 export type CapabilityOverrides = z.infer<typeof capabilityOverridesSchema>;
 export function supportedResolutions(
   model: ImageGenerationInput["model"],
-  overrides: CapabilityOverrides = {},
+  _overrides: CapabilityOverrides = {},
 ) {
-  const documented = imageModelCatalog.find((m) => m.id === model)?.documentedResolutions ?? [];
-  // Operator assertions are only permitted for undocumented channels, never to expand known limits.
-  return documented.length ? documented : (overrides[model] ?? ["1K"]);
+  // Public models route to the appropriate provider channel for each resolution.
+  return imageModelCatalog.find((m) => m.id === publicImageModel(model))?.allowedResolutions ?? [];
 }
 export function validateModelInput(
   input: ImageGenerationInput,
@@ -51,11 +53,29 @@ export class VakvError extends Error {
 const responseSchema = z.object({
   data: z.array(z.object({ b64_json: z.string().min(1) })).length(1),
 });
+export type GenerationTiming = {
+  stage: string;
+  durationMs: number;
+  bytes?: number;
+  status?: number;
+};
+// Observability must never change paid-request outcomes or expose payloads.
+export function reportGenerationTiming(
+  report: ((event: GenerationTiming) => void) | undefined,
+  event: GenerationTiming,
+) {
+  try {
+    report?.(event);
+  } catch {
+    // A failing telemetry sink must not trigger a retry or discard a generated image.
+  }
+}
 export type VakvConfig = {
   key: string;
   baseUrl: string;
   timeoutMs: number;
   allowHttpForTests?: boolean;
+  onTiming?: (event: GenerationTiming) => void;
 };
 export async function generateVakvImage(
   input: ImageGenerationInput,
@@ -63,6 +83,7 @@ export async function generateVakvImage(
   config: VakvConfig,
   idempotencyKey: string,
   request: typeof fetch = fetch,
+  providerModel = imageProviderModel(input),
 ): Promise<{ bytes: Buffer; requestId?: string | undefined }> {
   const url = new URL(config.baseUrl);
   if (url.username || url.password || url.search || url.hash || url.pathname !== "/")
@@ -83,11 +104,12 @@ export async function generateVakvImage(
   if (references.length) {
     const form = new FormData();
     for (const [key, value] of Object.entries({
-      model: input.model,
+      model: providerModel,
       prompt: input.prompt,
       size,
       n: "1",
       response_format: "b64_json",
+      quality: input.quality ?? "medium",
     }))
       form.set(key, value);
     for (const bytes of references)
@@ -99,12 +121,21 @@ export async function generateVakvImage(
     body = form;
   } else
     body = JSON.stringify({
-      model: input.model,
+      model: providerModel,
       prompt: input.prompt,
       n: 1,
       size,
       response_format: "b64_json",
+      quality: input.quality ?? "medium",
     });
+  const started = performance.now();
+  const timing = (stage: string, since: number, extra: { bytes?: number; status?: number } = {}) =>
+    reportGenerationTiming(config.onTiming, {
+      stage,
+      durationMs: Math.round(performance.now() - since),
+      ...extra,
+    });
+  timing("provider_request_started", started);
   try {
     const response = await request(
       new URL(references.length ? "/v1/images/edits" : "/v1/images/generations", url),
@@ -120,7 +151,10 @@ export async function generateVakvImage(
         body,
       },
     );
-    const header = response.headers.get("x-request-id");
+    timing("provider_headers", started, { status: response.status });
+    const bodyStarted = performance.now();
+    const header =
+      response.headers.get("x-request-id") ?? response.headers.get("x-oneapi-request-id");
     if (header && /^[\w-]{1,200}$/.test(header)) requestId = header;
     if (!response.ok) {
       await response.body?.cancel();
@@ -143,16 +177,26 @@ export async function generateVakvImage(
     } finally {
       await reader.cancel().catch(() => {});
     }
+    timing("provider_body", bodyStarted, { bytes: length });
+    const decodeStarted = performance.now();
     const parsed = responseSchema.safeParse(JSON.parse(Buffer.concat(chunks).toString("utf8")));
-    if (!parsed.success) throw new VakvError("PROVIDER_INVALID_IMAGE_RESPONSE", true, requestId);
-    const encoded = parsed.data.data[0]?.b64_json ?? "";
-    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(encoded) || encoded.length % 4 !== 0)
+    if (!parsed.success) {
+      timing("provider_invalid_response_shape", decodeStarted);
       throw new VakvError("PROVIDER_INVALID_IMAGE_RESPONSE", true, requestId);
+    }
+    const encoded = parsed.data.data[0]?.b64_json ?? "";
+    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(encoded) || encoded.length % 4 !== 0) {
+      timing("provider_invalid_base64", decodeStarted);
+      throw new VakvError("PROVIDER_INVALID_IMAGE_RESPONSE", true, requestId);
+    }
     const bytes = Buffer.from(encoded, "base64");
     if (bytes.length > imageLimits.outputBytes)
       throw new VakvError("PROVIDER_IMAGE_TOO_LARGE", true, requestId);
+    timing("provider_decode", decodeStarted, { bytes: bytes.length });
+    timing("provider_complete", started);
     return { bytes, requestId };
   } catch (error) {
+    timing("provider_error", started);
     if (error instanceof VakvError) throw error;
     // Transport errors, malformed successful responses and timeouts may already have been billed.
     throw new VakvError("PROVIDER_OUTCOME_UNKNOWN", true, requestId);
@@ -164,7 +208,7 @@ export function readImagePolicy(input: Record<string, string | undefined>) {
     .object({
       IMAGE_GENERATION_ENABLED: z.enum(["true", "false"]).default("false"),
       VAKV_ENABLE_IMAGE_EDITS: z.enum(["true", "false"]).default("false"),
-      IMAGE_CREDITS_PER_IMAGE: z.coerce.number().int().min(1).max(1000000).default(1),
+      IMAGE_CREDITS_PER_IMAGE: z.coerce.number().int().min(1).max(1000000).default(20),
     })
     .safeParse(input);
   let overrides: CapabilityOverrides;
@@ -179,7 +223,7 @@ export function readImagePolicy(input: Record<string, string | undefined>) {
   return {
     enabled: parsed.data.IMAGE_GENERATION_ENABLED === "true",
     editsEnabled: parsed.data.VAKV_ENABLE_IMAGE_EDITS === "true",
-    unitCredits: parsed.data.IMAGE_CREDITS_PER_IMAGE,
+    unitCredits: imageUnitCredits,
     overrides,
   };
 }

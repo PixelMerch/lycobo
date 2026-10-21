@@ -13,7 +13,7 @@
     "dev:worker": "pnpm --filter @lycoboai/worker dev",
     "build": "pnpm -r --if-present build",
     "typecheck": "tsc -p tsconfig.tools.json --noEmit && pnpm -r typecheck",
-    "lint": "biome check . && node scripts/check-boundaries.mjs",
+    "lint": "biome check . && node scripts/check-boundaries.mjs && node scripts/check-ui-conventions.mjs",
     "format": "biome check --write .",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -25,7 +25,7 @@
     "infra:up": "docker compose up -d --wait postgres redis",
     "infra:down": "docker compose down",
     "prepare": "node scripts/setup-hooks.mjs",
-    "test:integration": "pnpm --filter @lycoboai/worker test:integration && pnpm --filter @lycoboai/worker test:images"
+    "test:integration": "pnpm --filter @lycoboai/worker test:integration && pnpm --filter @lycoboai/worker test:images && pnpm --filter @lycoboai/api test:auth && pnpm --filter @lycoboai/api test:events"
   },
   "devDependencies": {
     "typescript": "5.9.3",

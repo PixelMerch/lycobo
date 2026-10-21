@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { imageGenerationInputSchema } from "./image-generation";
+import { userUidSchema } from "./auth";
+import {
+  imageGenerationInputSchema,
+  imagePublicIdSchema,
+  imageTaskPublicIdSchema,
+} from "./image-generation";
 
 describe("image submission", () => {
   it("supports text generation without client-supplied identity", () => {
@@ -13,6 +18,16 @@ describe("image submission", () => {
         organizationId: crypto.randomUUID(),
       }).success,
     ).toBe(false);
+  });
+  it("validates quality and leaves legacy snapshots unchanged", () => {
+    const legacy = { model: "gpt-image-2", prompt: "hello" };
+    expect(imageGenerationInputSchema.parse(legacy)).not.toHaveProperty("quality");
+    for (const quality of ["low", "medium", "high"]) {
+      expect(imageGenerationInputSchema.parse({ ...legacy, quality }).quality).toBe(quality);
+    }
+    for (const quality of ["auto", "标准", "", null, 1]) {
+      expect(imageGenerationInputSchema.safeParse({ ...legacy, quality }).success).toBe(false);
+    }
   });
   it("rejects duplicate assets and oversized batches", () => {
     const id = crypto.randomUUID();
@@ -28,4 +43,19 @@ describe("image submission", () => {
         .success,
     ).toBe(false);
   });
+});
+
+it("validates fixed-width task and image display IDs", () => {
+  for (const id of ["W00000000", "W9AZ09XYZ"]) expect(imageTaskPublicIdSchema.parse(id)).toBe(id);
+  for (const id of ["P00000000", "P9AZ09XYZ"]) expect(imagePublicIdSchema.parse(id)).toBe(id);
+  for (const id of ["123", "1000000000", "W9az09XYZ", "W123456789", crypto.randomUUID()])
+    expect(imageTaskPublicIdSchema.safeParse(id).success).toBe(false);
+  for (const id of ["P123", "P100000000", "P9az09XYZ", "L12345678", crypto.randomUUID()])
+    expect(imagePublicIdSchema.safeParse(id).success).toBe(false);
+});
+
+it("preserves ten-digit user UIDs including leading zero", () => {
+  expect(userUidSchema.parse("0123456789")).toBe("0123456789");
+  for (const value of [1234567890, "123456789", "12345678901", "A123456789", crypto.randomUUID()])
+    expect(userUidSchema.safeParse(value).success).toBe(false);
 });

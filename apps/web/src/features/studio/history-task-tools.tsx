@@ -1,8 +1,14 @@
-import { Button, Modal, Tooltip } from "@heroui/react";
-import { type ImageJob, imageJobSchema } from "@lycoboai/contracts";
-import { IconCheck, IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
+import { Alert, Button, Tooltip, toast } from "@heroui/react";
+import {
+  type ImageJob,
+  imageJobSchema,
+  imageUnitCredits,
+  publicImageModel,
+} from "@lycoboai/contracts";
+import { IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { ConfirmDialog } from "../../components/confirm-dialog";
 import { UiIcon } from "../../components/ui-icon";
 import {
   assetContentUrl,
@@ -13,20 +19,13 @@ import {
   useImageSession,
   usePendingSubmission,
 } from "./generation-client";
+import { ReferenceThumbnails } from "./reference-thumbnails";
 import { type Draft, type ModelId, useStudioStore } from "./studio-state";
 
 export function HistoryPrompt({ job }: { job: ImageJob }) {
   const text = useRef<HTMLParagraphElement>(null);
   const [expanded, setExpanded] = useState(false);
   const [overflow, setOverflow] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(
-    () => () => {
-      if (copyTimer.current) clearTimeout(copyTimer.current);
-    },
-    [],
-  );
   const [error, setError] = useState("");
   useEffect(() => {
     const node = text.current;
@@ -60,46 +59,27 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
       <Button
         variant="secondary"
         className="copy-prompt"
-        data-copied={copied || undefined}
         onPress={async () => {
           try {
             await navigator.clipboard.writeText(job.prompt);
-            setCopied(true);
+            toast.success("复制成功");
             setError("");
-            if (copyTimer.current) clearTimeout(copyTimer.current);
-            copyTimer.current = setTimeout(() => setCopied(false), 3000);
           } catch {
             setError("复制失败，请手动选择提示词复制。");
           }
         }}
       >
-        <UiIcon icon={copied ? IconCheck : IconCopy} size="small" />
-        {copied ? "已复制" : "复制提示词"}
+        <UiIcon icon={IconCopy} size="small" />
+        复制提示词
       </Button>
-      {error && <p role="alert">{error}</p>}
-      <div className="generation-output-thumbnails">
-        {job.items.map((item) =>
-          item.output_asset_id ? (
-            <Button
-              variant="tertiary"
-              key={item.id}
-              className="generation-output-thumbnail"
-              aria-label={`定位生成图片 ${item.position + 1}`}
-              onPress={() =>
-                document
-                  .getElementById(`result-${item.id}`)
-                  ?.scrollIntoView({ block: "center", behavior: "instant" })
-              }
-            >
-              <img
-                src={assetContentUrl(item.output_asset_id, true)}
-                alt={`生成图片 ${item.position + 1} 缩略图`}
-                loading="lazy"
-              />
-            </Button>
-          ) : null,
-        )}
-      </div>
+      {error && (
+        <Alert className="field-error" role="alert" status="danger">
+          <Alert.Content>
+            <Alert.Description>{error}</Alert.Description>
+          </Alert.Content>
+        </Alert>
+      )}
+      <ReferenceThumbnails ids={job.input?.referenceAssetIds ?? []} label="任务参考图" />
     </div>
   );
 }
@@ -120,11 +100,12 @@ async function taskDraft(
     ).input;
   if (!input) throw new Error("任务输入不完整，无法恢复，请重新创作。");
   return {
-    model: input.model,
+    model: publicImageModel(input.model),
     draft: {
       prompt: input.prompt,
       ratio: input.aspectRatio,
       resolution: input.resolution,
+      quality: input.quality === "low" ? "低" : input.quality === "high" ? "高" : "标准",
       count: String(input.count),
       references: input.referenceAssetIds.map((id, index) => ({
         id,
@@ -147,12 +128,12 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
   const session = useImageSession();
   const models = useImageModels();
   const pending = usePendingSubmission(session.data);
-  const blocked = ["queued", "running", "needs_reconciliation"].includes(job.status) || pending;
+  const blocked = ["queued", "running"].includes(job.status) || pending;
   const configured =
     models.data?.enabled &&
     models.data.models.some(
       (model) =>
-        model.id === job.model &&
+        model.id === publicImageModel(job.model) &&
         model.enabledResolutions.some((resolution) => resolution === job.resolution),
     ) &&
     (!job.input?.referenceAssetIds.length || models.data.editsEnabled);
@@ -220,80 +201,38 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
         <Tooltip.Content placement="bottom">重新生成</Tooltip.Content>
       </Tooltip>
       {(error || generation.isError) && (
-        <p className="history-action-error" role="alert">
-          {error ||
-            (hasPendingSubmission(session.data)
-              ? "提交结果待确认，请在左侧确认上次提交。"
-              : generation.error?.message)}
-        </p>
+        <Alert className="history-action-error" role="alert" status="danger">
+          <Alert.Content>
+            <Alert.Description>
+              {error ||
+                (hasPendingSubmission(session.data)
+                  ? "提交结果待确认，请在左侧确认上次提交。"
+                  : generation.error?.message)}
+            </Alert.Description>
+          </Alert.Content>
+        </Alert>
       )}
-      <Modal
+      <ConfirmDialog
         isOpen={regenerateOpen}
-        onOpenChange={(open) => {
-          if (!open) setRegenerateOpen(false);
+        title="重新生成这张图片？"
+        content={`将使用相同的提示词、参考图和参数新建任务，提交时扣除 ${job.requested_count * imageUnitCredits} 币，失败按张退回。`}
+        closeLabel="关闭重新生成确认"
+        onCancel={() => setRegenerateOpen(false)}
+        onConfirm={() => {
+          setRegenerateOpen(false);
+          void regenerate();
         }}
-      >
-        <Modal.Backdrop>
-          <Modal.Container>
-            <Modal.Dialog className="info-dialog">
-              <Modal.Header>
-                <Modal.Heading>重新生成这张图片？</Modal.Heading>
-                <Modal.CloseTrigger aria-label="关闭重新生成确认" />
-              </Modal.Header>
-              <Modal.Body>
-                <p>将使用相同的提示词、参考图和参数新建一个生成任务。</p>
-                <div className="history-confirm-actions">
-                  <Button variant="secondary" onPress={() => setRegenerateOpen(false)}>
-                    取消
-                  </Button>
-                  <Button
-                    className="primary-action"
-                    onPress={() => {
-                      setRegenerateOpen(false);
-                      void regenerate();
-                    }}
-                  >
-                    重新生成
-                  </Button>
-                </div>
-              </Modal.Body>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
-      <Modal
+      />
+      <ConfirmDialog
         isOpen={replacement !== null}
-        onOpenChange={(open) => {
-          if (!open) setReplacement(null);
+        title="替换当前草稿？"
+        content="该模型已有草稿，继续编辑将替换提示词、参考图和参数。"
+        closeLabel="关闭草稿确认"
+        onCancel={() => setReplacement(null)}
+        onConfirm={() => {
+          if (replacement) restore(replacement);
         }}
-      >
-        <Modal.Backdrop>
-          <Modal.Container>
-            <Modal.Dialog className="info-dialog">
-              <Modal.Header>
-                <Modal.Heading>替换当前草稿？</Modal.Heading>
-                <Modal.CloseTrigger aria-label="关闭草稿确认" />
-              </Modal.Header>
-              <Modal.Body>
-                <p>该模型已有草稿，继续编辑将替换提示词、参考图和参数。</p>
-                <div className="history-confirm-actions">
-                  <Button variant="secondary" onPress={() => setReplacement(null)}>
-                    保留草稿
-                  </Button>
-                  <Button
-                    className="primary-action"
-                    onPress={() => {
-                      if (replacement) restore(replacement);
-                    }}
-                  >
-                    替换并编辑
-                  </Button>
-                </div>
-              </Modal.Body>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
+      />
     </div>
   );
 }

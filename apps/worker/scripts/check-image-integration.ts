@@ -1,10 +1,21 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { once } from "node:events";
 import { mkdtemp, rm } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { imageGenerationInputSchema } from "@lycoboai/contracts";
+import { fileURLToPath } from "node:url";
+import {
+  apiErrorSchema,
+  imageAssetsResponseSchema,
+  imageGenerationInputSchema,
+  imageJobSchema,
+  rechargeOrdersSchema,
+  unwrapApiData,
+  walletBalanceSchema,
+  walletEntriesSchema,
+} from "@lycoboai/contracts";
 import { openImageRepository } from "@lycoboai/db";
 import { supportedResolutions, validateModelInput } from "@lycoboai/generation";
 import { createImageQueue, imageQueueJobSchema, redisConnection } from "@lycoboai/queue";
@@ -14,6 +25,7 @@ import postgres from "postgres";
 import { z } from "zod";
 import { createApp } from "../../api/src/app";
 import { processImageItem } from "../src/image-processor";
+import { verifyWallet } from "./verify-wallet";
 
 if (process.env.ALLOW_LOCAL_INTEGRATION !== "true")
   throw new Error("Explicit isolated test opt-in required");
@@ -24,7 +36,25 @@ function local(value: string | undefined, protocols: string[]) {
     throw new Error("Only loopback test services allowed");
   return value;
 }
-const databaseUrl = local(process.env.DATABASE_URL, ["postgres:", "postgresql:"]);
+const baseDatabaseUrl = local(process.env.DATABASE_URL, ["postgres:", "postgresql:"]);
+const testDatabaseName = `image_test_${crypto.randomUUID().replaceAll("-", "")}`;
+const admin = postgres(baseDatabaseUrl, { max: 1 });
+const isolatedUrl = new URL(baseDatabaseUrl);
+isolatedUrl.pathname = `/${testDatabaseName}`;
+const databaseUrl = isolatedUrl.href;
+await admin.unsafe(`create database "${testDatabaseName}"`);
+try {
+  const migrated = spawnSync("pnpm", ["--filter", "@lycoboai/db", "db:migrate"], {
+    cwd: fileURLToPath(new URL("../../../", import.meta.url)),
+    env: { ...process.env, DATABASE_URL: databaseUrl },
+    stdio: "pipe",
+  });
+  if (migrated.status !== 0) throw new Error("Isolated image migration failed");
+} catch (error) {
+  await admin.unsafe(`drop database if exists "${testDatabaseName}"`);
+  await admin.end({ timeout: 5 });
+  throw error;
+}
 const redisUrl = local(process.env.REDIS_URL, ["redis:", "rediss:"]);
 const runId = crypto.randomUUID(),
   queueName = `lycobo-image-test-${runId}`;
@@ -106,13 +136,13 @@ async function dispatch() {
 try {
   await events.waitUntilReady();
   await worker.waitUntilReady();
-  const first = await repository.provision(`test-${runId}`, "test-team", 20);
+  const first = await repository.provision(`test-${runId}`, "test-team", 400);
   const renewed = await repository.provision(`test-${runId}`, "test-team", 999, true);
   assert.equal(renewed.organizationId, first.organizationId);
   assert.equal((await repository.authenticate(renewed.token))?.userId, first.userId);
   organizations.push(first.organizationId);
   users.push(first.userId);
-  const second = await repository.provision(`other-${runId}`, "other-team", 10);
+  const second = await repository.provision(`other-${runId}`, "other-team", 200);
   organizations.push(second.organizationId);
   users.push(second.userId);
   const headers = { Authorization: `Bearer ${first.token}`, "Content-Type": "application/json" };
@@ -135,7 +165,7 @@ try {
       await app.request("/api/v1/image-tasks", {
         method: "POST",
         headers: { ...headers, "Idempotency-Key": crypto.randomUUID() },
-        body: JSON.stringify({ ...input("test"), model: "gpt-image-2.5-flare", resolution: "4K" }),
+        body: JSON.stringify({ ...input("test"), model: "gpt-image-2", resolution: "8K" }),
       })
     ).status,
     400,
@@ -146,7 +176,7 @@ try {
     body: new Uint8Array(png),
   });
   assert.equal(upload.status, 201);
-  const uploaded = z.object({ id: z.uuid() }).parse(await upload.json());
+  const uploaded = z.object({ id: z.uuid() }).parse(unwrapApiData(await upload.json()));
   assert.equal(
     (
       await app.request(`/api/v1/image-assets/${uploaded.id}/content`, {
@@ -156,7 +186,7 @@ try {
     404,
   );
   const before =
-    await sql`select available_credits from organizations where id=${second.organizationId}`;
+    await sql`select balance as available_credits from organization_wallets where organization_id=${second.organizationId}`;
   await assert.rejects(
     repository.create(
       second,
@@ -167,8 +197,9 @@ try {
     /REFERENCE_NOT_FOUND/,
   );
   assert.equal(
-    (await sql`select available_credits from organizations where id=${second.organizationId}`)[0]
-      ?.available_credits,
+    (
+      await sql`select balance as available_credits from organization_wallets where organization_id=${second.organizationId}`
+    )[0]?.available_credits,
     before[0]?.available_credits,
   );
   const key = crypto.randomUUID();
@@ -206,8 +237,8 @@ try {
   assert.equal(asset.height, 2);
   assert.ok((await store.read(asset)).length);
   const balance =
-    await sql`select available_credits from organizations where id=${first.organizationId}`;
-  assert.equal(balance[0]?.available_credits, 19);
+    await sql`select balance as available_credits from organization_wallets where organization_id=${first.organizationId}`;
+  assert.equal(balance[0]?.available_credits, 380);
   const repeat = await queue.add("generate-image", { itemId: String(success.id) });
   await repeat.waitUntilFinished(events, 10000);
   assert.equal(calls, 2);
@@ -224,9 +255,9 @@ try {
   assert.ok(uncertain);
   assert.equal(await repository.claim(uncertain.id, "another-worker", 1000), null);
   const held = (
-    await sql`select available_credits from organizations where id=${first.organizationId}`
+    await sql`select balance as available_credits from organization_wallets where organization_id=${first.organizationId}`
   )[0]?.available_credits;
-  assert.equal(held, 18);
+  assert.equal(held, 360);
   await repository.reconcile(
     first,
     unknown.id,
@@ -243,9 +274,10 @@ try {
     /STATE_CONFLICT/,
   );
   assert.equal(
-    (await sql`select available_credits from organizations where id=${first.organizationId}`)[0]
-      ?.available_credits,
-    19,
+    (
+      await sql`select balance as available_credits from organization_wallets where organization_id=${first.organizationId}`
+    )[0]?.available_credits,
+    380,
   );
   const apiKey = crypto.randomUUID();
   const apiSubmission = () => ({
@@ -257,7 +289,7 @@ try {
   assert.equal(accepted.status, 202);
   const acceptedJob = z
     .object({ id: z.uuid(), replayed: z.boolean() })
-    .parse(await accepted.json());
+    .parse(unwrapApiData(await accepted.json()));
   await dispatch();
   const response = await app.request(`/api/v1/image-tasks/${acceptedJob.id}`, { headers });
   const record = z
@@ -267,19 +299,49 @@ try {
       status: z.string(),
       created_at: z.string(),
     })
-    .parse(await response.json());
+    .parse(unwrapApiData(await response.json()));
   assert.equal(record.status, "succeeded");
   assert.equal(record.organization_id, first.organizationId);
   assert.equal(record.user_id, first.userId);
+  const detailed = imageJobSchema.parse(
+    JSON.parse(JSON.stringify(await repository.get(first, acceptedJob.id))),
+  );
+  assert.match(detailed.public_id ?? "", /^W[0-9A-Z]{8}$/);
+  const output = detailed.items[0];
+  assert.match(output?.output_public_id ?? "", /^P[0-9A-Z]{8}$/);
+  const assetResponse = await app.request("/api/v1/image-assets?limit=100", { headers });
+  const assetList = imageAssetsResponseSchema.parse(unwrapApiData(await assetResponse.json())).data;
+  assert.equal(
+    assetList.find((asset) => asset.id === output?.output_asset_id)?.public_id,
+    output?.output_public_id,
+  );
+  assert.equal(new Set(assetList.map((asset) => asset.public_id)).size, assetList.length);
+  const reconnected = openImageRepository(databaseUrl);
+  try {
+    const reread = imageJobSchema.parse(
+      JSON.parse(JSON.stringify(await reconnected.get(first, acceptedJob.id))),
+    );
+    assert.equal(reread.public_id, detailed.public_id);
+    assert.equal(reread.items[0]?.output_public_id, output?.output_public_id);
+    assert.equal(await reconnected.get(second, acceptedJob.id), null);
+  } finally {
+    await reconnected.close();
+  }
+  const sequenceBounds =
+    await sql`select sequencename,min_value::text,max_value::text,cycle from pg_sequences where schemaname='public' and sequencename in ('image_assets_display_number_seq','image_jobs_display_number_seq')`;
+  assert.equal(sequenceBounds.length, 2);
+  for (const sequence of sequenceBounds) {
+    assert.equal(sequence.cycle, false);
+    assert.equal(sequence.max_value, "9223372036854775807");
+  }
+
   assert.equal((await app.request("/api/v1/image-tasks", apiSubmission())).status, 200);
   const conflict = await app.request("/api/v1/image-tasks", {
     ...apiSubmission(),
     body: JSON.stringify(input("different")),
   });
   assert.equal(conflict.status, 409);
-  assert.ok(
-    z.object({ error: z.object({ requestId: z.string().min(1) }) }).parse(await conflict.json()),
-  );
+  assert.ok(apiErrorSchema.parse(await conflict.json()));
   const crashed = await repository.create(first, input("never-submit"), crypto.randomUUID(), 1);
   const [crashItem] = await sql`select id from image_job_items where job_id=${crashed.id}`;
   assert.ok(crashItem);
@@ -349,14 +411,14 @@ try {
       body: JSON.stringify({ ...input("browser-flow"), model }),
     });
     assert.equal(submitted.status, 202);
-    const task = z.object({ id: z.uuid() }).parse(await submitted.json());
+    const task = z.object({ id: z.uuid() }).parse(unwrapApiData(await submitted.json()));
     await dispatch();
     assert.equal((await repository.get(first, task.id))?.status, "succeeded");
   }
   const library = await browserApp.request("/api/v1/image-assets", { headers: { Cookie: cookie } });
   const saved = z
     .object({ data: z.array(z.object({ id: z.uuid(), kind: z.string() })) })
-    .parse(await library.json());
+    .parse(unwrapApiData(await library.json()));
   assert.equal(saved.data.filter((asset) => asset.kind === "output").length, 7);
   assert.equal((await repository.listAssets(second, 30)).length, 0);
   const thumbnail = await browserApp.request(
@@ -366,12 +428,40 @@ try {
   assert.equal(thumbnail.status, 200);
   assert.equal(thumbnail.headers.get("content-type"), "image/png");
   // Retry the already-reserved idempotency key even when the available balance has become zero.
-  await sql`update organizations set available_credits=0 where id=${first.organizationId}`;
+  while ((await repository.wallet(first)).balance >= 20) {
+    const count = Math.min(4, Math.floor((await repository.wallet(first)).balance / 20));
+    await repository.create(first, input("exhaust-fixture", count), crypto.randomUUID());
+  }
   assert.equal((await repository.create(first, input("mixed", 2), key, 1)).replayed, true);
   await assert.rejects(
     repository.create(first, input("no-credit"), crypto.randomUUID(), 1),
     /INSUFFICIENT_CREDITS/,
   );
+  walletBalanceSchema.parse(
+    unwrapApiData(await (await app.request("/api/v1/wallet", { headers })).json()),
+  );
+  walletEntriesSchema.parse(
+    unwrapApiData(await (await app.request("/api/v1/wallet/entries", { headers })).json()),
+  );
+  rechargeOrdersSchema.parse(
+    unwrapApiData(await (await app.request("/api/v1/wallet/recharges", { headers })).json()),
+  );
+  assert.equal((await app.request("/api/v1/wallet")).status, 401);
+  assert.equal(
+    (await app.request("/api/v1/wallet/entries?before=9999999999999999999", { headers })).status,
+    400,
+  );
+  assert.equal(
+    (
+      await app.request("/api/v1/wallet/recharges", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ credits: 10000 }),
+      })
+    ).status,
+    404,
+  );
+  await verifyWallet(repository, sql);
   await sql`update image_api_keys set revoked_at=now() where id=${first.keyId}`;
   assert.equal((await app.request("/api/v1/image-models", { headers })).status, 401);
   console.info(
@@ -383,18 +473,9 @@ try {
   await queue.obliterate({ force: true });
   await queue.close();
   await new Promise<void>((resolve) => server.close(() => resolve()));
-  for (const organizationId of organizations) {
-    await sql`delete from image_credit_ledger where organization_id=${organizationId}`;
-    await sql`delete from image_outbox where item_id in (select id from image_job_items where organization_id=${organizationId})`;
-    await sql`delete from image_job_items where organization_id=${organizationId}`;
-    await sql`delete from image_jobs where organization_id=${organizationId}`;
-    await sql`delete from image_assets where organization_id=${organizationId}`;
-    await sql`delete from image_api_keys where organization_id=${organizationId}`;
-    await sql`delete from organization_members where organization_id=${organizationId}`;
-    await sql`delete from organizations where id=${organizationId}`;
-  }
-  for (const id of users) await sql`delete from users where id=${id}`;
   await repository.close();
   await sql.end({ timeout: 5 });
+  await admin.unsafe(`drop database if exists "${testDatabaseName}"`);
+  await admin.end({ timeout: 5 });
   await rm(directory, { recursive: true, force: true });
 }

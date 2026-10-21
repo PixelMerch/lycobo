@@ -1,12 +1,24 @@
-import { Button } from "@heroui/react";
+import "./image-public-id.css";
+import { Button, Card, EmptyState, Link } from "@heroui/react";
 import { IconFolder } from "@tabler/icons-react";
 import { UiIcon } from "../../components/ui-icon";
-import { assetContentUrl, useImageAssets, useImageSession } from "./generation-client";
+import { useErrorToast } from "../../lib/error-toast";
+import {
+  assetContentUrl,
+  downloadAsset,
+  useImageAssets,
+  useImageSession,
+} from "./generation-client";
 
 export function AssetsPage() {
   const session = useImageSession();
   const query = useImageAssets();
   const assets = query.data?.pages.flatMap((page) => page.data) ?? [];
+  useErrorToast(
+    session.isError || query.isError
+      ? (session.error?.message ?? query.error?.message ?? "服务暂时不可用，请稍后重试。")
+      : null,
+  );
   return (
     <section className="page-panel assets-page">
       <div className="page-heading">
@@ -15,50 +27,40 @@ export function AssetsPage() {
           <p>已保存的生成图片与参考图片</p>
         </div>
       </div>
-      {session.isError || query.isError ? (
-        <div role="alert" className="generation-message">
-          <p>{session.error?.message ?? query.error?.message}</p>
-          <Button
-            variant="secondary"
-            onPress={() => {
-              void session.refetch();
-              void query.refetch();
-            }}
-          >
-            重新连接
-          </Button>
-        </div>
-      ) : session.isPending || query.isPending ? (
-        <p role="status">正在加载素材…</p>
-      ) : assets.length ? (
+      {session.isError ||
+      query.isError ||
+      session.isPending ||
+      query.isPending ? null : assets.length ? (
         <>
           <div className="asset-grid">
             {assets.map((asset) => (
-              <article className="case-card" key={asset.id}>
-                <a
+              <Card className="case-card" key={asset.id} variant="transparent">
+                <Link
                   className="asset-preview"
                   href={assetContentUrl(asset.id)}
                   target="_blank"
                   rel="noreferrer"
+                  aria-label={`查看原图：${asset.prompt ?? "参考图片"}`}
                 >
                   <img
                     src={assetContentUrl(asset.id, true)}
                     alt={asset.prompt ?? "参考图片"}
                     loading="lazy"
                   />
-                </a>
-                <div className="asset-card-details">
-                  <h2>{asset.kind === "output" ? "生成图片" : "参考图片"}</h2>
-                  <p>{asset.model}</p>
+                </Link>
+                <Card.Content className="asset-card-details">
+                  <Card.Title>{asset.kind === "output" ? "生成图片" : "参考图片"}</Card.Title>
+                  <Card.Description>{asset.model}</Card.Description>
+                  {asset.public_id && <p className="image-public-id">图片 ID：{asset.public_id}</p>}
                   <small>
                     {asset.width} × {asset.height} ·{" "}
                     {new Date(asset.created_at).toLocaleString("zh-CN")}
                   </small>
-                  <a href={assetContentUrl(asset.id)} download={`${asset.id}.png`}>
+                  <Button variant="outline" size="sm" onPress={() => downloadAsset(asset.id)}>
                     下载原图
-                  </a>
-                </div>
-              </article>
+                  </Button>
+                </Card.Content>
+              </Card>
             ))}
           </div>
           {query.hasNextPage && (
@@ -74,11 +76,11 @@ export function AssetsPage() {
           )}
         </>
       ) : (
-        <div className="empty-state">
+        <EmptyState className="empty-state">
           <UiIcon icon={IconFolder} size="illustration" />
           <h2>还没有素材</h2>
           <p>生成成功的图片会自动保存在这里。</p>
-        </div>
+        </EmptyState>
       )}
     </section>
   );

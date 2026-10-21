@@ -1,13 +1,23 @@
 import {
   imageGenerationInputSchema,
   imageModelCatalog,
+  imageUnitCredits,
   type StoredImage,
 } from "@lycoboai/contracts";
-import { type ImagePrincipal, type ImageRepository, ImageRepositoryError } from "@lycoboai/db";
+import {
+  type ImageEventFeed,
+  type ImagePrincipal,
+  type ImageRepository,
+  ImageRepositoryError,
+  WalletError,
+} from "@lycoboai/db";
 import { type ImageStore, ImageValidationError, maxImageBytes } from "@lycoboai/storage";
 import { type Context, Hono } from "hono";
 import sharp from "sharp";
 import { z } from "zod";
+import { enterprisePrincipal } from "../auth/routes";
+import type { EnterpriseAuth } from "../auth/service";
+import { imageEventStream } from "./events";
 import {
   setWorkbenchCookie,
   trustedWorkbenchRequest,
@@ -17,6 +27,8 @@ import {
 
 export type ImageApiDependencies = {
   repository: ImageRepository;
+  events?: ImageEventFeed | undefined;
+  auth?: EnterpriseAuth | undefined;
   store: ImageStore;
   enabled: boolean;
   unitCredits: number;
@@ -36,7 +48,22 @@ export function imageRoutes(deps: ImageApiDependencies) {
     message: string,
     status: 400 | 401 | 403 | 404 | 409 | 413 | 503,
   ) => c.json({ error: { code, message, requestId: c.get("requestId") } }, status);
+  const resolvePrincipal = async (c: Context) => {
+    const bearer = c.req.header("Authorization");
+    // Keep existing service API keys compatible; browser sessions never fall back to local identity.
+    if (deps.auth && bearer && /^Bearer [\w-]{43}$/.test(bearer))
+      return deps.repository.authenticate(bearer.slice(7));
+    return deps.auth
+      ? (await enterprisePrincipal(c, deps.auth))?.user
+      : workbenchPrincipal(c, deps.repository, deps.session);
+  };
   app.post("/image-session", async (c) => {
+    if (deps.auth) {
+      const principal = await resolvePrincipal(c);
+      return principal
+        ? c.json({ userId: principal.userId, organizationId: principal.organizationId })
+        : fail(c, "UNAUTHORIZED", "请先登录", 401);
+    }
     if (!deps.session || !trustedWorkbenchRequest(c, deps.session))
       return fail(c, "UNAUTHORIZED", "请先登录工作台", 401);
     const principal = await deps.repository.authenticate(deps.session.token);
@@ -45,13 +72,13 @@ export function imageRoutes(deps: ImageApiDependencies) {
     return c.json({ userId: principal.userId, organizationId: principal.organizationId });
   });
   app.use("*", async (c, next) => {
-    const principal = await workbenchPrincipal(c, deps.repository, deps.session);
+    const principal = await resolvePrincipal(c);
     if (!principal) return fail(c, "UNAUTHORIZED", "请先验证身份", 401);
     c.set("principal", principal);
     await next();
   });
   app.onError((error, c) => {
-    if (error instanceof ImageRepositoryError) {
+    if (error instanceof ImageRepositoryError || error instanceof WalletError) {
       const status =
         error.code === "FORBIDDEN"
           ? 403
@@ -60,19 +87,126 @@ export function imageRoutes(deps: ImageApiDependencies) {
             : error.code === "REFERENCE_NOT_FOUND"
               ? 400
               : 409;
-      return fail(c, error.code, "请求未执行，请检查权限、余额或任务状态", status);
+      return fail(
+        c,
+        error.code,
+        error.code === "INSUFFICIENT_CREDITS"
+          ? "企业金币余额不足，每张图片需要 20 币"
+          : "请求未执行，请检查权限、余额或任务状态",
+        status,
+      );
     }
     if (error instanceof SyntaxError) return fail(c, "VALIDATION_ERROR", "请求格式不正确", 400);
     throw error;
   });
+  const connections = new Map<string, number>();
+  app.get("/image-events", async (c) => {
+    const feed = deps.events;
+    if (!feed) return fail(c, "GENERATION_NOT_CONFIGURED", "实时通知暂不可用", 503);
+    const scope = c.get("principal");
+    const connectionKey = `${scope.organizationId}:${scope.userId}`;
+    if ((connections.get(connectionKey) ?? 0) >= 8)
+      return fail(c, "FORBIDDEN", "实时连接过多，请关闭多余页面", 403);
+    connections.set(connectionKey, (connections.get(connectionKey) ?? 0) + 1);
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
+      const count = (connections.get(connectionKey) ?? 1) - 1;
+      if (count > 0) connections.set(connectionKey, count);
+      else connections.delete(connectionKey);
+    };
+    try {
+      const response = await imageEventStream(c, feed, scope, async () => {
+        const current = await resolvePrincipal(c);
+        return (
+          !!current &&
+          current.userId === scope.userId &&
+          current.organizationId === scope.organizationId
+        );
+      });
+      if (!response.body || !response.headers.get("Content-Type")?.includes("text/event-stream")) {
+        release();
+        return response;
+      }
+      const reader = response.body.getReader();
+      return new Response(
+        new ReadableStream({
+          async pull(controller) {
+            try {
+              const next = await reader.read();
+              if (next.done) {
+                release();
+                controller.close();
+              } else controller.enqueue(next.value);
+            } catch (error) {
+              release();
+              controller.error(error);
+            }
+          },
+          async cancel() {
+            release();
+            await reader.cancel();
+          },
+        }),
+        { status: response.status, headers: response.headers },
+      );
+    } catch {
+      release();
+      return fail(c, "GENERATION_NOT_CONFIGURED", "实时通知暂不可用", 503);
+    }
+  });
   app.get("/image-models", (c) =>
     c.json({
       enabled: deps.enabled,
+      eventsEnabled: !!deps.events,
       editsEnabled: deps.editsEnabled ?? false,
-      unitCredits: deps.unitCredits,
+      unitCredits: imageUnitCredits,
       models: imageModelCatalog.map((m) => ({ ...m, enabledResolutions: deps.resolutions(m.id) })),
     }),
   );
+  app.get("/wallet", async (c) =>
+    c.json({
+      ...(await deps.repository.wallet(c.get("principal"))),
+      unitCredits: imageUnitCredits,
+    }),
+  );
+  app.get("/wallet/entries", async (c) => {
+    const parsed = z
+      .object({
+        limit: z.coerce.number().int().min(1).max(100).default(20),
+        before: z
+          .string()
+          .regex(/^[1-9][0-9]{0,18}$/)
+          .refine((value) => BigInt(value) <= 9223372036854775807n)
+          .optional(),
+      })
+      .safeParse(c.req.query());
+    if (!parsed.success) return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
+    return c.json({
+      data: await deps.repository.walletEntries(
+        c.get("principal"),
+        parsed.data.limit,
+        parsed.data.before,
+      ),
+    });
+  });
+  app.get("/wallet/recharges", async (c) => {
+    const parsed = z
+      .object({
+        limit: z.coerce.number().int().min(1).max(100).default(20),
+        before: z.uuid().optional(),
+      })
+      .safeParse(c.req.query());
+    if (!parsed.success) return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
+    return c.json({
+      data: await deps.repository.rechargeOrders(
+        c.get("principal"),
+        parsed.data.limit,
+        parsed.data.before,
+      ),
+    });
+  });
   app.post("/image-tasks", async (c) => {
     if (!deps.enabled) return fail(c, "GENERATION_NOT_CONFIGURED", "生图服务尚未启用", 503);
     const input = imageGenerationInputSchema.safeParse(await c.req.json());
@@ -88,7 +222,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
       c.get("principal"),
       input.data,
       key.data,
-      deps.unitCredits,
+      imageUnitCredits,
     );
     return c.json(result, result.replayed ? 200 : 202);
   });

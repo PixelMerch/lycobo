@@ -1,0 +1,22 @@
+.lycobo-logo {
+  display: block;
+  flex: none;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.brand .lycobo-logo {
+  width: 88px;
+}
+
+.login-brand-mark img {
+  display: block;
+  width: 28px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.mobile-nav .lycobo-logo {
+  width: 88px;
+}

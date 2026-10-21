@@ -3,16 +3,20 @@ import {
   type ImageGenerationInput,
   type ImageScope,
   imageGenerationInputSchema,
+  imageProviderModel,
+  imageUnitCredits,
   type StoredImage,
 } from "@lycoboai/contracts";
 import postgres from "postgres";
+import { recordImageEvent } from "./image-event-repository";
+import { appendWalletEntry, ensureWallet, walletRepository } from "./wallet-repository";
 
 export class ImageRepositoryError extends Error {
   constructor(readonly code: string) {
     super(code);
   }
 }
-export type ImagePrincipal = ImageScope & { role: "admin" | "member" };
+export type ImagePrincipal = ImageScope & { role: "admin" | "member"; uid?: string };
 export type ClaimedImage = {
   itemId: string;
   jobId: string;
@@ -20,6 +24,7 @@ export type ClaimedImage = {
   userId: string;
   executionToken: string;
   input: ImageGenerationInput;
+  providerModel: ImageGenerationInput["model"];
 };
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 export function openImageRepository(url: string) {
@@ -39,6 +44,8 @@ export function openImageRepository(url: string) {
       else 'failed' end, updated_at=now(), completed_at=case
       when exists(select 1 from image_job_items i where i.job_id=j.id and i.status in ('running','queued','needs_reconciliation')) then null
       else now() end where j.id=${jobId}`;
+    const [job] = await tx`select organization_id from image_jobs where id=${jobId}`;
+    if (job) await recordImageEvent(tx, String(job.organization_id), "task", jobId);
   };
   const refund = async (tx: postgres.TransactionSql, jobId: string, itemId: string) => {
     const credits =
@@ -46,18 +53,36 @@ export function openImageRepository(url: string) {
       select organization_id,id,${itemId},'refund',unit_credits from image_jobs where id=${jobId}
       on conflict do nothing returning organization_id,amount`;
     const credit = credits[0];
-    if (credit)
-      await tx`update organizations set available_credits=available_credits+${credit.amount} where id=${credit.organization_id}`;
+    if (credit) {
+      const [job] = await tx`select user_id from image_jobs where id=${jobId}`;
+      if (!job) throw new Error("MISSING_JOB");
+      const wallet = await ensureWallet(tx, {
+        organizationId: String(credit.organization_id),
+        userId: String(job.user_id),
+      });
+      await appendWalletEntry(tx, wallet.id, {
+        eventKey: `refund:${itemId}`,
+        kind: "refund",
+        amount: Number(credit.amount),
+        userId: String(job.user_id),
+        jobId,
+        itemId,
+      });
+    }
   };
-  const jobView = sql`j.id,j.organization_id,j.user_id,j.model,j.prompt,j.resolution,j.aspect_ratio,
+  const publicModelSql = sql`case when j.model in ('nano-banana-2.1','gemini-nano-banana-2.1') then 'nano-banana-2.1'
+    when j.model in ('gpt-image-2.5','gpt-image-2.5-flare','gpt-image-2.5-sunburst') then 'gpt-image-2.5'
+    when j.model in ('gpt-image-2','gpt-image-2-4K') then 'gpt-image-2' else j.model end`;
+  const jobView = sql`j.public_id,j.id,j.organization_id,j.user_id,${publicModelSql} as model,j.prompt,j.resolution,j.aspect_ratio,
     j.requested_count,j.unit_credits,j.status,j.input,j.created_at,j.updated_at,j.completed_at,
     (select coalesce(json_agg(json_build_object('id',i.id,'position',i.position,'status',i.status,
       'worker_id',i.worker_id,'provider',i.provider,'provider_request_id',i.provider_request_id,
       'attempts',i.attempts,'error_code',i.error_code,'started_at',i.started_at,'completed_at',i.completed_at,
-      'output_asset_id',i.output_asset_id,'width',a.width,'height',a.height,'bytes',a.bytes) order by i.position),'[]')
+      'output_asset_id',i.output_asset_id,'output_public_id',a.public_id,'width',a.width,'height',a.height,'bytes',a.bytes) order by i.position),'[]')
       from image_job_items i left join image_assets a on a.id=i.output_asset_id and a.organization_id=i.organization_id where i.job_id=j.id) as items`;
   return {
     close: () => sql.end({ timeout: 5 }),
+    ...walletRepository(sql),
     async provision(
       subject: string,
       organizationName: string,
@@ -68,7 +93,7 @@ export function openImageRepository(url: string) {
       return sql.begin(async (tx) => {
         const [user] =
           await tx`insert into users (auth_subject) values (${subject}) on conflict (auth_subject)
-          do update set auth_subject=excluded.auth_subject returning id`;
+          do update set auth_subject=excluded.auth_subject returning id,uid`;
         if (!user) throw new Error("PROVISION_FAILED");
         let org = reuseOrganization
           ? (
@@ -78,15 +103,27 @@ export function openImageRepository(url: string) {
           : undefined;
         if (!org) {
           [org] =
-            await tx`insert into organizations (name,available_credits) values (${organizationName},${credits}) returning id`;
+            await tx`insert into organizations (name,available_credits) values (${organizationName},0) returning id`;
           if (!org) throw new Error("PROVISION_FAILED");
           await tx`insert into organization_members (organization_id,user_id,role) values (${org.id},${user.id},'admin')`;
+          const wallet = await ensureWallet(tx, {
+            organizationId: String(org.id),
+            userId: String(user.id),
+          });
+          if (credits > 0)
+            await appendWalletEntry(tx, wallet.id, {
+              eventKey: "provision-opening",
+              kind: "opening",
+              amount: credits,
+              userId: String(user.id),
+            });
         }
         const [key] =
           await tx`insert into image_api_keys (organization_id,user_id,token_hash,expires_at)
           values (${org.id},${user.id},${hash(token)},now()+interval '7 days') returning id`;
         return {
           userId: String(user.id),
+          uid: String(user.uid),
           organizationId: String(org.id),
           keyId: String(key?.id),
           token,
@@ -95,7 +132,8 @@ export function openImageRepository(url: string) {
     },
     async authenticate(token: string): Promise<ImagePrincipal | null> {
       if (!/^[\w-]{43}$/.test(token)) return null;
-      const [row] = await sql`select k.user_id,k.organization_id,m.role from image_api_keys k
+      const [row] = await sql`select k.user_id,k.organization_id,m.role,u.uid from image_api_keys k
+        join users u on u.id=k.user_id
         join organization_members m on m.organization_id=k.organization_id and m.user_id=k.user_id
         where k.token_hash=${hash(token)} and k.revoked_at is null and k.expires_at>now()`;
       if (!row || (row.role !== "admin" && row.role !== "member")) return null;
@@ -103,17 +141,24 @@ export function openImageRepository(url: string) {
         userId: String(row.user_id),
         organizationId: String(row.organization_id),
         role: row.role,
+        uid: String(row.uid),
       };
     },
-    async create(scope: ImageScope, input: ImageGenerationInput, key: string, unitCredits: number) {
+    async create(
+      scope: ImageScope,
+      input: ImageGenerationInput,
+      key: string,
+      _legacyUnitCredits?: number,
+    ) {
+      const unitCredits = imageUnitCredits;
       const inputHash = hash(JSON.stringify(input));
       return sql.begin(async (tx) => {
         const members =
           await tx`select user_id from organization_members where organization_id=${scope.organizationId} and user_id=${scope.userId} for share`;
         if (!members.length) throw new ImageRepositoryError("FORBIDDEN");
         const inserted =
-          await tx`insert into image_jobs (organization_id,user_id,idempotency_key,input_hash,input,model,prompt,resolution,aspect_ratio,requested_count,unit_credits)
-          values (${scope.organizationId},${scope.userId},${key},${inputHash},${tx.json(input)},${input.model},${input.prompt},${input.resolution},${input.aspectRatio},${input.count},${unitCredits})
+          await tx`insert into image_jobs (organization_id,user_id,idempotency_key,input_hash,input,model,provider_model,prompt,resolution,aspect_ratio,requested_count,unit_credits)
+          values (${scope.organizationId},${scope.userId},${key},${inputHash},${tx.json(input)},${input.model},${imageProviderModel(input)},${input.prompt},${input.resolution},${input.aspectRatio},${input.count},${unitCredits})
           on conflict (organization_id,user_id,idempotency_key) do nothing returning id`;
         if (!inserted[0]) {
           const [existing] =
@@ -130,15 +175,23 @@ export function openImageRepository(url: string) {
             throw new ImageRepositoryError("REFERENCE_NOT_FOUND");
         }
         const total = unitCredits * input.count;
-        const reserved =
-          await tx`update organizations set available_credits=available_credits-${total} where id=${scope.organizationId} and available_credits>=${total} returning id`;
-        if (!reserved.length) throw new ImageRepositoryError("INSUFFICIENT_CREDITS");
+        const wallet = await ensureWallet(tx, scope);
+        if (wallet.balance < total) throw new ImageRepositoryError("INSUFFICIENT_CREDITS");
         await tx`insert into image_credit_ledger (organization_id,job_id,event_type,amount) values (${scope.organizationId},${id},'reserve',${-total})`;
         for (let position = 0; position < input.count; position++) {
           const itemId = randomUUID();
           await tx`insert into image_job_items (id,job_id,organization_id,position) values (${itemId},${id},${scope.organizationId},${position})`;
+          await appendWalletEntry(tx, wallet.id, {
+            eventKey: `consume:${itemId}`,
+            kind: "consume",
+            amount: -unitCredits,
+            userId: scope.userId,
+            jobId: id,
+            itemId,
+          });
           await tx`insert into image_outbox (item_id) values (${itemId})`;
         }
+        await recordImageEvent(tx, scope.organizationId, "task", id);
         return { id, replayed: false };
       });
     },
@@ -153,11 +206,14 @@ export function openImageRepository(url: string) {
       return row ?? null;
     },
     async addReference(scope: ImageScope, image: StoredImage) {
-      await sql`insert into image_assets (id,organization_id,user_id,kind,object_key,mime_type,width,height,bytes,sha256)
-        values (${image.id},${scope.organizationId},${scope.userId},'reference',${image.objectKey},${image.mimeType},${image.width},${image.height},${image.bytes},${image.sha256})`;
+      await sql.begin(async (tx) => {
+        await tx`insert into image_assets (id,organization_id,user_id,kind,object_key,mime_type,width,height,bytes,sha256)
+          values (${image.id},${scope.organizationId},${scope.userId},'reference',${image.objectKey},${image.mimeType},${image.width},${image.height},${image.bytes},${image.sha256})`;
+        await recordImageEvent(tx, scope.organizationId, "asset", image.id);
+      });
     },
     async listAssets(scope: ImageScope, limit: number, before?: string) {
-      return sql`select a.id,a.kind,a.width,a.height,a.bytes,a.created_at,j.model,j.prompt
+      return sql`select a.public_id,a.id,a.kind,a.width,a.height,a.bytes,a.created_at,${publicModelSql} as model,j.prompt
         from image_assets a left join image_job_items i on i.output_asset_id=a.id and i.organization_id=a.organization_id
         left join image_jobs j on j.id=i.job_id and j.organization_id=a.organization_id
         where a.organization_id=${scope.organizationId}
@@ -205,7 +261,7 @@ export function openImageRepository(url: string) {
         // Match completion/reconciliation lock order to avoid sibling-item deadlocks.
         await tx`select id from image_jobs where id=${candidate.job_id} for update`;
         const [row] =
-          await tx`select i.id,i.job_id,j.organization_id,j.user_id,j.input from image_job_items i join image_jobs j on j.id=i.job_id
+          await tx`select i.id,i.job_id,j.organization_id,j.user_id,j.input,j.provider_model from image_job_items i join image_jobs j on j.id=i.job_id
           where i.id=${itemId} and i.status='queued' for update of i skip locked`;
         if (!row) return null;
         const input = imageGenerationInputSchema.parse(row.input);
@@ -213,6 +269,7 @@ export function openImageRepository(url: string) {
         await tx`update image_job_items set status='running',worker_id=${workerId},execution_token=${executionToken},attempts=attempts+1,
           started_at=now(),lease_expires_at=now()+${leaseMs} * interval '1 millisecond' where id=${itemId}`;
         await tx`update image_jobs set status='running',updated_at=now() where id=${row.job_id}`;
+        await recordImageEvent(tx, String(row.organization_id), "task", String(row.job_id));
         return {
           itemId,
           executionToken,
@@ -220,6 +277,9 @@ export function openImageRepository(url: string) {
           organizationId: String(row.organization_id),
           userId: String(row.user_id),
           input,
+          providerModel: imageGenerationInputSchema.shape.model.parse(
+            row.provider_model ?? input.model,
+          ),
         };
       });
     },
@@ -251,6 +311,9 @@ export function openImageRepository(url: string) {
         await refreshJob(tx, job.jobId);
         return true;
       });
+    },
+    async pruneEvents() {
+      await sql`delete from image_events where id in (select id from image_events where created_at<now()-interval '7 days' order by created_at limit 1000)`;
     },
     async expireClaims() {
       // An expired paid attempt is held for operator reconciliation, never queued again.

@@ -7,7 +7,7 @@ const png = Buffer.from(
   "base64",
 );
 
-test("five models submit at 1K, queued results become durable history and library assets", async ({
+test("three public models submit at 1K, queued results become durable history and library assets", async ({
   page,
 }) => {
   await mockImageApi(page);
@@ -100,13 +100,15 @@ test("five models submit at 1K, queued results become durable history and librar
         input.resolution === "1K" && input.count === 1 && input.referenceAssetIds.length === 0,
     ),
   ).toBe(true);
-  await expect(page.locator(".generation-results img")).toHaveCount(5, { timeout: 12000 });
+  await expect(page.locator(".generation-results img")).toHaveCount(modelNames.length, {
+    timeout: 12000,
+  });
   await page.reload();
-  await expect(page.locator(".generation-results img")).toHaveCount(5);
+  await expect(page.locator(".generation-results img")).toHaveCount(modelNames.length);
   await page.getByRole("link", { name: "素材库", exact: true }).click();
-  await expect(page.locator(".asset-grid img")).toHaveCount(5);
+  await expect(page.locator(".asset-grid img")).toHaveCount(modelNames.length);
   await page.reload();
-  await expect(page.locator(".asset-grid img")).toHaveCount(5);
+  await expect(page.locator(".asset-grid img")).toHaveCount(modelNames.length);
 });
 
 for (const outcome of ["disconnect", "timeout", "auth"] as const) {
@@ -150,7 +152,7 @@ test("unavailable authentication does not show fabricated history or enable gene
   await page.getByLabel("提示词", { exact: true }).fill("陶瓷杯");
   await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
   await expect(page.locator(".generation-results img")).toHaveCount(0);
-  await expect(page.getByText("请先登录工作台，或检查本地身份配置。").first()).toBeVisible();
+  await expect(page.getByText("登录已过期，请重新登录工作台。").first()).toBeVisible();
 });
 
 test("reference images are uploaded before submitting their server asset IDs", async ({ page }) => {

@@ -1,4 +1,5 @@
 import {
+  apiErrorSchema,
   type ImageGenerationInput,
   imageAssetsResponseSchema,
   imageGenerationInputSchema,
@@ -10,6 +11,9 @@ import {
 } from "@lycoboai/contracts";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
+import { normalizeApiResponse } from "../../lib/api-response";
+import { sessionFetch } from "../../lib/session-fetch";
+import { useImageEventState } from "./image-event-state";
 import type { Draft, ModelId } from "./studio-state";
 
 export class ImageApiError extends Error {
@@ -21,7 +25,7 @@ export class ImageApiError extends Error {
   }
 }
 export async function imageRequest(path: string, init: RequestInit = {}) {
-  const response = await fetch(`/api/v1/${path}`, {
+  const response = await sessionFetch(`/api/v1/${path}`, {
     ...init,
     credentials: "same-origin",
     signal: init.signal
@@ -30,19 +34,22 @@ export async function imageRequest(path: string, init: RequestInit = {}) {
   });
   if (!response.ok) {
     const messages: Record<number, string> = {
-      401: "请先登录工作台，或检查本地身份配置。",
+      401: "登录已过期，请重新登录工作台。",
       403: "当前操作没有权限。",
       400: "模型参数或参考图不受支持，请调整后重试。",
       409: "额度不足或提交参数冲突，请检查后重试。",
       413: "图片超过大小限制。",
       503: "生图服务尚未启用，请检查服务端配置。",
     };
+    const failure = apiErrorSchema.safeParse(await response.json().catch(() => null));
     throw new ImageApiError(
-      messages[response.status] ?? "服务暂时不可用，请稍后重试。",
+      failure.success
+        ? failure.data.message
+        : (messages[response.status] ?? "服务暂时不可用，请稍后重试。"),
       response.status,
     );
   }
-  return response;
+  return normalizeApiResponse(response);
 }
 export function useImageSession() {
   return useQuery({
@@ -68,13 +75,15 @@ export function useImageModels() {
       ),
   });
 }
-export function useImageHistory() {
+export function useImageHistory({ poll = true } = {}) {
   const session = useImageSession();
+  const eventStatus = useImageEventState((state) => state.status);
   return useInfiniteQuery({
     queryKey: ["image-tasks"],
     enabled: session.isSuccess,
     initialPageParam: "",
     retry: false,
+    staleTime: 30000,
     queryFn: async ({ pageParam, signal }) =>
       imageTasksResponseSchema.parse(
         await (
@@ -84,14 +93,26 @@ export function useImageHistory() {
         ).json(),
       ),
     getNextPageParam: (last) => (last.data.length === 20 ? last.data.at(-1)?.id : undefined),
-    refetchInterval: 3000,
+    refetchInterval:
+      poll && eventStatus !== "live"
+        ? (query) =>
+            query.state.status !== "error" &&
+            query.state.data?.pages.some((page) =>
+              page.data.some((job) => job.status === "queued" || job.status === "running"),
+            )
+              ? eventStatus === "off"
+                ? 3000
+                : 30000
+              : false
+        : false,
   });
 }
-export function useImageAssets() {
+export function useImageAssets({ enabled = true }: { enabled?: boolean } = {}) {
   const session = useImageSession();
+  const eventStatus = useImageEventState((state) => state.status);
   return useInfiniteQuery({
     queryKey: ["image-assets"],
-    enabled: session.isSuccess,
+    enabled: enabled && session.isSuccess,
     initialPageParam: "",
     retry: false,
     queryFn: async ({ pageParam, signal }) =>
@@ -103,7 +124,7 @@ export function useImageAssets() {
         ).json(),
       ),
     getNextPageParam: (last) => (last.data.length === 30 ? last.data.at(-1)?.id : undefined),
-    refetchInterval: 5000,
+    refetchInterval: eventStatus === "live" ? false : eventStatus === "off" ? 5000 : 30000,
   });
 }
 type SessionScope = { organizationId: string; userId: string };
@@ -174,6 +195,14 @@ export function useGenerateImage() {
           model,
           prompt: draft.prompt,
           resolution: draft.resolution,
+          quality:
+            draft.quality === "低"
+              ? "low"
+              : draft.quality === "标准"
+                ? "medium"
+                : draft.quality === "高"
+                  ? "high"
+                  : draft.quality,
           aspectRatio: draft.ratio,
           count: Number(draft.count),
           referenceAssetIds,
@@ -205,6 +234,8 @@ export function useGenerateImage() {
       }
     },
     onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ["wallet"] });
+      void client.invalidateQueries({ queryKey: ["wallet-entries"] });
       void client.invalidateQueries({ queryKey: ["image-tasks"] });
       void client.invalidateQueries({ queryKey: ["image-assets"] });
     },
@@ -212,3 +243,10 @@ export function useGenerateImage() {
 }
 export const assetContentUrl = (id: string, thumbnail = false) =>
   `/api/v1/image-assets/${id}/content${thumbnail ? "?thumbnail=1" : ""}`;
+/** Triggers the browser download for an owned asset without leaving the page. */
+export function downloadAsset(id: string) {
+  const link = document.createElement("a");
+  link.href = assetContentUrl(id);
+  link.download = `${id}.png`;
+  link.click();
+}

@@ -22,6 +22,55 @@
       "when": 1792426018547,
       "tag": "0002_fuzzy_wolverine",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792466627273,
+      "tag": "0003_silent_ben_grimm",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792496614025,
+      "tag": "0004_mature_hammerhead",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792497915973,
+      "tag": "0005_ambiguous_clea",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792544296276,
+      "tag": "0006_thick_firebird",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792545635012,
+      "tag": "0007_nervous_vargas",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792571857624,
+      "tag": "0008_blue_moon_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792571982704,
+      "tag": "0009_fearless_big_bertha",
+      "breakpoints": true
     }
   ]
 }

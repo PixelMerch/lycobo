@@ -1,0 +1,111 @@
+.reference-mention-popover.popover {
+  width: min(280px, calc(100vw - 32px));
+  padding: 10px;
+  border: 0;
+  border-radius: 12px;
+  background: #202020;
+}
+.reference-mention-popover .popover__dialog {
+  padding: 0;
+}
+.reference-mention-popover .popover__heading {
+  margin: 0 0 6px;
+  padding: 0 4px 6px;
+  border-bottom: 1px solid #ffffff14;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.reference-mention-popover .list-box {
+  max-height: 232px;
+  overflow: auto;
+  padding: 0;
+}
+.reference-mention-popover .list-box-item {
+  min-height: 40px;
+  padding: 4px 8px;
+  gap: 8px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.reference-mention-popover .list-box-item img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+.reference-mention-popover .list-box-item[data-focused] {
+  outline: none;
+  box-shadow: none;
+  background: #ffffff0d;
+}
+.reference-mention-empty {
+  margin: 8px 4px;
+  font-size: 12px;
+  color: #aaa;
+}
+@media (pointer: coarse) {
+  .reference-mention-popover .list-box-item {
+    min-height: 44px;
+  }
+}
+.reference-mention-popover .list-box-item[data-focus-visible] {
+  outline: none;
+  box-shadow: none;
+  background: #343434;
+}
+
+.reference-mention-popover.popover,
+.reference-mention-popover .popover__dialog,
+.reference-mention-popover .list-box {
+  outline: none;
+  box-shadow: none;
+}
+.reference-rich-editor.textarea {
+  display: block;
+  min-height: 124px;
+  max-height: 280px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 12px;
+  font-size: var(--text-base);
+  line-height: 26px;
+  background: var(--field-background);
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  caret-color: var(--accent);
+}
+.home-composer .home-prompt .reference-rich-editor.textarea {
+  height: 138px;
+  min-height: 138px;
+  max-height: 138px;
+  padding: 10px 12px;
+  line-height: 26px;
+  overflow-y: auto;
+  background: transparent;
+  border-radius: 12px;
+}
+.reference-prompt-chip {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  gap: 6px;
+  padding: 2px 6px 2px 2px;
+  border-radius: 6px;
+  color: #a8ff00;
+  background: #343434;
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+  user-select: all;
+  transform: translateY(-2px);
+}
+.reference-prompt-chip img {
+  width: 18px;
+  height: 18px;
+  object-fit: cover;
+  border-radius: 4px;
+  pointer-events: none;
+}

@@ -10,25 +10,28 @@ import {
 const input = imageGenerationInputSchema.parse({ model: "gpt-image-2", prompt: "coffee" });
 const config = { key: "test-not-a-secret", baseUrl: "https://api.vakv.cn", timeoutMs: 1000 };
 describe("Vakv adapter and capability evidence", () => {
-  it("enforces documented limits and enables requested 2.5 channels at 1K only", () => {
-    expect(supportedResolutions("gpt-image-2")).toEqual(["1K"]);
+  it("allows all resolutions through public-model routing", () => {
+    expect(supportedResolutions("gpt-image-2")).toEqual(["1K", "2K", "4K"]);
     expect(supportedResolutions("gpt-image-2-4K")).toEqual(["1K", "2K", "4K"]);
-    expect(() => validateModelInput({ ...input, resolution: "4K" })).toThrow(
-      "MODEL_RESOLUTION_UNVERIFIED",
-    );
+    expect(() => validateModelInput({ ...input, resolution: "4K" })).not.toThrow();
     for (const model of [
       "gpt-image-2.5",
       "gpt-image-2.5-flare",
       "gpt-image-2.5-sunburst",
     ] as const) {
-      expect(supportedResolutions(model)).toEqual(["1K"]);
+      expect(supportedResolutions(model)).toEqual(["1K", "2K", "4K"]);
       expect(() => validateModelInput({ ...input, model })).not.toThrow();
-      expect(() => validateModelInput({ ...input, model, resolution: "2K" })).toThrow();
+      for (const resolution of ["2K", "4K"] as const)
+        expect(() => validateModelInput({ ...input, model, resolution })).not.toThrow();
     }
     expect(
       supportedResolutions("gpt-image-2.5-sunburst", { "gpt-image-2.5-sunburst": ["1K"] }),
-    ).toEqual(["1K"]);
-    expect(supportedResolutions("gpt-image-2", { "gpt-image-2": ["4K"] })).toEqual(["1K"]);
+    ).toEqual(["1K", "2K", "4K"]);
+    expect(supportedResolutions("gpt-image-2", { "gpt-image-2": ["4K"] })).toEqual([
+      "1K",
+      "2K",
+      "4K",
+    ]);
     expect(readImagePolicy({}).enabled).toBe(false);
     expect(() =>
       validateModelInput({ ...input, referenceAssetIds: [crypto.randomUUID()] }),
@@ -48,10 +51,29 @@ describe("Vakv adapter and capability evidence", () => {
     expect(JSON.parse(String(options?.body))).toMatchObject({
       model: "gpt-image-2",
       size: "1024x1024",
+      quality: "medium",
       n: 1,
     });
     expect(request).toHaveBeenCalledTimes(1);
   });
+  it.each(["low", "medium", "high"] as const)(
+    "forwards %s quality in JSON and multipart requests",
+    async (quality) => {
+      for (const references of [[], [new Uint8Array([1, 2, 3])]]) {
+        const request = vi
+          .fn<typeof fetch>()
+          .mockResolvedValue(new Response(JSON.stringify({ data: [{ b64_json: "aGVsbG8=" }] })));
+        await generateVakvImage({ ...input, quality }, references, config, "quality-item", request);
+        const options = request.mock.calls[0]?.[1];
+        if (references.length) {
+          expect(options?.body).toBeInstanceOf(FormData);
+          const body = options?.body;
+          if (!(body instanceof FormData)) throw new Error("Expected multipart body");
+          expect(body.get("quality")).toBe(quality);
+        } else expect(JSON.parse(String(options?.body)).quality).toBe(quality);
+      }
+    },
+  );
   it("never retries ambiguous submissions or downloads arbitrary output URLs", async () => {
     const request = vi.fn<typeof fetch>().mockRejectedValue(new Error("sensitive provider body"));
     await expect(generateVakvImage(input, [], config, "id", request)).rejects.toMatchObject({
@@ -106,3 +128,120 @@ describe("Vakv adapter and capability evidence", () => {
     ).rejects.toMatchObject({ code: "INVALID_PROVIDER_URL" });
   });
 });
+
+it.each([
+  ["gpt-image-2", "1K", "gpt-image-2"],
+  ["gpt-image-2", "2K", "gpt-image-2-4K"],
+  ["gpt-image-2", "4K", "gpt-image-2-4K"],
+  ["gpt-image-2.5", "1K", "gpt-image-2.5-sunburst"],
+  ["gpt-image-2.5", "4K", "gpt-image-2.5-sunburst"],
+  ["nano-banana-2.1", "2K", "gemini-nano-banana-2.1"],
+])("routes %s at %s to %s for both generation and edits", async (model, resolution, provider) => {
+  for (const refs of [[], [new Uint8Array([1])]]) {
+    const request = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response(JSON.stringify({ data: [{ b64_json: "aGVsbG8=" }] })));
+    await generateVakvImage(
+      imageGenerationInputSchema.parse({ model, resolution, prompt: "fixture" }),
+      refs,
+      config,
+      "item",
+      request,
+    );
+    const body = request.mock.calls[0]?.[1]?.body;
+    expect(body instanceof FormData ? body.get("model") : JSON.parse(String(body)).model).toBe(
+      provider,
+    );
+  }
+  expect(readImagePolicy({ IMAGE_CREDITS_PER_IMAGE: "1" }).unitCredits).toBe(20);
+});
+
+it("separates response-header wait from response-body download without logging payloads", async () => {
+  let now = 0;
+  const clock = vi.spyOn(performance, "now").mockImplementation(() => now);
+  const events: unknown[] = [];
+  const request = vi.fn<typeof fetch>().mockImplementation(async () => {
+    now = 25_000;
+    return new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('{"data":[{"b64_json":"aGVsbG8="}]}'));
+        },
+        pull(controller) {
+          now = 265_000;
+          controller.close();
+        },
+      }),
+    );
+  });
+  try {
+    await generateVakvImage(
+      input,
+      [],
+      { ...config, onTiming: (event: unknown) => events.push(event) },
+      "timing-test",
+      request,
+    );
+    expect(events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stage: "provider_headers", durationMs: 25000 }),
+        expect.objectContaining({ stage: "provider_body", durationMs: 240000 }),
+      ]),
+    );
+    expect(JSON.stringify(events)).not.toMatch(/coffee|aGVsbG8|test-not-a-secret/);
+    expect(request).toHaveBeenCalledTimes(1);
+  } finally {
+    clock.mockRestore();
+  }
+});
+
+it("does not lose a paid result when the timing sink fails", async () => {
+  const request = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(new Response(JSON.stringify({ data: [{ b64_json: "aGVsbG8=" }] })));
+  const result = await generateVakvImage(
+    input,
+    [],
+    {
+      ...config,
+      onTiming: () => {
+        throw new Error("telemetry unavailable");
+      },
+    },
+    "safe-timing",
+    request,
+  );
+  expect(result.bytes.toString()).toBe("hello");
+  expect(request).toHaveBeenCalledTimes(1);
+});
+
+it.each([
+  [{ data: [{ url: "https://example.invalid/private-image" }] }, "provider_invalid_response_shape"],
+  [{ data: [{ b64_json: "invalid base64" }] }, "provider_invalid_base64"],
+])(
+  "classifies invalid response safely and retains the gateway correlation ID",
+  async (body, stage) => {
+    const events: unknown[] = [];
+    const request = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify(body), {
+        headers: { "x-oneapi-request-id": "gateway-request-1" },
+      }),
+    );
+    await expect(
+      generateVakvImage(
+        input,
+        [],
+        { ...config, onTiming: (event) => events.push(event) },
+        "invalid-result",
+        request,
+      ),
+    ).rejects.toMatchObject({
+      code: "PROVIDER_INVALID_IMAGE_RESPONSE",
+      requestId: "gateway-request-1",
+      unknownOutcome: true,
+    });
+    expect(events).toEqual(expect.arrayContaining([expect.objectContaining({ stage })]));
+    expect(JSON.stringify(events)).not.toMatch(/private-image|invalid base64/);
+    expect(request).toHaveBeenCalledTimes(1);
+  },
+);

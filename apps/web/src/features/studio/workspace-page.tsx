@@ -1,16 +1,13 @@
-import { Button, Label, Popover, Tabs, TextArea, TextField, Tooltip } from "@heroui/react";
-import {
-  IconArrowBarToUp,
-  IconChevronRight,
-  IconLayersIntersect,
-  IconPlus,
-  IconSparkles,
-  IconTrash,
-  IconX,
-} from "@tabler/icons-react";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Alert, Button, Tabs, ToggleButton, ToggleButtonGroup, Tooltip } from "@heroui/react";
+import { imageUnitCredits } from "@lycoboai/contracts";
+import { IconArrowBarToUp, IconSparkles } from "@tabler/icons-react";
+import { useEffect, useRef, useState } from "react";
+import { CreditCoin } from "../../components/credit-coin";
+import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
+import { useErrorToast } from "../../lib/error-toast";
 import {
+  ImageApiError,
   useGenerateImage,
   useImageModels,
   useImageSession,
@@ -18,10 +15,14 @@ import {
 } from "./generation-client";
 import { GenerationHistory, HistoryIndex } from "./generation-history";
 import { ModelSelect } from "./model-select";
-import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "./studio-state";
+import { HomeRatioPicker } from "./ratio-picker";
+import { ReferencePicker } from "./reference-picker";
+import { SelectionHighlight } from "./selection-highlight";
+import { type ModelId, useStudioStore } from "./studio-state";
 
 const fields = [
   { key: "resolution", label: "分辨率", values: ["1K", "2K", "4K"] },
+  { key: "quality", label: "质量", values: ["低", "标准", "高"] },
   { key: "count", label: "生成张数", values: ["1", "2", "3", "4"] },
 ] as const;
 
@@ -38,6 +39,24 @@ function Workspace({ model }: { model: ModelId }) {
   const session = useImageSession();
   const modelQuery = useImageModels();
   const generate = useGenerateImage();
+  const [submissionPhase, setSubmissionPhase] = useState<"idle" | "submitting" | "settled">("idle");
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeSubmission = submissionPhase !== "idle" || generate.isPending;
+  const modelsError = modelQuery.isError
+    ? modelQuery.error instanceof ImageApiError
+      ? modelQuery.error.message
+      : "服务暂时不可用，请稍后重试。"
+    : null;
+  useErrorToast(modelsError);
+  useErrorToast(
+    session.isError
+      ? (session.error?.message ?? "服务暂时不可用，请稍后重试。")
+      : generate.isError
+        ? generate.error instanceof ImageApiError
+          ? generate.error.message
+          : "服务暂时不可用，请稍后重试。"
+        : null,
+  );
   const resolutions =
     modelQuery.data?.models.find((entry) => entry.id === model)?.enabledResolutions ?? [];
   const pending = usePendingSubmission(session.data);
@@ -52,6 +71,12 @@ function Workspace({ model }: { model: ModelId }) {
   useEffect(() => {
     visitModel(model);
   }, [model, visitModel]);
+  useEffect(
+    () => () => {
+      if (settleTimer.current) clearTimeout(settleTimer.current);
+    },
+    [],
+  );
   return (
     <div className="workspace">
       <section className="composer-panel" aria-label="创作设置">
@@ -72,24 +97,33 @@ function Workspace({ model }: { model: ModelId }) {
               setActiveModel(nextModel);
             }}
           />
-          <ReferencePicker model={model} references={draft.references} />
-          <TextField className="prompt-field">
-            <Label>提示词</Label>
-            <TextArea
-              ref={inputId}
-              value={draft.prompt}
-              onChange={(event) => updateDraft(model, { prompt: event.target.value })}
-              placeholder="描述你想要的画面，例如：保留商品，替换为原木卧室场景"
-              maxLength={9000}
+          <ReferencePicker compact model={model} references={draft.references} />
+          <ReferencePrompt
+            className="prompt-field"
+            label="提示词"
+            inputRef={inputId}
+            value={draft.prompt}
+            onChange={(prompt) => updateDraft(model, { prompt })}
+            references={draft.references}
+            placeholder="描述你想要的画面，输入 @ 引用已上传图片"
+          />
+          <section className="parameter-group ratio-group" aria-label="图片比例">
+            <div className="ratio-heading">
+              <h2>图片比例</h2>
+              <span className="ratio-current">{draft.ratio}</span>
+            </div>
+            <HomeRatioPicker
+              value={draft.ratio}
+              onChange={(ratio) => updateDraft(model, { ratio })}
             />
-          </TextField>
-          <RatioPicker value={draft.ratio} onChange={(ratio) => updateDraft(model, { ratio })} />
+          </section>
           {fields.map((field) => (
             <ParameterGroup
               key={field.key}
               label={field.label}
               values={field.values}
               value={draft[field.key]}
+              selectionId={field.key}
               disabledValues={
                 field.key === "resolution"
                   ? field.values.filter(
@@ -102,51 +136,82 @@ function Workspace({ model }: { model: ModelId }) {
           ))}
         </section>
         <div className="generate-area">
-          {(session.isError || modelQuery.isError || generate.isError) && (
-            <p className="generation-message" role="alert">
-              {session.error?.message ??
-                modelQuery.error?.message ??
-                (pending
-                  ? "提交结果待确认，请点击确认上次提交，避免重复生成。"
-                  : generate.error?.message)}
-            </p>
-          )}
           {modelQuery.data && !modelQuery.data.enabled && (
-            <p className="generation-message" role="status">
-              生图服务尚未启用
-            </p>
+            <Alert className="generation-message" role="status" status="warning">
+              <Alert.Content>
+                <Alert.Description>生图服务尚未启用</Alert.Description>
+              </Alert.Content>
+            </Alert>
           )}
           {draft.references.length > 0 && modelQuery.data && !modelQuery.data.editsEnabled && (
-            <p className="generation-message" role="status">
-              当前服务尚未启用参考图编辑，可先不上传图片进行创作。
-            </p>
+            <Alert className="generation-message" role="status" status="warning">
+              <Alert.Content>
+                <Alert.Description>
+                  当前服务尚未启用参考图编辑，可先不上传图片进行创作。
+                </Alert.Description>
+              </Alert.Content>
+            </Alert>
           )}
           <Button
-            className="primary-action"
-            isDisabled={!canGenerate}
-            onPress={() =>
+            className={`primary-action${activeSubmission ? " generation-pending" : ""}`}
+            data-submitting={activeSubmission || undefined}
+            aria-description={
+              !pending && !activeSubmission
+                ? `本次生成消耗 ${imageUnitCredits * Number(draft.count)} 币`
+                : undefined
+            }
+            isDisabled={!canGenerate || activeSubmission}
+            onPress={() => {
+              setSubmissionPhase("submitting");
               generate.mutate(
                 { model, draft },
                 {
                   onSuccess: () => {
-                    if (!pending && useStudioStore.getState().drafts[model] === draft) {
+                    const cleared = !pending && useStudioStore.getState().drafts[model] === draft;
+                    if (cleared) {
                       updateDraft(model, { prompt: "", references: [] });
+                      setSubmissionPhase("settled");
+                      if (settleTimer.current) clearTimeout(settleTimer.current);
+                      settleTimer.current = setTimeout(() => {
+                        setSubmissionPhase("idle");
+                      }, 600);
+                    } else {
+                      setSubmissionPhase("idle");
                     }
                   },
+                  onError: () => setSubmissionPhase("idle"),
                 },
-              )
-            }
+              );
+            }}
           >
-            <UiIcon icon={IconSparkles} />
-            {generate.isPending ? "正在提交…" : pending ? "确认上次提交" : "立即生成"}
+            {activeSubmission && (
+              <span className="generate-button-icon generation-loading-icon">
+                <UiIcon icon={IconSparkles} />
+              </span>
+            )}
+            {generate.isPending || submissionPhase === "submitting"
+              ? "正在提交…"
+              : submissionPhase === "settled"
+                ? "已提交"
+                : pending
+                  ? "确认上次提交"
+                  : "立即生成"}
+            {!pending && !activeSubmission && (
+              <span className="generate-credit-cost" aria-hidden="true">
+                <CreditCoin />
+                <span>{imageUnitCredits * Number(draft.count)}</span>
+              </span>
+            )}
           </Button>
         </div>
       </section>
       <section className="results-panel" aria-label="创作内容">
         <Tabs className="workspace-tabs">
-          <Tabs.List aria-label="工作区内容">
-            <Tabs.Tab id="history">历史记录</Tabs.Tab>
-          </Tabs.List>
+          <Tabs.ListContainer>
+            <Tabs.List aria-label="工作区内容">
+              <Tabs.Tab id="history">历史记录</Tabs.Tab>
+            </Tabs.List>
+          </Tabs.ListContainer>
           <Tabs.Panel id="history">
             <GenerationHistory />
           </Tabs.Panel>
@@ -193,303 +258,43 @@ function ParameterGroup({
   values,
   value,
   onChange,
+  selectionId,
   disabledValues = [],
 }: {
   label: string;
   values: readonly string[];
   disabledValues?: readonly string[];
   value: string;
+  selectionId: string;
   onChange: (value: string) => void;
 }) {
   return (
     <fieldset className="parameter-group">
       <legend>{label}</legend>
-      <div className="parameter-options">
-        {values.map((option) => (
-          <Button
-            key={option}
-            variant="tertiary"
-            isDisabled={disabledValues.includes(option)}
-            aria-label={`${label} ${option}`}
-            aria-pressed={value === option}
-            onPress={() => onChange(option)}
-          >
-            <span>{option}</span>
-          </Button>
-        ))}
-      </div>
-    </fieldset>
-  );
-}
-const commonRatios = ["1:1", "16:9", "2:1", "3:2", "4:3"];
-const additionalRatios = ["21:9", "9:16", "1:2", "2:3", "3:4", "9:21"];
-
-function subscribeRatioViewport(onChange: () => void) {
-  const media = window.matchMedia("(min-width: 900px)");
-  media.addEventListener("change", onChange);
-  return () => media.removeEventListener("change", onChange);
-}
-const getRatioViewport = () => window.matchMedia("(min-width: 900px)").matches;
-const getServerRatioViewport = () => false;
-
-function RatioPicker({ value, onChange }: { value: string; onChange: (ratio: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const groupRef = useRef<HTMLElement>(null);
-  const wideViewport = useSyncExternalStore(
-    subscribeRatioViewport,
-    getRatioViewport,
-    getServerRatioViewport,
-  );
-  const extendedSelected = additionalRatios.includes(value);
-  return (
-    <section ref={groupRef} className="parameter-group ratio-group" aria-label="图片比例">
-      <Popover isOpen={open} onOpenChange={setOpen}>
-        <div className="ratio-heading">
-          <h2>图片比例</h2>
-          <Button
-            className="ratio-expand"
-            variant="tertiary"
-            aria-label="展开全部图片比例"
-            aria-expanded={open}
-          >
-            <span>{value}</span>
-            <span className="ratio-chevron">
-              <UiIcon icon={IconChevronRight} size="small" />
-            </span>
-          </Button>
-        </div>
-        <Popover.Content
-          triggerRef={groupRef}
-          placement={wideViewport ? "right top" : "bottom start"}
-          offset={wideViewport ? 32 : 8}
-          shouldFlip={!wideViewport}
-          className="ratio-popover"
-        >
-          <Popover.Dialog className="ratio-popover-dialog" aria-label="更多图片比例">
-            <div className="ratio-popover-heading">
-              <Popover.Heading>图片比例</Popover.Heading>
-              <Button
-                isIconOnly
-                variant="tertiary"
-                className="icon-button ratio-close"
-                aria-label="关闭图片比例"
-                onPress={() => setOpen(false)}
-              >
-                <span className="ratio-close-visual">
-                  <UiIcon icon={IconX} />
-                </span>
-              </Button>
-            </div>
-            <div className="parameter-options ratio-options ratio-extra-options">
-              {additionalRatios.map((ratio) => (
-                <Button
-                  key={ratio}
-                  variant="tertiary"
-                  aria-label={`图片比例 ${ratio}`}
-                  aria-pressed={value === ratio}
-                  onPress={() => {
-                    onChange(ratio);
-                    setOpen(false);
-                  }}
-                >
-                  <RatioPreview ratio={ratio} />
-                  <span>{ratio}</span>
-                </Button>
-              ))}
-            </div>
-          </Popover.Dialog>
-        </Popover.Content>
-      </Popover>
-      <div className="parameter-options ratio-options">
-        {commonRatios.map((ratio) => (
-          <Button
-            key={ratio}
-            variant="tertiary"
-            aria-label={`图片比例 ${ratio}`}
-            aria-pressed={value === ratio}
-            onPress={() => onChange(ratio)}
-          >
-            <RatioPreview ratio={ratio} />
-            <span>{ratio}</span>
-          </Button>
-        ))}
-        <Button
-          variant="tertiary"
-          aria-label="更多图片比例"
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          aria-pressed={extendedSelected}
-          onPress={() => setOpen(true)}
-        >
-          {extendedSelected ? (
-            <RatioPreview ratio={value} />
-          ) : (
-            <span className="ratio-preview ratio-more-icon">
-              <UiIcon icon={IconLayersIntersect} />
-            </span>
-          )}
-          <span>{extendedSelected ? value : "更多"}</span>
-        </Button>
-      </div>
-    </section>
-  );
-}
-
-function RatioPreview({ ratio }: { ratio: string }) {
-  const [horizontal = 1, vertical = 1] = ratio.split(":").map(Number);
-  const proportion = horizontal / vertical;
-  const width = 24 * Math.min(1, proportion);
-  const height = 24 * Math.min(1, 1 / proportion);
-  return (
-    <svg className="ratio-preview" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-      <rect
-        x={(32 - width) / 2}
-        y={(32 - height) / 2}
-        width={width}
-        height={height}
-        rx="2"
-        fill="currentColor"
-        fillOpacity="0.08"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-    </svg>
-  );
-}
-
-function ReferencePicker({
-  model,
-  references,
-}: {
-  model: ModelId;
-  references: Draft["references"];
-}) {
-  const input = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState("");
-  const [reading, setReading] = useState(false);
-  const addReferences = useStudioStore((s) => s.addReferences);
-  const updateDraft = useStudioStore((s) => s.updateDraft);
-  async function readFiles(files: File[]) {
-    if (reading) return;
-    const remaining = 5 - useStudioStore.getState().drafts[model].references.length;
-    if (files.length > remaining) {
-      setError("最多添加 5 张参考图，请减少文件后重试。");
-      return;
-    }
-    if (
-      files.some(
-        (file) =>
-          !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
-          file.size > 10 * 1024 * 1024,
-      )
-    ) {
-      setError("请选择 PNG、JPEG 或 WebP 图片，单张不超过 10MB。");
-      return;
-    }
-    setReading(true);
-    setError("");
-    try {
-      const images = await Promise.all(
-        files.map(async (file): Promise<ReferenceImage> => {
-          const src = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () =>
-              typeof reader.result === "string"
-                ? resolve(reader.result)
-                : reject(new Error("invalid image"));
-            reader.onerror = () => reject(new Error("read failed"));
-            reader.readAsDataURL(file);
-          });
-          await new Promise<void>((resolve, reject) => {
-            const image = new Image();
-            image.onload = () => resolve();
-            image.onerror = () => reject(new Error("decode failed"));
-            image.src = src;
-          });
-          return { id: crypto.randomUUID(), name: file.name, src };
-        }),
-      );
-      addReferences(model, images);
-    } catch {
-      setError("图片无法读取，请检查文件后重试。");
-    } finally {
-      setReading(false);
-      if (input.current) input.current.value = "";
-    }
-  }
-  return (
-    <section className="reference-picker">
-      <div className="field-title">
-        <h2>
-          上传图片<small>（最多上传5张参考图）</small>
-        </h2>
-        <Button
-          variant="tertiary"
-          className="clear-references"
-          aria-label="清除全部参考图片"
-          isDisabled={reading || references.length === 0}
-          onPress={() => {
-            updateDraft(model, { references: [] });
-            setError("");
-            if (input.current) input.current.value = "";
-          }}
-        >
-          <UiIcon icon={IconTrash} size="small" />
-          清除
-        </Button>
-      </div>
-      <input
-        ref={input}
-        type="file"
-        accept="image/png,image/jpeg,image/webp"
-        multiple
-        aria-label="添加参考图片"
-        className="visually-hidden"
-        disabled={reading || references.length >= 5}
-        onChange={(event) => {
-          const files = Array.from(event.target.files ?? []);
-          event.target.value = "";
-          void readFiles(files);
+      <ToggleButtonGroup
+        aria-label={label}
+        className="parameter-options"
+        disallowEmptySelection
+        isDetached
+        selectedKeys={[value]}
+        selectionMode="single"
+        onSelectionChange={(keys) => {
+          const [next] = [...keys];
+          if (next !== undefined) onChange(String(next));
         }}
-      />
-      <div className="reference-grid">
-        {references.map((image, index) => (
-          <div className="reference-tile" key={image.id}>
-            <img src={image.src} alt={`图片${index + 1}`} />
-            <Button
-              isIconOnly
-              variant="secondary"
-              className="remove-reference"
-              aria-label={`移除参考图：图片${index + 1}`}
-              onPress={() =>
-                updateDraft(model, {
-                  references: references.filter((item) => item.id !== image.id),
-                })
-              }
-            >
-              <UiIcon icon={IconX} size="small" />
-            </Button>
-            <span className="reference-number">图片{index + 1}</span>
-          </div>
+      >
+        {values.map((option) => (
+          <ToggleButton key={option} id={option} isDisabled={disabledValues.includes(option)}>
+            {option === value && (
+              <SelectionHighlight
+                layoutId={`workspace-${selectionId}-selection`}
+                layoutDependency={value}
+              />
+            )}
+            <span>{option}</span>
+          </ToggleButton>
         ))}
-        {references.length < 5 ? (
-          <Button
-            variant="tertiary"
-            className="add-reference"
-            isDisabled={reading || references.length >= 5}
-            aria-label="添加参考图"
-            onPress={() => input.current?.click()}
-          >
-            <UiIcon icon={IconPlus} size="action" />
-            <span>{reading ? "读取中…" : "添加图片"}</span>
-          </Button>
-        ) : null}
-      </div>
-      {error ? (
-        <p className="field-error" role="alert">
-          {error}
-        </p>
-      ) : null}
-    </section>
+      </ToggleButtonGroup>
+    </fieldset>
   );
 }
