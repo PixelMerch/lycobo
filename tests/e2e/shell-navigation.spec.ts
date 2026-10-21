@@ -24,7 +24,7 @@ test("collapsed navigation preserves drafts, chooser anchoring and keyboard focu
   await expect(chooser).toBeVisible();
   const panel = await chooser.boundingBox();
   const sidebar = await page.locator(".sidebar").boundingBox();
-  expect(panel && sidebar && Math.abs(panel.x - sidebar.width - 24)).toBeLessThan(1);
+  expect(panel && sidebar && Math.abs(panel.x - sidebar.width - 12)).toBeLessThan(1);
   await chooser.press("Escape");
   await expect(chooser).toBeHidden();
   await expect(images).toBeFocused();

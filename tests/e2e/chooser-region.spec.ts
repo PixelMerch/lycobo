@@ -40,7 +40,7 @@ for (const width of [1440, 1920]) {
       expect(geometry.overlay.right).toBeCloseTo(geometry.rail.x, 0);
       expect(geometry.panel.x).toBeGreaterThan(geometry.overlay.x);
       expect(geometry.panel.right).toBeLessThan(geometry.rail.x);
-      expect(geometry.panel.y).toBeGreaterThan(geometry.header.bottom);
+      expect(geometry.panel.y).toBeCloseTo(geometry.header.bottom + 12, 0);
       expect(geometry.panel.bottom).toBeLessThanOrEqual(geometry.overlay.bottom);
       expect(geometry.blur).toBe("none");
       await chooser.press("Escape");
@@ -76,3 +76,27 @@ for (const width of [1024, 390]) {
     await expect(chooser).toHaveCount(0);
   });
 }
+
+test("covers rotate without layout movement and pause while browsing a model", async ({ page }) => {
+  await mockImageApi(page);
+  await page.clock.install();
+  await page.goto("/");
+  await page.getByRole("button", { name: "创作", exact: true }).click();
+  const chooser = page.getByRole("dialog", { name: "创作", exact: true });
+  const card = chooser.getByRole("button", { name: "进入 gpt-image-2 创作" });
+  const activeCover = card.locator("img.is-visible");
+  await expect(activeCover).toHaveAttribute("src", /image-2-1.webp$/);
+  await page.clock.runFor(4300);
+  await expect(activeCover).toHaveAttribute("src", /image-2-2.webp$/);
+  await card.hover();
+  await page.clock.runFor(6000);
+  await expect(activeCover).toHaveAttribute("src", /image-2-2.webp$/);
+  await card.focus();
+  await page.mouse.move(0, 0);
+  await page.clock.runFor(6000);
+  await expect(activeCover).toHaveAttribute("src", /image-2-2.webp$/);
+  await chooser.press("Escape");
+  await expect(chooser).toHaveCount(0);
+  await page.getByRole("button", { name: "创作", exact: true }).click();
+  await expect(activeCover).toHaveAttribute("src", /image-2-1.webp$/);
+});

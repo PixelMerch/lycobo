@@ -21,13 +21,13 @@ import { RouteLink } from "../../components/router-link";
 import { UiIcon } from "../../components/ui-icon";
 import { AccountPanel, type AccountSection } from "./account-panel";
 import { useEnterpriseLogout, useEnterpriseSession } from "./auth-client";
-import { CaseGallery } from "./case-gallery";
 import { LoginDialog } from "./login-dialog";
-import { cases, models, photo, useStudioStore } from "./studio-state";
+import { chooserModels, ModelChooserCard } from "./model-chooser-card";
+import { models, useStudioStore } from "./studio-state";
 import { useImageEvents } from "./use-image-events";
 
 const chooserLayout: CSSProperties & { "--tool-columns": number } = {
-  "--tool-columns": Math.min(5, Math.max(models.length, cases.length)),
+  "--tool-columns": Math.min(5, chooserModels.length),
 };
 
 export function StudioShell() {
@@ -289,38 +289,34 @@ export function StudioShell() {
           variant="transparent"
           style={chooserLayout}
         >
-          <Modal.Container className="chooser-container" scroll="inside">
+          <Modal.Container className="chooser-container" placement="top" scroll="inside">
             <Modal.Dialog className="model-chooser">
               <Modal.Header>
                 <Modal.Heading>创作</Modal.Heading>
-                <p>选择一个模型，进入创作工作台</p>
                 <Modal.CloseTrigger aria-label="关闭模型选择" />
               </Modal.Header>
               <Modal.Body>
-                <div className="section-tab">模型</div>
                 <div className="model-grid">
-                  {models.map((model) => (
-                    <Button
-                      className="model-card"
-                      variant="tertiary"
+                  {chooserModels.map((model, index) => (
+                    <ModelChooserCard
                       key={model.id}
-                      aria-label={`进入 ${model.name} 创作`}
-                      aria-current={currentModel?.id === model.id ? "true" : "false"}
-                      onPress={() => {
+                      model={model}
+                      index={index}
+                      current={Boolean(
+                        currentModel &&
+                          (model.id === "gpt-image-2.5"
+                            ? currentModel.id.startsWith("gpt-image-2.5")
+                            : model.id === "gpt-image-2" &&
+                              !currentModel.id.startsWith("gpt-image-2.5")),
+                      )}
+                      onChoose={(target) => {
                         setChooserOpen(false);
-                        setActiveModel(model.id);
+                        setActiveModel(target);
                         navigate("/create");
                       }}
-                    >
-                      <img src={photo(model.image, true)} alt="" width="480" height="480" />
-                      <span className="model-card-body">
-                        <span className="model-card-title">{model.name}</span>
-                        <span className="model-card-description">{model.description}</span>
-                      </span>
-                    </Button>
+                    />
                   ))}
                 </div>
-                <CaseGallery compact />
               </Modal.Body>
             </Modal.Dialog>
           </Modal.Container>

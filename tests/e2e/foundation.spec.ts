@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("home to five-model chooser to workspace, with correctly anchored panel and focus recovery", async ({
+test("home to model-family chooser to workspace, with correctly anchored panel and focus recovery", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1584, height: 993 });
@@ -10,10 +10,20 @@ test("home to five-model chooser to workspace, with correctly anchored panel and
   await trigger.click();
   const chooser = page.getByRole("dialog", { name: "创作", exact: true });
   await expect(chooser).toBeVisible();
-  await expect(chooser.locator(".model-card")).toHaveCount(5);
+  await expect(chooser.locator(".model-card")).toHaveCount(3);
+  // Families stay compact; unavailable providers cannot navigate.
+  await expect(chooser.locator(".case-gallery")).toHaveCount(0);
+  await expect(chooser.getByRole("button", { name: "banana 暂未开放" })).toBeDisabled();
+  const rows = await chooser.locator(".model-card").evaluateAll((cards) =>
+    cards.map((card) => {
+      const rect = card.getBoundingClientRect();
+      return `${Math.round(rect.top)}:${Math.round(rect.bottom)}`;
+    }),
+  );
+  expect(new Set(rows).size).toBe(1);
   const box = await chooser.boundingBox();
   const sidebar = await page.locator(".sidebar").boundingBox();
-  expect(box && sidebar && Math.abs(box.x - sidebar.width - 24)).toBeLessThan(1);
+  expect(box && sidebar && Math.abs(box.x - sidebar.width - 12)).toBeLessThan(1);
   expect(
     await page
       .locator(".chooser-backdrop")

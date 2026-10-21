@@ -124,19 +124,14 @@ for (const width of [320, 390, 768, 1024, 1440]) {
   });
 }
 
-test("compact model cards open from their covers and case cards restore focus", async ({
-  page,
-}) => {
+test("compact model cards open from their covers", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "创作", exact: true }).click();
   const chooser = page.getByRole("dialog", { name: "创作", exact: true });
-  const caseCard = chooser.getByRole("button", { name: "查看案例：原木卧室" });
-  await caseCard.click();
-  const detail = page.getByRole("dialog", { name: "原木卧室", exact: true });
-  await expect(detail).toBeVisible();
-  await detail.press("Escape");
-  await expect(caseCard).toBeFocused();
-  await chooser.getByRole("button", { name: "进入 gpt-image-2-4K 创作" }).locator("img").click();
+  await chooser
+    .getByRole("button", { name: "进入 gpt-image-2 创作" })
+    .locator(".model-card-cover")
+    .click();
   await expect(page).toHaveURL(/\/create$/);
   await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
 });
