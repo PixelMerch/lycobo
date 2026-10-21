@@ -63,6 +63,8 @@ export async function startImageWorker(input: NodeJS.ProcessEnv = process.env) {
           key: env.VAKV_API_KEY,
           baseUrl: env.VAKV_BASE_URL,
           timeoutMs: env.GENERATION_TIMEOUT_MS,
+          onTiming: (event) =>
+            logger.info({ itemId: payload.itemId, ...event }, "Image generation stage timing"),
         },
         overrides: policy.overrides,
         editsEnabled: policy.editsEnabled,

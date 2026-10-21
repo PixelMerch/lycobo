@@ -155,3 +155,62 @@ it.each([
   }
   expect(readImagePolicy({ IMAGE_CREDITS_PER_IMAGE: "1" }).unitCredits).toBe(20);
 });
+
+it("separates response-header wait from response-body download without logging payloads", async () => {
+  let now = 0;
+  const clock = vi.spyOn(performance, "now").mockImplementation(() => now);
+  const events: unknown[] = [];
+  const request = vi.fn<typeof fetch>().mockImplementation(async () => {
+    now = 25_000;
+    return new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('{"data":[{"b64_json":"aGVsbG8="}]}'));
+        },
+        pull(controller) {
+          now = 265_000;
+          controller.close();
+        },
+      }),
+    );
+  });
+  try {
+    await generateVakvImage(
+      input,
+      [],
+      { ...config, onTiming: (event: unknown) => events.push(event) },
+      "timing-test",
+      request,
+    );
+    expect(events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stage: "provider_headers", durationMs: 25000 }),
+        expect.objectContaining({ stage: "provider_body", durationMs: 240000 }),
+      ]),
+    );
+    expect(JSON.stringify(events)).not.toMatch(/coffee|aGVsbG8|test-not-a-secret/);
+    expect(request).toHaveBeenCalledTimes(1);
+  } finally {
+    clock.mockRestore();
+  }
+});
+
+it("does not lose a paid result when the timing sink fails", async () => {
+  const request = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(new Response(JSON.stringify({ data: [{ b64_json: "aGVsbG8=" }] })));
+  const result = await generateVakvImage(
+    input,
+    [],
+    {
+      ...config,
+      onTiming: () => {
+        throw new Error("telemetry unavailable");
+      },
+    },
+    "safe-timing",
+    request,
+  );
+  expect(result.bytes.toString()).toBe("hello");
+  expect(request).toHaveBeenCalledTimes(1);
+});

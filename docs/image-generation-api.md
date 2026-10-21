@@ -189,3 +189,16 @@ pnpm dev
 ## 当前公开模型（2026-10-21）
 
 前台仅显示 gpt-image-2、gpt-image-2.5、nano-banana-2.1；旧供应商ID保留历史兼容。最新映射、账务及迁移发布顺序以 [企业钱包](enterprise-wallet.md) 为准。
+
+## 生图耗时诊断（2026-10-21）
+
+Worker 以 `Image generation stage timing` 输出结构化分段计时，包含 itemId、stage、durationMs，必要时包含响应字节数与 HTTP 状态码。禁止输出提示词、参考图、响应正文、凭据或签名 URL。
+
+- claim / reference_read：领取任务与参考图片读取。
+- provider_request_started / provider_headers：开始请求与收到响应头；此段包含连接、上传、网关等待和模型执行，不能直接等同于模型推理时间。
+- provider_body / provider_decode：响应体接收与 base64 解码。
+- image_storage / database_finish：图片解码编码落盘与完成事务。
+- provider_complete / item_complete：供应商调用总耗时与本次处理总耗时，和子阶段重叠，不相加。
+- provider_error：供应商请求失败前累计耗时。日志接收器异常不能影响付费结果或触发重试。
+
+5分钟配置是请求超时上限，不是固定等待；前端使用SSE接收完成事件。已有历史任务只有开始/结束时间，无法事后恢复分段耗时。供应商控制台显示的耗时应使用同一请求的时间/ID核对，不能直接当作客户端端到端耗时。

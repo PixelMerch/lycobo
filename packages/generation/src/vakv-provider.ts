@@ -53,11 +53,29 @@ export class VakvError extends Error {
 const responseSchema = z.object({
   data: z.array(z.object({ b64_json: z.string().min(1) })).length(1),
 });
+export type GenerationTiming = {
+  stage: string;
+  durationMs: number;
+  bytes?: number;
+  status?: number;
+};
+// Observability must never change paid-request outcomes or expose payloads.
+export function reportGenerationTiming(
+  report: ((event: GenerationTiming) => void) | undefined,
+  event: GenerationTiming,
+) {
+  try {
+    report?.(event);
+  } catch {
+    // A failing telemetry sink must not trigger a retry or discard a generated image.
+  }
+}
 export type VakvConfig = {
   key: string;
   baseUrl: string;
   timeoutMs: number;
   allowHttpForTests?: boolean;
+  onTiming?: (event: GenerationTiming) => void;
 };
 export async function generateVakvImage(
   input: ImageGenerationInput,
@@ -110,6 +128,14 @@ export async function generateVakvImage(
       response_format: "b64_json",
       quality: input.quality ?? "medium",
     });
+  const started = performance.now();
+  const timing = (stage: string, since: number, extra: { bytes?: number; status?: number } = {}) =>
+    reportGenerationTiming(config.onTiming, {
+      stage,
+      durationMs: Math.round(performance.now() - since),
+      ...extra,
+    });
+  timing("provider_request_started", started);
   try {
     const response = await request(
       new URL(references.length ? "/v1/images/edits" : "/v1/images/generations", url),
@@ -125,6 +151,8 @@ export async function generateVakvImage(
         body,
       },
     );
+    timing("provider_headers", started, { status: response.status });
+    const bodyStarted = performance.now();
     const header = response.headers.get("x-request-id");
     if (header && /^[\w-]{1,200}$/.test(header)) requestId = header;
     if (!response.ok) {
@@ -148,6 +176,8 @@ export async function generateVakvImage(
     } finally {
       await reader.cancel().catch(() => {});
     }
+    timing("provider_body", bodyStarted, { bytes: length });
+    const decodeStarted = performance.now();
     const parsed = responseSchema.safeParse(JSON.parse(Buffer.concat(chunks).toString("utf8")));
     if (!parsed.success) throw new VakvError("PROVIDER_INVALID_IMAGE_RESPONSE", true, requestId);
     const encoded = parsed.data.data[0]?.b64_json ?? "";
@@ -156,8 +186,11 @@ export async function generateVakvImage(
     const bytes = Buffer.from(encoded, "base64");
     if (bytes.length > imageLimits.outputBytes)
       throw new VakvError("PROVIDER_IMAGE_TOO_LARGE", true, requestId);
+    timing("provider_decode", decodeStarted, { bytes: bytes.length });
+    timing("provider_complete", started);
     return { bytes, requestId };
   } catch (error) {
+    timing("provider_error", started);
     if (error instanceof VakvError) throw error;
     // Transport errors, malformed successful responses and timeouts may already have been billed.
     throw new VakvError("PROVIDER_OUTCOME_UNKNOWN", true, requestId);
