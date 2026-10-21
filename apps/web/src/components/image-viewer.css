@@ -1,7 +1,7 @@
 .modal__backdrop.browse-image-backdrop {
   padding: 0;
-  background: #000000c2;
-  backdrop-filter: blur(10px);
+  background: #ffffff0f;
+  backdrop-filter: blur(6px);
 }
 .modal__container.browse-image-container[data-entering="true"],
 .modal__container.browse-image-container[data-exiting="true"] {
@@ -28,7 +28,7 @@
   align-items: center;
   width: 100%;
   height: 100%;
-  padding: 40px 80px 20px;
+  padding: 40px 96px 20px;
   gap: 16px;
   transform-origin: center;
   overflow: hidden;
@@ -66,13 +66,14 @@
   max-width: none;
   max-height: none;
   object-fit: contain;
+  pointer-events: auto;
   user-select: none;
   border-radius: 8px;
 }
 .browse-image-close {
   position: absolute;
   top: 0;
-  left: calc(100% + 16px);
+  left: calc(100% + 32px);
   cursor: auto;
 }
 .browse-image-close .dialog-close {
@@ -90,33 +91,39 @@
   flex: none;
 }
 .browse-image-toolbar .button,
-.browse-image-area > .button {
+.browse-image-frame > .button {
   color: #fff;
   border: 0;
   background: transparent;
 }
 .browse-image-toolbar .button:hover,
-.browse-image-area > .button:hover {
+.browse-image-frame > .button:hover {
   background: #ffffff14;
 }
 .browse-image-position {
-  color: #ffffffb3;
-  font-size: 12px;
+  color: #fff;
+  min-width: 48px;
+  text-align: center;
+  font-size: 14px;
   white-space: nowrap;
 }
 .browse-image-prev.button,
 .browse-image-next.button {
   position: absolute;
   top: 50%;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
   transform: translateY(-50%);
   border-radius: 50%;
   background: #090909b3;
 }
 .browse-image-prev {
-  left: -60px;
+  right: calc(100% + 32px);
 }
 .browse-image-next {
-  right: -60px;
+  left: calc(100% + 32px);
 }
 @media (max-width: 767px) {
   .browse-image-surface {
@@ -128,9 +135,11 @@
     right: 0;
   }
   .browse-image-prev {
+    right: auto;
     left: 4px;
   }
   .browse-image-next {
+    left: auto;
     right: 4px;
   }
   .browse-image-toolbar {

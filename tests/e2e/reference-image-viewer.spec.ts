@@ -62,7 +62,7 @@ test("history references share a viewer with switching, rotation, wheel zoom and
   const picture = viewer.locator(".browse-image-picture");
   await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[1]}/content`);
   await expect(picture).toHaveJSProperty("naturalWidth", 1200);
-  await expect(viewer.getByLabel("图片浏览状态")).toHaveText("2 / 2 · 100%");
+  await expect(viewer.getByLabel("图片缩放比例")).toHaveText("100%");
   await expect(viewer.locator(".browse-image-surface")).toHaveCSS("transform", "none");
   await expect
     .poll(async () => (await viewer.locator(".browse-image-frame").boundingBox())?.width ?? 0)
@@ -73,22 +73,32 @@ test("history references share a viewer with switching, rotation, wheel zoom and
     .boundingBox();
   if (!frame || !close) throw new Error("Missing image viewer geometry");
   expect(Math.abs(frame.y - close.y)).toBeLessThan(1);
-  expect(close.x - frame.x - frame.width).toBeCloseTo(16, 0);
+  expect(close.x - frame.x - frame.width).toBeCloseTo(32, 0);
+  const next = await viewer.getByRole("button", { name: "下一张图片", exact: true }).boundingBox();
+  const prev = await viewer.getByRole("button", { name: "上一张图片", exact: true }).boundingBox();
+  if (!next || !prev) throw new Error("Missing image navigation geometry");
+  expect(next.x).toBeCloseTo(close.x, 0);
+  expect(frame.x - prev.x - prev.width).toBeCloseTo(32, 0);
+  const toolbar = viewer.getByRole("toolbar", { name: "图片浏览工具" });
+  await expect(toolbar).not.toContainText("/");
+  await expect(viewer.getByLabel("图片缩放比例")).toHaveCSS("color", "rgb(255, 255, 255)");
+  await picture.click();
+  await expect(viewer).toBeVisible();
   await viewer.getByRole("button", { name: "向左旋转", exact: true }).click();
   await expect(picture).toHaveCSS("rotate", "-90deg");
   await viewer.getByRole("button", { name: "向右旋转", exact: true }).click();
   await expect(picture).toHaveCSS("rotate", "0deg");
   await viewer.getByRole("button", { name: "放大图片", exact: true }).click();
-  await expect(viewer.getByLabel("图片浏览状态")).toHaveText("2 / 2 · 125%");
+  await expect(viewer.getByLabel("图片缩放比例")).toHaveText("125%");
   await viewer.getByRole("button", { name: "缩小图片", exact: true }).click();
   await viewer.getByRole("region", { name: "浏览图片区域", exact: true }).hover();
   await page.mouse.wheel(0, -100);
-  await expect(viewer.getByLabel("图片浏览状态")).toHaveText("2 / 2 · 110%");
+  await expect(viewer.getByLabel("图片缩放比例")).toHaveText("110%");
   await page.mouse.wheel(0, 100);
-  await expect(viewer.getByLabel("图片浏览状态")).toHaveText("2 / 2 · 100%");
+  await expect(viewer.getByLabel("图片缩放比例")).toHaveText("100%");
   await viewer.getByRole("button", { name: "上一张图片", exact: true }).click();
   await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[0]}/content`);
-  await expect(viewer.getByLabel("图片浏览状态")).toHaveText("1 / 2 · 100%");
+  await expect(viewer.getByLabel("图片缩放比例")).toHaveText("100%");
   await viewer.getByRole("button", { name: "下一张图片", exact: true }).click();
   await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[1]}/content`);
   await viewer.getByRole("button", { name: "关闭图片浏览", exact: true }).focus();
@@ -128,4 +138,24 @@ test("reference viewer stacks over result details and remains usable on mobile",
   await expect(viewer).toHaveCount(0);
   await expect(details).toBeVisible();
   await expect(reference).toBeFocused();
+});
+
+test("blank clicks dismiss at fitted and zoomed sizes without closing on image interaction", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await references(page);
+  const trigger = page.getByRole("button", { name: "查看参考图片 1", exact: true });
+  const viewer = page.getByRole("dialog", { name: "图片浏览", exact: true });
+  for (const zoomed of [false, true]) {
+    await trigger.click();
+    await expect(viewer.locator(".browse-image-surface")).toHaveCSS("transform", "none");
+    if (zoomed) await viewer.getByRole("button", { name: "放大图片", exact: true }).click();
+    const picture = viewer.locator(".browse-image-picture");
+    await picture.click();
+    await expect(viewer).toBeVisible();
+    await page.mouse.click(8, 8);
+    await expect(viewer).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  }
 });

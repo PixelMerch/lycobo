@@ -40,6 +40,7 @@ export function ImageViewer({
   const [viewport, setViewport] = useState({ width: 1, height: 1 });
   const [failed, setFailed] = useState(false);
   const [area, setArea] = useState<HTMLElement | null>(null);
+  const dismissStart = useRef<{ id: number; x: number; y: number } | null>(null);
   const drag = useRef<{ pointer: Point; pan: Point } | null>(null);
   const wheelChange = useRef<(delta: number) => void>(() => {});
   const turned = Math.abs(angle % 180) === 90;
@@ -109,6 +110,29 @@ export function ImageViewer({
             <motion.div
               className="browse-image-surface"
               {...surfaceMotion}
+              onPointerDown={(event) => {
+                dismissStart.current =
+                  event.button === 0 &&
+                  event.target instanceof Element &&
+                  !event.target.closest("button, .browse-image-picture")
+                    ? { id: event.pointerId, x: event.clientX, y: event.clientY }
+                    : null;
+              }}
+              onPointerUp={(event) => {
+                const start = dismissStart.current;
+                dismissStart.current = null;
+                if (
+                  start &&
+                  start.id === event.pointerId &&
+                  Math.hypot(event.clientX - start.x, event.clientY - start.y) < 4 &&
+                  event.target instanceof Element &&
+                  !event.target.closest("button, .browse-image-picture")
+                )
+                  requestClose();
+              }}
+              onPointerCancel={() => {
+                dismissStart.current = null;
+              }}
               onKeyDown={(event) => {
                 if (
                   images.length < 2 ||
@@ -134,7 +158,10 @@ export function ImageViewer({
                   if (
                     zoom <= 100 ||
                     event.button !== 0 ||
-                    (event.target instanceof Element && event.target.closest("button"))
+                    !(
+                      event.target instanceof Element &&
+                      event.target.closest(".browse-image-picture")
+                    )
                   )
                     return;
                   event.preventDefault();
@@ -186,34 +213,34 @@ export function ImageViewer({
                       onError={() => setFailed(true)}
                     />
                   </div>
+                  {images.length > 1 && (
+                    <>
+                      <Button
+                        isIconOnly
+                        size="lg"
+                        variant="ghost"
+                        className="browse-image-prev"
+                        aria-label="上一张图片"
+                        onPress={() => select(-1)}
+                      >
+                        <UiIcon icon={IconChevronLeft} size="action" />
+                      </Button>
+                      <Button
+                        isIconOnly
+                        size="lg"
+                        variant="ghost"
+                        className="browse-image-next"
+                        aria-label="下一张图片"
+                        onPress={() => select(1)}
+                      >
+                        <UiIcon icon={IconChevronRight} size="action" />
+                      </Button>
+                    </>
+                  )}
                   <div className="browse-image-close">
                     <DialogClose label="关闭图片浏览" />
                   </div>
                 </div>
-                {images.length > 1 && (
-                  <>
-                    <Button
-                      isIconOnly
-                      size="lg"
-                      variant="ghost"
-                      className="browse-image-prev"
-                      aria-label="上一张图片"
-                      onPress={() => select(-1)}
-                    >
-                      <UiIcon icon={IconChevronLeft} size="action" />
-                    </Button>
-                    <Button
-                      isIconOnly
-                      size="lg"
-                      variant="ghost"
-                      className="browse-image-next"
-                      aria-label="下一张图片"
-                      onPress={() => select(1)}
-                    >
-                      <UiIcon icon={IconChevronRight} size="action" />
-                    </Button>
-                  </>
-                )}
               </section>
               <Toolbar className="browse-image-toolbar" aria-label="图片浏览工具">
                 <Tooltip>
@@ -259,6 +286,13 @@ export function ImageViewer({
                   </Button>
                   <Tooltip.Content>缩小</Tooltip.Content>
                 </Tooltip>
+                <output
+                  className="browse-image-position"
+                  aria-label="图片缩放比例"
+                  aria-live="polite"
+                >
+                  {zoom}%
+                </output>
                 <Tooltip>
                   <Button
                     size="lg"
@@ -272,13 +306,6 @@ export function ImageViewer({
                   </Button>
                   <Tooltip.Content>放大</Tooltip.Content>
                 </Tooltip>
-                <output
-                  className="browse-image-position"
-                  aria-label="图片浏览状态"
-                  aria-live="polite"
-                >
-                  {index + 1} / {images.length} · {zoom}%
-                </output>
               </Toolbar>
             </motion.div>
           </Modal.Dialog>
