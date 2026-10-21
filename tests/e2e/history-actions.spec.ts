@@ -5,7 +5,7 @@ const png = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
   "base64",
 );
-async function historyFixture(page: Page, quality: "high" | null = "high") {
+async function historyFixture(page: Page, quality: "high" | null = "high", withReferences = true) {
   await mockImageApi(page);
   const reference = crypto.randomUUID();
   const input = {
@@ -15,7 +15,7 @@ async function historyFixture(page: Page, quality: "high" | null = "high") {
     resolution: "1K",
     count: 1,
     ...(quality ? { quality } : {}),
-    referenceAssetIds: [reference],
+    referenceAssetIds: withReferences ? [reference, crypto.randomUUID()] : [],
   };
   const job = {
     id: crypto.randomUUID(),
@@ -53,11 +53,11 @@ async function historyFixture(page: Page, quality: "high" | null = "high") {
   return { input, job };
 }
 
-test("history prompt expands, copies in full and locates the output; icon actions show tooltips", async ({
+test("history prompt expands, copies in full and shows uploaded references; icon actions show tooltips", async ({
   page,
   context,
 }) => {
-  const { input } = await historyFixture(page);
+  const { input, job } = await historyFixture(page);
   const article = page.locator(".generation-job").first();
   await expect(article.getByText("已完成", { exact: true })).toHaveCount(0);
   await expect(article.getByRole("button", { name: "展开全部", exact: true })).toBeVisible();
@@ -76,8 +76,22 @@ test("history prompt expands, copies in full and locates the output; icon action
   await expect(page.getByRole("tooltip").filter({ hasText: "重新编辑" })).toBeVisible();
   await article.getByRole("button", { name: "重新生成", exact: true }).hover();
   await expect(page.getByRole("tooltip").filter({ hasText: "重新生成" })).toBeVisible();
-  await article.getByRole("button", { name: "定位生成图片 1", exact: true }).click();
-  await expect(article.locator(".generation-results img")).toBeInViewport();
+  const references = article.getByRole("link", { name: /查看参考图片/ });
+  await expect(references).toHaveCount(2);
+  for (const [index, assetId] of input.referenceAssetIds.entries()) {
+    await expect(references.nth(index)).toHaveAttribute(
+      "href",
+      `/api/v1/image-assets/${assetId}/content`,
+    );
+    await expect(references.nth(index).locator("img")).toHaveAttribute(
+      "src",
+      `/api/v1/image-assets/${assetId}/content?thumbnail=1`,
+    );
+  }
+  await expect(article.locator(".generation-results img")).toHaveAttribute(
+    "src",
+    `/api/v1/image-assets/${job.items[0]?.output_asset_id}/content?thumbnail=1`,
+  );
 });
 
 test("edit restores the original references and parameters while preserving an existing draft", async ({
@@ -87,7 +101,7 @@ test("edit restores the original references and parameters while preserving an e
   const edit = page.getByRole("button", { name: "重新编辑", exact: true });
   await edit.click();
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
-  await expect(page.locator(".reference-tile")).toHaveCount(1);
+  await expect(page.locator(".reference-tile")).toHaveCount(2);
   await expect(page.getByRole("radio", { name: "高", exact: true })).toHaveAttribute(
     "aria-checked",
     "true",
@@ -108,7 +122,7 @@ test("edited history references and prompt survive all model switches", async ({
   const { input } = await historyFixture(page);
   await page.getByRole("button", { name: "重新编辑", exact: true }).click();
   const composer = page.getByRole("region", { name: "创作设置", exact: true });
-  const reference = composer.locator(".reference-tile img");
+  const reference = composer.locator(".reference-tile img").first();
   const source = await reference.getAttribute("src");
   for (const model of [
     "gpt-image-2-4K",
@@ -200,7 +214,7 @@ test("legacy history reads the original task snapshot before restoring a draft",
   await page.getByRole("button", { name: "重新编辑", exact: true }).click();
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
   expect(details).toBe(1);
-  await expect(page.locator(".reference-tile")).toHaveCount(1);
+  await expect(page.locator(".reference-tile")).toHaveCount(2);
 });
 
 test("legacy history without quality restores standard quality", async ({ page }) => {
@@ -210,4 +224,13 @@ test("legacy history without quality restores standard quality", async ({ page }
     "aria-checked",
     "true",
   );
+});
+
+test("text-only tasks do not show generated images as prompt references", async ({ page }) => {
+  const { job } = await historyFixture(page, "high", false);
+  const article = page.locator(".generation-job").first();
+  await expect(article.locator(".generation-results img")).toHaveCount(1);
+  await expect(article.getByLabel("任务参考图", { exact: true })).toHaveCount(0);
+  await expect(article.locator(".history-prompt img")).toHaveCount(0);
+  expect(job.input.referenceAssetIds).toEqual([]);
 });

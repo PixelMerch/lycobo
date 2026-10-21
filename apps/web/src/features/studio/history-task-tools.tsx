@@ -1,4 +1,4 @@
-import { Alert, Button, Tooltip, toast } from "@heroui/react";
+import { Alert, Button, Link, Tooltip, toast } from "@heroui/react";
 import { type ImageJob, imageJobSchema } from "@lycoboai/contracts";
 import { IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
@@ -74,29 +74,26 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
           </Alert.Content>
         </Alert>
       )}
-      <div className="generation-output-thumbnails">
-        {job.items.map((item) =>
-          item.output_asset_id ? (
-            <Button
-              variant="tertiary"
-              key={item.id}
+      {job.input?.referenceAssetIds.length ? (
+        <section className="generation-output-thumbnails" aria-label="任务参考图">
+          {job.input.referenceAssetIds.map((assetId, index) => (
+            <Link
+              key={assetId}
               className="generation-output-thumbnail"
-              aria-label={`定位生成图片 ${item.position + 1}`}
-              onPress={() =>
-                document
-                  .getElementById(`result-${item.id}`)
-                  ?.scrollIntoView({ block: "center", behavior: "instant" })
-              }
+              href={assetContentUrl(assetId)}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`查看参考图片 ${index + 1}`}
             >
               <img
-                src={assetContentUrl(item.output_asset_id, true)}
-                alt={`生成图片 ${item.position + 1} 缩略图`}
+                src={assetContentUrl(assetId, true)}
+                alt={`参考图片 ${index + 1} 缩略图`}
                 loading="lazy"
               />
-            </Button>
-          ) : null,
-        )}
-      </div>
+            </Link>
+          ))}
+        </section>
+      ) : null}
     </div>
   );
 }
