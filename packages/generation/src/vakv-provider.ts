@@ -153,7 +153,8 @@ export async function generateVakvImage(
     );
     timing("provider_headers", started, { status: response.status });
     const bodyStarted = performance.now();
-    const header = response.headers.get("x-request-id");
+    const header =
+      response.headers.get("x-request-id") ?? response.headers.get("x-oneapi-request-id");
     if (header && /^[\w-]{1,200}$/.test(header)) requestId = header;
     if (!response.ok) {
       await response.body?.cancel();
@@ -179,10 +180,15 @@ export async function generateVakvImage(
     timing("provider_body", bodyStarted, { bytes: length });
     const decodeStarted = performance.now();
     const parsed = responseSchema.safeParse(JSON.parse(Buffer.concat(chunks).toString("utf8")));
-    if (!parsed.success) throw new VakvError("PROVIDER_INVALID_IMAGE_RESPONSE", true, requestId);
-    const encoded = parsed.data.data[0]?.b64_json ?? "";
-    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(encoded) || encoded.length % 4 !== 0)
+    if (!parsed.success) {
+      timing("provider_invalid_response_shape", decodeStarted);
       throw new VakvError("PROVIDER_INVALID_IMAGE_RESPONSE", true, requestId);
+    }
+    const encoded = parsed.data.data[0]?.b64_json ?? "";
+    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(encoded) || encoded.length % 4 !== 0) {
+      timing("provider_invalid_base64", decodeStarted);
+      throw new VakvError("PROVIDER_INVALID_IMAGE_RESPONSE", true, requestId);
+    }
     const bytes = Buffer.from(encoded, "base64");
     if (bytes.length > imageLimits.outputBytes)
       throw new VakvError("PROVIDER_IMAGE_TOO_LARGE", true, requestId);

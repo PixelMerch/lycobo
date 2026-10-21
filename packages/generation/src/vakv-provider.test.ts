@@ -214,3 +214,34 @@ it("does not lose a paid result when the timing sink fails", async () => {
   expect(result.bytes.toString()).toBe("hello");
   expect(request).toHaveBeenCalledTimes(1);
 });
+
+it.each([
+  [{ data: [{ url: "https://example.invalid/private-image" }] }, "provider_invalid_response_shape"],
+  [{ data: [{ b64_json: "invalid base64" }] }, "provider_invalid_base64"],
+])(
+  "classifies invalid response safely and retains the gateway correlation ID",
+  async (body, stage) => {
+    const events: unknown[] = [];
+    const request = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify(body), {
+        headers: { "x-oneapi-request-id": "gateway-request-1" },
+      }),
+    );
+    await expect(
+      generateVakvImage(
+        input,
+        [],
+        { ...config, onTiming: (event) => events.push(event) },
+        "invalid-result",
+        request,
+      ),
+    ).rejects.toMatchObject({
+      code: "PROVIDER_INVALID_IMAGE_RESPONSE",
+      requestId: "gateway-request-1",
+      unknownOutcome: true,
+    });
+    expect(events).toEqual(expect.arrayContaining([expect.objectContaining({ stage })]));
+    expect(JSON.stringify(events)).not.toMatch(/private-image|invalid base64/);
+    expect(request).toHaveBeenCalledTimes(1);
+  },
+);
