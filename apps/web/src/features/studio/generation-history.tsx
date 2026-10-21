@@ -11,7 +11,6 @@ import {
   IconStarFilled,
 } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
-import "./image-public-id.css";
 import { UiIcon } from "../../components/ui-icon";
 import { copyToClipboard } from "../../lib/clipboard";
 import { useErrorToast } from "../../lib/error-toast";
@@ -54,13 +53,11 @@ async function copyTaskId(id: string | undefined) {
 }
 function ResultImage({
   assetId,
-  publicId,
   position,
   prompt,
   onPreview,
 }: {
   assetId: string;
-  publicId?: string | null | undefined;
   position: number;
   prompt: string;
   onPreview: () => void;
@@ -68,50 +65,47 @@ function ResultImage({
   const favorite = useStudioStore((s) => s.favorites.includes(assetId));
   const toggleFavorite = useStudioStore((s) => s.toggleFavorite);
   return (
-    <>
-      <div className="generation-media">
-        <Button
-          variant="tertiary"
-          className="generation-media-open"
-          aria-label={`预览图片 ${position + 1}`}
-          onPress={onPreview}
-        >
-          <img
-            src={assetContentUrl(assetId, true)}
-            loading="lazy"
-            alt={`${prompt}，图片${position + 1}`}
-          />
-        </Button>
-        <div className="generation-media-actions">
-          <Tooltip delay={0}>
-            <Button
-              isIconOnly
-              variant="tertiary"
-              className="generation-media-action"
-              aria-label="下载原图"
-              onPress={() => downloadAsset(assetId)}
-            >
-              <UiIcon icon={IconDownload} />
-            </Button>
-            <Tooltip.Content placement="top">下载原图</Tooltip.Content>
-          </Tooltip>
-          <Tooltip delay={0}>
-            <ToggleButton
-              isIconOnly
-              variant="ghost"
-              className="generation-media-action"
-              aria-label={favorite ? "取消收藏" : "收藏图片"}
-              isSelected={favorite}
-              onChange={() => toggleFavorite(assetId)}
-            >
-              <UiIcon icon={favorite ? IconStarFilled : IconStar} />
-            </ToggleButton>
-            <Tooltip.Content placement="top">{favorite ? "取消收藏" : "收藏"}</Tooltip.Content>
-          </Tooltip>
-        </div>
+    <div className="generation-media">
+      <Button
+        variant="tertiary"
+        className="generation-media-open"
+        aria-label={`预览图片 ${position + 1}`}
+        onPress={onPreview}
+      >
+        <img
+          src={assetContentUrl(assetId, true)}
+          loading="lazy"
+          alt={`${prompt}，图片${position + 1}`}
+        />
+      </Button>
+      <div className="generation-media-actions">
+        <Tooltip delay={0}>
+          <Button
+            isIconOnly
+            variant="tertiary"
+            className="generation-media-action"
+            aria-label="下载原图"
+            onPress={() => downloadAsset(assetId)}
+          >
+            <UiIcon icon={IconDownload} />
+          </Button>
+          <Tooltip.Content placement="top">下载原图</Tooltip.Content>
+        </Tooltip>
+        <Tooltip delay={0}>
+          <ToggleButton
+            isIconOnly
+            variant="ghost"
+            className="generation-media-action"
+            aria-label={favorite ? "取消收藏" : "收藏图片"}
+            isSelected={favorite}
+            onChange={() => toggleFavorite(assetId)}
+          >
+            <UiIcon icon={favorite ? IconStarFilled : IconStar} />
+          </ToggleButton>
+          <Tooltip.Content placement="top">{favorite ? "取消收藏" : "收藏"}</Tooltip.Content>
+        </Tooltip>
       </div>
-      {publicId && <p className="image-public-id">图片 ID：{publicId}</p>}
-    </>
+    </div>
   );
 }
 function GenerationLoading() {
@@ -280,7 +274,6 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
                     {item.output_asset_id ? (
                       <ResultImage
                         assetId={item.output_asset_id}
-                        publicId={item.output_public_id}
                         position={item.position}
                         prompt={job.prompt}
                         onPreview={() =>

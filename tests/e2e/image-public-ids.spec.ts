@@ -63,11 +63,16 @@ test("task and image IDs stay stable across history, reload and the asset librar
   await page.goto("/create");
   const history = page.locator(".generation-job");
   await expect(history).toContainText("W07AZ9T2Q");
-  await expect(history).toContainText("图片 ID：P82ZX19M4");
+  await expect(history.locator(".image-public-id")).toHaveCount(0);
   await expect(history).not.toContainText(id);
   await expect(history).not.toContainText(job.items[0]?.worker_id ?? "missing");
   await page.reload();
-  await expect(history).toContainText("图片 ID：P82ZX19M4");
+  await expect(history.locator(".image-public-id")).toHaveCount(0);
+  await history.getByRole("button", { name: "预览图片 1", exact: true }).click();
+  const preview = page.getByRole("dialog", { name: "图片预览", exact: true });
+  await expect(preview.locator(".image-preview-bar-id")).toHaveText("Img ID：P82ZX19M4");
+  await preview.getByRole("button", { name: "关闭图片预览", exact: true }).click();
+  await expect(preview).toHaveCount(0);
   await page.getByRole("link", { name: "素材库", exact: true }).click();
   await expect(page.locator(".asset-grid")).toContainText("图片 ID：P82ZX19M4");
 });
