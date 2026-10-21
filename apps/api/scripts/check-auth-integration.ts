@@ -185,6 +185,117 @@ try {
       (await app.request("/api/v1/auth/session", { headers: freshHeaders })).status,
       401,
     );
+    // Refresh credentials are HttpOnly, rotated atomically and bounded by the original login.
+    const cookieOf = (response: Response, name: string) =>
+      response.headers
+        .getSetCookie()
+        .find((value) => value.startsWith(`${name}=`))
+        ?.split(";")[0] ?? "";
+    const refresh = (cookie: string, requestOrigin = origin) =>
+      app.request("/api/v1/auth/refresh", {
+        method: "POST",
+        headers: { Cookie: cookie, Origin: requestOrigin },
+      });
+    const loginResponse = await login();
+    const persistent = enterpriseLoginResponseSchema.parse(
+      unwrapApiData(await loginResponse.json()),
+    );
+    assert.equal(persistent.expiresIn, 86400);
+    assert.ok(
+      (persistent.refreshExpiresIn ?? 0) > 2591995 && (persistent.refreshExpiresIn ?? 0) <= 2592000,
+    );
+    const firstRefresh = cookieOf(loginResponse, "lycobo_enterprise_refresh");
+    assert.ok(firstRefresh);
+    assert.ok(
+      loginResponse.headers
+        .getSetCookie()
+        .filter((value) => !value.startsWith("lycobo_image_session="))
+        .every((value) => value.includes("HttpOnly")),
+    );
+    assert.equal((await refresh(firstRefresh, "https://hostile.example")).status, 403);
+    const parallelRefresh = await Promise.all([refresh(firstRefresh), refresh(firstRefresh)]);
+    assert.deepEqual(parallelRefresh.map((response) => response.status).sort(), [200, 401]);
+    const rotated = parallelRefresh.find((response) => response.status === 200);
+    assert.ok(rotated);
+    const rotatedBody = unwrapApiData(await rotated.json());
+    assert.ok(
+      typeof rotatedBody === "object" && rotatedBody !== null && !("refreshToken" in rotatedBody),
+    );
+    const renewed = enterpriseLoginResponseSchema.parse(rotatedBody);
+    const secondRefresh = cookieOf(rotated, "lycobo_enterprise_refresh");
+    assert.notEqual(secondRefresh, firstRefresh);
+    assert.equal((await refresh(firstRefresh)).status, 401);
+    const refreshedHeaders = { Authorization: `Bearer ${renewed.accessToken}` };
+    assert.equal(
+      (await app.request("/api/v1/auth/session", { headers: refreshedHeaders })).status,
+      200,
+    );
+    // Logout must revoke the refresh session even when the access cookie has expired/disappeared.
+    assert.equal(
+      (
+        await app.request("/api/v1/auth/logout", {
+          method: "POST",
+          headers: { Cookie: firstRefresh, Origin: origin },
+        })
+      ).status,
+      200,
+    );
+    assert.equal((await refresh(secondRefresh)).status, 401);
+    assert.equal(
+      (await app.request("/api/v1/auth/session", { headers: refreshedHeaders })).status,
+      401,
+    );
+    const passwordLogin = await login();
+    const passwordToken = enterpriseLoginResponseSchema.parse(
+      unwrapApiData(await passwordLogin.json()),
+    );
+    const passwordRefresh = cookieOf(passwordLogin, "lycobo_enterprise_refresh");
+    const passwordHeaders = {
+      Authorization: `Bearer ${passwordToken.accessToken}`,
+      "Content-Type": "application/json",
+    };
+    assert.equal(
+      (
+        await app.request("/api/v1/auth/password", {
+          method: "POST",
+          headers: passwordHeaders,
+          body: JSON.stringify({
+            currentPassword: "wrong",
+            newPassword: "new-fixture-password-123",
+          }),
+        })
+      ).status,
+      401,
+    );
+    assert.equal(
+      (
+        await app.request("/api/v1/auth/password", {
+          method: "POST",
+          headers: passwordHeaders,
+          body: JSON.stringify({
+            currentPassword: password,
+            newPassword: "new-fixture-password-123",
+          }),
+        })
+      ).status,
+      200,
+    );
+    assert.equal((await refresh(passwordRefresh)).status, 401);
+    assert.equal(
+      (await app.request("/api/v1/auth/session", { headers: passwordHeaders })).status,
+      401,
+    );
+    assert.equal((await login()).status, 401);
+    await authDb.setCredential(
+      "fixture-account",
+      first.userId,
+      first.organizationId,
+      await hashPassword(password),
+    );
+    const expirationLogin = await login();
+    const expiringRefresh = cookieOf(expirationLogin, "lycobo_enterprise_refresh");
+    await sql`update enterprise_sessions set expires_at=now()-interval '1 second'`;
+    assert.equal((await refresh(expiringRefresh)).status, 401);
     const attempts = await Promise.all(
       Array.from({ length: 25 }, () => authDb?.allowLogin("rate-fixture")),
     );

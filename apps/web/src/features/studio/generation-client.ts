@@ -12,6 +12,7 @@ import {
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
 import { normalizeApiResponse } from "../../lib/api-response";
+import { sessionFetch } from "../../lib/session-fetch";
 import type { Draft, ModelId } from "./studio-state";
 
 export class ImageApiError extends Error {
@@ -23,7 +24,7 @@ export class ImageApiError extends Error {
   }
 }
 export async function imageRequest(path: string, init: RequestInit = {}) {
-  const response = await fetch(`/api/v1/${path}`, {
+  const response = await sessionFetch(`/api/v1/${path}`, {
     ...init,
     credentials: "same-origin",
     signal: init.signal

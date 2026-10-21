@@ -34,6 +34,8 @@ async function fixture() {
       active = false;
     }),
     setCredential: vi.fn(),
+    rotateRefresh: vi.fn(async () => null),
+    changePassword: vi.fn(async () => true),
   };
   const auth = enterpriseAuth(repository, { secret, origins: [origin], secureCookie: false });
   return { auth, repository, app: createApp(undefined, undefined, auth) };
@@ -102,10 +104,17 @@ describe("enterprise JWT login", () => {
     const cookie = response.headers.get("set-cookie") ?? "";
     expect(cookie).toContain("HttpOnly");
     expect(cookie).toContain("SameSite=Strict");
-    const { accessToken } = enterpriseLoginResponseSchema.parse(
+    const { accessToken, expiresIn, refreshExpiresIn } = enterpriseLoginResponseSchema.parse(
       unwrapApiData(await response.json()),
     );
     expect(accessToken.split(".")).toHaveLength(3);
+    expect(expiresIn).toBe(86400);
+    expect(refreshExpiresIn).toBeGreaterThan(2591995);
+    expect(
+      response.headers
+        .getSetCookie()
+        .find((value) => value.startsWith("lycobo_enterprise_refresh=")),
+    ).toContain("Path=/api/v1/auth");
     expect(
       (
         await app.request("/api/v1/auth/session", {
@@ -140,6 +149,30 @@ describe("enterprise JWT login", () => {
       ).status,
     ).toBe(401);
   });
+  it("expires access after one day and can issue a replacement inside the fixed refresh lifetime", async () => {
+    const { auth, repository } = await fixture();
+    const login = await auth.login(user.account, "fixture-password-123");
+    if ("error" in login) throw new Error("Fixture login failed");
+    const created = vi.mocked(repository.createSession).mock.calls[0];
+    expect(created?.[3]).toMatch(/^[a-f0-9]{64}$/);
+    expect(created?.[3]).not.toBe(login.refreshToken);
+    const now = Date.now();
+    const clock = vi.spyOn(Date, "now").mockReturnValue(now + 86401 * 1000);
+    try {
+      expect(await auth.authenticate(login.accessToken)).toBeNull();
+      vi.mocked(repository.rotateRefresh).mockResolvedValue({
+        id: created?.[0] ?? crypto.randomUUID(),
+        expires_at: new Date(now + 2592000 * 1000),
+      });
+      const refreshed = await auth.refresh(login.refreshToken);
+      expect(refreshed?.expiresIn).toBe(86400);
+      expect(refreshed?.refreshExpiresIn).toBeLessThan(2592000);
+      expect(refreshed?.refreshToken).not.toBe(login.refreshToken);
+      expect(await auth.authenticate(refreshed?.accessToken ?? "")).not.toBeNull();
+    } finally {
+      clock.mockRestore();
+    }
+  });
   it("rejects expired tokens, wrong audience/issuer/purpose and identity substitutions", async () => {
     const { auth } = await fixture();
     const now = Math.floor(Date.now() / 1000);
@@ -155,6 +188,7 @@ describe("enterprise JWT login", () => {
     };
     for (const patch of [
       { exp: now - 1 },
+      { exp: now + 86401 },
       { aud: "other" },
       { iss: "other" },
       { purpose: "refresh" },

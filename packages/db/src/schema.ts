@@ -436,6 +436,7 @@ export const enterpriseSessions = pgTable(
       .notNull()
       .references(() => enterpriseAccounts.id, { onDelete: "cascade" }),
     credentialVersion: uuid("credential_version").notNull(),
+    refreshTokenHash: text("refresh_token_hash").unique(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     createdAt: createdAt(),

@@ -48,10 +48,15 @@ export function openAuthRepository(url: string) {
         await sql`select id,account,user_id,organization_id,password_hash from enterprise_accounts where account=${account} and disabled_at is null`;
       return rows[0] ? accountRow.parse(rows[0]) : null;
     },
-    async createSession(id: string, credential: EnterpriseCredential, expiresAt: Date) {
+    async createSession(
+      id: string,
+      credential: EnterpriseCredential,
+      expiresAt: Date,
+      refreshTokenHash: string | null = null,
+    ) {
       const rows =
-        await sql`insert into enterprise_sessions (id,account_id,expires_at,credential_version)
-        select ${id},id,${expiresAt},credential_version from enterprise_accounts where id=${credential.id} and disabled_at is null and password_hash=${credential.password_hash} returning id`;
+        await sql`insert into enterprise_sessions (id,account_id,expires_at,credential_version,refresh_token_hash)
+        select ${id},id,${expiresAt},credential_version,${refreshTokenHash} from enterprise_accounts where id=${credential.id} and disabled_at is null and password_hash=${credential.password_hash} returning id`;
       return rows.length === 1;
     },
     async identity(sessionId: string): Promise<EnterpriseIdentity | null> {
@@ -70,6 +75,27 @@ export function openAuthRepository(url: string) {
         role: row.role,
         account: row.account,
       };
+    },
+    async rotateRefresh(currentHash: string, nextHash: string) {
+      const rows = await sql`update enterprise_sessions s set refresh_token_hash=${nextHash}
+        from enterprise_accounts a where s.refresh_token_hash=${currentHash}
+        and a.id=s.account_id and s.revoked_at is null and s.expires_at>now()
+        and a.disabled_at is null and s.credential_version=a.credential_version
+        and exists (select 1 from organization_members m where m.user_id=a.user_id and m.organization_id=a.organization_id)
+        returning s.id,s.expires_at`;
+      return rows[0]
+        ? z.object({ id: z.uuid(), expires_at: z.coerce.date() }).parse(rows[0])
+        : null;
+    },
+    async changePassword(credential: EnterpriseCredential, passwordHash: string) {
+      return sql.begin(async (tx) => {
+        const rows =
+          await tx`update enterprise_accounts set password_hash=${passwordHash},credential_version=gen_random_uuid()
+          where id=${credential.id} and password_hash=${credential.password_hash} and disabled_at is null returning id`;
+        if (!rows[0]) return false;
+        await tx`delete from enterprise_sessions where account_id=${credential.id}`;
+        return true;
+      });
     },
     async revoke(sessionId: string) {
       await sql`update enterprise_sessions set revoked_at=now() where id=${sessionId} and revoked_at is null`;

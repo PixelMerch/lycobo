@@ -4,16 +4,18 @@ import {
   enterpriseLoginResponseSchema,
 } from "@lycoboai/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
 import { normalizeApiResponse } from "../../lib/api-response";
+import { rememberSessionExpiry, resetSessionRenewal, sessionFetch } from "../../lib/session-fetch";
 
 const authKey = ["enterprise-session"];
 async function authRequest(path: string, init: RequestInit = {}) {
-  const response = await fetch(`/api/v1/auth/${path}`, {
+  const request = path === "session" ? sessionFetch : fetch;
+  const response = await request(`/api/v1/auth/${path}`, {
     ...init,
     credentials: "same-origin",
     signal: init.signal ?? AbortSignal.timeout(15000),
   });
+  rememberSessionExpiry(response);
   return normalizeApiResponse(response);
 }
 async function errorMessage(response: Response) {
@@ -51,6 +53,7 @@ export function useEnterpriseLogin() {
   return useMutation({
     gcTime: 0,
     mutationFn: async (input: { account: string; password: string }) => {
+      resetSessionRenewal();
       const response = await authRequest("enterprise/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,6 +76,7 @@ export function useEnterpriseLogout() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async () => {
+      resetSessionRenewal();
       const response = await authRequest("logout", { method: "POST" });
       if (!response.ok) throw new Error("退出失败，请稍后重试");
     },

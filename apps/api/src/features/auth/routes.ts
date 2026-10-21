@@ -1,8 +1,37 @@
-import { enterpriseLoginSchema } from "@lycoboai/contracts";
+import { enterpriseLoginSchema, enterprisePasswordChangeSchema } from "@lycoboai/contracts";
 import { type Context, Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { EnterpriseAuth } from "./service";
 export const enterpriseCookie = "lycobo_enterprise_session";
+export const refreshCookie = "lycobo_enterprise_refresh";
+const refreshPath = "/api/v1/auth";
+function clearAuthCookies(c: Context, auth: EnterpriseAuth) {
+  const flags = { secure: auth.config.secureCookie, sameSite: "Strict", httpOnly: true } as const;
+  deleteCookie(c, enterpriseCookie, { ...flags, path: "/api" });
+  deleteCookie(c, refreshCookie, { ...flags, path: refreshPath });
+  deleteCookie(c, "lycobo_image_session", { path: "/api" });
+}
+function tokenResponse(
+  c: Context,
+  auth: EnterpriseAuth,
+  result: NonNullable<Awaited<ReturnType<EnterpriseAuth["refresh"]>>>,
+) {
+  const { refreshToken, ...body } = result;
+  const flags = { httpOnly: true, secure: auth.config.secureCookie, sameSite: "Strict" } as const;
+  setCookie(c, enterpriseCookie, result.accessToken, {
+    ...flags,
+    path: "/api",
+    maxAge: result.expiresIn,
+  });
+  setCookie(c, refreshCookie, refreshToken, {
+    ...flags,
+    path: refreshPath,
+    maxAge: result.refreshExpiresIn,
+  });
+  deleteCookie(c, "lycobo_image_session", { path: "/api" });
+  c.header("X-Auth-Expires-At", String(Math.floor(Date.now() / 1000) + result.expiresIn));
+  return c.json(body);
+}
 export function trustedAuthRequest(c: Context, auth: EnterpriseAuth) {
   const origin = c.req.header("Origin");
   return (
@@ -48,20 +77,39 @@ export function authRoutes(auth?: EnterpriseAuth) {
       }
       return fail(c, result.error, "账号或密码错误", 401);
     }
-    setCookie(c, enterpriseCookie, result.accessToken, {
-      httpOnly: true,
-      secure: auth.config.secureCookie,
-      sameSite: "Strict",
-      path: "/api",
-      maxAge: result.expiresIn,
-    });
-    // Remove the old local identity cookie so two enterprise scopes cannot be mixed.
-    deleteCookie(c, "lycobo_image_session", { path: "/api" });
-    return c.json(result);
+    return tokenResponse(c, auth, result);
+  });
+  app.post("/refresh", async (c) => {
+    if (!auth) return fail(c, "AUTH_NOT_CONFIGURED", "登录服务尚未配置", 503);
+    if (!trustedAuthRequest(c, auth)) return fail(c, "UNTRUSTED_ORIGIN", "请求来源不受信任", 403);
+    const token = getCookie(c, refreshCookie);
+    const result = token ? await auth.refresh(token) : null;
+    // A concurrent tab may already have rotated the shared cookie. Never clear it on rejection.
+    return result
+      ? tokenResponse(c, auth, result)
+      : fail(c, "UNAUTHORIZED", "登录已过期，请重新登录", 401);
+  });
+  app.post("/password", async (c) => {
+    if (!auth) return fail(c, "AUTH_NOT_CONFIGURED", "登录服务尚未配置", 503);
+    const session = await enterprisePrincipal(c, auth);
+    if (!session) return fail(c, "UNAUTHORIZED", "请先登录", 401);
+    const input = enterprisePasswordChangeSchema.safeParse(await c.req.json().catch(() => null));
+    if (!input.success) return fail(c, "VALIDATION_ERROR", "新密码需为 12 至 256 个字符", 400);
+    if (
+      !(await auth.changePassword(
+        session.user.account,
+        input.data.currentPassword,
+        input.data.newPassword,
+      ))
+    )
+      return fail(c, "INVALID_CREDENTIALS", "当前密码错误或会话已失效", 401);
+    clearAuthCookies(c, auth);
+    return c.json({});
   });
   app.get("/session", async (c) => {
     if (!auth) return fail(c, "AUTH_NOT_CONFIGURED", "登录服务尚未配置", 503);
     const session = await enterprisePrincipal(c, auth);
+    if (session) c.header("X-Auth-Expires-At", String(session.expiresAt));
     return session ? c.json(session.user) : fail(c, "UNAUTHORIZED", "请先登录", 401);
   });
   app.post("/logout", async (c) => {
@@ -70,13 +118,11 @@ export function authRoutes(auth?: EnterpriseAuth) {
       return fail(c, "UNTRUSTED_ORIGIN", "请求来源不受信任", 403);
     const session = await enterprisePrincipal(c, auth);
     if (session) await auth.revoke(session.sessionId);
-    deleteCookie(c, enterpriseCookie, {
-      path: "/api",
-      secure: auth.config.secureCookie,
-      sameSite: "Strict",
-      httpOnly: true,
-    });
-    deleteCookie(c, "lycobo_image_session", { path: "/api" });
+    if (!c.req.header("Authorization")) {
+      const token = getCookie(c, refreshCookie);
+      if (token) await auth.revokeRefresh(token);
+    }
+    clearAuthCookies(c, auth);
     return c.json({});
   });
   return app;

@@ -26,8 +26,10 @@ Compose 修改环境变量后运行 `docker compose up -d --no-deps --wait api`�
 
 | 方法与路径 | 输入／行为 |
 | --- | --- |
-| POST /api/v1/auth/enterprise/login | JSON `{account,password}`；必须携带可信 Origin；成功返回 `{accessToken,tokenType:"Bearer",expiresIn:900,user}` 并写 HttpOnly Cookie |
+| POST /api/v1/auth/enterprise/login | JSON `{account,password}`；必须携带可信 Origin；成功返回 `{accessToken,tokenType:"Bearer",expiresIn:86400,refreshExpiresIn:2592000,user}` 并写 HttpOnly Cookie |
 | GET /api/v1/auth/session | 验证 JWT 后返回 `{userId,organizationId,role,account}`；未登录／过期返回 401 |
+| POST /api/v1/auth/refresh | 仅接受可信 Origin 和 HttpOnly 刷新 Cookie；轮换刷新凭据并签发新访问 Token，返回同登录的字段；刷新 Token 不进入 JSON |
+| POST /api/v1/auth/password | 已登录；JSON `{currentPassword,newPassword}`，新密码 12–256 字符；验证旧密码，原子更新密码并撤销该账号全部会话 |
 | POST /api/v1/auth/logout | 撤销服务端会话并删除 Cookie；重复退出可安全返回 HTTP 200、code=0、data={} |
 | POST /api/v1/image-session | 企业模式下读取当前 JWT 身份，不再创建本地身份 |
 
@@ -35,7 +37,11 @@ Compose 修改环境变量后运行 `docker compose up -d --no-deps --wait api`�
 
 API 客户端使用 `Authorization: Bearer <accessToken>`。浏览器只使用 `lycobo_enterprise_session` HttpOnly／SameSite=Strict Cookie（path=/api；生产 Secure），不把 JWT 放入 React 状态、localStorage 或 URL。Cookie 写请求校验精确 Origin 与 Sec-Fetch-Site；Bearer 请求验证令牌。未开放跨域凭据 CORS。
 
-JWT 有效期 15 分钟，固定 HS256，必须包含并验证 sub、org、jti、iat、exp、iss、aud 和用途。服务端每次查询会话、账号状态、凭据版本与当前组织成员关系，动态解析权限；退出、禁用、移除成员、重置密码都会使旧会话失效。没有 refresh token；过期后重新登录。
+访问 JWT 有效期 1 天（86400 秒），刷新凭据有效期为本次登录起 30 天（2592000 秒）。不再设置 7 天上限，也不通过刷新延长最初的 30 天期限；临近会话截止时，访问 Token 会缩短到剩余会话时长。JWT 固定 HS256，验证 sub、org、jti、iat、exp、iss、aud、purpose；每次请求还验证服务端会话、账号状态、凭据版本及当前成员关系。
+
+访问 Cookie `lycobo_enterprise_session` 的 Path 为 `/api`，刷新 Cookie `lycobo_enterprise_refresh` 的 Path 为 `/api/v1/auth`；均使用 HttpOnly、SameSite=Strict，生产启用 Secure。刷新 JWT 含 32 字节密码学随机 nonce、独立的 enterprise-refresh 用途和签名会话 ID，数据库仅保存整个凭据的 SHA-256 哈希；迁移 0006 新增可空、唯一的 refresh_token_hash。每次刷新通过数据库原子条件更新轮换哈希，旧刷新凭据立即不可再用；并发刷新只有一个成功。拒绝刷新时不清除 Cookie，避免覆盖其他标签页已成功轮换的新凭据。
+
+退出撤销当前会话；即使访问 Cookie 已过期，也会验证刷新凭据的签名并定位该会话。刚轮换的旧凭据只能撤销所属会话，不能再用于续期，避免退出与并发刷新竞态重新登录。通过改密码接口或已有账号设置命令修改密码，均撤销该账号全部会话，因此旧访问 Token 和刷新凭据同时失效；禁用账号、移除成员同样阻止访问和刷新。
 
 错误密码与不存在账号统一返回 401“账号或密码错误”。PostgreSQL 原子限流：每账号 15 分钟最多 10 次尝试、全局每分钟最多 200 次；限流返回 429 与 Retry-After。登录请求体受 API 32KiB 限制，账号／密码有长度上限；不记录密码、JWT、Cookie 或请求体。
 
@@ -53,3 +59,11 @@ JWT 有效期 15 分钟，固定 HS256，必须包含并验证 sub、org、jti�
 ## 用户公开 UID
 
 企业登录及会话身份返回 `uid`：随机 10 位纯数字字符串（例如 `0123456789`），允许前导 0，不随重新登录变化。内部 `userId`、JWT sub、成员关系及资源授权继续使用 UUID。迁移 0005 为已有用户补齐 UID，数据库唯一约束和原子号码登记防止重复分配；旧响应兼容允许缺省 UID。不得把公开 UID 作为授权依据，也不得转为数字存储。
+
+## 自动续期与升级
+
+前端通过既有每分钟会话检查和业务请求边界，在访问 Token 到期前 5 分钟内自动续期；休眠后恢复或重新打开页面遇到 401，也会刷新并重试一次。页面内合并并发刷新，支持 Web Locks 的浏览器跨标签页串行刷新；其他浏览器在轮换冲突时重新检查共享会话。业务 5xx 不触发重新提交；401 重试保留原请求体与幂等键。仅非敏感的到期时间保存在内存，Token 不写 localStorage 或 sessionStorage。
+
+迁移必须先于 API 新代码部署，迁移未升级的旧 15 分钟会话不会自动获得长期权限，需再登录一次以领取刷新 Cookie。续期不清空草稿、不跳转页面；刷新凭据过期、账号失效或密码变更后恢复未登录状态。
+
+隔离数据库集成验证 1 天／30 天期限、Cookie、并发轮换和旧凭据拒绝、仅刷新 Cookie 的退出、修改密码后双凭据撤销、30 天到期拒绝。浏览器测试覆盖自动恢复、并发请求合并、不保存可读 Token、退出后不自动登录。

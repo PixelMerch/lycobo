@@ -9,6 +9,12 @@ export const enterpriseAccountSchema = z
 export const enterpriseLoginSchema = z
   .object({ account: enterpriseAccountSchema, password: z.string().min(1).max(256) })
   .strict();
+export const enterprisePasswordChangeSchema = z
+  .object({
+    currentPassword: z.string().min(1).max(256),
+    newPassword: z.string().min(12).max(256),
+  })
+  .strict();
 export const userUidSchema = z.string().regex(/^[0-9]{10}$/);
 export const enterpriseIdentitySchema = z.object({
   uid: userUidSchema.optional(),
@@ -22,5 +28,6 @@ export const enterpriseLoginResponseSchema = z.object({
   tokenType: z.literal("Bearer"),
   expiresIn: z.number().int().positive(),
   user: enterpriseIdentitySchema,
+  refreshExpiresIn: z.number().int().positive().optional(),
 });
 export type EnterpriseIdentity = z.infer<typeof enterpriseIdentitySchema>;
