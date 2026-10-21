@@ -285,6 +285,7 @@ export function StudioShell() {
         <Modal.Backdrop
           className="chooser-backdrop"
           data-sidebar-collapsed={sidebarCollapsed}
+          data-workspace={inWorkspace || undefined}
           variant="transparent"
           style={chooserLayout}
         >

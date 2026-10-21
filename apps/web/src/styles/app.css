@@ -62,6 +62,8 @@
   --sidebar-width: 274px;
   --sidebar-header-offset: 0px;
   --header-height: 68px;
+  --workspace-history-width: 88px;
+  --workspace-padding: 12px;
   --content-padding: 24px;
   --shell-font-family:
     system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
@@ -943,17 +945,23 @@ p.home-hero-kicker {
 .recent-row strong {
   font-weight: var(--weight-medium);
 }
-.chooser-backdrop {
+.chooser-backdrop.modal__backdrop {
+  --chooser-rail-space: 0px;
   isolation: isolate;
-  padding: calc(var(--header-height) + var(--content-padding)) var(--content-padding)
-    var(--content-padding) calc(var(--sidebar-width) + var(--content-padding));
+  position: fixed;
+  inset: var(--header-height) var(--chooser-rail-space) 0 var(--sidebar-width);
+  width: auto;
+  height: auto;
+  padding: var(--content-padding);
+  backdrop-filter: none;
+  overflow: hidden;
   align-items: stretch;
   justify-content: stretch;
 }
 .chooser-backdrop::before {
   content: "";
-  position: fixed;
-  inset: var(--header-height) 0 0 var(--sidebar-width);
+  position: absolute;
+  inset: 0;
   background: var(--background);
   z-index: -1;
 }
@@ -1220,7 +1228,7 @@ p.home-hero-kicker {
 }
 .workspace {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr) 88px;
+  grid-template-columns: 320px minmax(0, 1fr) var(--workspace-history-width);
   gap: 12px;
   align-items: start;
 }
@@ -1540,9 +1548,17 @@ p.home-hero-kicker {
   position: absolute;
   white-space: nowrap;
 }
+@media (min-width: 1301px) {
+  .chooser-backdrop[data-workspace="true"] {
+    --chooser-rail-space: calc(var(--workspace-history-width) + var(--workspace-padding));
+  }
+}
 @media (min-width: 1700px) {
+  :root {
+    --workspace-history-width: 96px;
+  }
   .workspace {
-    grid-template-columns: 360px minmax(0, 1fr) 96px;
+    grid-template-columns: 360px minmax(0, 1fr) var(--workspace-history-width);
   }
 }
 @media (max-width: 1300px) {
@@ -1732,8 +1748,8 @@ p.home-hero-kicker {
     flex-wrap: wrap;
     gap: 4px;
   }
-  .chooser-backdrop {
-    padding: calc(var(--header-height) + 16px) 16px 16px;
+  .chooser-backdrop.modal__backdrop {
+    padding: 16px;
   }
   .model-chooser .modal__header {
     padding: 16px 16px 0;
@@ -1981,7 +1997,7 @@ p.home-hero-kicker {
 }
 
 .main-content:has(> .workspace) {
-  --content-padding: 12px;
+  --content-padding: var(--workspace-padding);
   padding: var(--content-padding);
 }
 
