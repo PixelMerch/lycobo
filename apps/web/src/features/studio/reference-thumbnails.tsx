@@ -1,18 +1,30 @@
-import { Link } from "@heroui/react";
+import { Button } from "@heroui/react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { assetContentUrl } from "./generation-client";
 
-/** Reference images used by a task, each opening its full-size asset. */
+const ImageViewer = lazy(() =>
+  import("../../components/image-viewer").then((module) => ({ default: module.ImageViewer })),
+);
+
+/** Task references open the shared viewer at their position in this reference set. */
 export function ReferenceThumbnails({ ids, label }: { ids: string[]; label?: string }) {
+  const [preview, setPreview] = useState<number | null>(null);
+  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   if (ids.length === 0) return null;
   return (
     <section className="generation-output-thumbnails" aria-label={label}>
       {ids.map((id, index) => (
-        <Link
+        <Button
+          variant="ghost"
+          ref={(element) => {
+            buttons.current[index] = element;
+          }}
           key={id}
           className="generation-output-thumbnail"
-          href={assetContentUrl(id)}
-          target="_blank"
-          rel="noreferrer"
+          onPress={() => {
+            buttons.current[index]?.focus();
+            setPreview(index);
+          }}
           aria-label={`查看参考图片 ${index + 1}`}
         >
           <img
@@ -20,8 +32,20 @@ export function ReferenceThumbnails({ ids, label }: { ids: string[]; label?: str
             alt={`参考图片 ${index + 1} 缩略图`}
             loading="lazy"
           />
-        </Link>
+        </Button>
       ))}
+      {preview !== null && (
+        <Suspense fallback={null}>
+          <ImageViewer
+            images={ids.map((id, index) => ({
+              src: assetContentUrl(id),
+              alt: `参考图片 ${index + 1}`,
+            }))}
+            initialIndex={preview}
+            onClose={() => setPreview(null)}
+          />
+        </Suspense>
+      )}
     </section>
   );
 }

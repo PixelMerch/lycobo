@@ -76,13 +76,9 @@ test("history prompt expands, copies in full and shows uploaded references; icon
   await expect(page.getByRole("tooltip").filter({ hasText: "重新编辑" })).toBeVisible();
   await article.getByRole("button", { name: "重新生成", exact: true }).hover();
   await expect(page.getByRole("tooltip").filter({ hasText: "重新生成" })).toBeVisible();
-  const references = article.getByRole("link", { name: /查看参考图片/ });
+  const references = article.getByRole("button", { name: /查看参考图片/ });
   await expect(references).toHaveCount(2);
   for (const [index, assetId] of input.referenceAssetIds.entries()) {
-    await expect(references.nth(index)).toHaveAttribute(
-      "href",
-      `/api/v1/image-assets/${assetId}/content`,
-    );
     await expect(references.nth(index).locator("img")).toHaveAttribute(
       "src",
       `/api/v1/image-assets/${assetId}/content?thumbnail=1`,
