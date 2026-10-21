@@ -39,7 +39,7 @@ test("current draft, references and output choices follow model switches and sur
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await page.getByRole("link", { name: "素材库", exact: true }).click();
   await expect(page.getByRole("heading", { name: "素材库", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "图片创作", exact: true }).click();
+  await page.getByRole("button", { name: "创作", exact: true }).click();
   await page.getByRole("button", { name: "进入 gpt-image-2 创作" }).click();
   await expect(prompt).toHaveValue("保留我的商品草稿");
 });
@@ -128,8 +128,8 @@ test("compact model cards open from their covers and case cards restore focus", 
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "图片创作", exact: true }).click();
-  const chooser = page.getByRole("dialog", { name: "图片创作", exact: true });
+  await page.getByRole("button", { name: "创作", exact: true }).click();
+  const chooser = page.getByRole("dialog", { name: "创作", exact: true });
   const caseCard = chooser.getByRole("button", { name: "查看案例：原木卧室" });
   await caseCard.click();
   const detail = page.getByRole("dialog", { name: "原木卧室", exact: true });

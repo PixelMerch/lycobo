@@ -11,7 +11,6 @@ import {
   IconLayoutSidebarLeftExpand,
   IconMenu2,
   IconPhoto,
-  IconPlayerPlay,
   IconSettings,
   IconShoppingBag,
 } from "@tabler/icons-react";
@@ -47,7 +46,6 @@ export function StudioShell() {
   const expandedSidebarWidth = viewportWidth >= 2560 ? 320 : viewportWidth >= 1800 ? 288 : 274;
   const sidebarWidth =
     viewportWidth < 768 ? "0px" : sidebarCollapsed ? "64px" : `${expandedSidebarWidth}px`;
-  const [tkOpen, setTkOpen] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
   const [loginOpen, setLoginOpen] = useState(false);
   const [accountSection, setAccountSection] = useState<AccountSection | null>(null);
@@ -78,8 +76,8 @@ export function StudioShell() {
       <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
         <Button
           variant="tertiary"
-          aria-label="图片创作"
-          className={`nav-row ${chooserOpen || (currentModel && !tkOpen && info !== "AI 电商") ? "active" : ""}`}
+          aria-label="创作"
+          className={`nav-row ${chooserOpen || (currentModel && info !== "AI 电商") ? "active" : ""}`}
           onPress={() => {
             setMenuOpen(false);
             setChooserOpen(true);
@@ -88,12 +86,12 @@ export function StudioShell() {
           aria-expanded={chooserOpen}
         >
           <UiIcon icon={IconPhoto} size="default" />
-          <span className="nav-label">图片创作</span>
+          <span className="nav-label">创作</span>
           <span className="nav-chevron">
             <UiIcon icon={IconChevronRight} size="small" />
           </span>
         </Button>
-        <Tooltip.Content placement="right">图片创作</Tooltip.Content>
+        <Tooltip.Content placement="right">创作</Tooltip.Content>
       </Tooltip>
       <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
         <Button
@@ -115,50 +113,6 @@ export function StudioShell() {
         </Button>
         <Tooltip.Content placement="right">AI 电商</Tooltip.Content>
       </Tooltip>
-      <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
-        <Button
-          variant="tertiary"
-          aria-label="TK 专区"
-          className={`nav-row ${tkOpen ? "active" : ""}`}
-          aria-expanded={tkOpen}
-          onPress={() => {
-            setSidebarCollapsed(false);
-            setTkOpen(!tkOpen);
-          }}
-        >
-          <UiIcon icon={IconPlayerPlay} size="default" />
-          <span className="nav-label">TK 专区</span>
-          <span className="nav-chevron">
-            <UiIcon icon={IconChevronRight} size="small" />
-          </span>
-        </Button>
-        <Tooltip.Content placement="right">TK 专区</Tooltip.Content>
-      </Tooltip>
-      {tkOpen ? (
-        <div className="tk-submenu">
-          {[
-            { name: "内容创作", items: ["带货视频", "图文转视频"] },
-            { name: "内容管理", items: ["视频中心", "自动发布", "发布草稿", "发布记录"] },
-            { name: "账号管理", items: ["授权账号"] },
-          ].map((group) => (
-            <div key={group.name}>
-              <small>{group.name}</small>
-              {group.items.map((item) => (
-                <Button
-                  key={item}
-                  variant="tertiary"
-                  onPress={() => {
-                    setMenuOpen(false);
-                    setInfo(item);
-                  }}
-                >
-                  {item}
-                </Button>
-              ))}
-            </div>
-          ))}
-        </div>
-      ) : null}
       <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
         <RouteLink
           nav
@@ -337,7 +291,7 @@ export function StudioShell() {
           <Modal.Container className="chooser-container" scroll="inside">
             <Modal.Dialog className="model-chooser">
               <Modal.Header>
-                <Modal.Heading>图片创作</Modal.Heading>
+                <Modal.Heading>创作</Modal.Heading>
                 <p>选择一个模型，进入创作工作台</p>
                 <Modal.CloseTrigger aria-label="关闭模型选择" />
               </Modal.Header>
@@ -387,11 +341,11 @@ export function StudioShell() {
               <Modal.Body>
                 <p>
                   {info === "帮助中心"
-                    ? "选择图片创作，进入模型工作台；添加参考图并描述画面。查看案例可以获取灵感，草稿会在当前页面会话中保留。"
+                    ? "选择创作，进入模型工作台；添加参考图并描述画面。查看案例可以获取灵感，草稿会在当前页面会话中保留。"
                     : info === "通知"
                       ? "暂无通知"
                       : info === "AI 电商"
-                        ? "家纺生图、换色换花型和图文合成正在准备中。你可以先使用图片创作。"
+                        ? "家纺生图、换色换花型和图文合成正在准备中。你可以先使用创作。"
                         : info === "账户设置"
                           ? "账户服务尚未开放。"
                           : `${info ?? "此功能"}正在准备中。`}

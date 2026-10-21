@@ -6,9 +6,9 @@ test("home to five-model chooser to workspace, with correctly anchored panel and
   await page.setViewportSize({ width: 1584, height: 993 });
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "为你的商品，创作下一张好图" })).toBeVisible();
-  const trigger = page.getByRole("button", { name: "图片创作", exact: true });
+  const trigger = page.getByRole("button", { name: "创作", exact: true });
   await trigger.click();
-  const chooser = page.getByRole("dialog", { name: "图片创作", exact: true });
+  const chooser = page.getByRole("dialog", { name: "创作", exact: true });
   await expect(chooser).toBeVisible();
   await expect(chooser.locator(".model-card")).toHaveCount(5);
   const box = await chooser.boundingBox();

@@ -393,24 +393,6 @@ small {
   padding-top: 8px;
   border-top: 1px solid #ffffff0a;
 }
-.tk-submenu {
-  padding-left: 28px;
-}
-.tk-submenu small {
-  color: var(--shell-nav-foreground);
-  display: block;
-  padding-block: 8px 4px;
-}
-.tk-submenu .button {
-  font-size: 12px;
-  line-height: 18px;
-  display: flex;
-  justify-content: flex-start;
-  min-height: 32px;
-  width: 100%;
-  background: transparent;
-  color: var(--shell-nav-foreground);
-}
 .topbar {
   position: sticky;
   top: 0;
@@ -460,8 +442,7 @@ small {
   }
   .studio-app[data-sidebar-collapsed="true"] .sidebar .brand,
   .studio-app[data-sidebar-collapsed="true"] .sidebar .nav-label,
-  .studio-app[data-sidebar-collapsed="true"] .sidebar .nav-chevron,
-  .studio-app[data-sidebar-collapsed="true"] .sidebar .tk-submenu {
+  .studio-app[data-sidebar-collapsed="true"] .sidebar .nav-chevron {
     display: none;
   }
   .studio-app[data-sidebar-collapsed="true"] .sidebar .nav-row {

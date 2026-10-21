@@ -33,9 +33,9 @@ Read relevant project skills before work:
   for the shared control density and audit workflow. Use HeroUI size/variant/isIconOnly;
   geometry belongs to DESIGN.md tokens, not inline styles or a new AppButton wrapper.
   pnpm lint enforces scripts/check-ui-conventions.mjs; do not bypass its component checks.
-- Follow PRD.md for navigation: Home, Image Creation, AI Commerce, TK Zone, Asset Library.
+- Follow PRD.md for navigation: Home, Create, AI Commerce, Asset Library.
   Home-textile tools belong to AI Commerce. Image tools use a category selection overlay;
-  TK uses grouped sidebar navigation. UI mockups in docs/design are review targets, not services.
+  TK has no current navigation entry. UI mockups in docs/design are review targets, not services.
 - DESIGN.md is the sole visual specification. Use HeroUI v3, neutral near-black surfaces,
   thin borders and the approved purple theme: --accent #8B5CF6, with the primary-action gradient
   linear-gradient(180deg, #BAA4FF 0, var(--accent) 100%). Use #09070D foreground on that gradient.
