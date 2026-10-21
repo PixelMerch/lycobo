@@ -132,7 +132,7 @@ const pendingStorageKey = (scope: SessionScope) =>
   `lycobo-pending-image-submission:${scope.organizationId}:${scope.userId}`;
 function pendingSubmission(
   pendingKey: string,
-): { key: string; input: ImageGenerationInput } | null {
+): { key: string; input: ImageGenerationInput; source?: string | undefined } | null {
   const raw = sessionStorage.getItem(pendingKey);
   if (!raw) return null;
   const value: unknown = JSON.parse(raw);
@@ -144,7 +144,14 @@ function pendingSubmission(
     !("input" in value)
   )
     throw new Error("待确认的提交信息无法读取，请联系管理员核对历史记录。");
-  return { key: value.key, input: imageGenerationInputSchema.parse(value.input) };
+  return {
+    key: value.key,
+    input: imageGenerationInputSchema.parse(value.input),
+    source: "source" in value && typeof value.source === "string" ? value.source : undefined,
+  };
+}
+export function pendingSubmissionSource(scope: SessionScope) {
+  return pendingSubmission(pendingStorageKey(scope))?.source;
 }
 export function hasPendingSubmission(scope?: SessionScope) {
   return !!scope && sessionStorage.getItem(pendingStorageKey(scope)) !== null;
@@ -170,10 +177,20 @@ export function useGenerateImage() {
   const client = useQueryClient();
   return useMutation({
     retry: false,
-    mutationFn: async ({ model, draft }: { model: ModelId; draft: Draft }) => {
+    mutationFn: async ({
+      model,
+      draft,
+      source,
+    }: {
+      model: ModelId;
+      draft: Draft;
+      source?: string;
+    }) => {
       if (!session.data) throw new Error("请先登录工作台。");
       const pendingKey = pendingStorageKey(session.data);
       let pending = pendingSubmission(pendingKey);
+      if (pending && pending.source !== source)
+        throw new Error("请先在原提交入口确认上次提交，再开始新的生成。");
       if (!pending) {
         const referenceAssetIds: string[] = [];
         for (const reference of draft.references) {
@@ -207,7 +224,7 @@ export function useGenerateImage() {
           count: Number(draft.count),
           referenceAssetIds,
         });
-        pending = { key: crypto.randomUUID(), input };
+        pending = { key: crypto.randomUUID(), input, source };
         // Retain the same request after a lost response or reload: never create another paid task blindly.
         sessionStorage.setItem(pendingKey, JSON.stringify(pending));
         window.dispatchEvent(new Event(pendingEvent));

@@ -9,7 +9,14 @@ import {
   IconStarFilled,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
-import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  type PointerEvent as ReactPointerEvent,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
 import { copyToClipboard } from "../../lib/clipboard";
@@ -19,6 +26,8 @@ import { useStudioStore } from "./studio-state";
 import { useCenteredDialogMotion } from "./use-centered-dialog-motion";
 import "./fullscreen-dialog.css";
 import "./image-preview.css";
+
+const LocalRepair = lazy(() => import("./local-repair"));
 
 export type PreviewImage = {
   id: string;
@@ -75,7 +84,7 @@ function clampPan(pan: { x: number; y: number }, limits: { x: number; y: number 
  * middle, and the thumbnail list pinned to the right.
  */
 export function ImagePreviewDialog({
-  images,
+  images: originalImages,
   meta: sharedMeta = {},
   initialIndex = 0,
   onClose,
@@ -85,6 +94,12 @@ export function ImagePreviewDialog({
   initialIndex?: number;
   onClose: () => void;
 }) {
+  const [addedImages, setAddedImages] = useState<PreviewImage[]>([]);
+  const images = [
+    ...originalImages,
+    ...addedImages.filter((image) => !originalImages.some((value) => value.id === image.id)),
+  ];
+  const [repair, setRepair] = useState(false);
   const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
   const [index, setIndex] = useState(Math.min(Math.max(initialIndex, 0), images.length - 1));
   const [zoom, setZoom] = useState(100);
@@ -123,14 +138,14 @@ export function ImagePreviewDialog({
   // Wheel zooms the picture; the listener must be non-passive to cancel scroll.
   useEffect(() => {
     const area = stage.current;
-    if (!area) return;
+    if (repair || !area) return;
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
       setZoom((current) => Math.min(500, Math.max(100, current + (event.deltaY < 0 ? 10 : -10))));
     };
     area.addEventListener("wheel", onWheel, { passive: false });
     return () => area.removeEventListener("wheel", onWheel);
-  }, []);
+  }, [repair]);
   // Keep the selected thumbnail in view as the viewer moves through the set.
   useEffect(() => {
     if (!activeId) return;
@@ -184,145 +199,182 @@ export function ImagePreviewDialog({
         <Modal.Container size="full" className="fullscreen-dialog__container">
           <Modal.Dialog className="image-preview-dialog" aria-label="图片预览">
             <motion.div className="image-preview" data-dialog-phase={phase} {...surfaceMotion}>
-              <section className="image-preview-stage" aria-label="图片预览" ref={stage}>
-                {/* The frame clips the zoom so a magnified picture never covers the
-                 * hint text or the bottom bar. */}
-                <div
-                  className="image-preview-frame"
-                  ref={frame}
-                  data-zoomed={zoomed}
-                  data-dragging={dragging}
-                  onPointerDown={startPan}
-                  onPointerMove={movePan}
-                  onPointerUp={endPan}
-                  onPointerCancel={endPan}
-                  onLostPointerCapture={endPan}
-                >
-                  <img
+              {repair ? (
+                <Suspense fallback={<p>正在打开局部修复…</p>}>
+                  <LocalRepair
                     key={active.id}
-                    ref={picture}
-                    className="image-preview-image"
-                    src={assetContentUrl(active.id)}
-                    alt={meta.prompt || "生成图片"}
-                    draggable={false}
-                    style={{ scale: `${zoom / 100}`, translate: `${pan.x}px ${pan.y}px` }}
-                    onLoad={() => {
-                      const limits = panLimits(frame.current, picture.current, zoom / 100);
-                      setPan((current) => clampPan(current, limits));
+                    source={active}
+                    meta={meta}
+                    onBack={() => {
+                      setRepair(false);
+                      requestAnimationFrame(() =>
+                        document.getElementById("open-local-repair")?.focus(),
+                      );
+                    }}
+                    onPreview={(image) => {
+                      const existing = images.findIndex((value) => value.id === image.id);
+                      if (existing >= 0) select(existing);
+                      else {
+                        setAddedImages((values) => [...values, image]);
+                        select(images.length);
+                      }
+                      setRepair(false);
                     }}
                   />
-                </div>
-                {multiple && (
-                  <>
-                    <Button
-                      isIconOnly
-                      variant="tertiary"
-                      className="image-preview-nav image-preview-prev"
-                      aria-label="上一张"
-                      onPress={() => step(-1)}
+                </Suspense>
+              ) : (
+                <>
+                  <section className="image-preview-stage" aria-label="图片预览" ref={stage}>
+                    {/* The frame clips the zoom so a magnified picture never covers the
+                     * hint text or the bottom bar. */}
+                    <div
+                      className="image-preview-frame"
+                      ref={frame}
+                      data-zoomed={zoomed}
+                      data-dragging={dragging}
+                      onPointerDown={startPan}
+                      onPointerMove={movePan}
+                      onPointerUp={endPan}
+                      onPointerCancel={endPan}
+                      onLostPointerCapture={endPan}
                     >
-                      <UiIcon icon={IconChevronLeft} size="action" />
-                    </Button>
+                      <img
+                        key={active.id}
+                        ref={picture}
+                        className="image-preview-image"
+                        src={assetContentUrl(active.id)}
+                        alt={meta.prompt || "生成图片"}
+                        draggable={false}
+                        style={{ scale: `${zoom / 100}`, translate: `${pan.x}px ${pan.y}px` }}
+                        onLoad={() => {
+                          const limits = panLimits(frame.current, picture.current, zoom / 100);
+                          setPan((current) => clampPan(current, limits));
+                        }}
+                      />
+                    </div>
+                    {multiple && (
+                      <>
+                        <Button
+                          isIconOnly
+                          variant="tertiary"
+                          className="image-preview-nav image-preview-prev"
+                          aria-label="上一张"
+                          onPress={() => step(-1)}
+                        >
+                          <UiIcon icon={IconChevronLeft} size="action" />
+                        </Button>
+                        <Button
+                          isIconOnly
+                          variant="tertiary"
+                          className="image-preview-nav image-preview-next"
+                          aria-label="下一张"
+                          onPress={() => step(1)}
+                        >
+                          <UiIcon icon={IconChevronRight} size="action" />
+                        </Button>
+                      </>
+                    )}
+                    <p className="image-preview-hint">
+                      使用滚轮或滑块缩放图片，放大后可拖动查看细节。
+                    </p>
+                  </section>
+                  <aside className="image-preview-info" aria-label="图片信息">
+                    <div className="image-preview-close-row">
+                      <DialogClose label="关闭图片预览" className="image-preview-close" />
+                    </div>
+                    <header className="image-preview-head">
+                      <span className="image-preview-model">
+                        <UiIcon icon={IconPhoto} size="default" />
+                        <span>{meta.model ?? "图片"}</span>
+                      </span>
+                      <span className="image-preview-tools">
+                        <Tooltip delay={0}>
+                          <ToggleButton
+                            isIconOnly
+                            variant="ghost"
+                            className="image-preview-tool"
+                            aria-label={favorite ? "取消收藏" : "收藏图片"}
+                            isSelected={favorite}
+                            onChange={() => toggleFavorite(active.id)}
+                          >
+                            <UiIcon icon={favorite ? IconStarFilled : IconStar} />
+                          </ToggleButton>
+                          <Tooltip.Content placement="top">
+                            {favorite ? "取消收藏" : "收藏"}
+                          </Tooltip.Content>
+                        </Tooltip>
+                        <Tooltip delay={0}>
+                          <Button
+                            isIconOnly
+                            variant="tertiary"
+                            className="image-preview-tool"
+                            aria-label="下载原图"
+                            onPress={() => downloadAsset(active.id)}
+                          >
+                            <UiIcon icon={IconDownload} />
+                          </Button>
+                          <Tooltip.Content placement="top">下载原图</Tooltip.Content>
+                        </Tooltip>
+                      </span>
+                    </header>
+                    <div className="image-preview-facts">
+                      <span className="image-preview-fact-label">ID：{label}</span>
+                      <CopyIconButton value={label} label={`复制图片 ID ${label}`} />
+                      {meta.createdAt && (
+                        <time className="image-preview-time" dateTime={meta.createdAt}>
+                          {new Date(meta.createdAt).toLocaleString("zh-CN", { hour12: false })}
+                        </time>
+                      )}
+                    </div>
+                    {meta.prompt && (
+                      <section className="image-preview-section" aria-label="创意描述">
+                        <h2>
+                          <span>创意描述</span>
+                          <CopyIconButton value={meta.prompt} label="复制创意描述" />
+                        </h2>
+                        <p>{meta.prompt}</p>
+                      </section>
+                    )}
+                    {/* References reuse the history thumbnails; a task without any
+                     * reference hides the whole section, title included. */}
+                    {meta.references && meta.references.length > 0 && (
+                      <section className="image-preview-section" aria-label="参考图">
+                        <h2>
+                          <span>参考图</span>
+                        </h2>
+                        <ReferenceThumbnails ids={meta.references} />
+                      </section>
+                    )}
                     <Button
-                      isIconOnly
-                      variant="tertiary"
-                      className="image-preview-nav image-preview-next"
-                      aria-label="下一张"
-                      onPress={() => step(1)}
+                      id="open-local-repair"
+                      variant="secondary"
+                      size="sm"
+                      onPress={() => setRepair(true)}
                     >
-                      <UiIcon icon={IconChevronRight} size="action" />
+                      局部修复
                     </Button>
-                  </>
-                )}
-                <p className="image-preview-hint">使用滚轮或滑块缩放图片，放大后可拖动查看细节。</p>
-              </section>
-              <aside className="image-preview-info" aria-label="图片信息">
-                <div className="image-preview-close-row">
-                  <DialogClose label="关闭图片预览" className="image-preview-close" />
-                </div>
-                <header className="image-preview-head">
-                  <span className="image-preview-model">
-                    <UiIcon icon={IconPhoto} size="default" />
-                    <span>{meta.model ?? "图片"}</span>
-                  </span>
-                  <span className="image-preview-tools">
-                    <Tooltip delay={0}>
-                      <ToggleButton
-                        isIconOnly
-                        variant="ghost"
-                        className="image-preview-tool"
-                        aria-label={favorite ? "取消收藏" : "收藏图片"}
-                        isSelected={favorite}
-                        onChange={() => toggleFavorite(active.id)}
-                      >
-                        <UiIcon icon={favorite ? IconStarFilled : IconStar} />
-                      </ToggleButton>
-                      <Tooltip.Content placement="top">
-                        {favorite ? "取消收藏" : "收藏"}
-                      </Tooltip.Content>
-                    </Tooltip>
-                    <Tooltip delay={0}>
-                      <Button
-                        isIconOnly
-                        variant="tertiary"
-                        className="image-preview-tool"
-                        aria-label="下载原图"
-                        onPress={() => downloadAsset(active.id)}
-                      >
-                        <UiIcon icon={IconDownload} />
-                      </Button>
-                      <Tooltip.Content placement="top">下载原图</Tooltip.Content>
-                    </Tooltip>
-                  </span>
-                </header>
-                <div className="image-preview-facts">
-                  <span className="image-preview-fact-label">ID：{label}</span>
-                  <CopyIconButton value={label} label={`复制图片 ID ${label}`} />
-                  {meta.createdAt && (
-                    <time className="image-preview-time" dateTime={meta.createdAt}>
-                      {new Date(meta.createdAt).toLocaleString("zh-CN", { hour12: false })}
-                    </time>
-                  )}
-                </div>
-                {meta.prompt && (
-                  <section className="image-preview-section" aria-label="创意描述">
-                    <h2>
-                      <span>创意描述</span>
-                      <CopyIconButton value={meta.prompt} label="复制创意描述" />
-                    </h2>
-                    <p>{meta.prompt}</p>
-                  </section>
-                )}
-                {/* References reuse the history thumbnails; a task without any
-                 * reference hides the whole section, title included. */}
-                {meta.references && meta.references.length > 0 && (
-                  <section className="image-preview-section" aria-label="参考图">
-                    <h2>
-                      <span>参考图</span>
-                    </h2>
-                    <ReferenceThumbnails ids={meta.references} />
-                  </section>
-                )}
-              </aside>
-              <footer className="image-preview-bar">
-                <span className="image-preview-bar-id">Img ID：{label}</span>
-                <span className="image-preview-bar-size">{size}</span>
-                <Slider
-                  className="image-preview-zoom"
-                  aria-label="缩放"
-                  minValue={100}
-                  maxValue={500}
-                  step={10}
-                  value={zoom}
-                  onChange={(value) => setZoom(Number(value))}
-                >
-                  <Slider.Track>
-                    <Slider.Fill />
-                    <Slider.Thumb />
-                  </Slider.Track>
-                </Slider>
-                <span className="image-preview-zoom-value">{zoom}%</span>
-              </footer>
+                  </aside>
+                  <footer className="image-preview-bar">
+                    <span className="image-preview-bar-id">Img ID：{label}</span>
+                    <span className="image-preview-bar-size">{size}</span>
+                    <Slider
+                      className="image-preview-zoom"
+                      aria-label="缩放"
+                      minValue={100}
+                      maxValue={500}
+                      step={10}
+                      value={zoom}
+                      onChange={(value) => setZoom(Number(value))}
+                    >
+                      <Slider.Track>
+                        <Slider.Fill />
+                        <Slider.Thumb />
+                      </Slider.Track>
+                    </Slider>
+                    <span className="image-preview-zoom-value">{zoom}%</span>
+                  </footer>
+                </>
+              )}
               {/* Thumbnail rail stays on the far right so the image and its
                * details never shift while switching pictures. */}
               <nav className="image-preview-rail" aria-label="全部图片" ref={rail}>
