@@ -12,6 +12,7 @@
 | 生图鉴权、任务、Worker 与存储 | [生图 API](image-generation-api.md) |
 | 任务生命周期 | [任务与幂等约束](task-lifecycle.md) |
 | 测试与隔离环境 | [测试说明](testing.md) |
+| 数据库完整导出与恢复 | [数据库备份](database-backup.md) |
 | 发布与分支流程 | [发布说明](releasing.md) |
 | HeroUI 组件选型 | [组件清单](heroui-components.md) |
 | UI 维护与自动检查 | [一致性维护](ui-consistency.md) |

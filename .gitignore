@@ -19,3 +19,6 @@ test-results/
 
 # Private image data and isolated integration configuration.
 /data/
+
+# Full database exports contain private account/session/business data.
+/backups/
