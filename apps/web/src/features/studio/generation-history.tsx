@@ -70,7 +70,12 @@ function ResultImage({
         variant="tertiary"
         className="generation-media-open"
         aria-label={`预览图片 ${position + 1}`}
-        onPress={onPreview}
+        onPress={(event) => {
+          // The controlled modal captures the active element when it mounts.
+          // Virtual clicks may activate this button without first focusing it.
+          if (event.target instanceof HTMLElement) event.target.focus({ preventScroll: true });
+          onPreview();
+        }}
       >
         <img
           src={assetContentUrl(assetId, true)}

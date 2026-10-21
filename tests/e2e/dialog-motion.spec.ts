@@ -88,37 +88,40 @@ function exitFrames(page: Page, selector: string) {
   }, selector);
 }
 
-test("preview and history library shrink to the viewport centre before restoring focus", async ({
-  page,
-}) => {
-  await fixture(page);
-  const previewEntry = page.getByRole("button", { name: "预览图片 1", exact: true });
-  await previewEntry.click();
-  const preview = page.locator(".image-preview");
-  await expect(preview).toHaveCSS("transform", "none");
-  const previewFrames = exitFrames(page, ".image-preview");
-  await page.keyboard.press("Escape");
-  const frames = await previewFrames;
-  expect(frames.some((frame) => frame.scale > 0 && frame.scale < 0.95 && frame.opacity < 1)).toBe(
-    true,
-  );
-  expect(frames.every((frame) => Math.abs(frame.x) < 1 && Math.abs(frame.y) < 1)).toBe(true);
-  await expect(page.getByRole("dialog", { name: "图片预览", exact: true })).toHaveCount(0);
-  await expect(previewEntry).toBeFocused();
+for (const activation of ["pointer", "virtual"] as const) {
+  test(`preview and history library shrink to the viewport centre before restoring focus (${activation})`, async ({
+    page,
+  }) => {
+    await fixture(page);
+    const previewEntry = page.getByRole("button", { name: "预览图片 1", exact: true });
+    if (activation === "pointer") await previewEntry.click();
+    else await previewEntry.evaluate((button: HTMLButtonElement) => button.click());
+    const preview = page.locator(".image-preview");
+    await expect(preview).toHaveCSS("transform", "none");
+    const previewFrames = exitFrames(page, ".image-preview");
+    await page.keyboard.press("Escape");
+    const frames = await previewFrames;
+    expect(frames.some((frame) => frame.scale > 0 && frame.scale < 0.95 && frame.opacity < 1)).toBe(
+      true,
+    );
+    expect(frames.every((frame) => Math.abs(frame.x) < 1 && Math.abs(frame.y) < 1)).toBe(true);
+    await expect(page.getByRole("dialog", { name: "图片预览", exact: true })).toHaveCount(0);
+    await expect(previewEntry).toBeFocused();
 
-  const libraryEntry = page.getByRole("button", { name: "打开素材库", exact: true });
-  await libraryEntry.click();
-  await expect(page.locator(".library-shell")).toHaveCSS("transform", "none");
-  const libraryFrames = exitFrames(page, ".library-shell");
-  await page.getByRole("button", { name: "关闭资产管理", exact: true }).click();
-  const library = await libraryFrames;
-  expect(library.some((frame) => frame.scale > 0 && frame.scale < 0.95 && frame.opacity < 1)).toBe(
-    true,
-  );
-  expect(library.every((frame) => Math.abs(frame.x) < 1 && Math.abs(frame.y) < 1)).toBe(true);
-  await expect(page.getByRole("dialog", { name: "资产管理", exact: true })).toHaveCount(0);
-  await expect(libraryEntry).toBeFocused();
-});
+    const libraryEntry = page.getByRole("button", { name: "打开素材库", exact: true });
+    await libraryEntry.click();
+    await expect(page.locator(".library-shell")).toHaveCSS("transform", "none");
+    const libraryFrames = exitFrames(page, ".library-shell");
+    await page.getByRole("button", { name: "关闭资产管理", exact: true }).click();
+    const library = await libraryFrames;
+    expect(
+      library.some((frame) => frame.scale > 0 && frame.scale < 0.95 && frame.opacity < 1),
+    ).toBe(true);
+    expect(library.every((frame) => Math.abs(frame.x) < 1 && Math.abs(frame.y) < 1)).toBe(true);
+    await expect(page.getByRole("dialog", { name: "资产管理", exact: true })).toHaveCount(0);
+    await expect(libraryEntry).toBeFocused();
+  });
+}
 
 test("reduced motion opens both surfaces without scaling and nested preview returns to library", async ({
   page,
