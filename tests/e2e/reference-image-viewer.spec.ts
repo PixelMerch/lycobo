@@ -55,7 +55,7 @@ test("history references share a viewer with switching, rotation, wheel zoom and
   context,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  const ids = await references(page);
+  const ids = await references(page, 3);
   const trigger = page.getByRole("button", { name: "查看参考图片 2", exact: true });
   await trigger.click();
   const viewer = page.getByRole("dialog", { name: "图片浏览", exact: true });
@@ -158,4 +158,64 @@ test("blank clicks dismiss at fitted and zoomed sizes without closing on image i
     await expect(viewer).toHaveCount(0);
     await expect(trigger).toBeFocused();
   }
+});
+
+test("image navigation hides boundary arrows and never wraps", async ({ page }) => {
+  const ids = await references(page, 3);
+  await page.getByRole("button", { name: "查看参考图片 1", exact: true }).click();
+  const viewer = page.getByRole("dialog", { name: "图片浏览", exact: true });
+  const picture = viewer.locator(".browse-image-picture");
+  const previous = viewer.getByRole("button", { name: "上一张图片", exact: true });
+  const next = viewer.getByRole("button", { name: "下一张图片", exact: true });
+  await expect(previous).toHaveCount(0);
+  await expect(next).toBeVisible();
+  await viewer.getByRole("button", { name: "放大图片", exact: true }).click();
+  await viewer.getByRole("button", { name: "关闭图片浏览", exact: true }).focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[0]}/content`);
+  await expect(viewer.getByLabel("图片缩放比例")).toHaveText("125%");
+  await next.click();
+  await expect(previous).toBeVisible();
+  await expect(next).toBeVisible();
+  await next.click();
+  await expect(next).toHaveCount(0);
+  await expect(previous).toBeVisible();
+  await viewer.getByRole("button", { name: "关闭图片浏览", exact: true }).focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[2]}/content`);
+});
+
+test("image loading keeps browsing controls hidden and leaves a stable close action", async ({
+  page,
+}) => {
+  const ids = await references(page);
+  let release = () => {};
+  const loaded = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(`**/api/v1/image-assets/${ids[0]}/content`, async (route) => {
+    await loaded;
+    await route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900"><rect width="1200" height="900" fill="#e3d4bc"/></svg>',
+    });
+  });
+  await page.getByRole("button", { name: "查看参考图片 1", exact: true }).click();
+  const viewer = page.getByRole("dialog", { name: "图片浏览", exact: true });
+  try {
+    await expect(viewer.getByLabel("图片加载中")).toBeVisible();
+    await expect(viewer.getByRole("toolbar", { name: "图片浏览工具" })).toBeHidden();
+    await expect(viewer.getByRole("button", { name: "下一张图片", exact: true })).toHaveCount(0);
+    await expect(viewer.locator(".browse-image-picture")).toBeHidden();
+    await expect(viewer.getByRole("button", { name: "关闭图片浏览", exact: true })).toBeVisible();
+    await viewer.getByRole("region", { name: "浏览图片区域", exact: true }).hover();
+    await page.mouse.wheel(0, -100);
+  } finally {
+    release();
+  }
+  await expect(viewer.locator(".browse-image-picture")).toBeVisible();
+  await expect(viewer.getByRole("toolbar", { name: "图片浏览工具" })).toBeVisible();
+  await expect(viewer.getByLabel("图片缩放比例")).toHaveText("100%");
+  await expect(viewer.getByLabel("图片加载中")).toHaveCount(0);
+  await expect(viewer.getByRole("button", { name: "下一张图片", exact: true })).toBeVisible();
 });

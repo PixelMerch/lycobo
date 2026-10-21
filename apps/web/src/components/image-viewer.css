@@ -1,7 +1,20 @@
 .modal__backdrop.browse-image-backdrop {
+  --viewer-backdrop-color: rgba(24, 24, 24, 0.5);
+  --viewer-backdrop-blur: 20px;
   padding: 0;
-  background: #ffffff0f;
-  backdrop-filter: blur(10px);
+  background: transparent;
+}
+/* Keep backdrop sampling separate from the image's moving compositing layer. */
+.browse-image-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--viewer-backdrop-color);
+  backdrop-filter: blur(var(--viewer-backdrop-blur));
+}
+.modal__container.browse-image-container {
+  position: relative;
 }
 .modal__container.browse-image-container[data-entering="true"],
 .modal__container.browse-image-container[data-exiting="true"] {
@@ -41,6 +54,18 @@
   flex: 1;
   min-height: 0;
   touch-action: none;
+}
+.browse-image-loading {
+  position: absolute;
+}
+.browse-image-surface[data-ready="false"] .browse-image-close {
+  position: fixed;
+  top: 40px;
+  right: 32px;
+  left: auto;
+}
+.browse-image-surface[data-ready="false"] :is(.browse-image-transform, .browse-image-toolbar) {
+  visibility: hidden;
 }
 .browse-image-area[data-zoomed="true"] {
   cursor: grab;

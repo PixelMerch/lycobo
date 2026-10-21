@@ -1,4 +1,4 @@
-import { Button, Modal, Toolbar, Tooltip } from "@heroui/react";
+import { Button, Modal, Spinner, Toolbar, Tooltip } from "@heroui/react";
 import {
   IconChevronLeft,
   IconChevronRight,
@@ -39,10 +39,12 @@ export function ImageViewer({
   const [natural, setNatural] = useState({ width: 1, height: 1 });
   const [viewport, setViewport] = useState({ width: 1, height: 1 });
   const [failed, setFailed] = useState(false);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const [area, setArea] = useState<HTMLElement | null>(null);
   const dismissStart = useRef<{ id: number; x: number; y: number } | null>(null);
   const drag = useRef<{ pointer: Point; pan: Point } | null>(null);
   const wheelChange = useRef<(delta: number) => void>(() => {});
+  const ready = loadedSrc === active?.src && viewport.width > 1 && viewport.height > 1;
   const turned = Math.abs(angle % 180) === 90;
   const visualWidth = turned ? natural.height : natural.width;
   const visualHeight = turned ? natural.width : natural.height;
@@ -62,7 +64,7 @@ export function ImageViewer({
     setZoom((current) => Math.min(500, Math.max(25, current + value)));
     setPan(origin);
   };
-  wheelChange.current = changeZoom;
+  wheelChange.current = ready ? changeZoom : () => {};
   useEffect(() => {
     const element = area;
     if (!element) return;
@@ -82,7 +84,10 @@ export function ImageViewer({
   }, [area]);
   useErrorToast(failed ? "图片加载失败，请关闭后重新打开。" : null);
   const select = (delta: number) => {
-    setIndex((current) => (current + delta + images.length) % images.length);
+    const next = index + delta;
+    if (next < 0 || next >= images.length) return;
+    setLoadedSrc(null);
+    setIndex(next);
     setZoom(100);
     setAngle(0);
     setPan(origin);
@@ -109,6 +114,7 @@ export function ImageViewer({
           <Modal.Dialog aria-label="图片浏览" className="browse-image-dialog">
             <motion.div
               className="browse-image-surface"
+              data-ready={ready}
               {...surfaceMotion}
               onPointerDown={(event) => {
                 dismissStart.current =
@@ -151,6 +157,7 @@ export function ImageViewer({
               <section
                 ref={setArea}
                 className="browse-image-area"
+                aria-busy={!ready && !failed}
                 aria-label="浏览图片区域"
                 data-zoomed={zoom > 100}
                 data-dragging={dragging}
@@ -186,6 +193,9 @@ export function ImageViewer({
                 onPointerCancel={endPan}
                 onLostPointerCapture={endPan}
               >
+                {!ready && !failed && (
+                  <Spinner className="browse-image-loading" aria-label="图片加载中" />
+                )}
                 <div className="browse-image-frame" style={{ width, height }}>
                   <div
                     className="browse-image-transform"
@@ -204,37 +214,42 @@ export function ImageViewer({
                         height: natural.height * fit,
                         rotate: `${angle}deg`,
                       }}
-                      onLoad={(event) =>
+                      onLoad={(event) => {
                         setNatural({
                           width: event.currentTarget.naturalWidth,
                           height: event.currentTarget.naturalHeight,
-                        })
-                      }
+                        });
+                        setLoadedSrc(active.src);
+                      }}
                       onError={() => setFailed(true)}
                     />
                   </div>
-                  {images.length > 1 && (
+                  {ready && images.length > 1 && (
                     <>
-                      <Button
-                        isIconOnly
-                        size="lg"
-                        variant="ghost"
-                        className="browse-image-prev"
-                        aria-label="上一张图片"
-                        onPress={() => select(-1)}
-                      >
-                        <UiIcon icon={IconChevronLeft} size="action" />
-                      </Button>
-                      <Button
-                        isIconOnly
-                        size="lg"
-                        variant="ghost"
-                        className="browse-image-next"
-                        aria-label="下一张图片"
-                        onPress={() => select(1)}
-                      >
-                        <UiIcon icon={IconChevronRight} size="action" />
-                      </Button>
+                      {index > 0 && (
+                        <Button
+                          isIconOnly
+                          size="lg"
+                          variant="ghost"
+                          className="browse-image-prev"
+                          aria-label="上一张图片"
+                          onPress={() => select(-1)}
+                        >
+                          <UiIcon icon={IconChevronLeft} size="action" />
+                        </Button>
+                      )}
+                      {index < images.length - 1 && (
+                        <Button
+                          isIconOnly
+                          size="lg"
+                          variant="ghost"
+                          className="browse-image-next"
+                          aria-label="下一张图片"
+                          onPress={() => select(1)}
+                        >
+                          <UiIcon icon={IconChevronRight} size="action" />
+                        </Button>
+                      )}
                     </>
                   )}
                   <div className="browse-image-close">
@@ -242,7 +257,7 @@ export function ImageViewer({
                   </div>
                 </div>
               </section>
-              <Toolbar className="browse-image-toolbar" aria-label="图片浏览工具">
+              <Toolbar className="browse-image-toolbar" aria-label="图片浏览工具" inert={!ready}>
                 <Tooltip>
                   <Button
                     size="lg"
