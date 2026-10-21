@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { once } from "node:events";
 import { mkdtemp, rm } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   apiErrorSchema,
   imageAssetsResponseSchema,
@@ -30,7 +32,25 @@ function local(value: string | undefined, protocols: string[]) {
     throw new Error("Only loopback test services allowed");
   return value;
 }
-const databaseUrl = local(process.env.DATABASE_URL, ["postgres:", "postgresql:"]);
+const baseDatabaseUrl = local(process.env.DATABASE_URL, ["postgres:", "postgresql:"]);
+const testDatabaseName = `image_test_${crypto.randomUUID().replaceAll("-", "")}`;
+const admin = postgres(baseDatabaseUrl, { max: 1 });
+const isolatedUrl = new URL(baseDatabaseUrl);
+isolatedUrl.pathname = `/${testDatabaseName}`;
+const databaseUrl = isolatedUrl.href;
+await admin.unsafe(`create database "${testDatabaseName}"`);
+try {
+  const migrated = spawnSync("pnpm", ["--filter", "@lycoboai/db", "db:migrate"], {
+    cwd: fileURLToPath(new URL("../../../", import.meta.url)),
+    env: { ...process.env, DATABASE_URL: databaseUrl },
+    stdio: "pipe",
+  });
+  if (migrated.status !== 0) throw new Error("Isolated image migration failed");
+} catch (error) {
+  await admin.unsafe(`drop database if exists "${testDatabaseName}"`);
+  await admin.end({ timeout: 5 });
+  throw error;
+}
 const redisUrl = local(process.env.REDIS_URL, ["redis:", "rediss:"]);
 const runId = crypto.randomUUID(),
   queueName = `lycobo-image-test-${runId}`;
@@ -432,5 +452,7 @@ try {
   for (const id of users) await sql`delete from users where id=${id}`;
   await repository.close();
   await sql.end({ timeout: 5 });
+  await admin.unsafe(`drop database if exists "${testDatabaseName}"`);
+  await admin.end({ timeout: 5 });
   await rm(directory, { recursive: true, force: true });
 }

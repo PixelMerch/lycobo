@@ -46,3 +46,9 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:integration
 配置、模型能力证据、身份签发和迁移边界见 [生图 API](image-generation-api.md)。
 
 企业账号与 JWT 的隔离数据库测试已接入根集成命令，具体覆盖与运行边界见 [企业鉴权](enterprise-auth.md)。
+
+## 实时事件与图片集成隔离
+
+图片 API／Worker 集成测试现在创建独立临时数据库并执行完整迁移，配合独立 Redis 队列与临时图片目录；避免本地运行中的真实 Worker 抢到 fixture outbox。最终关闭连接后删除测试数据库，不接触共享数据或卷。
+
+根 test:integration 已增加 `@lycoboai/api test:events`，覆盖 SSE 的持久化事件、跨连接通知、回滚、租户隔离、重连回放与身份撤销。运行需 loopback PostgreSQL、Redis 和 ALLOW_LOCAL_INTEGRATION=true；不会调用付费模型。

@@ -84,10 +84,15 @@ export async function startImageWorker(input: NodeJS.ProcessEnv = process.env) {
   process.once("SIGTERM", stop);
   process.once("SIGINT", stop);
   logger.info({ workerId: env.IMAGE_WORKER_ID }, "Image worker started");
+  let nextEventCleanup = 0;
   try {
     while (!stopping.signal.aborted) {
       try {
         await repository.expireClaims();
+        if (Date.now() >= nextEventCleanup) {
+          await repository.pruneEvents();
+          nextEventCleanup = Date.now() + 60 * 60 * 1000;
+        }
         const events = await repository.leaseOutbox();
         for (const event of events) {
           // No network request occurs inside the leasing database transaction.

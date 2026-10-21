@@ -3,13 +3,19 @@ import {
   imageModelCatalog,
   type StoredImage,
 } from "@lycoboai/contracts";
-import { type ImagePrincipal, type ImageRepository, ImageRepositoryError } from "@lycoboai/db";
+import {
+  type ImageEventFeed,
+  type ImagePrincipal,
+  type ImageRepository,
+  ImageRepositoryError,
+} from "@lycoboai/db";
 import { type ImageStore, ImageValidationError, maxImageBytes } from "@lycoboai/storage";
 import { type Context, Hono } from "hono";
 import sharp from "sharp";
 import { z } from "zod";
 import { enterprisePrincipal } from "../auth/routes";
 import type { EnterpriseAuth } from "../auth/service";
+import { imageEventStream } from "./events";
 import {
   setWorkbenchCookie,
   trustedWorkbenchRequest,
@@ -19,6 +25,7 @@ import {
 
 export type ImageApiDependencies = {
   repository: ImageRepository;
+  events?: ImageEventFeed | undefined;
   auth?: EnterpriseAuth | undefined;
   store: ImageStore;
   enabled: boolean;
@@ -83,9 +90,67 @@ export function imageRoutes(deps: ImageApiDependencies) {
     if (error instanceof SyntaxError) return fail(c, "VALIDATION_ERROR", "请求格式不正确", 400);
     throw error;
   });
+  const connections = new Map<string, number>();
+  app.get("/image-events", async (c) => {
+    const feed = deps.events;
+    if (!feed) return fail(c, "GENERATION_NOT_CONFIGURED", "实时通知暂不可用", 503);
+    const scope = c.get("principal");
+    const connectionKey = `${scope.organizationId}:${scope.userId}`;
+    if ((connections.get(connectionKey) ?? 0) >= 8)
+      return fail(c, "FORBIDDEN", "实时连接过多，请关闭多余页面", 403);
+    connections.set(connectionKey, (connections.get(connectionKey) ?? 0) + 1);
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
+      const count = (connections.get(connectionKey) ?? 1) - 1;
+      if (count > 0) connections.set(connectionKey, count);
+      else connections.delete(connectionKey);
+    };
+    try {
+      const response = await imageEventStream(c, feed, scope, async () => {
+        const current = await resolvePrincipal(c);
+        return (
+          !!current &&
+          current.userId === scope.userId &&
+          current.organizationId === scope.organizationId
+        );
+      });
+      if (!response.body || !response.headers.get("Content-Type")?.includes("text/event-stream")) {
+        release();
+        return response;
+      }
+      const reader = response.body.getReader();
+      return new Response(
+        new ReadableStream({
+          async pull(controller) {
+            try {
+              const next = await reader.read();
+              if (next.done) {
+                release();
+                controller.close();
+              } else controller.enqueue(next.value);
+            } catch (error) {
+              release();
+              controller.error(error);
+            }
+          },
+          async cancel() {
+            release();
+            await reader.cancel();
+          },
+        }),
+        { status: response.status, headers: response.headers },
+      );
+    } catch {
+      release();
+      return fail(c, "GENERATION_NOT_CONFIGURED", "实时通知暂不可用", 503);
+    }
+  });
   app.get("/image-models", (c) =>
     c.json({
       enabled: deps.enabled,
+      eventsEnabled: !!deps.events,
       editsEnabled: deps.editsEnabled ?? false,
       unitCredits: deps.unitCredits,
       models: imageModelCatalog.map((m) => ({ ...m, enabledResolutions: deps.resolutions(m.id) })),

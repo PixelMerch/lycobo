@@ -133,6 +133,7 @@ export const imageAssetSchema = z.object({
 export type ImageAsset = z.infer<typeof imageAssetSchema>;
 export const imageAssetsResponseSchema = z.object({ data: z.array(imageAssetSchema) });
 export const imageModelsResponseSchema = z.object({
+  eventsEnabled: z.boolean().optional(),
   enabled: z.boolean(),
   editsEnabled: z.boolean(),
   unitCredits: z.number(),

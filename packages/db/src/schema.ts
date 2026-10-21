@@ -458,3 +458,21 @@ export const loginRateLimits = pgTable(
     check("login_rate_limits_attempts_check", sql`${t.attempts} > 0`),
   ],
 );
+
+export const imageEvents = pgTable(
+  "image_events",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    resourceId: uuid("resource_id").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("image_events_org_cursor_idx").on(t.organizationId, t.id),
+    index("image_events_created_idx").on(t.createdAt),
+    check("image_events_kind_check", sql`${t.kind} in ('task','asset')`),
+  ],
+);

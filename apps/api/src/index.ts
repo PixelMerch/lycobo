@@ -1,6 +1,6 @@
 import { isAbsolute } from "node:path";
 import { serve } from "@hono/node-server";
-import { openAuthRepository, openImageRepository } from "@lycoboai/db";
+import { openAuthRepository, openImageEventFeed, openImageRepository } from "@lycoboai/db";
 import { readImagePolicy, supportedResolutions, validateModelInput } from "@lycoboai/generation";
 import { imageStore } from "@lycoboai/storage";
 import pino from "pino";
@@ -22,6 +22,10 @@ if (authConfig && !process.env.DATABASE_URL)
 const authRepository =
   authConfig && process.env.DATABASE_URL ? openAuthRepository(process.env.DATABASE_URL) : null;
 const auth = authRepository && authConfig ? enterpriseAuth(authRepository, authConfig) : undefined;
+const events =
+  repository && process.env.IMAGE_EVENTS_ENABLED !== "false" && process.env.DATABASE_URL
+    ? openImageEventFeed(process.env.DATABASE_URL)
+    : undefined;
 const store = imageStore(process.env.IMAGE_DATA_DIR ?? "./data/images");
 if (policy.enabled) await store.ready();
 const app = createApp(
@@ -29,6 +33,7 @@ const app = createApp(
   repository
     ? {
         repository,
+        events,
         store,
         enabled: policy.enabled,
         unitCredits: policy.unitCredits,
@@ -55,9 +60,10 @@ function shutdown() {
   if (closing) return;
   closing = true;
   const deadline = setTimeout(() => process.exit(1), 10_000).unref();
+  void events?.close();
   server.close(async (error) => {
     try {
-      await Promise.all([repository?.close(), authRepository?.close()]);
+      await Promise.all([repository?.close(), authRepository?.close(), events?.close()]);
       process.exitCode = error ? 1 : 0;
     } catch {
       process.exitCode = 1;

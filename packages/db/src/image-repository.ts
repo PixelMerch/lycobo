@@ -6,6 +6,7 @@ import {
   type StoredImage,
 } from "@lycoboai/contracts";
 import postgres from "postgres";
+import { recordImageEvent } from "./image-event-repository";
 
 export class ImageRepositoryError extends Error {
   constructor(readonly code: string) {
@@ -39,6 +40,8 @@ export function openImageRepository(url: string) {
       else 'failed' end, updated_at=now(), completed_at=case
       when exists(select 1 from image_job_items i where i.job_id=j.id and i.status in ('running','queued','needs_reconciliation')) then null
       else now() end where j.id=${jobId}`;
+    const [job] = await tx`select organization_id from image_jobs where id=${jobId}`;
+    if (job) await recordImageEvent(tx, String(job.organization_id), "task", jobId);
   };
   const refund = async (tx: postgres.TransactionSql, jobId: string, itemId: string) => {
     const credits =
@@ -142,6 +145,7 @@ export function openImageRepository(url: string) {
           await tx`insert into image_job_items (id,job_id,organization_id,position) values (${itemId},${id},${scope.organizationId},${position})`;
           await tx`insert into image_outbox (item_id) values (${itemId})`;
         }
+        await recordImageEvent(tx, scope.organizationId, "task", id);
         return { id, replayed: false };
       });
     },
@@ -156,8 +160,11 @@ export function openImageRepository(url: string) {
       return row ?? null;
     },
     async addReference(scope: ImageScope, image: StoredImage) {
-      await sql`insert into image_assets (id,organization_id,user_id,kind,object_key,mime_type,width,height,bytes,sha256)
-        values (${image.id},${scope.organizationId},${scope.userId},'reference',${image.objectKey},${image.mimeType},${image.width},${image.height},${image.bytes},${image.sha256})`;
+      await sql.begin(async (tx) => {
+        await tx`insert into image_assets (id,organization_id,user_id,kind,object_key,mime_type,width,height,bytes,sha256)
+          values (${image.id},${scope.organizationId},${scope.userId},'reference',${image.objectKey},${image.mimeType},${image.width},${image.height},${image.bytes},${image.sha256})`;
+        await recordImageEvent(tx, scope.organizationId, "asset", image.id);
+      });
     },
     async listAssets(scope: ImageScope, limit: number, before?: string) {
       return sql`select a.public_id,a.id,a.kind,a.width,a.height,a.bytes,a.created_at,j.model,j.prompt
@@ -216,6 +223,7 @@ export function openImageRepository(url: string) {
         await tx`update image_job_items set status='running',worker_id=${workerId},execution_token=${executionToken},attempts=attempts+1,
           started_at=now(),lease_expires_at=now()+${leaseMs} * interval '1 millisecond' where id=${itemId}`;
         await tx`update image_jobs set status='running',updated_at=now() where id=${row.job_id}`;
+        await recordImageEvent(tx, String(row.organization_id), "task", String(row.job_id));
         return {
           itemId,
           executionToken,
@@ -254,6 +262,9 @@ export function openImageRepository(url: string) {
         await refreshJob(tx, job.jobId);
         return true;
       });
+    },
+    async pruneEvents() {
+      await sql`delete from image_events where id in (select id from image_events where created_at<now()-interval '7 days' order by created_at limit 1000)`;
     },
     async expireClaims() {
       // An expired paid attempt is held for operator reconciliation, never queued again.

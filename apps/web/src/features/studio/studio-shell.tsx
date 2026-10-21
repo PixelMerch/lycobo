@@ -25,12 +25,14 @@ import { useEnterpriseLogout, useEnterpriseSession } from "./auth-client";
 import { CaseGallery } from "./case-gallery";
 import { LoginDialog } from "./login-dialog";
 import { cases, models, photo, useStudioStore } from "./studio-state";
+import { useImageEvents } from "./use-image-events";
 
 const chooserLayout: CSSProperties & { "--tool-columns": number } = {
   "--tool-columns": Math.min(5, Math.max(models.length, cases.length)),
 };
 
 export function StudioShell() {
+  useImageEvents();
   const accountSession = useEnterpriseSession();
   const logout = useEnterpriseLogout();
   const [menuOpen, setMenuOpen] = useState(false);

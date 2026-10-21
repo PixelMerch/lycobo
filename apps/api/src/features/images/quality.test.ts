@@ -30,6 +30,7 @@ function fixture() {
     ackOutbox: unexpected,
     claim: unexpected,
     finish: unexpected,
+    pruneEvents: unexpected,
     expireClaims: unexpected,
     reconcile: unexpected,
   };
