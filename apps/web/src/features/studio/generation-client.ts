@@ -74,13 +74,14 @@ export function useImageModels() {
       ),
   });
 }
-export function useImageHistory() {
+export function useImageHistory({ poll = true } = {}) {
   const session = useImageSession();
   return useInfiniteQuery({
     queryKey: ["image-tasks"],
     enabled: session.isSuccess,
     initialPageParam: "",
     retry: false,
+    staleTime: 30000,
     queryFn: async ({ pageParam, signal }) =>
       imageTasksResponseSchema.parse(
         await (
@@ -90,7 +91,15 @@ export function useImageHistory() {
         ).json(),
       ),
     getNextPageParam: (last) => (last.data.length === 20 ? last.data.at(-1)?.id : undefined),
-    refetchInterval: 3000,
+    refetchInterval: poll
+      ? (query) =>
+          query.state.status !== "error" &&
+          query.state.data?.pages.some((page) =>
+            page.data.some((job) => job.status === "queued" || job.status === "running"),
+          )
+            ? 3000
+            : false
+      : false,
   });
 }
 export function useImageAssets() {

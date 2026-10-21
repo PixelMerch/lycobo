@@ -315,7 +315,7 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
   );
 }
 export function HistoryIndex() {
-  const query = useImageHistory();
+  const query = useImageHistory({ poll: false });
   const jobs = query.data?.pages.flatMap((page) => page.data) ?? [];
   const activeId = useStudioStore((s) => s.activeHistoryId);
   const setActiveId = useStudioStore((s) => s.setActiveHistoryId);
