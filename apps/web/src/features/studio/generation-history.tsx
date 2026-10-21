@@ -60,7 +60,7 @@ function ResultImage({
   assetId: string;
   position: number;
   prompt: string;
-  onPreview: () => void;
+  onPreview: (trigger: HTMLElement) => void;
 }) {
   const favorite = useStudioStore((s) => s.favorites.includes(assetId));
   const toggleFavorite = useStudioStore((s) => s.toggleFavorite);
@@ -73,8 +73,10 @@ function ResultImage({
         onPress={(event) => {
           // The controlled modal captures the active element when it mounts.
           // Virtual clicks may activate this button without first focusing it.
-          if (event.target instanceof HTMLElement) event.target.focus({ preventScroll: true });
-          onPreview();
+          if (event.target instanceof HTMLElement) {
+            event.target.focus({ preventScroll: true });
+            onPreview(event.target);
+          }
         }}
       >
         <img
@@ -125,6 +127,16 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
   const query = useImageHistory();
   const jobs = query.data?.pages.flatMap((page) => page.data) ?? [];
   const [preview, setPreview] = useState<{ jobId: string; index: number } | null>(null);
+  const previewTrigger = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (preview || !previewTrigger.current) return;
+    // Restore only after the animated controlled dialog has unmounted. The
+    // trigger lives outside Modal's DialogTrigger tree, so retain it explicitly.
+    if (previewTrigger.current.isConnected) {
+      previewTrigger.current.focus({ preventScroll: true });
+    }
+    previewTrigger.current = null;
+  }, [preview]);
   const listRef = useRef<HTMLDivElement>(null);
   const activeHistoryId = useStudioStore((s) => s.activeHistoryId);
   const setActiveHistoryId = useStudioStore((s) => s.setActiveHistoryId);
@@ -281,14 +293,15 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
                         assetId={item.output_asset_id}
                         position={item.position}
                         prompt={job.prompt}
-                        onPreview={() =>
+                        onPreview={(trigger) => {
+                          previewTrigger.current = trigger;
                           setPreview({
                             jobId: job.id,
                             index: generatedImages(job).findIndex(
                               (image) => image.id === item.output_asset_id,
                             ),
-                          })
-                        }
+                          });
+                        }}
                       />
                     ) : (
                       <div
