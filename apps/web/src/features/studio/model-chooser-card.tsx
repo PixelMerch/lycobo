@@ -9,19 +9,22 @@ export const chooserModels = [
     id: "gpt-image-2",
     target: "gpt-image-2",
     cover: "image-2",
-    description: "描述想法或上传参考图，开始图片创作。",
+    description:
+      "通用图像生成与编辑模型，结合文字指令和参考图片组织主体、文字与场景，适用于商品展示、创意海报与日常设计。",
   },
   {
     id: "gpt-image-2.5",
     target: "gpt-image-2.5",
     cover: "image-2-5",
-    description: "上传参考图片，生成与编辑新的画面。",
+    description:
+      "GPT-image-2.5 图像创作模型，兼顾画面文字、写实质感与视觉表达，适用于商业摄影、创意海报和专业设计。",
   },
   {
     id: "banana",
     target: null,
     cover: "banana",
-    description: "暂未开放",
+    description:
+      "Banana 图像模型，面向商品、人像与场景等创作方向，探索写实与创意风格的视觉表达。暂未开放。",
   },
 ] as const satisfies ReadonlyArray<{
   id: string;

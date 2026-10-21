@@ -969,7 +969,7 @@ p.home-hero-kicker {
   display: flex;
   flex-direction: column;
   align-content: flex-start;
-  --tool-card-width: 320px;
+  --tool-card-width: 256px;
   --tool-card-gap: 20px;
   padding: 0;
   width: min(
@@ -1055,6 +1055,10 @@ p.home-hero-kicker {
   background: #0000000f;
 }
 .model-chooser .modal__close-trigger {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border: 0;
   background: transparent;
   box-shadow: none;
@@ -1074,7 +1078,7 @@ p.home-hero-kicker {
 }
 .model-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), var(--tool-card-width)));
   max-width: calc(
     var(--tool-columns) *
     var(--tool-card-width) +
@@ -1148,7 +1152,7 @@ p.home-hero-kicker {
   flex-direction: column;
   gap: 8px;
   padding: 16px 18px;
-  min-height: 100px;
+  min-height: 144px;
 }
 .model-card-title {
   font-size: var(--text-lg);
@@ -1156,14 +1160,11 @@ p.home-hero-kicker {
   font-weight: var(--weight-medium);
 }
 .model-card-description {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  min-height: 40px;
+  display: block;
+  min-height: 80px;
   font-size: var(--text-sm);
   line-height: 20px;
-  color: var(--muted);
+  color: #c8c8c8;
   font-weight: var(--weight-regular);
 }
 .model-card:focus-visible,
@@ -1933,7 +1934,7 @@ p.home-hero-kicker {
 @media (max-width: 767px) {
   .model-grid {
     max-width: none;
-    grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), var(--tool-card-width)));
   }
   .model-card-body {
     padding: 14px 16px;
