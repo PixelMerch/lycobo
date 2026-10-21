@@ -1,6 +1,11 @@
 import { Alert, Button, Tabs, ToggleButton, ToggleButtonGroup, Tooltip } from "@heroui/react";
 import { imageUnitCredits } from "@lycoboai/contracts";
-import { IconArrowBarToUp, IconSparkles } from "@tabler/icons-react";
+import {
+  IconArrowBarToUp,
+  IconChevronDown,
+  IconChevronUp,
+  IconSparkles,
+} from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { CreditCoin } from "../../components/credit-coin";
 import { ReferencePrompt } from "../../components/reference-prompt";
@@ -20,11 +25,12 @@ import { ReferencePicker } from "./reference-picker";
 import { SelectionHighlight } from "./selection-highlight";
 import { type ModelId, useStudioStore } from "./studio-state";
 
+const promptLimit = 5000;
 const fields = [
   { key: "resolution", label: "分辨率", values: ["1K", "2K", "4K"] },
   { key: "quality", label: "质量", values: ["低", "标准", "高"] },
-  { key: "count", label: "生成张数", values: ["1", "2", "3", "4"] },
 ] as const;
+const countField = { key: "count", label: "生成张数", values: ["1", "2", "3", "4"] } as const;
 
 export function WorkspacePage() {
   const model = useStudioStore((s) => s.activeModel);
@@ -40,6 +46,7 @@ function Workspace({ model }: { model: ModelId }) {
   const modelQuery = useImageModels();
   const generate = useGenerateImage();
   const [submissionPhase, setSubmissionPhase] = useState<"idle" | "submitting" | "settled">("idle");
+  const [showMore, setShowMore] = useState(false);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeSubmission = submissionPhase !== "idle" || generate.isPending;
   const modelsError = modelQuery.isError
@@ -106,6 +113,9 @@ function Workspace({ model }: { model: ModelId }) {
             onChange={(prompt) => updateDraft(model, { prompt })}
             references={draft.references}
             placeholder="描述你想要的画面，输入 @ 引用已上传图片"
+            maxLength={promptLimit}
+            showCount
+            autoGrow
           />
           <section className="parameter-group ratio-group" aria-label="图片比例">
             <div className="ratio-heading">
@@ -134,6 +144,25 @@ function Workspace({ model }: { model: ModelId }) {
               onChange={(value) => updateDraft(model, { [field.key]: value })}
             />
           ))}
+          {showMore && (
+            <ParameterGroup
+              label={countField.label}
+              values={countField.values}
+              value={draft.count}
+              selectionId={countField.key}
+              onChange={(value) => updateDraft(model, { count: value })}
+            />
+          )}
+          <Button
+            className="parameter-more"
+            variant="ghost"
+            size="sm"
+            aria-expanded={showMore}
+            onPress={() => setShowMore((open) => !open)}
+          >
+            {showMore ? "收起" : "更多"}
+            <UiIcon icon={showMore ? IconChevronUp : IconChevronDown} size="small" />
+          </Button>
         </section>
         <div className="generate-area">
           {modelQuery.data && !modelQuery.data.enabled && (

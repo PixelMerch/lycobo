@@ -280,49 +280,6 @@
   text-align: center;
   border-radius: 12px;
 }
-.home-recent {
-  margin-top: 32px;
-}
-.home-recent-empty {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding: 24px 16px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-  color: var(--muted);
-}
-.home-login.button {
-  background: #f4f4f5;
-  color: #111;
-  border: 0;
-}
-.home-output-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-.home-output-grid a {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  color: var(--foreground);
-}
-.home-output-grid img {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border-radius: 8px;
-}
-.home-output-grid span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-top: 8px;
-}
 .home-guides {
   display: flex;
   flex-wrap: wrap;
@@ -337,8 +294,7 @@
   .commerce-home.page-panel {
     padding-inline: 24px;
   }
-  .commerce-case-grid,
-  .home-output-grid {
+  .commerce-case-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .home-shortcuts {
@@ -377,8 +333,7 @@
     min-width: 0;
     padding-inline: 8px;
   }
-  .commerce-case-grid,
-  .home-output-grid {
+  .commerce-case-grid {
     gap: 8px;
   }
   .commerce-case .card__content {
@@ -393,10 +348,6 @@
     height: 44px;
     bottom: 4px;
     left: 4px;
-  }
-  .home-recent-empty {
-    gap: 8px;
-    text-align: center;
   }
   .home-prompt .textarea {
     font-size: var(--text-lg);

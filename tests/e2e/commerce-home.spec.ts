@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { apiFixture, mockImageApi } from "./image-api-fixture";
+import { mockImageApi } from "./image-api-fixture";
 
 test("home composer shares prompt and real reference drafts without submitting generation", async ({
   page,
@@ -94,64 +94,6 @@ for (const width of [320, 390, 768, 1440, 1920]) {
     await expect(page.getByRole("button", { name: "查看案例：床品 · 自然光场景" })).toBeFocused();
   });
 }
-
-test("recent works loads only authenticated output thumbnails and recovers from service errors", async ({
-  page,
-}) => {
-  await mockImageApi(page);
-  await page.route("**/api/v1/auth/session", (route) =>
-    route.fulfill({
-      json: apiFixture({
-        userId: crypto.randomUUID(),
-        organizationId: crypto.randomUUID(),
-        role: "member",
-        account: "test-merchant",
-      }),
-    }),
-  );
-  let unavailable = true;
-  const outputId = crypto.randomUUID();
-  await page.route("**/api/v1/image-assets?*", (route) =>
-    route.fulfill(
-      unavailable
-        ? { status: 503, json: apiFixture({}, 503) }
-        : {
-            json: apiFixture({
-              data: [
-                {
-                  id: outputId,
-                  kind: "output",
-                  width: 1024,
-                  height: 1024,
-                  bytes: 2048,
-                  created_at: "2026-10-20T00:00:00Z",
-                  model: "gpt-image-2",
-                  prompt: "我的商品作品",
-                },
-                {
-                  id: crypto.randomUUID(),
-                  kind: "reference",
-                  width: 1024,
-                  height: 1024,
-                  bytes: 2048,
-                  created_at: "2026-10-20T00:00:00Z",
-                  model: null,
-                  prompt: "不能当成作品的参考图",
-                },
-              ],
-            }),
-          },
-    ),
-  );
-  await page.goto("/");
-  const recent = page.getByRole("region", { name: "最近作品", exact: true });
-  await expect(recent.getByRole("alert")).toContainText("作品暂时无法加载");
-  unavailable = false;
-  await recent.getByRole("button", { name: "重新加载" }).click();
-  await expect(recent.getByRole("link", { name: "查看作品：我的商品作品" })).toBeVisible();
-  await expect(recent.locator("img")).toHaveAttribute("src", new RegExp(`${outputId}.*thumbnail`));
-  await expect(recent.getByText("不能当成作品的参考图")).toHaveCount(0);
-});
 
 test("home settings preserve drafts and only image creation is offered", async ({ page }) => {
   await mockImageApi(page);

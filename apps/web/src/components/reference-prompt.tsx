@@ -1,5 +1,5 @@
-import { Label, ListBox, Popover, TextArea, TextField } from "@heroui/react";
-import { type RefObject, useLayoutEffect, useRef, useState } from "react";
+import { Button, Label, ListBox, Popover, TextArea, TextField } from "@heroui/react";
+import { type RefObject, useId, useLayoutEffect, useRef, useState } from "react";
 import "./reference-prompt.css";
 import "./studio-control-feedback.css";
 
@@ -56,6 +56,34 @@ function placeCursor(editor: HTMLElement, offset: number) {
   selection?.addRange(range);
 }
 
+const autoGrowMinHeight = 100;
+function useAutoGrow(ref: RefObject<HTMLElement | null>, value: string, enabled: boolean) {
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!enabled || !element) return;
+    let width = -1;
+    const fit = () => {
+      element.style.height = "auto";
+      const contentHeight = value.length ? element.scrollHeight : autoGrowMinHeight;
+      element.style.height = `${Math.max(contentHeight, autoGrowMinHeight)}px`;
+      element.style.overflowY = "hidden";
+    };
+    const observer = new ResizeObserver((entries) => {
+      const next = entries[0]?.contentRect.width ?? 0;
+      if (Math.abs(next - width) < 1) return;
+      width = next;
+      fit();
+    });
+    fit();
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      element.style.removeProperty("height");
+      element.style.removeProperty("overflow-y");
+    };
+  }, [enabled, ref, value]);
+}
+
 /** Mentions refer to the current ordered reference list; no files are uploaded here. */
 export function ReferencePrompt({
   value,
@@ -65,6 +93,9 @@ export function ReferencePrompt({
   label,
   placeholder,
   inputRef,
+  maxLength = 9000,
+  showCount = false,
+  autoGrow = false,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -73,7 +104,11 @@ export function ReferencePrompt({
   label?: string;
   placeholder: string;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
+  maxLength?: number;
+  showCount?: boolean;
+  autoGrow?: boolean;
 }) {
+  const countId = useId();
   const composing = useRef(false);
   const ownRef = useRef<HTMLTextAreaElement>(null);
   const ref = inputRef ?? ownRef;
@@ -142,6 +177,8 @@ export function ReferencePrompt({
       });
     }
   });
+  useAutoGrow(richRef, value, autoGrow && hasReferences);
+  useAutoGrow(ref, value, autoGrow && !hasReferences);
   const [mention, setMention] = useState<{ start: number; end: number } | null>(null);
   function detect(text: string, cursor: number) {
     cursorRef.current = cursor;
@@ -150,19 +187,34 @@ export function ReferencePrompt({
   function handleRichInput() {
     const editor = richRef.current;
     if (!editor) return;
-    const text = readPrompt(editor).slice(0, 9000);
+    const text = readPrompt(editor).slice(0, maxLength);
     const cursor = selectionOffset(editor);
     cursorRef.current = cursor;
     focusPending.current = !composing.current;
     onChange(text);
     if (!composing.current) detect(text, cursor);
   }
+  function clear() {
+    onChange("");
+    cursorRef.current = 0;
+    setMention(null);
+    requestAnimationFrame(() => {
+      const editor = richRef.current;
+      if (editor) {
+        editor.focus();
+        placeCursor(editor, 0);
+      } else {
+        ref.current?.focus();
+        ref.current?.setSelectionRange(0, 0);
+      }
+    });
+  }
   function insert(id: string) {
     const index = references.findIndex((image) => image.id === id);
     if (!mention || index < 0 || value[mention.start] !== "@") return;
     const text = `@图片${index + 1} `;
     const next = value.slice(0, mention.start) + text + value.slice(mention.end);
-    if (next.length > 9000) return;
+    if (next.length > maxLength) return;
     cursorRef.current = mention.start + text.length;
     focusPending.current = true;
     onChange(next);
@@ -172,90 +224,122 @@ export function ReferencePrompt({
     <>
       <TextField className={className} aria-label={label ?? "创作需求"}>
         {label && <Label>{label}</Label>}
-        {hasReferences ? (
-          // biome-ignore lint/a11y/useSemanticElements: Native contenteditable is required for atomic image chips, which a textarea cannot render.
-          <div
-            ref={richRef}
-            role="textbox"
-            tabIndex={0}
-            aria-label={label ?? "创作需求"}
-            aria-multiline="true"
-            contentEditable
-            suppressContentEditableWarning
-            className="textarea reference-rich-editor"
-            onInput={handleRichInput}
-            onCompositionStart={() => {
-              composing.current = true;
-            }}
-            onCompositionEnd={() => {
-              composing.current = false;
-              handleRichInput();
-            }}
-            onCopy={(event) => {
-              const selection = window.getSelection();
-              if (!selection?.rangeCount) return;
-              event.preventDefault();
-              event.clipboardData.setData(
-                "text/plain",
-                readPrompt(selection.getRangeAt(0).cloneContents()),
-              );
-            }}
-            onCut={(event) => {
-              const editor = richRef.current;
-              const selection = window.getSelection();
-              if (!editor || !selection?.rangeCount) return;
-              const range = selection.getRangeAt(0);
-              if (!editor.contains(range.commonAncestorContainer)) return;
-              event.preventDefault();
-              event.clipboardData.setData("text/plain", readPrompt(range.cloneContents()));
-              range.deleteContents();
-              handleRichInput();
-            }}
-            onPaste={(event) => {
-              event.preventDefault();
-              const editor = richRef.current;
-              const selection = window.getSelection();
-              if (!editor || !selection?.rangeCount) return;
-              const range = selection.getRangeAt(0);
-              if (!editor.contains(range.commonAncestorContainer)) return;
-              const text = event.clipboardData
-                .getData("text/plain")
-                .slice(
-                  0,
-                  Math.max(0, 9000 - value.length + readPrompt(range.cloneContents()).length),
+        <div
+          className="prompt-editor"
+          data-count={showCount ? "" : undefined}
+          data-auto-grow={autoGrow ? "" : undefined}
+        >
+          {hasReferences ? (
+            // biome-ignore lint/a11y/useSemanticElements: Native contenteditable is required for atomic image chips, which a textarea cannot render.
+            <div
+              ref={richRef}
+              role="textbox"
+              tabIndex={0}
+              aria-label={label ?? "创作需求"}
+              aria-multiline="true"
+              aria-describedby={showCount ? countId : undefined}
+              contentEditable
+              suppressContentEditableWarning
+              className="textarea reference-rich-editor"
+              data-auto-grow={autoGrow ? "" : undefined}
+              onInput={handleRichInput}
+              onCompositionStart={() => {
+                composing.current = true;
+              }}
+              onCompositionEnd={() => {
+                composing.current = false;
+                handleRichInput();
+              }}
+              onCopy={(event) => {
+                const selection = window.getSelection();
+                if (!selection?.rangeCount) return;
+                event.preventDefault();
+                event.clipboardData.setData(
+                  "text/plain",
+                  readPrompt(selection.getRangeAt(0).cloneContents()),
                 );
-              range.deleteContents();
-              const node = document.createTextNode(text);
-              range.insertNode(node);
-              range.setStartAfter(node);
-              range.collapse(true);
-              selection.removeAllRanges();
-              selection.addRange(range);
-              handleRichInput();
-            }}
-          />
-        ) : (
-          <TextArea
-            ref={ref}
-            aria-label={label ?? "创作需求"}
-            value={value}
-            onChange={(event) => {
-              cursorRef.current = event.currentTarget.selectionStart;
-              onChange(event.target.value);
-              if (!composing.current)
-                detect(event.target.value, event.currentTarget.selectionStart);
-            }}
-            onCompositionStart={() => {
-              composing.current = true;
-            }}
-            onCompositionEnd={(event) => {
-              composing.current = false;
-              detect(event.currentTarget.value, event.currentTarget.selectionStart);
-            }}
-            placeholder={placeholder}
-            maxLength={9000}
-          />
-        )}
+              }}
+              onCut={(event) => {
+                const editor = richRef.current;
+                const selection = window.getSelection();
+                if (!editor || !selection?.rangeCount) return;
+                const range = selection.getRangeAt(0);
+                if (!editor.contains(range.commonAncestorContainer)) return;
+                event.preventDefault();
+                event.clipboardData.setData("text/plain", readPrompt(range.cloneContents()));
+                range.deleteContents();
+                handleRichInput();
+              }}
+              onPaste={(event) => {
+                event.preventDefault();
+                const editor = richRef.current;
+                const selection = window.getSelection();
+                if (!editor || !selection?.rangeCount) return;
+                const range = selection.getRangeAt(0);
+                if (!editor.contains(range.commonAncestorContainer)) return;
+                const text = event.clipboardData
+                  .getData("text/plain")
+                  .slice(
+                    0,
+                    Math.max(
+                      0,
+                      maxLength - value.length + readPrompt(range.cloneContents()).length,
+                    ),
+                  );
+                range.deleteContents();
+                const node = document.createTextNode(text);
+                range.insertNode(node);
+                range.setStartAfter(node);
+                range.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(range);
+                handleRichInput();
+              }}
+            />
+          ) : (
+            <TextArea
+              ref={ref}
+              aria-label={label ?? "创作需求"}
+              aria-describedby={showCount ? countId : undefined}
+              value={value}
+              onChange={(event) => {
+                const next = event.target.value.slice(0, maxLength);
+                const cursor = Math.min(event.currentTarget.selectionStart, next.length);
+                cursorRef.current = cursor;
+                onChange(next);
+                if (!composing.current) detect(next, cursor);
+              }}
+              onCompositionStart={() => {
+                composing.current = true;
+              }}
+              onCompositionEnd={(event) => {
+                composing.current = false;
+                detect(event.currentTarget.value, event.currentTarget.selectionStart);
+              }}
+              placeholder={placeholder}
+              maxLength={maxLength}
+              data-auto-grow={autoGrow ? "" : undefined}
+            />
+          )}
+          {showCount && (
+            <div className="prompt-meta">
+              {value.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="prompt-clear"
+                  aria-label="清空提示词"
+                  onPress={clear}
+                >
+                  清空
+                </Button>
+              )}
+              <span id={countId} className="prompt-count">
+                {value.length}/{maxLength}
+              </span>
+            </div>
+          )}
+        </div>
       </TextField>
       <Popover
         isOpen={mention !== null}

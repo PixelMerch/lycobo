@@ -3254,12 +3254,10 @@ p.home-hero-kicker {
 .back-to-top-button[data-focus-visible="true"] {
   background: var(--surface-secondary);
 }
-html:has(.workspace),
 .history-rail,
 .composer-scroll {
   scrollbar-width: none;
 }
-html:has(.workspace)::-webkit-scrollbar,
 .history-rail::-webkit-scrollbar,
 .composer-scroll::-webkit-scrollbar {
   display: none;
@@ -4286,6 +4284,16 @@ html:has(.workspace)::-webkit-scrollbar,
   background: var(--field-background);
   border-radius: 12px;
 }
+.composer-panel
+  .prompt-field
+  .prompt-editor[data-auto-grow]
+  :is(textarea, .reference-rich-editor.textarea) {
+  height: auto;
+  min-height: 100px;
+  max-height: none;
+  overflow: hidden;
+  resize: none;
+}
 .composer-panel .generate-area {
   margin-top: 2px;
 }
@@ -4315,4 +4323,29 @@ html:has(.workspace)::-webkit-scrollbar,
 }
 .account-rows dd {
   flex-shrink: 0;
+}
+
+/* Generation count stays collapsed until the user asks for more parameters. */
+.composer-panel .parameter-more.button {
+  align-self: flex-start;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 10px;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 20px;
+  background: transparent;
+}
+.composer-panel .parameter-more.button:hover,
+.composer-panel .parameter-more.button[data-hovered="true"],
+.composer-panel .parameter-more.button[data-focus-visible="true"] {
+  color: #eee;
+  background: transparent;
+}
+@media (max-width: 767px) {
+  .composer-panel .parameter-more.button {
+    min-height: 44px;
+    height: 44px;
+  }
 }

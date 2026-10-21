@@ -16,20 +16,14 @@ import {
   IconSparkles,
   IconTextCaption,
 } from "@tabler/icons-react";
-import { lazy, Suspense, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
-import { RouteLink } from "../../components/router-link";
 import { UiIcon } from "../../components/ui-icon";
-import { useEnterpriseSession } from "./auth-client";
 import { type CommerceCase, commerceCases } from "./commerce-cases";
-import { assetContentUrl, useImageAssets, useImageSession } from "./generation-client";
 import { HomeComposer } from "./home-composer";
 import { useStudioStore } from "./studio-state";
 import "../../styles/home.css";
 
-const LoginDialog = lazy(() =>
-  import("./login-dialog").then((module) => ({ default: module.LoginDialog })),
-);
 const purposes = ["全部", "商品主图", "场景图", "创意海报"];
 const categories = ["全部品类", "美妆个护", "服饰箱包", "食品饮料", "家居家纺"];
 const shortcuts = [
@@ -55,13 +49,11 @@ export function HomePage() {
   const model = useStudioStore((s) => s.activeModel);
   const draft = useStudioStore((s) => s.drafts[model]);
   const updateDraft = useStudioStore((s) => s.updateDraft);
-  const identity = useEnterpriseSession();
   const navigate = useNavigate();
   const [purpose, setPurpose] = useState("全部");
   const [category, setCategory] = useState("全部品类");
   const [selected, setSelected] = useState<CommerceCase | null>(null);
   const [replace, setReplace] = useState(false);
-  const [login, setLogin] = useState(false);
   const [guide, setGuide] = useState<string | null>(null);
   const filtered = commerceCases.filter(
     (item) =>
@@ -194,42 +186,6 @@ export function HomePage() {
           </p>
         )}
       </section>
-      <section className="home-recent" aria-labelledby="recent-title">
-        <div className="home-section-heading">
-          <h2 id="recent-title">最近作品</h2>
-          {identity.data ? (
-            <RouteLink to="/assets">
-              查看全部 <UiIcon icon={IconArrowRight} size="small" />
-            </RouteLink>
-          ) : identity.isPending ? null : (
-            <span>登录后查看你的创作记录</span>
-          )}
-        </div>
-        {identity.isPending ? null : identity.isError ? (
-          <p role="alert">
-            登录状态暂时无法读取，
-            <Button
-              size="sm"
-              variant="ghost"
-              onPress={() => {
-                void identity.refetch();
-              }}
-            >
-              重试
-            </Button>
-          </p>
-        ) : identity.data ? (
-          <RecentWorks />
-        ) : (
-          <div className="home-recent-empty">
-            <UiIcon icon={IconPhoto} size="illustration" />
-            <p>你的商品创作，从这里开始</p>
-            <Button className="home-login" onPress={() => setLogin(true)}>
-              登录查看
-            </Button>
-          </div>
-        )}
-      </section>
       <footer className="home-guides">
         <Button size="sm" variant="ghost" onPress={() => setGuide("参考图上传指南")}>
           参考图上传指南
@@ -322,11 +278,6 @@ export function HomePage() {
           </Modal.Container>
         </Modal.Backdrop>
       </Modal>
-      {login && (
-        <Suspense fallback={<p role="status">正在打开登录…</p>}>
-          <LoginDialog onClose={() => setLogin(false)} />
-        </Suspense>
-      )}
     </section>
   );
 }
@@ -342,56 +293,5 @@ function CasePhoto({ item, original = false }: { item: CommerceCase; original?: 
         backgroundPosition: "center",
       }}
     />
-  );
-}
-function RecentWorks() {
-  const session = useImageSession();
-  const query = useImageAssets();
-  const outputs =
-    query.data?.pages
-      .flatMap((page) => page.data)
-      .filter((item) => item.kind === "output")
-      .slice(0, 4) ?? [];
-  if (query.isError || session.isError)
-    return (
-      <p role="alert">
-        作品暂时无法加载。
-        <Button
-          variant="ghost"
-          size="sm"
-          onPress={() => {
-            void session.refetch();
-            void query.refetch();
-          }}
-        >
-          重新加载
-        </Button>
-      </p>
-    );
-  // The page is already visible while this query runs; only the entry loader is full-screen.
-  if (query.isPending) return null;
-  if (!outputs.length)
-    return (
-      <div className="home-recent-empty">
-        <UiIcon icon={IconPhoto} size="illustration" />
-        <p>还没有作品，先为你的商品创作一张图片吧。</p>
-        <RouteLink to="/create">
-          开始创作 <UiIcon icon={IconArrowRight} size="small" />
-        </RouteLink>
-      </div>
-    );
-  return (
-    <div className="home-output-grid">
-      {outputs.map((item) => (
-        <RouteLink key={item.id} to="/assets" aria-label={`查看作品：${item.prompt ?? "生成图片"}`}>
-          <img
-            src={assetContentUrl(item.id, true)}
-            alt={item.prompt ?? "生成图片"}
-            loading="lazy"
-          />
-          <span>{item.prompt ?? "生成图片"}</span>
-        </RouteLink>
-      ))}
-    </div>
   );
 }
