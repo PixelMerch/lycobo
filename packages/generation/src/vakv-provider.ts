@@ -3,7 +3,10 @@ import {
   imageLimits,
   imageModelCatalog,
   imageModelIds,
+  imageProviderModel,
   imageResolutionSchema,
+  imageUnitCredits,
+  publicImageModel,
 } from "@lycoboai/contracts";
 import { z } from "zod";
 
@@ -16,9 +19,8 @@ export function supportedResolutions(
   model: ImageGenerationInput["model"],
   _overrides: CapabilityOverrides = {},
 ) {
-  // Product-confirmed policy is shared by the API and Worker. Legacy overrides no longer
-  // restrict the 2.5 channels or expand the base model beyond 1K.
-  return imageModelCatalog.find((m) => m.id === model)?.allowedResolutions ?? [];
+  // Public models route to the appropriate provider channel for each resolution.
+  return imageModelCatalog.find((m) => m.id === publicImageModel(model))?.allowedResolutions ?? [];
 }
 export function validateModelInput(
   input: ImageGenerationInput,
@@ -63,6 +65,7 @@ export async function generateVakvImage(
   config: VakvConfig,
   idempotencyKey: string,
   request: typeof fetch = fetch,
+  providerModel = imageProviderModel(input),
 ): Promise<{ bytes: Buffer; requestId?: string | undefined }> {
   const url = new URL(config.baseUrl);
   if (url.username || url.password || url.search || url.hash || url.pathname !== "/")
@@ -83,7 +86,7 @@ export async function generateVakvImage(
   if (references.length) {
     const form = new FormData();
     for (const [key, value] of Object.entries({
-      model: input.model,
+      model: providerModel,
       prompt: input.prompt,
       size,
       n: "1",
@@ -100,7 +103,7 @@ export async function generateVakvImage(
     body = form;
   } else
     body = JSON.stringify({
-      model: input.model,
+      model: providerModel,
       prompt: input.prompt,
       n: 1,
       size,
@@ -166,7 +169,7 @@ export function readImagePolicy(input: Record<string, string | undefined>) {
     .object({
       IMAGE_GENERATION_ENABLED: z.enum(["true", "false"]).default("false"),
       VAKV_ENABLE_IMAGE_EDITS: z.enum(["true", "false"]).default("false"),
-      IMAGE_CREDITS_PER_IMAGE: z.coerce.number().int().min(1).max(1000000).default(1),
+      IMAGE_CREDITS_PER_IMAGE: z.coerce.number().int().min(1).max(1000000).default(20),
     })
     .safeParse(input);
   let overrides: CapabilityOverrides;
@@ -181,7 +184,7 @@ export function readImagePolicy(input: Record<string, string | undefined>) {
   return {
     enabled: parsed.data.IMAGE_GENERATION_ENABLED === "true",
     editsEnabled: parsed.data.VAKV_ENABLE_IMAGE_EDITS === "true",
-    unitCredits: parsed.data.IMAGE_CREDITS_PER_IMAGE,
+    unitCredits: imageUnitCredits,
     overrides,
   };
 }

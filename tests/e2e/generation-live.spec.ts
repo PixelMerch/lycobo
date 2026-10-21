@@ -7,7 +7,7 @@ const png = Buffer.from(
   "base64",
 );
 
-test("five models submit at 1K, queued results become durable history and library assets", async ({
+test("three public models submit at 1K, queued results become durable history and library assets", async ({
   page,
 }) => {
   await mockImageApi(page);
@@ -100,13 +100,15 @@ test("five models submit at 1K, queued results become durable history and librar
         input.resolution === "1K" && input.count === 1 && input.referenceAssetIds.length === 0,
     ),
   ).toBe(true);
-  await expect(page.locator(".generation-results img")).toHaveCount(5, { timeout: 12000 });
+  await expect(page.locator(".generation-results img")).toHaveCount(modelNames.length, {
+    timeout: 12000,
+  });
   await page.reload();
-  await expect(page.locator(".generation-results img")).toHaveCount(5);
+  await expect(page.locator(".generation-results img")).toHaveCount(modelNames.length);
   await page.getByRole("link", { name: "素材库", exact: true }).click();
-  await expect(page.locator(".asset-grid img")).toHaveCount(5);
+  await expect(page.locator(".asset-grid img")).toHaveCount(modelNames.length);
   await page.reload();
-  await expect(page.locator(".asset-grid img")).toHaveCount(5);
+  await expect(page.locator(".asset-grid img")).toHaveCount(modelNames.length);
 });
 
 for (const outcome of ["disconnect", "timeout", "auth"] as const) {

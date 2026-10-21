@@ -49,7 +49,7 @@ pnpm dev:worker
 ```
 
 Worker 缺少密钥/数据库/Redis 时启动失败，不以演示结果代替。API 本身不调用模型，也不把服务商密钥发给浏览器。
-`IMAGE_CREDITS_PER_IMAGE` 是工作区内部每张消耗的整数积分，与服务商货币价格无关。初始额度由运维分配，不代表在线充值或支付接入。
+当前每张固定20币，忽略旧 `IMAGE_CREDITS_PER_IMAGE` 定价。主子账号使用同一个组织钱包，提交扣费、确定失败按张退回。充值订单与账务只读接口已接入，真实支付未接入。详见 [企业钱包与模型路由](enterprise-wallet.md)。
 
 ## API
 
@@ -185,3 +185,7 @@ pnpm dev
 部署顺序：先执行迁移 0007，再更新 API 与 Worker，最后前端。`IMAGE_EVENTS_ENABLED=false` 可关闭实时通道；生产网关需支持流式响应、关闭 SSE 路径的代理缓冲，空闲超时大于心跳间隔，建议 HTTP/2。健康检查仍使用短请求。LISTEN 需要可保留会话的数据库连接，不能经 transaction 模式连接池。
 
 验证：`ALLOW_LOCAL_INTEGRATION=true pnpm --filter @lycoboai/api test:events` 在专用临时数据库执行迁移，验证隔离、提交／回滚、独立监听连接、任务生命周期、游标回放、撤销后停止发送。浏览器 fixture 验证共享连接、停止轮询、定向更新、去重、重连与低频兜底；不调用付费模型。
+
+## 当前公开模型（2026-10-21）
+
+前台仅显示 gpt-image-2、gpt-image-2.5、nano-banana-2.1；旧供应商ID保留历史兼容。最新映射、账务及迁移发布顺序以 [企业钱包](enterprise-wallet.md) 为准。

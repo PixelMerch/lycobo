@@ -1,8 +1,9 @@
-import { Alert, Avatar, Button, Chip, Modal, Tabs } from "@heroui/react";
-import { IconLogout, IconSparkles } from "@tabler/icons-react";
+import { Alert, Avatar, Button, Modal, Tabs } from "@heroui/react";
+import { IconLogout } from "@tabler/icons-react";
 import { useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { useEnterpriseLogout, useEnterpriseSession } from "./auth-client";
+import { WalletPanel } from "./wallet-panel";
 
 export type AccountSection = "profile" | "credits";
 const roleLabels: Record<string, string> = {
@@ -10,13 +11,6 @@ const roleLabels: Record<string, string> = {
   admin: "管理员",
   owner: "拥有者",
 };
-/** 方案与价格尚未确认，界面只呈现结构，不虚构额度或金额。 */
-const creditPlans = [
-  { id: "starter", name: "轻量包", hint: "先试做一组商品图与场景图" },
-  { id: "studio", name: "常用包", hint: "日常上新与批量场景制作" },
-  { id: "team", name: "团队包", hint: "多人协作与长期素材生产" },
-];
-
 export function AccountPanel({
   section,
   onClose,
@@ -102,43 +96,7 @@ export function AccountPanel({
                   ) : null}
                 </Tabs.Panel>
                 <Tabs.Panel id="credits">
-                  <div className="credit-balance">
-                    <div>
-                      <small>积分余额</small>
-                      <strong>—</strong>
-                    </div>
-                    <Chip variant="soft" size="sm">
-                      尚未开放
-                    </Chip>
-                  </div>
-                  <Alert className="account-alert" status="warning">
-                    <Alert.Content>
-                      <Alert.Description>
-                        积分服务尚未接入，余额、购买与扣费都不生效。接入后这里才会显示真实额度。
-                      </Alert.Description>
-                    </Alert.Content>
-                  </Alert>
-                  <div className="credit-plans">
-                    {creditPlans.map((plan) => (
-                      <div className="credit-plan" key={plan.id}>
-                        <span>
-                          <strong>{plan.name}</strong>
-                          <small>{plan.hint}</small>
-                        </span>
-                        <span className="credit-plan-price">
-                          <strong>— 积分</strong>
-                          <small>价格待定</small>
-                        </span>
-                        <Button variant="outline" size="sm" isDisabled>
-                          暂未开放
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="account-note">
-                    <UiIcon icon={IconSparkles} size="small" />
-                    积分接入后，余额与消耗记录会显示在这里。
-                  </p>
+                  <WalletPanel />
                 </Tabs.Panel>
               </Tabs>
             </Modal.Body>

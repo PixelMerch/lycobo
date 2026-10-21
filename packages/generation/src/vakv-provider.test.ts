@@ -10,12 +10,10 @@ import {
 const input = imageGenerationInputSchema.parse({ model: "gpt-image-2", prompt: "coffee" });
 const config = { key: "test-not-a-secret", baseUrl: "https://api.vakv.cn", timeoutMs: 1000 };
 describe("Vakv adapter and capability evidence", () => {
-  it("allows 1K only for image-2 and all three resolutions for the remaining models", () => {
-    expect(supportedResolutions("gpt-image-2")).toEqual(["1K"]);
+  it("allows all resolutions through public-model routing", () => {
+    expect(supportedResolutions("gpt-image-2")).toEqual(["1K", "2K", "4K"]);
     expect(supportedResolutions("gpt-image-2-4K")).toEqual(["1K", "2K", "4K"]);
-    expect(() => validateModelInput({ ...input, resolution: "4K" })).toThrow(
-      "MODEL_RESOLUTION_UNVERIFIED",
-    );
+    expect(() => validateModelInput({ ...input, resolution: "4K" })).not.toThrow();
     for (const model of [
       "gpt-image-2.5",
       "gpt-image-2.5-flare",
@@ -29,7 +27,11 @@ describe("Vakv adapter and capability evidence", () => {
     expect(
       supportedResolutions("gpt-image-2.5-sunburst", { "gpt-image-2.5-sunburst": ["1K"] }),
     ).toEqual(["1K", "2K", "4K"]);
-    expect(supportedResolutions("gpt-image-2", { "gpt-image-2": ["4K"] })).toEqual(["1K"]);
+    expect(supportedResolutions("gpt-image-2", { "gpt-image-2": ["4K"] })).toEqual([
+      "1K",
+      "2K",
+      "4K",
+    ]);
     expect(readImagePolicy({}).enabled).toBe(false);
     expect(() =>
       validateModelInput({ ...input, referenceAssetIds: [crypto.randomUUID()] }),
@@ -125,4 +127,31 @@ describe("Vakv adapter and capability evidence", () => {
       generateVakvImage(input, [], { ...config, baseUrl: "http://127.0.0.1" }, "id"),
     ).rejects.toMatchObject({ code: "INVALID_PROVIDER_URL" });
   });
+});
+
+it.each([
+  ["gpt-image-2", "1K", "gpt-image-2"],
+  ["gpt-image-2", "2K", "gpt-image-2-4K"],
+  ["gpt-image-2", "4K", "gpt-image-2-4K"],
+  ["gpt-image-2.5", "1K", "gpt-image-2.5-sunburst"],
+  ["gpt-image-2.5", "4K", "gpt-image-2.5-sunburst"],
+  ["nano-banana-2.1", "2K", "gemini-nano-banana-2.1"],
+])("routes %s at %s to %s for both generation and edits", async (model, resolution, provider) => {
+  for (const refs of [[], [new Uint8Array([1])]]) {
+    const request = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response(JSON.stringify({ data: [{ b64_json: "aGVsbG8=" }] })));
+    await generateVakvImage(
+      imageGenerationInputSchema.parse({ model, resolution, prompt: "fixture" }),
+      refs,
+      config,
+      "item",
+      request,
+    );
+    const body = request.mock.calls[0]?.[1]?.body;
+    expect(body instanceof FormData ? body.get("model") : JSON.parse(String(body)).model).toBe(
+      provider,
+    );
+  }
+  expect(readImagePolicy({ IMAGE_CREDITS_PER_IMAGE: "1" }).unitCredits).toBe(20);
 });

@@ -161,7 +161,7 @@ test("home settings preserve drafts and only image creation is offered", async (
   const panel = page.getByRole("dialog", { name: "模型和画面设置" });
   await expect(panel).toBeVisible();
   await panel.getByRole("radio", { name: "16:9", exact: true }).click();
-  await panel.getByRole("button", { name: /gpt-image-2.5-flare/ }).click();
+  await panel.getByRole("button", { name: /gpt-image-2.5/ }).click();
   await panel.press("Escape");
   await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("保留绗缝与面料细节");
   await expect(page.getByRole("button", { name: "选择创作模型", exact: true })).toContainText(
@@ -195,7 +195,7 @@ test("home model settings can change resolution and count with animated selectio
   await page.goto("/");
   await page.getByRole("button", { name: "选择创作模型" }).click();
   const panel = page.getByRole("dialog", { name: "模型和画面设置" });
-  await panel.getByRole("button", { name: /gpt-image-2-4K/ }).click();
+  await panel.getByRole("button", { name: /nano-banana-2.1/ }).click();
   const resolution = panel.getByRole("radio", { name: "2K", exact: true });
   await expect(resolution).toBeEnabled();
   await resolution.click();

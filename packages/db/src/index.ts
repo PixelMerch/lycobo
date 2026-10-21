@@ -14,4 +14,5 @@ export function openDatabase(url: string) {
 export * from "./auth-repository";
 export * from "./image-event-repository";
 export * from "./image-repository";
+export { WalletError } from "./wallet-repository";
 export { schema };

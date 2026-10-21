@@ -1,4 +1,5 @@
 import { Alert, Button, Tabs, ToggleButton, ToggleButtonGroup, Tooltip } from "@heroui/react";
+import { imageUnitCredits } from "@lycoboai/contracts";
 import { IconArrowBarToUp, IconSparkles } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { ReferencePrompt } from "../../components/reference-prompt";
@@ -150,6 +151,10 @@ function Workspace({ model }: { model: ModelId }) {
               </Alert.Content>
             </Alert>
           )}
+          <p className="generation-price">
+            每张 {imageUnitCredits} 币
+            {!pending && ` · 本次 ${imageUnitCredits * Number(draft.count)} 币`}
+          </p>
           <Button
             className={`primary-action${activeSubmission ? " generation-pending" : ""}`}
             data-submitting={activeSubmission || undefined}

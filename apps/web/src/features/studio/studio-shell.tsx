@@ -1,4 +1,5 @@
 import { Button, Drawer, Dropdown, Modal, Tooltip } from "@heroui/react";
+import { useWallet } from "./wallet-client";
 import "../../styles/brand.css";
 import {
   IconChevronDown,
@@ -34,6 +35,7 @@ const chooserLayout: CSSProperties & { "--tool-columns": number } = {
 export function StudioShell() {
   useImageEvents();
   const accountSession = useEnterpriseSession();
+  const wallet = useWallet();
   const logout = useEnterpriseLogout();
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -235,7 +237,7 @@ export function StudioShell() {
               >
                 <UiIcon icon={IconCoin} size="small" />
                 积分
-                <strong>—</strong>
+                <strong>{wallet.data?.balance ?? "—"}</strong>
               </Button>
               <Dropdown>
                 <Dropdown.Trigger className="account-trigger">
@@ -303,13 +305,7 @@ export function StudioShell() {
                       key={model.id}
                       model={model}
                       index={index}
-                      current={Boolean(
-                        currentModel &&
-                          (model.id === "gpt-image-2.5"
-                            ? currentModel.id.startsWith("gpt-image-2.5")
-                            : model.id === "gpt-image-2" &&
-                              !currentModel.id.startsWith("gpt-image-2.5")),
-                      )}
+                      current={Boolean(currentModel && model.id === currentModel.id)}
                       onChoose={(target) => {
                         setChooserOpen(false);
                         setActiveModel(target);

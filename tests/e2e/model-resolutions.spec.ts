@@ -19,12 +19,9 @@ for (const path of ["/", "/create"]) {
       }
       for (const resolution of ["1K", "2K", "4K"]) {
         const option = page.getByRole("radio", { name: resolution, exact: true });
-        if (model === "gpt-image-2" && resolution !== "1K") await expect(option).toBeDisabled();
-        else {
-          await expect(option).toBeEnabled();
-          await option.click();
-          await expect(option).toHaveAttribute("aria-checked", "true");
-        }
+        await expect(option).toBeEnabled();
+        await option.click();
+        await expect(option).toHaveAttribute("aria-checked", "true");
       }
     }
     if (home)
@@ -36,7 +33,7 @@ for (const path of ["/", "/create"]) {
       await page.getByRole("button", { name: /创作模型/ }).click();
       await page.getByRole("option", { name: "gpt-image-2", exact: true }).click();
     }
-    await expect(page.getByRole("radio", { name: "1K", exact: true })).toHaveAttribute(
+    await expect(page.getByRole("radio", { name: "4K", exact: true })).toHaveAttribute(
       "aria-checked",
       "true",
     );

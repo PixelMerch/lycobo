@@ -1,5 +1,10 @@
 import { Alert, Button, Tooltip, toast } from "@heroui/react";
-import { type ImageJob, imageJobSchema } from "@lycoboai/contracts";
+import {
+  type ImageJob,
+  imageJobSchema,
+  imageUnitCredits,
+  publicImageModel,
+} from "@lycoboai/contracts";
 import { IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -95,7 +100,7 @@ async function taskDraft(
     ).input;
   if (!input) throw new Error("任务输入不完整，无法恢复，请重新创作。");
   return {
-    model: input.model,
+    model: publicImageModel(input.model),
     draft: {
       prompt: input.prompt,
       ratio: input.aspectRatio,
@@ -128,7 +133,7 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
     models.data?.enabled &&
     models.data.models.some(
       (model) =>
-        model.id === job.model &&
+        model.id === publicImageModel(job.model) &&
         model.enabledResolutions.some((resolution) => resolution === job.resolution),
     ) &&
     (!job.input?.referenceAssetIds.length || models.data.editsEnabled);
@@ -210,7 +215,7 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
       <ConfirmDialog
         isOpen={regenerateOpen}
         title="重新生成这张图片？"
-        content="将使用相同的提示词、参考图和参数新建一个生成任务。"
+        content={`将使用相同的提示词、参考图和参数新建任务，提交时扣除 ${job.requested_count * imageUnitCredits} 币，失败按张退回。`}
         closeLabel="关闭重新生成确认"
         onCancel={() => setRegenerateOpen(false)}
         onConfirm={() => {

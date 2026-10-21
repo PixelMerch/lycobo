@@ -279,6 +279,7 @@ export const imageJobs = pgTable(
     inputHash: text("input_hash").notNull(),
     input: jsonb("input").$type<Record<string, unknown>>().notNull(),
     model: text("model").notNull(),
+    providerModel: text("provider_model"),
     prompt: text("prompt").notNull(),
     resolution: text("resolution").notNull(),
     aspectRatio: text("aspect_ratio").notNull(),
@@ -474,5 +475,118 @@ export const imageEvents = pgTable(
     index("image_events_org_cursor_idx").on(t.organizationId, t.id),
     index("image_events_created_idx").on(t.createdAt),
     check("image_events_kind_check", sql`${t.kind} in ('task','asset')`),
+  ],
+);
+
+// One shared wallet per enterprise; entries identify the member who initiated each operation.
+export const organizationWallets = pgTable(
+  "organization_wallets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .unique()
+      .references(() => organizations.id),
+    balance: integer("balance").notNull().default(0),
+    createdAt: createdAt(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [check("wallet_balance_check", sql`${t.balance} >= 0`)],
+);
+export const rechargeOrders = pgTable(
+  "recharge_orders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    walletId: uuid("wallet_id")
+      .notNull()
+      .references(() => organizationWallets.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    idempotencyKey: uuid("idempotency_key").notNull(),
+    credits: integer("credits").notNull(),
+    amountMinor: integer("amount_minor").notNull(),
+    currency: text("currency").notNull().default("CNY"),
+    status: text("status").notNull().default("pending"),
+    channel: text("channel").notNull(),
+    providerTransactionId: text("provider_transaction_id"),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("recharge_user_idx").on(t.userId),
+    unique("recharge_wallet_key_unique").on(t.walletId, t.idempotencyKey),
+    unique("recharge_provider_unique").on(t.channel, t.providerTransactionId),
+    index("recharge_wallet_created_idx").on(t.walletId, t.createdAt, t.id),
+    check(
+      "recharge_amount_check",
+      sql`${t.credits} > 0 and ${t.amountMinor} > 0 and ${t.currency} = 'CNY'`,
+    ),
+    check("recharge_status_check", sql`${t.status} in ('pending','paid','closed')`),
+    check(
+      "recharge_paid_check",
+      sql`(${t.status} = 'paid') = (${t.paidAt} is not null and ${t.providerTransactionId} is not null)`,
+    ),
+  ],
+);
+export const walletEntries = pgTable(
+  "wallet_entries",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedAlwaysAsIdentity(),
+    walletId: uuid("wallet_id")
+      .notNull()
+      .references(() => organizationWallets.id),
+    userId: uuid("user_id").references(() => users.id),
+    eventKey: text("event_key").notNull(),
+    kind: text("kind").notNull(),
+    amount: integer("amount").notNull(),
+    balanceAfter: integer("balance_after").notNull(),
+    jobId: uuid("job_id").references(() => imageJobs.id),
+    itemId: uuid("item_id").references(() => imageJobItems.id),
+    rechargeId: uuid("recharge_id").references(() => rechargeOrders.id),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("wallet_entries_user_idx").on(t.userId),
+    unique("wallet_event_unique").on(t.walletId, t.eventKey),
+    index("wallet_entries_cursor_idx").on(t.walletId, t.id),
+    index("wallet_entries_job_idx").on(t.jobId),
+    uniqueIndex("wallet_entries_item_kind_unique").on(t.itemId, t.kind),
+    uniqueIndex("wallet_entries_recharge_unique").on(t.rechargeId),
+    check(
+      "wallet_entry_amount_check",
+      sql`${t.balanceAfter} >= 0 and ((${t.kind} = 'consume' and ${t.amount} < 0) or (${t.kind} in ('opening','recharge','refund','checkin') and ${t.amount} > 0))`,
+    ),
+    check(
+      "wallet_entry_source_check",
+      sql`(${t.kind} in ('consume','refund') and ${t.jobId} is not null and ${t.itemId} is not null and ${t.rechargeId} is null) or (${t.kind} = 'recharge' and ${t.rechargeId} is not null and ${t.jobId} is null and ${t.itemId} is null) or (${t.kind} in ('opening','checkin') and ${t.jobId} is null and ${t.itemId} is null and ${t.rechargeId} is null)`,
+    ),
+  ],
+);
+// Reserved only: no public check-in endpoint or automatic reward until rules are approved.
+export const walletCheckins = pgTable(
+  "wallet_checkins",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    walletId: uuid("wallet_id")
+      .notNull()
+      .references(() => organizationWallets.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    businessDate: text("business_date").notNull(),
+    ruleVersion: text("rule_version").notNull(),
+    credits: integer("credits").notNull(),
+    ledgerId: bigint("ledger_id", { mode: "bigint" })
+      .notNull()
+      .unique()
+      .references(() => walletEntries.id),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("wallet_checkin_user_idx").on(t.userId),
+    unique("wallet_checkin_day_unique").on(t.walletId, t.businessDate),
+    check("wallet_checkin_credits_check", sql`${t.credits} > 0`),
+    check("wallet_checkin_date_check", sql`${t.businessDate} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'`),
   ],
 );

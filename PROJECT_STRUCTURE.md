@@ -6,7 +6,7 @@
 | 路径 | 职责 |
 | --- | --- |
 | apps/web/src/app | 路由、应用壳、providers |
-| apps/web/src/features/studio | 紫色首页、五模型工作台、客户端草稿、真实生图查询与素材库 |
+| apps/web/src/features/studio | 紫色首页、三模型工作台、客户端草稿、真实生图查询与素材库 |
 | apps/web/src/lib | 浏览器 API 客户端与工具 |
 | apps/web/src/styles | 共享设计 tokens 与全局基础样式 |
 | apps/api/src | Hono 入口、应用工厂、配置与组织隔离的生图 feature API |
@@ -61,3 +61,5 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 接口、本地工作台接入及正式登录等尚未完成的生产能力边界见 [生图 API 文档](docs/image-generation-api.md)。
 
 实时任务通知入口为 apps/api/src/features/images/events.ts；apps/web/src/features/studio/use-image-events.ts 在应用壳维护共享 SSE 连接与 Query 缓存更新。事件日志和业务状态事务提交，独立于 Redis 生图执行队列；具体协议见 docs/image-generation-api.md。
+
+- packages/db/src/wallet-repository.ts：企业共享钱包、充值订单与只读账务查询。数据表与扣费规则见 [企业钱包](docs/enterprise-wallet.md)。

@@ -40,6 +40,8 @@ export function useImageEvents() {
     const taskIds = new Set<string>();
     const calibrate = () => {
       calibration++;
+      void client.invalidateQueries({ queryKey: ["wallet"] });
+      void client.invalidateQueries({ queryKey: ["wallet-entries"] });
       void client.invalidateQueries({ queryKey: ["image-tasks"] });
       void client.invalidateQueries({ queryKey: ["image-assets"] });
     };
@@ -90,6 +92,10 @@ export function useImageEvents() {
         }),
       );
       if (!stopped) {
+        if (ids.length) {
+          void client.invalidateQueries({ queryKey: ["wallet"] });
+          void client.invalidateQueries({ queryKey: ["wallet-entries"] });
+        }
         if (reloadHistory || results.some((result) => result.status === "rejected"))
           void client.invalidateQueries({ queryKey: ["image-tasks"] });
         if (reloadAssets) void client.invalidateQueries({ queryKey: ["image-assets"] });
@@ -159,8 +165,9 @@ export function useImageEvents() {
           touch();
           if (BigInt(event.id) <= BigInt(cursor)) return;
           cursor = event.id;
-          if (event.kind === "task") taskIds.add(event.resourceId);
-          else assetsChanged = true;
+          if (event.kind === "task") {
+            taskIds.add(event.resourceId);
+          } else assetsChanged = true;
           schedule();
         } catch {
           restart();

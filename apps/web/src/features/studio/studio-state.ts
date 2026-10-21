@@ -1,35 +1,13 @@
 import { create } from "zustand";
 
 export const models = [
+  { id: "gpt-image-2", name: "gpt-image-2", image: "bedroom", description: "通用图像生成与编辑" },
+  { id: "gpt-image-2.5", name: "gpt-image-2.5", image: "set", description: "写实质感与创意表达" },
   {
-    id: "gpt-image-2.5",
-    name: "gpt-image-2.5",
-    image: "bedroom",
-    description: "上传参考图，描述想要的画面",
-  },
-  {
-    id: "gpt-image-2.5-flare",
-    name: "gpt-image-2.5-flare",
+    id: "nano-banana-2.1",
+    name: "nano-banana-2.1",
     image: "lavender",
-    description: "上传参考图，描述想要的画面",
-  },
-  {
-    id: "gpt-image-2.5-sunburst",
-    name: "gpt-image-2.5-sunburst",
-    image: "set",
-    description: "上传参考图，描述想要的画面",
-  },
-  {
-    id: "gpt-image-2",
-    name: "gpt-image-2",
-    image: "bedroom",
-    description: "上传参考图，描述想要的画面",
-  },
-  {
-    id: "gpt-image-2-4K",
-    name: "gpt-image-2-4K",
-    image: "set",
-    description: "上传参考图，描述想要的画面",
+    description: "商品、人像与场景创作",
   },
 ] as const;
 export type ModelId = (typeof models)[number]["id"];
@@ -108,10 +86,8 @@ export const useStudioStore = create<{
   setActiveModel: (activeModel) => set({ activeModel }),
   drafts: {
     "gpt-image-2.5": emptyDraft(),
-    "gpt-image-2.5-flare": emptyDraft(),
-    "gpt-image-2.5-sunburst": emptyDraft(),
     "gpt-image-2": emptyDraft(),
-    "gpt-image-2-4K": emptyDraft(),
+    "nano-banana-2.1": emptyDraft(),
   },
   updateDraft: (model, patch) =>
     set((state) => ({

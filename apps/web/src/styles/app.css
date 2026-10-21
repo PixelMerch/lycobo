@@ -4277,3 +4277,21 @@ html:has(.workspace)::-webkit-scrollbar,
     min-height: 44px;
   }
 }
+
+.account-rows small {
+  display: block;
+  overflow-wrap: anywhere;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+.account-rows dd {
+  flex-shrink: 0;
+}
+.generation-price {
+  margin: 4px 0;
+  color: #c8c8c8;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  text-align: center;
+}

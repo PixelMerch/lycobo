@@ -1,11 +1,5 @@
 import type { Page } from "@playwright/test";
-export const modelNames = [
-  "gpt-image-2.5",
-  "gpt-image-2.5-flare",
-  "gpt-image-2.5-sunburst",
-  "gpt-image-2",
-  "gpt-image-2-4K",
-];
+export const modelNames = ["gpt-image-2", "gpt-image-2.5", "nano-banana-2.1"];
 export function apiFixture(data: unknown, status = 200) {
   const success = status >= 200 && status < 300;
   return {
@@ -33,12 +27,14 @@ export async function mockImageApi(page: Page) {
       body = {
         enabled: true,
         editsEnabled: true,
-        unitCredits: 1,
+        unitCredits: 20,
         models: modelNames.map((id) => ({
           id,
-          enabledResolutions: id === "gpt-image-2" ? ["1K"] : ["1K", "2K", "4K"],
+          enabledResolutions: ["1K", "2K", "4K"],
         })),
       };
+    else if (path.endsWith("/wallet")) body = { balance: 200, unitCredits: 20 };
+    else if (path.startsWith("/api/v1/wallet/")) body = { data: [] };
     else if (path.endsWith("/image-tasks") || path.endsWith("/image-assets")) body = { data: [] };
     await route.fulfill({ json: apiFixture(body) });
   });

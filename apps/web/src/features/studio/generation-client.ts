@@ -234,6 +234,8 @@ export function useGenerateImage() {
       }
     },
     onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ["wallet"] });
+      void client.invalidateQueries({ queryKey: ["wallet-entries"] });
       void client.invalidateQueries({ queryKey: ["image-tasks"] });
       void client.invalidateQueries({ queryKey: ["image-assets"] });
     },

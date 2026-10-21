@@ -12,6 +12,8 @@ export const imageModelIds = [
   "gpt-image-2-4K",
   "gpt-image-2.5-flare",
   "gpt-image-2.5-sunburst",
+  "nano-banana-2.1",
+  "gemini-nano-banana-2.1",
 ] as const;
 export const imageResolutionSchema = z.enum(["1K", "2K", "4K"]);
 export type ImageResolution = z.infer<typeof imageResolutionSchema>;
@@ -58,16 +60,23 @@ export type StoredImage = {
   height: number;
   sha256: string;
 };
-export const imageModelCatalog = imageModelIds.map((id) => ({
+// Public choices are separate from provider aliases retained for historical tasks.
+export const publicImageModelIds = ["gpt-image-2", "gpt-image-2.5", "nano-banana-2.1"] as const;
+export type PublicImageModelId = (typeof publicImageModelIds)[number];
+export const imageUnitCredits = 20;
+export function publicImageModel(model: ImageGenerationInput["model"]): PublicImageModelId {
+  if (model.includes("banana")) return "nano-banana-2.1";
+  return model.startsWith("gpt-image-2.5") ? "gpt-image-2.5" : "gpt-image-2";
+}
+export function imageProviderModel(input: Pick<ImageGenerationInput, "model" | "resolution">) {
+  const model = publicImageModel(input.model);
+  if (model === "gpt-image-2") return input.resolution === "1K" ? "gpt-image-2" : "gpt-image-2-4K";
+  if (model === "gpt-image-2.5") return "gpt-image-2.5-sunburst";
+  return "gemini-nano-banana-2.1";
+}
+export const imageModelCatalog = publicImageModelIds.map((id) => ({
   id,
-  allowedResolutions: (id === "gpt-image-2" ? ["1K"] : ["1K", "2K", "4K"]) as ImageResolution[],
-  documentedResolutions: (id === "gpt-image-2"
-    ? ["1K"]
-    : id === "gpt-image-2-4K"
-      ? ["1K", "2K", "4K"]
-      : []) as ImageResolution[],
-  capabilityStatus: id.startsWith("gpt-image-2.5") ? "unverified" : "documented",
-  highResolutionMode: id === "gpt-image-2-4K" ? "enhanced" : null,
+  allowedResolutions: ["1K", "2K", "4K"] as ImageResolution[],
 }));
 
 export const imageItemStatusSchema = z.enum([

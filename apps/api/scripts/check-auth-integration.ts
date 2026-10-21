@@ -58,8 +58,12 @@ try {
       assert.equal(new Set(allocated).size, allocated.length);
     }
     await assert.rejects(sql`select public.allocate_public_identifier('invalid')`);
-    const first = await images.provision(`test:${crypto.randomUUID()}`, "test-enterprise-one", 10);
-    const second = await images.provision(`test:${crypto.randomUUID()}`, "test-enterprise-two", 10);
+    const first = await images.provision(`test:${crypto.randomUUID()}`, "test-enterprise-one", 200);
+    const second = await images.provision(
+      `test:${crypto.randomUUID()}`,
+      "test-enterprise-two",
+      200,
+    );
     const password = `test-only-${crypto.randomUUID()}`;
     await authDb.setCredential(
       "fixture-account",

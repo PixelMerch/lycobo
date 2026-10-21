@@ -11,9 +11,9 @@ test("home to model-family chooser to workspace, with correctly anchored panel a
   const chooser = page.getByRole("dialog", { name: "创作", exact: true });
   await expect(chooser).toBeVisible();
   await expect(chooser.locator(".model-card")).toHaveCount(3);
-  // Families stay compact; unavailable providers cannot navigate.
+  // Three public model entries share the compact chooser.
   await expect(chooser.locator(".case-gallery")).toHaveCount(0);
-  await expect(chooser.getByRole("button", { name: "banana 暂未开放" })).toBeDisabled();
+  await expect(chooser.getByRole("button", { name: "进入 nano-banana-2.1 创作" })).toBeEnabled();
   const rows = await chooser.locator(".model-card").evaluateAll((cards) =>
     cards.map((card) => {
       const rect = card.getBoundingClientRect();

@@ -124,13 +124,7 @@ test("edited history references and prompt survive all model switches", async ({
   const composer = page.getByRole("region", { name: "创作设置", exact: true });
   const reference = composer.locator(".reference-tile img").first();
   const source = await reference.getAttribute("src");
-  for (const model of [
-    "gpt-image-2-4K",
-    "gpt-image-2.5-flare",
-    "gpt-image-2.5-sunburst",
-    "gpt-image-2",
-    "gpt-image-2.5",
-  ]) {
+  for (const model of ["nano-banana-2.1", "gpt-image-2", "gpt-image-2.5"]) {
     await page.getByRole("button", { name: /创作模型/ }).click();
     await page.getByRole("option", { name: model, exact: true }).click();
     await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
@@ -145,7 +139,7 @@ test("edited history references and prompt survive all model switches", async ({
     );
   }
   await page.getByRole("button", { name: /创作模型/ }).click();
-  await page.getByRole("option", { name: "gpt-image-2-4K", exact: true }).click();
+  await page.getByRole("option", { name: "nano-banana-2.1", exact: true }).click();
   await page.getByRole("radio", { name: "4K", exact: true }).click();
   await page.getByRole("button", { name: /创作模型/ }).click();
   await page.getByRole("option", { name: "gpt-image-2.5", exact: true }).click();

@@ -59,3 +59,5 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:integration
 `tests/e2e/image-preview.spec.ts` 验证全屏预览、缩放拖动、移动布局和图片切换后的说明同步；`library-dialog.spec.ts` 验证筛选、延迟加载和弹层焦点恢复。接口均由浏览器 fixture 拦截，不调用模型。
 
 并行执行不同测试任务时，为每次运行设置独立 `--output=/tmp/<本次运行目录>`，避免 Playwright 清理其他运行的 trace。历史时间断言使用浏览器自身时区计算，不能写死本机的 UTC+8 时间。正式验收仍需运行完整 `pnpm test:e2e`，不能以跳过失败用例代替。
+
+企业共享钱包测试纳入 worker test:images：verify-wallet.ts 验证主子账号并发扣款、20币固定价格、逐图退款、充值重复入账、账本不可修改和分页。wallet.spec.ts 验证账户中心真实接口契约（浏览器 fixture）。

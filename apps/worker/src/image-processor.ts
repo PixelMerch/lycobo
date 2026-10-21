@@ -36,6 +36,7 @@ export async function processImageItem(itemId: string, deps: ImageProcessorDepen
       deps.provider,
       job.itemId,
       deps.request,
+      job.providerModel,
     );
     const image = await deps.store.put(job, result.bytes, job.itemId);
     await deps.repository.finish(job, { image, requestId: result.requestId });

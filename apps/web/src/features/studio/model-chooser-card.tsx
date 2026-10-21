@@ -20,11 +20,11 @@ export const chooserModels = [
       "GPT-image-2.5 图像创作模型，兼顾画面文字、写实质感与视觉表达，适用于商业摄影、创意海报和专业设计。",
   },
   {
-    id: "banana",
-    target: null,
+    id: "nano-banana-2.1",
+    target: "nano-banana-2.1",
     cover: "banana",
     description:
-      "Banana 图像模型，面向商品、人像与场景等创作方向，探索写实与创意风格的视觉表达。暂未开放。",
+      "Nano Banana 2.1 图像模型，面向商品、人像与场景等创作方向，探索写实与创意风格的视觉表达。适用于日常创作与视觉设计。",
   },
 ] as const satisfies ReadonlyArray<{
   id: string;
@@ -68,9 +68,8 @@ export function ModelChooserCard({
     <Button
       className="model-card"
       variant="tertiary"
-      aria-label={model.target ? `进入 ${model.id} 创作` : `${model.id} 暂未开放`}
+      aria-label={`进入 ${model.id} 创作`}
       aria-current={current ? "true" : "false"}
-      isDisabled={model.target === null}
       onHoverChange={setHovered}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}

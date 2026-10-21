@@ -1,6 +1,7 @@
 import {
   imageGenerationInputSchema,
   imageModelCatalog,
+  imageUnitCredits,
   type StoredImage,
 } from "@lycoboai/contracts";
 import {
@@ -8,6 +9,7 @@ import {
   type ImagePrincipal,
   type ImageRepository,
   ImageRepositoryError,
+  WalletError,
 } from "@lycoboai/db";
 import { type ImageStore, ImageValidationError, maxImageBytes } from "@lycoboai/storage";
 import { type Context, Hono } from "hono";
@@ -76,7 +78,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
     await next();
   });
   app.onError((error, c) => {
-    if (error instanceof ImageRepositoryError) {
+    if (error instanceof ImageRepositoryError || error instanceof WalletError) {
       const status =
         error.code === "FORBIDDEN"
           ? 403
@@ -85,7 +87,14 @@ export function imageRoutes(deps: ImageApiDependencies) {
             : error.code === "REFERENCE_NOT_FOUND"
               ? 400
               : 409;
-      return fail(c, error.code, "请求未执行，请检查权限、余额或任务状态", status);
+      return fail(
+        c,
+        error.code,
+        error.code === "INSUFFICIENT_CREDITS"
+          ? "企业金币余额不足，每张图片需要 20 币"
+          : "请求未执行，请检查权限、余额或任务状态",
+        status,
+      );
     }
     if (error instanceof SyntaxError) return fail(c, "VALIDATION_ERROR", "请求格式不正确", 400);
     throw error;
@@ -152,10 +161,52 @@ export function imageRoutes(deps: ImageApiDependencies) {
       enabled: deps.enabled,
       eventsEnabled: !!deps.events,
       editsEnabled: deps.editsEnabled ?? false,
-      unitCredits: deps.unitCredits,
+      unitCredits: imageUnitCredits,
       models: imageModelCatalog.map((m) => ({ ...m, enabledResolutions: deps.resolutions(m.id) })),
     }),
   );
+  app.get("/wallet", async (c) =>
+    c.json({
+      ...(await deps.repository.wallet(c.get("principal"))),
+      unitCredits: imageUnitCredits,
+    }),
+  );
+  app.get("/wallet/entries", async (c) => {
+    const parsed = z
+      .object({
+        limit: z.coerce.number().int().min(1).max(100).default(20),
+        before: z
+          .string()
+          .regex(/^[1-9][0-9]{0,18}$/)
+          .refine((value) => BigInt(value) <= 9223372036854775807n)
+          .optional(),
+      })
+      .safeParse(c.req.query());
+    if (!parsed.success) return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
+    return c.json({
+      data: await deps.repository.walletEntries(
+        c.get("principal"),
+        parsed.data.limit,
+        parsed.data.before,
+      ),
+    });
+  });
+  app.get("/wallet/recharges", async (c) => {
+    const parsed = z
+      .object({
+        limit: z.coerce.number().int().min(1).max(100).default(20),
+        before: z.uuid().optional(),
+      })
+      .safeParse(c.req.query());
+    if (!parsed.success) return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
+    return c.json({
+      data: await deps.repository.rechargeOrders(
+        c.get("principal"),
+        parsed.data.limit,
+        parsed.data.before,
+      ),
+    });
+  });
   app.post("/image-tasks", async (c) => {
     if (!deps.enabled) return fail(c, "GENERATION_NOT_CONFIGURED", "生图服务尚未启用", 503);
     const input = imageGenerationInputSchema.safeParse(await c.req.json());
@@ -171,7 +222,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
       c.get("principal"),
       input.data,
       key.data,
-      deps.unitCredits,
+      imageUnitCredits,
     );
     return c.json(result, result.replayed ? 200 : 202);
   });
