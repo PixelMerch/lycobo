@@ -1,7 +1,7 @@
 .modal__backdrop.browse-image-backdrop {
   padding: 0;
   background: #ffffff0f;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(10px);
 }
 .modal__container.browse-image-container[data-entering="true"],
 .modal__container.browse-image-container[data-exiting="true"] {
