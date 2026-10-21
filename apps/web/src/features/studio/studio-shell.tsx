@@ -4,7 +4,6 @@ import "../../styles/brand.css";
 import {
   IconChevronDown,
   IconChevronRight,
-  IconCoin,
   IconFolder,
   IconHelpCircle,
   IconHome,
@@ -18,6 +17,7 @@ import {
 import { motion, useReducedMotion } from "motion/react";
 import { type CSSProperties, useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
+import { CreditCoin } from "../../components/credit-coin";
 import { DialogClose } from "../../components/dialog-close";
 import { RouteLink } from "../../components/router-link";
 import { UiIcon } from "../../components/ui-icon";
@@ -235,7 +235,7 @@ export function StudioShell() {
                 className="credit-pill"
                 onPress={() => setAccountSection("credits")}
               >
-                <UiIcon icon={IconCoin} size="small" />
+                <CreditCoin />
                 积分
                 <strong>{wallet.data?.balance ?? "—"}</strong>
               </Button>

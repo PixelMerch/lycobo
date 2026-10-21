@@ -2,6 +2,7 @@ import { Alert, Button, Tabs, ToggleButton, ToggleButtonGroup, Tooltip } from "@
 import { imageUnitCredits } from "@lycoboai/contracts";
 import { IconArrowBarToUp, IconSparkles } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
+import { CreditCoin } from "../../components/credit-coin";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
@@ -151,13 +152,14 @@ function Workspace({ model }: { model: ModelId }) {
               </Alert.Content>
             </Alert>
           )}
-          <p className="generation-price">
-            每张 {imageUnitCredits} 币
-            {!pending && ` · 本次 ${imageUnitCredits * Number(draft.count)} 币`}
-          </p>
           <Button
             className={`primary-action${activeSubmission ? " generation-pending" : ""}`}
             data-submitting={activeSubmission || undefined}
+            aria-description={
+              !pending && !activeSubmission
+                ? `本次生成消耗 ${imageUnitCredits * Number(draft.count)} 币`
+                : undefined
+            }
             isDisabled={!canGenerate || activeSubmission}
             onPress={() => {
               setSubmissionPhase("submitting");
@@ -182,11 +184,11 @@ function Workspace({ model }: { model: ModelId }) {
               );
             }}
           >
-            <span
-              className={`generate-button-icon${activeSubmission ? " generation-loading-icon" : ""}`}
-            >
-              <UiIcon icon={IconSparkles} />
-            </span>
+            {activeSubmission && (
+              <span className="generate-button-icon generation-loading-icon">
+                <UiIcon icon={IconSparkles} />
+              </span>
+            )}
             {generate.isPending || submissionPhase === "submitting"
               ? "正在提交…"
               : submissionPhase === "settled"
@@ -194,6 +196,12 @@ function Workspace({ model }: { model: ModelId }) {
                 : pending
                   ? "确认上次提交"
                   : "立即生成"}
+            {!pending && !activeSubmission && (
+              <span className="generate-credit-cost" aria-hidden="true">
+                <CreditCoin />
+                <span>{imageUnitCredits * Number(draft.count)}</span>
+              </span>
+            )}
           </Button>
         </div>
       </section>

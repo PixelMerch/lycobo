@@ -1460,18 +1460,46 @@ p.home-hero-kicker {
   height: 44px;
 }
 .generate-area .primary-action {
-  border: 0;
-  background: #8b5cf6;
-  color: #ffffff;
+  gap: 8px;
+  border: 1px solid var(--accent);
+  background: #222222;
+  color: var(--accent);
+  transition:
+    background 140ms ease,
+    transform 100ms ease;
 }
 .generate-area .primary-action:not(:disabled):not([data-disabled="true"]):hover {
-  background: #7c4df0;
+  background: #30283e;
   filter: none;
+}
+.generate-area .primary-action[data-pressed="true"] {
+  transform: scale(0.98);
 }
 .generate-area .primary-action:disabled,
 .generate-area .primary-action[data-disabled="true"] {
+  border-color: #48454e;
   background: #343434;
   color: #8b8794;
+}
+.generate-area .primary-action:disabled .credit-coin {
+  opacity: 0.5;
+}
+.credit-coin {
+  display: block;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  object-fit: contain;
+}
+.credit-pill .credit-coin {
+  width: 18px;
+  height: 18px;
+}
+.generate-credit-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
 }
 .generate-button-icon {
   display: inline-flex;
@@ -4287,11 +4315,4 @@ html:has(.workspace)::-webkit-scrollbar,
 }
 .account-rows dd {
   flex-shrink: 0;
-}
-.generation-price {
-  margin: 4px 0;
-  color: #c8c8c8;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  text-align: center;
 }
