@@ -2329,6 +2329,9 @@ p.home-hero-kicker {
   min-width: 0;
 }
 .generation-job {
+  --history-row-gap: 12px;
+  display: grid;
+  gap: var(--history-row-gap);
   min-width: 0;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--border);
@@ -2346,7 +2349,7 @@ p.home-hero-kicker {
   font-size: 12px;
 }
 .generation-prompt {
-  margin: 12px 0 8px;
+  margin: 0;
   color: var(--muted);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -2356,7 +2359,7 @@ p.home-hero-kicker {
   grid-template-columns: repeat(3, minmax(0, 400px));
   justify-content: center;
   gap: 12px;
-  margin-top: 16px;
+  margin-top: 0;
 }
 .generation-results[data-count="1"] {
   grid-template-columns: minmax(0, 400px);
@@ -2695,6 +2698,14 @@ p.home-hero-kicker {
   gap: 8px;
   margin-top: 16px;
 }
+.history-prompt {
+  display: grid;
+  gap: var(--history-row-gap);
+  min-width: 0;
+}
+.history-prompt > .generation-output-thumbnails {
+  margin-top: 0;
+}
 .prompt-collapsed {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -2714,7 +2725,7 @@ p.home-hero-kicker {
   width: max-content;
   height: 24px;
   min-height: 24px;
-  margin-top: 8px;
+  margin-top: 0;
   padding: 3px 6px;
   gap: 4px;
   color: var(--muted);
@@ -2925,7 +2936,7 @@ p.home-hero-kicker {
   background: #4a4a4a;
 }
 .generation-prompt {
-  margin: 10px 0 6px;
+  margin: 0;
   color: #c8c8c8;
   font-size: 14px;
   line-height: 22px;
@@ -2943,7 +2954,7 @@ p.home-hero-kicker {
 .copy-prompt.button {
   height: 28px;
   min-height: 28px;
-  margin-top: 6px;
+  margin-top: 0;
   padding: 4px 8px;
   border: 0;
   border-radius: 6px;
