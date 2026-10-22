@@ -29,7 +29,7 @@ export function ImageViewer({
   initialIndex?: number;
   onClose: () => void;
 }) {
-  const { requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
+  const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
   const reducedMotion = useReducedMotion();
   const [index, setIndex] = useState(Math.max(0, Math.min(initialIndex, images.length - 1)));
   const active = images[index];
@@ -167,7 +167,7 @@ export function ImageViewer({
         if (!open) requestClose();
       }}
     >
-      <Modal.Backdrop className="browse-image-backdrop">
+      <Modal.Backdrop className="browse-image-backdrop" data-dialog-phase={phase}>
         <Modal.Container size="full" className="browse-image-container">
           <Modal.Dialog aria-label="图片浏览" className="browse-image-dialog">
             <motion.div
