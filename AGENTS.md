@@ -68,7 +68,9 @@ Read relevant project skills before work:
 - Persist task + outbox intent atomically. Redis/BullMQ is transport, PostgreSQL is the source of truth.
   Worker processes are separate from API; no fire-and-forget paid work in HTTP handlers.
 - External calls need timeouts, cancellation, idempotency keys and bounded retry. Ambiguous paid
-  submissions must be reconciled before resubmission. Duplicate callbacks cannot duplicate charges.
+  submissions must not be automatically resubmitted. An explicit user-confirmed retry may retire
+  an undelivered attempt, record the unresolved outcome and actor, refund it and charge a new
+  attempt atomically; stale completions must be ignored. Duplicate callbacks cannot duplicate charges.
 - Never log prompts, uploaded content, cookies, provider responses, credentials or signed URLs.
   Use request/task IDs and sanitized error codes. Return structured errors.
 - All JSON APIs use the shared request_id/code/message/data/error envelope from

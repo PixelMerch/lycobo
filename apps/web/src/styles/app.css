@@ -2690,16 +2690,6 @@ p.home-hero-kicker {
 .history-icon-action[data-focus-visible="true"] {
   background: var(--surface-secondary);
 }
-.history-action-error {
-  position: absolute;
-  right: 0;
-  top: 100%;
-  width: min(320px, 60vw);
-  padding: 8px;
-  background: var(--surface-secondary);
-  font-size: 12px;
-  z-index: 1;
-}
 .history-confirm-actions {
   display: flex;
   gap: 8px;
@@ -3179,7 +3169,6 @@ p.home-hero-kicker {
 }
 .alert.generation-message,
 .alert.field-error,
-.alert.history-action-error,
 .alert.replace-confirm {
   box-shadow: none;
 }
@@ -3194,7 +3183,6 @@ p.home-hero-kicker {
 }
 .alert.generation-message .alert__description,
 .alert.field-error .alert__description,
-.alert.history-action-error .alert__description,
 .alert.replace-confirm .alert__description {
   color: inherit;
   font-size: inherit;

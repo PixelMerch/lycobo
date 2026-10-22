@@ -20,7 +20,7 @@ ReferencePrompt统一普通文本与行内图片引用：输入@选择已上传�
 
 GenerationHistory负责查询、空态、活动任务同步与预览编排；HistoryTaskMeta展示元信息和任务ID复制，ResultImage封装预览、下载和收藏，HistoryIndex负责右侧定位与资产管理入口，generation-status共用阶段标签和图标。任务编辑与重新生成集中在HistoryTaskActions，不在缩略图中再实现一次。
 
-“重新编辑”直接回填历史输入并替换当前草稿，不弹框、不自动提交。“重新生成”通过ConfirmDialog，正文只显示本次积分。确定失败时在原任务中重试失败项、保留成功图片；不确定的付费请求先按服务端规则核对，不能为消除失败卡而盲目再次扣费。详见[任务生命周期](task-lifecycle.md)。
+“重新编辑”直接回填历史输入并替换当前草稿，不弹框、不自动提交。“重新生成”通过ConfirmDialog，正文只显示本次积分。确定失败时在原任务中重试失败项、保留成功图片；结果不确定的旧尝试允许用户明确确认后在原记录重试：先退款并记录用户结束旧尝试的依据，新尝试再扣款；Worker仍不自动重发，旧结果迟到不会覆盖新尝试。所有历史操作请求失败只在顶部toast提示。详见[任务生命周期](task-lifecycle.md)。
 
 提示词下方ReferenceThumbnails只展示提交快照input.referenceAssetIds中的上传参考图，无参考图则不显示；不使用生成结果补位。生成图位于结果区与历史索引，结果下方不重复展示图片编号。
 

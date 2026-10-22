@@ -92,7 +92,13 @@ export function imageRoutes(deps: ImageApiDependencies) {
         error.code,
         error.code === "INSUFFICIENT_CREDITS"
           ? "企业金币余额不足，每张图片需要 20 币"
-          : "请求未执行，请检查权限、余额或任务状态",
+          : error.code === "STATE_CONFLICT"
+            ? "任务正在生成或状态已更新，请稍后重试"
+            : error.code === "FORBIDDEN"
+              ? "没有权限操作此任务"
+              : error.code === "NOT_FOUND"
+                ? "任务不存在或已不可用"
+                : "请求未执行，请刷新后重试",
         status,
       );
     }

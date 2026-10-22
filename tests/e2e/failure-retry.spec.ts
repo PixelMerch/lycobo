@@ -130,3 +130,75 @@ test("partial retry confirms only the cost of failed images", async ({ page }) =
       .locator(".confirm-dialog__content"),
   ).toHaveText("本次消耗 40 积分");
 });
+
+test("rejected regeneration uses a top toast without inserting an error into history", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  const job = {
+    id: crypto.randomUUID(),
+    organization_id: crypto.randomUUID(),
+    user_id: crypto.randomUUID(),
+    public_id: "WEYZHYPZX",
+    unit_credits: 1,
+    model: "gpt-image-2",
+    prompt: "手动重试错误反馈",
+    resolution: "1K",
+    aspect_ratio: "1:1",
+    requested_count: 1,
+    status: "needs_reconciliation",
+    created_at: new Date().toISOString(),
+    completed_at: new Date().toISOString(),
+    input: {
+      model: "gpt-image-2",
+      prompt: "手动重试错误反馈",
+      resolution: "1K",
+      aspectRatio: "1:1",
+      count: 1,
+      referenceAssetIds: [],
+    },
+    items: [
+      {
+        id: crypto.randomUUID(),
+        position: 0,
+        status: "needs_reconciliation",
+        output_asset_id: null,
+        worker_id: null,
+        error_code: "PROVIDER_OUTCOME_UNKNOWN",
+        width: null,
+        height: null,
+      },
+    ],
+  };
+  let retries = 0;
+  const message = "企业金币余额不足，每张图片需要 20 币";
+  await page.route("**/api/v1/image-tasks**", async (route) => {
+    if (route.request().method() === "POST") {
+      retries++;
+      return route.fulfill({
+        status: 409,
+        json: {
+          request_id: crypto.randomUUID(),
+          code: 30003,
+          message,
+          data: {},
+          error: { code: "INSUFFICIENT_CREDITS" },
+        },
+      });
+    }
+    return route.fulfill({ json: apiFixture({ data: [job] }) });
+  });
+  await page.goto("/create");
+  await page.getByRole("button", { name: "重新生成", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "重新生成这张图片？", exact: true })).toContainText(
+    "本次消耗 1 积分",
+  );
+  await page
+    .getByRole("dialog", { name: "重新生成这张图片？", exact: true })
+    .getByRole("button", { name: "确认", exact: true })
+    .click();
+  await expect.poll(() => retries).toBe(1);
+  await expect(page.locator(".toast-region")).toContainText(message);
+  await expect(page.locator(".history-action-error")).toHaveCount(0);
+  await expect(page.locator(".generation-job")).toHaveCount(1);
+});

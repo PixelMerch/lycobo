@@ -89,6 +89,7 @@ export const imageItemStatusSchema = z.enum([
 export const imageTaskPublicIdSchema = z.string().regex(/^W[0-9A-Z]{8}$/);
 export const imagePublicIdSchema = z.string().regex(/^P[0-9A-Z]{8}$/);
 export const imageJobSchema = z.object({
+  unit_credits: z.number().int().nonnegative().optional(),
   public_id: z.union([imageTaskPublicIdSchema, z.string().regex(/^[1-9][0-9]{9}$/)]).optional(),
   input: imageGenerationInputSchema.optional(),
   id: z.uuid(),

@@ -225,24 +225,18 @@ export function openImageRepository(url: string) {
         }
         const items =
           await tx`select id,position,status,error_code from image_job_items where job_id=${jobId} and superseded_at is null order by position for update`;
-        if (
-          items.some(
-            (i) =>
-              i.status === "queued" ||
-              i.status === "running" ||
-              (i.status === "needs_reconciliation" &&
-                i.error_code !== "PROVIDER_INVALID_IMAGE_RESPONSE"),
-          )
-        )
+        if (items.some((i) => i.status === "queued" || i.status === "running"))
           throw new ImageRepositoryError("STATE_CONFLICT");
         const failed = items.filter(
           (i) => i.status === "failed" || i.status === "needs_reconciliation",
         );
         if (!failed.length) throw new ImageRepositoryError("STATE_CONFLICT");
-        // Repair historic invalid-response holds before charging the new attempt.
+        // Explicit user retry retires unresolved attempts before refund/recharge.
+        // Keep the uncertain provider outcome as evidence; do not call this
+        // reconciliation proof or let a late completion replace the new attempt.
         for (const item of failed) {
           if (item.status === "needs_reconciliation")
-            await tx`update image_job_items set status='failed',reconciliation_evidence='Invalid response: no usable image delivered' where id=${item.id}`;
+            await tx`update image_job_items set status='failed',reconciled_by=${scope.userId},reconciliation_evidence='User requested retry; prior provider outcome remains unconfirmed; undelivered attempt retired',completed_at=coalesce(completed_at,now()) where id=${item.id}`;
           await refund(tx, jobId, String(item.id));
         }
         const wallet = await ensureWallet(tx, scope);
@@ -364,7 +358,7 @@ export function openImageRepository(url: string) {
       return sql.begin(async (tx) => {
         await tx`select id from image_jobs where id=${job.jobId} for update`;
         const [item] =
-          await tx`select status from image_job_items where id=${job.itemId} and job_id=${job.jobId} and execution_token=${job.executionToken} for update`;
+          await tx`select status from image_job_items where id=${job.itemId} and job_id=${job.jobId} and execution_token=${job.executionToken} and superseded_at is null for update`;
         if (
           item?.status !== "running" &&
           !(item?.status === "needs_reconciliation" && "image" in result)

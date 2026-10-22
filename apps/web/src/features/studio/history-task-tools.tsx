@@ -1,4 +1,4 @@
-import { Alert, Button, Tooltip, toast } from "@heroui/react";
+import { Button, Tooltip, toast } from "@heroui/react";
 import {
   type ImageJob,
   imageJobSchema,
@@ -10,6 +10,8 @@ import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "../../components/confirm-dialog";
 import { UiIcon } from "../../components/ui-icon";
+import { copyToClipboard } from "../../lib/clipboard";
+import { useErrorToast } from "../../lib/error-toast";
 import {
   assetContentUrl,
   hasPendingSubmission,
@@ -26,7 +28,6 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
   const text = useRef<HTMLParagraphElement>(null);
   const [expanded, setExpanded] = useState(false);
   const [overflow, setOverflow] = useState(false);
-  const [error, setError] = useState("");
   useEffect(() => {
     const node = text.current;
     if (!node || expanded || !job.prompt) return;
@@ -59,26 +60,11 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
       <Button
         variant="secondary"
         className="copy-prompt"
-        onPress={async () => {
-          try {
-            await navigator.clipboard.writeText(job.prompt);
-            toast.success("复制成功");
-            setError("");
-          } catch {
-            setError("复制失败，请手动选择提示词复制。");
-          }
-        }}
+        onPress={() => void copyToClipboard(job.prompt)}
       >
         <UiIcon icon={IconCopy} size="small" />
         复制提示词
       </Button>
-      {error && (
-        <Alert className="field-error" role="alert" status="danger">
-          <Alert.Content>
-            <Alert.Description>{error}</Alert.Description>
-          </Alert.Content>
-        </Alert>
-      )}
       <ReferenceThumbnails ids={job.input?.referenceAssetIds ?? []} label="任务参考图" />
     </div>
   );
@@ -120,9 +106,15 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
   const client = useQueryClient();
   const [regenerateOpen, setRegenerateOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const generation = useGenerateImage();
   const session = useImageSession();
+  useErrorToast(
+    generation.isError
+      ? hasPendingSubmission(session.data)
+        ? "提交结果待确认，请在左侧确认上次提交。"
+        : generation.error?.message
+      : null,
+  );
   const models = useImageModels();
   const pending = usePendingSubmission(session.data);
   const blocked = ["queued", "running"].includes(job.status) || pending;
@@ -141,7 +133,8 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
         job.items.filter((item) => ["failed", "needs_reconciliation"].includes(item.status)).length,
       )
     : job.requested_count;
-  const regenerateContent = `本次消耗 ${count * imageUnitCredits} 积分`;
+  const unitCredits = retrying ? (job.unit_credits ?? imageUnitCredits) : imageUnitCredits;
+  const regenerateContent = `本次消耗 ${count * unitCredits} 积分`;
   const restore = ({ model, draft }: Awaited<ReturnType<typeof taskDraft>>) => {
     useStudioStore.getState().updateDraft(model, draft);
     useStudioStore.getState().setActiveModel(model);
@@ -154,7 +147,7 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
   const regenerate = async () => {
     if (hasPendingSubmission(session.data)) return;
     setLoading(true);
-    setError("");
+    generation.reset();
     try {
       generation.mutate({
         ...(await taskDraft(job, client)),
@@ -163,7 +156,7 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
           : {}),
       });
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "无法读取任务。");
+      toast.danger(failure instanceof Error ? failure.message : "无法读取任务。");
     } finally {
       setLoading(false);
     }
@@ -179,11 +172,11 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
           isDisabled={loading}
           onPress={async () => {
             setLoading(true);
-            setError("");
+            generation.reset();
             try {
               restore(await taskDraft(job, client));
             } catch (failure) {
-              setError(failure instanceof Error ? failure.message : "无法读取任务。");
+              toast.danger(failure instanceof Error ? failure.message : "无法读取任务。");
             } finally {
               setLoading(false);
             }
@@ -206,18 +199,6 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
         </Button>
         <Tooltip.Content placement="bottom">重新生成</Tooltip.Content>
       </Tooltip>
-      {(error || generation.isError) && (
-        <Alert className="history-action-error" role="alert" status="danger">
-          <Alert.Content>
-            <Alert.Description>
-              {error ||
-                (hasPendingSubmission(session.data)
-                  ? "提交结果待确认，请在左侧确认上次提交。"
-                  : generation.error?.message)}
-            </Alert.Description>
-          </Alert.Content>
-        </Alert>
-      )}
       <ConfirmDialog
         isOpen={regenerateOpen}
         title="重新生成这张图片？"
