@@ -31,9 +31,15 @@
   font-weight: 500;
 }
 .confirm-dialog .modal__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  column-gap: 10px;
   padding: 0 18px 18px;
 }
 .confirm-dialog__content {
+  grid-column: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
   color: #a8a8a8;
   font-size: 13px;
   line-height: 20px;
@@ -42,10 +48,14 @@
   margin: 0;
 }
 .confirm-dialog__actions {
-  display: flex;
-  justify-content: flex-end;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
   gap: 10px;
   margin-top: 24px;
+}
+.confirm-dialog__cancel.button {
+  justify-self: end;
 }
 .confirm-dialog__cancel.button,
 .confirm-dialog__confirm.button {
@@ -83,10 +93,12 @@
   background: #991b1b;
 }
 .confirm-dialog .modal__close-trigger {
-  top: 14px;
-  right: 14px;
-  width: 32px;
-  height: 32px;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -106,6 +118,9 @@
     padding: 16px 16px 4px;
   }
   .confirm-dialog .modal__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    column-gap: 10px;
     padding: 0 16px 16px;
   }
   .confirm-dialog__actions {

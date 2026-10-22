@@ -1,5 +1,6 @@
 import { Button, Modal } from "@heroui/react";
 import type { ReactNode } from "react";
+import { DialogClose } from "./dialog-close";
 import "./confirm-dialog.css";
 
 type ConfirmDialogProps = {
@@ -40,7 +41,7 @@ export function ConfirmDialog({
           <Modal.Dialog className="confirm-dialog" data-tone={tone}>
             <Modal.Header>
               <Modal.Heading>{title}</Modal.Heading>
-              <Modal.CloseTrigger aria-label={closeLabel} />
+              <DialogClose label={closeLabel} />
             </Modal.Header>
             <Modal.Body>
               <div className="confirm-dialog__content">{content}</div>
