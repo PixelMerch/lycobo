@@ -1,5 +1,15 @@
+/* A dark veil suppresses bright page content behind the confirmation. Keep
+ * the existing blur on a static layer so the fade stays visually stable. */
 .modal__backdrop.confirm-dialog__backdrop {
-  background: #000000c2;
+  background: transparent;
+}
+.confirm-dialog__backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(20px);
 }
 .confirm-dialog {
   width: min(480px, calc(100vw - 32px));
