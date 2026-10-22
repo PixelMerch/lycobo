@@ -1301,10 +1301,6 @@ p.home-hero-kicker {
 }
 .credit-coin {
   display: block;
-  width: 22px;
-  height: 22px;
-  flex: none;
-  object-fit: contain;
 }
 .generate-credit-cost {
   display: inline-flex;

@@ -28,10 +28,6 @@
 .header-account-credits strong {
   font-weight: 600;
 }
-.header-account-credits .credit-coin {
-  width: 20px;
-  height: 20px;
-}
 .account-trigger .header-account-avatar {
   width: 28px;
   height: 28px;
@@ -107,10 +103,6 @@
 }
 .header-account-balance .header-account-credits {
   gap: 6px;
-}
-.header-account-balance .credit-coin {
-  width: 16px;
-  height: 16px;
 }
 .header-account-menu .dropdown__menu {
   padding: 0;

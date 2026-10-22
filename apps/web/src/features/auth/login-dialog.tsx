@@ -16,6 +16,7 @@ import {
   IconEyeOff,
   IconQrcode,
   IconSparkles,
+  IconX,
 } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useRef, useState } from "react";
@@ -97,7 +98,9 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
               }}
             >
               {/* Inside the panel so the close control leaves with everything else. */}
-              <Modal.CloseTrigger className="login-close" aria-label="关闭登录" />
+              <Modal.CloseTrigger className="login-close" aria-label="关闭登录">
+                <UiIcon icon={IconX} size="default" />
+              </Modal.CloseTrigger>
               <div className="login-banner">
                 <UiIcon icon={IconSparkles} size="small" />
                 <p>从商品参考到场景创作，让灵感拥有新的画面</p>

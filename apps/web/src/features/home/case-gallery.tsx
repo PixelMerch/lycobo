@@ -1,5 +1,5 @@
 import { Alert, Button, Card, Modal, Tabs } from "@heroui/react";
-import { IconPhoto } from "@tabler/icons-react";
+import { IconPhoto, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
@@ -127,7 +127,9 @@ function CaseDetail({ item, onClose }: { item: StudioCase | null; onClose: () =>
           <Modal.Dialog className="case-dialog">
             <Modal.Header>
               <Modal.Heading>{item?.title}</Modal.Heading>
-              <Modal.CloseTrigger aria-label="关闭案例" />
+              <Modal.CloseTrigger aria-label="关闭案例">
+                <UiIcon icon={IconX} size="default" />
+              </Modal.CloseTrigger>
             </Modal.Header>
             <Modal.Body>
               {item ? (

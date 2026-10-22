@@ -1,5 +1,5 @@
 import { Button, Modal } from "@heroui/react";
-import { IconBox, IconPhoto, IconSparkles, IconTextCaption } from "@tabler/icons-react";
+import { IconBox, IconPhoto, IconSparkles, IconTextCaption, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
@@ -72,7 +72,9 @@ export function HomePage() {
             <Modal.Dialog>
               <Modal.Header>
                 <Modal.Heading>{guide}</Modal.Heading>
-                <Modal.CloseTrigger aria-label="关闭指南" />
+                <Modal.CloseTrigger aria-label="关闭指南">
+                  <UiIcon icon={IconX} size="default" />
+                </Modal.CloseTrigger>
               </Modal.Header>
               <Modal.Body>
                 <p>

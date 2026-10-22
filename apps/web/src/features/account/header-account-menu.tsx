@@ -46,7 +46,7 @@ export function HeaderAccountMenu() {
             {...menu.triggerProps}
           >
             <span className="header-account-credits" aria-hidden="true">
-              <CreditCoin />
+              <CreditCoin size="navigation" />
               <strong>{balance}</strong>
             </span>
             <Avatar className="header-account-avatar" size="sm" aria-hidden="true">
@@ -73,7 +73,7 @@ export function HeaderAccountMenu() {
             <div className="header-account-balance">
               <span>企业共享积分</span>
               <span className="header-account-credits">
-                <CreditCoin />
+                <CreditCoin size="default" />
                 <strong>{balance}</strong>
               </span>
             </div>

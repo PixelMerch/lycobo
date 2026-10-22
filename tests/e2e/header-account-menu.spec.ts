@@ -53,9 +53,10 @@ for (const width of [1440, 320]) {
     // Compact menu: the credits read as a value row, not the primary figure.
     await expect(popover).toHaveCSS("width", "280px");
     await expect(popover.locator(".header-account-balance strong")).toHaveCSS("font-size", "14px");
+    // Credits use the shared Tabler coin instead of the retired bitmap.
     await expect(popover.locator(".header-account-balance .credit-coin")).toHaveCSS(
       "width",
-      "16px",
+      "18px",
     );
     // HeroUI focuses the menu container and the hovered row for assistive tech.
     // Neither may paint the global purple ring around the list or the row.

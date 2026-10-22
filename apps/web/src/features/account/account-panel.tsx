@@ -1,5 +1,5 @@
 import { Alert, Avatar, Button, Modal, Tabs } from "@heroui/react";
-import { IconLogout } from "@tabler/icons-react";
+import { IconLogout, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { useEnterpriseLogout, useEnterpriseSession } from "../auth/auth-client";
@@ -29,7 +29,9 @@ export function AccountPanel({
           <Modal.Dialog className="account-dialog">
             <Modal.Header>
               <Modal.Heading>账户中心</Modal.Heading>
-              <Modal.CloseTrigger aria-label="关闭账户中心" />
+              <Modal.CloseTrigger aria-label="关闭账户中心">
+                <UiIcon icon={IconX} size="default" />
+              </Modal.CloseTrigger>
             </Modal.Header>
             <Modal.Body>
               <div className="account-identity">

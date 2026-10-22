@@ -11,6 +11,7 @@ import {
   IconPhoto,
   IconSettings,
   IconShoppingBag,
+  IconX,
 } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
 import { type CSSProperties, useEffect, useState } from "react";
@@ -270,7 +271,9 @@ export function StudioShell() {
             <Modal.Dialog className="info-dialog">
               <Modal.Header>
                 <Modal.Heading>{info}</Modal.Heading>
-                <Modal.CloseTrigger aria-label="关闭说明" />
+                <Modal.CloseTrigger aria-label="关闭说明">
+                  <UiIcon icon={IconX} size="default" />
+                </Modal.CloseTrigger>
               </Modal.Header>
               <Modal.Body>
                 <p>

@@ -134,6 +134,6 @@ Read relevant project skills before work:
 
 - Match the measured shell rules in DESIGN.md: sidebar 274/288/320px by breakpoint, collapsed 64px (2× the 32px icon background); desktop rows 40/42/44px, row gap 6px, icon/text gap 8px, radius 16px, icons 18px. Header is 68px desktop/60px mobile. Hover/active never change geometry; mobile targets stay 44px.
 
-- Use Tabler business icons through components/ui-icon.tsx. Sizes: 14 / 18 / 20 / 22 / 28px, stroke 2. Keep icon sizing independent of compact control geometry; do not add another icon library.
+- Use Tabler business icons through components/ui-icon.tsx. Sizes: 14 / 18 / 20 / 22 / 28px, stroke 2. Keep icon sizing independent of compact control geometry; do not add another icon library. Credits use Tabler IconCoins (no bitmap coin) and close controls use Tabler IconX; never keep hand-drawn, bitmap or second-library icons.
 
 - Sidebar text/icons use neutral gray-white: default #FFFFFFB3, hover fill #FFFFFF0A, active fill #FFFFFF14 with white text/icons. Do not restore purple navigation labels. Chevrons rotate left on expansion and respect reduced motion. Tool selectors use spacing instead of extra divider lines.
