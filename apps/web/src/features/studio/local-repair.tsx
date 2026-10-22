@@ -131,6 +131,7 @@ export function LocalRepairPanel({
                 width: result.width,
                 height: result.height,
                 meta: {
+                  taskId: job.data.id,
                   taskPublicId: job.data.public_id,
                   model: job.data.model,
                   prompt: job.data.prompt,

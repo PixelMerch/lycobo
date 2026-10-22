@@ -12,11 +12,17 @@ import { HistoryPrompt, HistoryTaskActions } from "./history-task-tools";
 import type { PreviewImage } from "./image-preview";
 import { ResultImage } from "./result-image";
 import { useStudioStore } from "./studio-state";
+import { useHistoryTaskTarget } from "./use-history-task-target";
 
 export function GenerationHistory({ compact = false }: { compact?: boolean }) {
   const session = useImageSession();
   const query = useImageHistory();
-  const jobs = query.data?.pages.flatMap((page) => page.data) ?? [];
+  const targetJob = useHistoryTaskTarget(compact);
+  const loadedJobs = query.data?.pages.flatMap((page) => page.data) ?? [];
+  const jobs =
+    targetJob && !loadedJobs.some((job) => job.id === targetJob.id)
+      ? [targetJob, ...loadedJobs]
+      : loadedJobs;
   const [preview, setPreview] = useState<{ images: PreviewImage[]; assetId: string } | null>(null);
   const previewTrigger = useRef<HTMLElement | null>(null);
   useEffect(() => {

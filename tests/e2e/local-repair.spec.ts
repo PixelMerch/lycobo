@@ -149,12 +149,15 @@ test("multiple repair regions retain original coordinates, submit one image and 
   expect(submitted?.prompt).toContain("区域 2：左上角 (307, 307)，宽 307，高 307");
   await viewer.getByRole("button", { name: "确认上次提交", exact: true }).click();
   await viewer.getByRole("button", { name: "查看修改版", exact: true }).click();
-  await expect(viewer.locator(".image-preview-facts")).toContainText("WREPAIR01");
-  await expect(viewer.locator(".image-preview-bar-id")).toContainText("P00000002");
-  await expect(viewer.getByRole("button", { name: "预览第 1 张", exact: true })).toBeVisible();
-  await viewer.getByRole("button", { name: "预览第 1 张", exact: true }).click();
-  await expect(viewer.locator(".image-preview-facts")).not.toContainText("WREPAIR01");
-  await expect(viewer.locator(".image-preview-bar-id")).toContainText("P00000001");
+  await expect(viewer).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "资产管理", exact: true })).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`/create\\?task=${jobId}$`));
+  const record = page.locator(`#job-${jobId}`);
+  await expect(record).toBeVisible();
+  await expect(record).toContainText("WREPAIR01");
+  const top = await record.evaluate((node) => node.getBoundingClientRect().top);
+  expect(top).toBeGreaterThanOrEqual(60);
+  expect(top).toBeLessThan(180);
   expect(attempts).toBe(2);
 });
 

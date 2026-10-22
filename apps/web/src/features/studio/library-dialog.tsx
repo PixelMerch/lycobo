@@ -176,6 +176,7 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                 images={preview.images}
                 initialIndex={preview.index}
                 onClose={() => setPreview(null)}
+                onViewHistory={requestClose}
               />
             )}
           </Modal.Dialog>

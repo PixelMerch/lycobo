@@ -1,6 +1,7 @@
 import { Modal } from "@heroui/react";
 import { motion } from "motion/react";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 import { ConfirmDialog } from "../../components/confirm-dialog";
 import { DialogClose } from "../../components/dialog-close";
 import { useCenteredDialogMotion } from "../../components/use-centered-dialog-motion";
@@ -21,6 +22,7 @@ export type PreviewImage = {
 };
 
 export type PreviewMeta = {
+  taskId?: string;
   taskPublicId?: string | null | undefined;
   model?: string | null;
   createdAt?: string | null;
@@ -37,6 +39,7 @@ export function ImagePreviewDialog({
   hasMore = false,
   isLoadingMore = false,
   onLoadMore,
+  onViewHistory,
 }: {
   images: PreviewImage[];
   meta?: PreviewMeta;
@@ -45,15 +48,20 @@ export function ImagePreviewDialog({
   hasMore?: boolean;
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
+  onViewHistory?: () => void;
 }) {
-  const [addedImages, setAddedImages] = useState<PreviewImage[]>([]);
-  const images = [
-    ...originalImages,
-    ...addedImages.filter((image) => !originalImages.some((value) => value.id === image.id)),
-  ];
+  const images = originalImages;
+  const navigate = useNavigate();
+  const historyTask = useRef<string | null>(null);
   const [repair, setRepair] = useState(false);
   const [exitConfirm, setExitConfirm] = useState(false);
-  const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
+  const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(() => {
+    onClose();
+    if (historyTask.current) {
+      onViewHistory?.();
+      void navigate(`/create?task=${encodeURIComponent(historyTask.current)}`);
+    }
+  });
   const [index, setIndex] = useState(Math.min(Math.max(initialIndex, 0), images.length - 1));
   const surface = useRef<HTMLDivElement>(null);
   const active = images[index];
@@ -152,13 +160,10 @@ export function ImagePreviewDialog({
                   repairing={repair}
                   onRepairChange={setRepair}
                   onPreview={(image) => {
-                    const existing = images.findIndex((value) => value.id === image.id);
-                    if (existing >= 0) select(existing);
-                    else {
-                      setAddedImages((values) => [...values, image]);
-                      select(images.length);
-                    }
+                    if (!image.meta?.taskId) return;
+                    historyTask.current = image.meta.taskId;
                     setRepair(false);
+                    requestClose();
                   }}
                 />
               </Suspense>
