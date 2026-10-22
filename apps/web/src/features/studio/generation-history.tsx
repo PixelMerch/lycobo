@@ -206,6 +206,7 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
           <ImagePreviewDialog
             images={generatedImages(job)}
             meta={{
+              taskPublicId: job.public_id,
               model: job.model,
               createdAt: job.created_at,
               prompt: job.prompt,

@@ -127,6 +127,7 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                                 width: image.width,
                                 height: image.height,
                                 meta: {
+                                  taskPublicId: image.task_public_id,
                                   model: image.model,
                                   createdAt: image.created_at,
                                   prompt: image.prompt,

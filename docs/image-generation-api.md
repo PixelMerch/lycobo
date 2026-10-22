@@ -57,11 +57,12 @@ Worker 缺少密钥/数据库/Redis 时启动失败，不以演示结果代替�
 
 | 方法与路径 | 功能 |
 | --- | --- |
-| GET /api/v1/image-models | 五个模型、文档能力、实际启用档位与每张积分；enabled 仅代表配置开关，不代表 Worker 在线 |
+| GET /api/v1/image-models | 三个公开模型、文档能力、实际启用档位与每张积分；enabled 仅代表配置开关，不代表 Worker 在线 |
 | POST /api/v1/image-tasks | 创建任务，原子保存任务/图片项/outbox/积分预留，202；同 key 同参数重放返回 200 |
 | GET /api/v1/image-tasks?limit=20&before=任务UUID | 组织内任务列表，按创建时间/ID 倒序，最大 100 条 |
 | GET /api/v1/image-tasks/:id | 组织内任务、输入快照、逐图状态与输出元数据 |
 | POST /api/v1/image-assets | 原始 PNG/JPEG/WebP 文件体，最大 10MB，返回资产 ID 与实际尺寸 |
+| GET /api/v1/image-assets?limit=30&before=资产UUID | 组织内素材列表；public_id为图片编号，task_public_id为生成任务编号，参考图无所属生成任务时为null |
 | GET /api/v1/image-assets/:id/content | 身份与组织验证后读取图片，不直接暴露磁盘路径 |
 | POST /api/v1/image-tasks/:jobId/items/:itemId/reconcile-failure | 管理员核对服务商后确认未成功，释放预留积分；不重发模型请求 |
 

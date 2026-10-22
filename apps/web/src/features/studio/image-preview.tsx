@@ -38,6 +38,7 @@ export type PreviewImage = {
 };
 
 export type PreviewMeta = {
+  taskPublicId?: string | null | undefined;
   model?: string | null;
   createdAt?: string | null;
   prompt?: string | null;
@@ -318,8 +319,15 @@ export function ImagePreviewDialog({
                       </span>
                     </header>
                     <div className="image-preview-facts">
-                      <span className="image-preview-fact-label">ID：{label}</span>
-                      <CopyIconButton value={label} label={`复制图片 ID ${label}`} />
+                      <span className="image-preview-fact-label">
+                        ID：{meta.taskPublicId ?? "—"}
+                      </span>
+                      {meta.taskPublicId && (
+                        <CopyIconButton
+                          value={meta.taskPublicId}
+                          label={`复制任务 ID ${meta.taskPublicId}`}
+                        />
+                      )}
                       {meta.createdAt && (
                         <time className="image-preview-time" dateTime={meta.createdAt}>
                           {new Date(meta.createdAt).toLocaleString("zh-CN", { hour12: false })}

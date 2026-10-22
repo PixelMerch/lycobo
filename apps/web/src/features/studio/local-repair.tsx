@@ -422,6 +422,7 @@ export default function LocalRepair({
                   width: result.width,
                   height: result.height,
                   meta: {
+                    taskPublicId: job.data.public_id,
                     model: job.data.model,
                     prompt: job.data.prompt,
                     createdAt: job.data.created_at,

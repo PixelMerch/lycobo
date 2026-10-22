@@ -236,6 +236,13 @@ try {
   assert.equal(asset.width, 2);
   assert.equal(asset.height, 2);
   assert.ok((await store.read(asset)).length);
+  const listedOutput = (await repository.listAssets(first, 30)).find(
+    (row) => row.id === success.output_asset_id,
+  );
+  const sourceTask = await repository.get(first, taskId);
+  assert.ok(sourceTask?.public_id);
+  assert.equal(listedOutput?.task_public_id, sourceTask.public_id);
+  assert.notEqual(listedOutput?.public_id, listedOutput?.task_public_id);
   const balance =
     await sql`select balance as available_credits from organization_wallets where organization_id=${first.organizationId}`;
   assert.equal(balance[0]?.available_credits, 380);

@@ -8,6 +8,7 @@ const svg =
 const asset = (position: number) => ({
   id: crypto.randomUUID(),
   public_id: `P5587123${position}`,
+  task_public_id: `W9000000${position}`,
   kind: "output",
   width: 2048,
   height: 2048,
@@ -67,7 +68,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   expect(historyBox?.height).toBe(906);
   await expect(historyDialog.locator(".image-preview-section p")).toContainText("紫色菱形被子");
   await expect(historyDialog.locator(".image-preview-model")).toContainText("gpt-image-2");
-  await expect(historyDialog.locator(".image-preview-facts")).toContainText("ID：P55871241");
+  await expect(historyDialog.locator(".image-preview-facts")).toContainText("ID：W00000013");
   await expect(historyDialog.locator(".image-preview-bar-id")).toHaveText("Img ID：P55871241");
   await expect(historyDialog.locator(".image-preview-bar-size")).toHaveText("2048 x 2048");
   // The selected frame is one of two thumbnails on the right rail.
@@ -99,6 +100,11 @@ test("library and history images open an in-page full-screen viewer", async ({ p
     .click();
   const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
   await expect(viewer).toBeVisible();
+  await expect(viewer.locator(".image-preview-facts")).toContainText("ID：W90000001");
+  await expect(viewer.locator(".image-preview-facts")).not.toContainText("P55871231");
+  await expect(
+    viewer.getByRole("button", { name: "复制任务 ID W90000001", exact: true }),
+  ).toBeVisible();
   await expect(viewer.locator(".image-preview")).toHaveCSS("transform", "none");
   // The preview and the asset library share the same close control size.
   const closeSizes = await page.evaluate(() => {
@@ -214,6 +220,8 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   await expect(viewer.getByRole("region", { name: "创意描述", exact: true })).toContainText(
     "素材 3 的创意描述",
   );
+  await expect(viewer.locator(".image-preview-facts")).toContainText("ID：W90000002");
+  await expect(viewer.locator(".image-preview-bar-id")).toHaveText("Img ID：P55871232");
   await viewer.getByRole("button", { name: "关闭图片预览", exact: true }).click();
   await expect(viewer).toHaveCount(0);
   // Closing the viewer returns to the library, not the workspace.

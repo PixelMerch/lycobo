@@ -70,6 +70,11 @@ test("task and image IDs stay stable across history, reload and the asset librar
   await expect(history.locator(".image-public-id")).toHaveCount(0);
   await history.getByRole("button", { name: "预览图片 1", exact: true }).click();
   const preview = page.getByRole("dialog", { name: "图片预览", exact: true });
+  await expect(preview.locator(".image-preview-facts")).toContainText("ID：W07AZ9T2Q");
+  await expect(preview.locator(".image-preview-facts")).not.toContainText("P82ZX19M4");
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await preview.getByRole("button", { name: "复制任务 ID W07AZ9T2Q", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("W07AZ9T2Q");
   await expect(preview.locator(".image-preview-bar-id")).toHaveText("Img ID：P82ZX19M4");
   await preview.getByRole("button", { name: "关闭图片预览", exact: true }).click();
   await expect(preview).toHaveCount(0);
