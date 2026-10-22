@@ -2561,11 +2561,26 @@ p.home-hero-kicker {
     grid-template-columns: minmax(0, 450px);
   }
 }
+/* Shared thumbnail behaviour for the history rail and the preview rail: the
+ * picture zooms inside its clipped tile on hover and keyboard focus, so both
+ * lists feel identical without moving the grid. */
 .history-thumbnail img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 6px;
+  transition: transform 180ms ease;
+}
+.history-thumbnail:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) img {
+  transform: scale(1.1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .history-thumbnail img {
+    transition: none;
+  }
+  .history-thumbnail:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) img {
+    transform: none;
+  }
 }
 .asset-grid img {
   width: 100%;

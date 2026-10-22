@@ -335,13 +335,6 @@
 }
 .image-preview-thumb img {
   display: block;
-  transition: transform 180ms ease;
-}
-/* Rail thumbnails zoom on hover and keyboard focus exactly like the reference
- * thumbnails, so the preview list feels the same as every other image list.
- * The tile clips the scale, so the grid geometry never changes. */
-.image-preview-thumb.button:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) img {
-  transform: scale(1.1);
 }
 .image-preview-load-more.button {
   flex: none;
@@ -351,12 +344,8 @@
   font-size: 11px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .image-preview-image,
-  .image-preview-thumb img {
+  .image-preview-image {
     transition: none;
-  }
-  .image-preview-thumb.button:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) img {
-    transform: none;
   }
 }
 @media (max-width: 1279px) {

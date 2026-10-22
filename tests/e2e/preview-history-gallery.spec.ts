@@ -116,6 +116,12 @@ test("result preview browses successful history images, highlights the entry and
   expect(appearance.radius).toBe(appearance.outerRadius);
   expect(appearance.shadow).toBe(appearance.outerShadow);
   expect(appearance.inset).toBeGreaterThan(0);
+  // The preview rail shares the history rail's hover treatment. That rail sits
+  // behind this modal, so it is covered by a dedicated test just below.
+  const previewThumb = rail.locator(".image-preview-thumb").first();
+  await expect(previewThumb.locator("img")).toHaveCSS("transform", "none");
+  await previewThumb.hover();
+  await expect(previewThumb.locator("img")).toHaveCSS("transform", "matrix(1.1, 0, 0, 1.1, 0, 0)");
   await expect(viewer.locator(".generation-output-thumbnail")).toHaveCSS("border-radius", "6px");
   await rail.hover();
   await page.mouse.wheel(0, 2000);
@@ -128,4 +134,57 @@ test("result preview browses successful history images, highlights the entry and
     "历史图片 22",
   );
   await expect(viewer.locator(".image-preview-bar-id")).toContainText("P00000021");
+});
+
+test("history rail thumbnails zoom on hover and keep a stable tile", async ({ page }) => {
+  await mockImageApi(page);
+  const outputId = crypto.randomUUID();
+  const job = {
+    id: crypto.randomUUID(),
+    public_id: "W10000001",
+    organization_id: crypto.randomUUID(),
+    user_id: crypto.randomUUID(),
+    model: "gpt-image-2",
+    prompt: "历史缩略图 hover",
+    resolution: "1K",
+    aspect_ratio: "1:1",
+    requested_count: 1,
+    status: "succeeded",
+    created_at: "2026-10-21T01:00:00.000Z",
+    completed_at: "2026-10-21T01:01:00.000Z",
+    items: [
+      {
+        id: crypto.randomUUID(),
+        position: 0,
+        status: "succeeded",
+        output_asset_id: outputId,
+        output_public_id: "P10000001",
+        error_code: null,
+        width: 512,
+        height: 512,
+        worker_id: "fixture",
+      },
+    ],
+  };
+  await page.route("**/api/v1/image-tasks*", (route) =>
+    route.fulfill({ json: apiFixture({ data: [job] }) }),
+  );
+  await page.route("**/api/v1/image-assets/**/content*", (route) =>
+    route.fulfill({ contentType: "image/svg+xml", body: svg }),
+  );
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/create");
+  const thumb = page.locator(".history-rail .history-thumbnail").first();
+  const image = thumb.locator("img");
+  const before = await thumb.boundingBox();
+  await expect(image).toHaveCSS("transform", "none");
+  await thumb.hover();
+  await expect(image).toHaveCSS("transform", "matrix(1.1, 0, 0, 1.1, 0, 0)");
+  // Only the picture scales; the tile keeps its slot so the rail never shifts.
+  expect(await thumb.boundingBox()).toEqual(before);
+  // Keyboard focus gets the same feedback.
+  await page.mouse.move(0, 0);
+  await expect(image).toHaveCSS("transform", "none");
+  await thumb.focus();
+  await expect(image).toHaveCSS("transform", "matrix(1.1, 0, 0, 1.1, 0, 0)");
 });
