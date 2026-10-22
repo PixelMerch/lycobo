@@ -41,7 +41,7 @@ export function ConfirmDialog({
           <Modal.Dialog className="confirm-dialog" data-tone={tone}>
             <Modal.Header>
               <Modal.Heading>{title}</Modal.Heading>
-              <DialogClose label={closeLabel} iconSize="default" />
+              <DialogClose label={closeLabel} />
             </Modal.Header>
             <Modal.Body>
               <div className="confirm-dialog__content">{content}</div>
