@@ -82,20 +82,6 @@ test("text generation requires a prompt and an available model", async ({ page }
   await expect(page.getByRole("radio", { name: "2K", exact: true })).toBeEnabled();
 });
 
-test("case reuse requires confirmation before replacing an existing draft", async ({ page }) => {
-  await page.goto("/create");
-  await page.getByLabel("提示词", { exact: true }).fill("重要草稿");
-  await page.getByRole("link", { name: "首页", exact: true }).first().click();
-  await page.getByRole("button", { name: "查看案例：家居家纺 · 卧室场景" }).click();
-  const dialog = page.getByRole("dialog", { name: "家居家纺 · 卧室场景", exact: true });
-  await dialog.getByRole("button", { name: "用这个提示词创作" }).click();
-  await expect(dialog.getByRole("alert")).toContainText("已有草稿");
-  await dialog.getByRole("button", { name: "保留草稿" }).click();
-  await dialog.press("Escape");
-  await page.getByRole("button", { name: "开始创作", exact: true }).click();
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("重要草稿");
-});
-
 for (const width of [320, 390, 768, 1024, 1440]) {
   test(`responsive pages, model chooser and login stay reachable at ${width}px`, async ({
     page,

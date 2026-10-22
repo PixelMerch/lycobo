@@ -49,49 +49,17 @@ test("home composer shares prompt and real reference drafts without submitting g
   expect(submissions).toBe(0);
 });
 
-test("case filters combine, empty results recover and reuse preserves references", async ({
-  page,
-}) => {
-  await mockImageApi(page);
-  await page.goto("/");
-  await expect(page.locator(".commerce-case")).toHaveCount(4);
-  await page.getByRole("radio", { name: "商品主图", exact: true }).click();
-  await expect(page.locator(".commerce-case")).toHaveCount(1);
-  await page.getByRole("button", { name: /商品品类/ }).click();
-  await page.getByRole("option", { name: "美妆个护", exact: true }).click();
-  await expect(page.getByRole("status").filter({ hasText: "还没有案例" })).toBeVisible();
-  await page.getByRole("button", { name: "查看全部", exact: true }).click();
-  await expect(page.locator(".commerce-case")).toHaveCount(4);
-  await page.getByRole("textbox", { name: "创作需求" }).fill("已有草稿");
-  await page.getByRole("button", { name: "做同款：床品 · 自然光场景" }).click();
-  const dialog = page.getByRole("dialog", { name: "床品 · 自然光场景" });
-  await dialog.getByRole("button", { name: "用这个提示词创作" }).click();
-  await expect(dialog.getByRole("alert")).toContainText("已有草稿");
-  await dialog.getByRole("button", { name: "保留草稿" }).click();
-  await dialog.press("Escape");
-  await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("已有草稿");
-  await page.getByRole("button", { name: "做同款：床品 · 自然光场景" }).click();
-  await dialog.getByRole("button", { name: "用这个提示词创作" }).click();
-  await dialog.getByRole("button", { name: "替换并进入" }).click();
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(/保留参考床品的颜色/);
-  await expect(page.locator(".reference-tile")).toHaveCount(0);
-});
-
 for (const width of [320, 390, 768, 1440, 1920]) {
   test(`home remains operable at ${width}px without horizontal overflow`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "电商案例", exact: true })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "创作需求" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "创作用途" })).toBeVisible();
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
     if (width === 390 || width === 1920)
       await page.screenshot({ path: `/tmp/lycobo-home-${width}.png`, fullPage: true });
-    await page.getByRole("button", { name: "查看案例：床品 · 自然光场景" }).click();
-    const dialog = page.getByRole("dialog", { name: "床品 · 自然光场景" });
-    await expect(dialog).toBeVisible();
-    await dialog.press("Escape");
-    await expect(page.getByRole("button", { name: "查看案例：床品 · 自然光场景" })).toBeFocused();
   });
 }
 

@@ -4,9 +4,9 @@
 
 ## 页面与输入
 
-首页提供共享草稿的创作输入、快捷用途、电商案例与使用指南。案例支持用途和品类筛选，复用只带入提示词，覆盖前确认并保留上传图片；开始创作只导航，不自动付费生成。首页不展示模拟最近作品。
+首页提供共享草稿的创作输入、快捷用途与使用指南；开始创作只导航，不自动付费生成。首页不展示案例网格、模拟最近作品或其他示例内容。
 
-首页当前使用bedroom、set、lavender样例图片，数据在commerce-cases.ts，创作输入在home-composer.tsx，布局在home.css。样例不代表客户商品、供应商调用结果或用户上传；来源见[素材说明](design/studio-photo-prompts.json)。旧版未挂载的showcase数据、配套CSS和六段MP4已经移除。
+首页创作输入在home-composer.tsx，布局在home.css。模型卡片与登录插画使用的bedroom、set、lavender图片仅作界面示例，不代表客户商品、供应商调用结果或用户上传；来源见[素材说明](design/studio-photo-prompts.json)。旧版未挂载的showcase数据、首页案例数据、配套CSS和六段MP4已经移除。
 
 ReferencePicker统一文件读取、格式和大小提示、最多5张限制、清除、删除后引用重编号与图片预览；首页和工作台共用。ReferenceImageCard只接收图片、编号、预览及删除回调，不依赖业务store。图片完整展示、编号常显，删除入口在桌面hover/focus和触屏保持可操作；点击图片通过共享ImageViewer浏览。
 
