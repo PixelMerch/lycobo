@@ -69,6 +69,17 @@ test("result preview browses successful history images, highlights the entry and
     new RegExp(target.items[0]?.output_asset_id ?? "missing"),
   );
   await expect(viewer.locator(".image-preview-facts")).toContainText(target.public_id);
+  // Arrow navigation works immediately after opening, before interacting with the rail.
+  await page.keyboard.press("ArrowRight");
+  await expect(viewer.locator(".image-preview-facts")).toContainText("W00000000");
+  await page.keyboard.press("ArrowLeft");
+  await expect(viewer.locator(".image-preview-facts")).toContainText(target.public_id);
+  const zoomThumb = viewer.getByRole("slider", { name: "缩放", exact: true });
+  await zoomThumb.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(viewer.locator(".image-preview-zoom-value")).toHaveText("110%");
+  await expect(viewer.locator(".image-preview-facts")).toContainText(target.public_id);
+
   await expect
     .poll(() =>
       selected.evaluate((node) => {

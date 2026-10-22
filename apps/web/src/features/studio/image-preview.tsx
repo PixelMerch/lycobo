@@ -5,6 +5,7 @@ import {
   lazy,
   type PointerEvent as ReactPointerEvent,
   Suspense,
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -13,12 +14,12 @@ import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
 import { useCenteredDialogMotion } from "../../components/use-centered-dialog-motion";
 import { copyToClipboard } from "../../lib/clipboard";
+import "./fullscreen-dialog.css";
 import { assetContentUrl, downloadAsset } from "./generation-client";
 import { ImagePreviewRail } from "./image-preview-rail";
+import "./image-preview.css";
 import { ReferenceThumbnails } from "./reference-thumbnails";
 import { useStudioStore } from "./studio-state";
-import "./fullscreen-dialog.css";
-import "./image-preview.css";
 
 const LocalRepair = lazy(() => import("./local-repair"));
 
@@ -103,10 +104,16 @@ export function ImagePreviewDialog({
   const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
   const [index, setIndex] = useState(Math.min(Math.max(initialIndex, 0), images.length - 1));
   const [zoom, setZoom] = useState(100);
+  const surface = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLElement>(null);
   const frame = useRef<HTMLDivElement>(null);
   const picture = useRef<HTMLImageElement>(null);
-  const dragOrigin = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
+  const dragOrigin = useRef<{
+    x: number;
+    y: number;
+    panX: number;
+    panY: number;
+  } | null>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const active = images[index];
@@ -116,12 +123,49 @@ export function ImagePreviewDialog({
   const toggleFavorite = useStudioStore((s) => s.toggleFavorite);
   // A new picture starts centred; reset the pan in the same batch as the
   // selection so the outgoing offset never reaches the next picture.
-  const select = (next: number | ((current: number) => number)) => {
+  const select = useCallback((next: number | ((current: number) => number)) => {
     setPan({ x: 0, y: 0 });
     setDragging(false);
     dragOrigin.current = null;
     setIndex(next);
-  };
+  }, []);
+  useEffect(() => {
+    const dialog = surface.current?.closest('[role="dialog"]');
+    if (!dialog) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const direction = {
+        ArrowLeft: -1,
+        ArrowUp: -1,
+        ArrowRight: 1,
+        ArrowDown: 1,
+      }[event.key];
+      const target = event.target;
+      if (
+        repair ||
+        !direction ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        !(target instanceof HTMLElement) ||
+        target.closest('[role="dialog"]') !== dialog ||
+        target.closest(
+          'input, textarea, select, [contenteditable="true"], [role="slider"], [role="textbox"], [role="combobox"], [role="spinbutton"]',
+        )
+      )
+        return;
+      event.preventDefault();
+      event.stopPropagation();
+      const next = (index + direction + images.length) % images.length;
+      select(next);
+      if (target.closest(".image-preview-rail")) {
+        dialog
+          .querySelectorAll<HTMLButtonElement>(".image-preview-thumb")
+          [next]?.focus({ preventScroll: true });
+      }
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, [index, images.length, repair, select]);
   // Shrinking the zoom can leave the old offset beyond the new overflow.
   useEffect(() => {
     const limits = panLimits(frame.current, picture.current, zoom / 100);
@@ -150,7 +194,12 @@ export function ImagePreviewDialog({
     if (!zoomed || event.button !== 0) return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
-    dragOrigin.current = { x: event.clientX, y: event.clientY, panX: pan.x, panY: pan.y };
+    dragOrigin.current = {
+      x: event.clientX,
+      y: event.clientY,
+      panX: pan.x,
+      panY: pan.y,
+    };
     setDragging(true);
   };
   const movePan = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -180,7 +229,12 @@ export function ImagePreviewDialog({
       <Modal.Backdrop className="fullscreen-dialog__backdrop image-preview-backdrop">
         <Modal.Container size="full" className="fullscreen-dialog__container">
           <Modal.Dialog className="image-preview-dialog" aria-label="图片预览">
-            <motion.div className="image-preview" data-dialog-phase={phase} {...surfaceMotion}>
+            <motion.div
+              ref={surface}
+              className="image-preview"
+              data-dialog-phase={phase}
+              {...surfaceMotion}
+            >
               {repair ? (
                 <Suspense fallback={<p>正在打开局部修复…</p>}>
                   <LocalRepair
@@ -227,7 +281,10 @@ export function ImagePreviewDialog({
                         src={assetContentUrl(active.id)}
                         alt={meta.prompt || "生成图片"}
                         draggable={false}
-                        style={{ scale: `${zoom / 100}`, translate: `${pan.x}px ${pan.y}px` }}
+                        style={{
+                          scale: `${zoom / 100}`,
+                          translate: `${pan.x}px ${pan.y}px`,
+                        }}
                         onLoad={() => {
                           const limits = panLimits(frame.current, picture.current, zoom / 100);
                           setPan((current) => clampPan(current, limits));
@@ -283,7 +340,7 @@ export function ImagePreviewDialog({
                     </header>
                     <div className="image-preview-facts">
                       <span className="image-preview-fact-label">
-                        ID：{meta.taskPublicId ?? "—"}
+                        任务ID：{meta.taskPublicId ?? "—"}
                       </span>
                       {meta.taskPublicId && (
                         <CopyIconButton
@@ -293,7 +350,9 @@ export function ImagePreviewDialog({
                       )}
                       {meta.createdAt && (
                         <time className="image-preview-time" dateTime={meta.createdAt}>
-                          {new Date(meta.createdAt).toLocaleString("zh-CN", { hour12: false })}
+                          {new Date(meta.createdAt).toLocaleString("zh-CN", {
+                            hour12: false,
+                          })}
                         </time>
                       )}
                     </div>
