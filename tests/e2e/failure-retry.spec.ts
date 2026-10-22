@@ -79,3 +79,54 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     await page.screenshot({ path: `/tmp/lycobo-failure-retry-${status}.png` });
   });
 }
+
+test("partial retry confirms only the cost of failed images", async ({ page }) => {
+  await mockImageApi(page);
+  const job = {
+    id: crypto.randomUUID(),
+    organization_id: crypto.randomUUID(),
+    user_id: crypto.randomUUID(),
+    model: "gpt-image-2",
+    prompt: "部分失败费用测试",
+    resolution: "1K",
+    aspect_ratio: "1:1",
+    requested_count: 3,
+    status: "partially_failed",
+    created_at: new Date().toISOString(),
+    completed_at: new Date().toISOString(),
+    input: {
+      model: "gpt-image-2",
+      prompt: "部分失败费用测试",
+      resolution: "1K",
+      aspectRatio: "1:1",
+      count: 3,
+      referenceAssetIds: [],
+    },
+    items: [0, 1, 2].map((position) => ({
+      id: crypto.randomUUID(),
+      position,
+      status: position === 0 ? "succeeded" : "failed",
+      output_asset_id: position === 0 ? crypto.randomUUID() : null,
+      worker_id: null,
+      error_code: position === 0 ? null : "PROVIDER_INVALID_IMAGE_RESPONSE",
+      width: position === 0 ? 1024 : null,
+      height: position === 0 ? 1024 : null,
+    })),
+  };
+  await page.route("**/api/v1/image-tasks*", (route) =>
+    route.fulfill({ json: apiFixture({ data: [job] }) }),
+  );
+  await page.route("**/api/v1/image-assets/**/content*", (route) =>
+    route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>',
+    }),
+  );
+  await page.goto("/create");
+  await page.getByRole("button", { name: "重新生成", exact: true }).click();
+  await expect(
+    page
+      .getByRole("dialog", { name: "重新生成这张图片？", exact: true })
+      .locator(".confirm-dialog__content"),
+  ).toHaveText("本次消耗 40 积分");
+});

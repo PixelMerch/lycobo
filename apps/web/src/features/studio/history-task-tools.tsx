@@ -134,6 +134,14 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
         model.enabledResolutions.some((resolution) => resolution === job.resolution),
     ) &&
     (!job.input?.referenceAssetIds.length || models.data.editsEnabled);
+  const retrying = ["failed", "partially_failed", "needs_reconciliation"].includes(job.status);
+  const count = retrying
+    ? Math.max(
+        1,
+        job.items.filter((item) => ["failed", "needs_reconciliation"].includes(item.status)).length,
+      )
+    : job.requested_count;
+  const regenerateContent = `本次消耗 ${count * imageUnitCredits} 积分`;
   const restore = ({ model, draft }: Awaited<ReturnType<typeof taskDraft>>) => {
     useStudioStore.getState().updateDraft(model, draft);
     useStudioStore.getState().setActiveModel(model);
@@ -213,11 +221,7 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
       <ConfirmDialog
         isOpen={regenerateOpen}
         title="重新生成这张图片？"
-        content={
-          ["failed", "partially_failed", "needs_reconciliation"].includes(job.status)
-            ? `${imageUnitCredits} 积分`
-            : `将使用相同的提示词、参考图和参数新建任务，提交时扣除 ${job.requested_count * imageUnitCredits} 币，失败按张退回。`
-        }
+        content={regenerateContent}
         closeLabel="关闭重新生成确认"
         onCancel={() => setRegenerateOpen(false)}
         onConfirm={() => {

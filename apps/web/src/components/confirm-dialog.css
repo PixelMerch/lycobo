@@ -15,34 +15,37 @@
 .confirm-dialog {
   width: min(480px, calc(100vw - 32px));
   padding: 0;
+  /* A black panel stands apart from the neutral-grey blurred page behind it. */
   border: 0;
   border-radius: 18px;
   background: #000;
   box-shadow: 0 24px 64px #00000080;
-  color: #eee;
+  color: #fff;
 }
 .confirm-dialog .modal__header {
-  padding: 18px 18px 6px;
+  padding: 20px 56px 8px 20px;
 }
 .confirm-dialog .modal__heading {
-  color: #eee;
+  color: #fff;
   font-size: 16px;
   line-height: 24px;
-  font-weight: 500;
+  font-weight: 600;
 }
 .confirm-dialog .modal__body {
+  margin: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) max-content;
   column-gap: 10px;
-  padding: 0 18px 18px;
+  padding: 0 20px 20px;
 }
 .confirm-dialog__content {
   grid-column: 1;
   min-width: 0;
   overflow-wrap: anywhere;
-  color: #a8a8a8;
-  font-size: 13px;
-  line-height: 20px;
+  color: #b8b8c0;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 400;
 }
 .confirm-dialog__content p {
   margin: 0;
@@ -52,7 +55,7 @@
   display: grid;
   grid-template-columns: subgrid;
   gap: 10px;
-  margin-top: 24px;
+  margin-top: 20px;
 }
 .confirm-dialog__cancel.button {
   justify-self: end;
@@ -69,13 +72,15 @@
   font-weight: 500;
   box-shadow: none;
 }
+/* Cancel is a plain white text action, as in the reference dialog; only hover
+ * and focus add a faint fill so it stays obviously clickable. */
 .confirm-dialog__cancel.button {
-  background: #2a2a2a;
-  color: #cfcfcf;
+  background: transparent;
+  color: #b8b8c0;
 }
 .confirm-dialog__cancel.button:is(:hover, [data-hovered="true"]) {
-  background: #343434;
-  color: #eee;
+  background: #ffffff1f;
+  color: #fff;
 }
 .confirm-dialog__confirm.button {
   background: #8b5cf6;
@@ -99,29 +104,32 @@
   width: 44px;
   height: 44px;
   padding: 0;
+  /* The close action is a round hit target, so its hover fill reads as a disc
+   * instead of a rounded square. Its glyph stays white like the full-screen
+   * dialogs so it never looks disabled. */
   border: 0;
-  border-radius: 8px;
+  border-radius: 50%;
   background: transparent;
-  color: #a8a8a8;
+  color: #a8a8b0;
   box-shadow: none;
 }
 .confirm-dialog
   .modal__close-trigger:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
-  background: #2a2a2a;
-  color: #eee;
+  background: #ffffff1f;
+  color: #fff;
 }
 @media (max-width: 767px) {
   .confirm-dialog {
     width: min(480px, calc(100vw - 24px));
   }
   .confirm-dialog .modal__header {
-    padding: 16px 16px 4px;
+    padding: 20px 56px 8px 20px;
   }
   .confirm-dialog .modal__body {
     display: grid;
     grid-template-columns: minmax(0, 1fr) max-content;
     column-gap: 10px;
-    padding: 0 16px 16px;
+    padding: 0 20px 20px;
   }
   .confirm-dialog__actions {
     margin-top: 20px;
