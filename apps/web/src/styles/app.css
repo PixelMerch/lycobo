@@ -157,24 +157,6 @@ small {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
-/* React Aria moves focus on hover and restores it after pointer clicks, and
- * Chromium reports those moves as :focus-visible. Keyboard focus is marked
- * with data-focus-visible, so pointer focus must never draw the purple ring. */
-:focus-visible[data-focused]:not([data-focus-visible="true"]) {
-  outline: none;
-}
-/* HeroUI overlay containers only take programmatic focus for assistive tech
- * and opt out of outlines themselves; this unlayered rule would otherwise
- * frame the whole dialog, popover or menu list in purple. */
-:focus-visible:is(
-  .modal__dialog,
-  .alert-dialog__dialog,
-  .drawer__dialog,
-  .popover__dialog,
-  [data-slot="dropdown-menu"]
-) {
-  outline: none;
-}
 .button,
 .toggle-button,
 .close-button,
