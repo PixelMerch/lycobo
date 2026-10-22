@@ -222,7 +222,7 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
         title="重新生成这张图片？"
         content={
           ["failed", "partially_failed", "needs_reconciliation"].includes(job.status)
-            ? `将在原任务中仅重试失败图片，保留任务 ID 和成功图片；每张 ${imageUnitCredits} 币，失败退回。结果仍待核对时暂不能重试。`
+            ? `仅重新生成失败的图片，已生成的图片会保留。每张 ${imageUnitCredits} 币，生成失败后自动退回。`
             : `将使用相同的提示词、参考图和参数新建任务，提交时扣除 ${job.requested_count * imageUnitCredits} 币，失败按张退回。`
         }
         closeLabel="关闭重新生成确认"
