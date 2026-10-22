@@ -105,7 +105,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
     viewer.getByRole("button", { name: "复制任务 ID W90000001", exact: true }),
   ).toBeVisible();
   await expect(viewer.locator(".image-preview")).toHaveCSS("transform", "none");
-  // The preview has a larger close control aligned with the first rail thumbnail.
+  // Full-screen overlays share the close geometry; the preview aligns its glyph with the image.
   const closeSizes = await page.evaluate(() => {
     const size = (selector: string) => {
       const rect = document.querySelector(selector)?.getBoundingClientRect();
@@ -113,7 +113,8 @@ test("library and history images open an in-page full-screen viewer", async ({ p
     };
     return { library: size(".library-close"), preview: size(".image-preview-close") };
   });
-  expect(closeSizes.library).toEqual({ width: 44, height: 44 });
+  expect(closeSizes.library).toEqual({ width: 52, height: 52 });
+  await expect(page.locator(".library-close svg")).toHaveCSS("width", "28px");
   expect(closeSizes.preview).toEqual({ width: 52, height: 52 });
   await expect(viewer.locator(".image-preview-close svg")).toHaveCSS("width", "28px");
   const topAlignment = await viewer.evaluate((dialog) => {

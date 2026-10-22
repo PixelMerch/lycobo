@@ -97,34 +97,6 @@
   justify-content: flex-end;
   translate: 0 -9px;
 }
-.modal__close-trigger.dialog-close.image-preview-close {
-  width: 52px;
-  min-width: 52px;
-  height: 52px;
-  min-height: 52px;
-  position: relative;
-}
-.modal__close-trigger.dialog-close.image-preview-close:is(
-  :hover,
-  [data-hovered="true"],
-  [data-focus-visible="true"]
-) {
-  background: transparent;
-}
-.image-preview-close::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 42px;
-  height: 42px;
-  border-radius: 999px;
-  background: transparent;
-  pointer-events: none;
-}
-.image-preview-close:is(:hover, [data-hovered="true"], [data-focus-visible="true"])::before {
-  background: #ffffff14;
-}
 /* The selected ring also identifies keyboard focus, without a second outer ring. */
 .image-preview-thumb.button[aria-current="true"]:is(:focus-visible, [data-focus-visible="true"]) {
   outline: none;
@@ -432,9 +404,6 @@
     top: 8px;
     right: 8px;
     z-index: 2;
-  }
-  .image-preview-close.button {
-    background: #000000a6;
   }
   .image-preview-head {
     padding-right: 0;

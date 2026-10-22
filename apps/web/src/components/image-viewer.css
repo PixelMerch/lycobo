@@ -142,11 +142,8 @@
 .browse-image-close {
   position: absolute;
   top: 0;
-  right: -76px;
+  right: -84px;
   cursor: auto;
-}
-.browse-image-close .dialog-close {
-  background: #00000066;
 }
 .browse-image-toolbar {
   position: relative;

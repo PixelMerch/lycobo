@@ -47,7 +47,7 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
           <Modal.Dialog className="library-dialog" aria-label="资产管理">
             <motion.div className="library-shell" data-dialog-phase={phase} {...surfaceMotion}>
               <Modal.Header className="library-header">
-                <DialogClose label="关闭资产管理" className="library-close" />
+                <DialogClose fullScreen label="关闭资产管理" className="library-close" />
                 <Modal.Heading>资产管理</Modal.Heading>
               </Modal.Header>
               <Modal.Body className="library-body">

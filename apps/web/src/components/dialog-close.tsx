@@ -10,18 +10,18 @@ import "./dialog-close.css";
 export function DialogClose({
   label,
   className,
-  iconSize = "action",
+  fullScreen = false,
 }: {
   label: string;
   className?: string;
-  iconSize?: "default" | "action" | "illustration";
+  fullScreen?: boolean;
 }) {
   return (
     <Modal.CloseTrigger
-      className={className ? `dialog-close ${className}` : "dialog-close"}
+      className={`dialog-close${fullScreen ? " dialog-close--fullscreen" : ""}${className ? ` ${className}` : ""}`}
       aria-label={label}
     >
-      <UiIcon icon={IconX} size={iconSize} />
+      <UiIcon icon={IconX} size={fullScreen ? "illustration" : "action"} />
     </Modal.CloseTrigger>
   );
 }

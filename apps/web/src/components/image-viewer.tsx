@@ -316,7 +316,7 @@ export function ImageViewer({
                     </>
                   )}
                   <div className="browse-image-close">
-                    <DialogClose label="关闭图片浏览" />
+                    <DialogClose fullScreen label="关闭图片浏览" />
                   </div>
                 </div>
               </section>

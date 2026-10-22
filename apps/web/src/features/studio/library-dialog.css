@@ -42,9 +42,9 @@
 /* Close sits on the left, next to the title, so the whole action area stays on
  * the same side as the filters below and lines up with the content padding. */
 .modal__close-trigger.library-close {
-  /* Pull the control out so the 22px glyph itself lines up with the content
+  /* Pull the control out so the 28px glyph itself lines up with the content
    * padding below instead of the button box. */
-  margin-inline-start: -11px;
+  margin-inline-start: -12px;
 }
 .library-dialog .library-header .modal__heading {
   color: #eee;

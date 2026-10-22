@@ -243,7 +243,7 @@ export function ImagePreviewDialog({
                       <DialogClose
                         label="关闭图片预览"
                         className="image-preview-close"
-                        iconSize="illustration"
+                        fullScreen
                       />
                     </div>
                     <header className="image-preview-head">

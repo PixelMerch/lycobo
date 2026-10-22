@@ -273,7 +273,7 @@ export default function LocalRepair({
       </section>
       <aside className="image-preview-info repair-info" aria-label="局部修复设置">
         <div className="image-preview-close-row">
-          <DialogClose label="关闭图片预览" className="image-preview-close" />
+          <DialogClose fullScreen label="关闭图片预览" className="image-preview-close" />
         </div>
         <header>
           <h2>局部修复</h2>
