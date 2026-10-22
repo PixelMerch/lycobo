@@ -78,6 +78,18 @@ test("result preview browses successful history images, highlights the entry and
   await zoomThumb.focus();
   await page.keyboard.press("ArrowRight");
   await expect(viewer.locator(".image-preview-zoom-value")).toHaveText("110%");
+  await viewer.locator(".image-preview-stage").hover();
+  await page.mouse.wheel(0, -1);
+  await expect
+    .poll(() =>
+      viewer
+        .locator(".image-preview-image")
+        .evaluate((image) => Number.parseFloat(getComputedStyle(image).scale)),
+    )
+    .toBeGreaterThan(1.1);
+  await expect(viewer.locator(".image-preview-zoom-value")).toHaveText("110%");
+  await page.mouse.wheel(0, -100);
+  await expect(viewer.locator(".image-preview-zoom-value")).toHaveText("121%");
   await expect(viewer.locator(".image-preview-facts")).toContainText(target.public_id);
 
   await expect

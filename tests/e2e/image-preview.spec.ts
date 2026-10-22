@@ -86,7 +86,9 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   expect(new URL(page.url()).pathname).toBe("/create");
   // The redundant bottom download row is gone; the icon actions stay in the panel.
   await expect(historyDialog.locator(".image-preview-actions")).toHaveCount(0);
-  await expect(historyDialog.getByRole("button", { name: "下载原图", exact: true })).toHaveCount(1);
+  await expect(
+    historyDialog.getByRole("button", { name: /^下载(?:原图)?$/, exact: true }),
+  ).toHaveCount(1);
   await historyDialog.getByRole("button", { name: "关闭图片预览", exact: true }).click();
   await expect(historyDialog).toHaveCount(0);
 

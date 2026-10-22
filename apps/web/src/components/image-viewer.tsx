@@ -11,6 +11,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import { useErrorToast } from "../lib/error-toast";
 import { DialogClose } from "./dialog-close";
+import { easedImageZoom, imageWheelFactor } from "./image-zoom-motion";
 import { UiIcon } from "./ui-icon";
 import { useCenteredDialogMotion } from "./use-centered-dialog-motion";
 import "./image-viewer.css";
@@ -48,7 +49,7 @@ export function ImageViewer({
   const [area, setArea] = useState<HTMLElement | null>(null);
   const dismissStart = useRef<{ id: number; x: number; y: number } | null>(null);
   const drag = useRef<{ pointer: Point; pan: Point } | null>(null);
-  const wheelZoom = useRef<(delta: number) => void>(() => {});
+  const wheelZoom = useRef<(delta: number, ctrlKey?: boolean) => void>(() => {});
   const ready = loadedSrc === active?.src && viewport.width > 1 && viewport.height > 1;
   const turned = Math.abs(angle % 180) === 90;
   const visualWidth = turned ? natural.height : natural.width;
@@ -75,10 +76,7 @@ export function ImageViewer({
       last = now;
       const goal = zoomGoal.current;
       const current = zoomValue.current;
-      const next =
-        Math.abs(goal - current) < 0.3
-          ? goal
-          : current + (goal - current) * (1 - Math.exp(-elapsed / 70));
+      const next = easedImageZoom(current, goal, elapsed);
       zoomValue.current = next;
       setZoom(next);
       zoomFrame.current = next === goal ? null : requestAnimationFrame(step);
@@ -97,7 +95,7 @@ export function ImageViewer({
   };
   const zoomBy = (factor: number) => zoomTo(zoomGoal.current * factor);
   wheelZoom.current = ready
-    ? (delta) => zoomBy(Math.exp(-delta * (Math.log(1.1) / 100)))
+    ? (delta, ctrlKey) => zoomBy(imageWheelFactor(delta, ctrlKey))
     : () => {};
   useEffect(
     () => () => {
@@ -125,8 +123,7 @@ export function ImageViewer({
     resize.observe(element);
     const wheel = (event: WheelEvent) => {
       event.preventDefault();
-      const delta = Math.max(-150, Math.min(150, event.deltaY)) * (event.ctrlKey ? 4 : 1);
-      wheelZoom.current(delta);
+      wheelZoom.current(event.deltaY, event.ctrlKey);
     };
     element.addEventListener("wheel", wheel, { passive: false });
     return () => {

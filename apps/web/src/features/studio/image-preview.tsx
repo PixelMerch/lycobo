@@ -20,6 +20,7 @@ import { ImagePreviewRail } from "./image-preview-rail";
 import "./image-preview.css";
 import { ReferenceThumbnails } from "./reference-thumbnails";
 import { useStudioStore } from "./studio-state";
+import { usePreviewZoom } from "./use-preview-zoom";
 
 const LocalRepair = lazy(() => import("./local-repair"));
 
@@ -103,7 +104,7 @@ export function ImagePreviewDialog({
   const [repair, setRepair] = useState(false);
   const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
   const [index, setIndex] = useState(Math.min(Math.max(initialIndex, 0), images.length - 1));
-  const [zoom, setZoom] = useState(100);
+  const { zoom, setZoom, wheelZoom } = usePreviewZoom();
   const surface = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLElement>(null);
   const frame = useRef<HTMLDivElement>(null);
@@ -180,11 +181,11 @@ export function ImagePreviewDialog({
     if (repair || !area) return;
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
-      setZoom((current) => Math.min(500, Math.max(100, current + (event.deltaY < 0 ? 10 : -10))));
+      wheelZoom(event.deltaY, event.ctrlKey);
     };
     area.addEventListener("wheel", onWheel, { passive: false });
     return () => area.removeEventListener("wheel", onWheel);
-  }, [repair]);
+  }, [repair, wheelZoom]);
   if (!active) return null;
   const label = active.publicId ?? active.id.slice(0, 8);
   const size = active.width && active.height ? `${active.width} x ${active.height}` : "尺寸待同步";
@@ -401,7 +402,7 @@ export function ImagePreviewDialog({
                         <Slider.Thumb />
                       </Slider.Track>
                     </Slider>
-                    <span className="image-preview-zoom-value">{zoom}%</span>
+                    <span className="image-preview-zoom-value">{Math.round(zoom)}%</span>
                   </footer>
                 </>
               )}
