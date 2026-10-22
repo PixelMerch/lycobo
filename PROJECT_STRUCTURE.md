@@ -12,7 +12,7 @@
 | apps/api/src | Hono 入口、应用工厂、配置与组织隔离的生图 feature API |
 | apps/worker/src | 队列消费者、生命周期与任务执行 |
 | packages/contracts | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖 |
-| packages/db | PostgreSQL pool、Drizzle schema、迁移、持久化图片事件及 LISTEN/NOTIFY |
+| packages/db | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY |
 | packages/queue | 队列名、payload、连接配置 |
 | packages/generation | 服务商契约、Vakv 同步生图适配与能力校验（真实渠道待验收） |
 | packages/storage | 对象存储契约与私有本地图片存储/校验；签名对象存储待接入 |
@@ -31,7 +31,7 @@ apps/web/src/
 └── features/
     ├── auth/                     # 身份请求与登录弹窗
     ├── account/                  # Header账户菜单、账户中心、钱包请求和账务展示
-    ├── home/                     # 首页、首页输入、案例及案例数据
+    ├── home/                     # 首页、共享创作输入与提示辅助
     ├── assets/                   # 素材页、全屏素材库及其局部样式
     ├── generation/               # 生图请求、事件、会话草稿及工作台页面
     │   ├── composer/             # 比例选择、参数选中背景
@@ -45,10 +45,10 @@ apps/web/src/
 - 先按业务功能归类，功能内部就近存放组件、hook、样式与单元测试；只有存在明确子职责时再增加目录，不为每个组件建立一层文件夹。
 - 保留描述性文件名和直接导入，不新增 `index.ts` 聚合出口，也不建立覆盖所有功能的 components/hooks/services 分类目录。浏览器端到端测试仍在根目录 `tests/e2e`。
 - `app/studio-shell.tsx` 组合导航、登录、账户和生图事件；路由页面留在各 feature。首页、工作台和素材页继续由路由懒加载，`image-workspace/preview-workspace.tsx` 及 Konva 继续按预览需要加载。
-- `generation/generation-client.ts` 维护现有生图、历史和素材 API 查询与缓存，被历史、素材库和编辑工作区直接引用；本次目录整理不拆分请求、改变 query key 或增加请求层。
+- `generation/generation-client.ts` 维护现有生图、历史和素材 API 查询与缓存，被历史、素材库和编辑工作区直接引用；目录维护不改变 query key 或增加请求层。
 - `generation/studio-state.ts` 保留原有客户端草稿、跨页面交互状态及样例定义，现有引用直接指向它；目录归类不把样例转换成持久服务，也不改变状态生命周期。
 - `image-workspace/local-edit` 负责编辑交互，调用生图请求；预览壳组合画布与编辑面板。底层请求不反向依赖页面。类型依赖继续使用 `import type`，不为目录入口建立运行时循环。
-- `styles/fullscreen-dialog.css` 是图片详情与素材库共用的全屏动效；各功能 CSS 随对应组件导入。文件迁移保持 DOM、class、样式内容、文案及交互逻辑不变。
+- `styles/fullscreen-dialog.css` 是图片详情与素材库共用的全屏动效；各功能 CSS 随对应组件导入。目录维护保持 DOM、class、样式内容、文案及交互逻辑不变。
 
 ## 依赖方向
 
@@ -88,7 +88,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 - apps/worker/src/image-worker.ts / image-processor.ts：独立生图队列、投递器、并发执行与租约处理。
 - packages/storage/src/image-store.ts：服务端图片解码、去元数据、私有 PNG 文件与实际尺寸/哈希。
 
-接口、本地工作台接入及正式登录等尚未完成的生产能力边界见 [生图 API 文档](docs/image-generation-api.md)。
+接口、工作台和登录的实现范围，以及供应商、存储等外部验收边界见 [生图 API 文档](docs/image-generation-api.md)。
 
 实时任务通知入口为 apps/api/src/features/images/events.ts；apps/web/src/features/generation/use-image-events.ts 在应用壳维护共享 SSE 连接与 Query 缓存更新。事件日志和业务状态事务提交，独立于 Redis 生图执行队列；具体协议见 docs/image-generation-api.md。
 
@@ -102,7 +102,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 - `HistoryTaskMeta`：模型、时间、任务编号复制和输出参数。
 - `components/image-zoom-motion`：详情和参考图浏览共用滚轮灵敏度、输入限幅及缓动公式；`usePreviewZoom` 管理详情缩放目标、动画帧和滑块直接操作。
 - `ResultImage`：生成图预览入口、下载和收藏；`generation-status`共用阶段标签和图标。
-- `HistoryIndex`：右侧历史定位、选中滚动与资产管理入口。
+- `HistoryIndex`：右侧历史定位、选中滚动与我的素材入口。
 - `ReferencePicker` / `ReferenceImageCard` / `ReferencePrompt`：共享上传、缩略图、图片引用。
 - `components/ImageViewer`：参考图浏览；`ImagePreviewDialog`：生成图详情壳、跨图切换和关闭。
 - `PreviewWorkspace`：懒加载的统一图片视口、缩放平移和模式切换；`PreviewCanvasToolbar`：官方工具栏组合；`ImagePreviewDetails`：原图信息栏；`LocalRepairPanel`：简化修改面板与提交状态；`RepairRegionCard`：编号选区的说明输入和删除，不暴露坐标表单。
@@ -111,13 +111,14 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 功能组件使用直接依赖；服务端缓存属于TanStack Query，临时草稿与交互属于Zustand，纯展示组件从props获得数据。具体规则见[UI一致性维护](docs/ui-consistency.md)。
 
-- `features/account/HeaderAccountMenu` 封装Header登录态、积分与头像合并入口、账户下拉菜单及账户弹窗；`StudioShell` 仅组合入口，不重复持有账号查询和菜单状态。个人作品复用素材库路由，账户资料／账单／账号权限由 `AccountPanel` 承接。
+- `features/account/HeaderAccountMenu` 封装Header登录态、积分与头像合并入口、账户下拉菜单及账户弹窗；`StudioShell` 仅组合入口，不重复持有账号查询和菜单状态。个人作品复用素材库路由，账户资料、订阅与账单、账号管理由 `AccountPanel` 承接。
+- 账户中心由 `features/account/account-panel.tsx` 组合：`AccountManagement` 封装绑定／重置密码的可用状态与表单，`WalletPanel` 封装真实共享余额、收支筛选和充值订单，`account-panel.css` 维护与个人信息一致的深色表面及中性灰输入焦点。未接入的账号绑定、验证码和支付不会模拟成功。
 
 ## 数据库领域命名
 
 通用素材实体使用 `media_assets`（Drizzle `mediaAssets`），生成任务及其执行、投递、重试、事件、令牌和任务账本统一使用 `generation_*`；图片选区编辑扩展保留 `image_local_edits`。
 表职责、已完成的旧视图移除与后续媒体扩展边界见 [数据库命名](docs/database-naming.md)。
 
-账户中心由 `features/account/account-panel.tsx` 组合：`AccountManagement` 封装绑定／重置密码的可用状态与表单，`WalletPanel` 封装真实共享余额、收支筛选和充值订单，`account-panel.css` 维护与个人信息一致的深色表面及中性灰输入焦点。未接入的账号绑定、验证码和支付不会模拟成功。
+## 发布工具
 
 版本发布由 `.github/workflows/release.yml` 显式触发，`scripts/release-notes.mjs` 生成提交分类、作者／提交人及文件改动清单。版本只发布已通过 main CI 的提交；发布日志与操作边界见 [发布说明](docs/releasing.md)。

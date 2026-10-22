@@ -7,7 +7,7 @@
 | 层次 | 职责 | 当前入口 |
 | --- | --- | --- |
 | 应用与页面 | 路由、布局、场景组合，不复制底层交互 | router、StudioShell、HomePage、WorkspacePage、AssetsPage |
-| 功能组件 | 拥有一个完整功能及其局部交互 | ReferencePicker、HistoryTaskActions、LocalRepair、LibraryDialog |
+| 功能组件 | 拥有一个完整功能及其局部交互 | ReferencePicker、HistoryTaskActions、LocalRepairPanel、AccountManagement、WalletPanel、LibraryDialog |
 | 展示组件 | 明确输入和事件，不自行请求无关业务 | HistoryTaskMeta、ResultImage、ModelChooserCard |
 | 共享交互组合 | 组合 HeroUI，统一可复用的完整行为 | ConfirmDialog、DialogClose、ImageViewer、ReferencePrompt |
 | 状态与同步 | 服务端数据用 TanStack Query，客户端草稿用 Zustand；hook只同步外部系统 | generation-client、wallet-client、studio-state、use-image-events |
@@ -19,19 +19,20 @@
 
 | 能力 | 唯一入口 | 维护约束 |
 | --- | --- | --- |
-| Header账户 | HeaderAccountMenu | 积分与头像共用入口，封装登录／悬停账户菜单／单一深色账户中心；应用壳不复制状态和查询 |
+| Header 账户 | HeaderAccountMenu | 积分与头像共用入口，封装登录／悬停账户菜单／单一深色账户中心；应用壳不复制状态和查询 |
+| 账户内容 | AccountPanel → AccountManagement / WalletPanel | 单一 Modal 内切换；真实账号与账单来自查询客户端，未接入的绑定／重置／支付不模拟成功 |
 | 确认 | ConfirmDialog | 不在业务中复制 Modal 标记；正文与操作布局共用 |
-| 关闭 | DialogClose | 图标与命中区分开，确认弹窗沿用33px hover圆底 |
+| 关闭 | DialogClose | 图标与命中区分开，普通确认和全屏规格只引用 DESIGN，不在业务组件重复定尺寸 |
 | 参考图片上传 | ReferencePicker → ReferenceImageCard | 首页与工作台共用；删除、编号、预览不复制 |
 | 图片引用 | ReferencePrompt | 文本序列化、@候选、行内图片展示共用 |
 | 参考图片浏览 | ImageViewer | 历史、详情、上传入口按需加载同一组件 |
 | 生成图片操作 | ResultImage | 预览、下载、收藏、焦点入口由同一组件承担 |
 | 任务元信息 | HistoryTaskMeta | 标签、时间、比例、任务ID复制一致 |
 | 历史索引 | HistoryIndex | 定位与滚动同步；“我的素材”标题固定、列表独立滚动；不承担重试或草稿覆盖 |
-| 生成提交按钮 | HeroUI Button + styles/app.css 的 .generation-submit | 工作台与局部修改共用44px高、12px圆角、渐变、字号与积分间距；不创建按钮包装组件 |
+| 生成提交按钮 | HeroUI Button + styles/app.css 的 .generation-submit | 工作台与局部修改高度、圆角、渐变、字级与积分间距统一引用 DESIGN；不创建按钮包装组件 |
 | 生成阶段 | generation-status | 中文状态与生成图标共用，不从颜色推断状态 |
 | 全屏开关动画 | components/use-centered-dialog-motion | 关闭动画结束后卸载；不复制 hook |
-| 请求错误 | useErrorToast | 去重、统一顶部反馈；字段校验继续用FieldError/Alert |
+| 请求错误 | useErrorToast | 去重、统一顶部反馈；字段校验继续用 FieldError／ErrorMessage |
 
 纯展示组件不增加另一份服务端状态；在父级派生数据，通过props传递。Zustand订阅选择所需字段，不用effect维持可在render计算的冗余状态。支付、鉴权、计费和任务快照不属于视觉重构范围。
 
@@ -58,10 +59,22 @@ pnpm lint运行`scripts/check-ui-conventions.mjs`，以TypeScript AST识别组�
 
 静态检查不能证明视觉一致、所有样式无引用或业务正确；必须结合浏览器和行为测试。不得通过ignore、移动目录、改名或删guard绕过规则。不为纯视觉数值编写镜像实现的测试；业务与可访问性回归用稳定的用户操作断言。
 
-## 本轮审查记录
+## 一致性审查清单
 
-- 合并DESIGN中重复、互相覆盖的模型卡片、Header、上传编号、历史重试、弹窗规则；当前UI固定，不更换主题或尺寸。
-- GenerationHistory保留历史查询与预览编排；抽出HistoryTaskMeta、ResultImage、HistoryIndex和共享状态，移除原重复定义。
-- 预览与我的素材直接复用共享中心开关hook，移除仅转发导出的文件。
-- 移除无调用方的旧showcase数据、专属样式和六段未挂载视频；保留仍在用的样例图片、模型封面、设计证据与用户本地文件。
-- 运行结果与局限以本次交付记录为准，本文不保留易过期的通过数量或旧版尺寸对比表。
+| 审查面 | 应检查的现状 | 不应通过“统一”引入的变化 |
+| --- | --- | --- |
+| 视觉 | 同类控件使用同一 token、字级、间距和状态；具名例外有明确范围 | 扩散登录浅色、账户焦点或参考站配色 |
+| 组件 | 页面组合完整功能组件，通用交互通过 HeroUI 和既有共享入口复用 | 第二套按钮、弹窗、焦点陷阱或无意义包装层 |
+| 内容 | 简体中文；任务 ID 与图片 ID 分开；素材来源与媒体类型分开 | 改名后误称视频／音频已经可生成 |
+| 状态 | 区分加载、失败、空态、禁用与成功；错误去重 | 内存成功、虚构余额、验证码倒计时或退款承诺 |
+| 草稿 | 页面、模型、历史与预览的切换遵守已有草稿和定位行为 | 后台完成自动跳页、样式重构顺便清空输入 |
+| 可访问性 | 键盘焦点可见、图标有名称、关闭后恢复焦点、减少动态效果生效 | 把“无主题色边框”改成所有控件都没有焦点提示 |
+| 响应式 | 主要操作可达，弹窗不超出视口，只有具名容器内部滚动 | 用缩小字体或隐藏内容掩盖溢出 |
+
+## 文档与交付
+
+- 产品术语与范围更新 PRD；视觉参数更新 DESIGN；组件能力更新组件清单；职责与路径更新 PROJECT_STRUCTURE。
+- 实施文档记录当前数据来源、能力和限制，不复制颜色、尺寸表；设计研究保留证据，不充当现行规范。
+- 删除文件或素材时同步更新索引和引用，不把用户本地文件当作废弃资源。
+- 交付记录说明改动、执行的检查和未验证边界，不在规范中累计日期覆盖条款、过期截图或测试通过数量。
+- 纯文档整理检查链接、术语、代码依据和 `git diff --check`；只有改变代码／UI 时才按仓库要求运行相应工程和浏览器检查，不把文档修正称为页面已改版。
