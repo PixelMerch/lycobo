@@ -229,8 +229,8 @@
   min-width: 0;
   padding: 0 30px;
   color: #8f8f8f;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: 14px;
+  line-height: 20px;
 }
 .image-preview-bar-id {
   min-width: 0;
@@ -243,8 +243,7 @@
   color: #cfcfcf;
   white-space: nowrap;
 }
-/* Official HeroUI Slider, themed: a 6px track whose fill and thumb are both the
- * brand purple, with no border or dark ring around the thumb. */
+/* Official HeroUI Slider: thin white progress and a rounded rectangular handle. */
 .image-preview-zoom {
   width: 220px;
   flex: none;
@@ -255,7 +254,7 @@
   gap: 0;
 }
 .image-preview-zoom .slider__track {
-  height: 6px;
+  height: 5.4px;
   border: 0;
   border-radius: 999px;
   background: #3a3a42;
@@ -264,14 +263,14 @@
 .image-preview-zoom .slider__fill {
   height: 100%;
   border-radius: 999px;
-  background: var(--accent);
+  background: #fff;
 }
 .image-preview-zoom .slider__thumb {
-  width: 16px;
-  height: 16px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--accent);
+  width: 14px;
+  height: 18px;
+  border: 1.5px solid #fff;
+  border-radius: 6px;
+  background: #0b0b0e;
   box-shadow: none;
   transition: transform 140ms ease;
 }
@@ -287,7 +286,7 @@
   outline-offset: 2px;
 }
 .image-preview-zoom-value {
-  width: 40px;
+  width: 48px;
   color: #cfcfcf;
   text-align: right;
 }
