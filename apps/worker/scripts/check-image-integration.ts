@@ -351,31 +351,6 @@ try {
     (error: unknown) =>
       error instanceof Error && error.message.includes("media_assets_media_type_check"),
   );
-  // Old API/Worker releases must still read and insert through the legacy name.
-  const relations = await sql`select relname,relkind from pg_class
-    where oid in ('public.media_assets'::regclass,'public.image_assets'::regclass)`;
-  assert.equal(relations.find((row) => row.relname === "media_assets")?.relkind, "r");
-  assert.equal(relations.find((row) => row.relname === "image_assets")?.relkind, "v");
-  await sql.begin(async (tx) => {
-    const [legacyRead] = await tx`select id,public_id,media_type from image_assets
-      where id=${persistedAssetId} and organization_id=${first.organizationId}`;
-    assert.equal(legacyRead?.public_id, output?.output_public_id);
-    const [legacyWrite] = await tx`insert into image_assets
-      (organization_id,user_id,kind,object_key,mime_type,width,height,bytes,sha256)
-      select organization_id,user_id,'reference',${`compat/${crypto.randomUUID()}`},
-        mime_type,width,height,bytes,sha256 from media_assets where id=${persistedAssetId}
-      returning id,public_id,display_number,media_type`;
-    assert.ok(legacyWrite?.id);
-    assert.match(legacyWrite.public_id, /^P[0-9A-Z]{8}$/);
-    assert.ok(legacyWrite.display_number);
-    assert.equal(legacyWrite.media_type, "image");
-    const [stored] = await tx`select public_id from media_assets where id=${legacyWrite.id}`;
-    assert.equal(stored?.public_id, legacyWrite.public_id);
-    await tx`delete from image_assets where id=${legacyWrite.id}`;
-    const [removed] =
-      await tx`select count(*)::int as count from media_assets where id=${legacyWrite.id}`;
-    assert.equal(removed?.count, 0);
-  });
   const firstOutputPage = await readAssets("limit=1&kind=output");
   assert.deepEqual(firstOutputPage, outputs.slice(0, 1));
   const nextOutputPage = await readAssets(`limit=1&kind=output&before=${outputs[0]?.id}`);

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict C5w6iMFzgXUZ1NVv0C1abTSQeJtk8bsBCofjC6RY5NSagOfJoFovuyrfYkuf4yM
+\restrict Q9TMNCubRr5NxW5zfJC8twSXiii2Ze4PgDdGIJ6xGL1wHsMaYf2O6eLlVjS0GUP
 
 -- Dumped from database version 17.11
 -- Dumped by pg_dump version 17.11
@@ -365,18 +365,28 @@ CREATE TABLE public.generation_retries (
 
 
 --
--- Name: image_api_keys; Type: VIEW; Schema: public; Owner: -
+-- Name: image_local_edits; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE VIEW public.image_api_keys WITH (security_invoker='true') AS
- SELECT id,
-    organization_id,
-    user_id,
-    token_hash,
-    expires_at,
-    revoked_at,
-    created_at
-   FROM public.generation_api_keys;
+CREATE TABLE public.image_local_edits (
+    job_id uuid NOT NULL,
+    organization_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    source_asset_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: login_rate_limits; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.login_rate_limits (
+    key text NOT NULL,
+    window_start timestamp with time zone NOT NULL,
+    attempts integer NOT NULL,
+    CONSTRAINT login_rate_limits_attempts_check CHECK ((attempts > 0))
+);
 
 
 --
@@ -401,164 +411,6 @@ CREATE TABLE public.media_assets (
     CONSTRAINT media_assets_dimensions_check CHECK (((width > 0) AND (height > 0) AND (bytes > 0))),
     CONSTRAINT media_assets_kind_check CHECK ((kind = ANY (ARRAY['reference'::text, 'output'::text]))),
     CONSTRAINT media_assets_media_type_check CHECK ((media_type = ANY (ARRAY['image'::text, 'video'::text, 'audio'::text])))
-);
-
-
---
--- Name: image_assets; Type: VIEW; Schema: public; Owner: -
---
-
-CREATE VIEW public.image_assets WITH (security_invoker='true') AS
- SELECT id,
-    organization_id,
-    user_id,
-    kind,
-    object_key,
-    mime_type,
-    width,
-    height,
-    bytes,
-    sha256,
-    created_at,
-    display_number,
-    public_id,
-    media_type
-   FROM public.media_assets;
-
-
---
--- Name: image_credit_ledger; Type: VIEW; Schema: public; Owner: -
---
-
-CREATE VIEW public.image_credit_ledger WITH (security_invoker='true') AS
- SELECT id,
-    organization_id,
-    job_id,
-    item_id,
-    event_type,
-    amount,
-    created_at
-   FROM public.generation_credit_ledger;
-
-
---
--- Name: image_events; Type: VIEW; Schema: public; Owner: -
---
-
-CREATE VIEW public.image_events WITH (security_invoker='true') AS
- SELECT id,
-    organization_id,
-    kind,
-    resource_id,
-    created_at
-   FROM public.generation_events;
-
-
---
--- Name: image_job_items; Type: VIEW; Schema: public; Owner: -
---
-
-CREATE VIEW public.image_job_items WITH (security_invoker='true') AS
- SELECT id,
-    job_id,
-    organization_id,
-    "position",
-    superseded_at,
-    status,
-    worker_id,
-    execution_token,
-    provider,
-    provider_request_id,
-    attempts,
-    output_asset_id,
-    error_code,
-    started_at,
-    completed_at,
-    lease_expires_at,
-    reconciled_by,
-    reconciliation_evidence,
-    created_at
-   FROM public.generation_job_items;
-
-
---
--- Name: image_jobs; Type: VIEW; Schema: public; Owner: -
---
-
-CREATE VIEW public.image_jobs WITH (security_invoker='true') AS
- SELECT id,
-    display_number,
-    public_id,
-    organization_id,
-    user_id,
-    idempotency_key,
-    input_hash,
-    input,
-    model,
-    provider_model,
-    prompt,
-    resolution,
-    aspect_ratio,
-    requested_count,
-    unit_credits,
-    status,
-    created_at,
-    updated_at,
-    completed_at
-   FROM public.generation_jobs;
-
-
---
--- Name: image_local_edits; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.image_local_edits (
-    job_id uuid NOT NULL,
-    organization_id uuid NOT NULL,
-    user_id uuid NOT NULL,
-    source_asset_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
---
--- Name: image_outbox; Type: VIEW; Schema: public; Owner: -
---
-
-CREATE VIEW public.image_outbox WITH (security_invoker='true') AS
- SELECT id,
-    item_id,
-    next_attempt_at,
-    lease_token,
-    lease_expires_at,
-    dispatched_at,
-    created_at
-   FROM public.generation_outbox;
-
-
---
--- Name: image_retries; Type: VIEW; Schema: public; Owner: -
---
-
-CREATE VIEW public.image_retries WITH (security_invoker='true') AS
- SELECT id,
-    organization_id,
-    user_id,
-    job_id,
-    idempotency_key,
-    created_at
-   FROM public.generation_retries;
-
-
---
--- Name: login_rate_limits; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.login_rate_limits (
-    key text NOT NULL,
-    window_start timestamp with time zone NOT NULL,
-    attempts integer NOT NULL,
-    CONSTRAINT login_rate_limits_attempts_check CHECK ((attempts > 0))
 );
 
 
@@ -1847,5 +1699,5 @@ ALTER TABLE ONLY public.wallet_entries
 -- PostgreSQL database dump complete
 --
 
-\unrestrict C5w6iMFzgXUZ1NVv0C1abTSQeJtk8bsBCofjC6RY5NSagOfJoFovuyrfYkuf4yM
+\unrestrict Q9TMNCubRr5NxW5zfJC8twSXiii2Ze4PgDdGIJ6xGL1wHsMaYf2O6eLlVjS0GUP
 

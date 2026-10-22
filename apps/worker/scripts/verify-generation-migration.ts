@@ -47,6 +47,7 @@ export async function verifyGenerationMigration(databaseUrl: string) {
         ),
       })
       .parse(JSON.parse(await readFile(path.join(migrations, "meta/_journal.json"), "utf8")));
+    const through14 = { ...journal, entries: journal.entries.filter((entry) => entry.idx <= 14) };
     journal.entries = journal.entries.filter((entry) => entry.idx <= 13);
     await mkdir(path.join(directory, "meta"));
     await writeFile(path.join(directory, "meta/_journal.json"), JSON.stringify(journal));
@@ -67,16 +68,22 @@ export async function verifyGenerationMigration(databaseUrl: string) {
     const jobId = crypto.randomUUID();
     const itemId = crypto.randomUUID();
     const key = crypto.randomUUID();
+    const assetId = crypto.randomUUID();
     await sql.begin(async (tx) => {
       await tx`insert into users(id,auth_subject) values(${userId},${`migration-${userId}`})`;
       await tx`insert into organizations(id,name) values(${orgId},'migration-fixture')`;
       await tx`insert into organization_members(organization_id,user_id) values(${orgId},${userId})`;
+      await tx`insert into media_assets(id,organization_id,user_id,kind,object_key,mime_type,width,height,bytes,sha256)
+        values(${assetId},${orgId},${userId},'output',${`fixture/${assetId}`},'image/png',2,2,67,${"0".repeat(64)})`;
       await tx`insert into image_api_keys(organization_id,user_id,token_hash,expires_at)
         values(${orgId},${userId},${crypto.randomUUID()},now()+interval '1 day')`;
       await tx`insert into image_jobs(id,organization_id,user_id,idempotency_key,input_hash,input,model,prompt,resolution,aspect_ratio,requested_count,unit_credits,status)
         values(${jobId},${orgId},${userId},${key},'fixture','{}','fixture','fixture','1K','1:1',1,20,'failed')`;
       await tx`insert into image_job_items(id,job_id,organization_id,position,status)
         values(${itemId},${jobId},${orgId},0,'failed')`;
+      await tx`update image_job_items set output_asset_id=${assetId} where id=${itemId}`;
+      await tx`insert into image_local_edits(job_id,organization_id,user_id,source_asset_id)
+        values(${jobId},${orgId},${userId},${assetId})`;
       await tx`insert into image_credit_ledger(organization_id,job_id,item_id,event_type,amount)
         values(${orgId},${jobId},${itemId},'reserve',-20)`;
       await tx`insert into image_outbox(item_id,dispatched_at) values(${itemId},now())`;
@@ -86,18 +93,70 @@ export async function verifyGenerationMigration(databaseUrl: string) {
     });
     const capture = async (table: string) => {
       const [row] = await sql`select ${table}::regclass::oid::text as oid`;
-      return { oid: row?.oid, rows: await sql`select * from ${sql(table)} order by id` };
+      return {
+        oid: row?.oid,
+        rows: await sql`select a.* from ${sql(table)} a order by row_to_json(a)::text`,
+      };
     };
     const before = await Promise.all(tables.map(([old]) => capture(old)));
-    migrate();
+    const linked = ["media_assets", "image_local_edits"];
+    const linkedBefore = await Promise.all(linked.map(capture));
+    await writeFile(path.join(directory, "meta/_journal.json"), JSON.stringify(through14));
+    const rename = through14.entries.find((entry) => entry.idx === 14);
+    assert.ok(rename);
+    await copyFile(
+      path.join(migrations, `${rename.tag}.sql`),
+      path.join(directory, `${rename.tag}.sql`),
+    );
+    migrate(config);
     for (const [index, [old, current]] of tables.entries()) {
       assert.deepEqual(
         await capture(current),
         before[index],
         `${current} must preserve OID and rows`,
       );
-      assert.deepEqual(await sql`select * from ${sql(old)} order by id`, before[index]?.rows);
+      assert.deepEqual(
+        await sql`select a.* from ${sql(old)} a order by row_to_json(a)::text`,
+        before[index]?.rows,
+      );
     }
+    // A dependent object must block contraction without removing any aliases or data.
+    await sql`create view legacy_dependency_fixture as select id from image_jobs`;
+    const blocked = spawnSync("pnpm", ["--filter", "@lycoboai/db", "db:migrate"], {
+      cwd: root,
+      env: { ...process.env, DATABASE_URL: databaseUrl },
+      stdio: "pipe",
+    });
+    assert.notEqual(blocked.status, 0);
+    const legacyNames = ["image_assets", ...tables.map(([old]) => old)];
+    const assertAliases = async (present: boolean) => {
+      for (const name of legacyNames) {
+        const [relation] = await sql`select to_regclass(${`public.${name}`})::text as name`;
+        assert.equal(relation?.name !== null, present);
+      }
+    };
+    await assertAliases(true);
+    await sql`drop view legacy_dependency_fixture`;
+    migrate();
+    await assertAliases(false);
+    for (const [index, [, current]] of tables.entries()) {
+      assert.deepEqual(
+        await capture(current),
+        before[index],
+        `${current} must survive view removal`,
+      );
+    }
+    for (const [index, current] of linked.entries()) {
+      assert.deepEqual(
+        await capture(current),
+        linkedBefore[index],
+        `${current} must keep asset/edit links`,
+      );
+    }
+    const staleFunctions =
+      await sql`select proname from pg_proc where pronamespace='public'::regnamespace
+      and prosrc ~ ${"\\mimage_(assets|jobs|job_items|outbox|events|retries|api_keys|credit_ledger)\\M"}`;
+    assert.equal(staleFunctions.length, 0);
     // Conflict-based idempotency and partial refund uniqueness must survive the rename.
     const replay = await sql`insert into generation_jobs
       (organization_id,user_id,idempotency_key,input_hash,input,model,prompt,resolution,aspect_ratio,requested_count,unit_credits)
@@ -113,16 +172,18 @@ export async function verifyGenerationMigration(databaseUrl: string) {
       await tx`delete from generation_outbox where item_id=${itemId}`;
       await tx`delete from generation_retries where organization_id=${orgId}`;
       await tx`delete from generation_credit_ledger where organization_id=${orgId}`;
+      await tx`delete from image_local_edits where job_id=${jobId}`;
       await tx`delete from generation_job_items where job_id=${jobId}`;
       await tx`delete from generation_jobs where id=${jobId}`;
       await tx`delete from generation_api_keys where organization_id=${orgId}`;
       await tx`delete from generation_events where organization_id=${orgId}`;
+      await tx`delete from media_assets where id=${assetId}`;
       await tx`delete from organization_members where organization_id=${orgId}`;
       await tx`delete from organizations where id=${orgId}`;
       await tx`delete from users where id=${userId}`;
     });
     console.log(
-      "Generation naming upgrade preserved relation identity, existing rows, legacy reads and idempotent writes",
+      "Generation upgrade and legacy view removal preserved data, links, idempotency and dependency protection",
     );
   } finally {
     await sql.end({ timeout: 5 });
