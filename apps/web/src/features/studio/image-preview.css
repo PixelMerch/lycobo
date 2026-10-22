@@ -216,6 +216,12 @@
 .image-preview-section .generation-output-thumbnails {
   margin-top: 0;
 }
+/* Every picture surface inside the full-screen preview is a plain rectangle;
+ * only controls keep their rounded geometry. */
+.image-preview-image,
+.image-preview .generation-output-thumbnail {
+  border-radius: 0;
+}
 .image-preview-section h2 {
   display: flex;
   align-items: center;
@@ -332,7 +338,7 @@
   min-height: 72px;
   padding: 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: 0;
   background: #17171b;
   box-shadow: none;
   overflow: hidden;
