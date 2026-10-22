@@ -247,3 +247,37 @@ test("image loading keeps browsing controls hidden and leaves a stable close act
   await expect(viewer.getByLabel("图片加载中")).toHaveCount(0);
   await expect(viewer.getByRole("button", { name: "下一张图片", exact: true })).toBeVisible();
 });
+
+test("uploaded draft references preview in the shared viewer and stay deletable", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await mockImageApi(page);
+  await page.goto("/create");
+  await page
+    .getByLabel("添加参考图片", { exact: true })
+    .setInputFiles(["apps/web/public/studio/bedroom.webp", "apps/web/public/studio/lavender.webp"]);
+  const tiles = page.locator(".reference-tile");
+  await expect(tiles).toHaveCount(2);
+  const opener = page.getByRole("button", { name: "查看参考图片：图片1", exact: true });
+  await opener.click();
+  const viewer = page.getByRole("dialog", { name: "图片浏览", exact: true });
+  const picture = viewer.locator(".browse-image-picture");
+  await expect(viewer).toBeVisible();
+  await expect(picture).toHaveAttribute("src", /^data:image\/webp;base64,/);
+  const first = await picture.getAttribute("src");
+  // Arrow keys walk the uploaded set, not the history.
+  await viewer.getByRole("button", { name: "下一张图片", exact: true }).click();
+  await expect(picture).not.toHaveAttribute("src", first ?? "");
+  await page.keyboard.press("Escape");
+  await expect(viewer).toHaveCount(0);
+  await expect(opener).toBeFocused();
+  // The corner control removes the picture without opening the viewer.
+  await tiles.first().hover();
+  await page.getByRole("button", { name: "移除参考图：图片1", exact: true }).click();
+  await expect(viewer).toHaveCount(0);
+  await expect(tiles).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "查看参考图片：图片1", exact: true })).toHaveCount(
+    1,
+  );
+});

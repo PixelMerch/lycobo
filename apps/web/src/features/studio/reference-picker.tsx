@@ -1,9 +1,13 @@
 import { Alert, Button, toast } from "@heroui/react";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
-import { useRef, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { ReferenceImageCard } from "../../components/reference-image-card";
 import { UiIcon } from "../../components/ui-icon";
 import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "./studio-state";
+
+const ImageViewer = lazy(() =>
+  import("../../components/image-viewer").then((module) => ({ default: module.ImageViewer })),
+);
 
 /** Drop the removed image mention and renumber later mentions to the new order. */
 function promptAfterReferenceRemoval(prompt: string, removedNumber: number) {
@@ -35,6 +39,7 @@ export function ReferencePicker({
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
   const [reading, setReading] = useState(false);
+  const [preview, setPreview] = useState<number | null>(null);
   const addReferences = useStudioStore((s) => s.addReferences);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   async function readFiles(files: File[]) {
@@ -113,6 +118,7 @@ export function ReferencePicker({
             const prompt = useStudioStore.getState().drafts[model].prompt;
             updateDraft(model, { references: [], prompt: promptWithoutReferences(prompt) });
             setError("");
+            setPreview(null);
             if (input.current) input.current.value = "";
           }}
         >
@@ -141,12 +147,24 @@ export function ReferencePicker({
             src={image.src}
             number={index + 1}
             isDisabled={reading}
+            onOpen={() => setPreview(index)}
             onRemove={() => {
               const prompt = useStudioStore.getState().drafts[model].prompt;
+              const remaining = references.filter((item) => item.id !== image.id);
               updateDraft(model, {
-                references: references.filter((item) => item.id !== image.id),
+                references: remaining,
                 prompt: promptAfterReferenceRemoval(prompt, index + 1),
               });
+              // Keep an open preview valid after the removed image disappears.
+              setPreview((current) =>
+                current === null
+                  ? null
+                  : current === index
+                    ? null
+                    : current > index
+                      ? current - 1
+                      : current,
+              );
             }}
           />
         ))}
@@ -169,6 +187,20 @@ export function ReferencePicker({
             <Alert.Description>{error}</Alert.Description>
           </Alert.Content>
         </Alert>
+      ) : null}
+      {/* Uploaded drafts become previewable the moment they are added, reusing
+       * the shared viewer instead of a second image overlay. */}
+      {preview !== null && references[preview] ? (
+        <Suspense fallback={null}>
+          <ImageViewer
+            images={references.map((image, index) => ({
+              src: image.src,
+              alt: `图片${index + 1}`,
+            }))}
+            initialIndex={preview}
+            onClose={() => setPreview(null)}
+          />
+        </Suspense>
       ) : null}
     </section>
   );
