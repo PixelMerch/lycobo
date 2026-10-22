@@ -67,9 +67,9 @@ test("preview keeps one canvas while repair changes only the property panel and 
       };
     });
   const before = await view();
-  await viewer.getByRole("button", { name: "局部修复", exact: true }).click();
+  await viewer.getByRole("button", { name: "局部编辑", exact: true }).click();
   await expect(
-    viewer.getByRole("complementary", { name: "局部修复设置", exact: true }),
+    viewer.getByRole("complementary", { name: "局部编辑设置", exact: true }),
   ).toBeVisible();
   expect(await image.evaluate((node) => node.isConnected)).toBe(true);
   expect(await canvas.evaluate((node) => node.isConnected)).toBe(true);
@@ -87,7 +87,7 @@ test("preview keeps one canvas while repair changes only the property panel and 
   await viewer.getByRole("button", { name: "返回详情", exact: true }).click();
   expect(await image.evaluate((node) => node.isConnected)).toBe(true);
   expect(await view()).toEqual(before);
-  await viewer.getByRole("button", { name: "局部修复", exact: true }).click();
+  await viewer.getByRole("button", { name: "局部编辑", exact: true }).click();
   await expect(prompt).toHaveValue("颜色更柔和");
   await viewer.getByRole("button", { name: "预览第 2 张", exact: true }).click();
   await expect(prompt).toHaveCount(0);
@@ -106,7 +106,7 @@ test("preview keeps one canvas while repair changes only the property panel and 
   await expect(toolbar.getByRole("radio", { name: "框选区域", exact: true })).toBeFocused();
   await page.keyboard.press("Space");
   await expect(
-    viewer.getByRole("complementary", { name: "局部修复设置", exact: true }),
+    viewer.getByRole("complementary", { name: "局部编辑设置", exact: true }),
   ).toBeVisible();
   await expect(viewer.locator(".image-preview-image")).toHaveAttribute(
     "src",

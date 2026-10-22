@@ -102,13 +102,17 @@ export function PreviewCanvasToolbar({
           </Button>
         </ButtonGroup>
       </Toolbar>
-      <span
-        className="preview-canvas-status"
-        data-editing={repairing}
-        title={`已选 ${editor.draft.regions.length} 个区域，最多 8 个`}
-      >
-        {editor.draft.regions.length} / 8
-      </span>
+      {/* The count is only useful once regions exist; the empty state keeps the
+       * canvas clean instead of showing a permanent "0 / 8". */}
+      {editor.draft.regions.length > 0 && (
+        <span
+          className="preview-canvas-status"
+          data-editing={repairing}
+          title={`已选 ${editor.draft.regions.length} 个区域，最多 8 个`}
+        >
+          {editor.draft.regions.length} / 8
+        </span>
+      )}
     </div>
   );
 }

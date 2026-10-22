@@ -111,7 +111,7 @@ export function ImagePreviewDetails({
           size="md"
           onPress={() => onRepair()}
         >
-          局部修复
+          局部编辑
         </Button>
       </div>
     </aside>

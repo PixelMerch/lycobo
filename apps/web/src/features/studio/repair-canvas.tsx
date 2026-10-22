@@ -124,7 +124,9 @@ function Region({
         scaleY={1 / scale}
         listening={false}
       >
-        <Circle radius={12} fill={accent} />
+        {/* Neutral dark chip: the number stays legible over both light and dark
+         * photos without adding a second brand accent to the canvas. */}
+        <Circle radius={12} fill="#17171be6" stroke="#ffffff4d" strokeWidth={1} />
         <Text
           text={String(number)}
           x={-12}
@@ -132,7 +134,7 @@ function Region({
           width={24}
           align="center"
           fontSize={14}
-          fill="#09070D"
+          fill="#FFFFFF"
         />
       </Group>
     </>
@@ -218,7 +220,7 @@ export function RepairCanvas(props: Props) {
       ref={container}
       data-tool={hand ? "hand" : tool}
       data-interactive={interactive && !hand ? "true" : "false"}
-      aria-label="局部修复画布"
+      aria-label="局部编辑画布"
     >
       <Stage
         width={viewport.width}

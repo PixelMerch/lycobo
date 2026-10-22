@@ -35,7 +35,6 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
   const [imageError, setImageError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(draft.regions[0]?.id ?? null);
   const [tool, setTool] = useState(initialTool);
-  const [attempted, setAttempted] = useState(false);
   const [history, setHistory] = useState<{ past: RepairRegion[][]; future: RepairRegion[][] }>({
     past: [],
     future: [],
@@ -82,6 +81,11 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
     );
   const busy = !!draft.jobId && (!job.data || ["queued", "running"].includes(job.data.status));
   const locked = !session.isSuccess || generate.isPending || busy || pending;
+  /* The button carries readiness: at least one region, each with a description.
+   * That replaces a separate validation message and a click that goes nowhere. */
+  const canGenerate =
+    ownPending ||
+    (draft.regions.length > 0 && draft.regions.every((region) => region.prompt.trim().length > 0));
   const result = job.data?.items.find(
     (item) => item.status === "succeeded" && item.output_asset_id,
   );
@@ -114,13 +118,8 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
       busy ||
       !available ||
       !image ||
-      (pending && !ownPending)
-    )
-      return;
-    setAttempted(true);
-    if (
-      !ownPending &&
-      (!draft.regions.length || draft.regions.some((region) => !region.prompt.trim()))
+      (pending && !ownPending) ||
+      !canGenerate
     )
       return;
     const prompt = repairPrompt(draft.regions, width, height);
@@ -173,7 +172,7 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
     locked,
     pending,
     ownPending,
-    attempted,
+    canGenerate,
     job,
     result,
     generate,

@@ -86,9 +86,13 @@ test("multiple repair regions retain original coordinates, submit one image and 
   await page.getByRole("button", { name: "打开素材库", exact: true }).click();
   await page.getByRole("button", { name: "查看图片：原始商品图", exact: true }).click();
   const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
-  await viewer.getByRole("button", { name: "局部修复", exact: true }).click();
-  const canvas = viewer.getByRole("region", { name: "局部修复画布", exact: true });
+  await viewer.getByRole("button", { name: "局部编辑", exact: true }).click();
+  const canvas = viewer.getByRole("region", { name: "局部编辑画布", exact: true });
   await expect(canvas.locator("canvas").first()).toBeVisible();
+  // No region and no description yet: the submit action stays disabled instead
+  // of reporting a validation error after a click.
+  const generateButton = viewer.getByRole("button", { name: "立即生成", exact: true });
+  await expect(generateButton).toBeDisabled();
   const bounds = await canvas.boundingBox();
   if (!bounds) throw new Error("Repair canvas has no bounds");
   await expect(viewer.locator(".image-preview")).toHaveCSS("transform", "none");
@@ -117,13 +121,14 @@ test("multiple repair regions retain original coordinates, submit one image and 
   await viewer.getByRole("button", { name: "返回详情", exact: true }).click();
   await viewer.getByRole("button", { name: "关闭图片预览", exact: true }).click();
   await page.getByRole("button", { name: "查看图片：原始商品图", exact: true }).click();
-  await viewer.getByRole("button", { name: "局部修复", exact: true }).click();
+  await viewer.getByRole("button", { name: "局部编辑", exact: true }).click();
   await expect(viewer.getByRole("textbox", { name: "区域 2 修改说明", exact: true })).toHaveValue(
     "去掉脚袋",
   );
   await viewer.getByRole("button", { name: "区域 2", exact: true }).click();
   await page.screenshot({ path: "/tmp/lycobo-local-repair-desktop.png" });
-  await viewer.getByRole("button", { name: "生成修改版", exact: true }).click();
+  await expect(generateButton).toBeEnabled();
+  await generateButton.click();
   await expect(viewer.getByRole("button", { name: "确认上次提交", exact: true })).toBeVisible();
   expect(submitted).toMatchObject({
     count: 1,
@@ -182,7 +187,7 @@ test("repair regions remain usable on a narrow screen", async ({ page }) => {
   await page.getByRole("button", { name: "打开素材库", exact: true }).click();
   await page.getByRole("button", { name: "查看图片：原始商品图", exact: true }).click();
   const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
-  await viewer.getByRole("button", { name: "局部修复", exact: true }).click();
+  await viewer.getByRole("button", { name: "局部编辑", exact: true }).click();
   await viewer.getByRole("button", { name: "添加区域", exact: true }).click();
   await viewer.getByRole("textbox", { name: "区域 1 修改说明", exact: true }).fill("修改局部颜色");
   await viewer.getByRole("button", { name: "删除区域 1", exact: true }).click();
