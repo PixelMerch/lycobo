@@ -118,9 +118,6 @@ async function taskDraft(
 }
 export function HistoryTaskActions({ job }: { job: ImageJob }) {
   const client = useQueryClient();
-  const [replacement, setReplacement] = useState<Awaited<ReturnType<typeof taskDraft>> | null>(
-    null,
-  );
   const [regenerateOpen, setRegenerateOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -140,7 +137,6 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
   const restore = ({ model, draft }: Awaited<ReturnType<typeof taskDraft>>) => {
     useStudioStore.getState().updateDraft(model, draft);
     useStudioStore.getState().setActiveModel(model);
-    setReplacement(null);
     requestAnimationFrame(() =>
       document
         .querySelector<HTMLTextAreaElement>(".composer-panel textarea")
@@ -177,10 +173,7 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
             setLoading(true);
             setError("");
             try {
-              const value = await taskDraft(job, client);
-              const draft = useStudioStore.getState().drafts[value.model];
-              if (draft.prompt || draft.references.length) setReplacement(value);
-              else restore(value);
+              restore(await taskDraft(job, client));
             } catch (failure) {
               setError(failure instanceof Error ? failure.message : "无法读取任务。");
             } finally {
@@ -230,16 +223,6 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
         onConfirm={() => {
           setRegenerateOpen(false);
           void regenerate();
-        }}
-      />
-      <ConfirmDialog
-        isOpen={replacement !== null}
-        title="替换当前草稿？"
-        content="该模型已有草稿，继续编辑将替换提示词、参考图和参数。"
-        closeLabel="关闭草稿确认"
-        onCancel={() => setReplacement(null)}
-        onConfirm={() => {
-          if (replacement) restore(replacement);
         }}
       />
     </div>

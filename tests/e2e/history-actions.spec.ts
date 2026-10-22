@@ -90,7 +90,7 @@ test("history prompt expands, copies in full and shows uploaded references; icon
   );
 });
 
-test("edit restores the original references and parameters while preserving an existing draft", async ({
+test("edit directly restores the original references and parameters over an existing draft", async ({
   page,
 }) => {
   const { input } = await historyFixture(page);
@@ -106,11 +106,7 @@ test("edit restores the original references and parameters while preserving an e
   await page.getByLabel("提示词", { exact: true }).fill("我的新草稿");
   await edit.click();
   const dialog = page.getByRole("dialog", { name: "替换当前草稿？", exact: true });
-  await expect(dialog).toBeVisible();
-  await dialog.getByRole("button", { name: "取消", exact: true }).click();
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("我的新草稿");
-  await edit.click();
-  await dialog.getByRole("button", { name: "确认", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
 });
 
