@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { once } from "node:events";
 import { mkdtemp, rm } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import {
   apiErrorSchema,
   imageAssetsResponseSchema,
@@ -25,6 +23,7 @@ import postgres from "postgres";
 import { z } from "zod";
 import { createApp } from "../../api/src/app";
 import { processImageItem } from "../src/image-processor";
+import { verifyGenerationMigration } from "./verify-generation-migration";
 import { verifyLocalEdits } from "./verify-local-edits";
 import { verifyWallet } from "./verify-wallet";
 
@@ -45,12 +44,7 @@ isolatedUrl.pathname = `/${testDatabaseName}`;
 const databaseUrl = isolatedUrl.href;
 await admin.unsafe(`create database "${testDatabaseName}"`);
 try {
-  const migrated = spawnSync("pnpm", ["--filter", "@lycoboai/db", "db:migrate"], {
-    cwd: fileURLToPath(new URL("../../../", import.meta.url)),
-    env: { ...process.env, DATABASE_URL: databaseUrl },
-    stdio: "pipe",
-  });
-  if (migrated.status !== 0) throw new Error("Isolated image migration failed");
+  await verifyGenerationMigration(databaseUrl);
 } catch (error) {
   await admin.unsafe(`drop database if exists "${testDatabaseName}"`);
   await admin.end({ timeout: 5 });
@@ -224,9 +218,10 @@ try {
     404,
   );
   await dispatch();
-  const [job] = await sql`select status from image_jobs where id=${taskId}`;
+  const [job] = await sql`select status from generation_jobs where id=${taskId}`;
   assert.equal(job?.status, "partially_failed");
-  const items = await sql`select * from image_job_items where job_id=${taskId} order by position`;
+  const items =
+    await sql`select * from generation_job_items where job_id=${taskId} order by position`;
   assert.equal(items.filter((i) => i.status === "succeeded").length, 1);
   assert.equal(items.filter((i) => i.status === "failed").length, 1);
   assert.equal(items[0]?.worker_id, "integration-worker");
@@ -261,7 +256,7 @@ try {
   const unknown = await repository.create(first, input("ambiguous"), crypto.randomUUID(), 1);
   await dispatch();
   assert.equal((await repository.get(first, unknown.id))?.status, "needs_reconciliation");
-  const [uncertain] = await sql`select id from image_job_items where job_id=${unknown.id}`;
+  const [uncertain] = await sql`select id from generation_job_items where job_id=${unknown.id}`;
   assert.ok(uncertain);
   assert.equal(await repository.claim(uncertain.id, "another-worker", 1000), null);
   const held = (
@@ -402,7 +397,7 @@ try {
     await reconnected.close();
   }
   const sequenceBounds =
-    await sql`select sequencename,min_value::text,max_value::text,cycle from pg_sequences where schemaname='public' and sequencename in ('media_assets_display_number_seq','image_jobs_display_number_seq')`;
+    await sql`select sequencename,min_value::text,max_value::text,cycle from pg_sequences where schemaname='public' and sequencename in ('media_assets_display_number_seq','generation_jobs_display_number_seq')`;
   assert.equal(sequenceBounds.length, 2);
   for (const sequence of sequenceBounds) {
     assert.equal(sequence.cycle, false);
@@ -417,14 +412,14 @@ try {
   assert.equal(conflict.status, 409);
   assert.ok(apiErrorSchema.parse(await conflict.json()));
   const crashed = await repository.create(first, input("never-submit"), crypto.randomUUID(), 1);
-  const [crashItem] = await sql`select id from image_job_items where job_id=${crashed.id}`;
+  const [crashItem] = await sql`select id from generation_job_items where job_id=${crashed.id}`;
   assert.ok(crashItem);
   const claims = await Promise.all([
     repository.claim(crashItem.id, "worker-a", 1000),
     repository.claim(crashItem.id, "worker-b", 1000),
   ]);
   assert.equal(claims.filter(Boolean).length, 1);
-  await sql`update image_job_items set lease_expires_at=now()-interval '1 second' where id=${crashItem.id}`;
+  await sql`update generation_job_items set lease_expires_at=now()-interval '1 second' where id=${crashItem.id}`;
   await repository.expireClaims();
   assert.equal((await repository.get(first, crashed.id))?.status, "needs_reconciliation");
   assert.equal(await repository.claim(crashItem.id, "worker-c", 1000), null);
@@ -540,7 +535,7 @@ try {
     2,
   );
   assert.equal(
-    (await sql`select count(*)::int as count from image_job_items where job_id=${taskId}`)[0]
+    (await sql`select count(*)::int as count from generation_job_items where job_id=${taskId}`)[0]
       ?.count,
     3,
   );
@@ -580,7 +575,7 @@ try {
   );
   await verifyWallet(repository, sql);
   await verifyLocalEdits(repository, sql, async (path, init) => app.request(path, init));
-  await sql`update image_api_keys set revoked_at=now() where id=${first.keyId}`;
+  await sql`update generation_api_keys set revoked_at=now() where id=${first.keyId}`;
   assert.equal((await app.request("/api/v1/image-models", { headers })).status, 401);
   console.info(
     "Image API auth/isolation, durable outbox, real Redis Worker, persisted files/metadata, idempotency, credits, partial failure and crash reconciliation passed (fixture only)",

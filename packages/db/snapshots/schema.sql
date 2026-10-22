@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict pOrAMVt49bGJ1Hs1u5xCYAYqEDubkf81lEvKqKbfyagIhx0StlSUY8Z7oPk6Rp9
+\restrict C5w6iMFzgXUZ1NVv0C1abTSQeJtk8bsBCofjC6RY5NSagOfJoFovuyrfYkuf4yM
 
 -- Dumped from database version 17.11
 -- Dumped by pg_dump version 17.11
@@ -127,7 +127,7 @@ BEGIN
  IF NEW.user_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM organization_members WHERE organization_id=org AND user_id=NEW.user_id)
  THEN RAISE EXCEPTION 'WALLET_MEMBER_MISMATCH'; END IF;
  IF NEW.kind IN ('consume','refund') AND NOT EXISTS (
-  SELECT 1 FROM image_jobs j JOIN image_job_items i ON i.job_id=j.id
+  SELECT 1 FROM generation_jobs j JOIN generation_job_items i ON i.job_id=j.id
   WHERE j.id=NEW.job_id AND i.id=NEW.item_id AND j.organization_id=org AND j.user_id=NEW.user_id)
  THEN RAISE EXCEPTION 'WALLET_TASK_MISMATCH'; END IF;
  IF NEW.kind='recharge' AND NOT EXISTS (SELECT 1 FROM recharge_orders r WHERE r.id=NEW.recharge_id AND r.wallet_id=NEW.wallet_id AND r.user_id=NEW.user_id AND r.status='paid' AND r.credits=NEW.amount)
@@ -204,10 +204,10 @@ CREATE TABLE public.enterprise_sessions (
 
 
 --
--- Name: image_api_keys; Type: TABLE; Schema: public; Owner: -
+-- Name: generation_api_keys; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.image_api_keys (
+CREATE TABLE public.generation_api_keys (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     organization_id uuid NOT NULL,
     user_id uuid NOT NULL,
@@ -216,6 +216,167 @@ CREATE TABLE public.image_api_keys (
     revoked_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
+
+
+--
+-- Name: generation_credit_ledger; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.generation_credit_ledger (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    organization_id uuid NOT NULL,
+    job_id uuid NOT NULL,
+    item_id uuid,
+    event_type text NOT NULL,
+    amount integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT generation_credit_ledger_amount_check CHECK ((((event_type = 'reserve'::text) AND (amount < 0)) OR ((event_type = 'refund'::text) AND (amount > 0))))
+);
+
+
+--
+-- Name: generation_events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.generation_events (
+    id bigint NOT NULL,
+    organization_id uuid NOT NULL,
+    kind text NOT NULL,
+    resource_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT generation_events_kind_check CHECK ((kind = ANY (ARRAY['task'::text, 'asset'::text])))
+);
+
+
+--
+-- Name: generation_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+ALTER TABLE public.generation_events ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.generation_events_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: generation_job_items; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.generation_job_items (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    job_id uuid NOT NULL,
+    organization_id uuid NOT NULL,
+    "position" integer NOT NULL,
+    status text DEFAULT 'queued'::text NOT NULL,
+    worker_id text,
+    execution_token uuid,
+    provider text DEFAULT 'vakv'::text NOT NULL,
+    provider_request_id text,
+    attempts integer DEFAULT 0 NOT NULL,
+    output_asset_id uuid,
+    error_code text,
+    started_at timestamp with time zone,
+    completed_at timestamp with time zone,
+    lease_expires_at timestamp with time zone,
+    reconciled_by uuid,
+    reconciliation_evidence text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    superseded_at timestamp with time zone,
+    CONSTRAINT generation_job_items_output_check CHECK (((status <> 'succeeded'::text) OR (output_asset_id IS NOT NULL))),
+    CONSTRAINT generation_job_items_position_check CHECK (((("position" >= 0) AND ("position" <= 3)) AND (attempts >= 0))),
+    CONSTRAINT generation_job_items_status_check CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'succeeded'::text, 'failed'::text, 'needs_reconciliation'::text])))
+);
+
+
+--
+-- Name: generation_jobs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.generation_jobs (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    organization_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    idempotency_key uuid NOT NULL,
+    input_hash text NOT NULL,
+    input jsonb NOT NULL,
+    model text NOT NULL,
+    prompt text NOT NULL,
+    resolution text NOT NULL,
+    aspect_ratio text NOT NULL,
+    requested_count integer NOT NULL,
+    unit_credits integer NOT NULL,
+    status text DEFAULT 'queued'::text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    completed_at timestamp with time zone,
+    display_number bigint NOT NULL,
+    public_id text DEFAULT public.allocate_public_identifier('task'::text) NOT NULL,
+    provider_model text,
+    CONSTRAINT generation_jobs_count_check CHECK ((((requested_count >= 1) AND (requested_count <= 4)) AND (unit_credits > 0))),
+    CONSTRAINT generation_jobs_status_check CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'succeeded'::text, 'partially_failed'::text, 'failed'::text, 'needs_reconciliation'::text])))
+);
+
+
+--
+-- Name: generation_jobs_display_number_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+ALTER TABLE public.generation_jobs ALTER COLUMN display_number ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.generation_jobs_display_number_seq
+    START WITH 1000000000
+    INCREMENT BY 1
+    MINVALUE 1000000000
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: generation_outbox; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.generation_outbox (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    item_id uuid NOT NULL,
+    next_attempt_at timestamp with time zone DEFAULT now() NOT NULL,
+    lease_token uuid,
+    lease_expires_at timestamp with time zone,
+    dispatched_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: generation_retries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.generation_retries (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    organization_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    job_id uuid NOT NULL,
+    idempotency_key uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: image_api_keys; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.image_api_keys WITH (security_invoker='true') AS
+ SELECT id,
+    organization_id,
+    user_id,
+    token_hash,
+    expires_at,
+    revoked_at,
+    created_at
+   FROM public.generation_api_keys;
 
 
 --
@@ -266,120 +427,85 @@ CREATE VIEW public.image_assets WITH (security_invoker='true') AS
 
 
 --
--- Name: image_credit_ledger; Type: TABLE; Schema: public; Owner: -
+-- Name: image_credit_ledger; Type: VIEW; Schema: public; Owner: -
 --
 
-CREATE TABLE public.image_credit_ledger (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    organization_id uuid NOT NULL,
-    job_id uuid NOT NULL,
-    item_id uuid,
-    event_type text NOT NULL,
-    amount integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT image_ledger_amount_check CHECK ((((event_type = 'reserve'::text) AND (amount < 0)) OR ((event_type = 'refund'::text) AND (amount > 0))))
-);
-
-
---
--- Name: image_events; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.image_events (
-    id bigint NOT NULL,
-    organization_id uuid NOT NULL,
-    kind text NOT NULL,
-    resource_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT image_events_kind_check CHECK ((kind = ANY (ARRAY['task'::text, 'asset'::text])))
-);
+CREATE VIEW public.image_credit_ledger WITH (security_invoker='true') AS
+ SELECT id,
+    organization_id,
+    job_id,
+    item_id,
+    event_type,
+    amount,
+    created_at
+   FROM public.generation_credit_ledger;
 
 
 --
--- Name: image_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: image_events; Type: VIEW; Schema: public; Owner: -
 --
 
-ALTER TABLE public.image_events ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
-    SEQUENCE NAME public.image_events_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1
-);
-
-
---
--- Name: image_job_items; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.image_job_items (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    job_id uuid NOT NULL,
-    organization_id uuid NOT NULL,
-    "position" integer NOT NULL,
-    status text DEFAULT 'queued'::text NOT NULL,
-    worker_id text,
-    execution_token uuid,
-    provider text DEFAULT 'vakv'::text NOT NULL,
-    provider_request_id text,
-    attempts integer DEFAULT 0 NOT NULL,
-    output_asset_id uuid,
-    error_code text,
-    started_at timestamp with time zone,
-    completed_at timestamp with time zone,
-    lease_expires_at timestamp with time zone,
-    reconciled_by uuid,
-    reconciliation_evidence text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    superseded_at timestamp with time zone,
-    CONSTRAINT image_items_output_check CHECK (((status <> 'succeeded'::text) OR (output_asset_id IS NOT NULL))),
-    CONSTRAINT image_items_position_check CHECK (((("position" >= 0) AND ("position" <= 3)) AND (attempts >= 0))),
-    CONSTRAINT image_items_status_check CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'succeeded'::text, 'failed'::text, 'needs_reconciliation'::text])))
-);
+CREATE VIEW public.image_events WITH (security_invoker='true') AS
+ SELECT id,
+    organization_id,
+    kind,
+    resource_id,
+    created_at
+   FROM public.generation_events;
 
 
 --
--- Name: image_jobs; Type: TABLE; Schema: public; Owner: -
+-- Name: image_job_items; Type: VIEW; Schema: public; Owner: -
 --
 
-CREATE TABLE public.image_jobs (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    organization_id uuid NOT NULL,
-    user_id uuid NOT NULL,
-    idempotency_key uuid NOT NULL,
-    input_hash text NOT NULL,
-    input jsonb NOT NULL,
-    model text NOT NULL,
-    prompt text NOT NULL,
-    resolution text NOT NULL,
-    aspect_ratio text NOT NULL,
-    requested_count integer NOT NULL,
-    unit_credits integer NOT NULL,
-    status text DEFAULT 'queued'::text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    completed_at timestamp with time zone,
-    display_number bigint NOT NULL,
-    public_id text DEFAULT public.allocate_public_identifier('task'::text) NOT NULL,
-    provider_model text,
-    CONSTRAINT image_jobs_count_check CHECK ((((requested_count >= 1) AND (requested_count <= 4)) AND (unit_credits > 0))),
-    CONSTRAINT image_jobs_status_check CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'succeeded'::text, 'partially_failed'::text, 'failed'::text, 'needs_reconciliation'::text])))
-);
+CREATE VIEW public.image_job_items WITH (security_invoker='true') AS
+ SELECT id,
+    job_id,
+    organization_id,
+    "position",
+    superseded_at,
+    status,
+    worker_id,
+    execution_token,
+    provider,
+    provider_request_id,
+    attempts,
+    output_asset_id,
+    error_code,
+    started_at,
+    completed_at,
+    lease_expires_at,
+    reconciled_by,
+    reconciliation_evidence,
+    created_at
+   FROM public.generation_job_items;
 
 
 --
--- Name: image_jobs_display_number_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: image_jobs; Type: VIEW; Schema: public; Owner: -
 --
 
-ALTER TABLE public.image_jobs ALTER COLUMN display_number ADD GENERATED ALWAYS AS IDENTITY (
-    SEQUENCE NAME public.image_jobs_display_number_seq
-    START WITH 1000000000
-    INCREMENT BY 1
-    MINVALUE 1000000000
-    NO MAXVALUE
-    CACHE 1
-);
+CREATE VIEW public.image_jobs WITH (security_invoker='true') AS
+ SELECT id,
+    display_number,
+    public_id,
+    organization_id,
+    user_id,
+    idempotency_key,
+    input_hash,
+    input,
+    model,
+    provider_model,
+    prompt,
+    resolution,
+    aspect_ratio,
+    requested_count,
+    unit_credits,
+    status,
+    created_at,
+    updated_at,
+    completed_at
+   FROM public.generation_jobs;
 
 
 --
@@ -396,32 +522,32 @@ CREATE TABLE public.image_local_edits (
 
 
 --
--- Name: image_outbox; Type: TABLE; Schema: public; Owner: -
+-- Name: image_outbox; Type: VIEW; Schema: public; Owner: -
 --
 
-CREATE TABLE public.image_outbox (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    item_id uuid NOT NULL,
-    next_attempt_at timestamp with time zone DEFAULT now() NOT NULL,
-    lease_token uuid,
-    lease_expires_at timestamp with time zone,
-    dispatched_at timestamp with time zone,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
+CREATE VIEW public.image_outbox WITH (security_invoker='true') AS
+ SELECT id,
+    item_id,
+    next_attempt_at,
+    lease_token,
+    lease_expires_at,
+    dispatched_at,
+    created_at
+   FROM public.generation_outbox;
 
 
 --
--- Name: image_retries; Type: TABLE; Schema: public; Owner: -
+-- Name: image_retries; Type: VIEW; Schema: public; Owner: -
 --
 
-CREATE TABLE public.image_retries (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    organization_id uuid NOT NULL,
-    user_id uuid NOT NULL,
-    job_id uuid NOT NULL,
-    idempotency_key uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
+CREATE VIEW public.image_retries WITH (security_invoker='true') AS
+ SELECT id,
+    organization_id,
+    user_id,
+    job_id,
+    idempotency_key,
+    created_at
+   FROM public.generation_retries;
 
 
 --
@@ -722,83 +848,115 @@ ALTER TABLE ONLY public.enterprise_sessions
 
 
 --
--- Name: image_api_keys image_api_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: generation_api_keys generation_api_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.image_api_keys
-    ADD CONSTRAINT image_api_keys_pkey PRIMARY KEY (id);
-
-
---
--- Name: image_api_keys image_api_keys_token_hash_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_api_keys
-    ADD CONSTRAINT image_api_keys_token_hash_unique UNIQUE (token_hash);
+ALTER TABLE ONLY public.generation_api_keys
+    ADD CONSTRAINT generation_api_keys_pkey PRIMARY KEY (id);
 
 
 --
--- Name: image_credit_ledger image_credit_ledger_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: generation_api_keys generation_api_keys_token_hash_unique; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.image_credit_ledger
-    ADD CONSTRAINT image_credit_ledger_pkey PRIMARY KEY (id);
-
-
---
--- Name: image_events image_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_events
-    ADD CONSTRAINT image_events_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.generation_api_keys
+    ADD CONSTRAINT generation_api_keys_token_hash_unique UNIQUE (token_hash);
 
 
 --
--- Name: image_job_items image_job_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: generation_credit_ledger generation_credit_ledger_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.image_job_items
-    ADD CONSTRAINT image_job_items_pkey PRIMARY KEY (id);
-
-
---
--- Name: image_jobs image_jobs_display_number_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_jobs
-    ADD CONSTRAINT image_jobs_display_number_unique UNIQUE (display_number);
+ALTER TABLE ONLY public.generation_credit_ledger
+    ADD CONSTRAINT generation_credit_ledger_pkey PRIMARY KEY (id);
 
 
 --
--- Name: image_jobs image_jobs_id_org_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: generation_events generation_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.image_jobs
-    ADD CONSTRAINT image_jobs_id_org_unique UNIQUE (id, organization_id);
-
-
---
--- Name: image_jobs image_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_jobs
-    ADD CONSTRAINT image_jobs_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.generation_events
+    ADD CONSTRAINT generation_events_pkey PRIMARY KEY (id);
 
 
 --
--- Name: image_jobs image_jobs_public_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: generation_job_items generation_job_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.image_jobs
-    ADD CONSTRAINT image_jobs_public_id_unique UNIQUE (public_id);
+ALTER TABLE ONLY public.generation_job_items
+    ADD CONSTRAINT generation_job_items_pkey PRIMARY KEY (id);
 
 
 --
--- Name: image_jobs image_jobs_scope_key_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: generation_jobs generation_jobs_display_number_unique; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.image_jobs
-    ADD CONSTRAINT image_jobs_scope_key_unique UNIQUE (organization_id, user_id, idempotency_key);
+ALTER TABLE ONLY public.generation_jobs
+    ADD CONSTRAINT generation_jobs_display_number_unique UNIQUE (display_number);
+
+
+--
+-- Name: generation_jobs generation_jobs_id_org_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.generation_jobs
+    ADD CONSTRAINT generation_jobs_id_org_unique UNIQUE (id, organization_id);
+
+
+--
+-- Name: generation_jobs generation_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.generation_jobs
+    ADD CONSTRAINT generation_jobs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: generation_jobs generation_jobs_public_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.generation_jobs
+    ADD CONSTRAINT generation_jobs_public_id_unique UNIQUE (public_id);
+
+
+--
+-- Name: generation_jobs generation_jobs_scope_key_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.generation_jobs
+    ADD CONSTRAINT generation_jobs_scope_key_unique UNIQUE (organization_id, user_id, idempotency_key);
+
+
+--
+-- Name: generation_outbox generation_outbox_item_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.generation_outbox
+    ADD CONSTRAINT generation_outbox_item_id_unique UNIQUE (item_id);
+
+
+--
+-- Name: generation_outbox generation_outbox_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.generation_outbox
+    ADD CONSTRAINT generation_outbox_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: generation_retries generation_retries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.generation_retries
+    ADD CONSTRAINT generation_retries_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: generation_retries generation_retries_scope_key_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.generation_retries
+    ADD CONSTRAINT generation_retries_scope_key_unique UNIQUE (organization_id, user_id, idempotency_key);
 
 
 --
@@ -807,38 +965,6 @@ ALTER TABLE ONLY public.image_jobs
 
 ALTER TABLE ONLY public.image_local_edits
     ADD CONSTRAINT image_local_edits_pkey PRIMARY KEY (job_id);
-
-
---
--- Name: image_outbox image_outbox_item_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_outbox
-    ADD CONSTRAINT image_outbox_item_id_unique UNIQUE (item_id);
-
-
---
--- Name: image_outbox image_outbox_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_outbox
-    ADD CONSTRAINT image_outbox_pkey PRIMARY KEY (id);
-
-
---
--- Name: image_retries image_retries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_retries
-    ADD CONSTRAINT image_retries_pkey PRIMARY KEY (id);
-
-
---
--- Name: image_retries image_retries_scope_key_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_retries
-    ADD CONSTRAINT image_retries_scope_key_unique UNIQUE (organization_id, user_id, idempotency_key);
 
 
 --
@@ -1103,94 +1229,115 @@ CREATE INDEX enterprise_sessions_expiry_idx ON public.enterprise_sessions USING 
 
 
 --
--- Name: image_events_created_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: generation_api_keys_member_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX image_events_created_idx ON public.image_events USING btree (created_at);
-
-
---
--- Name: image_events_org_cursor_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX image_events_org_cursor_idx ON public.image_events USING btree (organization_id, id);
+CREATE INDEX generation_api_keys_member_idx ON public.generation_api_keys USING btree (organization_id, user_id);
 
 
 --
--- Name: image_items_current_position_unique; Type: INDEX; Schema: public; Owner: -
+-- Name: generation_credit_ledger_job_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX image_items_current_position_unique ON public.image_job_items USING btree (job_id, "position") WHERE (superseded_at IS NULL);
-
-
---
--- Name: image_items_lease_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX image_items_lease_idx ON public.image_job_items USING btree (lease_expires_at) WHERE (status = 'running'::text);
+CREATE INDEX generation_credit_ledger_job_idx ON public.generation_credit_ledger USING btree (job_id, organization_id);
 
 
 --
--- Name: image_items_output_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: generation_credit_ledger_org_created_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX image_items_output_idx ON public.image_job_items USING btree (output_asset_id, organization_id);
-
-
---
--- Name: image_items_reconciler_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX image_items_reconciler_idx ON public.image_job_items USING btree (reconciled_by);
+CREATE INDEX generation_credit_ledger_org_created_idx ON public.generation_credit_ledger USING btree (organization_id, created_at);
 
 
 --
--- Name: image_jobs_member_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: generation_credit_ledger_refund_unique; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX image_jobs_member_idx ON public.image_jobs USING btree (organization_id, user_id);
-
-
---
--- Name: image_jobs_org_created_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX image_jobs_org_created_idx ON public.image_jobs USING btree (organization_id, created_at, id);
+CREATE UNIQUE INDEX generation_credit_ledger_refund_unique ON public.generation_credit_ledger USING btree (item_id) WHERE (event_type = 'refund'::text);
 
 
 --
--- Name: image_keys_member_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: generation_credit_ledger_reserve_unique; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX image_keys_member_idx ON public.image_api_keys USING btree (organization_id, user_id);
-
-
---
--- Name: image_ledger_job_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX image_ledger_job_idx ON public.image_credit_ledger USING btree (job_id, organization_id);
+CREATE UNIQUE INDEX generation_credit_ledger_reserve_unique ON public.generation_credit_ledger USING btree (job_id) WHERE (event_type = 'reserve'::text);
 
 
 --
--- Name: image_ledger_org_created_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: generation_events_created_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX image_ledger_org_created_idx ON public.image_credit_ledger USING btree (organization_id, created_at);
-
-
---
--- Name: image_ledger_refund_unique; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX image_ledger_refund_unique ON public.image_credit_ledger USING btree (item_id) WHERE (event_type = 'refund'::text);
+CREATE INDEX generation_events_created_idx ON public.generation_events USING btree (created_at);
 
 
 --
--- Name: image_ledger_reserve_unique; Type: INDEX; Schema: public; Owner: -
+-- Name: generation_events_org_cursor_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX image_ledger_reserve_unique ON public.image_credit_ledger USING btree (job_id) WHERE (event_type = 'reserve'::text);
+CREATE INDEX generation_events_org_cursor_idx ON public.generation_events USING btree (organization_id, id);
+
+
+--
+-- Name: generation_job_items_current_position_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX generation_job_items_current_position_unique ON public.generation_job_items USING btree (job_id, "position") WHERE (superseded_at IS NULL);
+
+
+--
+-- Name: generation_job_items_lease_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX generation_job_items_lease_idx ON public.generation_job_items USING btree (lease_expires_at) WHERE (status = 'running'::text);
+
+
+--
+-- Name: generation_job_items_output_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX generation_job_items_output_idx ON public.generation_job_items USING btree (output_asset_id, organization_id);
+
+
+--
+-- Name: generation_job_items_reconciler_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX generation_job_items_reconciler_idx ON public.generation_job_items USING btree (reconciled_by);
+
+
+--
+-- Name: generation_jobs_member_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX generation_jobs_member_idx ON public.generation_jobs USING btree (organization_id, user_id);
+
+
+--
+-- Name: generation_jobs_org_created_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX generation_jobs_org_created_idx ON public.generation_jobs USING btree (organization_id, created_at, id);
+
+
+--
+-- Name: generation_outbox_due_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX generation_outbox_due_idx ON public.generation_outbox USING btree (next_attempt_at);
+
+
+--
+-- Name: generation_retries_job_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX generation_retries_job_idx ON public.generation_retries USING btree (job_id, organization_id);
+
+
+--
+-- Name: generation_retries_user_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX generation_retries_user_idx ON public.generation_retries USING btree (user_id);
 
 
 --
@@ -1198,27 +1345,6 @@ CREATE UNIQUE INDEX image_ledger_reserve_unique ON public.image_credit_ledger US
 --
 
 CREATE INDEX image_local_edits_latest_idx ON public.image_local_edits USING btree (organization_id, user_id, source_asset_id, created_at DESC NULLS LAST, job_id DESC NULLS LAST);
-
-
---
--- Name: image_outbox_due_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX image_outbox_due_idx ON public.image_outbox USING btree (next_attempt_at);
-
-
---
--- Name: image_retries_job_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX image_retries_job_idx ON public.image_retries USING btree (job_id, organization_id);
-
-
---
--- Name: image_retries_user_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX image_retries_user_idx ON public.image_retries USING btree (user_id);
 
 
 --
@@ -1406,83 +1532,107 @@ ALTER TABLE ONLY public.enterprise_sessions
 
 
 --
--- Name: image_credit_ledger image_credit_ledger_item_id_image_job_items_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: generation_api_keys generation_api_keys_membership_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.image_credit_ledger
-    ADD CONSTRAINT image_credit_ledger_item_id_image_job_items_id_fk FOREIGN KEY (item_id) REFERENCES public.image_job_items(id);
-
-
---
--- Name: image_credit_ledger image_credit_ledger_organization_id_organizations_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_credit_ledger
-    ADD CONSTRAINT image_credit_ledger_organization_id_organizations_id_fk FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+ALTER TABLE ONLY public.generation_api_keys
+    ADD CONSTRAINT generation_api_keys_membership_fk FOREIGN KEY (organization_id, user_id) REFERENCES public.organization_members(organization_id, user_id);
 
 
 --
--- Name: image_events image_events_organization_id_organizations_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: generation_credit_ledger generation_credit_ledger_item_id_generation_job_items_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.image_events
-    ADD CONSTRAINT image_events_organization_id_organizations_id_fk FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
-
-
---
--- Name: image_job_items image_items_job_org_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_job_items
-    ADD CONSTRAINT image_items_job_org_fk FOREIGN KEY (job_id, organization_id) REFERENCES public.image_jobs(id, organization_id);
+ALTER TABLE ONLY public.generation_credit_ledger
+    ADD CONSTRAINT generation_credit_ledger_item_id_generation_job_items_id_fk FOREIGN KEY (item_id) REFERENCES public.generation_job_items(id);
 
 
 --
--- Name: image_job_items image_items_output_org_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: generation_credit_ledger generation_credit_ledger_job_org_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.image_job_items
-    ADD CONSTRAINT image_items_output_org_fk FOREIGN KEY (output_asset_id, organization_id) REFERENCES public.media_assets(id, organization_id);
-
-
---
--- Name: image_job_items image_job_items_reconciled_by_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_job_items
-    ADD CONSTRAINT image_job_items_reconciled_by_users_id_fk FOREIGN KEY (reconciled_by) REFERENCES public.users(id);
+ALTER TABLE ONLY public.generation_credit_ledger
+    ADD CONSTRAINT generation_credit_ledger_job_org_fk FOREIGN KEY (job_id, organization_id) REFERENCES public.generation_jobs(id, organization_id);
 
 
 --
--- Name: image_jobs image_jobs_membership_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: generation_credit_ledger generation_credit_ledger_organization_id_organizations_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.image_jobs
-    ADD CONSTRAINT image_jobs_membership_fk FOREIGN KEY (organization_id, user_id) REFERENCES public.organization_members(organization_id, user_id);
-
-
---
--- Name: image_jobs image_jobs_public_id_public_identifiers_value_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_jobs
-    ADD CONSTRAINT image_jobs_public_id_public_identifiers_value_fk FOREIGN KEY (public_id) REFERENCES public.public_identifiers(value);
+ALTER TABLE ONLY public.generation_credit_ledger
+    ADD CONSTRAINT generation_credit_ledger_organization_id_organizations_id_fk FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
 
 
 --
--- Name: image_api_keys image_keys_membership_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: generation_events generation_events_organization_id_organizations_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.image_api_keys
-    ADD CONSTRAINT image_keys_membership_fk FOREIGN KEY (organization_id, user_id) REFERENCES public.organization_members(organization_id, user_id);
+ALTER TABLE ONLY public.generation_events
+    ADD CONSTRAINT generation_events_organization_id_organizations_id_fk FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
 
 
 --
--- Name: image_credit_ledger image_ledger_job_org_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: generation_job_items generation_job_items_job_org_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.image_credit_ledger
-    ADD CONSTRAINT image_ledger_job_org_fk FOREIGN KEY (job_id, organization_id) REFERENCES public.image_jobs(id, organization_id);
+ALTER TABLE ONLY public.generation_job_items
+    ADD CONSTRAINT generation_job_items_job_org_fk FOREIGN KEY (job_id, organization_id) REFERENCES public.generation_jobs(id, organization_id);
+
+
+--
+-- Name: generation_job_items generation_job_items_output_org_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.generation_job_items
+    ADD CONSTRAINT generation_job_items_output_org_fk FOREIGN KEY (output_asset_id, organization_id) REFERENCES public.media_assets(id, organization_id);
+
+
+--
+-- Name: generation_job_items generation_job_items_reconciled_by_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.generation_job_items
+    ADD CONSTRAINT generation_job_items_reconciled_by_users_id_fk FOREIGN KEY (reconciled_by) REFERENCES public.users(id);
+
+
+--
+-- Name: generation_jobs generation_jobs_membership_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.generation_jobs
+    ADD CONSTRAINT generation_jobs_membership_fk FOREIGN KEY (organization_id, user_id) REFERENCES public.organization_members(organization_id, user_id);
+
+
+--
+-- Name: generation_jobs generation_jobs_public_id_public_identifiers_value_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.generation_jobs
+    ADD CONSTRAINT generation_jobs_public_id_public_identifiers_value_fk FOREIGN KEY (public_id) REFERENCES public.public_identifiers(value);
+
+
+--
+-- Name: generation_outbox generation_outbox_item_id_generation_job_items_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.generation_outbox
+    ADD CONSTRAINT generation_outbox_item_id_generation_job_items_id_fk FOREIGN KEY (item_id) REFERENCES public.generation_job_items(id);
+
+
+--
+-- Name: generation_retries generation_retries_job_org_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.generation_retries
+    ADD CONSTRAINT generation_retries_job_org_fk FOREIGN KEY (job_id, organization_id) REFERENCES public.generation_jobs(id, organization_id);
+
+
+--
+-- Name: generation_retries generation_retries_user_id_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.generation_retries
+    ADD CONSTRAINT generation_retries_user_id_users_id_fk FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -1490,7 +1640,7 @@ ALTER TABLE ONLY public.image_credit_ledger
 --
 
 ALTER TABLE ONLY public.image_local_edits
-    ADD CONSTRAINT image_local_edits_job_org_fk FOREIGN KEY (job_id, organization_id) REFERENCES public.image_jobs(id, organization_id);
+    ADD CONSTRAINT image_local_edits_job_org_fk FOREIGN KEY (job_id, organization_id) REFERENCES public.generation_jobs(id, organization_id);
 
 
 --
@@ -1507,30 +1657,6 @@ ALTER TABLE ONLY public.image_local_edits
 
 ALTER TABLE ONLY public.image_local_edits
     ADD CONSTRAINT image_local_edits_source_org_fk FOREIGN KEY (source_asset_id, organization_id) REFERENCES public.media_assets(id, organization_id);
-
-
---
--- Name: image_outbox image_outbox_item_id_image_job_items_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_outbox
-    ADD CONSTRAINT image_outbox_item_id_image_job_items_id_fk FOREIGN KEY (item_id) REFERENCES public.image_job_items(id);
-
-
---
--- Name: image_retries image_retries_job_org_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_retries
-    ADD CONSTRAINT image_retries_job_org_fk FOREIGN KEY (job_id, organization_id) REFERENCES public.image_jobs(id, organization_id);
-
-
---
--- Name: image_retries image_retries_user_id_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_retries
-    ADD CONSTRAINT image_retries_user_id_users_id_fk FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -1678,19 +1804,19 @@ ALTER TABLE ONLY public.wallet_checkins
 
 
 --
--- Name: wallet_entries wallet_entries_item_id_image_job_items_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: wallet_entries wallet_entries_item_id_generation_job_items_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.wallet_entries
-    ADD CONSTRAINT wallet_entries_item_id_image_job_items_id_fk FOREIGN KEY (item_id) REFERENCES public.image_job_items(id);
+    ADD CONSTRAINT wallet_entries_item_id_generation_job_items_id_fk FOREIGN KEY (item_id) REFERENCES public.generation_job_items(id);
 
 
 --
--- Name: wallet_entries wallet_entries_job_id_image_jobs_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: wallet_entries wallet_entries_job_id_generation_jobs_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.wallet_entries
-    ADD CONSTRAINT wallet_entries_job_id_image_jobs_id_fk FOREIGN KEY (job_id) REFERENCES public.image_jobs(id);
+    ADD CONSTRAINT wallet_entries_job_id_generation_jobs_id_fk FOREIGN KEY (job_id) REFERENCES public.generation_jobs(id);
 
 
 --
@@ -1721,5 +1847,5 @@ ALTER TABLE ONLY public.wallet_entries
 -- PostgreSQL database dump complete
 --
 
-\unrestrict pOrAMVt49bGJ1Hs1u5xCYAYqEDubkf81lEvKqKbfyagIhx0StlSUY8Z7oPk6Rp9
+\unrestrict C5w6iMFzgXUZ1NVv0C1abTSQeJtk8bsBCofjC6RY5NSagOfJoFovuyrfYkuf4yM
 

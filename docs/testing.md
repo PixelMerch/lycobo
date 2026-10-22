@@ -68,7 +68,6 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:integration
 
 根 test:integration 已增加 `@lycoboai/api test:events`，覆盖 SSE 的持久化事件、跨连接通知、回滚、租户隔离、重连回放与身份撤销。运行需 loopback PostgreSQL、Redis 和 ALLOW_LOCAL_INTEGRATION=true；不会调用付费模型。
 
-
 ## 工作台浏览器回归
 
 `tests/e2e/image-preview.spec.ts` 验证全屏预览、缩放拖动、移动布局和图片切换后的说明同步；`library-dialog.spec.ts` 验证筛选、延迟加载和弹层焦点恢复。接口均由浏览器 fixture 拦截，不调用模型。
@@ -80,3 +79,8 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:integration
 弹层焦点回归同时覆盖鼠标点击和不预先聚焦的虚拟点击。受控预览在挂载时记录返回目标，因此打开前需聚焦入口按钮；预览入口位于 Modal 的触发器树外，由历史组件保留其引用，在关闭动画结束、弹层卸载后恢复焦点；弹层内部的焦点约束仍交给 HeroUI。不能通过预先在测试中 focus 或删除焦点断言掩盖问题。
 
 原任务重试集成覆盖：同键并发只扣一次、跨组织拒绝、部分失败保留成功图片、旧执行被隔离、无效响应退币与历史待确认记录幂等修复。failure-retry.spec.ts 验证前端使用原任务 retry 接口，不追加失败历史。
+
+通用生成命名升级由 `verify-generation-migration.ts` 纳入 worker `test:images`：
+先在独立空库执行到 0013 并创建七张旧表的关联数据，再追加迁移，验证表 OID、记录、
+旧名查询、提交幂等和退款唯一性保持。后续原有图片／钱包／SSE 检查继续使用新表名。
+测试数据库和临时迁移目录结束后清理，不操作现有业务数据，也不调用付费模型。

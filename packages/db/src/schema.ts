@@ -192,8 +192,8 @@ export const organizationMembers = pgTable(
     check("organization_members_role_check", sql`${t.role} in ('admin','member')`),
   ],
 );
-export const imageApiKeys = pgTable(
-  "image_api_keys",
+export const generationApiKeys = pgTable(
+  "generation_api_keys",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     organizationId: uuid("organization_id").notNull(),
@@ -207,9 +207,9 @@ export const imageApiKeys = pgTable(
     foreignKey({
       columns: [t.organizationId, t.userId],
       foreignColumns: [organizationMembers.organizationId, organizationMembers.userId],
-      name: "image_keys_membership_fk",
+      name: "generation_api_keys_membership_fk",
     }),
-    index("image_keys_member_idx").on(t.organizationId, t.userId),
+    index("generation_api_keys_member_idx").on(t.organizationId, t.userId),
   ],
 );
 export const mediaAssets = pgTable(
@@ -258,8 +258,8 @@ export const mediaAssets = pgTable(
     check("media_assets_media_type_check", sql`${t.mediaType} in ('image','video','audio')`),
   ],
 );
-export const imageJobs = pgTable(
-  "image_jobs",
+export const generationJobs = pgTable(
+  "generation_jobs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     displayNumber: bigint("display_number", { mode: "bigint" })
@@ -296,23 +296,23 @@ export const imageJobs = pgTable(
     foreignKey({
       columns: [t.organizationId, t.userId],
       foreignColumns: [organizationMembers.organizationId, organizationMembers.userId],
-      name: "image_jobs_membership_fk",
+      name: "generation_jobs_membership_fk",
     }),
-    unique("image_jobs_scope_key_unique").on(t.organizationId, t.userId, t.idempotencyKey),
-    unique("image_jobs_id_org_unique").on(t.id, t.organizationId),
-    index("image_jobs_org_created_idx").on(t.organizationId, t.createdAt, t.id),
-    index("image_jobs_member_idx").on(t.organizationId, t.userId),
+    unique("generation_jobs_scope_key_unique").on(t.organizationId, t.userId, t.idempotencyKey),
+    unique("generation_jobs_id_org_unique").on(t.id, t.organizationId),
+    index("generation_jobs_org_created_idx").on(t.organizationId, t.createdAt, t.id),
+    index("generation_jobs_member_idx").on(t.organizationId, t.userId),
     check(
-      "image_jobs_count_check",
+      "generation_jobs_count_check",
       sql`${t.requestedCount} between 1 and 4 and ${t.unitCredits} > 0`,
     ),
     check(
-      "image_jobs_status_check",
+      "generation_jobs_status_check",
       sql`${t.status} in ('queued','running','succeeded','partially_failed','failed','needs_reconciliation')`,
     ),
   ],
 );
-// Submission lineage; full immutable region snapshot lives in image_jobs.input.localEdit.
+// Submission lineage; full immutable region snapshot lives in generation_jobs.input.localEdit.
 export const imageLocalEdits = pgTable(
   "image_local_edits",
   {
@@ -325,7 +325,7 @@ export const imageLocalEdits = pgTable(
   (t) => [
     foreignKey({
       columns: [t.jobId, t.organizationId],
-      foreignColumns: [imageJobs.id, imageJobs.organizationId],
+      foreignColumns: [generationJobs.id, generationJobs.organizationId],
       name: "image_local_edits_job_org_fk",
     }),
     foreignKey({
@@ -347,8 +347,8 @@ export const imageLocalEdits = pgTable(
     ),
   ],
 );
-export const imageJobItems = pgTable(
-  "image_job_items",
+export const generationJobItems = pgTable(
+  "generation_job_items",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     jobId: uuid("job_id").notNull(),
@@ -373,56 +373,61 @@ export const imageJobItems = pgTable(
   (t) => [
     foreignKey({
       columns: [t.jobId, t.organizationId],
-      foreignColumns: [imageJobs.id, imageJobs.organizationId],
-      name: "image_items_job_org_fk",
+      foreignColumns: [generationJobs.id, generationJobs.organizationId],
+      name: "generation_job_items_job_org_fk",
     }),
     foreignKey({
       columns: [t.outputAssetId, t.organizationId],
       foreignColumns: [mediaAssets.id, mediaAssets.organizationId],
-      name: "image_items_output_org_fk",
+      name: "generation_job_items_output_org_fk",
     }),
-    uniqueIndex("image_items_current_position_unique")
+    uniqueIndex("generation_job_items_current_position_unique")
       .on(t.jobId, t.position)
       .where(sql`${t.supersededAt} is null`),
-    index("image_items_output_idx").on(t.outputAssetId, t.organizationId),
-    index("image_items_reconciler_idx").on(t.reconciledBy),
-    index("image_items_lease_idx").on(t.leaseExpiresAt).where(sql`${t.status} = 'running'`),
-    check("image_items_position_check", sql`${t.position} between 0 and 3 and ${t.attempts} >= 0`),
+    index("generation_job_items_output_idx").on(t.outputAssetId, t.organizationId),
+    index("generation_job_items_reconciler_idx").on(t.reconciledBy),
+    index("generation_job_items_lease_idx")
+      .on(t.leaseExpiresAt)
+      .where(sql`${t.status} = 'running'`),
     check(
-      "image_items_status_check",
+      "generation_job_items_position_check",
+      sql`${t.position} between 0 and 3 and ${t.attempts} >= 0`,
+    ),
+    check(
+      "generation_job_items_status_check",
       sql`${t.status} in ('queued','running','succeeded','failed','needs_reconciliation')`,
     ),
     check(
-      "image_items_output_check",
+      "generation_job_items_output_check",
       sql`${t.status} <> 'succeeded' or ${t.outputAssetId} is not null`,
     ),
   ],
 );
-export const imageOutbox = pgTable(
-  "image_outbox",
+export const generationOutbox = pgTable(
+  "generation_outbox",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     itemId: uuid("item_id")
       .notNull()
       .unique()
-      .references(() => imageJobItems.id),
+      .references(() => generationJobItems.id),
     nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
     leaseToken: uuid("lease_token"),
     leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
     dispatchedAt: timestamp("dispatched_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
-  (t) => [index("image_outbox_due_idx").on(t.nextAttemptAt)],
+  (t) => [index("generation_outbox_due_idx").on(t.nextAttemptAt)],
 );
-export const imageCreditLedger = pgTable(
-  "image_credit_ledger",
+export const generationCreditLedger = pgTable(
+  "generation_credit_ledger",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     organizationId: uuid("organization_id")
       .notNull()
       .references(() => organizations.id),
     jobId: uuid("job_id").notNull(),
-    itemId: uuid("item_id").references(() => imageJobItems.id),
+    itemId: uuid("item_id").references(() => generationJobItems.id),
     eventType: text("event_type").notNull(),
     amount: integer("amount").notNull(),
     createdAt: createdAt(),
@@ -430,15 +435,19 @@ export const imageCreditLedger = pgTable(
   (t) => [
     foreignKey({
       columns: [t.jobId, t.organizationId],
-      foreignColumns: [imageJobs.id, imageJobs.organizationId],
-      name: "image_ledger_job_org_fk",
+      foreignColumns: [generationJobs.id, generationJobs.organizationId],
+      name: "generation_credit_ledger_job_org_fk",
     }),
-    uniqueIndex("image_ledger_refund_unique").on(t.itemId).where(sql`${t.eventType} = 'refund'`),
-    uniqueIndex("image_ledger_reserve_unique").on(t.jobId).where(sql`${t.eventType} = 'reserve'`),
-    index("image_ledger_org_created_idx").on(t.organizationId, t.createdAt),
-    index("image_ledger_job_idx").on(t.jobId, t.organizationId),
+    uniqueIndex("generation_credit_ledger_refund_unique")
+      .on(t.itemId)
+      .where(sql`${t.eventType} = 'refund'`),
+    uniqueIndex("generation_credit_ledger_reserve_unique")
+      .on(t.jobId)
+      .where(sql`${t.eventType} = 'reserve'`),
+    index("generation_credit_ledger_org_created_idx").on(t.organizationId, t.createdAt),
+    index("generation_credit_ledger_job_idx").on(t.jobId, t.organizationId),
     check(
-      "image_ledger_amount_check",
+      "generation_credit_ledger_amount_check",
       sql`(${t.eventType} = 'reserve' and ${t.amount} < 0) or (${t.eventType} = 'refund' and ${t.amount} > 0)`,
     ),
   ],
@@ -500,8 +509,8 @@ export const loginRateLimits = pgTable(
   ],
 );
 
-export const imageEvents = pgTable(
-  "image_events",
+export const generationEvents = pgTable(
+  "generation_events",
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedAlwaysAsIdentity(),
     organizationId: uuid("organization_id")
@@ -512,9 +521,9 @@ export const imageEvents = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    index("image_events_org_cursor_idx").on(t.organizationId, t.id),
-    index("image_events_created_idx").on(t.createdAt),
-    check("image_events_kind_check", sql`${t.kind} in ('task','asset')`),
+    index("generation_events_org_cursor_idx").on(t.organizationId, t.id),
+    index("generation_events_created_idx").on(t.createdAt),
+    check("generation_events_kind_check", sql`${t.kind} in ('task','asset')`),
   ],
 );
 
@@ -581,8 +590,8 @@ export const walletEntries = pgTable(
     kind: text("kind").notNull(),
     amount: integer("amount").notNull(),
     balanceAfter: integer("balance_after").notNull(),
-    jobId: uuid("job_id").references(() => imageJobs.id),
-    itemId: uuid("item_id").references(() => imageJobItems.id),
+    jobId: uuid("job_id").references(() => generationJobs.id),
+    itemId: uuid("item_id").references(() => generationJobItems.id),
     rechargeId: uuid("recharge_id").references(() => rechargeOrders.id),
     createdAt: createdAt(),
   },
@@ -631,8 +640,8 @@ export const walletCheckins = pgTable(
   ],
 );
 
-export const imageRetries = pgTable(
-  "image_retries",
+export const generationRetries = pgTable(
+  "generation_retries",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     organizationId: uuid("organization_id").notNull(),
@@ -646,11 +655,11 @@ export const imageRetries = pgTable(
   (t) => [
     foreignKey({
       columns: [t.jobId, t.organizationId],
-      foreignColumns: [imageJobs.id, imageJobs.organizationId],
-      name: "image_retries_job_org_fk",
+      foreignColumns: [generationJobs.id, generationJobs.organizationId],
+      name: "generation_retries_job_org_fk",
     }),
-    unique("image_retries_scope_key_unique").on(t.organizationId, t.userId, t.key),
-    index("image_retries_job_idx").on(t.jobId, t.organizationId),
-    index("image_retries_user_idx").on(t.userId),
+    unique("generation_retries_scope_key_unique").on(t.organizationId, t.userId, t.key),
+    index("generation_retries_job_idx").on(t.jobId, t.organizationId),
+    index("generation_retries_user_idx").on(t.userId),
   ],
 );

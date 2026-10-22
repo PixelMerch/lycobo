@@ -115,5 +115,5 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 ## 数据库领域命名
 
-通用素材实体使用 `media_assets`（Drizzle `mediaAssets`），图片专用任务、编辑和执行流程保留 `image_*`。
+通用素材实体使用 `media_assets`（Drizzle `mediaAssets`），生成任务及其执行、投递、重试、事件、令牌和任务账本统一使用 `generation_*`；图片选区编辑扩展保留 `image_local_edits`。
 表职责、旧名兼容视图与后续媒体扩展边界见 [数据库命名](docs/database-naming.md)。

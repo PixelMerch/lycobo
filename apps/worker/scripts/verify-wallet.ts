@@ -40,10 +40,13 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
       .size,
     2,
   );
-  const accepted = submissions.find((result) => result.status === "fulfilled");
+  // The retry fixture acts as owner; concurrent spending can let a child finish first.
+  const accepted = submissions
+    .filter((_, index) => index % 2 === 0)
+    .find((result) => result.status === "fulfilled");
   assert.ok(accepted?.status === "fulfilled");
   const [item] =
-    await sql`select i.id,j.provider_model from image_job_items i join image_jobs j on j.id=i.job_id where j.id=${accepted.value.id}`;
+    await sql`select i.id,j.provider_model from generation_job_items i join generation_jobs j on j.id=i.job_id where j.id=${accepted.value.id}`;
   assert.equal(item?.provider_model, "gpt-image-2-4K");
   const claim = await repository.claim(String(item?.id), "wallet-fixture", 1000);
   assert.ok(claim);
@@ -88,7 +91,7 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
   assert.equal((await repository.get(owner, accepted.value.id))?.status, "failed");
   assert.equal((await repository.wallet(owner)).balance, 20);
   assert.equal((await repository.retry(owner, accepted.value.id, retryKey)).replayed, true);
-  await sql`update image_job_items set status='needs_reconciliation' where id=${retryClaim.itemId}`;
+  await sql`update generation_job_items set status='needs_reconciliation' where id=${retryClaim.itemId}`;
   await Promise.all([repository.settleInvalidResponses(), repository.settleInvalidResponses()]);
   assert.equal((await repository.wallet(owner)).balance, 20);
   assert.equal((await repository.get(owner, accepted.value.id))?.status, "failed");
@@ -177,9 +180,9 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
   assert.equal((await repository.wallet(owner)).balance, before - 80);
   const repeatedId = repeated[0]?.id;
   assert.ok(repeatedId);
-  const [saved] = await sql`select provider_model from image_jobs where id=${repeatedId}`;
+  const [saved] = await sql`select provider_model from generation_jobs where id=${repeatedId}`;
   assert.equal(saved?.provider_model, "gemini-nano-banana-2.1");
-  const refundItems = await sql`select id from image_job_items where job_id=${repeatedId}`;
+  const refundItems = await sql`select id from generation_job_items where job_id=${repeatedId}`;
   for (const row of refundItems) {
     const attempt = await repository.claim(String(row.id), "refund-fixture", 1000);
     assert.ok(attempt);
@@ -217,7 +220,7 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
   assert.equal(manualEntries.filter((entry) => entry.kind === "refund").length, 1);
   assert.equal(manualEntries.filter((entry) => entry.kind === "consume").length, 2);
   const [retired] =
-    await sql`select superseded_at,reconciliation_evidence,reconciled_by from image_job_items where id=${unresolved.itemId}`;
+    await sql`select superseded_at,reconciliation_evidence,reconciled_by from generation_job_items where id=${unresolved.itemId}`;
   assert.ok(retired?.superseded_at);
   assert.equal(retired?.reconciled_by, manual.userId);
   assert.match(String(retired?.reconciliation_evidence), /User requested retry/);
@@ -252,7 +255,7 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
   assert.ok(legacyClaim);
   await repository.finish(legacyClaim, { errorCode: "OUTPUT_OUTCOME_UNKNOWN", unknown: true });
   assert.equal((await repository.wallet(legacy)).balance, 20);
-  await sql`update image_job_items set error_code='PROVIDER_INVALID_IMAGE_RESPONSE' where id=${legacyClaim.itemId}`;
+  await sql`update generation_job_items set error_code='PROVIDER_INVALID_IMAGE_RESPONSE' where id=${legacyClaim.itemId}`;
   await Promise.all([repository.settleInvalidResponses(), repository.settleInvalidResponses()]);
   assert.equal((await repository.wallet(legacy)).balance, 40);
   assert.equal(

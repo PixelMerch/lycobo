@@ -38,7 +38,7 @@ IMAGE_INITIAL_CREDITS=20 \
 pnpm --filter @lycoboai/api images:provision
 ```
 
-脚本每次创建新组织，复用同 auth_subject 用户，并输出 userId、organizationId、keyId 和一次生成的访问令牌。令牌有效期 7 天，数据库只保存 SHA-256 摘要，不记录明文。妥善保管输出，不上传日志或 Git。该工具只供有数据库权限的运维使用，不是公开注册/充值接口。撤销令牌需由运维更新对应 image_api_keys.revoked_at；用户登录和团队邀请仍需对接正式身份系统。
+脚本每次创建新组织，复用同 auth_subject 用户，并输出 userId、organizationId、keyId 和一次生成的访问令牌。令牌有效期 7 天，数据库只保存 SHA-256 摘要，不记录明文。妥善保管输出，不上传日志或 Git。该工具只供有数据库权限的运维使用，不是公开注册/充值接口。撤销令牌需由运维更新对应 generation_api_keys.revoked_at；用户登录和团队邀请仍需对接正式身份系统。
 
 5. 在 `.env` 显式设置 `IMAGE_GENERATION_ENABLED=true`、`IMAGE_WORKER_ENABLED=true`。保持 diagnostic 的 `WORKER_ENABLED` 独立；只跑生图时它可以为 false。
 6. 分别启动 API 与 Worker：
@@ -82,7 +82,7 @@ curl http://127.0.0.1:8787/api/v1/image-tasks \
 
 ## 任务与计费边界
 
-- image_jobs 保存输入和逐图价格快照；image_job_items 保存执行实例、租约和图片关联。
+- generation_jobs 保存输入和逐图价格快照；generation_job_items 保存执行实例、租约和图片关联。
 - 同一组织/用户/Idempotency-Key 保持同一任务；换参数重放返回 409，数据库余额不足返回 409，均不产生付费请求。
 - 任务、全部图片项、每图 outbox 和积分预留位于同一 PostgreSQL 事务。提交端不直接发 Redis 或调用服务商。
 - Worker 从 PostgreSQL 租赁 outbox，事务外投递 BullMQ，投递后确认。消息只含 itemId，队列使用独立名字；并发执行由数据库领取与执行令牌再次保护。
@@ -175,7 +175,7 @@ pnpm dev
 
 `GET /api/v1/image-events` 使用现有 Cookie／Bearer 身份；事件范围与任务、素材读取一致，由服务端解析组织成员关系。`image-models` 增加可选 `eventsEnabled`，用于兼容旧部署。SSE 响应为 `text/event-stream`，不包装 JSON 信封；鉴权、参数和服务不可用错误仍使用统一信封。支持 Last-Event-ID 请求头或非敏感 cursor 查询参数，游标为十进制 bigint 字符串。
 
-通知链路为 PostgreSQL image_events 持久化日志＋事务内 NOTIFY＋API 进程级 LISTEN＋SSE，不新增 Redis 转发；Redis/BullMQ 继续承载生图任务。提交、开始、每张结果、租约到期与人工核对、参考图上传在对应事务末尾写事件，回滚不留事件或通知。每组织事务级 advisory lock 在事件追加前获取，确保同一组织已提交游标顺序，不把并发事务的序列分配顺序误当成提交顺序；锁后只追加事件并提交，不调用外部服务。事件只含编号、类型和资源 UUID，不保存提示词、图片内容、凭据或供应商响应。
+通知链路为 PostgreSQL generation_events 持久化日志＋事务内 NOTIFY＋API 进程级 LISTEN＋SSE，不新增 Redis 转发；Redis/BullMQ 继续承载生图任务。提交、开始、每张结果、租约到期与人工核对、参考图上传在对应事务末尾写事件，回滚不留事件或通知。每组织事务级 advisory lock 在事件追加前获取，确保同一组织已提交游标顺序，不把并发事务的序列分配顺序误当成提交顺序；锁后只追加事件并提交，不调用外部服务。事件只含编号、类型和资源 UUID，不保存提示词、图片内容、凭据或供应商响应。
 
 每个 API 进程共用一个专用 LISTEN 连接和固定大小查询池，不为每个浏览器占一条数据库连接。原生通知仅作唤醒，实际内容从持久化日志读取；监听自动恢复后唤醒已有连接补读。支持 ready、image.updated、resync、heartbeat、auth-expired 事件。正常事件带 id；ready／resync 要求客户端重新校准现有列表，超过 200 条补读时转为快照校准。Worker 每小时最多清理 1000 条超过 7 天的事件；旧游标重连仍校准快照。
 

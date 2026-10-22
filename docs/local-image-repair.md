@@ -23,7 +23,7 @@
 ## 持久化与恢复
 
 - 追加迁移 `0011_slippery_caretaker.sql` 创建 `image_local_edits`：job_id（主键）、organization_id、user_id、source_asset_id、created_at。组织复合外键约束任务、原图及成员归属；按组织／用户／原图／时间／任务ID建立最近记录索引。
-- 完整选区快照保存在 `image_jobs.input.localEdit`，关联表与任务、预扣费、outbox在同一事务写入；同幂等键重放不会追加关联或重复扣费。校验原图实际宽高，单次修改固定一张输出、一个原图引用。
+- 完整选区快照保存在 `generation_jobs.input.localEdit`，关联表与任务、预扣费、outbox在同一事务写入；同幂等键重放不会追加关联或重复扣费。校验原图实际宽高，单次修改固定一张输出、一个原图引用。
 - `GET /api/v1/image-assets/:id/latest-edit` 返回 `{ job: ImageJob | null }`，从服务端身份限定组织和操作用户，按 created_at／job_id 降序读取；没有修改返回null，无权限图片返回404。接口经过统一JSON响应封装。
 - 前端仅在没有当前会话草稿时恢复服务端选区和jobId，恢复完成前禁止提交。生成后刷新最近记录缓存，详情恢复后“查看修改版”指向该任务历史。
 - 已有纯提示词形式的旧编辑没有可靠的结构化来源标记，本迁移不根据提示词猜测并补写关系；从本版本起提交的修改支持完整恢复。未提交内容不自动保存。

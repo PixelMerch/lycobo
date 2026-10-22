@@ -1,17 +1,17 @@
 # 数据库命名与媒体边界
 
-使用小写 `snake_case`、复数实体名和明确的业务前缀。前缀表达当前职责，不能仅因未来规划
-就把图片专用业务改名为通用媒体能力。新增实体先确认是否与现有通用表重复。
+使用小写 `snake_case`、复数实体名和明确的业务前缀。素材使用 `media_`，共享生成流程使用 `generation_`，明确的图片编辑扩展使用 `image_`。
+新增实体先确认是否与现有通用表重复；通用命名不等于所有媒体供应商已经接入。
 
 | 表／对象 | 当前职责与约定 |
 | --- | --- |
 | `media_assets` | 通用素材元数据；原 `image_assets`。`media_type` 表示 `image`／`video`／`audio`，`kind` 表示 `reference`／`output`，两者独立 |
-| `image_jobs`、`image_job_items` | 当前图片生成任务和逐图执行记录，含图片分辨率、比例、每图费用等约束 |
-| `image_outbox`、`image_retries`、`image_events` | 图片生成流程的投递、幂等重试和持久事件；不是平台所有业务的通用消息表 |
+| `generation_jobs`、`generation_job_items` | 共享生成任务与执行项；当前图片适配器仍使用现有分辨率、比例与数量约束 |
+| `generation_outbox`、`generation_retries`、`generation_events` | 生成流程的投递、幂等重试和持久事件；不是平台所有业务的通用消息表 |
 | `image_local_edits` | 图片坐标选区和修改任务的来源关联；不用于视频或音频编辑 |
-| `image_api_keys` | 现有图片 API 访问令牌；企业登录会话另存 `enterprise_sessions` |
-| `image_credit_ledger` | 图片流程既有账务记录；企业通用钱包使用 `organization_wallets`、`wallet_entries`，不能仅改名后合并账务 |
-| `tasks`、`task_items`、`outbox_events` | 已有基础任务／诊断流程；与图片生成链路分开，不能直接把 `image_jobs` 改成 `tasks` |
+| `generation_api_keys` | 生成 API 访问令牌；企业登录会话另存 `enterprise_sessions` |
+| `generation_credit_ledger` | 生成任务既有账务记录；企业通用钱包使用 `organization_wallets`、`wallet_entries`，不能仅改名后合并账务 |
+| `tasks`、`task_items`、`outbox_events` | 已有基础任务／诊断流程；与图片生成链路分开，不能直接把 `generation_jobs` 改成 `tasks` |
 
 ## 素材表迁移
 
@@ -26,7 +26,29 @@
 当前生成、上传、解码和存储仍只接入图片。`media_type` 已有类型记录与约束，
 不代表视频／音频服务已经可用。当前 `width`／`height` 必填，不能写入伪造尺寸来保存音频。
 实际接入时应追加迁移，按类型约束图片／视频尺寸、音视频时长等媒体元数据；
-同时设计各自的提交、计费和执行语义。只有真正共享任务模型后，才提取 `generation_*`
-通用流程，并通过 `media_type` 区分；不要复制一整套仅前缀不同的素材表。
+同时设计各自的提交、计费和执行语义，并为共享生成任务补充媒体类型及适配器专属参数约束。
+当前 `generation_*` 完成的是通用命名，原有图片字段、计费规则和请求契约保持不变；
+未来通过媒体类型区分执行适配器，不要复制一整套仅前缀不同的任务／素材表。
 
 新增数据库代码与查询必须携带服务端解析的组织／用户范围，改名不得削弱租户隔离。
+
+## 生成任务迁移与发布顺序
+
+`0014_generation_naming` 原地重命名七张生成表，并同步索引、约束、身份序列、
+钱包外键和 `validate_wallet_entry_scope()` 的函数体。任务、执行项、积分账本、重试键、
+outbox 租约、事件 ID／游标与公开任务编号均保持。`tasks` 等基础诊断表不合并，
+`image_local_edits` 继续通过外键关联新的生成任务表。
+
+迁移保留旧表名的 `security_invoker` 简单视图，作为查询和普通写入的过渡入口；
+新业务代码和 Drizzle 导出均使用 `generation*`。视图不是双写副本，也不支持旧提交代码的
+带冲突目标 `ON CONFLICT`；不得将此次迁移当作任意旧版本都能混跑的滚动升级。
+
+部署时先停止接受新提交，等待执行中的工作安全结束，再停止旧 API／Worker，
+执行迁移，启动使用新表名的 API／Worker，验证身份、任务查询、提交幂等与账务后恢复入口。
+未完成／待核对任务和 Redis 队列必须保留，不得清表或重建队列。迁移失败由事务回滚；
+迁移成功后不能直接切回使用旧表名的写入版本。需要滚动发布时，应先单独部署能识别新旧结构的
+过渡写入版本，再执行本次迁移。最后一次旧版本退出后，另加收缩迁移移除兼容视图。
+生产发布仍需要独立授权，不由本地迁移或测试代替。
+
+SSE 的 `lycobo_image_events` 通知频道及图片 API／Redis 队列协议保持原值，避免现有连接与
+待处理消息失联；数据库事件表已统一命名。后续协议升级须另做兼容设计，不能直接改字符串。
