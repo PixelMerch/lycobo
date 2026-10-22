@@ -68,9 +68,8 @@ test("history references share a viewer with switching, rotation, wheel zoom and
     .poll(async () => (await viewer.locator(".browse-image-frame").boundingBox())?.width ?? 0)
     .toBeGreaterThan(500);
   const frame = await viewer.locator(".browse-image-frame").boundingBox();
-  const close = await viewer
-    .getByRole("button", { name: "关闭图片浏览", exact: true })
-    .boundingBox();
+  const closeButton = viewer.getByRole("button", { name: "关闭图片浏览", exact: true });
+  const close = await closeButton.boundingBox();
   if (!frame || !close) throw new Error("Missing image viewer geometry");
   expect(Math.abs(frame.y - close.y)).toBeLessThan(1);
   expect(close.x - frame.x - frame.width).toBeCloseTo(32, 0);
@@ -88,6 +87,20 @@ test("history references share a viewer with switching, rotation, wheel zoom and
   await expect(picture).toHaveCSS("rotate", "-90deg");
   await viewer.getByRole("button", { name: "向右旋转", exact: true }).click();
   await expect(picture).toHaveCSS("rotate", "0deg");
+  await viewer.getByRole("button", { name: "向右旋转", exact: true }).click();
+  await expect(picture).toHaveCSS("rotate", "90deg");
+  // The picture is refitted after a rotation, but the browsing controls stay
+  // anchored to the stage so the close action never drifts.
+  const rotatedClose = await closeButton.boundingBox();
+  const rotatedNext = await viewer
+    .getByRole("button", { name: "下一张图片", exact: true })
+    .boundingBox();
+  if (!rotatedClose || !rotatedNext) throw new Error("Missing rotated viewer geometry");
+  expect(Math.abs(rotatedClose.x - close.x)).toBeLessThan(1);
+  expect(Math.abs(rotatedClose.y - close.y)).toBeLessThan(1);
+  expect(Math.abs(rotatedNext.x - next.x)).toBeLessThan(1);
+  await viewer.getByRole("button", { name: "向左旋转", exact: true }).click();
+  await expect(picture).toHaveCSS("rotate", "0deg");
   await viewer.getByRole("button", { name: "放大图片", exact: true }).click();
   await expect(viewer.getByLabel("图片缩放比例")).toHaveText("125%");
   await viewer.getByRole("button", { name: "缩小图片", exact: true }).click();
@@ -100,6 +113,21 @@ test("history references share a viewer with switching, rotation, wheel zoom and
   await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[0]}/content`);
   await expect(viewer.getByLabel("图片缩放比例")).toHaveText("100%");
   await viewer.getByRole("button", { name: "下一张图片", exact: true }).click();
+  await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[1]}/content`);
+  // The picture is a plain rectangle, matching the square-cornered viewer.
+  await expect(picture).toHaveCSS("border-radius", "0px");
+  // Arrow keys still switch images while the toolbar owns focus, and its focus
+  // indicator stays a neutral fill instead of a purple outline.
+  const zoomIn = viewer.getByRole("button", { name: "放大图片", exact: true });
+  await zoomIn.focus();
+  await expect(zoomIn).toHaveCSS("outline-style", "none");
+  await expect
+    .poll(async () => zoomIn.evaluate((node) => getComputedStyle(node).backgroundColor))
+    .not.toBe("rgba(0, 0, 0, 0)");
+  await page.keyboard.press("ArrowRight");
+  await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[2]}/content`);
+  await expect(zoomIn).toBeFocused();
+  await page.keyboard.press("ArrowLeft");
   await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[1]}/content`);
   await viewer.getByRole("button", { name: "关闭图片浏览", exact: true }).focus();
   await page.keyboard.press("ArrowLeft");

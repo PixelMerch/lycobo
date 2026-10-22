@@ -7,7 +7,7 @@ import {
   IconZoomIn,
   IconZoomOut,
 } from "@tabler/icons-react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import { useErrorToast } from "../lib/error-toast";
 import { DialogClose } from "./dialog-close";
@@ -30,9 +30,13 @@ export function ImageViewer({
   onClose: () => void;
 }) {
   const { requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
+  const reducedMotion = useReducedMotion();
   const [index, setIndex] = useState(Math.max(0, Math.min(initialIndex, images.length - 1)));
   const active = images[index];
   const [zoom, setZoom] = useState(100);
+  const zoomValue = useRef(100);
+  const zoomGoal = useRef(100);
+  const zoomFrame = useRef<number | null>(null);
   const [angle, setAngle] = useState(0);
   const [pan, setPan] = useState<Point>(origin);
   const [dragging, setDragging] = useState(false);
@@ -40,10 +44,11 @@ export function ImageViewer({
   const [viewport, setViewport] = useState({ width: 1, height: 1 });
   const [failed, setFailed] = useState(false);
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const [animated, setAnimated] = useState(false);
   const [area, setArea] = useState<HTMLElement | null>(null);
   const dismissStart = useRef<{ id: number; x: number; y: number } | null>(null);
   const drag = useRef<{ pointer: Point; pan: Point } | null>(null);
-  const wheelChange = useRef<(delta: number) => void>(() => {});
+  const wheelZoom = useRef<(delta: number) => void>(() => {});
   const ready = loadedSrc === active?.src && viewport.width > 1 && viewport.height > 1;
   const turned = Math.abs(angle % 180) === 90;
   const visualWidth = turned ? natural.height : natural.width;
@@ -60,11 +65,57 @@ export function ImageViewer({
     y: Math.max(-limit.y, Math.min(limit.y, point.y)),
   });
   const visiblePan = clamp(pan);
-  const changeZoom = (value: number) => {
-    setZoom((current) => Math.min(500, Math.max(25, current + value)));
-    setPan(origin);
+  /* Zoom is eased toward its goal so wheel input and button steps stay smooth
+   * instead of jumping a fixed step per event. */
+  const animateZoom = () => {
+    if (zoomFrame.current !== null) return;
+    let last = performance.now();
+    const step = (now: number) => {
+      const elapsed = Math.min(64, now - last);
+      last = now;
+      const goal = zoomGoal.current;
+      const current = zoomValue.current;
+      const next =
+        Math.abs(goal - current) < 0.3
+          ? goal
+          : current + (goal - current) * (1 - Math.exp(-elapsed / 70));
+      zoomValue.current = next;
+      setZoom(next);
+      zoomFrame.current = next === goal ? null : requestAnimationFrame(step);
+    };
+    zoomFrame.current = requestAnimationFrame(step);
   };
-  wheelChange.current = ready ? changeZoom : () => {};
+  const zoomTo = (value: number) => {
+    zoomGoal.current = Math.min(500, Math.max(25, value));
+    setPan(origin);
+    if (reducedMotion) {
+      zoomValue.current = zoomGoal.current;
+      setZoom(zoomGoal.current);
+      return;
+    }
+    animateZoom();
+  };
+  const zoomBy = (factor: number) => zoomTo(zoomGoal.current * factor);
+  wheelZoom.current = ready
+    ? (delta) => zoomBy(Math.exp(-delta * (Math.log(1.1) / 100)))
+    : () => {};
+  useEffect(
+    () => () => {
+      if (zoomFrame.current !== null) cancelAnimationFrame(zoomFrame.current);
+    },
+    [],
+  );
+  /* The first fitted frame must paint without transitions: `fit` starts at 1
+   * before the natural size is known, so an animated change would show the
+   * picture oversized for a moment when the viewer opens or switches images. */
+  useEffect(() => {
+    if (!ready) {
+      setAnimated(false);
+      return;
+    }
+    const frame = requestAnimationFrame(() => setAnimated(true));
+    return () => cancelAnimationFrame(frame);
+  }, [ready]);
   useEffect(() => {
     const element = area;
     if (!element) return;
@@ -74,7 +125,8 @@ export function ImageViewer({
     resize.observe(element);
     const wheel = (event: WheelEvent) => {
       event.preventDefault();
-      wheelChange.current(event.deltaY < 0 ? 10 : -10);
+      const delta = Math.max(-150, Math.min(150, event.deltaY)) * (event.ctrlKey ? 4 : 1);
+      wheelZoom.current(delta);
     };
     element.addEventListener("wheel", wheel, { passive: false });
     return () => {
@@ -86,6 +138,12 @@ export function ImageViewer({
   const select = (delta: number) => {
     const next = index + delta;
     if (next < 0 || next >= images.length) return;
+    if (zoomFrame.current !== null) {
+      cancelAnimationFrame(zoomFrame.current);
+      zoomFrame.current = null;
+    }
+    zoomValue.current = 100;
+    zoomGoal.current = 100;
     setLoadedSrc(null);
     setIndex(next);
     setZoom(100);
@@ -139,19 +197,22 @@ export function ImageViewer({
               onPointerCancel={() => {
                 dismissStart.current = null;
               }}
-              onKeyDown={(event) => {
+              onKeyDownCapture={(event) => {
+                /* Arrow keys always flip between images, including when the
+                 * toolbar owns focus; the toolbar must not move its own focus
+                 * ring instead. */
                 if (
                   images.length < 2 ||
                   event.altKey ||
                   event.ctrlKey ||
                   event.metaKey ||
-                  event.defaultPrevented
+                  event.shiftKey
                 )
                   return;
-                if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-                  event.preventDefault();
-                  select(event.key === "ArrowLeft" ? -1 : 1);
-                }
+                if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+                event.preventDefault();
+                event.stopPropagation();
+                select(event.key === "ArrowLeft" ? -1 : 1);
               }}
             >
               <section
@@ -196,7 +257,7 @@ export function ImageViewer({
                 {!ready && !failed && (
                   <Spinner className="browse-image-loading" aria-label="图片加载中" />
                 )}
-                <div className="browse-image-frame" style={{ width, height }}>
+                <div className="browse-image-frame">
                   <div
                     className="browse-image-transform"
                     style={{
@@ -209,10 +270,12 @@ export function ImageViewer({
                       alt={active.alt}
                       draggable={false}
                       className="browse-image-picture"
+                      data-animated={animated}
                       style={{
-                        width: natural.width * fit,
-                        height: natural.height * fit,
+                        width: natural.width,
+                        height: natural.height,
                         rotate: `${angle}deg`,
+                        scale: String(fit),
                       }}
                       onLoad={(event) => {
                         setNatural({
@@ -295,7 +358,7 @@ export function ImageViewer({
                     isIconOnly
                     aria-label="缩小图片"
                     isDisabled={zoom <= 25}
-                    onPress={() => changeZoom(-25)}
+                    onPress={() => zoomTo(zoomGoal.current - 25)}
                   >
                     <UiIcon icon={IconZoomOut} size="action" />
                   </Button>
@@ -306,7 +369,7 @@ export function ImageViewer({
                   aria-label="图片缩放比例"
                   aria-live="polite"
                 >
-                  {zoom}%
+                  {Math.round(zoom)}%
                 </output>
                 <Tooltip>
                   <Button
@@ -315,7 +378,7 @@ export function ImageViewer({
                     isIconOnly
                     aria-label="放大图片"
                     isDisabled={zoom >= 500}
-                    onPress={() => changeZoom(25)}
+                    onPress={() => zoomTo(zoomGoal.current + 25)}
                   >
                     <UiIcon icon={IconZoomIn} size="action" />
                   </Button>
