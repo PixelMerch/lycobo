@@ -1,6 +1,6 @@
 import { EmptyState, Link } from "@heroui/react";
 import { createBrowserRouter, redirect } from "react-router";
-import { isModelId, useStudioStore } from "../features/studio/studio-state";
+import { isModelId, useStudioStore } from "../features/generation/studio-state";
 import { PageLoading } from "./page-loading";
 
 export const router = createBrowserRouter([
@@ -26,17 +26,17 @@ export const router = createBrowserRouter([
       </EmptyState>
     ),
     lazy: async () => ({
-      Component: (await import("../features/studio/studio-shell")).StudioShell,
+      Component: (await import("./studio-shell")).StudioShell,
     }),
     children: [
       {
         index: true,
-        lazy: async () => ({ Component: (await import("../features/studio/home-page")).HomePage }),
+        lazy: async () => ({ Component: (await import("../features/home/home-page")).HomePage }),
       },
       {
         path: "create",
         lazy: async () => ({
-          Component: (await import("../features/studio/workspace-page")).WorkspacePage,
+          Component: (await import("../features/generation/workspace-page")).WorkspacePage,
         }),
       },
       {
@@ -51,7 +51,7 @@ export const router = createBrowserRouter([
       {
         path: "assets",
         lazy: async () => ({
-          Component: (await import("../features/studio/assets-page")).AssetsPage,
+          Component: (await import("../features/assets/assets-page")).AssetsPage,
         }),
       },
       {

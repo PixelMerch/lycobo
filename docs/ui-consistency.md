@@ -11,7 +11,7 @@
 | 展示组件 | 明确输入和事件，不自行请求无关业务 | HistoryTaskMeta、ResultImage、ModelChooserCard |
 | 共享交互组合 | 组合 HeroUI，统一可复用的完整行为 | ConfirmDialog、DialogClose、ImageViewer、ReferencePrompt |
 | 状态与同步 | 服务端数据用 TanStack Query，客户端草稿用 Zustand；hook只同步外部系统 | generation-client、wallet-client、studio-state、use-image-events |
-| 视觉 | 全局token＋功能样式；不新增相互竞争的基础控件样式 | styles/app.css、components/*.css、features/studio/*.css |
+| 视觉 | 全局token＋功能样式；不新增相互竞争的基础控件样式 | styles/app.css、components/*.css、features/**/*.css |
 
 按功能边界拆分，不为了行数把静态片段变成几十个只有一个调用方的包装。反之，查询、任务元信息、图片操作、右侧索引、预览状态不应长期挤在一个页面组件里。跨功能使用共享组件的真实路径，不保留仅转发导出的兼容文件，也不建立全站 barrel。
 
