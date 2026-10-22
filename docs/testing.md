@@ -13,6 +13,21 @@
 CI 使用 pnpm exec playwright install --with-deps chromium。
 浏览器测试失败留 trace/report；测试使用本地应用，不能连接线上接口。
 
+## CI 分层浏览器检查
+
+| 触发场景 | Browser 检查 |
+| --- | --- |
+| 推送 dev、目标为 dev 的 PR | `pnpm test:e2e:smoke`，只跑核心流程 |
+| 目标为 main 的 PR | `pnpm test:e2e`，合并前全量回归 |
+| 推送 main（含合并） | `pnpm test:e2e`，全量回归 |
+| 手动运行 CI | `pnpm test:e2e`，全量回归 |
+
+冒烟范围：首页到创作路由、登录/退出后的历史同步、会话续期、真实接口契约 fixture 下的提交/参考图上传、草稿保留与桌面/移动导航。它不替代发布前的完整回归。修改模块时仍应本地执行相应测试。
+
+Quality 和 Infrastructure 保持原检查范围；分支保护所需的 `Browser` 名称保持不变，由同一 job 明确选择全量或冒烟。不能通过顶层路径过滤跳过必需检查，否则可能一直处于 Pending。
+
+PR 标题校验拆为独立 `pr-title.yml`，仍报告 `PR title`。编辑标题或描述仅重跑该轻量工作流，不取消或重启完整 CI；新提交仍会触发完整的对应级别检查。改动 PR 目标分支则重新执行 CI，以免从 dev 改投 main 后沿用冒烟结果。纯元数据编辑的 CI 使用独立并发组和非必需检查名称并跳过任务，不覆盖之前的必需检查结果。此调整不改变 main 的分支保护。
+
 ## 本地 DB/队列集成
 
 ```sh
