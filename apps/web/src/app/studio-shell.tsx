@@ -1,8 +1,6 @@
-import { Button, Drawer, Dropdown, Modal, Tooltip } from "@heroui/react";
-import { useWallet } from "../features/account/wallet-client";
+import { Button, Drawer, Modal, Tooltip } from "@heroui/react";
 import "../styles/brand.css";
 import {
-  IconChevronDown,
   IconChevronRight,
   IconFolder,
   IconHelpCircle,
@@ -17,13 +15,10 @@ import {
 import { motion, useReducedMotion } from "motion/react";
 import { type CSSProperties, useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
-import { CreditCoin } from "../components/credit-coin";
 import { DialogClose } from "../components/dialog-close";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
-import { AccountPanel, type AccountSection } from "../features/account/account-panel";
-import { useEnterpriseLogout, useEnterpriseSession } from "../features/auth/auth-client";
-import { LoginDialog } from "../features/auth/login-dialog";
+import { HeaderAccountMenu } from "../features/account/header-account-menu";
 import { chooserModels, ModelChooserCard } from "../features/generation/models/model-chooser-card";
 import { models, useStudioStore } from "../features/generation/studio-state";
 import { useImageEvents } from "../features/generation/use-image-events";
@@ -34,9 +29,6 @@ const chooserLayout: CSSProperties & { "--tool-columns": number } = {
 
 export function StudioShell() {
   useImageEvents();
-  const accountSession = useEnterpriseSession();
-  const wallet = useWallet();
-  const logout = useEnterpriseLogout();
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
@@ -50,8 +42,6 @@ export function StudioShell() {
   const sidebarWidth =
     viewportWidth < 768 ? "0px" : sidebarCollapsed ? "64px" : `${expandedSidebarWidth}px`;
   const [info, setInfo] = useState<string | null>(null);
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [accountSection, setAccountSection] = useState<AccountSection | null>(null);
   const chooserOpen = useStudioStore((s) => s.chooserOpen);
   const setChooserOpen = useStudioStore((s) => s.setChooserOpen);
   const activeModel = useStudioStore((s) => s.activeModel);
@@ -228,59 +218,9 @@ export function StudioShell() {
           </Drawer.Backdrop>
         </Drawer>
         <div className="header-actions">
-          {accountSession.data ? (
-            <>
-              <Button
-                variant="tertiary"
-                className="credit-pill"
-                onPress={() => setAccountSection("credits")}
-              >
-                <CreditCoin />
-                积分
-                <strong>{wallet.data?.balance ?? "—"}</strong>
-              </Button>
-              <Dropdown>
-                <Dropdown.Trigger className="account-trigger">
-                  <span className="account-initial" aria-hidden="true">
-                    {accountSession.data.account.slice(0, 1).toUpperCase()}
-                  </span>
-                  <span className="account-name">{accountSession.data.account}</span>
-                  <UiIcon icon={IconChevronDown} size="small" />
-                </Dropdown.Trigger>
-                <Dropdown.Popover className="account-menu">
-                  <Dropdown.Menu
-                    onAction={(key) => {
-                      if (key === "logout") logout.mutate();
-                      else setAccountSection(key as AccountSection);
-                    }}
-                  >
-                    <Dropdown.Item id="profile">个人信息</Dropdown.Item>
-                    <Dropdown.Item id="credits">积分与购买</Dropdown.Item>
-                    <Dropdown.Item id="logout">退出登录</Dropdown.Item>
-                  </Dropdown.Menu>
-                </Dropdown.Popover>
-              </Dropdown>
-            </>
-          ) : (
-            <Button
-              variant="tertiary"
-              size="sm"
-              className="header-login"
-              onPress={() => setLoginOpen(true)}
-            >
-              登录领积分
-            </Button>
-          )}
+          <HeaderAccountMenu />
         </div>
       </header>
-      {loginOpen && <LoginDialog onClose={() => setLoginOpen(false)} />}
-      {accountSection ? (
-        <AccountPanel
-          key={accountSection}
-          section={accountSection}
-          onClose={() => setAccountSection(null)}
-        />
-      ) : null}
       <main className="main-content">
         <Outlet />
       </main>

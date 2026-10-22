@@ -5,7 +5,7 @@ import { UiIcon } from "../../components/ui-icon";
 import { useEnterpriseLogout, useEnterpriseSession } from "../auth/auth-client";
 import { WalletPanel } from "./wallet-panel";
 
-export type AccountSection = "profile" | "credits";
+export type AccountSection = "profile" | "credits" | "management";
 const roleLabels: Record<string, string> = {
   member: "成员",
   admin: "管理员",
@@ -47,7 +47,10 @@ export function AccountPanel({
               </div>
               <Tabs
                 selectedKey={active}
-                onSelectionChange={(key) => setActive(String(key) as AccountSection)}
+                onSelectionChange={(key) => {
+                  if (key === "profile" || key === "credits" || key === "management")
+                    setActive(key);
+                }}
               >
                 <Tabs.ListContainer>
                   <Tabs.List aria-label="账户信息">
@@ -56,7 +59,11 @@ export function AccountPanel({
                       <Tabs.Indicator />
                     </Tabs.Tab>
                     <Tabs.Tab id="credits">
-                      积分与购买
+                      订阅与账单
+                      <Tabs.Indicator />
+                    </Tabs.Tab>
+                    <Tabs.Tab id="management">
+                      账号管理
                       <Tabs.Indicator />
                     </Tabs.Tab>
                   </Tabs.List>
@@ -94,6 +101,29 @@ export function AccountPanel({
                       </Alert.Content>
                     </Alert>
                   ) : null}
+                </Tabs.Panel>
+                <Tabs.Panel id="management">
+                  <dl className="account-rows">
+                    <div>
+                      <dt>登录账号</dt>
+                      <dd>{account?.account ?? "—"}</dd>
+                    </div>
+                    {account?.uid && (
+                      <div>
+                        <dt>账号编号</dt>
+                        <dd>{account.uid}</dd>
+                      </div>
+                    )}
+                    <div>
+                      <dt>登录方式</dt>
+                      <dd>企业账号</dd>
+                    </div>
+                    <div>
+                      <dt>当前权限</dt>
+                      <dd>{account ? (roleLabels[account.role] ?? account.role) : "—"}</dd>
+                    </div>
+                  </dl>
+                  <p className="account-note">企业账号由管理员统一管理。</p>
                 </Tabs.Panel>
                 <Tabs.Panel id="credits">
                   <WalletPanel />

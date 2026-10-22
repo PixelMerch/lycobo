@@ -30,7 +30,7 @@ apps/web/src/
 ├── styles/                       # 共享 tokens、基础样式与全屏动效样式
 └── features/
     ├── auth/                     # 身份请求与登录弹窗
-    ├── account/                  # 账户中心、钱包请求和账务展示
+    ├── account/                  # Header账户菜单、账户中心、钱包请求和账务展示
     ├── home/                     # 首页、首页输入、案例及案例数据
     ├── assets/                   # 素材页、全屏素材库及其局部样式
     ├── generation/               # 生图请求、事件、会话草稿及工作台页面
@@ -110,3 +110,5 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 - `components/use-centered-dialog-motion`：预览和全屏素材库的公共开关动画，不通过feature转发导入。
 
 功能组件使用直接依赖；服务端缓存属于TanStack Query，临时草稿与交互属于Zustand，纯展示组件从props获得数据。具体规则见[UI一致性维护](docs/ui-consistency.md)。
+
+- `features/account/HeaderAccountMenu` 封装Header登录态、积分与头像合并入口、账户下拉菜单及账户弹窗；`StudioShell` 仅组合入口，不重复持有账号查询和菜单状态。个人作品复用素材库路由，账户资料／账单／账号权限由 `AccountPanel` 承接。

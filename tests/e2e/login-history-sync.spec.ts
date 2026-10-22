@@ -78,7 +78,7 @@ test("login and logout synchronize mounted history without reloading or losing t
   await dialog.getByLabel("密码", { exact: true }).fill("fixture-password");
   await dialog.getByRole("button", { name: "登录", exact: true }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(page.locator(".header-actions")).toContainText(user.account);
+  await expect(page.locator(".account-trigger")).toHaveAccessibleName(`账户菜单：${user.account}`);
   await expect(page.locator(".generation-job")).toContainText(job.prompt);
   await expect(page.getByText("登录后查看生成记录", { exact: true })).toHaveCount(0);
   await expect(prompt).toHaveValue("登录前编辑的草稿");

@@ -475,7 +475,7 @@ small {
   }
 }
 /* Header keeps only the mobile menu and the account/login actions. */
-.topbar :is(.credit-pill, .account-trigger, .header-login) {
+.topbar .header-login {
   height: 38px;
   min-height: 38px;
   border-radius: 20px;
@@ -483,19 +483,6 @@ small {
   line-height: 18px;
   font-weight: 500;
   font-family: var(--shell-font-family);
-}
-.topbar :is(.credit-pill, .account-trigger) {
-  background: #ffffff14;
-  border: 1px solid #ffffff0a;
-  color: #f4f4f5;
-}
-.topbar :is(.credit-pill, .account-trigger):is(:hover, [data-hovered="true"]) {
-  background: #ffffff1f;
-  border-color: #ffffff0a;
-}
-.topbar .account-initial {
-  background: #ffffff14;
-  color: #fff;
 }
 
 .header-actions {
@@ -505,73 +492,6 @@ small {
   flex: none;
   /* The breadcrumb is gone, so the actions pin themselves to the right edge. */
   margin-inline-start: auto;
-}
-.credit-pill {
-  height: 32px;
-  min-height: 32px;
-  padding: 0 12px;
-  gap: 6px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
-.credit-pill:hover,
-.credit-pill[data-hovered="true"] {
-  border-color: #ffffff29;
-  background: var(--surface);
-  color: var(--foreground);
-}
-.credit-pill strong {
-  color: var(--foreground);
-  font-weight: var(--weight-medium);
-  font-variant-numeric: tabular-nums;
-}
-.account-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 36px;
-  min-height: 36px;
-  padding: 0 10px 0 4px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--foreground);
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-}
-.account-trigger:hover,
-.account-trigger[data-hovered="true"] {
-  background: var(--surface-secondary);
-  border-color: #ffffff29;
-}
-.account-initial {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-}
-.account-name {
-  max-width: 14ch;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.account-menu {
-  min-width: 176px;
-  padding: 6px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--overlay);
 }
 .mobile-menu {
   display: none;
@@ -1366,10 +1286,6 @@ p.home-hero-kicker {
   flex: none;
   object-fit: contain;
 }
-.credit-pill .credit-coin {
-  width: 18px;
-  height: 18px;
-}
 .generate-credit-cost {
   display: inline-flex;
   align-items: center;
@@ -1596,7 +1512,7 @@ p.home-hero-kicker {
     min-height: 44px;
     height: 44px;
   }
-  .topbar :is(.credit-pill, .account-trigger, .header-login) {
+  .topbar .header-login {
     min-height: 44px;
     height: 44px;
   }
@@ -1641,16 +1557,6 @@ p.home-hero-kicker {
   }
   .home-hero-actions {
     padding-bottom: 0;
-  }
-  .account-name {
-    display: none;
-  }
-  .account-trigger {
-    min-height: var(--control-touch-target);
-    padding: 0 6px 0 4px;
-  }
-  .credit-pill {
-    padding: 0 10px;
   }
   .account-dialog {
     padding: 20px 16px;

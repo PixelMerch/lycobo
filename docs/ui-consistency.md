@@ -19,6 +19,7 @@
 
 | 能力 | 唯一入口 | 维护约束 |
 | --- | --- | --- |
+| Header账户 | HeaderAccountMenu | 积分与头像共用入口，封装登录／账号菜单／账户弹窗；应用壳不复制状态和查询 |
 | 确认 | ConfirmDialog | 不在业务中复制 Modal 标记；正文与操作布局共用 |
 | 关闭 | DialogClose | 图标与命中区分开，确认弹窗沿用33px hover圆底 |
 | 参考图片上传 | ReferencePicker → ReferenceImageCard | 首页与工作台共用；删除、编号、预览不复制 |

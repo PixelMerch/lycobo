@@ -216,7 +216,7 @@ test("enterprise login updates the header, refreshes its session and clears the 
   await dialog.getByLabel("密码", { exact: true }).fill("fixture-password");
   await dialog.getByRole("button", { name: "登录", exact: true }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(page.locator(".header-actions")).toContainText("merchant-fixture");
+  await expect(page.locator(".account-trigger")).toHaveAccessibleName("账户菜单：merchant-fixture");
   expect(
     await page.evaluate(() =>
       Object.keys(localStorage).some((key) => /token|jwt|password/i.test(key)),
