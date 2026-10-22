@@ -1,28 +1,13 @@
-import { Button, Modal, Slider, ToggleButton, Tooltip } from "@heroui/react";
-import { IconCopy, IconDownload, IconPhoto, IconStar, IconStarFilled } from "@tabler/icons-react";
+import { Modal } from "@heroui/react";
 import { motion } from "motion/react";
-import {
-  lazy,
-  type PointerEvent as ReactPointerEvent,
-  Suspense,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { DialogClose } from "../../components/dialog-close";
-import { UiIcon } from "../../components/ui-icon";
 import { useCenteredDialogMotion } from "../../components/use-centered-dialog-motion";
-import { copyToClipboard } from "../../lib/clipboard";
-import "./fullscreen-dialog.css";
-import { assetContentUrl, downloadAsset } from "./generation-client";
 import { ImagePreviewRail } from "./image-preview-rail";
+import "./fullscreen-dialog.css";
 import "./image-preview.css";
-import { ReferenceThumbnails } from "./reference-thumbnails";
-import { useStudioStore } from "./studio-state";
-import { usePreviewZoom } from "./use-preview-zoom";
 
-const LocalRepair = lazy(() => import("./local-repair"));
+const PreviewWorkspace = lazy(() => import("./preview-workspace"));
 
 export type PreviewImage = {
   id: string;
@@ -41,44 +26,6 @@ export type PreviewMeta = {
   references?: string[];
 };
 
-function CopyIconButton({ value, label }: { value: string; label: string }) {
-  return (
-    <Button
-      isIconOnly
-      variant="tertiary"
-      className="image-preview-copy"
-      aria-label={label}
-      onPress={() => void copyToClipboard(value)}
-    >
-      <UiIcon icon={IconCopy} size="small" />
-    </Button>
-  );
-}
-
-/**
- * How far the scaled picture may travel before an edge would leave the frame.
- * Scale is a transform: the layout size stays at the fitted size, so the
- * overflow is measured from it and split evenly around the centre.
- */
-function panLimits(frame: HTMLElement | null, picture: HTMLElement | null, scale: number) {
-  if (!frame || !picture) return { x: 0, y: 0 };
-  return {
-    x: Math.max(0, (picture.offsetWidth * scale - frame.clientWidth) / 2),
-    y: Math.max(0, (picture.offsetHeight * scale - frame.clientHeight) / 2),
-  };
-}
-
-function clampPan(pan: { x: number; y: number }, limits: { x: number; y: number }) {
-  return {
-    x: Math.min(limits.x, Math.max(-limits.x, pan.x)),
-    y: Math.min(limits.y, Math.max(-limits.y, pan.y)),
-  };
-}
-
-/**
- * Full-screen image viewer: the picture on the left, its facts and prompt in the
- * middle, and the thumbnail list pinned to the right.
- */
 export function ImagePreviewDialog({
   images: originalImages,
   meta: sharedMeta = {},
@@ -104,32 +51,10 @@ export function ImagePreviewDialog({
   const [repair, setRepair] = useState(false);
   const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
   const [index, setIndex] = useState(Math.min(Math.max(initialIndex, 0), images.length - 1));
-  const { zoom, setZoom, wheelZoom } = usePreviewZoom();
   const surface = useRef<HTMLDivElement>(null);
-  const stage = useRef<HTMLElement>(null);
-  const frame = useRef<HTMLDivElement>(null);
-  const picture = useRef<HTMLImageElement>(null);
-  const dragOrigin = useRef<{
-    x: number;
-    y: number;
-    panX: number;
-    panY: number;
-  } | null>(null);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [dragging, setDragging] = useState(false);
   const active = images[index];
   const meta = active?.meta ?? sharedMeta;
-  const zoomed = zoom > 100;
-  const favorite = useStudioStore((s) => (active ? s.favorites.includes(active.id) : false));
-  const toggleFavorite = useStudioStore((s) => s.toggleFavorite);
-  // A new picture starts centred; reset the pan in the same batch as the
-  // selection so the outgoing offset never reaches the next picture.
-  const select = useCallback((next: number | ((current: number) => number)) => {
-    setPan({ x: 0, y: 0 });
-    setDragging(false);
-    dragOrigin.current = null;
-    setIndex(next);
-  }, []);
+  const select = useCallback((next: number | ((current: number) => number)) => setIndex(next), []);
   useEffect(() => {
     const dialog = surface.current?.closest('[role="dialog"]');
     if (!dialog) return;
@@ -142,7 +67,8 @@ export function ImagePreviewDialog({
       }[event.key];
       const target = event.target;
       if (
-        repair ||
+        (repair &&
+          !(event.target instanceof HTMLElement && event.target.closest(".image-preview-rail"))) ||
         !direction ||
         event.altKey ||
         event.ctrlKey ||
@@ -150,7 +76,7 @@ export function ImagePreviewDialog({
         !(target instanceof HTMLElement) ||
         target.closest('[role="dialog"]') !== dialog ||
         target.closest(
-          'input, textarea, select, [contenteditable="true"], [role="slider"], [role="textbox"], [role="combobox"], [role="spinbutton"]',
+          'input, textarea, select, .preview-canvas-toolbar, [contenteditable="true"], [role="slider"], [role="textbox"], [role="combobox"], [role="spinbutton"]',
         )
       )
         return;
@@ -167,64 +93,7 @@ export function ImagePreviewDialog({
     document.addEventListener("keydown", onKeyDown, true);
     return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [index, images.length, repair, select]);
-  // Shrinking the zoom can leave the old offset beyond the new overflow.
-  useEffect(() => {
-    const limits = panLimits(frame.current, picture.current, zoom / 100);
-    setPan((current) => {
-      const next = clampPan(current, limits);
-      return next.x === current.x && next.y === current.y ? current : next;
-    });
-  }, [zoom]);
-  // Wheel zooms the picture; the listener must be non-passive to cancel scroll.
-  useEffect(() => {
-    const area = stage.current;
-    if (repair || !area) return;
-    const onWheel = (event: WheelEvent) => {
-      event.preventDefault();
-      wheelZoom(event.deltaY, event.ctrlKey);
-    };
-    area.addEventListener("wheel", onWheel, { passive: false });
-    return () => area.removeEventListener("wheel", onWheel);
-  }, [repair, wheelZoom]);
   if (!active) return null;
-  const label = active.publicId ?? active.id.slice(0, 8);
-  const size = active.width && active.height ? `${active.width} x ${active.height}` : "尺寸待同步";
-  // Dragging only applies to a magnified picture: at 100% nothing is hidden
-  // beyond the frame. Pointer capture keeps the pan alive beyond the stage.
-  const startPan = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!zoomed || event.button !== 0) return;
-    event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dragOrigin.current = {
-      x: event.clientX,
-      y: event.clientY,
-      panX: pan.x,
-      panY: pan.y,
-    };
-    setDragging(true);
-  };
-  const movePan = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const origin = dragOrigin.current;
-    if (!origin) return;
-    const limits = panLimits(frame.current, picture.current, zoom / 100);
-    setPan(
-      clampPan(
-        {
-          x: origin.panX + event.clientX - origin.x,
-          y: origin.panY + event.clientY - origin.y,
-        },
-        limits,
-      ),
-    );
-  };
-  const endPan = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!dragOrigin.current) return;
-    dragOrigin.current = null;
-    setDragging(false);
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-  };
   return (
     <Modal isOpen onOpenChange={(open) => (!open ? requestClose() : undefined)}>
       <Modal.Backdrop className="fullscreen-dialog__backdrop image-preview-backdrop">
@@ -236,179 +105,35 @@ export function ImagePreviewDialog({
               data-dialog-phase={phase}
               {...surfaceMotion}
             >
-              {repair ? (
-                <Suspense fallback={<p>正在打开局部修复…</p>}>
-                  <LocalRepair
-                    key={active.id}
-                    source={active}
-                    meta={meta}
-                    onBack={() => {
-                      setRepair(false);
-                      requestAnimationFrame(() =>
-                        document.getElementById("open-local-repair")?.focus(),
-                      );
-                    }}
-                    onPreview={(image) => {
-                      const existing = images.findIndex((value) => value.id === image.id);
-                      if (existing >= 0) select(existing);
-                      else {
-                        setAddedImages((values) => [...values, image]);
-                        select(images.length);
-                      }
-                      setRepair(false);
-                    }}
-                  />
-                </Suspense>
-              ) : (
-                <>
-                  <section className="image-preview-stage" aria-label="图片预览" ref={stage}>
-                    {/* The frame clips the zoom so a magnified picture never covers the
-                     * hint text or the bottom bar. */}
-                    <div
-                      className="image-preview-frame"
-                      ref={frame}
-                      data-zoomed={zoomed}
-                      data-dragging={dragging}
-                      onPointerDown={startPan}
-                      onPointerMove={movePan}
-                      onPointerUp={endPan}
-                      onPointerCancel={endPan}
-                      onLostPointerCapture={endPan}
-                    >
-                      <img
-                        key={active.id}
-                        ref={picture}
-                        className="image-preview-image"
-                        src={assetContentUrl(active.id)}
-                        alt={meta.prompt || "生成图片"}
-                        draggable={false}
-                        style={{
-                          scale: `${zoom / 100}`,
-                          translate: `${pan.x}px ${pan.y}px`,
-                        }}
-                        onLoad={() => {
-                          const limits = panLimits(frame.current, picture.current, zoom / 100);
-                          setPan((current) => clampPan(current, limits));
-                        }}
-                      />
-                    </div>
-                    <p className="image-preview-hint">
-                      使用滚轮或滑块缩放图片，放大后可拖动查看细节。
-                    </p>
-                  </section>
-                  <aside className="image-preview-info" aria-label="图片信息">
-                    <div className="image-preview-close-row">
-                      <DialogClose
-                        label="关闭图片预览"
-                        className="image-preview-close"
-                        fullScreen
-                      />
-                    </div>
-                    <header className="image-preview-head">
-                      <span className="image-preview-model">
-                        <UiIcon icon={IconPhoto} size="default" />
-                        <span>{meta.model ?? "图片"}</span>
-                      </span>
-                      <span className="image-preview-tools">
-                        <Tooltip delay={0}>
-                          <ToggleButton
-                            isIconOnly
-                            variant="ghost"
-                            className="image-preview-tool"
-                            aria-label={favorite ? "取消收藏" : "收藏图片"}
-                            isSelected={favorite}
-                            onChange={() => toggleFavorite(active.id)}
-                          >
-                            <UiIcon icon={favorite ? IconStarFilled : IconStar} />
-                          </ToggleButton>
-                          <Tooltip.Content placement="top">
-                            {favorite ? "取消收藏" : "收藏"}
-                          </Tooltip.Content>
-                        </Tooltip>
-                        <Tooltip delay={0}>
-                          <Button
-                            isIconOnly
-                            variant="tertiary"
-                            className="image-preview-tool"
-                            aria-label="下载原图"
-                            onPress={() => downloadAsset(active.id)}
-                          >
-                            <UiIcon icon={IconDownload} />
-                          </Button>
-                          <Tooltip.Content placement="top">下载原图</Tooltip.Content>
-                        </Tooltip>
-                      </span>
-                    </header>
-                    <div className="image-preview-facts">
-                      <span className="image-preview-fact-label">
-                        任务ID：{meta.taskPublicId ?? "—"}
-                      </span>
-                      {meta.taskPublicId && (
-                        <CopyIconButton
-                          value={meta.taskPublicId}
-                          label={`复制任务 ID ${meta.taskPublicId}`}
-                        />
-                      )}
-                      {meta.createdAt && (
-                        <time className="image-preview-time" dateTime={meta.createdAt}>
-                          {new Date(meta.createdAt).toLocaleString("zh-CN", {
-                            hour12: false,
-                          })}
-                        </time>
-                      )}
-                    </div>
-                    {meta.prompt && (
-                      <section className="image-preview-section" aria-label="创意描述">
-                        <h2>
-                          <span>创意描述</span>
-                          <CopyIconButton value={meta.prompt} label="复制创意描述" />
-                        </h2>
-                        <p>{meta.prompt}</p>
-                      </section>
-                    )}
-                    {/* References reuse the history thumbnails; a task without any
-                     * reference hides the whole section, title included. */}
-                    {meta.references && meta.references.length > 0 && (
-                      <section className="image-preview-section" aria-label="参考图">
-                        <h2>
-                          <span>参考图</span>
-                        </h2>
-                        <ReferenceThumbnails ids={meta.references} />
-                      </section>
-                    )}
-                    <div className="image-preview-tools-footer">
-                      <Button
-                        id="open-local-repair"
-                        className="image-preview-edit-action"
-                        variant="secondary"
-                        size="md"
-                        onPress={() => setRepair(true)}
-                      >
-                        局部修复
-                      </Button>
-                    </div>
-                  </aside>
-                  <footer className="image-preview-bar">
-                    <span className="image-preview-bar-id">Img ID：{label}</span>
-                    <span className="image-preview-bar-size">{size}</span>
-                    <Slider
-                      className="image-preview-zoom"
-                      aria-label="缩放"
-                      minValue={100}
-                      maxValue={500}
-                      step={10}
-                      value={zoom}
-                      onChange={(value) => setZoom(Number(value))}
-                    >
-                      <Slider.Track>
-                        <Slider.Fill />
-                        <Slider.Thumb />
-                      </Slider.Track>
-                    </Slider>
-                    <span className="image-preview-zoom-value">{Math.round(zoom)}%</span>
-                  </footer>
-                </>
-              )}
+              <Suspense
+                fallback={
+                  <div className="preview-workspace-loading" role="status">
+                    正在打开图片画布…
+                    <DialogClose
+                      fullScreen
+                      label="关闭图片预览"
+                      className="preview-loading-close"
+                    />
+                  </div>
+                }
+              >
+                <PreviewWorkspace
+                  key={active.id}
+                  source={active}
+                  meta={meta}
+                  repairing={repair}
+                  onRepairChange={setRepair}
+                  onPreview={(image) => {
+                    const existing = images.findIndex((value) => value.id === image.id);
+                    if (existing >= 0) select(existing);
+                    else {
+                      setAddedImages((values) => [...values, image]);
+                      select(images.length);
+                    }
+                    setRepair(false);
+                  }}
+                />
+              </Suspense>
               {/* Thumbnail rail stays on the far right so the image and its
                * details never shift while switching pictures. */}
               <ImagePreviewRail

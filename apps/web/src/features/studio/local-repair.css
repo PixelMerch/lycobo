@@ -1,51 +1,3 @@
-.repair-stage {
-  flex-direction: column;
-  padding: 72px 16px 36px;
-}
-.repair-topbar {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-}
-.repair-toolbar {
-  position: absolute;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-}
-.repair-toolbar [data-selected="true"] {
-  background: var(--accent);
-  color: var(--accent-foreground);
-}
-.repair-canvas {
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  touch-action: none;
-}
-.repair-canvas[data-tool="rect"] {
-  cursor: crosshair;
-}
-.repair-canvas[data-tool="hand"] {
-  cursor: grab;
-}
-.repair-canvas-hint {
-  position: absolute;
-  bottom: 10px;
-  margin: 0;
-  color: var(--muted);
-  font-size: 12px;
-}
 .repair-info {
   gap: 16px;
 }
@@ -155,46 +107,19 @@
   background: linear-gradient(180deg, #baa4ff 0, var(--accent) 100%);
   color: #09070d;
 }
-.repair-bar {
-  justify-content: flex-end;
-  gap: 8px;
+.repair-back.button {
+  margin-bottom: 16px;
+  padding-inline: 0;
+  color: #c8c8c8;
 }
-.repair-bar > span:first-child {
-  margin-right: auto;
-}
-@media (max-width: 1279px) {
-  .repair-stage {
-    padding-top: 112px;
-  }
-  .repair-toolbar {
-    top: 60px;
-    left: 16px;
-    right: auto;
-    transform: none;
-  }
+.repair-source img {
+  border-radius: 6px;
 }
 @media (max-width: 767px) {
-  .repair-stage {
-    height: 55dvh;
-    min-height: 360px;
-    padding-top: 112px;
-  }
   .repair-info {
     padding-bottom: 16px;
   }
-  .repair-bar {
-    order: 0;
-    flex-wrap: wrap;
-  }
-  .repair-stage .button,
-  .repair-toolbar .toggle-button,
   .repair-info .button,
-  .repair-bar .button {
-    min-height: 44px;
-  }
-  .repair-bar .button[data-icon-only="true"] {
-    min-width: 44px;
-  }
   .repair-coordinates input {
     min-height: 44px;
   }

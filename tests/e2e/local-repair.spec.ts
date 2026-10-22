@@ -91,11 +91,11 @@ test("multiple repair regions retain original coordinates, submit one image and 
   await expect(canvas.locator("canvas").first()).toBeVisible();
   const bounds = await canvas.boundingBox();
   if (!bounds) throw new Error("Repair canvas has no bounds");
-  const edge = Math.min(bounds.width - 40, bounds.height - 40);
-  const origin = {
-    x: bounds.x + (bounds.width - edge) / 2,
-    y: bounds.y + (bounds.height - edge) / 2,
-  };
+  await expect(viewer.locator(".image-preview")).toHaveCSS("transform", "none");
+  const imageBounds = await viewer.locator(".image-preview-image").boundingBox();
+  if (!imageBounds) throw new Error("Source image has no bounds");
+  const edge = imageBounds.width;
+  const origin = { x: imageBounds.x, y: imageBounds.y };
   await page.mouse.move(origin.x + edge * 0.1, origin.y + edge * 0.1);
   await page.mouse.down();
   await page.mouse.move(origin.x + edge * 0.4, origin.y + edge * 0.3, { steps: 8 });
@@ -118,7 +118,7 @@ test("multiple repair regions retain original coordinates, submit one image and 
     .inputValue();
   await canvas.hover();
   await page.mouse.wheel(0, -200);
-  await expect(viewer.getByLabel("画布缩放比例")).toHaveText("110%");
+  await expect(viewer.getByLabel("画布缩放比例")).toHaveText("115%");
   await expect(viewer.getByRole("spinbutton", { name: "区域 1 左", exact: true })).toHaveValue(
     firstX,
   );

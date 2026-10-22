@@ -4,6 +4,7 @@
 
 只保留仍在使用的设计依据与素材来源：
 
+- [统一图片画布交互依据](canvas-workspace-decisions.md)：本轮原地修复工作区的参考、取舍和验收范围。
 - [艺栢交互研究](yibai-page-logic.md)：工具选择、创作三栏与历史联动的参考依据。
 - [小云雀登录样式实测](xiaoyunque-login-measurements.md)：官方测量值与本站校准值，最终规则归入 DESIGN.md。
 - [参考站视觉语言实测](reference-style-dna.md)：艺栢与小云雀的色板、字号、圆角与密度实测，供视觉方向选择。
