@@ -365,6 +365,7 @@ test("reloading an image restores its most recent submitted edit and result link
   await prompt.fill("改成绿色被子");
   await viewer.getByRole("button", { name: "立即生成", exact: true }).click();
   await expect.poll(() => latestJobId).toBe(jobId);
+  await expect(viewer.getByRole("button", { name: "立即生成", exact: true })).toBeEnabled();
   await page.reload();
   await openEditor();
   await expect(prompt).toHaveValue("改成绿色被子");

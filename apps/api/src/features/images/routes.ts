@@ -268,6 +268,11 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const job = await deps.repository.get(c.get("principal"), parsed.data);
     return job ? c.json(job) : fail(c, "NOT_FOUND", "任务不存在", 404);
   });
+  app.get("/image-assets/:id/latest-edit", async (c) => {
+    const parsed = id.safeParse(c.req.param("id"));
+    if (!parsed.success) return fail(c, "NOT_FOUND", "图片不存在", 404);
+    return c.json({ job: await deps.repository.latestEdit(c.get("principal"), parsed.data) });
+  });
   app.get("/image-assets", async (c) => {
     const limit = z.coerce
       .number()

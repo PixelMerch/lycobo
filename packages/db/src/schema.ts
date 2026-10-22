@@ -310,6 +310,41 @@ export const imageJobs = pgTable(
     ),
   ],
 );
+// Submission lineage; full immutable region snapshot lives in image_jobs.input.localEdit.
+export const imageLocalEdits = pgTable(
+  "image_local_edits",
+  {
+    jobId: uuid("job_id").primaryKey(),
+    organizationId: uuid("organization_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    sourceAssetId: uuid("source_asset_id").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.jobId, t.organizationId],
+      foreignColumns: [imageJobs.id, imageJobs.organizationId],
+      name: "image_local_edits_job_org_fk",
+    }),
+    foreignKey({
+      columns: [t.sourceAssetId, t.organizationId],
+      foreignColumns: [imageAssets.id, imageAssets.organizationId],
+      name: "image_local_edits_source_org_fk",
+    }),
+    foreignKey({
+      columns: [t.organizationId, t.userId],
+      foreignColumns: [organizationMembers.organizationId, organizationMembers.userId],
+      name: "image_local_edits_member_fk",
+    }),
+    index("image_local_edits_latest_idx").on(
+      t.organizationId,
+      t.userId,
+      t.sourceAssetId,
+      t.createdAt.desc(),
+      t.jobId.desc(),
+    ),
+  ],
+);
 export const imageJobItems = pgTable(
   "image_job_items",
   {

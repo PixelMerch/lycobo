@@ -19,36 +19,83 @@ export const imageResolutionSchema = z.enum(["1K", "2K", "4K"]);
 export type ImageResolution = z.infer<typeof imageResolutionSchema>;
 export const imageQualitySchema = z.enum(["low", "medium", "high"]);
 export type ImageQuality = z.infer<typeof imageQualitySchema>;
-export const imageGenerationInputSchema = z.strictObject({
-  model: z.enum(imageModelIds),
-  prompt: z.string().trim().min(1).max(9000),
-  resolution: imageResolutionSchema.default("1K"),
-  aspectRatio: z
-    .enum([
-      "1:1",
-      "2:3",
-      "3:4",
-      "4:5",
-      "5:4",
-      "4:3",
-      "9:16",
-      "16:9",
-      "2:1",
-      "3:2",
-      "21:9",
-      "9:21",
-      "1:2",
-    ])
-    .default("1:1"),
-  referenceAssetIds: z
-    .array(z.uuid())
-    .max(10)
-    .default([])
-    .refine((ids) => new Set(ids).size === ids.length, "Duplicate references"),
-  count: z.number().int().min(1).max(4).default(1),
-  // Keep absent on legacy snapshots so their stored idempotency hashes remain valid.
-  quality: imageQualitySchema.optional(),
-});
+export const imageLocalEditSchema = z
+  .strictObject({
+    sourceAssetId: z.uuid(),
+    width: z.number().int().positive().max(32768),
+    height: z.number().int().positive().max(32768),
+    regions: z
+      .array(
+        z.strictObject({
+          id: z.uuid(),
+          x: z.number().finite().nonnegative(),
+          y: z.number().finite().nonnegative(),
+          width: z.number().finite().positive(),
+          height: z.number().finite().positive(),
+          prompt: z.string().trim().min(1).max(900),
+        }),
+      )
+      .min(1)
+      .max(8),
+  })
+  .superRefine((edit, ctx) => {
+    if (
+      new Set(edit.regions.map((region) => region.id)).size !== edit.regions.length ||
+      edit.regions.some(
+        (region) =>
+          region.x + region.width > edit.width + 0.01 ||
+          region.y + region.height > edit.height + 0.01,
+      )
+    )
+      ctx.addIssue({ code: "custom", message: "Invalid edit region bounds or identifiers" });
+  });
+export type ImageLocalEdit = z.infer<typeof imageLocalEditSchema>;
+
+export const imageGenerationInputSchema = z
+  .strictObject({
+    model: z.enum(imageModelIds),
+    prompt: z.string().trim().min(1).max(9000),
+    resolution: imageResolutionSchema.default("1K"),
+    aspectRatio: z
+      .enum([
+        "1:1",
+        "2:3",
+        "3:4",
+        "4:5",
+        "5:4",
+        "4:3",
+        "9:16",
+        "16:9",
+        "2:1",
+        "3:2",
+        "21:9",
+        "9:21",
+        "1:2",
+      ])
+      .default("1:1"),
+    referenceAssetIds: z
+      .array(z.uuid())
+      .max(10)
+      .default([])
+      .refine((ids) => new Set(ids).size === ids.length, "Duplicate references"),
+    count: z.number().int().min(1).max(4).default(1),
+    // Keep absent on legacy snapshots so their stored idempotency hashes remain valid.
+    quality: imageQualitySchema.optional(),
+    // Absent on legacy inputs, preserving their original idempotency hashes.
+    localEdit: imageLocalEditSchema.optional(),
+  })
+  .superRefine((input, ctx) => {
+    if (
+      input.localEdit &&
+      (input.count !== 1 ||
+        input.referenceAssetIds.length !== 1 ||
+        input.referenceAssetIds[0] !== input.localEdit.sourceAssetId)
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Local edits require exactly their source reference and one output",
+      });
+  });
 export type ImageGenerationInput = z.infer<typeof imageGenerationInputSchema>;
 export type ImageScope = { userId: string; organizationId: string };
 export type StoredImage = {
@@ -156,3 +203,5 @@ export const imageSubmissionResponseSchema = z.object({ id: z.uuid(), replayed: 
 export const imageUploadResponseSchema = z.object({ id: z.uuid() });
 
 export const imageSessionResponseSchema = z.object({ userId: z.uuid(), organizationId: z.uuid() });
+
+export const latestImageEditResponseSchema = z.object({ job: imageJobSchema.nullable() });

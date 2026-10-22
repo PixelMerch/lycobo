@@ -25,6 +25,7 @@ import postgres from "postgres";
 import { z } from "zod";
 import { createApp } from "../../api/src/app";
 import { processImageItem } from "../src/image-processor";
+import { verifyLocalEdits } from "./verify-local-edits";
 import { verifyWallet } from "./verify-wallet";
 
 if (process.env.ALLOW_LOCAL_INTEGRATION !== "true")
@@ -74,9 +75,11 @@ const server = createServer(async (req, res) => {
   calls++;
   let raw = "";
   for await (const bytes of req) raw += bytes.toString();
-  const body = imageGenerationInputSchema
-    .pick({ model: true, prompt: true })
-    .strip()
+  const body = z
+    .object({
+      model: imageGenerationInputSchema.shape.model,
+      prompt: imageGenerationInputSchema.shape.prompt,
+    })
     .parse(JSON.parse(raw));
   if (body.prompt === "ambiguous") {
     res.writeHead(503);
@@ -512,6 +515,7 @@ try {
     404,
   );
   await verifyWallet(repository, sql);
+  await verifyLocalEdits(repository, sql, async (path, init) => app.request(path, init));
   await sql`update image_api_keys set revoked_at=now() where id=${first.keyId}`;
   assert.equal((await app.request("/api/v1/image-models", { headers })).status, 401);
   console.info(

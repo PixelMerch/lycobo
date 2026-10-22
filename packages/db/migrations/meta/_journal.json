@@ -78,6 +78,13 @@
       "when": 1792638107189,
       "tag": "0010_exotic_wind_dancer",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792664122443,
+      "tag": "0011_slippery_caretaker",
+      "breakpoints": true
     }
   ]
 }

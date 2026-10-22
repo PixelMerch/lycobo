@@ -187,11 +187,13 @@ export function useGenerateImage() {
       draft,
       source,
       retryJobId,
+      localEdit,
     }: {
       model: ModelId;
       draft: Draft;
       source?: string;
       retryJobId?: string;
+      localEdit?: import("@lycoboai/contracts").ImageLocalEdit;
     }) => {
       if (!session.data) throw new Error("请先登录工作台。");
       const pendingKey = pendingStorageKey(session.data);
@@ -230,6 +232,7 @@ export function useGenerateImage() {
           aspectRatio: draft.ratio,
           count: Number(draft.count),
           referenceAssetIds,
+          ...(localEdit ? { localEdit } : {}),
         });
         pending = { key: crypto.randomUUID(), input, source, retryJobId };
         // Retain the same request after a lost response or reload: never create another paid task blindly.
@@ -267,6 +270,7 @@ export function useGenerateImage() {
       void client.invalidateQueries({ queryKey: ["wallet-entries"] });
       void client.invalidateQueries({ queryKey: ["image-tasks"] });
       void client.invalidateQueries({ queryKey: ["image-assets"] });
+      void client.invalidateQueries({ queryKey: ["image-latest-edit"] });
     },
   });
 }

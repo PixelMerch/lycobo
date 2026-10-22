@@ -184,9 +184,22 @@ export function openImageRepository(url: string) {
         const id = String(inserted[0].id);
         if (input.referenceAssetIds.length) {
           const refs =
-            await tx`select id from image_assets where organization_id=${scope.organizationId} and id in ${tx(input.referenceAssetIds)}`;
+            await tx`select id,width,height from image_assets where organization_id=${scope.organizationId} and id in ${tx(input.referenceAssetIds)}`;
           if (refs.length !== input.referenceAssetIds.length)
             throw new ImageRepositoryError("REFERENCE_NOT_FOUND");
+        }
+        if (input.localEdit) {
+          const edit = input.localEdit;
+          const [source] =
+            await tx`select width,height from image_assets where id=${edit.sourceAssetId} and organization_id=${scope.organizationId}`;
+          if (
+            !source ||
+            Number(source.width) !== edit.width ||
+            Number(source.height) !== edit.height
+          )
+            throw new ImageRepositoryError("REFERENCE_NOT_FOUND");
+          await tx`insert into image_local_edits (job_id,organization_id,user_id,source_asset_id)
+            values (${id},${scope.organizationId},${scope.userId},${edit.sourceAssetId})`;
         }
         const total = unitCredits * input.count;
         const wallet = await ensureWallet(tx, scope);
@@ -269,6 +282,16 @@ export function openImageRepository(url: string) {
     async get(scope: ImageScope, id: string) {
       const [row] =
         await sql`select ${jobView} from image_jobs j where j.id=${id} and j.organization_id=${scope.organizationId}`;
+      return row ?? null;
+    },
+    async latestEdit(scope: ImageScope, sourceId: string) {
+      const [source] =
+        await sql`select id from image_assets where id=${sourceId} and organization_id=${scope.organizationId}`;
+      if (!source) throw new ImageRepositoryError("NOT_FOUND");
+      const [row] = await sql`select ${jobView} from image_local_edits e
+        join image_jobs j on j.id=e.job_id and j.organization_id=e.organization_id
+        where e.organization_id=${scope.organizationId} and e.user_id=${scope.userId} and e.source_asset_id=${sourceId}
+        order by e.created_at desc,e.job_id desc limit 1`;
       return row ?? null;
     },
     async addReference(scope: ImageScope, image: StoredImage) {

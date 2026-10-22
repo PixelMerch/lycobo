@@ -33,6 +33,7 @@ export async function mockImageApi(page: Page) {
           enabledResolutions: ["1K", "2K", "4K"],
         })),
       };
+    else if (path.endsWith("/latest-edit")) body = { job: null };
     else if (path.endsWith("/wallet")) body = { balance: 200, unitCredits: 20 };
     else if (path.startsWith("/api/v1/wallet/")) body = { data: [] };
     else if (path.endsWith("/image-tasks") || path.endsWith("/image-assets")) body = { data: [] };

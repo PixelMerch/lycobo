@@ -59,3 +59,33 @@ it("preserves ten-digit user UIDs including leading zero", () => {
   for (const value of [1234567890, "123456789", "12345678901", "A123456789", crypto.randomUUID()])
     expect(userUidSchema.safeParse(value).success).toBe(false);
 });
+
+it("validates persisted local edit lineage and original pixel bounds", () => {
+  const source = crypto.randomUUID();
+  const region = {
+    id: crypto.randomUUID(),
+    x: 10,
+    y: 20,
+    width: 30,
+    height: 40,
+    prompt: "改为蓝色",
+  };
+  const input = {
+    model: "gpt-image-2",
+    prompt: "edit",
+    referenceAssetIds: [source],
+    localEdit: { sourceAssetId: source, width: 100, height: 100, regions: [region] },
+  };
+  expect(imageGenerationInputSchema.parse(input).localEdit?.regions).toEqual([region]);
+  expect(
+    imageGenerationInputSchema.parse({ model: "gpt-image-2", prompt: "legacy" }),
+  ).not.toHaveProperty("localEdit");
+  for (const invalid of [
+    { ...input, count: 2 },
+    { ...input, referenceAssetIds: [crypto.randomUUID()] },
+    { ...input, localEdit: { ...input.localEdit, regions: [region, region] } },
+    { ...input, localEdit: { ...input.localEdit, regions: [{ ...region, x: 90 }] } },
+    { ...input, localEdit: { ...input.localEdit, regions: [] } },
+  ])
+    expect(imageGenerationInputSchema.safeParse(invalid).success).toBe(false);
+});

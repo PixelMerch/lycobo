@@ -33,10 +33,8 @@ export const useRepairDrafts = create<{
       const entry = state.drafts[key];
       if (!entry) return state;
       const drafts = { ...state.drafts };
-      // A submitted task keeps its id so an in-flight or finished edit can still
-      // be followed; only the unsubmitted regions are discarded.
-      if (entry.jobId) drafts[key] = { regions: [], jobId: entry.jobId };
-      else delete drafts[key];
+      // Submitted edits are restored from the server; discard only this session's work.
+      delete drafts[key];
       return { drafts };
     }),
 }));

@@ -28,6 +28,7 @@ function fixture() {
     create,
     list: unexpected,
     get: unexpected,
+    latestEdit: unexpected,
     addReference: unexpected,
     listAssets: unexpected,
     asset: unexpected,

@@ -1,4 +1,4 @@
-import { imageJobSchema } from "@lycoboai/contracts";
+import { imageJobSchema, latestImageEditResponseSchema } from "@lycoboai/contracts";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useErrorToast } from "../../lib/error-toast";
@@ -25,7 +25,8 @@ import { isModelId } from "./studio-state";
 export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialTool = "select") {
   const session = useImageSession();
   const key = repairDraftKey(session.data, source.id);
-  const draft = useRepairDrafts((state) => state.drafts[key] ?? emptyRepairDraft);
+  const localDraft = useRepairDrafts((state) => state.drafts[key]);
+  const draft = localDraft ?? emptyRepairDraft;
   const update = useRepairDrafts((state) => state.update);
   const models = useImageModels();
   const generate = useGenerateImage();
@@ -40,6 +41,22 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
     past: [],
     future: [],
   });
+  const latest = useQuery({
+    queryKey: ["image-latest-edit", key],
+    enabled: session.isSuccess,
+    retry: false,
+    queryFn: async ({ signal }) =>
+      latestImageEditResponseSchema.parse(
+        await (await imageRequest(`image-assets/${source.id}/latest-edit`, { signal })).json(),
+      ),
+  });
+  useEffect(() => {
+    const saved = latest.data?.job;
+    const edit = saved?.input?.localEdit;
+    if (!saved || !edit || localDraft || useRepairDrafts.getState().drafts[key]) return;
+    update(key, { regions: edit.regions, jobId: saved.id });
+    setSelected(edit.regions[0]?.id ?? null);
+  }, [latest.data, key, update, localDraft]);
   const submissionLock = useRef(false);
   const job = useQuery({
     queryKey: ["image-repair-task", key, draft.jobId],
@@ -56,7 +73,11 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
         : false,
   });
   useErrorToast(
-    generate.error?.message ?? job.error?.message ?? models.error?.message ?? imageError,
+    latest.error?.message ??
+      generate.error?.message ??
+      job.error?.message ??
+      models.error?.message ??
+      imageError,
   );
   useEffect(() => {
     const loaded = new window.Image();
@@ -75,13 +96,15 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
   const model = isModelId(meta.model) ? meta.model : "gpt-image-2";
   const available =
     session.isSuccess &&
+    (localDraft || latest.isSuccess) &&
     models.data?.enabled &&
     models.data.editsEnabled &&
     models.data.models.some(
       (entry) => entry.id === model && entry.enabledResolutions.includes(output.resolution),
     );
   const busy = !!draft.jobId && (!job.data || ["queued", "running"].includes(job.data.status));
-  const locked = !session.isSuccess || generate.isPending || busy || pending;
+  const restoring = !localDraft && !latest.isSuccess;
+  const locked = !session.isSuccess || restoring || generate.isPending || busy || pending;
   /* The button carries readiness: at least one region, each with a description.
    * That replaces a separate validation message and a click that goes nowhere. */
   const canGenerate =
@@ -130,6 +153,7 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
       const submitted = await generate.mutateAsync({
         model,
         source: `repair:${source.id}`,
+        localEdit: { sourceAssetId: source.id, width, height, regions: draft.regions },
         draft: {
           prompt,
           references: [

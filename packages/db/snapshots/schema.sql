@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 32zQEI5qqbjX0JNiaHdEvX42cyM3c5SeySXXGeZUB3Zsn7ZAFi3CalkbdmwC1lE
+\restrict QTUg4HTdXRScFdsLjJHDmnayQlQliGQQTGYV3B82LRuP5wyqh1mlDxSFLh9rb2W
 
 -- Dumped from database version 17.11
 -- Dumped by pg_dump version 17.11
@@ -369,6 +369,19 @@ ALTER TABLE public.image_jobs ALTER COLUMN display_number ADD GENERATED ALWAYS A
     MINVALUE 1000000000
     NO MAXVALUE
     CACHE 1
+);
+
+
+--
+-- Name: image_local_edits; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.image_local_edits (
+    job_id uuid NOT NULL,
+    organization_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    source_asset_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -805,6 +818,14 @@ ALTER TABLE ONLY public.image_jobs
 
 
 --
+-- Name: image_local_edits image_local_edits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.image_local_edits
+    ADD CONSTRAINT image_local_edits_pkey PRIMARY KEY (job_id);
+
+
+--
 -- Name: image_outbox image_outbox_item_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1163,6 +1184,13 @@ CREATE UNIQUE INDEX image_ledger_reserve_unique ON public.image_credit_ledger US
 
 
 --
+-- Name: image_local_edits_latest_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX image_local_edits_latest_idx ON public.image_local_edits USING btree (organization_id, user_id, source_asset_id, created_at DESC NULLS LAST, job_id DESC NULLS LAST);
+
+
+--
 -- Name: image_outbox_due_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1450,6 +1478,30 @@ ALTER TABLE ONLY public.image_credit_ledger
 
 
 --
+-- Name: image_local_edits image_local_edits_job_org_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.image_local_edits
+    ADD CONSTRAINT image_local_edits_job_org_fk FOREIGN KEY (job_id, organization_id) REFERENCES public.image_jobs(id, organization_id);
+
+
+--
+-- Name: image_local_edits image_local_edits_member_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.image_local_edits
+    ADD CONSTRAINT image_local_edits_member_fk FOREIGN KEY (organization_id, user_id) REFERENCES public.organization_members(organization_id, user_id);
+
+
+--
+-- Name: image_local_edits image_local_edits_source_org_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.image_local_edits
+    ADD CONSTRAINT image_local_edits_source_org_fk FOREIGN KEY (source_asset_id, organization_id) REFERENCES public.image_assets(id, organization_id);
+
+
+--
 -- Name: image_outbox image_outbox_item_id_image_job_items_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1645,5 +1697,5 @@ ALTER TABLE ONLY public.wallet_entries
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 32zQEI5qqbjX0JNiaHdEvX42cyM3c5SeySXXGeZUB3Zsn7ZAFi3CalkbdmwC1lE
+\unrestrict QTUg4HTdXRScFdsLjJHDmnayQlQliGQQTGYV3B82LRuP5wyqh1mlDxSFLh9rb2W
 
