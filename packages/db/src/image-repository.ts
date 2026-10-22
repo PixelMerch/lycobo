@@ -93,7 +93,7 @@ export function openImageRepository(url: string) {
       'worker_id',i.worker_id,'provider',i.provider,'provider_request_id',i.provider_request_id,
       'attempts',i.attempts,'error_code',i.error_code,'started_at',i.started_at,'completed_at',i.completed_at,
       'output_asset_id',i.output_asset_id,'output_public_id',a.public_id,'width',a.width,'height',a.height,'bytes',a.bytes) order by i.position),'[]')
-      from image_job_items i left join image_assets a on a.id=i.output_asset_id and a.organization_id=i.organization_id where i.job_id=j.id and i.superseded_at is null) as items`;
+      from image_job_items i left join media_assets a on a.id=i.output_asset_id and a.organization_id=i.organization_id where i.job_id=j.id and i.superseded_at is null) as items`;
   return {
     close: () => sql.end({ timeout: 5 }),
     settleInvalidResponses,
@@ -185,14 +185,14 @@ export function openImageRepository(url: string) {
         const id = String(inserted[0].id);
         if (input.referenceAssetIds.length) {
           const refs =
-            await tx`select id,width,height from image_assets where organization_id=${scope.organizationId} and id in ${tx(input.referenceAssetIds)}`;
+            await tx`select id,width,height from media_assets where organization_id=${scope.organizationId} and id in ${tx(input.referenceAssetIds)}`;
           if (refs.length !== input.referenceAssetIds.length)
             throw new ImageRepositoryError("REFERENCE_NOT_FOUND");
         }
         if (input.localEdit) {
           const edit = input.localEdit;
           const [source] =
-            await tx`select width,height from image_assets where id=${edit.sourceAssetId} and organization_id=${scope.organizationId}`;
+            await tx`select width,height from media_assets where id=${edit.sourceAssetId} and organization_id=${scope.organizationId}`;
           if (
             !source ||
             Number(source.width) !== edit.width ||
@@ -287,7 +287,7 @@ export function openImageRepository(url: string) {
     },
     async latestEdit(scope: ImageScope, sourceId: string) {
       const [source] =
-        await sql`select id from image_assets where id=${sourceId} and organization_id=${scope.organizationId}`;
+        await sql`select id from media_assets where id=${sourceId} and organization_id=${scope.organizationId}`;
       if (!source) throw new ImageRepositoryError("NOT_FOUND");
       const [row] = await sql`select ${jobView} from image_local_edits e
         join image_jobs j on j.id=e.job_id and j.organization_id=e.organization_id
@@ -297,7 +297,7 @@ export function openImageRepository(url: string) {
     },
     async addReference(scope: ImageScope, image: StoredImage) {
       await sql.begin(async (tx) => {
-        await tx`insert into image_assets (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256)
+        await tx`insert into media_assets (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256)
           values (${image.id},${scope.organizationId},${scope.userId},'reference','image',${image.objectKey},${image.mimeType},${image.width},${image.height},${image.bytes},${image.sha256})`;
         await recordImageEvent(tx, scope.organizationId, "asset", image.id);
       });
@@ -310,17 +310,17 @@ export function openImageRepository(url: string) {
       type?: AssetType,
     ) {
       return sql`select a.public_id,a.id,a.kind,a.media_type as type,a.width,a.height,a.bytes,a.created_at,j.public_id as task_public_id,${publicModelSql} as model,j.prompt
-        from image_assets a left join image_job_items i on i.output_asset_id=a.id and i.organization_id=a.organization_id
+        from media_assets a left join image_job_items i on i.output_asset_id=a.id and i.organization_id=a.organization_id
         left join image_jobs j on j.id=i.job_id and j.organization_id=a.organization_id
         where a.organization_id=${scope.organizationId}
         ${kind ? sql`and a.kind=${kind}` : sql``}
         ${type ? sql`and a.media_type=${type}` : sql``}
-        ${before ? sql`and (a.created_at,a.id) < (select created_at,id from image_assets where id=${before} and organization_id=${scope.organizationId})` : sql``}
+        ${before ? sql`and (a.created_at,a.id) < (select created_at,id from media_assets where id=${before} and organization_id=${scope.organizationId})` : sql``}
         order by a.created_at desc,a.id desc limit ${limit}`;
     },
     async asset(scope: ImageScope, id: string): Promise<StoredImage | null> {
       const [row] =
-        await sql`select id,object_key,mime_type,width,height,bytes,sha256 from image_assets where id=${id} and organization_id=${scope.organizationId}`;
+        await sql`select id,object_key,mime_type,width,height,bytes,sha256 from media_assets where id=${id} and organization_id=${scope.organizationId}`;
       if (!row) return null;
       return {
         id: String(row.id),
@@ -398,7 +398,7 @@ export function openImageRepository(url: string) {
           return false;
         if ("image" in result) {
           const a = result.image;
-          await tx`insert into image_assets (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256)
+          await tx`insert into media_assets (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256)
             values (${a.id},${job.organizationId},${job.userId},'output','image',${a.objectKey},${a.mimeType},${a.width},${a.height},${a.bytes},${a.sha256})`;
           await tx`update image_job_items set status='succeeded',output_asset_id=${a.id},provider_request_id=${result.requestId ?? null},completed_at=now() where id=${job.itemId}`;
         } else {

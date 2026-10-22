@@ -92,6 +92,13 @@
       "when": 1792669490148,
       "tag": "0012_asset_media_type",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792671954189,
+      "tag": "0013_media_assets_naming",
+      "breakpoints": true
     }
   ]
 }

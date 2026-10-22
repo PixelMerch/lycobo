@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict p5OZze5eSSGCa5MW19ukvVlR1Nhe6XE8h3FrgoOxs0IHagTy27ynCStjgYKtjbs
+\restrict pOrAMVt49bGJ1Hs1u5xCYAYqEDubkf81lEvKqKbfyagIhx0StlSUY8Z7oPk6Rp9
 
 -- Dumped from database version 17.11
 -- Dumped by pg_dump version 17.11
@@ -219,10 +219,10 @@ CREATE TABLE public.image_api_keys (
 
 
 --
--- Name: image_assets; Type: TABLE; Schema: public; Owner: -
+-- Name: media_assets; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.image_assets (
+CREATE TABLE public.media_assets (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     organization_id uuid NOT NULL,
     user_id uuid NOT NULL,
@@ -237,24 +237,32 @@ CREATE TABLE public.image_assets (
     display_number bigint NOT NULL,
     public_id text DEFAULT public.allocate_public_identifier('image'::text) NOT NULL,
     media_type text DEFAULT 'image'::text NOT NULL,
-    CONSTRAINT image_assets_dimensions_check CHECK (((width > 0) AND (height > 0) AND (bytes > 0))),
-    CONSTRAINT image_assets_kind_check CHECK ((kind = ANY (ARRAY['reference'::text, 'output'::text]))),
-    CONSTRAINT image_assets_media_type_check CHECK ((media_type = ANY (ARRAY['image'::text, 'video'::text, 'audio'::text])))
+    CONSTRAINT media_assets_dimensions_check CHECK (((width > 0) AND (height > 0) AND (bytes > 0))),
+    CONSTRAINT media_assets_kind_check CHECK ((kind = ANY (ARRAY['reference'::text, 'output'::text]))),
+    CONSTRAINT media_assets_media_type_check CHECK ((media_type = ANY (ARRAY['image'::text, 'video'::text, 'audio'::text])))
 );
 
 
 --
--- Name: image_assets_display_number_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: image_assets; Type: VIEW; Schema: public; Owner: -
 --
 
-ALTER TABLE public.image_assets ALTER COLUMN display_number ADD GENERATED ALWAYS AS IDENTITY (
-    SEQUENCE NAME public.image_assets_display_number_seq
-    START WITH 100000000
-    INCREMENT BY 1
-    MINVALUE 100000000
-    NO MAXVALUE
-    CACHE 1
-);
+CREATE VIEW public.image_assets WITH (security_invoker='true') AS
+ SELECT id,
+    organization_id,
+    user_id,
+    kind,
+    object_key,
+    mime_type,
+    width,
+    height,
+    bytes,
+    sha256,
+    created_at,
+    display_number,
+    public_id,
+    media_type
+   FROM public.media_assets;
 
 
 --
@@ -425,6 +433,20 @@ CREATE TABLE public.login_rate_limits (
     window_start timestamp with time zone NOT NULL,
     attempts integer NOT NULL,
     CONSTRAINT login_rate_limits_attempts_check CHECK ((attempts > 0))
+);
+
+
+--
+-- Name: media_assets_display_number_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+ALTER TABLE public.media_assets ALTER COLUMN display_number ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.media_assets_display_number_seq
+    START WITH 100000000
+    INCREMENT BY 1
+    MINVALUE 100000000
+    NO MAXVALUE
+    CACHE 1
 );
 
 
@@ -716,46 +738,6 @@ ALTER TABLE ONLY public.image_api_keys
 
 
 --
--- Name: image_assets image_assets_display_number_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_assets
-    ADD CONSTRAINT image_assets_display_number_unique UNIQUE (display_number);
-
-
---
--- Name: image_assets image_assets_id_org_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_assets
-    ADD CONSTRAINT image_assets_id_org_unique UNIQUE (id, organization_id);
-
-
---
--- Name: image_assets image_assets_object_key_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_assets
-    ADD CONSTRAINT image_assets_object_key_unique UNIQUE (object_key);
-
-
---
--- Name: image_assets image_assets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_assets
-    ADD CONSTRAINT image_assets_pkey PRIMARY KEY (id);
-
-
---
--- Name: image_assets image_assets_public_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_assets
-    ADD CONSTRAINT image_assets_public_id_unique UNIQUE (public_id);
-
-
---
 -- Name: image_credit_ledger image_credit_ledger_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -865,6 +847,46 @@ ALTER TABLE ONLY public.image_retries
 
 ALTER TABLE ONLY public.login_rate_limits
     ADD CONSTRAINT login_rate_limits_pkey PRIMARY KEY (key);
+
+
+--
+-- Name: media_assets media_assets_display_number_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.media_assets
+    ADD CONSTRAINT media_assets_display_number_unique UNIQUE (display_number);
+
+
+--
+-- Name: media_assets media_assets_id_org_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.media_assets
+    ADD CONSTRAINT media_assets_id_org_unique UNIQUE (id, organization_id);
+
+
+--
+-- Name: media_assets media_assets_object_key_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.media_assets
+    ADD CONSTRAINT media_assets_object_key_unique UNIQUE (object_key);
+
+
+--
+-- Name: media_assets media_assets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.media_assets
+    ADD CONSTRAINT media_assets_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: media_assets media_assets_public_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.media_assets
+    ADD CONSTRAINT media_assets_public_id_unique UNIQUE (public_id);
 
 
 --
@@ -1081,20 +1103,6 @@ CREATE INDEX enterprise_sessions_expiry_idx ON public.enterprise_sessions USING 
 
 
 --
--- Name: image_assets_member_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX image_assets_member_idx ON public.image_assets USING btree (organization_id, user_id);
-
-
---
--- Name: image_assets_org_created_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX image_assets_org_created_idx ON public.image_assets USING btree (organization_id, created_at);
-
-
---
 -- Name: image_events_created_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1218,6 +1226,20 @@ CREATE INDEX image_retries_user_idx ON public.image_retries USING btree (user_id
 --
 
 CREATE INDEX login_rate_limits_window_idx ON public.login_rate_limits USING btree (window_start);
+
+
+--
+-- Name: media_assets_member_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX media_assets_member_idx ON public.media_assets USING btree (organization_id, user_id);
+
+
+--
+-- Name: media_assets_org_created_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX media_assets_org_created_idx ON public.media_assets USING btree (organization_id, created_at);
 
 
 --
@@ -1384,22 +1406,6 @@ ALTER TABLE ONLY public.enterprise_sessions
 
 
 --
--- Name: image_assets image_assets_membership_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_assets
-    ADD CONSTRAINT image_assets_membership_fk FOREIGN KEY (organization_id, user_id) REFERENCES public.organization_members(organization_id, user_id);
-
-
---
--- Name: image_assets image_assets_public_id_public_identifiers_value_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_assets
-    ADD CONSTRAINT image_assets_public_id_public_identifiers_value_fk FOREIGN KEY (public_id) REFERENCES public.public_identifiers(value);
-
-
---
 -- Name: image_credit_ledger image_credit_ledger_item_id_image_job_items_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1436,7 +1442,7 @@ ALTER TABLE ONLY public.image_job_items
 --
 
 ALTER TABLE ONLY public.image_job_items
-    ADD CONSTRAINT image_items_output_org_fk FOREIGN KEY (output_asset_id, organization_id) REFERENCES public.image_assets(id, organization_id);
+    ADD CONSTRAINT image_items_output_org_fk FOREIGN KEY (output_asset_id, organization_id) REFERENCES public.media_assets(id, organization_id);
 
 
 --
@@ -1500,7 +1506,7 @@ ALTER TABLE ONLY public.image_local_edits
 --
 
 ALTER TABLE ONLY public.image_local_edits
-    ADD CONSTRAINT image_local_edits_source_org_fk FOREIGN KEY (source_asset_id, organization_id) REFERENCES public.image_assets(id, organization_id);
+    ADD CONSTRAINT image_local_edits_source_org_fk FOREIGN KEY (source_asset_id, organization_id) REFERENCES public.media_assets(id, organization_id);
 
 
 --
@@ -1525,6 +1531,22 @@ ALTER TABLE ONLY public.image_retries
 
 ALTER TABLE ONLY public.image_retries
     ADD CONSTRAINT image_retries_user_id_users_id_fk FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: media_assets media_assets_membership_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.media_assets
+    ADD CONSTRAINT media_assets_membership_fk FOREIGN KEY (organization_id, user_id) REFERENCES public.organization_members(organization_id, user_id);
+
+
+--
+-- Name: media_assets media_assets_public_id_public_identifiers_value_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.media_assets
+    ADD CONSTRAINT media_assets_public_id_public_identifiers_value_fk FOREIGN KEY (public_id) REFERENCES public.public_identifiers(value);
 
 
 --
@@ -1699,5 +1721,5 @@ ALTER TABLE ONLY public.wallet_entries
 -- PostgreSQL database dump complete
 --
 
-\unrestrict p5OZze5eSSGCa5MW19ukvVlR1Nhe6XE8h3FrgoOxs0IHagTy27ynCStjgYKtjbs
+\unrestrict pOrAMVt49bGJ1Hs1u5xCYAYqEDubkf81lEvKqKbfyagIhx0StlSUY8Z7oPk6Rp9
 

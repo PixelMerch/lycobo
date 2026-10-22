@@ -212,8 +212,8 @@ export const imageApiKeys = pgTable(
     index("image_keys_member_idx").on(t.organizationId, t.userId),
   ],
 );
-export const imageAssets = pgTable(
-  "image_assets",
+export const mediaAssets = pgTable(
+  "media_assets",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     displayNumber: bigint("display_number", { mode: "bigint" })
@@ -245,17 +245,17 @@ export const imageAssets = pgTable(
     foreignKey({
       columns: [t.organizationId, t.userId],
       foreignColumns: [organizationMembers.organizationId, organizationMembers.userId],
-      name: "image_assets_membership_fk",
+      name: "media_assets_membership_fk",
     }),
-    unique("image_assets_id_org_unique").on(t.id, t.organizationId),
-    index("image_assets_org_created_idx").on(t.organizationId, t.createdAt),
-    index("image_assets_member_idx").on(t.organizationId, t.userId),
+    unique("media_assets_id_org_unique").on(t.id, t.organizationId),
+    index("media_assets_org_created_idx").on(t.organizationId, t.createdAt),
+    index("media_assets_member_idx").on(t.organizationId, t.userId),
     check(
-      "image_assets_dimensions_check",
+      "media_assets_dimensions_check",
       sql`${t.width} > 0 and ${t.height} > 0 and ${t.bytes} > 0`,
     ),
-    check("image_assets_kind_check", sql`${t.kind} in ('reference','output')`),
-    check("image_assets_media_type_check", sql`${t.mediaType} in ('image','video','audio')`),
+    check("media_assets_kind_check", sql`${t.kind} in ('reference','output')`),
+    check("media_assets_media_type_check", sql`${t.mediaType} in ('image','video','audio')`),
   ],
 );
 export const imageJobs = pgTable(
@@ -330,7 +330,7 @@ export const imageLocalEdits = pgTable(
     }),
     foreignKey({
       columns: [t.sourceAssetId, t.organizationId],
-      foreignColumns: [imageAssets.id, imageAssets.organizationId],
+      foreignColumns: [mediaAssets.id, mediaAssets.organizationId],
       name: "image_local_edits_source_org_fk",
     }),
     foreignKey({
@@ -378,7 +378,7 @@ export const imageJobItems = pgTable(
     }),
     foreignKey({
       columns: [t.outputAssetId, t.organizationId],
-      foreignColumns: [imageAssets.id, imageAssets.organizationId],
+      foreignColumns: [mediaAssets.id, mediaAssets.organizationId],
       name: "image_items_output_org_fk",
     }),
     uniqueIndex("image_items_current_position_unique")

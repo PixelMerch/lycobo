@@ -1,6 +1,6 @@
 # 数据库完整导出与恢复
 
-2026-10-21 的完整备份包含截至 0009 的迁移；当前 `schema.sql` 结构快照已随原任务重试更新到 0011（局部修改关联）。两者版本不同，恢复旧完整备份后需正常执行后续追加迁移。文件分为以下两类：
+2026-10-21 的完整备份包含截至 0009 的迁移；当前 `schema.sql` 结构快照已随原任务重试更新到 0013（通用素材命名）。两者版本不同，恢复旧完整备份后需正常执行后续追加迁移。文件分为以下两类：
 
 | 文件 | 内容 | Git |
 | --- | --- | --- |
@@ -47,6 +47,15 @@ docker compose exec -T postgres pg_dump -U lycoboai -d lycoboai \
 
 结构快照从同一个 custom 文件通过 `pg_restore --schema-only --no-owner --no-privileges --file=-` 导出。后续表结构变更仍需追加迁移，再更新快照；不要用快照直接修改已有数据库。
 
-当前结构快照已包含 `0012_asset_media_type`：`image_assets.media_type` 默认 `image`，
+当前结构快照已包含 `0012_asset_media_type`：`media_assets.media_type` 默认 `image`，
 通过约束保留 `image`／`video`／`audio`；与表示参考输入／生成结果的 `kind` 独立。
 新增媒体类型字段不代表已经接入视频或音频生成与存储。
+
+`0013_media_assets_naming` 将素材实体原地改名为 `media_assets`，同步约束、索引和序列名称；
+不复制或重建业务数据，保留 UUID、公开编号和外键关联。旧名 `image_assets` 暂作为
+`security_invoker` 可更新兼容视图，供旧 API／Worker 的查询、插入及 `RETURNING` 使用。
+它不是第二张素材表，不得作为新代码入口；旧版本全部退出后，再追加迁移移除视图。
+兼容视图不支持 `INSERT ON CONFLICT`，当前旧素材写入未使用该语法。迁移不新增角色授权；
+如果部署使用非表所有者角色，发布时还需按现有最小权限策略给该角色授予视图所需权限。
+视图由追加 SQL 迁移管理，不加入 Drizzle 表模型；历史迁移中的旧名保持不变。
+完整命名边界见 [数据库命名](database-naming.md)。

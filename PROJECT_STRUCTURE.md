@@ -112,3 +112,8 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 功能组件使用直接依赖；服务端缓存属于TanStack Query，临时草稿与交互属于Zustand，纯展示组件从props获得数据。具体规则见[UI一致性维护](docs/ui-consistency.md)。
 
 - `features/account/HeaderAccountMenu` 封装Header登录态、积分与头像合并入口、账户下拉菜单及账户弹窗；`StudioShell` 仅组合入口，不重复持有账号查询和菜单状态。个人作品复用素材库路由，账户资料／账单／账号权限由 `AccountPanel` 承接。
+
+## 数据库领域命名
+
+通用素材实体使用 `media_assets`（Drizzle `mediaAssets`），图片专用任务、编辑和执行流程保留 `image_*`。
+表职责、旧名兼容视图与后续媒体扩展边界见 [数据库命名](docs/database-naming.md)。
