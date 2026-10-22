@@ -1,13 +1,5 @@
 import { Button, Modal, Slider, ToggleButton, Tooltip } from "@heroui/react";
-import {
-  IconChevronLeft,
-  IconChevronRight,
-  IconCopy,
-  IconDownload,
-  IconPhoto,
-  IconStar,
-  IconStarFilled,
-} from "@tabler/icons-react";
+import { IconCopy, IconDownload, IconPhoto, IconStar, IconStarFilled } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import {
   lazy,
@@ -119,7 +111,6 @@ export function ImagePreviewDialog({
   const [dragging, setDragging] = useState(false);
   const active = images[index];
   const meta = active?.meta ?? sharedMeta;
-  const multiple = images.length > 1;
   const zoomed = zoom > 100;
   const favorite = useStudioStore((s) => (active ? s.favorites.includes(active.id) : false));
   const toggleFavorite = useStudioStore((s) => s.toggleFavorite);
@@ -131,8 +122,6 @@ export function ImagePreviewDialog({
     dragOrigin.current = null;
     setIndex(next);
   };
-  const step = (delta: number) =>
-    select((current) => (current + delta + images.length) % images.length);
   // Shrinking the zoom can leave the old offset beyond the new overflow.
   useEffect(() => {
     const limits = panLimits(frame.current, picture.current, zoom / 100);
@@ -245,28 +234,6 @@ export function ImagePreviewDialog({
                         }}
                       />
                     </div>
-                    {multiple && (
-                      <>
-                        <Button
-                          isIconOnly
-                          variant="tertiary"
-                          className="image-preview-nav image-preview-prev"
-                          aria-label="上一张"
-                          onPress={() => step(-1)}
-                        >
-                          <UiIcon icon={IconChevronLeft} size="action" />
-                        </Button>
-                        <Button
-                          isIconOnly
-                          variant="tertiary"
-                          className="image-preview-nav image-preview-next"
-                          aria-label="下一张"
-                          onPress={() => step(1)}
-                        >
-                          <UiIcon icon={IconChevronRight} size="action" />
-                        </Button>
-                      </>
-                    )}
                     <p className="image-preview-hint">
                       使用滚轮或滑块缩放图片，放大后可拖动查看细节。
                     </p>

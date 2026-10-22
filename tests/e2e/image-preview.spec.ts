@@ -211,7 +211,9 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   expect(layout.info?.x).toBe((layout.stage?.x ?? 0) + (layout.stage?.w ?? 0));
   expect(layout.rail?.x).toBe((layout.info?.x ?? 0) + (layout.info?.w ?? 0));
   expect((layout.rail?.x ?? 0) + (layout.rail?.w ?? 0)).toBe(1328);
-  await viewer.getByRole("button", { name: "下一张", exact: true }).click();
+  await expect(viewer.locator(".image-preview-nav")).toHaveCount(0);
+  await viewer.locator('.image-preview-thumb[aria-current="true"]').focus();
+  await page.keyboard.press("ArrowRight");
   await expect(viewer.locator(".image-preview-thumb").last()).toHaveAttribute(
     "aria-current",
     "true",
@@ -221,6 +223,21 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   );
   await expect(viewer.locator(".image-preview-facts")).toContainText("ID：W90000002");
   await expect(viewer.locator(".image-preview-bar-id")).toHaveText("Img ID：P55871232");
+  await page.keyboard.press("ArrowLeft");
+  await expect(viewer.locator(".image-preview-thumb").nth(1)).toHaveAttribute(
+    "aria-current",
+    "true",
+  );
+  await page.keyboard.press("ArrowUp");
+  await expect(viewer.locator(".image-preview-thumb").first()).toHaveAttribute(
+    "aria-current",
+    "true",
+  );
+  await page.keyboard.press("ArrowDown");
+  await expect(viewer.locator(".image-preview-thumb").nth(1)).toHaveAttribute(
+    "aria-current",
+    "true",
+  );
   await viewer.getByRole("button", { name: "关闭图片预览", exact: true }).click();
   await expect(viewer).toHaveCount(0);
   // Closing the viewer returns to the library, not the workspace.

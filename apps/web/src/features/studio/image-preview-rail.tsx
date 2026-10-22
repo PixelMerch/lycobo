@@ -40,7 +40,22 @@ export function ImagePreviewRail({
     return () => resize.disconnect();
   }, [activeId]);
   return (
-    <nav className="image-preview-rail" aria-label="全部图片" ref={rail}>
+    <nav
+      className="image-preview-rail"
+      aria-label="全部图片"
+      ref={rail}
+      onKeyDown={(event) => {
+        const direction = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }[event.key];
+        if (!direction || !images.length || event.altKey || event.ctrlKey || event.metaKey) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const next = (index + direction + images.length) % images.length;
+        onSelect(next);
+        rail.current
+          ?.querySelectorAll<HTMLButtonElement>(".image-preview-thumb")
+          [next]?.focus({ preventScroll: true });
+      }}
+    >
       {images.map((image, position) => (
         <Button
           key={image.id}
