@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { assetContentUrl, useImageHistory } from "./generation-client";
 import { GenerationLoading, statusLabel } from "./generation-status";
+import { scrollToHistoryTask } from "./history-navigation";
 import { LibraryDialog } from "./library-dialog";
 import { useStudioStore } from "./studio-state";
 
@@ -54,9 +55,7 @@ export function HistoryIndex() {
                   aria-current={selectedId === job.id ? "true" : "false"}
                   onPress={() => {
                     setActiveId(job.id);
-                    document
-                      .getElementById(`job-${job.id}`)
-                      ?.scrollIntoView({ block: "start", behavior: "instant" });
+                    scrollToHistoryTask(job.id);
                   }}
                 >
                   <span className="history-failure-label">
@@ -74,9 +73,7 @@ export function HistoryIndex() {
                 aria-current={selectedId === job.id ? "true" : "false"}
                 onPress={() => {
                   setActiveId(job.id);
-                  document
-                    .getElementById(`job-${job.id}`)
-                    ?.scrollIntoView({ block: "start", behavior: "instant" });
+                  scrollToHistoryTask(job.id);
                 }}
               >
                 {generating ? (

@@ -6,6 +6,7 @@ import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { useImageHistory, useImageSession } from "./generation-client";
 import { GenerationLoading, statusLabel } from "./generation-status";
+import { historyContentTop } from "./history-navigation";
 import { HistoryTaskMeta } from "./history-task-meta";
 import { HistoryPrompt, HistoryTaskActions } from "./history-task-tools";
 import { ImagePreviewDialog } from "./image-preview";
@@ -57,7 +58,7 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
     const update = () => {
       frame = 0;
       const articles = Array.from(list.querySelectorAll<HTMLElement>("[data-history-id]"));
-      const line = (document.querySelector(".topbar")?.getBoundingClientRect().bottom ?? 64) + 24;
+      const line = historyContentTop() + 1;
       let current = articles[0];
       for (const article of articles) {
         if (article.getBoundingClientRect().top > line) break;

@@ -53,7 +53,15 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await target.click();
   await expect(target).toHaveAttribute("aria-current", "true");
   await expect(articles.nth(1)).toHaveAttribute("data-active", "true");
-  await expect.poll(async () => (await articles.nth(1).boundingBox())?.y).toBeLessThan(110);
+  const metadataClearance = () =>
+    articles
+      .nth(1)
+      .locator("header")
+      .evaluate((header) => {
+        const title = document.querySelector(".workspace-tabs > .tabs__list-container");
+        return header.getBoundingClientRect().top - (title?.getBoundingClientRect().bottom ?? 0);
+      });
+  await expect.poll(metadataClearance).toBeGreaterThanOrEqual(12);
   const info = articles.nth(1).getByRole("definition");
   await expect(info).toHaveText([
     "gpt-image-2.5",
@@ -90,10 +98,14 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await target.press("Enter");
   await expect(target).toHaveAttribute("aria-current", "true");
   expect((await target.boundingBox())?.width).toBe(width);
+  await expect.poll(metadataClearance).toBeGreaterThanOrEqual(12);
   await page.setViewportSize({ width: 390, height: 844 });
   // The resize re-lays out the composer; assert the settled layout, not a frame
   // captured mid-reflow.
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
     .toBe(true);
+  await target.click();
+  await expect.poll(metadataClearance).toBeGreaterThanOrEqual(12);
+  await expect(target).toHaveAttribute("aria-current", "true");
 });
