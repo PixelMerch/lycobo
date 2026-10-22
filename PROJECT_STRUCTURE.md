@@ -68,7 +68,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 当前UI按[设计定稿](DESIGN.md)维护；组件拆分不得改变外观。公共组件在`apps/web/src/components`，场景功能在`features/studio`，避免在页面内重复实现上传、确认、图片浏览及操作。
 
-- `GenerationHistory`：历史查询、空态、活动任务同步及预览编排。
+- `GenerationHistory`：历史查询、空态、活动任务同步及预览入口。`HistoryImagePreview` 维护跨任务成功图片的稳定快照和分页；`ImagePreviewRail` 封装缩略图选择、高亮及自动定位。
 - `HistoryTaskMeta`：模型、时间、任务编号复制和输出参数。
 - `ResultImage`：生成图预览入口、下载和收藏；`generation-status`共用阶段标签和图标。
 - `HistoryIndex`：右侧历史定位、选中滚动与资产管理入口。

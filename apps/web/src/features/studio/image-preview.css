@@ -216,10 +216,8 @@
 .image-preview-section .generation-output-thumbnails {
   margin-top: 0;
 }
-/* Every picture surface inside the full-screen preview is a plain rectangle;
- * only controls keep their rounded geometry. */
-.image-preview-image,
-.image-preview .generation-output-thumbnail {
+/* Keep the main picture uncropped; reference thumbnails use the history radius. */
+.image-preview-image {
   border-radius: 0;
 }
 .image-preview-section h2 {
@@ -315,10 +313,11 @@
 }
 /* 右列缩略图：竖排、隐藏滚动条、选中内侧 2px 品牌紫框。 */
 .image-preview-rail {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   grid-column: 3;
   grid-row: 1 / span 2;
   min-height: 0;
@@ -336,21 +335,16 @@
   min-width: 72px;
   height: 72px;
   min-height: 72px;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: #17171b;
-  box-shadow: none;
-  overflow: hidden;
-}
-.image-preview-thumb.button[aria-current="true"] {
-  box-shadow: inset 0 0 0 2px var(--focus);
 }
 .image-preview-thumb img {
   display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+}
+.image-preview-load-more.button {
+  flex: none;
+  width: 72px;
+  min-width: 0;
+  padding-inline: 2px;
+  font-size: 11px;
 }
 @media (prefers-reduced-motion: reduce) {
   .image-preview-image {

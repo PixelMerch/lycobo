@@ -22,6 +22,7 @@ import { UiIcon } from "../../components/ui-icon";
 import { useCenteredDialogMotion } from "../../components/use-centered-dialog-motion";
 import { copyToClipboard } from "../../lib/clipboard";
 import { assetContentUrl, downloadAsset } from "./generation-client";
+import { ImagePreviewRail } from "./image-preview-rail";
 import { ReferenceThumbnails } from "./reference-thumbnails";
 import { useStudioStore } from "./studio-state";
 import "./fullscreen-dialog.css";
@@ -89,11 +90,17 @@ export function ImagePreviewDialog({
   meta: sharedMeta = {},
   initialIndex = 0,
   onClose,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
 }: {
   images: PreviewImage[];
   meta?: PreviewMeta;
   initialIndex?: number;
   onClose: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void;
 }) {
   const [addedImages, setAddedImages] = useState<PreviewImage[]>([]);
   const images = [
@@ -104,7 +111,6 @@ export function ImagePreviewDialog({
   const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
   const [index, setIndex] = useState(Math.min(Math.max(initialIndex, 0), images.length - 1));
   const [zoom, setZoom] = useState(100);
-  const rail = useRef<HTMLElement>(null);
   const stage = useRef<HTMLElement>(null);
   const frame = useRef<HTMLDivElement>(null);
   const picture = useRef<HTMLImageElement>(null);
@@ -127,7 +133,6 @@ export function ImagePreviewDialog({
   };
   const step = (delta: number) =>
     select((current) => (current + delta + images.length) % images.length);
-  const activeId = active?.id;
   // Shrinking the zoom can leave the old offset beyond the new overflow.
   useEffect(() => {
     const limits = panLimits(frame.current, picture.current, zoom / 100);
@@ -147,19 +152,6 @@ export function ImagePreviewDialog({
     area.addEventListener("wheel", onWheel, { passive: false });
     return () => area.removeEventListener("wheel", onWheel);
   }, [repair]);
-  // Keep the selected thumbnail in view as the viewer moves through the set.
-  useEffect(() => {
-    if (!activeId) return;
-    const railElement = rail.current;
-    const thumb = railElement?.querySelector<HTMLElement>('[aria-current="true"]');
-    if (!railElement || !thumb) return;
-    const box = thumb.getBoundingClientRect();
-    const bounds = railElement.getBoundingClientRect();
-    if (box.top < bounds.top) railElement.scrollTop -= bounds.top - box.top;
-    else if (box.bottom > bounds.bottom) railElement.scrollTop += box.bottom - bounds.bottom;
-    if (box.left < bounds.left) railElement.scrollLeft -= bounds.left - box.left;
-    else if (box.right > bounds.right) railElement.scrollLeft += box.right - bounds.right;
-  }, [activeId]);
   if (!active) return null;
   const label = active.publicId ?? active.id.slice(0, 8);
   const size = active.width && active.height ? `${active.width} x ${active.height}` : "尺寸待同步";
@@ -385,24 +377,14 @@ export function ImagePreviewDialog({
               )}
               {/* Thumbnail rail stays on the far right so the image and its
                * details never shift while switching pictures. */}
-              <nav className="image-preview-rail" aria-label="全部图片" ref={rail}>
-                {images.map((image, position) => (
-                  <Button
-                    key={image.id}
-                    variant="tertiary"
-                    className="image-preview-thumb"
-                    aria-label={`预览第 ${position + 1} 张`}
-                    aria-current={position === index ? "true" : "false"}
-                    onPress={() => select(position)}
-                  >
-                    <img
-                      src={assetContentUrl(image.id, true)}
-                      alt={`第 ${position + 1} 张缩略图`}
-                      loading="lazy"
-                    />
-                  </Button>
-                ))}
-              </nav>
+              <ImagePreviewRail
+                images={images}
+                index={index}
+                onSelect={select}
+                hasMore={hasMore}
+                isLoadingMore={isLoadingMore}
+                onLoadMore={onLoadMore}
+              />
             </motion.div>
           </Modal.Dialog>
         </Modal.Container>

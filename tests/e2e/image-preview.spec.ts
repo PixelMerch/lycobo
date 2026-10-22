@@ -77,12 +77,11 @@ test("library and history images open an in-page full-screen viewer", async ({ p
     "aria-current",
     "true",
   );
-  // Preview pictures are square-cornered rectangles; the asset library keeps its
-  // rounded tiles.
+  // The main picture stays square; rail thumbnails share the history geometry.
   await expect(historyDialog.locator(".image-preview-image")).toHaveCSS("border-radius", "0px");
   await expect(historyDialog.locator(".image-preview-thumb").first()).toHaveCSS(
     "border-radius",
-    "0px",
+    "8px",
   );
   expect(new URL(page.url()).pathname).toBe("/create");
   // The redundant bottom download row is gone; the icon actions stay in the panel.

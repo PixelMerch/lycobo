@@ -2561,7 +2561,7 @@ p.home-hero-kicker {
     grid-template-columns: minmax(0, 450px);
   }
 }
-.history-rail img {
+.history-thumbnail img {
   width: 100%;
   height: 100%;
   object-fit: cover;

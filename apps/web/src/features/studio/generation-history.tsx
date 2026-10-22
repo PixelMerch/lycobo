@@ -1,37 +1,23 @@
 import { Button, EmptyState } from "@heroui/react";
-import type { ImageJob } from "@lycoboai/contracts";
 import { IconPhoto } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { useImageHistory, useImageSession } from "./generation-client";
 import { GenerationLoading, statusLabel } from "./generation-status";
+import { HistoryImagePreview, historyPreviewImages } from "./history-image-preview";
 import { historyContentTop } from "./history-navigation";
 import { HistoryTaskMeta } from "./history-task-meta";
 import { HistoryPrompt, HistoryTaskActions } from "./history-task-tools";
-import { ImagePreviewDialog } from "./image-preview";
+import type { PreviewImage } from "./image-preview";
 import { ResultImage } from "./result-image";
 import { useStudioStore } from "./studio-state";
 
-/** Generated images of one task, in result order; used by the preview viewer. */
-const generatedImages = (job: ImageJob) =>
-  job.items.flatMap((item) =>
-    item.output_asset_id
-      ? [
-          {
-            id: item.output_asset_id,
-            publicId: item.output_public_id,
-            width: item.width,
-            height: item.height,
-          },
-        ]
-      : [],
-  );
 export function GenerationHistory({ compact = false }: { compact?: boolean }) {
   const session = useImageSession();
   const query = useImageHistory();
   const jobs = query.data?.pages.flatMap((page) => page.data) ?? [];
-  const [preview, setPreview] = useState<{ jobId: string; index: number } | null>(null);
+  const [preview, setPreview] = useState<{ images: PreviewImage[]; assetId: string } | null>(null);
   const previewTrigger = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (preview || !previewTrigger.current) return;
@@ -152,10 +138,8 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
                         onPreview={(trigger) => {
                           previewTrigger.current = trigger;
                           setPreview({
-                            jobId: job.id,
-                            index: generatedImages(job).findIndex(
-                              (image) => image.id === item.output_asset_id,
-                            ),
+                            images: historyPreviewImages(jobs),
+                            assetId: item.output_asset_id ?? "",
                           });
                         }}
                       />
@@ -200,23 +184,13 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
           </Button>
         )}
       </div>
-      {(() => {
-        const job = preview ? jobs.find((entry) => entry.id === preview.jobId) : undefined;
-        return job && preview ? (
-          <ImagePreviewDialog
-            images={generatedImages(job)}
-            meta={{
-              taskPublicId: job.public_id,
-              model: job.model,
-              createdAt: job.created_at,
-              prompt: job.prompt,
-              references: job.input?.referenceAssetIds ?? [],
-            }}
-            initialIndex={Math.max(preview.index, 0)}
-            onClose={() => setPreview(null)}
-          />
-        ) : null;
-      })()}
+      {preview && (
+        <HistoryImagePreview
+          images={preview.images}
+          assetId={preview.assetId}
+          onClose={() => setPreview(null)}
+        />
+      )}
     </>
   );
 }
