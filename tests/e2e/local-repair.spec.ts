@@ -196,3 +196,65 @@ test("repair regions remain usable on a narrow screen", async ({ page }) => {
   );
   expect(await viewer.evaluate((element) => element.scrollWidth <= window.innerWidth)).toBe(true);
 });
+
+test("closing with unsubmitted regions asks first and then clears the draft", async ({ page }) => {
+  await mockImageApi(page);
+  await page.route("**/api/v1/image-assets?*", (route) =>
+    route.fulfill({
+      json: apiFixture({
+        data: [
+          {
+            id: sourceId,
+            public_id: "P00000001",
+            kind: "output",
+            width: 1024,
+            height: 1024,
+            bytes: 1024,
+            created_at: "2026-10-21T01:00:00.000Z",
+            model: "gpt-image-2",
+            prompt: "原始商品图",
+          },
+        ],
+      }),
+    }),
+  );
+  await page.route("**/api/v1/image-assets/**/content*", (route) =>
+    route.fulfill({ contentType: "image/svg+xml", body: svg }),
+  );
+  await page.route("**/api/v1/image-tasks", (route) =>
+    route.fulfill({ json: apiFixture({ data: [] }) }),
+  );
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/create");
+  await page.getByRole("button", { name: "打开素材库", exact: true }).click();
+  await page.getByRole("button", { name: "查看图片：原始商品图", exact: true }).click();
+  const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
+  await viewer.getByRole("button", { name: "局部编辑", exact: true }).click();
+  await viewer.getByRole("button", { name: "添加区域", exact: true }).click();
+  const prompt = viewer.getByRole("textbox", { name: "区域 1 修改说明", exact: true });
+  await prompt.fill("背景换成浅灰");
+  const exit = page.getByRole("dialog", { name: "退出局部编辑？", exact: true });
+
+  // Escape asks before discarding the unsubmitted region.
+  await page.keyboard.press("Escape");
+  await expect(exit).toBeVisible();
+  await expect(exit).toContainText("不会保存");
+  await expect(viewer).toBeVisible();
+  await exit.getByRole("button", { name: "取消", exact: true }).click();
+  await expect(exit).toHaveCount(0);
+  await expect(prompt).toHaveValue("背景换成浅灰");
+
+  // The corner close action asks too, and confirming ends the viewer.
+  await viewer.getByRole("button", { name: "关闭图片预览", exact: true }).click();
+  await expect(exit).toBeVisible();
+  await exit.getByRole("button", { name: "确认", exact: true }).click();
+  await expect(viewer).toHaveCount(0);
+
+  // Reopening starts from an empty edit session.
+  await page.getByRole("button", { name: "查看图片：原始商品图", exact: true }).click();
+  await viewer.getByRole("button", { name: "局部编辑", exact: true }).click();
+  await expect(viewer.getByRole("textbox", { name: "区域 1 修改说明", exact: true })).toHaveCount(
+    0,
+  );
+  await expect(viewer.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
+});

@@ -11,16 +11,34 @@ export type RepairRegion = {
 };
 export type RepairDraft = { regions: RepairRegion[]; jobId?: string };
 const empty: RepairDraft = { regions: [] };
-// Session-only editing drafts, separated by authenticated identity and source asset.
+/** Drafts are session-only and separated by authenticated identity and source asset. */
+export function repairDraftKey(
+  identity: { organizationId: string; userId: string } | null | undefined,
+  sourceId: string,
+) {
+  return `${identity?.organizationId}:${identity?.userId}:${sourceId}`;
+}
 export const useRepairDrafts = create<{
   drafts: Record<string, RepairDraft>;
   update: (key: string, patch: Partial<RepairDraft>) => void;
+  clear: (key: string) => void;
 }>((set) => ({
   drafts: {},
   update: (key, patch) =>
     set((state) => ({
       drafts: { ...state.drafts, [key]: { ...(state.drafts[key] ?? empty), ...patch } },
     })),
+  clear: (key) =>
+    set((state) => {
+      const entry = state.drafts[key];
+      if (!entry) return state;
+      const drafts = { ...state.drafts };
+      // A submitted task keeps its id so an in-flight or finished edit can still
+      // be followed; only the unsubmitted regions are discarded.
+      if (entry.jobId) drafts[key] = { regions: [], jobId: entry.jobId };
+      else delete drafts[key];
+      return { drafts };
+    }),
 }));
 export const emptyRepairDraft = empty;
 

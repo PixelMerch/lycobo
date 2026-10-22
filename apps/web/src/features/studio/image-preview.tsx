@@ -1,9 +1,12 @@
 import { Modal } from "@heroui/react";
 import { motion } from "motion/react";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { ConfirmDialog } from "../../components/confirm-dialog";
 import { DialogClose } from "../../components/dialog-close";
 import { useCenteredDialogMotion } from "../../components/use-centered-dialog-motion";
+import { useImageSession } from "./generation-client";
 import { ImagePreviewRail } from "./image-preview-rail";
+import { repairDraftKey, useRepairDrafts } from "./local-repair-state";
 import "./fullscreen-dialog.css";
 import "./image-preview.css";
 
@@ -49,11 +52,20 @@ export function ImagePreviewDialog({
     ...addedImages.filter((image) => !originalImages.some((value) => value.id === image.id)),
   ];
   const [repair, setRepair] = useState(false);
+  const [exitConfirm, setExitConfirm] = useState(false);
   const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
   const [index, setIndex] = useState(Math.min(Math.max(initialIndex, 0), images.length - 1));
   const surface = useRef<HTMLDivElement>(null);
   const active = images[index];
   const meta = active?.meta ?? sharedMeta;
+  const session = useImageSession();
+  const draftKey = active ? repairDraftKey(session.data, active.id) : "";
+  /* Closing while the editor holds unsubmitted regions must not silently throw
+   * them away, so the modal close and Escape ask first. */
+  const editingDraft = useRepairDrafts((state) =>
+    draftKey ? (state.drafts[draftKey]?.regions.length ?? 0) : 0,
+  );
+  const needsExitConfirm = repair && editingDraft > 0;
   const select = useCallback((next: number | ((current: number) => number)) => setIndex(next), []);
   useEffect(() => {
     const dialog = surface.current?.closest('[role="dialog"]');
@@ -94,8 +106,24 @@ export function ImagePreviewDialog({
     return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [index, images.length, repair, select]);
   if (!active) return null;
+  const discardAndClose = () => {
+    setExitConfirm(false);
+    if (draftKey) useRepairDrafts.getState().clear(draftKey);
+    setRepair(false);
+    requestClose();
+  };
   return (
-    <Modal isOpen onOpenChange={(open) => (!open ? requestClose() : undefined)}>
+    <Modal
+      isOpen
+      onOpenChange={(open) => {
+        if (open) return;
+        if (needsExitConfirm) {
+          setExitConfirm(true);
+          return;
+        }
+        requestClose();
+      }}
+    >
       <Modal.Backdrop className="fullscreen-dialog__backdrop image-preview-backdrop">
         <Modal.Container size="full" className="fullscreen-dialog__container">
           <Modal.Dialog className="image-preview-dialog" aria-label="图片预览">
@@ -145,6 +173,14 @@ export function ImagePreviewDialog({
                 onLoadMore={onLoadMore}
               />
             </motion.div>
+            <ConfirmDialog
+              isOpen={exitConfirm}
+              title="退出局部编辑？"
+              content="当前选区和修改说明不会保存，退出后会清空。"
+              closeLabel="关闭退出确认"
+              onCancel={() => setExitConfirm(false)}
+              onConfirm={discardAndClose}
+            />
           </Modal.Dialog>
         </Modal.Container>
       </Modal.Backdrop>

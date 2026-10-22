@@ -15,6 +15,7 @@ import type { PreviewImage, PreviewMeta } from "./image-preview";
 import {
   emptyRepairDraft,
   type RepairRegion,
+  repairDraftKey,
   repairOutput,
   repairPrompt,
   useRepairDrafts,
@@ -23,7 +24,7 @@ import { isModelId } from "./studio-state";
 
 export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialTool = "select") {
   const session = useImageSession();
-  const key = `${session.data?.organizationId}:${session.data?.userId}:${source.id}`;
+  const key = repairDraftKey(session.data, source.id);
   const draft = useRepairDrafts((state) => state.drafts[key] ?? emptyRepairDraft);
   const update = useRepairDrafts((state) => state.update);
   const models = useImageModels();
