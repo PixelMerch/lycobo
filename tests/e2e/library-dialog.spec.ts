@@ -31,9 +31,16 @@ test("history rail heading opens the full-screen asset library", async ({ page }
     },
   ];
   let assetRequests = 0;
+  const requestedKinds: Array<string | null> = [];
+  const requestedTypes: Array<string | null> = [];
   await page.route("**/api/v1/image-assets?*", async (route) => {
     assetRequests += 1;
-    await route.fulfill({ json: apiFixture({ data: assets }) });
+    const kind = new URL(route.request().url()).searchParams.get("kind");
+    requestedKinds.push(kind);
+    requestedTypes.push(new URL(route.request().url()).searchParams.get("type"));
+    await route.fulfill({
+      json: apiFixture({ data: assets.filter((asset) => !kind || asset.kind === kind) }),
+    });
   });
   await page.route("**/api/v1/image-assets/**/content*", (route) =>
     route.fulfill({ contentType: "image/png", body: png }),
@@ -45,10 +52,16 @@ test("history rail heading opens the full-screen asset library", async ({ page }
   // The library is lazy: browsing the workspace must not load every asset.
   expect(assetRequests).toBe(0);
   await entry.click();
-  const dialog = page.getByRole("dialog", { name: "资产管理", exact: true });
+  const dialog = page.getByRole("dialog", { name: "我的素材", exact: true });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("heading", { name: "资产管理" })).toBeVisible();
-  await expect(dialog.locator(".library-tile")).toHaveCount(2);
+  await expect(dialog.getByRole("heading", { name: "我的素材" })).toBeVisible();
+  await expect(dialog.locator(".library-tile")).toHaveCount(1);
+  expect(requestedKinds[0]).toBe("output");
+  await expect(dialog.getByRole("button", { name: /^图片/ })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "查看图片：素材一", exact: true })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "查看图片：素材二", exact: true })).toHaveCount(
+    0,
+  );
   // Four large square previews per row at this width, with rounded corners.
   const tileShape = await dialog
     .locator(".library-tile")
@@ -84,15 +97,25 @@ test("history rail heading opens the full-screen asset library", async ({ page }
   });
   expect(edges.close).toBeCloseTo(edges.filter, 0);
   expect(edges.close).toBeCloseTo(edges.tile, 0);
-  await dialog.getByRole("button", { name: /全部类型/ }).click();
-  await page.getByRole("option", { name: "参考图片", exact: true }).click();
+  expect(requestedTypes[0]).toBe("image");
+  await dialog.getByRole("button", { name: /^图片/ }).click();
+  await expect(page.getByRole("option")).toHaveText(["全部类型", "图片"]);
+  await expect(page.getByRole("option", { name: "参考图片", exact: true })).toHaveCount(0);
+  await page.getByRole("option", { name: "全部类型", exact: true }).click();
   await expect(dialog.locator(".library-tile")).toHaveCount(1);
-  await dialog.getByRole("button", { name: "关闭资产管理", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: "查看图片：素材二", exact: true })).toHaveCount(
+    0,
+  );
+  expect(requestedKinds.every((kind) => kind === "output")).toBe(true);
+  expect(requestedTypes).toContain(null);
+  await dialog.getByRole("button", { name: "关闭我的素材", exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await expect(entry).toBeFocused();
   // Opening goes straight to a true full-screen surface, with no separate
   // expand control to reach for.
   await entry.click();
+  await expect(dialog.getByRole("button", { name: /^图片/ })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "查看图片：素材一", exact: true })).toBeVisible();
   await expect(dialog.locator(".library-shell")).toHaveCSS("transform", "none");
   const drawerBox = await dialog.boundingBox();
   expect(drawerBox?.x).toBeCloseTo(0, 0);
@@ -101,7 +124,7 @@ test("history rail heading opens the full-screen asset library", async ({ page }
   expect(Math.round(drawerBox?.height ?? 0)).toBe(906);
   await expect(dialog.getByRole("button", { name: /全屏|退出全屏/ })).toHaveCount(0);
   await page.screenshot({ path: "/tmp/library-drawer.png" });
-  await dialog.getByRole("button", { name: "关闭资产管理", exact: true }).click();
+  await dialog.getByRole("button", { name: "关闭我的素材", exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   await entry.click();
@@ -109,4 +132,9 @@ test("history rail heading opens the full-screen asset library", async ({ page }
   expect(box?.width).toBeCloseTo(390, 0);
   expect(box?.height).toBeCloseTo(844, 0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await dialog.getByRole("button", { name: "关闭我的素材", exact: true }).click();
+  await page.goto("/assets");
+  await expect(page.locator(".asset-grid .case-card")).toHaveCount(1);
+  await expect(page.getByRole("link", { name: "查看原图：素材一", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "查看原图：素材二", exact: true })).toHaveCount(0);
 });

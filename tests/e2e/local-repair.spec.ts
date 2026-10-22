@@ -159,7 +159,7 @@ test("multiple repair regions retain original coordinates, submit one image and 
   await expect(viewer.locator(".repair-message")).toHaveCount(0);
   await viewer.getByRole("button", { name: "查看修改版", exact: true }).click();
   await expect(viewer).toHaveCount(0);
-  await expect(page.getByRole("dialog", { name: "资产管理", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "我的素材", exact: true })).toHaveCount(0);
   await expect(page).toHaveURL(new RegExp(`/create\\?task=${jobId}$`));
   const record = page.locator(`#job-${jobId}`);
   await expect(record).toBeVisible();

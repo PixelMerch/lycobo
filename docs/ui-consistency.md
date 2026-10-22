@@ -61,6 +61,6 @@ pnpm lint运行`scripts/check-ui-conventions.mjs`，以TypeScript AST识别组�
 
 - 合并DESIGN中重复、互相覆盖的模型卡片、Header、上传编号、历史重试、弹窗规则；当前UI固定，不更换主题或尺寸。
 - GenerationHistory保留历史查询与预览编排；抽出HistoryTaskMeta、ResultImage、HistoryIndex和共享状态，移除原重复定义。
-- 预览与资产管理直接复用共享中心开关hook，移除仅转发导出的文件。
+- 预览与我的素材直接复用共享中心开关hook，移除仅转发导出的文件。
 - 移除无调用方的旧showcase数据、专属样式和六段未挂载视频；保留仍在用的样例图片、模型封面、设计证据与用户本地文件。
 - 运行结果与局限以本次交付记录为准，本文不保留易过期的通过数量或旧版尺寸对比表。

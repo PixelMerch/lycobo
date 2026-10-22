@@ -232,6 +232,7 @@ export const imageAssets = pgTable(
     organizationId: uuid("organization_id").notNull(),
     userId: uuid("user_id").notNull(),
     kind: text("kind").notNull(),
+    mediaType: text("media_type").notNull().default("image"),
     objectKey: text("object_key").notNull().unique(),
     mimeType: text("mime_type").notNull(),
     width: integer("width").notNull(),
@@ -254,6 +255,7 @@ export const imageAssets = pgTable(
       sql`${t.width} > 0 and ${t.height} > 0 and ${t.bytes} > 0`,
     ),
     check("image_assets_kind_check", sql`${t.kind} in ('reference','output')`),
+    check("image_assets_media_type_check", sql`${t.mediaType} in ('image','video','audio')`),
   ],
 );
 export const imageJobs = pgTable(

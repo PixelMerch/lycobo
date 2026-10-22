@@ -1,0 +1,2 @@
+ALTER TABLE "image_assets" ADD COLUMN "media_type" text DEFAULT 'image' NOT NULL;--> statement-breakpoint
+ALTER TABLE "image_assets" ADD CONSTRAINT "image_assets_media_type_check" CHECK ("image_assets"."media_type" in ('image','video','audio'));

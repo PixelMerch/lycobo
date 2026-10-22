@@ -326,6 +326,45 @@ try {
     output?.output_public_id,
   );
   assert.equal(new Set(assetList.map((asset) => asset.public_id)).size, assetList.length);
+  // Kind filtering must happen before pagination, and retain organization scope.
+  const readAssets = async (query: string, authorization = headers.Authorization) => {
+    const response = await app.request(`/api/v1/image-assets?${query}`, {
+      headers: { Authorization: authorization },
+    });
+    assert.equal(response.status, 200);
+    return imageAssetsResponseSchema.parse(unwrapApiData(await response.json())).data;
+  };
+  const outputs = await readAssets("limit=100&kind=output");
+  assert.ok(outputs.length > 0);
+  assert.ok(outputs.every((asset) => asset.kind === "output"));
+  assert.ok(outputs.every((asset) => asset.type === "image"));
+
+  assert.ok(!outputs.some((asset) => asset.id === uploaded.id));
+  const references = await readAssets("limit=100&kind=reference");
+  assert.ok(references.some((asset) => asset.id === uploaded.id));
+  assert.ok(references.every((asset) => asset.kind === "reference" && asset.type === "image"));
+  assert.deepEqual(await readAssets("limit=100&kind=output&type=image"), outputs);
+  assert.deepEqual(await readAssets("limit=100&kind=output&type=video"), []);
+  assert.deepEqual(await readAssets("limit=100&kind=output&type=audio"), []);
+  const persistedAssetId = output?.output_asset_id;
+  assert.ok(persistedAssetId);
+  const [persistedType] =
+    await sql`select media_type from image_assets where id=${persistedAssetId}`;
+  assert.equal(persistedType?.media_type, "image");
+  await assert.rejects(
+    sql`update image_assets set media_type='invalid' where id=${persistedAssetId}`,
+    (error: unknown) =>
+      error instanceof Error && error.message.includes("image_assets_media_type_check"),
+  );
+  const firstOutputPage = await readAssets("limit=1&kind=output");
+  assert.deepEqual(firstOutputPage, outputs.slice(0, 1));
+  const nextOutputPage = await readAssets(`limit=1&kind=output&before=${outputs[0]?.id}`);
+  assert.deepEqual(nextOutputPage, outputs.slice(1, 2));
+  assert.deepEqual(await readAssets("limit=100&kind=output", `Bearer ${second.token}`), []);
+  assert.equal((await app.request("/api/v1/image-assets?kind=unknown", { headers })).status, 400);
+  assert.equal((await app.request("/api/v1/image-assets?kind=output")).status, 401);
+  assert.equal((await app.request("/api/v1/image-assets?type=unknown", { headers })).status, 400);
+
   const reconnected = openImageRepository(databaseUrl);
   try {
     const reread = imageJobSchema.parse(

@@ -46,3 +46,7 @@ docker compose exec -T postgres pg_dump -U lycoboai -d lycoboai \
 ```
 
 结构快照从同一个 custom 文件通过 `pg_restore --schema-only --no-owner --no-privileges --file=-` 导出。后续表结构变更仍需追加迁移，再更新快照；不要用快照直接修改已有数据库。
+
+当前结构快照已包含 `0012_asset_media_type`：`image_assets.media_type` 默认 `image`，
+通过约束保留 `image`／`video`／`audio`；与表示参考输入／生成结果的 `kind` 独立。
+新增媒体类型字段不代表已经接入视频或音频生成与存储。

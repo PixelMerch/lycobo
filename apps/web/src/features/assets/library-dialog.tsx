@@ -6,26 +6,28 @@ import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
 import { useCenteredDialogMotion } from "../../components/use-centered-dialog-motion";
 import { useErrorToast } from "../../lib/error-toast";
+import "../../styles/fullscreen-dialog.css";
 import { assetContentUrl, useImageAssets } from "../generation/generation-client";
 import { ImagePreviewDialog, type PreviewImage } from "../image-workspace/image-preview";
-import "../../styles/fullscreen-dialog.css";
 import "./library-dialog.css";
 
-type KindFilter = "all" | "output" | "reference";
+type TypeFilter = "all" | "image";
 
-const kinds: Array<{ id: KindFilter; label: string }> = [
+const types: Array<{ id: TypeFilter; label: string }> = [
   { id: "all", label: "全部类型" },
-  { id: "output", label: "生成图片" },
-  { id: "reference", label: "参考图片" },
+  { id: "image", label: "图片" },
 ];
 
 /** Asset library drawer opened from the workspace history rail. */
 export function LibraryDialog({ onClose }: { onClose: () => void }) {
-  const [kind, setKind] = useState<KindFilter>("all");
+  const [type, setType] = useState<TypeFilter>("image");
   const [model, setModel] = useState("all");
-  const [preview, setPreview] = useState<{ images: PreviewImage[]; index: number } | null>(null);
+  const [preview, setPreview] = useState<{
+    images: PreviewImage[];
+    index: number;
+  } | null>(null);
   const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
-  const query = useImageAssets();
+  const query = useImageAssets({ kind: "output", type: type === "all" ? undefined : type });
   useErrorToast(query.isError ? query.error.message : null);
   const assets = query.data?.pages.flatMap((page) => page.data) ?? [];
   const modelOptions = [
@@ -33,7 +35,9 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
   ].sort();
   const visible = assets.filter(
     (asset) =>
-      (kind === "all" || asset.kind === kind) && (model === "all" || asset.model === model),
+      asset.kind === "output" &&
+      (type === "all" || asset.type === type) &&
+      (model === "all" || asset.model === model),
   );
   return (
     <Modal
@@ -44,20 +48,20 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
     >
       <Modal.Backdrop className="fullscreen-dialog__backdrop library-backdrop">
         <Modal.Container size="full" className="fullscreen-dialog__container">
-          <Modal.Dialog className="library-dialog" aria-label="资产管理">
+          <Modal.Dialog className="library-dialog" aria-label="我的素材">
             <motion.div className="library-shell" data-dialog-phase={phase} {...surfaceMotion}>
               <Modal.Header className="library-header">
-                <DialogClose fullScreen label="关闭资产管理" className="library-close" />
-                <Modal.Heading>资产管理</Modal.Heading>
+                <DialogClose fullScreen label="关闭我的素材" className="library-close" />
+                <Modal.Heading>我的素材</Modal.Heading>
               </Modal.Header>
               <Modal.Body className="library-body">
                 <div className="library-filters">
                   <Select
                     className="library-filter"
-                    aria-label="图片类型"
-                    value={kind}
+                    aria-label="素材类型"
+                    value={type}
                     onChange={(key) => {
-                      if (key === "all" || key === "output" || key === "reference") setKind(key);
+                      if (key === "all" || key === "image") setType(key);
                     }}
                   >
                     <Select.Trigger className="library-filter-trigger">
@@ -65,8 +69,8 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                       <Select.Indicator />
                     </Select.Trigger>
                     <Select.Popover className="model-menu" placement="bottom start">
-                      <ListBox aria-label="图片类型">
-                        {kinds.map((entry) => (
+                      <ListBox aria-label="素材类型">
+                        {types.map((entry) => (
                           <ListBox.Item
                             className="model-options"
                             key={entry.id}
@@ -117,7 +121,9 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                           className="library-tile"
                           key={asset.id}
                           aria-label={`查看图片：${asset.prompt ?? "参考图片"}`}
-                          style={{ animationDelay: `${Math.min(index, 18) * 24}ms` }}
+                          style={{
+                            animationDelay: `${Math.min(index, 18) * 24}ms`,
+                          }}
                           onPress={() =>
                             setPreview({
                               index,

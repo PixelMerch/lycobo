@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict QTUg4HTdXRScFdsLjJHDmnayQlQliGQQTGYV3B82LRuP5wyqh1mlDxSFLh9rb2W
+\restrict p5OZze5eSSGCa5MW19ukvVlR1Nhe6XE8h3FrgoOxs0IHagTy27ynCStjgYKtjbs
 
 -- Dumped from database version 17.11
 -- Dumped by pg_dump version 17.11
@@ -236,8 +236,10 @@ CREATE TABLE public.image_assets (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     display_number bigint NOT NULL,
     public_id text DEFAULT public.allocate_public_identifier('image'::text) NOT NULL,
+    media_type text DEFAULT 'image'::text NOT NULL,
     CONSTRAINT image_assets_dimensions_check CHECK (((width > 0) AND (height > 0) AND (bytes > 0))),
-    CONSTRAINT image_assets_kind_check CHECK ((kind = ANY (ARRAY['reference'::text, 'output'::text])))
+    CONSTRAINT image_assets_kind_check CHECK ((kind = ANY (ARRAY['reference'::text, 'output'::text]))),
+    CONSTRAINT image_assets_media_type_check CHECK ((media_type = ANY (ARRAY['image'::text, 'video'::text, 'audio'::text])))
 );
 
 
@@ -1697,5 +1699,5 @@ ALTER TABLE ONLY public.wallet_entries
 -- PostgreSQL database dump complete
 --
 
-\unrestrict QTUg4HTdXRScFdsLjJHDmnayQlQliGQQTGYV3B82LRuP5wyqh1mlDxSFLh9rb2W
+\unrestrict p5OZze5eSSGCa5MW19ukvVlR1Nhe6XE8h3FrgoOxs0IHagTy27ynCStjgYKtjbs
 

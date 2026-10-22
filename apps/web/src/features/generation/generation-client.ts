@@ -107,20 +107,31 @@ export function useImageHistory({ poll = true } = {}) {
         : false,
   });
 }
-export function useImageAssets({ enabled = true }: { enabled?: boolean } = {}) {
+export function useImageAssets({
+  enabled = true,
+  kind = "all",
+  type,
+}: {
+  enabled?: boolean;
+  kind?: "all" | "output" | "reference";
+  type?: "image" | "video" | "audio" | undefined;
+} = {}) {
   const session = useImageSession();
   const eventStatus = useImageEventState((state) => state.status);
   return useInfiniteQuery({
-    queryKey: ["image-assets"],
+    queryKey: ["image-assets", kind, type ?? "all"],
     enabled: enabled && session.isSuccess,
     initialPageParam: "",
     retry: false,
     queryFn: async ({ pageParam, signal }) =>
       imageAssetsResponseSchema.parse(
         await (
-          await imageRequest(`image-assets?limit=30${pageParam ? `&before=${pageParam}` : ""}`, {
-            signal,
-          })
+          await imageRequest(
+            `image-assets?limit=30${kind === "all" ? "" : `&kind=${kind}`}${type ? `&type=${type}` : ""}${pageParam ? `&before=${pageParam}` : ""}`,
+            {
+              signal,
+            },
+          )
         ).json(),
       ),
     getNextPageParam: (last) => (last.data.length === 30 ? last.data.at(-1)?.id : undefined),

@@ -176,11 +176,14 @@ export const imageJobSchema = z.object({
 });
 export type ImageJob = z.infer<typeof imageJobSchema>;
 export const imageTasksResponseSchema = z.object({ data: z.array(imageJobSchema) });
+export const assetTypeSchema = z.enum(["image", "video", "audio"]);
+export type AssetType = z.infer<typeof assetTypeSchema>;
 export const imageAssetSchema = z.object({
   task_public_id: imageJobSchema.shape.public_id.nullable(),
   public_id: z.union([imagePublicIdSchema, z.string().regex(/^L[1-9][0-9]{8}$/)]).optional(),
   id: z.uuid(),
   kind: z.enum(["reference", "output"]),
+  type: assetTypeSchema.default("image"),
   width: z.number(),
   height: z.number(),
   bytes: z.number(),

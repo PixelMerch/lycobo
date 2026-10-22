@@ -1,4 +1,5 @@
 import {
+  assetTypeSchema,
   imageGenerationInputSchema,
   imageModelCatalog,
   imageUnitCredits,
@@ -282,9 +283,18 @@ export function imageRoutes(deps: ImageApiDependencies) {
       .default(30)
       .safeParse(c.req.query("limit"));
     const before = id.optional().safeParse(c.req.query("before"));
-    if (!limit.success || !before.success) return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
+    const kind = z.enum(["output", "reference"]).optional().safeParse(c.req.query("kind"));
+    const type = assetTypeSchema.optional().safeParse(c.req.query("type"));
+    if (!limit.success || !before.success || !kind.success || !type.success)
+      return fail(c, "VALIDATION_ERROR", "筛选或分页参数无效", 400);
     return c.json({
-      data: await deps.repository.listAssets(c.get("principal"), limit.data, before.data),
+      data: await deps.repository.listAssets(
+        c.get("principal"),
+        limit.data,
+        before.data,
+        kind.data,
+        type.data,
+      ),
     });
   });
   app.post("/image-assets", async (c) => {

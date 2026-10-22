@@ -62,7 +62,7 @@ Worker 缺少密钥/数据库/Redis 时启动失败，不以演示结果代替�
 | GET /api/v1/image-tasks?limit=20&before=任务UUID | 组织内任务列表，按创建时间/ID 倒序，最大 100 条 |
 | GET /api/v1/image-tasks/:id | 组织内任务、输入快照、逐图状态与输出元数据 |
 | POST /api/v1/image-assets | 原始 PNG/JPEG/WebP 文件体，最大 10MB，返回资产 ID 与实际尺寸 |
-| GET /api/v1/image-assets?limit=30&before=资产UUID | 组织内素材列表；public_id为图片编号，task_public_id为生成任务编号，参考图无所属生成任务时为null |
+| GET /api/v1/image-assets?limit=30&before=资产UUID&kind=output&type=image | 组织内素材列表；可选kind=output/reference区分来源，type=image/video/audio区分媒体类型，均在分页前筛选；省略筛选保持兼容。当前生成和存储仅接入图片，type来自image_assets.media_type，旧记录及新图片默认image；public_id为图片编号，task_public_id为生成任务编号，参考图无所属生成任务时为null |
 | GET /api/v1/image-assets/:id/content | 身份与组织验证后读取图片，不直接暴露磁盘路径 |
 | POST /api/v1/image-tasks/:jobId/items/:itemId/reconcile-failure | 管理员核对服务商后确认未成功，释放预留积分；不重发模型请求 |
 

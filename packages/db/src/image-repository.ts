@@ -1,5 +1,6 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import {
+  type AssetType,
   type ImageGenerationInput,
   type ImageScope,
   imageGenerationInputSchema,
@@ -296,16 +297,24 @@ export function openImageRepository(url: string) {
     },
     async addReference(scope: ImageScope, image: StoredImage) {
       await sql.begin(async (tx) => {
-        await tx`insert into image_assets (id,organization_id,user_id,kind,object_key,mime_type,width,height,bytes,sha256)
-          values (${image.id},${scope.organizationId},${scope.userId},'reference',${image.objectKey},${image.mimeType},${image.width},${image.height},${image.bytes},${image.sha256})`;
+        await tx`insert into image_assets (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256)
+          values (${image.id},${scope.organizationId},${scope.userId},'reference','image',${image.objectKey},${image.mimeType},${image.width},${image.height},${image.bytes},${image.sha256})`;
         await recordImageEvent(tx, scope.organizationId, "asset", image.id);
       });
     },
-    async listAssets(scope: ImageScope, limit: number, before?: string) {
-      return sql`select a.public_id,a.id,a.kind,a.width,a.height,a.bytes,a.created_at,j.public_id as task_public_id,${publicModelSql} as model,j.prompt
+    async listAssets(
+      scope: ImageScope,
+      limit: number,
+      before?: string,
+      kind?: "output" | "reference",
+      type?: AssetType,
+    ) {
+      return sql`select a.public_id,a.id,a.kind,a.media_type as type,a.width,a.height,a.bytes,a.created_at,j.public_id as task_public_id,${publicModelSql} as model,j.prompt
         from image_assets a left join image_job_items i on i.output_asset_id=a.id and i.organization_id=a.organization_id
         left join image_jobs j on j.id=i.job_id and j.organization_id=a.organization_id
         where a.organization_id=${scope.organizationId}
+        ${kind ? sql`and a.kind=${kind}` : sql``}
+        ${type ? sql`and a.media_type=${type}` : sql``}
         ${before ? sql`and (a.created_at,a.id) < (select created_at,id from image_assets where id=${before} and organization_id=${scope.organizationId})` : sql``}
         order by a.created_at desc,a.id desc limit ${limit}`;
     },
@@ -389,8 +398,8 @@ export function openImageRepository(url: string) {
           return false;
         if ("image" in result) {
           const a = result.image;
-          await tx`insert into image_assets (id,organization_id,user_id,kind,object_key,mime_type,width,height,bytes,sha256)
-            values (${a.id},${job.organizationId},${job.userId},'output',${a.objectKey},${a.mimeType},${a.width},${a.height},${a.bytes},${a.sha256})`;
+          await tx`insert into image_assets (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256)
+            values (${a.id},${job.organizationId},${job.userId},'output','image',${a.objectKey},${a.mimeType},${a.width},${a.height},${a.bytes},${a.sha256})`;
           await tx`update image_job_items set status='succeeded',output_asset_id=${a.id},provider_request_id=${result.requestId ?? null},completed_at=now() where id=${job.itemId}`;
         } else {
           await tx`update image_job_items set status=${result.unknown && result.errorCode !== "PROVIDER_INVALID_IMAGE_RESPONSE" ? "needs_reconciliation" : "failed"},error_code=${result.errorCode},

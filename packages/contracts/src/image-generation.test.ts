@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { userUidSchema } from "./auth";
 import {
+  assetTypeSchema,
+  imageAssetSchema,
   imageGenerationInputSchema,
   imagePublicIdSchema,
   imageTaskPublicIdSchema,
@@ -88,4 +90,12 @@ it("validates persisted local edit lineage and original pixel bounds", () => {
     { ...input, localEdit: { ...input.localEdit, regions: [] } },
   ])
     expect(imageGenerationInputSchema.safeParse(invalid).success).toBe(false);
+});
+
+it("separates asset media types from input/output kinds and accepts legacy image metadata", () => {
+  expect(assetTypeSchema.options).toEqual(["image", "video", "audio"]);
+  expect(assetTypeSchema.safeParse("reference").success).toBe(false);
+  expect(imageAssetSchema.shape.type.parse(undefined)).toBe("image");
+  expect(imageAssetSchema.shape.type.parse("image")).toBe("image");
+  expect(imageAssetSchema.shape.type.safeParse("unknown").success).toBe(false);
 });

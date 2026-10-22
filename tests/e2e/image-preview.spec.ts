@@ -94,7 +94,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
 
   // Library tiles open the same viewer and browse the whole filtered set.
   await page.getByRole("button", { name: "打开素材库", exact: true }).click();
-  const libraryDialog = page.getByRole("dialog", { name: "资产管理", exact: true });
+  const libraryDialog = page.getByRole("dialog", { name: "我的素材", exact: true });
   await expect(libraryDialog).toBeVisible();
   await libraryDialog
     .getByRole("button", { name: "查看图片：素材 2 的创意描述", exact: true })

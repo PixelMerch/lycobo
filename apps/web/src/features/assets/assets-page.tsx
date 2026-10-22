@@ -12,8 +12,9 @@ import {
 
 export function AssetsPage() {
   const session = useImageSession();
-  const query = useImageAssets();
-  const assets = query.data?.pages.flatMap((page) => page.data) ?? [];
+  const query = useImageAssets({ kind: "output", type: "image" });
+  const assets =
+    query.data?.pages.flatMap((page) => page.data).filter((asset) => asset.kind === "output") ?? [];
   useErrorToast(
     session.isError || query.isError
       ? (session.error?.message ?? query.error?.message ?? "服务暂时不可用，请稍后重试。")
@@ -24,7 +25,7 @@ export function AssetsPage() {
       <div className="page-heading">
         <div>
           <h1>素材库</h1>
-          <p>已保存的生成图片与参考图片</p>
+          <p>已生成的图片</p>
         </div>
       </div>
       {session.isError ||
