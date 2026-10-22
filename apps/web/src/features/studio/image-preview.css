@@ -95,6 +95,40 @@
 .image-preview-close-row {
   display: flex;
   justify-content: flex-end;
+  translate: 0 -9px;
+}
+.modal__close-trigger.dialog-close.image-preview-close {
+  width: 52px;
+  min-width: 52px;
+  height: 52px;
+  min-height: 52px;
+  position: relative;
+}
+.modal__close-trigger.dialog-close.image-preview-close:is(
+  :hover,
+  [data-hovered="true"],
+  [data-focus-visible="true"]
+) {
+  background: transparent;
+}
+.image-preview-close::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: transparent;
+  pointer-events: none;
+}
+.image-preview-close:is(:hover, [data-hovered="true"], [data-focus-visible="true"])::before {
+  background: #ffffff14;
+}
+/* The selected ring also identifies keyboard focus, without a second outer ring. */
+.image-preview-thumb.button[aria-current="true"]:is(:focus-visible, [data-focus-visible="true"]) {
+  outline: none;
+  outline-offset: 0;
 }
 .image-preview-head {
   display: flex;
@@ -393,6 +427,7 @@
   /* On phones the close control floats over the image's top-right corner so it
    * stays reachable without scrolling the sheet. */
   .image-preview-close-row {
+    translate: none;
     position: absolute;
     top: 8px;
     right: 8px;

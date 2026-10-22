@@ -240,7 +240,11 @@ export function ImagePreviewDialog({
                   </section>
                   <aside className="image-preview-info" aria-label="图片信息">
                     <div className="image-preview-close-row">
-                      <DialogClose label="关闭图片预览" className="image-preview-close" />
+                      <DialogClose
+                        label="关闭图片预览"
+                        className="image-preview-close"
+                        iconSize="illustration"
+                      />
                     </div>
                     <header className="image-preview-head">
                       <span className="image-preview-model">

@@ -105,7 +105,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
     viewer.getByRole("button", { name: "复制任务 ID W90000001", exact: true }),
   ).toBeVisible();
   await expect(viewer.locator(".image-preview")).toHaveCSS("transform", "none");
-  // The preview and the asset library share the same close control size.
+  // The preview has a larger close control aligned with the first rail thumbnail.
   const closeSizes = await page.evaluate(() => {
     const size = (selector: string) => {
       const rect = document.querySelector(selector)?.getBoundingClientRect();
@@ -114,7 +114,24 @@ test("library and history images open an in-page full-screen viewer", async ({ p
     return { library: size(".library-close"), preview: size(".image-preview-close") };
   });
   expect(closeSizes.library).toEqual({ width: 44, height: 44 });
-  expect(closeSizes.preview).toEqual(closeSizes.library);
+  expect(closeSizes.preview).toEqual({ width: 52, height: 52 });
+  await expect(viewer.locator(".image-preview-close svg")).toHaveCSS("width", "28px");
+  const topAlignment = await viewer.evaluate((dialog) => {
+    const close = dialog.querySelector(".image-preview-close svg")!.getBoundingClientRect();
+    const thumb = dialog.querySelector(".image-preview-thumb img")!.getBoundingClientRect();
+    return Math.abs(close.top - thumb.top);
+  });
+  expect(topAlignment).toBeLessThanOrEqual(1);
+  await viewer.locator(".image-preview-close").hover();
+  const hoverBackground = await viewer.locator(".image-preview-close").evaluate((button) => {
+    const background = getComputedStyle(button, "::before");
+    return {
+      width: background.width,
+      height: background.height,
+      fill: getComputedStyle(button).backgroundColor,
+    };
+  });
+  expect(hoverBackground).toEqual({ width: "42px", height: "42px", fill: "rgba(0, 0, 0, 0)" });
   await expect(viewer.locator(".image-preview-thumb")).toHaveCount(3);
   await expect(viewer.locator(".image-preview-thumb").nth(1)).toHaveAttribute(
     "aria-current",
@@ -223,6 +240,11 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   );
   await expect(viewer.locator(".image-preview-facts")).toContainText("ID：W90000002");
   await expect(viewer.locator(".image-preview-bar-id")).toHaveText("Img ID：P55871232");
+  await expect(viewer.locator('.image-preview-thumb[aria-current="true"]')).toBeFocused();
+  await expect(viewer.locator('.image-preview-thumb[aria-current="true"]')).toHaveCSS(
+    "outline-style",
+    "none",
+  );
   await page.keyboard.press("ArrowLeft");
   await expect(viewer.locator(".image-preview-thumb").nth(1)).toHaveAttribute(
     "aria-current",

@@ -14,7 +14,7 @@ export function DialogClose({
 }: {
   label: string;
   className?: string;
-  iconSize?: "default" | "action";
+  iconSize?: "default" | "action" | "illustration";
 }) {
   return (
     <Modal.CloseTrigger
