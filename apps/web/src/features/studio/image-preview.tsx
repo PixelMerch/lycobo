@@ -376,14 +376,17 @@ export function ImagePreviewDialog({
                         <ReferenceThumbnails ids={meta.references} />
                       </section>
                     )}
-                    <Button
-                      id="open-local-repair"
-                      variant="secondary"
-                      size="sm"
-                      onPress={() => setRepair(true)}
-                    >
-                      局部修复
-                    </Button>
+                    <div className="image-preview-tools-footer">
+                      <Button
+                        id="open-local-repair"
+                        className="image-preview-edit-action"
+                        variant="secondary"
+                        size="md"
+                        onPress={() => setRepair(true)}
+                      >
+                        局部修复
+                      </Button>
+                    </div>
                   </aside>
                   <footer className="image-preview-bar">
                     <span className="image-preview-bar-id">Img ID：{label}</span>
