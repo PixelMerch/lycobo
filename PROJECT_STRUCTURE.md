@@ -119,3 +119,5 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 表职责、已完成的旧视图移除与后续媒体扩展边界见 [数据库命名](docs/database-naming.md)。
 
 账户中心由 `features/account/account-panel.tsx` 组合：`AccountManagement` 封装绑定／重置密码的可用状态与表单，`WalletPanel` 封装真实共享余额、收支筛选和充值订单，`account-panel.css` 维护与个人信息一致的深色表面及中性灰输入焦点。未接入的账号绑定、验证码和支付不会模拟成功。
+
+版本发布由 `.github/workflows/release.yml` 显式触发，`scripts/release-notes.mjs` 生成提交分类、作者／提交人及文件改动清单。版本只发布已通过 main CI 的提交；发布日志与操作边界见 [发布说明](docs/releasing.md)。
