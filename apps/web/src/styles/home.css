@@ -1,3 +1,14 @@
+/* Hide only the home document scrollbar; native wheel/touch scrolling remains enabled. */
+html:has(.commerce-home),
+body:has(.commerce-home) {
+  scrollbar-width: none;
+  scrollbar-gutter: auto;
+}
+html:has(.commerce-home)::-webkit-scrollbar,
+body:has(.commerce-home)::-webkit-scrollbar {
+  display: none;
+}
+
 /* Approved commerce homepage composition; sizes inherit DESIGN.md tokens. */
 .commerce-home.page-panel {
   max-width: 1840px;
