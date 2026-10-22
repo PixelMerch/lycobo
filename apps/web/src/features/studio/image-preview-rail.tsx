@@ -50,11 +50,13 @@ export function ImagePreviewRail({
           aria-current={position === index ? "true" : "false"}
           onPress={() => onSelect(position)}
         >
-          <img
-            src={assetContentUrl(image.id, true)}
-            alt={`第 ${position + 1} 张缩略图`}
-            loading="lazy"
-          />
+          <span className="history-thumbnail-frame">
+            <img
+              src={assetContentUrl(image.id, true)}
+              alt={`第 ${position + 1} 张缩略图`}
+              loading="lazy"
+            />
+          </span>
         </Button>
       ))}
       {hasMore && (

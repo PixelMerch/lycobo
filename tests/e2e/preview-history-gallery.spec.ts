@@ -119,9 +119,20 @@ test("result preview browses successful history images, highlights the entry and
   // The preview rail shares the history rail's hover treatment. That rail sits
   // behind this modal, so it is covered by a dedicated test just below.
   const previewThumb = rail.locator(".image-preview-thumb").first();
+  const previewFrame = previewThumb.locator(".history-thumbnail-frame");
+  const previewBox = await previewThumb.boundingBox();
+  const previewFrameBox = await previewFrame.boundingBox();
   await expect(previewThumb.locator("img")).toHaveCSS("transform", "none");
   await previewThumb.hover();
   await expect(previewThumb.locator("img")).toHaveCSS("transform", "matrix(1.1, 0, 0, 1.1, 0, 0)");
+  // The frame keeps its size and corners; the picture is clipped inside it.
+  const previewSize = (box: { width: number; height: number } | null) => ({
+    width: box?.width,
+    height: box?.height,
+  });
+  expect(previewSize(await previewThumb.boundingBox())).toEqual(previewSize(previewBox));
+  expect(previewSize(await previewFrame.boundingBox())).toEqual(previewSize(previewFrameBox));
+  await expect(previewFrame).toHaveCSS("overflow", "hidden");
   await expect(viewer.locator(".generation-output-thumbnail")).toHaveCSS("border-radius", "6px");
   await rail.hover();
   await page.mouse.wheel(0, 2000);
@@ -176,12 +187,18 @@ test("history rail thumbnails zoom on hover and keep a stable tile", async ({ pa
   await page.goto("/create");
   const thumb = page.locator(".history-rail .history-thumbnail").first();
   const image = thumb.locator("img");
+  const frame = thumb.locator(".history-thumbnail-frame");
   const before = await thumb.boundingBox();
+  const beforeFrame = await frame.boundingBox();
   await expect(image).toHaveCSS("transform", "none");
   await thumb.hover();
   await expect(image).toHaveCSS("transform", "matrix(1.1, 0, 0, 1.1, 0, 0)");
-  // Only the picture scales; the tile keeps its slot so the rail never shifts.
+  // Only the picture scales; the tile, its padding and the selected ring keep
+  // their size, so the frame never changes shape on hover.
   expect(await thumb.boundingBox()).toEqual(before);
+  expect(await frame.boundingBox()).toEqual(beforeFrame);
+  await expect(frame).toHaveCSS("border-radius", "6px");
+  await expect(frame).toHaveCSS("overflow", "hidden");
   // Keyboard focus gets the same feedback.
   await page.mouse.move(0, 0);
   await expect(image).toHaveCSS("transform", "none");

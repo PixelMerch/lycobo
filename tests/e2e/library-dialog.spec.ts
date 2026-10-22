@@ -41,7 +41,7 @@ test("history rail heading opens the full-screen asset library", async ({ page }
   await page.setViewportSize({ width: 1328, height: 906 });
   await page.goto("/create");
   const entry = page.getByRole("button", { name: "打开素材库", exact: true });
-  await expect(entry).toContainText("历史记录");
+  await expect(entry).toContainText("我的素材");
   // The library is lazy: browsing the workspace must not load every asset.
   expect(assetRequests).toBe(0);
   await entry.click();

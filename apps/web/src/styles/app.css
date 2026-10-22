@@ -1428,10 +1428,10 @@ p.home-hero-kicker {
   padding: 6px 8px;
   align-self: start;
   max-height: calc(100dvh - var(--header-height) - 2 * var(--content-padding));
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  overflow: hidden;
   position: sticky;
   top: calc(var(--header-height) + var(--content-padding));
 }
@@ -1440,9 +1440,21 @@ p.home-hero-kicker {
   line-height: var(--leading-sm);
   font-weight: var(--weight-medium);
 }
-/* The rail heading is the entry to the full-screen asset library. */
+/* The rail heading is the entry to the full-screen asset library. It sits
+   outside `.history-rail-list`, so scrolling thumbnails never hide it. */
 .history-rail .history-rail-title {
-  margin-bottom: 10px;
+  flex: none;
+  margin-bottom: 6.67px;
+}
+.history-rail-list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-anchor: none;
 }
 .history-rail-open.button {
   gap: 2px;
@@ -1527,7 +1539,15 @@ p.home-hero-kicker {
     display: flex;
     flex-direction: row;
     align-items: center;
+    overflow: hidden;
+  }
+  .history-rail .history-rail-title {
+    margin-bottom: 0;
+  }
+  .history-rail-list {
+    flex-direction: row;
     overflow-x: auto;
+    overflow-y: hidden;
   }
   .composer-panel {
     grid-row: 1 / span 2;
@@ -2562,13 +2582,23 @@ p.home-hero-kicker {
   }
 }
 /* Shared thumbnail behaviour for the history rail and the preview rail: the
- * picture zooms inside its clipped tile on hover and keyboard focus, so both
- * lists feel identical without moving the grid. */
+ * picture zooms inside its clipped frame on hover and keyboard focus, so both
+ * lists feel identical and the frame keeps its size, radius and padding. */
+.history-thumbnail > .history-thumbnail-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  background: transparent;
+}
 .history-thumbnail img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 0;
   transition: transform 180ms ease;
 }
 .history-thumbnail:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) img {
@@ -2657,7 +2687,9 @@ p.home-hero-kicker {
   gap: 3px;
   color: #fda4af;
 }
-.history-thumbnail > span {
+/* Placeholder copy for a task without a thumbnail picture; the picture frame
+ * has its own geometry rule above. */
+.history-thumbnail > span:not(.history-thumbnail-frame) {
   display: grid;
   place-items: center;
   width: 100%;
@@ -3123,10 +3155,12 @@ p.home-hero-kicker {
   background: var(--surface-secondary);
 }
 .history-rail,
+.history-rail-list,
 .composer-scroll {
   scrollbar-width: none;
 }
 .history-rail::-webkit-scrollbar,
+.history-rail-list::-webkit-scrollbar,
 .composer-scroll::-webkit-scrollbar {
   display: none;
 }
