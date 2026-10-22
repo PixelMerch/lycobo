@@ -183,7 +183,10 @@ function Workspace({ model }: { model: ModelId }) {
             </Alert>
           )}
           <Button
-            className={`primary-action${activeSubmission ? " generation-pending" : ""}`}
+            variant="primary"
+            size="lg"
+            fullWidth
+            className={`primary-action generation-submit${activeSubmission ? " generation-pending" : ""}`}
             data-submitting={activeSubmission || undefined}
             aria-description={
               !pending && !activeSubmission

@@ -1326,34 +1326,38 @@ p.home-hero-kicker {
 .generate-area {
   margin-top: auto;
 }
-.generate-area .button {
+.generation-submit.button {
   width: 100%;
   height: 44px;
-}
-.generate-area .primary-action {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding-inline: var(--control-padding-lg);
   gap: 8px;
-  border: 1px solid var(--accent);
-  background: #222222;
-  color: var(--accent);
-  transition:
-    background 140ms ease,
-    transform 100ms ease;
+  background: var(--app-primary-gradient);
+  color: #09070d;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  box-shadow: none;
+  transition: filter 140ms ease;
 }
-.generate-area .primary-action:not(:disabled):not([data-disabled="true"]):hover {
-  background: #30283e;
-  filter: none;
+.generation-submit.button:is(:hover, [data-hovered="true"]) {
+  filter: brightness(1.05);
 }
-.generate-area .primary-action[data-pressed="true"] {
-  transform: scale(0.98);
-}
-.generate-area .primary-action:disabled,
-.generate-area .primary-action[data-disabled="true"] {
-  border-color: #48454e;
+.generation-submit.button:is(:disabled, [data-disabled="true"]) {
   background: #343434;
   color: #8b8794;
+  filter: none;
 }
-.generate-area .primary-action:disabled .credit-coin {
+.generation-submit.button:is(:disabled, [data-disabled="true"]) .credit-coin {
   opacity: 0.5;
+}
+.generation-submit.button:is([data-submitting="true"], [data-pending="true"]) {
+  background: var(--app-primary-gradient);
+  color: #09070d;
+  filter: none;
+  cursor: progress;
 }
 .credit-coin {
   display: block;
@@ -1369,7 +1373,7 @@ p.home-hero-kicker {
 .generate-credit-cost {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   font-variant-numeric: tabular-nums;
 }
 .generate-button-icon {
@@ -1377,15 +1381,6 @@ p.home-hero-kicker {
   align-items: center;
   justify-content: center;
   flex: none;
-}
-.generate-area .primary-action[data-submitting="true"],
-.generate-area .primary-action[data-submitting="true"]:disabled {
-  background: #8b5cf6;
-  color: #ffffff;
-  cursor: progress;
-}
-.generate-area .primary-action[data-submitting="true"] .generation-loading-icon {
-  color: #ffffff;
 }
 .field-error {
   color: #fda4af;
@@ -4077,9 +4072,6 @@ p.home-hero-kicker {
 .composer-panel .add-reference {
   background: #1c1c1c;
   border-radius: 12px;
-}
-.generate-area .primary-action {
-  border-radius: 999px;
 }
 
 /* Add-image tile mirrors the home composer: icon only, centered. */

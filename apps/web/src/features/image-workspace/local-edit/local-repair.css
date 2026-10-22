@@ -165,25 +165,6 @@
   flex-direction: column;
   gap: 10px;
 }
-.repair-generate.button {
-  height: 44px;
-  min-height: 44px;
-  border-radius: 10px;
-  background: var(--app-primary-gradient);
-  color: #09070d;
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 600;
-  box-shadow: none;
-}
-.repair-generate.button:is(:hover, [data-hovered="true"]) {
-  filter: brightness(1.05);
-}
-.repair-generate.button:is(:disabled, [data-disabled="true"]) {
-  background: #343434;
-  color: #8b8794;
-  filter: none;
-}
 .repair-result.button {
   height: 40px;
   min-height: 40px;
