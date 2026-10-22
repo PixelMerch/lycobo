@@ -117,3 +117,5 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 通用素材实体使用 `media_assets`（Drizzle `mediaAssets`），生成任务及其执行、投递、重试、事件、令牌和任务账本统一使用 `generation_*`；图片选区编辑扩展保留 `image_local_edits`。
 表职责、已完成的旧视图移除与后续媒体扩展边界见 [数据库命名](docs/database-naming.md)。
+
+账户中心由 `features/account/account-panel.tsx` 组合：`AccountManagement` 封装绑定／重置密码的可用状态与表单，`WalletPanel` 封装真实共享余额、收支筛选和充值订单，`account-panel.css` 维护与个人信息一致的深色表面及中性灰输入焦点。未接入的账号绑定、验证码和支付不会模拟成功。

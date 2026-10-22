@@ -1,6 +1,9 @@
-import { Alert, Avatar, Button, Modal, Tabs } from "@heroui/react";
+import { Avatar, Button, Modal, Tabs } from "@heroui/react";
 import { IconLogout, IconX } from "@tabler/icons-react";
 import { useState } from "react";
+import { useErrorToast } from "../../lib/error-toast";
+import { AccountManagement } from "./account-management";
+import "./account-panel.css";
 import { UiIcon } from "../../components/ui-icon";
 import { useEnterpriseLogout, useEnterpriseSession } from "../auth/auth-client";
 import { WalletPanel } from "./wallet-panel";
@@ -22,11 +25,12 @@ export function AccountPanel({
   const logout = useEnterpriseLogout();
   const [active, setActive] = useState<AccountSection>(section);
   const account = session.data;
+  useErrorToast(logout.error?.message);
   return (
     <Modal isOpen onOpenChange={(open) => (!open ? onClose() : undefined)}>
       <Modal.Backdrop>
         <Modal.Container>
-          <Modal.Dialog className="account-dialog">
+          <Modal.Dialog className={`account-dialog account-dialog--${active}`}>
             <Modal.Header>
               <Modal.Heading>账户中心</Modal.Heading>
               <Modal.CloseTrigger aria-label="关闭账户中心">
@@ -96,36 +100,9 @@ export function AccountPanel({
                     <UiIcon icon={IconLogout} size="small" />
                     退出登录
                   </Button>
-                  {logout.isError ? (
-                    <Alert className="account-alert" status="danger">
-                      <Alert.Content>
-                        <Alert.Description>退出失败，请重试。</Alert.Description>
-                      </Alert.Content>
-                    </Alert>
-                  ) : null}
                 </Tabs.Panel>
                 <Tabs.Panel id="management">
-                  <dl className="account-rows">
-                    <div>
-                      <dt>登录账号</dt>
-                      <dd>{account?.account ?? "—"}</dd>
-                    </div>
-                    {account?.uid && (
-                      <div>
-                        <dt>账号编号</dt>
-                        <dd>{account.uid}</dd>
-                      </div>
-                    )}
-                    <div>
-                      <dt>登录方式</dt>
-                      <dd>企业账号</dd>
-                    </div>
-                    <div>
-                      <dt>当前权限</dt>
-                      <dd>{account ? (roleLabels[account.role] ?? account.role) : "—"}</dd>
-                    </div>
-                  </dl>
-                  <p className="account-note">企业账号由管理员统一管理。</p>
+                  <AccountManagement account={account} />
                 </Tabs.Panel>
                 <Tabs.Panel id="credits">
                   <WalletPanel />

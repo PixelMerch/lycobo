@@ -1578,12 +1578,6 @@ p.home-hero-kicker {
   .account-dialog {
     padding: 20px 16px;
   }
-  .credit-plan {
-    flex-wrap: wrap;
-  }
-  .credit-plan .button {
-    width: 100%;
-  }
   :where(.page-heading) .button {
     padding-inline: 12px;
     flex: none;
@@ -3728,74 +3722,6 @@ p.home-hero-kicker {
 .account-dialog .tabs__tab[data-selected="true"] {
   color: var(--foreground);
 }
-.account-alert {
-  margin: 12px 0;
-  border: 1px solid #7f1d1d;
-  border-radius: 12px;
-  background: #2a1416;
-  color: #fecaca;
-}
-.account-alert .alert__description {
-  color: inherit;
-}
-.credit-balance {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 16px;
-  padding: 16px 20px;
-  border-radius: 16px;
-  background: #202026;
-}
-.credit-balance small {
-  display: block;
-  color: #a1a1aa;
-}
-.credit-balance strong {
-  display: block;
-  font-size: 32px;
-  line-height: 40px;
-  font-weight: var(--weight-light);
-  color: var(--foreground);
-}
-.credit-plans {
-  display: grid;
-  gap: 8px;
-}
-.credit-plan {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: #202026;
-}
-.credit-plan span {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.credit-plan strong {
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-  font-weight: var(--weight-medium);
-}
-.credit-plan small {
-  color: #a1a1aa;
-}
-.credit-plan-price {
-  align-items: flex-end;
-  text-align: right;
-  margin-left: auto;
-}
-.credit-plan .button {
-  flex: none;
-}
-
 /* Preserve compact desktop density while providing touch targets. Upload removal
  * uses its existing transparent 44px hit area around the visible 24px circle. */
 @media (max-width: 767px), (pointer: coarse) {

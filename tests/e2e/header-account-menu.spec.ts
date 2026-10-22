@@ -87,7 +87,7 @@ for (const width of [1440, 320]) {
     await panel.getByRole("tab", { name: "订阅与账单", exact: true }).click();
     await expect(panel.getByText("企业金币余额", { exact: true })).toBeVisible();
     await panel.getByRole("tab", { name: "账号管理", exact: true }).click();
-    await expect(panel.getByText(account.uid, { exact: true })).toBeVisible();
+    await expect(panel.getByText(`账号 ${account.uid}`, { exact: true })).toBeVisible();
     await panel.getByRole("button", { name: "关闭账户中心", exact: true }).click();
 
     await trigger.hover();

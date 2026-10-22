@@ -63,9 +63,12 @@ test("enterprise account shows shared balance, member spending and recharge reco
   await expect(panel.getByText("企业金币余额", { exact: true })).toBeVisible();
   await expect(panel.getByText("每张 20 币", { exact: true })).toBeVisible();
   await expect(panel.getByText(/用户 0123456789/)).toBeVisible();
-  await expect(panel.getByText("已到账", { exact: true })).toBeVisible();
+  await panel.getByRole("tab", { name: "充值订单", exact: true }).click();
+  await expect(panel.getByText(/已到账/)).toBeVisible();
   await expect(panel.getByText(/¥10.00/)).toBeVisible();
-  await expect(panel.getByRole("button", { name: /充值|支付/ })).toHaveCount(0);
+  await expect(panel.getByRole("button", { name: "充值积分", exact: true })).toBeDisabled();
+  await expect(panel.getByRole("button", { name: "订阅会员", exact: true })).toBeDisabled();
+  await page.screenshot({ path: "/tmp/lycobo-account-orders-desktop.png" });
   await page.setViewportSize({ width: 390, height: 844 });
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
