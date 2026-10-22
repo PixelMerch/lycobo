@@ -1,6 +1,7 @@
 .modal__backdrop.browse-image-backdrop {
   padding: 0;
   background: transparent;
+  backdrop-filter: none;
 }
 /* The dim and blur share one static pseudo layer whose opacity alone animates.
  * The whole layer fades with the content surface, so the page darkens gradually

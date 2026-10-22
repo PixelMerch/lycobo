@@ -1,5 +1,6 @@
 .modal__backdrop.image-preview-backdrop {
   background: transparent;
+  backdrop-filter: none;
 }
 .image-preview-dialog {
   width: 100vw;

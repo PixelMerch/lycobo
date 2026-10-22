@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
 for (const width of [390, 1440, 1920, 2560]) {
-  test(`home scrolls without shifting the header when account overlays open at ${width}px`, async ({
+  test(`account overlays keep the header steady and release the lock at ${width}px`, async ({
     page,
   }) => {
     await mockImageApi(page);
@@ -37,9 +37,17 @@ for (const width of [390, 1440, 1920, 2560]) {
     expect(baseline.left).toBeCloseTo(width < 768 ? 12 : 20, 0);
     expect(baseline.right).toBeCloseTo(baseline.left, 0);
     expect(baseline.scrollbar).toBe(0);
-    await page.mouse.move(Math.round(width / 2), 500);
-    await page.mouse.wheel(0, 120);
-    await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+    // The homepage may be shorter than the viewport; only exercise scrolling
+    // when there is content to scroll.
+    const scrollable = await page.evaluate(
+      () => document.documentElement.scrollHeight > window.innerHeight,
+    );
+    if (scrollable) {
+      await page.mouse.move(Math.round(width / 2), 500);
+      await page.mouse.wheel(0, 120);
+      await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+    }
+    await trigger.hover();
     await trigger.click();
     const menu = page.getByRole("menu", { name: `账户菜单：${account.account}`, exact: true });
     await expect(menu).toBeVisible();
@@ -52,10 +60,22 @@ for (const width of [390, 1440, 1920, 2560]) {
     await expect(dialog).toHaveCount(0);
     expect(await measure()).toEqual(baseline);
     // Closing a modal must not leave the home document locked against further scrolling.
-    await page.mouse.move(Math.round(width / 2), 500);
     await expect(trigger).toBeFocused();
-    const afterCloseScroll = await page.evaluate(() => scrollY);
-    await page.mouse.wheel(0, afterCloseScroll > 0 ? -120 : 120);
-    await expect.poll(() => page.evaluate(() => scrollY)).not.toBe(afterCloseScroll);
+    if (scrollable) {
+      await page.mouse.move(Math.round(width / 2), 500);
+      const afterCloseScroll = await page.evaluate(() => scrollY);
+      await page.mouse.wheel(0, afterCloseScroll > 0 ? -120 : 120);
+      await expect.poll(() => page.evaluate(() => scrollY)).not.toBe(afterCloseScroll);
+    } else {
+      await expect
+        .poll(() =>
+          page.evaluate(() => {
+            const html = getComputedStyle(document.documentElement);
+            const body = getComputedStyle(document.body);
+            return html.overflow !== "hidden" && body.overflow !== "hidden";
+          }),
+        )
+        .toBe(true);
+    }
   });
 }

@@ -157,6 +157,24 @@ small {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
+/* React Aria moves focus on hover and restores it after pointer clicks, and
+ * Chromium reports those moves as :focus-visible. Keyboard focus is marked
+ * with data-focus-visible, so pointer focus must never draw the purple ring. */
+:focus-visible[data-focused]:not([data-focus-visible="true"]) {
+  outline: none;
+}
+/* HeroUI overlay containers only take programmatic focus for assistive tech
+ * and opt out of outlines themselves; this unlayered rule would otherwise
+ * frame the whole dialog, popover or menu list in purple. */
+:focus-visible:is(
+  .modal__dialog,
+  .alert-dialog__dialog,
+  .drawer__dialog,
+  .popover__dialog,
+  [data-slot="dropdown-menu"]
+) {
+  outline: none;
+}
 .button,
 .toggle-button,
 .close-button,
@@ -823,14 +841,22 @@ p.home-hero-kicker {
   width: 40px;
   height: 40px;
 }
-/* Every dismiss control is a circle with a white icon. Approved light surfaces
- * (login panel, account center) keep a dark icon so it stays visible. */
+/* Standard dialogs reuse the image viewer's dimmed, blurred page treatment so
+ * every overlay reads the same; surfaces that paint their own layer (chooser,
+ * confirm, login, fullscreen viewer, image preview) override it. */
+.modal__backdrop {
+  background: rgba(24, 24, 24, 0.5);
+  backdrop-filter: blur(20px);
+}
+/* Every dismiss control is a borderless circle with a white icon; only hover
+ * paints a faint fill. Login keeps its own light-surface control. */
 .close-button,
 .modal__close-trigger,
 .drawer__close-trigger,
 .alert-dialog__close-trigger {
   border-radius: 999px;
   color: #ffffff;
+  background: transparent;
 }
 .close-button:is(:hover, [data-hovered="true"]),
 .modal__close-trigger:is(:hover, [data-hovered="true"]),
@@ -838,13 +864,6 @@ p.home-hero-kicker {
 .alert-dialog__close-trigger:is(:hover, [data-hovered="true"]) {
   color: #ffffff;
   background: #ffffff14;
-}
-.account-dialog .modal__close-trigger {
-  color: #29232f;
-}
-.account-dialog .modal__close-trigger:is(:hover, [data-hovered="true"]) {
-  color: #29232f;
-  background: #0000000f;
 }
 .model-chooser .modal__close-trigger.dialog-close {
   position: absolute;
@@ -3631,28 +3650,17 @@ p.home-hero-kicker {
   line-height: var(--leading-sm);
 }
 
-/* Account center is an approved light surface like the login panel; tokens are
- * scoped here so the dark studio keeps its own values. */
+/* The account center uses the studio's dark surface; only the login panel
+ * keeps the approved light exception. One dialog with tabs holds every
+ * section instead of a separate dialog per menu entry. */
 .account-dialog {
-  --foreground: #141414;
-  --muted: rgba(0, 0, 0, 0.5);
-  --border: rgba(0, 0, 0, 0.08);
-  --separator: rgba(0, 0, 0, 0.06);
-  --surface: #faf9fd;
-  --surface-secondary: #f3f0fb;
-  --default: #f1eefb;
-  --accent: #6d4bd8;
-  --accent-soft: #efe6ff;
-  --link: #8152df;
-  --focus: rgba(0, 0, 0, 0.16);
   width: min(560px, calc(100vw - 48px));
   max-width: none;
   padding: 24px;
-  border: 0;
+  border: 1px solid var(--border);
   border-radius: 24px;
-  background: #fff;
-  color: #141414;
-  color-scheme: light;
+  background: #19191c;
+  color: var(--foreground);
   box-shadow: var(--overlay-shadow);
 }
 .account-dialog h2 {
@@ -3666,9 +3674,10 @@ p.home-hero-kicker {
   gap: 12px;
   margin: 4px 0 20px;
 }
-.account-avatar {
-  background: #efe6ff;
-  color: #6d4bd8;
+.account-avatar,
+.account-avatar .avatar__fallback {
+  background: #343434;
+  color: #fff;
   font-weight: var(--weight-semibold);
 }
 .account-identity strong {
@@ -3679,7 +3688,7 @@ p.home-hero-kicker {
 }
 .account-identity small {
   display: block;
-  color: rgba(0, 0, 0, 0.45);
+  color: #a1a1aa;
 }
 .account-rows {
   display: grid;
@@ -3687,7 +3696,7 @@ p.home-hero-kicker {
   margin: 16px 0 0;
   overflow: hidden;
   border-radius: 14px;
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--separator);
 }
 .account-rows > div {
   display: flex;
@@ -3695,16 +3704,16 @@ p.home-hero-kicker {
   justify-content: space-between;
   gap: 16px;
   padding: 12px 16px;
-  background: #faf9fd;
+  background: #202026;
 }
 .account-rows dt {
-  color: rgba(0, 0, 0, 0.5);
+  color: #a1a1aa;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }
 .account-rows dd {
   margin: 0;
-  color: #141414;
+  color: var(--foreground);
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
 }
@@ -3713,30 +3722,22 @@ p.home-hero-kicker {
   align-items: center;
   gap: 6px;
   margin: 12px 0 16px;
-  color: rgba(0, 0, 0, 0.45);
+  color: #a1a1aa;
   font-size: var(--text-xs);
   line-height: 18px;
 }
-/* Dark-surface defaults are hardcoded in the global button rules; re-scope them
- * for this approved light panel instead of changing every page. */
-.account-dialog .button {
-  color: #141414;
+.account-dialog .tabs__list {
+  border-bottom-color: var(--border);
 }
 .account-dialog .tabs__tab[data-selected="true"] {
-  color: #4b2fa8;
-}
-.account-dialog .button:disabled,
-.account-dialog .button[data-disabled="true"] {
-  color: rgba(0, 0, 0, 0.32);
-  background: #f4f2f8;
-  border-color: rgba(0, 0, 0, 0.08);
+  color: var(--foreground);
 }
 .account-alert {
   margin: 12px 0;
-  border: 1px solid #f0dcb4;
+  border: 1px solid #7f1d1d;
   border-radius: 12px;
-  background: #fff8e8;
-  color: #6b4508;
+  background: #2a1416;
+  color: #fecaca;
 }
 .account-alert .alert__description {
   color: inherit;
@@ -3749,18 +3750,18 @@ p.home-hero-kicker {
   margin-top: 16px;
   padding: 16px 20px;
   border-radius: 16px;
-  background: #f6f2ff;
+  background: #202026;
 }
 .credit-balance small {
   display: block;
-  color: rgba(0, 0, 0, 0.5);
+  color: #a1a1aa;
 }
 .credit-balance strong {
   display: block;
   font-size: 32px;
   line-height: 40px;
   font-weight: var(--weight-light);
-  color: #141414;
+  color: var(--foreground);
 }
 .credit-plans {
   display: grid;
@@ -3772,9 +3773,9 @@ p.home-hero-kicker {
   justify-content: space-between;
   gap: 12px;
   padding: 12px 14px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background: #fff;
+  background: #202026;
 }
 .credit-plan span {
   display: flex;
@@ -3788,7 +3789,7 @@ p.home-hero-kicker {
   font-weight: var(--weight-medium);
 }
 .credit-plan small {
-  color: rgba(0, 0, 0, 0.45);
+  color: #a1a1aa;
 }
 .credit-plan-price {
   align-items: flex-end;
@@ -4117,7 +4118,7 @@ p.home-hero-kicker {
 .account-rows small {
   display: block;
   overflow-wrap: anywhere;
-  color: rgba(0, 0, 0, 0.45);
+  color: #a1a1aa;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }

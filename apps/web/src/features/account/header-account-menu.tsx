@@ -1,6 +1,6 @@
 import { Avatar, Button, Dropdown, Separator } from "@heroui/react";
 import { IconLogout, IconPhoto, IconReceipt, IconSettings, IconUser } from "@tabler/icons-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
@@ -8,6 +8,7 @@ import { useErrorToast } from "../../lib/error-toast";
 import { useEnterpriseLogout, useEnterpriseSession } from "../auth/auth-client";
 import { LoginDialog } from "../auth/login-dialog";
 import { AccountPanel, type AccountSection } from "./account-panel";
+import { useHoverMenu } from "./use-hover-menu";
 import { useWallet } from "./wallet-client";
 import "./header-account-menu.css";
 
@@ -17,20 +18,32 @@ export function HeaderAccountMenu() {
   const wallet = useWallet();
   const logout = useEnterpriseLogout();
   const navigate = useNavigate();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menu = useHoverMenu(triggerRef, ".header-account-menu [role='menuitem']");
   const [loginOpen, setLoginOpen] = useState(false);
   const [section, setSection] = useState<AccountSection | null>(null);
+  const restoreFocus = useRef(false);
   useErrorToast(logout.error?.message);
+  // Closing the account center returns focus to the capsule that opened it; the
+  // non-modal menu no longer restores focus on its own.
+  useEffect(() => {
+    if (section !== null || !restoreFocus.current) return;
+    restoreFocus.current = false;
+    triggerRef.current?.focus({ preventScroll: true });
+  }, [section]);
   const account = session.data;
   const initial = account?.account.slice(0, 1).toUpperCase();
   const balance = wallet.data?.balance ?? "—";
   return (
     <>
       {account ? (
-        <Dropdown>
+        <Dropdown isOpen={menu.isOpen} onOpenChange={menu.onOpenChange}>
           <Dropdown.Trigger
+            ref={triggerRef}
             className="account-trigger"
             aria-label={`账户菜单：${account.account}`}
             aria-description={`积分余额 ${balance}`}
+            {...menu.triggerProps}
           >
             <span className="header-account-credits" aria-hidden="true">
               <CreditCoin />
@@ -40,7 +53,12 @@ export function HeaderAccountMenu() {
               <Avatar.Fallback>{initial}</Avatar.Fallback>
             </Avatar>
           </Dropdown.Trigger>
-          <Dropdown.Popover className="header-account-menu" placement="bottom end">
+          <Dropdown.Popover
+            className="header-account-menu"
+            placement="bottom end"
+            isNonModal
+            {...menu.popoverProps}
+          >
             <div className="header-account-identity">
               <Avatar size="lg" className="header-account-profile-avatar" aria-hidden="true">
                 <Avatar.Fallback>{initial}</Avatar.Fallback>
@@ -60,6 +78,7 @@ export function HeaderAccountMenu() {
               </span>
             </div>
             <Dropdown.Menu
+              autoFocus={false}
               disabledKeys={logout.isPending ? ["logout"] : []}
               onAction={(key) => {
                 if (key === "works") navigate("/assets");
@@ -107,7 +126,16 @@ export function HeaderAccountMenu() {
         </Button>
       )}
       {loginOpen && <LoginDialog onClose={() => setLoginOpen(false)} />}
-      {section && <AccountPanel key={section} section={section} onClose={() => setSection(null)} />}
+      {section && (
+        <AccountPanel
+          key={section}
+          section={section}
+          onClose={() => {
+            restoreFocus.current = true;
+            setSection(null);
+          }}
+        />
+      )}
     </>
   );
 }
