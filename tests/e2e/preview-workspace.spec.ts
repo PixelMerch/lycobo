@@ -77,12 +77,12 @@ test("preview keeps one canvas while repair changes only the property panel and 
   await viewer.getByRole("button", { name: "添加区域", exact: true }).click();
   const prompt = viewer.getByRole("textbox", { name: "区域 1 修改说明", exact: true });
   await prompt.fill("颜色更柔和");
-  const width = viewer.getByRole("spinbutton", { name: "区域 1 宽", exact: true });
-  await width.fill("280");
+  await prompt.fill("颜色更柔和，保留光线");
   await toolbar.getByRole("button", { name: "撤销区域修改", exact: true }).click();
-  await expect(width).toHaveValue("307");
+  await expect(prompt).toHaveValue("颜色更柔和");
   await toolbar.getByRole("button", { name: "重做区域修改", exact: true }).click();
-  await expect(width).toHaveValue("280");
+  await expect(prompt).toHaveValue("颜色更柔和，保留光线");
+  await prompt.fill("颜色更柔和");
   await page.screenshot({ path: "/tmp/lycobo-workspace-repair.png" });
   await viewer.getByRole("button", { name: "返回详情", exact: true }).click();
   expect(await image.evaluate((node) => node.isConnected)).toBe(true);

@@ -2,39 +2,17 @@
   gap: 16px;
 }
 .repair-info h2 {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 500;
 }
-.repair-info h3 {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 500;
-}
-.repair-info h3 span,
 .repair-info p,
 .repair-info small {
-  color: var(--muted);
+  color: #c8c8c8;
 }
 .repair-info p {
   margin: 6px 0 0;
-  font-size: 12px;
-  line-height: 1.6;
-}
-.repair-source {
-  display: flex;
-  gap: 12px;
-  align-items: center;
   font-size: 13px;
-}
-.repair-source img {
-  width: 56px;
-  height: 56px;
-  object-fit: contain;
-}
-.repair-source small {
-  display: block;
-  margin-top: 4px;
-  font-size: 12px;
+  line-height: 1.6;
 }
 .repair-regions {
   display: flex;
@@ -42,13 +20,13 @@
   gap: 12px;
 }
 .repair-region-card {
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
+  padding: 16px;
+  border: 1px solid #ffffff0a;
+  border-radius: 16px;
+  background: #17171b;
 }
 .repair-region-card[data-selected="true"] {
-  border-color: var(--focus);
+  border-color: #baa4ff40;
 }
 .repair-region-heading {
   display: flex;
@@ -62,48 +40,40 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: var(--focus);
-  color: #09070d;
+  border: 1px solid #baa4ff;
+  background: transparent;
+  color: #baa4ff;
 }
 .repair-region-card textarea {
   width: 100%;
-  min-height: 76px;
+  min-height: 128px;
   resize: vertical;
-  font-size: 13px;
+  font-size: 16px;
   line-height: 1.6;
-}
-.repair-coordinates {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
-  margin-top: 8px;
-}
-.repair-coordinates [aria-hidden="true"] {
-  font-size: 12px;
-}
-.repair-coordinates input {
-  width: 100%;
-  min-width: 0;
-  font-size: 12px;
-  padding-inline: 6px;
 }
 .repair-submit {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: auto;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
+  padding-top: 0;
 }
 .repair-submit small {
   font-size: 12px;
 }
-.repair-output {
+.repair-billing {
   display: flex;
   justify-content: space-between;
+  gap: 12px;
+  color: #8f8f98;
   font-size: 13px;
 }
+.repair-preserve {
+  text-align: center;
+}
 .repair-generate.button {
+  height: 44px;
+  min-height: 44px;
+  font-size: 14px;
   background: linear-gradient(180deg, #baa4ff 0, var(--accent) 100%);
   color: #09070d;
 }
@@ -112,15 +82,11 @@
   padding-inline: 0;
   color: #c8c8c8;
 }
-.repair-source img {
-  border-radius: 6px;
-}
 @media (max-width: 767px) {
   .repair-info {
     padding-bottom: 16px;
   }
-  .repair-info .button,
-  .repair-coordinates input {
+  .repair-info .button {
     min-height: 44px;
   }
 }

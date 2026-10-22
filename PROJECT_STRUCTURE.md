@@ -75,7 +75,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 - `HistoryIndex`：右侧历史定位、选中滚动与资产管理入口。
 - `ReferencePicker` / `ReferenceImageCard` / `ReferencePrompt`：共享上传、缩略图、图片引用。
 - `components/ImageViewer`：参考图浏览；`ImagePreviewDialog`：生成图详情壳、跨图切换和关闭。
-- `PreviewWorkspace`：懒加载的统一图片视口、缩放平移和模式切换；`PreviewCanvasToolbar`：官方工具栏组合；`ImagePreviewDetails`：原图信息栏；`LocalRepairPanel`：修复表单。
+- `PreviewWorkspace`：懒加载的统一图片视口、缩放平移和模式切换；`PreviewCanvasToolbar`：官方工具栏组合；`ImagePreviewDetails`：原图信息栏；`LocalRepairPanel`：简化修改面板与提交状态；`RepairRegionCard`：编号选区的说明输入和删除，不暴露坐标表单。
 - `useLocalRepair`：身份隔离草稿、选区历史和原有幂等提交／结果状态；`RepairCanvas`：原图坐标系上的透明选区交互层，不独立管理缩放或替换原图。
 - `components/use-centered-dialog-motion`：预览和全屏素材库的公共开关动画，不通过feature转发导入。
 

@@ -108,23 +108,12 @@ test("multiple repair regions retain original coordinates, submit one image and 
   await page.mouse.down();
   await page.mouse.move(origin.x + edge * 0.5, origin.y + edge * 0.2, { steps: 6 });
   await page.mouse.up();
-  await expect
-    .poll(async () =>
-      Number(await viewer.getByRole("spinbutton", { name: "区域 1 宽", exact: true }).inputValue()),
-    )
-    .toBeGreaterThan(390);
-  const firstX = await viewer
-    .getByRole("spinbutton", { name: "区域 1 左", exact: true })
-    .inputValue();
+  await expect(viewer.getByRole("spinbutton")).toHaveCount(0);
   await canvas.hover();
   await page.mouse.wheel(0, -200);
   await expect(viewer.getByLabel("画布缩放比例")).toHaveText("115%");
-  await expect(viewer.getByRole("spinbutton", { name: "区域 1 左", exact: true })).toHaveValue(
-    firstX,
-  );
   await viewer.getByRole("button", { name: "添加区域", exact: true }).click();
   await viewer.getByRole("textbox", { name: "区域 2 修改说明", exact: true }).fill("去掉脚袋");
-  await viewer.getByRole("spinbutton", { name: "区域 2 宽", exact: true }).fill("280");
   await viewer.getByRole("button", { name: "返回详情", exact: true }).click();
   await viewer.getByRole("button", { name: "关闭图片预览", exact: true }).click();
   await page.getByRole("button", { name: "查看图片：原始商品图", exact: true }).click();
@@ -133,9 +122,6 @@ test("multiple repair regions retain original coordinates, submit one image and 
     "去掉脚袋",
   );
   await viewer.getByRole("button", { name: "区域 2", exact: true }).click();
-  await expect(viewer.getByRole("spinbutton", { name: "区域 2 宽", exact: true })).toHaveValue(
-    "280",
-  );
   await page.screenshot({ path: "/tmp/lycobo-local-repair-desktop.png" });
   await viewer.getByRole("button", { name: "生成修改版", exact: true }).click();
   await expect(viewer.getByRole("button", { name: "确认上次提交", exact: true })).toBeVisible();
@@ -147,7 +133,15 @@ test("multiple repair regions retain original coordinates, submit one image and 
   });
   expect(submitted?.prompt).toContain("将标题改成柔软舒适");
   expect(submitted?.prompt).toContain("区域 2：");
-  expect(submitted?.prompt).toContain("宽 280");
+  const firstRegion = String(submitted?.prompt).match(
+    /区域 1：左上角 \((\d+), (\d+)\)，宽 (\d+)，高 (\d+)/,
+  );
+  if (!firstRegion) throw new Error("Missing submitted region coordinates");
+  expect(Math.abs(Number(firstRegion[1]) - 102)).toBeLessThan(3);
+  expect(Math.abs(Number(firstRegion[2]) - 102)).toBeLessThan(3);
+  expect(Math.abs(Number(firstRegion[3]) - 410)).toBeLessThan(4);
+  expect(Math.abs(Number(firstRegion[4]) - 205)).toBeLessThan(4);
+  expect(submitted?.prompt).toContain("区域 2：左上角 (307, 307)，宽 307，高 307");
   await viewer.getByRole("button", { name: "确认上次提交", exact: true }).click();
   await viewer.getByRole("button", { name: "查看修改版", exact: true }).click();
   await expect(viewer.locator(".image-preview-facts")).toContainText("WREPAIR01");
