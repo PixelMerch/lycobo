@@ -5,7 +5,7 @@
   grid-template-rows: minmax(0, 1fr);
   align-items: stretch;
   gap: 16px;
-  padding: 12px 16px 12px 24px;
+  padding: calc(var(--image-preview-inset) + 3px) 16px calc(var(--image-preview-inset) + 3px) 24px;
   background-image: radial-gradient(circle, #ffffff26 0.5px, transparent 0.75px);
   background-size: 32px 32px;
 }
