@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict gbxNNfF2KtwB5iGymKUnQMgU5IPzqoX5eXoddzsxIufgmbEcMm2bjenncJmRKxW
+\restrict 32zQEI5qqbjX0JNiaHdEvX42cyM3c5SeySXXGeZUB3Zsn7ZAFi3CalkbdmwC1lE
 
 -- Dumped from database version 17.11
 -- Dumped by pg_dump version 17.11
@@ -322,6 +322,7 @@ CREATE TABLE public.image_job_items (
     reconciled_by uuid,
     reconciliation_evidence text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
+    superseded_at timestamp with time zone,
     CONSTRAINT image_items_output_check CHECK (((status <> 'succeeded'::text) OR (output_asset_id IS NOT NULL))),
     CONSTRAINT image_items_position_check CHECK (((("position" >= 0) AND ("position" <= 3)) AND (attempts >= 0))),
     CONSTRAINT image_items_status_check CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'succeeded'::text, 'failed'::text, 'needs_reconciliation'::text])))
@@ -382,6 +383,20 @@ CREATE TABLE public.image_outbox (
     lease_token uuid,
     lease_expires_at timestamp with time zone,
     dispatched_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: image_retries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.image_retries (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    organization_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    job_id uuid NOT NULL,
+    idempotency_key uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
@@ -742,14 +757,6 @@ ALTER TABLE ONLY public.image_events
 
 
 --
--- Name: image_job_items image_items_job_position_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_job_items
-    ADD CONSTRAINT image_items_job_position_unique UNIQUE (job_id, "position");
-
-
---
 -- Name: image_job_items image_job_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -811,6 +818,22 @@ ALTER TABLE ONLY public.image_outbox
 
 ALTER TABLE ONLY public.image_outbox
     ADD CONSTRAINT image_outbox_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: image_retries image_retries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.image_retries
+    ADD CONSTRAINT image_retries_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: image_retries image_retries_scope_key_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.image_retries
+    ADD CONSTRAINT image_retries_scope_key_unique UNIQUE (organization_id, user_id, idempotency_key);
 
 
 --
@@ -1063,6 +1086,13 @@ CREATE INDEX image_events_org_cursor_idx ON public.image_events USING btree (org
 
 
 --
+-- Name: image_items_current_position_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX image_items_current_position_unique ON public.image_job_items USING btree (job_id, "position") WHERE (superseded_at IS NULL);
+
+
+--
 -- Name: image_items_lease_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1137,6 +1167,20 @@ CREATE UNIQUE INDEX image_ledger_reserve_unique ON public.image_credit_ledger US
 --
 
 CREATE INDEX image_outbox_due_idx ON public.image_outbox USING btree (next_attempt_at);
+
+
+--
+-- Name: image_retries_job_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX image_retries_job_idx ON public.image_retries USING btree (job_id, organization_id);
+
+
+--
+-- Name: image_retries_user_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX image_retries_user_idx ON public.image_retries USING btree (user_id);
 
 
 --
@@ -1414,6 +1458,22 @@ ALTER TABLE ONLY public.image_outbox
 
 
 --
+-- Name: image_retries image_retries_job_org_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.image_retries
+    ADD CONSTRAINT image_retries_job_org_fk FOREIGN KEY (job_id, organization_id) REFERENCES public.image_jobs(id, organization_id);
+
+
+--
+-- Name: image_retries image_retries_user_id_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.image_retries
+    ADD CONSTRAINT image_retries_user_id_users_id_fk FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: notifications notifications_owner_id_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1585,5 +1645,5 @@ ALTER TABLE ONLY public.wallet_entries
 -- PostgreSQL database dump complete
 --
 
-\unrestrict gbxNNfF2KtwB5iGymKUnQMgU5IPzqoX5eXoddzsxIufgmbEcMm2bjenncJmRKxW
+\unrestrict 32zQEI5qqbjX0JNiaHdEvX42cyM3c5SeySXXGeZUB3Zsn7ZAFi3CalkbdmwC1lE
 

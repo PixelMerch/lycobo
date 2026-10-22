@@ -226,6 +226,22 @@ export function imageRoutes(deps: ImageApiDependencies) {
     );
     return c.json(result, result.replayed ? 200 : 202);
   });
+  app.post("/image-tasks/:jobId/retry", async (c) => {
+    if (!deps.enabled) return fail(c, "GENERATION_NOT_CONFIGURED", "生图服务尚未启用", 503);
+    const jobId = id.safeParse(c.req.param("jobId"));
+    const key = id.safeParse(c.req.header("Idempotency-Key"));
+    if (!jobId.success || !key.success) return fail(c, "VALIDATION_ERROR", "重试参数无效", 400);
+    const scope = c.get("principal");
+    const job = await deps.repository.get(scope, jobId.data);
+    if (!job) return fail(c, "NOT_FOUND", "任务不存在", 404);
+    try {
+      deps.validate(imageGenerationInputSchema.parse(job.input));
+    } catch {
+      return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "模型能力尚未验证", 400);
+    }
+    const result = await deps.repository.retry(scope, jobId.data, key.data);
+    return c.json(result, result.replayed ? 200 : 202);
+  });
   app.get("/image-tasks", async (c) => {
     const limit = z.coerce
       .number()

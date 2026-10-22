@@ -71,6 +71,13 @@
       "when": 1792571982704,
       "tag": "0009_fearless_big_bertha",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792638107189,
+      "tag": "0010_exotic_wind_dancer",
+      "breakpoints": true
     }
   ]
 }

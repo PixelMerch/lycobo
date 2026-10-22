@@ -57,6 +57,49 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
     false,
   );
   assert.equal((await repository.wallet(child)).balance, 20);
+  const original = await repository.get(owner, accepted.value.id);
+  const retryKey = crypto.randomUUID();
+  const retries = await Promise.all(
+    Array.from({ length: 4 }, () => repository.retry(owner, accepted.value.id, retryKey)),
+  );
+  assert.equal(retries.filter((entry) => !entry.replayed).length, 1);
+  assert.ok(retries.every((entry) => entry.id === accepted.value.id));
+  const retried = await repository.get(owner, accepted.value.id);
+  assert.equal(retried?.public_id, original?.public_id);
+  assert.equal(retried?.items.length, 1);
+  assert.notEqual(retried?.items[0].id, item?.id);
+  assert.equal((await repository.wallet(owner)).balance, 0);
+  await assert.rejects(
+    repository.retry(child, accepted.value.id, crypto.randomUUID()),
+    /STATE_CONFLICT/,
+  );
+  await assert.rejects(
+    repository.claim(String(item?.id), "stale-worker", 1000).then((claim) => {
+      if (!claim) throw new Error("STALE_CLAIM_REJECTED");
+    }),
+    /STALE_CLAIM_REJECTED/,
+  );
+  const retryClaim = await repository.claim(String(retried?.items[0].id), "retry-worker", 1000);
+  assert.ok(retryClaim);
+  await repository.finish(retryClaim, {
+    errorCode: "PROVIDER_INVALID_IMAGE_RESPONSE",
+    unknown: true,
+  });
+  assert.equal((await repository.get(owner, accepted.value.id))?.status, "failed");
+  assert.equal((await repository.wallet(owner)).balance, 20);
+  assert.equal((await repository.retry(owner, accepted.value.id, retryKey)).replayed, true);
+  await sql`update image_job_items set status='needs_reconciliation' where id=${retryClaim.itemId}`;
+  await Promise.all([repository.settleInvalidResponses(), repository.settleInvalidResponses()]);
+  assert.equal((await repository.wallet(owner)).balance, 20);
+  assert.equal((await repository.get(owner, accepted.value.id))?.status, "failed");
+  await assert.rejects(
+    repository.retry(
+      { organizationId: crypto.randomUUID(), userId: owner.userId },
+      accepted.value.id,
+      crypto.randomUUID(),
+    ),
+    /FORBIDDEN/,
+  );
   const creditInput = {
     key: crypto.randomUUID(),
     credits: 100,
@@ -100,7 +143,7 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
     all.reduce((sum, entry) => sum + Number(entry.amount), 0),
     120,
   );
-  assert.equal(all.filter((entry) => entry.kind === "refund").length, 1);
+  assert.equal(all.filter((entry) => entry.kind === "refund").length, 2);
   assert.equal(all.filter((entry) => entry.kind === "recharge").length, 1);
   const page = await repository.walletEntries(child, 2);
   const next = await repository.walletEntries(owner, 100, String(page.at(-1)?.id));
@@ -143,6 +186,36 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
     await repository.finish(attempt, { errorCode: "FIXTURE_FAILED", unknown: false });
   }
   assert.equal((await repository.wallet(owner)).balance, before);
+  const legacy = await repository.provision(
+    `legacy:${crypto.randomUUID()}`,
+    "legacy-invalid-response",
+    40,
+  );
+  const legacyJob = await repository.create(legacy, input, crypto.randomUUID());
+  const legacyView = await repository.get(legacy, legacyJob.id);
+  const legacyClaim = await repository.claim(
+    String(legacyView?.items[0].id),
+    "legacy-worker",
+    1000,
+  );
+  assert.ok(legacyClaim);
+  await repository.finish(legacyClaim, { errorCode: "OUTPUT_OUTCOME_UNKNOWN", unknown: true });
+  assert.equal((await repository.wallet(legacy)).balance, 20);
+  await assert.rejects(
+    repository.retry(legacy, legacyJob.id, crypto.randomUUID()),
+    /STATE_CONFLICT/,
+  );
+  await sql`update image_job_items set error_code='PROVIDER_INVALID_IMAGE_RESPONSE' where id=${legacyClaim.itemId}`;
+  await Promise.all([repository.settleInvalidResponses(), repository.settleInvalidResponses()]);
+  assert.equal((await repository.wallet(legacy)).balance, 40);
+  assert.equal(
+    (await repository.walletEntries(legacy, 100)).filter((entry) => entry.kind === "refund").length,
+    1,
+  );
+  assert.equal(
+    await repository.finish(claim, { errorCode: "STALE_ATTEMPT", unknown: false }),
+    false,
+  );
   console.info(
     "Shared enterprise wallet: concurrent member spending, 20-coin pricing, per-image refunds, payment replay, ledger immutability, isolation and pagination passed",
   );

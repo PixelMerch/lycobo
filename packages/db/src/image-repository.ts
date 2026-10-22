@@ -36,13 +36,13 @@ export function openImageRepository(url: string) {
   });
   const refreshJob = async (tx: postgres.TransactionSql, jobId: string) => {
     await tx`update image_jobs j set status = case
-      when exists(select 1 from image_job_items i where i.job_id=j.id and i.status='running') then 'running'
-      when exists(select 1 from image_job_items i where i.job_id=j.id and i.status='queued') then 'queued'
-      when exists(select 1 from image_job_items i where i.job_id=j.id and i.status='needs_reconciliation') then 'needs_reconciliation'
-      when not exists(select 1 from image_job_items i where i.job_id=j.id and i.status <> 'succeeded') then 'succeeded'
-      when exists(select 1 from image_job_items i where i.job_id=j.id and i.status='succeeded') then 'partially_failed'
+      when exists(select 1 from image_job_items i where i.job_id=j.id and i.superseded_at is null and i.status='running') then 'running'
+      when exists(select 1 from image_job_items i where i.job_id=j.id and i.superseded_at is null and i.status='queued') then 'queued'
+      when exists(select 1 from image_job_items i where i.job_id=j.id and i.superseded_at is null and i.status='needs_reconciliation') then 'needs_reconciliation'
+      when not exists(select 1 from image_job_items i where i.job_id=j.id and i.superseded_at is null and i.status <> 'succeeded') then 'succeeded'
+      when exists(select 1 from image_job_items i where i.job_id=j.id and i.superseded_at is null and i.status='succeeded') then 'partially_failed'
       else 'failed' end, updated_at=now(), completed_at=case
-      when exists(select 1 from image_job_items i where i.job_id=j.id and i.status in ('running','queued','needs_reconciliation')) then null
+      when exists(select 1 from image_job_items i where i.job_id=j.id and i.superseded_at is null and i.status in ('running','queued','needs_reconciliation')) then null
       else now() end where j.id=${jobId}`;
     const [job] = await tx`select organization_id from image_jobs where id=${jobId}`;
     if (job) await recordImageEvent(tx, String(job.organization_id), "task", jobId);
@@ -70,6 +70,19 @@ export function openImageRepository(url: string) {
       });
     }
   };
+  const settleInvalidResponses = async () => {
+    const rows =
+      await sql`select id,job_id from image_job_items where status='needs_reconciliation' and error_code='PROVIDER_INVALID_IMAGE_RESPONSE' and superseded_at is null limit 100`;
+    for (const row of rows)
+      await sql.begin(async (tx) => {
+        await tx`select id from image_jobs where id=${row.job_id} for update`;
+        const changed =
+          await tx`update image_job_items set status='failed',reconciliation_evidence='Invalid response: no usable image delivered',completed_at=coalesce(completed_at,now()) where id=${row.id} and status='needs_reconciliation' and error_code='PROVIDER_INVALID_IMAGE_RESPONSE' returning id`;
+        if (!changed.length) return;
+        await refund(tx, String(row.job_id), String(row.id));
+        await refreshJob(tx, String(row.job_id));
+      });
+  };
   const publicModelSql = sql`case when j.model in ('nano-banana-2.1','gemini-nano-banana-2.1') then 'nano-banana-2.1'
     when j.model in ('gpt-image-2.5','gpt-image-2.5-flare','gpt-image-2.5-sunburst') then 'gpt-image-2.5'
     when j.model in ('gpt-image-2','gpt-image-2-4K') then 'gpt-image-2' else j.model end`;
@@ -79,9 +92,10 @@ export function openImageRepository(url: string) {
       'worker_id',i.worker_id,'provider',i.provider,'provider_request_id',i.provider_request_id,
       'attempts',i.attempts,'error_code',i.error_code,'started_at',i.started_at,'completed_at',i.completed_at,
       'output_asset_id',i.output_asset_id,'output_public_id',a.public_id,'width',a.width,'height',a.height,'bytes',a.bytes) order by i.position),'[]')
-      from image_job_items i left join image_assets a on a.id=i.output_asset_id and a.organization_id=i.organization_id where i.job_id=j.id) as items`;
+      from image_job_items i left join image_assets a on a.id=i.output_asset_id and a.organization_id=i.organization_id where i.job_id=j.id and i.superseded_at is null) as items`;
   return {
     close: () => sql.end({ timeout: 5 }),
+    settleInvalidResponses,
     ...walletRepository(sql),
     async provision(
       subject: string,
@@ -195,6 +209,64 @@ export function openImageRepository(url: string) {
         return { id, replayed: false };
       });
     },
+    async retry(scope: ImageScope, jobId: string, key: string) {
+      return sql.begin(async (tx) => {
+        const members =
+          await tx`select user_id from organization_members where organization_id=${scope.organizationId} and user_id=${scope.userId} for share`;
+        if (!members.length) throw new ImageRepositoryError("FORBIDDEN");
+        const [job] =
+          await tx`select id,status,unit_credits from image_jobs where id=${jobId} and organization_id=${scope.organizationId} for update`;
+        if (!job) throw new ImageRepositoryError("NOT_FOUND");
+        const [previous] =
+          await tx`select job_id from image_retries where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
+        if (previous) {
+          if (previous.job_id !== jobId) throw new ImageRepositoryError("IDEMPOTENCY_CONFLICT");
+          return { id: jobId, replayed: true };
+        }
+        const items =
+          await tx`select id,position,status,error_code from image_job_items where job_id=${jobId} and superseded_at is null order by position for update`;
+        if (
+          items.some(
+            (i) =>
+              i.status === "queued" ||
+              i.status === "running" ||
+              (i.status === "needs_reconciliation" &&
+                i.error_code !== "PROVIDER_INVALID_IMAGE_RESPONSE"),
+          )
+        )
+          throw new ImageRepositoryError("STATE_CONFLICT");
+        const failed = items.filter(
+          (i) => i.status === "failed" || i.status === "needs_reconciliation",
+        );
+        if (!failed.length) throw new ImageRepositoryError("STATE_CONFLICT");
+        // Repair historic invalid-response holds before charging the new attempt.
+        for (const item of failed) {
+          if (item.status === "needs_reconciliation")
+            await tx`update image_job_items set status='failed',reconciliation_evidence='Invalid response: no usable image delivered' where id=${item.id}`;
+          await refund(tx, jobId, String(item.id));
+        }
+        const wallet = await ensureWallet(tx, scope);
+        if (wallet.balance < Number(job.unit_credits) * failed.length)
+          throw new ImageRepositoryError("INSUFFICIENT_CREDITS");
+        await tx`insert into image_retries (organization_id,user_id,job_id,idempotency_key) values (${scope.organizationId},${scope.userId},${jobId},${key})`;
+        for (const item of failed) {
+          await tx`update image_job_items set superseded_at=now() where id=${item.id}`;
+          const itemId = randomUUID();
+          await tx`insert into image_job_items (id,job_id,organization_id,position) values (${itemId},${jobId},${scope.organizationId},${item.position})`;
+          await appendWalletEntry(tx, wallet.id, {
+            eventKey: `consume:${itemId}`,
+            kind: "consume",
+            amount: -Number(job.unit_credits),
+            userId: scope.userId,
+            jobId,
+            itemId,
+          });
+          await tx`insert into image_outbox (item_id) values (${itemId})`;
+        }
+        await refreshJob(tx, jobId);
+        return { id: jobId, replayed: false };
+      });
+    },
     async list(scope: ImageScope, limit: number, before?: string) {
       return sql`select ${jobView} from image_jobs j where j.organization_id=${scope.organizationId}
         ${before ? sql`and (j.created_at,j.id) < (select created_at,id from image_jobs where id=${before} and organization_id=${scope.organizationId})` : sql``}
@@ -304,9 +376,10 @@ export function openImageRepository(url: string) {
             values (${a.id},${job.organizationId},${job.userId},'output',${a.objectKey},${a.mimeType},${a.width},${a.height},${a.bytes},${a.sha256})`;
           await tx`update image_job_items set status='succeeded',output_asset_id=${a.id},provider_request_id=${result.requestId ?? null},completed_at=now() where id=${job.itemId}`;
         } else {
-          await tx`update image_job_items set status=${result.unknown ? "needs_reconciliation" : "failed"},error_code=${result.errorCode},
+          await tx`update image_job_items set status=${result.unknown && result.errorCode !== "PROVIDER_INVALID_IMAGE_RESPONSE" ? "needs_reconciliation" : "failed"},error_code=${result.errorCode},
             provider_request_id=${result.requestId ?? null},completed_at=now() where id=${job.itemId}`;
-          if (!result.unknown) await refund(tx, job.jobId, job.itemId);
+          if (!result.unknown || result.errorCode === "PROVIDER_INVALID_IMAGE_RESPONSE")
+            await refund(tx, job.jobId, job.itemId);
         }
         await refreshJob(tx, job.jobId);
         return true;
@@ -316,6 +389,7 @@ export function openImageRepository(url: string) {
       await sql`delete from image_events where id in (select id from image_events where created_at<now()-interval '7 days' order by created_at limit 1000)`;
     },
     async expireClaims() {
+      await settleInvalidResponses();
       // An expired paid attempt is held for operator reconciliation, never queued again.
       const rows =
         await sql`select id,job_id from image_job_items where status='running' and lease_expires_at<now() limit 100`;

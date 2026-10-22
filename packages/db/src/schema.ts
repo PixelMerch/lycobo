@@ -317,6 +317,7 @@ export const imageJobItems = pgTable(
     jobId: uuid("job_id").notNull(),
     organizationId: uuid("organization_id").notNull(),
     position: integer("position").notNull(),
+    supersededAt: timestamp("superseded_at", { withTimezone: true }),
     status: text("status").notNull().default("queued"),
     workerId: text("worker_id"),
     executionToken: uuid("execution_token"),
@@ -343,7 +344,9 @@ export const imageJobItems = pgTable(
       foreignColumns: [imageAssets.id, imageAssets.organizationId],
       name: "image_items_output_org_fk",
     }),
-    unique("image_items_job_position_unique").on(t.jobId, t.position),
+    uniqueIndex("image_items_current_position_unique")
+      .on(t.jobId, t.position)
+      .where(sql`${t.supersededAt} is null`),
     index("image_items_output_idx").on(t.outputAssetId, t.organizationId),
     index("image_items_reconciler_idx").on(t.reconciledBy),
     index("image_items_lease_idx").on(t.leaseExpiresAt).where(sql`${t.status} = 'running'`),
@@ -588,5 +591,29 @@ export const walletCheckins = pgTable(
     unique("wallet_checkin_day_unique").on(t.walletId, t.businessDate),
     check("wallet_checkin_credits_check", sql`${t.credits} > 0`),
     check("wallet_checkin_date_check", sql`${t.businessDate} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'`),
+  ],
+);
+
+export const imageRetries = pgTable(
+  "image_retries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    jobId: uuid("job_id").notNull(),
+    key: uuid("idempotency_key").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.jobId, t.organizationId],
+      foreignColumns: [imageJobs.id, imageJobs.organizationId],
+      name: "image_retries_job_org_fk",
+    }),
+    unique("image_retries_scope_key_unique").on(t.organizationId, t.userId, t.key),
+    index("image_retries_job_idx").on(t.jobId, t.organizationId),
+    index("image_retries_user_idx").on(t.userId),
   ],
 );

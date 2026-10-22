@@ -427,6 +427,49 @@ try {
   );
   assert.equal(thumbnail.status, 200);
   assert.equal(thumbnail.headers.get("content-type"), "image/png");
+  const retryKey = crypto.randomUUID();
+  assert.equal(
+    (
+      await app.request(`/api/v1/image-tasks/${taskId}/retry`, {
+        method: "POST",
+        headers: {
+          ...headers,
+          Authorization: `Bearer ${second.token}`,
+          "Idempotency-Key": retryKey,
+        },
+      })
+    ).status,
+    404,
+  );
+  const retryResponses = await Promise.all(
+    Array.from({ length: 4 }, () =>
+      app.request(`/api/v1/image-tasks/${taskId}/retry`, {
+        method: "POST",
+        headers: { ...headers, "Idempotency-Key": retryKey },
+      }),
+    ),
+  );
+  assert.equal(retryResponses.filter((response) => response.status === 202).length, 1);
+  assert.equal(retryResponses.filter((response) => response.status === 200).length, 3);
+  const beforeRetry = await repository.get(first, taskId);
+  assert.equal(beforeRetry?.items.length, 2);
+  assert.equal(
+    beforeRetry?.items.find((entry: { id: string }) => entry.id === success.id)?.output_asset_id,
+    asset.id,
+  );
+  await dispatch();
+  const afterRetry = await repository.get(first, taskId);
+  assert.equal(afterRetry?.status, "succeeded");
+  assert.equal(afterRetry?.items.length, 2);
+  assert.equal(
+    afterRetry?.items.filter((entry: { status: string }) => entry.status === "succeeded").length,
+    2,
+  );
+  assert.equal(
+    (await sql`select count(*)::int as count from image_job_items where job_id=${taskId}`)[0]
+      ?.count,
+    3,
+  );
   // Retry the already-reserved idempotency key even when the available balance has become zero.
   while ((await repository.wallet(first)).balance >= 20) {
     const count = Math.min(4, Math.floor((await repository.wallet(first)).balance / 20));

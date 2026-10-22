@@ -38,6 +38,8 @@ function fixture() {
     pruneEvents: unexpected,
     expireClaims: unexpected,
     reconcile: unexpected,
+    retry: unexpected,
+    settleInvalidResponses: unexpected,
   };
   const store: ImageStore = {
     ready: unexpected,
