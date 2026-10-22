@@ -19,11 +19,11 @@ import {
 } from "react";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
+import { useCenteredDialogMotion } from "../../components/use-centered-dialog-motion";
 import { copyToClipboard } from "../../lib/clipboard";
 import { assetContentUrl, downloadAsset } from "./generation-client";
 import { ReferenceThumbnails } from "./reference-thumbnails";
 import { useStudioStore } from "./studio-state";
-import { useCenteredDialogMotion } from "./use-centered-dialog-motion";
 import "./fullscreen-dialog.css";
 import "./image-preview.css";
 

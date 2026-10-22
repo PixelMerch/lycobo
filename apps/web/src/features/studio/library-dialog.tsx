@@ -4,10 +4,10 @@ import { motion } from "motion/react";
 import { useState } from "react";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
+import { useCenteredDialogMotion } from "../../components/use-centered-dialog-motion";
 import { useErrorToast } from "../../lib/error-toast";
 import { assetContentUrl, useImageAssets } from "./generation-client";
 import { ImagePreviewDialog, type PreviewImage } from "./image-preview";
-import { useCenteredDialogMotion } from "./use-centered-dialog-motion";
 import "./fullscreen-dialog.css";
 import "./library-dialog.css";
 

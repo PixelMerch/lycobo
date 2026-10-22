@@ -36,13 +36,18 @@ Read relevant project skills before work:
 - Follow PRD.md for navigation: Home, Create, AI Commerce, Asset Library.
   Home-textile tools belong to AI Commerce. Image tools use a category selection overlay;
   TK has no current navigation entry. UI mockups in docs/design are review targets, not services.
-- DESIGN.md is the sole visual specification. Use HeroUI v3, neutral near-black surfaces,
-  thin borders and the approved purple theme: --accent #8B5CF6, with the primary-action gradient
-  linear-gradient(180deg, #BAA4FF 0, var(--accent) 100%). Use #09070D foreground on that gradient.
-  Image content stays primary. Do not reintroduce retired brand palettes or bonko branding.
-  Interaction research in docs/design informs behavior; it does not override visual tokens.
-- The default workspace is an interactive design implementation with ephemeral fixtures documented in DESIGN.md. Keep it
-  separate from production APIs. Never represent its sample queue or notifications as durable services.
+- DESIGN.md is the sole visual specification. The user approved and froze the current UI on
+  2026-10-22. Documentation, cleanup and component refactors must preserve its appearance;
+  a new visual change requires a new explicit design request. Do not reinterpret skill recommendations
+  as permission to restyle it. Preserve the actual tokens: brand purple #8B5CF6, HeroUI accent
+  #A98CFF, primary gradient linear-gradient(180deg, #BAA4FF 0, #8B5CF6 100%) with #09070D foreground.
+  Image content stays primary. Do not reintroduce retired palettes or bonko branding.
+  Interaction research explains existing decisions; it does not override the approved UI.
+- Distinguish real image APIs from local examples and E2E fixtures. Never represent sample
+  content, client-only favorites or future payment/sign-in rewards as durable production services.
+- Keep page components focused on composition. Extract complete reusable features into components
+  and external synchronization into hooks; preserve DOM semantics, classes, focus and paid-task
+  behavior during refactors. Do not create another base-control wrapper or split by line count.
 - Use TanStack Query for server data, Zustand only for client interaction state. Derive values during
   render; effects synchronize external systems, not redundant state.
 - Lazy-load heavy canvas/editor routes. Do not load original full-resolution images into grid cards.

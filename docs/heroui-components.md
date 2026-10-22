@@ -2,7 +2,7 @@
 
 本文件记录 `@heroui/react` 3.2.6 实际导出的组件能力，供实现前查阅。
 规则只有一条：**交互能力在下面的清单里已经存在时，直接组合官方组件，不要自己实现。**
-CSS 仍负责主题与尺寸，见 DESIGN.md 第 8 节。
+CSS 仍负责主题与尺寸，见 [DESIGN.md](../DESIGN.md)。
 
 清单由 `apps/web/node_modules/@heroui/react/dist/components` 的实际目录整理，
 不是上游文档的推测。升级 `@heroui/react` 后必须重新核对本文件。
@@ -46,7 +46,7 @@ CSS 仍负责主题与尺寸，见 DESIGN.md 第 8 节。
 | 组件 | 用途 |
 | --- | --- |
 | `Modal` | 确认、说明、工具选择层；`Modal.Backdrop/Container/Dialog/Header/Heading/Body/Footer/CloseTrigger` |
-| `Drawer` | 侧滑面板、移动导航、任务中心 |
+| `Drawer` | 移动导航及经确认的侧滑面板 |
 | `Popover` | 小设置与说明面板，官方 Dialog 区域 |
 | `Tooltip` | 辅助提示，不能承载唯一必要说明 |
 | `Dropdown` / `Menu` / `MenuItem` / `MenuSection` | 菜单与操作列表 |
@@ -110,7 +110,7 @@ DESIGN.md 决定视觉与几何，本文件决定“用什么组件”与“不�
 
 ## 按钮统一入口与检查
 
-按钮档位、padding、圆角的唯一数值表在 DESIGN.md 第 6 节；不要在本文件另建一套数值。
+按钮档位、padding、圆角的唯一数值表在 [DESIGN.md 的基础控件规范](../DESIGN.md#3-排版图标与基础控件)；不要在本文件另建一套数值。
 使用 Button 的 size="sm" / "md" / "lg" 与 isIconOnly，不以业务主色推断按钮一定需要更大 padding。
 切换使用 ToggleButton／ToggleButtonGroup，导航当前项使用 aria-current。
 审查步骤见 docs/ui-consistency.md，pnpm lint 自动运行 AST 组件检查。

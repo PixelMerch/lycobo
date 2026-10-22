@@ -18,7 +18,8 @@ import {
   useImageSession,
   usePendingSubmission,
 } from "./generation-client";
-import { GenerationHistory, HistoryIndex } from "./generation-history";
+import { GenerationHistory } from "./generation-history";
+import { HistoryIndex } from "./history-index";
 import { ModelSelect } from "./model-select";
 import { HomeRatioPicker } from "./ratio-picker";
 import { ReferencePicker } from "./reference-picker";

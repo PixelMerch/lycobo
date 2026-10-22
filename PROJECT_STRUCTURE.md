@@ -63,3 +63,17 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 实时任务通知入口为 apps/api/src/features/images/events.ts；apps/web/src/features/studio/use-image-events.ts 在应用壳维护共享 SSE 连接与 Query 缓存更新。事件日志和业务状态事务提交，独立于 Redis 生图执行队列；具体协议见 docs/image-generation-api.md。
 
 - packages/db/src/wallet-repository.ts：企业共享钱包、充值订单与只读账务查询。数据表与扣费规则见 [企业钱包](docs/enterprise-wallet.md)。
+
+## 前端组件边界
+
+当前UI按[设计定稿](DESIGN.md)维护；组件拆分不得改变外观。公共组件在`apps/web/src/components`，场景功能在`features/studio`，避免在页面内重复实现上传、确认、图片浏览及操作。
+
+- `GenerationHistory`：历史查询、空态、活动任务同步及预览编排。
+- `HistoryTaskMeta`：模型、时间、任务编号复制和输出参数。
+- `ResultImage`：生成图预览入口、下载和收藏；`generation-status`共用阶段标签和图标。
+- `HistoryIndex`：右侧历史定位、选中滚动与资产管理入口。
+- `ReferencePicker` / `ReferenceImageCard` / `ReferencePrompt`：共享上传、缩略图、图片引用。
+- `components/ImageViewer`：参考图浏览；`ImagePreviewDialog`：生成图详情与局部修复入口，两者职责不同。
+- `components/use-centered-dialog-motion`：预览和全屏素材库的公共开关动画，不通过feature转发导入。
+
+功能组件使用直接依赖；服务端缓存属于TanStack Query，临时草稿与交互属于Zustand，纯展示组件从props获得数据。具体规则见[UI一致性维护](docs/ui-consistency.md)。
