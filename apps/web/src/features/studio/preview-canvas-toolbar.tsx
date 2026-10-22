@@ -1,4 +1,11 @@
-import { Button, ToggleButton, ToggleButtonGroup, Toolbar, Tooltip } from "@heroui/react";
+import {
+  Button,
+  ButtonGroup,
+  ToggleButton,
+  ToggleButtonGroup,
+  Toolbar,
+  Tooltip,
+} from "@heroui/react";
 import {
   IconArrowBackUp,
   IconArrowForwardUp,
@@ -51,7 +58,7 @@ export function PreviewCanvasToolbar({
             <Tooltip.Content>抓手 · 按住空格</Tooltip.Content>
           </Tooltip>
         </ToggleButtonGroup>
-        <div className="preview-canvas-history">
+        <ButtonGroup className="preview-canvas-history" variant="ghost" size="sm">
           <Button
             size="sm"
             isIconOnly
@@ -72,7 +79,7 @@ export function PreviewCanvasToolbar({
           >
             <UiIcon icon={IconArrowForwardUp} />
           </Button>
-        </div>
+        </ButtonGroup>
       </Toolbar>
       <span className="preview-canvas-status" data-editing={repairing}>
         {repairing ? `${editor.draft.regions.length} / 8 选区` : "图片画布"}
