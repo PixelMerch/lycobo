@@ -88,7 +88,7 @@
 .library-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 4px;
+  gap: 8px;
 }
 /* Wider desktops keep the same large picture size instead of stretching four
  * columns across the whole viewport. */
