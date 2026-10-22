@@ -13,8 +13,17 @@ import {
   IconPointer,
   IconRectangle,
 } from "@tabler/icons-react";
+import { useSyncExternalStore } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import type { LocalRepairEditor } from "./use-local-repair";
+
+function subscribeToolbarViewport(onChange: () => void) {
+  const media = window.matchMedia("(min-width: 768px)");
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+}
+const getToolbarViewport = () => window.matchMedia("(min-width: 768px)").matches;
+const getServerToolbarViewport = () => false;
 
 export function PreviewCanvasToolbar({
   editor,
@@ -25,11 +34,18 @@ export function PreviewCanvasToolbar({
   repairing: boolean;
   onTool: (tool: string) => void;
 }) {
+  const vertical = useSyncExternalStore(
+    subscribeToolbarViewport,
+    getToolbarViewport,
+    getServerToolbarViewport,
+  );
+  const orientation = vertical ? "vertical" : "horizontal";
   return (
     <div className="preview-canvas-dock">
-      <Toolbar className="preview-canvas-toolbar" aria-label="画布工具">
+      <Toolbar className="preview-canvas-toolbar" aria-label="画布工具" orientation={orientation}>
         <ToggleButtonGroup
           size="sm"
+          orientation={orientation}
           selectionMode="single"
           disallowEmptySelection
           selectedKeys={[editor.tool]}
@@ -58,7 +74,12 @@ export function PreviewCanvasToolbar({
             <Tooltip.Content>抓手 · 按住空格</Tooltip.Content>
           </Tooltip>
         </ToggleButtonGroup>
-        <ButtonGroup className="preview-canvas-history" variant="ghost" size="sm">
+        <ButtonGroup
+          className="preview-canvas-history"
+          variant="ghost"
+          size="sm"
+          orientation={orientation}
+        >
           <Button
             size="sm"
             isIconOnly
@@ -81,8 +102,12 @@ export function PreviewCanvasToolbar({
           </Button>
         </ButtonGroup>
       </Toolbar>
-      <span className="preview-canvas-status" data-editing={repairing}>
-        {repairing ? `${editor.draft.regions.length} / 8 选区` : "图片画布"}
+      <span
+        className="preview-canvas-status"
+        data-editing={repairing}
+        title={`已选 ${editor.draft.regions.length} 个区域，最多 8 个`}
+      >
+        {editor.draft.regions.length} / 8
       </span>
     </div>
   );

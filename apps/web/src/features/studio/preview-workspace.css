@@ -1,13 +1,18 @@
 /* The canvas and its dock keep their geometry when the property panel changes mode. */
 .image-preview-stage.preview-canvas-stage {
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  grid-template-rows: minmax(0, 1fr);
   align-items: stretch;
-  gap: 8px;
-  padding: 12px 32px;
+  gap: 16px;
+  padding: 12px 16px 12px 24px;
+  background-image: radial-gradient(circle, #ffffff26 0.5px, transparent 0.75px);
+  background-size: 32px 32px;
 }
 .preview-canvas-stage .image-preview-frame {
   position: relative;
-  flex: 1;
+  grid-column: 1;
+  grid-row: 1;
 }
 .image-preview-frame[data-tool="hand"] {
   cursor: grab;
@@ -33,6 +38,9 @@
   position: relative;
   display: flex;
   flex: none;
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
   justify-content: center;
   align-items: center;
   min-width: 0;
@@ -41,22 +49,24 @@
   width: fit-content;
   display: flex;
   flex: none;
+  flex-direction: column;
   align-items: center;
   gap: 8px;
   min-width: 0;
-  padding: 0;
+  padding: 4px;
   border: 0;
-  border-radius: 0;
-  background: transparent;
+  border-radius: 999px;
+  background: #17171b;
 }
 .preview-canvas-toolbar .toggle-button-group,
 .preview-canvas-history {
   display: flex;
+  flex-direction: column;
   gap: 0;
   padding: 0;
   border: 0;
   border-radius: 999px;
-  background: #29282f;
+  background: transparent;
 }
 .preview-canvas-toolbar .button,
 .preview-canvas-toolbar .toggle-button {
@@ -74,8 +84,10 @@
 }
 .preview-canvas-status {
   position: absolute;
-  right: 0;
-  padding-inline: 8px;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  text-align: center;
   color: #8f8f98;
   font-size: 12px;
   line-height: 20px;
@@ -83,6 +95,9 @@
 }
 .preview-canvas-status[data-editing="true"] {
   color: #c8b8f8;
+}
+.preview-canvas-status[data-editing="false"] {
+  visibility: hidden;
 }
 .preview-fit.button {
   flex: none;
@@ -121,8 +136,23 @@
 }
 @media (max-width: 767px) {
   .image-preview-stage.preview-canvas-stage {
+    display: flex;
+    flex-direction: column;
     gap: 8px;
     padding: 12px 16px;
+  }
+  .preview-canvas-stage .image-preview-frame {
+    flex: 1;
+  }
+  .preview-canvas-toolbar.toolbar {
+    flex-direction: row;
+    padding: 0;
+    background: transparent;
+  }
+  .preview-canvas-toolbar .toggle-button-group,
+  .preview-canvas-history {
+    flex-direction: row;
+    background: #29282f;
   }
   .preview-canvas-toolbar .button,
   .preview-canvas-toolbar .toggle-button {

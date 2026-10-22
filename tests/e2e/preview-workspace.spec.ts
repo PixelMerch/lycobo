@@ -33,6 +33,7 @@ test("preview keeps one canvas while repair changes only the property panel and 
   const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
   const toolbar = viewer.getByRole("toolbar", { name: "画布工具", exact: true });
   await expect(toolbar).toBeVisible();
+  await expect(toolbar).toHaveAttribute("aria-orientation", "vertical");
   await expect(viewer.locator(".image-preview")).toHaveCSS("transform", "none");
   await expect(viewer.locator(".repair-canvas canvas").first()).toBeVisible();
   const image = await viewer.locator(".image-preview-image").elementHandle();
@@ -44,6 +45,9 @@ test("preview keeps one canvas while repair changes only the property panel and 
   await toolbar.getByRole("radio", { name: "拖动画布", exact: true }).click();
   const frame = await viewer.locator(".image-preview-frame").boundingBox();
   if (!frame) throw new Error("Missing canvas frame");
+  const toolBounds = await toolbar.boundingBox();
+  if (!toolBounds) throw new Error("Missing canvas toolbar");
+  expect(frame.x + frame.width).toBeLessThanOrEqual(toolBounds.x);
   await page.mouse.move(frame.x + frame.width / 2, frame.y + frame.height / 2);
   await page.mouse.down();
   await page.mouse.move(frame.x + frame.width / 2 + 50, frame.y + frame.height / 2 + 20, {
@@ -98,7 +102,7 @@ test("preview keeps one canvas while repair changes only the property panel and 
   await expect(viewer.locator(".image-preview-info")).toHaveCSS("opacity", "1");
   await page.screenshot({ path: "/tmp/lycobo-workspace-details.png" });
   await toolbar.getByRole("radio", { name: "选择区域", exact: true }).focus();
-  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowDown");
   await expect(toolbar.getByRole("radio", { name: "框选区域", exact: true })).toBeFocused();
   await page.keyboard.press("Space");
   await expect(
@@ -111,6 +115,7 @@ test("preview keeps one canvas while repair changes only the property panel and 
   await viewer.getByRole("button", { name: "返回详情", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(toolbar).toBeVisible();
+  await expect(toolbar).toHaveAttribute("aria-orientation", "horizontal");
   await expect(toolbar.getByRole("radio", { name: "框选区域", exact: true })).toHaveCSS(
     "height",
     "44px",
