@@ -115,7 +115,7 @@
 }
 .confirm-dialog
   .modal__close-trigger:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
-  background: #ffffff1f;
+  background: radial-gradient(circle 14px at center, #ffffff1f 100%, transparent 100%);
   color: #fff;
 }
 @media (max-width: 767px) {
