@@ -2,14 +2,21 @@
  * the existing blur on a static layer so the fade stays visually stable. */
 .modal__backdrop.confirm-dialog__backdrop {
   background: transparent;
+  backdrop-filter: none;
 }
 .confirm-dialog__backdrop::before {
   content: "";
   position: absolute;
   inset: 0;
+  left: var(--confirm-sidebar-width, var(--sidebar-width, 0px));
   pointer-events: none;
   background: rgba(0, 0, 0, 0.78);
   backdrop-filter: blur(20px);
+}
+@media (min-width: 768px) {
+  body:has(.studio-app[data-sidebar-collapsed="true"]) .confirm-dialog__backdrop {
+    --confirm-sidebar-width: 64px;
+  }
 }
 .confirm-dialog {
   width: min(480px, calc(100vw - 32px));
