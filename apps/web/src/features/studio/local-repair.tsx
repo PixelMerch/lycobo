@@ -90,15 +90,7 @@ export function LocalRepairPanel({
           <p className="repair-message">当前模型暂不支持此规格的图片编辑。</p>
         )}
         {pending && !ownPending && <p className="repair-message">请先在原提交入口确认上次提交。</p>}
-        {job.data && (
-          <p className="repair-message" aria-live="polite">
-            {result
-              ? "修改版已生成"
-              : ["queued", "running"].includes(job.data.status)
-                ? "修改版生成中，可返回详情继续查看图片。"
-                : "修改版未能完成，请在历史记录查看任务与积分状态。"}
-          </p>
-        )}
+        {/* Task progress is announced in the bottom-right notice, not here. */}
         {/* Same action shape as the composer: label plus the credit token, so the
          * cost is read at submission instead of in a separate billing row. */}
         <Button

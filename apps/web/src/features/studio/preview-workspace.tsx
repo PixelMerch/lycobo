@@ -1,13 +1,12 @@
 import { Button, Slider } from "@heroui/react";
-import { IconArrowsMaximize } from "@tabler/icons-react";
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
-import { UiIcon } from "../../components/ui-icon";
 import { assetContentUrl } from "./generation-client";
 import type { PreviewImage, PreviewMeta } from "./image-preview";
 import { ImagePreviewDetails } from "./image-preview-details";
 import { LocalRepairPanel } from "./local-repair";
 import { PreviewCanvasToolbar } from "./preview-canvas-toolbar";
 import { RepairCanvas } from "./repair-canvas";
+import { RepairNoticeRegion, useRepairNotice } from "./repair-notice";
 import { useLocalRepair } from "./use-local-repair";
 import { usePreviewZoom } from "./use-preview-zoom";
 import "./preview-workspace.css";
@@ -42,6 +41,13 @@ export default function PreviewWorkspace({
 }) {
   const editor = useLocalRepair(source, meta, repairing ? "rect" : "select");
   const { zoom, setZoom, wheelZoom } = usePreviewZoom();
+  /* Task progress is announced in the bottom-right notice instead of the form,
+   * so the editor keeps only inputs and the submit action. */
+  useRepairNotice({
+    jobId: editor.draft.jobId,
+    status: editor.job.data?.status,
+    succeeded: !!editor.result,
+  });
   const stage = useRef<HTMLElement>(null);
   const frame = useRef<HTMLElement>(null);
   const picture = useRef<HTMLImageElement>(null);
@@ -231,8 +237,7 @@ export default function PreviewWorkspace({
           aria-label="适应画布"
           onPress={fit}
         >
-          <UiIcon icon={IconArrowsMaximize} size="small" />
-          <span>适应画布</span>
+          适应画布
         </Button>
         <Slider
           className="image-preview-zoom"
@@ -252,6 +257,7 @@ export default function PreviewWorkspace({
           {Math.round(zoom)}%
         </output>
       </footer>
+      <RepairNoticeRegion />
     </>
   );
 }

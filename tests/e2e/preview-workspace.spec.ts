@@ -96,7 +96,11 @@ test("preview keeps one canvas while repair changes only the property panel and 
   await viewer.getByRole("button", { name: "预览第 1 张", exact: true }).click();
   await expect(prompt).toHaveValue("颜色更柔和");
   await viewer.getByRole("button", { name: "返回详情", exact: true }).click();
-  await viewer.getByRole("button", { name: "适应画布", exact: true }).click();
+  // A text-only action: no leading glyph, at every breakpoint.
+  const fitButton = viewer.getByRole("button", { name: "适应画布", exact: true });
+  await expect(fitButton.locator("svg")).toHaveCount(0);
+  await expect(fitButton).toContainText("适应画布");
+  await fitButton.click();
   await expect(viewer.getByLabel("画布缩放比例")).toHaveText("100%");
   await expect(viewer.locator(".image-preview-image")).toHaveCSS("translate", "0px");
   await expect(viewer.locator(".image-preview-info")).toHaveCSS("opacity", "1");
@@ -121,6 +125,10 @@ test("preview keeps one canvas while repair changes only the property panel and 
     "44px",
   );
   expect(await viewer.evaluate((node) => node.scrollWidth <= window.innerWidth)).toBe(true);
+  // The compact breakpoint keeps the label rather than shrinking to an
+  // icon-sized box with no glyph inside.
+  await expect(fitButton).toBeVisible();
+  expect((await fitButton.boundingBox())?.width ?? 0).toBeGreaterThan(48);
   await expect(viewer.getByRole("slider", { name: "缩放", exact: true })).toBeHidden();
   const closeBounds = await viewer
     .getByRole("button", { name: "关闭图片预览", exact: true })

@@ -148,6 +148,15 @@ test("multiple repair regions retain original coordinates, submit one image and 
   expect(Math.abs(Number(firstRegion[4]) - 205)).toBeLessThan(4);
   expect(submitted?.prompt).toContain("区域 2：左上角 (307, 307)，宽 307，高 307");
   await viewer.getByRole("button", { name: "确认上次提交", exact: true }).click();
+  // Progress is announced in the bottom-right notice instead of inside the form.
+  const notice = page.locator(".toast-region--bottom-end .toast").first();
+  await expect(notice).toContainText("修改版已生成");
+  const noticeBox = await notice.boundingBox();
+  const viewport = page.viewportSize();
+  if (!noticeBox || !viewport) throw new Error("Missing notice geometry");
+  expect(viewport.width - (noticeBox.x + noticeBox.width)).toBeLessThan(40);
+  expect(viewport.height - (noticeBox.y + noticeBox.height)).toBeLessThan(40);
+  await expect(viewer.locator(".repair-message")).toHaveCount(0);
   await viewer.getByRole("button", { name: "查看修改版", exact: true }).click();
   await expect(viewer).toHaveCount(0);
   await expect(page.getByRole("dialog", { name: "资产管理", exact: true })).toHaveCount(0);
@@ -260,4 +269,106 @@ test("closing with unsubmitted regions asks first and then clears the draft", as
     0,
   );
   await expect(viewer.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
+});
+
+test("reloading an image restores its most recent submitted edit and result link", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  const oldJobId = crypto.randomUUID();
+  let latestJobId = oldJobId;
+  const source = {
+    id: sourceId,
+    public_id: "P00000001",
+    task_public_id: null,
+    kind: "output",
+    width: 1024,
+    height: 1024,
+    bytes: 1024,
+    created_at: "2026-10-21T01:00:00Z",
+    model: "gpt-image-2",
+    prompt: "原始商品图",
+  };
+  let snapshot = {
+    sourceAssetId: sourceId,
+    width: 1024,
+    height: 1024,
+    regions: [
+      { id: crypto.randomUUID(), x: 100, y: 100, width: 300, height: 300, prompt: "改成蓝色被子" },
+    ],
+  };
+  const job = () => ({
+    id: latestJobId,
+    public_id: latestJobId === oldJobId ? "WREPAIR01" : "WREPAIR02",
+    organization_id: crypto.randomUUID(),
+    user_id: crypto.randomUUID(),
+    model: "gpt-image-2",
+    prompt: "局部修改",
+    resolution: "1K",
+    aspect_ratio: "1:1",
+    requested_count: 1,
+    status: "succeeded",
+    created_at: "2026-10-22T01:00:00Z",
+    completed_at: "2026-10-22T01:00:30Z",
+    input: {
+      model: "gpt-image-2",
+      prompt: "局部修改",
+      referenceAssetIds: [sourceId],
+      localEdit: snapshot,
+    },
+    items: [
+      {
+        id: crypto.randomUUID(),
+        position: 0,
+        status: "succeeded",
+        output_asset_id: outputId,
+        output_public_id: "P00000002",
+        error_code: null,
+        width: 1024,
+        height: 1024,
+        worker_id: "fixture",
+      },
+    ],
+  });
+  await page.route("**/api/v1/image-assets?*", (route) =>
+    route.fulfill({ json: apiFixture({ data: [source] }) }),
+  );
+  await page.route("**/api/v1/image-assets/**/content*", (route) =>
+    route.fulfill({ contentType: "image/svg+xml", body: svg }),
+  );
+  await page.route(`**/api/v1/image-assets/${sourceId}/latest-edit`, (route) =>
+    route.fulfill({ json: apiFixture({ job: job() }) }),
+  );
+  await page.route("**/api/v1/image-tasks/*", (route) =>
+    route.fulfill({ json: apiFixture(job()) }),
+  );
+  await page.route("**/api/v1/image-tasks", (route) => {
+    if (route.request().method() !== "POST")
+      return route.fulfill({ json: apiFixture({ data: [] }) });
+    const request = route.request().postDataJSON();
+    snapshot = request.localEdit;
+    expect(snapshot.sourceAssetId).toBe(sourceId);
+    latestJobId = jobId;
+    return route.fulfill({ status: 202, json: apiFixture({ id: latestJobId, replayed: false }) });
+  });
+  const openEditor = async () => {
+    await page.getByRole("button", { name: "打开素材库", exact: true }).click();
+    await page.getByRole("button", { name: "查看图片：原始商品图", exact: true }).click();
+    await page.getByRole("button", { name: "局部编辑", exact: true }).click();
+  };
+  await page.goto("/create");
+  await openEditor();
+  const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
+  const prompt = viewer.getByRole("textbox", { name: "区域 1 修改说明", exact: true });
+  await expect(prompt).toHaveValue("改成蓝色被子");
+  await expect(viewer.getByRole("button", { name: "查看修改版", exact: true })).toBeVisible();
+  await prompt.fill("改成绿色被子");
+  await viewer.getByRole("button", { name: "立即生成", exact: true }).click();
+  await expect.poll(() => latestJobId).toBe(jobId);
+  await page.reload();
+  await openEditor();
+  await expect(prompt).toHaveValue("改成绿色被子");
+  await viewer.getByRole("button", { name: "查看修改版", exact: true }).click();
+  await expect(viewer).toHaveCount(0);
+  await expect(page.locator(`#job-${jobId}`)).toContainText("WREPAIR02");
 });

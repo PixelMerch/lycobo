@@ -278,3 +278,26 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   expect(Math.round(close?.y ?? -1)).toBeLessThan(20);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test("rail thumbnails zoom on hover like reference thumbnails", async ({ page }) => {
+  await page.setViewportSize({ width: 1328, height: 906 });
+  await mockImageApi(page);
+  await page.route("**/api/v1/image-assets?*", (route) =>
+    route.fulfill({ json: apiFixture({ data: [asset(0), asset(1)] }) }),
+  );
+  await page.route("**/api/v1/image-tasks*", (route) =>
+    route.fulfill({ json: apiFixture({ data: [] }) }),
+  );
+  await page.route("**/api/v1/image-assets/**/content*", (route) =>
+    route.fulfill({ contentType: "image/svg+xml", body: svg }),
+  );
+  await page.goto("/create");
+  await page.getByRole("button", { name: "打开素材库", exact: true }).click();
+  await page.getByRole("button", { name: "查看图片：素材 1 的创意描述", exact: true }).click();
+  const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
+  const thumb = viewer.getByRole("button", { name: "预览第 2 张", exact: true });
+  const image = thumb.locator("img");
+  await expect(image).toHaveCSS("transform", "none");
+  await thumb.hover();
+  await expect(image).toHaveCSS("transform", "matrix(1.1, 0, 0, 1.1, 0, 0)");
+});
