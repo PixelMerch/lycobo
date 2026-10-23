@@ -13,16 +13,23 @@
 CI 使用 pnpm exec playwright install --with-deps chromium。
 浏览器测试失败留 trace/report；测试使用本地应用，不能连接线上接口。
 
+## 本地开发与远程回归
+
+日常 AI 开发默认执行 `pnpm check` 和 `git diff --check`，不在每次样式、文案或布局调整后运行本地全量 E2E。关键交互变化、已知回归或用户明确要求时，只运行相关浏览器用例；例如 `pnpm test:e2e tests/e2e/preview-workspace.spec.ts`。不为纯视觉数值补写镜像测试。
+
+一批改动完成并获授权推送后，由远程 CI 运行全量浏览器回归；等待检查通过再合并。未推送时说明远程验证尚未执行，不因测试流程调整自动推送或发布。
+
 ## CI 分层浏览器检查
 
 | 触发场景 | Browser 检查 |
 | --- | --- |
-| 推送 dev、目标为 dev 的 PR | `pnpm test:e2e:smoke`，只跑核心流程 |
+| 推送 dev | `pnpm test:e2e`，批次完成后的全量回归 |
+| 目标为 dev 的 PR | `pnpm test:e2e:smoke`，只跑核心流程 |
 | 目标为 main 的 PR | `pnpm test:e2e`，合并前全量回归 |
 | 推送 main（含合并） | `pnpm test:e2e`，全量回归 |
 | 手动运行 CI | `pnpm test:e2e`，全量回归 |
 
-冒烟范围：首页到创作路由、登录/退出后的历史同步、会话续期、真实接口契约 fixture 下的提交/参考图上传、草稿保留与桌面/移动导航。它不替代发布前的完整回归。修改模块时仍应本地执行相应测试。
+冒烟范围：首页到创作路由、登录/退出后的历史同步、会话续期、真实接口契约 fixture 下的提交/参考图上传、草稿保留与桌面/移动导航。它不替代发布前的完整回归。本地按改动风险选择相关用例，不默认重跑全套。
 
 Quality 和 Infrastructure 保持原检查范围；分支保护所需的 `Browser` 名称保持不变，由同一 job 明确选择全量或冒烟。不能通过顶层路径过滤跳过必需检查，否则可能一直处于 Pending。
 
@@ -72,7 +79,7 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:integration
 
 `tests/e2e/image-preview.spec.ts` 验证全屏预览、缩放拖动、移动布局和图片切换后的说明同步；`library-dialog.spec.ts` 验证筛选、延迟加载和弹层焦点恢复。接口均由浏览器 fixture 拦截，不调用模型。
 
-并行执行不同测试任务时，为每次运行设置独立 `--output=/tmp/<本次运行目录>`，避免 Playwright 清理其他运行的 trace。历史时间断言使用浏览器自身时区计算，不能写死本机的 UTC+8 时间。正式验收仍需运行完整 `pnpm test:e2e`，不能以跳过失败用例代替。
+并行执行不同测试任务时，为每次运行设置独立 `--output=/tmp/<本次运行目录>`，避免 Playwright 清理其他运行的 trace。历史时间断言使用浏览器自身时区计算，不能写死本机的 UTC+8 时间。完整 `pnpm test:e2e` 默认在远程 CI 执行；本地复现可指定文件或用例，不能以跳过失败用例代替查明原因。
 
 企业共享钱包测试纳入 worker test:images：verify-wallet.ts 验证主子账号并发扣款、20币固定价格、逐图退款、充值重复入账、账本不可修改和分页。wallet.spec.ts 验证账户中心真实接口契约（浏览器 fixture）。
 

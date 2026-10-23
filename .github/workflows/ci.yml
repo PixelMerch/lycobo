@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      FULL_E2E: ${{ github.event_name == 'workflow_dispatch' || github.base_ref == 'main' || github.ref == 'refs/heads/main' }}
+      FULL_E2E: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.base_ref == 'main' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -45,7 +45,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: cp .env.example .env
       - run: pnpm exec playwright install --with-deps chromium
-      - name: Full browser regression for main
+      - name: Full browser regression for branch pushes and releases
         if: env.FULL_E2E == 'true'
         run: pnpm test:e2e
       - name: Core browser smoke tests for development

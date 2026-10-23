@@ -120,8 +120,11 @@ Read relevant project skills before work:
 
 ## Verification and delivery
 
-- Run pnpm check for code changes and pnpm test:e2e for UI/navigation changes. Add tests for
-  business invariants and failures, not for cosmetic implementation details.
+- Run pnpm check for code changes. Do not run the full local E2E suite by default during
+  iterative AI development; use focused browser tests only for changed critical interactions,
+  regressions or explicit requests. Full E2E runs in remote CI on dev/main pushes and release PRs;
+  require successful checks before merging. Add tests for business invariants and failures,
+  not cosmetic implementation details. Report skipped local browser checks honestly.
 - For DB/queue changes run the isolated integration check documented in docs/testing.md.
   Never use production or bonko services, and never delete shared volumes.
 - Check git diff --check. Report actual executed checks, skipped external integrations and limitations.
