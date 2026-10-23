@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | 应用与页面 | 路由、布局、场景组合，不复制底层交互 | router、StudioShell、HomePage、WorkspacePage、AssetsPage |
 | 功能组件 | 拥有一个完整功能及其局部交互 | ReferencePicker、HistoryTaskActions、LocalRepairPanel、AccountManagement、WalletPanel、LibraryDialog |
-| 展示组件 | 明确输入和事件，不自行请求无关业务 | HistoryTaskMeta、ResultImage、ModelChooserCard |
+| 展示组件 | 明确输入和事件，不自行请求无关业务 | HistoryTaskMeta、ResultImage、CreationNavigation |
 | 共享交互组合 | 组合 HeroUI，统一可复用的完整行为 | ConfirmDialog、DialogClose、ImageViewer、ReferencePrompt |
 | 状态与同步 | 服务端数据用 TanStack Query，客户端草稿用 Zustand；hook只同步外部系统 | generation-client、wallet-client、studio-state、use-image-events |
 | 视觉 | 全局token＋功能样式；不新增相互竞争的基础控件样式 | styles/app.css、components/*.css、features/**/*.css |
@@ -19,6 +19,7 @@
 
 | 能力 | 唯一入口 | 维护约束 |
 | --- | --- | --- |
+| 创作导航 | CreationNavigation | 文字直达、箭头悬停／点击展开竖向模型小卡片；使用共享 useHoverMenu，保持模型草稿 |
 | Header 账户 | HeaderAccountMenu | 积分与头像共用入口，封装登录／悬停账户菜单／独立深色账户弹窗；应用壳不复制状态和查询 |
 | 账户内容 | AccountPanel → AccountManagement / WalletPanel | 按菜单入口分别打开，仅挂载对应内容、自然高度；真实账号与账单来自查询客户端，未接入的绑定／重置／支付不模拟成功 |
 | 确认 | ConfirmDialog | 不在业务中复制 Modal 标记；正文与操作布局共用 |

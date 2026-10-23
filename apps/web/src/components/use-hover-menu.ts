@@ -9,7 +9,7 @@ function isHoverPointer(event: React.PointerEvent) {
 }
 
 /**
- * Opens an account menu when a mouse enters its trigger and closes it once the
+ * Opens a menu when a mouse enters its trigger and closes it once the
  * pointer leaves both the trigger and the menu. Touch and keyboard keep the
  * press/keyboard toggle: pointer events from touch never open on hover, so a
  * tap cannot open and immediately close the menu.

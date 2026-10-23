@@ -64,8 +64,6 @@ const emptyDraft = (): Draft => ({
 
 // Client interaction only. No persisted tasks, paid submissions, or simulated completion.
 export const useStudioStore = create<{
-  chooserOpen: boolean;
-  setChooserOpen: (open: boolean) => void;
   activeHistoryId: string | null;
   setActiveHistoryId: (id: string) => void;
   activeModel: ModelId;
@@ -78,8 +76,6 @@ export const useStudioStore = create<{
   favorites: string[];
   toggleFavorite: (id: string) => void;
 }>((set) => ({
-  chooserOpen: false,
-  setChooserOpen: (chooserOpen) => set({ chooserOpen }),
   activeHistoryId: null,
   setActiveHistoryId: (activeHistoryId) => set({ activeHistoryId }),
   activeModel: "gpt-image-2",

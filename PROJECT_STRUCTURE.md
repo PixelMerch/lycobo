@@ -37,7 +37,7 @@ apps/web/src/
     ├── assets/                   # 素材页、全屏素材库及其局部样式
     ├── generation/               # 生图请求、事件、会话草稿及工作台页面
     │   ├── composer/             # 比例选择、参数选中背景
-    │   ├── models/               # 模型选择层卡片与下拉选择
+    │   ├── models/               # 创作直达入口、箭头悬停模型小卡片与下拉选择
     │   ├── references/           # 参考图上传、选择与缩略图
     │   └── history/              # 历史查询、任务信息、操作和定位
     └── image-workspace/          # 生成图详情、缩略图列表、统一画布与缩放
@@ -46,6 +46,7 @@ apps/web/src/
 
 - 先按业务功能归类，功能内部就近存放组件、hook、样式与单元测试；只有存在明确子职责时再增加目录，不为每个组件建立一层文件夹。
 - 保留描述性文件名和直接导入，不新增 `index.ts` 聚合出口，也不建立覆盖所有功能的 components/hooks/services 分类目录。浏览器端到端测试仍在根目录 `tests/e2e`。
+- `features/generation/models/creation-navigation.tsx` 组合创作直达链接与非模态模型菜单；`components/use-hover-menu.ts` 共享账户及模型菜单的悬停、键盘焦点恢复逻辑。
 - `app/studio-shell.tsx` 组合导航、登录、账户和生图事件；路由页面留在各 feature。首页、工作台和素材页继续由路由懒加载，`image-workspace/preview-workspace.tsx` 及 Konva 继续按预览需要加载。
 - `generation/generation-client.ts` 维护现有生图、历史和素材 API 查询与缓存，被历史、素材库和编辑工作区直接引用；目录维护不改变 query key 或增加请求层。
 - `generation/studio-state.ts` 保留原有客户端草稿、跨页面交互状态及样例定义，现有引用直接指向它；目录归类不把样例转换成持久服务，也不改变状态生命周期。

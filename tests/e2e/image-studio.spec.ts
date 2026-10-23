@@ -39,8 +39,7 @@ test("current draft, references and output choices follow model switches and sur
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await page.getByRole("link", { name: "素材库", exact: true }).click();
   await expect(page.getByRole("heading", { name: "素材库", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "创作", exact: true }).click();
-  await page.getByRole("button", { name: "进入 gpt-image-2 创作" }).click();
+  await page.getByRole("link", { name: "创作", exact: true }).click();
   await expect(prompt).toHaveValue("保留我的商品草稿");
 });
 
@@ -112,12 +111,9 @@ for (const width of [320, 390, 768, 1024, 1440]) {
 
 test("compact model cards open from their covers", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "创作", exact: true }).click();
-  const chooser = page.getByRole("dialog", { name: "创作", exact: true });
-  await chooser
-    .getByRole("button", { name: "进入 gpt-image-2 创作" })
-    .locator(".model-card-cover")
-    .click();
+  await page.getByRole("button", { name: "浏览模型", exact: true }).click();
+  const chooser = page.getByRole("menu", { name: "浏览模型", exact: true });
+  await chooser.getByRole("menuitem", { name: "进入 gpt-image-2 创作" }).locator("img").click();
   await expect(page).toHaveURL(/\/create$/);
   await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
 });
