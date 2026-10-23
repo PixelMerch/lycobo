@@ -51,17 +51,22 @@ test("workspace rich prompt matches the counter and grows after inserting a refe
   await expect(page.locator(".prompt-count")).toHaveText("5000/5000");
 });
 
-test("generation count stays collapsed behind a more toggle", async ({ page }) => {
+test("advanced parameters stay collapsed behind a more toggle", async ({ page }) => {
   await mockImageApi(page);
   await page.goto("/create");
   const count = page.getByRole("group", { name: "生成张数", exact: true });
+  const quality = page.getByRole("group", { name: "质量", exact: true });
   await expect(count).toHaveCount(0);
+  await expect(quality).toHaveCount(0);
   const more = page.getByRole("button", { name: "更多", exact: true });
   await expect(more).toHaveAttribute("aria-expanded", "false");
   await more.click();
   await expect(count).toBeVisible();
+  await expect(quality).toBeVisible();
   await count.getByRole("radio", { name: "3", exact: true }).click();
+  await quality.getByRole("radio", { name: "高", exact: true }).click();
   await expect(page.getByRole("button", { name: /立即生成/ })).toBeVisible();
   await page.getByRole("button", { name: "收起", exact: true }).click();
   await expect(count).toHaveCount(0);
+  await expect(quality).toHaveCount(0);
 });

@@ -3841,7 +3841,7 @@ p.home-hero-kicker {
   flex-shrink: 0;
 }
 
-/* Generation count stays collapsed until the user asks for more parameters. */
+/* Advanced parameters (quality, count) stay collapsed until the user asks for more. */
 .composer-panel .parameter-more.button {
   align-self: flex-start;
   min-height: 32px;
