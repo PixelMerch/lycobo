@@ -55,7 +55,7 @@ Images 转换是额外计量项：Free 每月最多 5,000 次唯一转换，超�
 5. 在 Cloudflare 的 `lycobo-api` 中配置 `AUTH_TRUSTED_ORIGINS` 为实际 Pages HTTPS Origin 或已绑定的自定义域名。Pages 项目名对应的域名若有后缀，以控制台实际结果为准。
 6. `pnpm cloudflare:deploy --plan` 检查目标与本地参数；`pnpm cloudflare:deploy` 先检查 Hyperdrive 目标和缓存，再构建前端，依次发布消费者、API 和 Pages。
 
-部署脚本只生成资源配置，不读取或上传运行 Secrets；两个 Worker 均使用 `keep_vars: true`，发布配置不含 `vars`，保留 Cloudflare 已有运行变量和 Secrets。资源绑定、队列消费者和 Cron 仍由仓库管理。构建失败或账户配置缺失会返回非零；脚本不自动推送 Git，不合并分支，不执行付费生图，不宣称已通过外部集成。
+部署脚本只生成资源配置，不读取或上传运行 Secrets；两个 Worker 均使用 `keep_vars: true`，发布配置不含 `vars`，保留 Cloudflare 已有运行变量和 Secrets。部署前读取两个 Worker 的运行配置摘要；每个 Worker 部署后核对普通变量值及 Secret 名称／类型，若不一致立即失败并停止后续步骤。Secret 原值不可读，不比较也不输出；普通变量值仅用于内存中的摘要计算，不写入文件或日志。新 Worker 没有历史配置时会明确提示需要在 Cloudflare 配置。资源绑定、队列消费者和 Cron 仍由仓库管理。构建失败或账户配置缺失会返回非零；脚本不自动推送 Git，不合并分支，不执行付费生图，不宣称已通过外部集成。
 
 三个部署配置保留同一仓库；修改共享契约时先兼容消费者和 API，再发布 Pages。GitHub Actions 在 `main` 推送且对应 CI（含远程 E2E 和隔离集成）全部成功后自动发布；使用 CI 的精确提交 SHA，拒绝已被新提交取代的旧版本。也可仅从 `main` 手动触发。生产发布不依赖本地机器上的 Redis、文件目录或 Docker。
 

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import path from "node:path";
 export const accountId = "9a65fad90669d9c27b58d856ab3ce410";
 export function deploymentSettings(env) {
@@ -22,4 +23,17 @@ export function releaseConfig(base, settings, root) {
   delete config.vars;
   config.keep_vars = true;
   return config;
+}
+
+export function runtimeFingerprint(bindings) {
+  const runtime = bindings
+    .filter((binding) => ["plain_text", "json", "secret_text", "secret_key"].includes(binding.type))
+    .map((binding) => ({
+      name: binding.name,
+      type: binding.type,
+      ...(binding.type === "plain_text" ? { value: binding.text } : {}),
+      ...(binding.type === "json" ? { value: binding.json } : {}),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  return createHash("sha256").update(JSON.stringify(runtime)).digest("hex");
 }

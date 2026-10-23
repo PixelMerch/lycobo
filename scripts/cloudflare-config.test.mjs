@@ -1,6 +1,11 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
-import { accountId, deploymentSettings, releaseConfig } from "./cloudflare/config.mjs";
+import {
+  accountId,
+  deploymentSettings,
+  releaseConfig,
+  runtimeFingerprint,
+} from "./cloudflare/config.mjs";
 
 const env = {
   CLOUDFLARE_ACCOUNT_ID: accountId,
@@ -50,6 +55,22 @@ describe("Cloudflare deployment boundaries", () => {
       expect(base.hyperdrive).toEqual([]);
     },
   );
+  it("detects changed runtime values or removed secrets without depending on binding order", () => {
+    const bindings = [
+      { name: "FLAG", type: "plain_text", text: "true" },
+      { name: "AUTH_JWT_SECRET", type: "secret_text" },
+      { name: "HYPERDRIVE", type: "hyperdrive", id: "a".repeat(32) },
+    ];
+    const before = runtimeFingerprint(bindings);
+    expect(runtimeFingerprint([...bindings].reverse())).toBe(before);
+    expect(runtimeFingerprint([{ ...bindings[0], text: "false" }, ...bindings.slice(1)])).not.toBe(
+      before,
+    );
+    expect(runtimeFingerprint([bindings[0]])).not.toBe(before);
+    expect(runtimeFingerprint([...bindings, { name: "NEW", type: "json", json: "{}" }])).not.toBe(
+      before,
+    );
+  });
   it("does not request runtime settings or upload secrets from the deployment workflow", async () => {
     const workflow = await readFile(".github/workflows/deploy-cloudflare.yml", "utf8");
     expect(workflow).not.toMatch(
