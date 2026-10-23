@@ -1,0 +1,42 @@
+.commerce-page {
+  border: 0;
+  background: transparent;
+}
+.commerce-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 380px));
+  gap: 16px;
+  margin-top: 24px;
+}
+.commerce-tool-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #ffffff0f;
+  border-radius: 16px;
+  background: var(--app-dialog-background);
+  color: #eee;
+  text-decoration: none;
+}
+.commerce-tool-link:is(:hover, [data-hovered="true"]) {
+  background: #ffffff0a;
+  text-decoration: none;
+}
+.commerce-tool-link > img {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border-radius: 10px;
+  object-fit: cover;
+}
+.commerce-coming-soon {
+  max-width: 560px;
+  margin: 48px auto;
+  text-align: center;
+}
+.commerce-create-link {
+  margin-top: 16px;
+  color: #eee;
+  text-decoration: underline;
+}

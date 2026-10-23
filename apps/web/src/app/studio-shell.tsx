@@ -1,13 +1,11 @@
 import { Button, Drawer, Modal, Tooltip } from "@heroui/react";
 import {
-  IconChevronRight,
   IconFolderSparkle,
   IconHelpCircle,
   IconLayoutSidebar,
   IconLayoutSidebarRight,
   IconMenu2,
   IconSettings,
-  IconShoppingBag,
   IconSmartHome,
   IconX,
 } from "@tabler/icons-react";
@@ -17,6 +15,7 @@ import { Outlet } from "react-router";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
 import { HeaderAccountMenu } from "../features/account/header-account-menu";
+import { CommerceNavigation } from "../features/commerce/commerce-navigation";
 import { CreationNavigation } from "../features/generation/models/creation-navigation";
 import { useImageEvents } from "../features/generation/use-image-events";
 import "../styles/brand.css";
@@ -57,26 +56,11 @@ export function StudioShell() {
         mobile={viewportWidth < 768}
         onNavigate={() => setMenuOpen(false)}
       />
-      <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
-        <Button
-          variant="tertiary"
-          aria-label="AI 电商"
-          className={`nav-row ${info === "AI 电商" ? "active" : ""}`}
-          aria-haspopup="dialog"
-          aria-expanded={info === "AI 电商"}
-          onPress={() => {
-            setMenuOpen(false);
-            setInfo("AI 电商");
-          }}
-        >
-          <UiIcon icon={IconShoppingBag} size="default" />
-          <span className="nav-label">AI 电商</span>
-          <span className="nav-chevron">
-            <UiIcon icon={IconChevronRight} size="small" />
-          </span>
-        </Button>
-        <Tooltip.Content placement="right">AI 电商</Tooltip.Content>
-      </Tooltip>
+      <CommerceNavigation
+        collapsed={sidebarCollapsed && viewportWidth >= 768}
+        mobile={viewportWidth < 768}
+        onNavigate={() => setMenuOpen(false)}
+      />
       <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
         <RouteLink
           nav
@@ -214,13 +198,9 @@ export function StudioShell() {
                 <p>
                   {info === "帮助中心"
                     ? "选择创作，进入模型工作台；添加参考图并描述画面。查看案例可以获取灵感，草稿会在当前页面会话中保留。"
-                    : info === "通知"
-                      ? "暂无通知"
-                      : info === "AI 电商"
-                        ? "家纺生图、换色换花型和图文合成正在准备中。你可以先使用创作。"
-                        : info === "账户设置"
-                          ? "账户服务尚未开放。"
-                          : `${info ?? "此功能"}正在准备中。`}
+                    : info === "账户设置"
+                      ? "账户服务尚未开放。"
+                      : `${info ?? "此功能"}正在准备中。`}
                 </p>
               </Modal.Body>
               <Modal.Footer>

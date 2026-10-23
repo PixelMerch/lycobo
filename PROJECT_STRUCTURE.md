@@ -31,6 +31,7 @@ apps/web/src/
 └── features/
     ├── auth/                     # 身份请求与登录弹窗
     ├── account/                  # Header账户菜单、账户中心、钱包请求和账务展示
+    ├── commerce/                 # AI 电商导航、功能目录、家纺套图上线前说明页
     ├── home/                     # 首页、共享创作输入与提示辅助
     │   ├── home-intro.tsx         # 首页渐变轮换标题，文案与间隔在 home-intro-config.ts
     │   └── dot-grid/             # React Bits 点阵源码适配，首页参数在 home-dot-grid-config.ts
@@ -46,7 +47,7 @@ apps/web/src/
 
 - 先按业务功能归类，功能内部就近存放组件、hook、样式与单元测试；只有存在明确子职责时再增加目录，不为每个组件建立一层文件夹。
 - 保留描述性文件名和直接导入，不新增 `index.ts` 聚合出口，也不建立覆盖所有功能的 components/hooks/services 分类目录。浏览器端到端测试仍在根目录 `tests/e2e`。
-- `features/generation/models/creation-navigation.tsx` 组合创作直达链接与非模态模型菜单；`components/use-hover-menu.ts` 共享账户及模型菜单的悬停、键盘焦点恢复逻辑。
+- `components/feature-navigation.tsx` 组合创作／AI 电商的直达入口、整行悬停与非模态竖向卡片菜单，样式在同目录；各 feature 仅维护模型／功能内容及选择行为。`components/use-hover-menu.ts` 共享账户及模型菜单的悬停、键盘焦点恢复逻辑。
 - `app/studio-shell.tsx` 组合导航、登录、账户和生图事件；路由页面留在各 feature。首页、工作台和素材页继续由路由懒加载，`image-workspace/preview-workspace.tsx` 及 Konva 继续按预览需要加载。
 - `generation/generation-client.ts` 维护现有生图、历史和素材 API 查询与缓存，被历史、素材库和编辑工作区直接引用；目录维护不改变 query key 或增加请求层。
 - `generation/studio-state.ts` 保留原有客户端草稿、跨页面交互状态及样例定义，现有引用直接指向它；目录归类不把样例转换成持久服务，也不改变状态生命周期。
