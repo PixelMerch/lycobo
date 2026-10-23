@@ -108,6 +108,7 @@ export function TextileImageField({
             showNumber={false}
             isDisabled={reading}
             onOpen={() => setPreview(true)}
+            onReplace={() => input.current?.click()}
             onRemove={() => {
               onChange(null);
               setError("");

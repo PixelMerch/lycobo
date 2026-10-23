@@ -53,7 +53,9 @@ test("textile form has only required product inputs and retains confirmed choice
     "data-selected",
     "true",
   );
-  await form.getByRole("button", { name: "查看参考图片：图片1", exact: true }).click();
+  await form
+    .getByRole("button", { name: "查看参考图片：图片1", exact: true })
+    .click({ position: { x: 12, y: 56 } });
   const viewer = page.getByRole("dialog", { name: "图片浏览", exact: true });
   await expect(viewer).toBeVisible();
   await page.keyboard.press("Escape");
@@ -251,4 +253,29 @@ test("confirmed textile views show removable thumbnails and keep picker selectio
   await page.getByRole("button", { name: "移除裂变类型：面料特写", exact: true }).click();
   await expect(page.locator(".textile-selected-view")).toHaveCount(0);
   await expect(opener).toHaveText("选择裂变类型");
+});
+
+test("hover replacement opens the file chooser without opening preview and keeps a single image", async ({
+  page,
+}) => {
+  await page.goto("/commerce/textile-set");
+  await page
+    .getByLabel("主图文件", { exact: true })
+    .setInputFiles({ name: "main.png", mimeType: "image/png", buffer: png });
+  const field = page.getByRole("region", { name: "主图", exact: true });
+  const image = field.locator(".reference-preview img");
+  const previous = await image.getAttribute("src");
+  await field.locator(".reference-tile").hover();
+  const replace = field.getByRole("button", { name: "替换参考图：图片1", exact: true });
+  await expect(replace).toHaveCSS("opacity", "1");
+  const [chooser] = await Promise.all([page.waitForEvent("filechooser"), replace.click()]);
+  expect(chooser.isMultiple()).toBe(false);
+  await chooser.setFiles("apps/web/public/studio/set-thumb.webp");
+  await expect(image).not.toHaveAttribute("src", previous ?? "");
+  await expect(field.locator(".reference-tile")).toHaveCount(1);
+  await expect(page.getByRole("dialog", { name: "图片浏览", exact: true })).toBeHidden();
+  await field
+    .getByRole("button", { name: "查看参考图片：图片1", exact: true })
+    .click({ position: { x: 12, y: 56 } });
+  await expect(page.getByRole("dialog", { name: "图片浏览", exact: true })).toBeVisible();
 });

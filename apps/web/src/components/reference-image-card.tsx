@@ -1,5 +1,5 @@
 import { Button } from "@heroui/react";
-import { IconX } from "@tabler/icons-react";
+import { IconReplace, IconX } from "@tabler/icons-react";
 import { UiIcon } from "./ui-icon";
 import "./reference-image-card.css";
 
@@ -14,6 +14,7 @@ export function ReferenceImageCard({
   showNumber = true,
   onOpen,
   onRemove,
+  onReplace,
   isDisabled = false,
 }: {
   src: string;
@@ -21,6 +22,7 @@ export function ReferenceImageCard({
   showNumber?: boolean;
   onOpen: () => void;
   onRemove: () => void;
+  onReplace?: () => void;
   isDisabled?: boolean;
 }) {
   return (
@@ -34,6 +36,19 @@ export function ReferenceImageCard({
       >
         <img src={src} alt="" draggable={false} />
       </Button>
+      {onReplace && (
+        <Button
+          isIconOnly
+          size="sm"
+          variant="tertiary"
+          className="replace-reference"
+          aria-label={`替换参考图：图片${number}`}
+          isDisabled={isDisabled}
+          onPress={onReplace}
+        >
+          <UiIcon icon={IconReplace} size="navigation" />
+        </Button>
+      )}
       <Button
         isIconOnly
         variant="secondary"
