@@ -2,8 +2,8 @@ import type { DotGridProps } from "./dot-grid/dot-grid";
 
 /** 首页上半部分背景参数：直接修改此处，保存后即可预览。 */
 export const homeDotGrid = {
-  dotSize: 3,
-  gap: 18,
+  dotSize: 1.5,
+  gap: 15,
   baseColor: "#3a3446",
   activeColor: "#ffffff",
   proximity: 140,
