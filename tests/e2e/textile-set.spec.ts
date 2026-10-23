@@ -76,6 +76,19 @@ test("view reset and dismiss do not overwrite the confirmed selection", async ({
     "aria-pressed",
     "true",
   );
+  await dialog.getByRole("button", { name: "正面", exact: true }).click();
+  await page.getByRole("heading", { name: "家纺套图", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(opener).toHaveText("枕头特写");
+  await opener.click();
+  await expect(dialog.getByRole("button", { name: "正面", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  await expect(dialog.getByRole("button", { name: "枕头特写", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await dialog.getByRole("button", { name: "重置", exact: true }).click();
   await dialog.getByRole("button", { name: "确定", exact: true }).click();
   await expect(opener).toHaveText("选择裂变类型");

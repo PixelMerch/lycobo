@@ -1,24 +1,43 @@
 import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { IconCheck, IconX } from "@tabler/icons-react";
-import { type RefObject, useState } from "react";
+import { type RefObject, useEffect, useRef, useState } from "react";
 import "../../../components/dialog-close.css";
 import { UiIcon } from "../../../components/ui-icon";
 import { type TextileViewId, textileViewImages, textileViews } from "./textile-views";
 
 export function TextileViewsDialog({
   anchorRef,
+  triggerRef,
   selected,
   onConfirm,
   onClose,
 }: {
   anchorRef: RefObject<HTMLDivElement | null>;
+  triggerRef: RefObject<HTMLButtonElement | null>;
   selected: TextileViewId[];
   onConfirm: (values: TextileViewId[]) => void;
   onClose: () => void;
 }) {
   const [pending, setPending] = useState(selected);
+  const popoverRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    // Non-modal React Aria popovers dismiss on blur, but blank areas do not move focus.
+    // Keep its keyboard/focus behavior and also dismiss pointer presses outside.
+    function dismissOutside(event: PointerEvent) {
+      const path = event.composedPath();
+      if (
+        popoverRef.current &&
+        !path.includes(popoverRef.current) &&
+        (!triggerRef.current || !path.includes(triggerRef.current))
+      )
+        onClose();
+    }
+    document.addEventListener("pointerdown", dismissOutside, true);
+    return () => document.removeEventListener("pointerdown", dismissOutside, true);
+  }, [onClose, triggerRef]);
   return (
     <Popover.Content
+      ref={popoverRef}
       triggerRef={anchorRef}
       placement="bottom start"
       offset={0}

@@ -16,6 +16,7 @@ const LibraryDialog = lazy(() =>
 export function TextileSetPage() {
   const { mainImage, detailImage, views, ratio, update } = useTextileSetDraft();
   const viewsAnchor = useRef<HTMLDivElement>(null);
+  const viewsTrigger = useRef<HTMLButtonElement>(null);
   const [viewsOpen, setViewsOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const selectedViews = textileViews.filter((view) => views.includes(view.id));
@@ -48,7 +49,12 @@ export function TextileSetPage() {
               裂变类型
             </h2>
             <Popover isOpen={viewsOpen} onOpenChange={setViewsOpen}>
-              <Button variant="tertiary" className="textile-view-trigger" aria-label="选择裂变类型">
+              <Button
+                ref={viewsTrigger}
+                variant="tertiary"
+                className="textile-view-trigger"
+                aria-label="选择裂变类型"
+              >
                 {selectedViews.length ? (
                   <span className="textile-selected-views">
                     {selectedViews.map((view) => view.name).join("、")}
@@ -64,6 +70,7 @@ export function TextileSetPage() {
               {viewsOpen && (
                 <TextileViewsDialog
                   anchorRef={viewsAnchor}
+                  triggerRef={viewsTrigger}
                   selected={views}
                   onConfirm={(value) => update({ views: value })}
                   onClose={() => setViewsOpen(false)}
