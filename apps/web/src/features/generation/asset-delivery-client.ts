@@ -9,7 +9,17 @@ export function rememberImageDeliveries(value: unknown) {
   if (!value || typeof value !== "object") return;
   if ("id" in value && typeof value.id === "string" && "delivery" in value) {
     const parsed = imageDeliverySchema.safeParse(value.delivery);
-    if (parsed.success) queryClient.setQueryData(deliveryKey(value.id), parsed.data);
+    if (parsed.success) {
+      const current = imageDeliverySchema.safeParse(
+        queryClient.getQueryData(deliveryKey(value.id)),
+      );
+      if (current.success && current.data.expires_at > Date.now() / 1000 + 60) {
+        const before = new URL(current.data.url),
+          after = new URL(parsed.data.url);
+        if (before.origin === after.origin && before.pathname === after.pathname) return;
+      }
+      queryClient.setQueryData(deliveryKey(value.id), parsed.data);
+    }
   }
   if (
     "output_asset_id" in value &&

@@ -16,6 +16,7 @@ test("assets use signed resource URLs without business API image downloads or po
     resourceReads = 0;
   await page.route("**/api/v1/image-assets?*", (route) => {
     metadata++;
+    const refreshedUrl = metadata === 1 ? url : `${url}&refresh=${metadata}`;
     return route.fulfill({
       json: apiFixture({
         data: [
@@ -30,9 +31,9 @@ test("assets use signed resource URLs without business API image downloads or po
             prompt: "资源图片",
             task_public_id: null,
             delivery: {
-              url,
-              thumbnail_url: `${url}&variant=thumbnail`,
-              download_url: `${url}&variant=download`,
+              url: refreshedUrl,
+              thumbnail_url: `${refreshedUrl}&variant=thumbnail`,
+              download_url: `${refreshedUrl}&variant=download`,
               expires_at: 9999999999,
             },
           },
@@ -69,4 +70,9 @@ test("assets use signed resource URLs without business API image downloads or po
     apiImages: 0,
     metadata: 1,
   });
+  await page.evaluate(() => window.dispatchEvent(new Event("visibilitychange")));
+  await expect.poll(() => metadata).toBe(2);
+  await page.clock.runFor(200);
+  await expect(image).toHaveAttribute("src", `${url}&variant=thumbnail`);
+  expect(resourceReads).toBe(1);
 });

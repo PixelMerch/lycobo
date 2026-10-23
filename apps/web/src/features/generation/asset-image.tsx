@@ -1,6 +1,6 @@
 import { imageDeliverySchema } from "@lycoboai/contracts";
 import { useQuery } from "@tanstack/react-query";
-import type { ComponentPropsWithRef } from "react";
+import { type ComponentPropsWithRef, useRef } from "react";
 import { assetContentUrl, deliveryKey } from "./asset-delivery-client";
 import { imageRequest } from "./generation-client";
 export function AssetImage({
@@ -14,6 +14,7 @@ export function AssetImage({
   thumbnail?: boolean;
   alt: string;
 }) {
+  const refreshAttempted = useRef(new Set<string>());
   const query = useQuery({
     queryKey: deliveryKey(assetId),
     enabled: false,
@@ -37,8 +38,10 @@ export function AssetImage({
       src={src}
       onError={(event) => {
         onError?.(event);
-        if (!query.isFetching && query.data && query.data.expires_at <= Date.now() / 1000)
+        if (!query.isFetching && query.data && !refreshAttempted.current.has(assetId)) {
+          refreshAttempted.current.add(assetId);
           void query.refetch();
+        }
       }}
     />
   );
