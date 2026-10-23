@@ -17,6 +17,7 @@ export function TextileSetPage() {
   const { mainImage, detailImage, views, ratio, update } = useTextileSetDraft();
   const viewsAnchor = useRef<HTMLDivElement>(null);
   const viewsTrigger = useRef<HTMLButtonElement>(null);
+  const viewsPressWasOpen = useRef<boolean | null>(null);
   const [viewsOpen, setViewsOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const selectedViews = textileViews.filter((view) => views.includes(view.id));
@@ -54,6 +55,18 @@ export function TextileSetPage() {
             <Popover isOpen={viewsOpen} onOpenChange={setViewsOpen}>
               <Button
                 ref={viewsTrigger}
+                onPointerDown={() => {
+                  // Blur may close the non-modal popover before this press completes.
+                  viewsPressWasOpen.current = viewsOpen;
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ")
+                    viewsPressWasOpen.current = viewsOpen;
+                }}
+                onPress={() => {
+                  setViewsOpen(!(viewsPressWasOpen.current ?? viewsOpen));
+                  viewsPressWasOpen.current = null;
+                }}
                 variant="tertiary"
                 className="textile-view-trigger"
                 aria-label="选择裂变类型"

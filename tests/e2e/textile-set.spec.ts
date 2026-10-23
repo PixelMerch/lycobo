@@ -168,3 +168,44 @@ for (const width of [2560, 1440, 390]) {
     );
   });
 }
+
+test("textile view trigger alternates open and closed on repeated clicks", async ({ page }) => {
+  await page.goto("/commerce/textile-set");
+  const opener = page.getByRole("button", { name: "选择裂变类型", exact: true });
+  const dialog = page.getByRole("dialog", { name: "裂变类型", exact: true });
+  await opener.click();
+  await expect(dialog).toBeVisible();
+  await opener.click();
+  await expect(dialog).toBeHidden();
+  for (let cycle = 0; cycle < 3; cycle++) {
+    await opener.click();
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "正面", exact: true }).click();
+    await opener.click();
+    await expect(dialog).toBeHidden();
+  }
+});
+
+test("textile view trigger toggles on repeated touch taps", async ({ browser, baseURL }) => {
+  if (!baseURL) throw new Error("E2E baseURL must be configured.");
+  const context = await browser.newContext({
+    baseURL,
+    hasTouch: true,
+    viewport: { width: 1440, height: 900 },
+  });
+  const page = await context.newPage();
+  try {
+    await mockImageApi(page);
+    await page.goto("/commerce/textile-set");
+    const opener = page.getByRole("button", { name: "选择裂变类型", exact: true });
+    const dialog = page.getByRole("dialog", { name: "裂变类型", exact: true });
+    for (let cycle = 0; cycle < 3; cycle++) {
+      await opener.tap();
+      await expect(dialog).toBeVisible();
+      await opener.tap();
+      await expect(dialog).toBeHidden();
+    }
+  } finally {
+    await context.close();
+  }
+});
