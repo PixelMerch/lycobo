@@ -1,16 +1,15 @@
 import { Button, Drawer, Modal, Tooltip } from "@heroui/react";
-import "../styles/brand.css";
 import {
   IconChevronRight,
   IconFolder,
   IconHelpCircle,
-  IconHome,
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
   IconMenu2,
   IconPhoto,
   IconSettings,
   IconShoppingBag,
+  IconSmartHome,
   IconX,
 } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
@@ -23,6 +22,7 @@ import { HeaderAccountMenu } from "../features/account/header-account-menu";
 import { chooserModels, ModelChooserCard } from "../features/generation/models/model-chooser-card";
 import { models, useStudioStore } from "../features/generation/studio-state";
 import { useImageEvents } from "../features/generation/use-image-events";
+import "../styles/brand.css";
 
 const chooserLayout: CSSProperties & { "--tool-columns": number } = {
   "--tool-columns": Math.min(5, chooserModels.length),
@@ -62,7 +62,7 @@ export function StudioShell() {
           className="nav-row"
           onClick={() => setMenuOpen(false)}
         >
-          <UiIcon icon={IconHome} size="default" />
+          <UiIcon icon={IconSmartHome} size="default" />
           <span className="nav-label">首页</span>
         </RouteLink>
         <Tooltip.Content placement="right">首页</Tooltip.Content>
