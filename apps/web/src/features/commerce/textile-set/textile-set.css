@@ -156,7 +156,8 @@
   display: grid;
   width: 100%;
   min-width: 0;
-  grid-template-columns: repeat(auto-fit, minmax(max(140px, calc((100% - 48px) / 5)), 1fr));
+  max-width: 848px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 160px));
   gap: 12px;
   padding: 0;
   background: transparent;
@@ -210,7 +211,7 @@
 .textile-view-copy {
   display: flex;
   justify-content: center;
-  padding: 12px;
+  padding: 8px 10px;
   text-align: center;
 }
 .textile-view-copy strong {
