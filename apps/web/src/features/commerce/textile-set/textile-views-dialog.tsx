@@ -2,6 +2,7 @@ import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react"
 import { IconCheck, IconX } from "@tabler/icons-react";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import "../../../components/dialog-close.css";
+import "../../../components/confirm-dialog.css";
 import { UiIcon } from "../../../components/ui-icon";
 import { type TextileViewId, textileViewImages, textileViews } from "./textile-views";
 
@@ -101,18 +102,24 @@ export function TextileViewsDialog({
           </ToggleButtonGroup>
         </div>
         <div className="textile-views-footer">
-          <Button variant="tertiary" onPress={() => setPending([])}>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="confirm-dialog__cancel"
+            onPress={() => setPending([])}
+          >
             重置
           </Button>
           <Button
             variant="primary"
-            className="primary-action"
+            size="sm"
+            className="confirm-dialog__confirm"
             onPress={() => {
               onConfirm(pending);
               onClose();
             }}
           >
-            确定
+            确认
           </Button>
         </div>
       </Popover.Dialog>

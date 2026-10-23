@@ -31,7 +31,7 @@ test("textile form has only required product inputs and retains confirmed choice
   await dialog.getByRole("button", { name: "正面", exact: true }).click();
   await dialog.getByRole("button", { name: "面料特写", exact: true }).click();
   await expect(dialog).toContainText("已选 2 个视角");
-  await dialog.getByRole("button", { name: "确定", exact: true }).click();
+  await dialog.getByRole("button", { name: "确认", exact: true }).click();
   await expect(dialog).toBeHidden();
   await expect(form.getByRole("button", { name: "选择裂变类型", exact: true })).toContainText(
     "正面、面料特写",
@@ -64,7 +64,7 @@ test("view reset and dismiss do not overwrite the confirmed selection", async ({
   await opener.click();
   const dialog = page.getByRole("dialog", { name: "裂变类型", exact: true });
   await dialog.getByRole("button", { name: "枕头特写", exact: true }).click();
-  await dialog.getByRole("button", { name: "确定", exact: true }).click();
+  await dialog.getByRole("button", { name: "确认", exact: true }).click();
   await opener.click();
   await dialog.getByRole("button", { name: "重置", exact: true }).click();
   await expect(dialog).toContainText("已选 0 个视角");
@@ -90,7 +90,7 @@ test("view reset and dismiss do not overwrite the confirmed selection", async ({
     "true",
   );
   await dialog.getByRole("button", { name: "重置", exact: true }).click();
-  await dialog.getByRole("button", { name: "确定", exact: true }).click();
+  await dialog.getByRole("button", { name: "确认", exact: true }).click();
   await expect(opener).toHaveText("选择裂变类型");
 });
 
@@ -161,7 +161,7 @@ for (const width of [2560, 1440, 390]) {
       "outline-style",
       "none",
     );
-    await dialog.getByRole("button", { name: "确定", exact: true }).click();
+    await dialog.getByRole("button", { name: "确认", exact: true }).click();
     await expect(dialog).toBeHidden();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
