@@ -1,5 +1,5 @@
 import { Button } from "@heroui/react";
-import { IconReplace, IconX } from "@tabler/icons-react";
+import { IconX } from "@tabler/icons-react";
 import { UiIcon } from "./ui-icon";
 import "./reference-image-card.css";
 
@@ -38,7 +38,6 @@ export function ReferenceImageCard({
       </Button>
       {onReplace && (
         <Button
-          isIconOnly
           size="sm"
           variant="tertiary"
           className="replace-reference"
@@ -46,7 +45,7 @@ export function ReferenceImageCard({
           isDisabled={isDisabled}
           onPress={onReplace}
         >
-          <UiIcon icon={IconReplace} size="navigation" />
+          替换
         </Button>
       )}
       <Button

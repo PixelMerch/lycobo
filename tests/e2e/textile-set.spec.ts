@@ -268,6 +268,8 @@ test("hover replacement opens the file chooser without opening preview and keeps
   await field.locator(".reference-tile").hover();
   const replace = field.getByRole("button", { name: "替换参考图：图片1", exact: true });
   await expect(replace).toHaveCSS("opacity", "1");
+  await expect(replace).toHaveText("替换");
+  await expect(replace.locator("svg")).toHaveCount(0);
   const [chooser] = await Promise.all([page.waitForEvent("filechooser"), replace.click()]);
   expect(chooser.isMultiple()).toBe(false);
   await chooser.setFiles("apps/web/public/studio/set-thumb.webp");
