@@ -45,7 +45,7 @@ export function PreviewDotGrid({ stage }: { stage: RefObject<HTMLElement | null>
           }
           if (alpha < 0.01) continue;
           context.fillStyle = `rgba(255,255,255,${alpha})`;
-          context.fillRect(x - 0.7, y - 0.7, 1.4, 1.4);
+          context.fillRect(x - 0.5, y - 0.5, 1, 1);
         }
       }
       if (ripples.length) frame = requestAnimationFrame(draw);

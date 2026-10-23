@@ -69,7 +69,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   await expect(historyDialog.locator(".image-preview-section p")).toContainText("紫色菱形被子");
   await expect(historyDialog.locator(".image-preview-model")).toContainText("gpt-image-2");
   await expect(historyDialog.locator(".image-preview-facts")).toContainText("ID：W00000013");
-  await expect(historyDialog.locator(".image-preview-bar-id")).toHaveText("Img ID：P55871241");
+  await expect(historyDialog.locator(".image-preview-bar-id")).toHaveCount(0);
   await expect(historyDialog.locator(".image-preview-bar-size")).toHaveText("2048 x 2048");
   // The selected frame is one of two thumbnails on the right rail.
   await expect(historyDialog.locator(".image-preview-thumb")).toHaveCount(2);
@@ -242,7 +242,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
     "素材 3 的创意描述",
   );
   await expect(viewer.locator(".image-preview-facts")).toContainText("ID：W90000002");
-  await expect(viewer.locator(".image-preview-bar-id")).toHaveText("Img ID：P55871232");
+  await expect(viewer.locator(".image-preview-bar-id")).toHaveCount(0);
   await expect(viewer.locator('.image-preview-thumb[aria-current="true"]')).toBeFocused();
   await expect(viewer.locator('.image-preview-thumb[aria-current="true"]')).toHaveCSS(
     "outline-style",

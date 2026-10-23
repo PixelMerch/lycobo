@@ -51,6 +51,7 @@ export default function PreviewWorkspace({
   });
   const stage = useRef<HTMLElement>(null);
   const frame = useRef<HTMLElement>(null);
+  const footer = useRef<HTMLElement>(null);
   const picture = useRef<HTMLImageElement>(null);
   const dragOrigin = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -162,12 +163,11 @@ export default function PreviewWorkspace({
     setZoom(100);
     setPan({ x: 0, y: 0 });
   };
-  const label = source.publicId ?? source.id.slice(0, 8);
   const size = source.width && source.height ? `${source.width} x ${source.height}` : "尺寸待同步";
   return (
     <>
       <section
-        className="image-preview-stage preview-canvas-stage"
+        className="image-preview-stage preview-canvas-stage preview-dot-surface"
         aria-label="图片预览"
         ref={stage}
       >
@@ -229,8 +229,8 @@ export default function PreviewWorkspace({
       ) : (
         <ImagePreviewDetails source={source} meta={meta} onRepair={enterRepair} />
       )}
-      <footer className="image-preview-bar">
-        <span className="image-preview-bar-id">Img ID：{label}</span>
+      <footer className="image-preview-bar preview-dot-surface" ref={footer}>
+        <PreviewDotGrid stage={footer} />
         <span className="image-preview-bar-size">{size}</span>
         <Button
           size="sm"

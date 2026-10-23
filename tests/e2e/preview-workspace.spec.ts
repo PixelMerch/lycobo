@@ -36,9 +36,12 @@ test("preview keeps one canvas while repair changes only the property panel and 
   await expect(toolbar).toHaveAttribute("aria-orientation", "vertical");
   await expect(viewer.locator(".image-preview")).toHaveCSS("transform", "none");
   await expect(viewer.locator(".repair-canvas canvas").first()).toBeVisible();
-  const dots = viewer.locator(".preview-dot-grid canvas");
+  const dots = viewer.locator(".preview-canvas-stage .preview-dot-grid canvas");
   await expect(dots).toHaveCSS("pointer-events", "none");
-  await expect(viewer.locator(".preview-dot-grid")).toHaveAttribute("aria-hidden", "true");
+  await expect(viewer.locator(".preview-canvas-stage .preview-dot-grid")).toHaveAttribute(
+    "aria-hidden",
+    "true",
+  );
   const paintedDots = () =>
     dots.evaluate((node: HTMLCanvasElement) => {
       const pixels = node.getContext("2d")?.getImageData(0, 0, node.width, node.height).data;
@@ -58,6 +61,21 @@ test("preview keeps one canvas while repair changes only the property panel and 
   );
   expect(await paintedDots()).toBe(false);
   await page.emulateMedia({ reducedMotion: "no-preference" });
+  const footerDots = viewer.locator(".image-preview-bar .preview-dot-grid canvas");
+  await expect(viewer.locator(".image-preview-bar")).toHaveCSS(
+    "background-image",
+    /radial-gradient/,
+  );
+  await viewer.locator(".image-preview-bar").hover({ position: { x: 45, y: 20 } });
+  await expect
+    .poll(() =>
+      footerDots.evaluate((node: HTMLCanvasElement) => {
+        const pixels = node.getContext("2d")?.getImageData(0, 0, node.width, node.height).data;
+        return pixels?.some((value, index) => index % 4 === 3 && value > 0) ?? false;
+      }),
+    )
+    .toBe(true);
+
   const image = await viewer.locator(".image-preview-image").elementHandle();
   const canvas = await viewer.locator(".repair-canvas").elementHandle();
   if (!image || !canvas) throw new Error("Workspace did not load");
@@ -158,24 +176,28 @@ test("preview keeps one canvas while repair changes only the property panel and 
   expect(closeBounds?.y).toBeLessThan(80);
   const mobileGeometry = await viewer.locator(".image-preview").evaluate((node) => {
     const bar = node.querySelector(".image-preview-bar")!.getBoundingClientRect();
-    const id = node.querySelector(".image-preview-bar-id")!.getBoundingClientRect();
     return {
       width: node.clientWidth,
       scrollWidth: node.scrollWidth,
       scrollLeft: node.scrollLeft,
       barLeft: bar.left,
       barWidth: bar.width,
-      idLeft: id.left,
-      idWidth: id.width,
     };
   });
   expect(mobileGeometry.scrollWidth).toBeLessThanOrEqual(mobileGeometry.width);
-  expect(mobileGeometry.idLeft).toBeGreaterThanOrEqual(12);
+  expect(mobileGeometry.barLeft).toBeGreaterThanOrEqual(0);
+  await expect(viewer.locator(".image-preview-bar")).not.toContainText("Img ID");
   await page.screenshot({ path: "/tmp/lycobo-workspace-mobile.png" });
   // A cached workspace must also open with immediate image navigation, not tool navigation.
   await viewer.getByRole("button", { name: "关闭图片预览", exact: true }).click();
   await page.getByRole("button", { name: "查看图片：画布测试 1", exact: true }).click();
-  await expect(viewer.locator(".image-preview-bar-id")).toContainText("PCANVAS00");
+  await expect(viewer.locator(".image-preview-image")).toHaveAttribute(
+    "src",
+    new RegExp(assets[0]?.id ?? "missing"),
+  );
   await page.keyboard.press("ArrowRight");
-  await expect(viewer.locator(".image-preview-bar-id")).toContainText("PCANVAS01");
+  await expect(viewer.locator(".image-preview-image")).toHaveAttribute(
+    "src",
+    new RegExp(assets[1]?.id ?? "missing"),
+  );
 });
