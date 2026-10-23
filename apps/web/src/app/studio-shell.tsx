@@ -3,8 +3,8 @@ import {
   IconChevronRight,
   IconFolderSparkle,
   IconHelpCircle,
-  IconLayoutSidebarLeftCollapse,
-  IconLayoutSidebarLeftExpand,
+  IconLayoutSidebar,
+  IconLayoutSidebarRight,
   IconMenu2,
   IconPhotoEdit,
   IconSettings,
@@ -158,7 +158,7 @@ export function StudioShell() {
               height="24"
             />
             <UiIcon
-              icon={sidebarCollapsed ? IconLayoutSidebarLeftExpand : IconLayoutSidebarLeftCollapse}
+              icon={sidebarCollapsed ? IconLayoutSidebarRight : IconLayoutSidebar}
               size="default"
             />
           </Button>
