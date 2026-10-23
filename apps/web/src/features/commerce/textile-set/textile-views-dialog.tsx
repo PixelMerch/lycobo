@@ -3,7 +3,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 import { type RefObject, useState } from "react";
 import "../../../components/dialog-close.css";
 import { UiIcon } from "../../../components/ui-icon";
-import { type TextileViewId, textileViews } from "./textile-views";
+import { type TextileViewId, textileViewImages, textileViews } from "./textile-views";
 
 export function TextileViewsDialog({
   anchorRef,
@@ -58,10 +58,19 @@ export function TextileViewsDialog({
                 className="textile-view-card"
                 aria-label={view.name}
               >
-                <span className="textile-view-example" aria-hidden="true" />
+                <span className="textile-view-example" aria-hidden="true">
+                  {textileViewImages[view.id] && (
+                    <img
+                      src={textileViewImages[view.id]}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      draggable={false}
+                    />
+                  )}
+                </span>
                 <span className="textile-view-copy">
                   <strong>{view.name}</strong>
-                  <span>{view.description}</span>
                 </span>
                 {pending.includes(view.id) && (
                   <span className="textile-view-check">
