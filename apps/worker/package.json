@@ -12,7 +12,7 @@
     "test:images": "node --env-file-if-exists=../../.env --import tsx scripts/check-image-integration.ts"
   },
   "dependencies": {
-    "bullmq": "6.3.15",
+    "bullmq": "6.3.17",
     "pino": "10.4.0",
     "zod": "4.6.7",
     "@lycoboai/queue": "workspace:*",
