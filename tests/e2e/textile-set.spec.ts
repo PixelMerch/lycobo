@@ -37,9 +37,8 @@ test("textile form has only required product inputs and retains confirmed choice
   await expect(dialog).toContainText("已选 2 个视角");
   await dialog.getByRole("button", { name: "确认", exact: true }).click();
   await expect(dialog).toBeHidden();
-  await expect(form.getByRole("button", { name: "选择裂变类型", exact: true })).toContainText(
-    "正面、面料特写",
-  );
+  await expect(form.locator(".textile-selected-view")).toHaveCount(2);
+  await expect(form.locator(".textile-selected-name")).toHaveText(["正面", "面料特写"]);
   const ratios = form.getByRole("region", { name: "图片比例", exact: true });
   await ratios.getByRole("button", { name: "下一页画面比例", exact: true }).click();
   await ratios.getByRole("radio", { name: "3:4", exact: true }).click();
@@ -48,9 +47,8 @@ test("textile form has only required product inputs and retains confirmed choice
   await page.getByRole("link", { name: "AI 电商", exact: true }).click();
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
   await expect(form.locator(".reference-tile")).toHaveCount(1);
-  await expect(form.getByRole("button", { name: "选择裂变类型", exact: true })).toContainText(
-    "正面、面料特写",
-  );
+  await expect(form.locator(".textile-selected-view")).toHaveCount(2);
+  await expect(form.locator(".textile-selected-name")).toHaveText(["正面", "面料特写"]);
   await expect(ratios.getByRole("radio", { name: "3:4", exact: true })).toHaveAttribute(
     "data-selected",
     "true",
@@ -73,7 +71,7 @@ test("view reset and dismiss do not overwrite the confirmed selection", async ({
   await dialog.getByRole("button", { name: "重置", exact: true }).click();
   await expect(dialog).toContainText("已选 0 个视角");
   await page.keyboard.press("Escape");
-  await expect(opener).toContainText("枕头特写");
+  await expect(page.locator(".textile-selected-name")).toHaveText(["枕头特写"]);
   await expect(opener).toBeFocused();
   await opener.click();
   await expect(dialog.getByRole("button", { name: "枕头特写", exact: true })).toHaveAttribute(
@@ -83,7 +81,7 @@ test("view reset and dismiss do not overwrite the confirmed selection", async ({
   await dialog.getByRole("button", { name: "正面", exact: true }).click();
   await page.getByRole("heading", { name: "家纺套图", exact: true }).click();
   await expect(dialog).toBeHidden();
-  await expect(opener).toHaveText("枕头特写");
+  await expect(page.locator(".textile-selected-name")).toHaveText(["枕头特写"]);
   await opener.click();
   await expect(dialog.getByRole("button", { name: "正面", exact: true })).toHaveAttribute(
     "aria-pressed",
@@ -222,4 +220,35 @@ test("textile view trigger toggles on repeated touch taps", async ({ browser, ba
   } finally {
     await context.close();
   }
+});
+
+test("confirmed textile views show removable thumbnails and keep picker selection in sync", async ({
+  page,
+}) => {
+  await page.goto("/commerce/textile-set");
+  const opener = page.getByRole("button", { name: "选择裂变类型", exact: true });
+  const dialog = page.getByRole("dialog", { name: "裂变类型", exact: true });
+  await opener.click();
+  await dialog.getByRole("button", { name: "正面", exact: true }).click();
+  await dialog.getByRole("button", { name: "面料特写", exact: true }).click();
+  await dialog.getByRole("button", { name: "确认", exact: true }).click();
+  await expect(page.locator(".textile-selected-view")).toHaveCount(2);
+  await expect(page.locator(".textile-selected-example")).toHaveCount(2);
+  await page.getByRole("button", { name: "移除裂变类型：正面", exact: true }).click();
+  await expect(page.locator(".textile-selected-name")).toHaveText(["面料特写"]);
+  await expect(dialog).toBeHidden();
+  await expect(opener).toBeFocused();
+  await opener.click();
+  await expect(dialog.getByRole("button", { name: "正面", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  await expect(dialog.getByRole("button", { name: "面料特写", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "移除裂变类型：面料特写", exact: true }).click();
+  await expect(page.locator(".textile-selected-view")).toHaveCount(0);
+  await expect(opener).toHaveText("选择裂变类型");
 });
