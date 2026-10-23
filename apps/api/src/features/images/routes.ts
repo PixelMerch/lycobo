@@ -12,9 +12,8 @@ import {
   ImageRepositoryError,
   WalletError,
 } from "@lycoboai/db";
-import { type ImageStore, ImageValidationError, maxImageBytes } from "@lycoboai/storage";
+import { type ImageStore, ImageValidationError, maxImageBytes } from "@lycoboai/storage/core";
 import { type Context, Hono } from "hono";
-import sharp from "sharp";
 import { z } from "zod";
 import { enterprisePrincipal } from "../auth/routes";
 import type { EnterpriseAuth } from "../auth/service";
@@ -332,14 +331,10 @@ export function imageRoutes(deps: ImageApiDependencies) {
     if (!parsed.success) return fail(c, "NOT_FOUND", "图片不存在", 404);
     const asset = await deps.repository.asset(c.get("principal"), parsed.data);
     if (!asset) return fail(c, "NOT_FOUND", "图片不存在", 404);
-    const original = await deps.store.read(asset);
     const bytes =
       c.req.query("thumbnail") === "1"
-        ? await sharp(original)
-            .resize({ width: 512, height: 512, fit: "inside", withoutEnlargement: true })
-            .png()
-            .toBuffer()
-        : original;
+        ? await deps.store.thumbnail(asset)
+        : await deps.store.read(asset);
     c.header("Content-Type", "image/png");
     c.header("Content-Disposition", `inline; filename="${asset.id}.png"`);
     return c.body(new Uint8Array(bytes));

@@ -98,6 +98,7 @@ test("edit directly restores the original references and parameters over an exis
   await edit.click();
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
   await expect(page.locator(".reference-tile")).toHaveCount(2);
+  await page.getByRole("button", { name: "更多", exact: true }).click();
   await expect(page.getByRole("radio", { name: "高", exact: true })).toHaveAttribute(
     "aria-checked",
     "true",
@@ -226,6 +227,7 @@ test("legacy history reads the original task snapshot before restoring a draft",
 test("legacy history without quality restores standard quality", async ({ page }) => {
   await historyFixture(page, null);
   await page.getByRole("button", { name: "重新编辑", exact: true }).click();
+  await page.getByRole("button", { name: "更多", exact: true }).click();
   await expect(page.getByRole("radio", { name: "标准", exact: true })).toHaveAttribute(
     "aria-checked",
     "true",

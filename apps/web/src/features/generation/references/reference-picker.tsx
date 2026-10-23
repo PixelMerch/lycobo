@@ -4,6 +4,7 @@ import { lazy, Suspense, useRef, useState } from "react";
 import { ReferenceImageCard } from "../../../components/reference-image-card";
 import { UiIcon } from "../../../components/ui-icon";
 import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "../studio-state";
+import { readReferenceImages, referenceFileError } from "./read-reference-images";
 
 const ImageViewer = lazy(() =>
   import("../../../components/image-viewer").then((module) => ({ default: module.ImageViewer })),
@@ -44,39 +45,15 @@ export function ReferencePicker({
   const updateDraft = useStudioStore((s) => s.updateDraft);
   async function readFiles(files: File[]) {
     if (reading) return;
-    if (
-      files.some(
-        (file) =>
-          !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
-          file.size > 10 * 1024 * 1024,
-      )
-    ) {
-      setError("请选择 PNG、JPEG 或 WebP 图片，单张不超过 10MB。");
+    const issue = referenceFileError(files);
+    if (issue) {
+      setError(issue);
       return;
     }
     setReading(true);
     setError("");
     try {
-      const images = await Promise.all(
-        files.map(async (file): Promise<ReferenceImage> => {
-          const src = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () =>
-              typeof reader.result === "string"
-                ? resolve(reader.result)
-                : reject(new Error("invalid image"));
-            reader.onerror = () => reject(new Error("read failed"));
-            reader.readAsDataURL(file);
-          });
-          await new Promise<void>((resolve, reject) => {
-            const image = new Image();
-            image.onload = () => resolve();
-            image.onerror = () => reject(new Error("decode failed"));
-            image.src = src;
-          });
-          return { id: crypto.randomUUID(), name: file.name, src };
-        }),
-      );
+      const images = await readReferenceImages(files);
       const current = useStudioStore.getState().drafts[model].references;
       const seen = new Set(current.map((image) => image.src));
       const unique: ReferenceImage[] = [];

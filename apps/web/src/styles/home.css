@@ -9,6 +9,12 @@ body:has(.commerce-home)::-webkit-scrollbar {
   display: none;
 }
 
+/* Use one gap for both sides of the home heading, independent of shell padding. */
+.main-content:has(> .commerce-home) {
+  --home-intro-gap: 36px;
+  padding-top: 0;
+}
+
 /* Approved commerce homepage composition; sizes inherit DESIGN.md tokens. */
 .commerce-home.page-panel {
   max-width: 1840px;
@@ -16,7 +22,7 @@ body:has(.commerce-home)::-webkit-scrollbar {
   background: transparent;
   border-radius: 0;
   margin-inline: auto;
-  padding: 8px 40px 24px;
+  padding: 0 40px 24px;
 }
 .home-start {
   max-width: 1040px;
@@ -123,16 +129,6 @@ body:has(.commerce-home)::-webkit-scrollbar {
   gap: 12px;
   color: var(--foreground);
 }
-.home-guides {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: end;
-  gap: 8px;
-  margin-top: 12px;
-}
-.home-guides .button {
-  color: var(--muted);
-}
 @media (max-width: 1279px) {
   .commerce-home.page-panel {
     padding-inline: 24px;
@@ -142,8 +138,11 @@ body:has(.commerce-home)::-webkit-scrollbar {
   }
 }
 @media (max-width: 767px) {
+  .main-content:has(> .commerce-home) {
+    --home-intro-gap: 32px;
+  }
   .commerce-home.page-panel {
-    padding: 8px 16px 24px;
+    padding: 0 16px 24px;
   }
   .home-start h1 {
     font-size: var(--text-page-mobile);
@@ -164,7 +163,7 @@ body:has(.commerce-home)::-webkit-scrollbar {
 
 /* Xiaoyunque composer measurements: 1040 × 212, 28px radius, 14/21 type. */
 .home-start {
-  margin-top: 16px;
+  margin-top: var(--home-intro-gap);
   margin-bottom: 48px;
 }
 .home-start h1.sr-only {
@@ -179,31 +178,69 @@ body:has(.commerce-home)::-webkit-scrollbar {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-bottom: 24px;
-  color: #e8e8e8;
-  font-size: 24px;
-  font-weight: 400;
+  gap: 10px;
+  margin-bottom: var(--home-intro-gap);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
 }
-.home-intro .toggle-button-group {
-  background: #202020;
-  border: 0;
-  border-radius: 999px;
-  padding: 2px;
+.home-intro-rotation {
+  display: grid;
+  place-items: center;
+  width: 8em;
+  height: 1.5em;
+  overflow: hidden;
 }
-.home-intro .toggle-button {
-  height: 32px;
-  border: 0;
-  border-radius: 999px;
-  padding: 0 20px;
-  font-size: 14px;
-  font-weight: 400;
-  color: #aaa;
+.home-intro-phrase {
+  display: block;
+  grid-area: 1 / 1;
+  white-space: nowrap;
+  perspective: 480px;
 }
-.home-intro .toggle-button[data-selected] {
-  background: #444;
-  color: #fff;
-  box-shadow: none;
+.home-intro-character {
+  display: inline-block;
+  transform-origin: 50% 50% -0.45em;
+  backface-visibility: hidden;
+}
+.home-intro-gradient {
+  color: #baa4ff;
+  background-image: linear-gradient(100deg, var(--home-title-colors));
+  background-size: 250% 100%;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: home-title-gradient 8s ease-in-out infinite alternate;
+}
+.home-intro-phrase[data-palette="aurora"] {
+  --home-title-colors: #67e8f9, #a5b4fc, #f0abfc, #67e8f9;
+}
+.home-intro-phrase[data-palette="sunset"] {
+  --home-title-colors: #fcd34d, #fdba74, #fda4af, #fcd34d;
+}
+.home-intro-phrase[data-palette="ocean"] {
+  --home-title-colors: #6ee7b7, #67e8f9, #93c5fd, #6ee7b7;
+}
+.home-intro-phrase[data-palette="blossom"] {
+  --home-title-colors: #f9a8d4, #d8b4fe, #93c5fd, #f9a8d4;
+}
+.home-intro-phrase[data-palette="citrus"] {
+  --home-title-colors: #bef264, #fde68a, #6ee7b7, #bef264;
+}
+.home-intro:hover .home-intro-gradient {
+  animation-play-state: paused;
+}
+@keyframes home-title-gradient {
+  from {
+    background-position: var(--character-offset, 0%) 50%;
+  }
+  to {
+    background-position: calc(var(--character-offset, 0%) + 100%) 50%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-intro-gradient {
+    animation: none;
+  }
 }
 .home-composer {
   min-height: 212px;
@@ -506,16 +543,9 @@ body:has(.commerce-home)::-webkit-scrollbar {
 }
 @media (max-width: 767px) {
   .home-intro {
-    flex-wrap: wrap;
-    font-size: 18px;
-    gap: 8px;
-  }
-  .home-intro > span:last-child {
-    display: none;
-  }
-  .home-intro .toggle-button {
-    padding: 0 12px;
-    height: 44px;
+    flex-direction: column;
+    font-size: 22px;
+    gap: 4px;
   }
   .home-composer-tools {
     flex-wrap: wrap;
@@ -560,4 +590,23 @@ body:has(.commerce-home)::-webkit-scrollbar {
     padding: 0;
     font-size: 12px;
   }
+}
+
+/* Anchor the home background to the shell, not the padded/narrow content panel. */
+.studio-app:has(.commerce-home) {
+  position: relative;
+  isolation: isolate;
+  --home-dot-height: 720px;
+}
+.studio-app:has(.commerce-home) .topbar {
+  background: transparent;
+}
+.home-dot-background {
+  position: absolute;
+  inset: 0 0 auto var(--sidebar-width);
+  z-index: -1;
+  height: var(--home-dot-height);
+  overflow: hidden;
+  pointer-events: none;
+  mask-image: linear-gradient(#000 0%, #000 75%, transparent 100%);
 }

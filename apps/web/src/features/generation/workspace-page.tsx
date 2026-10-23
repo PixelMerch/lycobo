@@ -27,11 +27,11 @@ import { ReferencePicker } from "./references/reference-picker";
 import { type ModelId, useStudioStore } from "./studio-state";
 
 const promptLimit = 5000;
-const fields = [
-  { key: "resolution", label: "分辨率", values: ["1K", "2K", "4K"] },
+const resolutionField = { label: "分辨率", values: ["1K", "2K", "4K"] } as const;
+const advancedFields = [
   { key: "quality", label: "质量", values: ["低", "标准", "高"] },
+  { key: "count", label: "生成张数", values: ["1", "2", "3", "4"] },
 ] as const;
-const countField = { key: "count", label: "生成张数", values: ["1", "2", "3", "4"] } as const;
 
 export function WorkspacePage() {
   const model = useStudioStore((s) => s.activeModel);
@@ -128,32 +128,32 @@ function Workspace({ model }: { model: ModelId }) {
               onChange={(ratio) => updateDraft(model, { ratio })}
             />
           </section>
-          {fields.map((field) => (
-            <ParameterGroup
-              key={field.key}
-              label={field.label}
-              values={field.values}
-              value={draft[field.key]}
-              selectionId={field.key}
-              disabledValues={
-                field.key === "resolution"
-                  ? field.values.filter(
-                      (value) => !resolutions.some((enabled) => enabled === value),
-                    )
-                  : []
-              }
-              onChange={(value) => updateDraft(model, { [field.key]: value })}
-            />
-          ))}
-          {showMore && (
-            <ParameterGroup
-              label={countField.label}
-              values={countField.values}
-              value={draft.count}
-              selectionId={countField.key}
-              onChange={(value) => updateDraft(model, { count: value })}
-            />
-          )}
+          <ParameterGroup
+            label={resolutionField.label}
+            values={resolutionField.values}
+            value={draft.resolution}
+            selectionId="resolution"
+            disabledValues={resolutionField.values.filter(
+              (value) => !resolutions.some((enabled) => enabled === value),
+            )}
+            onChange={(resolution) => updateDraft(model, { resolution })}
+          />
+          {showMore &&
+            advancedFields.map((field) => (
+              <ParameterGroup
+                key={field.key}
+                label={field.label}
+                values={field.values}
+                value={draft[field.key]}
+                selectionId={field.key}
+                onChange={(value) =>
+                  updateDraft(
+                    model,
+                    field.key === "quality" ? { quality: value } : { count: value },
+                  )
+                }
+              />
+            ))}
           <Button
             className="parameter-more"
             variant="ghost"

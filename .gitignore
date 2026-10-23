@@ -26,3 +26,11 @@ test-results/
 # Python runtime caches from local skill scripts
 __pycache__/
 *.py[cod]
+
+# Cloudflare local emulation, secrets and generated deployment configuration.
+.wrangler/
+.dev.vars
+.dev.vars.*
+.cloudflare/
+dist-cloudflare/
+dist-functions/

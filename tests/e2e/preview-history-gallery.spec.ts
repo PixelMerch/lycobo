@@ -144,7 +144,7 @@ test("result preview browses successful history images, highlights the entry and
   await expect(viewer.getByRole("region", { name: "创意描述", exact: true })).toContainText(
     "历史图片 22",
   );
-  await expect(viewer.locator(".image-preview-bar-id")).toContainText("P00000021");
+  await expect(viewer.locator(".image-preview-bar-id")).toHaveCount(0);
 });
 
 test("history rail thumbnails zoom on hover and keep a stable tile", async ({ page }) => {

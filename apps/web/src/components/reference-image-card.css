@@ -81,3 +81,44 @@
     pointer-events: auto;
   }
 }
+
+.reference-tile.reference-image-card .replace-reference.button {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 21.6px;
+  min-width: 21.6px;
+  height: 21.6px;
+  min-height: 21.6px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px 0 8px 0;
+  background: #1c1c1ce6;
+  color: #ffffffa6;
+  box-shadow: none;
+  opacity: 0;
+  pointer-events: none;
+}
+.reference-tile.reference-image-card:is(:hover, :focus-within) .replace-reference.button {
+  opacity: 1;
+  pointer-events: auto;
+}
+.reference-tile.reference-image-card .replace-reference.button:is(:hover, [data-hovered="true"]) {
+  background: #121216e6;
+  color: #ffffffd9;
+}
+@media (hover: none) {
+  .reference-tile.reference-image-card .replace-reference.button {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+@media (max-width: 767px) {
+  .reference-tile.reference-image-card .replace-reference.button::after {
+    content: "";
+    position: absolute;
+    inset: -11px;
+    border-radius: inherit;
+  }
+}

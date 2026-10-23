@@ -1,5 +1,5 @@
 import { Link as HeroLink } from "@heroui/react";
-import type { ReactNode, Ref } from "react";
+import type { KeyboardEventHandler, ReactNode, Ref } from "react";
 import {
   type NavLinkRenderProps,
   Link as RouterLink,
@@ -12,6 +12,7 @@ type RouteLinkProps = {
   className?: string;
   "aria-label"?: string;
   onClick?: () => void;
+  onKeyDown?: KeyboardEventHandler<HTMLAnchorElement>;
   end?: boolean;
   nav?: boolean;
 };

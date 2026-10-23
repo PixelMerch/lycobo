@@ -40,24 +40,20 @@
 test -f .env || cp .env.example .env
 ```
 
-**Docker Compose**
-
-```sh
-docker compose up -d --build --wait
-```
-
-访问 <http://localhost:8080/>。停止服务使用 `docker compose down`，数据库和图片卷会保留。
-
-**本机开发**（Node.js 24.13.0+，限 24.x；pnpm 10.34.7）
+**本机开发**（Node.js 24.x；pnpm 10.34.7）
 
 ```sh
 corepack enable
 corepack install
 pnpm install --frozen-lockfile
+pnpm infra:up
+DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai pnpm db:migrate
 pnpm dev
 ```
 
-访问 <http://127.0.0.1:5173/>。`pnpm dev` 同时启动 Web、API 和 Worker；数据库、Redis、环境变量及真实生图初始化步骤见 [本地开发](docs/development.md) 和 [生图接入](docs/image-generation-api.md)。生图默认关闭，服务商密钥仅配置在服务端。
+访问 <http://127.0.0.1:5173/>。Vite 与本地 Wrangler 同时启动 API／Queues 消费者，R2 和 Images 使用本地模拟；Compose 仅提供本地 PostgreSQL，没有 Redis。开发生成默认关闭，秘密只放服务端。
+
+**Cloudflare 发布**：同仓库的 Pages、API Worker 和队列消费者使用统一配置，首次 `pnpm cloudflare:setup`，之后 `pnpm cloudflare:deploy`。账户开通、Hyperdrive、凭据和实际部署状态见 [Cloudflare 部署](docs/cloudflare-deployment.md)。
 
 ## 开发检查
 
@@ -76,5 +72,5 @@ React / Vite 前端、Hono API 和独立 Worker 位于 `apps/`；契约、数据
 
 - [产品范围](PRD.md) · [设计规范](DESIGN.md) · [技术栈](docs/tech-stack.md)
 - [企业鉴权](docs/enterprise-auth.md) · [企业钱包](docs/enterprise-wallet.md)
-- [局部修改](docs/local-image-repair.md) · [数据库备份](docs/database-backup.md)
+- [局部修改](docs/local-image-repair.md) · [数据库备份](docs/database-backup.md) · [Supabase 接入](docs/supabase-postgres.md) · [Cloudflare 部署](docs/cloudflare-deployment.md)
 - [发布说明](docs/releasing.md) · [安全](SECURITY.md) · [完整文档索引](docs/README.md)

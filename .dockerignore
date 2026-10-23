@@ -17,3 +17,9 @@ coverage
 .finesse
 
 data
+
+**/.dev.vars*
+**/.wrangler
+**/dist-functions
+**/dist-cloudflare
+.cloudflare

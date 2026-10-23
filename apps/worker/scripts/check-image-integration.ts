@@ -16,9 +16,8 @@ import {
 } from "@lycoboai/contracts";
 import { openImageRepository } from "@lycoboai/db";
 import { supportedResolutions, validateModelInput } from "@lycoboai/generation";
-import { createImageQueue, imageQueueJobSchema, redisConnection } from "@lycoboai/queue";
+import { dispatchImageOutbox, imageQueueJobSchema } from "@lycoboai/queue";
 import { imageStore } from "@lycoboai/storage";
-import { QueueEvents, Worker } from "bullmq";
 import postgres from "postgres";
 import { z } from "zod";
 import { createApp } from "../../api/src/app";
@@ -50,9 +49,7 @@ try {
   await admin.end({ timeout: 5 });
   throw error;
 }
-const redisUrl = local(process.env.REDIS_URL, ["redis:", "rediss:"]);
-const runId = crypto.randomUUID(),
-  queueName = `lycobo-image-test-${runId}`;
+const runId = crypto.randomUUID();
 const sql = postgres(databaseUrl, { max: 3 }),
   repository = openImageRepository(databaseUrl);
 const directory = await mkdtemp(path.join(tmpdir(), "lycobo-image-integration-"));
@@ -92,26 +89,20 @@ server.listen(0, "127.0.0.1");
 await once(server, "listening");
 const address = server.address();
 if (!address || typeof address === "string") throw new Error("Fixture startup failed");
-const queue = createImageQueue(redisUrl, queueName),
-  events = new QueueEvents(queueName, { connection: redisConnection(redisUrl) });
-const worker = new Worker(
-  queueName,
-  async (job) =>
-    processImageItem(imageQueueJobSchema.parse(job.data).itemId, {
-      repository,
-      store,
-      workerId: "integration-worker",
-      provider: {
-        key: "fixture-key",
-        baseUrl: `http://127.0.0.1:${address.port}`,
-        timeoutMs: 1500,
-        allowHttpForTests: true,
-      },
-      overrides: {},
-      editsEnabled: false,
-    }),
-  { connection: redisConnection(redisUrl), concurrency: 3, maxStalledCount: 0 },
-);
+const consume = async (payload: unknown) =>
+  processImageItem(imageQueueJobSchema.parse(payload).itemId, {
+    repository,
+    store,
+    workerId: "integration-worker",
+    provider: {
+      key: "fixture-key",
+      baseUrl: `http://127.0.0.1:${address.port}`,
+      timeoutMs: 1500,
+      allowHttpForTests: true,
+    },
+    overrides: {},
+    editsEnabled: false,
+  });
 const app = createApp(() => {}, {
   repository,
   store,
@@ -123,16 +114,9 @@ const app = createApp(() => {}, {
 const input = (prompt: string, count = 1) =>
   imageGenerationInputSchema.parse({ model: "gpt-image-2", prompt, count });
 async function dispatch() {
-  const outbox = await repository.leaseOutbox();
-  for (const event of outbox) {
-    const job = await queue.add("generate-image", { itemId: event.itemId }, { jobId: event.id });
-    await repository.ackOutbox(event.id, event.leaseToken);
-    await job.waitUntilFinished(events, 10000);
-  }
+  await dispatchImageOutbox(repository, { send: consume });
 }
 try {
-  await events.waitUntilReady();
-  await worker.waitUntilReady();
   const first = await repository.provision(`test-${runId}`, "test-team", 400);
   const renewed = await repository.provision(`test-${runId}`, "test-team", 999, true);
   assert.equal(renewed.organizationId, first.organizationId);
@@ -140,6 +124,11 @@ try {
   organizations.push(first.organizationId);
   users.push(first.userId);
   const second = await repository.provision(`other-${runId}`, "other-team", 200);
+  assert.equal(await repository.storageUid(first), first.uid);
+  await assert.rejects(
+    repository.storageUid({ userId: first.userId, organizationId: second.organizationId }),
+    /FORBIDDEN/,
+  );
   organizations.push(second.organizationId);
   users.push(second.userId);
   const headers = { Authorization: `Bearer ${first.token}`, "Content-Type": "application/json" };
@@ -244,8 +233,7 @@ try {
   const balance =
     await sql`select balance as available_credits from organization_wallets where organization_id=${first.organizationId}`;
   assert.equal(balance[0]?.available_credits, 380);
-  const repeat = await queue.add("generate-image", { itemId: String(success.id) });
-  await repeat.waitUntilFinished(events, 10000);
+  await consume({ version: 1, itemId: String(success.id) });
   assert.equal(calls, 2);
   const persisted = openImageRepository(databaseUrl);
   try {
@@ -553,13 +541,9 @@ try {
   await sql`update generation_api_keys set revoked_at=now() where id=${first.keyId}`;
   assert.equal((await app.request("/api/v1/image-models", { headers })).status, 401);
   console.info(
-    "Image API auth/isolation, durable outbox, real Redis Worker, persisted files/metadata, idempotency, credits, partial failure and crash reconciliation passed (fixture only)",
+    "Image API auth/isolation, durable outbox, identifier-only transport, persisted files/metadata, idempotency, credits, partial failure and crash reconciliation passed (fixture only)",
   );
 } finally {
-  await worker.close();
-  await events.close();
-  await queue.obliterate({ force: true });
-  await queue.close();
   await new Promise<void>((resolve) => server.close(() => resolve()));
   await repository.close();
   await sql.end({ timeout: 5 });

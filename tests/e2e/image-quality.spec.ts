@@ -16,6 +16,7 @@ for (const [label, quality] of [
     });
     await page.goto("/create");
     await page.getByLabel("提示词", { exact: true }).fill("质量参数验收");
+    await page.getByRole("button", { name: "更多", exact: true }).click();
     await page.getByRole("radio", { name: label, exact: true }).click();
     const submitted = page.waitForRequest(
       (request) => request.url().endsWith("/api/v1/image-tasks") && request.method() === "POST",

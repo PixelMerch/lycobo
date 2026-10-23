@@ -1,0 +1,53 @@
+name: Deploy Cloudflare
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      enable_generation:
+        description: Enable generation after bindings and provider have been verified
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: deploy-cloudflare-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: >-
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: cloudflare-production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: 9a65fad90669d9c27b58d856ab3ce410
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_HYPERDRIVE_ID: ${{ vars.CLOUDFLARE_HYPERDRIVE_ID }}
+      CLOUDFLARE_PUBLIC_ORIGIN: ${{ vars.CLOUDFLARE_PUBLIC_ORIGIN }}
+      SUPABASE_PROJECT_REF: wjirihknptxjodgknbfy
+      SUPABASE_DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+      AUTH_JWT_SECRET: ${{ secrets.AUTH_JWT_SECRET }}
+      VAKV_API_KEY: ${{ secrets.VAKV_API_KEY }}
+      IMAGE_GENERATION_ENABLED: ${{ ((github.event_name == 'workflow_dispatch' && inputs.enable_generation) || (github.event_name == 'workflow_run' && vars.IMAGE_GENERATION_ENABLED == 'true')) && 'true' || 'false' }}
+      VAKV_ENABLE_IMAGE_EDITS: ${{ vars.VAKV_ENABLE_IMAGE_EDITS || 'false' }}
+      WRANGLER_SEND_METRICS: "false"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Reject an outdated main revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: test "$(git rev-parse HEAD)" = "$(gh api repos/${{ github.repository }}/git/ref/heads/main --jq .object.sha)"
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm cloudflare:deploy

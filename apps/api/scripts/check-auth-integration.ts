@@ -33,7 +33,7 @@ let authDb: ReturnType<typeof openAuthRepository> | undefined;
 let images: ReturnType<typeof openImageRepository> | undefined;
 try {
   await admin.unsafe(`create database "${dbName}"`);
-  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const root = fileURLToPath(new URL("../../../", import.meta.url).href);
   const migrated = spawnSync("pnpm", ["--filter", "@lycoboai/db", "db:migrate"], {
     cwd: root,
     env: { ...process.env, DATABASE_URL: testUrl.href },

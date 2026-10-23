@@ -28,9 +28,11 @@ export type ClaimedImage = {
   providerModel: ImageGenerationInput["model"];
 };
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
-export function openImageRepository(url: string) {
+export function openImageRepository(url: string, edge = false) {
   const sql = postgres(url, {
-    max: 5,
+    max: edge ? 1 : 5,
+    fetch_types: !edge,
+    prepare: true,
     idle_timeout: 20,
     connect_timeout: 10,
     connection: { statement_timeout: 15000, lock_timeout: 5000 },
@@ -95,6 +97,13 @@ export function openImageRepository(url: string) {
       'output_asset_id',i.output_asset_id,'output_public_id',a.public_id,'width',a.width,'height',a.height,'bytes',a.bytes) order by i.position),'[]')
       from generation_job_items i left join media_assets a on a.id=i.output_asset_id and a.organization_id=i.organization_id where i.job_id=j.id and i.superseded_at is null) as items`;
   return {
+    async storageUid(scope: ImageScope) {
+      const [row] =
+        await sql`select u.uid from users u join organization_members m on m.user_id=u.id
+        where u.id=${scope.userId} and m.organization_id=${scope.organizationId}`;
+      if (!row || !/^[0-9]{10}$/.test(String(row.uid))) throw new ImageRepositoryError("FORBIDDEN");
+      return String(row.uid);
+    },
     close: () => sql.end({ timeout: 5 }),
     settleInvalidResponses,
     ...walletRepository(sql),

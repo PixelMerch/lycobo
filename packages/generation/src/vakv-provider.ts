@@ -141,7 +141,8 @@ export async function generateVakvImage(
       new URL(references.length ? "/v1/images/edits" : "/v1/images/generations", url),
       {
         method: "POST",
-        redirect: "error",
+        // Workers does not implement redirect:error. Never follow a provider redirect with credentials.
+        redirect: "manual",
         signal: AbortSignal.timeout(config.timeoutMs),
         headers: {
           Authorization: `Bearer ${config.key}`,

@@ -251,12 +251,6 @@
   font-size: 14px;
   line-height: 20px;
 }
-.image-preview-bar-id {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .image-preview-bar-size {
   margin-inline-start: auto;
   color: #cfcfcf;

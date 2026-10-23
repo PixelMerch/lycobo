@@ -14,6 +14,7 @@ function fixture() {
     .mockResolvedValue({ id: crypto.randomUUID(), replayed: false });
   const repository: ImageRepository = {
     close: unexpected,
+    storageUid: unexpected,
     provision: unexpected,
     wallet: unexpected,
     walletEntries: unexpected,
@@ -46,6 +47,7 @@ function fixture() {
     ready: unexpected,
     put: unexpected,
     read: unexpected,
+    thumbnail: unexpected,
     remove: unexpected,
   };
   const app = createApp(() => {}, {

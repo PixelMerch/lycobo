@@ -90,8 +90,17 @@ CSS 仍负责主题与尺寸，见 [DESIGN.md](../DESIGN.md)。
 | `Spinner` | 加载中 |
 | `EmptyState` | 无数据 |
 
-全局错误、字段错误与空状态必须使用 `Alert`、`FieldError`、`EmptyState`，
-不要继续用裸 `<p role="alert">` 或自建 `.empty-state` 结构承担同样的语义。
+反馈按职责选型，不把请求错误重复放进页面或弹窗：
+
+| 场景 | 统一入口 |
+| --- | --- |
+| API／网络请求失败 | `useErrorToast`，复用顶部 Toast 与去重逻辑 |
+| 字段校验 | `FieldError`／`ErrorMessage`，关联对应字段 |
+| 确有必要的区块警告或说明 | `Alert`，不重复展示已发出的请求错误 |
+| 无数据 | `EmptyState`；表格使用官方 `Table.Body` 的空态插槽 |
+| 正在请求 | 对应控件的 pending／loading 状态，不伪造完成进度 |
+
+不要用裸 `<p role="alert">` 或自建 `.empty-state` 重做组件已有的语义。
 
 ## 组合规则
 
@@ -104,13 +113,13 @@ CSS 仍负责主题与尺寸，见 [DESIGN.md](../DESIGN.md)。
 
 ## 与 DESIGN.md 的关系
 
+包括账户表单的中性焦点、登录浅色表面和不同关闭规格在内，所有局部视觉规则只在 DESIGN.md 维护。
 DESIGN.md 决定视觉与几何，本文件决定“用什么组件”与“不要自己实现什么”。
 两者冲突时以 DESIGN.md 的视觉规范为准，但不得据此重新手写交互组件。
-
 
 ## 按钮统一入口与检查
 
 按钮档位、padding、圆角的唯一数值表在 [DESIGN.md 的基础控件规范](../DESIGN.md#3-排版图标与基础控件)；不要在本文件另建一套数值。
 使用 Button 的 size="sm" / "md" / "lg" 与 isIconOnly，不以业务主色推断按钮一定需要更大 padding。
 切换使用 ToggleButton／ToggleButtonGroup，导航当前项使用 aria-current。
-审查步骤见 docs/ui-consistency.md，pnpm lint 自动运行 AST 组件检查。
+审查步骤见 [UI 一致性维护](ui-consistency.md)，pnpm lint 自动运行 AST 组件检查。

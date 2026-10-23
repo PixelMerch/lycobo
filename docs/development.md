@@ -1,75 +1,40 @@
 # 本地开发
 
-## 分支流程
+## 分支与工具
 
-本地与远程必须长期保留 `main`、`dev`。`dev` 合并到 `main` 后仍保留源分支，不使用 `--delete-branch` 删除 `dev`；同步后继续在本地 `dev` 开发。分支清理始终排除 `main`、`dev`，其他本地分支仅在确认已合入或已被替代且用户要求清理时删除。
+本地与远程长期保留 `main`、`dev`。默认在 `dev` 开发，先检查状态、fetch origin 并在可快进时同步；不覆盖用户改动，不 reset 或 force-push。验证后本地提交，只有用户明确授权才推送、开 PR、合并或发布。提交使用 Conventional Commits，见 CONTRIBUTING.md。
 
-长期分支为 dev（日常开发）与 main（稳定版本）。默认直接在本地 dev 开发，先检查状态、fetch origin 并在可快进时同步远端；保留本地提交与未提交内容。只有用户明确要求时才新建分支或 worktree。验证后默认只提交本地；推送、创建或更新 dev → main PR、合并和发布均按明确授权执行。提交信息采用 Angular 风格英文 `type(scope): subject`，见 CONTRIBUTING.md。
+项目固定 Node 24 / pnpm 10.34.7。Node 用于构建、迁移与隔离测试；线上 API 和后台消费由 Cloudflare Workers 承载。前端为 React/Vite，部署 Pages，图片进入私有 R2，任务传输使用 Queues；没有 Redis/BullMQ 服务。
 
-## 环境
+## 启动
 
-项目固定 Node 24 / pnpm 10.34.7。从根目录执行命令。
-pnpm install 的 prepare 会配置此仓库专用 .githooks，不修改用户全局 Git 配置。
-如准备提交但未设置作者，请用自己的真实 Git 用户名和邮箱，不使用虚构团队身份。
+```sh
+pnpm install --frozen-lockfile
+# 首次复制 .env.example 为 .env；不覆盖已有文件。
+pnpm infra:up
+DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai pnpm db:migrate
+pnpm dev
+```
 
-1. pnpm install --frozen-lockfile
-2. 首次将 .env.example 复制为 .env，不覆盖已有配置。
-3. pnpm dev：启动 Web 5173、API 8787 与 Worker；是否消费生图队列由独立开关控制。
-4. 浏览器打开 http://127.0.0.1:5173。
+浏览器打开 `http://127.0.0.1:5173`，Vite 将 `/api` 代理到本地 Wrangler 8787。`pnpm dev` 同时加载 API 和 Queues 消费者，R2、Images、队列为本地模拟，持久状态在 `.wrangler/state`。`pnpm cloudflare:dev:setup` 为本地 Worker 写入忽略的 `.dev.vars`；前端不读取服务器秘密。
 
-.env 只由 API/Worker/DB CLI 显式读取；前端不读取整份服务器配置。
-Vite 的 /api 默认代理到本地 8787，可通过 DEV_API_PROXY_TARGET 调整；更改 API_PORT 时需同步代理。
-本地 preview 仅预览静态产物，不自动代理 API；正式使用网关。
+本地 Hyperdrive 指向 loopback PostgreSQL，不把根 `.env` 的 Supabase 管理连接暗中用于测试。开发数据库不自动创建客户或赠送积分。本地真实生成必须显式设置 `LOCAL_IMAGE_GENERATION_ENABLED=true`、provider key，并有已配置账号和余额；默认不开启付费生图。
 
-## Compose 开发模式
+`compose.yaml` 仅管理本地 PostgreSQL，端口 55432，仅发布到 127.0.0.1。原 PostgreSQL 数据卷保留，不运行 `docker compose down -v`；旧 Redis／Node 容器与卷不能通过 remove-orphans 等清理命令顺手删除。停用旧服务前检查待执行任务和付费请求，按正常信号关闭。
 
-运行 `docker compose up --build` 可同时启动 Web、API、Worker、PostgreSQL 和 Redis；后续直接 `docker compose up`。
-Web 地址为 http://localhost:8080/，API 地址为 http://127.0.0.1:8788/api。
-启动日志会打印宿主机可访问的 Web 和 API URL，跟随 `.env` 的 `WEB_PORT`（默认 8080）与 `API_PUBLIC_PORT`（默认 8788）；端口被占用时可在 `.env` 修改后重新运行 Compose。
-后台运行使用 `docker compose up -d --build --wait`，通过 `docker compose logs -f web api worker` 跟踪日志。
-默认 Web/API 端口与本地 `pnpm dev` 不冲突；同时运行时须保持数据库、队列和图片目录一致。
+修改端口时同步 Vite 的 `DEV_API_PROXY_TARGET`。预览静态产物不自动代理 API；Pages 生产通过服务绑定访问私有 API Worker，不需要通配 CORS。
 
-Web 的 src、public、index.html、vite.config.ts，以及 API 和 contracts 的 src 以只读方式挂载到容器。
-修改页面 TSX/CSS 后 Vite 自动热更新；容器启用文件轮询以兼容 Docker Desktop。API 使用 Node watch 自动重启。
-依赖在 Linux 镜像内安装，不共享宿主机 node_modules；修改 package.json、pnpm-lock.yaml、构建配置或未挂载目录后运行 `docker compose up --build`。
-Vite 在容器内通过 api:8787 代理 /api，本地 pnpm dev 继续使用 127.0.0.1:8787。
-DEV_API_PROXY_TARGET 和 DEV_USE_POLLING 仅用于 Vite 开发服务器配置，不作为浏览器环境变量公开。
+## 数据库与测试
 
-容器端口只发布到宿主机 127.0.0.1。开发镜像不包含本地 .env；API/Worker 通过 env_file 读取本地配置，Compose 覆盖容器内数据库、Redis 和图片目录。
-API 已接入图片上传、任务与素材查询；独立 Worker 消费生图队列。服务监听不等于已配置模型，首次启用需完成迁移、本地身份签发与服务商 key 配置，详见 image-generation-api.md。
-Compose 不自动迁移数据库或删除数据卷。仅需基础设施时继续使用 `pnpm infra:up`。
+`pnpm db:generate` 生成待审查迁移，不访问生产库；`pnpm db:migrate` 必须显式确认 `DATABASE_URL`；Supabase 使用专用 `pnpm db:migrate:supabase`。已合并迁移只追加，禁止 db push 或重写迁移。
 
-## 可选基础设施
+```sh
+pnpm check
+DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW_LOCAL_INTEGRATION=true pnpm test:integration
+```
 
-Compose 项目名 lycoboai，PostgreSQL 55432、Redis 56379，仅绑定 127.0.0.1。
-必须使用本项目服务，不连接 bonko 的服务，不读取其 .env。
-pnpm infra:up 只启动 PostgreSQL/Redis 并等待健康检查；pnpm infra:down 停止此 Compose 项目（含已启动的 Web/API）但不删除卷。
-禁止把 docker compose down -v 当作普通清理命令。
+集成验证在独立数据库和本地 Cloudflare 模拟中执行；不会使用 Supabase 生产数据或付费模型。日常 UI 全量 E2E 默认留给远程 CI，关键交互按需执行相关文件，详见 [测试说明](testing.md)。
 
-数据库：
-- pnpm db:generate 根据 schema 生成待审查迁移；不访问生产库。
-- pnpm db:migrate 使用显式 DATABASE_URL，执行前检查目标。
-- 未合并的迁移冲突先协调作者；已合并迁移只追加，不修改。
-- 种子不自动执行，不创建虚拟客户或积分。
+## 发布
 
-Worker：
-- 默认 WORKER_ENABLED=false，不连接 Redis。
-- 本地基础设施启动后使用 WORKER_ENABLED=true pnpm dev:worker。
-- 生图使用独立的 IMAGE_WORKER_ENABLED 与 IMAGE_GENERATION_ENABLED 开关，配置 VAKV_API_KEY 后执行真实模型调用。
-- pnpm --filter @lycoboai/api images:setup 初始化本地工作台身份、图片目录与开关；执行前先完成迁移。
-- `.env.example` 中生图默认关闭；首次执行 `images:setup` 后，本地 `.env` 的 `IMAGE_GENERATION_ENABLED`、`IMAGE_WORKER_ENABLED` 为 true，后续启动沿用该配置，无需每次设置。不要用示例文件覆盖已配置的 `.env`。Compose 修改环境变量后用 `docker compose up -d --wait api worker web` 重建容器配置，单纯 restart 不会加载新的环境变量。
-- `WORKER_ENABLED=false` 只关闭诊断队列，不影响已启用的生图 Worker；`Image worker started` 才是生图消费者启动日志。两个 Worker 均关闭时，Node watch 显示 `Completed running ... Waiting for file changes` 属于等待源码变化，不表示 API 卡死。
-- 日志说明 Worker 就绪不代表业务生图就绪。
-
-## 日常命令
-
-pnpm format → pnpm check → UI 有变化时 pnpm test:e2e。
-API 单元测试使用 Hono app.request，无需绑定端口或 Docker。
-检查生产编译产物：pnpm build，然后分别 pnpm --filter @lycoboai/api start
-或配置好 Redis 后 pnpm --filter @lycoboai/worker start。
-SIGTERM/SIGINT 触发有界关闭；不要直接丢弃正在执行的付费请求。
-
-## 端口与调试
-
-默认服务只监听 loopback。需要局域网访问时显式配置 API_HOST 与 Vite host。
-不要为方便开发取消鉴权/CORS/上传检查；未接入功能应明确禁用。
+同一仓库通过 `pnpm cloudflare:setup` 准备资源、`pnpm cloudflare:deploy` 部署消费者、API 和 Pages。需要账户开通、作用域受限的部署 token 与 Worker Secrets；真实密码不进入配置文件或 Git。完整步骤、费用边界、UID 路径和上线验收见 [Cloudflare 部署](cloudflare-deployment.md)。

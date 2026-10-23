@@ -7,22 +7,29 @@
 - pnpm test：契约、API、Worker 的单元行为。
 - pnpm build：实际前端和两个 Node 应用生产构建。
 - pnpm test:e2e：真实 Chromium 下接口连接、路由、禁用态与窄屏溢出。
-- pnpm test:integration：明确 opt-in 的本地 PostgreSQL/Redis 集成验证。
+- pnpm test:integration：明确 opt-in 的本地 PostgreSQL 和 Cloudflare workerd 集成验证。
 
 首次运行浏览器测试需 pnpm exec playwright install chromium。
 CI 使用 pnpm exec playwright install --with-deps chromium。
 浏览器测试失败留 trace/report；测试使用本地应用，不能连接线上接口。
 
+## 本地开发与远程回归
+
+日常 AI 开发默认执行 `pnpm check` 和 `git diff --check`，不在每次样式、文案或布局调整后运行本地全量 E2E。关键交互变化、已知回归或用户明确要求时，只运行相关浏览器用例；例如 `pnpm test:e2e tests/e2e/preview-workspace.spec.ts`。不为纯视觉数值补写镜像测试。
+
+一批改动完成并获授权推送后，由远程 CI 运行全量浏览器回归；等待检查通过再合并。未推送时说明远程验证尚未执行，不因测试流程调整自动推送或发布。
+
 ## CI 分层浏览器检查
 
 | 触发场景 | Browser 检查 |
 | --- | --- |
-| 推送 dev、目标为 dev 的 PR | `pnpm test:e2e:smoke`，只跑核心流程 |
+| 推送 dev | `pnpm test:e2e`，批次完成后的全量回归 |
+| 目标为 dev 的 PR | `pnpm test:e2e:smoke`，只跑核心流程 |
 | 目标为 main 的 PR | `pnpm test:e2e`，合并前全量回归 |
 | 推送 main（含合并） | `pnpm test:e2e`，全量回归 |
 | 手动运行 CI | `pnpm test:e2e`，全量回归 |
 
-冒烟范围：首页到创作路由、登录/退出后的历史同步、会话续期、真实接口契约 fixture 下的提交/参考图上传、草稿保留与桌面/移动导航。它不替代发布前的完整回归。修改模块时仍应本地执行相应测试。
+冒烟范围：首页到创作路由、登录/退出后的历史同步、会话续期、真实接口契约 fixture 下的提交/参考图上传、草稿保留与桌面/移动导航。它不替代发布前的完整回归。本地按改动风险选择相关用例，不默认重跑全套。
 
 Quality 和 Infrastructure 保持原检查范围；分支保护所需的 `Browser` 名称保持不变，由同一 job 明确选择全量或冒烟。不能通过顶层路径过滤跳过必需检查，否则可能一直处于 Pending。
 
@@ -32,13 +39,14 @@ PR 标题校验拆为独立 `pr-title.yml`，仍报告 `PR title`。编辑标题
 
 ```sh
 pnpm infra:up
-pnpm db:migrate
-ALLOW_LOCAL_INTEGRATION=true pnpm test:integration
+DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai pnpm db:migrate
+DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW_LOCAL_INTEGRATION=true pnpm test:integration
 ```
 
-仅接受 loopback 的数据库/Redis URL，且必须显式允许。
-数据库测试插入唯一用户/项目/任务，验证归属和幂等约束，finally 清理并验证。
-队列使用每次运行独立名字，测试真实 Worker 的消息处理，finally 清理测试队列。
+仅接受 loopback 的数据库 URL，且必须显式允许。
+运行时 `DATABASE_URL` 已指向 Supabase 时，测试命令须显式覆盖为本项目本地 PostgreSQL 地址，例如 `DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW_LOCAL_INTEGRATION=true pnpm test:integration`；不修改远端库，也不将运行时配置改回本地。
+数据库测试在 loopback 服务插入唯一用户/项目/任务，验证归属和幂等约束，finally 清理并验证。
+队列使用每次运行独立名字，通过真实本地 workerd 验证 Queue 投递与消费者，finally 释放整个临时模拟环境。
 不调用模型、不扣积分、不上传对象。迁移可以在空白 CI 库上验证；
 本地已有数据不能用清库方式测试。
 
@@ -57,22 +65,22 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:integration
 ## 生图 API 集成
 
 `pnpm test:integration` 现在同时运行诊断检查与 `@lycoboai/worker test:images`。
-新增检查使用真实 PostgreSQL/Redis、独立 UUID 队列、临时私有图片目录和 loopback HTTP fixture；不调用付费模型。
+新增检查使用真实 PostgreSQL 与 workerd、独立 UUID 队列、临时私有图片目录和 loopback HTTP fixture；不调用付费模型。
 配置、模型能力证据、身份签发和迁移边界见 [生图 API](image-generation-api.md)。
 
 企业账号与 JWT 的隔离数据库测试已接入根集成命令，具体覆盖与运行边界见 [企业鉴权](enterprise-auth.md)。
 
 ## 实时事件与图片集成隔离
 
-图片 API／Worker 集成测试现在创建独立临时数据库并执行完整迁移，配合独立 Redis 队列与临时图片目录；避免本地运行中的真实 Worker 抢到 fixture outbox。最终关闭连接后删除测试数据库，不接触共享数据或卷。
+图片 API／Worker 集成测试现在创建独立临时数据库并执行完整迁移，配合独立本地 Cloudflare 队列与临时图片目录；避免本地运行中的真实 Worker 抢到 fixture outbox。最终关闭连接后删除测试数据库，不接触共享数据或卷。
 
-根 test:integration 已增加 `@lycoboai/api test:events`，覆盖 SSE 的持久化事件、跨连接通知、回滚、租户隔离、重连回放与身份撤销。运行需 loopback PostgreSQL、Redis 和 ALLOW_LOCAL_INTEGRATION=true；不会调用付费模型。
+根 test:integration 已增加 `@lycoboai/api test:events`，覆盖 SSE 的持久化事件、跨连接通知、回滚、租户隔离、重连回放与身份撤销。运行需 loopback PostgreSQL、本地 workerd 和 ALLOW_LOCAL_INTEGRATION=true；不会调用付费模型。
 
 ## 工作台浏览器回归
 
 `tests/e2e/image-preview.spec.ts` 验证全屏预览、缩放拖动、移动布局和图片切换后的说明同步；`library-dialog.spec.ts` 验证筛选、延迟加载和弹层焦点恢复。接口均由浏览器 fixture 拦截，不调用模型。
 
-并行执行不同测试任务时，为每次运行设置独立 `--output=/tmp/<本次运行目录>`，避免 Playwright 清理其他运行的 trace。历史时间断言使用浏览器自身时区计算，不能写死本机的 UTC+8 时间。正式验收仍需运行完整 `pnpm test:e2e`，不能以跳过失败用例代替。
+并行执行不同测试任务时，为每次运行设置独立 `--output=/tmp/<本次运行目录>`，避免 Playwright 清理其他运行的 trace。历史时间断言使用浏览器自身时区计算，不能写死本机的 UTC+8 时间。完整 `pnpm test:e2e` 默认在远程 CI 执行；本地复现可指定文件或用例，不能以跳过失败用例代替查明原因。
 
 企业共享钱包测试纳入 worker test:images：verify-wallet.ts 验证主子账号并发扣款、20币固定价格、逐图退款、充值重复入账、账本不可修改和分页。wallet.spec.ts 验证账户中心真实接口契约（浏览器 fixture）。
 

@@ -4,11 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
+import { useHoverMenu } from "../../components/use-hover-menu";
 import { useErrorToast } from "../../lib/error-toast";
 import { useEnterpriseLogout, useEnterpriseSession } from "../auth/auth-client";
 import { LoginDialog } from "../auth/login-dialog";
 import { AccountPanel, type AccountSection } from "./account-panel";
-import { useHoverMenu } from "./use-hover-menu";
 import { useWallet } from "./wallet-client";
 import "./header-account-menu.css";
 

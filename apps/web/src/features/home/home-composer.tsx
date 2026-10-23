@@ -9,6 +9,7 @@ import { SelectionHighlight } from "../generation/composer/selection-highlight";
 import { ImageApiError, useImageModels } from "../generation/generation-client";
 import { ReferencePicker } from "../generation/references/reference-picker";
 import { models, useStudioStore } from "../generation/studio-state";
+import { HomeIntro } from "./home-intro";
 
 export function HomeComposer() {
   const model = useStudioStore((s) => s.activeModel);
@@ -27,10 +28,7 @@ export function HomeComposer() {
   const resolutions = catalog.data?.models.find((item) => item.id === model)?.enabledResolutions;
   return (
     <>
-      <div className="home-intro">
-        <span>和 Lycobo</span>
-        <span>聊聊创作想法</span>
-      </div>
+      <HomeIntro />
       <div className="home-composer">
         <div className="home-upload">
           <ReferencePicker compact model={model} references={draft.references} />

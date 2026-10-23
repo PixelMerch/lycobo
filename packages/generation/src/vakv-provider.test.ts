@@ -245,3 +245,17 @@ it.each([
     expect(request).toHaveBeenCalledTimes(1);
   },
 );
+
+it("rejects provider redirects without forwarding credentials or resubmitting", async () => {
+  const request = vi.fn<typeof fetch>().mockResolvedValue(
+    new Response(null, {
+      status: 307,
+      headers: { Location: "https://untrusted-fixture.example/collect" },
+    }),
+  );
+  await expect(
+    generateVakvImage(input, [], config, "redirect-item", request),
+  ).rejects.toMatchObject({ code: "PROVIDER_HTTP_307", unknownOutcome: true });
+  expect(request).toHaveBeenCalledTimes(1);
+  expect(request.mock.calls[0]?.[1]?.redirect).toBe("manual");
+});

@@ -106,7 +106,6 @@ function CaseDetail({ item, onClose }: { item: StudioCase | null; onClose: () =>
       prompt: item.prompt,
       references: [{ id: `case-${item.id}`, name: item.title, src: photo(item.image) }],
     });
-    useStudioStore.getState().setChooserOpen(false);
     useStudioStore.getState().setActiveModel(model);
     setReplaceModel(null);
     onClose();

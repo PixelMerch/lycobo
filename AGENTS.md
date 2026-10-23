@@ -4,7 +4,7 @@
 
 - Follow the user's latest request. Read relevant code, Git status, PRD.md, DESIGN.md and
   PROJECT_STRUCTURE.md before changing behavior. Keep unrelated changes and local assets intact.
-- This is React/Vite + Node/Hono, not bonko's Astro/Cloudflare application.
+- This is React/Vite on Pages + Hono on Cloudflare Workers, with Queues/R2 and Supabase PostgreSQL. It is not bonko's Astro application; Node entrypoints remain for isolated tooling.
 - Distinguish implemented functionality, fixtures, UI references and future contracts.
   Never fabricate completed generation, uploaded files, persistence, users, credits or notifications.
 - Keep product UI in Simplified Chinese. Keep identifiers in English. Team documentation is Chinese;
@@ -74,7 +74,7 @@ Read relevant project skills before work:
   Request ownerId, projectId and storage keys are never proof of authorization.
 - Generation must remain disabled until auth, ownership, durable submission, provider reconciliation,
   storage and billing behavior exist. Never replace unavailable persistence with memory success.
-- Persist task + outbox intent atomically. Redis/BullMQ is transport, PostgreSQL is the source of truth.
+- Persist task + outbox intent atomically. Cloudflare Queues is transport, PostgreSQL is the source of truth. Do not reintroduce Redis/BullMQ.
   Worker processes are separate from API; no fire-and-forget paid work in HTTP handlers.
 - External calls need timeouts, cancellation, idempotency keys and bounded retry. Ambiguous paid
   submissions must not be automatically resubmitted. An explicit user-confirmed retry may retire
@@ -87,7 +87,7 @@ Read relevant project skills before work:
   Register numeric business codes in contracts; preserve HTTP statuses and binary downloads.
 - No wildcard credentialed CORS. Cookie auth requires trusted-origin/CSRF protection.
   Validate uploads at the server; MIME and extension checks in the browser are convenience only.
-- Database pools are process-scoped and closed on shutdown. No network calls inside DB transactions.
+- Node database pools are process-scoped and closed on shutdown; Workers clients are request/batch-scoped and closed after streamed responses or consumer completion, with Hyperdrive pooling upstream. No network calls inside DB transactions.
   Migrations are append-only once merged; use expand/contract changes, review SQL, no automatic db push.
 
 ## Collaboration and Git
@@ -120,8 +120,11 @@ Read relevant project skills before work:
 
 ## Verification and delivery
 
-- Run pnpm check for code changes and pnpm test:e2e for UI/navigation changes. Add tests for
-  business invariants and failures, not for cosmetic implementation details.
+- Run pnpm check for code changes. Do not run the full local E2E suite by default during
+  iterative AI development; use focused browser tests only for changed critical interactions,
+  regressions or explicit requests. Full E2E runs in remote CI on dev/main pushes and release PRs;
+  require successful checks before merging. Add tests for business invariants and failures,
+  not cosmetic implementation details. Report skipped local browser checks honestly.
 - For DB/queue changes run the isolated integration check documented in docs/testing.md.
   Never use production or bonko services, and never delete shared volumes.
 - Check git diff --check. Report actual executed checks, skipped external integrations and limitations.

@@ -1,6 +1,5 @@
-import { Avatar, Button, Modal, Tabs } from "@heroui/react";
+import { Avatar, Button, Modal } from "@heroui/react";
 import { IconLogout, IconX } from "@tabler/icons-react";
-import { useState } from "react";
 import { useErrorToast } from "../../lib/error-toast";
 import { AccountManagement } from "./account-management";
 import "./account-panel.css";
@@ -23,58 +22,38 @@ export function AccountPanel({
 }) {
   const session = useEnterpriseSession();
   const logout = useEnterpriseLogout();
-  const [active, setActive] = useState<AccountSection>(section);
+  const title = { profile: "个人信息", credits: "订阅与账单", management: "账号管理" }[section];
   const account = session.data;
   useErrorToast(logout.error?.message);
   return (
     <Modal isOpen onOpenChange={(open) => (!open ? onClose() : undefined)}>
-      <Modal.Backdrop>
+      <Modal.Backdrop className="account-backdrop">
         <Modal.Container>
-          <Modal.Dialog className={`account-dialog account-dialog--${active}`}>
+          <Modal.Dialog className={`account-dialog account-dialog--${section}`}>
             <Modal.Header>
-              <Modal.Heading>账户中心</Modal.Heading>
-              <Modal.CloseTrigger aria-label="关闭账户中心">
+              <Modal.Heading>{title}</Modal.Heading>
+              <Modal.CloseTrigger aria-label={`关闭${title}`}>
                 <UiIcon icon={IconX} size="default" />
               </Modal.CloseTrigger>
             </Modal.Header>
             <Modal.Body>
-              <div className="account-identity">
-                <Avatar className="account-avatar" size="lg">
-                  <Avatar.Fallback>
-                    {account?.account.slice(0, 1).toUpperCase() ?? "?"}
-                  </Avatar.Fallback>
-                </Avatar>
-                <div>
-                  <strong>{account?.account ?? "未登录"}</strong>
-                  <small>
-                    {account ? (roleLabels[account.role] ?? account.role) : "登录后可查看"}
-                  </small>
+              {section === "profile" && (
+                <div className="account-identity">
+                  <Avatar className="account-avatar" size="lg">
+                    <Avatar.Fallback>
+                      {account?.account.slice(0, 1).toUpperCase() ?? "?"}
+                    </Avatar.Fallback>
+                  </Avatar>
+                  <div>
+                    <strong>{account?.account ?? "未登录"}</strong>
+                    <small>
+                      {account ? (roleLabels[account.role] ?? account.role) : "登录后可查看"}
+                    </small>
+                  </div>
                 </div>
-              </div>
-              <Tabs
-                selectedKey={active}
-                onSelectionChange={(key) => {
-                  if (key === "profile" || key === "credits" || key === "management")
-                    setActive(key);
-                }}
-              >
-                <Tabs.ListContainer>
-                  <Tabs.List aria-label="账户信息">
-                    <Tabs.Tab id="profile">
-                      个人信息
-                      <Tabs.Indicator />
-                    </Tabs.Tab>
-                    <Tabs.Tab id="credits">
-                      订阅与账单
-                      <Tabs.Indicator />
-                    </Tabs.Tab>
-                    <Tabs.Tab id="management">
-                      账号管理
-                      <Tabs.Indicator />
-                    </Tabs.Tab>
-                  </Tabs.List>
-                </Tabs.ListContainer>
-                <Tabs.Panel id="profile">
+              )}
+              {section === "profile" && (
+                <div className="account-profile">
                   <dl className="account-rows">
                     <div>
                       <dt>账号</dt>
@@ -100,14 +79,10 @@ export function AccountPanel({
                     <UiIcon icon={IconLogout} size="small" />
                     退出登录
                   </Button>
-                </Tabs.Panel>
-                <Tabs.Panel id="management">
-                  <AccountManagement account={account} />
-                </Tabs.Panel>
-                <Tabs.Panel id="credits">
-                  <WalletPanel />
-                </Tabs.Panel>
-              </Tabs>
+                </div>
+              )}
+              {section === "management" && <AccountManagement account={account} />}
+              {section === "credits" && <WalletPanel />}
             </Modal.Body>
           </Modal.Dialog>
         </Modal.Container>

@@ -1,49 +1,20 @@
 import { expect, test } from "@playwright/test";
 
-test("home to model-family chooser to workspace, with correctly anchored panel and focus recovery", async ({
+test("creation link enters the workspace directly and arrow opens the model menu", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 1584, height: 993 });
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "为你的商品，创作下一张好图" })).toBeVisible();
-  const trigger = page.getByRole("button", { name: "创作", exact: true });
-  await trigger.click();
-  const chooser = page.getByRole("dialog", { name: "创作", exact: true });
-  await expect(chooser).toBeVisible();
-  await expect(chooser.locator(".model-card")).toHaveCount(3);
-  // Three public model entries share the compact chooser.
-  await expect(chooser.locator(".case-gallery")).toHaveCount(0);
-  await expect(chooser.getByRole("button", { name: "进入 nano-banana-2.1 创作" })).toBeEnabled();
-  const rows = await chooser.locator(".model-card").evaluateAll((cards) =>
-    cards.map((card) => {
-      const rect = card.getBoundingClientRect();
-      return `${Math.round(rect.top)}:${Math.round(rect.bottom)}`;
-    }),
-  );
-  expect(new Set(rows).size).toBe(1);
-  const box = await chooser.boundingBox();
-  const sidebar = await page.locator(".sidebar").boundingBox();
-  expect(box && sidebar && Math.abs(box.x - sidebar.width - 12)).toBeLessThan(1);
-  expect(
-    await page
-      .locator(".chooser-backdrop")
-      .evaluate((node) => getComputedStyle(node, "::before").backgroundColor),
-  ).toBe("rgb(15, 15, 18)");
-  await chooser.press("Escape");
-  await expect(chooser).not.toBeVisible();
-  await expect(trigger).toBeFocused();
-  await trigger.click();
-  const modelCard = chooser.getByRole("button", { name: "进入 gpt-image-2 创作" });
-  await modelCard.focus();
-  await modelCard.press("Enter");
+  await page.getByRole("link", { name: "创作", exact: true }).click();
   await expect(page).toHaveURL(/\/create$/);
+  await expect(page.getByRole("menu", { name: "浏览模型", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "浏览模型", exact: true }).focus();
+  await page.keyboard.press("Enter");
+  const menu = page.getByRole("menu", { name: "浏览模型", exact: true });
+  await expect(menu.getByRole("menuitem")).toHaveCount(3);
+  await menu.getByRole("menuitem", { name: "进入 gpt-image-2 创作", exact: true }).press("Enter");
+  await expect(menu).toBeHidden();
   await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
-  await expect(
-    page.getByRole("region", { name: "创作参数", exact: true }).getByText("模型", { exact: true }),
-  ).toBeVisible();
-  await expect(page.getByText("生成服务尚未开放")).toHaveCount(0);
-  await expect(page.getByText("费用 —", { exact: true })).toHaveCount(0);
 });
 
 test("old entry links recover to current home; unknown model is rejected", async ({ page }) => {

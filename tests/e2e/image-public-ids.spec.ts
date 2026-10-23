@@ -75,7 +75,7 @@ test("task and image IDs stay stable across history, reload and the asset librar
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
   await preview.getByRole("button", { name: "复制任务 ID W07AZ9T2Q", exact: true }).click();
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("W07AZ9T2Q");
-  await expect(preview.locator(".image-preview-bar-id")).toHaveText("Img ID：P82ZX19M4");
+  await expect(preview.locator(".image-preview-bar-id")).toHaveCount(0);
   await preview.getByRole("button", { name: "关闭图片预览", exact: true }).click();
   await expect(preview).toHaveCount(0);
   await page.getByRole("link", { name: "素材库", exact: true }).click();

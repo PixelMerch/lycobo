@@ -1,5 +1,9 @@
 import { EmptyState, Link } from "@heroui/react";
 import { createBrowserRouter, redirect } from "react-router";
+import {
+  getRecentCommerceTool,
+  rememberCommerceTool,
+} from "../features/commerce/commerce-preferences";
 import { isModelId, useStudioStore } from "../features/generation/studio-state";
 import { PageLoading } from "./page-loading";
 
@@ -47,6 +51,21 @@ export const router = createBrowserRouter([
           useStudioStore.getState().setActiveModel(model);
           return redirect(`/create${new URL(request.url).search}`);
         },
+      },
+      {
+        path: "commerce",
+        loader: () => redirect(getRecentCommerceTool().href),
+      },
+      {
+        path: "commerce/textile-set",
+        loader: () => {
+          rememberCommerceTool("textile-set");
+          return null;
+        },
+        lazy: async () => ({
+          Component: (await import("../features/commerce/textile-set/textile-set-page"))
+            .TextileSetPage,
+        }),
       },
       {
         path: "assets",
