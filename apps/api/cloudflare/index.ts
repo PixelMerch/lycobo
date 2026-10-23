@@ -2,11 +2,14 @@ import { businessCodes } from "@lycoboai/contracts";
 import { openAuthRepository, openImageEventFeed, openImageRepository } from "@lycoboai/db";
 import { readImagePolicy, supportedResolutions, validateModelInput } from "@lycoboai/generation";
 import { dispatchImageOutbox } from "@lycoboai/queue";
+import { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { r2ImageStore } from "@lycoboai/storage/r2";
 import { createApp } from "../src/app";
 import { enterpriseAuth, readAuthConfig } from "../src/features/auth/service";
 
 export interface ApiBindings {
+  ASSET_SIGNING_SECRET?: string;
+  ASSET_PUBLIC_ORIGIN?: string;
   HYPERDRIVE: Hyperdrive;
   IMAGES_BUCKET: R2Bucket;
   IMAGES: ImagesBinding;
@@ -124,6 +127,10 @@ async function handleRequest(
       {
         repository,
         store,
+        signAsset:
+          env.ASSET_PUBLIC_ORIGIN && env.ASSET_SIGNING_SECRET
+            ? assetDeliverySigner(env.ASSET_PUBLIC_ORIGIN, env.ASSET_SIGNING_SECRET)
+            : undefined,
         events,
         auth,
         enabled: policy.enabled,

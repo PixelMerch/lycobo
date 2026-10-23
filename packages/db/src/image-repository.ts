@@ -328,6 +328,12 @@ export function openImageRepository(url: string, edge = false) {
         ${before ? sql`and (a.created_at,a.id) < (select created_at,id from media_assets where id=${before} and organization_id=${scope.organizationId})` : sql``}
         order by a.created_at desc,a.id desc limit ${limit}`;
     },
+    async assetLocations(scope: ImageScope, ids: string[]) {
+      if (!ids.length) return [];
+      const rows =
+        await sql`select id,object_key from media_assets where organization_id=${scope.organizationId} and id in ${sql(ids)}`;
+      return rows.map((row) => ({ id: String(row.id), objectKey: String(row.object_key) }));
+    },
     async asset(scope: ImageScope, id: string): Promise<StoredImage | null> {
       const [row] =
         await sql`select id,object_key,mime_type,width,height,bytes,sha256 from media_assets where id=${id} and organization_id=${scope.organizationId}`;

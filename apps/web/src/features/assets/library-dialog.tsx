@@ -6,8 +6,9 @@ import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
 import { useCenteredDialogMotion } from "../../components/use-centered-dialog-motion";
 import { useErrorToast } from "../../lib/error-toast";
+import { AssetImage } from "../generation/asset-image";
 import "../../styles/fullscreen-dialog.css";
-import { assetContentUrl, useImageAssets } from "../generation/generation-client";
+import { useImageAssets } from "../generation/generation-client";
 import { ImagePreviewDialog, type PreviewImage } from "../image-workspace/image-preview";
 import "./library-dialog.css";
 
@@ -142,8 +143,9 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                             })
                           }
                         >
-                          <img
-                            src={assetContentUrl(asset.id, true)}
+                          <AssetImage
+                            assetId={asset.id}
+                            thumbnail
                             alt={asset.prompt ?? "素材图片"}
                             loading="lazy"
                           />

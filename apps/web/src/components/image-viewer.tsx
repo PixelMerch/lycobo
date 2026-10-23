@@ -45,12 +45,20 @@ export function ImageViewer({
   const [viewport, setViewport] = useState({ width: 1, height: 1 });
   const [failed, setFailed] = useState(false);
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const loadingFocus = useRef<HTMLElement | null>(null);
   const [animated, setAnimated] = useState(false);
   const [area, setArea] = useState<HTMLElement | null>(null);
   const dismissStart = useRef<{ id: number; x: number; y: number } | null>(null);
   const drag = useRef<{ pointer: Point; pan: Point } | null>(null);
   const wheelZoom = useRef<(delta: number, ctrlKey?: boolean) => void>(() => {});
   const ready = loadedSrc === active?.src && viewport.width > 1 && viewport.height > 1;
+  useEffect(() => {
+    if (!ready) return;
+    const target = loadingFocus.current;
+    loadingFocus.current = null;
+    if (target?.isConnected && document.activeElement === document.body)
+      target.focus({ preventScroll: true });
+  }, [ready]);
   const turned = Math.abs(angle % 180) === 90;
   const visualWidth = turned ? natural.height : natural.width;
   const visualHeight = turned ? natural.width : natural.height;
@@ -135,6 +143,9 @@ export function ImageViewer({
   const select = (delta: number) => {
     const next = index + delta;
     if (next < 0 || next >= images.length) return;
+    const focused = document.activeElement;
+    loadingFocus.current =
+      focused instanceof HTMLElement && focused.closest(".browse-image-toolbar") ? focused : null;
     if (zoomFrame.current !== null) {
       cancelAnimationFrame(zoomFrame.current);
       zoomFrame.current = null;

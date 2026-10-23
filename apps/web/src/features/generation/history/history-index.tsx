@@ -3,13 +3,14 @@ import { IconChevronRight, IconPhotoX } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { LibraryDialog } from "../../assets/library-dialog";
-import { assetContentUrl, useImageHistory } from "../generation-client";
+import { AssetImage } from "../asset-image";
+import { useImageHistory } from "../generation-client";
 import { GenerationLoading, statusLabel } from "../generation-status";
 import { useStudioStore } from "../studio-state";
 import { scrollToHistoryTask } from "./history-navigation";
 
 export function HistoryIndex() {
-  const query = useImageHistory({ poll: false });
+  const query = useImageHistory();
   const jobs = query.data?.pages.flatMap((page) => page.data) ?? [];
   const activeId = useStudioStore((s) => s.activeHistoryId);
   const setActiveId = useStudioStore((s) => s.setActiveHistoryId);
@@ -84,7 +85,7 @@ export function HistoryIndex() {
                     </span>
                   ) : image ? (
                     <span className="history-thumbnail-frame">
-                      <img src={assetContentUrl(image, true)} alt={job.model} loading="lazy" />
+                      <AssetImage assetId={image} thumbnail alt={job.model} loading="lazy" />
                     </span>
                   ) : (
                     <span>{statusLabel[job.status]}</span>

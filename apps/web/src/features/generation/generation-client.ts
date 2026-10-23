@@ -13,7 +13,10 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { useSyncExternalStore } from "react";
 import { normalizeApiResponse } from "../../lib/api-response";
 import { sessionFetch } from "../../lib/session-fetch";
-import { useImageEventState } from "./image-event-state";
+import { assetContentUrl, rememberImageDeliveries } from "./asset-delivery-client";
+
+export { assetContentUrl } from "./asset-delivery-client";
+
 import type { Draft, ModelId } from "./studio-state";
 
 export class ImageApiError extends Error {
@@ -49,7 +52,10 @@ export async function imageRequest(path: string, init: RequestInit = {}) {
       response.status,
     );
   }
-  return normalizeApiResponse(response);
+  const normalized = await normalizeApiResponse(response);
+  if (normalized.headers.get("Content-Type")?.includes("application/json"))
+    rememberImageDeliveries(await normalized.clone().json());
+  return normalized;
 }
 export function useImageSession() {
   return useQuery({
@@ -75,9 +81,8 @@ export function useImageModels() {
       ),
   });
 }
-export function useImageHistory({ poll = true } = {}) {
+export function useImageHistory() {
   const session = useImageSession();
-  const eventStatus = useImageEventState((state) => state.status);
   return useInfiniteQuery({
     queryKey: ["image-tasks"],
     enabled: session.isSuccess,
@@ -93,18 +98,6 @@ export function useImageHistory({ poll = true } = {}) {
         ).json(),
       ),
     getNextPageParam: (last) => (last.data.length === 20 ? last.data.at(-1)?.id : undefined),
-    refetchInterval:
-      poll && eventStatus !== "live"
-        ? (query) =>
-            query.state.status !== "error" &&
-            query.state.data?.pages.some((page) =>
-              page.data.some((job) => job.status === "queued" || job.status === "running"),
-            )
-              ? eventStatus === "off"
-                ? 3000
-                : 30000
-              : false
-        : false,
   });
 }
 export function useImageAssets({
@@ -117,7 +110,6 @@ export function useImageAssets({
   type?: "image" | "video" | "audio" | undefined;
 } = {}) {
   const session = useImageSession();
-  const eventStatus = useImageEventState((state) => state.status);
   return useInfiniteQuery({
     queryKey: ["image-assets", kind, type ?? "all"],
     enabled: enabled && session.isSuccess,
@@ -135,7 +127,6 @@ export function useImageAssets({
         ).json(),
       ),
     getNextPageParam: (last) => (last.data.length === 30 ? last.data.at(-1)?.id : undefined),
-    refetchInterval: eventStatus === "live" ? false : eventStatus === "off" ? 5000 : 30000,
   });
 }
 type SessionScope = { organizationId: string; userId: string };
@@ -285,12 +276,10 @@ export function useGenerateImage() {
     },
   });
 }
-export const assetContentUrl = (id: string, thumbnail = false) =>
-  `/api/v1/image-assets/${id}/content${thumbnail ? "?thumbnail=1" : ""}`;
 /** Triggers the browser download for an owned asset without leaving the page. */
 export function downloadAsset(id: string) {
   const link = document.createElement("a");
-  link.href = assetContentUrl(id);
+  link.href = assetContentUrl(id, false, true);
   link.download = `${id}.png`;
   link.click();
 }

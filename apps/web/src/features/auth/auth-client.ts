@@ -39,7 +39,6 @@ export function useEnterpriseSession() {
     queryKey: authKey,
     retry: false,
     staleTime: 30000,
-    refetchInterval: 60000,
     queryFn: async ({ signal }) => {
       const response = await authRequest("session", { signal });
       if (response.status === 401 || response.status === 503) return null;

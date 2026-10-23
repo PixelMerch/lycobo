@@ -49,10 +49,5 @@
   "triggers": {
     "crons": ["* * * * *"]
   },
-  "vars": {
-    "IMAGE_GENERATION_ENABLED": "false",
-    "VAKV_ENABLE_IMAGE_EDITS": "false",
-    "GENERATION_TIMEOUT_MS": "300000",
-    "VAKV_BASE_URL": "https://api.vakv.cn"
-  }
+  "keep_vars": true
 }

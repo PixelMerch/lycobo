@@ -1,7 +1,8 @@
 import { Button, ToggleButton, Tooltip } from "@heroui/react";
 import { IconDownload, IconStar, IconStarFilled } from "@tabler/icons-react";
 import { UiIcon } from "../../../components/ui-icon";
-import { assetContentUrl, downloadAsset } from "../generation-client";
+import { AssetImage } from "../asset-image";
+import { downloadAsset } from "../generation-client";
 import { useStudioStore } from "../studio-state";
 
 export function ResultImage({
@@ -32,8 +33,9 @@ export function ResultImage({
           }
         }}
       >
-        <img
-          src={assetContentUrl(assetId, true)}
+        <AssetImage
+          assetId={assetId}
+          thumbnail
           loading="lazy"
           alt={`${prompt}，图片${position + 1}`}
         />

@@ -1,6 +1,6 @@
 import { Button } from "@heroui/react";
 import { useLayoutEffect, useRef } from "react";
-import { assetContentUrl } from "../generation/generation-client";
+import { AssetImage } from "../generation/asset-image";
 import type { PreviewImage } from "./image-preview";
 
 export function ImagePreviewRail({
@@ -51,8 +51,9 @@ export function ImagePreviewRail({
           onPress={() => onSelect(position)}
         >
           <span className="history-thumbnail-frame">
-            <img
-              src={assetContentUrl(image.id, true)}
+            <AssetImage
+              assetId={image.id}
+              thumbnail
               alt={`第 ${position + 1} 张缩略图`}
               loading="lazy"
             />

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { apiFixture, mockImageApi } from "./image-api-fixture";
+import { apiFixture, mockImageApi, mockImageEvents } from "./image-api-fixture";
 
 const sourceId = "a5587123-0000-4000-8000-000000000001";
 const jobId = "a5587123-0000-4000-8000-000000000002";
@@ -10,7 +10,7 @@ const svg =
 test("multiple repair regions retain original coordinates, submit one image and preserve the original", async ({
   page,
 }) => {
-  await mockImageApi(page);
+  await mockImageEvents(page);
   await page.route("**/api/v1/image-assets?*", (route) =>
     route.fulfill({
       json: apiFixture({
@@ -50,8 +50,11 @@ test("multiple repair regions retain original coordinates, submit one image and 
     expect(route.request().headers()["idempotency-key"]).toBe(firstKey);
     return route.fulfill({ status: 202, json: apiFixture({ id: jobId, replayed: true }) });
   });
-  await page.route(`**/api/v1/image-tasks/${jobId}`, (route) =>
-    route.fulfill({
+  let completed = false;
+  let details = 0;
+  await page.route(`**/api/v1/image-tasks/${jobId}`, (route) => {
+    details++;
+    return route.fulfill({
       json: apiFixture({
         id: jobId,
         public_id: "WREPAIR01",
@@ -62,15 +65,15 @@ test("multiple repair regions retain original coordinates, submit one image and 
         resolution: "1K",
         aspect_ratio: "1:1",
         requested_count: 1,
-        status: "succeeded",
+        status: completed ? "succeeded" : "running",
         created_at: "2026-10-21T01:00:00.000Z",
-        completed_at: "2026-10-21T01:01:00.000Z",
+        completed_at: completed ? "2026-10-21T01:01:00.000Z" : null,
         items: [
           {
             id: crypto.randomUUID(),
             position: 0,
-            status: "succeeded",
-            output_asset_id: outputId,
+            status: completed ? "succeeded" : "running",
+            output_asset_id: completed ? outputId : null,
             output_public_id: "P00000002",
             error_code: null,
             width: 1024,
@@ -79,8 +82,8 @@ test("multiple repair regions retain original coordinates, submit one image and 
           },
         ],
       }),
-    }),
-  );
+    });
+  });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/create");
   await page.getByRole("button", { name: "打开素材库", exact: true }).click();
@@ -148,6 +151,23 @@ test("multiple repair regions retain original coordinates, submit one image and 
   expect(Math.abs(Number(firstRegion[4]) - 205)).toBeLessThan(4);
   expect(submitted?.prompt).toContain("区域 2：左上角 (307, 307)，宽 307，高 307");
   await viewer.getByRole("button", { name: "确认上次提交", exact: true }).click();
+  await expect.poll(() => details).toBe(1);
+  await new Promise((resolve) => setTimeout(resolve, 6500));
+  expect(details).toBe(1);
+  completed = true;
+  await page.evaluate(
+    (id) =>
+      window.dispatchEvent(
+        new CustomEvent("fixture:sse", {
+          detail: {
+            type: "image.updated",
+            id: "1",
+            data: { id: "1", kind: "task", resourceId: id },
+          },
+        }),
+      ),
+    jobId,
+  );
   // Progress is announced in the bottom-right notice instead of inside the form.
   const notice = page.locator(".toast-region--bottom-end .toast").first();
   await expect(notice).toContainText("修改版已生成");

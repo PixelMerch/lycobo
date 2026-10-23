@@ -1,6 +1,6 @@
 # 架构与目录
 
-一个 pnpm workspace 仓库，三个独立应用；前端 CSR 部署 Pages，API 与队列消费者部署 Cloudflare Workers。
+一个 pnpm workspace 仓库，四个独立应用；前端 CSR 部署 Pages，API 与队列消费者部署 Cloudflare Workers。
 代码同仓不表示进程合并或强制一起发布。
 
 | 路径 | 职责 |
@@ -10,6 +10,7 @@
 | apps/web/src/lib | 浏览器 API 客户端与工具 |
 | apps/web/src/styles | 共享设计 tokens 与全局基础样式 |
 | apps/api/src | Hono 入口、应用工厂、配置与组织隔离的生图 feature API |
+| apps/assets/src | 独立私有图片资源 Worker：短期签名、Referer/CORS、边缘缓存与 R2 流式读取 |
 | apps/worker/src | 队列消费者、生命周期与任务执行 |
 | packages/contracts | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖 |
 | packages/db | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY |
@@ -56,7 +57,7 @@ apps/web/src/
 
 ## 依赖方向
 
-web → contracts。api/worker → 服务包 → db/queue/storage/generation。
+web → contracts。api/worker/assets → 服务包 → db/queue/storage/generation。
 contracts 不得反向引用应用或 server-only 包；共享包不得依赖 apps。
 业务 feature 内部用直接导入，不建立覆盖整站的大 barrel。
 当前 packages 使用 TypeScript 源导出：开发通过 Vite/tsx 消费，

@@ -1,3 +1,4 @@
+import { AssetImage } from "../generation/asset-image";
 import "./image-public-id.css";
 import { Button, Card, EmptyState, Link } from "@heroui/react";
 import { IconFolder } from "@tabler/icons-react";
@@ -43,8 +44,9 @@ export function AssetsPage() {
                   rel="noreferrer"
                   aria-label={`查看原图：${asset.prompt ?? "参考图片"}`}
                 >
-                  <img
-                    src={assetContentUrl(asset.id, true)}
+                  <AssetImage
+                    assetId={asset.id}
+                    thumbnail
                     alt={asset.prompt ?? "参考图片"}
                     loading="lazy"
                   />

@@ -59,18 +59,13 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
   }, [latest.data, key, update, localDraft]);
   const submissionLock = useRef(false);
   const job = useQuery({
-    queryKey: ["image-repair-task", key, draft.jobId],
+    queryKey: ["image-task", draft.jobId],
     enabled: !!draft.jobId && session.isSuccess,
     retry: false,
     queryFn: async ({ signal }) =>
       imageJobSchema.parse(
         await (await imageRequest(`image-tasks/${draft.jobId}`, { signal })).json(),
       ),
-    refetchInterval: (query) =>
-      !query.state.error &&
-      (!query.state.data || ["queued", "running"].includes(query.state.data.status))
-        ? 3000
-        : false,
   });
   useErrorToast(
     latest.error?.message ??
@@ -81,6 +76,8 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
   );
   useEffect(() => {
     const loaded = new window.Image();
+    loaded.crossOrigin = "anonymous";
+    loaded.referrerPolicy = "strict-origin-when-cross-origin";
     loaded.onload = () => setImage(loaded);
     loaded.onerror = () => setImageError("原图加载失败，请重新打开图片后再试。");
     loaded.src = assetContentUrl(source.id);

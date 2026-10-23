@@ -37,7 +37,7 @@ export function HistoryImagePreview({
   assetId: string;
   onClose: () => void;
 }) {
-  const query = useImageHistory({ poll: false });
+  const query = useImageHistory();
   const [images, setImages] = useState(initialImages);
   const loadMore = async () => {
     const result = await query.fetchNextPage({ cancelRefetch: false });

@@ -99,6 +99,12 @@ export function r2ImageStore(
         customMetadata: { sha256 },
       });
       if (!written) throw new Error("IMAGE_STORAGE_UNAVAILABLE");
+      // Keep the paid original durable even if thumbnail processing subsequently fails.
+      const thumbnail = await png(data, true);
+      const thumbWritten = await bucket.put(thumbnailKey(key), thumbnail, {
+        httpMetadata: { contentType: "image/png" },
+      });
+      if (!thumbWritten) throw new Error("IMAGE_STORAGE_UNAVAILABLE");
       return {
         id,
         objectKey: key,

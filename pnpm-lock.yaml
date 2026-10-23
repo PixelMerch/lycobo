@@ -88,6 +88,12 @@ importers:
         specifier: 4.23.15
         version: 4.23.15
 
+  apps/assets:
+    dependencies:
+      '@lycoboai/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
+
   apps/web:
     dependencies:
       '@heroui/react':

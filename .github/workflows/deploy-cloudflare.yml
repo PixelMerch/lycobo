@@ -5,11 +5,6 @@ on:
     branches: [main]
     types: [completed]
   workflow_dispatch:
-    inputs:
-      enable_generation:
-        description: Enable generation after bindings and provider have been verified
-        type: boolean
-        default: false
 permissions:
   contents: read
 concurrency:
@@ -27,13 +22,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: 9a65fad90669d9c27b58d856ab3ce410
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_HYPERDRIVE_ID: ${{ vars.CLOUDFLARE_HYPERDRIVE_ID }}
-      CLOUDFLARE_PUBLIC_ORIGIN: ${{ vars.CLOUDFLARE_PUBLIC_ORIGIN }}
       SUPABASE_PROJECT_REF: wjirihknptxjodgknbfy
-      SUPABASE_DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
-      AUTH_JWT_SECRET: ${{ secrets.AUTH_JWT_SECRET }}
-      VAKV_API_KEY: ${{ secrets.VAKV_API_KEY }}
-      IMAGE_GENERATION_ENABLED: ${{ ((github.event_name == 'workflow_dispatch' && inputs.enable_generation) || (github.event_name == 'workflow_run' && vars.IMAGE_GENERATION_ENABLED == 'true')) && 'true' || 'false' }}
-      VAKV_ENABLE_IMAGE_EDITS: ${{ vars.VAKV_ENABLE_IMAGE_EDITS || 'false' }}
       WRANGLER_SEND_METRICS: "false"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

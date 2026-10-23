@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import type { ImageGenerationInput, ImageJob } from "../../packages/contracts/src/image-generation";
-import { mockImageApi, modelNames } from "./image-api-fixture";
+import { mockImageApi, mockImageEvents, modelNames } from "./image-api-fixture";
 
 const png = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
@@ -10,7 +10,7 @@ const png = Buffer.from(
 test("three public models submit at 1K, queued results become durable history and library assets", async ({
   page,
 }) => {
-  await mockImageApi(page);
+  await mockImageEvents(page);
   const jobs: ImageJob[] = [];
   const submissions: ImageGenerationInput[] = [];
   const organizationId = crypto.randomUUID(),
@@ -100,6 +100,9 @@ test("three public models submit at 1K, queued results become durable history an
         input.resolution === "1K" && input.count === 1 && input.referenceAssetIds.length === 0,
     ),
   ).toBe(true);
+  await page.evaluate(() =>
+    window.dispatchEvent(new CustomEvent("fixture:sse", { detail: { type: "resync", id: "1" } })),
+  );
   await expect(page.locator(".generation-results img")).toHaveCount(modelNames.length, {
     timeout: 12000,
   });
