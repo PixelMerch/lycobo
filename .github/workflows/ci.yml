@@ -68,15 +68,8 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U lycoboai -d lycoboai"
           --health-interval 5s --health-timeout 3s --health-retries 10
-      redis:
-        image: redis:7.4-alpine
-        ports: ["56379:6379"]
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s --health-timeout 3s --health-retries 10
     env:
       DATABASE_URL: postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai
-      REDIS_URL: redis://127.0.0.1:56379
       ALLOW_LOCAL_INTEGRATION: "true"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -1,6 +1,6 @@
 # 架构与目录
 
-一个 pnpm workspace 仓库，三个独立应用；前端 CSR，API 与 Worker 长驻 Node.js。
+一个 pnpm workspace 仓库，三个独立应用；前端 CSR 部署 Pages，API 与队列消费者部署 Cloudflare Workers。
 代码同仓不表示进程合并或强制一起发布。
 
 | 路径 | 职责 |
@@ -13,9 +13,9 @@
 | apps/worker/src | 队列消费者、生命周期与任务执行 |
 | packages/contracts | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖 |
 | packages/db | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY |
-| packages/queue | 队列名、payload、连接配置 |
+| packages/queue | Cloudflare Queues 消息契约、持久 outbox 投递 |
 | packages/generation | 服务商契约、Vakv 同步生图适配与能力校验（真实渠道待验收） |
-| packages/storage | 对象存储契约与私有本地图片存储/校验；签名对象存储待接入 |
+| packages/storage | 私有 R2／UID 路径、Images binding 校验和缩略图；Node 本地存储供隔离测试 |
 | tests/e2e | 浏览器关键路径验收 |
 | docs/design | 当前认可的设计参考 |
 | .agents/skills | 锁定来源的团队技能快照 |
@@ -60,14 +60,14 @@ web → contracts。api/worker → 服务包 → db/queue/storage/generation。
 contracts 不得反向引用应用或 server-only 包；共享包不得依赖 apps。
 业务 feature 内部用直接导入，不建立覆盖整站的大 barrel。
 当前 packages 使用 TypeScript 源导出：开发通过 Vite/tsx 消费，
-生产 API/Worker 由 tsup 内联 @lycoboai/*，启动 dist 时不依赖 TS 运行器。
+生产 API/Worker 由 Wrangler 打包 @lycoboai/*，Pages Functions 用服务绑定访问 API。Node API 构建只保留为调试入口。
 这些包 private，不是可直接发布到 npm 的编译 SDK。
 
 ## 进程与服务
 
 - API：短请求、身份、授权、参数校验、业务编排。
 - Worker：有持久任务托管的后台工作，绝不能依赖浏览器连接。
-- PostgreSQL：业务与状态真相。Redis：队列传输/调度。
+- PostgreSQL：业务与状态真相。Cloudflare Queues：只传任务 ID 的持久投递。
 - 对象存储：图片原件、缩略图、下载包；业务库只保存元数据和对象 key。
 - SSE：状态变化信号；断线后按游标/数据库补查。
 
@@ -79,9 +79,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 ## 部署
 
-静态前端独立部署，网关将同域名 /api/* 转发 Hono。API 和 Worker 可先在同机不同容器，
-后续独立扩容。数据库池按进程管理；池大小 × 副本数必须小于数据库连接预算。
-初始化尚未提供生产部署授权、域名绑定或上线认证。
+同一仓库管理 Pages、Hono API Worker、Queues 消费者。API 与消费者共用 R2、Images 和关闭查询缓存的 Hyperdrive，数据库为 Supabase。`scripts/cloudflare` 提供资源准备、受限秘密上传与顺序部署；配置、测试和远端实际状态分别记录，见 [Cloudflare 部署](docs/cloudflare-deployment.md)。
 
 ## 生图服务端接入
 
@@ -89,12 +87,12 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 - packages/contracts/src/image-generation.ts：独立生图输入契约与公开模型目录；不改变既有任务契约。
 - packages/db/src/image-repository.ts：组织、令牌、任务、逐图 outbox 与积分账本持久化。
 - packages/generation/src/vakv-provider.ts：Vakv 同步生图、能力开关、尺寸映射与不确定结果分类。
-- apps/worker/src/image-worker.ts / image-processor.ts：独立生图队列、投递器、并发执行与租约处理。
+- apps/worker/cloudflare/index.ts / src/image-processor.ts：Queues 消费、Cron outbox 恢复、并发执行与租约处理。
 - packages/storage/src/image-store.ts：服务端图片解码、去元数据、私有 PNG 文件与实际尺寸/哈希。
 
 接口、工作台和登录的实现范围，以及供应商、存储等外部验收边界见 [生图 API 文档](docs/image-generation-api.md)。
 
-实时任务通知入口为 apps/api/src/features/images/events.ts；apps/web/src/features/generation/use-image-events.ts 在应用壳维护共享 SSE 连接与 Query 缓存更新。事件日志和业务状态事务提交，独立于 Redis 生图执行队列；具体协议见 docs/image-generation-api.md。
+实时任务通知入口为 apps/api/src/features/images/events.ts；apps/web/src/features/generation/use-image-events.ts 在应用壳维护共享 SSE 连接与 Query 缓存更新。事件日志和业务状态事务提交，独立于 Cloudflare Queues 生图执行队列；具体协议见 docs/image-generation-api.md。
 
 - packages/db/src/wallet-repository.ts：企业共享钱包、充值订单与只读账务查询。数据表与扣费规则见 [企业钱包](docs/enterprise-wallet.md)。
 
@@ -126,7 +124,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 ## Supabase 结构迁移
 
-`packages/db/scripts/migrate-supabase.mjs` 复用现有 Drizzle Kit 迁移链，`supabase-target.mjs` 校验独立的 `SUPABASE_DATABASE_URL` 与项目引用，`secure-supabase.mjs` 限定本应用表／序列／函数的 RLS 和前端角色权限，不覆盖运行时 `DATABASE_URL`。`pnpm db:migrate:supabase --check` 仅检查配置；填写真实密码后才可实际初始化远端结构。此入口不复制本地业务数据、图片文件或修改现有迁移；连接、Data API 边界和 MCP 操作见 [Supabase 接入](docs/supabase-postgres.md)。
+`packages/db/scripts/migrate-supabase.mjs` 复用现有 Drizzle Kit 迁移链，`supabase-target.mjs` 校验独立的 `SUPABASE_DATABASE_URL` 与项目引用，`secure-supabase.mjs` 限定本应用表／序列／函数的 RLS 和前端角色权限。生产 Workers 通过 Hyperdrive 访问同一 Supabase，秘密与资源配置见 Cloudflare 部署文档。`pnpm db:migrate:supabase --check` 仅检查配置；填写真实密码后才可实际初始化远端结构。此入口不复制本地业务数据、图片文件或修改现有迁移；连接、Data API 边界和 MCP 操作见 [Supabase 接入](docs/supabase-postgres.md)。
 
 ## 发布工具
 

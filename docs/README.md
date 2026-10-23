@@ -35,6 +35,7 @@
 | 本地启动与配置 | [本地开发](development.md) |
 | 技术选择与边界 | [技术栈](tech-stack.md) |
 | 测试与隔离环境 | [测试说明](testing.md) |
+| Pages／Workers／Queues／R2 部署 | [Cloudflare 部署](cloudflare-deployment.md) |
 | Supabase PostgreSQL 结构迁移 | [Supabase 接入](supabase-postgres.md) |
 | 数据库完整导出与恢复 | [数据库备份](database-backup.md) |
 | 发布与分支流程 | [发布说明](releasing.md) |

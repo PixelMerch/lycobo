@@ -1,9 +1,6 @@
 import assert from "node:assert/strict";
 import { openDatabase } from "@lycoboai/db";
-import { redisConnection } from "@lycoboai/queue";
-import { Queue, QueueEvents, Worker } from "bullmq";
 import postgres from "postgres";
-import { processDiagnostic } from "../src/processor";
 
 function localUrl(value: string | undefined, protocols: string[]) {
   if (!value) throw new Error("Explicit local test URLs are required");
@@ -19,7 +16,6 @@ function localUrl(value: string | undefined, protocols: string[]) {
 if (process.env.ALLOW_LOCAL_INTEGRATION !== "true")
   throw new Error("Set ALLOW_LOCAL_INTEGRATION=true to run isolated integration checks");
 const databaseUrl = localUrl(process.env.DATABASE_URL, ["postgres:", "postgresql:"]);
-const redisUrl = localUrl(process.env.REDIS_URL, ["redis:", "rediss:"]);
 const runId = crypto.randomUUID();
 const ownerId = crypto.randomUUID();
 const otherOwnerId = crypto.randomUUID();
@@ -65,25 +61,4 @@ try {
     await client.end({ timeout: 5 });
     await connection.close();
   }
-}
-
-const queueName = `lycoboai-integration-${runId}`;
-const config = redisConnection(redisUrl);
-const queue = new Queue(queueName, { connection: config });
-const events = new QueueEvents(queueName, { connection: config });
-const worker = new Worker(queueName, async (job) => processDiagnostic(job.name, job.data), {
-  connection: config,
-});
-try {
-  await events.waitUntilReady();
-  await worker.waitUntilReady();
-  const job = await queue.add("healthcheck", { runId });
-  assert.deepEqual(await job.waitUntilFinished(events, 10_000), { runId, status: "ok" });
-  console.info("Real Redis queue / Worker roundtrip passed");
-} finally {
-  await worker.close();
-  await events.close();
-  await queue.obliterate({ force: true }); // Only this run's UUID-named test queue.
-  assert.equal(await queue.getJobCountByTypes("completed", "failed", "wait", "active"), 0);
-  await queue.close();
 }

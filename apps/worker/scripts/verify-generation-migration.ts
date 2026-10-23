@@ -19,7 +19,7 @@ const tables = [
 
 // Runs only in the disposable database created by check-image-integration.ts.
 export async function verifyGenerationMigration(databaseUrl: string) {
-  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const root = fileURLToPath(new URL("../../../", import.meta.url).href);
   const migrations = path.join(root, "packages/db/migrations");
   const directory = await mkdtemp(path.join(tmpdir(), "lycobo-generation-migration-"));
   const sql = postgres(databaseUrl, { max: 1 });

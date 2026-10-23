@@ -26,7 +26,7 @@ const events =
   repository && process.env.IMAGE_EVENTS_ENABLED !== "false" && process.env.DATABASE_URL
     ? openImageEventFeed(process.env.DATABASE_URL)
     : undefined;
-const store = imageStore(process.env.IMAGE_DATA_DIR ?? "./data/images");
+const store = imageStore(process.env.IMAGE_DATA_DIR ?? "./data/images", repository?.storageUid);
 if (policy.enabled) await store.ready();
 const app = createApp(
   (event) => logger.error(event, "Request failed"),

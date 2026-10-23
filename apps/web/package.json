@@ -5,9 +5,9 @@
   "name": "@lycoboai/web",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && wrangler pages functions build functions --outdir dist-functions --compatibility-date 2026-10-23",
     "preview": "vite preview --host 127.0.0.1",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.functions.json --noEmit"
   },
   "dependencies": {
     "@heroui/react": "3.2.6",

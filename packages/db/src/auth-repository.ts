@@ -19,9 +19,11 @@ const principalRow = z.object({
 });
 export type EnterpriseCredential = z.infer<typeof accountRow>;
 export type EnterpriseIdentity = ImagePrincipal & { account: string };
-export function openAuthRepository(url: string) {
+export function openAuthRepository(url: string, edge = false) {
   const sql = postgres(url, {
-    max: 3,
+    max: edge ? 1 : 3,
+    fetch_types: !edge,
+    prepare: true,
     idle_timeout: 20,
     connect_timeout: 10,
     connection: { statement_timeout: 15000, lock_timeout: 5000 },

@@ -13,7 +13,7 @@ SUPABASE_DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.wjirihknptxjodgkn
 
 仅将 `[YOUR-PASSWORD]` 替换为数据库密码。密码中的 `@`、`#`、`/`、`?`、`&` 等保留字符需 URL 编码。`.env` 已被 Git 忽略，不提交真实密码；`.env.example` 仅保留占位。
 
-迁移入口与运行时连接独立：专用命令只使用 `SUPABASE_DATABASE_URL`，并核对项目引用、数据库名、5432 端口和 TLS；未填写密码时在连接前退出，不会回退到本地库。API／Worker 使用 `DATABASE_URL`，Compose 还会用 `IMAGE_COMPOSE_DATABASE_URL` 覆盖容器内的 `DATABASE_URL`；切库时须同时配置，见下方运行时切换步骤。
+迁移入口与运行时连接独立：专用命令只使用 `SUPABASE_DATABASE_URL`，并核对项目引用、数据库名、5432 端口和 TLS；未填写密码时在连接前退出，不会回退到本地库。Workers API／消费者使用同一个 Hyperdrive binding；Node 数据库脚本使用 `DATABASE_URL`，生产部署不依赖 Compose 变量。
 
 该地址为 Supabase 直连端点，通常需要 IPv6 或项目的 IPv4 add-on。网络仅支持 IPv4 时，应从控制台 **Connect → Session pooler** 取得真实地址；不要自行拼接 pooler 主机。当前专用校验只接受上面的直连形式。参考 [Supabase 连接方式](https://supabase.com/docs/guides/database/connecting-to-postgres)。
 
@@ -43,20 +43,13 @@ pnpm db:migrate:supabase
 
 ## API／Worker 运行时连接
 
-2026-10-23 已将当前本地开发环境的 API 和 Worker 切换到上述 Supabase 项目。根目录 `.env` 中的 `DATABASE_URL`、`IMAGE_COMPOSE_DATABASE_URL` 与 `SUPABASE_DATABASE_URL` 使用同一个含 TLS 参数的完整连接地址；真实密码不提交。Node 本地启动读取前者，Compose 将第二项分别注入 API、Worker 的 `DATABASE_URL`。不依赖 dotenv 变量引用展开，也不在客户端加入 Supabase 密钥。
+此前已验证本地 Node API／Worker 直连上述 Supabase 项目并完成企业账号登录。当前代码改造后的发布目标是 Cloudflare Workers：API 和消费者共用同一个 Hyperdrive binding，连接上述 Supabase，**关闭查询缓存**，不再通过 Compose 注入数据库连接，也不需要 Redis。秘密在 Hyperdrive／Worker Secrets 中保存，前端不读取连接串。
 
-切换或更换密码时，先检查两边数据库及 Redis 队列没有待执行／执行中的任务，保留原数据库和图片文件；随后同步更新这三个配置，并在正常关闭服务后重新创建容器：
+Cloudflare 资源准备、凭据、部署和上线验收见 [Cloudflare 部署](cloudflare-deployment.md)。代码打包或本地模拟通过不代表远端已开通或已上线。`DATABASE_URL` 仍用于显式的数据库管理脚本，迁移命令单独使用 `SUPABASE_DATABASE_URL`，不会自动复制旧账号、历史、素材或积分。
 
-```sh
-docker compose stop -t 370 api worker
-docker compose up -d --no-deps --wait api worker
-```
+开发使用 Wrangler，本地 Hyperdrive 指向 loopback PostgreSQL；R2、Queues、Images 本地模拟，不把隔离测试连接指向 Supabase。根 `.env` 已有的远端账号和数据库秘密保持不变。旧数据库、卷和本地图片文件保留；旧本地文件进入 R2 需要单独核对迁移。
 
-`restart` 不会重新加载环境变量。宿主机运行 `pnpm dev` 时也需重新启动 API／Worker 进程。API 的登录、图片记录和事件订阅以及 Worker 的 outbox／任务查询共用切换后的数据库，继续使用现有 Drizzle schema 与服务端账号体系。直连保留 LISTEN/NOTIFY 支持，不改用事务池端点。
-
-Redis 与图片目录沿用现有配置，本地历史、素材、旧账号和积分不随连接切换复制到 Supabase；原 PostgreSQL 容器及数据卷保留。新建企业账号使用独立工作空间和零余额钱包，不代表已迁移旧业务数据。验收通过实际 HTTP 登录、会话、钱包、历史查询及退出完成，不调用付费生图。
-
-隔离集成测试只允许 loopback PostgreSQL。运行时已经切换到 Supabase 后，必须为测试进程显式指定本项目的本地测试连接，不得让测试回退到远端库：
+隔离集成测试显式指定本项目本地连接：
 
 ```sh
 DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW_LOCAL_INTEGRATION=true pnpm test:integration

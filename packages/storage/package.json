@@ -4,7 +4,9 @@
   "type": "module",
   "name": "@lycoboai/storage",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./core": "./src/core.ts",
+    "./r2": "./src/r2-image-store.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

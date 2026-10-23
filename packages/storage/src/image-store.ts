@@ -4,10 +4,9 @@ import { access, mkdir, readFile, rename, unlink, writeFile } from "node:fs/prom
 import path from "node:path";
 import { type ImageScope, imageLimits, type StoredImage } from "@lycoboai/contracts";
 import sharp from "sharp";
-import { objectKeySchema } from "./index";
+import { ImageValidationError, objectKeySchema, type StorageUid, userObjectKey } from "./core";
 
-export const maxImageBytes = imageLimits.uploadBytes;
-export class ImageValidationError extends Error {}
+export { ImageValidationError, maxImageBytes } from "./core";
 
 async function decodeImage(bytes: Uint8Array) {
   if (!bytes.length || bytes.length > imageLimits.outputBytes) throw new Error("INVALID_IMAGE");
@@ -27,7 +26,7 @@ export async function normalizeImage(bytes: Uint8Array) {
     throw new ImageValidationError("INVALID_IMAGE");
   }
 }
-export function imageStore(directory: string) {
+export function imageStore(directory: string, resolveUid?: StorageUid) {
   const root = path.resolve(directory);
   const filename = (key: string) => {
     objectKeySchema.parse(key);
@@ -46,7 +45,9 @@ export function imageStore(directory: string) {
       id: string = randomUUID(),
     ): Promise<StoredImage> {
       const image = await normalizeImage(input);
-      const objectKey = `${scope.organizationId}/${scope.userId}/${id}.png`;
+      const objectKey = resolveUid
+        ? userObjectKey(await resolveUid(scope), scope.organizationId, id)
+        : `${scope.organizationId}/${scope.userId}/${id}.png`;
       const file = filename(objectKey);
       await mkdir(path.dirname(file), { recursive: true, mode: 0o700 });
       const temporary = `${file}.${randomUUID()}.tmp`;
@@ -67,7 +68,13 @@ export function imageStore(directory: string) {
       };
     },
     read: (asset: StoredImage) => readFile(filename(asset.objectKey)),
+    async thumbnail(asset: StoredImage) {
+      return sharp(await readFile(filename(asset.objectKey)))
+        .resize({ width: 512, height: 512, fit: "inside", withoutEnlargement: true })
+        .png()
+        .toBuffer();
+    },
     remove: (asset: StoredImage) => unlink(filename(asset.objectKey)),
   };
 }
-export type ImageStore = ReturnType<typeof imageStore>;
+export type { ImageStore } from "./core";

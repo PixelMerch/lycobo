@@ -74,7 +74,7 @@ function frames(reader: ReadableStreamDefaultReader<Uint8Array>) {
 try {
   await admin.unsafe(`create database "${name}"`);
   const migrated = spawnSync("pnpm", ["--filter", "@lycoboai/db", "db:migrate"], {
-    cwd: fileURLToPath(new URL("../../../", import.meta.url)),
+    cwd: fileURLToPath(new URL("../../../", import.meta.url).href),
     env: { ...process.env, DATABASE_URL: url.href },
     stdio: "pipe",
   });
