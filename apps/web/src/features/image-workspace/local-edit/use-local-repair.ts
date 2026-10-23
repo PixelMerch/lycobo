@@ -59,18 +59,13 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
   }, [latest.data, key, update, localDraft]);
   const submissionLock = useRef(false);
   const job = useQuery({
-    queryKey: ["image-repair-task", key, draft.jobId],
+    queryKey: ["image-task", draft.jobId],
     enabled: !!draft.jobId && session.isSuccess,
     retry: false,
     queryFn: async ({ signal }) =>
       imageJobSchema.parse(
         await (await imageRequest(`image-tasks/${draft.jobId}`, { signal })).json(),
       ),
-    refetchInterval: (query) =>
-      !query.state.error &&
-      (!query.state.data || ["queued", "running"].includes(query.state.data.status))
-        ? 3000
-        : false,
   });
   useErrorToast(
     latest.error?.message ??

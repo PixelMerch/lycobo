@@ -13,7 +13,6 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { useSyncExternalStore } from "react";
 import { normalizeApiResponse } from "../../lib/api-response";
 import { sessionFetch } from "../../lib/session-fetch";
-import { useImageEventState } from "./image-event-state";
 import type { Draft, ModelId } from "./studio-state";
 
 export class ImageApiError extends Error {
@@ -75,9 +74,8 @@ export function useImageModels() {
       ),
   });
 }
-export function useImageHistory({ poll = true } = {}) {
+export function useImageHistory() {
   const session = useImageSession();
-  const eventStatus = useImageEventState((state) => state.status);
   return useInfiniteQuery({
     queryKey: ["image-tasks"],
     enabled: session.isSuccess,
@@ -93,18 +91,6 @@ export function useImageHistory({ poll = true } = {}) {
         ).json(),
       ),
     getNextPageParam: (last) => (last.data.length === 20 ? last.data.at(-1)?.id : undefined),
-    refetchInterval:
-      poll && eventStatus !== "live"
-        ? (query) =>
-            query.state.status !== "error" &&
-            query.state.data?.pages.some((page) =>
-              page.data.some((job) => job.status === "queued" || job.status === "running"),
-            )
-              ? eventStatus === "off"
-                ? 3000
-                : 30000
-              : false
-        : false,
   });
 }
 export function useImageAssets({
@@ -117,7 +103,6 @@ export function useImageAssets({
   type?: "image" | "video" | "audio" | undefined;
 } = {}) {
   const session = useImageSession();
-  const eventStatus = useImageEventState((state) => state.status);
   return useInfiniteQuery({
     queryKey: ["image-assets", kind, type ?? "all"],
     enabled: enabled && session.isSuccess,
@@ -135,7 +120,6 @@ export function useImageAssets({
         ).json(),
       ),
     getNextPageParam: (last) => (last.data.length === 30 ? last.data.at(-1)?.id : undefined),
-    refetchInterval: eventStatus === "live" ? false : eventStatus === "off" ? 5000 : 30000,
   });
 }
 type SessionScope = { organizationId: string; userId: string };

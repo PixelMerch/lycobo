@@ -14,9 +14,7 @@ test("idle history is fetched once and does not keep polling", async ({ page }) 
   expect(requests).toBe(1);
 });
 
-test("one history poller refreshes active work then stops when the task fails", async ({
-  page,
-}) => {
+test("active history stays unchanged without push until the user reloads", async ({ page }) => {
   await mockImageApi(page);
   let requests = 0;
   let finished = false;
@@ -48,12 +46,32 @@ test("one history poller refreshes active work then stops when the task fails", 
   });
   await page.goto("/create");
   await expect(page.locator(".generation-job")).toContainText(job.prompt);
-  await new Promise((resolve) => setTimeout(resolve, 3100));
-  await expect.poll(() => requests).toBe(2);
+  await page.clock.install();
+  await page.clock.fastForward(65000);
+  expect(requests).toBe(1);
   finished = true;
-  await new Promise((resolve) => setTimeout(resolve, 3100));
+  await page.reload();
   await expect(page.locator(".history-failure-thumbnail")).toBeVisible();
-  expect(requests).toBe(3);
-  await new Promise((resolve) => setTimeout(resolve, 7000));
-  expect(requests).toBe(3);
+  expect(requests).toBe(2);
+});
+
+test("idle assets and authentication do not issue periodic requests", async ({ page }) => {
+  await mockImageApi(page);
+  let assets = 0;
+  let sessions = 0;
+  await page.route("**/api/v1/image-assets?*", (route) => {
+    assets++;
+    return route.fulfill({ json: apiFixture({ data: [] }) });
+  });
+  await page.route("**/api/v1/auth/session", (route) => {
+    sessions++;
+    return route.fulfill({ status: 401, json: apiFixture({}, 401) });
+  });
+  await page.goto("/assets");
+  await expect.poll(() => assets).toBe(1);
+  await expect.poll(() => sessions).toBeGreaterThan(0);
+  const baseline = { assets, sessions };
+  await page.clock.install();
+  await page.clock.fastForward(125000);
+  expect({ assets, sessions }).toEqual(baseline);
 });
