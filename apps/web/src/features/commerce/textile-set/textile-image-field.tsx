@@ -38,6 +38,10 @@ export function TextileImageField({
   const [preview, setPreview] = useState(false);
   async function choose(files: File[]) {
     if (!files.length || reading) return;
+    if (files.length > 1) {
+      setError("每次只能上传一张图片。");
+      return;
+    }
     const issue = referenceFileError(files);
     if (issue) {
       setError(issue);
@@ -101,6 +105,7 @@ export function TextileImageField({
           <ReferenceImageCard
             src={value.src}
             number={number}
+            showNumber={false}
             isDisabled={reading}
             onOpen={() => setPreview(true)}
             onRemove={() => {
@@ -109,14 +114,6 @@ export function TextileImageField({
               setPreview(false);
             }}
           />
-          <Button
-            variant="tertiary"
-            size="sm"
-            isDisabled={reading}
-            onPress={() => input.current?.click()}
-          >
-            更换{label}
-          </Button>
         </div>
       ) : (
         <Button

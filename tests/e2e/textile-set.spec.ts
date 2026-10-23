@@ -16,6 +16,8 @@ test("textile form has only required product inputs and retains confirmed choice
   await page.goto("/commerce/textile-set");
   const form = page.getByRole("region", { name: "家纺套图参数", exact: true });
   await expect(page.getByLabel("主图文件", { exact: true })).toHaveAttribute("required", "");
+  await expect(page.getByLabel("主图文件", { exact: true })).not.toHaveAttribute("multiple");
+  await expect(page.getByLabel("详情图文件", { exact: true })).not.toHaveAttribute("multiple");
   await expect(page.getByLabel("详情图文件", { exact: true })).not.toHaveAttribute("required");
   for (const label of ["模型", "质量", "生成张数", "分辨率", "提示词"])
     await expect(form.getByText(label, { exact: true })).toHaveCount(0);
@@ -23,6 +25,8 @@ test("textile form has only required product inputs and retains confirmed choice
     .getByLabel("主图文件", { exact: true })
     .setInputFiles({ name: "main.png", mimeType: "image/png", buffer: png });
   await expect(form.locator(".reference-tile")).toHaveCount(1);
+  await expect(form.locator(".reference-number")).toHaveCount(0);
+  await expect(form.getByRole("button", { name: /更换/ })).toHaveCount(0);
   await form.getByRole("button", { name: "选择裂变类型", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "裂变类型", exact: true });
   await expect(dialog.locator(".textile-view-card")).toHaveCount(10);
@@ -104,6 +108,16 @@ test("main and optional detail images validate independently and clear without a
   await page
     .getByLabel("详情图文件", { exact: true })
     .setInputFiles({ name: "detail.png", mimeType: "image/png", buffer: png });
+  await expect(page.locator(".reference-tile")).toHaveCount(2);
+  await page.getByLabel("主图文件", { exact: true }).evaluate((input) => {
+    if (!(input instanceof HTMLInputElement)) throw new Error("Expected file input");
+    const files = new DataTransfer();
+    files.items.add(new File(["first"], "first.png", { type: "image/png" }));
+    files.items.add(new File(["second"], "second.png", { type: "image/png" }));
+    input.files = files.files;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await expect(page.getByRole("alert")).toContainText("每次只能上传一张图片");
   await expect(page.locator(".reference-tile")).toHaveCount(2);
   await page
     .getByLabel("主图文件", { exact: true })

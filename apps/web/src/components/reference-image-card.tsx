@@ -11,12 +11,14 @@ import "./reference-image-card.css";
 export function ReferenceImageCard({
   src,
   number,
+  showNumber = true,
   onOpen,
   onRemove,
   isDisabled = false,
 }: {
   src: string;
   number: number;
+  showNumber?: boolean;
   onOpen: () => void;
   onRemove: () => void;
   isDisabled?: boolean;
@@ -42,9 +44,11 @@ export function ReferenceImageCard({
       >
         <UiIcon icon={IconX} size="small" />
       </Button>
-      <span className="reference-number" aria-hidden="true">
-        {number}
-      </span>
+      {showNumber && (
+        <span className="reference-number" aria-hidden="true">
+          {number}
+        </span>
+      )}
     </div>
   );
 }
