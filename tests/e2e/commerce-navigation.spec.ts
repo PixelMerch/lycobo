@@ -44,10 +44,10 @@ test("commerce hover cards share model styling and preserve the current creation
   await card.click();
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
   await expect(page.getByRole("heading", { name: "家纺套图", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "家纺套图即将上线", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "家纺套图参数", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
   await expect(page.locator(".commerce-nav-row")).toHaveAttribute("data-active", "true");
-  await page.getByRole("link", { name: "前往创作", exact: true }).click();
+  await page.getByRole("link", { name: "创作", exact: true }).click();
   await expect(prompt).toHaveValue("保留我的家纺主图草稿");
 });
 

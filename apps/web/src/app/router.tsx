@@ -57,7 +57,8 @@ export const router = createBrowserRouter([
       {
         path: "commerce/textile-set",
         lazy: async () => ({
-          Component: (await import("../features/commerce/commerce-page")).TextileSetPage,
+          Component: (await import("../features/commerce/textile-set/textile-set-page"))
+            .TextileSetPage,
         }),
       },
       {
