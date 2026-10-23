@@ -36,10 +36,5 @@
       }
     ]
   },
-  "vars": {
-    "IMAGE_GENERATION_ENABLED": "false",
-    "VAKV_ENABLE_IMAGE_EDITS": "false",
-    "AUTH_TRUSTED_ORIGINS": "https://lycobo.pages.dev",
-    "APP_ENV": "production"
-  }
+  "keep_vars": true
 }

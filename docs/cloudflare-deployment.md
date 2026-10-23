@@ -13,7 +13,7 @@
 | 私有图片 | `packages/storage/src/r2-image-store.ts` | R2 bucket `lycobo`，不开公共域名 |
 | PostgreSQL | `packages/db` | Supabase 项目 `wjirihknptxjodgknbfy`，经 Hyperdrive 连接 |
 
-Pages 的 `functions/api/[[path]].ts` 用服务绑定将 `/api/*` 转给私有 API Worker，原样保留 Cookie 和 Origin。浏览器保持同域；无 wildcard CORS，不把 JWT、数据库密码或服务商 key 发给前端。Pages 预览域名不自动进入登录白名单；生产绑定仅接受 `.env` 中配置的精确 HTTPS Origin。
+Pages 的 `functions/api/[[path]].ts` 用服务绑定将 `/api/*` 转给私有 API Worker，原样保留 Cookie 和 Origin。浏览器保持同域；无 wildcard CORS，不把 JWT、数据库密码或服务商 key 发给前端。Pages 预览域名不自动进入登录白名单；生产 API 仅接受 Cloudflare 中 `AUTH_TRUSTED_ORIGINS` 配置的精确 HTTPS Origin。
 
 API／消费者复用原有 Hono 路由、账号哈希、Drizzle schema 和 PostgreSQL repository。Workers 连接按请求／消息批次创建、结束后关闭；Hyperdrive 管理源站连接池，**必须关闭查询缓存**，避免缓存身份撤销、余额和任务状态。Postgres.js 保持 prepared statements；每个 repository 的边缘连接上限为 1，不建立跨请求全局客户端。数据库迁移仍显式运行 `pnpm db:migrate:supabase`，部署不执行 `db push`、不重建表。
 
@@ -50,20 +50,48 @@ Images 转换是额外计量项：Free 每月最多 5,000 次唯一转换，超�
 
 1. 首次部署使用 Workers Free，不设置付费计划专用 CPU 上限，不升级订阅。HTTP 请求 CPU 上限为 10ms，网络等待不计 CPU；需要在真实免费运行时实测 scrypt 登录与上传。若发生 CPU 超限，记录失败并讨论优化，不降低密码校验强度、不自动升级。R2 保持当前已启用状态。当前 Chrome 已确认存在私有的 `lycobo` bucket（Public Access Disabled），配置复用该桶，不另建同用途桶。R2 即使额度内为 $0，也需用户确认订阅与条款；脚本不会开通或升级套餐。
 2. 通过 Cloudflare 创建仅限此账户的 API token，权限覆盖 Workers Scripts、Queues、R2 Storage、Hyperdrive、Pages 的编辑，以及 Cloudflare 要求的账户读取权限。令牌只填被忽略的根 `.env` 的 `CLOUDFLARE_API_TOKEN`，不发到聊天或提交 Git。创建访问凭据／同意订阅由用户完成。
-3. 保持 `SUPABASE_DATABASE_URL` 的真实密码只在 `.env`；提供至少 32 字节的 `AUTH_JWT_SECRET`。真实生成还需 `VAKV_API_KEY`，以及已验证的能力开关。
+3. 首次创建 Hyperdrive／显式迁移时，`SUPABASE_DATABASE_URL` 只在本地受保护的 `.env` 使用；日常部署不读取数据库密码。生产运行变量和 Secrets 只在 Cloudflare 管理，具体位置见下表。本地开发使用独立凭据。
 4. `pnpm cloudflare:setup` 创建或复用上述私有 bucket、两条队列、Hyperdrive 与 Pages 项目；Hyperdrive 关闭缓存并使用 require TLS（Cloudflare WebPKI 验证服务器证书），资源 ID 保存到 `.env` 的 `CLOUDFLARE_HYPERDRIVE_ID`。脚本不修改密码／套餐，不删除资源，失败后先检查同名资源再重跑。
-5. 核对 `CLOUDFLARE_PUBLIC_ORIGIN` 为实际 Pages HTTPS 域名或已经绑定的自定义域名。Pages 项目名对应的域名若有后缀，以控制台实际结果为准。
+5. 在 Cloudflare 的 `lycobo-api` 中配置 `AUTH_TRUSTED_ORIGINS` 为实际 Pages HTTPS Origin 或已绑定的自定义域名。Pages 项目名对应的域名若有后缀，以控制台实际结果为准。
 6. `pnpm cloudflare:deploy --plan` 检查目标与本地参数；`pnpm cloudflare:deploy` 先检查 Hyperdrive 目标和缓存，再构建前端，依次发布消费者、API 和 Pages。
 
-部署脚本通过受限临时文件上传 Worker Secrets，结束后删除文件，不把秘密放进命令参数、配置 vars、构建产物或控制台。构建失败或账户配置缺失会返回非零；脚本不自动推送 Git，不合并分支，不执行付费生图，不宣称已通过外部集成。
+部署脚本只生成资源配置，不读取或上传运行 Secrets；两个 Worker 均使用 `keep_vars: true`，发布配置不含 `vars`，保留 Cloudflare 已有运行变量和 Secrets。资源绑定、队列消费者和 Cron 仍由仓库管理。构建失败或账户配置缺失会返回非零；脚本不自动推送 Git，不合并分支，不执行付费生图，不宣称已通过外部集成。
 
 三个部署配置保留同一仓库；修改共享契约时先兼容消费者和 API，再发布 Pages。GitHub Actions 在 `main` 推送且对应 CI（含远程 E2E 和隔离集成）全部成功后自动发布；使用 CI 的精确提交 SHA，拒绝已被新提交取代的旧版本。也可仅从 `main` 手动触发。生产发布不依赖本地机器上的 Redis、文件目录或 Docker。
 
 ## GitHub 自动部署配置
 
-仓库为 `PixelMerch/lycobo`，部署使用 `cloudflare-production` Environment，仅允许 `main`。不同时开启 Cloudflare 原生 Git 构建，以免和 Actions 重复部署。生产环境所需 Secrets：`CLOUDFLARE_API_TOKEN`、`SUPABASE_DATABASE_URL`、`AUTH_JWT_SECRET`，生成启用时增加 `VAKV_API_KEY`。Variables：`CLOUDFLARE_HYPERDRIVE_ID`、`CLOUDFLARE_PUBLIC_ORIGIN`、`IMAGE_GENERATION_ENABLED`、`VAKV_ENABLE_IMAGE_EDITS`。生成开关缺省为 false。
+仓库为 `PixelMerch/lycobo`，部署使用 `cloudflare-production` Environment，仅允许 `main`。不同时开启 Cloudflare 原生 Git 构建，以免和 Actions 重复部署。
 
-Secrets 的原始值保留在被 Git 忽略、权限为 0600 的本地根 `.env`，不得放入文档、工作流或聊天；GitHub 不支持读取已保存的 Secret 原值。部署环境必须配置完成后再发布，缺失令牌或资源 ID 会明确失败，不报告上线成功。
+GitHub Environment 仅保留：
+
+| 类型 | 名称 | 用途 |
+| --- | --- | --- |
+| Secret | `CLOUDFLARE_API_TOKEN` | 发布 Workers／Pages，读取 Hyperdrive 配置 |
+| Variable | `CLOUDFLARE_HYPERDRIVE_ID` | 将两个 Worker 绑定到已存在的 Hyperdrive |
+
+`CLOUDFLARE_ACCOUNT_ID` 与 `SUPABASE_PROJECT_REF` 是非敏感部署目标标识，固定在工作流中。部署预检根据项目标识核对 Hyperdrive 目标主机及查询缓存关闭状态，不再需要数据库密码。数据库凭据由 Cloudflare Hyperdrive 资源管理，Worker 使用 `HYPERDRIVE.connectionString`。
+
+生产运行配置在 Cloudflare → Workers & Pages → 对应 Worker → Settings 中管理：
+
+| Worker | 类型 | 名称与配置 |
+| --- | --- | --- |
+| `lycobo-api` | Secret | `AUTH_JWT_SECRET`：至少 32 字节，保留已有值以免已有登录令牌失效 |
+| `lycobo-api` | Variable | `APP_ENV=production`；`AUTH_TRUSTED_ORIGINS=https://lycobo.pages.dev`（按实际域名调整） |
+| 两个 Worker | Variable | `IMAGE_GENERATION_ENABLED`、`VAKV_ENABLE_IMAGE_EDITS`：分别配置，保持一致；未验收时为 `false` |
+| `lycobo-generation` | Secret | `VAKV_API_KEY`：启用真实生图时必需 |
+| `lycobo-generation` | Variable | `VAKV_BASE_URL=https://api.vakv.cn`；`GENERATION_TIMEOUT_MS=300000` |
+
+不要把这些运行配置放到 Pages 静态前端或 `VITE_*` 中。首次部署新 Worker 后，必须在 Cloudflare 补齐运行配置才能验收；部署成功不代表运行配置齐全。后续自动、手动、本地脚本部署均保留 Cloudflare 的运行值，手动部署不再提供生图开关。`keep_vars` 仅保留运行变量，资源绑定仍随仓库配置发布。[Wrangler 官方说明](https://developers.cloudflare.com/workers/wrangler/configuration/#source-of-truth)。
+
+从旧工作流迁移：
+
+1. 先核对 Cloudflare 两个 Worker 的上述配置完整，尤其是消费者的 `VAKV_API_KEY`；不需要更换 JWT 或模型密钥。
+2. 发布使用新版工作流的代码（推送、合并与部署仍需单独授权）。旧 main 工作流仍依赖 GitHub 中的旧值，不能提前删除。
+3. 新版工作流生效后，从 GitHub `cloudflare-production` 删除 Secrets `AUTH_JWT_SECRET`、`VAKV_API_KEY`、`SUPABASE_DATABASE_URL`，以及 Variables `CLOUDFLARE_PUBLIC_ORIGIN`、`IMAGE_GENERATION_ENABLED`、`VAKV_ENABLE_IMAGE_EDITS`。不要删除 Cloudflare 中的运行值。
+4. 本地 `.env` 中生产运行密钥可在确认独立开发凭据后移除；数据库直连密码仅在资源初始化／显式迁移时使用，不进入 Actions。
+
+GitHub 不支持读取已保存的 Secret 原值。令牌只放入 GitHub Secret 或被 Git 忽略的本地 `.env`，不得放入文档、工作流或聊天。
 
 ## 本地开发与验证
 
@@ -96,3 +124,7 @@ SSE 在 Workers 中保持原有持久事件游标、组织隔离、身份复验�
 ## 2026-10-23 首次部署记录
 
 使用 Workers Free 完成消费者、API、Pages 部署，入口 https://lycobo.pages.dev。线上首页与 `/api/health/live` 返回 200；已有企业账号登录返回 code 0 并设置登录 Cookie。令牌与资源变量已同步到 GitHub cloudflare-production，本地 .env 保留。生成默认关闭；真实生图与线上上传验收尚未执行。
+
+## 运行配置管理调整
+
+部署代码改为保留 Cloudflare 运行变量及 Secrets；GitHub 只传部署令牌与资源标识。此代码调整不代表已经发布或已删除 GitHub 的历史配置，需按上述迁移顺序完成。

@@ -2,10 +2,9 @@ import { spawnSync } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { supabaseMigrationTarget } from "../../packages/db/scripts/supabase-target.mjs";
 import { deploymentSettings, releaseConfig } from "./config.mjs";
 
-// Secrets go to protected temporary files, never command arguments or Wrangler console output.
+// Generated deployment files contain resource configuration only, never runtime secrets.
 const plan = process.argv.slice(2).includes("--plan");
 let directory;
 function run(label, args) {
@@ -35,7 +34,7 @@ try {
     throw new Error("Only --plan is supported.");
   const settings = deploymentSettings(process.env);
   console.info(
-    `Target: lycobo account; Pages origin ${settings.origin}; private R2; Queues; Hyperdrive caching must be disabled.`,
+    "Target: lycobo account; private R2; Queues; Hyperdrive caching must be disabled; runtime settings stay in Cloudflare.",
   );
   if (!plan) {
     if (!process.env.CLOUDFLARE_API_TOKEN)
@@ -52,7 +51,7 @@ try {
     if (
       !res.ok ||
       data.result?.caching?.disabled !== true ||
-      data.result?.origin?.host !== new URL(supabaseMigrationTarget(process.env).url).hostname
+      data.result?.origin?.host !== settings.databaseHost
     )
       throw new Error("Hyperdrive must exist with query caching disabled before deployment.");
     run("Build Pages", ["--filter", "@lycoboai/web", "build"]);
@@ -66,23 +65,7 @@ try {
       await writeFile(configFile, JSON.stringify(config), {
         mode: 0o600,
       });
-      const secretFile = path.join(directory, `${service}-secrets.json`);
-      const secrets =
-        service === "api"
-          ? { AUTH_JWT_SECRET: process.env.AUTH_JWT_SECRET }
-          : process.env.VAKV_API_KEY
-            ? { VAKV_API_KEY: process.env.VAKV_API_KEY }
-            : {};
-      await writeFile(secretFile, JSON.stringify(secrets), { mode: 0o600 });
-      run(`Deploy ${service} Worker`, [
-        "exec",
-        "wrangler",
-        "deploy",
-        "--config",
-        configFile,
-        "--secrets-file",
-        secretFile,
-      ]);
+      run(`Deploy ${service} Worker`, ["exec", "wrangler", "deploy", "--config", configFile]);
     }
     // Pages configuration contains a service binding to the already deployed private API Worker.
     run("Deploy Pages", [
@@ -100,7 +83,7 @@ try {
       "--commit-dirty=true",
     ]);
     console.info(
-      `Deployment commands completed: ${settings.origin}. Verify login/upload/history before accepting paid tasks.`,
+      "Deployment commands completed. Verify the Pages URL, login/upload/history and Cloudflare runtime settings before accepting paid tasks.",
     );
   } else console.info("Plan validated; no resources or secrets were uploaded.");
 } catch (error) {
