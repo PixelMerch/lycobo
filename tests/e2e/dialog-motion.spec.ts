@@ -112,13 +112,13 @@ for (const activation of ["pointer", "virtual"] as const) {
     await libraryEntry.click();
     await expect(page.locator(".library-shell")).toHaveCSS("transform", "none");
     const libraryFrames = exitFrames(page, ".library-shell");
-    await page.getByRole("button", { name: "关闭资产管理", exact: true }).click();
+    await page.getByRole("button", { name: "关闭我的素材", exact: true }).click();
     const library = await libraryFrames;
     expect(
       library.some((frame) => frame.scale > 0 && frame.scale < 0.95 && frame.opacity < 1),
     ).toBe(true);
     expect(library.every((frame) => Math.abs(frame.x) < 1 && Math.abs(frame.y) < 1)).toBe(true);
-    await expect(page.getByRole("dialog", { name: "资产管理", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: "我的素材", exact: true })).toHaveCount(0);
     await expect(libraryEntry).toBeFocused();
   });
 }
@@ -134,7 +134,7 @@ test("reduced motion opens both surfaces without scaling and nested preview retu
   await expect(page.locator(".image-preview")).toHaveCSS("transform", "none");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog", { name: "图片预览", exact: true })).toHaveCount(0);
-  await expect(page.getByRole("dialog", { name: "资产管理", exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "我的素材", exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "打开素材库", exact: true })).toBeFocused();

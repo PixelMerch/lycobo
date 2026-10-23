@@ -1,0 +1,172 @@
+.modal__backdrop.library-backdrop {
+  background: transparent;
+}
+/* The panel owns the whole viewport on open: full height, full width, with the
+ * sidebar hidden behind it. Clicking the rail entry goes straight to full screen. */
+.library-dialog {
+  display: flex;
+  align-self: flex-end;
+  flex-direction: column;
+  width: 100vw;
+  height: 100dvh;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #eee;
+  overflow: hidden;
+}
+.library-shell {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  background: #0b0b0e;
+  will-change: transform;
+}
+/* Header shares the shell header height so the drawer title sits on the same
+ * vertical centre as the sidebar logo and the page header. */
+.library-dialog .library-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  height: var(--header-height);
+  min-height: var(--header-height);
+  padding: 0 30px;
+  text-align: left;
+}
+/* Close sits on the left, next to the title, so the whole action area stays on
+ * the same side as the filters below and lines up with the content padding. */
+.modal__close-trigger.library-close {
+  /* Pull the control out so the 28px glyph itself lines up with the content
+   * padding below instead of the button box. */
+  margin-inline-start: -12px;
+}
+.library-dialog .library-header .modal__heading {
+  color: #eee;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+.library-dialog .library-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  /* HeroUI offsets the body by -3px for its inner padding; cancel it so the
+   * content lines up with the header and the close glyph. */
+  margin-inline: 0;
+  padding: 0 30px 30px;
+  overflow-y: auto;
+}
+.library-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.library-filter-trigger.button {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #17171b;
+  color: #cfcfcf;
+  font-size: 13px;
+  line-height: 20px;
+  box-shadow: none;
+}
+.library-filter-trigger.button:is(:hover, [data-hovered="true"]) {
+  background: #202026;
+  color: #eee;
+}
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+/* Wider desktops keep the same large picture size instead of stretching four
+ * columns across the whole viewport. */
+@media (min-width: 1600px) {
+  .library-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+.library-tile {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  width: 100%;
+  /* The shared button height (36px) would flatten the square; the picture owns
+   * the whole tile, so no text padding either. */
+  height: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 8px;
+  background: #17171b;
+  animation: library-tile-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes library-tile-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.library-tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* The model label sits flush in the top-left corner, sharing the tile corner and
+ * reading like the reference asset tiles: neutral dark block, white label. */
+/* Model tag pinned to the tile's top-left corner: it reuses the shared
+ * `.model-tag` look and only swaps in corner-hugging geometry. */
+.library-tile-badge.model-tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 8px 0 8px 0;
+  background: #000000a6;
+}
+.library-more {
+  align-self: center;
+}
+.library-empty {
+  margin: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .library-tile {
+    animation: none;
+  }
+}
+@media (max-width: 1023px) {
+  .library-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 767px) {
+  .library-dialog .library-header {
+    padding: 0 16px;
+  }
+  .library-dialog .library-body {
+    padding: 0 16px 16px;
+  }
+}
+@media (max-width: 479px) {
+  .library-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

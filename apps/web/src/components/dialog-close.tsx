@@ -7,13 +7,21 @@ import "./dialog-close.css";
  * Circular close control shared by the full-screen dialogs. It must render
  * inside a HeroUI Modal so the trigger closes the surrounding dialog.
  */
-export function DialogClose({ label, className }: { label: string; className?: string }) {
+export function DialogClose({
+  label,
+  className,
+  fullScreen = false,
+}: {
+  label: string;
+  className?: string;
+  fullScreen?: boolean;
+}) {
   return (
     <Modal.CloseTrigger
-      className={className ? `dialog-close ${className}` : "dialog-close"}
+      className={`dialog-close${fullScreen ? " dialog-close--fullscreen" : ""}${className ? ` ${className}` : ""}`}
       aria-label={label}
     >
-      <UiIcon icon={IconX} size="action" />
+      <UiIcon icon={IconX} size={fullScreen ? "illustration" : "action"} />
     </Modal.CloseTrigger>
   );
 }

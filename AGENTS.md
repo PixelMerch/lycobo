@@ -36,18 +36,32 @@ Read relevant project skills before work:
 - Follow PRD.md for navigation: Home, Create, AI Commerce, Asset Library.
   Home-textile tools belong to AI Commerce. Image tools use a category selection overlay;
   TK has no current navigation entry. UI mockups in docs/design are review targets, not services.
-- DESIGN.md is the sole visual specification. Use HeroUI v3, neutral near-black surfaces,
-  thin borders and the approved purple theme: --accent #8B5CF6, with the primary-action gradient
-  linear-gradient(180deg, #BAA4FF 0, var(--accent) 100%). Use #09070D foreground on that gradient.
-  Image content stays primary. Do not reintroduce retired brand palettes or bonko branding.
-  Interaction research in docs/design informs behavior; it does not override visual tokens.
-- The default workspace is an interactive design implementation with ephemeral fixtures documented in DESIGN.md. Keep it
-  separate from production APIs. Never represent its sample queue or notifications as durable services.
+- DESIGN.md is the sole visual specification. The user approved and froze the current UI on
+  2026-10-22. Documentation, cleanup and component refactors must preserve its appearance;
+  a new visual change requires a new explicit design request. Do not reinterpret skill recommendations
+  as permission to restyle it. Preserve the actual tokens: brand purple #8B5CF6, HeroUI accent
+  #A98CFF, primary gradient linear-gradient(180deg, #BAA4FF 0, #8B5CF6 100%) with #09070D foreground.
+  Image content stays primary. Do not reintroduce retired palettes or bonko branding.
+  Interaction research explains existing decisions; it does not override the approved UI.
+- Distinguish real image APIs from local examples and E2E fixtures. Never represent sample
+  content, client-only favorites or future payment/sign-in rewards as durable production services.
+- Keep page components focused on composition. Extract complete reusable features into components
+  and external synchronization into hooks; preserve DOM semantics, classes, focus and paid-task
+  behavior during refactors. Do not create another base-control wrapper or split by line count.
 - Use TanStack Query for server data, Zustand only for client interaction state. Derive values during
   render; effects synchronize external systems, not redundant state.
 - Lazy-load heavy canvas/editor routes. Do not load original full-resolution images into grid cards.
 - Accessible labels, visible focus, semantic controls, reduced motion and narrow-screen behavior
   are required. The header keeps only the borderless pill-shaped login action; do not restore task-center or notification entries.
+- Keep the purple focus ring keyboard-only. React Aria moves focus on hover, restored focus and
+  programmatic opens, and Chromium reports those moves as `:focus-visible`; suppress the ring for
+  pointer focus (`data-focused` without `data-focus-visible`) and for HeroUI overlay containers
+  (dialog, popover, dropdown menu). No purple box around the account capsule, menu list, row or
+  dialog after hover or click. Cover this with E2E assertions, not only CSS.
+- The header account menu opens on mouse hover and closes once the pointer leaves the trigger and
+  menu; keyboard and touch keep press toggling, and keyboard focus still enters the first row and
+  returns to the capsule on close. Keep its popover non-modal: a modal popover marks outside content
+  inert and makes a hovered trigger flicker open and closed.
 - Preserve pending drafts when switching tasks. Never navigate users away when a background task completes.
 - No server modules or secrets in apps/web or packages/contracts. VITE_* is public.
 - UI mockups are references, never a screenshot used as a functional page.
@@ -63,7 +77,9 @@ Read relevant project skills before work:
 - Persist task + outbox intent atomically. Redis/BullMQ is transport, PostgreSQL is the source of truth.
   Worker processes are separate from API; no fire-and-forget paid work in HTTP handlers.
 - External calls need timeouts, cancellation, idempotency keys and bounded retry. Ambiguous paid
-  submissions must be reconciled before resubmission. Duplicate callbacks cannot duplicate charges.
+  submissions must not be automatically resubmitted. An explicit user-confirmed retry may retire
+  an undelivered attempt, record the unresolved outcome and actor, refund it and charge a new
+  attempt atomically; stale completions must be ignored. Duplicate callbacks cannot duplicate charges.
 - Never log prompts, uploaded content, cookies, provider responses, credentials or signed URLs.
   Use request/task IDs and sanitized error codes. Return structured errors.
 - All JSON APIs use the shared request_id/code/message/data/error envelope from
@@ -118,6 +134,6 @@ Read relevant project skills before work:
 
 - Match the measured shell rules in DESIGN.md: sidebar 274/288/320px by breakpoint, collapsed 64px (2× the 32px icon background); desktop rows 40/42/44px, row gap 6px, icon/text gap 8px, radius 16px, icons 18px. Header is 68px desktop/60px mobile. Hover/active never change geometry; mobile targets stay 44px.
 
-- Use Tabler business icons through components/ui-icon.tsx. Sizes: 14 / 18 / 20 / 22 / 28px, stroke 2. Keep icon sizing independent of compact control geometry; do not add another icon library.
+- Use Tabler business icons through components/ui-icon.tsx. Sizes: 14 / 18 / 20 / 22 / 28px, stroke 2. Keep icon sizing independent of compact control geometry; do not add another icon library. Credits use Tabler IconCoins (no bitmap coin) and close controls use Tabler IconX; never keep hand-drawn, bitmap or second-library icons.
 
 - Sidebar text/icons use neutral gray-white: default #FFFFFFB3, hover fill #FFFFFF0A, active fill #FFFFFF14 with white text/icons. Do not restore purple navigation labels. Chevrons rotate left on expansion and respect reduced motion. Tool selectors use spacing instead of extra divider lines.

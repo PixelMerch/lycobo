@@ -1,0 +1,68 @@
+name: Release
+run-name: Release ${{ inputs.version || github.ref_name }}
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "版本号（例如 v0.1.0；须与 package.json 一致）"
+        required: true
+        type: string
+  push:
+    tags: ["v*"]
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ inputs.version || github.ref_name }}
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_VERSION: ${{ inputs.version || github.ref_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+      - name: Validate version, main ancestry and successful CI
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$EVENT_REF" != "refs/heads/main" ]; then
+            echo "Release must be dispatched from main" >&2
+            exit 1
+          fi
+          RELEASE_SHA="$(git rev-parse HEAD)"
+          git merge-base --is-ancestor "$RELEASE_SHA" origin/main
+          node --input-type=module -e 'import {validateVersion} from "./scripts/release-notes.mjs"; validateVersion(process.env.RELEASE_VERSION)'
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_VERSION"; then
+            test "$(git rev-parse "refs/tags/$RELEASE_VERSION^{commit}")" = "$RELEASE_SHA"
+          fi
+          CI_RESULT="$(gh run list --workflow ci.yml --commit "$RELEASE_SHA" --branch main --event push --limit 1 --json conclusion --jq '.[0].conclusion // ""')"
+          if [ "$CI_RESULT" != "success" ]; then
+            echo "The main commit must have a successful CI run before release" >&2
+            exit 1
+          fi
+          printf 'RELEASE_SHA=%s\n' "$RELEASE_SHA" >> "$GITHUB_ENV"
+      - name: Generate changelog, authors and file changes
+        run: node scripts/release-notes.mjs --sha "$RELEASE_SHA" --output "$RUNNER_TEMP/lycobo-release"
+      - name: Publish GitHub Release
+        run: |
+          set -euo pipefail
+          gh release create "$RELEASE_VERSION" \
+            --target "$RELEASE_SHA" \
+            --title "$RELEASE_VERSION" \
+            --notes-file "$RUNNER_TEMP/lycobo-release/notes.md" \
+            "$RUNNER_TEMP/lycobo-release/CHANGELOG.md" \
+            "$RUNNER_TEMP/lycobo-release/changes.json"

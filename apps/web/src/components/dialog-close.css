@@ -23,3 +23,33 @@
   background: #ffffff14;
   color: #ffffff;
 }
+
+/* All full-screen overlays share a larger glyph with a restrained hover disc. */
+.modal__close-trigger.dialog-close.dialog-close--fullscreen {
+  position: relative;
+  width: 52px;
+  min-width: 52px;
+  height: 52px;
+  min-height: 52px;
+}
+.modal__close-trigger.dialog-close.dialog-close--fullscreen:is(
+  :hover,
+  [data-hovered="true"],
+  [data-focus-visible="true"]
+) {
+  background: transparent;
+}
+.dialog-close--fullscreen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: transparent;
+  pointer-events: none;
+}
+.dialog-close--fullscreen:is(:hover, [data-hovered="true"], [data-focus-visible="true"])::before {
+  background: #ffffff14;
+}

@@ -28,6 +28,7 @@ function fixture() {
     create,
     list: unexpected,
     get: unexpected,
+    latestEdit: unexpected,
     addReference: unexpected,
     listAssets: unexpected,
     asset: unexpected,
@@ -38,6 +39,8 @@ function fixture() {
     pruneEvents: unexpected,
     expireClaims: unexpected,
     reconcile: unexpected,
+    retry: unexpected,
+    settleInvalidResponses: unexpected,
   };
   const store: ImageStore = {
     ready: unexpected,

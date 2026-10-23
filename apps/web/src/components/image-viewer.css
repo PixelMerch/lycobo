@@ -1,0 +1,235 @@
+.modal__backdrop.browse-image-backdrop {
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+/* The dim and blur share one static pseudo layer whose opacity alone animates.
+ * The whole layer fades with the content surface, so the page darkens gradually
+ * on open and restores gradually on close; unmounting only after that fade
+ * removes the old pop from dimmed to undimmed. Blur is painted once and only
+ * composited, never re-sampled per frame. */
+.browse-image-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(24, 24, 24, 0.5);
+  backdrop-filter: blur(20px);
+  /* Entrance: start on mount rather than an attribute, because HeroUI drops
+   * `data-entering` before the backdrop exists. Same 300ms curve as the surface
+   * scale so the page dims while the viewer grows. */
+  animation: browse-image-backdrop-in 300ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
+}
+/* Exit: fade the dim out over the surface exit so the page keeps showing
+ * through the shrinking viewer instead of popping back at unmount. Slightly
+ * shorter than the 300ms surface so the last frame is already clear. */
+.modal__backdrop.browse-image-backdrop[data-dialog-phase="closed"]::before {
+  animation: browse-image-backdrop-out 260ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
+}
+@keyframes browse-image-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes browse-image-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+/* HeroUI's own 150ms/100ms backdrop timeline would double-fade the layer. */
+.modal__backdrop.browse-image-backdrop[data-entering="true"],
+.modal__backdrop.browse-image-backdrop[data-exiting="true"] {
+  animation: none;
+  opacity: 1;
+}
+.modal__container.browse-image-container {
+  position: relative;
+}
+.modal__container.browse-image-container[data-entering="true"],
+.modal__container.browse-image-container[data-exiting="true"] {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+.browse-image-dialog {
+  width: 100vw;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: hidden;
+  color: var(--foreground);
+}
+.browse-image-surface {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 40px 96px 20px;
+  gap: 16px;
+  transform-origin: center;
+  overflow: hidden;
+}
+.browse-image-area {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  touch-action: none;
+}
+.browse-image-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+}
+.browse-image-surface[data-ready="false"] :is(.browse-image-transform, .browse-image-toolbar) {
+  visibility: hidden;
+}
+.browse-image-area[data-zoomed="true"] {
+  cursor: grab;
+}
+.browse-image-area[data-dragging="true"] {
+  cursor: grabbing;
+}
+/* The frame is the stable image stage, not the picture box: it fills the
+ * browsing area so the close action and the arrows keep their position when
+ * the picture is refitted by a rotation or resized by zoom. */
+.browse-image-frame {
+  position: absolute;
+  inset: 0;
+}
+.browse-image-transform {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.browse-image-picture {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  pointer-events: auto;
+  user-select: none;
+  border-radius: 0;
+}
+/* Rotation and the matching refit ease together once the fitted frame is on
+ * screen; the first frame and reduced motion switch instantly. */
+.browse-image-picture[data-animated="true"] {
+  transition:
+    rotate 320ms cubic-bezier(0.215, 0.61, 0.355, 1),
+    scale 320ms cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+/* Close sits 32px right of the fixed stage so it never follows the picture as
+ * it is refitted or zoomed; the frame fills the stage, so its top is `top: 0`. */
+.browse-image-close {
+  position: absolute;
+  top: 0;
+  right: -84px;
+  cursor: auto;
+}
+.browse-image-toolbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: #090909e6;
+  color: #fff;
+  flex: none;
+}
+.browse-image-toolbar .button,
+.browse-image-frame > .button {
+  color: #fff;
+  border: 0;
+  background: transparent;
+}
+.browse-image-toolbar .button:hover,
+.browse-image-frame > .button:hover {
+  background: #ffffff14;
+}
+/* Viewer controls keep a visible but neutral keyboard focus: the shared theme
+ * ring reads as a purple border on the dark toolbar, so focus and hover share
+ * one lighter fill instead. */
+.browse-image-surface .button:is(:focus-visible, [data-focus-visible="true"]) {
+  outline: none;
+  box-shadow: none;
+  background: #ffffff1f;
+  color: #fff;
+}
+.browse-image-position {
+  color: #fff;
+  min-width: 48px;
+  text-align: center;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.browse-image-prev.button,
+.browse-image-next.button {
+  position: absolute;
+  top: 50%;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: #090909b3;
+}
+.browse-image-prev {
+  right: calc(100% + 32px);
+}
+.browse-image-next {
+  left: calc(100% + 32px);
+}
+@media (max-width: 767px) {
+  .browse-image-surface {
+    padding: 60px 16px 20px;
+  }
+  .browse-image-close {
+    top: -52px;
+    left: auto;
+    right: 0;
+  }
+  .browse-image-prev {
+    right: auto;
+    left: 4px;
+  }
+  .browse-image-next {
+    left: auto;
+    right: 4px;
+  }
+  .browse-image-toolbar {
+    gap: 4px;
+    padding-inline: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .browse-image-picture {
+    transition: none;
+  }
+  .browse-image-backdrop::before,
+  .modal__backdrop.browse-image-backdrop[data-dialog-phase="closed"]::before {
+    animation: none;
+    opacity: 1;
+  }
+}

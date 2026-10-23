@@ -1,13 +1,10 @@
-/** Shared decorative credit token; surrounding text supplies the amount. */
-export function CreditCoin() {
-  return (
-    <img
-      className="credit-coin"
-      src="/brand/credit-coin.png"
-      width={22}
-      height={22}
-      alt=""
-      aria-hidden="true"
-    />
-  );
+import { IconCoins } from "@tabler/icons-react";
+import { UiIcon } from "./ui-icon";
+
+/**
+ * Shared decorative credit token; surrounding text supplies the amount.
+ * It follows the Tabler icon set so credits read like every other business icon.
+ */
+export function CreditCoin({ size = "action" }: { size?: "default" | "navigation" | "action" }) {
+  return <UiIcon icon={IconCoins} size={size} className="credit-coin" />;
 }

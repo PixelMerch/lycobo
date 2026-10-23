@@ -71,6 +71,48 @@
       "when": 1792571982704,
       "tag": "0009_fearless_big_bertha",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792638107189,
+      "tag": "0010_exotic_wind_dancer",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792664122443,
+      "tag": "0011_slippery_caretaker",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792669490148,
+      "tag": "0012_asset_media_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792671954189,
+      "tag": "0013_media_assets_naming",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792672400127,
+      "tag": "0014_generation_naming",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792673132865,
+      "tag": "0015_remove_legacy_views",
+      "breakpoints": true
     }
   ]
 }

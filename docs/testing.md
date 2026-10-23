@@ -13,6 +13,21 @@
 CI 使用 pnpm exec playwright install --with-deps chromium。
 浏览器测试失败留 trace/report；测试使用本地应用，不能连接线上接口。
 
+## CI 分层浏览器检查
+
+| 触发场景 | Browser 检查 |
+| --- | --- |
+| 推送 dev、目标为 dev 的 PR | `pnpm test:e2e:smoke`，只跑核心流程 |
+| 目标为 main 的 PR | `pnpm test:e2e`，合并前全量回归 |
+| 推送 main（含合并） | `pnpm test:e2e`，全量回归 |
+| 手动运行 CI | `pnpm test:e2e`，全量回归 |
+
+冒烟范围：首页到创作路由、登录/退出后的历史同步、会话续期、真实接口契约 fixture 下的提交/参考图上传、草稿保留与桌面/移动导航。它不替代发布前的完整回归。修改模块时仍应本地执行相应测试。
+
+Quality 和 Infrastructure 保持原检查范围；分支保护所需的 `Browser` 名称保持不变，由同一 job 明确选择全量或冒烟。不能通过顶层路径过滤跳过必需检查，否则可能一直处于 Pending。
+
+PR 标题校验拆为独立 `pr-title.yml`，仍报告 `PR title`。编辑标题或描述仅重跑该轻量工作流，不取消或重启完整 CI；新提交仍会触发完整的对应级别检查。改动 PR 目标分支则重新执行 CI，以免从 dev 改投 main 后沿用冒烟结果。纯元数据编辑的 CI 使用独立并发组和非必需检查名称并跳过任务，不覆盖之前的必需检查结果。此调整不改变 main 的分支保护。
+
 ## 本地 DB/队列集成
 
 ```sh
@@ -53,7 +68,6 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:integration
 
 根 test:integration 已增加 `@lycoboai/api test:events`，覆盖 SSE 的持久化事件、跨连接通知、回滚、租户隔离、重连回放与身份撤销。运行需 loopback PostgreSQL、Redis 和 ALLOW_LOCAL_INTEGRATION=true；不会调用付费模型。
 
-
 ## 工作台浏览器回归
 
 `tests/e2e/image-preview.spec.ts` 验证全屏预览、缩放拖动、移动布局和图片切换后的说明同步；`library-dialog.spec.ts` 验证筛选、延迟加载和弹层焦点恢复。接口均由浏览器 fixture 拦截，不调用模型。
@@ -63,3 +77,12 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:integration
 企业共享钱包测试纳入 worker test:images：verify-wallet.ts 验证主子账号并发扣款、20币固定价格、逐图退款、充值重复入账、账本不可修改和分页。wallet.spec.ts 验证账户中心真实接口契约（浏览器 fixture）。
 
 弹层焦点回归同时覆盖鼠标点击和不预先聚焦的虚拟点击。受控预览在挂载时记录返回目标，因此打开前需聚焦入口按钮；预览入口位于 Modal 的触发器树外，由历史组件保留其引用，在关闭动画结束、弹层卸载后恢复焦点；弹层内部的焦点约束仍交给 HeroUI。不能通过预先在测试中 focus 或删除焦点断言掩盖问题。
+
+原任务重试集成覆盖：同键并发只扣一次、跨组织拒绝、部分失败保留成功图片、旧执行被隔离、无效响应退币与历史待确认记录幂等修复。failure-retry.spec.ts 验证前端使用原任务 retry 接口，不追加失败历史。
+
+通用生成命名升级由 `verify-generation-migration.ts` 纳入 worker `test:images`：
+先在独立空库执行到 0013，创建七张旧表、素材和局部修改的关联数据，
+再执行 0014 核对改名；建立旧视图依赖并确认 0015 删除受阻后，清理测试依赖再迁移。
+验证八个旧名均消失，表 OID、记录、素材／修改关联、提交幂等和退款唯一性保持，
+数据库函数不再引用旧表名。后续图片／钱包／SSE 检查全部在无兼容视图的结构上运行。
+测试数据库和临时迁移目录结束后清理，不操作现有业务数据，也不调用付费模型。

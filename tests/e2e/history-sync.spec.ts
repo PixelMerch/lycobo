@@ -7,13 +7,11 @@ const png = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
   "base64",
 );
-test("history thumbnails locate tasks, track scrolling and keep metadata visible", async ({
-  page,
-}) => {
-  await mockImageApi(page);
-  const jobs = Array.from({ length: 3 }, (_, index) => ({
+
+function historyJobs(count: number) {
+  return Array.from({ length: count }, (_, index) => ({
     id: crypto.randomUUID(),
-    public_id: `W0000000${index}`,
+    public_id: `W${index.toString(36).toUpperCase().padStart(8, "0")}`,
     organization_id: crypto.randomUUID(),
     user_id: crypto.randomUUID(),
     model: "gpt-image-2.5",
@@ -37,6 +35,13 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
       },
     ],
   }));
+}
+
+test("history thumbnails locate tasks, track scrolling and keep metadata visible", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  const jobs = historyJobs(3);
   await page.route("**/api/v1/image-tasks*", (route) => route.fulfill({ json: { data: jobs } }));
   await page.route("**/api/v1/image-assets/**/content*", (route) =>
     route.fulfill({ contentType: "image/png", body: png }),
@@ -53,7 +58,15 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await target.click();
   await expect(target).toHaveAttribute("aria-current", "true");
   await expect(articles.nth(1)).toHaveAttribute("data-active", "true");
-  await expect.poll(async () => (await articles.nth(1).boundingBox())?.y).toBeLessThan(110);
+  const metadataClearance = () =>
+    articles
+      .nth(1)
+      .locator("header")
+      .evaluate((header) => {
+        const title = document.querySelector(".workspace-tabs > .tabs__list-container");
+        return header.getBoundingClientRect().top - (title?.getBoundingClientRect().bottom ?? 0);
+      });
+  await expect.poll(metadataClearance).toBeGreaterThanOrEqual(12);
   const info = articles.nth(1).getByRole("definition");
   await expect(info).toHaveText([
     "gpt-image-2.5",
@@ -90,10 +103,51 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await target.press("Enter");
   await expect(target).toHaveAttribute("aria-current", "true");
   expect((await target.boundingBox())?.width).toBe(width);
+  await expect.poll(metadataClearance).toBeGreaterThanOrEqual(12);
   await page.setViewportSize({ width: 390, height: 844 });
   // The resize re-lays out the composer; assert the settled layout, not a frame
   // captured mid-reflow.
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
     .toBe(true);
+  await target.click();
+  await expect.poll(metadataClearance).toBeGreaterThanOrEqual(12);
+  await expect(target).toHaveAttribute("aria-current", "true");
+});
+
+test("the asset entry stays fixed above the scrolling thumbnail list", async ({ page }) => {
+  await mockImageApi(page);
+  const jobs = historyJobs(14);
+  await page.route("**/api/v1/image-tasks*", (route) => route.fulfill({ json: { data: jobs } }));
+  await page.route("**/api/v1/image-assets/**/content*", (route) =>
+    route.fulfill({ contentType: "image/png", body: png }),
+  );
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/create");
+  const list = page.locator(".history-rail-list");
+  await expect(list.locator(".history-thumbnail")).toHaveCount(14);
+  const entry = page.getByRole("button", { name: "打开素材库", exact: true });
+  await expect(entry).toContainText("我的素材");
+  // Scroll the thumbnails to the end; only the list moves, never the heading.
+  const headingBox = await page.locator(".history-rail-title").boundingBox();
+  const listBox = await list.boundingBox();
+  await page.mouse.move((listBox?.x ?? 0) + 20, (listBox?.y ?? 0) + 200);
+  await page.mouse.wheel(0, 6000);
+  await expect.poll(() => list.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+  await expect(entry).toBeInViewport();
+  expect(await page.locator(".history-rail-title").boundingBox()).toEqual(headingBox);
+  // Leaving the workspace and returning to the top must not clip the heading
+  // or leave it scrolled out of the rail.
+  await page.mouse.move(700, 400);
+  await page.mouse.wheel(0, 8000);
+  await page.mouse.wheel(0, -12000);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  expect(await page.locator(".history-rail-title").boundingBox()).toEqual(headingBox);
+  const clearance = await page.evaluate(() => {
+    const rail = document.querySelector(".history-rail")?.getBoundingClientRect();
+    const title = document.querySelector(".history-rail-title")?.getBoundingClientRect();
+    return title && rail ? title.top - rail.top : -1;
+  });
+  expect(clearance).toBeGreaterThanOrEqual(0);
+  await expect(entry).toBeVisible();
 });

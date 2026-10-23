@@ -76,13 +76,9 @@ test("history prompt expands, copies in full and shows uploaded references; icon
   await expect(page.getByRole("tooltip").filter({ hasText: "重新编辑" })).toBeVisible();
   await article.getByRole("button", { name: "重新生成", exact: true }).hover();
   await expect(page.getByRole("tooltip").filter({ hasText: "重新生成" })).toBeVisible();
-  const references = article.getByRole("link", { name: /查看参考图片/ });
+  const references = article.getByRole("button", { name: /查看参考图片/ });
   await expect(references).toHaveCount(2);
   for (const [index, assetId] of input.referenceAssetIds.entries()) {
-    await expect(references.nth(index)).toHaveAttribute(
-      "href",
-      `/api/v1/image-assets/${assetId}/content`,
-    );
     await expect(references.nth(index).locator("img")).toHaveAttribute(
       "src",
       `/api/v1/image-assets/${assetId}/content?thumbnail=1`,
@@ -94,7 +90,7 @@ test("history prompt expands, copies in full and shows uploaded references; icon
   );
 });
 
-test("edit restores the original references and parameters while preserving an existing draft", async ({
+test("edit directly restores the original references and parameters over an existing draft", async ({
   page,
 }) => {
   const { input } = await historyFixture(page);
@@ -110,11 +106,7 @@ test("edit restores the original references and parameters while preserving an e
   await page.getByLabel("提示词", { exact: true }).fill("我的新草稿");
   await edit.click();
   const dialog = page.getByRole("dialog", { name: "替换当前草稿？", exact: true });
-  await expect(dialog).toBeVisible();
-  await dialog.getByRole("button", { name: "取消", exact: true }).click();
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("我的新草稿");
-  await edit.click();
-  await dialog.getByRole("button", { name: "确认", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
 });
 
@@ -166,6 +158,25 @@ test("regenerate submits the original snapshot once and leaves the composer draf
   await page.getByRole("button", { name: "重新生成", exact: true }).click();
   const confirm = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
   await expect(confirm).toBeVisible();
+  await expect(confirm.locator(".confirm-dialog__content")).toHaveText("本次消耗 20 积分");
+  // The panel is a borderless black sheet on a blurred, veiled page, and both
+  // the dismiss action and the corner close glyph read as white on it.
+  await expect(confirm).toHaveCSS("border-top-width", "0px");
+  await expect(confirm).toHaveCSS("background-color", "rgb(0, 0, 0)");
+  await expect(confirm.locator(".confirm-dialog__content")).toHaveCSS(
+    "color",
+    "rgb(184, 184, 192)",
+  );
+  await expect(confirm.getByRole("button", { name: "取消", exact: true })).toHaveCSS(
+    "color",
+    "rgb(184, 184, 192)",
+  );
+  const closeRegenerate = confirm.getByRole("button", {
+    name: "关闭重新生成确认",
+    exact: true,
+  });
+  await expect(closeRegenerate).toHaveCSS("color", "rgb(168, 168, 176)");
+  await expect(closeRegenerate).toHaveCSS("border-radius", "50%");
   expect(requests).toBe(0);
   await confirm.getByRole("button", { name: "取消", exact: true }).click();
   await expect(confirm).not.toBeVisible();

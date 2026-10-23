@@ -1,0 +1,200 @@
+/* Local repair keeps the detail panel's neutral language: chrome stays on the
+ * gray scale and the brand gradient is reserved for the single submit action.
+ * Selecting a region is communicated with a lighter surface and hairline
+ * border, not with a filled accent. */
+.repair-info {
+  gap: 20px;
+}
+.repair-info h2 {
+  margin: 0;
+  color: #eee;
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
+}
+.repair-lead,
+.repair-message {
+  margin: 0;
+  color: #8f8f8f;
+  font-size: 13px;
+  line-height: 20px;
+}
+.repair-lead {
+  margin-top: 6px;
+}
+.repair-back.button {
+  width: fit-content;
+  height: auto;
+  min-height: 0;
+  margin-bottom: 12px;
+  padding: 0;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: #cfcfcf;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
+  box-shadow: none;
+}
+.repair-back.button:is(:hover, [data-hovered="true"]) {
+  background: transparent;
+  color: #fff;
+}
+.repair-regions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.repair-region-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #ffffff0a;
+  border-radius: 12px;
+  background: #17171b;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+.repair-region-card[data-selected="true"] {
+  border-color: #ffffff29;
+  background: #1c1c21;
+}
+.repair-region-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.repair-region-select.button {
+  width: fit-content;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: #eee;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.repair-region-select.button:is(:hover, [data-hovered="true"]) {
+  background: transparent;
+  color: #fff;
+}
+.repair-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: #343434;
+  color: #eee;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+}
+.repair-region-card[data-selected="true"] .repair-badge {
+  background: #505050;
+  color: #fff;
+}
+.repair-region-remove.button {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #8f8f8f;
+  box-shadow: none;
+}
+.repair-region-remove.button:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
+  background: #ffffff14;
+  color: #eee;
+}
+.repair-region-card textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 10px 12px;
+  resize: vertical;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: #121216;
+  color: #eee;
+  font-size: 14px;
+  line-height: 22px;
+  box-shadow: none;
+}
+.repair-region-card textarea::placeholder {
+  color: var(--field-placeholder);
+}
+.repair-region-card textarea:focus,
+.repair-region-card textarea[data-focused="true"] {
+  outline: none;
+  border-color: #ffffff29;
+  box-shadow: none;
+}
+.repair-add.button {
+  width: 100%;
+  height: 40px;
+  min-height: 40px;
+  gap: 6px;
+  border: 1px dashed #ffffff29;
+  border-radius: 10px;
+  background: #ffffff04;
+  color: #eee;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.repair-add.button:is(:hover, [data-hovered="true"]) {
+  border-color: #ffffff3d;
+  background: #ffffff0a;
+  color: #fff;
+}
+.repair-submit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.repair-result.button {
+  height: 40px;
+  min-height: 40px;
+  border: 1px solid #ffffff0a;
+  border-radius: 10px;
+  background: #26262d;
+  color: #eee;
+  font-size: 14px;
+  line-height: 20px;
+  box-shadow: none;
+}
+.repair-result.button:is(:hover, [data-hovered="true"]) {
+  background: #30303a;
+  color: #fff;
+}
+@media (max-width: 767px) {
+  .repair-info {
+    padding-bottom: 16px;
+  }
+  .repair-info .button {
+    min-height: 44px;
+  }
+  /* Reaching a 16px field size stops mobile browsers zooming on focus. */
+  .repair-region-card textarea {
+    font-size: 16px;
+    line-height: 24px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .repair-region-card {
+    transition: none;
+  }
+}

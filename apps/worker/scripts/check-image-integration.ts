@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { once } from "node:events";
 import { mkdtemp, rm } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import {
   apiErrorSchema,
   imageAssetsResponseSchema,
@@ -25,6 +23,8 @@ import postgres from "postgres";
 import { z } from "zod";
 import { createApp } from "../../api/src/app";
 import { processImageItem } from "../src/image-processor";
+import { verifyGenerationMigration } from "./verify-generation-migration";
+import { verifyLocalEdits } from "./verify-local-edits";
 import { verifyWallet } from "./verify-wallet";
 
 if (process.env.ALLOW_LOCAL_INTEGRATION !== "true")
@@ -44,12 +44,7 @@ isolatedUrl.pathname = `/${testDatabaseName}`;
 const databaseUrl = isolatedUrl.href;
 await admin.unsafe(`create database "${testDatabaseName}"`);
 try {
-  const migrated = spawnSync("pnpm", ["--filter", "@lycoboai/db", "db:migrate"], {
-    cwd: fileURLToPath(new URL("../../../", import.meta.url)),
-    env: { ...process.env, DATABASE_URL: databaseUrl },
-    stdio: "pipe",
-  });
-  if (migrated.status !== 0) throw new Error("Isolated image migration failed");
+  await verifyGenerationMigration(databaseUrl);
 } catch (error) {
   await admin.unsafe(`drop database if exists "${testDatabaseName}"`);
   await admin.end({ timeout: 5 });
@@ -74,9 +69,11 @@ const server = createServer(async (req, res) => {
   calls++;
   let raw = "";
   for await (const bytes of req) raw += bytes.toString();
-  const body = imageGenerationInputSchema
-    .pick({ model: true, prompt: true })
-    .strip()
+  const body = z
+    .object({
+      model: imageGenerationInputSchema.shape.model,
+      prompt: imageGenerationInputSchema.shape.prompt,
+    })
     .parse(JSON.parse(raw));
   if (body.prompt === "ambiguous") {
     res.writeHead(503);
@@ -221,9 +218,10 @@ try {
     404,
   );
   await dispatch();
-  const [job] = await sql`select status from image_jobs where id=${taskId}`;
+  const [job] = await sql`select status from generation_jobs where id=${taskId}`;
   assert.equal(job?.status, "partially_failed");
-  const items = await sql`select * from image_job_items where job_id=${taskId} order by position`;
+  const items =
+    await sql`select * from generation_job_items where job_id=${taskId} order by position`;
   assert.equal(items.filter((i) => i.status === "succeeded").length, 1);
   assert.equal(items.filter((i) => i.status === "failed").length, 1);
   assert.equal(items[0]?.worker_id, "integration-worker");
@@ -236,6 +234,13 @@ try {
   assert.equal(asset.width, 2);
   assert.equal(asset.height, 2);
   assert.ok((await store.read(asset)).length);
+  const listedOutput = (await repository.listAssets(first, 30)).find(
+    (row) => row.id === success.output_asset_id,
+  );
+  const sourceTask = await repository.get(first, taskId);
+  assert.ok(sourceTask?.public_id);
+  assert.equal(listedOutput?.task_public_id, sourceTask.public_id);
+  assert.notEqual(listedOutput?.public_id, listedOutput?.task_public_id);
   const balance =
     await sql`select balance as available_credits from organization_wallets where organization_id=${first.organizationId}`;
   assert.equal(balance[0]?.available_credits, 380);
@@ -251,7 +256,7 @@ try {
   const unknown = await repository.create(first, input("ambiguous"), crypto.randomUUID(), 1);
   await dispatch();
   assert.equal((await repository.get(first, unknown.id))?.status, "needs_reconciliation");
-  const [uncertain] = await sql`select id from image_job_items where job_id=${unknown.id}`;
+  const [uncertain] = await sql`select id from generation_job_items where job_id=${unknown.id}`;
   assert.ok(uncertain);
   assert.equal(await repository.claim(uncertain.id, "another-worker", 1000), null);
   const held = (
@@ -316,6 +321,45 @@ try {
     output?.output_public_id,
   );
   assert.equal(new Set(assetList.map((asset) => asset.public_id)).size, assetList.length);
+  // Kind filtering must happen before pagination, and retain organization scope.
+  const readAssets = async (query: string, authorization = headers.Authorization) => {
+    const response = await app.request(`/api/v1/image-assets?${query}`, {
+      headers: { Authorization: authorization },
+    });
+    assert.equal(response.status, 200);
+    return imageAssetsResponseSchema.parse(unwrapApiData(await response.json())).data;
+  };
+  const outputs = await readAssets("limit=100&kind=output");
+  assert.ok(outputs.length > 0);
+  assert.ok(outputs.every((asset) => asset.kind === "output"));
+  assert.ok(outputs.every((asset) => asset.type === "image"));
+
+  assert.ok(!outputs.some((asset) => asset.id === uploaded.id));
+  const references = await readAssets("limit=100&kind=reference");
+  assert.ok(references.some((asset) => asset.id === uploaded.id));
+  assert.ok(references.every((asset) => asset.kind === "reference" && asset.type === "image"));
+  assert.deepEqual(await readAssets("limit=100&kind=output&type=image"), outputs);
+  assert.deepEqual(await readAssets("limit=100&kind=output&type=video"), []);
+  assert.deepEqual(await readAssets("limit=100&kind=output&type=audio"), []);
+  const persistedAssetId = output?.output_asset_id;
+  assert.ok(persistedAssetId);
+  const [persistedType] =
+    await sql`select media_type from media_assets where id=${persistedAssetId}`;
+  assert.equal(persistedType?.media_type, "image");
+  await assert.rejects(
+    sql`update media_assets set media_type='invalid' where id=${persistedAssetId}`,
+    (error: unknown) =>
+      error instanceof Error && error.message.includes("media_assets_media_type_check"),
+  );
+  const firstOutputPage = await readAssets("limit=1&kind=output");
+  assert.deepEqual(firstOutputPage, outputs.slice(0, 1));
+  const nextOutputPage = await readAssets(`limit=1&kind=output&before=${outputs[0]?.id}`);
+  assert.deepEqual(nextOutputPage, outputs.slice(1, 2));
+  assert.deepEqual(await readAssets("limit=100&kind=output", `Bearer ${second.token}`), []);
+  assert.equal((await app.request("/api/v1/image-assets?kind=unknown", { headers })).status, 400);
+  assert.equal((await app.request("/api/v1/image-assets?kind=output")).status, 401);
+  assert.equal((await app.request("/api/v1/image-assets?type=unknown", { headers })).status, 400);
+
   const reconnected = openImageRepository(databaseUrl);
   try {
     const reread = imageJobSchema.parse(
@@ -328,7 +372,7 @@ try {
     await reconnected.close();
   }
   const sequenceBounds =
-    await sql`select sequencename,min_value::text,max_value::text,cycle from pg_sequences where schemaname='public' and sequencename in ('image_assets_display_number_seq','image_jobs_display_number_seq')`;
+    await sql`select sequencename,min_value::text,max_value::text,cycle from pg_sequences where schemaname='public' and sequencename in ('media_assets_display_number_seq','generation_jobs_display_number_seq')`;
   assert.equal(sequenceBounds.length, 2);
   for (const sequence of sequenceBounds) {
     assert.equal(sequence.cycle, false);
@@ -343,14 +387,14 @@ try {
   assert.equal(conflict.status, 409);
   assert.ok(apiErrorSchema.parse(await conflict.json()));
   const crashed = await repository.create(first, input("never-submit"), crypto.randomUUID(), 1);
-  const [crashItem] = await sql`select id from image_job_items where job_id=${crashed.id}`;
+  const [crashItem] = await sql`select id from generation_job_items where job_id=${crashed.id}`;
   assert.ok(crashItem);
   const claims = await Promise.all([
     repository.claim(crashItem.id, "worker-a", 1000),
     repository.claim(crashItem.id, "worker-b", 1000),
   ]);
   assert.equal(claims.filter(Boolean).length, 1);
-  await sql`update image_job_items set lease_expires_at=now()-interval '1 second' where id=${crashItem.id}`;
+  await sql`update generation_job_items set lease_expires_at=now()-interval '1 second' where id=${crashItem.id}`;
   await repository.expireClaims();
   assert.equal((await repository.get(first, crashed.id))?.status, "needs_reconciliation");
   assert.equal(await repository.claim(crashItem.id, "worker-c", 1000), null);
@@ -427,6 +471,49 @@ try {
   );
   assert.equal(thumbnail.status, 200);
   assert.equal(thumbnail.headers.get("content-type"), "image/png");
+  const retryKey = crypto.randomUUID();
+  assert.equal(
+    (
+      await app.request(`/api/v1/image-tasks/${taskId}/retry`, {
+        method: "POST",
+        headers: {
+          ...headers,
+          Authorization: `Bearer ${second.token}`,
+          "Idempotency-Key": retryKey,
+        },
+      })
+    ).status,
+    404,
+  );
+  const retryResponses = await Promise.all(
+    Array.from({ length: 4 }, () =>
+      app.request(`/api/v1/image-tasks/${taskId}/retry`, {
+        method: "POST",
+        headers: { ...headers, "Idempotency-Key": retryKey },
+      }),
+    ),
+  );
+  assert.equal(retryResponses.filter((response) => response.status === 202).length, 1);
+  assert.equal(retryResponses.filter((response) => response.status === 200).length, 3);
+  const beforeRetry = await repository.get(first, taskId);
+  assert.equal(beforeRetry?.items.length, 2);
+  assert.equal(
+    beforeRetry?.items.find((entry: { id: string }) => entry.id === success.id)?.output_asset_id,
+    asset.id,
+  );
+  await dispatch();
+  const afterRetry = await repository.get(first, taskId);
+  assert.equal(afterRetry?.status, "succeeded");
+  assert.equal(afterRetry?.items.length, 2);
+  assert.equal(
+    afterRetry?.items.filter((entry: { status: string }) => entry.status === "succeeded").length,
+    2,
+  );
+  assert.equal(
+    (await sql`select count(*)::int as count from generation_job_items where job_id=${taskId}`)[0]
+      ?.count,
+    3,
+  );
   // Retry the already-reserved idempotency key even when the available balance has become zero.
   while ((await repository.wallet(first)).balance >= 20) {
     const count = Math.min(4, Math.floor((await repository.wallet(first)).balance / 20));
@@ -462,7 +549,8 @@ try {
     404,
   );
   await verifyWallet(repository, sql);
-  await sql`update image_api_keys set revoked_at=now() where id=${first.keyId}`;
+  await verifyLocalEdits(repository, sql, async (path, init) => app.request(path, init));
+  await sql`update generation_api_keys set revoked_at=now() where id=${first.keyId}`;
   assert.equal((await app.request("/api/v1/image-models", { headers })).status, 401);
   console.info(
     "Image API auth/isolation, durable outbox, real Redis Worker, persisted files/metadata, idempotency, credits, partial failure and crash reconciliation passed (fixture only)",

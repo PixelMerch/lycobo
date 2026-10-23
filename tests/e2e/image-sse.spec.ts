@@ -239,7 +239,7 @@ test("logout closes the shared stream and removes prior identity data", async ({
     }),
   );
   await page.goto("/create");
-  await expect(page.locator(".header-actions")).toContainText(user.account);
+  await expect(page.locator(".account-trigger")).toHaveAccessibleName(`账户菜单：${user.account}`);
   await expect(page.locator("html")).toHaveAttribute("data-sse-active", "1");
   await page.locator(".account-trigger").click();
   await page.getByRole("menuitem", { name: "退出登录", exact: true }).click();

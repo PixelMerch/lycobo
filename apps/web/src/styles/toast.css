@@ -39,3 +39,70 @@
 .toast__description {
   text-align: center;
 }
+/* Task status notices (local editing) use their own bottom-right region: they
+ * are transient progress feedback, so they sit away from the picture and the
+ * form and never push the centred copy toasts around. HeroUI positions toasts
+ * absolutely, so the region needs an explicit width — otherwise it collapses to
+ * zero and the toast is clipped at the viewport edge. */
+.toast-region.toast-region--bottom-end {
+  inset-inline-start: auto;
+  left: auto;
+  right: 24px;
+  bottom: 24px;
+  width: min(360px, calc(100vw - 32px));
+  max-width: none;
+}
+.toast-region--bottom-end .toast {
+  /* Static-in-flow placement lets the notice shrink to its text and align to
+   * the right edge, instead of stretching across the whole 360px region. */
+  position: relative;
+  inset-inline: auto;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  width: fit-content;
+  min-width: 0;
+  max-width: 100%;
+  margin-inline-start: auto;
+  padding: 10px 14px;
+  gap: 8px;
+  translate: none;
+  align-items: flex-start;
+  justify-content: flex-start;
+  text-align: start;
+  border: 1px solid #ffffff14;
+  border-radius: 12px;
+  background: #1c1c21;
+  box-shadow: 0 16px 48px #000000a6;
+}
+.toast-region--bottom-end .toast__content {
+  align-items: flex-start;
+  justify-content: flex-start;
+  text-align: start;
+}
+.toast-region--bottom-end .toast__title,
+.toast-region--bottom-end .toast__description {
+  text-align: start;
+}
+.toast-region--bottom-end .toast__title {
+  color: #eee;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.toast-region--bottom-end .toast__description {
+  color: #a8a8a8;
+  font-size: 12px;
+  line-height: 18px;
+}
+.toast-region--bottom-end .toast__indicator {
+  color: #eee;
+}
+@media (max-width: 767px) {
+  .toast-region.toast-region--bottom-end {
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    width: auto;
+  }
+}

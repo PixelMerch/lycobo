@@ -1,68 +1,67 @@
-# 全站 UI 一致性与维护流程
+# UI 一致性与组件维护
 
-更新：2026-10-20。适用当前 React/Vite 工作台，HeroUI 3.2.6。尺寸数值唯一来源为 [DESIGN.md 第 6 节](../DESIGN.md)，组件选择唯一清单为 [HeroUI 组件清单](heroui-components.md)。本文记录审查发现与工作流程，不再定义第三套视觉标准。
+更新：2026-10-22。当前网站视觉已经用户确认定稿；维护目标是保持现有 UI、消除重复实现、让规范与代码一致。视觉唯一来源为 [DESIGN.md](../DESIGN.md)，交互组件清单为 [HeroUI 组件清单](heroui-components.md)。不根据设计技能的通用推荐重新换色、改尺寸或重排页面。
 
-## 本次审查范围与修复
+## 组件分层
 
-| 范围 | 发现 | 落实 |
+| 层次 | 职责 | 当前入口 |
 | --- | --- | --- |
-| 全站 Button | 统一 40px min-height 会撑大已设置为 32px 的控件；基础 height 与 min-height 冲突 | 统一 sm／md／lg 档位，移除这个全局最小高度，具名例外保留 |
-| 主按钮与弹窗操作 | 主按钮叠加 24px 横向 padding，与相邻次按钮不一致 | 主次操作默认同档；统一 12px 横向 padding，只有 lg 为 16px |
-| Header 登录领积分 | height 为 32px，但被全局 min-height 撑到 40px | 桌面恢复 32px，左右 12px，白底黑字胶囊保留 |
-| 工具栏、素材库、案例 | 小按钮使用 4px × 12px 的独立规则 | 改用官方 size="sm" / variant="outline"：32px 高、垂直 0、左右 8px，删除独立 small-button 尺寸 class |
-| 图标与触屏 | 内边距、命中区与图标大小混在一起 | isIconOnly 对应 size 的正方形；图标继续使用 UiIcon；窄屏／粗指针至少 44px，上传删除透明命中区保留 |
-| 首页／模型选择／案例 | 卡片也可能由 Button 承载，不能全局压成普通按钮 | 保留封面、正文驱动的卡片布局，不因普通按钮收紧而裁切卡片 |
-| 工作台参数、模型下拉、登录 | 已使用 HeroUI ToggleButtonGroup／Select／TextField／InputGroup | 延续官方组合，不另写互斥选择、输入框或焦点逻辑 |
-| 图片结果 | 查看原图仍使用裸 a，收藏手写 Button pressed 状态 | 替换为 HeroUI Link、ToggleButton；图片链接显式 width:100%，避免默认 fit-content 改变 400px 预览尺寸 |
-| 当前模型与历史索引 | 用 aria-pressed 表示当前导航记录 | 使用 aria-current，不伪装成可取消的开关 |
-| 过期样式 | 已移除任务中心、旧头像和 neutral-button 仍留有几何规则 | 清理无使用方的旧规则，避免后续复制旧尺寸 |
-| 维护机制 | 只有文档约定，新增代码仍可能重新使用原生控件 | 将 AST 组件边界检查接入 pnpm lint，并增加正反例单元验证 |
+| 应用与页面 | 路由、布局、场景组合，不复制底层交互 | router、StudioShell、HomePage、WorkspacePage、AssetsPage |
+| 功能组件 | 拥有一个完整功能及其局部交互 | ReferencePicker、HistoryTaskActions、LocalRepair、LibraryDialog |
+| 展示组件 | 明确输入和事件，不自行请求无关业务 | HistoryTaskMeta、ResultImage、ModelChooserCard |
+| 共享交互组合 | 组合 HeroUI，统一可复用的完整行为 | ConfirmDialog、DialogClose、ImageViewer、ReferencePrompt |
+| 状态与同步 | 服务端数据用 TanStack Query，客户端草稿用 Zustand；hook只同步外部系统 | generation-client、wallet-client、studio-state、use-image-events |
+| 视觉 | 全局token＋功能样式；不新增相互竞争的基础控件样式 | styles/app.css、components/*.css、features/**/*.css |
 
-保留的业务例外包括侧栏导航、比例图案选项、图片卡片、上传删除角标、图片悬浮动作、历史索引、登录与生成提交动作以及回到顶部。其尺寸理由见 DESIGN.md，不能把例外复制成新的默认按钮。
+按功能边界拆分，不为了行数把静态片段变成几十个只有一个调用方的包装。反之，查询、任务元信息、图片操作、右侧索引、预览状态不应长期挤在一个页面组件里。跨功能使用共享组件的真实路径，不保留仅转发导出的兼容文件，也不建立全站 barrel。
 
-## 错误反馈规则
+## 已固定的共享能力
 
-- 请求类错误（进入会话、模型目录、生成记录、素材列表、提交任务）只在页面顶部弹出一次 danger toast，不在页面、参数面板或结果区内渲染常驻错误文案。
-- 页面内不再提供“重新连接”按钮：同一错误消息在查询保持错误态期间不重复弹出，恢复后再次失败才重新提示。
-- 任务级结果仍以服务端状态为准：失败图片占位、待确认提交使用生成按钮文案“确认上次提交”表达，不伪造进度或成功。
-- 字段级校验（上传格式、大小、必填）继续使用字段下方的 `Alert`／`FieldError`，属于输入校验而非请求错误。
-- 统一使用 `useErrorToast`（apps/web/src/lib/error-toast.ts）实现去重与 toast 提示，不各页手写 `useRef` 去重逻辑。
-
-## 浏览器实测记录
-
-1440px 桌面视口，对同一页面修改前后读取 getBoundingClientRect 与 computed padding：
-
-| 控件 | 修改前实际高度／左右 padding | 修改后实际高度／左右 padding |
+| 能力 | 唯一入口 | 维护约束 |
 | --- | --- | --- |
-| Header 登录领积分 | 40px / 16px | 32px / 12px |
-| 首页开始创作 | 40px / 24px | 36px / 12px |
-| 工作台立即生成 | 44px / 24px | 44px / 12px |
+| Header账户 | HeaderAccountMenu | 积分与头像共用入口，封装登录／悬停账户菜单／单一深色账户中心；应用壳不复制状态和查询 |
+| 确认 | ConfirmDialog | 不在业务中复制 Modal 标记；正文与操作布局共用 |
+| 关闭 | DialogClose | 图标与命中区分开，确认弹窗沿用33px hover圆底 |
+| 参考图片上传 | ReferencePicker → ReferenceImageCard | 首页与工作台共用；删除、编号、预览不复制 |
+| 图片引用 | ReferencePrompt | 文本序列化、@候选、行内图片展示共用 |
+| 参考图片浏览 | ImageViewer | 历史、详情、上传入口按需加载同一组件 |
+| 生成图片操作 | ResultImage | 预览、下载、收藏、焦点入口由同一组件承担 |
+| 任务元信息 | HistoryTaskMeta | 标签、时间、比例、任务ID复制一致 |
+| 历史索引 | HistoryIndex | 定位与滚动同步；“我的素材”标题固定、列表独立滚动；不承担重试或草稿覆盖 |
+| 生成提交按钮 | HeroUI Button + styles/app.css 的 .generation-submit | 工作台与局部修改共用44px高、12px圆角、渐变、字号与积分间距；不创建按钮包装组件 |
+| 生成阶段 | generation-status | 中文状态与生成图标共用，不从颜色推断状态 |
+| 全屏开关动画 | components/use-centered-dialog-motion | 关闭动画结束后卸载；不复制 hook |
+| 请求错误 | useErrorToast | 去重、统一顶部反馈；字段校验继续用FieldError/Alert |
 
-保留登录白底黑字、导航 40px 行高、图片卡片封面比例；不是把所有内容压缩成同样的小按钮。
+纯展示组件不增加另一份服务端状态；在父级派生数据，通过props传递。Zustand订阅选择所需字段，不用effect维持可在render计算的冗余状态。支付、鉴权、计费和任务快照不属于视觉重构范围。
 
-## 所有 AI 与贡献者的执行顺序
+## 设计与代码清理流程
 
-1. 开始前读取 AGENTS.md、DESIGN.md、docs/heroui-components.md；检查 Git 状态并保留已有改动。
-2. 在组件清单里找到对应能力，按 `.agents/skills/heroui-react/SKILL.md` 查已安装版本的官方文档。HeroUI 有组件就组合它，不写新的基础按钮、输入、弹窗、单选、菜单、Tooltip 或焦点陷阱。
-3. 按需求选择 Button 的 size、variant、isIconOnly。表单、导航、切换分别使用对应官方组件，不用 aria 属性手工重建已有交互。
-4. 视觉只引用共享 token。需要新例外时，先在 DESIGN.md 写清场景、尺寸与移动端规则，再用具名功能 class；不内联 padding／height／radius，不新增互相竞争的通用 `.compact-button` 等尺寸体系。
-5. 检查桌面、窄屏、长文案、禁用、键盘聚焦、按压和加载状态。收紧 padding 不得缩小手机命中区，不得通过删除焦点解决边框问题。
-6. 运行 pnpm check、UI 变更运行 pnpm test:e2e，并检查 git diff --check。记录实际执行结果、例外和未接入能力。
+1. 先读用户最新要求、Git状态、PRD、DESIGN和组件清单，标出已有未提交工作。当前定稿只允许保持视觉的重构；新视觉需求另行明确。
+2. 用UI/UX Pro Max核对层级、状态反馈、触屏和响应式；用React技能核对状态与组件边界。研究结果与用户定稿冲突时保留定稿，不生成另一份MASTER规范。
+3. 核对安装的HeroUI API，再组合官方组件。选Button size、variant、isIconOnly，选择控件用ToggleButtonGroup / Select，不手写aria-pressed单选、菜单键盘或焦点陷阱。
+4. 拆分时保留DOM语义、class、事件、焦点恢复和计费边界。先移功能单元，再删旧定义和转发；不顺便升级依赖、技能、主题token。
+5. 删除代码前检查导入、动态字符串路径、CSS类、文档、测试与素材清单。无静态import不能单独证明public资源无用；成套删除已停用数据、专属样式和资源，并同步索引。
+6. 对仍在运行的UI检查桌面与窄屏、长文案、禁用、键盘焦点、加载和嵌套关闭。浏览器实测与自动化fixture各有边界，不能把fixture成功当成真实渠道验收。
+7. 执行pnpm check、pnpm test:e2e、git diff --check。发现失败查清原因，记录实际结果；只提交任务相关路径，不夹带本地技能或工具目录。
 
-## 自动检查覆盖与边界
+## 自动约束与覆盖边界
 
-`scripts/check-ui-conventions.mjs` 使用项目已有 TypeScript AST 解析 TSX，识别 HeroUI 导入别名，不靠 JSX 字符串搜索判断。
+pnpm lint运行`scripts/check-ui-conventions.mjs`，以TypeScript AST识别组件导入别名，拒绝：
 
-它拒绝：裸 button/input/select/textarea/a；原生元素加 dialog/button/radio 等交互 role；直接引入 Radix、Headless UI 或 React Aria Components；HeroUI Button/ToggleButton 使用 onClick；Button 手写 aria-pressed；Button/ToggleButton 内联几何属性。
+- 裸button/input/select/textarea/a及原生元素伪装的交互role。
+- Radix、Headless UI、直接React Aria基础件等第二套primitives。
+- HeroUI Button/ToggleButton使用onClick或手写aria-pressed。
+- Button/ToggleButton中的内联尺寸、padding、radius。
 
-唯一原生控件例外为 `type="file"` 且带 visually-hidden／sr-only 的 input：浏览器文件选择没有对应 HeroUI 组件，可见入口仍必须用 HeroUI Button。路由适配使用 components/router-link.tsx 中官方 Link 的 render 能力，不重新实现点击或键盘。
+原生隐藏file input是文件选择的具名例外，可见入口仍为HeroUI Button。路由适配使用RouterLink，不重做链接键盘。图形编辑等HeroUI没有覆盖的领域按项目已有canvas组件执行。
 
-自动检查不能判断页面是否好看，也不能覆盖所有动态样式与业务流程；它与浏览器检查、组件测试共同使用。不得通过 eslint/biome ignore、移出目录、删除 guard 或改名来绕开规则。新增依赖、版本、基础 token 和例外都需要明确审查，不顺便升级框架或 skills。
+静态检查不能证明视觉一致、所有样式无引用或业务正确；必须结合浏览器和行为测试。不得通过ignore、移动目录、改名或删guard绕过规则。不为纯视觉数值编写镜像实现的测试；业务与可访问性回归用稳定的用户操作断言。
 
-## 技能的职责
+## 本轮审查记录
 
-- `heroui-react`：组件组合、props、状态与已安装版本 API。
-- `vercel-react-best-practices`：React 状态、渲染与加载质量；不引入 Next.js 特有实现。
-- `refero-design`：参考研究和视觉核对；当前密度方向来自用户提供的艺栢、小云雀截图及本站已确认设计，DESIGN.md 继续拥有最终视觉决定权。
-
-新增设计技能必须沿用这些边界，不得建立另一套品牌、按钮尺寸或交互基础件。不同 AI 使用同一套文档、组件和 lint 检查，才能让规范持续生效。
+- 合并DESIGN中重复、互相覆盖的模型卡片、Header、上传编号、历史重试、弹窗规则；当前UI固定，不更换主题或尺寸。
+- GenerationHistory保留历史查询与预览编排；抽出HistoryTaskMeta、ResultImage、HistoryIndex和共享状态，移除原重复定义。
+- 预览与我的素材直接复用共享中心开关hook，移除仅转发导出的文件。
+- 移除无调用方的旧showcase数据、专属样式和六段未挂载视频；保留仍在用的样例图片、模型封面、设计证据与用户本地文件。
+- 运行结果与局限以本次交付记录为准，本文不保留易过期的通过数量或旧版尺寸对比表。

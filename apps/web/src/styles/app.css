@@ -61,6 +61,7 @@
   --app-primary-gradient: linear-gradient(180deg, #baa4ff 0, #8b5cf6 100%);
   --sidebar-width: 274px;
   --sidebar-header-offset: 0px;
+  --shell-inline-inset: 20px;
   --header-height: 68px;
   --workspace-history-width: 88px;
   --workspace-padding: 12px;
@@ -155,6 +156,24 @@ small {
 :focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
+}
+/* React Aria moves focus on hover and restores it after pointer clicks, and
+ * Chromium reports those moves as :focus-visible. Keyboard focus is marked
+ * with data-focus-visible, so pointer focus must never draw the purple ring. */
+:focus-visible[data-focused]:not([data-focus-visible="true"]) {
+  outline: none;
+}
+/* HeroUI overlay containers only take programmatic focus for assistive tech
+ * and opt out of outlines themselves; this unlayered rule would otherwise
+ * frame the whole dialog, popover or menu list in purple. */
+:focus-visible:is(
+  .modal__dialog,
+  .alert-dialog__dialog,
+  .drawer__dialog,
+  .popover__dialog,
+  [data-slot="dropdown-menu"]
+) {
+  outline: none;
 }
 .button,
 .toggle-button,
@@ -261,7 +280,7 @@ small {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: var(--sidebar-header-offset) 20px 0;
+  padding: var(--sidebar-header-offset) var(--shell-inline-inset) 0;
   transition: padding 450ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .brand {
@@ -406,7 +425,7 @@ small {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 40px;
+  padding: 0 var(--shell-inline-inset);
   font-family: var(--shell-font-family);
   z-index: 15;
 }
@@ -475,7 +494,7 @@ small {
   }
 }
 /* Header keeps only the mobile menu and the account/login actions. */
-.topbar :is(.credit-pill, .account-trigger, .header-login) {
+.topbar .header-login {
   height: 38px;
   min-height: 38px;
   border-radius: 20px;
@@ -483,19 +502,6 @@ small {
   line-height: 18px;
   font-weight: 500;
   font-family: var(--shell-font-family);
-}
-.topbar :is(.credit-pill, .account-trigger) {
-  background: #ffffff14;
-  border: 1px solid #ffffff0a;
-  color: #f4f4f5;
-}
-.topbar :is(.credit-pill, .account-trigger):is(:hover, [data-hovered="true"]) {
-  background: #ffffff1f;
-  border-color: #ffffff0a;
-}
-.topbar .account-initial {
-  background: #ffffff14;
-  color: #fff;
 }
 
 .header-actions {
@@ -505,73 +511,6 @@ small {
   flex: none;
   /* The breadcrumb is gone, so the actions pin themselves to the right edge. */
   margin-inline-start: auto;
-}
-.credit-pill {
-  height: 32px;
-  min-height: 32px;
-  padding: 0 12px;
-  gap: 6px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
-.credit-pill:hover,
-.credit-pill[data-hovered="true"] {
-  border-color: #ffffff29;
-  background: var(--surface);
-  color: var(--foreground);
-}
-.credit-pill strong {
-  color: var(--foreground);
-  font-weight: var(--weight-medium);
-  font-variant-numeric: tabular-nums;
-}
-.account-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 36px;
-  min-height: 36px;
-  padding: 0 10px 0 4px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--foreground);
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-}
-.account-trigger:hover,
-.account-trigger[data-hovered="true"] {
-  background: var(--surface-secondary);
-  border-color: #ffffff29;
-}
-.account-initial {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-}
-.account-name {
-  max-width: 14ch;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.account-menu {
-  min-width: 176px;
-  padding: 6px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--overlay);
 }
 .mobile-menu {
   display: none;
@@ -655,135 +594,6 @@ p.home-hero-kicker {
 }
 .home-hero-link:hover {
   color: var(--accent);
-}
-.showcase-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-.showcase-head h2 {
-  font-size: var(--text-lg);
-  line-height: var(--leading-lg);
-  font-weight: var(--weight-medium);
-}
-.showcase-head p {
-  margin-top: 4px;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  color: var(--muted);
-}
-.showcase-filter {
-  flex: none;
-  gap: 4px;
-  padding: 3px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-}
-.showcase-filter .toggle-button {
-  height: 26px;
-  min-height: 26px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
-.showcase-filter .toggle-button:hover,
-.showcase-filter .toggle-button[data-hovered="true"] {
-  background: var(--surface-secondary);
-  color: var(--foreground);
-}
-.showcase-filter .toggle-button[data-selected="true"] {
-  background: var(--surface-tertiary);
-  color: var(--foreground);
-}
-.showcase-wall {
-  columns: 3;
-  column-gap: 12px;
-}
-.showcase-card {
-  display: block;
-  width: 100%;
-  height: auto;
-  min-height: 0;
-  break-inside: avoid;
-  margin: 0 0 12px;
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-  text-align: left;
-  position: relative;
-}
-.showcase-card:hover,
-.showcase-card[data-hovered="true"] {
-  border-color: #ffffff29;
-}
-.showcase-media {
-  display: block;
-  width: 100%;
-  object-fit: cover;
-  background: var(--app-canvas);
-}
-.showcase-image .showcase-media {
-  aspect-ratio: 4 / 5;
-}
-.showcase-video .showcase-media {
-  aspect-ratio: 1 / 1;
-}
-.showcase-overlay {
-  position: absolute;
-  inset: auto 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 24px 12px 12px;
-  background: linear-gradient(180deg, transparent, #000000b8);
-  color: #fff;
-  pointer-events: none;
-}
-.showcase-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  line-height: 16px;
-  color: #ffffffb8;
-}
-.showcase-overlay strong {
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-  font-weight: var(--weight-medium);
-}
-.showcase-dialog {
-  width: min(720px, calc(100vw - 48px));
-  max-width: none;
-  border-radius: 16px;
-}
-.showcase-dialog-media {
-  display: flex;
-  justify-content: center;
-  overflow: hidden;
-  border-radius: 12px;
-  background: var(--app-canvas);
-}
-.showcase-dialog-media img,
-.showcase-dialog-media video {
-  width: 100%;
-  max-height: 58vh;
-  object-fit: contain;
-}
-.showcase-dialog-prompt {
-  margin-top: 12px;
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-  color: var(--muted);
 }
 .quick-section > h2 {
   margin-bottom: 12px;
@@ -1031,14 +841,22 @@ p.home-hero-kicker {
   width: 40px;
   height: 40px;
 }
-/* Every dismiss control is a circle with a white icon. Approved light surfaces
- * (login panel, account center) keep a dark icon so it stays visible. */
+/* Standard dialogs reuse the image viewer's dimmed, blurred page treatment so
+ * every overlay reads the same; surfaces that paint their own layer (chooser,
+ * confirm, login, fullscreen viewer, image preview) override it. */
+.modal__backdrop {
+  background: rgba(24, 24, 24, 0.5);
+  backdrop-filter: blur(20px);
+}
+/* Every dismiss control is a borderless circle with a white icon; only hover
+ * paints a faint fill. Login keeps its own light-surface control. */
 .close-button,
 .modal__close-trigger,
 .drawer__close-trigger,
 .alert-dialog__close-trigger {
   border-radius: 999px;
   color: #ffffff;
+  background: transparent;
 }
 .close-button:is(:hover, [data-hovered="true"]),
 .modal__close-trigger:is(:hover, [data-hovered="true"]),
@@ -1046,13 +864,6 @@ p.home-hero-kicker {
 .alert-dialog__close-trigger:is(:hover, [data-hovered="true"]) {
   color: #ffffff;
   background: #ffffff14;
-}
-.account-dialog .modal__close-trigger {
-  color: #29232f;
-}
-.account-dialog .modal__close-trigger:is(:hover, [data-hovered="true"]) {
-  color: #29232f;
-  background: #0000000f;
 }
 .model-chooser .modal__close-trigger.dialog-close {
   position: absolute;
@@ -1455,50 +1266,46 @@ p.home-hero-kicker {
 .generate-area {
   margin-top: auto;
 }
-.generate-area .button {
+.generation-submit.button {
   width: 100%;
   height: 44px;
-}
-.generate-area .primary-action {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding-inline: var(--control-padding-lg);
   gap: 8px;
-  border: 1px solid var(--accent);
-  background: #222222;
-  color: var(--accent);
-  transition:
-    background 140ms ease,
-    transform 100ms ease;
+  background: var(--app-primary-gradient);
+  color: #09070d;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  box-shadow: none;
+  transition: filter 140ms ease;
 }
-.generate-area .primary-action:not(:disabled):not([data-disabled="true"]):hover {
-  background: #30283e;
-  filter: none;
+.generation-submit.button:is(:hover, [data-hovered="true"]) {
+  filter: brightness(1.05);
 }
-.generate-area .primary-action[data-pressed="true"] {
-  transform: scale(0.98);
-}
-.generate-area .primary-action:disabled,
-.generate-area .primary-action[data-disabled="true"] {
-  border-color: #48454e;
+.generation-submit.button:is(:disabled, [data-disabled="true"]) {
   background: #343434;
   color: #8b8794;
+  filter: none;
 }
-.generate-area .primary-action:disabled .credit-coin {
+.generation-submit.button:is(:disabled, [data-disabled="true"]) .credit-coin {
   opacity: 0.5;
+}
+.generation-submit.button:is([data-submitting="true"], [data-pending="true"]) {
+  background: var(--app-primary-gradient);
+  color: #09070d;
+  filter: none;
+  cursor: progress;
 }
 .credit-coin {
   display: block;
-  width: 22px;
-  height: 22px;
-  flex: none;
-  object-fit: contain;
-}
-.credit-pill .credit-coin {
-  width: 18px;
-  height: 18px;
 }
 .generate-credit-cost {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   font-variant-numeric: tabular-nums;
 }
 .generate-button-icon {
@@ -1506,15 +1313,6 @@ p.home-hero-kicker {
   align-items: center;
   justify-content: center;
   flex: none;
-}
-.generate-area .primary-action[data-submitting="true"],
-.generate-area .primary-action[data-submitting="true"]:disabled {
-  background: #8b5cf6;
-  color: #ffffff;
-  cursor: progress;
-}
-.generate-area .primary-action[data-submitting="true"] .generation-loading-icon {
-  color: #ffffff;
 }
 .field-error {
   color: #fda4af;
@@ -1557,10 +1355,10 @@ p.home-hero-kicker {
   padding: 6px 8px;
   align-self: start;
   max-height: calc(100dvh - var(--header-height) - 2 * var(--content-padding));
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  overflow: hidden;
   position: sticky;
   top: calc(var(--header-height) + var(--content-padding));
 }
@@ -1569,9 +1367,21 @@ p.home-hero-kicker {
   line-height: var(--leading-sm);
   font-weight: var(--weight-medium);
 }
-/* The rail heading is the entry to the full-screen asset library. */
+/* The rail heading is the entry to the full-screen asset library. It sits
+   outside `.history-rail-list`, so scrolling thumbnails never hide it. */
 .history-rail .history-rail-title {
-  margin-bottom: 10px;
+  flex: none;
+  margin-bottom: 6.67px;
+}
+.history-rail-list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-anchor: none;
 }
 .history-rail-open.button {
   gap: 2px;
@@ -1656,7 +1466,15 @@ p.home-hero-kicker {
     display: flex;
     flex-direction: row;
     align-items: center;
+    overflow: hidden;
+  }
+  .history-rail .history-rail-title {
+    margin-bottom: 0;
+  }
+  .history-rail-list {
+    flex-direction: row;
     overflow-x: auto;
+    overflow-y: hidden;
   }
   .composer-panel {
     grid-row: 1 / span 2;
@@ -1665,9 +1483,6 @@ p.home-hero-kicker {
 @media (max-width: 1023px) {
   :root {
     --content-padding: 16px;
-  }
-  .showcase-wall {
-    columns: 2;
   }
   .brand {
     font-size: var(--text-page-mobile);
@@ -1697,6 +1512,7 @@ p.home-hero-kicker {
   :root {
     --sidebar-width: 0px;
     --header-height: 60px;
+    --shell-inline-inset: 12px;
   }
   .sidebar {
     display: none;
@@ -1713,13 +1529,13 @@ p.home-hero-kicker {
     min-height: 44px;
     height: 44px;
   }
-  .topbar :is(.credit-pill, .account-trigger, .header-login) {
+  .topbar .header-login {
     min-height: 44px;
     height: 44px;
   }
   .topbar {
     gap: 6px;
-    padding: 0 12px;
+    padding: 0 var(--shell-inline-inset);
   }
   .header-actions {
     gap: 4px;
@@ -1759,40 +1575,8 @@ p.home-hero-kicker {
   .home-hero-actions {
     padding-bottom: 0;
   }
-  .showcase-head {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-  .showcase-wall {
-    columns: 2;
-    column-gap: 8px;
-  }
-  .showcase-card {
-    margin-bottom: 8px;
-    border-radius: 10px;
-  }
-  .showcase-overlay {
-    padding: 18px 10px 10px;
-  }
-  .account-name {
-    display: none;
-  }
-  .account-trigger {
-    min-height: var(--control-touch-target);
-    padding: 0 6px 0 4px;
-  }
-  .credit-pill {
-    padding: 0 10px;
-  }
   .account-dialog {
     padding: 20px 16px;
-  }
-  .credit-plan {
-    flex-wrap: wrap;
-  }
-  .credit-plan .button {
-    width: 100%;
   }
   :where(.page-heading) .button {
     padding-inline: 12px;
@@ -2477,6 +2261,9 @@ p.home-hero-kicker {
   min-width: 0;
 }
 .generation-job {
+  --history-row-gap: 12px;
+  display: grid;
+  gap: var(--history-row-gap);
   min-width: 0;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--border);
@@ -2494,7 +2281,7 @@ p.home-hero-kicker {
   font-size: 12px;
 }
 .generation-prompt {
-  margin: 12px 0 8px;
+  margin: 0;
   color: var(--muted);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -2504,7 +2291,7 @@ p.home-hero-kicker {
   grid-template-columns: repeat(3, minmax(0, 400px));
   justify-content: center;
   gap: 12px;
-  margin-top: 16px;
+  margin-top: 0;
 }
 .generation-results[data-count="1"] {
   grid-template-columns: minmax(0, 400px);
@@ -2706,11 +2493,36 @@ p.home-hero-kicker {
     grid-template-columns: minmax(0, 450px);
   }
 }
-.history-rail img {
+/* Shared thumbnail behaviour for the history rail and the preview rail: the
+ * picture zooms inside its clipped frame on hover and keyboard focus, so both
+ * lists feel identical and the frame keeps its size, radius and padding. */
+.history-thumbnail > .history-thumbnail-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  background: transparent;
+}
+.history-thumbnail img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 0;
+  transition: transform 180ms ease;
+}
+.history-thumbnail:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) img {
+  transform: scale(1.1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .history-thumbnail img {
+    transition: none;
+  }
+  .history-thumbnail:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) img {
+    transform: none;
+  }
 }
 .asset-grid img {
   width: 100%;
@@ -2787,7 +2599,9 @@ p.home-hero-kicker {
   gap: 3px;
   color: #fda4af;
 }
-.history-thumbnail > span {
+/* Placeholder copy for a task without a thumbnail picture; the picture frame
+ * has its own geometry rule above. */
+.history-thumbnail > span:not(.history-thumbnail-frame) {
   display: grid;
   place-items: center;
   width: 100%;
@@ -2838,20 +2652,18 @@ p.home-hero-kicker {
 .history-icon-action[data-focus-visible="true"] {
   background: var(--surface-secondary);
 }
-.history-action-error {
-  position: absolute;
-  right: 0;
-  top: 100%;
-  width: min(320px, 60vw);
-  padding: 8px;
-  background: var(--surface-secondary);
-  font-size: 12px;
-  z-index: 1;
-}
 .history-confirm-actions {
   display: flex;
   gap: 8px;
   margin-top: 16px;
+}
+.history-prompt {
+  display: grid;
+  gap: var(--history-row-gap);
+  min-width: 0;
+}
+.history-prompt > .generation-output-thumbnails {
+  margin-top: 0;
 }
 .prompt-collapsed {
   display: -webkit-box;
@@ -2872,7 +2684,7 @@ p.home-hero-kicker {
   width: max-content;
   height: 24px;
   min-height: 24px;
-  margin-top: 8px;
+  margin-top: 0;
   padding: 3px 6px;
   gap: 4px;
   color: var(--muted);
@@ -3083,7 +2895,7 @@ p.home-hero-kicker {
   background: #4a4a4a;
 }
 .generation-prompt {
-  margin: 10px 0 6px;
+  margin: 0;
   color: #c8c8c8;
   font-size: 14px;
   line-height: 22px;
@@ -3101,7 +2913,7 @@ p.home-hero-kicker {
 .copy-prompt.button {
   height: 28px;
   min-height: 28px;
-  margin-top: 6px;
+  margin-top: 0;
   padding: 4px 8px;
   border: 0;
   border-radius: 6px;
@@ -3254,13 +3066,13 @@ p.home-hero-kicker {
 .back-to-top-button[data-focus-visible="true"] {
   background: var(--surface-secondary);
 }
-html:has(.workspace),
 .history-rail,
+.history-rail-list,
 .composer-scroll {
   scrollbar-width: none;
 }
-html:has(.workspace)::-webkit-scrollbar,
 .history-rail::-webkit-scrollbar,
+.history-rail-list::-webkit-scrollbar,
 .composer-scroll::-webkit-scrollbar {
   display: none;
 }
@@ -3329,7 +3141,6 @@ html:has(.workspace)::-webkit-scrollbar,
 }
 .alert.generation-message,
 .alert.field-error,
-.alert.history-action-error,
 .alert.replace-confirm {
   box-shadow: none;
 }
@@ -3344,7 +3155,6 @@ html:has(.workspace)::-webkit-scrollbar,
 }
 .alert.generation-message .alert__description,
 .alert.field-error .alert__description,
-.alert.history-action-error .alert__description,
 .alert.replace-confirm .alert__description {
   color: inherit;
   font-size: inherit;
@@ -3830,28 +3640,17 @@ html:has(.workspace)::-webkit-scrollbar,
   line-height: var(--leading-sm);
 }
 
-/* Account center is an approved light surface like the login panel; tokens are
- * scoped here so the dark studio keeps its own values. */
+/* The account center uses the studio's dark surface; only the login panel
+ * keeps the approved light exception. One dialog with tabs holds every
+ * section instead of a separate dialog per menu entry. */
 .account-dialog {
-  --foreground: #141414;
-  --muted: rgba(0, 0, 0, 0.5);
-  --border: rgba(0, 0, 0, 0.08);
-  --separator: rgba(0, 0, 0, 0.06);
-  --surface: #faf9fd;
-  --surface-secondary: #f3f0fb;
-  --default: #f1eefb;
-  --accent: #6d4bd8;
-  --accent-soft: #efe6ff;
-  --link: #8152df;
-  --focus: rgba(0, 0, 0, 0.16);
   width: min(560px, calc(100vw - 48px));
   max-width: none;
   padding: 24px;
-  border: 0;
+  border: 1px solid var(--border);
   border-radius: 24px;
-  background: #fff;
-  color: #141414;
-  color-scheme: light;
+  background: #19191c;
+  color: var(--foreground);
   box-shadow: var(--overlay-shadow);
 }
 .account-dialog h2 {
@@ -3865,9 +3664,10 @@ html:has(.workspace)::-webkit-scrollbar,
   gap: 12px;
   margin: 4px 0 20px;
 }
-.account-avatar {
-  background: #efe6ff;
-  color: #6d4bd8;
+.account-avatar,
+.account-avatar .avatar__fallback {
+  background: #343434;
+  color: #fff;
   font-weight: var(--weight-semibold);
 }
 .account-identity strong {
@@ -3878,7 +3678,7 @@ html:has(.workspace)::-webkit-scrollbar,
 }
 .account-identity small {
   display: block;
-  color: rgba(0, 0, 0, 0.45);
+  color: #a1a1aa;
 }
 .account-rows {
   display: grid;
@@ -3886,7 +3686,7 @@ html:has(.workspace)::-webkit-scrollbar,
   margin: 16px 0 0;
   overflow: hidden;
   border-radius: 14px;
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--separator);
 }
 .account-rows > div {
   display: flex;
@@ -3894,16 +3694,16 @@ html:has(.workspace)::-webkit-scrollbar,
   justify-content: space-between;
   gap: 16px;
   padding: 12px 16px;
-  background: #faf9fd;
+  background: #202026;
 }
 .account-rows dt {
-  color: rgba(0, 0, 0, 0.5);
+  color: #a1a1aa;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }
 .account-rows dd {
   margin: 0;
-  color: #141414;
+  color: var(--foreground);
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
 }
@@ -3912,92 +3712,16 @@ html:has(.workspace)::-webkit-scrollbar,
   align-items: center;
   gap: 6px;
   margin: 12px 0 16px;
-  color: rgba(0, 0, 0, 0.45);
+  color: #a1a1aa;
   font-size: var(--text-xs);
   line-height: 18px;
 }
-/* Dark-surface defaults are hardcoded in the global button rules; re-scope them
- * for this approved light panel instead of changing every page. */
-.account-dialog .button {
-  color: #141414;
+.account-dialog .tabs__list {
+  border-bottom-color: var(--border);
 }
 .account-dialog .tabs__tab[data-selected="true"] {
-  color: #4b2fa8;
+  color: var(--foreground);
 }
-.account-dialog .button:disabled,
-.account-dialog .button[data-disabled="true"] {
-  color: rgba(0, 0, 0, 0.32);
-  background: #f4f2f8;
-  border-color: rgba(0, 0, 0, 0.08);
-}
-.account-alert {
-  margin: 12px 0;
-  border: 1px solid #f0dcb4;
-  border-radius: 12px;
-  background: #fff8e8;
-  color: #6b4508;
-}
-.account-alert .alert__description {
-  color: inherit;
-}
-.credit-balance {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 16px;
-  padding: 16px 20px;
-  border-radius: 16px;
-  background: #f6f2ff;
-}
-.credit-balance small {
-  display: block;
-  color: rgba(0, 0, 0, 0.5);
-}
-.credit-balance strong {
-  display: block;
-  font-size: 32px;
-  line-height: 40px;
-  font-weight: var(--weight-light);
-  color: #141414;
-}
-.credit-plans {
-  display: grid;
-  gap: 8px;
-}
-.credit-plan {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 14px;
-  background: #fff;
-}
-.credit-plan span {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.credit-plan strong {
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-  font-weight: var(--weight-medium);
-}
-.credit-plan small {
-  color: rgba(0, 0, 0, 0.45);
-}
-.credit-plan-price {
-  align-items: flex-end;
-  text-align: right;
-  margin-left: auto;
-}
-.credit-plan .button {
-  flex: none;
-}
-
 /* Preserve compact desktop density while providing touch targets. Upload removal
  * uses its existing transparent 44px hit area around the visible 24px circle. */
 @media (max-width: 767px), (pointer: coarse) {
@@ -4180,9 +3904,6 @@ html:has(.workspace)::-webkit-scrollbar,
   background: #1c1c1c;
   border-radius: 12px;
 }
-.generate-area .primary-action {
-  border-radius: 999px;
-}
 
 /* Add-image tile mirrors the home composer: icon only, centered. */
 .composer-panel .add-reference {
@@ -4286,6 +4007,16 @@ html:has(.workspace)::-webkit-scrollbar,
   background: var(--field-background);
   border-radius: 12px;
 }
+.composer-panel
+  .prompt-field
+  .prompt-editor[data-auto-grow]
+  :is(textarea, .reference-rich-editor.textarea) {
+  height: auto;
+  min-height: 100px;
+  max-height: none;
+  overflow: hidden;
+  resize: none;
+}
 .composer-panel .generate-area {
   margin-top: 2px;
 }
@@ -4309,10 +4040,35 @@ html:has(.workspace)::-webkit-scrollbar,
 .account-rows small {
   display: block;
   overflow-wrap: anywhere;
-  color: rgba(0, 0, 0, 0.45);
+  color: #a1a1aa;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }
 .account-rows dd {
   flex-shrink: 0;
+}
+
+/* Generation count stays collapsed until the user asks for more parameters. */
+.composer-panel .parameter-more.button {
+  align-self: flex-start;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 10px;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 20px;
+  background: transparent;
+}
+.composer-panel .parameter-more.button:hover,
+.composer-panel .parameter-more.button[data-hovered="true"],
+.composer-panel .parameter-more.button[data-focus-visible="true"] {
+  color: #eee;
+  background: transparent;
+}
+@media (max-width: 767px) {
+  .composer-panel .parameter-more.button {
+    min-height: 44px;
+    height: 44px;
+  }
 }

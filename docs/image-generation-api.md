@@ -38,7 +38,7 @@ IMAGE_INITIAL_CREDITS=20 \
 pnpm --filter @lycoboai/api images:provision
 ```
 
-脚本每次创建新组织，复用同 auth_subject 用户，并输出 userId、organizationId、keyId 和一次生成的访问令牌。令牌有效期 7 天，数据库只保存 SHA-256 摘要，不记录明文。妥善保管输出，不上传日志或 Git。该工具只供有数据库权限的运维使用，不是公开注册/充值接口。撤销令牌需由运维更新对应 image_api_keys.revoked_at；用户登录和团队邀请仍需对接正式身份系统。
+脚本每次创建新组织，复用同 auth_subject 用户，并输出 userId、organizationId、keyId 和一次生成的访问令牌。令牌有效期 7 天，数据库只保存 SHA-256 摘要，不记录明文。妥善保管输出，不上传日志或 Git。该工具只供有数据库权限的运维使用，不是公开注册/充值接口。撤销令牌需由运维更新对应 generation_api_keys.revoked_at；用户登录和团队邀请仍需对接正式身份系统。
 
 5. 在 `.env` 显式设置 `IMAGE_GENERATION_ENABLED=true`、`IMAGE_WORKER_ENABLED=true`。保持 diagnostic 的 `WORKER_ENABLED` 独立；只跑生图时它可以为 false。
 6. 分别启动 API 与 Worker：
@@ -57,11 +57,12 @@ Worker 缺少密钥/数据库/Redis 时启动失败，不以演示结果代替�
 
 | 方法与路径 | 功能 |
 | --- | --- |
-| GET /api/v1/image-models | 五个模型、文档能力、实际启用档位与每张积分；enabled 仅代表配置开关，不代表 Worker 在线 |
+| GET /api/v1/image-models | 三个公开模型、文档能力、实际启用档位与每张积分；enabled 仅代表配置开关，不代表 Worker 在线 |
 | POST /api/v1/image-tasks | 创建任务，原子保存任务/图片项/outbox/积分预留，202；同 key 同参数重放返回 200 |
 | GET /api/v1/image-tasks?limit=20&before=任务UUID | 组织内任务列表，按创建时间/ID 倒序，最大 100 条 |
 | GET /api/v1/image-tasks/:id | 组织内任务、输入快照、逐图状态与输出元数据 |
 | POST /api/v1/image-assets | 原始 PNG/JPEG/WebP 文件体，最大 10MB，返回资产 ID 与实际尺寸 |
+| GET /api/v1/image-assets?limit=30&before=资产UUID&kind=output&type=image | 组织内素材列表；可选kind=output/reference区分来源，type=image/video/audio区分媒体类型，均在分页前筛选；省略筛选保持兼容。当前生成和存储仅接入图片，type来自media_assets.media_type，旧记录及新图片默认image；public_id为图片编号，task_public_id为生成任务编号，参考图无所属生成任务时为null |
 | GET /api/v1/image-assets/:id/content | 身份与组织验证后读取图片，不直接暴露磁盘路径 |
 | POST /api/v1/image-tasks/:jobId/items/:itemId/reconcile-failure | 管理员核对服务商后确认未成功，释放预留积分；不重发模型请求 |
 
@@ -77,11 +78,11 @@ curl http://127.0.0.1:8787/api/v1/image-tasks \
 
 查询记录会返回任务级 organization_id、user_id、model、prompt、resolution、aspect_ratio、requested_count、input、unit_credits、created_at、updated_at、completed_at，以及 items 的 worker_id、provider、provider_request_id、attempts、started_at、completed_at、output_asset_id、width、height、bytes、error_code。缺少服务商请求 ID 时保留 null，不用本地 ID 冒充。
 
-服务端原图信息还保存在 image_assets：object_key、mime_type、bytes、width、height、sha256、组织、用户和创建时间。参考上传原文件上限 10MB；生成结果和规范化 PNG 上限 32MB，服务商 JSON 响应上限 45MB，避免高分辨率结果沿用上传体积限制。图片字节保存在私有文件目录，数据库保存文件元数据和关联，不塞入 JSON 或 Redis 消息。
+服务端原图信息还保存在 media_assets：object_key、mime_type、bytes、width、height、sha256、组织、用户和创建时间。参考上传原文件上限 10MB；生成结果和规范化 PNG 上限 32MB，服务商 JSON 响应上限 45MB，避免高分辨率结果沿用上传体积限制。图片字节保存在私有文件目录，数据库保存文件元数据和关联，不塞入 JSON 或 Redis 消息。
 
 ## 任务与计费边界
 
-- image_jobs 保存输入和逐图价格快照；image_job_items 保存执行实例、租约和图片关联。
+- generation_jobs 保存输入和逐图价格快照；generation_job_items 保存执行实例、租约和图片关联。
 - 同一组织/用户/Idempotency-Key 保持同一任务；换参数重放返回 409，数据库余额不足返回 409，均不产生付费请求。
 - 任务、全部图片项、每图 outbox 和积分预留位于同一 PostgreSQL 事务。提交端不直接发 Redis 或调用服务商。
 - Worker 从 PostgreSQL 租赁 outbox，事务外投递 BullMQ，投递后确认。消息只含 itemId，队列使用独立名字；并发执行由数据库领取与执行令牌再次保护。
@@ -108,7 +109,7 @@ curl http://127.0.0.1:8787/api/v1/image-tasks \
 - gpt-image-2.5 的单参考图编辑另做一次真实调用成功。其余模型的编辑、高分辨率及非方形尺寸未逐一实测，不扩大为已验收能力。
 - 2.5 系列按用户要求开放 1K 路由，保留能力来源标记；2K/4K 默认不开放。参考编辑使用 OpenAI 兼容 `/v1/images/edits` 协议，需启用 `VAKV_ENABLE_IMAGE_EDITS`。
 - 历史记录、任务中心、右侧索引每 3 秒查询数据库任务；素材库每 5 秒查询已保存资产。两者都支持游标加载更多。列表使用鉴权后 512px 缩略图，下载读取原图。
-- 提交响应不确定时，浏览器会按用户和组织在 sessionStorage 保留同一请求快照与幂等编号，刷新后通过“确认上次提交”复用请求；不会自动重新生成。已运行但结果不确定的任务仍需运维核对。
+- 提交响应不确定时，浏览器会按用户和组织在 sessionStorage 保留同一请求快照与幂等编号，刷新后通过“确认上次提交”复用请求；不会自动重新生成。已运行但结果不确定的任务不自动重发；用户可以明确确认后在原记录重试，先结束旧尝试并退回原扣款，再提交新尝试，操作与未知结果依据可审计。管理员核对入口仍保留。
 - 新增 `GET /api/v1/image-assets?limit=30&before=UUID`，返回组织内资产元数据；`content?thumbnail=1` 返回缩略图。原图与缩略图均验证组织归属。
 
 ### 本地启动
@@ -174,7 +175,7 @@ pnpm dev
 
 `GET /api/v1/image-events` 使用现有 Cookie／Bearer 身份；事件范围与任务、素材读取一致，由服务端解析组织成员关系。`image-models` 增加可选 `eventsEnabled`，用于兼容旧部署。SSE 响应为 `text/event-stream`，不包装 JSON 信封；鉴权、参数和服务不可用错误仍使用统一信封。支持 Last-Event-ID 请求头或非敏感 cursor 查询参数，游标为十进制 bigint 字符串。
 
-通知链路为 PostgreSQL image_events 持久化日志＋事务内 NOTIFY＋API 进程级 LISTEN＋SSE，不新增 Redis 转发；Redis/BullMQ 继续承载生图任务。提交、开始、每张结果、租约到期与人工核对、参考图上传在对应事务末尾写事件，回滚不留事件或通知。每组织事务级 advisory lock 在事件追加前获取，确保同一组织已提交游标顺序，不把并发事务的序列分配顺序误当成提交顺序；锁后只追加事件并提交，不调用外部服务。事件只含编号、类型和资源 UUID，不保存提示词、图片内容、凭据或供应商响应。
+通知链路为 PostgreSQL generation_events 持久化日志＋事务内 NOTIFY＋API 进程级 LISTEN＋SSE，不新增 Redis 转发；Redis/BullMQ 继续承载生图任务。提交、开始、每张结果、租约到期与人工核对、参考图上传在对应事务末尾写事件，回滚不留事件或通知。每组织事务级 advisory lock 在事件追加前获取，确保同一组织已提交游标顺序，不把并发事务的序列分配顺序误当成提交顺序；锁后只追加事件并提交，不调用外部服务。事件只含编号、类型和资源 UUID，不保存提示词、图片内容、凭据或供应商响应。
 
 每个 API 进程共用一个专用 LISTEN 连接和固定大小查询池，不为每个浏览器占一条数据库连接。原生通知仅作唤醒，实际内容从持久化日志读取；监听自动恢复后唤醒已有连接补读。支持 ready、image.updated、resync、heartbeat、auth-expired 事件。正常事件带 id；ready／resync 要求客户端重新校准现有列表，超过 200 条补读时转为快照校准。Worker 每小时最多清理 1000 条超过 7 天的事件；旧游标重连仍校准快照。
 

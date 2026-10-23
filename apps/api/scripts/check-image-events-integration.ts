@@ -221,7 +221,7 @@ try {
   await cookieNext("auth-expired");
   await cookieReader.cancel();
   // Revocation is checked again before events are written, not just at connection setup.
-  await sql`update image_api_keys set revoked_at=now() where id=${first.keyId}`;
+  await sql`update generation_api_keys set revoked_at=now() where id=${first.keyId}`;
   await repository.create(first, input, crypto.randomUUID(), 1);
   await replayNext("auth-expired");
   await replayReader.cancel();

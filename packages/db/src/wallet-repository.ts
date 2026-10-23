@@ -57,7 +57,7 @@ export function walletRepository(sql: postgres.Sql) {
     },
     async walletEntries(scope: ImageScope, limit: number, before?: string) {
       return sql`select e.id::text,u.uid as user_uid,e.kind,e.amount,e.balance_after,e.job_id,j.public_id as task_id,e.item_id,e.recharge_id,e.created_at
-        from wallet_entries e join organization_wallets w on w.id=e.wallet_id left join image_jobs j on j.id=e.job_id left join users u on u.id=e.user_id
+        from wallet_entries e join organization_wallets w on w.id=e.wallet_id left join generation_jobs j on j.id=e.job_id left join users u on u.id=e.user_id
         where w.organization_id=${scope.organizationId}
         ${before ? sql`and e.id < ${before}::bigint` : sql``} order by e.id desc limit ${limit}`;
     },

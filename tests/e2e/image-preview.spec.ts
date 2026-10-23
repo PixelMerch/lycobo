@@ -8,6 +8,7 @@ const svg =
 const asset = (position: number) => ({
   id: crypto.randomUUID(),
   public_id: `P5587123${position}`,
+  task_public_id: `W9000000${position}`,
   kind: "output",
   width: 2048,
   height: 2048,
@@ -67,7 +68,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   expect(historyBox?.height).toBe(906);
   await expect(historyDialog.locator(".image-preview-section p")).toContainText("紫色菱形被子");
   await expect(historyDialog.locator(".image-preview-model")).toContainText("gpt-image-2");
-  await expect(historyDialog.locator(".image-preview-facts")).toContainText("ID：P55871241");
+  await expect(historyDialog.locator(".image-preview-facts")).toContainText("ID：W00000013");
   await expect(historyDialog.locator(".image-preview-bar-id")).toHaveText("Img ID：P55871241");
   await expect(historyDialog.locator(".image-preview-bar-size")).toHaveText("2048 x 2048");
   // The selected frame is one of two thumbnails on the right rail.
@@ -76,24 +77,37 @@ test("library and history images open an in-page full-screen viewer", async ({ p
     "aria-current",
     "true",
   );
+  // The main picture stays square; rail thumbnails share the history geometry.
+  await expect(historyDialog.locator(".image-preview-image")).toHaveCSS("border-radius", "0px");
+  await expect(historyDialog.locator(".image-preview-thumb").first()).toHaveCSS(
+    "border-radius",
+    "8px",
+  );
   expect(new URL(page.url()).pathname).toBe("/create");
   // The redundant bottom download row is gone; the icon actions stay in the panel.
   await expect(historyDialog.locator(".image-preview-actions")).toHaveCount(0);
-  await expect(historyDialog.getByRole("button", { name: "下载原图", exact: true })).toHaveCount(1);
+  await expect(
+    historyDialog.getByRole("button", { name: /^下载(?:原图)?$/, exact: true }),
+  ).toHaveCount(1);
   await historyDialog.getByRole("button", { name: "关闭图片预览", exact: true }).click();
   await expect(historyDialog).toHaveCount(0);
 
   // Library tiles open the same viewer and browse the whole filtered set.
   await page.getByRole("button", { name: "打开素材库", exact: true }).click();
-  const libraryDialog = page.getByRole("dialog", { name: "资产管理", exact: true });
+  const libraryDialog = page.getByRole("dialog", { name: "我的素材", exact: true });
   await expect(libraryDialog).toBeVisible();
   await libraryDialog
     .getByRole("button", { name: "查看图片：素材 2 的创意描述", exact: true })
     .click();
   const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
   await expect(viewer).toBeVisible();
+  await expect(viewer.locator(".image-preview-facts")).toContainText("ID：W90000001");
+  await expect(viewer.locator(".image-preview-facts")).not.toContainText("P55871231");
+  await expect(
+    viewer.getByRole("button", { name: "复制任务 ID W90000001", exact: true }),
+  ).toBeVisible();
   await expect(viewer.locator(".image-preview")).toHaveCSS("transform", "none");
-  // The preview and the asset library share the same close control size.
+  // Full-screen overlays share the close geometry; the preview aligns its glyph with the image.
   const closeSizes = await page.evaluate(() => {
     const size = (selector: string) => {
       const rect = document.querySelector(selector)?.getBoundingClientRect();
@@ -101,8 +115,26 @@ test("library and history images open an in-page full-screen viewer", async ({ p
     };
     return { library: size(".library-close"), preview: size(".image-preview-close") };
   });
-  expect(closeSizes.library).toEqual({ width: 44, height: 44 });
-  expect(closeSizes.preview).toEqual(closeSizes.library);
+  expect(closeSizes.library).toEqual({ width: 52, height: 52 });
+  await expect(page.locator(".library-close svg")).toHaveCSS("width", "28px");
+  expect(closeSizes.preview).toEqual({ width: 52, height: 52 });
+  await expect(viewer.locator(".image-preview-close svg")).toHaveCSS("width", "28px");
+  const topAlignment = await viewer.evaluate((dialog) => {
+    const close = dialog.querySelector(".image-preview-close svg")!.getBoundingClientRect();
+    const thumb = dialog.querySelector(".image-preview-thumb img")!.getBoundingClientRect();
+    return Math.abs(close.top - thumb.top);
+  });
+  expect(topAlignment).toBeLessThanOrEqual(1);
+  await viewer.locator(".image-preview-close").hover();
+  const hoverBackground = await viewer.locator(".image-preview-close").evaluate((button) => {
+    const background = getComputedStyle(button, "::before");
+    return {
+      width: background.width,
+      height: background.height,
+      fill: getComputedStyle(button).backgroundColor,
+    };
+  });
+  expect(hoverBackground).toEqual({ width: "42px", height: "42px", fill: "rgba(0, 0, 0, 0)" });
   await expect(viewer.locator(".image-preview-thumb")).toHaveCount(3);
   await expect(viewer.locator(".image-preview-thumb").nth(1)).toHaveAttribute(
     "aria-current",
@@ -199,13 +231,37 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   expect(layout.info?.x).toBe((layout.stage?.x ?? 0) + (layout.stage?.w ?? 0));
   expect(layout.rail?.x).toBe((layout.info?.x ?? 0) + (layout.info?.w ?? 0));
   expect((layout.rail?.x ?? 0) + (layout.rail?.w ?? 0)).toBe(1328);
-  await viewer.getByRole("button", { name: "下一张", exact: true }).click();
+  await expect(viewer.locator(".image-preview-nav")).toHaveCount(0);
+  await viewer.locator('.image-preview-thumb[aria-current="true"]').focus();
+  await page.keyboard.press("ArrowRight");
   await expect(viewer.locator(".image-preview-thumb").last()).toHaveAttribute(
     "aria-current",
     "true",
   );
   await expect(viewer.getByRole("region", { name: "创意描述", exact: true })).toContainText(
     "素材 3 的创意描述",
+  );
+  await expect(viewer.locator(".image-preview-facts")).toContainText("ID：W90000002");
+  await expect(viewer.locator(".image-preview-bar-id")).toHaveText("Img ID：P55871232");
+  await expect(viewer.locator('.image-preview-thumb[aria-current="true"]')).toBeFocused();
+  await expect(viewer.locator('.image-preview-thumb[aria-current="true"]')).toHaveCSS(
+    "outline-style",
+    "none",
+  );
+  await page.keyboard.press("ArrowLeft");
+  await expect(viewer.locator(".image-preview-thumb").nth(1)).toHaveAttribute(
+    "aria-current",
+    "true",
+  );
+  await page.keyboard.press("ArrowUp");
+  await expect(viewer.locator(".image-preview-thumb").first()).toHaveAttribute(
+    "aria-current",
+    "true",
+  );
+  await page.keyboard.press("ArrowDown");
+  await expect(viewer.locator(".image-preview-thumb").nth(1)).toHaveAttribute(
+    "aria-current",
+    "true",
   );
   await viewer.getByRole("button", { name: "关闭图片预览", exact: true }).click();
   await expect(viewer).toHaveCount(0);
@@ -221,4 +277,27 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   expect(Math.round(close?.x ?? 0)).toBeGreaterThan(300);
   expect(Math.round(close?.y ?? -1)).toBeLessThan(20);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("rail thumbnails zoom on hover like reference thumbnails", async ({ page }) => {
+  await page.setViewportSize({ width: 1328, height: 906 });
+  await mockImageApi(page);
+  await page.route("**/api/v1/image-assets?*", (route) =>
+    route.fulfill({ json: apiFixture({ data: [asset(0), asset(1)] }) }),
+  );
+  await page.route("**/api/v1/image-tasks*", (route) =>
+    route.fulfill({ json: apiFixture({ data: [] }) }),
+  );
+  await page.route("**/api/v1/image-assets/**/content*", (route) =>
+    route.fulfill({ contentType: "image/svg+xml", body: svg }),
+  );
+  await page.goto("/create");
+  await page.getByRole("button", { name: "打开素材库", exact: true }).click();
+  await page.getByRole("button", { name: "查看图片：素材 1 的创意描述", exact: true }).click();
+  const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
+  const thumb = viewer.getByRole("button", { name: "预览第 2 张", exact: true });
+  const image = thumb.locator("img");
+  await expect(image).toHaveCSS("transform", "none");
+  await thumb.hover();
+  await expect(image).toHaveCSS("transform", "matrix(1.1, 0, 0, 1.1, 0, 0)");
 });

@@ -1,4 +1,5 @@
 import {
+  assetTypeSchema,
   imageGenerationInputSchema,
   imageModelCatalog,
   imageUnitCredits,
@@ -92,7 +93,13 @@ export function imageRoutes(deps: ImageApiDependencies) {
         error.code,
         error.code === "INSUFFICIENT_CREDITS"
           ? "企业金币余额不足，每张图片需要 20 币"
-          : "请求未执行，请检查权限、余额或任务状态",
+          : error.code === "STATE_CONFLICT"
+            ? "任务正在生成或状态已更新，请稍后重试"
+            : error.code === "FORBIDDEN"
+              ? "没有权限操作此任务"
+              : error.code === "NOT_FOUND"
+                ? "任务不存在或已不可用"
+                : "请求未执行，请刷新后重试",
         status,
       );
     }
@@ -226,6 +233,22 @@ export function imageRoutes(deps: ImageApiDependencies) {
     );
     return c.json(result, result.replayed ? 200 : 202);
   });
+  app.post("/image-tasks/:jobId/retry", async (c) => {
+    if (!deps.enabled) return fail(c, "GENERATION_NOT_CONFIGURED", "生图服务尚未启用", 503);
+    const jobId = id.safeParse(c.req.param("jobId"));
+    const key = id.safeParse(c.req.header("Idempotency-Key"));
+    if (!jobId.success || !key.success) return fail(c, "VALIDATION_ERROR", "重试参数无效", 400);
+    const scope = c.get("principal");
+    const job = await deps.repository.get(scope, jobId.data);
+    if (!job) return fail(c, "NOT_FOUND", "任务不存在", 404);
+    try {
+      deps.validate(imageGenerationInputSchema.parse(job.input));
+    } catch {
+      return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "模型能力尚未验证", 400);
+    }
+    const result = await deps.repository.retry(scope, jobId.data, key.data);
+    return c.json(result, result.replayed ? 200 : 202);
+  });
   app.get("/image-tasks", async (c) => {
     const limit = z.coerce
       .number()
@@ -246,6 +269,11 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const job = await deps.repository.get(c.get("principal"), parsed.data);
     return job ? c.json(job) : fail(c, "NOT_FOUND", "任务不存在", 404);
   });
+  app.get("/image-assets/:id/latest-edit", async (c) => {
+    const parsed = id.safeParse(c.req.param("id"));
+    if (!parsed.success) return fail(c, "NOT_FOUND", "图片不存在", 404);
+    return c.json({ job: await deps.repository.latestEdit(c.get("principal"), parsed.data) });
+  });
   app.get("/image-assets", async (c) => {
     const limit = z.coerce
       .number()
@@ -255,9 +283,18 @@ export function imageRoutes(deps: ImageApiDependencies) {
       .default(30)
       .safeParse(c.req.query("limit"));
     const before = id.optional().safeParse(c.req.query("before"));
-    if (!limit.success || !before.success) return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
+    const kind = z.enum(["output", "reference"]).optional().safeParse(c.req.query("kind"));
+    const type = assetTypeSchema.optional().safeParse(c.req.query("type"));
+    if (!limit.success || !before.success || !kind.success || !type.success)
+      return fail(c, "VALIDATION_ERROR", "筛选或分页参数无效", 400);
     return c.json({
-      data: await deps.repository.listAssets(c.get("principal"), limit.data, before.data),
+      data: await deps.repository.listAssets(
+        c.get("principal"),
+        limit.data,
+        before.data,
+        kind.data,
+        type.data,
+      ),
     });
   });
   app.post("/image-assets", async (c) => {

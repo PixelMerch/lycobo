@@ -8,11 +8,13 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}${{ github.event.action == 'edited' && !github.event.changes.base && '-metadata' || '' }}
   cancel-in-progress: true
 jobs:
   quality:
-    name: Quality
+    # Metadata-only edits must neither cancel CI nor overwrite required check results.
+    name: ${{ github.event.action == 'edited' && !github.event.changes.base && 'Quality metadata only' || 'Quality' }}
+    if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -26,9 +28,13 @@ jobs:
       - run: pnpm check
       - run: git diff --exit-code
   browser:
-    name: Browser
+    # Metadata-only edits must neither cancel CI nor overwrite required check results.
+    name: ${{ github.event.action == 'edited' && !github.event.changes.base && 'Browser metadata only' || 'Browser' }}
+    if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      FULL_E2E: ${{ github.event_name == 'workflow_dispatch' || github.base_ref == 'main' || github.ref == 'refs/heads/main' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -39,9 +45,16 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: cp .env.example .env
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm test:e2e
+      - name: Full browser regression for main
+        if: env.FULL_E2E == 'true'
+        run: pnpm test:e2e
+      - name: Core browser smoke tests for development
+        if: env.FULL_E2E != 'true'
+        run: pnpm test:e2e:smoke
   infrastructure:
-    name: Infrastructure
+    # Metadata-only edits must neither cancel CI nor overwrite required check results.
+    name: ${{ github.event.action == 'edited' && !github.event.changes.base && 'Infrastructure metadata only' || 'Infrastructure' }}
+    if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -77,17 +90,3 @@ jobs:
       - run: git diff --exit-code -- packages/db
       - run: pnpm db:migrate
       - run: pnpm test:integration
-  pr-title:
-    name: PR title
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .node-version
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: node scripts/check-pr-title.mjs

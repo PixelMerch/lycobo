@@ -6,9 +6,11 @@ const sizes = { small: 14, default: 18, navigation: 20, action: 22, illustration
 export function UiIcon({
   icon: Icon,
   size = "default",
+  className,
 }: {
   icon: TablerIcon;
   size?: keyof typeof sizes;
+  className?: string;
 }) {
   return (
     <Icon
@@ -17,7 +19,7 @@ export function UiIcon({
       stroke={2}
       aria-hidden="true"
       focusable="false"
-      className="ui-icon"
+      className={className ? `ui-icon ${className}` : "ui-icon"}
     />
   );
 }

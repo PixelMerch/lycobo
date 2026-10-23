@@ -11,7 +11,7 @@ export async function recordImageEvent(
   resourceId: string,
 ) {
   await tx`select pg_advisory_xact_lock(hashtextextended(${organizationId}, 71420))`;
-  await tx`insert into image_events (organization_id,kind,resource_id) values (${organizationId},${kind},${resourceId})`;
+  await tx`insert into generation_events (organization_id,kind,resource_id) values (${organizationId},${kind},${resourceId})`;
   await tx`select pg_notify(${channel}, ${organizationId})`;
 }
 export function openImageEventFeed(url: string) {
@@ -61,12 +61,12 @@ export function openImageEventFeed(url: string) {
     },
     async latest(scope: ImageScope) {
       const rows =
-        await sql`select id::text as id from image_events where organization_id=${scope.organizationId} order by id desc limit 1`;
+        await sql`select id::text as id from generation_events where organization_id=${scope.organizationId} order by id desc limit 1`;
       return String(rows[0]?.id ?? "0");
     },
     async since(scope: ImageScope, after: string) {
       const rows =
-        await sql`select id::text as id,kind,resource_id as "resourceId" from image_events
+        await sql`select id::text as id,kind,resource_id as "resourceId" from generation_events
         where organization_id=${scope.organizationId} and id>${after} order by id limit 201`;
       return rows.map((row) => imageEventSchema.parse(row));
     },
