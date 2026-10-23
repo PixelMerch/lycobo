@@ -9,6 +9,12 @@ body:has(.commerce-home)::-webkit-scrollbar {
   display: none;
 }
 
+/* Use one gap for both sides of the home heading, independent of shell padding. */
+.main-content:has(> .commerce-home) {
+  --home-intro-gap: 36px;
+  padding-top: 0;
+}
+
 /* Approved commerce homepage composition; sizes inherit DESIGN.md tokens. */
 .commerce-home.page-panel {
   max-width: 1840px;
@@ -16,7 +22,7 @@ body:has(.commerce-home)::-webkit-scrollbar {
   background: transparent;
   border-radius: 0;
   margin-inline: auto;
-  padding: 8px 40px 24px;
+  padding: 0 40px 24px;
 }
 .home-start {
   max-width: 1040px;
@@ -132,8 +138,11 @@ body:has(.commerce-home)::-webkit-scrollbar {
   }
 }
 @media (max-width: 767px) {
+  .main-content:has(> .commerce-home) {
+    --home-intro-gap: 32px;
+  }
   .commerce-home.page-panel {
-    padding: 8px 16px 24px;
+    padding: 0 16px 24px;
   }
   .home-start h1 {
     font-size: var(--text-page-mobile);
@@ -154,7 +163,7 @@ body:has(.commerce-home)::-webkit-scrollbar {
 
 /* Xiaoyunque composer measurements: 1040 × 212, 28px radius, 14/21 type. */
 .home-start {
-  margin-top: 16px;
+  margin-top: var(--home-intro-gap);
   margin-bottom: 48px;
 }
 .home-start h1.sr-only {
@@ -170,7 +179,7 @@ body:has(.commerce-home)::-webkit-scrollbar {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin-bottom: 24px;
+  margin-bottom: var(--home-intro-gap);
   font-size: 28px;
   font-weight: 600;
   line-height: 1.4;
