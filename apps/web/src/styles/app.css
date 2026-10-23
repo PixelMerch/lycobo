@@ -928,7 +928,7 @@ p.home-hero-kicker {
   --composer-group: var(--overlay);
   --composer-selected: color-mix(in srgb, var(--surface-tertiary) 92%, var(--foreground));
   background: var(--surface);
-  border-radius: 8px;
+  border-radius: 20px;
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -1432,6 +1432,7 @@ p.home-hero-kicker {
     grid-template-columns: minmax(0, 1fr);
   }
   .composer-panel {
+    border-radius: 18px;
     grid-row: auto;
     position: static;
     min-height: auto;
