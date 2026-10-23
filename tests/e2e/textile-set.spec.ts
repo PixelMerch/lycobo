@@ -236,7 +236,11 @@ test("confirmed textile views show removable thumbnails and keep picker selectio
   await dialog.getByRole("button", { name: "确认", exact: true }).click();
   await expect(page.locator(".textile-selected-view")).toHaveCount(2);
   await expect(page.locator(".textile-selected-example")).toHaveCount(2);
-  await page.getByRole("button", { name: "移除裂变类型：正面", exact: true }).click();
+  const remove = page.getByRole("button", { name: "移除裂变类型：正面", exact: true });
+  await expect(remove).toHaveCSS("opacity", "0");
+  await remove.locator("..").hover();
+  await expect(remove).toHaveCSS("opacity", "1");
+  await remove.click();
   await expect(page.locator(".textile-selected-name")).toHaveText(["面料特写"]);
   await expect(dialog).toBeHidden();
   await expect(opener).toBeFocused();
@@ -250,7 +254,10 @@ test("confirmed textile views show removable thumbnails and keep picker selectio
     "true",
   );
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "移除裂变类型：面料特写", exact: true }).click();
+  const removeLast = page.getByRole("button", { name: "移除裂变类型：面料特写", exact: true });
+  await removeLast.focus();
+  await expect(removeLast).toHaveCSS("opacity", "1");
+  await removeLast.press("Enter");
   await expect(page.locator(".textile-selected-view")).toHaveCount(0);
   await expect(opener).toHaveText("选择裂变类型");
 });

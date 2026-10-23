@@ -145,20 +145,34 @@
 }
 .textile-selected-remove.button {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 28px;
-  min-width: 28px;
-  height: 28px;
-  min-height: 28px;
+  top: 0;
+  right: 0;
+  width: 21.6px;
+  min-width: 21.6px;
+  height: 21.6px;
+  min-height: 21.6px;
   padding: 0;
   border: 0;
-  border-radius: 50%;
-  background: #00000099;
-  color: #fff;
+  border-radius: 0 8px 0 8px;
+  background: #1c1c1ce6;
+  color: #ffffffa6;
+  box-shadow: none;
+  opacity: 0;
+  pointer-events: none;
+}
+.textile-selected-view:is(:hover, :focus-within) .textile-selected-remove.button {
+  opacity: 1;
+  pointer-events: auto;
 }
 .textile-selected-remove.button:is(:hover, [data-hovered="true"]) {
-  background: #000000bf;
+  background: #121216e6;
+  color: #ffffffd9;
+}
+@media (hover: none) {
+  .textile-selected-remove.button {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 .textile-selected-grid .textile-view-trigger {
   height: 100%;
@@ -344,17 +358,11 @@
   }
 }
 @media (max-width: 767px) {
-  .textile-selected-remove.button {
-    top: 0;
-    right: 0;
-    width: 44px;
-    min-width: 44px;
-    height: 44px;
-    min-height: 44px;
-    background: radial-gradient(circle 14px, #00000099 100%, transparent 100%);
-  }
-  .textile-selected-remove.button:is(:hover, [data-hovered="true"]) {
-    background: radial-gradient(circle 14px, #000000bf 100%, transparent 100%);
+  .textile-selected-remove.button::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 -22.4px -22.4px;
+    border-radius: inherit;
   }
   .textile-views-anchor {
     top: calc(var(--header-height) + 12px);
