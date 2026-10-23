@@ -17,10 +17,18 @@ function run(label, args) {
     maxBuffer: 16 * 1024 * 1024,
     env: { ...process.env, WRANGLER_SEND_METRICS: "false" },
   });
-  if (result.error || result.status !== 0)
-    throw new Error(
-      `${label} failed. Check Cloudflare authentication, subscriptions, bindings and deployment status; raw output suppressed to protect secrets.`,
+  if (result.error || result.status !== 0) {
+    let diagnostic = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+    for (const [key, value] of Object.entries(process.env))
+      if (value && /TOKEN|SECRET|PASSWORD|API_KEY|DATABASE_URL/.test(key))
+        diagnostic = diagnostic.replaceAll(value, "[REDACTED]");
+    console.error(
+      diagnostic.replace(/postgres(?:ql)?:\/\/[^\s"']+/g, "[REDACTED_DATABASE_URL]").slice(-6000),
     );
+    throw new Error(
+      `${label} failed. Check Cloudflare authentication, subscriptions, bindings and deployment status; secret values redacted.`,
+    );
+  }
 }
 try {
   if (process.argv.slice(2).some((arg) => arg !== "--plan"))
@@ -53,7 +61,9 @@ try {
       const root = path.resolve(`apps/${service}`);
       const base = JSON.parse(await readFile(path.join(root, "wrangler.jsonc"), "utf8"));
       const configFile = path.join(directory, `${service}.json`);
-      await writeFile(configFile, JSON.stringify(releaseConfig(base, settings, root)), {
+      const config = releaseConfig(base, settings, root);
+      delete config.tsconfig;
+      await writeFile(configFile, JSON.stringify(config), {
         mode: 0o600,
       });
       const secretFile = path.join(directory, `${service}-secrets.json`);

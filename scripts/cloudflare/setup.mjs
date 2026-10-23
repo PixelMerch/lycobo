@@ -65,7 +65,8 @@ try {
         user: "postgres",
         password: decodeURIComponent(target.password),
       },
-      mtls: { sslmode: "verify-full" },
+      // Hyperdrive require validates server certificates with WebPKI.
+      mtls: { sslmode: "require" },
     });
   }
   if (typeof hyperdrive.id !== "string" || !/^[a-f0-9]{32}$/.test(hyperdrive.id))

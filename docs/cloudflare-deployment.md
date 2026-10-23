@@ -51,7 +51,7 @@ Images 转换是额外计量项：Free 每月最多 5,000 次唯一转换，超�
 1. 首次部署使用 Workers Free，不设置付费计划专用 CPU 上限，不升级订阅。HTTP 请求 CPU 上限为 10ms，网络等待不计 CPU；需要在真实免费运行时实测 scrypt 登录与上传。若发生 CPU 超限，记录失败并讨论优化，不降低密码校验强度、不自动升级。R2 保持当前已启用状态。当前 Chrome 已确认存在私有的 `lycobo` bucket（Public Access Disabled），配置复用该桶，不另建同用途桶。R2 即使额度内为 $0，也需用户确认订阅与条款；脚本不会开通或升级套餐。
 2. 通过 Cloudflare 创建仅限此账户的 API token，权限覆盖 Workers Scripts、Queues、R2 Storage、Hyperdrive、Pages 的编辑，以及 Cloudflare 要求的账户读取权限。令牌只填被忽略的根 `.env` 的 `CLOUDFLARE_API_TOKEN`，不发到聊天或提交 Git。创建访问凭据／同意订阅由用户完成。
 3. 保持 `SUPABASE_DATABASE_URL` 的真实密码只在 `.env`；提供至少 32 字节的 `AUTH_JWT_SECRET`。真实生成还需 `VAKV_API_KEY`，以及已验证的能力开关。
-4. `pnpm cloudflare:setup` 创建或复用上述私有 bucket、两条队列、Hyperdrive 与 Pages 项目；Hyperdrive 关闭缓存并验证 TLS，资源 ID 保存到 `.env` 的 `CLOUDFLARE_HYPERDRIVE_ID`。脚本不修改密码／套餐，不删除资源，失败后先检查同名资源再重跑。
+4. `pnpm cloudflare:setup` 创建或复用上述私有 bucket、两条队列、Hyperdrive 与 Pages 项目；Hyperdrive 关闭缓存并使用 require TLS（Cloudflare WebPKI 验证服务器证书），资源 ID 保存到 `.env` 的 `CLOUDFLARE_HYPERDRIVE_ID`。脚本不修改密码／套餐，不删除资源，失败后先检查同名资源再重跑。
 5. 核对 `CLOUDFLARE_PUBLIC_ORIGIN` 为实际 Pages HTTPS 域名或已经绑定的自定义域名。Pages 项目名对应的域名若有后缀，以控制台实际结果为准。
 6. `pnpm cloudflare:deploy --plan` 检查目标与本地参数；`pnpm cloudflare:deploy` 先检查 Hyperdrive 目标和缓存，再构建前端，依次发布消费者、API 和 Pages。
 
@@ -92,3 +92,7 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 SSE 在 Workers 中保持原有持久事件游标、组织隔离、身份复验及断线恢复，通过每 3 秒查询事件日志代替长驻 `LISTEN`。Node 测试仍验证原有 NOTIFY 事务语义；边缘平台不依赖进程常驻或 Redis 转发。
 
 参考：[Workers Postgres.js / Hyperdrive](https://developers.cloudflare.com/hyperdrive/examples/connect-to-postgres/postgres-drivers-and-libraries/postgres-js/)、[Queues 限制](https://developers.cloudflare.com/queues/platform/limits/)、[Images binding](https://developers.cloudflare.com/images/optimization/binding/)、[R2 Workers API](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/)。
+
+## 2026-10-23 首次部署记录
+
+使用 Workers Free 完成消费者、API、Pages 部署，入口 https://lycobo.pages.dev。线上首页与 `/api/health/live` 返回 200；已有企业账号登录返回 code 0 并设置登录 Cookie。令牌与资源变量已同步到 GitHub cloudflare-production，本地 .env 保留。生成默认关闭；真实生图与线上上传验收尚未执行。
