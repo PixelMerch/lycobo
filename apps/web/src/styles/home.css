@@ -11,8 +11,6 @@ body:has(.commerce-home)::-webkit-scrollbar {
 
 /* Approved commerce homepage composition; sizes inherit DESIGN.md tokens. */
 .commerce-home.page-panel {
-  position: relative;
-  isolation: isolate;
   max-width: 1840px;
   border: 0;
   background: transparent;
@@ -554,12 +552,20 @@ body:has(.commerce-home)::-webkit-scrollbar {
   }
 }
 
-/* Only the upper home section gets this decorative layer; controls stay above it. */
+/* Anchor the home background to the shell, not the padded/narrow content panel. */
+.studio-app:has(.commerce-home) {
+  position: relative;
+  isolation: isolate;
+  --home-dot-height: 720px;
+}
+.studio-app:has(.commerce-home) .topbar {
+  background: transparent;
+}
 .home-dot-background {
   position: absolute;
-  inset: 0 0 auto;
+  inset: 0 0 auto var(--sidebar-width);
   z-index: -1;
-  height: min(720px, 100%);
+  height: var(--home-dot-height);
   overflow: hidden;
   pointer-events: none;
   mask-image: linear-gradient(#000 0%, #000 75%, transparent 100%);
