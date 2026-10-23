@@ -1,8 +1,11 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, type MotionStyle, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { homeIntro } from "./home-intro-config";
 
-// Focused adaptation of React Bits Gradient Text / Rotating Text effects.
+const segmenter = new Intl.Segmenter("zh-CN", { granularity: "grapheme" });
+type CharacterStyle = MotionStyle & { "--character-offset": string };
+
+// Focused adaptation of React Bits Gradient Text / Rotating Text character flip effects.
 // Source and license: docs/third-party.md and docs/licenses/react-bits.md.
 export function HomeIntro() {
   const [index, setIndex] = useState(0);
@@ -46,6 +49,10 @@ export function HomeIntro() {
   const current = reduced
     ? homeIntro.phrases[0]
     : (homeIntro.phrases[index] ?? homeIntro.phrases[0]);
+  const characters = Array.from(segmenter.segment(current.text), (part) => ({
+    text: part.segment,
+    offset: part.index,
+  }));
   return (
     <div className="home-intro" ref={root}>
       <span className="sr-only">{homeIntro.phrases[0].text}</span>
@@ -53,14 +60,42 @@ export function HomeIntro() {
         <AnimatePresence initial={false} mode="wait">
           <motion.span
             key={current.text}
-            className="home-intro-phrase home-intro-gradient"
+            className="home-intro-phrase"
             data-palette={current.palette}
-            initial={reduced ? false : { y: "70%", rotateX: -35, opacity: 0 }}
-            animate={{ y: 0, rotateX: 0, opacity: 1 }}
-            exit={reduced ? { opacity: 1 } : { y: "-70%", rotateX: 35, opacity: 0 }}
-            transition={{ duration: reduced ? 0 : 0.35, ease: [0.22, 1, 0.36, 1] }}
+            initial="initial"
+            animate="animate"
+            exit="exit"
           >
-            {current.text}
+            {reduced ? (
+              <span className="home-intro-gradient">{current.text}</span>
+            ) : (
+              characters.map((character, characterIndex) => {
+                const delay = (characters.length - 1 - characterIndex) * homeIntro.staggerDuration;
+                const style: CharacterStyle = {
+                  "--character-offset": `${(characterIndex / Math.max(1, characters.length - 1)) * 100}%`,
+                };
+                return (
+                  <motion.span
+                    key={`${current.text}-${character.offset}`}
+                    className="home-intro-character home-intro-gradient"
+                    style={style}
+                    variants={{
+                      initial: { rotateX: -90, opacity: 0, filter: `blur(${homeIntro.blur}px)` },
+                      animate: { rotateX: 0, opacity: 1, filter: "blur(0px)" },
+                      exit: {
+                        rotateX: 90,
+                        opacity: 0,
+                        filter: `blur(${homeIntro.blur}px)`,
+                        transition: { duration: 0.25, ease: "easeIn", delay },
+                      },
+                    }}
+                    transition={{ type: "spring", ...homeIntro.spring, delay }}
+                  >
+                    {character.text}
+                  </motion.span>
+                );
+              })
+            )}
           </motion.span>
         </AnimatePresence>
       </span>

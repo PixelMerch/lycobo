@@ -8,4 +8,7 @@ export const homeIntro = {
     { text: "创作下一张好图", palette: "citrus" },
   ],
   interval: 3000,
+  staggerDuration: 0.035,
+  blur: 4,
+  spring: { damping: 25, stiffness: 300 },
 } as const;
