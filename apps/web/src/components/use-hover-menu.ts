@@ -17,9 +17,21 @@ function isHoverPointer(event: React.PointerEvent) {
 export function useHoverMenu(
   triggerRef: RefObject<HTMLButtonElement | null>,
   itemSelector: string,
+  {
+    openDelay = 0,
+    closeDelay = HOVER_CLOSE_DELAY,
+    keepOpenOnHoveredPress = true,
+  }: { openDelay?: number; closeDelay?: number; keepOpenOnHoveredPress?: boolean } = {},
 ) {
   const [isOpen, setOpen] = useState(false);
   const closeTimer = useRef<number | null>(null);
+  const openTimer = useRef<number | null>(null);
+  const cancelOpen = useCallback(() => {
+    if (openTimer.current !== null) {
+      window.clearTimeout(openTimer.current);
+      openTimer.current = null;
+    }
+  }, []);
   const hoverOpened = useRef(false);
   const pressInside = useRef(false);
   const keyboardOpened = useRef(false);
@@ -31,7 +43,13 @@ export function useHoverMenu(
     }
   }, []);
 
-  useEffect(() => cancelClose, [cancelClose]);
+  useEffect(
+    () => () => {
+      cancelOpen();
+      cancelClose();
+    },
+    [cancelOpen, cancelClose],
+  );
 
   // A non-modal popover never moves focus by itself, so keyboard opens put the
   // first menu item in the tab order explicitly.
@@ -44,19 +62,26 @@ export function useHoverMenu(
   }, [isOpen, itemSelector]);
 
   const scheduleClose = useCallback(() => {
+    cancelOpen();
     cancelClose();
     closeTimer.current = window.setTimeout(() => {
       hoverOpened.current = false;
       setOpen(false);
-    }, HOVER_CLOSE_DELAY);
-  }, [cancelClose]);
+    }, closeDelay);
+  }, [cancelOpen, cancelClose, closeDelay]);
 
   const openForHover = (event: React.PointerEvent) => {
     if (!isHoverPointer(event)) return;
     cancelClose();
-    hoverOpened.current = true;
-    keyboardOpened.current = false;
-    setOpen(true);
+    if (isOpen || openTimer.current !== null) return;
+    const reveal = () => {
+      openTimer.current = null;
+      hoverOpened.current = true;
+      keyboardOpened.current = false;
+      setOpen(true);
+    };
+    if (openDelay === 0) reveal();
+    else openTimer.current = window.setTimeout(reveal, openDelay);
   };
 
   const closeAfterHover = (event: React.PointerEvent) => {
@@ -65,6 +90,7 @@ export function useHoverMenu(
   };
 
   const close = () => {
+    cancelOpen();
     cancelClose();
     hoverOpened.current = false;
     pressInside.current = false;
@@ -75,14 +101,24 @@ export function useHoverMenu(
   return {
     isOpen,
     close,
+    openFromKeyboard: () => {
+      cancelOpen();
+      cancelClose();
+      hoverOpened.current = false;
+      keyboardOpened.current = true;
+      setOpen(true);
+    },
     onOpenChange: (next: boolean) => {
+      cancelOpen();
+      cancelClose();
       // A press on an already hovered trigger keeps the menu open instead of
       // toggling it shut under the pointer. Escape and outside presses close.
-      if (!next && hoverOpened.current && pressInside.current) {
+      if (!next && keepOpenOnHoveredPress && hoverOpened.current && pressInside.current) {
         pressInside.current = false;
         return;
       }
       pressInside.current = false;
+      if (!next) hoverOpened.current = false;
       if (!next && keyboardOpened.current) {
         keyboardOpened.current = false;
         triggerRef.current?.focus();

@@ -130,3 +130,57 @@ test("collapsed creation has one icon: hover browses, click navigates, other ico
     page.getByRole("region", { name: "创作参数" }).getByRole("button", { name: /创作模型/ }),
   ).toContainText("nano-banana-2.1");
 });
+
+test("whole creation row delays hover, cancels pass-through and lets the arrow toggle", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  await page.clock.install({ time: new Date("2026-10-23T00:00:00Z") });
+  await page.goto("/");
+  await page.clock.pauseAt(new Date("2026-10-23T00:00:10Z"));
+  const link = page.getByRole("link", { name: "创作", exact: true });
+  const arrow = page.getByRole("button", { name: "浏览模型", exact: true });
+  const menu = page.getByRole("menu", { name: "浏览模型", exact: true });
+  await link.hover();
+  await page.clock.runFor(100);
+  await expect(menu).toHaveCount(0);
+  await page.mouse.move(800, 600);
+  await page.clock.runFor(400);
+  await expect(menu).toHaveCount(0);
+  await link.hover();
+  await page.clock.runFor(250);
+  await expect(menu).toBeVisible();
+  await expect(page.locator(".creation-nav-row")).not.toHaveAttribute("data-active", "true");
+  await expect(page).toHaveURL(/\/$/);
+  await menu.getByRole("menuitem").first().hover();
+  await page.clock.runFor(400);
+  await expect(menu).toBeVisible();
+  await arrow.click();
+  await page.clock.runFor(150);
+  await expect(menu).toBeHidden();
+  await page.clock.runFor(400);
+  await expect(menu).toBeHidden();
+  await arrow.click();
+  await page.clock.runFor(150);
+  await expect(menu).toBeVisible();
+  await page.mouse.move(800, 600);
+  await page.clock.runFor(150);
+  await expect(menu).toBeVisible();
+  await page.clock.runFor(200);
+  await expect(menu).toBeHidden();
+  await link.hover();
+  await page.clock.runFor(100);
+  await link.click();
+  await page.clock.runFor(500);
+  await expect(page).toHaveURL(/\/create$/);
+  await expect(menu).toBeHidden();
+  await page.getByRole("link", { name: "首页", exact: true }).click();
+  await link.focus();
+  await link.press("ArrowDown");
+  await page.clock.runFor(150);
+  await expect(menu.getByRole("menuitem").first()).toBeFocused();
+  await page.keyboard.press("Escape");
+  await page.clock.runFor(150);
+  await expect(menu).toBeHidden();
+  await expect(arrow).toBeFocused();
+});

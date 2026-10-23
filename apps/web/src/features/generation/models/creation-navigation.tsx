@@ -40,7 +40,12 @@ export function CreationNavigation({
   onNavigate: () => void;
 }) {
   const trigger = useRef<HTMLButtonElement>(null);
-  const menu = useHoverMenu(trigger, ".creation-model-menu [role='menuitem']");
+  const pressWasOpen = useRef<boolean | null>(null);
+  const menu = useHoverMenu(trigger, ".creation-model-menu [role='menuitem']", {
+    openDelay: 250,
+    closeDelay: 200,
+    keepOpenOnHoveredPress: false,
+  });
   const activeModel = useStudioStore((s) => s.activeModel);
   const setActiveModel = useStudioStore((s) => s.setActiveModel);
   const navigate = useNavigate();
@@ -55,6 +60,8 @@ export function CreationNavigation({
       className="creation-nav-row"
       data-active={location.pathname === "/create" || undefined}
       data-collapsed={collapsed || undefined}
+      onPointerEnter={menu.triggerProps.onPointerEnter}
+      onPointerLeave={menu.triggerProps.onPointerLeave}
     >
       {!collapsed && (
         <RouteLink
@@ -62,6 +69,13 @@ export function CreationNavigation({
           to="/create"
           aria-label="创作"
           className="nav-row creation-nav-link"
+          onKeyDown={(event) => {
+            if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+              event.preventDefault();
+              trigger.current?.focus();
+              menu.openFromKeyboard();
+            }
+          }}
           onClick={() => {
             menu.close();
             onNavigate();
@@ -80,9 +94,17 @@ export function CreationNavigation({
           {...(collapsed ? { "aria-description": "点击进入创作，悬停或按向下方向键浏览模型" } : {})}
           onPress={() => {
             if (collapsed) enterCreation();
+            else if (pressWasOpen.current ?? menu.isOpen) menu.close();
+            else menu.onOpenChange(true);
+            pressWasOpen.current = null;
           }}
-          {...menu.triggerProps}
+          onPointerDown={() => {
+            // Remember the state before React Aria's press/outside handlers run.
+            pressWasOpen.current = menu.isOpen;
+            menu.triggerProps.onPointerDown();
+          }}
           onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") pressWasOpen.current = menu.isOpen;
             if (collapsed && (event.key === "Enter" || event.key === " ")) {
               event.preventDefault();
               enterCreation();

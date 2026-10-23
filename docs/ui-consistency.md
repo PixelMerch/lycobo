@@ -19,7 +19,7 @@
 
 | 能力 | 唯一入口 | 维护约束 |
 | --- | --- | --- |
-| 创作导航 | CreationNavigation | 文字直达、箭头悬停／点击展开竖向模型小卡片；使用共享 useHoverMenu，保持模型草稿 |
+| 创作导航 | CreationNavigation | 文字直达、整行延迟悬停展开模型小卡片、箭头点击开关；使用共享 useHoverMenu，保持模型草稿 |
 | Header 账户 | HeaderAccountMenu | 积分与头像共用入口，封装登录／悬停账户菜单／独立深色账户弹窗；应用壳不复制状态和查询 |
 | 账户内容 | AccountPanel → AccountManagement / WalletPanel | 按菜单入口分别打开，仅挂载对应内容、自然高度；真实账号与账单来自查询客户端，未接入的绑定／重置／支付不模拟成功 |
 | 确认 | ConfirmDialog | 不在业务中复制 Modal 标记；正文与操作布局共用 |
