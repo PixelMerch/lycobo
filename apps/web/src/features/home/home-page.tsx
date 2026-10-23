@@ -1,6 +1,5 @@
-import { Button, Modal } from "@heroui/react";
-import { IconBox, IconPhoto, IconSparkles, IconTextCaption, IconX } from "@tabler/icons-react";
-import { useState } from "react";
+import { Button } from "@heroui/react";
+import { IconBox, IconPhoto, IconSparkles, IconTextCaption } from "@tabler/icons-react";
 import { useNavigate } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { useStudioStore } from "../generation/studio-state";
@@ -31,7 +30,6 @@ export function HomePage() {
   const draft = useStudioStore((s) => s.drafts[model]);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const navigate = useNavigate();
-  const [guide, setGuide] = useState<string | null>(null);
   function start(prompt?: string) {
     // The homepage edits the same draft. Entering the workspace never submits paid work.
     if (prompt && !draft.prompt.trim()) updateDraft(model, { prompt });
@@ -53,40 +51,6 @@ export function HomePage() {
           ))}
         </section>
       </section>
-      <footer className="home-guides">
-        <Button size="sm" variant="ghost" onPress={() => setGuide("参考图上传指南")}>
-          参考图上传指南
-        </Button>
-        <Button size="sm" variant="ghost" onPress={() => setGuide("如何保持商品一致性")}>
-          如何保持商品一致性
-        </Button>
-      </footer>
-      <Modal
-        isOpen={guide !== null}
-        onOpenChange={(open) => {
-          if (!open) setGuide(null);
-        }}
-      >
-        <Modal.Backdrop>
-          <Modal.Container>
-            <Modal.Dialog>
-              <Modal.Header>
-                <Modal.Heading>{guide}</Modal.Heading>
-                <Modal.CloseTrigger aria-label="关闭指南">
-                  <UiIcon icon={IconX} size="default" />
-                </Modal.CloseTrigger>
-              </Modal.Header>
-              <Modal.Body>
-                <p>
-                  {guide === "参考图上传指南"
-                    ? "支持 PNG、JPEG 和 WebP，单张不超过 10MB，最多添加 5 张。优先上传清晰、无遮挡的商品图。参考图会在你确认生成时上传。"
-                    : "使用清晰的商品正面图，在提示词中明确需要保留的形状、颜色、标签和材质。先检查生成结果，再用于商品展示；复杂文字与细节需要逐项核对。"}
-                </p>
-              </Modal.Body>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
     </section>
   );
 }
