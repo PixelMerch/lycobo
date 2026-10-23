@@ -17,7 +17,7 @@ export const homeDotGrid = {
   stretch: 0.3,
   glow: 0.3,
   shape: "circle",
-  fade: 0.1,
+  fade: 0, // 不做四边淡出；底部渐隐由 home.css 单独控制。
   opacity: 0.7,
   intro: false,
   mouseInteraction: true,
