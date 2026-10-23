@@ -35,7 +35,7 @@ Web 的 src、public、index.html、vite.config.ts，以及 API 和 contracts �
 Vite 在容器内通过 api:8787 代理 /api，本地 pnpm dev 继续使用 127.0.0.1:8787。
 DEV_API_PROXY_TARGET 和 DEV_USE_POLLING 仅用于 Vite 开发服务器配置，不作为浏览器环境变量公开。
 
-容器端口只发布到宿主机 127.0.0.1。开发镜像不包含本地 .env；API/Worker 通过 env_file 读取本地配置，Compose 覆盖容器内数据库、Redis 和图片目录。
+容器端口只发布到宿主机 127.0.0.1。开发镜像不包含本地 .env；API/Worker 通过 env_file 读取本地配置，Compose 覆盖容器内数据库、Redis 和图片目录。容器数据库优先使用 `IMAGE_COMPOSE_DATABASE_URL`，未配置时连接 Compose PostgreSQL；宿主机 Node 使用 `DATABASE_URL`。切换 Supabase 时两者须配置为相同的目标地址，并重建 API／Worker 容器；当前本地环境已切换，步骤和数据边界见 [Supabase 接入](supabase-postgres.md)。
 API 已接入图片上传、任务与素材查询；独立 Worker 消费生图队列。服务监听不等于已配置模型，首次启用需完成迁移、本地身份签发与服务商 key 配置，详见 image-generation-api.md。
 Compose 不自动迁移数据库或删除数据卷。仅需基础设施时继续使用 `pnpm infra:up`。
 

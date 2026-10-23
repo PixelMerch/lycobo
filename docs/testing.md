@@ -44,6 +44,7 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:integration
 ```
 
 仅接受 loopback 的数据库/Redis URL，且必须显式允许。
+运行时 `DATABASE_URL` 已指向 Supabase 时，测试命令须显式覆盖为本项目本地 PostgreSQL 地址，例如 `DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW_LOCAL_INTEGRATION=true pnpm test:integration`；不修改远端库，也不将运行时配置改回本地。
 数据库测试插入唯一用户/项目/任务，验证归属和幂等约束，finally 清理并验证。
 队列使用每次运行独立名字，测试真实 Worker 的消息处理，finally 清理测试队列。
 不调用模型、不扣积分、不上传对象。迁移可以在空白 CI 库上验证；
