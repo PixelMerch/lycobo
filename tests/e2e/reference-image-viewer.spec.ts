@@ -124,7 +124,23 @@ test("history references share a viewer with switching, rotation, wheel zoom and
   await expect
     .poll(async () => zoomIn.evaluate((node) => getComputedStyle(node).backgroundColor))
     .not.toBe("rgba(0, 0, 0, 0)");
-  await page.keyboard.press("ArrowRight");
+  let releaseImage = () => {};
+  const imagePending = new Promise<void>((resolve) => {
+    releaseImage = resolve;
+  });
+  await page.route(`**/api/v1/image-assets/${ids[2]}/content`, async (route) => {
+    await imagePending;
+    await route.fallback();
+  });
+  try {
+    await page.keyboard.press("ArrowRight");
+    await expect(viewer.locator(".browse-image-surface")).toHaveAttribute("data-ready", "false");
+    await expect
+      .poll(() => page.evaluate(() => document.activeElement?.getAttribute("aria-label")))
+      .not.toBe("放大图片");
+  } finally {
+    releaseImage();
+  }
   await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[2]}/content`);
   await expect(zoomIn).toBeFocused();
   await page.keyboard.press("ArrowLeft");
