@@ -106,7 +106,7 @@ test("main and optional detail images validate independently and clear without a
   ).toHaveCount(1);
 });
 
-for (const width of [1440, 390]) {
+for (const width of [2560, 1440, 390]) {
   test(`textile workspace and view dialog remain usable at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/commerce/textile-set");
@@ -129,6 +129,20 @@ for (const width of [1440, 390]) {
       const formBox = await form.boundingBox();
       expect(box && formBox && box.x >= formBox.x + formBox.width).toBeTruthy();
     }
+    if (width > 1300) {
+      const railBox = await page
+        .getByRole("complementary", { name: "家纺套图历史索引", exact: true })
+        .boundingBox();
+      expect(box && railBox && box.x + box.width <= railBox.x).toBeTruthy();
+      await expect(page.getByRole("button", { name: "打开素材库", exact: true })).toBeInViewport();
+    }
+    const cards = await dialog
+      .locator(".textile-view-card")
+      .evaluateAll((els) => els.map((el) => el.getBoundingClientRect().top));
+    const firstTop = cards[0];
+    expect(firstTop).toBeDefined();
+    const firstRow = cards.filter((top) => firstTop !== undefined && Math.abs(top - firstTop) < 1);
+    expect(firstRow.length).toBeLessThanOrEqual(5);
     await dialog.getByRole("button", { name: "面料特写", exact: true }).click();
     await expect(dialog.getByRole("button", { name: "面料特写", exact: true })).toHaveCSS(
       "outline-style",

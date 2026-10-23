@@ -1,3 +1,6 @@
+.textile-workspace > .composer-panel {
+  border-radius: 20px;
+}
 .textile-title {
   font-size: 16px;
   line-height: 24px;
@@ -106,7 +109,7 @@
   position: fixed;
   top: calc(var(--header-height) + var(--content-padding));
   left: calc(var(--sidebar-width) + var(--content-padding) + var(--textile-composer-width) + 12px);
-  right: var(--content-padding);
+  right: calc(var(--content-padding) + var(--workspace-history-width) + 12px);
   height: 0;
   pointer-events: none;
 }
@@ -129,7 +132,7 @@
   height: calc(100dvh - var(--header-height) - 2 * var(--content-padding));
   min-height: 0;
   padding: 0;
-  border: 1px solid #ffffff14;
+  border: 0;
   border-radius: 20px;
   background: var(--app-dialog-background);
 }
@@ -156,7 +159,7 @@
   display: grid;
   width: 100%;
   min-width: 0;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(max(140px, calc((100% - 48px) / 5)), 1fr));
   gap: 12px;
   padding: 0;
   background: transparent;
@@ -234,6 +237,7 @@
 @media (max-width: 1300px) {
   .textile-views-anchor {
     --textile-composer-width: 300px;
+    right: var(--content-padding);
   }
 }
 @media (max-width: 1023px) {
@@ -245,6 +249,9 @@
   }
 }
 @media (max-width: 767px) {
+  .textile-workspace > .composer-panel {
+    border-radius: 18px;
+  }
   .textile-views-anchor {
     top: calc(var(--header-height) + 12px);
     left: 12px;
