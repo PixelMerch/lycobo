@@ -10,9 +10,12 @@ for (const width of [1440, 1920]) {
     await page.goto("/create");
     for (const collapsed of [false, true]) {
       if (collapsed) await page.getByRole("button", { name: "收起导航栏", exact: true }).click();
-      const trigger = page.getByRole("button", { name: "浏览模型", exact: true });
+      const trigger = page.getByRole("button", {
+        name: collapsed ? "创作" : "浏览模型",
+        exact: true,
+      });
       await trigger.hover();
-      const menu = page.getByRole("menu", { name: "浏览模型", exact: true });
+      const menu = page.getByRole("menu", { name: collapsed ? "创作" : "浏览模型", exact: true });
       await expect(menu).toBeVisible();
       await expect(menu.getByRole("menuitem")).toHaveCount(3);
       await menu.getByRole("menuitem").first().hover();
@@ -34,7 +37,7 @@ for (const width of [1440, 1920]) {
       await page.mouse.move(width - 100, 500);
       await expect(menu).toBeHidden();
       await trigger.focus();
-      await trigger.press("Enter");
+      await trigger.press(collapsed ? "ArrowDown" : "Enter");
       await expect(menu.getByRole("menuitem").first()).toBeFocused();
       await page.keyboard.press("Escape");
       await expect(menu).toBeHidden();
@@ -89,6 +92,40 @@ test("navigation model choices retain each draft and direct creation keeps the s
   await page.getByRole("link", { name: "首页", exact: true }).click();
   await page.getByRole("link", { name: "创作", exact: true }).click();
   await expect(prompt).toHaveValue("场景创作草稿");
+  await expect(
+    page.getByRole("region", { name: "创作参数" }).getByRole("button", { name: /创作模型/ }),
+  ).toContainText("nano-banana-2.1");
+});
+
+test("collapsed creation has one icon: hover browses, click navigates, other icons retain tips", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "收起导航栏", exact: true }).click();
+  const icon = page.getByRole("button", { name: "创作", exact: true });
+  await expect(page.getByRole("button", { name: "浏览模型", exact: true })).toHaveCount(0);
+  await expect(icon.locator("svg")).toHaveCount(1);
+  await icon.hover();
+  const menu = page.getByRole("menu", { name: "创作", exact: true });
+  await expect(menu).toBeVisible();
+  await expect(page.getByRole("tooltip", { name: "创作", exact: true })).toHaveCount(0);
+  await icon.click();
+  await expect(page).toHaveURL(/\/create$/);
+  await expect(menu).toBeHidden();
+  const home = page.getByRole("link", { name: "首页", exact: true });
+  await home.hover();
+  await expect(page.getByRole("tooltip", { name: "首页", exact: true })).toBeVisible();
+  await expect(menu).toBeHidden();
+  await home.click();
+  await icon.focus();
+  await icon.press("Enter");
+  await expect(page).toHaveURL(/\/create$/);
+  await expect(menu).toBeHidden();
+  await icon.press("ArrowDown");
+  await expect(menu.getByRole("menuitem").first()).toBeFocused();
+  await menu.getByRole("menuitem", { name: "进入 nano-banana-2.1 创作", exact: true }).click();
+  await expect(menu).toBeHidden();
   await expect(
     page.getByRole("region", { name: "创作参数" }).getByRole("button", { name: /创作模型/ }),
   ).toContainText("nano-banana-2.1");

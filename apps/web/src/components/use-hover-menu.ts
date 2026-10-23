@@ -64,8 +64,17 @@ export function useHoverMenu(
     scheduleClose();
   };
 
+  const close = () => {
+    cancelClose();
+    hoverOpened.current = false;
+    pressInside.current = false;
+    keyboardOpened.current = false;
+    setOpen(false);
+  };
+
   return {
     isOpen,
+    close,
     onOpenChange: (next: boolean) => {
       // A press on an already hovered trigger keeps the menu open instead of
       // toggling it shut under the pointer. Escape and outside presses close.

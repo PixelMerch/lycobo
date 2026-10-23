@@ -33,10 +33,13 @@ test("collapsed navigation preserves drafts, chooser anchoring and keyboard focu
   const expand = page.getByRole("button", { name: "展开导航栏", exact: true });
   await expect(expand).toHaveAttribute("aria-expanded", "false");
 
-  const images = page.getByRole("button", { name: "浏览模型", exact: true });
+  await expect
+    .poll(async () => Math.round((await page.locator(".sidebar").boundingBox())?.width ?? 0))
+    .toBe(64);
+  const images = page.getByRole("button", { name: "创作", exact: true });
   await images.focus();
-  await images.press("Enter");
-  const chooser = page.getByRole("menu", { name: "浏览模型", exact: true });
+  await images.press("ArrowDown");
+  const chooser = page.getByRole("menu", { name: "创作", exact: true });
   await expect(chooser).toBeVisible();
   const panel = await chooser.boundingBox();
   const sidebar = await page.locator(".sidebar").boundingBox();

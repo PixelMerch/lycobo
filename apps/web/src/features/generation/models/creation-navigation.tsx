@@ -1,4 +1,4 @@
-import { Dropdown, Tooltip } from "@heroui/react";
+import { Dropdown } from "@heroui/react";
 import { IconCheck, IconChevronRight, IconSparkles } from "@tabler/icons-react";
 import { useRef } from "react";
 import { useLocation, useNavigate } from "react-router";
@@ -29,7 +29,7 @@ const navigationModels = [
   },
 ] as const;
 
-/** Navigation and model browsing are separate targets; neither submits paid work. */
+/** Expanded navigation separates the targets; a collapsed icon browses on hover. */
 export function CreationNavigation({
   collapsed,
   mobile,
@@ -45,33 +45,60 @@ export function CreationNavigation({
   const setActiveModel = useStudioStore((s) => s.setActiveModel);
   const navigate = useNavigate();
   const location = useLocation();
+  function enterCreation() {
+    menu.close();
+    onNavigate();
+    navigate("/create");
+  }
   return (
     <div
       className="creation-nav-row"
       data-active={location.pathname === "/create" || undefined}
       data-collapsed={collapsed || undefined}
     >
-      <Tooltip delay={300} isDisabled={!collapsed}>
+      {!collapsed && (
         <RouteLink
           nav
           to="/create"
           aria-label="创作"
           className="nav-row creation-nav-link"
-          onClick={onNavigate}
+          onClick={() => {
+            menu.close();
+            onNavigate();
+          }}
         >
           <UiIcon icon={IconSparkles} size="default" />
           <span className="nav-label">创作</span>
         </RouteLink>
-        <Tooltip.Content placement="right">创作</Tooltip.Content>
-      </Tooltip>
+      )}
       <Dropdown isOpen={menu.isOpen} onOpenChange={menu.onOpenChange}>
         <Dropdown.Trigger
           ref={trigger}
-          className="creation-model-trigger"
-          aria-label="浏览模型"
+          className={collapsed ? "nav-row creation-icon-trigger" : "creation-model-trigger"}
+          aria-label={collapsed ? "创作" : "浏览模型"}
+          aria-current={collapsed && location.pathname === "/create" ? "page" : false}
+          {...(collapsed ? { "aria-description": "点击进入创作，悬停或按向下方向键浏览模型" } : {})}
+          onPress={() => {
+            if (collapsed) enterCreation();
+          }}
           {...menu.triggerProps}
+          onKeyDown={(event) => {
+            if (collapsed && (event.key === "Enter" || event.key === " ")) {
+              event.preventDefault();
+              enterCreation();
+              return;
+            }
+            menu.triggerProps.onKeyDown(event);
+          }}
         >
-          <UiIcon icon={IconChevronRight} size="small" />
+          {collapsed ? (
+            <>
+              <UiIcon icon={IconSparkles} size="default" />
+              <span className="nav-label">创作</span>
+            </>
+          ) : (
+            <UiIcon icon={IconChevronRight} size="small" />
+          )}
         </Dropdown.Trigger>
         <Dropdown.Popover
           className="creation-model-menu"
