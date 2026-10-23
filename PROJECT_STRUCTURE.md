@@ -31,7 +31,7 @@ apps/web/src/
 └── features/
     ├── auth/                     # 身份请求与登录弹窗
     ├── account/                  # Header账户菜单、账户中心、钱包请求和账务展示
-    ├── commerce/                 # AI 电商导航、功能目录、家纺套图工作区与本地会话草稿
+    ├── commerce/                 # AI 电商导航、最近功能入口偏好、家纺套图工作区与本地会话草稿
     ├── home/                     # 首页、共享创作输入与提示辅助
     │   ├── home-intro.tsx         # 首页渐变轮换标题，文案与间隔在 home-intro-config.ts
     │   └── dot-grid/             # React Bits 点阵源码适配，首页参数在 home-dot-grid-config.ts

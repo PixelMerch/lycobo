@@ -55,8 +55,8 @@ test("commerce text goes directly to its page and the arrow toggles its menu", a
   await page.goto("/");
   const link = page.getByRole("link", { name: "AI 电商", exact: true });
   await link.click();
-  await expect(page).toHaveURL(/\/commerce$/);
-  await expect(page.getByRole("heading", { name: "AI 电商", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/commerce\/textile-set$/);
+  await expect(page.getByRole("heading", { name: "家纺套图", exact: true })).toBeVisible();
   await expect(page.getByRole("menu")).toHaveCount(0);
   const arrow = page.getByRole("button", { name: "浏览电商功能", exact: true });
   await arrow.click();
@@ -108,8 +108,43 @@ for (const width of [390, 1440]) {
       const icon = page.getByRole("button", { name: "AI 电商", exact: true });
       await icon.focus();
       await icon.press("Enter");
-      await expect(page).toHaveURL(/\/commerce$/);
+      await expect(page).toHaveURL(/\/commerce\/textile-set$/);
       await expect(menu).toBeHidden();
     }
   });
 }
+
+test("commerce entry remembers a valid tool across reloads and falls back from retired tools", async ({
+  page,
+}) => {
+  await page.goto("/commerce/textile-set");
+  await expect(page.getByRole("heading", { name: "家纺套图", exact: true })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("lycobo.commerce.recent-tool"))).toBe(
+    "textile-set",
+  );
+  await page.goto("/commerce");
+  await expect(page).toHaveURL(/\/commerce\/textile-set$/);
+  await page.reload();
+  await page.getByRole("link", { name: "首页", exact: true }).click();
+  await page.getByRole("link", { name: "AI 电商", exact: true }).click();
+  await expect(page).toHaveURL(/\/commerce\/textile-set$/);
+  await page.evaluate(() => localStorage.setItem("lycobo.commerce.recent-tool", "retired-tool"));
+  await page.goto("/commerce");
+  await expect(page).toHaveURL(/\/commerce\/textile-set$/);
+  expect(await page.evaluate(() => localStorage.getItem("lycobo.commerce.recent-tool"))).toBe(
+    "textile-set",
+  );
+});
+
+test("commerce entry remains available when browser storage is blocked", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "localStorage", {
+      get() {
+        throw new DOMException("Storage blocked", "SecurityError");
+      },
+    });
+  });
+  await page.goto("/commerce");
+  await expect(page).toHaveURL(/\/commerce\/textile-set$/);
+  await expect(page.getByRole("region", { name: "家纺套图参数", exact: true })).toBeVisible();
+});

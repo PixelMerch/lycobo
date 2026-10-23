@@ -42,7 +42,7 @@ test("textile form has only required product inputs and retains confirmed choice
   await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
   await page.getByRole("link", { name: "创作", exact: true }).click();
   await page.getByRole("link", { name: "AI 电商", exact: true }).click();
-  await page.getByRole("link", { name: /家纺套图/ }).click();
+  await expect(page).toHaveURL(/\/commerce\/textile-set$/);
   await expect(form.locator(".reference-tile")).toHaveCount(1);
   await expect(form.getByRole("button", { name: "选择裂变类型", exact: true })).toContainText(
     "正面、面料特写",
