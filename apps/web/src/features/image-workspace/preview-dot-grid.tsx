@@ -1,6 +1,6 @@
 import { type RefObject, useEffect, useRef } from "react";
 
-const SPACING = 42;
+const SPACING = 21;
 const OFFSET = 3;
 const LIFETIME = 1000;
 

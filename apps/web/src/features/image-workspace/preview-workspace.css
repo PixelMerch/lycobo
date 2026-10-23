@@ -9,8 +9,8 @@
   isolation: isolate;
   background-color: #0b0b0e;
   background-image: radial-gradient(circle, #777 0.7px, transparent 1px);
-  background-size: 42px 42px;
-  background-position: -18px -18px;
+  background-size: 21px 21px;
+  background-position: -7.5px -7.5px;
 }
 .preview-dot-grid {
   position: absolute;
