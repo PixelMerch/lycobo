@@ -5,6 +5,34 @@ test.beforeEach(async ({ page }) => {
   await mockImageApi(page);
 });
 
+test("create workspace fills the viewport and pins generation to the composer bottom", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1328, height: 906 });
+  await page.goto("/create");
+  const composer = page.getByRole("region", { name: "创作设置", exact: true });
+  const results = page.getByRole("region", { name: "创作内容", exact: true });
+  const generate = page.getByRole("button", { name: /立即生成/ });
+  const composerBox = await composer.boundingBox();
+  const resultsBox = await results.boundingBox();
+  const buttonBox = await generate.boundingBox();
+  expect(composerBox).not.toBeNull();
+  expect(resultsBox).not.toBeNull();
+  expect(buttonBox).not.toBeNull();
+  if (!composerBox || !resultsBox || !buttonBox) return;
+  const viewport = page.viewportSize();
+  const padding = 12;
+  expect(Math.abs(composerBox.y - (68 + padding))).toBeLessThan(1);
+  expect(Math.abs(composerBox.y + composerBox.height - (906 - padding))).toBeLessThan(1);
+  expect(Math.abs(resultsBox.y + resultsBox.height - (906 - padding))).toBeLessThan(1);
+  expect(
+    Math.abs(buttonBox.y + buttonBox.height - (composerBox.y + composerBox.height - padding)),
+  ).toBeLessThan(1);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(
+    viewport?.height ?? 0,
+  );
+});
+
 const png = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
   "base64",

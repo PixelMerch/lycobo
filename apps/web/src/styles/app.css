@@ -1734,7 +1734,9 @@ p.home-hero-kicker {
 }
 @media (min-width: 768px) {
   .composer-panel {
-    height: auto;
+    /* The composer fills the viewport; parameters scroll inside it and the
+       generate action stays pinned to the bottom edge of the panel. */
+    height: calc(100dvh - var(--header-height) - 2 * var(--content-padding));
     max-height: calc(100dvh - var(--header-height) - 2 * var(--content-padding));
     min-height: 0;
     overflow: hidden;
