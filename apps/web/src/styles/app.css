@@ -370,6 +370,10 @@ small {
 .nav-row:is(.active, [aria-current="page"], :focus-visible, [data-focus-visible="true"])::before {
   opacity: 0;
 }
+.nav-row .ui-icon {
+  margin: 0;
+  flex-shrink: 0;
+}
 .nav-label {
   overflow: hidden;
   text-overflow: ellipsis;

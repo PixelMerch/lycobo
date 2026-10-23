@@ -1,12 +1,12 @@
 import { Button, Drawer, Modal, Tooltip } from "@heroui/react";
 import {
   IconChevronRight,
-  IconFolder,
+  IconFolderSparkle,
   IconHelpCircle,
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
   IconMenu2,
-  IconPhoto,
+  IconPhotoEdit,
   IconSettings,
   IconShoppingBag,
   IconSmartHome,
@@ -79,7 +79,7 @@ export function StudioShell() {
           aria-haspopup="dialog"
           aria-expanded={chooserOpen}
         >
-          <UiIcon icon={IconPhoto} size="default" />
+          <UiIcon icon={IconPhotoEdit} size="default" />
           <span className="nav-label">创作</span>
           <span className="nav-chevron">
             <UiIcon icon={IconChevronRight} size="small" />
@@ -115,7 +115,7 @@ export function StudioShell() {
           className="nav-row"
           onClick={() => setMenuOpen(false)}
         >
-          <UiIcon icon={IconFolder} size="default" />
+          <UiIcon icon={IconFolderSparkle} size="default" />
           <span className="nav-label">素材库</span>
         </RouteLink>
         <Tooltip.Content placement="right">素材库</Tooltip.Content>
