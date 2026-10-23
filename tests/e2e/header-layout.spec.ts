@@ -53,10 +53,10 @@ for (const width of [390, 1440, 1920, 2560]) {
     await expect(menu).toBeVisible();
     expect(await measure()).toEqual(baseline);
     await menu.getByRole("menuitem", { name: "个人信息", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "账户中心", exact: true });
+    const dialog = page.getByRole("dialog", { name: "个人信息", exact: true });
     await expect(dialog).toBeVisible();
     expect(await measure()).toEqual(baseline);
-    await dialog.getByRole("button", { name: "关闭账户中心", exact: true }).click();
+    await dialog.getByRole("button", { name: "关闭个人信息", exact: true }).click();
     await expect(dialog).toHaveCount(0);
     expect(await measure()).toEqual(baseline);
     // Closing a modal must not leave the home document locked against further scrolling.

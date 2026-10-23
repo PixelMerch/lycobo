@@ -113,7 +113,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 功能组件使用直接依赖；服务端缓存属于TanStack Query，临时草稿与交互属于Zustand，纯展示组件从props获得数据。具体规则见[UI一致性维护](docs/ui-consistency.md)。
 
 - `features/account/HeaderAccountMenu` 封装Header登录态、积分与头像合并入口、账户下拉菜单及账户弹窗；`StudioShell` 仅组合入口，不重复持有账号查询和菜单状态。个人作品复用素材库路由，账户资料、订阅与账单、账号管理由 `AccountPanel` 承接。
-- 账户中心由 `features/account/account-panel.tsx` 组合：`AccountManagement` 封装绑定／重置密码的可用状态与表单，`WalletPanel` 封装真实共享余额、收支筛选和充值订单，`account-panel.css` 维护与个人信息一致的深色表面及中性灰输入焦点。未接入的账号绑定、验证码和支付不会模拟成功。
+- 账户独立弹窗由 `features/account/account-panel.tsx` 按入口组合，仅挂载所选功能、不提供跨功能 Tab：`AccountManagement` 封装绑定／重置密码的可用状态与表单，`WalletPanel` 封装真实共享余额、收支筛选和充值订单，`account-panel.css` 维护与个人信息一致的深色表面及中性灰输入焦点。未接入的账号绑定、验证码和支付不会模拟成功。
 
 ## 数据库领域命名
 

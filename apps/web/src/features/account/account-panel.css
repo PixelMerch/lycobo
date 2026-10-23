@@ -1,4 +1,15 @@
-/* Account surfaces follow the existing profile/menu palette. */
+/* Neutral account surfaces stay distinct from the dimmed workspace. */
+.account-backdrop.modal__backdrop {
+  background: #000000a6;
+  backdrop-filter: blur(6px);
+}
+.account-dialog.modal__dialog {
+  height: auto;
+  min-height: 0;
+  background: #1a1a1a;
+  border-color: #ffffff14;
+  box-shadow: 0 24px 80px #00000066;
+}
 .account-dialog {
   --focus: #b8b8c0;
   --field-border: #ffffff1f;
@@ -13,7 +24,11 @@
 .account-dialog.account-dialog--credits {
   width: min(1080px, calc(100vw - 48px));
 }
+.account-dialog .account-rows > div {
+  background: #262626;
+}
 .account-dialog .modal__body {
+  flex: 0 1 auto;
   min-width: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -75,7 +90,7 @@
   padding: 20px;
   border: 1px solid #ffffff0a;
   border-radius: 16px;
-  background: #ffffff05;
+  background: #262626;
 }
 .account-binding-heading,
 .account-binding-heading h3,
@@ -153,7 +168,7 @@
   height: 44px;
   border: 1px solid #ffffff14;
   border-radius: 12px;
-  background: #ffffff05;
+  background: #262626;
   box-shadow: none;
   color: #eee;
   font-size: 14px;
@@ -218,7 +233,7 @@
   overflow: hidden;
   border: 1px solid #ffffff0a;
   border-radius: 16px;
-  background: #ffffff05;
+  background: #262626;
 }
 .account-wallet-summary > div {
   display: grid;
@@ -255,7 +270,7 @@
 .account-ledger-filter .select__trigger {
   border: 1px solid #ffffff1f;
   border-radius: 10px;
-  background: #ffffff05;
+  background: #262626;
 }
 .account-ledger-table {
   overflow: hidden;
@@ -276,7 +291,7 @@
   font-size: 13px;
 }
 .account-ledger-table th {
-  background: #ffffff0a;
+  background: #333;
   color: #a1a1aa;
   font-weight: 400;
 }
@@ -297,7 +312,7 @@
   font-size: 12px;
 }
 .account-ledger-table tbody tr:nth-child(even) td {
-  background: #ffffff03;
+  background: #222;
 }
 .account-ledger-table .account-amount-positive {
   color: #eee;

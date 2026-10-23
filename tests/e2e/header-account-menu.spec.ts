@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
 for (const width of [1440, 320]) {
-  test(`combined account menu routes its actions and supports hover, keyboard and tabs at ${width}px`, async ({
+  test(`combined account menu routes its actions and supports hover, keyboard and independent dialogs at ${width}px`, async ({
     page,
   }) => {
     await mockImageApi(page);
@@ -74,21 +74,31 @@ for (const width of [1440, 320]) {
 
     await trigger.hover();
     await menu.getByRole("menuitem", { name: "个人信息", exact: true }).click();
-    const panel = page.getByRole("dialog", { name: "账户中心", exact: true });
+    const panel = page.getByRole("dialog", { name: "个人信息", exact: true });
     await expect(page.getByRole("dialog")).toHaveCount(1);
     // The dialog container takes programmatic focus without a purple frame, and
-    // the account center shares the studio's dark surface.
+    // each account dialog uses a neutral surface above the dimmed studio.
     await expect(panel).toHaveCSS("outline-style", "none");
-    await expect(panel).toHaveCSS("background-color", "rgb(25, 25, 28)");
-    await expect(panel.getByRole("tab", { name: "个人信息", exact: true })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
-    await panel.getByRole("tab", { name: "订阅与账单", exact: true }).click();
-    await expect(panel.getByText("企业金币余额", { exact: true })).toBeVisible();
-    await panel.getByRole("tab", { name: "账号管理", exact: true }).click();
-    await expect(panel.getByText(`账号 ${account.uid}`, { exact: true })).toBeVisible();
-    await panel.getByRole("button", { name: "关闭账户中心", exact: true }).click();
+    await expect(panel).toHaveCSS("background-color", "rgb(26, 26, 26)");
+    await expect(panel.getByRole("tab")).toHaveCount(0);
+    const profileHeight = (await panel.boundingBox())?.height ?? 0;
+    await panel.getByRole("button", { name: "关闭个人信息", exact: true }).click();
+    for (const title of ["订阅与账单", "账号管理"]) {
+      await trigger.hover();
+      await menu.getByRole("menuitem", { name: title, exact: true }).click();
+      const independent = page.getByRole("dialog", { name: title, exact: true });
+      await expect(page.getByRole("dialog")).toHaveCount(1);
+      await expect(independent.getByRole("tablist", { name: "账户信息", exact: true })).toHaveCount(
+        0,
+      );
+      if (title === "订阅与账单") {
+        await expect(independent.getByText("企业金币余额", { exact: true })).toBeVisible();
+      } else {
+        await expect(independent.getByText(`账号 ${account.uid}`, { exact: true })).toBeVisible();
+        expect((await independent.boundingBox())?.height ?? 0).toBeGreaterThan(profileHeight);
+      }
+      await independent.getByRole("button", { name: `关闭${title}`, exact: true }).click();
+    }
 
     await trigger.hover();
     await menu.getByRole("menuitem", { name: "个人作品", exact: true }).click();
@@ -136,6 +146,6 @@ test.describe("touch", () => {
     const item = menu.getByRole("menuitem", { name: "个人信息", exact: true });
     const box = (await item.boundingBox())!;
     await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
-    await expect(page.getByRole("dialog", { name: "账户中心", exact: true })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "个人信息", exact: true })).toBeVisible();
   });
 });

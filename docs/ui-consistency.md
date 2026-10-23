@@ -19,8 +19,8 @@
 
 | 能力 | 唯一入口 | 维护约束 |
 | --- | --- | --- |
-| Header 账户 | HeaderAccountMenu | 积分与头像共用入口，封装登录／悬停账户菜单／单一深色账户中心；应用壳不复制状态和查询 |
-| 账户内容 | AccountPanel → AccountManagement / WalletPanel | 单一 Modal 内切换；真实账号与账单来自查询客户端，未接入的绑定／重置／支付不模拟成功 |
+| Header 账户 | HeaderAccountMenu | 积分与头像共用入口，封装登录／悬停账户菜单／独立深色账户弹窗；应用壳不复制状态和查询 |
+| 账户内容 | AccountPanel → AccountManagement / WalletPanel | 按菜单入口分别打开，仅挂载对应内容、自然高度；真实账号与账单来自查询客户端，未接入的绑定／重置／支付不模拟成功 |
 | 确认 | ConfirmDialog | 不在业务中复制 Modal 标记；正文与操作布局共用 |
 | 关闭 | DialogClose | 图标与命中区分开，普通确认和全屏规格只引用 DESIGN，不在业务组件重复定尺寸 |
 | 参考图片上传 | ReferencePicker → ReferenceImageCard | 首页与工作台共用；删除、编号、预览不复制 |
