@@ -1,6 +1,6 @@
-import { Button, EmptyState, Tabs } from "@heroui/react";
+import { Button, EmptyState, Popover, Tabs } from "@heroui/react";
 import { IconChevronRight, IconPlus } from "@tabler/icons-react";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
 import { TextileImageField } from "./textile-image-field";
@@ -15,11 +15,13 @@ const LibraryDialog = lazy(() =>
 
 export function TextileSetPage() {
   const { mainImage, detailImage, views, ratio, update } = useTextileSetDraft();
+  const viewsAnchor = useRef<HTMLDivElement>(null);
   const [viewsOpen, setViewsOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const selectedViews = textileViews.filter((view) => views.includes(view.id));
   return (
     <div className="workspace textile-workspace">
+      <div ref={viewsAnchor} className="textile-views-anchor" aria-hidden="true" />
       <section className="composer-panel" aria-label="家纺套图参数">
         <div className="composer-scroll">
           <h1 className="textile-title">家纺套图</h1>
@@ -45,24 +47,29 @@ export function TextileSetPage() {
               </span>
               裂变类型
             </h2>
-            <Button
-              variant="tertiary"
-              className="textile-view-trigger"
-              aria-label="选择裂变类型"
-              onPress={() => setViewsOpen(true)}
-            >
-              {selectedViews.length ? (
-                <span className="textile-selected-views">
-                  {selectedViews.map((view) => view.name).join("、")}
-                </span>
-              ) : (
-                <>
-                  <UiIcon icon={IconPlus} size="action" />
-                  <span>选择裂变类型</span>
-                </>
+            <Popover isOpen={viewsOpen} onOpenChange={setViewsOpen}>
+              <Button variant="tertiary" className="textile-view-trigger" aria-label="选择裂变类型">
+                {selectedViews.length ? (
+                  <span className="textile-selected-views">
+                    {selectedViews.map((view) => view.name).join("、")}
+                  </span>
+                ) : (
+                  <>
+                    <UiIcon icon={IconPlus} size="action" />
+                    <span>选择裂变类型</span>
+                  </>
+                )}
+                {selectedViews.length > 0 && <UiIcon icon={IconChevronRight} size="small" />}
+              </Button>
+              {viewsOpen && (
+                <TextileViewsDialog
+                  anchorRef={viewsAnchor}
+                  selected={views}
+                  onConfirm={(value) => update({ views: value })}
+                  onClose={() => setViewsOpen(false)}
+                />
               )}
-              {selectedViews.length > 0 && <UiIcon icon={IconChevronRight} size="small" />}
-            </Button>
+            </Popover>
           </section>
           <section className="parameter-group" aria-label="图片比例">
             <div className="ratio-heading">
@@ -117,13 +124,6 @@ export function TextileSetPage() {
           <p>暂无套图</p>
         </div>
       </aside>
-      {viewsOpen && (
-        <TextileViewsDialog
-          selected={views}
-          onConfirm={(value) => update({ views: value })}
-          onClose={() => setViewsOpen(false)}
-        />
-      )}
       {libraryOpen && (
         <Suspense fallback={null}>
           <LibraryDialog onClose={() => setLibraryOpen(false)} />

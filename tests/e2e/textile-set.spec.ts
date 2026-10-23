@@ -119,6 +119,16 @@ for (const width of [1440, 390]) {
     const dialog = page.getByRole("dialog", { name: "裂变类型", exact: true });
     const box = await dialog.boundingBox();
     expect(box && box.x >= 0 && box.x + box.width <= width).toBeTruthy();
+    await expect(page.locator(".modal__backdrop")).toHaveCount(0);
+    await expect(page.locator(".textile-views-popover")).toHaveCSS("backdrop-filter", "none");
+    const form = page.getByRole("region", { name: "家纺套图参数", exact: true });
+    expect(await form.evaluate((el) => el.closest('[aria-hidden="true"], [inert]') === null)).toBe(
+      true,
+    );
+    if (width >= 768) {
+      const formBox = await form.boundingBox();
+      expect(box && formBox && box.x >= formBox.x + formBox.width).toBeTruthy();
+    }
     await dialog.getByRole("button", { name: "面料特写", exact: true }).click();
     await expect(dialog.getByRole("button", { name: "面料特写", exact: true })).toHaveCSS(
       "outline-style",
