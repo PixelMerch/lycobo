@@ -6,7 +6,7 @@
 .account-dialog.modal__dialog {
   height: auto;
   min-height: 0;
-  background: #1a1a1a;
+  background: var(--app-dialog-background);
   border-color: #ffffff14;
   box-shadow: 0 24px 80px #00000066;
 }
