@@ -70,7 +70,7 @@ export function HomeIntro() {
               <span className="home-intro-gradient">{current.text}</span>
             ) : (
               characters.map((character, characterIndex) => {
-                const delay = (characters.length - 1 - characterIndex) * homeIntro.staggerDuration;
+                const delay = characterIndex * homeIntro.staggerDuration;
                 const style: CharacterStyle = {
                   "--character-offset": `${(characterIndex / Math.max(1, characters.length - 1)) * 100}%`,
                 };
