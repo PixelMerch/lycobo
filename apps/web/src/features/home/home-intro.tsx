@@ -48,23 +48,19 @@ export function HomeIntro() {
     : (homeIntro.phrases[index] ?? homeIntro.phrases[0]);
   return (
     <div className="home-intro" ref={root}>
-      <span className="sr-only">
-        {homeIntro.prefix}，{homeIntro.phrases[0]}
-      </span>
-      <span className="home-intro-prefix" aria-hidden="true">
-        {homeIntro.prefix}
-      </span>
+      <span className="sr-only">{homeIntro.phrases[0].text}</span>
       <span className="home-intro-rotation" aria-hidden="true">
         <AnimatePresence initial={false} mode="wait">
           <motion.span
-            key={current}
+            key={current.text}
             className="home-intro-phrase home-intro-gradient"
+            data-palette={current.palette}
             initial={reduced ? false : { y: "70%", rotateX: -35, opacity: 0 }}
             animate={{ y: 0, rotateX: 0, opacity: 1 }}
             exit={reduced ? { opacity: 1 } : { y: "-70%", rotateX: 35, opacity: 0 }}
             transition={{ duration: reduced ? 0 : 0.35, ease: [0.22, 1, 0.36, 1] }}
           >
-            {current}
+            {current.text}
           </motion.span>
         </AnimatePresence>
       </span>

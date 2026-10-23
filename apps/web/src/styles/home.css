@@ -176,10 +176,6 @@ body:has(.commerce-home)::-webkit-scrollbar {
   line-height: 1.4;
   letter-spacing: -0.02em;
 }
-.home-intro-prefix {
-  color: #eee;
-  white-space: nowrap;
-}
 .home-intro-rotation {
   display: grid;
   place-items: center;
@@ -197,11 +193,26 @@ body:has(.commerce-home)::-webkit-scrollbar {
 }
 .home-intro-gradient {
   color: #baa4ff;
-  background-image: linear-gradient(100deg, #baa4ff, #f5f0ff, #a98cff, #8b5cf6, #baa4ff);
+  background-image: linear-gradient(100deg, var(--home-title-colors));
   background-size: 250% 100%;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: home-title-gradient 8s ease-in-out infinite alternate;
+}
+.home-intro-gradient[data-palette="aurora"] {
+  --home-title-colors: #67e8f9, #a5b4fc, #f0abfc, #67e8f9;
+}
+.home-intro-gradient[data-palette="sunset"] {
+  --home-title-colors: #fcd34d, #fdba74, #fda4af, #fcd34d;
+}
+.home-intro-gradient[data-palette="ocean"] {
+  --home-title-colors: #6ee7b7, #67e8f9, #93c5fd, #6ee7b7;
+}
+.home-intro-gradient[data-palette="blossom"] {
+  --home-title-colors: #f9a8d4, #d8b4fe, #93c5fd, #f9a8d4;
+}
+.home-intro-gradient[data-palette="citrus"] {
+  --home-title-colors: #bef264, #fde68a, #6ee7b7, #bef264;
 }
 .home-intro:hover .home-intro-gradient {
   animation-play-state: paused;
