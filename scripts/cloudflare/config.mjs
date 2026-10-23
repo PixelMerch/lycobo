@@ -18,7 +18,8 @@ export function releaseConfig(base, settings, root) {
   const config = structuredClone(base);
   config.main = path.resolve(root, config.main);
   config.tsconfig = path.resolve(root, "tsconfig.json");
-  config.hyperdrive = [{ binding: "HYPERDRIVE", id: settings.hyperdrive }];
+  if (base.name !== "lycobo-assets")
+    config.hyperdrive = [{ binding: "HYPERDRIVE", id: settings.hyperdrive }];
   // Runtime values belong to Cloudflare; even local defaults must not override them.
   delete config.vars;
   config.keep_vars = true;

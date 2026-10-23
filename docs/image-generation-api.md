@@ -44,7 +44,8 @@
 | GET /api/v1/image-tasks/:id | 组织内任务、输入快照、逐图状态与输出元数据 |
 | POST /api/v1/image-assets | 原始 PNG/JPEG/WebP 文件体，最大 10MB，返回资产 ID 与实际尺寸 |
 | GET /api/v1/image-assets?limit=30&before=资产UUID&kind=output&type=image | 组织内素材列表；可选kind=output/reference区分来源，type=image/video/audio区分媒体类型，均在分页前筛选；省略筛选保持兼容。当前生成和存储仅接入图片，type来自media_assets.media_type，旧记录及新图片默认image；public_id为图片编号，task_public_id为生成任务编号，参考图无所属生成任务时为null |
-| GET /api/v1/image-assets/:id/content | 身份与组织验证后读取图片，不直接暴露磁盘路径 |
+| GET /api/v1/image-assets/:id/content | 启用独立资源域名后，仅鉴权并重定向到签名链接；本地兼容读取 |
+| GET /api/v1/image-assets/:id/delivery | 身份与组织验证后按需刷新原图、缩略图与下载链接 |
 | POST /api/v1/image-tasks/:jobId/items/:itemId/reconcile-failure | 管理员核对服务商后确认未成功，释放预留积分；不重发模型请求 |
 
 提交示例（TOKEN 为上一步本地签发的应用访问令牌）：
@@ -73,7 +74,7 @@ curl http://127.0.0.1:8787/api/v1/image-tasks \
 - 服务商没有文档化幂等/查询协议。虽然发送稳定 Idempotency-Key 请求头，但不将其视为上游保证，不自动重试付费调用。
 - 管理员必须先核对服务商记录，再提交 `{"verifiedFailed":true,"evidence":"服务商记录核对依据..."}` 确认失败。该接口记录核对人和依据，释放额度一次，不自动重新生成。实际已成功但本地无法入库的结果需要运维恢复文件/数据库，不可确认成未成功。
 - 请求成功但进程在文件落盘与数据库提交之间退出可能留下孤立文件；任务会保留待核对，需运维核对后恢复或清理。当前没有自动成功结果恢复、计费回调或支付网关。
-- 没有提供自动重发、公共注册、组织管理、成员邀请、在线充值、对象存储签名 URL 或自动清理。不要将服务端接入等同于生产上线。
+- 没有提供自动重发、公共注册、组织管理、成员邀请、在线充值、自动清理。不要将服务端接入等同于生产上线。
 
 ## 验证与迁移
 
@@ -89,9 +90,9 @@ curl http://127.0.0.1:8787/api/v1/image-tasks \
 - gpt-image-2、gpt-image-2-4K、gpt-image-2.5、gpt-image-2.5-flare、gpt-image-2.5-sunburst 各一次真实 1K 调用均成功；4K 模型该次实际为 1024×1024，其余四个为 1254×1254。请求档位与返回像素分别保存。
 - gpt-image-2.5 的单参考图编辑另做一次真实调用成功。其余模型的编辑、高分辨率及非方形尺寸未逐一实测，不扩大为已验收能力。
 - 2.5 系列按用户要求开放 1K 路由，保留能力来源标记；2K/4K 默认不开放。参考编辑使用 OpenAI 兼容 `/v1/images/edits` 协议，需启用 `VAKV_ENABLE_IMAGE_EDITS`。
-- 历史记录、任务中心、右侧索引每 3 秒查询数据库任务；素材库每 5 秒查询已保存资产。两者都支持游标加载更多。列表使用鉴权后 512px 缩略图，下载读取原图。
+- 历史、右侧索引与素材库不定时轮询，状态通过 SSE 通知后按需查询；支持游标加载更多。列表使用提前生成的 512px 缩略图，下载读取原图。
 - 提交响应不确定时，浏览器会按用户和组织在 sessionStorage 保留同一请求快照与幂等编号，刷新后通过“确认上次提交”复用请求；不会自动重新生成。已运行但结果不确定的任务不自动重发；用户可以明确确认后在原记录重试，先结束旧尝试并退回原扣款，再提交新尝试，操作与未知结果依据可审计。管理员核对入口仍保留。
-- 新增 `GET /api/v1/image-assets?limit=30&before=UUID`，返回组织内资产元数据；`content?thumbnail=1` 返回缩略图。原图与缩略图均验证组织归属。
+- `GET /api/v1/image-assets?limit=30&before=UUID` 返回组织内素材与短期签名链接；历史输出和参考图同时返回链接。API 批量解析组织范围内的对象位置，不逐图查询数据库。独立资源 Worker 验签、校验 Referer／Origin，先读缓存、未命中时流式读取私有 R2，不执行图片转换。上传与生成结果在入库前保存原图及缩略图；旧 content 链接兼容重定向。具体配置与域名验收边界见 Cloudflare 部署文档。
 
 ### 本地启动
 

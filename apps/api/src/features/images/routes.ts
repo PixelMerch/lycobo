@@ -17,6 +17,7 @@ import { type Context, Hono } from "hono";
 import { z } from "zod";
 import { enterprisePrincipal } from "../auth/routes";
 import type { EnterpriseAuth } from "../auth/service";
+import { type DeliverySigner, imageDeliveries } from "./delivery";
 import { imageEventStream } from "./events";
 import {
   setWorkbenchCookie,
@@ -28,6 +29,7 @@ import {
 export type ImageApiDependencies = {
   repository: ImageRepository;
   events?: ImageEventFeed | undefined;
+  signAsset?: DeliverySigner | undefined;
   auth?: EnterpriseAuth | undefined;
   store: ImageStore;
   enabled: boolean;
@@ -42,6 +44,7 @@ type Env = { Variables: { principal: ImagePrincipal; requestId: string } };
 const id = z.uuid();
 export function imageRoutes(deps: ImageApiDependencies) {
   const app = new Hono<Env>();
+  const delivery = deps.signAsset ? imageDeliveries(deps.repository, deps.signAsset) : undefined;
   const fail = (
     c: Context<Env>,
     code: string,
@@ -258,20 +261,24 @@ export function imageRoutes(deps: ImageApiDependencies) {
       .safeParse(c.req.query("limit"));
     const before = id.optional().safeParse(c.req.query("before"));
     if (!limit.success || !before.success) return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
-    return c.json({
-      data: await deps.repository.list(c.get("principal"), limit.data, before.data),
-    });
+    const scope = c.get("principal");
+    const jobs = await deps.repository.list(scope, limit.data, before.data);
+    return c.json({ data: delivery ? await delivery.jobs(scope, jobs) : jobs });
   });
   app.get("/image-tasks/:id", async (c) => {
     const parsed = id.safeParse(c.req.param("id"));
     if (!parsed.success) return fail(c, "NOT_FOUND", "任务不存在", 404);
     const job = await deps.repository.get(c.get("principal"), parsed.data);
-    return job ? c.json(job) : fail(c, "NOT_FOUND", "任务不存在", 404);
+    return job
+      ? c.json(delivery ? (await delivery.jobs(c.get("principal"), [job]))[0] : job)
+      : fail(c, "NOT_FOUND", "任务不存在", 404);
   });
   app.get("/image-assets/:id/latest-edit", async (c) => {
     const parsed = id.safeParse(c.req.param("id"));
     if (!parsed.success) return fail(c, "NOT_FOUND", "图片不存在", 404);
-    return c.json({ job: await deps.repository.latestEdit(c.get("principal"), parsed.data) });
+    const scope = c.get("principal");
+    const job = await deps.repository.latestEdit(scope, parsed.data);
+    return c.json({ job: job && delivery ? (await delivery.jobs(scope, [job]))[0] : job });
   });
   app.get("/image-assets", async (c) => {
     const limit = z.coerce
@@ -286,15 +293,15 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const type = assetTypeSchema.optional().safeParse(c.req.query("type"));
     if (!limit.success || !before.success || !kind.success || !type.success)
       return fail(c, "VALIDATION_ERROR", "筛选或分页参数无效", 400);
-    return c.json({
-      data: await deps.repository.listAssets(
-        c.get("principal"),
-        limit.data,
-        before.data,
-        kind.data,
-        type.data,
-      ),
-    });
+    const scope = c.get("principal");
+    const assets = await deps.repository.listAssets(
+      scope,
+      limit.data,
+      before.data,
+      kind.data,
+      type.data,
+    );
+    return c.json({ data: delivery ? await delivery.assets(scope, assets) : assets });
   });
   app.post("/image-assets", async (c) => {
     if (!["image/png", "image/jpeg", "image/webp"].includes(c.req.header("Content-Type") ?? ""))
@@ -326,11 +333,23 @@ export function imageRoutes(deps: ImageApiDependencies) {
       201,
     );
   });
+  app.get("/image-assets/:id/delivery", async (c) => {
+    const parsed = id.safeParse(c.req.param("id"));
+    if (!parsed.success) return fail(c, "NOT_FOUND", "图片不存在", 404);
+    const asset = await deps.repository.asset(c.get("principal"), parsed.data);
+    if (!asset) return fail(c, "NOT_FOUND", "图片不存在", 404);
+    if (!deps.signAsset) return fail(c, "GENERATION_NOT_CONFIGURED", "图片访问尚未配置", 503);
+    return c.json({ id: asset.id, delivery: await deps.signAsset(asset.objectKey) });
+  });
   app.get("/image-assets/:id/content", async (c) => {
     const parsed = id.safeParse(c.req.param("id"));
     if (!parsed.success) return fail(c, "NOT_FOUND", "图片不存在", 404);
     const asset = await deps.repository.asset(c.get("principal"), parsed.data);
     if (!asset) return fail(c, "NOT_FOUND", "图片不存在", 404);
+    if (deps.signAsset) {
+      const urls = await deps.signAsset(asset.objectKey);
+      return c.redirect(c.req.query("thumbnail") === "1" ? urls.thumbnail_url : urls.url, 302);
+    }
     const bytes =
       c.req.query("thumbnail") === "1"
         ? await deps.store.thumbnail(asset)

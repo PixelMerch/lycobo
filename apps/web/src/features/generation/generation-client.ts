@@ -13,6 +13,10 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { useSyncExternalStore } from "react";
 import { normalizeApiResponse } from "../../lib/api-response";
 import { sessionFetch } from "../../lib/session-fetch";
+import { assetContentUrl, rememberImageDeliveries } from "./asset-delivery-client";
+
+export { assetContentUrl } from "./asset-delivery-client";
+
 import type { Draft, ModelId } from "./studio-state";
 
 export class ImageApiError extends Error {
@@ -48,7 +52,10 @@ export async function imageRequest(path: string, init: RequestInit = {}) {
       response.status,
     );
   }
-  return normalizeApiResponse(response);
+  const normalized = await normalizeApiResponse(response);
+  if (normalized.headers.get("Content-Type")?.includes("application/json"))
+    rememberImageDeliveries(await normalized.clone().json());
+  return normalized;
 }
 export function useImageSession() {
   return useQuery({
@@ -269,12 +276,10 @@ export function useGenerateImage() {
     },
   });
 }
-export const assetContentUrl = (id: string, thumbnail = false) =>
-  `/api/v1/image-assets/${id}/content${thumbnail ? "?thumbnail=1" : ""}`;
 /** Triggers the browser download for an owned asset without leaving the page. */
 export function downloadAsset(id: string) {
   const link = document.createElement("a");
-  link.href = assetContentUrl(id);
+  link.href = assetContentUrl(id, false, true);
   link.download = `${id}.png`;
   link.click();
 }

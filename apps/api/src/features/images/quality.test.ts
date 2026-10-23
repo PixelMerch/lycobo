@@ -15,6 +15,7 @@ function fixture() {
   const repository: ImageRepository = {
     close: unexpected,
     storageUid: unexpected,
+    assetLocations: unexpected,
     provision: unexpected,
     wallet: unexpected,
     walletEntries: unexpected,

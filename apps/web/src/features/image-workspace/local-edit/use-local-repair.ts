@@ -76,6 +76,8 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
   );
   useEffect(() => {
     const loaded = new window.Image();
+    loaded.crossOrigin = "anonymous";
+    loaded.referrerPolicy = "strict-origin-when-cross-origin";
     loaded.onload = () => setImage(loaded);
     loaded.onerror = () => setImageError("原图加载失败，请重新打开图片后再试。");
     loaded.src = assetContentUrl(source.id);

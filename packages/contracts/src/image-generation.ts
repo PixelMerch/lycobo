@@ -135,6 +135,13 @@ export const imageItemStatusSchema = z.enum([
 ]);
 export const imageTaskPublicIdSchema = z.string().regex(/^W[0-9A-Z]{8}$/);
 export const imagePublicIdSchema = z.string().regex(/^P[0-9A-Z]{8}$/);
+export const imageDeliverySchema = z.object({
+  url: z.url(),
+  thumbnail_url: z.url(),
+  download_url: z.url(),
+  expires_at: z.number().int(),
+});
+export type ImageDelivery = z.infer<typeof imageDeliverySchema>;
 export const imageJobSchema = z.object({
   unit_credits: z.number().int().nonnegative().optional(),
   public_id: z.union([imageTaskPublicIdSchema, z.string().regex(/^[1-9][0-9]{9}$/)]).optional(),
@@ -157,12 +164,14 @@ export const imageJobSchema = z.object({
   ]),
   created_at: z.string(),
   completed_at: z.string().nullable(),
+  reference_deliveries: z.record(z.string(), imageDeliverySchema).optional(),
   items: z.array(
     z.object({
       id: z.uuid(),
       position: z.number(),
       status: imageItemStatusSchema,
       output_asset_id: z.uuid().nullable(),
+      output_delivery: imageDeliverySchema.optional(),
       output_public_id: z
         .union([imagePublicIdSchema, z.string().regex(/^L[1-9][0-9]{8}$/)])
         .nullable()
@@ -179,6 +188,7 @@ export const imageTasksResponseSchema = z.object({ data: z.array(imageJobSchema)
 export const assetTypeSchema = z.enum(["image", "video", "audio"]);
 export type AssetType = z.infer<typeof assetTypeSchema>;
 export const imageAssetSchema = z.object({
+  delivery: imageDeliverySchema.optional(),
   task_public_id: imageJobSchema.shape.public_id.nullable(),
   public_id: z.union([imagePublicIdSchema, z.string().regex(/^L[1-9][0-9]{8}$/)]).optional(),
   id: z.uuid(),

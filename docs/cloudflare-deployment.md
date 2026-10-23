@@ -128,3 +128,13 @@ SSE 在 Workers 中保持原有持久事件游标、组织隔离、身份复验�
 ## 运行配置管理调整
 
 部署代码改为保留 Cloudflare 运行变量及 Secrets；GitHub 只传部署令牌与资源标识。此代码调整不代表已经发布或已删除 GitHub 的历史配置，需按上述迁移顺序完成。
+
+## 私有图片资源 Worker
+
+`lycobo-assets` 单独绑定私有 R2 `lycobo`，不连接数据库、不调用 Images、不执行生图。原图和缩略图由上传／生成链路提前写入。API 在鉴权后批量返回 30 分钟签名链接；旧 content 接口兼容为重定向，启用后不再传输图片。前端过期图片加载失败时按需刷新链接，不恢复定时轮询。
+
+运行配置仅在 Cloudflare 管理：API 配置 Secret `ASSET_SIGNING_SECRET` 与 运行配置 `ASSET_PUBLIC_ORIGIN`；资源 Worker 配置相同 Secret 与 运行配置 `ASSET_ALLOWED_ORIGINS=https://lycobo.pages.dev`（逗号分隔精确 Origin）。域名切换时同步更新资源 Origin、CORS 与 Referer 白名单。两个非敏感配置也可用 Cloudflare Secret 保存，以便仅更新指定 binding 并保留其他配置。不要使用 JWT 密钥作为图片签名密钥，不在 GitHub 保存这些运行配置。
+
+资源 Worker 验证对象路径、签名和过期时间，再读取边缘缓存；缓存键仅含对象路径与缩略图版本，不含签名。未命中时直接返回 R2 body 流。缓存内部可复用对象，浏览器收到 private 且不超过签名剩余寿命的缓存时间。下载使用 attachment；跨域图片使用 anonymous CORS，Referer 精确匹配白名单，空 Referer 的直接访问仍需有效签名。Referer 不是私有访问的唯一凭据。日志隐藏 query string，禁止记录签名链接。
+
+发布时先部署资源 Worker、配置 Cloudflare 密钥，再启用 API 的资源 Origin。R2 不打开公共域名或 r2.dev。默认 workers.dev 可验证验签与流式访问，Cache API 的线上命中效果须绑定自定义域名后验证；本地 workerd 可验证缓存与拒绝访问行为。已有图片需提前补缩略图，不重新调用模型或改动原图。

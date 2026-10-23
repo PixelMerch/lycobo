@@ -46,6 +46,8 @@ try {
   assert.match(asset.objectKey, /^0057849613\//);
   assert.ok(await bindings.BUCKET.head(asset.objectKey));
   assert.ok((await store.read(asset)).length);
+  // The thumbnail must exist before the asset is exposed to browsers.
+  assert.ok(await bindings.BUCKET.head(asset.objectKey.replace(/\.png$/, ".thumbnail.png")));
   assert.ok((await store.thumbnail(asset)).length);
   assert.ok(await bindings.BUCKET.head(asset.objectKey.replace(/\.png$/, ".thumbnail.png")));
   await assert.rejects(store.put(scope, Buffer.from("<svg/>")));

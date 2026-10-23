@@ -1,6 +1,6 @@
 import { Button, Slider } from "@heroui/react";
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
-import { assetContentUrl } from "../generation/generation-client";
+import { AssetImage } from "../generation/asset-image";
 import type { PreviewImage, PreviewMeta } from "./image-preview";
 import { ImagePreviewDetails } from "./image-preview-details";
 import { LocalRepairPanel } from "./local-edit/local-repair";
@@ -194,10 +194,10 @@ export default function PreviewWorkspace({
           onPointerCancel={endPan}
           onLostPointerCapture={endPan}
         >
-          <img
+          <AssetImage
             ref={picture}
             className="image-preview-image"
-            src={assetContentUrl(source.id)}
+            assetId={source.id}
             alt={meta.prompt || "生成图片"}
             draggable={false}
             style={{ scale: `${zoom / 100}`, translate: `${pan.x}px ${pan.y}px` }}

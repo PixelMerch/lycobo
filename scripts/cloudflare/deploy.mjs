@@ -71,11 +71,11 @@ try {
     )
       throw new Error("Hyperdrive must exist with query caching disabled before deployment.");
     const before = new Map();
-    for (const name of ["lycobo-generation", "lycobo-api"])
+    for (const name of ["lycobo-assets", "lycobo-generation", "lycobo-api"])
       before.set(name, await readRuntimeFingerprint(settings, name));
     run("Build Pages", ["--filter", "@lycoboai/web", "build"]);
     directory = await mkdtemp(path.join(tmpdir(), "lycobo-cloudflare-"));
-    for (const service of ["worker", "api"]) {
+    for (const service of ["assets", "worker", "api"]) {
       const root = path.resolve(`apps/${service}`);
       const base = JSON.parse(await readFile(path.join(root, "wrangler.jsonc"), "utf8"));
       const configFile = path.join(directory, `${service}.json`);

@@ -44,7 +44,7 @@ export async function verifyCloudflareApi() {
       stdio: "pipe",
     });
     assert.equal(migrated.status, 0, "Isolated Workers migration failed");
-    for (const service of ["api", "worker"]) {
+    for (const service of ["api", "worker", "assets"]) {
       const built = spawnSync(
         "pnpm",
         [
@@ -78,6 +78,7 @@ export async function verifyCloudflareApi() {
     const origin = "https://localhost";
     const fixturePng =
       "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADklEQVQImWP4DwYMEAoAU7oL9W/sIDEAAAAASUVORK5CYII=";
+    const assetSecret = crypto.randomUUID() + crypto.randomUUID();
     runtime = new Miniflare(
       convertV4MiniflareOptions({
         workers: [
@@ -94,6 +95,8 @@ export async function verifyCloudflareApi() {
             bindings: {
               AUTH_JWT_SECRET: crypto.randomUUID() + crypto.randomUUID(),
               AUTH_TRUSTED_ORIGINS: origin,
+              ASSET_SIGNING_SECRET: assetSecret,
+              ASSET_PUBLIC_ORIGIN: "https://assets-fixture.example",
               IMAGE_GENERATION_ENABLED: "true",
               VAKV_ENABLE_IMAGE_EDITS: "false",
             },
@@ -120,6 +123,14 @@ export async function verifyCloudflareApi() {
             outboundService: { name: "provider" },
           },
           {
+            name: "assets",
+            modules: true,
+            compatibilityDate: "2026-10-23",
+            script: await readFile(path.join(directory, "assets/index.js"), "utf8"),
+            r2Buckets: { IMAGES_BUCKET: "native-images" },
+            bindings: { ASSET_SIGNING_SECRET: assetSecret, ASSET_ALLOWED_ORIGINS: origin },
+          },
+          {
             name: "provider",
             modules: true,
             compatibilityDate: "2026-10-23",
@@ -135,6 +146,7 @@ export async function verifyCloudflareApi() {
       init: { method?: string; headers?: Record<string, string>; body?: string | Uint8Array } = {},
     ) {
       const response = await worker.fetch(`${origin}/api/v1${endpoint}`, {
+        redirect: "manual",
         ...init,
         headers: {
           Origin: origin,
@@ -172,9 +184,30 @@ export async function verifyCloudflareApi() {
     assert.equal(uploaded.status, 201);
     const assetBody = z.object({ id: z.uuid() }).parse(unwrapApiData(await uploaded.json()));
     const assetId = assetBody.id;
+    const locations = await images.assetLocations(principal, [assetId]);
+    assert.equal(locations.length, 1);
+    assert.ok(locations[0]?.objectKey.endsWith(`/${assetId}.png`));
+    assert.deepEqual(
+      await images.assetLocations({ ...principal, organizationId: crypto.randomUUID() }, [assetId]),
+      [],
+    );
     const thumbnail = await request(`/image-assets/${assetId}/content?thumbnail=1`);
-    assert.equal(thumbnail.status, 200);
-    assert.ok((await thumbnail.arrayBuffer()).byteLength);
+    assert.equal(thumbnail.status, 302);
+    const resourceUrl = thumbnail.headers.get("Location");
+    assert.ok(resourceUrl);
+    assert.ok(resourceUrl.startsWith("https://assets-fixture.example/"));
+    const assetWorker = await runtime.getWorker("assets");
+    const imageResponse = await assetWorker.fetch(resourceUrl, {
+      headers: { Origin: origin, Referer: `${origin}/create` },
+    });
+    assert.equal(imageResponse.status, 200);
+    assert.ok((await imageResponse.arrayBuffer()).byteLength);
+    const assetList = unwrapApiData(await (await request("/image-assets")).json());
+    const signed = z
+      .object({ data: z.array(z.object({ delivery: z.object({ url: z.url() }) })) })
+      .parse(assetList);
+    assert.equal(signed.data.length, 1);
+    assert.ok(signed.data[0]?.delivery.url.startsWith("https://assets-fixture.example/"));
     const stream = await request("/image-events");
     assert.equal(stream.status, 200);
     const reader = stream.body?.getReader();
