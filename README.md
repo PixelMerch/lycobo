@@ -76,5 +76,5 @@ React / Vite 前端、Hono API 和独立 Worker 位于 `apps/`；契约、数据
 
 - [产品范围](PRD.md) · [设计规范](DESIGN.md) · [技术栈](docs/tech-stack.md)
 - [企业鉴权](docs/enterprise-auth.md) · [企业钱包](docs/enterprise-wallet.md)
-- [局部修改](docs/local-image-repair.md) · [数据库备份](docs/database-backup.md)
+- [局部修改](docs/local-image-repair.md) · [数据库备份](docs/database-backup.md) · [Supabase 接入](docs/supabase-postgres.md)
 - [发布说明](docs/releasing.md) · [安全](SECURITY.md) · [完整文档索引](docs/README.md)

@@ -124,6 +124,10 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 通用素材实体使用 `media_assets`（Drizzle `mediaAssets`），生成任务及其执行、投递、重试、事件、令牌和任务账本统一使用 `generation_*`；图片选区编辑扩展保留 `image_local_edits`。
 表职责、已完成的旧视图移除与后续媒体扩展边界见 [数据库命名](docs/database-naming.md)。
 
+## Supabase 结构迁移
+
+`packages/db/scripts/migrate-supabase.mjs` 复用现有 Drizzle Kit 迁移链，`supabase-target.mjs` 校验独立的 `SUPABASE_DATABASE_URL` 与项目引用，`secure-supabase.mjs` 限定本应用表／序列／函数的 RLS 和前端角色权限，不覆盖运行时 `DATABASE_URL`。`pnpm db:migrate:supabase --check` 仅检查配置；填写真实密码后才可实际初始化远端结构。此入口不复制本地业务数据、图片文件或修改现有迁移；连接、Data API 边界和 MCP 操作见 [Supabase 接入](docs/supabase-postgres.md)。
+
 ## 发布工具
 
 版本发布由 `.github/workflows/release.yml` 显式触发，`scripts/release-notes.mjs` 生成提交分类、作者／提交人及文件改动清单。版本只发布已通过 main CI 的提交；发布日志与操作边界见 [发布说明](docs/releasing.md)。

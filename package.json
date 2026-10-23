@@ -23,6 +23,7 @@
     "check:release": "pnpm check && pnpm test:e2e",
     "db:generate": "pnpm --filter @lycoboai/db db:generate",
     "db:migrate": "pnpm --filter @lycoboai/db db:migrate",
+    "db:migrate:supabase": "pnpm --filter @lycoboai/db db:migrate:supabase",
     "infra:up": "docker compose up -d --wait postgres redis",
     "infra:down": "docker compose down",
     "prepare": "node scripts/setup-hooks.mjs",
