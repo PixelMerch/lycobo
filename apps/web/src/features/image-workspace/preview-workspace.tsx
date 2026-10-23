@@ -8,6 +8,7 @@ import { RepairCanvas } from "./local-edit/repair-canvas";
 import { RepairNoticeRegion, useRepairNotice } from "./local-edit/repair-notice";
 import { useLocalRepair } from "./local-edit/use-local-repair";
 import { PreviewCanvasToolbar } from "./preview-canvas-toolbar";
+import { PreviewDotGrid } from "./preview-dot-grid";
 import { usePreviewZoom } from "./use-preview-zoom";
 import "./preview-workspace.css";
 
@@ -170,6 +171,7 @@ export default function PreviewWorkspace({
         aria-label="图片预览"
         ref={stage}
       >
+        <PreviewDotGrid stage={stage} />
         <PreviewCanvasToolbar
           editor={editor}
           repairing={repairing}
