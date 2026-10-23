@@ -93,13 +93,14 @@ export function r2ImageStore(
       await inspect(input);
       const data = await png(input);
       const info = await inspect(data);
-      const thumbnail = await png(data, true);
       const sha256 = createHash("sha256").update(data).digest("hex");
       const written = await bucket.put(key, data, {
         httpMetadata: { contentType: "image/png" },
         customMetadata: { sha256 },
       });
       if (!written) throw new Error("IMAGE_STORAGE_UNAVAILABLE");
+      // Keep the paid original durable even if thumbnail processing subsequently fails.
+      const thumbnail = await png(data, true);
       const thumbWritten = await bucket.put(thumbnailKey(key), thumbnail, {
         httpMetadata: { contentType: "image/png" },
       });

@@ -50,6 +50,27 @@ try {
   assert.ok(await bindings.BUCKET.head(asset.objectKey.replace(/\.png$/, ".thumbnail.png")));
   assert.ok((await store.thumbnail(asset)).length);
   assert.ok(await bindings.BUCKET.head(asset.objectKey.replace(/\.png$/, ".thumbnail.png")));
+  let transforms = 0;
+  const failingStore = r2ImageStore(
+    bindings.BUCKET,
+    {
+      info: bindings.IMAGES.info.bind(bindings.IMAGES),
+      input(source) {
+        if (++transforms === 2) throw new Error("FIXTURE_THUMBNAIL_FAILURE");
+        return bindings.IMAGES.input(source);
+      },
+    },
+    async () => "0057849613",
+  );
+  const recoverableId = crypto.randomUUID();
+  const recoverableKey = `0057849613/${scope.organizationId}/${recoverableId}.png`;
+  await assert.rejects(failingStore.put(scope, png, recoverableId));
+  assert.ok(await bindings.BUCKET.head(recoverableKey), "Original must survive thumbnail failure");
+  assert.equal(
+    await bindings.BUCKET.head(recoverableKey.replace(/\.png$/, ".thumbnail.png")),
+    null,
+  );
+  await failingStore.remove({ ...asset, id: recoverableId, objectKey: recoverableKey });
   await assert.rejects(store.put(scope, Buffer.from("<svg/>")));
   await assert.rejects(store.put(scope, png.subarray(0, 24)));
   await assert.rejects(store.read({ ...asset, objectKey: "../another-user" }));
