@@ -30,6 +30,7 @@ export function TextileSetPage() {
             label="主图"
             required
             description="上传清晰的家纺主图，完整展示床品"
+            exampleSrc="/studio/bedroom-thumb.webp"
             value={mainImage}
             onChange={(image) => update({ mainImage: image })}
             number={1}
@@ -37,6 +38,8 @@ export function TextileSetPage() {
           <TextileImageField
             label="详情图"
             description="补充面料、花型或床品局部细节"
+            exampleSrc="/studio/set-thumb.webp"
+            exampleIsDetail
             value={detailImage}
             onChange={(image) => update({ detailImage: image })}
             number={2}

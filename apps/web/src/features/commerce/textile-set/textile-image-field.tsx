@@ -17,6 +17,8 @@ export function TextileImageField({
   label,
   required = false,
   description,
+  exampleSrc,
+  exampleIsDetail = false,
   value,
   onChange,
   number,
@@ -24,6 +26,8 @@ export function TextileImageField({
   label: string;
   required?: boolean;
   description: string;
+  exampleSrc: string;
+  exampleIsDetail?: boolean;
   value: ReferenceImage | null;
   onChange: (value: ReferenceImage | null) => void;
   number: number;
@@ -122,8 +126,25 @@ export function TextileImageField({
           isDisabled={reading}
           onPress={() => input.current?.click()}
         >
-          <UiIcon icon={IconPlus} size="action" />
-          <span>{reading ? "读取中…" : description}</span>
+          <span
+            className="textile-upload-example"
+            data-detail={exampleIsDetail || undefined}
+            aria-hidden="true"
+          >
+            <img
+              src={exampleSrc}
+              alt=""
+              width="80"
+              height="104"
+              decoding="async"
+              draggable={false}
+            />
+            <span>示例</span>
+          </span>
+          <span className="textile-upload-copy">
+            <UiIcon icon={IconPlus} size="action" />
+            <span>{reading ? "读取中…" : description}</span>
+          </span>
         </Button>
       )}
       {error && (
