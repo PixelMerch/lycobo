@@ -4,7 +4,7 @@ import type { DotGridProps } from "./dot-grid/dot-grid";
 export const homeDotGrid = {
   dotSize: 1.5,
   gap: 15,
-  baseColor: "#3a3446",
+  baseColor: "#666666",
   activeColor: "#ffffff",
   proximity: 140,
   strength: 0.2,
