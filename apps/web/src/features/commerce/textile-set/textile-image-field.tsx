@@ -132,8 +132,8 @@ export function TextileImageField({
             <img
               src={exampleSrc}
               alt=""
-              width="80"
-              height="104"
+              width="108"
+              height="144"
               decoding="async"
               draggable={false}
             />

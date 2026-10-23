@@ -84,20 +84,19 @@
 
 .reference-tile.reference-image-card .replace-reference.button {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: auto;
-  min-width: 40px;
-  height: 28px;
-  min-height: 28px;
-  padding: 0 8px;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 21.6px;
+  min-width: 21.6px;
+  height: 21.6px;
+  min-height: 21.6px;
+  padding: 0;
   border: 0;
-  border-radius: 6px;
-  font-size: 12px;
-  line-height: 18px;
-  background: #00000099;
-  color: #f87171;
+  border-radius: 8px 0 8px 0;
+  background: #1c1c1ce6;
+  color: #ffffffa6;
+  box-shadow: none;
   opacity: 0;
   pointer-events: none;
 }
@@ -106,16 +105,20 @@
   pointer-events: auto;
 }
 .reference-tile.reference-image-card .replace-reference.button:is(:hover, [data-hovered="true"]) {
-  background: #000000bf;
-  color: #ef4444;
+  background: #121216e6;
+  color: #ffffffd9;
 }
 @media (hover: none) {
   .reference-tile.reference-image-card .replace-reference.button {
-    width: 44px;
-    min-width: 44px;
-    height: 44px;
-    min-height: 44px;
     opacity: 1;
     pointer-events: auto;
+  }
+}
+@media (max-width: 767px) {
+  .reference-tile.reference-image-card .replace-reference.button::after {
+    content: "";
+    position: absolute;
+    inset: -11px;
+    border-radius: inherit;
   }
 }

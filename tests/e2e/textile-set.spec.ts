@@ -255,7 +255,7 @@ test("confirmed textile views show removable thumbnails and keep picker selectio
   await expect(opener).toHaveText("选择裂变类型");
 });
 
-test("hover replacement opens the file chooser without opening preview and keeps a single image", async ({
+test("corner replacement opens the file chooser without opening preview and keeps a single image", async ({
   page,
 }) => {
   await page.goto("/commerce/textile-set");
@@ -268,8 +268,20 @@ test("hover replacement opens the file chooser without opening preview and keeps
   await field.locator(".reference-tile").hover();
   const replace = field.getByRole("button", { name: "替换参考图：图片1", exact: true });
   await expect(replace).toHaveCSS("opacity", "1");
-  await expect(replace).toHaveText("替换");
-  await expect(replace.locator("svg")).toHaveCount(0);
+  await expect(replace).toHaveText("");
+  await expect(replace.locator("svg")).toHaveCount(1);
+  const tileBox = await field.locator(".reference-tile").boundingBox();
+  const replaceBox = await replace.boundingBox();
+  expect(
+    tileBox &&
+      replaceBox &&
+      Math.abs(tileBox.x + tileBox.width - replaceBox.x - replaceBox.width) < 1,
+  ).toBeTruthy();
+  expect(
+    tileBox &&
+      replaceBox &&
+      Math.abs(tileBox.y + tileBox.height - replaceBox.y - replaceBox.height) < 1,
+  ).toBeTruthy();
   const [chooser] = await Promise.all([page.waitForEvent("filechooser"), replace.click()]);
   expect(chooser.isMultiple()).toBe(false);
   await chooser.setFiles("apps/web/public/studio/set-thumb.webp");
