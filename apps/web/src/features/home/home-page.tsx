@@ -1,10 +1,14 @@
 import { Button } from "@heroui/react";
 import { IconBox, IconPhoto, IconSparkles, IconTextCaption } from "@tabler/icons-react";
+import { lazy, Suspense } from "react";
 import { useNavigate } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { useStudioStore } from "../generation/studio-state";
 import { HomeComposer } from "./home-composer";
+import { homeDotGrid } from "./home-dot-grid-config";
 import "../../styles/home.css";
+
+const DotGrid = lazy(() => import("./dot-grid/dot-grid"));
 
 const shortcuts = [
   {
@@ -37,6 +41,11 @@ export function HomePage() {
   }
   return (
     <section className="commerce-home page-panel">
+      <div className="home-dot-background" aria-hidden="true" inert>
+        <Suspense fallback={null}>
+          <DotGrid {...homeDotGrid} />
+        </Suspense>
+      </div>
       <section className="home-start" aria-labelledby="home-title">
         <h1 id="home-title" className="sr-only">
           为你的商品，创作下一张好图

@@ -32,6 +32,7 @@ apps/web/src/
     ├── auth/                     # 身份请求与登录弹窗
     ├── account/                  # Header账户菜单、账户中心、钱包请求和账务展示
     ├── home/                     # 首页、共享创作输入与提示辅助
+    │   └── dot-grid/             # React Bits 点阵源码适配，首页参数在 home-dot-grid-config.ts
     ├── assets/                   # 素材页、全屏素材库及其局部样式
     ├── generation/               # 生图请求、事件、会话草稿及工作台页面
     │   ├── composer/             # 比例选择、参数选中背景
