@@ -169,31 +169,55 @@ body:has(.commerce-home)::-webkit-scrollbar {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 24px;
-  color: #e8e8e8;
-  font-size: 24px;
-  font-weight: 400;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
 }
-.home-intro .toggle-button-group {
-  background: #202020;
-  border: 0;
-  border-radius: 999px;
-  padding: 2px;
+.home-intro-prefix {
+  color: #eee;
+  white-space: nowrap;
 }
-.home-intro .toggle-button {
-  height: 32px;
-  border: 0;
-  border-radius: 999px;
-  padding: 0 20px;
-  font-size: 14px;
-  font-weight: 400;
-  color: #aaa;
+.home-intro-rotation {
+  display: grid;
+  place-items: center;
+  width: 8em;
+  height: 1.5em;
+  overflow: hidden;
+  perspective: 480px;
 }
-.home-intro .toggle-button[data-selected] {
-  background: #444;
-  color: #fff;
-  box-shadow: none;
+.home-intro-phrase {
+  display: block;
+  grid-area: 1 / 1;
+  white-space: nowrap;
+  transform-origin: center;
+  backface-visibility: hidden;
+}
+.home-intro-gradient {
+  color: #baa4ff;
+  background-image: linear-gradient(100deg, #baa4ff, #f5f0ff, #a98cff, #8b5cf6, #baa4ff);
+  background-size: 250% 100%;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: home-title-gradient 8s ease-in-out infinite alternate;
+}
+.home-intro:hover .home-intro-gradient {
+  animation-play-state: paused;
+}
+@keyframes home-title-gradient {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-intro-gradient {
+    animation: none;
+  }
 }
 .home-composer {
   min-height: 212px;
@@ -496,16 +520,9 @@ body:has(.commerce-home)::-webkit-scrollbar {
 }
 @media (max-width: 767px) {
   .home-intro {
-    flex-wrap: wrap;
-    font-size: 18px;
-    gap: 8px;
-  }
-  .home-intro > span:last-child {
-    display: none;
-  }
-  .home-intro .toggle-button {
-    padding: 0 12px;
-    height: 44px;
+    flex-direction: column;
+    font-size: 22px;
+    gap: 4px;
   }
   .home-composer-tools {
     flex-wrap: wrap;
