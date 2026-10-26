@@ -224,7 +224,9 @@
 .textile-views-dialog {
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - var(--header-height) - 2 * var(--content-padding));
+  height: auto;
+  max-height: calc(100dvh - var(--header-height) - 2 * var(--content-padding));
+  overflow: hidden;
   min-height: 0;
   padding: 0;
   border: 0;
@@ -238,9 +240,14 @@
   flex: none;
   padding: 16px 20px 0;
 }
+.textile-views-title {
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 500;
+}
 .textile-views-body {
   min-height: 0;
-  flex: 1;
+  flex: 0 1 auto;
   padding: 16px 20px 20px;
   overflow-y: auto;
 }
@@ -316,7 +323,7 @@
 .textile-view-copy strong {
   font-size: 13px;
   line-height: 20px;
-  font-weight: 600;
+  font-weight: 500;
 }
 .textile-view-check {
   position: absolute;
@@ -370,7 +377,7 @@
     right: 12px;
   }
   .textile-views-dialog {
-    height: calc(100dvh - var(--header-height) - 24px);
+    max-height: calc(100dvh - var(--header-height) - 24px);
     border-radius: 18px;
   }
   .textile-views-header {

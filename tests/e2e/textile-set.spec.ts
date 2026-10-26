@@ -165,6 +165,21 @@ for (const width of [2560, 1440, 390]) {
     ).toBeVisible();
     await page.getByRole("button", { name: "选择裂变类型", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "裂变类型", exact: true });
+    if (width === 2560) {
+      await expect
+        .poll(() =>
+          dialog
+            .locator("img")
+            .evaluateAll((images) =>
+              images.every(
+                (image) =>
+                  image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
+              ),
+            ),
+        )
+        .toBe(true);
+      await page.screenshot({ path: "/tmp/lycobo-textile-adaptive.png" });
+    }
     const box = await dialog.boundingBox();
     expect(box && box.x >= 0 && box.x + box.width <= width).toBeTruthy();
     await expect(page.locator(".modal__backdrop")).toHaveCount(0);
