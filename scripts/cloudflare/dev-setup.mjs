@@ -32,5 +32,5 @@ for (const [name, values] of Object.entries(configs))
     { mode: 0o600 },
   );
 console.info(
-  "Prepared ignored local Worker settings. R2/Queues use local emulation; Hyperdrive uses the local database. Generation requires LOCAL_IMAGE_GENERATION_ENABLED=true.",
+  "Prepared ignored local Worker settings. R2/Queues use local emulation; Development connects directly to the configured Supabase database. Generation requires LOCAL_IMAGE_GENERATION_ENABLED=true.",
 );
