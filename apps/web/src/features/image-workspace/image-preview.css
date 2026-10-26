@@ -138,7 +138,7 @@
 }
 .image-preview-model span {
   display: block;
-  line-height: 1;
+  line-height: inherit;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -62,6 +62,22 @@ for (const width of [1440, 390]) {
     expect(barBox.x).toBeGreaterThanOrEqual(stageBox.x);
     expect(barBox.x + barBox.width).toBeLessThanOrEqual(stageBox.x + stageBox.width);
     if (width === 1440) expect(stageBox.height).toBe(1000);
+    const model = await viewer.locator(".image-preview-model").evaluate((node) => {
+      const text = node.querySelector("span");
+      const icon = node.querySelector("svg");
+      if (!text || !icon) throw new Error("Missing model label");
+      const range = document.createRange();
+      range.selectNodeContents(text);
+      const glyph = range.getBoundingClientRect();
+      const label = text.getBoundingClientRect();
+      const symbol = icon.getBoundingClientRect();
+      return {
+        clipped: glyph.top < label.top || glyph.bottom > label.bottom,
+        centreOffset: Math.abs((symbol.top + symbol.bottom - label.top - label.bottom) / 2),
+      };
+    });
+    expect(model.clipped).toBe(false);
+    expect(model.centreOffset).toBeLessThanOrEqual(1);
     const description = viewer.getByRole("region", { name: "创意描述", exact: true });
     const paragraph = description.locator("p");
     await expect(paragraph).toHaveCSS("-webkit-line-clamp", "3");
