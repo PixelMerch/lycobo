@@ -210,3 +210,52 @@ test("logout closes the shared stream and removes prior identity data", async ({
   await expect(page.locator("html")).toHaveAttribute("data-sse-active", "0");
   await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();
 });
+
+test("running task events do not refetch wallet but a refund does", async ({ page }) => {
+  await mockImageEvents(page);
+  const job = jobFixture();
+  let wallets = 0;
+  let details = 0;
+  await page.route("**/api/v1/wallet", (route) => {
+    wallets++;
+    return route.fulfill({ json: apiFixture({ balance: 200, unitCredits: 20 }) });
+  });
+  await page.route("**/api/v1/image-tasks*", (route) =>
+    route.fulfill({ json: apiFixture({ data: [job] }) }),
+  );
+  await page.route(`**/api/v1/image-tasks/${job.id}`, (route) => {
+    details++;
+    return route.fulfill({ json: apiFixture(job) });
+  });
+  await page.goto("/create");
+  await expect(page.locator(".generation-job")).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-sse-active", "1");
+  await page.waitForTimeout(700);
+  const baseline = wallets;
+  const send = (id: string) =>
+    page.evaluate(
+      ({ id, resourceId }) =>
+        window.dispatchEvent(
+          new CustomEvent("fixture:sse", {
+            detail: {
+              type: "image.updated",
+              id,
+              data: { id, kind: "task", resourceId },
+            },
+          }),
+        ),
+      { id, resourceId: job.id },
+    );
+  await send("1");
+  await expect.poll(() => details).toBe(1);
+  await page.waitForTimeout(800);
+  expect(wallets).toBe(baseline);
+  job.status = "failed";
+  for (const item of job.items) item.status = "failed";
+  await send("2");
+  await expect.poll(() => wallets).toBe(baseline + 1);
+  await send("3");
+  await expect.poll(() => details).toBe(3);
+  await page.waitForTimeout(800);
+  expect(wallets).toBe(baseline + 1);
+});

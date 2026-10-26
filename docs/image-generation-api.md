@@ -209,3 +209,5 @@ Worker 以 `Image generation stage timing` 输出结构化分段计时，包含 
 `POST /image-tasks/:jobId/retry` 支持可选JSON字段 `itemId`，仍要求Idempotency-Key与身份验证。省略字段兼容旧客户端整批重试（旧客户端发送的完整input仍忽略，执行始终读取服务端存储输入）；传入时仅允许当前任务未被替代的failed／needs_reconciliation项，其他图片可以继续排队或执行。已成功图片不可通过此入口重试，异步旧尝试完成不会覆盖新尝试。
 
 事务内按既有任务／子项锁顺序校验归属，必要时退休未决尝试并记录操作者，按原单价退款／重新扣款一次，只新增当前position的子项与outbox。generation_retries.target_item_id将幂等键绑定具体目标，重复请求回放，同键换图或切换批量被拒绝；旧行NULL不改变批量语义。丢失响应时浏览器保留retryJobId／retryItemId与原幂等键，刷新后确认原请求。迁移0018须先于API启用此功能，线上发布仍需单独授权。
+
+任务SSE更新不再无条件刷新钱包：已有图片的排队、执行中、成功及重复事件不改变预付余额；只在发现新尝试或新增明确失败（退款）时刷新钱包和账单，并用500ms窗口合并密集变更。连接恢复／resync仍校准完整状态，提交成功仍刷新扣款。

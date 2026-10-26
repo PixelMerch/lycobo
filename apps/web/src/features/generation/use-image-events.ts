@@ -28,6 +28,16 @@ export function useImageEvents() {
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
     let watchdog: ReturnType<typeof setTimeout> | undefined;
     let batchTimer: ReturnType<typeof setTimeout> | undefined;
+    let walletTimer: ReturnType<typeof setTimeout> | undefined;
+    const refreshWallet = () => {
+      if (walletTimer) return;
+      walletTimer = setTimeout(() => {
+        walletTimer = undefined;
+        if (stopped) return;
+        void client.invalidateQueries({ queryKey: ["wallet"] });
+        void client.invalidateQueries({ queryKey: ["wallet-entries"] });
+      }, 500);
+    };
     let cursor = "0";
     let failures = 0;
     let connectedAt: number | undefined;
@@ -53,9 +63,15 @@ export function useImageEvents() {
       const updateAssets = assetsChanged;
       assetsChanged = false;
       let reloadHistory = false;
+      let walletChanged = false;
       let reloadAssets = updateAssets;
       const results = await Promise.allSettled(
         ids.map(async (id) => {
+          const previous =
+            client
+              .getQueriesData<History>({ queryKey: ["image-tasks"] })
+              .flatMap(([, history]) => history?.pages.flatMap((page) => page.data) ?? [])
+              .find((job) => job.id === id) ?? client.getQueryData<ImageJob>(["image-task", id]);
           const job = await client.fetchQuery({
             queryKey: ["image-task", id],
             staleTime: 0,
@@ -70,6 +86,16 @@ export function useImageEvents() {
             return;
           }
           if (taskIds.has(id)) return;
+          // Starting/completing work does not change the prepaid wallet. New attempts
+          // charge once; a newly failed item refunds once. Replayed events do neither.
+          if (
+            !previous ||
+            job.items.some((item) => {
+              const old = previous.items.find((entry) => entry.id === item.id);
+              return !old || (item.status === "failed" && old.status !== "failed");
+            })
+          )
+            walletChanged = true;
           let found = false;
           client.setQueriesData<History>({ queryKey: ["image-tasks"] }, (current) => {
             if (!current) return current;
@@ -90,10 +116,7 @@ export function useImageEvents() {
         }),
       );
       if (!stopped) {
-        if (ids.length) {
-          void client.invalidateQueries({ queryKey: ["wallet"] });
-          void client.invalidateQueries({ queryKey: ["wallet-entries"] });
-        }
+        if (walletChanged) refreshWallet();
         if (reloadHistory || results.some((result) => result.status === "rejected"))
           void client.invalidateQueries({ queryKey: ["image-tasks"] });
         if (reloadAssets) void client.invalidateQueries({ queryKey: ["image-assets"] });
@@ -199,6 +222,7 @@ export function useImageEvents() {
       clearTimeout(reconnectTimer);
       clearTimeout(watchdog);
       clearTimeout(batchTimer);
+      clearTimeout(walletTimer);
     };
   }, [client, userId, organizationId, enabled, session.isSuccess]);
 }
