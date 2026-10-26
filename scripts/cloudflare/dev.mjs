@@ -14,7 +14,7 @@ try {
 const env = localEnvironment(process.env, docker, { ...fileSettings, ...process.env });
 // Refuse accidental remote bindings in the configs consumed by local development.
 const configs = {};
-for (const name of ["api", "worker"]) {
+for (const name of ["api", "worker", "assets"]) {
   const config = JSON.parse(await readFile(`apps/${name}/wrangler.jsonc`, "utf8"));
   const rejectRemote = (value) => {
     if (!value || typeof value !== "object") return;
@@ -23,7 +23,7 @@ for (const name of ["api", "worker"]) {
     for (const child of Object.values(value)) rejectRemote(child);
   };
   rejectRemote(config);
-  config.main = "cloudflare/local.ts";
+  config.main = name === "assets" ? "src/local.ts" : "cloudflare/local.ts";
   config.name += "-local";
   delete config.queues;
   delete config.triggers;
@@ -44,6 +44,8 @@ configs.api.services = [{ binding: "LOCAL_CONSUMER", service: configs.worker.nam
 for (const [name, config] of Object.entries(configs))
   await writeFile(`apps/${name}/wrangler.local.json`, JSON.stringify(config, null, 2));
 
+console.info(`  Assets: ${env.ASSET_PUBLIC_ORIGIN}/ (local private image delivery)`);
+
 const children = [
   spawn(process.execPath, ["scripts/cloudflare/redis-dev.mjs"], {
     stdio: "inherit",
@@ -58,6 +60,8 @@ const children = [
       "@lycoboai/web",
       "--filter",
       "@lycoboai/api",
+      "--filter",
+      "@lycoboai/assets",
       docker ? "dev:docker" : "dev",
     ],
     { stdio: "inherit", env, detached: process.platform !== "win32" },

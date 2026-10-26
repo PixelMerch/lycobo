@@ -131,7 +131,7 @@ SSE 在 Workers 中保持原有持久事件游标、组织隔离、身份复验�
 
 ## 私有图片资源 Worker
 
-`lycobo-assets` 单独绑定私有 R2 `lycobo`，不连接数据库、不调用 Images、不执行生图。原图和缩略图由上传／生成链路提前写入：先保存原图，再生成并保存缩略图，两者都完成后才暴露素材；缩略图失败时保留原图供核对，不自动重调模型。API 在鉴权后批量返回 30 分钟签名链接；旧 content 接口兼容为重定向，启用后不再传输图片。前端过期图片加载失败时按需刷新链接，不恢复定时轮询。
+`lycobo-assets` 单独绑定私有 R2 `lycobo`，不连接数据库、不调用 Images、不执行生图。原图和缩略图由上传／生成链路提前写入：先保存原图，再生成并保存缩略图，两者都完成后才暴露素材；缩略图失败时保留原图供核对，不自动重调模型。API 在鉴权后批量返回 30 分钟签名链接；旧 content 接口兼容为重定向，启用后不再传输图片。上传响应也直接返回签名链接，避免新上传图片的首次预览经过 content 兼容入口。前端过期图片加载失败时按需刷新链接，不恢复定时轮询。
 
 运行配置仅在 Cloudflare 管理：API 配置 Secret `ASSET_SIGNING_SECRET` 与 运行配置 `ASSET_PUBLIC_ORIGIN`；资源 Worker 配置相同 Secret 与 运行配置 `ASSET_ALLOWED_ORIGINS=https://lycobo.pages.dev`（逗号分隔精确 Origin）。域名切换时同步更新资源 Origin、CORS 与 Referer 白名单。两个非敏感配置也可用 Cloudflare Secret 保存，以便仅更新指定 binding 并保留其他配置。不要使用 JWT 密钥作为图片签名密钥，不在 GitHub 保存这些运行配置。
 

@@ -18,6 +18,7 @@ services:
       - "127.0.0.1:8081:5173"
       - "127.0.0.1:5173:5173"
       - "127.0.0.1:8787:8787"
+      - "127.0.0.1:8791:8791"
     environment:
       CI: "true"
       WRANGLER_SEND_METRICS: "false"
@@ -39,7 +40,7 @@ services:
       - /workspace/packages/storage/node_modules
       - studio-state:/workspace/.wrangler
     healthcheck:
-      test: ["CMD", "node", "-e", "Promise.all(['http://127.0.0.1:5173', 'http://127.0.0.1:8787/api/health/live', 'http://127.0.0.1:8790/health'].map(async u => { const r = await fetch(u); if (!r.ok) throw new Error(String(r.status)); })).catch(() => process.exit(1))"]
+      test: ["CMD", "node", "-e", "Promise.all(['http://127.0.0.1:5173', 'http://127.0.0.1:8787/api/health/live', 'http://127.0.0.1:8790/health', 'http://127.0.0.1:8791/health'].map(async u => { const r = await fetch(u); if (!r.ok) throw new Error(String(r.status)); })).catch(() => process.exit(1))"]
       interval: 10s
       timeout: 5s
       start_period: 120s

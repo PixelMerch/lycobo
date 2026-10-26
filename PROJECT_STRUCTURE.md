@@ -66,7 +66,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 ## 进程与服务
 
-本地通过 `docker compose up` 启动本地 PostgreSQL、Redis 与 `studio`（Vite + Wrangler API/消费者）；入口为 `scripts/cloudflare/docker-dev.sh` 与 `dev.mjs`。启动环境由 `local-environment.mjs` 固定为本地连接并清除线上凭据。R2/Images 使用本地模拟；本地队列使用 Redis Streams，`redis-dev.mjs` 通过认证桥接调用本地 Worker，生成的 `wrangler.local.json` 不含 Cloudflare Queue 绑定。数据库、模拟状态、Redis 和 Linux 依赖分别保存于 Docker 卷。具体命令见 [本地开发](docs/development.md)。
+本地通过 `docker compose up` 启动本地 PostgreSQL、Redis 与 `studio`（Vite + Wrangler API/消费者/独立图片资源 Worker）；入口为 `scripts/cloudflare/docker-dev.sh` 与 `dev.mjs`。启动环境由 `local-environment.mjs` 固定为本地连接并清除线上凭据。R2/Images 使用本地模拟；本地队列使用 Redis Streams，`redis-dev.mjs` 通过认证桥接调用本地 Worker，生成的 `wrangler.local.json` 不含 Cloudflare Queue 绑定。图片由本地独立资源 Worker（8791）通过签名 URL 提供，业务 API 不传输图片字节；数据库、模拟状态、Redis 和 Linux 依赖分别保存于 Docker 卷。具体命令见 [本地开发](docs/development.md)。
 
 - API：短请求、身份、授权、参数校验、业务编排。
 - Worker：有持久任务托管的后台工作，绝不能依赖浏览器连接。

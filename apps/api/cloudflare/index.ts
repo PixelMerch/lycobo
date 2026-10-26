@@ -129,7 +129,9 @@ async function handleRequest(
         store,
         signAsset:
           env.ASSET_PUBLIC_ORIGIN && env.ASSET_SIGNING_SECRET
-            ? assetDeliverySigner(env.ASSET_PUBLIC_ORIGIN, env.ASSET_SIGNING_SECRET)
+            ? assetDeliverySigner(env.ASSET_PUBLIC_ORIGIN, env.ASSET_SIGNING_SECRET, {
+                allowLocalHttp: env.APP_ENV === "development",
+              })
             : undefined,
         events,
         auth,

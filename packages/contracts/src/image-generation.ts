@@ -213,7 +213,10 @@ export const imageModelsResponseSchema = z.object({
   ),
 });
 export const imageSubmissionResponseSchema = z.object({ id: z.uuid(), replayed: z.boolean() });
-export const imageUploadResponseSchema = z.object({ id: z.uuid() });
+export const imageUploadResponseSchema = z.object({
+  id: z.uuid(),
+  delivery: imageDeliverySchema.optional(),
+});
 
 export const imageSessionResponseSchema = z.object({ userId: z.uuid(), organizationId: z.uuid() });
 

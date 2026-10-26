@@ -28,3 +28,18 @@ describe("asset capabilities", () => {
     expect(() => assetDeliverySigner("http://assets.example.test", secret)).toThrow();
   });
 });
+
+it("allows HTTP only through explicit development opt-in on exact loopback hosts", async () => {
+  expect(() => assetDeliverySigner("http://localhost:8791", secret)).toThrow();
+  const local = await assetDeliverySigner("http://localhost:8791", secret, {
+    allowLocalHttp: true,
+  })(key);
+  expect(new URL(local.url).origin).toBe("http://localhost:8791");
+  for (const origin of [
+    "http://assets.example.test",
+    "http://localhost.evil.test",
+    "http://127.0.0.1.evil.test",
+    "ftp://localhost:8791",
+  ])
+    expect(() => assetDeliverySigner(origin, secret, { allowLocalHttp: true })).toThrow();
+});

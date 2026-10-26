@@ -16,14 +16,14 @@ docker compose up --build
 # 后台启动：docker compose up -d
 ```
 
-打开 `http://localhost:8081`（`http://localhost:5173` 同样可用）。Compose 启动本地 PostgreSQL、Redis 与 `studio`，自动向本地库应用已有迁移，再运行 Vite + Wrangler API／生图消费者与 Redis 桥接进程。日志会打印 Web 和 API URL。首次构建安装依赖，后续使用容器缓存。
+打开 `http://localhost:8081`（`http://localhost:5173` 同样可用）。Compose 启动本地 PostgreSQL、Redis 与 `studio`，自动向本地库应用已有迁移，再运行 Vite + Wrangler API／生图消费者、独立图片资源 Worker 与 Redis 桥接进程。日志会打印 Web、API 和 Assets URL。首次构建安装依赖，后续使用容器缓存。
 
 ### 本地与线上隔离
 
 | 服务 | 本地开发位置 | 持久化 |
 | --- | --- | --- |
 | PostgreSQL | Compose `postgres:5432`；宿主机映射 `127.0.0.1:55432` | `postgres-data` 卷 |
-| 图片对象存储 | Wrangler 模拟 R2；原件与缩略图沿用 UID 隔离路径 | `studio-state` 卷内 `.wrangler/state` |
+| 图片对象存储 | Wrangler 模拟 R2；原件与缩略图沿用 UID 隔离路径，独立资源入口 `http://localhost:8791` | `studio-state` 卷内 `.wrangler/state` |
 | 图片处理 | 本地 Images 模拟 | 输出进入本地 R2 |
 | 任务队列 | Compose Redis Streams；宿主机映射 `127.0.0.1:56379` | `redis-data` 卷，AOF 持久化 |
 
@@ -35,11 +35,15 @@ docker compose up --build
 
 本地队列只保存 `{version, itemId}`。`redis-dev.mjs` 使用消费者组领取消息，心跳续租，执行完成后确认并删除消息；进程退出时未确认消息留在 Redis，租约过期后恢复。单条消息失败最多投递 4 次后进入本地死信流；数据库 outbox 仍是恢复意图的来源，数据库 claim 与不确定结果规则负责避免重复付费提交。桥接每 30 秒触发本地 outbox／租约维护。
 
-为复用同一套 R2/Images 和业务处理，本地入口生成被 Git 忽略的 `apps/{api,worker}/wrangler.local.json`：移除 Cloudflare Queue 绑定及 Cron，使用本地消费者服务绑定和仅监听 `127.0.0.1:8790` 的 Redis HTTP 桥接。内部端点使用每次启动随机生成的令牌，令牌仅进入本地 `.dev.vars`，不进入前端。线上 Wrangler 配置保持 Cloudflare Queues。正常开发使用根 `pnpm dev`／Compose，不重复启动独立消费者。
+为复用同一套 R2/Images 和业务处理，本地入口生成被 Git 忽略的 `apps/{api,worker,assets}/wrangler.local.json`：移除 Cloudflare Queue 绑定及 Cron，使用本地消费者服务绑定和仅监听 `127.0.0.1:8790` 的 Redis HTTP 桥接。内部端点使用每次启动随机生成的令牌，令牌仅进入本地 `.dev.vars`，不进入前端。线上 Wrangler 配置保持 Cloudflare Queues。正常开发使用根 `pnpm dev`／Compose，不重复启动独立消费者。
+
+本地图片通过独立资源 Worker（8791）读取同一个本地 R2，API 只负责授权并返回原图／缩略图／下载签名链接。历史与素材列表批量返回签名链接，上传响应也附带链接，前端直接使用资源地址；旧 `/content` 入口保留为授权后的 302 兼容跳转。资源请求不连接 PostgreSQL，验证签名和来源后读取缓存，未命中再读取本地 R2。签名 30 分钟有效，缓存命中前仍会验签。资源 Worker 的本地请求日志设为 warn，避免记录带签名的 URL。
+
+本地资源域名与签名密钥由启动器固定／随机生成，忽略 `.env` 中的线上 ASSET 配置；只有开发模式显式允许 loopback HTTP，生产资源 Origin 仍要求 HTTPS。本地模拟独立资源链路，不表示访问 Cloudflare 线上 CDN。修改端口需同步本地资源 Origin 和精确来源白名单。
 
 Redis 健康状态纳入 `studio` 健康检查。Redis 故障时发送失败不会确认数据库 outbox；恢复后由维护任务补投。AOF 每秒同步，异常断电可能丢失最近一秒的传输数据，持久数据库 outbox 负责补偿；不要把 Redis 当作计费或任务状态来源。
 
-源码绑定挂载，前端热更新，Worker 修改后重建。Linux `node_modules` 使用独立卷；端口 8081、5173、8787、55432、56379 仅发布到本机。Dockerfile 修改后执行 `docker compose up --build`；依赖修改后重启 `studio`。
+源码绑定挂载，前端热更新，Worker 修改后重建。Linux `node_modules` 使用独立卷；端口 8081、5173、8787、8791、55432、56379 仅发布到本机。Dockerfile 修改后执行 `docker compose up --build`；依赖修改后重启 `studio`。
 
 ```sh
 docker compose logs -f studio

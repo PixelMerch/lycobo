@@ -23,12 +23,12 @@ describe("local development isolation", () => {
       "SUPABASE_DATABASE_URL",
       "CLOUDFLARE_API_TOKEN",
       "AUTH_JWT_SECRET",
-      "ASSET_PUBLIC_ORIGIN",
       "VAKV_API_KEY",
     ])
       expect(env).not.toHaveProperty(key);
     expect(env.LOCAL_IMAGE_GENERATION_ENABLED).toBe("false");
     expect(env.PATH).toBe(production.PATH);
+    expect(env.ASSET_PUBLIC_ORIGIN).toBe("http://localhost:8791");
     expect(env.LOCAL_REDIS_URL).toBe("redis://redis:6379");
     expect(env.LOCAL_QUEUE_TOKEN).not.toBe(production.LOCAL_QUEUE_TOKEN);
   });

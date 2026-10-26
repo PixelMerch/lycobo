@@ -329,6 +329,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
         height: asset.height,
         bytes: asset.bytes,
         mimeType: asset.mimeType,
+        ...(deps.signAsset ? { delivery: await deps.signAsset(asset.objectKey) } : {}),
       },
       201,
     );

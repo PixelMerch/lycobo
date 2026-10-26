@@ -44,10 +44,19 @@ export async function verifyAsset(
   );
   return crypto.subtle.verify("HMAC", signingKey, bytes, message(key, expires));
 }
-export function assetDeliverySigner(origin: string, secret: string) {
+export function assetDeliverySigner(
+  origin: string,
+  secret: string,
+  options: { allowLocalHttp?: boolean } = {},
+) {
   const base = new URL(origin);
   if (
-    base.protocol !== "https:" ||
+    (base.protocol !== "https:" &&
+      !(
+        options.allowLocalHttp &&
+        base.protocol === "http:" &&
+        ["localhost", "127.0.0.1", "[::1]"].includes(base.hostname)
+      )) ||
     base.pathname !== "/" ||
     base.username ||
     base.password ||

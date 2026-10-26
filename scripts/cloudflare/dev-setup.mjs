@@ -16,9 +16,15 @@ const configs = {
   api: {
     ...common,
     APP_ENV: "development",
+    ASSET_SIGNING_SECRET: process.env.ASSET_SIGNING_SECRET ?? "",
+    ASSET_PUBLIC_ORIGIN: process.env.ASSET_PUBLIC_ORIGIN ?? "",
     AUTH_JWT_SECRET: process.env.AUTH_JWT_SECRET || randomBytes(48).toString("base64url"),
     AUTH_TRUSTED_ORIGINS:
       "http://localhost:8081,http://127.0.0.1:8081,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8787,http://127.0.0.1:8787",
+  },
+  assets: {
+    ASSET_SIGNING_SECRET: process.env.ASSET_SIGNING_SECRET ?? "",
+    ASSET_ALLOWED_ORIGINS: process.env.ASSET_ALLOWED_ORIGINS ?? "",
   },
   worker: {
     ...common,
