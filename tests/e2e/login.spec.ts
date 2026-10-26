@@ -19,6 +19,10 @@ test("header login opens account/password dialog and validates without faking au
   const password = dialog.getByLabel("密码", { exact: true });
   await expect(account).toBeFocused();
   await expect(dialog.getByRole("status", { name: "扫码登录暂未开放" })).toHaveCount(0);
+  // No coloured top strip: the panel is white edge to edge.
+  await expect(dialog.locator(".login-banner")).toHaveCount(0);
+  await expect(dialog.locator(".login-panel")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(dialog.getByRole("button", { name: "关闭登录" })).toBeVisible();
   await expect(dialog.locator(".login-content")).toHaveCSS(
     "background-color",
     "rgb(255, 255, 255)",

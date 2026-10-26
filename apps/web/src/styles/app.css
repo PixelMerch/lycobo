@@ -3025,52 +3025,38 @@ p.home-hero-kicker {
   background: #fff;
   transform-origin: 50% 60%;
 }
-/* Sits inside the animated panel, on the light banner. */
+/* Floats over the light panel; there is no coloured top strip. */
 .login-close {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 14px;
+  right: 14px;
   z-index: 3;
   width: 36px;
   height: 36px;
   min-height: 36px;
   border: 0;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.06);
-  color: #29232f;
+  background: rgba(0, 0, 0, 0.05);
+  color: #555;
 }
 .login-close:hover,
 .login-close[data-hovered="true"] {
-  background: rgba(0, 0, 0, 0.12);
-}
-.login-banner {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 52px;
-  padding: 12px 56px 12px 32px;
-  background: #e9dfff;
-  color: #29232f;
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-}
-.login-banner p {
-  margin: 0;
+  background: rgba(0, 0, 0, 0.1);
 }
 .login-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  padding: 8px;
-  min-height: 560px;
+  padding: 0;
+  min-height: 600px;
   background: #fff;
-  border-radius: 28px 28px 0 0;
+  border-radius: 28px;
 }
 .login-visual {
   position: relative;
   min-width: 0;
-  padding: 40px 28px;
+  padding: 48px 40px;
   overflow: hidden;
-  border-radius: 24px;
+  border-radius: 28px 0 0 28px;
   background: #171717;
 }
 .login-visual > img {
@@ -3123,15 +3109,16 @@ p.home-hero-kicker {
   --focus: rgba(0, 0, 0, 0.15);
   --field-border-focus: rgba(0, 0, 0, 0.15);
   --danger: #c83245;
-  --link: #8152df;
+  --link: #111111;
   font-family: var(--login-control-font);
   font-weight: 400;
   color-scheme: light;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 32px 36px 24px;
+  padding: 44px 44px 28px;
   background: #fff;
+  border-radius: 0 28px 28px 0;
   color: #000;
 }
 .login-content .modal__header,
@@ -3140,33 +3127,33 @@ p.home-hero-kicker {
 }
 .login-content .modal__header.login-header {
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
-  text-align: center;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 26px;
+  text-align: left;
 }
 .login-brand-mark {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  margin-bottom: 8px;
-  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 10px;
+  border-radius: 12px;
   background: #151515;
   color: #fff;
-  box-shadow: 0 0 22px #bba1ff66;
 }
 .login-content .modal__heading {
   color: #000;
   font-family: var(--login-title-font);
-  font-size: 30px;
-  line-height: 42px;
-  font-weight: 400;
+  font-size: 26px;
+  line-height: 36px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 .login-content .login-header p {
-  color: rgba(0, 0, 0, 0.4);
+  color: rgba(0, 0, 0, 0.45);
   font-family: var(--login-title-font);
-  font-size: 14px;
+  font-size: 13px;
   line-height: var(--leading-sm);
 }
 .login-body {
@@ -3257,7 +3244,7 @@ p.home-hero-kicker {
   width: auto;
   min-width: 0;
   padding: 0 16px;
-  color: #8360ec;
+  color: #111;
   font-size: 13px;
   font-weight: 500;
 }
@@ -3384,8 +3371,8 @@ p.home-hero-kicker {
     width: min(420px, calc(100vw - 24px));
   }
   .login-close {
-    top: 6px;
-    right: 6px;
+    top: 8px;
+    right: 8px;
     width: 44px;
     height: 44px;
     background: transparent;
@@ -3403,16 +3390,12 @@ p.home-hero-kicker {
     display: none;
   }
   .login-content {
-    padding: 28px 24px 24px;
-    border-radius: 24px;
+    padding: 32px 24px 24px;
+    border-radius: 28px;
   }
   .login-content .modal__heading {
-    font-size: 24px;
-  }
-  .login-banner {
-    padding: 14px 54px 14px 20px;
-    font-size: var(--text-xs);
-    line-height: var(--leading-xs);
+    font-size: 22px;
+    line-height: 30px;
   }
   .login-fields :is(.input, .input-group, .input-group .input) {
     min-height: 44px;

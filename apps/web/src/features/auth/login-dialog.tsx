@@ -10,14 +10,7 @@ import {
   TextField,
   ToggleButton,
 } from "@heroui/react";
-import {
-  IconBrandWechat,
-  IconEye,
-  IconEyeOff,
-  IconQrcode,
-  IconSparkles,
-  IconX,
-} from "@tabler/icons-react";
+import { IconBrandWechat, IconEye, IconEyeOff, IconQrcode, IconX } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useRef, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
@@ -101,10 +94,6 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
               <Modal.CloseTrigger className="login-close" aria-label="关闭登录">
                 <UiIcon icon={IconX} size="default" />
               </Modal.CloseTrigger>
-              <div className="login-banner">
-                <UiIcon icon={IconSparkles} size="small" />
-                <p>从商品参考到场景创作，让灵感拥有新的画面</p>
-              </div>
               <div className="login-split">
                 <section className="login-visual" aria-label="创作案例预览">
                   <img src={photo("bedroom")} alt="" width="880" height="1200" loading="eager" />
@@ -121,7 +110,7 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                 <div className="login-content">
                   <Modal.Header className="login-header">
                     <span className="login-brand-mark" aria-hidden="true">
-                      <img src="/brand/lycobo-mark-white.svg" alt="" width="25" height="28" />
+                      <img src="/brand/lycobo-mark-white.svg" alt="" width="24" height="18" />
                     </span>
                     <Modal.Heading>欢迎使用 Lycobo</Modal.Heading>
                     <p>{hint}</p>
