@@ -134,3 +134,73 @@ test("touch users can regenerate a failed image without hovering", async ({ brow
     await context.close();
   }
 });
+
+test("confirmed legacy textile failure creates a current-channel task for only the chosen view", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  const reference = crypto.randomUUID();
+  const job = {
+    id: crypto.randomUUID(),
+    organization_id: crypto.randomUUID(),
+    user_id: crypto.randomUUID(),
+    model: "gpt-image-2.5",
+    prompt: "旧版家纺主图裂变",
+    resolution: "4K",
+    aspect_ratio: "1:1",
+    requested_count: 2,
+    unit_credits: 20,
+    status: "failed",
+    created_at: new Date().toISOString(),
+    completed_at: null,
+    input: {
+      model: "gpt-image-2.5",
+      prompt: "旧版家纺主图裂变",
+      resolution: "4K",
+      aspectRatio: "1:1",
+      count: 2,
+      referenceAssetIds: [reference],
+      textileSet: { version: 3, views: ["front", "fabric"] },
+    },
+    items: [0, 1].map((position) => ({
+      id: crypto.randomUUID(),
+      position,
+      status: "failed",
+      output_asset_id: null,
+      error_code: "PROVIDER_HTTP_400",
+      width: null,
+      height: null,
+      worker_id: null,
+    })),
+  };
+  let submitted: unknown;
+  await page.route("**/api/v1/image-tasks**", async (route) => {
+    if (route.request().method() === "POST") {
+      expect(new URL(route.request().url()).pathname).toBe("/api/v1/image-tasks");
+      submitted = route.request().postDataJSON();
+      return route.fulfill({
+        status: 202,
+        json: apiFixture({ id: crypto.randomUUID(), replayed: false }, 202),
+      });
+    }
+    return route.fulfill({ json: apiFixture({ data: [job] }) });
+  });
+  await page.goto("/commerce/textile-set");
+  const card = page.locator(".generation-placeholder").first();
+  await card.hover();
+  await card.getByRole("button", { name: "重新生成第 1 张", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
+  await expect(dialog).toContainText("使用 gpt-image-2-4K 创建新任务");
+  await expect(dialog).toContainText("本次消耗 20 积分");
+  expect(submitted).toBeUndefined();
+  await dialog.getByRole("button", { name: "确认", exact: true }).click();
+  await expect
+    .poll(() => submitted)
+    .toMatchObject({
+      model: "gpt-image-2",
+      resolution: "4K",
+      count: 1,
+      referenceAssetIds: [reference],
+      textileSet: { version: 4, views: ["front"] },
+    });
+});

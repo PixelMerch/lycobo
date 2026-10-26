@@ -108,11 +108,18 @@ export function HistoryTaskActions({
     (item
       ? !["failed", "needs_reconciliation"].includes(item.status)
       : ["queued", "running"].includes(job.status)) || pending;
+  const targets = item
+    ? [item]
+    : job.items.filter((entry) => ["failed", "needs_reconciliation"].includes(entry.status));
+  const upgradeTextile =
+    !!job.input?.textileSet &&
+    job.input.textileSet.version < 4 &&
+    targets.every((entry) => entry.status === "failed");
   const configured =
     models.data?.enabled &&
     models.data.models.some(
       (model) =>
-        model.id === publicImageModel(job.model) &&
+        model.id === (upgradeTextile ? "gpt-image-2" : publicImageModel(job.model)) &&
         model.enabledResolutions.some((resolution) => resolution === job.resolution),
     ) &&
     (!job.input?.referenceAssetIds.length || models.data.editsEnabled);
@@ -128,7 +135,9 @@ export function HistoryTaskActions({
         )
       : job.requested_count;
   const unitCredits = retrying ? (job.unit_credits ?? imageUnitCredits) : imageUnitCredits;
-  const regenerateContent = `本次消耗 ${count * unitCredits} 积分`;
+  const regenerateContent = `本次消耗 ${count * unitCredits} 积分${
+    upgradeTextile ? "。使用 gpt-image-2-4K 创建新任务，原记录保留。" : ""
+  }`;
   const restore = (value: Awaited<ReturnType<typeof taskDraft>>) => {
     if (onRestore) {
       onRestore(value);
@@ -148,8 +157,24 @@ export function HistoryTaskActions({
     setLoading(true);
     generation.reset();
     try {
+      const restored = await taskDraft(job, client);
+      if (upgradeTextile && restored.textileSet) {
+        const views = retrying
+          ? restored.textileSet.views.filter((_, position) =>
+              targets.some((entry) => entry.position === position),
+            )
+          : restored.textileSet.views;
+        generation.mutate({
+          ...restored,
+          model: "gpt-image-2",
+          draft: { ...restored.draft, count: String(views.length) },
+          textileSet: { version: 4, views },
+          source: "textile-set",
+        });
+        return;
+      }
       generation.mutate({
-        ...(await taskDraft(job, client)),
+        ...restored,
         ...(job.input?.textileSet ? { source: "textile-set" } : {}),
         ...(item || ["failed", "partially_failed", "needs_reconciliation"].includes(job.status)
           ? { retryJobId: job.id, ...(item ? { retryItemId: item.id } : {}) }
