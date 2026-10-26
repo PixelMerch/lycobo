@@ -9,7 +9,7 @@
     "pnpm": ">=10.34.7 <11"
   },
   "scripts": {
-    "dev": "node --env-file-if-exists=.env scripts/cloudflare/dev.mjs",
+    "dev": "node scripts/cloudflare/dev.mjs",
     "dev:worker": "pnpm --filter @lycoboai/worker dev",
     "build": "pnpm -r --if-present build",
     "typecheck": "tsc -p tsconfig.tools.json --noEmit && pnpm -r typecheck",

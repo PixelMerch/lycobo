@@ -66,7 +66,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 ## 进程与服务
 
-本地通过 `docker compose up` 启动 `studio` 开发容器（Vite + Wrangler API/消费者），直连 `.env` 中的 Supabase；入口为 `scripts/cloudflare/docker-dev.sh` 与 `dev.mjs`。PostgreSQL 容器仅在隔离测试时显式启动，本地 R2/Queues 状态与 Linux 依赖使用独立卷。具体命令见 [本地开发](docs/development.md)。
+本地通过 `docker compose up` 启动本地 PostgreSQL 与 `studio`（Vite + Wrangler API/消费者）；入口为 `scripts/cloudflare/docker-dev.sh` 与 `dev.mjs`。启动环境由 `local-environment.mjs` 固定为本地连接并清除线上凭据。R2/Images/Queues 使用本地模拟；数据库、模拟状态和 Linux 依赖分别保存于 Docker 卷。具体命令见 [本地开发](docs/development.md)。
 
 - API：短请求、身份、授权、参数校验、业务编排。
 - Worker：有持久任务托管的后台工作，绝不能依赖浏览器连接。

@@ -1,5 +1,5 @@
 name: lycoboai
-# Development uses Supabase; PostgreSQL is opt-in for isolated tests.
+# Isolated development: PostgreSQL, R2, Images and Queues are all local.
 services:
   studio:
     build:
@@ -8,22 +8,19 @@ services:
     init: true
     working_dir: /workspace
     command: ["sh", "scripts/cloudflare/docker-dev.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - "127.0.0.1:8081:5173"
       - "127.0.0.1:5173:5173"
       - "127.0.0.1:8787:8787"
     environment:
       CI: "true"
-      SUPABASE_PROJECT_REF: ${SUPABASE_PROJECT_REF:-wjirihknptxjodgknbfy}
-      SUPABASE_DATABASE_URL: ${SUPABASE_DATABASE_URL:-}
       WRANGLER_SEND_METRICS: "false"
       DEV_USE_POLLING: "true"
       DEV_WEB_PUBLIC_PORT: "8081"
       DEV_API_PUBLIC_PORT: "8787"
-      LOCAL_IMAGE_GENERATION_ENABLED: ${LOCAL_IMAGE_GENERATION_ENABLED:-false}
-      VAKV_API_KEY: ${VAKV_API_KEY:-}
-      VAKV_BASE_URL: ${VAKV_BASE_URL:-https://api.vakv.cn}
-      VAKV_ENABLE_IMAGE_EDITS: ${VAKV_ENABLE_IMAGE_EDITS:-false}
     volumes:
       - .:/workspace
       # Linux dependencies must never overwrite macOS node_modules.
@@ -45,7 +42,6 @@ services:
       start_period: 120s
       retries: 6
   postgres:
-    profiles: ["test"]
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: lycoboai

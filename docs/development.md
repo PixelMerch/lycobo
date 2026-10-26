@@ -16,32 +16,41 @@ docker compose up --build
 # 后台启动：docker compose up -d
 ```
 
-打开 `http://localhost:8081`（`http://localhost:5173` 同样可用）。Compose 默认只启动 `studio`：Vite + Wrangler API／Queues 消费者，前端 `/api` 代理到本地 8787。日志会打印 Web 和 API 地址。首次构建安装依赖，后续使用容器缓存。
+打开 `http://localhost:8081`（`http://localhost:5173` 同样可用）。Compose 启动本地 PostgreSQL 与 `studio`，自动向本地库应用已有迁移，再运行 Vite + Wrangler API／Queues 消费者。日志会打印 Web 和 API URL。首次构建安装依赖，后续使用容器缓存。
 
-在根 `.env` 配置 `SUPABASE_PROJECT_REF` 与 `SUPABASE_DATABASE_URL`，格式见 `.env.example`。启动入口校验项目、密码占位符及 TLS 参数，再通过 Wrangler 本地 Hyperdrive 连接配置直连 Supabase。缺少有效连接时启动失败，不回退到 Docker 数据库。连接凭据仅用于服务端，不写入已跟踪配置或前端变量。
+### 本地与线上隔离
 
-**本地与线上共用 Supabase 业务数据**：账号、积分、历史均来自远端库，应用操作也会修改远端数据。启动不自动迁移、不创建账号、不赠送积分。迁移需使用独立的显式命令。
+| 服务 | 本地开发位置 | 持久化 |
+| --- | --- | --- |
+| PostgreSQL | Compose `postgres:5432`；宿主机映射 `127.0.0.1:55432` | `postgres-data` 卷 |
+| 图片对象存储 | Wrangler 模拟 R2；原件与缩略图沿用 UID 隔离路径 | `studio-state` 卷内 `.wrangler/state` |
+| 图片处理 | 本地 Images 模拟 | 输出进入本地 R2 |
+| 任务队列 | Wrangler 模拟 Cloudflare Queues | `studio-state` 卷 |
 
-R2、Images 和 Queues 仍为本地模拟，状态保存于 `studio-state` 卷。仅切换数据库不会同步线上 R2 图片，历史图片若不在本地模拟存储中仍无法加载。完整的远端图片访问需另行配置资源服务；不要将此模式视为与线上完全一致的生图环境。本地真实生图默认关闭，`LOCAL_IMAGE_GENERATION_ENABLED` 不应在未配置一致的对象存储和任务传输前开启。
+本地数据库、图片、队列均独立，不读取或写入线上 Supabase、R2 或 Queues。不会复制线上账号、积分、历史或图片，也不会自动创建账号和赠送积分。本地已有记录引用的图片若此前存放在其他卷，不能仅凭记录恢复文件。
 
-源码绑定挂载，前端热更新，Worker 修改后重建。Linux `node_modules` 使用独立卷；端口 8081、5173、8787 仅发布到本机。Dockerfile 修改后执行 `docker compose up --build`；依赖修改后重启 `studio`。
+`pnpm dev` 不读取根 `.env` 的生产配置；Docker 也不注入 Supabase、Cloudflare 部署令牌或模型密钥。启动入口固定本地数据库地址，清除继承的生产凭据，拒绝 `remote: true` 绑定，关闭真实付费生图。根 `.env` 可继续保存部署配置，开发启动不会使用其中的线上数据库。`pnpm cloudflare:deploy`、远端迁移等显式运维命令仍有独立职责，不能作为本地启动命令。
+
+源码绑定挂载，前端热更新，Worker 修改后重建。Linux `node_modules` 使用独立卷；端口 8081、5173、8787、55432 仅发布到本机。Dockerfile 修改后执行 `docker compose up --build`；依赖修改后重启 `studio`。
 
 ```sh
 docker compose logs -f studio
 docker compose restart studio
-docker compose stop studio
+docker compose stop studio postgres
 ```
 
-本地 PostgreSQL 仅保留在 `test` profile，默认 `docker compose up` 不启动它。原数据卷保留，不使用 `down -v` 或 `--remove-orphans`。如有已运行的旧 PostgreSQL，可在确认无测试使用时执行 `docker compose stop postgres`。旧前端占用 8081 时先执行 `docker stop lycoboai-web-1`。
+停止／删除容器不会自动删除上述命名卷；不要执行 `docker compose down -v`。旧前端占用 8081 时先执行 `docker stop lycoboai-web-1`，不顺手删除旧容器、卷或孤立服务。
 
 宿主机 Node 24 / pnpm 10.34.7 调试（先停止 `studio` 避免端口冲突）：
 
 ```sh
 pnpm install --frozen-lockfile
+pnpm infra:up
+DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai pnpm db:migrate
 pnpm dev
 ```
 
-宿主机入口同样读取 `.env` 的 Supabase 配置。宿主机 `.wrangler/state` 与 Docker 模拟存储分开。修改端口时同步可信来源和 `DEV_API_PROXY_TARGET`。
+宿主机模式固定连接 loopback PostgreSQL，其 `.wrangler/state` 与 Docker 模拟存储分开。修改端口时同步可信来源和 `DEV_API_PROXY_TARGET`。
 
 ## 数据库与测试
 
