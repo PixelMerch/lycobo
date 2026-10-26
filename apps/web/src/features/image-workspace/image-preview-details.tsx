@@ -1,5 +1,11 @@
 import { Button, ToggleButton, Tooltip } from "@heroui/react";
-import { IconCopy, IconDownload, IconPhoto, IconStar, IconStarFilled } from "@tabler/icons-react";
+import {
+  IconBrandOpenai,
+  IconCopy,
+  IconDownload,
+  IconStar,
+  IconStarFilled,
+} from "@tabler/icons-react";
 import { CollapsibleText } from "../../components/collapsible-text";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
@@ -41,7 +47,7 @@ export function ImagePreviewDetails({
       </div>
       <header className="image-preview-head">
         <span className="image-preview-model">
-          <UiIcon icon={IconPhoto} size="default" />
+          <UiIcon icon={IconBrandOpenai} size="default" />
           <span>{meta.model ?? "图片"}</span>
         </span>
         <span className="image-preview-tools">

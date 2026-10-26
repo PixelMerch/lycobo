@@ -127,6 +127,7 @@
 }
 .image-preview-model {
   display: inline-flex;
+  min-height: 28px;
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -136,6 +137,8 @@
   font-weight: 500;
 }
 .image-preview-model span {
+  display: block;
+  line-height: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
