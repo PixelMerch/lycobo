@@ -1,10 +1,11 @@
 import { spawn } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { localEnvironment } from "./local-environment.mjs";
 
 const docker = process.argv.includes("--docker");
 const env = localEnvironment(process.env, docker);
 // Refuse accidental remote bindings in the configs consumed by local development.
+const configs = {};
 for (const name of ["api", "worker"]) {
   const config = JSON.parse(await readFile(`apps/${name}/wrangler.jsonc`, "utf8"));
   const rejectRemote = (value) => {
@@ -14,6 +15,11 @@ for (const name of ["api", "worker"]) {
     for (const child of Object.values(value)) rejectRemote(child);
   };
   rejectRemote(config);
+  config.main = "cloudflare/local.ts";
+  config.name += "-local";
+  delete config.queues;
+  delete config.triggers;
+  configs[name] = config;
 }
 for (const key of Object.keys(process.env)) delete process.env[key];
 Object.assign(process.env, env);
@@ -26,23 +32,54 @@ if (docker) {
   if (status !== 0) process.exit(1);
 }
 await import("./dev-setup.mjs");
-const child = spawn(
-  "pnpm",
-  [
-    "--parallel",
-    "--filter",
-    "@lycoboai/web",
-    "--filter",
-    "@lycoboai/api",
-    process.argv.includes("--docker") ? "dev:docker" : "dev",
-  ],
-  { stdio: "inherit", env: process.env },
-);
-for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => child.kill(signal));
-child.on("error", () => {
-  console.error("Unable to start local development processes.");
-  process.exitCode = 1;
-});
-child.on("exit", (code) => {
-  process.exitCode = code ?? 1;
-});
+configs.api.services = [{ binding: "LOCAL_CONSUMER", service: configs.worker.name }];
+for (const [name, config] of Object.entries(configs))
+  await writeFile(`apps/${name}/wrangler.local.json`, JSON.stringify(config, null, 2));
+
+const children = [
+  spawn(process.execPath, ["scripts/cloudflare/redis-dev.mjs"], {
+    stdio: "inherit",
+    env,
+    detached: process.platform !== "win32",
+  }),
+  spawn(
+    "pnpm",
+    [
+      "--parallel",
+      "--filter",
+      "@lycoboai/web",
+      "--filter",
+      "@lycoboai/api",
+      docker ? "dev:docker" : "dev",
+    ],
+    { stdio: "inherit", env, detached: process.platform !== "win32" },
+  ),
+];
+let stopping = false;
+const stop = (signal = "SIGTERM") => {
+  if (stopping) return;
+  stopping = true;
+  for (const child of children) {
+    try {
+      // pnpm launches Vite/Wrangler grandchildren; signal the whole process group.
+      if (process.platform !== "win32" && child.pid) process.kill(-child.pid, signal);
+      else child.kill(signal);
+    } catch (error) {
+      if (!(error instanceof Error) || !("code" in error) || error.code !== "ESRCH") throw error;
+    }
+  }
+};
+for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => stop(signal));
+for (const child of children) {
+  child.on("error", () => {
+    console.error("LOCAL_DEVELOPMENT_START_FAILED");
+    process.exitCode = 1;
+    stop();
+  });
+  child.on("exit", (code) => {
+    if (!stopping) {
+      process.exitCode = code ?? 1;
+      stop();
+    }
+  });
+}

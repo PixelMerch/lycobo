@@ -68,6 +68,12 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U lycoboai -d lycoboai"
           --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7.4-alpine
+        ports: ["56379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
     env:
       DATABASE_URL: postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai
       ALLOW_LOCAL_INTEGRATION: "true"
@@ -83,3 +89,4 @@ jobs:
       - run: git diff --exit-code -- packages/db
       - run: pnpm db:migrate
       - run: pnpm test:integration
+      - run: pnpm test:redis

@@ -4,7 +4,7 @@
 
 本地与远程长期保留 `main`、`dev`。默认在 `dev` 开发，先检查状态、fetch origin 并在可快进时同步；不覆盖用户改动，不 reset 或 force-push。验证后本地提交，只有用户明确授权才推送、开 PR、合并或发布。提交使用 Conventional Commits，见 CONTRIBUTING.md。
 
-项目固定 Node 24 / pnpm 10.34.7。Node 用于构建、迁移与隔离测试；线上 API 和后台消费由 Cloudflare Workers 承载。前端为 React/Vite，部署 Pages，图片进入私有 R2，任务传输使用 Queues；没有 Redis/BullMQ 服务。
+项目固定 Node 24 / pnpm 10.34.7。Node 用于构建、迁移与隔离测试；线上 API 和后台消费由 Cloudflare Workers 承载。前端为 React/Vite，部署 Pages，图片进入私有 R2，线上任务传输使用 Queues；本地任务传输使用 Redis Streams，不使用 BullMQ。
 
 ## 启动
 
@@ -16,7 +16,7 @@ docker compose up --build
 # 后台启动：docker compose up -d
 ```
 
-打开 `http://localhost:8081`（`http://localhost:5173` 同样可用）。Compose 启动本地 PostgreSQL 与 `studio`，自动向本地库应用已有迁移，再运行 Vite + Wrangler API／Queues 消费者。日志会打印 Web 和 API URL。首次构建安装依赖，后续使用容器缓存。
+打开 `http://localhost:8081`（`http://localhost:5173` 同样可用）。Compose 启动本地 PostgreSQL、Redis 与 `studio`，自动向本地库应用已有迁移，再运行 Vite + Wrangler API／生图消费者与 Redis 桥接进程。日志会打印 Web 和 API URL。首次构建安装依赖，后续使用容器缓存。
 
 ### 本地与线上隔离
 
@@ -25,18 +25,24 @@ docker compose up --build
 | PostgreSQL | Compose `postgres:5432`；宿主机映射 `127.0.0.1:55432` | `postgres-data` 卷 |
 | 图片对象存储 | Wrangler 模拟 R2；原件与缩略图沿用 UID 隔离路径 | `studio-state` 卷内 `.wrangler/state` |
 | 图片处理 | 本地 Images 模拟 | 输出进入本地 R2 |
-| 任务队列 | Wrangler 模拟 Cloudflare Queues | `studio-state` 卷 |
+| 任务队列 | Compose Redis Streams；宿主机映射 `127.0.0.1:56379` | `redis-data` 卷，AOF 持久化 |
 
 本地数据库、图片、队列均独立，不读取或写入线上 Supabase、R2 或 Queues。不会复制线上账号、积分、历史或图片，也不会自动创建账号和赠送积分。本地已有记录引用的图片若此前存放在其他卷，不能仅凭记录恢复文件。
 
 `pnpm dev` 不读取根 `.env` 的生产配置；Docker 也不注入 Supabase、Cloudflare 部署令牌或模型密钥。启动入口固定本地数据库地址，清除继承的生产凭据，拒绝 `remote: true` 绑定，关闭真实付费生图。根 `.env` 可继续保存部署配置，开发启动不会使用其中的线上数据库。`pnpm cloudflare:deploy`、远端迁移等显式运维命令仍有独立职责，不能作为本地启动命令。
 
-源码绑定挂载，前端热更新，Worker 修改后重建。Linux `node_modules` 使用独立卷；端口 8081、5173、8787、55432 仅发布到本机。Dockerfile 修改后执行 `docker compose up --build`；依赖修改后重启 `studio`。
+本地队列只保存 `{version, itemId}`。`redis-dev.mjs` 使用消费者组领取消息，心跳续租，执行完成后确认并删除消息；进程退出时未确认消息留在 Redis，租约过期后恢复。单条消息失败最多投递 4 次后进入本地死信流；数据库 outbox 仍是恢复意图的来源，数据库 claim 与不确定结果规则负责避免重复付费提交。桥接每 30 秒触发本地 outbox／租约维护。
+
+为复用同一套 R2/Images 和业务处理，本地入口生成被 Git 忽略的 `apps/{api,worker}/wrangler.local.json`：移除 Cloudflare Queue 绑定及 Cron，使用本地消费者服务绑定和仅监听 `127.0.0.1:8790` 的 Redis HTTP 桥接。内部端点使用每次启动随机生成的令牌，令牌仅进入本地 `.dev.vars`，不进入前端。线上 Wrangler 配置保持 Cloudflare Queues。正常开发使用根 `pnpm dev`／Compose，不重复启动独立消费者。
+
+Redis 健康状态纳入 `studio` 健康检查。Redis 故障时发送失败不会确认数据库 outbox；恢复后由维护任务补投。AOF 每秒同步，异常断电可能丢失最近一秒的传输数据，持久数据库 outbox 负责补偿；不要把 Redis 当作计费或任务状态来源。
+
+源码绑定挂载，前端热更新，Worker 修改后重建。Linux `node_modules` 使用独立卷；端口 8081、5173、8787、55432、56379 仅发布到本机。Dockerfile 修改后执行 `docker compose up --build`；依赖修改后重启 `studio`。
 
 ```sh
 docker compose logs -f studio
 docker compose restart studio
-docker compose stop studio postgres
+docker compose stop studio postgres redis
 ```
 
 停止／删除容器不会自动删除上述命名卷；不要执行 `docker compose down -v`。旧前端占用 8081 时先执行 `docker stop lycoboai-web-1`，不顺手删除旧容器、卷或孤立服务。
@@ -59,6 +65,7 @@ pnpm dev
 ```sh
 pnpm check
 DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW_LOCAL_INTEGRATION=true pnpm test:integration
+ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
 ```
 
 集成验证在独立数据库和本地 Cloudflare 模拟中执行；不会使用 Supabase 生产数据或付费模型。日常 UI 全量 E2E 默认留给远程 CI，关键交互按需执行相关文件，详见 [测试说明](testing.md)。

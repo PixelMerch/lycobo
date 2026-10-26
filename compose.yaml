@@ -1,15 +1,18 @@
 name: lycoboai
-# Isolated development: PostgreSQL, R2, Images and Queues are all local.
+# Isolated development: PostgreSQL, simulated R2/Images and Redis queues are local.
 services:
   studio:
     build:
       context: .
       dockerfile: Dockerfile.dev
     init: true
+    stop_grace_period: 90s
     working_dir: /workspace
     command: ["sh", "scripts/cloudflare/docker-dev.sh"]
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "127.0.0.1:8081:5173"
@@ -36,11 +39,23 @@ services:
       - /workspace/packages/storage/node_modules
       - studio-state:/workspace/.wrangler
     healthcheck:
-      test: ["CMD", "node", "-e", "Promise.all(['http://127.0.0.1:5173', 'http://127.0.0.1:8787/api/health/live'].map(async u => { const r = await fetch(u); if (!r.ok) throw new Error(String(r.status)); })).catch(() => process.exit(1))"]
+      test: ["CMD", "node", "-e", "Promise.all(['http://127.0.0.1:5173', 'http://127.0.0.1:8787/api/health/live', 'http://127.0.0.1:8790/health'].map(async u => { const r = await fetch(u); if (!r.ok) throw new Error(String(r.status)); })).catch(() => process.exit(1))"]
       interval: 10s
       timeout: 5s
       start_period: 120s
       retries: 6
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    ports:
+      - "127.0.0.1:56379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
   postgres:
     image: postgres:17-alpine
     environment:
@@ -58,5 +73,6 @@ services:
       retries: 10
 volumes:
   postgres-data:
+  redis-data:
   studio-dependencies:
   studio-state:

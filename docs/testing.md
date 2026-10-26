@@ -50,6 +50,15 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 不调用模型、不扣积分、不上传对象。迁移可以在空白 CI 库上验证；
 本地已有数据不能用清库方式测试。
 
+## 本地 Redis 集成
+
+```sh
+pnpm infra:up
+ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
+```
+
+仅接受 loopback Redis，每次创建独立 UUID 前缀并在 finally 删除自己的 Stream，不执行 FLUSHDB 或清理共享卷。覆盖只传任务 ID、消费者退出后未确认消息恢复、执行中心跳防抢占、单条消息有限重试及死信、HTTP 桥接认证和成功确认。使用 loopback HTTP fixture，不调用付费模型；数据库 claim／计费不变量由原 PostgreSQL 隔离集成检查覆盖。Infrastructure CI 同时运行生产 Cloudflare Queues 模拟验证和本地 Redis 验证。
+
 ## 需要继续补齐的产品测试
 
 鉴权/跨用户隔离、重复提交、回调重放、断线恢复、单图失败重试、

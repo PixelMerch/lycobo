@@ -6,6 +6,7 @@ if (enabled && !process.env.VAKV_API_KEY)
   throw new Error("Local generation requires an explicit provider key.");
 const common = {
   IMAGE_GENERATION_ENABLED: String(enabled),
+  ...(process.env.LOCAL_QUEUE_TOKEN ? { LOCAL_QUEUE_TOKEN: process.env.LOCAL_QUEUE_TOKEN } : {}),
   VAKV_ENABLE_IMAGE_EDITS: process.env.VAKV_ENABLE_IMAGE_EDITS ?? "false",
 };
 const configs = {
@@ -32,5 +33,5 @@ for (const [name, values] of Object.entries(configs))
     { mode: 0o600 },
   );
 console.info(
-  "Prepared ignored local Worker settings. PostgreSQL, R2, Images and Queues are local. Real generation is disabled by the development launcher.",
+  "Prepared ignored local Worker settings. PostgreSQL, R2 and Images are local; the development queue uses local Redis. Real generation is disabled by the development launcher.",
 );

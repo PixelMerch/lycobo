@@ -14,7 +14,7 @@
 | apps/worker/src | 队列消费者、生命周期与任务执行 |
 | packages/contracts | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖 |
 | packages/db | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY |
-| packages/queue | Cloudflare Queues 消息契约、持久 outbox 投递 |
+| packages/queue | ID-only 消息契约、持久 outbox 投递、开发专用 HTTP sender；线上使用 Cloudflare Queues |
 | packages/generation | 服务商契约、Vakv 同步生图适配与能力校验（真实渠道待验收） |
 | packages/storage | 私有 R2／UID 路径、Images binding 校验和缩略图；Node 本地存储供隔离测试 |
 | tests/e2e | 浏览器关键路径验收 |
@@ -66,7 +66,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 ## 进程与服务
 
-本地通过 `docker compose up` 启动本地 PostgreSQL 与 `studio`（Vite + Wrangler API/消费者）；入口为 `scripts/cloudflare/docker-dev.sh` 与 `dev.mjs`。启动环境由 `local-environment.mjs` 固定为本地连接并清除线上凭据。R2/Images/Queues 使用本地模拟；数据库、模拟状态和 Linux 依赖分别保存于 Docker 卷。具体命令见 [本地开发](docs/development.md)。
+本地通过 `docker compose up` 启动本地 PostgreSQL、Redis 与 `studio`（Vite + Wrangler API/消费者）；入口为 `scripts/cloudflare/docker-dev.sh` 与 `dev.mjs`。启动环境由 `local-environment.mjs` 固定为本地连接并清除线上凭据。R2/Images 使用本地模拟；本地队列使用 Redis Streams，`redis-dev.mjs` 通过认证桥接调用本地 Worker，生成的 `wrangler.local.json` 不含 Cloudflare Queue 绑定。数据库、模拟状态、Redis 和 Linux 依赖分别保存于 Docker 卷。具体命令见 [本地开发](docs/development.md)。
 
 - API：短请求、身份、授权、参数校验、业务编排。
 - Worker：有持久任务托管的后台工作，绝不能依赖浏览器连接。

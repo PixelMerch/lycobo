@@ -12,6 +12,8 @@ describe("local development isolation", () => {
     ASSET_PUBLIC_ORIGIN: "https://assets.example",
     VAKV_API_KEY: "paid-provider-key",
     LOCAL_IMAGE_GENERATION_ENABLED: "true",
+    LOCAL_REDIS_URL: "redis://remote.example:6379",
+    LOCAL_QUEUE_TOKEN: "production-token",
   };
   it("uses only Compose PostgreSQL in Docker, discarding production credentials and paid calls", () => {
     const env = localEnvironment(production, true);
@@ -27,10 +29,13 @@ describe("local development isolation", () => {
       expect(env).not.toHaveProperty(key);
     expect(env.LOCAL_IMAGE_GENERATION_ENABLED).toBe("false");
     expect(env.PATH).toBe(production.PATH);
+    expect(env.LOCAL_REDIS_URL).toBe("redis://redis:6379");
+    expect(env.LOCAL_QUEUE_TOKEN).not.toBe(production.LOCAL_QUEUE_TOKEN);
   });
   it("ignores a remote DATABASE_URL when running on the host", () => {
     const env = localEnvironment(production);
     expect(new URL(env.DATABASE_URL).hostname).toBe("127.0.0.1");
     expect(new URL(env.DATABASE_URL).port).toBe("55432");
+    expect(env.LOCAL_REDIS_URL).toBe("redis://127.0.0.1:56379");
   });
 });

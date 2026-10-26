@@ -47,7 +47,7 @@ docker compose up --build
 # 后续启动只需 docker compose up
 ```
 
-访问 <http://localhost:8081/>。Compose 启动本地 PostgreSQL，自动应用本地迁移，运行 Vite 与 Wrangler API／Queues 消费者并支持源码热更新。R2、Images 和 Queues 全部在本地模拟；数据库与图片保存在独立 Docker 卷。开发入口不连接线上 Supabase、R2 或 Queues，默认关闭付费生图。账号、积分及图片需要在本地单独准备。宿主机调试、日志与存储位置见 [本地开发](docs/development.md)。
+访问 <http://localhost:8081/>。Compose 启动本地 PostgreSQL 和 Redis，自动应用本地迁移，运行 Vite、Wrangler API 与生图消费者，支持源码热更新。R2、Images 在本地模拟，任务通过 Redis Streams 投递；数据库、图片与 Redis 分别保存在 Docker 卷。开发入口不连接线上 Supabase、R2 或 Queues，默认关闭付费生图。账号、积分及图片需要在本地单独准备。宿主机调试、日志与存储位置见 [本地开发](docs/development.md)。
 
 **Cloudflare 发布**：同仓库的 Pages、API Worker 和队列消费者使用统一配置，首次 `pnpm cloudflare:setup`，之后 `pnpm cloudflare:deploy`。账户开通、Hyperdrive、凭据和实际部署状态见 [Cloudflare 部署](docs/cloudflare-deployment.md)。
 
