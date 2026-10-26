@@ -1,17 +1,18 @@
-import { Button, EmptyState, Popover, Tabs } from "@heroui/react";
-import { IconChevronRight, IconPlus, IconX } from "@tabler/icons-react";
-import { lazy, Suspense, useRef, useState } from "react";
+import { Button, Popover, Tabs } from "@heroui/react";
+import { imageUnitCredits } from "@lycoboai/contracts";
+import { IconPlus, IconX } from "@tabler/icons-react";
+import { useId, useRef, useState } from "react";
+import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
+import { GenerationHistory } from "../../generation/history/generation-history";
+import { HistoryIndex } from "../../generation/history/history-index";
 import { TextileImageField } from "./textile-image-field";
 import { useTextileSetDraft } from "./textile-set-state";
 import { textileViewImages, textileViews } from "./textile-views";
 import { TextileViewsDialog } from "./textile-views-dialog";
+import { useTextileGeneration } from "./use-textile-generation";
 import "./textile-set.css";
-
-const LibraryDialog = lazy(() =>
-  import("../../assets/library-dialog").then((module) => ({ default: module.LibraryDialog })),
-);
 
 export function TextileSetPage() {
   const { mainImage, detailImage, views, ratio, update } = useTextileSetDraft();
@@ -19,7 +20,8 @@ export function TextileSetPage() {
   const viewsTrigger = useRef<HTMLButtonElement>(null);
   const viewsPressWasOpen = useRef<boolean | null>(null);
   const [viewsOpen, setViewsOpen] = useState(false);
-  const [libraryOpen, setLibraryOpen] = useState(false);
+  const generation = useTextileGeneration();
+  const costDescriptionId = useId();
   const selectedViews = textileViews.filter((view) => views.includes(view.id));
   return (
     <div className="workspace textile-workspace">
@@ -132,12 +134,27 @@ export function TextileSetPage() {
             size="lg"
             fullWidth
             className="primary-action generation-submit"
-            isDisabled
-            aria-description="家纺主图裂变功能即将上线"
+            isDisabled={!generation.canGenerate}
+            isPending={generation.submitting}
+            onPress={generation.submit}
+            aria-describedby={costDescriptionId}
           >
-            立即生成
+            {generation.submitting ? "正在提交…" : generation.pending ? "确认上次提交" : "立即生成"}
+            {!generation.pending && (
+              <span className="generate-credit-cost" aria-hidden="true">
+                <CreditCoin />
+                <span>{views.length * imageUnitCredits}</span>
+              </span>
+            )}
           </Button>
-          <p className="textile-service-status">主图裂变功能即将上线</p>
+          <span id={costDescriptionId} className="sr-only">
+            {generation.pending
+              ? "确认上次提交，不会重复扣费"
+              : `本次生成 ${views.length} 张，消耗 ${views.length * imageUnitCredits} 积分`}
+          </span>
+          {generation.unavailable && (
+            <p className="textile-service-status">当前服务尚未启用参考图生成</p>
+          )}
         </div>
       </section>
       <section className="results-panel" aria-label="家纺主图裂变内容">
@@ -148,34 +165,22 @@ export function TextileSetPage() {
             </Tabs.List>
           </Tabs.ListContainer>
           <Tabs.Panel id="history">
-            <EmptyState className="textile-history-empty">
-              <h2>家纺主图裂变将在这里展示</h2>
-              <p>上传主图，选择需要的视角，准备你的商品套图</p>
-            </EmptyState>
+            <GenerationHistory
+              tool="textile"
+              onRestore={({ draft, textileSet }) => {
+                if (!textileSet) return;
+                update({
+                  mainImage: draft.references[0] ?? null,
+                  detailImage: draft.references[1] ?? null,
+                  views: textileSet.views,
+                  ratio: draft.ratio,
+                });
+              }}
+            />
           </Tabs.Panel>
         </Tabs>
       </section>
-      <aside className="history-rail" aria-label="家纺主图裂变历史索引">
-        <h2 className="history-rail-title">
-          <Button
-            variant="tertiary"
-            className="history-rail-open"
-            aria-label="打开素材库"
-            onPress={() => setLibraryOpen(true)}
-          >
-            <span>我的素材</span>
-            <UiIcon icon={IconChevronRight} size="small" />
-          </Button>
-        </h2>
-        <div className="history-rail-list">
-          <p>暂无套图</p>
-        </div>
-      </aside>
-      {libraryOpen && (
-        <Suspense fallback={null}>
-          <LibraryDialog onClose={() => setLibraryOpen(false)} />
-        </Suspense>
-      )}
+      <HistoryIndex tool="textile" />
     </div>
   );
 }

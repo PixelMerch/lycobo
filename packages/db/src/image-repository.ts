@@ -20,6 +20,7 @@ export class ImageRepositoryError extends Error {
 export type ImagePrincipal = ImageScope & { role: "admin" | "member"; uid?: string };
 export type ClaimedImage = {
   itemId: string;
+  position: number;
   jobId: string;
   organizationId: string;
   userId: string;
@@ -285,8 +286,9 @@ export function openImageRepository(url: string, edge = false) {
         return { id: jobId, replayed: false };
       });
     },
-    async list(scope: ImageScope, limit: number, before?: string) {
+    async list(scope: ImageScope, limit: number, before?: string, tool?: "create" | "textile") {
       return sql`select ${jobView} from generation_jobs j where j.organization_id=${scope.organizationId}
+        ${tool ? (tool === "textile" ? sql`and j.input ? 'textileSet'` : sql`and not (j.input ? 'textileSet')`) : sql``}
         ${before ? sql`and (j.created_at,j.id) < (select created_at,id from generation_jobs where id=${before} and organization_id=${scope.organizationId})` : sql``}
         order by j.created_at desc,j.id desc limit ${limit}`;
     },
@@ -375,7 +377,7 @@ export function openImageRepository(url: string, edge = false) {
         // Match completion/reconciliation lock order to avoid sibling-item deadlocks.
         await tx`select id from generation_jobs where id=${candidate.job_id} for update`;
         const [row] =
-          await tx`select i.id,i.job_id,j.organization_id,j.user_id,j.input,j.provider_model from generation_job_items i join generation_jobs j on j.id=i.job_id
+          await tx`select i.id,i.position,i.job_id,j.organization_id,j.user_id,j.input,j.provider_model from generation_job_items i join generation_jobs j on j.id=i.job_id
           where i.id=${itemId} and i.status='queued' for update of i skip locked`;
         if (!row) return null;
         const input = imageGenerationInputSchema.parse(row.input);
@@ -386,6 +388,7 @@ export function openImageRepository(url: string, edge = false) {
         await recordImageEvent(tx, String(row.organization_id), "task", String(row.job_id));
         return {
           itemId,
+          position: Number(row.position),
           executionToken,
           jobId: String(row.job_id),
           organizationId: String(row.organization_id),

@@ -63,7 +63,7 @@ test("textile form has only required product inputs and retains confirmed choice
   const ratios = form.getByRole("region", { name: "图片比例", exact: true });
   await ratios.getByRole("button", { name: "下一页画面比例", exact: true }).click();
   await ratios.getByRole("radio", { name: "3:4", exact: true }).click();
-  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeEnabled();
   await page.getByRole("link", { name: "创作", exact: true }).click();
   await page.getByRole("link", { name: "AI 电商", exact: true }).click();
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);

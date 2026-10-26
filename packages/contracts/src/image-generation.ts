@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { textileGenerationSchema } from "./textile-generation";
 
 export const imageLimits = {
   uploadBytes: 10 * 1024 * 1024,
@@ -78,13 +79,28 @@ export const imageGenerationInputSchema = z
       .max(10)
       .default([])
       .refine((ids) => new Set(ids).size === ids.length, "Duplicate references"),
-    count: z.number().int().min(1).max(4).default(1),
+    count: z.number().int().min(1).max(10).default(1),
     // Keep absent on legacy snapshots so their stored idempotency hashes remain valid.
     quality: imageQualitySchema.optional(),
     // Absent on legacy inputs, preserving their original idempotency hashes.
     localEdit: imageLocalEditSchema.optional(),
+    textileSet: textileGenerationSchema.optional(),
   })
   .superRefine((input, ctx) => {
+    if (
+      input.textileSet
+        ? input.count !== input.textileSet.views.length ||
+          input.referenceAssetIds.length < 1 ||
+          input.referenceAssetIds.length > 2 ||
+          !!input.localEdit
+        : input.count > 4
+    )
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Textile views require one output each and one or two references; ordinary tasks allow four outputs",
+      });
+
     if (
       input.localEdit &&
       (input.count !== 1 ||

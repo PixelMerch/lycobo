@@ -103,3 +103,11 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
 验证八个旧名均消失，表 OID、记录、素材／修改关联、提交幂等和退款唯一性保持，
 数据库函数不再引用旧表名。后续图片／钱包／SSE 检查全部在无兼容视图的结构上运行。
 测试数据库和临时迁移目录结束后清理，不操作现有业务数据，也不调用付费模型。
+
+## 家纺主图裂变
+
+`packages/generation/src/textile-generation.test.ts` 验证10个独立服务端视角预设、版本、重复与未知视角、普通任务4张上限和一视角一张约束；图片API测试验证客户端模型／提示词／质量无法覆盖服务端固定配置。
+
+`verify-textile-generation.ts` 纳入 worker `test:images`，在隔离临时库与私有临时图片目录中验证10张提交、原子扣200积分及10条outbox、同键重放、跨组织引用拒绝、工具历史筛选、每个position不同提示词、重复消费不调用服务商、9成功1失败净扣180积分、失败重试仅保留原position。服务商为本地注入fixture，未调用外部模型。根集成命令仍覆盖Queues/R2/Images与鉴权SSE。
+
+`tests/e2e/textile-generation.spec.ts` 使用接口fixture验证选中10视角后提交10张与两张有序参考、历史视角标记、部分失败与实时更新、刷新和重新编辑、普通创作历史隔离，以及丢失响应后刷新仍复用同一幂等键。全量浏览器测试仍由远程CI运行。

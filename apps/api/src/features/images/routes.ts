@@ -12,6 +12,7 @@ import {
   ImageRepositoryError,
   WalletError,
 } from "@lycoboai/db";
+import { normalizeTextileGeneration } from "@lycoboai/generation";
 import { type ImageStore, ImageValidationError, maxImageBytes } from "@lycoboai/storage/core";
 import { type Context, Hono } from "hono";
 import { z } from "zod";
@@ -222,14 +223,15 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const key = id.safeParse(c.req.header("Idempotency-Key"));
     if (!input.success || !key.success)
       return fail(c, "VALIDATION_ERROR", "请检查参数和 Idempotency-Key", 400);
+    const normalized = normalizeTextileGeneration(input.data);
     try {
-      deps.validate(input.data);
+      deps.validate(normalized);
     } catch {
       return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "模型分辨率或参考编辑能力尚未验证", 400);
     }
     const result = await deps.repository.create(
       c.get("principal"),
-      input.data,
+      normalized,
       key.data,
       imageUnitCredits,
     );
@@ -260,9 +262,11 @@ export function imageRoutes(deps: ImageApiDependencies) {
       .default(20)
       .safeParse(c.req.query("limit"));
     const before = id.optional().safeParse(c.req.query("before"));
-    if (!limit.success || !before.success) return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
+    const tool = z.enum(["create", "textile"]).optional().safeParse(c.req.query("tool"));
+    if (!limit.success || !before.success || !tool.success)
+      return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
     const scope = c.get("principal");
-    const jobs = await deps.repository.list(scope, limit.data, before.data);
+    const jobs = await deps.repository.list(scope, limit.data, before.data, tool.data);
     return c.json({ data: delivery ? await delivery.jobs(scope, jobs) : jobs });
   });
   app.get("/image-tasks/:id", async (c) => {

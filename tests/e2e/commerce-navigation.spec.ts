@@ -40,7 +40,7 @@ test("commerce hover cards share model styling and preserve the current creation
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(menu.getByRole("menuitem")).toHaveCount(1);
   const card = menu.getByRole("menuitem", { name: "查看家纺主图裂变", exact: true });
-  await expect(card).toContainText("即将上线");
+  await expect(card).not.toContainText("即将上线");
   await card.click();
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
   await expect(page.getByRole("heading", { name: "家纺主图裂变", exact: true })).toBeVisible();

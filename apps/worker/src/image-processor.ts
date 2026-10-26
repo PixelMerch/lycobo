@@ -3,6 +3,7 @@ import {
   type CapabilityOverrides,
   generateVakvImage,
   reportGenerationTiming,
+  textileItemInput,
   type VakvConfig,
   VakvError,
   validateModelInput,
@@ -41,7 +42,7 @@ export async function processImageItem(itemId: string, deps: ImageProcessorDepen
     timing("reference_read", referencesStarted);
     submitted = true;
     const result = await generateVakvImage(
-      job.input,
+      textileItemInput(job.input, job.position),
       references,
       deps.provider,
       job.itemId,

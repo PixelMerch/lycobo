@@ -1,4 +1,4 @@
-/** Navigation metadata only; dedicated set generation is not connected yet. */
+/** AI commerce navigation metadata. */
 export const commerceTools = [
   {
     id: "textile-set",
@@ -7,6 +7,6 @@ export const commerceTools = [
     image: "/studio/set-thumb.webp",
     description: "一张家纺主图，延展多视角套图",
     capabilities: "多视角 · 细节特写",
-    status: "即将上线",
+    status: "",
   },
 ] as const;

@@ -386,3 +386,10 @@
     gap: 10px;
   }
 }
+
+.textile-result-view {
+  margin: 0 0 8px;
+  color: #eee;
+  font-size: 14px;
+  line-height: 20px;
+}

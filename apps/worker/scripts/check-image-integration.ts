@@ -24,6 +24,7 @@ import { createApp } from "../../api/src/app";
 import { processImageItem } from "../src/image-processor";
 import { verifyGenerationMigration } from "./verify-generation-migration";
 import { verifyLocalEdits } from "./verify-local-edits";
+import { verifyTextileGeneration } from "./verify-textile-generation";
 import { verifyWallet } from "./verify-wallet";
 
 if (process.env.ALLOW_LOCAL_INTEGRATION !== "true")
@@ -537,6 +538,7 @@ try {
     404,
   );
   await verifyWallet(repository, sql);
+  await verifyTextileGeneration(repository, sql, store, png);
   await verifyLocalEdits(repository, sql, async (path, init) => app.request(path, init));
   await sql`update generation_api_keys set revoked_at=now() where id=${first.keyId}`;
   assert.equal((await app.request("/api/v1/image-models", { headers })).status, 401);

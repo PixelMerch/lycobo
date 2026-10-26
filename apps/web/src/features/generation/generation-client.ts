@@ -81,10 +81,10 @@ export function useImageModels() {
       ),
   });
 }
-export function useImageHistory() {
+export function useImageHistory(tool: "create" | "textile" = "create") {
   const session = useImageSession();
   return useInfiniteQuery({
-    queryKey: ["image-tasks"],
+    queryKey: tool === "create" ? ["image-tasks"] : ["image-tasks", tool],
     enabled: session.isSuccess,
     initialPageParam: "",
     retry: false,
@@ -92,9 +92,12 @@ export function useImageHistory() {
     queryFn: async ({ pageParam, signal }) =>
       imageTasksResponseSchema.parse(
         await (
-          await imageRequest(`image-tasks?limit=20${pageParam ? `&before=${pageParam}` : ""}`, {
-            signal,
-          })
+          await imageRequest(
+            `image-tasks?limit=20&tool=${tool}${pageParam ? `&before=${pageParam}` : ""}`,
+            {
+              signal,
+            },
+          )
         ).json(),
       ),
     getNextPageParam: (last) => (last.data.length === 20 ? last.data.at(-1)?.id : undefined),
@@ -190,12 +193,14 @@ export function useGenerateImage() {
       source,
       retryJobId,
       localEdit,
+      textileSet,
     }: {
       model: ModelId;
       draft: Draft;
       source?: string;
       retryJobId?: string;
       localEdit?: import("@lycoboai/contracts").ImageLocalEdit;
+      textileSet?: import("@lycoboai/contracts").TextileGeneration | undefined;
     }) => {
       if (!session.data) throw new Error("请先登录工作台。");
       const pendingKey = pendingStorageKey(session.data);
@@ -235,6 +240,7 @@ export function useGenerateImage() {
           count: Number(draft.count),
           referenceAssetIds,
           ...(localEdit ? { localEdit } : {}),
+          ...(textileSet ? { textileSet } : {}),
         });
         pending = { key: crypto.randomUUID(), input, source, retryJobId };
         // Retain the same request after a lost response or reload: never create another paid task blindly.

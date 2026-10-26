@@ -9,8 +9,8 @@ import { GenerationLoading, statusLabel } from "../generation-status";
 import { useStudioStore } from "../studio-state";
 import { scrollToHistoryTask } from "./history-navigation";
 
-export function HistoryIndex() {
-  const query = useImageHistory();
+export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" }) {
+  const query = useImageHistory(tool);
   const jobs = query.data?.pages.flatMap((page) => page.data) ?? [];
   const activeId = useStudioStore((s) => s.activeHistoryId);
   const setActiveId = useStudioStore((s) => s.setActiveHistoryId);
@@ -31,7 +31,10 @@ export function HistoryIndex() {
   return (
     <>
       {/* The heading stays outside the scroller so the list can never scroll it away. */}
-      <aside className="history-rail" aria-label="历史索引">
+      <aside
+        className="history-rail"
+        aria-label={tool === "textile" ? "家纺主图裂变历史索引" : "历史索引"}
+      >
         <h2 className="history-rail-title">
           <Button
             variant="tertiary"

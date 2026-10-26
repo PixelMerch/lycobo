@@ -113,6 +113,20 @@
       "when": 1792673132865,
       "tag": "0015_remove_legacy_views",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792995362477,
+      "tag": "0016_textile_generation_count",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792995823226,
+      "tag": "0017_textile_item_positions",
+      "breakpoints": true
     }
   ]
 }

@@ -44,7 +44,8 @@ export function CommerceNavigation({
             <span className="feature-tool-title">{tool.name}</span>
             <span className="feature-tool-description">{tool.description}</span>
             <span className="feature-tool-capabilities">
-              {tool.capabilities} · {tool.status}
+              {tool.capabilities}
+              {tool.status ? ` · ${tool.status}` : ""}
             </span>
           </span>
         </Dropdown.Item>

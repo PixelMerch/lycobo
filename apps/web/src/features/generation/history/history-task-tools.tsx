@@ -4,6 +4,7 @@ import {
   imageJobSchema,
   imageUnitCredits,
   publicImageModel,
+  type TextileGeneration,
 } from "@lycoboai/contracts";
 import { IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
@@ -41,10 +42,15 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
     </div>
   );
 }
+export type HistoryRestore = (value: {
+  model: ModelId;
+  draft: Draft;
+  textileSet?: TextileGeneration | undefined;
+}) => void;
 async function taskDraft(
   job: ImageJob,
   client: QueryClient,
-): Promise<{ model: ModelId; draft: Draft }> {
+): Promise<{ model: ModelId; draft: Draft; textileSet?: TextileGeneration | undefined }> {
   const input =
     job.input ??
     (
@@ -59,6 +65,7 @@ async function taskDraft(
   if (!input) throw new Error("任务输入不完整，无法恢复，请重新创作。");
   return {
     model: publicImageModel(input.model),
+    textileSet: input.textileSet,
     draft: {
       prompt: input.prompt,
       ratio: input.aspectRatio,
@@ -74,7 +81,13 @@ async function taskDraft(
     },
   };
 }
-export function HistoryTaskActions({ job }: { job: ImageJob }) {
+export function HistoryTaskActions({
+  job,
+  onRestore,
+}: {
+  job: ImageJob;
+  onRestore?: HistoryRestore | undefined;
+}) {
   const client = useQueryClient();
   const [regenerateOpen, setRegenerateOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -107,7 +120,12 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
     : job.requested_count;
   const unitCredits = retrying ? (job.unit_credits ?? imageUnitCredits) : imageUnitCredits;
   const regenerateContent = `本次消耗 ${count * unitCredits} 积分`;
-  const restore = ({ model, draft }: Awaited<ReturnType<typeof taskDraft>>) => {
+  const restore = (value: Awaited<ReturnType<typeof taskDraft>>) => {
+    if (onRestore) {
+      onRestore(value);
+      return;
+    }
+    const { model, draft } = value;
     useStudioStore.getState().updateDraft(model, draft);
     useStudioStore.getState().setActiveModel(model);
     requestAnimationFrame(() =>
@@ -123,6 +141,7 @@ export function HistoryTaskActions({ job }: { job: ImageJob }) {
     try {
       generation.mutate({
         ...(await taskDraft(job, client)),
+        ...(job.input?.textileSet ? { source: "textile-set" } : {}),
         ...(["failed", "partially_failed", "needs_reconciliation"].includes(job.status)
           ? { retryJobId: job.id }
           : {}),

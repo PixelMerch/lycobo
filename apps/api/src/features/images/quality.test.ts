@@ -8,7 +8,7 @@ import { createApp } from "../../app";
 const unexpected = async (): Promise<never> => {
   throw new Error("Unexpected dependency call");
 };
-function fixture() {
+function fixture(editsEnabled = false) {
   const create = vi
     .fn<ImageRepository["create"]>()
     .mockResolvedValue({ id: crypto.randomUUID(), replayed: false });
@@ -56,7 +56,7 @@ function fixture() {
     store,
     enabled: true,
     unitCredits: 1,
-    validate: validateModelInput,
+    validate: (input) => validateModelInput(input, {}, editsEnabled),
     resolutions: supportedResolutions,
   });
   const submit = (quality?: unknown) =>
@@ -118,4 +118,48 @@ it("advertises and enforces the same per-model resolution policy", async () => {
     }
   }
   expect(create).toHaveBeenCalledTimes(9);
+});
+
+it("normalizes textile presets on the server and rejects missing references", async () => {
+  const { app, create } = fixture(true);
+  const headers = {
+    Authorization: "Bearer fixture",
+    "Content-Type": "application/json",
+    "Idempotency-Key": crypto.randomUUID(),
+  };
+  const input = {
+    model: "gpt-image-2",
+    prompt: "untrusted client preset",
+    resolution: "4K",
+    quality: "high",
+    count: 2,
+    referenceAssetIds: [crypto.randomUUID()],
+    textileSet: { version: 1, views: ["front", "fabric"] },
+  };
+  expect(
+    (
+      await app.request("/api/v1/image-tasks", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(input),
+      })
+    ).status,
+  ).toBe(202);
+  expect(create.mock.calls[0]?.[1]).toMatchObject({
+    model: "gpt-image-2.5",
+    resolution: "1K",
+    quality: "medium",
+    count: 2,
+    prompt: "家纺主图裂变：正面、面料特写。每个视角分别生成一张图片。",
+  });
+  expect(
+    (
+      await app.request("/api/v1/image-tasks", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ ...input, referenceAssetIds: [] }),
+      })
+    ).status,
+  ).toBe(400);
+  expect(create).toHaveBeenCalledTimes(1);
 });

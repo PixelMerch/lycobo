@@ -1,17 +1,7 @@
 /** Camera angles for the home-textile main-image variations tool. */
-export const textileViews = [
-  { id: "overhead-wide", name: "俯拍全景" },
-  { id: "overhead-close", name: "俯拍近景" },
-  { id: "close-up", name: "近距离特写" },
-  { id: "pillow", name: "枕头特写" },
-  { id: "bed-end", name: "床尾特写" },
-  { id: "angled-overhead", name: "45度角俯拍" },
-  { id: "front", name: "正面" },
-  { id: "angled-level", name: "45度角平拍" },
-  { id: "draped", name: "被子拖地" },
-  { id: "fabric", name: "面料特写" },
-] as const;
-export type TextileViewId = (typeof textileViews)[number]["id"];
+export { type TextileViewId, textileViews } from "@lycoboai/contracts";
+
+import type { TextileViewId } from "@lycoboai/contracts";
 
 /** Static AI-generated examples only; never submitted as user reference images. */
 export const textileViewImages = {

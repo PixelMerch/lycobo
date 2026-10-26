@@ -32,12 +32,14 @@ export function HistoryImagePreview({
   images: initialImages,
   assetId,
   onClose,
+  tool = "create",
 }: {
   images: PreviewImage[];
+  tool?: "create" | "textile";
   assetId: string;
   onClose: () => void;
 }) {
-  const query = useImageHistory();
+  const query = useImageHistory(tool);
   const [images, setImages] = useState(initialImages);
   const loadMore = async () => {
     const result = await query.fetchNextPage({ cancelRefetch: false });

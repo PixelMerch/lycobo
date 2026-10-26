@@ -71,7 +71,7 @@ export function useImageEvents() {
           }
           if (taskIds.has(id)) return;
           let found = false;
-          client.setQueryData<History>(["image-tasks"], (current) => {
+          client.setQueriesData<History>({ queryKey: ["image-tasks"] }, (current) => {
             if (!current) return current;
             return {
               ...current,
