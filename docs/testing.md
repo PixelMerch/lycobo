@@ -113,3 +113,5 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
 `tests/e2e/textile-generation.spec.ts` 使用接口fixture验证选中10视角后提交10张与六张有序参考、历史视角标记、部分失败与实时更新、刷新和重新编辑、普通创作历史隔离，以及丢失响应后刷新仍复用同一幂等键。全量浏览器测试仍由远程CI运行。
 
 结果布局回归 `generation-result-layout.spec.ts` 验证单图全宽原比例、多图中的失败／待确认项保持同列正方形且不跨行。供应商适配器单测分别覆盖响应头等待与响应体等待超时，确认`PROVIDER_TIMEOUT`仍为未知收费结果并且只调用一次，不自动重试。默认总超时600000ms，租约在其上增加60000ms，Redis桥接请求保留610000ms上限。
+
+单图卡片重试由`card-image-retry.spec.ts`验证hover、键盘和触屏入口、单张金额确认、取消不提交、仅传itemId及丢失响应后刷新同键重放。隔离verify-textile-generation覆盖其他子项仍排队时仅替换选中未决项、另一个失败项不变、单次退款／扣费、同键换图拒绝与旧执行完成隔离。命名迁移回归先单独验证0015的数据保全，再应用后续扩展迁移，避免把新增可空列误判为旧数据变化。

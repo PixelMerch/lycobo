@@ -648,6 +648,7 @@ export const generationRetries = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id),
+    targetItemId: uuid("target_item_id").references(() => generationJobItems.id),
     jobId: uuid("job_id").notNull(),
     key: uuid("idempotency_key").notNull(),
     createdAt: createdAt(),

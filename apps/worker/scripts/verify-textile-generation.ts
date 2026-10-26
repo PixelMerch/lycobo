@@ -131,4 +131,63 @@ export async function verifyTextileGeneration(
     )[0]?.n,
     11,
   );
+  // A card retries one unresolved item while another item remains queued.
+  const batch = await repository.create(
+    owner,
+    imageGenerationInputSchema.parse({
+      model: "gpt-image-2",
+      prompt: "targeted-retry-fixture",
+      count: 3,
+    }),
+    crypto.randomUUID(),
+  );
+  const batchJob = imageJobSchema.parse(
+    JSON.parse(JSON.stringify(await repository.get(owner, batch.id))),
+  );
+  const firstItem = batchJob.items[0],
+    secondItem = batchJob.items[1],
+    thirdItem = batchJob.items[2];
+  assert(firstItem && secondItem && thirdItem);
+  const unresolved = await repository.claim(firstItem.id, "targeted-fixture", 60000);
+  const rejected = await repository.claim(secondItem.id, "targeted-fixture", 60000);
+  assert(unresolved && rejected);
+  await repository.finish(unresolved, { errorCode: "PROVIDER_TIMEOUT", unknown: true });
+  await repository.finish(rejected, { errorCode: "PROVIDER_HTTP_400", unknown: false });
+  const beforeTargeted = (await repository.wallet(owner)).balance;
+  const targetedKey = crypto.randomUUID();
+  const targetHeaders = {
+    Authorization: `Bearer ${owner.token}`,
+    "Content-Type": "application/json",
+    "Idempotency-Key": targetedKey,
+  };
+  const targetRequest = (itemId: string) =>
+    app.request(`/api/v1/image-tasks/${batch.id}/retry`, {
+      method: "POST",
+      headers: targetHeaders,
+      body: JSON.stringify({ itemId }),
+    });
+  assert.equal((await targetRequest(firstItem.id)).status, 202);
+  assert.equal((await targetRequest(firstItem.id)).status, 200);
+  assert.equal((await targetRequest(secondItem.id)).status, 409);
+  const afterTargeted = imageJobSchema.parse(
+    JSON.parse(JSON.stringify(await repository.get(owner, batch.id))),
+  );
+  assert.equal(afterTargeted.items.find((item) => item.position === 1)?.id, secondItem.id);
+  assert.equal(afterTargeted.items.find((item) => item.position === 1)?.status, "failed");
+  assert.equal(afterTargeted.items.find((item) => item.position === 2)?.id, thirdItem.id);
+  assert.equal(afterTargeted.items.find((item) => item.position === 2)?.status, "queued");
+  assert.notEqual(afterTargeted.items.find((item) => item.position === 0)?.id, firstItem.id);
+  assert.equal((await repository.wallet(owner)).balance, beforeTargeted);
+  await repository.finish(unresolved, { errorCode: "STALE_COMPLETION", unknown: false });
+  assert.equal((await repository.wallet(owner)).balance, beforeTargeted);
+  assert.equal(
+    (await sql`select count(*)::int as n from generation_retries where job_id=${batch.id}`)[0]?.n,
+    1,
+  );
+  assert.equal(
+    (
+      await sql`select count(*)::int as n from generation_outbox where item_id in (select id from generation_job_items where job_id=${batch.id})`
+    )[0]?.n,
+    4,
+  );
 }

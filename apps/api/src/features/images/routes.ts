@@ -2,6 +2,7 @@ import {
   assetTypeSchema,
   imageGenerationInputSchema,
   imageModelCatalog,
+  imageTaskRetrySchema,
   imageUnitCredits,
   type StoredImage,
 } from "@lycoboai/contracts";
@@ -242,6 +243,9 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const jobId = id.safeParse(c.req.param("jobId"));
     const key = id.safeParse(c.req.header("Idempotency-Key"));
     if (!jobId.success || !key.success) return fail(c, "VALIDATION_ERROR", "重试参数无效", 400);
+    const body = await c.req.text();
+    const target = imageTaskRetrySchema.safeParse(body ? JSON.parse(body) : {});
+    if (!target.success) return fail(c, "VALIDATION_ERROR", "重试图片参数无效", 400);
     const scope = c.get("principal");
     const job = await deps.repository.get(scope, jobId.data);
     if (!job) return fail(c, "NOT_FOUND", "任务不存在", 404);
@@ -250,7 +254,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
     } catch {
       return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "模型能力尚未验证", 400);
     }
-    const result = await deps.repository.retry(scope, jobId.data, key.data);
+    const result = await deps.repository.retry(scope, jobId.data, key.data, target.data.itemId);
     return c.json(result, result.replayed ? 200 : 202);
   });
   app.get("/image-tasks", async (c) => {

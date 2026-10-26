@@ -234,7 +234,7 @@ export function openImageRepository(url: string, edge = false) {
         return { id, replayed: false };
       });
     },
-    async retry(scope: ImageScope, jobId: string, key: string) {
+    async retry(scope: ImageScope, jobId: string, key: string, itemId?: string) {
       return sql.begin(async (tx) => {
         const members =
           await tx`select user_id from organization_members where organization_id=${scope.organizationId} and user_id=${scope.userId} for share`;
@@ -243,17 +243,20 @@ export function openImageRepository(url: string, edge = false) {
           await tx`select id,status,unit_credits from generation_jobs where id=${jobId} and organization_id=${scope.organizationId} for update`;
         if (!job) throw new ImageRepositoryError("NOT_FOUND");
         const [previous] =
-          await tx`select job_id from generation_retries where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
+          await tx`select job_id,target_item_id from generation_retries where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
         if (previous) {
-          if (previous.job_id !== jobId) throw new ImageRepositoryError("IDEMPOTENCY_CONFLICT");
+          if (previous.job_id !== jobId || (previous.target_item_id ?? undefined) !== itemId)
+            throw new ImageRepositoryError("IDEMPOTENCY_CONFLICT");
           return { id: jobId, replayed: true };
         }
         const items =
           await tx`select id,position,status,error_code from generation_job_items where job_id=${jobId} and superseded_at is null order by position for update`;
-        if (items.some((i) => i.status === "queued" || i.status === "running"))
+        if (!itemId && items.some((i) => i.status === "queued" || i.status === "running"))
           throw new ImageRepositoryError("STATE_CONFLICT");
         const failed = items.filter(
-          (i) => i.status === "failed" || i.status === "needs_reconciliation",
+          (i) =>
+            (!itemId || i.id === itemId) &&
+            (i.status === "failed" || i.status === "needs_reconciliation"),
         );
         if (!failed.length) throw new ImageRepositoryError("STATE_CONFLICT");
         // Explicit user retry retires unresolved attempts before refund/recharge.
@@ -267,7 +270,7 @@ export function openImageRepository(url: string, edge = false) {
         const wallet = await ensureWallet(tx, scope);
         if (wallet.balance < Number(job.unit_credits) * failed.length)
           throw new ImageRepositoryError("INSUFFICIENT_CREDITS");
-        await tx`insert into generation_retries (organization_id,user_id,job_id,idempotency_key) values (${scope.organizationId},${scope.userId},${jobId},${key})`;
+        await tx`insert into generation_retries (organization_id,user_id,job_id,idempotency_key,target_item_id) values (${scope.organizationId},${scope.userId},${jobId},${key},${itemId ?? null})`;
         for (const item of failed) {
           await tx`update generation_job_items set superseded_at=now() where id=${item.id}`;
           const itemId = randomUUID();

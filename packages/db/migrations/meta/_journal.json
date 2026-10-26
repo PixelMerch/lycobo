@@ -127,6 +127,13 @@
       "when": 1792995823226,
       "tag": "0017_textile_item_positions",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793001779687,
+      "tag": "0018_targeted_image_retry",
+      "breakpoints": true
     }
   ]
 }

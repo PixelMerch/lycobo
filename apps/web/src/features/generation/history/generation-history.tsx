@@ -193,6 +193,9 @@ export function GenerationHistory({
                                 : "生成结果和积分状态正在确认，请稍后查看。"}
                           </p>
                         )}
+                        {(item.status === "failed" || item.status === "needs_reconciliation") && (
+                          <HistoryTaskActions job={job} item={item} />
+                        )}
                       </div>
                     )}
                   </div>

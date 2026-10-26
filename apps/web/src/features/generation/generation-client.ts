@@ -6,6 +6,7 @@ import {
   imageModelsResponseSchema,
   imageSessionResponseSchema,
   imageSubmissionResponseSchema,
+  imageTaskRetrySchema,
   imageTasksResponseSchema,
   imageUploadResponseSchema,
 } from "@lycoboai/contracts";
@@ -139,6 +140,7 @@ function pendingSubmission(pendingKey: string): {
   key: string;
   input: ImageGenerationInput;
   retryJobId?: string | undefined;
+  retryItemId?: string | undefined;
   source?: string | undefined;
 } | null {
   const raw = sessionStorage.getItem(pendingKey);
@@ -156,6 +158,10 @@ function pendingSubmission(pendingKey: string): {
     key: value.key,
     retryJobId:
       "retryJobId" in value && typeof value.retryJobId === "string" ? value.retryJobId : undefined,
+    retryItemId:
+      "retryItemId" in value
+        ? imageTaskRetrySchema.parse({ itemId: value.retryItemId }).itemId
+        : undefined,
     input: imageGenerationInputSchema.parse(value.input),
     source: "source" in value && typeof value.source === "string" ? value.source : undefined,
   };
@@ -192,6 +198,7 @@ export function useGenerateImage() {
       draft,
       source,
       retryJobId,
+      retryItemId,
       localEdit,
       textileSet,
     }: {
@@ -199,6 +206,7 @@ export function useGenerateImage() {
       draft: Draft;
       source?: string;
       retryJobId?: string;
+      retryItemId?: string;
       localEdit?: import("@lycoboai/contracts").ImageLocalEdit;
       textileSet?: import("@lycoboai/contracts").TextileGeneration | undefined;
     }) => {
@@ -242,7 +250,7 @@ export function useGenerateImage() {
           ...(localEdit ? { localEdit } : {}),
           ...(textileSet ? { textileSet } : {}),
         });
-        pending = { key: crypto.randomUUID(), input, source, retryJobId };
+        pending = { key: crypto.randomUUID(), input, source, retryJobId, retryItemId };
         // Retain the same request after a lost response or reload: never create another paid task blindly.
         sessionStorage.setItem(pendingKey, JSON.stringify(pending));
         window.dispatchEvent(new Event(pendingEvent));
@@ -257,7 +265,9 @@ export function useGenerateImage() {
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Idempotency-Key": pending.key },
-                body: JSON.stringify(pending.input),
+                body: JSON.stringify(
+                  pending.retryItemId ? { itemId: pending.retryItemId } : pending.input,
+                ),
               },
             )
           ).json(),

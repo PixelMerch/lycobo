@@ -3850,3 +3850,43 @@ p.home-hero-kicker {
     height: 44px;
   }
 }
+
+.generation-placeholder.generation-failed {
+  position: relative;
+}
+.generation-retry-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #343434;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease;
+}
+.generation-placeholder:is(:hover, :focus-within) .generation-retry-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+.generation-retry-button.button {
+  gap: 8px;
+  color: #fff;
+  background: #ffffff14;
+}
+.generation-retry-button.button:is(:hover, [data-hovered="true"]) {
+  background: #ffffff24;
+}
+@media (hover: none), (pointer: coarse) {
+  .generation-retry-overlay {
+    position: static;
+    margin-top: 8px;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .generation-retry-overlay {
+    transition: none;
+  }
+}

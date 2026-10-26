@@ -203,3 +203,9 @@ Worker 以 `Image generation stage timing` 输出结构化分段计时，包含 
 公网同源5MB静态资源对照发现速度明显波动；显式本机代理和Accept-Encoding调整均没有稳定改善，因此未修改全局代理、固定IP或盲目切换生成接口。不能宣称吞吐问题已修复。
 
 本次响应未通过图片结构或base64校验，状态保持 needs_reconciliation，没有保存成功图片，也没有自动重试/退费。旧日志没有保存响应正文，不能追溯具体格式差异。后续新增 provider_invalid_response_shape / provider_invalid_base64 安全分类，并兼容供应商 X-Oneapi-Request-Id 响应头，便于对照上游日志；不记录图片内容。
+
+## 单图重试
+
+`POST /image-tasks/:jobId/retry` 支持可选JSON字段 `itemId`，仍要求Idempotency-Key与身份验证。省略字段兼容旧客户端整批重试（旧客户端发送的完整input仍忽略，执行始终读取服务端存储输入）；传入时仅允许当前任务未被替代的failed／needs_reconciliation项，其他图片可以继续排队或执行。已成功图片不可通过此入口重试，异步旧尝试完成不会覆盖新尝试。
+
+事务内按既有任务／子项锁顺序校验归属，必要时退休未决尝试并记录操作者，按原单价退款／重新扣款一次，只新增当前position的子项与outbox。generation_retries.target_item_id将幂等键绑定具体目标，重复请求回放，同键换图或切换批量被拒绝；旧行NULL不改变批量语义。丢失响应时浏览器保留retryJobId／retryItemId与原幂等键，刷新后确认原请求。迁移0018须先于API启用此功能，线上发布仍需单独授权。

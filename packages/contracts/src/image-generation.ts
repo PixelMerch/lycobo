@@ -228,6 +228,7 @@ export const imageModelsResponseSchema = z.object({
     z.object({ id: z.enum(imageModelIds), enabledResolutions: z.array(imageResolutionSchema) }),
   ),
 });
+export const imageTaskRetrySchema = z.object({ itemId: z.uuid().optional() });
 export const imageSubmissionResponseSchema = z.object({ id: z.uuid(), replayed: z.boolean() });
 export const imageUploadResponseSchema = z.object({
   id: z.uuid(),

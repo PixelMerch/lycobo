@@ -47,6 +47,7 @@ export async function verifyGenerationMigration(databaseUrl: string) {
         ),
       })
       .parse(JSON.parse(await readFile(path.join(migrations, "meta/_journal.json"), "utf8")));
+    const through15 = { ...journal, entries: journal.entries.filter((entry) => entry.idx <= 15) };
     const through14 = { ...journal, entries: journal.entries.filter((entry) => entry.idx <= 14) };
     journal.entries = journal.entries.filter((entry) => entry.idx <= 13);
     await mkdir(path.join(directory, "meta"));
@@ -137,7 +138,14 @@ export async function verifyGenerationMigration(databaseUrl: string) {
     };
     await assertAliases(true);
     await sql`drop view legacy_dependency_fixture`;
-    migrate();
+    await writeFile(path.join(directory, "meta/_journal.json"), JSON.stringify(through15));
+    const contraction = through15.entries.find((entry) => entry.idx === 15);
+    assert.ok(contraction);
+    await copyFile(
+      path.join(migrations, `${contraction.tag}.sql`),
+      path.join(directory, `${contraction.tag}.sql`),
+    );
+    migrate(config);
     await assertAliases(false);
     for (const [index, [, current]] of tables.entries()) {
       assert.deepEqual(
@@ -168,6 +176,13 @@ export async function verifyGenerationMigration(databaseUrl: string) {
       on conflict do nothing returning id`;
     assert.equal((await refund()).length, 1);
     assert.equal((await refund()).length, 0);
+    // Verify contraction separately from subsequent additive schema changes.
+    migrate();
+    assert.equal(
+      (await sql`select target_item_id from generation_retries where job_id=${jobId}`)[0]
+        ?.target_item_id,
+      null,
+    );
     await sql.begin(async (tx) => {
       await tx`delete from generation_outbox where item_id=${itemId}`;
       await tx`delete from generation_retries where organization_id=${orgId}`;
