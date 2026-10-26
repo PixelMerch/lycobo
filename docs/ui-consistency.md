@@ -24,6 +24,7 @@
 | 账户内容 | AccountPanel → AccountManagement / WalletPanel | 按菜单入口分别打开，仅挂载对应内容、自然高度；真实账号与账单来自查询客户端，未接入的绑定／重置／支付不模拟成功 |
 | 确认 | ConfirmDialog | 不在业务中复制 Modal 标记；正文与操作布局共用 |
 | 关闭 | DialogClose | 图标与命中区分开，普通确认和全屏规格只引用 DESIGN，不在业务组件重复定尺寸 |
+| 长文本折叠 | CollapsibleText | 历史提示词与详情创意描述共用实际溢出测量、展开／收起及 aria 状态；详情3行，历史保留既有行数，短文本不显示切换按钮 |
 | 参考图片上传 | ReferencePicker → ReferenceImageCard | 首页与工作台共用；删除、编号、预览不复制 |
 | 图片引用 | ReferencePrompt | 文本序列化、@候选、行内图片展示共用 |
 | 参考图片浏览 | ImageViewer | 历史、详情、上传入口按需加载同一组件 |

@@ -7,7 +7,8 @@ import {
 } from "@lycoboai/contracts";
 import { IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { CollapsibleText } from "../../../components/collapsible-text";
 import { ConfirmDialog } from "../../../components/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
 import { copyToClipboard } from "../../../lib/clipboard";
@@ -25,38 +26,9 @@ import { ReferenceThumbnails } from "../references/reference-thumbnails";
 import { type Draft, type ModelId, useStudioStore } from "../studio-state";
 
 export function HistoryPrompt({ job }: { job: ImageJob }) {
-  const text = useRef<HTMLParagraphElement>(null);
-  const [expanded, setExpanded] = useState(false);
-  const [overflow, setOverflow] = useState(false);
-  useEffect(() => {
-    const node = text.current;
-    if (!node || expanded || !job.prompt) return;
-    const measure = () => setOverflow(node.scrollHeight > node.clientHeight + 1);
-    const observer = new ResizeObserver(measure);
-    observer.observe(node);
-    measure();
-    return () => observer.disconnect();
-  }, [expanded, job.prompt]);
   return (
     <div className="history-prompt">
-      <p
-        className={`generation-prompt${expanded ? "" : " prompt-collapsed"}`}
-        ref={text}
-        id={`prompt-${job.id}`}
-      >
-        {job.prompt}
-      </p>
-      {(overflow || expanded) && (
-        <Button
-          variant="tertiary"
-          className="prompt-toggle"
-          aria-expanded={expanded}
-          aria-controls={`prompt-${job.id}`}
-          onPress={() => setExpanded(!expanded)}
-        >
-          {expanded ? "收起" : "展开全部"}
-        </Button>
-      )}
+      <CollapsibleText text={job.prompt} id={`prompt-${job.id}`} className="generation-prompt" />
       <Button
         variant="secondary"
         className="copy-prompt"

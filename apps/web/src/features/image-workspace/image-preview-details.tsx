@@ -1,5 +1,6 @@
 import { Button, ToggleButton, Tooltip } from "@heroui/react";
 import { IconCopy, IconDownload, IconPhoto, IconStar, IconStarFilled } from "@tabler/icons-react";
+import { CollapsibleText } from "../../components/collapsible-text";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
 import { copyToClipboard } from "../../lib/clipboard";
@@ -90,7 +91,12 @@ export function ImagePreviewDetails({
             <span>创意描述</span>
             <CopyIconButton value={meta.prompt} label="复制创意描述" />
           </h2>
-          <p>{meta.prompt}</p>
+          <CollapsibleText
+            key={active.id}
+            text={meta.prompt}
+            className="image-preview-prompt"
+            textContainerClassName="image-preview-description-text"
+          />
         </section>
       )}
       {/* References reuse the history thumbnails; a task without any

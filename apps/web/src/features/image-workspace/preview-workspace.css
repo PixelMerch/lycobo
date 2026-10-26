@@ -1,11 +1,7 @@
 /* The image stage and footer share a decorative grid below interactive content. */
 .image-preview-stage.preview-canvas-stage {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px;
-  grid-template-rows: minmax(0, 1fr);
-  align-items: stretch;
-  gap: 16px;
-  padding: calc(var(--image-preview-inset) + 3px) 16px calc(var(--image-preview-inset) + 3px) 24px;
+  display: flex;
+  padding: 0;
 }
 .preview-dot-surface {
   position: relative;
@@ -30,8 +26,7 @@
 }
 .preview-canvas-stage .image-preview-frame {
   position: relative;
-  grid-column: 1;
-  grid-row: 1;
+  flex: 1;
 }
 .image-preview-frame[data-tool="hand"] {
   cursor: grab;
@@ -59,12 +54,12 @@
   pointer-events: none;
 }
 .preview-canvas-dock {
-  position: relative;
+  position: absolute;
+  z-index: 2;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
-  flex: none;
-  grid-column: 2;
-  grid-row: 1;
-  align-self: center;
   justify-content: center;
   align-items: center;
   min-width: 0;
@@ -121,6 +116,8 @@
   top: calc(100% + 8px);
   left: 0;
   width: 100%;
+  border-radius: 999px;
+  background: #17171b;
   text-align: center;
   color: #8f8f98;
   font-size: 12px;
@@ -162,12 +159,13 @@
 @media (max-width: 767px) {
   .image-preview-stage.preview-canvas-stage {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 12px 16px;
+    padding: 0;
   }
-  .preview-canvas-stage .image-preview-frame {
-    flex: 1;
+  .preview-canvas-dock {
+    top: 8px;
+    left: 8px;
+    right: 68px;
+    transform: none;
   }
   .preview-canvas-toolbar.toolbar {
     flex-direction: row;

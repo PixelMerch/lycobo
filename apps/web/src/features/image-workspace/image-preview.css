@@ -16,8 +16,7 @@
 }
 /* 左图 / 中信息 / 右缩略图：列宽固定，切换图片时两侧都不位移。 */
 .image-preview {
-  /* One inset for the picture, the first thumbnail and the close control, so the
-   * three share the same top edge. */
+  /* Information, thumbnails and close control share their own inset; the canvas is edge-to-edge. */
   --image-preview-inset: 40px;
   background: #0b0b0e;
   display: grid;
@@ -35,10 +34,10 @@
   grid-row: 1;
   min-width: 0;
   min-height: 0;
-  padding: var(--image-preview-inset) 40px 48px;
+  padding: 0;
   overflow: hidden;
 }
-/* Clipping frame: the image is fitted here and only scaled inside it. */
+/* The image and selection layer share the full left canvas viewport. */
 .image-preview-frame {
   display: flex;
   align-items: center;
@@ -65,6 +64,7 @@
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+  border-radius: 0;
 }
 .image-preview-frame[data-zoomed="true"] .image-preview-image {
   user-select: none;
@@ -215,10 +215,6 @@
 .image-preview-section .generation-output-thumbnails {
   margin-top: 0;
 }
-/* Keep the main picture uncropped; reference thumbnails use the history radius. */
-.image-preview-image {
-  border-radius: 0;
-}
 .image-preview-section h2 {
   display: flex;
   align-items: center;
@@ -239,6 +235,20 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+.image-preview-description-text {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #111114;
+}
+.image-preview-section .image-preview-prompt {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.image-preview-section .image-preview-prompt.prompt-collapsed {
+  -webkit-line-clamp: 3;
+}
+
 .image-preview-bar {
   display: flex;
   align-items: center;
@@ -381,7 +391,7 @@
   .image-preview-stage {
     flex: none;
     height: min(48dvh, 420px);
-    padding: 16px 16px 32px;
+    padding: 0;
   }
   /* Static so the close control anchors to the sheet, floating over the image
    * instead of colliding with the favourite/download icons. */

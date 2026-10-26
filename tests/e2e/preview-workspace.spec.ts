@@ -87,7 +87,10 @@ test("preview keeps one canvas while repair changes only the property panel and 
   if (!frame) throw new Error("Missing canvas frame");
   const toolBounds = await toolbar.boundingBox();
   if (!toolBounds) throw new Error("Missing canvas toolbar");
-  expect(frame.x + frame.width).toBeLessThanOrEqual(toolBounds.x);
+  // The floating toolbar overlays the full canvas rather than reserving a column.
+  expect(toolBounds.x).toBeGreaterThan(frame.x);
+  expect(toolBounds.x + toolBounds.width).toBeLessThanOrEqual(frame.x + frame.width);
+  expect(frame.x + frame.width).toBeGreaterThan(toolBounds.x);
   await page.mouse.move(frame.x + frame.width / 2, frame.y + frame.height / 2);
   await page.mouse.down();
   await page.mouse.move(frame.x + frame.width / 2 + 50, frame.y + frame.height / 2 + 20, {
