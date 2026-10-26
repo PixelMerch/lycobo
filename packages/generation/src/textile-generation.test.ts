@@ -1,4 +1,4 @@
-import { imageGenerationInputSchema, textileViews } from "@lycoboai/contracts";
+import { imageGenerationInputSchema, imageProviderModel, textileViews } from "@lycoboai/contracts";
 import { describe, expect, it } from "vitest";
 import { normalizeTextileGeneration, textileItemInput } from "./textile-generation";
 
@@ -35,7 +35,7 @@ describe("textile angle generation", () => {
       { ...original, referenceAssetIds: [] },
       { ...original, textileSet: { version: 1, views: ["front", "front"] }, count: 2 },
       { ...original, textileSet: { version: 1, views: ["unknown"] }, count: 1 },
-      { ...original, textileSet: { version: 3, views: ["front"] }, count: 1 },
+      { ...original, textileSet: { version: 5, views: ["front"] }, count: 1 },
       { ...original, textileSet: undefined },
     ])
       expect(imageGenerationInputSchema.safeParse(value).success).toBe(false);
@@ -72,4 +72,52 @@ it("accepts five detail references in v2 while preserving v1 reference rules", (
     imageGenerationInputSchema.safeParse({ ...value, textileSet: { version: 1, views: ["front"] } })
       .success,
   ).toBe(false);
+});
+
+it("uses the selected v3 resolution while keeping stored v1/v2 tasks at 1K", () => {
+  const base = {
+    model: "gpt-image-2.5",
+    prompt: "textile",
+    referenceAssetIds: [crypto.randomUUID()],
+    count: 1,
+  };
+  for (const resolution of ["1K", "2K", "4K"]) {
+    const current = normalizeTextileGeneration(
+      imageGenerationInputSchema.parse({
+        ...base,
+        resolution,
+        textileSet: { version: 3, views: ["front"] },
+      }),
+    );
+    expect(current.resolution).toBe(resolution);
+    for (const version of [1, 2])
+      expect(
+        normalizeTextileGeneration(
+          imageGenerationInputSchema.parse({
+            ...base,
+            resolution,
+            textileSet: { version, views: ["front"] },
+          }),
+        ).resolution,
+      ).toBe("1K");
+  }
+});
+
+it("routes every new textile resolution to the requested 4K channel and preserves old presets", () => {
+  for (const resolution of ["1K", "2K", "4K"]) {
+    for (const version of [1, 2, 3, 4]) {
+      const normalized = normalizeTextileGeneration(
+        imageGenerationInputSchema.parse({
+          ...input(),
+          count: 1,
+          resolution,
+          textileSet: { version, views: ["front"] },
+        }),
+      );
+      expect(imageProviderModel(normalized)).toBe(
+        version === 4 ? "gpt-image-2-4K" : "gpt-image-2.5-sunburst",
+      );
+      expect(normalized.resolution).toBe(version >= 3 ? resolution : "1K");
+    }
+  }
 });

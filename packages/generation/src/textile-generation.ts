@@ -33,8 +33,8 @@ export function normalizeTextileGeneration(input: ImageGenerationInput): ImageGe
   );
   return {
     ...input,
-    model: "gpt-image-2.5",
-    resolution: "1K",
+    model: input.textileSet.version >= 4 ? "gpt-image-2-4K" : "gpt-image-2.5",
+    resolution: input.textileSet.version >= 3 ? input.resolution : "1K",
     quality: "medium",
     prompt: `家纺主图裂变：${names.join("、")}。每个视角分别生成一张图片。`,
     count: input.textileSet.views.length,
@@ -48,7 +48,7 @@ export function textileItemInput(
   const view = input.textileSet.views[position];
   if (!view) throw new Error("TEXTILE_VIEW_POSITION_INVALID");
   const referenceRules =
-    input.textileSet.version === 2
+    input.textileSet.version >= 2
       ? constraints.replace(
           "若有第二张参考图，仅将其",
           "若有第二至第六张参考图，这些均为详情图，仅将其",

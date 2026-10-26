@@ -44,9 +44,10 @@ export async function verifyTextileGeneration(
   const body = imageGenerationInputSchema.parse({
     model: "gpt-image-2",
     prompt: "untrusted-client",
+    resolution: "2K",
     count: 10,
     referenceAssetIds: references,
-    textileSet: { version: 2, views: textileViews.map((view) => view.id) },
+    textileSet: { version: 4, views: textileViews.map((view) => view.id) },
   });
   const headers = {
     Authorization: `Bearer ${owner.token}`,
@@ -64,7 +65,9 @@ export async function verifyTextileGeneration(
     JSON.parse(JSON.stringify(await repository.get(owner, submitted.id))),
   );
   assert.equal(job.items.length, 10);
-  assert.equal(job.model, "gpt-image-2.5");
+  assert.equal(job.model, "gpt-image-2");
+  assert.equal(job.input?.model, "gpt-image-2-4K");
+  assert.equal(job.resolution, "2K");
   assert.equal(job.input?.textileSet?.views.length, 10);
   assert.equal((await repository.list(owner, 20, undefined, "textile")).length, 1);
   assert.equal((await repository.list(owner, 20, undefined, "create")).length, 0);
@@ -82,8 +85,9 @@ export async function verifyTextileGeneration(
     const prompt = String(init.body.get("prompt"));
     prompts.push(prompt);
     assert.equal(init.body.get("n"), "1");
+    assert.equal(init.body.get("size"), "2048x2048");
     assert.equal(init.body.getAll("image[]").length, 6);
-    assert.equal(init.body.get("model"), "gpt-image-2.5-sunburst");
+    assert.equal(init.body.get("model"), "gpt-image-2-4K");
     if (prompt.includes("拍摄要求：枕头特写")) return new Response("{}", { status: 400 });
     return Response.json({ data: [{ b64_json: Buffer.from(png).toString("base64") }] });
   };

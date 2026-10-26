@@ -15,6 +15,20 @@ test("textile angles submit one durable ten-image job and keep results separate 
   page,
 }) => {
   await mockImageEvents(page);
+  await page.route("**/api/v1/image-models", (route) =>
+    route.fulfill({
+      json: apiFixture({
+        enabled: true,
+        eventsEnabled: true,
+        editsEnabled: true,
+        unitCredits: 20,
+        models: ["gpt-image-2", "gpt-image-2.5", "nano-banana-2.1"].map((id) => ({
+          id,
+          enabledResolutions: ["1K", "2K", "4K"],
+        })),
+      }),
+    }),
+  );
   const jobs: ImageJob[] = [];
   const referenceIds: string[] = [];
   await page.route("**/api/v1/image-assets", async (route) => {
@@ -34,8 +48,8 @@ test("textile angles submit one durable ten-image job and keep results separate 
       expect(input.textileSet?.views).toEqual(textileViews.map((view) => view.id));
       expect(input.count).toBe(10);
       expect(input.referenceAssetIds).toEqual(referenceIds);
-      expect(input.model).toBe("gpt-image-2.5");
-      expect(input.resolution).toBe("1K");
+      expect(input.model).toBe("gpt-image-2");
+      expect(input.resolution).toBe("2K");
       expect(input.quality).toBe("medium");
       const id = crypto.randomUUID();
       jobs.push({
@@ -72,6 +86,7 @@ test("textile angles submit one durable ten-image job and keep results separate 
     });
   });
   await page.goto("/commerce/textile-set");
+  await page.getByRole("radio", { name: "2K", exact: true }).click();
   const submit = page.getByRole("button", { name: "立即生成", exact: true });
   await expect(submit).toBeDisabled();
   await page
@@ -94,6 +109,12 @@ test("textile angles submit one durable ten-image job and keep results separate 
   await submit.click();
   await expect(page.locator(".generation-job")).toHaveCount(1);
   expect(referenceIds.length).toBe(6);
+  await expect(page.locator(".reference-tile")).toHaveCount(0);
+  await expect(page.locator(".textile-selected-view")).toHaveCount(0);
+  await expect(page.getByRole("radio", { name: "2K", exact: true })).toHaveAttribute(
+    "aria-checked",
+    "true",
+  );
   await expect(page.locator(".textile-result-view")).toHaveText(
     textileViews.map((view) => view.name),
   );

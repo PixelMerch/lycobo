@@ -17,14 +17,13 @@ export function useTextileGeneration() {
   const pending = usePendingSubmission(session.data);
   const ownPending =
     pending && !!session.data && pendingSubmissionSource(session.data) === "textile-set";
+  const resolutions =
+    models.data?.models.find((model) => model.id === "gpt-image-2")?.enabledResolutions ?? [];
   const configured =
-    !!models.data?.enabled &&
-    !!models.data.editsEnabled &&
-    !!models.data.models
-      .find((model) => model.id === "gpt-image-2.5")
-      ?.enabledResolutions.includes("1K");
+    !!models.data?.enabled && !!models.data.editsEnabled && resolutions.includes(draft.resolution);
   useErrorToast(generation.error?.message ?? models.error?.message);
   return {
+    resolutions,
     pending: ownPending,
     submitting: generation.isPending,
     canGenerate:
@@ -37,17 +36,30 @@ export function useTextileGeneration() {
       const input: Draft = {
         prompt: "家纺主图裂变",
         ratio: draft.ratio,
-        resolution: "1K",
+        resolution: draft.resolution,
         quality: "标准",
         count: String(draft.views.length),
         references,
       };
-      generation.mutate({
-        model: "gpt-image-2.5",
-        draft: input,
-        source: "textile-set",
-        textileSet: { version: 2, views: draft.views },
-      });
+      generation.mutate(
+        {
+          model: "gpt-image-2",
+          draft: input,
+          source: "textile-set",
+          textileSet: { version: 4, views: draft.views },
+        },
+        {
+          onSuccess: () => {
+            if (ownPending) return;
+            const current = useTextileSetDraft.getState();
+            current.update({
+              ...(current.mainImage === draft.mainImage ? { mainImage: null } : {}),
+              ...(current.detailImages === draft.detailImages ? { detailImages: [] } : {}),
+              ...(current.views === draft.views ? { views: [] } : {}),
+            });
+          },
+        },
+      );
     },
   };
 }

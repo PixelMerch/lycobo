@@ -1,10 +1,11 @@
-import { Button, Popover, Tabs } from "@heroui/react";
-import { imageUnitCredits } from "@lycoboai/contracts";
+import { Button, Popover, Tabs, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { imageResolutionSchema, imageUnitCredits } from "@lycoboai/contracts";
 import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { useId, useRef, useState } from "react";
 import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
+import { SelectionHighlight } from "../../generation/composer/selection-highlight";
 import { GenerationHistory } from "../../generation/history/generation-history";
 import { HistoryIndex } from "../../generation/history/history-index";
 import { TextileImageField } from "./textile-image-field";
@@ -15,7 +16,7 @@ import { useTextileGeneration } from "./use-textile-generation";
 import "./textile-set.css";
 
 export function TextileSetPage() {
-  const { mainImage, detailImages, views, ratio, update } = useTextileSetDraft();
+  const { mainImage, detailImages, views, ratio, resolution, update } = useTextileSetDraft();
   const viewsAnchor = useRef<HTMLDivElement>(null);
   const viewsTrigger = useRef<HTMLButtonElement>(null);
   const viewsPressWasOpen = useRef<boolean | null>(null);
@@ -145,6 +146,34 @@ export function TextileSetPage() {
             </div>
             <HomeRatioPicker value={ratio} onChange={(value) => update({ ratio: value })} />
           </section>
+          <fieldset className="parameter-group">
+            <legend>分辨率</legend>
+            <ToggleButtonGroup
+              aria-label="分辨率"
+              className="parameter-options"
+              isDetached
+              disallowEmptySelection
+              selectionMode="single"
+              selectedKeys={[resolution]}
+              onSelectionChange={(keys) => {
+                const next = imageResolutionSchema.options.find((value) => keys.has(value));
+                if (next) update({ resolution: next });
+              }}
+            >
+              {imageResolutionSchema.options.map((value) => (
+                <ToggleButton
+                  key={value}
+                  id={value}
+                  isDisabled={!generation.resolutions.includes(value)}
+                >
+                  {value === resolution && (
+                    <SelectionHighlight layoutId="textile-resolution-selection" />
+                  )}
+                  <span>{value}</span>
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+          </fieldset>
         </div>
         <div className="generate-area">
           <Button
@@ -157,8 +186,8 @@ export function TextileSetPage() {
             onPress={generation.submit}
             aria-describedby={costDescriptionId}
           >
-            {generation.submitting ? "正在提交…" : generation.pending ? "确认上次提交" : "立即生成"}
-            {!generation.pending && (
+            {generation.pending && !generation.submitting ? "确认上次提交" : "立即生成"}
+            {(!generation.pending || generation.submitting) && (
               <span className="generate-credit-cost" aria-hidden="true">
                 <CreditCoin />
                 <span>{views.length * imageUnitCredits}</span>
@@ -192,6 +221,7 @@ export function TextileSetPage() {
                   detailImages: draft.references.slice(1, 6),
                   views: textileSet.views,
                   ratio: draft.ratio,
+                  resolution: imageResolutionSchema.parse(draft.resolution),
                 });
               }}
             />

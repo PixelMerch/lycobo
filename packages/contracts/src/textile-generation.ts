@@ -15,7 +15,7 @@ export const textileViews = [
 export const textileViewIdSchema = z.enum(textileViews.map((view) => view.id));
 export type TextileViewId = z.infer<typeof textileViewIdSchema>;
 export const textileGenerationSchema = z.strictObject({
-  version: z.union([z.literal(1), z.literal(2)]),
+  version: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
   views: z
     .array(textileViewIdSchema)
     .min(1)

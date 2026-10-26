@@ -91,7 +91,7 @@ export const imageGenerationInputSchema = z
       input.textileSet
         ? input.count !== input.textileSet.views.length ||
           input.referenceAssetIds.length < 1 ||
-          input.referenceAssetIds.length > (input.textileSet.version === 2 ? 6 : 2) ||
+          input.referenceAssetIds.length > (input.textileSet.version >= 2 ? 6 : 2) ||
           !!input.localEdit
         : input.count > 4
     )
@@ -132,6 +132,7 @@ export function publicImageModel(model: ImageGenerationInput["model"]): PublicIm
   return model.startsWith("gpt-image-2.5") ? "gpt-image-2.5" : "gpt-image-2";
 }
 export function imageProviderModel(input: Pick<ImageGenerationInput, "model" | "resolution">) {
+  if (input.model === "gpt-image-2-4K") return "gpt-image-2-4K";
   const model = publicImageModel(input.model);
   if (model === "gpt-image-2") return input.resolution === "1K" ? "gpt-image-2" : "gpt-image-2-4K";
   if (model === "gpt-image-2.5") return "gpt-image-2.5-sunburst";

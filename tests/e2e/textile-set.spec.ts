@@ -19,7 +19,7 @@ test("textile form has only required product inputs and retains confirmed choice
   await expect(page.getByLabel("主图文件", { exact: true })).not.toHaveAttribute("multiple");
   await expect(page.getByLabel("详情图文件", { exact: true })).toHaveAttribute("multiple", "");
   await expect(page.getByLabel("详情图文件", { exact: true })).not.toHaveAttribute("required");
-  for (const label of ["模型", "质量", "生成张数", "分辨率", "提示词"])
+  for (const label of ["模型", "质量", "生成张数", "提示词"])
     await expect(form.getByText(label, { exact: true })).toHaveCount(0);
   await page
     .getByLabel("主图文件", { exact: true })
