@@ -7,6 +7,7 @@ import {
   readReferenceImages,
   referenceFileError,
 } from "../../generation/references/read-reference-images";
+import { referenceDisplaySource } from "../../generation/references/reference-display";
 import type { ReferenceImage } from "../../generation/studio-state";
 
 const ImageViewer = lazy(() =>
@@ -103,7 +104,7 @@ export function TextileImageField({
       {value ? (
         <div className="textile-uploaded-image">
           <ReferenceImageCard
-            src={value.src}
+            src={referenceDisplaySource(value, true)}
             number={number}
             showNumber={false}
             isDisabled={reading}
@@ -153,7 +154,7 @@ export function TextileImageField({
       {preview && value && (
         <Suspense fallback={null}>
           <ImageViewer
-            images={[{ src: value.src, alt: label }]}
+            images={[{ src: referenceDisplaySource(value), alt: label }]}
             onClose={() => setPreview(false)}
           />
         </Suspense>

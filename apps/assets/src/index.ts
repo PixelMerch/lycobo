@@ -18,13 +18,27 @@ export async function serveAsset(
   if (!["GET", "HEAD"].includes(request.method)) return fail(405);
   if (!env.ASSET_SIGNING_SECRET || !env.ASSET_ALLOWED_ORIGINS) return fail(503);
   const url = new URL(request.url);
-  const key = url.pathname.slice(1);
+  const requestedKey = url.pathname.slice(1);
+  const pathVariant = requestedKey.endsWith(".thumbnail.webp")
+    ? "thumbnail"
+    : requestedKey.endsWith(".preview.webp")
+      ? "preview"
+      : undefined;
+  const key = pathVariant
+    ? requestedKey.replace(/\.(preview|thumbnail)\.webp$/, ".png")
+    : requestedKey;
   const expires = Number(url.searchParams.get("expires"));
-  const variant = url.searchParams.get("variant") ?? "preview";
-  if (!assetKeyPattern.test(key) || !["preview", "thumbnail", "download"].includes(variant))
+  const variant = url.searchParams.get("variant") ?? pathVariant ?? "preview";
+  if (
+    !assetKeyPattern.test(key) ||
+    !["preview", "thumbnail", "download"].includes(variant) ||
+    (pathVariant && variant !== pathVariant)
+  )
     return fail(403);
+  if (variant === "download" && request.headers.get("Sec-Fetch-Dest") === "image") return fail(403);
   const allowed = env.ASSET_ALLOWED_ORIGINS.split(",").map((value) => value.trim());
-  // Referer supplements the signed capability; direct downloads may omit it.
+  // Require a trusted browser source in addition to the scoped signed capability.
+  if (!request.headers.get("Origin") && !request.headers.get("Referer")) return fail(403);
   for (const value of [request.headers.get("Origin"), request.headers.get("Referer")]) {
     if (!value) continue;
     try {
@@ -39,6 +53,8 @@ export async function serveAsset(
       expires,
       url.searchParams.get("sig") ?? "",
       await assetSigningKey(env.ASSET_SIGNING_SECRET),
+      Math.floor(Date.now() / 1000),
+      variant === "download" ? "download" : variant === "thumbnail" ? "thumbnail" : "preview",
     ))
   )
     return fail(403);
@@ -85,7 +101,9 @@ export async function serveAsset(
   const headers = new Headers(response.headers);
   headers.set(
     "Cache-Control",
-    `private, max-age=${Math.max(0, expires - Math.floor(Date.now() / 1000))}, immutable`,
+    variant === "download"
+      ? "private, no-store"
+      : `private, max-age=${Math.max(0, expires - Math.floor(Date.now() / 1000))}, immutable`,
   );
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("Referrer-Policy", "no-referrer");
@@ -96,7 +114,7 @@ export async function serveAsset(
   );
   const origin = request.headers.get("Origin");
   if (origin && allowed.includes(origin)) headers.set("Access-Control-Allow-Origin", origin);
-  headers.set("Vary", "Origin");
+  headers.set("Vary", "Origin, Referer, Sec-Fetch-Dest");
   if (request.headers.get("If-None-Match") === headers.get("ETag")) {
     headers.delete("Content-Length");
     return new Response(null, { status: 304, headers });

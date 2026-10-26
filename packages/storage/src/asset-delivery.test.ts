@@ -21,7 +21,7 @@ describe("asset capabilities", () => {
   });
   it("issues separate original, thumbnail and attachment URLs without credentials", async () => {
     const links = await assetDeliverySigner("https://assets.example.test", secret)(key);
-    expect(new URL(links.url).pathname).toBe(`/${key}`);
+    expect(new URL(links.url).pathname).toBe(`/${key.replace(/\.png$/, ".preview.webp")}`);
     expect(new URL(links.thumbnail_url).searchParams.get("variant")).toBe("thumbnail");
     expect(new URL(links.download_url).searchParams.get("variant")).toBe("download");
     expect(JSON.stringify(links)).not.toContain(secret);
@@ -54,4 +54,14 @@ it("signs a compressed preview by default and preserves the original only for do
   expect(() =>
     assetDeliverySigner("http://cdn.lycobo.localhost.evil.test", secret, { allowLocalHttp: true }),
   ).toThrow();
+});
+
+it("binds each signature to its variant so preview capabilities cannot retrieve originals", async () => {
+  const signing = await assetSigningKey(secret);
+  const expires = Math.floor(Date.now() / 1000) + 1800;
+  const preview = await signAsset(key, expires, signing, "preview");
+  const download = await signAsset(key, expires, signing, "download");
+  expect(preview).not.toBe(download);
+  expect(await verifyAsset(key, expires, preview, signing, undefined, "download")).toBe(false);
+  expect(await verifyAsset(key, expires, download, signing, undefined, "download")).toBe(true);
 });

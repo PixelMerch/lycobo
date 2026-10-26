@@ -275,6 +275,8 @@ export function ImageViewer({
                     <img
                       key={active.src}
                       src={active.src}
+                      crossOrigin="anonymous"
+                      referrerPolicy="strict-origin-when-cross-origin"
                       alt={active.alt}
                       draggable={false}
                       className="browse-image-picture"

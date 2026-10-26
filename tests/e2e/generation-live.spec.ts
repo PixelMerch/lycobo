@@ -164,7 +164,7 @@ test("reference images are uploaded before submitting their server asset IDs", a
   let uploaded = false;
   await page.route("**/api/v1/image-assets", async (route) => {
     expect(route.request().headers()["content-type"]).toBe("image/png");
-    expect(route.request().postDataBuffer()?.length).toBeGreaterThan(0);
+    expect(route.request().postDataBuffer()).toEqual(png);
     uploaded = true;
     await route.fulfill({ status: 201, json: { id: referenceId } });
   });
@@ -178,6 +178,10 @@ test("reference images are uploaded before submitting their server asset IDs", a
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles({ name: "reference.png", mimeType: "image/png", buffer: png });
+  await expect(page.locator(".reference-tile img")).toHaveAttribute(
+    "src",
+    /^data:image\/webp;base64,/,
+  );
   await page.getByLabel("提示词", { exact: true }).fill("保留杯子外形，放在白色置物架上");
   await page.getByRole("button", { name: "立即生成", exact: true }).click();
   await expect.poll(() => uploaded).toBe(true);

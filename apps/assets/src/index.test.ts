@@ -65,11 +65,11 @@ describe("private asset edge delivery", () => {
     expect(first.headers.get("Content-Type")).toBe("image/webp");
     expect(await first.text()).toBe("preview fixture");
     await Promise.all(f.work);
-    const second = await f.request(links.url, {});
+    const second = await f.request(links.url);
     expect(second.headers.get("X-Asset-Cache")).toBe("HIT");
     expect(await second.text()).toBe("preview fixture");
     expect(f.get).toHaveBeenCalledTimes(1);
-    const download = await f.request(links.download_url, {});
+    const download = await f.request(links.download_url);
     expect(download.headers.get("Content-Type")).toBe("image/png");
     expect(download.headers.get("Content-Disposition")).toContain("attachment");
     expect(await download.text()).toBe("original fixture");
@@ -88,7 +88,7 @@ describe("private asset edge delivery", () => {
   it("does not generate missing thumbnails or fetch bodies for HEAD", async () => {
     const f = fixture();
     const links = await assetDeliverySigner("https://assets.example.test", secret)(key);
-    const head = await f.request(links.url, {}, "HEAD");
+    const head = await f.request(links.url, { Referer: `${origin}/create` }, "HEAD");
     expect(head.status).toBe(200);
     expect(head.body).toBeNull();
     expect(f.get).not.toHaveBeenCalled();
@@ -121,4 +121,22 @@ it("backfills a WebP preview for an existing original instead of returning origi
   expect(await bucket.head(legacyKey.replace(/\.png$/, ".preview.webp"))).not.toBeNull();
   const download = await f.request(links.download_url);
   expect(new Uint8Array(await download.arrayBuffer())).toEqual(png);
+});
+
+it("rejects preview-to-original promotion, missing sources and image-embedded original downloads before cache", async () => {
+  const f = fixture();
+  const links = await assetDeliverySigner("https://assets.example.test", secret)(key);
+  await f.request(links.url);
+  await Promise.all(f.work);
+  const lookups = f.cache.match.mock.calls.length;
+  const changed = new URL(links.url);
+  changed.searchParams.set("variant", "download");
+  expect((await f.request(changed.href)).status).toBe(403);
+  changed.pathname = changed.pathname.replace(/\.preview\.webp$/, ".png");
+  expect((await f.request(changed.href)).status).toBe(403);
+  expect((await f.request(links.url, {})).status).toBe(403);
+  expect(
+    (await f.request(links.download_url, { Origin: origin, "Sec-Fetch-Dest": "image" })).status,
+  ).toBe(403);
+  expect(f.cache.match).toHaveBeenCalledTimes(lookups);
 });

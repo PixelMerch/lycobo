@@ -37,7 +37,7 @@ docker compose up --build
 
 为复用同一套 R2/Images 和业务处理，本地入口生成被 Git 忽略的 `apps/{api,worker,assets}/wrangler.local.json`：移除 Cloudflare Queue 绑定及 Cron，使用本地消费者服务绑定和仅监听 `127.0.0.1:8790` 的 Redis HTTP 桥接。内部端点使用每次启动随机生成的令牌，令牌仅进入本地 `.dev.vars`，不进入前端。线上 Wrangler 配置保持 Cloudflare Queues。正常开发使用根 `pnpm dev`／Compose，不重复启动独立消费者。
 
-本地图片通过独立资源 Worker（8791）读取同一个本地 R2，API 只负责授权并返回预览／缩略图／下载签名链接。历史与素材列表批量返回签名链接，上传响应也附带链接，前端直接使用资源地址；旧 `/content` 入口保留为授权后的 302 兼容跳转。资源请求不连接 PostgreSQL，验证签名和来源后读取缓存，未命中再读取本地 R2。签名 30 分钟有效，缓存命中前仍会验签。资源 URL 使用 `variant=preview`（默认，最长边 1600px、WebP quality 82）、`variant=thumbnail`（最长边 512px、WebP quality 76）或 `variant=download`（原始 PNG、attachment）。页面不默认加载原图，后台参考图编辑仍使用原始文件。新图写入时预生成 WebP；历史图片首次缺少某个版本时，从本地原图补生成并缓存，不重新调用模型。资源 Worker 的本地请求日志设为 warn，避免记录带签名的 URL。
+本地图片通过独立资源 Worker（8791）读取同一个本地 R2，API 只负责授权并返回预览／缩略图／下载签名链接。历史与素材列表批量返回签名链接，上传响应也附带链接，前端直接使用资源地址；旧 `/content` 入口保留为授权后的 302 兼容跳转。资源请求不连接 PostgreSQL，验证签名和来源后读取缓存，未命中再读取本地 R2。签名 30 分钟有效，签名 v2 同时绑定对象、到期时间和图片用途，缓存命中前仍校验签名与精确来源。预览／缩略图路径为 `.preview.webp`／`.thumbnail.webp`；修改预览 URL 的 variant 或文件名不能换取原图。空来源、外域来源和将原图下载 URL 当作图片嵌入均拒绝。下载使用附件响应且不进入浏览器缓存。资源 URL 使用 `variant=preview`（默认，最长边 1600px、WebP quality 82）、`variant=thumbnail`（最长边 512px、WebP quality 76）或 `variant=download`（原始 PNG、attachment）。页面不默认加载原图；未上传的参考文件也先在浏览器生成 WebP 缩略图／预览，原始数据单独保留供上传，后台参考图编辑仍使用原始文件。新图写入时预生成 WebP；历史图片首次缺少某个版本时，从本地原图补生成并缓存，不重新调用模型。资源 Worker 的本地请求日志设为 warn，避免记录带签名的 URL。
 
 本地资源域名与签名密钥由启动器固定／随机生成，忽略 `.env` 中的线上 ASSET 配置；本地域名 `cdn.lycobo.localhost` 解析到本机回环地址；只有开发模式显式允许该域名及精确 loopback HTTP，生产资源 Origin 仍要求 HTTPS。本地模拟独立资源链路，不表示访问 Cloudflare 线上 CDN。修改端口需同步本地资源 Origin 和精确来源白名单。
 

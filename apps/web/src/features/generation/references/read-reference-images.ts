@@ -26,13 +26,29 @@ export async function readReferenceImages(files: File[]): Promise<ReferenceImage
         reader.onerror = () => reject(new Error("read failed"));
         reader.readAsDataURL(file);
       });
-      await new Promise<void>((resolve, reject) => {
+      const decoded = await new Promise<HTMLImageElement>((resolve, reject) => {
         const image = new Image();
-        image.onload = () => resolve();
+        image.onload = () => resolve(image);
         image.onerror = () => reject(new Error("decode failed"));
         image.src = src;
       });
-      return { id: crypto.randomUUID(), name: file.name, src };
+      const resize = (edge: number, quality: number) => {
+        const scale = Math.min(1, edge / decoded.naturalWidth, edge / decoded.naturalHeight);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(decoded.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(decoded.naturalHeight * scale));
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Preview rendering unavailable");
+        context.drawImage(decoded, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL("image/webp", quality);
+      };
+      return {
+        id: crypto.randomUUID(),
+        name: file.name,
+        src,
+        thumbnailSrc: resize(512, 0.76),
+        previewSrc: resize(1600, 0.82),
+      };
     }),
   );
 }

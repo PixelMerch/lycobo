@@ -1,8 +1,9 @@
 const encoder = new TextEncoder();
 export const assetLinkLifetime = 1800;
 export const assetKeyPattern = /^[0-9]{10}\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.png$/;
-const message = (key: string, expires: number) =>
-  encoder.encode(`lycobo-asset-v1\n${key}\n${expires}`);
+export type AssetVariant = "preview" | "thumbnail" | "download";
+const message = (key: string, expires: number, variant: AssetVariant) =>
+  encoder.encode(`lycobo-asset-v2\n${key}\n${expires}\n${variant}`);
 export async function assetSigningKey(secret: string) {
   if (secret.length < 32) throw new Error("ASSET_SIGNING_NOT_CONFIGURED");
   return crypto.subtle.importKey(
@@ -13,10 +14,15 @@ export async function assetSigningKey(secret: string) {
     ["sign", "verify"],
   );
 }
-export async function signAsset(key: string, expires: number, signingKey: CryptoKey) {
+export async function signAsset(
+  key: string,
+  expires: number,
+  signingKey: CryptoKey,
+  variant: AssetVariant = "preview",
+) {
   if (!assetKeyPattern.test(key)) throw new Error("INVALID_ASSET_KEY");
   const signature = new Uint8Array(
-    await crypto.subtle.sign("HMAC", signingKey, message(key, expires)),
+    await crypto.subtle.sign("HMAC", signingKey, message(key, expires, variant)),
   );
   return btoa(String.fromCharCode(...signature))
     .replaceAll("+", "-")
@@ -29,6 +35,7 @@ export async function verifyAsset(
   signature: string,
   signingKey: CryptoKey,
   now = Math.floor(Date.now() / 1000),
+  variant: AssetVariant = "preview",
 ) {
   if (
     !assetKeyPattern.test(key) ||
@@ -42,7 +49,7 @@ export async function verifyAsset(
     atob(signature.replaceAll("-", "+").replaceAll("_", "/") + "="),
     (c) => c.charCodeAt(0),
   );
-  return crypto.subtle.verify("HMAC", signingKey, bytes, message(key, expires));
+  return crypto.subtle.verify("HMAC", signingKey, bytes, message(key, expires, variant));
 }
 export function assetDeliverySigner(
   origin: string,
@@ -67,19 +74,18 @@ export function assetDeliverySigner(
   const signingKey = assetSigningKey(secret);
   return async (key: string) => {
     const expires_at = Math.floor(Date.now() / 1000) + assetLinkLifetime;
-    const sig = await signAsset(key, expires_at, await signingKey);
-    const url = new URL(`/${key}`, base);
-    url.searchParams.set("expires", String(expires_at));
-    url.searchParams.set("sig", sig);
-    const variant = (value: string) => {
-      const copy = new URL(url);
-      copy.searchParams.set("variant", value);
-      return copy.href;
+    const variant = async (value: AssetVariant) => {
+      const pathname = value === "download" ? key : key.replace(/\.png$/, `.${value}.webp`);
+      const url = new URL(`/${pathname}`, base);
+      url.searchParams.set("expires", String(expires_at));
+      url.searchParams.set("variant", value);
+      url.searchParams.set("sig", await signAsset(key, expires_at, await signingKey, value));
+      return url.href;
     };
     return {
-      url: variant("preview"),
-      thumbnail_url: variant("thumbnail"),
-      download_url: variant("download"),
+      url: await variant("preview"),
+      thumbnail_url: await variant("thumbnail"),
+      download_url: await variant("download"),
       expires_at,
     };
   };
