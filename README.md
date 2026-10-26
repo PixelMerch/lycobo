@@ -40,18 +40,14 @@
 test -f .env || cp .env.example .env
 ```
 
-**本机开发**（Node.js 24.x；pnpm 10.34.7）
+**本机开发**（Docker Desktop）
 
 ```sh
-corepack enable
-corepack install
-pnpm install --frozen-lockfile
-pnpm infra:up
-DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai pnpm db:migrate
-pnpm dev
+docker compose up --build
+# 后续启动只需 docker compose up
 ```
 
-访问 <http://127.0.0.1:5173/>。Vite 与本地 Wrangler 同时启动 API／Queues 消费者，R2 和 Images 使用本地模拟；Compose 仅提供本地 PostgreSQL，没有 Redis。开发生成默认关闭，秘密只放服务端。
+访问 <http://localhost:5173/>。Compose 自动启动本地 PostgreSQL、应用迁移，并运行 Vite 与 Wrangler API／Queues 消费者，支持源码热更新；R2 和 Images 使用本地模拟，不需要 Redis。默认关闭付费生图，不连接生产数据库，也不自动复制线上账号。宿主机 pnpm 调试、日志和本地配置见 [本地开发](docs/development.md)。
 
 **Cloudflare 发布**：同仓库的 Pages、API Worker 和队列消费者使用统一配置，首次 `pnpm cloudflare:setup`，之后 `pnpm cloudflare:deploy`。账户开通、Hyperdrive、凭据和实际部署状态见 [Cloudflare 部署](docs/cloudflare-deployment.md)。
 

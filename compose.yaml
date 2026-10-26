@@ -1,6 +1,47 @@
 name: lycoboai
-# Local database for isolated integration checks. API/consumer/R2/Queues use Wrangler.
+# Local-only development: Vite + Wrangler API/consumer + PostgreSQL.
 services:
+  studio:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    init: true
+    working_dir: /workspace
+    command: ["sh", "scripts/cloudflare/docker-dev.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5173:5173"
+      - "127.0.0.1:8787:8787"
+    environment:
+      CI: "true"
+      WRANGLER_SEND_METRICS: "false"
+      DEV_USE_POLLING: "true"
+      LOCAL_IMAGE_GENERATION_ENABLED: ${LOCAL_IMAGE_GENERATION_ENABLED:-false}
+      VAKV_API_KEY: ${VAKV_API_KEY:-}
+      VAKV_BASE_URL: ${VAKV_BASE_URL:-https://api.vakv.cn}
+      VAKV_ENABLE_IMAGE_EDITS: ${VAKV_ENABLE_IMAGE_EDITS:-false}
+    volumes:
+      - .:/workspace
+      # Linux dependencies must never overwrite macOS node_modules.
+      - studio-dependencies:/workspace/node_modules
+      - /workspace/apps/web/node_modules
+      - /workspace/apps/api/node_modules
+      - /workspace/apps/worker/node_modules
+      - /workspace/apps/assets/node_modules
+      - /workspace/packages/contracts/node_modules
+      - /workspace/packages/db/node_modules
+      - /workspace/packages/generation/node_modules
+      - /workspace/packages/queue/node_modules
+      - /workspace/packages/storage/node_modules
+      - studio-state:/workspace/.wrangler
+    healthcheck:
+      test: ["CMD", "node", "-e", "Promise.all(['http://127.0.0.1:5173', 'http://127.0.0.1:8787/api/health/live'].map(async u => { const r = await fetch(u); if (!r.ok) throw new Error(String(r.status)); })).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 120s
+      retries: 6
   postgres:
     image: postgres:17-alpine
     environment:
@@ -18,3 +59,5 @@ services:
       retries: 10
 volumes:
   postgres-data:
+  studio-dependencies:
+  studio-state:
