@@ -35,7 +35,7 @@ describe("textile angle generation", () => {
       { ...original, referenceAssetIds: [] },
       { ...original, textileSet: { version: 1, views: ["front", "front"] }, count: 2 },
       { ...original, textileSet: { version: 1, views: ["unknown"] }, count: 1 },
-      { ...original, textileSet: { version: 2, views: ["front"] }, count: 1 },
+      { ...original, textileSet: { version: 3, views: ["front"] }, count: 1 },
       { ...original, textileSet: undefined },
     ])
       expect(imageGenerationInputSchema.safeParse(value).success).toBe(false);
@@ -48,4 +48,28 @@ describe("textile angle generation", () => {
     expect(normalizeTextileGeneration(generic)).toBe(generic);
     expect(textileItemInput(generic, 0)).toBe(generic);
   });
+});
+
+it("accepts five detail references in v2 while preserving v1 reference rules", () => {
+  const refs = Array.from({ length: 6 }, () => crypto.randomUUID());
+  const value = {
+    model: "gpt-image-2.5",
+    prompt: "textile",
+    count: 1,
+    referenceAssetIds: refs,
+    textileSet: { version: 2, views: ["front"] },
+  };
+  const parsed = imageGenerationInputSchema.parse(value);
+  expect(textileItemInput(parsed, 0).referenceAssetIds).toEqual(refs);
+  expect(textileItemInput(parsed, 0).prompt).toContain("第二至第六张参考图");
+  expect(
+    imageGenerationInputSchema.safeParse({
+      ...value,
+      referenceAssetIds: [...refs, crypto.randomUUID()],
+    }).success,
+  ).toBe(false);
+  expect(
+    imageGenerationInputSchema.safeParse({ ...value, textileSet: { version: 1, views: ["front"] } })
+      .success,
+  ).toBe(false);
 });

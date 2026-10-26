@@ -163,3 +163,42 @@ it("normalizes textile presets on the server and rejects missing references", as
   ).toBe(400);
   expect(create).toHaveBeenCalledTimes(1);
 });
+
+it("accepts one main plus five details and rejects a sixth detail", async () => {
+  const { app, create } = fixture(true);
+  const headers = {
+    Authorization: "Bearer fixture",
+    "Content-Type": "application/json",
+    "Idempotency-Key": crypto.randomUUID(),
+  };
+  const input = {
+    model: "gpt-image-2.5",
+    prompt: "textile",
+    count: 1,
+    referenceAssetIds: Array.from({ length: 6 }, () => crypto.randomUUID()),
+    textileSet: { version: 2, views: ["front"] },
+  };
+  expect(
+    (
+      await app.request("/api/v1/image-tasks", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(input),
+      })
+    ).status,
+  ).toBe(202);
+  expect(create.mock.calls[0]?.[1].referenceAssetIds).toEqual(input.referenceAssetIds);
+  expect(
+    (
+      await app.request("/api/v1/image-tasks", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          ...input,
+          referenceAssetIds: [...input.referenceAssetIds, crypto.randomUUID()],
+        }),
+      })
+    ).status,
+  ).toBe(400);
+  expect(create).toHaveBeenCalledTimes(1);
+});

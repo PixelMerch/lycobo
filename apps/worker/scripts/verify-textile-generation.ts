@@ -26,8 +26,12 @@ export async function verifyTextileGeneration(
     "textile-other",
     40,
   );
-  const asset = await store.put(owner, png, crypto.randomUUID());
-  await repository.addReference(owner, asset);
+  const references: string[] = [];
+  for (let index = 0; index < 6; index++) {
+    const asset = await store.put(owner, png, crypto.randomUUID());
+    await repository.addReference(owner, asset);
+    references.push(asset.id);
+  }
   const app = createApp(() => {}, {
     repository,
     store,
@@ -41,8 +45,8 @@ export async function verifyTextileGeneration(
     model: "gpt-image-2",
     prompt: "untrusted-client",
     count: 10,
-    referenceAssetIds: [asset.id],
-    textileSet: { version: 1, views: textileViews.map((view) => view.id) },
+    referenceAssetIds: references,
+    textileSet: { version: 2, views: textileViews.map((view) => view.id) },
   });
   const headers = {
     Authorization: `Bearer ${owner.token}`,
@@ -78,7 +82,7 @@ export async function verifyTextileGeneration(
     const prompt = String(init.body.get("prompt"));
     prompts.push(prompt);
     assert.equal(init.body.get("n"), "1");
-    assert.equal(init.body.getAll("image[]").length, 1);
+    assert.equal(init.body.getAll("image[]").length, 6);
     assert.equal(init.body.get("model"), "gpt-image-2.5-sunburst");
     if (prompt.includes("拍摄要求：枕头特写")) return new Response("{}", { status: 400 });
     return Response.json({ data: [{ b64_json: Buffer.from(png).toString("base64") }] });

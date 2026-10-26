@@ -22,23 +22,41 @@ export function TextileImageField({
   value,
   onChange,
   number,
+  maxImages = 1,
 }: {
   label: string;
   required?: boolean;
   description: string;
   exampleSrc: string;
-  value: ReferenceImage | null;
-  onChange: (value: ReferenceImage | null) => void;
+  value: ReferenceImage[];
+  onChange: (value: ReferenceImage[]) => void;
   number: number;
+  maxImages?: number;
 }) {
   const input = useRef<HTMLInputElement>(null);
+  const replacement = useRef<number | null>(null);
   const [reading, setReading] = useState(false);
   const [error, setError] = useState("");
-  const [preview, setPreview] = useState(false);
+  const [preview, setPreview] = useState<number | null>(null);
+  const multiple = maxImages > 1;
+  function openPicker(index: number | null = null) {
+    replacement.current = index;
+    if (input.current) {
+      input.current.multiple = multiple && index === null;
+      input.current.click();
+    }
+  }
   async function choose(files: File[]) {
+    const index = replacement.current;
+    replacement.current = null;
     if (!files.length || reading) return;
-    if (files.length > 1) {
+    const replacing = index !== null || !multiple;
+    if (replacing && files.length > 1) {
       setError("每次只能上传一张图片。");
+      return;
+    }
+    if (!replacing && value.length + files.length > maxImages) {
+      setError(`详情图最多上传 ${maxImages} 张。`);
       return;
     }
     const issue = referenceFileError(files);
@@ -49,8 +67,11 @@ export function TextileImageField({
     setReading(true);
     setError("");
     try {
-      const [image] = await readReferenceImages(files.slice(0, 1));
-      if (image) onChange(image);
+      const images = await readReferenceImages(files);
+      if (index !== null) {
+        const first = images[0];
+        if (first) onChange(value.map((image, position) => (position === index ? first : image)));
+      } else onChange(multiple ? [...value, ...images] : images);
     } catch {
       setError("图片无法读取，请检查文件后重试。");
     } finally {
@@ -67,9 +88,9 @@ export function TextileImageField({
             </span>
           )}
           {label}
-          {!required && <small>（可选）</small>}
+          {!required && <small>（可选，最多{maxImages}张）</small>}
         </h2>
-        {value && (
+        {value.length > 0 && (
           <Button
             variant="tertiary"
             size="sm"
@@ -77,9 +98,9 @@ export function TextileImageField({
             aria-label={`清除${label}`}
             isDisabled={reading}
             onPress={() => {
-              onChange(null);
+              onChange([]);
               setError("");
-              setPreview(false);
+              setPreview(null);
             }}
           >
             <UiIcon icon={IconTrash} size="small" />
@@ -94,6 +115,7 @@ export function TextileImageField({
         className="visually-hidden"
         aria-label={`${label}文件`}
         required={required}
+        multiple={multiple}
         disabled={reading}
         onChange={(event) => {
           const files = Array.from(event.target.files ?? []);
@@ -101,21 +123,35 @@ export function TextileImageField({
           void choose(files);
         }}
       />
-      {value ? (
-        <div className="textile-uploaded-image">
-          <ReferenceImageCard
-            src={referenceDisplaySource(value, true)}
-            number={number}
-            showNumber={false}
-            isDisabled={reading}
-            onOpen={() => setPreview(true)}
-            onReplace={() => input.current?.click()}
-            onRemove={() => {
-              onChange(null);
-              setError("");
-              setPreview(false);
-            }}
-          />
+      {value.length > 0 ? (
+        <div className={`textile-uploaded-image${multiple ? " textile-uploaded-details" : ""}`}>
+          {value.map((image, index) => (
+            <ReferenceImageCard
+              key={image.id}
+              src={referenceDisplaySource(image, true)}
+              number={number + index}
+              showNumber={false}
+              isDisabled={reading}
+              onOpen={() => setPreview(index)}
+              onReplace={() => openPicker(index)}
+              onRemove={() => {
+                onChange(value.filter((entry) => entry.id !== image.id));
+                setError("");
+                setPreview(null);
+              }}
+            />
+          ))}
+          {multiple && value.length < maxImages && (
+            <Button
+              variant="tertiary"
+              className="textile-detail-add"
+              aria-label="添加详情图"
+              isDisabled={reading}
+              onPress={() => openPicker()}
+            >
+              <UiIcon icon={IconPlus} size="action" />
+            </Button>
+          )}
         </div>
       ) : (
         <Button
@@ -123,7 +159,7 @@ export function TextileImageField({
           className="textile-upload-area"
           aria-label={`上传${label}`}
           isDisabled={reading}
-          onPress={() => input.current?.click()}
+          onPress={() => openPicker()}
         >
           <span className="textile-upload-example" aria-hidden="true">
             <img
@@ -147,11 +183,15 @@ export function TextileImageField({
           {error}
         </ErrorMessage>
       )}
-      {preview && value && (
+      {preview !== null && value[preview] && (
         <Suspense fallback={null}>
           <ImageViewer
-            images={[{ src: referenceDisplaySource(value), alt: label }]}
-            onClose={() => setPreview(false)}
+            images={value.map((image, index) => ({
+              src: referenceDisplaySource(image),
+              alt: `${label}${index + 1}`,
+            }))}
+            initialIndex={preview}
+            onClose={() => setPreview(null)}
           />
         </Suspense>
       )}

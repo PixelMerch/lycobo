@@ -17,7 +17,7 @@ test("textile form has only required product inputs and retains confirmed choice
   const form = page.getByRole("region", { name: "家纺主图裂变参数", exact: true });
   await expect(page.getByLabel("主图文件", { exact: true })).toHaveAttribute("required", "");
   await expect(page.getByLabel("主图文件", { exact: true })).not.toHaveAttribute("multiple");
-  await expect(page.getByLabel("详情图文件", { exact: true })).not.toHaveAttribute("multiple");
+  await expect(page.getByLabel("详情图文件", { exact: true })).toHaveAttribute("multiple", "");
   await expect(page.getByLabel("详情图文件", { exact: true })).not.toHaveAttribute("required");
   for (const label of ["模型", "质量", "生成张数", "分辨率", "提示词"])
     await expect(form.getByText(label, { exact: true })).toHaveCount(0);
@@ -361,4 +361,47 @@ test("clear textile views removes every selected angle without clearing product 
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await page.getByRole("button", { name: "选择裂变类型", exact: true }).click();
   await expect(picker).toContainText("已选 0 个视角");
+});
+
+test("detail images append up to five, replace individually and clear together", async ({
+  page,
+}) => {
+  await page.goto("/commerce/textile-set");
+  const field = page.getByRole("region", { name: "详情图", exact: true });
+  const input = page.getByLabel("详情图文件", { exact: true });
+  const files = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({
+      name: `detail-${index}.png`,
+      mimeType: "image/png",
+      buffer: png,
+    }));
+  await input.setInputFiles(files(3));
+  await expect(field.locator(".reference-tile")).toHaveCount(3);
+  await input.setInputFiles(files(3));
+  await expect(field.getByRole("alert")).toContainText("详情图最多上传 5 张");
+  await expect(field.locator(".reference-tile")).toHaveCount(3);
+  await input.setInputFiles(files(2));
+  await expect(field.locator(".reference-tile")).toHaveCount(5);
+  await expect(field.getByRole("button", { name: "添加详情图", exact: true })).toHaveCount(0);
+  const first = field.locator(".reference-tile").first();
+  const original = await first.locator(".reference-preview img").getAttribute("src");
+  await first.hover();
+  const [chooser] = await Promise.all([
+    page.waitForEvent("filechooser"),
+    first.getByRole("button", { name: "替换参考图：图片2", exact: true }).click(),
+  ]);
+  expect(chooser.isMultiple()).toBe(false);
+  await chooser.setFiles("apps/web/public/studio/set-thumb.webp");
+  await expect(first.locator(".reference-preview img")).not.toHaveAttribute("src", original ?? "");
+  await expect(field.locator(".reference-tile")).toHaveCount(5);
+  await first.getByRole("button", { name: "查看参考图片：图片2", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "图片浏览", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await first.hover();
+  await first.getByRole("button", { name: "移除参考图：图片2", exact: true }).click();
+  await expect(field.locator(".reference-tile")).toHaveCount(4);
+  await expect(field.getByRole("button", { name: "添加详情图", exact: true })).toBeVisible();
+  await field.getByRole("button", { name: "清除详情图", exact: true }).click();
+  await expect(field.locator(".reference-tile")).toHaveCount(0);
+  await expect(field.getByRole("button", { name: "清除详情图", exact: true })).toHaveCount(0);
 });

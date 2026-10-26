@@ -33,7 +33,7 @@ export function useTextileGeneration() {
       (ownPending || (!pending && configured && !!draft.mainImage && draft.views.length > 0)),
     unavailable: session.isSuccess && models.isSuccess && !configured,
     submit: () => {
-      const references = [draft.mainImage, draft.detailImage].filter((image) => image !== null);
+      const references = [draft.mainImage, ...draft.detailImages].filter((image) => image !== null);
       const input: Draft = {
         prompt: "家纺主图裂变",
         ratio: draft.ratio,
@@ -46,7 +46,7 @@ export function useTextileGeneration() {
         model: "gpt-image-2.5",
         draft: input,
         source: "textile-set",
-        textileSet: { version: 1, views: draft.views },
+        textileSet: { version: 2, views: draft.views },
       });
     },
   };

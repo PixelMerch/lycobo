@@ -396,3 +396,24 @@
   font-size: 14px;
   line-height: 20px;
 }
+
+.textile-uploaded-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.textile-image-field .textile-uploaded-details .reference-tile {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+.textile-detail-add.button {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 1;
+  border: 1px dashed #ffffff29;
+  border-radius: 8px;
+  background: transparent;
+  color: #aaa;
+}

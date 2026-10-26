@@ -15,7 +15,7 @@ import { useTextileGeneration } from "./use-textile-generation";
 import "./textile-set.css";
 
 export function TextileSetPage() {
-  const { mainImage, detailImage, views, ratio, update } = useTextileSetDraft();
+  const { mainImage, detailImages, views, ratio, update } = useTextileSetDraft();
   const viewsAnchor = useRef<HTMLDivElement>(null);
   const viewsTrigger = useRef<HTMLButtonElement>(null);
   const viewsPressWasOpen = useRef<boolean | null>(null);
@@ -34,16 +34,17 @@ export function TextileSetPage() {
             required
             description="上传清晰的家纺主图，完整展示床品"
             exampleSrc="/studio/bedroom-thumb.webp"
-            value={mainImage}
-            onChange={(image) => update({ mainImage: image })}
+            value={mainImage ? [mainImage] : []}
+            onChange={(images) => update({ mainImage: images[0] ?? null })}
             number={1}
           />
           <TextileImageField
             label="详情图"
             description="补充面料、花型或床品局部细节"
             exampleSrc="/studio/textile-views/fabric.webp"
-            value={detailImage}
-            onChange={(image) => update({ detailImage: image })}
+            value={detailImages}
+            maxImages={5}
+            onChange={(images) => update({ detailImages: images })}
             number={2}
           />
           <section className="parameter-group textile-view-field" aria-label="裂变类型">
@@ -188,7 +189,7 @@ export function TextileSetPage() {
                 if (!textileSet) return;
                 update({
                   mainImage: draft.references[0] ?? null,
-                  detailImage: draft.references[1] ?? null,
+                  detailImages: draft.references.slice(1, 6),
                   views: textileSet.views,
                   ratio: draft.ratio,
                 });

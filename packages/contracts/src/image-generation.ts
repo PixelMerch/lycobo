@@ -91,14 +91,14 @@ export const imageGenerationInputSchema = z
       input.textileSet
         ? input.count !== input.textileSet.views.length ||
           input.referenceAssetIds.length < 1 ||
-          input.referenceAssetIds.length > 2 ||
+          input.referenceAssetIds.length > (input.textileSet.version === 2 ? 6 : 2) ||
           !!input.localEdit
         : input.count > 4
     )
       ctx.addIssue({
         code: "custom",
         message:
-          "Textile views require one output each and one or two references; ordinary tasks allow four outputs",
+          "Textile views require one output each and one main reference and up to five detail references; ordinary tasks allow four outputs",
       });
 
     if (

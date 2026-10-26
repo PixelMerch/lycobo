@@ -74,10 +74,16 @@ test("textile angles submit one durable ten-image job and keep results separate 
   await page.goto("/commerce/textile-set");
   const submit = page.getByRole("button", { name: "立即生成", exact: true });
   await expect(submit).toBeDisabled();
-  for (const label of ["主图文件", "详情图文件"])
-    await page
-      .getByLabel(label, { exact: true })
-      .setInputFiles({ name: `${label}.png`, mimeType: "image/png", buffer: png });
+  await page
+    .getByLabel("主图文件", { exact: true })
+    .setInputFiles({ name: "main.png", mimeType: "image/png", buffer: png });
+  await page.getByLabel("详情图文件", { exact: true }).setInputFiles(
+    Array.from({ length: 5 }, (_, index) => ({
+      name: `detail-${index}.png`,
+      mimeType: "image/png",
+      buffer: png,
+    })),
+  );
   await page.getByRole("button", { name: "选择裂变类型", exact: true }).click();
   const picker = page.getByRole("dialog", { name: "裂变类型", exact: true });
   for (const view of textileViews)
@@ -87,7 +93,7 @@ test("textile angles submit one durable ten-image job and keep results separate 
   await expect(submit).toBeEnabled();
   await submit.click();
   await expect(page.locator(".generation-job")).toHaveCount(1);
-  expect(referenceIds.length).toBe(2);
+  expect(referenceIds.length).toBe(6);
   await expect(page.locator(".textile-result-view")).toHaveText(
     textileViews.map((view) => view.name),
   );
@@ -118,7 +124,7 @@ test("textile angles submit one durable ten-image job and keep results separate 
   await expect(page.locator(".generation-results img")).toHaveCount(9);
   await page.getByRole("button", { name: "重新编辑", exact: true }).click();
   await expect(page.locator(".textile-selected-view")).toHaveCount(10);
-  await expect(page.locator(".reference-tile")).toHaveCount(2);
+  await expect(page.locator(".reference-tile")).toHaveCount(6);
   await page.getByRole("link", { name: "创作", exact: true }).click();
   await expect(page.locator(".generation-job")).toHaveCount(0);
 });

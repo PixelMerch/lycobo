@@ -47,10 +47,17 @@ export function textileItemInput(
   if (!input.textileSet) return input;
   const view = input.textileSet.views[position];
   if (!view) throw new Error("TEXTILE_VIEW_POSITION_INVALID");
+  const referenceRules =
+    input.textileSet.version === 2
+      ? constraints.replace(
+          "若有第二张参考图，仅将其",
+          "若有第二至第六张参考图，这些均为详情图，仅将其",
+        )
+      : constraints;
   const { textileSet: _preset, ...providerInput } = input;
   return {
     ...providerInput,
-    prompt: `${constraints}\n拍摄要求：${cameras[view]}\n输出比例：${input.aspectRatio}。`,
+    prompt: `${referenceRules}\n拍摄要求：${cameras[view]}\n输出比例：${input.aspectRatio}。`,
     count: 1,
   };
 }

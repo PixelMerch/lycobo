@@ -4,7 +4,7 @@ import type { TextileViewId } from "./textile-views";
 
 type TextileSetDraft = {
   mainImage: ReferenceImage | null;
-  detailImage: ReferenceImage | null;
+  detailImages: ReferenceImage[];
   views: TextileViewId[];
   ratio: string;
 };
@@ -16,7 +16,7 @@ export const useTextileSetDraft = create<
   }
 >((set) => ({
   mainImage: null,
-  detailImage: null,
+  detailImages: [],
   views: [],
   ratio: "1:1",
   update: (patch) => set(patch),
