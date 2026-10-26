@@ -19,7 +19,6 @@ export function TextileImageField({
   required = false,
   description,
   exampleSrc,
-  exampleIsDetail = false,
   value,
   onChange,
   number,
@@ -28,7 +27,6 @@ export function TextileImageField({
   required?: boolean;
   description: string;
   exampleSrc: string;
-  exampleIsDetail?: boolean;
   value: ReferenceImage | null;
   onChange: (value: ReferenceImage | null) => void;
   number: number;
@@ -71,21 +69,23 @@ export function TextileImageField({
           {label}
           {!required && <small>（可选）</small>}
         </h2>
-        <Button
-          variant="tertiary"
-          size="sm"
-          className="clear-references"
-          aria-label={`清除${label}`}
-          isDisabled={!value || reading}
-          onPress={() => {
-            onChange(null);
-            setError("");
-            setPreview(false);
-          }}
-        >
-          <UiIcon icon={IconTrash} size="small" />
-          清除
-        </Button>
+        {value && (
+          <Button
+            variant="tertiary"
+            size="sm"
+            className="clear-references"
+            aria-label={`清除${label}`}
+            isDisabled={reading}
+            onPress={() => {
+              onChange(null);
+              setError("");
+              setPreview(false);
+            }}
+          >
+            <UiIcon icon={IconTrash} size="small" />
+            清除
+          </Button>
+        )}
       </div>
       <input
         ref={input}
@@ -125,11 +125,7 @@ export function TextileImageField({
           isDisabled={reading}
           onPress={() => input.current?.click()}
         >
-          <span
-            className="textile-upload-example"
-            data-detail={exampleIsDetail || undefined}
-            aria-hidden="true"
-          >
+          <span className="textile-upload-example" aria-hidden="true">
             <img
               src={exampleSrc}
               alt=""

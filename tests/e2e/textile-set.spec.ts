@@ -47,7 +47,7 @@ test("textile form has only required product inputs and retains confirmed choice
     )
     .toBe(true);
   await expect(dialog.locator(".textile-view-example")).toHaveCount(10);
-  await expect(dialog.locator(".textile-view-example").first()).toHaveCSS("aspect-ratio", "1 / 1");
+  await expect(dialog.locator(".textile-view-example").first()).toHaveCSS("aspect-ratio", "3 / 4");
   await page.screenshot({ path: "/tmp/lycobo-textile-view-examples.png" });
   await dialog.getByRole("button", { name: "正面", exact: true }).click();
   await dialog.getByRole("button", { name: "面料特写", exact: true }).click();
@@ -123,6 +123,9 @@ test("main and optional detail images validate independently and clear without a
   page,
 }) => {
   await page.goto("/commerce/textile-set");
+  await expect(page.getByRole("button", { name: "清除主图", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "清除详情图", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "清除裂变类型", exact: true })).toHaveCount(0);
   await page
     .getByLabel("主图文件", { exact: true })
     .setInputFiles({ name: "main.png", mimeType: "image/png", buffer: png });
@@ -146,6 +149,8 @@ test("main and optional detail images validate independently and clear without a
   await expect(page.getByRole("alert")).toContainText("图片无法读取");
   await expect(page.locator(".reference-tile")).toHaveCount(2);
   await page.getByRole("button", { name: "清除主图", exact: true }).click();
+  await expect(page.getByRole("button", { name: "清除主图", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "清除详情图", exact: true })).toBeVisible();
   await expect(
     page.getByRole("region", { name: "主图", exact: true }).locator(".reference-tile"),
   ).toHaveCount(0);
@@ -335,4 +340,25 @@ test("corner replacement opens the file chooser without opening preview and keep
     .getByRole("button", { name: "查看参考图片：图片1", exact: true })
     .click({ position: { x: 12, y: 56 } });
   await expect(page.getByRole("dialog", { name: "图片浏览", exact: true })).toBeVisible();
+});
+
+test("clear textile views removes every selected angle without clearing product images", async ({
+  page,
+}) => {
+  await page.goto("/commerce/textile-set");
+  await page
+    .getByLabel("主图文件", { exact: true })
+    .setInputFiles({ name: "main.png", mimeType: "image/png", buffer: png });
+  await page.getByRole("button", { name: "选择裂变类型", exact: true }).click();
+  const picker = page.getByRole("dialog", { name: "裂变类型", exact: true });
+  for (const name of ["正面", "面料特写"])
+    await picker.getByRole("button", { name, exact: true }).click();
+  await picker.getByRole("button", { name: "确认", exact: true }).click();
+  await expect(page.locator(".textile-selected-view")).toHaveCount(2);
+  await page.getByRole("button", { name: "清除裂变类型", exact: true }).click();
+  await expect(page.locator(".textile-selected-view")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "清除裂变类型", exact: true })).toHaveCount(0);
+  await expect(page.locator(".reference-tile")).toHaveCount(1);
+  await page.getByRole("button", { name: "选择裂变类型", exact: true }).click();
+  await expect(picker).toContainText("已选 0 个视角");
 });

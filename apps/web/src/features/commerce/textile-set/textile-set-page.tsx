@@ -1,6 +1,6 @@
 import { Button, Popover, Tabs } from "@heroui/react";
 import { imageUnitCredits } from "@lycoboai/contracts";
-import { IconPlus, IconX } from "@tabler/icons-react";
+import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { useId, useRef, useState } from "react";
 import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
@@ -41,19 +41,36 @@ export function TextileSetPage() {
           <TextileImageField
             label="详情图"
             description="补充面料、花型或床品局部细节"
-            exampleSrc="/studio/set-thumb.webp"
-            exampleIsDetail
+            exampleSrc="/studio/textile-views/fabric.webp"
             value={detailImage}
             onChange={(image) => update({ detailImage: image })}
             number={2}
           />
           <section className="parameter-group textile-view-field" aria-label="裂变类型">
-            <h2>
-              <span aria-hidden="true" className="textile-required">
-                *
-              </span>
-              裂变类型
-            </h2>
+            <div className="field-title">
+              <h2>
+                <span aria-hidden="true" className="textile-required">
+                  *
+                </span>
+                裂变类型
+              </h2>
+              {selectedViews.length > 0 && (
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  className="clear-references"
+                  aria-label="清除裂变类型"
+                  onPress={() => {
+                    update({ views: [] });
+                    setViewsOpen(false);
+                    viewsTrigger.current?.focus();
+                  }}
+                >
+                  <UiIcon icon={IconTrash} size="small" />
+                  清除
+                </Button>
+              )}
+            </div>
             <div className={selectedViews.length ? "textile-selected-grid" : undefined}>
               {selectedViews.map((view) => (
                 <div className="textile-selected-view" key={view.id}>
