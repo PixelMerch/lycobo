@@ -39,12 +39,12 @@ test("commerce hover cards share model styling and preserve the current creation
   await expect(page.locator(".commerce-nav-row")).not.toHaveAttribute("data-active", "true");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(menu.getByRole("menuitem")).toHaveCount(1);
-  const card = menu.getByRole("menuitem", { name: "查看家纺套图", exact: true });
+  const card = menu.getByRole("menuitem", { name: "查看家纺主图裂变", exact: true });
   await expect(card).toContainText("即将上线");
   await card.click();
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
-  await expect(page.getByRole("heading", { name: "家纺套图", exact: true })).toBeVisible();
-  await expect(page.getByRole("region", { name: "家纺套图参数", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "家纺主图裂变", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "家纺主图裂变参数", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
   await expect(page.locator(".commerce-nav-row")).toHaveAttribute("data-active", "true");
   await page.getByRole("link", { name: "创作", exact: true }).click();
@@ -56,7 +56,7 @@ test("commerce text goes directly to its page and the arrow toggles its menu", a
   const link = page.getByRole("link", { name: "AI 电商", exact: true });
   await link.click();
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
-  await expect(page.getByRole("heading", { name: "家纺套图", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "家纺主图裂变", exact: true })).toBeVisible();
   await expect(page.getByRole("menu")).toHaveCount(0);
   const arrow = page.getByRole("button", { name: "浏览电商功能", exact: true });
   await arrow.click();
@@ -96,9 +96,9 @@ for (const width of [390, 1440]) {
       exact: true,
     });
     await expect(menu).toBeVisible();
-    await menu.getByRole("menuitem", { name: "查看家纺套图", exact: true }).click();
+    await menu.getByRole("menuitem", { name: "查看家纺主图裂变", exact: true }).click();
     await expect(page).toHaveURL(/\/commerce\/textile-set$/);
-    await expect(page.getByRole("heading", { name: "家纺套图", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "家纺主图裂变", exact: true })).toBeVisible();
     await expect(menu).toBeHidden();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
@@ -118,7 +118,7 @@ test("commerce entry remembers a valid tool across reloads and falls back from r
   page,
 }) => {
   await page.goto("/commerce/textile-set");
-  await expect(page.getByRole("heading", { name: "家纺套图", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "家纺主图裂变", exact: true })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem("lycobo.commerce.recent-tool"))).toBe(
     "textile-set",
   );
@@ -146,5 +146,5 @@ test("commerce entry remains available when browser storage is blocked", async (
   });
   await page.goto("/commerce");
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
-  await expect(page.getByRole("region", { name: "家纺套图参数", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "家纺主图裂变参数", exact: true })).toBeVisible();
 });

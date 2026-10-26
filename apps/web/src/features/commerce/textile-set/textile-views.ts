@@ -1,4 +1,4 @@
-/** Example artwork is intentionally absent; add reviewed image paths here later. */
+/** Camera angles for the home-textile main-image variations tool. */
 export const textileViews = [
   { id: "overhead-wide", name: "俯拍全景" },
   { id: "overhead-close", name: "俯拍近景" },
@@ -13,5 +13,16 @@ export const textileViews = [
 ] as const;
 export type TextileViewId = (typeof textileViews)[number]["id"];
 
-/** Add approved example URLs by view ID; empty entries render a white placeholder. */
-export const textileViewImages: Partial<Record<TextileViewId, string>> = {};
+/** Static AI-generated examples only; never submitted as user reference images. */
+export const textileViewImages = {
+  "overhead-wide": "/studio/textile-views/overhead-wide.webp",
+  "overhead-close": "/studio/textile-views/overhead-close.webp",
+  "close-up": "/studio/textile-views/close-up.webp",
+  pillow: "/studio/textile-views/pillow.webp",
+  "bed-end": "/studio/textile-views/bed-end.webp",
+  "angled-overhead": "/studio/textile-views/angled-overhead.webp",
+  front: "/studio/textile-views/front.webp",
+  "angled-level": "/studio/textile-views/angled-level.webp",
+  draped: "/studio/textile-views/draped.webp",
+  fabric: "/studio/textile-views/fabric.webp",
+} satisfies Record<TextileViewId, string>;

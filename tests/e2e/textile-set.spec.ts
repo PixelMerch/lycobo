@@ -14,7 +14,7 @@ test("textile form has only required product inputs and retains confirmed choice
   page,
 }) => {
   await page.goto("/commerce/textile-set");
-  const form = page.getByRole("region", { name: "家纺套图参数", exact: true });
+  const form = page.getByRole("region", { name: "家纺主图裂变参数", exact: true });
   await expect(page.getByLabel("主图文件", { exact: true })).toHaveAttribute("required", "");
   await expect(page.getByLabel("主图文件", { exact: true })).not.toHaveAttribute("multiple");
   await expect(page.getByLabel("详情图文件", { exact: true })).not.toHaveAttribute("multiple");
@@ -30,8 +30,25 @@ test("textile form has only required product inputs and retains confirmed choice
   await form.getByRole("button", { name: "选择裂变类型", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "裂变类型", exact: true });
   await expect(dialog.locator(".textile-view-card")).toHaveCount(10);
-  await expect(dialog.locator("img")).toHaveCount(0);
+  await expect(dialog.locator("img")).toHaveCount(10);
+  await expect
+    .poll(() =>
+      dialog
+        .locator("img")
+        .evaluateAll((images) =>
+          images.every(
+            (image) =>
+              image instanceof HTMLImageElement &&
+              image.complete &&
+              image.naturalWidth === 480 &&
+              image.naturalHeight === 480,
+          ),
+        ),
+    )
+    .toBe(true);
   await expect(dialog.locator(".textile-view-example")).toHaveCount(10);
+  await expect(dialog.locator(".textile-view-example").first()).toHaveCSS("aspect-ratio", "1 / 1");
+  await page.screenshot({ path: "/tmp/lycobo-textile-view-examples.png" });
   await dialog.getByRole("button", { name: "正面", exact: true }).click();
   await dialog.getByRole("button", { name: "面料特写", exact: true }).click();
   await expect(dialog).toContainText("已选 2 个视角");
@@ -39,6 +56,10 @@ test("textile form has only required product inputs and retains confirmed choice
   await expect(dialog).toBeHidden();
   await expect(form.locator(".textile-selected-view")).toHaveCount(2);
   await expect(form.locator(".textile-selected-name")).toHaveText(["正面", "面料特写"]);
+  await expect(form.locator(".textile-selected-example img").first()).toHaveAttribute(
+    "src",
+    "/studio/textile-views/front.webp",
+  );
   const ratios = form.getByRole("region", { name: "图片比例", exact: true });
   await ratios.getByRole("button", { name: "下一页画面比例", exact: true }).click();
   await ratios.getByRole("radio", { name: "3:4", exact: true }).click();
@@ -81,7 +102,7 @@ test("view reset and dismiss do not overwrite the confirmed selection", async ({
     "true",
   );
   await dialog.getByRole("button", { name: "正面", exact: true }).click();
-  await page.getByRole("heading", { name: "家纺套图", exact: true }).click();
+  await page.getByRole("heading", { name: "家纺主图裂变", exact: true }).click();
   await expect(dialog).toBeHidden();
   await expect(page.locator(".textile-selected-name")).toHaveText(["枕头特写"]);
   await opener.click();
@@ -137,10 +158,10 @@ for (const width of [2560, 1440, 390]) {
   test(`textile workspace and view dialog remain usable at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/commerce/textile-set");
-    await expect(page.getByRole("region", { name: "家纺套图参数", exact: true })).toBeVisible();
-    await expect(page.getByRole("region", { name: "家纺套图内容", exact: true })).toBeVisible();
+    await expect(page.getByRole("region", { name: "家纺主图裂变参数", exact: true })).toBeVisible();
+    await expect(page.getByRole("region", { name: "家纺主图裂变内容", exact: true })).toBeVisible();
     await expect(
-      page.getByRole("complementary", { name: "家纺套图历史索引", exact: true }),
+      page.getByRole("complementary", { name: "家纺主图裂变历史索引", exact: true }),
     ).toBeVisible();
     await page.getByRole("button", { name: "选择裂变类型", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "裂变类型", exact: true });
@@ -148,7 +169,7 @@ for (const width of [2560, 1440, 390]) {
     expect(box && box.x >= 0 && box.x + box.width <= width).toBeTruthy();
     await expect(page.locator(".modal__backdrop")).toHaveCount(0);
     await expect(page.locator(".textile-views-popover")).toHaveCSS("backdrop-filter", "none");
-    const form = page.getByRole("region", { name: "家纺套图参数", exact: true });
+    const form = page.getByRole("region", { name: "家纺主图裂变参数", exact: true });
     expect(await form.evaluate((el) => el.closest('[aria-hidden="true"], [inert]') === null)).toBe(
       true,
     );
@@ -158,7 +179,7 @@ for (const width of [2560, 1440, 390]) {
     }
     if (width > 1300) {
       const railBox = await page
-        .getByRole("complementary", { name: "家纺套图历史索引", exact: true })
+        .getByRole("complementary", { name: "家纺主图裂变历史索引", exact: true })
         .boundingBox();
       expect(box && railBox && box.x + box.width <= railBox.x).toBeTruthy();
       await expect(page.getByRole("button", { name: "打开素材库", exact: true })).toBeInViewport();

@@ -24,9 +24,9 @@ export function TextileSetPage() {
   return (
     <div className="workspace textile-workspace">
       <div ref={viewsAnchor} className="textile-views-anchor" aria-hidden="true" />
-      <section className="composer-panel" aria-label="家纺套图参数">
+      <section className="composer-panel" aria-label="家纺主图裂变参数">
         <div className="composer-scroll">
-          <h1 className="textile-title">家纺套图</h1>
+          <h1 className="textile-title">家纺主图裂变</h1>
           <TextileImageField
             label="主图"
             required
@@ -60,6 +60,8 @@ export function TextileSetPage() {
                       <img
                         src={textileViewImages[view.id]}
                         alt=""
+                        width={480}
+                        height={480}
                         loading="lazy"
                         decoding="async"
                         draggable={false}
@@ -131,29 +133,29 @@ export function TextileSetPage() {
             fullWidth
             className="primary-action generation-submit"
             isDisabled
-            aria-description="家纺套图生成功能即将上线"
+            aria-description="家纺主图裂变功能即将上线"
           >
             立即生成
           </Button>
-          <p className="textile-service-status">套图生成功能即将上线</p>
+          <p className="textile-service-status">主图裂变功能即将上线</p>
         </div>
       </section>
-      <section className="results-panel" aria-label="家纺套图内容">
+      <section className="results-panel" aria-label="家纺主图裂变内容">
         <Tabs className="workspace-tabs">
           <Tabs.ListContainer>
-            <Tabs.List aria-label="家纺套图工作区">
+            <Tabs.List aria-label="家纺主图裂变工作区">
               <Tabs.Tab id="history">历史记录</Tabs.Tab>
             </Tabs.List>
           </Tabs.ListContainer>
           <Tabs.Panel id="history">
             <EmptyState className="textile-history-empty">
-              <h2>家纺套图将在这里展示</h2>
+              <h2>家纺主图裂变将在这里展示</h2>
               <p>上传主图，选择需要的视角，准备你的商品套图</p>
             </EmptyState>
           </Tabs.Panel>
         </Tabs>
       </section>
-      <aside className="history-rail" aria-label="家纺套图历史索引">
+      <aside className="history-rail" aria-label="家纺主图裂变历史索引">
         <h2 className="history-rail-title">
           <Button
             variant="tertiary"

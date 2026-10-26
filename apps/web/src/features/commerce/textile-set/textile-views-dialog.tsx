@@ -83,6 +83,8 @@ export function TextileViewsDialog({
                     <img
                       src={textileViewImages[view.id]}
                       alt=""
+                      width={480}
+                      height={480}
                       loading="lazy"
                       decoding="async"
                       draggable={false}

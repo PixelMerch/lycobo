@@ -125,7 +125,7 @@
 }
 .textile-selected-example {
   display: block;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 1;
   overflow: hidden;
   background: #fff;
 }
@@ -286,7 +286,7 @@
 .textile-view-example {
   display: block;
   width: 100%;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 1;
   overflow: hidden;
   background: #fff;
 }
