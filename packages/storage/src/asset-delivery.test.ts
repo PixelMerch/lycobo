@@ -43,3 +43,15 @@ it("allows HTTP only through explicit development opt-in on exact loopback hosts
   ])
     expect(() => assetDeliverySigner(origin, secret, { allowLocalHttp: true })).toThrow();
 });
+
+it("signs a compressed preview by default and preserves the original only for download", async () => {
+  const links = await assetDeliverySigner("http://cdn.lycobo.localhost:8791", secret, {
+    allowLocalHttp: true,
+  })(key);
+  expect(new URL(links.url).searchParams.get("variant")).toBe("preview");
+  expect(new URL(links.thumbnail_url).searchParams.get("variant")).toBe("thumbnail");
+  expect(new URL(links.download_url).searchParams.get("variant")).toBe("download");
+  expect(() =>
+    assetDeliverySigner("http://cdn.lycobo.localhost.evil.test", secret, { allowLocalHttp: true }),
+  ).toThrow();
+});

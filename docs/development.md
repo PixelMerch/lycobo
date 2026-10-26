@@ -23,7 +23,7 @@ docker compose up --build
 | 服务 | 本地开发位置 | 持久化 |
 | --- | --- | --- |
 | PostgreSQL | Compose `postgres:5432`；宿主机映射 `127.0.0.1:55432` | `postgres-data` 卷 |
-| 图片对象存储 | Wrangler 模拟 R2；原件与缩略图沿用 UID 隔离路径，独立资源入口 `http://localhost:8791` | `studio-state` 卷内 `.wrangler/state` |
+| 图片对象存储 | Wrangler 模拟 R2；原件与缩略图沿用 UID 隔离路径，独立资源入口 `http://cdn.lycobo.localhost:8791` | `studio-state` 卷内 `.wrangler/state` |
 | 图片处理 | 本地 Images 模拟 | 输出进入本地 R2 |
 | 任务队列 | Compose Redis Streams；宿主机映射 `127.0.0.1:56379` | `redis-data` 卷，AOF 持久化 |
 
@@ -37,9 +37,9 @@ docker compose up --build
 
 为复用同一套 R2/Images 和业务处理，本地入口生成被 Git 忽略的 `apps/{api,worker,assets}/wrangler.local.json`：移除 Cloudflare Queue 绑定及 Cron，使用本地消费者服务绑定和仅监听 `127.0.0.1:8790` 的 Redis HTTP 桥接。内部端点使用每次启动随机生成的令牌，令牌仅进入本地 `.dev.vars`，不进入前端。线上 Wrangler 配置保持 Cloudflare Queues。正常开发使用根 `pnpm dev`／Compose，不重复启动独立消费者。
 
-本地图片通过独立资源 Worker（8791）读取同一个本地 R2，API 只负责授权并返回原图／缩略图／下载签名链接。历史与素材列表批量返回签名链接，上传响应也附带链接，前端直接使用资源地址；旧 `/content` 入口保留为授权后的 302 兼容跳转。资源请求不连接 PostgreSQL，验证签名和来源后读取缓存，未命中再读取本地 R2。签名 30 分钟有效，缓存命中前仍会验签。资源 Worker 的本地请求日志设为 warn，避免记录带签名的 URL。
+本地图片通过独立资源 Worker（8791）读取同一个本地 R2，API 只负责授权并返回预览／缩略图／下载签名链接。历史与素材列表批量返回签名链接，上传响应也附带链接，前端直接使用资源地址；旧 `/content` 入口保留为授权后的 302 兼容跳转。资源请求不连接 PostgreSQL，验证签名和来源后读取缓存，未命中再读取本地 R2。签名 30 分钟有效，缓存命中前仍会验签。资源 URL 使用 `variant=preview`（默认，最长边 1600px、WebP quality 82）、`variant=thumbnail`（最长边 512px、WebP quality 76）或 `variant=download`（原始 PNG、attachment）。页面不默认加载原图，后台参考图编辑仍使用原始文件。新图写入时预生成 WebP；历史图片首次缺少某个版本时，从本地原图补生成并缓存，不重新调用模型。资源 Worker 的本地请求日志设为 warn，避免记录带签名的 URL。
 
-本地资源域名与签名密钥由启动器固定／随机生成，忽略 `.env` 中的线上 ASSET 配置；只有开发模式显式允许 loopback HTTP，生产资源 Origin 仍要求 HTTPS。本地模拟独立资源链路，不表示访问 Cloudflare 线上 CDN。修改端口需同步本地资源 Origin 和精确来源白名单。
+本地资源域名与签名密钥由启动器固定／随机生成，忽略 `.env` 中的线上 ASSET 配置；本地域名 `cdn.lycobo.localhost` 解析到本机回环地址；只有开发模式显式允许该域名及精确 loopback HTTP，生产资源 Origin 仍要求 HTTPS。本地模拟独立资源链路，不表示访问 Cloudflare 线上 CDN。修改端口需同步本地资源 Origin 和精确来源白名单。
 
 Redis 健康状态纳入 `studio` 健康检查。Redis 故障时发送失败不会确认数据库 outbox；恢复后由维护任务补投。AOF 每秒同步，异常断电可能丢失最近一秒的传输数据，持久数据库 outbox 负责补偿；不要把 Redis 当作计费或任务状态来源。
 

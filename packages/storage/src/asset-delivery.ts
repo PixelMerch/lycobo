@@ -55,7 +55,7 @@ export function assetDeliverySigner(
       !(
         options.allowLocalHttp &&
         base.protocol === "http:" &&
-        ["localhost", "127.0.0.1", "[::1]"].includes(base.hostname)
+        ["localhost", "127.0.0.1", "[::1]", "cdn.lycobo.localhost"].includes(base.hostname)
       )) ||
     base.pathname !== "/" ||
     base.username ||
@@ -77,7 +77,7 @@ export function assetDeliverySigner(
       return copy.href;
     };
     return {
-      url: url.href,
+      url: variant("preview"),
       thumbnail_url: variant("thumbnail"),
       download_url: variant("download"),
       expires_at,

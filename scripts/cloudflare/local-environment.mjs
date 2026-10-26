@@ -38,7 +38,7 @@ export function localEnvironment(source, docker = false, modelSettings = source)
   env.LOCAL_REDIS_URL = docker ? "redis://redis:6379" : "redis://127.0.0.1:56379";
   env.LOCAL_QUEUE_TOKEN = randomBytes(32).toString("hex");
   env.ASSET_SIGNING_SECRET = randomBytes(32).toString("hex");
-  env.ASSET_PUBLIC_ORIGIN = "http://localhost:8791";
+  env.ASSET_PUBLIC_ORIGIN = "http://cdn.lycobo.localhost:8791";
   env.ASSET_ALLOWED_ORIGINS =
     "http://localhost:8081,http://127.0.0.1:8081,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8787,http://127.0.0.1:8787";
   return env;

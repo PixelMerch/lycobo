@@ -19,5 +19,8 @@
       "binding": "IMAGES_BUCKET",
       "bucket_name": "lycobo"
     }
-  ]
+  ],
+  "images": {
+    "binding": "IMAGES"
+  }
 }

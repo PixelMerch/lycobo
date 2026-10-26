@@ -7,7 +7,8 @@
     ".": "./src/index.ts",
     "./core": "./src/core.ts",
     "./r2": "./src/r2-image-store.ts",
-    "./delivery": "./src/asset-delivery.ts"
+    "./delivery": "./src/asset-delivery.ts",
+    "./variants": "./src/image-variants.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

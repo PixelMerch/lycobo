@@ -206,6 +206,11 @@ export default function PreviewWorkspace({
             <RepairCanvas
               width={editor.width}
               height={editor.height}
+              maxFitScale={Math.min(
+                1,
+                editor.image.naturalWidth / editor.width,
+                editor.image.naturalHeight / editor.height,
+              )}
               regions={repairing ? editor.draft.regions : []}
               selected={editor.selected}
               tool={tool}

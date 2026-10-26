@@ -31,7 +31,13 @@ test("multiple repair regions retain original coordinates, submit one image and 
     }),
   );
   await page.route("**/api/v1/image-assets/**/content*", (route) =>
-    route.fulfill({ contentType: "image/svg+xml", body: svg }),
+    route.fulfill({
+      contentType: "image/svg+xml",
+      body: svg.replace(
+        'width="1024" height="1024"',
+        'width="256" height="256" viewBox="0 0 1024 1024"',
+      ),
+    }),
   );
   let submitted: Record<string, unknown> | undefined;
   let attempts = 0;
@@ -101,6 +107,11 @@ test("multiple repair regions retain original coordinates, submit one image and 
   await expect(viewer.locator(".image-preview")).toHaveCSS("transform", "none");
   const imageBounds = await viewer.locator(".image-preview-image").boundingBox();
   if (!imageBounds) throw new Error("Source image has no bounds");
+  expect(
+    await viewer
+      .locator(".image-preview-image")
+      .evaluate((node: HTMLImageElement) => node.naturalWidth),
+  ).toBe(256);
   const edge = imageBounds.width;
   const origin = { x: imageBounds.x, y: imageBounds.y };
   await page.mouse.move(origin.x + edge * 0.1, origin.y + edge * 0.1);
