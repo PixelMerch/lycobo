@@ -73,7 +73,6 @@ test("login and logout synchronize mounted history without reloading or losing t
   });
   await page.getByRole("button", { name: "登录领积分", exact: true }).click();
   const dialog = page.getByRole("dialog");
-  await dialog.getByRole("button", { name: "企业账号登录", exact: true }).click();
   await dialog.getByLabel("企业账号", { exact: true }).fill(user.account);
   await dialog.getByLabel("密码", { exact: true }).fill("fixture-password");
   await dialog.getByRole("button", { name: "登录", exact: true }).click();

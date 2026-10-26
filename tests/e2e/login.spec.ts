@@ -14,7 +14,11 @@ test("header login opens account/password dialog and validates without faking au
   await entry.click();
   const dialog = page.getByRole("dialog", { name: "欢迎使用 Lycobo" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("status", { name: "扫码登录暂未开放" })).toBeVisible();
+  // Enterprise account/password is the default login method.
+  const account = dialog.getByRole("textbox", { name: "企业账号" });
+  const password = dialog.getByLabel("密码", { exact: true });
+  await expect(account).toBeFocused();
+  await expect(dialog.getByRole("status", { name: "扫码登录暂未开放" })).toHaveCount(0);
   await expect(dialog.locator(".login-content")).toHaveCSS(
     "background-color",
     "rgb(255, 255, 255)",
@@ -27,11 +31,7 @@ test("header login opens account/password dialog and validates without faking au
   await expect
     .poll(() => dialog.locator(".login-panel").evaluate((node) => getComputedStyle(node).transform))
     .toBe("none");
-  await page.screenshot({ path: "/tmp/lycoboai-login-wechat-desktop.png" });
-  await dialog.getByRole("button", { name: "企业账号登录", exact: true }).click();
-  const account = dialog.getByRole("textbox", { name: "企业账号" });
-  const password = dialog.getByLabel("密码", { exact: true });
-  await expect(account).toBeFocused();
+  await page.screenshot({ path: "/tmp/lycoboai-login-enterprise-desktop.png" });
   await expect(account).toHaveCSS("border-top-width", "0px");
   await expect(account).toHaveCSS("outline-style", "none");
   await expect(account).toHaveCSS("box-shadow", "rgba(0, 0, 0, 0.15) 0px 0px 0px 1px inset");
@@ -61,9 +61,10 @@ test("header login opens account/password dialog and validates without faking au
   await expect(dialog).toHaveCount(0);
   await expect(entry).toBeFocused();
   await entry.click();
-  await expect(dialog.getByRole("status", { name: "扫码登录暂未开放" })).toBeVisible();
-  await dialog.getByRole("button", { name: "企业账号登录", exact: true }).click();
+  await expect(account).toBeFocused();
   await expect(dialog.getByLabel("密码", { exact: true })).toHaveValue("");
+  await dialog.getByRole("button", { name: "通过微信扫码登录", exact: true }).click();
+  await expect(dialog.getByRole("status", { name: "扫码登录暂未开放" })).toBeVisible();
 });
 
 test("switching login methods keeps the dialog height and uses borderless fields with one focus indicator", async ({
@@ -211,7 +212,6 @@ test("enterprise login updates the header, refreshes its session and clears the 
   await page.goto("/");
   await page.getByRole("button", { name: "登录领积分", exact: true }).click();
   const dialog = page.getByRole("dialog");
-  await dialog.getByRole("button", { name: "企业账号登录", exact: true }).click();
   await dialog.getByLabel("企业账号", { exact: true }).fill("merchant-fixture");
   await dialog.getByLabel("密码", { exact: true }).fill("fixture-password");
   await dialog.getByRole("button", { name: "登录", exact: true }).click();
