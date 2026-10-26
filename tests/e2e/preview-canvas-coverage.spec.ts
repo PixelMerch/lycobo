@@ -52,6 +52,16 @@ for (const width of [1440, 390]) {
     });
     expect(coverage).toEqual({ left: 0, top: 0, right: 0, bottom: 0, padding: "0px" });
     await expect(viewer.locator(".preview-canvas-dock")).toHaveCSS("position", "absolute");
+    const bar = stage.locator(".image-preview-bar");
+    await expect(bar).toHaveCSS("position", "absolute");
+    await expect(viewer.locator(".image-preview-image")).toHaveCSS("scale", "0.8");
+    const stageBox = await stage.boundingBox();
+    const barBox = await bar.boundingBox();
+    if (!stageBox || !barBox) throw new Error("Missing canvas controls");
+    expect(barBox.y + barBox.height).toBeLessThan(stageBox.y + stageBox.height);
+    expect(barBox.x).toBeGreaterThanOrEqual(stageBox.x);
+    expect(barBox.x + barBox.width).toBeLessThanOrEqual(stageBox.x + stageBox.width);
+    if (width === 1440) expect(stageBox.height).toBe(1000);
     const description = viewer.getByRole("region", { name: "创意描述", exact: true });
     const paragraph = description.locator("p");
     await expect(paragraph).toHaveCSS("-webkit-line-clamp", "3");
@@ -66,14 +76,21 @@ for (const width of [1440, 390]) {
     await description.getByRole("button", { name: "收起", exact: true }).click();
     await expect(paragraph).toHaveClass(/prompt-collapsed/);
     if (width === 1440) {
-      await viewer.getByRole("radio", { name: "拖动画布", exact: true }).click();
       const box = await frame.boundingBox();
       if (!box) throw new Error("Missing frame");
-      await page.mouse.move(box.x + 3, box.y + 3);
+      await page.mouse.move(box.x + 3, box.y + box.height - 3);
       await page.mouse.down();
-      await page.mouse.move(box.x + 103, box.y + 93, { steps: 5 });
+      await page.mouse.move(box.x + 103, box.y + box.height - 93, { steps: 5 });
       await page.mouse.up();
-      await expect(viewer.locator(".image-preview-image")).toHaveCSS("translate", "100px 90px");
+      await expect(viewer.locator(".image-preview-image")).toHaveCSS("translate", "100px -90px");
+      await viewer.getByRole("button", { name: "适应画布", exact: true }).click();
+      await expect(viewer.locator(".image-preview-image")).toHaveCSS("translate", "0px");
+      const slider = viewer.getByRole("slider", { name: "缩放", exact: true });
+      await slider.focus();
+      await page.keyboard.press("Home");
+      await expect(viewer.getByLabel("画布缩放比例")).toHaveText("25%");
+      await viewer.getByRole("button", { name: "适应画布", exact: true }).click();
+      await expect(viewer.getByLabel("画布缩放比例")).toHaveText("80%");
       await viewer.getByRole("button", { name: "预览第 2 张", exact: true }).click();
       await expect(
         viewer

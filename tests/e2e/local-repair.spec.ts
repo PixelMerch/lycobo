@@ -129,7 +129,7 @@ test("multiple repair regions retain original coordinates, submit one image and 
   await expect(viewer.getByRole("spinbutton")).toHaveCount(0);
   await canvas.hover();
   await page.mouse.wheel(0, -200);
-  await expect(viewer.getByLabel("画布缩放比例")).toHaveText("115%");
+  await expect(viewer.getByLabel("画布缩放比例")).toHaveText("92%");
   await viewer.getByRole("button", { name: "添加区域", exact: true }).click();
   await viewer.getByRole("textbox", { name: "区域 2 修改说明", exact: true }).fill("去掉脚袋");
   await viewer.getByRole("button", { name: "返回详情", exact: true }).click();
