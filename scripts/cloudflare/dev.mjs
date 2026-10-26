@@ -1,9 +1,17 @@
 import { spawn } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
+import { parseEnv } from "node:util";
 import { localEnvironment } from "./local-environment.mjs";
 
 const docker = process.argv.includes("--docker");
-const env = localEnvironment(process.env, docker);
+let fileSettings = {};
+try {
+  fileSettings = parseEnv(await readFile(".env", "utf8"));
+} catch (error) {
+  if (!(error instanceof Error) || !("code" in error) || error.code !== "ENOENT") throw error;
+}
+// Never merge the whole .env into child processes: only model settings are allowlisted.
+const env = localEnvironment(process.env, docker, { ...fileSettings, ...process.env });
 // Refuse accidental remote bindings in the configs consumed by local development.
 const configs = {};
 for (const name of ["api", "worker"]) {

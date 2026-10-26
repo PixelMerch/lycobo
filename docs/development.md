@@ -29,7 +29,9 @@ docker compose up --build
 
 本地数据库、图片、队列均独立，不读取或写入线上 Supabase、R2 或 Queues。不会复制线上账号、积分、历史或图片，也不会自动创建账号和赠送积分。本地已有记录引用的图片若此前存放在其他卷，不能仅凭记录恢复文件。
 
-`pnpm dev` 不读取根 `.env` 的生产配置；Docker 也不注入 Supabase、Cloudflare 部署令牌或模型密钥。启动入口固定本地数据库地址，清除继承的生产凭据，拒绝 `remote: true` 绑定，关闭真实付费生图。根 `.env` 可继续保存部署配置，开发启动不会使用其中的线上数据库。`pnpm cloudflare:deploy`、远端迁移等显式运维命令仍有独立职责，不能作为本地启动命令。
+本地启动只从根 `.env` 读取模型配置白名单：`IMAGE_GENERATION_ENABLED`、`VAKV_ENABLE_IMAGE_EDITS`、`VAKV_API_KEY`、`VAKV_BASE_URL`、`VAKV_CAPABILITY_OVERRIDES`、`GENERATION_TIMEOUT_MS`。启动入口固定本地数据库地址，清除线上基础设施凭据并拒绝 `remote: true` 绑定；`.env` 的 Supabase、数据库、R2、部署令牌、线上 JWT 和 `VITE_*` 值不会被导入开发进程。旧的 `LOCAL_IMAGE_GENERATION_ENABLED` 不再作为用户配置，以 `IMAGE_GENERATION_ENABLED` 为准。
+
+启用本地真实生图时设置 `IMAGE_GENERATION_ENABLED=true` 并配置 `VAKV_API_KEY`；参考图编辑还需 `VAKV_ENABLE_IMAGE_EDITS=true`。关闭时模型 Key 不传入 Worker。修改 `.env` 后执行 `docker compose restart studio`；宿主机模式重启 `pnpm dev`。模型调用会消耗对应供应商账户额度，但账号、积分、任务、图片与队列数据仍保存在本地。根 `.env` 可继续保存部署配置，开发启动不会使用其中的线上数据库。`pnpm cloudflare:deploy`、远端迁移等显式运维命令仍有独立职责，不能作为本地启动命令。
 
 本地队列只保存 `{version, itemId}`。`redis-dev.mjs` 使用消费者组领取消息，心跳续租，执行完成后确认并删除消息；进程退出时未确认消息留在 Redis，租约过期后恢复。单条消息失败最多投递 4 次后进入本地死信流；数据库 outbox 仍是恢复意图的来源，数据库 claim 与不确定结果规则负责避免重复付费提交。桥接每 30 秒触发本地 outbox／租约维护。
 
