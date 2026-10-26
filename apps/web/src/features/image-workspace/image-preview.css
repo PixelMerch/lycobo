@@ -167,10 +167,10 @@
 }
 .image-preview-tool.button[data-selected="true"] {
   background: transparent;
-  color: #baa4ff;
+  color: #0485f7;
 }
 .image-preview-tool.button[aria-pressed="true"] {
-  color: #baa4ff;
+  color: #0485f7;
 }
 .image-preview-facts {
   display: flex;

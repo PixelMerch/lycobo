@@ -204,7 +204,9 @@ test("submission success preserves edits made while the request is pending", asy
   await page.goto("/create");
   await page.getByLabel("提示词", { exact: true }).fill("提交的商品图");
   await page.getByRole("button", { name: "立即生成", exact: true }).click();
-  await expect(page.getByRole("button", { name: "正在提交…", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
+  await expect(page.getByText("正在提交…", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("已提交", { exact: true })).toHaveCount(0);
   await page.getByLabel("提示词", { exact: true }).fill("下一张商品图的新要求");
   accept?.();
   await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeEnabled();

@@ -25,15 +25,15 @@
   --field-placeholder: #8b8794;
   --field-border: #ffffff14;
   --field-border-hover: #ffffff29;
-  --field-border-focus: #baa4ff;
+  --field-border-focus: #0485f7;
   --field-border-width: 1px;
   --muted: #aaa7b2;
-  --accent: #a98cff;
-  --accent-foreground: #09070d;
-  --accent-soft: #a98cff1f;
-  --accent-soft-foreground: #c4b5fd;
-  --focus: #baa4ff;
-  --link: #c4b5fd;
+  --accent: #0485f7;
+  --accent-foreground: #ffffff;
+  --accent-soft: #0485f71f;
+  --accent-soft-foreground: #74bfff;
+  --focus: #0485f7;
+  --link: #74bfff;
   --border: #ffffff14;
   --separator: #ffffff0f;
   --backdrop: #00000099;
@@ -59,7 +59,7 @@
   --weight-semibold: 600;
   --text-display: 40px;
   --leading-display: 48px;
-  --app-primary-gradient: linear-gradient(180deg, #baa4ff 0, #8b5cf6 100%);
+  --app-primary-gradient: #0485f7;
   --sidebar-width: 274px;
   --sidebar-header-offset: 0px;
   --shell-inline-inset: 20px;
@@ -232,7 +232,7 @@ small {
 }
 .primary-action {
   background: var(--app-primary-gradient);
-  color: #09070d;
+  color: #ffffff;
   border: 1px solid transparent;
   font-weight: var(--weight-semibold);
   padding-inline: var(--control-padding-md);
@@ -690,10 +690,10 @@ p.home-hero-kicker {
   border-radius: 0;
 }
 .tabs__tab[data-selected="true"] {
-  color: #c4b5fd;
+  color: #74bfff;
 }
 .tabs__indicator {
-  background: #baa4ff;
+  background: #0485f7;
   height: 2px;
   border-radius: 0;
 }
@@ -1097,12 +1097,12 @@ p.home-hero-kicker {
   width: 100%;
   height: 44px;
   min-height: 44px;
-  border: 1px solid transparent;
-  border-radius: 12px;
+  border: 0;
+  border-radius: 999px;
   padding-inline: var(--control-padding-lg);
   gap: 8px;
   background: var(--app-primary-gradient);
-  color: #09070d;
+  color: #ffffff;
   font-size: 14px;
   line-height: 20px;
   font-weight: 600;
@@ -1122,7 +1122,7 @@ p.home-hero-kicker {
 }
 .generation-submit.button:is([data-submitting="true"], [data-pending="true"]) {
   background: var(--app-primary-gradient);
-  color: #09070d;
+  color: #ffffff;
   filter: none;
   cursor: progress;
 }
@@ -2818,12 +2818,12 @@ p.home-hero-kicker {
   border-radius: inherit;
   background: conic-gradient(
     from var(--generation-angle),
-    #baa4ff26 0deg,
-    #baa4ff26 235deg,
-    #8b5cf680 280deg,
-    #baa4ff 325deg,
+    #0485f726 0deg,
+    #0485f726 235deg,
+    #0485f780 280deg,
+    #0485f7 325deg,
     #eee7ff 345deg,
-    #baa4ff26 360deg
+    #0485f726 360deg
   );
   mask:
     linear-gradient(#fff 0 0) content-box,

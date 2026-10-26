@@ -90,11 +90,11 @@
   color: #fff;
 }
 .confirm-dialog__confirm.button {
-  background: #8b5cf6;
+  background: #0485f7;
   color: #fff;
 }
 .confirm-dialog__confirm.button:is(:hover, [data-hovered="true"]) {
-  background: #7c4df0;
+  background: #0373d8;
   color: #fff;
 }
 .confirm-dialog[data-tone="danger"] .confirm-dialog__confirm.button {

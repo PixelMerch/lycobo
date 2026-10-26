@@ -18,7 +18,7 @@ type Props = {
   interactive: boolean;
   maxFitScale?: number;
 };
-const accent = "#BAA4FF";
+const accent = "#0485F7";
 
 function Region({
   region,
@@ -57,7 +57,7 @@ function Region({
         stroke={accent}
         strokeWidth={selected ? 2 : 1}
         strokeScaleEnabled={false}
-        fill={selected ? "#BAA4FF12" : "#BAA4FF06"}
+        fill={selected ? "#0485F712" : "#0485F706"}
         draggable={!disabled}
         onClick={onSelect}
         onTap={onSelect}

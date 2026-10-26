@@ -39,8 +39,8 @@ Read relevant project skills before work:
 - DESIGN.md is the sole visual specification. The user approved and froze the current UI on
   2026-10-22. Documentation, cleanup and component refactors must preserve its appearance;
   a new visual change requires a new explicit design request. Do not reinterpret skill recommendations
-  as permission to restyle it. Preserve the actual tokens: brand purple #8B5CF6, HeroUI accent
-  #A98CFF, primary gradient linear-gradient(180deg, #BAA4FF 0, #8B5CF6 100%) with #09070D foreground.
+  as permission to restyle it. Preserve the actual tokens: brand blue #0485F7, HeroUI accent
+  #0485F7, solid primary #0485F7 with white foreground and pill-shaped generation buttons.
   Image content stays primary. Do not reintroduce retired palettes or bonko branding.
   Interaction research explains existing decisions; it does not override the approved UI.
 - Distinguish real image APIs from local examples and E2E fixtures. Never represent sample
@@ -53,7 +53,7 @@ Read relevant project skills before work:
 - Lazy-load heavy canvas/editor routes. Do not load original full-resolution images into grid cards.
 - Accessible labels, visible focus, semantic controls, reduced motion and narrow-screen behavior
   are required. The header keeps only the borderless pill-shaped login action; do not restore task-center or notification entries.
-- Keep the purple focus ring keyboard-only. React Aria moves focus on hover, restored focus and
+- Keep the brand focus ring keyboard-only. React Aria moves focus on hover, restored focus and
   programmatic opens, and Chromium reports those moves as `:focus-visible`; suppress the ring for
   pointer focus (`data-focused` without `data-focus-visible`) and for HeroUI overlay containers
   (dialog, popover, dropdown menu). No purple box around the account capsule, menu list, row or
