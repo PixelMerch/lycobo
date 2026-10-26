@@ -14,7 +14,7 @@ const configs = {
     APP_ENV: "development",
     AUTH_JWT_SECRET: process.env.AUTH_JWT_SECRET || randomBytes(48).toString("base64url"),
     AUTH_TRUSTED_ORIGINS:
-      "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8787,http://127.0.0.1:8787",
+      "http://localhost:8081,http://127.0.0.1:8081,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8787,http://127.0.0.1:8787",
   },
   worker: {
     ...common,

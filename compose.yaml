@@ -12,12 +12,15 @@ services:
       postgres:
         condition: service_healthy
     ports:
+      - "127.0.0.1:8081:5173"
       - "127.0.0.1:5173:5173"
       - "127.0.0.1:8787:8787"
     environment:
       CI: "true"
       WRANGLER_SEND_METRICS: "false"
       DEV_USE_POLLING: "true"
+      DEV_WEB_PUBLIC_PORT: "8081"
+      DEV_API_PUBLIC_PORT: "8787"
       LOCAL_IMAGE_GENERATION_ENABLED: ${LOCAL_IMAGE_GENERATION_ENABLED:-false}
       VAKV_API_KEY: ${VAKV_API_KEY:-}
       VAKV_BASE_URL: ${VAKV_BASE_URL:-https://api.vakv.cn}
