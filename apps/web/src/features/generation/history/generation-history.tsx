@@ -159,6 +159,7 @@ export function GenerationHistory({
                     {item.output_asset_id ? (
                       <ResultImage
                         assetId={item.output_asset_id}
+                        thumbnail={job.requested_count > 1}
                         position={item.position}
                         prompt={job.prompt}
                         onPreview={(trigger) => {
@@ -187,7 +188,9 @@ export function GenerationHistory({
                           <p className="generation-failure-message">
                             {item.status === "failed"
                               ? "任务未能完成，积分已退回，请您稍后重试。"
-                              : "任务未能完成，积分状态正在确认，请稍后查看。"}
+                              : item.error_code === "PROVIDER_TIMEOUT"
+                                ? "生成超时，结果和积分状态正在确认，请稍后查看。"
+                                : "生成结果和积分状态正在确认，请稍后查看。"}
                           </p>
                         )}
                       </div>

@@ -10,11 +10,13 @@ export function ResultImage({
   position,
   prompt,
   onPreview,
+  thumbnail = true,
 }: {
   assetId: string;
   position: number;
   prompt: string;
   onPreview: (trigger: HTMLElement) => void;
+  thumbnail?: boolean;
 }) {
   const favorite = useStudioStore((s) => s.favorites.includes(assetId));
   const toggleFavorite = useStudioStore((s) => s.toggleFavorite);
@@ -35,7 +37,7 @@ export function ResultImage({
       >
         <AssetImage
           assetId={assetId}
-          thumbnail
+          thumbnail={thumbnail}
           loading="lazy"
           alt={`${prompt}，图片${position + 1}`}
         />

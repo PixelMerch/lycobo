@@ -79,3 +79,5 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
 ## 发布
 
 同一仓库通过 `pnpm cloudflare:setup` 准备资源、`pnpm cloudflare:deploy` 部署消费者、API 和 Pages。需要账户开通、作用域受限的部署 token 与 Worker Secrets；真实密码不进入配置文件或 Git。完整步骤、费用边界、UID 路径和上线验收见 [Cloudflare 部署](cloudflare-deployment.md)。
+
+本地生图默认 `GENERATION_TIMEOUT_MS=600000`，覆盖供应商等待响应头及完整响应体的总时长。曾观察到供应商约39秒返回200响应头、随后等待／接收响应体约234秒，合计约273秒，旧300秒上限容易导致部分图片超时。此配置不是固定延迟，成功响应会立即落盘；超时保留结果待确认，不自动重复收费调用。修改根.env的模型配置需重启本地studio服务才能重新加载；必须先确认没有queued/running任务，避免打断付费请求，不为应用配置而重新提交已有任务。

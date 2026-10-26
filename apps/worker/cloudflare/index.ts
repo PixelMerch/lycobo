@@ -27,7 +27,7 @@ export async function processGenerationBatch(
     VAKV_CAPABILITY_OVERRIDES: env.VAKV_CAPABILITY_OVERRIDES,
   });
   if (!policy.enabled || !env.VAKV_API_KEY) throw new Error("GENERATION_NOT_CONFIGURED");
-  const timeoutMs = Number(env.GENERATION_TIMEOUT_MS ?? 300000);
+  const timeoutMs = Number(env.GENERATION_TIMEOUT_MS ?? 600000);
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 600000)
     throw new Error("INVALID_GENERATION_TIMEOUT");
   const base = new URL(env.VAKV_BASE_URL || "https://api.vakv.cn");

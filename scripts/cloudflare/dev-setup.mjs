@@ -30,7 +30,7 @@ const configs = {
     ...common,
     VAKV_API_KEY: process.env.VAKV_API_KEY ?? "",
     VAKV_BASE_URL: process.env.VAKV_BASE_URL || "https://api.vakv.cn",
-    GENERATION_TIMEOUT_MS: process.env.GENERATION_TIMEOUT_MS || "300000",
+    GENERATION_TIMEOUT_MS: process.env.GENERATION_TIMEOUT_MS || "600000",
   },
 };
 for (const [name, values] of Object.entries(configs))

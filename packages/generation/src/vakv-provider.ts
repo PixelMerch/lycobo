@@ -128,6 +128,7 @@ export async function generateVakvImage(
       response_format: "b64_json",
       quality: input.quality ?? "medium",
     });
+  const deadline = AbortSignal.timeout(config.timeoutMs);
   const started = performance.now();
   const timing = (stage: string, since: number, extra: { bytes?: number; status?: number } = {}) =>
     reportGenerationTiming(config.onTiming, {
@@ -143,7 +144,7 @@ export async function generateVakvImage(
         method: "POST",
         // Workers does not implement redirect:error. Never follow a provider redirect with credentials.
         redirect: "manual",
-        signal: AbortSignal.timeout(config.timeoutMs),
+        signal: deadline,
         headers: {
           Authorization: `Bearer ${config.key}`,
           "Idempotency-Key": idempotencyKey,
@@ -197,10 +198,14 @@ export async function generateVakvImage(
     timing("provider_complete", started);
     return { bytes, requestId };
   } catch (error) {
-    timing("provider_error", started);
+    timing(deadline.aborted ? "provider_timeout" : "provider_error", started);
     if (error instanceof VakvError) throw error;
     // Transport errors, malformed successful responses and timeouts may already have been billed.
-    throw new VakvError("PROVIDER_OUTCOME_UNKNOWN", true, requestId);
+    throw new VakvError(
+      deadline.aborted ? "PROVIDER_TIMEOUT" : "PROVIDER_OUTCOME_UNKNOWN",
+      true,
+      requestId,
+    );
   }
 }
 

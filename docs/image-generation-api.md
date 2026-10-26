@@ -182,9 +182,9 @@ Worker 以 `Image generation stage timing` 输出结构化分段计时，包含 
 - provider_body / provider_decode：响应体接收与 base64 解码。
 - image_storage / database_finish：图片解码编码落盘与完成事务。
 - provider_complete / item_complete：供应商调用总耗时与本次处理总耗时，和子阶段重叠，不相加。
-- provider_error：供应商请求失败前累计耗时。日志接收器异常不能影响付费结果或触发重试。
+- provider_error / provider_timeout：供应商请求异常或达到总超时上限前的累计耗时。日志接收器异常不能影响付费结果或触发重试。
 
-5分钟配置是请求超时上限，不是固定等待；前端使用SSE接收完成事件。已有历史任务只有开始/结束时间，无法事后恢复分段耗时。供应商控制台显示的耗时应使用同一请求的时间/ID核对，不能直接当作客户端端到端耗时。
+默认10分钟配置是单次供应商请求（包含响应体接收）的总超时上限，不是固定等待；可通过GENERATION_TIMEOUT_MS调整，范围1秒–10分钟，领取租约覆盖总超时再加60秒。超时单独记录PROVIDER_TIMEOUT与provider_timeout计时，状态仍为needs_reconciliation，不自动重发或退款；前端使用SSE接收完成事件。已有历史任务只有开始/结束时间，无法事后恢复分段耗时。供应商控制台显示的耗时应使用同一请求的时间/ID核对，不能直接当作客户端端到端耗时。
 
 ### 单次真实诊断结果：W174YOWZN
 

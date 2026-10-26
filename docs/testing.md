@@ -111,3 +111,5 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
 `verify-textile-generation.ts` 纳入 worker `test:images`，在隔离临时库与私有临时图片目录中验证10张提交、原子扣200积分及10条outbox、同键重放、跨组织引用拒绝、工具历史筛选、每个position不同提示词及每次请求携带有序的1张主图和5张详情图、重复消费不调用服务商、9成功1失败净扣180积分、失败重试仅保留原position。服务商为本地注入fixture，未调用外部模型。根集成命令仍覆盖Queues/R2/Images与鉴权SSE。
 
 `tests/e2e/textile-generation.spec.ts` 使用接口fixture验证选中10视角后提交10张与六张有序参考、历史视角标记、部分失败与实时更新、刷新和重新编辑、普通创作历史隔离，以及丢失响应后刷新仍复用同一幂等键。全量浏览器测试仍由远程CI运行。
+
+结果布局回归 `generation-result-layout.spec.ts` 验证单图全宽原比例、多图中的失败／待确认项保持同列正方形且不跨行。供应商适配器单测分别覆盖响应头等待与响应体等待超时，确认`PROVIDER_TIMEOUT`仍为未知收费结果并且只调用一次，不自动重试。默认总超时600000ms，租约在其上增加60000ms，Redis桥接请求保留610000ms上限。
