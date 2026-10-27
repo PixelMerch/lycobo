@@ -59,6 +59,9 @@ for (const path of ["/create", "/commerce/textile-set"]) {
     await expect(button).toHaveCSS("opacity", "0");
     await rail.locator(".history-rail-item").first().hover();
     await expect(button).toHaveCSS("opacity", "1");
+    const corner = await button.boundingBox();
+    expect(corner?.width).toBeCloseTo(21.6, 1);
+    expect(corner?.height).toBeCloseTo(21.6, 1);
     await button.click();
     const dialog = page.getByRole("dialog", { name: "删除这条历史记录？" });
     await expect(dialog).toBeVisible();

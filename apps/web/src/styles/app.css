@@ -3889,9 +3889,14 @@ p.home-hero-kicker {
   right: 3px;
   z-index: 1;
   opacity: 0;
+  width: 21.6px;
+  min-width: 21.6px;
+  height: 21.6px;
+  min-height: 21.6px;
+  padding: 0;
   border: 0;
   border-radius: 0 6px 0 8px;
-  background: #0009;
+  background: #1c1c1ce6;
   color: #ff6b75;
 }
 .history-rail-item:hover .history-thumbnail-delete,
@@ -3901,8 +3906,11 @@ p.home-hero-kicker {
 @media (hover: none) {
   .history-thumbnail-delete.button {
     opacity: 1;
-    min-width: 44px;
-    min-height: 44px;
+  }
+  .history-thumbnail-delete.button::after {
+    content: "";
+    position: absolute;
+    inset: -11.2px;
   }
 }
 @media (max-width: 1279px) {
