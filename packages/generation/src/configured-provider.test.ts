@@ -246,3 +246,41 @@ it("decodes inline image URLs and rejects malformed base64 without network calls
   ).rejects.toMatchObject({ code: "PROVIDER_UNRECOGNIZED_RESPONSE" });
   expect(request).not.toHaveBeenCalled();
 });
+
+it("continues polling accepted tasks that forbid resubmission and fetches completed summaries", async () => {
+  const request = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json(
+      {
+        task_id: "accepted-task",
+        status: "queued",
+        retryable: false,
+        auto_poll: true,
+        status_url: "/v1/images/tasks/accepted-task?view=summary",
+      },
+      { status: 202 },
+    ),
+  );
+  const pending = await configuredProviderCall(
+    snapshot,
+    "fixture-key",
+    input,
+    [],
+    "item",
+    undefined,
+    request,
+  );
+  expect(pending).toMatchObject({ kind: "pending", taskId: "accepted-task" });
+  if (pending.kind !== "pending") throw new Error("Expected accepted task");
+  request.mockResolvedValue(
+    Response.json({
+      task_id: "accepted-task",
+      status: "success",
+      retryable: false,
+      auto_poll: false,
+      result_url: "/v1/images/tasks/accepted-task",
+    }),
+  );
+  expect(
+    await configuredProviderCall(snapshot, "fixture-key", input, [], "item", pending, request),
+  ).toMatchObject({ kind: "pending", statusPath: "/v1/images/tasks/accepted-task" });
+});

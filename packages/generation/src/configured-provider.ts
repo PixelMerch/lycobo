@@ -165,10 +165,11 @@ export async function configuredProviderCall(
       );
   if (outputs.length && (!result.status || ["success", "succeeded"].includes(result.status)))
     return { kind: "complete", outputs, requestId };
+  // retryable controls new submissions, not reads of an already accepted task.
+  // Completed summary receipts can stop auto-polling while still needing a result fetch.
   if (
     ["uncertain", "client_disconnected", "paused", "canceled"].includes(result.status ?? "") ||
-    result.auto_poll === false ||
-    result.retryable === false
+    (result.auto_poll === false && !["success", "succeeded"].includes(result.status ?? ""))
   )
     throw new ImageProviderError("PROVIDER_OUTCOME_UNKNOWN", true, requestId);
   const taskId = result.task_id ?? pending?.taskId;
