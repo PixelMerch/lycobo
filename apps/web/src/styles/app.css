@@ -2149,7 +2149,7 @@ p.home-hero-kicker {
   transition: opacity 140ms ease;
 }
 .generation-media:hover .generation-media-actions,
-.generation-media:focus-within .generation-media-actions {
+.generation-media:has([data-focus-visible="true"]) .generation-media-actions {
   opacity: 1;
   pointer-events: auto;
 }

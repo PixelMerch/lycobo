@@ -395,7 +395,7 @@
 }
 .textile-result-view {
   position: absolute;
-  top: 8px;
+  top: 4px;
   left: 50%;
   z-index: 1;
   translate: -50% 0;

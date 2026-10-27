@@ -147,7 +147,7 @@ test("textile angles submit one durable ten-image job and keep results separate 
   const labelBox = await label.boundingBox();
   const resultBox = await result.boundingBox();
   if (!labelBox || !resultBox) throw new Error("Missing result label geometry");
-  expect(labelBox.y - resultBox.y).toBeCloseTo(8, 0);
+  expect(labelBox.y - resultBox.y).toBeCloseTo(4, 0);
   expect(labelBox.x + labelBox.width / 2).toBeCloseTo(resultBox.x + resultBox.width / 2, 0);
   await expect(label).toHaveCSS("font-size", "12px");
   await expect(label).toHaveCSS("pointer-events", "none");
