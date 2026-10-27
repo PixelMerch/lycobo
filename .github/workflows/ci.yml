@@ -32,6 +32,9 @@ jobs:
     name: ${{ github.event.action == 'edited' && !github.event.changes.base && 'Browser metadata only' || 'Browser' }}
     if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble@sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f
+      options: --ipc=host
     timeout-minutes: 40
     env:
       FULL_E2E: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.base_ref == 'main' }}
@@ -44,7 +47,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: cp .env.example .env
-      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm exec playwright --version
       - name: Full browser regression for branch pushes and releases
         if: env.FULL_E2E == 'true'
         run: pnpm test:e2e

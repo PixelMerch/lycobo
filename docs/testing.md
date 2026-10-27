@@ -118,6 +118,6 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
 
 浏览器CI的 `pnpm cloudflare:dev:setup` 使用 `dev.mjs --prepare-only` 同时生成被忽略的 `.dev.vars` 和三个 `wrangler.local.json`，不会启动服务、队列或数据库连接。`dev-setup.test.mjs` 在独立临时目录模拟干净检出，避免依赖开发者已有生成文件；Playwright随后按配置启动API与前端。
 
-浏览器CI固定使用 `ubuntu-24.04`，避免 `ubuntu-latest` 切换系统版本后依赖／字体下载和渲染环境漂移；仍安装匹配锁定Playwright版本的Chromium，完整E2E范围不变。
+浏览器CI固定使用 `ubuntu-24.04`，避免 `ubuntu-latest` 切换系统版本后依赖／字体下载和渲染环境漂移；浏览器任务使用匹配Playwright 1.64.0的官方 `mcr.microsoft.com/playwright:v1.64.0-noble` 镜像并固定digest，内置Chromium及系统字体依赖，不在任务中重复执行apt下载；完整E2E范围不变。
 
 完整浏览器CI使用2个worker覆盖全部用例，避免默认单worker将完整回归串行化；不改变测试范围、断言或失败重跑规则。生成结果图使用服务端宽高保留加载前比例，使远处历史任务的懒加载预览入口有稳定尺寸。
