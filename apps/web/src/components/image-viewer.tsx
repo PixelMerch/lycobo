@@ -181,39 +181,42 @@ export function ImageViewer({
     >
       <Modal.Backdrop className="browse-image-backdrop" data-dialog-phase={phase}>
         <Modal.Container size="full" className="browse-image-container">
-          <Modal.Dialog aria-label="图片浏览" className="browse-image-dialog">
+          <Modal.Dialog
+            aria-label="图片浏览"
+            className="browse-image-dialog"
+            onPointerDown={(event) => {
+              dismissStart.current =
+                event.button === 0 &&
+                event.target instanceof Element &&
+                !event.target.closest(
+                  "button, .browse-image-picture, .browse-image-thumbnails, .browse-image-toolbar",
+                )
+                  ? { id: event.pointerId, x: event.clientX, y: event.clientY }
+                  : null;
+            }}
+            onPointerUp={(event) => {
+              const start = dismissStart.current;
+              dismissStart.current = null;
+              if (
+                start &&
+                start.id === event.pointerId &&
+                Math.hypot(event.clientX - start.x, event.clientY - start.y) < 4 &&
+                event.target instanceof Element &&
+                !event.target.closest(
+                  "button, .browse-image-picture, .browse-image-thumbnails, .browse-image-toolbar",
+                )
+              )
+                requestClose();
+            }}
+            onPointerCancel={() => {
+              dismissStart.current = null;
+            }}
+          >
             <motion.div
               className="browse-image-surface"
               data-ready={ready}
               data-multiple={images.length > 1}
               {...surfaceMotion}
-              onPointerDown={(event) => {
-                dismissStart.current =
-                  event.button === 0 &&
-                  event.target instanceof Element &&
-                  !event.target.closest(
-                    "button, .browse-image-picture, .browse-image-thumbnails, .browse-image-toolbar",
-                  )
-                    ? { id: event.pointerId, x: event.clientX, y: event.clientY }
-                    : null;
-              }}
-              onPointerUp={(event) => {
-                const start = dismissStart.current;
-                dismissStart.current = null;
-                if (
-                  start &&
-                  start.id === event.pointerId &&
-                  Math.hypot(event.clientX - start.x, event.clientY - start.y) < 4 &&
-                  event.target instanceof Element &&
-                  !event.target.closest(
-                    "button, .browse-image-picture, .browse-image-thumbnails, .browse-image-toolbar",
-                  )
-                )
-                  requestClose();
-              }}
-              onPointerCancel={() => {
-                dismissStart.current = null;
-              }}
               onKeyDownCapture={(event) => {
                 /* Arrow keys always flip between images, including when the
                  * toolbar owns focus; the toolbar must not move its own focus

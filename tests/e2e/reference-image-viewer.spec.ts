@@ -204,6 +204,21 @@ test("blank clicks dismiss at fitted and zoomed sizes without closing on image i
   }
 });
 
+test("blank viewport corners dismiss while the preview surface is scaled", async ({ page }) => {
+  await references(page, 1);
+  // Hold the entrance scale so the viewport corner stays outside the animated surface.
+  await page.addStyleTag({
+    content: ".browse-image-surface { transform: scale(0.8) !important; }",
+  });
+  const trigger = page.getByRole("button", { name: "查看参考图片 1", exact: true });
+  await trigger.click();
+  const viewer = page.getByRole("dialog", { name: "图片浏览", exact: true });
+  await expect(viewer).toBeVisible();
+  await page.mouse.click(8, 8);
+  await expect(viewer).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
 test("thumbnail navigation keeps a fixed rail, resets transforms and never wraps", async ({
   page,
 }) => {
