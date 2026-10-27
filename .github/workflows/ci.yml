@@ -31,7 +31,7 @@ jobs:
     # Metadata-only edits must neither cancel CI nor overwrite required check results.
     name: ${{ github.event.action == 'edited' && !github.event.changes.base && 'Browser metadata only' || 'Browser' }}
     if: github.event.action != 'edited' || github.event.changes.base
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     env:
       FULL_E2E: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.base_ref == 'main' }}

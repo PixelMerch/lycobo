@@ -117,3 +117,5 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
 单图卡片重试由`card-image-retry.spec.ts`验证hover、键盘和触屏入口、单张金额确认、取消不提交、仅传itemId及丢失响应后刷新同键重放。隔离verify-textile-generation覆盖其他子项仍排队时仅替换选中未决项、另一个失败项不变、单次退款／扣费、同键换图拒绝与旧执行完成隔离。命名迁移回归先单独验证0015的数据保全，再应用后续扩展迁移，避免把新增可空列误判为旧数据变化。
 
 浏览器CI的 `pnpm cloudflare:dev:setup` 使用 `dev.mjs --prepare-only` 同时生成被忽略的 `.dev.vars` 和三个 `wrangler.local.json`，不会启动服务、队列或数据库连接。`dev-setup.test.mjs` 在独立临时目录模拟干净检出，避免依赖开发者已有生成文件；Playwright随后按配置启动API与前端。
+
+浏览器CI固定使用 `ubuntu-24.04`，避免 `ubuntu-latest` 切换系统版本后依赖／字体下载和渲染环境漂移；仍安装匹配锁定Playwright版本的Chromium，完整E2E范围不变。
