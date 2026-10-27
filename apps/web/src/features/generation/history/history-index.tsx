@@ -123,7 +123,7 @@ export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" 
             deletion.mutate(deleteId, {
               onSuccess: () => {
                 setDeleteId(null);
-                toast.success("已删除历史记录");
+                toast.success("删除成功");
               },
             });
         }}
