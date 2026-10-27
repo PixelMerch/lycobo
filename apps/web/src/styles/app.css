@@ -3343,11 +3343,6 @@ p.home-hero-kicker {
   grid-template-columns: 1fr;
   gap: 12px;
 }
-.login-error {
-  color: #c83245;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
 .login-support {
   margin-top: auto;
   text-align: center;
@@ -3407,15 +3402,6 @@ p.home-hero-kicker {
   .header-login {
     min-height: 44px;
   }
-}
-
-.alert.login-error {
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--danger);
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
 }
 
 /* The account center uses the studio's dark surface; only the login panel
