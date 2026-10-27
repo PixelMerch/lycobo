@@ -319,10 +319,18 @@ export function openImageRepository(url: string, edge = false) {
       });
     },
     async list(scope: ImageScope, limit: number, before?: string, tool?: "create" | "textile") {
-      return sql`select ${jobView} from generation_jobs j where j.organization_id=${scope.organizationId}
+      return sql`select ${jobView} from generation_jobs j where j.organization_id=${scope.organizationId} and j.archived_at is null
         ${tool ? (tool === "textile" ? sql`and j.input ? 'textileSet'` : sql`and not (j.input ? 'textileSet')`) : sql``}
         ${before ? sql`and (j.created_at,j.id) < (select created_at,id from generation_jobs where id=${before} and organization_id=${scope.organizationId})` : sql``}
         order by j.created_at desc,j.id desc limit ${limit}`;
+    },
+    async archive(scope: ImageScope, id: string) {
+      return sql.begin(async (tx) => {
+        const rows = await tx`update generation_jobs set archived_at=coalesce(archived_at,now())
+          where id=${id} and organization_id=${scope.organizationId} returning id`;
+        if (!rows.length) throw new ImageRepositoryError("NOT_FOUND");
+        await recordImageEvent(tx, scope.organizationId, "task", id);
+      });
     },
     async get(scope: ImageScope, id: string) {
       const [row] =

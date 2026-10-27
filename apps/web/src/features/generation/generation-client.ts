@@ -104,6 +104,15 @@ export function useImageHistory(tool: "create" | "textile" = "create") {
     getNextPageParam: (last) => (last.data.length === 20 ? last.data.at(-1)?.id : undefined),
   });
 }
+export function useDeleteHistoryTask() {
+  const client = useQueryClient();
+  return useMutation({
+    retry: false,
+    mutationFn: (id: string) =>
+      imageRequest(`image-tasks/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["image-tasks"] }),
+  });
+}
 export function useImageAssets({
   enabled = true,
   kind = "all",

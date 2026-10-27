@@ -194,4 +194,35 @@ export async function verifyTextileGeneration(
     )[0]?.n,
     4,
   );
+  // History deletion archives display state, never billing, source images or running work.
+  const balanceBeforeDelete = (await repository.wallet(owner)).balance;
+  const remove = (token: string) =>
+    app.request(`/api/v1/image-tasks/${batch.id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  assert.equal((await remove(other.token)).status, 404);
+  assert.equal(
+    (await repository.list(owner, 100)).some((row) => row.id === batch.id),
+    true,
+  );
+  assert.equal((await remove(owner.token)).status, 200);
+  assert.equal((await remove(owner.token)).status, 200);
+  assert.equal(
+    (await repository.list(owner, 100)).some((row) => row.id === batch.id),
+    false,
+  );
+  assert.ok(await repository.get(owner, batch.id));
+  assert.equal((await repository.wallet(owner)).balance, balanceBeforeDelete);
+  const stillClaimable = await repository.claim(thirdItem.id, "archived-history-fixture", 60000);
+  assert.ok(stillClaimable);
+  await repository.finish(stillClaimable, {
+    image: await store.put(owner, png, crypto.randomUUID()),
+  });
+  assert.equal((await repository.wallet(owner)).balance, balanceBeforeDelete);
+  assert.equal(
+    (await repository.list(owner, 100)).some((row) => row.id === batch.id),
+    false,
+  );
+  assert.ok(await repository.asset(owner, references[0] ?? ""));
 }

@@ -1,16 +1,22 @@
 import { Button } from "@heroui/react";
-import { IconChevronRight, IconPhotoX } from "@tabler/icons-react";
+import { IconChevronRight, IconPhotoX, IconTrash } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
+import { ConfirmDialog } from "../../../components/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
+import { useErrorToast } from "../../../lib/error-toast";
 import { LibraryDialog } from "../../assets/library-dialog";
 import { AssetImage } from "../asset-image";
-import { useImageHistory } from "../generation-client";
+import { useDeleteHistoryTask, useImageHistory } from "../generation-client";
 import { GenerationLoading, statusLabel } from "../generation-status";
 import { useStudioStore } from "../studio-state";
 import { scrollToHistoryTask } from "./history-navigation";
 
 export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" }) {
   const query = useImageHistory(tool);
+  const deletion = useDeleteHistoryTask();
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  useErrorToast(deletion.error?.message);
+
   const jobs = query.data?.pages.flatMap((page) => page.data) ?? [];
   const activeId = useStudioStore((s) => s.activeHistoryId);
   const setActiveId = useStudioStore((s) => s.setActiveHistoryId);
@@ -51,49 +57,50 @@ export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" 
             jobs.map((job) => {
               const image = job.items.find((item) => item.output_asset_id)?.output_asset_id;
               const generating = job.status === "running" || job.status === "queued";
-              if (!image && !generating && job.status !== "succeeded")
-                return (
+              const failed = !image && !generating && job.status !== "succeeded";
+              return (
+                <div className="history-rail-item" key={job.id}>
                   <Button
-                    key={job.id}
                     variant="tertiary"
-                    className="history-thumbnail history-failure-thumbnail"
-                    aria-label={`查看失败任务 ${job.id}`}
+                    className={`history-thumbnail${failed ? " history-failure-thumbnail" : ""}${generating ? " generation-pending" : ""}`}
+                    aria-label={`${failed ? "查看失败任务" : "查看任务"} ${job.id}`}
                     aria-current={selectedId === job.id ? "true" : "false"}
                     onPress={() => {
                       setActiveId(job.id);
                       scrollToHistoryTask(job.id);
                     }}
                   >
-                    <span className="history-failure-label">
-                      <UiIcon icon={IconPhotoX} size="action" />
+                    {failed ? (
+                      <span className="history-failure-label">
+                        <UiIcon icon={IconPhotoX} size="action" />
+                        <span>{statusLabel[job.status]}</span>
+                      </span>
+                    ) : generating ? (
+                      <span role="status" aria-label={statusLabel[job.status]}>
+                        <GenerationLoading />
+                      </span>
+                    ) : image ? (
+                      <span className="history-thumbnail-frame">
+                        <AssetImage assetId={image} thumbnail alt={job.model} loading="lazy" />
+                      </span>
+                    ) : (
                       <span>{statusLabel[job.status]}</span>
-                    </span>
+                    )}
                   </Button>
-                );
-              return (
-                <Button
-                  key={job.id}
-                  variant="tertiary"
-                  className={`history-thumbnail${generating ? " generation-pending" : ""}`}
-                  aria-label={`查看任务 ${job.id}`}
-                  aria-current={selectedId === job.id ? "true" : "false"}
-                  onPress={() => {
-                    setActiveId(job.id);
-                    scrollToHistoryTask(job.id);
-                  }}
-                >
-                  {generating ? (
-                    <span role="status" aria-label={statusLabel[job.status]}>
-                      <GenerationLoading />
-                    </span>
-                  ) : image ? (
-                    <span className="history-thumbnail-frame">
-                      <AssetImage assetId={image} thumbnail alt={job.model} loading="lazy" />
-                    </span>
-                  ) : (
-                    <span>{statusLabel[job.status]}</span>
-                  )}
-                </Button>
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="danger-soft"
+                    className="history-thumbnail-delete"
+                    aria-label={`删除任务 ${job.id}`}
+                    onPress={() => {
+                      deletion.reset();
+                      setDeleteId(job.id);
+                    }}
+                  >
+                    <UiIcon icon={IconTrash} size="small" />
+                  </Button>
+                </div>
               );
             })
           ) : (
@@ -101,6 +108,21 @@ export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" 
           )}
         </div>
       </aside>
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        title="删除这条历史记录？"
+        content="删除后将从历史列表移除，已保存的素材仍可在素材库查看。此操作不会取消生成或退还积分。"
+        tone="danger"
+        confirmLabel="删除"
+        isPending={deletion.isPending}
+        onCancel={() => {
+          if (!deletion.isPending) setDeleteId(null);
+        }}
+        onConfirm={() => {
+          if (deleteId && !deletion.isPending)
+            deletion.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+        }}
+      />
       {libraryOpen && <LibraryDialog onClose={() => setLibraryOpen(false)} />}
     </>
   );

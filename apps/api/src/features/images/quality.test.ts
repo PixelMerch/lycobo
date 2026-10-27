@@ -40,6 +40,7 @@ function fixture(editsEnabled = false) {
     }),
     create,
     list: unexpected,
+    archive: unexpected,
     get: unexpected,
     latestEdit: unexpected,
     addReference: unexpected,

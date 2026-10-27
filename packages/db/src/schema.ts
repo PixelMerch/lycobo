@@ -291,6 +291,7 @@ export const generationJobs = pgTable(
     status: text("status").notNull().default("queued"),
     createdAt: createdAt(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
   },
   (t) => [

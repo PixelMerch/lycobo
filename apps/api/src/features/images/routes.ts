@@ -288,6 +288,12 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const jobs = await deps.repository.list(scope, limit.data, before.data, tool.data);
     return c.json({ data: delivery ? await delivery.jobs(scope, jobs) : jobs });
   });
+  app.delete("/image-tasks/:id", async (c) => {
+    const parsed = id.safeParse(c.req.param("id"));
+    if (!parsed.success) return fail(c, "NOT_FOUND", "任务不存在", 404);
+    await deps.repository.archive(c.get("principal"), parsed.data);
+    return c.json({ id: parsed.data });
+  });
   app.get("/image-tasks/:id", async (c) => {
     const parsed = id.safeParse(c.req.param("id"));
     if (!parsed.success) return fail(c, "NOT_FOUND", "任务不存在", 404);
