@@ -68,6 +68,9 @@ for (const path of ["/create", "/commerce/textile-set"]) {
     await dialog.getByRole("button", { name: "取消", exact: true }).click();
     await expect(dialog).toBeHidden();
     expect(deletions).toBe(0);
+    await expect(
+      page.locator(".toast-region .toast").filter({ hasText: "已删除历史记录" }),
+    ).toHaveCount(0);
     // Keyboard users can reveal the action without hovering.
     await page.mouse.move(1, 1);
     await button.focus();
@@ -82,6 +85,7 @@ for (const path of ["/create", "/commerce/textile-set"]) {
     await expect(dialog).toBeHidden();
     await expect(rail.locator(".history-rail-item")).toHaveCount(2);
     expect(deletions).toBe(2);
+    await expect(page.locator(".toast-region")).toContainText("已删除历史记录");
     // The same control also deletes unresolved and failed history records.
     for (const job of [...jobs]) {
       const action = rail.getByRole("button", { name: `删除任务 ${job.id}`, exact: true });

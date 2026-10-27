@@ -1,4 +1,4 @@
-import { Button } from "@heroui/react";
+import { Button, toast } from "@heroui/react";
 import { IconChevronRight, IconPhotoX, IconTrash } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "../../../components/confirm-dialog";
@@ -120,7 +120,12 @@ export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" 
         }}
         onConfirm={() => {
           if (deleteId && !deletion.isPending)
-            deletion.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+            deletion.mutate(deleteId, {
+              onSuccess: () => {
+                setDeleteId(null);
+                toast.success("已删除历史记录");
+              },
+            });
         }}
       />
       {libraryOpen && <LibraryDialog onClose={() => setLibraryOpen(false)} />}
