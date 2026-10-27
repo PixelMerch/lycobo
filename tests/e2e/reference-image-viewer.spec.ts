@@ -214,6 +214,14 @@ test("thumbnail navigation keeps a fixed rail, resets transforms and never wraps
   const first = viewer.getByRole("button", { name: "查看第 1 张图片", exact: true });
   const last = viewer.getByRole("button", { name: "查看第 3 张图片", exact: true });
   await expect(first).toHaveAttribute("aria-current", "true");
+  await expect(viewer.locator(".browse-image-surface")).toHaveCSS("transform", "none");
+  const beforeHover = await first.boundingBox();
+  await first.hover();
+  await expect(first.locator(".browse-image-thumbnail-clip")).toHaveCSS("overflow", "hidden");
+  await expect(first.locator(".browse-image-thumbnail-clip")).toHaveCSS("border-radius", "6px");
+  await expect(first.locator("img")).toHaveCSS("transform", "matrix(1.1, 0, 0, 1.1, 0, 0)");
+  expect(await first.boundingBox()).toEqual(beforeHover);
+
   await viewer.getByRole("button", { name: "放大图片", exact: true }).click();
   await first.click();
   await expect(viewer.getByLabel("图片缩放比例")).toHaveText("125%");

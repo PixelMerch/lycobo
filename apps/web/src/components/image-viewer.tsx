@@ -398,14 +398,16 @@ export function ImageViewer({
                       aria-current={position === index}
                       onPress={() => select(position)}
                     >
-                      <img
-                        src={image.thumbnailSrc ?? image.src}
-                        alt=""
-                        loading="lazy"
-                        crossOrigin="anonymous"
-                        referrerPolicy="strict-origin-when-cross-origin"
-                        draggable={false}
-                      />
+                      <span className="browse-image-thumbnail-clip">
+                        <img
+                          src={image.thumbnailSrc ?? image.src}
+                          alt=""
+                          loading="lazy"
+                          crossOrigin="anonymous"
+                          referrerPolicy="strict-origin-when-cross-origin"
+                          draggable={false}
+                        />
+                      </span>
                     </Button>
                   ))}
                 </nav>

@@ -215,6 +215,13 @@
 .browse-image-thumbnail.button[aria-current="true"] {
   box-shadow: inset 0 0 0 2px var(--accent);
 }
+.browse-image-thumbnail-clip {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 6px;
+}
 .browse-image-thumbnail img {
   width: 100%;
   height: 100%;
