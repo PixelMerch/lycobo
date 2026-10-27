@@ -53,7 +53,7 @@ export function ResultImage({
           >
             <UiIcon icon={IconDownload} />
           </Button>
-          <Tooltip.Content placement="top">下载原图</Tooltip.Content>
+          <Tooltip.Content placement="top">下载</Tooltip.Content>
         </Tooltip>
         <Tooltip delay={0}>
           <ToggleButton
