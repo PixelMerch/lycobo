@@ -1,6 +1,6 @@
 # 模型服务后台与执行适配
 
-2026-10-27。当前仅本地 Docker 建表与验证，未部署线上或修改 Supabase。
+2026-10-27。独立后台页面在本地运行；v0.3.0 发布准备已将模型结构迁移到生产 Supabase，并为主站配置新中转站，管理页面不因此视为已上线。
 
 ## 身份与服务边界
 
@@ -51,3 +51,7 @@ MODEL_CREDENTIAL_SECRET 必须为 32 字节随机数的 Base64，独立后台 AP
 provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 负责公共响应、任务查询和结果下载，provider-errors.ts 统一已知失败与未知结果语义。已支持 OpenAI 同步 Images 与 FluxPort 同异步 Images；新中转站同协议只改后台，异步路径／鉴权／响应不同则新增适配器，不在前端或计费层添加分支。
 
 原VAKV_*环境变量保留兼容名称，根地址与SDK形式/v1均可规范化，拒绝其他前缀、认证信息和查询参数。当前裂变以v5和逻辑gpt-image-2.5绑定后台FluxPort渠道，详细配置及导入命令见 textile-generation.md。同步结果、异步task ID及上游请求ID用于排查；不记录提示词、响应正文、Key或签名URL。
+
+## v0.3.0 生产渠道
+
+生产统一使用 `https://api.ai-media.vip`，不再为新请求使用旧中转站。FluxPort 渠道为 gpt-image-2／gpt-image-2.5 绑定图片创作及局部修改，家纺裂变使用 gpt-image-2.5；异步优先，当前仅启用1K。当前Key未提供 nano-banana-2.1，因此该渠道禁用，不回退旧站。生产Key加密入库，独立主密钥保存在 Cloudflare 消费者 Secret，GitHub不存储。此次只检查配置、加密和公开能力，没有额外付费生成。

@@ -31,7 +31,7 @@
     "cloudflare:deploy": "node --env-file-if-exists=.env scripts/cloudflare/deploy.mjs",
     "cloudflare:setup": "node --env-file-if-exists=.env scripts/cloudflare/setup.mjs",
     "test:cloudflare": "pnpm --filter @lycoboai/worker exec tsx scripts/check-cloudflare-runtime.ts",
-    "cloudflare:dev:setup": "node --env-file-if-exists=.env scripts/cloudflare/dev-setup.mjs",
+    "cloudflare:dev:setup": "node --env-file-if-exists=.env scripts/cloudflare/dev.mjs --prepare-only",
     "test:redis": "node scripts/cloudflare/check-redis.mjs"
   },
   "devDependencies": {
