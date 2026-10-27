@@ -188,6 +188,7 @@ export function TextileImageField({
           <ImageViewer
             images={value.map((image, index) => ({
               src: referenceDisplaySource(image),
+              thumbnailSrc: referenceDisplaySource(image, true),
               alt: `${label}${index + 1}`,
             }))}
             initialIndex={preview}

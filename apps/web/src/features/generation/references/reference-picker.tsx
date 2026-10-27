@@ -173,6 +173,7 @@ export function ReferencePicker({
           <ImageViewer
             images={references.map((image, index) => ({
               src: referenceDisplaySource(image),
+              thumbnailSrc: referenceDisplaySource(image, true),
               alt: `图片${index + 1}`,
             }))}
             initialIndex={preview}

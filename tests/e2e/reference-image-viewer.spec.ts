@@ -71,13 +71,17 @@ test("history references share a viewer with switching, rotation, wheel zoom and
   const closeButton = viewer.getByRole("button", { name: "关闭图片浏览", exact: true });
   const close = await closeButton.boundingBox();
   if (!frame || !close) throw new Error("Missing image viewer geometry");
-  expect(Math.abs(frame.y - close.y)).toBeLessThan(1);
-  expect(close.x - frame.x - frame.width).toBeCloseTo(32, 0);
-  const next = await viewer.getByRole("button", { name: "下一张图片", exact: true }).boundingBox();
-  const prev = await viewer.getByRole("button", { name: "上一张图片", exact: true }).boundingBox();
-  if (!next || !prev) throw new Error("Missing image navigation geometry");
-  expect(next.x).toBeCloseTo(close.x, 0);
-  expect(frame.x - prev.x - prev.width).toBeCloseTo(32, 0);
+  const rail = viewer.getByRole("navigation", { name: "本组图片" });
+  await expect(rail.getByRole("button")).toHaveCount(3);
+  await expect(rail.getByRole("button", { name: "查看第 2 张图片" })).toHaveAttribute(
+    "aria-current",
+    "true",
+  );
+  const railBox = await rail.boundingBox();
+  if (!railBox) throw new Error("Missing thumbnail rail");
+  expect(railBox.x).toBeGreaterThanOrEqual(frame.x + frame.width);
+  await expect(viewer.getByRole("button", { name: "上一张图片", exact: true })).toHaveCount(0);
+  await expect(viewer.getByRole("button", { name: "下一张图片", exact: true })).toHaveCount(0);
   const toolbar = viewer.getByRole("toolbar", { name: "图片浏览工具" });
   await expect(toolbar).not.toContainText("/");
   await expect(viewer.getByLabel("图片缩放比例")).toHaveCSS("color", "rgb(255, 255, 255)");
@@ -92,13 +96,9 @@ test("history references share a viewer with switching, rotation, wheel zoom and
   // The picture is refitted after a rotation, but the browsing controls stay
   // anchored to the stage so the close action never drifts.
   const rotatedClose = await closeButton.boundingBox();
-  const rotatedNext = await viewer
-    .getByRole("button", { name: "下一张图片", exact: true })
-    .boundingBox();
-  if (!rotatedClose || !rotatedNext) throw new Error("Missing rotated viewer geometry");
+  if (!rotatedClose) throw new Error("Missing rotated close geometry");
   expect(Math.abs(rotatedClose.x - close.x)).toBeLessThan(1);
   expect(Math.abs(rotatedClose.y - close.y)).toBeLessThan(1);
-  expect(Math.abs(rotatedNext.x - next.x)).toBeLessThan(1);
   await viewer.getByRole("button", { name: "向左旋转", exact: true }).click();
   await expect(picture).toHaveCSS("rotate", "0deg");
   await viewer.getByRole("button", { name: "放大图片", exact: true }).click();
@@ -109,10 +109,10 @@ test("history references share a viewer with switching, rotation, wheel zoom and
   await expect(viewer.getByLabel("图片缩放比例")).toHaveText("110%");
   await page.mouse.wheel(0, 100);
   await expect(viewer.getByLabel("图片缩放比例")).toHaveText("100%");
-  await viewer.getByRole("button", { name: "上一张图片", exact: true }).click();
+  await viewer.getByRole("button", { name: "查看第 1 张图片", exact: true }).click();
   await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[0]}/content`);
   await expect(viewer.getByLabel("图片缩放比例")).toHaveText("100%");
-  await viewer.getByRole("button", { name: "下一张图片", exact: true }).click();
+  await viewer.getByRole("button", { name: "查看第 2 张图片", exact: true }).click();
   await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[1]}/content`);
   // The picture is a plain rectangle, matching the square-cornered viewer.
   await expect(picture).toHaveCSS("border-radius", "0px");
@@ -170,7 +170,7 @@ test("reference viewer stacks over result details and remains usable on mobile",
   await reference.click();
   const viewer = page.getByRole("dialog", { name: "图片浏览", exact: true });
   await expect(viewer.locator(".browse-image-picture")).toHaveJSProperty("naturalWidth", 1200);
-  await expect(viewer.getByRole("button", { name: "下一张图片", exact: true })).toHaveCount(0);
+  await expect(viewer.getByRole("navigation", { name: "本组图片" })).toHaveCount(0);
   await viewer.getByRole("button", { name: "向右旋转", exact: true }).click();
   await expect(viewer.locator(".browse-image-picture")).toHaveCSS("rotate", "90deg");
   await expect
@@ -204,29 +204,28 @@ test("blank clicks dismiss at fitted and zoomed sizes without closing on image i
   }
 });
 
-test("image navigation hides boundary arrows and never wraps", async ({ page }) => {
+test("thumbnail navigation keeps a fixed rail, resets transforms and never wraps", async ({
+  page,
+}) => {
   const ids = await references(page, 3);
   await page.getByRole("button", { name: "查看参考图片 1", exact: true }).click();
   const viewer = page.getByRole("dialog", { name: "图片浏览", exact: true });
   const picture = viewer.locator(".browse-image-picture");
-  const previous = viewer.getByRole("button", { name: "上一张图片", exact: true });
-  const next = viewer.getByRole("button", { name: "下一张图片", exact: true });
-  await expect(previous).toHaveCount(0);
-  await expect(next).toBeVisible();
+  const first = viewer.getByRole("button", { name: "查看第 1 张图片", exact: true });
+  const last = viewer.getByRole("button", { name: "查看第 3 张图片", exact: true });
+  await expect(first).toHaveAttribute("aria-current", "true");
   await viewer.getByRole("button", { name: "放大图片", exact: true }).click();
-  await viewer.getByRole("button", { name: "关闭图片浏览", exact: true }).focus();
-  await page.keyboard.press("ArrowLeft");
-  await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[0]}/content`);
+  await first.click();
   await expect(viewer.getByLabel("图片缩放比例")).toHaveText("125%");
-  await next.click();
-  await expect(previous).toBeVisible();
-  await expect(next).toBeVisible();
-  await next.click();
-  await expect(next).toHaveCount(0);
-  await expect(previous).toBeVisible();
-  await viewer.getByRole("button", { name: "关闭图片浏览", exact: true }).focus();
-  await page.keyboard.press("ArrowRight");
+  await first.press("ArrowLeft");
+  await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[0]}/content`);
+  await last.click();
+  await expect(last).toHaveAttribute("aria-current", "true");
+  await expect(viewer.getByLabel("图片缩放比例")).toHaveText("100%");
+  await last.press("ArrowRight");
   await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[2]}/content`);
+  await last.press("ArrowUp");
+  await expect(viewer.getByRole("button", { name: "查看第 2 张图片", exact: true })).toBeFocused();
 });
 
 test("image loading keeps browsing controls hidden and leaves a stable close action", async ({
@@ -261,7 +260,7 @@ test("image loading keeps browsing controls hidden and leaves a stable close act
   await expect(viewer.getByRole("toolbar", { name: "图片浏览工具" })).toBeVisible();
   await expect(viewer.getByLabel("图片缩放比例")).toHaveText("100%");
   await expect(viewer.getByLabel("图片加载中")).toHaveCount(0);
-  await expect(viewer.getByRole("button", { name: "下一张图片", exact: true })).toBeVisible();
+  await expect(viewer.getByRole("navigation", { name: "本组图片", exact: true })).toBeVisible();
 });
 
 test("uploaded draft references preview in the shared viewer and stay deletable", async ({
@@ -283,7 +282,7 @@ test("uploaded draft references preview in the shared viewer and stay deletable"
   await expect(picture).toHaveAttribute("src", /^data:image\/webp;base64,/);
   const first = await picture.getAttribute("src");
   // Arrow keys walk the uploaded set, not the history.
-  await viewer.getByRole("button", { name: "下一张图片", exact: true }).click();
+  await viewer.getByRole("button", { name: "查看第 2 张图片", exact: true }).click();
   await expect(picture).not.toHaveAttribute("src", first ?? "");
   await page.keyboard.press("Escape");
   await expect(viewer).toHaveCount(0);
@@ -296,4 +295,50 @@ test("uploaded draft references preview in the shared viewer and stay deletable"
   await expect(page.getByRole("button", { name: "查看参考图片：图片1", exact: true })).toHaveCount(
     1,
   );
+});
+
+test("thumbnail rail scrolls vertically on desktop and horizontally on mobile using small assets", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 600 });
+  const ids = await references(page, 8);
+  await page.getByRole("button", { name: "查看参考图片 8", exact: true }).click();
+  const viewer = page.getByRole("dialog", { name: "图片浏览", exact: true });
+  const rail = viewer.getByRole("navigation", { name: "本组图片" });
+  const last = rail.getByRole("button", { name: "查看第 8 张图片", exact: true });
+  await expect(last).toHaveAttribute("aria-current", "true");
+  await expect(last).toBeInViewport();
+  await expect(rail).toHaveCSS("flex-direction", "column");
+  await expect(rail.locator("img").last()).toHaveAttribute(
+    "src",
+    `/api/v1/image-assets/${ids[7]}/content?thumbnail=1`,
+  );
+  await expect.poll(() => rail.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+  const picture = viewer.locator(".browse-image-picture");
+  await expect(picture).toHaveJSProperty("naturalWidth", 1200);
+  await page.screenshot({ path: "/tmp/lycobo-viewer-desktop.png" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(rail).toHaveCSS("flex-direction", "row");
+  await expect(last).toBeInViewport();
+  await last.focus();
+  const areaBox = await viewer.getByRole("region", { name: "浏览图片区域" }).boundingBox();
+  const railBox = await rail.boundingBox();
+  const toolbarBox = await viewer.getByRole("toolbar").boundingBox();
+  if (!areaBox || !railBox || !toolbarBox) throw new Error("Missing mobile viewer geometry");
+  expect(railBox.y).toBeGreaterThan(areaBox.y + areaBox.height);
+  expect(toolbarBox.y + toolbarBox.height).toBeLessThanOrEqual(railBox.y);
+  await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[7]}/content`);
+  expect(await viewer.evaluate((node) => node.scrollWidth <= innerWidth)).toBe(true);
+  await expect(viewer.locator(".browse-image-surface")).toHaveCSS("transform", "none");
+  await expect
+    .poll(async () => {
+      const pictureBox = await picture.boundingBox();
+      const currentArea = await viewer.getByRole("region", { name: "浏览图片区域" }).boundingBox();
+      return !!pictureBox && !!currentArea && pictureBox.width <= currentArea.width + 1;
+    })
+    .toBe(true);
+  await page.screenshot({ path: "/tmp/lycobo-viewer-mobile.png" });
+  await last.press("ArrowLeft");
+  await expect(rail.getByRole("button", { name: "查看第 7 张图片", exact: true })).toBeFocused();
+  await expect(viewer).toBeVisible();
 });
