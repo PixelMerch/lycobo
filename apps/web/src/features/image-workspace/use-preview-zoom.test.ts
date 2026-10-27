@@ -14,7 +14,7 @@ describe("shared preview wheel zoom", () => {
     expect(imageWheelFactor(-10000)).toBe(imageWheelFactor(-150));
     expect(imageWheelFactor(-150, true)).toBeCloseTo(1.1 ** 6);
     expect(wheelZoomTarget(499, -100)).toBe(500);
-    expect(wheelZoomTarget(101, 100)).toBe(100);
+    expect(wheelZoomTarget(26, 100)).toBe(25);
   });
   it("eases toward the goal without overshoot and settles precisely", () => {
     expect(easedImageZoom(100, 200, 16)).toBeGreaterThan(100);

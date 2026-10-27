@@ -10,12 +10,12 @@
 | apps/web/src/lib | 浏览器 API 客户端与工具 |
 | apps/web/src/styles | 共享设计 tokens 与全局基础样式 |
 | apps/api/src | Hono 入口、应用工厂、配置与组织隔离的生图 feature API |
-| apps/assets/src | 独立私有图片资源 Worker：短期签名、Referer/CORS、边缘缓存与 R2 流式读取 |
+| apps/assets/src | 独立私有图片资源 Worker：短期签名、Referer/CORS、WebP 预览／缩略图缓存、原图下载及旧图 Images 补生成 |
 | apps/worker/src | 队列消费者、生命周期与任务执行 |
 | packages/contracts | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖 |
 | packages/db | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY |
-| packages/queue | Cloudflare Queues 消息契约、持久 outbox 投递 |
-| packages/generation | 服务商契约、Vakv 同步生图适配与能力校验（真实渠道待验收） |
+| packages/queue | ID-only 消息契约、持久 outbox 投递、开发专用 HTTP sender；线上使用 Cloudflare Queues |
+| packages/generation | 服务商契约、Vakv 同步兼容、可配置 OpenAI／FluxPort 同异步适配与密钥加密（真实渠道待验收） |
 | packages/storage | 私有 R2／UID 路径、Images binding 校验和缩略图；Node 本地存储供隔离测试 |
 | tests/e2e | 浏览器关键路径验收 |
 | docs/design | 当前认可的设计参考 |
@@ -32,7 +32,7 @@ apps/web/src/
 └── features/
     ├── auth/                     # 身份请求与登录弹窗
     ├── account/                  # Header账户菜单、账户中心、钱包请求和账务展示
-    ├── commerce/                 # AI 电商导航、最近功能入口偏好、家纺套图工作区与本地会话草稿
+    ├── commerce/                 # AI 电商导航、最近功能入口偏好、家纺主图裂变工作区、生成提交与本地会话草稿
     ├── home/                     # 首页、共享创作输入与提示辅助
     │   ├── home-intro.tsx         # 首页渐变轮换标题，文案与间隔在 home-intro-config.ts
     │   └── dot-grid/             # React Bits 点阵源码适配，首页参数在 home-dot-grid-config.ts
@@ -65,6 +65,8 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 这些包 private，不是可直接发布到 npm 的编译 SDK。
 
 ## 进程与服务
+
+本地通过 `docker compose up` 启动本地 PostgreSQL、Redis 与 `studio`（Vite + Wrangler API/消费者/独立图片资源 Worker）；入口为 `scripts/cloudflare/docker-dev.sh` 与 `dev.mjs`。启动环境由 `local-environment.mjs` 固定为本地连接并清除线上凭据。R2/Images 使用本地模拟；本地队列使用 Redis Streams，`redis-dev.mjs` 通过认证桥接调用本地 Worker，生成的 `wrangler.local.json` 不含 Cloudflare Queue 绑定。图片由本地独立资源 Worker（cdn.lycobo.localhost:8791）通过签名 URL 提供，业务 API 不传输图片字节；数据库、模拟状态、Redis 和 Linux 依赖分别保存于 Docker 卷。具体命令见 [本地开发](docs/development.md)。
 
 - API：短请求、身份、授权、参数校验、业务编排。
 - Worker：有持久任务托管的后台工作，绝不能依赖浏览器连接。
@@ -102,7 +104,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 当前UI按[设计定稿](DESIGN.md)维护；组件拆分不得改变外观。公共组件在`apps/web/src/components`，场景功能按职责放在`features/<domain>`，避免在页面内重复实现上传、确认、图片浏览及操作。
 
 - `GenerationHistory`：历史查询、空态、活动任务同步及预览入口。`HistoryImagePreview` 维护跨任务成功图片的稳定快照和分页；`ImagePreviewRail` 封装缩略图选择、高亮及自动定位。
-- `HistoryTaskMeta`：模型、时间、任务编号复制和输出参数。
+- `HistoryTaskMeta`：模型、时间、任务编号复制和输出参数。`components/collapsible-text.tsx` 共用历史提示词与详情创意描述的溢出测量、展开／收起和可访问状态；行数由各场景样式定义。
 - `components/image-zoom-motion`：详情和参考图浏览共用滚轮灵敏度、输入限幅及缓动公式；`usePreviewZoom` 管理详情缩放目标、动画帧和滑块直接操作。
 - `ResultImage`：生成图预览入口、下载和收藏；`generation-status`共用阶段标签和图标。
 - `HistoryIndex`：右侧历史定位、选中滚动与我的素材入口。
@@ -130,3 +132,9 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 ## 发布工具
 
 版本发布由 `.github/workflows/release.yml` 显式触发，`scripts/release-notes.mjs` 生成提交分类、作者／提交人及文件改动清单。版本只发布已通过 main CI 的提交；发布日志与操作边界见 [发布说明](docs/releasing.md)。
+
+模型配置 API：`apps/api/src/features/model-management`；仓库：`packages/db/src/model-management-repository.ts`；异步处理：`apps/worker/src/configured-image-processor.ts`。后台界面在独立 `../lycobo-admin`，通过受限代理调用本仓库平台授权接口；详见 [模型服务](docs/model-services.md)。
+
+2026-10-27：后台身份与模型配置路由已迁至独立 lycobo-admin API，主站不再挂载 model-management 管理路由。Drizzle 迁移仍统一存放本仓库；新增 admin_users、admin_sessions、admin_login_limits、admin_roles、admin_user_roles 无业务 users 外键，旧审计关系保留。当前共享数据库实例及模型配置，不代表物理库分离。
+
+供应商请求协议注册表位于 packages/generation/src/provider-adapters.ts，公共执行与下载在 configured-provider.ts，共享错误在 provider-errors.ts；apps/worker/scripts/import-textile-provider.ts 通过独立后台API将本地兼容环境配置导入裂变渠道，仅显式执行，不自动覆盖后台。

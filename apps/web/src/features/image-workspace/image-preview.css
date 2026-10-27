@@ -16,13 +16,12 @@
 }
 /* 左图 / 中信息 / 右缩略图：列宽固定，切换图片时两侧都不位移。 */
 .image-preview {
-  /* One inset for the picture, the first thumbnail and the close control, so the
-   * three share the same top edge. */
+  /* Information, thumbnails and close control share their own inset; the canvas is edge-to-edge. */
   --image-preview-inset: 40px;
   background: #0b0b0e;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 420px 96px;
-  grid-template-rows: minmax(0, 1fr) 44px;
+  grid-template-rows: minmax(0, 1fr);
   width: 100%;
   height: 100dvh;
 }
@@ -35,10 +34,10 @@
   grid-row: 1;
   min-width: 0;
   min-height: 0;
-  padding: var(--image-preview-inset) 40px 48px;
+  padding: 0;
   overflow: hidden;
 }
-/* Clipping frame: the image is fitted here and only scaled inside it. */
+/* The image and selection layer share the full left canvas viewport. */
 .image-preview-frame {
   display: flex;
   align-items: center;
@@ -49,9 +48,8 @@
   min-height: 0;
   overflow: hidden;
 }
-/* A magnified picture pans inside the frame: the hand cursor advertises the
- * drag, and touch dragging must move the picture instead of scrolling. */
-.image-preview-frame[data-zoomed="true"] {
+/* View mode pans anywhere; repair mode reserves pointer input for its active tool. */
+.image-preview-frame[data-pannable="true"] {
   cursor: grab;
   touch-action: none;
 }
@@ -65,6 +63,7 @@
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+  border-radius: 0;
 }
 .image-preview-frame[data-zoomed="true"] .image-preview-image {
   user-select: none;
@@ -77,7 +76,7 @@
   flex-direction: column;
   gap: 20px;
   grid-column: 2;
-  grid-row: 1 / span 2;
+  grid-row: 1;
   min-height: 0;
   padding: var(--image-preview-inset) 30px 30px;
   border-left: 1px solid #1f1f24;
@@ -128,6 +127,7 @@
 }
 .image-preview-model {
   display: inline-flex;
+  min-height: 28px;
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -137,6 +137,8 @@
   font-weight: 500;
 }
 .image-preview-model span {
+  display: block;
+  line-height: inherit;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -165,10 +167,10 @@
 }
 .image-preview-tool.button[data-selected="true"] {
   background: transparent;
-  color: #baa4ff;
+  color: #0485f7;
 }
 .image-preview-tool.button[aria-pressed="true"] {
-  color: #baa4ff;
+  color: #0485f7;
 }
 .image-preview-facts {
   display: flex;
@@ -215,10 +217,6 @@
 .image-preview-section .generation-output-thumbnails {
   margin-top: 0;
 }
-/* Keep the main picture uncropped; reference thumbnails use the history radius. */
-.image-preview-image {
-  border-radius: 0;
-}
 .image-preview-section h2 {
   display: flex;
   align-items: center;
@@ -239,14 +237,36 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+.image-preview-description-text {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #111114;
+}
+.image-preview-section .image-preview-prompt {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.image-preview-section .image-preview-prompt.prompt-collapsed {
+  -webkit-line-clamp: 3;
+}
+
 .image-preview-bar {
   display: flex;
   align-items: center;
   gap: 12px;
-  grid-column: 1;
-  grid-row: 2;
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 32px);
   min-width: 0;
-  padding: 0 30px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #17171b;
   color: #8f8f8f;
   font-size: 14px;
   line-height: 20px;
@@ -311,7 +331,7 @@
   align-items: center;
   gap: 6px;
   grid-column: 3;
-  grid-row: 1 / span 2;
+  grid-row: 1;
   min-height: 0;
   padding: var(--image-preview-inset) 16px 24px;
   border-left: 1px solid #1f1f24;
@@ -363,7 +383,7 @@
 @media (max-width: 1023px) {
   .image-preview {
     grid-template-columns: minmax(0, 1fr) 320px;
-    grid-template-rows: minmax(0, 1fr) 44px;
+    grid-template-rows: minmax(0, 1fr);
   }
   .image-preview-rail {
     display: none;
@@ -381,7 +401,7 @@
   .image-preview-stage {
     flex: none;
     height: min(48dvh, 420px);
-    padding: 16px 16px 32px;
+    padding: 0;
   }
   /* Static so the close control anchors to the sheet, floating over the image
    * instead of colliding with the favourite/download icons. */
@@ -401,9 +421,6 @@
   }
   .image-preview-rail {
     order: 2;
-  }
-  .image-preview-bar {
-    order: 3;
   }
   /* On phones the close control floats over the image's top-right corner so it
    * stays reachable without scrolling the sheet. */
@@ -440,10 +457,7 @@
     min-height: 64px;
   }
   .image-preview-bar {
-    flex: none;
-    height: auto;
-    min-height: 44px;
-    padding: 0 16px;
+    bottom: 8px;
   }
   .image-preview-zoom.slider,
   .image-preview-zoom-value {
@@ -465,7 +479,7 @@
   position: relative;
   display: grid;
   grid-column: 1 / 3;
-  grid-row: 1 / 3;
+  grid-row: 1;
   place-items: center;
   color: #c8c8c8;
   font-size: 14px;

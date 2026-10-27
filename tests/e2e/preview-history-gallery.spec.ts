@@ -77,7 +77,7 @@ test("result preview browses successful history images, highlights the entry and
   const zoomThumb = viewer.getByRole("slider", { name: "缩放", exact: true });
   await zoomThumb.focus();
   await page.keyboard.press("ArrowRight");
-  await expect(viewer.locator(".image-preview-zoom-value")).toHaveText("110%");
+  await expect(viewer.locator(".image-preview-zoom-value")).toHaveText("85%");
   await viewer.locator(".image-preview-stage").hover();
   await page.mouse.wheel(0, -1);
   await expect
@@ -86,10 +86,10 @@ test("result preview browses successful history images, highlights the entry and
         .locator(".image-preview-image")
         .evaluate((image) => Number.parseFloat(getComputedStyle(image).scale)),
     )
-    .toBeGreaterThan(1.1);
-  await expect(viewer.locator(".image-preview-zoom-value")).toHaveText("110%");
+    .toBeGreaterThan(0.85);
+  await expect(viewer.locator(".image-preview-zoom-value")).toHaveText("85%");
   await page.mouse.wheel(0, -100);
-  await expect(viewer.locator(".image-preview-zoom-value")).toHaveText("121%");
+  await expect(viewer.locator(".image-preview-zoom-value")).toHaveText("94%");
   await expect(viewer.locator(".image-preview-facts")).toContainText(target.public_id);
 
   await expect

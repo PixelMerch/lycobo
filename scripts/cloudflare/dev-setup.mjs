@@ -2,25 +2,38 @@ import { randomBytes } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 
 const enabled = process.env.LOCAL_IMAGE_GENERATION_ENABLED === "true";
-if (enabled && !process.env.VAKV_API_KEY)
+if (enabled && !process.env.VAKV_API_KEY && !process.env.MODEL_CREDENTIAL_SECRET)
   throw new Error("Local generation requires an explicit provider key.");
 const common = {
+  ...(process.env.MODEL_CREDENTIAL_SECRET
+    ? { MODEL_CREDENTIAL_SECRET: process.env.MODEL_CREDENTIAL_SECRET }
+    : {}),
   IMAGE_GENERATION_ENABLED: String(enabled),
+  ...(process.env.LOCAL_QUEUE_TOKEN ? { LOCAL_QUEUE_TOKEN: process.env.LOCAL_QUEUE_TOKEN } : {}),
   VAKV_ENABLE_IMAGE_EDITS: process.env.VAKV_ENABLE_IMAGE_EDITS ?? "false",
+  ...(process.env.VAKV_CAPABILITY_OVERRIDES
+    ? { VAKV_CAPABILITY_OVERRIDES: process.env.VAKV_CAPABILITY_OVERRIDES }
+    : {}),
 };
 const configs = {
   api: {
     ...common,
     APP_ENV: "development",
+    ASSET_SIGNING_SECRET: process.env.ASSET_SIGNING_SECRET ?? "",
+    ASSET_PUBLIC_ORIGIN: process.env.ASSET_PUBLIC_ORIGIN ?? "",
     AUTH_JWT_SECRET: process.env.AUTH_JWT_SECRET || randomBytes(48).toString("base64url"),
     AUTH_TRUSTED_ORIGINS:
-      "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8787,http://127.0.0.1:8787",
+      "http://localhost:8081,http://127.0.0.1:8081,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8787,http://127.0.0.1:8787",
+  },
+  assets: {
+    ASSET_SIGNING_SECRET: process.env.ASSET_SIGNING_SECRET ?? "",
+    ASSET_ALLOWED_ORIGINS: process.env.ASSET_ALLOWED_ORIGINS ?? "",
   },
   worker: {
     ...common,
     VAKV_API_KEY: process.env.VAKV_API_KEY ?? "",
     VAKV_BASE_URL: process.env.VAKV_BASE_URL || "https://api.vakv.cn",
-    GENERATION_TIMEOUT_MS: "300000",
+    GENERATION_TIMEOUT_MS: process.env.GENERATION_TIMEOUT_MS || "600000",
   },
 };
 for (const [name, values] of Object.entries(configs))
@@ -32,5 +45,5 @@ for (const [name, values] of Object.entries(configs))
     { mode: 0o600 },
   );
 console.info(
-  "Prepared ignored local Worker settings. R2/Queues use local emulation; Hyperdrive uses the local database. Generation requires LOCAL_IMAGE_GENERATION_ENABLED=true.",
+  "Prepared ignored local Worker settings. PostgreSQL, R2 and Images are local; the development queue uses local Redis. Model generation follows IMAGE_GENERATION_ENABLED and VAKV_ENABLE_IMAGE_EDITS from .env.",
 );

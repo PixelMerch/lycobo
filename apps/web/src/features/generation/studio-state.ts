@@ -44,7 +44,14 @@ export const cases = [
   },
 ] as const;
 export type StudioCase = (typeof cases)[number];
-export type ReferenceImage = { id: string; name: string; src: string; assetId?: string };
+export type ReferenceImage = {
+  id: string;
+  name: string;
+  src: string;
+  assetId?: string;
+  thumbnailSrc?: string;
+  previewSrc?: string;
+};
 export type Draft = {
   prompt: string;
   references: ReferenceImage[];

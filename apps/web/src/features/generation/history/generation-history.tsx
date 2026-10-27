@@ -1,4 +1,5 @@
 import { Button, EmptyState } from "@heroui/react";
+import { textileViews } from "@lycoboai/contracts";
 import { IconPhoto } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
@@ -14,10 +15,20 @@ import { HistoryPrompt, HistoryTaskActions } from "./history-task-tools";
 import { ResultImage } from "./result-image";
 import { useHistoryTaskTarget } from "./use-history-task-target";
 
-export function GenerationHistory({ compact = false }: { compact?: boolean }) {
+export function GenerationHistory({
+  compact = false,
+  tool = "create",
+  onRestore,
+}: {
+  compact?: boolean;
+  tool?: "create" | "textile";
+  onRestore?: import("./history-task-tools").HistoryRestore;
+}) {
   const session = useImageSession();
-  const query = useImageHistory();
-  const targetJob = useHistoryTaskTarget(compact);
+  const query = useImageHistory(tool);
+  const target = useHistoryTaskTarget(compact);
+  const targetJob =
+    target && (tool === "textile") === !!target.input?.textileSet ? target : undefined;
   const loadedJobs = query.data?.pages.flatMap((page) => page.data) ?? [];
   const jobs =
     targetJob && !loadedJobs.some((job) => job.id === targetJob.id)
@@ -109,7 +120,7 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
           >
             <header>
               <HistoryTaskMeta job={job} />
-              {!compact && <HistoryTaskActions job={job} />}
+              {!compact && <HistoryTaskActions job={job} onRestore={onRestore} />}
             </header>
             {compact ? (
               <p className="generation-prompt">{job.prompt}</p>
@@ -136,10 +147,22 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
                         : undefined
                     }
                   >
+                    {job.input?.textileSet && (
+                      <p className="textile-result-view">
+                        {
+                          textileViews.find(
+                            (view) => view.id === job.input?.textileSet?.views[item.position],
+                          )?.name
+                        }
+                      </p>
+                    )}
                     {item.output_asset_id ? (
                       <ResultImage
                         assetId={item.output_asset_id}
+                        thumbnail={job.requested_count > 1}
                         position={item.position}
+                        width={item.width}
+                        height={item.height}
                         prompt={job.prompt}
                         onPreview={(trigger) => {
                           previewTrigger.current = trigger;
@@ -167,8 +190,13 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
                           <p className="generation-failure-message">
                             {item.status === "failed"
                               ? "任务未能完成，积分已退回，请您稍后重试。"
-                              : "任务未能完成，积分状态正在确认，请稍后查看。"}
+                              : item.error_code === "PROVIDER_TIMEOUT"
+                                ? "生成超时，结果和积分状态正在确认，请稍后查看。"
+                                : "生成结果和积分状态正在确认，请稍后查看。"}
                           </p>
+                        )}
+                        {(item.status === "failed" || item.status === "needs_reconciliation") && (
+                          <HistoryTaskActions job={job} item={item} />
                         )}
                       </div>
                     )}
@@ -194,6 +222,7 @@ export function GenerationHistory({ compact = false }: { compact?: boolean }) {
         <HistoryImagePreview
           images={preview.images}
           assetId={preview.assetId}
+          tool={tool}
           onClose={() => setPreview(null)}
         />
       )}

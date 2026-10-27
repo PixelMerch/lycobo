@@ -287,7 +287,7 @@ CREATE TABLE public.generation_job_items (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     superseded_at timestamp with time zone,
     CONSTRAINT generation_job_items_output_check CHECK (((status <> 'succeeded'::text) OR (output_asset_id IS NOT NULL))),
-    CONSTRAINT generation_job_items_position_check CHECK (((("position" >= 0) AND ("position" <= 3)) AND (attempts >= 0))),
+    CONSTRAINT generation_job_items_position_check CHECK (((("position" >= 0) AND ("position" <= 9)) AND (attempts >= 0))),
     CONSTRAINT generation_job_items_status_check CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'succeeded'::text, 'failed'::text, 'needs_reconciliation'::text])))
 );
 
@@ -316,7 +316,7 @@ CREATE TABLE public.generation_jobs (
     display_number bigint NOT NULL,
     public_id text DEFAULT public.allocate_public_identifier('task'::text) NOT NULL,
     provider_model text,
-    CONSTRAINT generation_jobs_count_check CHECK ((((requested_count >= 1) AND (requested_count <= 4)) AND (unit_credits > 0))),
+    CONSTRAINT generation_jobs_count_check CHECK ((((requested_count >= 1) AND (requested_count <= 10)) AND (unit_credits > 0) AND ((requested_count <= 4) OR (input ? 'textileSet'::text)))),
     CONSTRAINT generation_jobs_status_check CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'succeeded'::text, 'partially_failed'::text, 'failed'::text, 'needs_reconciliation'::text])))
 );
 
@@ -360,7 +360,8 @@ CREATE TABLE public.generation_retries (
     user_id uuid NOT NULL,
     job_id uuid NOT NULL,
     idempotency_key uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    target_item_id uuid
 );
 
 
@@ -1701,3 +1702,7 @@ ALTER TABLE ONLY public.wallet_entries
 
 \unrestrict Q9TMNCubRr5NxW5zfJC8twSXiii2Ze4PgDdGIJ6xGL1wHsMaYf2O6eLlVjS0GUP
 
+
+-- Name: generation_retries generation_retries_target_item_id_generation_job_items_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+ALTER TABLE ONLY public.generation_retries
+    ADD CONSTRAINT generation_retries_target_item_id_generation_job_items_id_fk FOREIGN KEY (target_item_id) REFERENCES public.generation_job_items(id);

@@ -53,11 +53,17 @@ test("image actions download and toggle favorites; sticky history blocks scrolle
     "aria-pressed",
     "false",
   );
+  await page.mouse.move(0, 0);
+  await expect(actions).toHaveCSS("opacity", "0");
+  await media.hover();
   const download = page.waitForEvent("download");
   await media.getByRole("button", { name: "下载原图", exact: true }).click();
   expect((await download).suggestedFilename()).toBe(`${jobs[0]?.items[0]?.output_asset_id}.png`);
   await page.mouse.move(0, 0);
-  await media.getByRole("button", { name: "收藏图片", exact: true }).focus();
+  await expect(actions).toHaveCSS("opacity", "0");
+  await media.getByRole("button", { name: "预览图片 1", exact: true }).focus();
+  await page.keyboard.press("Tab");
+  await expect(media.getByRole("button", { name: "下载原图", exact: true })).toBeFocused();
   await expect(actions).toHaveCSS("opacity", "1");
   await page.evaluate(() => window.scrollTo(0, 350));
   const header = await page.locator(".topbar").boundingBox();

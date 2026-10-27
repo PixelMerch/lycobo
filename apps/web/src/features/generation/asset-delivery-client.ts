@@ -16,7 +16,12 @@ export function rememberImageDeliveries(value: unknown) {
       if (current.success && current.data.expires_at > Date.now() / 1000 + 60) {
         const before = new URL(current.data.url),
           after = new URL(parsed.data.url);
-        if (before.origin === after.origin && before.pathname === after.pathname) return;
+        if (
+          before.origin === after.origin &&
+          before.pathname === after.pathname &&
+          before.searchParams.get("variant") === after.searchParams.get("variant")
+        )
+          return;
       }
       queryClient.setQueryData(deliveryKey(value.id), parsed.data);
     }

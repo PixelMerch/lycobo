@@ -5,6 +5,7 @@ import { ReferenceImageCard } from "../../../components/reference-image-card";
 import { UiIcon } from "../../../components/ui-icon";
 import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "../studio-state";
 import { readReferenceImages, referenceFileError } from "./read-reference-images";
+import { referenceDisplaySource } from "./reference-display";
 
 const ImageViewer = lazy(() =>
   import("../../../components/image-viewer").then((module) => ({ default: module.ImageViewer })),
@@ -121,7 +122,7 @@ export function ReferencePicker({
         {references.map((image, index) => (
           <ReferenceImageCard
             key={image.id}
-            src={image.src}
+            src={referenceDisplaySource(image, true)}
             number={index + 1}
             isDisabled={reading}
             onOpen={() => setPreview(index)}
@@ -171,7 +172,8 @@ export function ReferencePicker({
         <Suspense fallback={null}>
           <ImageViewer
             images={references.map((image, index) => ({
-              src: image.src,
+              src: referenceDisplaySource(image),
+              thumbnailSrc: referenceDisplaySource(image, true),
               alt: `图片${index + 1}`,
             }))}
             initialIndex={preview}

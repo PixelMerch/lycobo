@@ -119,7 +119,7 @@ describe("Vakv adapter and capability evidence", () => {
     );
     await expect(
       generateVakvImage(input, [], { ...config, timeoutMs: 20 }, "id", request),
-    ).rejects.toMatchObject({ code: "PROVIDER_OUTCOME_UNKNOWN", unknownOutcome: true });
+    ).rejects.toMatchObject({ code: "PROVIDER_TIMEOUT", unknownOutcome: true });
     expect(request).toHaveBeenCalledTimes(1);
   });
   it("blocks non-HTTPS provider origins outside isolated fixtures", async () => {
@@ -258,4 +258,30 @@ it("rejects provider redirects without forwarding credentials or resubmitting", 
   ).rejects.toMatchObject({ code: "PROVIDER_HTTP_307", unknownOutcome: true });
   expect(request).toHaveBeenCalledTimes(1);
   expect(request.mock.calls[0]?.[1]?.redirect).toBe("manual");
+});
+
+it("keeps a timed-out response body unresolved without retrying the paid request", async () => {
+  const request = vi.fn<typeof fetch>().mockImplementation(
+    async (_url, options) =>
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            options?.signal?.addEventListener(
+              "abort",
+              () => controller.error(new Error("body timeout")),
+              { once: true },
+            );
+          },
+        }),
+        { headers: { "x-request-id": "body-timeout-fixture" } },
+      ),
+  );
+  await expect(
+    generateVakvImage(input, [], { ...config, timeoutMs: 20 }, "id", request),
+  ).rejects.toMatchObject({
+    code: "PROVIDER_TIMEOUT",
+    unknownOutcome: true,
+    requestId: "body-timeout-fixture",
+  });
+  expect(request).toHaveBeenCalledTimes(1);
 });

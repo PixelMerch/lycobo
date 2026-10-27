@@ -16,8 +16,9 @@ type Props = {
   onChange: (regions: RepairRegion[]) => void;
   pan: Point;
   interactive: boolean;
+  maxFitScale?: number;
 };
-const accent = "#BAA4FF";
+const accent = "#0485F7";
 
 function Region({
   region,
@@ -56,7 +57,7 @@ function Region({
         stroke={accent}
         strokeWidth={selected ? 2 : 1}
         strokeScaleEnabled={false}
-        fill={selected ? "#BAA4FF12" : "#BAA4FF06"}
+        fill={selected ? "#0485F712" : "#0485F706"}
         draggable={!disabled}
         onClick={onSelect}
         onTap={onSelect}
@@ -161,7 +162,9 @@ export function RepairCanvas(props: Props) {
   const [drawing, setDrawing] = useState<RepairRegion | null>(null);
   const gesture = useRef<{ start: Point; drawing: boolean } | null>(null);
   const hand = tool === "hand";
-  const scale = (Math.min(viewport.width / width, viewport.height / height, 1) * zoom) / 100;
+  const scale =
+    (Math.min(viewport.width / width, viewport.height / height, props.maxFitScale ?? 1) * zoom) /
+    100;
   const safeScale = Math.max(0.001, scale);
   const offset = {
     x: (viewport.width - width * safeScale) / 2 + pan.x,

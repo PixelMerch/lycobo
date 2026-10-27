@@ -6,10 +6,13 @@ import {
   imageGenerationInputSchema,
   imageProviderModel,
   imageUnitCredits,
+  type ProviderSnapshot,
+  providerSnapshotSchema,
   type StoredImage,
 } from "@lycoboai/contracts";
 import postgres from "postgres";
 import { recordImageEvent } from "./image-event-repository";
+import { modelManagementRepository, resolveProviderSnapshot } from "./model-management-repository";
 import { appendWalletEntry, ensureWallet, walletRepository } from "./wallet-repository";
 
 export class ImageRepositoryError extends Error {
@@ -20,12 +23,23 @@ export class ImageRepositoryError extends Error {
 export type ImagePrincipal = ImageScope & { role: "admin" | "member"; uid?: string };
 export type ClaimedImage = {
   itemId: string;
+  position: number;
   jobId: string;
   organizationId: string;
   userId: string;
   executionToken: string;
   input: ImageGenerationInput;
   providerModel: ImageGenerationInput["model"];
+  configuredProvider?:
+    | {
+        snapshot: ProviderSnapshot;
+        phase: string;
+        taskId: string | null;
+        statusPath: string | null;
+        deadlineAt: Date;
+        pollFailures: number;
+      }
+    | undefined;
 };
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 export function openImageRepository(url: string, edge = false) {
@@ -154,6 +168,7 @@ export function openImageRepository(url: string, edge = false) {
         };
       });
     },
+    models: modelManagementRepository(sql),
     async authenticate(token: string): Promise<ImagePrincipal | null> {
       if (!/^[\w-]{43}$/.test(token)) return null;
       const [row] =
@@ -181,9 +196,24 @@ export function openImageRepository(url: string, edge = false) {
         const members =
           await tx`select user_id from organization_members where organization_id=${scope.organizationId} and user_id=${scope.userId} for share`;
         if (!members.length) throw new ImageRepositoryError("FORBIDDEN");
+        const [replay] =
+          await tx`select id,input_hash from generation_jobs where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
+        if (replay) {
+          if (replay.input_hash !== inputHash)
+            throw new ImageRepositoryError("IDEMPOTENCY_CONFLICT");
+          return { id: String(replay.id), replayed: true };
+        }
+        const snapshot = await resolveProviderSnapshot(tx, input).catch((error: unknown) => {
+          if (
+            error instanceof Error &&
+            ["MODEL_CHANNEL_DISABLED", "MODEL_CHANNEL_CAPABILITY"].includes(error.message)
+          )
+            throw new ImageRepositoryError("MODEL_CAPABILITY_UNVERIFIED");
+          throw error;
+        });
         const inserted =
-          await tx`insert into generation_jobs (organization_id,user_id,idempotency_key,input_hash,input,model,provider_model,prompt,resolution,aspect_ratio,requested_count,unit_credits)
-          values (${scope.organizationId},${scope.userId},${key},${inputHash},${tx.json(input)},${input.model},${imageProviderModel(input)},${input.prompt},${input.resolution},${input.aspectRatio},${input.count},${unitCredits})
+          await tx`insert into generation_jobs (organization_id,user_id,idempotency_key,input_hash,input,model,provider_model,prompt,resolution,aspect_ratio,requested_count,unit_credits,provider_snapshot)
+          values (${scope.organizationId},${scope.userId},${key},${inputHash},${tx.json(input)},${input.model},${imageProviderModel(input)},${input.prompt},${input.resolution},${input.aspectRatio},${input.count},${unitCredits},${snapshot ? tx.json(snapshot) : null})
           on conflict (organization_id,user_id,idempotency_key) do nothing returning id`;
         if (!inserted[0]) {
           const [existing] =
@@ -233,7 +263,7 @@ export function openImageRepository(url: string, edge = false) {
         return { id, replayed: false };
       });
     },
-    async retry(scope: ImageScope, jobId: string, key: string) {
+    async retry(scope: ImageScope, jobId: string, key: string, itemId?: string) {
       return sql.begin(async (tx) => {
         const members =
           await tx`select user_id from organization_members where organization_id=${scope.organizationId} and user_id=${scope.userId} for share`;
@@ -242,17 +272,20 @@ export function openImageRepository(url: string, edge = false) {
           await tx`select id,status,unit_credits from generation_jobs where id=${jobId} and organization_id=${scope.organizationId} for update`;
         if (!job) throw new ImageRepositoryError("NOT_FOUND");
         const [previous] =
-          await tx`select job_id from generation_retries where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
+          await tx`select job_id,target_item_id from generation_retries where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
         if (previous) {
-          if (previous.job_id !== jobId) throw new ImageRepositoryError("IDEMPOTENCY_CONFLICT");
+          if (previous.job_id !== jobId || (previous.target_item_id ?? undefined) !== itemId)
+            throw new ImageRepositoryError("IDEMPOTENCY_CONFLICT");
           return { id: jobId, replayed: true };
         }
         const items =
           await tx`select id,position,status,error_code from generation_job_items where job_id=${jobId} and superseded_at is null order by position for update`;
-        if (items.some((i) => i.status === "queued" || i.status === "running"))
+        if (!itemId && items.some((i) => i.status === "queued" || i.status === "running"))
           throw new ImageRepositoryError("STATE_CONFLICT");
         const failed = items.filter(
-          (i) => i.status === "failed" || i.status === "needs_reconciliation",
+          (i) =>
+            (!itemId || i.id === itemId) &&
+            (i.status === "failed" || i.status === "needs_reconciliation"),
         );
         if (!failed.length) throw new ImageRepositoryError("STATE_CONFLICT");
         // Explicit user retry retires unresolved attempts before refund/recharge.
@@ -266,7 +299,7 @@ export function openImageRepository(url: string, edge = false) {
         const wallet = await ensureWallet(tx, scope);
         if (wallet.balance < Number(job.unit_credits) * failed.length)
           throw new ImageRepositoryError("INSUFFICIENT_CREDITS");
-        await tx`insert into generation_retries (organization_id,user_id,job_id,idempotency_key) values (${scope.organizationId},${scope.userId},${jobId},${key})`;
+        await tx`insert into generation_retries (organization_id,user_id,job_id,idempotency_key,target_item_id) values (${scope.organizationId},${scope.userId},${jobId},${key},${itemId ?? null})`;
         for (const item of failed) {
           await tx`update generation_job_items set superseded_at=now() where id=${item.id}`;
           const itemId = randomUUID();
@@ -285,10 +318,19 @@ export function openImageRepository(url: string, edge = false) {
         return { id: jobId, replayed: false };
       });
     },
-    async list(scope: ImageScope, limit: number, before?: string) {
-      return sql`select ${jobView} from generation_jobs j where j.organization_id=${scope.organizationId}
+    async list(scope: ImageScope, limit: number, before?: string, tool?: "create" | "textile") {
+      return sql`select ${jobView} from generation_jobs j where j.organization_id=${scope.organizationId} and j.archived_at is null
+        ${tool ? (tool === "textile" ? sql`and j.input ? 'textileSet'` : sql`and not (j.input ? 'textileSet')`) : sql``}
         ${before ? sql`and (j.created_at,j.id) < (select created_at,id from generation_jobs where id=${before} and organization_id=${scope.organizationId})` : sql``}
         order by j.created_at desc,j.id desc limit ${limit}`;
+    },
+    async archive(scope: ImageScope, id: string) {
+      return sql.begin(async (tx) => {
+        const rows = await tx`update generation_jobs set archived_at=coalesce(archived_at,now())
+          where id=${id} and organization_id=${scope.organizationId} returning id`;
+        if (!rows.length) throw new ImageRepositoryError("NOT_FOUND");
+        await recordImageEvent(tx, scope.organizationId, "task", id);
+      });
     },
     async get(scope: ImageScope, id: string) {
       const [row] =
@@ -352,7 +394,7 @@ export function openImageRepository(url: string, edge = false) {
       return sql.begin(async (tx) => {
         const rows =
           await tx`select o.id,o.item_id from generation_outbox o join generation_job_items i on i.id=o.item_id
-          where i.status='queued' and o.next_attempt_at<=now() and (o.lease_expires_at is null or o.lease_expires_at<now())
+          where (i.status='queued' or (i.status='running' and exists(select 1 from provider_executions e where e.item_id=i.id and e.phase='polling' and e.next_poll_at<=now()))) and o.next_attempt_at<=now() and (o.lease_expires_at is null or o.lease_expires_at<now())
           order by o.next_attempt_at limit 20 for update of o skip locked`;
         const result: Array<{ id: string; itemId: string; leaseToken: string }> = [];
         for (const row of rows) {
@@ -370,22 +412,44 @@ export function openImageRepository(url: string, edge = false) {
     async claim(itemId: string, workerId: string, leaseMs: number): Promise<ClaimedImage | null> {
       return sql.begin(async (tx) => {
         const [candidate] =
-          await tx`select job_id from generation_job_items where id=${itemId} and status='queued'`;
+          await tx`select job_id from generation_job_items where id=${itemId} and (status='queued' or (status='running' and exists(select 1 from provider_executions e where e.item_id=${itemId} and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now()))))`;
         if (!candidate) return null;
         // Match completion/reconciliation lock order to avoid sibling-item deadlocks.
         await tx`select id from generation_jobs where id=${candidate.job_id} for update`;
         const [row] =
-          await tx`select i.id,i.job_id,j.organization_id,j.user_id,j.input,j.provider_model from generation_job_items i join generation_jobs j on j.id=i.job_id
-          where i.id=${itemId} and i.status='queued' for update of i skip locked`;
+          await tx`select i.id,i.position,i.job_id,j.organization_id,j.user_id,j.input,j.provider_model,j.provider_snapshot,e.phase,e.task_id,e.status_path,e.deadline_at,e.poll_failures from generation_job_items i join generation_jobs j on j.id=i.job_id left join provider_executions e on e.item_id=i.id
+          where i.id=${itemId} and (i.status='queued' or (i.status='running' and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now()))) for update of i skip locked`;
         if (!row) return null;
         const input = imageGenerationInputSchema.parse(row.input);
         const executionToken = randomUUID();
-        await tx`update generation_job_items set status='running',worker_id=${workerId},execution_token=${executionToken},attempts=attempts+1,
-          started_at=now(),lease_expires_at=now()+${leaseMs} * interval '1 millisecond' where id=${itemId}`;
+        const snapshot = row.provider_snapshot
+          ? providerSnapshotSchema.parse(row.provider_snapshot)
+          : null;
+        let deadlineAt: Date | undefined;
+        if (snapshot) {
+          deadlineAt = row.deadline_at
+            ? new Date(String(row.deadline_at))
+            : new Date(Date.now() + snapshot.taskTimeoutSeconds * 1000);
+          await tx`insert into provider_executions(item_id,phase,deadline_at,lease_until) values (${itemId},'submitting',${deadlineAt},now()+${leaseMs}*interval '1 millisecond') on conflict(item_id) do update set lease_until=excluded.lease_until,next_poll_at=null,poll_count=provider_executions.poll_count+1`;
+        }
+        await tx`update generation_job_items set status='running',worker_id=${workerId},execution_token=${executionToken},provider=${snapshot?.adapter ?? "vakv"},attempts=attempts+case when status='queued' then 1 else 0 end,
+          started_at=coalesce(started_at,now()),lease_expires_at=now()+${leaseMs} * interval '1 millisecond' where id=${itemId}`;
         await tx`update generation_jobs set status='running',updated_at=now() where id=${row.job_id}`;
         await recordImageEvent(tx, String(row.organization_id), "task", String(row.job_id));
         return {
           itemId,
+          configuredProvider:
+            snapshot && deadlineAt
+              ? {
+                  snapshot,
+                  phase: String(row.phase ?? "submitting"),
+                  taskId: row.task_id ? String(row.task_id) : null,
+                  statusPath: row.status_path ? String(row.status_path) : null,
+                  deadlineAt,
+                  pollFailures: Number(row.poll_failures ?? 0),
+                }
+              : undefined,
+          position: Number(row.position),
           executionToken,
           jobId: String(row.job_id),
           organizationId: String(row.organization_id),
@@ -395,6 +459,27 @@ export function openImageRepository(url: string, edge = false) {
             row.provider_model ?? input.model,
           ),
         };
+      });
+    },
+    async providerCipher(credentialId: string) {
+      const [row] = await sql`select ciphertext from model_credentials where id=${credentialId}`;
+      if (!row) throw new Error("MODEL_CREDENTIAL_NOT_FOUND");
+      return String(row.ciphertext);
+    },
+    async deferProvider(
+      job: ClaimedImage,
+      taskId: string,
+      statusPath: string,
+      delayMs: number,
+      failed = false,
+      requestId?: string,
+    ) {
+      return sql.begin(async (tx) => {
+        const rows =
+          await tx`update generation_job_items set provider_request_id=coalesce(${requestId ?? null},provider_request_id),lease_expires_at=(select deadline_at+interval '1 minute' from provider_executions where item_id=${job.itemId}) where id=${job.itemId} and status='running' and execution_token=${job.executionToken} returning id`;
+        if (!rows.length) return;
+        await tx`update provider_executions set poll_failures=case when ${failed} then poll_failures+1 else 0 end,phase='polling',task_id=${taskId},status_path=${statusPath},next_poll_at=now()+${Math.max(2000, Math.min(delayMs, 60000))}*interval '1 millisecond',lease_until=null where item_id=${job.itemId}`;
+        await tx`update generation_outbox set next_attempt_at=now()+${Math.max(2000, Math.min(delayMs, 60000))}*interval '1 millisecond',lease_token=null,lease_expires_at=null where item_id=${job.itemId}`;
       });
     },
     async finish(
@@ -416,10 +501,10 @@ export function openImageRepository(url: string, edge = false) {
           const a = result.image;
           await tx`insert into media_assets (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256)
             values (${a.id},${job.organizationId},${job.userId},'output','image',${a.objectKey},${a.mimeType},${a.width},${a.height},${a.bytes},${a.sha256})`;
-          await tx`update generation_job_items set status='succeeded',output_asset_id=${a.id},provider_request_id=${result.requestId ?? null},completed_at=now() where id=${job.itemId}`;
+          await tx`update generation_job_items set status='succeeded',output_asset_id=${a.id},provider_request_id=coalesce(${result.requestId ?? null},provider_request_id),completed_at=now() where id=${job.itemId}`;
         } else {
           await tx`update generation_job_items set status=${result.unknown && result.errorCode !== "PROVIDER_INVALID_IMAGE_RESPONSE" ? "needs_reconciliation" : "failed"},error_code=${result.errorCode},
-            provider_request_id=${result.requestId ?? null},completed_at=now() where id=${job.itemId}`;
+            provider_request_id=coalesce(${result.requestId ?? null},provider_request_id),completed_at=now() where id=${job.itemId}`;
           if (!result.unknown || result.errorCode === "PROVIDER_INVALID_IMAGE_RESPONSE")
             await refund(tx, job.jobId, job.itemId);
         }

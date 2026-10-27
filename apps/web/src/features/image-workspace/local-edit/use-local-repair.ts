@@ -79,7 +79,7 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
     loaded.crossOrigin = "anonymous";
     loaded.referrerPolicy = "strict-origin-when-cross-origin";
     loaded.onload = () => setImage(loaded);
-    loaded.onerror = () => setImageError("原图加载失败，请重新打开图片后再试。");
+    loaded.onerror = () => setImageError("图片预览加载失败，请重新打开图片后再试。");
     loaded.src = assetContentUrl(source.id);
     return () => {
       loaded.onload = null;
@@ -87,8 +87,8 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
       loaded.src = "";
     };
   }, [source.id]);
-  const width = image?.naturalWidth ?? source.width ?? 1;
-  const height = image?.naturalHeight ?? source.height ?? 1;
+  const width = source.width ?? image?.naturalWidth ?? 1;
+  const height = source.height ?? image?.naturalHeight ?? 1;
   const output = repairOutput(width, height);
   const model = isModelId(meta.model) ? meta.model : "gpt-image-2";
   const available =

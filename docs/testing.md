@@ -50,6 +50,15 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 不调用模型、不扣积分、不上传对象。迁移可以在空白 CI 库上验证；
 本地已有数据不能用清库方式测试。
 
+## 本地 Redis 集成
+
+```sh
+pnpm infra:up
+ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
+```
+
+仅接受 loopback Redis，每次创建独立 UUID 前缀并在 finally 删除自己的 Stream，不执行 FLUSHDB 或清理共享卷。覆盖只传任务 ID、消费者退出后未确认消息恢复、执行中心跳防抢占、单条消息有限重试及死信、HTTP 桥接认证和成功确认。使用 loopback HTTP fixture，不调用付费模型；数据库 claim／计费不变量由原 PostgreSQL 隔离集成检查覆盖。Infrastructure CI 同时运行生产 Cloudflare Queues 模拟验证和本地 Redis 验证。
+
 ## 需要继续补齐的产品测试
 
 鉴权/跨用户隔离、重复提交、回调重放、断线恢复、单图失败重试、
@@ -94,3 +103,21 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 验证八个旧名均消失，表 OID、记录、素材／修改关联、提交幂等和退款唯一性保持，
 数据库函数不再引用旧表名。后续图片／钱包／SSE 检查全部在无兼容视图的结构上运行。
 测试数据库和临时迁移目录结束后清理，不操作现有业务数据，也不调用付费模型。
+
+## 家纺主图裂变
+
+`packages/generation/src/textile-generation.test.ts` 验证10个独立服务端视角预设、版本、重复与未知视角、普通任务4张上限和一视角一张约束；图片API测试验证客户端模型／提示词／质量无法覆盖服务端固定配置。
+
+`verify-textile-generation.ts` 纳入 worker `test:images`，在隔离临时库与私有临时图片目录中验证10张提交、原子扣200积分及10条outbox、同键重放、跨组织引用拒绝、工具历史筛选、每个position不同提示词及每次请求携带有序的1张主图和5张详情图、重复消费不调用服务商、9成功1失败净扣180积分、失败重试仅保留原position。服务商为本地注入fixture，未调用外部模型。根集成命令仍覆盖Queues/R2/Images与鉴权SSE。
+
+`tests/e2e/textile-generation.spec.ts` 使用接口fixture验证选中10视角后提交10张与六张有序参考、历史视角标记、部分失败与实时更新、刷新和重新编辑、普通创作历史隔离，以及丢失响应后刷新仍复用同一幂等键。全量浏览器测试仍由远程CI运行。
+
+结果布局回归 `generation-result-layout.spec.ts` 验证单图全宽原比例、多图中的失败／待确认项保持同列正方形且不跨行。供应商适配器单测分别覆盖响应头等待与响应体等待超时，确认`PROVIDER_TIMEOUT`仍为未知收费结果并且只调用一次，不自动重试。默认总超时600000ms，租约在其上增加60000ms，Redis桥接请求保留610000ms上限。
+
+单图卡片重试由`card-image-retry.spec.ts`验证hover、键盘和触屏入口、单张金额确认、取消不提交、仅传itemId及丢失响应后刷新同键重放。隔离verify-textile-generation覆盖其他子项仍排队时仅替换选中未决项、另一个失败项不变、单次退款／扣费、同键换图拒绝与旧执行完成隔离。命名迁移回归先单独验证0015的数据保全，再应用后续扩展迁移，避免把新增可空列误判为旧数据变化。
+
+浏览器CI的 `pnpm cloudflare:dev:setup` 使用 `dev.mjs --prepare-only` 同时生成被忽略的 `.dev.vars` 和三个 `wrangler.local.json`，不会启动服务、队列或数据库连接。`dev-setup.test.mjs` 在独立临时目录模拟干净检出，避免依赖开发者已有生成文件；Playwright随后按配置启动API与前端。
+
+浏览器CI固定使用 `ubuntu-24.04`，避免 `ubuntu-latest` 切换系统版本后依赖／字体下载和渲染环境漂移；浏览器任务使用匹配Playwright 1.64.0的官方 `mcr.microsoft.com/playwright:v1.64.0-noble` 镜像并固定digest，内置Chromium及系统字体依赖，不在任务中重复执行apt下载；完整E2E范围不变。
+
+完整浏览器CI分为2个shard，每个独立runner使用1个worker，避免同机浏览器竞争资源；`Browser`汇总检查必须等待两个分片全部成功，不改变测试范围、断言或失败重跑规则。生成结果图使用服务端宽高保留加载前比例，使远处历史任务的懒加载预览入口有稳定尺寸。

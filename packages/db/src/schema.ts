@@ -282,6 +282,7 @@ export const generationJobs = pgTable(
     input: jsonb("input").$type<Record<string, unknown>>().notNull(),
     model: text("model").notNull(),
     providerModel: text("provider_model"),
+    providerSnapshot: jsonb("provider_snapshot"),
     prompt: text("prompt").notNull(),
     resolution: text("resolution").notNull(),
     aspectRatio: text("aspect_ratio").notNull(),
@@ -290,6 +291,7 @@ export const generationJobs = pgTable(
     status: text("status").notNull().default("queued"),
     createdAt: createdAt(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
   },
   (t) => [
@@ -304,7 +306,7 @@ export const generationJobs = pgTable(
     index("generation_jobs_member_idx").on(t.organizationId, t.userId),
     check(
       "generation_jobs_count_check",
-      sql`${t.requestedCount} between 1 and 4 and ${t.unitCredits} > 0`,
+      sql`${t.requestedCount} between 1 and 10 and ${t.unitCredits} > 0 and (${t.requestedCount} <= 4 or ${t.input} ? 'textileSet')`,
     ),
     check(
       "generation_jobs_status_check",
@@ -391,7 +393,7 @@ export const generationJobItems = pgTable(
       .where(sql`${t.status} = 'running'`),
     check(
       "generation_job_items_position_check",
-      sql`${t.position} between 0 and 3 and ${t.attempts} >= 0`,
+      sql`${t.position} between 0 and 9 and ${t.attempts} >= 0`,
     ),
     check(
       "generation_job_items_status_check",
@@ -648,6 +650,7 @@ export const generationRetries = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id),
+    targetItemId: uuid("target_item_id").references(() => generationJobItems.id),
     jobId: uuid("job_id").notNull(),
     key: uuid("idempotency_key").notNull(),
     createdAt: createdAt(),
@@ -663,3 +666,173 @@ export const generationRetries = pgTable(
     index("generation_retries_user_idx").on(t.userId),
   ],
 );
+
+// Platform configuration is separate from enterprise membership and never exposed by the model catalog.
+export const platformAdministrators = pgTable("platform_administrators", {
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id),
+  enabled: integer("enabled").notNull().default(1),
+  createdAt: createdAt(),
+}).enableRLS();
+export const modelCredentials = pgTable("model_credentials", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ciphertext: text("ciphertext").notNull(),
+  createdAt: createdAt(),
+}).enableRLS();
+export const modelProviders = pgTable("model_providers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  origin: text("origin").notNull(),
+  adapter: text("adapter").notNull(),
+  credentialId: uuid("credential_id")
+    .notNull()
+    .references(() => modelCredentials.id),
+  enabled: integer("enabled").notNull().default(0),
+  createdAt: createdAt(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}).enableRLS();
+export const modelChannels = pgTable(
+  "model_channels",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    providerId: uuid("provider_id")
+      .notNull()
+      .references(() => modelProviders.id),
+    name: text("name").notNull(),
+    model: text("model").notNull(),
+    settings: jsonb("settings").notNull(),
+    enabled: integer("enabled").notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [index("model_channels_provider_idx").on(t.providerId)],
+).enableRLS();
+export const modelRoutes = pgTable(
+  "model_routes",
+  {
+    tool: text("tool").notNull(),
+    model: text("model").notNull(),
+    channelId: uuid("channel_id")
+      .notNull()
+      .references(() => modelChannels.id),
+  },
+  (t) => [
+    unique("model_routes_tool_model_unique").on(t.tool, t.model),
+    index("model_routes_channel_idx").on(t.channelId),
+  ],
+).enableRLS();
+export const modelAuditEvents = pgTable(
+  "model_audit_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    actorId: uuid("actor_id").references(() => users.id),
+    administratorId: uuid("administrator_id").references(() => adminUsers.id),
+    action: text("action").notNull(),
+    resourceId: uuid("resource_id").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("model_audit_created_idx").on(t.createdAt)],
+).enableRLS();
+export const providerExecutions = pgTable(
+  "provider_executions",
+  {
+    itemId: uuid("item_id")
+      .primaryKey()
+      .references(() => generationJobItems.id),
+    phase: text("phase").notNull(),
+    taskId: text("task_id"),
+    statusPath: text("status_path"),
+    nextPollAt: timestamp("next_poll_at", { withTimezone: true }),
+    leaseUntil: timestamp("lease_until", { withTimezone: true }),
+    deadlineAt: timestamp("deadline_at", { withTimezone: true }).notNull(),
+    pollCount: integer("poll_count").notNull().default(0),
+    pollFailures: integer("poll_failures").notNull().default(0),
+  },
+  (t) => [index("provider_executions_due_idx").on(t.nextPollAt)],
+).enableRLS();
+
+// Back-office identities have no relationship to business users or enterprise accounts.
+export const adminUsers = pgTable(
+  "admin_users",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    account: text("account").notNull().unique(),
+    passwordHash: text("password_hash").notNull(),
+    isSuperAdmin: integer("is_super_admin").notNull().default(0),
+    disabledAt: timestamp("disabled_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [check("admin_users_super_admin_check", sql`${t.isSuperAdmin} in (0,1)`)],
+).enableRLS();
+export const adminSessions = pgTable(
+  "admin_sessions",
+  {
+    tokenHash: text("token_hash").primaryKey(),
+    administratorId: uuid("administrator_id")
+      .notNull()
+      .references(() => adminUsers.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("admin_sessions_user_idx").on(t.administratorId),
+    index("admin_sessions_expiry_idx").on(t.expiresAt),
+  ],
+).enableRLS();
+export const adminLoginLimits = pgTable(
+  "admin_login_limits",
+  {
+    subjectHash: text("subject_hash").primaryKey(),
+    attempts: integer("attempts").notNull().default(1),
+    resetAt: timestamp("reset_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [index("admin_login_limits_reset_idx").on(t.resetAt)],
+).enableRLS();
+export const adminRoles = pgTable("admin_roles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  description: text("description").notNull().default(""),
+  permissions: jsonb("permissions").notNull().default(sql`'[]'::jsonb`),
+  createdAt: createdAt(),
+}).enableRLS();
+export const adminUserRoles = pgTable(
+  "admin_user_roles",
+  {
+    administratorId: uuid("administrator_id")
+      .notNull()
+      .references(() => adminUsers.id, { onDelete: "cascade" }),
+    roleId: uuid("role_id")
+      .notNull()
+      .references(() => adminRoles.id),
+  },
+  (t) => [
+    unique("admin_user_roles_unique").on(t.administratorId, t.roleId),
+    index("admin_user_roles_role_idx").on(t.roleId),
+  ],
+).enableRLS();
+
+// Navigation metadata is independent of Casbin's server-owned permission catalog.
+export const adminMenuEntries = pgTable(
+  "admin_menu_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    parentId: uuid("parent_id"),
+    title: text("title").notNull(),
+    type: text("type").notNull(),
+    pageId: text("page_id"),
+    permission: text("permission").notNull().default(""),
+    icon: text("icon").notNull().default("menu"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    visible: integer("visible").notNull().default(1),
+    protected: integer("protected").notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({ columns: [t.parentId], foreignColumns: [t.id] }),
+    index("admin_menu_parent_order_idx").on(t.parentId, t.sortOrder),
+    uniqueIndex("admin_menu_page_unique").on(t.pageId),
+    check("admin_menu_type_check", sql`${t.type} in ('directory','menu','button')`),
+    check("admin_menu_flags_check", sql`${t.visible} in (0,1) and ${t.protected} in (0,1)`),
+    check("admin_menu_parent_check", sql`${t.parentId} is null or ${t.parentId} <> ${t.id}`),
+  ],
+).enableRLS();

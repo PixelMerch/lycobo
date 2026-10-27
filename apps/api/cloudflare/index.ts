@@ -1,7 +1,7 @@
 import { businessCodes } from "@lycoboai/contracts";
 import { openAuthRepository, openImageEventFeed, openImageRepository } from "@lycoboai/db";
 import { readImagePolicy, supportedResolutions, validateModelInput } from "@lycoboai/generation";
-import { dispatchImageOutbox } from "@lycoboai/queue";
+import { dispatchImageOutbox, type ImageQueueSender } from "@lycoboai/queue";
 import { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { r2ImageStore } from "@lycoboai/storage/r2";
 import { createApp } from "../src/app";
@@ -13,13 +13,14 @@ export interface ApiBindings {
   HYPERDRIVE: Hyperdrive;
   IMAGES_BUCKET: R2Bucket;
   IMAGES: ImagesBinding;
-  GENERATION_QUEUE: Queue<{ version: 1; itemId: string }>;
+  GENERATION_QUEUE: ImageQueueSender;
   APP_ENV?: string;
   AUTH_JWT_SECRET: string;
   AUTH_TRUSTED_ORIGINS: string;
   IMAGE_GENERATION_ENABLED?: string;
   VAKV_ENABLE_IMAGE_EDITS?: string;
   VAKV_CAPABILITY_OVERRIDES?: string;
+  MODEL_CREDENTIAL_SECRET?: string;
 }
 function unavailable(code: "AUTH_NOT_CONFIGURED" | "INTERNAL_ERROR") {
   const requestId = crypto.randomUUID();
@@ -126,10 +127,13 @@ async function handleRequest(
       () => console.error("API_REQUEST_FAILED"),
       {
         repository,
+        modelSecret: env.MODEL_CREDENTIAL_SECRET,
         store,
         signAsset:
           env.ASSET_PUBLIC_ORIGIN && env.ASSET_SIGNING_SECRET
-            ? assetDeliverySigner(env.ASSET_PUBLIC_ORIGIN, env.ASSET_SIGNING_SECRET)
+            ? assetDeliverySigner(env.ASSET_PUBLIC_ORIGIN, env.ASSET_SIGNING_SECRET, {
+                allowLocalHttp: env.APP_ENV === "development",
+              })
             : undefined,
         events,
         auth,

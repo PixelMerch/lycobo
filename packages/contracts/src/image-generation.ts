@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { textileGenerationSchema } from "./textile-generation";
 
 export const imageLimits = {
   uploadBytes: 10 * 1024 * 1024,
@@ -78,13 +79,28 @@ export const imageGenerationInputSchema = z
       .max(10)
       .default([])
       .refine((ids) => new Set(ids).size === ids.length, "Duplicate references"),
-    count: z.number().int().min(1).max(4).default(1),
+    count: z.number().int().min(1).max(10).default(1),
     // Keep absent on legacy snapshots so their stored idempotency hashes remain valid.
     quality: imageQualitySchema.optional(),
     // Absent on legacy inputs, preserving their original idempotency hashes.
     localEdit: imageLocalEditSchema.optional(),
+    textileSet: textileGenerationSchema.optional(),
   })
   .superRefine((input, ctx) => {
+    if (
+      input.textileSet
+        ? input.count !== input.textileSet.views.length ||
+          input.referenceAssetIds.length < 1 ||
+          input.referenceAssetIds.length > (input.textileSet.version >= 2 ? 6 : 2) ||
+          !!input.localEdit
+        : input.count > 4
+    )
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Textile views require one output each and one main reference and up to five detail references; ordinary tasks allow four outputs",
+      });
+
     if (
       input.localEdit &&
       (input.count !== 1 ||
@@ -116,6 +132,7 @@ export function publicImageModel(model: ImageGenerationInput["model"]): PublicIm
   return model.startsWith("gpt-image-2.5") ? "gpt-image-2.5" : "gpt-image-2";
 }
 export function imageProviderModel(input: Pick<ImageGenerationInput, "model" | "resolution">) {
+  if (input.model === "gpt-image-2-4K") return "gpt-image-2-4K";
   const model = publicImageModel(input.model);
   if (model === "gpt-image-2") return input.resolution === "1K" ? "gpt-image-2" : "gpt-image-2-4K";
   if (model === "gpt-image-2.5") return "gpt-image-2.5-sunburst";
@@ -204,6 +221,20 @@ export const imageAssetSchema = z.object({
 export type ImageAsset = z.infer<typeof imageAssetSchema>;
 export const imageAssetsResponseSchema = z.object({ data: z.array(imageAssetSchema) });
 export const imageModelsResponseSchema = z.object({
+  tools: z
+    .record(
+      z.string(),
+      z.array(
+        z.object({
+          id: z.string(),
+          enabledResolutions: z.array(imageResolutionSchema),
+          editsEnabled: z.boolean(),
+          managed: z.boolean(),
+          maxReferences: z.number(),
+        }),
+      ),
+    )
+    .optional(),
   eventsEnabled: z.boolean().optional(),
   enabled: z.boolean(),
   editsEnabled: z.boolean(),
@@ -212,8 +243,12 @@ export const imageModelsResponseSchema = z.object({
     z.object({ id: z.enum(imageModelIds), enabledResolutions: z.array(imageResolutionSchema) }),
   ),
 });
+export const imageTaskRetrySchema = z.object({ itemId: z.uuid().optional() });
 export const imageSubmissionResponseSchema = z.object({ id: z.uuid(), replayed: z.boolean() });
-export const imageUploadResponseSchema = z.object({ id: z.uuid() });
+export const imageUploadResponseSchema = z.object({
+  id: z.uuid(),
+  delivery: imageDeliverySchema.optional(),
+});
 
 export const imageSessionResponseSchema = z.object({ userId: z.uuid(), organizationId: z.uuid() });
 

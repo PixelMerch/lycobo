@@ -222,14 +222,8 @@ function Workspace({ model }: { model: ModelId }) {
                 <UiIcon icon={IconSparkles} />
               </span>
             )}
-            {generate.isPending || submissionPhase === "submitting"
-              ? "正在提交…"
-              : submissionPhase === "settled"
-                ? "已提交"
-                : pending
-                  ? "确认上次提交"
-                  : "立即生成"}
-            {!pending && !activeSubmission && (
+            {pending && !activeSubmission ? "确认上次提交" : "立即生成"}
+            {(!pending || activeSubmission) && (
               <span className="generate-credit-cost" aria-hidden="true">
                 <CreditCoin />
                 <span>{imageUnitCredits * Number(draft.count)}</span>

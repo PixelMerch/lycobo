@@ -6,6 +6,7 @@ import {
   imageModelsResponseSchema,
   imageSessionResponseSchema,
   imageSubmissionResponseSchema,
+  imageTaskRetrySchema,
   imageTasksResponseSchema,
   imageUploadResponseSchema,
 } from "@lycoboai/contracts";
@@ -81,10 +82,10 @@ export function useImageModels() {
       ),
   });
 }
-export function useImageHistory() {
+export function useImageHistory(tool: "create" | "textile" = "create") {
   const session = useImageSession();
   return useInfiniteQuery({
-    queryKey: ["image-tasks"],
+    queryKey: tool === "create" ? ["image-tasks"] : ["image-tasks", tool],
     enabled: session.isSuccess,
     initialPageParam: "",
     retry: false,
@@ -92,12 +93,24 @@ export function useImageHistory() {
     queryFn: async ({ pageParam, signal }) =>
       imageTasksResponseSchema.parse(
         await (
-          await imageRequest(`image-tasks?limit=20${pageParam ? `&before=${pageParam}` : ""}`, {
-            signal,
-          })
+          await imageRequest(
+            `image-tasks?limit=20&tool=${tool}${pageParam ? `&before=${pageParam}` : ""}`,
+            {
+              signal,
+            },
+          )
         ).json(),
       ),
     getNextPageParam: (last) => (last.data.length === 20 ? last.data.at(-1)?.id : undefined),
+  });
+}
+export function useDeleteHistoryTask() {
+  const client = useQueryClient();
+  return useMutation({
+    retry: false,
+    mutationFn: (id: string) =>
+      imageRequest(`image-tasks/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["image-tasks"] }),
   });
 }
 export function useImageAssets({
@@ -136,6 +149,7 @@ function pendingSubmission(pendingKey: string): {
   key: string;
   input: ImageGenerationInput;
   retryJobId?: string | undefined;
+  retryItemId?: string | undefined;
   source?: string | undefined;
 } | null {
   const raw = sessionStorage.getItem(pendingKey);
@@ -153,6 +167,10 @@ function pendingSubmission(pendingKey: string): {
     key: value.key,
     retryJobId:
       "retryJobId" in value && typeof value.retryJobId === "string" ? value.retryJobId : undefined,
+    retryItemId:
+      "retryItemId" in value
+        ? imageTaskRetrySchema.parse({ itemId: value.retryItemId }).itemId
+        : undefined,
     input: imageGenerationInputSchema.parse(value.input),
     source: "source" in value && typeof value.source === "string" ? value.source : undefined,
   };
@@ -189,13 +207,17 @@ export function useGenerateImage() {
       draft,
       source,
       retryJobId,
+      retryItemId,
       localEdit,
+      textileSet,
     }: {
       model: ModelId;
       draft: Draft;
       source?: string;
       retryJobId?: string;
+      retryItemId?: string;
       localEdit?: import("@lycoboai/contracts").ImageLocalEdit;
+      textileSet?: import("@lycoboai/contracts").TextileGeneration | undefined;
     }) => {
       if (!session.data) throw new Error("请先登录工作台。");
       const pendingKey = pendingStorageKey(session.data);
@@ -235,8 +257,9 @@ export function useGenerateImage() {
           count: Number(draft.count),
           referenceAssetIds,
           ...(localEdit ? { localEdit } : {}),
+          ...(textileSet ? { textileSet } : {}),
         });
-        pending = { key: crypto.randomUUID(), input, source, retryJobId };
+        pending = { key: crypto.randomUUID(), input, source, retryJobId, retryItemId };
         // Retain the same request after a lost response or reload: never create another paid task blindly.
         sessionStorage.setItem(pendingKey, JSON.stringify(pending));
         window.dispatchEvent(new Event(pendingEvent));
@@ -251,7 +274,9 @@ export function useGenerateImage() {
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Idempotency-Key": pending.key },
-                body: JSON.stringify(pending.input),
+                body: JSON.stringify(
+                  pending.retryItemId ? { itemId: pending.retryItemId } : pending.input,
+                ),
               },
             )
           ).json(),
@@ -281,5 +306,6 @@ export function downloadAsset(id: string) {
   const link = document.createElement("a");
   link.href = assetContentUrl(id, false, true);
   link.download = `${id}.png`;
+  link.referrerPolicy = "strict-origin-when-cross-origin";
   link.click();
 }

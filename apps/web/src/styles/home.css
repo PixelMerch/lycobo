@@ -204,7 +204,7 @@ body:has(.commerce-home)::-webkit-scrollbar {
   backface-visibility: hidden;
 }
 .home-intro-gradient {
-  color: #baa4ff;
+  color: #0485f7;
   background-image: linear-gradient(100deg, var(--home-title-colors));
   background-size: 250% 100%;
   background-clip: text;

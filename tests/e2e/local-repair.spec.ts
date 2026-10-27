@@ -31,7 +31,13 @@ test("multiple repair regions retain original coordinates, submit one image and 
     }),
   );
   await page.route("**/api/v1/image-assets/**/content*", (route) =>
-    route.fulfill({ contentType: "image/svg+xml", body: svg }),
+    route.fulfill({
+      contentType: "image/svg+xml",
+      body: svg.replace(
+        'width="1024" height="1024"',
+        'width="256" height="256" viewBox="0 0 1024 1024"',
+      ),
+    }),
   );
   let submitted: Record<string, unknown> | undefined;
   let attempts = 0;
@@ -101,6 +107,11 @@ test("multiple repair regions retain original coordinates, submit one image and 
   await expect(viewer.locator(".image-preview")).toHaveCSS("transform", "none");
   const imageBounds = await viewer.locator(".image-preview-image").boundingBox();
   if (!imageBounds) throw new Error("Source image has no bounds");
+  expect(
+    await viewer
+      .locator(".image-preview-image")
+      .evaluate((node: HTMLImageElement) => node.naturalWidth),
+  ).toBe(256);
   const edge = imageBounds.width;
   const origin = { x: imageBounds.x, y: imageBounds.y };
   await page.mouse.move(origin.x + edge * 0.1, origin.y + edge * 0.1);
@@ -118,7 +129,7 @@ test("multiple repair regions retain original coordinates, submit one image and 
   await expect(viewer.getByRole("spinbutton")).toHaveCount(0);
   await canvas.hover();
   await page.mouse.wheel(0, -200);
-  await expect(viewer.getByLabel("画布缩放比例")).toHaveText("115%");
+  await expect(viewer.getByLabel("画布缩放比例")).toHaveText("92%");
   await viewer.getByRole("button", { name: "添加区域", exact: true }).click();
   await viewer.getByRole("textbox", { name: "区域 2 修改说明", exact: true }).fill("去掉脚袋");
   await viewer.getByRole("button", { name: "返回详情", exact: true }).click();
@@ -171,11 +182,17 @@ test("multiple repair regions retain original coordinates, submit one image and 
   // Progress is announced in the bottom-right notice instead of inside the form.
   const notice = page.locator(".toast-region--bottom-end .toast").first();
   await expect(notice).toContainText("修改版已生成");
-  const noticeBox = await notice.boundingBox();
-  const viewport = page.viewportSize();
-  if (!noticeBox || !viewport) throw new Error("Missing notice geometry");
-  expect(viewport.width - (noticeBox.x + noticeBox.width)).toBeLessThan(40);
-  expect(viewport.height - (noticeBox.y + noticeBox.height)).toBeLessThan(40);
+  await expect
+    .poll(async () => {
+      const noticeBox = await notice.boundingBox();
+      const viewport = page.viewportSize();
+      if (!noticeBox || !viewport) return Infinity;
+      return Math.max(
+        viewport.width - (noticeBox.x + noticeBox.width),
+        viewport.height - (noticeBox.y + noticeBox.height),
+      );
+    })
+    .toBeLessThan(40);
   await expect(viewer.locator(".repair-message")).toHaveCount(0);
   await viewer.getByRole("button", { name: "查看修改版", exact: true }).click();
   await expect(viewer).toHaveCount(0);

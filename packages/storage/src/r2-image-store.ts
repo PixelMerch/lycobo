@@ -9,6 +9,8 @@ import {
   userObjectKey,
 } from "./core";
 
+import { type DisplayVariant, displayImage, displayObjectKey } from "./image-variants";
+
 const stream = (bytes: Uint8Array) => new Blob([new Uint8Array(bytes)]).stream();
 const thumbnailKey = (key: string) => key.replace(/\.png$/, ".thumbnail.png");
 const validateKey = (key: string) => {
@@ -105,6 +107,13 @@ export function r2ImageStore(
         httpMetadata: { contentType: "image/png" },
       });
       if (!thumbWritten) throw new Error("IMAGE_STORAGE_UNAVAILABLE");
+      for (const variant of ["thumbnail", "preview"] satisfies DisplayVariant[]) {
+        const bytes = await displayImage(images, stream(data), variant);
+        const variantWritten = await bucket.put(displayObjectKey(key, variant), bytes, {
+          httpMetadata: { contentType: "image/webp" },
+        });
+        if (!variantWritten) throw new Error("IMAGE_STORAGE_UNAVAILABLE");
+      }
       return {
         id,
         objectKey: key,
@@ -134,7 +143,12 @@ export function r2ImageStore(
       return bytes;
     },
     async remove(asset) {
-      await bucket.delete([validateKey(asset.objectKey), thumbnailKey(asset.objectKey)]);
+      await bucket.delete([
+        validateKey(asset.objectKey),
+        thumbnailKey(asset.objectKey),
+        displayObjectKey(asset.objectKey, "preview"),
+        displayObjectKey(asset.objectKey, "thumbnail"),
+      ]);
     },
   };
 }

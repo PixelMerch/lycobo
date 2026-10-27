@@ -40,18 +40,14 @@
 test -f .env || cp .env.example .env
 ```
 
-**本机开发**（Node.js 24.x；pnpm 10.34.7）
+**本机开发**（Docker Desktop）
 
 ```sh
-corepack enable
-corepack install
-pnpm install --frozen-lockfile
-pnpm infra:up
-DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai pnpm db:migrate
-pnpm dev
+docker compose up --build
+# 后续启动只需 docker compose up
 ```
 
-访问 <http://127.0.0.1:5173/>。Vite 与本地 Wrangler 同时启动 API／Queues 消费者，R2 和 Images 使用本地模拟；Compose 仅提供本地 PostgreSQL，没有 Redis。开发生成默认关闭，秘密只放服务端。
+访问 <http://localhost:8081/>。Compose 启动本地 PostgreSQL 和 Redis，自动应用本地迁移，运行 Vite、Wrangler API 与生图消费者，支持源码热更新。R2、Images 在本地模拟，任务通过 Redis Streams 投递；数据库、图片与 Redis 分别保存在 Docker 卷。开发入口不连接线上 Supabase、R2 或 Queues；真实生图按 `.env` 中的模型开关和 Key 显式启用，调用会消耗供应商额度。图片通过本地资源域名 `http://cdn.lycobo.localhost:8791` 提供：页面使用 WebP 缩略图／预览，下载才读取原始 PNG。账号、积分及图片需要在本地单独准备。宿主机调试、日志与存储位置见 [本地开发](docs/development.md)。
 
 **Cloudflare 发布**：同仓库的 Pages、API Worker 和队列消费者使用统一配置，首次 `pnpm cloudflare:setup`，之后 `pnpm cloudflare:deploy`。账户开通、Hyperdrive、凭据和实际部署状态见 [Cloudflare 部署](docs/cloudflare-deployment.md)。
 

@@ -8,7 +8,8 @@
   margin-right: 5px;
   color: #c8c8c8;
 }
-.textile-image-field .field-title {
+.textile-image-field .field-title,
+.textile-view-field .field-title {
   margin-bottom: 8px;
 }
 .textile-image-field h2,
@@ -55,11 +56,6 @@
   height: 100%;
   object-fit: contain;
 }
-.textile-upload-example:where([data-detail="true"]) img {
-  object-fit: cover;
-  transform: scale(2.2);
-  transform-origin: 50% 65%;
-}
 .textile-upload-example > span {
   position: absolute;
   left: 4px;
@@ -94,7 +90,7 @@
   flex: none;
 }
 .textile-view-field h2 {
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 .textile-view-trigger.button {
   display: flex;
@@ -224,7 +220,9 @@
 .textile-views-dialog {
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - var(--header-height) - 2 * var(--content-padding));
+  height: auto;
+  max-height: calc(100dvh - var(--header-height) - 2 * var(--content-padding));
+  overflow: hidden;
   min-height: 0;
   padding: 0;
   border: 0;
@@ -238,9 +236,14 @@
   flex: none;
   padding: 16px 20px 0;
 }
+.textile-views-title {
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 500;
+}
 .textile-views-body {
   min-height: 0;
-  flex: 1;
+  flex: 0 1 auto;
   padding: 16px 20px 20px;
   overflow-y: auto;
 }
@@ -316,7 +319,7 @@
 .textile-view-copy strong {
   font-size: 13px;
   line-height: 20px;
-  font-weight: 600;
+  font-weight: 500;
 }
 .textile-view-check {
   position: absolute;
@@ -370,7 +373,7 @@
     right: 12px;
   }
   .textile-views-dialog {
-    height: calc(100dvh - var(--header-height) - 24px);
+    max-height: calc(100dvh - var(--header-height) - 24px);
     border-radius: 18px;
   }
   .textile-views-header {
@@ -385,4 +388,49 @@
   .textile-view-grid.toggle-button-group {
     gap: 10px;
   }
+}
+
+.generation-results > div:has(> .textile-result-view) {
+  position: relative;
+}
+.textile-result-view {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  z-index: 1;
+  translate: -50% 0;
+  max-width: calc(100% - 16px);
+  margin: 0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 70%);
+  color: #eee;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.textile-uploaded-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.textile-image-field .textile-uploaded-details .reference-tile {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+.textile-detail-add.button {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 1;
+  border: 1px dashed #ffffff29;
+  border-radius: 8px;
+  background: transparent;
+  color: #aaa;
 }

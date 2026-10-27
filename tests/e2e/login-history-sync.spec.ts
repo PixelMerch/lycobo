@@ -73,7 +73,6 @@ test("login and logout synchronize mounted history without reloading or losing t
   });
   await page.getByRole("button", { name: "登录领积分", exact: true }).click();
   const dialog = page.getByRole("dialog");
-  await dialog.getByRole("button", { name: "企业账号登录", exact: true }).click();
   await dialog.getByLabel("企业账号", { exact: true }).fill(user.account);
   await dialog.getByLabel("密码", { exact: true }).fill("fixture-password");
   await dialog.getByRole("button", { name: "登录", exact: true }).click();
@@ -91,3 +90,59 @@ test("login and logout synchronize mounted history without reloading or losing t
   await expect(prompt).toHaveValue("登录前编辑的草稿");
   expect(navigations).toBe(0);
 });
+
+for (const layout of ["expanded", "collapsed", "mobile"] as const) {
+  test(`rejected login toast stays viewport-centered with ${layout} navigation`, async ({
+    page,
+  }) => {
+    await mockImageApi(page);
+    const message = "账号或密码错误";
+    await page.route("**/api/v1/auth/session", (route) =>
+      route.fulfill({ status: 401, json: apiFixture({}, 401) }),
+    );
+    await page.route("**/api/v1/auth/enterprise/login", (route) =>
+      route.fulfill({
+        status: 401,
+        json: {
+          request_id: crypto.randomUUID(),
+          code: 40101,
+          message,
+          data: {},
+          error: { code: "INVALID_CREDENTIALS" },
+        },
+      }),
+    );
+    if (layout === "mobile") await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    if (layout === "collapsed")
+      await page.getByRole("button", { name: "收起导航栏", exact: true }).click();
+    await page.getByRole("button", { name: "登录领积分", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "欢迎使用 Lycobo" });
+    await dialog.getByLabel("企业账号", { exact: true }).fill("login-fixture");
+    const password = dialog.getByLabel("密码", { exact: true });
+    await password.fill("wrong-fixture-password");
+    const submit = dialog.getByRole("button", { name: "登录", exact: true });
+    const before = await submit.boundingBox();
+    await submit.click();
+    await expect(page.locator(".toast-region")).toContainText(message);
+    const toast = page.locator(".toast-region .toast").first();
+    await expect
+      .poll(async () => {
+        const bounds = await toast.boundingBox();
+        return bounds
+          ? Math.abs(bounds.x + bounds.width / 2 - (page.viewportSize()?.width ?? 0) / 2)
+          : Number.POSITIVE_INFINITY;
+      })
+      .toBeLessThanOrEqual(1);
+    await expect(dialog.getByText(message, { exact: true })).toHaveCount(0);
+    await expect(dialog.locator(".login-error")).toHaveCount(0);
+    await expect(password).toHaveValue("");
+    await expect(password).toBeFocused();
+    expect((await submit.boundingBox())?.y).toBeCloseTo(before?.y ?? 0, 0);
+    // A second failed attempt still produces one toast, without stacking or moving the form.
+    await password.fill("another-wrong-password");
+    await submit.click();
+    await expect(page.locator(".toast-region .toast")).toHaveCount(1);
+    await expect(dialog.getByText(message, { exact: true })).toHaveCount(0);
+  });
+}

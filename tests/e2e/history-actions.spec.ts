@@ -86,7 +86,7 @@ test("history prompt expands, copies in full and shows uploaded references; icon
   }
   await expect(article.locator(".generation-results img")).toHaveAttribute(
     "src",
-    `/api/v1/image-assets/${job.items[0]?.output_asset_id}/content?thumbnail=1`,
+    `/api/v1/image-assets/${job.items[0]?.output_asset_id}/content`,
   );
 });
 
