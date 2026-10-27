@@ -155,6 +155,20 @@
       "when": 1793076130244,
       "tag": "0021_provider_poll_failures",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793080589787,
+      "tag": "0022_mean_fenris",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793080697934,
+      "tag": "0023_thankful_mindworm",
+      "breakpoints": true
     }
   ]
 }

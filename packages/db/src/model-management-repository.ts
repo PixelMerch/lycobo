@@ -12,11 +12,6 @@ export function modelManagementRepository(sql: postgres.Sql) {
   const audit = (tx: postgres.TransactionSql, actor: string, action: string, id: string) =>
     tx`insert into model_audit_events (actor_id,action,resource_id) values (${actor},${action},${id})`;
   return {
-    async isAdministrator(userId: string) {
-      const rows =
-        await sql`select user_id from platform_administrators where user_id=${userId} and enabled=1`;
-      return rows.length === 1;
-    },
     async list() {
       const [providers, channels, routes] = await Promise.all([
         sql`select id,name,origin,adapter,enabled=1 as enabled,true as key_configured,updated_at from model_providers order by created_at`,

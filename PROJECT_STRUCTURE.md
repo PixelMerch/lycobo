@@ -134,3 +134,5 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 版本发布由 `.github/workflows/release.yml` 显式触发，`scripts/release-notes.mjs` 生成提交分类、作者／提交人及文件改动清单。版本只发布已通过 main CI 的提交；发布日志与操作边界见 [发布说明](docs/releasing.md)。
 
 模型配置 API：`apps/api/src/features/model-management`；仓库：`packages/db/src/model-management-repository.ts`；异步处理：`apps/worker/src/configured-image-processor.ts`。后台界面在独立 `../lycobo-admin`，通过受限代理调用本仓库平台授权接口；详见 [模型服务](docs/model-services.md)。
+
+2026-10-27：后台身份与模型配置路由已迁至独立 lycobo-admin API，主站不再挂载 model-management 管理路由。Drizzle 迁移仍统一存放本仓库；新增 admin_users、admin_sessions、admin_login_limits、admin_roles、admin_user_roles 无业务 users 外键，旧审计关系保留。当前共享数据库实例及模型配置，不代表物理库分离。

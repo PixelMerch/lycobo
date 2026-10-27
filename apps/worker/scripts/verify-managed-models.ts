@@ -17,12 +17,6 @@ export async function verifyManagedModels(
     "managed-fixture",
     200,
   );
-  const other = await repository.provision(
-    `managed-other-${crypto.randomUUID()}`,
-    "other-fixture",
-    100,
-  );
-  await sql`insert into platform_administrators(user_id) values (${owner.userId})`;
   const secret = Buffer.alloc(32, 7).toString("base64");
   const key = "fixture-upstream-key";
   const provider = await repository.models.saveProvider(
@@ -65,15 +59,15 @@ export async function verifyManagedModels(
     validate: (i) => validateModelInput(i, {}, true),
     resolutions: supportedResolutions,
   });
-  const path = "/api/v1/model-management";
-  assert.equal((await app.request(path)).status, 401);
+  // Management is owned by the independent admin API, even for business administrators.
   assert.equal(
-    (await app.request(path, { headers: { Authorization: `Bearer ${other.token}` } })).status,
-    403,
+    (
+      await app.request("/api/v1/model-management", {
+        headers: { Authorization: `Bearer ${owner.token}` },
+      })
+    ).status,
+    404,
   );
-  const view = await app.request(path, { headers: { Authorization: `Bearer ${owner.token}` } });
-  assert.equal(view.status, 200);
-  assert(!JSON.stringify(await view.json()).includes(key));
   const input = imageGenerationInputSchema.parse({ model: "gpt-image-2", prompt: "fixture" });
   const idempotencyKey = crypto.randomUUID();
   const accepted = await repository.create(owner, input, idempotencyKey);
@@ -153,6 +147,6 @@ export async function verifyManagedModels(
   // Subsequent integration cases must retain their original routing policy.
   await sql`delete from model_routes where channel_id=${channel.id}`;
   console.info(
-    "Managed model RBAC, encrypted keys, route snapshots, async submit/poll, wallet idempotency and legacy fallback passed (fixture only)",
+    "Managed model API separation, encrypted keys, route snapshots, async submit/poll, wallet idempotency and legacy fallback passed (fixture only)",
   );
 }

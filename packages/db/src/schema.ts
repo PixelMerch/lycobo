@@ -724,9 +724,8 @@ export const modelAuditEvents = pgTable(
   "model_audit_events",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    actorId: uuid("actor_id")
-      .notNull()
-      .references(() => users.id),
+    actorId: uuid("actor_id").references(() => users.id),
+    administratorId: uuid("administrator_id").references(() => adminUsers.id),
     action: text("action").notNull(),
     resourceId: uuid("resource_id").notNull(),
     createdAt: createdAt(),
@@ -749,4 +748,64 @@ export const providerExecutions = pgTable(
     pollFailures: integer("poll_failures").notNull().default(0),
   },
   (t) => [index("provider_executions_due_idx").on(t.nextPollAt)],
+).enableRLS();
+
+// Back-office identities have no relationship to business users or enterprise accounts.
+export const adminUsers = pgTable(
+  "admin_users",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    account: text("account").notNull().unique(),
+    passwordHash: text("password_hash").notNull(),
+    isSuperAdmin: integer("is_super_admin").notNull().default(0),
+    disabledAt: timestamp("disabled_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [check("admin_users_super_admin_check", sql`${t.isSuperAdmin} in (0,1)`)],
+).enableRLS();
+export const adminSessions = pgTable(
+  "admin_sessions",
+  {
+    tokenHash: text("token_hash").primaryKey(),
+    administratorId: uuid("administrator_id")
+      .notNull()
+      .references(() => adminUsers.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("admin_sessions_user_idx").on(t.administratorId),
+    index("admin_sessions_expiry_idx").on(t.expiresAt),
+  ],
+).enableRLS();
+export const adminLoginLimits = pgTable(
+  "admin_login_limits",
+  {
+    subjectHash: text("subject_hash").primaryKey(),
+    attempts: integer("attempts").notNull().default(1),
+    resetAt: timestamp("reset_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [index("admin_login_limits_reset_idx").on(t.resetAt)],
+).enableRLS();
+export const adminRoles = pgTable("admin_roles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  description: text("description").notNull().default(""),
+  permissions: jsonb("permissions").notNull().default(sql`'[]'::jsonb`),
+  createdAt: createdAt(),
+}).enableRLS();
+export const adminUserRoles = pgTable(
+  "admin_user_roles",
+  {
+    administratorId: uuid("administrator_id")
+      .notNull()
+      .references(() => adminUsers.id, { onDelete: "cascade" }),
+    roleId: uuid("role_id")
+      .notNull()
+      .references(() => adminRoles.id),
+  },
+  (t) => [
+    unique("admin_user_roles_unique").on(t.administratorId, t.roleId),
+    index("admin_user_roles_role_idx").on(t.roleId),
+  ],
 ).enableRLS();

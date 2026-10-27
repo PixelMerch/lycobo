@@ -19,7 +19,6 @@ import { type Context, Hono } from "hono";
 import { z } from "zod";
 import { enterprisePrincipal } from "../auth/routes";
 import type { EnterpriseAuth } from "../auth/service";
-import { modelManagementRoutes } from "../model-management/routes";
 import { type DeliverySigner, imageDeliveries } from "./delivery";
 import { imageEventStream } from "./events";
 import {
@@ -84,7 +83,6 @@ export function imageRoutes(deps: ImageApiDependencies) {
     c.set("principal", principal);
     await next();
   });
-  app.route("/model-management", modelManagementRoutes(deps.repository, deps.modelSecret));
   app.onError((error, c) => {
     if (error instanceof ImageRepositoryError || error instanceof WalletError) {
       const status =

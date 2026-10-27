@@ -15,7 +15,6 @@ function fixture(editsEnabled = false) {
   const repository: ImageRepository = {
     close: unexpected,
     models: {
-      isAdministrator: unexpected,
       list: unexpected,
       saveProvider: unexpected,
       saveChannel: unexpected,
