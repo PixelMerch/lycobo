@@ -136,3 +136,5 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 模型配置 API：`apps/api/src/features/model-management`；仓库：`packages/db/src/model-management-repository.ts`；异步处理：`apps/worker/src/configured-image-processor.ts`。后台界面在独立 `../lycobo-admin`，通过受限代理调用本仓库平台授权接口；详见 [模型服务](docs/model-services.md)。
 
 2026-10-27：后台身份与模型配置路由已迁至独立 lycobo-admin API，主站不再挂载 model-management 管理路由。Drizzle 迁移仍统一存放本仓库；新增 admin_users、admin_sessions、admin_login_limits、admin_roles、admin_user_roles 无业务 users 外键，旧审计关系保留。当前共享数据库实例及模型配置，不代表物理库分离。
+
+供应商请求协议注册表位于 packages/generation/src/provider-adapters.ts，公共执行与下载在 configured-provider.ts，共享错误在 provider-errors.ts；apps/worker/scripts/import-textile-provider.ts 通过独立后台API将本地兼容环境配置导入裂变渠道，仅显式执行，不自动覆盖后台。

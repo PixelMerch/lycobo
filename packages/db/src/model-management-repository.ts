@@ -124,7 +124,11 @@ export async function resolveProviderSnapshot(
   const tool = input.textileSet ? "textile-set" : input.localEdit ? "local-edit" : "create";
   const [row] =
     await tx`select c.id,c.settings,c.enabled,p.enabled as provider_enabled,p.origin,p.adapter,p.credential_id from model_routes r join model_channels c on c.id=r.channel_id join model_providers p on p.id=c.provider_id where r.tool=${tool} and r.model=${publicImageModel(input.model)}`;
-  if (!row) return null;
+  if (!row) {
+    if (input.textileSet && input.textileSet.version >= 5)
+      throw new Error("MODEL_CHANNEL_DISABLED");
+    return null;
+  }
   if (row.enabled !== 1 || row.provider_enabled !== 1) throw new Error("MODEL_CHANNEL_DISABLED");
   const settings = channelInputSchema.parse(row.settings);
   if (

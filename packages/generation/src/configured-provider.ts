@@ -1,6 +1,7 @@
 import { type ImageGenerationInput, imageLimits, type ProviderSnapshot } from "@lycoboai/contracts";
 import { z } from "zod";
-import { VakvError } from "./vakv-provider";
+import { imageProtocolAdapters } from "./provider-adapters";
+import { ImageProviderError } from "./provider-errors";
 
 const asset = z.object({
   url: z.string().optional(),
@@ -18,18 +19,26 @@ const reply = z.object({
   data: z.array(asset).optional(),
   assets: z.array(asset).optional(),
   result_url: z.string().optional(),
+  poll_url: z.string().optional(),
 });
-export class ProviderPollError extends VakvError {
+export class ProviderPollError extends ImageProviderError {
   constructor(
     code: string,
     readonly delayMs: number,
+    requestId?: string,
   ) {
-    super(code, true);
+    super(code, true, requestId);
   }
 }
 export type ProviderResult =
-  | { kind: "complete"; outputs: z.infer<typeof asset>[] }
-  | { kind: "pending"; taskId: string; statusPath: string; delayMs: number };
+  | { kind: "complete"; outputs: z.infer<typeof asset>[]; requestId?: string | undefined }
+  | {
+      kind: "pending";
+      taskId: string;
+      statusPath: string;
+      delayMs: number;
+      requestId?: string | undefined;
+    };
 export function providerTaskPath(value: string, origin: string) {
   const url = new URL(value, origin);
   if (
@@ -39,12 +48,12 @@ export function providerTaskPath(value: string, origin: string) {
     url.hash ||
     !url.pathname.startsWith("/v1/images/tasks/")
   )
-    throw new VakvError("PROVIDER_UNTRUSTED_TASK_URL", true);
+    throw new ImageProviderError("PROVIDER_UNTRUSTED_TASK_URL", true);
   return url.pathname + url.search;
 }
 async function readJson(response: Response) {
   const reader = response.body?.getReader();
-  if (!reader) throw new VakvError("PROVIDER_EMPTY_RESPONSE", true);
+  if (!reader) throw new ImageProviderError("PROVIDER_EMPTY_RESPONSE", true);
   let length = 0;
   const chunks: Uint8Array[] = [];
   try {
@@ -53,7 +62,7 @@ async function readJson(response: Response) {
       if (part.done) break;
       length += part.value.length;
       if (length > imageLimits.providerResponseBytes)
-        throw new VakvError("PROVIDER_RESPONSE_TOO_LARGE", true);
+        throw new ImageProviderError("PROVIDER_RESPONSE_TOO_LARGE", true);
       chunks.push(part.value);
     }
   } finally {
@@ -62,7 +71,7 @@ async function readJson(response: Response) {
   try {
     return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
   } catch {
-    throw new VakvError("PROVIDER_UNRECOGNIZED_RESPONSE", true);
+    throw new ImageProviderError("PROVIDER_UNRECOGNIZED_RESPONSE", true);
   }
 }
 export async function configuredProviderCall(
@@ -77,46 +86,12 @@ export async function configuredProviderCall(
   const isPoll = !!pending;
   const headers: Record<string, string> = { Authorization: `Bearer ${key}` };
   let body: FormData | string | undefined;
+  const adapter = imageProtocolAdapters[snapshot.adapter];
   if (!isPoll) {
     headers["Idempotency-Key"] = idempotencyKey;
-    const [w, h] = input.aspectRatio.split(":").map(Number);
-    const edge = { "1K": 1024, "2K": 2048, "4K": 4096 }[input.resolution];
-    const scale = edge / Math.max(w ?? 1, h ?? 1);
-    const size = `${Math.round(((w ?? 1) * scale) / 16) * 16}x${Math.round(((h ?? 1) * scale) / 16) * 16}`;
-    const payload = {
-      model: snapshot.upstreamModel,
-      prompt: input.prompt,
-      size,
-      n: 1,
-      quality: input.quality ?? "medium",
-      response_format: "b64_json",
-      ...(snapshot.adapter === "fluxport-images" && snapshot.mode !== "provider-default"
-        ? { async: snapshot.mode === "async-preferred" }
-        : {}),
-    };
-    if (snapshot.adapter === "fluxport-images" || !references.length) {
-      body = JSON.stringify({
-        ...payload,
-        ...(references.length
-          ? {
-              images: references.map((bytes) => ({
-                image_url: `data:image/png;base64,${Buffer.from(bytes).toString("base64")}`,
-              })),
-            }
-          : {}),
-      });
-      headers["Content-Type"] = "application/json";
-    } else {
-      const form = new FormData();
-      for (const [k, v] of Object.entries(payload)) form.set(k, String(v));
-      for (const bytes of references)
-        form.append(
-          "image[]",
-          new Blob([new Uint8Array(bytes)], { type: "image/png" }),
-          "reference.png",
-        );
-      body = form;
-    }
+    const prepared = adapter.prepare(snapshot, input, references);
+    body = prepared.body;
+    Object.assign(headers, prepared.headers);
   }
   const path = pending
     ? providerTaskPath(pending.statusPath, snapshot.origin)
@@ -130,13 +105,16 @@ export async function configuredProviderCall(
     redirect: "manual",
     signal: AbortSignal.timeout(isPoll ? 30000 : snapshot.timeoutMs),
   });
+  const rawRequestId = response.headers.get("x-request-id");
+  const requestId =
+    rawRequestId && /^[\w.:/-]{1,200}$/.test(rawRequestId) ? rawRequestId : undefined;
   if (
     isPoll &&
     (["stop"].includes(response.headers.get("X-FluxPort-Poll-Action") ?? "") ||
       [401, 403, 404, 410].includes(response.status))
   ) {
     await response.body?.cancel();
-    throw new VakvError("PROVIDER_POLL_STOPPED", true);
+    throw new ImageProviderError("PROVIDER_POLL_STOPPED", true, requestId);
   }
   if (!response.ok) {
     await response.body?.cancel();
@@ -151,36 +129,54 @@ export async function configuredProviderCall(
       throw new ProviderPollError(
         `PROVIDER_HTTP_${response.status}`,
         Number.isFinite(delay) ? Math.max(0, delay) : 0,
+        requestId,
       );
     }
-    throw new VakvError(
+    throw new ImageProviderError(
       `PROVIDER_HTTP_${response.status}`,
       isPoll || ![400, 401, 403, 404, 413, 415, 422, 429].includes(response.status),
+      requestId,
     );
   }
-  const parsed = reply.safeParse(await readJson(response));
-  if (!parsed.success) throw new VakvError("PROVIDER_UNRECOGNIZED_RESPONSE", true);
+  let json: unknown;
+  try {
+    json = await readJson(response);
+  } catch (error) {
+    throw new ImageProviderError(
+      error instanceof ImageProviderError ? error.code : "PROVIDER_RESPONSE_UNAVAILABLE",
+      true,
+      requestId,
+    );
+  }
+  const parsed = reply.safeParse(json);
+  if (!parsed.success)
+    throw new ImageProviderError("PROVIDER_UNRECOGNIZED_RESPONSE", true, requestId);
   const result = parsed.data;
-  if (result.status === "failed") throw new VakvError("PROVIDER_TASK_FAILED", false);
+  if (result.status === "failed")
+    throw new ImageProviderError("PROVIDER_TASK_FAILED", false, requestId);
+  const direct =
+    result.data?.filter(
+      (output) => output.url || output.b64_json || output.signed_url || output.download_url,
+    ) ?? [];
+  const outputs = direct.length
+    ? direct
+    : (result.assets ?? []).filter(
+        (output) => output.url || output.b64_json || output.signed_url || output.download_url,
+      );
+  if (outputs.length && (!result.status || ["success", "succeeded"].includes(result.status)))
+    return { kind: "complete", outputs, requestId };
   if (
-    ["uncertain", "client_disconnected"].includes(result.status ?? "") ||
+    ["uncertain", "client_disconnected", "paused", "canceled"].includes(result.status ?? "") ||
     result.auto_poll === false ||
     result.retryable === false
   )
-    throw new VakvError("PROVIDER_OUTCOME_UNKNOWN", true);
-  const outputs = (result.data ?? result.assets ?? []).filter(
-    (output) => output.url || output.b64_json || output.signed_url || output.download_url,
-  );
-  if (
-    outputs.length &&
-    (!result.status || result.status === "success" || result.status === "succeeded")
-  )
-    return { kind: "complete", outputs };
+    throw new ImageProviderError("PROVIDER_OUTCOME_UNKNOWN", true, requestId);
   const taskId = result.task_id ?? pending?.taskId;
-  if (snapshot.adapter !== "fluxport-images" || !taskId)
-    throw new VakvError("PROVIDER_UNRECOGNIZED_RESPONSE", true);
+  if (!adapter.acceptsTasks || !taskId)
+    throw new ImageProviderError("PROVIDER_UNRECOGNIZED_RESPONSE", true);
   let statusPath = providerTaskPath(
     result.status_url ??
+      result.poll_url ??
       pending?.statusPath ??
       `/v1/images/tasks/${encodeURIComponent(taskId)}?view=summary`,
     snapshot.origin,
@@ -190,7 +186,17 @@ export async function configuredProviderCall(
     full.searchParams.delete("view");
     statusPath = providerTaskPath(full.href, snapshot.origin);
   }
-  return { kind: "pending", taskId, statusPath, delayMs: result.poll_after_ms ?? 10000 };
+  return { kind: "pending", taskId, statusPath, delayMs: result.poll_after_ms ?? 2000, requestId };
+}
+function decodeImageBase64(value: string) {
+  if (value.length > imageLimits.providerResponseBytes || !/^[A-Za-z0-9+/]+={0,2}$/.test(value))
+    throw new ImageProviderError("PROVIDER_UNRECOGNIZED_RESPONSE", true);
+  const bytes = Buffer.from(value, "base64");
+  if (!bytes.length || bytes.toString("base64").replace(/=+$/, "") !== value.replace(/=+$/, ""))
+    throw new ImageProviderError("PROVIDER_UNRECOGNIZED_RESPONSE", true);
+  if (bytes.length > imageLimits.outputBytes)
+    throw new ImageProviderError("PROVIDER_IMAGE_TOO_LARGE", true);
+  return bytes;
 }
 export async function providerOutputBytes(
   output: z.infer<typeof asset>,
@@ -198,53 +204,65 @@ export async function providerOutputBytes(
   key: string,
   request: typeof fetch = fetch,
 ) {
-  if (output.b64_json) {
-    if (
-      output.b64_json.length > imageLimits.providerResponseBytes ||
-      !/^[A-Za-z0-9+/]+={0,2}$/.test(output.b64_json)
-    )
-      throw new VakvError("PROVIDER_UNRECOGNIZED_RESPONSE", true);
-    const bytes = Buffer.from(output.b64_json, "base64");
-    if (bytes.length > imageLimits.outputBytes)
-      throw new VakvError("PROVIDER_IMAGE_TOO_LARGE", true);
-    return bytes;
-  }
-  const value = output.signed_url ?? output.download_url ?? output.url;
-  if (!value) throw new VakvError("PROVIDER_UNRECOGNIZED_RESPONSE", true);
-  const url = new URL(value, snapshot.origin);
-  if (
-    url.protocol !== "https:" ||
-    url.username ||
-    url.password ||
-    ![snapshot.origin, ...snapshot.downloadOrigins].includes(url.origin)
-  )
-    throw new VakvError("PROVIDER_UNTRUSTED_RESULT_URL", true);
-  const response = await request(url, {
-    redirect: "manual",
-    signal: AbortSignal.timeout(30000),
-    headers:
-      url.origin === snapshot.origin && !output.signed_url
-        ? { Authorization: `Bearer ${key}` }
-        : {},
-  });
-  if (!response.ok) {
-    await response.body?.cancel();
-    throw new VakvError("PROVIDER_DOWNLOAD_UNAVAILABLE", true);
-  }
-  const reader = response.body?.getReader();
-  if (!reader) throw new VakvError("PROVIDER_EMPTY_IMAGE", true);
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  try {
-    for (;;) {
-      const part = await reader.read();
-      if (part.done) break;
-      size += part.value.length;
-      if (size > imageLimits.outputBytes) throw new VakvError("PROVIDER_IMAGE_TOO_LARGE", true);
-      chunks.push(part.value);
+  if (output.b64_json) return decodeImageBase64(output.b64_json);
+  const candidates = [
+    { value: output.signed_url, signed: true },
+    { value: output.download_url, signed: false },
+    { value: output.url, signed: false },
+  ].filter((item): item is { value: string; signed: boolean } => !!item.value);
+  if (!candidates.length) throw new ImageProviderError("PROVIDER_UNRECOGNIZED_RESPONSE", true);
+  let last: unknown = new ImageProviderError("PROVIDER_DOWNLOAD_UNAVAILABLE", true);
+  for (const candidate of candidates) {
+    try {
+      if (candidate.value.startsWith("data:")) {
+        const data = /^data:image\/(?:png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/.exec(
+          candidate.value,
+        );
+        if (!data?.[1]) throw new ImageProviderError("PROVIDER_UNRECOGNIZED_RESPONSE", true);
+        return decodeImageBase64(data[1]);
+      }
+      const url = new URL(candidate.value, snapshot.origin);
+      if (
+        url.protocol !== "https:" ||
+        url.username ||
+        url.password ||
+        ![snapshot.origin, ...snapshot.downloadOrigins].includes(url.origin)
+      )
+        throw new ImageProviderError("PROVIDER_UNTRUSTED_RESULT_URL", true);
+      const response = await request(url, {
+        redirect: "manual",
+        signal: AbortSignal.timeout(30000),
+        headers:
+          url.origin === snapshot.origin && !candidate.signed
+            ? { Authorization: `Bearer ${key}` }
+            : {},
+      });
+      if (!response.ok) {
+        await response.body?.cancel();
+        throw new ImageProviderError("PROVIDER_DOWNLOAD_UNAVAILABLE", true);
+      }
+      const reader = response.body?.getReader();
+      if (!reader) throw new ImageProviderError("PROVIDER_EMPTY_IMAGE", true);
+      const chunks: Uint8Array[] = [];
+      let size = 0;
+      try {
+        for (;;) {
+          const part = await reader.read();
+          if (part.done) break;
+          size += part.value.length;
+          if (size > imageLimits.outputBytes)
+            throw new ImageProviderError("PROVIDER_IMAGE_TOO_LARGE", true);
+          chunks.push(part.value);
+        }
+      } finally {
+        await reader.cancel().catch(() => {});
+      }
+      if (!size) throw new ImageProviderError("PROVIDER_EMPTY_IMAGE", true);
+      return Buffer.concat(chunks);
+    } catch (error) {
+      last = error;
+      if (!candidate.signed) throw error;
     }
-  } finally {
-    await reader.cancel().catch(() => {});
   }
-  return Buffer.concat(chunks);
+  throw last;
 }

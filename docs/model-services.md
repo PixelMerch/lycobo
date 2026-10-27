@@ -16,7 +16,7 @@
 2. 模型渠道：选择中转站、前台模型、任意合法上游模型 ID、执行方式、参考编辑与上限、分辨率、提交超时、总等待上限和额外下载源。
 3. 默认路由：按图片创作／家纺主图裂变／局部修改及前台模型绑定一个渠道。默认渠道禁用或能力不匹配时拒绝新任务，不自动跨站提交。
 
-前台公开模型仍为 gpt-image-2、gpt-image-2.5、nano-banana-2.1，只读取公开能力；上游名称独立配置，例如家纺 gpt-image-2-4K。未绑定组合继续兼容原环境变量渠道，不自动启用新站。
+前台公开模型仍为 gpt-image-2、gpt-image-2.5、nano-banana-2.1，只读取公开能力；上游名称独立配置，例如当前家纺 gpt-image-2.5。未绑定组合继续兼容原环境变量渠道，不自动启用新站。
 
 支持 OpenAI 兼容同步图片（文生图 JSON、编辑 multipart）及 FluxPort 图片协议（JSON 参考图、同步或异步）。执行方式可选同步、异步优先、供应商默认；异步优先也接受同步图片响应。新站同协议可只填配置，不同协议仍需服务端适配，不能填写可执行脚本。
 
@@ -43,3 +43,9 @@ MODEL_CREDENTIAL_SECRET 必须为 32 字节随机数的 Base64，独立后台 AP
 主站 pnpm check 与本地 opt-in pnpm test:integration；独立后台 pnpm check，独立临时库身份／Casbin／审计集成测试，浏览器登录、角色勾选、管理员分配及低权限隐藏验收。fixture 不调用付费模型。临时界面验收账号与角色清理后只保留初始化的 admin。
 
 后台全部页面必须登录，操作反馈使用顶部 HeroUI Toast，访问受限用弹框，登录页仅保留必要表单。管理员与角色为真实持久化，首页、任务和账务仍为演示。细节见相邻 lycobo-admin/docs/admin-access.md。
+
+## 协议适配与本地环境导入
+
+provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 负责公共响应、任务查询和结果下载，provider-errors.ts 统一已知失败与未知结果语义。已支持 OpenAI 同步 Images 与 FluxPort 同异步 Images；新中转站同协议只改后台，异步路径／鉴权／响应不同则新增适配器，不在前端或计费层添加分支。
+
+原VAKV_*环境变量保留兼容名称，根地址与SDK形式/v1均可规范化，拒绝其他前缀、认证信息和查询参数。当前裂变以v5和逻辑gpt-image-2.5绑定后台FluxPort渠道，详细配置及导入命令见 textile-generation.md。同步结果、异步task ID及上游请求ID用于排查；不记录提示词、响应正文、Key或签名URL。

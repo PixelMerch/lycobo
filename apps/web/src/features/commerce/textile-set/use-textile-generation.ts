@@ -19,8 +19,8 @@ export function useTextileGeneration() {
     pending && !!session.data && pendingSubmissionSource(session.data) === "textile-set";
   const resolutions =
     (
-      models.data?.tools?.["textile-set"]?.find((model) => model.id === "gpt-image-2") ??
-      models.data?.models.find((model) => model.id === "gpt-image-2")
+      models.data?.tools?.["textile-set"]?.find((model) => model.id === "gpt-image-2.5") ??
+      models.data?.models.find((model) => model.id === "gpt-image-2.5")
     )?.enabledResolutions ?? [];
   const configured =
     !!models.data?.enabled && !!models.data.editsEnabled && resolutions.includes(draft.resolution);
@@ -46,10 +46,10 @@ export function useTextileGeneration() {
       };
       generation.mutate(
         {
-          model: "gpt-image-2",
+          model: "gpt-image-2.5",
           draft: input,
           source: "textile-set",
-          textileSet: { version: 4, views: draft.views },
+          textileSet: { version: 5, views: draft.views },
         },
         {
           onSuccess: () => {

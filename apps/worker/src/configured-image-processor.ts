@@ -1,11 +1,11 @@
 import type { ClaimedImage, ImageRepository } from "@lycoboai/db";
 import {
   configuredProviderCall,
+  ImageProviderError,
   openProviderKey,
   ProviderPollError,
   providerOutputBytes,
   textileItemInput,
-  VakvError,
 } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
 export async function processConfiguredImage(
@@ -23,8 +23,8 @@ export async function processConfiguredImage(
   let sent = false;
   try {
     if (Date.now() > state.deadlineAt.getTime())
-      throw new VakvError("PROVIDER_TASK_DEADLINE", true);
-    if (!deps.modelSecret) throw new VakvError("MODEL_SECRET_NOT_CONFIGURED", polling);
+      throw new ImageProviderError("PROVIDER_TASK_DEADLINE", true);
+    if (!deps.modelSecret) throw new ImageProviderError("MODEL_SECRET_NOT_CONFIGURED", polling);
     const key = await openProviderKey(
       await deps.repository.providerCipher(state.snapshot.credentialId),
       deps.modelSecret,
@@ -33,7 +33,7 @@ export async function processConfiguredImage(
     if (!polling)
       for (const id of job.input.referenceAssetIds) {
         const asset = await deps.repository.asset(job, id);
-        if (!asset) throw new VakvError("REFERENCE_NOT_FOUND", false);
+        if (!asset) throw new ImageProviderError("REFERENCE_NOT_FOUND", false);
         references.push(await deps.store.read(asset));
       }
     sent = true;
@@ -49,17 +49,25 @@ export async function processConfiguredImage(
       deps.request,
     );
     if (result.kind === "pending") {
-      await deps.repository.deferProvider(job, result.taskId, result.statusPath, result.delayMs);
+      await deps.repository.deferProvider(
+        job,
+        result.taskId,
+        result.statusPath,
+        result.delayMs,
+        false,
+        result.requestId,
+      );
       return;
     }
-    if (result.outputs.length !== 1) throw new VakvError("PROVIDER_UNEXPECTED_IMAGE_COUNT", true);
+    if (result.outputs.length !== 1)
+      throw new ImageProviderError("PROVIDER_UNEXPECTED_IMAGE_COUNT", true);
     const output = result.outputs[0];
-    if (!output) throw new VakvError("PROVIDER_EMPTY_IMAGE", true);
+    if (!output) throw new ImageProviderError("PROVIDER_EMPTY_IMAGE", true);
     const bytes = await providerOutputBytes(output, state.snapshot, key, deps.request);
     const image = await deps.store.put(job, bytes, job.itemId);
-    await deps.repository.finish(job, { image });
+    await deps.repository.finish(job, { image, requestId: result.requestId });
   } catch (error) {
-    const known = error instanceof VakvError;
+    const known = error instanceof ImageProviderError;
     if (
       polling &&
       state.taskId &&
@@ -94,6 +102,7 @@ export async function processConfiguredImage(
     }
     await deps.repository.finish(job, {
       errorCode: known ? error.code : "CONFIGURED_PROVIDER_UNAVAILABLE",
+      requestId: known ? error.requestId : undefined,
       unknown: polling || sent ? (known ? error.unknownOutcome : true) : false,
     });
   }

@@ -147,3 +147,102 @@ it("follows the JSON result endpoint after a summary and preserves explicit fail
     configuredProviderCall(snapshot, "fixture-key", input, [], "item", pending, request),
   ).rejects.toMatchObject({ delayMs: 30000 });
 });
+it("uses the documented gpt-image-2.5 JSON edit protocol with private references in order", async () => {
+  const request = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json({ data: [{ url: "/v1/images/tasks/task/assets/a.png" }] }));
+  const current = { ...snapshot, upstreamModel: "gpt-image-2.5" };
+  await configuredProviderCall(
+    current,
+    "fixture-key",
+    input,
+    [new Uint8Array([1]), new Uint8Array([2])],
+    "item-v5",
+    undefined,
+    request,
+  );
+  expect(request).toHaveBeenCalledTimes(1);
+  expect(JSON.parse(String(request.mock.calls[0]?.[1]?.body))).toMatchObject({
+    model: "gpt-image-2.5",
+    n: 1,
+    async: true,
+    response_format: "url",
+    images: [
+      { image_url: "data:image/png;base64,AQ==" },
+      { image_url: "data:image/png;base64,Ag==" },
+    ],
+  });
+});
+it("accepts assets despite empty data or a completed polling-stop flag and handles paused tasks safely", async () => {
+  const request = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json({
+      status: "success",
+      auto_poll: false,
+      data: [],
+      assets: [{ url: "/v1/images/tasks/a/assets/result.png" }],
+    }),
+  );
+  expect(
+    await configuredProviderCall(
+      snapshot,
+      "fixture-key",
+      input,
+      [],
+      "item",
+      { taskId: "a", statusPath: "/v1/images/tasks/a" },
+      request,
+    ),
+  ).toMatchObject({ kind: "complete" });
+  for (const status of ["paused", "canceled"]) {
+    request.mockResolvedValue(Response.json({ task_id: "a", status }));
+    await expect(
+      configuredProviderCall(snapshot, "fixture-key", input, [], "item", undefined, request),
+    ).rejects.toMatchObject({ code: "PROVIDER_OUTCOME_UNKNOWN", unknownOutcome: true });
+  }
+  request.mockResolvedValue(
+    Response.json(
+      { task_id: "a", status: "running", poll_url: "/v1/images/tasks/a" },
+      { status: 202 },
+    ),
+  );
+  expect(
+    await configuredProviderCall(snapshot, "fixture-key", input, [], "item", undefined, request),
+  ).toMatchObject({ kind: "pending", statusPath: "/v1/images/tasks/a" });
+});
+it("falls back from an unavailable signed image to its protected asset without another generation", async () => {
+  const request = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(new Response(null, { status: 403 }))
+    .mockResolvedValueOnce(new Response("image"));
+  const result = await providerOutputBytes(
+    {
+      signed_url: "https://cdn.example.com/expired.png",
+      download_url: "/v1/images/tasks/a/assets/result.png?download=1",
+    },
+    snapshot,
+    "fixture-key",
+    request,
+  );
+  expect(result.toString()).toBe("image");
+  expect(request.mock.calls[0]?.[1]?.headers).toEqual({});
+  expect(request.mock.calls[1]?.[1]?.headers).toEqual({ Authorization: "Bearer fixture-key" });
+  expect(request.mock.calls.every(([, init]) => !init?.method || init.method === "GET")).toBe(true);
+  expect(request).toHaveBeenCalledTimes(2);
+});
+it("decodes inline image URLs and rejects malformed base64 without network calls", async () => {
+  const request = vi.fn<typeof fetch>();
+  expect(
+    (
+      await providerOutputBytes(
+        { url: "data:image/png;base64,aGVsbG8=" },
+        snapshot,
+        "fixture-key",
+        request,
+      )
+    ).toString(),
+  ).toBe("hello");
+  await expect(
+    providerOutputBytes({ b64_json: "a" }, snapshot, "fixture-key", request),
+  ).rejects.toMatchObject({ code: "PROVIDER_UNRECOGNIZED_RESPONSE" });
+  expect(request).not.toHaveBeenCalled();
+});

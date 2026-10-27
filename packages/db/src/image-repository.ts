@@ -424,7 +424,7 @@ export function openImageRepository(url: string, edge = false) {
             : new Date(Date.now() + snapshot.taskTimeoutSeconds * 1000);
           await tx`insert into provider_executions(item_id,phase,deadline_at,lease_until) values (${itemId},'submitting',${deadlineAt},now()+${leaseMs}*interval '1 millisecond') on conflict(item_id) do update set lease_until=excluded.lease_until,next_poll_at=null,poll_count=provider_executions.poll_count+1`;
         }
-        await tx`update generation_job_items set status='running',worker_id=${workerId},execution_token=${executionToken},attempts=attempts+case when status='queued' then 1 else 0 end,
+        await tx`update generation_job_items set status='running',worker_id=${workerId},execution_token=${executionToken},provider=${snapshot?.adapter ?? "vakv"},attempts=attempts+case when status='queued' then 1 else 0 end,
           started_at=coalesce(started_at,now()),lease_expires_at=now()+${leaseMs} * interval '1 millisecond' where id=${itemId}`;
         await tx`update generation_jobs set status='running',updated_at=now() where id=${row.job_id}`;
         await recordImageEvent(tx, String(row.organization_id), "task", String(row.job_id));
@@ -464,10 +464,11 @@ export function openImageRepository(url: string, edge = false) {
       statusPath: string,
       delayMs: number,
       failed = false,
+      requestId?: string,
     ) {
       return sql.begin(async (tx) => {
         const rows =
-          await tx`update generation_job_items set lease_expires_at=(select deadline_at+interval '1 minute' from provider_executions where item_id=${job.itemId}) where id=${job.itemId} and status='running' and execution_token=${job.executionToken} returning id`;
+          await tx`update generation_job_items set provider_request_id=coalesce(${requestId ?? null},provider_request_id),lease_expires_at=(select deadline_at+interval '1 minute' from provider_executions where item_id=${job.itemId}) where id=${job.itemId} and status='running' and execution_token=${job.executionToken} returning id`;
         if (!rows.length) return;
         await tx`update provider_executions set poll_failures=case when ${failed} then poll_failures+1 else 0 end,phase='polling',task_id=${taskId},status_path=${statusPath},next_poll_at=now()+${Math.max(2000, Math.min(delayMs, 60000))}*interval '1 millisecond',lease_until=null where item_id=${job.itemId}`;
         await tx`update generation_outbox set next_attempt_at=now()+${Math.max(2000, Math.min(delayMs, 60000))}*interval '1 millisecond',lease_token=null,lease_expires_at=null where item_id=${job.itemId}`;
@@ -492,10 +493,10 @@ export function openImageRepository(url: string, edge = false) {
           const a = result.image;
           await tx`insert into media_assets (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256)
             values (${a.id},${job.organizationId},${job.userId},'output','image',${a.objectKey},${a.mimeType},${a.width},${a.height},${a.bytes},${a.sha256})`;
-          await tx`update generation_job_items set status='succeeded',output_asset_id=${a.id},provider_request_id=${result.requestId ?? null},completed_at=now() where id=${job.itemId}`;
+          await tx`update generation_job_items set status='succeeded',output_asset_id=${a.id},provider_request_id=coalesce(${result.requestId ?? null},provider_request_id),completed_at=now() where id=${job.itemId}`;
         } else {
           await tx`update generation_job_items set status=${result.unknown && result.errorCode !== "PROVIDER_INVALID_IMAGE_RESPONSE" ? "needs_reconciliation" : "failed"},error_code=${result.errorCode},
-            provider_request_id=${result.requestId ?? null},completed_at=now() where id=${job.itemId}`;
+            provider_request_id=coalesce(${result.requestId ?? null},provider_request_id),completed_at=now() where id=${job.itemId}`;
           if (!result.unknown || result.errorCode === "PROVIDER_INVALID_IMAGE_RESPONSE")
             await refund(tx, job.jobId, job.itemId);
         }

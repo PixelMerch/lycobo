@@ -48,7 +48,8 @@ test("textile angles submit one durable ten-image job and keep results separate 
       expect(input.textileSet?.views).toEqual(textileViews.map((view) => view.id));
       expect(input.count).toBe(10);
       expect(input.referenceAssetIds).toEqual(referenceIds);
-      expect(input.model).toBe("gpt-image-2");
+      expect(input.model).toBe("gpt-image-2.5");
+      expect(input.textileSet?.version).toBe(5);
       expect(input.resolution).toBe("2K");
       expect(input.quality).toBe("medium");
       const id = crypto.randomUUID();

@@ -113,13 +113,16 @@ export function HistoryTaskActions({
     : job.items.filter((entry) => ["failed", "needs_reconciliation"].includes(entry.status));
   const upgradeTextile =
     !!job.input?.textileSet &&
-    job.input.textileSet.version < 4 &&
+    job.input.textileSet.version < 5 &&
     targets.every((entry) => entry.status === "failed");
+  const availableModels = job.input?.textileSet
+    ? (models.data?.tools?.["textile-set"] ?? models.data?.models)
+    : models.data?.models;
   const configured =
     models.data?.enabled &&
-    models.data.models.some(
+    availableModels?.some(
       (model) =>
-        model.id === (upgradeTextile ? "gpt-image-2" : publicImageModel(job.model)) &&
+        model.id === (upgradeTextile ? "gpt-image-2.5" : publicImageModel(job.model)) &&
         model.enabledResolutions.some((resolution) => resolution === job.resolution),
     ) &&
     (!job.input?.referenceAssetIds.length || models.data.editsEnabled);
@@ -136,7 +139,7 @@ export function HistoryTaskActions({
       : job.requested_count;
   const unitCredits = retrying ? (job.unit_credits ?? imageUnitCredits) : imageUnitCredits;
   const regenerateContent = `本次消耗 ${count * unitCredits} 积分${
-    upgradeTextile ? "。使用 gpt-image-2-4K 创建新任务，原记录保留。" : ""
+    upgradeTextile ? "。使用最新裂变配置创建新任务，原记录保留。" : ""
   }`;
   const restore = (value: Awaited<ReturnType<typeof taskDraft>>) => {
     if (onRestore) {
@@ -166,9 +169,9 @@ export function HistoryTaskActions({
           : restored.textileSet.views;
         generation.mutate({
           ...restored,
-          model: "gpt-image-2",
+          model: "gpt-image-2.5",
           draft: { ...restored.draft, count: String(views.length) },
-          textileSet: { version: 4, views },
+          textileSet: { version: 5, views },
           source: "textile-set",
         });
         return;

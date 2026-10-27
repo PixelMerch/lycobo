@@ -33,7 +33,7 @@ export function normalizeTextileGeneration(input: ImageGenerationInput): ImageGe
   );
   return {
     ...input,
-    model: input.textileSet.version >= 4 ? "gpt-image-2-4K" : "gpt-image-2.5",
+    model: input.textileSet.version === 4 ? "gpt-image-2-4K" : "gpt-image-2.5",
     resolution: input.textileSet.version >= 3 ? input.resolution : "1K",
     quality: "medium",
     prompt: `家纺主图裂变：${names.join("、")}。每个视角分别生成一张图片。`,

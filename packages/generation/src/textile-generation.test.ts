@@ -35,7 +35,7 @@ describe("textile angle generation", () => {
       { ...original, referenceAssetIds: [] },
       { ...original, textileSet: { version: 1, views: ["front", "front"] }, count: 2 },
       { ...original, textileSet: { version: 1, views: ["unknown"] }, count: 1 },
-      { ...original, textileSet: { version: 5, views: ["front"] }, count: 1 },
+      { ...original, textileSet: { version: 6, views: ["front"] }, count: 1 },
       { ...original, textileSet: undefined },
     ])
       expect(imageGenerationInputSchema.safeParse(value).success).toBe(false);
@@ -120,4 +120,21 @@ it("routes every new textile resolution to the requested 4K channel and preserve
       expect(normalized.resolution).toBe(version >= 3 ? resolution : "1K");
     }
   }
+});
+it("selects the public 2.5 model for v5 while keeping accepted v4 jobs unchanged", () => {
+  const original = imageGenerationInputSchema.parse({
+    ...input(),
+    resolution: "1K",
+    textileSet: { version: 5, views: textileViews.map((v) => v.id) },
+  });
+  const current = normalizeTextileGeneration(original);
+  expect(current.model).toBe("gpt-image-2.5");
+  expect(current.count).toBe(10);
+  expect(textileItemInput(current, 0)).toMatchObject({ model: "gpt-image-2.5", count: 1 });
+  expect(
+    normalizeTextileGeneration({
+      ...original,
+      textileSet: { views: original.textileSet?.views ?? [], version: 4 },
+    }).model,
+  ).toBe("gpt-image-2-4K");
 });
