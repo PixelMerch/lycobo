@@ -233,7 +233,11 @@ test("thumbnail navigation keeps a fixed rail, resets transforms and never wraps
   await last.press("ArrowRight");
   await expect(picture).toHaveAttribute("src", `/api/v1/image-assets/${ids[2]}/content`);
   await last.press("ArrowUp");
-  await expect(viewer.getByRole("button", { name: "查看第 2 张图片", exact: true })).toBeFocused();
+  const focusedThumbnail = viewer.getByRole("button", { name: "查看第 2 张图片", exact: true });
+  await expect(focusedThumbnail).toBeFocused();
+  await expect(focusedThumbnail).toHaveAttribute("aria-current", "true");
+  await expect(focusedThumbnail).toHaveCSS("outline-style", "none");
+  await expect(focusedThumbnail).toHaveCSS("box-shadow", "rgb(4, 133, 247) 0px 0px 0px 2px inset");
 });
 
 test("image loading keeps browsing controls hidden and leaves a stable close action", async ({
