@@ -13,6 +13,11 @@
   width: fit-content;
   min-width: 0;
 }
+/* The login backdrop covers the entire viewport, including the sidebar. */
+body:has(.login-backdrop) .toast-region:not(.toast-region--bottom-end) {
+  --toast-sidebar-width: 0px;
+  left: 50%;
+}
 .toast {
   inset-inline: auto;
   left: 50%;
