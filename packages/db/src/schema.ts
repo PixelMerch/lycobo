@@ -809,3 +809,29 @@ export const adminUserRoles = pgTable(
     index("admin_user_roles_role_idx").on(t.roleId),
   ],
 ).enableRLS();
+
+// Navigation metadata is independent of Casbin's server-owned permission catalog.
+export const adminMenuEntries = pgTable(
+  "admin_menu_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    parentId: uuid("parent_id"),
+    title: text("title").notNull(),
+    type: text("type").notNull(),
+    pageId: text("page_id"),
+    permission: text("permission").notNull().default(""),
+    icon: text("icon").notNull().default("menu"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    visible: integer("visible").notNull().default(1),
+    protected: integer("protected").notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({ columns: [t.parentId], foreignColumns: [t.id] }),
+    index("admin_menu_parent_order_idx").on(t.parentId, t.sortOrder),
+    uniqueIndex("admin_menu_page_unique").on(t.pageId),
+    check("admin_menu_type_check", sql`${t.type} in ('directory','menu','button')`),
+    check("admin_menu_flags_check", sql`${t.visible} in (0,1) and ${t.protected} in (0,1)`),
+    check("admin_menu_parent_check", sql`${t.parentId} is null or ${t.parentId} <> ${t.id}`),
+  ],
+).enableRLS();
