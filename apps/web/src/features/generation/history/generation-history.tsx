@@ -161,6 +161,8 @@ export function GenerationHistory({
                         assetId={item.output_asset_id}
                         thumbnail={job.requested_count > 1}
                         position={item.position}
+                        width={item.width}
+                        height={item.height}
                         prompt={job.prompt}
                         onPreview={(trigger) => {
                           previewTrigger.current = trigger;
