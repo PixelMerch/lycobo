@@ -120,4 +120,4 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
 
 浏览器CI固定使用 `ubuntu-24.04`，避免 `ubuntu-latest` 切换系统版本后依赖／字体下载和渲染环境漂移；浏览器任务使用匹配Playwright 1.64.0的官方 `mcr.microsoft.com/playwright:v1.64.0-noble` 镜像并固定digest，内置Chromium及系统字体依赖，不在任务中重复执行apt下载；完整E2E范围不变。
 
-完整浏览器CI使用2个worker覆盖全部用例，避免默认单worker将完整回归串行化；不改变测试范围、断言或失败重跑规则。生成结果图使用服务端宽高保留加载前比例，使远处历史任务的懒加载预览入口有稳定尺寸。
+完整浏览器CI分为2个shard，每个独立runner使用1个worker，避免同机浏览器竞争资源；`Browser`汇总检查必须等待两个分片全部成功，不改变测试范围、断言或失败重跑规则。生成结果图使用服务端宽高保留加载前比例，使远处历史任务的懒加载预览入口有稳定尺寸。
