@@ -56,6 +56,7 @@ export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" 
           {query.isLoading ? null : jobs.length ? (
             jobs.map((job) => {
               const image = job.items.find((item) => item.output_asset_id)?.output_asset_id;
+              const generatedCount = job.items.filter((item) => item.output_asset_id).length;
               const generating = job.status === "running" || job.status === "queued";
               const failed = !image && !generating && job.status !== "succeeded";
               return (
@@ -87,6 +88,13 @@ export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" 
                       <span>{statusLabel[job.status]}</span>
                     )}
                   </Button>
+                  {generatedCount > 0 && (
+                    <span className="history-thumbnail-count">
+                      <span className="sr-only">已生成</span>
+                      {generatedCount}
+                      <span className="sr-only">张图片</span>
+                    </span>
+                  )}
                   <Button
                     isIconOnly
                     size="sm"

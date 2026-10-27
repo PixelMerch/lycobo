@@ -3899,6 +3899,7 @@ p.home-hero-kicker {
   background: #1c1c1ce6;
   color: #ff6b75;
 }
+.history-rail-item:has(.history-thumbnail[aria-current="true"]) .history-thumbnail-delete,
 .history-rail-item:hover .history-thumbnail-delete,
 .history-rail-item:focus-within .history-thumbnail-delete {
   opacity: 1;
@@ -3917,4 +3918,20 @@ p.home-hero-kicker {
   .history-rail-item {
     width: 72px;
   }
+}
+
+.history-thumbnail-count {
+  position: absolute;
+  bottom: 3px;
+  left: 3px;
+  z-index: 1;
+  min-width: 18px;
+  padding: 1px 5px;
+  border-radius: 0 6px 0 6px;
+  background: #1c1c1ce6;
+  color: #eee;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+  pointer-events: none;
 }

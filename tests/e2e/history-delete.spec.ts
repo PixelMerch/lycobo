@@ -33,6 +33,15 @@ for (const path of ["/create", "/commerce/textile-set"]) {
     }));
     const first = jobs[0];
     if (!first) throw new Error("Missing fixture");
+    const firstItem = first.items[0];
+    if (!firstItem) throw new Error("Missing fixture item");
+    first.items = Array.from({ length: 5 }, (_, position) => ({
+      ...firstItem,
+      id: crypto.randomUUID(),
+      output_asset_id: crypto.randomUUID(),
+      position,
+    }));
+    first.requested_count = 5;
     let deletions = 0,
       reject = true;
     await page.route("**/api/v1/image-tasks?*", (route) =>
@@ -56,7 +65,15 @@ for (const path of ["/create", "/commerce/textile-set"]) {
     await expect(rail).toBeVisible({ timeout: 30000 });
     await expect(rail.locator(".history-rail-item")).toHaveCount(3);
     const button = rail.getByRole("button", { name: `删除任务 ${first.id}`, exact: true });
-    await expect(button).toHaveCSS("opacity", "0");
+    await expect(button).toHaveCSS("opacity", "1");
+    await expect(rail.locator(".history-thumbnail-count")).toHaveText("已生成5张图片");
+    const unselected = rail.locator(".history-rail-item").nth(1);
+    await expect(unselected.locator(".history-thumbnail-delete")).toHaveCSS("opacity", "0");
+    await unselected.hover();
+    await expect(unselected.locator(".history-thumbnail-delete")).toHaveCSS("opacity", "1");
+    await page.mouse.move(1, 1);
+    await expect(unselected.locator(".history-thumbnail-delete")).toHaveCSS("opacity", "0");
+    await expect(button).toHaveCSS("opacity", "1");
     await rail.locator(".history-rail-item").first().hover();
     await expect(button).toHaveCSS("opacity", "1");
     const corner = await button.boundingBox();
