@@ -142,6 +142,16 @@ test("textile angles submit one durable ten-image job and keep results separate 
   );
   await expect(page.locator(".generation-failed-result")).toHaveCount(1);
   await expect(page.locator(".generation-results img")).toHaveCount(9);
+  const result = page.locator(".generation-results > div").first();
+  const label = result.locator(".textile-result-view");
+  const labelBox = await label.boundingBox();
+  const resultBox = await result.boundingBox();
+  if (!labelBox || !resultBox) throw new Error("Missing result label geometry");
+  expect(labelBox.y - resultBox.y).toBeCloseTo(8, 0);
+  expect(labelBox.x + labelBox.width / 2).toBeCloseTo(resultBox.x + resultBox.width / 2, 0);
+  await expect(label).toHaveCSS("font-size", "12px");
+  await expect(label).toHaveCSS("pointer-events", "none");
+
   await page.reload();
   await expect(page.locator(".generation-results img")).toHaveCount(9);
   await page.getByRole("button", { name: "重新编辑", exact: true }).click();
