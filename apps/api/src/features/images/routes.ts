@@ -19,6 +19,7 @@ import { type Context, Hono } from "hono";
 import { z } from "zod";
 import { enterprisePrincipal } from "../auth/routes";
 import type { EnterpriseAuth } from "../auth/service";
+import { modelManagementRoutes } from "../model-management/routes";
 import { type DeliverySigner, imageDeliveries } from "./delivery";
 import { imageEventStream } from "./events";
 import {
@@ -30,6 +31,7 @@ import {
 
 export type ImageApiDependencies = {
   repository: ImageRepository;
+  modelSecret?: string | undefined;
   events?: ImageEventFeed | undefined;
   signAsset?: DeliverySigner | undefined;
   auth?: EnterpriseAuth | undefined;
@@ -82,6 +84,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
     c.set("principal", principal);
     await next();
   });
+  app.route("/model-management", modelManagementRoutes(deps.repository, deps.modelSecret));
   app.onError((error, c) => {
     if (error instanceof ImageRepositoryError || error instanceof WalletError) {
       const status =
@@ -89,21 +92,23 @@ export function imageRoutes(deps: ImageApiDependencies) {
           ? 403
           : error.code === "NOT_FOUND"
             ? 404
-            : error.code === "REFERENCE_NOT_FOUND"
+            : error.code === "REFERENCE_NOT_FOUND" || error.code === "MODEL_CAPABILITY_UNVERIFIED"
               ? 400
               : 409;
       return fail(
         c,
         error.code,
-        error.code === "INSUFFICIENT_CREDITS"
-          ? "企业金币余额不足，每张图片需要 20 币"
-          : error.code === "STATE_CONFLICT"
-            ? "任务正在生成或状态已更新，请稍后重试"
-            : error.code === "FORBIDDEN"
-              ? "没有权限操作此任务"
-              : error.code === "NOT_FOUND"
-                ? "任务不存在或已不可用"
-                : "请求未执行，请刷新后重试",
+        error.code === "MODEL_CAPABILITY_UNVERIFIED"
+          ? "当前模型渠道未启用或不支持所选参数，请刷新模型配置"
+          : error.code === "INSUFFICIENT_CREDITS"
+            ? "企业金币余额不足，每张图片需要 20 币"
+            : error.code === "STATE_CONFLICT"
+              ? "任务正在生成或状态已更新，请稍后重试"
+              : error.code === "FORBIDDEN"
+                ? "没有权限操作此任务"
+                : error.code === "NOT_FOUND"
+                  ? "任务不存在或已不可用"
+                  : "请求未执行，请刷新后重试",
         status,
       );
     }
@@ -167,15 +172,26 @@ export function imageRoutes(deps: ImageApiDependencies) {
       return fail(c, "GENERATION_NOT_CONFIGURED", "实时通知暂不可用", 503);
     }
   });
-  app.get("/image-models", (c) =>
-    c.json({
+  app.get("/image-models", async (c) => {
+    const tools = await deps.repository.models.capabilities();
+    return c.json({
       enabled: deps.enabled,
       eventsEnabled: !!deps.events,
-      editsEnabled: deps.editsEnabled ?? false,
+      editsEnabled:
+        deps.editsEnabled ||
+        Object.values(tools).some((models) =>
+          models.some((m) => m.managed && m.editsEnabled && m.enabledResolutions.length > 0),
+        ),
       unitCredits: imageUnitCredits,
-      models: imageModelCatalog.map((m) => ({ ...m, enabledResolutions: deps.resolutions(m.id) })),
-    }),
-  );
+      tools,
+      models: imageModelCatalog.map((m) => ({
+        ...m,
+        enabledResolutions:
+          tools.create?.find((option) => option.id === m.id && option.managed)
+            ?.enabledResolutions ?? deps.resolutions(m.id),
+      })),
+    });
+  });
   app.get("/wallet", async (c) =>
     c.json({
       ...(await deps.repository.wallet(c.get("principal"))),
@@ -226,7 +242,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
       return fail(c, "VALIDATION_ERROR", "请检查参数和 Idempotency-Key", 400);
     const normalized = normalizeTextileGeneration(input.data);
     try {
-      deps.validate(normalized);
+      if (!(await deps.repository.models.hasRoute(normalized))) deps.validate(normalized);
     } catch {
       return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "模型分辨率或参考编辑能力尚未验证", 400);
     }
@@ -250,7 +266,8 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const job = await deps.repository.get(scope, jobId.data);
     if (!job) return fail(c, "NOT_FOUND", "任务不存在", 404);
     try {
-      deps.validate(imageGenerationInputSchema.parse(job.input));
+      const input = imageGenerationInputSchema.parse(job.input);
+      if (!(await deps.repository.models.hasRoute(input))) deps.validate(input);
     } catch {
       return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "模型能力尚未验证", 400);
     }

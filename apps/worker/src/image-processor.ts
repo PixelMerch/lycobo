@@ -9,6 +9,7 @@ import {
   validateModelInput,
 } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
+import { processConfiguredImage } from "./configured-image-processor";
 
 export type ImageProcessorDependencies = {
   repository: ImageRepository;
@@ -17,6 +18,7 @@ export type ImageProcessorDependencies = {
   provider: VakvConfig;
   overrides: CapabilityOverrides;
   editsEnabled: boolean;
+  modelSecret?: string | undefined;
   request?: typeof fetch;
 };
 export async function processImageItem(itemId: string, deps: ImageProcessorDependencies) {
@@ -29,8 +31,10 @@ export async function processImageItem(itemId: string, deps: ImageProcessorDepen
   const job = await deps.repository.claim(itemId, deps.workerId, deps.provider.timeoutMs + 60000);
   timing("claim", started);
   if (!job) return;
+  if (job.configuredProvider) return processConfiguredImage(job, deps);
   let submitted = false;
   try {
+    if (!deps.provider.key) throw new VakvError("PROVIDER_NOT_CONFIGURED", false);
     validateModelInput(job.input, deps.overrides, deps.editsEnabled);
     const referencesStarted = performance.now();
     const references: Uint8Array[] = [];

@@ -11,6 +11,7 @@ export interface GenerationBindings {
   IMAGES: ImagesBinding;
   GENERATION_QUEUE: ImageQueueSender;
   VAKV_API_KEY: string;
+  MODEL_CREDENTIAL_SECRET?: string;
   VAKV_BASE_URL?: string;
   GENERATION_TIMEOUT_MS?: string;
   IMAGE_GENERATION_ENABLED?: string;
@@ -26,7 +27,7 @@ export async function processGenerationBatch(
     VAKV_ENABLE_IMAGE_EDITS: env.VAKV_ENABLE_IMAGE_EDITS,
     VAKV_CAPABILITY_OVERRIDES: env.VAKV_CAPABILITY_OVERRIDES,
   });
-  if (!policy.enabled || !env.VAKV_API_KEY) throw new Error("GENERATION_NOT_CONFIGURED");
+  if (!policy.enabled) throw new Error("GENERATION_NOT_CONFIGURED");
   const timeoutMs = Number(env.GENERATION_TIMEOUT_MS ?? 600000);
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 600000)
     throw new Error("INVALID_GENERATION_TIMEOUT");
@@ -47,6 +48,7 @@ export async function processGenerationBatch(
       processImageItem(itemId, {
         repository,
         store,
+        modelSecret: env.MODEL_CREDENTIAL_SECRET,
         workerId: `cloudflare:${deliveryId}`,
         provider: {
           key: env.VAKV_API_KEY,

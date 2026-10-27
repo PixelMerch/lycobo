@@ -2,9 +2,12 @@ import { randomBytes } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 
 const enabled = process.env.LOCAL_IMAGE_GENERATION_ENABLED === "true";
-if (enabled && !process.env.VAKV_API_KEY)
+if (enabled && !process.env.VAKV_API_KEY && !process.env.MODEL_CREDENTIAL_SECRET)
   throw new Error("Local generation requires an explicit provider key.");
 const common = {
+  ...(process.env.MODEL_CREDENTIAL_SECRET
+    ? { MODEL_CREDENTIAL_SECRET: process.env.MODEL_CREDENTIAL_SECRET }
+    : {}),
   IMAGE_GENERATION_ENABLED: String(enabled),
   ...(process.env.LOCAL_QUEUE_TOKEN ? { LOCAL_QUEUE_TOKEN: process.env.LOCAL_QUEUE_TOKEN } : {}),
   VAKV_ENABLE_IMAGE_EDITS: process.env.VAKV_ENABLE_IMAGE_EDITS ?? "false",

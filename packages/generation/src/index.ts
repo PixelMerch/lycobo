@@ -17,5 +17,7 @@ export interface GenerationProvider {
   >;
 }
 
+export * from "./configured-provider";
+export * from "./provider-secrets";
 export * from "./textile-generation";
 export * from "./vakv-provider";

@@ -5,7 +5,7 @@ export function localEnvironment(source, docker = false, modelSettings = source)
   const env = Object.fromEntries(
     Object.entries(source).filter(
       ([key]) =>
-        !/^(?:CLOUDFLARE_|CF_|SUPABASE_|AUTH_|ASSET_|VAKV_|IMAGE_|WRANGLER_)/.test(key) &&
+        !/^(?:CLOUDFLARE_|CF_|SUPABASE_|AUTH_|ASSET_|VAKV_|IMAGE_|MODEL_|WRANGLER_)/.test(key) &&
         key !== "DATABASE_URL" &&
         key !== "LOCAL_IMAGE_GENERATION_ENABLED" &&
         !key.startsWith("LOCAL_QUEUE_") &&
@@ -23,8 +23,10 @@ export function localEnvironment(source, docker = false, modelSettings = source)
   const enabled = modelSettings.IMAGE_GENERATION_ENABLED === "true";
   env.LOCAL_IMAGE_GENERATION_ENABLED = String(enabled);
   env.VAKV_ENABLE_IMAGE_EDITS = String(enabled && modelSettings.VAKV_ENABLE_IMAGE_EDITS === "true");
+  if (modelSettings.MODEL_CREDENTIAL_SECRET)
+    env.MODEL_CREDENTIAL_SECRET = modelSettings.MODEL_CREDENTIAL_SECRET;
   if (enabled) {
-    if (!modelSettings.VAKV_API_KEY?.trim())
+    if (!modelSettings.VAKV_API_KEY?.trim() && !modelSettings.MODEL_CREDENTIAL_SECRET)
       throw new Error("Enabled local generation requires VAKV_API_KEY in .env.");
     for (const key of [
       "VAKV_API_KEY",

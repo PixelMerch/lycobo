@@ -18,7 +18,10 @@ export function useTextileGeneration() {
   const ownPending =
     pending && !!session.data && pendingSubmissionSource(session.data) === "textile-set";
   const resolutions =
-    models.data?.models.find((model) => model.id === "gpt-image-2")?.enabledResolutions ?? [];
+    (
+      models.data?.tools?.["textile-set"]?.find((model) => model.id === "gpt-image-2") ??
+      models.data?.models.find((model) => model.id === "gpt-image-2")
+    )?.enabledResolutions ?? [];
   const configured =
     !!models.data?.enabled && !!models.data.editsEnabled && resolutions.includes(draft.resolution);
   useErrorToast(generation.error?.message ?? models.error?.message);

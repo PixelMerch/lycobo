@@ -20,6 +20,7 @@ export interface ApiBindings {
   IMAGE_GENERATION_ENABLED?: string;
   VAKV_ENABLE_IMAGE_EDITS?: string;
   VAKV_CAPABILITY_OVERRIDES?: string;
+  MODEL_CREDENTIAL_SECRET?: string;
 }
 function unavailable(code: "AUTH_NOT_CONFIGURED" | "INTERNAL_ERROR") {
   const requestId = crypto.randomUUID();
@@ -126,6 +127,7 @@ async function handleRequest(
       () => console.error("API_REQUEST_FAILED"),
       {
         repository,
+        modelSecret: env.MODEL_CREDENTIAL_SECRET,
         store,
         signAsset:
           env.ASSET_PUBLIC_ORIGIN && env.ASSET_SIGNING_SECRET

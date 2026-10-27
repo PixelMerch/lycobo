@@ -282,6 +282,7 @@ export const generationJobs = pgTable(
     input: jsonb("input").$type<Record<string, unknown>>().notNull(),
     model: text("model").notNull(),
     providerModel: text("provider_model"),
+    providerSnapshot: jsonb("provider_snapshot"),
     prompt: text("prompt").notNull(),
     resolution: text("resolution").notNull(),
     aspectRatio: text("aspect_ratio").notNull(),
@@ -664,3 +665,88 @@ export const generationRetries = pgTable(
     index("generation_retries_user_idx").on(t.userId),
   ],
 );
+
+// Platform configuration is separate from enterprise membership and never exposed by the model catalog.
+export const platformAdministrators = pgTable("platform_administrators", {
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id),
+  enabled: integer("enabled").notNull().default(1),
+  createdAt: createdAt(),
+}).enableRLS();
+export const modelCredentials = pgTable("model_credentials", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ciphertext: text("ciphertext").notNull(),
+  createdAt: createdAt(),
+}).enableRLS();
+export const modelProviders = pgTable("model_providers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  origin: text("origin").notNull(),
+  adapter: text("adapter").notNull(),
+  credentialId: uuid("credential_id")
+    .notNull()
+    .references(() => modelCredentials.id),
+  enabled: integer("enabled").notNull().default(0),
+  createdAt: createdAt(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}).enableRLS();
+export const modelChannels = pgTable(
+  "model_channels",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    providerId: uuid("provider_id")
+      .notNull()
+      .references(() => modelProviders.id),
+    name: text("name").notNull(),
+    model: text("model").notNull(),
+    settings: jsonb("settings").notNull(),
+    enabled: integer("enabled").notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [index("model_channels_provider_idx").on(t.providerId)],
+).enableRLS();
+export const modelRoutes = pgTable(
+  "model_routes",
+  {
+    tool: text("tool").notNull(),
+    model: text("model").notNull(),
+    channelId: uuid("channel_id")
+      .notNull()
+      .references(() => modelChannels.id),
+  },
+  (t) => [
+    unique("model_routes_tool_model_unique").on(t.tool, t.model),
+    index("model_routes_channel_idx").on(t.channelId),
+  ],
+).enableRLS();
+export const modelAuditEvents = pgTable(
+  "model_audit_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    actorId: uuid("actor_id")
+      .notNull()
+      .references(() => users.id),
+    action: text("action").notNull(),
+    resourceId: uuid("resource_id").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("model_audit_created_idx").on(t.createdAt)],
+).enableRLS();
+export const providerExecutions = pgTable(
+  "provider_executions",
+  {
+    itemId: uuid("item_id")
+      .primaryKey()
+      .references(() => generationJobItems.id),
+    phase: text("phase").notNull(),
+    taskId: text("task_id"),
+    statusPath: text("status_path"),
+    nextPollAt: timestamp("next_poll_at", { withTimezone: true }),
+    leaseUntil: timestamp("lease_until", { withTimezone: true }),
+    deadlineAt: timestamp("deadline_at", { withTimezone: true }).notNull(),
+    pollCount: integer("poll_count").notNull().default(0),
+    pollFailures: integer("poll_failures").notNull().default(0),
+  },
+  (t) => [index("provider_executions_due_idx").on(t.nextPollAt)],
+).enableRLS();

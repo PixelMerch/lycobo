@@ -221,6 +221,20 @@ export const imageAssetSchema = z.object({
 export type ImageAsset = z.infer<typeof imageAssetSchema>;
 export const imageAssetsResponseSchema = z.object({ data: z.array(imageAssetSchema) });
 export const imageModelsResponseSchema = z.object({
+  tools: z
+    .record(
+      z.string(),
+      z.array(
+        z.object({
+          id: z.string(),
+          enabledResolutions: z.array(imageResolutionSchema),
+          editsEnabled: z.boolean(),
+          managed: z.boolean(),
+          maxReferences: z.number(),
+        }),
+      ),
+    )
+    .optional(),
   eventsEnabled: z.boolean().optional(),
   enabled: z.boolean(),
   editsEnabled: z.boolean(),
