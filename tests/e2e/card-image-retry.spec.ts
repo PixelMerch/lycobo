@@ -190,17 +190,17 @@ test("confirmed legacy textile failure creates a current-channel task for only t
   await card.hover();
   await card.getByRole("button", { name: "重新生成第 1 张", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
-  await expect(dialog).toContainText("使用 gpt-image-2-4K 创建新任务");
+  await expect(dialog).toContainText("使用最新裂变配置创建新任务");
   await expect(dialog).toContainText("本次消耗 20 积分");
   expect(submitted).toBeUndefined();
   await dialog.getByRole("button", { name: "确认", exact: true }).click();
   await expect
     .poll(() => submitted)
     .toMatchObject({
-      model: "gpt-image-2",
+      model: "gpt-image-2.5",
       resolution: "4K",
       count: 1,
       referenceAssetIds: [reference],
-      textileSet: { version: 4, views: ["front"] },
+      textileSet: { version: 5, views: ["front"] },
     });
 });

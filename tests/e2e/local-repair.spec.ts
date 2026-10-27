@@ -182,11 +182,17 @@ test("multiple repair regions retain original coordinates, submit one image and 
   // Progress is announced in the bottom-right notice instead of inside the form.
   const notice = page.locator(".toast-region--bottom-end .toast").first();
   await expect(notice).toContainText("修改版已生成");
-  const noticeBox = await notice.boundingBox();
-  const viewport = page.viewportSize();
-  if (!noticeBox || !viewport) throw new Error("Missing notice geometry");
-  expect(viewport.width - (noticeBox.x + noticeBox.width)).toBeLessThan(40);
-  expect(viewport.height - (noticeBox.y + noticeBox.height)).toBeLessThan(40);
+  await expect
+    .poll(async () => {
+      const noticeBox = await notice.boundingBox();
+      const viewport = page.viewportSize();
+      if (!noticeBox || !viewport) return Infinity;
+      return Math.max(
+        viewport.width - (noticeBox.x + noticeBox.width),
+        viewport.height - (noticeBox.y + noticeBox.height),
+      );
+    })
+    .toBeLessThan(40);
   await expect(viewer.locator(".repair-message")).toHaveCount(0);
   await viewer.getByRole("button", { name: "查看修改版", exact: true }).click();
   await expect(viewer).toHaveCount(0);
