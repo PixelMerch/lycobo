@@ -65,3 +65,5 @@ provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 
 共享本地库已通过 db:migrate 升级；独立后台 init.sql 含同等基线，详细操作见相邻 lycobo-admin/docs/model-services.md。此次没有线上迁移、付费调用或部署；未来发布须先完成数据库迁移，再更新读取新表/列的服务。
 
 模型目录新增 nullable logo_url，仅保存公开 Logo 对象地址；上传和展示由独立 admin 负责，共享追加迁移 0027。Logo 的公开桶与主站生成图片私有桶隔离，见 [私有 S3 存储](s3-storage.md)。
+
+目录新增 upstream_model（0028 追加迁移），与显示名称 name、内部稳定 code 分开。后台“调用模型”可编辑为供应商型号，例如 gpt-image-2.5-sunburst；保存时事务更新使用目录旧值的渠道基础模型和分辨率映射，保留其他自定义上游值。主站继续按稳定逻辑模型关联默认渠道，新任务读取更新后的渠道设置；在途任务的 providerSnapshot 不变，不改公共模型枚举，也不自动发布新目录模型为前台入口。
