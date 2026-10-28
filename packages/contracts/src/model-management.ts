@@ -44,7 +44,8 @@ export const channelInputSchema = z.strictObject({
   mode: providerModeSchema,
   enabled: z.boolean(),
   editsEnabled: z.boolean(),
-  resolutions: z.array(imageResolutionSchema).min(1).max(3),
+  // Historical channel field; resolution now comes from each validated task input.
+  resolutions: z.array(imageResolutionSchema).min(1).max(3).default(["1K", "2K", "4K"]),
   maxReferences: z.number().int().min(0).max(10),
   timeoutMs: z.number().int().min(5000).max(600000),
   taskTimeoutSeconds: z.number().int().min(60).max(7200),
