@@ -439,6 +439,105 @@ export async function verifyManagedModels(
         String(item.provider_request_id).startsWith("fixture-submit-"),
     ),
   );
+  const geminiOwner = await repository.provision(
+    `gemini-${crypto.randomUUID()}`,
+    "gemini-fixture",
+    40,
+  );
+  const geminiSettings = {
+    name: "Gemini fixture",
+    providerId: provider.id,
+    model: "gemini-3.1-flash-image-preview",
+    upstreamModel: "gemini-3.1-flash-image-preview",
+    adapter: "gemini-native",
+    mode: "provider-default",
+    enabled: true,
+    editsEnabled: true,
+    maxReferences: 5,
+    timeoutMs: 5000,
+    taskTimeoutSeconds: 600,
+    downloadOrigins: [],
+  };
+  const geminiChannel = await repository.models.saveChannel(
+    owner.userId,
+    undefined,
+    geminiSettings,
+  );
+  await repository.models.saveRoute(owner.userId, {
+    tool: "create",
+    model: geminiSettings.model,
+    channelId: geminiChannel.id,
+  });
+  const geminiReference = await store.put(geminiOwner, png);
+  await repository.addReference(geminiOwner, geminiReference);
+  for (const asyncMode of [false, true]) {
+    const nativeInput = imageGenerationInputSchema.parse({
+      model: geminiSettings.model,
+      prompt: "fixture",
+      resolution: "4K",
+      referenceAssetIds: [geminiReference.id],
+    });
+    const nativeJob = await repository.create(
+      geminiOwner,
+      nativeInput,
+      crypto.randomUUID(),
+      20,
+      true,
+    );
+    const nativeItem = (await repository.get(geminiOwner, nativeJob.id))?.items[0];
+    assert(nativeItem);
+    let nativePosts = 0;
+    let nativeGets = 0;
+    const nativeRequest: typeof fetch = async (url, init) => {
+      if (init?.method === "POST") {
+        nativePosts++;
+        assert(
+          String(url).endsWith("/v1beta/models/gemini-3.1-flash-image-preview:generateContent"),
+        );
+        const payload = JSON.parse(String(init.body));
+        assert.equal(payload.generationConfig.imageConfig.imageSize, "4K");
+        assert.equal(payload.contents[0].parts[1].inlineData.data, png.toString("base64"));
+        assert.equal(payload.n, undefined);
+        if (asyncMode)
+          return Response.json(
+            {
+              task_id: "gemini-native-fixture",
+              status: "queued",
+              status_url: "/v1/images/tasks/gemini-native-fixture?view=summary",
+            },
+            { status: 202 },
+          );
+      } else nativeGets++;
+      return Response.json({
+        candidates: [
+          {
+            content: {
+              parts: [{ inlineData: { mimeType: "image/png", data: png.toString("base64") } }],
+            },
+          },
+        ],
+      });
+    };
+    await processImageItem(nativeItem.id, { ...deps, request: nativeRequest });
+    if (asyncMode) {
+      // Changing channel protocol cannot change an accepted task's protocol snapshot.
+      await repository.models.saveChannel(owner.userId, geminiChannel.id, {
+        ...geminiSettings,
+        adapter: "openai-images",
+      });
+      await sql`update provider_executions set next_poll_at=now()-interval '1 second' where item_id=${nativeItem.id}`;
+      await processImageItem(nativeItem.id, { ...deps, request: nativeRequest });
+    }
+    await processImageItem(nativeItem.id, { ...deps, request: nativeRequest });
+    assert.equal(nativePosts, 1);
+    assert.equal(nativeGets, asyncMode ? 1 : 0);
+    assert.equal((await repository.get(geminiOwner, nativeJob.id))?.status, "succeeded");
+    const [nativeSnapshot] =
+      await sql`select provider_snapshot from generation_jobs where id=${nativeJob.id}`;
+    assert.equal(nativeSnapshot?.provider_snapshot.adapter, "gemini-native");
+  }
+  assert.equal((await repository.wallet(geminiOwner)).balance, 0);
+  await sql`delete from model_routes where channel_id=${geminiChannel.id}`;
   await sql`delete from model_routes where channel_id=${textileChannel.id}`;
   // Subsequent integration cases must retain their original routing policy.
   await sql`delete from model_routes where channel_id=${channel.id}`;

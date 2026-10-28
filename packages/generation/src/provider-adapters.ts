@@ -1,4 +1,5 @@
 import type { ImageGenerationInput, ProviderSnapshot } from "@lycoboai/contracts";
+import { normalizeGeminiReply } from "./gemini-protocol";
 import { ImageProviderError } from "./provider-errors";
 
 /** SDK-style /v1 base URLs and root origins both resolve to a single API origin. */
@@ -21,11 +22,12 @@ export function imageProviderOrigin(value: string) {
 }
 export type ImageProtocolAdapter = {
   acceptsTasks: boolean;
+  normalizeReply?: (value: unknown) => unknown;
   prepare: (
     snapshot: ProviderSnapshot,
     input: ImageGenerationInput,
     references: Uint8Array[],
-  ) => { body: string | FormData; headers: Record<string, string> };
+  ) => { path?: string; body: string | FormData; headers: Record<string, string> };
 };
 function fields(snapshot: ProviderSnapshot, input: ImageGenerationInput) {
   const [w, h] = input.aspectRatio.split(":").map(Number);
@@ -56,6 +58,34 @@ export const imageProtocolAdapters: Record<ProviderSnapshot["adapter"], ImagePro
         );
       return { body, headers: {} };
     },
+  },
+  "gemini-native": {
+    acceptsTasks: true,
+    normalizeReply: normalizeGeminiReply,
+    prepare: (snapshot, input, references) => ({
+      path: `/v1beta/models/${encodeURIComponent(snapshot.upstreamModelsByResolution?.[input.resolution] ?? snapshot.upstreamModel)}:generateContent`,
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: input.prompt },
+              ...references.map((bytes) => ({
+                inlineData: { mimeType: "image/png", data: Buffer.from(bytes).toString("base64") },
+              })),
+            ],
+          },
+        ],
+        generationConfig: {
+          responseModalities: ["TEXT", "IMAGE"],
+          imageConfig: {
+            aspectRatio: input.aspectRatio,
+            imageSize: input.resolution,
+          },
+        },
+      }),
+      headers: { "Content-Type": "application/json" },
+    }),
   },
   "fluxport-images": {
     acceptsTasks: true,

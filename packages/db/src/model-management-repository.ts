@@ -200,6 +200,6 @@ export async function resolveProviderSnapshot(
     channelId: row.id,
     credentialId: row.credential_id,
     origin: row.origin,
-    adapter: row.adapter,
+    adapter: settings.adapter ?? row.adapter,
   });
 }

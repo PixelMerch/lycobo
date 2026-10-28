@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { imageModelCodeSchema, imageResolutionSchema } from "./image-generation";
 
-export const providerAdapterSchema = z.enum(["openai-images", "fluxport-images"]);
+export const providerAdapterSchema = z.enum(["openai-images", "fluxport-images", "gemini-native"]);
 export const providerModeSchema = z.enum(["sync", "async-preferred", "provider-default"]);
 export const providerOriginSchema = z
   .url()
@@ -34,6 +34,7 @@ export const channelInputSchema = z.strictObject({
   providerId: z.uuid(),
   model: imageModelCodeSchema,
   upstreamModel: upstreamModelSchema,
+  adapter: providerAdapterSchema.nullable().optional(),
   upstreamModelsByResolution: z
     .strictObject({
       "1K": upstreamModelSchema.optional(),

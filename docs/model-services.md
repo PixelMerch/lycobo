@@ -13,7 +13,7 @@
 ## 配置步骤
 
 1. 中转站：名称、HTTPS 源地址（如 https://api.ai-media.vip，不含 /v1）、协议、API Key、启用状态。默认禁用；Key 保存后只显示已配置，编辑留空保留旧值。
-2. 模型渠道：选择中转站、前台模型、任意合法上游模型 ID、执行方式、参考编辑与上限、提交超时、总等待上限和额外下载源。
+2. 模型渠道：选择中转站、前台模型、任意合法上游模型 ID、接口协议、执行方式、参考编辑与上限、提交超时、总等待上限和额外下载源。接口协议默认继承中转站，也可按渠道覆盖。
 3. 默认路由：按图片创作／家纺主图裂变／局部修改及前台模型绑定一个渠道。默认渠道禁用或参考图能力不匹配时拒绝新任务，不自动跨站提交。
 
 前台展示后台启用的全部图片模型，只读取公开能力。API 和 Worker 统一使用后台默认渠道；没有路由、渠道禁用或参考图能力不匹配时，在扣费前拒绝新提交，不回退环境变量。URL、供应商 Key、上游模型、编辑能力与超时均以渠道为准；分辨率统一支持 1K／2K／4K，由前端选择并在任务参数中保存。
@@ -48,7 +48,7 @@ MODEL_CREDENTIAL_SECRET 必须为 32 字节随机数的 Base64，独立后台 AP
 
 ## 协议适配与本地环境导入
 
-provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 负责公共响应、任务查询和结果下载，provider-errors.ts 统一已知失败与未知结果语义。已支持 OpenAI 同步 Images 与 FluxPort 同异步 Images；新中转站同协议只改后台，异步路径／鉴权／响应不同则新增适配器，不在前端或计费层添加分支。
+provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 负责公共响应、任务查询和结果下载，provider-errors.ts 统一已知失败与未知结果语义。已支持 OpenAI 同步 Images、FluxPort 同异步 Images 和 Gemini 原生 generateContent；新中转站同协议只改后台，异步路径／鉴权／响应不同则新增适配器，不在前端或计费层添加分支。
 
 运行时不再读取 VAKV_* 或 GENERATION_TIMEOUT_MS。`.env` 仅保留 IMAGE_GENERATION_ENABLED 全局开关、MODEL_CREDENTIAL_SECRET 加密主密钥及基础设施配置，供应商凭据在独立后台配置。同步兼容适配器仅留给隔离验证工具，不是产品运行时回退。当前裂变以v5和逻辑gpt-image-2.5绑定后台渠道，见 textile-generation.md。同步结果、异步task ID及上游请求ID用于排查；不记录提示词、响应正文、Key或签名URL。
 
@@ -82,4 +82,14 @@ provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 
 
 无渠道快照的旧失败任务，仅在用户显式重试且没有其他在途子项时，原子读取当前后台渠道并建立快照，再执行退款／扣费与 outbox 写入；缺少渠道时整个事务回滚、不新增扣费。已有快照继续固定原配置，不覆盖在途执行。API／Worker 不读取旧环境变量；本地已移除这些旧字段，线上 Secrets 本次不操作。
 
-渠道旧 JSON 中的 `resolutions` 只为兼容历史数据保留，不再限制可用分辨率，也不需要管理员维护；新任务统一接受已校验的 1K／2K／4K，执行端按任务值计算尺寸，4K 最长边仍为3840。供应商是否成功响应仍以实际任务结果为准。
+渠道旧 JSON 中的 `resolutions` 只为兼容历史数据保留，不再限制可用分辨率，也不需要管理员维护；新任务统一接受已校验的 1K／2K／4K，Images API 执行端按任务值计算尺寸，4K 最长边仍为3840；Gemini 原生接口直接传 imageSize 档位。供应商是否成功响应仍以实际任务结果为准。
+
+## Gemini 原生图片协议（2026-10-28）
+
+按 [FluxPort Gemini 文档](https://uselg.top/docs?model=gemini-3.1-flash-image-preview) 对接 `gemini-native`：POST `/v1beta/models/{upstreamModel}:generateContent`，Bearer 鉴权，提示词和 PNG 参考图放入 `contents[].parts`；比例、1K／2K／4K 使用 `generationConfig.imageConfig.aspectRatio/imageSize`。不发送 Images API 的 n、quality、async 或像素 size。Gemini 的 4K 使用供应商档位，不套用 Images API 最长边 3840 的尺寸计算。
+
+同步解析 candidates 中的 inlineData 或 fileData；纯文字、空图片结果不视为成功。异步 202 的 task_id/status_url/result_url 继续使用持久化查询流程，查询返回的原生结果同样解析，不重新付费 POST。结果文件仍需通过现有来源白名单、大小限制与真实图片校验，入私有存储后才能完成任务。
+
+渠道 `settings.adapter` 可覆盖中转站默认协议，null／省略则继承；同一个站可同时提供 GPT Images 与 Gemini 原生接口，不需要复制 Key。任务快照固定最终协议，修改渠道不改变旧任务。旧任务若固定了错误协议，应新建任务验证新配置。
+
+本地 Banana 2.1 已配置调用 `gemini-3.1-flash-image-preview`，Banana Pro 配置调用 `gemini-3-pro-image-preview`，两者均使用 Gemini 原生协议；GPT 渠道保留 Images 协议。本轮通过模拟上游的同步／异步请求、不可变快照、重复消费与扣费集成测试，以及后台保存／读取验证；没有付费调用、线上配置变更或部署，实际模型与 Key 分组可用性尚需真实生成验证。
