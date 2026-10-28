@@ -88,7 +88,7 @@ export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" 
                       <span>{statusLabel[job.status]}</span>
                     )}
                   </Button>
-                  {generatedCount > 0 && (
+                  {generatedCount > 1 && (
                     <span className="history-thumbnail-count">
                       <span className="sr-only">已生成</span>
                       {generatedCount}
