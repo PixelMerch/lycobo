@@ -141,4 +141,4 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 历史记录整组下载：`apps/web/src/features/generation/history/history-download-button.tsx` 管理原图签名获取、读取取消、打包状态及浏览器下载；`history-download.ts` 选择已完成任务的成功项并按顺序打包ZIP，fflate仅在下载时加载，不改变单张下载与资源授权。
 
-模型渠道的可选 `upstreamModelsByResolution` 配置按 1K／2K／4K 选择上游模型，随任务保存到供应商快照；未配置的分辨率回退到 `upstreamModel`。前端仍提交公共模型与分辨率，不感知供应商模型名。本地家纺裂变配置为 1K／2K → `gpt-image-2.5-flare`，4K → `gpt-image-2`；线上配置独立管理。
+模型渠道的可选 `upstreamModelsByResolution` 配置按 1K／2K／4K 选择上游模型，随任务保存到供应商快照；未配置的分辨率回退到 `upstreamModel`。前端仍提交公共模型与分辨率，不感知供应商模型名。适配器的 `size` 按比例计算：1K 最长边 1024、2K 最长边 2048、4K 最长边 3840，尺寸对齐到 16 像素；4K 正方形为 `3840x3840`。本地家纺裂变的 1K／2K／4K 统一使用 `gpt-image-2.5`；线上配置独立管理。

@@ -29,7 +29,7 @@ export type ImageProtocolAdapter = {
 };
 function fields(snapshot: ProviderSnapshot, input: ImageGenerationInput) {
   const [w, h] = input.aspectRatio.split(":").map(Number);
-  const edge = { "1K": 1024, "2K": 2048, "4K": 4096 }[input.resolution];
+  const edge = { "1K": 1024, "2K": 2048, "4K": 3840 }[input.resolution];
   const scale = edge / Math.max(w ?? 1, h ?? 1);
   return {
     model: snapshot.upstreamModelsByResolution?.[input.resolution] ?? snapshot.upstreamModel,

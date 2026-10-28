@@ -38,7 +38,7 @@ export function validateModelInput(
 }
 export function imageDimensions(ratio: string, resolution: ImageResolution) {
   const [w, h] = ratio.split(":").map(Number);
-  const edge = { "1K": 1024, "2K": 2048, "4K": 4096 }[resolution];
+  const edge = { "1K": 1024, "2K": 2048, "4K": 3840 }[resolution];
   const scale = edge / Math.max(w ?? 1, h ?? 1);
   return {
     width: Math.round(((w ?? 1) * scale) / 16) * 16,

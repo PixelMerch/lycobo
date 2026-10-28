@@ -288,7 +288,7 @@ it("continues polling accepted tasks that forbid resubmission and fetches comple
 it.each([
   ["1K", "gpt-image-2.5-flare", "1024x1024"],
   ["2K", "gpt-image-2.5-flare", "2048x2048"],
-  ["4K", "gpt-image-2", "4096x4096"],
+  ["4K", "gpt-image-2", "3840x3840"],
 ] as const)("selects the snapshotted upstream model for %s", async (resolution, model, size) => {
   const mapping = { "1K": "gpt-image-2.5-flare", "2K": "gpt-image-2.5-flare", "4K": "gpt-image-2" };
   const configured = providerSnapshotSchema.parse({
