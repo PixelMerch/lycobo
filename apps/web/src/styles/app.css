@@ -2209,7 +2209,7 @@ p.home-hero-kicker {
   background: #343434;
   border: 0;
 }
-.generation-results[data-count="1"] .generation-placeholder {
+.generation-results[data-count="1"] .generation-placeholder.generation-failed {
   min-height: 200px;
   aspect-ratio: auto;
 }

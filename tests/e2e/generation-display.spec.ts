@@ -65,9 +65,9 @@ test("running images animate with the model icon and stop for reduced motion", a
   await page.reload();
   await expect(placeholders).toHaveCount(1);
   const box = await placeholders.first().boundingBox();
-  const resultBounds = await page.locator(".generation-results").boundingBox();
-  expect(box?.width).toBe(resultBounds?.width);
-  expect(box?.height).toBe(200);
+  expect(box?.width).toBeLessThanOrEqual(400);
+  expect(box?.height).toBe(box?.width);
+  await expect(placeholders.first()).toHaveCSS("aspect-ratio", "1 / 1");
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.screenshot({ path: "/tmp/lycobo-generation-pending.png" });
   await page.setViewportSize({ width: 390, height: 844 });
