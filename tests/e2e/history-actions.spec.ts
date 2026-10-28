@@ -274,10 +274,18 @@ test("bulk download uses fresh signed originals and creates one ZIP before task 
       headers: { "Access-Control-Allow-Origin": "*" },
     });
   });
-  const button = page.getByRole("button", { name: "下载全部 · 3 张", exact: true });
+  const button = page.getByRole("button", { name: "下载全部", exact: true });
   await expect(button).toBeVisible();
+  await button.hover();
+  await expect(page.getByRole("tooltip").filter({ hasText: "3 张" })).toBeVisible();
+  await page.mouse.move(0, 0);
+  await expect(page.getByRole("tooltip").filter({ hasText: "3 张" })).toBeHidden();
+  await button.focus();
+  await expect(page.getByRole("tooltip").filter({ hasText: "3 张" })).toBeVisible();
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("tooltip").filter({ hasText: "3 张" })).toBeHidden();
   await expect(page.locator(".history-task-actions").getByRole("button").first()).toHaveText(
-    "下载全部 · 3 张",
+    "下载全部",
   );
   const pending = page.waitForEvent("download");
   await button.click();
@@ -304,7 +312,7 @@ test("bulk download failure shows a toast and allows retry without downloading a
   );
   let downloads = 0;
   page.on("download", () => downloads++);
-  const button = page.getByRole("button", { name: "下载全部 · 2 张", exact: true });
+  const button = page.getByRole("button", { name: "下载全部", exact: true });
   await button.click();
   await expect(page.locator(".toast__title")).toHaveText("下载失败，请稍后重试或分别下载图片。");
   await expect(button).toBeEnabled();
@@ -320,7 +328,7 @@ test("partially failed groups expose the successful count and unfinished groups 
   if (!failed) throw new Error("Missing fixture item");
   failed.status = "failed";
   await page.reload();
-  await expect(page.getByRole("button", { name: "下载已生成 · 2 张", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "下载已生成", exact: true })).toBeVisible();
   job.status = "running";
   await page.reload();
   await expect(page.locator(".generation-job")).toHaveCount(1);

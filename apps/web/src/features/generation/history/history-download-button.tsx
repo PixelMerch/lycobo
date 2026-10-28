@@ -1,4 +1,4 @@
-import { Button, toast } from "@heroui/react";
+import { Button, Tooltip, toast } from "@heroui/react";
 import { type ImageJob, imageDeliverySchema } from "@lycoboai/contracts";
 import { IconDownload } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
@@ -50,47 +50,53 @@ async function readOriginal(id: string, remaining: number, signal: AbortSignal) 
 export function HistoryDownloadButton({ job }: { job: ImageJob }) {
   const entries = historyDownloadEntries(job);
   const [packing, setPacking] = useState(false);
+  const [showCount, setShowCount] = useState(false);
   const active = useRef<AbortController | null>(null);
   useEffect(() => () => active.current?.abort(), []);
   if (!entries.length) return null;
   const partial = entries.length < job.requested_count;
   return (
-    <Button
-      variant="secondary"
-      className="copy-prompt"
-      isPending={packing}
-      isDisabled={packing}
-      onPress={async () => {
-        if (active.current) return;
-        const controller = new AbortController();
-        active.current = controller;
-        setPacking(true);
-        try {
-          const { createHistoryArchive } = await import("./history-download");
-          const bytes = await createHistoryArchive(
-            entries,
-            readOriginal,
-            AbortSignal.any([controller.signal, AbortSignal.timeout(180000)]),
-          );
-          controller.signal.throwIfAborted();
-          const url = URL.createObjectURL(
-            new Blob([new Uint8Array(bytes)], { type: "application/zip" }),
-          );
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = `${job.input?.textileSet ? "家纺裂变" : "图片创作"}-${job.public_id ?? job.id}.zip`;
-          link.click();
-          setTimeout(() => URL.revokeObjectURL(url), 60000);
-        } catch {
-          if (!controller.signal.aborted) toast.danger("下载失败，请稍后重试或分别下载图片。");
-        } finally {
-          active.current = null;
-          if (!controller.signal.aborted) setPacking(false);
-        }
-      }}
-    >
-      <UiIcon icon={IconDownload} size="small" />
-      {packing ? "正在打包" : `${partial ? "下载已生成" : "下载全部"} · ${entries.length} 张`}
-    </Button>
+    <Tooltip delay={0} closeDelay={0} isOpen={showCount && !packing} onOpenChange={setShowCount}>
+      <Button
+        variant="secondary"
+        onHoverChange={setShowCount}
+        onFocusChange={setShowCount}
+        className="copy-prompt"
+        isPending={packing}
+        isDisabled={packing}
+        onPress={async () => {
+          if (active.current) return;
+          const controller = new AbortController();
+          active.current = controller;
+          setPacking(true);
+          try {
+            const { createHistoryArchive } = await import("./history-download");
+            const bytes = await createHistoryArchive(
+              entries,
+              readOriginal,
+              AbortSignal.any([controller.signal, AbortSignal.timeout(180000)]),
+            );
+            controller.signal.throwIfAborted();
+            const url = URL.createObjectURL(
+              new Blob([new Uint8Array(bytes)], { type: "application/zip" }),
+            );
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `${job.input?.textileSet ? "家纺裂变" : "图片创作"}-${job.public_id ?? job.id}.zip`;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
+          } catch {
+            if (!controller.signal.aborted) toast.danger("下载失败，请稍后重试或分别下载图片。");
+          } finally {
+            active.current = null;
+            if (!controller.signal.aborted) setPacking(false);
+          }
+        }}
+      >
+        <UiIcon icon={IconDownload} size="small" />
+        {packing ? "正在打包" : partial ? "下载已生成" : "下载全部"}
+      </Button>
+      <Tooltip.Content placement="bottom">{`${entries.length} 张`}</Tooltip.Content>
+    </Tooltip>
   );
 }
