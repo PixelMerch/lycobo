@@ -204,6 +204,13 @@
       "when": 1793167902548,
       "tag": "0028_model_catalog_upstream",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793169373856,
+      "tag": "0029_simple_provider_binding",
+      "breakpoints": true
     }
   ]
 }

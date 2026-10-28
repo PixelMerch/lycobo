@@ -684,6 +684,7 @@ export const modelProviders = pgTable("model_providers", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   origin: text("origin").notNull(),
+  websiteUrl: text("website_url"),
   adapter: text("adapter").notNull(),
   credentialId: uuid("credential_id")
     .notNull()
@@ -700,11 +701,15 @@ export const modelCatalog = pgTable(
     name: text("name").notNull(),
     logoUrl: text("logo_url"),
     upstreamModel: text("upstream_model"),
+    providerId: uuid("provider_id").references(() => modelProviders.id),
     category: text("category").notNull(),
     enabled: integer("enabled").notNull().default(1),
     createdAt: createdAt(),
   },
-  (t) => [check("model_catalog_category_check", sql`${t.category} in ('image','music','video')`)],
+  (t) => [
+    check("model_catalog_category_check", sql`${t.category} in ('image','music','video')`),
+    index("model_catalog_provider_idx").on(t.providerId),
+  ],
 ).enableRLS();
 export const modelProviderKeys = pgTable(
   "model_provider_keys",
