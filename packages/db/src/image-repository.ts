@@ -297,7 +297,10 @@ export function openImageRepository(url: string, edge = false) {
             (i.status === "failed" || i.status === "needs_reconciliation"),
         );
         if (!failed.length) throw new ImageRepositoryError("STATE_CONFLICT");
-        if (requireManaged && !job.provider_snapshot) {
+        // Explicit retries of fully, definitively failed jobs may adopt corrected routing.
+        // Partial/uncertain/in-flight jobs keep their accepted snapshot for reconciliation.
+        const allDefinitivelyFailed = items.every((item) => item.status === "failed");
+        if (requireManaged && (!job.provider_snapshot || allDefinitivelyFailed)) {
           if (items.some((item) => item.status === "queued" || item.status === "running"))
             throw new ImageRepositoryError("STATE_CONFLICT");
           const input = imageGenerationInputSchema.parse(job.input);
@@ -305,6 +308,10 @@ export function openImageRepository(url: string, edge = false) {
             throw new ImageRepositoryError("MODEL_CAPABILITY_UNVERIFIED");
           });
           if (!snapshot) throw new ImageRepositoryError("MODEL_CAPABILITY_UNVERIFIED");
+          if (job.provider_snapshot) {
+            const evidence = `Explicit retry adopted current routing; prior provider snapshot: ${JSON.stringify(job.provider_snapshot)}`;
+            await tx`update generation_job_items set reconciliation_evidence=concat_ws('; ',reconciliation_evidence,${evidence}::text) where job_id=${jobId} and superseded_at is null`;
+          }
           await tx`update generation_jobs set provider_snapshot=${tx.json(snapshot)},provider_model=${snapshot.upstreamModelsByResolution?.[input.resolution] ?? snapshot.upstreamModel} where id=${jobId}`;
         }
         // Explicit user retry retires unresolved attempts before refund/recharge.

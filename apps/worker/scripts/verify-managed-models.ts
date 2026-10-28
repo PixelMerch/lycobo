@@ -521,6 +521,70 @@ export async function verifyManagedModels(
     model: geminiSettings.model,
     channelId: geminiChannel.id,
   });
+  // Definitively failed old-protocol jobs adopt current routing only on explicit retry.
+  const protocolOwner = await repository.provision(
+    `protocol-retry-${crypto.randomUUID()}`,
+    "protocol-fixture",
+    40,
+  );
+  await repository.models.saveChannel(owner.userId, geminiChannel.id, {
+    ...geminiSettings,
+    adapter: "fluxport-images",
+  });
+  const protocolInput = imageGenerationInputSchema.parse({
+    model: geminiSettings.model,
+    prompt: "fixture",
+  });
+  const protocolJob = await repository.create(
+    protocolOwner,
+    protocolInput,
+    crypto.randomUUID(),
+    20,
+    true,
+  );
+  const protocolItem = (await repository.get(protocolOwner, protocolJob.id))?.items[0];
+  assert(protocolItem);
+  const protocolClaim = await repository.claim(protocolItem.id, "old-protocol-fixture", 10000);
+  assert(protocolClaim);
+  await repository.finish(protocolClaim, { errorCode: "PROVIDER_HTTP_400", unknown: false });
+  await repository.models.saveChannel(owner.userId, geminiChannel.id, geminiSettings);
+  const protocolRetryKey = crypto.randomUUID();
+  await repository.retry(protocolOwner, protocolJob.id, protocolRetryKey, undefined, true);
+  const [retriedProtocol] =
+    await sql`select provider_snapshot from generation_jobs where id=${protocolJob.id}`;
+  assert.equal(
+    retriedProtocol?.provider_snapshot.adapter,
+    "gemini-native",
+    "Explicit retry must replace obsolete protocol for fully failed jobs",
+  );
+  const [oldProtocolEvidence] =
+    await sql`select reconciliation_evidence from generation_job_items where id=${protocolItem.id}`;
+  assert.match(String(oldProtocolEvidence?.reconciliation_evidence), /fluxport-images/);
+  assert.equal(
+    (await repository.retry(protocolOwner, protocolJob.id, protocolRetryKey, undefined, true))
+      .replayed,
+    true,
+  );
+  assert.equal((await repository.wallet(protocolOwner)).balance, 20);
+  const retriedProtocolItem = (await repository.get(protocolOwner, protocolJob.id))?.items[0];
+  assert(retriedProtocolItem);
+  await processImageItem(retriedProtocolItem.id, {
+    ...deps,
+    request: async (url, init) => {
+      assert.equal(init?.method, "POST");
+      assert.match(String(url), /:generateContent$/);
+      return Response.json({
+        candidates: [
+          {
+            content: {
+              parts: [{ inlineData: { mimeType: "image/png", data: png.toString("base64") } }],
+            },
+          },
+        ],
+      });
+    },
+  });
+  assert.equal((await repository.get(protocolOwner, protocolJob.id))?.status, "succeeded");
   const geminiReference = await store.put(geminiOwner, png);
   await repository.addReference(geminiOwner, geminiReference);
   for (const asyncMode of [false, true]) {
