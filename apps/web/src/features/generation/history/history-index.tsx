@@ -95,19 +95,21 @@ export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" 
                       <span className="sr-only">张图片</span>
                     </span>
                   )}
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="danger-soft"
-                    className="history-thumbnail-delete"
-                    aria-label={`删除任务 ${job.id}`}
-                    onPress={() => {
-                      deletion.reset();
-                      setDeleteId(job.id);
-                    }}
-                  >
-                    <UiIcon icon={IconTrash} size="small" />
-                  </Button>
+                  {!generating && (
+                    <Button
+                      isIconOnly
+                      size="sm"
+                      variant="danger-soft"
+                      className="history-thumbnail-delete"
+                      aria-label={`删除任务 ${job.id}`}
+                      onPress={() => {
+                        deletion.reset();
+                        setDeleteId(job.id);
+                      }}
+                    >
+                      <UiIcon icon={IconTrash} size="small" />
+                    </Button>
+                  )}
                 </div>
               );
             })
