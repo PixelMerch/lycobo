@@ -5,7 +5,12 @@ const png = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
   "base64",
 );
-async function historyFixture(page: Page, quality: "high" | null = "high", withReferences = true) {
+async function historyFixture(
+  page: Page,
+  quality: "high" | null = "high",
+  withReferences = true,
+  count = 1,
+) {
   await mockImageApi(page);
   const reference = crypto.randomUUID();
   const input = {
@@ -13,7 +18,7 @@ async function historyFixture(page: Page, quality: "high" | null = "high", withR
     prompt: "保留商品外形和面料纹理，更换为自然采光的美式卧室，不添加文字。".repeat(24),
     aspectRatio: "3:4",
     resolution: "1K",
-    count: 1,
+    count,
     ...(quality ? { quality } : {}),
     referenceAssetIds: withReferences ? [reference, crypto.randomUUID()] : [],
   };
@@ -30,18 +35,16 @@ async function historyFixture(page: Page, quality: "high" | null = "high", withR
     completed_at: new Date().toISOString(),
     status: "succeeded",
     input,
-    items: [
-      {
-        id: crypto.randomUUID(),
-        position: 0,
-        status: "succeeded",
-        output_asset_id: crypto.randomUUID(),
-        error_code: null,
-        width: 1024,
-        height: 1024,
-        worker_id: "fixture-worker",
-      },
-    ],
+    items: Array.from({ length: count }, (_, position) => ({
+      id: crypto.randomUUID(),
+      position,
+      status: "succeeded",
+      output_asset_id: crypto.randomUUID(),
+      error_code: null,
+      width: 1024,
+      height: 1024,
+      worker_id: "fixture-worker",
+    })),
   };
   await page.route("**/api/v1/image-tasks*", (route) => route.fulfill({ json: { data: [job] } }));
   await page.route("**/api/v1/image-assets/**/content*", (route) =>
@@ -241,4 +244,96 @@ test("text-only tasks do not show generated images as prompt references", async 
   await expect(article.getByLabel("任务参考图", { exact: true })).toHaveCount(0);
   await expect(article.locator(".history-prompt img")).toHaveCount(0);
   expect(job.input.referenceAssetIds).toEqual([]);
+});
+
+test("bulk download uses fresh signed originals and creates one ZIP before task edit actions", async ({
+  page,
+}) => {
+  const { job } = await historyFixture(page, "high", false, 3);
+  const originals: string[] = [];
+  await page.route("**/api/v1/image-assets/*/delivery", (route) => {
+    const id = new URL(route.request().url()).pathname.split("/").at(-2);
+    const base = `https://assets.example.test/${id}`;
+    return route.fulfill({
+      json: {
+        id,
+        delivery: {
+          url: `${base}.preview.webp`,
+          thumbnail_url: `${base}.thumbnail.webp`,
+          download_url: `${base}.png?variant=download`,
+          expires_at: Math.floor(Date.now() / 1000) + 300,
+        },
+      },
+    });
+  });
+  await page.route("https://assets.example.test/**", (route) => {
+    if (route.request().resourceType() !== "image") originals.push(route.request().url());
+    return route.fulfill({
+      contentType: "image/png",
+      body: png,
+      headers: { "Access-Control-Allow-Origin": "*" },
+    });
+  });
+  const button = page.getByRole("button", { name: "下载全部 · 3 张", exact: true });
+  await expect(button).toBeVisible();
+  await expect(page.locator(".history-task-actions").getByRole("button").first()).toHaveText(
+    "下载全部 · 3 张",
+  );
+  const pending = page.waitForEvent("download");
+  await button.click();
+  const download = await pending;
+  expect(download.suggestedFilename()).toBe(`图片创作-${job.id}.zip`);
+  const path = await download.path();
+  const { readFile } = await import("node:fs/promises");
+  if (!path) throw new Error("Download missing");
+  const bytes = await readFile(path);
+  expect(bytes.subarray(0, 2).toString()).toBe("PK");
+  expect(bytes.includes(Buffer.from("01-生成图片.png"))).toBe(true);
+  expect(bytes.includes(Buffer.from("03-生成图片.png"))).toBe(true);
+  expect(originals).toHaveLength(3);
+  expect(originals.every((url) => url.endsWith(".png?variant=download"))).toBe(true);
+  await expect(button).toBeEnabled();
+});
+
+test("bulk download failure shows a toast and allows retry without downloading a partial ZIP", async ({
+  page,
+}) => {
+  await historyFixture(page, "high", false, 2);
+  await page.route("**/api/v1/image-assets/*/delivery", (route) =>
+    route.fulfill({ status: 403, json: { message: "forbidden" } }),
+  );
+  let downloads = 0;
+  page.on("download", () => downloads++);
+  const button = page.getByRole("button", { name: "下载全部 · 2 张", exact: true });
+  await button.click();
+  await expect(page.locator(".toast__title")).toHaveText("下载失败，请稍后重试或分别下载图片。");
+  await expect(button).toBeEnabled();
+  expect(downloads).toBe(0);
+});
+
+test("partially failed groups expose the successful count and unfinished groups hide bulk download", async ({
+  page,
+}) => {
+  const { job } = await historyFixture(page, "high", false, 3);
+  job.status = "partially_failed";
+  const failed = job.items[1];
+  if (!failed) throw new Error("Missing fixture item");
+  failed.status = "failed";
+  await page.reload();
+  await expect(page.getByRole("button", { name: "下载已生成 · 2 张", exact: true })).toBeVisible();
+  job.status = "running";
+  await page.reload();
+  await expect(page.locator(".generation-job")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: /下载全部|下载已生成/ })).toHaveCount(0);
+});
+
+test("generated results stay separated from reference images by 24px", async ({ page }) => {
+  await historyFixture(page, "high", true, 2);
+  const gap = await page.locator(".generation-job").evaluate((article) => {
+    const prompt = article.querySelector(".history-prompt");
+    const results = article.querySelector(".generation-results");
+    if (!prompt || !results) throw new Error("History content missing");
+    return results.getBoundingClientRect().top - prompt.getBoundingClientRect().bottom;
+  });
+  expect(gap).toBe(24);
 });

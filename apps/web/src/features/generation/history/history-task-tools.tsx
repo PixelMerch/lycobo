@@ -25,6 +25,7 @@ import {
 } from "../generation-client";
 import { ReferenceThumbnails } from "../references/reference-thumbnails";
 import { type Draft, type ModelId, useStudioStore } from "../studio-state";
+import { HistoryDownloadButton } from "./history-download-button";
 
 export function HistoryPrompt({ job }: { job: ImageJob }) {
   return (
@@ -191,6 +192,7 @@ export function HistoryTaskActions({
   };
   return (
     <div className={item ? "generation-retry-overlay" : "history-task-actions"}>
+      {!item && <HistoryDownloadButton job={job} />}
       {!item && (
         <Tooltip delay={0}>
           <Button

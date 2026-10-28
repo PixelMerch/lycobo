@@ -2457,6 +2457,9 @@ p.home-hero-kicker {
   gap: var(--history-row-gap);
   min-width: 0;
 }
+.history-prompt + .generation-results {
+  margin-top: 12px;
+}
 .history-prompt > .generation-output-thumbnails {
   margin-top: 0;
 }
