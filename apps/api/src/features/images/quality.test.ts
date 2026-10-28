@@ -16,7 +16,15 @@ function fixture(editsEnabled = false) {
     close: unexpected,
     models: {
       logos: async () => ({
-        models: [{ id: "gpt-image-2", logoUrl: "https://logos.example.com/model.webp" }],
+        models: [
+          {
+            id: "gpt-image-2",
+            logoUrl: "https://logos.example.com/model.webp",
+            name: "Image 2",
+            description: "后台介绍",
+            capabilitySummary: "后台能力",
+          },
+        ],
       }),
       list: unexpected,
       saveProvider: unexpected,
@@ -223,6 +231,14 @@ it("serves display-only model logos without a session or provider secrets", asyn
   const response = await app.request("/api/v1/image-model-logos");
   expect(response.status).toBe(200);
   expect(unwrapApiData(await response.json())).toEqual({
-    models: [{ id: "gpt-image-2", logoUrl: "https://logos.example.com/model.webp" }],
+    models: [
+      {
+        id: "gpt-image-2",
+        logoUrl: "https://logos.example.com/model.webp",
+        name: "Image 2",
+        description: "后台介绍",
+        capabilitySummary: "后台能力",
+      },
+    ],
   });
 });

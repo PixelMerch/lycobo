@@ -24,7 +24,13 @@ export async function verifyManagedModels(
     "https://logos.example.com/image2.webp"
   )
     throw new Error("Configured model logo was not exposed");
-  if (logos.models.some((m) => Object.keys(m).some((key) => !["id", "logoUrl"].includes(key))))
+  if (
+    logos.models.some((m) =>
+      Object.keys(m).some(
+        (key) => !["id", "logoUrl", "name", "description", "capabilitySummary"].includes(key),
+      ),
+    )
+  )
     throw new Error("Provider configuration leaked through model logos");
   await sql`insert into model_catalog(code,name,category,logo_url,enabled) values ('gemini-3.1-flash-image-preview','Banana fixture','image','https://logos.example.com/banana.webp',1)`;
   assert.equal(
@@ -35,6 +41,17 @@ export async function verifyManagedModels(
   assert.equal(
     (await repository.models.logos()).models.find((m) => m.id === "nano-banana-2.1")?.logoUrl,
     "https://logos.example.com/canonical.webp",
+  );
+  await sql`update model_catalog set name='目录显示名称',description='后台介绍',capability_summary='后台能力' where code='gpt-image-2'`;
+  assert.deepEqual(
+    (await repository.models.logos()).models.find((m) => m.id === "gpt-image-2"),
+    {
+      id: "gpt-image-2",
+      name: "目录显示名称",
+      logoUrl: "https://logos.example.com/image2.webp",
+      description: "后台介绍",
+      capabilitySummary: "后台能力",
+    },
   );
   const owner = await repository.provision(
     `managed-${crypto.randomUUID()}`,

@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 
-export function useModelLogos() {
+export function useModelPresentation() {
   return useQuery({
     queryKey: ["image-model-logos"],
     staleTime: 30_000,

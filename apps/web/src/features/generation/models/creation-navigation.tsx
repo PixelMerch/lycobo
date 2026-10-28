@@ -1,28 +1,11 @@
 import { Dropdown } from "@heroui/react";
+import { publicImageModelIds } from "@lycoboai/contracts";
 import { IconCheck, IconSparkles } from "@tabler/icons-react";
 import { useNavigate } from "react-router";
 import { FeatureNavigation } from "../../../components/feature-navigation";
 import { UiIcon } from "../../../components/ui-icon";
 import { useStudioStore } from "../studio-state";
-import { ModelLogo, useModelLogos } from "./model-logos";
-
-const navigationModels = [
-  {
-    id: "gpt-image-2",
-    description: "商品展示与日常图片编辑",
-    capabilities: "图文生成 · 参考图编辑",
-  },
-  {
-    id: "gpt-image-2.5",
-    description: "商业摄影与创意海报",
-    capabilities: "文字排版 · 写实画面",
-  },
-  {
-    id: "nano-banana-2.1",
-    description: "商品、人像与场景创作",
-    capabilities: "场景生成 · 创意表达",
-  },
-] as const;
+import { ModelLogo, useModelPresentation } from "./model-logos";
 
 export function CreationNavigation({
   collapsed,
@@ -33,7 +16,16 @@ export function CreationNavigation({
   mobile: boolean;
   onNavigate: () => void;
 }) {
-  const logos = useModelLogos();
+  const catalog = useModelPresentation();
+  const navigationModels =
+    catalog.data?.models ??
+    publicImageModelIds.map((id) => ({
+      id,
+      name: id,
+      logoUrl: null,
+      description: "",
+      capabilitySummary: "",
+    }));
   const activeModel = useStudioStore((s) => s.activeModel);
   const setActiveModel = useStudioStore((s) => s.setActiveModel);
   const navigate = useNavigate();
@@ -56,26 +48,34 @@ export function CreationNavigation({
         navigate("/create");
       }}
     >
-      {navigationModels.map((model) => (
-        <Dropdown.Item
-          key={model.id}
-          id={model.id}
-          textValue={model.id}
-          aria-label={`进入 ${model.id} 创作`}
-          className="feature-tool-card"
-        >
-          <ModelLogo src={logos.data?.models.find((entry) => entry.id === model.id)?.logoUrl} />
-          <span className="feature-tool-copy">
-            <span className="feature-tool-title">{model.id}</span>
-            <span className="feature-tool-description">{model.description}</span>
-            <span className="feature-tool-capabilities">{model.capabilities}</span>
-          </span>
-          {activeModel === model.id && (
-            <UiIcon icon={IconCheck} size="small" className="feature-tool-current" />
-          )}
-          {activeModel === model.id && <span className="sr-only">当前模型</span>}
-        </Dropdown.Item>
-      ))}
+      {navigationModels.map((model) => {
+        const id = model.id;
+        const name = model.name ?? id;
+        return (
+          <Dropdown.Item
+            key={id}
+            id={id}
+            textValue={name}
+            aria-label={`进入 ${name} 创作`}
+            className="feature-tool-card"
+          >
+            <ModelLogo src={model.logoUrl} />
+            <span className="feature-tool-copy">
+              <span className="feature-tool-title">{name}</span>
+              {model.description && (
+                <span className="feature-tool-description">{model.description}</span>
+              )}
+              {model.capabilitySummary && (
+                <span className="feature-tool-capabilities">{model.capabilitySummary}</span>
+              )}
+            </span>
+            {activeModel === id && (
+              <UiIcon icon={IconCheck} size="small" className="feature-tool-current" />
+            )}
+            {activeModel === id && <span className="sr-only">当前模型</span>}
+          </Dropdown.Item>
+        );
+      })}
     </FeatureNavigation>
   );
 }

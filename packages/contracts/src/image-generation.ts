@@ -140,7 +140,15 @@ export function imageProviderModel(input: Pick<ImageGenerationInput, "model" | "
 }
 // Public presentation metadata; provider configuration and credentials are never included.
 export const imageModelLogosResponseSchema = z.object({
-  models: z.array(z.object({ id: z.enum(publicImageModelIds), logoUrl: z.url().nullable() })),
+  models: z.array(
+    z.object({
+      id: z.enum(publicImageModelIds),
+      logoUrl: z.url().nullable(),
+      name: z.string().max(80).optional(),
+      description: z.string().max(160).optional(),
+      capabilitySummary: z.string().max(160).optional(),
+    }),
+  ),
 });
 
 export const imageModelCatalog = publicImageModelIds.map((id) => ({

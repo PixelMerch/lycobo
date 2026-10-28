@@ -74,6 +74,6 @@ provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 
 后台简化为中转站、模型目录、模型渠道、默认渠道四页。每站维护官网 website_url、API 源地址、一个加密 API Key。目录的名称、Logo 和分类供主站展示，同一目录可绑定多个中转站；实际调用名称按站保存在 model_channels.settings.upstreamModel，不能使用目录全局名称替代。原目录 upstream_model、provider_id 仅兼容旧版本，渠道映射为准。主站继续按默认路由解析渠道、站点及不可变凭据快照；不自动发布新目录条目。追加迁移 0029 增加官网与兼容关联列，不改历史任务。音乐、视频仍仅配置管理。后台目录绑定需要 catalog.save 和 channel.save，默认引用保护解绑；每站密钥替换保留旧版本。
 
 
-## 主站模型 Logo 展示
+## 主站模型展示信息
 
-主站创作导航从公开 GET /api/v1/image-model-logos 读取后台配置的 Logo。响应只包含现有三个公开图片模型的稳定 id 与 logoUrl，不暴露站点、调用模型或凭据，不自动新增可用模型。按 model_catalog.code 关联，禁止按显示名称或中转站调用名称猜测匹配；Banana 2.1 显式兼容旧目录标识 gemini-nano-banana-2.1 和 gemini-3.1-flash-image-preview，优先使用规范标识配置的 Logo；后台修改 Logo 后，主站刷新或查询过期后重新聚焦页面会更新。缺少 Logo、请求失败或图片失效时显示中性图片图标，不再使用示例照片。菜单尺寸、文字、权限和实际生成行为保持原样。
+主站创作导航从公开 GET /api/v1/image-model-logos 读取后台配置的展示名称、Logo、模型介绍和能力说明。响应仅包含现有三个公开图片模型的稳定 id、name、logoUrl、description 和 capabilitySummary，不暴露站点、调用模型或凭据，不自动新增可用模型。按 model_catalog.code 关联，禁止按显示名称或中转站调用名称猜测匹配；Banana 2.1 显式兼容旧目录标识 gemini-nano-banana-2.1 和 gemini-3.1-flash-image-preview，优先使用规范标识配置的 Logo；后台修改 Logo 后，主站刷新或查询过期后重新聚焦页面会更新。缺少 Logo、请求失败或图片失效时显示中性图片图标，不再使用示例照片。菜单尺寸、权限和实际生成行为保持原样；展示名称和两行介绍由后台配置，留空介绍不显示。0030_model_catalog_presentation 追加 description、capability_summary 并迁入原有文案，每项最多 160 字。
