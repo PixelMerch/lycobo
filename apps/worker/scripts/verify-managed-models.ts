@@ -654,73 +654,76 @@ export async function verifyManagedModels(
     assert.equal(nativeSnapshot?.provider_snapshot.adapter, "gemini-native");
   }
   assert.equal((await repository.wallet(geminiOwner)).balance, 0);
-  const grokModel = "managed-grok-fixture";
-  await sql`insert into model_catalog(code,name,category,enabled) values (${grokModel},'Grok fixture','image',1)`;
-  const grokOwner = await repository.provision(`grok-${crypto.randomUUID()}`, "grok-fixture", 40);
-  const grokChannel = await repository.models.saveChannel(owner.userId, undefined, {
-    ...geminiSettings,
-    name: "Grok fixture",
-    model: grokModel,
-    upstreamModel: "grok-imagine-image-2.0",
-    adapter: "fluxport-images",
-    mode: "async-preferred",
-    maxReferences: 1,
-  });
-  await repository.models.saveRoute(owner.userId, {
-    tool: "create",
-    model: grokModel,
-    channelId: grokChannel.id,
-  });
-  const grokReference = await store.put(grokOwner, png);
-  await repository.addReference(grokOwner, grokReference);
-  for (const edit of [false, true]) {
-    const grokInput = imageGenerationInputSchema.parse({
+  for (const upstreamModel of ["grok-imagine-image-2.0", "seedream-5.0-pro"]) {
+    const grokModel = `managed-${upstreamModel}`;
+    await sql`insert into model_catalog(code,name,category,enabled) values (${grokModel},'Grok fixture','image',1)`;
+    const grokOwner = await repository.provision(`grok-${crypto.randomUUID()}`, "grok-fixture", 40);
+    const grokChannel = await repository.models.saveChannel(owner.userId, undefined, {
+      ...geminiSettings,
+      name: "Grok fixture",
       model: grokModel,
-      prompt: "fixture",
-      referenceAssetIds: edit ? [grokReference.id] : [],
+      upstreamModel,
+      adapter: "fluxport-images",
+      mode: "async-preferred",
+      maxReferences: 1,
     });
-    const grokJob = await repository.create(grokOwner, grokInput, crypto.randomUUID(), 20, true);
-    const grokItem = (await repository.get(grokOwner, grokJob.id))?.items[0];
-    assert(grokItem);
-    let posts = 0;
-    let gets = 0;
-    const request: typeof fetch = async (url, init) => {
-      if (init?.method === "POST") {
-        posts++;
-        assert(String(url).endsWith(edit ? "/v1/images/edits" : "/v1/images/generations"));
-        const payload = JSON.parse(String(init.body));
-        assert.equal(payload.model, "grok-imagine-image-2.0");
-        assert.equal(payload.quality, undefined);
-        assert.equal(payload.n, 1);
-        if (edit) {
-          assert.equal(
-            payload.images[0].image_url,
-            `data:image/png;base64,${png.toString("base64")}`,
-          );
-          return Response.json(
-            {
-              task_id: "grok-fixture",
-              status: "queued",
-              status_url: "/v1/images/tasks/grok-fixture?view=summary",
-            },
-            { status: 202 },
-          );
-        }
-      } else gets++;
-      return Response.json({ data: [{ b64_json: png.toString("base64") }] });
-    };
-    await processImageItem(grokItem.id, { ...deps, request });
-    if (edit) {
-      await sql`update provider_executions set next_poll_at=now()-interval '1 second' where item_id=${grokItem.id}`;
+    await repository.models.saveRoute(owner.userId, {
+      tool: "create",
+      model: grokModel,
+      channelId: grokChannel.id,
+    });
+    const grokReference = await store.put(grokOwner, png);
+    await repository.addReference(grokOwner, grokReference);
+    for (const edit of [false, true]) {
+      const grokInput = imageGenerationInputSchema.parse({
+        model: grokModel,
+        prompt: "fixture",
+        referenceAssetIds: edit ? [grokReference.id] : [],
+      });
+      const grokJob = await repository.create(grokOwner, grokInput, crypto.randomUUID(), 20, true);
+      const grokItem = (await repository.get(grokOwner, grokJob.id))?.items[0];
+      assert(grokItem);
+      let posts = 0;
+      let gets = 0;
+      const request: typeof fetch = async (url, init) => {
+        if (init?.method === "POST") {
+          posts++;
+          assert(String(url).endsWith(edit ? "/v1/images/edits" : "/v1/images/generations"));
+          const payload = JSON.parse(String(init.body));
+          assert.equal(payload.model, upstreamModel);
+          assert.equal(payload.quality, undefined);
+          assert.equal(payload.n, 1);
+          if (edit) {
+            assert.equal(
+              payload.images[0].image_url,
+              `data:image/png;base64,${png.toString("base64")}`,
+            );
+            return Response.json(
+              {
+                task_id: "grok-fixture",
+                status: "queued",
+                status_url: "/v1/images/tasks/grok-fixture?view=summary",
+              },
+              { status: 202 },
+            );
+          }
+        } else gets++;
+        return Response.json({ data: [{ b64_json: png.toString("base64") }] });
+      };
       await processImageItem(grokItem.id, { ...deps, request });
+      if (edit) {
+        await sql`update provider_executions set next_poll_at=now()-interval '1 second' where item_id=${grokItem.id}`;
+        await processImageItem(grokItem.id, { ...deps, request });
+      }
+      await processImageItem(grokItem.id, { ...deps, request });
+      assert.equal(posts, 1);
+      assert.equal(gets, edit ? 1 : 0);
+      assert.equal((await repository.get(grokOwner, grokJob.id))?.status, "succeeded");
     }
-    await processImageItem(grokItem.id, { ...deps, request });
-    assert.equal(posts, 1);
-    assert.equal(gets, edit ? 1 : 0);
-    assert.equal((await repository.get(grokOwner, grokJob.id))?.status, "succeeded");
+    assert.equal((await repository.wallet(grokOwner)).balance, 0);
+    await sql`delete from model_routes where channel_id=${grokChannel.id}`;
   }
-  assert.equal((await repository.wallet(grokOwner)).balance, 0);
-  await sql`delete from model_routes where channel_id=${grokChannel.id}`;
+
   await sql`delete from model_routes where channel_id=${geminiChannel.id}`;
   await sql`delete from model_routes where channel_id=${textileChannel.id}`;
   // Subsequent integration cases must retain their original routing policy.

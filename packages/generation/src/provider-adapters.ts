@@ -39,8 +39,10 @@ function fields(snapshot: ProviderSnapshot, input: ImageGenerationInput) {
     prompt: input.prompt,
     size: `${Math.round(((w ?? 1) * scale) / 16) * 16}x${Math.round(((h ?? 1) * scale) / 16) * 16}`,
     n: 1,
-    // This Grok route publishes no quality enum; do not send GPT defaults to it.
-    ...(model === "grok-imagine-image-2.0" ? {} : { quality: input.quality ?? "medium" }),
+    // These Images routes publish no quality enum; do not send GPT defaults to them.
+    ...(["grok-imagine-image-2.0", "seedream-5.0-pro"].includes(model)
+      ? {}
+      : { quality: input.quality ?? "medium" }),
   };
 }
 export const imageProtocolAdapters: Record<ProviderSnapshot["adapter"], ImageProtocolAdapter> = {
