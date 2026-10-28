@@ -22,6 +22,7 @@ import {
 } from "./generation-client";
 import { GenerationHistory } from "./history/generation-history";
 import { HistoryIndex } from "./history/history-index";
+import { modelCapabilities, supportsReferences } from "./models/model-capabilities";
 import { ModelSelect } from "./models/model-select";
 import { ReferencePicker } from "./references/reference-picker";
 import { defaultDraft, type ModelId, useStudioStore } from "./studio-state";
@@ -65,8 +66,9 @@ function Workspace({ model }: { model: ModelId }) {
           : "服务暂时不可用，请稍后重试。"
         : null,
   );
-  const resolutions =
-    modelQuery.data?.models.find((entry) => entry.id === model)?.enabledResolutions ?? [];
+  const capabilities = modelCapabilities(modelQuery.data, model, "create");
+  const resolutions = capabilities?.enabledResolutions ?? [];
+  const referencesSupported = supportsReferences(capabilities, draft.references.length);
   const pending = usePendingSubmission(session.data);
   const canGenerate =
     session.isSuccess &&
@@ -75,7 +77,7 @@ function Workspace({ model }: { model: ModelId }) {
     (pending ||
       (draft.prompt.trim().length > 0 &&
         resolutions.some((value) => value === draft.resolution) &&
-        (!draft.references.length || modelQuery.data.editsEnabled)));
+        referencesSupported));
   useEffect(() => {
     visitModel(model);
   }, [model, visitModel]);
@@ -173,11 +175,13 @@ function Workspace({ model }: { model: ModelId }) {
               </Alert.Content>
             </Alert>
           )}
-          {draft.references.length > 0 && modelQuery.data && !modelQuery.data.editsEnabled && (
+          {draft.references.length > 0 && modelQuery.data && !referencesSupported && (
             <Alert className="generation-message" role="status" status="warning">
               <Alert.Content>
                 <Alert.Description>
-                  当前服务尚未启用参考图编辑，可先不上传图片进行创作。
+                  {capabilities?.editsEnabled
+                    ? `当前模型最多支持 ${capabilities.maxReferences} 张参考图，请减少后生成。`
+                    : "当前模型暂不支持参考图编辑，请移除参考图后生成。"}
                 </Alert.Description>
               </Alert.Content>
             </Alert>

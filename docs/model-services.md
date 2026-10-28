@@ -116,13 +116,13 @@ W2MTDUFDF 连续 HTTP 400 的原因是旧任务固定了 fluxport-images，后�
 
 依据 [grok-imagine-image-2.0 分组 115 文档](https://uselg.top/docs?model=grok-imagine-image-2.0&group_id=115&offer_id=media_6d7e42e826e7510842fd430993768372)，Grok 复用 OpenAI 兼容 Images API，文生图 POST /v1/images/generations，参考图通过 /v1/images/edits 的 images[].image_url Data URI 发送；Bearer 鉴权、n=1、HTTP 200/202 和现有持久化查询／下载／计费流程不变。不增加 Grok 协议下拉选项。
 
-该线路未声明质量枚举，因此按最终上游模型 ID（而非展示名或目录 code）识别 grok-imagine-image-2.0，省略 quality，避免继承 GPT 默认 medium。仍按任务分辨率计算像素 size，4K 最长边 3840；接口的 1K／2K／4K 选项和请求构造测试不证明供应商接受全部尺寸。此文档没有完整发布具体尺寸和参考图上限；本地参考图限制为应用侧 1 张，不能据此宣称供应商上限或真实编辑已验证。
+该线路未声明质量枚举，因此按最终上游模型 ID（而非展示名或目录 code）识别 grok-imagine-image-2.0，省略 quality，避免继承 GPT 默认 medium。仍按任务分辨率计算像素 size，4K 最长边 3840；接口的 1K／2K／4K 选项和请求构造测试不证明供应商接受全部尺寸。此文档没有完整发布具体尺寸和参考图上限；最新最小请求实测中参考图编辑仍失败，因此本地现设为文生图专用（editsEnabled=false、maxReferences=0），不能据文档字段宣称真实编辑已验证。
 
-本地已有 Grok 2 目录和渠道，调用名为 grok-imagine-image-2.0；已启用目录，渠道沿用中转站协议、异步优先，并绑定 create／local-edit 默认路由。没有将 Grok 用于家纺默认模型。目录稳定 code 与调用名分离，前端继续读取公开配置。
+本地已有 Grok 2 目录和渠道，调用名为 grok-imagine-image-2.0；已启用目录，渠道沿用中转站协议、异步优先，仅保留 create 默认路由，移除 local-edit 路由。没有将 Grok 用于家纺默认模型。目录稳定 code 与调用名分离，前端继续读取公开配置。
 
 最初 /v1/models 未包含 Grok；用户明确授权后，已在中转站为现有 lyco 密钥追加分组 115，保留原 7 个分组与顺序，Grok 排第 8。只读复查 HTTP 200 且公开模型列表已包含 grok-imagine-image-2.0。此授权变更发生在共享密钥上，会影响所有使用该密钥的环境；本轮没有部署或修改线上数据库。
 
-已验证请求不带 quality、正确生成／编辑端点和参考图格式、同步／异步图片处理，以及真实隔离数据库下的原子扣费、单次提交和重复消费幂等。本轮未发起 Grok 付费生成，模型列表与权限检查不代表实际生成、参考编辑和各分辨率全部验收。
+已验证请求不带 quality、正确生成／编辑端点和参考图格式、同步／异步图片处理，以及真实隔离数据库下的原子扣费、单次提交和重复消费幂等。付费对照结果见下表；不能据文生图成功宣称参考编辑和各分辨率全部验收。
 
 ## Seedream 5.0 Pro（2026-10-28）
 
@@ -137,3 +137,19 @@ Seedream 文档未声明质量枚举，与 Grok 一样不发送 GPT 默认 quali
 该任务为 2K 参考图编辑，快照为 fluxport-images；请求构造使用 application/json 和 JSON 字符串，字段为 model/prompt/size/n/response_format/async/images。中转站接受异步并返回 imgtask_c4ac7e0e-880a-47a9-ad88-5bfbbe772d37，随后 generation 阶段失败，错误记录提示当前接口要求 JSON。本地并未使用 multipart；尚不能仅凭此错误确定中转站内部转发与上游接口之间的具体原因，禁止将其写为已修复。
 
 依照用户此前付费调试授权，另对同一任务进行一次同步模式诊断（子项 72c4ed79-50b0-46dc-964a-75dbe5ce9450），收到 HTTP 502。随后只读任务列表按 client_request_id 找到 imgtask_c5ef04f1-f87a-4364-adfd-40847391097a，状态 failed、请求 1、成功 0、charged_amount 0；通过组织管理员 reconcile-failure 接口保存证据并退回本次 20 积分。没有再次付费重发，Grok 渠道已恢复原 async-preferred。此诊断没有证明 JSON 错误已修复或供应商 2K 规格可用。需中转站核对该 Grok 生成线路；本地不擅自改用 Gemini 协议或未经文档支持的端点来绕过。
+
+### Grok JSON 最小请求对照（2026-10-28）
+
+用户授权真实付费测试后，在本地账号和本地私有 S3 中逐次创建持久化任务，每次一张、一次付费 POST；轮询和下载未重新生成。通过实际 Request 序列化核对 Content-Type 为 application/json 且正文可解析为 JSON；不记录原始提示词、素材、认证头或供应商完整响应。
+
+| 本地任务 | 端点与字段 | 结果与账务 |
+| --- | --- | --- |
+| WWQKPMA62 | generations：model、prompt、n | 成功，输出960×960，扣20积分 |
+| W6LC7IVER | edits：model、prompt、n、images[].image_url；单张 Data URI，不带size／quality／response_format | 异步受理后失败，仍提示需要JSON；扣20后自动退20 |
+| W9JS0JM54 | generations：正常应用请求model、prompt、size、n、response_format、async | 成功，输出960×960，扣20积分 |
+
+编辑失败的上游任务为 imgtask_0b5d78a2-8ad9-4954-88e3-e9edc23d75d3，终态failed、成功0、charged_amount=0，错误码image_generation_failed。即使移除附加参数仍失败，尚不能判定中转站内部具体转发原因；不将编辑错误记为已修复。本次净扣40积分；两张成功结果均持久化到本地存储。请求1K并收到960×960，未验证精确像素控制、2K或4K能力。
+
+本地Grok渠道现收敛为已验证的文生图，目录继续启用，不修改其他模型或线上配置。主站提交、历史重试、局部编辑和家纺生成均按tools中当前模型的能力及参考图上限判断，不再用全局editsEnabled替代单个渠道能力；tools存在但对应功能未配置时保持不可用，仅对没有tools的旧版响应保留兼容。Grok带参考图的草稿保留并提示移除参考图后生成，不静默丢弃用户素材或产生扣费。
+
+回归验证：pnpm check通过（37个测试文件，187通过、1跳过）；定向浏览器测试覆盖当前模型不支持参考图但全局开启时禁用提交／重试、清除参考图恢复文生图、家纺10视角与6张参考图提交、局部编辑提交，3项通过。未运行完整本地E2E，未推送或部署线上。

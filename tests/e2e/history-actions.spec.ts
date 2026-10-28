@@ -345,3 +345,50 @@ test("generated results stay separated from reference images by 24px", async ({ 
   });
   expect(gap).toBe(24);
 });
+
+test("a text-only model blocks restored references even when another model supports editing", async ({
+  page,
+}) => {
+  await historyFixture(page);
+  await page.route("**/api/v1/image-models", (route) =>
+    route.fulfill({
+      json: {
+        enabled: true,
+        editsEnabled: true,
+        unitCredits: 20,
+        models: [{ id: "gpt-image-2.5", enabledResolutions: ["1K"] }],
+        tools: {
+          create: [
+            {
+              id: "gpt-image-2.5",
+              enabledResolutions: ["1K"],
+              editsEnabled: false,
+              maxReferences: 0,
+              managed: true,
+            },
+            {
+              id: "nano-banana-2.1",
+              enabledResolutions: ["1K"],
+              editsEnabled: true,
+              maxReferences: 5,
+              managed: true,
+            },
+          ],
+        },
+      },
+    }),
+  );
+  await page.reload();
+  const regenerate = page.getByRole("button", { name: "重新生成", exact: true });
+  await expect(regenerate).toBeDisabled();
+  await page.getByRole("button", { name: "重新编辑", exact: true }).click();
+  await expect(page.locator(".reference-tile")).toHaveCount(2);
+  const submit = page.locator(".generation-submit");
+  await expect(submit).toBeDisabled();
+  await expect(
+    page.getByText("当前模型暂不支持参考图编辑，请移除参考图后生成。", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "清除全部参考图片", exact: true }).click();
+  await expect(page.locator(".reference-tile")).toHaveCount(0);
+  await expect(submit).toBeEnabled();
+});

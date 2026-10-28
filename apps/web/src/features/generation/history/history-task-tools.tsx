@@ -23,6 +23,7 @@ import {
   useImageSession,
   usePendingSubmission,
 } from "../generation-client";
+import { modelCapabilities, supportsReferences } from "../models/model-capabilities";
 import { ReferenceThumbnails } from "../references/reference-thumbnails";
 import { type Draft, type ModelId, useStudioStore } from "../studio-state";
 import { HistoryDownloadButton } from "./history-download-button";
@@ -116,17 +117,14 @@ export function HistoryTaskActions({
     !!job.input?.textileSet &&
     job.input.textileSet.version < 5 &&
     targets.every((entry) => entry.status === "failed");
-  const availableModels = job.input?.textileSet
-    ? (models.data?.tools?.["textile-set"] ?? models.data?.models)
-    : models.data?.models;
+  const capabilities = modelCapabilities(
+    models.data,
+    upgradeTextile ? "gpt-image-2.5" : job.model,
+    job.input?.textileSet ? "textile-set" : job.input?.localEdit ? "local-edit" : "create",
+  );
   const configured =
-    models.data?.enabled &&
-    availableModels?.some(
-      (model) =>
-        model.id === (upgradeTextile ? "gpt-image-2.5" : publicImageModel(job.model)) &&
-        model.enabledResolutions.some((resolution) => resolution === job.resolution),
-    ) &&
-    (!job.input?.referenceAssetIds.length || models.data.editsEnabled);
+    capabilities?.enabledResolutions.some((resolution) => resolution === job.resolution) &&
+    supportsReferences(capabilities, job.input?.referenceAssetIds.length ?? 0);
   const retrying =
     !!item || ["failed", "partially_failed", "needs_reconciliation"].includes(job.status);
   const count = item
