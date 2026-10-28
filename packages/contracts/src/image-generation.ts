@@ -138,6 +138,11 @@ export function imageProviderModel(input: Pick<ImageGenerationInput, "model" | "
   if (model === "gpt-image-2.5") return "gpt-image-2.5-sunburst";
   return "gemini-nano-banana-2.1";
 }
+// Public presentation metadata; provider configuration and credentials are never included.
+export const imageModelLogosResponseSchema = z.object({
+  models: z.array(z.object({ id: z.enum(publicImageModelIds), logoUrl: z.url().nullable() })),
+});
+
 export const imageModelCatalog = publicImageModelIds.map((id) => ({
   id,
   allowedResolutions: ["1K", "2K", "4K"] as ImageResolution[],

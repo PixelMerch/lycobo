@@ -15,6 +15,9 @@ function fixture(editsEnabled = false) {
   const repository: ImageRepository = {
     close: unexpected,
     models: {
+      logos: async () => ({
+        models: [{ id: "gpt-image-2", logoUrl: "https://logos.example.com/model.webp" }],
+      }),
       list: unexpected,
       saveProvider: unexpected,
       saveChannel: unexpected,
@@ -213,4 +216,13 @@ it("accepts one main plus five details and rejects a sixth detail", async () => 
     ).status,
   ).toBe(400);
   expect(create).toHaveBeenCalledTimes(1);
+});
+
+it("serves display-only model logos without a session or provider secrets", async () => {
+  const { app } = fixture();
+  const response = await app.request("/api/v1/image-model-logos");
+  expect(response.status).toBe(200);
+  expect(unwrapApiData(await response.json())).toEqual({
+    models: [{ id: "gpt-image-2", logoUrl: "https://logos.example.com/model.webp" }],
+  });
 });

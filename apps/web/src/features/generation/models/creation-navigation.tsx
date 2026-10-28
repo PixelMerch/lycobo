@@ -4,23 +4,21 @@ import { useNavigate } from "react-router";
 import { FeatureNavigation } from "../../../components/feature-navigation";
 import { UiIcon } from "../../../components/ui-icon";
 import { useStudioStore } from "../studio-state";
+import { ModelLogo, useModelLogos } from "./model-logos";
 
 const navigationModels = [
   {
     id: "gpt-image-2",
-    cover: "image-2",
     description: "商品展示与日常图片编辑",
     capabilities: "图文生成 · 参考图编辑",
   },
   {
     id: "gpt-image-2.5",
-    cover: "image-2-5",
     description: "商业摄影与创意海报",
     capabilities: "文字排版 · 写实画面",
   },
   {
     id: "nano-banana-2.1",
-    cover: "banana",
     description: "商品、人像与场景创作",
     capabilities: "场景生成 · 创意表达",
   },
@@ -35,6 +33,7 @@ export function CreationNavigation({
   mobile: boolean;
   onNavigate: () => void;
 }) {
+  const logos = useModelLogos();
   const activeModel = useStudioStore((s) => s.activeModel);
   const setActiveModel = useStudioStore((s) => s.setActiveModel);
   const navigate = useNavigate();
@@ -65,14 +64,7 @@ export function CreationNavigation({
           aria-label={`进入 ${model.id} 创作`}
           className="feature-tool-card"
         >
-          <img
-            src={`/studio/models/${model.cover}-1.webp`}
-            width="64"
-            height="64"
-            alt=""
-            decoding="async"
-            draggable={false}
-          />
+          <ModelLogo src={logos.data?.models.find((entry) => entry.id === model.id)?.logoUrl} />
           <span className="feature-tool-copy">
             <span className="feature-tool-title">{model.id}</span>
             <span className="feature-tool-description">{model.description}</span>

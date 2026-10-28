@@ -21,6 +21,8 @@
 | docs/design | 当前认可的设计参考 |
 | .agents/skills | 锁定来源的团队技能快照 |
 
+创作导航的后台 Logo 由 features/generation/models/model-logos.tsx 通过 TanStack Query 读取公开元数据；API 的 image-model-logos 只返回现有公开模型 id 与 logoUrl，数据库层按目录标识显式映射，不返回供应商配置。
+
 ## 前端功能目录
 
 ```text

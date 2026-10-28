@@ -17,6 +17,25 @@ export async function verifyManagedModels(
   store: ImageStore,
   png: Buffer,
 ) {
+  await sql`update model_catalog set logo_url='https://logos.example.com/image2.webp' where code='gpt-image-2'`;
+  const logos = await repository.models.logos();
+  if (
+    logos.models.find((m) => m.id === "gpt-image-2")?.logoUrl !==
+    "https://logos.example.com/image2.webp"
+  )
+    throw new Error("Configured model logo was not exposed");
+  if (logos.models.some((m) => Object.keys(m).some((key) => !["id", "logoUrl"].includes(key))))
+    throw new Error("Provider configuration leaked through model logos");
+  await sql`insert into model_catalog(code,name,category,logo_url,enabled) values ('gemini-3.1-flash-image-preview','Banana fixture','image','https://logos.example.com/banana.webp',1)`;
+  assert.equal(
+    (await repository.models.logos()).models.find((m) => m.id === "nano-banana-2.1")?.logoUrl,
+    "https://logos.example.com/banana.webp",
+  );
+  await sql`update model_catalog set logo_url='https://logos.example.com/canonical.webp' where code='nano-banana-2.1'`;
+  assert.equal(
+    (await repository.models.logos()).models.find((m) => m.id === "nano-banana-2.1")?.logoUrl,
+    "https://logos.example.com/canonical.webp",
+  );
   const owner = await repository.provision(
     `managed-${crypto.randomUUID()}`,
     "managed-fixture",

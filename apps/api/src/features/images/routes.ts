@@ -77,6 +77,8 @@ export function imageRoutes(deps: ImageApiDependencies) {
     setWorkbenchCookie(c, deps.session);
     return c.json({ userId: principal.userId, organizationId: principal.organizationId });
   });
+  // Display-only metadata is public; authenticated task and capability routes stay below.
+  app.get("/image-model-logos", async (c) => c.json(await deps.repository.models.logos()));
   app.use("*", async (c, next) => {
     const principal = await resolvePrincipal(c);
     if (!principal) return fail(c, "UNAUTHORIZED", "请先验证身份", 401);

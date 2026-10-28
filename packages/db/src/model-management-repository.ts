@@ -2,9 +2,11 @@ import {
   channelInputSchema,
   type ImageGenerationInput,
   imageModelCatalog,
+  imageModelLogosResponseSchema,
   modelRouteInputSchema,
   providerSnapshotSchema,
   publicImageModel,
+  publicImageModelIds,
 } from "@lycoboai/contracts";
 import type postgres from "postgres";
 
@@ -12,6 +14,29 @@ export function modelManagementRepository(sql: postgres.Sql) {
   const audit = (tx: postgres.TransactionSql, actor: string, action: string, id: string) =>
     tx`insert into model_audit_events (actor_id,action,resource_id) values (${actor},${action},${id})`;
   return {
+    async logos() {
+      // Explicit legacy catalog identities; never infer identity from display names.
+      const identities = {
+        "gpt-image-2": ["gpt-image-2"],
+        "gpt-image-2.5": ["gpt-image-2.5"],
+        "nano-banana-2.1": [
+          "nano-banana-2.1",
+          "gemini-nano-banana-2.1",
+          "gemini-3.1-flash-image-preview",
+        ],
+      };
+      const rows =
+        await sql`select code,logo_url from model_catalog where category='image' and code in ${sql(Object.values(identities).flat())}`;
+      return imageModelLogosResponseSchema.parse({
+        models: publicImageModelIds.map((id) => ({
+          id,
+          logoUrl:
+            identities[id]
+              .map((code) => rows.find((row) => row.code === code)?.logo_url)
+              .find((url) => url != null) ?? null,
+        })),
+      });
+    },
     async list() {
       const [providers, channels, routes] = await Promise.all([
         sql`select id,name,origin,adapter,enabled=1 as enabled,true as key_configured,updated_at from model_providers order by created_at`,
