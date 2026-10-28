@@ -52,7 +52,8 @@ export function imageObjectBucket(env: S3Bindings, fallback: ImageObjectBucket):
         ...(headers ? { headers } : {}),
         ...(data ? { body: new Uint8Array(data) } : {}),
         signal: AbortSignal.timeout(20000),
-        redirect: "error",
+        // Workers rejects "error"; non-2xx responses below also reject redirects.
+        redirect: "manual",
       });
       if (response.status === 404) {
         await response.body?.cancel();

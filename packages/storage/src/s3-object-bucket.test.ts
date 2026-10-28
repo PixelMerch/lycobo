@@ -122,3 +122,23 @@ it.skipIf(process.env.ALLOW_LOCAL_S3_INTEGRATION !== "true")(
   },
   30000,
 );
+
+it("uses Workers-compatible manual redirects and refuses S3 redirects without forwarding credentials", async () => {
+  const fallback = { head: vi.fn(), get: vi.fn(), put: vi.fn(), delete: vi.fn() };
+  const request = vi
+    .spyOn(globalThis, "fetch")
+    .mockResolvedValue(
+      new Response(null, { status: 302, headers: { Location: "https://untrusted.example.com/" } }),
+    );
+  try {
+    await expect(imageObjectBucket(config, fallback).get("fixture.png")).rejects.toThrow(
+      "IMAGE_STORAGE_UNAVAILABLE",
+    );
+    expect(request).toHaveBeenCalledTimes(1);
+    const call = request.mock.calls[0];
+    expect(call && new Request(call[0], call[1]).redirect).toBe("manual");
+    expect(fallback.get).not.toHaveBeenCalled();
+  } finally {
+    request.mockRestore();
+  }
+});
