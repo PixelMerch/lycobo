@@ -33,12 +33,14 @@ function fields(snapshot: ProviderSnapshot, input: ImageGenerationInput) {
   const [w, h] = input.aspectRatio.split(":").map(Number);
   const edge = { "1K": 1024, "2K": 2048, "4K": 3840 }[input.resolution];
   const scale = edge / Math.max(w ?? 1, h ?? 1);
+  const model = snapshot.upstreamModelsByResolution?.[input.resolution] ?? snapshot.upstreamModel;
   return {
-    model: snapshot.upstreamModelsByResolution?.[input.resolution] ?? snapshot.upstreamModel,
+    model,
     prompt: input.prompt,
     size: `${Math.round(((w ?? 1) * scale) / 16) * 16}x${Math.round(((h ?? 1) * scale) / 16) * 16}`,
     n: 1,
-    quality: input.quality ?? "medium",
+    // This Grok route publishes no quality enum; do not send GPT defaults to it.
+    ...(model === "grok-imagine-image-2.0" ? {} : { quality: input.quality ?? "medium" }),
   };
 }
 export const imageProtocolAdapters: Record<ProviderSnapshot["adapter"], ImageProtocolAdapter> = {

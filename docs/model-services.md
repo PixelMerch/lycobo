@@ -111,3 +111,15 @@ W2MTDUFDF 连续 HTTP 400 的原因是旧任务固定了 fluxport-images，后�
 用户明确授权真实付费验证后，对本地 W2MTDUFDF 只重试 1 张 Banana Pro（gemini-3-pro-image-preview），原生 Gemini 异步任务完成并入私有存储；主站任务 API succeeded、缩略图 HTTP 200 WebP，人工查看确认粉色改红色且白色保留。该新尝试账本只有一笔 -20 积分，没有自动追加付费重试；未操作线上环境。
 
 隔离回归先复现旧快照仍为 fluxport-images，再验证主动重试切换协议、旧配置留证、重复重试不重复扣费及新协议生成完成；pnpm check 和本地隔离集成通过。不以此单次验证宣称所有模型、分辨率或 Key 分组都已验收。
+
+## Grok 图片接入（2026-10-28）
+
+依据 [grok-imagine-image-2.0 分组 115 文档](https://uselg.top/docs?model=grok-imagine-image-2.0&group_id=115&offer_id=media_6d7e42e826e7510842fd430993768372)，Grok 复用 OpenAI 兼容 Images API，文生图 POST /v1/images/generations，参考图通过 /v1/images/edits 的 images[].image_url Data URI 发送；Bearer 鉴权、n=1、HTTP 200/202 和现有持久化查询／下载／计费流程不变。不增加 Grok 协议下拉选项。
+
+该线路未声明质量枚举，因此按最终上游模型 ID（而非展示名或目录 code）识别 grok-imagine-image-2.0，省略 quality，避免继承 GPT 默认 medium。仍按任务分辨率计算像素 size，4K 最长边 3840；接口的 1K／2K／4K 选项和请求构造测试不证明供应商接受全部尺寸。此文档没有完整发布具体尺寸和参考图上限；本地参考图限制为应用侧 1 张，不能据此宣称供应商上限或真实编辑已验证。
+
+本地已有 Grok 2 目录和渠道，调用名为 grok-imagine-image-2.0；已启用目录，渠道沿用中转站协议、异步优先，并绑定 create／local-edit 默认路由。没有将 Grok 用于家纺默认模型。目录稳定 code 与调用名分离，前端继续读取公开配置。
+
+最初 /v1/models 未包含 Grok；用户明确授权后，已在中转站为现有 lyco 密钥追加分组 115，保留原 7 个分组与顺序，Grok 排第 8。只读复查 HTTP 200 且公开模型列表已包含 grok-imagine-image-2.0。此授权变更发生在共享密钥上，会影响所有使用该密钥的环境；本轮没有部署或修改线上数据库。
+
+已验证请求不带 quality、正确生成／编辑端点和参考图格式、同步／异步图片处理，以及真实隔离数据库下的原子扣费、单次提交和重复消费幂等。本轮未发起 Grok 付费生成，模型列表与权限检查不代表实际生成、参考编辑和各分辨率全部验收。
