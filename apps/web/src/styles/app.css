@@ -2086,7 +2086,7 @@ p.home-hero-kicker {
   margin-top: 0;
 }
 .generation-results[data-count="1"] {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 400px);
 }
 .generation-results[data-count="2"] {
   grid-template-columns: repeat(2, minmax(0, 400px));
