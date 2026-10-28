@@ -7,6 +7,8 @@ import { useErrorToast } from "../../../lib/error-toast";
 import type { PreviewImage } from "../../image-workspace/image-preview";
 import { useImageHistory, useImageSession } from "../generation-client";
 import { GenerationLoading, statusLabel } from "../generation-status";
+import { modelDisplayName } from "../models/model-display-name";
+import { useModelPresentation } from "../models/model-logos";
 import { useStudioStore } from "../studio-state";
 import { HistoryImagePreview, historyPreviewImages } from "./history-image-preview";
 import { historyContentTop } from "./history-navigation";
@@ -26,6 +28,7 @@ export function GenerationHistory({
 }) {
   const session = useImageSession();
   const query = useImageHistory(tool);
+  const catalog = useModelPresentation();
   const target = useHistoryTaskTarget(compact);
   const targetJob =
     target && (tool === "textile") === !!target.input?.textileSet ? target : undefined;
@@ -119,7 +122,10 @@ export function GenerationHistory({
             data-active={!compact && activeHistoryId === job.id ? "true" : undefined}
           >
             <header>
-              <HistoryTaskMeta job={job} />
+              <HistoryTaskMeta
+                job={job}
+                modelName={modelDisplayName(job.model, catalog.data?.models ?? [])}
+              />
               {!compact && <HistoryTaskActions job={job} onRestore={onRestore} />}
             </header>
             {compact ? (

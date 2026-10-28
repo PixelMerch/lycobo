@@ -32,10 +32,12 @@ function CopyIconButton({ value, label }: { value: string; label: string }) {
 export function ImagePreviewDetails({
   source: active,
   meta,
+  modelName,
   onRepair,
 }: {
   source: PreviewImage;
   meta: PreviewMeta;
+  modelName: string;
   onRepair: () => void;
 }) {
   const favorite = useStudioStore((s) => s.favorites.includes(active.id));
@@ -48,7 +50,7 @@ export function ImagePreviewDetails({
       <header className="image-preview-head">
         <span className="image-preview-model">
           <UiIcon icon={IconBrandOpenai} size="default" />
-          <span>{meta.model ?? "图片"}</span>
+          <span>{modelName}</span>
         </span>
         <span className="image-preview-tools">
           <Tooltip delay={0}>

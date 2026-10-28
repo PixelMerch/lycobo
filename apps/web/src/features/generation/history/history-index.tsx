@@ -8,11 +8,14 @@ import { LibraryDialog } from "../../assets/library-dialog";
 import { AssetImage } from "../asset-image";
 import { useDeleteHistoryTask, useImageHistory } from "../generation-client";
 import { GenerationLoading, statusLabel } from "../generation-status";
+import { modelDisplayName } from "../models/model-display-name";
+import { useModelPresentation } from "../models/model-logos";
 import { useStudioStore } from "../studio-state";
 import { scrollToHistoryTask } from "./history-navigation";
 
 export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" }) {
   const query = useImageHistory(tool);
+  const catalog = useModelPresentation();
   const deletion = useDeleteHistoryTask();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   useErrorToast(deletion.error?.message);
@@ -82,7 +85,12 @@ export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" 
                       </span>
                     ) : image ? (
                       <span className="history-thumbnail-frame">
-                        <AssetImage assetId={image} thumbnail alt={job.model} loading="lazy" />
+                        <AssetImage
+                          assetId={image}
+                          thumbnail
+                          alt={modelDisplayName(job.model, catalog.data?.models ?? [])}
+                          loading="lazy"
+                        />
                       </span>
                     ) : (
                       <span>{statusLabel[job.status]}</span>
