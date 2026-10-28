@@ -2,10 +2,11 @@ import { openImageRepository } from "@lycoboai/db";
 import { readImagePolicy } from "@lycoboai/generation";
 import { dispatchImageOutbox, type ImageQueueSender } from "@lycoboai/queue";
 import { r2ImageStore } from "@lycoboai/storage/r2";
+import { imageObjectBucket, type S3Bindings } from "@lycoboai/storage/s3";
 import { processImageItem } from "../src/image-processor";
 import { consumeImageMessages } from "../src/queue-consumer";
 
-export interface GenerationBindings {
+export interface GenerationBindings extends S3Bindings {
   HYPERDRIVE: Hyperdrive;
   IMAGES_BUCKET: R2Bucket;
   IMAGES: ImagesBinding;
@@ -34,8 +35,9 @@ export async function processGenerationBatch(
   // Configured tasks own their origin and credentials. Legacy settings are validated
   // only by the legacy adapter after a task has been claimed.
   const baseUrl = env.VAKV_BASE_URL || "https://api.vakv.cn";
+  const bucket = imageObjectBucket(env, env.IMAGES_BUCKET);
   const repository = openImageRepository(env.HYPERDRIVE.connectionString, true);
-  const store = r2ImageStore(env.IMAGES_BUCKET, env.IMAGES, repository.storageUid);
+  const store = r2ImageStore(bucket, env.IMAGES, repository.storageUid);
   try {
     await consumeImageMessages(batch, (itemId, deliveryId) =>
       processImageItem(itemId, {

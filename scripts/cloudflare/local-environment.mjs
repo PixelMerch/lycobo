@@ -5,7 +5,9 @@ export function localEnvironment(source, docker = false, modelSettings = source)
   const env = Object.fromEntries(
     Object.entries(source).filter(
       ([key]) =>
-        !/^(?:CLOUDFLARE_|CF_|SUPABASE_|AUTH_|ASSET_|VAKV_|IMAGE_|MODEL_|WRANGLER_)/.test(key) &&
+        !/^(?:CLOUDFLARE_|CF_|SUPABASE_|AUTH_|ASSET_|VAKV_|IMAGE_|MODEL_|WRANGLER_|S3_)/.test(
+          key,
+        ) &&
         key !== "DATABASE_URL" &&
         key !== "LOCAL_IMAGE_GENERATION_ENABLED" &&
         !key.startsWith("LOCAL_QUEUE_") &&
@@ -36,6 +38,14 @@ export function localEnvironment(source, docker = false, modelSettings = source)
     ])
       if (modelSettings[key]) env[key] = modelSettings[key];
   }
+  if (docker)
+    Object.assign(env, {
+      S3_ENDPOINT: "http://image-storage:8333",
+      S3_BUCKET: "generated-images",
+      S3_REGION: "us-east-1",
+      S3_ACCESS_KEY_ID: "local-image-dev",
+      S3_SECRET_ACCESS_KEY: "local-image-dev-only",
+    });
   env.WRANGLER_SEND_METRICS = "false";
   env.LOCAL_REDIS_URL = docker ? "redis://redis:6379" : "redis://127.0.0.1:56379";
   env.LOCAL_QUEUE_TOKEN = randomBytes(32).toString("hex");

@@ -8,14 +8,17 @@
     "./core": "./src/core.ts",
     "./r2": "./src/r2-image-store.ts",
     "./delivery": "./src/asset-delivery.ts",
-    "./variants": "./src/image-variants.ts"
+    "./variants": "./src/image-variants.ts",
+    "./s3": "./src/s3-object-bucket.ts",
+    "./bucket": "./src/object-bucket.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "zod": "4.6.7",
     "@lycoboai/contracts": "workspace:*",
-    "sharp": "0.35.5"
+    "aws4fetch": "1.0.20",
+    "sharp": "0.35.5",
+    "zod": "4.6.7"
   }
 }

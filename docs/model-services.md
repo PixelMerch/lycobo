@@ -63,3 +63,5 @@ provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 
 图片消费者优先读取所选 Key 的当前凭据版本，在任务接收时固定快照，目录模型及所选 Key 停用后拒绝新任务。既有图片能力参数、账务和异步流程不改变。音乐/视频仅管理配置，不代表执行协议、播放或计费已接通；主站逻辑图片模型枚举不因后台新目录自动扩展。
 
 共享本地库已通过 db:migrate 升级；独立后台 init.sql 含同等基线，详细操作见相邻 lycobo-admin/docs/model-services.md。此次没有线上迁移、付费调用或部署；未来发布须先完成数据库迁移，再更新读取新表/列的服务。
+
+模型目录新增 nullable logo_url，仅保存公开 Logo 对象地址；上传和展示由独立 admin 负责，共享追加迁移 0027。Logo 的公开桶与主站生成图片私有桶隔离，见 [私有 S3 存储](s3-storage.md)。

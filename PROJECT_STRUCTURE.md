@@ -16,7 +16,7 @@
 | packages/db | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY |
 | packages/queue | ID-only 消息契约、持久 outbox 投递、开发专用 HTTP sender；线上使用 Cloudflare Queues |
 | packages/generation | 服务商契约、Vakv 同步兼容、可配置 OpenAI／FluxPort 同异步适配与密钥加密（真实渠道待验收） |
-| packages/storage | 私有 R2／UID 路径、Images binding 校验和缩略图；Node 本地存储供隔离测试 |
+| packages/storage | 私有 S3/R2 适配、UID 路径、Images binding 校验和缩略图；Node 本地存储供隔离测试 |
 | tests/e2e | 浏览器关键路径验收 |
 | docs/design | 当前认可的设计参考 |
 | .agents/skills | 锁定来源的团队技能快照 |

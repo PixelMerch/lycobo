@@ -4,10 +4,11 @@ import { readImagePolicy, supportedResolutions, validateModelInput } from "@lyco
 import { dispatchImageOutbox, type ImageQueueSender } from "@lycoboai/queue";
 import { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { r2ImageStore } from "@lycoboai/storage/r2";
+import { imageObjectBucket, type S3Bindings } from "@lycoboai/storage/s3";
 import { createApp } from "../src/app";
 import { enterpriseAuth, readAuthConfig } from "../src/features/auth/service";
 
-export interface ApiBindings {
+export interface ApiBindings extends S3Bindings {
   ASSET_SIGNING_SECRET?: string;
   ASSET_PUBLIC_ORIGIN?: string;
   HYPERDRIVE: Hyperdrive;
@@ -95,6 +96,7 @@ async function handleRequest(
     AUTH_TRUSTED_ORIGINS: env.AUTH_TRUSTED_ORIGINS,
   });
   if (!authConfig) return unavailable("AUTH_NOT_CONFIGURED");
+  const bucket = imageObjectBucket(env, env.IMAGES_BUCKET);
   const repository = openImageRepository(env.HYPERDRIVE.connectionString, true);
   const authRepository = openAuthRepository(env.HYPERDRIVE.connectionString, true);
   const auth = enterpriseAuth(authRepository, authConfig);
@@ -103,7 +105,7 @@ async function handleRequest(
     VAKV_ENABLE_IMAGE_EDITS: env.VAKV_ENABLE_IMAGE_EDITS,
     VAKV_CAPABILITY_OVERRIDES: env.VAKV_CAPABILITY_OVERRIDES,
   });
-  const store = r2ImageStore(env.IMAGES_BUCKET, env.IMAGES, repository.storageUid);
+  const store = r2ImageStore(bucket, env.IMAGES, repository.storageUid);
   let events = openImageEventFeed(env.HYPERDRIVE.connectionString, "unused");
   const close = () =>
     Promise.all([repository.close(), authRepository.close(), events.close()]).then(() => {});

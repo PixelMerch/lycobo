@@ -4,7 +4,13 @@ import { writeFile } from "node:fs/promises";
 const enabled = process.env.LOCAL_IMAGE_GENERATION_ENABLED === "true";
 if (enabled && !process.env.VAKV_API_KEY && !process.env.MODEL_CREDENTIAL_SECRET)
   throw new Error("Local generation requires an explicit provider key.");
+const storage = Object.fromEntries(
+  ["S3_ENDPOINT", "S3_BUCKET", "S3_REGION", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"].flatMap(
+    (key) => (process.env[key] ? [[key, process.env[key]]] : []),
+  ),
+);
 const common = {
+  ...storage,
   ...(process.env.MODEL_CREDENTIAL_SECRET
     ? { MODEL_CREDENTIAL_SECRET: process.env.MODEL_CREDENTIAL_SECRET }
     : {}),
@@ -26,6 +32,7 @@ const configs = {
       "http://localhost:8081,http://127.0.0.1:8081,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8787,http://127.0.0.1:8787",
   },
   assets: {
+    ...storage,
     ASSET_SIGNING_SECRET: process.env.ASSET_SIGNING_SECRET ?? "",
     ASSET_ALLOWED_ORIGINS: process.env.ASSET_ALLOWED_ORIGINS ?? "",
   },
@@ -45,5 +52,5 @@ for (const [name, values] of Object.entries(configs))
     { mode: 0o600 },
   );
 console.info(
-  "Prepared ignored local Worker settings. PostgreSQL, R2 and Images are local; the development queue uses local Redis. Model generation follows IMAGE_GENERATION_ENABLED and VAKV_ENABLE_IMAGE_EDITS from .env.",
+  "Prepared ignored local Worker settings. PostgreSQL, S3/R2 and Images are local; the development queue uses local Redis. Model generation follows IMAGE_GENERATION_ENABLED and VAKV_ENABLE_IMAGE_EDITS from .env.",
 );

@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import type { ImagesBinding, R2Bucket } from "@cloudflare/workers-types";
+import type { ImagesBinding } from "@cloudflare/workers-types";
 import { type ImageScope, imageLimits } from "@lycoboai/contracts";
 import {
   type ImageStore,
@@ -8,8 +8,8 @@ import {
   type StorageUid,
   userObjectKey,
 } from "./core";
-
 import { type DisplayVariant, displayImage, displayObjectKey } from "./image-variants";
+import type { ImageObjectBucket } from "./object-bucket";
 
 const stream = (bytes: Uint8Array) => new Blob([new Uint8Array(bytes)]).stream();
 const thumbnailKey = (key: string) => key.replace(/\.png$/, ".thumbnail.png");
@@ -20,9 +20,9 @@ const validateKey = (key: string) => {
   return key;
 };
 
-/** Private R2 only: callers must first resolve the asset through an owner-scoped repository. */
+/** Private object storage only: callers must first resolve the asset through an owner-scoped repository. */
 export function r2ImageStore(
-  bucket: Pick<R2Bucket, "head" | "put" | "get" | "delete">,
+  bucket: ImageObjectBucket,
   images: Pick<ImagesBinding, "info" | "input">,
   resolveUid: StorageUid,
 ): ImageStore {

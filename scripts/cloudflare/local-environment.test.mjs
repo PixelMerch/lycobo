@@ -5,6 +5,8 @@ describe("local development isolation", () => {
   const production = {
     PATH: "/usr/bin",
     DATABASE_URL: "postgresql://secret@remote.example/db",
+    S3_ENDPOINT: "https://private.production.example",
+    S3_SECRET_ACCESS_KEY: "production-storage-secret",
     SUPABASE_DATABASE_URL: "postgresql://secret@remote.example/db",
     CLOUDFLARE_API_TOKEN: "deployment-token",
     CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: "remote",
@@ -26,6 +28,8 @@ describe("local development isolation", () => {
       "VAKV_API_KEY",
     ])
       expect(env).not.toHaveProperty(key);
+    expect(env.S3_ENDPOINT).toBe("http://image-storage:8333");
+    expect(env.S3_SECRET_ACCESS_KEY).not.toBe(production.S3_SECRET_ACCESS_KEY);
     expect(env.LOCAL_IMAGE_GENERATION_ENABLED).toBe("false");
     expect(env.PATH).toBe(production.PATH);
     expect(env.ASSET_PUBLIC_ORIGIN).toBe("http://cdn.lycobo.localhost:8791");
@@ -36,6 +40,8 @@ describe("local development isolation", () => {
     const env = localEnvironment(production);
     expect(new URL(env.DATABASE_URL).hostname).toBe("127.0.0.1");
     expect(new URL(env.DATABASE_URL).port).toBe("55432");
+    expect(env).not.toHaveProperty("S3_ENDPOINT");
+    expect(env).not.toHaveProperty("S3_SECRET_ACCESS_KEY");
     expect(env.LOCAL_REDIS_URL).toBe("redis://127.0.0.1:56379");
   });
 });
