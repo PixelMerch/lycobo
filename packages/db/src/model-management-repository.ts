@@ -81,13 +81,27 @@ export function modelManagementRepository(sql: postgres.Sql) {
       return rows.length > 0;
     },
     async capabilities() {
-      const rows =
-        await sql`select r.tool,r.model,c.settings,c.enabled,p.enabled as provider_enabled from model_routes r join model_channels c on c.id=r.channel_id join model_providers p on p.id=c.provider_id`;
+      const [rows, catalog] = await Promise.all([
+        sql`select r.tool,r.model,c.settings,c.enabled,p.enabled as provider_enabled,m.enabled as catalog_enabled,m.category as catalog_category,k.enabled as key_enabled from model_routes r join model_channels c on c.id=r.channel_id join model_providers p on p.id=c.provider_id left join model_catalog m on m.code=c.model left join model_provider_keys k on k.id=c.key_id`,
+        sql`select code,category,enabled from model_catalog`,
+      ]);
       return Object.fromEntries(
         ["create", "textile-set", "local-edit"].map((tool) => [
           tool,
           imageModelCatalog.map((model) => {
             const row = rows.find((r) => r.tool === tool && r.model === model.id);
+            const configuredModel = catalog.find((entry) => entry.code === model.id);
+            if (
+              configuredModel &&
+              (configuredModel.enabled !== 1 || configuredModel.category !== "image")
+            )
+              return {
+                id: model.id,
+                enabledResolutions: [],
+                editsEnabled: false,
+                managed: true,
+                maxReferences: 0,
+              };
             if (!row)
               return {
                 id: model.id,
@@ -100,7 +114,12 @@ export function modelManagementRepository(sql: postgres.Sql) {
             return {
               id: model.id,
               enabledResolutions:
-                row.enabled === 1 && row.provider_enabled === 1 ? settings.resolutions : [],
+                row.enabled === 1 &&
+                row.provider_enabled === 1 &&
+                row.catalog_enabled !== 0 &&
+                row.key_enabled !== 0
+                  ? settings.resolutions
+                  : [],
               editsEnabled: settings.editsEnabled,
               managed: true,
               maxReferences: settings.maxReferences,
@@ -122,14 +141,24 @@ export async function resolveProviderSnapshot(
   input: ImageGenerationInput,
 ) {
   const tool = input.textileSet ? "textile-set" : input.localEdit ? "local-edit" : "create";
+  const [catalog] =
+    await tx`select enabled,category from model_catalog where code=${publicImageModel(input.model)}`;
+  if (catalog && (catalog.enabled !== 1 || catalog.category !== "image"))
+    throw new Error("MODEL_CHANNEL_DISABLED");
   const [row] =
-    await tx`select c.id,c.settings,c.enabled,p.enabled as provider_enabled,p.origin,p.adapter,p.credential_id from model_routes r join model_channels c on c.id=r.channel_id join model_providers p on p.id=c.provider_id where r.tool=${tool} and r.model=${publicImageModel(input.model)}`;
+    await tx`select c.id,c.settings,c.enabled,p.enabled as provider_enabled,p.origin,p.adapter,coalesce(k.credential_id,p.credential_id) as credential_id,k.enabled as key_enabled,m.enabled as catalog_enabled from model_routes r join model_channels c on c.id=r.channel_id join model_providers p on p.id=c.provider_id left join model_provider_keys k on k.id=c.key_id left join model_catalog m on m.code=c.model where r.tool=${tool} and r.model=${publicImageModel(input.model)}`;
   if (!row) {
     if (input.textileSet && input.textileSet.version >= 5)
       throw new Error("MODEL_CHANNEL_DISABLED");
     return null;
   }
-  if (row.enabled !== 1 || row.provider_enabled !== 1) throw new Error("MODEL_CHANNEL_DISABLED");
+  if (
+    row.enabled !== 1 ||
+    row.provider_enabled !== 1 ||
+    row.key_enabled === 0 ||
+    row.catalog_enabled === 0
+  )
+    throw new Error("MODEL_CHANNEL_DISABLED");
   const settings = channelInputSchema.parse(row.settings);
   if (
     !settings.resolutions.includes(input.resolution) ||

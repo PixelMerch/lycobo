@@ -183,6 +183,13 @@
       "when": 1793102490411,
       "tag": "0025_magical_thunderbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793156000479,
+      "tag": "0026_admin_model_configuration",
+      "breakpoints": true
     }
   ]
 }

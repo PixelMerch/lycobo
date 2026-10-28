@@ -55,3 +55,11 @@ provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 
 ## v0.3.0 生产渠道
 
 生产统一使用 `https://api.ai-media.vip`，不再为新请求使用旧中转站。FluxPort 渠道为 gpt-image-2／gpt-image-2.5 绑定图片创作及局部修改，家纺裂变使用 gpt-image-2.5；异步优先，当前仅启用1K。当前Key未提供 nano-banana-2.1，因此该渠道禁用，不回退旧站。生产Key加密入库，独立主密钥保存在 Cloudflare 消费者 Secret，GitHub不存储。此次只检查配置、加密和公开能力，没有额外付费生成。
+
+## 简单后台配置扩展（2026-10-28）
+
+独立后台新增访问密钥与模型目录，目录分图片、音乐、视频；中转站仍以 URL + 默认 Key 为主，渠道选择目录模型、站点、Key 和上游模型名，不引入密钥池或自动跨站调度。0026_admin_model_configuration 为追加迁移，回填既有图片模型/默认密钥并保留旧密文；model_channels.key_id 可为空以兼容旧写入。
+
+图片消费者优先读取所选 Key 的当前凭据版本，在任务接收时固定快照，目录模型及所选 Key 停用后拒绝新任务。既有图片能力参数、账务和异步流程不改变。音乐/视频仅管理配置，不代表执行协议、播放或计费已接通；主站逻辑图片模型枚举不因后台新目录自动扩展。
+
+共享本地库已通过 db:migrate 升级；独立后台 init.sql 含同等基线，详细操作见相邻 lycobo-admin/docs/model-services.md。此次没有线上迁移、付费调用或部署；未来发布须先完成数据库迁移，再更新读取新表/列的服务。

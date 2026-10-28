@@ -33,7 +33,7 @@ export async function verifyManagedModels(
       adapter: "fluxport-images",
       enabled: true,
     },
-    await sealProviderKey(key, secret),
+    await sealProviderKey("fixture-provider-default-key", secret),
   );
   const channel = await repository.models.saveChannel(owner.userId, undefined, {
     name: "Fixture channel",
@@ -49,6 +49,14 @@ export async function verifyManagedModels(
     taskTimeoutSeconds: 600,
     downloadOrigins: [],
   });
+  // The selected channel key, rather than the provider default, is snapshotted.
+  const [credential] =
+    await sql`insert into model_credentials(ciphertext) values (${await sealProviderKey(key, secret)}) returning id`;
+  assert(credential);
+  const [channelKey] =
+    await sql`insert into model_provider_keys(provider_id,credential_id,name,enabled) values (${provider.id},${credential.id},'Channel fixture key',1) returning id`;
+  assert(channelKey);
+  await sql`update model_channels set key_id=${channelKey.id} where id=${channel.id}`;
   await repository.models.saveRoute(owner.userId, {
     tool: "create",
     model: "gpt-image-2",
@@ -74,6 +82,20 @@ export async function verifyManagedModels(
     404,
   );
   const input = imageGenerationInputSchema.parse({ model: "gpt-image-2", prompt: "fixture" });
+  await sql`update model_provider_keys set enabled=0 where id=${channelKey.id}`;
+  await assert.rejects(
+    repository.create(owner, input, crypto.randomUUID()),
+    /MODEL_CAPABILITY_UNVERIFIED/,
+  );
+  assert.equal((await repository.wallet(owner)).balance, 200);
+  await sql`update model_provider_keys set enabled=1 where id=${channelKey.id}`;
+  await sql`update model_catalog set enabled=0 where code='gpt-image-2'`;
+  await assert.rejects(
+    repository.create(owner, input, crypto.randomUUID()),
+    /MODEL_CAPABILITY_UNVERIFIED/,
+  );
+  assert.equal((await repository.wallet(owner)).balance, 200);
+  await sql`update model_catalog set enabled=1 where code='gpt-image-2'`;
   const idempotencyKey = crypto.randomUUID();
   const accepted = await repository.create(owner, input, idempotencyKey);
   assert.equal((await repository.wallet(owner)).balance, 180);

@@ -692,6 +692,38 @@ export const modelProviders = pgTable("model_providers", {
   createdAt: createdAt(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }).enableRLS();
+export const modelCatalog = pgTable(
+  "model_catalog",
+  {
+    id: uuid("id").notNull().defaultRandom().unique(),
+    code: text("code").primaryKey(),
+    name: text("name").notNull(),
+    category: text("category").notNull(),
+    enabled: integer("enabled").notNull().default(1),
+    createdAt: createdAt(),
+  },
+  (t) => [check("model_catalog_category_check", sql`${t.category} in ('image','music','video')`)],
+).enableRLS();
+export const modelProviderKeys = pgTable(
+  "model_provider_keys",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    providerId: uuid("provider_id")
+      .notNull()
+      .references(() => modelProviders.id),
+    credentialId: uuid("credential_id")
+      .notNull()
+      .references(() => modelCredentials.id),
+    name: text("name").notNull(),
+    enabled: integer("enabled").notNull().default(1),
+    createdAt: createdAt(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique("model_provider_keys_provider_name_unique").on(t.providerId, t.name),
+    index("model_provider_keys_credential_idx").on(t.credentialId),
+  ],
+).enableRLS();
 export const modelChannels = pgTable(
   "model_channels",
   {
@@ -700,12 +732,19 @@ export const modelChannels = pgTable(
       .notNull()
       .references(() => modelProviders.id),
     name: text("name").notNull(),
-    model: text("model").notNull(),
+    model: text("model")
+      .notNull()
+      .references(() => modelCatalog.code),
+    keyId: uuid("key_id").references(() => modelProviderKeys.id),
     settings: jsonb("settings").notNull(),
     enabled: integer("enabled").notNull().default(0),
     createdAt: createdAt(),
   },
-  (t) => [index("model_channels_provider_idx").on(t.providerId)],
+  (t) => [
+    index("model_channels_provider_idx").on(t.providerId),
+    index("model_channels_key_idx").on(t.keyId),
+    index("model_channels_model_idx").on(t.model),
+  ],
 ).enableRLS();
 export const modelRoutes = pgTable(
   "model_routes",
