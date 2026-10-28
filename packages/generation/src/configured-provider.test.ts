@@ -6,6 +6,7 @@ import {
   providerTaskPath,
 } from "./configured-provider";
 import { openProviderKey, sealProviderKey } from "./provider-secrets";
+import { normalizeTextileGeneration, textileItemInput } from "./textile-generation";
 
 const snapshot = providerSnapshotSchema.parse({
   channelId: crypto.randomUUID(),
@@ -311,4 +312,54 @@ it.each([
   );
   expect(JSON.parse(String(request.mock.calls[0]?.[1]?.body))).toMatchObject({ model, size });
   expect(request).toHaveBeenCalledTimes(1);
+});
+
+it("sends each textile view with its own prompt, full references and independent request identity", async () => {
+  const input = normalizeTextileGeneration(
+    imageGenerationInputSchema.parse({
+      model: "gpt-image-2.5",
+      prompt: "摘要",
+      resolution: "4K",
+      aspectRatio: "1:1",
+      count: 2,
+      referenceAssetIds: [crypto.randomUUID()],
+      textileSet: { version: 5, views: ["overhead-close", "draped"] },
+    }),
+  );
+  const request = vi
+    .fn<typeof fetch>()
+    .mockImplementation(async () => Response.json({ data: [{ b64_json: "aGVsbG8=" }] }));
+  const references = [new Uint8Array([1, 2, 3])];
+  const ids = [crypto.randomUUID(), crypto.randomUUID()];
+  for (const [position, id] of ids.entries()) {
+    await configuredProviderCall(
+      { ...snapshot, upstreamModel: "gpt-image-2.5", resolutions: ["4K"] },
+      "fixture-key",
+      textileItemInput(input, position),
+      references,
+      id,
+      undefined,
+      request,
+    );
+  }
+  expect(request).toHaveBeenCalledTimes(2);
+  const payloads = request.mock.calls.map(([url, init]) => {
+    expect(String(url)).toBe("https://api.example.com/v1/images/edits");
+    return JSON.parse(String(init?.body));
+  });
+  expect(payloads[0].prompt).toContain("拍摄要求：俯拍近景");
+  expect(payloads[1].prompt).toContain("拍摄要求：被子拖地");
+  expect(payloads[1].prompt).not.toContain("拍摄要求：俯拍近景");
+  for (const [position, payload] of payloads.entries()) {
+    expect(payload).toMatchObject({
+      model: "gpt-image-2.5",
+      size: "3840x3840",
+      n: 1,
+      images: [{ image_url: "data:image/png;base64,AQID" }],
+    });
+    expect(new Headers(request.mock.calls[position]?.[1]?.headers).get("Idempotency-Key")).toBe(
+      ids[position],
+    );
+  }
+  expect(payloads[0].images).toEqual(payloads[1].images);
 });
