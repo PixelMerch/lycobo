@@ -11,13 +11,8 @@ export interface GenerationBindings extends S3Bindings {
   IMAGES_BUCKET: R2Bucket;
   IMAGES: ImagesBinding;
   GENERATION_QUEUE: ImageQueueSender;
-  VAKV_API_KEY: string;
   MODEL_CREDENTIAL_SECRET?: string;
-  VAKV_BASE_URL?: string;
-  GENERATION_TIMEOUT_MS?: string;
   IMAGE_GENERATION_ENABLED?: string;
-  VAKV_ENABLE_IMAGE_EDITS?: string;
-  VAKV_CAPABILITY_OVERRIDES?: string;
 }
 export async function processGenerationBatch(
   batch: Pick<MessageBatch<{ version: 1; itemId: string }>, "messages">,
@@ -25,16 +20,8 @@ export async function processGenerationBatch(
 ) {
   const policy = readImagePolicy({
     IMAGE_GENERATION_ENABLED: env.IMAGE_GENERATION_ENABLED,
-    VAKV_ENABLE_IMAGE_EDITS: env.VAKV_ENABLE_IMAGE_EDITS,
-    VAKV_CAPABILITY_OVERRIDES: env.VAKV_CAPABILITY_OVERRIDES,
   });
   if (!policy.enabled) throw new Error("GENERATION_NOT_CONFIGURED");
-  const timeoutMs = Number(env.GENERATION_TIMEOUT_MS ?? 600000);
-  if (!Number.isInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 600000)
-    throw new Error("INVALID_GENERATION_TIMEOUT");
-  // Configured tasks own their origin and credentials. Legacy settings are validated
-  // only by the legacy adapter after a task has been claimed.
-  const baseUrl = env.VAKV_BASE_URL || "https://api.vakv.cn";
   const bucket = imageObjectBucket(env, env.IMAGES_BUCKET);
   const repository = openImageRepository(env.HYPERDRIVE.connectionString, true);
   const store = r2ImageStore(bucket, env.IMAGES, repository.storageUid);
@@ -45,12 +32,6 @@ export async function processGenerationBatch(
         store,
         modelSecret: env.MODEL_CREDENTIAL_SECRET,
         workerId: `cloudflare:${deliveryId}`,
-        provider: {
-          key: env.VAKV_API_KEY,
-          baseUrl,
-          timeoutMs,
-          onTiming: (event) => console.info({ itemId, ...event }),
-        },
         request: (input, init) => fetch(input, init),
         overrides: policy.overrides,
         editsEnabled: policy.editsEnabled,

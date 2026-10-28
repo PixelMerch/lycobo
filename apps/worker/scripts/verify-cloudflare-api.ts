@@ -11,6 +11,7 @@ import {
   walletBalanceSchema,
 } from "@lycoboai/contracts";
 import { openAuthRepository, openImageRepository } from "@lycoboai/db";
+import { sealProviderKey } from "@lycoboai/generation";
 import { convertV4MiniflareOptions, Miniflare } from "miniflare";
 import postgres from "postgres";
 import { z } from "zod";
@@ -68,6 +69,37 @@ export async function verifyCloudflareApi() {
       "隔离测试工作空间",
       200,
     );
+    const modelSecret = Buffer.alloc(32, 9).toString("base64");
+    const configuredProvider = await images.models.saveProvider(
+      principal.userId,
+      undefined,
+      {
+        name: "Native fixture",
+        origin: "https://provider-fixture.example",
+        adapter: "openai-images",
+        enabled: true,
+      },
+      await sealProviderKey("fixture-provider-key", modelSecret),
+    );
+    const channel = await images.models.saveChannel(principal.userId, undefined, {
+      name: "Native channel",
+      providerId: configuredProvider.id,
+      model: "gpt-image-2",
+      upstreamModel: "gpt-image-2",
+      mode: "sync",
+      enabled: true,
+      editsEnabled: true,
+      resolutions: ["1K"],
+      maxReferences: 6,
+      timeoutMs: 10000,
+      taskTimeoutSeconds: 600,
+      downloadOrigins: [],
+    });
+    await images.models.saveRoute(principal.userId, {
+      tool: "create",
+      model: "gpt-image-2",
+      channelId: channel.id,
+    });
     const password = `fixture-${crypto.randomUUID()}`;
     await auth.setCredential(
       "native-fixture",
@@ -116,9 +148,7 @@ export async function verifyCloudflareApi() {
             },
             bindings: {
               IMAGE_GENERATION_ENABLED: "true",
-              VAKV_API_KEY: "fixture-provider-key",
-              VAKV_BASE_URL: "https://provider-fixture.example",
-              GENERATION_TIMEOUT_MS: "10000",
+              MODEL_CREDENTIAL_SECRET: modelSecret,
             },
             outboundService: { name: "provider" },
           },

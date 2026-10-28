@@ -36,6 +36,7 @@ export type ImageApiDependencies = {
   auth?: EnterpriseAuth | undefined;
   store: ImageStore;
   enabled: boolean;
+  managedModelsOnly?: boolean;
   unitCredits: number;
   editsEnabled?: boolean;
   session?: WorkbenchSession | undefined;
@@ -173,12 +174,22 @@ export function imageRoutes(deps: ImageApiDependencies) {
     }
   });
   app.get("/image-models", async (c) => {
-    const tools = await deps.repository.models.capabilities();
+    const configured = await deps.repository.models.capabilities();
+    const tools = deps.managedModelsOnly
+      ? Object.fromEntries(
+          Object.entries(configured).map(([tool, models]) => [
+            tool,
+            models.map((model) =>
+              model.managed ? model : { ...model, enabledResolutions: [], editsEnabled: false },
+            ),
+          ]),
+        )
+      : configured;
     return c.json({
       enabled: deps.enabled,
       eventsEnabled: !!deps.events,
       editsEnabled:
-        deps.editsEnabled ||
+        (!deps.managedModelsOnly && deps.editsEnabled) ||
         Object.values(tools).some((models) =>
           models.some((m) => m.managed && m.editsEnabled && m.enabledResolutions.length > 0),
         ),
@@ -189,7 +200,11 @@ export function imageRoutes(deps: ImageApiDependencies) {
         imageModelCatalog.map((m) => ({ ...m, managed: false, enabledResolutions: [] }))
       ).map((m) => ({
         id: m.id,
-        enabledResolutions: m.managed ? m.enabledResolutions : deps.resolutions(m.id),
+        enabledResolutions: m.managed
+          ? m.enabledResolutions
+          : deps.managedModelsOnly
+            ? []
+            : deps.resolutions(m.id),
       })),
     });
   });
@@ -243,15 +258,19 @@ export function imageRoutes(deps: ImageApiDependencies) {
       return fail(c, "VALIDATION_ERROR", "请检查参数和 Idempotency-Key", 400);
     const normalized = normalizeTextileGeneration(input.data);
     try {
-      if (!(await deps.repository.models.hasRoute(normalized))) deps.validate(normalized);
+      if (!(await deps.repository.models.hasRoute(normalized))) {
+        if (deps.managedModelsOnly) throw new Error("MODEL_CHANNEL_REQUIRED");
+        deps.validate(normalized);
+      }
     } catch {
-      return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "模型分辨率或参考编辑能力尚未验证", 400);
+      return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "请先在后台配置并启用该模型的默认渠道", 400);
     }
     const result = await deps.repository.create(
       c.get("principal"),
       normalized,
       key.data,
       imageUnitCredits,
+      deps.managedModelsOnly,
     );
     return c.json(result, result.replayed ? 200 : 202);
   });
@@ -268,11 +287,20 @@ export function imageRoutes(deps: ImageApiDependencies) {
     if (!job) return fail(c, "NOT_FOUND", "任务不存在", 404);
     try {
       const input = imageGenerationInputSchema.parse(job.input);
-      if (!(await deps.repository.models.hasRoute(input))) deps.validate(input);
+      if (!(await deps.repository.models.hasRoute(input))) {
+        if (deps.managedModelsOnly) throw new Error("MODEL_CHANNEL_REQUIRED");
+        deps.validate(input);
+      }
     } catch {
-      return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "模型能力尚未验证", 400);
+      return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "请先在后台配置并启用该模型的默认渠道", 400);
     }
-    const result = await deps.repository.retry(scope, jobId.data, key.data, target.data.itemId);
+    const result = await deps.repository.retry(
+      scope,
+      jobId.data,
+      key.data,
+      target.data.itemId,
+      deps.managedModelsOnly,
+    );
     return c.json(result, result.replayed ? 200 : 202);
   });
   app.get("/image-tasks", async (c) => {

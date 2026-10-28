@@ -162,6 +162,7 @@ export function modelManagementRepository(sql: postgres.Sql) {
 export async function resolveProviderSnapshot(
   tx: postgres.TransactionSql,
   input: ImageGenerationInput,
+  requireManaged = false,
 ) {
   const tool = input.textileSet ? "textile-set" : input.localEdit ? "local-edit" : "create";
   const [catalog] = await tx`select enabled,category from model_catalog where code=${input.model}`;
@@ -171,6 +172,7 @@ export async function resolveProviderSnapshot(
     await tx`select c.id,c.settings,c.enabled,p.enabled as provider_enabled,p.origin,p.adapter,coalesce(k.credential_id,p.credential_id) as credential_id,k.enabled as key_enabled,m.enabled as catalog_enabled from model_routes r join model_channels c on c.id=r.channel_id join model_providers p on p.id=c.provider_id left join model_provider_keys k on k.id=c.key_id left join model_catalog m on m.code=c.model where r.tool=${tool} and r.model=${input.model}`;
   if (!row) {
     if (
+      requireManaged ||
       (input.textileSet && input.textileSet.version >= 5) ||
       !imageModelCatalog.some((model) => model.id === publicImageModel(input.model))
     )

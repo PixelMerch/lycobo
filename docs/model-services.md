@@ -16,7 +16,7 @@
 2. 模型渠道：选择中转站、前台模型、任意合法上游模型 ID、执行方式、参考编辑与上限、分辨率、提交超时、总等待上限和额外下载源。
 3. 默认路由：按图片创作／家纺主图裂变／局部修改及前台模型绑定一个渠道。默认渠道禁用或能力不匹配时拒绝新任务，不自动跨站提交。
 
-前台公开模型仍为 gpt-image-2、gpt-image-2.5、nano-banana-2.1，只读取公开能力；上游名称独立配置，例如当前家纺 gpt-image-2.5。未绑定组合继续兼容原环境变量渠道，不自动启用新站。
+前台展示后台启用的全部图片模型，只读取公开能力。API 和 Worker 统一使用后台默认渠道；没有路由、渠道禁用或能力不匹配时，在扣费前拒绝新提交，不回退环境变量。URL、供应商 Key、上游模型、编辑能力、分辨率与超时均以渠道为准。
 
 支持 OpenAI 兼容同步图片（文生图 JSON、编辑 multipart）及 FluxPort 图片协议（JSON 参考图、同步或异步）。执行方式可选同步、异步优先、供应商默认；异步优先也接受同步图片响应。新站同协议可只填配置，不同协议仍需服务端适配，不能填写可执行脚本。
 
@@ -50,7 +50,7 @@ MODEL_CREDENTIAL_SECRET 必须为 32 字节随机数的 Base64，独立后台 AP
 
 provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 负责公共响应、任务查询和结果下载，provider-errors.ts 统一已知失败与未知结果语义。已支持 OpenAI 同步 Images 与 FluxPort 同异步 Images；新中转站同协议只改后台，异步路径／鉴权／响应不同则新增适配器，不在前端或计费层添加分支。
 
-原VAKV_*环境变量保留兼容名称，根地址与SDK形式/v1均可规范化，拒绝其他前缀、认证信息和查询参数。当前裂变以v5和逻辑gpt-image-2.5绑定后台FluxPort渠道，详细配置及导入命令见 textile-generation.md。同步结果、异步task ID及上游请求ID用于排查；不记录提示词、响应正文、Key或签名URL。
+运行时不再读取 VAKV_* 或 GENERATION_TIMEOUT_MS。`.env` 仅保留 IMAGE_GENERATION_ENABLED 全局开关、MODEL_CREDENTIAL_SECRET 加密主密钥及基础设施配置，供应商凭据在独立后台配置。同步兼容适配器仅留给隔离验证工具，不是产品运行时回退。当前裂变以v5和逻辑gpt-image-2.5绑定后台渠道，见 textile-generation.md。同步结果、异步task ID及上游请求ID用于排查；不记录提示词、响应正文、Key或签名URL。
 
 ## v0.3.0 生产渠道
 
@@ -79,3 +79,5 @@ provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 
 主站创作导航从公开 GET /api/v1/image-model-logos 读取后台配置的展示名称、Logo、模型介绍和能力说明。响应仅包含现有三个公开图片模型的稳定 id、name、logoUrl、description 和 capabilitySummary，不暴露站点、调用模型或凭据，不自动新增可用模型。按 model_catalog.code 关联，禁止按显示名称或中转站调用名称猜测匹配；Banana 2.1 显式兼容旧目录标识 gemini-nano-banana-2.1 和 gemini-3.1-flash-image-preview，优先使用规范标识配置的 Logo；后台修改 Logo 后，主站刷新或查询过期后重新聚焦页面会更新。缺少 Logo、请求失败或图片失效时显示中性图片图标，不再使用示例照片。菜单尺寸、权限和实际生成行为保持原样；展示名称和两行介绍由后台配置，留空介绍不显示。0030_model_catalog_presentation 追加 description、capability_summary 并迁入原有文案，每项最多 160 字。
 
 主站模型列表遵循后台目录 sort_order，排序迁移为 0031_model_catalog_sort_order。后台支持全部分类和过滤后的拖动排序；主站仅对当前支持的公开模型应用顺序，不因此发布其他模型或修改路由。
+
+无渠道快照的旧失败任务，仅在用户显式重试且没有其他在途子项时，原子读取当前后台渠道并建立快照，再执行退款／扣费与 outbox 写入；缺少渠道时整个事务回滚、不新增扣费。已有快照继续固定原配置，不覆盖在途执行。API／Worker 不读取旧环境变量；本地已移除这些旧字段，线上 Secrets 本次不操作。

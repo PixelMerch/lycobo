@@ -139,7 +139,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 2026-10-27：后台身份与模型配置路由已迁至独立 lycobo-admin API，主站不再挂载 model-management 管理路由。Drizzle 迁移仍统一存放本仓库；新增 admin_users、admin_sessions、admin_login_limits、admin_roles、admin_user_roles 无业务 users 外键，旧审计关系保留。当前共享数据库实例及模型配置，不代表物理库分离。
 
-供应商请求协议注册表位于 packages/generation/src/provider-adapters.ts，公共执行与下载在 configured-provider.ts，共享错误在 provider-errors.ts。供应商 URL、Key、型号、能力与超时仅由后台渠道提供；API 和 Worker 运行时不再回退 VAKV_* 环境配置。
+供应商请求协议注册表位于 packages/generation/src/provider-adapters.ts，公共执行与下载在 configured-provider.ts，共享错误在 provider-errors.ts；apps/worker/scripts/import-textile-provider.ts 通过独立后台API将本地兼容环境配置导入裂变渠道，仅显式执行，不自动覆盖后台。
 
 历史记录整组下载：`apps/web/src/features/generation/history/history-download-button.tsx` 管理原图签名获取、读取取消、打包状态及浏览器下载；`history-download.ts` 选择已完成任务的成功项并按顺序打包ZIP，fflate仅在下载时加载，不改变单张下载与资源授权。
 

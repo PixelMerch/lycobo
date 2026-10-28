@@ -38,7 +38,7 @@ try {
   }
   await writeFile(path, source, { mode: 0o600 });
   process.stdout.write(
-    "本地工作台身份已保存到 .env，未输出任何密钥。请填写 VAKV_API_KEY 后启动 API 与 Worker。\n",
+    "本地工作台身份已保存到 .env，未输出任何密钥。请在后台配置模型渠道后启动 API 与 Worker。\n",
   );
 } finally {
   await repository.close();

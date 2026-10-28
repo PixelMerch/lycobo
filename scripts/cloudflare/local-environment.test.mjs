@@ -50,7 +50,8 @@ it("imports explicitly enabled .env model settings while retaining local infrast
   const env = localEnvironment({ PATH: "/usr/bin" }, true, {
     IMAGE_GENERATION_ENABLED: "true",
     LOCAL_IMAGE_GENERATION_ENABLED: "false",
-    VAKV_API_KEY: "local-provider-key",
+    MODEL_CREDENTIAL_SECRET: "local-encryption-key",
+    VAKV_API_KEY: "retired-provider-key",
     VAKV_ENABLE_IMAGE_EDITS: "true",
     VAKV_BASE_URL: "https://provider.example",
     GENERATION_TIMEOUT_MS: "120000",
@@ -59,9 +60,10 @@ it("imports explicitly enabled .env model settings while retaining local infrast
     VITE_SECRET: "do-not-import",
   });
   expect(env.LOCAL_IMAGE_GENERATION_ENABLED).toBe("true");
-  expect(env.VAKV_ENABLE_IMAGE_EDITS).toBe("true");
-  expect(env.VAKV_API_KEY).toBe("local-provider-key");
-  expect(env.GENERATION_TIMEOUT_MS).toBe("120000");
+  expect(env).not.toHaveProperty("VAKV_ENABLE_IMAGE_EDITS");
+  expect(env).not.toHaveProperty("VAKV_API_KEY");
+  expect(env.MODEL_CREDENTIAL_SECRET).toBe("local-encryption-key");
+  expect(env).not.toHaveProperty("GENERATION_TIMEOUT_MS");
   expect(new URL(env.DATABASE_URL).hostname).toBe("postgres");
   expect(env.LOCAL_REDIS_URL).toBe("redis://redis:6379");
   expect(env).not.toHaveProperty("CLOUDFLARE_API_TOKEN");
@@ -70,7 +72,7 @@ it("imports explicitly enabled .env model settings while retaining local infrast
 
 it("fails early when enabled model generation has no key or invalid flags", () => {
   expect(() => localEnvironment({}, false, { IMAGE_GENERATION_ENABLED: "true" })).toThrow(
-    "VAKV_API_KEY",
+    "MODEL_CREDENTIAL_SECRET",
   );
   expect(() => localEnvironment({}, false, { IMAGE_GENERATION_ENABLED: "yes" })).toThrow(
     "true or false",

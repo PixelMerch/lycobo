@@ -11,7 +11,7 @@ import { readWorkbenchSession } from "./features/images/session";
 
 const env = readEnv(process.env);
 const logger = pino({ level: env.LOG_LEVEL });
-const policy = readImagePolicy(process.env);
+const policy = readImagePolicy({ IMAGE_GENERATION_ENABLED: process.env.IMAGE_GENERATION_ENABLED });
 if (policy.enabled && !isAbsolute(process.env.IMAGE_DATA_DIR ?? ""))
   throw new Error("IMAGE_DATA_DIR must be an absolute shared directory");
 const repository = process.env.DATABASE_URL ? openImageRepository(process.env.DATABASE_URL) : null;
@@ -36,6 +36,7 @@ const app = createApp(
         events,
         store,
         enabled: policy.enabled,
+        managedModelsOnly: true,
         unitCredits: policy.unitCredits,
         editsEnabled: policy.editsEnabled,
         session: auth ? undefined : readWorkbenchSession(process.env),

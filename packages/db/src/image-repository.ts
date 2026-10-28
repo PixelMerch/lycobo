@@ -189,6 +189,7 @@ export function openImageRepository(url: string, edge = false) {
       input: ImageGenerationInput,
       key: string,
       _legacyUnitCredits?: number,
+      requireManaged = false,
     ) {
       const unitCredits = imageUnitCredits;
       const inputHash = hash(JSON.stringify(input));
@@ -203,14 +204,16 @@ export function openImageRepository(url: string, edge = false) {
             throw new ImageRepositoryError("IDEMPOTENCY_CONFLICT");
           return { id: String(replay.id), replayed: true };
         }
-        const snapshot = await resolveProviderSnapshot(tx, input).catch((error: unknown) => {
-          if (
-            error instanceof Error &&
-            ["MODEL_CHANNEL_DISABLED", "MODEL_CHANNEL_CAPABILITY"].includes(error.message)
-          )
-            throw new ImageRepositoryError("MODEL_CAPABILITY_UNVERIFIED");
-          throw error;
-        });
+        const snapshot = await resolveProviderSnapshot(tx, input, requireManaged).catch(
+          (error: unknown) => {
+            if (
+              error instanceof Error &&
+              ["MODEL_CHANNEL_DISABLED", "MODEL_CHANNEL_CAPABILITY"].includes(error.message)
+            )
+              throw new ImageRepositoryError("MODEL_CAPABILITY_UNVERIFIED");
+            throw error;
+          },
+        );
         const inserted =
           await tx`insert into generation_jobs (organization_id,user_id,idempotency_key,input_hash,input,model,provider_model,prompt,resolution,aspect_ratio,requested_count,unit_credits,provider_snapshot)
           values (${scope.organizationId},${scope.userId},${key},${inputHash},${tx.json(input)},${input.model},${snapshot ? (snapshot.upstreamModelsByResolution?.[input.resolution] ?? snapshot.upstreamModel) : imageProviderModel(input)},${input.prompt},${input.resolution},${input.aspectRatio},${input.count},${unitCredits},${snapshot ? tx.json(snapshot) : null})
@@ -263,13 +266,19 @@ export function openImageRepository(url: string, edge = false) {
         return { id, replayed: false };
       });
     },
-    async retry(scope: ImageScope, jobId: string, key: string, itemId?: string) {
+    async retry(
+      scope: ImageScope,
+      jobId: string,
+      key: string,
+      itemId?: string,
+      requireManaged = false,
+    ) {
       return sql.begin(async (tx) => {
         const members =
           await tx`select user_id from organization_members where organization_id=${scope.organizationId} and user_id=${scope.userId} for share`;
         if (!members.length) throw new ImageRepositoryError("FORBIDDEN");
         const [job] =
-          await tx`select id,status,unit_credits from generation_jobs where id=${jobId} and organization_id=${scope.organizationId} for update`;
+          await tx`select id,status,unit_credits,input,provider_snapshot from generation_jobs where id=${jobId} and organization_id=${scope.organizationId} for update`;
         if (!job) throw new ImageRepositoryError("NOT_FOUND");
         const [previous] =
           await tx`select job_id,target_item_id from generation_retries where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
@@ -288,6 +297,16 @@ export function openImageRepository(url: string, edge = false) {
             (i.status === "failed" || i.status === "needs_reconciliation"),
         );
         if (!failed.length) throw new ImageRepositoryError("STATE_CONFLICT");
+        if (requireManaged && !job.provider_snapshot) {
+          if (items.some((item) => item.status === "queued" || item.status === "running"))
+            throw new ImageRepositoryError("STATE_CONFLICT");
+          const input = imageGenerationInputSchema.parse(job.input);
+          const snapshot = await resolveProviderSnapshot(tx, input, true).catch(() => {
+            throw new ImageRepositoryError("MODEL_CAPABILITY_UNVERIFIED");
+          });
+          if (!snapshot) throw new ImageRepositoryError("MODEL_CAPABILITY_UNVERIFIED");
+          await tx`update generation_jobs set provider_snapshot=${tx.json(snapshot)},provider_model=${snapshot.upstreamModelsByResolution?.[input.resolution] ?? snapshot.upstreamModel} where id=${jobId}`;
+        }
         // Explicit user retry retires unresolved attempts before refund/recharge.
         // Keep the uncertain provider outcome as evidence; do not call this
         // reconciliation proof or let a late completion replace the new attempt.

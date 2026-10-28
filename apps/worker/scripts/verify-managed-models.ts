@@ -169,6 +169,56 @@ export async function verifyManagedModels(
   const [dynamicSnapshot] =
     await sql`select provider_snapshot from generation_jobs where id=${dynamicTask.id}`;
   assert.equal(dynamicSnapshot?.provider_snapshot.upstreamModel, "custom-provider-v7");
+  const legacyOwner = await repository.provision(
+    `legacy-upgrade-${crypto.randomUUID()}`,
+    "legacy-fixture",
+    40,
+  );
+  const legacyInput = imageGenerationInputSchema.parse({
+    model: "gpt-image-2.5",
+    prompt: "fixture",
+  });
+  const legacyJob = await repository.create(legacyOwner, legacyInput, crypto.randomUUID());
+  const legacyItem = (await repository.get(legacyOwner, legacyJob.id))?.items[0];
+  assert(legacyItem);
+  const claimed = await repository.claim(legacyItem.id, "legacy-fixture", 10000);
+  assert(claimed);
+  await repository.finish(claimed, { errorCode: "PROVIDER_HTTP_400", unknown: false });
+  const retryKey = crypto.randomUUID();
+  await assert.rejects(
+    repository.retry(legacyOwner, legacyJob.id, retryKey, undefined, true),
+    /MODEL_CAPABILITY_UNVERIFIED/,
+  );
+  assert.equal((await repository.wallet(legacyOwner)).balance, 40);
+  const replacement = await repository.models.saveChannel(owner.userId, undefined, {
+    name: "Legacy replacement",
+    providerId: provider.id,
+    model: "gpt-image-2.5",
+    upstreamModel: "new-managed-image",
+    mode: "async-preferred",
+    enabled: true,
+    editsEnabled: true,
+    resolutions: ["1K"],
+    maxReferences: 6,
+    timeoutMs: 5000,
+    taskTimeoutSeconds: 600,
+    downloadOrigins: [],
+  });
+  await repository.models.saveRoute(owner.userId, {
+    tool: "create",
+    model: "gpt-image-2.5",
+    channelId: replacement.id,
+  });
+  await repository.retry(legacyOwner, legacyJob.id, retryKey, undefined, true);
+  assert.equal(
+    (await repository.retry(legacyOwner, legacyJob.id, retryKey, undefined, true)).replayed,
+    true,
+  );
+  assert.equal((await repository.wallet(legacyOwner)).balance, 20);
+  const [upgraded] =
+    await sql`select provider_snapshot from generation_jobs where id=${legacyJob.id}`;
+  assert.equal(upgraded?.provider_snapshot.upstreamModel, "new-managed-image");
+  await sql`delete from model_routes where channel_id=${replacement.id}`;
   const input = imageGenerationInputSchema.parse({ model: "gpt-image-2", prompt: "fixture" });
   await sql`update model_provider_keys set enabled=0 where id=${channelKey.id}`;
   await assert.rejects(

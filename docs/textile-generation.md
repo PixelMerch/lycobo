@@ -41,8 +41,8 @@ v1 保留原1张详情图规则；v2 允许5张详情图；v1/v2固定1K，v3保
 
 按 [gpt-image-2.5 文档](https://uselg.top/docs?model=gpt-image-2.5&group_id=12&offer_id=media_427cdffbe8a55d7034e4c9ca033773db) 实现。JSON编辑使用 images[].image_url Data URI，不公开本地／私有R2源图。请求 response_format=url、async=true，同时接受200同步图片和202任务回执；优先按status_url轮询，兼容poll_url，成功后保存图片而非长期保存供应商链接。签名链接失效时仅回退到同一结果的受保护下载，不重提交。
 
-本地更新后的 VAKV_BASE_URL（可带/v1）与 VAKV_API_KEY 已通过显式脚本导入加密中转站、模型渠道和默认路由，未修改其他功能的路由。新渠道只启用文档示例1K，2K/4K不据价格档推断已验证；maxReferences=6 是本应用上限，不代表供应商公布或保证支持6张。需要更多规格时在后台按线路能力调整并单独验收。
+供应商地址、凭据、上游模型与能力统一通过后台模型服务配置，前端不读取供应商参数。当前各分辨率是否可用以后台渠道为准，不能仅从价格档推断；参考图上限为本应用验证约束。
 
-导入脚本为 apps/worker/scripts/import-textile-provider.ts：默认只显示脱敏计划；--apply 需要显式 loopback DATABASE_URL 及本地 ADMIN_ACCOUNT/ADMIN_PASSWORD，通过独立后台授权API保存、检查API和Worker加密主密钥一致后启用。仅用于本地配置，不调用生图；后台后续修改不会被程序自动覆盖。VAKV_* 只是兼容导入名称，已绑定渠道实际从数据库读取。
+原环境变量导入脚本已退役；通过独立后台管理中转站、访问密钥、模型渠道和默认路由。运行时不再从 VAKV_* 环境变量回退。
 
 隔离验证涵盖两个视角异步受理、重复消费、查询、存储、恰好扣款、请求ID保留及无配置时不扣费；不冒充新线路的真实付费验收。发布时先更新API／消费者对v5契约的支持，再启用渠道和发布前端。本轮未部署线上。

@@ -19,8 +19,6 @@ export interface ApiBindings extends S3Bindings {
   AUTH_JWT_SECRET: string;
   AUTH_TRUSTED_ORIGINS: string;
   IMAGE_GENERATION_ENABLED?: string;
-  VAKV_ENABLE_IMAGE_EDITS?: string;
-  VAKV_CAPABILITY_OVERRIDES?: string;
   MODEL_CREDENTIAL_SECRET?: string;
 }
 function unavailable(code: "AUTH_NOT_CONFIGURED" | "INTERNAL_ERROR") {
@@ -102,8 +100,6 @@ async function handleRequest(
   const auth = enterpriseAuth(authRepository, authConfig);
   const policy = readImagePolicy({
     IMAGE_GENERATION_ENABLED: env.IMAGE_GENERATION_ENABLED,
-    VAKV_ENABLE_IMAGE_EDITS: env.VAKV_ENABLE_IMAGE_EDITS,
-    VAKV_CAPABILITY_OVERRIDES: env.VAKV_CAPABILITY_OVERRIDES,
   });
   const store = r2ImageStore(bucket, env.IMAGES, repository.storageUid);
   let events = openImageEventFeed(env.HYPERDRIVE.connectionString, "unused");
@@ -140,6 +136,7 @@ async function handleRequest(
         events,
         auth,
         enabled: policy.enabled,
+        managedModelsOnly: true,
         unitCredits: policy.unitCredits,
         editsEnabled: policy.editsEnabled,
         validate: (input) => validateModelInput(input, policy.overrides, policy.editsEnabled),

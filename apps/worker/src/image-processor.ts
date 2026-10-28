@@ -15,7 +15,7 @@ export type ImageProcessorDependencies = {
   repository: ImageRepository;
   store: ImageStore;
   workerId: string;
-  provider: VakvConfig;
+  provider?: VakvConfig;
   overrides: CapabilityOverrides;
   editsEnabled: boolean;
   modelSecret?: string | undefined;
@@ -24,17 +24,21 @@ export type ImageProcessorDependencies = {
 export async function processImageItem(itemId: string, deps: ImageProcessorDependencies) {
   const started = performance.now();
   const timing = (stage: string, since: number) =>
-    reportGenerationTiming(deps.provider.onTiming, {
+    reportGenerationTiming(deps.provider?.onTiming, {
       stage,
       durationMs: Math.round(performance.now() - since),
     });
-  const job = await deps.repository.claim(itemId, deps.workerId, deps.provider.timeoutMs + 60000);
+  const job = await deps.repository.claim(
+    itemId,
+    deps.workerId,
+    (deps.provider?.timeoutMs ?? 600000) + 60000,
+  );
   timing("claim", started);
   if (!job) return;
   if (job.configuredProvider) return processConfiguredImage(job, deps);
   let submitted = false;
   try {
-    if (!deps.provider.key) throw new VakvError("PROVIDER_NOT_CONFIGURED", false);
+    if (!deps.provider?.key) throw new VakvError("MODEL_CHANNEL_NOT_CONFIGURED", false);
     validateModelInput(job.input, deps.overrides, deps.editsEnabled);
     const referencesStarted = performance.now();
     const references: Uint8Array[] = [];

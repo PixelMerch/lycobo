@@ -8,7 +8,7 @@ import { createApp } from "../../app";
 const unexpected = async (): Promise<never> => {
   throw new Error("Unexpected dependency call");
 };
-function fixture(editsEnabled = false) {
+function fixture(editsEnabled = false, managedModelsOnly = false) {
   const create = vi
     .fn<ImageRepository["create"]>()
     .mockResolvedValue({ id: crypto.randomUUID(), replayed: false });
@@ -78,6 +78,7 @@ function fixture(editsEnabled = false) {
     repository,
     store,
     enabled: true,
+    managedModelsOnly,
     unitCredits: 1,
     validate: (input) => validateModelInput(input, {}, editsEnabled),
     resolutions: supportedResolutions,
@@ -241,4 +242,16 @@ it("serves display-only model logos without a session or provider secrets", asyn
       },
     ],
   });
+});
+
+it("rejects missing backend routes before durable submission when runtime requires managed models", async () => {
+  const { app, create, submit } = fixture(true, true);
+  const response = await submit();
+  expect(response.status).toBe(400);
+  expect(create).not.toHaveBeenCalled();
+  const models = await app.request("/api/v1/image-models", {
+    headers: { Authorization: "Bearer fixture" },
+  });
+  const body = imageModelsResponseSchema.parse(unwrapApiData(await models.json()));
+  expect(body.models.every((model) => model.enabledResolutions.length === 0)).toBe(true);
 });

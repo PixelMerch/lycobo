@@ -18,26 +18,18 @@ export function localEnvironment(source, docker = false, modelSettings = source)
     ? "postgresql://lycoboai:local_dev_only@postgres:5432/lycoboai"
     : "postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai";
   env.CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE = env.DATABASE_URL;
-  for (const key of ["IMAGE_GENERATION_ENABLED", "VAKV_ENABLE_IMAGE_EDITS"]) {
-    if (modelSettings[key] !== undefined && !["true", "false"].includes(modelSettings[key]))
-      throw new Error(`${key} must be true or false.`);
-  }
-  const enabled = modelSettings.IMAGE_GENERATION_ENABLED === "true";
-  env.LOCAL_IMAGE_GENERATION_ENABLED = String(enabled);
-  env.VAKV_ENABLE_IMAGE_EDITS = String(enabled && modelSettings.VAKV_ENABLE_IMAGE_EDITS === "true");
+  if (
+    modelSettings.IMAGE_GENERATION_ENABLED !== undefined &&
+    !["true", "false"].includes(modelSettings.IMAGE_GENERATION_ENABLED)
+  )
+    throw new Error("IMAGE_GENERATION_ENABLED must be true or false");
+  env.LOCAL_IMAGE_GENERATION_ENABLED = String(modelSettings.IMAGE_GENERATION_ENABLED === "true");
   if (modelSettings.MODEL_CREDENTIAL_SECRET)
     env.MODEL_CREDENTIAL_SECRET = modelSettings.MODEL_CREDENTIAL_SECRET;
-  if (enabled) {
-    if (!modelSettings.VAKV_API_KEY?.trim() && !modelSettings.MODEL_CREDENTIAL_SECRET)
-      throw new Error("Enabled local generation requires VAKV_API_KEY in .env.");
-    for (const key of [
-      "VAKV_API_KEY",
-      "VAKV_BASE_URL",
-      "VAKV_CAPABILITY_OVERRIDES",
-      "GENERATION_TIMEOUT_MS",
-    ])
-      if (modelSettings[key]) env[key] = modelSettings[key];
-  }
+  if (env.LOCAL_IMAGE_GENERATION_ENABLED === "true" && !env.MODEL_CREDENTIAL_SECRET)
+    throw new Error(
+      "Enabled local generation requires MODEL_CREDENTIAL_SECRET and backend channels.",
+    );
   if (docker)
     Object.assign(env, {
       S3_ENDPOINT: "http://image-storage:8333",

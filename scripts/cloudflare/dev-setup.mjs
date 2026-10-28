@@ -2,8 +2,8 @@ import { randomBytes } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 
 const enabled = process.env.LOCAL_IMAGE_GENERATION_ENABLED === "true";
-if (enabled && !process.env.VAKV_API_KEY && !process.env.MODEL_CREDENTIAL_SECRET)
-  throw new Error("Local generation requires an explicit provider key.");
+if (enabled && !process.env.MODEL_CREDENTIAL_SECRET)
+  throw new Error("Local generation requires MODEL_CREDENTIAL_SECRET and backend channels.");
 const storage = Object.fromEntries(
   ["S3_ENDPOINT", "S3_BUCKET", "S3_REGION", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"].flatMap(
     (key) => (process.env[key] ? [[key, process.env[key]]] : []),
@@ -16,10 +16,6 @@ const common = {
     : {}),
   IMAGE_GENERATION_ENABLED: String(enabled),
   ...(process.env.LOCAL_QUEUE_TOKEN ? { LOCAL_QUEUE_TOKEN: process.env.LOCAL_QUEUE_TOKEN } : {}),
-  VAKV_ENABLE_IMAGE_EDITS: process.env.VAKV_ENABLE_IMAGE_EDITS ?? "false",
-  ...(process.env.VAKV_CAPABILITY_OVERRIDES
-    ? { VAKV_CAPABILITY_OVERRIDES: process.env.VAKV_CAPABILITY_OVERRIDES }
-    : {}),
 };
 const configs = {
   api: {
@@ -38,9 +34,6 @@ const configs = {
   },
   worker: {
     ...common,
-    VAKV_API_KEY: process.env.VAKV_API_KEY ?? "",
-    VAKV_BASE_URL: process.env.VAKV_BASE_URL || "https://api.vakv.cn",
-    GENERATION_TIMEOUT_MS: process.env.GENERATION_TIMEOUT_MS || "600000",
   },
 };
 for (const [name, values] of Object.entries(configs))
@@ -52,5 +45,5 @@ for (const [name, values] of Object.entries(configs))
     { mode: 0o600 },
   );
 console.info(
-  "Prepared ignored local Worker settings. PostgreSQL, S3/R2 and Images are local; the development queue uses local Redis. Model generation follows IMAGE_GENERATION_ENABLED and VAKV_ENABLE_IMAGE_EDITS from .env.",
+  "Prepared ignored local Worker settings. PostgreSQL, S3/R2 and Images are local; the development queue uses local Redis. Model generation uses IMAGE_GENERATION_ENABLED and encrypted backend channels only.",
 );
