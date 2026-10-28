@@ -405,3 +405,32 @@ test("detail images append up to five, replace individually and clear together",
   await expect(field.locator(".reference-tile")).toHaveCount(0);
   await expect(field.getByRole("button", { name: "清除详情图", exact: true })).toHaveCount(0);
 });
+
+test("view picker locks background scrolling while its own content remains scrollable", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 600 });
+  await page.goto("/commerce/textile-set");
+  const composer = page.locator(".composer-scroll");
+  const opener = page.getByRole("button", { name: "选择裂变类型", exact: true });
+  await opener.click();
+  const dialog = page.getByRole("dialog", { name: "裂变类型", exact: true });
+  await expect(dialog).toBeVisible();
+  await expect(composer).toHaveCSS("overflow-y", "hidden");
+  const before = await composer.evaluate((element) => element.scrollTop);
+  const panel = await composer.boundingBox();
+  if (!panel) throw new Error("Composer missing");
+  await page.mouse.move(panel.x + panel.width / 2, panel.y + 40);
+  await page.mouse.wheel(0, 500);
+  await expect(dialog).toBeVisible();
+  await expect.poll(() => composer.evaluate((element) => element.scrollTop)).toBe(before);
+  const body = dialog.locator(".textile-views-body");
+  await body.hover();
+  await page.mouse.wheel(0, 500);
+  await expect.poll(() => body.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "关闭裂变类型", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(composer).toHaveCSS("overflow-y", "auto");
+  await expect.poll(() => composer.evaluate((element) => element.scrollTop)).toBe(before);
+});
