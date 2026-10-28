@@ -1,57 +1,39 @@
 import { imageLimits } from "@lycoboai/contracts";
 import { AwsClient } from "aws4fetch";
-import { z } from "zod";
 import { objectKeySchema } from "./core";
 import type { ImageObjectBucket } from "./object-bucket";
 
-export interface S3Bindings {
-  S3_ENDPOINT?: string;
-  S3_BUCKET?: string;
-  S3_REGION?: string;
-  S3_ACCESS_KEY_ID?: string;
-  S3_SECRET_ACCESS_KEY?: string;
-}
+import { readS3Config, type S3Bindings, s3ObjectUrl } from "./s3-config";
+
+export type { S3Bindings } from "./s3-config";
+
 /** No public S3 URLs: existing owner-scoped API / signed asset delivery remains authoritative. */
-export function imageObjectBucket(env: S3Bindings, fallback: ImageObjectBucket): ImageObjectBucket {
-  if (!env.S3_ENDPOINT) return fallback;
-  const config = z
-    .object({
-      S3_ENDPOINT: z.url(),
-      S3_BUCKET: z.string().regex(/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/),
-      S3_REGION: z.string().default("us-east-1"),
-      S3_ACCESS_KEY_ID: z.string().min(1),
-      S3_SECRET_ACCESS_KEY: z.string().min(1),
-    })
-    .parse(env);
-  const endpoint = new URL(config.S3_ENDPOINT);
-  if (
-    !["https:", "http:"].includes(endpoint.protocol) ||
-    endpoint.username ||
-    endpoint.password ||
-    endpoint.search ||
-    endpoint.hash ||
-    endpoint.pathname !== "/"
-  )
-    throw new Error("INVALID_S3_CONFIGURATION");
+export function imageObjectBucket(
+  env: S3Bindings,
+  fallback?: ImageObjectBucket,
+): ImageObjectBucket {
+  const config = readS3Config(env);
+  if (!config) {
+    if (!fallback) throw new Error("IMAGE_STORAGE_NOT_CONFIGURED");
+    return fallback;
+  }
   const client = new AwsClient({
     accessKeyId: config.S3_ACCESS_KEY_ID,
     secretAccessKey: config.S3_SECRET_ACCESS_KEY,
     region: config.S3_REGION,
     service: "s3",
+    ...(config.S3_SESSION_TOKEN ? { sessionToken: config.S3_SESSION_TOKEN } : {}),
     retries: 1,
   });
   const request = async (key: string, method: string, data?: Uint8Array, headers?: Headers) => {
     objectKeySchema.parse(key);
-    const url = new URL(
-      `/${config.S3_BUCKET}/${key.split("/").map(encodeURIComponent).join("/")}`,
-      endpoint,
-    );
+    const url = s3ObjectUrl(config, key);
     try {
       const response = await client.fetch(url.href, {
         method,
         ...(headers ? { headers } : {}),
         ...(data ? { body: new Uint8Array(data) } : {}),
-        signal: AbortSignal.timeout(20000),
+        signal: AbortSignal.timeout(config.S3_REQUEST_TIMEOUT_MS),
         // Workers rejects "error"; non-2xx responses below also reject redirects.
         redirect: "manual",
       });
@@ -71,7 +53,7 @@ export function imageObjectBucket(env: S3Bindings, fallback: ImageObjectBucket):
   return {
     async head(key) {
       const response = await request(key, "HEAD");
-      if (!response) return fallback.head(key);
+      if (!response) return fallback?.head(key) ?? null;
       return {
         size: Number(response.headers.get("content-length")),
         httpEtag: response.headers.get("etag") ?? '""',
@@ -79,7 +61,7 @@ export function imageObjectBucket(env: S3Bindings, fallback: ImageObjectBucket):
     },
     async get(key) {
       const response = await request(key, "GET");
-      if (!response) return fallback.get(key);
+      if (!response) return fallback?.get(key) ?? null;
       const size = Number(response.headers.get("content-length"));
       if (
         !response.body ||
@@ -108,7 +90,7 @@ export function imageObjectBucket(env: S3Bindings, fallback: ImageObjectBucket):
         const response = await request(key, "DELETE");
         await response?.body?.cancel();
         // Remove legacy copies too, so a deleted S3 object cannot reappear via fallback.
-        await fallback.delete(key);
+        await fallback?.delete(key);
       }
     },
   };

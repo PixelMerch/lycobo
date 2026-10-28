@@ -142,3 +142,50 @@ it("uses Workers-compatible manual redirects and refuses S3 redirects without fo
     request.mockRestore();
   }
 });
+
+it("signs virtual-host requests with the configured region and session token", async () => {
+  const fallback = { head: vi.fn(), get: vi.fn(), put: vi.fn(), delete: vi.fn() };
+  const request = vi
+    .spyOn(globalThis, "fetch")
+    .mockResolvedValue(new Response(null, { status: 200 }));
+  try {
+    await imageObjectBucket(
+      {
+        ...config,
+        S3_ENDPOINT: "https://cos.ap-guangzhou.myqcloud.com",
+        S3_BUCKET: "private-1250000000",
+        S3_REGION: "ap-guangzhou",
+        S3_FORCE_PATH_STYLE: "false",
+        S3_SESSION_TOKEN: "fixture-token",
+      },
+      fallback,
+    ).put("folder/image.png", new Uint8Array([1]), { httpMetadata: { contentType: "image/png" } });
+    const call = request.mock.calls[0];
+    if (!call) throw new Error("REQUEST_REQUIRED");
+    const signed = new Request(call[0], call[1]);
+    expect(signed.url).toBe(
+      "https://private-1250000000.cos.ap-guangzhou.myqcloud.com/folder/image.png",
+    );
+    expect(signed.headers.get("authorization")).toContain("/ap-guangzhou/s3/aws4_request");
+    expect(signed.headers.get("x-amz-security-token")).toBe("fixture-token");
+    expect(fallback.put).not.toHaveBeenCalled();
+  } finally {
+    request.mockRestore();
+  }
+});
+
+it("works with S3 alone without requiring an R2 binding", async () => {
+  const request = vi
+    .spyOn(globalThis, "fetch")
+    .mockResolvedValue(new Response(null, { status: 404 }));
+  try {
+    const store = imageObjectBucket(config);
+    expect(await store.head("missing.png")).toBeNull();
+    expect(await store.get("missing.png")).toBeNull();
+    await expect(store.delete("missing.png")).resolves.toBeUndefined();
+    expect(() => imageObjectBucket({})).toThrow("IMAGE_STORAGE_NOT_CONFIGURED");
+    expect(() => imageObjectBucket({ S3_BUCKET: "partial" })).toThrow("INVALID_S3_CONFIGURATION");
+  } finally {
+    request.mockRestore();
+  }
+});
