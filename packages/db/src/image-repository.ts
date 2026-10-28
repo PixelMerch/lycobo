@@ -213,7 +213,7 @@ export function openImageRepository(url: string, edge = false) {
         });
         const inserted =
           await tx`insert into generation_jobs (organization_id,user_id,idempotency_key,input_hash,input,model,provider_model,prompt,resolution,aspect_ratio,requested_count,unit_credits,provider_snapshot)
-          values (${scope.organizationId},${scope.userId},${key},${inputHash},${tx.json(input)},${input.model},${imageProviderModel(input)},${input.prompt},${input.resolution},${input.aspectRatio},${input.count},${unitCredits},${snapshot ? tx.json(snapshot) : null})
+          values (${scope.organizationId},${scope.userId},${key},${inputHash},${tx.json(input)},${input.model},${snapshot ? (snapshot.upstreamModelsByResolution?.[input.resolution] ?? snapshot.upstreamModel) : imageProviderModel(input)},${input.prompt},${input.resolution},${input.aspectRatio},${input.count},${unitCredits},${snapshot ? tx.json(snapshot) : null})
           on conflict (organization_id,user_id,idempotency_key) do nothing returning id`;
         if (!inserted[0]) {
           const [existing] =

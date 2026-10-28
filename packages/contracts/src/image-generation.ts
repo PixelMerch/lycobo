@@ -16,6 +16,10 @@ export const imageModelIds = [
   "nano-banana-2.1",
   "gemini-nano-banana-2.1",
 ] as const;
+export const imageModelCodeSchema = z
+  .string()
+  .trim()
+  .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,99}$/);
 export const imageResolutionSchema = z.enum(["1K", "2K", "4K"]);
 export type ImageResolution = z.infer<typeof imageResolutionSchema>;
 export const imageQualitySchema = z.enum(["low", "medium", "high"]);
@@ -54,7 +58,7 @@ export type ImageLocalEdit = z.infer<typeof imageLocalEditSchema>;
 
 export const imageGenerationInputSchema = z
   .strictObject({
-    model: z.enum(imageModelIds),
+    model: imageModelCodeSchema,
     prompt: z.string().trim().min(1).max(9000),
     resolution: imageResolutionSchema.default("1K"),
     aspectRatio: z
@@ -125,11 +129,13 @@ export type StoredImage = {
 };
 // Public choices are separate from provider aliases retained for historical tasks.
 export const publicImageModelIds = ["gpt-image-2", "gpt-image-2.5", "nano-banana-2.1"] as const;
-export type PublicImageModelId = (typeof publicImageModelIds)[number];
+export type PublicImageModelId = string;
 export const imageUnitCredits = 20;
 export function publicImageModel(model: ImageGenerationInput["model"]): PublicImageModelId {
-  if (model.includes("banana")) return "nano-banana-2.1";
-  return model.startsWith("gpt-image-2.5") ? "gpt-image-2.5" : "gpt-image-2";
+  if (model === "gemini-nano-banana-2.1") return "nano-banana-2.1";
+  if (model === "gpt-image-2-4K") return "gpt-image-2";
+  if (model === "gpt-image-2.5-flare" || model === "gpt-image-2.5-sunburst") return "gpt-image-2.5";
+  return model;
 }
 export function imageProviderModel(input: Pick<ImageGenerationInput, "model" | "resolution">) {
   if (input.model === "gpt-image-2-4K") return "gpt-image-2-4K";
@@ -142,7 +148,7 @@ export function imageProviderModel(input: Pick<ImageGenerationInput, "model" | "
 export const imageModelLogosResponseSchema = z.object({
   models: z.array(
     z.object({
-      id: z.enum(publicImageModelIds),
+      id: imageModelCodeSchema,
       logoUrl: z.url().nullable(),
       name: z.string().max(80).optional(),
       description: z.string().max(160).optional(),
@@ -179,7 +185,7 @@ export const imageJobSchema = z.object({
   id: z.uuid(),
   organization_id: z.uuid(),
   user_id: z.uuid(),
-  model: z.enum(imageModelIds),
+  model: imageModelCodeSchema,
   prompt: z.string(),
   resolution: imageResolutionSchema,
   aspect_ratio: z.string(),
@@ -253,7 +259,7 @@ export const imageModelsResponseSchema = z.object({
   editsEnabled: z.boolean(),
   unitCredits: z.number(),
   models: z.array(
-    z.object({ id: z.enum(imageModelIds), enabledResolutions: z.array(imageResolutionSchema) }),
+    z.object({ id: imageModelCodeSchema, enabledResolutions: z.array(imageResolutionSchema) }),
   ),
 });
 export const imageTaskRetrySchema = z.object({ itemId: z.uuid().optional() });

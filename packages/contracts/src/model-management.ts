@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { imageResolutionSchema, publicImageModelIds } from "./image-generation";
+import { imageModelCodeSchema, imageResolutionSchema } from "./image-generation";
 
 export const providerAdapterSchema = z.enum(["openai-images", "fluxport-images"]);
 export const providerModeSchema = z.enum(["sync", "async-preferred", "provider-default"]);
@@ -32,7 +32,7 @@ const upstreamModelSchema = z
 export const channelInputSchema = z.strictObject({
   name: z.string().trim().min(1).max(80),
   providerId: z.uuid(),
-  model: z.enum(publicImageModelIds),
+  model: imageModelCodeSchema,
   upstreamModel: upstreamModelSchema,
   upstreamModelsByResolution: z
     .strictObject({
@@ -52,7 +52,7 @@ export const channelInputSchema = z.strictObject({
 });
 export const modelRouteInputSchema = z.strictObject({
   tool: z.enum(["create", "textile-set", "local-edit"]),
-  model: z.enum(publicImageModelIds),
+  model: imageModelCodeSchema,
   channelId: z.uuid(),
 });
 export const providerSnapshotSchema = channelInputSchema

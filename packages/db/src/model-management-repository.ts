@@ -6,7 +6,6 @@ import {
   modelRouteInputSchema,
   providerSnapshotSchema,
   publicImageModel,
-  publicImageModelIds,
 } from "@lycoboai/contracts";
 import type postgres from "postgres";
 
@@ -15,35 +14,16 @@ export function modelManagementRepository(sql: postgres.Sql) {
     tx`insert into model_audit_events (actor_id,action,resource_id) values (${actor},${action},${id})`;
   return {
     async logos() {
-      // Explicit legacy catalog identities; never infer identity from display names.
-      const identities = {
-        "gpt-image-2": ["gpt-image-2"],
-        "gpt-image-2.5": ["gpt-image-2.5"],
-        "nano-banana-2.1": [
-          "nano-banana-2.1",
-          "gemini-nano-banana-2.1",
-          "gemini-3.1-flash-image-preview",
-        ],
-      };
       const rows =
-        await sql`select code,name,logo_url,description,capability_summary,sort_order from model_catalog where category='image' and code in ${sql(Object.values(identities).flat())}`;
+        await sql`select code,name,logo_url,description,capability_summary from model_catalog where category='image' and enabled=1 order by sort_order,created_at`;
       return imageModelLogosResponseSchema.parse({
-        models: publicImageModelIds
-          .map((id) => {
-            const entries = identities[id].map((code) => rows.find((row) => row.code === code));
-            // Prefer the configured Logo entry so legacy catalog names/copy stay together.
-            const entry =
-              entries.find((row) => row?.logo_url != null) ?? entries.find((row) => row != null);
-            return {
-              id,
-              sortOrder: entry?.sort_order ?? 2147483647,
-              name: entry?.name ?? id,
-              logoUrl: entry?.logo_url ?? null,
-              description: entry?.description ?? "",
-              capabilitySummary: entry?.capability_summary ?? "",
-            };
-          })
-          .sort((a, b) => a.sortOrder - b.sortOrder),
+        models: rows.map((row) => ({
+          id: row.code,
+          name: row.name,
+          logoUrl: row.logo_url,
+          description: row.description ?? "",
+          capabilitySummary: row.capability_summary ?? "",
+        })),
       });
     },
     async list() {
@@ -111,7 +91,7 @@ export function modelManagementRepository(sql: postgres.Sql) {
     async hasRoute(input: ImageGenerationInput) {
       const tool = input.textileSet ? "textile-set" : input.localEdit ? "local-edit" : "create";
       const rows =
-        await sql`select tool from model_routes where tool=${tool} and model=${publicImageModel(input.model)}`;
+        await sql`select tool from model_routes where tool=${tool} and model=${input.model}`;
       return rows.length > 0;
     },
     async capabilities() {
@@ -122,7 +102,16 @@ export function modelManagementRepository(sql: postgres.Sql) {
       return Object.fromEntries(
         ["create", "textile-set", "local-edit"].map((tool) => [
           tool,
-          imageModelCatalog.map((model) => {
+          (catalog.length
+            ? catalog
+                .filter((entry) => entry.category === "image")
+                .map((entry) => ({
+                  id: String(entry.code),
+                  allowedResolutions:
+                    imageModelCatalog.find((m) => m.id === entry.code)?.allowedResolutions ?? [],
+                }))
+            : imageModelCatalog
+          ).map((model) => {
             const row = rows.find((r) => r.tool === tool && r.model === model.id);
             const configuredModel = catalog.find((entry) => entry.code === model.id);
             if (
@@ -175,14 +164,16 @@ export async function resolveProviderSnapshot(
   input: ImageGenerationInput,
 ) {
   const tool = input.textileSet ? "textile-set" : input.localEdit ? "local-edit" : "create";
-  const [catalog] =
-    await tx`select enabled,category from model_catalog where code=${publicImageModel(input.model)}`;
+  const [catalog] = await tx`select enabled,category from model_catalog where code=${input.model}`;
   if (catalog && (catalog.enabled !== 1 || catalog.category !== "image"))
     throw new Error("MODEL_CHANNEL_DISABLED");
   const [row] =
-    await tx`select c.id,c.settings,c.enabled,p.enabled as provider_enabled,p.origin,p.adapter,coalesce(k.credential_id,p.credential_id) as credential_id,k.enabled as key_enabled,m.enabled as catalog_enabled from model_routes r join model_channels c on c.id=r.channel_id join model_providers p on p.id=c.provider_id left join model_provider_keys k on k.id=c.key_id left join model_catalog m on m.code=c.model where r.tool=${tool} and r.model=${publicImageModel(input.model)}`;
+    await tx`select c.id,c.settings,c.enabled,p.enabled as provider_enabled,p.origin,p.adapter,coalesce(k.credential_id,p.credential_id) as credential_id,k.enabled as key_enabled,m.enabled as catalog_enabled from model_routes r join model_channels c on c.id=r.channel_id join model_providers p on p.id=c.provider_id left join model_provider_keys k on k.id=c.key_id left join model_catalog m on m.code=c.model where r.tool=${tool} and r.model=${input.model}`;
   if (!row) {
-    if (input.textileSet && input.textileSet.version >= 5)
+    if (
+      (input.textileSet && input.textileSet.version >= 5) ||
+      !imageModelCatalog.some((model) => model.id === publicImageModel(input.model))
+    )
       throw new Error("MODEL_CHANNEL_DISABLED");
     return null;
   }

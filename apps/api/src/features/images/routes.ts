@@ -184,11 +184,12 @@ export function imageRoutes(deps: ImageApiDependencies) {
         ),
       unitCredits: imageUnitCredits,
       tools,
-      models: imageModelCatalog.map((m) => ({
-        ...m,
-        enabledResolutions:
-          tools.create?.find((option) => option.id === m.id && option.managed)
-            ?.enabledResolutions ?? deps.resolutions(m.id),
+      models: (
+        tools.create ??
+        imageModelCatalog.map((m) => ({ ...m, managed: false, enabledResolutions: [] }))
+      ).map((m) => ({
+        id: m.id,
+        enabledResolutions: m.managed ? m.enabledResolutions : deps.resolutions(m.id),
       })),
     });
   });

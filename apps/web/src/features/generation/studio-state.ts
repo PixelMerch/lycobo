@@ -1,18 +1,9 @@
+import { imageModelCodeSchema } from "@lycoboai/contracts";
 import { create } from "zustand";
 
-export const models = [
-  { id: "gpt-image-2", name: "gpt-image-2", image: "bedroom", description: "通用图像生成与编辑" },
-  { id: "gpt-image-2.5", name: "gpt-image-2.5", image: "set", description: "写实质感与创意表达" },
-  {
-    id: "nano-banana-2.1",
-    name: "nano-banana-2.1",
-    image: "lavender",
-    description: "商品、人像与场景创作",
-  },
-] as const;
-export type ModelId = (typeof models)[number]["id"];
+export type ModelId = string;
 export const isModelId = (value: unknown): value is ModelId =>
-  models.some((model) => model.id === value);
+  imageModelCodeSchema.safeParse(value).success;
 export const cases = [
   {
     id: "oak",
@@ -69,6 +60,8 @@ const emptyDraft = (): Draft => ({
   count: "1",
 });
 
+export const defaultDraft = emptyDraft();
+
 // Client interaction only. No persisted tasks, paid submissions, or simulated completion.
 export const useStudioStore = create<{
   activeHistoryId: string | null;
@@ -86,7 +79,11 @@ export const useStudioStore = create<{
   activeHistoryId: null,
   setActiveHistoryId: (activeHistoryId) => set({ activeHistoryId }),
   activeModel: "gpt-image-2",
-  setActiveModel: (activeModel) => set({ activeModel }),
+  setActiveModel: (activeModel) =>
+    set((state) => ({
+      activeModel,
+      drafts: { ...state.drafts, [activeModel]: state.drafts[activeModel] ?? emptyDraft() },
+    })),
   drafts: {
     "gpt-image-2.5": emptyDraft(),
     "gpt-image-2": emptyDraft(),
@@ -94,15 +91,15 @@ export const useStudioStore = create<{
   },
   updateDraft: (model, patch) =>
     set((state) => ({
-      drafts: { ...state.drafts, [model]: { ...state.drafts[model], ...patch } },
+      drafts: { ...state.drafts, [model]: { ...(state.drafts[model] ?? emptyDraft()), ...patch } },
     })),
   addReferences: (model, references) =>
     set((state) => ({
       drafts: {
         ...state.drafts,
         [model]: {
-          ...state.drafts[model],
-          references: [...state.drafts[model].references, ...references].slice(0, 5),
+          ...(state.drafts[model] ?? emptyDraft()),
+          references: [...(state.drafts[model]?.references ?? []), ...references].slice(0, 5),
         },
       },
     })),

@@ -34,7 +34,8 @@ export async function verifyManagedModels(
     throw new Error("Provider configuration leaked through model logos");
   await sql`insert into model_catalog(code,name,category,logo_url,enabled) values ('gemini-3.1-flash-image-preview','Banana fixture','image','https://logos.example.com/banana.webp',1)`;
   assert.equal(
-    (await repository.models.logos()).models.find((m) => m.id === "nano-banana-2.1")?.logoUrl,
+    (await repository.models.logos()).models.find((m) => m.id === "gemini-3.1-flash-image-preview")
+      ?.logoUrl,
     "https://logos.example.com/banana.webp",
   );
   await sql`update model_catalog set logo_url='https://logos.example.com/canonical.webp' where code='nano-banana-2.1'`;
@@ -119,6 +120,55 @@ export async function verifyManagedModels(
     ).status,
     404,
   );
+  await sql`insert into model_catalog(code,name,category,enabled) values ('custom-image-v7','新图片模型','image',1),('hidden-image','未启用','image',0),('custom-video','视频','video',1)`;
+  const publicCatalog = (await repository.models.logos()).models;
+  assert(publicCatalog.some((model) => model.id === "custom-image-v7"));
+  assert(!publicCatalog.some((model) => ["hidden-image", "custom-video"].includes(model.id)));
+  const customInput = imageGenerationInputSchema.parse({
+    model: "custom-image-v7",
+    prompt: "fixture",
+  });
+  await assert.rejects(
+    repository.create(owner, customInput, crypto.randomUUID()),
+    /MODEL_CAPABILITY_UNVERIFIED/,
+  );
+  const customChannel = await repository.models.saveChannel(owner.userId, undefined, {
+    name: "Dynamic channel",
+    providerId: provider.id,
+    model: "custom-image-v7",
+    upstreamModel: "custom-provider-v7",
+    mode: "async-preferred",
+    enabled: true,
+    editsEnabled: true,
+    resolutions: ["2K"],
+    maxReferences: 6,
+    timeoutMs: 5000,
+    taskTimeoutSeconds: 600,
+    downloadOrigins: [],
+  });
+  await repository.models.saveRoute(owner.userId, {
+    tool: "create",
+    model: "custom-image-v7",
+    channelId: customChannel.id,
+  });
+  assert(
+    (await repository.models.capabilities()).create?.some(
+      (model) => model.id === "custom-image-v7" && model.enabledResolutions.includes("2K"),
+    ),
+  );
+  const customOwner = await repository.provision(
+    `dynamic-${crypto.randomUUID()}`,
+    "dynamic-fixture",
+    20,
+  );
+  const dynamicTask = await repository.create(
+    customOwner,
+    { ...customInput, resolution: "2K" },
+    crypto.randomUUID(),
+  );
+  const [dynamicSnapshot] =
+    await sql`select provider_snapshot from generation_jobs where id=${dynamicTask.id}`;
+  assert.equal(dynamicSnapshot?.provider_snapshot.upstreamModel, "custom-provider-v7");
   const input = imageGenerationInputSchema.parse({ model: "gpt-image-2", prompt: "fixture" });
   await sql`update model_provider_keys set enabled=0 where id=${channelKey.id}`;
   await assert.rejects(

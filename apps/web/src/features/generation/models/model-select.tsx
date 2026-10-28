@@ -1,5 +1,6 @@
 import { Label, ListBox, Select } from "@heroui/react";
-import { isModelId, type ModelId, models } from "../studio-state";
+import { isModelId, type ModelId } from "../studio-state";
+import { useModelPresentation } from "./model-logos";
 export function ModelSelect({
   value,
   onChange,
@@ -7,18 +8,8 @@ export function ModelSelect({
   value: string;
   onChange: (model: ModelId) => void;
 }) {
-  // Imported here keeps model choice identical wherever it is presented.
-  const selected = models.find((m) => m.id === value) ?? models[0];
-  return <ModelSelectControl value={selected.id} onChange={onChange} />;
-}
-
-function ModelSelectControl({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (model: ModelId) => void;
-}) {
+  const catalog = useModelPresentation();
+  const models = catalog.data?.models ?? [];
   return (
     <Select
       className="model-field"
@@ -40,9 +31,9 @@ function ModelSelectControl({
               className="model-options"
               key={model.id}
               id={model.id}
-              textValue={model.name}
+              textValue={model.name ?? model.id}
             >
-              <span>{model.name}</span>
+              <span>{model.name ?? model.id}</span>
             </ListBox.Item>
           ))}
         </ListBox>

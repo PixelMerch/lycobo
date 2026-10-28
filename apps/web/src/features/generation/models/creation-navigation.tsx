@@ -1,5 +1,4 @@
 import { Dropdown } from "@heroui/react";
-import { publicImageModelIds } from "@lycoboai/contracts";
 import { IconCheck, IconSparkles } from "@tabler/icons-react";
 import { useNavigate } from "react-router";
 import { FeatureNavigation } from "../../../components/feature-navigation";
@@ -17,15 +16,7 @@ export function CreationNavigation({
   onNavigate: () => void;
 }) {
   const catalog = useModelPresentation();
-  const navigationModels =
-    catalog.data?.models ??
-    publicImageModelIds.map((id) => ({
-      id,
-      name: id,
-      logoUrl: null,
-      description: "",
-      capabilitySummary: "",
-    }));
+  const navigationModels = catalog.data?.models ?? [];
   const activeModel = useStudioStore((s) => s.activeModel);
   const setActiveModel = useStudioStore((s) => s.setActiveModel);
   const navigate = useNavigate();

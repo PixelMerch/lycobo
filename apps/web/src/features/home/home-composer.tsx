@@ -7,13 +7,15 @@ import { useErrorToast } from "../../lib/error-toast";
 import { HomeRatioPicker } from "../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../generation/composer/selection-highlight";
 import { ImageApiError, useImageModels } from "../generation/generation-client";
+import { useModelPresentation } from "../generation/models/model-logos";
 import { ReferencePicker } from "../generation/references/reference-picker";
-import { models, useStudioStore } from "../generation/studio-state";
+import { defaultDraft, useStudioStore } from "../generation/studio-state";
 import { HomeIntro } from "./home-intro";
 
 export function HomeComposer() {
+  const models = useModelPresentation().data?.models ?? [];
   const model = useStudioStore((s) => s.activeModel);
-  const draft = useStudioStore((s) => s.drafts[model]);
+  const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const setModel = useStudioStore((s) => s.setActiveModel);
   const catalog = useImageModels();

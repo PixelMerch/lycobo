@@ -55,7 +55,7 @@ export function ReferencePicker({
     setError("");
     try {
       const images = await readReferenceImages(files);
-      const current = useStudioStore.getState().drafts[model].references;
+      const current = useStudioStore.getState().drafts[model]?.references ?? [];
       const seen = new Set(current.map((image) => image.src));
       const unique: ReferenceImage[] = [];
       let duplicates = 0;
@@ -93,7 +93,7 @@ export function ReferencePicker({
           aria-label="清除全部参考图片"
           isDisabled={reading || references.length === 0}
           onPress={() => {
-            const prompt = useStudioStore.getState().drafts[model].prompt;
+            const prompt = useStudioStore.getState().drafts[model]?.prompt ?? "";
             updateDraft(model, { references: [], prompt: promptWithoutReferences(prompt) });
             setError("");
             setPreview(null);
@@ -127,7 +127,7 @@ export function ReferencePicker({
             isDisabled={reading}
             onOpen={() => setPreview(index)}
             onRemove={() => {
-              const prompt = useStudioStore.getState().drafts[model].prompt;
+              const prompt = useStudioStore.getState().drafts[model]?.prompt ?? "";
               const remaining = references.filter((item) => item.id !== image.id);
               updateDraft(model, {
                 references: remaining,

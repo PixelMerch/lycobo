@@ -24,7 +24,7 @@ import { GenerationHistory } from "./history/generation-history";
 import { HistoryIndex } from "./history/history-index";
 import { ModelSelect } from "./models/model-select";
 import { ReferencePicker } from "./references/reference-picker";
-import { type ModelId, useStudioStore } from "./studio-state";
+import { defaultDraft, type ModelId, useStudioStore } from "./studio-state";
 
 const promptLimit = 5000;
 const resolutionField = { label: "分辨率", values: ["1K", "2K", "4K"] } as const;
@@ -38,7 +38,7 @@ export function WorkspacePage() {
   return <Workspace model={model} />;
 }
 function Workspace({ model }: { model: ModelId }) {
-  const draft = useStudioStore((s) => s.drafts[model]);
+  const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const setActiveModel = useStudioStore((s) => s.setActiveModel);
   const visitModel = useStudioStore((s) => s.visitModel);

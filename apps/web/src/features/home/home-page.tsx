@@ -3,7 +3,7 @@ import { IconBox, IconPhoto, IconSparkles, IconTextCaption } from "@tabler/icons
 import { lazy, Suspense } from "react";
 import { useNavigate } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
-import { useStudioStore } from "../generation/studio-state";
+import { defaultDraft, useStudioStore } from "../generation/studio-state";
 import { HomeComposer } from "./home-composer";
 import { homeDotGrid } from "./home-dot-grid-config";
 import "../../styles/home.css";
@@ -31,7 +31,7 @@ const shortcuts = [
 
 export function HomePage() {
   const model = useStudioStore((s) => s.activeModel);
-  const draft = useStudioStore((s) => s.drafts[model]);
+  const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const navigate = useNavigate();
   function start(prompt?: string) {
