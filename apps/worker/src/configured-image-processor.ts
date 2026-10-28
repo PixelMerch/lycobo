@@ -59,8 +59,8 @@ export async function processConfiguredImage(
       );
       return;
     }
-    if (result.outputs.length !== 1)
-      throw new ImageProviderError("PROVIDER_UNEXPECTED_IMAGE_COUNT", true);
+    // A paid slot requests n=1; surplus provider outputs must not discard its usable result.
+    // Preserve stable provider order and deliver one image without creating extra charges/items.
     const output = result.outputs[0];
     if (!output) throw new ImageProviderError("PROVIDER_EMPTY_IMAGE", true);
     const bytes = await providerOutputBytes(output, state.snapshot, key, deps.request);

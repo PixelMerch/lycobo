@@ -413,7 +413,7 @@ export function openImageRepository(url: string, edge = false) {
       return sql.begin(async (tx) => {
         const rows =
           await tx`select o.id,o.item_id from generation_outbox o join generation_job_items i on i.id=o.item_id
-          where (i.status='queued' or (i.status='running' and exists(select 1 from provider_executions e where e.item_id=i.id and e.phase='polling' and e.next_poll_at<=now()))) and o.next_attempt_at<=now() and (o.lease_expires_at is null or o.lease_expires_at<now())
+          where (i.status='queued' or (i.status='running' and exists(select 1 from provider_executions e where e.item_id=i.id and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now())))) and o.next_attempt_at<=now() and (o.lease_expires_at is null or o.lease_expires_at<now())
           order by o.next_attempt_at limit 20 for update of o skip locked`;
         const result: Array<{ id: string; itemId: string; leaseToken: string }> = [];
         for (const row of rows) {
@@ -449,7 +449,7 @@ export function openImageRepository(url: string, edge = false) {
           deadlineAt = row.deadline_at
             ? new Date(String(row.deadline_at))
             : new Date(Date.now() + snapshot.taskTimeoutSeconds * 1000);
-          await tx`insert into provider_executions(item_id,phase,deadline_at,lease_until) values (${itemId},'submitting',${deadlineAt},now()+${leaseMs}*interval '1 millisecond') on conflict(item_id) do update set lease_until=excluded.lease_until,next_poll_at=null,poll_count=provider_executions.poll_count+1`;
+          await tx`insert into provider_executions(item_id,phase,deadline_at,lease_until) values (${itemId},'submitting',${deadlineAt},now()+${leaseMs}*interval '1 millisecond') on conflict(item_id) do update set lease_until=excluded.lease_until,next_poll_at=case when provider_executions.phase='polling' then provider_executions.next_poll_at else null end,poll_count=provider_executions.poll_count+1`;
         }
         await tx`update generation_job_items set status='running',worker_id=${workerId},execution_token=${executionToken},provider=${snapshot?.adapter ?? "vakv"},attempts=attempts+case when status='queued' then 1 else 0 end,
           started_at=coalesce(started_at,now()),lease_expires_at=now()+${leaseMs} * interval '1 millisecond' where id=${itemId}`;
@@ -520,7 +520,7 @@ export function openImageRepository(url: string, edge = false) {
           const a = result.image;
           await tx`insert into media_assets (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256)
             values (${a.id},${job.organizationId},${job.userId},'output','image',${a.objectKey},${a.mimeType},${a.width},${a.height},${a.bytes},${a.sha256})`;
-          await tx`update generation_job_items set status='succeeded',output_asset_id=${a.id},provider_request_id=coalesce(${result.requestId ?? null},provider_request_id),completed_at=now() where id=${job.itemId}`;
+          await tx`update generation_job_items set status='succeeded',error_code=null,output_asset_id=${a.id},provider_request_id=coalesce(${result.requestId ?? null},provider_request_id),completed_at=now() where id=${job.itemId}`;
         } else {
           await tx`update generation_job_items set status=${result.unknown && result.errorCode !== "PROVIDER_INVALID_IMAGE_RESPONSE" ? "needs_reconciliation" : "failed"},error_code=${result.errorCode},
             provider_request_id=coalesce(${result.requestId ?? null},provider_request_id),completed_at=now() where id=${job.itemId}`;
@@ -538,7 +538,7 @@ export function openImageRepository(url: string, edge = false) {
       await settleInvalidResponses();
       // An expired paid attempt is held for operator reconciliation, never queued again.
       const rows =
-        await sql`select id,job_id from generation_job_items where status='running' and lease_expires_at<now() limit 100`;
+        await sql`select id,job_id from generation_job_items where status='running' and lease_expires_at<now() and not exists(select 1 from provider_executions e where e.item_id=generation_job_items.id and e.phase='polling' and e.task_id is not null and e.status_path is not null and e.next_poll_at is not null and e.deadline_at>now()) limit 100`;
       for (const row of rows)
         await sql.begin(async (tx) => {
           await tx`select id from generation_jobs where id=${row.job_id} for update`;

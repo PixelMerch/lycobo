@@ -303,6 +303,54 @@ export async function verifyManagedModels(
   await processImageItem(itemId, deps);
   assert.equal(posts, 1);
   assert.equal(gets, 0);
+  // A worker restart during a read must resume GET, never retire or resubmit paid work.
+  await sql`update provider_executions set next_poll_at=now()-interval '1 second' where item_id=${itemId}`;
+  const interruptedPoll = await repository.claim(itemId, "interrupted-fixture", 10000);
+  assert(interruptedPoll);
+  assert.equal(
+    (await repository.leaseOutbox()).some((entry) => entry.itemId === itemId),
+    false,
+    "Active poll leases must suppress duplicate dispatch",
+  );
+  await sql`update provider_executions set lease_until=now()-interval '1 second' where item_id=${itemId}`;
+  await sql`update generation_job_items set lease_expires_at=now()-interval '1 second' where id=${itemId}`;
+  await repository.expireClaims();
+  assert.equal(
+    (await repository.get(owner, accepted.id))?.status,
+    "running",
+    "An interrupted known poll must remain recoverable",
+  );
+
+  // The upstream may return surplus images despite n=1. Deliver one result per paid slot.
+  const surplusOwner = await repository.provision(
+    `surplus-${crypto.randomUUID()}`,
+    "surplus-fixture",
+    20,
+  );
+  const surplusJob = await repository.create(surplusOwner, input, crypto.randomUUID(), 20, true);
+  const surplusItem = (await repository.get(surplusOwner, surplusJob.id))?.items[0];
+  assert(surplusItem);
+  let surplusPosts = 0;
+  await processImageItem(surplusItem.id, {
+    ...deps,
+    request: async (_url, init) => {
+      assert.equal(init?.method, "POST");
+      assert.equal(JSON.parse(String(init.body)).n, 1);
+      surplusPosts++;
+      return Response.json({
+        data: Array.from({ length: 3 }, () => ({ b64_json: png.toString("base64") })),
+      });
+    },
+  });
+  assert.equal(
+    (await repository.get(surplusOwner, surplusJob.id))?.status,
+    "succeeded",
+    "Surplus provider output must not discard a usable image",
+  );
+  assert.equal((await repository.wallet(surplusOwner)).balance, 0);
+  assert.equal(surplusPosts, 1);
+  await processImageItem(surplusItem.id, deps);
+  assert.equal(surplusPosts, 1);
   // Credentials and channel configuration are versioned: in-flight work keeps its accepted route.
   await repository.models.saveProvider(
     owner.userId,
@@ -320,6 +368,11 @@ export async function verifyManagedModels(
   await processImageItem(itemId, deps);
   assert.equal(posts, 1);
   assert.equal(gets, 1);
+  assert.equal((await repository.get(owner, accepted.id))?.status, "succeeded");
+  assert.equal(
+    await repository.finish(interruptedPoll, { errorCode: "STALE_POLL", unknown: true }),
+    false,
+  );
   assert.equal((await repository.get(owner, accepted.id))?.status, "succeeded");
   assert.equal((await repository.wallet(owner)).balance, 180);
   await processImageItem(itemId, deps);
