@@ -284,3 +284,31 @@ it("continues polling accepted tasks that forbid resubmission and fetches comple
     await configuredProviderCall(snapshot, "fixture-key", input, [], "item", pending, request),
   ).toMatchObject({ kind: "pending", statusPath: "/v1/images/tasks/accepted-task" });
 });
+
+it.each([
+  ["1K", "gpt-image-2.5-flare", "1024x1024"],
+  ["2K", "gpt-image-2.5-flare", "2048x2048"],
+  ["4K", "gpt-image-2", "4096x4096"],
+] as const)("selects the snapshotted upstream model for %s", async (resolution, model, size) => {
+  const mapping = { "1K": "gpt-image-2.5-flare", "2K": "gpt-image-2.5-flare", "4K": "gpt-image-2" };
+  const configured = providerSnapshotSchema.parse({
+    ...snapshot,
+    resolutions: ["1K", "2K", "4K"],
+    upstreamModelsByResolution: mapping,
+  });
+  mapping[resolution] = "changed-after-submission";
+  const request = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json({ data: [{ b64_json: "aGVsbG8=" }] }));
+  await configuredProviderCall(
+    configured,
+    "fixture-key",
+    { ...input, resolution },
+    [],
+    "item",
+    undefined,
+    request,
+  );
+  expect(JSON.parse(String(request.mock.calls[0]?.[1]?.body))).toMatchObject({ model, size });
+  expect(request).toHaveBeenCalledTimes(1);
+});

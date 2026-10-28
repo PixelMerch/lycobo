@@ -140,3 +140,5 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 供应商请求协议注册表位于 packages/generation/src/provider-adapters.ts，公共执行与下载在 configured-provider.ts，共享错误在 provider-errors.ts；apps/worker/scripts/import-textile-provider.ts 通过独立后台API将本地兼容环境配置导入裂变渠道，仅显式执行，不自动覆盖后台。
 
 历史记录整组下载：`apps/web/src/features/generation/history/history-download-button.tsx` 管理原图签名获取、读取取消、打包状态及浏览器下载；`history-download.ts` 选择已完成任务的成功项并按顺序打包ZIP，fflate仅在下载时加载，不改变单张下载与资源授权。
+
+模型渠道的可选 `upstreamModelsByResolution` 配置按 1K／2K／4K 选择上游模型，随任务保存到供应商快照；未配置的分辨率回退到 `upstreamModel`。前端仍提交公共模型与分辨率，不感知供应商模型名。本地家纺裂变配置为 1K／2K → `gpt-image-2.5-flare`，4K → `gpt-image-2`；线上配置独立管理。

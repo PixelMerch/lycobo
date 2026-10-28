@@ -25,14 +25,22 @@ export const providerInputSchema = z.strictObject({
   enabled: z.boolean(),
   apiKey: z.string().trim().min(8).max(2048).optional(),
 });
+const upstreamModelSchema = z
+  .string()
+  .trim()
+  .regex(/^[\w.\-:/]{1,160}$/);
 export const channelInputSchema = z.strictObject({
   name: z.string().trim().min(1).max(80),
   providerId: z.uuid(),
   model: z.enum(publicImageModelIds),
-  upstreamModel: z
-    .string()
-    .trim()
-    .regex(/^[\w.\-:/]{1,160}$/),
+  upstreamModel: upstreamModelSchema,
+  upstreamModelsByResolution: z
+    .strictObject({
+      "1K": upstreamModelSchema.optional(),
+      "2K": upstreamModelSchema.optional(),
+      "4K": upstreamModelSchema.optional(),
+    })
+    .optional(),
   mode: providerModeSchema,
   enabled: z.boolean(),
   editsEnabled: z.boolean(),

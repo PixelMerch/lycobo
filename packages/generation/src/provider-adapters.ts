@@ -32,7 +32,7 @@ function fields(snapshot: ProviderSnapshot, input: ImageGenerationInput) {
   const edge = { "1K": 1024, "2K": 2048, "4K": 4096 }[input.resolution];
   const scale = edge / Math.max(w ?? 1, h ?? 1);
   return {
-    model: snapshot.upstreamModel,
+    model: snapshot.upstreamModelsByResolution?.[input.resolution] ?? snapshot.upstreamModel,
     prompt: input.prompt,
     size: `${Math.round(((w ?? 1) * scale) / 16) * 16}x${Math.round(((h ?? 1) * scale) / 16) * 16}`,
     n: 1,
