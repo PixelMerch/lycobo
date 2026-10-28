@@ -702,6 +702,7 @@ export const modelCatalog = pgTable(
     logoUrl: text("logo_url"),
     description: text("description").notNull().default(""),
     capabilitySummary: text("capability_summary").notNull().default(""),
+    sortOrder: integer("sort_order").notNull().default(0),
     upstreamModel: text("upstream_model"),
     providerId: uuid("provider_id").references(() => modelProviders.id),
     category: text("category").notNull(),

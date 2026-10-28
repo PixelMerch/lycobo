@@ -77,3 +77,5 @@ provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 
 ## 主站模型展示信息
 
 主站创作导航从公开 GET /api/v1/image-model-logos 读取后台配置的展示名称、Logo、模型介绍和能力说明。响应仅包含现有三个公开图片模型的稳定 id、name、logoUrl、description 和 capabilitySummary，不暴露站点、调用模型或凭据，不自动新增可用模型。按 model_catalog.code 关联，禁止按显示名称或中转站调用名称猜测匹配；Banana 2.1 显式兼容旧目录标识 gemini-nano-banana-2.1 和 gemini-3.1-flash-image-preview，优先使用规范标识配置的 Logo；后台修改 Logo 后，主站刷新或查询过期后重新聚焦页面会更新。缺少 Logo、请求失败或图片失效时显示中性图片图标，不再使用示例照片。菜单尺寸、权限和实际生成行为保持原样；展示名称和两行介绍由后台配置，留空介绍不显示。0030_model_catalog_presentation 追加 description、capability_summary 并迁入原有文案，每项最多 160 字。
+
+主站模型列表遵循后台目录 sort_order，排序迁移为 0031_model_catalog_sort_order。后台支持全部分类和过滤后的拖动排序；主站仅对当前支持的公开模型应用顺序，不因此发布其他模型或修改路由。

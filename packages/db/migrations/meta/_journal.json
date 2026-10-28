@@ -218,6 +218,13 @@
       "when": 1793171528101,
       "tag": "0030_model_catalog_presentation",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793171925296,
+      "tag": "0031_model_catalog_sort_order",
+      "breakpoints": true
     }
   ]
 }

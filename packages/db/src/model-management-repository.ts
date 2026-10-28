@@ -26,21 +26,24 @@ export function modelManagementRepository(sql: postgres.Sql) {
         ],
       };
       const rows =
-        await sql`select code,name,logo_url,description,capability_summary from model_catalog where category='image' and code in ${sql(Object.values(identities).flat())}`;
+        await sql`select code,name,logo_url,description,capability_summary,sort_order from model_catalog where category='image' and code in ${sql(Object.values(identities).flat())}`;
       return imageModelLogosResponseSchema.parse({
-        models: publicImageModelIds.map((id) => {
-          const entries = identities[id].map((code) => rows.find((row) => row.code === code));
-          // Prefer the configured Logo entry so legacy catalog names/copy stay together.
-          const entry =
-            entries.find((row) => row?.logo_url != null) ?? entries.find((row) => row != null);
-          return {
-            id,
-            name: entry?.name ?? id,
-            logoUrl: entry?.logo_url ?? null,
-            description: entry?.description ?? "",
-            capabilitySummary: entry?.capability_summary ?? "",
-          };
-        }),
+        models: publicImageModelIds
+          .map((id) => {
+            const entries = identities[id].map((code) => rows.find((row) => row.code === code));
+            // Prefer the configured Logo entry so legacy catalog names/copy stay together.
+            const entry =
+              entries.find((row) => row?.logo_url != null) ?? entries.find((row) => row != null);
+            return {
+              id,
+              sortOrder: entry?.sort_order ?? 2147483647,
+              name: entry?.name ?? id,
+              logoUrl: entry?.logo_url ?? null,
+              description: entry?.description ?? "",
+              capabilitySummary: entry?.capability_summary ?? "",
+            };
+          })
+          .sort((a, b) => a.sortOrder - b.sortOrder),
       });
     },
     async list() {

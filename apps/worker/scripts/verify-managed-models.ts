@@ -53,6 +53,8 @@ export async function verifyManagedModels(
       capabilitySummary: "后台能力",
     },
   );
+  await sql`update model_catalog set sort_order=-10 where code='gpt-image-2.5'`;
+  assert.equal((await repository.models.logos()).models[0]?.id, "gpt-image-2.5");
   const owner = await repository.provision(
     `managed-${crypto.randomUUID()}`,
     "managed-fixture",
