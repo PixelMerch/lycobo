@@ -19,6 +19,7 @@
 
 | 主题 | 文档 |
 | --- | --- |
+| 智能商品裂变菜单与确认流程（待实施） | [商品裂变方案](product-variation-plan.md) |
 | 工作台状态与素材 | [工作台实现](image-studio-implementation.md) |
 | 多区域图片修改与画布 | [局部编辑](local-image-repair.md) |
 | JSON 返回结构与业务码 | [API 返回规范](api-response.md) |
