@@ -129,7 +129,7 @@ test("edited history references and prompt survive all model switches", async ({
       "aria-checked",
       "true",
     );
-    await expect(page.getByRole("radio", { name: "1K", exact: true })).toHaveAttribute(
+    await expect(page.getByRole("radio", { name: "1.5K", exact: true })).toHaveAttribute(
       "aria-checked",
       "true",
     );
@@ -356,19 +356,19 @@ test("a text-only model blocks restored references even when another model suppo
         enabled: true,
         editsEnabled: true,
         unitCredits: 20,
-        models: [{ id: "gpt-image-2.5", enabledResolutions: ["1K"] }],
+        models: [{ id: "gpt-image-2.5", enabledResolutions: ["1K", "1.5K"] }],
         tools: {
           create: [
             {
               id: "gpt-image-2.5",
-              enabledResolutions: ["1K"],
+              enabledResolutions: ["1K", "1.5K"],
               editsEnabled: false,
               maxReferences: 0,
               managed: true,
             },
             {
               id: "nano-banana-2.1",
-              enabledResolutions: ["1K"],
+              enabledResolutions: ["1K", "1.5K"],
               editsEnabled: true,
               maxReferences: 5,
               managed: true,

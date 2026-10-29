@@ -17,7 +17,7 @@ for (const path of ["/", "/create"]) {
         await page.getByRole("button", { name: /创作模型/ }).click();
         await page.getByRole("option", { name: model, exact: true }).click();
       }
-      for (const resolution of ["1K", "2K", "4K"]) {
+      for (const resolution of ["1.5K", "2K", "4K"]) {
         const option = page.getByRole("radio", { name: resolution, exact: true });
         await expect(option).toBeEnabled();
         await option.click();

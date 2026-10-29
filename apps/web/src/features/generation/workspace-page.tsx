@@ -28,7 +28,7 @@ import { ReferencePicker } from "./references/reference-picker";
 import { defaultDraft, type ModelId, useStudioStore } from "./studio-state";
 
 const promptLimit = 5000;
-const resolutionField = { label: "分辨率", values: ["1K", "2K", "4K"] } as const;
+const resolutionField = { label: "分辨率", values: ["1.5K", "2K", "4K"] } as const;
 const advancedFields = [
   { key: "quality", label: "质量", values: ["低", "标准", "高"] },
   { key: "count", label: "生成张数", values: ["1", "2", "3", "4"] },
@@ -102,7 +102,7 @@ function Workspace({ model }: { model: ModelId }) {
                 ...draft,
                 resolution: supported?.some((value) => value === draft.resolution)
                   ? draft.resolution
-                  : "1K",
+                  : "1.5K",
               });
               setActiveModel(nextModel);
             }}

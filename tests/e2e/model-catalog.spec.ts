@@ -80,7 +80,7 @@ for (const { stored, id, name } of [
           enabled: true,
           editsEnabled: true,
           unitCredits: 20,
-          models: [{ id, enabledResolutions: ["1K"] }],
+          models: [{ id, enabledResolutions: ["1K", "1.5K"] }],
         }),
       }),
     );

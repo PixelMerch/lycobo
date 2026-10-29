@@ -67,7 +67,7 @@ export function repairOutput(
   return {
     ratio,
     resolution:
-      Math.max(width, height) <= 1024 ? "1K" : Math.max(width, height) <= 2048 ? "2K" : "4K",
+      Math.max(width, height) <= 1254 ? "1.5K" : Math.max(width, height) <= 2048 ? "2K" : "4K",
   };
 }
 

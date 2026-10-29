@@ -169,14 +169,14 @@ export async function verifyManagedModels(
   const resolutionOwner = await repository.provision(
     `all-resolutions-${crypto.randomUUID()}`,
     "resolution-fixture",
-    40,
+    60,
   );
   assert.deepEqual(
     (await repository.models.capabilities()).create?.find((model) => model.id === "custom-image-v7")
       ?.enabledResolutions,
-    ["1K", "2K", "4K"],
+    ["1K", "1.5K", "2K", "4K"],
   );
-  for (const resolution of ["1K", "4K"] as const) {
+  for (const resolution of ["1K", "1.5K", "4K"] as const) {
     const created = await repository.create(
       resolutionOwner,
       { ...customInput, resolution },
@@ -187,7 +187,7 @@ export async function verifyManagedModels(
     const [stored] =
       await sql`select resolution,provider_snapshot from generation_jobs where id=${created.id}`;
     assert.equal(stored?.resolution, resolution);
-    assert.deepEqual(stored?.provider_snapshot.resolutions, ["1K", "2K", "4K"]);
+    assert.deepEqual(stored?.provider_snapshot.resolutions, ["1K", "1.5K", "2K", "4K"]);
   }
   const [dynamicSnapshot] =
     await sql`select provider_snapshot from generation_jobs where id=${dynamicTask.id}`;

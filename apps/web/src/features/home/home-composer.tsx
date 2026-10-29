@@ -75,7 +75,7 @@ export function HomeComposer() {
                           ...draft,
                           resolution: supported?.some((value) => value === draft.resolution)
                             ? draft.resolution
-                            : "1K",
+                            : "1.5K",
                         });
                         setModel(item.id);
                       }}
@@ -113,7 +113,7 @@ export function HomeComposer() {
                       updateDraft(model, { resolution: String([...keys][0]) })
                     }
                   >
-                    {(["1K", "2K", "4K"] as const).map((resolution) => (
+                    {(["1.5K", "2K", "4K"] as const).map((resolution) => (
                       <ToggleButton
                         id={resolution}
                         key={resolution}

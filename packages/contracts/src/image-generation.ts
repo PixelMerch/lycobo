@@ -20,7 +20,8 @@ export const imageModelCodeSchema = z
   .string()
   .trim()
   .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,99}$/);
-export const imageResolutionSchema = z.enum(["1K", "2K", "4K"]);
+export const imageResolutionSchema = z.enum(["1K", "1.5K", "2K", "4K"]);
+export const publicImageResolutions = ["1.5K", "2K", "4K"] as const;
 export type ImageResolution = z.infer<typeof imageResolutionSchema>;
 export const imageQualitySchema = z.enum(["low", "medium", "high"]);
 export type ImageQuality = z.infer<typeof imageQualitySchema>;
@@ -140,7 +141,10 @@ export function publicImageModel(model: ImageGenerationInput["model"]): PublicIm
 export function imageProviderModel(input: Pick<ImageGenerationInput, "model" | "resolution">) {
   if (input.model === "gpt-image-2-4K") return "gpt-image-2-4K";
   const model = publicImageModel(input.model);
-  if (model === "gpt-image-2") return input.resolution === "1K" ? "gpt-image-2" : "gpt-image-2-4K";
+  if (model === "gpt-image-2")
+    return input.resolution === "1K" || input.resolution === "1.5K"
+      ? "gpt-image-2"
+      : "gpt-image-2-4K";
   if (model === "gpt-image-2.5") return "gpt-image-2.5-sunburst";
   return "gemini-nano-banana-2.1";
 }
@@ -159,7 +163,7 @@ export const imageModelLogosResponseSchema = z.object({
 
 export const imageModelCatalog = publicImageModelIds.map((id) => ({
   id,
-  allowedResolutions: ["1K", "2K", "4K"] as ImageResolution[],
+  allowedResolutions: ["1K", ...publicImageResolutions] as ImageResolution[],
 }));
 
 export const imageItemStatusSchema = z.enum([
@@ -272,3 +276,15 @@ export const imageUploadResponseSchema = z.object({
 export const imageSessionResponseSchema = z.object({ userId: z.uuid(), organizationId: z.uuid() });
 
 export const latestImageEditResponseSchema = z.object({ job: imageJobSchema.nullable() });
+
+/** New 1.5K requests use exact pixels; legacy task dimensions remain unchanged. */
+export function imageOutputDimensions(ratio: string, resolution: ImageResolution) {
+  const [w = 1, h = 1] = ratio.split(":").map(Number);
+  const edge = { "1K": 1024, "1.5K": 1254, "2K": 2048, "4K": 3840 }[resolution];
+  const scale = edge / Math.max(w, h);
+  const alignment = resolution === "1.5K" ? 1 : 16;
+  return {
+    width: Math.round((w * scale) / alignment) * alignment,
+    height: Math.round((h * scale) / alignment) * alignment,
+  };
+}

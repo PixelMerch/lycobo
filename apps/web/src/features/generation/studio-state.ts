@@ -55,7 +55,7 @@ const emptyDraft = (): Draft => ({
   prompt: "",
   references: [],
   ratio: "1:1",
-  resolution: "1K",
+  resolution: "1.5K",
   quality: "标准",
   count: "1",
 });

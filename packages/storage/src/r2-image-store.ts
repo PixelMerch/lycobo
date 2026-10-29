@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type { ImagesBinding } from "@cloudflare/workers-types";
 import { type ImageScope, imageLimits } from "@lycoboai/contracts";
 import {
+  type ImageOutputSize,
   type ImageStore,
   ImageValidationError,
   objectKeySchema,
@@ -69,8 +70,9 @@ export function r2ImageStore(
     }
     return info;
   };
-  const png = async (bytes: Uint8Array, thumbnail = false) => {
+  const png = async (bytes: Uint8Array, thumbnail = false, outputSize?: ImageOutputSize) => {
     let transform = images.input(stream(bytes));
+    if (outputSize) transform = transform.transform({ ...outputSize, fit: "contain" });
     if (thumbnail) transform = transform.transform({ width: 512, height: 512, fit: "scale-down" });
     let result: Awaited<ReturnType<typeof transform.output>>;
     try {
@@ -90,11 +92,20 @@ export function r2ImageStore(
     async ready() {
       /* Bindings are validated by deployment; no public bucket probe. */
     },
-    async put(scope: ImageScope, input: Uint8Array, id = randomUUID()) {
+    async put(
+      scope: ImageScope,
+      input: Uint8Array,
+      id = randomUUID(),
+      outputSize?: ImageOutputSize,
+    ) {
       const key = userObjectKey(await resolveUid(scope), scope.organizationId, id);
-      await inspect(input);
-      const data = await png(input);
+      const source = await inspect(input);
+      if (outputSize && (source.width < outputSize.width || source.height < outputSize.height))
+        throw new ImageValidationError("OUTPUT_RESOLUTION_TOO_SMALL");
+      const data = await png(input, false, outputSize);
       const info = await inspect(data);
+      if (outputSize && (info.width !== outputSize.width || info.height !== outputSize.height))
+        throw new ImageValidationError("OUTPUT_RESOLUTION_MISMATCH");
       const sha256 = createHash("sha256").update(data).digest("hex");
       const written = await bucket.put(key, data, {
         httpMetadata: { contentType: "image/png" },

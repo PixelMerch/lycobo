@@ -1,3 +1,4 @@
+import { imageOutputDimensions } from "@lycoboai/contracts";
 import type { ClaimedImage, ImageRepository } from "@lycoboai/db";
 import {
   configuredProviderCall,
@@ -64,7 +65,14 @@ export async function processConfiguredImage(
     const output = result.outputs[0];
     if (!output) throw new ImageProviderError("PROVIDER_EMPTY_IMAGE", true);
     const bytes = await providerOutputBytes(output, state.snapshot, key, deps.request);
-    const image = await deps.store.put(job, bytes, job.itemId);
+    const image = await deps.store.put(
+      job,
+      bytes,
+      job.itemId,
+      job.input.resolution === "1.5K"
+        ? imageOutputDimensions(job.input.aspectRatio, job.input.resolution)
+        : undefined,
+    );
     await deps.repository.finish(job, { image, requestId: result.requestId });
   } catch (error) {
     const known = error instanceof ImageProviderError;

@@ -7,6 +7,7 @@ import {
   imageProviderModel,
   imageUnitCredits,
   type ProviderSnapshot,
+  providerModelForResolution,
   providerSnapshotSchema,
   type StoredImage,
 } from "@lycoboai/contracts";
@@ -216,7 +217,7 @@ export function openImageRepository(url: string, edge = false) {
         );
         const inserted =
           await tx`insert into generation_jobs (organization_id,user_id,idempotency_key,input_hash,input,model,provider_model,prompt,resolution,aspect_ratio,requested_count,unit_credits,provider_snapshot)
-          values (${scope.organizationId},${scope.userId},${key},${inputHash},${tx.json(input)},${input.model},${snapshot ? (snapshot.upstreamModelsByResolution?.[input.resolution] ?? snapshot.upstreamModel) : imageProviderModel(input)},${input.prompt},${input.resolution},${input.aspectRatio},${input.count},${unitCredits},${snapshot ? tx.json(snapshot) : null})
+          values (${scope.organizationId},${scope.userId},${key},${inputHash},${tx.json(input)},${input.model},${snapshot ? providerModelForResolution(snapshot, input.resolution) : imageProviderModel(input)},${input.prompt},${input.resolution},${input.aspectRatio},${input.count},${unitCredits},${snapshot ? tx.json(snapshot) : null})
           on conflict (organization_id,user_id,idempotency_key) do nothing returning id`;
         if (!inserted[0]) {
           const [existing] =
@@ -312,7 +313,7 @@ export function openImageRepository(url: string, edge = false) {
             const evidence = `Explicit retry adopted current routing; prior provider snapshot: ${JSON.stringify(job.provider_snapshot)}`;
             await tx`update generation_job_items set reconciliation_evidence=concat_ws('; ',reconciliation_evidence,${evidence}::text) where job_id=${jobId} and superseded_at is null`;
           }
-          await tx`update generation_jobs set provider_snapshot=${tx.json(snapshot)},provider_model=${snapshot.upstreamModelsByResolution?.[input.resolution] ?? snapshot.upstreamModel} where id=${jobId}`;
+          await tx`update generation_jobs set provider_snapshot=${tx.json(snapshot)},provider_model=${providerModelForResolution(snapshot, input.resolution)} where id=${jobId}`;
         }
         // Explicit user retry retires unresolved attempts before refund/recharge.
         // Keep the uncertain provider outcome as evidence; do not call this

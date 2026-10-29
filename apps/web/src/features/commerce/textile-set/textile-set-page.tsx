@@ -1,5 +1,9 @@
 import { Button, Popover, Tabs, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { imageResolutionSchema, imageUnitCredits } from "@lycoboai/contracts";
+import {
+  imageResolutionSchema,
+  imageUnitCredits,
+  publicImageResolutions,
+} from "@lycoboai/contracts";
 import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { useId, useRef, useState } from "react";
 import { CreditCoin } from "../../../components/credit-coin";
@@ -156,11 +160,11 @@ export function TextileSetPage() {
               selectionMode="single"
               selectedKeys={[resolution]}
               onSelectionChange={(keys) => {
-                const next = imageResolutionSchema.options.find((value) => keys.has(value));
+                const next = publicImageResolutions.find((value) => keys.has(value));
                 if (next) update({ resolution: next });
               }}
             >
-              {imageResolutionSchema.options.map((value) => (
+              {publicImageResolutions.map((value) => (
                 <ToggleButton
                   key={value}
                   id={value}

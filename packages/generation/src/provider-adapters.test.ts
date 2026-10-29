@@ -75,3 +75,38 @@ it("keeps legacy dimensions within the same 4K limit without changing 1K and 2K"
   expect(imageDimensions("1:1", "4K")).toEqual({ width: 3840, height: 3840 });
   expect(imageDimensions("9:16", "4K")).toEqual({ width: 2160, height: 3840 });
 });
+
+it("sends exact 1254 pixels for the new 1.5K tier and adapts native Gemini without inventing a native size", () => {
+  const snapshot = providerSnapshotSchema.parse({
+    channelId: crypto.randomUUID(),
+    credentialId: crypto.randomUUID(),
+    origin: "https://example.com",
+    adapter: "fluxport-images",
+    model: "gpt-image-2.5",
+    upstreamModel: "default-model",
+    upstreamModelsByResolution: { "1K": "legacy-tier-model" },
+    mode: "async-preferred",
+    editsEnabled: true,
+    maxReferences: 6,
+    timeoutMs: 5000,
+    taskTimeoutSeconds: 600,
+    downloadOrigins: [],
+  });
+  const input = imageGenerationInputSchema.parse({
+    model: "gpt-image-2.5",
+    prompt: "fixture",
+    resolution: "1.5K",
+  });
+  expect(imageDimensions("1:1", "1.5K")).toEqual({ width: 1254, height: 1254 });
+  expect(imageDimensions("3:4", "1.5K")).toEqual({ width: 941, height: 1254 });
+  for (const adapter of ["openai-images", "fluxport-images"] as const) {
+    const result = imageProtocolAdapters[adapter].prepare(snapshot, input, []);
+    expect(JSON.parse(String(result.body))).toMatchObject({
+      size: "1254x1254",
+      model: "legacy-tier-model",
+      n: 1,
+    });
+  }
+  const native = imageProtocolAdapters["gemini-native"].prepare(snapshot, input, []);
+  expect(JSON.parse(String(native.body)).generationConfig.imageConfig.imageSize).toBe("2K");
+});

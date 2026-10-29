@@ -38,6 +38,7 @@ export const channelInputSchema = z.strictObject({
   upstreamModelsByResolution: z
     .strictObject({
       "1K": upstreamModelSchema.optional(),
+      "1.5K": upstreamModelSchema.optional(),
       "2K": upstreamModelSchema.optional(),
       "4K": upstreamModelSchema.optional(),
     })
@@ -46,7 +47,7 @@ export const channelInputSchema = z.strictObject({
   enabled: z.boolean(),
   editsEnabled: z.boolean(),
   // Historical channel field; resolution now comes from each validated task input.
-  resolutions: z.array(imageResolutionSchema).min(1).max(3).default(["1K", "2K", "4K"]),
+  resolutions: z.array(imageResolutionSchema).min(1).max(4).default(["1K", "2K", "4K"]),
   maxReferences: z.number().int().min(0).max(10),
   timeoutMs: z.number().int().min(5000).max(600000),
   taskTimeoutSeconds: z.number().int().min(60).max(7200),
@@ -66,3 +67,14 @@ export const providerSnapshotSchema = channelInputSchema
     adapter: providerAdapterSchema,
   });
 export type ProviderSnapshot = z.infer<typeof providerSnapshotSchema>;
+
+export function providerModelForResolution(
+  snapshot: Pick<ProviderSnapshot, "upstreamModel" | "upstreamModelsByResolution">,
+  resolution: import("./image-generation").ImageResolution,
+) {
+  return (
+    snapshot.upstreamModelsByResolution?.[resolution] ??
+    (resolution === "1.5K" ? snapshot.upstreamModelsByResolution?.["1K"] : undefined) ??
+    snapshot.upstreamModel
+  );
+}

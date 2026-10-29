@@ -130,9 +130,9 @@ it("advertises and enforces the same per-model resolution policy", async () => {
   ]);
   expect(body.unitCredits).toBe(20);
   for (const model of body.models) {
-    const expected = ["1K", "2K", "4K"];
+    const expected = ["1K", "1.5K", "2K", "4K"];
     expect(model.enabledResolutions).toEqual(expected);
-    for (const resolution of ["1K", "2K", "4K"]) {
+    for (const resolution of ["1K", "1.5K", "2K", "4K"]) {
       const result = await app.request("/api/v1/image-tasks", {
         method: "POST",
         headers: { ...headers, "Idempotency-Key": crypto.randomUUID() },
@@ -141,7 +141,7 @@ it("advertises and enforces the same per-model resolution policy", async () => {
       expect(result.status).toBe(expected.includes(resolution) ? 202 : 400);
     }
   }
-  expect(create).toHaveBeenCalledTimes(9);
+  expect(create).toHaveBeenCalledTimes(12);
 });
 
 it("normalizes textile presets on the server and rejects missing references", async () => {

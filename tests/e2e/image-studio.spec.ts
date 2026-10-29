@@ -102,7 +102,7 @@ test("text generation requires a prompt and an available model", async ({ page }
   await expect(generate).toBeDisabled();
   await page.getByLabel("提示词", { exact: true }).fill("米白陶瓷杯");
   await expect(generate).toBeEnabled();
-  await expect(page.getByRole("radio", { name: "1K", exact: true })).toHaveAttribute(
+  await expect(page.getByRole("radio", { name: "1.5K", exact: true })).toHaveAttribute(
     "aria-checked",
     "true",
   );

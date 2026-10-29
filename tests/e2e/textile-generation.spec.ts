@@ -24,7 +24,7 @@ test("textile angles submit one durable ten-image job and keep results separate 
         unitCredits: 20,
         models: ["gpt-image-2", "gpt-image-2.5", "nano-banana-2.1"].map((id) => ({
           id,
-          enabledResolutions: ["1K", "2K", "4K"],
+          enabledResolutions: ["1K", "1.5K", "2K", "4K"],
         })),
       }),
     }),

@@ -43,3 +43,34 @@ it("precomputes bounded WebP variants without resizing the stored original and r
     await mf.dispose();
   }
 });
+
+it("stores exact 1.5K originals through the Cloudflare Images binding", async () => {
+  const mf = new Miniflare(
+    convertV4MiniflareOptions({
+      modules: true,
+      script: "export default { fetch() { return new Response('fixture'); } }",
+      r2Buckets: { BUCKET: "resolution-fixture" },
+      images: { binding: "IMAGES" },
+    }),
+  );
+  try {
+    const { BUCKET, IMAGES } = await mf.getBindings<{ BUCKET: R2Bucket; IMAGES: ImagesBinding }>();
+    const source = await sharp({
+      create: { width: 2048, height: 2048, channels: 3, background: "#789abc" },
+    })
+      .png()
+      .toBuffer();
+    const store = r2ImageStore(BUCKET, IMAGES, async () => "0057849613");
+    const asset = await store.put(
+      { userId: crypto.randomUUID(), organizationId: crypto.randomUUID() },
+      source,
+      crypto.randomUUID(),
+      { width: 1254, height: 1254 },
+    );
+    const meta = await sharp(Buffer.from(await store.read(asset))).metadata();
+    expect([asset.width, asset.height, meta.width, meta.height]).toEqual([1254, 1254, 1254, 1254]);
+    await store.remove(asset);
+  } finally {
+    await mf.dispose();
+  }
+});

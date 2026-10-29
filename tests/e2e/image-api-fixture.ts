@@ -30,7 +30,7 @@ export async function mockImageApi(page: Page) {
         unitCredits: 20,
         models: modelNames.map((id) => ({
           id,
-          enabledResolutions: ["1K", "2K", "4K"],
+          enabledResolutions: ["1K", "1.5K", "2K", "4K"],
         })),
       };
     else if (path.endsWith("/image-model-logos"))
@@ -52,7 +52,7 @@ export async function mockImageEvents(page: Page, enabled = true) {
         eventsEnabled: enabled,
         editsEnabled: true,
         unitCredits: 1,
-        models: modelNames.map((id) => ({ id, enabledResolutions: ["1K"] })),
+        models: modelNames.map((id) => ({ id, enabledResolutions: ["1K", "1.5K"] })),
       }),
     }),
   );
