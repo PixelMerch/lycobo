@@ -233,16 +233,16 @@ body:has(.commerce-home)::-webkit-scrollbar {
   justify-content: center;
   gap: 10px;
   margin-bottom: var(--home-intro-gap);
-  font-size: 28px;
-  font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: -0.02em;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0;
 }
 .home-intro-rotation {
   display: grid;
   place-items: center;
   width: 8em;
-  height: 1.5em;
+  height: 42px;
   overflow: hidden;
 }
 .home-intro-phrase {
@@ -257,43 +257,15 @@ body:has(.commerce-home)::-webkit-scrollbar {
   backface-visibility: hidden;
 }
 .home-intro-gradient {
-  color: #0485f7;
-  background-image: linear-gradient(100deg, var(--home-title-colors));
-  background-size: 250% 100%;
+  color: #e4eaf0;
+  background-image: linear-gradient(110deg, var(--home-title-colors));
+  background-size: 800% 100%;
+  background-position: var(--character-offset, 50%) 50%;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: home-title-gradient 8s ease-in-out infinite alternate;
 }
-.home-intro-phrase[data-palette="aurora"] {
-  --home-title-colors: #67e8f9, #a5b4fc, #f0abfc, #67e8f9;
-}
-.home-intro-phrase[data-palette="sunset"] {
-  --home-title-colors: #fcd34d, #fdba74, #fda4af, #fcd34d;
-}
-.home-intro-phrase[data-palette="ocean"] {
-  --home-title-colors: #6ee7b7, #67e8f9, #93c5fd, #6ee7b7;
-}
-.home-intro-phrase[data-palette="blossom"] {
-  --home-title-colors: #f9a8d4, #d8b4fe, #93c5fd, #f9a8d4;
-}
-.home-intro-phrase[data-palette="citrus"] {
-  --home-title-colors: #bef264, #fde68a, #6ee7b7, #bef264;
-}
-.home-intro:hover .home-intro-gradient {
-  animation-play-state: paused;
-}
-@keyframes home-title-gradient {
-  from {
-    background-position: var(--character-offset, 0%) 50%;
-  }
-  to {
-    background-position: calc(var(--character-offset, 0%) + 100%) 50%;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .home-intro-gradient {
-    animation: none;
-  }
+.home-intro-phrase[data-palette="silver"] {
+  --home-title-colors: #f2f3f5, #d5e1ed, #a6c8e9;
 }
 .home-composer {
   min-height: 212px;
@@ -580,6 +552,9 @@ body:has(.commerce-home)::-webkit-scrollbar {
     flex-direction: column;
     font-size: 22px;
     gap: 4px;
+  }
+  .home-intro-rotation {
+    height: 33px;
   }
   .home-composer-tools {
     flex-wrap: wrap;
