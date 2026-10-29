@@ -68,6 +68,17 @@ export const router = createBrowserRouter([
         }),
       },
       {
+        path: "commerce/smart-variation",
+        loader: () => {
+          rememberCommerceTool("smart-variation");
+          return null;
+        },
+        lazy: async () => ({
+          Component: (await import("../features/commerce/smart-variation/smart-variation-page"))
+            .SmartVariationPage,
+        }),
+      },
+      {
         path: "assets",
         lazy: async () => ({
           Component: (await import("../features/assets/assets-page")).AssetsPage,
