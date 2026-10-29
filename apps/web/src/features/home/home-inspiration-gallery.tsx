@@ -25,7 +25,6 @@ export function HomeInspirationGallery() {
     <section className="home-inspiration" aria-labelledby="home-inspiration-title">
       <div className="home-inspiration-heading">
         <h2 id="home-inspiration-title">电商创作灵感</h2>
-        <p>示例素材 · 找到下一张商品图的方向</p>
       </div>
       <Tabs
         selectedKey={category}

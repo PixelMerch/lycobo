@@ -224,7 +224,7 @@ test("home inspiration filters examples and confirms prompt replacement without 
   });
   await page.goto("/");
   const gallery = page.getByRole("region", { name: "电商创作灵感", exact: true });
-  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(12);
+  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(13);
   await page.getByRole("textbox", { name: "创作需求" }).fill("我的原提示词");
   await gallery.getByRole("tab", { name: "家纺展示", exact: true }).click();
   await expect(gallery.locator(".home-inspiration-card")).toHaveCount(4);
@@ -239,4 +239,35 @@ test("home inspiration filters examples and confirms prompt replacement without 
   await expect(page).toHaveURL(/\/create$/);
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(/基于参考床品拍摄枕头特写/);
   expect(submissions).toBe(0);
+});
+
+test("wide home inspiration fills every column with equal side gutters", async ({ page }) => {
+  await mockImageApi(page);
+  await page.setViewportSize({ width: 2400, height: 1100 });
+  await page.goto("/");
+  const gallery = page.getByRole("region", { name: "电商创作灵感", exact: true });
+  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(13);
+  await expect(gallery.getByText("示例素材 · 找到下一张商品图的方向")).toHaveCount(0);
+  const layout = await gallery.evaluate((element) => {
+    const home = element.closest(".commerce-home");
+    const grid = element.querySelector(".home-inspiration-grid");
+    if (!home || !grid) throw new Error("Missing inspiration layout");
+    const outer = home.getBoundingClientRect();
+    const bounds = grid.getBoundingClientRect();
+    const cards = Array.from(grid.querySelectorAll(".home-inspiration-card")).map((card) =>
+      card.getBoundingClientRect(),
+    );
+    return {
+      leftGutter: bounds.left - outer.left,
+      rightGutter: outer.right - bounds.right,
+      lastCardRight: Math.max(...cards.map((card) => card.right)),
+      gridRight: bounds.right,
+      columns: new Set(cards.map((card) => Math.round(card.left))).size,
+    };
+  });
+  expect(Math.abs(layout.leftGutter - layout.rightGutter)).toBeLessThan(1);
+  expect(Math.abs(layout.lastCardRight - layout.gridRight)).toBeLessThan(1);
+  expect(layout.columns).toBe(5);
+  await gallery.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "/tmp/lycobo-inspiration-wide.png" });
 });

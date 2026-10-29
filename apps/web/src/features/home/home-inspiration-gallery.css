@@ -1,6 +1,7 @@
 .home-inspiration {
   margin: 64px auto 24px;
-  max-width: 1600px;
+  width: 100%;
+  min-width: 0;
 }
 .home-inspiration-heading {
   display: flex;
@@ -14,11 +15,6 @@
   font-size: 22px;
   font-weight: 600;
   color: var(--foreground);
-}
-.home-inspiration-heading p {
-  margin: 0;
-  font-size: 13px;
-  color: var(--muted);
 }
 .home-inspiration .tabs {
   gap: 24px;

@@ -124,4 +124,13 @@ export const homeInspirations: HomeInspiration[] = [
     prompt:
       "从床尾中央平视拍摄参考床品，保持商品颜色、图案、材质和套件组成不变，左右构图平衡，完整展示床头、枕套和被子。",
   },
+  {
+    id: "folded-textile",
+    title: "套件质感陈列",
+    category: "商品主图",
+    image: "/studio/set-thumb.webp",
+    shape: "square",
+    prompt:
+      "以参考床品为主体，将被子与枕套整齐折叠陈列，保留商品颜色、绗缝和材质纹理，使用干净背景与柔和自然光，不添加文字或品牌。",
+  },
 ];
