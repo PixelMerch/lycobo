@@ -153,3 +153,9 @@ Seedream 文档未声明质量枚举，与 Grok 一样不发送 GPT 默认 quali
 本地Grok渠道现收敛为已验证的文生图，目录继续启用，不修改其他模型或线上配置。主站提交、历史重试、局部编辑和家纺生成均按tools中当前模型的能力及参考图上限判断，不再用全局editsEnabled替代单个渠道能力；tools存在但对应功能未配置时保持不可用，仅对没有tools的旧版响应保留兼容。Grok带参考图的草稿保留并提示移除参考图后生成，不静默丢弃用户素材或产生扣费。
 
 回归验证：pnpm check通过（37个测试文件，187通过、1跳过）；定向浏览器测试覆盖当前模型不支持参考图但全局开启时禁用提交／重试、清除参考图恢复文生图、家纺10视角与6张参考图提交、局部编辑提交，3项通过。未运行完整本地E2E，未推送或部署线上。
+
+### Grok 公网URL参考图对照（2026-10-29）
+
+使用用户提供的公网PNG地址做一次独立供应商诊断；HEAD返回HTTP200、image/png、2,273,225字节。直接按中转站文档发送JSON：model、prompt、单项images[].image_url及async=true，不带size、quality、response_format或额外n。只提交一次，持久化幂等键和任务回执后查询原任务，没有自动重发，也没有更改主站渠道能力。
+
+中转站HTTP202受理，任务imgtask_2bb2e2fa-5bc3-4651-b906-a4c76b665fd2，随后终态failed、image_generation_failed、阶段generation、成功0、charged_amount=0。结构化错误category=service_uncertain、reason_code=service_http_400、cause_confirmed=false；与此前Data URI的JSON／415提示不同，不能将这次失败解释为同一个已确认原因。公网URL未使编辑成功，仍需中转站核查生成服务HTTP400的具体原因。诊断直接使用供应商API，没有创建主站任务或扣主站钱包积分；不代表正常业务路径绕过持久任务和扣费。
