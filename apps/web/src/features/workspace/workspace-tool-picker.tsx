@@ -21,7 +21,6 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
-import { ModelLogo, useModelPresentation } from "../generation/models/model-logos";
 import { shareProductReference, toolForPath, workspaceTools } from "./workspace-state";
 
 const categories = ["全部工具", "主图制作", "套图与裂变", "商品视频"];
@@ -189,21 +188,6 @@ export function WorkspaceToolPicker() {
     </>
   );
 }
-export function TextileModelLabel() {
-  const catalog = useModelPresentation();
-  const model = catalog.data?.models.find((entry) => entry.id === "gpt-image-2.5");
-  return (
-    <div className="workspace-fixed-model">
-      <span>模型</span>
-      <span className="model-selector-name">
-        <ModelLogo src={model?.logoUrl} size="compact" />
-        {model?.name ?? "Image 2.5"}
-      </span>
-      <small>固定</small>
-    </div>
-  );
-}
-
 export function WorkspaceHistoryFilter({
   value,
   onChange,

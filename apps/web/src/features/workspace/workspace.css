@@ -52,22 +52,6 @@
   width: 140px;
   flex-shrink: 0;
 }
-.workspace-fixed-model {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: #ffffff0a;
-  font-size: 13px;
-}
-.workspace-fixed-model > :first-child {
-  margin-right: auto;
-  color: var(--muted);
-}
-.workspace-fixed-model small {
-  color: var(--muted);
-}
 /* The header and filters stay in place; only the visual tool grid scrolls. */
 .workspace-tools-dialog {
   width: min(860px, calc(100vw - 40px));

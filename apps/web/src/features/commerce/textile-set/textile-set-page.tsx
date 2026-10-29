@@ -6,7 +6,7 @@ import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../../generation/composer/selection-highlight";
-import { TextileModelLabel, WorkspaceToolPicker } from "../../workspace/workspace-tool-picker";
+import { WorkspaceToolPicker } from "../../workspace/workspace-tool-picker";
 
 import { TextileImageField } from "./textile-image-field";
 import { useTextileSetDraft } from "./textile-set-state";
@@ -176,7 +176,6 @@ export function TextileSetPage() {
           </fieldset>
         </div>
         <div className="generate-area">
-          <TextileModelLabel />
           <Button
             variant="primary"
             size="lg"
