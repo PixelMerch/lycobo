@@ -10,7 +10,7 @@ import type { HistoryRestore } from "../generation/history/history-task-tools";
 import { useStudioStore } from "../generation/studio-state";
 import { BackToTopButton } from "../generation/workspace-page";
 import { restoreMainImagePrompt, useWorkspaceState } from "./workspace-state";
-import { WorkspaceHistoryFilter } from "./workspace-tool-picker";
+import { WorkspaceHistoryFilter, WorkspaceToolPicker } from "./workspace-tool-picker";
 import "./workspace.css";
 
 type RestoredTask = Parameters<HistoryRestore>[0];
@@ -59,6 +59,7 @@ export function WorkspaceLayout() {
       data-mobile-panel={mobilePanel}
       className={`workspace unified-workspace${pathname.includes("textile-set") ? " textile-workspace" : ""}`}
     >
+      <WorkspaceToolPicker />
       <ToggleButtonGroup
         className="workspace-mobile-panels"
         aria-label="工作区视图"

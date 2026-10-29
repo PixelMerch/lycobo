@@ -15,24 +15,33 @@
   flex-direction: column;
   gap: 10px;
 }
-.workspace-tool-trigger.button {
-  width: 100%;
-  min-height: 44px;
-  justify-content: flex-start;
+.workspace-tool-bar {
+  display: flex;
+  align-items: center;
   gap: 8px;
-  padding: 0 12px;
-  border-radius: 12px;
+  min-width: 0;
+  grid-column: 2 / -1;
+  grid-row: 1;
+  padding-inline: 12px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.workspace-tool-shortcut.button {
+  flex-shrink: 0;
+  gap: 8px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted);
+  background: transparent;
+  white-space: nowrap;
+}
+.workspace-tool-shortcut.button[data-hovered="true"] {
   color: var(--foreground);
   background: #ffffff0a;
-  flex-shrink: 0;
 }
-.workspace-tool-trigger > span {
-  font-weight: 600;
-}
-.workspace-tool-trigger small {
-  margin-left: auto;
-  color: var(--muted);
-  font-weight: 400;
+.workspace-tool-shortcut.button[aria-current="page"] {
+  color: var(--foreground);
+  background: #ffffff14;
 }
 .workspace-history-heading {
   display: flex;
@@ -401,5 +410,60 @@
   }
   .workspace-history-filter {
     width: 160px;
+  }
+}
+
+@media (max-width: 767px) {
+  .workspace-tool-shortcut.button {
+    min-height: 44px;
+  }
+}
+
+/* The tool row belongs to the workspace, below the account header. */
+.unified-workspace > .composer-panel {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+.unified-workspace > .results-panel {
+  grid-column: 2;
+  grid-row: 2;
+}
+.unified-workspace > .history-rail {
+  grid-row: 2;
+}
+@media (max-width: 1300px) {
+  .unified-workspace > .composer-panel {
+    grid-row: 1 / span 3;
+  }
+  .unified-workspace > .history-rail {
+    grid-row: 3;
+  }
+}
+@media (max-width: 1023px) {
+  .workspace-tool-bar {
+    grid-column: 1 / -1;
+  }
+  .unified-workspace > .composer-panel {
+    grid-row: 2;
+  }
+  .unified-workspace > .results-panel {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .unified-workspace > .history-rail {
+    grid-row: 4;
+  }
+}
+@media (max-width: 767px) {
+  .unified-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .workspace-mobile-panels {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .unified-workspace > .composer-panel,
+  .unified-workspace > .results-panel {
+    grid-row: 3;
   }
 }

@@ -6,7 +6,6 @@ import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../../generation/composer/selection-highlight";
-import { WorkspaceToolPicker } from "../../workspace/workspace-tool-picker";
 
 import { TextileImageField } from "./textile-image-field";
 import { useTextileSetDraft } from "./textile-set-state";
@@ -28,7 +27,6 @@ export function TextileSetPage() {
     <>
       <div ref={viewsAnchor} className="textile-views-anchor" aria-hidden="true" />
       <section className="composer-panel" aria-label="家纺主图裂变参数">
-        <WorkspaceToolPicker />
         <div className="composer-scroll">
           <TextileImageField
             label="主图"

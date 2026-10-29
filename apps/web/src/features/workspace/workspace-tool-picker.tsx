@@ -12,9 +12,11 @@ import {
 } from "@heroui/react";
 import {
   IconArrowUpRight,
-  IconChevronDown,
+  IconLayersIntersect,
   IconPhoto,
+  IconPlus,
   IconSearch,
+  IconSparkles,
   IconVideo,
 } from "@tabler/icons-react";
 import { useState } from "react";
@@ -22,6 +24,8 @@ import { useLocation, useNavigate } from "react-router";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
 import { shareProductReference, toolForPath, workspaceTools } from "./workspace-state";
+
+const toolIcons = { create: IconPhoto, textile: IconLayersIntersect, variation: IconSparkles };
 
 const categories = ["全部工具", "主图制作", "套图与裂变", "商品视频"];
 export function WorkspaceToolPicker() {
@@ -40,18 +44,35 @@ export function WorkspaceToolPicker() {
     (category === "商品视频" || category === "全部工具") && "商品视频".includes(search.trim());
   return (
     <>
-      <Button
-        className="workspace-tool-trigger"
-        variant="secondary"
-        onPress={() => setOpen(true)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-      >
-        <UiIcon icon={IconPhoto} />
-        <span>{current.name}</span>
-        <small>切换</small>
-        <UiIcon icon={IconChevronDown} size="small" />
-      </Button>
+      <nav className="workspace-tool-bar" aria-label="电商创作工具">
+        {workspaceTools.map((tool) => (
+          <Button
+            key={tool.id}
+            size="sm"
+            variant="tertiary"
+            className="workspace-tool-shortcut"
+            aria-current={current.id === tool.id ? "page" : false}
+            onPress={() => {
+              shareProductReference(pathname, tool.path);
+              navigate(tool.path);
+            }}
+          >
+            <UiIcon icon={toolIcons[tool.id]} />
+            {tool.name}
+          </Button>
+        ))}
+        <Button
+          className="workspace-tool-shortcut"
+          size="sm"
+          variant="tertiary"
+          onPress={() => setOpen(true)}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+        >
+          <UiIcon icon={IconPlus} />
+          全部工具
+        </Button>
+      </nav>
       <Modal isOpen={open} onOpenChange={setOpen}>
         <Modal.Backdrop className="workspace-tools-backdrop">
           <Modal.Container>

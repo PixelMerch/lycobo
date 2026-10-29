@@ -3,7 +3,6 @@ import { useState } from "react";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../../generation/composer/selection-highlight";
 import { ModelSelect } from "../../generation/models/model-select";
-import { WorkspaceToolPicker } from "../../workspace/workspace-tool-picker";
 import { TextileImageField } from "../textile-set/textile-image-field";
 import { useSmartVariationDraft } from "./smart-variation-state";
 import { VariationPlanDialog } from "./variation-plan-dialog";
@@ -16,7 +15,6 @@ export function SmartVariationPage() {
   return (
     <>
       <section className="composer-panel" aria-label="智能裂变参数">
-        <WorkspaceToolPicker />
         <div className="composer-scroll">
           <TextileImageField
             label="商品图"

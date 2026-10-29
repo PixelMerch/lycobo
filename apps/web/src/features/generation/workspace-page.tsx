@@ -12,7 +12,6 @@ import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { mainImagePurposes, useWorkspaceState } from "../workspace/workspace-state";
-import { WorkspaceToolPicker } from "../workspace/workspace-tool-picker";
 import { HomeRatioPicker } from "./composer/ratio-picker";
 import { SelectionHighlight } from "./composer/selection-highlight";
 import {
@@ -90,7 +89,6 @@ function Workspace({ model }: { model: ModelId }) {
   );
   return (
     <section className="composer-panel" aria-label="创作设置">
-      <WorkspaceToolPicker />
       <section className="composer-scroll" aria-label="创作参数">
         <ReferencePicker compact model={model} references={draft.references} />
         <ParameterGroup
