@@ -159,3 +159,5 @@ Seedream 文档未声明质量枚举，与 Grok 一样不发送 GPT 默认 quali
 使用用户提供的公网PNG地址做一次独立供应商诊断；HEAD返回HTTP200、image/png、2,273,225字节。直接按中转站文档发送JSON：model、prompt、单项images[].image_url及async=true，不带size、quality、response_format或额外n。只提交一次，持久化幂等键和任务回执后查询原任务，没有自动重发，也没有更改主站渠道能力。
 
 中转站HTTP202受理，任务imgtask_2bb2e2fa-5bc3-4651-b906-a4c76b665fd2，随后终态failed、image_generation_failed、阶段generation、成功0、charged_amount=0。结构化错误category=service_uncertain、reason_code=service_http_400、cause_confirmed=false；与此前Data URI的JSON／415提示不同，不能将这次失败解释为同一个已确认原因。公网URL未使编辑成功，仍需中转站核查生成服务HTTP400的具体原因。诊断直接使用供应商API，没有创建主站任务或扣主站钱包积分；不代表正常业务路径绕过持久任务和扣费。
+
+用户进一步要求把同一份公网参考图JSON提交到/v1/images/generations，仅切换端点，其余字段不变。一次POST返回HTTP202，任务imgtask_5511e70c-6b27-48a8-8b7f-f81aed491b20；只读查询原任务后终态failed、image_generation_failed、generation阶段、service_http_400，requested=1、successful=0、charged_amount=0。当前实测不能通过切换generations端点解决参考图问题；未修改业务端点、渠道能力或线上配置。
