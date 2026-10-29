@@ -1,5 +1,5 @@
 import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { IconArrowUp, IconCheck, IconChevronDown, IconSparkles } from "@tabler/icons-react";
+import { IconArrowUp, IconCheck, IconChevronDown } from "@tabler/icons-react";
 import { useNavigate } from "react-router";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
@@ -7,7 +7,7 @@ import { useErrorToast } from "../../lib/error-toast";
 import { HomeRatioPicker } from "../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../generation/composer/selection-highlight";
 import { ImageApiError, useImageModels } from "../generation/generation-client";
-import { useModelPresentation } from "../generation/models/model-logos";
+import { ModelLogo, useModelPresentation } from "../generation/models/model-logos";
 import { ReferencePicker } from "../generation/references/reference-picker";
 import { defaultDraft, useStudioStore } from "../generation/studio-state";
 import { HomeIntro } from "./home-intro";
@@ -15,6 +15,7 @@ import { HomeIntro } from "./home-intro";
 export function HomeComposer() {
   const models = useModelPresentation().data?.models ?? [];
   const model = useStudioStore((s) => s.activeModel);
+  const selectedModel = models.find((item) => item.id === model);
   const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const setModel = useStudioStore((s) => s.setActiveModel);
@@ -45,8 +46,8 @@ export function HomeComposer() {
         <div className="home-composer-tools">
           <Popover>
             <Button className="home-settings-trigger" variant="ghost" aria-label="选择创作模型">
-              <UiIcon icon={IconSparkles} />
-              <span>{model}</span>
+              <ModelLogo src={selectedModel?.logoUrl} size="compact" />
+              <span>{selectedModel?.name ?? "图片创作"}</span>
               <span>·</span>
               <span>{draft.ratio}</span>
               <span>·</span>
@@ -87,7 +88,10 @@ export function HomeComposer() {
                         )}
                       </span>
                       <span>
-                        <strong>{item.name}</strong>
+                        <strong className="model-selector-name">
+                          <ModelLogo src={item.logoUrl} size="compact" />
+                          <span>{item.name}</span>
+                        </strong>
                         <small>{item.description}</small>
                       </span>
                     </ToggleButton>

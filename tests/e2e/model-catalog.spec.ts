@@ -102,3 +102,61 @@ for (const { stored, id, name } of [
     await expect(page.locator(".image-preview-model")).not.toContainText(stored);
   });
 }
+
+test("model selectors use backend logos, names and image-error fallbacks", async ({ page }) => {
+  await mockImageApi(page);
+  const logo = "https://fixture.example/fixtures/catalog-logo.svg";
+  const models = [
+    { id: "gpt-image-2", name: "Image 2", logoUrl: logo },
+    {
+      id: "gpt-image-2.5",
+      name: "Image 2.5",
+      logoUrl: "https://fixture.example/fixtures/missing-logo.png",
+    },
+    { id: "nano-banana-2.1", name: "Banana 2.1", logoUrl: null },
+  ];
+  await page.route("**/fixtures/catalog-logo.svg", (route) =>
+    route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><circle cx="32" cy="32" r="28" fill="#0485f7"/></svg>',
+    }),
+  );
+  await page.route("**/fixtures/missing-logo.png", (route) => route.fulfill({ status: 404 }));
+  await page.route("**/api/v1/image-model-logos", (route) =>
+    route.fulfill({
+      json: apiFixture({ models }),
+    }),
+  );
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/");
+  const trigger = page.getByRole("button", { name: "选择创作模型", exact: true });
+  await expect(trigger).toContainText("Image 2");
+  await expect(trigger.locator("img")).toHaveAttribute("src", logo);
+  await trigger.click();
+  const options = page.locator(".home-model-option");
+  await expect(options).toHaveCount(3);
+  await expect(options.nth(0).locator("img")).toHaveAttribute("src", logo);
+  await expect(options.nth(1).locator(".creation-model-logo-fallback")).toBeVisible();
+  await expect(options.nth(2).locator(".creation-model-logo-fallback")).toBeVisible();
+  await options.nth(1).click();
+  await expect(trigger).toContainText("Image 2.5");
+  await expect(trigger.locator(".creation-model-logo-fallback")).toBeVisible();
+  await page
+    .getByRole("dialog", { name: "模型和画面设置" })
+    .screenshot({ path: "/tmp/lycobo-home-model-logos.png" });
+  await page.keyboard.press("Escape");
+  await page.goto("/create/gpt-image-2");
+  const select = page.getByRole("button", { name: /创作模型/ });
+  await expect(select.locator("img")).toHaveAttribute("src", logo);
+  await select.click();
+  const option = page.getByRole("option", { name: "Image 2", exact: true });
+  await expect(option.locator("img")).toHaveAttribute("src", logo);
+  await expect(
+    page
+      .getByRole("option", { name: "Banana 2.1", exact: true })
+      .locator(".creation-model-logo-fallback"),
+  ).toBeVisible();
+  await page.getByRole("option", { name: "Image 2.5", exact: true }).click();
+  await expect(select).toContainText("Image 2.5");
+  await expect(select.locator(".creation-model-logo-fallback")).toBeVisible();
+});
