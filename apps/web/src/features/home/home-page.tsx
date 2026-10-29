@@ -6,6 +6,7 @@ import { UiIcon } from "../../components/ui-icon";
 import { defaultDraft, useStudioStore } from "../generation/studio-state";
 import { HomeComposer } from "./home-composer";
 import { homeDotGrid } from "./home-dot-grid-config";
+import { HomeInspirationGallery } from "./home-inspiration-gallery";
 import "../../styles/home.css";
 
 const DotGrid = lazy(() => import("./dot-grid/dot-grid"));
@@ -60,6 +61,7 @@ export function HomePage() {
           ))}
         </section>
       </section>
+      <HomeInspirationGallery />
     </section>
   );
 }

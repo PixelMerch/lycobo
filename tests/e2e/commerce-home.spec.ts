@@ -212,3 +212,31 @@ test("image mentions insert at the cursor and preserve surrounding text", async 
   await page.keyboard.press("Enter");
   await expect(workspacePrompt).toHaveText("图片1 ");
 });
+
+test("home inspiration filters examples and confirms prompt replacement without submitting paid work", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  let submissions = 0;
+  page.on("request", (request) => {
+    if (request.method() === "POST" && new URL(request.url()).pathname.endsWith("/image-tasks"))
+      submissions++;
+  });
+  await page.goto("/");
+  const gallery = page.getByRole("region", { name: "电商创作灵感", exact: true });
+  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(12);
+  await page.getByRole("textbox", { name: "创作需求" }).fill("我的原提示词");
+  await gallery.getByRole("tab", { name: "家纺展示", exact: true }).click();
+  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(4);
+  await gallery.getByRole("button", { name: "查看灵感：枕间细节", exact: true }).click();
+  const detail = page.getByRole("dialog", { name: "灵感详情：枕间细节", exact: true });
+  await expect(detail.getByText("家纺展示 · 示例素材")).toBeVisible();
+  await detail.getByRole("button", { name: "使用提示词", exact: true }).click();
+  await page.getByRole("button", { name: "保留当前内容", exact: true }).click();
+  await expect(detail).toBeVisible();
+  await detail.getByRole("button", { name: "使用提示词", exact: true }).click();
+  await page.getByRole("button", { name: "替换并进入", exact: true }).click();
+  await expect(page).toHaveURL(/\/create$/);
+  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(/基于参考床品拍摄枕头特写/);
+  expect(submissions).toBe(0);
+});

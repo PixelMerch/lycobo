@@ -1,0 +1,219 @@
+.home-inspiration {
+  margin: 64px auto 24px;
+  max-width: 1600px;
+}
+.home-inspiration-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.home-inspiration-heading h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.home-inspiration-heading p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.home-inspiration .tabs {
+  gap: 24px;
+}
+.home-inspiration .tabs__list-container {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.home-inspiration .tabs__list {
+  width: max-content;
+  padding: 4px;
+  gap: 4px;
+  background: transparent;
+}
+.home-inspiration .tabs__tab {
+  min-height: 40px;
+  padding: 8px 16px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.home-inspiration .tabs__tab[data-selected] {
+  color: var(--foreground);
+}
+.home-inspiration .tabs__indicator {
+  background: #ffffff14;
+  border-radius: 999px;
+}
+.home-inspiration-grid {
+  columns: 4;
+  column-gap: 16px;
+}
+.home-inspiration-card.button {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  padding: 0;
+  margin-bottom: 16px;
+  overflow: hidden;
+  break-inside: avoid;
+  border: 0;
+  border-radius: 16px;
+  background: var(--surface);
+  text-align: left;
+  isolation: isolate;
+}
+.home-inspiration-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+.home-inspiration-card:where([data-shape="portrait"]) img {
+  aspect-ratio: 3 / 4;
+}
+.home-inspiration-card:where([data-shape="landscape"]) img {
+  aspect-ratio: 4 / 3;
+}
+.home-inspiration-caption {
+  position: absolute;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  inset: auto 0 0;
+  padding: 48px 16px 16px;
+  color: #fff;
+  background: linear-gradient(transparent, #000000b3);
+  pointer-events: none;
+}
+.home-inspiration-caption > span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.home-inspiration-caption small {
+  font-size: 12px;
+  font-weight: 400;
+  color: #ffffffb3;
+}
+.home-inspiration-caption strong {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-inspiration-caption > .ui-icon {
+  flex: none;
+}
+.home-inspiration-detail.modal__dialog {
+  width: min(960px, calc(100vw - 32px));
+  max-width: 960px;
+}
+.home-inspiration-detail-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.home-inspiration-detail-content > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 60vh;
+  border-radius: 16px;
+  object-fit: contain;
+  background: var(--surface);
+}
+.home-inspiration-description {
+  padding: 8px 0;
+}
+.home-inspiration-description > span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.home-inspiration-description h3 {
+  margin: 24px 0 12px;
+  font-size: 16px;
+  font-weight: 500;
+}
+.home-inspiration-description p {
+  margin: 0;
+  line-height: 1.7;
+  font-size: 14px;
+}
+.home-inspiration-description .home-inspiration-hint {
+  margin-top: 24px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.home-inspiration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .home-inspiration-card img {
+    transition: transform 200ms ease;
+  }
+  .home-inspiration-card:is(:hover, [data-hovered], [data-focus-visible]) img {
+    transform: scale(1.04);
+  }
+}
+@media (min-width: 1800px) {
+  .home-inspiration-grid {
+    columns: 5;
+  }
+}
+@media (max-width: 1199px) {
+  .home-inspiration-grid {
+    columns: 3;
+  }
+}
+@media (max-width: 767px) {
+  .home-inspiration {
+    margin-top: 40px;
+  }
+  .home-inspiration-heading {
+    align-items: start;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .home-inspiration-heading h2 {
+    font-size: 20px;
+  }
+  .home-inspiration .tabs__tab {
+    min-height: 44px;
+    padding-inline: 12px;
+    font-size: 13px;
+  }
+  .home-inspiration-grid {
+    columns: 2;
+    column-gap: 12px;
+  }
+  .home-inspiration-card.button {
+    margin-bottom: 12px;
+    border-radius: 12px;
+  }
+  .home-inspiration-caption {
+    padding: 32px 12px 12px;
+  }
+  .home-inspiration-caption > .ui-icon {
+    display: none;
+  }
+  .home-inspiration-detail-content {
+    grid-template-columns: 1fr;
+  }
+  .home-inspiration-detail-content > img {
+    max-height: 40vh;
+  }
+}
