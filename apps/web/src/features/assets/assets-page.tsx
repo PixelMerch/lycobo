@@ -10,9 +10,12 @@ import {
   useImageAssets,
   useImageSession,
 } from "../generation/generation-client";
+import { modelDisplayName } from "../generation/models/model-display-name";
+import { useModelPresentation } from "../generation/models/model-logos";
 
 export function AssetsPage() {
   const session = useImageSession();
+  const models = useModelPresentation().data?.models ?? [];
   const query = useImageAssets({ kind: "output", type: "image" });
   const assets =
     query.data?.pages.flatMap((page) => page.data).filter((asset) => asset.kind === "output") ?? [];
@@ -53,7 +56,7 @@ export function AssetsPage() {
                 </Link>
                 <Card.Content className="asset-card-details">
                   <Card.Title>{asset.kind === "output" ? "生成图片" : "参考图片"}</Card.Title>
-                  <Card.Description>{asset.model}</Card.Description>
+                  <Card.Description>{modelDisplayName(asset.model, models)}</Card.Description>
                   {asset.public_id && <p className="image-public-id">图片 ID：{asset.public_id}</p>}
                   <small>
                     {asset.width} × {asset.height} ·{" "}

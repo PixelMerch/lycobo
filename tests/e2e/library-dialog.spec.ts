@@ -8,6 +8,11 @@ const png = Buffer.from(
 
 test("history rail heading opens the full-screen asset library", async ({ page }) => {
   await mockImageApi(page);
+  await page.route("**/api/v1/image-model-logos", (route) =>
+    route.fulfill({
+      json: apiFixture({ models: [{ id: "gpt-image-2.5", name: "Image 2.5", logoUrl: null }] }),
+    }),
+  );
   const assets = [
     {
       id: crypto.randomUUID(),
@@ -16,7 +21,7 @@ test("history rail heading opens the full-screen asset library", async ({ page }
       height: 1024,
       bytes: 1024,
       created_at: "2026-10-20T01:00:00.000Z",
-      model: "gpt-image-2",
+      model: "gpt-image-2.5-sunburst",
       prompt: "素材一",
     },
     {
@@ -62,6 +67,10 @@ test("history rail heading opens the full-screen asset library", async ({ page }
   await expect(dialog.getByRole("button", { name: "查看图片：素材二", exact: true })).toHaveCount(
     0,
   );
+  await dialog.getByRole("button", { name: /生成模型/ }).click();
+  await expect(page.getByRole("option", { name: "Image 2.5", exact: true })).toBeVisible();
+  await page.getByRole("option", { name: "Image 2.5", exact: true }).click();
+  await expect(dialog.locator(".library-tile")).toHaveCount(1);
   // Four large square previews per row at this width, with rounded corners.
   const tileShape = await dialog
     .locator(".library-tile")
@@ -74,7 +83,7 @@ test("history rail heading opens the full-screen asset library", async ({ page }
   expect(tileShape.radius).toBe("8px");
   // Only generated images carry a model badge; references have no model.
   await expect(dialog.locator(".library-tile-badge")).toHaveCount(1);
-  await expect(dialog.locator(".library-tile-badge")).toHaveText("gpt-image-2");
+  await expect(dialog.locator(".library-tile-badge")).toHaveText("Image 2.5");
   await expect(dialog.locator(".library-tile-badge")).toHaveClass(/model-tag/);
   await expect(dialog.locator(".library-tile-badge svg")).toHaveCount(0);
   // The shared model tag carries the same look in both places.
@@ -135,6 +144,8 @@ test("history rail heading opens the full-screen asset library", async ({ page }
   await dialog.getByRole("button", { name: "关闭我的素材", exact: true }).click();
   await page.goto("/assets");
   await expect(page.locator(".asset-grid .case-card")).toHaveCount(1);
+  await expect(page.locator(".asset-card-details")).toContainText("Image 2.5");
+  await expect(page.locator(".asset-card-details")).not.toContainText("gpt-image-2.5-sunburst");
   await expect(page.getByRole("link", { name: "查看原图：素材一", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "查看原图：素材二", exact: true })).toHaveCount(0);
 });

@@ -9,6 +9,8 @@ import { useErrorToast } from "../../lib/error-toast";
 import { AssetImage } from "../generation/asset-image";
 import "../../styles/fullscreen-dialog.css";
 import { useImageAssets } from "../generation/generation-client";
+import { modelDisplayName } from "../generation/models/model-display-name";
+import { useModelPresentation } from "../generation/models/model-logos";
 import { ImagePreviewDialog, type PreviewImage } from "../image-workspace/image-preview";
 import "./library-dialog.css";
 
@@ -21,6 +23,7 @@ const types: Array<{ id: TypeFilter; label: string }> = [
 
 /** Asset library drawer opened from the workspace history rail. */
 export function LibraryDialog({ onClose }: { onClose: () => void }) {
+  const models = useModelPresentation().data?.models ?? [];
   const [type, setType] = useState<TypeFilter>("image");
   const [model, setModel] = useState("all");
   const [preview, setPreview] = useState<{
@@ -104,9 +107,9 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                             className="model-options"
                             key={entry}
                             id={entry}
-                            textValue={entry}
+                            textValue={modelDisplayName(entry, models)}
                           >
-                            <span>{entry}</span>
+                            <span>{modelDisplayName(entry, models)}</span>
                           </ListBox.Item>
                         ))}
                       </ListBox>
@@ -151,7 +154,7 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                           />
                           {asset.model && (
                             <span className="model-tag library-tile-badge">
-                              <span>{asset.model}</span>
+                              <span>{modelDisplayName(asset.model, models)}</span>
                             </span>
                           )}
                         </Button>
