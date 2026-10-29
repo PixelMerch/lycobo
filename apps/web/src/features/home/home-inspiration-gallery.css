@@ -1,5 +1,5 @@
 .home-inspiration {
-  margin: 64px auto 24px;
+  margin: 48px auto 24px;
   width: 100%;
   min-width: 0;
 }
@@ -8,31 +8,42 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
+  margin: 0;
 }
 .home-inspiration-heading h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
   color: var(--foreground);
 }
 .home-inspiration .tabs {
-  gap: 24px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 32px;
+  row-gap: 24px;
+}
+.home-inspiration .tabs__panel {
+  grid-column: 1 / -1;
+  min-width: 0;
 }
 .home-inspiration .tabs__list-container {
+  justify-self: end;
   max-width: 100%;
   overflow-x: auto;
   scrollbar-width: none;
 }
 .home-inspiration .tabs__list {
   width: max-content;
-  padding: 4px;
-  gap: 4px;
+  padding: 0;
+  gap: 6px;
   background: transparent;
+  border-bottom: 0;
 }
 .home-inspiration .tabs__tab {
-  min-height: 40px;
-  padding: 8px 16px;
+  min-height: 36px;
+  padding: 8px 14px;
+  border-radius: 999px;
   font-size: 14px;
   color: var(--muted);
 }
@@ -40,12 +51,29 @@
   color: var(--foreground);
 }
 .home-inspiration .tabs__indicator {
+  inset: 0;
+  width: auto;
+  height: auto;
   background: #ffffff14;
   border-radius: 999px;
 }
+.home-inspiration .tabs__list {
+  box-shadow: none;
+}
+.home-inspiration .tabs__tab:is(:hover, [data-hovered]):not([data-selected]) {
+  color: var(--foreground);
+  background: #ffffff08;
+}
 .home-inspiration-grid {
-  columns: 4;
-  column-gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.home-inspiration-column {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
 }
 .home-inspiration-card.button {
   position: relative;
@@ -54,9 +82,7 @@
   height: auto;
   min-width: 0;
   padding: 0;
-  margin-bottom: 16px;
   overflow: hidden;
-  break-inside: avoid;
   border: 0;
   border-radius: 16px;
   background: var(--surface);
@@ -71,10 +97,30 @@
   object-fit: cover;
 }
 .home-inspiration-card:where([data-shape="portrait"]) img {
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 5;
 }
 .home-inspiration-card:where([data-shape="landscape"]) img {
   aspect-ratio: 4 / 3;
+}
+.home-inspiration-preview {
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  color: #fff;
+  background: #00000080;
+  font-size: 12px;
+  line-height: 18px;
+  opacity: 0;
+  pointer-events: none;
+}
+.home-inspiration-card:is(:hover, [data-hovered], [data-focus-visible]) .home-inspiration-preview {
+  opacity: 1;
 }
 .home-inspiration-caption {
   position: absolute;
@@ -166,12 +212,21 @@
 }
 @media (min-width: 1800px) {
   .home-inspiration-grid {
-    columns: 5;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 @media (max-width: 1199px) {
   .home-inspiration-grid {
-    columns: 3;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1199px) {
+  .home-inspiration .tabs {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 20px;
+  }
+  .home-inspiration .tabs__list-container {
+    justify-self: start;
   }
 }
 @media (max-width: 767px) {
@@ -182,7 +237,6 @@
     align-items: start;
     flex-direction: column;
     gap: 8px;
-    margin-bottom: 16px;
   }
   .home-inspiration-heading h2 {
     font-size: 20px;
@@ -193,11 +247,13 @@
     font-size: 13px;
   }
   .home-inspiration-grid {
-    columns: 2;
-    column-gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .home-inspiration-column {
+    gap: 12px;
   }
   .home-inspiration-card.button {
-    margin-bottom: 12px;
     border-radius: 12px;
   }
   .home-inspiration-caption {
@@ -211,5 +267,11 @@
   }
   .home-inspiration-detail-content > img {
     max-height: 40vh;
+  }
+}
+
+@media (hover: none) {
+  .home-inspiration-preview {
+    opacity: 1;
   }
 }

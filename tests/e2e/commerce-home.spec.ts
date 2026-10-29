@@ -270,4 +270,26 @@ test("wide home inspiration fills every column with equal side gutters", async (
   expect(layout.columns).toBe(5);
   await gallery.scrollIntoViewIfNeeded();
   await page.screenshot({ path: "/tmp/lycobo-inspiration-wide.png" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(gallery.locator(".home-inspiration-column")).toHaveCount(2);
+  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(13);
+  await gallery.getByRole("tab", { name: "家纺展示", exact: true }).click();
+  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(4);
+});
+
+test("image shortcuts preserve the current draft and never submit paid work", async ({ page }) => {
+  await mockImageApi(page);
+  let submissions = 0;
+  page.on("request", (request) => {
+    if (request.method() === "POST" && new URL(request.url()).pathname.endsWith("/image-tasks"))
+      submissions++;
+  });
+  await page.goto("/");
+  const shortcuts = page.getByRole("region", { name: "创作用途", exact: true });
+  await expect(shortcuts.getByRole("button")).toHaveCount(4);
+  await page.getByRole("textbox", { name: "创作需求" }).fill("保留我的商品描述");
+  await shortcuts.getByRole("button", { name: "场景图", exact: true }).click();
+  await expect(page).toHaveURL(/\/create$/);
+  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("保留我的商品描述");
+  expect(submissions).toBe(0);
 });

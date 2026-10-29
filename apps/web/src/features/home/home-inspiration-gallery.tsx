@@ -13,6 +13,7 @@ import {
   type InspirationCategory,
   inspirationCategories,
 } from "./home-inspiration-data";
+import { useInspirationColumns } from "./use-inspiration-columns";
 import "./home-inspiration-gallery.css";
 
 export function HomeInspirationGallery() {
@@ -21,11 +22,9 @@ export function HomeInspirationGallery() {
   const visible = homeInspirations.filter(
     (item) => category === "全部" || item.category === category,
   );
+  const columns = useInspirationColumns(visible);
   return (
     <section className="home-inspiration" aria-labelledby="home-inspiration-title">
-      <div className="home-inspiration-heading">
-        <h2 id="home-inspiration-title">电商创作灵感</h2>
-      </div>
       <Tabs
         selectedKey={category}
         onSelectionChange={(key) => {
@@ -33,6 +32,9 @@ export function HomeInspirationGallery() {
           if (next) setCategory(next);
         }}
       >
+        <div className="home-inspiration-heading">
+          <h2 id="home-inspiration-title">电商创作灵感</h2>
+        </div>
         <Tabs.ListContainer>
           <Tabs.List aria-label="灵感分类">
             {inspirationCategories.map((name) => (
@@ -45,31 +47,37 @@ export function HomeInspirationGallery() {
         </Tabs.ListContainer>
         <Tabs.Panel id={category}>
           <div className="home-inspiration-grid">
-            {visible.map((item) => (
-              <Button
-                variant="tertiary"
-                className="home-inspiration-card"
-                data-shape={item.shape}
-                key={item.id}
-                aria-label={`查看灵感：${item.title}`}
-                onPress={() => setSelected(item)}
-              >
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  width="480"
-                  height="480"
-                  loading="lazy"
-                  decoding="async"
-                />
-                <span className="home-inspiration-caption">
-                  <span>
-                    <small>{item.category}</small>
-                    <strong>{item.title}</strong>
-                  </span>
-                  <UiIcon icon={IconArrowUpRight} />
-                </span>
-              </Button>
+            {columns.map((column) => (
+              <div className="home-inspiration-column" key={column.id}>
+                {column.items.map((item) => (
+                  <Button
+                    variant="tertiary"
+                    className="home-inspiration-card"
+                    data-shape={item.shape}
+                    key={item.id}
+                    aria-label={`查看灵感：${item.title}`}
+                    onPress={() => setSelected(item)}
+                  >
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      width="480"
+                      height="480"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <span className="home-inspiration-preview" aria-hidden="true">
+                      查看灵感 <UiIcon icon={IconArrowUpRight} size="small" />
+                    </span>
+                    <span className="home-inspiration-caption">
+                      <span>
+                        <small>{item.category}</small>
+                        <strong>{item.title}</strong>
+                      </span>
+                    </span>
+                  </Button>
+                ))}
+              </div>
             ))}
           </div>
         </Tabs.Panel>
