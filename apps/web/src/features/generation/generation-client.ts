@@ -82,7 +82,7 @@ export function useImageModels() {
       ),
   });
 }
-export function useImageHistory(tool: "create" | "textile" = "create") {
+export function useImageHistory(tool: "create" | "textile" | "all" = "create") {
   const session = useImageSession();
   return useInfiniteQuery({
     queryKey: tool === "create" ? ["image-tasks"] : ["image-tasks", tool],
@@ -94,7 +94,7 @@ export function useImageHistory(tool: "create" | "textile" = "create") {
       imageTasksResponseSchema.parse(
         await (
           await imageRequest(
-            `image-tasks?limit=20&tool=${tool}${pageParam ? `&before=${pageParam}` : ""}`,
+            `image-tasks?limit=20${tool === "all" ? "" : `&tool=${tool}`}${pageParam ? `&before=${pageParam}` : ""}`,
             {
               signal,
             },

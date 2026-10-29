@@ -56,19 +56,21 @@ test("expired access is renewed once and restores the mounted workspace without 
   await page.goto("/create");
   await expect(page.locator(".account-trigger")).toHaveAccessibleName(`账户菜单：${user.account}`);
   await expect(page.getByText("登录后查看生成记录", { exact: true })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeVisible();
   expect(refreshes).toBe(1);
   expect(
     await page.evaluate(() =>
       Object.keys(localStorage).some((key) => /token|jwt|password/i.test(key)),
     ),
   ).toBe(false);
-  await page.getByLabel("提示词", { exact: true }).fill("自动续期保留的草稿");
+  await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("自动续期保留的草稿");
   await page.locator(".account-trigger").click();
   await page.getByRole("menuitem", { name: "退出登录", exact: true }).click();
   await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();
   await expect(page.getByText("登录后查看生成记录", { exact: true })).toBeVisible();
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("自动续期保留的草稿");
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
+    "自动续期保留的草稿",
+  );
   await page.reload();
   await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();
 });

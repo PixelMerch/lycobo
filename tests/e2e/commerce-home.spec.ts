@@ -44,7 +44,9 @@ test("home composer shares prompt and real reference drafts without submitting g
 
   await page.getByRole("button", { name: "开始创作", exact: true }).click();
   await expect(page).toHaveURL(/\/create$/);
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("为我的商品搭配自然光场景");
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
+    "为我的商品搭配自然光场景",
+  );
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   expect(submissions).toBe(0);
 });
@@ -80,7 +82,9 @@ test("home settings preserve drafts and only image creation is offered", async (
   await expect(page.getByRole("radio", { name: "商品视频" })).toHaveCount(0);
   await expect(page.getByText("视频生成即将开放", { exact: false })).toHaveCount(0);
   await page.getByRole("button", { name: "开始创作", exact: true }).click();
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("保留绗缝与面料细节");
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
+    "保留绗缝与面料细节",
+  );
 });
 
 test("ratio pager moves one page and keeps the selection", async ({ page }) => {
@@ -203,7 +207,7 @@ test("image mentions insert at the cursor and preserve surrounding text", async 
   await expect(prompt).toHaveText("保留图片2 继续编辑 面料");
   await expect(prompt).toBeFocused();
   await page.getByRole("button", { name: "开始创作", exact: true }).click();
-  const workspacePrompt = page.getByLabel("提示词", { exact: true });
+  const workspacePrompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   await expect(workspacePrompt).toHaveText("保留图片2 继续编辑 面料");
   await workspacePrompt.fill("@");
   await expect(menu).toBeVisible();
@@ -237,7 +241,9 @@ test("home inspiration filters examples and confirms prompt replacement without 
   await detail.getByRole("button", { name: "使用提示词", exact: true }).click();
   await page.getByRole("button", { name: "替换并进入", exact: true }).click();
   await expect(page).toHaveURL(/\/create$/);
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(/基于参考床品拍摄枕头特写/);
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
+    /基于参考床品拍摄枕头特写/,
+  );
   expect(submissions).toBe(0);
 });
 
@@ -290,6 +296,8 @@ test("image shortcuts preserve the current draft and never submit paid work", as
   await page.getByRole("textbox", { name: "创作需求" }).fill("保留我的商品描述");
   await shortcuts.getByRole("button", { name: "场景图", exact: true }).click();
   await expect(page).toHaveURL(/\/create$/);
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("保留我的商品描述");
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
+    "保留我的商品描述",
+  );
   expect(submissions).toBe(0);
 });

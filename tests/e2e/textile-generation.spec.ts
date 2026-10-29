@@ -11,7 +11,7 @@ const png = Buffer.from(
   "base64",
 );
 
-test("textile angles submit one durable ten-image job and keep results separate from creation", async ({
+test("textile angles submit one durable ten-image job and share history across tools", async ({
   page,
 }) => {
   await mockImageEvents(page);
@@ -83,7 +83,7 @@ test("textile angles submit one durable ten-image job and keep results separate 
     const id = url.pathname.split("/").at(-1);
     const job = jobs.find((entry) => entry.id === id);
     return route.fulfill({
-      json: apiFixture(job ?? { data: url.searchParams.get("tool") === "textile" ? jobs : [] }),
+      json: apiFixture(job ?? { data: url.searchParams.get("tool") !== "create" ? jobs : [] }),
     });
   });
   await page.goto("/commerce/textile-set");
@@ -157,8 +157,12 @@ test("textile angles submit one durable ten-image job and keep results separate 
   await page.getByRole("button", { name: "重新编辑", exact: true }).click();
   await expect(page.locator(".textile-selected-view")).toHaveCount(10);
   await expect(page.locator(".reference-tile")).toHaveCount(6);
-  await page.getByRole("link", { name: "创作", exact: true }).click();
-  await expect(page.locator(".generation-job")).toHaveCount(0);
+  await page.getByRole("button", { name: "家纺套图 切换", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "选择工具" })
+    .getByRole("button", { name: /^主图制作/ })
+    .click();
+  await expect(page.locator(".generation-job")).toHaveCount(1);
 });
 
 test("textile submission keeps its idempotency key after a lost response and reload", async ({

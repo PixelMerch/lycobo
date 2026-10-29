@@ -1,17 +1,13 @@
-import { Button, Popover, Tabs, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import {
-  imageResolutionSchema,
-  imageUnitCredits,
-  publicImageResolutions,
-} from "@lycoboai/contracts";
+import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { imageUnitCredits, publicImageResolutions } from "@lycoboai/contracts";
 import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { useId, useRef, useState } from "react";
 import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../../generation/composer/selection-highlight";
-import { GenerationHistory } from "../../generation/history/generation-history";
-import { HistoryIndex } from "../../generation/history/history-index";
+import { TextileModelLabel, WorkspaceToolPicker } from "../../workspace/workspace-tool-picker";
+
 import { TextileImageField } from "./textile-image-field";
 import { useTextileSetDraft } from "./textile-set-state";
 import { textileViewImages, textileViews } from "./textile-views";
@@ -29,11 +25,11 @@ export function TextileSetPage() {
   const costDescriptionId = useId();
   const selectedViews = textileViews.filter((view) => views.includes(view.id));
   return (
-    <div className="workspace textile-workspace">
+    <>
       <div ref={viewsAnchor} className="textile-views-anchor" aria-hidden="true" />
       <section className="composer-panel" aria-label="家纺主图裂变参数">
+        <WorkspaceToolPicker />
         <div className="composer-scroll">
-          <h1 className="textile-title">家纺主图裂变</h1>
           <TextileImageField
             label="主图"
             required
@@ -180,6 +176,7 @@ export function TextileSetPage() {
           </fieldset>
         </div>
         <div className="generate-area">
+          <TextileModelLabel />
           <Button
             variant="primary"
             size="lg"
@@ -208,31 +205,6 @@ export function TextileSetPage() {
           )}
         </div>
       </section>
-      <section className="results-panel" aria-label="家纺主图裂变内容">
-        <Tabs className="workspace-tabs">
-          <Tabs.ListContainer>
-            <Tabs.List aria-label="家纺主图裂变工作区">
-              <Tabs.Tab id="history">历史记录</Tabs.Tab>
-            </Tabs.List>
-          </Tabs.ListContainer>
-          <Tabs.Panel id="history">
-            <GenerationHistory
-              tool="textile"
-              onRestore={({ draft, textileSet }) => {
-                if (!textileSet) return;
-                update({
-                  mainImage: draft.references[0] ?? null,
-                  detailImages: draft.references.slice(1, 6),
-                  views: textileSet.views,
-                  ratio: draft.ratio,
-                  resolution: imageResolutionSchema.parse(draft.resolution),
-                });
-              }}
-            />
-          </Tabs.Panel>
-        </Tabs>
-      </section>
-      <HistoryIndex tool="textile" />
-    </div>
+    </>
   );
 }

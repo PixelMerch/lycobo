@@ -15,7 +15,7 @@ for (const [label, quality] of [
       await route.fulfill({ status: 202, json: { id: crypto.randomUUID(), replayed: false } });
     });
     await page.goto("/create");
-    await page.getByLabel("提示词", { exact: true }).fill("质量参数验收");
+    await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("质量参数验收");
     await page.getByRole("button", { name: "更多", exact: true }).click();
     await page.getByRole("radio", { name: label, exact: true }).click();
     const submitted = page.waitForRequest(

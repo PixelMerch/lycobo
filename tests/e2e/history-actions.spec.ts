@@ -99,7 +99,7 @@ test("edit directly restores the original references and parameters over an exis
   const { input } = await historyFixture(page);
   const edit = page.getByRole("button", { name: "重新编辑", exact: true });
   await edit.click();
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(input.prompt);
   await expect(page.locator(".reference-tile")).toHaveCount(2);
   await page.getByRole("button", { name: "更多", exact: true }).click();
   await expect(page.getByRole("radio", { name: "高", exact: true })).toHaveAttribute(
@@ -107,11 +107,11 @@ test("edit directly restores the original references and parameters over an exis
     "true",
   );
   await expect(page.getByRole("button", { name: /创作模型/ })).toContainText(input.model);
-  await page.getByLabel("提示词", { exact: true }).fill("我的新草稿");
+  await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("我的新草稿");
   await edit.click();
   const dialog = page.getByRole("dialog", { name: "替换当前草稿？", exact: true });
   await expect(dialog).toHaveCount(0);
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(input.prompt);
 });
 
 test("edited history references and prompt survive all model switches", async ({ page }) => {
@@ -123,7 +123,7 @@ test("edited history references and prompt survive all model switches", async ({
   for (const model of ["nano-banana-2.1", "gpt-image-2", "gpt-image-2.5"]) {
     await page.getByRole("button", { name: /创作模型/ }).click();
     await page.getByRole("option", { name: model, exact: true }).click();
-    await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
+    await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(input.prompt);
     await expect(reference).toHaveAttribute("src", source ?? "");
     await expect(composer.getByRole("radio", { name: "3:4", exact: true })).toHaveAttribute(
       "aria-checked",
@@ -143,7 +143,7 @@ test("edited history references and prompt survive all model switches", async ({
     "aria-checked",
     "true",
   );
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(input.prompt);
   await expect(reference).toHaveAttribute("src", source ?? "");
 });
 
@@ -158,7 +158,7 @@ test("regenerate submits the original snapshot once and leaves the composer draf
     expect(route.request().postDataJSON()).toEqual(input);
     await route.fulfill({ status: 202, json: { id: crypto.randomUUID(), replayed: false } });
   });
-  await page.getByLabel("提示词", { exact: true }).fill("不要覆盖我的草稿");
+  await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("不要覆盖我的草稿");
   await page.getByRole("button", { name: "重新生成", exact: true }).click();
   const confirm = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
   await expect(confirm).toBeVisible();
@@ -188,7 +188,9 @@ test("regenerate submits the original snapshot once and leaves the composer draf
   await page.getByRole("button", { name: "重新生成", exact: true }).click();
   await confirm.getByRole("button", { name: "确认", exact: true }).click();
   await expect.poll(() => requests).toBe(1);
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("不要覆盖我的草稿");
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
+    "不要覆盖我的草稿",
+  );
 });
 
 test("an uncertain history submission exposes the same pending request in the composer", async ({
@@ -222,7 +224,7 @@ test("legacy history reads the original task snapshot before restoring a draft",
   });
   await page.reload();
   await page.getByRole("button", { name: "重新编辑", exact: true }).click();
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(input.prompt);
   expect(details).toBe(1);
   await expect(page.locator(".reference-tile")).toHaveCount(2);
 });

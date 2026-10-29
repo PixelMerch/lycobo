@@ -1,20 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-test("creation link enters the workspace directly and arrow opens the model menu", async ({
-  page,
-}) => {
+test("workspace entry opens creation and the categorized tool selector", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: "创作", exact: true }).click();
+  await page.getByRole("link", { name: "工作区", exact: true }).click();
   await expect(page).toHaveURL(/\/create$/);
-  await expect(page.getByRole("menu", { name: "浏览模型", exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "浏览模型", exact: true }).focus();
-  await page.keyboard.press("Enter");
-  const menu = page.getByRole("menu", { name: "浏览模型", exact: true });
-  await expect(menu.getByRole("menuitem")).toHaveCount(3);
-  await menu.getByRole("menuitem", { name: "进入 gpt-image-2 创作", exact: true }).press("Enter");
-  await expect(menu).toBeHidden();
-  await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "主图制作 切换", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "选择工具" });
+  await dialog.getByRole("button", { name: /^主图制作/ }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByLabel("制作要求", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^生成商品主图/ })).toBeDisabled();
 });
 
 test("old entry links recover to current home; unknown model is rejected", async ({ page }) => {
@@ -31,5 +26,5 @@ test("legacy image creation URL opens the workspace and preserves task context",
   await page.goto("/chatdraw?task=demo-skin");
   await expect(page).toHaveURL(/\/create\?task=demo-skin$/);
   await expect(page.getByRole("heading", { name: "页面暂时无法打开" })).toHaveCount(0);
-  await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toBeVisible();
 });

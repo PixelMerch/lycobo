@@ -435,7 +435,8 @@ small {
   z-index: 15;
 }
 @media (min-width: 1800px) {
-  :root {
+  :root,
+  .dark {
     --sidebar-width: 288px;
     --sidebar-header-offset: 22px;
     --shell-nav-height: 42px;
@@ -445,7 +446,8 @@ small {
   }
 }
 @media (min-width: 2560px) {
-  :root {
+  :root,
+  .dark {
     --sidebar-width: 320px;
     --sidebar-header-offset: 24px;
     --shell-nav-height: 44px;
@@ -1327,7 +1329,8 @@ p.home-hero-kicker {
   }
 }
 @media (max-width: 767px) {
-  :root {
+  :root,
+  .dark {
     --sidebar-width: 0px;
     --header-height: 60px;
     --shell-inline-inset: 12px;

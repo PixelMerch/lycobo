@@ -12,7 +12,7 @@ test("create workspace fills the viewport and pins generation to the composer bo
   await page.goto("/create");
   const composer = page.getByRole("region", { name: "创作设置", exact: true });
   const results = page.getByRole("region", { name: "创作内容", exact: true });
-  const generate = page.getByRole("button", { name: /立即生成/ });
+  const generate = page.getByRole("button", { name: /生成商品主图/ });
   const composerBox = await composer.boundingBox();
   const resultsBox = await results.boundingBox();
   const buttonBox = await generate.boundingBox();
@@ -42,7 +42,7 @@ test("current draft, references and output choices follow model switches and sur
   page,
 }) => {
   await page.goto("/create");
-  const prompt = page.getByLabel("提示词", { exact: true });
+  const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   await prompt.fill("保留我的商品草稿");
   const ratioPicker = page.getByRole("region", { name: "图片比例", exact: true });
   await ratioPicker.getByRole("button", { name: "下一页画面比例", exact: true }).click();
@@ -67,7 +67,7 @@ test("current draft, references and output choices follow model switches and sur
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await page.getByRole("link", { name: "素材库", exact: true }).click();
   await expect(page.getByRole("heading", { name: "素材库", exact: true })).toBeVisible();
-  await page.getByRole("link", { name: "创作", exact: true }).click();
+  await page.getByRole("link", { name: "工作区", exact: true }).click();
   await expect(prompt).toHaveValue("保留我的商品草稿");
 });
 
@@ -98,9 +98,9 @@ test("invalid references and limit errors do not destroy valid images", async ({
 
 test("text generation requires a prompt and an available model", async ({ page }) => {
   await page.goto("/create");
-  const generate = page.getByRole("button", { name: "立即生成", exact: true });
+  const generate = page.getByRole("button", { name: "生成商品主图", exact: true });
   await expect(generate).toBeDisabled();
-  await page.getByLabel("提示词", { exact: true }).fill("米白陶瓷杯");
+  await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("米白陶瓷杯");
   await expect(generate).toBeEnabled();
   await expect(page.getByRole("radio", { name: "1.5K", exact: true })).toHaveAttribute(
     "aria-checked",
@@ -137,13 +137,16 @@ for (const width of [320, 390, 768, 1024, 1440]) {
   });
 }
 
-test("compact model cards open from their covers", async ({ page }) => {
-  await page.goto("/");
-  await page.getByRole("button", { name: "浏览模型", exact: true }).click();
-  const chooser = page.getByRole("menu", { name: "浏览模型", exact: true });
-  await chooser.getByRole("menuitem", { name: "进入 gpt-image-2 创作" }).locator("img").click();
+test("tool cards open their workspace", async ({ page }) => {
+  await page.goto("/create");
+  await page.getByRole("button", { name: "主图制作 切换", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "选择工具" });
+  await dialog
+    .getByRole("button", { name: /^主图制作/ })
+    .locator("img")
+    .click();
   await expect(page).toHaveURL(/\/create$/);
-  await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("制作要求", { exact: true })).toBeVisible();
 });
 
 test("extended ratios preserve selection and composer scroll stays independent", async ({
@@ -167,7 +170,7 @@ test("extended ratios preserve selection and composer scroll stays independent",
     ratioPicker.getByRole("button", { name: "上一页画面比例", exact: true }),
   ).toBeVisible();
   const parameters = page.getByRole("region", { name: "创作参数", exact: true });
-  const generate = page.getByRole("button", { name: "立即生成", exact: true });
+  const generate = page.getByRole("button", { name: "生成商品主图", exact: true });
   const before = await generate.boundingBox();
   const pageScroll = await page.evaluate(() => window.scrollY);
   await parameters.hover();
@@ -193,7 +196,7 @@ test("extended ratios preserve selection and composer scroll stays independent",
 
 test("reference limit and clearing remain consistent when switching models", async ({ page }) => {
   await page.goto("/create");
-  const prompt = page.getByLabel("提示词", { exact: true });
+  const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   await prompt.fill("保留提示词");
   await page
     .getByLabel("添加参考图片", { exact: true })
@@ -237,7 +240,7 @@ test("all three public models switch without changing the workspace URL or the c
 }) => {
   const models = ["gpt-image-2", "gpt-image-2.5", "nano-banana-2.1"];
   await page.goto("/create");
-  const prompt = page.getByLabel("提示词", { exact: true });
+  const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   await prompt.fill("同一份商品草稿");
   for (const model of models) {
     await page.getByRole("button", { name: /创作模型/ }).click();
