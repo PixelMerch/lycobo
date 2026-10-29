@@ -15,6 +15,7 @@ export function SmartVariationPage() {
   return (
     <>
       <section className="composer-panel" aria-label="智能裂变参数">
+        <h2 className="workspace-composer-title">智能裂变</h2>
         <div className="composer-scroll">
           <TextileImageField
             label="商品图"
