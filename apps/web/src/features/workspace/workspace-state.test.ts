@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { useSmartVariationDraft } from "../commerce/smart-variation/smart-variation-state";
 import { useTextileSetDraft } from "../commerce/textile-set/textile-set-state";
 import { useStudioStore } from "../generation/studio-state";
-import { restoreMainImagePrompt, shareProductReference } from "./workspace-state";
+import { shareProductReference } from "./workspace-state";
 
 const reference = (id: string) => ({ id, name: id, src: `/fixtures/${id}.webp` });
 beforeEach(() => {
@@ -50,12 +50,5 @@ describe("workspace draft handoff", () => {
     shareProductReference("/create", "/commerce/textile-set");
     expect(useTextileSetDraft.getState().mainImage?.id).toBe("main");
     expect(useTextileSetDraft.getState().detailImages[0]?.id).toBe("keep-detail");
-  });
-  it("restores purpose separately so resubmission does not duplicate it", () => {
-    expect(restoreMainImagePrompt("白底主图：保留商品")).toEqual({
-      purpose: "白底主图",
-      prompt: "保留商品",
-    });
-    expect(restoreMainImagePrompt("保留商品")).toEqual({ purpose: "场景主图", prompt: "保留商品" });
   });
 });

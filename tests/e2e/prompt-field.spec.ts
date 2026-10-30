@@ -1,14 +1,15 @@
 import { expect, test } from "@playwright/test";
 import { mockImageApi } from "./image-api-fixture";
 
-test("workspace prompt grows with content, reserves room for the selected purpose and shows a counter", async ({
+test("workspace prompt grows with content, uses the full prompt limit and shows a counter", async ({
   page,
 }) => {
   await mockImageApi(page);
   await page.goto("/create");
+  await expect(page.getByRole("group", { name: "主图用途", exact: true })).toHaveCount(0);
   const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   const counter = page.locator(".prompt-count");
-  await expect(counter).toHaveText("0/4995");
+  await expect(counter).toHaveText("0/5000");
   const initial = await prompt.boundingBox();
   await prompt.fill("第一行\n".repeat(10));
   await expect
@@ -19,15 +20,15 @@ test("workspace prompt grows with content, reserves room for the selected purpos
   expect(await prompt.evaluate((node) => getComputedStyle(node).overflowY)).toBe("hidden");
   expect(await prompt.evaluate((node) => getComputedStyle(node).resize)).toBe("none");
   await prompt.fill("字".repeat(6000));
-  await expect(prompt).toHaveValue("字".repeat(4995));
-  await expect(counter).toHaveText("4995/4995");
+  await expect(prompt).toHaveValue("字".repeat(5000));
+  await expect(counter).toHaveText("5000/5000");
   const clear = page.getByRole("button", { name: "清空提示词", exact: true });
   const count = await counter.boundingBox();
   const clearBox = await clear.boundingBox();
   expect(clearBox && count && clearBox.x + clearBox.width <= count.x).toBe(true);
   await clear.click();
   await expect(prompt).toHaveValue("");
-  await expect(counter).toHaveText("0/4995");
+  await expect(counter).toHaveText("0/5000");
   await expect(prompt).toBeFocused();
 });
 
@@ -46,11 +47,11 @@ test("workspace rich prompt matches the counter and grows after inserting a refe
   const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   const richPrompt = `保留 @图片1 ${"细节\n".repeat(12)}`;
   await prompt.fill(richPrompt);
-  await expect(page.locator(".prompt-count")).toHaveText(`${richPrompt.length}/4995`);
+  await expect(page.locator(".prompt-count")).toHaveText(`${richPrompt.length}/5000`);
   const box = await prompt.boundingBox();
   expect(box && box.height > 100).toBe(true);
   await prompt.fill("字".repeat(6000));
-  await expect(page.locator(".prompt-count")).toHaveText("4995/4995");
+  await expect(page.locator(".prompt-count")).toHaveText("5000/5000");
 });
 
 test("image count stays visible and quality is available under more", async ({ page }) => {
@@ -71,4 +72,23 @@ test("image count stays visible and quality is available under more", async ({ p
   await page.getByRole("button", { name: "收起", exact: true }).click();
   await expect(count).toBeVisible();
   await expect(quality).toHaveCount(0);
+});
+
+test("main image submission keeps the user's full prompt without a purpose prefix", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  await page.route("**/api/v1/image-tasks", (route) =>
+    route.fulfill({ status: 202, json: { id: crypto.randomUUID(), replayed: false } }),
+  );
+  await page.goto("/create");
+  const prompt = page.getByLabel("制作要求", { exact: true });
+  const description = `保留商品，使用自然光。${"细节".repeat(2494)}`;
+  await prompt.fill(description);
+  const submission = page.waitForRequest(
+    (request) => request.url().endsWith("/api/v1/image-tasks") && request.method() === "POST",
+  );
+  await page.getByRole("button", { name: /生成商品主图/ }).click();
+  expect((await submission).postDataJSON().prompt).toBe(description);
+  await expect(prompt).toHaveValue("");
 });

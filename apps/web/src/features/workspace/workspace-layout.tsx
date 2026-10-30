@@ -9,7 +9,7 @@ import { HistoryIndex } from "../generation/history/history-index";
 import type { HistoryRestore } from "../generation/history/history-task-tools";
 import { useStudioStore } from "../generation/studio-state";
 import { BackToTopButton } from "../generation/workspace-page";
-import { restoreMainImagePrompt, toolForPath, useWorkspaceState } from "./workspace-state";
+import { toolForPath, useWorkspaceState } from "./workspace-state";
 import { WorkspaceToolPicker } from "./workspace-tool-picker";
 import "./workspace.css";
 
@@ -37,9 +37,7 @@ export function WorkspaceLayout() {
       navigate("/commerce/textile-set");
     } else {
       const studio = useStudioStore.getState();
-      const restored = restoreMainImagePrompt(draft.prompt);
-      useWorkspaceState.getState().setPurpose(restored.purpose);
-      studio.updateDraft(model, { ...draft, prompt: restored.prompt });
+      studio.updateDraft(model, draft);
       studio.setActiveModel(model);
       navigate("/create");
     }

@@ -11,7 +11,6 @@ import { CreditCoin } from "../../components/credit-coin";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
-import { mainImagePurposes, useWorkspaceState } from "../workspace/workspace-state";
 import { HomeRatioPicker } from "./composer/ratio-picker";
 import { SelectionHighlight } from "./composer/selection-highlight";
 import {
@@ -36,8 +35,6 @@ export function WorkspacePage() {
   return <Workspace model={model} />;
 }
 function Workspace({ model }: { model: ModelId }) {
-  const purpose = useWorkspaceState((state) => state.purpose);
-  const setPurpose = useWorkspaceState((state) => state.setPurpose);
   const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const setActiveModel = useStudioStore((s) => s.setActiveModel);
@@ -75,7 +72,7 @@ function Workspace({ model }: { model: ModelId }) {
     !generate.isPending &&
     (pending ||
       (draft.prompt.trim().length > 0 &&
-        draft.prompt.length + purpose.length + 1 <= promptLimit &&
+        draft.prompt.length <= promptLimit &&
         resolutions.some((value) => value === draft.resolution) &&
         referencesSupported));
   useEffect(() => {
@@ -92,13 +89,6 @@ function Workspace({ model }: { model: ModelId }) {
       <h2 className="workspace-composer-title">主图制作</h2>
       <section className="composer-scroll" aria-label="创作参数">
         <ReferencePicker compact model={model} references={draft.references} />
-        <ParameterGroup
-          label="主图用途"
-          values={mainImagePurposes}
-          value={purpose}
-          selectionId="purpose"
-          onChange={setPurpose}
-        />
         <ReferencePrompt
           className="prompt-field"
           label="制作要求"
@@ -107,7 +97,7 @@ function Workspace({ model }: { model: ModelId }) {
           onChange={(prompt) => updateDraft(model, { prompt })}
           references={draft.references}
           placeholder="描述商品、场景或需要调整的细节，输入 @ 引用商品图"
-          maxLength={promptLimit - purpose.length - 1}
+          maxLength={promptLimit}
           showCount
           autoGrow
         />
@@ -213,7 +203,7 @@ function Workspace({ model }: { model: ModelId }) {
           onPress={() => {
             setSubmissionPhase("submitting");
             generate.mutate(
-              { model, draft: { ...draft, prompt: `${purpose}：${draft.prompt}` } },
+              { model, draft },
               {
                 onSuccess: () => {
                   const cleared = !pending && useStudioStore.getState().drafts[model] === draft;

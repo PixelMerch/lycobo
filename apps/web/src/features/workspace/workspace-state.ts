@@ -33,14 +33,10 @@ export const toolForPath = (path: string) =>
   workspaceTools.find((tool) => tool.path === path) ?? workspaceTools[0];
 export const useWorkspaceState = create<{
   lastPath: string;
-  purpose: string;
   setLastPath: (path: string) => void;
-  setPurpose: (purpose: string) => void;
 }>((set) => ({
   lastPath: "/create",
-  purpose: "场景主图",
   setLastPath: (lastPath) => set({ lastPath }),
-  setPurpose: (purpose) => set({ purpose }),
 }));
 
 /** Seed only an empty destination; switching never discards an existing tool draft. */
@@ -68,13 +64,4 @@ export function shareProductReference(from: string, to: string) {
   } else if (to === "/commerce/smart-variation" && !variation.image) {
     variation.update({ image: mainImage });
   }
-}
-
-export const mainImagePurposes = ["场景主图", "白底主图", "活动主图"] as const;
-export function restoreMainImagePrompt(prompt: string) {
-  const purpose = mainImagePurposes.find((value) => prompt.startsWith(`${value}：`));
-  return {
-    purpose: purpose ?? "场景主图",
-    prompt: purpose ? prompt.slice(purpose.length + 1) : prompt,
-  };
 }
