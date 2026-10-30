@@ -3598,7 +3598,8 @@ p.home-hero-kicker {
   flex-wrap: nowrap;
   justify-content: flex-start;
   gap: 2px;
-  padding: 3px;
+  padding: 4px;
+  scroll-padding-inline: 4px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;

@@ -161,7 +161,7 @@ export function HomeRatioPicker({
       target.getBoundingClientRect().left -
       track.getBoundingClientRect().left +
       track.scrollLeft -
-      3;
+      (Number.parseFloat(getComputedStyle(track).paddingLeft) || 0);
     track.scrollTo({ left: Math.max(0, offset), behavior: "auto" });
   }, []);
   useLayoutEffect(() => {
