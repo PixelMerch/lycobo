@@ -2,6 +2,7 @@
 .unified-workspace {
   position: relative;
   --workspace-toolbar-height: 52px;
+  --workspace-view-switch-height: 0px;
   grid-template-rows: var(--workspace-toolbar-height) auto;
 }
 .unified-workspace > .composer-panel {
@@ -498,6 +499,33 @@
   grid-column: 2;
   grid-row: 2;
 }
+.unified-workspace > .results-panel:has(> .generation-empty-state) {
+  display: grid;
+  place-items: center;
+  padding-block: 0;
+  min-height: calc(
+    100dvh -
+    var(--header-height) -
+    2 *
+    var(--content-padding) -
+    var(--workspace-toolbar-height) -
+    var(--workspace-view-switch-height) -
+    12px
+  );
+}
+.generation-empty-state.empty-state {
+  min-height: 0;
+  gap: 12px;
+  max-width: 360px;
+  padding: 24px 16px;
+  color: var(--muted);
+}
+.generation-empty-state.empty-state p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 400;
+}
 .unified-workspace > .history-rail {
   grid-column: 3;
   grid-row: 1 / span 2;
@@ -540,6 +568,7 @@
 }
 @media (max-width: 767px) {
   .unified-workspace {
+    --workspace-view-switch-height: 56px;
     grid-template-columns: minmax(0, 1fr);
   }
   .workspace-history-heading {

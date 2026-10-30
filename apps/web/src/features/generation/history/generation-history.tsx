@@ -1,6 +1,6 @@
 import { Button, EmptyState } from "@heroui/react";
 import { textileViews } from "@lycoboai/contracts";
-import { IconPhoto } from "@tabler/icons-react";
+import { IconPhotoPlus } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useErrorToast } from "../../../lib/error-toast";
@@ -96,20 +96,18 @@ export function GenerationHistory({
   }, [compact, jobIds, setActiveHistoryId]);
   if (session.isError && /请先登录|登录已过期|重新登录/.test(session.error?.message ?? ""))
     return (
-      <EmptyState className="empty-state">
-        <UiIcon icon={IconPhoto} size="illustration" />
-        <h2>登录后查看生成记录</h2>
-        <p>登录账号后，生成结果会保存在这里。</p>
+      <EmptyState className="empty-state generation-empty-state">
+        <UiIcon icon={IconPhotoPlus} size="illustration" />
+        <p>登录后查看生成记录</p>
       </EmptyState>
     );
   if (session.isError || query.isError) return null;
   if (session.isPending || (tool !== null && query.isPending)) return null;
   if (!jobs.length)
     return (
-      <EmptyState className="empty-state">
-        <UiIcon icon={IconPhoto} size="illustration" />
-        <h2>{compact ? "暂无任务" : "还没有生成记录"}</h2>
-        <p>提交后的生成任务会保存在这里。</p>
+      <EmptyState className="empty-state generation-empty-state">
+        <UiIcon icon={IconPhotoPlus} size="illustration" />
+        <p>{compact ? "暂无任务" : "生成的图片会显示在这里"}</p>
       </EmptyState>
     );
   return (

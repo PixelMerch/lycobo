@@ -28,17 +28,21 @@ export function SmartVariationPage() {
             number={1}
           />
           <TextField
-            className="parameter-group variation-description"
+            className="prompt-field"
             value={description}
             onChange={(value) => update({ description: value })}
           >
             <Label>创作需求</Label>
-            <TextArea
-              rows={6}
-              maxLength={5000}
-              placeholder="例如：把被子和枕套换成橙色、粉色、灰色，白色部分不变，每种颜色生成一张图。"
-            />
-            <span className="variation-character-count">{description.length}/5000</span>
+            <div className="prompt-editor" data-count="">
+              <TextArea
+                rows={3}
+                maxLength={5000}
+                placeholder="描述要调整的颜色、场景或细节，每个方向生成一张图"
+              />
+              <div className="prompt-meta">
+                <span className="prompt-count">{description.length}/5000</span>
+              </div>
+            </div>
           </TextField>
           <section className="parameter-group" aria-label="图片比例">
             <div className="field-title">
@@ -74,7 +78,12 @@ export function SmartVariationPage() {
         </div>
         <div className="generate-area variation-submit">
           <ModelSelect value={model} onChange={(model) => update({ model })} />
-          <Button variant="secondary" onPress={() => setPlanOpen(true)}>
+          <Button
+            variant="tertiary"
+            size="sm"
+            className="variation-example-button"
+            onPress={() => setPlanOpen(true)}
+          >
             查看计划示例
           </Button>
           <Button
@@ -86,7 +95,7 @@ export function SmartVariationPage() {
           >
             生成计划
           </Button>
-          <p>智能分析暂未开放，可先查看计划示例</p>
+          <p>智能分析暂未开放</p>
         </div>
       </section>
       <VariationPlanDialog isOpen={planOpen} onOpenChange={setPlanOpen} />

@@ -47,15 +47,13 @@ test("smart variation keeps drafts and edits examples without submitting paid wo
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
   await expect(page.getByRole("button", { name: "查看计划示例", exact: true })).toBeFocused();
-  await page.getByRole("button", { name: "智能裂变 切换", exact: true }).click();
   await page
-    .getByRole("dialog", { name: "选择工具" })
-    .getByRole("button", { name: /^主图制作/ })
+    .getByRole("navigation", { name: "电商创作工具" })
+    .getByRole("button", { name: "主图制作", exact: true })
     .click();
-  await page.getByRole("button", { name: "主图制作 切换", exact: true }).click();
   await page
-    .getByRole("dialog", { name: "选择工具" })
-    .getByRole("button", { name: /^智能裂变/ })
+    .getByRole("navigation", { name: "电商创作工具" })
+    .getByRole("button", { name: "智能裂变", exact: true })
     .click();
   await expect(page).toHaveURL(/\/commerce\/smart-variation$/);
   await expect(page.getByRole("textbox", { name: "创作需求", exact: true })).toHaveValue(

@@ -1,21 +1,14 @@
 .smart-variation-workspace {
   min-width: 0;
 }
-.variation-description {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.variation-description textarea {
-  width: 100%;
-  resize: vertical;
-  font-size: 14px;
-  line-height: 1.7;
-}
-.variation-character-count {
-  align-self: flex-end;
-  font-size: 12px;
+.variation-example-button.button {
+  align-self: flex-start;
   color: var(--muted);
+  background: transparent;
+}
+.variation-example-button.button[data-hovered="true"] {
+  color: var(--foreground);
+  background: #ffffff0a;
 }
 .variation-submit p,
 .variation-plan-availability {

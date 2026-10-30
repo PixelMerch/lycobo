@@ -135,7 +135,7 @@ for (const width of [390, 1440]) {
     await expect(page.locator(".unified-workspace")).toHaveAttribute("data-tool", "variation");
     await expect(page.locator(".generation-job")).toHaveCount(0);
     await expect(page.getByRole("region", { name: "工作区历史记录" })).toContainText(
-      "还没有生成记录",
+      "生成的图片会显示在这里",
     );
     expect(requested).not.toContain("all");
     expect(requested).not.toContain("null");
