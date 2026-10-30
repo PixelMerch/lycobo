@@ -30,7 +30,7 @@ export function ModelLogo({
 }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const className = `creation-model-logo${size === "compact" ? " model-selector-logo" : ""}`;
-  const dimension = size === "compact" ? 22 : 64;
+  const dimension = size === "compact" ? 18 : 64;
   return src && failedUrl !== src ? (
     <img
       className={className}
