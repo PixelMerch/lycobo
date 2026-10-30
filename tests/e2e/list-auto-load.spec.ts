@@ -53,7 +53,7 @@ test("reference list loads the next page at its bottom, shows a spinner and stop
   await page.goto("/commerce/smart-variation");
   await page.locator(".prompt-field").getByRole("textbox").press("@");
   const dialog = page.getByRole("dialog", { name: "引用图片", exact: true });
-  await dialog.getByRole("tab", { name: "历史上传" }).click();
+  await dialog.getByRole("tab", { name: "图片" }).click();
   await expect(dialog.getByRole("option")).toHaveCount(30);
   expect(nextRequests).toBe(0);
   await dialog.locator(".reference-mention-scroll").evaluate((element) => {

@@ -239,6 +239,9 @@ export const mediaAssets = pgTable(
     height: integer("height").notNull(),
     bytes: integer("bytes").notNull(),
     sha256: text("sha256").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    cleanupStartedAt: timestamp("cleanup_started_at", { withTimezone: true }),
+    storageDeletedAt: timestamp("storage_deleted_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [
@@ -249,6 +252,9 @@ export const mediaAssets = pgTable(
     }),
     unique("media_assets_id_org_unique").on(t.id, t.organizationId),
     index("media_assets_org_created_idx").on(t.organizationId, t.createdAt),
+    index("media_assets_expiry_idx")
+      .on(t.expiresAt)
+      .where(sql`${t.expiresAt} is not null and ${t.storageDeletedAt} is null`),
     index("media_assets_member_idx").on(t.organizationId, t.userId),
     check(
       "media_assets_dimensions_check",

@@ -229,7 +229,7 @@ export function openImageRepository(url: string, edge = false) {
         const id = String(inserted[0].id);
         if (input.referenceAssetIds.length) {
           const refs =
-            await tx`select id,width,height from media_assets where organization_id=${scope.organizationId} and id in ${tx(input.referenceAssetIds)}`;
+            await tx`select id,width,height from media_assets where organization_id=${scope.organizationId} and id in ${tx(input.referenceAssetIds)} and (expires_at is null or expires_at>now()) and storage_deleted_at is null and cleanup_started_at is null order by id for update`;
           if (refs.length !== input.referenceAssetIds.length)
             throw new ImageRepositoryError("REFERENCE_NOT_FOUND");
         }
@@ -263,6 +263,8 @@ export function openImageRepository(url: string, edge = false) {
           });
           await tx`insert into generation_outbox (item_id) values (${itemId})`;
         }
+        if (input.referenceAssetIds.length)
+          await tx`update media_assets set expires_at=null where organization_id=${scope.organizationId} and id in ${tx(input.referenceAssetIds)}`;
         await recordImageEvent(tx, scope.organizationId, "task", id);
         return { id, replayed: false };
       });
@@ -376,8 +378,8 @@ export function openImageRepository(url: string, edge = false) {
     },
     async addReference(scope: ImageScope, image: StoredImage) {
       await sql.begin(async (tx) => {
-        await tx`insert into media_assets (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256)
-          values (${image.id},${scope.organizationId},${scope.userId},'reference','image',${image.objectKey},${image.mimeType},${image.width},${image.height},${image.bytes},${image.sha256})`;
+        await tx`insert into media_assets (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256,expires_at)
+          values (${image.id},${scope.organizationId},${scope.userId},'reference','image',${image.objectKey},${image.mimeType},${image.width},${image.height},${image.bytes},${image.sha256},now()+interval '3 days')`;
         await recordImageEvent(tx, scope.organizationId, "asset", image.id);
       });
     },
@@ -391,7 +393,7 @@ export function openImageRepository(url: string, edge = false) {
       return sql`select a.public_id,a.id,a.kind,a.media_type as type,a.width,a.height,a.bytes,a.created_at,j.public_id as task_public_id,${publicModelSql} as model,j.prompt
         from media_assets a left join generation_job_items i on i.output_asset_id=a.id and i.organization_id=a.organization_id
         left join generation_jobs j on j.id=i.job_id and j.organization_id=a.organization_id
-        where a.organization_id=${scope.organizationId}
+        where a.organization_id=${scope.organizationId} and (a.expires_at is null or a.expires_at>now()) and a.storage_deleted_at is null
         ${kind ? sql`and a.kind=${kind}` : sql``}
         ${type ? sql`and a.media_type=${type}` : sql``}
         ${before ? sql`and (a.created_at,a.id) < (select created_at,id from media_assets where id=${before} and organization_id=${scope.organizationId})` : sql``}
@@ -400,12 +402,12 @@ export function openImageRepository(url: string, edge = false) {
     async assetLocations(scope: ImageScope, ids: string[]) {
       if (!ids.length) return [];
       const rows =
-        await sql`select id,object_key from media_assets where organization_id=${scope.organizationId} and id in ${sql(ids)}`;
+        await sql`select id,object_key from media_assets where organization_id=${scope.organizationId} and id in ${sql(ids)} and (expires_at is null or expires_at>now()) and storage_deleted_at is null`;
       return rows.map((row) => ({ id: String(row.id), objectKey: String(row.object_key) }));
     },
     async asset(scope: ImageScope, id: string): Promise<StoredImage | null> {
       const [row] =
-        await sql`select id,object_key,mime_type,width,height,bytes,sha256 from media_assets where id=${id} and organization_id=${scope.organizationId}`;
+        await sql`select id,object_key,mime_type,width,height,bytes,sha256 from media_assets where id=${id} and organization_id=${scope.organizationId} and (expires_at is null or expires_at>now()) and storage_deleted_at is null`;
       if (!row) return null;
       return {
         id: String(row.id),
@@ -416,6 +418,28 @@ export function openImageRepository(url: string, edge = false) {
         bytes: Number(row.bytes),
         sha256: String(row.sha256),
       };
+    },
+    async expiredReferences(): Promise<StoredImage[]> {
+      const rows = await sql.begin(async (tx) => {
+        const expired = await tx`select id,object_key,width,height,bytes,sha256 from media_assets
+          where expires_at<=now() and storage_deleted_at is null order by expires_at,id limit 20 for update skip locked`;
+        if (expired.length)
+          await tx`update media_assets set cleanup_started_at=coalesce(cleanup_started_at,now()) where id in ${tx(expired.map((row) => String(row.id)))}`;
+        return expired;
+      });
+      return rows.map((row) => ({
+        id: String(row.id),
+        objectKey: String(row.object_key),
+        mimeType: "image/png",
+        width: Number(row.width),
+        height: Number(row.height),
+        bytes: Number(row.bytes),
+        sha256: String(row.sha256),
+      }));
+    },
+    async markReferenceDeleted(id: string) {
+      await sql`update media_assets set storage_deleted_at=now()
+        where id=${id} and expires_at<=now() and storage_deleted_at is null`;
     },
     async leaseOutbox() {
       return sql.begin(async (tx) => {

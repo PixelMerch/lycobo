@@ -38,6 +38,8 @@ function fixture(editsEnabled = false, managedModelsOnly = false) {
     deferProvider: unexpected,
     storageUid: unexpected,
     assetLocations: unexpected,
+    expiredReferences: unexpected,
+    markReferenceDeleted: unexpected,
     provision: unexpected,
     wallet: unexpected,
     walletEntries: unexpected,

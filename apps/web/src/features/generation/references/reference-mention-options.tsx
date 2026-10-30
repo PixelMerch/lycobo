@@ -3,7 +3,7 @@ import { useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { assetContentUrl } from "../asset-delivery-client";
 import { useImageAssets } from "../generation-client";
-import type { ReferenceImage } from "../studio-state";
+import { type ReferenceImage, useStudioStore } from "../studio-state";
 
 /** Browse only the authenticated user's assets; selecting an asset reuses its durable ID. */
 export function ReferenceMentionOptions({
@@ -12,12 +12,19 @@ export function ReferenceMentionOptions({
   onSelect,
   allowHistory,
 }: {
-  references: readonly { id: string; src: string; name?: string; assetId?: string }[];
+  references: readonly {
+    id: string;
+    src: string;
+    name?: string;
+    assetId?: string;
+    sourceKind?: "reference" | "output";
+  }[];
   usedIds: Set<string>;
   onSelect: (images: ReferenceImage[]) => void;
   allowHistory: boolean;
 }) {
-  const [category, setCategory] = useState("current");
+  const [category, setCategory] = useState("images");
+  const favorites = useStudioStore((state) => state.favorites);
   const [search, setSearch] = useState("");
   const isCurrent = (image: ReferenceImage) =>
     references.some(
@@ -25,22 +32,32 @@ export function ReferenceMentionOptions({
         reference.id === image.id || (image.assetId && reference.assetId === image.assetId),
     );
   const query = useImageAssets({
-    enabled: allowHistory && category !== "current",
-    kind: category === "uploaded" ? "reference" : "output",
+    enabled: allowHistory,
+    kind: category === "images" ? "reference" : "output",
     type: "image",
   });
   const assets = query.data?.pages.flatMap((page) => page.data) ?? [];
+  const stored: ReferenceImage[] = assets
+    .filter((asset) => category !== "favorites" || favorites.includes(asset.id))
+    .map((asset) => ({
+      id: asset.id,
+      assetId: asset.id,
+      sourceKind: asset.kind,
+      src: assetContentUrl(asset.id, true),
+      name: asset.public_id ?? (asset.kind === "output" ? "生成图片" : "上传图片"),
+    }));
   const options: ReferenceImage[] =
-    category === "current"
-      ? references.map((image, index) => ({ ...image, name: image.name ?? `图片${index + 1}` }))
-      : assets.map((asset) => ({
-          id: asset.id,
-          assetId: asset.id,
-          src: assetContentUrl(asset.id, true),
-          name:
-            asset.public_id ??
-            `${asset.kind === "output" ? "生成图片" : "上传图片"} · ${new Date(asset.created_at).toLocaleString("zh-CN")}`,
-        }));
+    category === "images"
+      ? [
+          ...references
+            .filter((image) => image.sourceKind !== "output")
+            .map((image, index) => ({
+              ...image,
+              name: image.name ?? `图片${index + 1}`,
+            })),
+          ...stored.filter((image) => !isCurrent(image)),
+        ]
+      : stored;
   const keyword = search.trim().toLocaleLowerCase();
   const filtered = options.filter((image, index) =>
     `${image.name} ${image.id} 图片${index + 1} ${assets.find((asset) => asset.id === image.id)?.prompt ?? ""}`
@@ -68,19 +85,19 @@ export function ReferenceMentionOptions({
       >
         <Tabs.ListContainer>
           <Tabs.List aria-label="图片来源">
-            <Tabs.Tab id="current">
-              当前图片
+            <Tabs.Tab id="images">
+              图片
               <Tabs.Indicator />
             </Tabs.Tab>
             {allowHistory && (
-              <Tabs.Tab id="uploaded">
-                历史上传
+              <Tabs.Tab id="generated">
+                素材
                 <Tabs.Indicator />
               </Tabs.Tab>
             )}
             {allowHistory && (
-              <Tabs.Tab id="generated">
-                生成图片
+              <Tabs.Tab id="favorites">
+                收藏
                 <Tabs.Indicator />
               </Tabs.Tab>
             )}
@@ -112,19 +129,19 @@ export function ReferenceMentionOptions({
           </ListBox>
         ) : (
           <p className="reference-mention-empty">
-            {category !== "current" && query.isFetching
+            {allowHistory && query.isFetching
               ? null
-              : category !== "current" && query.isError
+              : allowHistory && query.isError
                 ? "图片暂时无法加载"
                 : "暂无匹配图片"}
           </p>
         )}
-        {category !== "current" && query.isError && (
+        {allowHistory && query.isError && (
           <Button size="sm" variant="ghost" onPress={() => void query.refetch()}>
             重新加载
           </Button>
         )}
-        {category !== "current" && (
+        {allowHistory && (
           <InfiniteLoad
             hasMore={query.hasNextPage}
             isLoading={query.isFetching}

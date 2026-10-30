@@ -225,6 +225,13 @@
       "when": 1793171925296,
       "tag": "0031_model_catalog_sort_order",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793341007888,
+      "tag": "0032_reference_retention",
+      "breakpoints": true
     }
   ]
 }

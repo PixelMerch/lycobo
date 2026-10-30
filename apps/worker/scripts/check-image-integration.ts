@@ -25,6 +25,7 @@ import { processImageItem } from "../src/image-processor";
 import { verifyGenerationMigration } from "./verify-generation-migration";
 import { verifyLocalEdits } from "./verify-local-edits";
 import { verifyManagedModels } from "./verify-managed-models";
+import { verifyReferenceRetention } from "./verify-reference-retention";
 import { verifyTextileGeneration } from "./verify-textile-generation";
 import { verifyWallet } from "./verify-wallet";
 
@@ -539,6 +540,7 @@ try {
     404,
   );
   await verifyManagedModels(repository, sql, store, png);
+  await verifyReferenceRetention(repository, sql);
   await verifyWallet(repository, sql);
   await verifyTextileGeneration(repository, sql, store, png);
   await verifyLocalEdits(repository, sql, async (path, init) => app.request(path, init));

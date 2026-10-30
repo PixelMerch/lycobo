@@ -233,15 +233,31 @@ export function useGenerateImage() {
             referenceAssetIds.push(reference.assetId);
             continue;
           }
-          const blob = await (
-            await fetch(reference.src, { signal: AbortSignal.timeout(30000) })
-          ).blob();
-          const upload = await imageRequest("image-assets", {
-            method: "POST",
-            headers: { "Content-Type": blob.type },
-            body: blob,
+          const asset = await client.fetchQuery({
+            queryKey: [
+              "reference-upload",
+              session.data.organizationId,
+              session.data.userId,
+              reference.id,
+            ],
+            staleTime: 2 * 24 * 60 * 60 * 1000,
+            gcTime: 2 * 24 * 60 * 60 * 1000,
+            retry: false,
+            queryFn: async () => {
+              const blob = await (
+                await fetch(reference.src, { signal: AbortSignal.timeout(30000) })
+              ).blob();
+              const upload = await imageRequest("image-assets", {
+                method: "POST",
+                headers: { "Content-Type": blob.type },
+                body: blob,
+              });
+              const uploaded = imageUploadResponseSchema.parse(await upload.json());
+              void client.invalidateQueries({ queryKey: ["image-assets"] });
+              return uploaded;
+            },
           });
-          referenceAssetIds.push(imageUploadResponseSchema.parse(await upload.json()).id);
+          referenceAssetIds.push(asset.id);
         }
         const input = imageGenerationInputSchema.parse({
           model,

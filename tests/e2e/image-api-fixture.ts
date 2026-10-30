@@ -35,6 +35,8 @@ export async function mockImageApi(page: Page) {
       };
     else if (path.endsWith("/image-model-logos"))
       body = { models: modelNames.map((id) => ({ id, name: id, logoUrl: null })) };
+    else if (path.endsWith("/image-assets") && route.request().method() === "POST")
+      body = { id: crypto.randomUUID(), width: 2, height: 2, bytes: 100, mimeType: "image/png" };
     else if (path.endsWith("/latest-edit")) body = { job: null };
     else if (path.endsWith("/wallet")) body = { balance: 200, unitCredits: 20 };
     else if (path.startsWith("/api/v1/wallet/")) body = { data: [] };

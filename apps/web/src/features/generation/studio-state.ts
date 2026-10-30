@@ -40,6 +40,7 @@ export type ReferenceImage = {
   name: string;
   src: string;
   assetId?: string;
+  sourceKind?: "reference" | "output";
   thumbnailSrc?: string;
   previewSrc?: string;
 };

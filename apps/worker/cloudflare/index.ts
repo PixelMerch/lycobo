@@ -48,6 +48,20 @@ export default {
     try {
       await repository.expireClaims();
       await repository.pruneEvents();
+      const store = r2ImageStore(
+        imageObjectBucket(env, env.IMAGES_BUCKET),
+        env.IMAGES,
+        repository.storageUid,
+      );
+      for (const asset of await repository.expiredReferences()) {
+        try {
+          await store.remove(asset);
+          await repository.markReferenceDeleted(asset.id);
+        } catch {
+          // Leave the expired row pending so the next scheduled run retries deletion.
+          console.error("REFERENCE_CLEANUP_FAILED", asset.id);
+        }
+      }
       if (env.IMAGE_GENERATION_ENABLED !== "true") return;
       // Always drain durable intents, including when a prior HTTP transport send failed.
       for (let page = 0; page < 5; page++)
