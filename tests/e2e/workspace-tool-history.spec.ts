@@ -45,6 +45,10 @@ for (const width of [390, 1440]) {
     });
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/create");
+    const prompt = "保留商品主体，使用自然光。";
+    if (width >= 768) {
+      await page.getByRole("textbox", { name: "提示词 提示词", exact: true }).fill(prompt);
+    }
     if (width < 768) await page.getByRole("radio", { name: "历史记录", exact: true }).click();
     await expect(page.getByRole("heading", { name: "历史记录", exact: true })).toHaveCount(0);
     await expect(page.locator(".generation-job")).toHaveCount(4);
@@ -103,6 +107,14 @@ for (const width of [390, 1440]) {
     await expect(page).toHaveURL(/textile-set/);
     await expect(page.locator(".unified-workspace")).toHaveAttribute("data-tool", "textile");
     await expect(page.locator(".workspace-composer-title")).toHaveText("家纺套图");
+    await expect(
+      page.getByRole("navigation", { name: "电商创作工具" }).getByRole("button", {
+        name: "家纺套图",
+        exact: true,
+      }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(page.locator(".composer-panel")).toContainText("详情图");
+    await expect(page.locator(".composer-panel")).toContainText("裂变类型");
     await expect(page.locator(".workspace-composer-title .workspace-tool-symbol")).toHaveAttribute(
       "data-tool",
       "textile",
@@ -127,5 +139,16 @@ for (const width of [390, 1440]) {
     );
     expect(requested).not.toContain("all");
     expect(requested).not.toContain("null");
+    if (width >= 768) {
+      await expect(page.getByRole("textbox", { name: "创作需求" })).toBeVisible();
+      await page
+        .getByRole("navigation", { name: "电商创作工具" })
+        .getByRole("button", { name: "主图制作", exact: true })
+        .click();
+      await expect(page.locator(".workspace-composer-title")).toHaveText("主图制作");
+      await expect(page.getByRole("textbox", { name: "提示词 提示词", exact: true })).toHaveValue(
+        prompt,
+      );
+    }
   });
 }

@@ -1,10 +1,10 @@
-import { IconLayersIntersect, IconPhoto, IconSparkles } from "@tabler/icons-react";
+import { IconCamera, IconLayoutCollage, IconWand } from "@tabler/icons-react";
 import { useLocation } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { toolForPath, type workspaceTools } from "./workspace-state";
 
 type ToolId = (typeof workspaceTools)[number]["id"];
-const toolIcons = { create: IconPhoto, textile: IconLayersIntersect, variation: IconSparkles };
+const toolIcons = { create: IconCamera, textile: IconLayoutCollage, variation: IconWand };
 
 export function WorkspaceToolSymbol({ tool }: { tool: ToolId }) {
   return (

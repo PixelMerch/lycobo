@@ -52,7 +52,7 @@ apps/web/src/
 
 - 先按业务功能归类，功能内部就近存放组件、hook、样式与单元测试；只有存在明确子职责时再增加目录，不为每个组件建立一层文件夹。
 - 保留描述性文件名和直接导入，不新增 `index.ts` 聚合出口，也不建立覆盖所有功能的 components/hooks/services 分类目录。浏览器端到端测试仍在根目录 `tests/e2e`。
-- 主导航统一使用工作区入口；`features/workspace` 组合参数子路由、随功能切换的历史及工具选择面板；`workspace-tool-symbol.tsx` 共享功能入口与参数标题的图标身份，装饰纹理位于 `public/studio/tools`。旧 `components/feature-navigation.tsx` 保留兼容组件，不再挂载在主导航。`components/use-hover-menu.ts` 共享账户及模型菜单的悬停、键盘焦点恢复逻辑。
+- 主导航统一使用工作区入口；`features/workspace` 组合参数子路由、随功能切换的历史及工具选择面板；`workspace-tool-symbol.tsx` 共享功能入口与参数标题的图标身份，只使用Tabler矢量图标。旧 `components/feature-navigation.tsx` 保留兼容组件，不再挂载在主导航。`components/use-hover-menu.ts` 共享账户及模型菜单的悬停、键盘焦点恢复逻辑。
 - `app/studio-shell.tsx` 组合导航、登录、账户和生图事件；路由页面留在各 feature。首页、工作台和素材页继续由路由懒加载，`image-workspace/preview-workspace.tsx` 及 Konva 继续按预览需要加载。
 - `generation/generation-client.ts` 维护现有生图、历史和素材 API 查询与缓存，被历史、素材库和编辑工作区直接引用；目录维护不改变 query key 或增加请求层。
 - `generation/studio-state.ts` 保留原有客户端草稿、跨页面交互状态及样例定义，现有引用直接指向它；目录归类不把样例转换成持久服务，也不改变状态生命周期。

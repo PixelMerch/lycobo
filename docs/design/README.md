@@ -6,6 +6,7 @@
 
 - [电商工作台 UI 提案（待评审）](unified-creation/README.md)：基于 Photoroom 与小云雀实查的分类工具面板、单入口切换、下拉历史筛选、统一任务列表、固定模型选择，以及完整输入／确认／结果状态。仅为用户本轮要求的 UI 设计图，不替代现行规范、不表示功能已接入。
 
+- [工作区功能栏参考与取舍](workspace-tool-navigation-research.md)：Refero Krea、Linear、Raycast 的中性导航参考与图标／左侧参数联动边界。
 - [统一图片画布交互依据](canvas-workspace-decisions.md)：原地修复工作区的参考、取舍和验收范围；当前采用灰色点阵、鼠标白色波纹与桌面右侧竖向工具。
 - [艺栢交互研究](yibai-page-logic.md)：工具选择、创作三栏与历史联动的参考依据。
 - [小云雀登录样式实测](xiaoyunque-login-measurements.md)：官方测量值与本站校准值，最终规则归入 DESIGN.md。
