@@ -3588,6 +3588,10 @@ p.home-hero-kicker {
 }
 
 /* Workspace ratio pager mirrors the home ratio selector. */
+.home-ratio-pager.toolbar {
+  display: block;
+  width: 100%;
+}
 .composer-panel .home-ratio-pager {
   position: relative;
   margin-bottom: 0;

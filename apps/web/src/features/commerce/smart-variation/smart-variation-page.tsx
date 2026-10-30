@@ -52,7 +52,9 @@ export function SmartVariationPage() {
             <HomeRatioPicker value={ratio} onChange={(value) => update({ ratio: value })} />
           </section>
           <section className="parameter-group">
-            <h2>分辨率</h2>
+            <div className="field-title">
+              <h2>分辨率</h2>
+            </div>
             <ToggleButtonGroup
               aria-label="分辨率"
               className="parameter-options"

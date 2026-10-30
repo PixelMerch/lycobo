@@ -1,4 +1,4 @@
-import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { Button, Popover, ToggleButton, ToggleButtonGroup, Toolbar } from "@heroui/react";
 import { IconChevronLeft, IconChevronRight, IconLayersIntersect, IconX } from "@tabler/icons-react";
 import {
   type Key,
@@ -194,7 +194,9 @@ export function HomeRatioPicker({
     track.scrollBy({ left: direction * track.clientWidth, behavior: reduce ? "auto" : "smooth" });
   }
   return (
-    <div className="home-ratio-pager">
+    // Keep page arrows inside the group's focus boundary. Otherwise returning
+    // from an arrow restores the previously focused offscreen ratio mid-press.
+    <Toolbar className="home-ratio-pager" aria-label="图片比例选择器">
       <ToggleButtonGroup
         ref={trackRef}
         aria-label="画面比例"
@@ -241,7 +243,7 @@ export function HomeRatioPicker({
           <UiIcon icon={IconChevronRight} size="small" />
         </Button>
       )}
-    </div>
+    </Toolbar>
   );
 }
 
