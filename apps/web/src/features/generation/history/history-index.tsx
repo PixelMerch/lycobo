@@ -2,6 +2,7 @@ import { Button, toast } from "@heroui/react";
 import { IconChevronRight, IconPhotoX, IconTrash } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "../../../components/confirm-dialog";
+import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
 import { useErrorToast } from "../../../lib/error-toast";
 import { LibraryDialog } from "../../assets/library-dialog";
@@ -124,6 +125,12 @@ export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" 
           ) : (
             <p>暂无记录</p>
           )}
+          <InfiniteLoad
+            hasMore={query.hasNextPage}
+            isLoading={query.isFetchingNextPage}
+            isError={query.isError}
+            onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
+          />
         </div>
       </aside>
       <ConfirmDialog

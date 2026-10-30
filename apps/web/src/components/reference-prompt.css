@@ -16,12 +16,16 @@
   line-height: 20px;
   font-weight: 500;
 }
-.reference-mention-popover .list-box {
-  gap: 4px;
-  scrollbar-width: thin;
-  scrollbar-color: #ffffff33 transparent;
+.reference-mention-scroll {
   max-height: 232px;
   overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff33 transparent;
+}
+.reference-mention-popover .list-box {
+  gap: 4px;
+  max-height: none;
+  overflow: visible;
   padding: 0;
 }
 .reference-mention-popover .list-box-item {
@@ -231,13 +235,13 @@
 .reference-mention-popover.popover {
   box-shadow: 0 12px 32px #00000066;
 }
-.reference-mention-popover .list-box::-webkit-scrollbar {
+.reference-mention-scroll::-webkit-scrollbar {
   width: 4px;
 }
-.reference-mention-popover .list-box::-webkit-scrollbar-thumb {
+.reference-mention-scroll::-webkit-scrollbar-thumb {
   background: #ffffff33;
   border-radius: 4px;
 }
-.reference-mention-popover .list-box::-webkit-scrollbar-track {
+.reference-mention-scroll::-webkit-scrollbar-track {
   background: transparent;
 }

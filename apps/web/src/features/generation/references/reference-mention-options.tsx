@@ -1,5 +1,6 @@
 import { Button, Input, ListBox, Tabs, TextField } from "@heroui/react";
 import { useState } from "react";
+import { InfiniteLoad } from "../../../components/infinite-load";
 import { assetContentUrl } from "../asset-delivery-client";
 import { useImageAssets } from "../generation-client";
 import type { ReferenceImage } from "../studio-state";
@@ -89,49 +90,49 @@ export function ReferenceMentionOptions({
       <TextField aria-label="搜索图片" value={search} onChange={setSearch}>
         <Input placeholder="搜索图片 ID、描述或名称" />
       </TextField>
-      {filtered.length ? (
-        <ListBox
-          aria-label="可引用图片"
-          disabledKeys={disabled}
-          onAction={(key) => {
-            const image = filtered.find((item) => item.id === key);
-            if (image) onSelect([image]);
-          }}
-        >
-          {filtered.map((image) => (
-            <ListBox.Item key={image.id} id={image.id} textValue={image.name}>
-              <img src={image.src} alt="" loading="lazy" />
-              <span>{image.name}</span>
-              {usedIds.has(image.id) || (image.assetId && usedIds.has(image.assetId)) ? (
-                <small>已引用</small>
-              ) : null}
-            </ListBox.Item>
-          ))}
-        </ListBox>
-      ) : (
-        <p className="reference-mention-empty">
-          {category !== "current" && query.isFetching
-            ? "正在加载图片…"
-            : category !== "current" && query.isError
-              ? "图片暂时无法加载"
-              : "暂无匹配图片"}
-        </p>
-      )}
-      {category !== "current" && query.isError && (
-        <Button size="sm" variant="ghost" onPress={() => void query.refetch()}>
-          重新加载
-        </Button>
-      )}
-      {category !== "current" && query.hasNextPage && (
-        <Button
-          size="sm"
-          variant="ghost"
-          isPending={query.isFetchingNextPage}
-          onPress={() => void query.fetchNextPage()}
-        >
-          加载更多图片
-        </Button>
-      )}
+      <div className="reference-mention-scroll">
+        {filtered.length ? (
+          <ListBox
+            aria-label="可引用图片"
+            disabledKeys={disabled}
+            onAction={(key) => {
+              const image = filtered.find((item) => item.id === key);
+              if (image) onSelect([image]);
+            }}
+          >
+            {filtered.map((image) => (
+              <ListBox.Item key={image.id} id={image.id} textValue={image.name}>
+                <img src={image.src} alt="" loading="lazy" />
+                <span>{image.name}</span>
+                {usedIds.has(image.id) || (image.assetId && usedIds.has(image.assetId)) ? (
+                  <small>已引用</small>
+                ) : null}
+              </ListBox.Item>
+            ))}
+          </ListBox>
+        ) : (
+          <p className="reference-mention-empty">
+            {category !== "current" && query.isFetching
+              ? null
+              : category !== "current" && query.isError
+                ? "图片暂时无法加载"
+                : "暂无匹配图片"}
+          </p>
+        )}
+        {category !== "current" && query.isError && (
+          <Button size="sm" variant="ghost" onPress={() => void query.refetch()}>
+            重新加载
+          </Button>
+        )}
+        {category !== "current" && (
+          <InfiniteLoad
+            hasMore={query.hasNextPage}
+            isLoading={query.isFetching}
+            isError={query.isError}
+            onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
+          />
+        )}
+      </div>
     </div>
   );
 }

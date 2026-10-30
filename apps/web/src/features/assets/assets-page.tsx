@@ -1,3 +1,4 @@
+import { InfiniteLoad } from "../../components/infinite-load";
 import { AssetImage } from "../generation/asset-image";
 import "./image-public-id.css";
 import { Button, Card, EmptyState, Link } from "@heroui/react";
@@ -33,7 +34,7 @@ export function AssetsPage() {
         </div>
       </div>
       {session.isError ||
-      query.isError ||
+      (query.isError && !query.data) ||
       session.isPending ||
       query.isPending ? null : assets.length ? (
         <>
@@ -69,17 +70,12 @@ export function AssetsPage() {
               </Card>
             ))}
           </div>
-          {query.hasNextPage && (
-            <Button
-              variant="secondary"
-              isDisabled={query.isFetchingNextPage}
-              onPress={() => {
-                void query.fetchNextPage();
-              }}
-            >
-              加载更多素材
-            </Button>
-          )}
+          <InfiniteLoad
+            hasMore={query.hasNextPage}
+            isLoading={query.isFetchingNextPage}
+            isError={query.isError}
+            onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
+          />
         </>
       ) : (
         <EmptyState className="empty-state">

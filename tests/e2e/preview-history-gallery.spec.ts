@@ -69,9 +69,10 @@ test("result preview browses successful history images, highlights the entry and
     new RegExp(target.items[0]?.output_asset_id ?? "missing"),
   );
   await expect(viewer.locator(".image-preview-facts")).toContainText(target.public_id);
-  // Arrow navigation works immediately after opening, before interacting with the rail.
+  // Revealing the last visible thumbnail automatically appends the next page.
+  await expect(rail.locator(".image-preview-thumb")).toHaveCount(20);
   await page.keyboard.press("ArrowRight");
-  await expect(viewer.locator(".image-preview-facts")).toContainText("W00000000");
+  await expect(viewer.locator(".image-preview-facts")).toContainText("W00000020");
   await page.keyboard.press("ArrowLeft");
   await expect(viewer.locator(".image-preview-facts")).toContainText(target.public_id);
   const zoomThumb = viewer.getByRole("slider", { name: "缩放", exact: true });
@@ -136,8 +137,8 @@ test("result preview browses successful history images, highlights the entry and
   await expect(viewer.locator(".generation-output-thumbnail")).toHaveCSS("border-radius", "6px");
   await rail.hover();
   await page.mouse.wheel(0, 2000);
-  const loadMore = rail.getByRole("button", { name: "加载更多图片", exact: true });
-  if (await loadMore.count()) await loadMore.click();
+  const end = rail.locator(".infinite-load");
+  if (await end.count()) await end.scrollIntoViewIfNeeded();
   await expect(rail.locator(".image-preview-thumb")).toHaveCount(20);
   await rail.locator(".image-preview-thumb").last().click();
   await expect(viewer.locator(".image-preview-facts")).toContainText("W00000021");

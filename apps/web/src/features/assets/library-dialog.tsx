@@ -3,6 +3,7 @@ import { IconPhoto } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { DialogClose } from "../../components/dialog-close";
+import { InfiniteLoad } from "../../components/infinite-load";
 import { UiIcon } from "../../components/ui-icon";
 import { useCenteredDialogMotion } from "../../components/use-centered-dialog-motion";
 import { useErrorToast } from "../../lib/error-toast";
@@ -116,7 +117,7 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                     </Select.Popover>
                   </Select>
                 </div>
-                {query.isPending ? null : query.isError ? null : visible.length ? (
+                {query.isPending ? null : query.isError && !query.data ? null : visible.length ? (
                   <>
                     <div className="library-grid">
                       {visible.map((asset, index) => (
@@ -160,18 +161,12 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                         </Button>
                       ))}
                     </div>
-                    {query.hasNextPage && (
-                      <Button
-                        variant="secondary"
-                        className="library-more"
-                        isDisabled={query.isFetchingNextPage}
-                        onPress={() => {
-                          void query.fetchNextPage();
-                        }}
-                      >
-                        加载更多素材
-                      </Button>
-                    )}
+                    <InfiniteLoad
+                      hasMore={query.hasNextPage}
+                      isLoading={query.isFetchingNextPage}
+                      isError={query.isError}
+                      onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
+                    />
                   </>
                 ) : (
                   <EmptyState className="empty-state library-empty">

@@ -1,7 +1,8 @@
-import { Button, EmptyState } from "@heroui/react";
+import { EmptyState } from "@heroui/react";
 import { textileViews } from "@lycoboai/contracts";
 import { IconPhotoPlus } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
+import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
 import { useErrorToast } from "../../../lib/error-toast";
 import type { PreviewImage } from "../../image-workspace/image-preview";
@@ -212,17 +213,12 @@ export function GenerationHistory({
             )}
           </article>
         ))}
-        {query.hasNextPage && (
-          <Button
-            variant="secondary"
-            isDisabled={query.isFetchingNextPage}
-            onPress={() => {
-              void query.fetchNextPage();
-            }}
-          >
-            加载更多记录
-          </Button>
-        )}
+        <InfiniteLoad
+          hasMore={query.hasNextPage}
+          isLoading={query.isFetchingNextPage}
+          isError={query.isError}
+          onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
+        />
       </div>
       {preview && tool !== null && (
         <HistoryImagePreview
