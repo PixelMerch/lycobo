@@ -1,4 +1,4 @@
-import { Button, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { Button, Spinner, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { useState } from "react";
 import { ReferencePrompt } from "../../../components/reference-prompt";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
@@ -7,7 +7,7 @@ import { ReferencePicker } from "../../generation/references/reference-picker";
 import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
 import { useSmartVariationDraft } from "./smart-variation-state";
 import { useVariationPlan } from "./use-variation-plan";
-import { VariationPlanDialog } from "./variation-plan-dialog";
+import { VariationPlanPanel } from "./variation-plan-panel";
 import "../textile-set/textile-set.css";
 import "./smart-variation.css";
 
@@ -102,11 +102,14 @@ export function SmartVariationPage() {
             fullWidth
             className="primary-action generation-submit"
           >
-            生成计划
+            {analysis.isPending && (
+              <Spinner size="sm" color="current" role="status" aria-label="正在生成计划" />
+            )}
+            {analysis.isPending ? "正在生成计划" : "生成计划"}
           </Button>
         </div>
       </section>
-      <VariationPlanDialog isOpen={planOpen} onOpenChange={setPlanOpen} />
+      <VariationPlanPanel isOpen={planOpen} onOpenChange={setPlanOpen} />
     </>
   );
 }

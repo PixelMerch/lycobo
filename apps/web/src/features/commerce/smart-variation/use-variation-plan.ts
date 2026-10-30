@@ -4,7 +4,8 @@ import {
   variationCapabilitiesSchema,
   variationPlanSchema,
 } from "@lycoboai/contracts";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
 import {
   imageRequest,
   uploadImageReferences,
@@ -17,6 +18,9 @@ export function useVariationPlan() {
   const session = useImageSession();
   const client = useQueryClient();
   const draft = useSmartVariationDraft();
+  const locked = useRef(false);
+  const mutationKey = ["variation-plan", session.data?.organizationId, session.data?.userId];
+  const activeRequests = useIsMutating({ mutationKey });
   const capabilities = useQuery({
     queryKey: ["variation-capabilities"],
     enabled: session.isSuccess,
@@ -27,6 +31,7 @@ export function useVariationPlan() {
       ),
   });
   const mutation = useMutation({
+    mutationKey,
     retry: false,
     onMutate: () => ({ description: draft.description, references: draft.references }),
     mutationFn: async () => {
@@ -79,9 +84,10 @@ export function useVariationPlan() {
     onSuccess: (plan, _variables, snapshot) => {
       const current = useSmartVariationDraft.getState();
       if (
-        current.description !== snapshot.description ||
-        current.references !== snapshot.references ||
-        plan.description !== snapshot.description
+        current.description.trim() !== snapshot.description.trim() ||
+        current.references.length !== snapshot.references.length ||
+        current.references.some((image, index) => image.id !== snapshot.references[index]?.id) ||
+        plan.description !== snapshot.description.trim()
       ) {
         toast.info("计划已保存，当前需求已变化，请重新分析");
         return;
@@ -99,14 +105,24 @@ export function useVariationPlan() {
       });
     },
     onError: (error) => toast.danger(error.message),
+    onSettled: () => {
+      locked.current = false;
+    },
   });
+  const busy = mutation.isPending || activeRequests > 0;
   return {
     ...mutation,
+    isPending: busy,
+    mutate: (...args: Parameters<typeof mutation.mutate>) => {
+      if (locked.current || busy) return;
+      locked.current = true;
+      mutation.mutate(...args);
+    },
     enabled: capabilities.data?.enabled ?? false,
     canAnalyze:
       session.isSuccess &&
       !!capabilities.data?.enabled &&
       hasPromptDescription(draft.description) &&
-      !mutation.isPending,
+      !busy,
   };
 }

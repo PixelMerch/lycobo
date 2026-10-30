@@ -91,46 +91,55 @@
   color: var(--muted);
   margin-top: 24px;
 }
-.variation-backdrop {
-  background: #0009;
-  backdrop-filter: blur(8px);
-}
-.variation-plan-dialog {
-  padding: 0;
-  width: min(1120px, calc(100vw - 32px));
-  max-width: 1120px;
-  max-height: calc(100dvh - 48px);
-  background: #191919;
-  color: #eee;
-  border-radius: 24px;
-}
-.variation-plan-dialog .modal__header {
-  position: relative;
+.variation-plan-panel {
+  grid-column: 2;
+  grid-row: 2;
+  position: sticky;
+  top: calc(var(--header-height) + var(--content-padding) + var(--workspace-toolbar-height) + 12px);
+  height: calc(
+    100dvh -
+    var(--header-height) -
+    2 *
+    var(--content-padding) -
+    var(--workspace-toolbar-height) -
+    12px
+  );
+  width: calc((100% + 12px) * 0.75 - 5px);
+  margin-left: -7px;
+  min-width: 0;
+  min-height: 0;
+  z-index: 12;
   display: flex;
-  flex-direction: row;
-  align-items: flex-start;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--app-dialog-background);
+  color: var(--foreground);
+  border-radius: 20px;
+}
+.unified-workspace:has(> .variation-plan-panel) > .results-panel {
+  visibility: hidden;
+}
+.variation-plan-header {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-  padding: 24px 28px 20px;
+  gap: 12px;
+  flex-shrink: 0;
+  padding: 16px 20px;
 }
-.variation-example-tag {
-  display: inline-block;
-  margin-bottom: 8px;
-  font-size: 12px;
-  color: #8bc8ff;
-}
-.variation-plan-dialog .modal__heading {
-  font-size: 22px;
+.variation-plan-header h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 26px;
   font-weight: 500;
-  padding-right: 40px;
 }
-.variation-plan-dialog .modal__header p {
-  font-size: 13px;
-  line-height: 1.6;
-  color: #a1a1aa;
-  margin: 8px 0 0;
-}
-.variation-plan-dialog .modal__body {
-  padding: 0 28px 24px;
+.variation-plan-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding: 4px 20px 20px;
 }
 .variation-plan-list {
   display: grid;
@@ -154,8 +163,8 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--accent-soft);
-  color: #8bc8ff;
+  background: #ffffff0d;
+  color: var(--muted);
   font-size: 13px;
 }
 .variation-plan-title {
@@ -177,10 +186,12 @@
   resize: vertical;
 }
 .variation-plan-card-heading > .button {
+  background: transparent;
   color: #f87171;
   flex-shrink: 0;
 }
 .variation-plan-footer {
+  flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -221,19 +232,14 @@
   }
 }
 @media (max-width: 640px) {
-  .variation-plan-dialog {
-    width: calc(100vw - 16px);
-    max-height: calc(100dvh - 16px);
-    border-radius: 16px;
+  .variation-plan-header {
+    padding: 12px;
   }
-  .variation-plan-dialog .modal__header {
-    padding: 20px 16px;
+  .variation-plan-header h2 {
+    font-size: 16px;
   }
-  .variation-plan-dialog .modal__body {
-    padding: 0 12px 16px;
-  }
-  .variation-plan-dialog .modal__heading {
-    font-size: 18px;
+  .variation-plan-body {
+    padding: 0 12px 12px;
   }
   .variation-plan-card {
     padding: 12px;
@@ -271,5 +277,55 @@
   .variation-plan-card .checkbox__content {
     min-width: 44px;
     min-height: 44px;
+  }
+}
+
+/* Selection is explicit; inactive plans stay editable but visually subdued. */
+.variation-plan-card[data-selected="false"] {
+  background: #1c1c1c;
+}
+.variation-plan-card[data-selected="false"] :is(input, textarea) {
+  color: #909090;
+}
+.variation-plan-card[data-selected="true"] .variation-plan-number {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+.variation-plan-card .checkbox__control {
+  background: #292929;
+  border: 1px solid #ffffff26;
+  color: #aaa;
+}
+.variation-plan-card .checkbox[data-selected="true"] .checkbox__control {
+  border-color: transparent;
+  color: var(--accent-foreground);
+}
+.variation-plan-card :is(input, textarea):is(:focus, :focus-visible, [data-focus-visible="true"]) {
+  outline: 1px solid #ffffff70;
+  outline-offset: 0;
+  box-shadow: none;
+  border-color: #ffffff70;
+}
+@media (max-width: 1023px) {
+  .variation-plan-panel {
+    position: fixed;
+    inset: calc(
+        var(--header-height) +
+        var(--content-padding) +
+        var(--workspace-toolbar-height) +
+        var(--workspace-view-switch-height) +
+        12px
+      )
+      var(--content-padding) var(--content-padding)
+      calc(var(--sidebar-width) + var(--content-padding));
+    width: auto;
+    height: auto;
+    margin: 0;
+  }
+}
+@media (max-width: 767px) {
+  .variation-plan-panel {
+    left: var(--content-padding);
+    border-radius: 16px;
   }
 }

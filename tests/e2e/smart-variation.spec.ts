@@ -44,7 +44,7 @@ test("analysis requires text, preserves edited plans and submits only confirmed 
   await page.reload();
   await description.fill("为杯子生成十种商品场景，保留主体");
   await page.getByRole("button", { name: "生成计划", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "确认每张图的中文提示词", exact: true });
+  const dialog = page.getByRole("region", { name: "确认每张图的中文提示词", exact: true });
   await expect(dialog.locator(".variation-plan-card")).toHaveCount(10);
   expect(generations).toBe(0);
   await dialog.getByRole("textbox", { name: "方案 1 名称", exact: true }).fill("橙色桌面");
@@ -57,7 +57,7 @@ test("analysis requires text, preserves edited plans and submits only confirmed 
     .click();
   await dialog.getByRole("button", { name: "删除方案 3", exact: true }).click();
   await expect(dialog).toContainText("已选 8 张");
-  await page.keyboard.press("Escape");
+  await dialog.getByRole("button", { name: "关闭生成计划", exact: true }).click();
   await page
     .getByRole("navigation", { name: "电商创作工具" })
     .getByRole("button", { name: "主图制作", exact: true })
@@ -92,17 +92,83 @@ for (const width of [1440, 390, 320])
     await page.goto("/commerce/smart-variation");
     await page.getByRole("textbox", { name: "创作需求", exact: true }).fill("为杯子生成十种场景");
     await page.getByRole("button", { name: "生成计划", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "确认每张图的中文提示词", exact: true });
+    const dialog = page.getByRole("region", { name: "确认每张图的中文提示词", exact: true });
     await expect(dialog).toBeVisible();
     await expect(
-      dialog.getByRole("button", { name: "关闭套图生成计划", exact: true }),
+      dialog.getByRole("button", { name: "关闭生成计划", exact: true }),
     ).toBeInViewport();
     await expect(dialog.getByRole("button", { name: /开始生成/ })).toBeInViewport();
     await dialog
       .getByRole("textbox", { name: "方案 10 提示词", exact: true })
       .fill("第十张商品图的修改内容");
     await expect(dialog.getByRole("button", { name: /开始生成/ })).toBeInViewport();
+    if (width === 1440) {
+      const panel = await dialog.boundingBox();
+      const composer = await page.locator(".composer-panel").boundingBox();
+      const rail = await page.locator(".history-rail").boundingBox();
+      expect(panel).not.toBeNull();
+      expect(composer).not.toBeNull();
+      expect(
+        Math.abs((panel?.x ?? 0) - ((composer?.x ?? 0) + (composer?.width ?? 0) + 5)),
+      ).toBeLessThanOrEqual(1);
+      expect((panel?.x ?? 0) + (panel?.width ?? 0)).toBeLessThanOrEqual(rail?.x ?? Infinity);
+      await expect(page.locator(".results-panel")).toBeHidden();
+      await expect(page.locator(".modal__backdrop")).toHaveCount(0);
+      await page.screenshot({ path: "/tmp/lycobo-variation-plan-panel.png" });
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
   });
+
+test("analysis shows progress, blocks repeated presses and opens normalized plans", async ({
+  page,
+}) => {
+  let calls = 0;
+  let release: (() => void) | undefined;
+  const waiting = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/v1/variation-plans", async (route) => {
+    calls++;
+    const input = route.request().postDataJSON();
+    await waiting;
+    await route.fulfill({
+      json: apiFixture({
+        id: crypto.randomUUID(),
+        status: "ready",
+        ...input,
+        description: input.description.trim(),
+        items: [
+          {
+            id: crypto.randomUUID(),
+            title: "橙色款",
+            prompt: "保留白色与花纹，只修改商品主色为橙色。",
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto("/commerce/smart-variation");
+  await page.getByRole("textbox", { name: "创作需求", exact: true }).fill("生成一个橙色商品方案\n");
+  const button = page.locator(".variation-submit .generation-submit");
+  await button.click();
+  try {
+    await expect(button).toBeDisabled();
+    await expect(button.getByRole("status")).toBeVisible();
+    await expect(button).toContainText("正在生成计划");
+    await button.evaluate((node) => {
+      if (node instanceof HTMLButtonElement) {
+        node.click();
+        node.click();
+      }
+    });
+    expect(calls).toBe(1);
+  } finally {
+    release?.();
+  }
+  await expect(
+    page.getByRole("region", { name: "确认每张图的中文提示词", exact: true }),
+  ).toBeVisible();
+  expect(calls).toBe(1);
+});
