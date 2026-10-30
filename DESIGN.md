@@ -108,7 +108,7 @@ HeroUI 是唯一交互基础：Button、ToggleButtonGroup、Select、Modal、Pop
 | 桌面导航行 | 对应三档 40 / 42 / 44px，间距 6px、圆角 16px |
 | 行内 | 左 padding 14px、右 16 / 18 / 20px，图标 18px，图文 gap 8px |
 | 导航颜色 | 默认 #FFFFFFB3，hover #FFFFFF0A，active #FFFFFF14 + 白色文字图标 |
-| Header | 桌面 68px、手机 60px；左右留白共用 --shell-inline-inset：桌面20px／手机12px，账户胶囊右缘与展开侧栏Logo左缘对称、操作 gap 8px |
+| Header | 桌面与手机均为 60px；左右留白共用 --shell-inline-inset：桌面20px／手机12px，账户胶囊右缘与展开侧栏Logo左缘对称、操作 gap 8px |
 | Header 胶囊 | 桌面 38px、手机 44px；登录白底黑字，账户中性底 |
 | 内容留白 | 普通桌面 24px、窄屏 16px；工作台与工具选择层为 12px |
 
