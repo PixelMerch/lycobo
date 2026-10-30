@@ -101,6 +101,12 @@ for (const width of [390, 1440]) {
       .getByRole("button", { name: "家纺套图", exact: true })
       .click();
     await expect(page).toHaveURL(/textile-set/);
+    await expect(page.locator(".unified-workspace")).toHaveAttribute("data-tool", "textile");
+    await expect(page.locator(".workspace-composer-title")).toHaveText("家纺套图");
+    await expect(page.locator(".workspace-composer-title .workspace-tool-symbol")).toHaveAttribute(
+      "data-tool",
+      "textile",
+    );
     await expect(page.locator(".generation-history")).toContainText("textile记录");
     await expect(page.locator(".generation-history")).not.toContainText("create记录");
     if (width >= 768) {
@@ -113,6 +119,8 @@ for (const width of [390, 1440]) {
       .getByRole("navigation", { name: "电商创作工具" })
       .getByRole("button", { name: "智能裂变", exact: true })
       .click();
+    await expect(page.locator(".workspace-composer-title")).toHaveText("智能裂变");
+    await expect(page.locator(".unified-workspace")).toHaveAttribute("data-tool", "variation");
     await expect(page.locator(".generation-job")).toHaveCount(0);
     await expect(page.getByRole("region", { name: "工作区历史记录" })).toContainText(
       "还没有生成记录",

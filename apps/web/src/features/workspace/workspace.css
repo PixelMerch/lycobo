@@ -1,11 +1,18 @@
 /* Each ecommerce tool shows its own history in the shared workspace. */
 .unified-workspace {
   position: relative;
-  --workspace-toolbar-height: 48px;
+  --workspace-toolbar-height: 52px;
   grid-template-rows: var(--workspace-toolbar-height) auto;
 }
 .unified-workspace > .composer-panel {
   gap: 12px;
+  background-image: radial-gradient(ellipse at 20% 0%, #a8ff0009, transparent 60px);
+}
+.unified-workspace:where([data-tool="textile"]) > .composer-panel {
+  background-image: radial-gradient(ellipse at 50% 0%, #54e6a50c, transparent 60px);
+}
+.unified-workspace:where([data-tool="variation"]) > .composer-panel {
+  background-image: radial-gradient(ellipse at 80% 0%, #a8ff000c, transparent 60px);
 }
 .unified-workspace .composer-scroll {
   display: flex;
@@ -23,6 +30,9 @@
   background: transparent;
 }
 .workspace-composer-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
   padding: 4px 8px;
   font-size: 18px;
@@ -30,6 +40,67 @@
   font-weight: 500;
   color: var(--foreground);
   flex-shrink: 0;
+  animation: workspace-tool-enter 160ms ease-out;
+}
+.workspace-tool-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  isolation: isolate;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #242526 url("/studio/tools/graphite-tile.webp") center / cover;
+  color: #dedfe1;
+  box-shadow: inset 0 0 0 1px #ffffff0c;
+  transition:
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+.workspace-tool-symbol::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(135deg, #a8ff0033, #54e6a518);
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.workspace-composer-title .workspace-tool-symbol,
+.workspace-tool-shortcut[aria-current="page"] .workspace-tool-symbol {
+  color: #edffd6;
+  box-shadow:
+    inset 0 0 0 1px #c7ff9133,
+    0 0 12px #a8ff000a;
+}
+.workspace-composer-title .workspace-tool-symbol::before,
+.workspace-tool-shortcut[aria-current="page"] .workspace-tool-symbol::before {
+  opacity: 1;
+}
+.workspace-tool-symbol[data-tool="textile"]::before {
+  background: linear-gradient(135deg, #54e6a533, #a8ff0018);
+}
+@keyframes workspace-tool-enter {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace-composer-title {
+    animation: none;
+  }
+  .workspace-tool-symbol,
+  .workspace-tool-symbol::before {
+    transition: none;
+  }
 }
 .workspace-tool-bar {
   display: flex;
@@ -45,9 +116,10 @@
   flex-shrink: 0;
   height: var(--workspace-toolbar-height);
   min-height: var(--workspace-toolbar-height);
-  padding: 0 12px;
+  padding: 0 10px;
+  gap: 8px;
   border: 0;
-  border-radius: 0;
+  border-radius: 12px;
   font-size: 14px;
   line-height: 20px;
   font-weight: 500;
@@ -59,16 +131,6 @@
 .workspace-tool-shortcut.button[aria-current="page"] {
   color: var(--foreground);
   background: transparent;
-}
-.workspace-tool-shortcut.button[aria-current="page"]::after {
-  content: "";
-  position: absolute;
-  bottom: 4px;
-  left: calc(50% - 12px);
-  width: 24px;
-  height: 2px;
-  border-radius: 999px;
-  background: currentColor;
 }
 .workspace-tool-more.button {
   flex-shrink: 0;

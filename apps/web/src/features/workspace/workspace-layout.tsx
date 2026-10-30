@@ -56,6 +56,7 @@ export function WorkspaceLayout() {
   return (
     <div
       data-mobile-panel={mobilePanel}
+      data-tool={currentTool.id}
       className={`workspace unified-workspace${pathname.includes("textile-set") ? " textile-workspace" : ""}`}
     >
       <div className="workspace-history-heading">

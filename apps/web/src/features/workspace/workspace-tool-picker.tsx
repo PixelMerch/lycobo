@@ -15,6 +15,7 @@ import { useLocation, useNavigate } from "react-router";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
 import { shareProductReference, toolForPath, workspaceTools } from "./workspace-state";
+import { WorkspaceToolSymbol } from "./workspace-tool-symbol";
 
 const categories = ["全部工具", "主图制作", "套图与裂变", "商品视频"];
 export function WorkspaceToolPicker() {
@@ -46,6 +47,7 @@ export function WorkspaceToolPicker() {
               navigate(tool.path);
             }}
           >
+            <WorkspaceToolSymbol tool={tool.id} />
             {tool.name}
           </Button>
         ))}

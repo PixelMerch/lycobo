@@ -11,6 +11,7 @@ import { CreditCoin } from "../../components/credit-coin";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
+import { WorkspaceComposerTitle } from "../workspace/workspace-tool-symbol";
 import { HomeRatioPicker } from "./composer/ratio-picker";
 import { SelectionHighlight } from "./composer/selection-highlight";
 import {
@@ -86,7 +87,7 @@ function Workspace({ model }: { model: ModelId }) {
   );
   return (
     <section className="composer-panel" aria-label="创作设置">
-      <h2 className="workspace-composer-title">主图制作</h2>
+      <WorkspaceComposerTitle />
       <section className="composer-scroll" aria-label="创作参数">
         <ReferencePicker compact model={model} references={draft.references} />
         <ReferencePrompt
