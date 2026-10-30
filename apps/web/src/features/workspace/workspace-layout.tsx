@@ -61,7 +61,6 @@ export function WorkspaceLayout() {
       className={`workspace unified-workspace${pathname.includes("textile-set") ? " textile-workspace" : ""}`}
     >
       <div className="workspace-history-heading">
-        <h1>历史记录</h1>
         <WorkspaceToolPicker />
       </div>
       <ToggleButtonGroup

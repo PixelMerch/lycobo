@@ -1,7 +1,8 @@
 /* Each ecommerce tool shows its own history in the shared workspace. */
 .unified-workspace {
   position: relative;
-  grid-template-rows: 44px auto;
+  --workspace-toolbar-height: 48px;
+  grid-template-rows: var(--workspace-toolbar-height) auto;
 }
 .unified-workspace > .composer-panel {
   gap: 12px;
@@ -40,21 +41,43 @@
   scrollbar-width: thin;
 }
 .workspace-tool-shortcut.button {
+  position: relative;
   flex-shrink: 0;
-  gap: 8px;
+  height: var(--workspace-toolbar-height);
+  min-height: var(--workspace-toolbar-height);
+  padding: 0 12px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 0;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
   color: var(--muted);
   background: transparent;
   white-space: nowrap;
 }
-.workspace-tool-shortcut.button[data-hovered="true"] {
-  color: var(--foreground);
-  background: #ffffff0a;
-}
+.workspace-tool-shortcut.button[data-hovered="true"],
 .workspace-tool-shortcut.button[aria-current="page"] {
   color: var(--foreground);
-  background: #ffffff14;
+  background: transparent;
+}
+.workspace-tool-shortcut.button[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  left: calc(50% - 12px);
+  width: 24px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.workspace-tool-more.button {
+  flex-shrink: 0;
+  color: var(--muted);
+  background: transparent;
+}
+.workspace-tool-more.button[data-hovered="true"] {
+  color: var(--foreground);
+  background: #ffffff0a;
 }
 .workspace-history-heading {
   display: flex;
@@ -68,7 +91,7 @@
   gap: 20px;
   min-width: 0;
   padding-inline: 12px;
-  height: 44px;
+  height: var(--workspace-toolbar-height);
   background: var(--background);
 }
 .workspace-history-heading::before {
@@ -77,13 +100,6 @@
   inset: -12px 0 auto;
   height: 12px;
   background: var(--background);
-}
-.workspace-history-heading h1 {
-  flex-shrink: 0;
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 26px;
 }
 /* The header and filters stay in place; only the visual tool grid scrolls. */
 .workspace-tools-dialog {
@@ -454,7 +470,7 @@
 .unified-workspace .history-rail-title {
   display: flex;
   align-items: center;
-  min-height: 44px;
+  min-height: var(--workspace-toolbar-height);
   margin-bottom: 12px;
 }
 @media (max-width: 1300px) {
@@ -493,9 +509,6 @@
   .workspace-history-heading {
     gap: 12px;
     grid-row: 1 / span 3;
-  }
-  .unified-workspace[data-mobile-panel="form"] .workspace-history-heading h1 {
-    display: none;
   }
   .workspace-mobile-panels {
     grid-column: 1 / -1;

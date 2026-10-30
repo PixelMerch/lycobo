@@ -7,23 +7,14 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
 } from "@heroui/react";
-import {
-  IconArrowUpRight,
-  IconLayersIntersect,
-  IconPhoto,
-  IconPlus,
-  IconSearch,
-  IconSparkles,
-  IconVideo,
-} from "@tabler/icons-react";
+import { IconArrowUpRight, IconDots, IconSearch, IconVideo } from "@tabler/icons-react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
 import { shareProductReference, toolForPath, workspaceTools } from "./workspace-state";
-
-const toolIcons = { create: IconPhoto, textile: IconLayersIntersect, variation: IconSparkles };
 
 const categories = ["全部工具", "主图制作", "套图与裂变", "商品视频"];
 export function WorkspaceToolPicker() {
@@ -55,21 +46,24 @@ export function WorkspaceToolPicker() {
               navigate(tool.path);
             }}
           >
-            <UiIcon icon={toolIcons[tool.id]} />
             {tool.name}
           </Button>
         ))}
-        <Button
-          className="workspace-tool-shortcut"
-          size="sm"
-          variant="tertiary"
-          onPress={() => setOpen(true)}
-          aria-haspopup="dialog"
-          aria-expanded={open}
-        >
-          <UiIcon icon={IconPlus} />
-          全部工具
-        </Button>
+        <Tooltip delay={250}>
+          <Button
+            className="workspace-tool-more"
+            size="sm"
+            variant="tertiary"
+            isIconOnly
+            aria-label="全部工具"
+            onPress={() => setOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={open}
+          >
+            <UiIcon icon={IconDots} />
+          </Button>
+          <Tooltip.Content placement="bottom">全部工具</Tooltip.Content>
+        </Tooltip>
       </nav>
       <Modal isOpen={open} onOpenChange={setOpen}>
         <Modal.Backdrop className="workspace-tools-backdrop">
