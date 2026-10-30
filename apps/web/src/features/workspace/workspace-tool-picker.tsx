@@ -1,8 +1,6 @@
 import {
   Button,
-  ComboBox,
   Input,
-  Label,
   ListBox,
   Modal,
   Select,
@@ -207,45 +205,5 @@ export function WorkspaceToolPicker() {
         </Modal.Backdrop>
       </Modal>
     </>
-  );
-}
-export function WorkspaceHistoryFilter({
-  value,
-  onChange,
-}: {
-  value: "all" | "create" | "textile";
-  onChange: (value: "all" | "create" | "textile") => void;
-}) {
-  return (
-    <ComboBox
-      className="workspace-history-filter"
-      aria-label="历史工具筛选"
-      value={value}
-      onChange={(key) => {
-        if (key === "all" || key === "create" || key === "textile") onChange(key);
-      }}
-    >
-      <Label className="sr-only">历史工具筛选</Label>
-      <ComboBox.InputGroup>
-        <Input placeholder="搜索工具" />
-        <ComboBox.Trigger />
-      </ComboBox.InputGroup>
-      <ComboBox.Popover>
-        <ListBox aria-label="历史工具" renderEmptyState={() => "没有匹配的工具"}>
-          <ListBox.Item id="all" textValue="全部工具">
-            全部工具
-            <ListBox.ItemIndicator />
-          </ListBox.Item>
-          <ListBox.Item id="create" textValue="主图制作">
-            主图制作
-            <ListBox.ItemIndicator />
-          </ListBox.Item>
-          <ListBox.Item id="textile" textValue="家纺套图">
-            家纺套图
-            <ListBox.ItemIndicator />
-          </ListBox.Item>
-        </ListBox>
-      </ComboBox.Popover>
-    </ComboBox>
   );
 }

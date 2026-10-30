@@ -82,25 +82,27 @@ export function useImageModels() {
       ),
   });
 }
-export function useImageHistory(tool: "create" | "textile" | "all" = "create") {
+export function useImageHistory(tool: "create" | "textile" | "all" | null = "create") {
   const session = useImageSession();
   return useInfiniteQuery({
     queryKey: tool === "create" ? ["image-tasks"] : ["image-tasks", tool],
-    enabled: session.isSuccess,
+    enabled: session.isSuccess && tool !== null,
     initialPageParam: "",
     retry: false,
     staleTime: 30000,
     queryFn: async ({ pageParam, signal }) =>
-      imageTasksResponseSchema.parse(
-        await (
-          await imageRequest(
-            `image-tasks?limit=20${tool === "all" ? "" : `&tool=${tool}`}${pageParam ? `&before=${pageParam}` : ""}`,
-            {
-              signal,
-            },
-          )
-        ).json(),
-      ),
+      tool === null
+        ? { data: [] }
+        : imageTasksResponseSchema.parse(
+            await (
+              await imageRequest(
+                `image-tasks?limit=20${tool === "all" ? "" : `&tool=${tool}`}${pageParam ? `&before=${pageParam}` : ""}`,
+                {
+                  signal,
+                },
+              )
+            ).json(),
+          ),
     getNextPageParam: (last) => (last.data.length === 20 ? last.data.at(-1)?.id : undefined),
   });
 }

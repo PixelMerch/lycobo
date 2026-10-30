@@ -23,13 +23,13 @@ export function GenerationHistory({
   onRestore,
 }: {
   compact?: boolean;
-  tool?: "create" | "textile" | "all";
+  tool?: "create" | "textile" | "all" | null;
   onRestore?: import("./history-task-tools").HistoryRestore;
 }) {
   const session = useImageSession();
   const query = useImageHistory(tool);
   const catalog = useModelPresentation();
-  const target = useHistoryTaskTarget(compact);
+  const target = useHistoryTaskTarget(compact || tool === null);
   const targetJob =
     target && (tool === "all" || (tool === "textile") === !!target.input?.textileSet)
       ? target
@@ -103,7 +103,7 @@ export function GenerationHistory({
       </EmptyState>
     );
   if (session.isError || query.isError) return null;
-  if (session.isPending || query.isPending) return null;
+  if (session.isPending || (tool !== null && query.isPending)) return null;
   if (!jobs.length)
     return (
       <EmptyState className="empty-state">
@@ -226,7 +226,7 @@ export function GenerationHistory({
           </Button>
         )}
       </div>
-      {preview && (
+      {preview && tool !== null && (
         <HistoryImagePreview
           images={preview.images}
           assetId={preview.assetId}

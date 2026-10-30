@@ -9,8 +9,8 @@ import { HistoryIndex } from "../generation/history/history-index";
 import type { HistoryRestore } from "../generation/history/history-task-tools";
 import { useStudioStore } from "../generation/studio-state";
 import { BackToTopButton } from "../generation/workspace-page";
-import { restoreMainImagePrompt, useWorkspaceState } from "./workspace-state";
-import { WorkspaceHistoryFilter, WorkspaceToolPicker } from "./workspace-tool-picker";
+import { restoreMainImagePrompt, toolForPath, useWorkspaceState } from "./workspace-state";
+import { WorkspaceToolPicker } from "./workspace-tool-picker";
 import "./workspace.css";
 
 type RestoredTask = Parameters<HistoryRestore>[0];
@@ -19,7 +19,8 @@ export function WorkspaceLayout() {
   const navigate = useNavigate();
   const remember = useWorkspaceState((state) => state.setLastPath);
   const [mobilePanel, setMobilePanel] = useState("form");
-  const [filter, setFilter] = useState<"all" | "create" | "textile">("all");
+  const currentTool = toolForPath(pathname);
+  const historyTool = currentTool.id === "variation" ? null : currentTool.id;
   const [restorePending, setRestorePending] = useState<RestoredTask | null>(null);
   useEffect(() => {
     remember(pathname);
@@ -59,7 +60,10 @@ export function WorkspaceLayout() {
       data-mobile-panel={mobilePanel}
       className={`workspace unified-workspace${pathname.includes("textile-set") ? " textile-workspace" : ""}`}
     >
-      <WorkspaceToolPicker />
+      <div className="workspace-history-heading">
+        <h1>历史记录</h1>
+        <WorkspaceToolPicker />
+      </div>
       <ToggleButtonGroup
         className="workspace-mobile-panels"
         aria-label="工作区视图"
@@ -76,13 +80,9 @@ export function WorkspaceLayout() {
       </ToggleButtonGroup>
       <Outlet />
       <section className="results-panel" aria-label="工作区历史记录">
-        <div className="workspace-history-heading">
-          <h1>历史记录</h1>
-          <WorkspaceHistoryFilter value={filter} onChange={setFilter} />
-        </div>
-        <GenerationHistory tool={filter} onRestore={restore} />
+        <GenerationHistory key={currentTool.id} tool={historyTool} onRestore={restore} />
       </section>
-      <HistoryIndex tool={filter} />
+      <HistoryIndex key={currentTool.id} tool={historyTool} />
       <BackToTopButton />
       <ConfirmDialog
         isOpen={restorePending !== null}

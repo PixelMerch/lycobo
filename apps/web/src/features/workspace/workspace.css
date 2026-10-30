@@ -1,6 +1,7 @@
-/* Approved unified ecommerce workspace: tool choice and history filtering are independent. */
+/* Each ecommerce tool shows its own history in the shared workspace. */
 .unified-workspace {
   position: relative;
+  grid-template-rows: 44px auto;
 }
 .unified-workspace > .composer-panel {
   gap: 12px;
@@ -34,9 +35,7 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
-  grid-column: 2 / -1;
-  grid-row: 1;
-  padding-inline: 12px;
+  padding: 0;
   overflow-x: auto;
   scrollbar-width: thin;
 }
@@ -60,20 +59,31 @@
 .workspace-history-heading {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 24px;
-  min-height: 44px;
+  position: sticky;
+  top: calc(var(--header-height) + var(--content-padding));
+  z-index: 13;
+  align-self: start;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  gap: 20px;
+  min-width: 0;
+  padding-inline: 12px;
+  height: 44px;
+  background: var(--background);
+}
+.workspace-history-heading::before {
+  content: "";
+  position: absolute;
+  inset: -12px 0 auto;
+  height: 12px;
+  background: var(--background);
 }
 .workspace-history-heading h1 {
+  flex-shrink: 0;
   margin: 0;
   font-size: 18px;
   font-weight: 600;
   line-height: 26px;
-}
-.workspace-history-filter {
-  width: 140px;
-  flex-shrink: 0;
 }
 /* The header and filters stay in place; only the visual tool grid scrolls. */
 .workspace-tools-dialog {
@@ -393,9 +403,6 @@
   .workspace-mobile-category {
     display: block;
   }
-  .workspace-history-heading {
-    margin-top: 20px;
-  }
 }
 
 .workspace-mobile-panels {
@@ -422,9 +429,6 @@
   .unified-workspace[data-mobile-panel="history"] > .composer-panel {
     display: none;
   }
-  .workspace-history-filter {
-    width: 160px;
-  }
 }
 
 @media (max-width: 767px) {
@@ -443,19 +447,32 @@
   grid-row: 2;
 }
 .unified-workspace > .history-rail {
-  grid-row: 2;
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  padding-top: 0;
+}
+.unified-workspace .history-rail-title {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin-bottom: 12px;
 }
 @media (max-width: 1300px) {
   .unified-workspace > .composer-panel {
     grid-row: 1 / span 3;
   }
+  .workspace-history-heading {
+    grid-row: 1 / span 3;
+  }
   .unified-workspace > .history-rail {
+    grid-column: 2;
     grid-row: 3;
   }
 }
 @media (max-width: 1023px) {
-  .workspace-tool-bar {
+  .workspace-history-heading {
     grid-column: 1 / -1;
+    grid-row: 1 / span 4;
   }
   .unified-workspace > .composer-panel {
     grid-row: 2;
@@ -465,12 +482,20 @@
     grid-row: 3;
   }
   .unified-workspace > .history-rail {
+    grid-column: 1;
     grid-row: 4;
   }
 }
 @media (max-width: 767px) {
   .unified-workspace {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .workspace-history-heading {
+    gap: 12px;
+    grid-row: 1 / span 3;
+  }
+  .unified-workspace[data-mobile-panel="form"] .workspace-history-heading h1 {
+    display: none;
   }
   .workspace-mobile-panels {
     grid-column: 1 / -1;
