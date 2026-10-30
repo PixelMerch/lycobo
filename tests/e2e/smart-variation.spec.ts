@@ -20,7 +20,7 @@ test("smart variation keeps drafts and edits examples without submitting paid wo
   });
   await page.goto("/commerce/smart-variation");
   await page
-    .getByLabel("商品图文件", { exact: true })
+    .getByLabel("添加参考图片", { exact: true })
     .setInputFiles({ name: "product.png", mimeType: "image/png", buffer: png });
   await page
     .getByRole("textbox", { name: "创作需求", exact: true })

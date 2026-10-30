@@ -29,21 +29,33 @@ function promptWithoutReferences(prompt: string) {
     .replace(/^[ \t]+/gm, "");
 }
 
+type PickerProps = { compact?: boolean; references: Draft["references"] } & (
+  | { model: ModelId; prompt?: never; onChange?: never }
+  | {
+      model?: never;
+      prompt: string;
+      onChange: (references: ReferenceImage[], prompt: string) => void;
+    }
+);
+
 export function ReferencePicker({
   model,
   references,
   compact = false,
-}: {
-  compact?: boolean;
-  model: ModelId;
-  references: Draft["references"];
-}) {
+  prompt = "",
+  onChange,
+}: PickerProps) {
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
   const [reading, setReading] = useState(false);
   const [preview, setPreview] = useState<number | null>(null);
-  const addReferences = useStudioStore((s) => s.addReferences);
   const updateDraft = useStudioStore((s) => s.updateDraft);
+  const currentDraft = () =>
+    model !== undefined ? useStudioStore.getState().drafts[model] : { references, prompt };
+  function change(next: ReferenceImage[], text: string) {
+    if (model !== undefined) updateDraft(model, { references: next, prompt: text });
+    else onChange?.(next, text);
+  }
   async function readFiles(files: File[]) {
     if (reading) return;
     const issue = referenceFileError(files);
@@ -55,7 +67,7 @@ export function ReferencePicker({
     setError("");
     try {
       const images = await readReferenceImages(files);
-      const current = useStudioStore.getState().drafts[model]?.references ?? [];
+      const current = currentDraft()?.references ?? [];
       const seen = new Set(current.map((image) => image.src));
       const unique: ReferenceImage[] = [];
       let duplicates = 0;
@@ -73,7 +85,7 @@ export function ReferencePicker({
         setError("最多添加 5 张参考图，请减少文件后重试。");
         return;
       }
-      addReferences(model, unique);
+      change([...current, ...unique], currentDraft()?.prompt ?? "");
     } catch {
       setError("图片无法读取，请检查文件后重试。");
     } finally {
@@ -93,8 +105,8 @@ export function ReferencePicker({
           aria-label="清除全部参考图片"
           isDisabled={reading || references.length === 0}
           onPress={() => {
-            const prompt = useStudioStore.getState().drafts[model]?.prompt ?? "";
-            updateDraft(model, { references: [], prompt: promptWithoutReferences(prompt) });
+            const prompt = currentDraft()?.prompt ?? "";
+            change([], promptWithoutReferences(prompt));
             setError("");
             setPreview(null);
             if (input.current) input.current.value = "";
@@ -127,12 +139,9 @@ export function ReferencePicker({
             isDisabled={reading}
             onOpen={() => setPreview(index)}
             onRemove={() => {
-              const prompt = useStudioStore.getState().drafts[model]?.prompt ?? "";
+              const prompt = currentDraft()?.prompt ?? "";
               const remaining = references.filter((item) => item.id !== image.id);
-              updateDraft(model, {
-                references: remaining,
-                prompt: promptAfterReferenceRemoval(prompt, index + 1),
-              });
+              change(remaining, promptAfterReferenceRemoval(prompt, index + 1));
               // Keep an open preview valid after the removed image disappears.
               setPreview((current) =>
                 current === null

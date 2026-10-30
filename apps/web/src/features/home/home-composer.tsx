@@ -40,6 +40,9 @@ export function HomeComposer() {
           className="home-prompt"
           value={draft.prompt}
           onChange={(prompt) => updateDraft(model, { prompt })}
+          onReferencesInsert={(images, prompt) =>
+            updateDraft(model, { references: [...draft.references, ...images], prompt })
+          }
           references={draft.references}
           placeholder="描述你想要的画面，输入 @ 引用已上传图片"
         />

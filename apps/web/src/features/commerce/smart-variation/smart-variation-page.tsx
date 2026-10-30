@@ -1,48 +1,43 @@
-import { Button, Label, TextArea, TextField, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { Button, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { useState } from "react";
+import { ReferencePrompt } from "../../../components/reference-prompt";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../../generation/composer/selection-highlight";
+import { ReferencePicker } from "../../generation/references/reference-picker";
 import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
-import { TextileImageField } from "../textile-set/textile-image-field";
 import { useSmartVariationDraft } from "./smart-variation-state";
 import { VariationPlanDialog } from "./variation-plan-dialog";
 import "../textile-set/textile-set.css";
 import "./smart-variation.css";
 
 export function SmartVariationPage() {
-  const { image, description, ratio, resolution, update } = useSmartVariationDraft();
+  const { references, description, ratio, resolution, update } = useSmartVariationDraft();
   const [planOpen, setPlanOpen] = useState(false);
   return (
     <>
       <section className="composer-panel" aria-label="智能裂变参数">
         <WorkspaceComposerTitle />
         <div className="composer-scroll">
-          <TextileImageField
-            label="商品图"
-            required
-            description="上传清晰商品图，完整展示商品"
-            exampleSrc="/studio/bedroom-thumb.webp"
-            value={image ? [image] : []}
-            onChange={(images) => update({ image: images[0] ?? null })}
-            number={1}
+          <ReferencePicker
+            compact
+            references={references}
+            prompt={description}
+            onChange={(references, description) => update({ references, description })}
           />
-          <TextField
+          <ReferencePrompt
             className="prompt-field"
+            label="创作需求"
             value={description}
-            onChange={(value) => update({ description: value })}
-          >
-            <Label>创作需求</Label>
-            <div className="prompt-editor" data-count="">
-              <TextArea
-                rows={3}
-                maxLength={5000}
-                placeholder="描述要调整的颜色、场景或细节，每个方向生成一张图"
-              />
-              <div className="prompt-meta">
-                <span className="prompt-count">{description.length}/5000</span>
-              </div>
-            </div>
-          </TextField>
+            onChange={(description) => update({ description })}
+            references={references}
+            onReferencesInsert={(images, description) =>
+              update({ references: [...references, ...images], description })
+            }
+            placeholder="描述要调整的颜色、场景或细节，输入 @ 引用图片"
+            maxLength={5000}
+            showCount
+            autoGrow
+          />
           <section className="parameter-group" aria-label="图片比例">
             <div className="field-title">
               <h2>图片比例</h2>

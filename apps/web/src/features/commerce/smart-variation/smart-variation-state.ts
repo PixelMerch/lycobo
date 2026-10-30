@@ -13,7 +13,7 @@ export function examplePlan(): VariationPlanItem[] {
 }
 
 type Draft = {
-  image: ReferenceImage | null;
+  references: ReferenceImage[];
   description: string;
   model: string;
   ratio: string;
@@ -23,7 +23,7 @@ type Draft = {
 /** Session-only UI draft. Example plans never represent an AI response or a paid task. */
 export const useSmartVariationDraft = create<Draft & { update: (patch: Partial<Draft>) => void }>(
   (set) => ({
-    image: null,
+    references: [],
     description: "",
     model: "",
     ratio: "1:1",

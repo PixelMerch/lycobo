@@ -47,7 +47,7 @@ for (const width of [390, 1440]) {
     await page.goto("/create");
     const prompt = "保留商品主体，使用自然光。";
     if (width >= 768) {
-      await page.getByRole("textbox", { name: "提示词 提示词", exact: true }).fill(prompt);
+      await page.getByRole("textbox", { name: "提示词", exact: true }).fill(prompt);
     }
     if (width < 768) await page.getByRole("radio", { name: "历史记录", exact: true }).click();
     await expect(page.getByRole("heading", { name: "历史记录", exact: true })).toHaveCount(0);
@@ -146,9 +146,7 @@ for (const width of [390, 1440]) {
         .getByRole("button", { name: "主图制作", exact: true })
         .click();
       await expect(page.locator(".workspace-composer-title")).toHaveText("主图制作");
-      await expect(page.getByRole("textbox", { name: "提示词 提示词", exact: true })).toHaveValue(
-        prompt,
-      );
+      await expect(page.getByRole("textbox", { name: "提示词", exact: true })).toHaveValue(prompt);
     }
   });
 }

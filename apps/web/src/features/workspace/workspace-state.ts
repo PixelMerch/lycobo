@@ -48,9 +48,7 @@ export function shareProductReference(from: string, to: string) {
     from === "/commerce/textile-set"
       ? [textile.mainImage, ...textile.detailImages].filter((image) => image !== null)
       : from === "/commerce/smart-variation"
-        ? variation.image
-          ? [variation.image]
-          : []
+        ? variation.references
         : (studio.drafts[studio.activeModel]?.references ?? []);
   const mainImage = references[0];
   if (!mainImage) return;
@@ -61,7 +59,7 @@ export function shareProductReference(from: string, to: string) {
       mainImage,
       ...(textile.detailImages.length ? {} : { detailImages: references.slice(1, 6) }),
     });
-  } else if (to === "/commerce/smart-variation" && !variation.image) {
-    variation.update({ image: mainImage });
+  } else if (to === "/commerce/smart-variation" && !variation.references.length) {
+    variation.update({ references: references.slice(0, 5) });
   }
 }

@@ -25,7 +25,7 @@
   --field-placeholder: #8b8794;
   --field-border: #ffffff14;
   --field-border-hover: #ffffff29;
-  --field-border-focus: #a8ff00;
+  --field-border-focus: #ffffff66;
   --field-border-width: 1px;
   --muted: #aaa7b2;
   --accent: #a8ff00;
@@ -3978,4 +3978,14 @@ p.home-hero-kicker {
   line-height: 16px;
   text-align: center;
   pointer-events: none;
+}
+
+/* Inputs and tabs stay neutral; primary actions and asset selection retain brand color. */
+:is(.text-field, .input-group, .tabs__tab) {
+  --focus: var(--muted);
+}
+:is(.tabs__tab, .tabs__indicator) {
+  --accent: var(--foreground);
+  --accent-soft: #ffffff0a;
+  --accent-soft-foreground: var(--foreground);
 }

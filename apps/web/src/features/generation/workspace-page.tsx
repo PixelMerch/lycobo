@@ -96,6 +96,9 @@ function Workspace({ model }: { model: ModelId }) {
           inputRef={inputId}
           value={draft.prompt}
           onChange={(prompt) => updateDraft(model, { prompt })}
+          onReferencesInsert={(images, prompt) =>
+            updateDraft(model, { references: [...draft.references, ...images], prompt })
+          }
           references={draft.references}
           placeholder="描述商品、场景或需要调整的细节，输入 @ 引用商品图"
           maxLength={promptLimit}

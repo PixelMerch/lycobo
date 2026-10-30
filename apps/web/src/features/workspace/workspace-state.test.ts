@@ -17,15 +17,15 @@ describe("workspace draft handoff", () => {
     studio.updateDraft(studio.activeModel, { prompt: "source", references: [reference("main")] });
     useSmartVariationDraft.getState().update({ description: "destination" });
     shareProductReference("/create", "/commerce/smart-variation");
-    expect(useSmartVariationDraft.getState().image?.id).toBe("main");
+    expect(useSmartVariationDraft.getState().references[0]?.id).toBe("main");
     expect(useSmartVariationDraft.getState().description).toBe("destination");
     expect(useStudioStore.getState().drafts[studio.activeModel]?.prompt).toBe("source");
   });
   it("never replaces an existing destination image", () => {
     useTextileSetDraft.getState().update({ mainImage: reference("source") });
-    useSmartVariationDraft.getState().update({ image: reference("keep") });
+    useSmartVariationDraft.getState().update({ references: [reference("keep")] });
     shareProductReference("/commerce/textile-set", "/commerce/smart-variation");
-    expect(useSmartVariationDraft.getState().image?.id).toBe("keep");
+    expect(useSmartVariationDraft.getState().references[0]?.id).toBe("keep");
   });
   it("limits creation references to five without modifying the textile draft", () => {
     const details = Array.from({ length: 5 }, (_, i) => reference(`detail-${i}`));
