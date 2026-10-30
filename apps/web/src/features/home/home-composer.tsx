@@ -8,6 +8,7 @@ import { HomeRatioPicker } from "../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../generation/composer/selection-highlight";
 import { ImageApiError, useImageModels } from "../generation/generation-client";
 import { ModelLogo, useModelPresentation } from "../generation/models/model-logos";
+import { hasPromptDescription } from "../generation/references/prompt-description";
 import { ReferencePicker } from "../generation/references/reference-picker";
 import { defaultDraft, useStudioStore } from "../generation/studio-state";
 import { HomeIntro } from "./home-intro";
@@ -27,7 +28,7 @@ export function HomeComposer() {
       : "服务暂时不可用，请稍后重试。"
     : null;
   useErrorToast(catalogError);
-  const canSubmit = draft.prompt.trim().length > 0 || draft.references.length > 0;
+  const canSubmit = hasPromptDescription(draft.prompt);
   const resolutions = catalog.data?.models.find((item) => item.id === model)?.enabledResolutions;
   return (
     <>
@@ -184,6 +185,7 @@ export function HomeComposer() {
             isIconOnly
             className="home-submit"
             data-active={canSubmit || undefined}
+            isDisabled={!canSubmit}
             aria-label="开始创作"
             onPress={() => navigate("/create")}
           >

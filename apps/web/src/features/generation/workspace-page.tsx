@@ -24,6 +24,7 @@ import {
 
 import { modelCapabilities, supportsReferences } from "./models/model-capabilities";
 import { ModelSelect } from "./models/model-select";
+import { hasPromptDescription } from "./references/prompt-description";
 import { ReferencePicker } from "./references/reference-picker";
 import { defaultDraft, type ModelId, useStudioStore } from "./studio-state";
 
@@ -72,7 +73,7 @@ function Workspace({ model }: { model: ModelId }) {
     modelQuery.data?.enabled &&
     !generate.isPending &&
     (pending ||
-      (draft.prompt.trim().length > 0 &&
+      (hasPromptDescription(draft.prompt) &&
         draft.prompt.length <= promptLimit &&
         resolutions.some((value) => value === draft.resolution) &&
         referencesSupported));
