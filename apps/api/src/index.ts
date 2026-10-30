@@ -33,6 +33,7 @@ const app = createApp(
   repository
     ? {
         repository,
+        modelSecret: process.env.MODEL_CREDENTIAL_SECRET,
         events,
         store,
         enabled: policy.enabled,

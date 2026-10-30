@@ -5,12 +5,14 @@ import {
   imageTaskRetrySchema,
   imageUnitCredits,
   type StoredImage,
+  variationPlanInputSchema,
 } from "@lycoboai/contracts";
 import {
   type ImageEventFeed,
   type ImagePrincipal,
   type ImageRepository,
   ImageRepositoryError,
+  VariationError,
   WalletError,
 } from "@lycoboai/db";
 import { normalizeTextileGeneration } from "@lycoboai/generation";
@@ -27,10 +29,12 @@ import {
   type WorkbenchSession,
   workbenchPrincipal,
 } from "./session";
+import { variationService } from "./variation-service";
 
 export type ImageApiDependencies = {
   repository: ImageRepository;
   modelSecret?: string | undefined;
+  plannerRequest?: typeof fetch | undefined;
   events?: ImageEventFeed | undefined;
   signAsset?: DeliverySigner | undefined;
   auth?: EnterpriseAuth | undefined;
@@ -48,6 +52,7 @@ type Env = { Variables: { principal: ImagePrincipal; requestId: string } };
 const id = z.uuid();
 export function imageRoutes(deps: ImageApiDependencies) {
   const app = new Hono<Env>();
+  const variation = variationService(deps);
   const delivery = deps.signAsset ? imageDeliveries(deps.repository, deps.signAsset) : undefined;
   const fail = (
     c: Context<Env>,
@@ -87,6 +92,13 @@ export function imageRoutes(deps: ImageApiDependencies) {
     await next();
   });
   app.onError((error, c) => {
+    if (error instanceof VariationError)
+      return fail(
+        c,
+        error.code,
+        "分析请求未执行，请检查图片或稍后再试",
+        error.code === "RATE_LIMITED" ? 409 : 400,
+      );
     if (error instanceof ImageRepositoryError || error instanceof WalletError) {
       const status =
         error.code === "FORBIDDEN"
@@ -208,6 +220,23 @@ export function imageRoutes(deps: ImageApiDependencies) {
       })),
     });
   });
+  app.get("/variation-plans/capabilities", async (c) =>
+    c.json({ enabled: await variation.enabled() }),
+  );
+  app.post("/variation-plans", async (c) => {
+    const input = variationPlanInputSchema.safeParse(await c.req.json());
+    const key = id.safeParse(c.req.header("Idempotency-Key"));
+    if (!input.success || !key.success)
+      return fail(c, "VALIDATION_ERROR", "请填写创作需求并检查参考图", 400);
+    const plan = await variation.create(c.get("principal"), input.data, key.data, c.req.raw.signal);
+    return plan ? c.json(plan) : fail(c, "GENERATION_NOT_CONFIGURED", "智能分析尚未配置", 503);
+  });
+  app.get("/variation-plans/:id", async (c) => {
+    const parsed = id.safeParse(c.req.param("id"));
+    if (!parsed.success) return fail(c, "VALIDATION_ERROR", "计划编号无效", 400);
+    const plan = await deps.repository.variation.get(c.get("principal"), parsed.data);
+    return plan ? c.json(plan) : fail(c, "NOT_FOUND", "计划不存在", 404);
+  });
   app.get("/wallet", async (c) =>
     c.json({
       ...(await deps.repository.wallet(c.get("principal"))),
@@ -256,7 +285,14 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const key = id.safeParse(c.req.header("Idempotency-Key"));
     if (!input.success || !key.success)
       return fail(c, "VALIDATION_ERROR", "请检查参数和 Idempotency-Key", 400);
-    const normalized = normalizeTextileGeneration(input.data);
+    const normalized = input.data.variation
+      ? {
+          ...input.data,
+          model: "gpt-image-2.5",
+          quality: "medium" as const,
+          prompt: `智能裂变：${input.data.variation.items.map((item) => item.title).join("、")}。每个方案分别生成一张图片。`,
+        }
+      : normalizeTextileGeneration(input.data);
     try {
       if (!(await deps.repository.models.hasRoute(normalized))) {
         if (deps.managedModelsOnly) throw new Error("MODEL_CHANNEL_REQUIRED");
@@ -312,7 +348,10 @@ export function imageRoutes(deps: ImageApiDependencies) {
       .default(20)
       .safeParse(c.req.query("limit"));
     const before = id.optional().safeParse(c.req.query("before"));
-    const tool = z.enum(["create", "textile"]).optional().safeParse(c.req.query("tool"));
+    const tool = z
+      .enum(["create", "textile", "variation"])
+      .optional()
+      .safeParse(c.req.query("tool"));
     if (!limit.success || !before.success || !tool.success)
       return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
     const scope = c.get("principal");

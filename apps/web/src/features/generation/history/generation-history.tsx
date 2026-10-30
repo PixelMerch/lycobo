@@ -24,7 +24,7 @@ export function GenerationHistory({
   onRestore,
 }: {
   compact?: boolean;
-  tool?: "create" | "textile" | "all" | null;
+  tool?: "create" | "textile" | "variation" | "all" | null;
   onRestore?: import("./history-task-tools").HistoryRestore;
 }) {
   const session = useImageSession();
@@ -32,7 +32,13 @@ export function GenerationHistory({
   const catalog = useModelPresentation();
   const target = useHistoryTaskTarget(compact || tool === null);
   const targetJob =
-    target && (tool === "all" || (tool === "textile") === !!target.input?.textileSet)
+    target &&
+    (tool === "all" ||
+      (tool === "variation"
+        ? !!target.input?.variation
+        : tool === "textile"
+          ? !!target.input?.textileSet
+          : !target.input?.textileSet && !target.input?.variation))
       ? target
       : undefined;
   const loadedJobs = query.data?.pages.flatMap((page) => page.data) ?? [];
@@ -154,6 +160,11 @@ export function GenerationHistory({
                         : undefined
                     }
                   >
+                    {job.input?.variation && (
+                      <p className="textile-result-view">
+                        {job.input.variation.items[item.position]?.title}
+                      </p>
+                    )}
                     {job.input?.textileSet && (
                       <p className="textile-result-view">
                         {

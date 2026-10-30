@@ -14,6 +14,7 @@ function fixture(editsEnabled = false, managedModelsOnly = false) {
     .mockResolvedValue({ id: crypto.randomUUID(), replayed: false });
   const repository: ImageRepository = {
     close: unexpected,
+    variation: { config: unexpected, begin: unexpected, get: unexpected, finish: unexpected },
     models: {
       logos: async () => ({
         models: [

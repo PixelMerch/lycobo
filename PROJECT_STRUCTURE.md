@@ -35,7 +35,7 @@ apps/web/src/
     ├── auth/                     # 身份请求与登录弹窗
     ├── account/                  # Header账户菜单、账户中心、钱包请求和账务展示
     ├── workspace/                # 统一工作区布局、工具分类搜索、历史筛选、跨工具草稿交接
-    ├── commerce/                 # 兼容旧电商入口偏好、家纺主图裂变参数面板、智能裂变页面与示例计划编辑、本地会话草稿
+    ├── commerce/                 # 兼容旧电商入口偏好、家纺主图裂变参数面板、智能裂变语言分析、真实计划确认与生图、本地会话草稿
     ├── home/                     # 首页、共享创作输入与提示辅助
     │   ├── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，use-inspiration-columns.ts 订阅断点并派生均衡瀑布流
     │   ├── home-intro.tsx         # 首页渐变轮换标题，文案与间隔在 home-intro-config.ts
@@ -150,3 +150,5 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 模型公开目录由 `modelManagementRepository.logos` 按图片类别、启用状态和排序查询，主站各模型入口共用 `useModelPresentation`。模型编码使用有格式限制的动态字符串，渠道与任务快照继续由服务端校验；新增模型未绑定渠道时不可生成，历史供应商别名保留兼容。
 
 共享列表分页在 `components/infinite-load.tsx`，组合 IntersectionObserver 与 HeroUI Spinner；主站分页列表统一复用，业务查询仍由各功能的 TanStack Query hook 管理。提示词有效描述判断在 `features/generation/references/prompt-description.ts`，首页与创作页共用。
+
+智能裂变：`variation-planner.ts` 封装 OpenAI 兼容语言分析；`variation-service.ts` 负责授权后读取缩略图与解密密钥；`variation-repository.ts` 持久化计划和幂等状态。`model_planners` 独立配置语言模型；`generation_jobs.input.variation` 保存确认后的方案快照，Worker 每条方案只请求一张图。

@@ -232,6 +232,20 @@
       "when": 1793341007888,
       "tag": "0032_reference_retention",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793344501799,
+      "tag": "0033_smart_variation_plans",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793349758005,
+      "tag": "0034_variation_planner_protocol",
+      "breakpoints": true
     }
   ]
 }

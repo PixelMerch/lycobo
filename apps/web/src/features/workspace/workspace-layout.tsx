@@ -3,6 +3,7 @@ import { imageResolutionSchema } from "@lycoboai/contracts";
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { ConfirmDialog } from "../../components/confirm-dialog";
+import { useSmartVariationDraft } from "../commerce/smart-variation/smart-variation-state";
 import { useTextileSetDraft } from "../commerce/textile-set/textile-set-state";
 import { GenerationHistory } from "../generation/history/generation-history";
 import { HistoryIndex } from "../generation/history/history-index";
@@ -20,13 +21,23 @@ export function WorkspaceLayout() {
   const remember = useWorkspaceState((state) => state.setLastPath);
   const [mobilePanel, setMobilePanel] = useState("form");
   const currentTool = toolForPath(pathname);
-  const historyTool = currentTool.id === "variation" ? null : currentTool.id;
+  const historyTool = currentTool.id;
   const [restorePending, setRestorePending] = useState<RestoredTask | null>(null);
   useEffect(() => {
     remember(pathname);
   }, [pathname, remember]);
-  const applyRestore = ({ model, draft, textileSet }: RestoredTask) => {
-    if (textileSet) {
+  const applyRestore = ({ model, draft, textileSet, variation }: RestoredTask) => {
+    if (variation) {
+      useSmartVariationDraft.getState().update({
+        planId: variation.planId,
+        description: draft.prompt,
+        references: draft.references,
+        ratio: draft.ratio,
+        resolution: draft.resolution,
+        items: variation.items.map((item) => ({ ...item, selected: true })),
+      });
+      navigate("/commerce/smart-variation");
+    } else if (textileSet) {
       useTextileSetDraft.getState().update({
         mainImage: draft.references[0] ?? null,
         detailImages: draft.references.slice(1, 6),
@@ -47,9 +58,14 @@ export function WorkspaceLayout() {
   const restore: HistoryRestore = (task) => {
     const textile = useTextileSetDraft.getState();
     const draft = useStudioStore.getState().drafts[task.model];
-    const occupied = task.textileSet
-      ? !!textile.mainImage || textile.detailImages.length > 0 || textile.views.length > 0
-      : !!draft?.prompt.trim() || !!draft?.references.length;
+    const variation = useSmartVariationDraft.getState();
+    const occupied = task.variation
+      ? !!variation.description.trim() ||
+        variation.references.length > 0 ||
+        variation.items.length > 0
+      : task.textileSet
+        ? !!textile.mainImage || textile.detailImages.length > 0 || textile.views.length > 0
+        : !!draft?.prompt.trim() || !!draft?.references.length;
     if (occupied) setRestorePending(task);
     else applyRestore(task);
   };

@@ -14,7 +14,11 @@ import { useModelPresentation } from "../models/model-logos";
 import { useStudioStore } from "../studio-state";
 import { scrollToHistoryTask } from "./history-navigation";
 
-export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" | "all" | null }) {
+export function HistoryIndex({
+  tool = "create",
+}: {
+  tool?: "create" | "textile" | "variation" | "all" | null;
+}) {
   const query = useImageHistory(tool);
   const catalog = useModelPresentation();
   const deletion = useDeleteHistoryTask();

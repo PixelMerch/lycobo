@@ -5,6 +5,7 @@ import {
   imageUnitCredits,
   publicImageModel,
   type TextileGeneration,
+  type VariationGeneration,
 } from "@lycoboai/contracts";
 import { IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
@@ -48,11 +49,12 @@ export type HistoryRestore = (value: {
   model: ModelId;
   draft: Draft;
   textileSet?: TextileGeneration | undefined;
+  variation?: VariationGeneration | undefined;
 }) => void;
 async function taskDraft(
   job: ImageJob,
   client: QueryClient,
-): Promise<{ model: ModelId; draft: Draft; textileSet?: TextileGeneration | undefined }> {
+): Promise<Parameters<HistoryRestore>[0]> {
   const input =
     job.input ??
     (
@@ -68,6 +70,7 @@ async function taskDraft(
   return {
     model: publicImageModel(input.model),
     textileSet: input.textileSet,
+    variation: input.variation,
     draft: {
       prompt: input.prompt,
       ratio: input.aspectRatio,
@@ -177,7 +180,11 @@ export function HistoryTaskActions({
       }
       generation.mutate({
         ...restored,
-        ...(job.input?.textileSet ? { source: "textile-set" } : {}),
+        ...(job.input?.textileSet
+          ? { source: "textile-set" }
+          : job.input?.variation
+            ? { source: "smart-variation" }
+            : {}),
         ...(item || ["failed", "partially_failed", "needs_reconciliation"].includes(job.status)
           ? { retryJobId: job.id, ...(item ? { retryItemId: item.id } : {}) }
           : {}),

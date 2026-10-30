@@ -6,6 +6,7 @@ import { SelectionHighlight } from "../../generation/composer/selection-highligh
 import { ReferencePicker } from "../../generation/references/reference-picker";
 import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
 import { useSmartVariationDraft } from "./smart-variation-state";
+import { useVariationPlan } from "./use-variation-plan";
 import { VariationPlanDialog } from "./variation-plan-dialog";
 import "../textile-set/textile-set.css";
 import "./smart-variation.css";
@@ -13,6 +14,9 @@ import "./smart-variation.css";
 export function SmartVariationPage() {
   const { references, description, ratio, resolution, update } = useSmartVariationDraft();
   const [planOpen, setPlanOpen] = useState(false);
+  const analysis = useVariationPlan();
+  const planId = useSmartVariationDraft((state) => state.planId);
+
   return (
     <>
       <section className="composer-panel" aria-label="智能裂变参数">
@@ -73,16 +77,26 @@ export function SmartVariationPage() {
           </section>
         </div>
         <div className="generate-area variation-submit">
+          {planId && (
+            <Button
+              variant="tertiary"
+              size="sm"
+              className="variation-example-button"
+              onPress={() => setPlanOpen(true)}
+            >
+              查看生成计划
+            </Button>
+          )}
           <Button
-            variant="tertiary"
-            size="sm"
-            className="variation-example-button"
-            onPress={() => setPlanOpen(true)}
-          >
-            查看计划示例
-          </Button>
-          <Button
-            isDisabled
+            isDisabled={!analysis.canAnalyze}
+            isPending={analysis.isPending}
+            onPress={() =>
+              analysis.mutate(undefined, {
+                onSuccess: (plan) => {
+                  if (useSmartVariationDraft.getState().planId === plan.id) setPlanOpen(true);
+                },
+              })
+            }
             variant="primary"
             size="lg"
             fullWidth
@@ -90,7 +104,6 @@ export function SmartVariationPage() {
           >
             生成计划
           </Button>
-          <p>智能分析暂未开放</p>
         </div>
       </section>
       <VariationPlanDialog isOpen={planOpen} onOpenChange={setPlanOpen} />

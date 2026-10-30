@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { textileGenerationSchema } from "./textile-generation";
+import { variationGenerationSchema } from "./variation-plan";
 
 export const imageLimits = {
   uploadBytes: 10 * 1024 * 1024,
@@ -90,15 +91,21 @@ export const imageGenerationInputSchema = z
     // Absent on legacy inputs, preserving their original idempotency hashes.
     localEdit: imageLocalEditSchema.optional(),
     textileSet: textileGenerationSchema.optional(),
+    variation: variationGenerationSchema.optional(),
   })
   .superRefine((input, ctx) => {
     if (
-      input.textileSet
-        ? input.count !== input.textileSet.views.length ||
-          input.referenceAssetIds.length < 1 ||
-          input.referenceAssetIds.length > (input.textileSet.version >= 2 ? 6 : 2) ||
+      input.variation
+        ? input.count !== input.variation.items.length ||
+          input.referenceAssetIds.length > 5 ||
+          !!input.textileSet ||
           !!input.localEdit
-        : input.count > 4
+        : input.textileSet
+          ? input.count !== input.textileSet.views.length ||
+            input.referenceAssetIds.length < 1 ||
+            input.referenceAssetIds.length > (input.textileSet.version >= 2 ? 6 : 2) ||
+            !!input.localEdit
+          : input.count > 4
     )
       ctx.addIssue({
         code: "custom",

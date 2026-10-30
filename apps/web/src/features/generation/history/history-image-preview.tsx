@@ -34,7 +34,7 @@ export function HistoryImagePreview({
   tool = "create",
 }: {
   images: PreviewImage[];
-  tool?: "create" | "textile" | "all";
+  tool?: "create" | "textile" | "variation" | "all";
   assetId: string;
   onClose: () => void;
 }) {

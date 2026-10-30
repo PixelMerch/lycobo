@@ -2,7 +2,8 @@ import { Button, Checkbox, Input, Label, Modal, TextArea, TextField } from "@her
 import { IconCheck, IconTrash } from "@tabler/icons-react";
 import { DialogClose } from "../../../components/dialog-close";
 import { UiIcon } from "../../../components/ui-icon";
-import { examplePlan, useSmartVariationDraft } from "./smart-variation-state";
+import { useSmartVariationDraft } from "./smart-variation-state";
+import { useVariationGeneration } from "./use-variation-generation";
 
 export function VariationPlanDialog({
   isOpen,
@@ -12,6 +13,7 @@ export function VariationPlanDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { items, ratio, resolution, update } = useSmartVariationDraft();
+  const generation = useVariationGeneration();
   const selectedCount = items.filter((item) => item.selected).length;
   const patchItem = (id: string, patch: Partial<(typeof items)[number]>) =>
     update({ items: items.map((item) => (item.id === id ? { ...item, ...patch } : item)) });
@@ -22,9 +24,7 @@ export function VariationPlanDialog({
           <Modal.Dialog className="variation-plan-dialog">
             <Modal.Header>
               <div>
-                <span className="variation-example-tag">示例计划</span>
                 <Modal.Heading>确认每张图的中文提示词</Modal.Heading>
-                <p>以下是换色示例，可编辑查看效果；不会提交生成。</p>
               </div>
               <DialogClose label="关闭套图生成计划" />
             </Modal.Header>
@@ -76,12 +76,12 @@ export function VariationPlanDialog({
                       onChange={(prompt) => patchItem(item.id, { prompt })}
                     >
                       <Label className="sr-only">方案 {index + 1} 提示词</Label>
-                      <TextArea rows={3} maxLength={5000} />
+                      <TextArea rows={3} maxLength={4000} />
                     </TextField>
                   </section>
                 ))}
                 {!items.length && (
-                  <p className="variation-plan-empty">暂无方案，可以恢复示例后继续查看。</p>
+                  <p className="variation-plan-empty">暂无方案，请重新生成计划。</p>
                 )}
               </div>
             </Modal.Body>
@@ -91,13 +91,19 @@ export function VariationPlanDialog({
                   {ratio} · {resolution} · 已选 {selectedCount} 张
                 </span>
               </div>
-              <Button size="sm" variant="tertiary" onPress={() => update({ items: examplePlan() })}>
-                恢复示例
+              <Button
+                isDisabled={!generation.canGenerate}
+                isPending={generation.submitting}
+                className="primary-action variation-generate"
+                onPress={() => {
+                  void generation
+                    .submit()
+                    .then(() => onOpenChange(false))
+                    .catch(() => {});
+                }}
+              >
+                {generation.pending ? "确认上次提交" : `开始生成 · ${generation.cost} 积分`}
               </Button>
-              <Button isDisabled className="variation-generate">
-                开始生成
-              </Button>
-              <p className="variation-plan-availability">生成功能暂未开放</p>
             </Modal.Footer>
           </Modal.Dialog>
         </Modal.Container>

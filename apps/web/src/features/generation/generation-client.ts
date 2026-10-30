@@ -10,7 +10,13 @@ import {
   imageTasksResponseSchema,
   imageUploadResponseSchema,
 } from "@lycoboai/contracts";
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type QueryClient,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
 import { normalizeApiResponse } from "../../lib/api-response";
 import { sessionFetch } from "../../lib/session-fetch";
@@ -18,7 +24,7 @@ import { assetContentUrl, rememberImageDeliveries } from "./asset-delivery-clien
 
 export { assetContentUrl } from "./asset-delivery-client";
 
-import type { Draft, ModelId } from "./studio-state";
+import type { Draft, ModelId, ReferenceImage } from "./studio-state";
 
 export class ImageApiError extends Error {
   constructor(
@@ -28,13 +34,13 @@ export class ImageApiError extends Error {
     super(message);
   }
 }
-export async function imageRequest(path: string, init: RequestInit = {}) {
+export async function imageRequest(path: string, init: RequestInit = {}, timeoutMs = 30000) {
   const response = await sessionFetch(`/api/v1/${path}`, {
     ...init,
     credentials: "same-origin",
     signal: init.signal
-      ? AbortSignal.any([init.signal, AbortSignal.timeout(30000)])
-      : AbortSignal.timeout(30000),
+      ? AbortSignal.any([init.signal, AbortSignal.timeout(timeoutMs)])
+      : AbortSignal.timeout(timeoutMs),
   });
   if (!response.ok) {
     const messages: Record<number, string> = {
@@ -82,7 +88,9 @@ export function useImageModels() {
       ),
   });
 }
-export function useImageHistory(tool: "create" | "textile" | "all" | null = "create") {
+export function useImageHistory(
+  tool: "create" | "textile" | "variation" | "all" | null = "create",
+) {
   const session = useImageSession();
   return useInfiniteQuery({
     queryKey: tool === "create" ? ["image-tasks"] : ["image-tasks", tool],
@@ -199,6 +207,40 @@ export function usePendingSubmission(scope?: SessionScope) {
     () => false,
   );
 }
+export async function uploadImageReferences(
+  client: QueryClient,
+  scope: SessionScope,
+  references: readonly ReferenceImage[],
+) {
+  const referenceAssetIds: string[] = [];
+  for (const reference of references) {
+    if (reference.assetId) {
+      referenceAssetIds.push(reference.assetId);
+      continue;
+    }
+    const asset = await client.fetchQuery({
+      queryKey: ["reference-upload", scope.organizationId, scope.userId, reference.id],
+      staleTime: 2 * 24 * 60 * 60 * 1000,
+      gcTime: 2 * 24 * 60 * 60 * 1000,
+      retry: false,
+      queryFn: async () => {
+        const blob = await (
+          await fetch(reference.src, { signal: AbortSignal.timeout(30000) })
+        ).blob();
+        const upload = await imageRequest("image-assets", {
+          method: "POST",
+          headers: { "Content-Type": blob.type },
+          body: blob,
+        });
+        const uploaded = imageUploadResponseSchema.parse(await upload.json());
+        void client.invalidateQueries({ queryKey: ["image-assets"] });
+        return uploaded;
+      },
+    });
+    referenceAssetIds.push(asset.id);
+  }
+  return referenceAssetIds;
+}
 export function useGenerateImage() {
   const session = useImageSession();
   const client = useQueryClient();
@@ -212,6 +254,7 @@ export function useGenerateImage() {
       retryItemId,
       localEdit,
       textileSet,
+      variation,
     }: {
       model: ModelId;
       draft: Draft;
@@ -220,6 +263,7 @@ export function useGenerateImage() {
       retryItemId?: string;
       localEdit?: import("@lycoboai/contracts").ImageLocalEdit;
       textileSet?: import("@lycoboai/contracts").TextileGeneration | undefined;
+      variation?: import("@lycoboai/contracts").VariationGeneration | undefined;
     }) => {
       if (!session.data) throw new Error("请先登录工作台。");
       const pendingKey = pendingStorageKey(session.data);
@@ -227,38 +271,11 @@ export function useGenerateImage() {
       if (pending && pending.source !== source)
         throw new Error("请先在原提交入口确认上次提交，再开始新的生成。");
       if (!pending) {
-        const referenceAssetIds: string[] = [];
-        for (const reference of draft.references) {
-          if (reference.assetId) {
-            referenceAssetIds.push(reference.assetId);
-            continue;
-          }
-          const asset = await client.fetchQuery({
-            queryKey: [
-              "reference-upload",
-              session.data.organizationId,
-              session.data.userId,
-              reference.id,
-            ],
-            staleTime: 2 * 24 * 60 * 60 * 1000,
-            gcTime: 2 * 24 * 60 * 60 * 1000,
-            retry: false,
-            queryFn: async () => {
-              const blob = await (
-                await fetch(reference.src, { signal: AbortSignal.timeout(30000) })
-              ).blob();
-              const upload = await imageRequest("image-assets", {
-                method: "POST",
-                headers: { "Content-Type": blob.type },
-                body: blob,
-              });
-              const uploaded = imageUploadResponseSchema.parse(await upload.json());
-              void client.invalidateQueries({ queryKey: ["image-assets"] });
-              return uploaded;
-            },
-          });
-          referenceAssetIds.push(asset.id);
-        }
+        const referenceAssetIds = await uploadImageReferences(
+          client,
+          session.data,
+          draft.references,
+        );
         const input = imageGenerationInputSchema.parse({
           model,
           prompt: draft.prompt,
@@ -276,6 +293,7 @@ export function useGenerateImage() {
           referenceAssetIds,
           ...(localEdit ? { localEdit } : {}),
           ...(textileSet ? { textileSet } : {}),
+          ...(variation ? { variation } : {}),
         });
         pending = { key: crypto.randomUUID(), input, source, retryJobId, retryItemId };
         // Retain the same request after a lost response or reload: never create another paid task blindly.

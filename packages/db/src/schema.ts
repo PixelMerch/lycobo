@@ -312,7 +312,7 @@ export const generationJobs = pgTable(
     index("generation_jobs_member_idx").on(t.organizationId, t.userId),
     check(
       "generation_jobs_count_check",
-      sql`${t.requestedCount} between 1 and 10 and ${t.unitCredits} > 0 and (${t.requestedCount} <= 4 or ${t.input} ? 'textileSet')`,
+      sql`${t.requestedCount} between 1 and 10 and ${t.unitCredits} > 0 and (${t.requestedCount} <= 4 or ${t.input} ? 'textileSet' or ${t.input} ? 'variation')`,
     ),
     check(
       "generation_jobs_status_check",
@@ -889,5 +889,50 @@ export const adminMenuEntries = pgTable(
     check("admin_menu_type_check", sql`${t.type} in ('directory','menu','button')`),
     check("admin_menu_flags_check", sql`${t.visible} in (0,1) and ${t.protected} in (0,1)`),
     check("admin_menu_parent_check", sql`${t.parentId} is null or ${t.parentId} <> ${t.id}`),
+  ],
+).enableRLS();
+
+export const variationPlans = pgTable(
+  "variation_plans",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    idempotencyKey: uuid("idempotency_key").notNull(),
+    inputHash: text("input_hash").notNull(),
+    input: jsonb("input").notNull(),
+    status: text("status").notNull().default("running"),
+    items: jsonb("items").notNull().default(sql`'[]'::jsonb`),
+    errorCode: text("error_code"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.organizationId, t.userId],
+      foreignColumns: [organizationMembers.organizationId, organizationMembers.userId],
+    }),
+    unique("variation_plan_idempotency").on(t.organizationId, t.userId, t.idempotencyKey),
+    index("variation_plan_owner_created").on(t.organizationId, t.userId, t.createdAt),
+    check("variation_plan_status", sql`${t.status} in ('running','ready','failed','uncertain')`),
+  ],
+).enableRLS();
+export const modelPlanners = pgTable(
+  "model_planners",
+  {
+    tool: text("tool").primaryKey(),
+    providerId: uuid("provider_id")
+      .notNull()
+      .references(() => modelProviders.id),
+    origin: text("origin").notNull(),
+    protocol: text("protocol").notNull().default("openai-chat"),
+    upstreamModel: text("upstream_model").notNull(),
+    enabled: integer("enabled").notNull().default(0),
+    timeoutMs: integer("timeout_ms").notNull().default(25000),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check("model_planner_protocol", sql`${t.protocol} in ('openai-chat','anthropic-messages')`),
+    check("model_planner_enabled", sql`${t.enabled} in (0,1)`),
+    check("model_planner_timeout", sql`${t.timeoutMs} between 5000 and 60000`),
   ],
 ).enableRLS();

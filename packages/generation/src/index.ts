@@ -23,3 +23,4 @@ export * from "./provider-errors";
 export * from "./provider-secrets";
 export * from "./textile-generation";
 export * from "./vakv-provider";
+export * from "./variation-planner";

@@ -14,7 +14,9 @@ export function HistoryTaskMeta({ job, modelName }: { job: ImageJob; modelName: 
       <div>
         <dt className="sr-only">模型</dt>
         <dd>
-          <span className="model-tag">{job.input?.textileSet ? "家纺主图裂变" : modelName}</span>
+          <span className="model-tag">
+            {job.input?.variation ? "智能裂变" : job.input?.textileSet ? "家纺主图裂变" : modelName}
+          </span>
         </dd>
       </div>
       <div>

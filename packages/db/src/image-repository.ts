@@ -10,10 +10,12 @@ import {
   providerModelForResolution,
   providerSnapshotSchema,
   type StoredImage,
+  variationPlanInputSchema,
 } from "@lycoboai/contracts";
 import postgres from "postgres";
 import { recordImageEvent } from "./image-event-repository";
 import { modelManagementRepository, resolveProviderSnapshot } from "./model-management-repository";
+import { variationRepository } from "./variation-repository";
 import { appendWalletEntry, ensureWallet, walletRepository } from "./wallet-repository";
 
 export class ImageRepositoryError extends Error {
@@ -119,6 +121,7 @@ export function openImageRepository(url: string, edge = false) {
       if (!row || !/^[0-9]{10}$/.test(String(row.uid))) throw new ImageRepositoryError("FORBIDDEN");
       return String(row.uid);
     },
+    variation: variationRepository(sql),
     close: () => sql.end({ timeout: 5 }),
     settleInvalidResponses,
     ...walletRepository(sql),
@@ -246,6 +249,16 @@ export function openImageRepository(url: string, edge = false) {
           await tx`insert into image_local_edits (job_id,organization_id,user_id,source_asset_id)
             values (${id},${scope.organizationId},${scope.userId},${edit.sourceAssetId})`;
         }
+        if (input.variation) {
+          const [plan] =
+            await tx`select input,status from variation_plans where id=${input.variation.planId} and organization_id=${scope.organizationId} and user_id=${scope.userId}`;
+          if (!plan || plan.status !== "ready") throw new ImageRepositoryError("STATE_CONFLICT");
+          const original = variationPlanInputSchema.parse(plan.input);
+          if (
+            JSON.stringify(original.referenceAssetIds) !== JSON.stringify(input.referenceAssetIds)
+          )
+            throw new ImageRepositoryError("REFERENCE_NOT_FOUND");
+        }
         const total = unitCredits * input.count;
         const wallet = await ensureWallet(tx, scope);
         if (wallet.balance < total) throw new ImageRepositoryError("INSUFFICIENT_CREDITS");
@@ -347,9 +360,14 @@ export function openImageRepository(url: string, edge = false) {
         return { id: jobId, replayed: false };
       });
     },
-    async list(scope: ImageScope, limit: number, before?: string, tool?: "create" | "textile") {
+    async list(
+      scope: ImageScope,
+      limit: number,
+      before?: string,
+      tool?: "create" | "textile" | "variation",
+    ) {
       return sql`select ${jobView} from generation_jobs j where j.organization_id=${scope.organizationId} and j.archived_at is null
-        ${tool ? (tool === "textile" ? sql`and j.input ? 'textileSet'` : sql`and not (j.input ? 'textileSet')`) : sql``}
+        ${tool ? (tool === "textile" ? sql`and j.input ? 'textileSet'` : tool === "variation" ? sql`and j.input ? 'variation'` : sql`and not (j.input ? 'textileSet') and not (j.input ? 'variation')`) : sql``}
         ${before ? sql`and (j.created_at,j.id) < (select created_at,id from generation_jobs where id=${before} and organization_id=${scope.organizationId})` : sql``}
         order by j.created_at desc,j.id desc limit ${limit}`;
     },

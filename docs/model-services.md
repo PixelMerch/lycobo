@@ -161,3 +161,13 @@ Seedream 文档未声明质量枚举，与 Grok 一样不发送 GPT 默认 quali
 中转站HTTP202受理，任务imgtask_2bb2e2fa-5bc3-4651-b906-a4c76b665fd2，随后终态failed、image_generation_failed、阶段generation、成功0、charged_amount=0。结构化错误category=service_uncertain、reason_code=service_http_400、cause_confirmed=false；与此前Data URI的JSON／415提示不同，不能将这次失败解释为同一个已确认原因。公网URL未使编辑成功，仍需中转站核查生成服务HTTP400的具体原因。诊断直接使用供应商API，没有创建主站任务或扣主站钱包积分；不代表正常业务路径绕过持久任务和扣费。
 
 用户进一步要求把同一份公网参考图JSON提交到/v1/images/generations，仅切换端点，其余字段不变。一次POST返回HTTP202，任务imgtask_5511e70c-6b27-48a8-8b7f-f81aed491b20；只读查询原任务后终态failed、image_generation_failed、generation阶段、service_http_400，requested=1、successful=0、charged_amount=0。当前实测不能通过切换generations端点解决参考图问题；未修改业务端点、渠道能力或线上配置。
+
+## 智能裂变的语言分析
+
+语言分析与图片渠道分开：`model_planners.tool='smart-variation'` 配置 HTTPS 源地址、`upstream_model='claude-sonnet-5'`、超时与启用状态，`provider_id` 引用现有中转站的默认加密密钥。读取时要求中转站同样启用，通过 `MODEL_CREDENTIAL_SECRET` 解密。密钥不写入计划、前端、日志或 Git。当前独立管理应用尚无此配置表的编辑页面；本地由显式 SQL 配置，部署前须迁移并配置目标环境，不能把本地配置视为线上已生效。
+
+当前配置 `protocol=anthropic-messages`，使用 Claude 原生 `POST /v1/messages`，`x-api-key` 与版本头鉴权，文字需求及最多5张授权PNG缩略图以base64内容块输入，输出JSON计划。保留独立的 `openai-chat` 适配用于其他中转站，协议在服务端配置，不自动跨协议重发。现配置语言地址 `https://api.uselg.top`，与图片地址分开；前端只调用业务 `/variation-plans`，不直连供应商。图片里的文字不作为指令，结果严格验证为1–10条标题和独立提示词，不接受截断、空结果或重复提示词。
+
+计划按企业及用户隔离，分析不扣图片积分，每用户每分钟最多3次新分析。相同幂等键只读已有状态，不重复请求模型；网络超时标记 `uncertain`，进程中断超过120秒的运行记录同样转待确认，不自动补发。分析成本由模型供应商账单记录，当前没有单独向用户收取分析积分。
+
+`generation_jobs.input.variation` 保存用户确认后的方案快照；服务端校验计划所有权和参考图一致性，固定 Image 2.5，沿用图片任务的原子扣费及outbox。Worker按方案位置提取对应提示词，每次 `count=1`，不会把整组数量传给每个方案。重复创建、失败退款与不明确付费结果沿用现有任务机制。
