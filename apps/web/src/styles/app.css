@@ -2472,13 +2472,30 @@ p.home-hero-kicker {
   -webkit-line-clamp: 2;
   overflow: hidden;
 }
-.prompt-toggle {
+.collapsible-text {
   display: flex;
-  min-height: 28px;
+  flex-direction: column;
+  gap: var(--history-row-gap, 12px);
+  min-width: 0;
+}
+.prompt-toggle.button {
+  display: flex;
+  height: 22px;
+  min-height: 22px;
   width: max-content;
   padding: 0;
-  color: var(--focus);
   background: transparent;
+}
+.prompt-toggle.button > svg {
+  transition: transform 160ms ease;
+}
+.prompt-toggle.button[aria-expanded="true"] > svg {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .prompt-toggle.button > svg {
+    transition: none;
+  }
 }
 .copy-prompt {
   display: flex;
@@ -2768,7 +2785,8 @@ p.home-hero-kicker {
     height: 44px;
     min-width: 44px;
   }
-  .prompt-toggle {
+  .prompt-toggle.button {
+    height: 44px;
     min-height: 44px;
   }
   .copy-prompt,

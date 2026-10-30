@@ -1,5 +1,7 @@
 import { Button } from "@heroui/react";
+import { IconChevronDown } from "@tabler/icons-react";
 import { useEffect, useId, useRef, useState } from "react";
+import { UiIcon } from "./ui-icon";
 
 /** History and image details share measured overflow and the same accessible toggle. */
 export function CollapsibleText({
@@ -37,7 +39,7 @@ export function CollapsibleText({
     </p>
   );
   return (
-    <>
+    <div className="collapsible-text">
       {textContainerClassName ? <div className={textContainerClassName}>{content}</div> : content}
       {(overflow || expanded) && (
         <Button
@@ -48,8 +50,9 @@ export function CollapsibleText({
           onPress={() => setExpanded(!expanded)}
         >
           {expanded ? "收起" : "展开全部"}
+          <UiIcon icon={IconChevronDown} size="small" />
         </Button>
       )}
-    </>
+    </div>
   );
 }
