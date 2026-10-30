@@ -2,7 +2,6 @@ import { Button, Label, TextArea, TextField, ToggleButton, ToggleButtonGroup } f
 import { useState } from "react";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../../generation/composer/selection-highlight";
-import { ModelSelect } from "../../generation/models/model-select";
 import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
 import { TextileImageField } from "../textile-set/textile-image-field";
 import { useSmartVariationDraft } from "./smart-variation-state";
@@ -11,7 +10,7 @@ import "../textile-set/textile-set.css";
 import "./smart-variation.css";
 
 export function SmartVariationPage() {
-  const { image, description, model, ratio, resolution, update } = useSmartVariationDraft();
+  const { image, description, ratio, resolution, update } = useSmartVariationDraft();
   const [planOpen, setPlanOpen] = useState(false);
   return (
     <>
@@ -79,7 +78,6 @@ export function SmartVariationPage() {
           </section>
         </div>
         <div className="generate-area variation-submit">
-          <ModelSelect value={model} onChange={(model) => update({ model })} />
           <Button
             variant="tertiary"
             size="sm"

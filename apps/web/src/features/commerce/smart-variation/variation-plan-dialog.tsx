@@ -1,18 +1,7 @@
-import {
-  Button,
-  Checkbox,
-  Input,
-  Label,
-  ListBox,
-  Modal,
-  Select,
-  TextArea,
-  TextField,
-} from "@heroui/react";
+import { Button, Checkbox, Input, Label, Modal, TextArea, TextField } from "@heroui/react";
 import { IconCheck, IconTrash } from "@tabler/icons-react";
 import { DialogClose } from "../../../components/dialog-close";
 import { UiIcon } from "../../../components/ui-icon";
-import { ModelLogo, useModelPresentation } from "../../generation/models/model-logos";
 import { examplePlan, useSmartVariationDraft } from "./smart-variation-state";
 
 export function VariationPlanDialog({
@@ -22,8 +11,7 @@ export function VariationPlanDialog({
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { items, model, ratio, resolution, update } = useSmartVariationDraft();
-  const models = useModelPresentation().data?.models ?? [];
+  const { items, ratio, resolution, update } = useSmartVariationDraft();
   const selectedCount = items.filter((item) => item.selected).length;
   const patchItem = (id: string, patch: Partial<(typeof items)[number]>) =>
     update({ items: items.map((item) => (item.id === id ? { ...item, ...patch } : item)) });
@@ -99,34 +87,6 @@ export function VariationPlanDialog({
             </Modal.Body>
             <Modal.Footer className="variation-plan-footer">
               <div className="variation-plan-output">
-                <Select
-                  aria-label="图片模型"
-                  placeholder="选择图片模型"
-                  value={model || null}
-                  onChange={(key) => update({ model: String(key ?? "") })}
-                  isDisabled={!models.length}
-                >
-                  <Label className="sr-only">图片模型</Label>
-                  <Select.Trigger>
-                    <Select.Value />
-                    <Select.Indicator />
-                  </Select.Trigger>
-                  <Select.Popover>
-                    <ListBox>
-                      {models.map((entry) => (
-                        <ListBox.Item
-                          key={entry.id}
-                          id={entry.id}
-                          textValue={entry.name ?? "图片模型"}
-                        >
-                          <ModelLogo src={entry.logoUrl} size="compact" />
-                          {entry.name ?? "图片模型"}
-                          <ListBox.ItemIndicator />
-                        </ListBox.Item>
-                      ))}
-                    </ListBox>
-                  </Select.Popover>
-                </Select>
                 <span>
                   {ratio} · {resolution} · 已选 {selectedCount} 张
                 </span>
