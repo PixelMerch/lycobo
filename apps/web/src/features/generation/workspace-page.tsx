@@ -91,7 +91,7 @@ function Workspace({ model }: { model: ModelId }) {
         <ReferencePicker compact model={model} references={draft.references} />
         <ReferencePrompt
           className="prompt-field"
-          label="制作要求"
+          label="提示词"
           inputRef={inputId}
           value={draft.prompt}
           onChange={(prompt) => updateDraft(model, { prompt })}

@@ -2702,14 +2702,14 @@ p.home-hero-kicker {
   line-height: 22px;
 }
 .prompt-toggle {
-  color: #a8a8a8;
+  color: #a8ff00;
   font-size: 12px;
   line-height: 18px;
 }
 .prompt-toggle:hover,
 .prompt-toggle[data-hovered="true"],
 .prompt-toggle[data-focus-visible="true"] {
-  color: #eee;
+  color: #a8ff00;
 }
 .copy-prompt.button {
   height: 28px;
@@ -2723,6 +2723,10 @@ p.home-hero-kicker {
   color: #a8a8a8;
   font-size: 12px;
   line-height: 18px;
+}
+.history-prompt .copy-prompt.button {
+  font-size: 11px;
+  line-height: 16px;
 }
 .copy-prompt.button:hover,
 .copy-prompt.button[data-hovered="true"],

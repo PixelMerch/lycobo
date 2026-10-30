@@ -82,7 +82,7 @@ test("main image submission keeps the user's full prompt without a purpose prefi
     route.fulfill({ status: 202, json: { id: crypto.randomUUID(), replayed: false } }),
   );
   await page.goto("/create");
-  const prompt = page.getByLabel("制作要求", { exact: true });
+  const prompt = page.getByLabel("提示词", { exact: true });
   const description = `保留商品，使用自然光。${"细节".repeat(2494)}`;
   await prompt.fill(description);
   const submission = page.waitForRequest(
