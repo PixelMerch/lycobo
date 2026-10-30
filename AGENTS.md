@@ -39,8 +39,8 @@ Read relevant project skills before work:
 - DESIGN.md is the sole visual specification. The user approved and froze the current UI on
   2026-10-22. Documentation, cleanup and component refactors must preserve its appearance;
   a new visual change requires a new explicit design request. Do not reinterpret skill recommendations
-  as permission to restyle it. Preserve the actual tokens: brand blue #0485F7, HeroUI accent
-  #0485F7, solid primary #0485F7 with white foreground and pill-shaped generation buttons.
+  as permission to restyle it. Preserve the actual tokens: brand lime #A8FF00, HeroUI accent
+  #A8FF00, lime-to-mint primary gradient (#A8FF00 → #54E6A5) with dark #142000 foreground and pill-shaped generation buttons.
   Image content stays primary. Do not reintroduce retired palettes or bonko branding.
   Interaction research explains existing decisions; it does not override the approved UI.
 - Distinguish real image APIs from local examples and E2E fixtures. Never represent sample

@@ -161,7 +161,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #0485f724;
+  background: var(--accent-soft);
   color: #8bc8ff;
   font-size: 13px;
 }
