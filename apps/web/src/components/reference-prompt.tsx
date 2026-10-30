@@ -122,7 +122,9 @@ export function ReferencePrompt({
   const parts = Array.from(value.matchAll(/@图片[1-9]\d*|[^@]+|@/g), (match) => match[0]);
   const validReference = (text: string) =>
     /^@图片[1-9]\d*$/.test(text) && Number(text.slice(3)) <= references.length;
-  const hasReferences = parts.some(validReference);
+  const hasReferences = value.includes("@");
+  const mentionAnchor = useRef<HTMLElement | null>(null);
+  const [anchoredMention, setAnchoredMention] = useState<number | null>(null);
   useLayoutEffect(() => {
     const editor = richRef.current;
     if (editor) {
@@ -134,11 +136,35 @@ export function ReferencePrompt({
           const image = references[Number(tokens[index]?.slice(3)) - 1];
           return chip.dataset.reference === tokens[index] && chip.dataset.imageId === image?.id;
         });
-      if (readPrompt(editor) !== value || !sameChips) {
+      let textOffset = 0;
+      const plainMentions: number[] = [];
+      for (const text of parts) {
+        if (text === "@") plainMentions.push(textOffset);
+        textOffset += text.length;
+      }
+      const atSigns = Array.from(editor.querySelectorAll<HTMLElement>(".reference-at"));
+      const sameAtSigns =
+        atSigns.length === plainMentions.length &&
+        atSigns.every(
+          (at, index) =>
+            at.textContent === "@" && Number(at.dataset.mentionStart) === plainMentions[index],
+        );
+      if (readPrompt(editor) !== value || !sameChips || !sameAtSigns) {
         const focused = document.activeElement === editor;
         const cursor = focused ? selectionOffset(editor) : cursorRef.current;
         const fragment = document.createDocumentFragment();
+        let offset = 0;
         for (const text of parts) {
+          const start = offset;
+          offset += text.length;
+          if (text === "@") {
+            const at = document.createElement("span");
+            at.className = "reference-at";
+            at.dataset.mentionStart = String(start);
+            at.textContent = text;
+            fragment.append(at);
+            continue;
+          }
           const image = validReference(text) ? references[Number(text.slice(3)) - 1] : undefined;
           if (!image) {
             fragment.append(document.createTextNode(text));
@@ -184,9 +210,20 @@ export function ReferencePrompt({
   useAutoGrow(richRef, value, autoGrow && hasReferences);
   useAutoGrow(ref, value, autoGrow && !hasReferences);
   const [mention, setMention] = useState<{ start: number; end: number } | null>(null);
+  useLayoutEffect(() => {
+    mentionAnchor.current =
+      mention && value[mention.start] === "@"
+        ? (richRef.current?.querySelector<HTMLElement>(`[data-mention-start="${mention.start}"]`) ??
+          null)
+        : null;
+    setAnchoredMention(mentionAnchor.current && mention ? mention.start : null);
+  }, [mention, value]);
   function detect(text: string, cursor: number) {
     cursorRef.current = cursor;
-    if (text[cursor - 1] === "@") setMention({ start: cursor - 1, end: cursor });
+    if (text[cursor - 1] === "@") {
+      focusPending.current = true;
+      setMention({ start: cursor - 1, end: cursor });
+    }
   }
   function handleRichInput() {
     const editor = richRef.current;
@@ -373,15 +410,16 @@ export function ReferencePrompt({
         </div>
       </TextField>
       <Popover
-        isOpen={mention !== null}
+        isOpen={mention !== null && anchoredMention === mention.start}
         onOpenChange={(open) => {
           if (!open) setMention(null);
         }}
       >
         <Popover.Content
-          triggerRef={hasReferences ? richRef : ref}
+          triggerRef={mentionAnchor}
           placement="bottom start"
-          offset={4}
+          shouldFlip={false}
+          offset={8}
           className="reference-mention-popover"
         >
           <Popover.Dialog aria-label="引用图片">

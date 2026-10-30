@@ -1,9 +1,9 @@
 .reference-mention-popover.popover {
   width: min(320px, calc(100vw - 32px));
   padding: 12px;
-  border: 0;
-  border-radius: 12px;
-  background: #171717;
+  border: 1px solid #ffffff1f;
+  border-radius: 16px;
+  background: #202020;
 }
 .reference-mention-popover .popover__dialog {
   padding: 0;
@@ -17,13 +17,15 @@
   font-weight: 500;
 }
 .reference-mention-popover .list-box {
-  gap: 6px;
+  gap: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff33 transparent;
   max-height: 232px;
   overflow: auto;
   padding: 0;
 }
 .reference-mention-popover .list-box-item {
-  background: #2c2c2c;
+  background: transparent;
   min-height: 40px;
   padding: 4px 8px;
   gap: 8px;
@@ -39,7 +41,7 @@
 .reference-mention-popover .list-box-item[data-focused] {
   outline: none;
   box-shadow: none;
-  background: #ffffff0d;
+  background: transparent;
 }
 .reference-mention-empty {
   margin: 8px 4px;
@@ -206,15 +208,6 @@
   --accent-soft: #ffffff0a;
   --accent-soft-foreground: #eee;
 }
-.reference-mention-popover .list-box-item[data-selected] {
-  background: #484848;
-  color: #f3f3f3;
-}
-.reference-mention-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 2px;
-}
 .reference-mention-options .input {
   min-width: 0;
   font-size: 12px;
@@ -230,4 +223,21 @@
 .reference-mention-options .list-box-item small {
   font-size: 11px;
   color: #999;
+}
+
+.reference-at {
+  color: #a8ff00;
+}
+.reference-mention-popover.popover {
+  box-shadow: 0 12px 32px #00000066;
+}
+.reference-mention-popover .list-box::-webkit-scrollbar {
+  width: 4px;
+}
+.reference-mention-popover .list-box::-webkit-scrollbar-thumb {
+  background: #ffffff33;
+  border-radius: 4px;
+}
+.reference-mention-popover .list-box::-webkit-scrollbar-track {
+  background: transparent;
 }

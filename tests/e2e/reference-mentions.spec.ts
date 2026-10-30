@@ -40,7 +40,6 @@ for (const path of ["/create", "/commerce/smart-variation", "/"]) {
     await menu.getByRole("textbox", { name: "搜索图片" }).fill("商品颜色2");
     await expect(menu.getByRole("option")).toHaveCount(1);
     await menu.getByRole("option").click();
-    await menu.getByRole("button", { name: "确认（1/5）", exact: true }).click();
     await expect(menu).toBeHidden();
     await expect(page.locator(".reference-tile")).toHaveCount(1);
     await expect(prompt).toContainText("图片1");
@@ -52,7 +51,6 @@ for (const path of ["/create", "/commerce/smart-variation", "/"]) {
       const options = menu.getByRole("option");
       await expect(options.filter({ hasText: "PAAAAAAA2" })).toBeDisabled();
       await options.filter({ hasText: `PAAAAAAA${index === 0 ? 1 : index + 2}` }).click();
-      await menu.getByRole("button", { name: "确认（1/5）", exact: true }).click();
     }
     await expect(page.locator(".reference-tile")).toHaveCount(5);
     await prompt.press("End");
@@ -65,11 +63,11 @@ for (const path of ["/create", "/commerce/smart-variation", "/"]) {
         await page.getByRole("button", { name: "移除参考图：图片1", exact: true }).press("Enter");
     } else await page.getByRole("button", { name: "清除全部参考图片", exact: true }).click();
     await expect(page.locator(".reference-tile")).toHaveCount(0);
-    await expect(prompt).toHaveValue("@");
+    await expect(prompt).toHaveText("@");
   });
 }
 
-test("mention multi-selection stays neutral and caps pending selection at five on mobile", async ({
+test("mention popup anchors below the green at-sign and directly inserts up to five images on mobile", async ({
   page,
 }) => {
   await mockImageApi(page);
@@ -106,11 +104,30 @@ test("mention multi-selection stays neutral and caps pending selection at five o
   expect(await tab.evaluate((element) => getComputedStyle(element).color)).not.toBe(
     "rgb(168, 255, 0)",
   );
-  for (let index = 0; index < 5; index++) await menu.getByRole("option").nth(index).click();
-  await expect(menu.getByRole("option").nth(5)).toBeDisabled();
-  await expect(menu).not.toContainText("同一张图片只能引用一次");
-  await page.screenshot({ path: "/tmp/lycobo-reference-multiselect-mobile.png" });
-  await menu.getByRole("button", { name: "确认（5/5）", exact: true }).click();
+  const at = page.locator(".reference-at");
+  await expect(at).toHaveCSS("color", "rgb(168, 255, 0)");
+  const atBox = await at.boundingBox();
+  const menuBox = await page.locator(".reference-mention-popover").boundingBox();
+  expect(atBox).not.toBeNull();
+  expect(menuBox).not.toBeNull();
+  expect((menuBox?.y ?? 0) - ((atBox?.y ?? 0) + (atBox?.height ?? 0))).toBeGreaterThanOrEqual(4);
+  expect((menuBox?.y ?? 0) - ((atBox?.y ?? 0) + (atBox?.height ?? 0))).toBeLessThan(20);
+  await expect(menu.getByRole("button", { name: /^确认/ })).toHaveCount(0);
+  const option = menu.getByRole("option").first();
+  await search.focus();
+  await expect(option).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await option.hover();
+  await expect(option).toHaveCSS("background-color", "rgb(60, 60, 60)");
+  await page.screenshot({ path: "/tmp/lycobo-reference-direct-mobile.png" });
+  for (let index = 0; index < 5; index++) {
+    if (index > 0) {
+      await prompt.press("End");
+      await prompt.press("@");
+      await menu.getByRole("tab", { name: "历史上传", exact: true }).click();
+    }
+    await menu.getByRole("option").nth(index).click();
+    await expect(menu).toBeHidden();
+  }
   await expect(page.locator(".reference-tile")).toHaveCount(5);
   await expect(page.locator(".reference-prompt-chip")).toHaveCount(5);
 });

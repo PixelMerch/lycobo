@@ -18,13 +18,11 @@ export function ReferenceMentionOptions({
 }) {
   const [category, setCategory] = useState("current");
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<ReferenceImage[]>([]);
   const isCurrent = (image: ReferenceImage) =>
     references.some(
       (reference) =>
         reference.id === image.id || (image.assetId && reference.assetId === image.assetId),
     );
-  const newCount = selected.filter((image) => !isCurrent(image)).length;
   const query = useImageAssets({
     enabled: allowHistory && category !== "current",
     kind: category === "uploaded" ? "reference" : "output",
@@ -53,8 +51,7 @@ export function ReferenceMentionOptions({
       (image) =>
         usedIds.has(image.id) ||
         (image.assetId && usedIds.has(image.assetId)) ||
-        (!selected.some((item) => item.id === image.id) &&
-          (selected.length >= 5 || (!isCurrent(image) && references.length + newCount >= 5))),
+        (!isCurrent(image) && references.length >= 5),
     )
     .map((image) => image.id);
   return (
@@ -96,21 +93,9 @@ export function ReferenceMentionOptions({
         <ListBox
           aria-label="可引用图片"
           disabledKeys={disabled}
-          selectionMode="multiple"
-          selectionBehavior="toggle"
-          selectedKeys={new Set(selected.map((image) => image.id))}
-          onSelectionChange={(keys) => {
-            if (keys === "all") return;
-            const visibleIds = new Set(filtered.map((image) => image.id));
-            const next = [
-              ...selected.filter((image) => !visibleIds.has(image.id)),
-              ...filtered.filter((image) => keys.has(image.id)),
-            ];
-            if (
-              next.length <= 5 &&
-              references.length + next.filter((image) => !isCurrent(image)).length <= 5
-            )
-              setSelected(next);
+          onAction={(key) => {
+            const image = filtered.find((item) => item.id === key);
+            if (image) onSelect([image]);
           }}
         >
           {filtered.map((image) => (
@@ -147,16 +132,6 @@ export function ReferenceMentionOptions({
           加载更多图片
         </Button>
       )}
-      <div className="reference-mention-actions">
-        <Button
-          size="sm"
-          variant="primary"
-          isDisabled={!selected.length}
-          onPress={() => onSelect(selected)}
-        >
-          确认{selected.length ? `（${selected.length}/5）` : ""}
-        </Button>
-      </div>
     </div>
   );
 }
