@@ -22,6 +22,7 @@ export type ImageProcessorDependencies = {
   modelSecret?: string | undefined;
   standaloneKey?: string | undefined;
   request?: typeof fetch;
+  onDeferred?: ((delayMs: number) => void) | undefined;
 };
 export async function processImageItem(itemId: string, deps: ImageProcessorDependencies) {
   const started = performance.now();

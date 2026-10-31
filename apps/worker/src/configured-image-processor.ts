@@ -13,11 +13,15 @@ import type { ImageStore } from "@lycoboai/storage";
 export async function processConfiguredImage(
   job: ClaimedImage,
   deps: {
-    repository: ImageRuntimeRepository;
-    store: ImageStore;
+    repository: Pick<
+      ImageRuntimeRepository,
+      "providerCipher" | "asset" | "deferProvider" | "finish"
+    >;
+    store: Pick<ImageStore, "read" | "put">;
     modelSecret?: string | undefined;
     standaloneKey?: string | undefined;
     request?: typeof fetch;
+    onDeferred?: ((delayMs: number) => void) | undefined;
   },
 ) {
   const state = job.configuredProvider;
@@ -65,6 +69,7 @@ export async function processConfiguredImage(
         false,
         result.requestId,
       );
+      deps.onDeferred?.(result.delayMs);
       return;
     }
     // A paid slot requests n=1; surplus provider outputs must not discard its usable result.
@@ -100,19 +105,15 @@ export async function processConfiguredImage(
         ].includes(error.code)
       )
     ) {
-      await deps.repository.deferProvider(
-        job,
-        state.taskId,
-        state.statusPath,
-        Math.min(
-          60000,
-          Math.max(
-            5000 * 2 ** state.pollFailures,
-            error instanceof ProviderPollError ? error.delayMs : 0,
-          ),
+      const delayMs = Math.min(
+        60000,
+        Math.max(
+          5000 * 2 ** state.pollFailures,
+          error instanceof ProviderPollError ? error.delayMs : 0,
         ),
-        true,
       );
+      await deps.repository.deferProvider(job, state.taskId, state.statusPath, delayMs, true);
+      deps.onDeferred?.(delayMs);
       return;
     }
     await deps.repository.finish(job, {
