@@ -5,16 +5,26 @@ import {
 } from "@lycoboai/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { normalizeApiResponse } from "../../lib/api-response";
+import { reportRequestFailure } from "../../lib/request-diagnostics";
 import { rememberSessionExpiry, resetSessionRenewal, sessionFetch } from "../../lib/session-fetch";
 
 const authKey = ["enterprise-session"];
 async function authRequest(path: string, init: RequestInit = {}) {
   const request = path === "session" ? sessionFetch : fetch;
-  const response = await request(`/api/v1/auth/${path}`, {
-    ...init,
-    credentials: "same-origin",
-    signal: init.signal ?? AbortSignal.timeout(15000),
-  });
+  let response: Response;
+  try {
+    response = await request(`/api/v1/auth/${path}`, {
+      ...init,
+      credentials: "same-origin",
+      signal: init.signal ?? AbortSignal.timeout(15000),
+    });
+  } catch (error) {
+    if (path !== "session" && !init.signal?.aborted)
+      reportRequestFailure(`/api/v1/auth/${path}`, init.method ?? "GET");
+    throw error;
+  }
+  if (path !== "session" && !response.ok)
+    reportRequestFailure(`/api/v1/auth/${path}`, init.method ?? "GET", response);
   rememberSessionExpiry(response);
   return normalizeApiResponse(response);
 }

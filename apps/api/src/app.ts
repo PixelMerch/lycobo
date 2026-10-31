@@ -10,14 +10,24 @@ import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
 import { secureHeaders } from "hono/secure-headers";
 import { z } from "zod";
-
 import { authRoutes } from "./features/auth/routes";
 import type { EnterpriseAuth } from "./features/auth/service";
-
 import { type ImageApiDependencies, imageRoutes } from "./features/images/routes";
+import { errorCategory, safeRequestPath } from "./request-diagnostics";
 
-type ApiEnv = { Variables: { requestId: string } };
-type ErrorReporter = (event: { requestId: string; name: string }) => void;
+const mappedCode = (code: string) => (Object.hasOwn(businessCodes, code) ? code : "INTERNAL_ERROR");
+type ApiEnv = { Variables: { requestId: string; failure?: ReturnType<typeof errorCategory> } };
+type ErrorReporter = (event: {
+  event: string;
+  requestId: string;
+  name: string;
+  errorCode?: string;
+  method: string;
+  path: string;
+  status: number;
+  durationMs: number;
+  businessCode: string;
+}) => void;
 
 export function createApp(
   reportError: ErrorReporter = () => {},
@@ -26,6 +36,7 @@ export function createApp(
 ) {
   const app = new Hono<ApiEnv>();
   app.use("*", async (c, next) => {
+    const startedAt = Date.now();
     c.set("requestId", crypto.randomUUID());
     c.header("X-Request-Id", c.get("requestId"));
     c.header("Cache-Control", "no-store");
@@ -38,6 +49,20 @@ export function createApp(
       .object({ error: z.object({ code: z.string(), message: z.string() }) })
       .safeParse(payload);
     const symbol = failure.success ? failure.data.error.code : "INTERNAL_ERROR";
+    if (c.res.status >= 500 || (c.res.status >= 400 && !["GET", "HEAD"].includes(c.req.method))) {
+      const category = c.get("failure");
+      reportError({
+        event: "API_REQUEST_FAILED",
+        requestId: c.get("requestId"),
+        name: category?.name ?? "BusinessError",
+        ...(category?.errorCode ? { errorCode: category.errorCode } : {}),
+        method: c.req.method,
+        path: safeRequestPath(c.req.raw),
+        status: c.res.status,
+        durationMs: Date.now() - startedAt,
+        businessCode: mappedCode(symbol),
+      });
+    }
     const mapped = Object.entries(businessCodes).find(([name]) => name === symbol)?.[1];
     const envelope = {
       request_id: c.get("requestId"),
@@ -149,7 +174,7 @@ export function createApp(
         error.status,
       );
     }
-    reportError({ requestId, name: error.name });
+    c.set("failure", errorCategory(error));
     return c.json({ error: { code: "INTERNAL_ERROR", message: "服务暂时不可用", requestId } }, 500);
   });
   return app;

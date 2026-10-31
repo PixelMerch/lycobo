@@ -13,6 +13,7 @@ import { r2ImageStore } from "@lycoboai/storage/r2";
 import { imageObjectBucket, type S3Bindings } from "@lycoboai/storage/s3";
 import { createApp } from "../src/app";
 import { enterpriseAuth, readAuthConfig } from "../src/features/auth/service";
+import { errorCategory, safeRequestPath } from "../src/request-diagnostics";
 
 export interface ApiBindings extends S3Bindings, StandaloneModelEnvironment {
   ASSET_SIGNING_SECRET?: string;
@@ -27,8 +28,21 @@ export interface ApiBindings extends S3Bindings, StandaloneModelEnvironment {
   IMAGE_GENERATION_ENABLED?: string;
   MODEL_CREDENTIAL_SECRET?: string;
 }
-function unavailable(code: "AUTH_NOT_CONFIGURED" | "INTERNAL_ERROR") {
+function unavailable(
+  code: "AUTH_NOT_CONFIGURED" | "INTERNAL_ERROR",
+  request: Request,
+  error?: unknown,
+) {
   const requestId = crypto.randomUUID();
+  console.error({
+    event: "API_RUNTIME_UNAVAILABLE",
+    requestId,
+    status: 503,
+    method: request.method,
+    path: safeRequestPath(request),
+    businessCode: code,
+    ...errorCategory(error),
+  });
   return Response.json(
     {
       request_id: requestId,
@@ -77,7 +91,13 @@ function cleanupResponse(response: Response, close: () => Promise<void>, ctx: Ex
             controller.close();
             finish();
           } else controller.enqueue(next.value);
-        } catch {
+        } catch (error) {
+          console.error({
+            event: "API_RESPONSE_STREAM_FAILED",
+            requestId: response.headers.get("X-Request-Id") ?? undefined,
+            status: response.status,
+            ...errorCategory(error),
+          });
           controller.error(new Error("RESPONSE_STREAM_UNAVAILABLE"));
           finish();
         }
@@ -103,7 +123,7 @@ async function handleRequest(
     AUTH_JWT_SECRET: env.AUTH_JWT_SECRET,
     AUTH_TRUSTED_ORIGINS: env.AUTH_TRUSTED_ORIGINS,
   });
-  if (!authConfig) return unavailable("AUTH_NOT_CONFIGURED");
+  if (!authConfig) return unavailable("AUTH_NOT_CONFIGURED", request);
   const bucket = imageObjectBucket(env, env.IMAGES_BUCKET);
   const repository = openImageRepository(
     env.HYPERDRIVE.connectionString,
@@ -136,7 +156,7 @@ async function handleRequest(
         events = openImageEventFeed(env.HYPERDRIVE.connectionString, identity.user.organizationId);
     }
     const app = createApp(
-      () => console.error("API_REQUEST_FAILED"),
+      (event) => console.error(event),
       {
         repository,
         modelSecret: env.MODEL_CREDENTIAL_SECRET,
@@ -168,9 +188,9 @@ async function handleRequest(
     )
       ctx.waitUntil(dispatch(env));
     return cleanupResponse(response, close, ctx);
-  } catch {
+  } catch (error) {
     await close();
-    return unavailable("INTERNAL_ERROR");
+    return unavailable("INTERNAL_ERROR", request, error);
   }
 }
 
@@ -178,8 +198,8 @@ export default {
   async fetch(request, env, ctx) {
     try {
       return await handleRequest(request, env, ctx);
-    } catch {
-      return unavailable("INTERNAL_ERROR");
+    } catch (error) {
+      return unavailable("INTERNAL_ERROR", request, error);
     }
   },
 } satisfies ExportedHandler<ApiBindings>;
