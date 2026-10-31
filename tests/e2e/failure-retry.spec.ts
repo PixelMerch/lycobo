@@ -44,7 +44,11 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     await page.route("**/api/v1/image-tasks**", async (route) => {
       if (route.request().method() === "POST") {
         expect(new URL(route.request().url()).pathname).toBe(`/api/v1/image-tasks/${job.id}/retry`);
-        expect(route.request().postDataJSON()).toEqual({ ...input, quality: "medium" });
+        expect(route.request().postDataJSON()).toEqual({
+          ...input,
+          quality: "medium",
+          resolution: "1.5K",
+        });
         submissions.push(route.request().headers()["idempotency-key"] ?? "");
         return route.fulfill({
           status: 202,
@@ -128,7 +132,7 @@ test("partial retry confirms only the cost of failed images", async ({ page }) =
     page
       .getByRole("dialog", { name: "重新生成这张图片？", exact: true })
       .locator(".confirm-dialog__content"),
-  ).toHaveText("本次消耗 40 积分");
+  ).toHaveText("本次消耗 4 积分");
 });
 
 test("rejected regeneration uses a top toast without inserting an error into history", async ({
@@ -171,7 +175,7 @@ test("rejected regeneration uses a top toast without inserting an error into his
     ],
   };
   let retries = 0;
-  const message = "企业金币余额不足，每张图片需要 20 币";
+  const message = "企业金币余额不足，每张图片需要 2 币";
   await page.route("**/api/v1/image-tasks**", async (route) => {
     if (route.request().method() === "POST") {
       retries++;
@@ -191,7 +195,7 @@ test("rejected regeneration uses a top toast without inserting an error into his
   await page.goto("/create");
   await page.getByRole("button", { name: "重新生成", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "重新生成这张图片？", exact: true })).toContainText(
-    "本次消耗 1 积分",
+    "本次消耗 2 积分",
   );
   await page
     .getByRole("dialog", { name: "重新生成这张图片？", exact: true })

@@ -18,7 +18,9 @@ for (const width of [390, 1440, 1920, 2560]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/");
     const trigger = page.getByRole("button", { name: `账户菜单：${account.account}`, exact: true });
-    await expect(trigger).toBeVisible();
+    await expect(trigger).toBeVisible({ timeout: 15000 });
+    // Measure after the independently loaded wallet replaces its placeholder.
+    await expect(trigger.locator("strong")).toHaveText("200");
     const measure = () =>
       page.evaluate((mobile) => {
         const left = document.querySelector<HTMLElement>(

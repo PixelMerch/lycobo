@@ -2,35 +2,49 @@ import {
   assetTypeSchema,
   imageGenerationInputSchema,
   imageModelCatalog,
+  imageTaskRetrySchema,
   imageUnitCredits,
   type StoredImage,
+  variationPlanInputSchema,
 } from "@lycoboai/contracts";
 import {
   type ImageEventFeed,
   type ImagePrincipal,
   type ImageRepository,
   ImageRepositoryError,
+  VariationError,
   WalletError,
 } from "@lycoboai/db";
+import { normalizeTextileGeneration } from "@lycoboai/generation";
 import { type ImageStore, ImageValidationError, maxImageBytes } from "@lycoboai/storage/core";
 import { type Context, Hono } from "hono";
 import { z } from "zod";
 import { enterprisePrincipal } from "../auth/routes";
 import type { EnterpriseAuth } from "../auth/service";
+import { type DeliverySigner, imageDeliveries } from "./delivery";
 import { imageEventStream } from "./events";
+import { providerRetryService } from "./provider-retry-service";
 import {
   setWorkbenchCookie,
   trustedWorkbenchRequest,
   type WorkbenchSession,
   workbenchPrincipal,
 } from "./session";
+import { variationService } from "./variation-service";
 
 export type ImageApiDependencies = {
   repository: ImageRepository;
+  modelSecret?: string | undefined;
+  plannerKey?: string | undefined;
+  plannerRequest?: typeof fetch | undefined;
+  standaloneKey?: string | undefined;
+  providerRequest?: typeof fetch | undefined;
   events?: ImageEventFeed | undefined;
+  signAsset?: DeliverySigner | undefined;
   auth?: EnterpriseAuth | undefined;
   store: ImageStore;
   enabled: boolean;
+  managedModelsOnly?: boolean;
   unitCredits: number;
   editsEnabled?: boolean;
   session?: WorkbenchSession | undefined;
@@ -42,6 +56,8 @@ type Env = { Variables: { principal: ImagePrincipal; requestId: string } };
 const id = z.uuid();
 export function imageRoutes(deps: ImageApiDependencies) {
   const app = new Hono<Env>();
+  const variation = variationService(deps);
+  const delivery = deps.signAsset ? imageDeliveries(deps.repository, deps.signAsset) : undefined;
   const fail = (
     c: Context<Env>,
     code: string,
@@ -71,6 +87,8 @@ export function imageRoutes(deps: ImageApiDependencies) {
     setWorkbenchCookie(c, deps.session);
     return c.json({ userId: principal.userId, organizationId: principal.organizationId });
   });
+  // Display-only metadata is public; authenticated task and capability routes stay below.
+  app.get("/image-model-logos", async (c) => c.json(await deps.repository.models.logos()));
   app.use("*", async (c, next) => {
     const principal = await resolvePrincipal(c);
     if (!principal) return fail(c, "UNAUTHORIZED", "请先验证身份", 401);
@@ -78,27 +96,36 @@ export function imageRoutes(deps: ImageApiDependencies) {
     await next();
   });
   app.onError((error, c) => {
+    if (error instanceof VariationError)
+      return fail(
+        c,
+        error.code,
+        "分析请求未执行，请检查图片或稍后再试",
+        error.code === "RATE_LIMITED" ? 409 : 400,
+      );
     if (error instanceof ImageRepositoryError || error instanceof WalletError) {
       const status =
         error.code === "FORBIDDEN"
           ? 403
           : error.code === "NOT_FOUND"
             ? 404
-            : error.code === "REFERENCE_NOT_FOUND"
+            : error.code === "REFERENCE_NOT_FOUND" || error.code === "MODEL_CAPABILITY_UNVERIFIED"
               ? 400
               : 409;
       return fail(
         c,
         error.code,
-        error.code === "INSUFFICIENT_CREDITS"
-          ? "企业金币余额不足，每张图片需要 20 币"
-          : error.code === "STATE_CONFLICT"
-            ? "任务正在生成或状态已更新，请稍后重试"
-            : error.code === "FORBIDDEN"
-              ? "没有权限操作此任务"
-              : error.code === "NOT_FOUND"
-                ? "任务不存在或已不可用"
-                : "请求未执行，请刷新后重试",
+        error.code === "MODEL_CAPABILITY_UNVERIFIED"
+          ? "当前模型渠道未启用或不支持所选参数，请刷新模型配置"
+          : error.code === "INSUFFICIENT_CREDITS"
+            ? `企业金币余额不足，每张图片需要 ${imageUnitCredits} 币`
+            : error.code === "STATE_CONFLICT"
+              ? "任务正在生成或状态已更新，请稍后重试"
+              : error.code === "FORBIDDEN"
+                ? "没有权限操作此任务"
+                : error.code === "NOT_FOUND"
+                  ? "任务不存在或已不可用"
+                  : "请求未执行，请刷新后重试",
         status,
       );
     }
@@ -162,15 +189,58 @@ export function imageRoutes(deps: ImageApiDependencies) {
       return fail(c, "GENERATION_NOT_CONFIGURED", "实时通知暂不可用", 503);
     }
   });
-  app.get("/image-models", (c) =>
-    c.json({
+  app.get("/image-models", async (c) => {
+    const configured = await deps.repository.models.capabilities();
+    const tools = deps.managedModelsOnly
+      ? Object.fromEntries(
+          Object.entries(configured).map(([tool, models]) => [
+            tool,
+            models.map((model) =>
+              model.managed ? model : { ...model, enabledResolutions: [], editsEnabled: false },
+            ),
+          ]),
+        )
+      : configured;
+    return c.json({
       enabled: deps.enabled,
       eventsEnabled: !!deps.events,
-      editsEnabled: deps.editsEnabled ?? false,
+      editsEnabled:
+        (!deps.managedModelsOnly && deps.editsEnabled) ||
+        Object.values(tools).some((models) =>
+          models.some((m) => m.managed && m.editsEnabled && m.enabledResolutions.length > 0),
+        ),
       unitCredits: imageUnitCredits,
-      models: imageModelCatalog.map((m) => ({ ...m, enabledResolutions: deps.resolutions(m.id) })),
-    }),
+      tools,
+      models: (
+        tools.create ??
+        imageModelCatalog.map((m) => ({ ...m, managed: false, enabledResolutions: [] }))
+      ).map((m) => ({
+        id: m.id,
+        enabledResolutions: m.managed
+          ? m.enabledResolutions
+          : deps.managedModelsOnly
+            ? []
+            : deps.resolutions(m.id),
+      })),
+    });
+  });
+  app.get("/variation-plans/capabilities", async (c) =>
+    c.json({ enabled: await variation.enabled() }),
   );
+  app.post("/variation-plans", async (c) => {
+    const input = variationPlanInputSchema.safeParse(await c.req.json());
+    const key = id.safeParse(c.req.header("Idempotency-Key"));
+    if (!input.success || !key.success)
+      return fail(c, "VALIDATION_ERROR", "请填写创作需求并检查参考图", 400);
+    const plan = await variation.create(c.get("principal"), input.data, key.data, c.req.raw.signal);
+    return plan ? c.json(plan) : fail(c, "GENERATION_NOT_CONFIGURED", "智能分析尚未配置", 503);
+  });
+  app.get("/variation-plans/:id", async (c) => {
+    const parsed = id.safeParse(c.req.param("id"));
+    if (!parsed.success) return fail(c, "VALIDATION_ERROR", "计划编号无效", 400);
+    const plan = await deps.repository.variation.get(c.get("principal"), parsed.data);
+    return plan ? c.json(plan) : fail(c, "NOT_FOUND", "计划不存在", 404);
+  });
   app.get("/wallet", async (c) =>
     c.json({
       ...(await deps.repository.wallet(c.get("principal"))),
@@ -219,16 +289,28 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const key = id.safeParse(c.req.header("Idempotency-Key"));
     if (!input.success || !key.success)
       return fail(c, "VALIDATION_ERROR", "请检查参数和 Idempotency-Key", 400);
+    const normalized = input.data.variation
+      ? {
+          ...input.data,
+          model: "gpt-image-2.5",
+          quality: "medium" as const,
+          prompt: `智能裂变：${input.data.variation.items.map((item) => item.title).join("、")}。每个方案分别生成一张图片。`,
+        }
+      : normalizeTextileGeneration(input.data);
     try {
-      deps.validate(input.data);
+      if (!(await deps.repository.models.hasRoute(normalized))) {
+        if (deps.managedModelsOnly) throw new Error("MODEL_CHANNEL_REQUIRED");
+        deps.validate(normalized);
+      }
     } catch {
-      return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "模型分辨率或参考编辑能力尚未验证", 400);
+      return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "当前模型暂不可用，请选择其他模型", 400);
     }
     const result = await deps.repository.create(
       c.get("principal"),
-      input.data,
+      normalized,
       key.data,
       imageUnitCredits,
+      deps.managedModelsOnly,
     );
     return c.json(result, result.replayed ? 200 : 202);
   });
@@ -237,15 +319,30 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const jobId = id.safeParse(c.req.param("jobId"));
     const key = id.safeParse(c.req.header("Idempotency-Key"));
     if (!jobId.success || !key.success) return fail(c, "VALIDATION_ERROR", "重试参数无效", 400);
+    const body = await c.req.text();
+    const target = imageTaskRetrySchema.safeParse(body ? JSON.parse(body) : {});
+    if (!target.success) return fail(c, "VALIDATION_ERROR", "重试图片参数无效", 400);
     const scope = c.get("principal");
     const job = await deps.repository.get(scope, jobId.data);
     if (!job) return fail(c, "NOT_FOUND", "任务不存在", 404);
+    if (await providerRetryService(deps)(scope, jobId.data, target.data.itemId))
+      return c.json({ id: jobId.data, replayed: false }, 202);
     try {
-      deps.validate(imageGenerationInputSchema.parse(job.input));
+      const input = imageGenerationInputSchema.parse(job.input);
+      if (!(await deps.repository.models.hasRoute(input))) {
+        if (deps.managedModelsOnly) throw new Error("MODEL_CHANNEL_REQUIRED");
+        deps.validate(input);
+      }
     } catch {
-      return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "模型能力尚未验证", 400);
+      return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "当前模型暂不可用，请选择其他模型", 400);
     }
-    const result = await deps.repository.retry(scope, jobId.data, key.data);
+    const result = await deps.repository.retry(
+      scope,
+      jobId.data,
+      key.data,
+      target.data.itemId,
+      deps.managedModelsOnly,
+    );
     return c.json(result, result.replayed ? 200 : 202);
   });
   app.get("/image-tasks", async (c) => {
@@ -257,21 +354,36 @@ export function imageRoutes(deps: ImageApiDependencies) {
       .default(20)
       .safeParse(c.req.query("limit"));
     const before = id.optional().safeParse(c.req.query("before"));
-    if (!limit.success || !before.success) return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
-    return c.json({
-      data: await deps.repository.list(c.get("principal"), limit.data, before.data),
-    });
+    const tool = z
+      .enum(["create", "textile", "variation"])
+      .optional()
+      .safeParse(c.req.query("tool"));
+    if (!limit.success || !before.success || !tool.success)
+      return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
+    const scope = c.get("principal");
+    const jobs = await deps.repository.list(scope, limit.data, before.data, tool.data);
+    return c.json({ data: delivery ? await delivery.jobs(scope, jobs) : jobs });
+  });
+  app.delete("/image-tasks/:id", async (c) => {
+    const parsed = id.safeParse(c.req.param("id"));
+    if (!parsed.success) return fail(c, "NOT_FOUND", "任务不存在", 404);
+    await deps.repository.archive(c.get("principal"), parsed.data);
+    return c.json({ id: parsed.data });
   });
   app.get("/image-tasks/:id", async (c) => {
     const parsed = id.safeParse(c.req.param("id"));
     if (!parsed.success) return fail(c, "NOT_FOUND", "任务不存在", 404);
     const job = await deps.repository.get(c.get("principal"), parsed.data);
-    return job ? c.json(job) : fail(c, "NOT_FOUND", "任务不存在", 404);
+    return job
+      ? c.json(delivery ? (await delivery.jobs(c.get("principal"), [job]))[0] : job)
+      : fail(c, "NOT_FOUND", "任务不存在", 404);
   });
   app.get("/image-assets/:id/latest-edit", async (c) => {
     const parsed = id.safeParse(c.req.param("id"));
     if (!parsed.success) return fail(c, "NOT_FOUND", "图片不存在", 404);
-    return c.json({ job: await deps.repository.latestEdit(c.get("principal"), parsed.data) });
+    const scope = c.get("principal");
+    const job = await deps.repository.latestEdit(scope, parsed.data);
+    return c.json({ job: job && delivery ? (await delivery.jobs(scope, [job]))[0] : job });
   });
   app.get("/image-assets", async (c) => {
     const limit = z.coerce
@@ -286,15 +398,15 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const type = assetTypeSchema.optional().safeParse(c.req.query("type"));
     if (!limit.success || !before.success || !kind.success || !type.success)
       return fail(c, "VALIDATION_ERROR", "筛选或分页参数无效", 400);
-    return c.json({
-      data: await deps.repository.listAssets(
-        c.get("principal"),
-        limit.data,
-        before.data,
-        kind.data,
-        type.data,
-      ),
-    });
+    const scope = c.get("principal");
+    const assets = await deps.repository.listAssets(
+      scope,
+      limit.data,
+      before.data,
+      kind.data,
+      type.data,
+    );
+    return c.json({ data: delivery ? await delivery.assets(scope, assets) : assets });
   });
   app.post("/image-assets", async (c) => {
     if (!["image/png", "image/jpeg", "image/webp"].includes(c.req.header("Content-Type") ?? ""))
@@ -322,15 +434,28 @@ export function imageRoutes(deps: ImageApiDependencies) {
         height: asset.height,
         bytes: asset.bytes,
         mimeType: asset.mimeType,
+        ...(deps.signAsset ? { delivery: await deps.signAsset(asset.objectKey) } : {}),
       },
       201,
     );
+  });
+  app.get("/image-assets/:id/delivery", async (c) => {
+    const parsed = id.safeParse(c.req.param("id"));
+    if (!parsed.success) return fail(c, "NOT_FOUND", "图片不存在", 404);
+    const asset = await deps.repository.asset(c.get("principal"), parsed.data);
+    if (!asset) return fail(c, "NOT_FOUND", "图片不存在", 404);
+    if (!deps.signAsset) return fail(c, "GENERATION_NOT_CONFIGURED", "图片访问尚未配置", 503);
+    return c.json({ id: asset.id, delivery: await deps.signAsset(asset.objectKey) });
   });
   app.get("/image-assets/:id/content", async (c) => {
     const parsed = id.safeParse(c.req.param("id"));
     if (!parsed.success) return fail(c, "NOT_FOUND", "图片不存在", 404);
     const asset = await deps.repository.asset(c.get("principal"), parsed.data);
     if (!asset) return fail(c, "NOT_FOUND", "图片不存在", 404);
+    if (deps.signAsset) {
+      const urls = await deps.signAsset(asset.objectKey);
+      return c.redirect(c.req.query("thumbnail") === "1" ? urls.thumbnail_url : urls.url, 302);
+    }
     const bytes =
       c.req.query("thumbnail") === "1"
         ? await deps.store.thumbnail(asset)

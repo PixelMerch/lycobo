@@ -11,6 +11,7 @@ import {
   useImageSession,
   usePendingSubmission,
 } from "../../generation/generation-client";
+import { modelCapabilities, supportsReferences } from "../../generation/models/model-capabilities";
 import { isModelId } from "../../generation/studio-state";
 import type { PreviewImage, PreviewMeta } from "../image-preview";
 import {
@@ -54,23 +55,19 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
     const saved = latest.data?.job;
     const edit = saved?.input?.localEdit;
     if (!saved || !edit || localDraft || useRepairDrafts.getState().drafts[key]) return;
-    update(key, { regions: edit.regions, jobId: saved.id });
-    setSelected(edit.regions[0]?.id ?? null);
+    // A saved submission is history, not an unsaved editing draft.
+    update(key, { regions: [], jobId: saved.id });
+    setSelected(null);
   }, [latest.data, key, update, localDraft]);
   const submissionLock = useRef(false);
   const job = useQuery({
-    queryKey: ["image-repair-task", key, draft.jobId],
+    queryKey: ["image-task", draft.jobId],
     enabled: !!draft.jobId && session.isSuccess,
     retry: false,
     queryFn: async ({ signal }) =>
       imageJobSchema.parse(
         await (await imageRequest(`image-tasks/${draft.jobId}`, { signal })).json(),
       ),
-    refetchInterval: (query) =>
-      !query.state.error &&
-      (!query.state.data || ["queued", "running"].includes(query.state.data.status))
-        ? 3000
-        : false,
   });
   useErrorToast(
     latest.error?.message ??
@@ -81,8 +78,10 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
   );
   useEffect(() => {
     const loaded = new window.Image();
+    loaded.crossOrigin = "anonymous";
+    loaded.referrerPolicy = "strict-origin-when-cross-origin";
     loaded.onload = () => setImage(loaded);
-    loaded.onerror = () => setImageError("原图加载失败，请重新打开图片后再试。");
+    loaded.onerror = () => setImageError("图片预览加载失败，请重新打开图片后再试。");
     loaded.src = assetContentUrl(source.id);
     return () => {
       loaded.onload = null;
@@ -90,18 +89,16 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
       loaded.src = "";
     };
   }, [source.id]);
-  const width = image?.naturalWidth ?? source.width ?? 1;
-  const height = image?.naturalHeight ?? source.height ?? 1;
+  const width = source.width ?? image?.naturalWidth ?? 1;
+  const height = source.height ?? image?.naturalHeight ?? 1;
   const output = repairOutput(width, height);
   const model = isModelId(meta.model) ? meta.model : "gpt-image-2";
+  const capabilities = modelCapabilities(models.data, model, "local-edit");
   const available =
     session.isSuccess &&
     (localDraft || latest.isSuccess) &&
-    models.data?.enabled &&
-    models.data.editsEnabled &&
-    models.data.models.some(
-      (entry) => entry.id === model && entry.enabledResolutions.includes(output.resolution),
-    );
+    supportsReferences(capabilities, 1) &&
+    capabilities?.enabledResolutions.includes(output.resolution);
   const busy = !!draft.jobId && (!job.data || ["queued", "running"].includes(job.data.status));
   const restoring = !localDraft && !latest.isSuccess;
   const locked = !session.isSuccess || restoring || generate.isPending || busy || pending;
@@ -165,7 +162,9 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
           count: "1",
         },
       });
-      update(key, { jobId: submitted.id });
+      update(key, { regions: [], jobId: submitted.id });
+      setSelected(null);
+      setHistory({ past: [], future: [] });
     } catch {
       /* The shared error toast and pending submission retain the exact paid request. */
     } finally {

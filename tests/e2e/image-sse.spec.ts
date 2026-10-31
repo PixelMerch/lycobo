@@ -1,67 +1,6 @@
-import { expect, type Page, test } from "@playwright/test";
-import { apiFixture, mockImageApi, modelNames } from "./image-api-fixture";
+import { expect, test } from "@playwright/test";
+import { apiFixture, mockImageEvents } from "./image-api-fixture";
 
-async function mockEvents(page: Page, enabled = true) {
-  await mockImageApi(page);
-  await page.route("**/api/v1/image-models", (route) =>
-    route.fulfill({
-      json: apiFixture({
-        enabled: true,
-        eventsEnabled: enabled,
-        editsEnabled: true,
-        unitCredits: 1,
-        models: modelNames.map((id) => ({ id, enabledResolutions: ["1K"] })),
-      }),
-    }),
-  );
-  await page.addInitScript(() => {
-    let active = 0,
-      total = 0;
-    class FixtureEventSource extends EventTarget {
-      onerror: ((event: Event) => void) | null = null;
-      closed = false;
-      constructor(url: string) {
-        super();
-        active++;
-        total++;
-        document.documentElement.dataset.sseActive = String(active);
-        document.documentElement.dataset.sseTotal = String(total);
-        document.documentElement.dataset.sseUrl = url;
-        window.addEventListener("fixture:sse", this.receive);
-        queueMicrotask(() => {
-          if (!this.closed)
-            this.dispatchEvent(
-              new MessageEvent("ready", {
-                data: "{}",
-                lastEventId: new URL(url, location.href).searchParams.get("cursor") ?? "0",
-              }),
-            );
-        });
-      }
-      receive = (event: Event) => {
-        if (!(event instanceof CustomEvent) || this.closed) return;
-        if (event.detail.type === "error") {
-          this.onerror?.(new Event("error"));
-          return;
-        }
-        this.dispatchEvent(
-          new MessageEvent(event.detail.type, {
-            data: JSON.stringify(event.detail.data ?? {}),
-            lastEventId: event.detail.id ?? "",
-          }),
-        );
-      };
-      close() {
-        if (this.closed) return;
-        this.closed = true;
-        active--;
-        document.documentElement.dataset.sseActive = String(active);
-        window.removeEventListener("fixture:sse", this.receive);
-      }
-    }
-    Object.defineProperty(window, "EventSource", { value: FixtureEventSource });
-  });
-}
 function jobFixture() {
   return {
     id: crypto.randomUUID(),
@@ -94,7 +33,7 @@ function jobFixture() {
 test("one live connection replaces history polling and updates the task by detail", async ({
   page,
 }) => {
-  await mockEvents(page);
+  await mockImageEvents(page);
   const job = jobFixture();
   let historyReads = 0,
     details = 0;
@@ -153,7 +92,7 @@ test("one live connection replaces history polling and updates the task by detai
 test("reconnect uses the last cursor, calibrates missed state and keeps a single stream", async ({
   page,
 }) => {
-  await mockEvents(page);
+  await mockImageEvents(page);
   const job = jobFixture();
   await page.route("**/api/v1/image-tasks*", (route) =>
     route.fulfill({ json: apiFixture({ data: [job] }) }),
@@ -187,10 +126,34 @@ test("reconnect uses the last cursor, calibrates missed state and keeps a single
   await expect(page.locator("html")).toHaveAttribute("data-sse-active", "1");
 });
 
-test("unavailable push uses slow fallback rather than the old three-second loop", async ({
-  page,
-}) => {
-  await mockEvents(page, false);
+test("short-lived streams keep exponential backoff after ready", async ({ page }) => {
+  await mockImageEvents(page);
+  await page.goto("/create");
+  const html = page.locator("html");
+  await expect(html).toHaveAttribute("data-sse-active", "1");
+  await page.clock.install();
+  const disconnect = () =>
+    page.evaluate(() =>
+      window.dispatchEvent(new CustomEvent("fixture:sse", { detail: { type: "error" } })),
+    );
+  await disconnect();
+  await expect(html).toHaveAttribute("data-sse-active", "0");
+  await page.clock.runFor(1100);
+  await expect(html).toHaveAttribute("data-sse-active", "1");
+  await disconnect();
+  await page.clock.runFor(1100);
+  await expect(html).toHaveAttribute("data-sse-active", "0");
+  await page.clock.runFor(1100);
+  await expect(html).toHaveAttribute("data-sse-active", "1");
+  await disconnect();
+  await page.clock.runFor(2100);
+  await expect(html).toHaveAttribute("data-sse-active", "0");
+  await page.clock.runFor(2100);
+  await expect(html).toHaveAttribute("data-sse-active", "1");
+});
+
+test("unavailable push does not start business polling", async ({ page }) => {
+  await mockImageEvents(page, false);
   const job = jobFixture();
   let reads = 0;
   await page.route("**/api/v1/image-tasks*", (route) => {
@@ -200,13 +163,14 @@ test("unavailable push uses slow fallback rather than the old three-second loop"
   await page.goto("/create");
   await expect(page.locator(".generation-job")).toContainText(job.prompt);
   const baseline = reads;
-  await new Promise((resolve) => setTimeout(resolve, 6500));
+  await page.clock.install();
+  await page.clock.fastForward(65000);
   expect(reads).toBe(baseline);
   await expect(page.locator("html")).not.toHaveAttribute("data-sse-active");
 });
 
 test("logout closes the shared stream and removes prior identity data", async ({ page }) => {
-  await mockEvents(page);
+  await mockImageEvents(page);
   const user = {
     userId: crypto.randomUUID(),
     organizationId: crypto.randomUUID(),
@@ -245,4 +209,53 @@ test("logout closes the shared stream and removes prior identity data", async ({
   await page.getByRole("menuitem", { name: "退出登录", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("data-sse-active", "0");
   await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();
+});
+
+test("running task events do not refetch wallet but a refund does", async ({ page }) => {
+  await mockImageEvents(page);
+  const job = jobFixture();
+  let wallets = 0;
+  let details = 0;
+  await page.route("**/api/v1/wallet", (route) => {
+    wallets++;
+    return route.fulfill({ json: apiFixture({ balance: 200, unitCredits: 2 }) });
+  });
+  await page.route("**/api/v1/image-tasks*", (route) =>
+    route.fulfill({ json: apiFixture({ data: [job] }) }),
+  );
+  await page.route(`**/api/v1/image-tasks/${job.id}`, (route) => {
+    details++;
+    return route.fulfill({ json: apiFixture(job) });
+  });
+  await page.goto("/create");
+  await expect(page.locator(".generation-job")).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-sse-active", "1");
+  await page.waitForTimeout(700);
+  const baseline = wallets;
+  const send = (id: string) =>
+    page.evaluate(
+      ({ id, resourceId }) =>
+        window.dispatchEvent(
+          new CustomEvent("fixture:sse", {
+            detail: {
+              type: "image.updated",
+              id,
+              data: { id, kind: "task", resourceId },
+            },
+          }),
+        ),
+      { id, resourceId: job.id },
+    );
+  await send("1");
+  await expect.poll(() => details).toBe(1);
+  await page.waitForTimeout(800);
+  expect(wallets).toBe(baseline);
+  job.status = "failed";
+  for (const item of job.items) item.status = "failed";
+  await send("2");
+  await expect.poll(() => wallets).toBe(baseline + 1);
+  await send("3");
+  await expect.poll(() => details).toBe(3);
+  await page.waitForTimeout(800);
+  expect(wallets).toBe(baseline + 1);
 });

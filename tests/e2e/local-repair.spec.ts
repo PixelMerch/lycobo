@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { apiFixture, mockImageApi } from "./image-api-fixture";
+import { apiFixture, mockImageApi, mockImageEvents } from "./image-api-fixture";
 
 const sourceId = "a5587123-0000-4000-8000-000000000001";
 const jobId = "a5587123-0000-4000-8000-000000000002";
@@ -10,7 +10,7 @@ const svg =
 test("multiple repair regions retain original coordinates, submit one image and preserve the original", async ({
   page,
 }) => {
-  await mockImageApi(page);
+  await mockImageEvents(page);
   await page.route("**/api/v1/image-assets?*", (route) =>
     route.fulfill({
       json: apiFixture({
@@ -31,7 +31,13 @@ test("multiple repair regions retain original coordinates, submit one image and 
     }),
   );
   await page.route("**/api/v1/image-assets/**/content*", (route) =>
-    route.fulfill({ contentType: "image/svg+xml", body: svg }),
+    route.fulfill({
+      contentType: "image/svg+xml",
+      body: svg.replace(
+        'width="1024" height="1024"',
+        'width="256" height="256" viewBox="0 0 1024 1024"',
+      ),
+    }),
   );
   let submitted: Record<string, unknown> | undefined;
   let attempts = 0;
@@ -50,8 +56,11 @@ test("multiple repair regions retain original coordinates, submit one image and 
     expect(route.request().headers()["idempotency-key"]).toBe(firstKey);
     return route.fulfill({ status: 202, json: apiFixture({ id: jobId, replayed: true }) });
   });
-  await page.route(`**/api/v1/image-tasks/${jobId}`, (route) =>
-    route.fulfill({
+  let completed = false;
+  let details = 0;
+  await page.route(`**/api/v1/image-tasks/${jobId}`, (route) => {
+    details++;
+    return route.fulfill({
       json: apiFixture({
         id: jobId,
         public_id: "WREPAIR01",
@@ -62,15 +71,15 @@ test("multiple repair regions retain original coordinates, submit one image and 
         resolution: "1K",
         aspect_ratio: "1:1",
         requested_count: 1,
-        status: "succeeded",
+        status: completed ? "succeeded" : "running",
         created_at: "2026-10-21T01:00:00.000Z",
-        completed_at: "2026-10-21T01:01:00.000Z",
+        completed_at: completed ? "2026-10-21T01:01:00.000Z" : null,
         items: [
           {
             id: crypto.randomUUID(),
             position: 0,
-            status: "succeeded",
-            output_asset_id: outputId,
+            status: completed ? "succeeded" : "running",
+            output_asset_id: completed ? outputId : null,
             output_public_id: "P00000002",
             error_code: null,
             width: 1024,
@@ -79,8 +88,8 @@ test("multiple repair regions retain original coordinates, submit one image and 
           },
         ],
       }),
-    }),
-  );
+    });
+  });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/create");
   await page.getByRole("button", { name: "打开素材库", exact: true }).click();
@@ -98,6 +107,11 @@ test("multiple repair regions retain original coordinates, submit one image and 
   await expect(viewer.locator(".image-preview")).toHaveCSS("transform", "none");
   const imageBounds = await viewer.locator(".image-preview-image").boundingBox();
   if (!imageBounds) throw new Error("Source image has no bounds");
+  expect(
+    await viewer
+      .locator(".image-preview-image")
+      .evaluate((node: HTMLImageElement) => node.naturalWidth),
+  ).toBe(256);
   const edge = imageBounds.width;
   const origin = { x: imageBounds.x, y: imageBounds.y };
   await page.mouse.move(origin.x + edge * 0.1, origin.y + edge * 0.1);
@@ -115,7 +129,7 @@ test("multiple repair regions retain original coordinates, submit one image and 
   await expect(viewer.getByRole("spinbutton")).toHaveCount(0);
   await canvas.hover();
   await page.mouse.wheel(0, -200);
-  await expect(viewer.getByLabel("画布缩放比例")).toHaveText("115%");
+  await expect(viewer.getByLabel("画布缩放比例")).toHaveText("92%");
   await viewer.getByRole("button", { name: "添加区域", exact: true }).click();
   await viewer.getByRole("textbox", { name: "区域 2 修改说明", exact: true }).fill("去掉脚袋");
   await viewer.getByRole("button", { name: "返回详情", exact: true }).click();
@@ -133,7 +147,7 @@ test("multiple repair regions retain original coordinates, submit one image and 
   expect(submitted).toMatchObject({
     count: 1,
     referenceAssetIds: [sourceId],
-    resolution: "1K",
+    resolution: "1.5K",
     aspectRatio: "1:1",
   });
   expect(submitted?.prompt).toContain("将标题改成柔软舒适");
@@ -148,14 +162,37 @@ test("multiple repair regions retain original coordinates, submit one image and 
   expect(Math.abs(Number(firstRegion[4]) - 205)).toBeLessThan(4);
   expect(submitted?.prompt).toContain("区域 2：左上角 (307, 307)，宽 307，高 307");
   await viewer.getByRole("button", { name: "确认上次提交", exact: true }).click();
+  await expect.poll(() => details).toBe(1);
+  await new Promise((resolve) => setTimeout(resolve, 6500));
+  expect(details).toBe(1);
+  completed = true;
+  await page.evaluate(
+    (id) =>
+      window.dispatchEvent(
+        new CustomEvent("fixture:sse", {
+          detail: {
+            type: "image.updated",
+            id: "1",
+            data: { id: "1", kind: "task", resourceId: id },
+          },
+        }),
+      ),
+    jobId,
+  );
   // Progress is announced in the bottom-right notice instead of inside the form.
   const notice = page.locator(".toast-region--bottom-end .toast").first();
   await expect(notice).toContainText("修改版已生成");
-  const noticeBox = await notice.boundingBox();
-  const viewport = page.viewportSize();
-  if (!noticeBox || !viewport) throw new Error("Missing notice geometry");
-  expect(viewport.width - (noticeBox.x + noticeBox.width)).toBeLessThan(40);
-  expect(viewport.height - (noticeBox.y + noticeBox.height)).toBeLessThan(40);
+  await expect
+    .poll(async () => {
+      const noticeBox = await notice.boundingBox();
+      const viewport = page.viewportSize();
+      if (!noticeBox || !viewport) return Infinity;
+      return Math.max(
+        viewport.width - (noticeBox.x + noticeBox.width),
+        viewport.height - (noticeBox.y + noticeBox.height),
+      );
+    })
+    .toBeLessThan(40);
   await expect(viewer.locator(".repair-message")).toHaveCount(0);
   await viewer.getByRole("button", { name: "查看修改版", exact: true }).click();
   await expect(viewer).toHaveCount(0);
@@ -195,9 +232,42 @@ test("repair regions remain usable on a narrow screen", async ({ page }) => {
     route.fulfill({ contentType: "image/svg+xml", body: svg }),
   );
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.route("**/api/v1/image-tasks?*", (route) =>
+    route.fulfill({
+      json: apiFixture({
+        data: [
+          {
+            id: crypto.randomUUID(),
+            organization_id: crypto.randomUUID(),
+            user_id: crypto.randomUUID(),
+            model: "gpt-image-2",
+            prompt: "原始商品图",
+            resolution: "1K",
+            aspect_ratio: "1:1",
+            requested_count: 1,
+            status: "succeeded",
+            created_at: "2026-10-21T01:00:00Z",
+            completed_at: "2026-10-21T01:01:00Z",
+            items: [
+              {
+                id: crypto.randomUUID(),
+                position: 0,
+                status: "succeeded",
+                output_asset_id: sourceId,
+                width: 1024,
+                height: 1024,
+                error_code: null,
+                worker_id: "fixture",
+              },
+            ],
+          },
+        ],
+      }),
+    }),
+  );
   await page.goto("/create");
-  await page.getByRole("button", { name: "打开素材库", exact: true }).click();
-  await page.getByRole("button", { name: "查看图片：原始商品图", exact: true }).click();
+  await page.getByRole("radio", { name: "历史记录", exact: true }).click();
+  await page.getByRole("button", { name: "预览图片 1", exact: true }).click();
   const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
   await viewer.getByRole("button", { name: "局部编辑", exact: true }).click();
   await viewer.getByRole("button", { name: "添加区域", exact: true }).click();
@@ -271,7 +341,7 @@ test("closing with unsubmitted regions asks first and then clears the draft", as
   await expect(viewer.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
 });
 
-test("reloading an image restores its most recent submitted edit and result link", async ({
+test("submitted repairs clear their draft and reopen without discard warnings while preserving results", async ({
   page,
 }) => {
   await mockImageApi(page);
@@ -360,15 +430,20 @@ test("reloading an image restores its most recent submitted edit and result link
   await openEditor();
   const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
   const prompt = viewer.getByRole("textbox", { name: "区域 1 修改说明", exact: true });
-  await expect(prompt).toHaveValue("改成蓝色被子");
+  await expect(prompt).toHaveCount(0);
   await expect(viewer.getByRole("button", { name: "查看修改版", exact: true })).toBeVisible();
+  await viewer.getByRole("button", { name: "添加区域", exact: true }).click();
   await prompt.fill("改成绿色被子");
   await viewer.getByRole("button", { name: "立即生成", exact: true }).click();
   await expect.poll(() => latestJobId).toBe(jobId);
-  await expect(viewer.getByRole("button", { name: "立即生成", exact: true })).toBeEnabled();
+  await expect(prompt).toHaveCount(0);
+  await expect(viewer.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
+  await viewer.getByRole("button", { name: "关闭图片预览", exact: true }).click();
+  await expect(viewer).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "退出局部编辑？", exact: true })).toHaveCount(0);
   await page.reload();
   await openEditor();
-  await expect(prompt).toHaveValue("改成绿色被子");
+  await expect(prompt).toHaveCount(0);
   await viewer.getByRole("button", { name: "查看修改版", exact: true }).click();
   await expect(viewer).toHaveCount(0);
   await expect(page.locator(`#job-${jobId}`)).toContainText("WREPAIR02");

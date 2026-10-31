@@ -49,7 +49,7 @@ export function TextileViewsDialog({
     >
       <Popover.Dialog className="textile-views-dialog">
         <div className="textile-views-header">
-          <Popover.Heading>裂变类型</Popover.Heading>
+          <Popover.Heading className="textile-views-title">裂变类型</Popover.Heading>
           <Button
             isIconOnly
             variant="tertiary"
@@ -83,6 +83,8 @@ export function TextileViewsDialog({
                     <img
                       src={textileViewImages[view.id]}
                       alt=""
+                      width={480}
+                      height={480}
                       loading="lazy"
                       decoding="async"
                       draggable={false}

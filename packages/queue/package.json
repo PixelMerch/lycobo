@@ -4,7 +4,8 @@
   "type": "module",
   "name": "@lycoboai/queue",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./local": "./src/local.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

@@ -61,33 +61,25 @@ test("preview keeps one canvas while repair changes only the property panel and 
   );
   expect(await paintedDots()).toBe(false);
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  const footerDots = viewer.locator(".image-preview-bar .preview-dot-grid canvas");
-  await expect(viewer.locator(".image-preview-bar")).toHaveCSS(
-    "background-image",
-    /radial-gradient/,
-  );
-  await viewer.locator(".image-preview-bar").hover({ position: { x: 45, y: 20 } });
-  await expect
-    .poll(() =>
-      footerDots.evaluate((node: HTMLCanvasElement) => {
-        const pixels = node.getContext("2d")?.getImageData(0, 0, node.width, node.height).data;
-        return pixels?.some((value, index) => index % 4 === 3 && value > 0) ?? false;
-      }),
-    )
-    .toBe(true);
+  await expect(viewer.locator(".image-preview-bar")).toHaveCSS("position", "absolute");
+  const dotsBounds = await dots.boundingBox();
+  expect(dotsBounds?.height).toBe(stageBounds.height);
 
   const image = await viewer.locator(".image-preview-image").elementHandle();
   const canvas = await viewer.locator(".repair-canvas").elementHandle();
   if (!image || !canvas) throw new Error("Workspace did not load");
   await viewer.locator(".image-preview-stage").hover();
   await page.mouse.wheel(0, -100);
-  await expect(viewer.getByLabel("画布缩放比例")).toHaveText("110%");
+  await expect(viewer.getByLabel("画布缩放比例")).toHaveText("88%");
   await toolbar.getByRole("radio", { name: "拖动画布", exact: true }).click();
   const frame = await viewer.locator(".image-preview-frame").boundingBox();
   if (!frame) throw new Error("Missing canvas frame");
   const toolBounds = await toolbar.boundingBox();
   if (!toolBounds) throw new Error("Missing canvas toolbar");
-  expect(frame.x + frame.width).toBeLessThanOrEqual(toolBounds.x);
+  // The floating toolbar overlays the full canvas rather than reserving a column.
+  expect(toolBounds.x).toBeGreaterThan(frame.x);
+  expect(toolBounds.x + toolBounds.width).toBeLessThanOrEqual(frame.x + frame.width);
+  expect(frame.x + frame.width).toBeGreaterThan(toolBounds.x);
   await page.mouse.move(frame.x + frame.width / 2, frame.y + frame.height / 2);
   await page.mouse.down();
   await page.mouse.move(frame.x + frame.width / 2 + 50, frame.y + frame.height / 2 + 20, {
@@ -141,7 +133,7 @@ test("preview keeps one canvas while repair changes only the property panel and 
   await expect(fitButton.locator("svg")).toHaveCount(0);
   await expect(fitButton).toContainText("适应画布");
   await fitButton.click();
-  await expect(viewer.getByLabel("画布缩放比例")).toHaveText("100%");
+  await expect(viewer.getByLabel("画布缩放比例")).toHaveText("80%");
   await expect(viewer.locator(".image-preview-image")).toHaveCSS("translate", "0px");
   await expect(viewer.locator(".image-preview-info")).toHaveCSS("opacity", "1");
   await page.screenshot({ path: "/tmp/lycobo-workspace-details.png" });

@@ -65,27 +65,17 @@ try {
         user: "postgres",
         password: decodeURIComponent(target.password),
       },
-      mtls: { sslmode: "verify-full" },
+      // Hyperdrive require validates server certificates with WebPKI.
+      mtls: { sslmode: "require" },
     });
   }
   if (typeof hyperdrive.id !== "string" || !/^[a-f0-9]{32}$/.test(hyperdrive.id))
     throw new Error("Invalid Hyperdrive identifier.");
   const pages = await api("/pages/projects");
   if (!Array.isArray(pages)) throw new Error("Unexpected Pages response.");
-  let page = pages.find((project) => project.name === "lycobo");
-  if (!page)
-    page = await api("/pages/projects", "POST", { name: "lycobo", production_branch: "main" });
+  if (!pages.some((project) => project.name === "lycobo"))
+    await api("/pages/projects", "POST", { name: "lycobo", production_branch: "main" });
   let source = await readFile(".env", "utf8");
-  if (
-    !process.env.CLOUDFLARE_PUBLIC_ORIGIN &&
-    typeof page.subdomain === "string" &&
-    /^[a-z0-9.-]+\.pages\.dev$/.test(page.subdomain)
-  ) {
-    const origin = `CLOUDFLARE_PUBLIC_ORIGIN=https://${page.subdomain}`;
-    source = /^CLOUDFLARE_PUBLIC_ORIGIN=.*$/m.test(source)
-      ? source.replace(/^CLOUDFLARE_PUBLIC_ORIGIN=.*$/m, origin)
-      : `${source.trimEnd()}\n${origin}\n`;
-  }
   const line = `CLOUDFLARE_HYPERDRIVE_ID=${hyperdrive.id}`;
   source = /^CLOUDFLARE_HYPERDRIVE_ID=.*$/m.test(source)
     ? source.replace(/^CLOUDFLARE_HYPERDRIVE_ID=.*$/m, line)

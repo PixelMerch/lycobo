@@ -1,20 +1,33 @@
 import {
   apiErrorSchema,
   type ImageGenerationInput,
+  type ImageJob,
   imageAssetsResponseSchema,
   imageGenerationInputSchema,
   imageModelsResponseSchema,
   imageSessionResponseSchema,
   imageSubmissionResponseSchema,
+  imageTaskRetrySchema,
   imageTasksResponseSchema,
   imageUploadResponseSchema,
 } from "@lycoboai/contracts";
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSyncExternalStore } from "react";
+import {
+  type InfiniteData,
+  type QueryClient,
+  useInfiniteQuery,
+  useIsMutating,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { useRef, useSyncExternalStore } from "react";
 import { normalizeApiResponse } from "../../lib/api-response";
 import { sessionFetch } from "../../lib/session-fetch";
-import { useImageEventState } from "./image-event-state";
-import type { Draft, ModelId } from "./studio-state";
+import { assetContentUrl, rememberImageDeliveries } from "./asset-delivery-client";
+
+export { assetContentUrl } from "./asset-delivery-client";
+
+import type { Draft, ModelId, ReferenceImage } from "./studio-state";
 
 export class ImageApiError extends Error {
   constructor(
@@ -24,13 +37,13 @@ export class ImageApiError extends Error {
     super(message);
   }
 }
-export async function imageRequest(path: string, init: RequestInit = {}) {
+export async function imageRequest(path: string, init: RequestInit = {}, timeoutMs = 30000) {
   const response = await sessionFetch(`/api/v1/${path}`, {
     ...init,
     credentials: "same-origin",
     signal: init.signal
-      ? AbortSignal.any([init.signal, AbortSignal.timeout(30000)])
-      : AbortSignal.timeout(30000),
+      ? AbortSignal.any([init.signal, AbortSignal.timeout(timeoutMs)])
+      : AbortSignal.timeout(timeoutMs),
   });
   if (!response.ok) {
     const messages: Record<number, string> = {
@@ -49,7 +62,10 @@ export async function imageRequest(path: string, init: RequestInit = {}) {
       response.status,
     );
   }
-  return normalizeApiResponse(response);
+  const normalized = await normalizeApiResponse(response);
+  if (normalized.headers.get("Content-Type")?.includes("application/json"))
+    rememberImageDeliveries(await normalized.clone().json());
+  return normalized;
 }
 export function useImageSession() {
   return useQuery({
@@ -75,36 +91,52 @@ export function useImageModels() {
       ),
   });
 }
-export function useImageHistory({ poll = true } = {}) {
+export function useImageHistory(
+  tool: "create" | "textile" | "variation" | "all" | null = "create",
+) {
   const session = useImageSession();
-  const eventStatus = useImageEventState((state) => state.status);
-  return useInfiniteQuery({
-    queryKey: ["image-tasks"],
-    enabled: session.isSuccess,
+  return useInfiniteQuery<
+    { data: ImageJob[] },
+    Error,
+    InfiniteData<{ data: ImageJob[] }, string>,
+    readonly unknown[],
+    string
+  >({
+    queryKey: tool === "create" ? ["image-tasks"] : ["image-tasks", tool],
+    enabled: session.isSuccess && tool !== null,
     initialPageParam: "",
     retry: false,
     staleTime: 30000,
-    queryFn: async ({ pageParam, signal }) =>
-      imageTasksResponseSchema.parse(
-        await (
-          await imageRequest(`image-tasks?limit=20${pageParam ? `&before=${pageParam}` : ""}`, {
-            signal,
-          })
-        ).json(),
-      ),
-    getNextPageParam: (last) => (last.data.length === 20 ? last.data.at(-1)?.id : undefined),
-    refetchInterval:
-      poll && eventStatus !== "live"
-        ? (query) =>
-            query.state.status !== "error" &&
-            query.state.data?.pages.some((page) =>
-              page.data.some((job) => job.status === "queued" || job.status === "running"),
-            )
-              ? eventStatus === "off"
-                ? 3000
-                : 30000
-              : false
+    // SSE is an optimization; active work must converge even when its event is lost.
+    refetchInterval: (query) =>
+      query.state.data?.pages.some((page) =>
+        page.data.some((job) => job.status === "queued" || job.status === "running"),
+      )
+        ? 5000
         : false,
+    queryFn: async ({ pageParam, signal }) =>
+      tool === null
+        ? { data: [] }
+        : imageTasksResponseSchema.parse(
+            await (
+              await imageRequest(
+                `image-tasks?limit=20${tool === "all" ? "" : `&tool=${tool}`}${pageParam ? `&before=${pageParam}` : ""}`,
+                {
+                  signal,
+                },
+              )
+            ).json(),
+          ),
+    getNextPageParam: (last) => (last.data.length === 20 ? last.data.at(-1)?.id : undefined),
+  });
+}
+export function useDeleteHistoryTask() {
+  const client = useQueryClient();
+  return useMutation({
+    retry: false,
+    mutationFn: (id: string) =>
+      imageRequest(`image-tasks/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["image-tasks"] }),
   });
 }
 export function useImageAssets({
@@ -117,7 +149,6 @@ export function useImageAssets({
   type?: "image" | "video" | "audio" | undefined;
 } = {}) {
   const session = useImageSession();
-  const eventStatus = useImageEventState((state) => state.status);
   return useInfiniteQuery({
     queryKey: ["image-assets", kind, type ?? "all"],
     enabled: enabled && session.isSuccess,
@@ -135,7 +166,6 @@ export function useImageAssets({
         ).json(),
       ),
     getNextPageParam: (last) => (last.data.length === 30 ? last.data.at(-1)?.id : undefined),
-    refetchInterval: eventStatus === "live" ? false : eventStatus === "off" ? 5000 : 30000,
   });
 }
 type SessionScope = { organizationId: string; userId: string };
@@ -145,6 +175,7 @@ function pendingSubmission(pendingKey: string): {
   key: string;
   input: ImageGenerationInput;
   retryJobId?: string | undefined;
+  retryItemId?: string | undefined;
   source?: string | undefined;
 } | null {
   const raw = sessionStorage.getItem(pendingKey);
@@ -162,6 +193,10 @@ function pendingSubmission(pendingKey: string): {
     key: value.key,
     retryJobId:
       "retryJobId" in value && typeof value.retryJobId === "string" ? value.retryJobId : undefined,
+    retryItemId:
+      "retryItemId" in value
+        ? imageTaskRetrySchema.parse({ itemId: value.retryItemId }).itemId
+        : undefined,
     input: imageGenerationInputSchema.parse(value.input),
     source: "source" in value && typeof value.source === "string" ? value.source : undefined,
   };
@@ -188,23 +223,67 @@ export function usePendingSubmission(scope?: SessionScope) {
     () => false,
   );
 }
+export async function uploadImageReferences(
+  client: QueryClient,
+  scope: SessionScope,
+  references: readonly ReferenceImage[],
+) {
+  const referenceAssetIds: string[] = [];
+  for (const reference of references) {
+    if (reference.assetId) {
+      referenceAssetIds.push(reference.assetId);
+      continue;
+    }
+    const asset = await client.fetchQuery({
+      queryKey: ["reference-upload", scope.organizationId, scope.userId, reference.id],
+      staleTime: 2 * 24 * 60 * 60 * 1000,
+      gcTime: 2 * 24 * 60 * 60 * 1000,
+      retry: false,
+      queryFn: async () => {
+        const blob = await (
+          await fetch(reference.src, { signal: AbortSignal.timeout(30000) })
+        ).blob();
+        const upload = await imageRequest("image-assets", {
+          method: "POST",
+          headers: { "Content-Type": blob.type },
+          body: blob,
+        });
+        const uploaded = imageUploadResponseSchema.parse(await upload.json());
+        void client.invalidateQueries({ queryKey: ["image-assets"] });
+        return uploaded;
+      },
+    });
+    referenceAssetIds.push(asset.id);
+  }
+  return referenceAssetIds;
+}
 export function useGenerateImage() {
   const session = useImageSession();
   const client = useQueryClient();
-  return useMutation({
+  const locked = useRef(false);
+  const mutationKey = ["image-submission", session.data?.organizationId, session.data?.userId];
+  const activeRequests = useIsMutating({ mutationKey });
+  const mutation = useMutation({
+    mutationKey,
     retry: false,
     mutationFn: async ({
       model,
       draft,
       source,
       retryJobId,
+      retryItemId,
       localEdit,
+      textileSet,
+      variation,
     }: {
       model: ModelId;
       draft: Draft;
       source?: string;
       retryJobId?: string;
+      retryItemId?: string;
       localEdit?: import("@lycoboai/contracts").ImageLocalEdit;
+      textileSet?: import("@lycoboai/contracts").TextileGeneration | undefined;
+      variation?: import("@lycoboai/contracts").VariationGeneration | undefined;
     }) => {
       if (!session.data) throw new Error("请先登录工作台。");
       const pendingKey = pendingStorageKey(session.data);
@@ -212,22 +291,11 @@ export function useGenerateImage() {
       if (pending && pending.source !== source)
         throw new Error("请先在原提交入口确认上次提交，再开始新的生成。");
       if (!pending) {
-        const referenceAssetIds: string[] = [];
-        for (const reference of draft.references) {
-          if (reference.assetId) {
-            referenceAssetIds.push(reference.assetId);
-            continue;
-          }
-          const blob = await (
-            await fetch(reference.src, { signal: AbortSignal.timeout(30000) })
-          ).blob();
-          const upload = await imageRequest("image-assets", {
-            method: "POST",
-            headers: { "Content-Type": blob.type },
-            body: blob,
-          });
-          referenceAssetIds.push(imageUploadResponseSchema.parse(await upload.json()).id);
-        }
+        const referenceAssetIds = await uploadImageReferences(
+          client,
+          session.data,
+          draft.references,
+        );
         const input = imageGenerationInputSchema.parse({
           model,
           prompt: draft.prompt,
@@ -244,8 +312,10 @@ export function useGenerateImage() {
           count: Number(draft.count),
           referenceAssetIds,
           ...(localEdit ? { localEdit } : {}),
+          ...(textileSet ? { textileSet } : {}),
+          ...(variation ? { variation } : {}),
         });
-        pending = { key: crypto.randomUUID(), input, source, retryJobId };
+        pending = { key: crypto.randomUUID(), input, source, retryJobId, retryItemId };
         // Retain the same request after a lost response or reload: never create another paid task blindly.
         sessionStorage.setItem(pendingKey, JSON.stringify(pending));
         window.dispatchEvent(new Event(pendingEvent));
@@ -260,7 +330,9 @@ export function useGenerateImage() {
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Idempotency-Key": pending.key },
-                body: JSON.stringify(pending.input),
+                body: JSON.stringify(
+                  pending.retryItemId ? { itemId: pending.retryItemId } : pending.input,
+                ),
               },
             )
           ).json(),
@@ -276,6 +348,9 @@ export function useGenerateImage() {
         throw error;
       }
     },
+    onSettled: () => {
+      locked.current = false;
+    },
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ["wallet"] });
       void client.invalidateQueries({ queryKey: ["wallet-entries"] });
@@ -284,13 +359,27 @@ export function useGenerateImage() {
       void client.invalidateQueries({ queryKey: ["image-latest-edit"] });
     },
   });
+  return {
+    ...mutation,
+    isPending: mutation.isPending || activeRequests > 0,
+    mutate: (...args: Parameters<typeof mutation.mutate>) => {
+      if (locked.current || activeRequests > 0) return;
+      locked.current = true;
+      mutation.mutate(...args);
+    },
+    mutateAsync: (...args: Parameters<typeof mutation.mutateAsync>) => {
+      if (locked.current || activeRequests > 0)
+        return Promise.reject(new Error("正在提交，请稍候"));
+      locked.current = true;
+      return mutation.mutateAsync(...args);
+    },
+  };
 }
-export const assetContentUrl = (id: string, thumbnail = false) =>
-  `/api/v1/image-assets/${id}/content${thumbnail ? "?thumbnail=1" : ""}`;
 /** Triggers the browser download for an owned asset without leaving the page. */
 export function downloadAsset(id: string) {
   const link = document.createElement("a");
-  link.href = assetContentUrl(id);
+  link.href = assetContentUrl(id, false, true);
   link.download = `${id}.png`;
+  link.referrerPolicy = "strict-origin-when-cross-origin";
   link.click();
 }

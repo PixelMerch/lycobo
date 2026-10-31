@@ -119,22 +119,75 @@ body:has(.commerce-home)::-webkit-scrollbar {
   max-width: 360px;
   margin-top: 8px;
 }
+/* Image-led shortcuts reuse the existing draft-only creation entry points. */
 .home-shortcuts {
-  display: flex;
-  justify-content: center;
-  gap: 32px;
-  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
 }
 .home-shortcuts .button {
+  display: flex;
+  justify-content: start;
   gap: 12px;
+  width: 100%;
+  height: 84px;
+  min-width: 0;
+  padding: 10px;
+  border: 0;
+  border-radius: 16px;
+  background: #ffffff06;
+  text-align: left;
   color: var(--foreground);
+}
+.home-shortcuts .button:is(:hover, [data-hovered], [data-focus-visible]) {
+  background: #ffffff0e;
+}
+.home-shortcuts img {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+.home-shortcut-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.home-shortcut-copy strong {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+}
+.home-shortcut-copy small {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-shortcuts .ui-icon {
+  flex: none;
+  margin: 0 0 0 auto;
+  color: var(--muted);
 }
 @media (max-width: 1279px) {
   .commerce-home.page-panel {
     padding-inline: 24px;
   }
+}
+@media (min-width: 768px) and (max-width: 1199px) {
   .home-shortcuts {
-    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-shortcuts img {
+    width: 44px;
+    height: 56px;
+  }
+  .home-shortcuts .ui-icon {
+    display: none;
   }
 }
 @media (max-width: 767px) {
@@ -180,16 +233,16 @@ body:has(.commerce-home)::-webkit-scrollbar {
   justify-content: center;
   gap: 10px;
   margin-bottom: var(--home-intro-gap);
-  font-size: 28px;
-  font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: -0.02em;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0;
 }
 .home-intro-rotation {
   display: grid;
   place-items: center;
   width: 8em;
-  height: 1.5em;
+  height: 42px;
   overflow: hidden;
 }
 .home-intro-phrase {
@@ -204,43 +257,15 @@ body:has(.commerce-home)::-webkit-scrollbar {
   backface-visibility: hidden;
 }
 .home-intro-gradient {
-  color: #baa4ff;
-  background-image: linear-gradient(100deg, var(--home-title-colors));
-  background-size: 250% 100%;
+  color: #e4eaf0;
+  background-image: linear-gradient(110deg, var(--home-title-colors));
+  background-size: 800% 100%;
+  background-position: var(--character-offset, 50%) 50%;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: home-title-gradient 8s ease-in-out infinite alternate;
 }
-.home-intro-phrase[data-palette="aurora"] {
-  --home-title-colors: #67e8f9, #a5b4fc, #f0abfc, #67e8f9;
-}
-.home-intro-phrase[data-palette="sunset"] {
-  --home-title-colors: #fcd34d, #fdba74, #fda4af, #fcd34d;
-}
-.home-intro-phrase[data-palette="ocean"] {
-  --home-title-colors: #6ee7b7, #67e8f9, #93c5fd, #6ee7b7;
-}
-.home-intro-phrase[data-palette="blossom"] {
-  --home-title-colors: #f9a8d4, #d8b4fe, #93c5fd, #f9a8d4;
-}
-.home-intro-phrase[data-palette="citrus"] {
-  --home-title-colors: #bef264, #fde68a, #6ee7b7, #bef264;
-}
-.home-intro:hover .home-intro-gradient {
-  animation-play-state: paused;
-}
-@keyframes home-title-gradient {
-  from {
-    background-position: var(--character-offset, 0%) 50%;
-  }
-  to {
-    background-position: calc(var(--character-offset, 0%) + 100%) 50%;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .home-intro-gradient {
-    animation: none;
-  }
+.home-intro-phrase[data-palette="silver"] {
+  --home-title-colors: #f2f3f5, #d5e1ed, #a6c8e9;
 }
 .home-composer {
   min-height: 212px;
@@ -342,25 +367,6 @@ body:has(.commerce-home)::-webkit-scrollbar {
 }
 .home-submit.button[data-active="true"]:hover {
   background: #ddd;
-}
-.home-shortcuts {
-  margin-top: 28px;
-  gap: 40px;
-}
-.home-shortcuts .button {
-  height: auto;
-  padding: 0 8px;
-  flex-direction: column;
-  gap: 10px;
-  font-size: 13px;
-  font-weight: 400;
-  color: #bdbdbd;
-}
-.home-shortcuts .ui-icon {
-  box-sizing: content-box;
-  padding: 12px;
-  border-radius: 12px;
-  background: linear-gradient(145deg, #3a3a3a, #202020);
 }
 .home-settings.popover {
   width: fit-content;
@@ -547,6 +553,9 @@ body:has(.commerce-home)::-webkit-scrollbar {
     font-size: 22px;
     gap: 4px;
   }
+  .home-intro-rotation {
+    height: 33px;
+  }
   .home-composer-tools {
     flex-wrap: wrap;
     min-height: 44px;
@@ -583,12 +592,25 @@ body:has(.commerce-home)::-webkit-scrollbar {
     padding: 0 0 12px;
   }
   .home-shortcuts {
-    gap: 12px;
-    justify-content: space-between;
+    gap: 10px;
+    margin-top: 20px;
   }
   .home-shortcuts .button {
-    padding: 0;
-    font-size: 12px;
+    height: 72px;
+    padding: 8px;
+    gap: 8px;
+    border-radius: 12px;
+  }
+  .home-shortcuts img {
+    width: 44px;
+    height: 52px;
+    border-radius: 8px;
+  }
+  .home-shortcut-copy strong {
+    font-size: 13px;
+  }
+  .home-shortcuts .ui-icon {
+    display: none;
   }
 }
 

@@ -1,6 +1,6 @@
 # 架构与目录
 
-一个 pnpm workspace 仓库，三个独立应用；前端 CSR 部署 Pages，API 与队列消费者部署 Cloudflare Workers。
+一个 pnpm workspace 仓库，四个独立应用；前端 CSR 部署 Pages，API 与队列消费者部署 Cloudflare Workers。
 代码同仓不表示进程合并或强制一起发布。
 
 | 路径 | 职责 |
@@ -10,15 +10,18 @@
 | apps/web/src/lib | 浏览器 API 客户端与工具 |
 | apps/web/src/styles | 共享设计 tokens 与全局基础样式 |
 | apps/api/src | Hono 入口、应用工厂、配置与组织隔离的生图 feature API |
+| apps/assets/src | 独立私有图片资源 Worker：短期签名、Referer/CORS、WebP 预览／缩略图缓存、原图下载及旧图 Images 补生成 |
 | apps/worker/src | 队列消费者、生命周期与任务执行 |
 | packages/contracts | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖 |
 | packages/db | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY |
-| packages/queue | Cloudflare Queues 消息契约、持久 outbox 投递 |
-| packages/generation | 服务商契约、Vakv 同步生图适配与能力校验（真实渠道待验收） |
-| packages/storage | 私有 R2／UID 路径、Images binding 校验和缩略图；Node 本地存储供隔离测试 |
+| packages/queue | ID-only 消息契约、持久 outbox 投递、开发专用 HTTP sender；线上使用 Cloudflare Queues |
+| packages/generation | 服务商契约、Vakv 同步兼容、可配置 OpenAI／FluxPort 同异步适配与密钥加密（真实渠道待验收） |
+| packages/storage | 私有对象存储接口、统一 S3 配置/寻址、可选历史 R2 回退、UID 路径和 Images 变体；Node 本地存储供隔离测试 |
 | tests/e2e | 浏览器关键路径验收 |
 | docs/design | 当前认可的设计参考 |
 | .agents/skills | 锁定来源的团队技能快照 |
+
+创作导航的后台 Logo 由 features/generation/models/model-logos.tsx 通过 TanStack Query 读取公开元数据；API 的 image-model-logos 返回现有公开模型 id、name、logoUrl、description 与 capabilitySummary，数据库层按目录标识显式映射，不返回供应商配置。
 
 ## 前端功能目录
 
@@ -31,15 +34,17 @@ apps/web/src/
 └── features/
     ├── auth/                     # 身份请求与登录弹窗
     ├── account/                  # Header账户菜单、账户中心、钱包请求和账务展示
-    ├── commerce/                 # AI 电商导航、最近功能入口偏好、家纺套图工作区与本地会话草稿
+    ├── workspace/                # 统一工作区布局、工具分类搜索、历史筛选、跨工具草稿交接
+    ├── commerce/                 # 兼容旧电商入口偏好、家纺主图裂变参数面板、智能裂变语言分析、真实计划确认与生图、本地会话草稿
     ├── home/                     # 首页、共享创作输入与提示辅助
+    │   ├── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，use-inspiration-columns.ts 订阅断点并派生均衡瀑布流
     │   ├── home-intro.tsx         # 首页渐变轮换标题，文案与间隔在 home-intro-config.ts
     │   └── dot-grid/             # React Bits 点阵源码适配，首页参数在 home-dot-grid-config.ts
     ├── assets/                   # 素材页、全屏素材库及其局部样式
     ├── generation/               # 生图请求、事件、会话草稿及工作台页面
     │   ├── composer/             # 比例选择、参数选中背景
     │   ├── models/               # 创作直达入口、整行悬停模型小卡片与下拉选择
-    │   ├── references/           # 参考图上传、选择与缩略图
+    │   ├── references/           # 共享参考图上传、当前／历史上传／生成素材分类搜索与多选引用、缩略图
     │   └── history/              # 历史查询、任务信息、操作和定位
     └── image-workspace/          # 生成图详情、缩略图列表、统一画布与缩放
         └── local-edit/           # 局部修改面板、选区、草稿、提交及状态通知
@@ -47,7 +52,7 @@ apps/web/src/
 
 - 先按业务功能归类，功能内部就近存放组件、hook、样式与单元测试；只有存在明确子职责时再增加目录，不为每个组件建立一层文件夹。
 - 保留描述性文件名和直接导入，不新增 `index.ts` 聚合出口，也不建立覆盖所有功能的 components/hooks/services 分类目录。浏览器端到端测试仍在根目录 `tests/e2e`。
-- `components/feature-navigation.tsx` 组合创作／AI 电商的直达入口、整行悬停与非模态竖向卡片菜单，样式在同目录；各 feature 仅维护模型／功能内容及选择行为。`components/use-hover-menu.ts` 共享账户及模型菜单的悬停、键盘焦点恢复逻辑。
+- 主导航统一使用工作区入口；`features/workspace` 组合参数子路由、随功能切换的历史及工具选择面板；`workspace-tool-symbol.tsx` 共享功能入口与参数标题的图标身份，只使用Tabler矢量图标。旧 `components/feature-navigation.tsx` 保留兼容组件，不再挂载在主导航。`components/use-hover-menu.ts` 共享账户及模型菜单的悬停、键盘焦点恢复逻辑。
 - `app/studio-shell.tsx` 组合导航、登录、账户和生图事件；路由页面留在各 feature。首页、工作台和素材页继续由路由懒加载，`image-workspace/preview-workspace.tsx` 及 Konva 继续按预览需要加载。
 - `generation/generation-client.ts` 维护现有生图、历史和素材 API 查询与缓存，被历史、素材库和编辑工作区直接引用；目录维护不改变 query key 或增加请求层。
 - `generation/studio-state.ts` 保留原有客户端草稿、跨页面交互状态及样例定义，现有引用直接指向它；目录归类不把样例转换成持久服务，也不改变状态生命周期。
@@ -56,7 +61,7 @@ apps/web/src/
 
 ## 依赖方向
 
-web → contracts。api/worker → 服务包 → db/queue/storage/generation。
+web → contracts。api/worker/assets → 服务包 → db/queue/storage/generation。
 contracts 不得反向引用应用或 server-only 包；共享包不得依赖 apps。
 业务 feature 内部用直接导入，不建立覆盖整站的大 barrel。
 当前 packages 使用 TypeScript 源导出：开发通过 Vite/tsx 消费，
@@ -64,6 +69,8 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 这些包 private，不是可直接发布到 npm 的编译 SDK。
 
 ## 进程与服务
+
+本地通过 `docker compose up` 启动本地 PostgreSQL、Redis 与 `studio`（Vite + Wrangler API/消费者/独立图片资源 Worker）；入口为 `scripts/cloudflare/docker-dev.sh` 与 `dev.mjs`。启动环境由 `local-environment.mjs` 固定为本地连接并清除线上凭据。R2/Images 使用本地模拟；本地队列使用 Redis Streams，`redis-dev.mjs` 通过认证桥接调用本地 Worker，生成的 `wrangler.local.json` 不含 Cloudflare Queue 绑定。图片由本地独立资源 Worker（cdn.lycobo.localhost:8791）通过签名 URL 提供，业务 API 不传输图片字节；数据库、模拟状态、Redis 和 Linux 依赖分别保存于 Docker 卷。具体命令见 [本地开发](docs/development.md)。
 
 - API：短请求、身份、授权、参数校验、业务编排。
 - Worker：有持久任务托管的后台工作，绝不能依赖浏览器连接。
@@ -101,7 +108,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 当前UI按[设计定稿](DESIGN.md)维护；组件拆分不得改变外观。公共组件在`apps/web/src/components`，场景功能按职责放在`features/<domain>`，避免在页面内重复实现上传、确认、图片浏览及操作。
 
 - `GenerationHistory`：历史查询、空态、活动任务同步及预览入口。`HistoryImagePreview` 维护跨任务成功图片的稳定快照和分页；`ImagePreviewRail` 封装缩略图选择、高亮及自动定位。
-- `HistoryTaskMeta`：模型、时间、任务编号复制和输出参数。
+- `HistoryTaskMeta`：模型、时间、任务编号复制和输出参数。`components/collapsible-text.tsx` 共用历史提示词与详情创意描述的溢出测量、展开／收起和可访问状态；行数由各场景样式定义。
 - `components/image-zoom-motion`：详情和参考图浏览共用滚轮灵敏度、输入限幅及缓动公式；`usePreviewZoom` 管理详情缩放目标、动画帧和滑块直接操作。
 - `ResultImage`：生成图预览入口、下载和收藏；`generation-status`共用阶段标签和图标。
 - `HistoryIndex`：右侧历史定位、选中滚动与我的素材入口。
@@ -129,3 +136,22 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 ## 发布工具
 
 版本发布由 `.github/workflows/release.yml` 显式触发，`scripts/release-notes.mjs` 生成提交分类、作者／提交人及文件改动清单。版本只发布已通过 main CI 的提交；发布日志与操作边界见 [发布说明](docs/releasing.md)。
+
+模型配置 API：`apps/api/src/features/model-management`；仓库：`packages/db/src/model-management-repository.ts`；异步处理：`apps/worker/src/configured-image-processor.ts`。后台界面在独立 `../lycobo-admin`，通过受限代理调用本仓库平台授权接口；详见 [模型服务](docs/model-services.md)。
+
+2026-10-27：后台身份与模型配置路由已迁至独立 lycobo-admin API，主站不再挂载 model-management 管理路由。Drizzle 迁移仍统一存放本仓库；新增 admin_users、admin_sessions、admin_login_limits、admin_roles、admin_user_roles 无业务 users 外键，旧审计关系保留。当前共享数据库实例及模型配置，不代表物理库分离。
+
+供应商请求协议注册表位于 packages/generation/src/provider-adapters.ts，Gemini 原生响应归一化位于 gemini-protocol.ts，渠道可覆盖中转站默认协议并固定进任务快照；公共执行与下载在 configured-provider.ts，共享错误在 provider-errors.ts。供应商 URL、Key、型号、能力与超时仅由后台渠道提供；API 和 Worker 运行时不再回退 VAKV_* 环境配置。
+
+历史记录整组下载：`apps/web/src/features/generation/history/history-download-button.tsx` 管理原图签名获取、读取取消、打包状态及浏览器下载；`history-download.ts` 选择已完成任务的成功项并按顺序打包ZIP，fflate仅在下载时加载，不改变单张下载与资源授权。
+
+模型渠道的可选 `upstreamModelsByResolution` 配置按 1K／2K／4K 选择上游模型，随任务保存到供应商快照；未配置的分辨率回退到 `upstreamModel`。前端仍提交公共模型与分辨率，不感知供应商模型名。适配器的 `size` 按比例计算：1K 最长边 1024、2K 最长边 2048、4K 最长边 3840，尺寸对齐到 16 像素；4K 正方形为 `3840x3840`。本地家纺裂变的 1K／2K／4K 统一使用 `gpt-image-2.5`；线上配置独立管理。
+
+模型公开目录由 `modelManagementRepository.logos` 按图片类别、启用状态和排序查询，主站各模型入口共用 `useModelPresentation`。模型编码使用有格式限制的动态字符串，渠道与任务快照继续由服务端校验；新增模型未绑定渠道时不可生成，历史供应商别名保留兼容。
+
+共享列表分页在 `components/infinite-load.tsx`，组合 IntersectionObserver 与 HeroUI Spinner；主站分页列表统一复用，业务查询仍由各功能的 TanStack Query hook 管理。提示词有效描述判断在 `features/generation/references/prompt-description.ts`，首页与创作页共用。
+
+智能裂变：`variation-planner.ts` 封装 OpenAI 兼容语言分析；`variation-service.ts` 负责授权后读取缩略图与解密密钥；`variation-repository.ts` 持久化计划和幂等状态。`model_planners` 独立配置语言模型；`generation_jobs.input.variation` 保存确认后的方案快照，Worker 每条方案只请求一张图。
+
+
+主站独立试用路由由 `packages/generation/src/standalone-models.ts` 定义；API/消费者将纯配置注入图片仓储，绕过后台模型目录、路由及语言模型设置读取。前端展示在 `models/model-presentation.ts`，Logo 位于 `apps/web/public/model-logos/`。不会删除后台表或改变鉴权/积分/素材持久化。

@@ -1,5 +1,6 @@
 import { Button } from "@heroui/react";
 import { lazy, Suspense, useRef, useState } from "react";
+import { AssetImage } from "../asset-image";
 import { assetContentUrl } from "../generation-client";
 
 const ImageViewer = lazy(() =>
@@ -27,11 +28,7 @@ export function ReferenceThumbnails({ ids, label }: { ids: string[]; label?: str
           }}
           aria-label={`查看参考图片 ${index + 1}`}
         >
-          <img
-            src={assetContentUrl(id, true)}
-            alt={`参考图片 ${index + 1} 缩略图`}
-            loading="lazy"
-          />
+          <AssetImage assetId={id} thumbnail alt={`参考图片 ${index + 1} 缩略图`} loading="lazy" />
         </Button>
       ))}
       {preview !== null && (
@@ -39,6 +36,7 @@ export function ReferenceThumbnails({ ids, label }: { ids: string[]; label?: str
           <ImageViewer
             images={ids.map((id, index) => ({
               src: assetContentUrl(id),
+              thumbnailSrc: assetContentUrl(id, true),
               alt: `参考图片 ${index + 1}`,
             }))}
             initialIndex={preview}

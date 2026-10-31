@@ -3,16 +3,21 @@ import {
   imageLimits,
   imageModelCatalog,
   imageModelIds,
+  imageOutputDimensions,
   imageProviderModel,
   imageResolutionSchema,
   imageUnitCredits,
   publicImageModel,
 } from "@lycoboai/contracts";
 import { z } from "zod";
+import { imageProviderOrigin } from "./provider-adapters";
+import { ImageProviderError as VakvError } from "./provider-errors";
+
+export { ImageProviderError as VakvError } from "./provider-errors";
 
 export const capabilityOverridesSchema = z.partialRecord(
   z.enum(imageModelIds),
-  z.array(imageResolutionSchema).min(1).max(3),
+  z.array(imageResolutionSchema).min(1).max(4),
 );
 export type CapabilityOverrides = z.infer<typeof capabilityOverridesSchema>;
 export function supportedResolutions(
@@ -33,22 +38,7 @@ export function validateModelInput(
     throw new VakvError("IMAGE_EDITS_NOT_VERIFIED", false);
 }
 export function imageDimensions(ratio: string, resolution: ImageResolution) {
-  const [w, h] = ratio.split(":").map(Number);
-  const edge = { "1K": 1024, "2K": 2048, "4K": 4096 }[resolution];
-  const scale = edge / Math.max(w ?? 1, h ?? 1);
-  return {
-    width: Math.round(((w ?? 1) * scale) / 16) * 16,
-    height: Math.round(((h ?? 1) * scale) / 16) * 16,
-  };
-}
-export class VakvError extends Error {
-  constructor(
-    readonly code: string,
-    readonly unknownOutcome: boolean,
-    readonly requestId?: string | undefined,
-  ) {
-    super(code);
-  }
+  return imageOutputDimensions(ratio, resolution);
 }
 const responseSchema = z.object({
   data: z.array(z.object({ b64_json: z.string().min(1) })).length(1),
@@ -85,7 +75,7 @@ export async function generateVakvImage(
   request: typeof fetch = fetch,
   providerModel = imageProviderModel(input),
 ): Promise<{ bytes: Buffer; requestId?: string | undefined }> {
-  const url = new URL(config.baseUrl);
+  const url = new URL(imageProviderOrigin(config.baseUrl));
   if (url.username || url.password || url.search || url.hash || url.pathname !== "/")
     throw new VakvError("INVALID_PROVIDER_URL", false);
   if (
@@ -128,6 +118,7 @@ export async function generateVakvImage(
       response_format: "b64_json",
       quality: input.quality ?? "medium",
     });
+  const deadline = AbortSignal.timeout(config.timeoutMs);
   const started = performance.now();
   const timing = (stage: string, since: number, extra: { bytes?: number; status?: number } = {}) =>
     reportGenerationTiming(config.onTiming, {
@@ -143,7 +134,7 @@ export async function generateVakvImage(
         method: "POST",
         // Workers does not implement redirect:error. Never follow a provider redirect with credentials.
         redirect: "manual",
-        signal: AbortSignal.timeout(config.timeoutMs),
+        signal: deadline,
         headers: {
           Authorization: `Bearer ${config.key}`,
           "Idempotency-Key": idempotencyKey,
@@ -197,10 +188,14 @@ export async function generateVakvImage(
     timing("provider_complete", started);
     return { bytes, requestId };
   } catch (error) {
-    timing("provider_error", started);
+    timing(deadline.aborted ? "provider_timeout" : "provider_error", started);
     if (error instanceof VakvError) throw error;
     // Transport errors, malformed successful responses and timeouts may already have been billed.
-    throw new VakvError("PROVIDER_OUTCOME_UNKNOWN", true, requestId);
+    throw new VakvError(
+      deadline.aborted ? "PROVIDER_TIMEOUT" : "PROVIDER_OUTCOME_UNKNOWN",
+      true,
+      requestId,
+    );
   }
 }
 

@@ -1,6 +1,8 @@
 import { Button, Slider } from "@heroui/react";
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
-import { assetContentUrl } from "../generation/generation-client";
+import { AssetImage } from "../generation/asset-image";
+import { modelDisplayName } from "../generation/models/model-display-name";
+import { useModelPresentation } from "../generation/models/model-logos";
 import type { PreviewImage, PreviewMeta } from "./image-preview";
 import { ImagePreviewDetails } from "./image-preview-details";
 import { LocalRepairPanel } from "./local-edit/local-repair";
@@ -9,22 +11,8 @@ import { RepairNoticeRegion, useRepairNotice } from "./local-edit/repair-notice"
 import { useLocalRepair } from "./local-edit/use-local-repair";
 import { PreviewCanvasToolbar } from "./preview-canvas-toolbar";
 import { PreviewDotGrid } from "./preview-dot-grid";
-import { usePreviewZoom } from "./use-preview-zoom";
+import { previewDefaultZoom, previewMinZoom, usePreviewZoom } from "./use-preview-zoom";
 import "./preview-workspace.css";
-
-function panLimits(frame: HTMLElement | null, picture: HTMLElement | null, scale: number) {
-  if (!frame || !picture) return { x: 0, y: 0 };
-  return {
-    x: Math.max(0, (picture.offsetWidth * scale - frame.clientWidth) / 2),
-    y: Math.max(0, (picture.offsetHeight * scale - frame.clientHeight) / 2),
-  };
-}
-function clampPan(pan: { x: number; y: number }, limits: { x: number; y: number }) {
-  return {
-    x: Math.min(limits.x, Math.max(-limits.x, pan.x)),
-    y: Math.min(limits.y, Math.max(-limits.y, pan.y)),
-  };
-}
 
 /** One persistent image, viewport and tool dock; only its property panel changes. */
 export default function PreviewWorkspace({
@@ -40,6 +28,7 @@ export default function PreviewWorkspace({
   onRepairChange: (repairing: boolean) => void;
   onPreview: (image: PreviewImage) => void;
 }) {
+  const catalog = useModelPresentation();
   const editor = useLocalRepair(source, meta, repairing ? "rect" : "select");
   const { zoom, setZoom, wheelZoom } = usePreviewZoom();
   /* Task progress is announced in the bottom-right notice instead of the form,
@@ -50,9 +39,6 @@ export default function PreviewWorkspace({
     succeeded: !!editor.result,
   });
   const stage = useRef<HTMLElement>(null);
-  const frame = useRef<HTMLElement>(null);
-  const footer = useRef<HTMLElement>(null);
-  const picture = useRef<HTMLImageElement>(null);
   const dragOrigin = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
@@ -70,17 +56,13 @@ export default function PreviewWorkspace({
   }, []);
 
   useEffect(() => {
-    const limits = panLimits(frame.current, picture.current, zoom / 100);
-    setPan((current) => {
-      const next = clampPan(current, limits);
-      return next.x === current.x && next.y === current.y ? current : next;
-    });
-  }, [zoom]);
-  useEffect(() => {
     const area = stage.current;
     if (!area) return;
     const onWheel = (event: WheelEvent) => {
-      if (event.target instanceof Element && event.target.closest(".preview-canvas-toolbar"))
+      if (
+        event.target instanceof Element &&
+        event.target.closest(".preview-canvas-toolbar, .image-preview-bar")
+      )
         return;
       event.preventDefault();
       wheelZoom(event.deltaY, event.ctrlKey);
@@ -121,8 +103,7 @@ export default function PreviewWorkspace({
   }, []);
   const startPan = (event: ReactPointerEvent<HTMLElement>) => {
     event.currentTarget.focus({ preventScroll: true });
-    if ((repairing && tool !== "hand") || (!zoomed && tool !== "hand") || event.button !== 0)
-      return;
+    if ((repairing && tool !== "hand") || event.button !== 0) return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     dragOrigin.current = { x: event.clientX, y: event.clientY, panX: pan.x, panY: pan.y };
@@ -135,11 +116,7 @@ export default function PreviewWorkspace({
       x: origin.panX + event.clientX - origin.x,
       y: origin.panY + event.clientY - origin.y,
     };
-    setPan(
-      tool === "hand"
-        ? next
-        : clampPan(next, panLimits(frame.current, picture.current, zoom / 100)),
-    );
+    setPan(next);
   };
   const endPan = (event: ReactPointerEvent<HTMLElement>) => {
     if (!dragOrigin.current) return;
@@ -160,7 +137,7 @@ export default function PreviewWorkspace({
     );
   };
   const fit = () => {
-    setZoom(100);
+    setZoom(previewDefaultZoom);
     setPan({ x: 0, y: 0 });
   };
   const size = source.width && source.height ? `${source.width} x ${source.height}` : "尺寸待同步";
@@ -184,8 +161,8 @@ export default function PreviewWorkspace({
           className="image-preview-frame"
           aria-label="图片画布"
           tabIndex={-1}
-          ref={frame}
           data-zoomed={zoomed}
+          data-pannable={!repairing || tool === "hand"}
           data-dragging={dragging}
           data-tool={tool}
           onPointerDown={startPan}
@@ -194,10 +171,9 @@ export default function PreviewWorkspace({
           onPointerCancel={endPan}
           onLostPointerCapture={endPan}
         >
-          <img
-            ref={picture}
+          <AssetImage
             className="image-preview-image"
-            src={assetContentUrl(source.id)}
+            assetId={source.id}
             alt={meta.prompt || "生成图片"}
             draggable={false}
             style={{ scale: `${zoom / 100}`, translate: `${pan.x}px ${pan.y}px` }}
@@ -206,6 +182,11 @@ export default function PreviewWorkspace({
             <RepairCanvas
               width={editor.width}
               height={editor.height}
+              maxFitScale={Math.min(
+                1,
+                editor.image.naturalWidth / editor.width,
+                editor.image.naturalHeight / editor.height,
+              )}
               regions={repairing ? editor.draft.regions : []}
               selected={editor.selected}
               tool={tool}
@@ -218,6 +199,35 @@ export default function PreviewWorkspace({
             />
           )}
         </section>
+        <footer className="image-preview-bar">
+          <span className="image-preview-bar-size">{size}</span>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="preview-fit"
+            aria-label="适应画布"
+            onPress={fit}
+          >
+            适应画布
+          </Button>
+          <Slider
+            className="image-preview-zoom"
+            aria-label="缩放"
+            minValue={previewMinZoom}
+            maxValue={500}
+            step={5}
+            value={zoom}
+            onChange={(value) => setZoom(Number(value))}
+          >
+            <Slider.Track>
+              <Slider.Fill />
+              <Slider.Thumb />
+            </Slider.Track>
+          </Slider>
+          <output className="image-preview-zoom-value" aria-label="画布缩放比例">
+            {Math.round(zoom)}%
+          </output>
+        </footer>
       </section>
       {repairing ? (
         <LocalRepairPanel
@@ -227,38 +237,13 @@ export default function PreviewWorkspace({
           onPreview={onPreview}
         />
       ) : (
-        <ImagePreviewDetails source={source} meta={meta} onRepair={enterRepair} />
+        <ImagePreviewDetails
+          source={source}
+          meta={meta}
+          modelName={modelDisplayName(meta.model, catalog.data?.models ?? [])}
+          onRepair={enterRepair}
+        />
       )}
-      <footer className="image-preview-bar preview-dot-surface" ref={footer}>
-        <PreviewDotGrid stage={footer} />
-        <span className="image-preview-bar-size">{size}</span>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="preview-fit"
-          aria-label="适应画布"
-          onPress={fit}
-        >
-          适应画布
-        </Button>
-        <Slider
-          className="image-preview-zoom"
-          aria-label="缩放"
-          minValue={100}
-          maxValue={500}
-          step={10}
-          value={zoom}
-          onChange={(value) => setZoom(Number(value))}
-        >
-          <Slider.Track>
-            <Slider.Fill />
-            <Slider.Thumb />
-          </Slider.Track>
-        </Slider>
-        <output className="image-preview-zoom-value" aria-label="画布缩放比例">
-          {Math.round(zoom)}%
-        </output>
-      </footer>
       <RepairNoticeRegion />
     </>
   );

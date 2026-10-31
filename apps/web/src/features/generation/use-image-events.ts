@@ -7,7 +7,6 @@ import {
 import { type InfiniteData, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { imageRequest, useImageModels, useImageSession } from "./generation-client";
-import { useImageEventState } from "./image-event-state";
 
 type History = InfiniteData<{ data: ImageJob[] }, string>;
 export function useImageEvents() {
@@ -18,13 +17,10 @@ export function useImageEvents() {
   const organizationId = session.data?.organizationId;
   const enabled = models.data?.eventsEnabled;
   useEffect(() => {
-    const setStatus = useImageEventState.getState().setStatus;
     if (!userId || !organizationId || !session.isSuccess || enabled === undefined) {
-      setStatus("off");
       return;
     }
     if (!enabled || typeof EventSource === "undefined") {
-      setStatus("fallback");
       return;
     }
     let stopped = false;
@@ -32,8 +28,19 @@ export function useImageEvents() {
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
     let watchdog: ReturnType<typeof setTimeout> | undefined;
     let batchTimer: ReturnType<typeof setTimeout> | undefined;
+    let walletTimer: ReturnType<typeof setTimeout> | undefined;
+    const refreshWallet = () => {
+      if (walletTimer) return;
+      walletTimer = setTimeout(() => {
+        walletTimer = undefined;
+        if (stopped) return;
+        void client.invalidateQueries({ queryKey: ["wallet"] });
+        void client.invalidateQueries({ queryKey: ["wallet-entries"] });
+      }, 500);
+    };
     let cursor = "0";
     let failures = 0;
+    let connectedAt: number | undefined;
     let flushing = false;
     let calibration = 0;
     let assetsChanged = false;
@@ -43,6 +50,7 @@ export function useImageEvents() {
       void client.invalidateQueries({ queryKey: ["wallet"] });
       void client.invalidateQueries({ queryKey: ["wallet-entries"] });
       void client.invalidateQueries({ queryKey: ["image-tasks"] });
+      void client.invalidateQueries({ queryKey: ["image-task"] });
       void client.invalidateQueries({ queryKey: ["image-assets"] });
     };
     const flush = async () => {
@@ -55,9 +63,15 @@ export function useImageEvents() {
       const updateAssets = assetsChanged;
       assetsChanged = false;
       let reloadHistory = false;
+      let walletChanged = false;
       let reloadAssets = updateAssets;
       const results = await Promise.allSettled(
         ids.map(async (id) => {
+          const previous =
+            client
+              .getQueriesData<History>({ queryKey: ["image-tasks"] })
+              .flatMap(([, history]) => history?.pages.flatMap((page) => page.data) ?? [])
+              .find((job) => job.id === id) ?? client.getQueryData<ImageJob>(["image-task", id]);
           const job = await client.fetchQuery({
             queryKey: ["image-task", id],
             staleTime: 0,
@@ -72,8 +86,18 @@ export function useImageEvents() {
             return;
           }
           if (taskIds.has(id)) return;
+          // Starting/completing work does not change the prepaid wallet. New attempts
+          // charge once; a newly failed item refunds once. Replayed events do neither.
+          if (
+            !previous ||
+            job.items.some((item) => {
+              const old = previous.items.find((entry) => entry.id === item.id);
+              return !old || (item.status === "failed" && old.status !== "failed");
+            })
+          )
+            walletChanged = true;
           let found = false;
-          client.setQueryData<History>(["image-tasks"], (current) => {
+          client.setQueriesData<History>({ queryKey: ["image-tasks"] }, (current) => {
             if (!current) return current;
             return {
               ...current,
@@ -92,10 +116,7 @@ export function useImageEvents() {
         }),
       );
       if (!stopped) {
-        if (ids.length) {
-          void client.invalidateQueries({ queryKey: ["wallet"] });
-          void client.invalidateQueries({ queryKey: ["wallet-entries"] });
-        }
+        if (walletChanged) refreshWallet();
         if (reloadHistory || results.some((result) => result.status === "rejected"))
           void client.invalidateQueries({ queryKey: ["image-tasks"] });
         if (reloadAssets) void client.invalidateQueries({ queryKey: ["image-assets"] });
@@ -108,11 +129,12 @@ export function useImageEvents() {
       if (!flushing && !batchTimer) batchTimer = setTimeout(() => void flush(), 150);
     };
     const restart = () => {
+      if (connectedAt !== undefined && Date.now() - connectedAt >= 60000) failures = 0;
+      connectedAt = undefined;
       source?.close();
       source = undefined;
       clearTimeout(watchdog);
       if (stopped || reconnectTimer) return;
-      setStatus("fallback");
       reconnectTimer = setTimeout(
         () => {
           reconnectTimer = undefined;
@@ -140,7 +162,6 @@ export function useImageEvents() {
         }
       }
       if (stopped) return;
-      setStatus("connecting");
       const active = new EventSource(`/api/v1/image-events?cursor=${cursor}`);
       source = active;
       const current = () => !stopped && source === active;
@@ -152,8 +173,7 @@ export function useImageEvents() {
           return;
         }
         cursor = parsed.data;
-        failures = 0;
-        setStatus("live");
+        connectedAt = Date.now();
         touch();
         calibrate();
       });
@@ -202,7 +222,7 @@ export function useImageEvents() {
       clearTimeout(reconnectTimer);
       clearTimeout(watchdog);
       clearTimeout(batchTimer);
-      setStatus("off");
+      clearTimeout(walletTimer);
     };
   }, [client, userId, organizationId, enabled, session.isSuccess]);
 }

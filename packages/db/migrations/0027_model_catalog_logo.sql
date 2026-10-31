@@ -1,0 +1,1 @@
+ALTER TABLE "model_catalog" ADD COLUMN "logo_url" text;

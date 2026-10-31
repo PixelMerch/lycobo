@@ -1,22 +1,31 @@
 import { businessCodes } from "@lycoboai/contracts";
 import { openAuthRepository, openImageEventFeed, openImageRepository } from "@lycoboai/db";
-import { readImagePolicy, supportedResolutions, validateModelInput } from "@lycoboai/generation";
-import { dispatchImageOutbox } from "@lycoboai/queue";
+import {
+  readImagePolicy,
+  type StandaloneModelEnvironment,
+  standaloneModels,
+  supportedResolutions,
+  validateModelInput,
+} from "@lycoboai/generation";
+import { dispatchImageOutbox, type ImageQueueSender } from "@lycoboai/queue";
+import { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { r2ImageStore } from "@lycoboai/storage/r2";
+import { imageObjectBucket, type S3Bindings } from "@lycoboai/storage/s3";
 import { createApp } from "../src/app";
 import { enterpriseAuth, readAuthConfig } from "../src/features/auth/service";
 
-export interface ApiBindings {
+export interface ApiBindings extends S3Bindings, StandaloneModelEnvironment {
+  ASSET_SIGNING_SECRET?: string;
+  ASSET_PUBLIC_ORIGIN?: string;
   HYPERDRIVE: Hyperdrive;
   IMAGES_BUCKET: R2Bucket;
   IMAGES: ImagesBinding;
-  GENERATION_QUEUE: Queue<{ version: 1; itemId: string }>;
+  GENERATION_QUEUE: ImageQueueSender;
   APP_ENV?: string;
   AUTH_JWT_SECRET: string;
   AUTH_TRUSTED_ORIGINS: string;
   IMAGE_GENERATION_ENABLED?: string;
-  VAKV_ENABLE_IMAGE_EDITS?: string;
-  VAKV_CAPABILITY_OVERRIDES?: string;
+  MODEL_CREDENTIAL_SECRET?: string;
 }
 function unavailable(code: "AUTH_NOT_CONFIGURED" | "INTERNAL_ERROR") {
   const requestId = crypto.randomUUID();
@@ -32,7 +41,11 @@ function unavailable(code: "AUTH_NOT_CONFIGURED" | "INTERNAL_ERROR") {
   );
 }
 async function dispatch(env: ApiBindings) {
-  const repository = openImageRepository(env.HYPERDRIVE.connectionString, true);
+  const repository = openImageRepository(
+    env.HYPERDRIVE.connectionString,
+    true,
+    await standaloneModels(env),
+  );
   try {
     await dispatchImageOutbox(repository, env.GENERATION_QUEUE);
   } catch {
@@ -91,15 +104,18 @@ async function handleRequest(
     AUTH_TRUSTED_ORIGINS: env.AUTH_TRUSTED_ORIGINS,
   });
   if (!authConfig) return unavailable("AUTH_NOT_CONFIGURED");
-  const repository = openImageRepository(env.HYPERDRIVE.connectionString, true);
+  const bucket = imageObjectBucket(env, env.IMAGES_BUCKET);
+  const repository = openImageRepository(
+    env.HYPERDRIVE.connectionString,
+    true,
+    await standaloneModels(env),
+  );
   const authRepository = openAuthRepository(env.HYPERDRIVE.connectionString, true);
   const auth = enterpriseAuth(authRepository, authConfig);
   const policy = readImagePolicy({
     IMAGE_GENERATION_ENABLED: env.IMAGE_GENERATION_ENABLED,
-    VAKV_ENABLE_IMAGE_EDITS: env.VAKV_ENABLE_IMAGE_EDITS,
-    VAKV_CAPABILITY_OVERRIDES: env.VAKV_CAPABILITY_OVERRIDES,
   });
-  const store = r2ImageStore(env.IMAGES_BUCKET, env.IMAGES, repository.storageUid);
+  const store = r2ImageStore(bucket, env.IMAGES, repository.storageUid);
   let events = openImageEventFeed(env.HYPERDRIVE.connectionString, "unused");
   const close = () =>
     Promise.all([repository.close(), authRepository.close(), events.close()]).then(() => {});
@@ -123,10 +139,20 @@ async function handleRequest(
       () => console.error("API_REQUEST_FAILED"),
       {
         repository,
+        modelSecret: env.MODEL_CREDENTIAL_SECRET,
+        standaloneKey: env.STANDALONE_MODELS === "true" ? env.STANDALONE_IMAGE_API_KEY : undefined,
+        plannerKey: env.STANDALONE_MODELS === "true" ? env.DEEPSEEK_API_KEY : undefined,
         store,
+        signAsset:
+          env.ASSET_PUBLIC_ORIGIN && env.ASSET_SIGNING_SECRET
+            ? assetDeliverySigner(env.ASSET_PUBLIC_ORIGIN, env.ASSET_SIGNING_SECRET, {
+                allowLocalHttp: env.APP_ENV === "development",
+              })
+            : undefined,
         events,
         auth,
         enabled: policy.enabled,
+        managedModelsOnly: true,
         unitCredits: policy.unitCredits,
         editsEnabled: policy.editsEnabled,
         validate: (input) => validateModelInput(input, policy.overrides, policy.editsEnabled),

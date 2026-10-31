@@ -1,5 +1,7 @@
-import { Button, Label, ListBox, Popover, TextArea, TextField } from "@heroui/react";
+import { Button, Label, Popover, TextArea, TextField } from "@heroui/react";
 import { type RefObject, useId, useLayoutEffect, useRef, useState } from "react";
+import { ReferenceMentionOptions } from "../features/generation/references/reference-mention-options";
+import type { ReferenceImage } from "../features/generation/studio-state";
 import "./reference-prompt.css";
 import "./studio-control-feedback.css";
 
@@ -96,10 +98,11 @@ export function ReferencePrompt({
   maxLength = 9000,
   showCount = false,
   autoGrow = false,
+  onReferencesInsert,
 }: {
   value: string;
   onChange: (value: string) => void;
-  references: readonly { id: string; src: string }[];
+  references: readonly { id: string; src: string; name?: string; assetId?: string }[];
   className: string;
   label?: string;
   placeholder: string;
@@ -107,6 +110,7 @@ export function ReferencePrompt({
   maxLength?: number;
   showCount?: boolean;
   autoGrow?: boolean;
+  onReferencesInsert?: (images: ReferenceImage[], prompt: string) => void;
 }) {
   const countId = useId();
   const composing = useRef(false);
@@ -118,7 +122,9 @@ export function ReferencePrompt({
   const parts = Array.from(value.matchAll(/@图片[1-9]\d*|[^@]+|@/g), (match) => match[0]);
   const validReference = (text: string) =>
     /^@图片[1-9]\d*$/.test(text) && Number(text.slice(3)) <= references.length;
-  const hasReferences = parts.some(validReference);
+  const hasReferences = value.includes("@");
+  const mentionAnchor = useRef<HTMLElement | null>(null);
+  const [anchoredMention, setAnchoredMention] = useState<number | null>(null);
   useLayoutEffect(() => {
     const editor = richRef.current;
     if (editor) {
@@ -130,11 +136,35 @@ export function ReferencePrompt({
           const image = references[Number(tokens[index]?.slice(3)) - 1];
           return chip.dataset.reference === tokens[index] && chip.dataset.imageId === image?.id;
         });
-      if (readPrompt(editor) !== value || !sameChips) {
+      let textOffset = 0;
+      const plainMentions: number[] = [];
+      for (const text of parts) {
+        if (text === "@") plainMentions.push(textOffset);
+        textOffset += text.length;
+      }
+      const atSigns = Array.from(editor.querySelectorAll<HTMLElement>(".reference-at"));
+      const sameAtSigns =
+        atSigns.length === plainMentions.length &&
+        atSigns.every(
+          (at, index) =>
+            at.textContent === "@" && Number(at.dataset.mentionStart) === plainMentions[index],
+        );
+      if (readPrompt(editor) !== value || !sameChips || !sameAtSigns) {
         const focused = document.activeElement === editor;
         const cursor = focused ? selectionOffset(editor) : cursorRef.current;
         const fragment = document.createDocumentFragment();
+        let offset = 0;
         for (const text of parts) {
+          const start = offset;
+          offset += text.length;
+          if (text === "@") {
+            const at = document.createElement("span");
+            at.className = "reference-at";
+            at.dataset.mentionStart = String(start);
+            at.textContent = text;
+            fragment.append(at);
+            continue;
+          }
           const image = validReference(text) ? references[Number(text.slice(3)) - 1] : undefined;
           if (!image) {
             fragment.append(document.createTextNode(text));
@@ -180,9 +210,20 @@ export function ReferencePrompt({
   useAutoGrow(richRef, value, autoGrow && hasReferences);
   useAutoGrow(ref, value, autoGrow && !hasReferences);
   const [mention, setMention] = useState<{ start: number; end: number } | null>(null);
+  useLayoutEffect(() => {
+    mentionAnchor.current =
+      mention && value[mention.start] === "@"
+        ? (richRef.current?.querySelector<HTMLElement>(`[data-mention-start="${mention.start}"]`) ??
+          null)
+        : null;
+    setAnchoredMention(mentionAnchor.current && mention ? mention.start : null);
+  }, [mention, value]);
   function detect(text: string, cursor: number) {
     cursorRef.current = cursor;
-    if (text[cursor - 1] === "@") setMention({ start: cursor - 1, end: cursor });
+    if (text[cursor - 1] === "@") {
+      focusPending.current = true;
+      setMention({ start: cursor - 1, end: cursor });
+    }
   }
   function handleRichInput() {
     const editor = richRef.current;
@@ -209,20 +250,47 @@ export function ReferencePrompt({
       }
     });
   }
-  function insert(id: string) {
-    const index = references.findIndex((image) => image.id === id);
-    if (!mention || index < 0 || value[mention.start] !== "@") return;
-    const text = `@图片${index + 1} `;
+  const usedIds = new Set(
+    parts.filter(validReference).flatMap((token) => {
+      const image = references[Number(token.slice(3)) - 1];
+      return image ? [image.id, ...(image.assetId ? [image.assetId] : [])] : [];
+    }),
+  );
+  function insert(images: ReferenceImage[]) {
+    if (!mention || value[mention.start] !== "@") return;
+    const nextReferences = [...references];
+    const added: ReferenceImage[] = [];
+    const inserted = new Set(usedIds);
+    const tokens: string[] = [];
+    for (const image of images) {
+      if (inserted.has(image.id) || (image.assetId && inserted.has(image.assetId))) continue;
+      let index = nextReferences.findIndex(
+        (reference) =>
+          reference.id === image.id || (image.assetId && reference.assetId === image.assetId),
+      );
+      if (index < 0) {
+        if (!onReferencesInsert || nextReferences.length >= 5) continue;
+        index = nextReferences.length;
+        nextReferences.push(image);
+        added.push(image);
+      }
+      inserted.add(image.id);
+      if (image.assetId) inserted.add(image.assetId);
+      tokens.push(`@图片${index + 1}`);
+    }
+    if (!tokens.length) return;
+    const text = `${tokens.join(" ")} `;
     const next = value.slice(0, mention.start) + text + value.slice(mention.end);
     if (next.length > maxLength) return;
     cursorRef.current = mention.start + text.length;
     focusPending.current = true;
-    onChange(next);
+    if (added.length) onReferencesInsert?.(added, next);
+    else onChange(next);
     setMention(null);
   }
   return (
     <>
-      <TextField className={className} aria-label={label ?? "创作需求"}>
+      <TextField className={className} {...(label ? {} : { "aria-label": "创作需求" })}>
         {label && <Label>{label}</Label>}
         <div
           className="prompt-editor"
@@ -299,7 +367,7 @@ export function ReferencePrompt({
           ) : (
             <TextArea
               ref={ref}
-              aria-label={label ?? "创作需求"}
+              aria-label={label ? undefined : "创作需求"}
               aria-describedby={showCount ? countId : undefined}
               value={value}
               onChange={(event) => {
@@ -342,34 +410,26 @@ export function ReferencePrompt({
         </div>
       </TextField>
       <Popover
-        isOpen={mention !== null}
+        isOpen={mention !== null && anchoredMention === mention.start}
         onOpenChange={(open) => {
           if (!open) setMention(null);
         }}
       >
         <Popover.Content
-          triggerRef={hasReferences ? richRef : ref}
+          triggerRef={mentionAnchor}
           placement="bottom start"
-          offset={4}
+          shouldFlip={false}
+          offset={8}
           className="reference-mention-popover"
         >
-          <Popover.Dialog aria-label="引用已上传图片">
-            <Popover.Heading>图片</Popover.Heading>
-            {references.length ? (
-              <ListBox
-                aria-label="已上传图片"
-                autoFocus="first"
-                onAction={(key) => insert(String(key))}
-              >
-                {references.map((image, index) => (
-                  <ListBox.Item key={image.id} id={image.id} textValue={`图片${index + 1}`}>
-                    <img src={image.src} alt="" />
-                    <span>图片{index + 1}</span>
-                  </ListBox.Item>
-                ))}
-              </ListBox>
-            ) : (
-              <p className="reference-mention-empty">请先上传参考图片</p>
+          <Popover.Dialog aria-label="引用图片">
+            {mention && (
+              <ReferenceMentionOptions
+                references={references}
+                usedIds={usedIds}
+                onSelect={insert}
+                allowHistory={Boolean(onReferencesInsert)}
+              />
             )}
           </Popover.Dialog>
         </Popover.Content>

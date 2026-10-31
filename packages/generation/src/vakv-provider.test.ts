@@ -11,24 +11,25 @@ const input = imageGenerationInputSchema.parse({ model: "gpt-image-2", prompt: "
 const config = { key: "test-not-a-secret", baseUrl: "https://api.vakv.cn", timeoutMs: 1000 };
 describe("Vakv adapter and capability evidence", () => {
   it("allows all resolutions through public-model routing", () => {
-    expect(supportedResolutions("gpt-image-2")).toEqual(["1K", "2K", "4K"]);
-    expect(supportedResolutions("gpt-image-2-4K")).toEqual(["1K", "2K", "4K"]);
+    expect(supportedResolutions("gpt-image-2")).toEqual(["1K", "1.5K", "2K", "4K"]);
+    expect(supportedResolutions("gpt-image-2-4K")).toEqual(["1K", "1.5K", "2K", "4K"]);
     expect(() => validateModelInput({ ...input, resolution: "4K" })).not.toThrow();
     for (const model of [
       "gpt-image-2.5",
       "gpt-image-2.5-flare",
       "gpt-image-2.5-sunburst",
     ] as const) {
-      expect(supportedResolutions(model)).toEqual(["1K", "2K", "4K"]);
+      expect(supportedResolutions(model)).toEqual(["1K", "1.5K", "2K", "4K"]);
       expect(() => validateModelInput({ ...input, model })).not.toThrow();
       for (const resolution of ["2K", "4K"] as const)
         expect(() => validateModelInput({ ...input, model, resolution })).not.toThrow();
     }
     expect(
       supportedResolutions("gpt-image-2.5-sunburst", { "gpt-image-2.5-sunburst": ["1K"] }),
-    ).toEqual(["1K", "2K", "4K"]);
+    ).toEqual(["1K", "1.5K", "2K", "4K"]);
     expect(supportedResolutions("gpt-image-2", { "gpt-image-2": ["4K"] })).toEqual([
       "1K",
+      "1.5K",
       "2K",
       "4K",
     ]);
@@ -119,7 +120,7 @@ describe("Vakv adapter and capability evidence", () => {
     );
     await expect(
       generateVakvImage(input, [], { ...config, timeoutMs: 20 }, "id", request),
-    ).rejects.toMatchObject({ code: "PROVIDER_OUTCOME_UNKNOWN", unknownOutcome: true });
+    ).rejects.toMatchObject({ code: "PROVIDER_TIMEOUT", unknownOutcome: true });
     expect(request).toHaveBeenCalledTimes(1);
   });
   it("blocks non-HTTPS provider origins outside isolated fixtures", async () => {
@@ -153,7 +154,7 @@ it.each([
       provider,
     );
   }
-  expect(readImagePolicy({ IMAGE_CREDITS_PER_IMAGE: "1" }).unitCredits).toBe(20);
+  expect(readImagePolicy({ IMAGE_CREDITS_PER_IMAGE: "1" }).unitCredits).toBe(2);
 });
 
 it("separates response-header wait from response-body download without logging payloads", async () => {
@@ -258,4 +259,30 @@ it("rejects provider redirects without forwarding credentials or resubmitting", 
   ).rejects.toMatchObject({ code: "PROVIDER_HTTP_307", unknownOutcome: true });
   expect(request).toHaveBeenCalledTimes(1);
   expect(request.mock.calls[0]?.[1]?.redirect).toBe("manual");
+});
+
+it("keeps a timed-out response body unresolved without retrying the paid request", async () => {
+  const request = vi.fn<typeof fetch>().mockImplementation(
+    async (_url, options) =>
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            options?.signal?.addEventListener(
+              "abort",
+              () => controller.error(new Error("body timeout")),
+              { once: true },
+            );
+          },
+        }),
+        { headers: { "x-request-id": "body-timeout-fixture" } },
+      ),
+  );
+  await expect(
+    generateVakvImage(input, [], { ...config, timeoutMs: 20 }, "id", request),
+  ).rejects.toMatchObject({
+    code: "PROVIDER_TIMEOUT",
+    unknownOutcome: true,
+    requestId: "body-timeout-fixture",
+  });
+  expect(request).toHaveBeenCalledTimes(1);
 });

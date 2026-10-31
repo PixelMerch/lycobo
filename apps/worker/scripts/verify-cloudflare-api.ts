@@ -7,10 +7,13 @@ import { fileURLToPath } from "node:url";
 import {
   enterpriseLoginResponseSchema,
   imageJobSchema,
+  imageUnitCredits,
   unwrapApiData,
+  variationPlanSchema,
   walletBalanceSchema,
 } from "@lycoboai/contracts";
 import { openAuthRepository, openImageRepository } from "@lycoboai/db";
+import { sealProviderKey } from "@lycoboai/generation";
 import { convertV4MiniflareOptions, Miniflare } from "miniflare";
 import postgres from "postgres";
 import { z } from "zod";
@@ -44,7 +47,7 @@ export async function verifyCloudflareApi() {
       stdio: "pipe",
     });
     assert.equal(migrated.status, 0, "Isolated Workers migration failed");
-    for (const service of ["api", "worker"]) {
+    for (const service of ["api", "worker", "assets"]) {
       const built = spawnSync(
         "pnpm",
         [
@@ -68,6 +71,38 @@ export async function verifyCloudflareApi() {
       "隔离测试工作空间",
       200,
     );
+    const modelSecret = Buffer.alloc(32, 9).toString("base64");
+    const configuredProvider = await images.models.saveProvider(
+      principal.userId,
+      undefined,
+      {
+        name: "Native fixture",
+        origin: "https://provider-fixture.example",
+        adapter: "openai-images",
+        enabled: true,
+      },
+      await sealProviderKey("fixture-provider-key", modelSecret),
+    );
+    await db`insert into model_planners(tool,provider_id,origin,protocol,upstream_model,enabled) values('smart-variation',${configuredProvider.id},'https://provider-fixture.example','anthropic-messages','claude-sonnet-5',1)`;
+    const channel = await images.models.saveChannel(principal.userId, undefined, {
+      name: "Native channel",
+      providerId: configuredProvider.id,
+      model: "gpt-image-2",
+      upstreamModel: "gpt-image-2",
+      mode: "sync",
+      enabled: true,
+      editsEnabled: true,
+      resolutions: ["1K"],
+      maxReferences: 6,
+      timeoutMs: 10000,
+      taskTimeoutSeconds: 600,
+      downloadOrigins: [],
+    });
+    await images.models.saveRoute(principal.userId, {
+      tool: "create",
+      model: "gpt-image-2",
+      channelId: channel.id,
+    });
     const password = `fixture-${crypto.randomUUID()}`;
     await auth.setCredential(
       "native-fixture",
@@ -78,6 +113,7 @@ export async function verifyCloudflareApi() {
     const origin = "https://localhost";
     const fixturePng =
       "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADklEQVQImWP4DwYMEAoAU7oL9W/sIDEAAAAASUVORK5CYII=";
+    const assetSecret = crypto.randomUUID() + crypto.randomUUID();
     runtime = new Miniflare(
       convertV4MiniflareOptions({
         workers: [
@@ -92,11 +128,15 @@ export async function verifyCloudflareApi() {
             images: { binding: "IMAGES" },
             queueProducers: { GENERATION_QUEUE: "native-generation" },
             bindings: {
+              MODEL_CREDENTIAL_SECRET: modelSecret,
               AUTH_JWT_SECRET: crypto.randomUUID() + crypto.randomUUID(),
               AUTH_TRUSTED_ORIGINS: origin,
+              ASSET_SIGNING_SECRET: assetSecret,
+              ASSET_PUBLIC_ORIGIN: "https://assets-fixture.example",
               IMAGE_GENERATION_ENABLED: "true",
               VAKV_ENABLE_IMAGE_EDITS: "false",
             },
+            outboundService: { name: "provider" },
           },
           {
             name: "consumer",
@@ -113,17 +153,23 @@ export async function verifyCloudflareApi() {
             },
             bindings: {
               IMAGE_GENERATION_ENABLED: "true",
-              VAKV_API_KEY: "fixture-provider-key",
-              VAKV_BASE_URL: "https://provider-fixture.example",
-              GENERATION_TIMEOUT_MS: "10000",
+              MODEL_CREDENTIAL_SECRET: modelSecret,
             },
             outboundService: { name: "provider" },
+          },
+          {
+            name: "assets",
+            modules: true,
+            compatibilityDate: "2026-10-23",
+            script: await readFile(path.join(directory, "assets/index.js"), "utf8"),
+            r2Buckets: { IMAGES_BUCKET: "native-images" },
+            bindings: { ASSET_SIGNING_SECRET: assetSecret, ASSET_ALLOWED_ORIGINS: origin },
           },
           {
             name: "provider",
             modules: true,
             compatibilityDate: "2026-10-23",
-            script: `let calls=0;export default {async fetch(request){if(new URL(request.url).pathname==='/count')return Response.json({calls});calls++;return Response.json({data:[{b64_json:${JSON.stringify(fixturePng)}}]},{headers:{'x-request-id':'native-fixture'}})}}`,
+            script: `let calls=0;export default {async fetch(request){if(new URL(request.url).pathname==='/count')return Response.json({calls});if(new URL(request.url).pathname==='/v1/messages'){const body=await request.json();if(request.headers.get('x-api-key')!=='fixture-provider-key'||body.model!=='claude-sonnet-5'||!body.messages[0].content.some(p=>p.type==='image'&&p.source?.type==='base64'))return new Response(null,{status:400});return Response.json({stop_reason:'end_turn',content:[{type:'text',text:JSON.stringify({items:[{title:'原生视觉计划',prompt:'保留参考图片的商品身份，调整为自然光电商摄影。'}]})}]});}calls++;return Response.json({data:[{b64_json:${JSON.stringify(fixturePng)}}]},{headers:{'x-request-id':'native-fixture'}})}}`,
           },
         ],
       }),
@@ -135,6 +181,7 @@ export async function verifyCloudflareApi() {
       init: { method?: string; headers?: Record<string, string>; body?: string | Uint8Array } = {},
     ) {
       const response = await worker.fetch(`${origin}/api/v1${endpoint}`, {
+        redirect: "manual",
         ...init,
         headers: {
           Origin: origin,
@@ -172,9 +219,51 @@ export async function verifyCloudflareApi() {
     assert.equal(uploaded.status, 201);
     const assetBody = z.object({ id: z.uuid() }).parse(unwrapApiData(await uploaded.json()));
     const assetId = assetBody.id;
+    const locations = await images.assetLocations(principal, [assetId]);
+    assert.equal(locations.length, 1);
+    assert.ok(locations[0]?.objectKey.endsWith(`/${assetId}.png`));
+    assert.deepEqual(
+      await images.assetLocations({ ...principal, organizationId: crypto.randomUUID() }, [assetId]),
+      [],
+    );
     const thumbnail = await request(`/image-assets/${assetId}/content?thumbnail=1`);
-    assert.equal(thumbnail.status, 200);
-    assert.ok((await thumbnail.arrayBuffer()).byteLength);
+    assert.equal(thumbnail.status, 302);
+    const resourceUrl = thumbnail.headers.get("Location");
+    assert.ok(resourceUrl);
+    assert.ok(resourceUrl.startsWith("https://assets-fixture.example/"));
+    const assetWorker = await runtime.getWorker("assets");
+    const imageResponse = await assetWorker.fetch(resourceUrl, {
+      headers: { Origin: origin, Referer: `${origin}/create` },
+    });
+    assert.equal(imageResponse.status, 200);
+    assert.ok((await imageResponse.arrayBuffer()).byteLength);
+    const assetList = unwrapApiData(await (await request("/image-assets")).json());
+    const signed = z
+      .object({ data: z.array(z.object({ delivery: z.object({ url: z.url() }) })) })
+      .parse(assetList);
+    assert.equal(signed.data.length, 1);
+    assert.ok(signed.data[0]?.delivery.url.startsWith("https://assets-fixture.example/"));
+    const analysis = await request("/variation-plans", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() },
+      body: JSON.stringify({
+        description: "生成一个自然光商品摄影方案",
+        referenceAssetIds: [assetId],
+      }),
+    });
+    assert.equal(analysis.status, 200);
+    const plan = variationPlanSchema.parse(unwrapApiData(await analysis.json()));
+    assert.equal(
+      plan.status,
+      "ready",
+      "Workers must send native planner request rather than fail before network",
+    );
+    assert.equal(plan.items.length, 1);
+    assert.equal(
+      (await images.wallet(principal)).balance,
+      200,
+      "Planning must not debit image credits",
+    );
     const stream = await request("/image-events");
     assert.equal(stream.status, 200);
     const reader = stream.body?.getReader();
@@ -235,7 +324,7 @@ export async function verifyCloudflareApi() {
     const wallet = walletBalanceSchema.parse(
       unwrapApiData(await (await request("/wallet")).json()),
     );
-    assert.equal(wallet.balance, 180);
+    assert.equal(wallet.balance, 200 - imageUnitCredits);
     assert.equal((await request("/auth/refresh", { method: "POST" })).status, 200);
     assert.equal((await request("/auth/logout", { method: "POST" })).status, 200);
     assert.equal((await request("/auth/session")).status, 401);

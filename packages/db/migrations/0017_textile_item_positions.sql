@@ -1,0 +1,2 @@
+ALTER TABLE "generation_job_items" DROP CONSTRAINT "generation_job_items_position_check";--> statement-breakpoint
+ALTER TABLE "generation_job_items" ADD CONSTRAINT "generation_job_items_position_check" CHECK ("generation_job_items"."position" between 0 and 9 and "generation_job_items"."attempts" >= 0);

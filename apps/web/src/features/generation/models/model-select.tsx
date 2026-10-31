@@ -1,5 +1,6 @@
 import { Label, ListBox, Select } from "@heroui/react";
-import { isModelId, type ModelId, models } from "../studio-state";
+import { isModelId, type ModelId } from "../studio-state";
+import { ModelLogo, useModelPresentation } from "./model-logos";
 export function ModelSelect({
   value,
   onChange,
@@ -7,18 +8,9 @@ export function ModelSelect({
   value: string;
   onChange: (model: ModelId) => void;
 }) {
-  // Imported here keeps model choice identical wherever it is presented.
-  const selected = models.find((m) => m.id === value) ?? models[0];
-  return <ModelSelectControl value={selected.id} onChange={onChange} />;
-}
-
-function ModelSelectControl({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (model: ModelId) => void;
-}) {
+  const catalog = useModelPresentation();
+  const models = catalog.data?.models ?? [];
+  const selectedModel = models.find((model) => model.id === value);
   return (
     <Select
       className="model-field"
@@ -30,7 +22,12 @@ function ModelSelectControl({
     >
       <Label className="model-field-label">模型</Label>
       <Select.Trigger className="model-select">
-        <Select.Value>{models.find((model) => model.id === value)?.name}</Select.Value>
+        <Select.Value>
+          <span className="model-selector-name">
+            <ModelLogo src={selectedModel?.logoUrl} size="compact" />
+            <span>{selectedModel?.name}</span>
+          </span>
+        </Select.Value>
         <Select.Indicator />
       </Select.Trigger>
       <Select.Popover className="model-menu" placement="bottom start">
@@ -40,9 +37,12 @@ function ModelSelectControl({
               className="model-options"
               key={model.id}
               id={model.id}
-              textValue={model.name}
+              textValue={model.name ?? model.id}
             >
-              <span>{model.name}</span>
+              <span className="model-selector-name">
+                <ModelLogo src={model.logoUrl} size="compact" />
+                <span>{model.name ?? model.id}</span>
+              </span>
             </ListBox.Item>
           ))}
         </ListBox>

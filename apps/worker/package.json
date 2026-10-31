@@ -4,7 +4,7 @@
   "type": "module",
   "name": "@lycoboai/worker",
   "scripts": {
-    "dev": "wrangler dev --port 8789 --persist-to ../../.wrangler/state --test-scheduled",
+    "dev": "wrangler dev --config wrangler.local.json --port 8789 --persist-to ../../.wrangler/state --test-scheduled",
     "build": "wrangler deploy --dry-run --outdir dist",
     "typecheck": "tsc --noEmit",
     "test:integration": "node --env-file-if-exists=../../.env --import tsx scripts/check-integration.ts",

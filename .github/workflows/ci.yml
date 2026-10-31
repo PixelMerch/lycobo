@@ -5,6 +5,12 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
+    inputs:
+      browser_grep:
+        description: "Optional browser test name filter for manual diagnosis; push/PR checks always run the complete suite"
+        required: false
+        default: ""
+        type: string
 permissions:
   contents: read
 concurrency:
@@ -29,11 +35,19 @@ jobs:
       - run: git diff --exit-code
   browser:
     # Metadata-only edits must neither cancel CI nor overwrite required check results.
-    name: ${{ github.event.action == 'edited' && !github.event.changes.base && 'Browser metadata only' || 'Browser' }}
+    name: ${{ github.event.action == 'edited' && !github.event.changes.base && format('Browser shard {0} metadata only', matrix.shard) || format('Browser shard {0}/2', matrix.shard) }}
     if: github.event.action != 'edited' || github.event.changes.base
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble@sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f
+      options: --ipc=host
+    timeout-minutes: 40
     env:
+      BROWSER_GREP: ${{ github.event_name == 'workflow_dispatch' && inputs.browser_grep || '' }}
       FULL_E2E: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.base_ref == 'main' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -44,13 +58,28 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: cp .env.example .env
-      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm exec playwright --version
       - name: Full browser regression for branch pushes and releases
         if: env.FULL_E2E == 'true'
-        run: pnpm test:e2e
+        run: |
+          if [ -n "$BROWSER_GREP" ]; then
+            pnpm test:e2e --shard=${{ matrix.shard }}/2 --grep "$BROWSER_GREP" --pass-with-no-tests
+          else
+            pnpm test:e2e --shard=${{ matrix.shard }}/2
+          fi
       - name: Core browser smoke tests for development
         if: env.FULL_E2E != 'true'
-        run: pnpm test:e2e:smoke
+        run: pnpm test:e2e:smoke --shard=${{ matrix.shard }}/2
+  browser-result:
+    name: ${{ github.event.action == 'edited' && !github.event.changes.base && 'Browser metadata only' || 'Browser' }}
+    needs: browser
+    if: always() && (github.event.action != 'edited' || github.event.changes.base)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require both complete browser shards
+        env:
+          BROWSER_RESULT: ${{ needs.browser.result }}
+        run: test "$BROWSER_RESULT" = success
   infrastructure:
     # Metadata-only edits must neither cancel CI nor overwrite required check results.
     name: ${{ github.event.action == 'edited' && !github.event.changes.base && 'Infrastructure metadata only' || 'Infrastructure' }}
@@ -68,6 +97,12 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U lycoboai -d lycoboai"
           --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7.4-alpine
+        ports: ["56379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
     env:
       DATABASE_URL: postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai
       ALLOW_LOCAL_INTEGRATION: "true"
@@ -83,3 +118,4 @@ jobs:
       - run: git diff --exit-code -- packages/db
       - run: pnpm db:migrate
       - run: pnpm test:integration
+      - run: pnpm test:redis
