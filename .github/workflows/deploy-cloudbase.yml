@@ -83,7 +83,7 @@ jobs:
         run: |
           test "$DEPLOY_SHA" = "$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq .object.sha)"
           cd "$RUNNER_TEMP/lycobo-cloudbase-web"
-          tcb hosting deploy . / --env-id "$CLOUDBASE_ENV_ID" --ignore cloudbaserc.json --safe --verify --json
+          tcb hosting deploy . --env-id "$CLOUDBASE_ENV_ID" --ignore cloudbaserc.json --safe --verify --json
       - name: Remove temporary deployment login
         if: always()
         run: |
