@@ -90,15 +90,17 @@
   color: #fff;
 }
 .confirm-dialog__confirm.button {
-  background: #0485f7;
-  color: #fff;
+  background: var(--app-primary-gradient);
+  color: var(--accent-foreground);
 }
 .confirm-dialog__confirm.button:is(:hover, [data-hovered="true"]) {
-  background: #0373d8;
-  color: #fff;
+  background: var(--app-primary-gradient);
+  color: var(--accent-foreground);
+  filter: brightness(1.04);
 }
 .confirm-dialog[data-tone="danger"] .confirm-dialog__confirm.button {
   background: #b42318;
+  color: #fff;
 }
 .confirm-dialog[data-tone="danger"]
   .confirm-dialog__confirm.button:is(:hover, [data-hovered="true"]) {

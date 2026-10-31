@@ -1,6 +1,6 @@
 import { Label, ListBox, Select } from "@heroui/react";
 import { isModelId, type ModelId } from "../studio-state";
-import { useModelPresentation } from "./model-logos";
+import { ModelLogo, useModelPresentation } from "./model-logos";
 export function ModelSelect({
   value,
   onChange,
@@ -10,6 +10,7 @@ export function ModelSelect({
 }) {
   const catalog = useModelPresentation();
   const models = catalog.data?.models ?? [];
+  const selectedModel = models.find((model) => model.id === value);
   return (
     <Select
       className="model-field"
@@ -21,7 +22,12 @@ export function ModelSelect({
     >
       <Label className="model-field-label">模型</Label>
       <Select.Trigger className="model-select">
-        <Select.Value>{models.find((model) => model.id === value)?.name}</Select.Value>
+        <Select.Value>
+          <span className="model-selector-name">
+            <ModelLogo src={selectedModel?.logoUrl} size="compact" />
+            <span>{selectedModel?.name}</span>
+          </span>
+        </Select.Value>
         <Select.Indicator />
       </Select.Trigger>
       <Select.Popover className="model-menu" placement="bottom start">
@@ -33,7 +39,10 @@ export function ModelSelect({
               id={model.id}
               textValue={model.name ?? model.id}
             >
-              <span>{model.name ?? model.id}</span>
+              <span className="model-selector-name">
+                <ModelLogo src={model.logoUrl} size="compact" />
+                <span>{model.name ?? model.id}</span>
+              </span>
             </ListBox.Item>
           ))}
         </ListBox>

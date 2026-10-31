@@ -56,7 +56,7 @@ try {
     {
       info: bindings.IMAGES.info.bind(bindings.IMAGES),
       input(source) {
-        if (++transforms === 2) throw new Error("FIXTURE_THUMBNAIL_FAILURE");
+        if (++transforms === 1) throw new Error("FIXTURE_THUMBNAIL_FAILURE");
         return bindings.IMAGES.input(source);
       },
     },

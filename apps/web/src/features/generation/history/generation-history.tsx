@@ -1,12 +1,15 @@
-import { Button, EmptyState } from "@heroui/react";
+import { EmptyState } from "@heroui/react";
 import { textileViews } from "@lycoboai/contracts";
-import { IconPhoto } from "@tabler/icons-react";
+import { IconPhotoPlus } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
+import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
 import { useErrorToast } from "../../../lib/error-toast";
 import type { PreviewImage } from "../../image-workspace/image-preview";
 import { useImageHistory, useImageSession } from "../generation-client";
 import { GenerationLoading, statusLabel } from "../generation-status";
+import { modelDisplayName } from "../models/model-display-name";
+import { useModelPresentation } from "../models/model-logos";
 import { useStudioStore } from "../studio-state";
 import { HistoryImagePreview, historyPreviewImages } from "./history-image-preview";
 import { historyContentTop } from "./history-navigation";
@@ -21,14 +24,23 @@ export function GenerationHistory({
   onRestore,
 }: {
   compact?: boolean;
-  tool?: "create" | "textile";
+  tool?: "create" | "textile" | "variation" | "all" | null;
   onRestore?: import("./history-task-tools").HistoryRestore;
 }) {
   const session = useImageSession();
   const query = useImageHistory(tool);
-  const target = useHistoryTaskTarget(compact);
+  const catalog = useModelPresentation();
+  const target = useHistoryTaskTarget(compact || tool === null);
   const targetJob =
-    target && (tool === "textile") === !!target.input?.textileSet ? target : undefined;
+    target &&
+    (tool === "all" ||
+      (tool === "variation"
+        ? !!target.input?.variation
+        : tool === "textile"
+          ? !!target.input?.textileSet
+          : !target.input?.textileSet && !target.input?.variation))
+      ? target
+      : undefined;
   const loadedJobs = query.data?.pages.flatMap((page) => page.data) ?? [];
   const jobs =
     targetJob && !loadedJobs.some((job) => job.id === targetJob.id)
@@ -91,20 +103,18 @@ export function GenerationHistory({
   }, [compact, jobIds, setActiveHistoryId]);
   if (session.isError && /请先登录|登录已过期|重新登录/.test(session.error?.message ?? ""))
     return (
-      <EmptyState className="empty-state">
-        <UiIcon icon={IconPhoto} size="illustration" />
-        <h2>登录后查看生成记录</h2>
-        <p>登录账号后，生成结果会保存在这里。</p>
+      <EmptyState className="empty-state generation-empty-state">
+        <UiIcon icon={IconPhotoPlus} size="illustration" />
+        <p>登录后查看生成记录</p>
       </EmptyState>
     );
   if (session.isError || query.isError) return null;
-  if (session.isPending || query.isPending) return null;
+  if (session.isPending || (tool !== null && query.isPending)) return null;
   if (!jobs.length)
     return (
-      <EmptyState className="empty-state">
-        <UiIcon icon={IconPhoto} size="illustration" />
-        <h2>{compact ? "暂无任务" : "还没有生成记录"}</h2>
-        <p>提交后的生成任务会保存在这里。</p>
+      <EmptyState className="empty-state generation-empty-state">
+        <UiIcon icon={IconPhotoPlus} size="illustration" />
+        <p>{compact ? "暂无任务" : "生成的图片会显示在这里"}</p>
       </EmptyState>
     );
   return (
@@ -119,7 +129,10 @@ export function GenerationHistory({
             data-active={!compact && activeHistoryId === job.id ? "true" : undefined}
           >
             <header>
-              <HistoryTaskMeta job={job} />
+              <HistoryTaskMeta
+                job={job}
+                modelName={modelDisplayName(job.model, catalog.data?.models ?? [])}
+              />
               {!compact && <HistoryTaskActions job={job} onRestore={onRestore} />}
             </header>
             {compact ? (
@@ -147,6 +160,11 @@ export function GenerationHistory({
                         : undefined
                     }
                   >
+                    {job.input?.variation && (
+                      <p className="textile-result-view">
+                        {job.input.variation.items[item.position]?.title}
+                      </p>
+                    )}
                     {job.input?.textileSet && (
                       <p className="textile-result-view">
                         {
@@ -191,7 +209,7 @@ export function GenerationHistory({
                             {item.status === "failed"
                               ? "任务未能完成，积分已退回，请您稍后重试。"
                               : item.error_code === "PROVIDER_TIMEOUT"
-                                ? "生成超时，结果和积分状态正在确认，请稍后查看。"
+                                ? "生成超时，请重新生成。将先查询并恢复已有结果。"
                                 : "生成结果和积分状态正在确认，请稍后查看。"}
                           </p>
                         )}
@@ -206,19 +224,14 @@ export function GenerationHistory({
             )}
           </article>
         ))}
-        {query.hasNextPage && (
-          <Button
-            variant="secondary"
-            isDisabled={query.isFetchingNextPage}
-            onPress={() => {
-              void query.fetchNextPage();
-            }}
-          >
-            加载更多记录
-          </Button>
-        )}
+        <InfiniteLoad
+          hasMore={query.hasNextPage}
+          isLoading={query.isFetchingNextPage}
+          isError={query.isError}
+          onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
+        />
       </div>
-      {preview && (
+      {preview && tool !== null && (
         <HistoryImagePreview
           images={preview.images}
           assetId={preview.assetId}

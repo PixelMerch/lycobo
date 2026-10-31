@@ -38,6 +38,7 @@ export function ImagePreviewDialog({
   onClose,
   hasMore = false,
   isLoadingMore = false,
+  isLoadMoreError = false,
   onLoadMore,
   onViewHistory,
 }: {
@@ -47,7 +48,8 @@ export function ImagePreviewDialog({
   onClose: () => void;
   hasMore?: boolean;
   isLoadingMore?: boolean;
-  onLoadMore?: () => void;
+  isLoadMoreError?: boolean;
+  onLoadMore?: () => Promise<unknown>;
   onViewHistory?: () => void;
 }) {
   const images = originalImages;
@@ -175,6 +177,7 @@ export function ImagePreviewDialog({
                 onSelect={select}
                 hasMore={hasMore}
                 isLoadingMore={isLoadingMore}
+                isLoadMoreError={isLoadMoreError}
                 onLoadMore={onLoadMore}
               />
             </motion.div>

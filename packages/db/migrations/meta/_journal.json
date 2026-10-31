@@ -225,6 +225,41 @@
       "when": 1793171925296,
       "tag": "0031_model_catalog_sort_order",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793341007888,
+      "tag": "0032_reference_retention",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793344501799,
+      "tag": "0033_smart_variation_plans",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793349758005,
+      "tag": "0034_variation_planner_protocol",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1793426934107,
+      "tag": "0035_variation_twenty_plans",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793428568412,
+      "tag": "0036_generation_timeout_index",
+      "breakpoints": true
     }
   ]
 }

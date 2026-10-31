@@ -1,5 +1,4 @@
 import type { ImageJob } from "@lycoboai/contracts";
-import { useState } from "react";
 import { ImagePreviewDialog, type PreviewImage } from "../../image-workspace/image-preview";
 import { useImageHistory } from "../generation-client";
 
@@ -35,20 +34,15 @@ export function HistoryImagePreview({
   tool = "create",
 }: {
   images: PreviewImage[];
-  tool?: "create" | "textile";
+  tool?: "create" | "textile" | "variation" | "all";
   assetId: string;
   onClose: () => void;
 }) {
   const query = useImageHistory(tool);
-  const [images, setImages] = useState(initialImages);
-  const loadMore = async () => {
-    const result = await query.fetchNextPage({ cancelRefetch: false });
-    const fetched = historyPreviewImages(result.data?.pages.flatMap((page) => page.data) ?? []);
-    setImages((current) => {
-      const ids = new Set(current.map((image) => image.id));
-      return [...current, ...fetched.filter((image) => !ids.has(image.id))];
-    });
-  };
+  const ids = new Set(initialImages.map((image) => image.id));
+  const fetched = historyPreviewImages(query.data?.pages.flatMap((page) => page.data) ?? []);
+  const images = [...initialImages, ...fetched.filter((image) => !ids.has(image.id))];
+  const loadMore = () => query.fetchNextPage({ cancelRefetch: false });
   return (
     <ImagePreviewDialog
       images={images}
@@ -58,7 +52,8 @@ export function HistoryImagePreview({
       )}
       hasMore={query.hasNextPage}
       isLoadingMore={query.isFetchingNextPage}
-      onLoadMore={() => void loadMore()}
+      isLoadMoreError={query.isError}
+      onLoadMore={loadMore}
       onClose={onClose}
     />
   );

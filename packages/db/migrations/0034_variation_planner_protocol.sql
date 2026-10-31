@@ -1,0 +1,2 @@
+ALTER TABLE "model_planners" ADD COLUMN "protocol" text DEFAULT 'openai-chat' NOT NULL;--> statement-breakpoint
+ALTER TABLE "model_planners" ADD CONSTRAINT "model_planner_protocol" CHECK ("model_planners"."protocol" in ('openai-chat','anthropic-messages'));

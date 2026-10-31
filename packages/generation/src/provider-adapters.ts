@@ -1,4 +1,10 @@
-import type { ImageGenerationInput, ProviderSnapshot } from "@lycoboai/contracts";
+import {
+  type ImageGenerationInput,
+  imageOutputDimensions,
+  type ProviderSnapshot,
+  providerModelForResolution,
+} from "@lycoboai/contracts";
+import { normalizeGeminiReply } from "./gemini-protocol";
 import { ImageProviderError } from "./provider-errors";
 
 /** SDK-style /v1 base URLs and root origins both resolve to a single API origin. */
@@ -21,22 +27,25 @@ export function imageProviderOrigin(value: string) {
 }
 export type ImageProtocolAdapter = {
   acceptsTasks: boolean;
+  normalizeReply?: (value: unknown) => unknown;
   prepare: (
     snapshot: ProviderSnapshot,
     input: ImageGenerationInput,
     references: Uint8Array[],
-  ) => { body: string | FormData; headers: Record<string, string> };
+  ) => { path?: string; body: string | FormData; headers: Record<string, string> };
 };
 function fields(snapshot: ProviderSnapshot, input: ImageGenerationInput) {
-  const [w, h] = input.aspectRatio.split(":").map(Number);
-  const edge = { "1K": 1024, "2K": 2048, "4K": 3840 }[input.resolution];
-  const scale = edge / Math.max(w ?? 1, h ?? 1);
+  const { width, height } = imageOutputDimensions(input.aspectRatio, input.resolution);
+  const model = providerModelForResolution(snapshot, input.resolution);
   return {
-    model: snapshot.upstreamModelsByResolution?.[input.resolution] ?? snapshot.upstreamModel,
+    model,
     prompt: input.prompt,
-    size: `${Math.round(((w ?? 1) * scale) / 16) * 16}x${Math.round(((h ?? 1) * scale) / 16) * 16}`,
+    size: `${width}x${height}`,
     n: 1,
-    quality: input.quality ?? "medium",
+    // These Images routes publish no quality enum; do not send GPT defaults to them.
+    ...(["grok-imagine-image-2.0", "seedream-5.0-pro"].includes(model)
+      ? {}
+      : { quality: input.quality ?? "medium" }),
   };
 }
 export const imageProtocolAdapters: Record<ProviderSnapshot["adapter"], ImageProtocolAdapter> = {
@@ -56,6 +65,34 @@ export const imageProtocolAdapters: Record<ProviderSnapshot["adapter"], ImagePro
         );
       return { body, headers: {} };
     },
+  },
+  "gemini-native": {
+    acceptsTasks: true,
+    normalizeReply: normalizeGeminiReply,
+    prepare: (snapshot, input, references) => ({
+      path: `/v1beta/models/${encodeURIComponent(providerModelForResolution(snapshot, input.resolution))}:generateContent`,
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: input.prompt },
+              ...references.map((bytes) => ({
+                inlineData: { mimeType: "image/png", data: Buffer.from(bytes).toString("base64") },
+              })),
+            ],
+          },
+        ],
+        generationConfig: {
+          responseModalities: ["TEXT", "IMAGE"],
+          imageConfig: {
+            aspectRatio: input.aspectRatio,
+            imageSize: input.resolution === "1.5K" ? "2K" : input.resolution,
+          },
+        },
+      }),
+      headers: { "Content-Type": "application/json" },
+    }),
   },
   "fluxport-images": {
     acceptsTasks: true,

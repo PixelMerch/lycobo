@@ -1,5 +1,11 @@
 import type { Page } from "@playwright/test";
-export const modelNames = ["gpt-image-2", "gpt-image-2.5", "nano-banana-2.1"];
+export const modelNames = [
+  "gpt-image-2",
+  "gpt-image-2.5",
+  "nano-banana-2.1",
+  "gemini-3-pro-image-preview",
+];
+export const modelDisplayNames = ["Image 2", "Image 2.5", "Banana 2.1", "Banana Pro"];
 export function apiFixture(data: unknown, status = 200) {
   const success = status >= 200 && status < 300;
   return {
@@ -27,16 +33,18 @@ export async function mockImageApi(page: Page) {
       body = {
         enabled: true,
         editsEnabled: true,
-        unitCredits: 20,
+        unitCredits: 2,
         models: modelNames.map((id) => ({
           id,
-          enabledResolutions: ["1K", "2K", "4K"],
+          enabledResolutions: ["1K", "1.5K", "2K", "4K"],
         })),
       };
     else if (path.endsWith("/image-model-logos"))
       body = { models: modelNames.map((id) => ({ id, name: id, logoUrl: null })) };
+    else if (path.endsWith("/image-assets") && route.request().method() === "POST")
+      body = { id: crypto.randomUUID(), width: 2, height: 2, bytes: 100, mimeType: "image/png" };
     else if (path.endsWith("/latest-edit")) body = { job: null };
-    else if (path.endsWith("/wallet")) body = { balance: 200, unitCredits: 20 };
+    else if (path.endsWith("/wallet")) body = { balance: 200, unitCredits: 2 };
     else if (path.startsWith("/api/v1/wallet/")) body = { data: [] };
     else if (path.endsWith("/image-tasks") || path.endsWith("/image-assets")) body = { data: [] };
     await route.fulfill({ json: apiFixture(body) });
@@ -52,7 +60,7 @@ export async function mockImageEvents(page: Page, enabled = true) {
         eventsEnabled: enabled,
         editsEnabled: true,
         unitCredits: 1,
-        models: modelNames.map((id) => ({ id, enabledResolutions: ["1K"] })),
+        models: modelNames.map((id) => ({ id, enabledResolutions: ["1K", "1.5K"] })),
       }),
     }),
   );

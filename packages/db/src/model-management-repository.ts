@@ -3,6 +3,7 @@ import {
   type ImageGenerationInput,
   imageModelCatalog,
   imageModelLogosResponseSchema,
+  imageResolutionSchema,
   modelRouteInputSchema,
   providerSnapshotSchema,
   publicImageModel,
@@ -141,7 +142,7 @@ export function modelManagementRepository(sql: postgres.Sql) {
                 row.provider_enabled === 1 &&
                 row.catalog_enabled !== 0 &&
                 row.key_enabled !== 0
-                  ? settings.resolutions
+                  ? imageResolutionSchema.options
                   : [],
               editsEnabled: settings.editsEnabled,
               managed: true,
@@ -188,7 +189,6 @@ export async function resolveProviderSnapshot(
     throw new Error("MODEL_CHANNEL_DISABLED");
   const settings = channelInputSchema.parse(row.settings);
   if (
-    !settings.resolutions.includes(input.resolution) ||
     input.referenceAssetIds.length > settings.maxReferences ||
     (input.referenceAssetIds.length > 0 && !settings.editsEnabled)
   )
@@ -196,9 +196,10 @@ export async function resolveProviderSnapshot(
   const { name: _name, providerId: _providerId, enabled: _enabled, ...configuration } = settings;
   return providerSnapshotSchema.parse({
     ...configuration,
+    resolutions: imageResolutionSchema.options,
     channelId: row.id,
     credentialId: row.credential_id,
     origin: row.origin,
-    adapter: row.adapter,
+    adapter: settings.adapter ?? row.adapter,
   });
 }

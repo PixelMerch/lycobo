@@ -99,19 +99,20 @@ test("edit directly restores the original references and parameters over an exis
   const { input } = await historyFixture(page);
   const edit = page.getByRole("button", { name: "重新编辑", exact: true });
   await edit.click();
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(input.prompt);
   await expect(page.locator(".reference-tile")).toHaveCount(2);
   await page.getByRole("button", { name: "更多", exact: true }).click();
   await expect(page.getByRole("radio", { name: "高", exact: true })).toHaveAttribute(
     "aria-checked",
     "true",
   );
-  await expect(page.getByRole("button", { name: /创作模型/ })).toContainText(input.model);
-  await page.getByLabel("提示词", { exact: true }).fill("我的新草稿");
+  await expect(page.getByRole("button", { name: /创作模型/ })).toContainText("Image 2.5");
+  await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("我的新草稿");
   await edit.click();
-  const dialog = page.getByRole("dialog", { name: "替换当前草稿？", exact: true });
-  await expect(dialog).toHaveCount(0);
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
+  const dialog = page.getByRole("dialog", { name: "载入这次创作？", exact: true });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "载入", exact: true }).click();
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(input.prompt);
 });
 
 test("edited history references and prompt survive all model switches", async ({ page }) => {
@@ -120,30 +121,30 @@ test("edited history references and prompt survive all model switches", async ({
   const composer = page.getByRole("region", { name: "创作设置", exact: true });
   const reference = composer.locator(".reference-tile img").first();
   const source = await reference.getAttribute("src");
-  for (const model of ["nano-banana-2.1", "gpt-image-2", "gpt-image-2.5"]) {
+  for (const model of ["Banana 2.1", "Image 2", "Image 2.5"]) {
     await page.getByRole("button", { name: /创作模型/ }).click();
     await page.getByRole("option", { name: model, exact: true }).click();
-    await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
+    await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(input.prompt);
     await expect(reference).toHaveAttribute("src", source ?? "");
     await expect(composer.getByRole("radio", { name: "3:4", exact: true })).toHaveAttribute(
       "aria-checked",
       "true",
     );
-    await expect(page.getByRole("radio", { name: "1K", exact: true })).toHaveAttribute(
+    await expect(page.getByRole("radio", { name: "1.5K", exact: true })).toHaveAttribute(
       "aria-checked",
       "true",
     );
   }
   await page.getByRole("button", { name: /创作模型/ }).click();
-  await page.getByRole("option", { name: "nano-banana-2.1", exact: true }).click();
+  await page.getByRole("option", { name: "Banana 2.1", exact: true }).click();
   await page.getByRole("radio", { name: "4K", exact: true }).click();
   await page.getByRole("button", { name: /创作模型/ }).click();
-  await page.getByRole("option", { name: "gpt-image-2.5", exact: true }).click();
+  await page.getByRole("option", { name: "Image 2.5", exact: true }).click();
   await expect(page.getByRole("radio", { name: "4K", exact: true })).toHaveAttribute(
     "aria-checked",
     "true",
   );
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(input.prompt);
   await expect(reference).toHaveAttribute("src", source ?? "");
 });
 
@@ -155,14 +156,14 @@ test("regenerate submits the original snapshot once and leaves the composer draf
   await page.route("**/api/v1/image-tasks", async (route) => {
     if (route.request().method() !== "POST") return route.fallback();
     requests++;
-    expect(route.request().postDataJSON()).toEqual(input);
+    expect(route.request().postDataJSON()).toEqual({ ...input, resolution: "1.5K" });
     await route.fulfill({ status: 202, json: { id: crypto.randomUUID(), replayed: false } });
   });
-  await page.getByLabel("提示词", { exact: true }).fill("不要覆盖我的草稿");
+  await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("不要覆盖我的草稿");
   await page.getByRole("button", { name: "重新生成", exact: true }).click();
   const confirm = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
   await expect(confirm).toBeVisible();
-  await expect(confirm.locator(".confirm-dialog__content")).toHaveText("本次消耗 20 积分");
+  await expect(confirm.locator(".confirm-dialog__content")).toHaveText("本次消耗 2 积分");
   // The panel is a borderless black sheet on a blurred, veiled page, and both
   // the dismiss action and the corner close glyph read as white on it.
   await expect(confirm).toHaveCSS("border-top-width", "0px");
@@ -188,7 +189,9 @@ test("regenerate submits the original snapshot once and leaves the composer draf
   await page.getByRole("button", { name: "重新生成", exact: true }).click();
   await confirm.getByRole("button", { name: "确认", exact: true }).click();
   await expect.poll(() => requests).toBe(1);
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("不要覆盖我的草稿");
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
+    "不要覆盖我的草稿",
+  );
 });
 
 test("an uncertain history submission exposes the same pending request in the composer", async ({
@@ -222,7 +225,7 @@ test("legacy history reads the original task snapshot before restoring a draft",
   });
   await page.reload();
   await page.getByRole("button", { name: "重新编辑", exact: true }).click();
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue(input.prompt);
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(input.prompt);
   expect(details).toBe(1);
   await expect(page.locator(".reference-tile")).toHaveCount(2);
 });
@@ -344,4 +347,51 @@ test("generated results stay separated from reference images by 24px", async ({ 
     return results.getBoundingClientRect().top - prompt.getBoundingClientRect().bottom;
   });
   expect(gap).toBe(24);
+});
+
+test("a text-only model blocks restored references even when another model supports editing", async ({
+  page,
+}) => {
+  await historyFixture(page);
+  await page.route("**/api/v1/image-models", (route) =>
+    route.fulfill({
+      json: {
+        enabled: true,
+        editsEnabled: true,
+        unitCredits: 2,
+        models: [{ id: "gpt-image-2.5", enabledResolutions: ["1K", "1.5K"] }],
+        tools: {
+          create: [
+            {
+              id: "gpt-image-2.5",
+              enabledResolutions: ["1K", "1.5K"],
+              editsEnabled: false,
+              maxReferences: 0,
+              managed: true,
+            },
+            {
+              id: "nano-banana-2.1",
+              enabledResolutions: ["1K", "1.5K"],
+              editsEnabled: true,
+              maxReferences: 5,
+              managed: true,
+            },
+          ],
+        },
+      },
+    }),
+  );
+  await page.reload();
+  const regenerate = page.getByRole("button", { name: "重新生成", exact: true });
+  await expect(regenerate).toBeDisabled();
+  await page.getByRole("button", { name: "重新编辑", exact: true }).click();
+  await expect(page.locator(".reference-tile")).toHaveCount(2);
+  const submit = page.locator(".generation-submit");
+  await expect(submit).toBeDisabled();
+  await expect(
+    page.getByText("当前模型暂不支持参考图编辑，请移除参考图后生成。", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "清除全部参考图片", exact: true }).click();
+  await expect(page.locator(".reference-tile")).toHaveCount(0);
+  await expect(submit).toBeEnabled();
 });

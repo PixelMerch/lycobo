@@ -15,13 +15,13 @@ for (const [label, quality] of [
       await route.fulfill({ status: 202, json: { id: crypto.randomUUID(), replayed: false } });
     });
     await page.goto("/create");
-    await page.getByLabel("提示词", { exact: true }).fill("质量参数验收");
+    await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("质量参数验收");
     await page.getByRole("button", { name: "更多", exact: true }).click();
     await page.getByRole("radio", { name: label, exact: true }).click();
     const submitted = page.waitForRequest(
       (request) => request.url().endsWith("/api/v1/image-tasks") && request.method() === "POST",
     );
-    await page.getByRole("button", { name: "立即生成", exact: true }).click();
+    await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
     expect((await submitted).postDataJSON()).toMatchObject({ quality });
   });
 }

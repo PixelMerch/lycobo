@@ -1,0 +1,100 @@
+import { expect, test } from "@playwright/test";
+import { apiFixture, mockImageApi } from "./image-api-fixture";
+
+for (const path of ["/create", "/"]) {
+  test(`a prompt needs a description rather than only references in ${path}`, async ({ page }) => {
+    await mockImageApi(page);
+    await page.goto(path);
+    const button = page.locator(path === "/" ? ".home-submit" : ".generation-submit");
+    const prompt = page
+      .locator(path === "/" ? ".home-prompt" : ".prompt-field")
+      .getByRole("textbox");
+    await expect(button).toBeDisabled();
+    await prompt.press("@");
+    await expect(button).toBeDisabled();
+    await page.keyboard.press("Escape");
+    await prompt.fill("@图片1 @图片2");
+    await expect(button).toBeDisabled();
+    await prompt.press("End");
+    await prompt.pressSequentially("保留商品主体");
+    await expect(button).toBeEnabled();
+  });
+}
+
+test("reference list loads the next page at its bottom, shows a spinner and stops on error", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  let nextRequests = 0;
+  let release: (() => void) | undefined;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const assets = Array.from({ length: 30 }, (_, index) => ({
+    id: `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+    kind: "reference",
+    task_public_id: null,
+    type: "image",
+    width: 100,
+    height: 100,
+    bytes: 100,
+    created_at: "2026-10-30T00:00:00Z",
+    model: null,
+    prompt: null,
+  }));
+  await page.route("**/api/v1/image-assets?*", async (route) => {
+    const url = new URL(route.request().url());
+    if (!url.searchParams.get("before"))
+      return route.fulfill({ json: apiFixture({ data: assets }) });
+    nextRequests++;
+    await gate;
+    return route.fulfill({ status: 500, json: apiFixture({}, 500) });
+  });
+  await page.goto("/commerce/smart-variation");
+  await page.locator(".prompt-field").getByRole("textbox").press("@");
+  const dialog = page.getByRole("dialog", { name: "引用图片", exact: true });
+  await dialog.getByRole("tab", { name: "图片" }).click();
+  await expect(dialog.getByRole("option")).toHaveCount(30);
+  expect(nextRequests).toBe(0);
+  await dialog.locator(".reference-mention-scroll").evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expect.poll(() => nextRequests).toBe(1);
+  await expect(dialog.getByLabel("正在加载列表")).toBeVisible();
+  await expect(dialog.getByRole("button", { name: /加载更多/ })).toHaveCount(0);
+  release?.();
+  await expect(dialog.getByLabel("正在加载列表")).toBeHidden();
+  await expect(dialog.getByRole("button", { name: "重新加载" })).toBeVisible();
+  await dialog.getByRole("textbox", { name: "搜索图片" }).focus();
+  expect(nextRequests).toBe(1);
+});
+
+test("asset library appends another page and stops when the list is complete", async ({ page }) => {
+  await mockImageApi(page);
+  let nextRequests = 0;
+  const assets = Array.from({ length: 31 }, (_, index) => ({
+    id: `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+    kind: "output",
+    task_public_id: null,
+    type: "image",
+    width: 100,
+    height: 100,
+    bytes: 100,
+    created_at: "2026-10-30T00:00:00Z",
+    model: "gpt-image-2",
+    prompt: `商品${index}`,
+  }));
+  await page.route("**/api/v1/image-assets?*", (route) => {
+    const more = new URL(route.request().url()).searchParams.has("before");
+    if (more) nextRequests++;
+    return route.fulfill({
+      json: apiFixture({ data: more ? assets.slice(30) : assets.slice(0, 30) }),
+    });
+  });
+  await page.goto("/assets");
+  await expect(page.locator(".asset-grid > .case-card")).toHaveCount(30);
+  await page.locator(".infinite-load").scrollIntoViewIfNeeded();
+  await expect(page.locator(".asset-grid > .case-card")).toHaveCount(31);
+  await expect(page.locator(".infinite-load")).toHaveCount(0);
+  expect(nextRequests).toBe(1);
+});

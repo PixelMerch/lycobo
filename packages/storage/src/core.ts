@@ -26,9 +26,15 @@ export function userObjectKey(uid: string, organizationId: string, id: string) {
   z.uuid().parse(id);
   return `${uid}/${organizationId}/${id}.png`;
 }
+export type ImageOutputSize = { width: number; height: number };
 export interface ImageStore {
   ready(): Promise<void>;
-  put(scope: ImageScope, input: Uint8Array, id?: string): Promise<StoredImage>;
+  put(
+    scope: ImageScope,
+    input: Uint8Array,
+    id?: string,
+    outputSize?: ImageOutputSize,
+  ): Promise<StoredImage>;
   read(asset: StoredImage): Promise<Uint8Array>;
   thumbnail(asset: StoredImage): Promise<Uint8Array>;
   remove(asset: StoredImage): Promise<unknown>;

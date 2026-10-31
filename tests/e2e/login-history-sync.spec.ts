@@ -65,7 +65,7 @@ test("login and logout synchronize mounted history without reloading or losing t
   );
   await page.goto("/create");
   await expect(page.getByText("登录后查看生成记录", { exact: true })).toBeVisible();
-  const prompt = page.getByLabel("提示词", { exact: true });
+  const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   await prompt.fill("登录前编辑的草稿");
   let navigations = 0;
   page.on("framenavigated", (frame) => {

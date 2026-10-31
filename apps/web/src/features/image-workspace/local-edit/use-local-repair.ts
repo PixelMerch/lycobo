@@ -11,6 +11,7 @@ import {
   useImageSession,
   usePendingSubmission,
 } from "../../generation/generation-client";
+import { modelCapabilities, supportsReferences } from "../../generation/models/model-capabilities";
 import { isModelId } from "../../generation/studio-state";
 import type { PreviewImage, PreviewMeta } from "../image-preview";
 import {
@@ -91,14 +92,12 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
   const height = source.height ?? image?.naturalHeight ?? 1;
   const output = repairOutput(width, height);
   const model = isModelId(meta.model) ? meta.model : "gpt-image-2";
+  const capabilities = modelCapabilities(models.data, model, "local-edit");
   const available =
     session.isSuccess &&
     (localDraft || latest.isSuccess) &&
-    models.data?.enabled &&
-    models.data.editsEnabled &&
-    models.data.models.some(
-      (entry) => entry.id === model && entry.enabledResolutions.includes(output.resolution),
-    );
+    supportsReferences(capabilities, 1) &&
+    capabilities?.enabledResolutions.includes(output.resolution);
   const busy = !!draft.jobId && (!job.data || ["queued", "running"].includes(job.data.status));
   const restoring = !localDraft && !latest.isSuccess;
   const locked = !session.isSuccess || restoring || generate.isPending || busy || pending;
