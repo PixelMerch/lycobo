@@ -47,6 +47,8 @@ jobs:
         run: node scripts/cloudbase/prepare-runtime.mjs "$RUNNER_TEMP/lycobo-cloudbase-runtime"
       - name: Install pinned CloudBase CLI
         run: npm install --global @cloudbase/cli@3.8.11
+      - name: Install pinned MCP deployment client
+        run: npm install --prefix "$RUNNER_TEMP/cloudbase-mcp-client" --no-audit --no-fund @modelcontextprotocol/sdk@1.32.2 cos-nodejs-sdk-v5@3.0.0
       - name: Authenticate deployment identity
         env:
           TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}
@@ -69,10 +71,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           test "$DEPLOY_SHA" = "$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq .object.sha)"
-          cd "$RUNNER_TEMP/lycobo-cloudbase-runtime"
-          tcb fn code update lycobo-consumer --dir ./lycobo-consumer --json
-          tcb fn code update lycobo-assets --dir ./lycobo-assets --json
-          tcb fn code update lycobo-api --dir ./lycobo-api --json
+          node scripts/cloudbase/deploy-runtime.mjs "$RUNNER_TEMP/lycobo-cloudbase-runtime" "$RUNNER_TEMP/cloudbase-mcp-client"
       - name: Verify API before publishing frontend
         run: |
           curl --fail --silent --show-error --retry 5 --retry-delay 5 --max-time 30 'https://lycobo-d9gyvxkegc54a1257-1311968085.ap-shanghai.app.tcloudbase.com/api/health/live' | jq -e '.code == 0 and .data.status == "ok"'
