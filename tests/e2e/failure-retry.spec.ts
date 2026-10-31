@@ -175,7 +175,7 @@ test("rejected regeneration uses a top toast without inserting an error into his
     ],
   };
   let retries = 0;
-  const message = "企业金币余额不足，每张图片需要 20 币";
+  const message = "企业金币余额不足，每张图片需要 2 币";
   await page.route("**/api/v1/image-tasks**", async (route) => {
     if (route.request().method() === "POST") {
       retries++;

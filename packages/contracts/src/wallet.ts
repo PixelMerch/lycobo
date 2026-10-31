@@ -1,8 +1,7 @@
 import { z } from "zod";
-import { imageUnitCredits } from "./image-generation";
 export const walletBalanceSchema = z.object({
   balance: z.number().int().nonnegative(),
-  unitCredits: z.literal(imageUnitCredits),
+  unitCredits: z.number().int().positive(),
 });
 export const walletEntriesSchema = z.object({
   data: z.array(

@@ -115,7 +115,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
         error.code === "MODEL_CAPABILITY_UNVERIFIED"
           ? "当前模型渠道未启用或不支持所选参数，请刷新模型配置"
           : error.code === "INSUFFICIENT_CREDITS"
-            ? "企业金币余额不足，每张图片需要 20 币"
+            ? `企业金币余额不足，每张图片需要 ${imageUnitCredits} 币`
             : error.code === "STATE_CONFLICT"
               ? "任务正在生成或状态已更新，请稍后重试"
               : error.code === "FORBIDDEN"
