@@ -103,7 +103,7 @@ GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 C
 
 接口、工作台和登录的实现范围，以及供应商、存储等外部验收边界见 [生图 API 文档](docs/image-generation-api.md)。
 
-实时任务通知入口为 apps/api/src/features/images/events.ts；apps/web/src/features/generation/use-image-events.ts 在应用壳维护共享 SSE 连接与 Query 缓存更新。事件日志和业务状态事务提交，独立于 Cloudflare Queues 生图执行队列；具体协议见 docs/image-generation-api.md。
+实时任务通知入口为 apps/api/src/features/images/events.ts；apps/web/src/features/generation/use-image-events.ts 在应用壳维护共享 SSE 连接，无 SSE（CloudBase 默认）时只轮询未完成任务，二者经 task-sync.ts 定向更新 Query 缓存。事件日志和业务状态事务提交，独立于 Cloudflare Queues 生图执行队列；具体协议见 docs/image-generation-api.md。
 
 - packages/db/src/wallet-repository.ts：企业共享钱包、充值订单与只读账务查询。数据表与扣费规则见 [企业钱包](docs/enterprise-wallet.md)。
 

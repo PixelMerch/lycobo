@@ -36,6 +36,8 @@ API 和消费者的 IMAGE_GENERATION_ENABLED 均已开启；消费者的 `lycobo
 
 事件使用数据库持久游标和按组织 3 秒轮询，不依赖 TCP LISTEN。API SSE 保留到期重连与鉴权撤销检查；API HTTP 云函数超时 900 秒，SSE 应用自身 10 分钟结束。候选域名实测返回 text/event-stream、首块 42 字节正常到达；长时稳定性和完整重连仍主要依赖隔离集成覆盖。
 
+2026-11-01 起 CloudBase 默认不开启 SSE（`IMAGE_EVENTS_ENABLED=true` 才开启）：每条连接按时长计费且每 3 秒查询数据库，打开的页面会让 API 与共享 PG 持续计量。浏览器改为只轮询未完成任务，计费分析见 [CloudBase 部署](cloudbase-deployment.md#运行计费优化)。
+
 ## 运行服务与包
 
 - `lycobo-api`：HTTP 云函数，Hono，企业鉴权、业务 API、事件流；监听 0.0.0.0:9000。
