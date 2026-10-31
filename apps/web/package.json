@@ -5,9 +5,9 @@
   "name": "@lycoboai/web",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build && wrangler pages functions build functions --outdir dist-functions --compatibility-date 2026-10-23",
+    "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.functions.json --noEmit",
+    "typecheck": "tsc --noEmit",
     "dev:docker": "vite --host 0.0.0.0"
   },
   "dependencies": {

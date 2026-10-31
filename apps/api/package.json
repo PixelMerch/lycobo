@@ -5,7 +5,7 @@
   "name": "@lycoboai/api",
   "scripts": {
     "dev": "wrangler dev --config wrangler.local.json --config ../worker/wrangler.local.json --port 8787 --persist-to ../../.wrangler/state",
-    "build": "tsup && wrangler deploy --dry-run --outdir dist-cloudflare",
+    "build": "tsup",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "images:provision": "node --env-file-if-exists=../../.env --import tsx scripts/provision-images.ts",

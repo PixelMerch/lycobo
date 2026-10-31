@@ -1,8 +1,0 @@
-{
-  "$schema": "../../node_modules/wrangler/config-schema.json",
-  "name": "lycobo",
-  "pages_build_output_dir": "./dist",
-  "compatibility_date": "2026-10-23",
-  "compatibility_flags": ["nodejs_compat"],
-  "services": [{ "binding": "API", "service": "lycobo-api" }]
-}

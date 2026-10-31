@@ -28,8 +28,6 @@
     "infra:down": "docker compose down",
     "prepare": "node scripts/setup-hooks.mjs",
     "test:integration": "pnpm --filter @lycoboai/worker test:integration && pnpm --filter @lycoboai/worker test:images && pnpm --filter @lycoboai/api test:auth && pnpm --filter @lycoboai/api test:events && pnpm test:cloudflare",
-    "cloudflare:deploy": "node --env-file-if-exists=.env scripts/cloudflare/deploy.mjs",
-    "cloudflare:setup": "node --env-file-if-exists=.env scripts/cloudflare/setup.mjs",
     "test:cloudflare": "pnpm --filter @lycoboai/worker exec tsx scripts/check-cloudflare-runtime.ts",
     "cloudflare:dev:setup": "node --env-file-if-exists=.env scripts/cloudflare/dev.mjs --prepare-only",
     "test:redis": "node scripts/cloudflare/check-redis.mjs"

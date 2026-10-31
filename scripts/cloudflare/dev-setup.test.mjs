@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { cp, mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,10 +11,6 @@ it("prepares ignored local Wrangler configs in a clean checkout without starting
   try {
     for (const name of ["api", "worker", "assets"]) {
       await mkdir(path.join(directory, "apps", name), { recursive: true });
-      await cp(
-        path.join(root, "apps", name, "wrangler.jsonc"),
-        path.join(directory, "apps", name, "wrangler.jsonc"),
-      );
     }
     const output = execFileSync(
       process.execPath,
@@ -36,6 +32,8 @@ it("prepares ignored local Wrangler configs in a clean checkout without starting
       );
       expect(config.queues).toBeUndefined();
       expect(config.triggers).toBeUndefined();
+      expect(config.account_id).toBeUndefined();
+      expect(config.r2_buckets[0].bucket_name).toBe("lycobo");
       const vars = await readFile(path.join(directory, "apps", name, ".dev.vars"), "utf8");
       expect(vars).not.toContain("api.ai-media.vip");
     }

@@ -6,11 +6,11 @@ import {
 } from "@lycoboai/generation";
 import { dispatchImageOutbox, type ImageQueueSender } from "@lycoboai/queue";
 import { r2ImageStore } from "@lycoboai/storage/r2";
-import { imageObjectBucket, type S3Bindings } from "@lycoboai/storage/s3";
+import { imageObjectBucket, type StorageBindings } from "@lycoboai/storage/s3";
 import { processImageItem } from "../src/image-processor";
 import { consumeImageMessages } from "../src/queue-consumer";
 
-export interface GenerationBindings extends S3Bindings, StandaloneModelEnvironment {
+export interface GenerationBindings extends StorageBindings, StandaloneModelEnvironment {
   HYPERDRIVE: Hyperdrive;
   IMAGES_BUCKET: R2Bucket;
   IMAGES: ImagesBinding;

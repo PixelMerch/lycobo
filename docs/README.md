@@ -36,9 +36,10 @@
 | 本地启动与配置 | [本地开发](development.md) |
 | 技术选择与边界 | [技术栈](tech-stack.md) |
 | 测试与隔离环境 | [测试说明](testing.md) |
-| Pages／Workers／Queues／R2 部署 | [Cloudflare 部署](cloudflare-deployment.md) |
+| CloudBase GitHub 自动发布与私有图片存储 | [CloudBase 部署](cloudbase-deployment.md) |
 | Supabase PostgreSQL 结构迁移 | [Supabase 接入](supabase-postgres.md) |
 | CloudBase 个人版共享 PG 数据副本与校验 | [CloudBase 数据迁移](cloudbase-database-migration.md) |
+| 主站私有图片复制与逐对象校验 | [CloudBase 图片迁移](cloudbase-storage-migration.md) |
 | 数据库完整导出与恢复 | [数据库备份](database-backup.md) |
 | 发布与分支流程 | [发布说明](releasing.md) |
 | 技能及来源 | [项目技能](skills.md) |

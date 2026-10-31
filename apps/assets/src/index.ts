@@ -1,8 +1,8 @@
 import { assetKeyPattern, assetSigningKey, verifyAsset } from "@lycoboai/storage/delivery";
-import { imageObjectBucket, type S3Bindings } from "@lycoboai/storage/s3";
+import { imageObjectBucket, type StorageBindings } from "@lycoboai/storage/s3";
 import { displayImage, displayObjectKey } from "@lycoboai/storage/variants";
 
-export interface AssetBindings extends S3Bindings {
+export interface AssetBindings extends StorageBindings {
   IMAGES?: ImagesBinding;
   IMAGES_BUCKET: R2Bucket;
   ASSET_SIGNING_SECRET: string;

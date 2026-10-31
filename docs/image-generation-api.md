@@ -36,7 +36,7 @@
 
 ## 服务端配置与启动
 
-生产架构为 Pages + Hono Workers API + Queues 消费者 + R2 + Supabase，入口和一键部署见 [Cloudflare 部署](cloudflare-deployment.md)。不再部署 Redis 或 BullMQ。API 使用 Hyperdrive、私有 R2、Images binding 和 Queues producer；消费者持有 provider key，不向浏览器发送密钥。
+旧线上架构为 Pages + Hono Workers API + Queues 消费者 + R2 + Supabase，旧服务仍运行，但仓库中的 Cloudflare 生产发布配置已删除。新目标为 CloudBase，部署凭据、私有存储及共享 PG 迁移边界见 [CloudBase 部署](cloudbase-deployment.md)。供应商和资源密钥只保留在服务端；静态前端发布不代表 API 与消费者已迁移。
 
 账号通过现有企业账号体系配置，主子账号共用组织钱包。生成开关默认关闭，确认数据库、权限、对象存储、模型及后台绑定后再显式启用 `IMAGE_GENERATION_ENABLED=true`。本地开发使用 Wrangler 模拟与独立 loopback 数据库，真实模型调用需显式 `LOCAL_IMAGE_GENERATION_ENABLED=true`。旧 Node 工作台签发脚本仅供已有的本地调试，不是线上账号注册或充值接口。
 

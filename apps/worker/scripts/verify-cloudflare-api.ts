@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -48,6 +48,22 @@ export async function verifyCloudflareApi() {
     });
     assert.equal(migrated.status, 0, "Isolated Workers migration failed");
     for (const service of ["api", "worker", "assets"]) {
+      const configPath = path.join(directory, `${service}.json`);
+      await writeFile(
+        configPath,
+        JSON.stringify({
+          name: `isolated-${service}`,
+          main: path.relative(
+            directory,
+            path.join(
+              root,
+              `apps/${service}/${service === "assets" ? "src" : "cloudflare"}/index.ts`,
+            ),
+          ),
+          compatibility_date: "2026-10-23",
+          compatibility_flags: ["nodejs_compat"],
+        }),
+      );
       const built = spawnSync(
         "pnpm",
         [
@@ -56,7 +72,7 @@ export async function verifyCloudflareApi() {
           "deploy",
           "--dry-run",
           "--config",
-          `apps/${service}/wrangler.jsonc`,
+          configPath,
           "--outdir",
           path.join(directory, service),
         ],

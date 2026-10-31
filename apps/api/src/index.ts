@@ -8,6 +8,8 @@ import {
   validateModelInput,
 } from "@lycoboai/generation";
 import { imageStore } from "@lycoboai/storage";
+import { cloudbaseObjectBucket, readCloudBaseStorageConfig } from "@lycoboai/storage/cloudbase";
+import { objectImageStore } from "@lycoboai/storage/object-images";
 import pino from "pino";
 import { createApp } from "./app";
 import { readEnv } from "./env";
@@ -17,7 +19,8 @@ import { readWorkbenchSession } from "./features/images/session";
 const env = readEnv(process.env);
 const logger = pino({ level: env.LOG_LEVEL });
 const policy = readImagePolicy({ IMAGE_GENERATION_ENABLED: process.env.IMAGE_GENERATION_ENABLED });
-if (policy.enabled && !isAbsolute(process.env.IMAGE_DATA_DIR ?? ""))
+const cloudbaseStorage = readCloudBaseStorageConfig(process.env);
+if (policy.enabled && !cloudbaseStorage && !isAbsolute(process.env.IMAGE_DATA_DIR ?? ""))
   throw new Error("IMAGE_DATA_DIR must be an absolute shared directory");
 const repository = process.env.DATABASE_URL
   ? openImageRepository(process.env.DATABASE_URL, false, await standaloneModels(process.env))
@@ -33,7 +36,9 @@ const events =
   repository && process.env.IMAGE_EVENTS_ENABLED !== "false" && process.env.DATABASE_URL
     ? openImageEventFeed(process.env.DATABASE_URL)
     : undefined;
-const store = imageStore(process.env.IMAGE_DATA_DIR ?? "./data/images", repository?.storageUid);
+const store = cloudbaseStorage
+  ? objectImageStore(cloudbaseObjectBucket(cloudbaseStorage), repository?.storageUid)
+  : imageStore(process.env.IMAGE_DATA_DIR ?? "./data/images", repository?.storageUid);
 if (policy.enabled) await store.ready();
 const app = createApp(
   (event) => logger.error(event, "Request failed"),
