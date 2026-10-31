@@ -35,8 +35,8 @@ jobs:
       - run: git diff --exit-code
   browser:
     # Metadata-only edits must neither cancel CI nor overwrite required check results.
-    name: ${{ github.event.action == 'edited' && !github.event.changes.base && format('Browser shard {0} metadata only', matrix.shard) || format('Browser shard {0}/2', matrix.shard) }}
-    if: github.event.action != 'edited' || github.event.changes.base
+    name: Browser shard ${{ matrix.shard }}/2
+    if: github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
@@ -73,7 +73,7 @@ jobs:
   browser-result:
     name: ${{ github.event.action == 'edited' && !github.event.changes.base && 'Browser metadata only' || 'Browser' }}
     needs: browser
-    if: always() && (github.event.action != 'edited' || github.event.changes.base)
+    if: always() && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     steps:
       - name: Require both complete browser shards

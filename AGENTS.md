@@ -122,8 +122,8 @@ Read relevant project skills before work:
 
 - Run pnpm check for code changes. Do not run the full local E2E suite by default during
   iterative AI development; use focused browser tests only for changed critical interactions,
-  regressions or explicit requests. Full E2E runs in remote CI on dev/main pushes and release PRs;
-  require successful checks before merging. Add tests for business invariants and failures,
+  regressions or explicit requests. Full E2E is manual-only in remote CI, per the user's 2026-10-31 request;
+  automatic pushes/PRs keep Quality and Infrastructure checks. Respect branch protection before merging. Add tests for business invariants and failures,
   not cosmetic implementation details. Report skipped local browser checks honestly.
 - For DB/queue changes run the isolated integration check documented in docs/testing.md.
   Never use production or bonko services, and never delete shared volumes.
