@@ -36,6 +36,16 @@ export async function prepareWeb(source, destination) {
       errorOnExist: true,
       force: false,
     });
+  if (!html.includes("<head>")) throw new Error("Frontend HTML must have a head element.");
+  await writeFile(
+    path.join(destination, "cloudbase-entry.js"),
+    `if (location.origin === "https://${cloudbaseEnvironment}-1311968085.tcloudbaseapp.com") {\n` +
+      `  location.replace("https://${cloudbaseEnvironment}-1311968085.ap-shanghai.app.tcloudbase.com" + location.pathname + location.search + location.hash);\n}\n`,
+  );
+  await writeFile(
+    path.join(destination, "index.html"),
+    html.replace("<head>", '<head><script src="/cloudbase-entry.js"></script>'),
+  );
   await writeFile(
     path.join(destination, "cloudbaserc.json"),
     `${JSON.stringify(

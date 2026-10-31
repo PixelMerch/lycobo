@@ -48,7 +48,8 @@ jobs:
       - name: Install pinned CloudBase CLI
         run: npm install --global @cloudbase/cli@3.8.11
       - name: Install pinned MCP deployment client
-        run: npm install --prefix "$RUNNER_TEMP/cloudbase-mcp-client" --no-audit --no-fund @modelcontextprotocol/sdk@1.32.2 cos-nodejs-sdk-v5@3.0.0
+        timeout-minutes: 5
+        run: npm install --prefix "$RUNNER_TEMP/cloudbase-mcp-client" --no-audit --no-fund @cloudbase/cloudbase-mcp@2.36.2 @modelcontextprotocol/sdk@1.32.2 cos-nodejs-sdk-v5@3.0.0
       - name: Authenticate deployment identity
         env:
           TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}
@@ -67,6 +68,7 @@ jobs:
         run: |
           test "$RUNTIME_READY" = true || { echo '::error::Complete CloudBase functions, server credentials, gateway routes and candidate validation before enabling CLOUDBASE_RUNTIME_READY'; exit 1; }
       - name: Publish backend code with existing server configuration
+        timeout-minutes: 10
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

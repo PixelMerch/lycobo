@@ -12,6 +12,8 @@ Actions 中完成构建，临时发布目录只复制 `apps/web/dist`。准备�
 
 使用 `tcb hosting deploy --safe --verify` 将独立 Vite 产物发布到共享静态托管，忽略准备目录中的应用配置文件、不使用 prune。网关默认 HTTP 域名统一挂载前端、`/api` 和 `/_images`，保证 Cookie 同源。当前静态托管已启用，首页和错误页均已配置并回查为 `index.html`，支持 SPA 深链刷新。默认域名为平台测试入口，自定义域名另行核对备案、证书和套餐能力。
 
+候选访问入口为 `https://lycobo-d9gyvxkegc54a1257-1311968085.ap-shanghai.app.tcloudbase.com/`。`tcloudbaseapp.com` 只承载静态文件，不含业务 API；发布包在应用启动前将该项目的静态域名页面转到网关，并保留路径、查询和片段。网关、自定义域名和本地开发不跳转，Cookie 继续使用同源策略。
+
 ## 部署凭据
 
 GitHub 已创建 `cloudbase-production` Environment，仅允许 main 部署。凭据持有人须在该 Environment Secrets 中配置：
@@ -77,5 +79,7 @@ workerd/Miniflare、旧运行时源码和 `scripts/cloudflare` 剩余文件仅�
 发布 PR #33 已合并到 main（b7a4b70），main Quality/Infrastructure 均通过。首次 GitHub 发布在 CLI 的临时 COS 上传阶段没有完成，已停止该任务，未修改运行配置或前端。
 
 后端改用 `scripts/cloudbase/deploy-runtime.mjs`：固定 @cloudbase/cloudbase-mcp 2.36.2、MCP SDK 1.32.2、COS SDK 3.0.0，依赖仅安装到 runner 临时目录，不进入应用包或根锁文件。MCP 获取环境自有 COS 桶的短期上传地址，限制区域、桶、代码前缀和函数名，90 秒上传超时、最多三次刷新地址重试；成功传输后才提交代码更新。函数恢复 Active 且修改时间变化后，用 COS SDK 删除本次代码对象。读取的临时管理凭据仅存在于进程内，不输出或写入应用配置。
+
+MCP 安装在登录前的独立步骤完成（5 分钟上限），发布进程直接启动已安装的入口，避免发布时隐式下载。后端发布步骤限制为 10 分钟；日志仅记录工具和动作名称，不包含参数、响应、凭据或上传地址。
 
 本地已用同一两段式入口实际更新三个服务并确认 Active，三个临时代码对象已删除。针对 URL/桶/用途校验、错误脱敏、上传失败重试和代码提交顺序的专项测试通过。新工作流仍需 GitHub 实际运行验证。

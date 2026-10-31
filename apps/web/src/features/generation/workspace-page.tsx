@@ -177,7 +177,7 @@ function Workspace({ model }: { model: ModelId }) {
             </Alert.Content>
           </Alert>
         )}
-        {draft.references.length > 0 && modelQuery.data && !referencesSupported && (
+        {draft.references.length > 0 && capabilities && !referencesSupported && (
           <Alert className="generation-message" role="status" status="warning">
             <Alert.Content>
               <Alert.Description>

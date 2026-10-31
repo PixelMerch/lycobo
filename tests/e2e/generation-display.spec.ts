@@ -1,5 +1,31 @@
 import { expect, test } from "@playwright/test";
-import { mockImageApi } from "./image-api-fixture";
+import { apiFixture, mockImageApi, modelNames } from "./image-api-fixture";
+
+test("a disabled service keeps references without claiming the model cannot edit them", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  await page.route("**/api/v1/image-models", (route) =>
+    route.fulfill({
+      json: apiFixture({
+        enabled: false,
+        editsEnabled: true,
+        unitCredits: 2,
+        models: modelNames.map((id) => ({ id, enabledResolutions: ["1.5K"] })),
+      }),
+    }),
+  );
+  await page.goto("/create");
+  await page
+    .getByLabel("添加参考图片", { exact: true })
+    .setInputFiles("apps/web/public/studio/bedroom.webp");
+  await expect(page.locator(".reference-tile")).toHaveCount(1);
+  await expect(page.getByText("生图服务尚未启用", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("当前模型暂不支持参考图编辑，请移除参考图后生成。", { exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeDisabled();
+});
 
 test("running images animate with the model icon and stop for reduced motion", async ({ page }) => {
   await mockImageApi(page);
