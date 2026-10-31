@@ -1,7 +1,17 @@
 // Read finite JSON inside the binding invocation so a broken body never becomes partial success.
 export async function completeApiResponse(response: Response) {
   if (!response.headers.get("Content-Type")?.includes("application/json")) return response;
-  const body = await response.text();
+  let body: string;
+  try {
+    body = await response.text();
+  } catch {
+    console.error({
+      event: "PAGES_API_BODY_UNAVAILABLE",
+      status: response.status,
+      requestId: response.headers.get("X-Request-Id") ?? undefined,
+    });
+    throw new Error("API_RESPONSE_UNAVAILABLE");
+  }
   try {
     JSON.parse(body);
   } catch {

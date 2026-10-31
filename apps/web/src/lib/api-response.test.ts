@@ -41,3 +41,27 @@ it("reports truncated client JSON safely without showing parser internals", asyn
   ).rejects.toThrow("响应未完整接收");
   expect(JSON.stringify(log.mock.calls)).not.toContain("private");
 });
+it("correlates an interrupted upstream body without leaking the stream error", async () => {
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  const body = new ReadableStream({
+    start(controller) {
+      controller.error(new Error("private database details"));
+    },
+  });
+  await expect(
+    completeApiResponse(
+      new Response(body, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Request-Id": "36b7aa18-a1e1-4bd2-a2d3-271cd6f7bf51",
+        },
+      }),
+    ),
+  ).rejects.toThrow("API_RESPONSE_UNAVAILABLE");
+  expect(log).toHaveBeenCalledWith({
+    event: "PAGES_API_BODY_UNAVAILABLE",
+    status: 200,
+    requestId: "36b7aa18-a1e1-4bd2-a2d3-271cd6f7bf51",
+  });
+  expect(JSON.stringify(log.mock.calls)).not.toContain("private");
+});

@@ -91,7 +91,13 @@ function cleanupResponse(response: Response, close: () => Promise<void>, ctx: Ex
             controller.close();
             finish();
           } else controller.enqueue(next.value);
-        } catch {
+        } catch (error) {
+          console.error({
+            event: "API_RESPONSE_STREAM_FAILED",
+            requestId: response.headers.get("X-Request-Id") ?? undefined,
+            status: response.status,
+            ...errorCategory(error),
+          });
           controller.error(new Error("RESPONSE_STREAM_UNAVAILABLE"));
           finish();
         }
