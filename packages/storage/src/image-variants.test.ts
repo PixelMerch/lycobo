@@ -35,6 +35,7 @@ it("precomputes bounded WebP variants without resizing the stored original and r
       const meta = await sharp(Buffer.from(await object.arrayBuffer())).metadata();
       expect([meta.format, meta.width, meta.height]).toEqual(["webp", width, height]);
     }
+    expect(Buffer.from(await store.read(asset)).equals(source)).toBe(true);
     const original = await sharp(Buffer.from(await store.read(asset))).metadata();
     expect([original.format, original.width, original.height]).toEqual(["png", 2400, 1800]);
     await store.remove(asset);

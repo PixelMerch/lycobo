@@ -234,3 +234,62 @@ test("submission success preserves edits made while the request is pending", asy
     "下一张商品图的新要求",
   );
 });
+
+test("pending history converges without an SSE notification and stops polling once complete", async ({
+  page,
+}) => {
+  await mockImageEvents(page, false);
+  let reads = 0;
+  const job: ImageJob = {
+    id: crypto.randomUUID(),
+    organization_id: crypto.randomUUID(),
+    user_id: crypto.randomUUID(),
+    model: "gpt-image-2.5",
+    prompt: "自然光杯子",
+    resolution: "1K",
+    aspect_ratio: "1:1",
+    requested_count: 1,
+    status: "running",
+    created_at: new Date().toISOString(),
+    completed_at: null,
+    items: [
+      {
+        id: crypto.randomUUID(),
+        position: 0,
+        status: "running",
+        output_asset_id: null,
+        error_code: null,
+        width: null,
+        height: null,
+        worker_id: null,
+      },
+    ],
+  };
+  await page.route("**/api/v1/image-tasks?**", async (route) => {
+    reads++;
+    if (reads >= 2) {
+      job.status = "succeeded";
+      job.completed_at = new Date().toISOString();
+      job.items[0] = {
+        ...job.items[0]!,
+        status: "succeeded",
+        output_asset_id: crypto.randomUUID(),
+        width: 1024,
+        height: 1024,
+      };
+    }
+    await route.fulfill({ json: { data: [job] } });
+  });
+  await page.route("**/api/v1/image-assets/*/content**", (route) =>
+    route.fulfill({ contentType: "image/png", body: png }),
+  );
+  await page.goto("/create");
+  await expect(page.locator(".generation-placeholder.generation-pending")).toBeVisible();
+  await expect(page.locator(".generation-results .generation-media img")).toBeVisible({
+    timeout: 12000,
+  });
+  await expect(page.locator(".generation-pending")).toHaveCount(0);
+  const completedReads = reads;
+  await page.waitForTimeout(5500);
+  expect(reads).toBe(completedReads);
+});

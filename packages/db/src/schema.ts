@@ -394,6 +394,9 @@ export const generationJobItems = pgTable(
       .where(sql`${t.supersededAt} is null`),
     index("generation_job_items_output_idx").on(t.outputAssetId, t.organizationId),
     index("generation_job_items_reconciler_idx").on(t.reconciledBy),
+    index("generation_job_items_running_started_idx")
+      .on(t.startedAt, t.organizationId)
+      .where(sql`${t.status} = 'running' and ${t.supersededAt} is null`),
     index("generation_job_items_lease_idx")
       .on(t.leaseExpiresAt)
       .where(sql`${t.status} = 'running'`),

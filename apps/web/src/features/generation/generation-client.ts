@@ -1,6 +1,7 @@
 import {
   apiErrorSchema,
   type ImageGenerationInput,
+  type ImageJob,
   imageAssetsResponseSchema,
   imageGenerationInputSchema,
   imageModelsResponseSchema,
@@ -11,6 +12,7 @@ import {
   imageUploadResponseSchema,
 } from "@lycoboai/contracts";
 import {
+  type InfiniteData,
   type QueryClient,
   useInfiniteQuery,
   useIsMutating,
@@ -93,12 +95,25 @@ export function useImageHistory(
   tool: "create" | "textile" | "variation" | "all" | null = "create",
 ) {
   const session = useImageSession();
-  return useInfiniteQuery({
+  return useInfiniteQuery<
+    { data: ImageJob[] },
+    Error,
+    InfiniteData<{ data: ImageJob[] }, string>,
+    readonly unknown[],
+    string
+  >({
     queryKey: tool === "create" ? ["image-tasks"] : ["image-tasks", tool],
     enabled: session.isSuccess && tool !== null,
     initialPageParam: "",
     retry: false,
     staleTime: 30000,
+    // SSE is an optimization; active work must converge even when its event is lost.
+    refetchInterval: (query) =>
+      query.state.data?.pages.some((page) =>
+        page.data.some((job) => job.status === "queued" || job.status === "running"),
+      )
+        ? 5000
+        : false,
     queryFn: async ({ pageParam, signal }) =>
       tool === null
         ? { data: [] }

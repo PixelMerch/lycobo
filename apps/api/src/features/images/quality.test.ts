@@ -36,6 +36,8 @@ function fixture(editsEnabled = false, managedModelsOnly = false) {
       hasRoute: async () => false,
     },
     providerCipher: unexpected,
+    providerRetryCandidates: unexpected,
+    resumeProvider: unexpected,
     deferProvider: unexpected,
     storageUid: unexpected,
     assetLocations: unexpected,

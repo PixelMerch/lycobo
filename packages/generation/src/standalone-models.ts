@@ -41,7 +41,7 @@ export async function standaloneModels(env: StandaloneModelEnvironment) {
         editsEnabled: true,
         maxReferences: 6,
         timeoutMs: 60000,
-        taskTimeoutSeconds: 1800,
+        taskTimeoutSeconds: 180,
         downloadOrigins: ["https://download.ai-media.vip"],
         channelId,
         credentialId: standaloneCredentialId,

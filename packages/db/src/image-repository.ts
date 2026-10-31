@@ -132,6 +132,19 @@ export function openImageRepository(
       'attempts',i.attempts,'error_code',i.error_code,'started_at',i.started_at,'completed_at',i.completed_at,
       'output_asset_id',i.output_asset_id,'output_public_id',a.public_id,'width',a.width,'height',a.height,'bytes',a.bytes) order by i.position),'[]')
       from generation_job_items i left join media_assets a on a.id=i.output_asset_id and a.organization_id=i.organization_id where i.job_id=j.id and i.superseded_at is null) as items`;
+  const expireTimedOut = async (organizationId?: string) => {
+    const rows = await sql`select i.id,i.job_id from generation_job_items i
+      where i.status='running' and i.superseded_at is null and i.started_at<now()-interval '3 minutes'
+      ${organizationId ? sql`and i.organization_id=${organizationId}` : sql``} limit 100`;
+    for (const row of rows)
+      await sql.begin(async (tx) => {
+        await tx`select id from generation_jobs where id=${row.job_id} for update`;
+        const changed =
+          await tx`update generation_job_items set status='needs_reconciliation',error_code='PROVIDER_TIMEOUT',completed_at=now()
+        where id=${row.id} and status='running' and superseded_at is null and started_at<now()-interval '3 minutes' returning id`;
+        if (changed.length) await refreshJob(tx, String(row.job_id));
+      });
+  };
   return {
     async storageUid(scope: ImageScope) {
       const [row] =
@@ -322,6 +335,39 @@ export function openImageRepository(
         return { id, replayed: false };
       });
     },
+    async providerRetryCandidates(scope: ImageScope, jobId: string, itemId?: string) {
+      const rows =
+        await sql`select i.id,e.task_id,e.status_path,j.provider_snapshot,j.input from generation_jobs j
+        join generation_job_items i on i.job_id=j.id join provider_executions e on e.item_id=i.id
+        where j.id=${jobId} and j.organization_id=${scope.organizationId} and i.superseded_at is null
+        and i.status in ('failed','needs_reconciliation') and e.task_id is not null and e.status_path is not null
+        and exists(select 1 from organization_members where organization_id=j.organization_id and user_id=${scope.userId})
+        ${itemId ? sql`and i.id=${itemId}` : sql``}`;
+      return rows.map((row) => ({
+        itemId: String(row.id),
+        taskId: String(row.task_id),
+        statusPath: String(row.status_path),
+        snapshot: providerSnapshotSchema.parse(row.provider_snapshot),
+        input: imageGenerationInputSchema.parse(row.input),
+      }));
+    },
+    async resumeProvider(scope: ImageScope, jobId: string, itemId: string) {
+      return sql.begin(async (tx) => {
+        const [job] =
+          await tx`select id from generation_jobs where id=${jobId} and organization_id=${scope.organizationId}
+          and exists(select 1 from organization_members where organization_id=${scope.organizationId} and user_id=${scope.userId}) for update`;
+        if (!job) throw new ImageRepositoryError("NOT_FOUND");
+        const changed =
+          await tx`update generation_job_items set status='running',error_code=null,completed_at=null,
+          execution_token=gen_random_uuid(),lease_expires_at=null,started_at=now(),reconciled_by=${scope.userId},
+          reconciliation_evidence='User retry verified the original provider task; resume result retrieval without new generation or charge'
+          where id=${itemId} and job_id=${jobId} and superseded_at is null and status in ('failed','needs_reconciliation') returning id`;
+        if (!changed.length) return;
+        await tx`update provider_executions set phase='polling',deadline_at=now()+interval '3 minutes',next_poll_at=now(),lease_until=null,poll_failures=0 where item_id=${itemId}`;
+        await tx`update generation_outbox set next_attempt_at=now(),lease_token=null,lease_expires_at=null where item_id=${itemId}`;
+        await refreshJob(tx, jobId);
+      });
+    },
     async retry(
       scope: ImageScope,
       jobId: string,
@@ -409,6 +455,7 @@ export function openImageRepository(
       before?: string,
       tool?: "create" | "textile" | "variation",
     ) {
+      await expireTimedOut(scope.organizationId);
       return sql`select ${jobView} from generation_jobs j where j.organization_id=${scope.organizationId} and j.archived_at is null
         ${tool ? (tool === "textile" ? sql`and j.input ? 'textileSet'` : tool === "variation" ? sql`and j.input ? 'variation'` : sql`and not (j.input ? 'textileSet') and not (j.input ? 'variation')`) : sql``}
         ${before ? sql`and (j.created_at,j.id) < (select created_at,id from generation_jobs where id=${before} and organization_id=${scope.organizationId})` : sql``}
@@ -423,6 +470,7 @@ export function openImageRepository(
       });
     },
     async get(scope: ImageScope, id: string) {
+      await expireTimedOut(scope.organizationId);
       const [row] =
         await sql`select ${jobView} from generation_jobs j where j.id=${id} and j.organization_id=${scope.organizationId}`;
       return row ?? null;
@@ -522,6 +570,7 @@ export function openImageRepository(
         lease_token=null,lease_expires_at=null where id=${id} and lease_token=${token}`;
     },
     async claim(itemId: string, workerId: string, leaseMs: number): Promise<ClaimedImage | null> {
+      leaseMs = Math.min(leaseMs, 90000);
       return sql.begin(async (tx) => {
         const [candidate] =
           await tx`select job_id from generation_job_items where id=${itemId} and (status='queued' or (status='running' and exists(select 1 from provider_executions e where e.item_id=${itemId} and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now()))))`;
@@ -629,6 +678,7 @@ export function openImageRepository(
       await sql`delete from generation_events where id in (select id from generation_events where created_at<now()-interval '7 days' order by created_at limit 1000)`;
     },
     async expireClaims() {
+      await expireTimedOut();
       await settleInvalidResponses();
       // An expired paid attempt is held for operator reconciliation, never queued again.
       const rows =

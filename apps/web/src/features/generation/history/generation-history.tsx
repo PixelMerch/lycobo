@@ -209,7 +209,7 @@ export function GenerationHistory({
                             {item.status === "failed"
                               ? "任务未能完成，积分已退回，请您稍后重试。"
                               : item.error_code === "PROVIDER_TIMEOUT"
-                                ? "生成超时，结果和积分状态正在确认，请稍后查看。"
+                                ? "生成超时，请重新生成。将先查询并恢复已有结果。"
                                 : "生成结果和积分状态正在确认，请稍后查看。"}
                           </p>
                         )}

@@ -545,7 +545,7 @@ try {
     ).status,
     404,
   );
-  await verifyStandaloneModels(databaseUrl, sql);
+  await verifyStandaloneModels(databaseUrl, sql, store, png);
   await verifyManagedModels(repository, sql, store, png);
   await verifyReferenceRetention(repository, sql);
   await verifyVariationPlans(repository, sql, store, png);

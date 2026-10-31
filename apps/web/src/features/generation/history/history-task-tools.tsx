@@ -140,9 +140,11 @@ export function HistoryTaskActions({
         )
       : job.requested_count;
   const unitCredits = imageUnitCredits;
-  const regenerateContent = `本次消耗 ${count * unitCredits} 积分${
-    upgradeTextile ? "。使用最新裂变配置创建新任务，原记录保留。" : ""
-  }`;
+  const regenerateContent = targets.some((entry) => entry.status === "needs_reconciliation")
+    ? "先查询原任务，已有结果将直接保存；确认需重新生成时才扣除积分。"
+    : `本次消耗 ${count * unitCredits} 积分${
+        upgradeTextile ? "。使用最新裂变配置创建新任务，原记录保留。" : ""
+      }`;
   const restore = (value: Awaited<ReturnType<typeof taskDraft>>) => {
     if (onRestore) {
       onRestore(value);

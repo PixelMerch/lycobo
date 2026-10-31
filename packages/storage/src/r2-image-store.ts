@@ -12,7 +12,13 @@ import {
 import { type DisplayVariant, displayImage, displayObjectKey } from "./image-variants";
 import type { ImageObjectBucket } from "./object-bucket";
 
-const stream = (bytes: Uint8Array) => new Blob([new Uint8Array(bytes)]).stream();
+const stream = (bytes: Uint8Array) =>
+  new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(bytes);
+      controller.close();
+    },
+  });
 const thumbnailKey = (key: string) => key.replace(/\.png$/, ".thumbnail.png");
 const validateKey = (key: string) => {
   objectKeySchema.parse(key);
@@ -49,7 +55,7 @@ export function r2ImageStore(
     )
       throw new ImageValidationError("INVALID_IMAGE");
     // Reject APNG / animated WebP instead of silently flattening user uploads.
-    const ascii = Buffer.from(bytes);
+    const ascii = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     if (info.format === "image/png") {
       let offset = 8;
       while (offset + 12 <= bytes.length) {
@@ -102,8 +108,12 @@ export function r2ImageStore(
       const source = await inspect(input);
       if (outputSize && (source.width < outputSize.width || source.height < outputSize.height))
         throw new ImageValidationError("OUTPUT_RESOLUTION_TOO_SMALL");
-      const data = await png(input, false, outputSize);
-      const info = await inspect(data);
+      // Validated PNG results need no second full-resolution encode or copy.
+      const preserve =
+        source.format === "image/png" &&
+        (!outputSize || (source.width === outputSize.width && source.height === outputSize.height));
+      const data = preserve ? input : await png(input, false, outputSize);
+      const info = preserve ? source : await inspect(data);
       if (outputSize && (info.width !== outputSize.width || info.height !== outputSize.height))
         throw new ImageValidationError("OUTPUT_RESOLUTION_MISMATCH");
       const sha256 = createHash("sha256").update(data).digest("hex");

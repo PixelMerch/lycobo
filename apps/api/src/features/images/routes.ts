@@ -23,6 +23,7 @@ import { enterprisePrincipal } from "../auth/routes";
 import type { EnterpriseAuth } from "../auth/service";
 import { type DeliverySigner, imageDeliveries } from "./delivery";
 import { imageEventStream } from "./events";
+import { providerRetryService } from "./provider-retry-service";
 import {
   setWorkbenchCookie,
   trustedWorkbenchRequest,
@@ -36,6 +37,8 @@ export type ImageApiDependencies = {
   modelSecret?: string | undefined;
   plannerKey?: string | undefined;
   plannerRequest?: typeof fetch | undefined;
+  standaloneKey?: string | undefined;
+  providerRequest?: typeof fetch | undefined;
   events?: ImageEventFeed | undefined;
   signAsset?: DeliverySigner | undefined;
   auth?: EnterpriseAuth | undefined;
@@ -322,6 +325,8 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const scope = c.get("principal");
     const job = await deps.repository.get(scope, jobId.data);
     if (!job) return fail(c, "NOT_FOUND", "任务不存在", 404);
+    if (await providerRetryService(deps)(scope, jobId.data, target.data.itemId))
+      return c.json({ id: jobId.data, replayed: false }, 202);
     try {
       const input = imageGenerationInputSchema.parse(job.input);
       if (!(await deps.repository.models.hasRoute(input))) {

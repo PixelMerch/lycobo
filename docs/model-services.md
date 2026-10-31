@@ -176,4 +176,8 @@ Seedream 文档未声明质量枚举，与 Grok 一样不发送 GPT 默认 quali
 
 `STANDALONE_MODELS=true` 时，智能裂变固定直连 DeepSeek 官方 `https://api.deepseek.com/chat/completions`，模型 `deepseek-flash`，不读取后台语言渠道或使用语言中转站。`DEEPSEEK_API_KEY` 使用 DeepSeek 官方 Key，仅在 API 服务端配置；图片生成仍用独立的 `STANDALONE_IMAGE_API_KEY`。保留后台表和其他协议适配供后续管理功能使用。
 
-按[官方视觉文档](https://api-docs.deepseek.com/guides/vision/)发送已授权缩略图 Base64 与 `detail=low`；无参考图仅发送文字，不虚构商品视觉分析。依据[思考模式文档](https://api-docs.deepseek.com/guides/thinking_mode/)显式 `thinking.type=disabled`，避免默认开启思考；使用 JSON 输出、`max_tokens=8192`、单轮请求和简短独立提示词来控制费用。最多20条，未指定数量仍默认10条，用户指定数量时按需求生成；不为省成本减少用户要求的方案数。保留60秒超时、取消、幂等、严格结果校验，不自动重发。
+按[官方视觉文档](https://api-docs.deepseek.com/guides/vision/)发送已授权缩略图 Base64 与 `detail=low`；无参考图仅发送文字，不虚构商品视觉分析。依据[思考模式文档](https://api-docs.deepseek.com/guides/thinking_mode/)显式 `thinking.type=disabled`，避免默认开启思考；使用 JSON 输出、`max_tokens=8192`、单轮请求和简短独立提示词来控制费用。最多20条，按用户指定的张数或颜色、场景、视角等目标列表确定数量；如“红色、蓝色、白色”为3条，“换成红色，白色部分不变”为1条，未指定数量或变化项时只生成1条；不为省成本减少用户要求的方案数。保留60秒超时、取消、幂等、严格结果校验，不自动重发。
+
+DeepSeek独立适配真实验证（2026-10-31）：官方Key、低细节商品参考图和非思考JSON输出，3条计划HTTP200，663 token，总耗时约2.7秒；20条计划HTTP200，1955 token，总耗时约10.1秒。未自动重发、未创建或扣费生图任务。结果仅为这两次请求，不保证后续延迟。
+
+计划数量语义验证（2026-10-31）：未写张数、仅列红/蓝/白三色，真实官方请求返回3条（约1.9秒）；仅要求换红并保留白色部分，返回1条（约1.4秒）。保留条件不计作新方案，不默认扩展至10条。

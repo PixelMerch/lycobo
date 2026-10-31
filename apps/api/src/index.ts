@@ -41,6 +41,10 @@ const app = createApp(
     ? {
         repository,
         modelSecret: process.env.MODEL_CREDENTIAL_SECRET,
+        standaloneKey:
+          process.env.STANDALONE_MODELS === "true"
+            ? process.env.STANDALONE_IMAGE_API_KEY
+            : undefined,
         plannerKey:
           process.env.STANDALONE_MODELS === "true" ? process.env.DEEPSEEK_API_KEY : undefined,
         events,
