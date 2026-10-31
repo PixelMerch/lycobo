@@ -129,3 +129,5 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
 智能裂变接入测试：`variation-planner.test.ts` 覆盖视觉JSON、独立提示词、坏结果及不自动重试；`verify-variation-plans.ts` 由隔离图片集成脚本执行，覆盖计划幂等、所有权、确认前不扣费、10方案创建与历史隔离。`tests/e2e/smart-variation.spec.ts` 使用明确的API fixtures，检查文字校验、编辑/勾选/删除、跨工具保留草稿及确认后的单次提交，包含320/390/1440px。Fixture通过不代表外部语言供应商可用，外部实测另行记录结果。
 
 独立主站配置由 `standalone-models.test.ts` 验证开关、密钥缺失时关闭、六模型路由与快照不包含密钥。`verify-standalone-models.ts` 随隔离图片集成运行，在临时库禁用后台模型目录后验证主站仍可创建任务、同键只扣一次、outbox和计划配置可用。`model-catalog.spec.ts` 验证后台目录503时不发送目录请求、六模型与本地SVG仍显示、图片加载失败回退；保留历史与预览名称一致断言。
+
+2026-10-31 主站独立配置线上验收：Cloudflare Pages/Workers + Supabase 完成普通生图、家纺套图、智能裂变各1张真实生成，三张均成功写入素材，输出1254×1254；裂变计划由Claude Sonnet 5实际生成后确认提交，合计扣60积分。首次普通任务被结果域名白名单拦截，核对原上游任务成功后，仅补充已确认的下载源并恢复原任务GET轮询，未重复提交或扣费。固定配置仅允许`download.ai-media.vip`作为额外图片下载源；单测验证CDN下载不带API Key、其他域名仍拒绝。六模型目录已上线，但本次付费验收只验证Image 2.5链路，不代表其他五模型全部完成真实调用。

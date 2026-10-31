@@ -1,5 +1,6 @@
 import { imageGenerationInputSchema } from "@lycoboai/contracts";
 import { expect, it } from "vitest";
+import { providerOutputBytes } from "./configured-provider";
 import { standaloneCredentialId, standaloneModels } from "./standalone-models";
 
 const env = {
@@ -37,4 +38,29 @@ it("routes all public models without any admin or database lookups", async () =>
   expect(() => config?.resolve({ ...input, model: "unknown-model" })).toThrow(
     "MODEL_CHANNEL_DISABLED",
   );
+});
+
+it("downloads standalone provider results without forwarding credentials to its CDN", async () => {
+  const config = await standaloneModels(env);
+  if (!config) throw new Error("STANDALONE_CONFIG_REQUIRED");
+  const snapshot = config.resolve(
+    imageGenerationInputSchema.parse({ model: "gpt-image-2.5", prompt: "商品摄影" }),
+  );
+  const bytes = await providerOutputBytes(
+    { url: "https://download.ai-media.vip/result.png" },
+    snapshot,
+    env.STANDALONE_IMAGE_API_KEY,
+    async (_url, init) => {
+      expect(new Headers(init?.headers).has("Authorization")).toBe(false);
+      return new Response(new Uint8Array([1, 2, 3]));
+    },
+  );
+  expect(bytes.length).toBe(3);
+  await expect(
+    providerOutputBytes(
+      { url: "https://untrusted.example/result.png" },
+      snapshot,
+      env.STANDALONE_IMAGE_API_KEY,
+    ),
+  ).rejects.toThrow("PROVIDER_UNTRUSTED_RESULT_URL");
 });

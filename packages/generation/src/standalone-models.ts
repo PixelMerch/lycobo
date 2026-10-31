@@ -44,7 +44,7 @@ export async function standaloneModels(env: StandaloneModelEnvironment) {
         maxReferences: 6,
         timeoutMs: 60000,
         taskTimeoutSeconds: 1800,
-        downloadOrigins: [],
+        downloadOrigins: ["https://download.ai-media.vip"],
         channelId,
         credentialId: standaloneCredentialId,
       }),
