@@ -23,4 +23,18 @@ describe("CloudBase consumer release boundaries", () => {
     await expect(main()).rejects.toThrow("DATABASE_BACKEND_CONFLICT");
     expect(request).not.toHaveBeenCalled();
   });
+  it("answers an API wake by queueing an asynchronous drain without database or paid work", async () => {
+    vi.stubEnv("IMAGE_GENERATION_ENABLED", "true");
+    vi.stubEnv("TENCENTCLOUD_SECRETID", "AKIDfixture");
+    vi.stubEnv("TENCENTCLOUD_SECRETKEY", "fixture-secret-key");
+    vi.stubEnv("TENCENTCLOUD_REGION", "ap-shanghai");
+    vi.stubEnv("SCF_FUNCTIONNAME", "lycobo-consumer");
+    vi.stubEnv("CLOUDBASE_ENV_ID", "lycobo-env");
+    const request = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(Response.json({ Response: { RequestId: "fixture" } }));
+    expect(await main({ wake: true })).toEqual({ enabled: true, processed: 0, woken: true });
+    expect(request).toHaveBeenCalledOnce();
+    expect(String(request.mock.calls[0]?.[0])).toBe("https://scf.tencentcloudapi.com/");
+  });
 });
