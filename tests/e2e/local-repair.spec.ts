@@ -341,7 +341,7 @@ test("closing with unsubmitted regions asks first and then clears the draft", as
   await expect(viewer.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
 });
 
-test("reloading an image restores its most recent submitted edit and result link", async ({
+test("submitted repairs clear their draft and reopen without discard warnings while preserving results", async ({
   page,
 }) => {
   await mockImageApi(page);
@@ -430,15 +430,20 @@ test("reloading an image restores its most recent submitted edit and result link
   await openEditor();
   const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
   const prompt = viewer.getByRole("textbox", { name: "区域 1 修改说明", exact: true });
-  await expect(prompt).toHaveValue("改成蓝色被子");
+  await expect(prompt).toHaveCount(0);
   await expect(viewer.getByRole("button", { name: "查看修改版", exact: true })).toBeVisible();
+  await viewer.getByRole("button", { name: "添加区域", exact: true }).click();
   await prompt.fill("改成绿色被子");
   await viewer.getByRole("button", { name: "立即生成", exact: true }).click();
   await expect.poll(() => latestJobId).toBe(jobId);
-  await expect(viewer.getByRole("button", { name: "立即生成", exact: true })).toBeEnabled();
+  await expect(prompt).toHaveCount(0);
+  await expect(viewer.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
+  await viewer.getByRole("button", { name: "关闭图片预览", exact: true }).click();
+  await expect(viewer).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "退出局部编辑？", exact: true })).toHaveCount(0);
   await page.reload();
   await openEditor();
-  await expect(prompt).toHaveValue("改成绿色被子");
+  await expect(prompt).toHaveCount(0);
   await viewer.getByRole("button", { name: "查看修改版", exact: true }).click();
   await expect(viewer).toHaveCount(0);
   await expect(page.locator(`#job-${jobId}`)).toContainText("WREPAIR02");

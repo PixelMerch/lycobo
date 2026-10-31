@@ -55,8 +55,9 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
     const saved = latest.data?.job;
     const edit = saved?.input?.localEdit;
     if (!saved || !edit || localDraft || useRepairDrafts.getState().drafts[key]) return;
-    update(key, { regions: edit.regions, jobId: saved.id });
-    setSelected(edit.regions[0]?.id ?? null);
+    // A saved submission is history, not an unsaved editing draft.
+    update(key, { regions: [], jobId: saved.id });
+    setSelected(null);
   }, [latest.data, key, update, localDraft]);
   const submissionLock = useRef(false);
   const job = useQuery({
@@ -161,7 +162,9 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
           count: "1",
         },
       });
-      update(key, { jobId: submitted.id });
+      update(key, { regions: [], jobId: submitted.id });
+      setSelected(null);
+      setHistory({ past: [], future: [] });
     } catch {
       /* The shared error toast and pending submission retain the exact paid request. */
     } finally {
