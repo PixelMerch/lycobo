@@ -68,7 +68,7 @@ jobs:
         run: |
           test "$RUNTIME_READY" = true || { echo '::error::Complete CloudBase functions, server credentials, gateway routes and candidate validation before enabling CLOUDBASE_RUNTIME_READY'; exit 1; }
       - name: Publish backend code with existing server configuration
-        timeout-minutes: 10
+        timeout-minutes: 20
         env:
           GH_TOKEN: ${{ github.token }}
           TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}
