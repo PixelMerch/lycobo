@@ -2,7 +2,12 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { decodeToolResult, publishRuntime, validateUpload } from "./cloudbase/deploy-runtime.mjs";
+import {
+  decodeToolResult,
+  deploymentCosCredentials,
+  publishRuntime,
+  validateUpload,
+} from "./cloudbase/deploy-runtime.mjs";
 
 const name = "lycobo-consumer";
 const upload = (suffix = "0123456789abcdef") => {
@@ -16,6 +21,41 @@ const upload = (suffix = "0123456789abcdef") => {
   };
 };
 describe("CloudBase runtime code publishing", () => {
+  it("uses CI credentials without calling the temporary-session-only interface", async () => {
+    const call = vi.fn(async () => {
+      throw new Error("UNSUPPORTED_CREDENTIAL_TYPE");
+    });
+    await expect(
+      deploymentCosCredentials(
+        { TCB_SECRET_ID: "AKIDfixture", TCB_SECRET_KEY: "fixture-only" },
+        call,
+      ),
+    ).resolves.toEqual({ SecretId: "AKIDfixture", SecretKey: "fixture-only" });
+    expect(call).not.toHaveBeenCalled();
+    await expect(deploymentCosCredentials({ TCB_SECRET_ID: "AKIDfixture" }, call)).rejects.toThrow(
+      "CODE_UPLOAD_CREDENTIALS_UNAVAILABLE",
+    );
+    expect(call).not.toHaveBeenCalled();
+  });
+  it("retains the explicit temporary-session path for local device authorization", async () => {
+    const call = vi.fn(async () => ({
+      credentials: {
+        secretId: "local-fixture",
+        secretKey: "fixture-only",
+        token: "temporary-fixture",
+        masked: false,
+      },
+    }));
+    await expect(deploymentCosCredentials({}, call)).resolves.toMatchObject({
+      SecretId: "local-fixture",
+      SecurityToken: "temporary-fixture",
+    });
+    expect(call).toHaveBeenCalledWith("auth", {
+      action: "get_temp_credentials",
+      confirm: "yes",
+      reveal: true,
+    });
+  });
   it("does not forward raw tool errors containing credentials or signed URLs", () => {
     expect(() =>
       decodeToolResult(
