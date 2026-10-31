@@ -23,7 +23,7 @@ GitHub 已创建 `cloudbase-production` Environment，仅允许 main 部署。�
 
 权限限定到本项目发布所需能力，不使用主账号无限制密钥。数据库密码、企业 JWT 主密钥和图片供应商 Key 不进入前端部署环境。临时 device 登录授权不能复制到 GitHub 长期使用。
 
-首次三个函数创建、服务端变量、同源网关与候选读写检查均已完成，Environment 变量 `CLOUDBASE_RUNTIME_READY` 已设置为 `true`。后续 CI 使用 `tcb fn code update` 仅更新代码，保留云端运行凭据和配置；不会自动创建不完整后端或应用数据库迁移。
+首次三个函数创建、服务端变量、同源网关与候选读写检查均已完成，Environment 变量 `CLOUDBASE_RUNTIME_READY` 已设置为 `true`。后续 CI 使用固定版本 CloudBase MCP 的两段式代码上传，仅更新代码并保留云端运行凭据和配置；不会自动创建不完整后端或应用数据库迁移。
 
 Secrets 仅在发布登录步骤注入，不传入前端构建；任务结束后执行 CLI logout。代码进入 main、Secrets 配置完成并实际运行前，不能宣称 GitHub 自动发布已跑通。本地提交不会自动推送或触发发布。
 
@@ -70,3 +70,12 @@ workerd/Miniflare、旧运行时源码和 `scripts/cloudflare` 剩余文件仅�
 
 
 本次首次部署已使用替代入口：`node --env-file=.env scripts/cloudbase/bootstrap-runtime.mjs <准备好的运行目录>`。该入口通过官方 CLI 配置文件直接引用原始本机凭据；临时配置在函数包外、权限 0600，并在结束时删除。它不打开网关、不启用生图或定时器。MCP 凭据核对因客户端没有弹窗未能执行，本次按其引用指引直接读取原始配置，通过官方 CLI 完成部署。
+
+
+## 自动发布传输修复
+
+发布 PR #33 已合并到 main（b7a4b70），main Quality/Infrastructure 均通过。首次 GitHub 发布在 CLI 的临时 COS 上传阶段没有完成，已停止该任务，未修改运行配置或前端。
+
+后端改用 `scripts/cloudbase/deploy-runtime.mjs`：固定 @cloudbase/cloudbase-mcp 2.36.2、MCP SDK 1.32.2、COS SDK 3.0.0，依赖仅安装到 runner 临时目录，不进入应用包或根锁文件。MCP 获取环境自有 COS 桶的短期上传地址，限制区域、桶、代码前缀和函数名，90 秒上传超时、最多三次刷新地址重试；成功传输后才提交代码更新。函数恢复 Active 且修改时间变化后，用 COS SDK 删除本次代码对象。读取的临时管理凭据仅存在于进程内，不输出或写入应用配置。
+
+本地已用同一两段式入口实际更新三个服务并确认 Active，三个临时代码对象已删除。针对 URL/桶/用途校验、错误脱敏、上传失败重试和代码提交顺序的专项测试通过。新工作流仍需 GitHub 实际运行验证。

@@ -70,7 +70,7 @@
 - 临时测试的 4 个对象、素材行、事件行及公开编号注册行已精确清理。再次计算目标 43 张表的内容指纹，与源快照全部匹配；正常保留序列递增产生的空号，不回退已使用游标。
 - 消费者云端手动调用成功：enabled=false、processed=0，无供应商调用。
 
-GitHub cloudbase-production Environment 已配置 CLOUDBASE_RUNTIME_READY=true。后续 main CI 成功时可以更新已配置的三个函数代码并发布前端；本地代码尚未推送/合并，GitHub 实际发布工作流尚未运行，两个部署 Secret 的正确性仍待首次运行验证。
+GitHub cloudbase-production Environment 已配置 CLOUDBASE_RUNTIME_READY=true。发布 PR #33 已在 CI 通过后合并，main 提交为 b7a4b70；两个长期分支已同步。首次 GitHub 发布停在 CLI 临时 COS 上传，已停止该任务并采用环境自有桶的两段式代码上传修复，详见 [部署传输修复](cloudbase-deployment.md#自动发布传输修复)。新流程实际验证仍在进行。
 
 ## 正式切换阻塞
 
@@ -78,4 +78,4 @@ lycobo.com 已有 CloudBase 域名配置和证书，但平台状态 FAIL；实�
 
 当前 device 登录实际以 TCB_QcsRole 调用（STS 已确认），不具备 DNSPod 读取权限。无需为了候选域名扩大权限；自定义域名备案完成后，可由域名持有人配置解析。若需要代查 DNS，可由具备 CAM 写权限的账号使用 [只读授权入口](https://console.cloud.tencent.com/cam/role/grant?roleName=TCB_QcsRole&policyName=QcloudDNSPodReadOnlyAccess&principal=eyJzZXJ2aWNlIjpbInRjYi5jbG91ZC50ZW5jZW50LmNvbSJdfQ%3D%3D)；该授权扩大服务角色对账号下域名的只读权限，并非本次候选部署必需。
 
-尚需：取得 GitHub 推送/发布 PR 授权并运行真实自动发布、完成自定义域名备案和解析、协调旧 API/消费者及独立 admin 停写、最终数据库/对象复核、入口切换，然后开启 API 生图与消费者定时触发。当前两个服务的 IMAGE_GENERATION_ENABLED 仍为 false，不把候选部署当成正式生图服务已切换。
+尚需：完成 GitHub 自动发布传输修复并验证真实运行、完成自定义域名备案和解析、协调旧 API/消费者及独立 admin 停写、最终数据库/对象复核、入口切换，然后开启 API 生图与消费者定时触发。当前两个服务的 IMAGE_GENERATION_ENABLED 仍为 false，不把候选部署当成正式生图服务已切换。
