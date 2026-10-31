@@ -1,6 +1,6 @@
 # CloudBase 后端运行迁移记录
 
-更新：2026-11-01。主图制作、家纺套图、智能裂变均已在 CloudBase 实际生图并保存到私有云存储。正式域名因未备案无法接入，当前使用同源网关入口；旧 API 和消费者的生图已关闭，原数据与对象保留。
+更新：2026-11-01。主图制作、家纺套图、智能裂变均已在 CloudBase 实际生图并保存到私有云存储。当前固定使用默认同源网关，自定义域名暂不接入；旧 API 和消费者的生图已关闭，原数据与对象保留。
 
 ## 当前真实验收
 
@@ -86,10 +86,10 @@ API 和消费者的 IMAGE_GENERATION_ENABLED 均已开启；消费者的 `lycobo
 
 GitHub cloudbase-production Environment 已配置 CLOUDBASE_RUNTIME_READY=true。发布 PR #33 已在 CI 通过后合并，main 提交为 b7a4b70；两个长期分支已同步。首次 GitHub 发布停在 CLI 临时 COS 上传，已停止该任务并采用环境自有桶的两段式代码上传修复，详见 [部署传输修复](cloudbase-deployment.md#自动发布传输修复)。新流程实际验证仍在进行。
 
-## 正式切换阻塞
+## 自定义域名历史与后续边界
 
 lycobo.com 已有 CloudBase 域名配置和证书，但平台状态 FAIL；实际创建 API 路由返回“域名未备案；如果域名已经完成备案，由于腾讯云与工信部数据需要同步，请在1小时后重试”。未修改 DNS，也没有停止原站。
 
-当前 device 登录实际以 TCB_QcsRole 调用（STS 已确认），不具备 DNSPod 读取权限。无需为了候选域名扩大权限；自定义域名备案完成后，可由域名持有人配置解析。若需要代查 DNS，可由具备 CAM 写权限的账号使用 [只读授权入口](https://console.cloud.tencent.com/cam/role/grant?roleName=TCB_QcsRole&policyName=QcloudDNSPodReadOnlyAccess&principal=eyJzZXJ2aWNlIjpbInRjYi5jbG91ZC50ZW5jZW50LmNvbSJdfQ%3D%3D)；该授权扩大服务角色对账号下域名的只读权限，并非本次候选部署必需。
+当前 device 登录实际以 TCB_QcsRole 调用（STS 已确认），不具备 DNSPod 读取权限。用户已确认暂不接入自定义域名，本次不修改 DNS、不扩大该角色权限，也不以备案作为默认入口的启用条件。
 
-尚需完成 GitHub 分块自动发布验证，以及自定义域名备案和解析。新站三个功能已经开启并真实验收，旧 API/消费者生图已关闭；独立 admin 仍待接入目标库，正式域名入口尚未切换。
+尚需完成 GitHub 分块自动发布验证。新站三个功能已经开启并真实验收，默认入口固定，旧 API/消费者生图已关闭；独立 admin 仍待接入目标库。自定义域名明确暂缓，不列为本次交付待办。
