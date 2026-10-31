@@ -1,8 +1,46 @@
 import { Button, Checkbox, Input, Label, Spinner, TextArea, TextField } from "@heroui/react";
 import { IconCheck, IconTrash, IconX } from "@tabler/icons-react";
+import { useLayoutEffect, useRef } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useSmartVariationDraft } from "./smart-variation-state";
 import { useVariationGeneration } from "./use-variation-generation";
+
+function PlanPrompt({
+  value,
+  index,
+  onChange,
+}: {
+  value: string;
+  index: number;
+  onChange: (value: string) => void;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    let width = -1;
+    const fit = () => {
+      element.style.height = value.length === 0 ? "" : "auto";
+      const border = element.offsetHeight - element.clientHeight;
+      element.style.height = `${element.scrollHeight + border}px`;
+    };
+    const observer = new ResizeObserver((entries) => {
+      const next = entries[0]?.contentRect.width ?? 0;
+      if (Math.abs(next - width) < 1) return;
+      width = next;
+      fit();
+    });
+    fit();
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [value]);
+  return (
+    <TextField value={value} onChange={onChange}>
+      <Label className="sr-only">方案 {index + 1} 提示词</Label>
+      <TextArea ref={ref} rows={3} maxLength={4000} />
+    </TextField>
+  );
+}
 
 export function VariationPlanPanel({
   isOpen,
@@ -83,10 +121,11 @@ export function VariationPlanPanel({
                   <UiIcon icon={IconTrash} />
                 </Button>
               </div>
-              <TextField value={item.prompt} onChange={(prompt) => patchItem(item.id, { prompt })}>
-                <Label className="sr-only">方案 {index + 1} 提示词</Label>
-                <TextArea rows={3} maxLength={4000} />
-              </TextField>
+              <PlanPrompt
+                value={item.prompt}
+                index={index}
+                onChange={(prompt) => patchItem(item.id, { prompt })}
+              />
             </section>
           ))}
           {!items.length && <p className="variation-plan-empty">暂无方案，请重新生成计划。</p>}
