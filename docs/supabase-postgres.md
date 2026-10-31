@@ -1,5 +1,7 @@
 # Supabase PostgreSQL 结构迁移
 
+2026-10-31：此文保留 Supabase 旧源库的初始化与显式运维说明。CloudBase 共享 PG 数据副本已完成；当前发布和运行边界见 [CloudBase 部署](cloudbase-deployment.md)，复制结果见 [数据库迁移](cloudbase-database-migration.md)。旧源服务尚未切换，生产 Cloudflare 发布配置已删除。
+
 项目仍由 Hono API、独立 Worker 通过 PostgreSQL 驱动访问数据库，前端不直连数据库，不切换为 Supabase Auth 或 Data API。此次目标是将仓库已有结构初始化到 Supabase；本地用户、组织、余额、素材记录与图片文件不随结构迁移复制。
 
 ## 连接配置
@@ -45,7 +47,7 @@ pnpm db:migrate:supabase
 
 此前已验证本地 Node API／Worker 直连上述 Supabase 项目并完成企业账号登录。当前代码改造后的发布目标是 Cloudflare Workers：API 和消费者共用同一个 Hyperdrive binding，连接上述 Supabase，**关闭查询缓存**，不再通过 Compose 注入数据库连接，也不需要 Redis。秘密在 Hyperdrive／Worker Secrets 中保存，前端不读取连接串。
 
-Cloudflare 资源准备、凭据、部署和上线验收见 [Cloudflare 部署](cloudflare-deployment.md)。代码打包或本地模拟通过不代表远端已开通或已上线。`DATABASE_URL` 仍用于显式的数据库管理脚本，迁移命令单独使用 `SUPABASE_DATABASE_URL`，不会自动复制旧账号、历史、素材或积分。
+当前发布凭据和迁移边界见 [CloudBase 部署](cloudbase-deployment.md)。代码打包或本地模拟通过不代表远端已上线。`DATABASE_URL` 仍用于显式数据库管理，旧初始化命令只使用 `SUPABASE_DATABASE_URL`，不会自动复制账号、历史、素材或积分。
 
 开发使用 Wrangler，本地 Hyperdrive 指向 loopback PostgreSQL；R2、Queues、Images 本地模拟，不把隔离测试连接指向 Supabase。根 `.env` 已有的远端账号和数据库秘密保持不变。旧数据库、卷和本地图片文件保留；旧本地文件进入 R2 需要单独核对迁移。
 

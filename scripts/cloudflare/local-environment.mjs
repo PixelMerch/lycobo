@@ -5,7 +5,7 @@ export function localEnvironment(source, docker = false, modelSettings = source)
   const env = Object.fromEntries(
     Object.entries(source).filter(
       ([key]) =>
-        !/^(?:CLOUDFLARE_|CF_|SUPABASE_|AUTH_|ASSET_|VAKV_|IMAGE_|MODEL_|WRANGLER_|S3_|STANDALONE_)/.test(
+        !/^(?:CLOUDBASE_|TCB_|TENCENTCLOUD_|CLOUDFLARE_|CF_|SUPABASE_|AUTH_|ASSET_|VAKV_|IMAGE_|MODEL_|WRANGLER_|S3_|STANDALONE_)/.test(
           key,
         ) &&
         key !== "DATABASE_URL" &&

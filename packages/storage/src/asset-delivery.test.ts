@@ -65,3 +65,25 @@ it("binds each signature to its variant so preview capabilities cannot retrieve 
   expect(await verifyAsset(key, expires, preview, signing, undefined, "download")).toBe(false);
   expect(await verifyAsset(key, expires, download, signing, undefined, "download")).toBe(true);
 });
+
+it("keeps gateway-prefixed delivery signed for the same object and purpose", async () => {
+  const links = await assetDeliverySigner("https://app.example.test", secret, {
+    pathPrefix: "/_images/",
+  })(key);
+  const url = new URL(links.thumbnail_url);
+  expect(url.pathname).toBe(`/_images/${key.replace(/\.png$/, ".thumbnail.webp")}`);
+  expect(
+    await verifyAsset(
+      key,
+      links.expires_at,
+      url.searchParams.get("sig") ?? "",
+      await assetSigningKey(secret),
+      undefined,
+      "thumbnail",
+    ),
+  ).toBe(true);
+  for (const pathPrefix of ["//evil.test/", "/../", "/images?key=", "images/"])
+    expect(() => assetDeliverySigner("https://app.example.test", secret, { pathPrefix })).toThrow(
+      "INVALID_ASSET_PREFIX",
+    );
+});

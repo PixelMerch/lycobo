@@ -1,5 +1,7 @@
 # 技术栈与决策
 
+2026-10-31：发布目标改为 CloudBase 静态应用、共享 PG 与私有 PG 云存储。下列旧 Workers/Queues 条目记录尚未迁移的运行时，不能用于恢复已删除的 Cloudflare 生产配置。实际状态见 [CloudBase 部署](cloudbase-deployment.md)。
+
 ## 固定方案
 
 | 层 | 技术 | 理由 |
@@ -17,7 +19,7 @@
 | 日志 | Pino | 结构化、脱敏、不打印原始请求内容 |
 | 数据 | PostgreSQL 17 + Drizzle ORM / Kit | 关系约束、可审查迁移、持久任务 |
 | 后台 | Cloudflare Queues + 消费者 Worker | PostgreSQL outbox、独立消费与 Cron 恢复 |
-| 文件 | R2 私有对象 + Images binding | 按 UID 分目录，原件与缩略图分开 |
+| 文件 | CloudBase PG 私有存储 + Node Sharp | 按 UID 分目录，原图、预览与缩略图分开；旧源对象保留 |
 | 通知 | 持久事件 + SSE + 查询兜底 | 推送丢失也能找回结果 |
 | 检查 | Biome、Vitest、Playwright、commitlint | 类型之外的规则、行为、浏览器与提交检查 |
 

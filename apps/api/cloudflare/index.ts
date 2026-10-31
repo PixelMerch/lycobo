@@ -10,12 +10,12 @@ import {
 import { dispatchImageOutbox, type ImageQueueSender } from "@lycoboai/queue";
 import { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { r2ImageStore } from "@lycoboai/storage/r2";
-import { imageObjectBucket, type S3Bindings } from "@lycoboai/storage/s3";
+import { imageObjectBucket, type StorageBindings } from "@lycoboai/storage/s3";
 import { createApp } from "../src/app";
 import { enterpriseAuth, readAuthConfig } from "../src/features/auth/service";
 import { errorCategory, safeRequestPath } from "../src/request-diagnostics";
 
-export interface ApiBindings extends S3Bindings, StandaloneModelEnvironment {
+export interface ApiBindings extends StorageBindings, StandaloneModelEnvironment {
   ASSET_SIGNING_SECRET?: string;
   ASSET_PUBLIC_ORIGIN?: string;
   HYPERDRIVE: Hyperdrive;

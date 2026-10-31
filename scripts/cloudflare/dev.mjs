@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import { parseEnv } from "node:util";
+import { localConfig } from "./local-config.mjs";
 import { localEnvironment } from "./local-environment.mjs";
 
 const docker = process.argv.includes("--docker");
@@ -12,22 +13,10 @@ try {
 }
 // Never merge the whole .env into child processes: only model settings are allowlisted.
 const env = localEnvironment(process.env, docker, { ...fileSettings, ...process.env });
-// Refuse accidental remote bindings in the configs consumed by local development.
+// Local-only templates contain no account, production resource or publish configuration.
 const configs = {};
 for (const name of ["api", "worker", "assets"]) {
-  const config = JSON.parse(await readFile(`apps/${name}/wrangler.jsonc`, "utf8"));
-  const rejectRemote = (value) => {
-    if (!value || typeof value !== "object") return;
-    if (value.remote === true)
-      throw new Error("Remote bindings are forbidden in local development.");
-    for (const child of Object.values(value)) rejectRemote(child);
-  };
-  rejectRemote(config);
-  config.main = name === "assets" ? "src/local.ts" : "cloudflare/local.ts";
-  config.name += "-local";
-  delete config.queues;
-  delete config.triggers;
-  configs[name] = config;
+  configs[name] = localConfig(name);
 }
 for (const key of Object.keys(process.env)) delete process.env[key];
 Object.assign(process.env, env);

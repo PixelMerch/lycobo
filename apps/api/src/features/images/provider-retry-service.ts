@@ -1,5 +1,5 @@
 import type { ImageScope } from "@lycoboai/contracts";
-import { type ImageRepository, ImageRepositoryError } from "@lycoboai/db";
+import { ImageRepositoryError, type ImageRuntimeRepository } from "@lycoboai/db";
 import {
   configuredProviderCall,
   ImageProviderError,
@@ -10,7 +10,7 @@ import {
 /** Read accepted upstream tasks before allowing any replacement paid submission. */
 export function providerRetryService(deps: {
   repository: Pick<
-    ImageRepository,
+    ImageRuntimeRepository,
     "providerRetryCandidates" | "providerCipher" | "resumeProvider"
   >;
   modelSecret?: string | undefined;

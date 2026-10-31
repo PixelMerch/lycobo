@@ -1,6 +1,14 @@
 import { isAbsolute } from "node:path";
 import { serve } from "@hono/node-server";
-import { openAuthRepository, openImageEventFeed, openImageRepository } from "@lycoboai/db";
+import {
+  openAuthRepository,
+  openCloudBaseAuthRepository,
+  openCloudBaseImageEventFeed,
+  openCloudBaseImageRepository,
+  openImageEventFeed,
+  openImageRepository,
+  readCloudBaseDatabaseConfig,
+} from "@lycoboai/db";
 import {
   readImagePolicy,
   standaloneModels,
@@ -8,6 +16,9 @@ import {
   validateModelInput,
 } from "@lycoboai/generation";
 import { imageStore } from "@lycoboai/storage";
+import { cloudbaseObjectBucket, readCloudBaseStorageConfig } from "@lycoboai/storage/cloudbase";
+import { assetDeliverySigner } from "@lycoboai/storage/delivery";
+import { objectImageStore } from "@lycoboai/storage/object-images";
 import pino from "pino";
 import { createApp } from "./app";
 import { readEnv } from "./env";
@@ -17,23 +28,41 @@ import { readWorkbenchSession } from "./features/images/session";
 const env = readEnv(process.env);
 const logger = pino({ level: env.LOG_LEVEL });
 const policy = readImagePolicy({ IMAGE_GENERATION_ENABLED: process.env.IMAGE_GENERATION_ENABLED });
-if (policy.enabled && !isAbsolute(process.env.IMAGE_DATA_DIR ?? ""))
+const cloudbaseStorage = readCloudBaseStorageConfig(process.env);
+const cloudbaseDatabase = readCloudBaseDatabaseConfig(process.env);
+if (policy.enabled && !cloudbaseStorage && !isAbsolute(process.env.IMAGE_DATA_DIR ?? ""))
   throw new Error("IMAGE_DATA_DIR must be an absolute shared directory");
-const repository = process.env.DATABASE_URL
-  ? openImageRepository(process.env.DATABASE_URL, false, await standaloneModels(process.env))
-  : null;
+if (cloudbaseDatabase && process.env.DATABASE_URL) throw new Error("DATABASE_BACKEND_CONFLICT");
+const independent = await standaloneModels(process.env);
+if (cloudbaseDatabase && !independent) throw new Error("CLOUDBASE_STANDALONE_MODELS_REQUIRED");
+const repository =
+  cloudbaseDatabase && independent
+    ? openCloudBaseImageRepository(cloudbaseDatabase, independent)
+    : process.env.DATABASE_URL
+      ? openImageRepository(process.env.DATABASE_URL, false, independent)
+      : null;
 if (policy.enabled && !repository) throw new Error("DATABASE_URL is required for the Image API");
 const authConfig = readAuthConfig(process.env);
-if (authConfig && !process.env.DATABASE_URL)
-  throw new Error("DATABASE_URL is required for enterprise auth");
+if (authConfig && !process.env.DATABASE_URL && !cloudbaseDatabase)
+  throw new Error("Enterprise auth database is required");
 const authRepository =
-  authConfig && process.env.DATABASE_URL ? openAuthRepository(process.env.DATABASE_URL) : null;
+  authConfig && cloudbaseDatabase
+    ? openCloudBaseAuthRepository(cloudbaseDatabase)
+    : authConfig && process.env.DATABASE_URL
+      ? openAuthRepository(process.env.DATABASE_URL)
+      : null;
 const auth = authRepository && authConfig ? enterpriseAuth(authRepository, authConfig) : undefined;
 const events =
-  repository && process.env.IMAGE_EVENTS_ENABLED !== "false" && process.env.DATABASE_URL
-    ? openImageEventFeed(process.env.DATABASE_URL)
+  repository && process.env.IMAGE_EVENTS_ENABLED !== "false"
+    ? cloudbaseDatabase
+      ? openCloudBaseImageEventFeed(cloudbaseDatabase)
+      : process.env.DATABASE_URL
+        ? openImageEventFeed(process.env.DATABASE_URL)
+        : undefined
     : undefined;
-const store = imageStore(process.env.IMAGE_DATA_DIR ?? "./data/images", repository?.storageUid);
+const store = cloudbaseStorage
+  ? objectImageStore(cloudbaseObjectBucket(cloudbaseStorage), repository?.storageUid)
+  : imageStore(process.env.IMAGE_DATA_DIR ?? "./data/images", repository?.storageUid);
 if (policy.enabled) await store.ready();
 const app = createApp(
   (event) => logger.error(event, "Request failed"),
@@ -49,6 +78,16 @@ const app = createApp(
           process.env.STANDALONE_MODELS === "true" ? process.env.DEEPSEEK_API_KEY : undefined,
         events,
         store,
+        signAsset:
+          process.env.ASSET_PUBLIC_ORIGIN && process.env.ASSET_SIGNING_SECRET
+            ? assetDeliverySigner(
+                process.env.ASSET_PUBLIC_ORIGIN,
+                process.env.ASSET_SIGNING_SECRET,
+                {
+                  pathPrefix: process.env.ASSET_PATH_PREFIX ?? "/",
+                },
+              )
+            : undefined,
         enabled: policy.enabled,
         managedModelsOnly: true,
         unitCredits: policy.unitCredits,

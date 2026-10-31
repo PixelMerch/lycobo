@@ -1,5 +1,5 @@
 import { imageOutputDimensions } from "@lycoboai/contracts";
-import type { ImageRepository } from "@lycoboai/db";
+import type { ImageRuntimeRepository } from "@lycoboai/db";
 import {
   type CapabilityOverrides,
   generateVakvImage,
@@ -13,7 +13,7 @@ import type { ImageStore } from "@lycoboai/storage";
 import { processConfiguredImage } from "./configured-image-processor";
 
 export type ImageProcessorDependencies = {
-  repository: ImageRepository;
+  repository: ImageRuntimeRepository;
   store: ImageStore;
   workerId: string;
   provider?: VakvConfig;

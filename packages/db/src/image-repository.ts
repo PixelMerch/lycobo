@@ -710,3 +710,16 @@ export function openImageRepository(
   };
 }
 export type ImageRepository = ReturnType<typeof openImageRepository>;
+
+// Runtime services do not expose provisioning, payment settlement or model-admin writes.
+type PortableMethod<T> = T extends (...args: infer A) => Promise<infer R>
+  ? (...args: A) => Promise<R extends readonly (infer E)[] ? E[] : R>
+  : T;
+export type ImageRuntimeRepository = {
+  [K in Exclude<
+    keyof ImageRepository,
+    "provision" | "models" | "createRecharge" | "settleRecharge"
+  >]: PortableMethod<ImageRepository[K]>;
+} & {
+  models: Pick<ImageRepository["models"], "logos" | "hasRoute" | "capabilities">;
+};

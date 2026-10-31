@@ -1,17 +1,22 @@
 import { imageLimits } from "@lycoboai/contracts";
 import { AwsClient } from "aws4fetch";
+import { cloudbaseObjectBucket, readCloudBaseStorageConfig } from "./cloudbase-object-bucket";
 import { objectKeySchema } from "./core";
-import type { ImageObjectBucket } from "./object-bucket";
+import type { ImageObjectBucket, StorageBindings } from "./object-bucket";
 
-import { readS3Config, type S3Bindings, s3ObjectUrl } from "./s3-config";
+import { readS3Config, s3ObjectUrl } from "./s3-config";
 
+export type { StorageBindings } from "./object-bucket";
 export type { S3Bindings } from "./s3-config";
 
 /** No public S3 URLs: existing owner-scoped API / signed asset delivery remains authoritative. */
 export function imageObjectBucket(
-  env: S3Bindings,
+  env: StorageBindings,
   fallback?: ImageObjectBucket,
 ): ImageObjectBucket {
+  // CloudBase is authoritative once configured, including missing objects and failures.
+  // Never recover a deleted private object from an old R2/S3 copy.
+  if (readCloudBaseStorageConfig(env)) return cloudbaseObjectBucket(env);
   const config = readS3Config(env);
   if (!config) {
     if (!fallback) throw new Error("IMAGE_STORAGE_NOT_CONFIGURED");

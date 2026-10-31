@@ -31,7 +31,7 @@ export async function imageEventStream(
       if (organizationId === null && calibrated) resyncRequired = true;
       wake?.();
     }
-  });
+  }, scope.organizationId);
   c.header("Cache-Control", "no-cache, no-transform");
   c.header("X-Accel-Buffering", "no");
   return streamSSE(

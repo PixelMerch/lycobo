@@ -9,6 +9,10 @@ describe("local development isolation", () => {
     S3_SECRET_ACCESS_KEY: "production-storage-secret",
     SUPABASE_DATABASE_URL: "postgresql://secret@remote.example/db",
     CLOUDFLARE_API_TOKEN: "deployment-token",
+    CLOUDBASE_ENV_ID: "production-environment",
+    CLOUDBASE_APIKEY: "production-cloudbase-key",
+    TCB_SECRET_ID: "production-deploy-id",
+    TCB_SECRET_KEY: "production-deploy-key",
     CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: "remote",
     AUTH_JWT_SECRET: "production-session-key",
     ASSET_PUBLIC_ORIGIN: "https://assets.example",
@@ -24,6 +28,10 @@ describe("local development isolation", () => {
     for (const key of [
       "SUPABASE_DATABASE_URL",
       "CLOUDFLARE_API_TOKEN",
+      "CLOUDBASE_ENV_ID",
+      "CLOUDBASE_APIKEY",
+      "TCB_SECRET_ID",
+      "TCB_SECRET_KEY",
       "AUTH_JWT_SECRET",
       "VAKV_API_KEY",
     ])

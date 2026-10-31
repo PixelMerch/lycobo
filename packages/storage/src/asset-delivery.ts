@@ -54,9 +54,11 @@ export async function verifyAsset(
 export function assetDeliverySigner(
   origin: string,
   secret: string,
-  options: { allowLocalHttp?: boolean } = {},
+  options: { allowLocalHttp?: boolean; pathPrefix?: string } = {},
 ) {
   const base = new URL(origin);
+  const prefix = options.pathPrefix ?? "/";
+  if (!/^\/(?:[a-z0-9_-]+\/)*$/.test(prefix)) throw new Error("INVALID_ASSET_PREFIX");
   if (
     (base.protocol !== "https:" &&
       !(
@@ -76,7 +78,7 @@ export function assetDeliverySigner(
     const expires_at = Math.floor(Date.now() / 1000) + assetLinkLifetime;
     const variant = async (value: AssetVariant) => {
       const pathname = value === "download" ? key : key.replace(/\.png$/, `.${value}.webp`);
-      const url = new URL(`/${pathname}`, base);
+      const url = new URL(`${prefix}${pathname}`, base);
       url.searchParams.set("expires", String(expires_at));
       url.searchParams.set("variant", value);
       url.searchParams.set("sig", await signAsset(key, expires_at, await signingKey, value));

@@ -31,7 +31,7 @@ docker compose up --build
 
 本地启动只从根 `.env` 读取模型配置白名单：`IMAGE_GENERATION_ENABLED`、`VAKV_ENABLE_IMAGE_EDITS`、`VAKV_API_KEY`、`VAKV_BASE_URL`、`VAKV_CAPABILITY_OVERRIDES`、`GENERATION_TIMEOUT_MS`。启动入口固定本地数据库地址，清除线上基础设施凭据并拒绝 `remote: true` 绑定；`.env` 的 Supabase、数据库、R2、部署令牌、线上 JWT 和 `VITE_*` 值不会被导入开发进程。旧的 `LOCAL_IMAGE_GENERATION_ENABLED` 不再作为用户配置，以 `IMAGE_GENERATION_ENABLED` 为准。
 
-启用本地真实生图时设置 `IMAGE_GENERATION_ENABLED=true` 并配置 `VAKV_API_KEY`；参考图编辑还需 `VAKV_ENABLE_IMAGE_EDITS=true`。关闭时模型 Key 不传入 Worker。修改 `.env` 后执行 `docker compose restart studio`；宿主机模式重启 `pnpm dev`。模型调用会消耗对应供应商账户额度，但账号、积分、任务、图片与队列数据仍保存在本地。根 `.env` 可继续保存部署配置，开发启动不会使用其中的线上数据库。`pnpm cloudflare:deploy`、远端迁移等显式运维命令仍有独立职责，不能作为本地启动命令。
+启用本地真实生图时设置 `IMAGE_GENERATION_ENABLED=true` 并配置已接入模型所需的服务端 Key。修改 `.env` 后执行 `docker compose restart studio`；宿主机模式重启 `pnpm dev`。模型调用消耗供应商额度，但业务数据、图片和队列仍保存在本地。开发启动丢弃 CLOUDBASE_*、TCB_*、TENCENTCLOUD_* 及其他远端凭据，不访问线上业务资源。远端迁移与发布不是本地启动流程。
 
 本地队列只保存 `{version, itemId}`。`redis-dev.mjs` 使用消费者组领取消息，心跳续租，执行完成后确认并删除消息；进程退出时未确认消息留在 Redis，租约过期后恢复。单条消息失败最多投递 4 次后进入本地死信流；数据库 outbox 仍是恢复意图的来源，数据库 claim 与不确定结果规则负责避免重复付费提交。桥接每 30 秒触发本地 outbox／租约维护。
 
@@ -78,6 +78,6 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
 
 ## 发布
 
-同一仓库通过 `pnpm cloudflare:setup` 准备资源、`pnpm cloudflare:deploy` 部署消费者、API 和 Pages。需要账户开通、作用域受限的部署 token 与 Worker Secrets；真实密码不进入配置文件或 Git。完整步骤、费用边界、UID 路径和上线验收见 [Cloudflare 部署](cloudflare-deployment.md)。
+发布目标改为 CloudBase，旧 setup/deploy 命令和生产 Wrangler 配置已删除。main 的成功 CI 触发前端静态应用发布；共享 PG 仓储、消费者及图片资源服务仍需完成运行时迁移。凭据和验收边界见 [CloudBase 部署](cloudbase-deployment.md)。现有 workerd 模拟继续用于本地隔离开发，不发布远端资源。
 
 本地生图默认 `GENERATION_TIMEOUT_MS=600000`，覆盖供应商等待响应头及完整响应体的总时长。曾观察到供应商约39秒返回200响应头、随后等待／接收响应体约234秒，合计约273秒，旧300秒上限容易导致部分图片超时。此配置不是固定延迟，成功响应会立即落盘；超时保留结果待确认，不自动重复收费调用。修改根.env的模型配置需重启本地studio服务才能重新加载；必须先确认没有queued/running任务，避免打断付费请求，不为应用配置而重新提交已有任务。

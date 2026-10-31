@@ -1,4 +1,9 @@
-/** Minimal object operations shared by R2 and S3; authorization stays in the caller. */
+import type { CloudBaseStorageBindings } from "./cloudbase-object-bucket";
+import type { S3Bindings } from "./s3-config";
+
+export interface StorageBindings extends S3Bindings, CloudBaseStorageBindings {}
+
+/** Minimal private object operations; authorization stays in the caller. */
 export interface ImageObjectBucket {
   head(key: string): Promise<{ size: number; httpEtag: string } | null>;
   get(key: string): Promise<{
