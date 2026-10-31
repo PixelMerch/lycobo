@@ -56,6 +56,7 @@ export async function publishRuntime({
   plan = false,
   functions = runtimeFunctions,
   removeUploadedObject,
+  uploadArchive,
 }) {
   if (!plan && typeof removeUploadedObject !== "function") throw new Error("CODE_CLEANUP_REQUIRED");
   for (const name of functions) {
@@ -84,20 +85,26 @@ export async function publishRuntime({
       ).data;
       const { url, headers } = validateUpload(upload, name);
       try {
-        const response = await request(url, {
-          method: "PUT",
-          headers,
-          body: bytes,
-          redirect: "manual",
-          signal: AbortSignal.timeout(90000),
-        });
-        await response.body?.cancel();
-        if (response.ok) {
-          uploaded = upload;
-          break;
+        console.log(`Uploading ${name}: attempt ${attempt + 1}`);
+        if (uploadArchive) {
+          await uploadArchive(upload, name, archive);
+        } else {
+          const response = await request(url, {
+            method: "PUT",
+            headers,
+            body: bytes,
+            redirect: "manual",
+            signal: AbortSignal.timeout(90000),
+          });
+          await response.body?.cancel();
+          if (!response.ok) {
+            if (![408, 429, 500, 502, 503, 504].includes(response.status))
+              throw new Error("UPLOAD_REJECTED");
+            throw new Error("UPLOAD_TRANSIENT");
+          }
         }
-        if (![408, 429, 500, 502, 503, 504].includes(response.status))
-          throw new Error("UPLOAD_REJECTED");
+        uploaded = upload;
+        break;
       } catch (error) {
         if (error?.message === "UPLOAD_REJECTED") throw new Error(`${name}: UPLOAD_REJECTED`);
       }
@@ -184,26 +191,71 @@ async function main() {
         throw new Error("CLOUDBASE_ENVIRONMENT_MISMATCH");
     }
     const COS = require("cos-nodejs-sdk-v5");
+    let cos;
+    const getCos = async () => {
+      if (cos) return cos;
+      const { credentials } = await call("auth", {
+        action: "get_temp_credentials",
+        confirm: "yes",
+        reveal: true,
+      });
+      if (!credentials?.secretId || !credentials?.secretKey || credentials.masked)
+        throw new Error("CODE_UPLOAD_CREDENTIALS_UNAVAILABLE");
+      cos = new COS({
+        SecretId: credentials.secretId,
+        SecretKey: credentials.secretKey,
+        SecurityToken: credentials.token || undefined,
+        Timeout: 90000,
+        ChunkParallelLimit: 3,
+        FileParallelLimit: 1,
+      });
+      return cos;
+    };
     await publishRuntime({
       call,
       root,
       archiveDirectory,
       plan: process.argv.includes("--plan"),
+      uploadArchive: async (upload, name, archive) => {
+        const { url } = validateUpload(upload, name);
+        const uploader = await getCos();
+        let progress = -1;
+        await new Promise((resolve, reject) =>
+          uploader.uploadFile(
+            {
+              Bucket: url.hostname.split(".cos.")[0],
+              Region: upload.cosBucketRegion,
+              Key: upload.cosObjectName,
+              FilePath: archive,
+              SliceSize: 1024 * 1024,
+              ChunkSize: 1024 * 1024,
+              onProgress: ({ percent }) => {
+                const step = Math.floor(percent * 4);
+                if (step > progress) console.log(`Uploading ${name}: ${step * 25}%`);
+                progress = step;
+              },
+            },
+            (error) => {
+              if (!error) return resolve();
+              const status = Number(error.statusCode) || 0;
+              const code = /^[A-Za-z0-9_]{1,60}$/.test(error.code ?? "")
+                ? error.code
+                : "NETWORK_ERROR";
+              console.error(`Upload ${name} failed: status=${status}; code=${code}`);
+              reject(
+                new Error(
+                  status >= 400 && status < 500 && status !== 429
+                    ? "UPLOAD_REJECTED"
+                    : "UPLOAD_TRANSIENT",
+                ),
+              );
+            },
+          ),
+        );
+      },
       removeUploadedObject: async (upload, name) => {
         const { url } = validateUpload(upload, name);
-        const { credentials } = await call("auth", {
-          action: "get_temp_credentials",
-          confirm: "yes",
-          reveal: true,
-        });
-        if (!credentials?.secretId || !credentials?.secretKey || credentials.masked)
-          throw new Error("CODE_CLEANUP_CREDENTIALS_UNAVAILABLE");
-        const cos = new COS({
-          SecretId: credentials.secretId,
-          SecretKey: credentials.secretKey,
-          SecurityToken: credentials.token || undefined,
-          Timeout: 30000,
-        });
+        const cos = await getCos();
         await new Promise((resolve, reject) =>
           cos.deleteObject(
             {

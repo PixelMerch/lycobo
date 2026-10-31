@@ -40,52 +40,72 @@ describe("CloudBase runtime code publishing", () => {
     ])
       expect(() => validateUpload(changed, name)).toThrow();
   });
-  it("refreshes transient failed uploads and updates code only after successful transfer", async () => {
-    const root = await mkdtemp(path.join(tmpdir(), "lycobo-code-publish-test-"));
-    try {
-      await mkdir(path.join(root, name));
-      await mkdir(path.join(root, "archives"));
-      await writeFile(
-        path.join(root, name, "index.js"),
-        "exports.main=async()=>({enabled:false});",
-      );
-      let reads = 0,
-        capabilities = 0;
-      const call = vi.fn(async (_tool, args) => {
-        if (args.action === "getFunctionDetail")
-          return {
-            data: {
-              functionDetail: { Status: "Active", ModTime: reads++ === 0 ? "before" : "after" },
-            },
-          };
-        if (args.action === "getFunctionUploadUrl")
-          return { data: upload(capabilities++ === 0 ? "0123456789abcdef" : "fedcba9876543210") };
-        return { success: true };
-      });
-      const request = vi
-        .fn()
-        .mockResolvedValueOnce(new Response("temporary", { status: 503 }))
-        .mockResolvedValueOnce(new Response(null, { status: 200 }));
-      const cleanup = vi.fn(async () => {});
-      await publishRuntime({
-        call,
-        root,
-        archiveDirectory: path.join(root, "archives"),
-        request,
-        wait: async () => {},
-        functions: [name],
-        removeUploadedObject: cleanup,
-      });
-      expect(request).toHaveBeenCalledTimes(2);
-      expect(request.mock.calls[0][0].href).not.toBe(request.mock.calls[1][0].href);
-      const updates = call.mock.calls.filter(([tool]) => tool === "manageFunctions");
-      expect(updates).toHaveLength(1);
-      expect(updates[0][1]).not.toHaveProperty("func");
-      expect(updates[0][1].code.cosObjectName).toContain("fedcba9876543210");
-      expect(cleanup).toHaveBeenCalledOnce();
-      expect(cleanup.mock.calls[0][0].cosObjectName).toContain("fedcba9876543210");
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
-  });
+  it.each(["signed-put", "multipart"])(
+    "%s refreshes failed transfers before updating code",
+    async (mode) => {
+      const root = await mkdtemp(path.join(tmpdir(), "lycobo-code-publish-test-"));
+      try {
+        await mkdir(path.join(root, name));
+        await mkdir(path.join(root, "archives"));
+        await writeFile(
+          path.join(root, name, "index.js"),
+          "exports.main=async()=>({enabled:false});",
+        );
+        let reads = 0,
+          capabilities = 0;
+        const call = vi.fn(async (_tool, args) => {
+          if (args.action === "getFunctionDetail")
+            return {
+              data: {
+                functionDetail: { Status: "Active", ModTime: reads++ === 0 ? "before" : "after" },
+              },
+            };
+          if (args.action === "getFunctionUploadUrl")
+            return { data: upload(capabilities++ === 0 ? "0123456789abcdef" : "fedcba9876543210") };
+          return { success: true };
+        });
+        const request = vi
+          .fn()
+          .mockResolvedValueOnce(new Response("temporary", { status: 503 }))
+          .mockResolvedValueOnce(new Response(null, { status: 200 }));
+        const cleanup = vi.fn(async () => {});
+        const uploadArchive = vi
+          .fn()
+          .mockRejectedValueOnce(new Error("UPLOAD_TRANSIENT"))
+          .mockResolvedValueOnce(undefined);
+        await publishRuntime({
+          call,
+          root,
+          archiveDirectory: path.join(root, "archives"),
+          request,
+          wait: async () => {},
+          functions: [name],
+          removeUploadedObject: cleanup,
+          ...(mode === "multipart" ? { uploadArchive } : {}),
+        });
+        if (mode === "signed-put") {
+          expect(request).toHaveBeenCalledTimes(2);
+          expect(request.mock.calls[0][0].href).not.toBe(request.mock.calls[1][0].href);
+        } else {
+          expect(request).not.toHaveBeenCalled();
+          expect(uploadArchive).toHaveBeenCalledTimes(2);
+          expect(uploadArchive.mock.calls[0][0].cosObjectName).not.toBe(
+            uploadArchive.mock.calls[1][0].cosObjectName,
+          );
+          expect(uploadArchive.mock.calls[1].slice(1)).toEqual([
+            name,
+            path.join(root, "archives", `${name}.zip`),
+          ]);
+        }
+        const updates = call.mock.calls.filter(([tool]) => tool === "manageFunctions");
+        expect(updates).toHaveLength(1);
+        expect(updates[0][1]).not.toHaveProperty("func");
+        expect(updates[0][1].code.cosObjectName).toContain("fedcba9876543210");
+        expect(cleanup).toHaveBeenCalledOnce();
+        expect(cleanup.mock.calls[0][0].cosObjectName).toContain("fedcba9876543210");
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    },
+  );
 });

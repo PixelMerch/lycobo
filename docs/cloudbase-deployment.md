@@ -78,8 +78,10 @@ workerd/Miniflare、旧运行时源码和 `scripts/cloudflare` 剩余文件仅�
 
 发布 PR #33 已合并到 main（b7a4b70），main Quality/Infrastructure 均通过。首次 GitHub 发布在 CLI 的临时 COS 上传阶段没有完成，已停止该任务，未修改运行配置或前端。
 
-后端改用 `scripts/cloudbase/deploy-runtime.mjs`：固定 @cloudbase/cloudbase-mcp 2.36.2、MCP SDK 1.32.2、COS SDK 3.0.0，依赖仅安装到 runner 临时目录，不进入应用包或根锁文件。MCP 获取环境自有 COS 桶的短期上传地址，限制区域、桶、代码前缀和函数名，90 秒上传超时、最多三次刷新地址重试；成功传输后才提交代码更新。函数恢复 Active 且修改时间变化后，用 COS SDK 删除本次代码对象。读取的临时管理凭据仅存在于进程内，不输出或写入应用配置。
+后端改用 `scripts/cloudbase/deploy-runtime.mjs`：固定 @cloudbase/cloudbase-mcp 2.36.2、MCP SDK 1.32.2、COS SDK 3.0.0，依赖仅安装到 runner 临时目录，不进入应用包或根锁文件。MCP 获取环境自有 COS 桶的上传能力，限制区域、桶、代码前缀和函数名；COS SDK 将代码包按 1 MiB 分块、最多 3 路传输，单请求 90 秒超时、最多三次刷新目标重试，仅输出百分比和脱敏错误码。成功传输后才通过 MCP 提交代码更新。函数恢复 Active 且修改时间变化后，用 COS SDK 删除本次代码对象。管理凭据仅存在于进程内，不输出或写入应用配置。
 
 MCP 安装在登录前的独立步骤完成（5 分钟上限），发布进程直接启动已安装的入口，避免发布时隐式下载。后端发布步骤限制为 10 分钟；日志仅记录工具和动作名称，不包含参数、响应、凭据或上传地址。
 
 本地已用同一两段式入口实际更新三个服务并确认 Active，三个临时代码对象已删除。针对 URL/桶/用途校验、错误脱敏、上传失败重试和代码提交顺序的专项测试通过。新工作流仍需 GitHub 实际运行验证。
+
+GitHub 第三轮发布已确认 MCP 启动和认证成功，但单次 PUT 连续三次在 90 秒超时；随后改为上述分块上传。本地已通过该路径再次更新三个服务，云端变量和定时器保留。GitHub 分块发布结果须以实际 Actions 运行结论为准。
