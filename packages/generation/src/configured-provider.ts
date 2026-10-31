@@ -207,6 +207,11 @@ export async function providerOutputBytes(
   request: typeof fetch = fetch,
 ) {
   if (output.b64_json) return decodeImageBase64(output.b64_json);
+  const providerOrigin = new URL(snapshot.origin).origin;
+  const allowedOrigins = [
+    providerOrigin,
+    ...snapshot.downloadOrigins.map((origin) => new URL(origin).origin),
+  ];
   const candidates = [
     { value: output.signed_url, signed: true },
     { value: output.download_url, signed: false },
@@ -228,14 +233,14 @@ export async function providerOutputBytes(
         url.protocol !== "https:" ||
         url.username ||
         url.password ||
-        ![snapshot.origin, ...snapshot.downloadOrigins].includes(url.origin)
+        !allowedOrigins.includes(url.origin)
       )
         throw new ImageProviderError("PROVIDER_UNTRUSTED_RESULT_URL", true);
       const response = await request(url, {
         redirect: "manual",
         signal: AbortSignal.timeout(30000),
         headers:
-          url.origin === snapshot.origin && !candidate.signed
+          url.origin === providerOrigin && !candidate.signed
             ? { Authorization: `Bearer ${key}` }
             : {},
       });
