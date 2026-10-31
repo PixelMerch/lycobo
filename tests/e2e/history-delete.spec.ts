@@ -123,3 +123,54 @@ for (const path of ["/create", "/commerce/textile-set"]) {
     await expect(rail.locator(".history-rail-item")).toHaveCount(0);
   });
 }
+
+for (const path of ["/create", "/commerce/textile-set"]) {
+  test(`hide history deletion until generation ends on ${path}`, async ({ page }) => {
+    await mockImageApi(page);
+    const id = crypto.randomUUID();
+    let status = "queued";
+    await page.route("**/api/v1/image-tasks?*", (route) =>
+      route.fulfill({
+        json: apiFixture({
+          data: [
+            {
+              id,
+              organization_id: crypto.randomUUID(),
+              user_id: crypto.randomUUID(),
+              model: "gpt-image-2",
+              prompt: "任务状态测试",
+              resolution: "1K",
+              aspect_ratio: "1:1",
+              requested_count: 1,
+              status,
+              created_at: new Date().toISOString(),
+              completed_at: null,
+              items: [
+                {
+                  id: crypto.randomUUID(),
+                  position: 0,
+                  status,
+                  output_asset_id: null,
+                  error_code: null,
+                  width: null,
+                  height: null,
+                  worker_id: null,
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+    for (const next of ["queued", "running", "failed"]) {
+      status = next;
+      await page.goto(path);
+      const rail = page.locator(".history-rail");
+      await expect(rail.locator(".history-rail-item")).toHaveCount(1);
+      await rail.locator(".history-rail-item").hover();
+      await expect(rail.getByRole("button", { name: `删除任务 ${id}`, exact: true })).toHaveCount(
+        next === "failed" ? 1 : 0,
+      );
+    }
+  });
+}

@@ -1,10 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { mockImageApi } from "./image-api-fixture";
 
-test("workspace prompt grows with content, caps at 5000 and shows a counter", async ({ page }) => {
+test("workspace prompt grows with content, uses the full prompt limit and shows a counter", async ({
+  page,
+}) => {
   await mockImageApi(page);
   await page.goto("/create");
-  const prompt = page.getByLabel("提示词", { exact: true });
+  await expect(page.getByRole("group", { name: "主图用途", exact: true })).toHaveCount(0);
+  const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   const counter = page.locator(".prompt-count");
   await expect(counter).toHaveText("0/5000");
   const initial = await prompt.boundingBox();
@@ -41,7 +44,7 @@ test("workspace rich prompt matches the counter and grows after inserting a refe
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles({ name: "product.png", mimeType: "image/png", buffer: png });
-  const prompt = page.getByLabel("提示词", { exact: true });
+  const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   const richPrompt = `保留 @图片1 ${"细节\n".repeat(12)}`;
   await prompt.fill(richPrompt);
   await expect(page.locator(".prompt-count")).toHaveText(`${richPrompt.length}/5000`);
@@ -51,12 +54,12 @@ test("workspace rich prompt matches the counter and grows after inserting a refe
   await expect(page.locator(".prompt-count")).toHaveText("5000/5000");
 });
 
-test("advanced parameters stay collapsed behind a more toggle", async ({ page }) => {
+test("image count stays visible and quality is available under more", async ({ page }) => {
   await mockImageApi(page);
   await page.goto("/create");
   const count = page.getByRole("group", { name: "生成张数", exact: true });
   const quality = page.getByRole("group", { name: "质量", exact: true });
-  await expect(count).toHaveCount(0);
+  await expect(count).toBeVisible();
   await expect(quality).toHaveCount(0);
   const more = page.getByRole("button", { name: "更多", exact: true });
   await expect(more).toHaveAttribute("aria-expanded", "false");
@@ -65,8 +68,27 @@ test("advanced parameters stay collapsed behind a more toggle", async ({ page })
   await expect(quality).toBeVisible();
   await count.getByRole("radio", { name: "3", exact: true }).click();
   await quality.getByRole("radio", { name: "高", exact: true }).click();
-  await expect(page.getByRole("button", { name: /立即生成/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /生成商品主图/ })).toBeVisible();
   await page.getByRole("button", { name: "收起", exact: true }).click();
-  await expect(count).toHaveCount(0);
+  await expect(count).toBeVisible();
   await expect(quality).toHaveCount(0);
+});
+
+test("main image submission keeps the user's full prompt without a purpose prefix", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  await page.route("**/api/v1/image-tasks", (route) =>
+    route.fulfill({ status: 202, json: { id: crypto.randomUUID(), replayed: false } }),
+  );
+  await page.goto("/create");
+  const prompt = page.getByLabel("提示词", { exact: true });
+  const description = `保留商品，使用自然光。${"细节".repeat(2494)}`;
+  await prompt.fill(description);
+  const submission = page.waitForRequest(
+    (request) => request.url().endsWith("/api/v1/image-tasks") && request.method() === "POST",
+  );
+  await page.getByRole("button", { name: /生成商品主图/ }).click();
+  expect((await submission).postDataJSON().prompt).toBe(description);
+  await expect(prompt).toHaveValue("");
 });

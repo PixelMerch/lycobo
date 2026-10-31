@@ -142,7 +142,7 @@ test("login panel animates open and close, and reduced motion skips the animatio
 test("mobile login closes without losing the current creation draft", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/create");
-  const prompt = page.getByLabel("提示词", { exact: true });
+  const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   await prompt.fill("保留当前创作草稿");
   await page.getByRole("button", { name: "登录领积分", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "欢迎使用 Lycobo" });

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { textileGenerationSchema } from "./textile-generation";
+import { variationGenerationSchema, variationPlanLimit } from "./variation-plan";
 
 export const imageLimits = {
   uploadBytes: 10 * 1024 * 1024,
@@ -16,7 +17,12 @@ export const imageModelIds = [
   "nano-banana-2.1",
   "gemini-nano-banana-2.1",
 ] as const;
-export const imageResolutionSchema = z.enum(["1K", "2K", "4K"]);
+export const imageModelCodeSchema = z
+  .string()
+  .trim()
+  .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,99}$/);
+export const imageResolutionSchema = z.enum(["1K", "1.5K", "2K", "4K"]);
+export const publicImageResolutions = ["1.5K", "2K", "4K"] as const;
 export type ImageResolution = z.infer<typeof imageResolutionSchema>;
 export const imageQualitySchema = z.enum(["low", "medium", "high"]);
 export type ImageQuality = z.infer<typeof imageQualitySchema>;
@@ -54,7 +60,7 @@ export type ImageLocalEdit = z.infer<typeof imageLocalEditSchema>;
 
 export const imageGenerationInputSchema = z
   .strictObject({
-    model: z.enum(imageModelIds),
+    model: imageModelCodeSchema,
     prompt: z.string().trim().min(1).max(9000),
     resolution: imageResolutionSchema.default("1K"),
     aspectRatio: z
@@ -79,21 +85,27 @@ export const imageGenerationInputSchema = z
       .max(10)
       .default([])
       .refine((ids) => new Set(ids).size === ids.length, "Duplicate references"),
-    count: z.number().int().min(1).max(10).default(1),
+    count: z.number().int().min(1).max(variationPlanLimit).default(1),
     // Keep absent on legacy snapshots so their stored idempotency hashes remain valid.
     quality: imageQualitySchema.optional(),
     // Absent on legacy inputs, preserving their original idempotency hashes.
     localEdit: imageLocalEditSchema.optional(),
     textileSet: textileGenerationSchema.optional(),
+    variation: variationGenerationSchema.optional(),
   })
   .superRefine((input, ctx) => {
     if (
-      input.textileSet
-        ? input.count !== input.textileSet.views.length ||
-          input.referenceAssetIds.length < 1 ||
-          input.referenceAssetIds.length > (input.textileSet.version >= 2 ? 6 : 2) ||
+      input.variation
+        ? input.count !== input.variation.items.length ||
+          input.referenceAssetIds.length > 5 ||
+          !!input.textileSet ||
           !!input.localEdit
-        : input.count > 4
+        : input.textileSet
+          ? input.count !== input.textileSet.views.length ||
+            input.referenceAssetIds.length < 1 ||
+            input.referenceAssetIds.length > (input.textileSet.version >= 2 ? 6 : 2) ||
+            !!input.localEdit
+          : input.count > 4
     )
       ctx.addIssue({
         code: "custom",
@@ -125,22 +137,40 @@ export type StoredImage = {
 };
 // Public choices are separate from provider aliases retained for historical tasks.
 export const publicImageModelIds = ["gpt-image-2", "gpt-image-2.5", "nano-banana-2.1"] as const;
-export type PublicImageModelId = (typeof publicImageModelIds)[number];
-export const imageUnitCredits = 20;
+export type PublicImageModelId = string;
+export const imageUnitCredits = 2;
 export function publicImageModel(model: ImageGenerationInput["model"]): PublicImageModelId {
-  if (model.includes("banana")) return "nano-banana-2.1";
-  return model.startsWith("gpt-image-2.5") ? "gpt-image-2.5" : "gpt-image-2";
+  if (model === "gemini-nano-banana-2.1") return "nano-banana-2.1";
+  if (model === "gpt-image-2-4K") return "gpt-image-2";
+  if (model === "gpt-image-2.5-flare" || model === "gpt-image-2.5-sunburst") return "gpt-image-2.5";
+  return model;
 }
 export function imageProviderModel(input: Pick<ImageGenerationInput, "model" | "resolution">) {
   if (input.model === "gpt-image-2-4K") return "gpt-image-2-4K";
   const model = publicImageModel(input.model);
-  if (model === "gpt-image-2") return input.resolution === "1K" ? "gpt-image-2" : "gpt-image-2-4K";
+  if (model === "gpt-image-2")
+    return input.resolution === "1K" || input.resolution === "1.5K"
+      ? "gpt-image-2"
+      : "gpt-image-2-4K";
   if (model === "gpt-image-2.5") return "gpt-image-2.5-sunburst";
   return "gemini-nano-banana-2.1";
 }
+// Public presentation metadata; provider configuration and credentials are never included.
+export const imageModelLogosResponseSchema = z.object({
+  models: z.array(
+    z.object({
+      id: imageModelCodeSchema,
+      logoUrl: z.url().nullable(),
+      name: z.string().max(80).optional(),
+      description: z.string().max(160).optional(),
+      capabilitySummary: z.string().max(160).optional(),
+    }),
+  ),
+});
+
 export const imageModelCatalog = publicImageModelIds.map((id) => ({
   id,
-  allowedResolutions: ["1K", "2K", "4K"] as ImageResolution[],
+  allowedResolutions: ["1K", ...publicImageResolutions] as ImageResolution[],
 }));
 
 export const imageItemStatusSchema = z.enum([
@@ -166,7 +196,7 @@ export const imageJobSchema = z.object({
   id: z.uuid(),
   organization_id: z.uuid(),
   user_id: z.uuid(),
-  model: z.enum(imageModelIds),
+  model: imageModelCodeSchema,
   prompt: z.string(),
   resolution: imageResolutionSchema,
   aspect_ratio: z.string(),
@@ -240,7 +270,7 @@ export const imageModelsResponseSchema = z.object({
   editsEnabled: z.boolean(),
   unitCredits: z.number(),
   models: z.array(
-    z.object({ id: z.enum(imageModelIds), enabledResolutions: z.array(imageResolutionSchema) }),
+    z.object({ id: imageModelCodeSchema, enabledResolutions: z.array(imageResolutionSchema) }),
   ),
 });
 export const imageTaskRetrySchema = z.object({ itemId: z.uuid().optional() });
@@ -253,3 +283,15 @@ export const imageUploadResponseSchema = z.object({
 export const imageSessionResponseSchema = z.object({ userId: z.uuid(), organizationId: z.uuid() });
 
 export const latestImageEditResponseSchema = z.object({ job: imageJobSchema.nullable() });
+
+/** New 1.5K requests use exact pixels; legacy task dimensions remain unchanged. */
+export function imageOutputDimensions(ratio: string, resolution: ImageResolution) {
+  const [w = 1, h = 1] = ratio.split(":").map(Number);
+  const edge = { "1K": 1024, "1.5K": 1254, "2K": 2048, "4K": 3840 }[resolution];
+  const scale = edge / Math.max(w, h);
+  const alignment = resolution === "1.5K" ? 1 : 16;
+  return {
+    width: Math.round((w * scale) / alignment) * alignment,
+    height: Math.round((h * scale) / alignment) * alignment,
+  };
+}

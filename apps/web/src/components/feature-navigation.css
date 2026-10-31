@@ -166,3 +166,17 @@
     animation: none;
   }
 }
+
+.feature-tool-card > .creation-model-logo {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  object-fit: contain;
+}
+.creation-model-logo-fallback {
+  display: grid;
+  place-items: center;
+  background: var(--surface-secondary);
+  color: var(--muted);
+}

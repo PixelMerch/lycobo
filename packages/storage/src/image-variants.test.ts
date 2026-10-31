@@ -35,10 +35,42 @@ it("precomputes bounded WebP variants without resizing the stored original and r
       const meta = await sharp(Buffer.from(await object.arrayBuffer())).metadata();
       expect([meta.format, meta.width, meta.height]).toEqual(["webp", width, height]);
     }
+    expect(Buffer.from(await store.read(asset)).equals(source)).toBe(true);
     const original = await sharp(Buffer.from(await store.read(asset))).metadata();
     expect([original.format, original.width, original.height]).toEqual(["png", 2400, 1800]);
     await store.remove(asset);
     expect((await BUCKET.list()).objects).toHaveLength(0);
+  } finally {
+    await mf.dispose();
+  }
+});
+
+it("stores exact 1.5K originals through the Cloudflare Images binding", async () => {
+  const mf = new Miniflare(
+    convertV4MiniflareOptions({
+      modules: true,
+      script: "export default { fetch() { return new Response('fixture'); } }",
+      r2Buckets: { BUCKET: "resolution-fixture" },
+      images: { binding: "IMAGES" },
+    }),
+  );
+  try {
+    const { BUCKET, IMAGES } = await mf.getBindings<{ BUCKET: R2Bucket; IMAGES: ImagesBinding }>();
+    const source = await sharp({
+      create: { width: 2048, height: 2048, channels: 3, background: "#789abc" },
+    })
+      .png()
+      .toBuffer();
+    const store = r2ImageStore(BUCKET, IMAGES, async () => "0057849613");
+    const asset = await store.put(
+      { userId: crypto.randomUUID(), organizationId: crypto.randomUUID() },
+      source,
+      crypto.randomUUID(),
+      { width: 1254, height: 1254 },
+    );
+    const meta = await sharp(Buffer.from(await store.read(asset))).metadata();
+    expect([asset.width, asset.height, meta.width, meta.height]).toEqual([1254, 1254, 1254, 1254]);
+    await store.remove(asset);
   } finally {
     await mf.dispose();
   }

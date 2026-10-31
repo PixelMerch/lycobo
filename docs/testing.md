@@ -121,3 +121,19 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
 浏览器CI固定使用 `ubuntu-24.04`，避免 `ubuntu-latest` 切换系统版本后依赖／字体下载和渲染环境漂移；浏览器任务使用匹配Playwright 1.64.0的官方 `mcr.microsoft.com/playwright:v1.64.0-noble` 镜像并固定digest，内置Chromium及系统字体依赖，不在任务中重复执行apt下载；完整E2E范围不变。
 
 完整浏览器CI分为2个shard，每个独立runner使用1个worker，避免同机浏览器竞争资源；`Browser`汇总检查必须等待两个分片全部成功，不改变测试范围、断言或失败重跑规则。生成结果图使用服务端宽高保留加载前比例，使远处历史任务的懒加载预览入口有稳定尺寸。
+
+## 私有 S3
+
+`docker compose up -d image-storage` 后，`ALLOW_LOCAL_S3_INTEGRATION=true pnpm exec vitest run packages/storage/src/s3-object-bucket.test.ts` 使用固定 loopback:9004 的独立私有桶，真实 Images binding 处理 fixture，验证原图/PNG 缩略图/WebP 预览与缩略图写入、签名访问、匿名拒绝、R2 旧对象回退和清理。只创建随机 fixture key，结束删除自己的原图与变体，不调用付费模型。默认单元验证 S3 故障不能静默写回 R2；本地环境测试确保不会导入正式 S3 凭据。
+
+智能裂变接入测试：`variation-planner.test.ts` 覆盖视觉JSON、独立提示词、坏结果及不自动重试；`verify-variation-plans.ts` 由隔离图片集成脚本执行，覆盖计划幂等、所有权、确认前不扣费、20方案创建、40积分原子扣款、20条outbox及历史隔离。`tests/e2e/smart-variation.spec.ts` 使用明确的API fixtures，检查文字校验、编辑/勾选/删除、跨工具保留草稿及确认后的单次提交，包含320/390/1440px。Fixture通过不代表外部语言供应商可用，外部实测另行记录结果。
+
+独立主站配置由 `standalone-models.test.ts` 验证开关、密钥缺失时关闭、四模型路由与快照不包含密钥。`verify-standalone-models.ts` 随隔离图片集成运行，在临时库禁用后台模型目录后验证主站仍可创建任务、同键只扣一次、outbox和计划配置可用。`model-catalog.spec.ts` 验证后台目录503时不发送目录请求、四模型与本地SVG仍显示、图片加载失败回退；保留历史与预览名称一致断言。
+
+2026-10-31 主站独立配置线上验收：Cloudflare Pages/Workers + Supabase 完成普通生图、家纺套图、智能裂变各1张真实生成，三张均成功写入素材，输出1254×1254；裂变计划由Claude Sonnet 5实际生成后确认提交，合计扣60积分。首次普通任务被结果域名白名单拦截，核对原上游任务成功后，仅补充已确认的下载源并恢复原任务GET轮询，未重复提交或扣费。固定配置仅允许`download.ai-media.vip`作为额外图片下载源；单测验证CDN下载不带API Key、其他域名仍拒绝。六模型目录已上线，但本次付费验收只验证Image 2.5链路，不代表其他五模型全部完成真实调用。
+
+2026-10-31 模型列表调整：主站仅提供 Image 2、Image 2.5、Banana 2.1、Banana Pro；Grok 与 Seedream 从可选目录和独立新任务路由移除，已有任务与素材名称保留。发布回归更新旧工具入口、展示名、1K转1.5K重试、草稿替换确认和移动素材入口断言，不恢复已移除的筛选／固定模型信息栏。
+
+发布浏览器回归：按当前四模型展示名、工具导航、历史隔离、草稿载入确认、移动素材入口与1.5K参数更新旧断言；保持请求体、单次收费、退款、坐标和草稿保留验证。空历史居中规则降低选择器优先级，避免覆盖移动端创作视图对历史区的隐藏；390px家纺与空历史回归覆盖此问题。本地失败用例分组复验通过，完整套件仍由远程CI跑两分片。
+
+结果恢复回归：独立主站集成覆盖3分钟超时、90秒领取租约、跨企业恢复拒绝、原task_id只读查询与恢复、旧执行token不能覆盖结果、恢复不重复扣费。浏览器定向检查未收到SSE通知时每5秒刷新并最终显示成功图片，成功后停止轮询。R2测试验证已校验PNG直接保存、原图与缩略预览版本完整、派生图失败保留原图，不因优化跳过格式或动画校验。

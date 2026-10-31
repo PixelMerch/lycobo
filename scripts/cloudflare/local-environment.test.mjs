@@ -5,6 +5,8 @@ describe("local development isolation", () => {
   const production = {
     PATH: "/usr/bin",
     DATABASE_URL: "postgresql://secret@remote.example/db",
+    S3_ENDPOINT: "https://private.production.example",
+    S3_SECRET_ACCESS_KEY: "production-storage-secret",
     SUPABASE_DATABASE_URL: "postgresql://secret@remote.example/db",
     CLOUDFLARE_API_TOKEN: "deployment-token",
     CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: "remote",
@@ -26,6 +28,8 @@ describe("local development isolation", () => {
       "VAKV_API_KEY",
     ])
       expect(env).not.toHaveProperty(key);
+    expect(env.S3_ENDPOINT).toBe("http://image-storage:8333");
+    expect(env.S3_SECRET_ACCESS_KEY).not.toBe(production.S3_SECRET_ACCESS_KEY);
     expect(env.LOCAL_IMAGE_GENERATION_ENABLED).toBe("false");
     expect(env.PATH).toBe(production.PATH);
     expect(env.ASSET_PUBLIC_ORIGIN).toBe("http://cdn.lycobo.localhost:8791");
@@ -36,6 +40,8 @@ describe("local development isolation", () => {
     const env = localEnvironment(production);
     expect(new URL(env.DATABASE_URL).hostname).toBe("127.0.0.1");
     expect(new URL(env.DATABASE_URL).port).toBe("55432");
+    expect(env).not.toHaveProperty("S3_ENDPOINT");
+    expect(env).not.toHaveProperty("S3_SECRET_ACCESS_KEY");
     expect(env.LOCAL_REDIS_URL).toBe("redis://127.0.0.1:56379");
   });
 });
@@ -44,7 +50,8 @@ it("imports explicitly enabled .env model settings while retaining local infrast
   const env = localEnvironment({ PATH: "/usr/bin" }, true, {
     IMAGE_GENERATION_ENABLED: "true",
     LOCAL_IMAGE_GENERATION_ENABLED: "false",
-    VAKV_API_KEY: "local-provider-key",
+    MODEL_CREDENTIAL_SECRET: "local-encryption-key",
+    VAKV_API_KEY: "retired-provider-key",
     VAKV_ENABLE_IMAGE_EDITS: "true",
     VAKV_BASE_URL: "https://provider.example",
     GENERATION_TIMEOUT_MS: "120000",
@@ -53,9 +60,10 @@ it("imports explicitly enabled .env model settings while retaining local infrast
     VITE_SECRET: "do-not-import",
   });
   expect(env.LOCAL_IMAGE_GENERATION_ENABLED).toBe("true");
-  expect(env.VAKV_ENABLE_IMAGE_EDITS).toBe("true");
-  expect(env.VAKV_API_KEY).toBe("local-provider-key");
-  expect(env.GENERATION_TIMEOUT_MS).toBe("120000");
+  expect(env).not.toHaveProperty("VAKV_ENABLE_IMAGE_EDITS");
+  expect(env).not.toHaveProperty("VAKV_API_KEY");
+  expect(env.MODEL_CREDENTIAL_SECRET).toBe("local-encryption-key");
+  expect(env).not.toHaveProperty("GENERATION_TIMEOUT_MS");
   expect(new URL(env.DATABASE_URL).hostname).toBe("postgres");
   expect(env.LOCAL_REDIS_URL).toBe("redis://redis:6379");
   expect(env).not.toHaveProperty("CLOUDFLARE_API_TOKEN");
@@ -64,7 +72,7 @@ it("imports explicitly enabled .env model settings while retaining local infrast
 
 it("fails early when enabled model generation has no key or invalid flags", () => {
   expect(() => localEnvironment({}, false, { IMAGE_GENERATION_ENABLED: "true" })).toThrow(
-    "VAKV_API_KEY",
+    "MODEL_CREDENTIAL_SECRET",
   );
   expect(() => localEnvironment({}, false, { IMAGE_GENERATION_ENABLED: "yes" })).toThrow(
     "true or false",

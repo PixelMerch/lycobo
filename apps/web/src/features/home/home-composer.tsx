@@ -1,5 +1,5 @@
 import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { IconArrowUp, IconCheck, IconChevronDown, IconSparkles } from "@tabler/icons-react";
+import { IconArrowUp, IconCheck, IconChevronDown } from "@tabler/icons-react";
 import { useNavigate } from "react-router";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
@@ -7,13 +7,17 @@ import { useErrorToast } from "../../lib/error-toast";
 import { HomeRatioPicker } from "../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../generation/composer/selection-highlight";
 import { ImageApiError, useImageModels } from "../generation/generation-client";
+import { ModelLogo, useModelPresentation } from "../generation/models/model-logos";
+import { hasPromptDescription } from "../generation/references/prompt-description";
 import { ReferencePicker } from "../generation/references/reference-picker";
-import { models, useStudioStore } from "../generation/studio-state";
+import { defaultDraft, useStudioStore } from "../generation/studio-state";
 import { HomeIntro } from "./home-intro";
 
 export function HomeComposer() {
+  const models = useModelPresentation().data?.models ?? [];
   const model = useStudioStore((s) => s.activeModel);
-  const draft = useStudioStore((s) => s.drafts[model]);
+  const selectedModel = models.find((item) => item.id === model);
+  const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const setModel = useStudioStore((s) => s.setActiveModel);
   const catalog = useImageModels();
@@ -24,7 +28,7 @@ export function HomeComposer() {
       : "服务暂时不可用，请稍后重试。"
     : null;
   useErrorToast(catalogError);
-  const canSubmit = draft.prompt.trim().length > 0 || draft.references.length > 0;
+  const canSubmit = hasPromptDescription(draft.prompt);
   const resolutions = catalog.data?.models.find((item) => item.id === model)?.enabledResolutions;
   return (
     <>
@@ -37,14 +41,17 @@ export function HomeComposer() {
           className="home-prompt"
           value={draft.prompt}
           onChange={(prompt) => updateDraft(model, { prompt })}
+          onReferencesInsert={(images, prompt) =>
+            updateDraft(model, { references: [...draft.references, ...images], prompt })
+          }
           references={draft.references}
           placeholder="描述你想要的画面，输入 @ 引用已上传图片"
         />
         <div className="home-composer-tools">
           <Popover>
             <Button className="home-settings-trigger" variant="ghost" aria-label="选择创作模型">
-              <UiIcon icon={IconSparkles} />
-              <span>{model}</span>
+              <ModelLogo src={selectedModel?.logoUrl} size="compact" />
+              <span>{selectedModel?.name ?? "图片创作"}</span>
               <span>·</span>
               <span>{draft.ratio}</span>
               <span>·</span>
@@ -72,7 +79,7 @@ export function HomeComposer() {
                           ...draft,
                           resolution: supported?.some((value) => value === draft.resolution)
                             ? draft.resolution
-                            : "1K",
+                            : "1.5K",
                         });
                         setModel(item.id);
                       }}
@@ -85,7 +92,10 @@ export function HomeComposer() {
                         )}
                       </span>
                       <span>
-                        <strong>{item.name}</strong>
+                        <strong className="model-selector-name">
+                          <ModelLogo src={item.logoUrl} size="compact" />
+                          <span>{item.name}</span>
+                        </strong>
                         <small>{item.description}</small>
                       </span>
                     </ToggleButton>
@@ -107,7 +117,7 @@ export function HomeComposer() {
                       updateDraft(model, { resolution: String([...keys][0]) })
                     }
                   >
-                    {(["1K", "2K", "4K"] as const).map((resolution) => (
+                    {(["1.5K", "2K", "4K"] as const).map((resolution) => (
                       <ToggleButton
                         id={resolution}
                         key={resolution}
@@ -175,6 +185,7 @@ export function HomeComposer() {
             isIconOnly
             className="home-submit"
             data-active={canSubmit || undefined}
+            isDisabled={!canSubmit}
             aria-label="开始创作"
             onPress={() => navigate("/create")}
           >

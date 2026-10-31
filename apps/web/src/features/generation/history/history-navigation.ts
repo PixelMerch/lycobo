@@ -1,13 +1,18 @@
 /** Shared viewport boundary for task navigation and scroll-based selection. */
 export function historyContentTop() {
   const header = document.querySelector<HTMLElement>(".topbar");
+  const toolbar = document.querySelector<HTMLElement>(".workspace-history-heading");
+  const toolbarHeight = toolbar?.getBoundingClientRect().height ?? 0;
   const title = document.querySelector<HTMLElement>(".workspace-tabs > .tabs__list-container");
   const headerBottom = header?.getBoundingClientRect().bottom ?? 0;
   const titleHeight = title?.getBoundingClientRect().height ?? 0;
   const gap = title ? Number.parseFloat(getComputedStyle(title).marginBottom) || 0 : 0;
   // The title may not be stuck yet when navigating from the top of the page.
   // Use its height at the sticky header boundary, not its current page offset.
-  return headerBottom + titleHeight + gap;
+  const toolbarTop = toolbar ? Number.parseFloat(getComputedStyle(toolbar).top) || 0 : 0;
+  return (
+    Math.max(headerBottom, toolbarTop) + toolbarHeight + (toolbar ? 12 : 0) + titleHeight + gap
+  );
 }
 
 export function scrollToHistoryTask(id: string) {

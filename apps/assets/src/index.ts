@@ -1,7 +1,8 @@
 import { assetKeyPattern, assetSigningKey, verifyAsset } from "@lycoboai/storage/delivery";
+import { imageObjectBucket, type S3Bindings } from "@lycoboai/storage/s3";
 import { displayImage, displayObjectKey } from "@lycoboai/storage/variants";
 
-export interface AssetBindings {
+export interface AssetBindings extends S3Bindings {
   IMAGES?: ImagesBinding;
   IMAGES_BUCKET: R2Bucket;
   ASSET_SIGNING_SECRET: string;
@@ -13,6 +14,7 @@ export async function serveAsset(
   context: Pick<ExecutionContext, "waitUntil">,
   cache: Pick<Cache, "match" | "put">,
 ) {
+  const bucket = imageObjectBucket(env, env.IMAGES_BUCKET);
   const fail = (status: number) =>
     new Response(null, { status, headers: { "Cache-Control": "no-store" } });
   if (!["GET", "HEAD"].includes(request.method)) return fail(405);
@@ -66,21 +68,21 @@ export async function serveAsset(
   let response = await cache.match(cacheKey);
   const hit = !!response;
   if (!response) {
-    let object = await env.IMAGES_BUCKET.head(objectKey);
+    let object = await bucket.head(objectKey);
     // Existing assets are backfilled once after authorization, never by recalling a model.
     if (!object && variant !== "download" && env.IMAGES) {
-      const original = await env.IMAGES_BUCKET.get(key);
+      const original = await bucket.get(key);
       if (!original) return fail(404);
       const resized = await displayImage(env.IMAGES, original.body, displayVariant);
-      await env.IMAGES_BUCKET.put(objectKey, resized, {
+      await bucket.put(objectKey, resized, {
         httpMetadata: { contentType: "image/webp" },
       });
-      object = await env.IMAGES_BUCKET.head(objectKey);
+      object = await bucket.head(objectKey);
     }
     if (!object) return fail(404);
     let body: ReadableStream | null = null;
     if (request.method !== "HEAD") {
-      const found = await env.IMAGES_BUCKET.get(objectKey);
+      const found = await bucket.get(objectKey);
       if (!found) return fail(404);
       body = found.body;
     }

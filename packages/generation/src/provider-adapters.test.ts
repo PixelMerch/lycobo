@@ -1,7 +1,7 @@
-import { imageGenerationInputSchema } from "@lycoboai/contracts";
+import { imageGenerationInputSchema, providerSnapshotSchema } from "@lycoboai/contracts";
 import { expect, it, vi } from "vitest";
-import { imageProviderOrigin } from "./provider-adapters";
-import { generateVakvImage } from "./vakv-provider";
+import { imageProtocolAdapters, imageProviderOrigin } from "./provider-adapters";
+import { generateVakvImage, imageDimensions } from "./vakv-provider";
 
 it("accepts root and SDK /v1 base URLs without duplicating the endpoint prefix", async () => {
   for (const value of [
@@ -29,4 +29,84 @@ it("accepts root and SDK /v1 base URLs without duplicating the endpoint prefix",
   );
   expect(String(request.mock.calls[0]?.[0])).toBe("https://example.com/v1/images/generations");
   expect(request).toHaveBeenCalledTimes(1);
+});
+
+it.each(["openai-images", "fluxport-images"] as const)(
+  "caps 4K dimensions at 3840 for %s JSON and reference uploads",
+  (adapter) => {
+    const snapshot = providerSnapshotSchema.parse({
+      channelId: crypto.randomUUID(),
+      credentialId: crypto.randomUUID(),
+      origin: "https://example.com",
+      adapter,
+      model: "gpt-image-2",
+      upstreamModel: "gpt-image-2",
+      mode: "async-preferred",
+      editsEnabled: true,
+      resolutions: ["1K", "2K", "4K"],
+      maxReferences: 6,
+      timeoutMs: 5000,
+      taskTimeoutSeconds: 600,
+      downloadOrigins: [],
+    });
+    for (const [aspectRatio, size] of [
+      ["1:1", "3840x3840"],
+      ["16:9", "3840x2160"],
+      ["9:16", "2160x3840"],
+      ["3:4", "2880x3840"],
+    ]) {
+      const input = imageGenerationInputSchema.parse({
+        model: "gpt-image-2",
+        prompt: "fixture",
+        resolution: "4K",
+        aspectRatio,
+      });
+      for (const references of [[], [new Uint8Array([1, 2])]]) {
+        const { body } = imageProtocolAdapters[adapter].prepare(snapshot, input, references);
+        expect(typeof body === "string" ? JSON.parse(body).size : body.get("size")).toBe(size);
+      }
+    }
+  },
+);
+
+it("keeps legacy dimensions within the same 4K limit without changing 1K and 2K", () => {
+  expect(imageDimensions("1:1", "1K")).toEqual({ width: 1024, height: 1024 });
+  expect(imageDimensions("1:1", "2K")).toEqual({ width: 2048, height: 2048 });
+  expect(imageDimensions("1:1", "4K")).toEqual({ width: 3840, height: 3840 });
+  expect(imageDimensions("9:16", "4K")).toEqual({ width: 2160, height: 3840 });
+});
+
+it("sends exact 1254 pixels for the new 1.5K tier and adapts native Gemini without inventing a native size", () => {
+  const snapshot = providerSnapshotSchema.parse({
+    channelId: crypto.randomUUID(),
+    credentialId: crypto.randomUUID(),
+    origin: "https://example.com",
+    adapter: "fluxport-images",
+    model: "gpt-image-2.5",
+    upstreamModel: "default-model",
+    upstreamModelsByResolution: { "1K": "legacy-tier-model" },
+    mode: "async-preferred",
+    editsEnabled: true,
+    maxReferences: 6,
+    timeoutMs: 5000,
+    taskTimeoutSeconds: 600,
+    downloadOrigins: [],
+  });
+  const input = imageGenerationInputSchema.parse({
+    model: "gpt-image-2.5",
+    prompt: "fixture",
+    resolution: "1.5K",
+  });
+  expect(imageDimensions("1:1", "1.5K")).toEqual({ width: 1254, height: 1254 });
+  expect(imageDimensions("3:4", "1.5K")).toEqual({ width: 941, height: 1254 });
+  for (const adapter of ["openai-images", "fluxport-images"] as const) {
+    const result = imageProtocolAdapters[adapter].prepare(snapshot, input, []);
+    expect(JSON.parse(String(result.body))).toMatchObject({
+      size: "1254x1254",
+      model: "legacy-tier-model",
+      n: 1,
+    });
+  }
+  const native = imageProtocolAdapters["gemini-native"].prepare(snapshot, input, []);
+  expect(JSON.parse(String(native.body)).generationConfig.imageConfig.imageSize).toBe("2K");
 });

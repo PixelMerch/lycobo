@@ -17,7 +17,7 @@
     "dev:docker": "wrangler dev --config wrangler.local.json --config ../worker/wrangler.local.json --ip 0.0.0.0 --port 8787 --persist-to ../../.wrangler/state"
   },
   "dependencies": {
-    "hono": "4.13.13",
+    "hono": "4.13.14",
     "@hono/node-server": "2.1.5",
     "@hono/zod-validator": "0.9.1",
     "pino": "10.4.0",

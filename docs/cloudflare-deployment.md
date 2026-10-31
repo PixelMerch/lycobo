@@ -147,3 +147,7 @@ SSE 在 Workers 中保持原有持久事件游标、组织隔离、身份复验�
 GitHub `cloudflare-production` 仅保留部署用 `CLOUDFLARE_API_TOKEN` 和非敏感 `CLOUDFLARE_HYPERDRIVE_ID`，不保存模型Key、JWT主密钥或数据库密码。运行密钥在 Cloudflare 对应 Worker 的 Settings 管理，部署保留其值。可配置渠道的供应商Key加密保存在 PostgreSQL，解密主密钥仅放消费者 Cloudflare Secret；新增中转站通过模型服务后台配置，无需改GitHub Actions。生产主密钥与本地开发独立，被忽略的本地生产配置备份须设为仅当前用户可读，不得提交。
 
 本次上线须先将Supabase迁移到0025（独立管理员／模型渠道／菜单／历史归档），再部署Workers与Pages。迁移仅扩展结构，不导入本地账户、积分、图片或生成记录。新渠道沿用本地已验证的FluxPort异步协议；公网验收只检查登录、能力和历史读取，不自动发起付费生成。
+
+### 主站独立模型计划密钥
+
+主站 `STANDALONE_MODELS=true` 时，API Worker `lycobo-api` 的 `DEEPSEEK_API_KEY` 配置为 DeepSeek 官方 Key，计划固定使用 `deepseek-flash` 和官方接口，不再使用语言中转站。该 Secret 不放 GitHub Actions 或浏览器；本地 `.env` 使用同名变量，保留受保护备份。图片 Key 和图片路由保持独立。切换供应商时须在发布该版本前同步更新 API Secret。

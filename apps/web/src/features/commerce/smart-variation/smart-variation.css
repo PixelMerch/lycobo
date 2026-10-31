@@ -1,0 +1,331 @@
+.smart-variation-workspace {
+  min-width: 0;
+}
+.variation-example-button.button {
+  align-self: flex-start;
+  color: var(--muted);
+  background: transparent;
+}
+.variation-example-button.button[data-hovered="true"] {
+  color: var(--foreground);
+  background: #ffffff0a;
+}
+.variation-submit p,
+.variation-plan-availability {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+.variation-introduction {
+  padding: 48px 32px;
+  min-width: 0;
+}
+.variation-eyebrow {
+  color: #8bc8ff;
+  font-size: 13px;
+}
+.variation-intro-heading h2 {
+  margin: 12px 0;
+  font-size: clamp(24px, 2.2vw, 32px);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.variation-intro-heading p,
+.variation-steps p,
+.variation-example-entry p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 6px 0 0;
+}
+.variation-steps {
+  list-style: none;
+  margin: 40px 0;
+  padding: 0;
+  display: grid;
+  gap: 28px;
+}
+.variation-steps li {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.variation-steps li > svg {
+  color: #8bc8ff;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+.variation-steps h3,
+.variation-example-entry h3 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+.variation-example-entry {
+  padding: 20px;
+  border-radius: 16px;
+  background: #ffffff08;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+}
+.variation-history-index {
+  width: 100%;
+  padding: 12px 8px;
+  text-align: center;
+}
+.variation-history-index a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  color: var(--foreground);
+  font-size: 14px;
+}
+.variation-history-index p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--muted);
+  margin-top: 24px;
+}
+.variation-plan-panel {
+  grid-column: 2;
+  grid-row: 2;
+  position: sticky;
+  top: calc(var(--header-height) + var(--content-padding) + var(--workspace-toolbar-height) + 12px);
+  height: calc(
+    100dvh -
+    var(--header-height) -
+    2 *
+    var(--content-padding) -
+    var(--workspace-toolbar-height) -
+    12px
+  );
+  width: calc((100% + 12px) * 0.75 - 5px);
+  margin-left: -7px;
+  min-width: 0;
+  min-height: 0;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--app-dialog-background);
+  color: var(--foreground);
+  border-radius: 20px;
+}
+.unified-workspace:has(> .variation-plan-panel) > .results-panel {
+  visibility: hidden;
+}
+.variation-plan-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  padding: 16px 20px;
+}
+.variation-plan-header h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 500;
+}
+.variation-plan-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding: 4px 20px 20px;
+}
+.variation-plan-list {
+  display: grid;
+  gap: 16px;
+}
+.variation-plan-card {
+  padding: 18px;
+  background: #222;
+  border-radius: 16px;
+}
+.variation-plan-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.variation-plan-number {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ffffff0d;
+  color: var(--muted);
+  font-size: 13px;
+}
+.variation-plan-title {
+  flex: 1;
+  min-width: 0;
+}
+.variation-plan-card input,
+.variation-plan-card textarea {
+  background: #171717;
+  font-size: 14px;
+  color: #eee;
+  border: 1px solid #ffffff12;
+  border-radius: 10px;
+}
+.variation-plan-card textarea {
+  width: 100%;
+  line-height: 1.8;
+  font-size: 14px;
+  resize: vertical;
+}
+.variation-plan-card-heading > .button {
+  background: transparent;
+  color: #f87171;
+  flex-shrink: 0;
+}
+.variation-plan-footer {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 18px 28px;
+  border-top: 1px solid #ffffff0d;
+}
+.variation-plan-output {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.variation-plan-output > span {
+  color: #a1a1aa;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.variation-generate {
+  border-radius: 999px;
+}
+.variation-plan-availability {
+  width: 100%;
+  text-align: right;
+}
+.variation-plan-empty {
+  padding: 48px 0;
+  text-align: center;
+  color: #a1a1aa;
+}
+@media (max-width: 900px) {
+  .variation-history-index {
+    display: none;
+  }
+  .variation-introduction {
+    padding: 28px 20px;
+  }
+}
+@media (max-width: 640px) {
+  .variation-plan-header {
+    padding: 12px;
+  }
+  .variation-plan-header h2 {
+    font-size: 16px;
+  }
+  .variation-plan-body {
+    padding: 0 12px 12px;
+  }
+  .variation-plan-card {
+    padding: 12px;
+  }
+  .variation-plan-card-heading {
+    gap: 8px;
+  }
+  .variation-plan-number {
+    width: 24px;
+    height: 24px;
+  }
+  .variation-plan-footer {
+    padding: 16px;
+  }
+  .variation-plan-output {
+    flex-basis: 100%;
+  }
+  .variation-plan-output .select {
+    width: 100%;
+  }
+  .variation-plan-availability {
+    text-align: left;
+  }
+  .variation-introduction {
+    padding: 24px 16px;
+  }
+}
+
+.variation-plan-card .checkbox__content {
+  min-width: 32px;
+  min-height: 32px;
+  justify-content: center;
+}
+@media (pointer: coarse) {
+  .variation-plan-card .checkbox__content {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Selection is explicit; inactive plans stay editable but visually subdued. */
+.variation-plan-card[data-selected="false"] {
+  background: #1c1c1c;
+}
+.variation-plan-card[data-selected="false"] :is(input, textarea) {
+  color: #909090;
+}
+.variation-plan-card[data-selected="true"] .variation-plan-number {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+.variation-plan-card .checkbox__control {
+  background: #292929;
+  border: 1px solid #ffffff26;
+  color: #aaa;
+}
+.variation-plan-card .checkbox[data-selected="true"] .checkbox__control {
+  border-color: transparent;
+  color: var(--accent-foreground);
+}
+.variation-plan-card :is(input, textarea):is(:focus, :focus-visible, [data-focus-visible="true"]) {
+  outline: 1px solid #ffffff70;
+  outline-offset: 0;
+  box-shadow: none;
+  border-color: #ffffff70;
+}
+@media (max-width: 1023px) {
+  .variation-plan-panel {
+    position: fixed;
+    inset: calc(
+        var(--header-height) +
+        var(--content-padding) +
+        var(--workspace-toolbar-height) +
+        var(--workspace-view-switch-height) +
+        12px
+      )
+      var(--content-padding) var(--content-padding)
+      calc(var(--sidebar-width) + var(--content-padding));
+    width: auto;
+    height: auto;
+    margin: 0;
+  }
+}
+@media (max-width: 767px) {
+  .variation-plan-panel {
+    left: var(--content-padding);
+    border-radius: 16px;
+  }
+}

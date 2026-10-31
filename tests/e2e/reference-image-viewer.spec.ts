@@ -164,6 +164,7 @@ test("reference viewer stacks over result details and remains usable on mobile",
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await references(page, 1);
+  await page.getByRole("radio", { name: "历史记录", exact: true }).click();
   await page.getByRole("button", { name: "预览图片 1", exact: true }).click();
   const details = page.getByRole("dialog", { name: "图片预览", exact: true });
   const reference = details.getByRole("button", { name: "查看参考图片 1", exact: true });
@@ -198,7 +199,21 @@ test("blank clicks dismiss at fitted and zoomed sizes without closing on image i
     const picture = viewer.locator(".browse-image-picture");
     await picture.click();
     await expect(viewer).toBeVisible();
-    await page.mouse.click(8, 8);
+    // The enlarged image can reach the top-left corner on Linux. Use the
+    // top-right gutter and verify it remains blank before testing dismissal.
+    const blank = { x: 1432, y: 8 };
+    expect(
+      await page.evaluate(
+        ({ x, y }) =>
+          document
+            .elementFromPoint(x, y)
+            ?.closest(
+              "button, .browse-image-picture, .browse-image-thumbnails, .browse-image-toolbar",
+            ) !== null,
+        blank,
+      ),
+    ).toBe(false);
+    await page.mouse.click(blank.x, blank.y);
     await expect(viewer).toHaveCount(0);
     await expect(trigger).toBeFocused();
   }
@@ -252,7 +267,7 @@ test("thumbnail navigation keeps a fixed rail, resets transforms and never wraps
   await expect(focusedThumbnail).toBeFocused();
   await expect(focusedThumbnail).toHaveAttribute("aria-current", "true");
   await expect(focusedThumbnail).toHaveCSS("outline-style", "none");
-  await expect(focusedThumbnail).toHaveCSS("box-shadow", "rgb(4, 133, 247) 0px 0px 0px 2px inset");
+  await expect(focusedThumbnail).toHaveCSS("box-shadow", "rgb(168, 255, 0) 0px 0px 0px 2px inset");
 });
 
 test("image loading keeps browsing controls hidden and leaves a stable close action", async ({

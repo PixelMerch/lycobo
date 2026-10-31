@@ -239,6 +239,9 @@ export const mediaAssets = pgTable(
     height: integer("height").notNull(),
     bytes: integer("bytes").notNull(),
     sha256: text("sha256").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    cleanupStartedAt: timestamp("cleanup_started_at", { withTimezone: true }),
+    storageDeletedAt: timestamp("storage_deleted_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [
@@ -249,6 +252,9 @@ export const mediaAssets = pgTable(
     }),
     unique("media_assets_id_org_unique").on(t.id, t.organizationId),
     index("media_assets_org_created_idx").on(t.organizationId, t.createdAt),
+    index("media_assets_expiry_idx")
+      .on(t.expiresAt)
+      .where(sql`${t.expiresAt} is not null and ${t.storageDeletedAt} is null`),
     index("media_assets_member_idx").on(t.organizationId, t.userId),
     check(
       "media_assets_dimensions_check",
@@ -306,7 +312,7 @@ export const generationJobs = pgTable(
     index("generation_jobs_member_idx").on(t.organizationId, t.userId),
     check(
       "generation_jobs_count_check",
-      sql`${t.requestedCount} between 1 and 10 and ${t.unitCredits} > 0 and (${t.requestedCount} <= 4 or ${t.input} ? 'textileSet')`,
+      sql`${t.requestedCount} between 1 and 20 and ${t.unitCredits} > 0 and (${t.requestedCount} <= 4 or (${t.requestedCount} <= 10 and ${t.input} ? 'textileSet') or ${t.input} ? 'variation')`,
     ),
     check(
       "generation_jobs_status_check",
@@ -388,12 +394,15 @@ export const generationJobItems = pgTable(
       .where(sql`${t.supersededAt} is null`),
     index("generation_job_items_output_idx").on(t.outputAssetId, t.organizationId),
     index("generation_job_items_reconciler_idx").on(t.reconciledBy),
+    index("generation_job_items_running_started_idx")
+      .on(t.startedAt, t.organizationId)
+      .where(sql`${t.status} = 'running' and ${t.supersededAt} is null`),
     index("generation_job_items_lease_idx")
       .on(t.leaseExpiresAt)
       .where(sql`${t.status} = 'running'`),
     check(
       "generation_job_items_position_check",
-      sql`${t.position} between 0 and 9 and ${t.attempts} >= 0`,
+      sql`${t.position} between 0 and 19 and ${t.attempts} >= 0`,
     ),
     check(
       "generation_job_items_status_check",
@@ -684,6 +693,7 @@ export const modelProviders = pgTable("model_providers", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   origin: text("origin").notNull(),
+  websiteUrl: text("website_url"),
   adapter: text("adapter").notNull(),
   credentialId: uuid("credential_id")
     .notNull()
@@ -692,6 +702,47 @@ export const modelProviders = pgTable("model_providers", {
   createdAt: createdAt(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }).enableRLS();
+export const modelCatalog = pgTable(
+  "model_catalog",
+  {
+    id: uuid("id").notNull().defaultRandom().unique(),
+    code: text("code").primaryKey(),
+    name: text("name").notNull(),
+    logoUrl: text("logo_url"),
+    description: text("description").notNull().default(""),
+    capabilitySummary: text("capability_summary").notNull().default(""),
+    sortOrder: integer("sort_order").notNull().default(0),
+    upstreamModel: text("upstream_model"),
+    providerId: uuid("provider_id").references(() => modelProviders.id),
+    category: text("category").notNull(),
+    enabled: integer("enabled").notNull().default(1),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check("model_catalog_category_check", sql`${t.category} in ('image','music','video')`),
+    index("model_catalog_provider_idx").on(t.providerId),
+  ],
+).enableRLS();
+export const modelProviderKeys = pgTable(
+  "model_provider_keys",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    providerId: uuid("provider_id")
+      .notNull()
+      .references(() => modelProviders.id),
+    credentialId: uuid("credential_id")
+      .notNull()
+      .references(() => modelCredentials.id),
+    name: text("name").notNull(),
+    enabled: integer("enabled").notNull().default(1),
+    createdAt: createdAt(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique("model_provider_keys_provider_name_unique").on(t.providerId, t.name),
+    index("model_provider_keys_credential_idx").on(t.credentialId),
+  ],
+).enableRLS();
 export const modelChannels = pgTable(
   "model_channels",
   {
@@ -700,12 +751,19 @@ export const modelChannels = pgTable(
       .notNull()
       .references(() => modelProviders.id),
     name: text("name").notNull(),
-    model: text("model").notNull(),
+    model: text("model")
+      .notNull()
+      .references(() => modelCatalog.code),
+    keyId: uuid("key_id").references(() => modelProviderKeys.id),
     settings: jsonb("settings").notNull(),
     enabled: integer("enabled").notNull().default(0),
     createdAt: createdAt(),
   },
-  (t) => [index("model_channels_provider_idx").on(t.providerId)],
+  (t) => [
+    index("model_channels_provider_idx").on(t.providerId),
+    index("model_channels_key_idx").on(t.keyId),
+    index("model_channels_model_idx").on(t.model),
+  ],
 ).enableRLS();
 export const modelRoutes = pgTable(
   "model_routes",
@@ -834,5 +892,50 @@ export const adminMenuEntries = pgTable(
     check("admin_menu_type_check", sql`${t.type} in ('directory','menu','button')`),
     check("admin_menu_flags_check", sql`${t.visible} in (0,1) and ${t.protected} in (0,1)`),
     check("admin_menu_parent_check", sql`${t.parentId} is null or ${t.parentId} <> ${t.id}`),
+  ],
+).enableRLS();
+
+export const variationPlans = pgTable(
+  "variation_plans",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    idempotencyKey: uuid("idempotency_key").notNull(),
+    inputHash: text("input_hash").notNull(),
+    input: jsonb("input").notNull(),
+    status: text("status").notNull().default("running"),
+    items: jsonb("items").notNull().default(sql`'[]'::jsonb`),
+    errorCode: text("error_code"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.organizationId, t.userId],
+      foreignColumns: [organizationMembers.organizationId, organizationMembers.userId],
+    }),
+    unique("variation_plan_idempotency").on(t.organizationId, t.userId, t.idempotencyKey),
+    index("variation_plan_owner_created").on(t.organizationId, t.userId, t.createdAt),
+    check("variation_plan_status", sql`${t.status} in ('running','ready','failed','uncertain')`),
+  ],
+).enableRLS();
+export const modelPlanners = pgTable(
+  "model_planners",
+  {
+    tool: text("tool").primaryKey(),
+    providerId: uuid("provider_id")
+      .notNull()
+      .references(() => modelProviders.id),
+    origin: text("origin").notNull(),
+    protocol: text("protocol").notNull().default("openai-chat"),
+    upstreamModel: text("upstream_model").notNull(),
+    enabled: integer("enabled").notNull().default(0),
+    timeoutMs: integer("timeout_ms").notNull().default(25000),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check("model_planner_protocol", sql`${t.protocol} in ('openai-chat','anthropic-messages')`),
+    check("model_planner_enabled", sql`${t.enabled} in (0,1)`),
+    check("model_planner_timeout", sql`${t.timeoutMs} between 5000 and 60000`),
   ],
 ).enableRLS();

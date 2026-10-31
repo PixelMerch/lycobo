@@ -1,22 +1,22 @@
 import { openImageRepository } from "@lycoboai/db";
-import { readImagePolicy } from "@lycoboai/generation";
+import {
+  readImagePolicy,
+  type StandaloneModelEnvironment,
+  standaloneModels,
+} from "@lycoboai/generation";
 import { dispatchImageOutbox, type ImageQueueSender } from "@lycoboai/queue";
 import { r2ImageStore } from "@lycoboai/storage/r2";
+import { imageObjectBucket, type S3Bindings } from "@lycoboai/storage/s3";
 import { processImageItem } from "../src/image-processor";
 import { consumeImageMessages } from "../src/queue-consumer";
 
-export interface GenerationBindings {
+export interface GenerationBindings extends S3Bindings, StandaloneModelEnvironment {
   HYPERDRIVE: Hyperdrive;
   IMAGES_BUCKET: R2Bucket;
   IMAGES: ImagesBinding;
   GENERATION_QUEUE: ImageQueueSender;
-  VAKV_API_KEY: string;
   MODEL_CREDENTIAL_SECRET?: string;
-  VAKV_BASE_URL?: string;
-  GENERATION_TIMEOUT_MS?: string;
   IMAGE_GENERATION_ENABLED?: string;
-  VAKV_ENABLE_IMAGE_EDITS?: string;
-  VAKV_CAPABILITY_OVERRIDES?: string;
 }
 export async function processGenerationBatch(
   batch: Pick<MessageBatch<{ version: 1; itemId: string }>, "messages">,
@@ -24,31 +24,23 @@ export async function processGenerationBatch(
 ) {
   const policy = readImagePolicy({
     IMAGE_GENERATION_ENABLED: env.IMAGE_GENERATION_ENABLED,
-    VAKV_ENABLE_IMAGE_EDITS: env.VAKV_ENABLE_IMAGE_EDITS,
-    VAKV_CAPABILITY_OVERRIDES: env.VAKV_CAPABILITY_OVERRIDES,
   });
   if (!policy.enabled) throw new Error("GENERATION_NOT_CONFIGURED");
-  const timeoutMs = Number(env.GENERATION_TIMEOUT_MS ?? 600000);
-  if (!Number.isInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 600000)
-    throw new Error("INVALID_GENERATION_TIMEOUT");
-  // Configured tasks own their origin and credentials. Legacy settings are validated
-  // only by the legacy adapter after a task has been claimed.
-  const baseUrl = env.VAKV_BASE_URL || "https://api.vakv.cn";
-  const repository = openImageRepository(env.HYPERDRIVE.connectionString, true);
-  const store = r2ImageStore(env.IMAGES_BUCKET, env.IMAGES, repository.storageUid);
+  const bucket = imageObjectBucket(env, env.IMAGES_BUCKET);
+  const repository = openImageRepository(
+    env.HYPERDRIVE.connectionString,
+    true,
+    await standaloneModels(env),
+  );
+  const store = r2ImageStore(bucket, env.IMAGES, repository.storageUid);
   try {
     await consumeImageMessages(batch, (itemId, deliveryId) =>
       processImageItem(itemId, {
         repository,
         store,
         modelSecret: env.MODEL_CREDENTIAL_SECRET,
+        standaloneKey: env.STANDALONE_MODELS === "true" ? env.STANDALONE_IMAGE_API_KEY : undefined,
         workerId: `cloudflare:${deliveryId}`,
-        provider: {
-          key: env.VAKV_API_KEY,
-          baseUrl,
-          timeoutMs,
-          onTiming: (event) => console.info({ itemId, ...event }),
-        },
         request: (input, init) => fetch(input, init),
         overrides: policy.overrides,
         editsEnabled: policy.editsEnabled,
@@ -61,10 +53,28 @@ export async function processGenerationBatch(
 export default {
   queue: processGenerationBatch,
   async scheduled(_event, env) {
-    const repository = openImageRepository(env.HYPERDRIVE.connectionString, true);
+    const repository = openImageRepository(
+      env.HYPERDRIVE.connectionString,
+      true,
+      await standaloneModels(env),
+    );
     try {
       await repository.expireClaims();
       await repository.pruneEvents();
+      const store = r2ImageStore(
+        imageObjectBucket(env, env.IMAGES_BUCKET),
+        env.IMAGES,
+        repository.storageUid,
+      );
+      for (const asset of await repository.expiredReferences()) {
+        try {
+          await store.remove(asset);
+          await repository.markReferenceDeleted(asset.id);
+        } catch {
+          // Leave the expired row pending so the next scheduled run retries deletion.
+          console.error("REFERENCE_CLEANUP_FAILED", asset.id);
+        }
+      }
       if (env.IMAGE_GENERATION_ENABLED !== "true") return;
       // Always drain durable intents, including when a prior HTTP transport send failed.
       for (let page = 0; page < 5; page++)

@@ -167,10 +167,10 @@
 }
 .image-preview-tool.button[data-selected="true"] {
   background: transparent;
-  color: #0485f7;
+  color: var(--accent);
 }
 .image-preview-tool.button[aria-pressed="true"] {
-  color: #0485f7;
+  color: var(--accent);
 }
 .image-preview-facts {
   display: flex;

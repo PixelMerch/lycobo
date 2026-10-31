@@ -1,6 +1,8 @@
 import { Button, Slider } from "@heroui/react";
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import { AssetImage } from "../generation/asset-image";
+import { modelDisplayName } from "../generation/models/model-display-name";
+import { useModelPresentation } from "../generation/models/model-logos";
 import type { PreviewImage, PreviewMeta } from "./image-preview";
 import { ImagePreviewDetails } from "./image-preview-details";
 import { LocalRepairPanel } from "./local-edit/local-repair";
@@ -26,6 +28,7 @@ export default function PreviewWorkspace({
   onRepairChange: (repairing: boolean) => void;
   onPreview: (image: PreviewImage) => void;
 }) {
+  const catalog = useModelPresentation();
   const editor = useLocalRepair(source, meta, repairing ? "rect" : "select");
   const { zoom, setZoom, wheelZoom } = usePreviewZoom();
   /* Task progress is announced in the bottom-right notice instead of the form,
@@ -234,7 +237,12 @@ export default function PreviewWorkspace({
           onPreview={onPreview}
         />
       ) : (
-        <ImagePreviewDetails source={source} meta={meta} onRepair={enterRepair} />
+        <ImagePreviewDetails
+          source={source}
+          meta={meta}
+          modelName={modelDisplayName(meta.model, catalog.data?.models ?? [])}
+          onRepair={enterRepair}
+        />
       )}
       <RepairNoticeRegion />
     </>

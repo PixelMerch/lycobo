@@ -1,7 +1,12 @@
 import { isAbsolute } from "node:path";
 import { serve } from "@hono/node-server";
 import { openAuthRepository, openImageEventFeed, openImageRepository } from "@lycoboai/db";
-import { readImagePolicy, supportedResolutions, validateModelInput } from "@lycoboai/generation";
+import {
+  readImagePolicy,
+  standaloneModels,
+  supportedResolutions,
+  validateModelInput,
+} from "@lycoboai/generation";
 import { imageStore } from "@lycoboai/storage";
 import pino from "pino";
 import { createApp } from "./app";
@@ -11,10 +16,12 @@ import { readWorkbenchSession } from "./features/images/session";
 
 const env = readEnv(process.env);
 const logger = pino({ level: env.LOG_LEVEL });
-const policy = readImagePolicy(process.env);
+const policy = readImagePolicy({ IMAGE_GENERATION_ENABLED: process.env.IMAGE_GENERATION_ENABLED });
 if (policy.enabled && !isAbsolute(process.env.IMAGE_DATA_DIR ?? ""))
   throw new Error("IMAGE_DATA_DIR must be an absolute shared directory");
-const repository = process.env.DATABASE_URL ? openImageRepository(process.env.DATABASE_URL) : null;
+const repository = process.env.DATABASE_URL
+  ? openImageRepository(process.env.DATABASE_URL, false, await standaloneModels(process.env))
+  : null;
 if (policy.enabled && !repository) throw new Error("DATABASE_URL is required for the Image API");
 const authConfig = readAuthConfig(process.env);
 if (authConfig && !process.env.DATABASE_URL)
@@ -33,9 +40,17 @@ const app = createApp(
   repository
     ? {
         repository,
+        modelSecret: process.env.MODEL_CREDENTIAL_SECRET,
+        standaloneKey:
+          process.env.STANDALONE_MODELS === "true"
+            ? process.env.STANDALONE_IMAGE_API_KEY
+            : undefined,
+        plannerKey:
+          process.env.STANDALONE_MODELS === "true" ? process.env.DEEPSEEK_API_KEY : undefined,
         events,
         store,
         enabled: policy.enabled,
+        managedModelsOnly: true,
         unitCredits: policy.unitCredits,
         editsEnabled: policy.editsEnabled,
         session: auth ? undefined : readWorkbenchSession(process.env),

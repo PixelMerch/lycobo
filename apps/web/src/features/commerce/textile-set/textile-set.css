@@ -204,6 +204,13 @@
   height: 0;
   pointer-events: none;
 }
+/* Keep the non-modal picker anchored while background panels stay in place. */
+html:has(.textile-views-popover),
+body:has(.textile-views-popover),
+body:has(.textile-views-popover)
+  :is(.composer-scroll, .results-panel, .history-rail, .sidebar nav) {
+  overflow: hidden;
+}
 .textile-views-popover {
   width: min(var(--trigger-width), 888px);
   max-width: none;
@@ -246,6 +253,7 @@
   flex: 0 1 auto;
   padding: 16px 20px 20px;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
 }
 .textile-view-count {
   margin-bottom: 16px;
