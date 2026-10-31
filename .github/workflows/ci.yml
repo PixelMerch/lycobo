@@ -5,6 +5,12 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
+    inputs:
+      browser_grep:
+        description: "Optional browser test name filter for manual diagnosis; push/PR checks always run the complete suite"
+        required: false
+        default: ""
+        type: string
 permissions:
   contents: read
 concurrency:
@@ -41,6 +47,7 @@ jobs:
       options: --ipc=host
     timeout-minutes: 40
     env:
+      BROWSER_GREP: ${{ github.event_name == 'workflow_dispatch' && inputs.browser_grep || '' }}
       FULL_E2E: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.base_ref == 'main' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -54,7 +61,12 @@ jobs:
       - run: pnpm exec playwright --version
       - name: Full browser regression for branch pushes and releases
         if: env.FULL_E2E == 'true'
-        run: pnpm test:e2e --shard=${{ matrix.shard }}/2
+        run: |
+          if [ -n "$BROWSER_GREP" ]; then
+            pnpm test:e2e --shard=${{ matrix.shard }}/2 --grep "$BROWSER_GREP" --pass-with-no-tests
+          else
+            pnpm test:e2e --shard=${{ matrix.shard }}/2
+          fi
       - name: Core browser smoke tests for development
         if: env.FULL_E2E != 'true'
         run: pnpm test:e2e:smoke --shard=${{ matrix.shard }}/2

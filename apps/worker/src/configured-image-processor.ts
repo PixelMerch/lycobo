@@ -1,3 +1,4 @@
+import { imageOutputDimensions } from "@lycoboai/contracts";
 import type { ClaimedImage, ImageRepository } from "@lycoboai/db";
 import {
   configuredProviderCall,
@@ -5,6 +6,7 @@ import {
   openProviderKey,
   ProviderPollError,
   providerOutputBytes,
+  standaloneCredentialId,
   textileItemInput,
 } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
@@ -14,6 +16,7 @@ export async function processConfiguredImage(
     repository: ImageRepository;
     store: ImageStore;
     modelSecret?: string | undefined;
+    standaloneKey?: string | undefined;
     request?: typeof fetch;
   },
 ) {
@@ -24,11 +27,16 @@ export async function processConfiguredImage(
   try {
     if (Date.now() > state.deadlineAt.getTime())
       throw new ImageProviderError("PROVIDER_TASK_DEADLINE", true);
-    if (!deps.modelSecret) throw new ImageProviderError("MODEL_SECRET_NOT_CONFIGURED", polling);
-    const key = await openProviderKey(
-      await deps.repository.providerCipher(state.snapshot.credentialId),
-      deps.modelSecret,
-    );
+    const key =
+      state.snapshot.credentialId === standaloneCredentialId
+        ? deps.standaloneKey
+        : deps.modelSecret
+          ? await openProviderKey(
+              await deps.repository.providerCipher(state.snapshot.credentialId),
+              deps.modelSecret,
+            )
+          : undefined;
+    if (!key) throw new ImageProviderError("MODEL_SECRET_NOT_CONFIGURED", polling);
     const references: Uint8Array[] = [];
     if (!polling)
       for (const id of job.input.referenceAssetIds) {
@@ -59,12 +67,19 @@ export async function processConfiguredImage(
       );
       return;
     }
-    if (result.outputs.length !== 1)
-      throw new ImageProviderError("PROVIDER_UNEXPECTED_IMAGE_COUNT", true);
+    // A paid slot requests n=1; surplus provider outputs must not discard its usable result.
+    // Preserve stable provider order and deliver one image without creating extra charges/items.
     const output = result.outputs[0];
     if (!output) throw new ImageProviderError("PROVIDER_EMPTY_IMAGE", true);
     const bytes = await providerOutputBytes(output, state.snapshot, key, deps.request);
-    const image = await deps.store.put(job, bytes, job.itemId);
+    const image = await deps.store.put(
+      job,
+      bytes,
+      job.itemId,
+      job.input.resolution === "1.5K"
+        ? imageOutputDimensions(job.input.aspectRatio, job.input.resolution)
+        : undefined,
+    );
     await deps.repository.finish(job, { image, requestId: result.requestId });
   } catch (error) {
     const known = error instanceof ImageProviderError;

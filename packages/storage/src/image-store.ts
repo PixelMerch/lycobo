@@ -4,25 +4,37 @@ import { access, mkdir, readFile, rename, unlink, writeFile } from "node:fs/prom
 import path from "node:path";
 import { type ImageScope, imageLimits, type StoredImage } from "@lycoboai/contracts";
 import sharp from "sharp";
-import { ImageValidationError, objectKeySchema, type StorageUid, userObjectKey } from "./core";
+import {
+  type ImageOutputSize,
+  ImageValidationError,
+  objectKeySchema,
+  type StorageUid,
+  userObjectKey,
+} from "./core";
 
 export { ImageValidationError, maxImageBytes } from "./core";
 
-async function decodeImage(bytes: Uint8Array) {
+async function decodeImage(bytes: Uint8Array, outputSize?: ImageOutputSize) {
   if (!bytes.length || bytes.length > imageLimits.outputBytes) throw new Error("INVALID_IMAGE");
   const source = sharp(bytes, { limitInputPixels: 32 * 1024 * 1024, failOn: "warning" });
   const metadata = await source.metadata();
   if (!["png", "jpeg", "webp"].includes(metadata.format ?? "") || (metadata.pages ?? 1) > 1)
     throw new Error("INVALID_IMAGE");
+  if (outputSize) {
+    if ((metadata.width ?? 0) < outputSize.width || (metadata.height ?? 0) < outputSize.height)
+      throw new ImageValidationError("OUTPUT_RESOLUTION_TOO_SMALL");
+    source.resize({ ...outputSize, fit: "contain", withoutEnlargement: true });
+  }
   const { data, info } = await source.rotate().png().toBuffer({ resolveWithObject: true });
   if (data.length > imageLimits.outputBytes || info.width > 8192 || info.height > 8192)
     throw new Error("INVALID_IMAGE");
   return { data, width: info.width, height: info.height };
 }
-export async function normalizeImage(bytes: Uint8Array) {
+export async function normalizeImage(bytes: Uint8Array, outputSize?: ImageOutputSize) {
   try {
-    return await decodeImage(bytes);
-  } catch {
+    return await decodeImage(bytes, outputSize);
+  } catch (error) {
+    if (error instanceof ImageValidationError) throw error;
     throw new ImageValidationError("INVALID_IMAGE");
   }
 }
@@ -43,8 +55,9 @@ export function imageStore(directory: string, resolveUid?: StorageUid) {
       scope: ImageScope,
       input: Uint8Array,
       id: string = randomUUID(),
+      outputSize?: ImageOutputSize,
     ): Promise<StoredImage> {
-      const image = await normalizeImage(input);
+      const image = await normalizeImage(input, outputSize);
       const objectKey = resolveUid
         ? userObjectKey(await resolveUid(scope), scope.organizationId, id)
         : `${scope.organizationId}/${scope.userId}/${id}.png`;

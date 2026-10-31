@@ -5,7 +5,7 @@ export function localEnvironment(source, docker = false, modelSettings = source)
   const env = Object.fromEntries(
     Object.entries(source).filter(
       ([key]) =>
-        !/^(?:CLOUDFLARE_|CF_|SUPABASE_|AUTH_|ASSET_|VAKV_|IMAGE_|MODEL_|WRANGLER_|S3_)/.test(
+        !/^(?:CLOUDFLARE_|CF_|SUPABASE_|AUTH_|ASSET_|VAKV_|IMAGE_|MODEL_|WRANGLER_|S3_|STANDALONE_)/.test(
           key,
         ) &&
         key !== "DATABASE_URL" &&
@@ -30,6 +30,10 @@ export function localEnvironment(source, docker = false, modelSettings = source)
     throw new Error(
       "Enabled local generation requires MODEL_CREDENTIAL_SECRET and backend channels.",
     );
+  if (env.LOCAL_IMAGE_GENERATION_ENABLED === "true" && modelSettings.STANDALONE_MODELS === "true") {
+    for (const key of ["STANDALONE_MODELS", "STANDALONE_IMAGE_API_KEY", "DEEPSEEK_API_KEY"])
+      if (modelSettings[key]) env[key] = modelSettings[key];
+  }
   if (docker)
     Object.assign(env, {
       S3_ENDPOINT: "http://image-storage:8333",

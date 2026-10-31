@@ -67,7 +67,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   expect(historyBox?.width).toBe(1328);
   expect(historyBox?.height).toBe(906);
   await expect(historyDialog.locator(".image-preview-section p")).toContainText("紫色菱形被子");
-  await expect(historyDialog.locator(".image-preview-model")).toContainText("gpt-image-2");
+  await expect(historyDialog.locator(".image-preview-model")).toContainText("Image 2");
   await expect(historyDialog.locator(".image-preview-facts")).toContainText("ID：W00000013");
   await expect(historyDialog.locator(".image-preview-bar-id")).toHaveCount(0);
   await expect(historyDialog.locator(".image-preview-bar-size")).toHaveText("2048 x 2048");

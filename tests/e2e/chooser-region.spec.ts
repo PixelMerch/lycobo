@@ -1,186 +1,59 @@
 import { expect, test } from "@playwright/test";
 import { mockImageApi } from "./image-api-fixture";
 
-for (const width of [1440, 1920]) {
-  test(`model menu opens on arrow hover without blocking the workspace at ${width}px`, async ({
-    page,
-  }) => {
+for (const width of [390, 1440, 1920]) {
+  test(`tool selector fits ${width}px and restores keyboard focus`, async ({ page }) => {
     await mockImageApi(page);
-    await page.setViewportSize({ width, height: 1000 });
-    await page.goto("/create");
-    for (const collapsed of [false, true]) {
-      if (collapsed) await page.getByRole("button", { name: "收起导航栏", exact: true }).click();
-      const trigger = page.getByRole("button", {
-        name: collapsed ? "创作" : "浏览模型",
-        exact: true,
-      });
-      await trigger.hover();
-      const menu = page.getByRole("menu", { name: collapsed ? "创作" : "浏览模型", exact: true });
-      await expect(menu).toBeVisible();
-      await expect(menu.getByRole("menuitem")).toHaveCount(3);
-      await menu.getByRole("menuitem").first().hover();
-      await expect(menu).toBeVisible();
-      const box = await menu.boundingBox();
-      const sidebar = await page.locator(".sidebar").boundingBox();
-      expect(box && sidebar && box.x >= sidebar.x + sidebar.width - 1).toBeTruthy();
-      const rows = await menu
-        .getByRole("menuitem")
-        .evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().top));
-      expect(rows[1]).toBeGreaterThan(rows[0] ?? 0);
-      expect(rows[2]).toBeGreaterThan(rows[1] ?? 0);
-      await expect(page.locator(".modal__backdrop")).toHaveCount(0);
-      await expect(page.getByLabel("提示词", { exact: true })).toBeEnabled();
-      expect(await page.locator("main").evaluate((el) => el.closest("[inert]") === null)).toBe(
-        true,
-      );
-      expect(await menu.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe("none");
-      await page.mouse.move(width - 100, 500);
-      await expect(menu).toBeHidden();
-      await trigger.focus();
-      await trigger.press(collapsed ? "ArrowDown" : "Enter");
-      await expect(menu.getByRole("menuitem").first()).toBeFocused();
-      await page.keyboard.press("Escape");
-      await expect(menu).toBeHidden();
-      await expect(trigger).toBeFocused();
-    }
-  });
-}
-
-for (const width of [1024, 390]) {
-  test(`model menu supports click and narrow navigation at ${width}px`, async ({ page }) => {
-    await mockImageApi(page);
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/");
-    if (width < 768) await page.getByRole("button", { name: "打开导航", exact: true }).click();
-    const navigation = width < 768 ? page.locator(".mobile-nav") : page.locator(".sidebar");
-    await navigation.getByRole("button", { name: "浏览模型", exact: true }).click();
-    const menu = page.getByRole("menu", { name: "浏览模型", exact: true });
-    await expect(menu).toBeVisible();
-    const panel = await page.locator(".creation-model-menu").boundingBox();
-    if (!panel) throw new Error("Missing model menu");
-    expect(panel.x).toBeGreaterThanOrEqual(0);
-    expect(panel.x + panel.width).toBeLessThanOrEqual(width);
-    await menu.getByRole("menuitem", { name: "进入 nano-banana-2.1 创作", exact: true }).click();
-    await expect(page).toHaveURL(/\/create$/);
-    await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: /创作模型/ })).toContainText("nano-banana-2.1");
-    await expect(menu).toBeHidden();
+    await page.goto("/create");
+    const trigger = page.getByRole("button", { name: "全部工具", exact: true });
+    await trigger.click();
+    const dialog = page.getByRole("dialog", { name: "选择工具" });
+    await expect(dialog).toBeVisible();
+    const box = await dialog.boundingBox();
+    if (!box) throw new Error("Tool selector is not visible");
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(width);
+    expect(await dialog.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe("none");
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await trigger.press("Enter");
+    await expect(dialog).toBeVisible();
+    const search = dialog.getByRole("textbox", { name: "搜索电商工具" });
+    await expect(search).toBeFocused();
+    await dialog.evaluate(async (el) => {
+      await Promise.all(el.getAnimations().map((animation) => animation.finished));
+    });
+    const fixedHeight = (await dialog.boundingBox())?.height;
+    const focusStyle = await search.evaluate((el) => {
+      const style = getComputedStyle(el);
+      return `${style.borderColor} ${style.outlineColor} ${style.boxShadow}`;
+    });
+    expect(focusStyle).not.toContain("4, 133, 247");
+    await search.fill("不存在的工具");
+    await expect(dialog.getByText("没有匹配的工具")).toBeVisible();
+    expect((await dialog.boundingBox())?.height).toBe(fixedHeight);
+    await search.fill("");
+    if (width >= 768) {
+      for (const category of ["主图制作", "商品视频", "全部工具"]) {
+        await dialog.getByRole("radio", { name: category, exact: true }).click();
+        expect((await dialog.boundingBox())?.height).toBe(fixedHeight);
+      }
+    }
+    await page.keyboard.press("Escape");
+    await expect(trigger).toBeFocused();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
+    if (width < 768) {
+      await page.getByRole("radio", { name: "历史记录", exact: true }).click();
+      await expect(page.getByRole("region", { name: "工作区历史记录" })).toBeVisible();
+      await expect(trigger).toBeVisible();
+      await page.getByRole("radio", { name: "创作", exact: true }).click();
+      await expect(trigger).toBeVisible();
+      expect((await page.locator(".main-content").boundingBox())?.x).toBe(0);
+    }
   });
 }
-
-test("navigation model choices retain each draft and direct creation keeps the selected model", async ({
-  page,
-}) => {
-  await mockImageApi(page);
-  await page.goto("/create");
-  const prompt = page.getByLabel("提示词", { exact: true });
-  await prompt.fill("商品主图草稿");
-  const select = async (id: string) => {
-    await page.getByRole("button", { name: "浏览模型", exact: true }).focus();
-    await page.keyboard.press("Enter");
-    await page.getByRole("menuitem", { name: `进入 ${id} 创作`, exact: true }).click();
-  };
-  await select("nano-banana-2.1");
-  await prompt.fill("场景创作草稿");
-  await select("gpt-image-2");
-  await expect(prompt).toHaveValue("商品主图草稿");
-  await select("nano-banana-2.1");
-  await expect(prompt).toHaveValue("场景创作草稿");
-  await page.getByRole("link", { name: "首页", exact: true }).click();
-  await page.getByRole("link", { name: "创作", exact: true }).click();
-  await expect(prompt).toHaveValue("场景创作草稿");
-  await expect(
-    page.getByRole("region", { name: "创作参数" }).getByRole("button", { name: /创作模型/ }),
-  ).toContainText("nano-banana-2.1");
-});
-
-test("collapsed creation has one icon: hover browses, click navigates, other icons retain tips", async ({
-  page,
-}) => {
-  await mockImageApi(page);
-  await page.goto("/");
-  await page.getByRole("button", { name: "收起导航栏", exact: true }).click();
-  const icon = page.getByRole("button", { name: "创作", exact: true });
-  await expect(page.getByRole("button", { name: "浏览模型", exact: true })).toHaveCount(0);
-  await expect(icon.locator("svg")).toHaveCount(1);
-  await icon.hover();
-  const menu = page.getByRole("menu", { name: "创作", exact: true });
-  await expect(menu).toBeVisible();
-  await expect(page.getByRole("tooltip", { name: "创作", exact: true })).toHaveCount(0);
-  await icon.click();
-  await expect(page).toHaveURL(/\/create$/);
-  await expect(menu).toBeHidden();
-  const home = page.getByRole("link", { name: "首页", exact: true });
-  await home.hover();
-  await expect(page.getByRole("tooltip", { name: "首页", exact: true })).toBeVisible();
-  await expect(menu).toBeHidden();
-  await home.click();
-  await icon.focus();
-  await icon.press("Enter");
-  await expect(page).toHaveURL(/\/create$/);
-  await expect(menu).toBeHidden();
-  await icon.press("ArrowDown");
-  await expect(menu.getByRole("menuitem").first()).toBeFocused();
-  await menu.getByRole("menuitem", { name: "进入 nano-banana-2.1 创作", exact: true }).click();
-  await expect(menu).toBeHidden();
-  await expect(
-    page.getByRole("region", { name: "创作参数" }).getByRole("button", { name: /创作模型/ }),
-  ).toContainText("nano-banana-2.1");
-});
-
-test("whole creation row delays hover, cancels pass-through and lets the arrow toggle", async ({
-  page,
-}) => {
-  await mockImageApi(page);
-  await page.clock.install({ time: new Date("2026-10-23T00:00:00Z") });
-  await page.goto("/");
-  await page.clock.pauseAt(new Date("2026-10-23T00:00:10Z"));
-  const link = page.getByRole("link", { name: "创作", exact: true });
-  const arrow = page.getByRole("button", { name: "浏览模型", exact: true });
-  const menu = page.getByRole("menu", { name: "浏览模型", exact: true });
-  await link.hover();
-  await page.clock.runFor(100);
-  await expect(menu).toHaveCount(0);
-  await page.mouse.move(800, 600);
-  await page.clock.runFor(400);
-  await expect(menu).toHaveCount(0);
-  await link.hover();
-  await page.clock.runFor(250);
-  await expect(menu).toBeVisible();
-  await expect(page.locator(".creation-nav-row")).not.toHaveAttribute("data-active", "true");
-  await expect(page).toHaveURL(/\/$/);
-  await menu.getByRole("menuitem").first().hover();
-  await page.clock.runFor(400);
-  await expect(menu).toBeVisible();
-  await arrow.click();
-  await page.clock.runFor(150);
-  await expect(menu).toBeHidden();
-  await page.clock.runFor(400);
-  await expect(menu).toBeHidden();
-  await arrow.click();
-  await page.clock.runFor(150);
-  await expect(menu).toBeVisible();
-  await page.mouse.move(800, 600);
-  await page.clock.runFor(150);
-  await expect(menu).toBeVisible();
-  await page.clock.runFor(200);
-  await expect(menu).toBeHidden();
-  await link.hover();
-  await page.clock.runFor(100);
-  await link.click();
-  await page.clock.runFor(500);
-  await expect(page).toHaveURL(/\/create$/);
-  await expect(menu).toBeHidden();
-  await page.getByRole("link", { name: "首页", exact: true }).click();
-  await link.focus();
-  await link.press("ArrowDown");
-  await page.clock.runFor(150);
-  await expect(menu.getByRole("menuitem").first()).toBeFocused();
-  await page.keyboard.press("Escape");
-  await page.clock.runFor(150);
-  await expect(menu).toBeHidden();
-  await expect(arrow).toBeFocused();
-});

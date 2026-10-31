@@ -86,18 +86,18 @@ export async function configuredProviderCall(
   const isPoll = !!pending;
   const headers: Record<string, string> = { Authorization: `Bearer ${key}` };
   let body: FormData | string | undefined;
+  let submissionPath: string | undefined;
   const adapter = imageProtocolAdapters[snapshot.adapter];
   if (!isPoll) {
     headers["Idempotency-Key"] = idempotencyKey;
     const prepared = adapter.prepare(snapshot, input, references);
     body = prepared.body;
+    submissionPath = prepared.path;
     Object.assign(headers, prepared.headers);
   }
   const path = pending
     ? providerTaskPath(pending.statusPath, snapshot.origin)
-    : references.length
-      ? "/v1/images/edits"
-      : "/v1/images/generations";
+    : (submissionPath ?? (references.length ? "/v1/images/edits" : "/v1/images/generations"));
   const response = await request(new URL(path, snapshot.origin), {
     method: isPoll ? "GET" : "POST",
     headers,
@@ -141,6 +141,7 @@ export async function configuredProviderCall(
   let json: unknown;
   try {
     json = await readJson(response);
+    if (adapter.normalizeReply) json = adapter.normalizeReply(json);
   } catch (error) {
     throw new ImageProviderError(
       error instanceof ImageProviderError ? error.code : "PROVIDER_RESPONSE_UNAVAILABLE",

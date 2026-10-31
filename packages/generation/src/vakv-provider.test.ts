@@ -11,24 +11,25 @@ const input = imageGenerationInputSchema.parse({ model: "gpt-image-2", prompt: "
 const config = { key: "test-not-a-secret", baseUrl: "https://api.vakv.cn", timeoutMs: 1000 };
 describe("Vakv adapter and capability evidence", () => {
   it("allows all resolutions through public-model routing", () => {
-    expect(supportedResolutions("gpt-image-2")).toEqual(["1K", "2K", "4K"]);
-    expect(supportedResolutions("gpt-image-2-4K")).toEqual(["1K", "2K", "4K"]);
+    expect(supportedResolutions("gpt-image-2")).toEqual(["1K", "1.5K", "2K", "4K"]);
+    expect(supportedResolutions("gpt-image-2-4K")).toEqual(["1K", "1.5K", "2K", "4K"]);
     expect(() => validateModelInput({ ...input, resolution: "4K" })).not.toThrow();
     for (const model of [
       "gpt-image-2.5",
       "gpt-image-2.5-flare",
       "gpt-image-2.5-sunburst",
     ] as const) {
-      expect(supportedResolutions(model)).toEqual(["1K", "2K", "4K"]);
+      expect(supportedResolutions(model)).toEqual(["1K", "1.5K", "2K", "4K"]);
       expect(() => validateModelInput({ ...input, model })).not.toThrow();
       for (const resolution of ["2K", "4K"] as const)
         expect(() => validateModelInput({ ...input, model, resolution })).not.toThrow();
     }
     expect(
       supportedResolutions("gpt-image-2.5-sunburst", { "gpt-image-2.5-sunburst": ["1K"] }),
-    ).toEqual(["1K", "2K", "4K"]);
+    ).toEqual(["1K", "1.5K", "2K", "4K"]);
     expect(supportedResolutions("gpt-image-2", { "gpt-image-2": ["4K"] })).toEqual([
       "1K",
+      "1.5K",
       "2K",
       "4K",
     ]);
@@ -153,7 +154,7 @@ it.each([
       provider,
     );
   }
-  expect(readImagePolicy({ IMAGE_CREDITS_PER_IMAGE: "1" }).unitCredits).toBe(20);
+  expect(readImagePolicy({ IMAGE_CREDITS_PER_IMAGE: "1" }).unitCredits).toBe(2);
 });
 
 it("separates response-header wait from response-body download without logging payloads", async () => {

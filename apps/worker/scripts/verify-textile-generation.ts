@@ -3,6 +3,7 @@ import {
   imageGenerationInputSchema,
   imageJobSchema,
   imageSubmissionResponseSchema,
+  imageUnitCredits,
   textileViews,
   unwrapApiData,
 } from "@lycoboai/contracts";
@@ -60,7 +61,7 @@ export async function verifyTextileGeneration(
   assert.equal(first.status, 202);
   const submitted = imageSubmissionResponseSchema.parse(unwrapApiData(await first.json()));
   assert.equal((await submit()).status, 200);
-  assert.equal((await repository.wallet(owner)).balance, 800);
+  assert.equal((await repository.wallet(owner)).balance, 1000 - 10 * imageUnitCredits);
   const job = imageJobSchema.parse(
     JSON.parse(JSON.stringify(await repository.get(owner, submitted.id))),
   );
@@ -118,10 +119,10 @@ export async function verifyTextileGeneration(
   );
   assert.equal(complete.status, "partially_failed");
   assert.equal(complete.items.filter((item) => item.status === "succeeded").length, 9);
-  assert.equal((await repository.wallet(owner)).balance, 820);
+  assert.equal((await repository.wallet(owner)).balance, 1000 - 9 * imageUnitCredits);
   const retry = await repository.retry(owner, job.id, crypto.randomUUID());
   assert.equal(retry.id, job.id);
-  assert.equal((await repository.wallet(owner)).balance, 800);
+  assert.equal((await repository.wallet(owner)).balance, 1000 - 10 * imageUnitCredits);
   const retried = imageJobSchema.parse(
     JSON.parse(JSON.stringify(await repository.get(owner, job.id))),
   );

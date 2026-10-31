@@ -7,7 +7,9 @@ import { fileURLToPath } from "node:url";
 import {
   enterpriseLoginResponseSchema,
   imageJobSchema,
+  imageUnitCredits,
   unwrapApiData,
+  variationPlanSchema,
   walletBalanceSchema,
 } from "@lycoboai/contracts";
 import { openAuthRepository, openImageRepository } from "@lycoboai/db";
@@ -81,6 +83,7 @@ export async function verifyCloudflareApi() {
       },
       await sealProviderKey("fixture-provider-key", modelSecret),
     );
+    await db`insert into model_planners(tool,provider_id,origin,protocol,upstream_model,enabled) values('smart-variation',${configuredProvider.id},'https://provider-fixture.example','anthropic-messages','claude-sonnet-5',1)`;
     const channel = await images.models.saveChannel(principal.userId, undefined, {
       name: "Native channel",
       providerId: configuredProvider.id,
@@ -125,6 +128,7 @@ export async function verifyCloudflareApi() {
             images: { binding: "IMAGES" },
             queueProducers: { GENERATION_QUEUE: "native-generation" },
             bindings: {
+              MODEL_CREDENTIAL_SECRET: modelSecret,
               AUTH_JWT_SECRET: crypto.randomUUID() + crypto.randomUUID(),
               AUTH_TRUSTED_ORIGINS: origin,
               ASSET_SIGNING_SECRET: assetSecret,
@@ -132,6 +136,7 @@ export async function verifyCloudflareApi() {
               IMAGE_GENERATION_ENABLED: "true",
               VAKV_ENABLE_IMAGE_EDITS: "false",
             },
+            outboundService: { name: "provider" },
           },
           {
             name: "consumer",
@@ -164,7 +169,7 @@ export async function verifyCloudflareApi() {
             name: "provider",
             modules: true,
             compatibilityDate: "2026-10-23",
-            script: `let calls=0;export default {async fetch(request){if(new URL(request.url).pathname==='/count')return Response.json({calls});calls++;return Response.json({data:[{b64_json:${JSON.stringify(fixturePng)}}]},{headers:{'x-request-id':'native-fixture'}})}}`,
+            script: `let calls=0;export default {async fetch(request){if(new URL(request.url).pathname==='/count')return Response.json({calls});if(new URL(request.url).pathname==='/v1/messages'){const body=await request.json();if(request.headers.get('x-api-key')!=='fixture-provider-key'||body.model!=='claude-sonnet-5'||!body.messages[0].content.some(p=>p.type==='image'&&p.source?.type==='base64'))return new Response(null,{status:400});return Response.json({stop_reason:'end_turn',content:[{type:'text',text:JSON.stringify({items:[{title:'原生视觉计划',prompt:'保留参考图片的商品身份，调整为自然光电商摄影。'}]})}]});}calls++;return Response.json({data:[{b64_json:${JSON.stringify(fixturePng)}}]},{headers:{'x-request-id':'native-fixture'}})}}`,
           },
         ],
       }),
@@ -238,6 +243,27 @@ export async function verifyCloudflareApi() {
       .parse(assetList);
     assert.equal(signed.data.length, 1);
     assert.ok(signed.data[0]?.delivery.url.startsWith("https://assets-fixture.example/"));
+    const analysis = await request("/variation-plans", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() },
+      body: JSON.stringify({
+        description: "生成一个自然光商品摄影方案",
+        referenceAssetIds: [assetId],
+      }),
+    });
+    assert.equal(analysis.status, 200);
+    const plan = variationPlanSchema.parse(unwrapApiData(await analysis.json()));
+    assert.equal(
+      plan.status,
+      "ready",
+      "Workers must send native planner request rather than fail before network",
+    );
+    assert.equal(plan.items.length, 1);
+    assert.equal(
+      (await images.wallet(principal)).balance,
+      200,
+      "Planning must not debit image credits",
+    );
     const stream = await request("/image-events");
     assert.equal(stream.status, 200);
     const reader = stream.body?.getReader();
@@ -298,7 +324,7 @@ export async function verifyCloudflareApi() {
     const wallet = walletBalanceSchema.parse(
       unwrapApiData(await (await request("/wallet")).json()),
     );
-    assert.equal(wallet.balance, 180);
+    assert.equal(wallet.balance, 200 - imageUnitCredits);
     assert.equal((await request("/auth/refresh", { method: "POST" })).status, 200);
     assert.equal((await request("/auth/logout", { method: "POST" })).status, 200);
     assert.equal((await request("/auth/session")).status, 401);

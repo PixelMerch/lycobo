@@ -44,7 +44,9 @@ test("home composer shares prompt and real reference drafts without submitting g
 
   await page.getByRole("button", { name: "开始创作", exact: true }).click();
   await expect(page).toHaveURL(/\/create$/);
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("为我的商品搭配自然光场景");
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
+    "为我的商品搭配自然光场景",
+  );
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   expect(submissions).toBe(0);
 });
@@ -71,7 +73,7 @@ test("home settings preserve drafts and only image creation is offered", async (
   const panel = page.getByRole("dialog", { name: "模型和画面设置" });
   await expect(panel).toBeVisible();
   await panel.getByRole("radio", { name: "16:9", exact: true }).click();
-  await panel.getByRole("button", { name: /gpt-image-2.5/ }).click();
+  await panel.getByRole("button", { name: /Image 2.5/ }).click();
   await panel.press("Escape");
   await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("保留绗缝与面料细节");
   await expect(page.getByRole("button", { name: "选择创作模型", exact: true })).toContainText(
@@ -80,7 +82,9 @@ test("home settings preserve drafts and only image creation is offered", async (
   await expect(page.getByRole("radio", { name: "商品视频" })).toHaveCount(0);
   await expect(page.getByText("视频生成即将开放", { exact: false })).toHaveCount(0);
   await page.getByRole("button", { name: "开始创作", exact: true }).click();
-  await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("保留绗缝与面料细节");
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
+    "保留绗缝与面料细节",
+  );
 });
 
 test("ratio pager moves one page and keeps the selection", async ({ page }) => {
@@ -105,7 +109,7 @@ test("home model settings can change resolution and count with animated selectio
   await page.goto("/");
   await page.getByRole("button", { name: "选择创作模型" }).click();
   const panel = page.getByRole("dialog", { name: "模型和画面设置" });
-  await panel.getByRole("button", { name: /nano-banana-2.1/ }).click();
+  await panel.getByRole("button", { name: /Banana 2.1/ }).click();
   const resolution = panel.getByRole("radio", { name: "2K", exact: true });
   await expect(resolution).toBeEnabled();
   await resolution.click();
@@ -179,8 +183,8 @@ test("image mentions insert at the cursor and preserve surrounding text", async 
   await page.goto("/");
   const prompt = page.getByRole("textbox", { name: "创作需求" });
   await prompt.fill("@");
-  const menu = page.getByRole("dialog", { name: "引用已上传图片" });
-  await expect(menu).toContainText("请先上传参考图片");
+  const menu = page.getByRole("dialog", { name: "引用图片" });
+  await expect(menu).toContainText("暂无匹配图片");
   await menu.press("Escape");
   await page
     .getByLabel("添加参考图片", { exact: true })
@@ -195,7 +199,7 @@ test("image mentions insert at the cursor and preserve surrounding text", async 
   await prompt.press("ArrowRight");
   await prompt.press("@");
   await expect(menu).toBeVisible();
-  await page.getByRole("option", { name: "图片2", exact: true }).click();
+  await page.getByRole("option", { name: "bedroom-thumb.webp", exact: true }).click();
   await expect(prompt).toBeFocused();
   await expect(prompt).toHaveText("保留图片2  面料");
   await expect(prompt.locator("[data-reference]")).toHaveAttribute("data-reference", "@图片2");
@@ -203,12 +207,100 @@ test("image mentions insert at the cursor and preserve surrounding text", async 
   await expect(prompt).toHaveText("保留图片2 继续编辑 面料");
   await expect(prompt).toBeFocused();
   await page.getByRole("button", { name: "开始创作", exact: true }).click();
-  const workspacePrompt = page.getByLabel("提示词", { exact: true });
+  const workspacePrompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   await expect(workspacePrompt).toHaveText("保留图片2 继续编辑 面料");
   await workspacePrompt.fill("@");
   await expect(menu).toBeVisible();
-  await menu.press("Tab");
-  await expect(page.getByRole("option", { name: "图片1", exact: true })).toBeFocused();
+  await menu.getByRole("textbox", { name: "搜索图片" }).focus();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("option", { name: "commerce-atlas.webp", exact: true }),
+  ).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(workspacePrompt).toHaveText("图片1 ");
+});
+
+test("home inspiration filters examples and confirms prompt replacement without submitting paid work", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  let submissions = 0;
+  page.on("request", (request) => {
+    if (request.method() === "POST" && new URL(request.url()).pathname.endsWith("/image-tasks"))
+      submissions++;
+  });
+  await page.goto("/");
+  const gallery = page.getByRole("region", { name: "电商创作灵感", exact: true });
+  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(13);
+  await page.getByRole("textbox", { name: "创作需求" }).fill("我的原提示词");
+  await gallery.getByRole("tab", { name: "家纺展示", exact: true }).click();
+  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(4);
+  await gallery.getByRole("button", { name: "查看灵感：枕间细节", exact: true }).click();
+  const detail = page.getByRole("dialog", { name: "灵感详情：枕间细节", exact: true });
+  await expect(detail.getByText("家纺展示 · 示例素材")).toBeVisible();
+  await detail.getByRole("button", { name: "使用提示词", exact: true }).click();
+  await page.getByRole("button", { name: "保留当前内容", exact: true }).click();
+  await expect(detail).toBeVisible();
+  await detail.getByRole("button", { name: "使用提示词", exact: true }).click();
+  await page.getByRole("button", { name: "替换并进入", exact: true }).click();
+  await expect(page).toHaveURL(/\/create$/);
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
+    /基于参考床品拍摄枕头特写/,
+  );
+  expect(submissions).toBe(0);
+});
+
+test("wide home inspiration fills every column with equal side gutters", async ({ page }) => {
+  await mockImageApi(page);
+  await page.setViewportSize({ width: 2400, height: 1100 });
+  await page.goto("/");
+  const gallery = page.getByRole("region", { name: "电商创作灵感", exact: true });
+  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(13);
+  await expect(gallery.getByText("示例素材 · 找到下一张商品图的方向")).toHaveCount(0);
+  const layout = await gallery.evaluate((element) => {
+    const home = element.closest(".commerce-home");
+    const grid = element.querySelector(".home-inspiration-grid");
+    if (!home || !grid) throw new Error("Missing inspiration layout");
+    const outer = home.getBoundingClientRect();
+    const bounds = grid.getBoundingClientRect();
+    const cards = Array.from(grid.querySelectorAll(".home-inspiration-card")).map((card) =>
+      card.getBoundingClientRect(),
+    );
+    return {
+      leftGutter: bounds.left - outer.left,
+      rightGutter: outer.right - bounds.right,
+      lastCardRight: Math.max(...cards.map((card) => card.right)),
+      gridRight: bounds.right,
+      columns: new Set(cards.map((card) => Math.round(card.left))).size,
+    };
+  });
+  expect(Math.abs(layout.leftGutter - layout.rightGutter)).toBeLessThan(1);
+  expect(Math.abs(layout.lastCardRight - layout.gridRight)).toBeLessThan(1);
+  expect(layout.columns).toBe(5);
+  await gallery.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "/tmp/lycobo-inspiration-wide.png" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(gallery.locator(".home-inspiration-column")).toHaveCount(2);
+  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(13);
+  await gallery.getByRole("tab", { name: "家纺展示", exact: true }).click();
+  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(4);
+});
+
+test("image shortcuts preserve the current draft and never submit paid work", async ({ page }) => {
+  await mockImageApi(page);
+  let submissions = 0;
+  page.on("request", (request) => {
+    if (request.method() === "POST" && new URL(request.url()).pathname.endsWith("/image-tasks"))
+      submissions++;
+  });
+  await page.goto("/");
+  const shortcuts = page.getByRole("region", { name: "创作用途", exact: true });
+  await expect(shortcuts.getByRole("button")).toHaveCount(4);
+  await page.getByRole("textbox", { name: "创作需求" }).fill("保留我的商品描述");
+  await shortcuts.getByRole("button", { name: "场景图", exact: true }).click();
+  await expect(page).toHaveURL(/\/create$/);
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
+    "保留我的商品描述",
+  );
+  expect(submissions).toBe(0);
 });

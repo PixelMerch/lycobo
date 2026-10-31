@@ -40,7 +40,7 @@ describe("local repair image coordinates", () => {
   });
   it("uses the closest supported output ratio and source resolution tier", () => {
     expect(repairOutput(2048, 1024)).toEqual({ ratio: "2:1", resolution: "2K" });
-    expect(repairOutput(1024, 768)).toEqual({ ratio: "4:3", resolution: "1K" });
+    expect(repairOutput(1024, 768)).toEqual({ ratio: "4:3", resolution: "1.5K" });
     expect(repairOutput(4096, 4096)).toEqual({ ratio: "1:1", resolution: "4K" });
   });
 });

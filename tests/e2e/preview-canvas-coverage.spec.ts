@@ -30,9 +30,10 @@ for (const width of [1440, 390]) {
         body: '<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="#aaa"/></svg>',
       }),
     );
-    await page.setViewportSize({ width, height: 1000 });
+    await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto("/create");
     await page.getByRole("button", { name: "打开素材库", exact: true }).click();
+    await page.setViewportSize({ width, height: 1000 });
     await page.getByRole("button", { name: `查看图片：${items[0]?.prompt}`, exact: true }).click();
     const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
     const stage = viewer.locator(".preview-canvas-stage");

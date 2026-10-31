@@ -1,5 +1,6 @@
 import { Button } from "@heroui/react";
 import { useLayoutEffect, useRef } from "react";
+import { InfiniteLoad } from "../../components/infinite-load";
 import { AssetImage } from "../generation/asset-image";
 import type { PreviewImage } from "./image-preview";
 
@@ -9,6 +10,7 @@ export function ImagePreviewRail({
   onSelect,
   hasMore,
   isLoadingMore,
+  isLoadMoreError,
   onLoadMore,
 }: {
   images: PreviewImage[];
@@ -16,7 +18,8 @@ export function ImagePreviewRail({
   onSelect: (index: number) => void;
   hasMore: boolean;
   isLoadingMore: boolean;
-  onLoadMore?: (() => void) | undefined;
+  isLoadMoreError: boolean;
+  onLoadMore?: (() => Promise<unknown>) | undefined;
 }) {
   const rail = useRef<HTMLElement>(null);
   const activeId = images[index]?.id;
@@ -60,17 +63,12 @@ export function ImagePreviewRail({
           </span>
         </Button>
       ))}
-      {hasMore && (
-        <Button
-          variant="tertiary"
-          size="sm"
-          className="image-preview-load-more"
-          isDisabled={isLoadingMore}
-          onPress={() => onLoadMore?.()}
-        >
-          加载更多图片
-        </Button>
-      )}
+      <InfiniteLoad
+        hasMore={hasMore && Boolean(onLoadMore)}
+        isLoading={isLoadingMore}
+        isError={isLoadMoreError}
+        onLoadMore={() => onLoadMore?.()}
+      />
     </nav>
   );
 }

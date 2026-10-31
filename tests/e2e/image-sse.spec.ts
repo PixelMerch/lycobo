@@ -218,7 +218,7 @@ test("running task events do not refetch wallet but a refund does", async ({ pag
   let details = 0;
   await page.route("**/api/v1/wallet", (route) => {
     wallets++;
-    return route.fulfill({ json: apiFixture({ balance: 200, unitCredits: 20 }) });
+    return route.fulfill({ json: apiFixture({ balance: 200, unitCredits: 2 }) });
   });
   await page.route("**/api/v1/image-tasks*", (route) =>
     route.fulfill({ json: apiFixture({ data: [job] }) }),

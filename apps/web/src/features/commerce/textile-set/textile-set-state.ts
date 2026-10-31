@@ -21,6 +21,6 @@ export const useTextileSetDraft = create<
   detailImages: [],
   views: [],
   ratio: "1:1",
-  resolution: "1K",
+  resolution: "1.5K",
   update: (patch) => set(patch),
 }));

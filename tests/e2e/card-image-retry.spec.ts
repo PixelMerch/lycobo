@@ -62,7 +62,7 @@ test("hover retries only the chosen image after confirming its own cost", async 
   await expect(action).toBeEnabled();
   await action.click();
   const dialog = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
-  await expect(dialog).toContainText("本次消耗 20 积分");
+  await expect(dialog).toContainText("本次消耗 2 积分");
   expect(submissions).toHaveLength(0);
   await dialog.getByRole("button", { name: "取消", exact: true }).click();
   expect(submissions).toHaveLength(0);
@@ -121,13 +121,14 @@ test("touch users can regenerate a failed image without hovering", async ({ brow
       route.fulfill({ json: apiFixture({ data: [job] }) }),
     );
     await page.goto("/create");
+    await page.getByRole("radio", { name: "历史记录", exact: true }).click();
     const card = page.locator(".generation-placeholder");
     await expect(card.locator(".generation-retry-overlay")).toHaveCSS("opacity", "1");
     const action = card.getByRole("button", { name: "重新生成第 1 张", exact: true });
     await expect(action).toBeVisible();
     await action.tap();
     const dialog = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
-    await expect(dialog).toContainText("本次消耗 20 积分");
+    await expect(dialog).toContainText("本次消耗 2 积分");
     await dialog.getByRole("button", { name: "取消", exact: true }).tap();
     await expect(dialog).toBeHidden();
   } finally {
@@ -191,7 +192,7 @@ test("confirmed legacy textile failure creates a current-channel task for only t
   await card.getByRole("button", { name: "重新生成第 1 张", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
   await expect(dialog).toContainText("使用最新裂变配置创建新任务");
-  await expect(dialog).toContainText("本次消耗 20 积分");
+  await expect(dialog).toContainText("本次消耗 2 积分");
   expect(submitted).toBeUndefined();
   await dialog.getByRole("button", { name: "确认", exact: true }).click();
   await expect

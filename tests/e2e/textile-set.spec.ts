@@ -19,7 +19,8 @@ test("textile form has only required product inputs and retains confirmed choice
   await expect(page.getByLabel("主图文件", { exact: true })).not.toHaveAttribute("multiple");
   await expect(page.getByLabel("详情图文件", { exact: true })).toHaveAttribute("multiple", "");
   await expect(page.getByLabel("详情图文件", { exact: true })).not.toHaveAttribute("required");
-  for (const label of ["模型", "质量", "生成张数", "提示词"])
+  await expect(page.locator(".workspace-fixed-model")).toHaveCount(0);
+  for (const label of ["质量", "生成张数", "提示词"])
     await expect(form.getByText(label, { exact: true })).toHaveCount(0);
   await page
     .getByLabel("主图文件", { exact: true })
@@ -64,8 +65,16 @@ test("textile form has only required product inputs and retains confirmed choice
   await ratios.getByRole("button", { name: "下一页画面比例", exact: true }).click();
   await ratios.getByRole("radio", { name: "3:4", exact: true }).click();
   await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeEnabled();
-  await page.getByRole("link", { name: "创作", exact: true }).click();
-  await page.getByRole("link", { name: "AI 电商", exact: true }).click();
+  await page.getByRole("button", { name: "全部工具", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "选择工具" })
+    .getByRole("button", { name: /^主图制作/ })
+    .click();
+  await page.getByRole("button", { name: "全部工具", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "选择工具" })
+    .getByRole("button", { name: /^家纺套图/ })
+    .click();
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
   await expect(form.locator(".reference-tile")).toHaveCount(1);
   await expect(form.locator(".textile-selected-view")).toHaveCount(2);
@@ -102,7 +111,7 @@ test("view reset and dismiss do not overwrite the confirmed selection", async ({
     "true",
   );
   await dialog.getByRole("button", { name: "正面", exact: true }).click();
-  await page.getByRole("heading", { name: "家纺主图裂变", exact: true }).click();
+  await page.locator(".workspace-composer-title").click();
   await expect(dialog).toBeHidden();
   await expect(page.locator(".textile-selected-name")).toHaveText(["枕头特写"]);
   await opener.click();
@@ -164,10 +173,14 @@ for (const width of [2560, 1440, 390]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/commerce/textile-set");
     await expect(page.getByRole("region", { name: "家纺主图裂变参数", exact: true })).toBeVisible();
-    await expect(page.getByRole("region", { name: "家纺主图裂变内容", exact: true })).toBeVisible();
+    await expect(page.getByRole("region", { name: "工作区历史记录", exact: true })).toBeVisible({
+      visible: width >= 768,
+    });
     await expect(
       page.getByRole("complementary", { name: "家纺主图裂变历史索引", exact: true }),
-    ).toBeVisible();
+    ).toBeVisible({
+      visible: width >= 768,
+    });
     await page.getByRole("button", { name: "选择裂变类型", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "裂变类型", exact: true });
     if (width === 2560) {
