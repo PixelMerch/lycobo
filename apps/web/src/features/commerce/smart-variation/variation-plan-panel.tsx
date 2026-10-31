@@ -1,4 +1,4 @@
-import { Button, Checkbox, Input, Label, TextArea, TextField } from "@heroui/react";
+import { Button, Checkbox, Input, Label, Spinner, TextArea, TextField } from "@heroui/react";
 import { IconCheck, IconTrash, IconX } from "@tabler/icons-react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useSmartVariationDraft } from "./smart-variation-state";
@@ -109,6 +109,9 @@ export function VariationPlanPanel({
               .catch(() => {});
           }}
         >
+          {generation.submitting && (
+            <Spinner size="md" color="current" role="status" aria-label="正在提交裂变任务" />
+          )}
           {generation.pending ? "确认上次提交" : `开始生成 · ${generation.cost} 积分`}
         </Button>
       </footer>

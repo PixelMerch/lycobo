@@ -13,11 +13,12 @@ import {
 import {
   type QueryClient,
   useInfiniteQuery,
+  useIsMutating,
   useMutation,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useSyncExternalStore } from "react";
+import { useRef, useSyncExternalStore } from "react";
 import { normalizeApiResponse } from "../../lib/api-response";
 import { sessionFetch } from "../../lib/session-fetch";
 import { assetContentUrl, rememberImageDeliveries } from "./asset-delivery-client";
@@ -244,7 +245,11 @@ export async function uploadImageReferences(
 export function useGenerateImage() {
   const session = useImageSession();
   const client = useQueryClient();
-  return useMutation({
+  const locked = useRef(false);
+  const mutationKey = ["image-submission", session.data?.organizationId, session.data?.userId];
+  const activeRequests = useIsMutating({ mutationKey });
+  const mutation = useMutation({
+    mutationKey,
     retry: false,
     mutationFn: async ({
       model,
@@ -328,6 +333,9 @@ export function useGenerateImage() {
         throw error;
       }
     },
+    onSettled: () => {
+      locked.current = false;
+    },
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ["wallet"] });
       void client.invalidateQueries({ queryKey: ["wallet-entries"] });
@@ -336,6 +344,21 @@ export function useGenerateImage() {
       void client.invalidateQueries({ queryKey: ["image-latest-edit"] });
     },
   });
+  return {
+    ...mutation,
+    isPending: mutation.isPending || activeRequests > 0,
+    mutate: (...args: Parameters<typeof mutation.mutate>) => {
+      if (locked.current || activeRequests > 0) return;
+      locked.current = true;
+      mutation.mutate(...args);
+    },
+    mutateAsync: (...args: Parameters<typeof mutation.mutateAsync>) => {
+      if (locked.current || activeRequests > 0)
+        return Promise.reject(new Error("正在提交，请稍候"));
+      locked.current = true;
+      return mutation.mutateAsync(...args);
+    },
+  };
 }
 /** Triggers the browser download for an owned asset without leaving the page. */
 export function downloadAsset(id: string) {

@@ -3989,3 +3989,10 @@ p.home-hero-kicker {
   --accent-soft: #ffffff0a;
   --accent-soft-foreground: var(--foreground);
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .generation-submit .spinner,
+  .variation-generate .spinner {
+    animation: none;
+  }
+}

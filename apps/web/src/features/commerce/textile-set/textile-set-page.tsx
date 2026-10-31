@@ -1,4 +1,4 @@
-import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { Button, Popover, Spinner, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { imageUnitCredits, publicImageResolutions } from "@lycoboai/contracts";
 import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { useId, useRef, useState } from "react";
@@ -186,6 +186,9 @@ export function TextileSetPage() {
             onPress={generation.submit}
             aria-describedby={costDescriptionId}
           >
+            {generation.submitting && (
+              <Spinner size="md" color="current" role="status" aria-label="正在提交套图任务" />
+            )}
             {generation.pending && !generation.submitting ? "确认上次提交" : "立即生成"}
             {(!generation.pending || generation.submitting) && (
               <span className="generate-credit-cost" aria-hidden="true">

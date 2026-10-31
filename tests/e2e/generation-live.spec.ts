@@ -201,12 +201,14 @@ test("reference images are uploaded before submitting their server asset IDs", a
 
 test("submission success preserves edits made while the request is pending", async ({ page }) => {
   await mockImageApi(page);
+  let submissions = 0;
   let accept: (() => void) | undefined;
   const response = new Promise<void>((resolve) => {
     accept = resolve;
   });
   await page.route("**/api/v1/image-tasks", async (route) => {
     if (route.request().method() !== "POST") return route.fulfill({ json: { data: [] } });
+    submissions++;
     await response;
     await route.fulfill({ status: 202, json: { id: crypto.randomUUID(), replayed: false } });
   });
@@ -214,6 +216,15 @@ test("submission success preserves edits made while the request is pending", asy
   await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("提交的商品图");
   await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
   await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeDisabled();
+  const submit = page.getByRole("button", { name: "生成商品主图", exact: true });
+  await expect(submit.getByRole("status", { name: "正在提交生图任务" })).toBeVisible();
+  await submit.evaluate((node) => {
+    if (node instanceof HTMLButtonElement) {
+      node.click();
+      node.click();
+    }
+  });
+  await expect.poll(() => submissions).toBe(1);
   await expect(page.getByText("正在提交…", { exact: true })).toHaveCount(0);
   await expect(page.getByText("已提交", { exact: true })).toHaveCount(0);
   await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("下一张商品图的新要求");

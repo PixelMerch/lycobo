@@ -1,11 +1,6 @@
-import { Alert, Button, ToggleButton, ToggleButtonGroup, Tooltip } from "@heroui/react";
+import { Alert, Button, Spinner, ToggleButton, ToggleButtonGroup, Tooltip } from "@heroui/react";
 import { imageUnitCredits } from "@lycoboai/contracts";
-import {
-  IconArrowBarToUp,
-  IconChevronDown,
-  IconChevronUp,
-  IconSparkles,
-} from "@tabler/icons-react";
+import { IconArrowBarToUp, IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { CreditCoin } from "../../components/credit-coin";
 import { ReferencePrompt } from "../../components/reference-prompt";
@@ -199,6 +194,8 @@ function Workspace({ model }: { model: ModelId }) {
           fullWidth
           className={`primary-action generation-submit${activeSubmission ? " generation-pending" : ""}`}
           data-submitting={activeSubmission || undefined}
+          isPending={activeSubmission}
+          aria-label={pending && !activeSubmission ? "确认上次提交" : "生成商品主图"}
           aria-description={
             !pending && !activeSubmission
               ? `本次生成消耗 ${imageUnitCredits * Number(draft.count)} 币`
@@ -229,9 +226,7 @@ function Workspace({ model }: { model: ModelId }) {
           }}
         >
           {activeSubmission && (
-            <span className="generate-button-icon generation-loading-icon">
-              <UiIcon icon={IconSparkles} />
-            </span>
+            <Spinner size="md" color="current" role="status" aria-label="正在提交生图任务" />
           )}
           {pending && !activeSubmission ? "确认上次提交" : "生成商品主图"}
           {(!pending || activeSubmission) && (

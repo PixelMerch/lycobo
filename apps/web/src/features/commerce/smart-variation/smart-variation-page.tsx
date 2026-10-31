@@ -103,7 +103,7 @@ export function SmartVariationPage() {
             className="primary-action generation-submit"
           >
             {analysis.isPending && (
-              <Spinner size="sm" color="current" role="status" aria-label="正在生成计划" />
+              <Spinner size="md" color="current" role="status" aria-label="正在生成计划" />
             )}
             {analysis.isPending ? "正在生成计划" : "生成计划"}
           </Button>
