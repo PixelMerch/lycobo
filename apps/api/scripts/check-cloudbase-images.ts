@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { imageGenerationInputSchema } from "@lycoboai/contracts";
 import {
@@ -42,28 +42,12 @@ try {
       `DO $$ BEGIN CREATE ROLE ${role}; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
     );
   }
-  await sql.unsafe(
-    await readFile(
-      fileURLToPath(
-        new URL(
-          "../../../cloudbase/migrations/20261031223500_image_runtime_rpc.sql",
-          import.meta.url,
-        ).href,
-      ),
-      "utf8",
-    ),
-  );
-  await sql.unsafe(
-    await readFile(
-      fileURLToPath(
-        new URL(
-          "../../../cloudbase/migrations/20261031223600_runtime_privileges.sql",
-          import.meta.url,
-        ).href,
-      ),
-      "utf8",
-    ),
-  );
+  const migrations = new URL("../../../cloudbase/migrations/", import.meta.url);
+  for (const migration of (await readdir(fileURLToPath(migrations.href)))
+    .filter((name) => name.endsWith(".sql") && name >= "20261031223500")
+    .sort()) {
+    await sql.unsafe(await readFile(fileURLToPath(new URL(migration, migrations).href), "utf8"));
+  }
   const call: CloudBaseRpc = async (operation, parameters) => {
     assert.equal(operation, "lycobo_image_operation");
     const args = z
@@ -205,6 +189,28 @@ try {
     { id: randomUUID(), title: "测试方案", prompt: "一个隔离测试方案" },
   ]);
   assert.equal((await repository.variation.get(scope, plan.plan.id))?.status, "ready");
+  const readyPlan = await repository.variation.get(scope, plan.plan.id);
+  if (!readyPlan) throw new Error("Ready variation plan missing");
+  const variationInput = imageGenerationInputSchema.parse({
+    ...input,
+    count: 1,
+    referenceAssetIds: [asset.id],
+    variation: { version: 1, planId: readyPlan.id, items: readyPlan.items },
+  });
+  const variationKey = randomUUID();
+  const variationJob = await repository.create(scope, variationInput, variationKey);
+  assert.equal((await repository.create(scope, variationInput, variationKey)).id, variationJob.id);
+  assert.equal((await repository.wallet(scope)).balance, 16);
+  const variationItems =
+    await sql`select id from generation_job_items where job_id=${variationJob.id}`;
+  assert.equal(variationItems.length, 1);
+  const variationOutbox =
+    await sql`select count(*)::int as count from generation_outbox where item_id=${variationItems[0]?.id}`;
+  assert.equal(variationOutbox[0]?.count, 1);
+  const variationClaim = await repository.claim(variationItems[0]?.id, "variation-fixture", 90000);
+  if (!variationClaim) throw new Error("Variation claim missing");
+  await repository.finish(variationClaim, { errorCode: "FIXTURE_FAILED", unknown: false });
+  assert.equal((await repository.wallet(scope)).balance, 18);
   const feed = cloudbaseImageEventFeed(call);
   const cursor = await feed.latest(scope);
   assert.notEqual(cursor, "0");

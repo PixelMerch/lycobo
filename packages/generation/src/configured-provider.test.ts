@@ -210,26 +210,31 @@ it("accepts assets despite empty data or a completed polling-stop flag and handl
     await configuredProviderCall(snapshot, "fixture-key", input, [], "item", undefined, request),
   ).toMatchObject({ kind: "pending", statusPath: "/v1/images/tasks/a" });
 });
-it("falls back from an unavailable signed image to its protected asset without another generation", async () => {
-  const request = vi
-    .fn<typeof fetch>()
-    .mockResolvedValueOnce(new Response(null, { status: 403 }))
-    .mockResolvedValueOnce(new Response("image"));
-  const result = await providerOutputBytes(
-    {
-      signed_url: "https://cdn.example.com/expired.png",
-      download_url: "/v1/images/tasks/a/assets/result.png?download=1",
-    },
-    snapshot,
-    "fixture-key",
-    request,
-  );
-  expect(result.toString()).toBe("image");
-  expect(request.mock.calls[0]?.[1]?.headers).toEqual({});
-  expect(request.mock.calls[1]?.[1]?.headers).toEqual({ Authorization: "Bearer fixture-key" });
-  expect(request.mock.calls.every(([, init]) => !init?.method || init.method === "GET")).toBe(true);
-  expect(request).toHaveBeenCalledTimes(2);
-});
+it.each(["https://api.example.com", "https://api.example.com/"])(
+  "%s falls back to its protected image without another generation",
+  async (origin) => {
+    const request = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 403 }))
+      .mockResolvedValueOnce(new Response("image"));
+    const result = await providerOutputBytes(
+      {
+        signed_url: "https://cdn.example.com/expired.png",
+        download_url: "/v1/images/tasks/a/assets/result.png?download=1",
+      },
+      { ...snapshot, origin },
+      "fixture-key",
+      request,
+    );
+    expect(result.toString()).toBe("image");
+    expect(request.mock.calls[0]?.[1]?.headers).toEqual({});
+    expect(request.mock.calls[1]?.[1]?.headers).toEqual({ Authorization: "Bearer fixture-key" });
+    expect(request.mock.calls.every(([, init]) => !init?.method || init.method === "GET")).toBe(
+      true,
+    );
+    expect(request).toHaveBeenCalledTimes(2);
+  },
+);
 it("decodes inline image URLs and rejects malformed base64 without network calls", async () => {
   const request = vi.fn<typeof fetch>();
   expect(
