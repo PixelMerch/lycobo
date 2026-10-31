@@ -6,6 +6,7 @@ import {
   openProviderKey,
   ProviderPollError,
   providerOutputBytes,
+  standaloneCredentialId,
   textileItemInput,
 } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
@@ -15,6 +16,7 @@ export async function processConfiguredImage(
     repository: ImageRepository;
     store: ImageStore;
     modelSecret?: string | undefined;
+    standaloneKey?: string | undefined;
     request?: typeof fetch;
   },
 ) {
@@ -25,11 +27,16 @@ export async function processConfiguredImage(
   try {
     if (Date.now() > state.deadlineAt.getTime())
       throw new ImageProviderError("PROVIDER_TASK_DEADLINE", true);
-    if (!deps.modelSecret) throw new ImageProviderError("MODEL_SECRET_NOT_CONFIGURED", polling);
-    const key = await openProviderKey(
-      await deps.repository.providerCipher(state.snapshot.credentialId),
-      deps.modelSecret,
-    );
+    const key =
+      state.snapshot.credentialId === standaloneCredentialId
+        ? deps.standaloneKey
+        : deps.modelSecret
+          ? await openProviderKey(
+              await deps.repository.providerCipher(state.snapshot.credentialId),
+              deps.modelSecret,
+            )
+          : undefined;
+    if (!key) throw new ImageProviderError("MODEL_SECRET_NOT_CONFIGURED", polling);
     const references: Uint8Array[] = [];
     if (!polling)
       for (const id of job.input.referenceAssetIds) {

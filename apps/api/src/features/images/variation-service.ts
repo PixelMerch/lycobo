@@ -7,15 +7,18 @@ export function variationService(deps: {
   repository: ImageRepository;
   store: ImageStore;
   modelSecret?: string | undefined;
+  plannerKey?: string | undefined;
   plannerRequest?: typeof fetch | undefined;
 }) {
   return {
     async enabled() {
-      return !!deps.modelSecret && !!(await deps.repository.variation.config());
+      return (
+        !!(deps.plannerKey || deps.modelSecret) && !!(await deps.repository.variation.config())
+      );
     },
     async create(scope: ImageScope, input: VariationPlanInput, key: string, signal: AbortSignal) {
       const config = await deps.repository.variation.config();
-      if (!config || !deps.modelSecret) return null;
+      if (!config || (!deps.plannerKey && !deps.modelSecret)) return null;
       const result = await deps.repository.variation.begin(scope, input, key);
       if (result.replayed) return result.plan;
       try {
@@ -25,7 +28,8 @@ export function variationService(deps: {
           if (!asset) throw new PlannerError("PLANNER_INVALID_RESULT");
           images.push(await deps.store.thumbnail(asset));
         }
-        const secret = await openProviderKey(config.ciphertext, deps.modelSecret);
+        const secret =
+          deps.plannerKey ?? (await openProviderKey(config.ciphertext, deps.modelSecret ?? ""));
         const items = await planVariation(
           input,
           images,

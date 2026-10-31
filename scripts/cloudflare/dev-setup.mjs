@@ -11,6 +11,13 @@ const storage = Object.fromEntries(
 );
 const common = {
   ...storage,
+  ...(enabled && process.env.STANDALONE_MODELS === "true"
+    ? Object.fromEntries(
+        ["STANDALONE_MODELS", "STANDALONE_IMAGE_API_KEY", "STANDALONE_PLANNER_API_KEY"].flatMap(
+          (key) => (process.env[key] ? [[key, process.env[key]]] : []),
+        ),
+      )
+    : {}),
   ...(process.env.MODEL_CREDENTIAL_SECRET
     ? { MODEL_CREDENTIAL_SECRET: process.env.MODEL_CREDENTIAL_SECRET }
     : {}),
@@ -45,5 +52,5 @@ for (const [name, values] of Object.entries(configs))
     { mode: 0o600 },
   );
 console.info(
-  "Prepared ignored local Worker settings. PostgreSQL, S3/R2 and Images are local; the development queue uses local Redis. Model generation uses IMAGE_GENERATION_ENABLED and encrypted backend channels only.",
+  "Prepared ignored local Worker settings. PostgreSQL, S3/R2 and Images are local; the development queue uses local Redis. Model generation uses IMAGE_GENERATION_ENABLED and explicit standalone secrets or encrypted backend channels.",
 );

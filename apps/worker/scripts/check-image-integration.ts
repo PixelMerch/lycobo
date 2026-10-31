@@ -26,6 +26,7 @@ import { verifyGenerationMigration } from "./verify-generation-migration";
 import { verifyLocalEdits } from "./verify-local-edits";
 import { verifyManagedModels } from "./verify-managed-models";
 import { verifyReferenceRetention } from "./verify-reference-retention";
+import { verifyStandaloneModels } from "./verify-standalone-models";
 import { verifyTextileGeneration } from "./verify-textile-generation";
 import { verifyVariationPlans } from "./verify-variation-plans";
 import { verifyWallet } from "./verify-wallet";
@@ -540,6 +541,7 @@ try {
     ).status,
     404,
   );
+  await verifyStandaloneModels(databaseUrl, sql);
   await verifyManagedModels(repository, sql, store, png);
   await verifyReferenceRetention(repository, sql);
   await verifyVariationPlans(repository, sql, store, png);

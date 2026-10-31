@@ -45,7 +45,22 @@ export type ClaimedImage = {
     | undefined;
 };
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
-export function openImageRepository(url: string, edge = false) {
+export interface IndependentModelConfiguration {
+  credentialId: string;
+  credentialCipher: string;
+  planner: NonNullable<Awaited<ReturnType<ReturnType<typeof variationRepository>["config"]>>>;
+  capabilities: ReturnType<typeof modelManagementRepository>["capabilities"] extends () => Promise<
+    infer T
+  >
+    ? () => T
+    : never;
+  resolve: (input: ImageGenerationInput) => ProviderSnapshot;
+}
+export function openImageRepository(
+  url: string,
+  edge = false,
+  independent?: IndependentModelConfiguration,
+) {
   const sql = postgres(url, {
     max: edge ? 1 : 5,
     fetch_types: !edge,
@@ -121,7 +136,10 @@ export function openImageRepository(url: string, edge = false) {
       if (!row || !/^[0-9]{10}$/.test(String(row.uid))) throw new ImageRepositoryError("FORBIDDEN");
       return String(row.uid);
     },
-    variation: variationRepository(sql),
+    variation: {
+      ...variationRepository(sql),
+      ...(independent ? { config: async () => independent.planner } : {}),
+    },
     close: () => sql.end({ timeout: 5 }),
     settleInvalidResponses,
     ...walletRepository(sql),
@@ -172,7 +190,24 @@ export function openImageRepository(url: string, edge = false) {
         };
       });
     },
-    models: modelManagementRepository(sql),
+    models: {
+      ...modelManagementRepository(sql),
+      ...(independent
+        ? {
+            logos: async () => ({
+              models:
+                independent
+                  .capabilities()
+                  .create?.map((model) => ({ id: model.id, logoUrl: null })) ?? [],
+            }),
+            hasRoute: async (input: ImageGenerationInput) => {
+              independent.resolve(input);
+              return true;
+            },
+            capabilities: async () => independent.capabilities(),
+          }
+        : {}),
+    },
     async authenticate(token: string): Promise<ImagePrincipal | null> {
       if (!/^[\w-]{43}$/.test(token)) return null;
       const [row] =
@@ -208,16 +243,17 @@ export function openImageRepository(url: string, edge = false) {
             throw new ImageRepositoryError("IDEMPOTENCY_CONFLICT");
           return { id: String(replay.id), replayed: true };
         }
-        const snapshot = await resolveProviderSnapshot(tx, input, requireManaged).catch(
-          (error: unknown) => {
-            if (
-              error instanceof Error &&
-              ["MODEL_CHANNEL_DISABLED", "MODEL_CHANNEL_CAPABILITY"].includes(error.message)
-            )
-              throw new ImageRepositoryError("MODEL_CAPABILITY_UNVERIFIED");
-            throw error;
-          },
-        );
+        const snapshot = await (independent
+          ? Promise.resolve().then(() => independent.resolve(input))
+          : resolveProviderSnapshot(tx, input, requireManaged)
+        ).catch((error: unknown) => {
+          if (
+            error instanceof Error &&
+            ["MODEL_CHANNEL_DISABLED", "MODEL_CHANNEL_CAPABILITY"].includes(error.message)
+          )
+            throw new ImageRepositoryError("MODEL_CAPABILITY_UNVERIFIED");
+          throw error;
+        });
         const inserted =
           await tx`insert into generation_jobs (organization_id,user_id,idempotency_key,input_hash,input,model,provider_model,prompt,resolution,aspect_ratio,requested_count,unit_credits,provider_snapshot)
           values (${scope.organizationId},${scope.userId},${key},${inputHash},${tx.json(input)},${input.model},${snapshot ? providerModelForResolution(snapshot, input.resolution) : imageProviderModel(input)},${input.prompt},${input.resolution},${input.aspectRatio},${input.count},${unitCredits},${snapshot ? tx.json(snapshot) : null})
@@ -320,7 +356,10 @@ export function openImageRepository(url: string, edge = false) {
           if (items.some((item) => item.status === "queued" || item.status === "running"))
             throw new ImageRepositoryError("STATE_CONFLICT");
           const input = imageGenerationInputSchema.parse(job.input);
-          const snapshot = await resolveProviderSnapshot(tx, input, true).catch(() => {
+          const snapshot = await (independent
+            ? Promise.resolve().then(() => independent.resolve(input))
+            : resolveProviderSnapshot(tx, input, true)
+          ).catch(() => {
             throw new ImageRepositoryError("MODEL_CAPABILITY_UNVERIFIED");
           });
           if (!snapshot) throw new ImageRepositoryError("MODEL_CAPABILITY_UNVERIFIED");
@@ -531,6 +570,7 @@ export function openImageRepository(url: string, edge = false) {
       });
     },
     async providerCipher(credentialId: string) {
+      if (independent?.credentialId === credentialId) return independent.credentialCipher;
       const [row] = await sql`select ciphertext from model_credentials where id=${credentialId}`;
       if (!row) throw new Error("MODEL_CREDENTIAL_NOT_FOUND");
       return String(row.ciphertext);

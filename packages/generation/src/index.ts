@@ -21,6 +21,7 @@ export * from "./configured-provider";
 export * from "./provider-adapters";
 export * from "./provider-errors";
 export * from "./provider-secrets";
+export * from "./standalone-models";
 export * from "./textile-generation";
 export * from "./vakv-provider";
 export * from "./variation-planner";

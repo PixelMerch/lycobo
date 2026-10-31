@@ -20,6 +20,7 @@ export type ImageProcessorDependencies = {
   overrides: CapabilityOverrides;
   editsEnabled: boolean;
   modelSecret?: string | undefined;
+  standaloneKey?: string | undefined;
   request?: typeof fetch;
 };
 export async function processImageItem(itemId: string, deps: ImageProcessorDependencies) {

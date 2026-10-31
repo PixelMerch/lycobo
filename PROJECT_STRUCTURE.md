@@ -153,6 +153,5 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 智能裂变：`variation-planner.ts` 封装 OpenAI 兼容语言分析；`variation-service.ts` 负责授权后读取缩略图与解密密钥；`variation-repository.ts` 持久化计划和幂等状态。`model_planners` 独立配置语言模型；`generation_jobs.input.variation` 保存确认后的方案快照，Worker 每条方案只请求一张图。
 
-## Agent 生图命令
 
-`generate-image/generate.mjs` 提供 Claude Code / Bash 调用入口，输入分辨率、提示词、文件夹和文件名，直接请求显式配置的中转站并下载原始结果；`client.mjs` 处理同步结果、异步轮询和受限下载。配置、费用与网站任务/积分系统独立，使用说明见 `generate-image/README.md`。
+主站独立试用路由由 `packages/generation/src/standalone-models.ts` 定义；API/消费者将纯配置注入图片仓储，绕过后台模型目录、路由及语言模型设置读取。前端展示在 `models/model-presentation.ts`，Logo 位于 `apps/web/public/model-logos/`。不会删除后台表或改变鉴权/积分/素材持久化。

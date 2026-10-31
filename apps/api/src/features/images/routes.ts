@@ -34,6 +34,7 @@ import { variationService } from "./variation-service";
 export type ImageApiDependencies = {
   repository: ImageRepository;
   modelSecret?: string | undefined;
+  plannerKey?: string | undefined;
   plannerRequest?: typeof fetch | undefined;
   events?: ImageEventFeed | undefined;
   signAsset?: DeliverySigner | undefined;
@@ -299,7 +300,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
         deps.validate(normalized);
       }
     } catch {
-      return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "请先在后台配置并启用该模型的默认渠道", 400);
+      return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "当前模型暂不可用，请选择其他模型", 400);
     }
     const result = await deps.repository.create(
       c.get("principal"),
@@ -328,7 +329,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
         deps.validate(input);
       }
     } catch {
-      return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "请先在后台配置并启用该模型的默认渠道", 400);
+      return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "当前模型暂不可用，请选择其他模型", 400);
     }
     const result = await deps.repository.retry(
       scope,

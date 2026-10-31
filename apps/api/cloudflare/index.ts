@@ -1,6 +1,12 @@
 import { businessCodes } from "@lycoboai/contracts";
 import { openAuthRepository, openImageEventFeed, openImageRepository } from "@lycoboai/db";
-import { readImagePolicy, supportedResolutions, validateModelInput } from "@lycoboai/generation";
+import {
+  readImagePolicy,
+  type StandaloneModelEnvironment,
+  standaloneModels,
+  supportedResolutions,
+  validateModelInput,
+} from "@lycoboai/generation";
 import { dispatchImageOutbox, type ImageQueueSender } from "@lycoboai/queue";
 import { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { r2ImageStore } from "@lycoboai/storage/r2";
@@ -8,7 +14,7 @@ import { imageObjectBucket, type S3Bindings } from "@lycoboai/storage/s3";
 import { createApp } from "../src/app";
 import { enterpriseAuth, readAuthConfig } from "../src/features/auth/service";
 
-export interface ApiBindings extends S3Bindings {
+export interface ApiBindings extends S3Bindings, StandaloneModelEnvironment {
   ASSET_SIGNING_SECRET?: string;
   ASSET_PUBLIC_ORIGIN?: string;
   HYPERDRIVE: Hyperdrive;
@@ -35,7 +41,11 @@ function unavailable(code: "AUTH_NOT_CONFIGURED" | "INTERNAL_ERROR") {
   );
 }
 async function dispatch(env: ApiBindings) {
-  const repository = openImageRepository(env.HYPERDRIVE.connectionString, true);
+  const repository = openImageRepository(
+    env.HYPERDRIVE.connectionString,
+    true,
+    await standaloneModels(env),
+  );
   try {
     await dispatchImageOutbox(repository, env.GENERATION_QUEUE);
   } catch {
@@ -95,7 +105,11 @@ async function handleRequest(
   });
   if (!authConfig) return unavailable("AUTH_NOT_CONFIGURED");
   const bucket = imageObjectBucket(env, env.IMAGES_BUCKET);
-  const repository = openImageRepository(env.HYPERDRIVE.connectionString, true);
+  const repository = openImageRepository(
+    env.HYPERDRIVE.connectionString,
+    true,
+    await standaloneModels(env),
+  );
   const authRepository = openAuthRepository(env.HYPERDRIVE.connectionString, true);
   const auth = enterpriseAuth(authRepository, authConfig);
   const policy = readImagePolicy({
@@ -126,6 +140,7 @@ async function handleRequest(
       {
         repository,
         modelSecret: env.MODEL_CREDENTIAL_SECRET,
+        plannerKey: env.STANDALONE_MODELS === "true" ? env.STANDALONE_PLANNER_API_KEY : undefined,
         store,
         signAsset:
           env.ASSET_PUBLIC_ORIGIN && env.ASSET_SIGNING_SECRET

@@ -1,12 +1,16 @@
 import { openImageRepository } from "@lycoboai/db";
-import { readImagePolicy } from "@lycoboai/generation";
+import {
+  readImagePolicy,
+  type StandaloneModelEnvironment,
+  standaloneModels,
+} from "@lycoboai/generation";
 import { dispatchImageOutbox, type ImageQueueSender } from "@lycoboai/queue";
 import { r2ImageStore } from "@lycoboai/storage/r2";
 import { imageObjectBucket, type S3Bindings } from "@lycoboai/storage/s3";
 import { processImageItem } from "../src/image-processor";
 import { consumeImageMessages } from "../src/queue-consumer";
 
-export interface GenerationBindings extends S3Bindings {
+export interface GenerationBindings extends S3Bindings, StandaloneModelEnvironment {
   HYPERDRIVE: Hyperdrive;
   IMAGES_BUCKET: R2Bucket;
   IMAGES: ImagesBinding;
@@ -23,7 +27,11 @@ export async function processGenerationBatch(
   });
   if (!policy.enabled) throw new Error("GENERATION_NOT_CONFIGURED");
   const bucket = imageObjectBucket(env, env.IMAGES_BUCKET);
-  const repository = openImageRepository(env.HYPERDRIVE.connectionString, true);
+  const repository = openImageRepository(
+    env.HYPERDRIVE.connectionString,
+    true,
+    await standaloneModels(env),
+  );
   const store = r2ImageStore(bucket, env.IMAGES, repository.storageUid);
   try {
     await consumeImageMessages(batch, (itemId, deliveryId) =>
@@ -31,6 +39,7 @@ export async function processGenerationBatch(
         repository,
         store,
         modelSecret: env.MODEL_CREDENTIAL_SECRET,
+        standaloneKey: env.STANDALONE_MODELS === "true" ? env.STANDALONE_IMAGE_API_KEY : undefined,
         workerId: `cloudflare:${deliveryId}`,
         request: (input, init) => fetch(input, init),
         overrides: policy.overrides,
@@ -44,7 +53,11 @@ export async function processGenerationBatch(
 export default {
   queue: processGenerationBatch,
   async scheduled(_event, env) {
-    const repository = openImageRepository(env.HYPERDRIVE.connectionString, true);
+    const repository = openImageRepository(
+      env.HYPERDRIVE.connectionString,
+      true,
+      await standaloneModels(env),
+    );
     try {
       await repository.expireClaims();
       await repository.pruneEvents();
