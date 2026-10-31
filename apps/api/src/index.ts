@@ -52,10 +52,14 @@ const authRepository =
       ? openAuthRepository(process.env.DATABASE_URL)
       : null;
 const auth = authRepository && authConfig ? enterpriseAuth(authRepository, authConfig) : undefined;
+// CloudBase bills a held SSE response as function time, and its feed polls keep the shared
+// PostgreSQL instance metered; browsers poll unfinished tasks instead unless explicitly enabled.
 const events =
   repository && process.env.IMAGE_EVENTS_ENABLED !== "false"
     ? cloudbaseDatabase
-      ? openCloudBaseImageEventFeed(cloudbaseDatabase)
+      ? process.env.IMAGE_EVENTS_ENABLED === "true"
+        ? openCloudBaseImageEventFeed(cloudbaseDatabase)
+        : undefined
       : process.env.DATABASE_URL
         ? openImageEventFeed(process.env.DATABASE_URL)
         : undefined

@@ -20,6 +20,8 @@ export function imageDeliveries(
   sign: DeliverySigner,
 ) {
   const links = async (scope: ImageScope, ids: string[]) => {
+    // Unfinished tasks usually reference no assets; skip the database round trip.
+    if (!ids.length) return new Map<string, Awaited<ReturnType<DeliverySigner>>>();
     const locations = await repository.assetLocations(scope, [...new Set(ids)]);
     return new Map(
       await Promise.all(
