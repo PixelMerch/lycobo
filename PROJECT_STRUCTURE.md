@@ -1,6 +1,6 @@
 # 架构与目录
 
-一个 pnpm workspace 仓库，四个独立应用；前端 CSR 发布目标为 CloudBase，API 与消费者的共享 PG 运行代码已适配，云端候选部署尚未完成。旧 Workers 源码保留用于隔离开发及旧部署兼容，Cloudflare 生产发布配置已移除。
+一个 pnpm workspace 仓库，四个独立应用；前端 CSR 发布目标为 CloudBase，API 与消费者的共享 PG 运行代码已适配，云端候选部署与读写验收已完成，正式入口尚未切换。旧 Workers 源码保留用于隔离开发及旧部署兼容，Cloudflare 生产发布配置已移除。
 代码同仓不表示进程合并或强制一起发布。
 
 | 路径 | 职责 |
@@ -67,7 +67,7 @@ web → contracts。api/worker/assets → 服务包 → db/queue/storage/generat
 contracts 不得反向引用应用或 server-only 包；共享包不得依赖 apps。
 业务 feature 内部用直接导入，不建立覆盖整站的大 barrel。
 当前 packages 使用 TypeScript 源导出：开发通过 Vite/tsx 消费，
-前端由 Vite 打包，Node API 由 tsup 打包；Wrangler 仅用于本地模拟和隔离回归。Pages Functions 转发入口已删除，CloudBase 共享 PG 仓储、Node 资源服务及 Event 消费者已实现；同源网关与云端运行仍待部署验收。
+前端由 Vite 打包，Node API 由 tsup 打包；Wrangler 仅用于本地模拟和隔离回归。Pages Functions 转发入口已删除，CloudBase 共享 PG 仓储、Node 资源服务及 Event 消费者已实现；同源网关与云端候选运行已验收，正式生图保持关闭。
 这些包 private，不是可直接发布到 npm 的编译 SDK。
 
 ## 进程与服务
@@ -90,7 +90,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 CloudBase 函数代码并发布静态前端，使用 cloudbase-production Environment。旧 Cloudflare 工作流、生产 Wrangler 配置和 setup/deploy 脚本已删除。主站图片目标为 CloudBase PG 私有云存储，Node 变体生成不依赖 Cloudflare Images。见 [CloudBase 部署](docs/cloudbase-deployment.md)。旧远端服务仍保留，前端发布不代表后端迁移已完成。
 
-2026-10-31 已将 Supabase 的 `public`、`drizzle` 结构与数据快照复制到 CloudBase 个人版共享 PG，43 张表、1,156 行及关联结构通过校验。现有应用、消费者和独立 admin 仍连接源库；共享 PG 固定业务 RPC、仓储与隔离集成已实现；云函数创建被插件凭据核对拦截。数据库和图片复制不代表应用已上线，分别见 [数据库迁移](docs/cloudbase-database-migration.md) 与 [图片迁移](docs/cloudbase-storage-migration.md)。
+2026-10-31 已将 Supabase 的 `public`、`drizzle` 结构与数据快照复制到 CloudBase 个人版共享 PG，43 张表、1,156 行及关联结构通过校验。现有应用、消费者和独立 admin 仍连接源库；共享 PG 固定业务 RPC、仓储与隔离集成已实现；已通过官方 CLI 原始配置文件引用完成候选部署。数据库和图片复制不代表应用已上线，分别见 [数据库迁移](docs/cloudbase-database-migration.md) 与 [图片迁移](docs/cloudbase-storage-migration.md)。
 
 ## 生图服务端接入
 
