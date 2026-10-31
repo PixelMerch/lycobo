@@ -65,3 +65,19 @@ createApp 的唯一出口层统一包装 JSON；业务路由只返回业务 payl
 前端在 lib/api-response.ts 的 HTTP 边界拆包一次，业务领域的 Zod Schema 继续验证数据；auth 和图片请求共享该规则。新前端临时兼容旧服务器的未包装数据以支持发布切换，服务器仅输出新格式。API 消费方需将原业务字段读取路径迁移到 data；不得把这次响应结构调整描述成对所有旧客户端完全兼容。
 
 契约测试验证 UUID、数值业务码、成功／失败结构与非零码处理；API 测试覆盖健康检查、参数和体积限制、未配置、404、异常脱敏；浏览器和隔离集成测试验证登录、Cookie、任务、上传和下载路径。
+
+## 错误排查日志
+
+Cloudflare API 记录结构化 `API_REQUEST_FAILED`（5xx、写操作 4xx）和启动阶段的
+`API_RUNTIME_UNAVAILABLE`；Pages 服务绑定失败记录 `PAGES_API_BINDING_UNAVAILABLE`。
+日志包含服务端生成的 requestId、HTTP 状态、请求方法、脱敏路径、已注册业务码，
+常规 API 额外包含耗时和白名单异常分类／数据库或网络错误码。
+使用浏览器 Network 的 `X-Request-Id`（也在响应 `request_id` 中）关联 Cloudflare 日志。
+浏览器控制台同时记录失败请求元数据；断网没有服务端回执时记录 `API_NETWORK_FAILED`。
+正常未登录的 GET 401 不作为异常告警记录，避免匿名会话检查刷屏。
+Pages 对有限 JSON 响应完整读取并校验后再转发；不缓冲 SSE 或图片下载。
+无法解析时记录 `PAGES_API_INVALID_JSON` 与字节数并返回结构化 503；前端解析失败
+记录 `API_RESPONSE_INVALID_JSON`，提示重新查询，不自动重新提交付费任务。
+
+禁止记录请求／响应正文、密码、Cookie、Token、提示词、图片内容及签名链接；查询参数和
+路径中的动态标识不写入日志。日志不能单独证明上游付费任务失败，仍须按任务状态核对。

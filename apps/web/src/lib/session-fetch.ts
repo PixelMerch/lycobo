@@ -1,3 +1,5 @@
+import { reportRequestFailure } from "./request-diagnostics";
+
 // Only expiry metadata lives in JavaScript. Both credentials remain HttpOnly cookies.
 let accessExpiresAt = Number.POSITIVE_INFINITY;
 let renewal: Promise<boolean> | undefined;
@@ -57,7 +59,7 @@ async function refreshSession() {
   renewal = pending;
   return pending;
 }
-export async function sessionFetch(input: string, init: RequestInit = {}) {
+async function fetchSession(input: string, init: RequestInit = {}) {
   if (accessExpiresAt <= Date.now() / 1000 + renewBeforeSeconds) await refreshSession();
   const response = await fetch(input, { ...init, credentials: "same-origin" });
   readExpiry(response);
@@ -67,4 +69,15 @@ export async function sessionFetch(input: string, init: RequestInit = {}) {
   const retried = await fetch(input, { ...init, credentials: "same-origin" });
   readExpiry(retried);
   return retried;
+}
+
+export async function sessionFetch(input: string, init: RequestInit = {}) {
+  try {
+    const response = await fetchSession(input, init);
+    if (!response.ok) reportRequestFailure(input, init.method ?? "GET", response);
+    return response;
+  } catch (error) {
+    if (!init.signal?.aborted) reportRequestFailure(input, init.method ?? "GET");
+    throw error;
+  }
 }

@@ -92,5 +92,14 @@ it("wraps unexpected failures without leaking internal exception messages", asyn
   const error = apiErrorSchema.parse(await response.json());
   expect(error.code).toBe(50000);
   expect(JSON.stringify(error)).not.toContain("private-error-detail");
-  expect(errors[0]?.requestId).toBe(error.request_id);
+  expect(errors).toHaveLength(1);
+  expect(errors[0]).toMatchObject({
+    event: "API_REQUEST_FAILED",
+    requestId: error.request_id,
+    method: "GET",
+    path: "/api/:id",
+    status: 500,
+    businessCode: "INTERNAL_ERROR",
+  });
+  expect(JSON.stringify(errors)).not.toContain("private-error-detail");
 });
