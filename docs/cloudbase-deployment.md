@@ -114,4 +114,4 @@ GitHub 使用长期 SecretId/SecretKey，不能调用仅支持临时登录态的
 - API 提交或重试成功后同步唤醒消费者；消费者只用运行角色向 SCF 排队一次异步 drain，同步调用不访问数据库、不执行付费请求。drain 结束时仍有延后读取或剩余意向会自行续排，生成不再等待下一次定时器。
 - 由唤醒触发的 drain 跳过事件保留清理和过期参考图清理，这两项留给定时或手动运行。
 
-待确认（尚未执行）：发布后先在日志确认唤醒与续排均成功（无 `CONSUMER_WAKE_FAILED`、`CONSUMER_CONTINUATION_FAILED`，消费者调用不再只出现在整分钟）。唤醒依赖 CloudBase API Key 调用函数的权限和 `TCB_QcsRole` 的 SCF Invoke 权限，均以线上结果为准；失败时仍由每分钟定时器处理，行为与此前一致。确认后再把 `lycobo-outbox-minute` 调整为低频兜底，否则共享 PG 仍全天计量：每小时一次约 340 点/天，每 3 小时一次约 115 点/天，代价是唤醒丢失且无人查看时最长等到下一次兜底。
+定时器：2026-11-01 01:42（上海时间）按用户要求将 `lycobo-outbox-minute`（每分钟）替换为 `lycobo-outbox-3h`（`0 0 */3 * * * *`），共享 PG 的兜底计量约 115 点/天。生成依赖 API 唤醒与消费者续排：唤醒需要 CloudBase API Key 调用函数的权限和 `TCB_QcsRole` 的 SCF Invoke 权限，须以线上日志为准（无 `CONSUMER_WAKE_FAILED`、`CONSUMER_CONTINUATION_FAILED`）。唤醒失败时任务最长等到下一次 3 小时兜底，有人查看排队任务时 API 每 15 秒补唤醒一次；如线上确认唤醒不可用，应恢复每分钟触发器 `0 * * * * * *`。
