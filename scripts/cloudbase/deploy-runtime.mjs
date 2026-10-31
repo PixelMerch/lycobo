@@ -78,6 +78,7 @@ export async function publishRuntime({
   uploadArchive,
 }) {
   if (!plan && typeof removeUploadedObject !== "function") throw new Error("CODE_CLEANUP_REQUIRED");
+  const releases = [];
   for (const name of functions) {
     if (!runtimeFunctions.includes(name)) throw new Error("INVALID_FUNCTION");
     const before = (
@@ -97,7 +98,9 @@ export async function publishRuntime({
     await chmod(archive, 0o600);
     const bytes = await readFile(archive);
     if (bytes.length > 50 * 1024 * 1024) throw new Error(`${name}: ZIP_TOO_LARGE`);
-    let uploaded;
+    releases.push({ name, before, archive, bytes });
+  }
+  const transfer = async ({ name, archive, bytes }) => {
     for (let attempt = 0; attempt < 3; attempt++) {
       const upload = (
         await call("queryFunctions", { action: "getFunctionUploadUrl", functionName: name })
@@ -122,42 +125,68 @@ export async function publishRuntime({
             throw new Error("UPLOAD_TRANSIENT");
           }
         }
-        uploaded = upload;
-        break;
+        return upload;
       } catch (error) {
         if (error?.message === "CODE_UPLOAD_CREDENTIALS_UNAVAILABLE") throw error;
         if (error?.message === "UPLOAD_REJECTED") throw new Error(`${name}: UPLOAD_REJECTED`);
       }
       if (attempt < 2) await wait(2000 * (attempt + 1));
     }
-    if (!uploaded) throw new Error(`${name}: UPLOAD_FAILED`);
-    // The MCP two-phase path uses the environment-owned COS bucket, never tempcos.
-    // Code-only update preserves runtime variables, timeout, memory and gateway config.
-    await call("manageFunctions", {
-      action: "updateFunctionCode",
-      functionName: name,
-      code: {
-        cosBucketName: uploaded.cosBucketName,
-        cosBucketRegion: uploaded.cosBucketRegion,
-        cosObjectName: uploaded.cosObjectName,
-      },
-      confirm: true,
-    });
-    let active = false;
-    for (let attempt = 0; attempt < 45; attempt++) {
-      await wait(2000);
-      const current = (
-        await call("queryFunctions", { action: "getFunctionDetail", functionName: name })
-      ).data.functionDetail;
-      if (current.Status === "Active" && current.ModTime !== before.ModTime) {
-        active = true;
-        break;
+    throw new Error(`${name}: UPLOAD_FAILED`);
+  };
+  const discard = async (unsubmitted) => {
+    for (const { name, uploaded } of unsubmitted)
+      await removeUploadedObject(uploaded, name).catch(() =>
+        console.error(`${name}: CODE_OBJECT_CLEANUP_FAILED`),
+      );
+  };
+  // Cross-region transfer dominates a release, so every package moves concurrently. No function
+  // switches until all packages are stored: a failed transfer leaves every current version running.
+  const transfers = await Promise.allSettled(releases.map(transfer));
+  const stored = releases.flatMap((release, index) =>
+    transfers[index].status === "fulfilled"
+      ? [{ ...release, uploaded: transfers[index].value }]
+      : [],
+  );
+  const failed = transfers.find(({ status }) => status === "rejected");
+  if (failed) {
+    await discard(stored);
+    throw failed.reason;
+  }
+  for (const [index, { name, before, uploaded }] of stored.entries()) {
+    try {
+      // The MCP two-phase path uses the environment-owned COS bucket, never tempcos.
+      // Code-only update preserves runtime variables, timeout, memory and gateway config.
+      await call("manageFunctions", {
+        action: "updateFunctionCode",
+        functionName: name,
+        code: {
+          cosBucketName: uploaded.cosBucketName,
+          cosBucketRegion: uploaded.cosBucketRegion,
+          cosObjectName: uploaded.cosObjectName,
+        },
+        confirm: true,
+      });
+      let active = false;
+      for (let attempt = 0; attempt < 45; attempt++) {
+        await wait(2000);
+        const current = (
+          await call("queryFunctions", { action: "getFunctionDetail", functionName: name })
+        ).data.functionDetail;
+        if (current.Status === "Active" && current.ModTime !== before.ModTime) {
+          active = true;
+          break;
+        }
+        if (["CreateFailed", "UpdateFailed", "DeployFailed"].includes(current.Status))
+          throw new Error(`${name}: DEPLOY_FAILED`);
       }
-      if (["CreateFailed", "UpdateFailed", "DeployFailed"].includes(current.Status))
-        throw new Error(`${name}: DEPLOY_FAILED`);
+      if (!active) throw new Error(`${name}: DEPLOY_NOT_CONFIRMED`);
+      await removeUploadedObject(uploaded, name);
+    } catch (error) {
+      // A submitted package may still be read by the platform; only later, unsubmitted ones go.
+      await discard(stored.slice(index + 1));
+      throw error;
     }
-    if (!active) throw new Error(`${name}: DEPLOY_NOT_CONFIRMED`);
-    await removeUploadedObject(uploaded, name);
     console.log(`Updated ${name}: Active; temporary code object deleted`);
   }
 }
@@ -195,12 +224,18 @@ async function main() {
     console.log("Connecting to the installed CloudBase deployment client");
     await client.connect(transport, { timeout: 120000 });
     console.log("CloudBase deployment client connected");
-    const call = async (name, args) => {
-      console.log(`CloudBase operation: ${name}/${args.action}`);
-      return decodeToolResult(
-        await client.callTool({ name, arguments: args }, undefined, { timeout: 120000 }),
-        name,
-      );
+    // Code transfers run concurrently, but the MCP server receives one tool request at a time.
+    let previous = Promise.resolve();
+    const call = (name, args) => {
+      const result = previous.then(async () => {
+        console.log(`CloudBase operation: ${name}/${args.action}`);
+        return decodeToolResult(
+          await client.callTool({ name, arguments: args }, undefined, { timeout: 120000 }),
+          name,
+        );
+      });
+      previous = result.catch(() => {});
+      return result;
     };
     const status = await call("auth", { action: "status" });
     if (status.auth_status !== "READY") throw new Error("CLOUDBASE_DEPLOYMENT_AUTH_REQUIRED");
@@ -212,16 +247,22 @@ async function main() {
     }
     const COS = require("cos-nodejs-sdk-v5");
     let cos;
-    const getCos = async () => {
-      if (cos) return cos;
-      cos = new COS({
-        ...(await deploymentCosCredentials(process.env, call)),
-        Timeout: 90000,
-        ChunkParallelLimit: 3,
-        FileParallelLimit: 1,
-      });
-      return cos;
-    };
+    const getCos = () =>
+      (cos ??= deploymentCosCredentials(process.env, call).then(
+        (credentials) =>
+          new COS({
+            ...credentials,
+            // Idle timeout per request. The cross-border route caps each connection near 10 KB/s,
+            // so all packages transfer at once and each sends up to 16 MiB of 1 MiB parts together.
+            Timeout: 90000,
+            ChunkParallelLimit: 16,
+            FileParallelLimit: runtimeFunctions.length,
+          }),
+        (error) => {
+          cos = undefined;
+          throw error;
+        },
+      ));
     await publishRuntime({
       call,
       root,

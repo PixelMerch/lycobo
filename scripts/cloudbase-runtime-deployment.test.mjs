@@ -6,12 +6,13 @@ import {
   decodeToolResult,
   deploymentCosCredentials,
   publishRuntime,
+  runtimeFunctions,
   validateUpload,
 } from "./cloudbase/deploy-runtime.mjs";
 
 const name = "lycobo-consumer";
-const upload = (suffix = "0123456789abcdef") => {
-  const key = `fnzip-upload/1793450000-${suffix}/${name}.zip`;
+const upload = (suffix = "0123456789abcdef", functionName = name) => {
+  const key = `fnzip-upload/1793450000-${suffix}/${functionName}.zip`;
   return {
     cosBucketName: "example-code",
     cosBucketRegion: "ap-shanghai",
@@ -148,4 +149,80 @@ describe("CloudBase runtime code publishing", () => {
       }
     },
   );
+  const release = async ({ failTransfer, failUpdate } = {}) => {
+    const root = await mkdtemp(path.join(tmpdir(), "lycobo-code-release-test-"));
+    const events = [];
+    const updated = new Set();
+    let active = 0,
+      peak = 0,
+      targets = 0;
+    const call = vi.fn(async (_tool, args) => {
+      const fn = args.functionName;
+      if (args.action === "getFunctionDetail")
+        return {
+          data: {
+            functionDetail: { Status: "Active", ModTime: updated.has(fn) ? "after" : "before" },
+          },
+        };
+      if (args.action === "getFunctionUploadUrl")
+        return { data: upload(String(targets++).padStart(16, "0"), fn) };
+      events.push(`update:${fn}`);
+      if (fn === failUpdate) throw new Error("manageFunctions: TOOL_OPERATION_FAILED");
+      updated.add(fn);
+      return { success: true };
+    });
+    const uploadArchive = vi.fn(async (_upload, fn) => {
+      events.push(`upload:${fn}`);
+      peak = Math.max(peak, ++active);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      active--;
+      if (fn === failTransfer) throw new Error("UPLOAD_REJECTED");
+    });
+    const cleanup = vi.fn(async () => {});
+    try {
+      await mkdir(path.join(root, "archives"));
+      for (const fn of runtimeFunctions) {
+        await mkdir(path.join(root, fn));
+        await writeFile(path.join(root, fn, "index.js"), "exports.main=async()=>({});");
+      }
+      const outcome = await publishRuntime({
+        call,
+        root,
+        archiveDirectory: path.join(root, "archives"),
+        wait: async () => {},
+        removeUploadedObject: cleanup,
+        uploadArchive,
+      }).catch((error) => error);
+      const removed = cleanup.mock.calls.map(([object, fn]) => {
+        expect(object.cosObjectName).toContain(`/${fn}.zip`);
+        return fn;
+      });
+      return { outcome, events, peak, removed };
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  };
+  it("stores every package concurrently before switching functions in release order", async () => {
+    const { outcome, events, peak, removed } = await release();
+    expect(outcome).toBeUndefined();
+    expect(peak).toBe(runtimeFunctions.length);
+    expect(events.slice(0, 3).every((event) => event.startsWith("upload:"))).toBe(true);
+    expect(events.slice(3)).toEqual(runtimeFunctions.map((fn) => `update:${fn}`));
+    expect(removed).toEqual(runtimeFunctions);
+  });
+  it("switches no function when any package transfer fails", async () => {
+    const { outcome, events, removed } = await release({ failTransfer: "lycobo-api" });
+    expect(outcome.message).toBe("lycobo-api: UPLOAD_REJECTED");
+    expect(events.some((event) => event.startsWith("update:"))).toBe(false);
+    expect(removed).toEqual(["lycobo-consumer", "lycobo-assets"]);
+  });
+  it("keeps a submitted package and removes never-submitted ones when a switch fails", async () => {
+    const { outcome, events, removed } = await release({ failUpdate: "lycobo-assets" });
+    expect(outcome.message).toBe("manageFunctions: TOOL_OPERATION_FAILED");
+    expect(events.filter((event) => event.startsWith("update:"))).toEqual([
+      "update:lycobo-consumer",
+      "update:lycobo-assets",
+    ]);
+    expect(removed).toEqual(["lycobo-consumer", "lycobo-api"]);
+  });
 });
