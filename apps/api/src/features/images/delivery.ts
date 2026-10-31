@@ -1,5 +1,5 @@
 import { type ImageScope, imageJobSchema } from "@lycoboai/contracts";
-import type { ImageRepository } from "@lycoboai/db";
+import type { ImageRuntimeRepository } from "@lycoboai/db";
 import type { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { z } from "zod";
 
@@ -16,7 +16,7 @@ const jobDeliverySchema = imageJobSchema.passthrough().extend({
 });
 export type DeliverySigner = ReturnType<typeof assetDeliverySigner>;
 export function imageDeliveries(
-  repository: Pick<ImageRepository, "assetLocations">,
+  repository: Pick<ImageRuntimeRepository, "assetLocations">,
   sign: DeliverySigner,
 ) {
   const links = async (scope: ImageScope, ids: string[]) => {

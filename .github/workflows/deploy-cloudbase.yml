@@ -17,7 +17,7 @@ jobs:
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository) ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     environment: cloudbase-production
     env:
       CLOUDBASE_ENV_ID: lycobo-d9gyvxkegc54a1257
@@ -43,6 +43,8 @@ jobs:
       - run: pnpm check
       - name: Prepare static frontend package
         run: node scripts/cloudbase/prepare-web.mjs "$RUNNER_TEMP/lycobo-cloudbase-web"
+      - name: Prepare Linux backend packages
+        run: node scripts/cloudbase/prepare-runtime.mjs "$RUNNER_TEMP/lycobo-cloudbase-runtime"
       - name: Install pinned CloudBase CLI
         run: npm install --global @cloudbase/cli@3.8.11
       - name: Authenticate deployment identity
@@ -57,13 +59,30 @@ jobs:
             *) echo '::error::TCB_SECRET_ID must be a Tencent Cloud SecretId, not a CloudBase storage API Key'; exit 1 ;;
           esac
           tcb login --apiKeyId "$TCB_SECRET_ID" --apiKey "$TCB_SECRET_KEY" --intl false --json > "$RUNNER_TEMP/cloudbase-login.json"
-      - name: Publish the latest main frontend
+      - name: Require completed runtime bootstrap
+        env:
+          RUNTIME_READY: ${{ vars.CLOUDBASE_RUNTIME_READY }}
+        run: |
+          test "$RUNTIME_READY" = true || { echo '::error::Complete CloudBase functions, server credentials, gateway routes and candidate validation before enabling CLOUDBASE_RUNTIME_READY'; exit 1; }
+      - name: Publish backend code with existing server configuration
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$DEPLOY_SHA" = "$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq .object.sha)"
+          cd "$RUNNER_TEMP/lycobo-cloudbase-runtime"
+          tcb fn code update lycobo-consumer --dir ./lycobo-consumer --json
+          tcb fn code update lycobo-assets --dir ./lycobo-assets --json
+          tcb fn code update lycobo-api --dir ./lycobo-api --json
+      - name: Verify API before publishing frontend
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 --max-time 30 'https://lycobo-d9gyvxkegc54a1257-1311968085.ap-shanghai.app.tcloudbase.com/api/health/live' | jq -e '.code == 0 and .data.status == "ok"'
+      - name: Publish the latest main frontend to shared hosting
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           test "$DEPLOY_SHA" = "$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq .object.sha)"
           cd "$RUNNER_TEMP/lycobo-cloudbase-web"
-          tcb app deploy lycobo-web --env-id "$CLOUDBASE_ENV_ID" --framework static --install-command '' --build-command '' --output-dir ./ --deploy-path / --force --json
+          tcb hosting deploy . / --env-id "$CLOUDBASE_ENV_ID" --ignore cloudbaserc.json --safe --verify --json
       - name: Remove temporary deployment login
         if: always()
         run: |

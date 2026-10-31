@@ -50,7 +50,7 @@ export function openImageEventFeed(url: string, pollOrganizationId?: string) {
   return {
     isClosed: () => closed,
     ready,
-    async subscribe(listener: (organizationId: string | null) => void) {
+    async subscribe(listener: (organizationId: string | null) => void, _organizationId?: string) {
       if (closed) throw new Error("EVENT_FEED_CLOSED");
       if (pollOrganizationId) {
         const timer = setInterval(() => listener(pollOrganizationId), 3000);

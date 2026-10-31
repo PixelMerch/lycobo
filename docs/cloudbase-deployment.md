@@ -4,13 +4,13 @@
 
 ## GitHub 自动发布
 
-`.github/workflows/deploy-cloudbase.yml` 替代已删除的 Cloudflare 发布工作流：main 的 push CI 成功 → 检出该 SHA → 确认仍为最新 main → 冻结安装依赖 → `pnpm check` → 准备静态产物 → 发布 CloudBase 应用 `lycobo-web`。dev 和 PR 不发布；手动触发也只允许 main，且必须有该 SHA 对应的成功 push CI。
+`.github/workflows/deploy-cloudbase.yml` 替代已删除的 Cloudflare 发布工作流：main 的 push CI 成功 → 检出该 SHA → 确认仍为最新 main → 冻结安装依赖 → `pnpm check` → 准备前后端包 → 更新已配置的三个云函数代码 → 验证 API → 发布共享静态托管。dev 和 PR 不发布；手动触发也只允许 main，且必须有该 SHA 对应的成功 push CI。
 
 发布前再次检查 main，避免构建期间已有新提交却发布旧版本。同一环境的发布串行执行，不自动运行完整浏览器 E2E，不迁移数据库或上传业务运行密钥。
 
 Actions 中完成构建，临时发布目录只复制 `apps/web/dist`。准备脚本拒绝环境文件、备份、服务器函数和符号链接；不上传仓库根目录、`.env` 或图片数据。Node/pnpm 沿用仓库固定版本，CLI 固定为 `@cloudbase/cli@3.8.11`，已通过实际 help 核对参数。
 
-使用 `tcb app deploy` static 模式，安装/构建命令为空、产物目录 `./`、挂载路径 `/`，固定应用名复用后续版本。当前静态托管已启用，首页和错误页均已配置并回查为 `index.html`，支持 SPA 深链刷新。默认域名为平台测试入口，自定义域名另行核对备案、证书和套餐能力。
+使用 `tcb hosting deploy --safe --verify` 将独立 Vite 产物发布到共享静态托管，忽略准备目录中的应用配置文件、不使用 prune。网关默认 HTTP 域名统一挂载前端、`/api` 和 `/_images`，保证 Cookie 同源。当前静态托管已启用，首页和错误页均已配置并回查为 `index.html`，支持 SPA 深链刷新。默认域名为平台测试入口，自定义域名另行核对备案、证书和套餐能力。
 
 ## 部署凭据
 
@@ -22,6 +22,8 @@ GitHub 已创建 `cloudbase-production` Environment，仅允许 main 部署。�
 | `TCB_SECRET_KEY` | 对应 SecretKey |
 
 权限限定到本项目发布所需能力，不使用主账号无限制密钥。数据库密码、企业 JWT 主密钥和图片供应商 Key 不进入前端部署环境。临时 device 登录授权不能复制到 GitHub 长期使用。
+
+首次必须完成三个函数创建、服务端运行变量及同源网关并验证，再将 Environment 变量 `CLOUDBASE_RUNTIME_READY` 设置为 `true`。后续 CI 使用 `tcb fn code update` 仅更新代码，保留云端运行凭据和配置；不会自动创建不完整后端或应用数据库迁移。
 
 Secrets 仅在发布登录步骤注入，不传入前端构建；任务结束后执行 CLI logout。代码进入 main、Secrets 配置完成并实际运行前，不能宣称 GitHub 自动发布已跑通。本地提交不会自动推送或触发发布。
 
@@ -53,7 +55,7 @@ Node API 的 `object-image-store.ts` 使用 Sharp 完成解码校验、去元数
 
 workerd/Miniflare、旧运行时源码和 `scripts/cloudflare` 剩余文件仅用于隔离开发/回归及尚未完成的运行时迁移。本地配置从无 account_id、生产队列或 Cron 的模板生成，保留原本地存储名称和已有数据。本地启动丢弃 CloudBase、腾讯云及旧 Cloudflare 的远端凭据。
 
-远端旧服务和对象没有删除，源数据库没有切换。正式切换仍需实现共享 PG 仓储/RPC、独立消费者和资源服务，并完成最终数据同步；静态站发布成功不能替代这些工作。
+远端旧服务和对象没有删除，源数据库没有切换。共享 PG 仓储/RPC、独立消费者和资源服务代码已实现；正式切换仍需解除凭据核对拦截、实际部署验收并完成最终数据同步；静态站发布成功不能替代这些工作。
 
 ## 验证与状态
 
@@ -62,4 +64,9 @@ workerd/Miniflare、旧运行时源码和 `scripts/cloudflare` 剩余文件仅�
 - 工作流通过 actionlint；GitHub 实际发布需补齐 Secrets 并在 main CI 后运行。
 - 图片复制结果见 [图片存储迁移](cloudbase-storage-migration.md)。独立 admin 的公开 Logo 存储不在本轮主站私有图片范围内。
 
-官方参考：[CLI 应用部署](https://docs.cloudbase.net/cli-v1/app/management)、[CI/CD 集成](https://docs.cloudbase.net/hosting/cli-devops)、[PG 云存储](https://docs.cloudbase.net/api-reference/webv3/storage)。
+官方参考：[CLI 函数代码更新](https://docs.cloudbase.net/cli-v1/functions/code-update)、[CI/CD 集成](https://docs.cloudbase.net/hosting/cli-devops)、[PG 云存储](https://docs.cloudbase.net/api-reference/webv3/storage)。
+
+后端共享 PG 适配进度及实际验证见 [运行迁移记录](cloudbase-runtime-migration.md)。鉴权、任务、钱包和事件 RPC 已应用目标，运行角色直访业务表已拒绝；三个服务尚未实际创建，当前仍不可执行正式入口切换。
+
+
+首次部署替代入口已准备但未执行：`node --env-file=.env scripts/cloudbase/bootstrap-runtime.mjs <准备好的运行目录>`。该入口通过官方 CLI 配置文件直接引用原始本机凭据；临时配置在函数包外、权限 0600，并在结束时删除。它不打开网关、不启用生图或定时器。因本次 MCP 的凭据核对被自动响应拦截，先向用户说明并确认采用文件引用方式，再执行。

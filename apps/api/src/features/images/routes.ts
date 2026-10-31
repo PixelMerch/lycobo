@@ -10,8 +10,8 @@ import {
 import {
   type ImageEventFeed,
   type ImagePrincipal,
-  type ImageRepository,
   ImageRepositoryError,
+  type ImageRuntimeRepository,
   VariationError,
   WalletError,
 } from "@lycoboai/db";
@@ -33,7 +33,7 @@ import {
 import { variationService } from "./variation-service";
 
 export type ImageApiDependencies = {
-  repository: ImageRepository;
+  repository: ImageRuntimeRepository;
   modelSecret?: string | undefined;
   plannerKey?: string | undefined;
   plannerRequest?: typeof fetch | undefined;

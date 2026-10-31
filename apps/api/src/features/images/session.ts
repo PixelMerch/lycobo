@@ -1,4 +1,4 @@
-import type { ImagePrincipal, ImageRepository } from "@lycoboai/db";
+import type { ImagePrincipal, ImageRuntimeRepository } from "@lycoboai/db";
 import type { Context } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 
@@ -26,7 +26,7 @@ export function trustedWorkbenchRequest(c: Context, session: WorkbenchSession) {
 }
 export async function workbenchPrincipal(
   c: Context,
-  repository: ImageRepository,
+  repository: ImageRuntimeRepository,
   session?: WorkbenchSession,
 ): Promise<ImagePrincipal | null> {
   const auth = c.req.header("Authorization");

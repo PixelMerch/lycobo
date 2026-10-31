@@ -37,6 +37,7 @@
 | 技术选择与边界 | [技术栈](tech-stack.md) |
 | 测试与隔离环境 | [测试说明](testing.md) |
 | CloudBase GitHub 自动发布与私有图片存储 | [CloudBase 部署](cloudbase-deployment.md) |
+| 共享 PG 事务、运行服务和部署进度 | [CloudBase 运行迁移](cloudbase-runtime-migration.md) |
 | Supabase PostgreSQL 结构迁移 | [Supabase 接入](supabase-postgres.md) |
 | CloudBase 个人版共享 PG 数据副本与校验 | [CloudBase 数据迁移](cloudbase-database-migration.md) |
 | 主站私有图片复制与逐对象校验 | [CloudBase 图片迁移](cloudbase-storage-migration.md) |

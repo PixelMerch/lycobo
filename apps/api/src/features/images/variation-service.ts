@@ -1,10 +1,10 @@
 import type { ImageScope, VariationPlanInput } from "@lycoboai/contracts";
-import type { ImageRepository } from "@lycoboai/db";
+import type { ImageRuntimeRepository } from "@lycoboai/db";
 import { openProviderKey, PlannerError, planVariation } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage/core";
 
 export function variationService(deps: {
-  repository: ImageRepository;
+  repository: ImageRuntimeRepository;
   store: ImageStore;
   modelSecret?: string | undefined;
   plannerKey?: string | undefined;

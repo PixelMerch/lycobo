@@ -1,5 +1,5 @@
 import { imageOutputDimensions } from "@lycoboai/contracts";
-import type { ClaimedImage, ImageRepository } from "@lycoboai/db";
+import type { ClaimedImage, ImageRuntimeRepository } from "@lycoboai/db";
 import {
   configuredProviderCall,
   ImageProviderError,
@@ -13,7 +13,7 @@ import type { ImageStore } from "@lycoboai/storage";
 export async function processConfiguredImage(
   job: ClaimedImage,
   deps: {
-    repository: ImageRepository;
+    repository: ImageRuntimeRepository;
     store: ImageStore;
     modelSecret?: string | undefined;
     standaloneKey?: string | undefined;
