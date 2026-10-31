@@ -12,6 +12,8 @@ Actions 中完成构建，临时发布目录只复制 `apps/web/dist`。准备�
 
 使用 `tcb hosting deploy --safe --verify` 将独立 Vite 产物发布到共享静态托管，忽略准备目录中的应用配置文件、不使用 prune。网关默认 HTTP 域名统一挂载前端、`/api` 和 `/_images`，保证 Cookie 同源。当前静态托管已启用，首页和错误页均已配置并回查为 `index.html`，支持 SPA 深链刷新。默认域名为平台测试入口，自定义域名另行核对备案、证书和套餐能力。
 
+候选访问入口为 `https://lycobo-d9gyvxkegc54a1257-1311968085.ap-shanghai.app.tcloudbase.com/`。`tcloudbaseapp.com` 只承载静态文件，不含业务 API；发布包在应用启动前将该项目的静态域名页面转到网关，并保留路径、查询和片段。网关、自定义域名和本地开发不跳转，Cookie 继续使用同源策略。
+
 ## 部署凭据
 
 GitHub 已创建 `cloudbase-production` Environment，仅允许 main 部署。凭据持有人须在该 Environment Secrets 中配置：
