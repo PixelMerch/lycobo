@@ -19,18 +19,20 @@
 
 | 能力 | 唯一入口 | 维护约束 |
 | --- | --- | --- |
-| 功能导航 | FeatureNavigation → CreationNavigation / CommerceNavigation | 文字直达、整行延迟悬停展开竖向卡片、箭头点击开关；共用样式和 useHoverMenu，保持模型草稿；AI 电商点击恢复浏览器最近功能，首次默认家纺套图；家纺套图工作区使用共享上传预览／比例，专用生成尚未接入 |
+| 功能导航 | FeatureNavigation → CreationNavigation / CommerceNavigation | 文字直达、整行延迟悬停展开竖向卡片、箭头点击开关；共用样式和 useHoverMenu，保持模型草稿；AI 电商点击恢复浏览器最近功能，首次默认家纺主图裂变；家纺主图裂变工作区使用共享上传预览／比例，复用真实生成提交、历史、索引与逐图状态，视角预设由服务端管理 |
 | Header 账户 | HeaderAccountMenu | 积分与头像共用入口，封装登录／悬停账户菜单／独立深色账户弹窗；应用壳不复制状态和查询 |
 | 账户内容 | AccountPanel → AccountManagement / WalletPanel | 按菜单入口分别打开，仅挂载对应内容、自然高度；真实账号与账单来自查询客户端，未接入的绑定／重置／支付不模拟成功 |
 | 确认 | ConfirmDialog | 不在业务中复制 Modal 标记；正文与操作布局共用 |
 | 关闭 | DialogClose | 图标与命中区分开，普通确认和全屏规格只引用 DESIGN，不在业务组件重复定尺寸 |
+| 长文本折叠 | CollapsibleText | 历史提示词与详情创意描述共用实际溢出测量、展开／收起及 aria 状态；详情3行，历史保留既有行数，短文本不显示切换按钮 |
 | 参考图片上传 | ReferencePicker → ReferenceImageCard | 首页与工作台共用；删除、编号、预览不复制 |
 | 图片引用 | ReferencePrompt | 文本序列化、@候选、行内图片展示共用 |
+| 列表分页 | InfiniteLoad | 滚动到列表底部自动取下一页；使用 HeroUI Spinner 显示加载，禁止另加“加载更多”按钮；失败停止自动加载，查询和重试由业务持有 |
 | 参考图片浏览 | ImageViewer | 历史、详情、上传入口按需加载同一组件 |
 | 生成图片操作 | ResultImage | 预览、下载、收藏、焦点入口由同一组件承担 |
-| 任务元信息 | HistoryTaskMeta | 标签、时间、比例、任务ID复制一致 |
+| 任务元信息 | HistoryTaskMeta | 标签、时间、比例、任务ID复制一致；父级用 modelDisplayName 从共享模型目录派生展示名称，不渲染原始 model 标识 |
 | 历史索引 | HistoryIndex | 定位与滚动同步；“我的素材”标题固定、列表独立滚动；不承担重试或草稿覆盖 |
-| 生成提交按钮 | HeroUI Button + styles/app.css 的 .generation-submit | 工作台与局部修改高度、圆角、渐变、字级与积分间距统一引用 DESIGN；不创建按钮包装组件 |
+| 生成提交按钮 | HeroUI Button + styles/app.css 的 .generation-submit | 工作台与局部修改高度、胶囊圆角、主题蓝底白字、字级与积分间距统一引用 DESIGN；不创建按钮包装组件 |
 | 生成阶段 | generation-status | 中文状态与生成图标共用，不从颜色推断状态 |
 | 全屏开关动画 | components/use-centered-dialog-motion | 关闭动画结束后卸载；不复制 hook |
 | 请求错误 | useErrorToast | 去重、统一顶部反馈；字段校验继续用 FieldError／ErrorMessage |

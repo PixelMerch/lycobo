@@ -65,8 +65,9 @@ test("running images animate with the model icon and stop for reduced motion", a
   await page.reload();
   await expect(placeholders).toHaveCount(1);
   const box = await placeholders.first().boundingBox();
-  expect(box?.width).toBe(400);
-  expect(box?.height).toBe(400);
+  expect(box?.width).toBeLessThanOrEqual(400);
+  expect(box?.height).toBe(box?.width);
+  await expect(placeholders.first()).toHaveCSS("aspect-ratio", "1 / 1");
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.screenshot({ path: "/tmp/lycobo-generation-pending.png" });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -78,7 +79,7 @@ test("running images animate with the model icon and stop for reduced motion", a
 });
 
 for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
-  test(`terminal ${status} displays failure without exposing internal reconciliation`, async ({
+  test(`terminal ${status} distinguishes confirmed failure from an unresolved result`, async ({
     page,
   }) => {
     await mockImageApi(page);
@@ -112,19 +113,23 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto("/create");
     await expect(page.locator(".generation-job header").getByRole("status")).toHaveCount(0);
-    await expect(page.locator(".generation-placeholder")).toHaveAttribute("aria-label", "失败");
+    await expect(page.locator(".generation-placeholder")).toHaveAttribute(
+      "aria-label",
+      status === "needs_reconciliation" ? "待确认" : "失败",
+    );
     const preview = page.locator(".generation-placeholder");
     const box = await preview.boundingBox();
     const history = await page.locator(".generation-results").boundingBox();
-    expect(box?.width).toBe(history?.width);
-    expect(box?.height).toBeCloseTo(267, 0);
+    expect(box?.width).toBeLessThanOrEqual(history?.width ?? 0);
+    expect(box?.width).toBeCloseTo(400, 0);
+    expect(box?.height).toBeCloseTo(200, 0);
     await expect(preview).toHaveCSS("border-top-width", "0px");
     await expect(preview).toHaveCSS("background-color", "rgb(52, 52, 52)");
     await expect(preview.getByRole("button", { name: "重试", exact: true })).toHaveCount(0);
     const message = preview.locator(".generation-failure-message");
     await expect(message).toHaveText(
       status === "needs_reconciliation"
-        ? "任务未能完成，积分状态正在确认，请稍后查看。"
+        ? "生成结果和积分状态正在确认，请稍后查看。"
         : "任务未能完成，积分已退回，请您稍后重试。",
     );
     await expect(message).toHaveCSS("color", "rgb(255, 255, 255)");

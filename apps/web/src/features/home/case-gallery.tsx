@@ -3,10 +3,10 @@ import { IconPhoto, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
+import { useModelPresentation } from "../generation/models/model-logos";
 import {
   cases,
   type ModelId,
-  models,
   photo,
   type StudioCase,
   useStudioStore,
@@ -97,6 +97,7 @@ function CaseCards({
   );
 }
 function CaseDetail({ item, onClose }: { item: StudioCase | null; onClose: () => void }) {
+  const models = useModelPresentation().data?.models ?? [];
   const [replaceModel, setReplaceModel] = useState<ModelId | null>(null);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const navigate = useNavigate();
@@ -159,7 +160,8 @@ function CaseDetail({ item, onClose }: { item: StudioCase | null; onClose: () =>
                           variant="secondary"
                           onPress={() => {
                             const draft = useStudioStore.getState().drafts[model.id];
-                            if (draft.prompt || draft.references.length) setReplaceModel(model.id);
+                            if (draft?.prompt || draft?.references.length)
+                              setReplaceModel(model.id);
                             else apply(model.id);
                           }}
                         >

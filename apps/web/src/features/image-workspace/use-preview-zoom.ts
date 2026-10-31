@@ -3,16 +3,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { easedImageZoom, imageWheelFactor } from "../../components/image-zoom-motion";
 
-const clamp = (value: number) => Math.min(500, Math.max(100, value));
+export const previewDefaultZoom = 80;
+export const previewMinZoom = 25;
+const clamp = (value: number) => Math.min(500, Math.max(previewMinZoom, value));
 
 export function wheelZoomTarget(goal: number, delta: number, ctrlKey = false) {
   return clamp(goal * imageWheelFactor(delta, ctrlKey));
 }
 
 export function usePreviewZoom() {
-  const [zoom, updateZoom] = useState(100);
-  const current = useRef(100);
-  const goal = useRef(100);
+  const [zoom, updateZoom] = useState(previewDefaultZoom);
+  const current = useRef(previewDefaultZoom);
+  const goal = useRef(previewDefaultZoom);
   const frame = useRef<number | null>(null);
   const reducedMotion = useReducedMotion();
   const setZoom = useCallback((value: number) => {

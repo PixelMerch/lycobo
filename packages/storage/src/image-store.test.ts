@@ -1,6 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 import { imageStore, normalizeImage } from "./image-store";
 
@@ -28,4 +29,16 @@ describe("private image storage", () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+});
+
+it("normalizes larger paid output to exact 1254 pixels and rejects smaller sources instead of upscaling", async () => {
+  const source = await sharp({
+    create: { width: 1536, height: 1536, channels: 3, background: "#789abc" },
+  })
+    .png()
+    .toBuffer();
+  const target = { width: 1254, height: 1254 };
+  const image = await normalizeImage(source, target);
+  expect([image.width, image.height]).toEqual([1254, 1254]);
+  await expect(normalizeImage(png, target)).rejects.toThrow("OUTPUT_RESOLUTION_TOO_SMALL");
 });

@@ -23,3 +23,5 @@ data
 **/dist-functions
 **/dist-cloudflare
 .cloudflare
+
+**/wrangler.local.json

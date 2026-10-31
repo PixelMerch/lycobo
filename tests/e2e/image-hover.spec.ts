@@ -53,19 +53,25 @@ test("image actions download and toggle favorites; sticky history blocks scrolle
     "aria-pressed",
     "false",
   );
+  await page.mouse.move(0, 0);
+  await expect(actions).toHaveCSS("opacity", "0");
+  await media.hover();
   const download = page.waitForEvent("download");
   await media.getByRole("button", { name: "下载原图", exact: true }).click();
   expect((await download).suggestedFilename()).toBe(`${jobs[0]?.items[0]?.output_asset_id}.png`);
   await page.mouse.move(0, 0);
-  await media.getByRole("button", { name: "收藏图片", exact: true }).focus();
+  await expect(actions).toHaveCSS("opacity", "0");
+  await media.getByRole("button", { name: "预览图片 1", exact: true }).focus();
+  await page.keyboard.press("Tab");
+  await expect(media.getByRole("button", { name: "下载原图", exact: true })).toBeFocused();
   await expect(actions).toHaveCSS("opacity", "1");
   await page.evaluate(() => window.scrollTo(0, 350));
   const header = await page.locator(".topbar").boundingBox();
-  const tabs = await page.locator(".workspace-tabs > .tabs__list-container").boundingBox();
+  const tabs = await page.locator(".workspace-history-heading").boundingBox();
   expect(header?.y).toBe(0);
-  expect(tabs?.y).toBeCloseTo((header?.y ?? 0) + (header?.height ?? 0), 0);
+  expect(tabs?.y).toBeCloseTo((header?.y ?? 0) + (header?.height ?? 0) + 12, 0);
   expect(
-    await page.locator(".workspace-tabs > .tabs__list-container").evaluate((element) => {
+    await page.locator(".workspace-history-heading").evaluate((element) => {
       const rect = element.getBoundingClientRect();
       return element.contains(document.elementFromPoint(rect.x + rect.width - 10, rect.y + 2));
     }),

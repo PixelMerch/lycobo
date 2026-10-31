@@ -1,6 +1,6 @@
 {
   "name": "lycoboai",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.34.7",
@@ -9,7 +9,7 @@
     "pnpm": ">=10.34.7 <11"
   },
   "scripts": {
-    "dev": "pnpm cloudflare:dev:setup && pnpm --parallel --filter @lycoboai/web --filter @lycoboai/api dev",
+    "dev": "node scripts/cloudflare/dev.mjs",
     "dev:worker": "pnpm --filter @lycoboai/worker dev",
     "build": "pnpm -r --if-present build",
     "typecheck": "tsc -p tsconfig.tools.json --noEmit && pnpm -r typecheck",
@@ -24,14 +24,15 @@
     "db:generate": "pnpm --filter @lycoboai/db db:generate",
     "db:migrate": "pnpm --filter @lycoboai/db db:migrate",
     "db:migrate:supabase": "pnpm --filter @lycoboai/db db:migrate:supabase",
-    "infra:up": "docker compose up -d --wait postgres",
+    "infra:up": "docker compose up -d --wait postgres redis",
     "infra:down": "docker compose down",
     "prepare": "node scripts/setup-hooks.mjs",
     "test:integration": "pnpm --filter @lycoboai/worker test:integration && pnpm --filter @lycoboai/worker test:images && pnpm --filter @lycoboai/api test:auth && pnpm --filter @lycoboai/api test:events && pnpm test:cloudflare",
     "cloudflare:deploy": "node --env-file-if-exists=.env scripts/cloudflare/deploy.mjs",
     "cloudflare:setup": "node --env-file-if-exists=.env scripts/cloudflare/setup.mjs",
     "test:cloudflare": "pnpm --filter @lycoboai/worker exec tsx scripts/check-cloudflare-runtime.ts",
-    "cloudflare:dev:setup": "node --env-file-if-exists=.env scripts/cloudflare/dev-setup.mjs"
+    "cloudflare:dev:setup": "node --env-file-if-exists=.env scripts/cloudflare/dev.mjs --prepare-only",
+    "test:redis": "node scripts/cloudflare/check-redis.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
@@ -42,6 +43,7 @@
     "@types/node": "24.19.2",
     "lint-staged": "17.6.0",
     "miniflare": "5.20261019.2-beta",
+    "redis": "6.3.0",
     "typescript": "5.9.3",
     "vitest": "4.1.11",
     "wrangler": "4.152.0"

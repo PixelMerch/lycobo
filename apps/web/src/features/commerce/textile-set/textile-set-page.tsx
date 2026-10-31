@@ -1,57 +1,78 @@
-import { Button, EmptyState, Popover, Tabs } from "@heroui/react";
-import { IconChevronRight, IconPlus, IconX } from "@tabler/icons-react";
-import { lazy, Suspense, useRef, useState } from "react";
+import { Button, Popover, Spinner, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { imageUnitCredits, publicImageResolutions } from "@lycoboai/contracts";
+import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
+import { useId, useRef, useState } from "react";
+import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
+import { SelectionHighlight } from "../../generation/composer/selection-highlight";
+import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
+
 import { TextileImageField } from "./textile-image-field";
 import { useTextileSetDraft } from "./textile-set-state";
 import { textileViewImages, textileViews } from "./textile-views";
 import { TextileViewsDialog } from "./textile-views-dialog";
+import { useTextileGeneration } from "./use-textile-generation";
 import "./textile-set.css";
 
-const LibraryDialog = lazy(() =>
-  import("../../assets/library-dialog").then((module) => ({ default: module.LibraryDialog })),
-);
-
 export function TextileSetPage() {
-  const { mainImage, detailImage, views, ratio, update } = useTextileSetDraft();
+  const { mainImage, detailImages, views, ratio, resolution, update } = useTextileSetDraft();
   const viewsAnchor = useRef<HTMLDivElement>(null);
   const viewsTrigger = useRef<HTMLButtonElement>(null);
   const viewsPressWasOpen = useRef<boolean | null>(null);
   const [viewsOpen, setViewsOpen] = useState(false);
-  const [libraryOpen, setLibraryOpen] = useState(false);
+  const generation = useTextileGeneration();
+  const costDescriptionId = useId();
   const selectedViews = textileViews.filter((view) => views.includes(view.id));
   return (
-    <div className="workspace textile-workspace">
+    <>
       <div ref={viewsAnchor} className="textile-views-anchor" aria-hidden="true" />
-      <section className="composer-panel" aria-label="家纺套图参数">
+      <section className="composer-panel" aria-label="家纺主图裂变参数">
+        <WorkspaceComposerTitle />
         <div className="composer-scroll">
-          <h1 className="textile-title">家纺套图</h1>
           <TextileImageField
             label="主图"
             required
             description="上传清晰的家纺主图，完整展示床品"
             exampleSrc="/studio/bedroom-thumb.webp"
-            value={mainImage}
-            onChange={(image) => update({ mainImage: image })}
+            value={mainImage ? [mainImage] : []}
+            onChange={(images) => update({ mainImage: images[0] ?? null })}
             number={1}
           />
           <TextileImageField
             label="详情图"
             description="补充面料、花型或床品局部细节"
-            exampleSrc="/studio/set-thumb.webp"
-            exampleIsDetail
-            value={detailImage}
-            onChange={(image) => update({ detailImage: image })}
+            exampleSrc="/studio/textile-views/fabric.webp"
+            value={detailImages}
+            maxImages={5}
+            onChange={(images) => update({ detailImages: images })}
             number={2}
           />
           <section className="parameter-group textile-view-field" aria-label="裂变类型">
-            <h2>
-              <span aria-hidden="true" className="textile-required">
-                *
-              </span>
-              裂变类型
-            </h2>
+            <div className="field-title">
+              <h2>
+                <span aria-hidden="true" className="textile-required">
+                  *
+                </span>
+                裂变类型
+              </h2>
+              {selectedViews.length > 0 && (
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  className="clear-references"
+                  aria-label="清除裂变类型"
+                  onPress={() => {
+                    update({ views: [] });
+                    setViewsOpen(false);
+                    viewsTrigger.current?.focus();
+                  }}
+                >
+                  <UiIcon icon={IconTrash} size="small" />
+                  清除
+                </Button>
+              )}
+            </div>
             <div className={selectedViews.length ? "textile-selected-grid" : undefined}>
               {selectedViews.map((view) => (
                 <div className="textile-selected-view" key={view.id}>
@@ -60,6 +81,8 @@ export function TextileSetPage() {
                       <img
                         src={textileViewImages[view.id]}
                         alt=""
+                        width={480}
+                        height={480}
                         loading="lazy"
                         decoding="async"
                         draggable={false}
@@ -123,6 +146,34 @@ export function TextileSetPage() {
             </div>
             <HomeRatioPicker value={ratio} onChange={(value) => update({ ratio: value })} />
           </section>
+          <fieldset className="parameter-group">
+            <legend>分辨率</legend>
+            <ToggleButtonGroup
+              aria-label="分辨率"
+              className="parameter-options"
+              isDetached
+              disallowEmptySelection
+              selectionMode="single"
+              selectedKeys={[resolution]}
+              onSelectionChange={(keys) => {
+                const next = publicImageResolutions.find((value) => keys.has(value));
+                if (next) update({ resolution: next });
+              }}
+            >
+              {publicImageResolutions.map((value) => (
+                <ToggleButton
+                  key={value}
+                  id={value}
+                  isDisabled={!generation.resolutions.includes(value)}
+                >
+                  {value === resolution && (
+                    <SelectionHighlight layoutId="textile-resolution-selection" />
+                  )}
+                  <span>{value}</span>
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+          </fieldset>
         </div>
         <div className="generate-area">
           <Button
@@ -130,50 +181,32 @@ export function TextileSetPage() {
             size="lg"
             fullWidth
             className="primary-action generation-submit"
-            isDisabled
-            aria-description="家纺套图生成功能即将上线"
+            isDisabled={!generation.canGenerate}
+            isPending={generation.submitting}
+            onPress={generation.submit}
+            aria-describedby={costDescriptionId}
           >
-            立即生成
+            {generation.submitting && (
+              <Spinner size="md" color="current" role="status" aria-label="正在提交套图任务" />
+            )}
+            {generation.pending && !generation.submitting ? "确认上次提交" : "立即生成"}
+            {(!generation.pending || generation.submitting) && (
+              <span className="generate-credit-cost" aria-hidden="true">
+                <CreditCoin />
+                <span>{views.length * imageUnitCredits}</span>
+              </span>
+            )}
           </Button>
-          <p className="textile-service-status">套图生成功能即将上线</p>
+          <span id={costDescriptionId} className="sr-only">
+            {generation.pending
+              ? "确认上次提交，不会重复扣费"
+              : `本次生成 ${views.length} 张，消耗 ${views.length * imageUnitCredits} 积分`}
+          </span>
+          {generation.unavailable && (
+            <p className="textile-service-status">当前服务尚未启用参考图生成</p>
+          )}
         </div>
       </section>
-      <section className="results-panel" aria-label="家纺套图内容">
-        <Tabs className="workspace-tabs">
-          <Tabs.ListContainer>
-            <Tabs.List aria-label="家纺套图工作区">
-              <Tabs.Tab id="history">历史记录</Tabs.Tab>
-            </Tabs.List>
-          </Tabs.ListContainer>
-          <Tabs.Panel id="history">
-            <EmptyState className="textile-history-empty">
-              <h2>家纺套图将在这里展示</h2>
-              <p>上传主图，选择需要的视角，准备你的商品套图</p>
-            </EmptyState>
-          </Tabs.Panel>
-        </Tabs>
-      </section>
-      <aside className="history-rail" aria-label="家纺套图历史索引">
-        <h2 className="history-rail-title">
-          <Button
-            variant="tertiary"
-            className="history-rail-open"
-            aria-label="打开素材库"
-            onPress={() => setLibraryOpen(true)}
-          >
-            <span>我的素材</span>
-            <UiIcon icon={IconChevronRight} size="small" />
-          </Button>
-        </h2>
-        <div className="history-rail-list">
-          <p>暂无套图</p>
-        </div>
-      </aside>
-      {libraryOpen && (
-        <Suspense fallback={null}>
-          <LibraryDialog onClose={() => setLibraryOpen(false)} />
-        </Suspense>
-      )}
-    </div>
+    </>
   );
 }

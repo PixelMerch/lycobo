@@ -1,30 +1,37 @@
 name: lycoboai
-# Local-only development: Vite + Wrangler API/consumer + PostgreSQL.
+# Isolated development: PostgreSQL, private S3, R2 fallback/Images and Redis queues are local.
 services:
   studio:
     build:
       context: .
       dockerfile: Dockerfile.dev
     init: true
+    stop_grace_period: 90s
     working_dir: /workspace
     command: ["sh", "scripts/cloudflare/docker-dev.sh"]
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+      image-storage:
+        condition: service_started
     ports:
       - "127.0.0.1:8081:5173"
       - "127.0.0.1:5173:5173"
       - "127.0.0.1:8787:8787"
+      - "127.0.0.1:8791:8791"
     environment:
+      S3_ENDPOINT: http://image-storage:8333
+      S3_BUCKET: generated-images
+      S3_REGION: us-east-1
+      S3_ACCESS_KEY_ID: local-image-dev
+      S3_SECRET_ACCESS_KEY: local-image-dev-only
       CI: "true"
       WRANGLER_SEND_METRICS: "false"
       DEV_USE_POLLING: "true"
       DEV_WEB_PUBLIC_PORT: "8081"
       DEV_API_PUBLIC_PORT: "8787"
-      LOCAL_IMAGE_GENERATION_ENABLED: ${LOCAL_IMAGE_GENERATION_ENABLED:-false}
-      VAKV_API_KEY: ${VAKV_API_KEY:-}
-      VAKV_BASE_URL: ${VAKV_BASE_URL:-https://api.vakv.cn}
-      VAKV_ENABLE_IMAGE_EDITS: ${VAKV_ENABLE_IMAGE_EDITS:-false}
     volumes:
       - .:/workspace
       # Linux dependencies must never overwrite macOS node_modules.
@@ -40,11 +47,34 @@ services:
       - /workspace/packages/storage/node_modules
       - studio-state:/workspace/.wrangler
     healthcheck:
-      test: ["CMD", "node", "-e", "Promise.all(['http://127.0.0.1:5173', 'http://127.0.0.1:8787/api/health/live'].map(async u => { const r = await fetch(u); if (!r.ok) throw new Error(String(r.status)); })).catch(() => process.exit(1))"]
+      test: ["CMD", "node", "-e", "Promise.all(['http://127.0.0.1:5173', 'http://127.0.0.1:8787/api/health/live', 'http://127.0.0.1:8790/health', 'http://127.0.0.1:8791/health'].map(async u => { const r = await fetch(u); if (!r.ok) throw new Error(String(r.status)); })).catch(() => process.exit(1))"]
       interval: 10s
       timeout: 5s
       start_period: 120s
       retries: 6
+  image-storage:
+    image: chrislusf/seaweedfs:4.51@sha256:f7a49e3f3972ebed5be2ed4befa4a0c68eb7bdddba6e692d42729ceb545134b8
+    command: ["mini", "-dir=/data", "-ip=image-storage", "-ip.bind=0.0.0.0", "-s3.config=/etc/lycobo/s3.json"]
+    environment:
+      S3_BUCKET: generated-images
+    volumes:
+      - image-storage-data:/data
+      - ./docker-s3-images.json:/etc/lycobo/s3.json:ro
+    ports:
+      - "127.0.0.1:9004:8333"
+    restart: unless-stopped
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    ports:
+      - "127.0.0.1:56379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
   postgres:
     image: postgres:17-alpine
     environment:
@@ -61,6 +91,8 @@ services:
       timeout: 3s
       retries: 10
 volumes:
+  image-storage-data:
   postgres-data:
+  redis-data:
   studio-dependencies:
   studio-state:

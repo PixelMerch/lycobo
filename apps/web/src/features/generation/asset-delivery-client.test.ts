@@ -25,3 +25,18 @@ it("keeps valid image URLs stable across metadata refreshes and replaces expirin
   rememberImageDeliveries({ id, delivery: original });
   expect(assetContentUrl(id)).toBe(original.url);
 });
+
+it("replaces a cached legacy original link when metadata supplies a preview variant", () => {
+  const id = crypto.randomUUID();
+  const legacy = {
+    expires_at: Math.floor(Date.now() / 1000) + 1800,
+    url: `https://assets.example.test/${id}.png?sig=fixture`,
+    thumbnail_url: `https://assets.example.test/${id}.png?variant=thumbnail`,
+    download_url: `https://assets.example.test/${id}.png?variant=download`,
+  };
+  rememberImageDeliveries({ id, delivery: legacy });
+  const preview = { ...legacy, url: `${legacy.url}&variant=preview` };
+  rememberImageDeliveries({ id, delivery: preview });
+  expect(assetContentUrl(id)).toBe(preview.url);
+  expect(assetContentUrl(id, false, true)).toBe(preview.download_url);
+});

@@ -1,5 +1,12 @@
 import { Button, ToggleButton, Tooltip } from "@heroui/react";
-import { IconCopy, IconDownload, IconPhoto, IconStar, IconStarFilled } from "@tabler/icons-react";
+import {
+  IconBrandOpenai,
+  IconCopy,
+  IconDownload,
+  IconStar,
+  IconStarFilled,
+} from "@tabler/icons-react";
+import { CollapsibleText } from "../../components/collapsible-text";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
 import { copyToClipboard } from "../../lib/clipboard";
@@ -25,10 +32,12 @@ function CopyIconButton({ value, label }: { value: string; label: string }) {
 export function ImagePreviewDetails({
   source: active,
   meta,
+  modelName,
   onRepair,
 }: {
   source: PreviewImage;
   meta: PreviewMeta;
+  modelName: string;
   onRepair: () => void;
 }) {
   const favorite = useStudioStore((s) => s.favorites.includes(active.id));
@@ -40,8 +49,8 @@ export function ImagePreviewDetails({
       </div>
       <header className="image-preview-head">
         <span className="image-preview-model">
-          <UiIcon icon={IconPhoto} size="default" />
-          <span>{meta.model ?? "图片"}</span>
+          <UiIcon icon={IconBrandOpenai} size="default" />
+          <span>{modelName}</span>
         </span>
         <span className="image-preview-tools">
           <Tooltip delay={0}>
@@ -90,7 +99,12 @@ export function ImagePreviewDetails({
             <span>创意描述</span>
             <CopyIconButton value={meta.prompt} label="复制创意描述" />
           </h2>
-          <p>{meta.prompt}</p>
+          <CollapsibleText
+            key={active.id}
+            text={meta.prompt}
+            className="image-preview-prompt"
+            textContainerClassName="image-preview-description-text"
+          />
         </section>
       )}
       {/* References reuse the history thumbnails; a task without any

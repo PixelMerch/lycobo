@@ -80,7 +80,8 @@ GitHub Environment 仅保留：
 | `lycobo-api` | Variable | `APP_ENV=production`；`AUTH_TRUSTED_ORIGINS=https://lycobo.pages.dev`（按实际域名调整） |
 | 两个 Worker | Variable | `IMAGE_GENERATION_ENABLED`、`VAKV_ENABLE_IMAGE_EDITS`：分别配置，保持一致；未验收时为 `false` |
 | `lycobo-generation` | Secret | `VAKV_API_KEY`：启用真实生图时必需 |
-| `lycobo-generation` | Variable | `VAKV_BASE_URL=https://api.vakv.cn`；`GENERATION_TIMEOUT_MS=300000` |
+| `lycobo-generation` | Secret | `MODEL_CREDENTIAL_SECRET`：生产独立的32字节Base64主密钥，解密数据库中的渠道Key，不进入GitHub Actions或前端 |
+| `lycobo-generation` | Variable | `VAKV_BASE_URL=https://api.ai-media.vip`；`GENERATION_TIMEOUT_MS=600000` |
 
 不要把这些运行配置放到 Pages 静态前端或 `VITE_*` 中。首次部署新 Worker 后，必须在 Cloudflare 补齐运行配置才能验收；部署成功不代表运行配置齐全。后续自动、手动、本地脚本部署均保留 Cloudflare 的运行值，手动部署不再提供生图开关。`keep_vars` 仅保留运行变量，资源绑定仍随仓库配置发布。[Wrangler 官方说明](https://developers.cloudflare.com/workers/wrangler/configuration/#source-of-truth)。
 
@@ -131,10 +132,22 @@ SSE 在 Workers 中保持原有持久事件游标、组织隔离、身份复验�
 
 ## 私有图片资源 Worker
 
-`lycobo-assets` 单独绑定私有 R2 `lycobo`，不连接数据库、不调用 Images、不执行生图。原图和缩略图由上传／生成链路提前写入：先保存原图，再生成并保存缩略图，两者都完成后才暴露素材；缩略图失败时保留原图供核对，不自动重调模型。API 在鉴权后批量返回 30 分钟签名链接；旧 content 接口兼容为重定向，启用后不再传输图片。前端过期图片加载失败时按需刷新链接，不恢复定时轮询。
+`lycobo-assets` 单独绑定私有 R2 `lycobo`，不连接数据库、不执行生图。新图在上传／生成时预先保存原始 PNG、兼容 PNG 缩略图及 WebP 展示版本，全部完成后才暴露素材；派生图失败时保留原图供核对，不自动重调模型。资源 Worker 绑定 Images，仅在历史图片缺少 WebP 版本时补生成并持久保存；这会使用 Images 处理额度，后续复用缓存／对象。API 在鉴权后批量返回 30 分钟签名链接；旧 content 接口兼容为重定向，启用后不再传输图片。上传响应也直接返回签名链接，避免新上传图片的首次预览经过 content 兼容入口。前端过期图片加载失败时按需刷新链接，不恢复定时轮询。
 
 运行配置仅在 Cloudflare 管理：API 配置 Secret `ASSET_SIGNING_SECRET` 与 运行配置 `ASSET_PUBLIC_ORIGIN`；资源 Worker 配置相同 Secret 与 运行配置 `ASSET_ALLOWED_ORIGINS=https://lycobo.pages.dev`（逗号分隔精确 Origin）。域名切换时同步更新资源 Origin、CORS 与 Referer 白名单。两个非敏感配置也可用 Cloudflare Secret 保存，以便仅更新指定 binding 并保留其他配置。不要使用 JWT 密钥作为图片签名密钥，不在 GitHub 保存这些运行配置。
 
-资源 Worker 验证对象路径、签名和过期时间，再读取边缘缓存；缓存键仅含对象路径与缩略图版本，不含签名。未命中时直接返回 R2 body 流。缓存内部可复用对象，浏览器收到 private 且不超过签名剩余寿命的缓存时间。下载使用 attachment；跨域图片使用 anonymous CORS，Referer 精确匹配白名单，空 Referer 的直接访问仍需有效签名。Referer 不是私有访问的唯一凭据。日志隐藏 query string，禁止记录签名链接。
+资源 Worker 验证对象路径、签名和过期时间，再读取边缘缓存；缓存键仅含对象路径与展示版本，不含签名。未命中时直接返回 R2 body 流。缓存内部可复用对象，浏览器收到 private 且不超过签名剩余寿命的缓存时间。下载使用 attachment；跨域图片使用 anonymous CORS，Referer 精确匹配白名单，每次请求必须至少携带一个受信任的 Origin 或 Referer，缺失来源也拒绝；任何存在的来源头都必须精确匹配。HMAC v2 绑定对象 key、到期时间和 preview／thumbnail／download 用途，预览签名不能通过修改参数换取原图。下载拒绝 Sec-Fetch-Dest=image，只返回 attachment，浏览器响应使用 private,no-store。预览／缩略图响应 Vary 包含 Origin、Referer 和 Sec-Fetch-Dest，防止浏览器缓存绕过来源／用途检查。来源校验与签名共同工作；来源头本身不是身份凭据。日志隐藏 query string，禁止记录签名链接。
 
-发布时先部署资源 Worker、配置 Cloudflare 密钥，再启用 API 的资源 Origin。R2 不打开公共域名或 r2.dev。默认 workers.dev 可验证验签、流式访问与缓存，生产仍建议绑定自定义域名并重新验收。2026-10-23 候选入口实测：30 次请求中 24 次正常读取、6 次无效／越权请求均拒绝，22 次缓存命中、2 次未命中；Cloudflare CPU 中位数 1.031ms、P99 2.805ms，执行错误 0。该结果是本次取样，不能代替后续域名、网络与负载下的验收。本地 workerd 同时验证缓存与拒绝访问行为。已有图片需提前补缩略图，不重新调用模型或改动原图。
+发布时先部署资源 Worker、配置 Cloudflare 密钥，再启用 API 的资源 Origin。R2 不打开公共域名或 r2.dev。默认 workers.dev 可验证验签、流式访问与缓存，生产仍建议绑定自定义域名并重新验收。2026-10-23 候选入口实测：30 次请求中 24 次正常读取、6 次无效／越权请求均拒绝，22 次缓存命中、2 次未命中；Cloudflare CPU 中位数 1.031ms、P99 2.805ms，执行错误 0。该结果是本次取样，不能代替后续域名、网络与负载下的验收。本地 workerd 同时验证缓存与拒绝访问行为。默认 `url` 返回 `variant=preview`：最长边 1600px、WebP quality 82；缩略图为 `variant=thumbnail`：最长边 512px、WebP quality 76；仅 `variant=download` 返回原始 PNG 并使用 attachment。展示路径使用 `.preview.webp`／`.thumbnail.webp`，而非原图的 `.png` 路径。禁止把缺失展示版本回退成原图响应。参考图编辑的服务端输入仍使用原始文件，前端选区坐标以原始宽高计算。首次启用需先发布带 Images binding 和新变体支持的资源 Worker，再发布生成新链接的 API；已有旧链接不带 variant 时也按预览版本处理。
+
+签名升级到 v2 后，旧签名链接将被拒绝；需要协调更新资源 Worker 和 API，并让客户端刷新元数据。旧链接不会被降级放行以换取原图。此代码变更不代表已部署线上。
+
+## v0.3.0 发布配置
+
+GitHub `cloudflare-production` 仅保留部署用 `CLOUDFLARE_API_TOKEN` 和非敏感 `CLOUDFLARE_HYPERDRIVE_ID`，不保存模型Key、JWT主密钥或数据库密码。运行密钥在 Cloudflare 对应 Worker 的 Settings 管理，部署保留其值。可配置渠道的供应商Key加密保存在 PostgreSQL，解密主密钥仅放消费者 Cloudflare Secret；新增中转站通过模型服务后台配置，无需改GitHub Actions。生产主密钥与本地开发独立，被忽略的本地生产配置备份须设为仅当前用户可读，不得提交。
+
+本次上线须先将Supabase迁移到0025（独立管理员／模型渠道／菜单／历史归档），再部署Workers与Pages。迁移仅扩展结构，不导入本地账户、积分、图片或生成记录。新渠道沿用本地已验证的FluxPort异步协议；公网验收只检查登录、能力和历史读取，不自动发起付费生成。
+
+### 主站独立模型计划密钥
+
+主站 `STANDALONE_MODELS=true` 时，API Worker `lycobo-api` 的 `DEEPSEEK_API_KEY` 配置为 DeepSeek 官方 Key，计划固定使用 `deepseek-flash` 和官方接口，不再使用语言中转站。该 Secret 不放 GitHub Actions 或浏览器；本地 `.env` 使用同名变量，保留受保护备份。图片 Key 和图片路由保持独立。切换供应商时须在发布该版本前同步更新 API Secret。

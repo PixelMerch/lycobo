@@ -1,71 +1,80 @@
 import { openImageRepository } from "@lycoboai/db";
-import { readImagePolicy } from "@lycoboai/generation";
-import { dispatchImageOutbox } from "@lycoboai/queue";
+import {
+  readImagePolicy,
+  type StandaloneModelEnvironment,
+  standaloneModels,
+} from "@lycoboai/generation";
+import { dispatchImageOutbox, type ImageQueueSender } from "@lycoboai/queue";
 import { r2ImageStore } from "@lycoboai/storage/r2";
+import { imageObjectBucket, type S3Bindings } from "@lycoboai/storage/s3";
 import { processImageItem } from "../src/image-processor";
 import { consumeImageMessages } from "../src/queue-consumer";
 
-export interface GenerationBindings {
+export interface GenerationBindings extends S3Bindings, StandaloneModelEnvironment {
   HYPERDRIVE: Hyperdrive;
   IMAGES_BUCKET: R2Bucket;
   IMAGES: ImagesBinding;
-  GENERATION_QUEUE: Queue<{ version: 1; itemId: string }>;
-  VAKV_API_KEY: string;
-  VAKV_BASE_URL?: string;
-  GENERATION_TIMEOUT_MS?: string;
+  GENERATION_QUEUE: ImageQueueSender;
+  MODEL_CREDENTIAL_SECRET?: string;
   IMAGE_GENERATION_ENABLED?: string;
-  VAKV_ENABLE_IMAGE_EDITS?: string;
-  VAKV_CAPABILITY_OVERRIDES?: string;
+}
+export async function processGenerationBatch(
+  batch: Pick<MessageBatch<{ version: 1; itemId: string }>, "messages">,
+  env: GenerationBindings,
+) {
+  const policy = readImagePolicy({
+    IMAGE_GENERATION_ENABLED: env.IMAGE_GENERATION_ENABLED,
+  });
+  if (!policy.enabled) throw new Error("GENERATION_NOT_CONFIGURED");
+  const bucket = imageObjectBucket(env, env.IMAGES_BUCKET);
+  const repository = openImageRepository(
+    env.HYPERDRIVE.connectionString,
+    true,
+    await standaloneModels(env),
+  );
+  const store = r2ImageStore(bucket, env.IMAGES, repository.storageUid);
+  try {
+    await consumeImageMessages(batch, (itemId, deliveryId) =>
+      processImageItem(itemId, {
+        repository,
+        store,
+        modelSecret: env.MODEL_CREDENTIAL_SECRET,
+        standaloneKey: env.STANDALONE_MODELS === "true" ? env.STANDALONE_IMAGE_API_KEY : undefined,
+        workerId: `cloudflare:${deliveryId}`,
+        request: (input, init) => fetch(input, init),
+        overrides: policy.overrides,
+        editsEnabled: policy.editsEnabled,
+      }),
+    );
+  } finally {
+    await repository.close();
+  }
 }
 export default {
-  async queue(batch, env) {
-    const policy = readImagePolicy({
-      IMAGE_GENERATION_ENABLED: env.IMAGE_GENERATION_ENABLED,
-      VAKV_ENABLE_IMAGE_EDITS: env.VAKV_ENABLE_IMAGE_EDITS,
-      VAKV_CAPABILITY_OVERRIDES: env.VAKV_CAPABILITY_OVERRIDES,
-    });
-    if (!policy.enabled || !env.VAKV_API_KEY) throw new Error("GENERATION_NOT_CONFIGURED");
-    const timeoutMs = Number(env.GENERATION_TIMEOUT_MS ?? 300000);
-    if (!Number.isInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 600000)
-      throw new Error("INVALID_GENERATION_TIMEOUT");
-    const base = new URL(env.VAKV_BASE_URL || "https://api.vakv.cn");
-    if (
-      base.protocol !== "https:" ||
-      base.username ||
-      base.password ||
-      base.pathname !== "/" ||
-      base.search ||
-      base.hash
-    )
-      throw new Error("INVALID_PROVIDER_ORIGIN");
-    const repository = openImageRepository(env.HYPERDRIVE.connectionString, true);
-    const store = r2ImageStore(env.IMAGES_BUCKET, env.IMAGES, repository.storageUid);
-    try {
-      await consumeImageMessages(batch, (itemId, deliveryId) =>
-        processImageItem(itemId, {
-          repository,
-          store,
-          workerId: `cloudflare:${deliveryId}`,
-          provider: {
-            key: env.VAKV_API_KEY,
-            baseUrl: base.origin,
-            timeoutMs,
-            onTiming: (event) => console.info({ itemId, ...event }),
-          },
-          request: (input, init) => fetch(input, init),
-          overrides: policy.overrides,
-          editsEnabled: policy.editsEnabled,
-        }),
-      );
-    } finally {
-      await repository.close();
-    }
-  },
+  queue: processGenerationBatch,
   async scheduled(_event, env) {
-    const repository = openImageRepository(env.HYPERDRIVE.connectionString, true);
+    const repository = openImageRepository(
+      env.HYPERDRIVE.connectionString,
+      true,
+      await standaloneModels(env),
+    );
     try {
       await repository.expireClaims();
       await repository.pruneEvents();
+      const store = r2ImageStore(
+        imageObjectBucket(env, env.IMAGES_BUCKET),
+        env.IMAGES,
+        repository.storageUid,
+      );
+      for (const asset of await repository.expiredReferences()) {
+        try {
+          await store.remove(asset);
+          await repository.markReferenceDeleted(asset.id);
+        } catch {
+          // Leave the expired row pending so the next scheduled run retries deletion.
+          console.error("REFERENCE_CLEANUP_FAILED", asset.id);
+        }
+      }
       if (env.IMAGE_GENERATION_ENABLED !== "true") return;
       // Always drain durable intents, including when a prior HTTP transport send failed.
       for (let page = 0; page < 5; page++)

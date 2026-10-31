@@ -69,7 +69,7 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await expect.poll(metadataClearance).toBeGreaterThanOrEqual(12);
   const info = articles.nth(1).getByRole("definition");
   await expect(info).toHaveText([
-    "gpt-image-2.5",
+    "Image 2.5",
     await page.evaluate((iso) => new Date(iso).toLocaleString("zh-CN"), jobs[1]?.created_at ?? ""),
     jobs[1]?.public_id ?? "",
     "1:1",
@@ -97,7 +97,7 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
     page.getByRole("button", { name: `查看任务 ${jobs[0]?.id}`, exact: true }),
   ).toHaveAttribute("aria-current", "true");
   await expect(target).toHaveAttribute("aria-current", "false");
-  await expect(page.locator(".history-rail")).toHaveCSS("padding-top", "6px");
+  await expect(page.locator(".history-rail")).toHaveCSS("padding-top", "0px");
   const width = (await target.boundingBox())?.width;
   await target.focus();
   await target.press("Enter");
@@ -110,9 +110,10 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
     .toBe(true);
-  await target.click();
-  await expect.poll(metadataClearance).toBeGreaterThanOrEqual(12);
-  await expect(target).toHaveAttribute("aria-current", "true");
+  await page.getByRole("radio", { name: "历史记录", exact: true }).click();
+  await expect(page.getByRole("region", { name: "工作区历史记录" })).toBeVisible();
+  await expect(page.locator(".history-rail")).toBeHidden();
+  await expect(articles).toHaveCount(3);
 });
 
 test("the asset entry stays fixed above the scrolling thumbnail list", async ({ page }) => {

@@ -1,7 +1,7 @@
 import { z } from "zod";
 export const walletBalanceSchema = z.object({
   balance: z.number().int().nonnegative(),
-  unitCredits: z.literal(20),
+  unitCredits: z.number().int().positive(),
 });
 export const walletEntriesSchema = z.object({
   data: z.array(

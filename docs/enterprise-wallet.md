@@ -11,7 +11,7 @@
 | gpt-image-2.5 | 1K / 2K / 4K | gpt-image-2.5-sunburst |
 | nano-banana-2.1 | 1K / 2K / 4K | gemini-nano-banana-2.1 |
 
-统一每张 **20 币**，与分辨率、质量无关。以 contracts 的 imageUnitCredits 为唯一价格来源；旧 IMAGE_CREDITS_PER_IMAGE 配置及 repository 旧价格参数保留读取兼容但不再决定扣费。前台提交公开模型；实际 provider_model 在入队事务中存为快照。历史供应商 ID 继续可读；迁移前排队任务没有快照时沿用原 input.model。生成与编辑共用映射，经现有 Vakv 兼容 images 接口提交。真实渠道尤其 Nano Banana 的参数兼容性仍需供应商实测，测试 fixture 不能当成模型可用证明。
+统一每张 **2 币**，与分辨率、质量无关。以 contracts 的 imageUnitCredits 为唯一价格来源；旧 IMAGE_CREDITS_PER_IMAGE 配置及 repository 旧价格参数保留读取兼容但不再决定扣费。前台提交公开模型；实际 provider_model 在入队事务中存为快照。历史供应商 ID 继续可读；迁移前排队任务没有快照时沿用原 input.model。生成与编辑共用映射，经现有 Vakv 兼容 images 接口提交。真实渠道尤其 Nano Banana 的参数兼容性仍需供应商实测，测试 fixture 不能当成模型可用证明。
 
 ## 数据结构
 
@@ -51,12 +51,12 @@
 
 1. 校验登录、模型参数、参考图和 Idempotency-Key。
 2. 同事务创建任务、锁住企业钱包；余额不足时整个事务回滚，不留下待执行任务。
-3. 按 count × 20 扣费，每张图一条 -20 流水，写入 item 和 outbox；事务提交后才允许 Worker 执行。
+3. 按 count × 2 扣费，每张图一条 -2 流水，写入 item 和 outbox；事务提交后才允许 Worker 执行。
 4. 同用户、同幂等键、同参数重放返回原任务；即使余额已用完也不会再次扣费。参数变更返回冲突。
-5. 确定失败每张退回任务保存的 unit_credits（新任务为20，旧任务保持原价）；部分成功只退失败图片。重复完成/退款不会增加余额。
+5. 确定失败每张按该尝试实际消费流水退款（旧任务无消费流水时回退到保存的 unit_credits）；部分成功只退失败图片。重复完成/退款不会增加余额。
 6. 超时、连接中断等未知结果进入 needs_reconciliation，不自动再次调用付费接口；管理员核对确认失败可单独退币；用户也可通过明确确认的原任务retry入口结束未交付的旧尝试并重试，旧尝试先退款，再为新尝试扣费，保留“供应商结果仍未知、用户主动重试”的审计记录。响应已返回但图片结构/编码无效（PROVIDER_INVALID_IMAGE_RESPONSE）按未交付结算失败并退款；Worker 同时幂等修复历史上这一错误码的待确认记录，不处理其他未知结果。
 7. 失败/部分失败任务通过 POST /api/v1/image-tasks/:jobId/retry 在原任务内仅重试失败项，保留任务 UUID、W 开头公开 ID、原参数和成功图片。旧失败项写 superseded_at，账本及 provider 请求证据保持可查；新项使用新的内部 ID、outbox 和供应商幂等键，避免旧失败响应被复用。worker_id 是执行进程身份，不由浏览器指定。成功任务再次生成仍创建新任务。
-8. 重试按原任务 unit_credits 重新扣失败张数对应金币（新任务每张20币）。原失败项先确保已退款，新扣款与幂等请求记录、结果项和 outbox 同事务提交；余额不足全部回滚。generation_retries 按组织/操作人/Idempotency-Key 唯一，重放不重复扣款，运行中不允许再次发起重试，结果待核对允许用户主动确认后重试，不允许Worker自动重发；旧尝试写入操作人、结束依据和superseded_at，迟到结果不得再次入账或覆盖新结果。
+8. 重试按当前单价每张2币扣费，原尝试仍按实际历史扣费金额退款。原失败项先确保已退款，新扣款与幂等请求记录、结果项和 outbox 同事务提交；余额不足全部回滚。generation_retries 按组织/操作人/Idempotency-Key 唯一，重放不重复扣款，运行中不允许再次发起重试，结果待核对允许用户主动确认后重试，不允许Worker自动重发；旧尝试写入操作人、结束依据和superseded_at，迟到结果不得再次入账或覆盖新结果。
 
 数据库锁按任务→钱包排序；同组织所有成员共享钱包行锁，防止并发超支。充值按钱包→充值订单排序，所有外部网络验证在事务外完成。
 
@@ -64,7 +64,7 @@
 
 沿用统一 request_id/code/message/data/error 响应体与既有企业会话/API key 鉴权：
 
-- GET /api/v1/wallet：balance、unitCredits（20）。
+- GET /api/v1/wallet：balance、unitCredits（2）。
 - GET /api/v1/wallet/entries?limit=20&before=<流水游标>：企业共享收支、操作人、任务/图片关联与余额快照。
 - GET /api/v1/wallet/recharges?limit=20&before=<订单UUID>：企业充值订单及到账状态。
 

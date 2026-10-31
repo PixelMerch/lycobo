@@ -67,7 +67,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   expect(historyBox?.width).toBe(1328);
   expect(historyBox?.height).toBe(906);
   await expect(historyDialog.locator(".image-preview-section p")).toContainText("紫色菱形被子");
-  await expect(historyDialog.locator(".image-preview-model")).toContainText("gpt-image-2");
+  await expect(historyDialog.locator(".image-preview-model")).toContainText("Image 2");
   await expect(historyDialog.locator(".image-preview-facts")).toContainText("ID：W00000013");
   await expect(historyDialog.locator(".image-preview-bar-id")).toHaveCount(0);
   await expect(historyDialog.locator(".image-preview-bar-size")).toHaveText("2048 x 2048");
@@ -193,13 +193,9 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   });
   expect(panned.x).toBeCloseTo(-120, 0);
   expect(panned.y).toBeCloseTo(-80, 0);
-  // Reset to 100% so the remaining assertions read the fitted picture.
-  await viewer.locator('[aria-label="缩放"] input[type="range"]').evaluate((input) => {
-    (input as HTMLInputElement).focus();
-  });
-  await page.keyboard.press("Home");
-  await expect(viewer.locator(".image-preview-zoom-value")).toHaveText("100%");
-  // Fitted pictures return to the centre and lose the pan cursor.
+  // Fit restores the smaller default view and centres the freely pannable canvas.
+  await viewer.getByRole("button", { name: "适应画布", exact: true }).click();
+  await expect(viewer.locator(".image-preview-zoom-value")).toHaveText("80%");
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -214,7 +210,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
     .poll(() =>
       page.evaluate(() => getComputedStyle(document.querySelector(".image-preview-frame")!).cursor),
     )
-    .toBe("auto");
+    .toBe("grab");
   // Fixed three-column layout: stage | details | thumbnail rail.
   const layout = await page.evaluate(() => {
     const box = (selector: string) => {

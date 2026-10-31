@@ -1,0 +1,14 @@
+{
+  "identities": [
+    {
+      "name": "local-image-service",
+      "credentials": [{ "accessKey": "local-image-dev", "secretKey": "local-image-dev-only" }],
+      "actions": [
+        "Admin:generated-images",
+        "Read:generated-images",
+        "Write:generated-images",
+        "List:generated-images"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+ALTER TABLE "generation_job_items" DROP CONSTRAINT "generation_job_items_position_check";--> statement-breakpoint
+ALTER TABLE "generation_jobs" DROP CONSTRAINT "generation_jobs_count_check";--> statement-breakpoint
+ALTER TABLE "generation_job_items" ADD CONSTRAINT "generation_job_items_position_check" CHECK ("generation_job_items"."position" between 0 and 19 and "generation_job_items"."attempts" >= 0);--> statement-breakpoint
+ALTER TABLE "generation_jobs" ADD CONSTRAINT "generation_jobs_count_check" CHECK ("generation_jobs"."requested_count" between 1 and 20 and "generation_jobs"."unit_credits" > 0 and ("generation_jobs"."requested_count" <= 4 or ("generation_jobs"."requested_count" <= 10 and "generation_jobs"."input" ? 'textileSet') or "generation_jobs"."input" ? 'variation'));
