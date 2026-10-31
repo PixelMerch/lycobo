@@ -163,7 +163,7 @@ test("regenerate submits the original snapshot once and leaves the composer draf
   await page.getByRole("button", { name: "重新生成", exact: true }).click();
   const confirm = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
   await expect(confirm).toBeVisible();
-  await expect(confirm.locator(".confirm-dialog__content")).toHaveText("本次消耗 20 积分");
+  await expect(confirm.locator(".confirm-dialog__content")).toHaveText("本次消耗 2 积分");
   // The panel is a borderless black sheet on a blurred, veiled page, and both
   // the dismiss action and the corner close glyph read as white on it.
   await expect(confirm).toHaveCSS("border-top-width", "0px");
@@ -358,7 +358,7 @@ test("a text-only model blocks restored references even when another model suppo
       json: {
         enabled: true,
         editsEnabled: true,
-        unitCredits: 20,
+        unitCredits: 2,
         models: [{ id: "gpt-image-2.5", enabledResolutions: ["1K", "1.5K"] }],
         tools: {
           create: [

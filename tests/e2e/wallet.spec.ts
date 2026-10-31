@@ -61,7 +61,7 @@ test("enterprise account shows shared balance, member spending and recharge reco
   await page.getByRole("menuitem", { name: "订阅与账单", exact: true }).click();
   const panel = page.getByRole("dialog", { name: "订阅与账单" });
   await expect(panel.getByText("企业金币余额", { exact: true })).toBeVisible();
-  await expect(panel.getByText("每张 20 币", { exact: true })).toBeVisible();
+  await expect(panel.getByText("每张 2 币", { exact: true })).toBeVisible();
   await expect(panel.getByText(/用户 0123456789/)).toBeVisible();
   await panel.getByRole("tab", { name: "充值订单", exact: true }).click();
   await expect(panel.getByText(/已到账/)).toBeVisible();

@@ -85,7 +85,11 @@ export function openImageRepository(
   const refund = async (tx: postgres.TransactionSql, jobId: string, itemId: string) => {
     const credits =
       await tx`insert into generation_credit_ledger (organization_id,job_id,item_id,event_type,amount)
-      select organization_id,id,${itemId},'refund',unit_credits from generation_jobs where id=${jobId}
+      select j.organization_id,j.id,${itemId},'refund',coalesce(
+        (select -e.amount from wallet_entries e join organization_wallets w on w.id=e.wallet_id
+          where e.event_key=${`consume:${itemId}`} and e.job_id=j.id and e.item_id=${itemId}
+            and e.kind='consume' and w.organization_id=j.organization_id),j.unit_credits)
+        from generation_jobs j where j.id=${jobId}
       on conflict do nothing returning organization_id,amount`;
     const credit = credits[0];
     if (credit) {
@@ -378,7 +382,7 @@ export function openImageRepository(
           await refund(tx, jobId, String(item.id));
         }
         const wallet = await ensureWallet(tx, scope);
-        if (wallet.balance < Number(job.unit_credits) * failed.length)
+        if (wallet.balance < imageUnitCredits * failed.length)
           throw new ImageRepositoryError("INSUFFICIENT_CREDITS");
         await tx`insert into generation_retries (organization_id,user_id,job_id,idempotency_key,target_item_id) values (${scope.organizationId},${scope.userId},${jobId},${key},${itemId ?? null})`;
         for (const item of failed) {
@@ -388,7 +392,7 @@ export function openImageRepository(
           await appendWalletEntry(tx, wallet.id, {
             eventKey: `consume:${itemId}`,
             kind: "consume",
-            amount: -Number(job.unit_credits),
+            amount: -imageUnitCredits,
             userId: scope.userId,
             jobId,
             itemId,

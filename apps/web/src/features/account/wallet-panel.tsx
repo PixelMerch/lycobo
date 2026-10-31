@@ -1,4 +1,5 @@
 import { Button, Label, ListBox, Select, Table, Tabs } from "@heroui/react";
+import { imageUnitCredits } from "@lycoboai/contracts";
 import { useState } from "react";
 import { CreditCoin } from "../../components/credit-coin";
 import { InfiniteLoad } from "../../components/infinite-load";
@@ -53,7 +54,7 @@ export function WalletPanel() {
         </div>
         <div>
           <span>图片生成价格</span>
-          <strong>每张 20 币</strong>
+          <strong>每张 {imageUnitCredits} 币</strong>
         </div>
         <div>
           <span>失败结算</span>

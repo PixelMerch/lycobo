@@ -21,7 +21,7 @@ test("textile angles submit one durable ten-image job and isolate history across
         enabled: true,
         eventsEnabled: true,
         editsEnabled: true,
-        unitCredits: 20,
+        unitCredits: 2,
         models: ["gpt-image-2", "gpt-image-2.5", "nano-banana-2.1"].map((id) => ({
           id,
           enabledResolutions: ["1K", "1.5K", "2K", "4K"],

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import {
   imageGenerationInputSchema,
   imageJobSchema,
+  imageUnitCredits,
   latestImageEditResponseSchema,
   unwrapApiData,
 } from "@lycoboai/contracts";
@@ -15,7 +16,11 @@ export async function verifyLocalEdits(
   sql: postgres.Sql,
   request: (path: string, init?: RequestInit) => Promise<Response>,
 ) {
-  const owner = await repository.provision(`edit-${randomUUID()}`, "edit-fixture", 120);
+  const owner = await repository.provision(
+    `edit-${randomUUID()}`,
+    "edit-fixture",
+    6 * imageUnitCredits,
+  );
   const other = await repository.provision(`edit-other-${randomUUID()}`, "other-fixture", 40);
   const sourceId = randomUUID();
   await repository.addReference(owner, {
@@ -76,7 +81,7 @@ export async function verifyLocalEdits(
     (await request(endpoint, { headers: { Authorization: `Bearer ${other.token}` } })).status,
     404,
   );
-  assert.equal((await repository.wallet(owner)).balance, 80);
+  assert.equal((await repository.wallet(owner)).balance, 4 * imageUnitCredits);
   await assert.rejects(repository.latestEdit(other, sourceId), /NOT_FOUND/);
   await sql`insert into organization_members (organization_id,user_id,role) values (${owner.organizationId},${other.userId},'member')`;
   assert.equal(await repository.latestEdit({ ...owner, userId: other.userId }, sourceId), null);
@@ -91,7 +96,7 @@ export async function verifyLocalEdits(
     )[0]?.n,
     2,
   );
-  assert.equal((await repository.wallet(owner)).balance, 80);
+  assert.equal((await repository.wallet(owner)).balance, 4 * imageUnitCredits);
   // Failed billing rolls back task, lineage, debit and outbox together.
   await repository.create(
     owner,

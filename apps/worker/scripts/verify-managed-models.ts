@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { imageGenerationInputSchema } from "@lycoboai/contracts";
+import { imageGenerationInputSchema, imageUnitCredits } from "@lycoboai/contracts";
 import type { ImageRepository } from "@lycoboai/db";
 import {
   normalizeTextileGeneration,
@@ -237,7 +237,7 @@ export async function verifyManagedModels(
     (await repository.retry(legacyOwner, legacyJob.id, retryKey, undefined, true)).replayed,
     true,
   );
-  assert.equal((await repository.wallet(legacyOwner)).balance, 20);
+  assert.equal((await repository.wallet(legacyOwner)).balance, 40 - imageUnitCredits);
   const [upgraded] =
     await sql`select provider_snapshot from generation_jobs where id=${legacyJob.id}`;
   assert.equal(upgraded?.provider_snapshot.upstreamModel, "new-managed-image");
@@ -259,7 +259,7 @@ export async function verifyManagedModels(
   await sql`update model_catalog set enabled=1 where code='gpt-image-2'`;
   const idempotencyKey = crypto.randomUUID();
   const accepted = await repository.create(owner, input, idempotencyKey);
-  assert.equal((await repository.wallet(owner)).balance, 180);
+  assert.equal((await repository.wallet(owner)).balance, 200 - imageUnitCredits);
   let posts = 0,
     gets = 0;
   const request: typeof fetch = async (_url, init) => {
@@ -325,7 +325,7 @@ export async function verifyManagedModels(
   const surplusOwner = await repository.provision(
     `surplus-${crypto.randomUUID()}`,
     "surplus-fixture",
-    20,
+    imageUnitCredits,
   );
   const surplusJob = await repository.create(surplusOwner, input, crypto.randomUUID(), 20, true);
   const surplusItem = (await repository.get(surplusOwner, surplusJob.id))?.items[0];
@@ -374,7 +374,7 @@ export async function verifyManagedModels(
     false,
   );
   assert.equal((await repository.get(owner, accepted.id))?.status, "succeeded");
-  assert.equal((await repository.wallet(owner)).balance, 180);
+  assert.equal((await repository.wallet(owner)).balance, 200 - imageUnitCredits);
   await processImageItem(itemId, deps);
   assert.equal(posts, 1);
   assert.equal(gets, 1);
@@ -382,7 +382,7 @@ export async function verifyManagedModels(
     repository.create(owner, input, crypto.randomUUID()),
     /MODEL_CAPABILITY_UNVERIFIED/,
   );
-  assert.equal((await repository.wallet(owner)).balance, 180);
+  assert.equal((await repository.wallet(owner)).balance, 200 - imageUnitCredits);
   const audits = await sql`select id from model_audit_events where actor_id=${owner.userId}`;
   assert(audits.length >= 4);
   // v5 must never silently fall back to legacy model aliases when a route is absent.
@@ -401,7 +401,7 @@ export async function verifyManagedModels(
     repository.create(owner, textile, crypto.randomUUID()),
     /MODEL_CAPABILITY_UNVERIFIED/,
   );
-  assert.equal((await repository.wallet(owner)).balance, 180);
+  assert.equal((await repository.wallet(owner)).balance, 200 - imageUnitCredits);
   await repository.models.saveProvider(
     owner.userId,
     provider.id,
@@ -435,7 +435,7 @@ export async function verifyManagedModels(
   const textileKey = crypto.randomUUID();
   const textileJob = await repository.create(owner, textile, textileKey);
   assert.equal((await repository.create(owner, textile, textileKey)).replayed, true);
-  assert.equal((await repository.wallet(owner)).balance, 140);
+  assert.equal((await repository.wallet(owner)).balance, 200 - 3 * imageUnitCredits);
   const textileItems = (await repository.get(owner, textileJob.id))?.items ?? [];
   let textilePosts = 0,
     textilePolls = 0;
@@ -482,7 +482,7 @@ export async function verifyManagedModels(
   assert.equal(textilePosts, 2);
   assert.equal(textilePolls, 2);
   assert.equal((await repository.get(owner, textileJob.id))?.status, "succeeded");
-  assert.equal((await repository.wallet(owner)).balance, 140);
+  assert.equal((await repository.wallet(owner)).balance, 200 - 3 * imageUnitCredits);
   const traced =
     await sql`select provider,provider_request_id from generation_job_items where job_id=${textileJob.id}`;
   assert(
@@ -495,7 +495,7 @@ export async function verifyManagedModels(
   const geminiOwner = await repository.provision(
     `gemini-${crypto.randomUUID()}`,
     "gemini-fixture",
-    40,
+    2 * imageUnitCredits,
   );
   const geminiSettings = {
     name: "Gemini fixture",
@@ -565,7 +565,7 @@ export async function verifyManagedModels(
       .replayed,
     true,
   );
-  assert.equal((await repository.wallet(protocolOwner)).balance, 20);
+  assert.equal((await repository.wallet(protocolOwner)).balance, 40 - imageUnitCredits);
   const retriedProtocolItem = (await repository.get(protocolOwner, protocolJob.id))?.items[0];
   assert(retriedProtocolItem);
   await processImageItem(retriedProtocolItem.id, {
@@ -657,7 +657,11 @@ export async function verifyManagedModels(
   for (const upstreamModel of ["grok-imagine-image-2.0", "seedream-5.0-pro"]) {
     const grokModel = `managed-${upstreamModel}`;
     await sql`insert into model_catalog(code,name,category,enabled) values (${grokModel},'Grok fixture','image',1)`;
-    const grokOwner = await repository.provision(`grok-${crypto.randomUUID()}`, "grok-fixture", 40);
+    const grokOwner = await repository.provision(
+      `grok-${crypto.randomUUID()}`,
+      "grok-fixture",
+      2 * imageUnitCredits,
+    );
     const grokChannel = await repository.models.saveChannel(owner.userId, undefined, {
       ...geminiSettings,
       name: "Grok fixture",

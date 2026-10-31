@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import {
   enterpriseLoginResponseSchema,
   imageJobSchema,
+  imageUnitCredits,
   unwrapApiData,
   variationPlanSchema,
   walletBalanceSchema,
@@ -323,7 +324,7 @@ export async function verifyCloudflareApi() {
     const wallet = walletBalanceSchema.parse(
       unwrapApiData(await (await request("/wallet")).json()),
     );
-    assert.equal(wallet.balance, 180);
+    assert.equal(wallet.balance, 200 - imageUnitCredits);
     assert.equal((await request("/auth/refresh", { method: "POST" })).status, 200);
     assert.equal((await request("/auth/logout", { method: "POST" })).status, 200);
     assert.equal((await request("/auth/session")).status, 401);

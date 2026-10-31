@@ -66,7 +66,7 @@ for (const { stored, id, name } of [
         json: apiFixture({
           enabled: true,
           editsEnabled: true,
-          unitCredits: 20,
+          unitCredits: 2,
           models: [{ id, enabledResolutions: ["1K", "1.5K"] }],
         }),
       }),

@@ -9,6 +9,7 @@ import {
   imageAssetsResponseSchema,
   imageGenerationInputSchema,
   imageJobSchema,
+  imageUnitCredits,
   rechargeOrdersSchema,
   unwrapApiData,
   walletBalanceSchema,
@@ -122,13 +123,13 @@ async function dispatch() {
   await dispatchImageOutbox(repository, { send: consume });
 }
 try {
-  const first = await repository.provision(`test-${runId}`, "test-team", 400);
+  const first = await repository.provision(`test-${runId}`, "test-team", 20 * imageUnitCredits);
   const renewed = await repository.provision(`test-${runId}`, "test-team", 999, true);
   assert.equal(renewed.organizationId, first.organizationId);
   assert.equal((await repository.authenticate(renewed.token))?.userId, first.userId);
   organizations.push(first.organizationId);
   users.push(first.userId);
-  const second = await repository.provision(`other-${runId}`, "other-team", 200);
+  const second = await repository.provision(`other-${runId}`, "other-team", 10 * imageUnitCredits);
   assert.equal(await repository.storageUid(first), first.uid);
   await assert.rejects(
     repository.storageUid({ userId: first.userId, organizationId: second.organizationId }),
@@ -237,7 +238,7 @@ try {
   assert.notEqual(listedOutput?.public_id, listedOutput?.task_public_id);
   const balance =
     await sql`select balance as available_credits from organization_wallets where organization_id=${first.organizationId}`;
-  assert.equal(balance[0]?.available_credits, 380);
+  assert.equal(balance[0]?.available_credits, 19 * imageUnitCredits);
   await consume({ version: 1, itemId: String(success.id) });
   assert.equal(calls, 2);
   const persisted = openImageRepository(databaseUrl);
@@ -255,7 +256,7 @@ try {
   const held = (
     await sql`select balance as available_credits from organization_wallets where organization_id=${first.organizationId}`
   )[0]?.available_credits;
-  assert.equal(held, 360);
+  assert.equal(held, 18 * imageUnitCredits);
   await repository.reconcile(
     first,
     unknown.id,
@@ -275,7 +276,7 @@ try {
     (
       await sql`select balance as available_credits from organization_wallets where organization_id=${first.organizationId}`
     )[0]?.available_credits,
-    380,
+    19 * imageUnitCredits,
   );
   const apiKey = crypto.randomUUID();
   const apiSubmission = () => ({
@@ -508,8 +509,11 @@ try {
     3,
   );
   // Retry the already-reserved idempotency key even when the available balance has become zero.
-  while ((await repository.wallet(first)).balance >= 20) {
-    const count = Math.min(4, Math.floor((await repository.wallet(first)).balance / 20));
+  while ((await repository.wallet(first)).balance >= imageUnitCredits) {
+    const count = Math.min(
+      4,
+      Math.floor((await repository.wallet(first)).balance / imageUnitCredits),
+    );
     await repository.create(first, input("exhaust-fixture", count), crypto.randomUUID());
   }
   assert.equal((await repository.create(first, input("mixed", 2), key, 1)).replayed, true);

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { imageGenerationInputSchema } from "@lycoboai/contracts";
+import { imageGenerationInputSchema, imageUnitCredits } from "@lycoboai/contracts";
 import { openImageRepository } from "@lycoboai/db";
 import { standaloneModels } from "@lycoboai/generation";
 import type postgres from "postgres";
@@ -33,7 +33,7 @@ export async function verifyStandaloneModels(url: string, sql: postgres.Sql) {
     const [row] = await sql`select provider_snapshot from generation_jobs where id=${task.id}`;
     assert.equal(row?.provider_snapshot.upstreamModel, "gpt-image-2.5-sunburst");
     assert.equal(JSON.stringify(row?.provider_snapshot).includes("fixture-image"), false);
-    assert.equal((await repository.wallet(owner)).balance, 180);
+    assert.equal((await repository.wallet(owner)).balance, 200 - imageUnitCredits);
     const [outbox] =
       await sql`select count(*)::int as count from generation_outbox o join generation_job_items i on i.id=o.item_id where i.job_id=${task.id}`;
     assert.equal(outbox?.count, 1);

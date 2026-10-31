@@ -33,7 +33,7 @@ export async function mockImageApi(page: Page) {
       body = {
         enabled: true,
         editsEnabled: true,
-        unitCredits: 20,
+        unitCredits: 2,
         models: modelNames.map((id) => ({
           id,
           enabledResolutions: ["1K", "1.5K", "2K", "4K"],
@@ -44,7 +44,7 @@ export async function mockImageApi(page: Page) {
     else if (path.endsWith("/image-assets") && route.request().method() === "POST")
       body = { id: crypto.randomUUID(), width: 2, height: 2, bytes: 100, mimeType: "image/png" };
     else if (path.endsWith("/latest-edit")) body = { job: null };
-    else if (path.endsWith("/wallet")) body = { balance: 200, unitCredits: 20 };
+    else if (path.endsWith("/wallet")) body = { balance: 200, unitCredits: 2 };
     else if (path.startsWith("/api/v1/wallet/")) body = { data: [] };
     else if (path.endsWith("/image-tasks") || path.endsWith("/image-assets")) body = { data: [] };
     await route.fulfill({ json: apiFixture(body) });

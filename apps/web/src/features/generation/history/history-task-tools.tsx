@@ -139,7 +139,7 @@ export function HistoryTaskActions({
             .length,
         )
       : job.requested_count;
-  const unitCredits = retrying ? (job.unit_credits ?? imageUnitCredits) : imageUnitCredits;
+  const unitCredits = imageUnitCredits;
   const regenerateContent = `本次消耗 ${count * unitCredits} 积分${
     upgradeTextile ? "。使用最新裂变配置创建新任务，原记录保留。" : ""
   }`;

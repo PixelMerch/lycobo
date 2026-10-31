@@ -138,7 +138,7 @@ export type StoredImage = {
 // Public choices are separate from provider aliases retained for historical tasks.
 export const publicImageModelIds = ["gpt-image-2", "gpt-image-2.5", "nano-banana-2.1"] as const;
 export type PublicImageModelId = string;
-export const imageUnitCredits = 20;
+export const imageUnitCredits = 2;
 export function publicImageModel(model: ImageGenerationInput["model"]): PublicImageModelId {
   if (model === "gemini-nano-banana-2.1") return "nano-banana-2.1";
   if (model === "gpt-image-2-4K") return "gpt-image-2";

@@ -154,7 +154,7 @@ it.each([
       provider,
     );
   }
-  expect(readImagePolicy({ IMAGE_CREDITS_PER_IMAGE: "1" }).unitCredits).toBe(20);
+  expect(readImagePolicy({ IMAGE_CREDITS_PER_IMAGE: "1" }).unitCredits).toBe(2);
 });
 
 it("separates response-header wait from response-body download without logging payloads", async () => {

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import {
   imageGenerationInputSchema,
+  imageUnitCredits,
   unwrapApiData,
   variationPlanSchema,
 } from "@lycoboai/contracts";
@@ -115,7 +116,7 @@ export async function verifyVariationPlans(
   const key = crypto.randomUUID();
   const created = await repository.create(owner, generation, key);
   assert.equal((await repository.create(owner, generation, key)).replayed, true);
-  assert.equal((await repository.wallet(owner)).balance, 800);
+  assert.equal((await repository.wallet(owner)).balance, 1000 - 10 * imageUnitCredits);
   const job = await repository.get(owner, created.id);
   assert.ok(job);
   assert.equal(job.items.length, 10);
@@ -149,7 +150,7 @@ export async function verifyVariationPlans(
   assert.equal(calls, beforeReplay);
   assert.equal(
     (await repository.wallet(owner)).balance,
-    800,
+    1000 - 10 * imageUnitCredits,
     "Uncertain analysis must not debit image credits",
   );
   await sql`delete from model_planners where tool='smart-variation'`;

@@ -110,7 +110,7 @@ it.each(["low", "medium", "high"])(
     expect(response.status).toBe(202);
     expect(unwrapApiData(await response.json())).toMatchObject({ replayed: false });
     expect(create.mock.calls[0]?.[1]).toMatchObject({ quality });
-    expect(create.mock.calls[0]?.[3]).toBe(20);
+    expect(create.mock.calls[0]?.[3]).toBe(2);
   },
 );
 it("rejects unknown quality before creating a task and accepts legacy omitted quality", async () => {
@@ -131,7 +131,7 @@ it("advertises and enforces the same per-model resolution policy", async () => {
     "gpt-image-2.5",
     "nano-banana-2.1",
   ]);
-  expect(body.unitCredits).toBe(20);
+  expect(body.unitCredits).toBe(2);
   for (const model of body.models) {
     const expected = ["1K", "1.5K", "2K", "4K"];
     expect(model.enabledResolutions).toEqual(expected);
