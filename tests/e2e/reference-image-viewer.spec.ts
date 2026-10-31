@@ -164,6 +164,7 @@ test("reference viewer stacks over result details and remains usable on mobile",
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await references(page, 1);
+  await page.getByRole("radio", { name: "历史记录", exact: true }).click();
   await page.getByRole("button", { name: "预览图片 1", exact: true }).click();
   const details = page.getByRole("dialog", { name: "图片预览", exact: true });
   const reference = details.getByRole("button", { name: "查看参考图片 1", exact: true });
@@ -252,7 +253,7 @@ test("thumbnail navigation keeps a fixed rail, resets transforms and never wraps
   await expect(focusedThumbnail).toBeFocused();
   await expect(focusedThumbnail).toHaveAttribute("aria-current", "true");
   await expect(focusedThumbnail).toHaveCSS("outline-style", "none");
-  await expect(focusedThumbnail).toHaveCSS("box-shadow", "rgb(4, 133, 247) 0px 0px 0px 2px inset");
+  await expect(focusedThumbnail).toHaveCSS("box-shadow", "rgb(168, 255, 0) 0px 0px 0px 2px inset");
 });
 
 test("image loading keeps browsing controls hidden and leaves a stable close action", async ({

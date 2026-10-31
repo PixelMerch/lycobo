@@ -106,11 +106,12 @@ test("edit directly restores the original references and parameters over an exis
     "aria-checked",
     "true",
   );
-  await expect(page.getByRole("button", { name: /创作模型/ })).toContainText(input.model);
+  await expect(page.getByRole("button", { name: /创作模型/ })).toContainText("Image 2.5");
   await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("我的新草稿");
   await edit.click();
-  const dialog = page.getByRole("dialog", { name: "替换当前草稿？", exact: true });
-  await expect(dialog).toHaveCount(0);
+  const dialog = page.getByRole("dialog", { name: "载入这次创作？", exact: true });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "载入", exact: true }).click();
   await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(input.prompt);
 });
 
@@ -120,7 +121,7 @@ test("edited history references and prompt survive all model switches", async ({
   const composer = page.getByRole("region", { name: "创作设置", exact: true });
   const reference = composer.locator(".reference-tile img").first();
   const source = await reference.getAttribute("src");
-  for (const model of ["nano-banana-2.1", "gpt-image-2", "gpt-image-2.5"]) {
+  for (const model of ["Banana 2.1", "Image 2", "Image 2.5"]) {
     await page.getByRole("button", { name: /创作模型/ }).click();
     await page.getByRole("option", { name: model, exact: true }).click();
     await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(input.prompt);
@@ -135,10 +136,10 @@ test("edited history references and prompt survive all model switches", async ({
     );
   }
   await page.getByRole("button", { name: /创作模型/ }).click();
-  await page.getByRole("option", { name: "nano-banana-2.1", exact: true }).click();
+  await page.getByRole("option", { name: "Banana 2.1", exact: true }).click();
   await page.getByRole("radio", { name: "4K", exact: true }).click();
   await page.getByRole("button", { name: /创作模型/ }).click();
-  await page.getByRole("option", { name: "gpt-image-2.5", exact: true }).click();
+  await page.getByRole("option", { name: "Image 2.5", exact: true }).click();
   await expect(page.getByRole("radio", { name: "4K", exact: true })).toHaveAttribute(
     "aria-checked",
     "true",
@@ -155,7 +156,7 @@ test("regenerate submits the original snapshot once and leaves the composer draf
   await page.route("**/api/v1/image-tasks", async (route) => {
     if (route.request().method() !== "POST") return route.fallback();
     requests++;
-    expect(route.request().postDataJSON()).toEqual(input);
+    expect(route.request().postDataJSON()).toEqual({ ...input, resolution: "1.5K" });
     await route.fulfill({ status: 202, json: { id: crypto.randomUUID(), replayed: false } });
   });
   await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("不要覆盖我的草稿");

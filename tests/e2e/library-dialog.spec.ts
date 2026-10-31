@@ -136,13 +136,10 @@ test("history rail heading opens the full-screen asset library", async ({ page }
   await dialog.getByRole("button", { name: "关闭我的素材", exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
-  await entry.click();
-  const box = await dialog.boundingBox();
-  expect(box?.width).toBeCloseTo(390, 0);
-  expect(box?.height).toBeCloseTo(844, 0);
+  await page.getByRole("button", { name: "打开导航", exact: true }).click();
+  await page.locator(".mobile-nav").getByRole("link", { name: "素材库", exact: true }).click();
+  await expect(page).toHaveURL(/\/assets$/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await dialog.getByRole("button", { name: "关闭我的素材", exact: true }).click();
-  await page.goto("/assets");
   await expect(page.locator(".asset-grid .case-card")).toHaveCount(1);
   await expect(page.locator(".asset-card-details")).toContainText("Image 2.5");
   await expect(page.locator(".asset-card-details")).not.toContainText("gpt-image-2.5-sunburst");

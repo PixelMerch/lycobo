@@ -4,19 +4,19 @@ test("workspace entry opens creation and the categorized tool selector", async (
   await page.goto("/");
   await page.getByRole("link", { name: "工作区", exact: true }).click();
   await expect(page).toHaveURL(/\/create$/);
-  await page.getByRole("button", { name: "主图制作 切换", exact: true }).click();
+  await page.getByRole("button", { name: "全部工具", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "选择工具" });
   await dialog.getByRole("button", { name: /^主图制作/ }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.getByLabel("制作要求", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: /^生成商品主图/ })).toBeDisabled();
 });
 
-test("old entry links recover to current home; unknown model is rejected", async ({ page }) => {
+test("old entry links recover to current home; malformed model is rejected", async ({ page }) => {
   await page.goto("/design/canvas?task=demo-skin");
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("heading", { name: "为你的商品，创作下一张好图" })).toBeVisible();
-  await page.goto("/create/not-a-model");
+  await page.goto("/create/not%20a%20model");
   await expect(page.getByRole("heading", { name: "页面暂时无法打开" })).toBeVisible();
 });
 

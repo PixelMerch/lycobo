@@ -499,7 +499,7 @@
   grid-column: 2;
   grid-row: 2;
 }
-.unified-workspace > .results-panel:has(> .generation-empty-state) {
+:where(.unified-workspace) > .results-panel:has(> .generation-empty-state) {
   display: grid;
   place-items: center;
   padding-block: 0;

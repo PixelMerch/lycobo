@@ -11,7 +11,7 @@ const png = Buffer.from(
   "base64",
 );
 
-test("textile angles submit one durable ten-image job and share history across tools", async ({
+test("textile angles submit one durable ten-image job and isolate history across tools", async ({
   page,
 }) => {
   await mockImageEvents(page);
@@ -157,12 +157,12 @@ test("textile angles submit one durable ten-image job and share history across t
   await page.getByRole("button", { name: "重新编辑", exact: true }).click();
   await expect(page.locator(".textile-selected-view")).toHaveCount(10);
   await expect(page.locator(".reference-tile")).toHaveCount(6);
-  await page.getByRole("button", { name: "家纺套图 切换", exact: true }).click();
+  await page.getByRole("button", { name: "全部工具", exact: true }).click();
   await page
     .getByRole("dialog", { name: "选择工具" })
     .getByRole("button", { name: /^主图制作/ })
     .click();
-  await expect(page.locator(".generation-job")).toHaveCount(1);
+  await expect(page.locator(".generation-job")).toHaveCount(0);
 });
 
 test("textile submission keeps its idempotency key after a lost response and reload", async ({

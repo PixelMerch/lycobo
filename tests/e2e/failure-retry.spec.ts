@@ -44,7 +44,11 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     await page.route("**/api/v1/image-tasks**", async (route) => {
       if (route.request().method() === "POST") {
         expect(new URL(route.request().url()).pathname).toBe(`/api/v1/image-tasks/${job.id}/retry`);
-        expect(route.request().postDataJSON()).toEqual({ ...input, quality: "medium" });
+        expect(route.request().postDataJSON()).toEqual({
+          ...input,
+          quality: "medium",
+          resolution: "1.5K",
+        });
         submissions.push(route.request().headers()["idempotency-key"] ?? "");
         return route.fulfill({
           status: 202,

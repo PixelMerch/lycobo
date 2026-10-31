@@ -40,7 +40,9 @@ for (const width of [390, 1440]) {
       const tool = new URL(route.request().url()).searchParams.get("tool");
       requested.push(tool ?? "all");
       await route.fulfill({
-        json: apiFixture({ data: tool === "textile" ? textileJobs : createJobs }),
+        json: apiFixture({
+          data: tool === "textile" ? textileJobs : tool === "variation" ? [] : createJobs,
+        }),
       });
     });
     await page.setViewportSize({ width, height: 900 });

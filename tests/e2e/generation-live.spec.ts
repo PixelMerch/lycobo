@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
 import type { ImageGenerationInput, ImageJob } from "../../packages/contracts/src/image-generation";
-import { mockImageApi, mockImageEvents, modelNames } from "./image-api-fixture";
+import { mockImageApi, mockImageEvents, modelDisplayNames, modelNames } from "./image-api-fixture";
 
 const png = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
   "base64",
 );
 
-test("three public models submit at 1.5K, queued results become durable history and library assets", async ({
+test("four public models submit at 1.5K, queued results become durable history and library assets", async ({
   page,
 }) => {
   await mockImageEvents(page);
@@ -86,7 +86,12 @@ test("three public models submit at 1.5K, queued results become durable history 
   await page.goto("/create");
   for (const model of modelNames) {
     await page.getByRole("button", { name: /创作模型/ }).click();
-    await page.getByRole("option", { name: model, exact: true }).click();
+    await page
+      .getByRole("option", {
+        name: modelDisplayNames[modelNames.indexOf(model)] ?? model,
+        exact: true,
+      })
+      .click();
     await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill(`陶瓷杯 ${model}`);
     await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
     await expect(page.locator(".generation-job")).toHaveCount(submissions.length);

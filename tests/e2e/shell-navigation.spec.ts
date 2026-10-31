@@ -7,7 +7,7 @@ test("workspace navigation remains compact and aligned across desktop and mobile
   await mockImageApi(page);
   await page.setViewportSize({ width: 1584, height: 993 });
   await page.goto("/create");
-  const prompt = page.getByLabel("制作要求", { exact: true });
+  const prompt = page.getByLabel("提示词", { exact: true });
   await prompt.fill("保留这份商品创作草稿");
   const rows = page.locator(".sidebar nav .nav-row");
   await expect(rows).toHaveText(["首页", "工作区", "素材库"]);

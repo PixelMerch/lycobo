@@ -121,6 +121,7 @@ test("touch users can regenerate a failed image without hovering", async ({ brow
       route.fulfill({ json: apiFixture({ data: [job] }) }),
     );
     await page.goto("/create");
+    await page.getByRole("radio", { name: "历史记录", exact: true }).click();
     const card = page.locator(".generation-placeholder");
     await expect(card.locator(".generation-retry-overlay")).toHaveCSS("opacity", "1");
     const action = card.getByRole("button", { name: "重新生成第 1 张", exact: true });

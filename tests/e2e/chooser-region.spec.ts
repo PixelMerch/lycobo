@@ -4,9 +4,10 @@ import { mockImageApi } from "./image-api-fixture";
 for (const width of [390, 1440, 1920]) {
   test(`tool selector fits ${width}px and restores keyboard focus`, async ({ page }) => {
     await mockImageApi(page);
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/create");
-    const trigger = page.getByRole("button", { name: "主图制作 切换", exact: true });
+    const trigger = page.getByRole("button", { name: "全部工具", exact: true });
     await trigger.click();
     const dialog = page.getByRole("dialog", { name: "选择工具" });
     await expect(dialog).toBeVisible();
@@ -49,7 +50,7 @@ for (const width of [390, 1440, 1920]) {
     if (width < 768) {
       await page.getByRole("radio", { name: "历史记录", exact: true }).click();
       await expect(page.getByRole("region", { name: "工作区历史记录" })).toBeVisible();
-      await expect(trigger).toBeHidden();
+      await expect(trigger).toBeVisible();
       await page.getByRole("radio", { name: "创作", exact: true }).click();
       await expect(trigger).toBeVisible();
       expect((await page.locator(".main-content").boundingBox())?.x).toBe(0);

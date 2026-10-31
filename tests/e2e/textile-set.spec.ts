@@ -19,7 +19,7 @@ test("textile form has only required product inputs and retains confirmed choice
   await expect(page.getByLabel("主图文件", { exact: true })).not.toHaveAttribute("multiple");
   await expect(page.getByLabel("详情图文件", { exact: true })).toHaveAttribute("multiple", "");
   await expect(page.getByLabel("详情图文件", { exact: true })).not.toHaveAttribute("required");
-  await expect(page.locator(".workspace-fixed-model")).toContainText("固定");
+  await expect(page.locator(".workspace-fixed-model")).toHaveCount(0);
   for (const label of ["质量", "生成张数", "提示词"])
     await expect(form.getByText(label, { exact: true })).toHaveCount(0);
   await page
@@ -65,12 +65,12 @@ test("textile form has only required product inputs and retains confirmed choice
   await ratios.getByRole("button", { name: "下一页画面比例", exact: true }).click();
   await ratios.getByRole("radio", { name: "3:4", exact: true }).click();
   await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeEnabled();
-  await page.getByRole("button", { name: "家纺套图 切换", exact: true }).click();
+  await page.getByRole("button", { name: "全部工具", exact: true }).click();
   await page
     .getByRole("dialog", { name: "选择工具" })
     .getByRole("button", { name: /^主图制作/ })
     .click();
-  await page.getByRole("button", { name: "主图制作 切换", exact: true }).click();
+  await page.getByRole("button", { name: "全部工具", exact: true }).click();
   await page
     .getByRole("dialog", { name: "选择工具" })
     .getByRole("button", { name: /^家纺套图/ })
@@ -111,7 +111,7 @@ test("view reset and dismiss do not overwrite the confirmed selection", async ({
     "true",
   );
   await dialog.getByRole("button", { name: "正面", exact: true }).click();
-  await page.getByRole("heading", { name: "历史记录", exact: true }).click();
+  await page.locator(".workspace-composer-title").click();
   await expect(dialog).toBeHidden();
   await expect(page.locator(".textile-selected-name")).toHaveText(["枕头特写"]);
   await opener.click();
@@ -176,7 +176,9 @@ for (const width of [2560, 1440, 390]) {
     await expect(page.getByRole("region", { name: "工作区历史记录", exact: true })).toBeVisible({
       visible: width >= 768,
     });
-    await expect(page.getByRole("complementary", { name: "历史索引", exact: true })).toBeVisible({
+    await expect(
+      page.getByRole("complementary", { name: "家纺主图裂变历史索引", exact: true }),
+    ).toBeVisible({
       visible: width >= 768,
     });
     await page.getByRole("button", { name: "选择裂变类型", exact: true }).click();
@@ -210,7 +212,7 @@ for (const width of [2560, 1440, 390]) {
     }
     if (width > 1300) {
       const railBox = await page
-        .getByRole("complementary", { name: "历史索引", exact: true })
+        .getByRole("complementary", { name: "家纺主图裂变历史索引", exact: true })
         .boundingBox();
       expect(box && railBox && box.x + box.width <= railBox.x).toBeTruthy();
       await expect(page.getByRole("button", { name: "打开素材库", exact: true })).toBeInViewport();
