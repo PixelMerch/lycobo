@@ -3,6 +3,7 @@ import { openCloudBaseImageRepository } from "@lycoboai/db";
 import { readImagePolicy, standaloneModels } from "@lycoboai/generation";
 import { cloudbaseObjectBucket } from "@lycoboai/storage/cloudbase";
 import { objectImageStore } from "@lycoboai/storage/object-images";
+import { drainCloudBaseOutbox } from "./cloudbase-outbox";
 import { processImageItem } from "./image-processor";
 
 /** Event/timer invocation owns the whole execution; no paid work in API handlers. */
@@ -16,7 +17,6 @@ export async function main() {
   if (!independent) throw new Error("CLOUDBASE_STANDALONE_MODELS_REQUIRED");
   const repository = openCloudBaseImageRepository(process.env, independent);
   const store = objectImageStore(cloudbaseObjectBucket(process.env), repository.storageUid);
-  let processed = 0;
   const stopStartingAt = Date.now() + 7 * 60 * 1000;
   try {
     await repository.expireClaims();
@@ -29,26 +29,21 @@ export async function main() {
         console.error("REFERENCE_CLEANUP_FAILED", asset.id);
       }
     }
-    const leased = await repository.leaseOutbox();
-    for (let index = 0; index < leased.length; index += 2) {
-      // Leave unstarted intents durable; their leases expire for a later invocation.
-      if (Date.now() >= stopStartingAt) break;
-      await Promise.all(
-        leased.slice(index, index + 2).map(async (entry) => {
-          await processImageItem(entry.itemId, {
-            repository,
-            store,
-            workerId: `cloudbase:${randomUUID()}`,
-            modelSecret: process.env.MODEL_CREDENTIAL_SECRET,
-            standaloneKey: process.env.STANDALONE_IMAGE_API_KEY,
-            overrides: policy.overrides,
-            editsEnabled: policy.editsEnabled,
-          });
-          await repository.ackOutbox(entry.id, entry.leaseToken);
-          processed++;
+    const processed = await drainCloudBaseOutbox({
+      repository,
+      stopStartingAt,
+      process: (itemId, onDeferred) =>
+        processImageItem(itemId, {
+          repository,
+          store,
+          workerId: `cloudbase:${randomUUID()}`,
+          modelSecret: process.env.MODEL_CREDENTIAL_SECRET,
+          standaloneKey: process.env.STANDALONE_IMAGE_API_KEY,
+          overrides: policy.overrides,
+          editsEnabled: policy.editsEnabled,
+          onDeferred,
         }),
-      );
-    }
+    });
     return { enabled: true, processed };
   } finally {
     await repository.close();
