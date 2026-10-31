@@ -1,6 +1,6 @@
 # CloudBase 共享 PG 迁移设计草案
 
-状态：待确认、未实现。需求见 [requirements.md](requirements.md)。这是共享数据库约束下的工程方案，不代表现有系统已经兼容 CloudBase。
+状态：按用户要求先完成数据库快照复制，应用运行适配未实施。需求见 [requirements.md](requirements.md)，数据库执行结果见 [复制记录](../../docs/cloudbase-database-migration.md)。这是共享数据库约束下的工程方案，不代表现有系统已经兼容 CloudBase。
 
 ## 访问边界
 

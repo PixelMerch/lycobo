@@ -14,6 +14,7 @@
 | apps/worker/src | 队列消费者、生命周期与任务执行 |
 | packages/contracts | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖 |
 | packages/db | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY |
+| cloudbase/migrations | CloudBase 共享 PG 的源库结构基线与约束恢复；原 Drizzle 历史随数据复制保留 |
 | packages/queue | ID-only 消息契约、持久 outbox 投递、开发专用 HTTP sender；线上使用 Cloudflare Queues |
 | packages/generation | 服务商契约、Vakv 同步兼容、可配置 OpenAI／FluxPort 同异步适配与密钥加密（真实渠道待验收） |
 | packages/storage | 私有对象存储接口、统一 S3 配置/寻址、可选历史 R2 回退、UID 路径和 Images 变体；Node 本地存储供隔离测试 |
@@ -87,6 +88,8 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 ## 部署
 
 同一仓库管理 Pages、Hono API Worker、Queues 消费者。API 与消费者共用 R2、Images 和关闭查询缓存的 Hyperdrive，数据库为 Supabase。`scripts/cloudflare` 提供资源准备、受限秘密上传与顺序部署；配置、测试和远端实际状态分别记录，见 [Cloudflare 部署](docs/cloudflare-deployment.md)。
+
+2026-10-31 已将 Supabase 的 `public`、`drizzle` 结构与数据快照复制到 CloudBase 个人版共享 PG，43 张表、1,156 行及关联结构通过校验。现有应用、消费者和独立 admin 仍连接源库；尚未实现共享 PG 运行仓储或迁移图片，不能将该数据副本视为应用已上线。实际执行、权限和后续切换边界见 [CloudBase 数据迁移](docs/cloudbase-database-migration.md)。
 
 ## 生图服务端接入
 
