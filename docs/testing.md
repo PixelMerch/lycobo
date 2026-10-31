@@ -136,3 +136,5 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
 ## CloudBase 共享 PG 鉴权事务
 
 根 `pnpm test:integration` 已包含 `@lycoboai/db test:cloudbase-auth`。该检查只接受显式允许的 loopback PostgreSQL，每次新建独立数据库并执行完整迁移链和 CloudBase 鉴权 RPC，验证条件会话创建、并发刷新单次使用、改密原子撤销会话及匿名/普通登录角色拒绝执行服务端函数。无需 CloudBase 生产凭据，不写远端业务数据。
+
+`@lycoboai/api test:cloudbase-images` 在独立临时库加载图片 RPC 及后续追加迁移，覆盖提交/claim/outbox 并发、扣费、退款、幂等、旧执行隔离与跨组织访问。计划 ready 后还会实际确认一张裂变图片，检查仅一笔扣费和一条 outbox、同键重放不重复收费，确定失败后退款；不仅验证计划生成。该回归已先复现 SQLSTATE 42702，再验证 `20261031235900_variation_plan_confirmation.sql` 修复。运行仍需显式 loopback DATABASE_URL 和 ALLOW_LOCAL_INTEGRATION=true，不调用付费供应商。
