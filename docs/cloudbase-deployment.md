@@ -1,6 +1,6 @@
 # CloudBase 自动部署与私有图片存储
 
-更新：2026-10-31。目标为上海个人版环境 `lycobo-d9gyvxkegc54a1257`，不升级套餐。
+更新：2026-11-01。目标为上海个人版环境 `lycobo-d9gyvxkegc54a1257`，不升级套餐。主站三个功能已实际生图并保存私有云存储，API/消费者生图开关和每分钟定时触发均已启用，见 [真实验收记录](cloudbase-runtime-migration.md#当前真实验收)。
 
 ## GitHub 自动发布
 
@@ -29,7 +29,7 @@ GitHub 已创建 `cloudbase-production` Environment，仅允许 main 部署。�
 
 Secrets 仅在发布登录步骤注入，不传入前端构建；任务结束后执行 CLI logout。代码进入 main、Secrets 配置完成并实际运行前，不能宣称 GitHub 自动发布已跑通。本地提交不会自动推送或触发发布。
 
-GitHub 已确认存在两个 Secret 名称，但平台不允许读取其原值，因此尚未验证值是否正确。`TCB_SECRET_ID` 应为腾讯云 AKID 开头的 SecretId；工作流会提前拒绝将服务端存储 API Key 误填为发布身份的情况。控制台中的 `lycobo-private-storage` 资源 API Key 不用于这两个发布 Secret。
+GitHub 中的两个 Secret 已通过实际 MCP 认证和函数查询；GitHub 不允许读取原值，代码发布权限仍须以实际发布结果验证。`TCB_SECRET_ID` 应为腾讯云 AKID 开头的 SecretId；工作流会提前拒绝将服务端存储 API Key 误填为发布身份的情况。控制台中的 `lycobo-private-storage` 资源 API Key 不用于这两个发布 Secret。
 
 ## 主站私有图片
 
@@ -49,7 +49,7 @@ CLOUDBASE_APIKEY=<server-api-key>
 
 `cloudbase-object-bucket.ts` 实现已实测的 PG HEAD/GET/PUT/DELETE，固定目标网关、30 秒超时、不跟随重定向、错误脱敏。一旦配置 CloudBase，404、鉴权错误、超时或服务故障均不会回退旧 R2/S3，避免已删除素材重新出现。
 
-Node API 的 `object-image-store.ts` 使用 Sharp 完成解码校验、去元数据、PNG 原图和展示变体生成，无需 Cloudflare Images。付费原图先落盘到私有云存储，变体失败保留原图。旧运行时源文件也接入同一存储选择逻辑；CloudBase API、消费者和资源服务已部署并验证，正式生图仍关闭。
+Node API 的 `object-image-store.ts` 使用 Sharp 完成解码校验、去元数据、PNG 原图和展示变体生成，无需 Cloudflare Images。付费原图先落盘到私有云存储，变体失败保留原图。旧运行时源文件也接入同一存储选择逻辑；CloudBase 三功能已开启并真实验收，正式域名尚未切换。
 
 ## Cloudflare 退出边界
 
@@ -57,7 +57,7 @@ Node API 的 `object-image-store.ts` 使用 Sharp 完成解码校验、去元数
 
 workerd/Miniflare、旧运行时源码和 `scripts/cloudflare` 剩余文件仅用于隔离开发/回归及尚未完成的运行时迁移。本地配置从无 account_id、生产队列或 Cron 的模板生成，保留原本地存储名称和已有数据。本地启动丢弃 CloudBase、腾讯云及旧 Cloudflare 的远端凭据。
 
-远端旧服务和对象没有删除，源数据库没有切换。共享 PG 仓储/RPC、独立消费者和资源服务代码已实现；已通过原始文件引用方式完成部署验收；正式切换仍需域名备案、最终同步及旧端停写；静态站发布成功不能替代这些工作。
+远端旧资源、源库和对象保留供回溯，旧 API/消费者的生成开关已关闭。新站主站业务读写使用共享 PG、独立消费者和资源服务；三个功能已实际生成并存储图片。独立 admin 未接入目标，正式域名仍需备案和解析，不能据此宣称域名已切换。
 
 ## 验证与状态
 
@@ -85,3 +85,5 @@ MCP 安装在登录前的独立步骤完成（5 分钟上限），发布进程�
 本地已用同一两段式入口实际更新三个服务并确认 Active，三个临时代码对象已删除。针对 URL/桶/用途校验、错误脱敏、上传失败重试和代码提交顺序的专项测试通过。新工作流仍需 GitHub 实际运行验证。
 
 GitHub 第三轮发布已确认 MCP 启动和认证成功，但单次 PUT 连续三次在 90 秒超时；随后改为上述分块上传。本地已通过该路径再次更新三个服务，云端变量和定时器保留。GitHub 分块发布结果须以实际 Actions 运行结论为准。
+
+静态托管使用 `tcb hosting deploy .` 的默认根路径。CLI 3.8.11 显式传 `/` 会在一致性校验中保留前导斜杠，误报全部 missing 并回滚；省略该参数后本地 94 文件发布成功，verified=true、failedCount=0。保留 --safe --verify，不通过关闭校验绕过问题。执行目录必须是独立发布目录，不能用 --cwd 代替进程工作目录后仍传 `.`。
