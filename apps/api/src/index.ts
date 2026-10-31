@@ -23,6 +23,7 @@ import pino from "pino";
 import { createApp } from "./app";
 import { readEnv } from "./env";
 import { enterpriseAuth, readAuthConfig } from "./features/auth/service";
+import { cloudbaseConsumerWake } from "./features/images/consumer-wake";
 import { readWorkbenchSession } from "./features/images/session";
 
 const env = readEnv(process.env);
@@ -52,13 +53,24 @@ const authRepository =
       ? openAuthRepository(process.env.DATABASE_URL)
       : null;
 const auth = authRepository && authConfig ? enterpriseAuth(authRepository, authConfig) : undefined;
+// CloudBase bills a held SSE response as function time, and its feed polls keep the shared
+// PostgreSQL instance metered; browsers poll unfinished tasks instead unless explicitly enabled.
 const events =
   repository && process.env.IMAGE_EVENTS_ENABLED !== "false"
     ? cloudbaseDatabase
-      ? openCloudBaseImageEventFeed(cloudbaseDatabase)
+      ? process.env.IMAGE_EVENTS_ENABLED === "true"
+        ? openCloudBaseImageEventFeed(cloudbaseDatabase)
+        : undefined
       : process.env.DATABASE_URL
         ? openImageEventFeed(process.env.DATABASE_URL)
         : undefined
+    : undefined;
+const wakeConsumer =
+  cloudbaseDatabase && policy.enabled
+    ? cloudbaseConsumerWake(
+        cloudbaseDatabase,
+        process.env.CLOUDBASE_CONSUMER_FUNCTION ?? "lycobo-consumer",
+      )
     : undefined;
 const store = cloudbaseStorage
   ? objectImageStore(cloudbaseObjectBucket(cloudbaseStorage), repository?.storageUid)
@@ -77,6 +89,12 @@ const app = createApp(
         plannerKey:
           process.env.STANDALONE_MODELS === "true" ? process.env.DEEPSEEK_API_KEY : undefined,
         events,
+        wake:
+          wakeConsumer &&
+          (async () => {
+            if (!(await wakeConsumer()))
+              logger.warn({ code: "CONSUMER_WAKE_FAILED" }, "Consumer wake failed");
+          }),
         store,
         signAsset:
           process.env.ASSET_PUBLIC_ORIGIN && process.env.ASSET_SIGNING_SECRET

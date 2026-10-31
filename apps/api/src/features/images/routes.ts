@@ -40,6 +40,8 @@ export type ImageApiDependencies = {
   standaloneKey?: string | undefined;
   providerRequest?: typeof fetch | undefined;
   events?: ImageEventFeed | undefined;
+  // Starts background processing after work is enqueued when the transport has no push.
+  wake?: (() => Promise<void>) | undefined;
   signAsset?: DeliverySigner | undefined;
   auth?: EnterpriseAuth | undefined;
   store: ImageStore;
@@ -57,6 +59,24 @@ const id = z.uuid();
 export function imageRoutes(deps: ImageApiDependencies) {
   const app = new Hono<Env>();
   const variation = variationService(deps);
+  // A task still queued while its owner polls means the submission wake was lost or the
+  // consumer was busy; retry the wake at most every 15 seconds per task in this instance.
+  const wokenAt = new Map<string, number>();
+  const queuedJob = z.object({
+    id: z.uuid(),
+    status: z.literal("queued"),
+    created_at: z.coerce.date(),
+  });
+  const wakeIfStale = async (job: unknown) => {
+    const queued = queuedJob.safeParse(job);
+    if (!deps.wake || !queued.success) return;
+    const now = Date.now();
+    if (now - queued.data.created_at.getTime() < 15000) return;
+    if (now - (wokenAt.get(queued.data.id) ?? 0) < 15000) return;
+    if (wokenAt.size > 1000) wokenAt.clear();
+    wokenAt.set(queued.data.id, now);
+    await deps.wake();
+  };
   const delivery = deps.signAsset ? imageDeliveries(deps.repository, deps.signAsset) : undefined;
   const fail = (
     c: Context<Env>,
@@ -312,6 +332,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
       imageUnitCredits,
       deps.managedModelsOnly,
     );
+    if (!result.replayed) await deps.wake?.();
     return c.json(result, result.replayed ? 200 : 202);
   });
   app.post("/image-tasks/:jobId/retry", async (c) => {
@@ -325,8 +346,10 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const scope = c.get("principal");
     const job = await deps.repository.get(scope, jobId.data);
     if (!job) return fail(c, "NOT_FOUND", "任务不存在", 404);
-    if (await providerRetryService(deps)(scope, jobId.data, target.data.itemId))
+    if (await providerRetryService(deps)(scope, jobId.data, target.data.itemId)) {
+      await deps.wake?.();
       return c.json({ id: jobId.data, replayed: false }, 202);
+    }
     try {
       const input = imageGenerationInputSchema.parse(job.input);
       if (!(await deps.repository.models.hasRoute(input))) {
@@ -343,6 +366,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
       target.data.itemId,
       deps.managedModelsOnly,
     );
+    if (!result.replayed) await deps.wake?.();
     return c.json(result, result.replayed ? 200 : 202);
   });
   app.get("/image-tasks", async (c) => {
@@ -374,9 +398,9 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const parsed = id.safeParse(c.req.param("id"));
     if (!parsed.success) return fail(c, "NOT_FOUND", "任务不存在", 404);
     const job = await deps.repository.get(c.get("principal"), parsed.data);
-    return job
-      ? c.json(delivery ? (await delivery.jobs(c.get("principal"), [job]))[0] : job)
-      : fail(c, "NOT_FOUND", "任务不存在", 404);
+    if (!job) return fail(c, "NOT_FOUND", "任务不存在", 404);
+    await wakeIfStale(job);
+    return c.json(delivery ? (await delivery.jobs(c.get("principal"), [job]))[0] : job);
   });
   app.get("/image-assets/:id/latest-edit", async (c) => {
     const parsed = id.safeParse(c.req.param("id"));

@@ -59,3 +59,41 @@ it("batch signs only authorized asset locations for outputs and references", asy
   expect(jobs[0]?.reference_deliveries[reference]?.url).toContain(reference);
   expect(jobs[0]?.reference_deliveries[inaccessible]).toBeUndefined();
 });
+
+it("does not query asset locations for tasks without outputs or references", async () => {
+  const scope = { userId: crypto.randomUUID(), organizationId: crypto.randomUUID() };
+  const assetLocations = vi.fn<ImageRepository["assetLocations"]>();
+  const deliveries = imageDeliveries(
+    { assetLocations },
+    assetDeliverySigner("https://assets.example.test", "fixture-signing-key-with-32-characters"),
+  );
+  const [job] = await deliveries.jobs(scope, [
+    {
+      id: crypto.randomUUID(),
+      organization_id: scope.organizationId,
+      user_id: scope.userId,
+      model: "gpt-image-2",
+      prompt: "fixture",
+      resolution: "1K",
+      aspect_ratio: "1:1",
+      requested_count: 1,
+      status: "queued",
+      created_at: new Date().toISOString(),
+      completed_at: null,
+      items: [
+        {
+          id: crypto.randomUUID(),
+          position: 0,
+          status: "queued",
+          output_asset_id: null,
+          error_code: null,
+          width: null,
+          height: null,
+          worker_id: null,
+        },
+      ],
+    },
+  ]);
+  expect(assetLocations).not.toHaveBeenCalled();
+  expect(job?.reference_deliveries).toEqual({});
+});

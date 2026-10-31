@@ -107,13 +107,8 @@ export function useImageHistory(
     initialPageParam: "",
     retry: false,
     staleTime: 30000,
-    // SSE is an optimization; active work must converge even when its event is lost.
-    refetchInterval: (query) =>
-      query.state.data?.pages.some((page) =>
-        page.data.some((job) => job.status === "queued" || job.status === "running"),
-      )
-        ? 5000
-        : false,
+    // Unfinished tasks converge through useImageEvents, which refetches only those tasks
+    // instead of every loaded history page.
     queryFn: async ({ pageParam, signal }) =>
       tool === null
         ? { data: [] }

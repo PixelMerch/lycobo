@@ -117,7 +117,7 @@ it("continues a durable provider receipt with GET and stores it without a second
       });
     },
   });
-  expect(result).toBe(1);
+  expect(result).toEqual({ processed: 1, resumeAt: null });
   expect(time).toBe(3000);
   expect(request.mock.calls.map(([, init]) => init?.method)).toEqual(["POST", "GET"]);
   expect(request.mock.calls[1]?.[1]?.headers).not.toHaveProperty("Idempotency-Key");

@@ -1,14 +1,24 @@
-import {
-  type ImageJob,
-  imageEventCursorSchema,
-  imageEventSchema,
-  imageJobSchema,
-} from "@lycoboai/contracts";
-import { type InfiniteData, useQueryClient } from "@tanstack/react-query";
+import { imageEventCursorSchema, imageEventSchema, imageJobSchema } from "@lycoboai/contracts";
+import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { imageRequest, useImageModels, useImageSession } from "./generation-client";
+import { ImageApiError, imageRequest, useImageModels, useImageSession } from "./generation-client";
+import {
+  cachedJob,
+  chargesChanged,
+  pollDelay,
+  refreshUnfinished,
+  replaceJob,
+  unfinishedJobs,
+} from "./task-sync";
 
-type History = InfiniteData<{ data: ImageJob[] }, string>;
+const fetchJob = (client: QueryClient, id: string) =>
+  client.fetchQuery({
+    queryKey: ["image-task", id],
+    staleTime: 0,
+    queryFn: async ({ signal }) =>
+      imageJobSchema.parse(await (await imageRequest(`image-tasks/${id}`, { signal })).json()),
+  });
+/** Keeps task, wallet and asset caches current: SSE when offered, otherwise task polling. */
 export function useImageEvents() {
   const session = useImageSession();
   const models = useImageModels();
@@ -67,51 +77,16 @@ export function useImageEvents() {
       let reloadAssets = updateAssets;
       const results = await Promise.allSettled(
         ids.map(async (id) => {
-          const previous =
-            client
-              .getQueriesData<History>({ queryKey: ["image-tasks"] })
-              .flatMap(([, history]) => history?.pages.flatMap((page) => page.data) ?? [])
-              .find((job) => job.id === id) ?? client.getQueryData<ImageJob>(["image-task", id]);
-          const job = await client.fetchQuery({
-            queryKey: ["image-task", id],
-            staleTime: 0,
-            queryFn: async ({ signal }) =>
-              imageJobSchema.parse(
-                await (await imageRequest(`image-tasks/${id}`, { signal })).json(),
-              ),
-          });
+          const previous = cachedJob(client, id);
+          const job = await fetchJob(client, id);
           if (stopped) return;
           if (snapshot !== calibration) {
             taskIds.add(id);
             return;
           }
           if (taskIds.has(id)) return;
-          // Starting/completing work does not change the prepaid wallet. New attempts
-          // charge once; a newly failed item refunds once. Replayed events do neither.
-          if (
-            !previous ||
-            job.items.some((item) => {
-              const old = previous.items.find((entry) => entry.id === item.id);
-              return !old || (item.status === "failed" && old.status !== "failed");
-            })
-          )
-            walletChanged = true;
-          let found = false;
-          client.setQueriesData<History>({ queryKey: ["image-tasks"] }, (current) => {
-            if (!current) return current;
-            return {
-              ...current,
-              pages: current.pages.map((page) => ({
-                ...page,
-                data: page.data.map((old) => {
-                  if (old.id !== id) return old;
-                  found = true;
-                  return job;
-                }),
-              })),
-            };
-          });
-          if (!found) reloadHistory = true;
+          if (chargesChanged(previous, job)) walletChanged = true;
+          if (!replaceJob(client, job)) reloadHistory = true;
           if (job.items.some((item) => item.output_asset_id)) reloadAssets = true;
         }),
       );
@@ -223,6 +198,58 @@ export function useImageEvents() {
       clearTimeout(watchdog);
       clearTimeout(batchTimer);
       clearTimeout(walletTimer);
+    };
+  }, [client, userId, organizationId, enabled, session.isSuccess]);
+  // Polls only unfinished tasks in a visible tab: nothing reaches the API or database while idle.
+  // Behind a live event stream the same loop is a slow safety net for lost events.
+  useEffect(() => {
+    if (!userId || !organizationId || !session.isSuccess || enabled === undefined) return;
+    let stopped = false;
+    let polling = false;
+    let failures = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const schedule = () => {
+      if (stopped || polling || timer || document.visibilityState === "hidden") return;
+      const jobs = unfinishedJobs(client);
+      if (jobs.length)
+        timer = setTimeout(() => void poll(), pollDelay(jobs, enabled, failures, Date.now()));
+    };
+    const poll = async () => {
+      clearTimeout(timer);
+      timer = undefined;
+      if (stopped || polling || document.visibilityState === "hidden") return;
+      const jobs = unfinishedJobs(client);
+      if (!jobs.length) return;
+      polling = true;
+      const followUp = await refreshUnfinished(client, jobs, (id) =>
+        fetchJob(client, id).catch((error) => {
+          if (error instanceof ImageApiError && error.status === 404) return null;
+          throw error;
+        }),
+      );
+      polling = false;
+      if (stopped) return;
+      failures = followUp.failed ? failures + 1 : 0;
+      if (followUp.wallet) {
+        void client.invalidateQueries({ queryKey: ["wallet"] });
+        void client.invalidateQueries({ queryKey: ["wallet-entries"] });
+      }
+      if (followUp.history) void client.invalidateQueries({ queryKey: ["image-tasks"] });
+      if (followUp.assets) void client.invalidateQueries({ queryKey: ["image-assets"] });
+      schedule();
+    };
+    const unsubscribe = client.getQueryCache().subscribe(({ query }) => {
+      const [key] = query.queryKey;
+      if (key === "image-tasks" || key === "image-task") schedule();
+    });
+    const onVisibility = () => void poll();
+    document.addEventListener("visibilitychange", onVisibility);
+    schedule();
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+      unsubscribe();
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [client, userId, organizationId, enabled, session.isSuccess]);
 }

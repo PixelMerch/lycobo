@@ -36,7 +36,7 @@ it("retrieves an accepted result in the same invocation without another paid sub
       }
     },
   });
-  expect(result).toBe(1);
+  expect(result).toEqual({ processed: 1, resumeAt: null });
   expect(submissions).toBe(1);
   expect(reads).toBe(1);
   expect(wait).toHaveBeenCalledExactlyOnceWith(3000);
@@ -51,7 +51,7 @@ it("does not retry an unresolved outcome or idle after completed work", async ()
     wait = vi.fn(async () => {});
   expect(
     await drainCloudBaseOutbox({ repository, process, now: () => 0, wait, stopStartingAt: 20000 }),
-  ).toBe(1);
+  ).toEqual({ processed: 1, resumeAt: null });
   expect(process).toHaveBeenCalledOnce();
   expect(wait).not.toHaveBeenCalled();
 });
@@ -62,11 +62,43 @@ it("leaves a deferred intent durable when its next read exceeds the invocation b
   const process = vi.fn(async (_itemId: string, onDeferred: (ms: number) => void) =>
     onDeferred(60000),
   );
+  // The next read is reported so the consumer can continue it instead of waiting for the timer.
   expect(
     await drainCloudBaseOutbox({ repository, process, now: () => 0, wait, stopStartingAt: 20000 }),
-  ).toBe(1);
+  ).toEqual({ processed: 1, resumeAt: 60000 });
   expect(process).toHaveBeenCalledOnce();
   expect(wait).not.toHaveBeenCalled();
+});
+it("keeps draining full batches and reports intents left unstarted at the budget", async () => {
+  let time = 0;
+  const batches = [Array.from({ length: 20 }, entry), Array.from({ length: 20 }, entry), []];
+  const repository = {
+    leaseOutbox: vi.fn(async () => batches.shift() ?? []),
+    ackOutbox: vi.fn(async () => {}),
+  };
+  const wait = vi.fn(async () => {});
+  expect(
+    await drainCloudBaseOutbox({
+      repository,
+      process: async () => {},
+      now: () => time,
+      wait,
+      stopStartingAt: 20000,
+    }),
+  ).toEqual({ processed: 40, resumeAt: null });
+  expect(repository.leaseOutbox).toHaveBeenCalledTimes(3);
+  const slow = [Array.from({ length: 4 }, entry)];
+  const stopped = await drainCloudBaseOutbox({
+    repository: { leaseOutbox: async () => slow.shift() ?? [], ackOutbox: async () => {} },
+    process: async () => {
+      time = 25000;
+    },
+    now: () => time,
+    wait,
+    stopStartingAt: 20000,
+  });
+  // Two intents never started; they become available again once their lease lapses.
+  expect(stopped).toEqual({ processed: 2, resumeAt: 55000 });
 });
 it("keeps at most two task operations in flight", async () => {
   let active = 0,
