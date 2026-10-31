@@ -8,7 +8,11 @@ import { createApp } from "../../app";
 const unexpected = async (): Promise<never> => {
   throw new Error("Unexpected dependency call");
 };
-function fixture(editsEnabled = false, managedModelsOnly = false) {
+function fixture(
+  editsEnabled = false,
+  managedModelsOnly = false,
+  extra: { wake?: () => Promise<void>; get?: ImageRepository["get"] } = {},
+) {
   const create = vi
     .fn<ImageRepository["create"]>()
     .mockResolvedValue({ id: crypto.randomUUID(), replayed: false });
@@ -57,7 +61,7 @@ function fixture(editsEnabled = false, managedModelsOnly = false) {
     create,
     list: unexpected,
     archive: unexpected,
-    get: unexpected,
+    get: extra.get ?? unexpected,
     latestEdit: unexpected,
     addReference: unexpected,
     listAssets: unexpected,
@@ -85,6 +89,7 @@ function fixture(editsEnabled = false, managedModelsOnly = false) {
     enabled: true,
     managedModelsOnly,
     unitCredits: 1,
+    wake: extra.wake,
     validate: (input) => validateModelInput(input, {}, editsEnabled),
     resolutions: supportedResolutions,
   });
@@ -115,6 +120,35 @@ it.each(["low", "medium", "high"])(
     expect(create.mock.calls[0]?.[3]).toBe(2);
   },
 );
+it("wakes background processing once per newly enqueued task, never for a replay", async () => {
+  const wake = vi.fn(async () => {});
+  const { create, submit } = fixture(false, false, { wake });
+  expect((await submit()).status).toBe(202);
+  expect(wake).toHaveBeenCalledOnce();
+  create.mockResolvedValueOnce({ id: crypto.randomUUID(), replayed: true });
+  expect((await submit()).status).toBe(200);
+  expect(wake).toHaveBeenCalledOnce();
+});
+it("re-wakes processing for a task still queued while polled, at most every 15 seconds", async () => {
+  const wake = vi.fn(async () => {});
+  const row = (seconds: number, status = "queued") => ({
+    id: crypto.randomUUID(),
+    status,
+    created_at: new Date(Date.now() - seconds * 1000).toISOString(),
+    items: [],
+  });
+  const stale = row(20);
+  const rows = [stale, stale, row(5), row(60, "running")];
+  const { app } = fixture(false, false, { wake, get: async () => rows.shift() ?? null });
+  const poll = (id: string) =>
+    app.request(`/api/v1/image-tasks/${id}`, { headers: { Authorization: "Bearer fixture" } });
+  expect((await poll(stale.id)).status).toBe(200);
+  expect(wake).toHaveBeenCalledOnce();
+  await poll(stale.id);
+  await poll(crypto.randomUUID());
+  await poll(crypto.randomUUID());
+  expect(wake).toHaveBeenCalledOnce();
+});
 it("rejects unknown quality before creating a task and accepts legacy omitted quality", async () => {
   const { create, submit } = fixture();
   for (const quality of ["auto", "标准", null, 1]) expect((await submit(quality)).status).toBe(400);
