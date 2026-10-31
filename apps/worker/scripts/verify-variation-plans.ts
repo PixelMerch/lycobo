@@ -51,7 +51,7 @@ export async function verifyVariationPlans(
           {
             message: {
               content: JSON.stringify({
-                items: Array.from({ length: 10 }, (_, i) => ({
+                items: Array.from({ length: 20 }, (_, i) => ({
                   title: `方案${i}`,
                   prompt: `参考图1，独立商品场景方案${i}，保留商品主体。`,
                 })),
@@ -79,7 +79,7 @@ export async function verifyVariationPlans(
     "Content-Type": "application/json",
     "Idempotency-Key": crypto.randomUUID(),
   };
-  const input = { description: "为商品给十个独立场景", referenceAssetIds: [asset.id] };
+  const input = { description: "为商品给二十个独立场景", referenceAssetIds: [asset.id] };
   const post = () =>
     app.request("/api/v1/variation-plans", {
       method: "POST",
@@ -90,7 +90,7 @@ export async function verifyVariationPlans(
   assert.equal(response.status, 200);
   const plan = variationPlanSchema.parse(unwrapApiData(await response.json()));
   assert.equal(plan.status, "ready");
-  assert.equal(plan.items.length, 10);
+  assert.equal(plan.items.length, 20);
   assert.equal((await post()).status, 200);
   assert.equal(calls, 1, "Analysis replay must not call provider");
   assert.equal(
@@ -109,18 +109,25 @@ export async function verifyVariationPlans(
   const generation = imageGenerationInputSchema.parse({
     model: "gpt-image-2.5",
     prompt: "智能裂变",
-    count: 10,
+    count: 20,
     referenceAssetIds: [asset.id],
     variation: { version: 1, planId: plan.id, items: plan.items },
   });
   const key = crypto.randomUUID();
   const created = await repository.create(owner, generation, key);
   assert.equal((await repository.create(owner, generation, key)).replayed, true);
-  assert.equal((await repository.wallet(owner)).balance, 1000 - 10 * imageUnitCredits);
+  assert.equal((await repository.wallet(owner)).balance, 1000 - 20 * imageUnitCredits);
   const job = await repository.get(owner, created.id);
   assert.ok(job);
-  assert.equal(job.items.length, 10);
-  for (let i = 0; i < 10; i++)
+  assert.equal(job.items.length, 20);
+  const [outbox] =
+    await sql`select count(*)::integer as count from generation_outbox o join generation_job_items i on i.id=o.item_id where i.job_id=${created.id}`;
+  assert.equal(
+    Number(outbox?.count),
+    20,
+    "Each confirmed plan requires a distinct durable delivery",
+  );
+  for (let i = 0; i < 20; i++)
     assert.ok(textileItemInput(generation, i).prompt.includes(`方案${i}`));
   assert.equal((await repository.list(owner, 20, undefined, "variation")).length, 1);
   assert.equal((await repository.list(owner, 20, undefined, "create")).length, 0);
@@ -150,7 +157,7 @@ export async function verifyVariationPlans(
   assert.equal(calls, beforeReplay);
   assert.equal(
     (await repository.wallet(owner)).balance,
-    1000 - 10 * imageUnitCredits,
+    1000 - 20 * imageUnitCredits,
     "Uncertain analysis must not debit image credits",
   );
   await sql`delete from model_planners where tool='smart-variation'`;

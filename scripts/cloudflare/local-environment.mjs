@@ -31,11 +31,7 @@ export function localEnvironment(source, docker = false, modelSettings = source)
       "Enabled local generation requires MODEL_CREDENTIAL_SECRET and backend channels.",
     );
   if (env.LOCAL_IMAGE_GENERATION_ENABLED === "true" && modelSettings.STANDALONE_MODELS === "true") {
-    for (const key of [
-      "STANDALONE_MODELS",
-      "STANDALONE_IMAGE_API_KEY",
-      "STANDALONE_PLANNER_API_KEY",
-    ])
+    for (const key of ["STANDALONE_MODELS", "STANDALONE_IMAGE_API_KEY", "DEEPSEEK_API_KEY"])
       if (modelSettings[key]) env[key] = modelSettings[key];
   }
   if (docker)

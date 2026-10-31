@@ -24,8 +24,8 @@ it("requires meaningful requirements and at most five distinct references", () =
     }).success,
   ).toBe(false);
 });
-it("allows ten confirmed plans but forbids count mismatch and mixed tools", () => {
-  const items = Array.from({ length: 10 }, (_, i) => ({
+it("allows twenty confirmed plans but forbids count mismatch and mixed tools", () => {
+  const items = Array.from({ length: 20 }, (_, i) => ({
     id: crypto.randomUUID(),
     title: `商品${i}`,
     prompt: `独立商品摄影方案${i}`,
@@ -33,7 +33,7 @@ it("allows ten confirmed plans but forbids count mismatch and mixed tools", () =
   const input = {
     model: "gpt-image-2.5",
     prompt: "智能裂变",
-    count: 10,
+    count: 20,
     variation: { version: 1, planId: crypto.randomUUID(), items },
   };
   expect(imageGenerationInputSchema.safeParse(input).success).toBe(true);
@@ -43,6 +43,26 @@ it("allows ten confirmed plans but forbids count mismatch and mixed tools", () =
   );
   expect(
     imageGenerationInputSchema.safeParse({ ...input, textileSet: { version: 5, views: ["front"] } })
+      .success,
+  ).toBe(false);
+});
+
+it("rejects more than twenty plans without widening ordinary output limits", () => {
+  const items = Array.from({ length: 21 }, (_, i) => ({
+    id: crypto.randomUUID(),
+    title: `方案${i}`,
+    prompt: `独立商品方案${i}`,
+  }));
+  expect(
+    imageGenerationInputSchema.safeParse({
+      model: "gpt-image-2.5",
+      prompt: "智能裂变",
+      count: 21,
+      variation: { version: 1, planId: crypto.randomUUID(), items },
+    }).success,
+  ).toBe(false);
+  expect(
+    imageGenerationInputSchema.safeParse({ model: "gpt-image-2.5", prompt: "商品摄影", count: 5 })
       .success,
   ).toBe(false);
 });

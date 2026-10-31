@@ -8,7 +8,7 @@ import {
 export interface StandaloneModelEnvironment {
   STANDALONE_MODELS?: string;
   STANDALONE_IMAGE_API_KEY?: string;
-  STANDALONE_PLANNER_API_KEY?: string;
+  DEEPSEEK_API_KEY?: string;
   MODEL_CREDENTIAL_SECRET?: string;
 }
 export const standaloneCredentialId = "8fd01c10-fb8c-4ed0-bdab-000000000001";
@@ -25,7 +25,7 @@ const models = [
 ] as const;
 export async function standaloneModels(env: StandaloneModelEnvironment) {
   if (env.STANDALONE_MODELS !== "true") return undefined;
-  if (!env.STANDALONE_IMAGE_API_KEY || !env.STANDALONE_PLANNER_API_KEY)
+  if (!env.STANDALONE_IMAGE_API_KEY || !env.DEEPSEEK_API_KEY)
     throw new Error("STANDALONE_MODEL_SECRETS_REQUIRED");
   const credentialCipher = "standalone-env";
   const snapshots = Object.fromEntries(
@@ -53,9 +53,9 @@ export async function standaloneModels(env: StandaloneModelEnvironment) {
     credentialCipher,
     credentialId: standaloneCredentialId,
     planner: {
-      origin: "https://api.uselg.top/",
-      model: "claude-sonnet-5",
-      protocol: "anthropic-messages" as const,
+      origin: "https://api.deepseek.com/",
+      model: "deepseek-flash",
+      protocol: "openai-chat" as const,
       timeoutMs: 60000,
       ciphertext: "standalone-env",
     },

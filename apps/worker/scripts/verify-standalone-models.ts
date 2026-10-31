@@ -8,7 +8,7 @@ export async function verifyStandaloneModels(url: string, sql: postgres.Sql) {
   const configuration = await standaloneModels({
     STANDALONE_MODELS: "true",
     STANDALONE_IMAGE_API_KEY: "fixture-image",
-    STANDALONE_PLANNER_API_KEY: "fixture-planner",
+    DEEPSEEK_API_KEY: "fixture-planner",
   });
   assert.ok(configuration);
   const repository = openImageRepository(url, false, configuration);
@@ -26,7 +26,7 @@ export async function verifyStandaloneModels(url: string, sql: postgres.Sql) {
       resolution: "1.5K",
     });
     assert.equal((await repository.models.capabilities()).create?.length, 4);
-    assert.equal((await repository.variation.config())?.model, "claude-sonnet-5");
+    assert.equal((await repository.variation.config())?.model, "deepseek-flash");
     const key = crypto.randomUUID();
     const task = await repository.create(owner, input, key, 20, true);
     assert.equal((await repository.create(owner, input, key, 20, true)).replayed, true);

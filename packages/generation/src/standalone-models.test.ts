@@ -6,7 +6,7 @@ import { standaloneCredentialId, standaloneModels } from "./standalone-models";
 const env = {
   STANDALONE_MODELS: "true",
   STANDALONE_IMAGE_API_KEY: "fixture-image-secret",
-  STANDALONE_PLANNER_API_KEY: "fixture-language-secret",
+  DEEPSEEK_API_KEY: "fixture-language-secret",
 };
 it("requires explicit standalone opt-in and refuses missing keys", async () => {
   expect(await standaloneModels({})).toBeUndefined();
@@ -31,9 +31,9 @@ it("routes all public models without any admin or database lookups", async () =>
   expect(JSON.stringify(snapshot)).not.toContain(env.STANDALONE_IMAGE_API_KEY);
   expect(config?.resolve({ ...input, model: "nano-banana-2.1" }).adapter).toBe("gemini-native");
   expect(config?.planner).toMatchObject({
-    model: "claude-sonnet-5",
-    protocol: "anthropic-messages",
-    origin: "https://api.uselg.top/",
+    model: "deepseek-flash",
+    protocol: "openai-chat",
+    origin: "https://api.deepseek.com/",
   });
   expect(() => config?.resolve({ ...input, model: "grok-imagine-image-2.0" })).toThrow(
     "MODEL_CHANNEL_DISABLED",

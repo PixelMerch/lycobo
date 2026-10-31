@@ -312,7 +312,7 @@ export const generationJobs = pgTable(
     index("generation_jobs_member_idx").on(t.organizationId, t.userId),
     check(
       "generation_jobs_count_check",
-      sql`${t.requestedCount} between 1 and 10 and ${t.unitCredits} > 0 and (${t.requestedCount} <= 4 or ${t.input} ? 'textileSet' or ${t.input} ? 'variation')`,
+      sql`${t.requestedCount} between 1 and 20 and ${t.unitCredits} > 0 and (${t.requestedCount} <= 4 or (${t.requestedCount} <= 10 and ${t.input} ? 'textileSet') or ${t.input} ? 'variation')`,
     ),
     check(
       "generation_jobs_status_check",
@@ -399,7 +399,7 @@ export const generationJobItems = pgTable(
       .where(sql`${t.status} = 'running'`),
     check(
       "generation_job_items_position_check",
-      sql`${t.position} between 0 and 9 and ${t.attempts} >= 0`,
+      sql`${t.position} between 0 and 19 and ${t.attempts} >= 0`,
     ),
     check(
       "generation_job_items_status_check",

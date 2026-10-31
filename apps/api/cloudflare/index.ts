@@ -140,7 +140,7 @@ async function handleRequest(
       {
         repository,
         modelSecret: env.MODEL_CREDENTIAL_SECRET,
-        plannerKey: env.STANDALONE_MODELS === "true" ? env.STANDALONE_PLANNER_API_KEY : undefined,
+        plannerKey: env.STANDALONE_MODELS === "true" ? env.DEEPSEEK_API_KEY : undefined,
         store,
         signAsset:
           env.ASSET_PUBLIC_ORIGIN && env.ASSET_SIGNING_SECRET

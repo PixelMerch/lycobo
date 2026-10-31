@@ -71,7 +71,7 @@ describe("variation planner", () => {
   it("rejects duplicate, empty and oversized plans", async () => {
     for (const items of [
       [],
-      Array.from({ length: 11 }, (_, i) => ({
+      Array.from({ length: 21 }, (_, i) => ({
         title: String(i),
         prompt: `独立的商品摄影需求${i}`,
       })),
@@ -125,3 +125,75 @@ it("accepts native Claude vision plans inside a single JSON code fence", async (
   );
   expect(items).toHaveLength(1);
 });
+
+it("uses the official DeepSeek vision endpoint with bounded non-thinking JSON output", async () => {
+  let calls = 0;
+  const request: typeof fetch = async (url, init) => {
+    calls++;
+    expect(String(url)).toBe("https://api.deepseek.com/chat/completions");
+    expect(init?.redirect).toBe("manual");
+    expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer fixture-only");
+    const body = JSON.parse(String(init?.body));
+    expect(body).toMatchObject({
+      model: "deepseek-flash",
+      thinking: { type: "disabled" },
+      max_tokens: 8192,
+      response_format: { type: "json_object" },
+      stream: false,
+    });
+    expect(body).not.toHaveProperty("max_completion_tokens");
+    expect(body).not.toHaveProperty("reasoning_effort");
+    expect(body.messages[1].content[2].image_url).toEqual({
+      url: "data:image/png;base64,AQID",
+      detail: "low",
+    });
+    return reply(
+      Array.from({ length: 20 }, (_, i) => ({
+        title: `方案${i + 1}`,
+        prompt: `参考图1，保留商品主体和白色区域，生成第${i + 1}种独立商品摄影方案。`,
+      })),
+    );
+  };
+  const items = await planVariation(
+    input,
+    [new Uint8Array([1, 2, 3])],
+    {
+      ...config,
+      model: "deepseek-flash",
+      origin: "https://api.deepseek.com/",
+    },
+    "deepseek-plan",
+    undefined,
+    request,
+  );
+  expect(items).toHaveLength(20);
+  expect(calls).toBe(1);
+});
+
+it.each(["length", "stop"])(
+  "rejects truncated or blank DeepSeek JSON without automatic retries (%s)",
+  async (finishReason) => {
+    let calls = 0;
+    const request: typeof fetch = async () => {
+      calls++;
+      return new Response(
+        JSON.stringify({ choices: [{ finish_reason: finishReason, message: { content: "  " } }] }),
+      );
+    };
+    await expect(
+      planVariation(
+        input,
+        [],
+        {
+          ...config,
+          model: "deepseek-flash",
+          origin: "https://api.deepseek.com/",
+        },
+        "deepseek-invalid",
+        undefined,
+        request,
+      ),
+    ).rejects.toMatchObject({ code: "PLANNER_INVALID_RESULT" });
+    expect(calls).toBe(1);
+  },
+);

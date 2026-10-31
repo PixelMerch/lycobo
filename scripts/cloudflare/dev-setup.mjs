@@ -13,8 +13,8 @@ const common = {
   ...storage,
   ...(enabled && process.env.STANDALONE_MODELS === "true"
     ? Object.fromEntries(
-        ["STANDALONE_MODELS", "STANDALONE_IMAGE_API_KEY", "STANDALONE_PLANNER_API_KEY"].flatMap(
-          (key) => (process.env[key] ? [[key, process.env[key]]] : []),
+        ["STANDALONE_MODELS", "STANDALONE_IMAGE_API_KEY", "DEEPSEEK_API_KEY"].flatMap((key) =>
+          process.env[key] ? [[key, process.env[key]]] : [],
         ),
       )
     : {}),

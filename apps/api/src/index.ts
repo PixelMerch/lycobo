@@ -42,9 +42,7 @@ const app = createApp(
         repository,
         modelSecret: process.env.MODEL_CREDENTIAL_SECRET,
         plannerKey:
-          process.env.STANDALONE_MODELS === "true"
-            ? process.env.STANDALONE_PLANNER_API_KEY
-            : undefined,
+          process.env.STANDALONE_MODELS === "true" ? process.env.DEEPSEEK_API_KEY : undefined,
         events,
         store,
         enabled: policy.enabled,

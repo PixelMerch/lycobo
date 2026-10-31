@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { textileGenerationSchema } from "./textile-generation";
-import { variationGenerationSchema } from "./variation-plan";
+import { variationGenerationSchema, variationPlanLimit } from "./variation-plan";
 
 export const imageLimits = {
   uploadBytes: 10 * 1024 * 1024,
@@ -85,7 +85,7 @@ export const imageGenerationInputSchema = z
       .max(10)
       .default([])
       .refine((ids) => new Set(ids).size === ids.length, "Duplicate references"),
-    count: z.number().int().min(1).max(10).default(1),
+    count: z.number().int().min(1).max(variationPlanLimit).default(1),
     // Keep absent on legacy snapshots so their stored idempotency hashes remain valid.
     quality: imageQualitySchema.optional(),
     // Absent on legacy inputs, preserving their original idempotency hashes.

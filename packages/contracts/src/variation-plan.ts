@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const variationPlanLimit = 20;
+
 export const variationPlanItemSchema = z.strictObject({
   id: z.uuid(),
   title: z.string().trim().min(1).max(40),
@@ -22,7 +24,7 @@ export const variationPlanSchema = z.object({
   status: z.enum(["running", "ready", "failed", "uncertain"]),
   referenceAssetIds: z.array(z.uuid()).max(5),
   description: z.string(),
-  items: z.array(variationPlanItemSchema).max(10),
+  items: z.array(variationPlanItemSchema).max(variationPlanLimit),
 });
 export const variationGenerationSchema = z.strictObject({
   version: z.literal(1),
@@ -30,7 +32,7 @@ export const variationGenerationSchema = z.strictObject({
   items: z
     .array(variationPlanItemSchema)
     .min(1)
-    .max(10)
+    .max(variationPlanLimit)
     .refine((items) => new Set(items.map((item) => item.id)).size === items.length),
 });
 export type VariationPlan = z.infer<typeof variationPlanSchema>;

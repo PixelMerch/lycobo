@@ -4,6 +4,7 @@ import {
   providerOriginSchema,
   type VariationPlanInput,
   variationPlanItemSchema,
+  variationPlanLimit,
   variationPlanSchema,
 } from "@lycoboai/contracts";
 import type postgres from "postgres";
@@ -82,7 +83,7 @@ export function variationRepository(sql: postgres.Sql) {
       return row ? view(row) : null;
     },
     async finish(scope: ImageScope, id: string, items: unknown, errorCode?: string) {
-      const checked = z.array(variationPlanItemSchema).max(10).parse(items);
+      const checked = z.array(variationPlanItemSchema).max(variationPlanLimit).parse(items);
       await sql`update variation_plans set status=${errorCode ? (errorCode === "PLANNER_OUTCOME_UNKNOWN" ? "uncertain" : "failed") : "ready"},items=${sql.json(checked)},error_code=${errorCode ?? null}
         where id=${id} and organization_id=${scope.organizationId} and user_id=${scope.userId} and status='running'`;
     },

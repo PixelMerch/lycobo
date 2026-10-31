@@ -166,8 +166,14 @@ Seedream 文档未声明质量枚举，与 Grok 一样不发送 GPT 默认 quali
 
 语言分析与图片渠道分开：`model_planners.tool='smart-variation'` 配置 HTTPS 源地址、`upstream_model='claude-sonnet-5'`、超时与启用状态，`provider_id` 引用现有中转站的默认加密密钥。读取时要求中转站同样启用，通过 `MODEL_CREDENTIAL_SECRET` 解密。密钥不写入计划、前端、日志或 Git。当前独立管理应用尚无此配置表的编辑页面；本地由显式 SQL 配置，部署前须迁移并配置目标环境，不能把本地配置视为线上已生效。
 
-当前配置 `protocol=anthropic-messages`，使用 Claude 原生 `POST /v1/messages`，`x-api-key` 与版本头鉴权，文字需求及最多5张授权PNG缩略图以base64内容块输入，输出JSON计划。保留独立的 `openai-chat` 适配用于其他中转站，协议在服务端配置，不自动跨协议重发。现配置语言地址 `https://api.uselg.top`，与图片地址分开；前端只调用业务 `/variation-plans`，不直连供应商。图片里的文字不作为指令，结果严格验证为1–10条标题和独立提示词，不接受截断、空结果或重复提示词。
+后台历史配置 `protocol=anthropic-messages`，使用 Claude 原生 `POST /v1/messages`，`x-api-key` 与版本头鉴权，文字需求及最多5张授权PNG缩略图以base64内容块输入，输出JSON计划。保留独立的 `openai-chat` 适配用于其他中转站，协议在服务端配置，不自动跨协议重发。现配置语言地址 `https://api.uselg.top`，与图片地址分开；前端只调用业务 `/variation-plans`，不直连供应商。图片里的文字不作为指令，结果严格验证为1–10条标题和独立提示词，不接受截断、空结果或重复提示词。
 
 计划按企业及用户隔离，分析不扣图片积分，每用户每分钟最多3次新分析。相同幂等键只读已有状态，不重复请求模型；网络超时标记 `uncertain`，进程中断超过120秒的运行记录同样转待确认，不自动补发。分析成本由模型供应商账单记录，当前没有单独向用户收取分析积分。
 
 `generation_jobs.input.variation` 保存用户确认后的方案快照；服务端校验计划所有权和参考图一致性，固定 Image 2.5，沿用图片任务的原子扣费及outbox。Worker按方案位置提取对应提示词，每次 `count=1`，不会把整组数量传给每个方案。重复创建、失败退款与不明确付费结果沿用现有任务机制。
+
+### 主站独立计划服务
+
+`STANDALONE_MODELS=true` 时，智能裂变固定直连 DeepSeek 官方 `https://api.deepseek.com/chat/completions`，模型 `deepseek-flash`，不读取后台语言渠道或使用语言中转站。`DEEPSEEK_API_KEY` 使用 DeepSeek 官方 Key，仅在 API 服务端配置；图片生成仍用独立的 `STANDALONE_IMAGE_API_KEY`。保留后台表和其他协议适配供后续管理功能使用。
+
+按[官方视觉文档](https://api-docs.deepseek.com/guides/vision/)发送已授权缩略图 Base64 与 `detail=low`；无参考图仅发送文字，不虚构商品视觉分析。依据[思考模式文档](https://api-docs.deepseek.com/guides/thinking_mode/)显式 `thinking.type=disabled`，避免默认开启思考；使用 JSON 输出、`max_tokens=8192`、单轮请求和简短独立提示词来控制费用。最多20条，未指定数量仍默认10条，用户指定数量时按需求生成；不为省成本减少用户要求的方案数。保留60秒超时、取消、幂等、严格结果校验，不自动重发。
