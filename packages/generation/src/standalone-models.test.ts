@@ -16,7 +16,7 @@ it("requires explicit standalone opt-in and refuses missing keys", async () => {
 });
 it("routes all public models without any admin or database lookups", async () => {
   const config = await standaloneModels(env);
-  expect(config?.capabilities().create).toHaveLength(6);
+  expect(config?.capabilities().create).toHaveLength(4);
   const input = imageGenerationInputSchema.parse({
     model: "gpt-image-2.5",
     prompt: "商品摄影",
@@ -35,7 +35,7 @@ it("routes all public models without any admin or database lookups", async () =>
     protocol: "anthropic-messages",
     origin: "https://api.uselg.top/",
   });
-  expect(() => config?.resolve({ ...input, model: "unknown-model" })).toThrow(
+  expect(() => config?.resolve({ ...input, model: "grok-imagine-image-2.0" })).toThrow(
     "MODEL_CHANNEL_DISABLED",
   );
 });

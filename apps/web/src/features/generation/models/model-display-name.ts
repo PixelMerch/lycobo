@@ -9,5 +9,9 @@ export function modelDisplayName(
   const model =
     models.find((model) => model.id === id) ??
     models.find((model) => model.id === publicImageModel(id));
-  return model?.name?.trim() || "图片创作";
+  const retiredNames: Record<string, string> = {
+    "grok-imagine-image-2.0": "Grok 2",
+    "seedream-5.0-pro": "Seedream 5.0 Pro",
+  };
+  return model?.name?.trim() || retiredNames[id] || "图片创作";
 }

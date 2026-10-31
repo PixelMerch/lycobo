@@ -25,7 +25,7 @@ export async function verifyStandaloneModels(url: string, sql: postgres.Sql) {
       prompt: "固定主站路由",
       resolution: "1.5K",
     });
-    assert.equal((await repository.models.capabilities()).create?.length, 6);
+    assert.equal((await repository.models.capabilities()).create?.length, 4);
     assert.equal((await repository.variation.config())?.model, "claude-sonnet-5");
     const key = crypto.randomUUID();
     const task = await repository.create(owner, input, key, 20, true);

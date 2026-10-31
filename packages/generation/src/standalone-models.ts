@@ -22,8 +22,6 @@ const models = [
     upstream: "gemini-3-pro-image-preview",
     adapter: "gemini-native",
   },
-  { id: "grok-imagine-image-2.0", upstream: "grok-imagine-image-2.0", adapter: "fluxport-images" },
-  { id: "seedream-5.0-pro", upstream: "seedream-5.0-pro", adapter: "fluxport-images" },
 ] as const;
 export async function standaloneModels(env: StandaloneModelEnvironment) {
   if (env.STANDALONE_MODELS !== "true") return undefined;

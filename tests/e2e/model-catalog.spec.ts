@@ -14,9 +14,11 @@ test("standalone models remain available when the admin catalog is unavailable",
   const select = page.getByRole("button", { name: "创作模型" });
   await expect(select).toContainText("Image 2.5");
   await select.click();
-  await expect(page.getByRole("option")).toHaveCount(6);
-  await page.getByRole("option", { name: "Grok 2", exact: true }).click();
-  await expect(select).toContainText("Grok 2");
+  await expect(page.getByRole("option")).toHaveCount(4);
+  await page.getByRole("option", { name: "Banana Pro", exact: true }).click();
+  await expect(select).toContainText("Banana Pro");
+  await select.click();
+  await expect(page.getByRole("option", { name: /Grok|Seedream/ })).toHaveCount(0);
   expect(catalogRequests).toBe(0);
 });
 
@@ -78,8 +80,7 @@ for (const { stored, id, name } of [
         body: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" fill="gray"/></svg>',
       }),
     );
-    await page.goto(`/create/${id}`);
-    await expect(page.getByRole("button", { name: "创作模型" })).toContainText(name);
+    await page.goto("/create");
     await expect(page.locator(".generation-meta .model-tag")).toHaveText(name);
     await expect(page.locator(".generation-meta .model-tag")).not.toContainText(stored);
     await page.getByRole("button", { name: "预览图片 1", exact: true }).click();
@@ -96,7 +97,7 @@ test("model selectors load local logos and retain image-error fallbacks", async 
   await expect(trigger.locator("img")).toHaveAttribute("src", "/model-logos/openai.svg");
   await trigger.click();
   const options = page.locator(".home-model-option");
-  await expect(options).toHaveCount(6);
+  await expect(options).toHaveCount(4);
   await expect(options.nth(2).locator(".creation-model-logo-fallback")).toBeVisible();
   await options.nth(1).click();
   await expect(trigger).toContainText("Image 2.5");

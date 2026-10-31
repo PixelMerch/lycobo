@@ -29,19 +29,5 @@ export const modelPresentation = {
       description: "商品细节与复杂画面创作",
       capabilitySummary: "参考图编辑 · 创意表达",
     },
-    {
-      id: "grok-imagine-image-2.0",
-      name: "Grok 2",
-      logoUrl: "/model-logos/grok.svg",
-      description: "商品视觉与创意探索",
-      capabilitySummary: "图片生成 · 参考图编辑",
-    },
-    {
-      id: "seedream-5.0-pro",
-      name: "Seedream 5.0 Pro",
-      logoUrl: "/model-logos/seedream.svg",
-      description: "电商商品与场景设计",
-      capabilitySummary: "图片生成 · 参考图编辑",
-    },
   ],
 };
