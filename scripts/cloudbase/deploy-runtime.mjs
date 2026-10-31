@@ -155,8 +155,8 @@ async function main() {
     { capabilities: {} },
   );
   const transport = new StdioClientTransport({
-    command: "npx",
-    args: ["--yes", "@cloudbase/cloudbase-mcp@2.36.2"],
+    command: process.execPath,
+    args: [path.join(path.dirname(require.resolve("@cloudbase/cloudbase-mcp")), "cli.cjs")],
     cwd: root,
     env: { ...process.env, TCB_REGION: "ap-shanghai", TCB_SITE: "domestic" },
     stderr: "pipe",
@@ -165,12 +165,16 @@ async function main() {
   transport.stderr?.resume();
   const archiveDirectory = await mkdtemp(path.join(tmpdir(), "lycobo-code-upload-"));
   try {
+    console.log("Connecting to the installed CloudBase deployment client");
     await client.connect(transport, { timeout: 120000 });
-    const call = async (name, args) =>
-      decodeToolResult(
+    console.log("CloudBase deployment client connected");
+    const call = async (name, args) => {
+      console.log(`CloudBase operation: ${name}/${args.action}`);
+      return decodeToolResult(
         await client.callTool({ name, arguments: args }, undefined, { timeout: 120000 }),
         name,
       );
+    };
     const status = await call("auth", { action: "status" });
     if (status.auth_status !== "READY") throw new Error("CLOUDBASE_DEPLOYMENT_AUTH_REQUIRED");
     if (status.current_env_id !== runtimeEnvironment) {
