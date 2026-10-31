@@ -105,7 +105,7 @@ test("textile angles submit one durable ten-image job and isolate history across
   for (const view of textileViews)
     await picker.getByRole("button", { name: view.name, exact: true }).click();
   await picker.getByRole("button", { name: "确认", exact: true }).click();
-  await expect(submit).toHaveAccessibleDescription("本次生成 10 张，消耗 200 积分");
+  await expect(submit).toHaveAccessibleDescription("本次生成 10 张，消耗 20 积分");
   await expect(submit).toBeEnabled();
   await submit.click();
   await expect(page.locator(".generation-job")).toHaveCount(1);

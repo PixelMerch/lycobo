@@ -132,7 +132,7 @@ test("partial retry confirms only the cost of failed images", async ({ page }) =
     page
       .getByRole("dialog", { name: "重新生成这张图片？", exact: true })
       .locator(".confirm-dialog__content"),
-  ).toHaveText("本次消耗 40 积分");
+  ).toHaveText("本次消耗 4 积分");
 });
 
 test("rejected regeneration uses a top toast without inserting an error into history", async ({
@@ -195,7 +195,7 @@ test("rejected regeneration uses a top toast without inserting an error into his
   await page.goto("/create");
   await page.getByRole("button", { name: "重新生成", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "重新生成这张图片？", exact: true })).toContainText(
-    "本次消耗 1 积分",
+    "本次消耗 2 积分",
   );
   await page
     .getByRole("dialog", { name: "重新生成这张图片？", exact: true })
