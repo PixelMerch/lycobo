@@ -19,6 +19,7 @@
 
 | 主题 | 文档 |
 | --- | --- |
+| 智能商品裂变菜单与确认流程（待实施） | [商品裂变方案](product-variation-plan.md) |
 | 工作台状态与素材 | [工作台实现](image-studio-implementation.md) |
 | 多区域图片修改与画布 | [局部编辑](local-image-repair.md) |
 | JSON 返回结构与业务码 | [API 返回规范](api-response.md) |
@@ -43,3 +44,5 @@
 | 依赖和素材声明 | [第三方说明](third-party.md) |
 
 维护要求：产品范围写入 PRD，视觉参数写入 DESIGN，实现状态写入对应模块文档；不要新增同一主题的 v2／v3 副本。图片必须被当前文档或应用引用；删除旧资料时同步检查链接，避免索引保留失效入口。
+
+- [统一对象存储](s3-storage.md)：主站与后台的 S3 参数、R2/COS/Docker 寻址、公开与私有桶边界及迁移规则。

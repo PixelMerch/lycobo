@@ -3,16 +3,21 @@ import {
   imageLimits,
   imageModelCatalog,
   imageModelIds,
+  imageOutputDimensions,
   imageProviderModel,
   imageResolutionSchema,
   imageUnitCredits,
   publicImageModel,
 } from "@lycoboai/contracts";
 import { z } from "zod";
+import { imageProviderOrigin } from "./provider-adapters";
+import { ImageProviderError as VakvError } from "./provider-errors";
+
+export { ImageProviderError as VakvError } from "./provider-errors";
 
 export const capabilityOverridesSchema = z.partialRecord(
   z.enum(imageModelIds),
-  z.array(imageResolutionSchema).min(1).max(3),
+  z.array(imageResolutionSchema).min(1).max(4),
 );
 export type CapabilityOverrides = z.infer<typeof capabilityOverridesSchema>;
 export function supportedResolutions(
@@ -33,22 +38,7 @@ export function validateModelInput(
     throw new VakvError("IMAGE_EDITS_NOT_VERIFIED", false);
 }
 export function imageDimensions(ratio: string, resolution: ImageResolution) {
-  const [w, h] = ratio.split(":").map(Number);
-  const edge = { "1K": 1024, "2K": 2048, "4K": 4096 }[resolution];
-  const scale = edge / Math.max(w ?? 1, h ?? 1);
-  return {
-    width: Math.round(((w ?? 1) * scale) / 16) * 16,
-    height: Math.round(((h ?? 1) * scale) / 16) * 16,
-  };
-}
-export class VakvError extends Error {
-  constructor(
-    readonly code: string,
-    readonly unknownOutcome: boolean,
-    readonly requestId?: string | undefined,
-  ) {
-    super(code);
-  }
+  return imageOutputDimensions(ratio, resolution);
 }
 const responseSchema = z.object({
   data: z.array(z.object({ b64_json: z.string().min(1) })).length(1),
@@ -85,7 +75,7 @@ export async function generateVakvImage(
   request: typeof fetch = fetch,
   providerModel = imageProviderModel(input),
 ): Promise<{ bytes: Buffer; requestId?: string | undefined }> {
-  const url = new URL(config.baseUrl);
+  const url = new URL(imageProviderOrigin(config.baseUrl));
   if (url.username || url.password || url.search || url.hash || url.pathname !== "/")
     throw new VakvError("INVALID_PROVIDER_URL", false);
   if (

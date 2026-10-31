@@ -1,6 +1,8 @@
 import { Button, Label, ListBox, Select, Table, Tabs } from "@heroui/react";
+import { imageUnitCredits } from "@lycoboai/contracts";
 import { useState } from "react";
 import { CreditCoin } from "../../components/credit-coin";
+import { InfiniteLoad } from "../../components/infinite-load";
 import { useErrorToast } from "../../lib/error-toast";
 import { useRechargeOrders, useWallet, useWalletEntries } from "./wallet-client";
 
@@ -52,7 +54,7 @@ export function WalletPanel() {
         </div>
         <div>
           <span>图片生成价格</span>
-          <strong>每张 20 币</strong>
+          <strong>每张 {imageUnitCredits} 币</strong>
         </div>
         <div>
           <span>失败结算</span>
@@ -148,16 +150,12 @@ export function WalletPanel() {
             <span>
               显示 {visible.length} 条{entries.hasNextPage ? "，可继续加载" : ""}
             </span>
-            {entries.hasNextPage && (
-              <Button
-                size="sm"
-                variant="secondary"
-                isPending={entries.isFetchingNextPage}
-                onPress={() => void entries.fetchNextPage()}
-              >
-                加载更多收支
-              </Button>
-            )}
+            <InfiniteLoad
+              hasMore={entries.hasNextPage}
+              isLoading={entries.isFetchingNextPage}
+              isError={entries.isError}
+              onLoadMore={() => entries.fetchNextPage({ cancelRefetch: false })}
+            />
             {entries.isError && (
               <Button size="sm" variant="secondary" onPress={() => void entries.refetch()}>
                 重新加载收支
@@ -209,16 +207,12 @@ export function WalletPanel() {
           </Table>
           <div className="account-table-footer">
             <span>已加载 {orders.length} 条订单</span>
-            {recharges.hasNextPage && (
-              <Button
-                size="sm"
-                variant="secondary"
-                isPending={recharges.isFetchingNextPage}
-                onPress={() => void recharges.fetchNextPage()}
-              >
-                加载更多充值
-              </Button>
-            )}
+            <InfiniteLoad
+              hasMore={recharges.hasNextPage}
+              isLoading={recharges.isFetchingNextPage}
+              isError={recharges.isError}
+              onLoadMore={() => recharges.fetchNextPage({ cancelRefetch: false })}
+            />
             {recharges.isError && (
               <Button size="sm" variant="secondary" onPress={() => void recharges.refetch()}>
                 重新加载订单

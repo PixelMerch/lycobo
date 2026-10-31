@@ -3,6 +3,7 @@ import {
   imageGenerationInputSchema,
   imageJobSchema,
   imageSubmissionResponseSchema,
+  imageUnitCredits,
   textileViews,
   unwrapApiData,
 } from "@lycoboai/contracts";
@@ -60,7 +61,7 @@ export async function verifyTextileGeneration(
   assert.equal(first.status, 202);
   const submitted = imageSubmissionResponseSchema.parse(unwrapApiData(await first.json()));
   assert.equal((await submit()).status, 200);
-  assert.equal((await repository.wallet(owner)).balance, 800);
+  assert.equal((await repository.wallet(owner)).balance, 1000 - 10 * imageUnitCredits);
   const job = imageJobSchema.parse(
     JSON.parse(JSON.stringify(await repository.get(owner, submitted.id))),
   );
@@ -118,10 +119,10 @@ export async function verifyTextileGeneration(
   );
   assert.equal(complete.status, "partially_failed");
   assert.equal(complete.items.filter((item) => item.status === "succeeded").length, 9);
-  assert.equal((await repository.wallet(owner)).balance, 820);
+  assert.equal((await repository.wallet(owner)).balance, 1000 - 9 * imageUnitCredits);
   const retry = await repository.retry(owner, job.id, crypto.randomUUID());
   assert.equal(retry.id, job.id);
-  assert.equal((await repository.wallet(owner)).balance, 800);
+  assert.equal((await repository.wallet(owner)).balance, 1000 - 10 * imageUnitCredits);
   const retried = imageJobSchema.parse(
     JSON.parse(JSON.stringify(await repository.get(owner, job.id))),
   );
@@ -194,4 +195,35 @@ export async function verifyTextileGeneration(
     )[0]?.n,
     4,
   );
+  // History deletion archives display state, never billing, source images or running work.
+  const balanceBeforeDelete = (await repository.wallet(owner)).balance;
+  const remove = (token: string) =>
+    app.request(`/api/v1/image-tasks/${batch.id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  assert.equal((await remove(other.token)).status, 404);
+  assert.equal(
+    (await repository.list(owner, 100)).some((row) => row.id === batch.id),
+    true,
+  );
+  assert.equal((await remove(owner.token)).status, 200);
+  assert.equal((await remove(owner.token)).status, 200);
+  assert.equal(
+    (await repository.list(owner, 100)).some((row) => row.id === batch.id),
+    false,
+  );
+  assert.ok(await repository.get(owner, batch.id));
+  assert.equal((await repository.wallet(owner)).balance, balanceBeforeDelete);
+  const stillClaimable = await repository.claim(thirdItem.id, "archived-history-fixture", 60000);
+  assert.ok(stillClaimable);
+  await repository.finish(stillClaimable, {
+    image: await store.put(owner, png, crypto.randomUUID()),
+  });
+  assert.equal((await repository.wallet(owner)).balance, balanceBeforeDelete);
+  assert.equal(
+    (await repository.list(owner, 100)).some((row) => row.id === batch.id),
+    false,
+  );
+  assert.ok(await repository.asset(owner, references[0] ?? ""));
 }

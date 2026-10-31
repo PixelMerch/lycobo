@@ -33,7 +33,7 @@ export function normalizeTextileGeneration(input: ImageGenerationInput): ImageGe
   );
   return {
     ...input,
-    model: input.textileSet.version >= 4 ? "gpt-image-2-4K" : "gpt-image-2.5",
+    model: input.textileSet.version === 4 ? "gpt-image-2-4K" : "gpt-image-2.5",
     resolution: input.textileSet.version >= 3 ? input.resolution : "1K",
     quality: "medium",
     prompt: `家纺主图裂变：${names.join("、")}。每个视角分别生成一张图片。`,
@@ -44,6 +44,16 @@ export function textileItemInput(
   input: ImageGenerationInput,
   position: number,
 ): ImageGenerationInput {
+  if (input.variation) {
+    const item = input.variation.items[position];
+    if (!item) throw new Error("VARIATION_POSITION_INVALID");
+    const { variation: _plan, ...providerInput } = input;
+    return {
+      ...providerInput,
+      prompt: `${item.prompt}\n只生成一张独立图片，不拼图。输出比例：${input.aspectRatio}。`,
+      count: 1,
+    };
+  }
   if (!input.textileSet) return input;
   const view = input.textileSet.views[position];
   if (!view) throw new Error("TEXTILE_VIEW_POSITION_INVALID");

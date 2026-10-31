@@ -44,6 +44,11 @@ configs.api.services = [{ binding: "LOCAL_CONSUMER", service: configs.worker.nam
 for (const [name, config] of Object.entries(configs))
   await writeFile(`apps/${name}/wrangler.local.json`, JSON.stringify(config, null, 2));
 
+if (process.argv.includes("--prepare-only")) {
+  console.info("Local Worker configs prepared; no servers, queue or database connections started.");
+  process.exit(0);
+}
+
 console.info(`  Assets: ${env.ASSET_PUBLIC_ORIGIN}/ (local private image delivery)`);
 
 const children = [

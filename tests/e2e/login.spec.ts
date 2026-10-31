@@ -59,7 +59,10 @@ test("header login opens account/password dialog and validates without faking au
   await expect(password).toHaveAttribute("type", "text");
   await dialog.getByRole("button", { name: "隐藏密码" }).click();
   await dialog.getByRole("button", { name: "登录", exact: true }).click();
-  await expect(dialog.getByRole("alert")).toHaveText("企业账号登录服务暂未开放，请稍后再试。");
+  await expect(page.locator(".toast-region")).toContainText(
+    "企业账号登录服务暂未开放，请稍后再试。",
+  );
+  await expect(dialog.locator(".login-error")).toHaveCount(0);
   await page.screenshot({ path: "/tmp/lycoboai-login-desktop.png" });
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
@@ -139,7 +142,7 @@ test("login panel animates open and close, and reduced motion skips the animatio
 test("mobile login closes without losing the current creation draft", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/create");
-  const prompt = page.getByLabel("提示词", { exact: true });
+  const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   await prompt.fill("保留当前创作草稿");
   await page.getByRole("button", { name: "登录领积分", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "欢迎使用 Lycobo" });
@@ -168,10 +171,10 @@ test("phone login validates the phone and code without pretending to send SMS", 
   await expect(dialog.getByText("请输入有效的中国大陆手机号", { exact: true })).toBeVisible();
   await phone.fill("13800138000");
   await dialog.getByRole("button", { name: "发送验证码" }).click();
-  await expect(dialog.getByRole("alert")).toContainText("短信验证码服务暂未开放");
+  await expect(page.locator(".toast-region")).toContainText("短信验证码服务暂未开放");
   await dialog.getByLabel("验证码", { exact: true }).fill("123456");
   await dialog.getByRole("button", { name: "登录", exact: true }).click();
-  await expect(dialog.getByRole("alert")).toContainText("手机号登录服务暂未开放");
+  await expect(page.locator(".toast-region")).toContainText("手机号登录服务暂未开放");
   await dialog.getByRole("button", { name: "通过微信扫码登录", exact: true }).click();
   await expect(dialog.getByRole("textbox")).toHaveCount(0);
   await expect(dialog.getByRole("status", { name: "扫码登录暂未开放" })).toBeVisible();

@@ -16,6 +16,7 @@
     "@lycoboai/contracts": "workspace:*",
     "@tabler/icons-react": "3.49.0",
     "@tanstack/react-query": "5.104.2",
+    "fflate": "0.8.3",
     "konva": "10.9.0",
     "motion": "14.3.0",
     "react": "19.3.1",

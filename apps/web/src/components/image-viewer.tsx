@@ -1,12 +1,5 @@
 import { Button, Modal, Spinner, Toolbar, Tooltip } from "@heroui/react";
-import {
-  IconChevronLeft,
-  IconChevronRight,
-  IconRotate,
-  IconRotateClockwise,
-  IconZoomIn,
-  IconZoomOut,
-} from "@tabler/icons-react";
+import { IconRotate, IconRotateClockwise, IconZoomIn, IconZoomOut } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import { useErrorToast } from "../lib/error-toast";
@@ -16,7 +9,7 @@ import { UiIcon } from "./ui-icon";
 import { useCenteredDialogMotion } from "./use-centered-dialog-motion";
 import "./image-viewer.css";
 
-export type ViewerImage = { src: string; alt: string };
+export type ViewerImage = { src: string; thumbnailSrc?: string; alt: string };
 type Point = { x: number; y: number };
 const origin = { x: 0, y: 0 };
 
@@ -34,6 +27,18 @@ export function ImageViewer({
   const reducedMotion = useReducedMotion();
   const [index, setIndex] = useState(Math.max(0, Math.min(initialIndex, images.length - 1)));
   const active = images[index];
+  const thumbnails = useRef<(HTMLButtonElement | null)[]>([]);
+  const thumbnailRail = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const reveal = () =>
+      thumbnails.current[index]?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    reveal();
+    const rail = thumbnailRail.current;
+    if (!rail) return;
+    const observer = new ResizeObserver(reveal);
+    observer.observe(rail);
+    return () => observer.disconnect();
+  }, [index]);
   const [zoom, setZoom] = useState(100);
   const zoomValue = useRef(100);
   const zoomGoal = useRef(100);
@@ -140,9 +145,8 @@ export function ImageViewer({
     };
   }, [area]);
   useErrorToast(failed ? "图片加载失败，请关闭后重新打开。" : null);
-  const select = (delta: number) => {
-    const next = index + delta;
-    if (next < 0 || next >= images.length) return;
+  const select = (next: number) => {
+    if (next === index || next < 0 || next >= images.length) return;
     const focused = document.activeElement;
     loadingFocus.current =
       focused instanceof HTMLElement && focused.closest(".browse-image-toolbar") ? focused : null;
@@ -175,36 +179,44 @@ export function ImageViewer({
         if (!open) requestClose();
       }}
     >
-      <Modal.Backdrop className="browse-image-backdrop" data-dialog-phase={phase}>
+      <Modal.Backdrop
+        className="browse-image-backdrop"
+        data-dialog-phase={phase}
+        onPointerDownCapture={(event) => {
+          dismissStart.current =
+            event.button === 0 &&
+            event.target instanceof Element &&
+            !event.target.closest(
+              "button, .browse-image-picture, .browse-image-thumbnails, .browse-image-toolbar",
+            )
+              ? { id: event.pointerId, x: event.clientX, y: event.clientY }
+              : null;
+        }}
+        onPointerUpCapture={(event) => {
+          const start = dismissStart.current;
+          dismissStart.current = null;
+          if (
+            start &&
+            start.id === event.pointerId &&
+            Math.hypot(event.clientX - start.x, event.clientY - start.y) < 4 &&
+            event.target instanceof Element &&
+            !event.target.closest(
+              "button, .browse-image-picture, .browse-image-thumbnails, .browse-image-toolbar",
+            )
+          )
+            requestClose();
+        }}
+        onPointerCancelCapture={() => {
+          dismissStart.current = null;
+        }}
+      >
         <Modal.Container size="full" className="browse-image-container">
           <Modal.Dialog aria-label="图片浏览" className="browse-image-dialog">
             <motion.div
               className="browse-image-surface"
               data-ready={ready}
+              data-multiple={images.length > 1}
               {...surfaceMotion}
-              onPointerDown={(event) => {
-                dismissStart.current =
-                  event.button === 0 &&
-                  event.target instanceof Element &&
-                  !event.target.closest("button, .browse-image-picture")
-                    ? { id: event.pointerId, x: event.clientX, y: event.clientY }
-                    : null;
-              }}
-              onPointerUp={(event) => {
-                const start = dismissStart.current;
-                dismissStart.current = null;
-                if (
-                  start &&
-                  start.id === event.pointerId &&
-                  Math.hypot(event.clientX - start.x, event.clientY - start.y) < 4 &&
-                  event.target instanceof Element &&
-                  !event.target.closest("button, .browse-image-picture")
-                )
-                  requestClose();
-              }}
-              onPointerCancel={() => {
-                dismissStart.current = null;
-              }}
               onKeyDownCapture={(event) => {
                 /* Arrow keys always flip between images, including when the
                  * toolbar owns focus; the toolbar must not move its own focus
@@ -217,184 +229,195 @@ export function ImageViewer({
                   event.shiftKey
                 )
                   return;
-                if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+                const inThumbnails =
+                  event.target instanceof Element &&
+                  !!event.target.closest(".browse-image-thumbnails");
+                const backwards =
+                  event.key === "ArrowLeft" || (inThumbnails && event.key === "ArrowUp");
+                const forwards =
+                  event.key === "ArrowRight" || (inThumbnails && event.key === "ArrowDown");
+                if (!backwards && !forwards) return;
                 event.preventDefault();
                 event.stopPropagation();
-                select(event.key === "ArrowLeft" ? -1 : 1);
+                const next = index + (backwards ? -1 : 1);
+                select(next);
+                if (inThumbnails) thumbnails.current[next]?.focus({ preventScroll: true });
               }}
             >
-              <section
-                ref={setArea}
-                className="browse-image-area"
-                aria-busy={!ready && !failed}
-                aria-label="浏览图片区域"
-                data-zoomed={zoom > 100}
-                data-dragging={dragging}
-                onPointerDown={(event) => {
-                  if (
-                    zoom <= 100 ||
-                    event.button !== 0 ||
-                    !(
-                      event.target instanceof Element &&
-                      event.target.closest(".browse-image-picture")
+              <div className="browse-image-main">
+                <section
+                  ref={setArea}
+                  className="browse-image-area"
+                  aria-busy={!ready && !failed}
+                  aria-label="浏览图片区域"
+                  data-zoomed={zoom > 100}
+                  data-dragging={dragging}
+                  onPointerDown={(event) => {
+                    if (
+                      zoom <= 100 ||
+                      event.button !== 0 ||
+                      !(
+                        event.target instanceof Element &&
+                        event.target.closest(".browse-image-picture")
+                      )
                     )
-                  )
-                    return;
-                  event.preventDefault();
-                  event.currentTarget.setPointerCapture(event.pointerId);
-                  drag.current = {
-                    pointer: { x: event.clientX, y: event.clientY },
-                    pan: visiblePan,
-                  };
-                  setDragging(true);
-                }}
-                onPointerMove={(event) => {
-                  const start = drag.current;
-                  if (start)
-                    setPan(
-                      clamp({
-                        x: start.pan.x + event.clientX - start.pointer.x,
-                        y: start.pan.y + event.clientY - start.pointer.y,
-                      }),
-                    );
-                }}
-                onPointerUp={endPan}
-                onPointerCancel={endPan}
-                onLostPointerCapture={endPan}
-              >
-                {!ready && !failed && (
-                  <Spinner className="browse-image-loading" aria-label="图片加载中" />
-                )}
-                <div className="browse-image-frame">
-                  <div
-                    className="browse-image-transform"
-                    style={{
-                      transform: `translate(${visiblePan.x}px, ${visiblePan.y}px) scale(${zoom / 100})`,
-                    }}
-                  >
-                    <img
-                      key={active.src}
-                      src={active.src}
-                      crossOrigin="anonymous"
-                      referrerPolicy="strict-origin-when-cross-origin"
-                      alt={active.alt}
-                      draggable={false}
-                      className="browse-image-picture"
-                      data-animated={animated}
-                      style={{
-                        width: natural.width,
-                        height: natural.height,
-                        rotate: `${angle}deg`,
-                        scale: String(fit),
-                      }}
-                      onLoad={(event) => {
-                        setNatural({
-                          width: event.currentTarget.naturalWidth,
-                          height: event.currentTarget.naturalHeight,
-                        });
-                        setLoadedSrc(active.src);
-                      }}
-                      onError={() => setFailed(true)}
-                    />
-                  </div>
-                  {ready && images.length > 1 && (
-                    <>
-                      {index > 0 && (
-                        <Button
-                          isIconOnly
-                          size="lg"
-                          variant="ghost"
-                          className="browse-image-prev"
-                          aria-label="上一张图片"
-                          onPress={() => select(-1)}
-                        >
-                          <UiIcon icon={IconChevronLeft} size="action" />
-                        </Button>
-                      )}
-                      {index < images.length - 1 && (
-                        <Button
-                          isIconOnly
-                          size="lg"
-                          variant="ghost"
-                          className="browse-image-next"
-                          aria-label="下一张图片"
-                          onPress={() => select(1)}
-                        >
-                          <UiIcon icon={IconChevronRight} size="action" />
-                        </Button>
-                      )}
-                    </>
-                  )}
-                  <div className="browse-image-close">
-                    <DialogClose fullScreen label="关闭图片浏览" />
-                  </div>
-                </div>
-              </section>
-              <Toolbar className="browse-image-toolbar" aria-label="图片浏览工具" inert={!ready}>
-                <Tooltip>
-                  <Button
-                    size="lg"
-                    variant="ghost"
-                    isIconOnly
-                    aria-label="向左旋转"
-                    onPress={() => {
-                      setAngle((value) => value - 90);
-                      setPan(origin);
-                    }}
-                  >
-                    <UiIcon icon={IconRotate} size="action" />
-                  </Button>
-                  <Tooltip.Content>向左旋转</Tooltip.Content>
-                </Tooltip>
-                <Tooltip>
-                  <Button
-                    size="lg"
-                    variant="ghost"
-                    isIconOnly
-                    aria-label="向右旋转"
-                    onPress={() => {
-                      setAngle((value) => value + 90);
-                      setPan(origin);
-                    }}
-                  >
-                    <UiIcon icon={IconRotateClockwise} size="action" />
-                  </Button>
-                  <Tooltip.Content>向右旋转</Tooltip.Content>
-                </Tooltip>
-                <Tooltip>
-                  <Button
-                    size="lg"
-                    variant="ghost"
-                    isIconOnly
-                    aria-label="缩小图片"
-                    isDisabled={zoom <= 25}
-                    onPress={() => zoomTo(zoomGoal.current - 25)}
-                  >
-                    <UiIcon icon={IconZoomOut} size="action" />
-                  </Button>
-                  <Tooltip.Content>缩小</Tooltip.Content>
-                </Tooltip>
-                <output
-                  className="browse-image-position"
-                  aria-label="图片缩放比例"
-                  aria-live="polite"
+                      return;
+                    event.preventDefault();
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                    drag.current = {
+                      pointer: { x: event.clientX, y: event.clientY },
+                      pan: visiblePan,
+                    };
+                    setDragging(true);
+                  }}
+                  onPointerMove={(event) => {
+                    const start = drag.current;
+                    if (start)
+                      setPan(
+                        clamp({
+                          x: start.pan.x + event.clientX - start.pointer.x,
+                          y: start.pan.y + event.clientY - start.pointer.y,
+                        }),
+                      );
+                  }}
+                  onPointerUp={endPan}
+                  onPointerCancel={endPan}
+                  onLostPointerCapture={endPan}
                 >
-                  {Math.round(zoom)}%
-                </output>
-                <Tooltip>
-                  <Button
-                    size="lg"
-                    variant="ghost"
-                    isIconOnly
-                    aria-label="放大图片"
-                    isDisabled={zoom >= 500}
-                    onPress={() => zoomTo(zoomGoal.current + 25)}
+                  {!ready && !failed && (
+                    <Spinner className="browse-image-loading" aria-label="图片加载中" />
+                  )}
+                  <div className="browse-image-frame">
+                    <div
+                      className="browse-image-transform"
+                      style={{
+                        transform: `translate(${visiblePan.x}px, ${visiblePan.y}px) scale(${zoom / 100})`,
+                      }}
+                    >
+                      <img
+                        key={active.src}
+                        src={active.src}
+                        crossOrigin="anonymous"
+                        referrerPolicy="strict-origin-when-cross-origin"
+                        alt={active.alt}
+                        draggable={false}
+                        className="browse-image-picture"
+                        data-animated={animated}
+                        style={{
+                          width: natural.width,
+                          height: natural.height,
+                          rotate: `${angle}deg`,
+                          scale: String(fit),
+                        }}
+                        onLoad={(event) => {
+                          setNatural({
+                            width: event.currentTarget.naturalWidth,
+                            height: event.currentTarget.naturalHeight,
+                          });
+                          setLoadedSrc(active.src);
+                        }}
+                        onError={() => setFailed(true)}
+                      />
+                    </div>
+                  </div>
+                </section>
+                <Toolbar className="browse-image-toolbar" aria-label="图片浏览工具" inert={!ready}>
+                  <Tooltip>
+                    <Button
+                      size="lg"
+                      variant="ghost"
+                      isIconOnly
+                      aria-label="向左旋转"
+                      onPress={() => {
+                        setAngle((value) => value - 90);
+                        setPan(origin);
+                      }}
+                    >
+                      <UiIcon icon={IconRotate} size="action" />
+                    </Button>
+                    <Tooltip.Content>向左旋转</Tooltip.Content>
+                  </Tooltip>
+                  <Tooltip>
+                    <Button
+                      size="lg"
+                      variant="ghost"
+                      isIconOnly
+                      aria-label="向右旋转"
+                      onPress={() => {
+                        setAngle((value) => value + 90);
+                        setPan(origin);
+                      }}
+                    >
+                      <UiIcon icon={IconRotateClockwise} size="action" />
+                    </Button>
+                    <Tooltip.Content>向右旋转</Tooltip.Content>
+                  </Tooltip>
+                  <Tooltip>
+                    <Button
+                      size="lg"
+                      variant="ghost"
+                      isIconOnly
+                      aria-label="缩小图片"
+                      isDisabled={zoom <= 25}
+                      onPress={() => zoomTo(zoomGoal.current - 25)}
+                    >
+                      <UiIcon icon={IconZoomOut} size="action" />
+                    </Button>
+                    <Tooltip.Content>缩小</Tooltip.Content>
+                  </Tooltip>
+                  <output
+                    className="browse-image-position"
+                    aria-label="图片缩放比例"
+                    aria-live="polite"
                   >
-                    <UiIcon icon={IconZoomIn} size="action" />
-                  </Button>
-                  <Tooltip.Content>放大</Tooltip.Content>
-                </Tooltip>
-              </Toolbar>
+                    {Math.round(zoom)}%
+                  </output>
+                  <Tooltip>
+                    <Button
+                      size="lg"
+                      variant="ghost"
+                      isIconOnly
+                      aria-label="放大图片"
+                      isDisabled={zoom >= 500}
+                      onPress={() => zoomTo(zoomGoal.current + 25)}
+                    >
+                      <UiIcon icon={IconZoomIn} size="action" />
+                    </Button>
+                    <Tooltip.Content>放大</Tooltip.Content>
+                  </Tooltip>
+                </Toolbar>
+              </div>
+              {images.length > 1 && (
+                <nav ref={thumbnailRail} className="browse-image-thumbnails" aria-label="本组图片">
+                  {images.map((image, position) => (
+                    <Button
+                      key={`${image.src}-${image.alt}`}
+                      ref={(element) => {
+                        thumbnails.current[position] = element;
+                      }}
+                      variant="ghost"
+                      className="browse-image-thumbnail"
+                      aria-label={`查看第 ${position + 1} 张图片`}
+                      aria-current={position === index}
+                      onPress={() => select(position)}
+                    >
+                      <span className="browse-image-thumbnail-clip">
+                        <img
+                          src={image.thumbnailSrc ?? image.src}
+                          alt=""
+                          loading="lazy"
+                          crossOrigin="anonymous"
+                          referrerPolicy="strict-origin-when-cross-origin"
+                          draggable={false}
+                        />
+                      </span>
+                    </Button>
+                  ))}
+                </nav>
+              )}
+              <div className="browse-image-close">
+                <DialogClose fullScreen label="关闭图片浏览" />
+              </div>
             </motion.div>
           </Modal.Dialog>
         </Modal.Container>

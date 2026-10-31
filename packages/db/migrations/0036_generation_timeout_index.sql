@@ -1,0 +1,1 @@
+CREATE INDEX "generation_job_items_running_started_idx" ON "generation_job_items" USING btree ("started_at","organization_id") WHERE "generation_job_items"."status" = 'running' and "generation_job_items"."superseded_at" is null;

@@ -11,7 +11,7 @@ const png = Buffer.from(
   "base64",
 );
 
-test("textile angles submit one durable ten-image job and keep results separate from creation", async ({
+test("textile angles submit one durable ten-image job and isolate history across tools", async ({
   page,
 }) => {
   await mockImageEvents(page);
@@ -21,10 +21,10 @@ test("textile angles submit one durable ten-image job and keep results separate 
         enabled: true,
         eventsEnabled: true,
         editsEnabled: true,
-        unitCredits: 20,
+        unitCredits: 2,
         models: ["gpt-image-2", "gpt-image-2.5", "nano-banana-2.1"].map((id) => ({
           id,
-          enabledResolutions: ["1K", "2K", "4K"],
+          enabledResolutions: ["1K", "1.5K", "2K", "4K"],
         })),
       }),
     }),
@@ -48,7 +48,8 @@ test("textile angles submit one durable ten-image job and keep results separate 
       expect(input.textileSet?.views).toEqual(textileViews.map((view) => view.id));
       expect(input.count).toBe(10);
       expect(input.referenceAssetIds).toEqual(referenceIds);
-      expect(input.model).toBe("gpt-image-2");
+      expect(input.model).toBe("gpt-image-2.5");
+      expect(input.textileSet?.version).toBe(5);
       expect(input.resolution).toBe("2K");
       expect(input.quality).toBe("medium");
       const id = crypto.randomUUID();
@@ -82,7 +83,7 @@ test("textile angles submit one durable ten-image job and keep results separate 
     const id = url.pathname.split("/").at(-1);
     const job = jobs.find((entry) => entry.id === id);
     return route.fulfill({
-      json: apiFixture(job ?? { data: url.searchParams.get("tool") === "textile" ? jobs : [] }),
+      json: apiFixture(job ?? { data: url.searchParams.get("tool") !== "create" ? jobs : [] }),
     });
   });
   await page.goto("/commerce/textile-set");
@@ -104,7 +105,7 @@ test("textile angles submit one durable ten-image job and keep results separate 
   for (const view of textileViews)
     await picker.getByRole("button", { name: view.name, exact: true }).click();
   await picker.getByRole("button", { name: "确认", exact: true }).click();
-  await expect(submit).toHaveAccessibleDescription("本次生成 10 张，消耗 200 积分");
+  await expect(submit).toHaveAccessibleDescription("本次生成 10 张，消耗 20 积分");
   await expect(submit).toBeEnabled();
   await submit.click();
   await expect(page.locator(".generation-job")).toHaveCount(1);
@@ -141,12 +142,26 @@ test("textile angles submit one durable ten-image job and keep results separate 
   );
   await expect(page.locator(".generation-failed-result")).toHaveCount(1);
   await expect(page.locator(".generation-results img")).toHaveCount(9);
+  const result = page.locator(".generation-results > div").first();
+  const label = result.locator(".textile-result-view");
+  const labelBox = await label.boundingBox();
+  const resultBox = await result.boundingBox();
+  if (!labelBox || !resultBox) throw new Error("Missing result label geometry");
+  expect(labelBox.y - resultBox.y).toBeCloseTo(4, 0);
+  expect(labelBox.x + labelBox.width / 2).toBeCloseTo(resultBox.x + resultBox.width / 2, 0);
+  await expect(label).toHaveCSS("font-size", "12px");
+  await expect(label).toHaveCSS("pointer-events", "none");
+
   await page.reload();
   await expect(page.locator(".generation-results img")).toHaveCount(9);
   await page.getByRole("button", { name: "重新编辑", exact: true }).click();
   await expect(page.locator(".textile-selected-view")).toHaveCount(10);
   await expect(page.locator(".reference-tile")).toHaveCount(6);
-  await page.getByRole("link", { name: "创作", exact: true }).click();
+  await page.getByRole("button", { name: "全部工具", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "选择工具" })
+    .getByRole("button", { name: /^主图制作/ })
+    .click();
   await expect(page.locator(".generation-job")).toHaveCount(0);
 });
 

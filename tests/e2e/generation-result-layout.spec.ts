@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
 for (const count of [1, 3]) {
-  test(`generation results use a full-width single image and square multiple tiles (${count})`, async ({
+  test(`generation results cap single and multiple image widths consistently (${count})`, async ({
     page,
   }) => {
     await mockImageApi(page);
@@ -52,7 +52,9 @@ for (const count of [1, 3]) {
       first = await image.boundingBox();
     if (!area || !first) throw new Error("Missing result geometry");
     if (count === 1) {
-      expect(Math.abs(first.width - area.width)).toBeLessThan(2);
+      expect(first.width).toBeLessThanOrEqual(400);
+      expect(first.width).toBeGreaterThan(350);
+      expect(first.width).toBeLessThan(area.width);
       expect(first.width / first.height).toBeCloseTo(2, 1);
     } else {
       const failed = await results.locator(".generation-placeholder").boundingBox();

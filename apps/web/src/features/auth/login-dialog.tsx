@@ -1,5 +1,4 @@
 import {
-  Alert,
   Button,
   FieldError,
   Form,
@@ -14,6 +13,7 @@ import { IconBrandWechat, IconEye, IconEyeOff, IconQrcode, IconX } from "@tabler
 import { motion, useReducedMotion } from "motion/react";
 import { useRef, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
+import { useErrorToast } from "../../lib/error-toast";
 import { photo } from "../generation/studio-state";
 import { useEnterpriseLogin } from "./auth-client";
 
@@ -37,6 +37,7 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
   const [visible, setVisible] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  useErrorToast(error);
   const phoneValid = /^1[3-9]\d{9}$/.test(phone);
   const hint = loginMethods.find((method) => method.mode === mode)?.hint;
   const switchMode = (next: LoginMode) => {
@@ -139,6 +140,7 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                           onSubmit={async (event) => {
                             event.preventDefault();
                             if (login.isPending) return;
+                            setError("");
                             setSubmitted(true);
                             if (mode === "enterprise") {
                               if (!account.trim() || !password) return;
@@ -280,13 +282,6 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                                 <FieldError>请输入6位数字验证码</FieldError>
                               </TextField>
                             </>
-                          )}
-                          {error && (
-                            <Alert className="login-error" status="danger" role="alert">
-                              <Alert.Content>
-                                <Alert.Description>{error}</Alert.Description>
-                              </Alert.Content>
-                            </Alert>
                           )}
                           <Button
                             type="submit"

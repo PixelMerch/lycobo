@@ -6,6 +6,7 @@ import {
   useImageSession,
   usePendingSubmission,
 } from "../../generation/generation-client";
+import { modelCapabilities, supportsReferences } from "../../generation/models/model-capabilities";
 import type { Draft } from "../../generation/studio-state";
 import { useTextileSetDraft } from "./textile-set-state";
 
@@ -17,10 +18,11 @@ export function useTextileGeneration() {
   const pending = usePendingSubmission(session.data);
   const ownPending =
     pending && !!session.data && pendingSubmissionSource(session.data) === "textile-set";
-  const resolutions =
-    models.data?.models.find((model) => model.id === "gpt-image-2")?.enabledResolutions ?? [];
+  const capabilities = modelCapabilities(models.data, "gpt-image-2.5", "textile-set");
+  const resolutions = capabilities?.enabledResolutions ?? [];
   const configured =
-    !!models.data?.enabled && !!models.data.editsEnabled && resolutions.includes(draft.resolution);
+    supportsReferences(capabilities, 1 + draft.detailImages.length) &&
+    resolutions.includes(draft.resolution);
   useErrorToast(generation.error?.message ?? models.error?.message);
   return {
     resolutions,
@@ -43,10 +45,10 @@ export function useTextileGeneration() {
       };
       generation.mutate(
         {
-          model: "gpt-image-2",
+          model: "gpt-image-2.5",
           draft: input,
           source: "textile-set",
-          textileSet: { version: 4, views: draft.views },
+          textileSet: { version: 5, views: draft.views },
         },
         {
           onSuccess: () => {

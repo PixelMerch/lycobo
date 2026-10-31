@@ -204,6 +204,13 @@
   height: 0;
   pointer-events: none;
 }
+/* Keep the non-modal picker anchored while background panels stay in place. */
+html:has(.textile-views-popover),
+body:has(.textile-views-popover),
+body:has(.textile-views-popover)
+  :is(.composer-scroll, .results-panel, .history-rail, .sidebar nav) {
+  overflow: hidden;
+}
 .textile-views-popover {
   width: min(var(--trigger-width), 888px);
   max-width: none;
@@ -246,6 +253,7 @@
   flex: 0 1 auto;
   padding: 16px 20px 20px;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
 }
 .textile-view-count {
   margin-bottom: 16px;
@@ -390,11 +398,28 @@
   }
 }
 
+.generation-results > div:has(> .textile-result-view) {
+  position: relative;
+}
 .textile-result-view {
-  margin: 0 0 8px;
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  z-index: 1;
+  translate: -50% 0;
+  max-width: calc(100% - 16px);
+  margin: 0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 70%);
   color: #eee;
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
 }
 
 .textile-uploaded-details {

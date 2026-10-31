@@ -134,6 +134,132 @@
       "when": 1793001779687,
       "tag": "0018_targeted_image_retry",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793075271464,
+      "tag": "0019_model_channels",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793075982974,
+      "tag": "0020_model_configuration_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793076130244,
+      "tag": "0021_provider_poll_failures",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793080589787,
+      "tag": "0022_mean_fenris",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793080697934,
+      "tag": "0023_thankful_mindworm",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793097141269,
+      "tag": "0024_admin_menu_entries",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793102490411,
+      "tag": "0025_magical_thunderbolt",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793156000479,
+      "tag": "0026_admin_model_configuration",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1793166658568,
+      "tag": "0027_model_catalog_logo",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1793167902548,
+      "tag": "0028_model_catalog_upstream",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793169373856,
+      "tag": "0029_simple_provider_binding",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793171528101,
+      "tag": "0030_model_catalog_presentation",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793171925296,
+      "tag": "0031_model_catalog_sort_order",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793341007888,
+      "tag": "0032_reference_retention",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793344501799,
+      "tag": "0033_smart_variation_plans",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793349758005,
+      "tag": "0034_variation_planner_protocol",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1793426934107,
+      "tag": "0035_variation_twenty_plans",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793428568412,
+      "tag": "0036_generation_timeout_index",
+      "breakpoints": true
     }
   ]
 }

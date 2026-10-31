@@ -39,8 +39,8 @@ Read relevant project skills before work:
 - DESIGN.md is the sole visual specification. The user approved and froze the current UI on
   2026-10-22. Documentation, cleanup and component refactors must preserve its appearance;
   a new visual change requires a new explicit design request. Do not reinterpret skill recommendations
-  as permission to restyle it. Preserve the actual tokens: brand blue #0485F7, HeroUI accent
-  #0485F7, solid primary #0485F7 with white foreground and pill-shaped generation buttons.
+  as permission to restyle it. Preserve the actual tokens: brand lime #A8FF00, HeroUI accent
+  #A8FF00, lime-to-mint primary gradient (#A8FF00 → #54E6A5) with dark #142000 foreground and pill-shaped generation buttons.
   Image content stays primary. Do not reintroduce retired palettes or bonko branding.
   Interaction research explains existing decisions; it does not override the approved UI.
 - Distinguish real image APIs from local examples and E2E fixtures. Never represent sample
@@ -135,7 +135,7 @@ Read relevant project skills before work:
 
 - Product screens use end-user language. Keep preview/debug/reset notes in developer documentation, not headers, cards or dialogs. Never infer production readiness from clean UI copy.
 
-- Match the measured shell rules in DESIGN.md: sidebar 274/288/320px by breakpoint, collapsed 64px (2× the 32px icon background); desktop rows 40/42/44px, row gap 6px, icon/text gap 8px, radius 16px, icons 18px. Header is 68px desktop/60px mobile. Hover/active never change geometry; mobile targets stay 44px.
+- Match the measured shell rules in DESIGN.md: sidebar 274/288/320px by breakpoint, collapsed 64px (2× the 32px icon background); desktop rows 40/42/44px, row gap 6px, icon/text gap 8px, radius 16px, icons 18px. Header is 60px on desktop and mobile. Hover/active never change geometry; mobile targets stay 44px.
 
 - Use Tabler business icons through components/ui-icon.tsx. Sizes: 14 / 18 / 20 / 22 / 28px, stroke 2. Keep icon sizing independent of compact control geometry; do not add another icon library. Credits use Tabler IconCoins (no bitmap coin) and close controls use Tabler IconX; never keep hand-drawn, bitmap or second-library icons.
 

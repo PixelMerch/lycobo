@@ -4,10 +4,13 @@
 
 只保留仍在使用的设计依据与素材来源：
 
+- [电商工作台 UI 提案（待评审）](unified-creation/README.md)：基于 Photoroom 与小云雀实查的分类工具面板、单入口切换、下拉历史筛选、统一任务列表、固定模型选择，以及完整输入／确认／结果状态。仅为用户本轮要求的 UI 设计图，不替代现行规范、不表示功能已接入。
+
+- [工作区功能栏参考与取舍](workspace-tool-navigation-research.md)：Refero Krea、Linear、Raycast 的中性导航参考与图标／左侧参数联动边界。
 - [统一图片画布交互依据](canvas-workspace-decisions.md)：原地修复工作区的参考、取舍和验收范围；当前采用灰色点阵、鼠标白色波纹与桌面右侧竖向工具。
 - [艺栢交互研究](yibai-page-logic.md)：工具选择、创作三栏与历史联动的参考依据。
 - [小云雀登录样式实测](xiaoyunque-login-measurements.md)：官方测量值与本站校准值，最终规则归入 DESIGN.md。
-- [参考站视觉语言实测](reference-style-dna.md)：艺栢与小云雀的色板、字号、圆角与密度，以及 Oii 账户弹窗层次实测，记录参考来源与取舍，不作为重新换色或调整密度的规范。
+- [参考站视觉语言实测](reference-style-dna.md)：艺栢与小云雀的色板、字号、圆角与密度，以及 Oii 账户弹窗层次、OiiOii 与小云雀首页内容层次复核，记录参考来源与取舍，不作为重新换色或调整密度的规范。
 - [家纺样例图片来源](studio-photo-prompts.json)：对应 apps/web/public/studio 下仍在使用的三组样例素材，不代表真实客户商品或生成结果。
 
 旧 UI 位图、版本对比稿、导出页面和一次性 UI 生图提示词已移出当前资料。不要重新以静态图维护第二份产品规范。新增参考只保留支撑当前决策的必要证据，先更新本索引并检查引用。

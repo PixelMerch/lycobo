@@ -36,6 +36,7 @@ export function ReferenceThumbnails({ ids, label }: { ids: string[]; label?: str
           <ImageViewer
             images={ids.map((id, index) => ({
               src: assetContentUrl(id),
+              thumbnailSrc: assetContentUrl(id, true),
               alt: `参考图片 ${index + 1}`,
             }))}
             initialIndex={preview}

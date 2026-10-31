@@ -5,6 +5,7 @@ import {
   imageUnitCredits,
   publicImageModel,
   type TextileGeneration,
+  type VariationGeneration,
 } from "@lycoboai/contracts";
 import { IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
@@ -23,8 +24,10 @@ import {
   useImageSession,
   usePendingSubmission,
 } from "../generation-client";
+import { modelCapabilities, supportsReferences } from "../models/model-capabilities";
 import { ReferenceThumbnails } from "../references/reference-thumbnails";
 import { type Draft, type ModelId, useStudioStore } from "../studio-state";
+import { HistoryDownloadButton } from "./history-download-button";
 
 export function HistoryPrompt({ job }: { job: ImageJob }) {
   return (
@@ -46,11 +49,12 @@ export type HistoryRestore = (value: {
   model: ModelId;
   draft: Draft;
   textileSet?: TextileGeneration | undefined;
+  variation?: VariationGeneration | undefined;
 }) => void;
 async function taskDraft(
   job: ImageJob,
   client: QueryClient,
-): Promise<{ model: ModelId; draft: Draft; textileSet?: TextileGeneration | undefined }> {
+): Promise<Parameters<HistoryRestore>[0]> {
   const input =
     job.input ??
     (
@@ -66,10 +70,11 @@ async function taskDraft(
   return {
     model: publicImageModel(input.model),
     textileSet: input.textileSet,
+    variation: input.variation,
     draft: {
       prompt: input.prompt,
       ratio: input.aspectRatio,
-      resolution: input.resolution,
+      resolution: input.resolution === "1K" ? "1.5K" : input.resolution,
       quality: input.quality === "low" ? "低" : input.quality === "high" ? "高" : "标准",
       count: String(input.count),
       references: input.referenceAssetIds.map((id, index) => ({
@@ -113,16 +118,16 @@ export function HistoryTaskActions({
     : job.items.filter((entry) => ["failed", "needs_reconciliation"].includes(entry.status));
   const upgradeTextile =
     !!job.input?.textileSet &&
-    job.input.textileSet.version < 4 &&
+    job.input.textileSet.version < 5 &&
     targets.every((entry) => entry.status === "failed");
+  const capabilities = modelCapabilities(
+    models.data,
+    upgradeTextile ? "gpt-image-2.5" : job.model,
+    job.input?.textileSet ? "textile-set" : job.input?.localEdit ? "local-edit" : "create",
+  );
   const configured =
-    models.data?.enabled &&
-    models.data.models.some(
-      (model) =>
-        model.id === (upgradeTextile ? "gpt-image-2" : publicImageModel(job.model)) &&
-        model.enabledResolutions.some((resolution) => resolution === job.resolution),
-    ) &&
-    (!job.input?.referenceAssetIds.length || models.data.editsEnabled);
+    capabilities?.enabledResolutions.some((resolution) => resolution === job.resolution) &&
+    supportsReferences(capabilities, job.input?.referenceAssetIds.length ?? 0);
   const retrying =
     !!item || ["failed", "partially_failed", "needs_reconciliation"].includes(job.status);
   const count = item
@@ -134,10 +139,12 @@ export function HistoryTaskActions({
             .length,
         )
       : job.requested_count;
-  const unitCredits = retrying ? (job.unit_credits ?? imageUnitCredits) : imageUnitCredits;
-  const regenerateContent = `本次消耗 ${count * unitCredits} 积分${
-    upgradeTextile ? "。使用 gpt-image-2-4K 创建新任务，原记录保留。" : ""
-  }`;
+  const unitCredits = imageUnitCredits;
+  const regenerateContent = targets.some((entry) => entry.status === "needs_reconciliation")
+    ? "先查询原任务，已有结果将直接保存；确认需重新生成时才扣除积分。"
+    : `本次消耗 ${count * unitCredits} 积分${
+        upgradeTextile ? "。使用最新裂变配置创建新任务，原记录保留。" : ""
+      }`;
   const restore = (value: Awaited<ReturnType<typeof taskDraft>>) => {
     if (onRestore) {
       onRestore(value);
@@ -166,16 +173,20 @@ export function HistoryTaskActions({
           : restored.textileSet.views;
         generation.mutate({
           ...restored,
-          model: "gpt-image-2",
+          model: "gpt-image-2.5",
           draft: { ...restored.draft, count: String(views.length) },
-          textileSet: { version: 4, views },
+          textileSet: { version: 5, views },
           source: "textile-set",
         });
         return;
       }
       generation.mutate({
         ...restored,
-        ...(job.input?.textileSet ? { source: "textile-set" } : {}),
+        ...(job.input?.textileSet
+          ? { source: "textile-set" }
+          : job.input?.variation
+            ? { source: "smart-variation" }
+            : {}),
         ...(item || ["failed", "partially_failed", "needs_reconciliation"].includes(job.status)
           ? { retryJobId: job.id, ...(item ? { retryItemId: item.id } : {}) }
           : {}),
@@ -188,6 +199,7 @@ export function HistoryTaskActions({
   };
   return (
     <div className={item ? "generation-retry-overlay" : "history-task-actions"}>
+      {!item && <HistoryDownloadButton job={job} />}
       {!item && (
         <Tooltip delay={0}>
           <Button

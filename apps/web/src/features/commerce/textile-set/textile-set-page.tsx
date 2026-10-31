@@ -1,13 +1,13 @@
-import { Button, Popover, Tabs, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { imageResolutionSchema, imageUnitCredits } from "@lycoboai/contracts";
+import { Button, Popover, Spinner, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { imageUnitCredits, publicImageResolutions } from "@lycoboai/contracts";
 import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { useId, useRef, useState } from "react";
 import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../../generation/composer/selection-highlight";
-import { GenerationHistory } from "../../generation/history/generation-history";
-import { HistoryIndex } from "../../generation/history/history-index";
+import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
+
 import { TextileImageField } from "./textile-image-field";
 import { useTextileSetDraft } from "./textile-set-state";
 import { textileViewImages, textileViews } from "./textile-views";
@@ -25,11 +25,11 @@ export function TextileSetPage() {
   const costDescriptionId = useId();
   const selectedViews = textileViews.filter((view) => views.includes(view.id));
   return (
-    <div className="workspace textile-workspace">
+    <>
       <div ref={viewsAnchor} className="textile-views-anchor" aria-hidden="true" />
       <section className="composer-panel" aria-label="家纺主图裂变参数">
+        <WorkspaceComposerTitle />
         <div className="composer-scroll">
-          <h1 className="textile-title">家纺主图裂变</h1>
           <TextileImageField
             label="主图"
             required
@@ -156,11 +156,11 @@ export function TextileSetPage() {
               selectionMode="single"
               selectedKeys={[resolution]}
               onSelectionChange={(keys) => {
-                const next = imageResolutionSchema.options.find((value) => keys.has(value));
+                const next = publicImageResolutions.find((value) => keys.has(value));
                 if (next) update({ resolution: next });
               }}
             >
-              {imageResolutionSchema.options.map((value) => (
+              {publicImageResolutions.map((value) => (
                 <ToggleButton
                   key={value}
                   id={value}
@@ -186,6 +186,9 @@ export function TextileSetPage() {
             onPress={generation.submit}
             aria-describedby={costDescriptionId}
           >
+            {generation.submitting && (
+              <Spinner size="md" color="current" role="status" aria-label="正在提交套图任务" />
+            )}
             {generation.pending && !generation.submitting ? "确认上次提交" : "立即生成"}
             {(!generation.pending || generation.submitting) && (
               <span className="generate-credit-cost" aria-hidden="true">
@@ -204,31 +207,6 @@ export function TextileSetPage() {
           )}
         </div>
       </section>
-      <section className="results-panel" aria-label="家纺主图裂变内容">
-        <Tabs className="workspace-tabs">
-          <Tabs.ListContainer>
-            <Tabs.List aria-label="家纺主图裂变工作区">
-              <Tabs.Tab id="history">历史记录</Tabs.Tab>
-            </Tabs.List>
-          </Tabs.ListContainer>
-          <Tabs.Panel id="history">
-            <GenerationHistory
-              tool="textile"
-              onRestore={({ draft, textileSet }) => {
-                if (!textileSet) return;
-                update({
-                  mainImage: draft.references[0] ?? null,
-                  detailImages: draft.references.slice(1, 6),
-                  views: textileSet.views,
-                  ratio: draft.ratio,
-                  resolution: imageResolutionSchema.parse(draft.resolution),
-                });
-              }}
-            />
-          </Tabs.Panel>
-        </Tabs>
-      </section>
-      <HistoryIndex tool="textile" />
-    </div>
+    </>
   );
 }

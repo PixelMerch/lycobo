@@ -1,0 +1,1 @@
+ALTER TABLE "provider_executions" ADD COLUMN "poll_failures" integer DEFAULT 0 NOT NULL;

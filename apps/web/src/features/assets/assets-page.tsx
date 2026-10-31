@@ -1,3 +1,4 @@
+import { InfiniteLoad } from "../../components/infinite-load";
 import { AssetImage } from "../generation/asset-image";
 import "./image-public-id.css";
 import { Button, Card, EmptyState, Link } from "@heroui/react";
@@ -10,9 +11,12 @@ import {
   useImageAssets,
   useImageSession,
 } from "../generation/generation-client";
+import { modelDisplayName } from "../generation/models/model-display-name";
+import { useModelPresentation } from "../generation/models/model-logos";
 
 export function AssetsPage() {
   const session = useImageSession();
+  const models = useModelPresentation().data?.models ?? [];
   const query = useImageAssets({ kind: "output", type: "image" });
   const assets =
     query.data?.pages.flatMap((page) => page.data).filter((asset) => asset.kind === "output") ?? [];
@@ -30,7 +34,7 @@ export function AssetsPage() {
         </div>
       </div>
       {session.isError ||
-      query.isError ||
+      (query.isError && !query.data) ||
       session.isPending ||
       query.isPending ? null : assets.length ? (
         <>
@@ -53,7 +57,7 @@ export function AssetsPage() {
                 </Link>
                 <Card.Content className="asset-card-details">
                   <Card.Title>{asset.kind === "output" ? "生成图片" : "参考图片"}</Card.Title>
-                  <Card.Description>{asset.model}</Card.Description>
+                  <Card.Description>{modelDisplayName(asset.model, models)}</Card.Description>
                   {asset.public_id && <p className="image-public-id">图片 ID：{asset.public_id}</p>}
                   <small>
                     {asset.width} × {asset.height} ·{" "}
@@ -66,17 +70,12 @@ export function AssetsPage() {
               </Card>
             ))}
           </div>
-          {query.hasNextPage && (
-            <Button
-              variant="secondary"
-              isDisabled={query.isFetchingNextPage}
-              onPress={() => {
-                void query.fetchNextPage();
-              }}
-            >
-              加载更多素材
-            </Button>
-          )}
+          <InfiniteLoad
+            hasMore={query.hasNextPage}
+            isLoading={query.isFetchingNextPage}
+            isError={query.isError}
+            onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
+          />
         </>
       ) : (
         <EmptyState className="empty-state">

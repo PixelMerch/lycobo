@@ -11,12 +11,16 @@ export function ResultImage({
   prompt,
   onPreview,
   thumbnail = true,
+  width,
+  height,
 }: {
   assetId: string;
   position: number;
   prompt: string;
   onPreview: (trigger: HTMLElement) => void;
   thumbnail?: boolean;
+  width?: number | null;
+  height?: number | null;
 }) {
   const favorite = useStudioStore((s) => s.favorites.includes(assetId));
   const toggleFavorite = useStudioStore((s) => s.toggleFavorite);
@@ -38,6 +42,11 @@ export function ResultImage({
         <AssetImage
           assetId={assetId}
           thumbnail={thumbnail}
+          width={width ?? undefined}
+          height={height ?? undefined}
+          style={
+            !thumbnail && width && height ? { aspectRatio: `${width} / ${height}` } : undefined
+          }
           loading="lazy"
           alt={`${prompt}，图片${position + 1}`}
         />
@@ -53,7 +62,7 @@ export function ResultImage({
           >
             <UiIcon icon={IconDownload} />
           </Button>
-          <Tooltip.Content placement="top">下载原图</Tooltip.Content>
+          <Tooltip.Content placement="top">下载</Tooltip.Content>
         </Tooltip>
         <Tooltip delay={0}>
           <ToggleButton

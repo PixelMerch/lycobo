@@ -80,7 +80,8 @@ GitHub Environment 仅保留：
 | `lycobo-api` | Variable | `APP_ENV=production`；`AUTH_TRUSTED_ORIGINS=https://lycobo.pages.dev`（按实际域名调整） |
 | 两个 Worker | Variable | `IMAGE_GENERATION_ENABLED`、`VAKV_ENABLE_IMAGE_EDITS`：分别配置，保持一致；未验收时为 `false` |
 | `lycobo-generation` | Secret | `VAKV_API_KEY`：启用真实生图时必需 |
-| `lycobo-generation` | Variable | `VAKV_BASE_URL=https://api.vakv.cn`；`GENERATION_TIMEOUT_MS=600000` |
+| `lycobo-generation` | Secret | `MODEL_CREDENTIAL_SECRET`：生产独立的32字节Base64主密钥，解密数据库中的渠道Key，不进入GitHub Actions或前端 |
+| `lycobo-generation` | Variable | `VAKV_BASE_URL=https://api.ai-media.vip`；`GENERATION_TIMEOUT_MS=600000` |
 
 不要把这些运行配置放到 Pages 静态前端或 `VITE_*` 中。首次部署新 Worker 后，必须在 Cloudflare 补齐运行配置才能验收；部署成功不代表运行配置齐全。后续自动、手动、本地脚本部署均保留 Cloudflare 的运行值，手动部署不再提供生图开关。`keep_vars` 仅保留运行变量，资源绑定仍随仓库配置发布。[Wrangler 官方说明](https://developers.cloudflare.com/workers/wrangler/configuration/#source-of-truth)。
 
@@ -140,3 +141,13 @@ SSE 在 Workers 中保持原有持久事件游标、组织隔离、身份复验�
 发布时先部署资源 Worker、配置 Cloudflare 密钥，再启用 API 的资源 Origin。R2 不打开公共域名或 r2.dev。默认 workers.dev 可验证验签、流式访问与缓存，生产仍建议绑定自定义域名并重新验收。2026-10-23 候选入口实测：30 次请求中 24 次正常读取、6 次无效／越权请求均拒绝，22 次缓存命中、2 次未命中；Cloudflare CPU 中位数 1.031ms、P99 2.805ms，执行错误 0。该结果是本次取样，不能代替后续域名、网络与负载下的验收。本地 workerd 同时验证缓存与拒绝访问行为。默认 `url` 返回 `variant=preview`：最长边 1600px、WebP quality 82；缩略图为 `variant=thumbnail`：最长边 512px、WebP quality 76；仅 `variant=download` 返回原始 PNG 并使用 attachment。展示路径使用 `.preview.webp`／`.thumbnail.webp`，而非原图的 `.png` 路径。禁止把缺失展示版本回退成原图响应。参考图编辑的服务端输入仍使用原始文件，前端选区坐标以原始宽高计算。首次启用需先发布带 Images binding 和新变体支持的资源 Worker，再发布生成新链接的 API；已有旧链接不带 variant 时也按预览版本处理。
 
 签名升级到 v2 后，旧签名链接将被拒绝；需要协调更新资源 Worker 和 API，并让客户端刷新元数据。旧链接不会被降级放行以换取原图。此代码变更不代表已部署线上。
+
+## v0.3.0 发布配置
+
+GitHub `cloudflare-production` 仅保留部署用 `CLOUDFLARE_API_TOKEN` 和非敏感 `CLOUDFLARE_HYPERDRIVE_ID`，不保存模型Key、JWT主密钥或数据库密码。运行密钥在 Cloudflare 对应 Worker 的 Settings 管理，部署保留其值。可配置渠道的供应商Key加密保存在 PostgreSQL，解密主密钥仅放消费者 Cloudflare Secret；新增中转站通过模型服务后台配置，无需改GitHub Actions。生产主密钥与本地开发独立，被忽略的本地生产配置备份须设为仅当前用户可读，不得提交。
+
+本次上线须先将Supabase迁移到0025（独立管理员／模型渠道／菜单／历史归档），再部署Workers与Pages。迁移仅扩展结构，不导入本地账户、积分、图片或生成记录。新渠道沿用本地已验证的FluxPort异步协议；公网验收只检查登录、能力和历史读取，不自动发起付费生成。
+
+### 主站独立模型计划密钥
+
+主站 `STANDALONE_MODELS=true` 时，API Worker `lycobo-api` 的 `DEEPSEEK_API_KEY` 配置为 DeepSeek 官方 Key，计划固定使用 `deepseek-flash` 和官方接口，不再使用语言中转站。该 Secret 不放 GitHub Actions 或浏览器；本地 `.env` 使用同名变量，保留受保护备份。图片 Key 和图片路由保持独立。切换供应商时须在发布该版本前同步更新 API Secret。

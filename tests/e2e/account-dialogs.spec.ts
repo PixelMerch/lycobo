@@ -98,7 +98,7 @@ test("ledger filters loaded pages without losing older records or exposing payme
   await page.getByRole("menuitem", { name: "订阅与账单", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "订阅与账单", exact: true });
   await expect(dialog.getByText("已加载 20 条记录", { exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "加载更多收支", exact: true }).click();
+  await dialog.locator(".infinite-load").scrollIntoViewIfNeeded();
   await expect(dialog.getByText("已加载 21 条记录", { exact: true })).toBeVisible();
   await dialog.getByRole("button", { name: /全部类型.*收支类型/ }).click();
   await page.getByRole("option", { name: "生成失败退款", exact: true }).click();
