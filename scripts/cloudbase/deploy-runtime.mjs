@@ -7,6 +7,25 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 export const runtimeEnvironment = "lycobo-d9gyvxkegc54a1257";
 export const runtimeFunctions = ["lycobo-consumer", "lycobo-assets", "lycobo-api"];
+export async function deploymentCosCredentials(env, call) {
+  if (env.TCB_SECRET_ID || env.TCB_SECRET_KEY) {
+    if (!/^AKID[A-Za-z0-9]+$/.test(env.TCB_SECRET_ID ?? "") || !env.TCB_SECRET_KEY)
+      throw new Error("CODE_UPLOAD_CREDENTIALS_UNAVAILABLE");
+    return { SecretId: env.TCB_SECRET_ID, SecretKey: env.TCB_SECRET_KEY };
+  }
+  const { credentials } = await call("auth", {
+    action: "get_temp_credentials",
+    confirm: "yes",
+    reveal: true,
+  });
+  if (!credentials?.secretId || !credentials?.secretKey || credentials.masked)
+    throw new Error("CODE_UPLOAD_CREDENTIALS_UNAVAILABLE");
+  return {
+    SecretId: credentials.secretId,
+    SecretKey: credentials.secretKey,
+    SecurityToken: credentials.token || undefined,
+  };
+}
 export function decodeToolResult(result, label) {
   let decoded = result.structuredContent;
   if (!decoded) {
@@ -106,6 +125,7 @@ export async function publishRuntime({
         uploaded = upload;
         break;
       } catch (error) {
+        if (error?.message === "CODE_UPLOAD_CREDENTIALS_UNAVAILABLE") throw error;
         if (error?.message === "UPLOAD_REJECTED") throw new Error(`${name}: UPLOAD_REJECTED`);
       }
       if (attempt < 2) await wait(2000 * (attempt + 1));
@@ -194,17 +214,8 @@ async function main() {
     let cos;
     const getCos = async () => {
       if (cos) return cos;
-      const { credentials } = await call("auth", {
-        action: "get_temp_credentials",
-        confirm: "yes",
-        reveal: true,
-      });
-      if (!credentials?.secretId || !credentials?.secretKey || credentials.masked)
-        throw new Error("CODE_UPLOAD_CREDENTIALS_UNAVAILABLE");
       cos = new COS({
-        SecretId: credentials.secretId,
-        SecretKey: credentials.secretKey,
-        SecurityToken: credentials.token || undefined,
+        ...(await deploymentCosCredentials(process.env, call)),
         Timeout: 90000,
         ChunkParallelLimit: 3,
         FileParallelLimit: 1,

@@ -71,6 +71,8 @@ jobs:
         timeout-minutes: 10
         env:
           GH_TOKEN: ${{ github.token }}
+          TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}
+          TCB_SECRET_KEY: ${{ secrets.TCB_SECRET_KEY }}
         run: |
           test "$DEPLOY_SHA" = "$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq .object.sha)"
           node scripts/cloudbase/deploy-runtime.mjs "$RUNNER_TEMP/lycobo-cloudbase-runtime" "$RUNNER_TEMP/cloudbase-mcp-client"

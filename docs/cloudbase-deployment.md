@@ -2,6 +2,8 @@
 
 更新：2026-11-01。目标为上海个人版环境 `lycobo-d9gyvxkegc54a1257`，不升级套餐。主站三个功能已实际生图并保存私有云存储，API/消费者生图开关和每分钟定时触发均已启用，见 [真实验收记录](cloudbase-runtime-migration.md#当前真实验收)。
 
+按用户确认，当前固定使用默认入口：https://lycobo-d9gyvxkegc54a1257-1311968085.ap-shanghai.app.tcloudbase.com/ 。前端、API 和图片资源共用该网关；后续部署更新同一环境的服务和文件，不更换入口。自定义域名暂不接入，不将备案或 DNS 作为本次交付条件。
+
 ## GitHub 自动发布
 
 `.github/workflows/deploy-cloudbase.yml` 替代已删除的 Cloudflare 发布工作流：main 的 push CI 成功 → 检出该 SHA → 确认仍为最新 main → 冻结安装依赖 → `pnpm check` → 准备前后端包 → 更新已配置的三个云函数代码 → 验证 API → 发布共享静态托管。dev 和 PR 不发布；手动触发也只允许 main，且必须有该 SHA 对应的成功 push CI。
@@ -27,7 +29,7 @@ GitHub 已创建 `cloudbase-production` Environment，仅允许 main 部署。�
 
 首次三个函数创建、服务端变量、同源网关与候选读写检查均已完成，Environment 变量 `CLOUDBASE_RUNTIME_READY` 已设置为 `true`。后续 CI 使用固定版本 CloudBase MCP 的两段式代码上传，仅更新代码并保留云端运行凭据和配置；不会自动创建不完整后端或应用数据库迁移。
 
-Secrets 仅在发布登录步骤注入，不传入前端构建；任务结束后执行 CLI logout。代码进入 main、Secrets 配置完成并实际运行前，不能宣称 GitHub 自动发布已跑通。本地提交不会自动推送或触发发布。
+Secrets 仅在发布登录与后端代码传输步骤注入，不传入前端构建；任务结束后执行 CLI logout。代码进入 main、Secrets 配置完成并实际运行前，不能宣称 GitHub 自动发布已跑通。本地提交不会自动推送或触发发布。
 
 GitHub 中的两个 Secret 已通过实际 MCP 认证和函数查询；GitHub 不允许读取原值，代码发布权限仍须以实际发布结果验证。`TCB_SECRET_ID` 应为腾讯云 AKID 开头的 SecretId；工作流会提前拒绝将服务端存储 API Key 误填为发布身份的情况。控制台中的 `lycobo-private-storage` 资源 API Key 不用于这两个发布 Secret。
 
@@ -57,7 +59,7 @@ Node API 的 `object-image-store.ts` 使用 Sharp 完成解码校验、去元数
 
 workerd/Miniflare、旧运行时源码和 `scripts/cloudflare` 剩余文件仅用于隔离开发/回归及尚未完成的运行时迁移。本地配置从无 account_id、生产队列或 Cron 的模板生成，保留原本地存储名称和已有数据。本地启动丢弃 CloudBase、腾讯云及旧 Cloudflare 的远端凭据。
 
-远端旧资源、源库和对象保留供回溯，旧 API/消费者的生成开关已关闭。新站主站业务读写使用共享 PG、独立消费者和资源服务；三个功能已实际生成并存储图片。独立 admin 未接入目标，正式域名仍需备案和解析，不能据此宣称域名已切换。
+远端旧资源、源库和对象保留供回溯，旧 API/消费者的生成开关已关闭。新站主站业务读写使用共享 PG、独立消费者和资源服务；三个功能已实际生成并存储图片。独立 admin 未接入目标。当前只使用上述默认网关；自定义域名以后按需处理，不在本次接入范围内。
 
 ## 验证与状态
 
@@ -87,3 +89,5 @@ MCP 安装在登录前的独立步骤完成（5 分钟上限），发布进程�
 GitHub 第三轮发布已确认 MCP 启动和认证成功，但单次 PUT 连续三次在 90 秒超时；随后改为上述分块上传。本地已通过该路径再次更新三个服务，云端变量和定时器保留。GitHub 分块发布结果须以实际 Actions 运行结论为准。
 
 静态托管使用 `tcb hosting deploy .` 的默认根路径。CLI 3.8.11 显式传 `/` 会在一致性校验中保留前导斜杠，误报全部 missing 并回滚；省略该参数后本地 94 文件发布成功，verified=true、failedCount=0。保留 --safe --verify，不通过关闭校验绕过问题。执行目录必须是独立发布目录，不能用 --cwd 代替进程工作目录后仍传 `.`。
+
+GitHub 使用长期 SecretId/SecretKey，不能调用仅支持临时登录态的 MCP `get_temp_credentials`。COS 传输与清理在 CI 直接读取已配置的两个 Environment Secrets；本地 device 授权才走显式临时凭据接口。凭据仅在内存使用，两条路径均由回归覆盖，缺少配对字段时拒绝回退到其他身份。
