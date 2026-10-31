@@ -199,6 +199,15 @@ test("blank clicks dismiss at fitted and zoomed sizes without closing on image i
     const picture = viewer.locator(".browse-image-picture");
     await picture.click();
     await expect(viewer).toBeVisible();
+    console.info("blank click geometry", {
+      zoomed,
+      ...(await page.evaluate(() => ({
+        target: document.elementFromPoint(8, 8)?.getAttribute("class"),
+        picture: document.querySelector(".browse-image-picture")?.getBoundingClientRect().toJSON(),
+        dialog: document.querySelector(".browse-image-dialog")?.getBoundingClientRect().toJSON(),
+        surface: document.querySelector(".browse-image-surface")?.getBoundingClientRect().toJSON(),
+      }))),
+    });
     await page.mouse.click(8, 8);
     await expect(viewer).toHaveCount(0);
     await expect(trigger).toBeFocused();
