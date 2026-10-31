@@ -1,3 +1,4 @@
+import { imageOutputDimensions } from "@lycoboai/contracts";
 import type { ImageRepository } from "@lycoboai/db";
 import {
   type CapabilityOverrides,
@@ -19,6 +20,7 @@ export type ImageProcessorDependencies = {
   overrides: CapabilityOverrides;
   editsEnabled: boolean;
   modelSecret?: string | undefined;
+  standaloneKey?: string | undefined;
   request?: typeof fetch;
 };
 export async function processImageItem(itemId: string, deps: ImageProcessorDependencies) {
@@ -58,7 +60,14 @@ export async function processImageItem(itemId: string, deps: ImageProcessorDepen
       job.providerModel,
     );
     const storageStarted = performance.now();
-    const image = await deps.store.put(job, result.bytes, job.itemId);
+    const image = await deps.store.put(
+      job,
+      result.bytes,
+      job.itemId,
+      job.input.resolution === "1.5K"
+        ? imageOutputDimensions(job.input.aspectRatio, job.input.resolution)
+        : undefined,
+    );
     timing("image_storage", storageStarted);
     const finishStarted = performance.now();
     await deps.repository.finish(job, { image, requestId: result.requestId });

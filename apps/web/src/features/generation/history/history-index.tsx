@@ -2,17 +2,25 @@ import { Button, toast } from "@heroui/react";
 import { IconChevronRight, IconPhotoX, IconTrash } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "../../../components/confirm-dialog";
+import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
 import { useErrorToast } from "../../../lib/error-toast";
 import { LibraryDialog } from "../../assets/library-dialog";
 import { AssetImage } from "../asset-image";
 import { useDeleteHistoryTask, useImageHistory } from "../generation-client";
 import { GenerationLoading, statusLabel } from "../generation-status";
+import { modelDisplayName } from "../models/model-display-name";
+import { useModelPresentation } from "../models/model-logos";
 import { useStudioStore } from "../studio-state";
 import { scrollToHistoryTask } from "./history-navigation";
 
-export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" }) {
+export function HistoryIndex({
+  tool = "create",
+}: {
+  tool?: "create" | "textile" | "variation" | "all" | null;
+}) {
   const query = useImageHistory(tool);
+  const catalog = useModelPresentation();
   const deletion = useDeleteHistoryTask();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   useErrorToast(deletion.error?.message);
@@ -82,7 +90,12 @@ export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" 
                       </span>
                     ) : image ? (
                       <span className="history-thumbnail-frame">
-                        <AssetImage assetId={image} thumbnail alt={job.model} loading="lazy" />
+                        <AssetImage
+                          assetId={image}
+                          thumbnail
+                          alt={modelDisplayName(job.model, catalog.data?.models ?? [])}
+                          loading="lazy"
+                        />
                       </span>
                     ) : (
                       <span>{statusLabel[job.status]}</span>
@@ -116,6 +129,12 @@ export function HistoryIndex({ tool = "create" }: { tool?: "create" | "textile" 
           ) : (
             <p>暂无记录</p>
           )}
+          <InfiniteLoad
+            hasMore={query.hasNextPage}
+            isLoading={query.isFetchingNextPage}
+            isError={query.isError}
+            onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
+          />
         </div>
       </aside>
       <ConfirmDialog

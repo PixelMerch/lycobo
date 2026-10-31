@@ -67,11 +67,11 @@ test("image actions download and toggle favorites; sticky history blocks scrolle
   await expect(actions).toHaveCSS("opacity", "1");
   await page.evaluate(() => window.scrollTo(0, 350));
   const header = await page.locator(".topbar").boundingBox();
-  const tabs = await page.locator(".workspace-tabs > .tabs__list-container").boundingBox();
+  const tabs = await page.locator(".workspace-history-heading").boundingBox();
   expect(header?.y).toBe(0);
-  expect(tabs?.y).toBeCloseTo((header?.y ?? 0) + (header?.height ?? 0), 0);
+  expect(tabs?.y).toBeCloseTo((header?.y ?? 0) + (header?.height ?? 0) + 12, 0);
   expect(
-    await page.locator(".workspace-tabs > .tabs__list-container").evaluate((element) => {
+    await page.locator(".workspace-history-heading").evaluate((element) => {
       const rect = element.getBoundingClientRect();
       return element.contains(document.elementFromPoint(rect.x + rect.width - 10, rect.y + 2));
     }),

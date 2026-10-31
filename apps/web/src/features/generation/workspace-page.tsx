@@ -1,16 +1,12 @@
-import { Alert, Button, Tabs, ToggleButton, ToggleButtonGroup, Tooltip } from "@heroui/react";
+import { Alert, Button, Spinner, ToggleButton, ToggleButtonGroup, Tooltip } from "@heroui/react";
 import { imageUnitCredits } from "@lycoboai/contracts";
-import {
-  IconArrowBarToUp,
-  IconChevronDown,
-  IconChevronUp,
-  IconSparkles,
-} from "@tabler/icons-react";
+import { IconArrowBarToUp, IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { CreditCoin } from "../../components/credit-coin";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
+import { WorkspaceComposerTitle } from "../workspace/workspace-tool-symbol";
 import { HomeRatioPicker } from "./composer/ratio-picker";
 import { SelectionHighlight } from "./composer/selection-highlight";
 import {
@@ -20,18 +16,16 @@ import {
   useImageSession,
   usePendingSubmission,
 } from "./generation-client";
-import { GenerationHistory } from "./history/generation-history";
-import { HistoryIndex } from "./history/history-index";
+
+import { modelCapabilities, supportsReferences } from "./models/model-capabilities";
 import { ModelSelect } from "./models/model-select";
+import { hasPromptDescription } from "./references/prompt-description";
 import { ReferencePicker } from "./references/reference-picker";
 import { defaultDraft, type ModelId, useStudioStore } from "./studio-state";
 
 const promptLimit = 5000;
-const resolutionField = { label: "分辨率", values: ["1K", "2K", "4K"] } as const;
-const advancedFields = [
-  { key: "quality", label: "质量", values: ["低", "标准", "高"] },
-  { key: "count", label: "生成张数", values: ["1", "2", "3", "4"] },
-] as const;
+const resolutionField = { label: "分辨率", values: ["1.5K", "2K", "4K"] } as const;
+const advancedFields = [{ key: "quality", label: "质量", values: ["低", "标准", "高"] }] as const;
 
 export function WorkspacePage() {
   const model = useStudioStore((s) => s.activeModel);
@@ -65,17 +59,19 @@ function Workspace({ model }: { model: ModelId }) {
           : "服务暂时不可用，请稍后重试。"
         : null,
   );
-  const resolutions =
-    modelQuery.data?.models.find((entry) => entry.id === model)?.enabledResolutions ?? [];
+  const capabilities = modelCapabilities(modelQuery.data, model, "create");
+  const resolutions = capabilities?.enabledResolutions ?? [];
+  const referencesSupported = supportsReferences(capabilities, draft.references.length);
   const pending = usePendingSubmission(session.data);
   const canGenerate =
     session.isSuccess &&
     modelQuery.data?.enabled &&
     !generate.isPending &&
     (pending ||
-      (draft.prompt.trim().length > 0 &&
+      (hasPromptDescription(draft.prompt) &&
+        draft.prompt.length <= promptLimit &&
         resolutions.some((value) => value === draft.resolution) &&
-        (!draft.references.length || modelQuery.data.editsEnabled)));
+        referencesSupported));
   useEffect(() => {
     visitModel(model);
   }, [model, visitModel]);
@@ -86,170 +82,165 @@ function Workspace({ model }: { model: ModelId }) {
     [],
   );
   return (
-    <div className="workspace">
-      <section className="composer-panel" aria-label="创作设置">
-        <section className="composer-scroll" aria-label="创作参数">
-          <ModelSelect
-            value={model}
-            onChange={(nextModel) => {
-              if (nextModel === model) return;
-              const supported = modelQuery.data?.models.find(
-                (entry) => entry.id === nextModel,
-              )?.enabledResolutions;
-              updateDraft(nextModel, {
-                ...draft,
-                resolution: supported?.some((value) => value === draft.resolution)
-                  ? draft.resolution
-                  : "1K",
-              });
-              setActiveModel(nextModel);
-            }}
+    <section className="composer-panel" aria-label="创作设置">
+      <WorkspaceComposerTitle />
+      <section className="composer-scroll" aria-label="创作参数">
+        <ReferencePicker compact model={model} references={draft.references} />
+        <ReferencePrompt
+          className="prompt-field"
+          label="提示词"
+          inputRef={inputId}
+          value={draft.prompt}
+          onChange={(prompt) => updateDraft(model, { prompt })}
+          onReferencesInsert={(images, prompt) =>
+            updateDraft(model, { references: [...draft.references, ...images], prompt })
+          }
+          references={draft.references}
+          placeholder="描述商品、场景或需要调整的细节，输入 @ 引用商品图"
+          maxLength={promptLimit}
+          showCount
+          autoGrow
+        />
+        <section className="parameter-group ratio-group" aria-label="图片比例">
+          <div className="ratio-heading">
+            <h2>图片比例</h2>
+            <span className="ratio-current">{draft.ratio}</span>
+          </div>
+          <HomeRatioPicker
+            value={draft.ratio}
+            onChange={(ratio) => updateDraft(model, { ratio })}
           />
-          <ReferencePicker compact model={model} references={draft.references} />
-          <ReferencePrompt
-            className="prompt-field"
-            label="提示词"
-            inputRef={inputId}
-            value={draft.prompt}
-            onChange={(prompt) => updateDraft(model, { prompt })}
-            references={draft.references}
-            placeholder="描述你想要的画面，输入 @ 引用已上传图片"
-            maxLength={promptLimit}
-            showCount
-            autoGrow
-          />
-          <section className="parameter-group ratio-group" aria-label="图片比例">
-            <div className="ratio-heading">
-              <h2>图片比例</h2>
-              <span className="ratio-current">{draft.ratio}</span>
-            </div>
-            <HomeRatioPicker
-              value={draft.ratio}
-              onChange={(ratio) => updateDraft(model, { ratio })}
-            />
-          </section>
-          <ParameterGroup
-            label={resolutionField.label}
-            values={resolutionField.values}
-            value={draft.resolution}
-            selectionId="resolution"
-            disabledValues={resolutionField.values.filter(
-              (value) => !resolutions.some((enabled) => enabled === value),
-            )}
-            onChange={(resolution) => updateDraft(model, { resolution })}
-          />
-          {showMore &&
-            advancedFields.map((field) => (
-              <ParameterGroup
-                key={field.key}
-                label={field.label}
-                values={field.values}
-                value={draft[field.key]}
-                selectionId={field.key}
-                onChange={(value) =>
-                  updateDraft(
-                    model,
-                    field.key === "quality" ? { quality: value } : { count: value },
-                  )
-                }
-              />
-            ))}
-          <Button
-            className="parameter-more"
-            variant="ghost"
-            size="sm"
-            aria-expanded={showMore}
-            onPress={() => setShowMore((open) => !open)}
-          >
-            {showMore ? "收起" : "更多"}
-            <UiIcon icon={showMore ? IconChevronUp : IconChevronDown} size="small" />
-          </Button>
         </section>
-        <div className="generate-area">
-          {modelQuery.data && !modelQuery.data.enabled && (
-            <Alert className="generation-message" role="status" status="warning">
-              <Alert.Content>
-                <Alert.Description>生图服务尚未启用</Alert.Description>
-              </Alert.Content>
-            </Alert>
+        <ParameterGroup
+          label={resolutionField.label}
+          values={resolutionField.values}
+          value={draft.resolution}
+          selectionId="resolution"
+          disabledValues={resolutionField.values.filter(
+            (value) => !resolutions.some((enabled) => enabled === value),
           )}
-          {draft.references.length > 0 && modelQuery.data && !modelQuery.data.editsEnabled && (
-            <Alert className="generation-message" role="status" status="warning">
-              <Alert.Content>
-                <Alert.Description>
-                  当前服务尚未启用参考图编辑，可先不上传图片进行创作。
-                </Alert.Description>
-              </Alert.Content>
-            </Alert>
-          )}
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            className={`primary-action generation-submit${activeSubmission ? " generation-pending" : ""}`}
-            data-submitting={activeSubmission || undefined}
-            aria-description={
-              !pending && !activeSubmission
-                ? `本次生成消耗 ${imageUnitCredits * Number(draft.count)} 币`
-                : undefined
-            }
-            isDisabled={!canGenerate || activeSubmission}
-            onPress={() => {
-              setSubmissionPhase("submitting");
-              generate.mutate(
-                { model, draft },
-                {
-                  onSuccess: () => {
-                    const cleared = !pending && useStudioStore.getState().drafts[model] === draft;
-                    if (cleared) {
-                      updateDraft(model, { prompt: "", references: [] });
-                      setSubmissionPhase("settled");
-                      if (settleTimer.current) clearTimeout(settleTimer.current);
-                      settleTimer.current = setTimeout(() => {
-                        setSubmissionPhase("idle");
-                      }, 600);
-                    } else {
+          onChange={(resolution) => updateDraft(model, { resolution })}
+        />
+        <ParameterGroup
+          label="生成张数"
+          values={["1", "2", "3", "4"]}
+          value={draft.count}
+          selectionId="count"
+          onChange={(count) => updateDraft(model, { count })}
+        />
+        {showMore &&
+          advancedFields.map((field) => (
+            <ParameterGroup
+              key={field.key}
+              label={field.label}
+              values={field.values}
+              value={draft[field.key]}
+              selectionId={field.key}
+              onChange={(value) =>
+                updateDraft(model, field.key === "quality" ? { quality: value } : { count: value })
+              }
+            />
+          ))}
+        <Button
+          className="parameter-more"
+          variant="ghost"
+          size="sm"
+          aria-expanded={showMore}
+          onPress={() => setShowMore((open) => !open)}
+        >
+          {showMore ? "收起" : "更多"}
+          <UiIcon icon={showMore ? IconChevronUp : IconChevronDown} size="small" />
+        </Button>
+      </section>
+      <div className="generate-area">
+        <ModelSelect
+          value={model}
+          onChange={(nextModel) => {
+            if (nextModel === model) return;
+            const supported = modelQuery.data?.models.find(
+              (entry) => entry.id === nextModel,
+            )?.enabledResolutions;
+            updateDraft(nextModel, {
+              ...draft,
+              resolution: supported?.some((value) => value === draft.resolution)
+                ? draft.resolution
+                : "1.5K",
+            });
+            setActiveModel(nextModel);
+          }}
+        />
+
+        {modelQuery.data && !modelQuery.data.enabled && (
+          <Alert className="generation-message" role="status" status="warning">
+            <Alert.Content>
+              <Alert.Description>生图服务尚未启用</Alert.Description>
+            </Alert.Content>
+          </Alert>
+        )}
+        {draft.references.length > 0 && modelQuery.data && !referencesSupported && (
+          <Alert className="generation-message" role="status" status="warning">
+            <Alert.Content>
+              <Alert.Description>
+                {capabilities?.editsEnabled
+                  ? `当前模型最多支持 ${capabilities.maxReferences} 张参考图，请减少后生成。`
+                  : "当前模型暂不支持参考图编辑，请移除参考图后生成。"}
+              </Alert.Description>
+            </Alert.Content>
+          </Alert>
+        )}
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          className={`primary-action generation-submit${activeSubmission ? " generation-pending" : ""}`}
+          data-submitting={activeSubmission || undefined}
+          isPending={activeSubmission}
+          aria-label={pending && !activeSubmission ? "确认上次提交" : "生成商品主图"}
+          aria-description={
+            !pending && !activeSubmission
+              ? `本次生成消耗 ${imageUnitCredits * Number(draft.count)} 币`
+              : undefined
+          }
+          isDisabled={!canGenerate || activeSubmission}
+          onPress={() => {
+            setSubmissionPhase("submitting");
+            generate.mutate(
+              { model, draft },
+              {
+                onSuccess: () => {
+                  const cleared = !pending && useStudioStore.getState().drafts[model] === draft;
+                  if (cleared) {
+                    updateDraft(model, { prompt: "", references: [] });
+                    setSubmissionPhase("settled");
+                    if (settleTimer.current) clearTimeout(settleTimer.current);
+                    settleTimer.current = setTimeout(() => {
                       setSubmissionPhase("idle");
-                    }
-                  },
-                  onError: () => setSubmissionPhase("idle"),
+                    }, 600);
+                  } else {
+                    setSubmissionPhase("idle");
+                  }
                 },
-              );
-            }}
-          >
-            {activeSubmission && (
-              <span className="generate-button-icon generation-loading-icon">
-                <UiIcon icon={IconSparkles} />
-              </span>
-            )}
-            {pending && !activeSubmission ? "确认上次提交" : "立即生成"}
-            {(!pending || activeSubmission) && (
-              <span className="generate-credit-cost" aria-hidden="true">
-                <CreditCoin />
-                <span>{imageUnitCredits * Number(draft.count)}</span>
-              </span>
-            )}
-          </Button>
-        </div>
-      </section>
-      <section className="results-panel" aria-label="创作内容">
-        <Tabs className="workspace-tabs">
-          <Tabs.ListContainer>
-            <Tabs.List aria-label="工作区内容">
-              <Tabs.Tab id="history">历史记录</Tabs.Tab>
-            </Tabs.List>
-          </Tabs.ListContainer>
-          <Tabs.Panel id="history">
-            <GenerationHistory />
-          </Tabs.Panel>
-        </Tabs>
-      </section>
-      <HistoryIndex />
-      <BackToTopButton />
-    </div>
+                onError: () => setSubmissionPhase("idle"),
+              },
+            );
+          }}
+        >
+          {activeSubmission && (
+            <Spinner size="md" color="current" role="status" aria-label="正在提交生图任务" />
+          )}
+          {pending && !activeSubmission ? "确认上次提交" : "生成商品主图"}
+          {(!pending || activeSubmission) && (
+            <span className="generate-credit-cost" aria-hidden="true">
+              <CreditCoin />
+              <span>{imageUnitCredits * Number(draft.count)}</span>
+            </span>
+          )}
+        </Button>
+      </div>
+    </section>
   );
 }
-function BackToTopButton() {
+export function BackToTopButton() {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const update = () => setVisible(window.scrollY > 240);

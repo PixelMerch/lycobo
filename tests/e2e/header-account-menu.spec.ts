@@ -22,7 +22,7 @@ for (const width of [1440, 320]) {
     await expect(trigger).toContainText("200");
     await expect(trigger.locator(".avatar")).toHaveCount(1);
     await expect(page.locator(".credit-pill")).toHaveCount(0);
-    const draft = page.getByLabel("提示词", { exact: true });
+    const draft = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
     await draft.fill("保留正在准备的商品图");
     await trigger.focus();
     await page.keyboard.press("Enter");

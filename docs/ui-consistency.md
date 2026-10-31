@@ -27,9 +27,10 @@
 | 长文本折叠 | CollapsibleText | 历史提示词与详情创意描述共用实际溢出测量、展开／收起及 aria 状态；详情3行，历史保留既有行数，短文本不显示切换按钮 |
 | 参考图片上传 | ReferencePicker → ReferenceImageCard | 首页与工作台共用；删除、编号、预览不复制 |
 | 图片引用 | ReferencePrompt | 文本序列化、@候选、行内图片展示共用 |
+| 列表分页 | InfiniteLoad | 滚动到列表底部自动取下一页；使用 HeroUI Spinner 显示加载，禁止另加“加载更多”按钮；失败停止自动加载，查询和重试由业务持有 |
 | 参考图片浏览 | ImageViewer | 历史、详情、上传入口按需加载同一组件 |
 | 生成图片操作 | ResultImage | 预览、下载、收藏、焦点入口由同一组件承担 |
-| 任务元信息 | HistoryTaskMeta | 标签、时间、比例、任务ID复制一致 |
+| 任务元信息 | HistoryTaskMeta | 标签、时间、比例、任务ID复制一致；父级用 modelDisplayName 从共享模型目录派生展示名称，不渲染原始 model 标识 |
 | 历史索引 | HistoryIndex | 定位与滚动同步；“我的素材”标题固定、列表独立滚动；不承担重试或草稿覆盖 |
 | 生成提交按钮 | HeroUI Button + styles/app.css 的 .generation-submit | 工作台与局部修改高度、胶囊圆角、主题蓝底白字、字级与积分间距统一引用 DESIGN；不创建按钮包装组件 |
 | 生成阶段 | generation-status | 中文状态与生成图标共用，不从颜色推断状态 |

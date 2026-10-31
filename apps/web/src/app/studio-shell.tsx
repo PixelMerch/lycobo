@@ -6,22 +6,24 @@ import {
   IconLayoutSidebarRight,
   IconMenu2,
   IconSettings,
+  IconShoppingBagSearch,
   IconSmartHome,
   IconX,
 } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
-import { Outlet } from "react-router";
+import { Outlet, useLocation } from "react-router";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
 import { HeaderAccountMenu } from "../features/account/header-account-menu";
-import { CommerceNavigation } from "../features/commerce/commerce-navigation";
-import { CreationNavigation } from "../features/generation/models/creation-navigation";
 import { useImageEvents } from "../features/generation/use-image-events";
 import "../styles/brand.css";
 
 export function StudioShell() {
   useImageEvents();
+  const { pathname } = useLocation();
+  const inWorkspace =
+    pathname.startsWith("/create") || pathname.startsWith("/commerce") || pathname === "/workspace";
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
@@ -51,16 +53,18 @@ export function StudioShell() {
         </RouteLink>
         <Tooltip.Content placement="right">首页</Tooltip.Content>
       </Tooltip>
-      <CreationNavigation
-        collapsed={sidebarCollapsed && viewportWidth >= 768}
-        mobile={viewportWidth < 768}
-        onNavigate={() => setMenuOpen(false)}
-      />
-      <CommerceNavigation
-        collapsed={sidebarCollapsed && viewportWidth >= 768}
-        mobile={viewportWidth < 768}
-        onNavigate={() => setMenuOpen(false)}
-      />
+      <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
+        <RouteLink
+          to="/workspace"
+          aria-label="工作区"
+          className={`nav-row${inWorkspace ? " active" : ""}`}
+          onClick={() => setMenuOpen(false)}
+        >
+          <UiIcon icon={IconShoppingBagSearch} size="default" />
+          <span className="nav-label">工作区</span>
+        </RouteLink>
+        <Tooltip.Content placement="right">工作区</Tooltip.Content>
+      </Tooltip>
       <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
         <RouteLink
           nav

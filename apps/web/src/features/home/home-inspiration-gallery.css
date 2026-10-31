@@ -1,0 +1,277 @@
+.home-inspiration {
+  margin: 48px auto 24px;
+  width: 100%;
+  min-width: 0;
+}
+.home-inspiration-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0;
+}
+.home-inspiration-heading h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.home-inspiration .tabs {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 32px;
+  row-gap: 24px;
+}
+.home-inspiration .tabs__panel {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.home-inspiration .tabs__list-container {
+  justify-self: end;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.home-inspiration .tabs__list {
+  width: max-content;
+  padding: 0;
+  gap: 6px;
+  background: transparent;
+  border-bottom: 0;
+}
+.home-inspiration .tabs__tab {
+  min-height: 36px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.home-inspiration .tabs__tab[data-selected] {
+  color: var(--foreground);
+}
+.home-inspiration .tabs__indicator {
+  inset: 0;
+  width: auto;
+  height: auto;
+  background: #ffffff14;
+  border-radius: 999px;
+}
+.home-inspiration .tabs__list {
+  box-shadow: none;
+}
+.home-inspiration .tabs__tab:is(:hover, [data-hovered]):not([data-selected]) {
+  color: var(--foreground);
+  background: #ffffff08;
+}
+.home-inspiration-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.home-inspiration-column {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.home-inspiration-card.button {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 16px;
+  background: var(--surface);
+  text-align: left;
+  isolation: isolate;
+}
+.home-inspiration-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+.home-inspiration-card:where([data-shape="portrait"]) img {
+  aspect-ratio: 4 / 5;
+}
+.home-inspiration-card:where([data-shape="landscape"]) img {
+  aspect-ratio: 4 / 3;
+}
+.home-inspiration-preview {
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  color: #fff;
+  background: #00000080;
+  font-size: 12px;
+  line-height: 18px;
+  opacity: 0;
+  pointer-events: none;
+}
+.home-inspiration-card:is(:hover, [data-hovered], [data-focus-visible]) .home-inspiration-preview {
+  opacity: 1;
+}
+.home-inspiration-caption {
+  position: absolute;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  inset: auto 0 0;
+  padding: 48px 16px 16px;
+  color: #fff;
+  background: linear-gradient(transparent, #000000b3);
+  pointer-events: none;
+}
+.home-inspiration-caption > span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.home-inspiration-caption small {
+  font-size: 12px;
+  font-weight: 400;
+  color: #ffffffb3;
+}
+.home-inspiration-caption strong {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-inspiration-caption > .ui-icon {
+  flex: none;
+}
+.home-inspiration-detail.modal__dialog {
+  width: min(960px, calc(100vw - 32px));
+  max-width: 960px;
+}
+.home-inspiration-detail-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.home-inspiration-detail-content > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 60vh;
+  border-radius: 16px;
+  object-fit: contain;
+  background: var(--surface);
+}
+.home-inspiration-description {
+  padding: 8px 0;
+}
+.home-inspiration-description > span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.home-inspiration-description h3 {
+  margin: 24px 0 12px;
+  font-size: 16px;
+  font-weight: 500;
+}
+.home-inspiration-description p {
+  margin: 0;
+  line-height: 1.7;
+  font-size: 14px;
+}
+.home-inspiration-description .home-inspiration-hint {
+  margin-top: 24px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.home-inspiration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .home-inspiration-card img {
+    transition: transform 200ms ease;
+  }
+  .home-inspiration-card:is(:hover, [data-hovered], [data-focus-visible]) img {
+    transform: scale(1.04);
+  }
+}
+@media (min-width: 1800px) {
+  .home-inspiration-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1199px) {
+  .home-inspiration-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1199px) {
+  .home-inspiration .tabs {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 20px;
+  }
+  .home-inspiration .tabs__list-container {
+    justify-self: start;
+  }
+}
+@media (max-width: 767px) {
+  .home-inspiration {
+    margin-top: 40px;
+  }
+  .home-inspiration-heading {
+    align-items: start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .home-inspiration-heading h2 {
+    font-size: 20px;
+  }
+  .home-inspiration .tabs__tab {
+    min-height: 44px;
+    padding-inline: 12px;
+    font-size: 13px;
+  }
+  .home-inspiration-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .home-inspiration-column {
+    gap: 12px;
+  }
+  .home-inspiration-card.button {
+    border-radius: 12px;
+  }
+  .home-inspiration-caption {
+    padding: 32px 12px 12px;
+  }
+  .home-inspiration-caption > .ui-icon {
+    display: none;
+  }
+  .home-inspiration-detail-content {
+    grid-template-columns: 1fr;
+  }
+  .home-inspiration-detail-content > img {
+    max-height: 40vh;
+  }
+}
+
+@media (hover: none) {
+  .home-inspiration-preview {
+    opacity: 1;
+  }
+}

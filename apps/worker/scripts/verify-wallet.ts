@@ -7,7 +7,7 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
   const owner = await repository.provision(
     `wallet:${crypto.randomUUID()}`,
     "shared-wallet-fixture",
-    60,
+    3 * imageUnitCredits,
   );
   const [member] =
     await sql`insert into users (auth_subject) values (${`member:${crypto.randomUUID()}`}) returning id`;
@@ -59,7 +59,7 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
     await repository.finish(claim, { errorCode: "FIXTURE_FAILED", unknown: false }),
     false,
   );
-  assert.equal((await repository.wallet(child)).balance, 20);
+  assert.equal((await repository.wallet(child)).balance, imageUnitCredits);
   const original = await repository.get(owner, accepted.value.id);
   const retryKey = crypto.randomUUID();
   const retries = await Promise.all(
@@ -89,11 +89,11 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
     unknown: true,
   });
   assert.equal((await repository.get(owner, accepted.value.id))?.status, "failed");
-  assert.equal((await repository.wallet(owner)).balance, 20);
+  assert.equal((await repository.wallet(owner)).balance, imageUnitCredits);
   assert.equal((await repository.retry(owner, accepted.value.id, retryKey)).replayed, true);
   await sql`update generation_job_items set status='needs_reconciliation' where id=${retryClaim.itemId}`;
   await Promise.all([repository.settleInvalidResponses(), repository.settleInvalidResponses()]);
-  assert.equal((await repository.wallet(owner)).balance, 20);
+  assert.equal((await repository.wallet(owner)).balance, imageUnitCredits);
   assert.equal((await repository.get(owner, accepted.value.id))?.status, "failed");
   await assert.rejects(
     repository.retry(
@@ -115,7 +115,7 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
     repository.createRecharge(owner, { ...creditInput, credits: 101 }),
     /IDEMPOTENCY_CONFLICT/,
   );
-  assert.equal((await repository.wallet(owner)).balance, 20);
+  assert.equal((await repository.wallet(owner)).balance, imageUnitCredits);
   const payment = {
     id: order.id,
     transactionId: crypto.randomUUID(),
@@ -131,7 +131,7 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
     Array.from({ length: 5 }, () => repository.settleRecharge(payment)),
   );
   assert.equal(results.filter((result) => !result.replayed).length, 1);
-  assert.equal((await repository.wallet(child)).balance, 120);
+  assert.equal((await repository.wallet(child)).balance, 100 + imageUnitCredits);
   const otherOrder = await repository.createRecharge(owner, {
     ...creditInput,
     key: crypto.randomUUID(),
@@ -140,11 +140,11 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
     repository.settleRecharge({ ...payment, id: otherOrder.id }),
     /recharge_provider_unique/,
   );
-  assert.equal((await repository.wallet(owner)).balance, 120);
+  assert.equal((await repository.wallet(owner)).balance, 100 + imageUnitCredits);
   const all = await repository.walletEntries(owner, 100);
   assert.equal(
     all.reduce((sum, entry) => sum + Number(entry.amount), 0),
-    120,
+    100 + imageUnitCredits,
   );
   assert.equal(all.filter((entry) => entry.kind === "refund").length, 2);
   assert.equal(all.filter((entry) => entry.kind === "recharge").length, 1);
@@ -177,7 +177,7 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
     Array.from({ length: 4 }, () => repository.create(child, multi, key)),
   );
   assert.equal(new Set(repeated.map((job) => job.id)).size, 1);
-  assert.equal((await repository.wallet(owner)).balance, before - 80);
+  assert.equal((await repository.wallet(owner)).balance, before - 4 * imageUnitCredits);
   const repeatedId = repeated[0]?.id;
   assert.ok(repeatedId);
   const [saved] = await sql`select provider_model from generation_jobs where id=${repeatedId}`;
@@ -194,7 +194,7 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
   const manual = await repository.provision(
     `manual:${crypto.randomUUID()}`,
     "manual-retry-fixture",
-    40,
+    2 * imageUnitCredits,
   );
   const manualJob = await repository.create(manual, input, crypto.randomUUID());
   const manualView = await repository.get(manual, manualJob.id);
@@ -205,7 +205,7 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
   );
   assert.ok(unresolved);
   await repository.finish(unresolved, { errorCode: "PROVIDER_OUTCOME_UNKNOWN", unknown: true });
-  assert.equal((await repository.wallet(manual)).balance, 20);
+  assert.equal((await repository.wallet(manual)).balance, imageUnitCredits);
   const manualKey = crypto.randomUUID();
   const manualRetries = await Promise.all(
     Array.from({ length: 3 }, () => repository.retry(manual, manualJob.id, manualKey)),
@@ -215,7 +215,7 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
   assert.equal(manualResult?.public_id, manualView?.public_id);
   assert.equal(manualResult?.status, "queued");
   assert.equal(manualResult?.items.length, 1);
-  assert.equal((await repository.wallet(manual)).balance, 20);
+  assert.equal((await repository.wallet(manual)).balance, imageUnitCredits);
   const manualEntries = await repository.walletEntries(manual, 100);
   assert.equal(manualEntries.filter((entry) => entry.kind === "refund").length, 1);
   assert.equal(manualEntries.filter((entry) => entry.kind === "consume").length, 2);
@@ -238,12 +238,12 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
     }),
     false,
   );
-  assert.equal((await repository.wallet(manual)).balance, 20);
+  assert.equal((await repository.wallet(manual)).balance, imageUnitCredits);
   assert.equal((await repository.retry(manual, manualJob.id, manualKey)).replayed, true);
   const legacy = await repository.provision(
     `legacy:${crypto.randomUUID()}`,
     "legacy-invalid-response",
-    40,
+    2 * imageUnitCredits,
   );
   const legacyJob = await repository.create(legacy, input, crypto.randomUUID());
   const legacyView = await repository.get(legacy, legacyJob.id);
@@ -254,19 +254,41 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
   );
   assert.ok(legacyClaim);
   await repository.finish(legacyClaim, { errorCode: "OUTPUT_OUTCOME_UNKNOWN", unknown: true });
-  assert.equal((await repository.wallet(legacy)).balance, 20);
+  assert.equal((await repository.wallet(legacy)).balance, imageUnitCredits);
   await sql`update generation_job_items set error_code='PROVIDER_INVALID_IMAGE_RESPONSE' where id=${legacyClaim.itemId}`;
   await Promise.all([repository.settleInvalidResponses(), repository.settleInvalidResponses()]);
-  assert.equal((await repository.wallet(legacy)).balance, 40);
+  assert.equal((await repository.wallet(legacy)).balance, 2 * imageUnitCredits);
   assert.equal(
     (await repository.walletEntries(legacy, 100)).filter((entry) => entry.kind === "refund").length,
     1,
+  );
+  // A historical job price must not override the actual price of a new attempt.
+  await sql`update generation_jobs set unit_credits=20 where id=${legacyJob.id}`;
+  const priceRetryKey = crypto.randomUUID();
+  await repository.retry(legacy, legacyJob.id, priceRetryKey);
+  assert.equal((await repository.wallet(legacy)).balance, imageUnitCredits);
+  const priceRetried = await repository.get(legacy, legacyJob.id);
+  const priceRetryClaim = await repository.claim(
+    String(priceRetried?.items[0].id),
+    "price-change",
+    1000,
+  );
+  assert.ok(priceRetryClaim);
+  await repository.finish(priceRetryClaim, { errorCode: "PROVIDER_HTTP_400", unknown: false });
+  await repository.finish(priceRetryClaim, { errorCode: "PROVIDER_HTTP_400", unknown: false });
+  assert.equal((await repository.wallet(legacy)).balance, 2 * imageUnitCredits);
+  const priceRetryEntries = (await repository.walletEntries(legacy, 100)).filter(
+    (entry) => entry.item_id === priceRetryClaim.itemId,
+  );
+  assert.deepEqual(
+    priceRetryEntries.map((entry) => entry.amount).sort((a, b) => a - b),
+    [-imageUnitCredits, imageUnitCredits],
   );
   assert.equal(
     await repository.finish(claim, { errorCode: "STALE_ATTEMPT", unknown: false }),
     false,
   );
   console.info(
-    "Shared enterprise wallet: concurrent member spending, 20-coin pricing, per-image refunds, payment replay, ledger immutability, isolation and pagination passed",
+    "Shared enterprise wallet: concurrent member spending, 2-coin pricing, per-image refunds, payment replay, ledger immutability, isolation and pagination passed",
   );
 }
