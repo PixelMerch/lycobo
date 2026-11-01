@@ -835,8 +835,18 @@
   align-items: center;
   gap: 12px 8px;
 }
-.unified-workspace .history-prompt > .collapsible-text {
+.unified-workspace .history-prompt > .generation-prompt {
+  /* Reserve the two 36px actions, their 4px gap and 12px breathing room. */
   flex-basis: 100%;
+  max-width: calc(100% - 88px);
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 767px), (pointer: coarse) {
+  .unified-workspace .history-prompt > .generation-prompt {
+    max-width: calc(100% - 104px);
+  }
 }
 .unified-workspace .generation-job .generation-prompt {
   color: #c8c8c8;
