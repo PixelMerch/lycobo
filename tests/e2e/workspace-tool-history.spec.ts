@@ -134,7 +134,7 @@ for (const width of [390, 1440]) {
     // The panel hero follows the tool: its own example photo, name and purpose.
     const hero = page.locator(".workspace-composer-hero");
     await expect(hero).toHaveAttribute("data-tool", "textile");
-    await expect(hero.locator(".workspace-composer-hero-collage img")).toHaveCount(3);
+    await expect(hero.locator(".workspace-composer-hero-collage img")).toHaveCount(5);
     await expect(hero.locator("img").first()).toHaveAttribute(
       "src",
       "/studio/textile-views/front.webp",

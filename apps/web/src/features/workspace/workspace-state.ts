@@ -34,6 +34,13 @@ export const workspaceTools = [
     description: "一张家纺主图，生成多视角与细节图",
     caption: "多视角 · 细节图",
     hero: "/studio/tool-heroes/textile.webp",
+    bannerImages: [
+      "/studio/textile-views/front.webp",
+      "/studio/textile-views/angled-level.webp",
+      "/studio/textile-views/pillow.webp",
+      "/studio/textile-views/bed-end.webp",
+      "/studio/textile-views/fabric.webp",
+    ],
     summary: "一张主图，延展多视角与细节图",
     steps: [
       "上传 1 张家纺主图，可补充细节图",
