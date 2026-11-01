@@ -2,19 +2,19 @@
 export const commerceTools = [
   {
     id: "textile-set",
-    name: "家纺主图裂变",
+    name: "家纺裂变",
     href: "/commerce/textile-set",
     image: "/studio/set-thumb.webp",
-    description: "一张家纺主图，延展多视角套图",
+    description: "一张家纺主图，生成多视角与细节图",
     capabilities: "多视角 · 细节特写",
     status: "",
   },
   {
     id: "smart-variation",
-    name: "智能裂变",
+    name: "套图计划",
     href: "/commerce/smart-variation",
     image: "/studio/bedroom-thumb.webp",
-    description: "上传商品图，逐张确认创作方案",
+    description: "先规划每张图的内容，确认后批量生成",
     capabilities: "提示词编辑 · 方案确认",
     status: "页面预览",
   },

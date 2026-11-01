@@ -27,7 +27,7 @@ export function TextileSetPage() {
   return (
     <>
       <div ref={viewsAnchor} className="textile-views-anchor" aria-hidden="true" />
-      <section className="composer-panel" aria-label="家纺主图裂变参数">
+      <section className="composer-panel" aria-label="家纺裂变参数">
         <WorkspaceComposerTitle />
         <div className="composer-scroll">
           <TextileImageField

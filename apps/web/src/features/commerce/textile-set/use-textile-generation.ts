@@ -37,7 +37,7 @@ export function useTextileGeneration() {
     submit: () => {
       const references = [draft.mainImage, ...draft.detailImages].filter((image) => image !== null);
       const input: Draft = {
-        prompt: "家纺主图裂变",
+        prompt: "家纺裂变",
         ratio: draft.ratio,
         resolution: draft.resolution,
         quality: "标准",

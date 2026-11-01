@@ -60,7 +60,7 @@ test("textile angles submit one durable ten-image job and isolate history across
         user_id: crypto.randomUUID(),
         input,
         model: input.model,
-        prompt: "家纺主图裂变",
+        prompt: "家纺裂变",
         resolution: input.resolution,
         aspect_ratio: input.aspectRatio,
         requested_count: input.count,

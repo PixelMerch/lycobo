@@ -1,6 +1,6 @@
 # 架构与目录
 
-一个 pnpm workspace 仓库，四个独立应用；前端 CSR、API、消费者、图片服务及共享 PG 已接入 CloudBase。主图制作、家纺套图、智能裂变已实际生图和保存私有对象，定时执行已开启；固定使用默认同源网关，自定义域名暂不接入，独立 admin 尚未切换。旧平台运行时代码、模拟器与部署配置已移除，旧远端 API/消费者生图保持关闭。
+一个 pnpm workspace 仓库，四个独立应用；前端 CSR、API、消费者、图片服务及共享 PG 已接入 CloudBase。主图制作、家纺裂变、套图计划已实际生图和保存私有对象，定时执行已开启；固定使用默认同源网关，自定义域名暂不接入，独立 admin 尚未切换。旧平台运行时代码、模拟器与部署配置已移除，旧远端 API/消费者生图保持关闭。
 代码同仓不表示进程合并或强制一起发布。
 
 | 路径 | 职责 |
@@ -37,7 +37,7 @@ apps/web/src/
     ├── auth/                     # 身份请求与登录弹窗
     ├── account/                  # Header账户菜单、账户中心、钱包请求和账务展示
     ├── workspace/                # 统一工作区布局、工具分类搜索、历史筛选、跨工具草稿交接
-    ├── commerce/                 # 兼容旧电商入口偏好、家纺主图裂变参数面板、智能裂变语言分析、真实计划确认与生图、本地会话草稿
+    ├── commerce/                 # 兼容旧电商入口偏好、家纺裂变参数面板、套图计划语言分析、真实计划确认与生图、本地会话草稿
     ├── home/                     # 首页、共享创作输入与提示辅助
     │   ├── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，use-inspiration-columns.ts 订阅断点并派生均衡瀑布流
     │   ├── home-intro.tsx         # 首页渐变轮换标题，文案与间隔在 home-intro-config.ts
@@ -155,7 +155,7 @@ GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 C
 
 共享列表分页在 `components/infinite-load.tsx`，组合 IntersectionObserver 与 HeroUI Spinner；主站分页列表统一复用，业务查询仍由各功能的 TanStack Query hook 管理。提示词有效描述判断在 `features/generation/references/prompt-description.ts`，首页与创作页共用。
 
-智能裂变：`variation-planner.ts` 封装 OpenAI 兼容语言分析；`variation-service.ts` 负责参考素材归属校验与解密密钥；计划阶段仅优化文本和参考图编号，不读取或发送图片，参考图保留至实际生图阶段；`variation-repository.ts` 持久化计划和幂等状态。`model_planners` 独立配置语言模型；`generation_jobs.input.variation` 保存确认后的方案快照，Worker 每条方案只请求一张图。
+套图计划：`variation-planner.ts` 封装 OpenAI 兼容语言分析；`variation-service.ts` 负责参考素材归属校验与解密密钥；计划阶段仅优化文本和参考图编号，不读取或发送图片，参考图保留至实际生图阶段；`variation-repository.ts` 持久化计划和幂等状态。`model_planners` 独立配置语言模型；`generation_jobs.input.variation` 保存确认后的方案快照，Worker 每条方案只请求一张图。
 
 
 主站独立试用路由由 `packages/generation/src/standalone-models.ts` 定义；API/消费者将纯配置注入图片仓储，绕过后台模型目录、路由及语言模型设置读取。前端展示在 `models/model-presentation.ts`，Logo 位于 `apps/web/public/model-logos/`。不会删除后台表或改变鉴权/积分/素材持久化。

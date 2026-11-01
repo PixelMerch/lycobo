@@ -59,10 +59,10 @@ for (const width of [390, 1440]) {
     // Hovering a tool previews what it does and how to use it, without switching tools.
     await page
       .getByRole("navigation", { name: "电商创作工具" })
-      .getByRole("button", { name: "家纺套图", exact: true })
+      .getByRole("button", { name: "家纺裂变", exact: true })
       .hover();
     const preview = page.getByRole("tooltip");
-    await expect(preview).toContainText("上传主图，选择视角，一次生成整套");
+    await expect(preview).toContainText("一张主图，延展多视角与细节图");
     await expect(preview.getByRole("listitem")).toHaveCount(3);
     await expect(preview).toContainText("点击切换到此功能");
     await expect(page).toHaveURL(/\/create$/);
@@ -118,14 +118,14 @@ for (const width of [390, 1440]) {
     await page.screenshot({ path: `/tmp/lycobo-workspace-tools-${width}.png` });
     await page
       .getByRole("navigation", { name: "电商创作工具" })
-      .getByRole("button", { name: "家纺套图", exact: true })
+      .getByRole("button", { name: "家纺裂变", exact: true })
       .click();
     await expect(page).toHaveURL(/textile-set/);
     await expect(page.locator(".unified-workspace")).toHaveAttribute("data-tool", "textile");
-    await expect(page.locator(".workspace-composer-title")).toHaveText("家纺套图");
+    await expect(page.locator(".workspace-composer-title")).toHaveText("家纺裂变");
     await expect(
       page.getByRole("navigation", { name: "电商创作工具" }).getByRole("button", {
-        name: "家纺套图",
+        name: "家纺裂变",
         exact: true,
       }),
     ).toHaveAttribute("aria-current", "page");
@@ -134,8 +134,12 @@ for (const width of [390, 1440]) {
     // The panel hero follows the tool: its own example photo, name and purpose.
     const hero = page.locator(".workspace-composer-hero");
     await expect(hero).toHaveAttribute("data-tool", "textile");
-    await expect(hero.locator("img")).toHaveAttribute("src", "/studio/tool-heroes/textile.webp");
-    await expect(hero).toContainText("上传主图，选择视角，一次生成整套");
+    await expect(hero.locator(".workspace-composer-hero-collage img")).toHaveCount(3);
+    await expect(hero.locator("img").first()).toHaveAttribute(
+      "src",
+      "/studio/textile-views/front.webp",
+    );
+    await expect(hero).toContainText("一张主图，延展多视角与细节图");
     await expect(page.locator(".generation-history")).toContainText("textile记录");
     await expect(page.locator(".generation-history")).not.toContainText("create记录");
     if (width >= 768) {
@@ -146,9 +150,9 @@ for (const width of [390, 1440]) {
     }
     await page
       .getByRole("navigation", { name: "电商创作工具" })
-      .getByRole("button", { name: "智能裂变", exact: true })
+      .getByRole("button", { name: "套图计划", exact: true })
       .click();
-    await expect(page.locator(".workspace-composer-title")).toHaveText("智能裂变");
+    await expect(page.locator(".workspace-composer-title")).toHaveText("套图计划");
     await expect(page.locator(".unified-workspace")).toHaveAttribute("data-tool", "variation");
     await expect(page.locator(".generation-job")).toHaveCount(0);
     await expect(page.getByRole("region", { name: "工作区历史记录" })).toContainText(
