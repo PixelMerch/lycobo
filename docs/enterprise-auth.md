@@ -39,6 +39,8 @@ API 客户端使用 `Authorization: Bearer <accessToken>`。浏览器只使用 `
 
 访问 JWT 有效期 1 天（86400 秒），刷新凭据有效期为本次登录起 30 天（2592000 秒）。不再设置 7 天上限，也不通过刷新延长最初的 30 天期限；临近会话截止时，访问 Token 会缩短到剩余会话时长。JWT 固定 HS256，验证 sub、org、jti、iat、exp、iss、aud、purpose；每次请求还验证服务端会话、账号状态、凭据版本及当前成员关系。
 
+同一 API 实例对已验证有效的会话最多缓存 30 秒，期间不再查询数据库；登录与刷新始终读取数据库，无效结果不缓存。退出、刷新凭据撤销和改密码会立即清除本实例缓存，其他实例最迟 30 秒后生效。
+
 访问 Cookie `lycobo_enterprise_session` 的 Path 为 `/api`，刷新 Cookie `lycobo_enterprise_refresh` 的 Path 为 `/api/v1/auth`；均使用 HttpOnly、SameSite=Strict，生产启用 Secure。刷新 JWT 含 32 字节密码学随机 nonce、独立的 enterprise-refresh 用途和签名会话 ID，数据库仅保存整个凭据的 SHA-256 哈希；迁移 0006 新增可空、唯一的 refresh_token_hash。每次刷新通过数据库原子条件更新轮换哈希，旧刷新凭据立即不可再用；并发刷新只有一个成功。拒绝刷新时不清除 Cookie，避免覆盖其他标签页已成功轮换的新凭据。
 
 退出撤销当前会话；即使访问 Cookie 已过期，也会验证刷新凭据的签名并定位该会话。刚轮换的旧凭据只能撤销所属会话，不能再用于续期，避免退出与并发刷新竞态重新登录。通过改密码接口或已有账号设置命令修改密码，均撤销该账号全部会话，因此旧访问 Token 和刷新凭据同时失效；禁用账号、移除成员同样阻止访问和刷新。
