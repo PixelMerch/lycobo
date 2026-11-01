@@ -201,24 +201,4 @@ describe("enterprise JWT login", () => {
       ).toBeNull();
     }
   });
-  it("re-checks a valid session at most every 30 seconds and drops a revoked one at once", async () => {
-    vi.useFakeTimers({ toFake: ["Date"] });
-    try {
-      const { auth, repository } = await fixture();
-      const login = await auth.login(user.account, "fixture-password-123");
-      if ("error" in login) throw new Error("Fixture login failed");
-      const session = await auth.authenticate(login.accessToken);
-      if (!session) throw new Error("Fixture session missing");
-      const lookups = vi.mocked(repository.identity).mock.calls.length;
-      expect(await auth.authenticate(login.accessToken)).toMatchObject({ user });
-      expect(repository.identity).toHaveBeenCalledTimes(lookups);
-      vi.setSystemTime(Date.now() + 30001);
-      expect(await auth.authenticate(login.accessToken)).toMatchObject({ user });
-      expect(repository.identity).toHaveBeenCalledTimes(lookups + 1);
-      await auth.revoke(session.sessionId);
-      expect(await auth.authenticate(login.accessToken)).toBeNull();
-    } finally {
-      vi.useRealTimers();
-    }
-  });
 });

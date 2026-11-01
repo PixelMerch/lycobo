@@ -47,26 +47,7 @@ const refreshClaimsSchema = claimsSchema
     purpose: z.literal("enterprise-refresh"),
     nonce: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
   });
-// A valid session is re-checked against the database at most every 30 seconds per API instance:
-// logout, revocation and password changes evict it here at once, and take effect on other
-// instances within that window. Login and refresh always read the database.
-const identityTtlMs = 30000;
 export function enterpriseAuth(repository: AuthRepository, config: AuthConfig) {
-  const identities = new Map<
-    string,
-    { user: NonNullable<Awaited<ReturnType<AuthRepository["identity"]>>>; until: number }
-  >();
-  const currentIdentity = async (sessionId: string) => {
-    const cached = identities.get(sessionId);
-    if (cached && cached.until > Date.now()) return cached.user;
-    const user = await repository.identity(sessionId);
-    if (!user) identities.delete(sessionId);
-    else {
-      if (identities.size >= 5000) identities.clear();
-      identities.set(sessionId, { user, until: Date.now() + identityTtlMs });
-    }
-    return user;
-  };
   const mintRefresh = (sessionId: string, expiresAt: Date) =>
     sign(
       {
@@ -161,7 +142,7 @@ export function enterpriseAuth(repository: AuthRepository, config: AuthConfig) {
       const now = Math.floor(Date.now() / 1000);
       if (claims.exp <= now || claims.iat > now || claims.exp - claims.iat > accessTokenLifetime)
         return null;
-      const user = await currentIdentity(claims.jti);
+      const user = await repository.identity(claims.jti);
       if (!user || user.userId !== claims.sub || user.organizationId !== claims.org) return null;
       return { user, sessionId: claims.jti, expiresAt: claims.exp };
     },
@@ -170,24 +151,15 @@ export function enterpriseAuth(repository: AuthRepository, config: AuthConfig) {
       const credential = await repository.credential(account);
       if (!credential || !(await verifyPassword(currentPassword, credential.password_hash)))
         return false;
-      const changed = await repository.changePassword(credential, await hashPassword(newPassword));
-      // The change revokes the account's sessions; stop trusting any cached one here.
-      identities.clear();
-      return changed;
+      return repository.changePassword(credential, await hashPassword(newPassword));
     },
     async revokeRefresh(token: string) {
       // Just-rotated credentials may still revoke their own session during logout,
       // but are never accepted for renewal. This closes the logout/refresh race.
       const claims = await refreshClaims(token);
-      if (claims) {
-        identities.delete(claims.jti);
-        await repository.revoke(claims.jti);
-      }
+      if (claims) await repository.revoke(claims.jti);
     },
-    revoke: async (id: string) => {
-      identities.delete(id);
-      await repository.revoke(id);
-    },
+    revoke: (id: string) => repository.revoke(id),
   };
 }
 export type EnterpriseAuth = ReturnType<typeof enterpriseAuth>;
