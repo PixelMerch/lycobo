@@ -1,7 +1,13 @@
 import type { ImageJob } from "@lycoboai/contracts";
 import { QueryClient } from "@tanstack/react-query";
 import { expect, it, vi } from "vitest";
-import { type ImageHistory, pollDelay, refreshUnfinished, unfinishedJobs } from "./task-sync";
+import {
+  type ImageHistory,
+  pollDelay,
+  reconnectPlan,
+  refreshUnfinished,
+  unfinishedJobs,
+} from "./task-sync";
 
 const item = (overrides: Partial<ImageJob["items"][number]> = {}) => ({
   id: crypto.randomUUID(),
@@ -57,6 +63,20 @@ it("polls new work quickly, long work slowly and backs off after failures", () =
   expect(pollDelay([recent], true, 0, now)).toBe(30000);
   expect(pollDelay([recent], false, 2, now)).toBe(16000);
   expect(pollDelay([long], false, 9, now)).toBe(60000);
+});
+
+it("backs off event-stream reconnects and re-checks the events capability every third failure", () => {
+  const plans = Array.from({ length: 7 }, (_, index) => reconnectPlan(index + 1));
+  expect(plans.map((plan) => plan.delay)).toEqual([1000, 2000, 4000, 8000, 16000, 30000, 30000]);
+  expect(plans.map((plan) => plan.recheck)).toEqual([
+    false,
+    false,
+    true,
+    false,
+    false,
+    true,
+    false,
+  ]);
 });
 
 it("leaves caches untouched while polled tasks are unchanged", async () => {

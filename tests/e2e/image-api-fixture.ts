@@ -51,13 +51,14 @@ export async function mockImageApi(page: Page) {
   });
 }
 
-export async function mockImageEvents(page: Page, enabled = true) {
+/** `enabled` may be a function, read on every capability request, to change it mid-test. */
+export async function mockImageEvents(page: Page, enabled: boolean | (() => boolean) = true) {
   await mockImageApi(page);
   await page.route("**/api/v1/image-models", (route) =>
     route.fulfill({
       json: apiFixture({
         enabled: true,
-        eventsEnabled: enabled,
+        eventsEnabled: typeof enabled === "function" ? enabled() : enabled,
         editsEnabled: true,
         unitCredits: 1,
         models: modelNames.map((id) => ({ id, enabledResolutions: ["1K", "1.5K"] })),

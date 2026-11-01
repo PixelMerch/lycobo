@@ -64,6 +64,17 @@ export function pollDelay(jobs: ImageJob[], liveEvents: boolean, failures: numbe
   return Math.min(60000, base * 2 ** Math.min(failures, 4));
 }
 
+/**
+ * Reconnect timing for the `failure`-th consecutive event-stream failure: exponential backoff to
+ * 30 s and, every third failure, a re-check that the server still offers live events. EventSource
+ * errors carry no HTTP status, so this is how a stream the server stopped offering ends instead of
+ * being retried for as long as the tab stays open.
+ */
+export const reconnectPlan = (failure: number) => ({
+  delay: Math.min(30000, 1000 * 2 ** Math.min(failure - 1, 5)),
+  recheck: failure % 3 === 0,
+});
+
 const fingerprint = (job: ImageJob) =>
   JSON.stringify([
     job.status,

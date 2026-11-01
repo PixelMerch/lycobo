@@ -6,6 +6,7 @@ import {
   cachedJob,
   chargesChanged,
   pollDelay,
+  reconnectPlan,
   refreshUnfinished,
   replaceJob,
   unfinishedJobs,
@@ -110,13 +111,13 @@ export function useImageEvents() {
       source = undefined;
       clearTimeout(watchdog);
       if (stopped || reconnectTimer) return;
-      reconnectTimer = setTimeout(
-        () => {
-          reconnectTimer = undefined;
-          void connect(true);
-        },
-        Math.min(30000, 1000 * 2 ** Math.min(failures++, 5)),
-      );
+      const plan = reconnectPlan(++failures);
+      // A refreshed capability without events turns this effect off and cancels the reconnect.
+      if (plan.recheck) void client.invalidateQueries({ queryKey: ["image-models"] });
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = undefined;
+        void connect(true);
+      }, plan.delay);
     };
     const touch = () => {
       clearTimeout(watchdog);
