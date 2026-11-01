@@ -16,6 +16,8 @@ export function readCloudBaseDatabaseConfig(env: CloudBaseDatabaseBindings) {
 }
 export type CloudBaseOperation =
   | "lycobo_image_operation"
+  | "lycobo_provider_webhook"
+  | "lycobo_image_batch"
   | "lycobo_auth_allow_login"
   | "lycobo_auth_credential"
   | "lycobo_auth_create_session"

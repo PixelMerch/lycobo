@@ -63,6 +63,12 @@ export const providerSnapshotSchema = channelInputSchema
   .extend({
     channelId: z.uuid(),
     credentialId: z.uuid(),
+    webhook: z
+      .object({
+        source: z.string().regex(/^[a-f0-9]{64}$/),
+        waitSeconds: z.number().int().min(30).max(120),
+      })
+      .optional(),
     origin: providerOriginSchema,
     adapter: providerAdapterSchema,
   });

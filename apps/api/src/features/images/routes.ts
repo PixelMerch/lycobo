@@ -64,14 +64,16 @@ export function imageRoutes(deps: ImageApiDependencies) {
   const wokenAt = new Map<string, number>();
   const queuedJob = z.object({
     id: z.uuid(),
-    status: z.literal("queued"),
+    status: z.enum(["queued", "running"]),
+    recovery_due: z.boolean().optional(),
     created_at: z.coerce.date(),
   });
   const wakeIfStale = async (job: unknown) => {
     const queued = queuedJob.safeParse(job);
     if (!deps.wake || !queued.success) return;
     const now = Date.now();
-    if (now - queued.data.created_at.getTime() < 15000) return;
+    if (queued.data.status === "running" && !queued.data.recovery_due) return;
+    if (queued.data.status === "queued" && now - queued.data.created_at.getTime() < 15000) return;
     if (now - (wokenAt.get(queued.data.id) ?? 0) < 15000) return;
     if (wokenAt.size > 1000) wokenAt.clear();
     wokenAt.set(queued.data.id, now);
@@ -393,6 +395,24 @@ export function imageRoutes(deps: ImageApiDependencies) {
     if (!parsed.success) return fail(c, "NOT_FOUND", "任务不存在", 404);
     await deps.repository.archive(c.get("principal"), parsed.data);
     return c.json({ id: parsed.data });
+  });
+  app.get("/image-tasks/status", async (c) => {
+    const parsed = z.array(z.uuid()).min(1).max(50).safeParse(c.req.query("ids")?.split(","));
+    if (!parsed.success) return fail(c, "VALIDATION_ERROR", "任务编号无效", 400);
+    const scope = c.get("principal");
+    const jobs = await deps.repository.getMany(scope, [...new Set(parsed.data)]);
+    // One recovery wake per batch; the consumer drains all durable due work.
+    const recover = jobs.find((job) => {
+      const value = queuedJob.safeParse(job);
+      return (
+        value.success &&
+        ((value.data.status === "queued" &&
+          Date.now() - value.data.created_at.getTime() >= 15000) ||
+          value.data.recovery_due)
+      );
+    });
+    if (recover) await wakeIfStale(recover);
+    return c.json({ data: delivery ? await delivery.jobs(scope, jobs) : jobs });
   });
   app.get("/image-tasks/:id", async (c) => {
     const parsed = id.safeParse(c.req.param("id"));

@@ -18,6 +18,7 @@ export * from "./cloudbase-image-repository";
 export * from "./cloudbase-rpc";
 export * from "./image-event-repository";
 export * from "./image-repository";
+export type { ProviderWebhookReceipt } from "./provider-webhook-repository";
 export { VariationError } from "./variation-repository";
 export { WalletError } from "./wallet-repository";
 export { schema };

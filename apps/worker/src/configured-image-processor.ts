@@ -15,7 +15,7 @@ export async function processConfiguredImage(
   deps: {
     repository: Pick<
       ImageRuntimeRepository,
-      "providerCipher" | "asset" | "deferProvider" | "finish"
+      "providerCipher" | "asset" | "deferProvider" | "finish" | "webhookWait"
     >;
     store: Pick<ImageStore, "read" | "put">;
     modelSecret?: string | undefined;
@@ -29,7 +29,7 @@ export async function processConfiguredImage(
   const polling = state.phase === "polling" && !!state.taskId && !!state.statusPath;
   let sent = false;
   try {
-    if (Date.now() > state.deadlineAt.getTime())
+    if (Date.now() > state.deadlineAt.getTime() && !(polling && state.snapshot.webhook))
       throw new ImageProviderError("PROVIDER_TASK_DEADLINE", true);
     const key =
       state.snapshot.credentialId === standaloneCredentialId
@@ -61,6 +61,20 @@ export async function processConfiguredImage(
       deps.request,
     );
     if (result.kind === "pending") {
+      if (Date.now() > state.deadlineAt.getTime())
+        throw new ImageProviderError("PROVIDER_TASK_DEADLINE", true);
+      if (state.snapshot.webhook) {
+        const ready = await deps.repository.webhookWait(
+          job,
+          result.taskId,
+          result.statusPath,
+          result.requestId,
+        );
+        // Only an already-received callback needs immediate continuation. Otherwise exit:
+        // the durable next_poll_at is recovered by a callback, visible batch read or timer.
+        if (ready) deps.onDeferred?.(2000);
+        return;
+      }
       await deps.repository.deferProvider(
         job,
         result.taskId,

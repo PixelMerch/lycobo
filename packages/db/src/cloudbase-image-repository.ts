@@ -20,6 +20,7 @@ import {
   type ImageRuntimeRepository,
   type IndependentModelConfiguration,
 } from "./image-repository";
+import { cloudbaseProviderWebhooks } from "./provider-webhook-repository";
 import { VariationError } from "./variation-repository";
 
 const row = z.record(z.string(), z.unknown());
@@ -85,6 +86,15 @@ export function cloudbaseImageRepository(
   };
   const repository: ImageRuntimeRepository = {
     close: async () => {},
+    ...cloudbaseProviderWebhooks(call),
+    getMany: async (scope, ids) =>
+      rows.parse(
+        await call("lycobo_image_batch", {
+          p_org: scope.organizationId,
+          p_user: scope.userId,
+          p_ids: ids,
+        }),
+      ),
     storageUid: async (scope) =>
       z
         .string()
