@@ -40,7 +40,10 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm check
+      # The check step above requires successful CI (lint, typecheck, tests, build) for this
+      # exact commit, so only the frontend build that prepare-web packages is repeated here.
+      - name: Build static frontend
+        run: pnpm --filter @lycoboai/web build
       - name: Prepare static frontend package
         run: node scripts/cloudbase/prepare-web.mjs "$RUNNER_TEMP/lycobo-cloudbase-web"
       - name: Prepare Linux backend packages
