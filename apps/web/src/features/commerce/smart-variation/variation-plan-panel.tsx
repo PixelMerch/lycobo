@@ -2,6 +2,7 @@ import { Button, Checkbox, Input, Label, Spinner, TextArea, TextField } from "@h
 import { IconCheck, IconTrash, IconX } from "@tabler/icons-react";
 import { useLayoutEffect, useRef } from "react";
 import { UiIcon } from "../../../components/ui-icon";
+import { previewPlanItems } from "./plan-stream";
 import { useSmartVariationDraft } from "./smart-variation-state";
 import { useVariationGeneration } from "./use-variation-generation";
 
@@ -45,12 +46,20 @@ function PlanPrompt({
 export function VariationPlanPanel({
   isOpen,
   onOpenChange,
+  analyzing = false,
+  streamText = "",
+  analysisError,
 }: {
   isOpen: boolean;
+  analyzing?: boolean;
+  streamText?: string;
+  analysisError?: string | undefined;
   onOpenChange: (open: boolean) => void;
 }) {
   const { items, ratio, resolution, update } = useSmartVariationDraft();
   const generation = useVariationGeneration();
+  const previews = previewPlanItems(streamText);
+  const showPreview = analyzing || !!analysisError;
   const selectedCount = items.filter((item) => item.selected).length;
   const patchItem = (id: string, patch: Partial<(typeof items)[number]>) =>
     update({ items: items.map((item) => (item.id === id ? { ...item, ...patch } : item)) });
@@ -68,7 +77,9 @@ export function VariationPlanPanel({
     >
       <header className="variation-plan-header">
         <div>
-          <h2 id="variation-plan-heading">确认每张图的中文提示词</h2>
+          <h2 id="variation-plan-heading">
+            {analyzing ? "正在生成套图计划" : "确认每张图的中文提示词"}
+          </h2>
         </div>
         <Button
           isIconOnly
@@ -81,64 +92,89 @@ export function VariationPlanPanel({
       </header>
       <div className="variation-plan-body">
         <div className="variation-plan-list">
-          {items.map((item, index) => (
-            <section
-              className="variation-plan-card"
-              data-selected={item.selected}
-              key={item.id}
-              aria-label={`方案 ${index + 1}`}
-            >
-              <div className="variation-plan-card-heading">
-                <span className="variation-plan-number">{index + 1}</span>
-                <TextField
-                  value={item.title}
-                  onChange={(title) => patchItem(item.id, { title })}
-                  className="variation-plan-title"
+          {showPreview && (
+            <>
+              <p className="variation-plan-stream-status" role="status">
+                {analysisError ||
+                  (previews.length ? "正在完善方案，完成后即可编辑确认…" : "正在规划，请稍候…")}
+              </p>
+              {previews.map((item, index) => (
+                <section
+                  className="variation-plan-card"
+                  key={item.id}
+                  aria-label={`生成中的方案 ${index + 1}`}
                 >
-                  <Label className="sr-only">方案 {index + 1} 名称</Label>
-                  <Input maxLength={40} />
-                </TextField>
-                <Checkbox
-                  isSelected={item.selected}
-                  onChange={(selected) => patchItem(item.id, { selected })}
-                >
-                  <Checkbox.Content>
-                    <Checkbox.Control>
-                      <Checkbox.Indicator>
-                        <UiIcon icon={IconCheck} size="small" />
-                      </Checkbox.Indicator>
-                    </Checkbox.Control>
-                    <span className="sr-only">选择方案 {index + 1}</span>
-                  </Checkbox.Content>
-                </Checkbox>
-                <Button
-                  isIconOnly
-                  size="sm"
-                  variant="tertiary"
-                  aria-label={`删除方案 ${index + 1}`}
-                  onPress={() => update({ items: items.filter((entry) => entry.id !== item.id) })}
-                >
-                  <UiIcon icon={IconTrash} />
-                </Button>
-              </div>
-              <PlanPrompt
-                value={item.prompt}
-                index={index}
-                onChange={(prompt) => patchItem(item.id, { prompt })}
-              />
-            </section>
-          ))}
-          {!items.length && <p className="variation-plan-empty">暂无方案，请重新生成计划。</p>}
+                  <div className="variation-plan-card-heading">
+                    <span className="variation-plan-number">{index + 1}</span>
+                    <h3>{item.title || "正在生成标题…"}</h3>
+                  </div>
+                  <p className="variation-plan-stream-prompt">{item.prompt || "正在编写提示词…"}</p>
+                </section>
+              ))}
+            </>
+          )}
+          {!showPreview &&
+            items.map((item, index) => (
+              <section
+                className="variation-plan-card"
+                data-selected={item.selected}
+                key={item.id}
+                aria-label={`方案 ${index + 1}`}
+              >
+                <div className="variation-plan-card-heading">
+                  <span className="variation-plan-number">{index + 1}</span>
+                  <TextField
+                    value={item.title}
+                    onChange={(title) => patchItem(item.id, { title })}
+                    className="variation-plan-title"
+                  >
+                    <Label className="sr-only">方案 {index + 1} 名称</Label>
+                    <Input maxLength={40} />
+                  </TextField>
+                  <Checkbox
+                    isSelected={item.selected}
+                    onChange={(selected) => patchItem(item.id, { selected })}
+                  >
+                    <Checkbox.Content>
+                      <Checkbox.Control>
+                        <Checkbox.Indicator>
+                          <UiIcon icon={IconCheck} size="small" />
+                        </Checkbox.Indicator>
+                      </Checkbox.Control>
+                      <span className="sr-only">选择方案 {index + 1}</span>
+                    </Checkbox.Content>
+                  </Checkbox>
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="tertiary"
+                    aria-label={`删除方案 ${index + 1}`}
+                    onPress={() => update({ items: items.filter((entry) => entry.id !== item.id) })}
+                  >
+                    <UiIcon icon={IconTrash} />
+                  </Button>
+                </div>
+                <PlanPrompt
+                  value={item.prompt}
+                  index={index}
+                  onChange={(prompt) => patchItem(item.id, { prompt })}
+                />
+              </section>
+            ))}
+          {!showPreview && !items.length && (
+            <p className="variation-plan-empty">暂无方案，请重新生成计划。</p>
+          )}
         </div>
       </div>
       <footer className="variation-plan-footer">
         <div className="variation-plan-output">
           <span>
-            {ratio} · {resolution} · 已选 {selectedCount} 张
+            {ratio} · {resolution} ·{" "}
+            {showPreview ? "计划完成后可确认生成" : `已选 ${selectedCount} 张`}
           </span>
         </div>
         <Button
-          isDisabled={!generation.canGenerate}
+          isDisabled={showPreview || !generation.canGenerate}
           isPending={generation.submitting}
           className="primary-action variation-generate"
           onPress={() => {

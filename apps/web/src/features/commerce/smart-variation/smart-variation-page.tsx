@@ -90,13 +90,10 @@ export function SmartVariationPage() {
           <Button
             isDisabled={!analysis.canAnalyze}
             isPending={analysis.isPending}
-            onPress={() =>
-              analysis.mutate(undefined, {
-                onSuccess: (plan) => {
-                  if (useSmartVariationDraft.getState().planId === plan.id) setPlanOpen(true);
-                },
-              })
-            }
+            onPress={() => {
+              setPlanOpen(true);
+              analysis.mutate();
+            }}
             variant="primary"
             size="lg"
             fullWidth
@@ -109,7 +106,13 @@ export function SmartVariationPage() {
           </Button>
         </div>
       </section>
-      <VariationPlanPanel isOpen={planOpen} onOpenChange={setPlanOpen} />
+      <VariationPlanPanel
+        isOpen={planOpen}
+        onOpenChange={setPlanOpen}
+        analyzing={analysis.isPending}
+        streamText={analysis.streamText}
+        analysisError={analysis.error?.message}
+      />
     </>
   );
 }

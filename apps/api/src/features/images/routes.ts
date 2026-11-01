@@ -18,6 +18,7 @@ import {
 import { normalizeTextileGeneration } from "@lycoboai/generation";
 import { type ImageStore, ImageValidationError, maxImageBytes } from "@lycoboai/storage/core";
 import { type Context, Hono } from "hono";
+import { streamSSE } from "hono/streaming";
 import { z } from "zod";
 import { enterprisePrincipal } from "../auth/routes";
 import type { EnterpriseAuth } from "../auth/service";
@@ -254,6 +255,34 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const key = id.safeParse(c.req.header("Idempotency-Key"));
     if (!input.success || !key.success)
       return fail(c, "VALIDATION_ERROR", "请填写创作需求并检查参考图", 400);
+    if (c.req.header("Accept")?.includes("text/event-stream")) {
+      c.header("Cache-Control", "no-cache, no-transform");
+      c.header("X-Accel-Buffering", "no");
+      return streamSSE(c, async (stream) => {
+        const abort = new AbortController();
+        stream.onAbort(() => abort.abort());
+        try {
+          await stream.writeSSE({ event: "started", data: "{}" });
+          const plan = await variation.create(
+            c.get("principal"),
+            input.data,
+            key.data,
+            AbortSignal.any([abort.signal, c.req.raw.signal]),
+            async (text) => {
+              await stream.writeSSE({ event: "delta", data: JSON.stringify({ text }) });
+            },
+          );
+          if (!plan) throw new Error("UNAVAILABLE");
+          await stream.writeSSE({ event: "complete", data: JSON.stringify(plan) });
+        } catch {
+          if (!abort.signal.aborted)
+            await stream.writeSSE({
+              event: "failed",
+              data: JSON.stringify({ message: "计划未完成，请稍后重试" }),
+            });
+        }
+      });
+    }
     const plan = await variation.create(c.get("principal"), input.data, key.data, c.req.raw.signal);
     return plan ? c.json(plan) : fail(c, "GENERATION_NOT_CONFIGURED", "智能分析尚未配置", 503);
   });
