@@ -92,9 +92,9 @@ export function StudioShell() {
           <RouteLink to="/" className="brand">
             <img
               className="lycobo-logo"
-              src="/brand/lycobo-logo-white.svg"
+              src="/brand/lycobo-product-pilot.svg"
               alt="Lycobo"
-              width="88"
+              width="120"
               height="24"
             />
           </RouteLink>
@@ -110,7 +110,7 @@ export function StudioShell() {
           >
             <img
               className="sidebar-compact-mark"
-              src="/brand/lycobo-mark-white.svg"
+              src="/brand/lycobo-product-pilot-mark.svg"
               alt=""
               width="24"
               height="24"
@@ -161,10 +161,10 @@ export function StudioShell() {
                   <Drawer.Heading>
                     <img
                       className="lycobo-logo"
-                      src="/brand/lycobo-logo-white.svg"
+                      src="/brand/lycobo-product-pilot.svg"
                       alt="Lycobo"
-                      width="130"
-                      height="40"
+                      width="120"
+                      height="24"
                     />
                   </Drawer.Heading>
                   <Drawer.CloseTrigger aria-label="关闭导航" />

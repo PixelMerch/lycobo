@@ -13,11 +13,15 @@ const docker = process.argv.includes("--docker");
 const env = localEnvironment(process.env, docker, { ...settings, ...process.env });
 const names = process.argv.includes("--api-only") ? ["api"] : ["api", "worker", "assets", "web"];
 const children = names.map((name) =>
-  spawn("pnpm", ["--filter", `@lycoboai/${name}`, "dev"], {
-    stdio: "inherit",
-    env,
-    detached: process.platform !== "win32",
-  }),
+  spawn(
+    "pnpm",
+    ["--filter", `@lycoboai/${name}`, docker && name === "web" ? "dev:docker" : "dev"],
+    {
+      stdio: "inherit",
+      env,
+      detached: process.platform !== "win32",
+    },
+  ),
 );
 let stopping = false;
 function stop() {

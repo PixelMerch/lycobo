@@ -10,7 +10,6 @@ import {
 import { IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { CollapsibleText } from "../../../components/collapsible-text";
 import { ConfirmDialog } from "../../../components/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
 import { copyToClipboard } from "../../../lib/clipboard";
@@ -32,7 +31,7 @@ import { HistoryDownloadButton } from "./history-download-button";
 export function HistoryPrompt({ job }: { job: ImageJob }) {
   return (
     <div className="history-prompt">
-      <CollapsibleText text={job.prompt} id={`prompt-${job.id}`} className="generation-prompt" />
+      <p className="generation-prompt">{job.prompt}</p>
       <Button
         variant="secondary"
         className="copy-prompt"

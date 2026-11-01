@@ -64,7 +64,7 @@ test("analysis requires text, preserves edited plans and submits only confirmed 
     .click();
   await page
     .getByRole("navigation", { name: "电商创作工具" })
-    .getByRole("button", { name: "智能裂变", exact: true })
+    .getByRole("button", { name: "套图计划", exact: true })
     .click();
   await page.getByRole("button", { name: "查看生成计划", exact: true }).click();
   await expect(dialog.getByRole("textbox", { name: "方案 1 名称", exact: true })).toHaveValue(

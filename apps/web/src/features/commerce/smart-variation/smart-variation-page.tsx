@@ -19,7 +19,7 @@ export function SmartVariationPage() {
 
   return (
     <>
-      <section className="composer-panel" aria-label="智能裂变参数">
+      <section className="composer-panel" aria-label="套图计划参数">
         <WorkspaceComposerTitle />
         <div className="composer-scroll">
           <ReferencePicker
@@ -37,7 +37,7 @@ export function SmartVariationPage() {
             onReferencesInsert={(images, description) =>
               update({ references: [...references, ...images], description })
             }
-            placeholder="描述要调整的颜色、场景或细节，输入 @ 引用图片"
+            placeholder="描述整套图片的用途、场景和卖点，输入 @ 引用商品图"
             maxLength={5000}
             showCount
             autoGrow

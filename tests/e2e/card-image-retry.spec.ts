@@ -146,7 +146,7 @@ test("confirmed legacy textile failure creates a current-channel task for only t
     organization_id: crypto.randomUUID(),
     user_id: crypto.randomUUID(),
     model: "gpt-image-2.5",
-    prompt: "旧版家纺主图裂变",
+    prompt: "旧版家纺裂变",
     resolution: "4K",
     aspect_ratio: "1:1",
     requested_count: 2,
@@ -156,7 +156,7 @@ test("confirmed legacy textile failure creates a current-channel task for only t
     completed_at: null,
     input: {
       model: "gpt-image-2.5",
-      prompt: "旧版家纺主图裂变",
+      prompt: "旧版家纺裂变",
       resolution: "4K",
       aspectRatio: "1:1",
       count: 2,

@@ -12,7 +12,7 @@ test("workspace switches tools without discarding drafts and remembers the curre
   await page.getByLabel("提示词", { exact: true }).fill("保留我的商品草稿");
   await page.getByRole("button", { name: "全部工具", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "选择工具" });
-  await dialog.getByRole("button", { name: /^家纺套图/ }).click();
+  await dialog.getByRole("button", { name: /^家纺裂变/ }).click();
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
   await expect(dialog).toBeHidden();
   await page.getByRole("link", { name: "首页", exact: true }).click();
@@ -58,7 +58,7 @@ test("tool-scoped history follows navigation and preserves the main-image draft"
   await page.getByLabel("提示词", { exact: true }).fill("保留商品描述");
   await expect(page.getByRole("combobox", { name: "历史工具筛选" })).toHaveCount(0);
   const tools = page.getByRole("navigation", { name: "电商创作工具" });
-  await tools.getByRole("button", { name: "家纺套图", exact: true }).click();
+  await tools.getByRole("button", { name: "家纺裂变", exact: true }).click();
   await expect.poll(() => filters.includes("textile")).toBe(true);
   await tools.getByRole("button", { name: "主图制作", exact: true }).click();
   await expect(page).toHaveURL(/\/create$/);

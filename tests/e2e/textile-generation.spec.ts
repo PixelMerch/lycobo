@@ -60,7 +60,7 @@ test("textile angles submit one durable ten-image job and isolate history across
         user_id: crypto.randomUUID(),
         input,
         model: input.model,
-        prompt: "家纺主图裂变",
+        prompt: "家纺裂变",
         resolution: input.resolution,
         aspect_ratio: input.aspectRatio,
         requested_count: input.count,
@@ -147,8 +147,8 @@ test("textile angles submit one durable ten-image job and isolate history across
   const labelBox = await label.boundingBox();
   const resultBox = await result.boundingBox();
   if (!labelBox || !resultBox) throw new Error("Missing result label geometry");
-  expect(labelBox.y - resultBox.y).toBeCloseTo(4, 0);
-  expect(labelBox.x + labelBox.width / 2).toBeCloseTo(resultBox.x + resultBox.width / 2, 0);
+  expect(labelBox.y - resultBox.y).toBeCloseTo(6, 0);
+  expect(labelBox.x - resultBox.x).toBeCloseTo(6, 0);
   await expect(label).toHaveCSS("font-size", "12px");
   await expect(label).toHaveCSS("pointer-events", "none");
 

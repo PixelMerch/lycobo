@@ -118,6 +118,8 @@ for (const layout of ["expanded", "collapsed", "mobile"] as const) {
       await page.getByRole("button", { name: "收起导航栏", exact: true }).click();
     await page.getByRole("button", { name: "登录领积分", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "欢迎使用 Lycobo" });
+    // The panel springs into place; compare form positions only once it has settled.
+    await expect(dialog.locator(".login-panel")).toHaveCSS("transform", "none");
     await dialog.getByLabel("企业账号", { exact: true }).fill("login-fixture");
     const password = dialog.getByLabel("密码", { exact: true });
     await password.fill("wrong-fixture-password");
@@ -139,10 +141,16 @@ for (const layout of ["expanded", "collapsed", "mobile"] as const) {
     await expect(password).toHaveValue("");
     await expect(password).toBeFocused();
     expect((await submit.boundingBox())?.y).toBeCloseTo(before?.y ?? 0, 0);
-    // A second failed attempt still produces one toast, without stacking or moving the form.
+    // A second failed attempt still shows one toast, without stacking or moving the form.
+    // The provider keeps an older toast mounted but hidden until it expires, so count only
+    // the toasts it displays.
     await password.fill("another-wrong-password");
+    const retried = page.waitForResponse("**/api/v1/auth/enterprise/login");
     await submit.click();
-    await expect(page.locator(".toast-region .toast")).toHaveCount(1);
+    await retried;
+    const shown = page.locator('.toast-region .toast:not([data-hidden="true"])');
+    await expect(shown).toHaveCount(1);
+    await expect(shown).toContainText(message);
     await expect(dialog.getByText(message, { exact: true })).toHaveCount(0);
   });
 }

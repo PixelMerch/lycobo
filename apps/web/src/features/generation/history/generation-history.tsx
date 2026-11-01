@@ -1,7 +1,7 @@
-import { EmptyState } from "@heroui/react";
-import { textileViews } from "@lycoboai/contracts";
-import { IconPhotoPlus } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { Button, EmptyState } from "@heroui/react";
+import { type ImageJob, textileViews } from "@lycoboai/contracts";
+import { IconChevronDown, IconChevronUp, IconPhotoPlus } from "@tabler/icons-react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
 import { useErrorToast } from "../../../lib/error-toast";
@@ -17,6 +17,35 @@ import { HistoryTaskMeta } from "./history-task-meta";
 import { HistoryPrompt, HistoryTaskActions } from "./history-task-tools";
 import { ResultImage } from "./result-image";
 import { useHistoryTaskTarget } from "./use-history-task-target";
+
+/** Batches of five or more report their progress; past ten images they fold to two rows. */
+const batchSize = 5;
+const batchFold = 10;
+function BatchProgress({ items }: { items: ImageJob["items"] }) {
+  const tally = (...statuses: ImageJob["items"][number]["status"][]) =>
+    items.filter((item) => statuses.includes(item.status)).length;
+  const done = tally("succeeded");
+  if (done === items.length) return null;
+  const running = tally("queued", "running");
+  const failed = tally("failed");
+  const unresolved = tally("needs_reconciliation");
+  const parts = [
+    `已完成 ${done}/${items.length}`,
+    running ? `生成中 ${running}` : "",
+    failed ? `失败 ${failed}` : "",
+    unresolved ? `待确认 ${unresolved}` : "",
+  ].filter(Boolean);
+  return (
+    <p className="history-batch-progress">
+      {parts.map((part, index) => (
+        <Fragment key={part}>
+          {index > 0 && " · "}
+          <span>{part}</span>
+        </Fragment>
+      ))}
+    </p>
+  );
+}
 
 export function GenerationHistory({
   compact = false,
@@ -57,6 +86,14 @@ export function GenerationHistory({
     }
     previewTrigger.current = null;
   }, [preview]);
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
+  const folded = (job: ImageJob) => job.items.length > batchFold && !expanded.has(job.id);
+  const toggleFold = (id: string) =>
+    setExpanded((current) => {
+      const next = new Set(current);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
   const listRef = useRef<HTMLDivElement>(null);
   const activeHistoryId = useStudioStore((s) => s.activeHistoryId);
   const setActiveHistoryId = useStudioStore((s) => s.setActiveHistoryId);
@@ -133,6 +170,7 @@ export function GenerationHistory({
                 job={job}
                 modelName={modelDisplayName(job.model, catalog.data?.models ?? [])}
               />
+              {!compact && job.items.length >= batchSize && <BatchProgress items={job.items} />}
               {!compact && <HistoryTaskActions job={job} onRestore={onRestore} />}
             </header>
             {compact ? (
@@ -142,6 +180,7 @@ export function GenerationHistory({
             )}
             {!compact && (
               <div
+                id={`results-${job.id}`}
                 className="generation-results"
                 data-count={job.items.length}
                 data-failed={
@@ -150,7 +189,7 @@ export function GenerationHistory({
                   ) || undefined
                 }
               >
-                {job.items.map((item) => (
+                {(folded(job) ? job.items.slice(0, batchFold) : job.items).map((item) => (
                   <div
                     key={item.id}
                     id={`result-${item.id}`}
@@ -221,6 +260,19 @@ export function GenerationHistory({
                   </div>
                 ))}
               </div>
+            )}
+            {!compact && job.items.length > batchFold && (
+              <Button
+                size="sm"
+                variant="tertiary"
+                className="history-batch-toggle"
+                aria-expanded={!folded(job)}
+                aria-controls={`results-${job.id}`}
+                onPress={() => toggleFold(job.id)}
+              >
+                <UiIcon icon={folded(job) ? IconChevronDown : IconChevronUp} size="small" />
+                {folded(job) ? `展开全部 ${job.items.length} 张` : "收起"}
+              </Button>
             )}
           </article>
         ))}

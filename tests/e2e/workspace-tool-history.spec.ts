@@ -56,10 +56,35 @@ for (const width of [390, 1440]) {
     await expect(page.locator(".generation-job")).toHaveCount(4);
     await page.evaluate(() => document.fonts.ready);
     await page.mouse.move(0, 0);
+    // Switching controls never display help; the composer banner owns it.
+    const textileShortcut = page
+      .getByRole("navigation", { name: "电商创作工具" })
+      .getByRole("button", { name: "家纺裂变", exact: true });
+    await textileShortcut.hover();
+    const preview = page.getByRole("tooltip");
+    await expect(preview).toHaveCount(0);
+    if (width >= 768) {
+      const banner = page.locator(".workspace-composer-hero");
+      await banner.hover();
+      await expect(preview).toContainText("一张图讲清卖点");
+      await expect(preview.getByRole("listitem")).toHaveCount(3);
+      await expect(preview).not.toContainText("点击切换到此功能");
+      const bannerBounds = await banner.boundingBox();
+      const previewBounds = await preview.boundingBox();
+      expect(previewBounds?.x).toBeGreaterThanOrEqual(
+        (bannerBounds?.x ?? 0) + (bannerBounds?.width ?? 0),
+      );
+      await page.keyboard.press("Escape");
+      await expect(preview).toHaveCount(0);
+    }
+    await expect(page).toHaveURL(/\/create$/);
+    await page.mouse.move(0, 0);
     const allTools = page.getByRole("button", { name: "全部工具", exact: true });
+    // The dock names every entry on screen, so hovering adds no tooltip.
+    await expect(allTools).toContainText("视频即将开放");
     await allTools.hover();
     await page.screenshot({ path: `/tmp/lycobo-tabs-hover-${width}.png` });
-    await expect(page.getByRole("tooltip")).toHaveText("全部工具");
+    await expect(page.getByRole("tooltip")).toHaveCount(0);
     await allTools.click();
     await expect(page.getByRole("dialog", { name: "选择工具" })).toBeVisible();
     await page.keyboard.press("Escape");
@@ -104,23 +129,29 @@ for (const width of [390, 1440]) {
     await page.screenshot({ path: `/tmp/lycobo-workspace-tools-${width}.png` });
     await page
       .getByRole("navigation", { name: "电商创作工具" })
-      .getByRole("button", { name: "家纺套图", exact: true })
+      .getByRole("button", { name: "家纺裂变", exact: true })
       .click();
     await expect(page).toHaveURL(/textile-set/);
+    await expect(page.getByRole("tooltip")).toHaveCount(0);
     await expect(page.locator(".unified-workspace")).toHaveAttribute("data-tool", "textile");
-    await expect(page.locator(".workspace-composer-title")).toHaveText("家纺套图");
+    await expect(page.locator(".workspace-composer-title")).toHaveText("家纺裂变");
     await expect(
       page.getByRole("navigation", { name: "电商创作工具" }).getByRole("button", {
-        name: "家纺套图",
+        name: "家纺裂变",
         exact: true,
       }),
     ).toHaveAttribute("aria-current", "page");
     await expect(page.locator(".composer-panel")).toContainText("详情图");
     await expect(page.locator(".composer-panel")).toContainText("裂变类型");
-    await expect(page.locator(".workspace-composer-title .workspace-tool-symbol")).toHaveAttribute(
-      "data-tool",
-      "textile",
+    // The panel hero follows the tool: its own example photo, name and purpose.
+    const hero = page.locator(".workspace-composer-hero");
+    await expect(hero).toHaveAttribute("data-tool", "textile");
+    await expect(hero.locator(".workspace-composer-hero-collage img")).toHaveCount(5);
+    await expect(hero.locator("img").first()).toHaveAttribute(
+      "src",
+      "/studio/textile-views/front.webp",
     );
+    await expect(hero).toContainText("一张主图，延展多视角与细节图");
     await expect(page.locator(".generation-history")).toContainText("textile记录");
     await expect(page.locator(".generation-history")).not.toContainText("create记录");
     if (width >= 768) {
@@ -131,9 +162,9 @@ for (const width of [390, 1440]) {
     }
     await page
       .getByRole("navigation", { name: "电商创作工具" })
-      .getByRole("button", { name: "智能裂变", exact: true })
+      .getByRole("button", { name: "套图计划", exact: true })
       .click();
-    await expect(page.locator(".workspace-composer-title")).toHaveText("智能裂变");
+    await expect(page.locator(".workspace-composer-title")).toHaveText("套图计划");
     await expect(page.locator(".unified-workspace")).toHaveAttribute("data-tool", "variation");
     await expect(page.locator(".generation-job")).toHaveCount(0);
     await expect(page.getByRole("region", { name: "工作区历史记录" })).toContainText(

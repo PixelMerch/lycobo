@@ -56,17 +56,21 @@ async function historyFixture(
   return { input, job };
 }
 
-test("history prompt expands, copies in full and shows uploaded references; icon actions show tooltips", async ({
+test("history prompt wraps, copies in full and shows uploaded references; icon actions show tooltips", async ({
   page,
   context,
 }) => {
   const { input, job } = await historyFixture(page);
   const article = page.locator(".generation-job").first();
   await expect(article.getByText("已完成", { exact: true })).toHaveCount(0);
-  await expect(article.getByRole("button", { name: "展开全部", exact: true })).toBeVisible();
-  await article.getByRole("button", { name: "展开全部", exact: true }).click();
+  await expect(article.getByRole("button", { name: "展开全部", exact: true })).toHaveCount(0);
   await expect(article.locator(".generation-prompt")).not.toHaveClass(/prompt-collapsed/);
-  await article.getByRole("button", { name: "收起", exact: true }).click();
+  await expect(article.locator(".generation-prompt")).toHaveText(input.prompt);
+  const promptBounds = await article.locator(".generation-prompt").boundingBox();
+  const editBounds = await article
+    .getByRole("button", { name: "重新编辑", exact: true })
+    .boundingBox();
+  expect((promptBounds?.x ?? 0) + (promptBounds?.width ?? 0)).toBeLessThan(editBounds?.x ?? 0);
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.clock.install();
   await article.getByRole("button", { name: "复制提示词", exact: true }).click();

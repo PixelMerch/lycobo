@@ -47,7 +47,7 @@ export function HistoryIndex({
       {/* The heading stays outside the scroller so the list can never scroll it away. */}
       <aside
         className="history-rail"
-        aria-label={tool === "textile" ? "家纺主图裂变历史索引" : "历史索引"}
+        aria-label={tool === "textile" ? "家纺裂变历史索引" : "历史索引"}
       >
         <h2 className="history-rail-title">
           <Button
