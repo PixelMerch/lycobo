@@ -2,9 +2,11 @@ import type { ImageRuntimeRepository } from "@lycoboai/db";
 
 // Matches the LIMIT of the leaseOutbox database operation.
 const leaseBatchSize = 20;
-// Items spend most of their time waiting on the provider, so more of them share one billed
-// invocation; the consumer separately bounds memory-heavy image encoding.
-const itemConcurrency = 4;
+// With async providers an item holds a slot only while it submits or reads its result (about
+// 10 s); generation overlaps across items as deferred reads. Four slots saved about 12 s per
+// 5-image batch in production but raised peak memory from 278 to 381 MB of 512 MB at 1.5K, a
+// margin 4K batches would lose.
+const itemConcurrency = 2;
 
 /**
  * Continue accepted provider reads within the owning Event invocation. `resumeAt` is when work

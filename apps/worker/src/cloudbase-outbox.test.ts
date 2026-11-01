@@ -109,17 +109,17 @@ it("starts no new paid work after a failure but lets in-flight items finish", as
   };
   const process = vi.fn(async (itemId: string) => {
     await Promise.resolve();
-    if (itemId === entries[1]?.itemId) throw new Error("DATABASE_UNAVAILABLE");
+    if (itemId === entries[0]?.itemId) throw new Error("DATABASE_UNAVAILABLE");
   });
   await expect(
     drainCloudBaseOutbox({ repository, process, now: () => 0, stopStartingAt: 20000 }),
   ).rejects.toThrow("DATABASE_UNAVAILABLE");
-  expect(process).toHaveBeenCalledTimes(4);
-  expect(repository.ackOutbox.mock.calls.map(([id]) => id)).toEqual(
-    [entries[0], entries[2], entries[3]].map((started) => started?.id),
-  );
+  // The second item was in flight when the first failed: it finishes and is acknowledged, and
+  // its slot starts nothing new.
+  expect(process).toHaveBeenCalledTimes(2);
+  expect(repository.ackOutbox.mock.calls.map(([id]) => id)).toEqual([entries[1]?.id]);
 });
-it("keeps at most four task operations in flight", async () => {
+it("keeps at most two task operations in flight", async () => {
   let active = 0,
     maximum = 0;
   const repository = {
@@ -137,5 +137,5 @@ it("keeps at most four task operations in flight", async () => {
       active--;
     },
   });
-  expect(maximum).toBe(4);
+  expect(maximum).toBe(2);
 });

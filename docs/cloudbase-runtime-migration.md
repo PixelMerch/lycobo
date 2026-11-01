@@ -42,7 +42,7 @@ API 和消费者的 IMAGE_GENERATION_ENABLED 均已开启；消费者原 `lycobo
 
 - `lycobo-api`：HTTP 云函数，Hono，企业鉴权、业务 API、事件流；监听 0.0.0.0:9000。
 - `lycobo-assets`：HTTP 云函数，签名绑定对象/用途/过期时间；校验 Origin/Referer 后读取私有云存储。默认不使用进程缓存，沿用既有授权测试。
-- `lycobo-consumer`：独立 Event 云函数，完整等待任务处理；PostgreSQL outbox/claim 为持久来源，每次最多租用 20 条，同时 4 条等待服务商，图片解码、编码与保存最多 2 条并行。不在 HTTP API 中执行后台付费请求。消费者已实际调用并返回 enabled=false、processed=0；正式切换前不启用定时触发器。
+- `lycobo-consumer`：独立 Event 云函数，完整等待任务处理；PostgreSQL outbox/claim 为持久来源，每次最多租用 20 条，同时 2 条提交或读取结果（生成期间以延后读取重叠），图片解码、编码与保存最多 2 条并行。不在 HTTP API 中执行后台付费请求。消费者已实际调用并返回 enabled=false、processed=0；正式切换前不启用定时触发器。
 
 `scripts/cloudbase/prepare-runtime.mjs` 在仓库外空目录构建 Nodejs20.19 包，外部依赖固定版本，为 Sharp 下载 Linux x64/glibc 二进制；包只含编译代码、依赖和启动文件，不含 .env、用户图片、数据库备份或源目录。两个 HTTP 包含可执行 scf_bootstrap，Event 包使用 index.main。
 
