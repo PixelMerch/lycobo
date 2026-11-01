@@ -14,6 +14,16 @@ export const workspaceTools = [
     caption: "场景 · 白底 · 活动",
     hero: "/studio/tool-heroes/create.webp",
     summary: "一张图讲清卖点：场景、白底、活动主图",
+    steps: [
+      "上传商品参考图（可选，最多 5 张）",
+      "用提示词描述场景、白底或活动风格",
+      "选好比例、分辨率与模型，点击生成",
+    ],
+    examples: [
+      "/studio/models/image-2-1.webp",
+      "/studio/models/image-2-3.webp",
+      "/studio/models/image-2-5-2.webp",
+    ],
   },
   {
     id: "textile",
@@ -25,6 +35,16 @@ export const workspaceTools = [
     caption: "多视角套图",
     hero: "/studio/tool-heroes/textile.webp",
     summary: "上传主图，选择视角，一次生成整套",
+    steps: [
+      "上传 1 张家纺主图，可补充细节图",
+      "在裂变类型里选择需要的视角",
+      "选好比例与分辨率，一次生成整套",
+    ],
+    examples: [
+      "/studio/textile-views/front.webp",
+      "/studio/textile-views/pillow.webp",
+      "/studio/textile-views/fabric.webp",
+    ],
   },
   {
     id: "variation",
@@ -36,6 +56,12 @@ export const workspaceTools = [
     caption: "先确认方案",
     hero: "/studio/tool-heroes/variation.webp",
     summary: "先出逐张方案，确认后批量生成",
+    steps: ["上传参考图，写下创作需求", "生成计划，逐张检查并修改方案", "确认方案后批量生成"],
+    examples: [
+      "/studio/bedroom-thumb.webp",
+      "/studio/lavender-thumb.webp",
+      "/studio/set-thumb.webp",
+    ],
   },
 ] as const;
 export const toolForPath = (path: string) =>

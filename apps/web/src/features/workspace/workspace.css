@@ -23,21 +23,24 @@
   :is(.reference-picker, .prompt-field, .model-field, .parameter-group) {
   background: transparent;
 }
-/* Each tool carries one accent: the current dock tile and the panel hero tile use it. */
+/* Each tool carries one accent: the current dock tile, its hover preview and history tags use it. */
 :is(
   .unified-workspace,
   .workspace-tool-shortcut,
   .workspace-composer-hero,
-  .workspace-tool-symbol
+  .workspace-tool-symbol,
+  .workspace-tool-preview-card
 )[data-tool="create"] {
   --tool-accent: #a8ff00;
   --tool-ink: #142000;
+  --tool-soft: #d4ff8a;
 }
 :is(
   .unified-workspace,
   .workspace-tool-shortcut,
   .workspace-composer-hero,
-  .workspace-tool-symbol
+  .workspace-tool-symbol,
+  .workspace-tool-preview-card
 )[data-tool="textile"] {
   --tool-accent: #ffb27a;
   --tool-ink: #3d1a00;
@@ -47,7 +50,8 @@
   .unified-workspace,
   .workspace-tool-shortcut,
   .workspace-composer-hero,
-  .workspace-tool-symbol
+  .workspace-tool-symbol,
+  .workspace-tool-preview-card
 )[data-tool="variation"] {
   --tool-accent: #4fe3b0;
   --tool-ink: #00281b;
@@ -95,17 +99,9 @@
   left: 16px;
   right: 16px;
   bottom: 14px;
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
+  display: grid;
+  gap: 2px;
   color: #ffffff;
-}
-.workspace-composer-hero .workspace-tool-symbol {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: var(--tool-accent);
-  color: var(--tool-ink);
 }
 .workspace-composer-title {
   margin: 0;
@@ -140,7 +136,9 @@
     height: 124px;
   }
 }
-/* The tool switcher is one dock: icon tile, name and a short purpose per tool. */
+/* The tool switcher is one dock: icon tile, name and a short purpose per tool. The current
+ * tool sits on a pill that slides between tools; hovering lifts the tile in the tool's accent
+ * and opens its preview. Geometry never changes. */
 .workspace-tool-bar {
   display: flex;
   align-items: center;
@@ -161,6 +159,7 @@
 }
 .workspace-tool-shortcut.button {
   position: relative;
+  isolation: isolate;
   flex-shrink: 0;
   justify-content: flex-start;
   height: 56px;
@@ -174,16 +173,24 @@
   background: transparent;
   white-space: nowrap;
   transition:
-    background-color 160ms ease,
-    color 160ms ease;
+    background-color 180ms ease,
+    color 180ms ease;
 }
-.workspace-tool-shortcut.button[data-hovered="true"] {
+.workspace-tool-shortcut.button:is([data-hovered="true"], [aria-current="page"]) {
   color: var(--foreground);
+}
+.workspace-tool-shortcut.button[data-hovered="true"]:not([aria-current="page"]) {
   background: #ffffff0a;
 }
-.workspace-tool-shortcut.button[aria-current="page"] {
-  color: var(--foreground);
-  background: #ffffff14;
+.workspace-tool-indicator {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(180deg, #ffffff17 0%, #ffffff0d 100%);
+  box-shadow:
+    inset 0 0 0 1px #ffffff14,
+    0 8px 20px -12px #000000;
 }
 .workspace-tool-shortcut .workspace-tool-symbol {
   width: 40px;
@@ -192,12 +199,34 @@
   background: #202026;
   color: #d9d7de;
   transition:
-    background-color 160ms ease,
-    color 160ms ease;
+    transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 180ms ease,
+    color 180ms ease,
+    box-shadow 240ms ease;
+}
+.workspace-tool-shortcut .workspace-tool-symbol > .ui-icon {
+  transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.workspace-tool-shortcut.button[data-hovered="true"] .workspace-tool-symbol {
+  background: #26262d;
+  color: var(--tool-accent, #ffffff);
 }
 .workspace-tool-shortcut.button[aria-current="page"] .workspace-tool-symbol {
   background: var(--tool-accent);
   color: var(--tool-ink);
+  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--tool-accent) 70%, transparent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .workspace-tool-shortcut.button[data-hovered="true"] .workspace-tool-symbol {
+    transform: translateY(-2px);
+  }
+  .workspace-tool-shortcut.button[data-hovered="true"] .workspace-tool-symbol > .ui-icon {
+    transform: rotate(-8deg) scale(1.08);
+  }
+  .workspace-tool-shortcut.button[data-pressed="true"] .workspace-tool-symbol {
+    transform: scale(0.92);
+    transition-duration: 90ms;
+  }
 }
 .workspace-tool-label {
   display: flex;
@@ -225,9 +254,118 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .workspace-tool-shortcut.button,
-  .workspace-tool-shortcut .workspace-tool-symbol {
+  .workspace-tool-shortcut .workspace-tool-symbol,
+  .workspace-tool-shortcut .workspace-tool-symbol > .ui-icon {
     transition: none;
   }
+}
+/* Hover or keyboard focus on a tool previews it: sample results, what it does and how to use it. */
+.tooltip.workspace-tool-preview {
+  width: 300px;
+  max-width: calc(100vw - 24px);
+  padding: 10px;
+  border-radius: 16px;
+  background: #1a1a1e;
+  box-shadow:
+    inset 0 0 0 1px #ffffff14,
+    0 18px 40px -12px #000000cc;
+  color: #f3f1f7;
+  word-break: normal;
+}
+.workspace-tool-preview-card {
+  display: grid;
+  gap: 8px;
+}
+.workspace-tool-preview-media {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: repeat(2, 66px);
+  gap: 4px;
+  overflow: hidden;
+  border-radius: 10px;
+}
+.workspace-tool-preview-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #ffffff;
+}
+.workspace-tool-preview-media img:first-child {
+  grid-row: 1 / span 2;
+}
+.workspace-tool-preview-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #0f0f12cc;
+  color: #f3f1f7;
+  font-size: 11px;
+  line-height: 16px;
+}
+.workspace-tool-preview-card p {
+  margin: 0;
+}
+.workspace-tool-preview-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: 14px;
+  line-height: 20px;
+}
+.workspace-tool-preview-current {
+  padding: 0 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--tool-accent) 15%, transparent);
+  color: var(--tool-soft);
+  font-size: 11px;
+  line-height: 18px;
+  font-weight: 600;
+}
+.workspace-tool-preview-summary {
+  color: #c8c8c8;
+  font-size: 12px;
+  line-height: 18px;
+}
+.workspace-tool-preview-steps {
+  display: grid;
+  gap: 6px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: preview-step;
+}
+.workspace-tool-preview-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #d9d7de;
+  font-size: 12px;
+  line-height: 18px;
+  counter-increment: preview-step;
+}
+.workspace-tool-preview-steps li::before {
+  content: counter(preview-step);
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tool-accent) 18%, transparent);
+  color: var(--tool-soft);
+  font-size: 11px;
+  font-weight: 600;
+}
+.workspace-tool-preview-hint {
+  padding-top: 8px;
+  border-top: 1px solid #ffffff0f;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 18px;
 }
 .workspace-history-heading {
   display: flex;

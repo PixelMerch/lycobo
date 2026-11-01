@@ -56,6 +56,18 @@ for (const width of [390, 1440]) {
     await expect(page.locator(".generation-job")).toHaveCount(4);
     await page.evaluate(() => document.fonts.ready);
     await page.mouse.move(0, 0);
+    // Hovering a tool previews what it does and how to use it, without switching tools.
+    await page
+      .getByRole("navigation", { name: "电商创作工具" })
+      .getByRole("button", { name: "家纺套图", exact: true })
+      .hover();
+    const preview = page.getByRole("tooltip");
+    await expect(preview).toContainText("上传主图，选择视角，一次生成整套");
+    await expect(preview.getByRole("listitem")).toHaveCount(3);
+    await expect(preview).toContainText("点击切换到此功能");
+    await expect(page).toHaveURL(/\/create$/);
+    await page.mouse.move(0, 0);
+    await expect(preview).toHaveCount(0);
     const allTools = page.getByRole("button", { name: "全部工具", exact: true });
     // The dock names every entry on screen, so hovering adds no tooltip.
     await expect(allTools).toContainText("视频即将开放");
@@ -119,10 +131,11 @@ for (const width of [390, 1440]) {
     ).toHaveAttribute("aria-current", "page");
     await expect(page.locator(".composer-panel")).toContainText("详情图");
     await expect(page.locator(".composer-panel")).toContainText("裂变类型");
-    // The panel hero follows the tool: its accent tile and its own example photo.
+    // The panel hero follows the tool: its own example photo, name and purpose.
     const hero = page.locator(".workspace-composer-hero");
-    await expect(hero.locator(".workspace-tool-symbol")).toHaveAttribute("data-tool", "textile");
+    await expect(hero).toHaveAttribute("data-tool", "textile");
     await expect(hero.locator("img")).toHaveAttribute("src", "/studio/tool-heroes/textile.webp");
+    await expect(hero).toContainText("上传主图，选择视角，一次生成整套");
     await expect(page.locator(".generation-history")).toContainText("textile记录");
     await expect(page.locator(".generation-history")).not.toContainText("create记录");
     if (width >= 768) {
