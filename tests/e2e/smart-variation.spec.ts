@@ -254,3 +254,48 @@ test("failed webpage reading keeps the draft and permits a fresh retry", async (
     ),
   ).toEqual([]);
 });
+
+for (const path of ["/commerce/smart-variation", "/create"])
+  test(`editing a long prompt preserves composer scroll and caret on ${path}`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(path);
+    const prompt = page.locator(".prompt-field").getByRole("textbox");
+    await prompt.fill("1".repeat(903));
+    await prompt.press("End");
+    await prompt.evaluate((element) => element.blur());
+    await page.waitForTimeout(500);
+    const before = await prompt.evaluate((element) => {
+      const scroller = element.closest(".composer-scroll");
+      if (!(scroller instanceof HTMLElement)) throw new Error("Missing composer scroller");
+      scroller.scrollTo({ top: 400, behavior: "instant" });
+      return scroller.scrollTop;
+    });
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    );
+    const box = await prompt.boundingBox();
+    if (!box) throw new Error("Missing prompt");
+    await page.mouse.click(box.x + 45, Math.max(box.y + 35, 380));
+    await expect(prompt).toBeFocused();
+    expect(await prompt.evaluate((element) => element.closest(".composer-scroll")?.scrollTop)).toBe(
+      before,
+    );
+    await page.keyboard.type("2");
+    await expect
+      .poll(() => prompt.evaluate((element) => element.closest(".composer-scroll")?.scrollTop))
+      .toBe(before);
+    expect(
+      await prompt.evaluate((element) =>
+        element instanceof HTMLTextAreaElement ? element.selectionStart : -1,
+      ),
+    ).toBeGreaterThan(0);
+    const changed = await prompt.inputValue();
+    expect(changed.indexOf("2")).toBeGreaterThan(0);
+    expect(changed.indexOf("2")).toBeLessThan(903);
+    await page.getByRole("button", { name: "清空提示词", exact: true }).click();
+    await expect(prompt).toHaveValue("");
+    expect(await prompt.evaluate((element) => element.getBoundingClientRect().height)).toBe(100);
+  });
