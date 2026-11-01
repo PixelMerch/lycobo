@@ -120,3 +120,5 @@ GitHub 使用长期 SecretId/SecretKey，不能调用仅支持临时登录态的
 定时器：2026-11-01 01:42（上海时间）按用户要求将 `lycobo-outbox-minute`（每分钟）替换为 `lycobo-outbox-3h`（`0 0 */3 * * * *`），共享 PG 的兜底计量约 115 点/天。生成依赖 API 唤醒与消费者续排：唤醒需要 CloudBase API Key 调用函数的权限和 `TCB_QcsRole` 的 SCF Invoke 权限，须以线上日志为准（无 `CONSUMER_WAKE_FAILED`、`CONSUMER_CONTINUATION_FAILED`）。唤醒失败时任务最长等到下一次 3 小时兜底，有人查看排队任务时 API 每 15 秒补唤醒一次；如线上确认唤醒不可用，应恢复每分钟触发器 `0 * * * * * *`。
 
 PR #40 于 2026-11-01 合并并由部署 #8 发布（后端发布 1 分 30 秒）。01:49 直接以 `{"wake":true}` 调用 `lycobo-consumer`：唤醒调用 141 ms 返回 `woken: true`，20 ms 后异步 drain 启动，未发现待处理任务，261 ms 正常结束，确认运行角色可排队异步调用。09:30:50 首次真实提交确认了 API 侧唤醒：API 经网关（`TCB_GW`）以 API Key 唤醒消费者，248 ms 返回 `woken: true`；异步 drain（来源 `API`）随即启动，62 s 处理 5 个图片项，内存峰值 278 MB／512 MB。01:48 至 09:36 日志中没有 `CONSUMER_WAKE_FAILED` 或 `CONSUMER_CONTINUATION_FAILED`。
+
+PR #41 于 2026-11-01 09:33 合并，部署 #9 用时 3 分 20 秒（09:35:53–09:39:13），函数按 consumer（09:38:01）→ assets（09:38:14）→ api（09:38:20）顺序切换。09:46:00 一次真实提交由新 API 唤醒新消费者（476 ms，`woken: true`），异步 drain 随即开始处理；6 秒后手动唤醒排队的 drain 租不到已被持有的意向，271 ms 以 `processed: 0` 结束，确认并发 drain 不会重复处理。
