@@ -16,6 +16,7 @@ import {
   useImageSession,
   usePendingSubmission,
 } from "./generation-client";
+import { revealNewestHistory } from "./history/history-navigation";
 
 import { modelCapabilities, supportsReferences } from "./models/model-capabilities";
 import { ModelSelect } from "./models/model-select";
@@ -204,6 +205,7 @@ function Workspace({ model }: { model: ModelId }) {
           isDisabled={!canGenerate || activeSubmission}
           onPress={() => {
             setSubmissionPhase("submitting");
+            revealNewestHistory();
             generate.mutate(
               { model, draft },
               {

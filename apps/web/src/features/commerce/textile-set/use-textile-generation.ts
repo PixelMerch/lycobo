@@ -6,6 +6,7 @@ import {
   useImageSession,
   usePendingSubmission,
 } from "../../generation/generation-client";
+import { revealNewestHistory } from "../../generation/history/history-navigation";
 import { modelCapabilities, supportsReferences } from "../../generation/models/model-capabilities";
 import type { Draft } from "../../generation/studio-state";
 import { useTextileSetDraft } from "./textile-set-state";
@@ -43,6 +44,7 @@ export function useTextileGeneration() {
         count: String(draft.views.length),
         references,
       };
+      revealNewestHistory();
       generation.mutate(
         {
           model: "gpt-image-2.5",

@@ -7,6 +7,7 @@ import {
   useImageSession,
   usePendingSubmission,
 } from "../../generation/generation-client";
+import { revealNewestHistory } from "../../generation/history/history-navigation";
 import { modelCapabilities, supportsReferences } from "../../generation/models/model-capabilities";
 import { useSmartVariationDraft } from "./smart-variation-state";
 
@@ -40,6 +41,7 @@ export function useVariationGeneration() {
           selected.every((item) => item.title.trim() && item.prompt.trim().length >= 5))),
     async submit() {
       if (!draft.planId && !ownPending) return;
+      revealNewestHistory();
       await generation.mutateAsync({
         model: "gpt-image-2.5",
         source: "smart-variation",
