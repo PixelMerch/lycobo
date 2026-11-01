@@ -7,6 +7,7 @@ import { z } from "zod";
 import { drainCloudBaseOutbox } from "./cloudbase-outbox";
 import { startAsyncDrain } from "./cloudbase-wake";
 import { processImageItem } from "./image-processor";
+import { slots } from "./slots";
 
 const wakeEvent = z.object({ wake: z.literal(true) });
 const drainEvent = z.object({ drain: z.literal(true), resumeAt: z.number().int().optional() });
@@ -29,7 +30,14 @@ export async function main(event?: unknown) {
   const independent = await standaloneModels(process.env);
   if (!independent) throw new Error("CLOUDBASE_STANDALONE_MODELS_REQUIRED");
   const repository = openCloudBaseImageRepository(process.env, independent);
-  const store = objectImageStore(cloudbaseObjectBucket(process.env), repository.storageUid);
+  const objects = objectImageStore(cloudbaseObjectBucket(process.env), repository.storageUid);
+  // More items wait on providers at once than the 512 MB function could decode and encode at
+  // once (a 4K original alone needs about 200 MB), so image persistence takes turns.
+  const encode = slots(2);
+  const store: typeof objects = {
+    ...objects,
+    put: (...args) => encode(() => objects.put(...args)),
+  };
   const drain = drainEvent.safeParse(event);
   // A continuation waits for the deferred work it was queued for (at most a provider poll delay).
   if (drain.success && drain.data.resumeAt)
