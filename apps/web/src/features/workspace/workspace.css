@@ -828,7 +828,7 @@
   color: var(--tool-soft);
   font-weight: 600;
 }
-/* The prompt, then one tool row: copy and the task's reference thumbnails. */
+/* Prompt, copy action and full-width reference row. */
 .unified-workspace .history-prompt {
   display: flex;
   flex-wrap: wrap;
@@ -854,13 +854,14 @@
   line-height: 22px;
 }
 .unified-workspace .history-prompt > .generation-output-thumbnails {
-  gap: 4px;
+  flex-basis: 100%;
+  gap: 8px;
   margin: 0;
 }
 .unified-workspace .history-prompt .generation-output-thumbnail {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
 }
 .unified-workspace .generation-results[data-count] {
   grid-template-columns: repeat(5, minmax(0, 1fr));

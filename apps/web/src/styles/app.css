@@ -3885,8 +3885,10 @@ p.home-hero-kicker {
 
 .generation-placeholder.generation-failed {
   position: relative;
+  overflow: hidden;
 }
 .generation-retry-overlay {
+  border-radius: inherit;
   position: absolute;
   inset: 0;
   display: flex;
