@@ -9,6 +9,11 @@
   gap: 12px;
 }
 .unified-workspace .composer-scroll {
+  margin: -12px -12px 0;
+  padding-inline: 12px;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  scroll-padding-top: 60px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -68,16 +73,25 @@
 }
 /* The panel opens with the tool's example photo; it bleeds to the panel's rounded top edge. */
 .workspace-composer-hero {
-  position: relative;
+  --composer-hero-height: 148px;
+  --hero-collapse: 0;
+  position: sticky;
+  top: calc(48px - var(--composer-hero-height));
+  z-index: 3;
   isolation: isolate;
   flex-shrink: 0;
-  height: 148px;
-  margin: -12px -12px 0;
+  height: var(--composer-hero-height);
+  margin: 0 -12px;
   overflow: hidden;
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
   background: #121216;
-  animation: workspace-hero-enter 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  /* No transform: sticky position must remain exact while scrolling. */
+}
+.workspace-composer-hero-image,
+.workspace-composer-hero-collage,
+.workspace-composer-hero::after {
+  opacity: calc(1 - var(--hero-collapse));
 }
 .workspace-composer-hero-image {
   position: absolute;
@@ -118,9 +132,10 @@
   position: absolute;
   left: 16px;
   right: 16px;
-  bottom: 14px;
+  bottom: calc(14px - 4px * var(--hero-collapse));
   display: grid;
-  gap: 2px;
+  grid-template-rows: 28px calc(18px * (1 - var(--hero-collapse)));
+  gap: calc(2px * (1 - var(--hero-collapse)));
   color: #ffffff;
 }
 .workspace-composer-title {
@@ -131,29 +146,17 @@
   color: #ffffff;
 }
 .workspace-composer-hero p {
+  overflow: hidden;
+  opacity: calc(1 - var(--hero-collapse));
   margin: 0;
   font-size: 12px;
   line-height: 18px;
   color: #ffffffd9;
 }
-@keyframes workspace-hero-enter {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .workspace-composer-hero {
-    animation: none;
-  }
-}
 @media (max-width: 767px) {
   .workspace-composer-hero {
-    height: 124px;
+    --composer-hero-height: 124px;
+    top: calc(var(--header-height) + 48px - var(--composer-hero-height));
   }
 }
 /* The tool switcher is one dock: icon tile, name and a short purpose per tool. The current

@@ -122,6 +122,23 @@ for (const width of [1440, 390, 320])
     );
   });
 
+test("plan actions are not covered by the page back-to-top button", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 700 });
+  await page.goto("/commerce/smart-variation");
+  await page.getByRole("textbox", { name: "创作需求", exact: true }).fill("为杯子生成十种场景");
+  await page.evaluate(() => window.scrollTo({ top: 400, behavior: "instant" }));
+  const backToTop = page.getByRole("button", { name: "回到顶部", exact: true });
+  await expect(backToTop).toBeVisible();
+  await page.getByRole("button", { name: "生成计划", exact: true }).click();
+  const panel = page.getByRole("region", { name: "确认每张图的中文提示词", exact: true });
+  await expect(panel).toBeVisible();
+  await expect(backToTop).toBeHidden();
+  await panel.getByRole("button", { name: /开始生成/ }).click({ trial: true });
+  await panel.getByRole("button", { name: "关闭生成计划", exact: true }).click();
+  await page.evaluate(() => window.scrollTo({ top: 400, behavior: "instant" }));
+  await expect(backToTop).toBeVisible();
+});
+
 test("analysis shows progress, blocks repeated presses and opens normalized plans", async ({
   page,
 }) => {
@@ -254,3 +271,48 @@ test("failed webpage reading keeps the draft and permits a fresh retry", async (
     ),
   ).toEqual([]);
 });
+
+for (const path of ["/commerce/smart-variation", "/create"])
+  test(`editing a long prompt preserves composer scroll and caret on ${path}`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(path);
+    const prompt = page.locator(".prompt-field").getByRole("textbox");
+    await prompt.fill("1".repeat(903));
+    await prompt.press("End");
+    await prompt.evaluate((element) => element.blur());
+    await page.waitForTimeout(500);
+    const before = await prompt.evaluate((element) => {
+      const scroller = element.closest(".composer-scroll");
+      if (!(scroller instanceof HTMLElement)) throw new Error("Missing composer scroller");
+      scroller.scrollTo({ top: 400, behavior: "instant" });
+      return scroller.scrollTop;
+    });
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    );
+    const box = await prompt.boundingBox();
+    if (!box) throw new Error("Missing prompt");
+    await page.mouse.click(box.x + 45, Math.max(box.y + 35, 380));
+    await expect(prompt).toBeFocused();
+    expect(await prompt.evaluate((element) => element.closest(".composer-scroll")?.scrollTop)).toBe(
+      before,
+    );
+    await page.keyboard.type("2");
+    await expect
+      .poll(() => prompt.evaluate((element) => element.closest(".composer-scroll")?.scrollTop))
+      .toBe(before);
+    expect(
+      await prompt.evaluate((element) =>
+        element instanceof HTMLTextAreaElement ? element.selectionStart : -1,
+      ),
+    ).toBeGreaterThan(0);
+    const changed = await prompt.inputValue();
+    expect(changed.indexOf("2")).toBeGreaterThan(0);
+    expect(changed.indexOf("2")).toBeLessThan(903);
+    await page.getByRole("button", { name: "清空提示词", exact: true }).click();
+    await expect(prompt).toHaveValue("");
+    expect(await prompt.evaluate((element) => element.getBoundingClientRect().height)).toBe(100);
+  });

@@ -119,6 +119,9 @@
 .unified-workspace:has(> .variation-plan-panel) > .results-panel {
   visibility: hidden;
 }
+.unified-workspace:has(> .variation-plan-panel) > .back-to-top-button {
+  display: none;
+}
 .variation-plan-header {
   display: flex;
   align-items: center;

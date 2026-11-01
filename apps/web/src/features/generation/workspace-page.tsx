@@ -84,8 +84,8 @@ function Workspace({ model }: { model: ModelId }) {
   );
   return (
     <section className="composer-panel" aria-label="创作设置">
-      <WorkspaceComposerTitle />
       <section className="composer-scroll" aria-label="创作参数">
+        <WorkspaceComposerTitle />
         <ReferencePicker compact model={model} references={draft.references} />
         <ReferencePrompt
           className="prompt-field"
