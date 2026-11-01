@@ -10,7 +10,10 @@ const config = {
   timeoutMs: 5000,
   key: "fixture-only",
 };
-const input = { description: "换成橙色和蓝色，保留白色部分", referenceAssetIds: [] };
+const input = {
+  description: "换成橙色和蓝色，保留白色部分",
+  referenceAssetIds: [crypto.randomUUID()],
+};
 const reply = (items: unknown) =>
   new Response(
     JSON.stringify({
@@ -18,7 +21,7 @@ const reply = (items: unknown) =>
     }),
   );
 describe("variation planner", () => {
-  it("sends vision JSON server-side and maps each plan to exactly one image", async () => {
+  it("sends text-only JSON server-side and maps each plan to exactly one image", async () => {
     let calls = 0;
     const request: typeof fetch = async (url, init) => {
       calls++;
@@ -26,20 +29,15 @@ describe("variation planner", () => {
       expect(new Headers(init?.headers).get("Idempotency-Key")).toBe("same-analysis");
       const body = JSON.parse(String(init?.body));
       expect(body.model).toBe("gpt-6-luna");
-      expect(body.messages[1].content[2].image_url.url).toBe("data:image/png;base64,AQID");
+      expect(body.messages[1].content).toContain(input.description);
+      expect(body.messages[1].content).toContain("参考图1");
+      expect(JSON.stringify(body)).not.toMatch(/image_url|data:image|base64/);
       return reply([
         { title: "橙色", prompt: "参考图1，将主色换成橙色，保留白色。" },
         { title: "蓝色", prompt: "参考图1，将主色换成蓝色，保留白色。" },
       ]);
     };
-    const items = await planVariation(
-      input,
-      [new Uint8Array([1, 2, 3])],
-      config,
-      "same-analysis",
-      undefined,
-      request,
-    );
+    const items = await planVariation(input, config, "same-analysis", undefined, request);
     const job = imageGenerationInputSchema.parse({
       model: "gpt-image-2.5",
       prompt: "智能裂变",
@@ -63,9 +61,9 @@ describe("variation planner", () => {
       calls++;
       throw new Error("network");
     };
-    await expect(planVariation(input, [], config, "key", undefined, request)).rejects.toMatchObject(
-      { code: "PLANNER_OUTCOME_UNKNOWN" },
-    );
+    await expect(planVariation(input, config, "key", undefined, request)).rejects.toMatchObject({
+      code: "PLANNER_OUTCOME_UNKNOWN",
+    });
     expect(calls).toBe(1);
   });
   it("rejects duplicate, empty and oversized plans", async () => {
@@ -81,23 +79,22 @@ describe("variation planner", () => {
       ],
     ]) {
       await expect(
-        planVariation(input, [], config, "key", undefined, async () => reply(items)),
+        planVariation(input, config, "key", undefined, async () => reply(items)),
       ).rejects.toMatchObject({ code: "PLANNER_INVALID_RESULT" });
     }
   });
 });
 
-it("accepts native Claude vision plans inside a single JSON code fence", async () => {
+it("accepts native Claude text-only plans inside a single JSON code fence", async () => {
   const request: typeof fetch = async (url, init) => {
     expect(String(url)).toBe("https://language.example.com/v1/messages");
     expect(new Headers(init?.headers).get("x-api-key")).toBe("fixture-only");
     const body = JSON.parse(String(init?.body));
     expect(body.max_tokens).toBe(6000);
     expect(body).not.toHaveProperty("reasoning_effort");
-    expect(body.messages[0].content[2]).toMatchObject({
-      type: "image",
-      source: { type: "base64", media_type: "image/png", data: "AQID" },
-    });
+    expect(typeof body.messages[0].content).toBe("string");
+    expect(body.messages[0].content).toContain(input.description);
+    expect(JSON.stringify(body)).not.toMatch(/image_url|data:image|base64/);
     return new Response(
       JSON.stringify({
         stop_reason: "end_turn",
@@ -117,7 +114,6 @@ it("accepts native Claude vision plans inside a single JSON code fence", async (
   };
   const items = await planVariation(
     input,
-    [new Uint8Array([1, 2, 3])],
     { ...config, model: "claude-sonnet-5", protocol: "anthropic-messages" },
     "key",
     undefined,
@@ -126,7 +122,7 @@ it("accepts native Claude vision plans inside a single JSON code fence", async (
   expect(items).toHaveLength(1);
 });
 
-it("uses the official DeepSeek vision endpoint with bounded non-thinking JSON output", async () => {
+it("uses the official DeepSeek text-only endpoint with bounded non-thinking JSON output", async () => {
   let calls = 0;
   const request: typeof fetch = async (url, init) => {
     calls++;
@@ -143,10 +139,10 @@ it("uses the official DeepSeek vision endpoint with bounded non-thinking JSON ou
     });
     expect(body).not.toHaveProperty("max_completion_tokens");
     expect(body).not.toHaveProperty("reasoning_effort");
-    expect(body.messages[1].content[2].image_url).toEqual({
-      url: "data:image/png;base64,AQID",
-      detail: "low",
-    });
+    expect(typeof body.messages[1].content).toBe("string");
+    expect(body.messages[1].content).toContain(input.description);
+    expect(body.messages[1].content).toContain("参考图1");
+    expect(JSON.stringify(body)).not.toMatch(/image_url|data:image|base64/);
     return reply(
       Array.from({ length: 20 }, (_, i) => ({
         title: `方案${i + 1}`,
@@ -156,7 +152,6 @@ it("uses the official DeepSeek vision endpoint with bounded non-thinking JSON ou
   };
   const items = await planVariation(
     input,
-    [new Uint8Array([1, 2, 3])],
     {
       ...config,
       model: "deepseek-flash",
@@ -183,7 +178,6 @@ it.each(["length", "stop"])(
     await expect(
       planVariation(
         input,
-        [],
         {
           ...config,
           model: "deepseek-flash",

@@ -22,17 +22,17 @@ export function variationService(deps: {
       const result = await deps.repository.variation.begin(scope, input, key);
       if (result.replayed) return result.plan;
       try {
-        const images: Uint8Array[] = [];
-        for (const id of input.referenceAssetIds) {
-          const asset = await deps.repository.asset(scope, id);
-          if (!asset) throw new PlannerError("PLANNER_INVALID_RESULT");
-          images.push(await deps.store.thumbnail(asset));
-        }
+        // Keep ownership checks without reading or encoding image content for the planner.
+        await Promise.all(
+          input.referenceAssetIds.map(async (id) => {
+            if (!(await deps.repository.asset(scope, id)))
+              throw new PlannerError("PLANNER_INVALID_RESULT");
+          }),
+        );
         const secret =
           deps.plannerKey ?? (await openProviderKey(config.ciphertext, deps.modelSecret ?? ""));
         const items = await planVariation(
           input,
-          images,
           { ...config, key: secret },
           result.plan.id,
           signal,
