@@ -4,7 +4,7 @@
   "type": "module",
   "name": "@lycoboai/worker",
   "scripts": {
-    "dev": "wrangler dev --config wrangler.local.json --port 8789 --persist-to ../../.wrangler/state --test-scheduled",
+    "dev": "node --import tsx --watch src/local-consumer.ts",
     "typecheck": "tsc --noEmit",
     "test:integration": "node --env-file-if-exists=../../.env --import tsx scripts/check-integration.ts",
     "test:images": "node --env-file-if-exists=../../.env --import tsx scripts/check-image-integration.ts"

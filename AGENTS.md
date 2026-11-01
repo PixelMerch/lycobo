@@ -4,7 +4,7 @@
 
 - Follow the user's latest request. Read relevant code, Git status, PRD.md, DESIGN.md and
   PROJECT_STRUCTURE.md before changing behavior. Keep unrelated changes and local assets intact.
-- This is React/Vite on Pages + Hono on Cloudflare Workers, with Queues/R2 and Supabase PostgreSQL. It is not bonko's Astro application; Node entrypoints remain for isolated tooling.
+- This is React/Vite on CloudBase hosting + Hono Node HTTP functions, with Event consumers, private CloudBase storage and shared PostgreSQL. It is not bonko's Astro application; Node entrypoints serve production functions and isolated local development.
 - Distinguish implemented functionality, fixtures, UI references and future contracts.
   Never fabricate completed generation, uploaded files, persistence, users, credits or notifications.
 - Keep product UI in Simplified Chinese. Keep identifiers in English. Team documentation is Chinese;
@@ -74,7 +74,7 @@ Read relevant project skills before work:
   Request ownerId, projectId and storage keys are never proof of authorization.
 - Generation must remain disabled until auth, ownership, durable submission, provider reconciliation,
   storage and billing behavior exist. Never replace unavailable persistence with memory success.
-- Persist task + outbox intent atomically. Cloudflare Queues is transport, PostgreSQL is the source of truth. Do not reintroduce Redis/BullMQ.
+- Persist task + outbox intent atomically. CloudBase Event consumers drain durable outbox intents; PostgreSQL is the source of truth. Do not reintroduce Redis/BullMQ.
   Worker processes are separate from API; no fire-and-forget paid work in HTTP handlers.
 - External calls need timeouts, cancellation, idempotency keys and bounded retry. Ambiguous paid
   submissions must not be automatically resubmitted. An explicit user-confirmed retry may retire
@@ -87,7 +87,7 @@ Read relevant project skills before work:
   Register numeric business codes in contracts; preserve HTTP statuses and binary downloads.
 - No wildcard credentialed CORS. Cookie auth requires trusted-origin/CSRF protection.
   Validate uploads at the server; MIME and extension checks in the browser are convenience only.
-- Node database pools are process-scoped and closed on shutdown; Workers clients are request/batch-scoped and closed after streamed responses or consumer completion, with Hyperdrive pooling upstream. No network calls inside DB transactions.
+- Node database pools are process-scoped and closed on shutdown; CloudBase shared PG uses scoped HTTP RPC calls and Event invocations close repository resources on completion. No network calls inside DB transactions.
   Migrations are append-only once merged; use expand/contract changes, review SQL, no automatic db push.
 
 ## Collaboration and Git

@@ -20,7 +20,7 @@ export async function assetSigningKey(secret: string) {
 export async function signAsset(
   key: string,
   expires: number,
-  signingKey: CryptoKey,
+  signingKey: Awaited<ReturnType<typeof assetSigningKey>>,
   variant: AssetVariant = "preview",
 ) {
   if (!assetKeyPattern.test(key)) throw new Error("INVALID_ASSET_KEY");
@@ -36,7 +36,7 @@ export async function verifyAsset(
   key: string,
   expires: number,
   signature: string,
-  signingKey: CryptoKey,
+  signingKey: Awaited<ReturnType<typeof assetSigningKey>>,
   now = Math.floor(Date.now() / 1000),
   variant: AssetVariant = "preview",
 ) {

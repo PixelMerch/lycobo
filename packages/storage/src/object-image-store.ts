@@ -7,7 +7,7 @@ import { normalizeImage } from "./image-store";
 import { displayObjectKey } from "./image-variants";
 import type { ImageObjectBucket } from "./object-bucket";
 
-/** Node image processing for private cloud storage; no Cloudflare Images binding. */
+/** Node image processing for private cloud storage. */
 export function objectImageStore(bucket: ImageObjectBucket, resolveUid?: StorageUid): ImageStore {
   const thumbnailKey = (key: string) => key.replace(/\.png$/, ".thumbnail.png");
   const read = async (key: string) => {

@@ -1,39 +1,55 @@
+import { servePrivateAsset } from "@lycoboai/storage/asset-server";
+import type { ImageObjectBucket } from "@lycoboai/storage/bucket";
 import { assetDeliverySigner } from "@lycoboai/storage/delivery";
-import { convertV4MiniflareOptions, Miniflare } from "miniflare";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { type AssetBindings, serveAsset } from "./index";
+import sharp from "sharp";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 const secret = "fixture-only-asset-signing-secret-0001";
-const origin = "https://lycobo.pages.dev";
+const origin = "https://app.example.test";
 const key = `0057849613/${crypto.randomUUID()}/${crypto.randomUUID()}.png`;
-const mf = new Miniflare(
-  convertV4MiniflareOptions({
-    modules: true,
-    script: "export default { fetch() { return new Response('fixture'); } }",
-    r2Buckets: { BUCKET: "asset-fixture" },
-    images: { binding: "IMAGES" },
-  }),
-);
-let bucket: R2Bucket;
-let images: ImagesBinding;
+const objects = new Map<string, Uint8Array>();
+const bucket: ImageObjectBucket = {
+  head: async (key) => {
+    const b = objects.get(key);
+    return b ? { size: b.length, httpEtag: '"fixture"' } : null;
+  },
+  get: async (key) => {
+    const b = objects.get(key);
+    return b
+      ? {
+          size: b.length,
+          body: new ReadableStream<Uint8Array>({
+            start(controller) {
+              controller.enqueue(b);
+              controller.close();
+            },
+          }),
+          arrayBuffer: async () => new Uint8Array(b).buffer,
+        }
+      : null;
+  },
+  put: async (key, bytes) => {
+    objects.set(key, bytes);
+    return { stored: true };
+  },
+  delete: async (keys) => {
+    for (const key of typeof keys === "string" ? [keys] : keys) objects.delete(key);
+  },
+};
 beforeAll(async () => {
-  const bindings = await mf.getBindings<{ BUCKET: R2Bucket; IMAGES: ImagesBinding }>();
-  bucket = bindings.BUCKET;
-  images = bindings.IMAGES;
-  await bucket.put(key, "original fixture");
-  await bucket.put(key.replace(/\.png$/, ".preview.webp"), "preview fixture");
-  await bucket.put(key.replace(/\.png$/, ".thumbnail.webp"), "thumbnail fixture");
+  await bucket.put(key, new TextEncoder().encode("original fixture"));
+  await bucket.put(
+    key.replace(/\.png$/, ".preview.webp"),
+    new TextEncoder().encode("preview fixture"),
+  );
+  await bucket.put(
+    key.replace(/\.png$/, ".thumbnail.webp"),
+    new TextEncoder().encode("thumbnail fixture"),
+  );
 });
-afterAll(() => mf.dispose());
-function fixture(processor?: ImagesBinding) {
+function fixture(processor = false) {
   const get = vi.fn(bucket.get.bind(bucket));
   const head = vi.fn(bucket.head.bind(bucket));
-  const env: AssetBindings = {
-    IMAGES_BUCKET: { ...bucket, get, head, put: bucket.put.bind(bucket) },
-    ...(processor ? { IMAGES: processor } : {}),
-    ASSET_SIGNING_SECRET: secret,
-    ASSET_ALLOWED_ORIGINS: origin,
-  };
   const entries = new Map<string, Response>();
   const cache = {
     match: vi.fn(async (request: Request) => entries.get(request.url)?.clone()),
@@ -49,9 +65,30 @@ function fixture(processor?: ImagesBinding) {
   };
   const request = (
     url: string,
-    headers: HeadersInit = { Referer: `${origin}/create`, Origin: origin },
+    headers: ConstructorParameters<typeof Headers>[0] = {
+      Referer: `${origin}/create`,
+      Origin: origin,
+    },
     method = "GET",
-  ) => serveAsset(new Request(url, { headers, method }), env, ctx, cache);
+  ) =>
+    servePrivateAsset(new Request(url, { headers, method }), {
+      bucket: { ...bucket, get, head },
+      signingSecret: secret,
+      allowedOrigins: origin,
+      cache,
+      background: ctx.waitUntil,
+      ...(processor
+        ? {
+            createVariant: async (body: ReadableStream) =>
+              new Uint8Array(
+                await sharp(Buffer.from(await new Response(body).arrayBuffer()))
+                  .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
+                  .webp()
+                  .toBuffer(),
+              ),
+          }
+        : {}),
+    });
   return { request, cache, get, head, work };
 }
 describe("private asset edge delivery", () => {
@@ -111,7 +148,7 @@ it("backfills a WebP preview for an existing original instead of returning origi
   );
   const legacyKey = key.replace(/[^/]+\.png$/, `${crypto.randomUUID()}.png`);
   await bucket.put(legacyKey, png);
-  const f = fixture(images);
+  const f = fixture(true);
   const links = await assetDeliverySigner("https://assets.example.test", secret)(legacyKey);
   const preview = await f.request(links.url);
   expect(preview.status).toBe(200);

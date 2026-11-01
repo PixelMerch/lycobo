@@ -19,6 +19,7 @@ import { imageStore } from "@lycoboai/storage";
 import { cloudbaseObjectBucket, readCloudBaseStorageConfig } from "@lycoboai/storage/cloudbase";
 import { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { objectImageStore } from "@lycoboai/storage/object-images";
+import { imageObjectBucket } from "@lycoboai/storage/s3";
 import pino from "pino";
 import { createApp } from "./app";
 import { readEnv } from "./env";
@@ -74,7 +75,9 @@ const wakeConsumer =
     : undefined;
 const store = cloudbaseStorage
   ? objectImageStore(cloudbaseObjectBucket(cloudbaseStorage), repository?.storageUid)
-  : imageStore(process.env.IMAGE_DATA_DIR ?? "./data/images", repository?.storageUid);
+  : process.env.S3_ENDPOINT
+    ? objectImageStore(imageObjectBucket(process.env), repository?.storageUid)
+    : imageStore(process.env.IMAGE_DATA_DIR ?? "./data/images", repository?.storageUid);
 if (policy.enabled) await store.ready();
 const app = createApp(
   (event) => logger.error(event, "Request failed"),
@@ -103,6 +106,7 @@ const app = createApp(
                 process.env.ASSET_SIGNING_SECRET,
                 {
                   pathPrefix: process.env.ASSET_PATH_PREFIX ?? "/",
+                  allowLocalHttp: process.env.APP_ENV === "development",
                 },
               )
             : undefined,

@@ -1,5 +1,5 @@
 name: lycoboai
-# Isolated development: PostgreSQL, private S3, R2 fallback/Images and Redis queues are local.
+# Isolated Node development: PostgreSQL outbox and private S3 are local.
 services:
   studio:
     build:
@@ -8,11 +8,9 @@ services:
     init: true
     stop_grace_period: 90s
     working_dir: /workspace
-    command: ["sh", "scripts/cloudflare/docker-dev.sh"]
+    command: ["sh", "scripts/local/docker-dev.sh"]
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       image-storage:
         condition: service_started
@@ -28,7 +26,6 @@ services:
       S3_ACCESS_KEY_ID: local-image-dev
       S3_SECRET_ACCESS_KEY: local-image-dev-only
       CI: "true"
-      WRANGLER_SEND_METRICS: "false"
       DEV_USE_POLLING: "true"
       DEV_WEB_PUBLIC_PORT: "8081"
       DEV_API_PUBLIC_PORT: "8787"
@@ -45,9 +42,8 @@ services:
       - /workspace/packages/generation/node_modules
       - /workspace/packages/queue/node_modules
       - /workspace/packages/storage/node_modules
-      - studio-state:/workspace/.wrangler
     healthcheck:
-      test: ["CMD", "node", "-e", "Promise.all(['http://127.0.0.1:5173', 'http://127.0.0.1:8787/api/health/live', 'http://127.0.0.1:8790/health', 'http://127.0.0.1:8791/health'].map(async u => { const r = await fetch(u); if (!r.ok) throw new Error(String(r.status)); })).catch(() => process.exit(1))"]
+      test: ["CMD", "node", "-e", "Promise.all(['http://127.0.0.1:5173', 'http://127.0.0.1:8787/api/health/live', 'http://127.0.0.1:8791/health'].map(async u => { const r = await fetch(u); if (!r.ok) throw new Error(String(r.status)); })).catch(() => process.exit(1))"]
       interval: 10s
       timeout: 5s
       start_period: 120s
@@ -63,18 +59,6 @@ services:
     ports:
       - "127.0.0.1:9004:8333"
     restart: unless-stopped
-  redis:
-    image: redis:7.4-alpine
-    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
-    ports:
-      - "127.0.0.1:56379:6379"
-    volumes:
-      - redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
   postgres:
     image: postgres:17-alpine
     environment:
@@ -93,6 +77,4 @@ services:
 volumes:
   image-storage-data:
   postgres-data:
-  redis-data:
   studio-dependencies:
-  studio-state:

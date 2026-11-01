@@ -7,6 +7,6 @@ COPY packages ./packages
 COPY scripts ./scripts
 RUN pnpm install --frozen-lockfile
 
-# workerd needs the system trust store even for its local runtime.
+# HTTPS requests require the system trust store.
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*

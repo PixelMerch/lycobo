@@ -1,12 +1,12 @@
 # 技术栈与决策
 
-2026-10-31：发布目标改为 CloudBase 静态应用、共享 PG 与私有 PG 云存储。下列旧 Workers/Queues 条目记录尚未迁移的运行时，不能用于恢复已删除的 Cloudflare 生产配置。实际状态见 [CloudBase 部署](cloudbase-deployment.md)。
+2026-10-31：发布目标改为 CloudBase 静态应用、共享 PG 与私有 PG 云存储。旧平台运行时和模拟依赖已清理。实际状态见 [CloudBase 部署](cloudbase-deployment.md)。
 
 ## 固定方案
 
 | 层 | 技术 | 理由 |
 | --- | --- | --- |
-| 运行时 | Cloudflare Workers；Node.js 24 构建／测试 | API 与 Queues 消费者复用标准运行时 |
+| 运行时 | CloudBase Node 云函数；Node.js 24 构建／测试 | HTTP API 与独立 Event 消费者 |
 | 包管理 | pnpm 10.34.7 workspace | 单仓库、固定锁文件、明确包边界 |
 | 语言 | TypeScript 5.9.3 strict | 与已验证工具链兼容，升级单独评估 |
 | 前端 | React 19 + Vite 8 | 登录后交互工作台采用 CSR |
@@ -18,7 +18,7 @@
 | 参数校验 | Zod 4 + Hono zod-validator | 共享输入输出契约 |
 | 日志 | Pino | 结构化、脱敏、不打印原始请求内容 |
 | 数据 | PostgreSQL 17 + Drizzle ORM / Kit | 关系约束、可审查迁移、持久任务 |
-| 后台 | Cloudflare Queues + 消费者 Worker | PostgreSQL outbox、独立消费与 Cron 恢复 |
+| 后台 | CloudBase Event 消费者 + PG outbox | PostgreSQL outbox、独立消费与 Cron 恢复 |
 | 文件 | CloudBase PG 私有存储 + Node Sharp | 按 UID 分目录，原图、预览与缩略图分开；旧源对象保留 |
 | 通知 | 持久事件 + SSE + 查询兜底 | 推送丢失也能找回结果 |
 | 检查 | Biome、Vitest、Playwright、commitlint | 类型之外的规则、行为、浏览器与提交检查 |
@@ -52,9 +52,7 @@ Pages Functions 同域名 /api 服务绑定，API 和 Queues 消费者独立 Wor
 ## 官方资料
 
 - [React + Vite](https://react.dev/learn/build-a-react-app-from-scratch)
-- [Hono Workers](https://hono.dev/docs/getting-started/cloudflare-workers)
 - [Hono Best Practices](https://hono.dev/docs/guides/best-practices)
 - [HeroUI](https://heroui.com/en/docs/react/getting-started)
-- [Cloudflare Queues](https://developers.cloudflare.com/queues/)
 - [Drizzle](https://orm.drizzle.team/docs/overview)
 - [Konva React](https://konvajs.org/docs/react/index.html)

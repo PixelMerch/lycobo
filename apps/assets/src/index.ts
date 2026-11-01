@@ -1,35 +1,24 @@
+import { serve } from "@hono/node-server";
 import { servePrivateAsset } from "@lycoboai/storage/asset-server";
-import { imageObjectBucket, type StorageBindings } from "@lycoboai/storage/s3";
-import { displayImage } from "@lycoboai/storage/variants";
-export interface AssetBindings extends StorageBindings {
-  IMAGES?: ImagesBinding;
-  IMAGES_BUCKET: R2Bucket;
-  ASSET_SIGNING_SECRET: string;
-  ASSET_ALLOWED_ORIGINS: string;
-}
-export function serveAsset(
-  request: Request,
-  env: AssetBindings,
-  context: Pick<ExecutionContext, "waitUntil">,
-  cache: Pick<Cache, "match" | "put">,
-) {
-  const images = env.IMAGES;
-  return servePrivateAsset(request, {
-    bucket: imageObjectBucket(env, env.IMAGES_BUCKET),
-    signingSecret: env.ASSET_SIGNING_SECRET,
-    allowedOrigins: env.ASSET_ALLOWED_ORIGINS,
-    ...(images ? { createVariant: (body, variant) => displayImage(images, body, variant) } : {}),
-    cache,
-    background: (work) => context.waitUntil(work),
-  });
-}
-export default {
-  async fetch(request, env, context) {
+import { imageObjectBucket } from "@lycoboai/storage/s3";
+
+const secret = process.env.ASSET_SIGNING_SECRET;
+if (!secret || !process.env.ASSET_ALLOWED_ORIGINS) throw new Error("ASSET_CONFIGURATION_REQUIRED");
+const bucket = imageObjectBucket(process.env);
+const server = serve({
+  hostname: process.env.API_HOST ?? "127.0.0.1",
+  port: 8791,
+  fetch: async (request) => {
+    if (new URL(request.url).pathname === "/health") return new Response(null, { status: 204 });
     try {
-      return await serveAsset(request, env, context, caches.default);
+      return await servePrivateAsset(request, {
+        bucket,
+        signingSecret: secret,
+        allowedOrigins: process.env.ASSET_ALLOWED_ORIGINS ?? "",
+      });
     } catch {
-      console.error("ASSET_REQUEST_FAILED");
       return new Response(null, { status: 503, headers: { "Cache-Control": "no-store" } });
     }
   },
-} satisfies ExportedHandler<AssetBindings>;
+});
+for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => server.close());
