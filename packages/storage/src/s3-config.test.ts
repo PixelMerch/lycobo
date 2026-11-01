@@ -3,7 +3,6 @@ import { readS3Config, s3ObjectUrl } from "./s3-config";
 
 const credentials = { S3_ACCESS_KEY_ID: "fixture-access", S3_SECRET_ACCESS_KEY: "fixture-secret" };
 it.each([
-  ["https://account.r2.cloudflarestorage.com", "auto", "generated-images"],
   ["https://cos.ap-guangzhou.myqcloud.com", "ap-guangzhou", "generated-images-1250000000"],
   ["http://image-storage:8333", "us-east-1", "generated-images"],
 ])("uses the same S3 addressing rules for %s", (endpoint, region, bucket) => {

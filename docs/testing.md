@@ -7,7 +7,7 @@
 - pnpm test：契约、API、Worker 的单元行为。
 - pnpm build：实际前端和两个 Node 应用生产构建。
 - pnpm test:e2e：真实 Chromium 下接口连接、路由、禁用态与窄屏溢出。
-- pnpm test:integration：明确 opt-in 的本地 PostgreSQL 和 Cloudflare workerd 集成验证。
+- pnpm test:integration：明确 opt-in 的本地 PostgreSQL 和 CloudBase RPC 集成验证。
 
 首次运行浏览器测试需 pnpm exec playwright install chromium。
 CI 使用 pnpm exec playwright install --with-deps chromium。
@@ -41,18 +41,9 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 仅接受 loopback 的数据库 URL，且必须显式允许。
 运行时 `DATABASE_URL` 已指向 Supabase 时，测试命令须显式覆盖为本项目本地 PostgreSQL 地址，例如 `DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW_LOCAL_INTEGRATION=true pnpm test:integration`；不修改远端库，也不将运行时配置改回本地。
 数据库测试在 loopback 服务插入唯一用户/项目/任务，验证归属和幂等约束，finally 清理并验证。
-队列使用每次运行独立名字，通过真实本地 workerd 验证 Queue 投递与消费者，finally 释放整个临时模拟环境。
+任务通过独立数据库中的 outbox 验证认领、幂等和计费；已删除旧平台队列模拟测试。
 不调用模型、不扣积分、不上传对象。迁移可以在空白 CI 库上验证；
 本地已有数据不能用清库方式测试。
-
-## 本地 Redis 集成
-
-```sh
-pnpm infra:up
-ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
-```
-
-仅接受 loopback Redis，每次创建独立 UUID 前缀并在 finally 删除自己的 Stream，不执行 FLUSHDB 或清理共享卷。覆盖只传任务 ID、消费者退出后未确认消息恢复、执行中心跳防抢占、单条消息有限重试及死信、HTTP 桥接认证和成功确认。使用 loopback HTTP fixture，不调用付费模型；数据库 claim／计费不变量由原 PostgreSQL 隔离集成检查覆盖。Infrastructure CI 同时运行生产 Cloudflare Queues 模拟验证和本地 Redis 验证。
 
 ## 需要继续补齐的产品测试
 
@@ -69,16 +60,16 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
 ## 生图 API 集成
 
 `pnpm test:integration` 现在同时运行诊断检查与 `@lycoboai/worker test:images`。
-新增检查使用真实 PostgreSQL 与 workerd、独立 UUID 队列、临时私有图片目录和 loopback HTTP fixture；不调用付费模型。
+新增检查使用真实 PostgreSQL 、独立任务数据、临时私有图片目录和 loopback HTTP fixture；不调用付费模型。
 配置、模型能力证据、身份签发和迁移边界见 [生图 API](image-generation-api.md)。
 
 企业账号与 JWT 的隔离数据库测试已接入根集成命令，具体覆盖与运行边界见 [企业鉴权](enterprise-auth.md)。
 
 ## 实时事件与图片集成隔离
 
-图片 API／Worker 集成测试现在创建独立临时数据库并执行完整迁移，配合独立本地 Cloudflare 队列与临时图片目录；避免本地运行中的真实 Worker 抢到 fixture outbox。最终关闭连接后删除测试数据库，不接触共享数据或卷。
+图片 API／Worker 集成测试现在创建独立临时数据库并执行完整迁移，配合临时图片目录；避免本地运行中的真实 Worker 抢到 fixture outbox。最终关闭连接后删除测试数据库，不接触共享数据或卷。
 
-根 test:integration 已增加 `@lycoboai/api test:events`，覆盖 SSE 的持久化事件、跨连接通知、回滚、租户隔离、重连回放与身份撤销。运行需 loopback PostgreSQL、本地 workerd 和 ALLOW_LOCAL_INTEGRATION=true；不会调用付费模型。
+根 test:integration 已增加 `@lycoboai/api test:events`，覆盖 SSE 的持久化事件、跨连接通知、回滚、租户隔离、重连回放与身份撤销。运行需 loopback PostgreSQL 和 ALLOW_LOCAL_INTEGRATION=true；不会调用付费模型。
 
 ## 工作台浏览器回归
 
@@ -111,7 +102,7 @@ ALLOW_LOCAL_INTEGRATION=true pnpm test:redis
 
 单图卡片重试由`card-image-retry.spec.ts`验证hover、键盘和触屏入口、单张金额确认、取消不提交、仅传itemId及丢失响应后刷新同键重放。隔离verify-textile-generation覆盖其他子项仍排队时仅替换选中未决项、另一个失败项不变、单次退款／扣费、同键换图拒绝与旧执行完成隔离。命名迁移回归先单独验证0015的数据保全，再应用后续扩展迁移，避免把新增可空列误判为旧数据变化。
 
-浏览器CI的 `pnpm cloudflare:dev:setup` 使用 `dev.mjs --prepare-only` 同时生成被忽略的 `.dev.vars` 和三个 `wrangler.local.json`，不会启动服务、队列或数据库连接。`dev-setup.test.mjs` 在独立临时目录模拟干净检出，避免依赖开发者已有生成文件；Playwright随后按配置启动API与前端。
+浏览器测试通过 `scripts/local/dev.mjs --api-only` 启动隔离 Node API，再由 Playwright 启动前端。
 
 浏览器CI固定使用 `ubuntu-24.04`，避免 `ubuntu-latest` 切换系统版本后依赖／字体下载和渲染环境漂移；浏览器任务使用匹配Playwright 1.64.0的官方 `mcr.microsoft.com/playwright:v1.64.0-noble` 镜像并固定digest，内置Chromium及系统字体依赖，不在任务中重复执行apt下载；完整E2E范围不变。
 

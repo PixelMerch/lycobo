@@ -1,3 +1,5 @@
+> 历史源库运维文档：下文 Workers/Hyperdrive 描述仅为迁移前记录。当前运行时为 CloudBase，旧适配代码与本地模拟器已删除；不按本文恢复旧平台部署。
+
 # Supabase PostgreSQL 结构迁移
 
 2026-10-31：此文保留 Supabase 旧源库的初始化与显式运维说明。CloudBase 共享 PG 数据副本已完成；当前发布和运行边界见 [CloudBase 部署](cloudbase-deployment.md)，复制结果见 [数据库迁移](cloudbase-database-migration.md)。旧源服务尚未切换，生产 Cloudflare 发布配置已删除。

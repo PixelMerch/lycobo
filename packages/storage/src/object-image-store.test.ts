@@ -6,7 +6,7 @@ import { objectImageStore } from "./object-image-store";
 
 describe("Node cloud image processing", () => {
   const scope = { organizationId: randomUUID(), userId: randomUUID() };
-  it("stores private original and display variants without a Cloudflare binding", async () => {
+  it("stores private original and display variants using the shared object bucket", async () => {
     const saved = new Map<string, Uint8Array>();
     const bucket: ImageObjectBucket = {
       head: async () => null,

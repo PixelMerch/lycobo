@@ -47,7 +47,7 @@ docker compose up --build
 # 后续启动只需 docker compose up
 ```
 
-访问 <http://localhost:8081/>。Compose 启动本地 PostgreSQL 和 Redis，自动应用本地迁移，运行 Vite、Wrangler API 与生图消费者，支持源码热更新。R2、Images 在本地模拟，任务通过 Redis Streams 投递；数据库、图片与 Redis 分别保存在 Docker 卷。开发入口不连接线上 Supabase、R2 或 Queues；真实生图按 `.env` 中的模型开关和 Key 显式启用，调用会消耗供应商额度。图片通过本地资源域名 `http://cdn.lycobo.localhost:8791` 提供：页面使用 WebP 缩略图／预览，下载才读取原始 PNG。账号、积分及图片需要在本地单独准备。宿主机调试、日志与存储位置见 [本地开发](docs/development.md)。
+访问 <http://localhost:8081/>。Compose 提供本地 PostgreSQL、私有 S3 与 Node API／独立消费者／图片服务／Vite。首次运行需显式迁移本地数据库，启动器过滤线上基础设施凭据；真实生图按模型开关启用并消耗供应商额度。图片通过 `http://127.0.0.1:8791` 签名读取。账号、积分和图片需本地准备；详见 [本地开发](docs/development.md)。
 
 **CloudBase 自动发布**：main 的 CI 通过后发布前端至 CloudBase 静态应用，使用 GitHub `cloudbase-production` Environment。Cloudflare 发布配置已删除，主站私有图片改用 CloudBase PG 云存储。凭据、后端迁移边界和实际状态见 [CloudBase 部署](docs/cloudbase-deployment.md)，数据副本见 [数据库迁移](docs/cloudbase-database-migration.md)。
 

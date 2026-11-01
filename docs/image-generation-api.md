@@ -36,7 +36,7 @@
 
 ## 服务端配置与启动
 
-旧线上架构为 Pages + Hono Workers API + Queues 消费者 + R2 + Supabase，旧服务仍运行，但仓库中的 Cloudflare 生产发布配置已删除。新目标为 CloudBase，部署凭据、私有存储及共享 PG 迁移边界见 [CloudBase 部署](cloudbase-deployment.md)。供应商和资源密钥只保留在服务端；静态前端发布不代表 API 与消费者已迁移。
+生产运行于 CloudBase HTTP API、Event 消费者、共享 PG 与私有云存储。旧平台代码已移除，旧源资源仅保留迁移回退资料。见 [CloudBase 部署](cloudbase-deployment.md)。
 
 账号通过现有企业账号体系配置，主子账号共用组织钱包。生成开关默认关闭，确认数据库、权限、对象存储、模型及后台绑定后再显式启用 `IMAGE_GENERATION_ENABLED=true`。本地开发使用 Wrangler 模拟与独立 loopback 数据库，真实模型调用需显式 `LOCAL_IMAGE_GENERATION_ENABLED=true`。旧 Node 工作台签发脚本仅供已有的本地调试，不是线上账号注册或充值接口。
 
@@ -77,7 +77,7 @@ curl http://127.0.0.1:8787/api/v1/image-tasks \
 - generation_jobs 保存输入和逐图价格快照；generation_job_items 保存执行实例、租约和图片关联。
 - 同一组织/用户/Idempotency-Key 保持同一任务；换参数重放返回 409，数据库余额不足返回 409，均不产生付费请求。
 - 任务、全部图片项、每图 outbox 和积分预留位于同一 PostgreSQL 事务。HTTP 事务不发消息或调用服务商；提交后只触发 outbox 投递。
-- 投递器从 PostgreSQL 租赁 outbox，事务外投递 Cloudflare Queues，发送成功后确认；消息只含 version 和 itemId，消费者由数据库领取与执行令牌再次保护。
+- 独立 Event 消费者认领 PostgreSQL outbox，通过数据库领取与执行令牌防止重复付费调用；定时器负责兜底恢复。
 - outbox 最早 30 秒后可重新租赁，API 提交后即时投递、Cron 每分钟补偿，可恢复消息丢失或投递确认中断。running 不回到 queued，重复消息不重复调用模型。
 - CloudBase 没有队列推送：API 提交或重试成功后同步唤醒消费者函数，消费者只用运行角色排队一次异步 drain 后立即返回，付费请求不在同步调用中执行；仍在排队的任务被轮询时最多每 15 秒补唤醒一次。drain 结束时如有延后读取、未开始或满批的意向，会按到期时间自行续排；定时器始终是兜底。
 - 每图独立执行与保存：成功保留扣除积分，明确拒绝退回该图积分；部分失败不删除成功兄弟图片。积分退款有唯一约束，不重复返还。
@@ -90,7 +90,7 @@ curl http://127.0.0.1:8787/api/v1/image-tasks \
 ## 验证与迁移
 
 - `pnpm check`：类型、lint、单元测试和生产构建。
-- `ALLOW_LOCAL_INTEGRATION=true DATABASE_URL=... pnpm test:integration`：仅 loopback 的隔离 PostgreSQL 和本地 workerd Queues/R2，含已有诊断约束与新生图完整链路。通过本地 HTTP fixture 验证，不使用真实 key，不扣服务商积分。
+- `ALLOW_LOCAL_INTEGRATION=true DATABASE_URL=... pnpm test:integration`：仅 loopback 的隔离 PostgreSQL 和私有存储 fixture，含已有诊断约束与新生图完整链路。通过本地 HTTP fixture 验证，不使用真实 key，不扣服务商积分。
 - 新集成覆盖访问令牌、伪造身份、组织隔离、参考图越权、并发幂等、积分预留/释放、实际文件与元数据、重复队列消息、部分失败、服务商不确定结果、Worker 租约到期和令牌撤销。
 - 新增 `0002_fuzzy_wolverine.sql` 与对应 Drizzle snapshot/journal；保留已合并的 0000/0001。它基于远端 dev 的迁移顺序，不包含主工作区未跟踪的其他 0002 草稿，合并前必须协调迁移编号。
 - 真实渠道的 1K/2K/4K 输出像素、参考编辑以及 flare/sunburst 支持范围需在配置密钥后另行限额验收。模拟图片或静态页面不作为真实渠道证据。
@@ -103,7 +103,7 @@ curl http://127.0.0.1:8787/api/v1/image-tasks \
 - 2.5 系列按用户要求开放 1K 路由，保留能力来源标记；2K/4K 默认不开放。参考编辑使用 OpenAI 兼容 `/v1/images/edits` 协议，需启用 `VAKV_ENABLE_IMAGE_EDITS`。
 - 历史、右侧索引与素材库不轮询列表；只有可见页面中存在排队或生成中的任务时才按任务详情查询，状态通过 SSE 或这些查询定向更新缓存；支持游标加载更多。列表使用提前生成的 512px 缩略图，下载读取原图。
 - 提交响应不确定时，浏览器会按用户和组织在 sessionStorage 保留同一请求快照与幂等编号，刷新后通过“确认上次提交”复用请求；不会自动重新生成。已运行但结果不确定的任务不自动重发；用户可以明确确认后在原记录重试，先结束旧尝试并退回原扣款，再提交新尝试，操作与未知结果依据可审计。管理员核对入口仍保留。
-- `GET /api/v1/image-assets?limit=30&before=UUID` 返回组织内素材与短期签名链接；历史输出和参考图同时返回链接。API 批量解析组织范围内的对象位置，不逐图查询数据库；任务没有输出和参考图时不查询。签名至少保留 30 分钟有效期，并向上取整到 15 分钟边界，同一时段内重复签发的链接完全相同，刷新页面可复用浏览器缓存；资源服务最多接受 45 分钟内到期的签名。独立资源 Worker 验签、校验 Referer／Origin，先读缓存、未命中时流式读取私有 R2，不执行图片转换。上传与生成结果在入库前保存原图及缩略图；旧 content 链接兼容重定向。具体配置与域名验收边界见 Cloudflare 部署文档。
+- `GET /api/v1/image-assets?limit=30&before=UUID` 返回组织内素材与短期签名链接；历史输出和参考图同时返回链接。API 批量解析组织范围内的对象位置，不逐图查询数据库；任务没有输出和参考图时不查询。签名至少保留 30 分钟有效期，并向上取整到 15 分钟边界，同一时段内重复签发的链接完全相同，刷新页面可复用浏览器缓存；资源服务最多接受 45 分钟内到期的签名。独立 Node 图片服务验签、校验 Referer／Origin，并读取 CloudBase 私有对象；浏览器按签名有效期缓存。上传与生成结果在入库前保存原图及缩略图；旧 content 链接兼容重定向。具体配置与域名验收边界见 CloudBase 部署文档。
 
 ### 本地启动
 

@@ -1,6 +1,6 @@
 # 架构与目录
 
-一个 pnpm workspace 仓库，四个独立应用；前端 CSR、API、消费者、图片服务及共享 PG 已接入 CloudBase。主图制作、家纺套图、智能裂变已实际生图和保存私有对象，定时执行已开启；固定使用默认同源网关，自定义域名暂不接入，独立 admin 尚未切换。旧 Workers 源码保留用于隔离开发及旧部署兼容，Cloudflare 生产发布配置已移除，旧 API/消费者生图已关闭。
+一个 pnpm workspace 仓库，四个独立应用；前端 CSR、API、消费者、图片服务及共享 PG 已接入 CloudBase。主图制作、家纺套图、智能裂变已实际生图和保存私有对象，定时执行已开启；固定使用默认同源网关，自定义域名暂不接入，独立 admin 尚未切换。旧平台运行时代码、模拟器与部署配置已移除，旧远端 API/消费者生图保持关闭。
 代码同仓不表示进程合并或强制一起发布。
 
 | 路径 | 职责 |
@@ -17,7 +17,7 @@
 | cloudbase/migrations | CloudBase 共享 PG 的源库结构基线与约束恢复；原 Drizzle 历史随数据复制保留 |
 | packages/queue | ID-only 消息契约、持久 outbox 与旧 Queue 适配；CloudBase 消费者直接认领 PG outbox，旧运输适配用于隔离开发和兼容 |
 | packages/generation | 服务商契约、Vakv 同步兼容、可配置 OpenAI／FluxPort 同异步适配与密钥加密（真实渠道待验收） |
-| packages/storage | CloudBase PG 私有存储、UID 路径、Node Sharp 变体；旧 S3/R2 适配用于本地开发和迁移，CloudBase 不回退旧存储 |
+| packages/storage | CloudBase PG 私有存储、UID 路径、Node Sharp 变体；S3 适配用于本地开发和迁移，CloudBase 不回退旧存储 |
 | scripts/cloudbase | 静态及 Linux 云函数发布包准备、固定目标配置与敏感文件隔离 |
 | tests/e2e | 浏览器关键路径验收 |
 | docs/design | 当前认可的设计参考 |
@@ -72,11 +72,11 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 ## 进程与服务
 
-本地通过 `docker compose up` 启动本地 PostgreSQL、Redis 与 `studio`（Vite + Wrangler API/消费者/独立图片资源 Worker）；入口为 `scripts/cloudflare/docker-dev.sh` 与 `dev.mjs`。启动环境由 `local-environment.mjs` 固定为本地连接并清除线上凭据。R2/Images 使用本地模拟；本地队列使用 Redis Streams，`redis-dev.mjs` 通过认证桥接调用本地 Worker，生成的 `wrangler.local.json` 不含 Cloudflare Queue 绑定。图片由本地独立资源 Worker（cdn.lycobo.localhost:8791）通过签名 URL 提供，业务 API 不传输图片字节；数据库、模拟状态、Redis 和 Linux 依赖分别保存于 Docker 卷。具体命令见 [本地开发](docs/development.md)。
+本地入口为 `scripts/local/dev.mjs`：Vite、Node API、独立 PG outbox 消费者和图片服务。业务基础设施固定使用本地 PostgreSQL 与私有 S3；详见 [本地开发](docs/development.md)。
 
 - API：短请求、身份、授权、参数校验、业务编排。
 - Worker：有持久任务托管的后台工作，绝不能依赖浏览器连接。
-- PostgreSQL：业务与状态真相；CloudBase 定时消费者认领持久 outbox，旧 Cloudflare Queues 适配只传任务 ID。
+- PostgreSQL：业务与状态真相；CloudBase Event 消费者和本地独立消费者认领持久 outbox。
 - 对象存储：图片原件、缩略图、下载包；业务库只保存元数据和对象 key。
 - SSE：状态变化信号；断线后按游标/数据库补查。
 
@@ -88,7 +88,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 ## 部署
 
-GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 CloudBase 函数代码并发布静态前端，使用 cloudbase-production Environment。旧 Cloudflare 工作流、生产 Wrangler 配置和 setup/deploy 脚本已删除。主站图片目标为 CloudBase PG 私有云存储，Node 变体生成不依赖 Cloudflare Images。见 [CloudBase 部署](docs/cloudbase-deployment.md)。旧远端服务仍保留，前端发布不代表后端迁移已完成。
+GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 CloudBase 函数代码并发布静态前端，使用 cloudbase-production Environment。旧 Cloudflare 工作流、生产 Wrangler 配置和 setup/deploy 脚本已删除。主站图片目标为 CloudBase PG 私有云存储，Node 变体生成不依赖 Cloudflare Images。见 [CloudBase 部署](docs/cloudbase-deployment.md)。旧远端资源仅作为迁移回退资料保留。
 
 2026-10-31 已将 Supabase 的 `public`、`drizzle` 结构与数据快照复制到 CloudBase 个人版共享 PG，43 张表、1,156 行及关联结构通过校验。2026-11-01 主站三个功能已使用 CloudBase 共享 PG、后台消费者和私有云存储完成真实生成；独立 admin 仍未切换，旧端生图关闭。初始数据复制、运行启用及正式域名边界分别见 [数据库迁移](docs/cloudbase-database-migration.md)、[图片迁移](docs/cloudbase-storage-migration.md) 和 [运行验收](docs/cloudbase-runtime-migration.md)。
 
@@ -98,12 +98,12 @@ GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 C
 - packages/contracts/src/image-generation.ts：独立生图输入契约与公开模型目录；不改变既有任务契约。
 - packages/db/src/image-repository.ts：组织、令牌、任务、逐图 outbox 与积分账本持久化。
 - packages/generation/src/vakv-provider.ts：Vakv 同步生图、能力开关、尺寸映射与不确定结果分类。
-- apps/worker/cloudflare/index.ts / src/image-processor.ts：Queues 消费、Cron outbox 恢复、并发执行与租约处理。
+- apps/worker/src/cloudbase-consumer.ts / local-consumer.ts / image-processor.ts：生产 Event、本地 PG 消费及共享任务处理。
 - packages/storage/src/image-store.ts：服务端图片解码、去元数据、私有 PNG 文件与实际尺寸/哈希。
 
 接口、工作台和登录的实现范围，以及供应商、存储等外部验收边界见 [生图 API 文档](docs/image-generation-api.md)。
 
-实时任务通知入口为 apps/api/src/features/images/events.ts；apps/web/src/features/generation/use-image-events.ts 在应用壳维护共享 SSE 连接，无 SSE（CloudBase 默认）时只轮询未完成任务，二者经 task-sync.ts 定向更新 Query 缓存。事件日志和业务状态事务提交，独立于 Cloudflare Queues 生图执行队列；具体协议见 docs/image-generation-api.md。
+实时任务通知入口为 apps/api/src/features/images/events.ts；apps/web/src/features/generation/use-image-events.ts 在应用壳维护共享 SSE 连接，无 SSE（CloudBase 默认）时只轮询未完成任务，二者经 task-sync.ts 定向更新 Query 缓存。事件日志和业务状态事务提交，独立于生图消费者；具体协议见 docs/image-generation-api.md。
 
 - packages/db/src/wallet-repository.ts：企业共享钱包、充值订单与只读账务查询。数据表与扣费规则见 [企业钱包](docs/enterprise-wallet.md)。
 
@@ -135,7 +135,7 @@ GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 C
 
 ## Supabase 结构迁移
 
-`packages/db/scripts/migrate-supabase.mjs` 复用现有 Drizzle Kit 迁移链，`supabase-target.mjs` 校验独立的 `SUPABASE_DATABASE_URL` 与项目引用，`secure-supabase.mjs` 限定本应用表／序列／函数的 RLS 和前端角色权限。生产 Workers 通过 Hyperdrive 访问同一 Supabase，秘密与资源配置见 Cloudflare 部署文档。`pnpm db:migrate:supabase --check` 仅检查配置；填写真实密码后才可实际初始化远端结构。此入口不复制本地业务数据、图片文件或修改现有迁移；连接、Data API 边界和 MCP 操作见 [Supabase 接入](docs/supabase-postgres.md)。
+`packages/db/scripts/migrate-supabase.mjs` 复用现有 Drizzle Kit 迁移链，`supabase-target.mjs` 校验独立的 `SUPABASE_DATABASE_URL` 与项目引用，`secure-supabase.mjs` 限定本应用表／序列／函数的 RLS 和前端角色权限。当前生产使用 CloudBase 共享 PG；此脚本仅供旧源库显式运维。`pnpm db:migrate:supabase --check` 仅检查配置；填写真实密码后才可实际初始化远端结构。此入口不复制本地业务数据、图片文件或修改现有迁移；连接、Data API 边界和 MCP 操作见 [Supabase 接入](docs/supabase-postgres.md)。
 
 ## 发布工具
 

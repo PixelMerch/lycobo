@@ -6,6 +6,5 @@ strictPeerDependencies: true
 autoInstallPeers: true
 onlyBuiltDependencies:
   - esbuild
-  - workerd
 ignoredBuiltDependencies:
   - msgpackr-extract

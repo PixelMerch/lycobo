@@ -51,13 +51,13 @@ CLOUDBASE_APIKEY=<server-api-key>
 
 `cloudbase-object-bucket.ts` 实现已实测的 PG HEAD/GET/PUT/DELETE，固定目标网关、30 秒超时、不跟随重定向、错误脱敏。一旦配置 CloudBase，404、鉴权错误、超时或服务故障均不会回退旧 R2/S3，避免已删除素材重新出现。
 
-Node API 的 `object-image-store.ts` 使用 Sharp 完成解码校验、去元数据、PNG 原图和展示变体生成，无需 Cloudflare Images。付费原图先落盘到私有云存储，变体失败保留原图。旧运行时源文件也接入同一存储选择逻辑；CloudBase 三功能已开启并真实验收，正式域名尚未切换。
+Node API 的 `object-image-store.ts` 使用 Sharp 完成解码校验、去元数据、PNG 原图和展示变体生成，无需 Cloudflare Images。付费原图先落盘到私有云存储，变体失败保留原图。CloudBase 三功能已开启并真实验收，正式域名尚未切换。
 
 ## Cloudflare 退出边界
 
 已删除旧发布工作流、四个生产 `wrangler.jsonc`、Pages Functions 转发入口、远端 setup/deploy 脚本及根命令。日常 build 不再执行 Wrangler 发布 dry run。
 
-workerd/Miniflare、旧运行时源码和 `scripts/cloudflare` 剩余文件仅用于隔离开发/回归及尚未完成的运行时迁移。本地配置从无 account_id、生产队列或 Cron 的模板生成，保留原本地存储名称和已有数据。本地启动丢弃 CloudBase、腾讯云及旧 Cloudflare 的远端凭据。
+旧运行时源码、Wrangler/Miniflare/workerd 依赖、R2/Images/Queues 适配及 `scripts/cloudflare` 已移除。本地改用隔离 Node 进程、PG outbox 与私有 S3，保留图片鉴权和数据库回归测试。旧远端资源、迁移历史与受保护备份不删除。
 
 远端旧资源、源库和对象保留供回溯，旧 API/消费者的生成开关已关闭。新站主站业务读写使用共享 PG、独立消费者和资源服务；三个功能已实际生成并存储图片。独立 admin 未接入目标。当前只使用上述默认网关；自定义域名以后按需处理，不在本次接入范围内。
 

@@ -1,0 +1,50 @@
+import { randomUUID } from "node:crypto";
+import { openImageRepository } from "@lycoboai/db";
+import { readImagePolicy, standaloneModels } from "@lycoboai/generation";
+import { objectImageStore } from "@lycoboai/storage/object-images";
+import { imageObjectBucket } from "@lycoboai/storage/s3";
+import { drainCloudBaseOutbox } from "./cloudbase-outbox";
+import { processImageItem } from "./image-processor";
+import { slots } from "./slots";
+
+const url = new URL(process.env.DATABASE_URL ?? "");
+if (!["127.0.0.1", "localhost", "postgres"].includes(url.hostname))
+  throw new Error("LOCAL_DATABASE_REQUIRED");
+const repository = openImageRepository(url.href, false, await standaloneModels(process.env));
+const objects = objectImageStore(imageObjectBucket(process.env), repository.storageUid);
+const encode = slots(2);
+const store: typeof objects = { ...objects, put: (...args) => encode(() => objects.put(...args)) };
+const policy = readImagePolicy(process.env);
+let stopping = false;
+for (const signal of ["SIGINT", "SIGTERM"])
+  process.once(signal, () => {
+    stopping = true;
+  });
+try {
+  while (!stopping) {
+    if (policy.enabled)
+      try {
+        await repository.expireClaims();
+        await drainCloudBaseOutbox({
+          repository,
+          stopStartingAt: Date.now() + 5000,
+          process: (itemId, onDeferred) =>
+            processImageItem(itemId, {
+              repository,
+              store,
+              workerId: `local:${randomUUID()}`,
+              modelSecret: process.env.MODEL_CREDENTIAL_SECRET,
+              standaloneKey: process.env.STANDALONE_IMAGE_API_KEY,
+              overrides: policy.overrides,
+              editsEnabled: policy.editsEnabled,
+              onDeferred,
+            }),
+        });
+      } catch {
+        console.error("LOCAL_CONSUMER_FAILED");
+      }
+    if (!stopping) await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+} finally {
+  await repository.close();
+}

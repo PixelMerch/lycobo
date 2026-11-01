@@ -10,7 +10,7 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: [
     {
-      command: "pnpm cloudflare:dev:setup && pnpm --filter @lycoboai/api dev",
+      command: "node scripts/local/dev.mjs --api-only",
       url: "http://127.0.0.1:8787/api/health/live",
       reuseExistingServer: !process.env.CI,
     },

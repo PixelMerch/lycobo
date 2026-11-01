@@ -15,7 +15,7 @@ export function imageObjectBucket(
   fallback?: ImageObjectBucket,
 ): ImageObjectBucket {
   // CloudBase is authoritative once configured, including missing objects and failures.
-  // Never recover a deleted private object from an old R2/S3 copy.
+  // Never recover a deleted private object from an legacy copy.
   if (readCloudBaseStorageConfig(env)) return cloudbaseObjectBucket(env);
   const config = readS3Config(env);
   if (!config) {
@@ -39,7 +39,7 @@ export function imageObjectBucket(
         ...(headers ? { headers } : {}),
         ...(data ? { body: new Uint8Array(data) } : {}),
         signal: AbortSignal.timeout(config.S3_REQUEST_TIMEOUT_MS),
-        // Workers rejects "error"; non-2xx responses below also reject redirects.
+        // Do not follow redirects with storage credentials.
         redirect: "manual",
       });
       if (response.status === 404) {
