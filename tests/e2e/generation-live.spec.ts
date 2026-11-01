@@ -266,8 +266,11 @@ test("pending history converges without an SSE notification and stops polling on
     ],
   };
   await page.route("**/api/v1/image-tasks?**", async (route) => {
+    await route.fulfill({ json: { data: [job] } });
+  });
+  await page.route(`**/api/v1/image-tasks/${job.id}`, async (route) => {
     reads++;
-    if (reads >= 2) {
+    if (reads >= 1) {
       job.status = "succeeded";
       job.completed_at = new Date().toISOString();
       job.items[0] = {
@@ -278,7 +281,7 @@ test("pending history converges without an SSE notification and stops polling on
         height: 1024,
       };
     }
-    await route.fulfill({ json: { data: [job] } });
+    await route.fulfill({ json: job });
   });
   await page.route("**/api/v1/image-assets/*/content**", (route) =>
     route.fulfill({ contentType: "image/png", body: png }),
@@ -292,4 +295,30 @@ test("pending history converges without an SSE notification and stops polling on
   const completedReads = reads;
   await page.waitForTimeout(5500);
   expect(reads).toBe(completedReads);
+});
+
+test("idle focus and reconnect do not reload database-backed queries", async ({ page }) => {
+  await mockImageEvents(page, false);
+  let reads = 0;
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname.startsWith("/api/v1/")) reads++;
+  });
+  await page.goto("/create");
+  await expect(page.getByText("生成的图片会显示在这里", { exact: true })).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  // Advance cache age without a wall-clock wait; the event handlers remain real browser code.
+  await page.clock.install();
+  await page.clock.fastForward(60000);
+  const idleReads = reads;
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+    document.dispatchEvent(new Event("visibilitychange"));
+    window.dispatchEvent(new Event("offline"));
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+    document.dispatchEvent(new Event("visibilitychange"));
+    window.dispatchEvent(new Event("online"));
+  });
+  await page.clock.fastForward(60000);
+  await page.waitForTimeout(250);
+  expect(reads).toBe(idleReads);
 });

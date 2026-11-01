@@ -65,6 +65,45 @@ it("polls new work quickly, long work slowly and backs off after failures", () =
   expect(pollDelay([long], false, 9, now)).toBe(60000);
 });
 
+it("uses the freshest snapshot before deciding to poll, including a later retry", () => {
+  const running = job();
+  const client = withHistory();
+  client.setQueryData<ImageHistory>(
+    ["image-tasks"],
+    { pages: [{ data: [running] }], pageParams: [""] },
+    { updatedAt: 100 },
+  );
+  client.setQueryData(
+    ["image-task", running.id],
+    { ...running, status: "succeeded" },
+    { updatedAt: 200 },
+  );
+  expect(unfinishedJobs(client)).toEqual([]);
+  const retry = { ...running, status: "queued" as const };
+  client.setQueryData<ImageHistory>(
+    ["image-tasks"],
+    { pages: [{ data: [retry] }], pageParams: [""] },
+    { updatedAt: 300 },
+  );
+  expect(unfinishedJobs(client)).toEqual([retry]);
+});
+
+it("removes a confirmed missing task from every history so a failed history reload cannot keep polling it", async () => {
+  const missing = job();
+  const other = job();
+  const client = withHistory(missing, other);
+  client.setQueryData<ImageHistory>(["image-tasks", "create"], {
+    pages: [{ data: [missing] }],
+    pageParams: [""],
+  });
+  client.setQueryData(["image-task", missing.id], missing);
+  expect(await refreshUnfinished(client, [missing], async () => null)).toMatchObject({
+    history: true,
+    failed: false,
+  });
+  expect(unfinishedJobs(client)).toEqual([other]);
+});
+
 it("backs off event-stream reconnects and re-checks the events capability every third failure", () => {
   const plans = Array.from({ length: 7 }, (_, index) => reconnectPlan(index + 1));
   expect(plans.map((plan) => plan.delay)).toEqual([1000, 2000, 4000, 8000, 16000, 30000, 30000]);

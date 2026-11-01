@@ -42,16 +42,25 @@ export const chargesChanged = (previous: ImageJob | undefined, job: ImageJob) =>
   });
 
 export function unfinishedJobs(client: QueryClient) {
-  const jobs = new Map<string, ImageJob>();
-  for (const job of [
-    ...historyJobs(client),
-    ...client
-      .getQueriesData<ImageJob>({ queryKey: ["image-task"] })
-      .flatMap(([, job]) => (job ? [job] : [])),
-  ])
-    if ((job.status === "queued" || job.status === "running") && !jobs.has(job.id))
-      jobs.set(job.id, job);
-  return [...jobs.values()];
+  const jobs = new Map<string, { job: ImageJob; updatedAt: number }>();
+  const remember = (job: ImageJob, updatedAt: number) => {
+    const prior = jobs.get(job.id);
+    if (!prior || updatedAt >= prior.updatedAt) jobs.set(job.id, { job, updatedAt });
+  };
+  for (const query of client.getQueryCache().findAll({ queryKey: ["image-tasks"] })) {
+    const history = client.getQueryData<ImageHistory>(query.queryKey);
+    for (const job of history?.pages.flatMap((page) => page.data) ?? [])
+      remember(job, query.state.dataUpdatedAt);
+  }
+  for (const query of client.getQueryCache().findAll({ queryKey: ["image-task"] })) {
+    const job = client.getQueryData<ImageJob>(query.queryKey);
+    if (job) remember(job, query.state.dataUpdatedAt);
+  }
+  // Resolve conflicting snapshots before filtering. An old running history page must not
+  // resurrect a completed task, and a newer explicit retry must remain eligible for polling.
+  return [...jobs.values()]
+    .map(({ job }) => job)
+    .filter((job) => job.status === "queued" || job.status === "running");
 }
 
 /**
@@ -102,6 +111,17 @@ export async function refreshUnfinished(
       }
       if (!job) {
         client.removeQueries({ queryKey: ["image-task", previous.id], exact: true });
+        client.setQueriesData<ImageHistory>(
+          { queryKey: ["image-tasks"] },
+          (history) =>
+            history && {
+              ...history,
+              pages: history.pages.map((page) => ({
+                ...page,
+                data: page.data.filter((entry) => entry.id !== previous.id),
+              })),
+            },
+        );
         followUp.history = true;
         return;
       }
