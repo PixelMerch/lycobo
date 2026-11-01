@@ -31,8 +31,8 @@ export async function main(event?: unknown) {
   if (!independent) throw new Error("CLOUDBASE_STANDALONE_MODELS_REQUIRED");
   const repository = openCloudBaseImageRepository(process.env, independent);
   const objects = objectImageStore(cloudbaseObjectBucket(process.env), repository.storageUid);
-  // More items wait on providers at once than the 512 MB function could decode and encode at
-  // once (a 4K original alone needs about 200 MB), so image persistence takes turns.
+  // Image persistence is the memory-heavy step (a 4K original alone needs about 200 MB of the
+  // 512 MB function), so at most two items decode and encode at once however many are in flight.
   const encode = slots(2);
   const store: typeof objects = {
     ...objects,

@@ -128,9 +128,14 @@ test("reconnect uses the last cursor, calibrates missed state and keeps a single
 
 test("short-lived streams keep exponential backoff after ready", async ({ page }) => {
   await mockImageEvents(page);
+  let checks = 0;
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname === "/api/v1/image-models") checks++;
+  });
   await page.goto("/create");
   const html = page.locator("html");
   await expect(html).toHaveAttribute("data-sse-active", "1");
+  const baseline = checks;
   await page.clock.install();
   const disconnect = () =>
     page.evaluate(() =>
@@ -145,11 +150,47 @@ test("short-lived streams keep exponential backoff after ready", async ({ page }
   await expect(html).toHaveAttribute("data-sse-active", "0");
   await page.clock.runFor(1100);
   await expect(html).toHaveAttribute("data-sse-active", "1");
+  expect(checks).toBe(baseline);
   await disconnect();
   await page.clock.runFor(2100);
   await expect(html).toHaveAttribute("data-sse-active", "0");
+  // The third failure in a row re-checks the capability once; events stay offered.
+  await expect.poll(() => checks).toBe(baseline + 1);
   await page.clock.runFor(2100);
   await expect(html).toHaveAttribute("data-sse-active", "1");
+});
+
+test("a failing stream stops reconnecting once the server no longer offers events", async ({
+  page,
+}) => {
+  let offered = true,
+    checks = 0;
+  await mockImageEvents(page, () => offered);
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname === "/api/v1/image-models") checks++;
+  });
+  await page.goto("/create");
+  const html = page.locator("html");
+  await expect(html).toHaveAttribute("data-sse-active", "1");
+  const baseline = checks;
+  // The server stops offering events while the tab still holds the capability it loaded.
+  offered = false;
+  const disconnect = () =>
+    page.evaluate(() =>
+      window.dispatchEvent(new CustomEvent("fixture:sse", { detail: { type: "error" } })),
+    );
+  // The first two failures reconnect after 1 s and 2 s without asking the server again.
+  for (const total of ["2", "3"]) {
+    await disconnect();
+    await expect(html).toHaveAttribute("data-sse-total", total);
+  }
+  expect(checks).toBe(baseline);
+  await disconnect();
+  await expect.poll(() => checks).toBe(baseline + 1);
+  // Wait past the 4-second reconnect that would otherwise follow the third failure.
+  await page.waitForTimeout(5000);
+  await expect(html).toHaveAttribute("data-sse-active", "0");
+  await expect(html).toHaveAttribute("data-sse-total", "3");
 });
 
 test("unavailable push does not start business polling", async ({ page }) => {
