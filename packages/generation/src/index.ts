@@ -18,6 +18,7 @@ export interface GenerationProvider {
 }
 
 export * from "./configured-provider";
+export { createPlannerWebReader, PlannerWebError, plannerUrls } from "./planner-web";
 export * from "./provider-adapters";
 export * from "./provider-errors";
 export * from "./provider-secrets";

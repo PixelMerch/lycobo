@@ -271,6 +271,9 @@ export function imageRoutes(deps: ImageApiDependencies) {
             async (text) => {
               await stream.writeSSE({ event: "delta", data: JSON.stringify({ text }) });
             },
+            async (stage) => {
+              await stream.writeSSE({ event: "status", data: JSON.stringify({ stage }) });
+            },
           );
           if (!plan) throw new Error("UNAVAILABLE");
           await stream.writeSSE({ event: "complete", data: JSON.stringify(plan) });

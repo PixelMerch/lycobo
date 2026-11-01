@@ -196,10 +196,11 @@ test("streams read-only plan cards before the saved plan becomes editable", asyn
                 encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
               );
             emit("started", {});
-            setTimeout(
-              () => emit("delta", { text: '{"items":[{"title":"橙色款","prompt":"保留商品结构' }),
-              100,
-            );
+            emit("status", { stage: "reading" });
+            setTimeout(() => {
+              emit("status", { stage: "planning" });
+              emit("delta", { text: '{"items":[{"title":"橙色款","prompt":"保留商品结构' });
+            }, 1000);
             setTimeout(() => {
               emit("delta", { text: '，换成橙色，自然光场景。"}]}' });
               emit("complete", {
@@ -221,6 +222,7 @@ test("streams read-only plan cards before the saved plan becomes editable", asyn
   await page.getByRole("button", { name: "生成计划", exact: true }).click();
   const pending = page.getByRole("region", { name: "正在生成套图计划", exact: true });
   await expect(pending).toBeVisible();
+  await expect(pending).toContainText("DeepSeek 正在读取网页内容");
   await expect(pending).toContainText("保留商品结构");
   await expect(pending.getByRole("textbox")).toHaveCount(0);
   await expect(pending.getByRole("button", { name: /开始生成/ })).toBeDisabled();
@@ -228,4 +230,27 @@ test("streams read-only plan cards before the saved plan becomes editable", asyn
   await expect(ready.getByRole("textbox", { name: "方案 1 提示词", exact: true })).toHaveValue(
     "保留商品结构，换成橙色，自然光场景。",
   );
+});
+
+test("failed webpage reading keeps the draft and permits a fresh retry", async ({ page }) => {
+  await page.route("**/api/v1/variation-plans", async (route) => {
+    const input = route.request().postDataJSON();
+    const plan = { id: crypto.randomUUID(), status: "failed", ...input, items: [] };
+    await route.fulfill({
+      contentType: "text/event-stream",
+      body: `event: status\ndata: {"stage":"link_failed"}\n\nevent: complete\ndata: ${JSON.stringify(plan)}\n\n`,
+    });
+  });
+  await page.goto("/commerce/smart-variation");
+  const description = page.getByRole("textbox", { name: "创作需求", exact: true });
+  await description.fill("参考 https://shop.example/item 生成一张图");
+  await page.getByRole("button", { name: "生成计划", exact: true }).click();
+  await expect(page.locator(".variation-plan-stream-status")).toContainText("网页读取未完成");
+  await expect(description).toHaveValue("参考 https://shop.example/item 生成一张图");
+  await expect(page.getByRole("button", { name: /开始生成/ })).toBeDisabled();
+  expect(
+    await page.evaluate(() =>
+      Object.keys(sessionStorage).filter((key) => key.startsWith("lycobo-variation-plan:")),
+    ),
+  ).toEqual([]);
 });

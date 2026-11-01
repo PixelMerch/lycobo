@@ -111,6 +111,7 @@ export function SmartVariationPage() {
         onOpenChange={setPlanOpen}
         analyzing={analysis.isPending}
         streamText={analysis.streamText}
+        readingWeb={analysis.readingWeb}
         analysisError={analysis.error?.message}
       />
     </>

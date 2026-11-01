@@ -1,6 +1,10 @@
 import { variationPlanSchema } from "@lycoboai/contracts";
 
-export async function readPlanResponse(response: Response, onText: (text: string) => void) {
+export async function readPlanResponse(
+  response: Response,
+  onText: (text: string) => void,
+  onStatus?: (stage: "reading" | "planning" | "link_failed") => void,
+) {
   if (!response.headers.get("content-type")?.includes("text/event-stream"))
     return variationPlanSchema.parse(await response.json());
   const reader = response.body?.getReader();
@@ -24,6 +28,14 @@ export async function readPlanResponse(response: Response, onText: (text: string
         if (line.startsWith("event:")) event = line.slice(6).trim();
         if (!line.startsWith("data:")) continue;
         const value: unknown = JSON.parse(line.slice(5));
+        if (
+          event === "status" &&
+          value &&
+          typeof value === "object" &&
+          "stage" in value &&
+          (value.stage === "reading" || value.stage === "planning" || value.stage === "link_failed")
+        )
+          onStatus?.(value.stage);
         if (event === "delta") {
           if (
             !value ||

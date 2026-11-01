@@ -16,6 +16,7 @@ export function useVariationPlan() {
   const client = useQueryClient();
   const draft = useSmartVariationDraft();
   const locked = useRef(false);
+  const [readingWeb, setReadingWeb] = useState(false);
   const [streamText, setStreamText] = useState("");
   const mutationKey = ["variation-plan", session.data?.organizationId, session.data?.userId];
   const activeRequests = useIsMutating({ mutationKey });
@@ -33,6 +34,7 @@ export function useVariationPlan() {
     retry: false,
     onMutate: () => {
       setStreamText("");
+      setReadingWeb(false);
       return { description: draft.description, references: draft.references };
     },
     mutationFn: async () => {
@@ -72,11 +74,21 @@ export function useVariationPlan() {
         },
         90000,
       );
-      const plan = await readPlanResponse(response, (text) =>
-        setStreamText((current) => current + text),
+      let linkFailed = false;
+      const plan = await readPlanResponse(
+        response,
+        (text) => setStreamText((current) => current + text),
+        (stage) => {
+          setReadingWeb(stage === "reading");
+          linkFailed = stage === "link_failed";
+        },
       );
       if (plan.status === "running") throw new Error("分析仍在处理，请稍后点击继续获取计划");
       sessionStorage.removeItem(storageKey);
+      if (linkFailed)
+        throw new Error(
+          "网页读取未完成：请使用最多 3 个公开网页链接，或移除链接并粘贴商品信息后重试",
+        );
       if (plan.status !== "ready")
         throw new Error(
           plan.status === "uncertain"
@@ -111,12 +123,14 @@ export function useVariationPlan() {
     onError: (error) => toast.danger(error.message),
     onSettled: () => {
       locked.current = false;
+      setReadingWeb(false);
     },
   });
   const busy = mutation.isPending || activeRequests > 0;
   return {
     ...mutation,
     streamText,
+    readingWeb,
     isPending: busy,
     mutate: (...args: Parameters<typeof mutation.mutate>) => {
       if (locked.current || busy) return;
