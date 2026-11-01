@@ -22,4 +22,4 @@ Docker 开发可使用 `docker compose up --build`，对外前端端口8081；�
 
 日常运行 `pnpm check`。隔离集成和手动浏览器检查见 [测试说明](testing.md)。
 
-2026-11-01 已从 CloudBase 同步业务库到本地 Docker，范围、验证、备份及本地生图关闭状态见 [本地数据库同步记录](cloudbase-local-database-sync.md)。
+2026-11-01 已从 CloudBase 同步业务库到本地 Docker，范围、验证、备份及隔离复制任务后开启本地生图的状态见 [本地数据库同步记录](cloudbase-local-database-sync.md)。
