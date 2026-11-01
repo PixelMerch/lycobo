@@ -11,6 +11,7 @@ import {
 } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
 import { processConfiguredImage } from "./configured-image-processor";
+import { providerReferenceBytes } from "./provider-references";
 
 export type ImageProcessorDependencies = {
   repository: ImageRuntimeRepository;
@@ -48,7 +49,7 @@ export async function processImageItem(itemId: string, deps: ImageProcessorDepen
     for (const id of job.input.referenceAssetIds) {
       const asset = await deps.repository.asset(job, id);
       if (!asset) throw new VakvError("REFERENCE_NOT_FOUND", false);
-      references.push(await deps.store.read(asset));
+      references.push(await providerReferenceBytes(deps.store, asset, !!job.input.localEdit));
     }
     timing("reference_read", referencesStarted);
     submitted = true;

@@ -6,6 +6,7 @@ import {
 } from "@lycoboai/contracts";
 import { normalizeGeminiReply } from "./gemini-protocol";
 import { ImageProviderError } from "./provider-errors";
+import { referenceType } from "./reference-type";
 
 /** SDK-style /v1 base URLs and root origins both resolve to a single API origin. */
 export function imageProviderOrigin(value: string) {
@@ -57,12 +58,14 @@ export const imageProtocolAdapters: Record<ProviderSnapshot["adapter"], ImagePro
         return { body: JSON.stringify(payload), headers: { "Content-Type": "application/json" } };
       const body = new FormData();
       for (const [k, v] of Object.entries(payload)) body.set(k, String(v));
-      for (const bytes of references)
+      for (const bytes of references) {
+        const type = referenceType(bytes);
         body.append(
           "image[]",
-          new Blob([new Uint8Array(bytes)], { type: "image/png" }),
-          "reference.png",
+          new Blob([new Uint8Array(bytes)], { type: type.mime }),
+          `reference.${type.extension}`,
         );
+      }
       return { body, headers: {} };
     },
   },
@@ -78,7 +81,10 @@ export const imageProtocolAdapters: Record<ProviderSnapshot["adapter"], ImagePro
             parts: [
               { text: input.prompt },
               ...references.map((bytes) => ({
-                inlineData: { mimeType: "image/png", data: Buffer.from(bytes).toString("base64") },
+                inlineData: {
+                  mimeType: referenceType(bytes).mime,
+                  data: Buffer.from(bytes).toString("base64"),
+                },
               })),
             ],
           },
@@ -106,7 +112,7 @@ export const imageProtocolAdapters: Record<ProviderSnapshot["adapter"], ImagePro
         ...(references.length
           ? {
               images: references.map((bytes) => ({
-                image_url: `data:image/png;base64,${Buffer.from(bytes).toString("base64")}`,
+                image_url: `data:${referenceType(bytes).mime};base64,${Buffer.from(bytes).toString("base64")}`,
               })),
             }
           : {}),

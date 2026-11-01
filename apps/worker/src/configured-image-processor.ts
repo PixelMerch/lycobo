@@ -10,6 +10,7 @@ import {
   textileItemInput,
 } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
+import { providerReferenceBytes } from "./provider-references";
 export async function processConfiguredImage(
   job: ClaimedImage,
   deps: {
@@ -46,7 +47,7 @@ export async function processConfiguredImage(
       for (const id of job.input.referenceAssetIds) {
         const asset = await deps.repository.asset(job, id);
         if (!asset) throw new ImageProviderError("REFERENCE_NOT_FOUND", false);
-        references.push(await deps.store.read(asset));
+        references.push(await providerReferenceBytes(deps.store, asset, !!job.input.localEdit));
       }
     sent = true;
     const result = await configuredProviderCall(

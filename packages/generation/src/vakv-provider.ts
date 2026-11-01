@@ -12,6 +12,7 @@ import {
 import { z } from "zod";
 import { imageProviderOrigin } from "./provider-adapters";
 import { ImageProviderError as VakvError } from "./provider-errors";
+import { referenceType } from "./reference-type";
 
 export { ImageProviderError as VakvError } from "./provider-errors";
 
@@ -102,12 +103,14 @@ export async function generateVakvImage(
       quality: input.quality ?? "medium",
     }))
       form.set(key, value);
-    for (const bytes of references)
+    for (const bytes of references) {
+      const type = referenceType(bytes);
       form.append(
         "image[]",
-        new Blob([new Uint8Array(bytes)], { type: "image/png" }),
-        "reference.png",
+        new Blob([new Uint8Array(bytes)], { type: type.mime }),
+        `reference.${type.extension}`,
       );
+    }
     body = form;
   } else
     body = JSON.stringify({
