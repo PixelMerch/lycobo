@@ -587,6 +587,8 @@ export async function verifyManagedModels(
   assert.equal((await repository.get(protocolOwner, protocolJob.id))?.status, "succeeded");
   const geminiReference = await store.put(geminiOwner, png);
   await repository.addReference(geminiOwner, geminiReference);
+  // Providers receive the stored (re-encoded) reference, not the uploaded bytes.
+  const geminiReferenceData = Buffer.from(await store.read(geminiReference)).toString("base64");
   for (const asyncMode of [false, true]) {
     const nativeInput = imageGenerationInputSchema.parse({
       model: geminiSettings.model,
@@ -613,7 +615,7 @@ export async function verifyManagedModels(
         );
         const payload = JSON.parse(String(init.body));
         assert.equal(payload.generationConfig.imageConfig.imageSize, "4K");
-        assert.equal(payload.contents[0].parts[1].inlineData.data, png.toString("base64"));
+        assert.equal(payload.contents[0].parts[1].inlineData.data, geminiReferenceData);
         assert.equal(payload.n, undefined);
         if (asyncMode)
           return Response.json(
@@ -678,6 +680,7 @@ export async function verifyManagedModels(
     });
     const grokReference = await store.put(grokOwner, png);
     await repository.addReference(grokOwner, grokReference);
+    const grokReferenceData = Buffer.from(await store.read(grokReference)).toString("base64");
     for (const edit of [false, true]) {
       const grokInput = imageGenerationInputSchema.parse({
         model: grokModel,
@@ -698,10 +701,7 @@ export async function verifyManagedModels(
           assert.equal(payload.quality, undefined);
           assert.equal(payload.n, 1);
           if (edit) {
-            assert.equal(
-              payload.images[0].image_url,
-              `data:image/png;base64,${png.toString("base64")}`,
-            );
+            assert.equal(payload.images[0].image_url, `data:image/png;base64,${grokReferenceData}`);
             return Response.json(
               {
                 task_id: "grok-fixture",
