@@ -1,7 +1,7 @@
 /* Each ecommerce tool shows its own history in the shared workspace. */
 .unified-workspace {
   position: relative;
-  --workspace-toolbar-height: 52px;
+  --workspace-toolbar-height: 68px;
   --workspace-view-switch-height: 0px;
   grid-template-rows: var(--workspace-toolbar-height) auto;
 }
@@ -23,18 +23,35 @@
   :is(.reference-picker, .prompt-field, .model-field, .parameter-group) {
   background: transparent;
 }
-.workspace-composer-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-  padding: 4px 8px;
-  font-size: 18px;
-  line-height: 26px;
-  font-weight: 500;
-  color: var(--foreground);
-  flex-shrink: 0;
-  animation: workspace-tool-enter 160ms ease-out;
+/* Each tool carries one accent: the current dock tile and the panel hero tile use it. */
+:is(
+  .unified-workspace,
+  .workspace-tool-shortcut,
+  .workspace-composer-hero,
+  .workspace-tool-symbol
+)[data-tool="create"] {
+  --tool-accent: #a8ff00;
+  --tool-ink: #142000;
+}
+:is(
+  .unified-workspace,
+  .workspace-tool-shortcut,
+  .workspace-composer-hero,
+  .workspace-tool-symbol
+)[data-tool="textile"] {
+  --tool-accent: #ffb27a;
+  --tool-ink: #3d1a00;
+  --tool-soft: #ffcfa8;
+}
+:is(
+  .unified-workspace,
+  .workspace-tool-shortcut,
+  .workspace-composer-hero,
+  .workspace-tool-symbol
+)[data-tool="variation"] {
+  --tool-accent: #4fe3b0;
+  --tool-ink: #00281b;
+  --tool-soft: #9ff0d0;
 }
 .workspace-tool-symbol {
   display: inline-flex;
@@ -45,10 +62,68 @@
   flex-shrink: 0;
   color: inherit;
 }
-@keyframes workspace-tool-enter {
+/* The panel opens with the tool's example photo; it bleeds to the panel's rounded top edge. */
+.workspace-composer-hero {
+  position: relative;
+  isolation: isolate;
+  flex-shrink: 0;
+  height: 148px;
+  margin: -12px -12px 0;
+  overflow: hidden;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  background: #121216;
+  animation: workspace-hero-enter 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.workspace-composer-hero-image {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.workspace-composer-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, #0f0f1200 28%, #0f0f12cc 100%);
+}
+.workspace-composer-hero-copy {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 14px;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  color: #ffffff;
+}
+.workspace-composer-hero .workspace-tool-symbol {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--tool-accent);
+  color: var(--tool-ink);
+}
+.workspace-composer-title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  color: #ffffff;
+}
+.workspace-composer-hero p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: #ffffffd9;
+}
+@keyframes workspace-hero-enter {
   from {
     opacity: 0;
-    transform: translateY(2px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -56,31 +131,45 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .workspace-composer-title {
+  .workspace-composer-hero {
     animation: none;
   }
 }
+@media (max-width: 767px) {
+  .workspace-composer-hero {
+    height: 124px;
+  }
+}
+/* The tool switcher is one dock: icon tile, name and a short purpose per tool. */
 .workspace-tool-bar {
   display: flex;
   align-items: center;
   gap: 6px;
+  width: fit-content;
+  max-width: 100%;
   min-width: 0;
-  padding: 0;
+  box-sizing: border-box;
+  padding: 6px;
+  border-radius: 18px;
+  background: #141417;
+  box-shadow: inset 0 0 0 1px #ffffff0f;
   overflow-x: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+}
+.workspace-tool-bar::-webkit-scrollbar {
+  display: none;
 }
 .workspace-tool-shortcut.button {
   position: relative;
   flex-shrink: 0;
-  height: 40px;
-  min-height: 40px;
-  padding: 0 12px;
-  gap: 8px;
+  justify-content: flex-start;
+  height: 56px;
+  min-height: 56px;
+  padding: 8px 16px 8px 8px;
+  gap: 10px;
   border: 0;
-  border-radius: 12px;
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 500;
+  border-radius: 14px;
+  text-align: left;
   color: var(--muted);
   background: transparent;
   white-space: nowrap;
@@ -96,25 +185,49 @@
   color: var(--foreground);
   background: #ffffff14;
 }
+.workspace-tool-shortcut .workspace-tool-symbol {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #202026;
+  color: #d9d7de;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+.workspace-tool-shortcut.button[aria-current="page"] .workspace-tool-symbol {
+  background: var(--tool-accent);
+  color: var(--tool-ink);
+}
+.workspace-tool-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+.workspace-tool-name {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.workspace-tool-note {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.workspace-tool-divider {
+  flex-shrink: 0;
+  width: 1px;
+  height: 32px;
+  margin: 0 4px;
+  background: #ffffff14;
+}
 @media (prefers-reduced-motion: reduce) {
-  .workspace-tool-shortcut.button {
+  .workspace-tool-shortcut.button,
+  .workspace-tool-shortcut .workspace-tool-symbol {
     transition: none;
   }
-}
-@media (max-width: 767px) {
-  .workspace-tool-shortcut.button {
-    height: 44px;
-    min-height: 44px;
-  }
-}
-.workspace-tool-more.button {
-  flex-shrink: 0;
-  color: var(--muted);
-  background: transparent;
-}
-.workspace-tool-more.button[data-hovered="true"] {
-  color: var(--foreground);
-  background: #ffffff0a;
 }
 .workspace-history-heading {
   display: flex;
@@ -484,12 +597,6 @@
   }
 }
 
-@media (max-width: 767px) {
-  .workspace-tool-shortcut.button {
-    min-height: 44px;
-  }
-}
-
 /* The tool row belongs to the workspace, below the account header. */
 .unified-workspace > .composer-panel {
   grid-column: 1;
@@ -536,6 +643,131 @@
   align-items: center;
   min-height: var(--workspace-toolbar-height);
   margin-bottom: 12px;
+}
+/* Every task is one full-width row card, paired with one thumbnail in the rail. Images
+ * share a five-column tile grid; a single result keeps its own ratio up to 400px, and
+ * batches past ten images fold to two rows. */
+.unified-workspace .generation-history {
+  gap: 16px;
+}
+.unified-workspace .generation-job {
+  padding: 16px;
+  border: 0;
+  border-radius: 20px;
+  background: #17171b;
+}
+/* Task facts read as one quiet line; spacing replaces the divider bars. */
+.unified-workspace .generation-job .generation-meta {
+  gap: 2px 12px;
+}
+.unified-workspace .generation-job .generation-meta > div {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+.unified-workspace .generation-job .generation-meta > div + div::before {
+  display: none;
+}
+.unified-workspace:is([data-tool="textile"], [data-tool="variation"]) .generation-job .model-tag {
+  background: color-mix(in srgb, var(--tool-accent) 15%, transparent);
+  color: var(--tool-soft);
+  font-weight: 600;
+}
+/* The prompt, then one tool row: copy and the task's reference thumbnails. */
+.unified-workspace .history-prompt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 8px;
+}
+.unified-workspace .history-prompt > .collapsible-text {
+  flex-basis: 100%;
+}
+.unified-workspace .generation-job .generation-prompt {
+  color: #c8c8c8;
+  font-size: 14px;
+  line-height: 22px;
+}
+.unified-workspace .history-prompt > .generation-output-thumbnails {
+  gap: 4px;
+  margin: 0;
+}
+.unified-workspace .history-prompt .generation-output-thumbnail {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+}
+.unified-workspace .generation-results[data-count] {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  justify-content: stretch;
+  gap: 8px;
+}
+.unified-workspace .generation-results[data-count="1"] {
+  grid-template-columns: minmax(0, 400px);
+  justify-content: start;
+}
+.unified-workspace .generation-results :is(.generation-media-open.button, .generation-placeholder) {
+  border-radius: 12px;
+}
+.unified-workspace .generation-placeholder:not(.generation-failed) {
+  border: 0;
+  background: #1c1c21;
+}
+.unified-workspace .generation-results:not([data-count="1"]) .generation-failure-message {
+  font-size: 12px;
+  line-height: 18px;
+}
+/* Per-image labels (view names, variation titles) sit on the tile's top-left corner;
+ * a failed tile starts its note below the label. */
+.unified-workspace .generation-results .textile-result-view {
+  top: 6px;
+  left: 6px;
+  translate: none;
+  max-width: calc(100% - 12px);
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #0f0f12cc;
+  color: #f3f1f7;
+}
+.unified-workspace .generation-results > div:has(> .textile-result-view) .generation-failed {
+  padding: 30px 8px 8px;
+}
+.history-batch-progress {
+  margin: 0 0 0 auto;
+  color: #d9d7de;
+  font-size: 12px;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.history-batch-progress > span {
+  white-space: nowrap;
+}
+.history-batch-progress + .history-task-actions {
+  margin-left: 0;
+}
+.history-batch-toggle.button {
+  justify-self: center;
+  gap: 6px;
+  color: #d9d7de;
+  background: #202026;
+}
+.history-batch-toggle.button[data-hovered="true"] {
+  color: #ffffff;
+  background: #2a2a31;
+}
+@media (max-width: 767px) {
+  .history-batch-progress {
+    flex: 1 1 0;
+    min-width: 0;
+    margin-left: 0;
+  }
+  .history-batch-progress + .history-task-actions {
+    margin-left: auto;
+  }
+}
+@media (max-width: 479px) {
+  .unified-workspace .generation-results[data-count]:not([data-count="1"]) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @media (max-width: 1300px) {
   .unified-workspace > .composer-panel {

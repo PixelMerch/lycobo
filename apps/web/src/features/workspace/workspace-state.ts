@@ -11,6 +11,9 @@ export const workspaceTools = [
     category: "主图制作",
     image: "/studio/models/image-2-1.webp",
     description: "场景主图 · 白底主图 · 活动主图",
+    caption: "场景 · 白底 · 活动",
+    hero: "/studio/tool-heroes/create.webp",
+    summary: "一张图讲清卖点：场景、白底、活动主图",
   },
   {
     id: "textile",
@@ -19,6 +22,9 @@ export const workspaceTools = [
     category: "套图与裂变",
     image: "/studio/textile-views/front.webp",
     description: "同一商品，多视角展示",
+    caption: "多视角套图",
+    hero: "/studio/tool-heroes/textile.webp",
+    summary: "上传主图，选择视角，一次生成整套",
   },
   {
     id: "variation",
@@ -27,6 +33,9 @@ export const workspaceTools = [
     category: "套图与裂变",
     image: "/studio/models/image-2-3.webp",
     description: "确认逐张方案，再批量生成",
+    caption: "先确认方案",
+    hero: "/studio/tool-heroes/variation.webp",
+    summary: "先出逐张方案，确认后批量生成",
   },
 ] as const;
 export const toolForPath = (path: string) =>

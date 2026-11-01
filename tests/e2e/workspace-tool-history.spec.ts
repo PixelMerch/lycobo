@@ -57,9 +57,11 @@ for (const width of [390, 1440]) {
     await page.evaluate(() => document.fonts.ready);
     await page.mouse.move(0, 0);
     const allTools = page.getByRole("button", { name: "全部工具", exact: true });
+    // The dock names every entry on screen, so hovering adds no tooltip.
+    await expect(allTools).toContainText("视频即将开放");
     await allTools.hover();
     await page.screenshot({ path: `/tmp/lycobo-tabs-hover-${width}.png` });
-    await expect(page.getByRole("tooltip")).toHaveText("全部工具");
+    await expect(page.getByRole("tooltip")).toHaveCount(0);
     await allTools.click();
     await expect(page.getByRole("dialog", { name: "选择工具" })).toBeVisible();
     await page.keyboard.press("Escape");
@@ -117,10 +119,10 @@ for (const width of [390, 1440]) {
     ).toHaveAttribute("aria-current", "page");
     await expect(page.locator(".composer-panel")).toContainText("详情图");
     await expect(page.locator(".composer-panel")).toContainText("裂变类型");
-    await expect(page.locator(".workspace-composer-title .workspace-tool-symbol")).toHaveAttribute(
-      "data-tool",
-      "textile",
-    );
+    // The panel hero follows the tool: its accent tile and its own example photo.
+    const hero = page.locator(".workspace-composer-hero");
+    await expect(hero.locator(".workspace-tool-symbol")).toHaveAttribute("data-tool", "textile");
+    await expect(hero.locator("img")).toHaveAttribute("src", "/studio/tool-heroes/textile.webp");
     await expect(page.locator(".generation-history")).toContainText("textile记录");
     await expect(page.locator(".generation-history")).not.toContainText("create记录");
     if (width >= 768) {

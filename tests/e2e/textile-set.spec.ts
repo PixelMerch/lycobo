@@ -181,7 +181,12 @@ for (const width of [2560, 1440, 390]) {
     ).toBeVisible({
       visible: width >= 768,
     });
-    await page.getByRole("button", { name: "选择裂变类型", exact: true }).click();
+    const opener = page.getByRole("button", { name: "选择裂变类型", exact: true });
+    // On a phone the panel hero can leave the opener just below the fold. Let that scroll
+    // dispatch before opening, because the non-modal popover closes when the page scrolls.
+    await opener.scrollIntoViewIfNeeded();
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+    await opener.click();
     const dialog = page.getByRole("dialog", { name: "裂变类型", exact: true });
     if (width === 2560) {
       await expect

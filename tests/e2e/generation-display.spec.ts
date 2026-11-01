@@ -71,8 +71,9 @@ test("running images animate with the model icon and stop for reduced motion", a
       width: element.getBoundingClientRect().width,
     })),
   );
-  expect(boxes[0]?.top).toBe(boxes[2]?.top);
-  expect(boxes[3]?.top).toBeGreaterThan(boxes[0]?.top ?? 0);
+  // The five-column tile grid keeps a four-image task on one row of equal tiles.
+  expect(new Set(boxes.map((box) => box.top)).size).toBe(1);
+  expect(new Set(boxes.map((box) => Math.round(box.width))).size).toBe(1);
   const borderAngle = () =>
     placeholders
       .first()

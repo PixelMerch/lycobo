@@ -14,13 +14,20 @@ export function WorkspaceToolSymbol({ tool }: { tool: ToolId }) {
   );
 }
 
+/** The panel opens with the current tool's example photo, accent, name and purpose. */
 export function WorkspaceComposerTitle() {
   const { pathname } = useLocation();
   const tool = toolForPath(pathname);
   return (
-    <h2 key={tool.id} className="workspace-composer-title">
-      <WorkspaceToolSymbol tool={tool.id} />
-      {tool.name}
-    </h2>
+    <header key={tool.id} className="workspace-composer-hero" data-tool={tool.id}>
+      <img className="workspace-composer-hero-image" src={tool.hero} alt="" decoding="async" />
+      <div className="workspace-composer-hero-copy">
+        <WorkspaceToolSymbol tool={tool.id} />
+        <div>
+          <h2 className="workspace-composer-title">{tool.name}</h2>
+          <p>{tool.summary}</p>
+        </div>
+      </div>
+    </header>
   );
 }

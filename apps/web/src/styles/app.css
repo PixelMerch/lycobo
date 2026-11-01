@@ -2882,9 +2882,10 @@ p.home-hero-kicker {
   }
 }
 
+/* Centered under the regenerate action of the rightmost history card (16px card inset). */
 .back-to-top-button {
   position: fixed;
-  right: calc(var(--content-padding) + 88px + 34px);
+  right: calc(var(--content-padding) + 88px + 34px + 16px);
   bottom: max(20px, env(safe-area-inset-bottom));
   z-index: 12;
   width: 48px;
@@ -2909,17 +2910,17 @@ p.home-hero-kicker {
 }
 @media (min-width: 1700px) {
   .back-to-top-button {
-    right: calc(var(--content-padding) + 96px + 34px);
+    right: calc(var(--content-padding) + 96px + 34px + 16px);
   }
 }
 @media (max-width: 1300px) {
   .back-to-top-button {
-    right: calc(var(--content-padding) + 22px);
+    right: calc(var(--content-padding) + 22px + 16px);
   }
 }
 @media (max-width: 767px) {
   .back-to-top-button {
-    right: calc(var(--content-padding) + 26px);
+    right: calc(var(--content-padding) + 26px + 16px);
   }
 }
 

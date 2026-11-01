@@ -7,10 +7,9 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
-  Tooltip,
 } from "@heroui/react";
-import { IconArrowUpRight, IconDots, IconSearch, IconVideo } from "@tabler/icons-react";
-import { useState } from "react";
+import { IconArrowUpRight, IconLayoutGrid, IconSearch, IconVideo } from "@tabler/icons-react";
+import { useId, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
@@ -22,6 +21,7 @@ export function WorkspaceToolPicker() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const current = toolForPath(pathname);
+  const noteId = useId();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("全部工具");
@@ -41,6 +41,9 @@ export function WorkspaceToolPicker() {
             size="sm"
             variant="tertiary"
             className="workspace-tool-shortcut"
+            data-tool={tool.id}
+            aria-label={tool.name}
+            aria-describedby={`${noteId}-${tool.id}`}
             aria-current={current.id === tool.id ? "page" : false}
             onPress={() => {
               shareProductReference(pathname, tool.path);
@@ -48,24 +51,35 @@ export function WorkspaceToolPicker() {
             }}
           >
             <WorkspaceToolSymbol tool={tool.id} />
-            {tool.name}
+            <span className="workspace-tool-label">
+              <span className="workspace-tool-name">{tool.name}</span>
+              <span className="workspace-tool-note" id={`${noteId}-${tool.id}`}>
+                {tool.caption}
+              </span>
+            </span>
           </Button>
         ))}
-        <Tooltip delay={250}>
-          <Button
-            className="workspace-tool-more"
-            size="sm"
-            variant="tertiary"
-            isIconOnly
-            aria-label="全部工具"
-            onPress={() => setOpen(true)}
-            aria-haspopup="dialog"
-            aria-expanded={open}
-          >
-            <UiIcon icon={IconDots} />
-          </Button>
-          <Tooltip.Content placement="bottom">全部工具</Tooltip.Content>
-        </Tooltip>
+        <span className="workspace-tool-divider" aria-hidden="true" />
+        <Button
+          className="workspace-tool-shortcut workspace-tool-more"
+          size="sm"
+          variant="tertiary"
+          aria-label="全部工具"
+          aria-describedby={`${noteId}-more`}
+          onPress={() => setOpen(true)}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+        >
+          <span className="workspace-tool-symbol" aria-hidden="true">
+            <UiIcon icon={IconLayoutGrid} size="navigation" />
+          </span>
+          <span className="workspace-tool-label">
+            <span className="workspace-tool-name">全部工具</span>
+            <span className="workspace-tool-note" id={`${noteId}-more`}>
+              视频即将开放
+            </span>
+          </span>
+        </Button>
       </nav>
       <Modal isOpen={open} onOpenChange={setOpen}>
         <Modal.Backdrop className="workspace-tools-backdrop">
