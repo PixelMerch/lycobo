@@ -28,11 +28,8 @@ export function objectImageStore(bucket: ImageObjectBucket, resolveUid?: Storage
       const sha256 = createHash("sha256").update(image.data).digest("hex");
       await bucket.put(key, image.data, { httpMetadata: { contentType: "image/png" } });
       // Save the paid original first; failed variants must never cause provider resubmission.
-      const thumb = await sharp(image.data)
-        .resize({ width: 512, height: 512, fit: "inside", withoutEnlargement: true })
-        .png()
-        .toBuffer();
-      await bucket.put(thumbnailKey(key), thumb, { httpMetadata: { contentType: "image/png" } });
+      // Pages only show the WebP variants. The PNG thumbnail (about 16 times the WebP size)
+      // serves the variation planner alone, so thumbnail() creates it on first use.
       for (const variant of ["thumbnail", "preview"] as const) {
         const size = variant === "thumbnail" ? 512 : 1600;
         const bytes = await sharp(image.data)

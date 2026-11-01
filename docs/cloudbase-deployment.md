@@ -6,7 +6,7 @@
 
 ## GitHub 自动发布
 
-`.github/workflows/deploy-cloudbase.yml` 替代已删除的 Cloudflare 发布工作流：main 的 push CI 成功 → 检出该 SHA → 确认仍为最新 main → 冻结安装依赖 → `pnpm check` → 准备前后端包 → 更新已配置的三个云函数代码 → 验证 API → 发布共享静态托管。dev 和 PR 不发布；手动触发也只允许 main，且必须有该 SHA 对应的成功 push CI。
+`.github/workflows/deploy-cloudbase.yml` 替代已删除的 Cloudflare 发布工作流：main 的 push CI 成功 → 检出该 SHA → 确认仍为最新 main → 冻结安装依赖 → 构建前端（同一提交已在 CI 通过 `pnpm check`，发布时不再重复）→ 准备前后端包 → 更新已配置的三个云函数代码 → 验证 API → 发布共享静态托管。dev 和 PR 不发布；手动触发也只允许 main，且必须有该 SHA 对应的成功 push CI。
 
 发布前再次检查 main，避免构建期间已有新提交却发布旧版本。同一环境的发布串行执行，不自动运行完整浏览器 E2E，不迁移数据库或上传业务运行密钥。
 
@@ -35,7 +35,7 @@ GitHub 中的两个 Secret 已通过实际 MCP 认证和函数查询；GitHub �
 
 ## 主站私有图片
 
-主站使用 CloudBase PG 原生存储 `lycobo-images` 私有桶，不使用旧 NoSQL COS 接口。[追加迁移](../cloudbase/migrations/20261031223300_private_image_storage.sql) 限定单对象 32 MiB、PNG/WebP。原图、兼容 PNG 缩略图、WebP 预览及缩略图保留原对象 key 约定。
+主站使用 CloudBase PG 原生存储 `lycobo-images` 私有桶，不使用旧 NoSQL COS 接口。[追加迁移](../cloudbase/migrations/20261031223300_private_image_storage.sql) 限定单对象 32 MiB、PNG/WebP。原图、兼容 PNG 缩略图、WebP 预览及缩略图保留原对象 key 约定。新生成和上传的图片只写入原图与两个 WebP 变体；兼容 PNG 缩略图（实测平均 497 KiB，是 WebP 缩略图的 16 倍）只有智能裂变规划会读取，首次读取时从原图生成并保存。
 
 服务端配置如下，禁止使用 VITE_ 前缀：
 
@@ -113,5 +113,10 @@ GitHub 使用长期 SecretId/SecretKey，不能调用仅支持临时登录态的
 - 没有输出和参考图的任务不再查询图片位置，生成中每次轮询只需鉴权与任务两次数据库调用。
 - API 提交或重试成功后同步唤醒消费者；消费者只用运行角色向 SCF 排队一次异步 drain，同步调用不访问数据库、不执行付费请求。drain 结束时仍有延后读取或剩余意向会自行续排，生成不再等待下一次定时器。
 - 由唤醒触发的 drain 跳过事件保留清理和过期参考图清理，这两项留给定时或手动运行。
+- 原图保存为启用自适应行过滤的无损 PNG：照片类样图小 11–25%，每百万像素约多 10–20 ms 编码；像素与格式不变。
+- 消费者同时让 4 个图片项等待服务商（多图任务的计费时长约减半），图片解码、编码与保存仍最多 2 个并行，保证 4K 输出不超过 512 MB 内存。
+- 会话校验不在实例内缓存：停用账号和撤销须在下一次请求生效，见[企业登录](enterprise-auth.md)。
 
-待确认（尚未执行）：发布后先在日志确认唤醒与续排均成功（无 `CONSUMER_WAKE_FAILED`、`CONSUMER_CONTINUATION_FAILED`，消费者调用不再只出现在整分钟）。唤醒依赖 CloudBase API Key 调用函数的权限和 `TCB_QcsRole` 的 SCF Invoke 权限，均以线上结果为准；失败时仍由每分钟定时器处理，行为与此前一致。确认后再把 `lycobo-outbox-minute` 调整为低频兜底，否则共享 PG 仍全天计量：每小时一次约 340 点/天，每 3 小时一次约 115 点/天，代价是唤醒丢失且无人查看时最长等到下一次兜底。
+定时器：2026-11-01 01:42（上海时间）按用户要求将 `lycobo-outbox-minute`（每分钟）替换为 `lycobo-outbox-3h`（`0 0 */3 * * * *`），共享 PG 的兜底计量约 115 点/天。生成依赖 API 唤醒与消费者续排：唤醒需要 CloudBase API Key 调用函数的权限和 `TCB_QcsRole` 的 SCF Invoke 权限，须以线上日志为准（无 `CONSUMER_WAKE_FAILED`、`CONSUMER_CONTINUATION_FAILED`）。唤醒失败时任务最长等到下一次 3 小时兜底，有人查看排队任务时 API 每 15 秒补唤醒一次；如线上确认唤醒不可用，应恢复每分钟触发器 `0 * * * * * *`。
+
+PR #40 于 2026-11-01 合并并由部署 #8 发布（后端发布 1 分 30 秒）。01:49 直接以 `{"wake":true}` 调用 `lycobo-consumer`：唤醒调用 141 ms 返回 `woken: true`，20 ms 后异步 drain 启动，未发现待处理任务，261 ms 正常结束，确认运行角色可排队异步调用。API 使用 API Key 调用消费者的唤醒路径仍待首次真实提交后在日志中确认。

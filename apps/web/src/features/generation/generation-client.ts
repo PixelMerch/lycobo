@@ -85,6 +85,8 @@ export function useImageModels() {
     queryKey: ["image-models"],
     enabled: session.isSuccess,
     retry: false,
+    // Model capabilities change only with server configuration; avoid refetching on every focus.
+    staleTime: 10 * 60 * 1000,
     queryFn: async ({ signal }) =>
       imageModelsResponseSchema.parse(
         await (await imageRequest("image-models", { signal })).json(),

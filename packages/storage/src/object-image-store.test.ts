@@ -23,7 +23,8 @@ describe("Node cloud image processing", () => {
       .png()
       .toBuffer();
     const asset = await objectImageStore(bucket, async () => "1234567890").put(scope, input);
-    expect(saved.size).toBe(4);
+    expect(saved.size).toBe(3);
+    expect(saved.has(asset.objectKey.replace(/\.png$/, ".thumbnail.png"))).toBe(false);
     const original = saved.get(asset.objectKey);
     if (!original) throw new Error("Original missing");
     const preview = saved.get(asset.objectKey.replace(/\.png$/, ".preview.webp"));
@@ -53,5 +54,39 @@ describe("Node cloud image processing", () => {
     ).rejects.toThrow("storage unavailable");
     expect(put).toHaveBeenCalledTimes(2);
     expect(bucket.delete).not.toHaveBeenCalled();
+  });
+  it("creates the planner PNG thumbnail on first use and reuses it afterwards", async () => {
+    const saved = new Map<string, Uint8Array>();
+    const bucket: ImageObjectBucket = {
+      head: async () => null,
+      get: async (key) => {
+        const stored = saved.get(key);
+        if (!stored) return null;
+        const bytes = new Uint8Array(stored);
+        return {
+          size: bytes.length,
+          body: new Blob([bytes]).stream(),
+          arrayBuffer: async () => bytes.buffer,
+        };
+      },
+      delete: async () => {},
+      put: vi.fn(async (key: string, bytes: Uint8Array) => {
+        saved.set(key, bytes);
+        return { stored: true };
+      }),
+    };
+    const input = await sharp({
+      create: { width: 1200, height: 600, channels: 3, background: "#54E6A5" },
+    })
+      .png()
+      .toBuffer();
+    const store = objectImageStore(bucket, async () => "1234567890");
+    const asset = await store.put(scope, input);
+    const thumbnail = await store.thumbnail(asset);
+    expect(await sharp(thumbnail).metadata()).toMatchObject({ format: "png", width: 512 });
+    expect(saved.has(asset.objectKey.replace(/\.png$/, ".thumbnail.png"))).toBe(true);
+    const writes = vi.mocked(bucket.put).mock.calls.length;
+    expect(new Uint8Array(await store.thumbnail(asset))).toEqual(new Uint8Array(thumbnail));
+    expect(bucket.put).toHaveBeenCalledTimes(writes);
   });
 });

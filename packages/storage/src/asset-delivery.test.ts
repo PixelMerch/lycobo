@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { assetDeliverySigner, assetSigningKey, signAsset, verifyAsset } from "./asset-delivery";
 
 const key = `0057849613/${crypto.randomUUID()}/${crypto.randomUUID()}.png`;
@@ -15,7 +15,9 @@ describe("asset capabilities", () => {
     ).toBe(false);
     expect(await verifyAsset(key, expires + 1, sig, signing, now)).toBe(false);
     expect(await verifyAsset(key, expires, sig, signing, expires)).toBe(false);
-    expect(await verifyAsset(key, expires, sig, signing, now - 1)).toBe(false);
+    // At most the lifetime plus one shared expiry window may remain.
+    expect(await verifyAsset(key, expires, sig, signing, expires - 2700)).toBe(true);
+    expect(await verifyAsset(key, expires, sig, signing, expires - 2701)).toBe(false);
     expect(await verifyAsset(key, expires, "bad", signing, now)).toBe(false);
     expect(await verifyAsset(`../${key}`, expires, sig, signing, now)).toBe(false);
   });
@@ -27,6 +29,35 @@ describe("asset capabilities", () => {
     expect(JSON.stringify(links)).not.toContain(secret);
     expect(() => assetDeliverySigner("http://assets.example.test", secret)).toThrow();
   });
+});
+
+it("reissues identical links within a window so reloads reuse cached images", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  try {
+    const sign = assetDeliverySigner("https://assets.example.test", secret);
+    vi.setSystemTime(new Date("2026-11-01T00:00:10Z"));
+    const issuedAt = Math.floor(Date.now() / 1000);
+    const first = await sign(key);
+    expect(first.expires_at - issuedAt).toBeGreaterThanOrEqual(1800);
+    expect(first.expires_at).toBe(Date.parse("2026-11-01T00:45:00Z") / 1000);
+    vi.setSystemTime(new Date("2026-11-01T00:14:59Z"));
+    expect(await sign(key)).toEqual(first);
+    const thumbnail = new URL(first.thumbnail_url);
+    expect(
+      await verifyAsset(
+        key,
+        first.expires_at,
+        thumbnail.searchParams.get("sig") ?? "",
+        await assetSigningKey(secret),
+        issuedAt,
+        "thumbnail",
+      ),
+    ).toBe(true);
+    vi.setSystemTime(new Date("2026-11-01T00:15:01Z"));
+    expect((await sign(key)).expires_at).toBe(first.expires_at + 900);
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 it("allows HTTP only through explicit development opt-in on exact loopback hosts", async () => {

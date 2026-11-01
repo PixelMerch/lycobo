@@ -1,5 +1,8 @@
 const encoder = new TextEncoder();
 export const assetLinkLifetime = 1800;
+// Links issued within the same window share their expiry, so a reload or refetch yields the same
+// URL and the browser reuses its cached image instead of fetching it again through the function.
+export const assetLinkWindow = 900;
 export const assetKeyPattern = /^[0-9]{10}\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.png$/;
 export type AssetVariant = "preview" | "thumbnail" | "download";
 const message = (key: string, expires: number, variant: AssetVariant) =>
@@ -41,7 +44,7 @@ export async function verifyAsset(
     !assetKeyPattern.test(key) ||
     !Number.isSafeInteger(expires) ||
     expires <= now ||
-    expires > now + assetLinkLifetime ||
+    expires > now + assetLinkLifetime + assetLinkWindow ||
     !/^[\w-]{43}$/.test(signature)
   )
     return false;
@@ -75,7 +78,10 @@ export function assetDeliverySigner(
     throw new Error("INVALID_ASSET_ORIGIN");
   const signingKey = assetSigningKey(secret);
   return async (key: string) => {
-    const expires_at = Math.floor(Date.now() / 1000) + assetLinkLifetime;
+    // At least the full lifetime remains; rounding up to the window keeps URLs stable within it.
+    const expires_at =
+      Math.ceil((Math.floor(Date.now() / 1000) + assetLinkLifetime) / assetLinkWindow) *
+      assetLinkWindow;
     const variant = async (value: AssetVariant) => {
       const pathname = value === "download" ? key : key.replace(/\.png$/, `.${value}.webp`);
       const url = new URL(`${prefix}${pathname}`, base);

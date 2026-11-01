@@ -4,7 +4,7 @@
 
 ## 当前真实验收
 
-API 和消费者的 IMAGE_GENERATION_ENABLED 均已开启；消费者的 `lycobo-outbox-minute` 定时触发器按 `0 * * * * * *` 运行。原 CLI 配置更新遇到交互选择时会以 0 退出却未执行，因此本次使用 CLI `--yes` 明确选择已核对的完整变量覆盖，并通过模型能力响应与真实任务确认生效。运行密钥仅从原本机文件引用，临时配置在包外、权限 0600，已删除。
+API 和消费者的 IMAGE_GENERATION_ENABLED 均已开启；消费者原 `lycobo-outbox-minute` 定时触发器按 `0 * * * * * *` 运行；2026-11-01 01:42（上海时间）按用户要求替换为 `lycobo-outbox-3h`（`0 0 */3 * * * *`，每 3 小时），生成改由 API 唤醒，见 [CloudBase 部署](cloudbase-deployment.md#运行计费优化)。原 CLI 配置更新遇到交互选择时会以 0 退出却未执行，因此本次使用 CLI `--yes` 明确选择已核对的完整变量覆盖，并通过模型能力响应与真实任务确认生效。运行密钥仅从原本机文件引用，临时配置在包外、权限 0600，已删除。
 
 用户报告首次任务已在中转站完成但前端等待。复核时两张原任务均已通过原结果恢复完成，各一笔消费、替换生成次数 0。消费者随后改为在当前 Event 调用内按供应商返回的间隔继续读取已受理任务，不再每次 defer 后都等待下一分钟；仍由 PG 认领、最多两路处理、7 分钟内停止启动新操作，没有待查询结果就退出。仅回查现有 receipt，不自动重提未决付费请求。本地消费者已更新 Active；回归验证真实处理器只发一次 POST、随后 GET 取图保存，且遵守调用预算、并发上限及未决结果不循环重提。未额外发起付费生图。
 
@@ -42,7 +42,7 @@ API 和消费者的 IMAGE_GENERATION_ENABLED 均已开启；消费者的 `lycobo
 
 - `lycobo-api`：HTTP 云函数，Hono，企业鉴权、业务 API、事件流；监听 0.0.0.0:9000。
 - `lycobo-assets`：HTTP 云函数，签名绑定对象/用途/过期时间；校验 Origin/Referer 后读取私有云存储。默认不使用进程缓存，沿用既有授权测试。
-- `lycobo-consumer`：独立 Event 云函数，完整等待任务处理；PostgreSQL outbox/claim 为持久来源，两个执行并发、每次最多 20 条。不在 HTTP API 中执行后台付费请求。消费者已实际调用并返回 enabled=false、processed=0；正式切换前不启用定时触发器。
+- `lycobo-consumer`：独立 Event 云函数，完整等待任务处理；PostgreSQL outbox/claim 为持久来源，每次最多租用 20 条，同时 4 条等待服务商，图片解码、编码与保存最多 2 条并行。不在 HTTP API 中执行后台付费请求。消费者已实际调用并返回 enabled=false、processed=0；正式切换前不启用定时触发器。
 
 `scripts/cloudbase/prepare-runtime.mjs` 在仓库外空目录构建 Nodejs20.19 包，外部依赖固定版本，为 Sharp 下载 Linux x64/glibc 二进制；包只含编译代码、依赖和启动文件，不含 .env、用户图片、数据库备份或源目录。两个 HTTP 包含可执行 scf_bootstrap，Event 包使用 index.main。
 

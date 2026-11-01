@@ -31,6 +31,21 @@ describe("private image storage", () => {
   });
 });
 
+it("keeps paid originals pixel-identical while recompressing them", async () => {
+  const width = 64,
+    height = 48;
+  const pixels = Buffer.alloc(width * height * 3);
+  for (let i = 0; i < pixels.length; i++) pixels[i] = (i * 37 + (i >> 5) * 11) % 256;
+  const source = await sharp(pixels, { raw: { width, height, channels: 3 } })
+    .png()
+    .toBuffer();
+  const { data } = await normalizeImage(source);
+  const decoded = await sharp(data).raw().toBuffer({ resolveWithObject: true });
+  expect((await sharp(data).metadata()).format).toBe("png");
+  expect(decoded.info).toMatchObject({ width, height, channels: 3 });
+  expect(decoded.data.equals(pixels)).toBe(true);
+});
+
 it("normalizes larger paid output to exact 1254 pixels and rejects smaller sources instead of upscaling", async () => {
   const source = await sharp({
     create: { width: 1536, height: 1536, channels: 3, background: "#789abc" },

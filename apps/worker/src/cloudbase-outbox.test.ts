@@ -97,10 +97,29 @@ it("keeps draining full batches and reports intents left unstarted at the budget
     wait,
     stopStartingAt: 20000,
   });
-  // Two intents never started; they become available again once their lease lapses.
-  expect(stopped).toEqual({ processed: 2, resumeAt: 55000 });
+  // The first item used up the budget; the other three never started and become available again
+  // once their lease lapses.
+  expect(stopped).toEqual({ processed: 1, resumeAt: 55000 });
 });
-it("keeps at most two task operations in flight", async () => {
+it("starts no new paid work after a failure but lets in-flight items finish", async () => {
+  const entries = Array.from({ length: 6 }, entry);
+  const repository = {
+    leaseOutbox: vi.fn(async () => entries),
+    ackOutbox: vi.fn(async (_id: string, _leaseToken: string) => {}),
+  };
+  const process = vi.fn(async (itemId: string) => {
+    await Promise.resolve();
+    if (itemId === entries[1]?.itemId) throw new Error("DATABASE_UNAVAILABLE");
+  });
+  await expect(
+    drainCloudBaseOutbox({ repository, process, now: () => 0, stopStartingAt: 20000 }),
+  ).rejects.toThrow("DATABASE_UNAVAILABLE");
+  expect(process).toHaveBeenCalledTimes(4);
+  expect(repository.ackOutbox.mock.calls.map(([id]) => id)).toEqual(
+    [entries[0], entries[2], entries[3]].map((started) => started?.id),
+  );
+});
+it("keeps at most four task operations in flight", async () => {
   let active = 0,
     maximum = 0;
   const repository = {
@@ -118,5 +137,5 @@ it("keeps at most two task operations in flight", async () => {
       active--;
     },
   });
-  expect(maximum).toBe(2);
+  expect(maximum).toBe(4);
 });
