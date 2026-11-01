@@ -35,7 +35,7 @@ GitHub 中的两个 Secret 已通过实际 MCP 认证和函数查询；GitHub �
 
 ## 主站私有图片
 
-主站使用 CloudBase PG 原生存储 `lycobo-images` 私有桶，不使用旧 NoSQL COS 接口。[追加迁移](../cloudbase/migrations/20261031223300_private_image_storage.sql) 限定单对象 32 MiB、PNG/WebP。原图、兼容 PNG 缩略图、WebP 预览及缩略图保留原对象 key 约定。
+主站使用 CloudBase PG 原生存储 `lycobo-images` 私有桶，不使用旧 NoSQL COS 接口。[追加迁移](../cloudbase/migrations/20261031223300_private_image_storage.sql) 限定单对象 32 MiB、PNG/WebP。原图、兼容 PNG 缩略图、WebP 预览及缩略图保留原对象 key 约定。新生成和上传的图片只写入原图与两个 WebP 变体；兼容 PNG 缩略图（实测平均 497 KiB，是 WebP 缩略图的 16 倍）只有智能裂变规划会读取，首次读取时从原图生成并保存。
 
 服务端配置如下，禁止使用 VITE_ 前缀：
 
