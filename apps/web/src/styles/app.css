@@ -2419,7 +2419,8 @@ p.home-hero-kicker {
   font-size: 12px;
   padding: 4px;
 }
-@media (max-width: 1279px) {
+/* The rail turns into a row at 1300px, so its thumbnails shrink at the same breakpoint. */
+@media (max-width: 1300px) {
   .history-thumbnail {
     width: 72px;
   }
@@ -3959,7 +3960,7 @@ p.home-hero-kicker {
     inset: -11.2px;
   }
 }
-@media (max-width: 1279px) {
+@media (max-width: 1300px) {
   .history-rail-item {
     width: 72px;
   }
