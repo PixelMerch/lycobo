@@ -38,3 +38,9 @@
 减少的是逐任务 HTTP/RPC 调用、正常生图期间反复查中转站和云函数空等。批量接口仍读取 PostgreSQL；等待中的页面每 15 秒访问数据库可能继续保持共享 PG 活跃，因此不承诺 CU 按请求数量同比降低。
 
 回调表开启 RLS 且不向浏览器角色提供策略；匿名、authenticated、service_role 都没有表的直接业务访问权限，仅服务端 service_role 可执行受限 SECURITY DEFINER RPC。批量 RPC 校验组织成员身份；回调 RPC 只能由已校验签名的服务端调用。函数固定 search_path，回调不回显请求头、环境变量或签名。数据库事务不包含网络调用。
+
+## 回调地址
+
+https://lycobo-d9gyvxkegc54a1257-1311968085.ap-shanghai.app.tcloudbase.com/api/v1/webhooks/fluxport/images
+
+签名密钥通过服务端环境变量 `IMAGE_WEBHOOK_SECRET` 配置，真实值不保存到 Git。
