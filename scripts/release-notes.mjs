@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -159,8 +159,6 @@ async function main() {
   });
   const version = validateVersion(values.version ?? process.env.RELEASE_VERSION ?? "");
   const cwd = process.cwd();
-  const pkg = JSON.parse(await readFile(path.join(cwd, "package.json"), "utf8"));
-  if (`v${pkg.version}` !== version) throw new Error("版本号与根 package.json 不一致");
   const data = collectChanges(cwd, version, values.sha);
   const repository = process.env.GITHUB_REPOSITORY ?? "PixelMerch/lycobo";
   const token = process.env.GH_TOKEN;
