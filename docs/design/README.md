@@ -4,6 +4,8 @@
 
 只保留仍在使用的设计依据与素材来源：
 
+- [Lycobo Logo 定稿](brand/lycobo-approved.png)：2026-11-01确认的 A 方案及调整后的圆角字标；正式资源为 `apps/web/public/brand` 内的 SVG，配色与使用规则见 DESIGN.md。
+
 - [电商工作台 UI 提案（待评审）](unified-creation/README.md)：基于 Photoroom 与小云雀实查的分类工具面板、单入口切换、下拉历史筛选、统一任务列表、固定模型选择，以及完整输入／确认／结果状态。仅为用户本轮要求的 UI 设计图，不替代现行规范、不表示功能已接入。
 
 - [工作区功能栏参考与取舍](workspace-tool-navigation-research.md)：Refero Krea、Linear、Raycast 的中性导航参考与图标／左侧参数联动边界。
