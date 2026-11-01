@@ -7,7 +7,6 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
-  Tooltip,
 } from "@heroui/react";
 import { IconArrowUpRight, IconLayoutGrid, IconSearch, IconVideo } from "@tabler/icons-react";
 import { MotionConfig, motion } from "motion/react";
@@ -16,7 +15,6 @@ import { useLocation, useNavigate } from "react-router";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
 import { shareProductReference, toolForPath, workspaceTools } from "./workspace-state";
-import { WorkspaceToolPreview } from "./workspace-tool-preview";
 import { WorkspaceToolSymbol } from "./workspace-tool-symbol";
 
 const categories = ["全部工具", "主图制作", "套图与裂变", "商品视频"];
@@ -40,44 +38,36 @@ export function WorkspaceToolPicker() {
       <MotionConfig reducedMotion="user">
         <motion.nav layoutScroll className="workspace-tool-bar" aria-label="电商创作工具">
           {workspaceTools.map((tool) => (
-            <Tooltip key={tool.id} delay={350} closeDelay={80}>
-              <Button
-                size="sm"
-                variant="tertiary"
-                className="workspace-tool-shortcut"
-                data-tool={tool.id}
-                aria-label={tool.name}
-                aria-describedby={`${noteId}-${tool.id}`}
-                aria-current={current.id === tool.id ? "page" : false}
-                onPress={() => {
-                  shareProductReference(pathname, tool.path);
-                  navigate(tool.path);
-                }}
-              >
-                {current.id === tool.id && (
-                  <motion.span
-                    layoutId="workspace-tool-indicator"
-                    className="workspace-tool-indicator"
-                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                    aria-hidden="true"
-                  />
-                )}
-                <WorkspaceToolSymbol tool={tool.id} />
-                <span className="workspace-tool-label">
-                  <span className="workspace-tool-name">{tool.name}</span>
-                  <span className="workspace-tool-note" id={`${noteId}-${tool.id}`}>
-                    {tool.caption}
-                  </span>
+            <Button
+              key={tool.id}
+              size="sm"
+              variant="tertiary"
+              className="workspace-tool-shortcut"
+              data-tool={tool.id}
+              aria-label={tool.name}
+              aria-describedby={`${noteId}-${tool.id}`}
+              aria-current={current.id === tool.id ? "page" : false}
+              onPress={() => {
+                shareProductReference(pathname, tool.path);
+                navigate(tool.path);
+              }}
+            >
+              {current.id === tool.id && (
+                <motion.span
+                  layoutId="workspace-tool-indicator"
+                  className="workspace-tool-indicator"
+                  transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                  aria-hidden="true"
+                />
+              )}
+              <WorkspaceToolSymbol tool={tool.id} />
+              <span className="workspace-tool-label">
+                <span className="workspace-tool-name">{tool.name}</span>
+                <span className="workspace-tool-note" id={`${noteId}-${tool.id}`}>
+                  {tool.caption}
                 </span>
-              </Button>
-              <Tooltip.Content
-                placement="bottom start"
-                offset={10}
-                className="workspace-tool-preview"
-              >
-                <WorkspaceToolPreview tool={tool} current={current.id === tool.id} />
-              </Tooltip.Content>
-            </Tooltip>
+              </span>
+            </Button>
           ))}
           <span className="workspace-tool-divider" aria-hidden="true" />
           <Button
