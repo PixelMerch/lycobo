@@ -185,7 +185,7 @@ export async function verifyCloudflareApi() {
             name: "provider",
             modules: true,
             compatibilityDate: "2026-10-23",
-            script: `let calls=0;export default {async fetch(request){if(new URL(request.url).pathname==='/count')return Response.json({calls});if(new URL(request.url).pathname==='/v1/messages'){const body=await request.json();if(request.headers.get('x-api-key')!=='fixture-provider-key'||body.model!=='claude-sonnet-5'||!body.messages[0].content.some(p=>p.type==='image'&&p.source?.type==='base64'))return new Response(null,{status:400});return Response.json({stop_reason:'end_turn',content:[{type:'text',text:JSON.stringify({items:[{title:'原生视觉计划',prompt:'保留参考图片的商品身份，调整为自然光电商摄影。'}]})}]});}calls++;return Response.json({data:[{b64_json:${JSON.stringify(fixturePng)}}]},{headers:{'x-request-id':'native-fixture'}})}}`,
+            script: `let calls=0;export default {async fetch(request){if(new URL(request.url).pathname==='/count')return Response.json({calls});if(new URL(request.url).pathname==='/v1/messages'){const body=await request.json();if(request.headers.get('x-api-key')!=='fixture-provider-key'||body.model!=='claude-sonnet-5'||typeof body.messages[0].content!=='string'||!body.messages[0].content.includes('参考图1')||JSON.stringify(body.messages).includes('data:image'))return new Response(null,{status:400});return Response.json({stop_reason:'end_turn',content:[{type:'text',text:JSON.stringify({items:[{title:'纯文本计划',prompt:'保留参考图片的商品身份，调整为自然光电商摄影。'}]})}]});}calls++;return Response.json({data:[{b64_json:${JSON.stringify(fixturePng)}}]},{headers:{'x-request-id':'native-fixture'}})}}`,
           },
         ],
       }),
