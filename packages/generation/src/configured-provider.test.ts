@@ -48,6 +48,28 @@ it("accepts synchronous results even when async is preferred and sends provider-
   });
   expect(request).toHaveBeenCalledTimes(1);
 });
+it("declares each reference by its actual image type", async () => {
+  const request = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json({ data: [{ b64_json: "aGVsbG8=" }] }));
+  const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
+  const webp = new Uint8Array([...Buffer.from("RIFF"), 0, 0, 0, 0, ...Buffer.from("WEBP")]);
+  await configuredProviderCall(
+    snapshot,
+    "fixture-key",
+    input,
+    [jpeg, webp, new Uint8Array([1, 2])],
+    "item",
+    undefined,
+    request,
+  );
+  const { images } = JSON.parse(String(request.mock.calls[0]?.[1]?.body));
+  expect(images.map(({ image_url }: { image_url: string }) => image_url.split(";")[0])).toEqual([
+    "data:image/jpeg",
+    "data:image/webp",
+    "data:image/png",
+  ]);
+});
 it("stores accepted task identity and polls without resubmitting or attaching a paid idempotency header", async () => {
   const submit = vi.fn<typeof fetch>().mockResolvedValue(
     Response.json(

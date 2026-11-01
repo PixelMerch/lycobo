@@ -86,7 +86,7 @@ provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 
 
 ## Gemini 原生图片协议（2026-10-28）
 
-按 [FluxPort Gemini 文档](https://uselg.top/docs?model=gemini-3.1-flash-image-preview) 对接 `gemini-native`：POST `/v1beta/models/{upstreamModel}:generateContent`，Bearer 鉴权，提示词和 PNG 参考图放入 `contents[].parts`；比例、1K／2K／4K 使用 `generationConfig.imageConfig.aspectRatio/imageSize`。不发送 Images API 的 n、quality、async 或像素 size。Gemini 的 4K 使用供应商档位，不套用 Images API 最长边 3840 的尺寸计算。
+按 [FluxPort Gemini 文档](https://uselg.top/docs?model=gemini-3.1-flash-image-preview) 对接 `gemini-native`：POST `/v1beta/models/{upstreamModel}:generateContent`，Bearer 鉴权，提示词和参考图放入 `contents[].parts`（不透明参考图发送前压缩为 JPEG，透明图保持 PNG，`mimeType` 按实际内容声明，见[运行计费优化](cloudbase-deployment.md#运行计费优化)）；比例、1K／2K／4K 使用 `generationConfig.imageConfig.aspectRatio/imageSize`。不发送 Images API 的 n、quality、async 或像素 size。Gemini 的 4K 使用供应商档位，不套用 Images API 最长边 3840 的尺寸计算。
 
 同步解析 candidates 中的 inlineData 或 fileData；纯文字、空图片结果不视为成功。异步 202 的 task_id/status_url/result_url 继续使用持久化查询流程，查询返回的原生结果同样解析，不重新付费 POST。结果文件仍需通过现有来源白名单、大小限制与真实图片校验，入私有存储后才能完成任务。
 

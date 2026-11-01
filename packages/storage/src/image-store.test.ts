@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
-import { imageStore, normalizeImage } from "./image-store";
+import { imageStore, normalizeImage, providerReference } from "./image-store";
 
 const png = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADklEQVQImWP4DwYMEAoAU7oL9W/sIDEAAAAASUVORK5CYII=",
@@ -56,4 +56,42 @@ it("normalizes larger paid output to exact 1254 pixels and rejects smaller sourc
   const image = await normalizeImage(source, target);
   expect([image.width, image.height]).toEqual([1254, 1254]);
   await expect(normalizeImage(png, target)).rejects.toThrow("OUTPUT_RESOLUTION_TOO_SMALL");
+});
+it("sends opaque references as smaller JPEGs of at most 2048 pixels", async () => {
+  const photo = await sharp({
+    create: {
+      width: 2600,
+      height: 1300,
+      channels: 3,
+      background: "#808080",
+      noise: { type: "gaussian", mean: 128, sigma: 24 },
+    },
+  })
+    .png()
+    .toBuffer();
+  const sent = await providerReference(photo);
+  expect(sent.length).toBeLessThan(photo.length);
+  expect(await sharp(sent).metadata()).toMatchObject({ format: "jpeg", width: 2048, height: 1024 });
+});
+it("keeps transparent references as PNG and returns bytes it cannot improve unchanged", async () => {
+  // Noisy alpha: a JPEG would be smaller, so only the transparency check keeps it PNG.
+  const cutout = await sharp({
+    create: {
+      width: 900,
+      height: 600,
+      channels: 4,
+      background: { r: 84, g: 230, b: 165, alpha: 0.5 },
+      noise: { type: "gaussian", mean: 128, sigma: 40 },
+    },
+  })
+    .png()
+    .toBuffer();
+  expect(await sharp(await providerReference(cutout)).metadata()).toMatchObject({
+    format: "png",
+    hasAlpha: true,
+  });
+  // A 2x2 PNG is smaller than any JPEG of it; undecodable bytes are passed through.
+  expect(await providerReference(png)).toBe(png);
+  const broken = new Uint8Array([1, 2, 3]);
+  expect(await providerReference(broken)).toBe(broken);
 });
