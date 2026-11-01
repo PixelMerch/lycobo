@@ -21,3 +21,5 @@ Docker 开发可使用 `docker compose up --build`，对外前端端口8081；�
 宿主机 `pnpm dev` 与 Docker `studio` 共用 5173、8787、8791 端口，切换前先停止原开发进程。如果提示 `address already in use`，用 `lsof -nP -iTCP:8787 -sTCP:LISTEN` 确认占用者，再停止属于本项目的进程。Docker 启动器为前端选择 `dev:docker`，监听容器的 `0.0.0.0`；容器健康后通过 `http://127.0.0.1:8081` 访问。
 
 日常运行 `pnpm check`。隔离集成和手动浏览器检查见 [测试说明](testing.md)。
+
+2026-11-01 已从 CloudBase 同步业务库到本地 Docker，范围、验证、备份及本地生图关闭状态见 [本地数据库同步记录](cloudbase-local-database-sync.md)。
