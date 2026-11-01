@@ -20,8 +20,8 @@ export function SmartVariationPage() {
   return (
     <>
       <section className="composer-panel" aria-label="套图计划参数">
-        <WorkspaceComposerTitle />
         <div className="composer-scroll">
+          <WorkspaceComposerTitle />
           <ReferencePicker
             compact
             references={references}

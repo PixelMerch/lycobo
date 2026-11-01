@@ -2,8 +2,8 @@ import { Tooltip } from "@heroui/react";
 import { IconCamera, IconLayoutCollage, IconWand } from "@tabler/icons-react";
 import { useLocation } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
+import { useComposerHeroScroll } from "./use-composer-hero-scroll";
 import { toolForPath, type workspaceTools } from "./workspace-state";
-
 import { WorkspaceToolPreview } from "./workspace-tool-preview";
 
 type ToolId = (typeof workspaceTools)[number]["id"];
@@ -21,6 +21,7 @@ export function WorkspaceToolSymbol({ tool }: { tool: ToolId }) {
 export function WorkspaceComposerTitle() {
   const { pathname } = useLocation();
   const tool = toolForPath(pathname);
+  const heroRef = useComposerHeroScroll(tool.id);
   return (
     <Tooltip key={tool.id} delay={350} closeDelay={80}>
       <Tooltip.Trigger
@@ -37,7 +38,7 @@ export function WorkspaceComposerTitle() {
         ) : (
           <img className="workspace-composer-hero-image" src={tool.hero} alt="" decoding="async" />
         )}
-        <div className="workspace-composer-hero-copy">
+        <div ref={heroRef} className="workspace-composer-hero-copy">
           <h2 className="workspace-composer-title">{tool.name}</h2>
           <p>{tool.summary}</p>
         </div>

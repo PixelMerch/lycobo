@@ -28,8 +28,8 @@ export function TextileSetPage() {
     <>
       <div ref={viewsAnchor} className="textile-views-anchor" aria-hidden="true" />
       <section className="composer-panel" aria-label="家纺裂变参数">
-        <WorkspaceComposerTitle />
         <div className="composer-scroll">
+          <WorkspaceComposerTitle />
           <TextileImageField
             label="主图"
             required
