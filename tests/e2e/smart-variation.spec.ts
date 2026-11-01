@@ -109,7 +109,7 @@ for (const width of [1440, 390, 320])
       expect(panel).not.toBeNull();
       expect(composer).not.toBeNull();
       expect(
-        Math.abs((panel?.x ?? 0) - ((composer?.x ?? 0) + (composer?.width ?? 0) + 5)),
+        Math.abs((panel?.x ?? 0) - ((composer?.x ?? 0) + (composer?.width ?? 0) + 12)),
       ).toBeLessThanOrEqual(1);
       expect((panel?.x ?? 0) + (panel?.width ?? 0)).toBeLessThanOrEqual(rail?.x ?? Infinity);
       await expect(page.locator(".results-panel")).toBeHidden();
@@ -154,6 +154,7 @@ test("analysis shows progress, blocks repeated presses and opens normalized plan
   const button = page.locator(".variation-submit .generation-submit");
   await button.click();
   try {
+    await expect(page.getByRole("region", { name: "正在生成套图计划", exact: true })).toBeVisible();
     await expect(button).toBeDisabled();
     await expect(button.getByRole("status")).toBeVisible();
     await expect(button).toContainText("正在生成计划");
@@ -171,4 +172,59 @@ test("analysis shows progress, blocks repeated presses and opens normalized plan
     page.getByRole("region", { name: "确认每张图的中文提示词", exact: true }),
   ).toBeVisible();
   expect(calls).toBe(1);
+});
+
+test("streams read-only plan cards before the saved plan becomes editable", async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = window.fetch.bind(window);
+    window.fetch = async (resource, init) => {
+      if (String(resource) !== "/api/v1/variation-plans" || init?.method !== "POST")
+        return original(resource, init);
+      const input = JSON.parse(String(init.body));
+      const encoder = new TextEncoder();
+      const item = {
+        id: crypto.randomUUID(),
+        title: "橙色款",
+        prompt: "保留商品结构，换成橙色，自然光场景。",
+      };
+      return new Response(
+        new ReadableStream({
+          start(controller) {
+            const emit = (event: string, data: unknown) =>
+              controller.enqueue(
+                encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
+              );
+            emit("started", {});
+            setTimeout(
+              () => emit("delta", { text: '{"items":[{"title":"橙色款","prompt":"保留商品结构' }),
+              100,
+            );
+            setTimeout(() => {
+              emit("delta", { text: '，换成橙色，自然光场景。"}]}' });
+              emit("complete", {
+                id: crypto.randomUUID(),
+                status: "ready",
+                ...input,
+                items: [item],
+              });
+              controller.close();
+            }, 2000);
+          },
+        }),
+        { headers: { "Content-Type": "text/event-stream" } },
+      );
+    };
+  });
+  await page.goto("/commerce/smart-variation");
+  await page.getByRole("textbox", { name: "创作需求", exact: true }).fill("生成橙色商品图");
+  await page.getByRole("button", { name: "生成计划", exact: true }).click();
+  const pending = page.getByRole("region", { name: "正在生成套图计划", exact: true });
+  await expect(pending).toBeVisible();
+  await expect(pending).toContainText("保留商品结构");
+  await expect(pending.getByRole("textbox")).toHaveCount(0);
+  await expect(pending.getByRole("button", { name: /开始生成/ })).toBeDisabled();
+  const ready = page.getByRole("region", { name: "确认每张图的中文提示词", exact: true });
+  await expect(ready.getByRole("textbox", { name: "方案 1 提示词", exact: true })).toHaveValue(
+    "保留商品结构，换成橙色，自然光场景。",
+  );
 });

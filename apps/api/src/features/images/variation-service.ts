@@ -1,11 +1,9 @@
 import type { ImageScope, VariationPlanInput } from "@lycoboai/contracts";
 import type { ImageRuntimeRepository } from "@lycoboai/db";
 import { openProviderKey, PlannerError, planVariation } from "@lycoboai/generation";
-import type { ImageStore } from "@lycoboai/storage/core";
 
 export function variationService(deps: {
-  repository: ImageRuntimeRepository;
-  store: ImageStore;
+  repository: Pick<ImageRuntimeRepository, "variation" | "asset">;
   modelSecret?: string | undefined;
   plannerKey?: string | undefined;
   plannerRequest?: typeof fetch | undefined;
@@ -16,7 +14,13 @@ export function variationService(deps: {
         !!(deps.plannerKey || deps.modelSecret) && !!(await deps.repository.variation.config())
       );
     },
-    async create(scope: ImageScope, input: VariationPlanInput, key: string, signal: AbortSignal) {
+    async create(
+      scope: ImageScope,
+      input: VariationPlanInput,
+      key: string,
+      signal: AbortSignal,
+      onText?: (text: string) => Promise<void>,
+    ) {
       const config = await deps.repository.variation.config();
       if (!config || (!deps.plannerKey && !deps.modelSecret)) return null;
       const result = await deps.repository.variation.begin(scope, input, key);
@@ -37,6 +41,7 @@ export function variationService(deps: {
           result.plan.id,
           signal,
           deps.plannerRequest,
+          onText,
         );
         await deps.repository.variation.finish(scope, result.plan.id, items);
       } catch (error) {

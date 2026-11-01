@@ -1,17 +1,14 @@
 import { toast } from "@heroui/react";
-import {
-  pendingVariationPlanSchema,
-  variationCapabilitiesSchema,
-  variationPlanSchema,
-} from "@lycoboai/contracts";
+import { pendingVariationPlanSchema, variationCapabilitiesSchema } from "@lycoboai/contracts";
 import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   imageRequest,
   uploadImageReferences,
   useImageSession,
 } from "../../generation/generation-client";
 import { hasPromptDescription } from "../../generation/references/prompt-description";
+import { readPlanResponse } from "./plan-stream";
 import { useSmartVariationDraft } from "./smart-variation-state";
 
 export function useVariationPlan() {
@@ -19,6 +16,7 @@ export function useVariationPlan() {
   const client = useQueryClient();
   const draft = useSmartVariationDraft();
   const locked = useRef(false);
+  const [streamText, setStreamText] = useState("");
   const mutationKey = ["variation-plan", session.data?.organizationId, session.data?.userId];
   const activeRequests = useIsMutating({ mutationKey });
   const capabilities = useQuery({
@@ -33,7 +31,10 @@ export function useVariationPlan() {
   const mutation = useMutation({
     mutationKey,
     retry: false,
-    onMutate: () => ({ description: draft.description, references: draft.references }),
+    onMutate: () => {
+      setStreamText("");
+      return { description: draft.description, references: draft.references };
+    },
     mutationFn: async () => {
       if (!session.data) throw new Error("请先登录");
       const storageKey = `lycobo-variation-plan:${session.data.organizationId}:${session.data.userId}`;
@@ -58,18 +59,21 @@ export function useVariationPlan() {
         pending = pendingVariationPlanSchema.safeParse(value);
       }
       if (!pending.success) throw new Error("分析请求无法保存");
-      const plan = variationPlanSchema.parse(
-        await (
-          await imageRequest(
-            "variation-plans",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "Idempotency-Key": pending.data.key },
-              body: JSON.stringify(pending.data.input),
-            },
-            90000,
-          )
-        ).json(),
+      const response = await imageRequest(
+        "variation-plans",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "text/event-stream",
+            "Idempotency-Key": pending.data.key,
+          },
+          body: JSON.stringify(pending.data.input),
+        },
+        90000,
+      );
+      const plan = await readPlanResponse(response, (text) =>
+        setStreamText((current) => current + text),
       );
       if (plan.status === "running") throw new Error("分析仍在处理，请稍后点击继续获取计划");
       sessionStorage.removeItem(storageKey);
@@ -112,6 +116,7 @@ export function useVariationPlan() {
   const busy = mutation.isPending || activeRequests > 0;
   return {
     ...mutation,
+    streamText,
     isPending: busy,
     mutate: (...args: Parameters<typeof mutation.mutate>) => {
       if (locked.current || busy) return;

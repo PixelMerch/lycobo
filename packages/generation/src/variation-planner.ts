@@ -4,6 +4,7 @@ import {
   variationPlanLimit,
 } from "@lycoboai/contracts";
 import { z } from "zod";
+import { readPlannerStream } from "./planner-stream";
 
 export class PlannerError extends Error {
   constructor(
@@ -40,6 +41,7 @@ export async function planVariation(
   idempotencyKey: string,
   signal?: AbortSignal,
   request: typeof fetch = fetch,
+  onText?: (text: string) => Promise<void>,
 ) {
   const abort = AbortSignal.timeout(config.timeoutMs);
   const native = config.protocol === "anthropic-messages";
@@ -69,7 +71,7 @@ export async function planVariation(
             ? {
                 model: config.model,
                 max_tokens: 6000,
-                stream: false,
+                stream: !!onText,
                 system: instructions,
                 messages: [
                   {
@@ -80,7 +82,7 @@ export async function planVariation(
               }
             : {
                 model: config.model,
-                stream: false,
+                stream: !!onText,
                 ...(deepseek
                   ? { thinking: { type: "disabled" }, max_tokens: 8192 }
                   : { reasoning_effort: "none", max_completion_tokens: 6000 }),
@@ -104,6 +106,10 @@ export async function planVariation(
     throw new PlannerError(response.status >= 500 ? "PLANNER_OUTCOME_UNKNOWN" : "PLANNER_REJECTED");
   }
   try {
+    if (onText && response.headers.get("content-type")?.includes("text/event-stream")) {
+      const content = await readPlannerStream(response, onText);
+      return parsePlan(content);
+    }
     const reader = response.body?.getReader();
     if (!reader) throw new Error("EMPTY");
     const parts: Uint8Array[] = [];
@@ -156,15 +162,20 @@ export async function planVariation(
       if (!choice || choice.finish_reason === "length") throw new Error("TRUNCATED");
       content = choice.message.content;
     }
-    // Some compatible providers wrap otherwise valid JSON in a single code fence.
-    // Accept only that full wrapper; explanations and partial JSON remain invalid.
-    const trimmed = content.trim();
-    const fenced = /^```(?:json)?\s*\n([\s\S]*?)\n```$/i.exec(trimmed);
-    const plan = output.parse(JSON.parse(fenced?.[1] ?? trimmed));
-    if (new Set(plan.items.map((i) => i.prompt)).size !== plan.items.length)
-      throw new Error("DUPLICATE");
-    return plan.items.map((item) => ({ ...item, id: crypto.randomUUID() }));
+    if (onText) await onText(content);
+    return parsePlan(content);
   } catch {
     throw new PlannerError("PLANNER_INVALID_RESULT");
   }
+}
+
+function parsePlan(content: string) {
+  // Some compatible providers wrap otherwise valid JSON in a single code fence.
+  // Accept only that full wrapper; explanations and partial JSON remain invalid.
+  const trimmed = content.trim();
+  const fenced = /^```(?:json)?\s*\n([\s\S]*?)\n```$/i.exec(trimmed);
+  const plan = output.parse(JSON.parse(fenced?.[1] ?? trimmed));
+  if (new Set(plan.items.map((i) => i.prompt)).size !== plan.items.length)
+    throw new Error("DUPLICATE");
+  return plan.items.map((item) => ({ ...item, id: crypto.randomUUID() }));
 }
