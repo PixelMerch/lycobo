@@ -1,6 +1,8 @@
 # 图片 Webhook 与低频批量同步
 
-本轮只完成代码和隔离测试，生产环境尚未启用。协议来源：[FluxPort 图片 Webhook 文档](https://uselg.top/docs#api-image-webhook)。
+2026-11-01 已通过 PR #46 合并到 main 并完成 CloudBase 自动部署（合并提交 `10d1c11`，Actions `41291666618`）。数据库迁移已应用，API 签名密钥与中转站 `lyco` Key 回调配置匹配，`IMAGE_WEBHOOK_ENABLED=true`。协议来源：[FluxPort 图片 Webhook 文档](https://uselg.top/docs#api-image-webhook)。
+
+生产验收任务 `WN3QEQ5N5`：收到 1 次 `image.task.completed` 回调并消费，消费者只 GET 核查原任务 1 次；1254×1254 PNG（1,289,534 字节）已写入 `lycobo-images` 私有桶。前端通过 2 次批量查询显示图片，完成后 76 秒未再查询。验收仅生成 1 张图片；家纺、裂变的共享回调链路已部署，本次未逐功能额外付费生成。
 
 ## 链路
 
@@ -21,7 +23,7 @@
 - 新 webhook 任务采用 600 秒正常核查预算；超过预算仍对原任务最后 GET 一次，有结果则保存，没有确定结果则标记待核对，不重发付费请求。旧任务快照不改，继续原有执行策略。
 - 事件记录保留 7 天，维护任务每次最多清理 1000 条；任务关联保留用于迟到回调判断。去重记录过期后，终态和旧尝试检查仍防止重复结算。
 
-## 后续发布顺序（需要另行授权）
+## 发布顺序与后续更新
 
 1. 审查共享契约和迁移；先应用 CloudBase 迁移 `20261101040000_provider_webhooks.sql`，再部署新 API、消费者和前端。Node PG 的对应迁移为 `0037_provider_webhooks.sql`，两种生产数据库只运行各自迁移通道。
 2. 服务端保持 `IMAGE_WEBHOOK_ENABLED=false`，先在 API 配置 `IMAGE_WEBHOOK_SECRET`（随机 16–256 字符）。API 通过现有 `STANDALONE_IMAGE_API_KEY` 识别该回调所属来源；密钥不得进入前端或 VITE 环境变量。
