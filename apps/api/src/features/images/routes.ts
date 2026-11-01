@@ -345,7 +345,6 @@ export function imageRoutes(deps: ImageApiDependencies) {
           ...input.data,
           model: "gpt-image-2.5",
           quality: "medium" as const,
-          prompt: `智能裂变：${input.data.variation.items.map((item) => item.title).join("、")}。每个方案分别生成一张图片。`,
         }
       : normalizeTextileGeneration(input.data);
     try {

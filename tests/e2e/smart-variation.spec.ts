@@ -76,6 +76,7 @@ test("analysis requires text, preserves edited plans and submits only confirmed 
   expect(submitted).toMatchObject({
     model: "gpt-image-2.5",
     count: 8,
+    prompt: "为杯子生成十种商品场景，保留主体",
     variation: {
       version: 1,
       items: expect.arrayContaining([

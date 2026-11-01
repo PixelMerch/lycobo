@@ -331,3 +331,28 @@ it("validates and deduplicates authenticated batch queries and wakes once for du
   ).toBe(400);
   expect(getMany).toHaveBeenCalledTimes(1);
 });
+
+it("preserves original variation requirements while retaining per-image prompts", async () => {
+  const { app, create } = fixture();
+  const prompt = "生成红色和蓝色两款商品图，保留白色区域。";
+  const items = [
+    { id: crypto.randomUUID(), title: "红色款", prompt: "主色改成红色，保留白色区域。" },
+    { id: crypto.randomUUID(), title: "蓝色款", prompt: "主色改成蓝色，保留白色区域。" },
+  ];
+  const response = await app.request("/api/v1/image-tasks", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer fixture",
+      "Content-Type": "application/json",
+      "Idempotency-Key": crypto.randomUUID(),
+    },
+    body: JSON.stringify({
+      model: "gpt-image-2.5",
+      prompt,
+      count: 2,
+      variation: { version: 1, planId: crypto.randomUUID(), items },
+    }),
+  });
+  expect(response.status).toBe(202);
+  expect(create.mock.calls[0]?.[1]).toMatchObject({ prompt, variation: { items } });
+});
