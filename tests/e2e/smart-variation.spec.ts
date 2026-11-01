@@ -122,6 +122,23 @@ for (const width of [1440, 390, 320])
     );
   });
 
+test("plan actions are not covered by the page back-to-top button", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 700 });
+  await page.goto("/commerce/smart-variation");
+  await page.getByRole("textbox", { name: "创作需求", exact: true }).fill("为杯子生成十种场景");
+  await page.evaluate(() => window.scrollTo({ top: 400, behavior: "instant" }));
+  const backToTop = page.getByRole("button", { name: "回到顶部", exact: true });
+  await expect(backToTop).toBeVisible();
+  await page.getByRole("button", { name: "生成计划", exact: true }).click();
+  const panel = page.getByRole("region", { name: "确认每张图的中文提示词", exact: true });
+  await expect(panel).toBeVisible();
+  await expect(backToTop).toBeHidden();
+  await panel.getByRole("button", { name: /开始生成/ }).click({ trial: true });
+  await panel.getByRole("button", { name: "关闭生成计划", exact: true }).click();
+  await page.evaluate(() => window.scrollTo({ top: 400, behavior: "instant" }));
+  await expect(backToTop).toBeVisible();
+});
+
 test("analysis shows progress, blocks repeated presses and opens normalized plans", async ({
   page,
 }) => {
