@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   type ImageGenerationInput,
   imageResolutionSchema,
@@ -7,6 +8,7 @@ import {
 /** 主站试用配置；不读取管理后台表。密钥仅由服务端运行环境注入。 */
 export interface StandaloneModelEnvironment {
   STANDALONE_MODELS?: string;
+  IMAGE_WEBHOOK_ENABLED?: string;
   STANDALONE_IMAGE_API_KEY?: string;
   DEEPSEEK_API_KEY?: string;
   MODEL_CREDENTIAL_SECRET?: string;
@@ -27,6 +29,7 @@ export async function standaloneModels(env: StandaloneModelEnvironment) {
   if (env.STANDALONE_MODELS !== "true") return undefined;
   if (!env.STANDALONE_IMAGE_API_KEY || !env.DEEPSEEK_API_KEY)
     throw new Error("STANDALONE_MODEL_SECRETS_REQUIRED");
+  const imageKey = env.STANDALONE_IMAGE_API_KEY;
   const credentialCipher = "standalone-env";
   const snapshots = Object.fromEntries(
     models.map((model) => [
@@ -41,7 +44,15 @@ export async function standaloneModels(env: StandaloneModelEnvironment) {
         editsEnabled: true,
         maxReferences: 6,
         timeoutMs: 60000,
-        taskTimeoutSeconds: 180,
+        taskTimeoutSeconds: env.IMAGE_WEBHOOK_ENABLED === "true" ? 600 : 180,
+        ...(env.IMAGE_WEBHOOK_ENABLED === "true"
+          ? {
+              webhook: {
+                source: imageWebhookSource(imageKey),
+                waitSeconds: 60,
+              },
+            }
+          : {}),
         downloadOrigins: ["https://download.ai-media.vip"],
         channelId,
         credentialId: standaloneCredentialId,
@@ -79,4 +90,9 @@ export async function standaloneModels(env: StandaloneModelEnvironment) {
       return snapshot;
     },
   };
+}
+
+/** Key-scoped routing identifier; never expose the generation credential. */
+export function imageWebhookSource(key: string) {
+  return createHash("sha256").update(`fluxport:${key}`).digest("hex");
 }

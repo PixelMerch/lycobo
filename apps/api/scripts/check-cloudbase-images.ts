@@ -49,11 +49,24 @@ try {
     await sql.unsafe(await readFile(fileURLToPath(new URL(migration, migrations).href), "utf8"));
   }
   const call: CloudBaseRpc = async (operation, parameters) => {
-    assert.equal(operation, "lycobo_image_operation");
+    if (operation === "lycobo_image_batch") {
+      const a = z
+        .object({ p_org: z.string(), p_user: z.string(), p_ids: z.array(z.string()) })
+        .parse(parameters);
+      const [row] =
+        await sql`select public.lycobo_image_batch(${a.p_org}::uuid,${a.p_user}::uuid,${a.p_ids}::uuid[]) result`;
+      return row?.result;
+    }
+    assert(["lycobo_image_operation", "lycobo_provider_webhook"].includes(operation));
     const args = z
       .object({ p_operation: z.string(), p_args: z.record(z.string(), z.unknown()) })
       .parse(parameters);
     try {
+      if (operation === "lycobo_provider_webhook") {
+        const [row] =
+          await sql`select public.lycobo_provider_webhook(${args.p_operation},${sql.json(z.json().parse(JSON.parse(JSON.stringify(args.p_args))))}) result`;
+        return row?.result;
+      }
       const [row] =
         await sql`select public.lycobo_image_operation(${args.p_operation},${sql.json(z.json().parse(JSON.parse(JSON.stringify(args.p_args))))}) result`;
       return row?.result;
@@ -248,6 +261,84 @@ try {
       sql.begin(async (tx) => {
         await tx.unsafe(`set local role ${role}`);
         await tx`select public.lycobo_image_operation('wallet',${tx.json({ organizationId: scope.organizationId, userId: scope.userId })})`;
+      }),
+      { code: "42501" },
+    );
+  }
+  const webhookConfig = await standaloneModels({
+    STANDALONE_MODELS: "true",
+    STANDALONE_IMAGE_API_KEY: "fixture-only",
+    DEEPSEEK_API_KEY: "fixture-only",
+    IMAGE_WEBHOOK_ENABLED: "true",
+  });
+  if (!webhookConfig) throw new Error("Missing webhook config");
+  const webhooks = cloudbaseImageRepository(call, webhookConfig);
+  const webhookJob = await webhooks.create(scope, { ...input, count: 1 }, randomUUID());
+  const [webhookItem] =
+    await sql`select id from generation_job_items where job_id=${webhookJob.id}`;
+  const webhookClaim = await webhooks.claim(webhookItem?.id, "webhook-fixture", 90000);
+  if (!webhookClaim?.configuredProvider?.snapshot.webhook) throw new Error("Missing webhook claim");
+  const receipt = {
+    source: webhookClaim.configuredProvider.snapshot.webhook.source,
+    eventId: "evt_early",
+    taskId: "imgtask_early",
+    eventType: "image.task.completed" as const,
+    taskStatus: "success" as const,
+  };
+  const balance = (await webhooks.wallet(scope)).balance;
+  assert.equal(await webhooks.webhookReceive(receipt), false);
+  assert.equal(
+    await webhooks.webhookWait(webhookClaim, receipt.taskId, "/v1/images/tasks/imgtask_early"),
+    true,
+  );
+  assert.equal(await webhooks.webhookReceive(receipt), true);
+  assert.equal((await webhooks.wallet(scope)).balance, balance);
+  assert.equal(
+    (await sql`select count(*)::int n from provider_webhook_events where event_id='evt_early'`)[0]
+      ?.n,
+    1,
+  );
+  await assert.rejects(webhooks.webhookReceive({ ...receipt, taskStatus: "uncertain" }), {
+    message: "IDEMPOTENCY_CONFLICT",
+  });
+  assert.equal(await webhooks.webhookReceive({ ...receipt, source: "b".repeat(64) }), false);
+  assert.equal((await webhooks.getMany(stranger, [webhookJob.id])).length, 0);
+  assert.equal((await webhooks.getMany(scope, [webhookJob.id]))[0]?.recovery_due, true);
+  await sql`update generation_job_items set started_at=now()-interval '4 hours',lease_expires_at=now()-interval '3 hours' where id=${webhookClaim.itemId}`;
+  await sql`update provider_executions set deadline_at=now()-interval '3 hours' where item_id=${webhookClaim.itemId}`;
+  await webhooks.expireClaims();
+  assert.equal((await webhooks.getMany(scope, [webhookJob.id]))[0]?.status, "running");
+  assert.equal((await native.getMany(scope, [webhookJob.id]))[0]?.status, "running");
+  assert.equal((await native.getMany(stranger, [webhookJob.id])).length, 0);
+  const lateClaim = await webhooks.claim(webhookClaim.itemId, "late-webhook", 90000);
+  assert(lateClaim);
+  assert.equal(await webhooks.webhookReceive({ ...receipt, eventId: "evt_during_lease" }), false);
+  assert.equal(
+    await webhooks.webhookWait(lateClaim, receipt.taskId, "/v1/images/tasks/imgtask_early"),
+    true,
+  );
+  const finalClaim = await webhooks.claim(webhookClaim.itemId, "final-webhook", 90000);
+  assert(finalClaim);
+  await webhooks.finish(finalClaim, { errorCode: "PROVIDER_OUTCOME_UNKNOWN", unknown: true });
+  assert.equal((await webhooks.wallet(scope)).balance, balance);
+  assert.equal(await webhooks.webhookReceive({ ...receipt, eventId: "evt_late_recovery" }), true);
+  const recoveredClaim = await webhooks.claim(webhookClaim.itemId, "recovered-webhook", 90000);
+  assert(recoveredClaim);
+  await webhooks.finish(recoveredClaim, { errorCode: "PROVIDER_TASK_FAILED", unknown: false });
+  const finalBalance = (await webhooks.wallet(scope)).balance;
+  assert.equal(finalBalance, balance + 2);
+  assert.equal(await webhooks.webhookReceive({ ...receipt, eventId: "evt_after_finished" }), false);
+  assert.equal((await webhooks.wallet(scope)).balance, finalBalance);
+  await webhooks.retry(scope, webhookJob.id, randomUUID(), webhookClaim.itemId, true);
+  const retryBalance = (await webhooks.wallet(scope)).balance;
+  assert.equal(await webhooks.webhookReceive({ ...receipt, eventId: "evt_superseded" }), false);
+  assert.equal((await webhooks.wallet(scope)).balance, retryBalance);
+  await webhooks.pruneWebhooks();
+  for (const role of ["anon", "authenticated"]) {
+    await assert.rejects(
+      sql.begin(async (tx) => {
+        await tx.unsafe(`set local role ${role}`);
+        await tx`select public.lycobo_provider_webhook('prune','{}'::jsonb)`;
       }),
       { code: "42501" },
     );

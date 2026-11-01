@@ -69,7 +69,7 @@ export function unfinishedJobs(client: QueryClient) {
  */
 export function pollDelay(jobs: ImageJob[], liveEvents: boolean, failures: number, now: number) {
   const age = Math.min(...jobs.map((job) => now - Date.parse(job.created_at)));
-  const base = liveEvents || age >= 600000 ? 30000 : age < 120000 ? 4000 : 10000;
+  const base = liveEvents || age >= 600000 ? 30000 : 15000;
   return Math.min(60000, base * 2 ** Math.min(failures, 4));
 }
 

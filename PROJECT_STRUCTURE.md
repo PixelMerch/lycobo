@@ -161,3 +161,5 @@ GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 C
 主站独立试用路由由 `packages/generation/src/standalone-models.ts` 定义；API/消费者将纯配置注入图片仓储，绕过后台模型目录、路由及语言模型设置读取。前端展示在 `models/model-presentation.ts`，Logo 位于 `apps/web/public/model-logos/`。不会删除后台表或改变鉴权/积分/素材持久化。
 
 CloudBase 运行入口为 `apps/api/src/index.ts`（API）、`apps/api/src/assets-server.ts`（私有图片）、`apps/worker/src/cloudbase-consumer.ts`（独立 Event 消费者）。`packages/db/src/cloudbase-*` 通过固定 SQL 业务函数访问共享 PG，原 Node 原生 PG 仓储用于本地/旧部署。实际状态和限制见 [运行迁移记录](docs/cloudbase-runtime-migration.md)。
+
+图片回调接收位于 `apps/api/src/features/images/provider-webhook.ts`；任务与事件的持久化关联位于 `packages/db/src/provider-webhook-repository.ts`。前端低频批量同步、超时补查和发布顺序见 [图片 Webhook](docs/image-webhooks.md)。

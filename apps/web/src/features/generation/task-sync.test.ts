@@ -57,11 +57,11 @@ it("polls new work quickly, long work slowly and backs off after failures", () =
   const recent = job({ created_at: "2026-11-01T00:09:30Z" });
   const long = job({ created_at: "2026-11-01T00:05:00Z" });
   const stuck = job({ created_at: "2026-11-01T00:00:00Z" });
-  expect(pollDelay([long, recent], false, 0, now)).toBe(4000);
-  expect(pollDelay([long], false, 0, now)).toBe(10000);
+  expect(pollDelay([long, recent], false, 0, now)).toBe(15000);
+  expect(pollDelay([long], false, 0, now)).toBe(15000);
   expect(pollDelay([stuck], false, 0, now)).toBe(30000);
   expect(pollDelay([recent], true, 0, now)).toBe(30000);
-  expect(pollDelay([recent], false, 2, now)).toBe(16000);
+  expect(pollDelay([recent], false, 2, now)).toBe(60000);
   expect(pollDelay([long], false, 9, now)).toBe(60000);
 });
 

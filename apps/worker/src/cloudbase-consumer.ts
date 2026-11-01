@@ -50,6 +50,7 @@ export async function main(event?: unknown) {
     // Retention and expired-reference cleanup are not urgent: timer and manual runs keep them current.
     if (!drain.success) {
       await repository.pruneEvents();
+      await repository.pruneWebhooks();
       for (const asset of await repository.expiredReferences()) {
         try {
           await store.remove(asset);

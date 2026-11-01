@@ -131,3 +131,5 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 `@lycoboai/api test:cloudbase-images` 在独立临时库加载图片 RPC 及后续追加迁移，覆盖提交/claim/outbox 并发、扣费、退款、幂等、旧执行隔离与跨组织访问。计划 ready 后还会实际确认一张裂变图片，检查仅一笔扣费和一条 outbox、同键重放不重复收费，确定失败后退款；不仅验证计划生成。该回归已先复现 SQLSTATE 42702，再验证 `20261031235900_variation_plan_confirmation.sql` 修复。运行仍需显式 loopback DATABASE_URL 和 ALLOW_LOCAL_INTEGRATION=true，不调用付费供应商。
 
 `cloudbase-outbox*.test.ts` 覆盖 Event 调用内继续取回异步结果：使用真实配置处理器与明确的内存持久化/HTTP fixtures，验证一次生成 POST、随后 GET、结果保存一次；同时验证最多两路操作、预算不足时保留 intent、没有后续 receipt 或结果未决时退出。测试不接触外部模型；原账务及 claim/outbox 不变量继续由隔离数据库测试覆盖。
+
+图片 Webhook：`provider-webhook.test.ts` 覆盖原始字节签名、时间窗口、头部一致性和持久化后唤醒；`cloudbase-outbox-provider.test.ts` 覆盖异步等待释放消费者及超时后只 GET 原任务；`test:cloudbase-images` 在独立数据库验证早到/重复/持租约回调、迟到恢复、权限、租户隔离与计费。`generation-live.spec.ts` 中 pending history 用例验证无 SSE 时的批量查询收敛和完成后停止。所有中转调用均为模拟数据，不调用真实模型。

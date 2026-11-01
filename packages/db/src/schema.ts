@@ -939,3 +939,34 @@ export const modelPlanners = pgTable(
     check("model_planner_timeout", sql`${t.timeoutMs} between 5000 and 60000`),
   ],
 ).enableRLS();
+
+// Receipts contain identifiers only, never callback bodies, prompts or download URLs.
+export const providerWebhookEvents = pgTable(
+  "provider_webhook_events",
+  {
+    id: text("id").primaryKey(),
+    source: text("source").notNull(),
+    eventId: text("event_id").notNull(),
+    taskId: text("task_id").notNull(),
+    eventType: text("event_type").notNull(),
+    taskStatus: text("task_status").notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("provider_webhook_task_idx").on(t.source, t.taskId),
+    index("provider_webhook_created_idx").on(t.createdAt),
+  ],
+).enableRLS();
+export const providerWebhookTasks = pgTable(
+  "provider_webhook_tasks",
+  {
+    itemId: uuid("item_id")
+      .primaryKey()
+      .references(() => generationJobItems.id),
+    source: text("source").notNull(),
+    taskId: text("task_id").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("provider_webhook_source_task_idx").on(t.source, t.taskId)],
+).enableRLS();

@@ -15,6 +15,16 @@ export function historyContentTop() {
   );
 }
 
+/**
+ * Shows where a new task appears: the history back at its top and the thumbnail index at its
+ * first entry. On narrow screens the history is a hidden panel, so the form keeps its place.
+ */
+export function revealNewestHistory() {
+  document.querySelector(".history-rail-list")?.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  if (document.querySelector(".results-panel")?.getClientRects().length)
+    window.scrollTo({ top: 0, behavior: "instant" });
+}
+
 export function scrollToHistoryTask(id: string) {
   const target = document.getElementById(`job-${id}`);
   if (!target) return;

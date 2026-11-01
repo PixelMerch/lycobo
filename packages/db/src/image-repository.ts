@@ -15,6 +15,7 @@ import {
 import postgres from "postgres";
 import { recordImageEvent } from "./image-event-repository";
 import { modelManagementRepository, resolveProviderSnapshot } from "./model-management-repository";
+import { nativeProviderWebhooks } from "./provider-webhook-repository";
 import { variationRepository } from "./variation-repository";
 import { appendWalletEntry, ensureWallet, walletRepository } from "./wallet-repository";
 
@@ -134,18 +135,19 @@ export function openImageRepository(
       from generation_job_items i left join media_assets a on a.id=i.output_asset_id and a.organization_id=i.organization_id where i.job_id=j.id and i.superseded_at is null) as items`;
   const expireTimedOut = async (organizationId?: string) => {
     const rows = await sql`select i.id,i.job_id from generation_job_items i
-      where i.status='running' and i.superseded_at is null and i.started_at<now()-interval '3 minutes'
+      where i.status='running' and i.superseded_at is null and i.started_at<now()-interval '3 minutes' and not exists(select 1 from provider_webhook_tasks w join provider_executions e on e.item_id=w.item_id where w.item_id=i.id and e.phase='polling')
       ${organizationId ? sql`and i.organization_id=${organizationId}` : sql``} limit 100`;
     for (const row of rows)
       await sql.begin(async (tx) => {
         await tx`select id from generation_jobs where id=${row.job_id} for update`;
         const changed =
           await tx`update generation_job_items set status='needs_reconciliation',error_code='PROVIDER_TIMEOUT',completed_at=now()
-        where id=${row.id} and status='running' and superseded_at is null and started_at<now()-interval '3 minutes' returning id`;
+        where id=${row.id} and status='running' and superseded_at is null and started_at<now()-interval '3 minutes' and not exists(select 1 from provider_webhook_tasks w join provider_executions e on e.item_id=w.item_id where w.item_id=generation_job_items.id and e.phase='polling') returning id`;
         if (changed.length) await refreshJob(tx, String(row.job_id));
       });
   };
   return {
+    ...nativeProviderWebhooks(sql),
     async storageUid(scope: ImageScope) {
       const [row] =
         await sql`select u.uid from users u join organization_members m on m.user_id=u.id
@@ -469,6 +471,15 @@ export function openImageRepository(
         await recordImageEvent(tx, scope.organizationId, "task", id);
       });
     },
+    async getMany(scope: ImageScope, ids: string[]): Promise<Record<string, unknown>[]> {
+      await expireTimedOut(scope.organizationId);
+      if (!ids.length || ids.length > 50) throw new ImageRepositoryError("STATE_CONFLICT");
+      return sql`select ${jobView}, exists(select 1 from generation_job_items i join provider_executions e on e.item_id=i.id
+        where i.job_id=j.id and i.superseded_at is null and i.status='running' and e.phase='polling' and e.next_poll_at<=now()
+        and (e.lease_until is null or e.lease_until<now())) as recovery_due
+        from generation_jobs j where j.id in ${sql(ids)} and j.organization_id=${scope.organizationId}
+        and exists(select 1 from organization_members where organization_id=j.organization_id and user_id=${scope.userId})`;
+    },
     async get(scope: ImageScope, id: string) {
       await expireTimedOut(scope.organizationId);
       const [row] =
@@ -682,12 +693,12 @@ export function openImageRepository(
       await settleInvalidResponses();
       // An expired paid attempt is held for operator reconciliation, never queued again.
       const rows =
-        await sql`select id,job_id from generation_job_items where status='running' and lease_expires_at<now() and not exists(select 1 from provider_executions e where e.item_id=generation_job_items.id and e.phase='polling' and e.task_id is not null and e.status_path is not null and e.next_poll_at is not null and e.deadline_at>now()) limit 100`;
+        await sql`select id,job_id from generation_job_items where status='running' and lease_expires_at<now() and not exists(select 1 from provider_executions e where e.item_id=generation_job_items.id and e.phase='polling' and e.task_id is not null and e.status_path is not null and e.next_poll_at is not null and (e.deadline_at>now() or exists(select 1 from provider_webhook_tasks w where w.item_id=e.item_id))) limit 100`;
       for (const row of rows)
         await sql.begin(async (tx) => {
           await tx`select id from generation_jobs where id=${row.job_id} for update`;
           await tx`update generation_job_items set status='needs_reconciliation',error_code='WORKER_OUTCOME_UNKNOWN',completed_at=now()
-          where id=${row.id} and status='running' and lease_expires_at<now()`;
+          where id=${row.id} and status='running' and lease_expires_at<now() and not exists(select 1 from provider_executions e where e.item_id=generation_job_items.id and e.phase='polling' and e.task_id is not null and e.status_path is not null and e.next_poll_at is not null and (e.deadline_at>now() or exists(select 1 from provider_webhook_tasks w where w.item_id=e.item_id)))`;
           await refreshJob(tx, String(row.job_id));
         });
     },

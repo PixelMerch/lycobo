@@ -25,6 +25,7 @@ import { createApp } from "./app";
 import { readEnv } from "./env";
 import { enterpriseAuth, readAuthConfig } from "./features/auth/service";
 import { cloudbaseConsumerWake } from "./features/images/consumer-wake";
+import { readWebhookConfig } from "./features/images/provider-webhook";
 import { readWorkbenchSession } from "./features/images/session";
 
 const env = readEnv(process.env);
@@ -121,6 +122,7 @@ const app = createApp(
       }
     : undefined,
   auth,
+  readWebhookConfig(process.env),
 );
 const server = serve({ fetch: app.fetch, hostname: env.API_HOST, port: env.API_PORT }, (info) => {
   const host = env.API_HOST === "0.0.0.0" || env.API_HOST === "::" ? "127.0.0.1" : env.API_HOST;

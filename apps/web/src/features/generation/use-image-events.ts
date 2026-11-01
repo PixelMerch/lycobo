@@ -1,7 +1,12 @@
-import { imageEventCursorSchema, imageEventSchema, imageJobSchema } from "@lycoboai/contracts";
+import {
+  imageEventCursorSchema,
+  imageEventSchema,
+  imageJobSchema,
+  imageTasksResponseSchema,
+} from "@lycoboai/contracts";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { ImageApiError, imageRequest, useImageModels, useImageSession } from "./generation-client";
+import { imageRequest, useImageModels, useImageSession } from "./generation-client";
 import {
   cachedJob,
   chargesChanged,
@@ -222,12 +227,30 @@ export function useImageEvents() {
       const jobs = unfinishedJobs(client);
       if (!jobs.length) return;
       polling = true;
-      const followUp = await refreshUnfinished(client, jobs, (id) =>
-        fetchJob(client, id).catch((error) => {
-          if (error instanceof ImageApiError && error.status === 404) return null;
-          throw error;
-        }),
-      );
+      const results = new Map<string, ReturnType<typeof imageJobSchema.parse>>();
+      const failed = new Set<string>();
+      // Bounded sequential batches avoid both per-task round trips and an unbounded fan-out.
+      for (let offset = 0; offset < jobs.length && !stopped; offset += 50) {
+        const batch = jobs.slice(offset, offset + 50);
+        try {
+          const ids = batch.map((job) => job.id).join(",");
+          const response = imageTasksResponseSchema.parse(
+            await (await imageRequest(`image-tasks/status?ids=${ids}`)).json(),
+          );
+          if (stopped) return;
+          for (const job of response.data) {
+            results.set(job.id, job);
+            client.setQueryData(["image-task", job.id], job);
+          }
+        } catch {
+          for (const job of batch) failed.add(job.id);
+        }
+      }
+      if (stopped) return;
+      const followUp = await refreshUnfinished(client, jobs, async (id) => {
+        if (failed.has(id)) throw new Error("TASK_BATCH_UNAVAILABLE");
+        return results.get(id) ?? null;
+      });
       polling = false;
       if (stopped) return;
       failures = followUp.failed ? failures + 1 : 0;

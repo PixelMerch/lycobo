@@ -12,6 +12,7 @@ import { secureHeaders } from "hono/secure-headers";
 import { z } from "zod";
 import { authRoutes } from "./features/auth/routes";
 import type { EnterpriseAuth } from "./features/auth/service";
+import { providerWebhookRoutes, type WebhookConfig } from "./features/images/provider-webhook";
 import { type ImageApiDependencies, imageRoutes } from "./features/images/routes";
 import { errorCategory, safeRequestPath } from "./request-diagnostics";
 
@@ -33,6 +34,7 @@ export function createApp(
   reportError: ErrorReporter = () => {},
   images?: ImageApiDependencies,
   auth?: EnterpriseAuth,
+  webhook?: WebhookConfig,
 ) {
   const app = new Hono<ApiEnv>();
   app.use("*", async (c, next) => {
@@ -114,6 +116,11 @@ export function createApp(
     await next();
   });
   app.route("/api/v1/auth", authRoutes(auth));
+  if (images && webhook)
+    app.route(
+      "/api/v1/webhooks",
+      providerWebhookRoutes({ config: webhook, repository: images.repository, wake: images.wake }),
+    );
   if (images) app.route("/api/v1", imageRoutes(images));
   app.get("/api/health/live", (c) => c.json({ status: "ok", service: "lycoboai-api" }));
   app.get("/api/v1/system/capabilities", (c) => {

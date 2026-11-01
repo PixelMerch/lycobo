@@ -238,6 +238,7 @@ test("submission success preserves edits made while the request is pending", asy
 test("pending history converges without an SSE notification and stops polling once complete", async ({
   page,
 }) => {
+  test.setTimeout(45000);
   await mockImageEvents(page, false);
   let reads = 0;
   const job: ImageJob = {
@@ -268,7 +269,7 @@ test("pending history converges without an SSE notification and stops polling on
   await page.route("**/api/v1/image-tasks?**", async (route) => {
     await route.fulfill({ json: { data: [job] } });
   });
-  await page.route(`**/api/v1/image-tasks/${job.id}`, async (route) => {
+  await page.route("**/api/v1/image-tasks/status?ids=*", async (route) => {
     reads++;
     if (reads >= 1) {
       job.status = "succeeded";
@@ -281,7 +282,8 @@ test("pending history converges without an SSE notification and stops polling on
         height: 1024,
       };
     }
-    await route.fulfill({ json: job });
+    expect(new URL(route.request().url()).searchParams.get("ids")).toBe(job.id);
+    await route.fulfill({ json: { data: [job] } });
   });
   await page.route("**/api/v1/image-assets/*/content**", (route) =>
     route.fulfill({ contentType: "image/png", body: png }),
@@ -289,11 +291,11 @@ test("pending history converges without an SSE notification and stops polling on
   await page.goto("/create");
   await expect(page.locator(".generation-placeholder.generation-pending")).toBeVisible();
   await expect(page.locator(".generation-results .generation-media img")).toBeVisible({
-    timeout: 12000,
+    timeout: 22000,
   });
   await expect(page.locator(".generation-pending")).toHaveCount(0);
   const completedReads = reads;
-  await page.waitForTimeout(5500);
+  await page.waitForTimeout(16000);
   expect(reads).toBe(completedReads);
 });
 

@@ -11,7 +11,11 @@ const unexpected = async (): Promise<never> => {
 function fixture(
   editsEnabled = false,
   managedModelsOnly = false,
-  extra: { wake?: () => Promise<void>; get?: ImageRepository["get"] } = {},
+  extra: {
+    wake?: () => Promise<void>;
+    get?: ImageRepository["get"];
+    getMany?: ImageRepository["getMany"];
+  } = {},
 ) {
   const create = vi
     .fn<ImageRepository["create"]>()
@@ -43,6 +47,10 @@ function fixture(
     providerRetryCandidates: unexpected,
     resumeProvider: unexpected,
     deferProvider: unexpected,
+    webhookWait: unexpected,
+    webhookReceive: unexpected,
+    pruneWebhooks: unexpected,
+    getMany: extra.getMany ?? unexpected,
     storageUid: unexpected,
     assetLocations: unexpected,
     expiredReferences: unexpected,
@@ -293,4 +301,33 @@ it("rejects missing backend routes before durable submission when runtime requir
   });
   const body = imageModelsResponseSchema.parse(unwrapApiData(await models.json()));
   expect(body.models.every((model) => model.enabledResolutions.length === 0)).toBe(true);
+});
+
+it("validates and deduplicates authenticated batch queries and wakes once for due work", async () => {
+  const ids = [crypto.randomUUID(), crypto.randomUUID()];
+  const wake = vi.fn(async () => {});
+  const getMany = vi
+    .fn<ImageRepository["getMany"]>()
+    .mockResolvedValue(
+      ids.map((id) => ({ id, status: "running", created_at: new Date(), recovery_due: true })),
+    );
+  const { app } = fixture(false, false, { wake, getMany });
+  const url = `/api/v1/image-tasks/status?ids=${[...ids, ids[0]].join(",")}`;
+  expect((await app.request(url)).status).toBe(401);
+  expect(getMany).not.toHaveBeenCalled();
+  const headers = { Authorization: "Bearer fixture" };
+  expect((await app.request(url, { headers })).status).toBe(200);
+  expect(getMany.mock.calls[0]?.[1]).toEqual(ids);
+  expect(wake).toHaveBeenCalledTimes(1);
+  expect((await app.request("/api/v1/image-tasks/status?ids=invalid", { headers })).status).toBe(
+    400,
+  );
+  expect(
+    (
+      await app.request(`/api/v1/image-tasks/status?ids=${Array(51).fill(ids[0]).join(",")}`, {
+        headers,
+      })
+    ).status,
+  ).toBe(400);
+  expect(getMany).toHaveBeenCalledTimes(1);
 });

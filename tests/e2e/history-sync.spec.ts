@@ -116,6 +116,38 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await expect(articles).toHaveCount(3);
 });
 
+test("generating returns the history and its thumbnail index to the newest task", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  const jobs = historyJobs(14);
+  let submissions = 0;
+  await page.route("**/api/v1/image-tasks*", (route) => {
+    if (route.request().method() !== "POST") return route.fulfill({ json: { data: jobs } });
+    submissions++;
+    return route.fulfill({ status: 202, json: { id: crypto.randomUUID(), replayed: false } });
+  });
+  await page.route("**/api/v1/image-assets/**/content*", (route) =>
+    route.fulfill({ contentType: "image/png", body: png }),
+  );
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/create");
+  const list = page.locator(".history-rail-list");
+  await expect(list.locator(".history-thumbnail")).toHaveCount(14);
+  await list.evaluate((node) => {
+    node.scrollTop = node.scrollHeight;
+  });
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect.poll(() => list.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("新的商品图");
+  await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
+  await expect.poll(() => submissions).toBe(1);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect.poll(() => list.evaluate((node) => node.scrollTop)).toBe(0);
+  await expect(list.locator(".history-thumbnail").first()).toHaveAttribute("aria-current", "true");
+});
+
 test("the asset entry stays fixed above the scrolling thumbnail list", async ({ page }) => {
   await mockImageApi(page);
   const jobs = historyJobs(14);
