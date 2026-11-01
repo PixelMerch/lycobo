@@ -867,7 +867,10 @@
   min-width: 80px;
 }
 .unified-workspace .generation-results[data-count] {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(
+      auto-fill,
+      minmax(min(100%, max(180px, calc((100% - 24px) / 4))), 1fr)
+    );
   justify-content: stretch;
   gap: 8px;
 }

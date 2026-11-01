@@ -48,11 +48,13 @@ export function VariationPlanPanel({
   onOpenChange,
   analyzing = false,
   streamText = "",
+  readingWeb = false,
   analysisError,
 }: {
   isOpen: boolean;
   analyzing?: boolean;
   streamText?: string;
+  readingWeb?: boolean;
   analysisError?: string | undefined;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -96,7 +98,11 @@ export function VariationPlanPanel({
             <>
               <p className="variation-plan-stream-status" role="status">
                 {analysisError ||
-                  (previews.length ? "正在完善方案，完成后即可编辑确认…" : "正在规划，请稍候…")}
+                  (readingWeb
+                    ? "DeepSeek 正在读取网页内容…"
+                    : previews.length
+                      ? "正在完善方案，完成后即可编辑确认…"
+                      : "正在规划，请稍候…")}
               </p>
               {previews.map((item, index) => (
                 <section

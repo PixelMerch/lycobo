@@ -47,7 +47,7 @@ export function useVariationGeneration() {
         source: "smart-variation",
         draft: {
           references: draft.references,
-          prompt: `套图计划：${selected.map((i) => i.title).join("、")}`,
+          prompt: draft.description,
           ratio: draft.ratio,
           resolution: draft.resolution,
           count: String(selected.length),

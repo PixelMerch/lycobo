@@ -1,6 +1,13 @@
 import type { ImageScope, VariationPlanInput } from "@lycoboai/contracts";
 import type { ImageRuntimeRepository } from "@lycoboai/db";
-import { openProviderKey, PlannerError, planVariation } from "@lycoboai/generation";
+import {
+  createPlannerWebReader,
+  openProviderKey,
+  PlannerError,
+  PlannerWebError,
+  plannerUrls,
+  planVariation,
+} from "@lycoboai/generation";
 
 export function variationService(deps: {
   repository: Pick<ImageRuntimeRepository, "variation" | "asset">;
@@ -8,6 +15,7 @@ export function variationService(deps: {
   plannerKey?: string | undefined;
   plannerRequest?: typeof fetch | undefined;
 }) {
+  const readWeb = createPlannerWebReader(deps.plannerRequest);
   return {
     async enabled() {
       return (
@@ -20,6 +28,7 @@ export function variationService(deps: {
       key: string,
       signal: AbortSignal,
       onText?: (text: string) => Promise<void>,
+      onStatus?: (stage: "reading" | "planning" | "link_failed") => Promise<void>,
     ) {
       const config = await deps.repository.variation.config();
       if (!config || (!deps.plannerKey && !deps.modelSecret)) return null;
@@ -35,6 +44,20 @@ export function variationService(deps: {
         );
         const secret =
           deps.plannerKey ?? (await openProviderKey(config.ciphertext, deps.modelSecret ?? ""));
+        const urls = plannerUrls(input.description);
+        let webContext: string | undefined;
+        if (urls.length) {
+          await onStatus?.("reading");
+          if (new URL(config.origin).origin !== "https://api.deepseek.com")
+            throw new PlannerWebError();
+          webContext = await readWeb(
+            urls,
+            secret,
+            `${scope.organizationId}:${scope.userId}`,
+            signal,
+          );
+        }
+        await onStatus?.("planning");
         const items = await planVariation(
           input,
           { ...config, key: secret },
@@ -42,6 +65,7 @@ export function variationService(deps: {
           signal,
           deps.plannerRequest,
           onText,
+          webContext,
         );
         await deps.repository.variation.finish(scope, result.plan.id, items);
       } catch (error) {
@@ -49,8 +73,13 @@ export function variationService(deps: {
           scope,
           result.plan.id,
           [],
-          error instanceof PlannerError ? error.code : "PLANNER_INVALID_RESULT",
+          error instanceof PlannerError
+            ? error.code
+            : error instanceof PlannerWebError
+              ? "PLANNER_WEB_FAILED"
+              : "PLANNER_INVALID_RESULT",
         );
+        if (error instanceof PlannerWebError) await onStatus?.("link_failed");
       }
       return deps.repository.variation.get(scope, result.plan.id);
     },
