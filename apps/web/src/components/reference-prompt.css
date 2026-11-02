@@ -12,9 +12,9 @@
   margin: 0 0 6px;
   padding: 0 4px 6px;
   border-bottom: 1px solid #ffffff14;
-  font-size: 13px;
-  line-height: 20px;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
 }
 .reference-mention-scroll {
   max-height: 232px;
@@ -34,7 +34,8 @@
   padding: 4px 8px;
   gap: 8px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 .reference-mention-popover .list-box-item img {
   width: 32px;
@@ -49,8 +50,9 @@
 }
 .reference-mention-empty {
   margin: 8px 4px;
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: #aaa;
+  line-height: var(--leading-xs);
 }
 @media (pointer: coarse) {
   .reference-mention-popover .list-box-item {
@@ -60,7 +62,7 @@
 .reference-mention-popover .list-box-item[data-focus-visible] {
   outline: none;
   box-shadow: none;
-  background: #343434;
+  background: var(--control-hover-fill);
 }
 
 .reference-mention-popover.popover,
@@ -104,7 +106,7 @@
   border-radius: 6px;
   color: #a8ff00;
   background: #343434;
-  font-size: 12px;
+  font-size: var(--text-xs);
   line-height: 18px;
   white-space: nowrap;
   user-select: all;
@@ -130,7 +132,7 @@
   overflow: hidden;
 }
 .prompt-field .prompt-editor[data-count] :is(textarea, .reference-rich-editor.textarea) {
-  padding-bottom: 32px;
+  padding-bottom: var(--space-8);
 }
 .prompt-meta {
   display: flex;
@@ -148,7 +150,7 @@
   padding: 0 4px;
   color: #808080;
   font-size: var(--text-xs);
-  font-weight: 400;
+  font-weight: var(--weight-regular);
   line-height: var(--leading-xs);
   background: transparent;
   opacity: 1;
@@ -162,7 +164,7 @@
 .prompt-count {
   color: #808080;
   font-size: var(--text-xs);
-  font-weight: 400;
+  font-weight: var(--weight-regular);
   line-height: var(--leading-xs);
   font-variant-numeric: tabular-nums;
   pointer-events: none;
@@ -189,10 +191,11 @@
 .reference-source-tabs .tabs__tab {
   padding: 0 0 8px;
   min-width: 0;
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: #888;
   background: transparent;
   border-radius: 0;
+  line-height: var(--leading-sm);
 }
 .reference-source-tabs .tabs__tab[data-selected] {
   color: #f3f3f3;
@@ -214,8 +217,9 @@
 }
 .reference-mention-options .input {
   min-width: 0;
-  font-size: 12px;
+  font-size: var(--text-xs);
   background: #171719;
+  line-height: var(--leading-xs);
 }
 .reference-mention-options .list-box-item span {
   flex: 1;
@@ -225,8 +229,15 @@
   white-space: nowrap;
 }
 .reference-mention-options .list-box-item small {
-  font-size: 11px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   color: #999;
+}
+@media (max-width: 767px) {
+  .reference-mention-options .input {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+  }
 }
 
 .reference-at {

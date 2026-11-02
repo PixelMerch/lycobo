@@ -77,14 +77,14 @@
 }
 .toast-region--bottom-end .toast__title {
   color: #eee;
-  font-size: 13px;
-  line-height: 20px;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
 }
 .toast-region--bottom-end .toast__description {
   color: #a8a8a8;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 .toast-region--bottom-end .toast__indicator {
   color: #eee;

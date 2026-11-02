@@ -39,7 +39,7 @@
 }
 .reference-tile.reference-image-card .reference-number {
   color: #ffffffa6;
-  font-weight: 400;
+  font-weight: var(--weight-regular);
   inset: 0 auto auto 0;
   display: grid;
   place-items: center;

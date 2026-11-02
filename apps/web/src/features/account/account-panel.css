@@ -35,14 +35,14 @@
 }
 .account-dialog .tabs__panel {
   min-width: 0;
-  padding-block: 20px 0;
+  padding-block: var(--space-5) 0;
 }
 .account-dialog .tabs__tab {
   white-space: nowrap;
 }
 .account-management > .tabs__list-container .tabs__list,
 .account-ledger-tabs > .tabs__list-container .tabs__list {
-  gap: 8px;
+  gap: var(--space-2);
   padding: 0;
   border: 0;
   background: transparent;
@@ -50,7 +50,7 @@
 .account-management .tabs__tab,
 .account-ledger-tabs .tabs__tab {
   min-height: 40px;
-  padding: 8px 18px;
+  padding: var(--space-2) 18px;
   border-radius: 12px;
   color: #b8b8c0;
 }
@@ -68,14 +68,15 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px 12px;
-  margin-bottom: 16px;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-4);
   color: #a1a1aa;
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 .account-management-summary strong {
   color: #eee;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   overflow-wrap: anywhere;
 }
 .account-management-summary small {
@@ -83,11 +84,11 @@
 }
 .account-binding-list {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .account-binding-card,
 .account-reset-card {
-  padding: 20px;
+  padding: var(--space-5);
   border: 1px solid var(--interaction-hover);
   border-radius: 16px;
   background: #262626;
@@ -97,49 +98,52 @@
 .account-binding-action {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2);
 }
 .account-binding-heading {
-  padding-bottom: 16px;
+  padding-bottom: var(--space-4);
   border-bottom: 1px solid #ffffff0f;
 }
 .account-binding-heading h3 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-lg);
 }
 .account-status {
-  padding: 3px 8px;
+  padding: 3px var(--space-2);
   border-radius: 8px;
   background: var(--interaction-hover);
   color: #a1a1aa;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 .account-binding-action {
   justify-content: space-between;
-  margin-top: 16px;
+  margin-top: var(--space-4);
 }
 .account-binding-action p {
   margin: 0;
   color: #a1a1aa;
-  font-size: 14px;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
 }
 .account-reset-steps {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--space-3);
   margin: 0 0 20px;
-  padding: 0 0 16px;
+  padding: 0 0 var(--space-4);
   border-bottom: 1px solid #ffffff0f;
   list-style: none;
   color: #85858e;
-  font-size: 14px;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
 }
 .account-reset-steps li {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .account-reset-steps li[aria-current="step"] {
   color: #eee;
@@ -151,17 +155,19 @@
   height: 22px;
   border: 1px solid currentColor;
   border-radius: 7px;
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 .account-field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
 }
 .account-field .label {
   color: #eee;
-  font-size: 14px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 .account-field .input {
   width: 100%;
@@ -171,7 +177,8 @@
   background: #262626;
   box-shadow: none;
   color: #eee;
-  font-size: 14px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 .account-field .input:is(:focus, :focus-visible, [data-focused="true"]) {
   border-color: #ffffff4d;
@@ -181,13 +188,13 @@
 }
 .account-field .description {
   color: #a1a1aa;
-  font-size: 12px;
-  line-height: 20px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 .account-verification-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .account-verification-row .input {
   min-width: 0;
@@ -199,32 +206,33 @@
 .account-wallet-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: var(--space-2);
 }
 .account-wallet-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 .account-wallet-heading > div:first-child {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .account-wallet-heading > div > span {
   color: #b8b8c0;
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 .account-wallet-heading strong {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2);
   color: #eee;
-  font-size: 32px;
-  line-height: 40px;
-  font-weight: 600;
+  font-size: var(--text-2xl);
+  line-height: var(--leading-2xl);
+  font-weight: var(--weight-semibold);
   font-variant-numeric: tabular-nums;
 }
 .account-wallet-summary {
@@ -237,32 +245,34 @@
 }
 .account-wallet-summary > div {
   display: grid;
-  gap: 10px;
-  padding: 16px 20px;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
 }
 .account-wallet-summary > div + div {
   border-left: 1px solid #ffffff0f;
 }
 .account-wallet-summary > div > span {
   color: #a1a1aa;
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 .account-wallet-summary strong {
-  font-size: 14px;
-  line-height: 22px;
-  font-weight: 500;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-medium);
 }
 .account-ledger-controls,
 .account-table-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   color: #a1a1aa;
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 .account-ledger-controls {
-  margin-bottom: 14px;
+  margin-bottom: var(--space-3);
 }
 .account-ledger-filter {
   width: 160px;
@@ -286,14 +296,15 @@
   min-width: 650px;
 }
 .account-ledger-table :is(th, td) {
-  padding: 14px 16px;
+  padding: 14px var(--space-4);
   text-align: left;
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 .account-ledger-table th {
   background: #333;
   color: #a1a1aa;
-  font-weight: 400;
+  font-weight: var(--weight-regular);
 }
 .account-ledger-table td {
   border-bottom: 1px solid var(--interaction-hover);
@@ -302,14 +313,16 @@
   font-variant-numeric: tabular-nums;
 }
 .account-ledger-table td strong {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-sm);
 }
 .account-ledger-table td small {
   display: block;
   margin-top: 5px;
   color: #85858e;
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 .account-ledger-table tbody tr:nth-child(even) td {
   background: #222;
@@ -328,22 +341,27 @@
   place-items: center;
   min-height: 150px;
   color: #a1a1aa;
-  font-size: 14px;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
 }
 .account-table-footer {
-  margin-top: 14px;
+  margin-top: var(--space-3);
   min-height: 32px;
 }
 @media (max-width: 767px) {
+  .account-field .input {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+  }
   .account-dialog.account-dialog--management,
   .account-dialog.account-dialog--credits {
     width: calc(100vw - 24px);
     max-height: calc(100dvh - 24px);
-    padding: 20px 16px;
+    padding: var(--space-5) var(--space-4);
   }
   .account-binding-card,
   .account-reset-card {
-    padding: 16px;
+    padding: var(--space-4);
   }
   .account-wallet-summary {
     grid-template-columns: 1fr;
@@ -352,8 +370,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding: 12px 16px;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
   }
   .account-wallet-summary > div + div {
     border-top: 1px solid #ffffff0f;
@@ -364,8 +382,9 @@
     margin-left: 0;
   }
   .account-reset-steps {
-    gap: 8px;
-    font-size: 12px;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
   }
   .account-verification-row {
     flex-wrap: wrap;

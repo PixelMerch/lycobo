@@ -104,7 +104,7 @@
 /* Neutral hover on the dark pill, matching the option tracks elsewhere. */
 .preview-canvas-toolbar .button:is(:hover, [data-hovered="true"]),
 .preview-canvas-toolbar .toggle-button:is(:hover, [data-hovered="true"]) {
-  background: #ffffff0f;
+  background: var(--interaction-hover);
   color: #fff;
 }
 .preview-canvas-toolbar .toggle-button[data-selected="true"]:is(:hover, [data-hovered="true"]) {
@@ -120,8 +120,8 @@
   background: #17171b;
   text-align: center;
   color: #8f8f98;
-  font-size: 12px;
-  line-height: 20px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   white-space: nowrap;
 }
 .preview-canvas-status[data-editing="true"] {
@@ -136,8 +136,9 @@
   flex: none;
   padding-inline: 8px;
   color: #cfcfcf;
-  font-size: 12px;
+  font-size: var(--text-xs);
   white-space: nowrap;
+  line-height: var(--leading-xs);
 }
 .image-preview-workspace-panel {
   animation: preview-panel-in 120ms ease-out;

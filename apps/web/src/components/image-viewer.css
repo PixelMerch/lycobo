@@ -170,7 +170,7 @@
   background: transparent;
 }
 .browse-image-toolbar .button:hover {
-  background: #ffffff14;
+  background: var(--interaction-active);
 }
 /* Viewer controls keep a visible but neutral keyboard focus: the shared theme
  * ring reads as a purple border on the dark toolbar, so focus and hover share
@@ -185,8 +185,9 @@
   color: #fff;
   min-width: 48px;
   text-align: center;
-  font-size: 14px;
+  font-size: var(--text-base);
   white-space: nowrap;
+  line-height: var(--leading-base);
 }
 .browse-image-thumbnails {
   display: flex;

@@ -8,14 +8,15 @@
 }
 .variation-example-button.button[data-hovered="true"] {
   color: var(--foreground);
-  background: #ffffff0a;
+  background: var(--interaction-hover);
 }
 .variation-submit p,
 .variation-plan-availability {
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-xs);
   text-align: center;
+  line-height: var(--leading-xs);
 }
 .variation-introduction {
   padding: 48px 32px;
@@ -23,20 +24,21 @@
 }
 .variation-eyebrow {
   color: #8bc8ff;
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 .variation-intro-heading h2 {
   margin: 12px 0;
-  font-size: clamp(24px, 2.2vw, 32px);
-  font-weight: 600;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
   line-height: 1.4;
 }
 .variation-intro-heading p,
 .variation-steps p,
 .variation-example-entry p {
   color: var(--muted);
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
   margin: 6px 0 0;
 }
 .variation-steps {
@@ -58,9 +60,10 @@
 }
 .variation-steps h3,
 .variation-example-entry h3 {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
   margin: 0;
+  line-height: var(--leading-lg);
 }
 .variation-example-entry {
   padding: 20px;
@@ -83,11 +86,12 @@
   gap: 4px;
   white-space: nowrap;
   color: var(--foreground);
-  font-size: 14px;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
 }
 .variation-history-index p {
-  font-size: 12px;
-  line-height: 1.8;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   color: var(--muted);
   margin-top: 24px;
 }
@@ -126,15 +130,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-shrink: 0;
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
 }
 .variation-plan-header h2 {
   margin: 0;
-  font-size: 18px;
-  line-height: 26px;
-  font-weight: 500;
+  font-size: var(--text-xl);
+  line-height: var(--leading-xl);
+  font-weight: var(--weight-semibold);
 }
 .variation-plan-body {
   flex: 1;
@@ -142,22 +146,22 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  padding: 4px 20px 20px;
+  padding: var(--space-1) var(--space-5) var(--space-5);
 }
 .variation-plan-list {
   display: grid;
-  gap: 16px;
+  gap: var(--space-4);
 }
 .variation-plan-card {
-  padding: 18px;
+  padding: var(--space-4);
   background: #222;
   border-radius: 16px;
 }
 .variation-plan-card-heading {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
 }
 .variation-plan-number {
   display: grid;
@@ -168,7 +172,8 @@
   border-radius: 50%;
   background: #ffffff0d;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 .variation-plan-title {
   flex: 1;
@@ -177,15 +182,16 @@
 .variation-plan-card input,
 .variation-plan-card textarea {
   background: #171717;
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: #eee;
   border: 1px solid #ffffff12;
   border-radius: 10px;
+  line-height: var(--leading-sm);
 }
 .variation-plan-card textarea {
   width: 100%;
-  line-height: 1.8;
-  font-size: 14px;
+  line-height: var(--leading-base);
+  font-size: var(--text-base);
   resize: none;
   overflow: hidden;
   max-height: none;
@@ -199,22 +205,23 @@
   flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: center;
-  padding: 18px 28px;
+  padding: var(--space-4) var(--space-6);
   border-top: 1px solid #ffffff0d;
 }
 .variation-plan-output {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-4);
   flex: 1;
   flex-wrap: wrap;
 }
 .variation-plan-output > span {
   color: #a1a1aa;
-  font-size: 13px;
+  font-size: var(--text-sm);
   white-space: nowrap;
+  line-height: var(--leading-sm);
 }
 .variation-generate {
   border-radius: 999px;
@@ -238,26 +245,27 @@
 }
 @media (max-width: 640px) {
   .variation-plan-header {
-    padding: 12px;
+    padding: var(--space-3);
   }
   .variation-plan-header h2 {
-    font-size: 16px;
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
   }
   .variation-plan-body {
-    padding: 0 12px 12px;
+    padding: 0 var(--space-3) var(--space-3);
   }
   .variation-plan-card {
-    padding: 12px;
+    padding: var(--space-3);
   }
   .variation-plan-card-heading {
-    gap: 8px;
+    gap: var(--space-2);
   }
   .variation-plan-number {
     width: 24px;
     height: 24px;
   }
   .variation-plan-footer {
-    padding: 16px;
+    padding: var(--space-4);
   }
   .variation-plan-output {
     flex-basis: 100%;
@@ -329,6 +337,10 @@
   }
 }
 @media (max-width: 767px) {
+  .variation-plan-card :is(input, textarea) {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+  }
   .variation-plan-panel {
     left: var(--content-padding);
     border-radius: 16px;
@@ -338,10 +350,11 @@
 .variation-plan-stream-prompt {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  line-height: 1.7;
+  line-height: var(--leading-base);
   margin: 12px 0 0;
 }
 .variation-plan-stream-status {
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
 }
