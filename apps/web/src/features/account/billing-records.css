@@ -1,5 +1,31 @@
+.account-dialog--credits .modal__body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
 .account-wallet {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   min-width: 0;
+  min-height: 0;
+}
+.account-ledger-tabs {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.account-ledger-tabs > .tabs__list-container,
+.billing-overview {
+  flex-shrink: 0;
+}
+.account-wallet .account-ledger-tabs .tabs__panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 .billing-overview {
   display: flex;

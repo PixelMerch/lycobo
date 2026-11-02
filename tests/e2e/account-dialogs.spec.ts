@@ -105,7 +105,7 @@ test("ledger filters loaded pages without losing older records or exposing payme
   await expect(dialog.getByText("已加载 21 条记录", { exact: true })).toBeVisible();
   await expect(dialog.getByRole("heading", { name: "2026年10月22日" })).toBeAttached();
   await expect(dialog.getByRole("heading", { name: "2026年10月21日" })).toBeVisible();
-  await dialog.locator(".modal__body").evaluate((el) => {
+  await dialog.getByRole("tabpanel", { name: "收支明细", exact: true }).evaluate((el) => {
     el.scrollTop = 0;
   });
   await dialog.screenshot({ path: "/tmp/lycobo-billing-redesign-records.png" });
@@ -125,3 +125,67 @@ test("ledger filters loaded pages without losing older records or exposing payme
     .toBe(true);
   await page.screenshot({ path: "/tmp/lycobo-account-orders-mobile.png" });
 });
+
+for (const width of [1440, 390]) {
+  test(`billing tabs keep the dialog and tab positions stable at ${width}px`, async ({ page }) => {
+    await mockImageApi(page);
+    await page.route("**/api/v1/auth/session", (route) =>
+      route.fulfill({
+        json: apiFixture({
+          userId: crypto.randomUUID(),
+          organizationId: crypto.randomUUID(),
+          role: "admin",
+          account: "billing-layout-fixture",
+        }),
+      }),
+    );
+    await page.route("**/api/v1/wallet/entries?*", (route) =>
+      route.fulfill({
+        json: apiFixture({
+          data: Array.from({ length: 15 }, (_, index) => ({
+            id: String(15 - index),
+            user_uid: "0123456789",
+            kind: "consume",
+            amount: -2,
+            balance_after: 200,
+            job_id: null,
+            task_id: "W12345678",
+            item_id: null,
+            recharge_id: null,
+            created_at: "2026-11-02T00:00:00Z",
+          })),
+        }),
+      }),
+    );
+    await page.setViewportSize({ width, height: width < 768 ? 700 : 900 });
+    await page.goto("/create");
+    if (width < 768) await page.getByRole("button", { name: "打开导航", exact: true }).click();
+    await page
+      .getByRole("button", { name: "账户菜单：billing-layout-fixture", exact: true })
+      .click();
+    await page.getByRole("menuitem", { name: "订阅与账单", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "订阅与账单", exact: true });
+    await expect(dialog.getByText("已加载 15 条记录", { exact: true })).toBeVisible();
+    await expect(page.locator(".modal__container").last()).not.toHaveAttribute(
+      "data-entering",
+      "true",
+    );
+    const before = await dialog.boundingBox();
+    const tabs = dialog.getByRole("tablist", { name: "账单记录", exact: true });
+    const tabsBefore = await tabs.boundingBox();
+    if (!before || !tabsBefore) throw new Error("Missing billing layout");
+    await dialog.getByRole("tabpanel", { name: "收支明细", exact: true }).evaluate((el) => {
+      el.scrollTop = 180;
+    });
+    expect((await tabs.boundingBox())?.y).toBeCloseTo(tabsBefore.y, 0);
+    for (const tab of ["充值订单", "收支明细", "充值订单"]) {
+      await dialog.getByRole("tab", { name: tab, exact: true }).click();
+      await expect
+        .poll(async () => (await dialog.boundingBox())?.height)
+        .toBeCloseTo(before.height, 0);
+      expect((await dialog.boundingBox())?.y).toBeCloseTo(before.y, 0);
+      expect((await tabs.boundingBox())?.y).toBeCloseTo(tabsBefore.y, 0);
+      await expect.poll(() => dialog.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    }
+  });
+}

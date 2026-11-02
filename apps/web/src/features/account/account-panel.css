@@ -22,6 +22,7 @@
   width: min(720px, calc(100vw - 48px));
 }
 .account-dialog.account-dialog--credits {
+  height: min(760px, calc(100dvh - 48px));
   width: min(960px, calc(100vw - 48px));
 }
 .account-dialog .account-rows > div {
