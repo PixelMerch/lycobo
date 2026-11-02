@@ -7,9 +7,9 @@ export const reactBitConfig = {
     radius: 12, // 图片圆角，px
     angle: -12, // 整体旋转角度，deg
     tilt: 0, // 透视倾斜角度，0–75
-    speed: 24, // 自动移动速度，px/s；0 为停止自动移动
+    speed: 12, // 自动移动速度，px/s；0 为停止自动移动
     direction: "alternate", // alternate：错向；left：向左；right：向右
-    parallax: 0.5, // 鼠标视差，0–1；0 为关闭
+    parallax: 0.15, // 鼠标视差，0–1；0 为关闭
     spotlight: 0.6, // 鼠标附近图片的提亮范围，0–1；0 为关闭
     dim: 0.6, // 图片暗化程度，0–1；越大越暗
     fade: 0.7, // 左右与底部渐隐，0–1；顶部不渐隐，覆盖 Header
