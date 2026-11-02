@@ -1,6 +1,6 @@
 # 架构与目录
 
-一个 pnpm workspace 仓库，四个独立应用；前端 CSR、API、消费者、图片服务及共享 PG 已接入 CloudBase。主图制作、家纺裂变、套图计划已实际生图和保存私有对象，定时执行已开启；固定使用默认同源网关，自定义域名暂不接入，独立 admin 尚未切换。旧平台运行时代码、模拟器与部署配置已移除，旧远端 API/消费者生图保持关闭。
+一个 pnpm workspace 仓库，四个独立应用；前端 CSR、API、消费者、图片服务及共享 PG 已接入 CloudBase。主图制作、家纺裂变、套图计划已实际生图和保存私有对象，定时执行已开启；固定使用默认同源网关，自定义域名暂不接入，独立 admin 尚未切换。旧平台运行时代码、模拟器与部署配置已移除，旧远端Pages、三个Worker和R2桶已按用户要求删除。
 代码同仓不表示进程合并或强制一起发布。
 
 | 路径 | 职责 |
@@ -10,12 +10,12 @@
 | apps/web/src/lib | 浏览器 API 客户端与工具 |
 | apps/web/src/styles | 共享设计 tokens 与全局基础样式 |
 | apps/api/src | Hono 入口、应用工厂、配置与组织隔离的生图 feature API |
-| apps/assets/src | 独立私有图片资源 Worker：短期签名、Referer/CORS、WebP 预览／缩略图缓存、原图下载及旧图 Images 补生成 |
+| apps/assets/src | 独立 Node 私有图片资源服务：短期签名、Referer/CORS、WebP 展示变体缓存、原图下载及旧图 Sharp 变体补生成 |
 | apps/worker/src | 队列消费者、生命周期与任务执行 |
 | packages/contracts | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖 |
 | packages/db | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY |
 | cloudbase/migrations | CloudBase 共享 PG 的源库结构基线与约束恢复；原 Drizzle 历史随数据复制保留 |
-| packages/queue | ID-only 消息契约、持久 outbox 与旧 Queue 适配；CloudBase 消费者直接认领 PG outbox，旧运输适配用于隔离开发和兼容 |
+| packages/queue | ID-only 消息契约与通用 outbox 投递；CloudBase 消费者直接认领 PG outbox，通用投递接口用于隔离集成测试 |
 | packages/generation | 服务商契约、Vakv 同步兼容、可配置 OpenAI／FluxPort 同异步适配与密钥加密（真实渠道待验收） |
 | packages/storage | CloudBase PG 私有存储、UID 路径、Node Sharp 变体；S3 适配用于本地开发和迁移，CloudBase 不回退旧存储 |
 | scripts/cloudbase | 静态及 Linux 云函数发布包准备、固定目标配置与敏感文件隔离 |
@@ -40,8 +40,7 @@ apps/web/src/
     ├── commerce/                 # 兼容旧电商入口偏好、家纺裂变参数面板、套图计划语言分析、真实计划确认与生图、本地会话草稿
     ├── home/                     # 首页、共享创作输入与提示辅助
     │   ├── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，use-inspiration-columns.ts 订阅断点并派生均衡瀑布流
-    │   ├── home-intro.tsx         # 首页渐变轮换标题，文案与间隔在 home-intro-config.ts
-    │   └── dot-grid/             # React Bits 点阵源码适配，首页参数在 home-dot-grid-config.ts
+    │   └── home-grid-motion.tsx   # 按需加载的Grid Motion背景、视差与可见性暂停；参数在react-bit-config.ts
     ├── assets/                   # 素材页、全屏素材库及其局部样式
     ├── generation/               # 生图请求、事件、会话草稿及工作台页面
     │   ├── composer/             # 比例选择、参数选中背景
@@ -67,7 +66,7 @@ web → contracts。api/worker/assets → 服务包 → db/queue/storage/generat
 contracts 不得反向引用应用或 server-only 包；共享包不得依赖 apps。
 业务 feature 内部用直接导入，不建立覆盖整站的大 barrel。
 当前 packages 使用 TypeScript 源导出：开发通过 Vite/tsx 消费，
-前端由 Vite 打包，Node API 由 tsup 打包；Wrangler 仅用于本地模拟和隔离回归。Pages Functions 转发入口已删除，CloudBase 共享 PG 仓储、Node 资源服务及 Event 消费者已实现；同源网关、真实生图和私有图片读写均已验收，主站生图与定时执行已开启。
+前端由 Vite 打包，Node API 由 tsup 打包；本地开发使用隔离 Node 进程、PostgreSQL 与私有 S3。CloudBase 共享 PG 仓储、Node 资源服务及 Event 消费者已实现；同源网关、真实生图和私有图片读写均已验收，主站生图与定时执行已开启。
 这些包 private，不是可直接发布到 npm 的编译 SDK。
 
 ## 进程与服务
@@ -88,7 +87,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 ## 部署
 
-GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 CloudBase 函数代码并发布静态前端，使用 cloudbase-production Environment。旧 Cloudflare 工作流、生产 Wrangler 配置和 setup/deploy 脚本已删除。主站图片目标为 CloudBase PG 私有云存储，Node 变体生成不依赖 Cloudflare Images。见 [CloudBase 部署](docs/cloudbase-deployment.md)。旧远端资源仅作为迁移回退资料保留。
+GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 CloudBase 函数代码并发布静态前端，使用 cloudbase-production Environment。旧 Cloudflare 工作流、生产 Wrangler 配置和 setup/deploy 脚本已删除。主站图片目标为 CloudBase PG 私有云存储，Node 变体生成不依赖 Cloudflare Images。见 [CloudBase 部署](docs/cloudbase-deployment.md)。旧Pages、三个Worker和R2桶已删除，仅保留本地迁移记录与数据备份。
 
 2026-10-31 已将 Supabase 的 `public`、`drizzle` 结构与数据快照复制到 CloudBase 个人版共享 PG，43 张表、1,156 行及关联结构通过校验。2026-11-01 主站三个功能已使用 CloudBase 共享 PG、后台消费者和私有云存储完成真实生成；独立 admin 仍未切换，旧端生图关闭。初始数据复制、运行启用及正式域名边界分别见 [数据库迁移](docs/cloudbase-database-migration.md)、[图片迁移](docs/cloudbase-storage-migration.md) 和 [运行验收](docs/cloudbase-runtime-migration.md)。
 
@@ -125,8 +124,9 @@ GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 C
 
 功能组件使用直接依赖；服务端缓存属于TanStack Query，临时草稿与交互属于Zustand，纯展示组件从props获得数据。具体规则见[UI一致性维护](docs/ui-consistency.md)。
 
-- `features/account/HeaderAccountMenu` 封装Header登录态、积分与头像合并入口、账户下拉菜单及账户弹窗；`StudioShell` 仅组合入口，不重复持有账号查询和菜单状态。个人作品复用素材库路由，账户资料、订阅与账单、账号管理由 `AccountPanel` 承接。
-- 账户独立弹窗由 `features/account/account-panel.tsx` 按入口组合，仅挂载所选功能、不提供跨功能 Tab：`AccountManagement` 封装绑定／重置密码的可用状态与表单，`WalletPanel` 封装真实共享余额、收支筛选和充值订单，`account-panel.css` 维护与个人信息一致的深色表面及中性灰输入焦点。未接入的账号绑定、验证码和支付不会模拟成功。
+- `features/account/account-menu.tsx` 的 HeaderLogin 与 AccountMenu 封装未登录入口和侧栏账户菜单（积分卡片、会员行与个人中心快捷入口）；`header-benefits.tsx` 组合登录后的双入口胶囊，积分点击用官方Popover展示 `CreditPreview` 的真实余额及最多三条记录。`account-overlays.tsx` 以Zustand记录个人中心页签、充值／会员弹层及各自打开者，`AccountOverlayHost` 由StudioShell挂载，统一渲染懒加载个人中心、`RechargeDialog`（`credits-dialog.tsx`、`credit-packs.tsx` 订单预览）与懒加载会员弹窗；充值和会员可叠在个人中心上方，各层关闭后焦点返回各自打开者，退出登录时清空。
+- `features/account/account-center-dialog.tsx` 是懒加载的个人中心弹窗（不设路由），页签定义在 `account-center-tabs.ts`；`account-overview.tsx`、`credit-ledger.tsx`、`recharge-orders.tsx`、`account-membership.tsx`、`account-security.tsx` 分别为各页签，`account-format.ts` 提供纯格式化函数（张数换算、成员、相对时间），`account-entry.tsx` 为收支类型图标。查询共用TanStack Query，只在页签选中时挂载。
+- `features/account/membership-page.tsx` 导出懒加载全屏 MembershipDialog，Header在当前工作区打开；/membership仅为旧链接兼容入口，不展示返回与明细按钮；`MembershipPlans` 管理分类、周期、档位和团队席位展示；membership-details组合工具／协作能力与Tooltip，membership-faq用官方Accordion承载本站FAQ，`CreditPacks` 只管理所选包。`wallet-client.ts` 共享钱包查询，最近记录按需读取并缓存30秒，不新增轮询。未接入的会员、绑定、验证码及支付不会模拟成功。
 
 ## 数据库领域命名
 

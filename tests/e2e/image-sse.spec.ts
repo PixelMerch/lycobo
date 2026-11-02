@@ -254,6 +254,17 @@ test("logout closes the shared stream and removes prior identity data", async ({
 
 test("running task events do not refetch wallet but a refund does", async ({ page }) => {
   await mockImageEvents(page);
+  // The signed-in account capsule shows the shared balance, so it observes the wallet.
+  await page.route("**/api/v1/auth/session", (route) =>
+    route.fulfill({
+      json: apiFixture({
+        userId: crypto.randomUUID(),
+        organizationId: crypto.randomUUID(),
+        role: "admin",
+        account: "wallet-fixture",
+      }),
+    }),
+  );
   const job = jobFixture();
   let wallets = 0;
   let details = 0;

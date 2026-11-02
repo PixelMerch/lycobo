@@ -12,9 +12,10 @@
 }
 .home-inspiration-heading h2 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
   color: var(--foreground);
+  line-height: var(--leading-xl);
 }
 .home-inspiration .tabs {
   display: grid;
@@ -44,8 +45,9 @@
   min-height: 36px;
   padding: 8px 14px;
   border-radius: 999px;
-  font-size: 14px;
+  font-size: var(--text-base);
   color: var(--muted);
+  line-height: var(--leading-base);
 }
 .home-inspiration .tabs__tab[data-selected] {
   color: var(--foreground);
@@ -62,7 +64,7 @@
 }
 .home-inspiration .tabs__tab:is(:hover, [data-hovered]):not([data-selected]) {
   color: var(--foreground);
-  background: #ffffff08;
+  background: var(--interaction-hover);
 }
 .home-inspiration-grid {
   display: grid;
@@ -114,8 +116,8 @@
   border-radius: 8px;
   color: #fff;
   background: #00000080;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   opacity: 0;
   pointer-events: none;
 }
@@ -140,14 +142,15 @@
   min-width: 0;
 }
 .home-inspiration-caption small {
-  font-size: 12px;
-  font-weight: 400;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
   color: #ffffffb3;
+  line-height: var(--leading-xs);
 }
 .home-inspiration-caption strong {
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 500;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-medium);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -175,26 +178,29 @@
   background: var(--surface);
 }
 .home-inspiration-description {
-  padding: 8px 0;
+  padding: var(--space-2) 0;
 }
 .home-inspiration-description > span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 .home-inspiration-description h3 {
   margin: 24px 0 12px;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-lg);
 }
 .home-inspiration-description p {
   margin: 0;
-  line-height: 1.7;
-  font-size: 14px;
+  line-height: var(--leading-base);
+  font-size: var(--text-base);
 }
 .home-inspiration-description .home-inspiration-hint {
-  margin-top: 24px;
+  margin-top: var(--space-6);
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 .home-inspiration-actions {
   display: flex;
@@ -239,12 +245,14 @@
     gap: 8px;
   }
   .home-inspiration-heading h2 {
-    font-size: 20px;
+    font-size: var(--text-xl);
+    line-height: var(--leading-xl);
   }
   .home-inspiration .tabs__tab {
     min-height: 44px;
     padding-inline: 12px;
-    font-size: 13px;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
   }
   .home-inspiration-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

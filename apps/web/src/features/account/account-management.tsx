@@ -22,7 +22,7 @@ export function AccountManagement({ account }: { account: EnterpriseIdentity | n
         <div className="account-management-summary">
           <span>企业账号</span>
           <strong>{account?.account ?? "—"}</strong>
-          {account?.uid && <small>账号 {account.uid}</small>}
+          {account?.uid && <small>UID {account.uid}</small>}
         </div>
         <div className="account-binding-list">
           {[
@@ -86,9 +86,6 @@ export function AccountManagement({ account }: { account: EnterpriseIdentity | n
             <Description>企业账号由管理员重置密码，暂不支持验证码自助重置。</Description>
           </TextField>
           <div className="account-reset-actions">
-            <Button variant="secondary" slot="close">
-              取消
-            </Button>
             <Button variant="primary" isDisabled>
               确认
             </Button>

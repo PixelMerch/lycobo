@@ -30,29 +30,29 @@
   outline: none;
 }
 .confirm-dialog .modal__header {
-  padding: 20px 56px 8px 20px;
+  padding: var(--space-5) 56px var(--space-2) var(--space-5);
 }
 .confirm-dialog .modal__heading {
   color: #fff;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 600;
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
+  font-weight: var(--weight-semibold);
 }
 .confirm-dialog .modal__body {
   margin: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) max-content;
-  column-gap: 10px;
-  padding: 0 20px 20px;
+  column-gap: var(--space-2);
+  padding: 0 var(--space-5) var(--space-5);
 }
 .confirm-dialog__content {
   grid-column: 1;
   min-width: 0;
   overflow-wrap: anywhere;
   color: #b8b8c0;
-  font-size: 14px;
-  line-height: 22px;
-  font-weight: 400;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-regular);
 }
 .confirm-dialog__content p {
   margin: 0;
@@ -61,8 +61,8 @@
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: subgrid;
-  gap: 10px;
-  margin-top: 20px;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
 }
 .confirm-dialog__cancel.button {
   justify-self: end;
@@ -71,12 +71,12 @@
 .confirm-dialog__confirm.button {
   height: 32px;
   min-height: 32px;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
   border: 0;
   border-radius: 8px;
-  font-size: 13px;
-  line-height: 20px;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
   box-shadow: none;
 }
 /* Cancel is a plain white text action, as in the reference dialog; only hover
@@ -110,43 +110,27 @@
   position: absolute;
   top: 8px;
   right: 8px;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  /* The close action is a round hit target, so its hover fill reads as a disc
-   * instead of a rounded square. Its glyph stays white like the full-screen
-   * dialogs so it never looks disabled. */
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: #a8a8b0;
-  box-shadow: none;
-}
-.confirm-dialog
-  .modal__close-trigger:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
-  background: radial-gradient(circle 16.5px at center, #ffffff1f 100%, transparent 100%);
-  color: #fff;
 }
 @media (max-width: 767px) {
   .confirm-dialog {
     width: min(480px, calc(100vw - 24px));
   }
   .confirm-dialog .modal__header {
-    padding: 20px 56px 8px 20px;
+    padding: var(--space-5) 56px var(--space-2) var(--space-5);
   }
   .confirm-dialog .modal__body {
     display: grid;
     grid-template-columns: minmax(0, 1fr) max-content;
-    column-gap: 10px;
-    padding: 0 20px 20px;
+    column-gap: var(--space-2);
+    padding: 0 var(--space-5) var(--space-5);
   }
   .confirm-dialog__actions {
-    margin-top: 20px;
+    margin-top: var(--space-5);
   }
   .confirm-dialog__cancel.button,
   .confirm-dialog__confirm.button {
     height: 44px;
     min-height: 44px;
-    padding: 0 14px;
+    padding: 0 var(--space-3);
   }
 }

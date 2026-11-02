@@ -1,15 +1,19 @@
 import { Button } from "@heroui/react";
 import { IconArrowUpRight } from "@tabler/icons-react";
-import { lazy, Suspense } from "react";
+import { type CSSProperties, lazy, Suspense } from "react";
 import { useNavigate } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { defaultDraft, useStudioStore } from "../generation/studio-state";
 import { HomeComposer } from "./home-composer";
-import { homeDotGrid } from "./home-dot-grid-config";
+import { homeInspirations } from "./home-inspiration-data";
 import { HomeInspirationGallery } from "./home-inspiration-gallery";
+import { reactBitConfig } from "./react-bit-config";
+import { useHomeHeaderSurface } from "./use-home-header-surface";
 import "../../styles/home.css";
 
-const DotGrid = lazy(() => import("./dot-grid/dot-grid"));
+const HomeGridMotion = lazy(() => import("./home-grid-motion"));
+
+const backgroundImages = homeInspirations.map((item) => ({ src: item.image }));
 
 const shortcuts = [
   {
@@ -39,6 +43,7 @@ const shortcuts = [
 ];
 
 export function HomePage() {
+  const intro = useHomeHeaderSurface();
   const model = useStudioStore((s) => s.activeModel);
   const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
@@ -49,13 +54,23 @@ export function HomePage() {
     navigate("/create");
   }
   return (
-    <section className="commerce-home page-panel">
-      <div className="home-dot-background" aria-hidden="true" inert>
+    <section
+      className="commerce-home page-panel"
+      style={
+        {
+          "--home-background-height": `${reactBitConfig.home.backgroundHeight}px`,
+          "--home-background-overlay": reactBitConfig.home.overlayOpacity,
+          "--home-start-spacing": `${reactBitConfig.home.topSpacing}px`,
+          "--home-mobile-start-spacing": `${reactBitConfig.home.mobileTopSpacing}px`,
+        } as CSSProperties
+      }
+    >
+      <div className="home-motion-background" aria-hidden="true" inert>
         <Suspense fallback={null}>
-          <DotGrid {...homeDotGrid} />
+          <HomeGridMotion {...reactBitConfig.gridMotion} items={backgroundImages} />
         </Suspense>
       </div>
-      <section className="home-start" aria-labelledby="home-title">
+      <section ref={intro} className="home-start" aria-labelledby="home-title">
         <h1 id="home-title" className="sr-only">
           为你的商品，创作下一张好图
         </h1>

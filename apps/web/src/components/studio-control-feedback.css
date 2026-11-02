@@ -1,8 +1,8 @@
 /* Shared neutral feedback for settings and uploaded-image mentions. */
 :is(.home-settings, .home-settings-trigger, .reference-mention-popover) {
-  --studio-control-hover: #3c3c3c;
-  --studio-control-pressed: #454545;
-  --studio-control-selected: #505050;
+  --studio-control-hover: var(--control-hover-fill);
+  --studio-control-pressed: var(--control-pressed-fill);
+  --studio-control-selected: var(--control-selected-fill);
 }
 :is(
   .home-settings-trigger.button,
@@ -43,7 +43,7 @@
   .reference-mention-popover .list-box-item
 ):not(:disabled):not([data-disabled]):not(.home-model-option):is(:active, [data-pressed]) {
   background: var(--studio-control-pressed);
-  scale: 0.98;
+  scale: 1;
 }
 @media (prefers-reduced-motion: reduce) {
   :is(

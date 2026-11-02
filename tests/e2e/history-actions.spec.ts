@@ -190,8 +190,8 @@ test("regenerate submits the original snapshot once and leaves the composer draf
     name: "关闭重新生成确认",
     exact: true,
   });
-  await expect(closeRegenerate).toHaveCSS("color", "rgb(168, 168, 176)");
-  await expect(closeRegenerate).toHaveCSS("border-radius", "50%");
+  await expect(closeRegenerate).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(closeRegenerate).toHaveCSS("border-radius", "999px");
   expect(requests).toBe(0);
   await confirm.getByRole("button", { name: "取消", exact: true }).click();
   await expect(confirm).not.toBeVisible();
@@ -416,4 +416,26 @@ test("a text-only model blocks restored references even when another model suppo
   await page.getByRole("button", { name: "清除全部参考图片", exact: true }).click();
   await expect(page.locator(".reference-tile")).toHaveCount(0);
   await expect(submit).toBeEnabled();
+});
+
+test("history prompt stops before the optional download action and media controls stay compact", async ({
+  page,
+}) => {
+  await historyFixture(page, "high", false, 3);
+  const article = page.locator(".generation-job");
+  const prompt = await article.locator(".generation-prompt").boundingBox();
+  const download = await article
+    .getByRole("button", { name: "下载全部", exact: true })
+    .boundingBox();
+  expect(prompt && download && prompt.x + prompt.width <= download.x).toBeTruthy();
+  const media = article.locator(".generation-media").first();
+  await media.hover();
+  await expect(media.getByRole("button", { name: "下载原图", exact: true })).toHaveCSS(
+    "height",
+    "30px",
+  );
+  await expect(media.getByRole("button", { name: "收藏图片", exact: true })).toHaveCSS(
+    "height",
+    "30px",
+  );
 });

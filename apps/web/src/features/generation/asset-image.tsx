@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { type ComponentPropsWithRef, useRef } from "react";
 import { assetContentUrl, deliveryKey } from "./asset-delivery-client";
 import { imageRequest } from "./generation-client";
+import { clearPreviewLinks } from "./preview-link-cache";
 export function AssetImage({
   assetId,
   thumbnail = false,
@@ -40,6 +41,7 @@ export function AssetImage({
         onError?.(event);
         if (!query.isFetching && query.data && !refreshAttempted.current.has(assetId)) {
           refreshAttempted.current.add(assetId);
+          clearPreviewLinks();
           void query.refetch();
         }
       }}

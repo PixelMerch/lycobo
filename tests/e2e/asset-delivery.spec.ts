@@ -76,4 +76,8 @@ test("assets use signed resource URLs without business API image downloads or po
   expect(metadata).toBe(1);
   await expect(image).toHaveAttribute("src", `${url}&variant=thumbnail`);
   expect(resourceReads).toBe(1);
+  await page.reload();
+  // Metadata is re-authorized, but a changed signature does not replace a valid preview.
+  await expect(image).toHaveAttribute("src", `${url}&variant=thumbnail`);
+  expect(metadata).toBe(2);
 });

@@ -16,8 +16,8 @@ describe("asset capabilities", () => {
     expect(await verifyAsset(key, expires + 1, sig, signing, now)).toBe(false);
     expect(await verifyAsset(key, expires, sig, signing, expires)).toBe(false);
     // At most the lifetime plus one shared expiry window may remain.
-    expect(await verifyAsset(key, expires, sig, signing, expires - 2700)).toBe(true);
-    expect(await verifyAsset(key, expires, sig, signing, expires - 2701)).toBe(false);
+    expect(await verifyAsset(key, expires, sig, signing, expires - 86400)).toBe(true);
+    expect(await verifyAsset(key, expires, sig, signing, expires - 86401)).toBe(false);
     expect(await verifyAsset(key, expires, "bad", signing, now)).toBe(false);
     expect(await verifyAsset(`../${key}`, expires, sig, signing, now)).toBe(false);
   });
@@ -39,14 +39,16 @@ it("reissues identical links within a window so reloads reuse cached images", as
     const issuedAt = Math.floor(Date.now() / 1000);
     const first = await sign(key);
     expect(first.expires_at - issuedAt).toBeGreaterThanOrEqual(1800);
-    expect(first.expires_at).toBe(Date.parse("2026-11-01T00:45:00Z") / 1000);
+    expect(Number(new URL(first.url).searchParams.get("expires"))).toBe(
+      Date.parse("2026-11-02T00:00:00Z") / 1000,
+    );
     vi.setSystemTime(new Date("2026-11-01T00:14:59Z"));
     expect(await sign(key)).toEqual(first);
     const thumbnail = new URL(first.thumbnail_url);
     expect(
       await verifyAsset(
         key,
-        first.expires_at,
+        Number(thumbnail.searchParams.get("expires")),
         thumbnail.searchParams.get("sig") ?? "",
         await assetSigningKey(secret),
         issuedAt,
@@ -106,7 +108,7 @@ it("keeps gateway-prefixed delivery signed for the same object and purpose", asy
   expect(
     await verifyAsset(
       key,
-      links.expires_at,
+      Number(url.searchParams.get("expires")),
       url.searchParams.get("sig") ?? "",
       await assetSigningKey(secret),
       undefined,
@@ -117,4 +119,18 @@ it("keeps gateway-prefixed delivery signed for the same object and purpose", asy
     expect(() => assetDeliverySigner("https://app.example.test", secret, { pathPrefix })).toThrow(
       "INVALID_ASSET_PREFIX",
     );
+});
+
+it("keeps downloads short while allowing a one-day preview capability", async () => {
+  const links = await assetDeliverySigner("https://assets.example.test", secret)(key);
+  const now = Math.floor(Date.now() / 1000);
+  const download = new URL(links.download_url);
+  const previewExpiry = Number(new URL(links.url).searchParams.get("expires"));
+  expect(previewExpiry - now).toBeGreaterThanOrEqual(85500);
+  expect(previewExpiry - now).toBeLessThanOrEqual(86400);
+  expect(links.expires_at).toBe(Number(download.searchParams.get("expires")));
+  expect(Number(download.searchParams.get("expires")) - now).toBeLessThanOrEqual(2700);
+  const signing = await assetSigningKey(secret);
+  const longDownload = await signAsset(key, previewExpiry, signing, "download");
+  expect(await verifyAsset(key, previewExpiry, longDownload, signing, now, "download")).toBe(false);
 });

@@ -86,6 +86,7 @@ export function VariationPlanPanel({
         <Button
           isIconOnly
           variant="tertiary"
+          className="dialog-close"
           aria-label="关闭生成计划"
           onPress={() => onOpenChange(false)}
         >

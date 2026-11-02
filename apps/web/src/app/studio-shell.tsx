@@ -11,19 +11,28 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
-import { HeaderAccountMenu } from "../features/account/header-account-menu";
+import { AccountMenu, HeaderLogin } from "../features/account/account-menu";
+import { AccountOverlayHost } from "../features/account/account-overlays";
+import { HeaderBenefits } from "../features/account/header-benefits";
+import { useEnterpriseSession } from "../features/auth/auth-client";
 import { useImageEvents } from "../features/generation/use-image-events";
 import "../styles/brand.css";
+
+export interface StudioShellContext {
+  setHomeHeaderOpaque: Dispatch<SetStateAction<boolean>>;
+}
 
 export function StudioShell() {
   useImageEvents();
   const { pathname } = useLocation();
   const inWorkspace =
     pathname.startsWith("/create") || pathname.startsWith("/commerce") || pathname === "/workspace";
+  const signedIn = !!useEnterpriseSession().data;
+  const [homeHeaderOpaque, setHomeHeaderOpaque] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
@@ -84,6 +93,7 @@ export function StudioShell() {
     <motion.div
       className="studio-app"
       data-sidebar-collapsed={sidebarCollapsed}
+      data-home-header-opaque={pathname === "/" && homeHeaderOpaque}
       animate={{ "--sidebar-width": sidebarWidth }}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
     >
@@ -135,18 +145,22 @@ export function StudioShell() {
             </Button>
             <Tooltip.Content placement="right">帮助中心</Tooltip.Content>
           </Tooltip>
-          <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
-            <Button
-              variant="tertiary"
-              className="nav-row"
-              aria-label="账户设置"
-              onPress={() => setInfo("账户设置")}
-            >
-              <UiIcon icon={IconSettings} size="default" />
-              <span className="nav-label">账户设置</span>
-            </Button>
-            <Tooltip.Content placement="right">账户设置</Tooltip.Content>
-          </Tooltip>
+          {signedIn ? (
+            <AccountMenu />
+          ) : (
+            <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
+              <Button
+                variant="tertiary"
+                className="nav-row"
+                aria-label="账户设置"
+                onPress={() => setInfo("账户设置")}
+              >
+                <UiIcon icon={IconSettings} size="default" />
+                <span className="nav-label">账户设置</span>
+              </Button>
+              <Tooltip.Content placement="right">账户设置</Tooltip.Content>
+            </Tooltip>
+          )}
         </div>
       </aside>
       <header className="topbar">
@@ -167,22 +181,28 @@ export function StudioShell() {
                       height="24"
                     />
                   </Drawer.Heading>
-                  <Drawer.CloseTrigger aria-label="关闭导航" />
+                  <Drawer.CloseTrigger aria-label="关闭导航">
+                    <UiIcon icon={IconX} size="action" />
+                  </Drawer.CloseTrigger>
                 </Drawer.Header>
                 <Drawer.Body>
                   <nav>{nav}</nav>
                 </Drawer.Body>
+                {signedIn && (
+                  <Drawer.Footer className="mobile-nav-account">
+                    <AccountMenu onNavigate={() => setMenuOpen(false)} />
+                  </Drawer.Footer>
+                )}
               </Drawer.Dialog>
             </Drawer.Content>
           </Drawer.Backdrop>
         </Drawer>
-        <div className="header-actions">
-          <HeaderAccountMenu />
-        </div>
+        <div className="header-actions">{signedIn ? <HeaderBenefits /> : <HeaderLogin />}</div>
       </header>
       <main className="main-content">
-        <Outlet />
+        <Outlet context={{ setHomeHeaderOpaque } satisfies StudioShellContext} />
       </main>
+      {signedIn && <AccountOverlayHost onNavigate={() => setMenuOpen(false)} />}
       <Modal
         isOpen={info !== null}
         onOpenChange={(open) => {
@@ -195,7 +215,7 @@ export function StudioShell() {
               <Modal.Header>
                 <Modal.Heading>{info}</Modal.Heading>
                 <Modal.CloseTrigger aria-label="关闭说明">
-                  <UiIcon icon={IconX} size="default" />
+                  <UiIcon icon={IconX} size="action" />
                 </Modal.CloseTrigger>
               </Modal.Header>
               <Modal.Body>

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockImageApi } from "./image-api-fixture";
+import { apiFixture, mockImageApi } from "./image-api-fixture";
 
 test("home composer shares prompt and real reference drafts without submitting generation", async ({
   page,
@@ -303,4 +303,132 @@ test("image shortcuts preserve the current draft and never submit paid work", as
     "保留我的商品描述",
   );
   expect(submissions).toBe(0);
+});
+
+for (const width of [1440, 390]) {
+  test(`home header matches the page background over inspiration and restores at the top at ${width}px`, async ({
+    page,
+  }) => {
+    await mockImageApi(page);
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/");
+    const header = page.locator(".topbar");
+    await expect(page.locator(".home-start")).toBeVisible();
+    await expect(header).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    const initialHeight = await header.evaluate((el) => el.getBoundingClientRect().height);
+    await page
+      .locator(".home-inspiration")
+      .evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY));
+    const pageBackground = await page
+      .locator("body")
+      .evaluate((el) => getComputedStyle(el).backgroundColor);
+    await expect(header).toHaveCSS("background-color", pageBackground);
+    expect(await header.evaluate((el) => el.getBoundingClientRect().height)).toBe(initialHeight);
+    expect(await header.evaluate((el) => el.getBoundingClientRect().top)).toBe(0);
+    await page.screenshot({ path: `/tmp/lycobo-home-header-matched-${width}.png` });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(header).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    if (width < 768) await page.getByRole("button", { name: "打开导航", exact: true }).click();
+    await page.getByRole("link", { name: "工作区", exact: true }).last().click();
+    await expect(page.locator(".studio-app")).toHaveAttribute("data-home-header-opaque", "false");
+  });
+}
+
+for (const width of [1440, 390]) {
+  test(`home moving image background leaves the composer stable at ${width}px`, async ({
+    page,
+  }) => {
+    await mockImageApi(page);
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    const wall = page.locator(".grid-motion");
+    await expect(wall).toHaveAttribute("data-playing", "true");
+    await expect(page.locator(".home-intro, .home-intro-heading")).toHaveCount(0);
+    await expect(page.locator(".grid-motion__row")).toHaveCount(8);
+    const background = page.locator(".home-motion-background");
+    const backgroundBounds = await background.boundingBox();
+    expect(backgroundBounds?.y).toBe(0);
+    expect(backgroundBounds?.width).toBe(width < 768 ? width : width - 274);
+    await expect(page.locator(".home-intro-character, .home-dot-background")).toHaveCount(0);
+    await expect
+      .poll(() =>
+        wall
+          .locator("img")
+          .evaluateAll((images) =>
+            images.every(
+              (image) =>
+                image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
+            ),
+          ),
+      )
+      .toBe(true);
+    const prompt = page.getByRole("textbox", { name: "创作需求", exact: true });
+    const before = await prompt.boundingBox();
+    const row = page.locator(".grid-motion__row").first();
+    const transform = await row.evaluate((el) => getComputedStyle(el).transform);
+    await expect
+      .poll(() => row.evaluate((el) => getComputedStyle(el).transform))
+      .not.toBe(transform);
+    await prompt.fill("保留商品的颜色与材质");
+    expect((await prompt.boundingBox())?.y).toBe(before?.y);
+    await page.screenshot({ path: `/tmp/lycobo-grid-motion-home-${width}.png` });
+    await wall.evaluate((el) =>
+      window.scrollTo(0, el.getBoundingClientRect().bottom + window.scrollY + 16),
+    );
+    await expect(wall).toHaveAttribute("data-playing", "false");
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(wall).toHaveAttribute("data-playing", "true");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(wall).toHaveAttribute("data-playing", "false");
+    await expect(row).toHaveCSS("will-change", "auto");
+    await expect(prompt).toHaveValue("保留商品的颜色与材质");
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+      .toBe(true);
+  });
+}
+
+test("image background ignores pointer movement over the composer and credit popover", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  await page.route("**/api/v1/auth/session", (route) =>
+    route.fulfill({
+      json: apiFixture({
+        userId: crypto.randomUUID(),
+        organizationId: crypto.randomUUID(),
+        role: "admin",
+        account: "background-pointer-fixture",
+      }),
+    }),
+  );
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await expect(page.locator(".grid-motion")).toHaveAttribute("data-playing", "true");
+  const maxSpot = () =>
+    page
+      .locator(".grid-motion__tile")
+      .evaluateAll((tiles) =>
+        Math.max(
+          0,
+          ...tiles.map((tile) =>
+            Number.parseFloat(
+              (tile instanceof HTMLElement ? tile.style.getPropertyValue("--spot") : "") || "0",
+            ),
+          ),
+        ),
+      );
+  await page.getByRole("textbox", { name: "创作需求", exact: true }).hover();
+  await expect.poll(maxSpot).toBe(0);
+  await page.mouse.move(450, 90);
+  await expect.poll(maxSpot).toBeGreaterThan(0.05);
+  await page.getByRole("textbox", { name: "创作需求", exact: true }).hover();
+  await expect.poll(maxSpot).toBe(0);
+  await page.locator(".header-balance").click();
+  const preview = page.getByRole("dialog", { name: "积分概览", exact: true });
+  await preview.getByRole("button", { name: "充值积分", exact: true }).hover();
+  await expect.poll(maxSpot).toBe(0);
+  await preview.getByRole("button", { name: "全部明细" }).hover();
+  await expect.poll(maxSpot).toBe(0);
+  await expect(preview).toBeVisible();
 });

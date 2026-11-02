@@ -1,5 +1,6 @@
 const encoder = new TextEncoder();
-export const assetLinkLifetime = 1800;
+export const assetLinkLifetime = 86400;
+export const assetDownloadLifetime = 1800;
 // Links issued within the same window share their expiry, so a reload or refetch yields the same
 // URL and the browser reuses its cached image instead of fetching it again through the function.
 export const assetLinkWindow = 900;
@@ -44,7 +45,9 @@ export async function verifyAsset(
     !assetKeyPattern.test(key) ||
     !Number.isSafeInteger(expires) ||
     expires <= now ||
-    expires > now + assetLinkLifetime + assetLinkWindow ||
+    expires >
+      now +
+        (variant === "download" ? assetDownloadLifetime + assetLinkWindow : assetLinkLifetime) ||
     !/^[\w-]{43}$/.test(signature)
   )
     return false;
@@ -78,22 +81,27 @@ export function assetDeliverySigner(
     throw new Error("INVALID_ASSET_ORIGIN");
   const signingKey = assetSigningKey(secret);
   return async (key: string) => {
-    // At least the full lifetime remains; rounding up to the window keeps URLs stable within it.
+    // Preview lifetime is at most 24 hours; preserve the short attachment capability.
+    const previewExpires =
+      Math.floor(Math.floor(Date.now() / 1000) / assetLinkWindow) * assetLinkWindow +
+      assetLinkLifetime;
     const expires_at =
-      Math.ceil((Math.floor(Date.now() / 1000) + assetLinkLifetime) / assetLinkWindow) *
+      Math.ceil((Math.floor(Date.now() / 1000) + assetDownloadLifetime) / assetLinkWindow) *
       assetLinkWindow;
     const variant = async (value: AssetVariant) => {
       const pathname = value === "download" ? key : key.replace(/\.png$/, `.${value}.webp`);
       const url = new URL(`${prefix}${pathname}`, base);
-      url.searchParams.set("expires", String(expires_at));
+      const expires = value === "download" ? expires_at : previewExpires;
+      url.searchParams.set("expires", String(expires));
       url.searchParams.set("variant", value);
-      url.searchParams.set("sig", await signAsset(key, expires_at, await signingKey, value));
+      url.searchParams.set("sig", await signAsset(key, expires, await signingKey, value));
       return url.href;
     };
     return {
       url: await variant("preview"),
       thumbnail_url: await variant("thumbnail"),
       download_url: await variant("download"),
+      // Keep the envelope expiry at the shortest capability for older web clients.
       expires_at,
     };
   };

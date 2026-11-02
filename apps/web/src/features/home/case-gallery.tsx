@@ -128,7 +128,7 @@ function CaseDetail({ item, onClose }: { item: StudioCase | null; onClose: () =>
             <Modal.Header>
               <Modal.Heading>{item?.title}</Modal.Heading>
               <Modal.CloseTrigger aria-label="关闭案例">
-                <UiIcon icon={IconX} size="default" />
+                <UiIcon icon={IconX} size="action" />
               </Modal.CloseTrigger>
             </Modal.Header>
             <Modal.Body>

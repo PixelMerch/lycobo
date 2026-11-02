@@ -1,6 +1,6 @@
 # UI 一致性与组件维护
 
-更新：2026-10-22。当前网站视觉已经用户确认定稿；维护目标是保持现有 UI、消除重复实现、让规范与代码一致。视觉唯一来源为 [DESIGN.md](../DESIGN.md)，交互组件清单为 [HeroUI 组件清单](heroui-components.md)。不根据设计技能的通用推荐重新换色、改尺寸或重排页面。
+更新：2026-11-02。以用户确认的定稿及后续整站排版校准为准；维护目标是保持现有 UI、消除重复实现、让规范与代码一致。视觉唯一来源为 [DESIGN.md](../DESIGN.md)，交互组件清单为 [HeroUI 组件清单](heroui-components.md)。不根据设计技能的通用推荐重新换色、改尺寸或重排页面。
 
 ## 组件分层
 
@@ -20,10 +20,10 @@
 | 能力 | 唯一入口 | 维护约束 |
 | --- | --- | --- |
 | 功能导航 | FeatureNavigation → CreationNavigation / CommerceNavigation | 文字直达、整行延迟悬停展开竖向卡片、箭头点击开关；共用样式和 useHoverMenu，保持模型草稿；AI 电商点击恢复浏览器最近功能，首次默认家纺主图裂变；家纺主图裂变工作区使用共享上传预览／比例，复用真实生成提交、历史、索引与逐图状态，视角预设由服务端管理 |
-| Header 账户 | HeaderAccountMenu | 积分与头像共用入口，封装登录／悬停账户菜单／独立深色账户弹窗；应用壳不复制状态和查询 |
-| 账户内容 | AccountPanel → AccountManagement / WalletPanel | 按菜单入口分别打开，仅挂载对应内容、自然高度；真实账号与账单来自查询客户端，未接入的绑定／重置／支付不模拟成功 |
+| 账户入口 | HeaderLogin + HeaderBenefits + AccountMenu | 未登录入口在Header，已登录账户在侧栏底部；共用账户查询，余额在菜单内和Header；积分点击展开真实概览、悬停不打开，会员打开当前页弹窗，更新与消息使用HeroUI右侧抽屉；应用壳不复制状态 |
+| 账户内容 | AccountPanel → AccountManagement / WalletPanel → BillingRecords；CreditsDialog / MembershipPage | 按入口分别打开；会员全屏订阅弹窗、充值720px独立弹窗，个人及管理弹层自然高度；真实账号与账单来自查询客户端，未接入的绑定／重置／支付不模拟成功 |
 | 确认 | ConfirmDialog | 不在业务中复制 Modal 标记；正文与操作布局共用 |
-| 关闭 | DialogClose | 图标与命中区分开，普通确认和全屏规格只引用 DESIGN，不在业务组件重复定尺寸 |
+| 关闭 | HeroUI CloseTrigger + DialogClose | 全局--dismiss-*统一普通Modal／Drawer／AlertDialog的命中区和hover圆盘；全屏使用DialogClose具名大尺寸，业务只负责定位 |
 | 长文本折叠 | CollapsibleText | 历史提示词与详情创意描述共用实际溢出测量、展开／收起及 aria 状态；详情3行，历史保留既有行数，短文本不显示切换按钮 |
 | 参考图片上传 | ReferencePicker → ReferenceImageCard | 首页与工作台共用；删除、编号、预览不复制 |
 | 图片引用 | ReferencePrompt | 文本序列化、@候选、行内图片展示共用 |
@@ -32,7 +32,7 @@
 | 生成图片操作 | ResultImage | 预览、下载、收藏、焦点入口由同一组件承担 |
 | 任务元信息 | HistoryTaskMeta | 标签、时间、比例、任务ID复制一致；父级用 modelDisplayName 从共享模型目录派生展示名称，不渲染原始 model 标识 |
 | 历史索引 | HistoryIndex | 定位与滚动同步；“我的素材”标题固定、列表独立滚动；不承担重试或草稿覆盖 |
-| 生成提交按钮 | HeroUI Button + styles/app.css 的 .generation-submit | 工作台与局部修改高度、胶囊圆角、主题蓝底白字、字级与积分间距统一引用 DESIGN；不创建按钮包装组件 |
+| 生成提交按钮 | HeroUI Button + styles/app.css 的 .generation-submit | 工作台与局部修改高度、胶囊圆角、青柠至薄荷绿渐变与深色前景、字级及积分间距统一引用 DESIGN；不创建按钮包装组件 |
 | 生成阶段 | generation-status | 中文状态与生成图标共用，不从颜色推断状态 |
 | 全屏开关动画 | components/use-centered-dialog-motion | 关闭动画结束后卸载；不复制 hook |
 | 请求错误 | useErrorToast | 去重、统一顶部反馈；字段校验继续用 FieldError／ErrorMessage |
@@ -41,13 +41,13 @@
 
 ## 设计与代码清理流程
 
-1. 先读用户最新要求、Git状态、PRD、DESIGN和组件清单，标出已有未提交工作。当前定稿只允许保持视觉的重构；新视觉需求另行明确。
+1. 先读用户最新要求、Git状态、PRD、DESIGN和组件清单，标出已有未提交工作。维护性重构保留现行视觉；用户明确要求的视觉调整须同步修改DESIGN中的现行规则。
 2. 用UI/UX Pro Max核对层级、状态反馈、触屏和响应式；用React技能核对状态与组件边界。研究结果与用户定稿冲突时保留定稿，不生成另一份MASTER规范。
 3. 核对安装的HeroUI API，再组合官方组件。选Button size、variant、isIconOnly，选择控件用ToggleButtonGroup / Select，不手写aria-pressed单选、菜单键盘或焦点陷阱。
 4. 拆分时保留DOM语义、class、事件、焦点恢复和计费边界。先移功能单元，再删旧定义和转发；不顺便升级依赖、技能、主题token。
 5. 删除代码前检查导入、动态字符串路径、CSS类、文档、测试与素材清单。无静态import不能单独证明public资源无用；成套删除已停用数据、专属样式和资源，并同步索引。
 6. 对仍在运行的UI检查桌面与窄屏、长文案、禁用、键盘焦点、加载和嵌套关闭。浏览器实测与自动化fixture各有边界，不能把fixture成功当成真实渠道验收。
-7. 本地执行 `pnpm check`、`git diff --check`；关键交互按需运行相关 E2E，不默认运行本地全量。获授权推送后由远程 CI 全量回归，成功后才能合并，详见[测试说明](testing.md)。发现失败查清原因，记录实际结果；只提交任务相关路径，不夹带本地技能或工具目录。
+7. 本地执行 `pnpm check`、`git diff --check`；关键交互按需运行相关 E2E，不默认运行本地全量。获授权推送后由远程CI执行Quality与Infrastructure；全量E2E仅手动触发，必需检查成功后才能合并，详见[测试说明](testing.md)。发现失败查清原因，记录实际结果；只提交任务相关路径，不夹带本地技能或工具目录。
 
 ## 自动约束与覆盖边界
 
@@ -73,6 +73,16 @@ pnpm lint运行`scripts/check-ui-conventions.mjs`，以TypeScript AST识别组�
 | 草稿 | 页面、模型、历史与预览的切换遵守已有草稿和定位行为 | 后台完成自动跳页、样式重构顺便清空输入 |
 | 可访问性 | 键盘焦点可见、图标有名称、关闭后恢复焦点、减少动态效果生效 | 把“无主题色边框”改成所有控件都没有焦点提示 |
 | 响应式 | 主要操作可达，弹窗不超出视口，只有具名容器内部滚动 | 用缩小字体或隐藏内容掩盖溢出 |
+
+## 整站视觉覆盖核对
+
+样式统一应同时检查首页、主图制作、家纺裂变、套图计划、历史记录、素材库、详情与局部编辑、登录、账户账单、右侧更新和消息。仅修改root变量不能证明页面局部覆盖已经统一；同时检查功能CSS中的字号、行高、分组间距、hover和移动端覆盖。
+
+- 排版按DESIGN的12/13/14/16/18/24px语义字级成对使用行高；不能把辅助角标的小字扩散到正文。手机可编辑字段至少16px。
+- 内容间距复用 `--space-*`，保留图片、画布、轨道和导航的具名几何；不以缩小图片或触控区实现紧凑。
+- hover复用 `--interaction-*` 与 `--control-*-fill`，检查常态到hover仍有可见反馈，不能因共用色让同底控件失去状态差异。品牌、危险、登录浅色和图片舞台保留语义例外。
+- 鼠标hover不改变尺寸和位置；键盘焦点仍可见，点击后的程序化焦点不出现多余整块外框；抽屉与图片动效继续验证减少动态效果。
+- 用实际页面核对阅读密度，用带明确fixture来源的针对性E2E核对草稿、焦点、窄屏、展开收起、计划和编辑操作；不为CSS数值编写镜像测试，也不把fixture通过视为生产生图验收。
 
 ## 文档与交付
 

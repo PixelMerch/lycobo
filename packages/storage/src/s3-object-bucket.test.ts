@@ -2,7 +2,6 @@ import sharp from "sharp";
 import { expect, it, vi } from "vitest";
 import { assetSigningKey, signAsset } from "./asset-delivery";
 import { displayObjectKey } from "./image-variants";
-import type { ImageObjectBucket } from "./object-bucket";
 import { objectImageStore } from "./object-image-store";
 import { servePrivateAsset } from "./private-asset-server";
 import { imageObjectBucket } from "./s3-object-bucket";
@@ -14,23 +13,16 @@ const config = {
   S3_ACCESS_KEY_ID: "local-image-dev",
   S3_SECRET_ACCESS_KEY: "local-image-dev-only",
 };
-it("does not silently save to a fallback when S3 writes fail", async () => {
-  const put = vi.fn();
-  const fallback: ImageObjectBucket = {
-    head: async () => null,
-    get: async () => null,
-    put,
-    delete: async () => {},
-  };
-  expect(imageObjectBucket({}, fallback)).toBe(fallback);
+it("fails closed when storage is absent or S3 rejects a write", async () => {
+  expect(() => imageObjectBucket({})).toThrow("IMAGE_STORAGE_NOT_CONFIGURED");
   const request = vi
     .spyOn(globalThis, "fetch")
     .mockResolvedValue(new Response(null, { status: 403 }));
   try {
-    await expect(
-      imageObjectBucket(config, fallback).put("fixture.png", new Uint8Array([1])),
-    ).rejects.toThrow("IMAGE_STORAGE_UNAVAILABLE");
-    expect(put).not.toHaveBeenCalled();
+    await expect(imageObjectBucket(config).put("fixture.png", new Uint8Array([1]))).rejects.toThrow(
+      "IMAGE_STORAGE_UNAVAILABLE",
+    );
+    expect(request).toHaveBeenCalledTimes(1);
   } finally {
     request.mockRestore();
   }
@@ -91,42 +83,36 @@ it.skipIf(process.env.ALLOW_LOCAL_S3_INTEGRATION !== "true")(
 );
 
 it("uses manual redirects and refuses S3 redirects without forwarding credentials", async () => {
-  const fallback = { head: vi.fn(), get: vi.fn(), put: vi.fn(), delete: vi.fn() };
   const request = vi
     .spyOn(globalThis, "fetch")
     .mockResolvedValue(
       new Response(null, { status: 302, headers: { Location: "https://untrusted.example.com/" } }),
     );
   try {
-    await expect(imageObjectBucket(config, fallback).get("fixture.png")).rejects.toThrow(
+    await expect(imageObjectBucket(config).get("fixture.png")).rejects.toThrow(
       "IMAGE_STORAGE_UNAVAILABLE",
     );
     expect(request).toHaveBeenCalledTimes(1);
     const call = request.mock.calls[0];
     expect(call && new Request(call[0], call[1]).redirect).toBe("manual");
-    expect(fallback.get).not.toHaveBeenCalled();
   } finally {
     request.mockRestore();
   }
 });
 
 it("signs virtual-host requests with the configured region and session token", async () => {
-  const fallback = { head: vi.fn(), get: vi.fn(), put: vi.fn(), delete: vi.fn() };
   const request = vi
     .spyOn(globalThis, "fetch")
     .mockResolvedValue(new Response(null, { status: 200 }));
   try {
-    await imageObjectBucket(
-      {
-        ...config,
-        S3_ENDPOINT: "https://cos.ap-guangzhou.myqcloud.com",
-        S3_BUCKET: "private-1250000000",
-        S3_REGION: "ap-guangzhou",
-        S3_FORCE_PATH_STYLE: "false",
-        S3_SESSION_TOKEN: "fixture-token",
-      },
-      fallback,
-    ).put("folder/image.png", new Uint8Array([1]), { httpMetadata: { contentType: "image/png" } });
+    await imageObjectBucket({
+      ...config,
+      S3_ENDPOINT: "https://cos.ap-guangzhou.myqcloud.com",
+      S3_BUCKET: "private-1250000000",
+      S3_REGION: "ap-guangzhou",
+      S3_FORCE_PATH_STYLE: "false",
+      S3_SESSION_TOKEN: "fixture-token",
+    }).put("folder/image.png", new Uint8Array([1]), { httpMetadata: { contentType: "image/png" } });
     const call = request.mock.calls[0];
     if (!call) throw new Error("REQUEST_REQUIRED");
     const signed = new Request(call[0], call[1]);
@@ -135,13 +121,12 @@ it("signs virtual-host requests with the configured region and session token", a
     );
     expect(signed.headers.get("authorization")).toContain("/ap-guangzhou/s3/aws4_request");
     expect(signed.headers.get("x-amz-security-token")).toBe("fixture-token");
-    expect(fallback.put).not.toHaveBeenCalled();
   } finally {
     request.mockRestore();
   }
 });
 
-it("works with S3 alone without a fallback", async () => {
+it("returns missing S3 objects without consulting another storage provider", async () => {
   const request = vi
     .spyOn(globalThis, "fetch")
     .mockResolvedValue(new Response(null, { status: 404 }));

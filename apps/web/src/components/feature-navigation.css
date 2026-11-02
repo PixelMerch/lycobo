@@ -71,9 +71,9 @@
 .feature-tool-heading {
   padding: 8px 10px 10px;
   color: #aaa;
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 500;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-weight: var(--weight-medium);
 }
 .feature-tool-menu .dropdown__menu {
   gap: 4px;
@@ -91,7 +91,7 @@
   color: #eee;
 }
 .feature-tool-card:is(:hover, [data-focused="true"]) {
-  background: #ffffff0a;
+  background: var(--interaction-hover);
 }
 .feature-tool-card > img {
   flex: none;
@@ -108,19 +108,19 @@
   gap: 3px;
 }
 .feature-tool-title {
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 600;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-semibold);
 }
 .feature-tool-description {
   color: #c8c8c8;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 .feature-tool-capabilities {
   color: #999;
-  font-size: 11px;
-  line-height: 16px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 .feature-tool-current {
   flex: none;
