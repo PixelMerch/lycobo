@@ -2148,7 +2148,7 @@ p.home-hero-kicker {
 }
 .generation-media-actions {
   position: absolute;
-  inset: auto auto 12px 50%;
+  inset: auto auto 6px 50%;
   transform: translateX(-50%);
   display: flex;
   width: max-content;
