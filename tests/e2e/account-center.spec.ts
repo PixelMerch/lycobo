@@ -47,12 +47,20 @@ async function openCenter(page: Page, account: string, row: string) {
 
 async function expectInsideViewport(page: Page, center: Locator) {
   const viewport = page.viewportSize();
-  const box = await center.boundingBox();
-  if (!viewport || !box) throw new Error("Missing account center bounds");
-  expect(box.x).toBeGreaterThanOrEqual(0);
-  expect(box.y).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
-  expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+  if (!viewport) throw new Error("Missing viewport");
+  // React Aria updates its visual viewport height after the resize event.
+  await expect
+    .poll(async () => {
+      const box = await center.boundingBox();
+      return (
+        !!box &&
+        box.x >= 0 &&
+        box.y >= 0 &&
+        box.x + box.width <= viewport.width &&
+        box.y + box.height <= viewport.height
+      );
+    })
+    .toBe(true);
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
     .toBe(true);
