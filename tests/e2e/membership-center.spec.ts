@@ -34,8 +34,7 @@ for (const width of [1440, 320]) {
     const header = page.locator(".topbar");
     const balance = header.getByRole("button", { name: "积分 200，充值积分" });
     await expect(balance).toBeVisible();
-    const topup = header.getByRole("button", { name: "补充积分", exact: true });
-    await topup.click();
+    await balance.click();
     const recharge = page.getByRole("dialog", { name: "积分充值", exact: true });
     await expect(recharge).toBeVisible();
     await expect(recharge.getByRole("tab")).toHaveCount(0);
@@ -48,7 +47,7 @@ for (const width of [1440, 320]) {
     await expect(recharge.getByText("企业共享账户", { exact: true })).toHaveCount(0);
     await expect(recharge.getByRole("button", { name: "积分明细", exact: true })).toHaveCount(0);
     await page.keyboard.press("Escape");
-    await expect(topup).toBeFocused();
+    await expect(balance).toBeFocused();
     await expect(draft).toHaveValue("保留创作草稿，不创建付费任务");
     await header.getByRole("button", { name: "开通会员", exact: true }).click();
     await expect(page).toHaveURL(/\/membership$/);
