@@ -52,7 +52,9 @@ Read relevant project skills before work:
   render; effects synchronize external systems, not redundant state.
 - Lazy-load heavy canvas/editor routes. Do not load original full-resolution images into grid cards.
 - Accessible labels, visible focus, semantic controls, reduced motion and narrow-screen behavior
-  are required. The header keeps only the borderless pill-shaped login action; do not restore task-center or notification entries.
+  are required. Signed out, the header keeps the borderless pill-shaped login action; signed in,
+  it shows shared credits and membership entries. Accounts and notifications remain in the sidebar;
+  do not restore task-center or notification entries in the header.
 - Keep the brand focus ring keyboard-only. React Aria moves focus on hover, restored focus and
   programmatic opens, and Chromium reports those moves as `:focus-visible`; suppress the ring for
   pointer focus (`data-focused` without `data-focus-visible`) and for HeroUI overlay containers

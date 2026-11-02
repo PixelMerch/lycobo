@@ -35,7 +35,7 @@ export function HeaderLogin() {
 
 /**
  * The signed-in account sits in a quiet footer row (avatar, name and
- * short name) and opens its menu upward; balance remains inside the menu.
+ * name) and opens its menu upward; balance is shared with the header entry.
  */
 export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
   const session = useEnterpriseSession();

@@ -5,7 +5,8 @@ import { AccountManagement } from "./account-management";
 import "./account-panel.css";
 import { UiIcon } from "../../components/ui-icon";
 import { useEnterpriseLogout, useEnterpriseSession } from "../auth/auth-client";
-import { WalletPanel } from "./wallet-panel";
+import { MembershipCenter } from "./membership-center";
+import type { MembershipTab } from "./membership-types";
 
 export type AccountSection = "profile" | "credits" | "management";
 const roleLabels: Record<string, string> = {
@@ -16,9 +17,11 @@ const roleLabels: Record<string, string> = {
 export function AccountPanel({
   section,
   onClose,
+  initialMembershipTab = "billing",
 }: {
   section: AccountSection;
   onClose: () => void;
+  initialMembershipTab?: MembershipTab;
 }) {
   const session = useEnterpriseSession();
   const logout = useEnterpriseLogout();
@@ -82,7 +85,7 @@ export function AccountPanel({
                 </div>
               )}
               {section === "management" && <AccountManagement account={account} />}
-              {section === "credits" && <WalletPanel />}
+              {section === "credits" && <MembershipCenter initialTab={initialMembershipTab} />}
             </Modal.Body>
           </Modal.Dialog>
         </Modal.Container>

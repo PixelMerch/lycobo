@@ -19,7 +19,13 @@ const kinds = [
   ...Object.entries(names).map(([id, name]) => ({ id, name })),
 ];
 
-export function WalletPanel() {
+export function WalletPanel({
+  onMembership,
+  onRecharge,
+}: {
+  onMembership: () => void;
+  onRecharge: () => void;
+}) {
   const wallet = useWallet();
   const entries = useWalletEntries();
   const recharges = useRechargeOrders();
@@ -32,18 +38,18 @@ export function WalletPanel() {
     <div className="account-wallet">
       <div className="account-wallet-heading">
         <div>
-          <span>企业金币余额</span>
+          <span>企业共享积分</span>
           <strong>
             <CreditCoin size="action" />
             {wallet.data?.balance ?? "—"}
           </strong>
         </div>
         <div className="account-wallet-actions">
-          <Button size="sm" variant="secondary" isDisabled>
+          <Button size="sm" variant="secondary" onPress={onRecharge}>
             充值积分
           </Button>
-          <Button size="sm" variant="primary" isDisabled>
-            订阅会员
+          <Button size="sm" variant="secondary" onPress={onMembership}>
+            会员方案
           </Button>
         </div>
       </div>
@@ -54,7 +60,7 @@ export function WalletPanel() {
         </div>
         <div>
           <span>图片生成价格</span>
-          <strong>每张 {imageUnitCredits} 币</strong>
+          <strong>每张 {imageUnitCredits} 积分</strong>
         </div>
         <div>
           <span>失败结算</span>
@@ -136,10 +142,10 @@ export function WalletPanel() {
                       <Table.Cell>
                         <span className={entry.amount > 0 ? "account-amount-positive" : undefined}>
                           {entry.amount > 0 ? "+" : ""}
-                          {entry.amount} 币
+                          {entry.amount} 积分
                         </span>
                       </Table.Cell>
-                      <Table.Cell>{entry.balance_after} 币</Table.Cell>
+                      <Table.Cell>{entry.balance_after} 积分</Table.Cell>
                     </Table.Row>
                   ))}
                 </Table.Body>
@@ -187,7 +193,7 @@ export function WalletPanel() {
                   {orders.map((order) => (
                     <Table.Row key={order.id} id={order.id}>
                       <Table.Cell>
-                        <strong>充值 {order.credits} 币</strong>
+                        <strong>充值 {order.credits} 积分</strong>
                         <small>
                           {statuses[order.status]} · 用户 {order.user_uid}
                         </small>

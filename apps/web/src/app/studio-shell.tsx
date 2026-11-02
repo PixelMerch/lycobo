@@ -16,6 +16,7 @@ import { Outlet, useLocation } from "react-router";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
 import { AccountMenu, HeaderLogin } from "../features/account/account-menu";
+import { HeaderBenefits } from "../features/account/header-benefits";
 import { useEnterpriseSession } from "../features/auth/auth-client";
 import { useImageEvents } from "../features/generation/use-image-events";
 import "../styles/brand.css";
@@ -189,9 +190,7 @@ export function StudioShell() {
             </Drawer.Content>
           </Drawer.Backdrop>
         </Drawer>
-        <div className="header-actions">
-          <HeaderLogin />
-        </div>
+        <div className="header-actions">{signedIn ? <HeaderBenefits /> : <HeaderLogin />}</div>
       </header>
       <main className="main-content">
         <Outlet />

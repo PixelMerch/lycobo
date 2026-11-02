@@ -108,7 +108,7 @@ test("ledger filters loaded pages without losing older records or exposing payme
   await expect(
     dialog.getByRole("grid", { name: "积分收支明细", exact: true }).getByRole("row"),
   ).toHaveCount(2);
-  await expect(dialog.getByText("+20 币", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("+20 积分", { exact: true })).toBeVisible();
   await expect(dialog.getByRole("button", { name: "加载更多收支", exact: true })).toHaveCount(0);
   await page.screenshot({ path: "/tmp/lycobo-account-ledger-desktop.png" });
   await dialog.getByRole("tab", { name: "充值订单", exact: true }).click();

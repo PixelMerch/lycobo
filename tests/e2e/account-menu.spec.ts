@@ -26,7 +26,7 @@ for (const width of [1440, 320]) {
     await page.goto("/create");
     const draft = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
     await draft.fill("保留正在准备的商品图");
-    // The header keeps only the signed-out login action; the account moved to the navigation.
+    // The account stays in navigation; the header only adds shared credits and membership.
     await expect(page.locator(".topbar .account-trigger")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toHaveCount(0);
     const openNavigation = async () => {
@@ -135,7 +135,7 @@ for (const width of [1440, 320]) {
       await expect(accountClose).toHaveCSS("background-image", closeHover);
       await expect(accountClose).toHaveCSS("width", "44px");
       if (title === "订阅与账单")
-        await expect(dialog.getByText("企业金币余额", { exact: true })).toBeVisible();
+        await expect(dialog.getByText("企业共享积分", { exact: true })).toBeVisible();
       if (title === "账号管理")
         await expect(dialog.getByText("账号 0123456789", { exact: true })).toBeVisible();
       await dialog.getByRole("button", { name: `关闭${title}`, exact: true }).click();
