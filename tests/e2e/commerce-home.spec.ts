@@ -304,3 +304,29 @@ test("image shortcuts preserve the current draft and never submit paid work", as
   );
   expect(submissions).toBe(0);
 });
+
+for (const width of [1440, 390]) {
+  test(`home header becomes black over inspiration and restores at the top at ${width}px`, async ({
+    page,
+  }) => {
+    await mockImageApi(page);
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/");
+    const header = page.locator(".topbar");
+    await expect(page.locator(".home-start")).toBeVisible();
+    await expect(header).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    const initialHeight = await header.evaluate((el) => el.getBoundingClientRect().height);
+    await page
+      .locator(".home-inspiration")
+      .evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY));
+    await expect(header).toHaveCSS("background-color", "rgb(0, 0, 0)");
+    expect(await header.evaluate((el) => el.getBoundingClientRect().height)).toBe(initialHeight);
+    expect(await header.evaluate((el) => el.getBoundingClientRect().top)).toBe(0);
+    await page.screenshot({ path: `/tmp/lycobo-home-header-black-${width}.png` });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(header).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    if (width < 768) await page.getByRole("button", { name: "打开导航", exact: true }).click();
+    await page.getByRole("link", { name: "工作区", exact: true }).last().click();
+    await expect(page.locator(".studio-app")).toHaveAttribute("data-home-header-opaque", "false");
+  });
+}

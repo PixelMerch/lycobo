@@ -629,6 +629,9 @@ body:has(.commerce-home)::-webkit-scrollbar {
 .studio-app:has(.commerce-home) .topbar {
   background: transparent;
 }
+.studio-app[data-home-header-opaque="true"]:has(.commerce-home) .topbar {
+  background: #000;
+}
 .home-dot-background {
   position: absolute;
   inset: 0 0 auto var(--sidebar-width);

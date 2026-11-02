@@ -7,6 +7,7 @@ import { defaultDraft, useStudioStore } from "../generation/studio-state";
 import { HomeComposer } from "./home-composer";
 import { homeDotGrid } from "./home-dot-grid-config";
 import { HomeInspirationGallery } from "./home-inspiration-gallery";
+import { useHomeHeaderSurface } from "./use-home-header-surface";
 import "../../styles/home.css";
 
 const DotGrid = lazy(() => import("./dot-grid/dot-grid"));
@@ -39,6 +40,7 @@ const shortcuts = [
 ];
 
 export function HomePage() {
+  const intro = useHomeHeaderSurface();
   const model = useStudioStore((s) => s.activeModel);
   const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
@@ -55,7 +57,7 @@ export function HomePage() {
           <DotGrid {...homeDotGrid} />
         </Suspense>
       </div>
-      <section className="home-start" aria-labelledby="home-title">
+      <section ref={intro} className="home-start" aria-labelledby="home-title">
         <h1 id="home-title" className="sr-only">
           为你的商品，创作下一张好图
         </h1>

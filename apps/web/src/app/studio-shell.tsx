@@ -11,7 +11,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
@@ -21,12 +21,17 @@ import { useEnterpriseSession } from "../features/auth/auth-client";
 import { useImageEvents } from "../features/generation/use-image-events";
 import "../styles/brand.css";
 
+export interface StudioShellContext {
+  setHomeHeaderOpaque: Dispatch<SetStateAction<boolean>>;
+}
+
 export function StudioShell() {
   useImageEvents();
   const { pathname } = useLocation();
   const inWorkspace =
     pathname.startsWith("/create") || pathname.startsWith("/commerce") || pathname === "/workspace";
   const signedIn = !!useEnterpriseSession().data;
+  const [homeHeaderOpaque, setHomeHeaderOpaque] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
@@ -87,6 +92,7 @@ export function StudioShell() {
     <motion.div
       className="studio-app"
       data-sidebar-collapsed={sidebarCollapsed}
+      data-home-header-opaque={pathname === "/" && homeHeaderOpaque}
       animate={{ "--sidebar-width": sidebarWidth }}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
     >
@@ -193,7 +199,7 @@ export function StudioShell() {
         <div className="header-actions">{signedIn ? <HeaderBenefits /> : <HeaderLogin />}</div>
       </header>
       <main className="main-content">
-        <Outlet />
+        <Outlet context={{ setHomeHeaderOpaque } satisfies StudioShellContext} />
       </main>
       <Modal
         isOpen={info !== null}
