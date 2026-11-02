@@ -156,6 +156,8 @@ for (const width of [1440, 320]) {
     await openNavigation();
     await trigger.click();
     await expect(menu).toBeVisible();
+    await expect(popover).toHaveCSS("opacity", "1");
+    await popover.screenshot({ path: `/tmp/lycobo-typography-account-menu-${width}.png` });
     await page.screenshot({ path: `/tmp/lycoboai-account-menu-${width}.png` });
   });
 }

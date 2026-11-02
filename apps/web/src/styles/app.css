@@ -5,7 +5,7 @@
 .dark {
   color-scheme: dark;
   --font-sans:
-    -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI",
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei",
     "Noto Sans CJK SC", sans-serif;
   --background: #0f0f12;
   --foreground: #f3f1f7;
@@ -48,8 +48,8 @@
   --text-2xl: 24px;
   --text-page-mobile: 22px;
   --leading-xs: 18px;
-  --leading-sm: 20px;
-  --leading-base: 22px;
+  --leading-sm: 19.5px;
+  --leading-base: 21px;
   --leading-lg: 24px;
   --leading-xl: 26px;
   --leading-2xl: 32px;
@@ -100,6 +100,8 @@ body,
   margin: 0;
 }
 body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   font-family: var(--font-sans);
   font-size: var(--text-base);
   line-height: var(--leading-base);
@@ -346,9 +348,9 @@ small {
   color: var(--shell-nav-foreground);
   background: transparent;
   font-family: var(--shell-font-family);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 19.6px;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  line-height: 22px;
   letter-spacing: normal;
   white-space: nowrap;
   text-decoration: none;

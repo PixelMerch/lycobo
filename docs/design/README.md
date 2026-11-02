@@ -1,8 +1,10 @@
 # 设计资料索引
 
-唯一视觉规范是 [DESIGN.md](../../DESIGN.md)，产品范围是 [PRD.md](../../PRD.md)。当前网站视觉已于2026-10-22由用户定稿；实现时以当前规范、代码与实际浏览器验收为准，不将研究资料作为再次改版的授权。
+唯一视觉规范是 [DESIGN.md](../../DESIGN.md)，产品范围是 [PRD.md](../../PRD.md)。现行规范已纳入用户确认的后续品牌、导航与排版调整；实现时以当前规范、代码和实际浏览器验收为准，不将研究资料作为再次改版的授权。
 
 只保留仍在使用的设计依据与素材来源：
+
+- [小云雀工作台排版实测](xiaoyunque-typography-measurements.md)：2026-11-02通过ego-browser核对已登录导航、账户菜单和字体覆盖范围；本站采用值已归入DESIGN.md。
 
 - [Lycobo Logo 定稿](brand/lycobo-product-pilot-approved.png)：2026-11-01确认的 02「商品领航」方案：包裹、前进箭头及粗体字标；正式资源为 `apps/web/public/brand` 内的 SVG，配色与使用规则见 DESIGN.md。
 
