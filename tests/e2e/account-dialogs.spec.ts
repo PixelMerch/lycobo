@@ -88,7 +88,7 @@ test("ledger filters loaded pages without losing older records or exposing payme
     created_at: "2026-10-22T00:00:00Z",
   });
   const recent = Array.from({ length: 20 }, (_, index) => makeEntry(30 - index));
-  const older = makeEntry(10, true);
+  const older = { ...makeEntry(10, true), created_at: "2026-10-21T00:00:00Z" };
   await page.route("**/api/v1/wallet/entries?*", (route) =>
     route.fulfill({
       json: apiFixture({
@@ -103,11 +103,17 @@ test("ledger filters loaded pages without losing older records or exposing payme
   await expect(dialog.getByText("已加载 20 条记录", { exact: true })).toBeVisible();
   await dialog.locator(".infinite-load").scrollIntoViewIfNeeded();
   await expect(dialog.getByText("已加载 21 条记录", { exact: true })).toBeVisible();
+  await expect(dialog.getByRole("heading", { name: "2026年10月22日" })).toBeAttached();
+  await expect(dialog.getByRole("heading", { name: "2026年10月21日" })).toBeVisible();
+  await dialog.locator(".modal__body").evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  await dialog.screenshot({ path: "/tmp/lycobo-billing-redesign-records.png" });
   await dialog.getByRole("button", { name: /全部类型.*收支类型/ }).click();
   await page.getByRole("option", { name: "生成失败退款", exact: true }).click();
   await expect(
-    dialog.getByRole("grid", { name: "积分收支明细", exact: true }).getByRole("row"),
-  ).toHaveCount(2);
+    dialog.getByRole("region", { name: "积分收支明细", exact: true }).getByRole("listitem"),
+  ).toHaveCount(1);
   await expect(dialog.getByText("+20 积分", { exact: true })).toBeVisible();
   await expect(dialog.getByRole("button", { name: "加载更多收支", exact: true })).toHaveCount(0);
   await page.screenshot({ path: "/tmp/lycobo-account-ledger-desktop.png" });

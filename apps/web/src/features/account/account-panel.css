@@ -22,7 +22,7 @@
   width: min(720px, calc(100vw - 48px));
 }
 .account-dialog.account-dialog--credits {
-  width: min(1080px, calc(100vw - 48px));
+  width: min(960px, calc(100vw - 48px));
 }
 .account-dialog .account-rows > div {
   background: #262626;
@@ -40,22 +40,19 @@
 .account-dialog .tabs__tab {
   white-space: nowrap;
 }
-.account-management > .tabs__list-container .tabs__list,
-.account-ledger-tabs > .tabs__list-container .tabs__list {
+.account-management > .tabs__list-container .tabs__list {
   gap: var(--space-2);
   padding: 0;
   border: 0;
   background: transparent;
 }
-.account-management .tabs__tab,
-.account-ledger-tabs .tabs__tab {
+.account-management .tabs__tab {
   min-height: 40px;
   padding: var(--space-2) 18px;
   border-radius: 12px;
   color: #b8b8c0;
 }
-.account-management .tabs__indicator,
-.account-ledger-tabs .tabs__indicator {
+.account-management .tabs__indicator {
   top: 0;
   bottom: auto;
   height: 100%;
@@ -202,151 +199,10 @@
 .account-verification-row .button {
   flex: none;
 }
-.account-reset-actions,
-.account-wallet-actions {
+.account-reset-actions {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-2);
-}
-.account-wallet-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-  margin-bottom: var(--space-5);
-}
-.account-wallet-heading > div:first-child {
-  display: grid;
-  gap: var(--space-2);
-}
-.account-wallet-heading > div > span {
-  color: #b8b8c0;
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-}
-.account-wallet-heading strong {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: #eee;
-  font-size: var(--text-2xl);
-  line-height: var(--leading-2xl);
-  font-weight: var(--weight-semibold);
-  font-variant-numeric: tabular-nums;
-}
-.account-wallet-summary {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  overflow: hidden;
-  border: 1px solid var(--interaction-hover);
-  border-radius: 16px;
-  background: #262626;
-}
-.account-wallet-summary > div {
-  display: grid;
-  gap: var(--space-2);
-  padding: var(--space-4) var(--space-5);
-}
-.account-wallet-summary > div + div {
-  border-left: 1px solid #ffffff0f;
-}
-.account-wallet-summary > div > span {
-  color: #a1a1aa;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
-.account-wallet-summary strong {
-  font-size: var(--text-base);
-  line-height: var(--leading-base);
-  font-weight: var(--weight-medium);
-}
-.account-ledger-controls,
-.account-table-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  color: #a1a1aa;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
-.account-ledger-controls {
-  margin-bottom: var(--space-3);
-}
-.account-ledger-filter {
-  width: 160px;
-}
-.account-ledger-filter .select__trigger {
-  border: 1px solid #ffffff1f;
-  border-radius: 10px;
-  background: #262626;
-}
-.account-ledger-table {
-  overflow: hidden;
-  border: 1px solid var(--interaction-active);
-  border-radius: 14px;
-  background: transparent;
-}
-.account-ledger-table .table__scroll-container {
-  overflow-x: auto;
-}
-.account-ledger-table .table__content {
-  width: 100%;
-  min-width: 650px;
-}
-.account-ledger-table :is(th, td) {
-  padding: 14px var(--space-4);
-  text-align: left;
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-}
-.account-ledger-table th {
-  background: #333;
-  color: #a1a1aa;
-  font-weight: var(--weight-regular);
-}
-.account-ledger-table td {
-  border-bottom: 1px solid var(--interaction-hover);
-  color: #d4d4d8;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-.account-ledger-table td strong {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-sm);
-}
-.account-ledger-table td small {
-  display: block;
-  margin-top: 5px;
-  color: #85858e;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
-.account-ledger-table tbody tr:nth-child(even) td {
-  background: #222;
-}
-.account-ledger-table .account-amount-positive {
-  color: #eee;
-}
-.account-order-id {
-  display: block;
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.account-table-empty {
-  display: grid;
-  place-items: center;
-  min-height: 150px;
-  color: #a1a1aa;
-  font-size: var(--text-base);
-  line-height: var(--leading-base);
-}
-.account-table-footer {
-  margin-top: var(--space-3);
-  min-height: 32px;
 }
 @media (max-width: 767px) {
   .account-field .input {
@@ -362,20 +218,6 @@
   .account-binding-card,
   .account-reset-card {
     padding: var(--space-4);
-  }
-  .account-wallet-summary {
-    grid-template-columns: 1fr;
-  }
-  .account-wallet-summary > div {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding: var(--space-3) var(--space-4);
-  }
-  .account-wallet-summary > div + div {
-    border-top: 1px solid #ffffff0f;
-    border-left: 0;
   }
   .account-management-summary small {
     width: 100%;
@@ -394,7 +236,6 @@
   }
 }
 
-.account-management > .tabs__list-container,
-.account-ledger-tabs > .tabs__list-container {
+.account-management > .tabs__list-container {
   border: 0;
 }
