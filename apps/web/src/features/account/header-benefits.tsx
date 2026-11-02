@@ -1,7 +1,6 @@
 import { Button, Popover } from "@heroui/react";
 import { IconChevronRight, IconCrown } from "@tabler/icons-react";
-import { useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { lazy, Suspense, useRef, useState } from "react";
 import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
 import { useHoverMenu } from "../../components/use-hover-menu";
@@ -10,10 +9,14 @@ import { CreditsDialog } from "./credits-dialog";
 import { useWallet } from "./wallet-client";
 import "./header-benefits.css";
 
+const MembershipDialog = lazy(() =>
+  import("./membership-page").then((module) => ({ default: module.MembershipDialog })),
+);
+
 /** Two primary actions; the hover preview never intercepts a recharge press. */
 export function HeaderBenefits() {
   const wallet = useWallet();
-  const [panel, setPanel] = useState<"recharge" | "billing" | null>(null);
+  const [panel, setPanel] = useState<"recharge" | "billing" | "membership" | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const suppressRestoredHover = useRef(false);
   const preview = useHoverMenu(trigger, ".credit-preview button", {
@@ -21,8 +24,6 @@ export function HeaderBenefits() {
     closeDelay: 200,
     keepOpenOnHoveredPress: false,
   });
-  const navigate = useNavigate();
-  const location = useLocation();
   const balanceLabel = wallet.data?.balance.toLocaleString("zh-CN") ?? "—";
   const openPanel = (next: "recharge" | "billing") => {
     preview.close();
@@ -31,9 +32,7 @@ export function HeaderBenefits() {
   };
   const openMembership = () => {
     preview.close();
-    if (location.pathname !== "/membership") {
-      navigate("/membership", { state: { returnTo: location.pathname + location.search } });
-    }
+    setPanel("membership");
   };
   const closePanel = () => {
     suppressRestoredHover.current = true;
@@ -100,7 +99,13 @@ export function HeaderBenefits() {
           )}
         </Popover.Dialog>
       </Popover.Content>
-      {panel && <CreditsDialog initialView={panel} onClose={closePanel} />}
+      {panel === "membership" ? (
+        <Suspense fallback={null}>
+          <MembershipDialog onClose={closePanel} />
+        </Suspense>
+      ) : (
+        panel && <CreditsDialog initialView={panel} onClose={closePanel} />
+      )}
     </>
   );
 }

@@ -41,7 +41,7 @@ for (const width of [1440, 320]) {
     const pack = recharge.getByRole("radio", { name: "3,000 积分，示例价格 300 元", exact: true });
     await pack.click();
     await expect(pack).toBeChecked();
-    await expect(recharge.getByRole("button", { name: "充值即将开放" })).toBeDisabled();
+    await expect(recharge.getByRole("button", { name: "立即购买" })).toBeDisabled();
     expect(ledgerReads).toBe(0);
     await recharge.screenshot({ path: `/tmp/lycobo-redesign-recharge-${width}.png` });
     await expect(recharge.getByText("企业共享账户", { exact: true })).toHaveCount(0);
@@ -50,19 +50,35 @@ for (const width of [1440, 320]) {
     await expect(balance).toBeFocused();
     await expect(draft).toHaveValue("保留创作草稿，不创建付费任务");
     await header.getByRole("button", { name: "开通会员", exact: true }).click();
-    await expect(page).toHaveURL(/\/membership$/);
-    await expect(page.getByRole("heading", { name: /让好商品，\s*拥有好表达。/ })).toBeVisible();
-    await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "创作会员即将开放" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "专业会员即将开放" })).toBeDisabled();
-    await page.getByRole("radio", { name: "年度", exact: true }).click();
-    await expect(page.getByText("/ 年", { exact: true })).toHaveCount(2);
-    await page.locator(".membership-page").evaluate((el) => {
-      el.scrollTop = 0;
-    });
-    await page.screenshot({ path: `/tmp/lycobo-redesign-membership-${width}.png` });
-    await page.getByRole("button", { name: "返回创作", exact: true }).click();
     await expect(page).toHaveURL(/\/create$/);
+    const membership = page.getByRole("dialog", { name: "会员订阅", exact: true });
+    await expect(membership).toBeVisible();
+    await expect(membership.getByText("返回创作", { exact: true })).toHaveCount(0);
+    await expect(membership.getByText("积分明细", { exact: true })).toHaveCount(0);
+    await expect(membership.getByText(/即将开放|方案预览|待确认|待公布/)).toHaveCount(0);
+    await expect(membership.getByRole("button", { name: "订阅BASE" })).toBeDisabled();
+    await expect(membership.getByRole("button", { name: "订阅APEX" })).toBeDisabled();
+    await membership.getByRole("radio", { name: "季付", exact: true }).click();
+    await expect(membership.getByText("/ 季", { exact: true })).toHaveCount(4);
+    await membership.getByRole("radio", { name: "年付", exact: true }).click();
+    await expect(membership.getByText("/ 年", { exact: true })).toHaveCount(4);
+    await expect(membership.getByText("LYCOBO MEMBERSHIP", { exact: true })).toHaveCount(0);
+    await expect(membership.locator(".membership-plan")).toHaveCount(4);
+    const pro = membership.locator('[data-plan="pro"]');
+    await expect(pro.locator(".membership-plan-price strong")).toHaveText("¥8,388");
+    await pro.getByRole("radio", { name: "PRO 6050积分/月", exact: true }).click();
+    await expect(pro.locator(".membership-plan-price strong")).toHaveText("¥3,899");
+    await membership.getByRole("radio", { name: "月付", exact: true }).click();
+    await expect(membership.getByRole("radio", { name: "月付", exact: true })).toBeChecked();
+    await expect(pro.locator(".membership-plan-price strong")).toHaveText("¥398");
+    await expect(membership.locator('[data-plan="base"] .membership-plan-price strong')).toHaveText(
+      "¥88",
+    );
+    await expect(membership).toHaveCSS("outline-style", "none");
+    await page.screenshot({ path: `/tmp/lycobo-redesign-membership-${width}.png` });
+    await membership.getByRole("button", { name: "关闭会员订阅", exact: true }).click();
+    await expect(membership).toHaveCount(0);
+    await expect(header.getByRole("button", { name: "开通会员", exact: true })).toBeFocused();
     await expect(draft).toHaveValue("保留创作草稿，不创建付费任务");
     await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeEnabled();
     expect(writes).toEqual([]);
@@ -186,6 +202,6 @@ test("credit preview shows only three real entries and reopens from cache", asyn
 test("direct membership visits have a safe return to the workspace", async ({ page }) => {
   await signIn(page);
   await page.goto("/membership");
-  await page.getByRole("button", { name: "返回创作", exact: true }).click();
+  await page.getByRole("button", { name: "关闭会员订阅", exact: true }).click();
   await expect(page).toHaveURL(/\/create$/);
 });

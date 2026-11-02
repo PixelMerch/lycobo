@@ -9,7 +9,6 @@ export function CreditPacks() {
   const [selected, setSelected] = useState("500");
   return (
     <section className="credit-packs" aria-label="选择充值积分包">
-      <p className="credit-recharge-intro">方案预览 · 积分档位与价格待确认</p>
       <ToggleButtonGroup
         fullWidth
         isDetached
@@ -40,12 +39,10 @@ export function CreditPacks() {
       </ToggleButtonGroup>
       <div className="credit-pack-checkout">
         <Button variant="primary" className="credit-pack-submit" isDisabled>
-          充值即将开放
+          立即购买
         </Button>
       </div>
-      <p className="credit-recharge-note">
-        积分用于创作消耗，购买积分不改变会员等级。正式价格、额度及有效期将在开放时公布。
-      </p>
+      <p className="credit-recharge-note">积分用于创作消耗，购买积分不改变会员等级。</p>
     </section>
   );
 }
