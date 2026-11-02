@@ -208,6 +208,17 @@ const GridMotion = ({
     observer.observe(root);
     const motion = motionRef.current;
     const onMove = (event: PointerEvent) => {
+      // The decorative layer is inert: only exposed page surfaces may drive it.
+      // A descendant control, card, header or portalled overlay is foreground UI.
+      const target = event.target;
+      if (
+        event.pointerType === "touch" ||
+        !(target instanceof Element) ||
+        !target.matches(".studio-app, .main-content, .commerce-home, .home-start")
+      ) {
+        motion.pointer.active = false;
+        return;
+      }
       motion.pointer.x = event.clientX;
       motion.pointer.y = event.clientY;
       motion.pointer.active = true;

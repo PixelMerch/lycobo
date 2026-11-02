@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockImageApi } from "./image-api-fixture";
+import { apiFixture, mockImageApi } from "./image-api-fixture";
 
 test("home composer shares prompt and real reference drafts without submitting generation", async ({
   page,
@@ -387,3 +387,48 @@ for (const width of [1440, 390]) {
       .toBe(true);
   });
 }
+
+test("image background ignores pointer movement over the composer and credit popover", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  await page.route("**/api/v1/auth/session", (route) =>
+    route.fulfill({
+      json: apiFixture({
+        userId: crypto.randomUUID(),
+        organizationId: crypto.randomUUID(),
+        role: "admin",
+        account: "background-pointer-fixture",
+      }),
+    }),
+  );
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await expect(page.locator(".grid-motion")).toHaveAttribute("data-playing", "true");
+  const maxSpot = () =>
+    page
+      .locator(".grid-motion__tile")
+      .evaluateAll((tiles) =>
+        Math.max(
+          0,
+          ...tiles.map((tile) =>
+            Number.parseFloat(
+              (tile instanceof HTMLElement ? tile.style.getPropertyValue("--spot") : "") || "0",
+            ),
+          ),
+        ),
+      );
+  await page.getByRole("textbox", { name: "创作需求", exact: true }).hover();
+  await expect.poll(maxSpot).toBe(0);
+  await page.mouse.move(450, 90);
+  await expect.poll(maxSpot).toBeGreaterThan(0.05);
+  await page.getByRole("textbox", { name: "创作需求", exact: true }).hover();
+  await expect.poll(maxSpot).toBe(0);
+  await page.locator(".header-balance").click();
+  const preview = page.getByRole("dialog", { name: "积分概览", exact: true });
+  await preview.getByRole("button", { name: "充值积分", exact: true }).hover();
+  await expect.poll(maxSpot).toBe(0);
+  await preview.getByRole("button", { name: "查看积分明细" }).hover();
+  await expect.poll(maxSpot).toBe(0);
+  await expect(preview).toBeVisible();
+});
