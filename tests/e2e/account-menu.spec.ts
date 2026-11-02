@@ -181,3 +181,58 @@ test.describe("touch", () => {
     await expect(page.getByRole("dialog", { name: "个人信息", exact: true })).toBeVisible();
   });
 });
+
+test("account news slides from the right and respects reduced motion", async ({ page }) => {
+  await signIn(page, "13800138000");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/create");
+  const motion = page.evaluate(async () => {
+    await new Promise<void>((resolve) =>
+      document.addEventListener("click", () => resolve(), { once: true, capture: true }),
+    );
+    const samples = [];
+    const start = performance.now();
+    while (performance.now() - start < 600) {
+      await new Promise(requestAnimationFrame);
+      const element = document.querySelector(".account-news-panel");
+      if (element)
+        samples.push({
+          left: element.getBoundingClientRect().left,
+          animations: (element.closest(".drawer__content")?.getAnimations() ?? []).map((item) => ({
+            duration: item.effect?.getTiming().duration,
+            state: item.playState,
+          })),
+        });
+    }
+    return samples;
+  });
+  await page.getByRole("button", { name: "更新记录", exact: true }).click();
+  const panel = page.getByRole("dialog", { name: "最近更新" });
+  const samples = await motion;
+  expect(
+    samples.some((sample) =>
+      sample.animations.some((animation) => Number(animation.duration) >= 400),
+    ),
+  ).toBe(true);
+  expect(samples.some((sample) => sample.left > 801)).toBe(true);
+  expect(samples.at(-1)?.left).toBeCloseTo(800, 0);
+  await page.keyboard.press("Escape");
+  const exit = await panel.evaluate((element) => {
+    const content = element.closest(".drawer__content");
+    const animation = content?.getAnimations()[0];
+    return {
+      exiting: content?.getAttribute("data-exiting"),
+      duration: animation?.effect?.getTiming().duration,
+    };
+  });
+  expect(exit.exiting).toBe("true");
+  expect(Number(exit.duration)).toBeGreaterThanOrEqual(300);
+  await expect(panel).toBeHidden();
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.getByRole("button", { name: "消息", exact: true }).click();
+  const messages = page.getByRole("dialog", { name: "消息中心" });
+  await expect(messages).toHaveCSS("transition-duration", "0s");
+  await expect(messages).toHaveCSS("translate", "none");
+  await page.keyboard.press("Escape");
+  await expect(messages).toBeHidden();
+});

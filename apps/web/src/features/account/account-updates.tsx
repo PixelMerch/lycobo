@@ -30,7 +30,7 @@ export function AccountUpdates({ kind }: { kind: "updates" | "messages" }) {
         </Button>
         <Tooltip.Content placement="top">{label}</Tooltip.Content>
       </Tooltip>
-      <Drawer.Backdrop>
+      <Drawer.Backdrop className="account-news-backdrop">
         <Drawer.Content placement="right" className="account-news-content">
           <Drawer.Dialog className="account-news-panel">
             <Drawer.Header className="account-news-header">
