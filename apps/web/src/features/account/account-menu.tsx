@@ -1,13 +1,5 @@
-import { Avatar, Button, Dropdown, Link, Separator, Tooltip, toast } from "@heroui/react";
-import {
-  IconBell,
-  IconListDetails,
-  IconLogout,
-  IconPhoto,
-  IconReceipt,
-  IconSettings,
-  IconUser,
-} from "@tabler/icons-react";
+import { Avatar, Button, Dropdown, Separator } from "@heroui/react";
+import { IconLogout, IconPhoto, IconReceipt, IconSettings, IconUser } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { CreditCoin } from "../../components/credit-coin";
@@ -16,6 +8,7 @@ import { useErrorToast } from "../../lib/error-toast";
 import { useEnterpriseLogout, useEnterpriseSession } from "../auth/auth-client";
 import { LoginDialog } from "../auth/login-dialog";
 import { AccountPanel, type AccountSection } from "./account-panel";
+import { AccountUpdates } from "./account-updates";
 import { useWallet } from "./wallet-client";
 import "./account-menu.css";
 
@@ -62,7 +55,7 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
   const account = session.data;
   if (!account) return null;
   const characters = Array.from(account.account);
-  const nickname = characters.length > 5 ? `${characters.slice(0, 5).join("")}…` : account.account;
+  const nickname = account.account;
   const initial = characters[0]?.toUpperCase() ?? "";
   const balance = wallet.data?.balance ?? "—";
   return (
@@ -76,7 +69,7 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
           <Avatar className="account-avatar" size="sm" aria-hidden="true">
             <Avatar.Fallback>{initial}</Avatar.Fallback>
           </Avatar>
-          <span className="account-trigger-name" aria-hidden="true">
+          <span className="account-trigger-name" title={account.account} aria-hidden="true">
             {nickname}
           </span>
         </Dropdown.Trigger>
@@ -139,31 +132,8 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
         </Dropdown.Popover>
       </Dropdown>
       <div className="account-footer-tools">
-        <Tooltip delay={200}>
-          <Link
-            className="account-footer-action"
-            href="https://github.com/PixelMerch/lycobo/releases"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="更新记录"
-          >
-            <UiIcon icon={IconListDetails} />
-          </Link>
-          <Tooltip.Content placement="top">更新记录</Tooltip.Content>
-        </Tooltip>
-        <Tooltip delay={200}>
-          <Button
-            isIconOnly
-            size="sm"
-            variant="tertiary"
-            className="account-footer-action"
-            aria-label="消息（即将开放）"
-            onPress={() => toast.info("消息功能即将开放")}
-          >
-            <UiIcon icon={IconBell} />
-          </Button>
-          <Tooltip.Content placement="top">消息 · 即将开放</Tooltip.Content>
-        </Tooltip>
+        <AccountUpdates kind="updates" />
+        <AccountUpdates kind="messages" />
       </div>
       {section && (
         <AccountPanel

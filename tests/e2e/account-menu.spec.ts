@@ -38,7 +38,7 @@ for (const width of [1440, 320]) {
       name: `账户菜单：${account}`,
       exact: true,
     });
-    await expect(trigger.locator(".account-trigger-name")).toHaveText("13800…");
+    await expect(trigger.locator(".account-trigger-name")).toHaveText(account);
     await expect(trigger.locator(".account-credits")).toHaveCount(0);
     await expect(trigger.locator(".avatar")).toHaveCount(1);
     await expect(trigger).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
@@ -48,12 +48,26 @@ for (const width of [1440, 320]) {
     await navigation
       .locator(".account-footer")
       .screenshot({ path: `/tmp/lycobo-footer-${width}.png` });
-    await expect(navigation.getByRole("link", { name: "更新记录" })).toHaveAttribute(
+    const updates = navigation.getByRole("button", { name: "更新记录", exact: true });
+    await updates.click();
+    const updatesPanel = page.getByRole("dialog", { name: "最近更新" });
+    await expect(updatesPanel).toBeVisible();
+    await expect(updatesPanel).toHaveCSS("width", `${Math.min(640, width)}px`);
+    await expect(page.locator(".drawer__backdrop").last()).toHaveCSS("opacity", "1");
+    await updatesPanel.screenshot({ path: `/tmp/lycobo-updates-${width}.png` });
+    await expect(updatesPanel.getByText("v0.4.4", { exact: true })).toBeVisible();
+    await expect(updatesPanel.getByRole("link", { name: "查看版本详情" })).toHaveAttribute(
       "href",
-      "https://github.com/PixelMerch/lycobo/releases",
+      "https://github.com/PixelMerch/lycobo/releases/tag/v0.4.4",
     );
-    await navigation.getByRole("button", { name: "消息（即将开放）" }).click();
-    await expect(page.locator(".toast__title")).toHaveText("消息功能即将开放");
+    await page.keyboard.press("Escape");
+    await expect(updatesPanel).toBeHidden();
+    await expect(updates).toBeFocused();
+    await navigation.getByRole("button", { name: "消息", exact: true }).click();
+    const messagesPanel = page.getByRole("dialog", { name: "消息中心" });
+    await expect(messagesPanel.getByText("消息功能即将开放")).toBeVisible();
+    await messagesPanel.getByRole("button", { name: "关闭消息中心" }).click();
+    await expect(messagesPanel).toBeHidden();
 
     await trigger.focus();
     await page.keyboard.press("Enter");
