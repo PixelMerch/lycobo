@@ -417,3 +417,25 @@ test("a text-only model blocks restored references even when another model suppo
   await expect(page.locator(".reference-tile")).toHaveCount(0);
   await expect(submit).toBeEnabled();
 });
+
+test("history prompt stops before the optional download action and media controls stay compact", async ({
+  page,
+}) => {
+  await historyFixture(page, "high", false, 3);
+  const article = page.locator(".generation-job");
+  const prompt = await article.locator(".generation-prompt").boundingBox();
+  const download = await article
+    .getByRole("button", { name: "下载全部", exact: true })
+    .boundingBox();
+  expect(prompt && download && prompt.x + prompt.width <= download.x).toBeTruthy();
+  const media = article.locator(".generation-media").first();
+  await media.hover();
+  await expect(media.getByRole("button", { name: "下载原图", exact: true })).toHaveCSS(
+    "height",
+    "28px",
+  );
+  await expect(media.getByRole("button", { name: "收藏图片", exact: true })).toHaveCSS(
+    "height",
+    "28px",
+  );
+});

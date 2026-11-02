@@ -55,25 +55,27 @@ export function ResultImage({
         <Tooltip delay={0}>
           <Button
             isIconOnly
+            size="sm"
             variant="tertiary"
             className="generation-media-action"
             aria-label="下载原图"
             onPress={() => downloadAsset(assetId)}
           >
-            <UiIcon icon={IconDownload} />
+            <UiIcon icon={IconDownload} size="small" />
           </Button>
           <Tooltip.Content placement="top">下载</Tooltip.Content>
         </Tooltip>
         <Tooltip delay={0}>
           <ToggleButton
             isIconOnly
+            size="sm"
             variant="ghost"
             className="generation-media-action"
             aria-label={favorite ? "取消收藏" : "收藏图片"}
             isSelected={favorite}
             onChange={() => toggleFavorite(assetId)}
           >
-            <UiIcon icon={favorite ? IconStarFilled : IconStar} />
+            <UiIcon icon={favorite ? IconStarFilled : IconStar} size="small" />
           </ToggleButton>
           <Tooltip.Content placement="top">{favorite ? "取消收藏" : "收藏"}</Tooltip.Content>
         </Tooltip>

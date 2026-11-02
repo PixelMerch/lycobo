@@ -9,7 +9,7 @@ import {
 } from "@lycoboai/contracts";
 import { IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CollapsibleText } from "../../../components/collapsible-text";
 import { ConfirmDialog } from "../../../components/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
@@ -95,6 +95,25 @@ export function HistoryTaskActions({
   onRestore?: HistoryRestore | undefined;
   item?: ImageJob["items"][number] | undefined;
 }) {
+  const actionsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (item) return;
+    const actions = actionsRef.current;
+    const article = actions?.closest<HTMLElement>(".generation-job");
+    if (!actions || !article) return;
+    const measure = () =>
+      article.style.setProperty(
+        "--history-actions-width",
+        `${actions.getBoundingClientRect().width}px`,
+      );
+    const observer = new ResizeObserver(measure);
+    observer.observe(actions);
+    measure();
+    return () => {
+      observer.disconnect();
+      article.style.removeProperty("--history-actions-width");
+    };
+  }, [item]);
   const client = useQueryClient();
   const [regenerateOpen, setRegenerateOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -198,7 +217,7 @@ export function HistoryTaskActions({
     }
   };
   return (
-    <div className={item ? "generation-retry-overlay" : "history-task-actions"}>
+    <div ref={actionsRef} className={item ? "generation-retry-overlay" : "history-task-actions"}>
       {!item && <HistoryDownloadButton job={job} />}
       {!item && (
         <Tooltip delay={0}>
