@@ -1,56 +1,96 @@
-import { Button, Tooltip } from "@heroui/react";
+import { Button, Popover } from "@heroui/react";
 import { IconChevronRight, IconCrown } from "@tabler/icons-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
-import { AccountPanel } from "./account-panel";
-import type { MembershipTab } from "./membership-types";
+import { useHoverMenu } from "../../components/use-hover-menu";
+import { CreditPreview } from "./credit-preview";
+import { CreditsDialog } from "./credits-dialog";
 import { useWallet } from "./wallet-client";
-import "./membership-center.css";
+import "./header-benefits.css";
 
-/** Mounted only for signed-in users; the wallet query is shared with the account menu. */
+/** Two primary actions; the hover preview never intercepts a recharge press. */
 export function HeaderBenefits() {
   const wallet = useWallet();
-  const [section, setSection] = useState<MembershipTab | null>(null);
-  const balance = wallet.data?.balance;
-  const balanceLabel = balance === undefined ? "—" : balance.toLocaleString("zh-CN");
+  const [panel, setPanel] = useState<"recharge" | "billing" | null>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const preview = useHoverMenu(trigger, ".credit-preview button", {
+    openDelay: 250,
+    closeDelay: 200,
+    keepOpenOnHoveredPress: false,
+  });
+  const navigate = useNavigate();
+  const location = useLocation();
+  const balanceLabel = wallet.data?.balance.toLocaleString("zh-CN") ?? "—";
+  const openPanel = (next: "recharge" | "billing") => {
+    preview.close();
+    trigger.current?.focus({ preventScroll: true });
+    setPanel(next);
+  };
+  const openMembership = () => {
+    preview.close();
+    if (location.pathname !== "/membership") {
+      navigate("/membership", { state: { returnTo: location.pathname + location.search } });
+    }
+  };
+  const closePanel = () => {
+    preview.close();
+    setPanel(null);
+  };
   return (
     <>
       <div className="header-benefits">
-        <Tooltip delay={300}>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="header-balance"
-            aria-label={`企业共享积分 ${balanceLabel}，查看账单明细`}
-            onPress={() => setSection("billing")}
-          >
-            <CreditCoin size="default" />
-            <span className="header-balance-value">{balanceLabel}</span>
-            <span className="header-balance-unit">积分</span>
-          </Button>
-          <Tooltip.Content>
-            {wallet.isError ? "余额暂不可用，点击查看账单" : "企业成员共享 · 查看账单明细"}
-          </Tooltip.Content>
-        </Tooltip>
         <Button
-          variant="secondary"
+          ref={trigger}
+          variant="tertiary"
           size="sm"
-          className="header-membership"
-          onPress={() => setSection("membership")}
+          className="header-balance"
+          aria-label={`企业共享积分 ${balanceLabel}，充值积分`}
+          aria-description="点击充值；悬停或按向下键查看积分明细"
+          aria-haspopup="dialog"
+          aria-expanded={preview.isOpen}
+          {...(panel === null ? preview.triggerProps : {})}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowDown") {
+              event.preventDefault();
+              preview.openFromKeyboard();
+            }
+          }}
+          onPress={() => openPanel("recharge")}
         >
+          <CreditCoin size="default" />
+          <span className="header-balance-value">{balanceLabel}</span>
+          <span className="header-balance-unit">积分</span>
+        </Button>
+        <span className="header-benefits-divider" aria-hidden="true" />
+        <Button variant="tertiary" size="sm" className="header-membership" onPress={openMembership}>
           <UiIcon icon={IconCrown} />
-          会员中心
+          开通会员
           <UiIcon icon={IconChevronRight} size="small" />
         </Button>
       </div>
-      {section && (
-        <AccountPanel
-          section="credits"
-          initialMembershipTab={section}
-          onClose={() => setSection(null)}
-        />
-      )}
+      <Popover.Content
+        triggerRef={trigger}
+        isOpen={preview.isOpen && panel === null}
+        onOpenChange={preview.onOpenChange}
+        isNonModal
+        placement="bottom end"
+        offset={10}
+        className="credit-preview-popover"
+        {...preview.popoverProps}
+      >
+        <Popover.Dialog aria-label="积分概览" className="credit-preview-dialog">
+          {preview.isOpen && (
+            <CreditPreview
+              onRecharge={() => openPanel("recharge")}
+              onDetails={() => openPanel("billing")}
+              onMembership={openMembership}
+            />
+          )}
+        </Popover.Dialog>
+      </Popover.Content>
+      {panel && <CreditsDialog initialView={panel} onClose={closePanel} />}
     </>
   );
 }

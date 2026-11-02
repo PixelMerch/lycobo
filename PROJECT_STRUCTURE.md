@@ -125,8 +125,8 @@ GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 C
 
 功能组件使用直接依赖；服务端缓存属于TanStack Query，临时草稿与交互属于Zustand，纯展示组件从props获得数据。具体规则见[UI一致性维护](docs/ui-consistency.md)。
 
-- `features/account/account-menu.tsx` 的 HeaderLogin 与 AccountMenu 分别封装未登录入口、侧栏底部账户菜单；HeaderBenefits 组合登录后的共享积分及会员入口，按需打开账户中心。StudioShell只组合入口。查询复用TanStack Query，个人作品仍进入素材库。
-- 账户独立弹窗由 `features/account/account-panel.tsx` 按入口组合，仅挂载所选功能，个人信息与账号管理不提供跨功能Tab：`AccountManagement` 封装绑定／重置密码的可用状态与表单，`MembershipCenter` 在订阅与账单内组合会员方案、积分充值、账单页签；`MembershipPlans` 与 `CreditPacks` 只管理展示周期及所选包，不访问支付或权限接口，`membership-types.ts` 共享页签类型。`WalletPanel` 仅在账单页签挂载，封装真实共享余额、收支筛选和充值订单，`account-panel.css` 维护与个人信息一致的深色表面及中性灰输入焦点。未接入的账号绑定、验证码和支付不会模拟成功。
+- `features/account/account-menu.tsx` 的 HeaderLogin 与 AccountMenu 封装未登录入口和侧栏账户菜单；`header-benefits.tsx` 组合登录后的双入口胶囊，积分点击打开 `CreditsDialog`，悬停用官方非模态Popover展示 `CreditPreview` 的真实余额及最多三条记录，会员进入独立路由。StudioShell只组合入口，查询共用TanStack Query。
+- `features/account/membership-page.tsx` 为懒加载 /membership 页面，组合返回、会员方案与独立积分包入口；`MembershipPlans` 只管理展示周期，`CreditPacks` 只管理所选包。`credits-dialog.tsx` 为独立640px充值弹窗，`account-panel.tsx` 继续按入口组合个人信息、账号管理及订阅与账单。`WalletPanel` 封装真实余额、收支筛选、订单与分页；`wallet-client.ts` 共享钱包查询，最近记录按需读取并缓存30秒，不新增轮询。未接入的会员、绑定、验证码及支付不会模拟成功；没有跨会员、充值、账单的聚合Tab弹窗。
 
 ## 数据库领域命名
 

@@ -1,5 +1,5 @@
 import { Button, Card, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { IconCheck, IconCrown, IconLock, IconSparkles } from "@tabler/icons-react";
+import { IconCheck, IconCrown, IconSparkles } from "@tabler/icons-react";
 import { useState } from "react";
 import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
@@ -26,8 +26,8 @@ export function MembershipPlans() {
     <section className="membership-plans" aria-label="会员方案">
       <div className="membership-section-heading">
         <div>
-          <h3>选择适合你的创作节奏</h3>
-          <p>会员用于解锁专属能力，积分用于每次创作的实际消耗。</p>
+          <h3>选择你的会员方案</h3>
+          <p>两种创作节奏，按需选择。</p>
         </div>
         <ToggleButtonGroup
           aria-label="会员周期"
@@ -83,19 +83,10 @@ export function MembershipPlans() {
               >
                 会员即将开放
               </Button>
-              <p className="membership-plan-terms">价格、赠送额度及专属功能清单将在开放时公布。</p>
+              <p className="membership-plan-terms">专属权益与赠送额度待公布</p>
             </Card.Footer>
           </Card>
         ))}
-      </div>
-      <div className="membership-availability">
-        <UiIcon icon={IconLock} />
-        <div>
-          <strong>专属权益正在准备中</strong>
-          <p className="membership-availability-description">
-            会员开放后，可在功能入口查看所需等级。当前创作功能的使用方式保持不变。
-          </p>
-        </div>
       </div>
     </section>
   );

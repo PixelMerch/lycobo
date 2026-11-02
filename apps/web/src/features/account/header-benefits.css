@@ -1,0 +1,185 @@
+.header-benefits {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 3px;
+  border-radius: 999px;
+  background: #242424;
+}
+.header-benefits .button {
+  height: 32px;
+  min-height: 32px;
+  padding-inline: var(--space-3);
+  gap: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
+  box-shadow: none;
+}
+.header-benefits .button:is(:hover, [data-hovered="true"]) {
+  background: var(--control-hover-fill);
+}
+.header-balance.button {
+  max-width: 200px;
+  min-width: 0;
+}
+.header-balance .credit-coin,
+.header-membership > .ui-icon:first-child {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.header-balance-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+.header-balance-unit {
+  color: var(--muted);
+}
+.header-benefits-divider {
+  height: 14px;
+  width: 1px;
+  flex-shrink: 0;
+  margin-inline: 2px;
+  background: #ffffff24;
+}
+.header-membership.button {
+  flex-shrink: 0;
+}
+.credit-preview-popover {
+  width: min(360px, calc(100vw - 24px));
+  padding: 0;
+  border: 1px solid var(--interaction-active);
+  border-radius: 20px;
+  background: #202020;
+  box-shadow: 0 16px 48px #0000004d;
+}
+.credit-preview-dialog {
+  padding: var(--space-5);
+  outline: none;
+}
+.credit-preview {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.credit-preview .button {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.credit-preview-balance {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.credit-preview-balance > div {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+.credit-preview-footer > span {
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  color: var(--muted);
+  max-width: 160px;
+}
+.credit-preview-heading > span,
+.credit-preview-balance > div > span {
+  color: var(--muted);
+}
+.credit-preview-balance strong {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-2xl);
+  line-height: var(--leading-2xl);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+.credit-preview-balance .credit-coin {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.credit-preview-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--interaction-active);
+}
+.credit-preview-heading .button,
+.credit-preview-footer .button {
+  gap: 4px;
+  padding-inline: var(--space-2);
+}
+.credit-preview-records {
+  padding: 0;
+  margin: var(--space-3) 0 var(--space-4);
+  list-style: none;
+  display: grid;
+  gap: var(--space-4);
+}
+.credit-preview-records li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  align-items: center;
+}
+.credit-preview-records li > div {
+  display: grid;
+  gap: 2px;
+}
+.credit-preview-records small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+.credit-preview-records strong {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-medium);
+}
+.credit-preview-records strong[data-positive="true"] {
+  color: var(--accent);
+}
+.credit-preview-empty {
+  padding-block: var(--space-4);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.credit-preview-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  border-top: 1px solid var(--interaction-active);
+  padding-top: var(--space-3);
+}
+
+@media (max-width: 767px), (pointer: coarse) {
+  .header-benefits .button {
+    min-height: 44px;
+  }
+}
+@media (max-width: 767px) {
+  .header-actions {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+  .header-benefits {
+    padding: 0;
+  }
+  .header-benefits .button {
+    padding-inline: 10px;
+  }
+  .header-balance-unit,
+  .header-membership > .ui-icon:last-child {
+    display: none;
+  }
+}

@@ -22,6 +22,7 @@ export function useWalletEntries() {
     queryKey: ["wallet-entries", session.data?.organizationId, session.data?.userId],
     enabled: session.isSuccess,
     retry: false,
+    staleTime: 30000,
     initialPageParam: "",
     queryFn: async ({ signal, pageParam }) =>
       walletEntriesSchema.parse(

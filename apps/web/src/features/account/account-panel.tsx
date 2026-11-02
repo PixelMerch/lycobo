@@ -5,8 +5,7 @@ import { AccountManagement } from "./account-management";
 import "./account-panel.css";
 import { UiIcon } from "../../components/ui-icon";
 import { useEnterpriseLogout, useEnterpriseSession } from "../auth/auth-client";
-import { MembershipCenter } from "./membership-center";
-import type { MembershipTab } from "./membership-types";
+import { CreditsDialog } from "./credits-dialog";
 
 export type AccountSection = "profile" | "credits" | "management";
 const roleLabels: Record<string, string> = {
@@ -17,17 +16,17 @@ const roleLabels: Record<string, string> = {
 export function AccountPanel({
   section,
   onClose,
-  initialMembershipTab = "billing",
 }: {
   section: AccountSection;
   onClose: () => void;
-  initialMembershipTab?: MembershipTab;
 }) {
   const session = useEnterpriseSession();
   const logout = useEnterpriseLogout();
   const title = { profile: "个人信息", credits: "订阅与账单", management: "账号管理" }[section];
   const account = session.data;
   useErrorToast(logout.error?.message);
+  if (section === "credits") return <CreditsDialog initialView="billing" onClose={onClose} />;
+
   return (
     <Modal isOpen onOpenChange={(open) => (!open ? onClose() : undefined)}>
       <Modal.Backdrop className="account-backdrop">
@@ -85,7 +84,6 @@ export function AccountPanel({
                 </div>
               )}
               {section === "management" && <AccountManagement account={account} />}
-              {section === "credits" && <MembershipCenter initialTab={initialMembershipTab} />}
             </Modal.Body>
           </Modal.Dialog>
         </Modal.Container>
