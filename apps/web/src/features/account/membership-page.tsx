@@ -14,7 +14,7 @@ export function MembershipDialog({ onClose }: { onClose: () => void }) {
       }}
     >
       <Modal.Backdrop className="membership-backdrop">
-        <Modal.Container>
+        <Modal.Container className="membership-container">
           <Modal.Dialog className="membership-dialog">
             <Modal.Header className="membership-dialog-header">
               <Modal.Heading>会员订阅</Modal.Heading>

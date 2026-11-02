@@ -75,7 +75,7 @@
   background: #151614;
   box-shadow: none;
 }
-.membership-plan[data-plan="apex"] {
+.membership-plan:is([data-plan="apex"], [data-plan="team-max"]) {
   border-color: #a8ff0070;
   box-shadow: inset 0 4px 0 var(--accent);
 }
@@ -146,7 +146,8 @@
   background: #f4f5ef;
   color: #151713;
 }
-.membership-plan[data-plan="apex"] .membership-plan-action.button[data-disabled] {
+.membership-plan:is([data-plan="apex"], [data-plan="team-max"])
+  .membership-plan-action.button[data-disabled] {
   background: var(--accent);
   color: #142000;
 }
@@ -269,5 +270,266 @@
   }
   .membership-quota-select .toggle-button {
     min-height: 44px;
+  }
+}
+
+/* Full-screen membership surface; only its body scrolls. */
+.membership-container.modal__container {
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  padding: 0;
+}
+.membership-container .membership-dialog.modal__dialog {
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: 100dvh;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+.membership-dialog-header {
+  flex-shrink: 0;
+  padding-block: 24px;
+  background: #090a09;
+}
+.membership-dialog .modal__body {
+  flex: 1;
+  min-height: 0;
+  padding: 24px 40px 64px;
+}
+.membership-plans {
+  width: min(1440px, 100%);
+  margin-inline: auto;
+}
+.membership-switcher {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: min(520px, 100%);
+  margin: 0 auto 48px;
+  border: 1px solid #ffffff24;
+  border-radius: 28px;
+  padding: 12px;
+  background: linear-gradient(#ffffff03, transparent);
+  gap: 12px;
+}
+.membership-switcher .tabs__list {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  gap: 4px;
+}
+.membership-switcher .tabs__tab {
+  position: relative;
+  min-height: 44px;
+  flex: 1;
+  padding-inline: 24px;
+  color: #a6a6ad;
+  border-radius: 16px;
+  transition:
+    color 200ms ease,
+    background-color 200ms ease;
+}
+.membership-switcher .tabs__tab:is(:hover, [data-hovered="true"]) {
+  color: #fff;
+  background: #ffffff0a;
+}
+.membership-switcher .tabs__tab[data-selected="true"] {
+  color: #fff;
+}
+.membership-switcher .tabs__indicator {
+  top: 0;
+  bottom: auto;
+  height: 2px;
+  width: 24px;
+  left: calc(50% - 12px);
+  background: var(--accent);
+  border: 0;
+  box-shadow: none;
+  border-radius: 999px;
+}
+.membership-switcher .membership-cycle {
+  width: 100%;
+}
+.membership-switcher .membership-cycle .toggle-button {
+  flex: 1;
+  min-width: 0;
+}
+.membership-cycle .toggle-button:is(:hover, [data-hovered="true"]):not([data-selected="true"]) {
+  background: #ffffff0a;
+  color: #fff;
+}
+.membership-plan-grid {
+  max-width: none;
+}
+.membership-plan-gift .membership-info {
+  margin-inline-start: auto;
+}
+.membership-info.button {
+  flex-shrink: 0;
+  color: #a3a69b;
+}
+.membership-tooltip {
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 12px 16px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  background: #292b26;
+  color: #f3f4ef;
+  border: 1px solid #ffffff24;
+  border-radius: 12px;
+}
+.membership-benefits {
+  margin-top: 12px;
+  border-top: 1px solid #ffffff12;
+  padding-top: 24px;
+}
+.membership-benefits h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: #b0b5a7;
+  margin: 0 0 16px;
+}
+.membership-benefits ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.membership-benefits li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: var(--text-sm);
+  color: #d9ded0;
+}
+.membership-benefits .ui-icon {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.membership-seats {
+  max-width: 180px;
+  align-self: center;
+}
+.membership-seats .number-field__group {
+  border-radius: 999px;
+  background: #ffffff08;
+}
+.membership-seat-total {
+  margin: 0;
+  color: #b3baa8;
+  font-size: var(--text-xs);
+  text-align: center;
+}
+.membership-faq {
+  max-width: 1120px;
+  margin: 80px auto 0;
+}
+.membership-faq h2 {
+  font-size: var(--text-xl);
+  text-align: center;
+  font-weight: var(--weight-semibold);
+  margin-bottom: 40px;
+}
+.membership-faq .accordion {
+  background: transparent;
+  gap: 0;
+}
+.membership-faq .accordion__item {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #ffffff12;
+  border-radius: 0;
+}
+.membership-faq .accordion__trigger {
+  min-height: 72px;
+  padding: 24px 16px;
+  font-size: var(--text-base);
+  color: #f1f3eb;
+  border-radius: 12px;
+  transition: background-color 200ms ease;
+}
+.membership-faq .accordion__trigger:is(:hover, [data-hovered="true"]) {
+  background: #ffffff08;
+}
+.membership-faq .accordion__body {
+  color: #b5bcae;
+  padding: 0 16px 24px;
+  line-height: 1.8;
+  font-size: var(--text-sm);
+  max-width: 85ch;
+}
+.membership-enterprise {
+  max-width: 1120px;
+  margin-inline: auto;
+  padding-block: 24px;
+  text-align: center;
+}
+.membership-enterprise h2 {
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: var(--weight-semibold);
+  margin: 16px 0 40px;
+}
+.membership-enterprise-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  text-align: left;
+}
+.membership-enterprise-grid .card {
+  padding: 28px;
+  background: #171a14;
+  border: 1px solid #ffffff1a;
+  border-radius: 24px;
+}
+.membership-enterprise-grid .card__header {
+  gap: 20px;
+  color: var(--accent);
+}
+.membership-enterprise-grid .card__title {
+  color: #fff;
+}
+.membership-enterprise-grid .card__content {
+  color: #b2bba8;
+  font-size: var(--text-sm);
+  line-height: 1.8;
+}
+.membership-enterprise-contact.button {
+  margin-top: 40px;
+  border-radius: 999px;
+}
+@media (max-width: 767px) {
+  .membership-dialog .modal__body {
+    padding: 16px 16px 40px;
+  }
+  .membership-switcher {
+    margin-bottom: 28px;
+    padding: 8px;
+    border-radius: 24px;
+  }
+  .membership-switcher .tabs__tab {
+    padding-inline: 16px;
+  }
+  .membership-faq {
+    margin-top: 48px;
+  }
+  .membership-faq .accordion__trigger {
+    font-size: var(--text-sm);
+    padding-inline: 8px;
+  }
+  .membership-enterprise-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .membership-switcher .tabs__tab,
+  .membership-faq .accordion__trigger {
+    transition: none;
   }
 }

@@ -6,7 +6,20 @@ export const membershipCycles = [
   { id: "monthly", label: "月付", months: 1, unit: "/ 月" },
 ] as const;
 
-export const membershipPricing = [
+export interface MembershipPlan {
+  id: string;
+  name: string;
+  options: readonly {
+    credits: number;
+    original: number;
+    label: string;
+    monthly: number;
+    quarterly: number;
+    yearly: number;
+  }[];
+}
+
+export const membershipPricing: readonly MembershipPlan[] = [
   {
     id: "base",
     name: "BASE",
@@ -88,3 +101,56 @@ export const membershipPricing = [
     ],
   },
 ] as const;
+
+// Per-seat team prices from the same public price page; seat controls do not provision accounts.
+export const teamMembershipPricing: readonly MembershipPlan[] = [
+  {
+    id: "team-lite",
+    name: "TEAM LITE",
+    options: [
+      { credits: 4930, original: 615, label: "4.9k", monthly: 399, quarterly: 987, yearly: 3828 },
+    ],
+  },
+  {
+    id: "team-plus",
+    name: "TEAM PLUS",
+    options: [
+      {
+        credits: 17240,
+        original: 2462,
+        label: "17.2k",
+        monthly: 1299,
+        quarterly: 3687,
+        yearly: 14748,
+      },
+    ],
+  },
+  {
+    id: "team-pro",
+    name: "TEAM PRO",
+    options: [
+      {
+        credits: 28550,
+        original: 4154,
+        label: "28.6k",
+        monthly: 2079,
+        quarterly: 4797,
+        yearly: 18948,
+      },
+    ],
+  },
+  {
+    id: "team-max",
+    name: "TEAM MAX",
+    options: [
+      {
+        credits: 47550,
+        original: 7077,
+        label: "47.6k",
+        monthly: 3398,
+        quarterly: 7797,
+        yearly: 29748,
+      },
+    ],
+  },
+];

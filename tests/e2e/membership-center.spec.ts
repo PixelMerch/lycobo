@@ -53,6 +53,8 @@ for (const width of [1440, 320]) {
     await expect(page).toHaveURL(/\/create$/);
     const membership = page.getByRole("dialog", { name: "会员订阅", exact: true });
     await expect(membership).toBeVisible();
+    await expect(membership).toHaveCSS("width", `${width}px`);
+    await expect(membership).toHaveCSS("height", "900px");
     await expect(membership.getByText("返回创作", { exact: true })).toHaveCount(0);
     await expect(membership.getByText("积分明细", { exact: true })).toHaveCount(0);
     await expect(membership.getByText(/即将开放|方案预览|待确认|待公布/)).toHaveCount(0);
@@ -204,4 +206,47 @@ test("direct membership visits have a safe return to the workspace", async ({ pa
   await page.goto("/membership");
   await page.getByRole("button", { name: "关闭会员订阅", exact: true }).click();
   await expect(page).toHaveURL(/\/create$/);
+});
+
+test("full-screen membership supports audiences, seats, explanations and FAQ without writes", async ({
+  page,
+}) => {
+  await signIn(page);
+  const writes: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() !== "GET" && !request.url().endsWith("/api/v1/image-session"))
+      writes.push(request.url());
+  });
+  await page.goto("/create");
+  await page.locator(".topbar").getByRole("button", { name: "开通会员", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "会员订阅", exact: true });
+  await dialog.getByRole("tab", { name: "团队", exact: true }).hover();
+  await expect(dialog.getByRole("tab", { name: "个人", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await dialog.getByRole("tab", { name: "团队", exact: true }).click();
+  const lite = dialog.locator('[data-plan="team-lite"]');
+  await expect(lite.locator(".membership-plan-price strong")).toHaveText("¥3,828");
+  await lite.getByRole("button", { name: "增加TEAM LITE席位", exact: true }).click();
+  await expect(lite.locator(".membership-seat-total")).toContainText("3 席位 · 合计 ¥11,484");
+  await dialog.getByRole("radio", { name: "月付", exact: true }).click();
+  await expect(lite.locator(".membership-plan-price strong")).toHaveText("¥399");
+  await lite.getByRole("button", { name: "TEAM LITE积分说明", exact: true }).hover();
+  await expect(page.getByRole("tooltip")).toContainText("每席费用");
+  await page.mouse.move(0, 0);
+  await page.screenshot({ path: "/tmp/lycobo-membership-team.png" });
+  await dialog.getByRole("tab", { name: "企业", exact: true }).click();
+  await expect(dialog.getByRole("heading", { name: "企业协作", exact: true })).toBeVisible();
+  await expect(dialog.getByText("账户管理", { exact: true })).toBeVisible();
+  const question = dialog.getByRole("button", { name: "生成失败后，积分会退回吗？", exact: true });
+  await question.click();
+  await expect(question).toHaveAttribute("aria-expanded", "true");
+  await expect(dialog.getByText(/多张图片部分失败时，只退回失败部分/)).toBeVisible();
+  await page.screenshot({ path: "/tmp/lycobo-membership-faq.png" });
+  await question.click();
+  await expect(question).toHaveAttribute("aria-expanded", "false");
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  expect(writes).toEqual([]);
 });
