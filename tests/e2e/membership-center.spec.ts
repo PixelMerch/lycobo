@@ -111,7 +111,7 @@ test("credit preview opens only on press, shares reads and supports keyboard", a
   await preview.getByRole("button", { name: "查看积分明细" }).hover();
   await expect(preview).toBeVisible();
   await expect(preview).toHaveCSS("outline-style", "none");
-  expect(await balance.evaluate((el) => el.closest("[inert]") === null)).toBe(true);
+  await expect(page.locator("html")).toHaveCSS("overflow", "hidden");
   await preview.screenshot({ path: "/tmp/lycobo-redesign-credit-preview.png" });
   await preview.getByRole("button", { name: "查看积分明细" }).click();
   const billing = page.getByRole("dialog", { name: "订阅与账单", exact: true });
@@ -126,7 +126,8 @@ test("credit preview opens only on press, shares reads and supports keyboard", a
   await expect(balance).toBeFocused();
   await page.keyboard.press("Space");
   await expect(preview).toBeVisible();
-  await page.getByLabel("提示词", { exact: true }).click();
+  // The modal underlay receives outside presses; background controls are inert.
+  await page.mouse.click(500, 500);
   await expect(preview).toHaveCount(0);
   await balance.click();
   await expect(preview).toBeVisible();
@@ -210,7 +211,12 @@ test("credit preview shows only three real entries and reopens from cache", asyn
   expect(orders).toBe(0);
   await page.mouse.move(500, 500);
   await expect(preview).toBeVisible();
-  await balance.click();
+  const triggerBounds = await balance.boundingBox();
+  if (!triggerBounds) throw new Error("Missing credit trigger");
+  await page.mouse.click(
+    triggerBounds.x + triggerBounds.width / 2,
+    triggerBounds.y + triggerBounds.height / 2,
+  );
   await expect(preview).toHaveCount(0);
   await balance.click();
   await expect(preview.getByRole("listitem")).toHaveCount(3);
@@ -269,4 +275,41 @@ test("full-screen membership supports audiences, seats, explanations and FAQ wit
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
   expect(writes).toEqual([]);
+});
+
+test("credit and account overlays block background wheel scrolling and restore it on close", async ({
+  page,
+}) => {
+  await signIn(page);
+  await page.setViewportSize({ width: 1440, height: 700 });
+  await page.goto("/create");
+  await page.getByLabel("提示词", { exact: true }).fill("商品创作需求\n".repeat(100));
+  const background = page.locator(".composer-scroll");
+  await expect
+    .poll(() => background.evaluate((el) => el.scrollHeight > el.clientHeight))
+    .toBe(true);
+  await background.evaluate((el) => {
+    el.scrollTop = 80;
+  });
+  const position = await background.evaluate((el) => el.scrollTop);
+  const bounds = await background.boundingBox();
+  if (!bounds) throw new Error("Missing composer scroll region");
+  for (const trigger of [
+    page.locator(".topbar .header-balance"),
+    page.locator(".sidebar .account-trigger"),
+  ]) {
+    await trigger.click();
+    const overlay = page.locator(".credit-preview-popover, .account-menu");
+    await expect(overlay).toBeVisible();
+    await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    await page.mouse.wheel(0, 350);
+    await page.waitForTimeout(250);
+    await expect(overlay).toBeVisible();
+    expect(await background.evaluate((el) => el.scrollTop)).toBe(position);
+    await page.keyboard.press("Escape");
+    await expect(overlay).toHaveCount(0);
+    expect(await background.evaluate((el) => el.scrollTop)).toBe(position);
+  }
+  await page.mouse.wheel(0, 350);
+  await expect.poll(() => background.evaluate((el) => el.scrollTop)).toBeGreaterThan(position);
 });

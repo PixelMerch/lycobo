@@ -73,7 +73,12 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
             {nickname}
           </span>
         </Dropdown.Trigger>
-        <Dropdown.Popover className="account-menu" placement="top start" offset={8}>
+        <Dropdown.Popover
+          className="account-menu"
+          placement="top start"
+          offset={8}
+          isNonModal={false}
+        >
           <div className="account-menu-identity">
             <Avatar size="lg" className="account-menu-avatar" aria-hidden="true">
               <Avatar.Fallback>{initial}</Avatar.Fallback>
@@ -82,7 +87,7 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
               <strong className="account-menu-name" title={account.account}>
                 {account.account}
               </strong>
-              <span>{account.uid ? `账号 ${account.uid}` : "企业账号"}</span>
+              <span>{account.uid ? `UID ${account.uid}` : "UID —"}</span>
             </div>
           </div>
           <div className="account-menu-balance">

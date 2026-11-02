@@ -89,6 +89,8 @@ for (const width of [1440, 320]) {
       "退出登录",
     ]);
     await expect(page.locator(".account-menu-name")).toHaveText(account);
+    await expect(page.locator(".account-menu-details")).toContainText("UID 0123456789");
+    await expect(page.locator("html")).toHaveCSS("overflow", "hidden");
     await expect(menu.getByRole("separator")).toHaveCount(1);
     // Keyboard focus draws the purple ring; pointer focus never does.
     await expect(menu.getByRole("menuitem").first()).toHaveCSS("outline-style", "solid");

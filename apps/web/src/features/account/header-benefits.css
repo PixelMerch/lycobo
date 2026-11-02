@@ -52,6 +52,9 @@
 }
 .credit-preview-popover {
   width: min(360px, calc(100vw - 24px));
+  max-height: calc(100dvh - 84px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0;
   border: 1px solid var(--interaction-active);
   border-radius: 20px;

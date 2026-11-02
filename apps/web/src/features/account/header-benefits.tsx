@@ -69,7 +69,7 @@ export function HeaderBenefits() {
         isOpen={previewOpen && panel === null}
         onOpenChange={setPreviewOpen}
         shouldCloseOnInteractOutside={(element) => !trigger.current?.contains(element)}
-        isNonModal
+        isNonModal={false}
         placement="bottom end"
         offset={10}
         className="credit-preview-popover"
