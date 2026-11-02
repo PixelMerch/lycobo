@@ -306,7 +306,7 @@ test("image shortcuts preserve the current draft and never submit paid work", as
 });
 
 for (const width of [1440, 390]) {
-  test(`home header becomes black over inspiration and restores at the top at ${width}px`, async ({
+  test(`home header matches the page background over inspiration and restores at the top at ${width}px`, async ({
     page,
   }) => {
     await mockImageApi(page);
@@ -319,10 +319,13 @@ for (const width of [1440, 390]) {
     await page
       .locator(".home-inspiration")
       .evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY));
-    await expect(header).toHaveCSS("background-color", "rgb(0, 0, 0)");
+    const pageBackground = await page
+      .locator("body")
+      .evaluate((el) => getComputedStyle(el).backgroundColor);
+    await expect(header).toHaveCSS("background-color", pageBackground);
     expect(await header.evaluate((el) => el.getBoundingClientRect().height)).toBe(initialHeight);
     expect(await header.evaluate((el) => el.getBoundingClientRect().top)).toBe(0);
-    await page.screenshot({ path: `/tmp/lycobo-home-header-black-${width}.png` });
+    await page.screenshot({ path: `/tmp/lycobo-home-header-matched-${width}.png` });
     await page.evaluate(() => window.scrollTo(0, 0));
     await expect(header).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     if (width < 768) await page.getByRole("button", { name: "打开导航", exact: true }).click();

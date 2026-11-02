@@ -630,7 +630,7 @@ body:has(.commerce-home)::-webkit-scrollbar {
   background: transparent;
 }
 .studio-app[data-home-header-opaque="true"]:has(.commerce-home) .topbar {
-  background: #000;
+  background: var(--background);
 }
 .home-dot-background {
   position: absolute;
