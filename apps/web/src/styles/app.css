@@ -2167,10 +2167,10 @@ p.home-hero-kicker {
   pointer-events: auto;
 }
 .generation-media-action {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  min-height: 28px;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
   padding: 4px;
   border-radius: 4px;
   color: #ffffff;

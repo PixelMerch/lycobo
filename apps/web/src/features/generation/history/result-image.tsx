@@ -61,7 +61,7 @@ export function ResultImage({
             aria-label="下载原图"
             onPress={() => downloadAsset(assetId)}
           >
-            <UiIcon icon={IconDownload} size="small" />
+            <UiIcon icon={IconDownload} size="default" />
           </Button>
           <Tooltip.Content placement="top">下载</Tooltip.Content>
         </Tooltip>
@@ -75,7 +75,7 @@ export function ResultImage({
             isSelected={favorite}
             onChange={() => toggleFavorite(assetId)}
           >
-            <UiIcon icon={favorite ? IconStarFilled : IconStar} size="small" />
+            <UiIcon icon={favorite ? IconStarFilled : IconStar} size="default" />
           </ToggleButton>
           <Tooltip.Content placement="top">{favorite ? "取消收藏" : "收藏"}</Tooltip.Content>
         </Tooltip>

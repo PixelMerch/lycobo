@@ -432,10 +432,10 @@ test("history prompt stops before the optional download action and media control
   await media.hover();
   await expect(media.getByRole("button", { name: "下载原图", exact: true })).toHaveCSS(
     "height",
-    "28px",
+    "30px",
   );
   await expect(media.getByRole("button", { name: "收藏图片", exact: true })).toHaveCSS(
     "height",
-    "28px",
+    "30px",
   );
 });
