@@ -17,8 +17,6 @@ docs/design 的参考站交互研究不构成品牌素材授权；实际示例�
 
 ## React Bits 视觉效果
 
-首页装饰背景采用 [React Bits Dot Grid](https://reactbits.dev/backgrounds/dot-grid) 的 TypeScript/CSS 源码，来源 [DavidHDev/react-bits](https://github.com/DavidHDev/react-bits/tree/e12c22192ac7b4b452c5e2feb9b586d74765d696/src/ts-default/Backgrounds/DotGrid)，固定 commit `e12c22192ac7b4b452c5e2feb9b586d74765d696`。组件位于 `apps/web/src/features/home/dot-grid/`；本地修改包括严格类型、着色器资源清理、动态减少运动偏好及静态降级，未增加第三方运行时依赖。
+首页图片背景参考[React Bits Grid Motion](https://www.reactbits.dev/backgrounds/grid-motion)的倾斜图片墙与交替漂移，来源[DavidHDev/react-bits](https://github.com/DavidHDev/react-bits/tree/4dc7b5b7772e1217c8fb8d2a7aa074302180e5b4/src/ts-default/Backgrounds/GridMotion)，核对commit `4dc7b5b7772e1217c8fb8d2a7aa074302180e5b4`。本地适配在`apps/web/src/features/home/home-grid-motion.tsx`及同名CSS中：保留上游行数、比例、间隔、圆角、角度、倾斜、速度、方向、鼠标视差、提亮、暗化、渐隐和灰度参数；限定为本站已有商品示例并铺在首页创作区后方，不提供编辑工具。适配严格索引检查、稳定节点key、页面隐藏暂停、动态减少运动偏好，以及顶部不渐隐以覆盖Header。所有页面参数由`react-bit-config.ts`提供。按需加载，无新增运行时依赖。首页旧Dot Grid与Rotating Text已移除，不影响图片详情的独立点阵实现。
 
-上游采用 MIT + Commons Clause，版权 David Haz (2026)。完整许可保留在 [React Bits 许可](licenses/react-bits.md)：允许作为应用、网站或产品的一部分使用，不允许出售或重新分发组件本身／组件包。本站仅将其用于首页背景与标题，不提供 React Bits 组件或工具分发服务。
-
-首页标题在 `apps/web/src/features/home/home-intro.tsx` 与 `apps/web/src/styles/home.css` 中精简适配 [Gradient Text](https://reactbits.dev/text-animations/gradient-text) 与 [Rotating Text](https://reactbits.dev/text-animations/rotating-text) 的渐变、字素拆分、逐字错峰 3D flip 与减少动态效果模式，使用已有 `motion/react` 和 CSS，不引入整套上游组件或新增依赖。参考源码固定在同一 commit 的 [GradientText](https://github.com/DavidHDev/react-bits/tree/e12c22192ac7b4b452c5e2feb9b586d74765d696/src/ts-default/TextAnimations/GradientText) 与 [RotatingText](https://github.com/DavidHDev/react-bits/tree/e12c22192ac7b4b452c5e2feb9b586d74765d696/src/ts-default/TextAnimations/RotatingText)。标题采用上游字素拆分、错峰和 flip 旋转轴，在本地组合弹簧过渡与轻微模糊；整句不再纵向平移。本地保留稳定辅助技术文本、固定轮换占位、悬停及页面隐藏暂停，并采用每句独立的明亮多彩渐变。
+上游采用MIT + Commons Clause，版权David Haz（2026）。完整许可保留在[React Bits许可](licenses/react-bits.md)：允许作为应用、网站或产品的一部分使用，不允许出售或重新分发组件本身／组件包。本站仅将其用于首页视觉，不提供React Bits组件或工具分发服务。图片为本站已有本地AI示例，来源说明仍由各示例文档维护。

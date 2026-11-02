@@ -333,3 +333,57 @@ for (const width of [1440, 390]) {
     await expect(page.locator(".studio-app")).toHaveAttribute("data-home-header-opaque", "false");
   });
 }
+
+for (const width of [1440, 390]) {
+  test(`home moving image background leaves the composer stable at ${width}px`, async ({
+    page,
+  }) => {
+    await mockImageApi(page);
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    const wall = page.locator(".grid-motion");
+    await expect(wall).toHaveAttribute("data-playing", "true");
+    await expect(page.locator(".home-intro, .home-intro-heading")).toHaveCount(0);
+    await expect(page.locator(".grid-motion__row")).toHaveCount(8);
+    const background = page.locator(".home-motion-background");
+    const backgroundBounds = await background.boundingBox();
+    expect(backgroundBounds?.y).toBe(0);
+    expect(backgroundBounds?.width).toBe(width < 768 ? width : width - 274);
+    await expect(page.locator(".home-intro-character, .home-dot-background")).toHaveCount(0);
+    await expect
+      .poll(() =>
+        wall
+          .locator("img")
+          .evaluateAll((images) =>
+            images.every(
+              (image) =>
+                image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
+            ),
+          ),
+      )
+      .toBe(true);
+    const prompt = page.getByRole("textbox", { name: "创作需求", exact: true });
+    const before = await prompt.boundingBox();
+    const row = page.locator(".grid-motion__row").first();
+    const transform = await row.evaluate((el) => getComputedStyle(el).transform);
+    await expect
+      .poll(() => row.evaluate((el) => getComputedStyle(el).transform))
+      .not.toBe(transform);
+    await prompt.fill("保留商品的颜色与材质");
+    expect((await prompt.boundingBox())?.y).toBe(before?.y);
+    await page.screenshot({ path: `/tmp/lycobo-grid-motion-home-${width}.png` });
+    await wall.evaluate((el) =>
+      window.scrollTo(0, el.getBoundingClientRect().bottom + window.scrollY + 16),
+    );
+    await expect(wall).toHaveAttribute("data-playing", "false");
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(wall).toHaveAttribute("data-playing", "true");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(wall).toHaveAttribute("data-playing", "false");
+    await expect(row).toHaveCSS("will-change", "auto");
+    await expect(prompt).toHaveValue("保留商品的颜色与材质");
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+      .toBe(true);
+  });
+}

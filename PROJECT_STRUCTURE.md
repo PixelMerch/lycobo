@@ -40,8 +40,7 @@ apps/web/src/
     ├── commerce/                 # 兼容旧电商入口偏好、家纺裂变参数面板、套图计划语言分析、真实计划确认与生图、本地会话草稿
     ├── home/                     # 首页、共享创作输入与提示辅助
     │   ├── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，use-inspiration-columns.ts 订阅断点并派生均衡瀑布流
-    │   ├── home-intro.tsx         # 首页渐变轮换标题，文案与间隔在 home-intro-config.ts
-    │   └── dot-grid/             # React Bits 点阵源码适配，首页参数在 home-dot-grid-config.ts
+    │   └── home-grid-motion.tsx   # 按需加载的Grid Motion背景、视差与可见性暂停；参数在react-bit-config.ts
     ├── assets/                   # 素材页、全屏素材库及其局部样式
     ├── generation/               # 生图请求、事件、会话草稿及工作台页面
     │   ├── composer/             # 比例选择、参数选中背景
