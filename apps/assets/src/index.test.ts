@@ -100,6 +100,9 @@ describe("private asset edge delivery", () => {
     expect(first.headers.get("X-Asset-Cache")).toBe("MISS");
     expect(first.headers.get("Access-Control-Allow-Origin")).toBe(origin);
     expect(first.headers.get("Cache-Control")).toContain("private");
+    const ttl = Number(first.headers.get("Cache-Control")?.match(/max-age=(\d+)/)?.[1]);
+    expect(ttl).toBeGreaterThanOrEqual(85500);
+    expect(ttl).toBeLessThanOrEqual(86400);
     expect(first.headers.get("Content-Type")).toBe("image/webp");
     expect(await first.text()).toBe("preview fixture");
     await Promise.all(f.work);

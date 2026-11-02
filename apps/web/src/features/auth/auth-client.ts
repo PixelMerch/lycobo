@@ -8,6 +8,8 @@ import { normalizeApiResponse } from "../../lib/api-response";
 import { reportRequestFailure } from "../../lib/request-diagnostics";
 import { rememberSessionExpiry, resetSessionRenewal, sessionFetch } from "../../lib/session-fetch";
 
+import { clearPreviewLinks } from "../generation/preview-link-cache";
+
 const authKey = ["enterprise-session"];
 async function authRequest(path: string, init: RequestInit = {}) {
   const request = path === "session" ? sessionFetch : fetch;
@@ -73,6 +75,7 @@ export function useEnterpriseLogin() {
       return enterpriseLoginResponseSchema.parse(await response.json()).user;
     },
     onSuccess: async (user) => {
+      clearPreviewLinks();
       await client.cancelQueries();
       client.setQueryData(authKey, user);
       // Reset notifies mounted observers and refetches active queries with the new cookie.
@@ -90,6 +93,7 @@ export function useEnterpriseLogout() {
       if (!response.ok) throw new Error("退出失败，请稍后重试");
     },
     onSuccess: async () => {
+      clearPreviewLinks();
       await client.cancelQueries();
       client.setQueryData(authKey, null);
       await client.resetQueries({ predicate: (query) => query.queryKey[0] !== authKey[0] });

@@ -1,5 +1,6 @@
 import { imageDeliverySchema } from "@lycoboai/contracts";
 import { queryClient } from "../../lib/query-client";
+import { reusePreviewLinks } from "./preview-link-cache";
 export const deliveryKey = (id: string) => ["image-delivery", id];
 export function rememberImageDeliveries(value: unknown) {
   if (Array.isArray(value)) {
@@ -10,6 +11,9 @@ export function rememberImageDeliveries(value: unknown) {
   if ("id" in value && typeof value.id === "string" && "delivery" in value) {
     const parsed = imageDeliverySchema.safeParse(value.delivery);
     if (parsed.success) {
+      const previewExpiry = Number(new URL(parsed.data.url).searchParams.get("expires"));
+      if (Number.isSafeInteger(previewExpiry) && previewExpiry > 0)
+        parsed.data.expires_at = previewExpiry;
       const current = imageDeliverySchema.safeParse(
         queryClient.getQueryData(deliveryKey(value.id)),
       );
@@ -20,10 +24,15 @@ export function rememberImageDeliveries(value: unknown) {
           before.origin === after.origin &&
           before.pathname === after.pathname &&
           before.searchParams.get("variant") === after.searchParams.get("variant")
-        )
+        ) {
+          queryClient.setQueryData(deliveryKey(value.id), {
+            ...current.data,
+            download_url: parsed.data.download_url,
+          });
           return;
+        }
       }
-      queryClient.setQueryData(deliveryKey(value.id), parsed.data);
+      queryClient.setQueryData(deliveryKey(value.id), reusePreviewLinks(value.id, parsed.data));
     }
   }
   if (
@@ -45,7 +54,11 @@ export function rememberImageDeliveries(value: unknown) {
 }
 export function assetContentUrl(id: string, thumbnail = false, download = false) {
   const parsed = imageDeliverySchema.safeParse(queryClient.getQueryData(deliveryKey(id)));
-  if (parsed.success && parsed.data.expires_at > Date.now() / 1000)
+  if (
+    parsed.success &&
+    parsed.data.expires_at > Date.now() / 1000 &&
+    (!download || downloadExpiry(parsed.data) > Date.now() / 1000)
+  )
     return download
       ? parsed.data.download_url
       : thumbnail
@@ -55,9 +68,16 @@ export function assetContentUrl(id: string, thumbnail = false, download = false)
   return `/api/v1/image-assets/${id}/content${download ? "?download=1" : thumbnail ? "?thumbnail=1" : ""}`;
 }
 
+function downloadExpiry(delivery: ReturnType<typeof imageDeliverySchema.parse>) {
+  const expires = new URL(delivery.download_url).searchParams.get("expires");
+  return expires === null ? delivery.expires_at : Number(expires);
+}
+
 export function cachedImageDelivery(id: string, minimumLifetime = 60) {
   const parsed = imageDeliverySchema.safeParse(queryClient.getQueryData(deliveryKey(id)));
-  return parsed.success && parsed.data.expires_at > Date.now() / 1000 + minimumLifetime
+  return parsed.success &&
+    Math.min(parsed.data.expires_at, downloadExpiry(parsed.data)) >
+      Date.now() / 1000 + minimumLifetime
     ? parsed.data
     : null;
 }

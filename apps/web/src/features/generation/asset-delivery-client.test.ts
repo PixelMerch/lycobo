@@ -55,3 +55,24 @@ it("preserves original download semantics when a link is missing or expired", ()
   });
   expect(assetContentUrl(id, false, true)).toBe(`/api/v1/image-assets/${id}/content?download=1`);
 });
+
+it("refreshes short download links without replacing still-valid previews", () => {
+  const id = crypto.randomUUID(),
+    now = Math.floor(Date.now() / 1000);
+  const delivery = {
+    expires_at: now + 86400,
+    url: "https://assets.example.test/preview",
+    thumbnail_url: "https://assets.example.test/thumb",
+    download_url: `https://assets.example.test/original?expires=${now - 1}`,
+  };
+  rememberImageDeliveries({ id, delivery });
+  expect(assetContentUrl(id, false, true)).toContain("content?download=1");
+  const refreshed = {
+    ...delivery,
+    url: `${delivery.url}?new=1`,
+    download_url: `https://assets.example.test/original?expires=${now + 1800}`,
+  };
+  rememberImageDeliveries({ id, delivery: refreshed });
+  expect(assetContentUrl(id)).toBe(delivery.url);
+  expect(assetContentUrl(id, false, true)).toBe(refreshed.download_url);
+});
