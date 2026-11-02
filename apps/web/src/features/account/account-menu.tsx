@@ -9,13 +9,12 @@ import {
   IconUserCircle,
 } from "@tabler/icons-react";
 import { useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { useEnterpriseLogout, useEnterpriseSession } from "../auth/auth-client";
 import { LoginDialog } from "../auth/login-dialog";
-import { accountCenterPath } from "./account-center-tabs";
 import { formatCredits, imagesFor, roleLabel } from "./account-format";
 import { useAccountOverlays } from "./account-overlays";
 import { AccountUpdates } from "./account-updates";
@@ -53,9 +52,9 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
   const wallet = useWallet();
   const logout = useEnterpriseLogout();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const openOverlay = useAccountOverlays((state) => state.open);
+  const openCenter = useAccountOverlays((state) => state.openCenter);
   useErrorToast(logout.error?.message);
   const account = session.data;
   if (!account) return null;
@@ -66,7 +65,8 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
     onNavigate?.();
     navigate(path);
   };
-  // Overlays stack above the phone navigation drawer, so focus can return to this row.
+  // The account center and its dialogs stack above the phone navigation drawer, so focus can
+  // return to this row.
   const open = (overlay: "recharge" | "membership") => openOverlay(overlay, triggerRef.current);
   return (
     <div className="account-footer">
@@ -74,7 +74,6 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
         <Dropdown.Trigger
           ref={triggerRef}
           className="account-trigger"
-          data-current={pathname.startsWith("/account") || undefined}
           aria-label={`账户菜单：${account.account}`}
         >
           <Avatar className="account-avatar" size="sm" aria-hidden="true">
@@ -124,10 +123,10 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
             disabledKeys={logout.isPending ? ["logout"] : []}
             onAction={(key) => {
               if (key === "recharge" || key === "membership") open(key);
-              else if (key === "ledger") go(accountCenterPath("credits"));
-              else if (key === "center") go(accountCenterPath("overview"));
+              else if (key === "ledger") openCenter("credits", triggerRef.current);
+              else if (key === "center") openCenter("overview", triggerRef.current);
               else if (key === "works") go("/assets");
-              else if (key === "security") go(accountCenterPath("security"));
+              else if (key === "security") openCenter("security", triggerRef.current);
               else if (key === "logout") logout.mutate();
             }}
           >

@@ -1,10 +1,8 @@
 import { Button, Popover } from "@heroui/react";
 import { IconChevronRight, IconCrown } from "@tabler/icons-react";
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router";
 import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
-import { accountCenterPath } from "./account-center-tabs";
 import { useAccountOverlays } from "./account-overlays";
 import { CreditPreview } from "./credit-preview";
 import { useWallet } from "./wallet-client";
@@ -13,12 +11,12 @@ import "./header-benefits.css";
 /** Official press-triggered popover; wallet reads mount only while open. */
 export function HeaderBenefits() {
   const wallet = useWallet();
-  const navigate = useNavigate();
   const trigger = useRef<HTMLButtonElement>(null);
   const membership = useRef<HTMLButtonElement>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const overlay = useAccountOverlays((state) => state.overlay);
+  const overlayOpen = useAccountOverlays((state) => state.center !== null || state.dialog !== null);
   const openOverlay = useAccountOverlays((state) => state.open);
+  const openCenter = useAccountOverlays((state) => state.openCenter);
   const balanceLabel = wallet.data?.balance.toLocaleString("zh-CN") ?? "—";
   const open = (next: "recharge" | "membership", opener: HTMLElement | null) => {
     setPreviewOpen(false);
@@ -56,7 +54,7 @@ export function HeaderBenefits() {
       </div>
       <Popover.Content
         triggerRef={trigger}
-        isOpen={previewOpen && overlay === null}
+        isOpen={previewOpen && !overlayOpen}
         onOpenChange={setPreviewOpen}
         shouldCloseOnInteractOutside={(element) => !trigger.current?.contains(element)}
         isNonModal={false}
@@ -70,7 +68,7 @@ export function HeaderBenefits() {
               onRecharge={() => open("recharge", trigger.current)}
               onDetails={() => {
                 setPreviewOpen(false);
-                navigate(accountCenterPath("credits"));
+                openCenter("credits", trigger.current);
               }}
               onMembership={() => open("membership", trigger.current)}
             />

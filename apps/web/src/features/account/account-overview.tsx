@@ -7,14 +7,13 @@ import {
   IconInfoCircle,
   IconPlus,
 } from "@tabler/icons-react";
-import { useNavigate } from "react-router";
 import { CreditCoin } from "../../components/credit-coin";
 import { RouteLink } from "../../components/router-link";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { AssetImage } from "../generation/asset-image";
 import { useImageAssets } from "../generation/generation-client";
-import { accountCenterPath } from "./account-center-tabs";
+import type { AccountCenterTab } from "./account-center-tabs";
 import { EntryMark } from "./account-entry";
 import {
   entryDetail,
@@ -30,9 +29,10 @@ import { useWallet, useWalletEntries } from "./wallet-client";
 export const pressedElement = (target: EventTarget) =>
   target instanceof HTMLElement ? target : null;
 
-export function WalletSummary() {
+type ShowTab = (tab: AccountCenterTab) => void;
+
+export function WalletSummary({ onShowTab }: { onShowTab: ShowTab }) {
   const wallet = useWallet();
-  const navigate = useNavigate();
   const open = useAccountOverlays((state) => state.open);
   const unit = wallet.data?.unitCredits ?? imageUnitCredits;
   const balance = wallet.data?.balance;
@@ -71,7 +71,7 @@ export function WalletSummary() {
           <UiIcon icon={IconPlus} />
           充值积分
         </Button>
-        <Button variant="secondary" onPress={() => navigate(accountCenterPath("credits"))}>
+        <Button variant="secondary" onPress={() => onShowTab("credits")}>
           积分明细
         </Button>
       </div>
@@ -109,7 +109,7 @@ export function MembershipSummary() {
   );
 }
 
-function RecentEntries() {
+function RecentEntries({ onShowTab }: { onShowTab: ShowTab }) {
   const entries = useWalletEntries();
   const recent = entries.data?.pages[0]?.data.slice(0, 4) ?? [];
   return (
@@ -118,10 +118,15 @@ function RecentEntries() {
         <h2 id="account-recent-heading" className="account-card-title">
           最近积分记录
         </h2>
-        <RouteLink to={accountCenterPath("credits")} className="account-more">
+        <Button
+          size="sm"
+          variant="ghost"
+          className="account-more"
+          onPress={() => onShowTab("credits")}
+        >
           全部明细
           <UiIcon icon={IconChevronRight} size="small" />
-        </RouteLink>
+        </Button>
       </div>
       {recent.length > 0 ? (
         <ul className="account-entry-list">
@@ -153,7 +158,8 @@ function RecentEntries() {
   );
 }
 
-function RecentWorks() {
+/** Works live in the asset library; following a link there closes the center first. */
+function RecentWorks({ onLeave }: { onLeave: () => void }) {
   const assets = useImageAssets({ kind: "output", type: "image" });
   const works = assets.data?.pages[0]?.data.slice(0, 6) ?? [];
   return (
@@ -162,7 +168,7 @@ function RecentWorks() {
         <h2 id="account-works-heading" className="account-card-title">
           个人作品
         </h2>
-        <RouteLink to="/assets" className="account-more">
+        <RouteLink to="/assets" className="account-more" onClick={onLeave}>
           进入素材库
           <UiIcon icon={IconChevronRight} size="small" />
         </RouteLink>
@@ -189,7 +195,7 @@ function RecentWorks() {
           ) : (
             <>
               暂无作品，
-              <RouteLink to="/workspace" className="account-inline-link">
+              <RouteLink to="/workspace" className="account-inline-link" onClick={onLeave}>
                 去工作区创作
               </RouteLink>
             </>
@@ -200,16 +206,22 @@ function RecentWorks() {
   );
 }
 
-export function AccountOverview() {
+export function AccountOverview({
+  onShowTab,
+  onLeave,
+}: {
+  onShowTab: ShowTab;
+  onLeave: () => void;
+}) {
   const wallet = useWallet();
   const entries = useWalletEntries();
   useErrorToast((wallet.error ?? entries.error)?.message);
   return (
     <div className="account-overview">
-      <WalletSummary />
+      <WalletSummary onShowTab={onShowTab} />
       <MembershipSummary />
-      <RecentEntries />
-      <RecentWorks />
+      <RecentEntries onShowTab={onShowTab} />
+      <RecentWorks onLeave={onLeave} />
     </div>
   );
 }

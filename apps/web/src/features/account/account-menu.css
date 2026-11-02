@@ -39,10 +39,6 @@
   background: var(--interaction-hover);
   transform: none;
 }
-/* On the account center the account row reads as the current place, like a navigation item. */
-.account-trigger[data-current="true"] {
-  background: var(--interaction-active);
-}
 .account-trigger .account-avatar {
   width: 24px;
   height: 24px;

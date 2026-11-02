@@ -202,7 +202,7 @@ export function StudioShell() {
       <main className="main-content">
         <Outlet context={{ setHomeHeaderOpaque } satisfies StudioShellContext} />
       </main>
-      {signedIn && <AccountOverlayHost />}
+      {signedIn && <AccountOverlayHost onNavigate={() => setMenuOpen(false)} />}
       <Modal
         isOpen={info !== null}
         onOpenChange={(open) => {

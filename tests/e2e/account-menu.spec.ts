@@ -148,23 +148,26 @@ for (const width of [1440, 320]) {
     // On phones the drawer stays open beneath the overlay, so focus returns there too.
     await expect(trigger).toBeFocused();
 
-    // The account center is a page; leaving keeps the creative draft.
+    // The account center opens above the current page (and above the phone drawer, like
+    // recharge); closing it returns focus to the account row and keeps the creative draft.
     await trigger.click();
     await menu.getByRole("menuitem", { name: "账号与安全", exact: true }).click();
-    await expect(page).toHaveURL(/\/account\/security$/);
-    await expect(page.getByRole("heading", { name: "个人中心", level: 1 })).toBeVisible();
-    await expect(page.locator(".account-management-summary")).toContainText("UID 0123456789");
-    await expect(page.locator(".mobile-nav")).toHaveCount(0);
-    await page.goBack();
+    const center = page.getByRole("dialog", { name: "个人中心", exact: true });
+    await expect(center.getByRole("tab", { name: "账号与安全", selected: true })).toBeVisible();
+    await expect(center.locator(".account-management-summary")).toContainText("UID 0123456789");
+    await expect(page).toHaveURL(/\/create$/);
+    const centerClose = center.getByRole("button", { name: "关闭个人中心" });
+    await expect(centerClose).toHaveCSS("width", "44px");
+    await centerClose.click();
+    await expect(center).toHaveCount(0);
+    await expect(trigger).toBeFocused();
     await expect(draft).toHaveValue("保留正在准备的商品图");
-    await openNavigation();
     await trigger.click();
     await menu.getByRole("menuitem", { name: "个人中心", exact: true }).click();
-    await expect(page).toHaveURL(/\/account$/);
-    await expect(page.getByRole("tab", { name: "概览", selected: true })).toBeVisible();
-    await page.goBack();
-    await expect(draft).toHaveValue("保留正在准备的商品图");
-    await openNavigation();
+    await expect(center.getByRole("tab", { name: "概览", selected: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(center).toHaveCount(0);
+    await expect(trigger).toBeFocused();
 
     await trigger.click();
     await menu.getByRole("menuitem", { name: "个人作品", exact: true }).click();
@@ -216,8 +219,8 @@ test.describe("touch", () => {
     const box = await item.boundingBox();
     if (!box) throw new Error("Missing account menu row");
     await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
-    await expect(page).toHaveURL(/\/account$/);
-    await expect(page.getByRole("heading", { name: "个人中心", level: 1 })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "个人中心", exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/\/create$/);
   });
 });
 
