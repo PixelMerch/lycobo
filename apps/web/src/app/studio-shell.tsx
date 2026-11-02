@@ -15,7 +15,8 @@ import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
-import { HeaderAccountMenu } from "../features/account/header-account-menu";
+import { AccountMenu, HeaderLogin } from "../features/account/account-menu";
+import { useEnterpriseSession } from "../features/auth/auth-client";
 import { useImageEvents } from "../features/generation/use-image-events";
 import "../styles/brand.css";
 
@@ -24,6 +25,7 @@ export function StudioShell() {
   const { pathname } = useLocation();
   const inWorkspace =
     pathname.startsWith("/create") || pathname.startsWith("/commerce") || pathname === "/workspace";
+  const signedIn = !!useEnterpriseSession().data;
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
@@ -135,18 +137,22 @@ export function StudioShell() {
             </Button>
             <Tooltip.Content placement="right">帮助中心</Tooltip.Content>
           </Tooltip>
-          <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
-            <Button
-              variant="tertiary"
-              className="nav-row"
-              aria-label="账户设置"
-              onPress={() => setInfo("账户设置")}
-            >
-              <UiIcon icon={IconSettings} size="default" />
-              <span className="nav-label">账户设置</span>
-            </Button>
-            <Tooltip.Content placement="right">账户设置</Tooltip.Content>
-          </Tooltip>
+          {signedIn ? (
+            <AccountMenu />
+          ) : (
+            <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
+              <Button
+                variant="tertiary"
+                className="nav-row"
+                aria-label="账户设置"
+                onPress={() => setInfo("账户设置")}
+              >
+                <UiIcon icon={IconSettings} size="default" />
+                <span className="nav-label">账户设置</span>
+              </Button>
+              <Tooltip.Content placement="right">账户设置</Tooltip.Content>
+            </Tooltip>
+          )}
         </div>
       </aside>
       <header className="topbar">
@@ -172,12 +178,17 @@ export function StudioShell() {
                 <Drawer.Body>
                   <nav>{nav}</nav>
                 </Drawer.Body>
+                {signedIn && (
+                  <Drawer.Footer className="mobile-nav-account">
+                    <AccountMenu onNavigate={() => setMenuOpen(false)} />
+                  </Drawer.Footer>
+                )}
               </Drawer.Dialog>
             </Drawer.Content>
           </Drawer.Backdrop>
         </Drawer>
         <div className="header-actions">
-          <HeaderAccountMenu />
+          <HeaderLogin />
         </div>
       </header>
       <main className="main-content">

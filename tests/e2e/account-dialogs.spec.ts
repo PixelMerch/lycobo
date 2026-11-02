@@ -24,11 +24,14 @@ for (const width of [1440, 390]) {
     });
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/create");
+    // Phones reach the account from the foot of the navigation drawer.
+    if (width < 768) await page.getByRole("button", { name: "打开导航", exact: true }).click();
     const trigger = page.getByRole("button", { name: "账户菜单：merchant-fixture", exact: true });
     await trigger.click();
     await page.getByRole("menuitem", { name: "账号管理", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "账号管理", exact: true });
-    await expect(page.getByRole("dialog")).toHaveCount(1);
+    // On phones the navigation drawer stays open beneath the account dialog.
+    await expect(page.getByRole("dialog")).toHaveCount(width < 768 ? 2 : 1);
     await expect(page.locator(".modal__backdrop")).not.toHaveAttribute("data-entering", "true");
     await expect(dialog.getByRole("button", { name: "绑定手机号", exact: true })).toBeDisabled();
     await expect(dialog.getByRole("button", { name: "绑定邮箱", exact: true })).toBeDisabled();

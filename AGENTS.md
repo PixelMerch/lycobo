@@ -58,10 +58,9 @@ Read relevant project skills before work:
   pointer focus (`data-focused` without `data-focus-visible`) and for HeroUI overlay containers
   (dialog, popover, dropdown menu). No purple box around the account capsule, menu list, row or
   dialog after hover or click. Cover this with E2E assertions, not only CSS.
-- The header account menu opens on mouse hover and closes once the pointer leaves the trigger and
-  menu; keyboard and touch keep press toggling, and keyboard focus still enters the first row and
-  returns to the capsule on close. Keep its popover non-modal: a modal popover marks outside content
-  inert and makes a hovered trigger flicker open and closed.
+- Signed in, the account capsule sits at the foot of the sidebar (the navigation drawer on phones)
+  and opens its menu upward on press, Enter or Space, as in the approved 小云雀 reference; hovering
+  does not open it. Keyboard focus enters the first row and returns to the capsule on close.
 - Preserve pending drafts when switching tasks. Never navigate users away when a background task completes.
 - No server modules or secrets in apps/web or packages/contracts. VITE_* is public.
 - UI mockups are references, never a screenshot used as a functional page.
