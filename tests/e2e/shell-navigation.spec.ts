@@ -7,6 +7,16 @@ test("workspace navigation remains compact and aligned across desktop and mobile
   await mockImageApi(page);
   await page.setViewportSize({ width: 1584, height: 993 });
   await page.goto("/create");
+  const logo = page.locator(".sidebar .lycobo-logo");
+  await expect(logo).toHaveAttribute("src", "/brand/lycobo-fold.svg");
+  await expect
+    .poll(() => logo.evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
+  await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute(
+    "href",
+    "/brand/lycobo-fold-icon.svg",
+  );
+  expect((await page.request.get("/brand/lycobo-fold-icon.svg")).ok()).toBe(true);
   const prompt = page.getByLabel("提示词", { exact: true });
   await prompt.fill("保留这份商品创作草稿");
   const rows = page.locator(".sidebar nav .nav-row");

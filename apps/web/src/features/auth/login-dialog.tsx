@@ -111,12 +111,7 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                 <div className="login-content">
                   <Modal.Header className="login-header">
                     <span className="login-brand-mark" aria-hidden="true">
-                      <img
-                        src="/brand/lycobo-product-pilot-mark.svg"
-                        alt=""
-                        width="24"
-                        height="18"
-                      />
+                      <img src="/brand/lycobo-fold-mark.svg" alt="" width="24" height="24" />
                     </span>
                     <Modal.Heading>欢迎使用 Lycobo</Modal.Heading>
                     <p>{hint}</p>

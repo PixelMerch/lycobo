@@ -71,7 +71,7 @@
 
 ### 品牌 Logo
 
-采用[已确认字标预览](docs/design/brand/lycobo-product-pilot-approved.png)，图形为 #A8FF00，深色背景字标为 #F2F4EE，浅色文档字标为 #142000。主站使用透明底 SVG，字标已转为路径，不加载额外字体。展开侧栏与移动导航使用组合标志，折叠侧栏、登录与 favicon 使用独立图形；favicon 使用 #A8FF00 圆角底与 #101310 深色符号，小尺寸版本加宽箭头上方折缝。资源位于 `apps/web/public/brand`，保持导航、按钮及页面字体规格不变。
+采用[已确认字标预览](docs/design/brand/lycobo-fold-approved.png)，2026-11-02选定第二方案「柔性折页」。抽象折页图形为 #A8FF00，英文 LYCOBO 字标为 #F5F5F2，浅色文档用纯黑版；不含中文字标和具象青蛙。主站透明SVG图形及字标均为路径，无额外字体依赖。展开侧栏与移动导航使用组合标志，折叠侧栏、登录使用独立图形；favicon 使用透明底青柠图形，Apple Touch Icon 使用深底青柠图形。正式资源以 lycobo-fold 命名，位于 apps/web/public/brand；登录图形24×24px，其余导航及按钮几何不变。
 
 ## 3. 排版、图标与基础控件
 
