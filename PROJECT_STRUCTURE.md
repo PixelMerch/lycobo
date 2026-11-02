@@ -124,7 +124,8 @@ GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 C
 
 功能组件使用直接依赖；服务端缓存属于TanStack Query，临时草稿与交互属于Zustand，纯展示组件从props获得数据。具体规则见[UI一致性维护](docs/ui-consistency.md)。
 
-- `features/account/account-menu.tsx` 的 HeaderLogin 与 AccountMenu 封装未登录入口和侧栏账户菜单；`header-benefits.tsx` 组合登录后的双入口胶囊，积分点击打开 `CreditsDialog`，悬停用官方非模态Popover展示 `CreditPreview` 的真实余额及最多三条记录，会员进入独立路由。StudioShell只组合入口，查询共用TanStack Query。
+- `features/account/account-menu.tsx` 的 HeaderLogin 与 AccountMenu 封装未登录入口和侧栏账户菜单（积分卡片、会员行与个人中心快捷入口）；`header-benefits.tsx` 组合登录后的双入口胶囊，积分点击用官方Popover展示 `CreditPreview` 的真实余额及最多三条记录。`account-overlays.tsx` 以Zustand记录当前账户弹层与打开者，`AccountOverlayHost` 由StudioShell挂载，统一渲染 `RechargeDialog`（`credits-dialog.tsx`、`credit-packs.tsx` 订单预览）与懒加载会员弹窗，关闭后焦点返回打开者。
+- `features/account/account-center-page.tsx` 是懒加载的 `/account/:tab?` 个人中心，页签定义在 `account-center-tabs.ts`（路由loader据此重定向未知页签）；`account-overview.tsx`、`credit-ledger.tsx`、`recharge-orders.tsx`、`account-membership.tsx`、`account-security.tsx` 分别为各页签，`account-format.ts` 提供纯格式化函数（张数换算、成员、相对时间），`account-entry.tsx` 为收支类型图标。查询共用TanStack Query，只在页签选中时挂载。
 - `features/account/membership-page.tsx` 导出懒加载全屏 MembershipDialog，Header在当前工作区打开；/membership仅为旧链接兼容入口，不展示返回与明细按钮；`MembershipPlans` 管理分类、周期、档位和团队席位展示；membership-details组合工具／协作能力与Tooltip，membership-faq用官方Accordion承载本站FAQ，`CreditPacks` 只管理所选包。`credits-dialog.tsx` 为独立720px充值弹窗，`account-panel.tsx` 继续按入口组合个人信息、账号管理及订阅与账单。`WalletPanel` 封装真实余额、收支筛选、订单与分页；`wallet-client.ts` 共享钱包查询，最近记录按需读取并缓存30秒，不新增轮询。未接入的会员、绑定、验证码及支付不会模拟成功；没有跨会员、充值、账单的聚合Tab弹窗。
 
 ## 数据库领域命名
