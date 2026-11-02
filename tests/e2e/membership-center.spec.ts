@@ -32,9 +32,13 @@ for (const width of [1440, 320]) {
     const draft = page.getByLabel("提示词", { exact: true });
     await draft.fill("保留创作草稿，不创建付费任务");
     const header = page.locator(".topbar");
-    const balance = header.getByRole("button", { name: "积分 200，充值积分" });
+    const balance = header.getByRole("button", { name: "积分 200，查看积分概览" });
     await expect(balance).toBeVisible();
     await balance.click();
+    await page
+      .getByRole("dialog", { name: "积分概览" })
+      .getByRole("button", { name: "充值积分", exact: true })
+      .click();
     const recharge = page.getByRole("dialog", { name: "积分充值", exact: true });
     await expect(recharge).toBeVisible();
     await expect(recharge.getByRole("tab")).toHaveCount(0);
@@ -42,7 +46,7 @@ for (const width of [1440, 320]) {
     await pack.click();
     await expect(pack).toBeChecked();
     await expect(recharge.getByRole("button", { name: "立即购买" })).toBeDisabled();
-    expect(ledgerReads).toBe(0);
+    expect(ledgerReads).toBeGreaterThan(0);
     await recharge.screenshot({ path: `/tmp/lycobo-redesign-recharge-${width}.png` });
     await expect(recharge.getByText("企业共享账户", { exact: true })).toHaveCount(0);
     await expect(recharge.getByRole("button", { name: "积分明细", exact: true })).toHaveCount(0);
@@ -90,9 +94,7 @@ for (const width of [1440, 320]) {
   });
 }
 
-test("credit hover preview shares reads, supports keyboard and leaves recharge as primary press", async ({
-  page,
-}) => {
+test("credit preview opens only on press, shares reads and supports keyboard", async ({ page }) => {
   await signIn(page);
   let ledgerResponses = 0;
   page.on("response", (response) => {
@@ -101,6 +103,9 @@ test("credit hover preview shares reads, supports keyboard and leaves recharge a
   await page.goto("/create");
   const balance = page.locator(".topbar .header-balance");
   await balance.hover();
+  await page.waitForTimeout(350);
+  await expect(page.getByRole("dialog", { name: "积分概览" })).toHaveCount(0);
+  await balance.click();
   const preview = page.getByRole("dialog", { name: "积分概览" });
   await expect(preview.getByText("暂无积分记录", { exact: true })).toBeVisible();
   await preview.getByRole("button", { name: "查看积分明细" }).hover();
@@ -115,11 +120,17 @@ test("credit hover preview shares reads, supports keyboard and leaves recharge a
   await page.keyboard.press("Escape");
   await page.mouse.move(500, 500);
   await balance.focus();
-  await page.keyboard.press("ArrowDown");
-  await expect(preview.getByRole("button", { name: "充值积分", exact: true })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(preview).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(balance).toBeFocused();
-  await page.keyboard.press("Enter");
+  await page.keyboard.press("Space");
+  await expect(preview).toBeVisible();
+  await page.getByLabel("提示词", { exact: true }).click();
+  await expect(preview).toHaveCount(0);
+  await balance.click();
+  await expect(preview).toBeVisible();
+  await preview.getByRole("button", { name: "充值积分", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "积分充值", exact: true })).toBeVisible();
   await expect(preview).toHaveCount(0);
 });
@@ -130,9 +141,13 @@ test("unavailable balance stays unknown in recharge instead of becoming zero", a
     route.fulfill({ status: 503, json: apiFixture({}, 503) }),
   );
   await page.goto("/");
-  const balance = page.locator(".topbar").getByRole("button", { name: "积分 —，充值积分" });
+  const balance = page.locator(".topbar").getByRole("button", { name: "积分 —，查看积分概览" });
   await expect(balance).toBeVisible();
   await balance.click();
+  await page
+    .getByRole("dialog", { name: "积分概览" })
+    .getByRole("button", { name: "充值积分", exact: true })
+    .click();
   const dialog = page.getByRole("dialog", { name: "积分充值", exact: true });
   await expect(dialog.getByRole("radio")).toHaveCount(9);
   await expect(dialog.locator(".credit-recharge-balance")).toHaveCount(0);
@@ -179,6 +194,9 @@ test("credit preview shows only three real entries and reopens from cache", asyn
   await expect(balance).toContainText("200");
   expect(reads).toBe(0);
   await balance.hover();
+  await page.waitForTimeout(350);
+  await expect(page.getByRole("dialog", { name: "积分概览" })).toHaveCount(0);
+  await balance.click();
   const preview = page.getByRole("dialog", { name: "积分概览" });
   await expect(preview.getByRole("listitem")).toHaveCount(3);
   await expect(preview.getByText("充值到账", { exact: true })).toBeVisible();
@@ -191,11 +209,13 @@ test("credit preview shows only three real entries and reopens from cache", asyn
   const initialReads = reads;
   expect(orders).toBe(0);
   await page.mouse.move(500, 500);
+  await expect(preview).toBeVisible();
+  await balance.click();
   await expect(preview).toHaveCount(0);
-  await balance.hover();
+  await balance.click();
   await expect(preview.getByRole("listitem")).toHaveCount(3);
   expect(reads).toBe(initialReads);
-  await balance.click();
+  await preview.getByRole("button", { name: "充值积分", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "积分充值", exact: true })).toBeVisible();
   await expect(preview).toHaveCount(0);
   expect(orders).toBe(0);

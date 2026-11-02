@@ -20,7 +20,7 @@
 | 能力 | 唯一入口 | 维护约束 |
 | --- | --- | --- |
 | 功能导航 | FeatureNavigation → CreationNavigation / CommerceNavigation | 文字直达、整行延迟悬停展开竖向卡片、箭头点击开关；共用样式和 useHoverMenu，保持模型草稿；AI 电商点击恢复浏览器最近功能，首次默认家纺主图裂变；家纺主图裂变工作区使用共享上传预览／比例，复用真实生成提交、历史、索引与逐图状态，视角预设由服务端管理 |
-| 账户入口 | HeaderLogin + HeaderBenefits + AccountMenu | 未登录入口在Header，已登录账户在侧栏底部；共用账户查询，余额在菜单内和Header；积分点击充值、悬停下方真实概览，会员打开当前页弹窗，更新与消息使用HeroUI右侧抽屉；应用壳不复制状态 |
+| 账户入口 | HeaderLogin + HeaderBenefits + AccountMenu | 未登录入口在Header，已登录账户在侧栏底部；共用账户查询，余额在菜单内和Header；积分点击展开真实概览、悬停不打开，会员打开当前页弹窗，更新与消息使用HeroUI右侧抽屉；应用壳不复制状态 |
 | 账户内容 | AccountPanel → AccountManagement / WalletPanel；CreditsDialog / MembershipPage | 按入口分别打开；会员全屏订阅弹窗、充值720px独立弹窗，个人及管理弹层自然高度；真实账号与账单来自查询客户端，未接入的绑定／重置／支付不模拟成功 |
 | 确认 | ConfirmDialog | 不在业务中复制 Modal 标记；正文与操作布局共用 |
 | 关闭 | HeroUI CloseTrigger + DialogClose | 全局--dismiss-*统一普通Modal／Drawer／AlertDialog的命中区和hover圆盘；全屏使用DialogClose具名大尺寸，业务只负责定位 |
