@@ -2,7 +2,7 @@
 
 # Supabase PostgreSQL 结构迁移
 
-2026-10-31：此文保留 Supabase 旧源库的初始化与显式运维说明。CloudBase 共享 PG 数据副本已完成；当前发布和运行边界见 [CloudBase 部署](cloudbase-deployment.md)，复制结果见 [数据库迁移](cloudbase-database-migration.md)。旧源服务尚未切换，生产 Cloudflare 发布配置已删除。
+2026-10-31：此文保留 Supabase 旧源库的初始化与显式运维说明。CloudBase 共享 PG 数据副本已完成；当前发布和运行边界见 [CloudBase 部署](cloudbase-deployment.md)，复制结果见 [数据库迁移](cloudbase-database-migration.md)。旧平台Pages、Worker与R2资源已于2026-11-02按用户要求删除，Supabase源库及显式运维脚本保留。
 
 项目仍由 Hono API、独立 Worker 通过 PostgreSQL 驱动访问数据库，前端不直连数据库，不切换为 Supabase Auth 或 Data API。此次目标是将仓库已有结构初始化到 Supabase；本地用户、组织、余额、素材记录与图片文件不随结构迁移复制。
 

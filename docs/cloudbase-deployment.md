@@ -55,9 +55,22 @@ Node API 的 `object-image-store.ts` 使用 Sharp 完成解码校验、去元数
 
 ## Cloudflare 退出边界
 
+2026-11-02，按用户明确授权，通过ego-browser在`lycobo`账户完成远端删除：
+
+| 类型 | 资源 | 核对结果 |
+| --- | --- | --- |
+| Pages | lycobo | 已删除项目及部署 |
+| Worker | lycobo-api | 已删除 |
+| Worker | lycobo-generation | 已删除，消费者绑定一并移除 |
+| Worker | lycobo-assets | 已删除 |
+| R2 | lycobo | 清空原有464个对象后删除桶 |
+
+控制台Workers & Pages列表显示“No projects found”，R2列表显示“You haven't created a bucket yet”。本次删除范围为上述三类资源，未删除Cloudflare账户、域名、Queues或Hyperdrive；Worker删除会解除队列消费者绑定，队列本身不会随之删除。CloudBase生产资源与本地备份继续保留。
+
+
 已删除旧发布工作流、四个生产 `wrangler.jsonc`、Pages Functions 转发入口、远端 setup/deploy 脚本及根命令。日常 build 不再执行 Wrangler 发布 dry run。
 
-旧运行时源码、Wrangler/Miniflare/workerd 依赖、R2/Images/Queues 适配及 `scripts/cloudflare` 已移除。本地改用隔离 Node 进程、PG outbox 与私有 S3，保留图片鉴权和数据库回归测试。旧远端资源、迁移历史与受保护备份不删除。
+旧运行时源码、Wrangler/Miniflare/workerd 依赖、R2/Images/Queues 适配及 `scripts/cloudflare` 已移除。本地改用隔离 Node 进程、PG outbox 与私有 S3，保留图片鉴权和数据库回归测试。旧远端Pages、三个Worker和R2桶已删除；迁移历史与受保护本地备份保留。
 
 本地旧环境文件`.env.cloudflare-production`、`.cloudflare`临时运维目录和API／资源服务的`dist-cloudflare`产物已清理；各旧模拟器状态目录移入被Git忽略的`backups/retired-emulation-20261102`，仅作数据备份，不再参与开发与构建。对象适配删除旧副本fallback参数，当前CloudBase与本地S3均不再读取旧存储副本。忽略规则和本地环境凭据过滤保留，防止旧秘密被误提交或注入本地进程。锁文件中的`@cloudflare/workers-types`仅为Drizzle上游可选peer声明，未安装运行时，不手工篡改供应商依赖元数据。
 

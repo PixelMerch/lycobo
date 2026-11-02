@@ -1,6 +1,6 @@
 # 架构与目录
 
-一个 pnpm workspace 仓库，四个独立应用；前端 CSR、API、消费者、图片服务及共享 PG 已接入 CloudBase。主图制作、家纺裂变、套图计划已实际生图和保存私有对象，定时执行已开启；固定使用默认同源网关，自定义域名暂不接入，独立 admin 尚未切换。旧平台运行时代码、模拟器与部署配置已移除，旧远端 API/消费者生图保持关闭。
+一个 pnpm workspace 仓库，四个独立应用；前端 CSR、API、消费者、图片服务及共享 PG 已接入 CloudBase。主图制作、家纺裂变、套图计划已实际生图和保存私有对象，定时执行已开启；固定使用默认同源网关，自定义域名暂不接入，独立 admin 尚未切换。旧平台运行时代码、模拟器与部署配置已移除，旧远端Pages、三个Worker和R2桶已按用户要求删除。
 代码同仓不表示进程合并或强制一起发布。
 
 | 路径 | 职责 |
@@ -88,7 +88,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 ## 部署
 
-GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 CloudBase 函数代码并发布静态前端，使用 cloudbase-production Environment。旧 Cloudflare 工作流、生产 Wrangler 配置和 setup/deploy 脚本已删除。主站图片目标为 CloudBase PG 私有云存储，Node 变体生成不依赖 Cloudflare Images。见 [CloudBase 部署](docs/cloudbase-deployment.md)。旧远端资源仅作为迁移回退资料保留。
+GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 CloudBase 函数代码并发布静态前端，使用 cloudbase-production Environment。旧 Cloudflare 工作流、生产 Wrangler 配置和 setup/deploy 脚本已删除。主站图片目标为 CloudBase PG 私有云存储，Node 变体生成不依赖 Cloudflare Images。见 [CloudBase 部署](docs/cloudbase-deployment.md)。旧Pages、三个Worker和R2桶已删除，仅保留本地迁移记录与数据备份。
 
 2026-10-31 已将 Supabase 的 `public`、`drizzle` 结构与数据快照复制到 CloudBase 个人版共享 PG，43 张表、1,156 行及关联结构通过校验。2026-11-01 主站三个功能已使用 CloudBase 共享 PG、后台消费者和私有云存储完成真实生成；独立 admin 仍未切换，旧端生图关闭。初始数据复制、运行启用及正式域名边界分别见 [数据库迁移](docs/cloudbase-database-migration.md)、[图片迁移](docs/cloudbase-storage-migration.md) 和 [运行验收](docs/cloudbase-runtime-migration.md)。
 
