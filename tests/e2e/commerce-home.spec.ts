@@ -428,7 +428,7 @@ test("image background ignores pointer movement over the composer and credit pop
   const preview = page.getByRole("dialog", { name: "积分概览", exact: true });
   await preview.getByRole("button", { name: "充值积分", exact: true }).hover();
   await expect.poll(maxSpot).toBe(0);
-  await preview.getByRole("button", { name: "查看积分明细" }).hover();
+  await preview.getByRole("button", { name: "全部明细" }).hover();
   await expect.poll(maxSpot).toBe(0);
   await expect(preview).toBeVisible();
 });

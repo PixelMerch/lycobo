@@ -1,17 +1,21 @@
-import { Button } from "@heroui/react";
-import { IconArrowUpRight, IconChevronRight } from "@tabler/icons-react";
+import { Button, Chip } from "@heroui/react";
+import { imageUnitCredits } from "@lycoboai/contracts";
+import { IconChevronRight, IconCrown, IconPlus } from "@tabler/icons-react";
 import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
+import { EntryMark } from "./account-entry";
+import {
+  entryDetail,
+  entryNames,
+  formatCredits,
+  imagesFor,
+  recordTime,
+  signedCredits,
+} from "./account-format";
 import { useWallet, useWalletEntries } from "./wallet-client";
+import "./account-common.css";
 
-const entryNames = {
-  opening: "期初余额",
-  consume: "图片生成",
-  refund: "生成失败退款",
-  recharge: "充值到账",
-  checkin: "签到奖励",
-};
-
+/** Balance as images it can buy, the one recharge action, three real records and membership. */
 export function CreditPreview({
   onRecharge,
   onDetails,
@@ -24,47 +28,51 @@ export function CreditPreview({
   const wallet = useWallet();
   const entries = useWalletEntries();
   const recent = entries.data?.pages[0]?.data.slice(0, 3) ?? [];
+  const unit = wallet.data?.unitCredits ?? imageUnitCredits;
+  const balance = wallet.data?.balance;
   return (
     <div className="credit-preview">
-      <div className="credit-preview-balance">
-        <div>
-          <span>可用积分</span>
-          <strong>
-            <CreditCoin />
-            {wallet.data?.balance.toLocaleString("zh-CN") ?? "—"}
-          </strong>
-        </div>
-        <Button size="sm" variant="secondary" onPress={onRecharge}>
-          充值积分
-        </Button>
+      <div className="credit-preview-head">
+        <span>
+          <CreditCoin size="default" />
+          企业共享积分
+        </span>
+        <Chip size="sm" className="account-chip">
+          全员共用
+        </Chip>
       </div>
+      <strong className="credit-preview-balance">
+        {balance === undefined ? "—" : formatCredits(balance)}
+      </strong>
+      <p className="credit-preview-facts">
+        每张 {unit} 积分
+        {balance === undefined ? "" : ` · 约可生成 ${formatCredits(imagesFor(balance, unit))} 张`} ·
+        失败按张退回
+      </p>
       {wallet.isError && <p className="credit-preview-empty">余额暂不可用，请在积分明细中重试。</p>}
+      <Button variant="primary" className="credit-preview-recharge" onPress={onRecharge}>
+        <UiIcon icon={IconPlus} />
+        充值积分
+      </Button>
       <div className="credit-preview-heading">
         <span>最近记录</span>
         <Button size="sm" variant="ghost" onPress={onDetails}>
-          查看积分明细
-          <UiIcon icon={IconArrowUpRight} size="small" />
+          全部明细
+          <UiIcon icon={IconChevronRight} size="small" />
         </Button>
       </div>
       {recent.length > 0 ? (
         <ul className="credit-preview-records">
           {recent.map((entry) => (
             <li key={entry.id}>
+              <EntryMark kind={entry.kind} />
               <div>
                 <span>{entryNames[entry.kind]}</span>
                 <small>
-                  {new Date(entry.created_at).toLocaleString("zh-CN", {
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {recordTime(entry.created_at)} · {entryDetail(entry)}
                 </small>
               </div>
-              <strong data-positive={entry.amount > 0}>
-                {entry.amount > 0 ? "+" : ""}
-                {entry.amount}
-              </strong>
+              <strong data-positive={entry.amount > 0}>{signedCredits(entry.amount)}</strong>
             </li>
           ))}
         </ul>
@@ -78,9 +86,13 @@ export function CreditPreview({
         </p>
       )}
       <div className="credit-preview-footer">
-        <span>会员权益与积分用量，分别管理</span>
-        <Button size="sm" variant="ghost" onPress={onMembership}>
-          了解会员
+        <UiIcon icon={IconCrown} className="credit-preview-crown" />
+        <span>会员</span>
+        <Chip size="sm" className="account-chip">
+          未开通
+        </Chip>
+        <Button size="sm" variant="ghost" className="credit-preview-member" onPress={onMembership}>
+          查看方案
           <UiIcon icon={IconChevronRight} size="small" />
         </Button>
       </div>

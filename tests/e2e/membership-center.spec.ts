@@ -39,12 +39,15 @@ for (const width of [1440, 320]) {
       .getByRole("dialog", { name: "积分概览" })
       .getByRole("button", { name: "充值积分", exact: true })
       .click();
-    const recharge = page.getByRole("dialog", { name: "积分充值", exact: true });
+    const recharge = page.getByRole("dialog", { name: "充值积分", exact: true });
     await expect(recharge).toBeVisible();
     await expect(recharge.getByRole("tab")).toHaveCount(0);
-    const pack = recharge.getByRole("radio", { name: "3,000 积分，示例价格 300 元", exact: true });
+    const pack = recharge.getByRole("radio", { name: /^3,000 积分，示例价格 300 元/ });
     await pack.click();
     await expect(pack).toBeChecked();
+    // The order preview follows the selection; payment stays unavailable.
+    await expect(recharge.locator(".credit-order-rows")).toContainText("3,000");
+    await expect(recharge.locator(".credit-order-after strong")).toContainText("3,200");
     await expect(recharge.getByRole("button", { name: "立即购买" })).toBeDisabled();
     expect(ledgerReads).toBeGreaterThan(0);
     await recharge.screenshot({ path: `/tmp/lycobo-redesign-recharge-${width}.png` });
@@ -108,16 +111,16 @@ test("credit preview opens only on press, shares reads and supports keyboard", a
   await balance.click();
   const preview = page.getByRole("dialog", { name: "积分概览" });
   await expect(preview.getByText("暂无积分记录", { exact: true })).toBeVisible();
-  await preview.getByRole("button", { name: "查看积分明细" }).hover();
+  await preview.getByRole("button", { name: "全部明细" }).hover();
   await expect(preview).toBeVisible();
   await expect(preview).toHaveCSS("outline-style", "none");
   await expect(page.locator("html")).toHaveCSS("overflow", "hidden");
   await preview.screenshot({ path: "/tmp/lycobo-redesign-credit-preview.png" });
-  await preview.getByRole("button", { name: "查看积分明细" }).click();
-  const billing = page.getByRole("dialog", { name: "订阅与账单", exact: true });
-  await expect(billing.getByText("暂无收支记录", { exact: true })).toBeVisible();
+  await preview.getByRole("button", { name: "全部明细" }).click();
+  // The full ledger is a page now; it reuses the preview's read instead of fetching again.
+  await expect(page).toHaveURL(/\/account\/credits$/);
+  await expect(page.getByText("暂无收支记录", { exact: true })).toBeVisible();
   expect(ledgerResponses).toBe(1);
-  await page.keyboard.press("Escape");
   await page.mouse.move(500, 500);
   await balance.focus();
   await page.keyboard.press("Enter");
@@ -132,7 +135,7 @@ test("credit preview opens only on press, shares reads and supports keyboard", a
   await balance.click();
   await expect(preview).toBeVisible();
   await preview.getByRole("button", { name: "充值积分", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "积分充值", exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "充值积分", exact: true })).toBeVisible();
   await expect(preview).toHaveCount(0);
 });
 
@@ -149,9 +152,11 @@ test("unavailable balance stays unknown in recharge instead of becoming zero", a
     .getByRole("dialog", { name: "积分概览" })
     .getByRole("button", { name: "充值积分", exact: true })
     .click();
-  const dialog = page.getByRole("dialog", { name: "积分充值", exact: true });
+  const dialog = page.getByRole("dialog", { name: "充值积分", exact: true });
   await expect(dialog.getByRole("radio")).toHaveCount(9);
-  await expect(dialog.locator(".credit-recharge-balance")).toHaveCount(0);
+  // An unreadable balance never becomes 0 in the order preview.
+  await expect(dialog.locator(".credit-order-after strong")).toHaveText("—");
+  await expect(dialog.getByText("余额暂不可用，读取后显示", { exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(balance).toBeFocused();
 });
@@ -222,7 +227,7 @@ test("credit preview shows only three real entries and reopens from cache", asyn
   await expect(preview.getByRole("listitem")).toHaveCount(3);
   expect(reads).toBe(initialReads);
   await preview.getByRole("button", { name: "充值积分", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "积分充值", exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "充值积分", exact: true })).toBeVisible();
   await expect(preview).toHaveCount(0);
   expect(orders).toBe(0);
 });

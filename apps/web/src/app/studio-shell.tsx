@@ -16,6 +16,7 @@ import { Outlet, useLocation } from "react-router";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
 import { AccountMenu, HeaderLogin } from "../features/account/account-menu";
+import { AccountOverlayHost } from "../features/account/account-overlays";
 import { HeaderBenefits } from "../features/account/header-benefits";
 import { useEnterpriseSession } from "../features/auth/auth-client";
 import { useImageEvents } from "../features/generation/use-image-events";
@@ -201,6 +202,7 @@ export function StudioShell() {
       <main className="main-content">
         <Outlet context={{ setHomeHeaderOpaque } satisfies StudioShellContext} />
       </main>
+      {signedIn && <AccountOverlayHost />}
       <Modal
         isOpen={info !== null}
         onOpenChange={(open) => {

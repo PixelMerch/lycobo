@@ -39,6 +39,10 @@
   background: var(--interaction-hover);
   transform: none;
 }
+/* On the account center the account row reads as the current place, like a navigation item. */
+.account-trigger[data-current="true"] {
+  background: var(--interaction-active);
+}
 .account-trigger .account-avatar {
   width: 24px;
   height: 24px;
@@ -117,26 +121,26 @@
 .account-menu-avatar,
 .account-menu-avatar .avatar__fallback {
   flex: none;
-  width: 32px;
-  min-width: 32px;
-  height: 32px;
-  font-size: var(--text-sm);
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  font-size: var(--text-lg);
   background: #343434;
   color: #fff;
 }
 .account-menu-details {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
 }
 .account-menu-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-  font-weight: var(--weight-regular);
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-medium);
 }
 .account-menu-details > span {
   color: #a1a1aa;
@@ -144,23 +148,87 @@
   line-height: 18px;
 }
 .account-menu-balance {
+  padding: 14px 14px 12px;
+  border-radius: 16px 16px 0 0;
+  background: var(--interaction-hover);
+}
+.account-menu-balance-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px;
-  margin-bottom: 8px;
-  border-radius: 12px;
-  background: var(--interaction-hover);
-  font-size: 13px;
-  line-height: 20px;
 }
-.account-menu-balance > span:first-child {
-  color: #b8b8c0;
+.account-menu-balance-row > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #d9d7de;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.account-menu-balance .credit-coin {
+  color: var(--accent);
 }
 .account-menu-balance strong {
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-xl);
+  line-height: var(--leading-xl);
+}
+.account-menu-balance small {
+  display: block;
+  margin-top: 2px;
+  color: #a1a1aa;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+/* The two credit shortcuts continue the balance card as a pill pair. */
+.account-menu .account-menu-quick {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 0 14px 14px;
+  border-radius: 0 0 16px 16px;
+  background: var(--interaction-hover);
+}
+.account-menu .menu-item.account-menu-pill {
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #ffffff14;
+  font-weight: var(--weight-medium);
+}
+.account-menu .menu-item.account-menu-pill:is([data-hovered="true"], [data-focused="true"]) {
+  background: var(--control-hover-fill);
+}
+.account-menu .menu-item.account-menu-pill--primary,
+.account-menu
+  .menu-item.account-menu-pill--primary:is([data-hovered="true"], [data-focused="true"]) {
+  background: linear-gradient(120deg, #a8ff00, #54e6a5);
+  color: #142000;
+}
+.account-menu
+  .menu-item.account-menu-pill--primary:is([data-hovered="true"], [data-focused="true"]) {
+  filter: brightness(1.04);
+}
+.account-menu .menu-item.account-menu-member {
+  margin-bottom: 6px;
+  gap: 8px;
+  background: var(--interaction-hover);
+}
+.account-menu .menu-item.account-menu-member:is([data-hovered="true"], [data-focused="true"]) {
+  background: var(--interaction-active);
+}
+.account-menu-crown {
+  color: var(--accent);
+}
+.account-menu-member-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  color: var(--accent);
+  font-weight: var(--weight-medium);
 }
 .account-menu .dropdown__menu {
   padding: 0;

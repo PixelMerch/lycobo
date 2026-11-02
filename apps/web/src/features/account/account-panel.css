@@ -18,28 +18,11 @@
   --field-background-focus: #ffffff05;
   max-height: calc(100dvh - 48px);
 }
-.account-dialog.account-dialog--management {
-  width: min(720px, calc(100vw - 48px));
-}
-.account-dialog.account-dialog--credits {
-  height: min(760px, calc(100dvh - 48px));
-  width: min(960px, calc(100vw - 48px));
-}
-.account-dialog .account-rows > div {
-  background: #262626;
-}
 .account-dialog .modal__body {
   flex: 0 1 auto;
   min-width: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-}
-.account-dialog .tabs__panel {
-  min-width: 0;
-  padding-block: var(--space-5) 0;
-}
-.account-dialog .tabs__tab {
-  white-space: nowrap;
 }
 .account-management > .tabs__list-container .tabs__list {
   gap: var(--space-2);
@@ -209,12 +192,6 @@
   .account-field .input {
     font-size: var(--text-lg);
     line-height: var(--leading-lg);
-  }
-  .account-dialog.account-dialog--management,
-  .account-dialog.account-dialog--credits {
-    width: calc(100vw - 24px);
-    max-height: calc(100dvh - 24px);
-    padding: var(--space-5) var(--space-4);
   }
   .account-binding-card,
   .account-reset-card {

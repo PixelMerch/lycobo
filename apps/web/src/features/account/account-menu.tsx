@@ -1,15 +1,26 @@
-import { Avatar, Button, Dropdown, Separator } from "@heroui/react";
-import { IconLogout, IconPhoto, IconReceipt, IconSettings, IconUser } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { Avatar, Button, Chip, Dropdown, Separator } from "@heroui/react";
+import { imageUnitCredits } from "@lycoboai/contracts";
+import {
+  IconChevronRight,
+  IconCrown,
+  IconLogout,
+  IconPhoto,
+  IconShieldLock,
+  IconUserCircle,
+} from "@tabler/icons-react";
+import { useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { useEnterpriseLogout, useEnterpriseSession } from "../auth/auth-client";
 import { LoginDialog } from "../auth/login-dialog";
-import { AccountPanel, type AccountSection } from "./account-panel";
+import { accountCenterPath } from "./account-center-tabs";
+import { formatCredits, imagesFor, roleLabel } from "./account-format";
+import { useAccountOverlays } from "./account-overlays";
 import { AccountUpdates } from "./account-updates";
 import { useWallet } from "./wallet-client";
+import "./account-common.css";
 import "./account-menu.css";
 
 /** Signed out, the header offers login; once signed in the account lives in the navigation. */
@@ -34,43 +45,43 @@ export function HeaderLogin() {
 }
 
 /**
- * The signed-in account sits in a quiet footer row (avatar, name and
- * name) and opens its menu upward; balance is shared with the header entry.
+ * The signed-in account sits in a quiet footer row and opens its menu upward. The menu is the
+ * shortcut into the account center: shared credits, membership status and the common actions.
  */
 export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
   const session = useEnterpriseSession();
   const wallet = useWallet();
   const logout = useEnterpriseLogout();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const [section, setSection] = useState<AccountSection | null>(null);
-  const restoreFocus = useRef(false);
+  const openOverlay = useAccountOverlays((state) => state.open);
   useErrorToast(logout.error?.message);
-  // Closing the account center returns focus to the account row that opened it.
-  useEffect(() => {
-    if (section !== null || !restoreFocus.current) return;
-    restoreFocus.current = false;
-    triggerRef.current?.focus({ preventScroll: true });
-  }, [section]);
   const account = session.data;
   if (!account) return null;
-  const characters = Array.from(account.account);
-  const nickname = account.account;
-  const initial = characters[0]?.toUpperCase() ?? "";
-  const balance = wallet.data?.balance ?? "—";
+  const initial = Array.from(account.account)[0]?.toUpperCase() ?? "";
+  const unit = wallet.data?.unitCredits ?? imageUnitCredits;
+  const balance = wallet.data?.balance;
+  const go = (path: string) => {
+    onNavigate?.();
+    navigate(path);
+  };
+  // Overlays stack above the phone navigation drawer, so focus can return to this row.
+  const open = (overlay: "recharge" | "membership") => openOverlay(overlay, triggerRef.current);
   return (
     <div className="account-footer">
       <Dropdown>
         <Dropdown.Trigger
           ref={triggerRef}
           className="account-trigger"
+          data-current={pathname.startsWith("/account") || undefined}
           aria-label={`账户菜单：${account.account}`}
         >
           <Avatar className="account-avatar" size="sm" aria-hidden="true">
             <Avatar.Fallback>{initial}</Avatar.Fallback>
           </Avatar>
           <span className="account-trigger-name" title={account.account} aria-hidden="true">
-            {nickname}
+            {account.account}
           </span>
         </Dropdown.Trigger>
         <Dropdown.Popover
@@ -87,46 +98,83 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
               <strong className="account-menu-name" title={account.account}>
                 {account.account}
               </strong>
-              <span>{account.uid ? `UID ${account.uid}` : "UID —"}</span>
+              <span>
+                {account.uid ? `UID ${account.uid}` : "UID —"} · {roleLabel(account.role)}
+              </span>
             </div>
           </div>
           <div className="account-menu-balance">
-            <span>企业共享积分</span>
-            <span className="account-credits">
-              <CreditCoin size="default" />
-              <strong>{balance}</strong>
-            </span>
+            <div className="account-menu-balance-row">
+              <span>
+                <CreditCoin size="default" />
+                企业共享积分
+              </span>
+              <strong className="account-credits">
+                {balance === undefined ? "—" : formatCredits(balance)}
+              </strong>
+            </div>
+            <small>
+              每张 {unit} 积分
+              {balance === undefined
+                ? ""
+                : ` · 约可生成 ${formatCredits(imagesFor(balance, unit))} 张`}
+            </small>
           </div>
           <Dropdown.Menu
             disabledKeys={logout.isPending ? ["logout"] : []}
             onAction={(key) => {
-              if (key === "works") {
-                onNavigate?.();
-                navigate("/assets");
-              } else if (key === "profile" || key === "credits" || key === "management")
-                setSection(key);
+              if (key === "recharge" || key === "membership") open(key);
+              else if (key === "ledger") go(accountCenterPath("credits"));
+              else if (key === "center") go(accountCenterPath("overview"));
+              else if (key === "works") go("/assets");
+              else if (key === "security") go(accountCenterPath("security"));
               else if (key === "logout") logout.mutate();
             }}
           >
+            <Dropdown.Section aria-label="积分" className="account-menu-quick">
+              <Dropdown.Item
+                id="recharge"
+                textValue="充值积分"
+                className="account-menu-pill account-menu-pill--primary"
+              >
+                充值积分
+              </Dropdown.Item>
+              <Dropdown.Item id="ledger" textValue="积分明细" className="account-menu-pill">
+                积分明细
+              </Dropdown.Item>
+            </Dropdown.Section>
+            <Dropdown.Section aria-label="会员" className="account-menu-membership">
+              <Dropdown.Item
+                id="membership"
+                textValue="会员 未开通 查看方案"
+                className="account-menu-member"
+              >
+                <UiIcon icon={IconCrown} className="account-menu-crown" />
+                <span>会员</span>
+                <Chip size="sm" className="account-chip">
+                  未开通
+                </Chip>
+                <span className="account-menu-member-link">
+                  查看方案
+                  <UiIcon icon={IconChevronRight} size="small" />
+                </span>
+              </Dropdown.Item>
+            </Dropdown.Section>
             <Dropdown.Section aria-label="个人空间">
+              <Dropdown.Item id="center" textValue="个人中心">
+                <UiIcon icon={IconUserCircle} />
+                <span>个人中心</span>
+              </Dropdown.Item>
               <Dropdown.Item id="works" textValue="个人作品">
                 <UiIcon icon={IconPhoto} />
                 <span>个人作品</span>
               </Dropdown.Item>
-              <Dropdown.Item id="profile" textValue="个人信息">
-                <UiIcon icon={IconUser} />
-                <span>个人信息</span>
-              </Dropdown.Item>
-              <Dropdown.Item id="credits" textValue="订阅与账单">
-                <UiIcon icon={IconReceipt} />
-                <span>订阅与账单</span>
-              </Dropdown.Item>
             </Dropdown.Section>
             <Separator className="account-menu-separator" />
             <Dropdown.Section aria-label="账号操作">
-              <Dropdown.Item id="management" textValue="账号管理">
-                <UiIcon icon={IconSettings} />
-                <span>账号管理</span>
+              <Dropdown.Item id="security" textValue="账号与安全">
+                <UiIcon icon={IconShieldLock} />
+                <span>账号与安全</span>
               </Dropdown.Item>
               <Dropdown.Item id="logout" textValue="退出登录">
                 <UiIcon icon={IconLogout} />
@@ -140,16 +188,6 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
         <AccountUpdates kind="updates" />
         <AccountUpdates kind="messages" />
       </div>
-      {section && (
-        <AccountPanel
-          key={section}
-          section={section}
-          onClose={() => {
-            restoreFocus.current = true;
-            setSection(null);
-          }}
-        />
-      )}
     </div>
   );
 }

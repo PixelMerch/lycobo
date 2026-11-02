@@ -1,5 +1,6 @@
 import { EmptyState, Link } from "@heroui/react";
 import { createBrowserRouter, redirect } from "react-router";
+import { accountCenterTabs } from "../features/account/account-center-tabs";
 import {
   getRecentCommerceTool,
   rememberCommerceTool,
@@ -86,6 +87,16 @@ export const router = createBrowserRouter([
             }),
           },
         ],
+      },
+      {
+        path: "account/:tab?",
+        loader: ({ params }) =>
+          params.tab && !accountCenterTabs.some((item) => item.path === params.tab)
+            ? redirect("/account")
+            : null,
+        lazy: async () => ({
+          Component: (await import("../features/account/account-center-page")).AccountCenterPage,
+        }),
       },
       {
         path: "membership",

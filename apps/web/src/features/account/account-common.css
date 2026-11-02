@@ -1,0 +1,29 @@
+/* Shared by the header credit overview, account menu, recharge dialog and account center. */
+.chip.account-chip {
+  height: 20px;
+  padding-inline: var(--space-2);
+  border-radius: 999px;
+  background: #ffffff12;
+  color: #d9d7de;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+.account-entry-mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: #ffffff0d;
+  color: #c8c8c8;
+}
+.account-entry-mark:is([data-kind="refund"], [data-kind="recharge"], [data-kind="checkin"]) {
+  background: #a8ff0014;
+  color: var(--accent);
+}
+.account-entry-mark[data-kind="opening"] {
+  color: var(--muted);
+}

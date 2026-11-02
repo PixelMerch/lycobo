@@ -1,44 +1,28 @@
 import { Button, Popover } from "@heroui/react";
 import { IconChevronRight, IconCrown } from "@tabler/icons-react";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useNavigate } from "react-router";
 import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
+import { accountCenterPath } from "./account-center-tabs";
+import { useAccountOverlays } from "./account-overlays";
 import { CreditPreview } from "./credit-preview";
-import { CreditsDialog } from "./credits-dialog";
 import { useWallet } from "./wallet-client";
 import "./header-benefits.css";
-
-const MembershipDialog = lazy(() =>
-  import("./membership-page").then((module) => ({ default: module.MembershipDialog })),
-);
 
 /** Official press-triggered popover; wallet reads mount only while open. */
 export function HeaderBenefits() {
   const wallet = useWallet();
-  const [panel, setPanel] = useState<"recharge" | "billing" | "membership" | null>(null);
+  const navigate = useNavigate();
   const trigger = useRef<HTMLButtonElement>(null);
+  const membership = useRef<HTMLButtonElement>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const restorePanelFocus = useRef(false);
-  useEffect(() => {
-    if (panel === null && restorePanelFocus.current) {
-      restorePanelFocus.current = false;
-      trigger.current?.focus({ preventScroll: true });
-    }
-  }, [panel]);
+  const overlay = useAccountOverlays((state) => state.overlay);
+  const openOverlay = useAccountOverlays((state) => state.open);
   const balanceLabel = wallet.data?.balance.toLocaleString("zh-CN") ?? "—";
-  const openPanel = (next: "recharge" | "billing") => {
-    restorePanelFocus.current = true;
+  const open = (next: "recharge" | "membership", opener: HTMLElement | null) => {
     setPreviewOpen(false);
-    trigger.current?.focus({ preventScroll: true });
-    setPanel(next);
-  };
-  const openMembership = () => {
-    setPreviewOpen(false);
-    setPanel("membership");
-  };
-  const closePanel = () => {
-    setPreviewOpen(false);
-    setPanel(null);
+    openOverlay(next, opener);
   };
   return (
     <>
@@ -51,14 +35,20 @@ export function HeaderBenefits() {
           aria-label={`积分 ${balanceLabel}，查看积分概览`}
           aria-haspopup="dialog"
           aria-expanded={previewOpen}
-          onPress={() => setPreviewOpen((open) => !open)}
+          onPress={() => setPreviewOpen((current) => !current)}
         >
           <CreditCoin size="default" />
           <span className="header-balance-value">{balanceLabel}</span>
           <span className="header-balance-unit">积分</span>
         </Button>
         <span className="header-benefits-divider" aria-hidden="true" />
-        <Button variant="tertiary" size="sm" className="header-membership" onPress={openMembership}>
+        <Button
+          ref={membership}
+          variant="tertiary"
+          size="sm"
+          className="header-membership"
+          onPress={() => open("membership", membership.current)}
+        >
           <UiIcon icon={IconCrown} />
           开通会员
           <UiIcon icon={IconChevronRight} size="small" />
@@ -66,7 +56,7 @@ export function HeaderBenefits() {
       </div>
       <Popover.Content
         triggerRef={trigger}
-        isOpen={previewOpen && panel === null}
+        isOpen={previewOpen && overlay === null}
         onOpenChange={setPreviewOpen}
         shouldCloseOnInteractOutside={(element) => !trigger.current?.contains(element)}
         isNonModal={false}
@@ -77,20 +67,16 @@ export function HeaderBenefits() {
         <Popover.Dialog aria-label="积分概览" className="credit-preview-dialog">
           {previewOpen && (
             <CreditPreview
-              onRecharge={() => openPanel("recharge")}
-              onDetails={() => openPanel("billing")}
-              onMembership={openMembership}
+              onRecharge={() => open("recharge", trigger.current)}
+              onDetails={() => {
+                setPreviewOpen(false);
+                navigate(accountCenterPath("credits"));
+              }}
+              onMembership={() => open("membership", trigger.current)}
             />
           )}
         </Popover.Dialog>
       </Popover.Content>
-      {panel === "membership" ? (
-        <Suspense fallback={null}>
-          <MembershipDialog onClose={closePanel} />
-        </Suspense>
-      ) : (
-        panel && <CreditsDialog initialView={panel} onClose={closePanel} />
-      )}
     </>
   );
 }
