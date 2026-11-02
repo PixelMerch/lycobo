@@ -4,6 +4,7 @@
   align-items: center;
   gap: 8px;
   width: 100%;
+  min-height: calc(var(--shell-nav-height) + 9px);
   padding-top: 8px;
   border-top: 1px solid #ffffff0a;
 }
@@ -18,19 +19,19 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
   width: auto;
-  height: var(--shell-nav-height);
-  min-height: var(--shell-nav-height);
+  height: 32px;
+  min-height: 32px;
   padding: 0 6px;
   border: 0;
   border-radius: 12px;
   background: transparent;
   color: #ffffff;
   font-family: var(--shell-font-family);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: 12px;
+  line-height: 18px;
   font-weight: 500;
   transition: background-color 150ms ease;
 }
@@ -39,12 +40,12 @@
   transform: none;
 }
 .account-trigger .account-avatar {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
   background: #505050;
   color: #fff;
-  font-size: 13px;
+  font-size: 12px;
 }
 .account-avatar .avatar__fallback {
   background: #505050;
@@ -183,6 +184,7 @@
 }
 
 .account-footer-tools {
+  margin-left: auto;
   display: flex;
   align-items: center;
   flex: none;
@@ -207,6 +209,10 @@
   color: #fff;
 }
 @media (max-width: 767px), (pointer: coarse) {
+  .account-trigger {
+    height: 44px;
+    min-height: 44px;
+  }
   .account-footer-action {
     width: 44px;
     min-width: 44px;
