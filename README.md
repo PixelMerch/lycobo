@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/brand/lycobo-fold.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/brand/lycobo-product-pilot.svg">
     <img src="docs/assets/lycobo-logo-dark.svg" alt="LycoBo" width="240">
   </picture>
 </p>

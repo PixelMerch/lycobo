@@ -8,7 +8,7 @@
 
 - [小云雀工作台排版实测](xiaoyunque-typography-measurements.md)：2026-11-02通过ego-browser核对已登录导航、账户菜单和字体覆盖范围；本站采用值已归入DESIGN.md。
 
-- [LYCOBO Logo 定稿](brand/lycobo-fold-approved.png)：2026-11-02确认的第二方案「柔性折页」，抽象折页图形与纯英文路径字标；正式资源位于 apps/web/public/brand。
+- [Lycobo Logo 定稿](brand/lycobo-product-pilot-approved.png)：2026-11-01确认的 02「商品领航」方案：包裹、前进箭头及粗体字标；正式资源为 `apps/web/public/brand` 内的 SVG，配色与使用规则见 DESIGN.md。
 
 - [电商工作台 UI 提案（待评审）](unified-creation/README.md)：基于 Photoroom 与小云雀实查的分类工具面板、单入口切换、下拉历史筛选、统一任务列表、固定模型选择，以及完整输入／确认／结果状态。仅为用户本轮要求的 UI 设计图，不替代现行规范、不表示功能已接入。
 
