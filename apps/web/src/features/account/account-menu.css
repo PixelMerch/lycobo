@@ -1,16 +1,32 @@
-/* Signed in, the account sits at the foot of the navigation as one capsule: avatar, name and
- * shared credits. It follows the nav row height and opens the account menu upward. */
-.account-trigger {
+/* A quiet footer row, separated from navigation by a thin rule. */
+.account-footer {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
+  padding-top: 8px;
+  border-top: 1px solid #ffffff0a;
+}
+.sidebar-bottom:has(.account-footer) {
+  padding-top: 0;
+  border-top: 0;
+}
+.sidebar-bottom .account-footer {
+  margin-top: 6px;
+}
+.account-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  width: auto;
   height: var(--shell-nav-height);
   min-height: var(--shell-nav-height);
-  padding: 0 14px 0 6px;
+  padding: 0 6px;
   border: 0;
-  border-radius: 999px;
-  background: #ffffff0a;
+  border-radius: 12px;
+  background: transparent;
   color: #ffffff;
   font-family: var(--shell-font-family);
   font-size: 13px;
@@ -19,7 +35,7 @@
   transition: background-color 150ms ease;
 }
 .account-trigger:is([data-hovered="true"], [data-pressed="true"], [aria-expanded="true"]) {
-  background: #ffffff14;
+  background: #ffffff0a;
   transform: none;
 }
 .account-trigger .account-avatar {
@@ -51,15 +67,9 @@
 .account-credits strong {
   font-weight: 600;
 }
-.account-trigger .account-credits {
-  flex: none;
-  gap: 4px;
-  color: #ffffffb3;
-  font-size: 12px;
-  line-height: 18px;
-}
 @media (min-width: 768px) {
   .studio-app[data-sidebar-collapsed="true"] .sidebar .account-trigger {
+    flex: none;
     width: 32px;
     min-width: 32px;
     height: 32px;
@@ -71,15 +81,14 @@
   }
   .studio-app[data-sidebar-collapsed="true"]
     .sidebar
-    .account-trigger
-    :is(.account-trigger-name, .account-credits) {
+    :is(.account-trigger-name, .account-footer-tools) {
     display: none;
   }
 }
 .mobile-nav-account {
   width: 100%;
-  padding-top: 8px;
-  border-top: 1px solid #ffffff0a;
+  padding-top: 0;
+  border-top: 0;
 }
 .mobile-nav .account-trigger {
   height: 44px;
@@ -170,5 +179,38 @@
   .account-menu .menu-item {
     min-height: 44px;
     padding-block: 12px;
+  }
+}
+
+.account-footer-tools {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 4px;
+}
+.account-footer-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 6px;
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffff80;
+  text-decoration: none;
+}
+.account-footer-action:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
+  background: #ffffff0a;
+  color: #fff;
+}
+@media (max-width: 767px), (pointer: coarse) {
+  .account-footer-action {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
   }
 }

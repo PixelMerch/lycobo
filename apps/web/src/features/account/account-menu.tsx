@@ -1,5 +1,13 @@
-import { Avatar, Button, Dropdown, Separator } from "@heroui/react";
-import { IconLogout, IconPhoto, IconReceipt, IconSettings, IconUser } from "@tabler/icons-react";
+import { Avatar, Button, Dropdown, Link, Separator, Tooltip, toast } from "@heroui/react";
+import {
+  IconBell,
+  IconListDetails,
+  IconLogout,
+  IconPhoto,
+  IconReceipt,
+  IconSettings,
+  IconUser,
+} from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { CreditCoin } from "../../components/credit-coin";
@@ -33,8 +41,8 @@ export function HeaderLogin() {
 }
 
 /**
- * The signed-in account sits at the foot of the navigation as one capsule (avatar, name and
- * shared credits) and opens its menu upward; the menu owns the account destinations.
+ * The signed-in account sits in a quiet footer row (avatar, name and
+ * short name) and opens its menu upward; balance remains inside the menu.
  */
 export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
   const session = useEnterpriseSession();
@@ -45,7 +53,7 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
   const [section, setSection] = useState<AccountSection | null>(null);
   const restoreFocus = useRef(false);
   useErrorToast(logout.error?.message);
-  // Closing the account center returns focus to the capsule that opened it.
+  // Closing the account center returns focus to the account row that opened it.
   useEffect(() => {
     if (section !== null || !restoreFocus.current) return;
     restoreFocus.current = false;
@@ -53,26 +61,23 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
   }, [section]);
   const account = session.data;
   if (!account) return null;
-  const initial = account.account.slice(0, 1).toUpperCase();
+  const characters = Array.from(account.account);
+  const nickname = characters.length > 5 ? `${characters.slice(0, 5).join("")}…` : account.account;
+  const initial = characters[0]?.toUpperCase() ?? "";
   const balance = wallet.data?.balance ?? "—";
   return (
-    <>
+    <div className="account-footer">
       <Dropdown>
         <Dropdown.Trigger
           ref={triggerRef}
           className="account-trigger"
           aria-label={`账户菜单：${account.account}`}
-          aria-description={`积分余额 ${balance}`}
         >
           <Avatar className="account-avatar" size="sm" aria-hidden="true">
             <Avatar.Fallback>{initial}</Avatar.Fallback>
           </Avatar>
           <span className="account-trigger-name" aria-hidden="true">
-            {account.account}
-          </span>
-          <span className="account-credits" aria-hidden="true">
-            <CreditCoin size="default" />
-            <strong>{balance}</strong>
+            {nickname}
           </span>
         </Dropdown.Trigger>
         <Dropdown.Popover className="account-menu" placement="top start" offset={8}>
@@ -133,6 +138,33 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
           </Dropdown.Menu>
         </Dropdown.Popover>
       </Dropdown>
+      <div className="account-footer-tools">
+        <Tooltip delay={200}>
+          <Link
+            className="account-footer-action"
+            href="https://github.com/PixelMerch/lycobo/releases"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="更新记录"
+          >
+            <UiIcon icon={IconListDetails} />
+          </Link>
+          <Tooltip.Content placement="top">更新记录</Tooltip.Content>
+        </Tooltip>
+        <Tooltip delay={200}>
+          <Button
+            isIconOnly
+            size="sm"
+            variant="tertiary"
+            className="account-footer-action"
+            aria-label="消息（即将开放）"
+            onPress={() => toast.info("消息功能即将开放")}
+          >
+            <UiIcon icon={IconBell} />
+          </Button>
+          <Tooltip.Content placement="top">消息 · 即将开放</Tooltip.Content>
+        </Tooltip>
+      </div>
       {section && (
         <AccountPanel
           key={section}
@@ -143,6 +175,6 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
           }}
         />
       )}
-    </>
+    </div>
   );
 }

@@ -36,8 +36,7 @@ for (const width of [390, 1440, 1920, 2560]) {
     }
     const trigger = page.getByRole("button", { name: `账户菜单：${account.account}`, exact: true });
     await expect(trigger).toBeVisible({ timeout: 15000 });
-    // Measure after the independently loaded wallet replaces its placeholder.
-    await expect(trigger.locator("strong")).toHaveText("200");
+    await expect(trigger.locator(".account-trigger-name")).toBeVisible();
     await expect(page.locator(".topbar .account-trigger")).toHaveCount(0);
     const measure = () =>
       page.evaluate((mobile) => {

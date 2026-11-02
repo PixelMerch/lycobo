@@ -20,7 +20,7 @@ for (const width of [1440, 320]) {
   test(`signed-in account sits at the foot of the navigation and opens its menu upward at ${width}px`, async ({
     page,
   }) => {
-    const account = "merchant-fixture";
+    const account = "13800138000";
     await signIn(page, account);
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/create");
@@ -38,10 +38,22 @@ for (const width of [1440, 320]) {
       name: `账户菜单：${account}`,
       exact: true,
     });
-    await expect(trigger).toContainText(account);
-    await expect(trigger).toContainText("200");
+    await expect(trigger.locator(".account-trigger-name")).toHaveText("13800…");
+    await expect(trigger.locator(".account-credits")).toHaveCount(0);
     await expect(trigger.locator(".avatar")).toHaveCount(1);
+    await expect(trigger).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(navigation.locator(".account-footer")).toHaveCSS("border-top-width", "1px");
     await expect(page.locator(".credit-pill")).toHaveCount(0);
+    if (width < 768) await expect(page.locator(".drawer__backdrop")).toHaveCSS("opacity", "1");
+    await navigation
+      .locator(".account-footer")
+      .screenshot({ path: `/tmp/lycobo-footer-${width}.png` });
+    await expect(navigation.getByRole("link", { name: "更新记录" })).toHaveAttribute(
+      "href",
+      "https://github.com/PixelMerch/lycobo/releases",
+    );
+    await navigation.getByRole("button", { name: "消息（即将开放）" }).click();
+    await expect(page.locator(".toast__title")).toHaveText("消息功能即将开放");
 
     await trigger.focus();
     await page.keyboard.press("Enter");
@@ -128,7 +140,7 @@ test("the collapsed sidebar keeps the account as its avatar", async ({ page }) =
   await page.getByRole("button", { name: "收起导航栏", exact: true }).click();
   const trigger = page.getByRole("button", { name: "账户菜单：collapsed-fixture", exact: true });
   await expect(trigger.locator(".account-trigger-name")).toBeHidden();
-  await expect(trigger.locator(".account-credits")).toBeHidden();
+  await expect(page.locator(".sidebar .account-footer-tools")).toBeHidden();
   await expect.poll(async () => (await trigger.boundingBox())?.width).toBe(32);
   await trigger.click();
   await expect(page.getByRole("menu", { name: "账户菜单：collapsed-fixture" })).toBeVisible();
