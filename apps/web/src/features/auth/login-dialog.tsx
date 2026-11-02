@@ -93,7 +93,7 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
             >
               {/* Inside the panel so the close control leaves with everything else. */}
               <Modal.CloseTrigger className="login-close" aria-label="关闭登录">
-                <UiIcon icon={IconX} size="default" />
+                <UiIcon icon={IconX} size="action" />
               </Modal.CloseTrigger>
               <div className="login-split">
                 <section className="login-visual" aria-label="创作案例预览">

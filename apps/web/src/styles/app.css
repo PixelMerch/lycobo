@@ -67,14 +67,18 @@
   --workspace-history-width: 88px;
   --workspace-padding: 12px;
   --content-padding: 24px;
-  --shell-font-family:
-    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    "PingFang SC", sans-serif;
+  --shell-font-family: var(--font-sans);
+  --interaction-hover: #ffffff0a;
+  --interaction-active: #ffffff14;
+  --dismiss-target: 44px;
+  --dismiss-disc: 33px;
+  --dismiss-foreground: #ffffff;
+  --dismiss-hover: #ffffff1f;
   --shell-sidebar-background: #161616;
   --shell-header-background: #111;
   --shell-nav-foreground: #ffffffb3;
-  --shell-nav-hover: #ffffff0a;
-  --shell-nav-active: #ffffff14;
+  --shell-nav-hover: var(--interaction-hover);
+  --shell-nav-active: var(--interaction-active);
   --shell-nav-height: 40px;
   --control-height-sm: 32px;
   --control-height-md: 36px;
@@ -779,22 +783,46 @@ p.home-hero-kicker {
   background: rgba(24, 24, 24, 0.5);
   backdrop-filter: blur(20px);
 }
-/* Every dismiss control is a borderless circle with a white icon; only hover
- * paints a faint fill. Login keeps its own light-surface control. */
+/* All standard overlay dismiss controls share geometry and feedback. */
+.button.dialog-close,
 .close-button,
 .modal__close-trigger,
 .drawer__close-trigger,
 .alert-dialog__close-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--dismiss-target);
+  min-width: var(--dismiss-target);
+  height: var(--dismiss-target);
+  min-height: var(--dismiss-target);
+  padding: 0;
+  border: 0;
   border-radius: 999px;
-  color: #ffffff;
+  color: var(--dismiss-foreground);
   background: transparent;
+  box-shadow: none;
 }
-.close-button:is(:hover, [data-hovered="true"]),
-.modal__close-trigger:is(:hover, [data-hovered="true"]),
-.drawer__close-trigger:is(:hover, [data-hovered="true"]),
-.alert-dialog__close-trigger:is(:hover, [data-hovered="true"]) {
-  color: #ffffff;
-  background: #ffffff14;
+.button.dialog-close:is(:hover, [data-hovered="true"], [data-focus-visible="true"]),
+.close-button:is(:hover, [data-hovered="true"], [data-focus-visible="true"]),
+.modal__close-trigger:is(:hover, [data-hovered="true"], [data-focus-visible="true"]),
+.drawer__close-trigger:is(:hover, [data-hovered="true"], [data-focus-visible="true"]),
+.alert-dialog__close-trigger:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
+  color: var(--dismiss-foreground);
+  background: radial-gradient(
+    circle calc(var(--dismiss-disc) / 2) at center,
+    var(--dismiss-hover) 100%,
+    transparent 100%
+  );
+}
+.modal__heading,
+.drawer__heading,
+.alert-dialog__heading {
+  font-family: var(--font-sans);
+  font-size: var(--text-xl);
+  line-height: var(--leading-xl);
+  font-weight: var(--weight-semibold);
 }
 /* finesse · focused product densification · existing purple tokens
  * whole-card navigation; portrait covers; stable hover/focus/pressed geometry */
@@ -3071,21 +3099,12 @@ p.home-hero-kicker {
 }
 /* Floats over the light panel; there is no coloured top strip. */
 .login-close {
+  --dismiss-foreground: #555;
+  --dismiss-hover: #0000001a;
   position: absolute;
   top: 14px;
   right: 14px;
   z-index: 3;
-  width: 36px;
-  height: 36px;
-  min-height: 36px;
-  border: 0;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.05);
-  color: #555;
-}
-.login-close:hover,
-.login-close[data-hovered="true"] {
-  background: rgba(0, 0, 0, 0.1);
 }
 .login-split {
   display: grid;
@@ -3143,9 +3162,8 @@ p.home-hero-kicker {
 /* The login panel is an explicitly approved light surface; studio tokens stay dark. */
 .login-content {
   --foreground: #000;
-  --login-title-font: -apple-system, "system-ui", "SF Pro Display", "Helvetica Neue", sans-serif;
-  --login-control-font:
-    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --login-title-font: var(--font-sans);
+  --login-control-font: var(--font-sans);
   --muted: rgba(0, 0, 0, 0.4);
   --field-background: rgba(0, 0, 0, 0.05);
   --field-foreground: #000;
@@ -3416,9 +3434,6 @@ p.home-hero-kicker {
     height: 44px;
     background: transparent;
     color: #555;
-  }
-  .login-close[data-hovered="true"] {
-    background: #00000010;
   }
   .login-split {
     grid-template-columns: 1fr;

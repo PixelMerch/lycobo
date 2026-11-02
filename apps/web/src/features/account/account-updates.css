@@ -49,13 +49,13 @@
   border-bottom: 1px solid #ffffff0f;
 }
 .account-news-header .drawer__heading {
-  font-size: 22px;
-  line-height: 30px;
+  font-size: var(--text-xl);
+  line-height: var(--leading-xl);
 }
 .account-news-header p,
 .account-news-empty p {
   margin-top: 8px;
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: #a1a1aa;
 }
 .account-news-body {
@@ -83,25 +83,25 @@
 }
 .account-release h3,
 .account-news-empty h3 {
-  font-size: 16px;
-  line-height: 24px;
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
   font-weight: 600;
 }
 .account-release p {
   margin: 12px 0;
-  font-size: 14px;
-  line-height: 24px;
+  font-size: var(--text-base);
+  line-height: var(--leading-lg);
   color: #c4c4c8;
 }
 .account-release .account-release-meta {
   display: flex;
   gap: 12px;
   color: #a1a1aa;
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 .account-news-panel a {
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: #a8ff00;
 }
 .account-news-empty {

@@ -33,7 +33,7 @@ export function AccountPanel({
             <Modal.Header>
               <Modal.Heading>{title}</Modal.Heading>
               <Modal.CloseTrigger aria-label={`关闭${title}`}>
-                <UiIcon icon={IconX} size="default" />
+                <UiIcon icon={IconX} size="action" />
               </Modal.CloseTrigger>
             </Modal.Header>
             <Modal.Body>

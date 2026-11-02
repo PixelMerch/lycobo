@@ -66,7 +66,16 @@ for (const width of [1440, 320]) {
     await navigation.getByRole("button", { name: "消息", exact: true }).click();
     const messagesPanel = page.getByRole("dialog", { name: "消息中心" });
     await expect(messagesPanel.getByText("消息功能即将开放")).toBeVisible();
-    await messagesPanel.getByRole("button", { name: "关闭消息中心" }).click();
+    const messageClose = messagesPanel.getByRole("button", { name: "关闭消息中心" });
+    await messageClose.hover();
+    await expect(messageClose).toHaveCSS("width", "44px");
+    await expect(messageClose.locator("svg")).toHaveCSS("width", "22px");
+    await expect(messageClose).toHaveCSS("outline-style", "none");
+    const closeHover = await messageClose.evaluate(
+      (element) => getComputedStyle(element).backgroundImage,
+    );
+    await messagesPanel.screenshot({ path: `/tmp/lycobo-message-close-${width}.png` });
+    await messageClose.click();
     await expect(messagesPanel).toBeHidden();
 
     await trigger.focus();
@@ -121,6 +130,10 @@ for (const width of [1440, 320]) {
       // The dialog container takes programmatic focus without a purple frame.
       await expect(dialog).toHaveCSS("outline-style", "none");
       await expect(dialog).toHaveCSS("background-color", "rgb(26, 26, 26)");
+      const accountClose = dialog.getByRole("button", { name: `关闭${title}` });
+      await accountClose.hover();
+      await expect(accountClose).toHaveCSS("background-image", closeHover);
+      await expect(accountClose).toHaveCSS("width", "44px");
       if (title === "订阅与账单")
         await expect(dialog.getByText("企业金币余额", { exact: true })).toBeVisible();
       if (title === "账号管理")

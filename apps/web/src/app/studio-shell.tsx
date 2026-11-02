@@ -173,7 +173,9 @@ export function StudioShell() {
                       height="24"
                     />
                   </Drawer.Heading>
-                  <Drawer.CloseTrigger aria-label="关闭导航" />
+                  <Drawer.CloseTrigger aria-label="关闭导航">
+                    <UiIcon icon={IconX} size="action" />
+                  </Drawer.CloseTrigger>
                 </Drawer.Header>
                 <Drawer.Body>
                   <nav>{nav}</nav>
@@ -206,7 +208,7 @@ export function StudioShell() {
               <Modal.Header>
                 <Modal.Heading>{info}</Modal.Heading>
                 <Modal.CloseTrigger aria-label="关闭说明">
-                  <UiIcon icon={IconX} size="default" />
+                  <UiIcon icon={IconX} size="action" />
                 </Modal.CloseTrigger>
               </Modal.Header>
               <Modal.Body>

@@ -110,22 +110,6 @@
   position: absolute;
   top: 8px;
   right: 8px;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  /* The close action is a round hit target, so its hover fill reads as a disc
-   * instead of a rounded square. Its glyph stays white like the full-screen
-   * dialogs so it never looks disabled. */
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: #a8a8b0;
-  box-shadow: none;
-}
-.confirm-dialog
-  .modal__close-trigger:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
-  background: radial-gradient(circle 16.5px at center, #ffffff1f 100%, transparent 100%);
-  color: #fff;
 }
 @media (max-width: 767px) {
   .confirm-dialog {

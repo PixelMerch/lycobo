@@ -6,7 +6,7 @@
   width: 100%;
   min-height: calc(var(--shell-nav-height) + 9px);
   padding-top: 8px;
-  border-top: 1px solid #ffffff0a;
+  border-top: 1px solid var(--interaction-hover);
 }
 .sidebar-bottom:has(.account-footer) {
   padding-top: 0;
@@ -36,7 +36,7 @@
   transition: background-color 150ms ease;
 }
 .account-trigger:is([data-hovered="true"], [data-pressed="true"], [aria-expanded="true"]) {
-  background: #ffffff0a;
+  background: var(--interaction-hover);
   transform: none;
 }
 .account-trigger .account-avatar {
@@ -145,7 +145,7 @@
   padding: 12px;
   margin-bottom: 8px;
   border-radius: 12px;
-  background: #ffffff0a;
+  background: var(--interaction-hover);
   font-size: 13px;
   line-height: 20px;
 }
@@ -169,12 +169,12 @@
   line-height: 20px;
 }
 .account-menu .menu-item:is([data-hovered="true"], [data-focused="true"]) {
-  background: #ffffff0a;
+  background: var(--interaction-hover);
   color: #fff;
 }
 .account-menu-separator {
   margin: 8px 12px;
-  background: #ffffff14;
+  background: var(--interaction-active);
 }
 @media (max-width: 767px) {
   .account-menu .menu-item {
@@ -205,7 +205,7 @@
   text-decoration: none;
 }
 .account-footer-action:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
-  background: #ffffff0a;
+  background: var(--interaction-hover);
   color: #fff;
 }
 @media (max-width: 767px), (pointer: coarse) {

@@ -39,7 +39,7 @@ export function AccountUpdates({ kind }: { kind: "updates" | "messages" }) {
                 {!updates && <p>系统消息和活动通知</p>}
               </div>
               <Drawer.CloseTrigger aria-label={`关闭${title}`}>
-                <UiIcon icon={IconX} />
+                <UiIcon icon={IconX} size="action" />
               </Drawer.CloseTrigger>
             </Drawer.Header>
             <Drawer.Body className="account-news-body">

@@ -190,8 +190,8 @@ test("regenerate submits the original snapshot once and leaves the composer draf
     name: "关闭重新生成确认",
     exact: true,
   });
-  await expect(closeRegenerate).toHaveCSS("color", "rgb(168, 168, 176)");
-  await expect(closeRegenerate).toHaveCSS("border-radius", "50%");
+  await expect(closeRegenerate).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(closeRegenerate).toHaveCSS("border-radius", "999px");
   expect(requests).toBe(0);
   await confirm.getByRole("button", { name: "取消", exact: true }).click();
   await expect(confirm).not.toBeVisible();
