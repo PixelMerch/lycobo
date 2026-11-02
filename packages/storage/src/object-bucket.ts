@@ -8,6 +8,7 @@ export interface ImageObjectBucket {
   head(key: string): Promise<{ size: number; httpEtag: string } | null>;
   get(key: string): Promise<{
     size: number;
+    httpEtag?: string | undefined;
     body: ReadableStream<Uint8Array>;
     arrayBuffer(): Promise<ArrayBuffer>;
   } | null>;

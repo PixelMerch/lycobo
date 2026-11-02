@@ -1,18 +1,13 @@
 import { Button, Tooltip, toast } from "@heroui/react";
-import { type ImageJob, imageDeliverySchema } from "@lycoboai/contracts";
+import type { ImageJob } from "@lycoboai/contracts";
 import { IconDownload } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
-import { imageRequest } from "../generation-client";
+import { prepareDownloadDeliveries, resolveDownloadDelivery } from "../download-deliveries";
 import { historyDownloadEntries } from "./history-download";
 
 async function readOriginal(id: string, remaining: number, signal: AbortSignal) {
-  const metadata: unknown = await (
-    await imageRequest(`image-assets/${id}/delivery`, { signal })
-  ).json();
-  const delivery = imageDeliverySchema.parse(
-    metadata && typeof metadata === "object" && "delivery" in metadata ? metadata.delivery : null,
-  );
+  const delivery = await resolveDownloadDelivery(id, signal);
   const response = await fetch(delivery.download_url, {
     signal,
     credentials: "omit",
@@ -69,13 +64,14 @@ export function HistoryDownloadButton({ job }: { job: ImageJob }) {
           const controller = new AbortController();
           active.current = controller;
           setPacking(true);
+          const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(180000)]);
           try {
             const { createHistoryArchive } = await import("./history-download");
-            const bytes = await createHistoryArchive(
-              entries,
-              readOriginal,
-              AbortSignal.any([controller.signal, AbortSignal.timeout(180000)]),
+            await prepareDownloadDeliveries(
+              entries.map((entry) => entry.id),
+              signal,
             );
+            const bytes = await createHistoryArchive(entries, readOriginal, signal);
             controller.signal.throwIfAborted();
             const url = URL.createObjectURL(
               new Blob([new Uint8Array(bytes)], { type: "application/zip" }),

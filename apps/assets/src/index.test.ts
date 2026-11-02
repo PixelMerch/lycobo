@@ -18,6 +18,7 @@ const bucket: ImageObjectBucket = {
     return b
       ? {
           size: b.length,
+          httpEtag: '"fixture"',
           body: new ReadableStream<Uint8Array>({
             start(controller) {
               controller.enqueue(b);
@@ -106,6 +107,7 @@ describe("private asset edge delivery", () => {
     expect(second.headers.get("X-Asset-Cache")).toBe("HIT");
     expect(await second.text()).toBe("preview fixture");
     expect(f.get).toHaveBeenCalledTimes(1);
+    expect(f.head).not.toHaveBeenCalled();
     const download = await f.request(links.download_url);
     expect(download.headers.get("Content-Type")).toBe("image/png");
     expect(download.headers.get("Content-Disposition")).toContain("attachment");
@@ -176,4 +178,54 @@ it("rejects preview-to-original promotion, missing sources and image-embedded or
     (await f.request(links.download_url, { Origin: origin, "Sec-Fetch-Dest": "image" })).status,
   ).toBe(403);
   expect(f.cache.match).toHaveBeenCalledTimes(lookups);
+});
+
+it("redirects originals only after origin and download-capability verification", async () => {
+  const links = await assetDeliverySigner("https://assets.example.test", secret)(key);
+  const signDownload = vi.fn(async () => "https://storage.example.test/signed-original");
+  const get = vi.fn(bucket.get),
+    head = vi.fn(bucket.head);
+  const options = {
+    bucket: { ...bucket, get, head },
+    signingSecret: secret,
+    allowedOrigins: origin,
+    signDownload,
+  };
+  const request = (url: string, referer = origin) =>
+    servePrivateAsset(new Request(url, { headers: { Referer: referer, Origin: origin } }), options);
+  const result = await request(links.download_url);
+  expect(result.status).toBe(302);
+  expect(result.headers.get("Location")).toBe("https://storage.example.test/signed-original");
+  expect(result.headers.get("Cache-Control")).toBe("private, no-store");
+  expect(result.headers.get("Access-Control-Allow-Origin")).toBe(origin);
+  expect(signDownload).toHaveBeenCalledWith(key, 300);
+  expect(get).not.toHaveBeenCalled();
+  expect(head).not.toHaveBeenCalled();
+  const tampered = new URL(links.url);
+  tampered.searchParams.set("variant", "download");
+  expect((await request(tampered.href)).status).toBe(403);
+  expect((await request(links.download_url, "https://evil.example.test")).status).toBe(403);
+  expect((await request(links.download_url.replace(/expires=\d+/, "expires=1"))).status).toBe(403);
+  expect(signDownload).toHaveBeenCalledTimes(1);
+});
+
+it("uses the GET ETag for revalidation and closes the unused stream", async () => {
+  const links = await assetDeliverySigner("https://assets.example.test", secret)(key);
+  const cancel = vi.fn();
+  const get = vi.fn(async () => ({
+    size: 3,
+    httpEtag: '"same"',
+    body: new ReadableStream<Uint8Array>({ cancel }),
+    arrayBuffer: async () => new ArrayBuffer(3),
+  }));
+  const head = vi.fn(bucket.head);
+  const result = await servePrivateAsset(
+    new Request(links.url, { headers: { Referer: origin, "If-None-Match": '"same"' } }),
+    { bucket: { ...bucket, get, head }, signingSecret: secret, allowedOrigins: origin },
+  );
+  expect(result.status).toBe(304);
+  expect(result.body).toBeNull();
+  expect(head).not.toHaveBeenCalled();
+  expect(get).toHaveBeenCalledTimes(1);
+  expect(cancel).toHaveBeenCalledTimes(1);
 });

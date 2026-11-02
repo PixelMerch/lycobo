@@ -75,7 +75,12 @@ export function cloudbaseObjectBucket(
       try {
         const size = objectSize(response);
         if (!response.body) throw new Error("IMAGE_STORAGE_UNAVAILABLE");
-        return { size, body: response.body, arrayBuffer: () => response.arrayBuffer() };
+        return {
+          size,
+          httpEtag: response.headers.get("ETag") ?? undefined,
+          body: response.body,
+          arrayBuffer: () => response.arrayBuffer(),
+        };
       } catch {
         await response.body?.cancel();
         throw new Error("IMAGE_STORAGE_UNAVAILABLE");
@@ -96,5 +101,55 @@ export function cloudbaseObjectBucket(
         await response?.body?.cancel();
       }
     },
+  };
+}
+
+/** PG signed download API; call only after validating the application's download capability. */
+export function cloudbaseDownloadSigner(
+  env: CloudBaseStorageBindings,
+  request: typeof fetch = fetch,
+) {
+  const config = readCloudBaseStorageConfig(env);
+  if (!config) throw new Error("CLOUDBASE_STORAGE_NOT_CONFIGURED");
+  const origin = `https://${config.CLOUDBASE_ENV_ID}.api.tcloudbasegateway.com`;
+  return async (key: string, expiresIn: number) => {
+    objectKeySchema.parse(key);
+    if (!Number.isInteger(expiresIn) || expiresIn < 1 || expiresIn > 300)
+      throw new Error("INVALID_DOWNLOAD_LIFETIME");
+    const pathname = `/v1/storages/object/sign/${config.CLOUDBASE_STORAGE_BUCKET}/${key.split("/").map(encodeURIComponent).join("/")}`;
+    try {
+      const response = await request(origin + pathname, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${config.CLOUDBASE_APIKEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ expiresIn }),
+        signal: AbortSignal.timeout(10000),
+        redirect: "manual",
+      });
+      if (!response.ok) {
+        await response.body?.cancel();
+        throw new Error("IMAGE_STORAGE_UNAVAILABLE");
+      }
+      const parsed = z
+        .object({ fullSignedURL: z.string().max(16384) })
+        .parse(await response.json());
+      const url = new URL(parsed.fullSignedURL);
+      // Only redirect to this environment's exact signed object, never an arbitrary upstream URL.
+      if (
+        url.origin !== origin ||
+        url.pathname !== pathname ||
+        url.username ||
+        url.password ||
+        url.hash ||
+        !url.searchParams.get("token")
+      )
+        throw new Error("IMAGE_STORAGE_UNAVAILABLE");
+      url.searchParams.set("download", key.split("/").at(-1) ?? "image.png");
+      return url.href;
+    } catch {
+      throw new Error("IMAGE_STORAGE_UNAVAILABLE");
+    }
   };
 }

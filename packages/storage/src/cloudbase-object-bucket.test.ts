@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cloudbaseObjectBucket, readCloudBaseStorageConfig } from "./cloudbase-object-bucket";
+import {
+  cloudbaseDownloadSigner,
+  cloudbaseObjectBucket,
+  readCloudBaseStorageConfig,
+} from "./cloudbase-object-bucket";
 import { imageObjectBucket } from "./s3-object-bucket";
 
 const env = {
@@ -69,4 +73,30 @@ describe("CloudBase private storage", () => {
     request.mockResolvedValue(new Response(null, { status: 404 }));
     await expect(bucket.delete(["a.png", "b.png"])).resolves.toBeUndefined();
   });
+});
+
+it("signs a bounded original download without exposing the service credential", async () => {
+  const path = "/v1/storages/object/sign/private-images/a.png";
+  const signed = `https://fixture-env-123.api.tcloudbasegateway.com${path}?token=temporary`;
+  const request = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(new Response(JSON.stringify({ fullSignedURL: signed })));
+  const sign = cloudbaseDownloadSigner(env, request);
+  const url = new URL(await sign("a.png", 120));
+  expect(url.searchParams.get("download")).toBe("a.png");
+  expect(url.href).not.toContain(env.CLOUDBASE_APIKEY);
+  expect(request.mock.calls[0]?.[0]).toBe(signed.split("?")[0]);
+  expect(JSON.parse(String(request.mock.calls[0]?.[1]?.body))).toEqual({ expiresIn: 120 });
+  expect(request.mock.calls[0]?.[1]?.redirect).toBe("manual");
+  await expect(sign("a.png", 301)).rejects.toThrow("INVALID_DOWNLOAD_LIFETIME");
+  for (const fullSignedURL of [
+    "https://evil.test/a.png?token=x",
+    signed.replace("a.png", "other.png"),
+    signed.replace("https:", "http:"),
+  ]) {
+    request.mockResolvedValue(new Response(JSON.stringify({ fullSignedURL })));
+    await expect(sign("a.png", 120)).rejects.toThrow("IMAGE_STORAGE_UNAVAILABLE");
+  }
+  request.mockResolvedValue(new Response("secret upstream body", { status: 403 }));
+  await expect(sign("a.png", 120)).rejects.toThrow("IMAGE_STORAGE_UNAVAILABLE");
 });

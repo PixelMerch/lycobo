@@ -77,7 +77,12 @@ export function imageObjectBucket(
         await response.body?.cancel();
         throw new Error("IMAGE_STORAGE_UNAVAILABLE");
       }
-      return { size, body: response.body, arrayBuffer: () => response.arrayBuffer() };
+      return {
+        size,
+        httpEtag: response.headers.get("ETag") ?? undefined,
+        body: response.body,
+        arrayBuffer: () => response.arrayBuffer(),
+      };
     },
     async put(key, data, options) {
       const headers = new Headers({

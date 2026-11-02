@@ -1,6 +1,6 @@
 import { serve } from "@hono/node-server";
 import { servePrivateAsset } from "@lycoboai/storage/asset-server";
-import { cloudbaseObjectBucket } from "@lycoboai/storage/cloudbase";
+import { cloudbaseDownloadSigner, cloudbaseObjectBucket } from "@lycoboai/storage/cloudbase";
 import { z } from "zod";
 
 const env = z
@@ -18,6 +18,7 @@ const options = {
   bucket: cloudbaseObjectBucket(process.env),
   signingSecret: env.ASSET_SIGNING_SECRET,
   allowedOrigins: env.ASSET_ALLOWED_ORIGINS,
+  signDownload: cloudbaseDownloadSigner(process.env),
 };
 const server = serve({
   hostname: "0.0.0.0",
