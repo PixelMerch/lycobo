@@ -59,6 +59,8 @@ Node API 的 `object-image-store.ts` 使用 Sharp 完成解码校验、去元数
 
 旧运行时源码、Wrangler/Miniflare/workerd 依赖、R2/Images/Queues 适配及 `scripts/cloudflare` 已移除。本地改用隔离 Node 进程、PG outbox 与私有 S3，保留图片鉴权和数据库回归测试。旧远端资源、迁移历史与受保护备份不删除。
 
+本地旧环境文件`.env.cloudflare-production`、`.cloudflare`临时运维目录和API／资源服务的`dist-cloudflare`产物已清理；各旧模拟器状态目录移入被Git忽略的`backups/retired-emulation-20261102`，仅作数据备份，不再参与开发与构建。对象适配删除旧副本fallback参数，当前CloudBase与本地S3均不再读取旧存储副本。忽略规则和本地环境凭据过滤保留，防止旧秘密被误提交或注入本地进程。锁文件中的`@cloudflare/workers-types`仅为Drizzle上游可选peer声明，未安装运行时，不手工篡改供应商依赖元数据。
+
 远端旧资源、源库和对象保留供回溯，旧 API/消费者的生成开关已关闭。新站主站业务读写使用共享 PG、独立消费者和资源服务；三个功能已实际生成并存储图片。独立 admin 未接入目标。当前只使用上述默认网关；自定义域名以后按需处理，不在本次接入范围内。
 
 ## 验证与状态

@@ -10,12 +10,12 @@
 | apps/web/src/lib | 浏览器 API 客户端与工具 |
 | apps/web/src/styles | 共享设计 tokens 与全局基础样式 |
 | apps/api/src | Hono 入口、应用工厂、配置与组织隔离的生图 feature API |
-| apps/assets/src | 独立私有图片资源 Worker：短期签名、Referer/CORS、WebP 预览／缩略图缓存、原图下载及旧图 Images 补生成 |
+| apps/assets/src | 独立 Node 私有图片资源服务：短期签名、Referer/CORS、WebP 展示变体缓存、原图下载及旧图 Sharp 变体补生成 |
 | apps/worker/src | 队列消费者、生命周期与任务执行 |
 | packages/contracts | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖 |
 | packages/db | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY |
 | cloudbase/migrations | CloudBase 共享 PG 的源库结构基线与约束恢复；原 Drizzle 历史随数据复制保留 |
-| packages/queue | ID-only 消息契约、持久 outbox 与旧 Queue 适配；CloudBase 消费者直接认领 PG outbox，旧运输适配用于隔离开发和兼容 |
+| packages/queue | ID-only 消息契约与通用 outbox 投递；CloudBase 消费者直接认领 PG outbox，通用投递接口用于隔离集成测试 |
 | packages/generation | 服务商契约、Vakv 同步兼容、可配置 OpenAI／FluxPort 同异步适配与密钥加密（真实渠道待验收） |
 | packages/storage | CloudBase PG 私有存储、UID 路径、Node Sharp 变体；S3 适配用于本地开发和迁移，CloudBase 不回退旧存储 |
 | scripts/cloudbase | 静态及 Linux 云函数发布包准备、固定目标配置与敏感文件隔离 |
@@ -67,7 +67,7 @@ web → contracts。api/worker/assets → 服务包 → db/queue/storage/generat
 contracts 不得反向引用应用或 server-only 包；共享包不得依赖 apps。
 业务 feature 内部用直接导入，不建立覆盖整站的大 barrel。
 当前 packages 使用 TypeScript 源导出：开发通过 Vite/tsx 消费，
-前端由 Vite 打包，Node API 由 tsup 打包；Wrangler 仅用于本地模拟和隔离回归。Pages Functions 转发入口已删除，CloudBase 共享 PG 仓储、Node 资源服务及 Event 消费者已实现；同源网关、真实生图和私有图片读写均已验收，主站生图与定时执行已开启。
+前端由 Vite 打包，Node API 由 tsup 打包；本地开发使用隔离 Node 进程、PostgreSQL 与私有 S3。CloudBase 共享 PG 仓储、Node 资源服务及 Event 消费者已实现；同源网关、真实生图和私有图片读写均已验收，主站生图与定时执行已开启。
 这些包 private，不是可直接发布到 npm 的编译 SDK。
 
 ## 进程与服务

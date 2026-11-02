@@ -10,7 +10,7 @@
 
 尺寸映射共用 contracts.imageOutputDimensions；Images协议提交精确size，Gemini原生使用2K后由私有存储处理成目标像素。新1.5K结果入库存储前校验源图尺寸，不把低清图放大；缩略图从最终图派生，元数据与下载文件一致。渠道可设置独立1.5K上游模型，未配置时回落到旧1K映射、再回落通道默认值。发布顺序为API／Worker与后台契约在前、主站在后，旧消费者不识别新枚举。
 
-2026-10-29本地真实调用：Image 2.5、文生图、单张、1.5K任务 `f7763c0b-eae3-4d16-a386-df49951ebbe6` 成功，保存宽高1254×1254；只创建一次任务，不自动重试。此证据不覆盖参考图编辑、Gemini付费调用或其他供应商。Cloudflare Images模拟与Node存储测试验证精确缩放和低清拒绝。
+2026-10-29本地真实调用：Image 2.5、文生图、单张、1.5K任务 `f7763c0b-eae3-4d16-a386-df49951ebbe6` 成功，保存宽高1254×1254；只创建一次任务，不自动重试。此证据不覆盖参考图编辑、Gemini付费调用或其他供应商。当前Node存储测试验证精确缩放和低清拒绝。
 
 下方Vakv文档证据描述早期固定供应商，当前可配置中转站与协议见[模型服务](model-services.md)，不能把旧线路的规格套用于所有渠道。
 
@@ -38,7 +38,7 @@
 
 生产运行于 CloudBase HTTP API、Event 消费者、共享 PG 与私有云存储。旧平台代码已移除，旧源资源仅保留迁移回退资料。见 [CloudBase 部署](cloudbase-deployment.md)。
 
-账号通过现有企业账号体系配置，主子账号共用组织钱包。生成开关默认关闭，确认数据库、权限、对象存储、模型及后台绑定后再显式启用 `IMAGE_GENERATION_ENABLED=true`。本地开发使用 Wrangler 模拟与独立 loopback 数据库，真实模型调用需显式 `LOCAL_IMAGE_GENERATION_ENABLED=true`。旧 Node 工作台签发脚本仅供已有的本地调试，不是线上账号注册或充值接口。
+账号通过现有企业账号体系配置，主子账号共用组织钱包。生成开关默认关闭，确认数据库、权限、对象存储、模型及后台绑定后再显式启用 `IMAGE_GENERATION_ENABLED=true`。本地开发使用隔离Node进程、私有S3和独立loopback数据库；只有在本地配置显式启用 `IMAGE_GENERATION_ENABLED=true` 并提供模型密钥后才能调用真实模型。旧 Node 工作台签发脚本仅供已有的本地调试，不是线上账号注册或充值接口。
 
 每张固定 20 币，忽略旧 `IMAGE_CREDITS_PER_IMAGE` 定价；提交扣费、确定失败按张退款。充值订单与账务只读接口已接入，真实支付未接入，见 [企业钱包](enterprise-wallet.md)。
 

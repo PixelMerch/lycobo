@@ -10,18 +10,11 @@ export type { StorageBindings } from "./object-bucket";
 export type { S3Bindings } from "./s3-config";
 
 /** No public S3 URLs: existing owner-scoped API / signed asset delivery remains authoritative. */
-export function imageObjectBucket(
-  env: StorageBindings,
-  fallback?: ImageObjectBucket,
-): ImageObjectBucket {
+export function imageObjectBucket(env: StorageBindings): ImageObjectBucket {
   // CloudBase is authoritative once configured, including missing objects and failures.
-  // Never recover a deleted private object from an legacy copy.
   if (readCloudBaseStorageConfig(env)) return cloudbaseObjectBucket(env);
   const config = readS3Config(env);
-  if (!config) {
-    if (!fallback) throw new Error("IMAGE_STORAGE_NOT_CONFIGURED");
-    return fallback;
-  }
+  if (!config) throw new Error("IMAGE_STORAGE_NOT_CONFIGURED");
   const client = new AwsClient({
     accessKeyId: config.S3_ACCESS_KEY_ID,
     secretAccessKey: config.S3_SECRET_ACCESS_KEY,
@@ -58,7 +51,7 @@ export function imageObjectBucket(
   return {
     async head(key) {
       const response = await request(key, "HEAD");
-      if (!response) return fallback?.head(key) ?? null;
+      if (!response) return null;
       return {
         size: Number(response.headers.get("content-length")),
         httpEtag: response.headers.get("etag") ?? '""',
@@ -66,7 +59,7 @@ export function imageObjectBucket(
     },
     async get(key) {
       const response = await request(key, "GET");
-      if (!response) return fallback?.get(key) ?? null;
+      if (!response) return null;
       const size = Number(response.headers.get("content-length"));
       if (
         !response.body ||
@@ -99,8 +92,6 @@ export function imageObjectBucket(
       for (const key of typeof keys === "string" ? [keys] : keys) {
         const response = await request(key, "DELETE");
         await response?.body?.cancel();
-        // Remove legacy copies too, so a deleted S3 object cannot reappear via fallback.
-        await fallback?.delete(key);
       }
     },
   };

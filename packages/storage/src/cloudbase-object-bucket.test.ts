@@ -45,11 +45,10 @@ describe("CloudBase private storage", () => {
       "IMAGE_STORAGE_UNAVAILABLE",
     );
     expect(request).toHaveBeenCalledTimes(1);
-    const fallback = { get: vi.fn(), head: vi.fn(), put: vi.fn(), delete: vi.fn() };
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 404 })));
-    expect(await imageObjectBucket(env, fallback).get("a.png")).toBeNull();
-    expect(fallback.get).not.toHaveBeenCalled();
-    expect(() => imageObjectBucket({ CLOUDBASE_ENV_ID: env.CLOUDBASE_ENV_ID }, fallback)).toThrow();
+    expect(await imageObjectBucket(env).get("a.png")).toBeNull();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(() => imageObjectBucket({ CLOUDBASE_ENV_ID: env.CLOUDBASE_ENV_ID })).toThrow();
   });
   it("validates object keys and download size before exposing a stream", async () => {
     const request = vi.fn<typeof fetch>();

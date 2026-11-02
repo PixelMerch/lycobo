@@ -54,7 +54,7 @@ provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 
 
 ## v0.3.0 生产渠道
 
-生产统一使用 `https://api.ai-media.vip`，不再为新请求使用旧中转站。FluxPort 渠道为 gpt-image-2／gpt-image-2.5 绑定图片创作及局部修改，家纺裂变使用 gpt-image-2.5；异步优先，当前仅启用1K。当前Key未提供 nano-banana-2.1，因此该渠道禁用，不回退旧站。生产Key加密入库，独立主密钥保存在 Cloudflare 消费者 Secret，GitHub不存储。此次只检查配置、加密和公开能力，没有额外付费生成。
+生产统一使用 `https://api.ai-media.vip`，不再为新请求使用旧中转站。FluxPort 渠道为 gpt-image-2／gpt-image-2.5 绑定图片创作及局部修改，家纺裂变使用 gpt-image-2.5；异步优先，当前仅启用1K。当前Key未提供 nano-banana-2.1，因此该渠道禁用，不回退旧站。生产Key加密入库，独立主密钥保存在 CloudBase 消费者云函数环境变量，GitHub不存储。此次只检查配置、加密和公开能力，没有额外付费生成。
 
 ## 简单后台配置扩展（2026-10-28）
 

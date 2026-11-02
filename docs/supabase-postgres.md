@@ -17,7 +17,7 @@ SUPABASE_DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.wjirihknptxjodgkn
 
 仅将 `[YOUR-PASSWORD]` 替换为数据库密码。密码中的 `@`、`#`、`/`、`?`、`&` 等保留字符需 URL 编码。`.env` 已被 Git 忽略，不提交真实密码；`.env.example` 仅保留占位。
 
-迁移入口与运行时连接独立：专用命令只使用 `SUPABASE_DATABASE_URL`，并核对项目引用、数据库名、5432 端口和 TLS；未填写密码时在连接前退出，不会回退到本地库。Workers API／消费者使用同一个 Hyperdrive binding；Node 数据库脚本使用 `DATABASE_URL`，生产部署不依赖 Compose 变量。
+迁移入口与运行时连接独立：专用命令只使用 `SUPABASE_DATABASE_URL`，并核对项目引用、数据库名、5432 端口和 TLS；未填写密码时在连接前退出，不会回退到本地库。数据库脚本使用显式连接配置，当前生产CloudBase部署不依赖Compose变量。
 
 该地址为 Supabase 直连端点，通常需要 IPv6 或项目的 IPv4 add-on。网络仅支持 IPv4 时，应从控制台 **Connect → Session pooler** 取得真实地址；不要自行拼接 pooler 主机。当前专用校验只接受上面的直连形式。参考 [Supabase 连接方式](https://supabase.com/docs/guides/database/connecting-to-postgres)。
 
@@ -45,13 +45,11 @@ pnpm db:migrate:supabase
 
 结构初始化成功不会自动切换应用连接。切换 API／Worker 时需协调同一个目标数据库、账号初始化／数据迁移与图片存储。
 
-## API／Worker 运行时连接
+## 当前运行时与隔离开发
 
-此前已验证本地 Node API／Worker 直连上述 Supabase 项目并完成企业账号登录。当前代码改造后的发布目标是 Cloudflare Workers：API 和消费者共用同一个 Hyperdrive binding，连接上述 Supabase，**关闭查询缓存**，不再通过 Compose 注入数据库连接，也不需要 Redis。秘密在 Hyperdrive／Worker Secrets 中保存，前端不读取连接串。
+当前生产API、资源服务和消费者使用CloudBase共享PG仓储与云函数；不从旧源库读取运行时业务数据。旧源数据库脚本仅供显式运维，使用独立的SUPABASE_DATABASE_URL，不自动复制账号、历史、素材或积分。
 
-当前发布凭据和迁移边界见 [CloudBase 部署](cloudbase-deployment.md)。代码打包或本地模拟通过不代表远端已上线。`DATABASE_URL` 仍用于显式数据库管理，旧初始化命令只使用 `SUPABASE_DATABASE_URL`，不会自动复制账号、历史、素材或积分。
-
-开发使用 Wrangler，本地 Hyperdrive 指向 loopback PostgreSQL；R2、Queues、Images 本地模拟，不把隔离测试连接指向 Supabase。根 `.env` 已有的远端账号和数据库秘密保持不变。旧数据库、卷和本地图片文件保留；旧本地文件进入 R2 需要单独核对迁移。
+本地开发使用隔离Node进程、loopback PostgreSQL和私有S3。根环境文件中的远端凭据不注入本地业务进程；保留旧源数据与备份，不作为当前应用的回退存储。
 
 隔离集成测试显式指定本项目本地连接：
 
