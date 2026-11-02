@@ -38,8 +38,9 @@ for (const width of [1440, 320]) {
     const recharge = page.getByRole("dialog", { name: "充值积分", exact: true });
     await expect(recharge).toBeVisible();
     await expect(recharge.getByRole("tab")).toHaveCount(0);
-    await recharge.getByText("高频创作", { exact: true }).click();
-    await expect(recharge.locator(".credit-pack-checkout strong")).toHaveText("高频创作");
+    const pack = recharge.getByRole("radio", { name: "3,000 积分，示例价格 300 元", exact: true });
+    await pack.click();
+    await expect(pack).toBeChecked();
     await expect(recharge.getByRole("button", { name: "充值即将开放" })).toBeDisabled();
     expect(ledgerReads).toBe(0);
     await recharge.screenshot({ path: `/tmp/lycobo-redesign-recharge-${width}.png` });
@@ -52,12 +53,12 @@ for (const width of [1440, 320]) {
     await expect(draft).toHaveValue("保留创作草稿，不创建付费任务");
     await header.getByRole("button", { name: "开通会员", exact: true }).click();
     await expect(page).toHaveURL(/\/membership$/);
-    await expect(page.getByRole("heading", { name: "让每次上新，都有更多可能" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /让好商品，\s*拥有好表达。/ })).toBeVisible();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "创作会员即将开放" })).toBeDisabled();
     await expect(page.getByRole("button", { name: "专业会员即将开放" })).toBeDisabled();
     await page.getByRole("radio", { name: "年度", exact: true }).click();
-    await expect(page.getByText("按年订阅", { exact: true })).toHaveCount(2);
+    await expect(page.getByText("/ 年", { exact: true })).toHaveCount(2);
     await page.locator(".membership-page").evaluate((el) => {
       el.scrollTop = 0;
     });

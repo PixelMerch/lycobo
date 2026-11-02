@@ -1,22 +1,15 @@
 import { Button, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { IconCheck } from "@tabler/icons-react";
 import { useState } from "react";
 import { CreditCoin } from "../../components/credit-coin";
-import { UiIcon } from "../../components/ui-icon";
 
-const packs = [
-  { id: "light", name: "轻量补充", description: "偶尔补充一点用量" },
-  { id: "daily", name: "日常创作", description: "日常上新与商品迭代" },
-  { id: "frequent", name: "高频创作", description: "持续、多批次创作" },
-] as const;
+// Visual proposals only; these are not purchasable SKUs or configured commercial terms.
+const packs = [500, 1500, 3000, 5000, 10000, 30000, 50000, 100000, 200000];
 
-/** Display only: no prices, credits or payment orders are configured yet. */
 export function CreditPacks() {
-  const [selected, setSelected] = useState("daily");
-  const pack = packs.find((item) => item.id === selected) ?? packs[1];
+  const [selected, setSelected] = useState("500");
   return (
     <section className="credit-packs" aria-label="选择充值积分包">
-      <p className="credit-recharge-intro">按需补充创作用量，积分包可单独购买。</p>
+      <p className="credit-recharge-intro">方案预览 · 积分档位与价格待确认</p>
       <ToggleButtonGroup
         fullWidth
         isDetached
@@ -25,37 +18,33 @@ export function CreditPacks() {
         disallowEmptySelection
         selectedKeys={[selected]}
         onSelectionChange={(keys) => {
-          const next = packs.find((item) => keys.has(item.id));
-          if (next) setSelected(next.id);
+          const next = packs.find((amount) => keys.has(String(amount)));
+          if (next) setSelected(String(next));
         }}
         className="credit-pack-grid"
       >
-        {packs.map((item) => (
-          <ToggleButton key={item.id} id={item.id} className="credit-pack">
-            <span className="credit-pack-heading">
+        {packs.map((amount) => (
+          <ToggleButton
+            key={amount}
+            id={String(amount)}
+            className="credit-pack"
+            aria-label={`${amount.toLocaleString("zh-CN")} 积分，示例价格 ${amount / 10} 元`}
+          >
+            <span className="credit-pack-value">
               <CreditCoin size="action" />
-              <span className="credit-pack-check">
-                <UiIcon icon={IconCheck} size="small" />
-              </span>
+              <strong>{amount.toLocaleString("zh-CN")}</strong>
             </span>
-            <strong>{item.name}</strong>
-            <span className="credit-pack-description">{item.description}</span>
-            <span className="credit-pack-price">价格待公布</span>
-            <span className="credit-pack-amount">积分额度待公布</span>
+            <span className="credit-pack-price">¥{(amount / 10).toLocaleString("zh-CN")}</span>
           </ToggleButton>
         ))}
       </ToggleButtonGroup>
       <div className="credit-pack-checkout">
-        <div>
-          <span>已选择</span>
-          <strong>{pack.name}</strong>
-        </div>
         <Button variant="primary" className="credit-pack-submit" isDisabled>
           充值即将开放
         </Button>
       </div>
       <p className="credit-recharge-note">
-        单独充值只增加积分，不改变会员等级。价格、额度及有效期将在开放时公布。
+        积分用于创作消耗，购买积分不改变会员等级。正式价格、额度及有效期将在开放时公布。
       </p>
     </section>
   );

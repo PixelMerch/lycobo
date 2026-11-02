@@ -42,8 +42,20 @@ export function MembershipPage() {
             <UiIcon icon={IconCrown} />
             LYCOBO 会员
           </span>
-          <h1>让每次上新，都有更多可能</h1>
-          <p>会员解锁专属能力，赠送积分用于创作。用量不够时，也可以单独补充。</p>
+          <h1>
+            让好商品，
+            <br />
+            <em>拥有好表达。</em>
+          </h1>
+          <p>从一张主图，到一整套上新素材</p>
+          <div className="membership-hero-art" aria-hidden="true">
+            <img src="/studio/tool-heroes/create.webp" alt="" />
+            <img src="/studio/textile-views/front.webp" alt="" />
+            <img src="/studio/tool-heroes/variation.webp" alt="" />
+          </div>
+          <div className="membership-hero-tools">
+            主图制作<span>家纺裂变</span>套图计划
+          </div>
         </header>
         <MembershipPlans />
         <div className="membership-credit-link">

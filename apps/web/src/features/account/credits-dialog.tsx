@@ -1,9 +1,10 @@
-import { Button, Modal } from "@heroui/react";
+import { Avatar, Button, Modal } from "@heroui/react";
 import { IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
+import { useEnterpriseSession } from "../auth/auth-client";
 import { CreditPacks } from "./credit-packs";
 import { useWallet } from "./wallet-client";
 import { WalletPanel } from "./wallet-panel";
@@ -19,6 +20,7 @@ export function CreditsDialog({
   initialView?: "recharge" | "billing";
 }) {
   const wallet = useWallet();
+  const session = useEnterpriseSession();
   const [view, setView] = useState(initialView);
   const navigate = useNavigate();
   const location = useLocation();
@@ -44,6 +46,30 @@ export function CreditsDialog({
             <Modal.Body>
               {view === "recharge" ? (
                 <>
+                  <div className="credit-recharge-identity">
+                    <Avatar size="lg">
+                      <Avatar.Fallback>
+                        {session.data?.account.slice(0, 1).toUpperCase() ?? ""}
+                      </Avatar.Fallback>
+                    </Avatar>
+                    <div>
+                      <strong>{session.data?.account ?? "账户"}</strong>
+                      <span>企业共享账户</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onPress={() => {
+                          onClose();
+                          if (location.pathname !== "/membership")
+                            navigate("/membership", {
+                              state: { returnTo: location.pathname + location.search },
+                            });
+                        }}
+                      >
+                        查看会员权益 →
+                      </Button>
+                    </div>
+                  </div>
                   <div className="credit-recharge-balance">
                     <div>
                       <span>企业共享积分</span>

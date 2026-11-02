@@ -1,176 +1,162 @@
 .account-dialog.credit-recharge-dialog {
-  width: min(640px, calc(100vw - 48px));
+  width: min(720px, calc(100vw - 48px));
   height: auto;
+  max-height: calc(100dvh - 48px);
   padding: var(--space-6);
+  background: radial-gradient(ellipse at 0 0, #ffffff07, transparent 70%), #242426;
+}
+.credit-recharge-identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-block: 8px 20px;
+}
+.credit-recharge-identity > div:last-child {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+.credit-recharge-identity strong {
+  font-size: var(--text-lg);
+  overflow-wrap: anywhere;
+}
+.credit-recharge-identity span {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+.credit-recharge-identity .button {
+  justify-self: start;
+  color: var(--accent);
+  padding-inline: 0;
 }
 .credit-recharge-balance {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-4);
-  background: #ffffff05;
-  border-radius: 12px;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 .credit-recharge-balance > div {
-  display: grid;
-  gap: var(--space-1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
   min-width: 0;
 }
 .credit-recharge-balance > div > span {
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
   color: var(--muted);
+  font-size: var(--text-sm);
 }
 .credit-recharge-balance strong {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-2xl);
-  line-height: var(--leading-2xl);
-  font-weight: var(--weight-semibold);
+  gap: 8px;
+  border-radius: 999px;
+  padding: 8px 16px;
+  background: #ffffff08;
+  font-size: var(--text-xl);
   overflow-wrap: anywhere;
 }
 .credit-recharge-balance .credit-coin {
   color: var(--accent);
   flex-shrink: 0;
 }
-.credit-recharge-balance .button {
-  flex-shrink: 0;
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-}
-.credit-recharge-intro {
-  margin: var(--space-5) 0 var(--space-4);
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
+.credit-recharge-intro,
+.credit-recharge-note {
+  margin: 12px 0;
   color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 .credit-pack-grid.toggle-button-group {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
+  gap: 12px;
   padding: 0;
   background: transparent;
 }
 .credit-pack.toggle-button {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  justify-content: center;
   width: 100%;
   min-width: 0;
   height: auto;
-  padding: var(--space-4);
-  gap: var(--space-2);
-  border: 1px solid var(--interaction-active);
-  border-radius: 16px;
-  background: #242424;
+  min-height: 112px;
+  gap: 8px;
+  padding: 20px 12px;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  background: #111112;
   color: var(--foreground);
-  text-align: left;
-  white-space: normal;
   box-shadow: none;
 }
 .credit-pack:is(:hover, [data-hovered]) {
-  background: #2c2c2c;
+  background: #191a18;
 }
 .credit-pack[data-selected] {
-  border-color: #a8ff0080;
-  background: #a8ff000a;
+  border-color: var(--accent);
+  background: radial-gradient(ellipse at top, #a8ff001a, transparent), #1d2413;
 }
-.credit-pack-heading {
+.credit-pack-value {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  margin-bottom: var(--space-2);
-  color: var(--muted);
+  justify-content: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
 }
-.credit-pack-check {
-  display: grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border: 1px solid #ffffff29;
-  border-radius: 50%;
-  color: transparent;
+.credit-pack-value .credit-coin {
+  color: var(--accent);
+  flex-shrink: 0;
 }
-.credit-pack[data-selected] .credit-pack-check {
-  background: var(--accent);
-  color: var(--accent-foreground);
-  border-color: transparent;
+.credit-pack-value strong {
+  font-size: var(--text-2xl);
+  line-height: var(--leading-2xl);
+  font-weight: var(--weight-semibold);
 }
-.credit-pack > strong {
-  font-size: var(--text-base);
-  line-height: var(--leading-base);
-  font-weight: var(--weight-medium);
-}
-.credit-pack-description,
-.credit-pack-amount {
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  color: var(--muted);
+.credit-pack[data-selected] strong {
+  color: var(--accent);
 }
 .credit-pack-price {
-  margin-top: var(--space-4);
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
+  color: #c2c2c7;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
 }
 .credit-pack-checkout {
-  display: grid;
-  gap: var(--space-4);
-  margin-top: var(--space-5);
-}
-.credit-pack-checkout > div {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-3);
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-}
-.credit-pack-checkout > div > span {
-  color: var(--muted);
-}
-.credit-pack-checkout strong {
-  font-weight: var(--weight-medium);
+  margin-top: 24px;
 }
 .credit-pack-submit.button {
   width: 100%;
   border-radius: 999px;
 }
-.credit-recharge-note {
-  margin: var(--space-4) 0 0;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  color: var(--muted);
-}
 @media (max-width: 767px) {
   .account-dialog.credit-recharge-dialog {
     width: calc(100vw - 24px);
     max-height: calc(100dvh - 24px);
-    padding: var(--space-5) var(--space-4);
+    padding: 20px 16px;
   }
   .credit-pack-grid.toggle-button-group {
-    grid-template-columns: 1fr;
-    gap: var(--space-2);
+    gap: 8px;
   }
   .credit-pack.toggle-button {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 4px var(--space-3);
+    min-height: 88px;
+    padding: 12px 4px;
+    border-radius: 16px;
   }
-  .credit-pack-heading {
-    grid-row: 1 / span 2;
-    grid-column: 2;
-    margin: 0;
-    align-self: center;
+  .credit-pack-value {
+    gap: 4px;
   }
-  .credit-pack-heading > .credit-coin {
-    display: none;
+  .credit-pack-value strong {
+    font-size: var(--text-base);
+  }
+  .credit-pack-value .credit-coin {
+    width: 18px;
+    height: 18px;
   }
   .credit-pack-price {
-    margin-top: var(--space-2);
+    font-size: var(--text-sm);
   }
-  .credit-pack-amount {
-    grid-column: 1;
+  .credit-recharge-balance > div {
+    gap: 4px;
+    flex-wrap: wrap;
   }
 }

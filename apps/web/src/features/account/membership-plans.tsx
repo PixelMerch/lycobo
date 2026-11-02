@@ -9,13 +9,17 @@ const plans = [
   {
     id: "creator",
     name: "创作会员",
-    description: "为日常商品图创作，补足能力与用量。",
+    description: "为日常上新准备",
+    price: 99,
+    credits: 1000,
     features: ["开通会员赠送积分", "使用对应档位的会员专属功能", "按需单独补充积分"],
   },
   {
     id: "professional",
     name: "专业会员",
-    description: "为更高频的商品创作，提供进阶选择。",
+    description: "让整套创作更从容",
+    price: 299,
+    credits: 4000,
     features: ["配套更高档位的赠送积分", "使用对应档位的进阶会员权益", "按需单独补充积分"],
   },
 ] as const;
@@ -26,8 +30,8 @@ export function MembershipPlans() {
     <section className="membership-plans" aria-label="会员方案">
       <div className="membership-section-heading">
         <div>
-          <h3>选择你的会员方案</h3>
-          <p>两种创作节奏，按需选择。</p>
+          <h3>选择适合你的创作节奏</h3>
+          <p>方案预览 · 价格、积分及权益待确认</p>
         </div>
         <ToggleButtonGroup
           aria-label="会员周期"
@@ -57,14 +61,26 @@ export function MembershipPlans() {
             </Card.Header>
             <Card.Content>
               <div className="membership-plan-price">
-                <strong>价格待公布</strong>
-                <span>{cycle === "monthly" ? "按月订阅" : "按年订阅"}</span>
+                <strong>
+                  <small>¥</small>
+                  {(plan.price * (cycle === "yearly" ? 12 : 1)).toLocaleString("zh-CN")}
+                </strong>
+                <span>{cycle === "monthly" ? "/ 月" : "/ 年"}</span>
               </div>
               <div className="membership-plan-gift">
                 <CreditCoin size="default" />
-                <span>开通赠送积分</span>
-                <span>额度待公布</span>
+                <strong>{plan.credits.toLocaleString("zh-CN")}</strong>
+                <span>每月赠送积分</span>
               </div>
+              <Button
+                variant={plan.id === "professional" ? "primary" : "secondary"}
+                isDisabled
+                className="membership-plan-action"
+                aria-label={`${plan.name}即将开放`}
+              >
+                会员即将开放
+              </Button>
+              <div className="membership-benefits-title">会员权益</div>
               <ul className="membership-feature-list">
                 {plan.features.map((feature) => (
                   <li key={feature}>
@@ -75,14 +91,6 @@ export function MembershipPlans() {
               </ul>
             </Card.Content>
             <Card.Footer>
-              <Button
-                variant={plan.id === "professional" ? "primary" : "secondary"}
-                isDisabled
-                className="membership-plan-action"
-                aria-label={`${plan.name}即将开放`}
-              >
-                会员即将开放
-              </Button>
               <p className="membership-plan-terms">专属权益与赠送额度待公布</p>
             </Card.Footer>
           </Card>
