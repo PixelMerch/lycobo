@@ -40,3 +40,18 @@ it("replaces a cached legacy original link when metadata supplies a preview vari
   expect(assetContentUrl(id)).toBe(preview.url);
   expect(assetContentUrl(id, false, true)).toBe(preview.download_url);
 });
+
+it("preserves original download semantics when a link is missing or expired", () => {
+  const id = crypto.randomUUID();
+  expect(assetContentUrl(id, false, true)).toBe(`/api/v1/image-assets/${id}/content?download=1`);
+  rememberImageDeliveries({
+    id,
+    delivery: {
+      url: "https://assets.example.test/preview",
+      thumbnail_url: "https://assets.example.test/thumb",
+      download_url: "https://assets.example.test/original",
+      expires_at: 1,
+    },
+  });
+  expect(assetContentUrl(id, false, true)).toBe(`/api/v1/image-assets/${id}/content?download=1`);
+});

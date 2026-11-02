@@ -2,6 +2,7 @@ import { imageModelsResponseSchema, unwrapApiData } from "@lycoboai/contracts";
 import type { ImageRepository } from "@lycoboai/db";
 import { supportedResolutions, validateModelInput } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
+import { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { expect, it, vi } from "vitest";
 import { createApp } from "../../app";
 
@@ -15,6 +16,9 @@ function fixture(
     wake?: () => Promise<void>;
     get?: ImageRepository["get"];
     getMany?: ImageRepository["getMany"];
+    assetLocations?: ImageRepository["assetLocations"];
+    asset?: ImageRepository["asset"];
+    signAsset?: ReturnType<typeof assetDeliverySigner>;
   } = {},
 ) {
   const create = vi
@@ -52,7 +56,7 @@ function fixture(
     pruneWebhooks: unexpected,
     getMany: extra.getMany ?? unexpected,
     storageUid: unexpected,
-    assetLocations: unexpected,
+    assetLocations: extra.assetLocations ?? unexpected,
     expiredReferences: unexpected,
     markReferenceDeleted: unexpected,
     provision: unexpected,
@@ -73,7 +77,7 @@ function fixture(
     latestEdit: unexpected,
     addReference: unexpected,
     listAssets: unexpected,
-    asset: unexpected,
+    asset: extra.asset ?? unexpected,
     leaseOutbox: unexpected,
     ackOutbox: unexpected,
     claim: unexpected,
@@ -94,6 +98,7 @@ function fixture(
   const app = createApp(() => {}, {
     repository,
     store,
+    signAsset: extra.signAsset,
     enabled: true,
     managedModelsOnly,
     unitCredits: 1,
@@ -355,4 +360,76 @@ it("preserves original variation requirements while retaining per-image prompts"
   });
   expect(response.status).toBe(202);
   expect(create.mock.calls[0]?.[1]).toMatchObject({ prompt, variation: { items } });
+});
+
+it("batch delivery scopes one lookup, omits inaccessible objects and requires authentication", async () => {
+  const own = crypto.randomUUID(),
+    other = crypto.randomUUID();
+  const assetLocations = vi
+    .fn<ImageRepository["assetLocations"]>()
+    .mockResolvedValue([{ id: own, objectKey: `0057849613/${crypto.randomUUID()}/${own}.png` }]);
+  const { app } = fixture(false, false, {
+    assetLocations,
+    signAsset: assetDeliverySigner(
+      "https://assets.example.test",
+      "fixture-signing-secret-with-32-characters",
+    ),
+  });
+  const body = JSON.stringify({ ids: [own, other, own] });
+  const unauthenticated = await app.request("/api/v1/image-assets/deliveries", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+  });
+  expect(unauthenticated.status).toBe(401);
+  expect(assetLocations).not.toHaveBeenCalled();
+  const response = await app.request("/api/v1/image-assets/deliveries", {
+    method: "POST",
+    headers: { Authorization: "Bearer fixture", "Content-Type": "application/json" },
+    body,
+  });
+  expect(response.status).toBe(200);
+  const result = unwrapApiData(await response.json());
+  expect(result).toMatchObject({
+    data: [{ id: own, delivery: { download_url: expect.stringContaining("variant=download") } }],
+  });
+  expect(assetLocations).toHaveBeenCalledTimes(1);
+  expect(assetLocations).toHaveBeenCalledWith(
+    expect.objectContaining({ organizationId: expect.any(String), userId: expect.any(String) }),
+    [own, other],
+  );
+});
+it("expired original download fallback redirects to the original capability", async () => {
+  const id = crypto.randomUUID();
+  const asset = vi.fn<ImageRepository["asset"]>().mockResolvedValue({
+    id,
+    objectKey: `0057849613/${crypto.randomUUID()}/${id}.png`,
+    mimeType: "image/png",
+    width: 1,
+    height: 1,
+    bytes: 3,
+    sha256: "fixture",
+  });
+  const { app } = fixture(false, false, {
+    asset,
+    signAsset: assetDeliverySigner(
+      "https://assets.example.test",
+      "fixture-signing-secret-with-32-characters",
+    ),
+  });
+  const response = await app.request(`/api/v1/image-assets/${id}/content?download=1`, {
+    headers: { Authorization: "Bearer fixture" },
+  });
+  expect(response.status).toBe(302);
+  expect(new URL(response.headers.get("Location") ?? "").searchParams.get("variant")).toBe(
+    "download",
+  );
+  asset.mockResolvedValue(null);
+  expect(
+    (
+      await app.request(`/api/v1/image-assets/${id}/content?download=1`, {
+        headers: { Authorization: "Bearer fixture" },
+      })
+    ).status,
+  ).toBe(404);
 });

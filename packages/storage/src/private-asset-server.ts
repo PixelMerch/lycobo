@@ -10,6 +10,7 @@ export interface PrivateAssetOptions {
     body: ReadableStream<Uint8Array>,
     variant: "preview" | "thumbnail",
   ) => Promise<Uint8Array>;
+  signDownload?: (key: string, expiresIn: number) => Promise<string>;
   cache?: {
     match(request: Request): Promise<Response | undefined>;
     put(request: Request, response: Response): Promise<void>;
@@ -64,6 +65,21 @@ export async function servePrivateAsset(request: Request, options: PrivateAssetO
     ))
   )
     return fail(403);
+  if (variant === "download" && request.method === "GET" && options.signDownload) {
+    const location = await options.signDownload(
+      key,
+      Math.min(300, expires - Math.floor(Date.now() / 1000)),
+    );
+    const headers = new Headers({
+      Location: location,
+      "Cache-Control": "private, no-store",
+      "Referrer-Policy": "no-referrer",
+    });
+    const origin = request.headers.get("Origin");
+    if (origin && allowed.includes(origin)) headers.set("Access-Control-Allow-Origin", origin);
+    headers.set("Vary", "Origin, Referer, Sec-Fetch-Dest");
+    return new Response(null, { status: 302, headers });
+  }
   // Authenticate before every cache lookup. Signatures never fragment the object cache.
   const displayVariant = variant === "thumbnail" ? "thumbnail" : "preview";
   const objectKey = variant === "download" ? key : displayObjectKey(key, displayVariant);
@@ -72,30 +88,27 @@ export async function servePrivateAsset(request: Request, options: PrivateAssetO
   let response = await options.cache?.match(cacheKey);
   const hit = !!response;
   if (!response) {
-    let object = await bucket.head(objectKey);
+    const readObject = () =>
+      request.method === "HEAD" ? bucket.head(objectKey) : bucket.get(objectKey);
+    let object = await readObject();
     // Existing assets are backfilled once after authorization, never by recalling a model.
-    if (!object && variant !== "download" && options.createVariant) {
+    if (!object && request.method === "GET" && variant !== "download" && options.createVariant) {
       const original = await bucket.get(key);
       if (!original) return fail(404);
       const resized = await options.createVariant(original.body, displayVariant);
       await bucket.put(objectKey, resized, {
         httpMetadata: { contentType: "image/webp" },
       });
-      object = await bucket.head(objectKey);
+      object = await readObject();
     }
     if (!object) return fail(404);
-    let body: ReadableStream | null = null;
-    if (request.method !== "HEAD") {
-      const found = await bucket.get(objectKey);
-      if (!found) return fail(404);
-      body = found.body;
-    }
+    const body = "body" in object ? object.body : null;
     const headers = new Headers({
       "Content-Type": variant === "download" ? "image/png" : "image/webp",
       "Content-Length": String(object.size),
-      ETag: object.httpEtag,
       "Cache-Control": "public, max-age=86400",
     });
+    if (object.httpEtag) headers.set("ETag", object.httpEtag);
     response = new Response(body, { headers });
     if (request.method === "GET" && options.cache && options.background)
       options.background(
@@ -121,8 +134,9 @@ export async function servePrivateAsset(request: Request, options: PrivateAssetO
   const origin = request.headers.get("Origin");
   if (origin && allowed.includes(origin)) headers.set("Access-Control-Allow-Origin", origin);
   headers.set("Vary", "Origin, Referer, Sec-Fetch-Dest");
-  if (request.headers.get("If-None-Match") === headers.get("ETag")) {
+  if (headers.has("ETag") && request.headers.get("If-None-Match") === headers.get("ETag")) {
     headers.delete("Content-Length");
+    await response.body?.cancel();
     return new Response(null, { status: 304, headers });
   }
   return new Response(request.method === "HEAD" ? null : response.body, { headers });

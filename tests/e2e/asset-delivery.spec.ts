@@ -71,8 +71,9 @@ test("assets use signed resource URLs without business API image downloads or po
     metadata: 1,
   });
   await page.evaluate(() => window.dispatchEvent(new Event("visibilitychange")));
-  await expect.poll(() => metadata).toBe(2);
+  // Returning to an idle tab must not wake shared PG (global query policy).
   await page.clock.runFor(200);
+  expect(metadata).toBe(1);
   await expect(image).toHaveAttribute("src", `${url}&variant=thumbnail`);
   expect(resourceReads).toBe(1);
 });

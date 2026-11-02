@@ -52,5 +52,12 @@ export function assetContentUrl(id: string, thumbnail = false, download = false)
         ? parsed.data.thumbnail_url
         : parsed.data.url;
   // Compatibility for old metadata/local tooling: production responds with a signed redirect, never image bytes.
-  return `/api/v1/image-assets/${id}/content${thumbnail ? "?thumbnail=1" : ""}`;
+  return `/api/v1/image-assets/${id}/content${download ? "?download=1" : thumbnail ? "?thumbnail=1" : ""}`;
+}
+
+export function cachedImageDelivery(id: string, minimumLifetime = 60) {
+  const parsed = imageDeliverySchema.safeParse(queryClient.getQueryData(deliveryKey(id)));
+  return parsed.success && parsed.data.expires_at > Date.now() / 1000 + minimumLifetime
+    ? parsed.data
+    : null;
 }

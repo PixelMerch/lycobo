@@ -514,6 +514,19 @@ export function imageRoutes(deps: ImageApiDependencies) {
       201,
     );
   });
+  app.post("/image-assets/deliveries", async (c) => {
+    const input = z
+      .object({ ids: z.array(id).min(1).max(100) })
+      .safeParse(await c.req.json().catch(() => null));
+    if (!input.success) return fail(c, "VALIDATION_ERROR", "图片列表无效", 400);
+    if (!delivery) return fail(c, "GENERATION_NOT_CONFIGURED", "图片访问尚未配置", 503);
+    const assets = await delivery.assets(
+      c.get("principal"),
+      [...new Set(input.data.ids)].map((id) => ({ id })),
+    );
+    // Never issue capabilities for missing, expired, or other-workspace objects.
+    return c.json({ data: assets.filter((asset) => asset.delivery) });
+  });
   app.get("/image-assets/:id/delivery", async (c) => {
     const parsed = id.safeParse(c.req.param("id"));
     if (!parsed.success) return fail(c, "NOT_FOUND", "图片不存在", 404);
@@ -529,14 +542,24 @@ export function imageRoutes(deps: ImageApiDependencies) {
     if (!asset) return fail(c, "NOT_FOUND", "图片不存在", 404);
     if (deps.signAsset) {
       const urls = await deps.signAsset(asset.objectKey);
-      return c.redirect(c.req.query("thumbnail") === "1" ? urls.thumbnail_url : urls.url, 302);
+      return c.redirect(
+        c.req.query("download") === "1"
+          ? urls.download_url
+          : c.req.query("thumbnail") === "1"
+            ? urls.thumbnail_url
+            : urls.url,
+        302,
+      );
     }
     const bytes =
-      c.req.query("thumbnail") === "1"
+      c.req.query("thumbnail") === "1" && c.req.query("download") !== "1"
         ? await deps.store.thumbnail(asset)
         : await deps.store.read(asset);
     c.header("Content-Type", "image/png");
-    c.header("Content-Disposition", `inline; filename="${asset.id}.png"`);
+    c.header(
+      "Content-Disposition",
+      `${c.req.query("download") === "1" ? "attachment" : "inline"}; filename="${asset.id}.png"`,
+    );
     return c.body(new Uint8Array(bytes));
   });
   app.post("/image-tasks/:jobId/items/:itemId/reconcile-failure", async (c) => {

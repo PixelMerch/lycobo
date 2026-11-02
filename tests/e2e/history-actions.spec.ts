@@ -264,18 +264,24 @@ test("bulk download uses fresh signed originals and creates one ZIP before task 
 }) => {
   const { job } = await historyFixture(page, "high", false, 3);
   const originals: string[] = [];
-  await page.route("**/api/v1/image-assets/*/delivery", (route) => {
-    const id = new URL(route.request().url()).pathname.split("/").at(-2);
-    const base = `https://assets.example.test/${id}`;
+  let deliveryRequests = 0;
+  await page.route("**/api/v1/image-assets/deliveries", (route) => {
+    deliveryRequests++;
+    const ids: string[] = route.request().postDataJSON().ids;
     return route.fulfill({
       json: {
-        id,
-        delivery: {
-          url: `${base}.preview.webp`,
-          thumbnail_url: `${base}.thumbnail.webp`,
-          download_url: `${base}.png?variant=download`,
-          expires_at: Math.floor(Date.now() / 1000) + 300,
-        },
+        data: ids.map((id) => {
+          const base = `https://assets.example.test/${id}`;
+          return {
+            id,
+            delivery: {
+              url: `${base}.preview.webp`,
+              thumbnail_url: `${base}.thumbnail.webp`,
+              download_url: `${base}.png?variant=download`,
+              expires_at: Math.floor(Date.now() / 1000) + 300,
+            },
+          };
+        }),
       },
     });
   });
@@ -313,6 +319,12 @@ test("bulk download uses fresh signed originals and creates one ZIP before task 
   expect(bytes.includes(Buffer.from("03-生成图片.png"))).toBe(true);
   expect(originals).toHaveLength(3);
   expect(originals.every((url) => url.endsWith(".png?variant=download"))).toBe(true);
+  expect(deliveryRequests).toBe(1);
+  const repeated = page.waitForEvent("download");
+  await button.click();
+  await repeated;
+  expect(deliveryRequests).toBe(1);
+  expect(originals).toHaveLength(6);
   await expect(button).toBeEnabled();
 });
 
