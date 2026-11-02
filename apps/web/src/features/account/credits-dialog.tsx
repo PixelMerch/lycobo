@@ -1,12 +1,9 @@
-import { Avatar, Button, Modal } from "@heroui/react";
+import { Modal } from "@heroui/react";
 import { IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
-import { useEnterpriseSession } from "../auth/auth-client";
 import { CreditPacks } from "./credit-packs";
-import { useWallet } from "./wallet-client";
 import { WalletPanel } from "./wallet-panel";
 import "./account-panel.css";
 import "./credit-recharge.css";
@@ -19,12 +16,10 @@ export function CreditsDialog({
   onClose: () => void;
   initialView?: "recharge" | "billing";
 }) {
-  const wallet = useWallet();
-  const session = useEnterpriseSession();
   const [view, setView] = useState(initialView);
   const navigate = useNavigate();
   const location = useLocation();
-  const title = view === "recharge" ? "充值积分" : "订阅与账单";
+  const title = view === "recharge" ? "积分充值" : "订阅与账单";
   return (
     <Modal
       isOpen
@@ -45,48 +40,7 @@ export function CreditsDialog({
             </Modal.Header>
             <Modal.Body>
               {view === "recharge" ? (
-                <>
-                  <div className="credit-recharge-identity">
-                    <Avatar size="lg">
-                      <Avatar.Fallback>
-                        {session.data?.account.slice(0, 1).toUpperCase() ?? ""}
-                      </Avatar.Fallback>
-                    </Avatar>
-                    <div>
-                      <strong>{session.data?.account ?? "账户"}</strong>
-                      <span>企业共享账户</span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onPress={() => {
-                          onClose();
-                          if (location.pathname !== "/membership")
-                            navigate("/membership", {
-                              state: { returnTo: location.pathname + location.search },
-                            });
-                        }}
-                      >
-                        查看会员权益 →
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="credit-recharge-balance">
-                    <div>
-                      <span>企业共享积分</span>
-                      <strong>
-                        <CreditCoin size="action" />
-                        {wallet.data?.balance.toLocaleString("zh-CN") ?? "—"}
-                      </strong>
-                    </div>
-                    <Button size="sm" variant="ghost" onPress={() => setView("billing")}>
-                      积分明细
-                    </Button>
-                  </div>
-                  {wallet.isError && (
-                    <p className="credit-recharge-note">余额暂不可用，请在积分明细中重试。</p>
-                  )}
-                  <CreditPacks />
-                </>
+                <CreditPacks />
               ) : (
                 <WalletPanel
                   onRecharge={() => setView("recharge")}

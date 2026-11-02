@@ -28,7 +28,7 @@ export function CreditPreview({
     <div className="credit-preview">
       <div className="credit-preview-balance">
         <div>
-          <span>企业共享积分</span>
+          <span>可用积分</span>
           <strong>
             <CreditCoin />
             {wallet.data?.balance.toLocaleString("zh-CN") ?? "—"}

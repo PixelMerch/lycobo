@@ -5,61 +5,6 @@
   padding: var(--space-6);
   background: radial-gradient(ellipse at 0 0, #ffffff07, transparent 70%), #242426;
 }
-.credit-recharge-identity {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-block: 8px 20px;
-}
-.credit-recharge-identity > div:last-child {
-  display: grid;
-  min-width: 0;
-  gap: 4px;
-}
-.credit-recharge-identity strong {
-  font-size: var(--text-lg);
-  overflow-wrap: anywhere;
-}
-.credit-recharge-identity span {
-  color: var(--muted);
-  font-size: var(--text-sm);
-}
-.credit-recharge-identity .button {
-  justify-self: start;
-  color: var(--accent);
-  padding-inline: 0;
-}
-.credit-recharge-balance {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-.credit-recharge-balance > div {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-.credit-recharge-balance > div > span {
-  color: var(--muted);
-  font-size: var(--text-sm);
-}
-.credit-recharge-balance strong {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 999px;
-  padding: 8px 16px;
-  background: #ffffff08;
-  font-size: var(--text-xl);
-  overflow-wrap: anywhere;
-}
-.credit-recharge-balance .credit-coin {
-  color: var(--accent);
-  flex-shrink: 0;
-}
 .credit-recharge-intro,
 .credit-recharge-note {
   margin: 12px 0;
@@ -154,9 +99,5 @@
   }
   .credit-pack-price {
     font-size: var(--text-sm);
-  }
-  .credit-recharge-balance > div {
-    gap: 4px;
-    flex-wrap: wrap;
   }
 }

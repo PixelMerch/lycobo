@@ -32,10 +32,11 @@ for (const width of [1440, 320]) {
     const draft = page.getByLabel("提示词", { exact: true });
     await draft.fill("保留创作草稿，不创建付费任务");
     const header = page.locator(".topbar");
-    const balance = header.getByRole("button", { name: "企业共享积分 200，充值积分" });
+    const balance = header.getByRole("button", { name: "积分 200，充值积分" });
     await expect(balance).toBeVisible();
-    await balance.click();
-    const recharge = page.getByRole("dialog", { name: "充值积分", exact: true });
+    const topup = header.getByRole("button", { name: "补充积分", exact: true });
+    await topup.click();
+    const recharge = page.getByRole("dialog", { name: "积分充值", exact: true });
     await expect(recharge).toBeVisible();
     await expect(recharge.getByRole("tab")).toHaveCount(0);
     const pack = recharge.getByRole("radio", { name: "3,000 积分，示例价格 300 元", exact: true });
@@ -44,12 +45,10 @@ for (const width of [1440, 320]) {
     await expect(recharge.getByRole("button", { name: "充值即将开放" })).toBeDisabled();
     expect(ledgerReads).toBe(0);
     await recharge.screenshot({ path: `/tmp/lycobo-redesign-recharge-${width}.png` });
-    await recharge.getByRole("button", { name: "积分明细", exact: true }).click();
-    const billing = page.getByRole("dialog", { name: "订阅与账单", exact: true });
-    await expect(billing.getByText("暂无收支记录", { exact: true })).toBeVisible();
-    await expect(recharge).toHaveCount(0);
+    await expect(recharge.getByText("企业共享账户", { exact: true })).toHaveCount(0);
+    await expect(recharge.getByRole("button", { name: "积分明细", exact: true })).toHaveCount(0);
     await page.keyboard.press("Escape");
-    await expect(balance).toBeFocused();
+    await expect(topup).toBeFocused();
     await expect(draft).toHaveValue("保留创作草稿，不创建付费任务");
     await header.getByRole("button", { name: "开通会员", exact: true }).click();
     await expect(page).toHaveURL(/\/membership$/);
@@ -104,7 +103,7 @@ test("credit hover preview shares reads, supports keyboard and leaves recharge a
   await page.keyboard.press("Escape");
   await expect(balance).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("dialog", { name: "充值积分", exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "积分充值", exact: true })).toBeVisible();
   await expect(preview).toHaveCount(0);
 });
 
@@ -114,14 +113,12 @@ test("unavailable balance stays unknown in recharge instead of becoming zero", a
     route.fulfill({ status: 503, json: apiFixture({}, 503) }),
   );
   await page.goto("/");
-  const balance = page.locator(".topbar").getByRole("button", { name: "企业共享积分 —，充值积分" });
+  const balance = page.locator(".topbar").getByRole("button", { name: "积分 —，充值积分" });
   await expect(balance).toBeVisible();
   await balance.click();
-  const dialog = page.getByRole("dialog", { name: "充值积分", exact: true });
-  await expect(dialog.locator(".credit-recharge-balance strong")).toHaveText("—");
-  await expect(
-    dialog.getByText("余额暂不可用，请在积分明细中重试。", { exact: true }),
-  ).toBeVisible();
+  const dialog = page.getByRole("dialog", { name: "积分充值", exact: true });
+  await expect(dialog.getByRole("radio")).toHaveCount(9);
+  await expect(dialog.locator(".credit-recharge-balance")).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(balance).toBeFocused();
 });
@@ -182,7 +179,7 @@ test("credit preview shows only three real entries and reopens from cache", asyn
   await expect(preview.getByRole("listitem")).toHaveCount(3);
   expect(reads).toBe(initialReads);
   await balance.click();
-  await expect(page.getByRole("dialog", { name: "充值积分", exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "积分充值", exact: true })).toBeVisible();
   await expect(preview).toHaveCount(0);
   expect(orders).toBe(0);
 });

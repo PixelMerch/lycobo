@@ -15,6 +15,8 @@ export function HeaderBenefits() {
   const wallet = useWallet();
   const [panel, setPanel] = useState<"recharge" | "billing" | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const rechargeTrigger = useRef<HTMLButtonElement>(null);
+  const suppressRestoredHover = useRef(false);
   const preview = useHoverMenu(trigger, ".credit-preview button", {
     openDelay: 250,
     closeDelay: 200,
@@ -23,9 +25,9 @@ export function HeaderBenefits() {
   const navigate = useNavigate();
   const location = useLocation();
   const balanceLabel = wallet.data?.balance.toLocaleString("zh-CN") ?? "—";
-  const openPanel = (next: "recharge" | "billing") => {
+  const openPanel = (next: "recharge" | "billing", source = trigger.current) => {
     preview.close();
-    trigger.current?.focus({ preventScroll: true });
+    source?.focus({ preventScroll: true });
     setPanel(next);
   };
   const openMembership = () => {
@@ -35,40 +37,65 @@ export function HeaderBenefits() {
     }
   };
   const closePanel = () => {
+    suppressRestoredHover.current = true;
     preview.close();
     setPanel(null);
   };
   return (
     <>
-      <div className="header-benefits">
+      <div className="header-purchase-actions">
         <Button
-          ref={trigger}
-          variant="tertiary"
+          ref={rechargeTrigger}
+          variant="secondary"
           size="sm"
-          className="header-balance"
-          aria-label={`企业共享积分 ${balanceLabel}，充值积分`}
-          aria-description="点击充值；悬停或按向下键查看积分明细"
-          aria-haspopup="dialog"
-          aria-expanded={preview.isOpen}
-          {...(panel === null ? preview.triggerProps : {})}
-          onKeyDown={(event) => {
-            if (event.key === "ArrowDown") {
-              event.preventDefault();
-              preview.openFromKeyboard();
-            }
-          }}
-          onPress={() => openPanel("recharge")}
+          className="header-recharge"
+          onPress={() => openPanel("recharge", rechargeTrigger.current)}
         >
-          <CreditCoin size="default" />
-          <span className="header-balance-value">{balanceLabel}</span>
-          <span className="header-balance-unit">积分</span>
+          补充积分
         </Button>
-        <span className="header-benefits-divider" aria-hidden="true" />
-        <Button variant="tertiary" size="sm" className="header-membership" onPress={openMembership}>
-          <UiIcon icon={IconCrown} />
-          开通会员
-          <UiIcon icon={IconChevronRight} size="small" />
-        </Button>
+        <div className="header-benefits">
+          <Button
+            ref={trigger}
+            variant="tertiary"
+            size="sm"
+            className="header-balance"
+            aria-label={`积分 ${balanceLabel}，充值积分`}
+            aria-description="点击充值；悬停或按向下键查看积分明细"
+            aria-haspopup="dialog"
+            aria-expanded={preview.isOpen}
+            {...(panel === null ? preview.triggerProps : {})}
+            onPointerEnter={(event) => {
+              if (panel === null && !suppressRestoredHover.current)
+                preview.triggerProps.onPointerEnter(event);
+            }}
+            onPointerLeave={(event) => {
+              suppressRestoredHover.current = false;
+              preview.triggerProps.onPointerLeave(event);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowDown") {
+                event.preventDefault();
+                preview.openFromKeyboard();
+              }
+            }}
+            onPress={() => openPanel("recharge")}
+          >
+            <CreditCoin size="default" />
+            <span className="header-balance-value">{balanceLabel}</span>
+            <span className="header-balance-unit">积分</span>
+          </Button>
+          <span className="header-benefits-divider" aria-hidden="true" />
+          <Button
+            variant="tertiary"
+            size="sm"
+            className="header-membership"
+            onPress={openMembership}
+          >
+            <UiIcon icon={IconCrown} />
+            开通会员
+            <UiIcon icon={IconChevronRight} size="small" />
+          </Button>
+        </div>
       </div>
       <Popover.Content
         triggerRef={trigger}

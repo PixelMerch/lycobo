@@ -1,3 +1,28 @@
+.header-purchase-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.header-recharge.button {
+  height: 38px;
+  border-radius: 999px;
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+}
+@media (max-width: 767px), (pointer: coarse) {
+  .header-recharge.button {
+    min-height: 44px;
+  }
+}
+@media (max-width: 767px) {
+  .header-purchase-actions {
+    gap: 4px;
+  }
+  .header-recharge.button {
+    padding-inline: 8px;
+  }
+}
 .header-benefits {
   display: flex;
   align-items: center;
