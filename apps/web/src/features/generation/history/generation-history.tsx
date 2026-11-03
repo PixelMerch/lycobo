@@ -18,9 +18,9 @@ import { HistoryPrompt, HistoryTaskActions } from "./history-task-tools";
 import { ResultImage } from "./result-image";
 import { useHistoryTaskTarget } from "./use-history-task-target";
 
-/** Batches of five or more report their progress; past ten images they fold to two rows. */
+/** Batches of five or more report their progress; larger batches initially show twelve images. */
 const batchSize = 5;
-const batchFold = 10;
+const batchFold = 12;
 function BatchProgress({ items }: { items: ImageJob["items"] }) {
   const tally = (...statuses: ImageJob["items"][number]["status"][]) =>
     items.filter((item) => statuses.includes(item.status)).length;
