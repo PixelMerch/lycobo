@@ -10,14 +10,17 @@ import {
 } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
 import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
-import { Outlet, useLocation } from "react-router";
+import { Outlet, useLocation, useNavigate } from "react-router";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
 import { AccountMenu, HeaderLogin } from "../features/account/account-menu";
 import { AccountOverlayHost } from "../features/account/account-overlays";
 import { HeaderBenefits } from "../features/account/header-benefits";
 import { useEnterpriseSession } from "../features/auth/auth-client";
+import { LoginDialog } from "../features/auth/login-dialog";
+import { useLoginPrompt } from "../features/auth/login-prompt";
 import { useImageEvents } from "../features/generation/use-image-events";
+import { PageLoading } from "./page-loading";
 import "../styles/brand.css";
 
 export interface StudioShellContext {
@@ -25,11 +28,16 @@ export interface StudioShellContext {
 }
 
 export function StudioShell() {
-  useImageEvents();
   const { pathname } = useLocation();
   const inWorkspace =
     pathname.startsWith("/create") || pathname.startsWith("/commerce") || pathname === "/workspace";
-  const signedIn = !!useEnterpriseSession().data;
+  const session = useEnterpriseSession();
+  const signedIn = !!session.data;
+  const navigate = useNavigate();
+  const loginRequested = useLoginPrompt((state) => state.isOpen);
+  const closeLogin = useLoginPrompt((state) => state.close);
+  const protectedRoute = pathname !== "/";
+  const routeNeedsLogin = protectedRoute && !signedIn;
   const [homeHeaderOpaque, setHomeHeaderOpaque] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -168,9 +176,30 @@ export function StudioShell() {
         <div className="header-actions">{signedIn ? <HeaderBenefits /> : <HeaderLogin />}</div>
       </header>
       <main className="main-content">
-        <Outlet context={{ setHomeHeaderOpaque } satisfies StudioShellContext} />
+        {routeNeedsLogin ? (
+          session.isPending ? (
+            <PageLoading />
+          ) : null
+        ) : (
+          <Outlet context={{ setHomeHeaderOpaque } satisfies StudioShellContext} />
+        )}
       </main>
+      {signedIn && <SignedInEvents />}
       {signedIn && <AccountOverlayHost onNavigate={() => setMenuOpen(false)} />}
+      {(loginRequested || (routeNeedsLogin && !session.isPending)) && (
+        <LoginDialog
+          onClose={() => {
+            closeLogin();
+            if (protectedRoute) navigate("/", { replace: true });
+          }}
+          onLoginSuccess={closeLogin}
+        />
+      )}
     </motion.div>
   );
+}
+
+function SignedInEvents() {
+  useImageEvents();
+  return null;
 }

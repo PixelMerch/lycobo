@@ -4,6 +4,8 @@ import { useNavigate } from "react-router";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
+import { useEnterpriseSession } from "../auth/auth-client";
+import { LoginRequiredInteraction } from "../auth/login-prompt";
 import { HomeRatioPicker } from "../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../generation/composer/selection-highlight";
 import { ImageApiError, useImageModels } from "../generation/generation-client";
@@ -19,7 +21,8 @@ export function HomeComposer() {
   const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const setModel = useStudioStore((s) => s.setActiveModel);
-  const catalog = useImageModels();
+  const signedIn = !!useEnterpriseSession().data;
+  const catalog = useImageModels(signedIn);
   const navigate = useNavigate();
   const catalogError = catalog.isError
     ? catalog.error instanceof ImageApiError
@@ -30,7 +33,7 @@ export function HomeComposer() {
   const canSubmit = hasPromptDescription(draft.prompt);
   const resolutions = catalog.data?.models.find((item) => item.id === model)?.enabledResolutions;
   return (
-    <div className="home-composer">
+    <LoginRequiredInteraction className="home-composer">
       <div className="home-upload">
         <ReferencePicker compact model={model} references={draft.references} />
       </div>
@@ -187,6 +190,6 @@ export function HomeComposer() {
           <UiIcon icon={IconArrowUp} size="action" />
         </Button>
       </div>
-    </div>
+    </LoginRequiredInteraction>
   );
 }

@@ -36,35 +36,120 @@ test("workspace navigation remains compact and aligned across desktop and mobile
 });
 
 for (const mobile of [false, true]) {
-  test(`signed-out navigation hides account settings and preserves drafts on ${mobile ? "mobile" : "desktop"}`, async ({
+  test(`signed-out navigation opens login for protected entries on ${mobile ? "mobile" : "desktop"}`, async ({
     page,
   }) => {
-    await mockImageApi(page);
+    await mockImageApi(page, { signedIn: false });
     await page.setViewportSize(mobile ? { width: 390, height: 844 } : { width: 1584, height: 993 });
-    await page.goto("/create");
-    const prompt = page.getByLabel("提示词", { exact: true });
-    await prompt.fill("保留未登录的创作草稿");
-    if (mobile) await page.getByRole("button", { name: "打开导航", exact: true }).click();
-    const navigation = page.locator(mobile ? ".mobile-nav" : ".sidebar");
-    await expect(page.getByRole("button", { name: "帮助中心", exact: true })).toHaveCount(0);
-    await expect(navigation.getByRole("button", { name: "账户设置", exact: true })).toHaveCount(0);
-    if (mobile) await navigation.getByRole("button", { name: "关闭导航", exact: true }).click();
-    await expect(prompt).toHaveValue("保留未登录的创作草稿");
-    await expect(page).toHaveURL(/\/create$/);
+    for (const entry of ["工作区", "素材库"]) {
+      await page.goto("/");
+      if (mobile) await page.getByRole("button", { name: "打开导航", exact: true }).click();
+      const navigation = page.locator(mobile ? ".mobile-nav" : ".sidebar");
+      await expect(navigation.getByRole("button", { name: "账户设置", exact: true })).toHaveCount(
+        0,
+      );
+      await expect(navigation.getByRole("button", { name: "帮助中心", exact: true })).toHaveCount(
+        0,
+      );
+      await navigation.getByRole("link", { name: entry, exact: true }).click();
+      const login = page.getByRole("dialog", { name: "欢迎使用 Lycobo", exact: true });
+      await expect(login).toBeVisible();
+      await login.getByRole("button", { name: "关闭登录", exact: true }).click();
+      await expect(page).toHaveURL(/\/$/);
+    }
   });
 }
 
-test("signed-out asset library opens login instead of an unavailable state", async ({ page }) => {
-  await mockImageApi(page);
-  await page.route("**/api/v1/image-session", (route) =>
-    route.fulfill({ status: 401, json: { message: "请先登录" } }),
-  );
-  await page.goto("/assets");
+for (const path of [
+  "/workspace",
+  "/create",
+  "/commerce/textile-set",
+  "/commerce/smart-variation",
+  "/video",
+  "/assets",
+  "/membership",
+]) {
+  test(`signed-out direct route ${path} requires login without mounting business pages`, async ({
+    page,
+  }) => {
+    await mockImageApi(page, { signedIn: false });
+    const requests: string[] = [];
+    page.on("request", (request) => {
+      if (/\/api\/v1\/(image-session|image-assets|image-tasks|image-uploads)/.test(request.url()))
+        requests.push(request.url());
+    });
+    await page.goto(path);
+    const login = page.getByRole("dialog", { name: "欢迎使用 Lycobo", exact: true });
+    await expect(login).toBeVisible();
+    await expect(page.getByText("素材暂时不可用", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("请先登录", { exact: true })).toHaveCount(0);
+    await expect(page.locator(".composer-panel, .asset-browser")).toHaveCount(0);
+    expect(requests).toEqual([]);
+    await login.getByRole("button", { name: "关闭登录", exact: true }).click();
+    await expect(page).toHaveURL(/\/$/);
+  });
+}
+
+for (const action of [
+  "upload",
+  "keyboard-upload",
+  "prompt",
+  "settings",
+  "shortcut",
+  "file-input",
+] as const) {
+  test(`homepage ${action} requires login before changing drafts or selecting files`, async ({
+    page,
+  }) => {
+    await mockImageApi(page, { signedIn: false });
+    let fileChoosers = 0;
+    page.on("filechooser", () => fileChoosers++);
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "电商创作灵感" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "欢迎使用 Lycobo" })).toHaveCount(0);
+    const upload = page.getByRole("button", { name: "添加参考图", exact: true });
+    if (action === "upload") await upload.click();
+    if (action === "keyboard-upload") {
+      await upload.focus();
+      await upload.press("Enter");
+    }
+    if (action === "prompt") await page.getByRole("textbox", { name: "创作需求" }).click();
+    if (action === "settings")
+      await page.getByRole("button", { name: "选择创作模型", exact: true }).click();
+    if (action === "shortcut")
+      await page.getByRole("button", { name: "商品主图", exact: true }).click();
+    if (action === "file-input")
+      await page.getByLabel("添加参考图片", { exact: true }).setInputFiles({
+        name: "product.png",
+        mimeType: "image/png",
+        buffer: Buffer.from("not-read-before-login"),
+      });
+    const login = page.getByRole("dialog", { name: "欢迎使用 Lycobo", exact: true });
+    await expect(login).toBeVisible();
+    expect(fileChoosers).toBe(0);
+    await login.getByRole("button", { name: "关闭登录", exact: true }).click();
+    await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("");
+    await expect(page.locator(".reference-image-card")).toHaveCount(0);
+    await expect(page).toHaveURL(/\/$/);
+  });
+}
+
+test("homepage inspirations remain browsable while applying a prompt requires login", async ({
+  page,
+}) => {
+  await mockImageApi(page, { signedIn: false });
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: /^查看灵感：/ })
+    .first()
+    .click();
+  const detail = page.getByRole("dialog", { name: /^灵感详情：/ });
+  await expect(detail).toBeVisible();
+  await detail.getByRole("button", { name: "使用提示词", exact: true }).click();
   const login = page.getByRole("dialog", { name: "欢迎使用 Lycobo", exact: true });
   await expect(login).toBeVisible();
-  await expect(page.getByText("素材暂时不可用", { exact: true })).toHaveCount(0);
-  await expect(page.getByText("请先登录", { exact: true })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "重新加载", exact: true })).toHaveCount(0);
   await login.getByRole("button", { name: "关闭登录", exact: true }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(detail).toBeVisible();
+  await detail.getByRole("button", { name: "关闭灵感详情", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("");
 });

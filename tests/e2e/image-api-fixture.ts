@@ -16,7 +16,7 @@ export function apiFixture(data: unknown, status = 200) {
     error: success ? {} : { code: "AUTH_NOT_CONFIGURED" },
   };
 }
-export async function mockImageApi(page: Page) {
+export async function mockImageApi(page: Page, { signedIn = true } = {}) {
   const userId = crypto.randomUUID(),
     organizationId = crypto.randomUUID();
   // Favorites are server state; the fixture keeps them for the page's lifetime.
@@ -24,9 +24,16 @@ export async function mockImageApi(page: Page) {
   await page.route("**/api/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path.startsWith("/api/v1/auth/")) {
+      const session = path.endsWith("/session");
+      const status = session && signedIn ? 200 : session ? 401 : 503;
       await route.fulfill({
-        status: path.endsWith("/session") ? 401 : 503,
-        json: apiFixture({}, path.endsWith("/session") ? 401 : 503),
+        status,
+        json: apiFixture(
+          session && signedIn
+            ? { userId, organizationId, account: "image-fixture", role: "member" }
+            : {},
+          status,
+        ),
       });
       return;
     }

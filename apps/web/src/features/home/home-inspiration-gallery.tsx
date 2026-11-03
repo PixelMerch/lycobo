@@ -6,6 +6,7 @@ import { ConfirmDialog } from "../../components/confirm-dialog";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
 import { copyToClipboard } from "../../lib/clipboard";
+import { useRequireLogin } from "../auth/login-prompt";
 import { defaultDraft, useStudioStore } from "../generation/studio-state";
 import {
   type HomeInspiration,
@@ -89,8 +90,10 @@ export function HomeInspirationGallery() {
 
 function InspirationDetail({ item, onClose }: { item: HomeInspiration; onClose: () => void }) {
   const navigate = useNavigate();
+  const requireLogin = useRequireLogin();
   const [replaceOpen, setReplaceOpen] = useState(false);
   function apply() {
+    if (!requireLogin()) return;
     const { activeModel, updateDraft } = useStudioStore.getState();
     updateDraft(activeModel, { prompt: item.prompt });
     onClose();
@@ -123,13 +126,19 @@ function InspirationDetail({ item, onClose }: { item: HomeInspiration; onClose: 
                     <p>{item.prompt}</p>
                     <p className="home-inspiration-hint">上传你的商品图，使用这段描述开始创作。</p>
                     <div className="home-inspiration-actions">
-                      <Button variant="secondary" onPress={() => void copyToClipboard(item.prompt)}>
+                      <Button
+                        variant="secondary"
+                        onPress={() => {
+                          if (requireLogin()) void copyToClipboard(item.prompt);
+                        }}
+                      >
                         <UiIcon icon={IconCopy} size="small" />
                         复制提示词
                       </Button>
                       <Button
                         variant="primary"
                         onPress={() => {
+                          if (!requireLogin()) return;
                           const { activeModel, drafts } = useStudioStore.getState();
                           const draft = drafts[activeModel] ?? defaultDraft;
                           if (draft.prompt.trim() && draft.prompt !== item.prompt)

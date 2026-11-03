@@ -178,7 +178,7 @@ test("unavailable balance stays unknown in recharge instead of becoming zero", a
 });
 
 test("signed-out header keeps login without inventing benefits", async ({ page }) => {
-  await mockImageApi(page);
+  await mockImageApi(page, { signedIn: false });
   await page.goto("/");
   await expect(
     page.locator(".topbar").getByRole("button", { name: "登录领积分", exact: true }),

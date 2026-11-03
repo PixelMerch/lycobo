@@ -3,6 +3,7 @@ import { IconArrowUpRight } from "@tabler/icons-react";
 import { type CSSProperties, lazy, Suspense } from "react";
 import { useNavigate } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
+import { useRequireLogin } from "../auth/login-prompt";
 import { defaultDraft, useStudioStore } from "../generation/studio-state";
 import { HomeComposer } from "./home-composer";
 import { homeInspirations } from "./home-inspiration-data";
@@ -43,12 +44,14 @@ const shortcuts = [
 ];
 
 export function HomePage() {
+  const requireLogin = useRequireLogin();
   const intro = useHomeHeaderSurface();
   const model = useStudioStore((s) => s.activeModel);
   const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const navigate = useNavigate();
   function start(prompt?: string) {
+    if (!requireLogin()) return;
     // The homepage edits the same draft. Entering the workspace never submits paid work.
     if (prompt && !draft.prompt.trim()) updateDraft(model, { prompt });
     navigate("/create");

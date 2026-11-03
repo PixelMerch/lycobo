@@ -110,13 +110,13 @@ test("text generation requires a prompt and an available model", async ({ page }
 });
 
 for (const width of [320, 390, 768, 1024, 1440]) {
-  test(`responsive pages, model chooser and login stay reachable at ${width}px`, async ({
+  test(`responsive signed-in pages and model chooser stay reachable at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
     for (const path of ["/", "/create", "/assets"]) {
       await page.goto(path);
-      await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();
+      await expect(page.locator(".header-benefits")).toBeVisible();
       await expect(
         page.locator("header").getByRole("button", { name: /任务中心|通知/ }),
       ).toHaveCount(0);

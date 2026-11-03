@@ -3,6 +3,7 @@ import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { lazy, Suspense, useRef, useState } from "react";
 import { ReferenceImageCard } from "../../../components/reference-image-card";
 import { UiIcon } from "../../../components/ui-icon";
+import { useRequireLogin } from "../../auth/login-prompt";
 import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "../studio-state";
 import { readReferenceImages, referenceFileError } from "./read-reference-images";
 import { referenceDisplaySource } from "./reference-display";
@@ -45,6 +46,7 @@ export function ReferencePicker({
   prompt = "",
   onChange,
 }: PickerProps) {
+  const requireLogin = useRequireLogin();
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
   const [reading, setReading] = useState(false);
@@ -57,6 +59,7 @@ export function ReferencePicker({
     else onChange?.(next, text);
   }
   async function readFiles(files: File[]) {
+    if (!requireLogin()) return;
     if (reading) return;
     const issue = referenceFileError(files);
     if (issue) {
@@ -161,7 +164,9 @@ export function ReferencePicker({
             className="add-reference"
             isDisabled={reading || references.length >= 5}
             aria-label="添加参考图"
-            onPress={() => input.current?.click()}
+            onPress={() => {
+              if (requireLogin()) input.current?.click();
+            }}
           >
             <UiIcon icon={IconPlus} size={compact ? "default" : "action"} />
             <span>{reading ? "读取中…" : compact ? "上传商品图" : "添加图片"}</span>
