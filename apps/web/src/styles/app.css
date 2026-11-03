@@ -2330,36 +2330,27 @@ p.home-hero-kicker {
     grid-template-columns: minmax(0, 450px);
   }
 }
-/* Shared thumbnail behaviour for the history rail and the preview rail: the
- * picture zooms inside its clipped frame on hover and keyboard focus, so both
- * lists feel identical and the frame keeps its size, radius and padding. */
+/* Keep the complete image visible in both square thumbnail rails. */
 .history-thumbnail > .history-thumbnail-frame {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
   padding: 0;
   overflow: hidden;
   border-radius: 6px;
-  background: transparent;
+  background: var(--surface);
 }
 .history-thumbnail img {
   display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 0;
-  transition: transform 180ms ease;
-}
-.history-thumbnail:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) img {
-  transform: scale(1.1);
-}
-@media (prefers-reduced-motion: reduce) {
-  .history-thumbnail img {
-    transition: none;
-  }
-  .history-thumbnail:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) img {
-    transform: none;
-  }
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 6px;
 }
 .generation-meta {
   display: flex;
