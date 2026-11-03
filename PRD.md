@@ -123,7 +123,7 @@ Header登录后展示共享积分与会员中心，账户继续在侧栏底部�
 
 ## 8. 视觉与实现边界
 
-视觉唯一规范为 [DESIGN.md](DESIGN.md)：HeroUI v3、深色中性表面、#0485F7主题蓝色、紧凑导航、统一字体与圆角。交互证据见 [艺栢研究](docs/design/yibai-page-logic.md)；导航与 TK 的目标范围以本文为准。
+视觉唯一规范为 [DESIGN.md](DESIGN.md)：HeroUI v3、深色中性表面、#A8FF00青柠绿品牌色、紧凑导航、统一字体与圆角。交互证据见 [艺栢研究](docs/design/yibai-page-logic.md)；导航与 TK 的目标范围以本文为准。
 
 | 状态 | 范围 |
 | --- | --- |
