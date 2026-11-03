@@ -56,6 +56,31 @@
   display: none;
 }
 .membership-plans {
+  /* stiffness 420, damping 34: the workspace dock's spring as a CSS easing. */
+  --membership-spring: linear(
+    0,
+    0.067,
+    0.213,
+    0.382,
+    0.541,
+    0.677,
+    0.785,
+    0.866,
+    0.922,
+    0.961,
+    0.985,
+    0.999,
+    1.006,
+    1.009,
+    1.009,
+    1.008,
+    1.007,
+    1.005,
+    1.004,
+    1.003,
+    1.002,
+    1
+  );
   width: min(1440px, 100%);
   margin-inline: auto;
 }
@@ -127,16 +152,15 @@
 }
 .membership-switcher .tabs__tab {
   position: relative;
+  isolation: isolate;
   flex: 1;
   min-height: 44px;
   padding-inline: 24px;
   border-radius: 16px;
   color: #a6a6ad;
-  transition:
-    color 200ms ease,
-    background-color 200ms ease;
+  transition: color 200ms ease;
 }
-.membership-switcher .tabs__tab:is(:hover, [data-hovered="true"]) {
+.membership-switcher .tabs__tab:is(:hover, [data-hovered="true"]):not([data-selected="true"]) {
   background: #ffffff0a;
   color: #fff;
 }
@@ -144,16 +168,38 @@
   color: #fff;
   font-weight: var(--weight-semibold);
 }
-/* HeroUI's indicator slides between audiences as a soft pill, not the site-wide underline. */
-.membership-switcher .tabs__indicator {
-  top: 0;
-  bottom: auto;
-  height: 100%;
-  border-radius: 16px;
-  background: #ffffff12;
-  box-shadow: none;
+/* Both rows move the selection like the workspace dock: one frosted gradient pill that springs
+ * to the chosen item (SelectionHighlight, stiffness 420, damping 34). */
+.membership-switcher :is(.toggle-selection, .membership-cycle-pill) {
+  position: absolute;
+  border-radius: inherit;
+  background: linear-gradient(180deg, #ffffff17 0%, #ffffff0d 100%);
+  box-shadow:
+    inset 0 1px 0 #ffffff14,
+    0 6px 16px -10px #000000cc;
+  backdrop-filter: blur(12px) saturate(140%);
+  pointer-events: none;
+}
+.membership-switcher .toggle-selection {
+  inset: 0;
+  z-index: -1;
+}
+.membership-cycle-pill {
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 3);
+  border-radius: 999px;
+  transition: translate 420ms var(--membership-spring);
+}
+.membership-cycle[data-cycle="quarterly"] .membership-cycle-pill {
+  translate: 100% 0;
+}
+.membership-cycle[data-cycle="monthly"] .membership-cycle-pill {
+  translate: 200% 0;
 }
 .membership-cycle.toggle-button-group {
+  position: relative;
   width: 100%;
   padding: 4px;
   border-radius: 999px;
@@ -168,18 +214,11 @@
   border-radius: 999px;
   background: transparent;
   font-size: var(--text-sm);
+  transition: color 200ms ease;
 }
 .membership-cycle .toggle-button[data-selected="true"] {
   background: transparent;
   color: #fff;
-}
-.membership-cycle .toggle-selection {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background: #3a3c37;
-  pointer-events: none;
 }
 .membership-panels {
   position: relative;
@@ -580,7 +619,6 @@
   color: #a3a69b;
 }
 .membership-faq .accordion__body {
-  max-width: 85ch;
   padding: 0 16px 24px;
   color: #b5bcae;
   font-size: var(--text-sm);
@@ -696,6 +734,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .membership-switcher .tabs__tab,
+  .membership-cycle-pill,
   .membership-faq .accordion__trigger,
   .membership-plan.card,
   .membership-plan-action.button[data-disabled] {

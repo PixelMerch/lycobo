@@ -20,6 +20,12 @@ import {
   teamMembershipPricing,
 } from "./membership-pricing";
 
+const audiences = [
+  { id: "personal", label: "个人" },
+  { id: "team", label: "团队" },
+  { id: "enterprise", label: "企业" },
+] as const;
+
 // Every figure in the headline and badges is derived from the price table, never typed by hand.
 const lowestCredit = Math.min(
   ...membershipCycles.map((cycle) =>
@@ -220,23 +226,23 @@ export function MembershipPlans() {
         <div className="membership-switcher">
           <Tabs.ListContainer>
             <Tabs.List aria-label="订阅类型">
-              <Tabs.Tab id="personal">
-                个人
-                <Tabs.Indicator />
-              </Tabs.Tab>
-              <Tabs.Tab id="team">
-                团队
-                <Tabs.Indicator />
-              </Tabs.Tab>
-              <Tabs.Tab id="enterprise">
-                企业
-                <Tabs.Indicator />
-              </Tabs.Tab>
+              {audiences.map((item) => (
+                <Tabs.Tab key={item.id} id={item.id}>
+                  {item.id === audience && (
+                    <SelectionHighlight
+                      layoutId="membership-audience-selection"
+                      layoutDependency={audience}
+                    />
+                  )}
+                  {item.label}
+                </Tabs.Tab>
+              ))}
             </Tabs.List>
           </Tabs.ListContainer>
           {audience !== "enterprise" && (
             <ToggleButtonGroup
               aria-label="会员周期"
+              data-cycle={cycle}
               selectedKeys={[cycle]}
               selectionMode="single"
               disallowEmptySelection
@@ -247,6 +253,10 @@ export function MembershipPlans() {
                 if (next) setCycle(next.id);
               }}
             >
+              {/* React Aria renders Tabs' children twice to build the tab collection, so a
+                  shared motion layoutId here would hand off to the hidden copy. One persistent
+                  pill slides by CSS instead, on the dock's spring curve. */}
+              <span className="membership-cycle-pill" aria-hidden="true" />
               {membershipCycles.map((item) => {
                 const discount = lowestDiscount(audiencePlans, item.id);
                 const hint = discount < 10 ? `${hintId}-${item.id}` : undefined;
@@ -257,12 +267,6 @@ export function MembershipPlans() {
                     aria-label={item.label}
                     {...(hint ? { "aria-describedby": hint } : {})}
                   >
-                    {item.id === cycle && (
-                      <SelectionHighlight
-                        layoutId="membership-cycle-selection"
-                        layoutDependency={cycle}
-                      />
-                    )}
                     {item.label}
                     {hint && (
                       <span id={hint} className="membership-cycle-hint">
