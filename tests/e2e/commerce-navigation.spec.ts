@@ -35,7 +35,11 @@ test("tool search, categories and unavailable tools do not trigger paid work", a
   await expect(dialog.getByText("没有匹配的工具")).toBeVisible();
   await dialog.getByRole("textbox", { name: "搜索电商工具" }).fill("");
   await dialog.getByRole("radio", { name: "商品视频", exact: true }).click();
-  await expect(dialog.getByRole("button", { name: /商品视频/ })).toBeDisabled();
+  const video = dialog.getByRole("button", { name: /^视频创作/ });
+  await expect(video).toContainText("生成即将开放");
+  await video.click();
+  await expect(page).toHaveURL(/\/video$/);
+  await expect(page.getByRole("button", { name: "视频生成即将开放", exact: true })).toBeDisabled();
   expect(submissions).toEqual([]);
 });
 

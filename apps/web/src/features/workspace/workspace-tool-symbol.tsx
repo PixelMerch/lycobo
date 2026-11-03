@@ -1,5 +1,5 @@
 import { Tooltip } from "@heroui/react";
-import { IconCamera, IconLayoutCollage, IconWand } from "@tabler/icons-react";
+import { IconCamera, IconLayoutCollage, IconMovie, IconWand } from "@tabler/icons-react";
 import { useLocation } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { useComposerHeroScroll } from "./use-composer-hero-scroll";
@@ -8,7 +8,12 @@ import { WorkspaceToolPreview } from "./workspace-tool-preview";
 
 type ToolId = (typeof workspaceTools)[number]["id"];
 /** Shared by the workspace symbols and the asset library's 功能 filter. */
-export const toolIcons = { create: IconCamera, textile: IconLayoutCollage, variation: IconWand };
+export const toolIcons = {
+  create: IconCamera,
+  textile: IconLayoutCollage,
+  variation: IconWand,
+  video: IconMovie,
+};
 
 export function WorkspaceToolSymbol({ tool }: { tool: ToolId }) {
   return (

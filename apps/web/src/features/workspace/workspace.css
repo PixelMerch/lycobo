@@ -62,6 +62,17 @@
   --tool-ink: #00281b;
   --tool-soft: #9ff0d0;
 }
+:is(
+  .unified-workspace,
+  .workspace-tool-shortcut,
+  .workspace-composer-hero,
+  .workspace-tool-symbol,
+  .workspace-tool-preview-card
+)[data-tool="video"] {
+  --tool-accent: #7cc4ff;
+  --tool-ink: #00213a;
+  --tool-soft: #b9e0ff;
+}
 .workspace-tool-symbol {
   display: inline-flex;
   align-items: center;
@@ -273,6 +284,22 @@
   margin: 0 4px;
   background: #ffffff14;
 }
+/* Four tools and 全部工具 need 831px. Narrower desktop docks drop the purpose line, which
+ * stays in each tool's preview and description, so every entry remains visible. */
+@media (min-width: 768px) {
+  @container workspace-dock (max-width: 830px) {
+    .workspace-tool-bar {
+      gap: 4px;
+    }
+    .workspace-tool-shortcut.button {
+      gap: 8px;
+      padding-right: 8px;
+    }
+    .workspace-tool-note {
+      display: none;
+    }
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .workspace-tool-shortcut.button,
   .workspace-tool-shortcut .workspace-tool-symbol,
@@ -389,6 +416,7 @@
   line-height: var(--leading-xs);
 }
 .workspace-history-heading {
+  container: workspace-dock / inline-size;
   display: flex;
   align-items: center;
   position: sticky;

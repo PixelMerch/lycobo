@@ -20,8 +20,13 @@ import {
   sameFilters,
 } from "./asset-library-client";
 
+// The asset API filters by image tools only; 视频创作 has no generated assets yet.
+const libraryTools = workspaceTools.filter(
+  (tool): tool is Extract<(typeof workspaceTools)[number], { id: ImageTool }> =>
+    tool.id !== "video",
+);
 export const toolNames = Object.fromEntries(
-  workspaceTools.map((tool) => [tool.id, tool.name]),
+  libraryTools.map((tool) => [tool.id, tool.name]),
 ) as Record<ImageTool, string>;
 const sources = [
   { id: "generated", label: "生成素材", icon: IconPhoto },
@@ -112,7 +117,7 @@ export function AssetFilters({
         value={filters.tool}
         isDisabled={disabled}
         onChange={(key) => {
-          const tool = workspaceTools.find((entry) => entry.id === key)?.id;
+          const tool = libraryTools.find((entry) => entry.id === key)?.id;
           set({ tool: tool ?? "all" });
         }}
       >
@@ -131,7 +136,7 @@ export function AssetFilters({
               <span>全部功能</span>
               <ListBox.ItemIndicator />
             </ListBox.Item>
-            {workspaceTools.map((tool) => (
+            {libraryTools.map((tool) => (
               <ListBox.Item
                 className="model-options"
                 key={tool.id}

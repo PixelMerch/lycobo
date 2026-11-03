@@ -9,6 +9,8 @@ import {
 } from "../../generation/references/read-reference-images";
 import { referenceDisplaySource } from "../../generation/references/reference-display";
 import type { ReferenceImage } from "../../generation/studio-state";
+// The field brings its own styles so other tools (视频创作) can reuse it.
+import "./textile-set.css";
 
 const ImageViewer = lazy(() =>
   import("../../../components/image-viewer").then((module) => ({ default: module.ImageViewer })),

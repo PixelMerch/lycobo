@@ -81,7 +81,13 @@ for (const width of [390, 1440]) {
     await page.mouse.move(0, 0);
     const allTools = page.getByRole("button", { name: "全部工具", exact: true });
     // The dock names every entry on screen, so hovering adds no tooltip.
-    await expect(allTools).toContainText("视频即将开放");
+    await expect(allTools).toContainText("按分类查找");
+    if (width >= 1440) {
+      // Four tools and 全部工具 fit; narrower desktop docks only drop the purpose line.
+      const dock = page.getByRole("navigation", { name: "电商创作工具" });
+      await expect(dock.getByRole("button")).toHaveCount(5);
+      expect(await dock.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    }
     await allTools.hover();
     await page.screenshot({ path: `/tmp/lycobo-tabs-hover-${width}.png` });
     await expect(page.getByRole("tooltip")).toHaveCount(0);

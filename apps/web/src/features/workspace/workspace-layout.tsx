@@ -10,6 +10,7 @@ import { HistoryIndex } from "../generation/history/history-index";
 import type { HistoryRestore } from "../generation/history/history-task-tools";
 import { useStudioStore } from "../generation/studio-state";
 import { BackToTopButton } from "../generation/workspace-page";
+import { VideoHistory, VideoHistoryRail } from "../video/video-history";
 import { toolForPath, useWorkspaceState } from "./workspace-state";
 import { WorkspaceToolPicker } from "./workspace-tool-picker";
 import "./workspace.css";
@@ -94,9 +95,17 @@ export function WorkspaceLayout() {
       </ToggleButtonGroup>
       <Outlet />
       <section className="results-panel" aria-label="工作区历史记录">
-        <GenerationHistory key={currentTool.id} tool={historyTool} onRestore={restore} />
+        {historyTool === "video" ? (
+          <VideoHistory />
+        ) : (
+          <GenerationHistory key={historyTool} tool={historyTool} onRestore={restore} />
+        )}
       </section>
-      <HistoryIndex key={currentTool.id} tool={historyTool} />
+      {historyTool === "video" ? (
+        <VideoHistoryRail />
+      ) : (
+        <HistoryIndex key={historyTool} tool={historyTool} />
+      )}
       <BackToTopButton />
       <ConfirmDialog
         isOpen={restorePending !== null}

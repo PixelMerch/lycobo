@@ -8,7 +8,12 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from "@heroui/react";
-import { IconArrowUpRight, IconLayoutGrid, IconSearch, IconVideo } from "@tabler/icons-react";
+import {
+  IconArrowUpRight,
+  IconLayoutGrid,
+  IconPlayerPlayFilled,
+  IconSearch,
+} from "@tabler/icons-react";
 import { MotionConfig, motion } from "motion/react";
 import { useId, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
@@ -31,8 +36,6 @@ export function WorkspaceToolPicker() {
       (category === "全部工具" || tool.category === category) &&
       `${tool.name}${tool.description}`.includes(search.trim()),
   );
-  const showVideo =
-    (category === "商品视频" || category === "全部工具") && "商品视频".includes(search.trim());
   return (
     <>
       <MotionConfig reducedMotion="user">
@@ -86,7 +89,7 @@ export function WorkspaceToolPicker() {
             <span className="workspace-tool-label">
               <span className="workspace-tool-name">全部工具</span>
               <span className="workspace-tool-note" id={`${noteId}-more`}>
-                视频即将开放
+                按分类查找
               </span>
             </span>
           </Button>
@@ -178,6 +181,11 @@ export function WorkspaceToolPicker() {
                               <span />
                             </span>
                           )}
+                          {tool.id === "video" && (
+                            <span className="workspace-video-symbol">
+                              <UiIcon icon={IconPlayerPlayFilled} size="action" />
+                            </span>
+                          )}
                         </span>
                         <span className="workspace-tool-caption">
                           <span className="workspace-tool-title">
@@ -188,6 +196,8 @@ export function WorkspaceToolPicker() {
                         </span>
                         {tool.id === "variation" ? (
                           <span className="workspace-tool-badge">先确认计划</span>
+                        ) : tool.id === "video" ? (
+                          <span className="workspace-tool-badge">生成即将开放</span>
                         ) : (
                           tool.id === current.id && (
                             <span className="workspace-tool-badge">当前使用</span>
@@ -195,29 +205,7 @@ export function WorkspaceToolPicker() {
                         )}
                       </Button>
                     ))}
-                    {showVideo && (
-                      <Button isDisabled variant="secondary" className="workspace-tool-card">
-                        <span
-                          className="workspace-tool-art workspace-tool-art--video"
-                          aria-hidden="true"
-                        >
-                          <img src="/studio/models/image-2-5-2.webp" alt="" loading="lazy" />
-                          <span className="workspace-video-symbol">
-                            <UiIcon icon={IconVideo} size="action" />
-                          </span>
-                        </span>
-                        <span className="workspace-tool-caption">
-                          <span className="workspace-tool-title">
-                            <strong>商品视频</strong>
-                          </span>
-                          <small>让商品动起来</small>
-                        </span>
-                        <span className="workspace-tool-badge">即将开放</span>
-                      </Button>
-                    )}
-                    {!visible.length && !showVideo && (
-                      <p className="workspace-tools-empty">没有匹配的工具</p>
-                    )}
+                    {!visible.length && <p className="workspace-tools-empty">没有匹配的工具</p>}
                   </div>
                 </div>
               </Modal.Body>

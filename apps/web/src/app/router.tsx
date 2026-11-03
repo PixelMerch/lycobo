@@ -60,6 +60,12 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: "video",
+            lazy: async () => ({
+              Component: (await import("../features/video/video-page")).VideoPage,
+            }),
+          },
+          {
             path: "commerce",
             loader: () => redirect(getRecentCommerceTool().href),
           },
