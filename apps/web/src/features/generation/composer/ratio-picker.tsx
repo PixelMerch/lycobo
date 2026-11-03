@@ -216,11 +216,13 @@ export function HomeRatioPicker({
       >
         {ratios.map((ratio) => (
           <ToggleButton key={ratio} id={ratio}>
-            {ratio === value && (
-              <SelectionHighlight layoutId="home-ratio-selection" layoutDependency={value} />
-            )}
-            <RatioPreview ratio={ratio} />
-            {ratio}
+            <span className="ratio-option-visual">
+              {ratio === value && (
+                <SelectionHighlight layoutId="home-ratio-selection" layoutDependency={value} />
+              )}
+              <RatioPreview ratio={ratio} />
+              {ratio}
+            </span>
           </ToggleButton>
         ))}
       </ToggleButtonGroup>

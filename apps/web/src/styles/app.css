@@ -3594,7 +3594,7 @@ p.home-hero-kicker {
   gap: 1px;
   padding: 3px 2px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 16px;
   background: transparent;
   color: #aaa;
   scroll-snap-align: start;
@@ -3668,7 +3668,7 @@ p.home-hero-kicker {
   }
   .composer-panel .home-ratio-track .toggle-button:hover:not([data-selected="true"]) {
     color: #eee;
-    background: var(--control-hover-fill);
+    background: transparent;
   }
   .composer-panel .model-field .model-select:hover {
     background: var(--control-hover-fill);
@@ -3980,5 +3980,33 @@ p.home-hero-kicker {
     position: absolute;
     inset: -6px 0;
     border-radius: inherit;
+  }
+}
+
+/* Keep each ratio's feedback square while retaining four-column paging. */
+.home-ratio-track .ratio-option-visual {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  gap: 1px;
+  border-radius: 16px;
+}
+.home-ratio-track .toggle-button .ratio-preview {
+  margin: 0;
+}
+.composer-panel .home-ratio-track .toggle-button,
+.home-settings-options .home-ratio-track .toggle-button {
+  padding: 0;
+  background: transparent;
+}
+@media (hover: hover) {
+  .home-ratio-track .toggle-button:hover:not([data-selected="true"]) .ratio-option-visual {
+    background: var(--control-hover-fill);
   }
 }
