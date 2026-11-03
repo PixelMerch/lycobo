@@ -39,6 +39,7 @@ export function HomeComposer() {
       </div>
       <ReferencePrompt
         className="home-prompt"
+        isRequired
         value={draft.prompt}
         onChange={(prompt) => updateDraft(model, { prompt })}
         onReferencesInsert={(images, prompt) =>

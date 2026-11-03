@@ -1012,6 +1012,9 @@ p.home-hero-kicker {
   line-height: var(--leading-sm);
   font-weight: var(--weight-medium);
 }
+.required-indicator {
+  color: var(--danger);
+}
 .field-title small {
   color: var(--muted);
 }

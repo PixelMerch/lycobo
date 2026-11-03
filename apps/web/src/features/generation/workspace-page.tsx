@@ -90,6 +90,7 @@ function Workspace({ model }: { model: ModelId }) {
         <ReferencePrompt
           className="prompt-field"
           label="提示词"
+          isRequired
           inputRef={inputId}
           value={draft.prompt}
           onChange={(prompt) => updateDraft(model, { prompt })}

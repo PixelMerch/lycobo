@@ -138,6 +138,7 @@ export function ReferencePrompt({
   onReferencesInsert?: (images: ReferenceImage[], prompt: string) => void;
 }) {
   const countId = useId();
+  const labelId = useId();
   const composing = useRef(false);
   const ownRef = useRef<HTMLTextAreaElement>(null);
   const ref = inputRef ?? ownRef;
@@ -320,7 +321,11 @@ export function ReferencePrompt({
         className={className}
         {...(label ? {} : { "aria-label": "创作需求" })}
       >
-        {label && <Label>{label}</Label>}
+        {label && (
+          <Label>
+            <span id={labelId}>{label}</span>
+          </Label>
+        )}
         <div
           className="prompt-editor"
           data-count={showCount ? "" : undefined}
@@ -397,7 +402,8 @@ export function ReferencePrompt({
           ) : (
             <TextArea
               ref={ref}
-              aria-label={label ? undefined : "创作需求"}
+              aria-label={label ?? "创作需求"}
+              aria-labelledby={label ? labelId : undefined}
               aria-describedby={showCount ? countId : undefined}
               value={value}
               onChange={(event) => {

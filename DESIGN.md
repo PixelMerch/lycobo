@@ -75,6 +75,8 @@
 
 ## 3. 排版、图标与基础控件
 
+必填输入在现有字段标题旁使用红色星号（`var(--danger)`），HeroUI 字段通过 `isRequired` 显示官方标识并提供必填语义。主图制作提示词、套图计划创作需求、视频场景描述、家纺裂变主图与裂变类型、局部修改区域说明均按实际校验标记；参考图片及详情图等选填项不标星。首页无标题输入保留现有布局及必填语义。
+
 字体栈为系统字体：system-ui、-apple-system、BlinkMacSystemFont、Segoe UI、PingFang SC、Microsoft YaHei、Noto Sans CJK SC、sans-serif。导航、账户、登录、表单与正文统一引用--font-sans，--shell-font-family仅保留为别名。不新增字体 CDN。数字使用 tabular-nums，中文不加装饰字距。
 
 | Token | 字号 / 行高 | 用途 |
