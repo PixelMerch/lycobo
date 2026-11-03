@@ -455,6 +455,7 @@ body:has(.commerce-home)::-webkit-scrollbar {
   pointer-events: none;
 }
 .home-settings-options [aria-label="画面比例"] .toggle-button {
+  border-radius: 8px;
   height: 48px;
   min-height: 48px;
   flex-direction: column;

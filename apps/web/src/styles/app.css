@@ -3594,7 +3594,7 @@ p.home-hero-kicker {
   gap: 1px;
   padding: 3px 2px;
   border: 0;
-  border-radius: 18px;
+  border-radius: 8px;
   background: transparent;
   color: #aaa;
   scroll-snap-align: start;
