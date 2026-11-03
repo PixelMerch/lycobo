@@ -224,6 +224,45 @@ try {
   if (!variationClaim) throw new Error("Variation claim missing");
   await repository.finish(variationClaim, { errorCode: "FIXTURE_FAILED", unknown: false });
   assert.equal((await repository.wallet(scope)).balance, 18);
+  // Asset library over the RPC: tool and model filters, favorite flags and personal favorites.
+  const output = randomUUID();
+  await sql`insert into media_assets (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256)
+    values (${output},${scope.organizationId},${scope.userId},'output','image',${`fixtures/${output}.png`},'image/png',2,2,12,${"b".repeat(64)})`;
+  await sql`update generation_job_items set status='succeeded',output_asset_id=${output} where id=${variationItems[0]?.id}`;
+  await sql`update generation_jobs set model='gpt-image-2-4K' where id=${variationJob.id}`;
+  const library = (filters: Parameters<typeof repository.listAssets>[5]) =>
+    repository.listAssets(scope, 10, undefined, undefined, undefined, filters);
+  const [listedOutput] = await library({ tool: "variation", model: "gpt-image-2" });
+  assert.equal(listedOutput?.id, output);
+  assert.equal(listedOutput?.tool, "variation");
+  assert.equal(listedOutput?.model, "gpt-image-2");
+  assert.equal((await library({ tool: "textile" })).length, 0);
+  assert.equal(
+    (await repository.listAssets(scope, 10, undefined, "reference")).find(
+      (row) => row.id === asset.id,
+    )?.tool,
+    null,
+  );
+  assert.equal(await repository.setAssetFavorite(scope, output, true), true);
+  assert.equal(await repository.setAssetFavorite(scope, output, true), true);
+  assert.equal(await repository.setAssetFavorite(stranger, output, true), null);
+  assert.deepEqual(await repository.favoriteAssetIds(scope), [output]);
+  assert.deepEqual(await repository.favoriteAssetIds(stranger), []);
+  const [favorite] = await library({ favorite: true });
+  assert.equal(favorite?.id, output);
+  assert.equal(favorite?.favorite, true);
+  assert.equal(await repository.setAssetFavorite(scope, output, false), false);
+  assert.equal((await library({ favorite: true })).length, 0);
+  await sql`insert into media_assets (organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256)
+    select ${scope.organizationId},${scope.userId},'output','image','fixtures/limit-'||${randomUUID()}||'-'||n,'image/png',2,2,12,${"b".repeat(64)}
+    from generate_series(1,1000) n`;
+  await sql`insert into image_asset_favorites (organization_id,user_id,asset_id)
+    select organization_id,user_id,id from media_assets
+    where organization_id=${scope.organizationId} and object_key like 'fixtures/limit-%'`;
+  await assert.rejects(repository.setAssetFavorite(scope, output, true), {
+    code: "STATE_CONFLICT",
+  });
+  assert.equal((await repository.favoriteAssetIds(scope)).length, 1000);
   const feed = cloudbaseImageEventFeed(call);
   const cursor = await feed.latest(scope);
   assert.notEqual(cursor, "0");

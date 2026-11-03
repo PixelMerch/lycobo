@@ -73,7 +73,9 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 ## 工作台浏览器回归
 
-`tests/e2e/image-preview.spec.ts` 验证全屏预览、缩放拖动、移动布局和图片切换后的说明同步；`library-dialog.spec.ts` 验证筛选、延迟加载和弹层焦点恢复。接口均由浏览器 fixture 拦截，不调用模型。
+`tests/e2e/image-preview.spec.ts` 验证全屏预览、缩放拖动、移动布局和图片切换后的说明同步；`library-dialog.spec.ts` 验证我的素材默认当前工具、页签与功能／模型筛选在分页前请求、重置、上传页签禁用筛选、服务端收藏与失败回滚、带筛选进入素材库、按天等高行与手机两列，以及弹层焦点恢复。接口均由浏览器 fixture 拦截，不调用模型。
+
+素材库筛选与收藏的数据库约束由两处隔离检查覆盖：worker `test:images` 中的 `verify-asset-library.ts` 在真实 PostgreSQL 上验证工具与模型筛选（含服务商变体归并）、参考图不命中工具筛选、收藏幂等与成员隔离、跨组织与过期素材拒绝，以及每位成员1000项上限；api `test:cloudbase-images` 对 CloudBase RPC 应用新迁移后重复验证同样的筛选、收藏与上限。
 
 并行执行不同测试任务时，为每次运行设置独立 `--output=/tmp/<本次运行目录>`，避免 Playwright 清理其他运行的 trace。历史时间断言使用浏览器自身时区计算，不能写死本机的 UTC+8 时间。完整 `pnpm test:e2e` 由远程 CI 手动触发；本地复现可指定文件或用例，不能以跳过失败用例代替查明原因。
 

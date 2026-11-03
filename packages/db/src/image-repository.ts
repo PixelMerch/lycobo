@@ -1,8 +1,10 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import {
   type AssetType,
+  assetFavoriteLimit,
   type ImageGenerationInput,
   type ImageScope,
+  type ImageTool,
   imageGenerationInputSchema,
   imageProviderModel,
   imageUnitCredits,
@@ -25,6 +27,12 @@ export class ImageRepositoryError extends Error {
   }
 }
 export type ImagePrincipal = ImageScope & { role: "admin" | "member"; uid?: string };
+/** Asset library filters applied before pagination; favorites belong to the signed-in member. */
+export type AssetFilters = {
+  tool?: ImageTool | undefined;
+  model?: string | undefined;
+  favorite?: boolean | undefined;
+};
 export type ClaimedImage = {
   itemId: string;
   position: number;
@@ -126,6 +134,16 @@ export function openImageRepository(
   const publicModelSql = sql`case when j.model in ('nano-banana-2.1','gemini-nano-banana-2.1') then 'nano-banana-2.1'
     when j.model in ('gpt-image-2.5','gpt-image-2.5-flare','gpt-image-2.5-sunburst') then 'gpt-image-2.5'
     when j.model in ('gpt-image-2','gpt-image-2-4K') then 'gpt-image-2' else j.model end`;
+  // A task's tool is recorded by its input: textile and variation inputs carry their own keys.
+  const toolMatchSql = (tool: ImageTool) =>
+    tool === "textile"
+      ? sql`j.input ? 'textileSet'`
+      : tool === "variation"
+        ? sql`j.input ? 'variation'`
+        : sql`not (j.input ? 'textileSet') and not (j.input ? 'variation')`;
+  const toolSql = sql`case when j.id is null then null when j.input ? 'textileSet' then 'textile'
+    when j.input ? 'variation' then 'variation' else 'create' end`;
+  const visibleAssetSql = sql`(a.expires_at is null or a.expires_at>now()) and a.storage_deleted_at is null`;
   const jobView = sql`j.public_id,j.id,j.organization_id,j.user_id,${publicModelSql} as model,j.prompt,j.resolution,j.aspect_ratio,
     j.requested_count,j.unit_credits,j.status,j.input,j.created_at,j.updated_at,j.completed_at,
     (select coalesce(json_agg(json_build_object('id',i.id,'position',i.position,'status',i.status,
@@ -459,7 +477,7 @@ export function openImageRepository(
     ) {
       await expireTimedOut(scope.organizationId);
       return sql`select ${jobView} from generation_jobs j where j.organization_id=${scope.organizationId} and j.archived_at is null
-        ${tool ? (tool === "textile" ? sql`and j.input ? 'textileSet'` : tool === "variation" ? sql`and j.input ? 'variation'` : sql`and not (j.input ? 'textileSet') and not (j.input ? 'variation')`) : sql``}
+        ${tool ? sql`and ${toolMatchSql(tool)}` : sql``}
         ${before ? sql`and (j.created_at,j.id) < (select created_at,id from generation_jobs where id=${before} and organization_id=${scope.organizationId})` : sql``}
         order by j.created_at desc,j.id desc limit ${limit}`;
     },
@@ -509,15 +527,58 @@ export function openImageRepository(
       before?: string,
       kind?: "output" | "reference",
       type?: AssetType,
+      filters: AssetFilters = {},
     ) {
-      return sql`select a.public_id,a.id,a.kind,a.media_type as type,a.width,a.height,a.bytes,a.created_at,j.public_id as task_public_id,${publicModelSql} as model,j.prompt
+      const favorite = sql`exists(select 1 from image_asset_favorites f where f.organization_id=a.organization_id
+        and f.user_id=${scope.userId} and f.asset_id=a.id)`;
+      return sql`select a.public_id,a.id,a.kind,a.media_type as type,a.width,a.height,a.bytes,a.created_at,j.public_id as task_public_id,${publicModelSql} as model,j.prompt,
+        ${toolSql} as tool,${favorite} as favorite
         from media_assets a left join generation_job_items i on i.output_asset_id=a.id and i.organization_id=a.organization_id
         left join generation_jobs j on j.id=i.job_id and j.organization_id=a.organization_id
-        where a.organization_id=${scope.organizationId} and (a.expires_at is null or a.expires_at>now()) and a.storage_deleted_at is null
+        where a.organization_id=${scope.organizationId} and ${visibleAssetSql}
         ${kind ? sql`and a.kind=${kind}` : sql``}
         ${type ? sql`and a.media_type=${type}` : sql``}
+        ${filters.tool ? sql`and j.id is not null and ${toolMatchSql(filters.tool)}` : sql``}
+        ${filters.model ? sql`and ${publicModelSql}=${filters.model}` : sql``}
+        ${filters.favorite ? sql`and ${favorite}` : sql``}
         ${before ? sql`and (a.created_at,a.id) < (select created_at,id from media_assets where id=${before} and organization_id=${scope.organizationId})` : sql``}
         order by a.created_at desc,a.id desc limit ${limit}`;
+    },
+    /** Returns the stored state, or null when the asset is not visible to the organization. */
+    async setAssetFavorite(scope: ImageScope, assetId: string, favorite: boolean) {
+      return sql.begin(async (tx) => {
+        const [asset] =
+          await tx`select id from media_assets where id=${assetId} and organization_id=${scope.organizationId}
+          and (expires_at is null or expires_at>now()) and storage_deleted_at is null`;
+        if (!asset) return null;
+        if (!favorite) {
+          await tx`delete from image_asset_favorites where organization_id=${scope.organizationId}
+            and user_id=${scope.userId} and asset_id=${assetId}`;
+          return false;
+        }
+        // One member's favorite writes are serialized so the limit holds under concurrent requests.
+        await tx`select pg_advisory_xact_lock(hashtextextended(${`${scope.organizationId}:${scope.userId}`},71421))`;
+        const [existing] =
+          await tx`select 1 from image_asset_favorites where organization_id=${scope.organizationId}
+          and user_id=${scope.userId} and asset_id=${assetId}`;
+        if (existing) return true;
+        const [count] = await tx`select count(*)::integer as total from image_asset_favorites f
+          join media_assets a on a.id=f.asset_id and a.organization_id=f.organization_id
+          where f.organization_id=${scope.organizationId} and f.user_id=${scope.userId}
+          and (a.expires_at is null or a.expires_at>now()) and a.storage_deleted_at is null`;
+        if (Number(count?.total) >= assetFavoriteLimit)
+          throw new ImageRepositoryError("STATE_CONFLICT");
+        await tx`insert into image_asset_favorites (organization_id,user_id,asset_id)
+          values (${scope.organizationId},${scope.userId},${assetId}) on conflict do nothing`;
+        return true;
+      });
+    },
+    async favoriteAssetIds(scope: ImageScope) {
+      const rows = await sql`select f.asset_id from image_asset_favorites f
+        join media_assets a on a.id=f.asset_id and a.organization_id=f.organization_id
+        where f.organization_id=${scope.organizationId} and f.user_id=${scope.userId} and ${visibleAssetSql}
+        order by f.created_at desc,f.asset_id desc limit ${assetFavoriteLimit}`;
+      return rows.map((row) => String(row.asset_id));
     },
     async assetLocations(scope: ImageScope, ids: string[]) {
       if (!ids.length) return [];

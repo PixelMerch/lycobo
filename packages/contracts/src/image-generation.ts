@@ -234,6 +234,11 @@ export type ImageJob = z.infer<typeof imageJobSchema>;
 export const imageTasksResponseSchema = z.object({ data: z.array(imageJobSchema) });
 export const assetTypeSchema = z.enum(["image", "video", "audio"]);
 export type AssetType = z.infer<typeof assetTypeSchema>;
+/** Workspace tools that create images; history and the asset library filter by them. */
+export const imageToolSchema = z.enum(["create", "textile", "variation"]);
+export type ImageTool = z.infer<typeof imageToolSchema>;
+/** Each member keeps at most this many favorites, so the favorite id list stays bounded. */
+export const assetFavoriteLimit = 1000;
 export const imageAssetSchema = z.object({
   delivery: imageDeliverySchema.optional(),
   task_public_id: imageJobSchema.shape.public_id.nullable(),
@@ -247,9 +252,15 @@ export const imageAssetSchema = z.object({
   created_at: z.string(),
   model: z.string().nullable(),
   prompt: z.string().nullable(),
+  /** Tool of the task that produced an output; uploads have none. Optional for older servers. */
+  tool: imageToolSchema.nullable().optional(),
+  /** Whether the signed-in member favorited the asset. Optional for older servers. */
+  favorite: z.boolean().optional(),
 });
 export type ImageAsset = z.infer<typeof imageAssetSchema>;
 export const imageAssetsResponseSchema = z.object({ data: z.array(imageAssetSchema) });
+export const assetFavoriteResponseSchema = z.object({ favorite: z.boolean() });
+export const assetFavoriteIdsResponseSchema = z.object({ data: z.array(z.uuid()) });
 export const imageModelsResponseSchema = z.object({
   tools: z
     .record(

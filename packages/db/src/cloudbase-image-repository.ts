@@ -195,8 +195,15 @@ export function cloudbaseImageRepository(
     addReference: async (scope, image) => {
       await run("addReference", { ...scope, image });
     },
-    listAssets: async (scope, limit, before, kind, type) =>
-      rows.parse(await run("listAssets", { ...scope, limit, before, kind, type })),
+    listAssets: async (scope, limit, before, kind, type, filters = {}) =>
+      rows.parse(await run("listAssets", { ...scope, limit, before, kind, type, ...filters })),
+    setAssetFavorite: async (scope, id, favorite) =>
+      z
+        .boolean()
+        .nullable()
+        .parse(await run("setAssetFavorite", { ...scope, id, favorite })),
+    favoriteAssetIds: async (scope) =>
+      z.array(z.uuid()).parse(await run("favoriteAssetIds", scope)),
     assetLocations: async (scope, ids) =>
       z
         .array(z.object({ id: z.uuid(), objectKey: z.string() }))

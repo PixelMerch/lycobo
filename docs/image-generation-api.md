@@ -53,7 +53,9 @@
 | GET /api/v1/image-tasks?limit=20&before=任务UUID | 组织内任务列表，按创建时间/ID 倒序，最大 100 条 |
 | GET /api/v1/image-tasks/:id | 组织内任务、输入快照、逐图状态与输出元数据 |
 | POST /api/v1/image-assets | 原始 PNG/JPEG/WebP 文件体，最大 10MB，返回资产 ID 与实际尺寸 |
-| GET /api/v1/image-assets?limit=30&before=资产UUID&kind=output&type=image | 组织内素材列表；可选kind=output/reference区分来源，type=image/video/audio区分媒体类型，均在分页前筛选；省略筛选保持兼容。当前生成和存储仅接入图片，type来自media_assets.media_type，旧记录及新图片默认image；public_id为图片编号，task_public_id为生成任务编号，参考图无所属生成任务时为null |
+| GET /api/v1/image-assets?limit=30&before=资产UUID&kind=output&type=image&tool=textile&model=gpt-image-2.5&favorite=true | 组织内素材列表；可选kind=output/reference区分来源，type=image/video/audio区分媒体类型，tool=create/textile/variation按所属任务的工具筛选（参考图没有任务，不会命中），model按公开模型编号筛选（服务商变体归并到公开编号），favorite=true只返回当前成员收藏的素材；全部在分页前执行，省略筛选保持兼容。当前生成和存储仅接入图片，type来自media_assets.media_type，旧记录及新图片默认image；public_id为图片编号，task_public_id为生成任务编号，参考图无所属生成任务时为null；tool为所属工具（参考图为null），favorite为当前成员是否收藏 |
+| GET /api/v1/image-asset-favorites | 当前成员收藏的素材 ID，按收藏时间倒序，最多1000个；过期或已删除的素材不返回 |
+| PUT /api/v1/image-assets/:id/favorite、DELETE 同路径 | 收藏／取消收藏，幂等，返回 `{ favorite }`；素材不属于当前组织或已不可见返回404；每位成员最多收藏1000项，超出返回409 STATE_CONFLICT“最多收藏 1000 项，请先取消部分收藏” |
 | GET /api/v1/image-assets/:id/content | 启用独立资源域名后，仅鉴权并重定向到签名链接；本地兼容读取 |
 | GET /api/v1/image-assets/:id/delivery | 身份与组织验证后按需刷新原图、缩略图与下载链接 |
 | POST /api/v1/image-tasks/:jobId/items/:itemId/reconcile-failure | 管理员核对服务商后确认未成功，释放预留积分；不重发模型请求 |
@@ -240,3 +242,9 @@ Worker 以 `Image generation stage timing` 输出结构化分段计时，包含 
 ## 历史记录删除
 
 `DELETE /api/v1/image-tasks/:id` 复用企业会话、可信来源保护与组织隔离，成功返回 `{id}`（统一 envelope），重复删除幂等；其他组织或未知 ID 返回404。迁移0025为 `generation_jobs` 添加可空 `archived_at`；历史查询排除归档记录，并通过持久任务事件通知其他会话。删除仅归档历史展示，不删除素材、任务详情、outbox或账本，不取消执行、不重试、不退款。部署时先迁移再更新 API。前端右侧卡片使用共享确认弹框与错误Toast。
+
+## 素材库筛选与收藏
+
+2026-11-03 起，素材库页面与各工具右侧的“我的素材”使用上表的筛选和收藏接口。收藏存于 `image_asset_favorites`（组织、成员、素材联合主键，组合外键约束素材归属与成员关系，按成员与收藏时间建索引），按成员区分；数量上限在同一成员的事务级 advisory lock 内校验，并发收藏不会超出。工具由任务输入判定：含 `textileSet` 为家纺裂变，含 `variation` 为套图计划，其余为主图制作，与历史筛选一致。
+
+迁移：本地与 Supabase 链路为 `packages/db/migrations/0038_asset_favorites.sql`；CloudBase 共享 PG 为 `cloudbase/migrations/20261103100000_asset_favorites.sql`，新建同一张表并撤销运行角色的直接表权限，只按原文逐段替换 `lycobo_image_operation` 中的 listAssets 与作用域列表并新增 setAssetFavorite、favoriteAssetIds，任一片段不匹配即中止。发布流水线不迁移数据库：需先应用 CloudBase 迁移再部署 API；新函数兼容旧 API 的调用参数，反之旧函数不认识新的收藏操作。
