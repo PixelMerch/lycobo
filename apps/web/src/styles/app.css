@@ -3588,11 +3588,11 @@ p.home-hero-kicker {
 }
 .composer-panel .home-ratio-track .toggle-button {
   flex: 0 0 calc((100% - 6px) / 4);
-  height: 64px;
-  min-height: 64px;
+  height: 48px;
+  min-height: 48px;
   flex-direction: column;
-  gap: 4px;
-  padding: 6px 2px;
+  gap: 1px;
+  padding: 3px 2px;
   border: 0;
   border-radius: 18px;
   background: transparent;
@@ -3612,8 +3612,8 @@ p.home-hero-kicker {
   pointer-events: none;
 }
 .composer-panel .home-ratio-track .ratio-preview {
-  width: 30px;
-  height: 30px;
+  width: 20px;
+  height: 20px;
 }
 .composer-panel .home-ratio-arrow.button {
   position: absolute;
