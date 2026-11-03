@@ -30,6 +30,18 @@
 .toast__description {
   text-align: center;
 }
+/* HeroUI's padded indicator otherwise adds extra space only on the left. */
+.toast-region--top .toast {
+  gap: 8px;
+}
+.toast-region--top .toast__indicator {
+  padding: 0;
+}
+.toast-region--top .toast__content {
+  flex-grow: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 /* Task status notices (local editing) use their own bottom-right region: they
  * are transient progress feedback, so they sit away from the picture and the
  * form and never push the centred copy toasts around. HeroUI positions toasts
