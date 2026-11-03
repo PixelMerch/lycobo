@@ -296,13 +296,13 @@ test("bulk download uses fresh signed originals and creates one ZIP before task 
   const button = page.getByRole("button", { name: "下载全部", exact: true });
   await expect(button).toBeVisible();
   await button.hover();
-  await expect(page.getByRole("tooltip").filter({ hasText: "3 张" })).toBeVisible();
+  await expect(page.getByRole("tooltip").filter({ hasText: "共 3 张" })).toBeVisible();
   await page.mouse.move(0, 0);
-  await expect(page.getByRole("tooltip").filter({ hasText: "3 张" })).toBeHidden();
+  await expect(page.getByRole("tooltip").filter({ hasText: "共 3 张" })).toBeHidden();
   await button.focus();
-  await expect(page.getByRole("tooltip").filter({ hasText: "3 张" })).toBeVisible();
+  await expect(page.getByRole("tooltip").filter({ hasText: "共 3 张" })).toBeVisible();
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("tooltip").filter({ hasText: "3 张" })).toBeHidden();
+  await expect(page.getByRole("tooltip").filter({ hasText: "共 3 张" })).toBeHidden();
   await expect(page.locator(".history-task-actions").getByRole("button").first()).toHaveText(
     "下载全部",
   );
