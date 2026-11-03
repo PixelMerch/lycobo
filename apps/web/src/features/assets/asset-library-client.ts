@@ -49,7 +49,9 @@ export function filtersFromSearch(search: URLSearchParams): AssetLibraryFilters 
     values.find((entry) => entry === value) ?? fallback;
   const tool = imageToolSchema.safeParse(search.get("tool"));
   const model = search.get("model");
+  const time = pick(["all", "today", "7", "30", "90"] as const, search.get("time"), "all");
   return {
+    ...(time !== "all" ? { time } : {}),
     source: pick(sources, search.get("source"), "generated"),
     tool: tool.success ? tool.data : "all",
     type: pick(mediaTypes, search.get("type"), "all"),
@@ -62,6 +64,7 @@ export function filtersToSearch(filters: AssetLibraryFilters) {
   if (filters.tool !== "all") search.set("tool", filters.tool);
   if (filters.type !== "all") search.set("type", filters.type);
   if (filters.model !== "all") search.set("model", filters.model);
+  if (filters.time && filters.time !== "all") search.set("time", filters.time);
   return search;
 }
 

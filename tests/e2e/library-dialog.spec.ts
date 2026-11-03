@@ -198,15 +198,17 @@ test("我的素材 only shows generated images while 素材库 retains its sourc
   await page.goto("/assets?tool=textile");
   await expect(page).toHaveURL(/\/assets\?tool=textile$/);
   await expect(page.getByRole("heading", { name: "素材库", level: 1 })).toBeVisible();
-  await expect(page.getByRole("tab")).toHaveText(["生成", "上传", "收藏"]);
-  await page.getByRole("tab", { name: "上传", exact: true }).click();
+  await expect(page.getByRole("tab")).toHaveCount(0);
+  await page.getByRole("button", { name: "生成素材 素材来源", exact: true }).click();
+  await page.getByRole("option", { name: "上传素材", exact: true }).click();
   await expect(page.locator(".asset-tile")).toHaveCount(1);
   await expect.poll(() => queries.at(-1)?.get("kind")).toBe("reference");
-  await page.getByRole("tab", { name: "生成", exact: true }).click();
+  await page.getByRole("button", { name: "上传素材 素材来源", exact: true }).click();
+  await page.getByRole("option", { name: "生成素材", exact: true }).click();
   await expect(page.getByRole("button", { name: "家纺裂变 功能", exact: true })).toBeVisible();
 });
 
-test("素材库 lays out day groups in full rows and two columns on phones", async ({ page }) => {
+test("素材库 shares density and time filters with 我的素材", async ({ page }) => {
   const assets = [
     asset("P10000001", { hours: 0 }, [1024, 1024]),
     asset("P10000002", { hours: 0.1 }, [960, 1280]),
@@ -219,23 +221,16 @@ test("素材库 lays out day groups in full rows and two columns on phones", asy
   await mockLibrary(page, assets);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/assets");
+  await expect(page.locator(".asset-tile")).toHaveCount(7);
+  await expect(page.locator(".asset-day")).toHaveCount(0);
+  await expect(page.locator(".asset-density-grid")).toHaveCSS(
+    "grid-template-columns",
+    /^(\S+ ){5}\S+$/,
+  );
+  await page.getByRole("button", { name: "全部时间 时间", exact: true }).click();
+  await page.getByRole("option", { name: "最近 7 天", exact: true }).click();
   await expect(page.getByRole("heading", { name: /^今天/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: /^昨天/ })).toBeVisible();
-  const rows = await page.locator(".asset-row").evaluateAll((elements) =>
-    elements.map((row) => ({
-      width: row.getBoundingClientRect().width,
-      tiles: Array.from(row.querySelectorAll(".asset-tile")).map((tile) => {
-        const box = tile.getBoundingClientRect();
-        return { left: box.left, right: box.right, height: box.height };
-      }),
-    })),
-  );
-  // A full row ends flush with the content edge; every tile in a row shares one height.
-  const first = rows[0];
-  if (!first) throw new Error("Missing asset row");
-  expect(new Set(first.tiles.map((tile) => Math.round(tile.height))).size).toBe(1);
-  const content = await page.locator(".asset-browser").boundingBox();
-  expect(first.tiles.at(-1)?.right).toBeCloseTo((content?.x ?? 0) + (content?.width ?? 0), 0);
   await page.locator(".asset-tile").first().hover();
   await expect(page.locator(".asset-tile").first().locator(".asset-tile-foot")).toHaveCSS(
     "opacity",
@@ -246,12 +241,17 @@ test("素材库 lays out day groups in full rows and two columns on phones", asy
   await expect(preview.locator(".image-preview-facts")).toContainText("图片ID：P10000001");
   await page.keyboard.press("Escape");
   await expect(preview).toHaveCount(0);
-  await page.getByRole("radio", { name: "视频", exact: true }).click();
+  await page.getByRole("button", { name: "全部类型 类型", exact: true }).click();
+  await page.getByRole("option", { name: "视频", exact: true }).click();
   await expect(page.getByText("暂无视频素材")).toBeVisible();
-  await page.getByRole("radio", { name: "图片", exact: true }).click();
-  await expect(page).toHaveURL(/\/assets\?type=image$/);
+  await page.getByRole("button", { name: "视频 类型", exact: true }).click();
+  await page.getByRole("option", { name: "图片", exact: true }).click();
+  await expect(page).toHaveURL(/type=image/);
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator(".asset-masonry").first().locator(".asset-column")).toHaveCount(2);
+  await expect(page.locator(".asset-density-grid").first()).toHaveCSS(
+    "grid-template-columns",
+    /^\S+ \S+$/,
+  );
   await expect(page.getByRole("button", { name: "图片 类型", exact: true })).toBeVisible();
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
@@ -317,4 +317,20 @@ test("我的素材 keeps filters visible while scrolling and separates the curre
   expect(badge).not.toBeNull();
   expect(check).not.toBeNull();
   expect((badge?.x ?? 0) + (badge?.width ?? 0)).toBeLessThan(check?.x ?? 0);
+});
+
+test("素材库 keeps source and filters below the header while scrolling", async ({ page }) => {
+  await mockLibrary(
+    page,
+    Array.from({ length: 48 }, (_, i) => asset(`P${String(i).padStart(8, "0")}`)),
+  );
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/assets");
+  await expect(page.locator(".asset-tile")).toHaveCount(48);
+  await page.mouse.wheel(0, 700);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(200);
+  await expect
+    .poll(async () => Math.round((await page.locator(".asset-filters").boundingBox())?.y ?? -1))
+    .toBe(60);
+  await expect(page.getByRole("button", { name: "生成素材 素材来源", exact: true })).toBeVisible();
 });

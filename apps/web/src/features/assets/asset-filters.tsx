@@ -1,6 +1,14 @@
 import { Button, ListBox, Select, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import type { ImageTool } from "@lycoboai/contracts";
-import { IconCalendar, IconLayoutGrid, IconRefresh, IconSparkles } from "@tabler/icons-react";
+import {
+  IconCalendar,
+  IconLayoutGrid,
+  IconPhoto,
+  IconRefresh,
+  IconSparkles,
+  IconStar,
+  IconUpload,
+} from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { workspaceTools } from "../workspace/workspace-state";
@@ -15,6 +23,11 @@ import {
 export const toolNames = Object.fromEntries(
   workspaceTools.map((tool) => [tool.id, tool.name]),
 ) as Record<ImageTool, string>;
+const sources = [
+  { id: "generated", label: "生成素材", icon: IconPhoto },
+  { id: "uploads", label: "上传素材", icon: IconUpload },
+  { id: "favorites", label: "收藏素材", icon: IconStar },
+] as const;
 const mediaTypes: { id: AssetMediaType; label: string; compact: string }[] = [
   { id: "all", label: "全部", compact: "全部类型" },
   { id: "image", label: "图片", compact: "图片" },
@@ -38,6 +51,7 @@ export function AssetFilters({
   loaded,
   compact,
   mediaSelect = false,
+  showSource = false,
   displayControls,
   onChange,
 }: {
@@ -48,15 +62,50 @@ export function AssetFilters({
   loaded: number | null;
   compact: boolean;
   mediaSelect?: boolean;
+  showSource?: boolean;
   displayControls?: ReactNode;
   onChange: (filters: AssetLibraryFilters) => void;
 }) {
   const disabled = !filtersApply(filters);
   const set = (patch: Partial<AssetLibraryFilters>) => onChange({ ...filters, ...patch });
   const ToolIcon = filters.tool === "all" ? IconLayoutGrid : toolIcons[filters.tool];
+  const SourceIcon = sources.find((source) => source.id === filters.source)?.icon ?? IconPhoto;
   const reset = { ...defaults, source: filters.source };
   return (
     <div className="asset-filters">
+      {showSource && (
+        <Select
+          className="asset-filter"
+          aria-label="素材来源"
+          value={filters.source}
+          onChange={(key) => {
+            const source = sources.find((entry) => entry.id === key)?.id;
+            if (source) set({ source });
+          }}
+        >
+          <Select.Trigger className="asset-filter-trigger">
+            <UiIcon icon={SourceIcon} className="asset-filter-lead" />
+            <Select.Value>{({ selectedText }) => selectedText}</Select.Value>
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover className="model-menu asset-filter-menu" placement="bottom start">
+            <ListBox aria-label="素材来源">
+              {sources.map((source) => (
+                <ListBox.Item
+                  className="model-options"
+                  key={source.id}
+                  id={source.id}
+                  textValue={source.label}
+                >
+                  <UiIcon icon={source.icon} />
+                  <span>{source.label}</span>
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
+            </ListBox>
+          </Select.Popover>
+        </Select>
+      )}
       <Select
         className="asset-filter"
         aria-label="功能"

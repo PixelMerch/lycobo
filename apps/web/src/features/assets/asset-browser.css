@@ -24,43 +24,6 @@
   line-height: var(--leading-sm);
 }
 
-/* ---------- source tabs ---------- */
-.asset-source-tabs > .tabs__list-container {
-  border-bottom: 1px solid var(--interaction-active);
-  background: transparent;
-}
-.asset-source-tabs > .tabs__list-container .tabs__list {
-  gap: 28px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-.asset-source-tabs .tabs__tab {
-  min-height: 44px;
-  padding: 10px 0 12px;
-  border-radius: 0;
-  color: var(--muted);
-  font-size: var(--text-base);
-  line-height: var(--leading-base);
-  font-weight: var(--weight-medium);
-  white-space: nowrap;
-}
-.asset-source-tabs .tabs__tab:is(:hover, [data-hovered="true"], [data-selected="true"]) {
-  color: var(--foreground);
-}
-.asset-source-tabs .tabs__indicator {
-  top: auto;
-  bottom: 0;
-  height: 2px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--accent);
-  box-shadow: none;
-}
-.asset-source-tabs > .tabs__panel.asset-source-panel {
-  padding: 0;
-}
-
 /* ---------- filters ---------- */
 .asset-filters {
   display: flex;
@@ -399,9 +362,6 @@
 
 /* ---------- narrow containers ---------- */
 @media (max-width: 767px) {
-  .asset-source-tabs > .tabs__list-container .tabs__list {
-    gap: var(--space-6);
-  }
   .asset-filters {
     overflow-x: auto;
     padding-top: var(--space-3);
@@ -421,7 +381,7 @@
   }
 }
 
-/* 我的素材 uses explicit density; the standalone library keeps justified rows. */
+/* Both asset entry points share the same responsive density grid. */
 .asset-density-grid {
   display: grid;
   grid-template-columns: repeat(var(--asset-columns, 6), minmax(0, 1fr));
@@ -455,4 +415,24 @@
 }
 .asset-filters + .asset-density-grid {
   margin-top: var(--space-4);
+}
+
+/* The page scrolls with the document; filters stop beneath the shared header. */
+.assets-page .asset-filters {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 10;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  background: var(--background);
+}
+.assets-page .asset-source-panel {
+  min-height: calc(100dvh - var(--header-height) - 120px);
+  display: flex;
+  flex-direction: column;
+}
+.assets-page .asset-empty.empty-state {
+  flex: 1;
+  justify-content: center;
+  align-items: center;
 }
