@@ -294,11 +294,26 @@ for (const width of [390, 1440]) {
       await expect(task.getByRole("button", { name: "复制任务 ID W09VIDEO2" })).toBeVisible();
       await task.getByRole("button", { name: "预览视频：W09VIDEO2" }).click();
       const dialog = page.getByRole("dialog", { name: "视频预览", exact: true });
-      await expect(dialog.locator(".video-phone-shell")).toBeVisible();
+      const frame = dialog.locator(".video-preview-frame");
+      await expect(frame).toBeVisible();
+      await expect(dialog.getByRole("heading", { name: "W09VIDEO2" })).toBeVisible();
+      await expect(dialog.locator(".video-preview-meta")).toHaveText("9:1610秒768p");
       const player = dialog.locator("video");
+      // Product controls replace the browser chrome and its download menu.
+      expect(await player.getAttribute("controls")).toBeNull();
       await expect(player).toHaveAttribute("controlslist", "nodownload");
-      const dialogBox = await dialog.boundingBox();
-      expect(dialogBox && dialogBox.x >= 0 && dialogBox.width <= width).toBe(true);
+      await expect(dialog.getByRole("slider", { name: "播放进度" })).toBeAttached();
+      await expect(dialog.getByRole("link", { name: "下载视频" })).toHaveAttribute(
+        "href",
+        originalUrl,
+      );
+      const frameBox = await frame.boundingBox();
+      expect(
+        frameBox &&
+          frameBox.x >= 0 &&
+          frameBox.x + frameBox.width <= width &&
+          frameBox.height > frameBox.width,
+      ).toBe(true);
       await player.evaluate(async (element) => {
         if (!(element instanceof HTMLVideoElement)) throw new Error("Video element missing");
         element.muted = true;

@@ -297,6 +297,9 @@ export function AssetBrowser({
         <VideoPlayerDialog
           assetId={assets[preview].id}
           title={assets[preview].prompt ?? "视频预览"}
+          {...(assets[preview].width > 0 && assets[preview].height > 0
+            ? { aspect: assets[preview].width / assets[preview].height }
+            : {})}
           onClose={() => setPreview(null)}
         />
       ) : (

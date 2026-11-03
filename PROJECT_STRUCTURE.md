@@ -38,7 +38,7 @@ apps/web/src/
     ├── account/                  # Header账户菜单、账户中心、钱包请求和账务展示
     ├── workspace/                # 统一工作区布局、工具分类搜索、历史筛选、跨工具草稿交接
     ├── commerce/                 # 兼容旧电商入口偏好、家纺裂变参数面板、套图计划语言分析、真实计划确认与生图、本地会话草稿
-    ├── video/                    # 视频创作参数、草稿、提交确认、视频历史与按需播放器（独立查询视频任务）
+    ├── video/                    # 视频创作参数、草稿、提交确认、视频历史、封面与按需预览播放器（独立查询视频任务）
     ├── home/                     # 首页、共享创作输入与提示辅助
     │   ├── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，use-inspiration-columns.ts 订阅断点并派生均衡瀑布流
     │   └── home-grid-motion.tsx   # 按需加载的Grid Motion背景、视差与可见性暂停；参数在react-bit-config.ts

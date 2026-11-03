@@ -1,11 +1,13 @@
 import { Button, Spinner } from "@heroui/react";
-import { IconMovie, IconPlayerPlay, IconRefresh } from "@tabler/icons-react";
+import { IconMovie, IconPlayerPlayFilled, IconRefresh } from "@tabler/icons-react";
 import { type CSSProperties, lazy, Suspense, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { AssetImage } from "../generation/asset-image";
+import { formatVideoTime } from "./use-video-playback";
 
+const loadDialog = () => import("./video-player-dialog");
 const VideoPlayerDialog = lazy(() =>
-  import("./video-player-dialog").then((module) => ({ default: module.VideoPlayerDialog })),
+  loadDialog().then((module) => ({ default: module.VideoPlayerDialog })),
 );
 /** Lists load a private still image; only opening the dialog requests the smaller video. */
 export function VideoCover({
@@ -13,11 +15,13 @@ export function VideoCover({
   title,
   ratio,
   seconds,
+  meta,
 }: {
   assetId: string;
   title: string;
   ratio: string;
   seconds: number;
+  meta: string[];
 }) {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -37,7 +41,10 @@ export function VideoCover({
         className="video-cover"
         aria-label={`预览视频：${title}`}
         data-cover-loaded={loaded || undefined}
+        data-cover-failed={failed || undefined}
         style={coverStyle}
+        onHoverStart={() => void loadDialog()}
+        onFocus={() => void loadDialog()}
         onPress={() => setOpen(true)}
       >
         {!failed && (
@@ -64,11 +71,11 @@ export function VideoCover({
           {!loaded && !failed ? (
             <Spinner size="sm" color="current" />
           ) : (
-            <UiIcon icon={failed ? IconMovie : IconPlayerPlay} size="illustration" />
+            <UiIcon icon={failed ? IconMovie : IconPlayerPlayFilled} size="navigation" />
           )}
         </span>
-        <span className="video-cover-caption">{failed ? "点击预览视频" : "点击预览"}</span>
-        <span className="video-cover-duration">{seconds}秒</span>
+        {failed && <span className="video-cover-caption">封面暂不可用，点击预览视频</span>}
+        <span className="video-cover-duration">{formatVideoTime(seconds)}</span>
       </Button>
       {failed && (
         <Button
@@ -86,7 +93,14 @@ export function VideoCover({
       )}
       {open && (
         <Suspense fallback={<Spinner aria-label="正在打开视频预览" />}>
-          <VideoPlayerDialog assetId={assetId} title={title} onClose={() => setOpen(false)} />
+          <VideoPlayerDialog
+            assetId={assetId}
+            title={title}
+            aspect={aspect}
+            seconds={seconds}
+            meta={meta}
+            onClose={() => setOpen(false)}
+          />
         </Suspense>
       )}
     </>
