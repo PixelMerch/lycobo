@@ -10,7 +10,7 @@
 | apps/web/src/lib | 浏览器 API 客户端与工具 |
 | apps/web/src/styles | 共享设计 tokens 与全局基础样式 |
 | apps/api/src | Hono 入口、应用工厂、配置与组织隔离的生图 feature API |
-| apps/assets/src | 独立 Node 私有图片资源服务：短期签名、Referer/CORS、WebP 展示变体缓存、原图下载及旧图 Sharp 变体补生成 |
+| apps/assets/src | 独立 Node 私有媒体资源服务：短期签名、Referer/CORS、WebP 展示变体缓存、原图下载、旧图 Sharp 变体补生成，以及经授权后按需生成并缓存真实视频封面／轻量预览 |
 | apps/worker/src | 队列消费者、生命周期与任务执行 |
 | packages/contracts | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖 |
 | packages/db | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY |

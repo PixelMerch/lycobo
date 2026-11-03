@@ -89,7 +89,12 @@ export function assetDeliverySigner(
       Math.ceil((Math.floor(Date.now() / 1000) + assetDownloadLifetime) / assetLinkWindow) *
       assetLinkWindow;
     const variant = async (value: AssetVariant) => {
-      const pathname = value === "download" ? key : key.replace(/\.png$/, `.${value}.webp`);
+      const pathname =
+        value === "download"
+          ? key
+          : key.endsWith(".mp4")
+            ? `${key}.${value}.${value === "thumbnail" ? "webp" : "mp4"}`
+            : key.replace(/\.png$/, `.${value}.webp`);
       const url = new URL(`${prefix}${pathname}`, base);
       const expires = value === "download" ? expires_at : previewExpires;
       url.searchParams.set("expires", String(expires));

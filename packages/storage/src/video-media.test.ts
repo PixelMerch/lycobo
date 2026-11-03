@@ -70,3 +70,59 @@ it("non-video and malformed BMFF bodies cannot enter the private video store", (
   const truncated = new Uint8Array([0, 0, 0, 64, 102, 116, 121, 112]);
   expect(() => videoDimensions(truncated)).toThrow("INVALID_VIDEO");
 });
+
+it("separates video cover, preview and original bytes and never falls back to original on preview failure", async () => {
+  const links = await assetDeliverySigner("https://assets.test", secret)(key);
+  expect(new URL(links.url).pathname).toBe(`/${key}.preview.mp4`);
+  expect(new URL(links.thumbnail_url).pathname).toBe(`/${key}.thumbnail.webp`);
+  expect(new URL(links.download_url).pathname).toBe(`/${key}`);
+  const reads: string[] = [];
+  const objects = new Map<string, Uint8Array>([[key, new Uint8Array([1, 2, 3])]]);
+  const base: Parameters<typeof servePrivateAsset>[1] = options(new Uint8Array([1]));
+  base.bucket.get = async (id) => {
+    reads.push(id);
+    const bytes = objects.get(id);
+    return bytes
+      ? {
+          size: bytes.length,
+          arrayBuffer: async () => new Uint8Array(bytes).buffer,
+          body: new ReadableStream<Uint8Array>({
+            start(c) {
+              c.enqueue(bytes);
+              c.close();
+            },
+          }),
+        }
+      : null;
+  };
+  const headers = { Referer: "https://app.test/" };
+  expect((await servePrivateAsset(new Request(links.url, { headers }), base)).status).toBe(404);
+  expect(reads).not.toContain(key);
+  const createVideoVariant = async (id: string, variant: "preview" | "thumbnail") => {
+    objects.set(
+      `${id}.${variant}.${variant === "thumbnail" ? "webp" : "mp4"}`,
+      new Uint8Array([7, 8, 9]),
+    );
+  };
+  const cover = await servePrivateAsset(new Request(links.thumbnail_url, { headers }), {
+    ...base,
+    createVideoVariant,
+  });
+  expect(cover.headers.get("Content-Type")).toBe("image/webp");
+  expect([...new Uint8Array(await cover.arrayBuffer())]).toEqual([7, 8, 9]);
+  const preview = await servePrivateAsset(
+    new Request(links.url, { headers: { ...headers, Range: "bytes=0-1" } }),
+    { ...base, createVideoVariant },
+  );
+  expect(preview.status).toBe(206);
+  expect([...new Uint8Array(await preview.arrayBuffer())]).toEqual([7, 8]);
+  const original = await servePrivateAsset(new Request(links.download_url, { headers }), base);
+  expect([...new Uint8Array(await original.arrayBuffer())]).toEqual([1, 2, 3]);
+  expect(original.headers.get("Content-Disposition")).toContain("attachment");
+  reads.length = 0;
+  expect(
+    (await servePrivateAsset(new Request(links.thumbnail_url), { ...base, createVideoVariant }))
+      .status,
+  ).toBe(403);
+  expect(reads).toEqual([]);
+});

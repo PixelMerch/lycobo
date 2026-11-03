@@ -6,5 +6,6 @@ strictPeerDependencies: true
 autoInstallPeers: true
 onlyBuiltDependencies:
   - esbuild
+  - ffmpeg-static
 ignoredBuiltDependencies:
   - msgpackr-extract

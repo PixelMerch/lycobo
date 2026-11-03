@@ -10,6 +10,7 @@ export interface PrivateAssetOptions {
     body: ReadableStream<Uint8Array>,
     variant: "preview" | "thumbnail",
   ) => Promise<Uint8Array>;
+  createVideoVariant?: (key: string, variant: "preview" | "thumbnail") => Promise<void>;
   signDownload?: (key: string, expiresIn: number) => Promise<string>;
   cache?: {
     match(request: Request): Promise<Response | undefined>;
@@ -26,14 +27,22 @@ export async function servePrivateAsset(request: Request, options: PrivateAssetO
   if (!options.signingSecret || !options.allowedOrigins) return fail(503);
   const url = new URL(request.url);
   const requestedKey = url.pathname.slice(1);
-  const pathVariant = requestedKey.endsWith(".thumbnail.webp")
-    ? "thumbnail"
-    : requestedKey.endsWith(".preview.webp")
-      ? "preview"
-      : undefined;
-  const key = pathVariant
-    ? requestedKey.replace(/\.(preview|thumbnail)\.webp$/, ".png")
-    : requestedKey;
+  const videoPreview = requestedKey.endsWith(".mp4.preview.mp4");
+  const videoThumbnail = requestedKey.endsWith(".mp4.thumbnail.webp");
+  const pathVariant = videoPreview
+    ? "preview"
+    : requestedKey.endsWith(".thumbnail.webp")
+      ? "thumbnail"
+      : requestedKey.endsWith(".preview.webp")
+        ? "preview"
+        : undefined;
+  const key = videoPreview
+    ? requestedKey.replace(/\.preview\.mp4$/, "")
+    : videoThumbnail
+      ? requestedKey.replace(/\.thumbnail\.webp$/, "")
+      : pathVariant
+        ? requestedKey.replace(/\.(preview|thumbnail)\.webp$/, ".png")
+        : requestedKey;
   const expires = Number(url.searchParams.get("expires"));
   const variant = url.searchParams.get("variant") ?? pathVariant ?? "preview";
   if (
@@ -88,13 +97,29 @@ export async function servePrivateAsset(request: Request, options: PrivateAssetO
     return new Response(null, { status: 302, headers });
   }
   if (key.endsWith(".mp4") || variant === "provider") {
-    if (pathVariant || (variant === "provider" && !key.endsWith(".png"))) return fail(403);
-    const object = request.method === "HEAD" ? await bucket.head(key) : await bucket.get(key);
+    if ((variant === "provider" && !key.endsWith(".png")) || (pathVariant && !key.endsWith(".mp4")))
+      return fail(403);
+    const isVideoDisplay = key.endsWith(".mp4") && variant !== "download";
+    const objectKey = isVideoDisplay
+      ? `${key}.${variant}.${variant === "thumbnail" ? "webp" : "mp4"}`
+      : key;
+    const read = () => (request.method === "HEAD" ? bucket.head(objectKey) : bucket.get(objectKey));
+    let object = await read();
+    if (!object && isVideoDisplay && request.method === "GET" && options.createVideoVariant) {
+      await options.createVideoVariant(key, variant === "thumbnail" ? "thumbnail" : "preview");
+      object = await read();
+    }
     if (!object) return fail(404);
     const headers = new Headers({
-      "Content-Type": key.endsWith(".mp4") ? "video/mp4" : "image/png",
+      "Content-Type": key.endsWith(".mp4")
+        ? variant === "thumbnail"
+          ? "image/webp"
+          : "video/mp4"
+        : "image/png",
       "Content-Length": String(object.size),
-      "Cache-Control": "private, no-store",
+      "Cache-Control": isVideoDisplay
+        ? `private, max-age=${Math.max(0, expires - Math.floor(Date.now() / 1000))}, immutable`
+        : "private, no-store",
       "X-Content-Type-Options": "nosniff",
       "Accept-Ranges": "bytes",
       "Content-Disposition": `${variant === "download" ? "attachment" : "inline"}; filename="${key.split("/").at(-1)}"`,
@@ -103,7 +128,7 @@ export async function servePrivateAsset(request: Request, options: PrivateAssetO
     if (origin && allowed.includes(origin)) headers.set("Access-Control-Allow-Origin", origin);
     let body = "body" in object ? object.body : null;
     const range = request.headers.get("Range");
-    if (range && key.endsWith(".mp4")) {
+    if (range && key.endsWith(".mp4") && variant !== "thumbnail") {
       const parsed = /^bytes=(\d+)-(\d*)$/.exec(range);
       const start = Number(parsed?.[1]),
         end = parsed?.[2] ? Number(parsed[2]) : object.size - 1;

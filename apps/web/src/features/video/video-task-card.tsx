@@ -8,6 +8,7 @@ import { UiIcon } from "../../components/ui-icon";
 import { copyToClipboard } from "../../lib/clipboard";
 import { assetContentUrl } from "../generation/generation-client";
 import { ReferenceThumbnails } from "../generation/references/reference-thumbnails";
+import { VideoCover } from "./video-cover";
 import { useVideoDraft } from "./video-state";
 import { VideoTaskActions } from "./video-task-actions";
 
@@ -103,14 +104,12 @@ export function VideoTaskCard({ task, onRestore }: { task: VideoTask; onRestore:
             <dt className="sr-only">清晰度</dt>
             <dd>768p</dd>
           </div>
-          <div>
-            <dt className="sr-only">参考图</dt>
-            <dd>
-              {input.referenceAssetIds.length
-                ? `${input.referenceAssetIds.length} 张参考图`
-                : "纯文字"}
-            </dd>
-          </div>
+          {input.referenceAssetIds.length > 0 && (
+            <div>
+              <dt className="sr-only">参考图</dt>
+              <dd>{input.referenceAssetIds.length} 张参考图</dd>
+            </div>
+          )}
         </dl>
         <VideoTaskActions
           task={task}
@@ -145,14 +144,12 @@ export function VideoTaskCard({ task, onRestore }: { task: VideoTask; onRestore:
       </div>
       <div className="generation-results" data-count="1">
         <div>
-          {task.delivery ? (
-            // biome-ignore lint/a11y/useMediaCaption: generated videos have no subtitle-track metadata.
-            <video
-              controls
-              playsInline
-              preload="none"
-              src={task.delivery.url}
-              aria-label={`视频：${task.public_id}`}
+          {task.delivery && task.asset_id ? (
+            <VideoCover
+              assetId={task.asset_id}
+              title={task.public_id}
+              ratio={input.aspectRatio}
+              seconds={input.seconds}
             />
           ) : (
             <section

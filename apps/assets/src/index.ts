@@ -1,10 +1,12 @@
 import { serve } from "@hono/node-server";
 import { servePrivateAsset } from "@lycoboai/storage/asset-server";
 import { imageObjectBucket } from "@lycoboai/storage/s3";
+import { videoVariantCache } from "@lycoboai/storage/video-variants";
 
 const secret = process.env.ASSET_SIGNING_SECRET;
 if (!secret || !process.env.ASSET_ALLOWED_ORIGINS) throw new Error("ASSET_CONFIGURATION_REQUIRED");
 const bucket = imageObjectBucket(process.env);
+const createVideoVariant = videoVariantCache(bucket);
 const server = serve({
   hostname: process.env.API_HOST ?? "127.0.0.1",
   port: 8791,
@@ -13,6 +15,7 @@ const server = serve({
     try {
       return await servePrivateAsset(request, {
         bucket,
+        createVideoVariant,
         signingSecret: secret,
         allowedOrigins: process.env.ASSET_ALLOWED_ORIGINS ?? "",
       });

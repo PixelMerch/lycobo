@@ -6,6 +6,8 @@ import { InfiniteLoad } from "../../components/infinite-load";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { LibraryDialog } from "../assets/library-dialog";
+import { AssetImage } from "../generation/asset-image";
+import { historyContentTop } from "../generation/history/history-navigation";
 import { useVideoTasks } from "./video-client";
 import { VideoTaskCard } from "./video-task-card";
 
@@ -56,6 +58,7 @@ export function VideoHistory({ onRestore }: { onRestore: () => void }) {
 }
 export function VideoHistoryRail() {
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const query = useVideoTasks();
   const tasks = query.data?.pages.flatMap((page) => page.data) ?? [];
   return (
@@ -74,19 +77,41 @@ export function VideoHistoryRail() {
         </h2>
         <div className="history-rail-list">
           {tasks.map((task) => (
-            <Button
-              key={task.id}
-              variant="ghost"
-              aria-label={`定位视频：${task.public_id}`}
-              onPress={() =>
-                document
-                  .getElementById(`video-task-${task.id}`)
-                  ?.scrollIntoView({ block: "start", behavior: "auto" })
-              }
-            >
-              <UiIcon icon={IconMovie} />
-              <span>{task.public_id}</span>
-            </Button>
+            <div className="history-rail-item" key={task.id}>
+              <Button
+                variant="tertiary"
+                className={`history-thumbnail${task.status === "queued" || task.status === "running" ? " generation-pending" : ""}`}
+                aria-label={`定位视频：${task.public_id}`}
+                aria-current={(activeId ?? tasks[0]?.id) === task.id ? "true" : "false"}
+                onPress={() => {
+                  setActiveId(task.id);
+                  const target = document.getElementById(`video-task-${task.id}`);
+                  if (target)
+                    window.scrollTo({
+                      top: Math.max(
+                        0,
+                        window.scrollY + target.getBoundingClientRect().top - historyContentTop(),
+                      ),
+                      behavior: "instant",
+                    });
+                }}
+              >
+                {task.asset_id ? (
+                  <span className="history-thumbnail-frame">
+                    <AssetImage
+                      assetId={task.asset_id}
+                      thumbnail
+                      alt={`视频 ${task.public_id} 封面`}
+                      loading="lazy"
+                    />
+                  </span>
+                ) : task.status === "queued" || task.status === "running" ? (
+                  <Spinner size="sm" aria-label="视频处理中" />
+                ) : (
+                  <UiIcon icon={IconMovie} size="action" />
+                )}
+              </Button>
+            </div>
           ))}
         </div>
       </aside>

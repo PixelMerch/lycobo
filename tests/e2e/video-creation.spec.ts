@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { createServer } from "node:http";
 import { expect, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
@@ -178,73 +179,163 @@ test("an ambiguous video submission retains its immutable idempotency key when t
   await expect(prompt).toHaveValue("准备下一条的新草稿");
 });
 
-test("completed video fixtures play through the real browser media element", async ({ page }) => {
-  await mockImageApi(page);
-  await page.route("**/api/v1/video-model", (route) =>
-    route.fulfill({ json: apiFixture({ enabled: true, resolution: "768p", unitCredits: 100 }) }),
-  );
-  const bytes = await readFile(new URL("../fixtures/video-playback.mp4", import.meta.url));
-  await page.route("**/fixture-video.mp4", (route) =>
-    route.fulfill({ status: 200, contentType: "video/mp4", body: bytes }),
-  );
-  await page.route("**/api/v1/video-tasks", (route) =>
-    route.fulfill({
-      json: apiFixture({
-        data: [
-          {
-            id: crypto.randomUUID(),
-            public_id: "W09VIDEO2",
-            prompt: "已完成的视频fixture",
-            status: "succeeded",
-            created_at: new Date().toISOString(),
-            input: {
-              video: {
-                prompt: "已完成的视频fixture",
-                seconds: 10,
-                aspectRatio: "9:16",
-                referenceAssetIds: [],
-              },
-            },
-            error_code: null,
-            asset_id: crypto.randomUUID(),
-            provider_status: "completed",
+for (const width of [390, 1440]) {
+  test(`completed video fixtures show portrait covers and preview without downloading originals at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 1000 });
+    await mockImageApi(page);
+    await page.route("**/api/v1/video-model", (route) =>
+      route.fulfill({ json: apiFixture({ enabled: true, resolution: "768p", unitCredits: 100 }) }),
+    );
+    const coverBytes = await readFile(new URL("../fixtures/video-cover.webp", import.meta.url));
+    const assetId = crypto.randomUUID();
+    let previewReads = 0;
+    let originalReads = 0;
+    const bytes = await readFile(new URL("../fixtures/video-portrait.mp4", import.meta.url));
+    await page.route("**/fixture-preview.mp4", (route) => {
+      previewReads++;
+      return route.fulfill({ status: 200, contentType: "video/mp4", body: bytes });
+    });
+    const originalServer = createServer((_request, response) => {
+      originalReads++;
+      response.writeHead(200, {
+        "Content-Type": "video/mp4",
+        "Content-Disposition": "attachment; filename=original.mp4",
+      });
+      response.end(bytes);
+    });
+    await new Promise<void>((resolve) => originalServer.listen(0, "127.0.0.1", resolve));
+    const address = originalServer.address();
+    if (!address || typeof address === "string") throw new Error("Fixture server missing");
+    const originalUrl = `http://127.0.0.1:${address.port}/original.mp4`;
+    try {
+      await page.route(`**/api/v1/image-assets/${assetId}/content?thumbnail=1`, (route) =>
+        route.fulfill({ contentType: "image/webp", body: coverBytes }),
+      );
+      await page.route(`**/api/v1/image-assets/${assetId}/delivery`, (route) =>
+        route.fulfill({
+          json: apiFixture({
+            id: assetId,
             delivery: {
-              url: "http://127.0.0.1:5173/fixture-video.mp4",
-              download_url: "http://127.0.0.1:5173/fixture-video.mp4",
+              url: "http://127.0.0.1:5173/fixture-preview.mp4",
+              thumbnail_url: "http://127.0.0.1:5173/fixture-cover.webp",
+              download_url: originalUrl,
+              expires_at: 9999999999,
             },
-          },
-        ],
-      }),
-    }),
-  );
-  await page.goto("/video");
-  const task = page.getByRole("article", { name: "视频任务：W09VIDEO2" });
-  await expect(task).toContainText("已完成");
-  await expect(task).toContainText("9:16");
-  await expect(task).toContainText("10秒");
-  await expect(task).not.toContainText("消耗 100 积分");
-  await expect(task.locator(".generation-meta-ratio .ui-icon")).toBeVisible();
-  await expect(task.locator(".video-history-tag")).toHaveCSS("color", "rgb(185, 224, 255)");
-  await expect(task.locator("time")).toHaveCount(1);
-  await expect(task.getByRole("button", { name: "复制任务 ID W09VIDEO2" })).toBeVisible();
-  const player = task.locator("video");
-  await player.evaluate(async (element) => {
-    if (!(element instanceof HTMLVideoElement)) throw new Error("Video element missing");
-    element.muted = true;
-    await element.play();
+          }),
+        }),
+      );
+      await page.route("**/api/v1/video-tasks", (route) =>
+        route.fulfill({
+          json: apiFixture({
+            data: [
+              {
+                id: crypto.randomUUID(),
+                public_id: "W09VIDEO2",
+                prompt: "已完成的视频fixture",
+                status: "succeeded",
+                created_at: new Date().toISOString(),
+                input: {
+                  video: {
+                    prompt: "已完成的视频fixture",
+                    seconds: 10,
+                    aspectRatio: "9:16",
+                    referenceAssetIds: [],
+                  },
+                },
+                error_code: null,
+                asset_id: assetId,
+                provider_status: "completed",
+                delivery: {
+                  url: "http://127.0.0.1:5173/fixture-preview.mp4",
+                  download_url: originalUrl,
+                },
+              },
+            ],
+          }),
+        }),
+      );
+      await page.goto("/video");
+      if (width === 390) await page.getByRole("radio", { name: "历史记录", exact: true }).click();
+      const task = page.getByRole("article", { name: "视频任务：W09VIDEO2" });
+      await expect(task.getByRole("button", { name: "预览视频：W09VIDEO2" })).toBeVisible();
+      await expect(task.locator("video")).toHaveCount(0);
+      await expect(task.locator(".video-cover-image")).toBeVisible();
+      await expect(task.locator(".video-cover-image")).toHaveCSS("opacity", "1");
+      await expect
+        .poll(() =>
+          task
+            .locator(".video-cover-image")
+            .evaluate(
+              (node) => node instanceof HTMLImageElement && node.naturalHeight > node.naturalWidth,
+            ),
+        )
+        .toBe(true);
+      const coverBox = await task.locator(".video-cover").boundingBox();
+      expect(coverBox && coverBox.height > coverBox.width).toBe(true);
+      expect(coverBox?.height ?? 0).toBeLessThanOrEqual(321);
+      await expect(task).not.toContainText("纯文字");
+      await expect(
+        page.locator('.history-rail[aria-label="视频历史索引"] .history-thumbnail-frame img'),
+      ).toHaveCount(1);
+      const imageBox = await task.locator(".video-cover-image").boundingBox();
+      expect(imageBox?.width).toBeCloseTo(coverBox?.width ?? 0, 0);
+      expect(imageBox?.height).toBeCloseTo(coverBox?.height ?? 0, 0);
+      await page.screenshot({ path: testInfo.outputPath("video-cover.png") });
+      expect(previewReads).toBe(0);
+      expect(originalReads).toBe(0);
+      await expect(task).toContainText("9:16");
+      await expect(task).toContainText("10秒");
+      await expect(task).not.toContainText("消耗 100 积分");
+      await expect(task.locator(".generation-meta-ratio .ui-icon")).toBeVisible();
+      await expect(task.locator(".video-history-tag")).toHaveCSS("color", "rgb(185, 224, 255)");
+      await expect(task.locator("time")).toHaveCount(1);
+      await expect(task.getByRole("button", { name: "复制任务 ID W09VIDEO2" })).toBeVisible();
+      await task.getByRole("button", { name: "预览视频：W09VIDEO2" }).click();
+      const dialog = page.getByRole("dialog", { name: "视频预览", exact: true });
+      await expect(dialog.locator(".video-phone-shell")).toBeVisible();
+      const player = dialog.locator("video");
+      await expect(player).toHaveAttribute("controlslist", "nodownload");
+      const dialogBox = await dialog.boundingBox();
+      expect(dialogBox && dialogBox.x >= 0 && dialogBox.width <= width).toBe(true);
+      await player.evaluate(async (element) => {
+        if (!(element instanceof HTMLVideoElement)) throw new Error("Video element missing");
+        element.muted = true;
+        await element.play();
+      });
+      await expect
+        .poll(() =>
+          player.evaluate((element) =>
+            element instanceof HTMLVideoElement ? element.currentTime : 0,
+          ),
+        )
+        .toBeGreaterThan(0);
+      await page.screenshot({ path: testInfo.outputPath("video-preview.png") });
+      await expect(task.getByRole("link", { name: "下载视频" })).toHaveAttribute(
+        "href",
+        originalUrl,
+      );
+      expect(originalReads).toBe(0);
+      await dialog.getByRole("button", { name: "关闭视频预览", exact: true }).click();
+      await expect(task.getByRole("button", { name: "预览视频：W09VIDEO2" })).toBeFocused();
+      const download = page.waitForEvent("download");
+      await task.getByRole("link", { name: "下载视频", exact: true }).click();
+      const downloaded = await download;
+      const downloadedPath = await downloaded.path();
+      if (!downloadedPath) throw new Error("Original download missing");
+      expect(await readFile(downloadedPath)).toEqual(bytes);
+      await expect.poll(() => originalReads).toBe(1);
+      await task.getByRole("button", { name: "重新编辑", exact: true }).click();
+      await expect(page.getByLabel("场景描述", { exact: true })).toHaveValue("已完成的视频fixture");
+    } finally {
+      originalServer.closeAllConnections();
+      await new Promise<void>((resolve, reject) =>
+        originalServer.close((error) => (error ? reject(error) : resolve())),
+      );
+    }
   });
-  await expect
-    .poll(() =>
-      player.evaluate((element) => (element instanceof HTMLVideoElement ? element.currentTime : 0)),
-    )
-    .toBeGreaterThan(0);
-  await expect(task.getByRole("link", { name: "下载视频" })).toHaveAttribute(
-    "href",
-    "http://127.0.0.1:5173/fixture-video.mp4",
-  );
-  await task.getByRole("button", { name: "重新编辑", exact: true }).click();
-  await expect(page.getByLabel("场景描述", { exact: true })).toHaveValue("已完成的视频fixture");
-});
+}
 
 test("asset grids defer video loading until the video preview opens", async ({ page }) => {
   await mockImageApi(page);
@@ -252,10 +343,13 @@ test("asset grids defer video loading until the video preview opens", async ({ p
   const bytes = await readFile(new URL("../fixtures/video-playback.mp4", import.meta.url));
   const delivery = {
     url: "http://127.0.0.1:5173/fixture-video.mp4",
-    thumbnail_url: "http://127.0.0.1:5173/fixture-video.mp4",
+    thumbnail_url: "http://127.0.0.1:5173/fixture-cover.webp",
     download_url: "http://127.0.0.1:5173/fixture-video.mp4",
     expires_at: 9999999999,
   };
+  await page.route("**/fixture-cover.webp", (route) =>
+    route.fulfill({ contentType: "image/png", body: png }),
+  );
   let mediaReads = 0;
   await page.route("**/fixture-video.mp4", (route) => {
     mediaReads++;
@@ -287,10 +381,14 @@ test("asset grids defer video loading until the video preview opens", async ({ p
   await page.route(`**/api/v1/image-assets/${id}/delivery`, (route) =>
     route.fulfill({ json: apiFixture({ id, delivery }) }),
   );
+  await page.route(`**/api/v1/image-assets/${id}/content?thumbnail=1`, (route) =>
+    route.fulfill({ contentType: "image/png", body: png }),
+  );
   await page.goto("/assets?type=video");
   const tile = page.getByRole("button", { name: "查看视频：素材库视频fixture", exact: true });
   await expect(tile).toBeVisible();
-  await expect(tile.locator("img,video")).toHaveCount(0);
+  await expect(tile.locator("img")).toHaveCount(1);
+  await expect(tile.locator("video")).toHaveCount(0);
   expect(mediaReads).toBe(0);
   await tile.click();
   const preview = page.getByRole("dialog", { name: "视频预览", exact: true });
