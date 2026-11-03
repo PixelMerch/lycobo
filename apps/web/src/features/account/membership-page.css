@@ -157,20 +157,20 @@
   min-height: 44px;
   padding-inline: 24px;
   border-radius: 16px;
+  background: transparent;
   color: #a6a6ad;
   transition: color 200ms ease;
 }
 .membership-switcher .tabs__tab:is(:hover, [data-hovered="true"]):not([data-selected="true"]) {
-  background: #ffffff0a;
+  background: transparent;
   color: #fff;
 }
 .membership-switcher .tabs__tab[data-selected="true"] {
   color: #fff;
   font-weight: var(--weight-semibold);
 }
-/* Both rows move the selection like the workspace dock: one frosted gradient pill that springs
- * to the chosen item (SelectionHighlight, stiffness 420, damping 34). */
-.membership-switcher :is(.toggle-selection, .membership-cycle-pill) {
+/* Audience tabs use text-only emphasis; the billing cycle keeps its sliding pill. */
+.membership-switcher .membership-cycle-pill {
   position: absolute;
   border-radius: inherit;
   background: linear-gradient(180deg, #ffffff17 0%, #ffffff0d 100%);
@@ -181,8 +181,7 @@
   pointer-events: none;
 }
 .membership-switcher .toggle-selection {
-  inset: 0;
-  z-index: -1;
+  display: none;
 }
 .membership-cycle-pill {
   top: 4px;
