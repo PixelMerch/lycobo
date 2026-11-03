@@ -121,7 +121,12 @@ test("video text-only submission is durable, uses the selected duration and does
   await page.goto("/video");
   const submit = page.getByRole("button", { name: /立即生成.*100/ });
   await expect(submit).toBeDisabled();
-  await page.getByLabel("场景描述", { exact: true }).fill("俯拍商品，镜头平稳向前推进");
+  const description = page.getByLabel("场景描述", { exact: true });
+  await expect(description).toHaveAttribute("required", "");
+  await description.fill("   ");
+  await expect(submit).toBeDisabled();
+  await description.fill("俯拍商品，镜头平稳向前推进");
+  await expect(submit).toBeEnabled();
   await submit.click();
   await expect.poll(() => submissions.length).toBe(1);
   expect(submissions[0]).toEqual({

@@ -34,6 +34,7 @@ describe("video API", () => {
       repository,
       origin: "https://api.uselg.top",
       key: "never-exposed",
+      referencesReady: false,
       sign: async () => ({
         url: "https://asset.test/a",
         thumbnail_url: "https://asset.test/t",
@@ -57,6 +58,13 @@ describe("video API", () => {
     expect(
       (await send({ prompt: "视频描述", seconds: 10, ownerId: crypto.randomUUID() })).status,
     ).toBe(400);
+    for (const prompt of ["", "   ", "@图片1"])
+      expect((await send({ prompt, seconds: 10 })).status).toBe(400);
+    expect((await send({ seconds: 10 })).status).toBe(400);
+    expect(
+      (await send({ prompt: "视频描述", seconds: 10, referenceAssetIds: [crypto.randomUUID()] }))
+        .status,
+    ).toBe(503);
     expect(calls).toEqual([]);
     const response = await send({ prompt: "视频描述", seconds: 15 });
     expect(response.status).toBe(202);

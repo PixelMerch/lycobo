@@ -17,7 +17,7 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
   const config = {
     origin: "https://api.uselg.top",
     key: "fixture-key",
-    assetOrigin: "https://assets.example.test",
+    assetOrigin: "http://127.0.0.1:8791",
     signingSecret: "x".repeat(40),
   };
   const routing = { origin: config.origin, credentialHash: videoCredentialHash(config.key) };

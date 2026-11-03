@@ -4,7 +4,7 @@
 
 ## 用户已确认的规格
 
-- 场景描述5000字，参考图片可选，最多9张；支持纯文字。
+- 场景描述必填，最多5000字，参考图片可选，最多9张；支持纯文字。
 - 图片属于内容参考，没有专用首帧／尾帧参数；原两张草稿图片保留为图片1、图片2。不增加参考视频、音频输入。
 - 固定768p，左侧不展示清晰度和模型名，也不提供分辨率切换；不向供应商传resolution、quality等无效字段。
 - 画面比例按9:16、16:9、21:9、4:3、3:4、1:1排列；默认9:16。有参考图时供应商可能沿用图片比例，不保证参数强制覆盖画幅。
@@ -36,7 +36,7 @@ API与消费者需要：
 
 - STANDALONE_IMAGE_API_KEY：复用现有生图Key供API及消费者服务端调用，仍需具备视频型号权限，不再单独配置VIDEO_API_KEY。不经聊天或仓库传递。
 - VIDEO_API_ORIGIN：默认https://api.uselg.top，可显式选择文档列出的https://api.ai-media.vip；不在运行时猜测域名重发。
-- 复用ASSET_PUBLIC_ORIGIN、ASSET_PATH_PREFIX、ASSET_SIGNING_SECRET及私有CloudBase／本地S3配置。CloudBase环境直接使用同一私有桶的1小时临时签名URL作为视频参考图，无需另配公网素材域名；普通预览继续走现有资源服务。本地隔离S3模式才需要供应商可访问的HTTPS资源地址。
+- 复用ASSET_PUBLIC_ORIGIN、ASSET_PATH_PREFIX、ASSET_SIGNING_SECRET及私有CloudBase／本地S3配置。CloudBase环境直接使用同一私有桶的1小时临时签名URL作为视频参考图，无需另配公网素材域名；普通预览继续走现有资源服务。本地隔离S3模式的纯文字视频不需要公网资源地址，成品保存至同一本地私有桶；仅使用参考图时需要供应商可访问的HTTPS资源地址。未配置时，含参考图的请求在扣费前拒绝，不影响纯文字视频。
 - 生图与视频默认启用，不再读取IMAGE_GENERATION_ENABLED／VIDEO_GENERATION_ENABLED。密钥、身份、数据库与私有存储仍必须配置完整。
 
 实施迁移为packages/db/migrations/0039_video_outbox.sql及cloudbase/migrations/20261103120000_video_generation.sql（分别用于Node PG与CloudBase共享PG）。CloudBase迁移除建表／固定视频RPC外，也按断言定位片段扩展既有图片RPC的媒体过滤并排除视频超时处理；不能自动db push或在运行时建表。

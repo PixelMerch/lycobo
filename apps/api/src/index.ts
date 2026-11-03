@@ -95,8 +95,7 @@ const videoReady = !!(
   videoConfig &&
   videoSign &&
   auth &&
-  (cloudbaseStorage || process.env.S3_ENDPOINT) &&
-  (cloudbaseStorage || process.env.ASSET_PUBLIC_ORIGIN?.startsWith("https://"))
+  (cloudbaseStorage || process.env.S3_ENDPOINT)
 );
 const app = createApp(
   (event) => logger.error(event, "Request failed"),
@@ -147,6 +146,9 @@ const app = createApp(
           repository: videoRepository,
           ...videoConfig,
           sign: videoSign,
+          referencesReady: !!(
+            cloudbaseStorage || process.env.ASSET_PUBLIC_ORIGIN?.startsWith("https://")
+          ),
           wake: wakeConsumer
             ? async () => {
                 await wakeConsumer();

@@ -8,6 +8,7 @@ export function videoService(deps: {
   origin: string;
   key: string;
   sign: ReturnType<typeof assetDeliverySigner>;
+  referencesReady?: boolean;
   wake?: (() => Promise<void>) | undefined;
 }) {
   const deliver = async (raw: unknown) =>
@@ -28,6 +29,8 @@ export function videoService(deps: {
       (await deliver(await deps.repository.get(scope, id)))[0] ?? null,
     create: async (scope: ImageScope, raw: unknown, key: string) => {
       const input = videoInputSchema.parse(raw);
+      if (input.referenceAssetIds.length && deps.referencesReady === false)
+        throw new Error("GENERATION_NOT_CONFIGURED");
       const accepted = await deps.repository.create(scope, input, key, {
         origin: deps.origin,
         credentialHash: videoCredentialHash(deps.key),

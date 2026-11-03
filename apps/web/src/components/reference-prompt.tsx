@@ -120,6 +120,7 @@ export function ReferencePrompt({
   maxReferences = 5,
   showCount = false,
   autoGrow = false,
+  isRequired = false,
   onReferencesInsert,
 }: {
   value: string;
@@ -133,6 +134,7 @@ export function ReferencePrompt({
   maxReferences?: number;
   showCount?: boolean;
   autoGrow?: boolean;
+  isRequired?: boolean;
   onReferencesInsert?: (images: ReferenceImage[], prompt: string) => void;
 }) {
   const countId = useId();
@@ -313,7 +315,11 @@ export function ReferencePrompt({
   }
   return (
     <>
-      <TextField className={className} {...(label ? {} : { "aria-label": "创作需求" })}>
+      <TextField
+        isRequired={isRequired}
+        className={className}
+        {...(label ? {} : { "aria-label": "创作需求" })}
+      >
         {label && <Label>{label}</Label>}
         <div
           className="prompt-editor"
@@ -328,6 +334,7 @@ export function ReferencePrompt({
               tabIndex={0}
               aria-label={label ?? "创作需求"}
               aria-multiline="true"
+              aria-required={isRequired || undefined}
               aria-describedby={showCount ? countId : undefined}
               contentEditable
               suppressContentEditableWarning

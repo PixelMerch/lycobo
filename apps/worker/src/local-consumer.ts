@@ -17,7 +17,7 @@ const encode = slots(2);
 const store: typeof objects = { ...objects, put: (...args) => encode(() => objects.put(...args)) };
 const policy = readImagePolicy(process.env);
 const videoConfig =
-  process.env.ASSET_PUBLIC_ORIGIN?.startsWith("https://") && process.env.ASSET_SIGNING_SECRET
+  process.env.ASSET_PUBLIC_ORIGIN && process.env.ASSET_SIGNING_SECRET
     ? videoConfiguration(process.env)
     : null;
 const videos = videoConfig ? openVideoRepository(process.env) : undefined;

@@ -51,13 +51,17 @@ export async function processVideoIntent(
   try {
     if (job.references.length !== job.input.referenceAssetIds.length)
       throw new VideoProviderError("REFERENCE_NOT_FOUND", false);
-    const sign =
-      config.referenceUrl ??
-      providerReferenceSigner(config.assetOrigin, config.signingSecret, config.pathPrefix);
+    const images: string[] = [];
+    if (job.submit && job.references.length) {
+      const sign =
+        config.referenceUrl ??
+        providerReferenceSigner(config.assetOrigin, config.signingSecret, config.pathPrefix);
+      images.push(...(await Promise.all(job.references.map((asset) => sign(asset.objectKey)))));
+    }
     const creation = job.submit
       ? {
           input: job.input,
-          images: await Promise.all(job.references.map((asset) => sign(asset.objectKey))),
+          images,
           key: job.itemId,
         }
       : undefined;

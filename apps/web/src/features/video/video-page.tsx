@@ -49,6 +49,7 @@ export function VideoPage() {
         <ReferencePrompt
           className="prompt-field"
           label="场景描述"
+          isRequired
           value={draft.prompt}
           onChange={(prompt) => draft.update({ prompt })}
           references={references}
