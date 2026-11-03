@@ -30,12 +30,14 @@ export function MembershipBenefits({ team }: { team: boolean }) {
   return (
     <div className="membership-benefits">
       <h3>
-        {team ? "团队协作" : "创作工具"}
-        <MembershipInfo label={team ? "团队协作说明" : "创作工具说明"}>
-          {team
-            ? "成员使用独立账户登录，组织权限由管理员管理；积分归属和消费按所在组织记录。"
-            : "支持主图制作、家纺裂变和套图计划；实际可用模型与单次消耗以创作面板显示为准。"}
-        </MembershipInfo>
+        <span>
+          {team ? "团队协作" : "创作工具"}
+          <MembershipInfo label={team ? "团队协作说明" : "创作工具说明"}>
+            {team
+              ? "成员使用独立账户登录，组织权限由管理员管理；积分归属和消费按所在组织记录。"
+              : "支持主图制作、家纺裂变和套图计划；实际可用模型与单次消耗以创作面板显示为准。"}
+          </MembershipInfo>
+        </span>
       </h3>
       <ul>
         {items.map((item) => (
