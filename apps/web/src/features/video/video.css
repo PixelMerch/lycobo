@@ -108,13 +108,18 @@
   background: transparent;
 }
 .video-duration-output {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-width: 72px;
-  padding: 8px 12px;
+  height: 28px;
+  padding: 0 10px;
   border-radius: 999px;
   background: var(--interaction-active);
   color: var(--foreground);
   text-align: center;
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
   font-variant-numeric: tabular-nums;
 }
 .video-duration-marks {
@@ -182,4 +187,9 @@
   .video-duration-wave > span {
     transition: none;
   }
+}
+
+.video-duration-slider
+  :is(.video-duration-track, .slider__thumb, .slider__thumb[data-dragging="true"]) {
+  cursor: ew-resize;
 }
