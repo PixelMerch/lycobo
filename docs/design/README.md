@@ -6,6 +6,8 @@
 
 - [积分与会员入口参考](credits-membership-references.md)：2026-11-02通过ego-browser查看小云雀与Oii公开价格页，记录双入口、充值与独立会员页的取舍。
 
+- [我的素材与素材库 UI（已确认）](asset-library/README.md)：2026-11-03 用户确认并已实现的素材库页面、我的素材（默认当前工具）、生成／上传／收藏页签、功能／类型／模型筛选、服务端收藏与手机布局设计图。
+
 - [个人中心与积分 UI（已确认）](account-center/README.md)：2026-11-02 用户确认并已实现的账户菜单、个人中心、积分概览、充值与充值明细设计图；个人中心同日改为弹窗，会员订阅保持现行方案页。
 
 - [小云雀工作台排版实测](xiaoyunque-typography-measurements.md)：2026-11-02通过ego-browser核对已登录导航、账户菜单和字体覆盖范围；本站采用值已归入DESIGN.md。
