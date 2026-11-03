@@ -39,12 +39,9 @@ export function VideoDuration({
             <span className="video-duration-wave" aria-hidden="true">
               {ticks.map((tick) => {
                 const distance = Math.abs(tick / 50 - position);
-                const wave = hover !== null || focused ? Math.max(0, 1 - distance / 0.16) : 0;
+                const wave = hover !== null || focused ? Math.max(0, 1 - distance / 0.09) : 0;
                 return (
-                  <span
-                    key={tick}
-                    style={{ height: `${(tick % 5 === 0 ? 10 : 6) + wave * 12}px` }}
-                  />
+                  <span key={tick} style={{ height: `${(tick % 5 === 0 ? 8 : 4) + wave * 6}px` }} />
                 );
               })}
             </span>
