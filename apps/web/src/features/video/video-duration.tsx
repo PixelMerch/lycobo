@@ -26,6 +26,7 @@ export function VideoDuration({
     >
       <Label>时长</Label>
       <div className="video-duration-row">
+        <span className="video-duration-endpoint">5s</span>
         <Tooltip isOpen={hover !== null || focused} delay={0}>
           <Slider.Track
             className="video-duration-track"
@@ -68,12 +69,8 @@ export function VideoDuration({
             {seconds}秒
           </Tooltip.Content>
         </Tooltip>
-        <Slider.Output className="video-duration-output">{value} 秒</Slider.Output>
+        <span className="video-duration-endpoint">30s</span>
       </div>
-      <Slider.Marks className="video-duration-marks">
-        <span>5秒</span>
-        <span>30秒</span>
-      </Slider.Marks>
     </Slider>
   );
 }
