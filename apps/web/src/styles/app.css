@@ -3778,6 +3778,8 @@ p.home-hero-kicker {
   margin-bottom: 6px;
 }
 .composer-panel .prompt-field :is(textarea, .reference-rich-editor.textarea) {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
   height: 100px;
   min-height: 70px;
   max-height: 280px;
@@ -3785,6 +3787,13 @@ p.home-hero-kicker {
   resize: vertical;
   background: var(--field-background);
   border-radius: 12px;
+}
+@media (max-width: 767px) {
+  .composer-panel .prompt-field > label,
+  .composer-panel .prompt-field :is(textarea, .reference-rich-editor.textarea) {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+  }
 }
 .composer-panel
   .prompt-field
