@@ -38,12 +38,13 @@ apps/web/src/
     ├── account/                  # Header账户菜单、账户中心、钱包请求和账务展示
     ├── workspace/                # 统一工作区布局、工具分类搜索、历史筛选、跨工具草稿交接
     ├── commerce/                 # 兼容旧电商入口偏好、家纺裂变参数面板、套图计划语言分析、真实计划确认与生图、本地会话草稿
+    ├── video/                    # 视频创作参数页、会话草稿与空历史（生成未接入，不请求图片任务）
     ├── home/                     # 首页、共享创作输入与提示辅助
     │   ├── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，use-inspiration-columns.ts 订阅断点并派生均衡瀑布流
     │   └── home-grid-motion.tsx   # 按需加载的Grid Motion背景、视差与可见性暂停；参数在react-bit-config.ts
     ├── assets/                   # 素材库页面、全屏我的素材与共用浏览组件（筛选、按天等高行、收藏）
     ├── generation/               # 生图请求、事件、会话草稿及工作台页面
-    │   ├── composer/             # 比例选择、参数选中背景
+    │   ├── composer/             # 比例选择、参数选中背景、图片与视频共用的单选参数行
     │   ├── models/               # 创作直达入口、整行悬停模型小卡片与下拉选择
     │   ├── references/           # 共享参考图上传、当前／历史上传／生成素材分类搜索与多选引用、缩略图
     │   └── history/              # 历史查询、任务信息、操作和定位
@@ -127,7 +128,7 @@ GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 C
 
 - `features/account/account-menu.tsx` 的 HeaderLogin 与 AccountMenu 封装未登录入口和侧栏账户菜单（积分卡片、会员行与个人中心快捷入口）；`header-benefits.tsx` 组合登录后的双入口胶囊，积分点击用官方Popover展示 `CreditPreview` 的真实余额及最多三条记录。`account-overlays.tsx` 以Zustand记录个人中心页签、充值／会员弹层及各自打开者，`AccountOverlayHost` 由StudioShell挂载，统一渲染懒加载个人中心、`RechargeDialog`（`credits-dialog.tsx`、`credit-packs.tsx` 订单预览）与懒加载会员弹窗；充值和会员可叠在个人中心上方，各层关闭后焦点返回各自打开者，退出登录时清空。
 - `features/account/account-center-dialog.tsx` 是懒加载的个人中心弹窗（不设路由），页签定义在 `account-center-tabs.ts`；`account-overview.tsx`、`credit-ledger.tsx`、`recharge-orders.tsx`、`account-membership.tsx`、`account-security.tsx` 分别为各页签，`account-format.ts` 提供纯格式化函数（张数换算、成员、相对时间），`account-entry.tsx` 为收支类型图标。查询共用TanStack Query，只在页签选中时挂载。
-- `features/account/membership-page.tsx` 导出懒加载全屏 MembershipDialog，Header在当前工作区打开；/membership仅为旧链接兼容入口，不展示返回与明细按钮；`MembershipPlans` 管理分类、周期、档位和团队席位展示；membership-details组合工具／协作能力与Tooltip，membership-faq用官方Accordion承载本站FAQ，`CreditPacks` 只管理所选包。`wallet-client.ts` 共享钱包查询，最近记录按需读取并缓存30秒，不新增轮询。未接入的会员、绑定、验证码及支付不会模拟成功。
+- `features/account/membership-page.tsx` 导出懒加载全屏 MembershipDialog，Header在当前工作区打开；/membership仅为旧链接兼容入口，不展示返回与明细按钮；`MembershipPlans` 管理分类、周期、档位和团队席位展示；标语单价、周期最低折扣、折扣标签、单位积分价与“积分单价最低”飘带均由 `membership-pricing.ts` 的纯函数从价格表推导，并由同目录单元测试覆盖；membership-details组合工具／协作能力与Tooltip，membership-faq用官方Accordion承载本站FAQ，`CreditPacks` 只管理所选包。`wallet-client.ts` 共享钱包查询，最近记录按需读取并缓存30秒，不新增轮询。未接入的会员、绑定、验证码及支付不会模拟成功。
 
 ## 数据库领域命名
 
