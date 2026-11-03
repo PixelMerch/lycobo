@@ -81,10 +81,10 @@ export const workspaceTools = [
     path: "/video",
     category: "商品视频",
     image: "/studio/models/image-2-5-2.webp",
-    description: "用商品图生成短视频，描述动作与镜头运动",
+    description: "用文字和参考图片生成精美宣传视频",
     caption: "参考图 · 镜头 · 时长",
     hero: "/studio/tool-heroes/video.webp",
-    summary: "用文字和参考图片生成768p视频",
+    summary: "用文字和参考图片生成精美宣传视频",
     steps: [
       "添加参考图片，或直接输入文字描述",
       "描述画面主体、动作和镜头运动",

@@ -39,7 +39,7 @@ test("tool search, categories and unavailable tools do not trigger paid work", a
   await expect(video).toContainText("768p");
   await video.click();
   await expect(page).toHaveURL(/\/video$/);
-  await expect(page.getByRole("button", { name: /立即生成.*100 积分/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /立即生成.*100/ })).toBeDisabled();
   expect(submissions).toEqual([]);
 });
 

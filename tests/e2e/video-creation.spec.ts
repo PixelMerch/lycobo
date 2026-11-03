@@ -55,7 +55,7 @@ for (const width of [390, 1440]) {
     await page.mouse.move(box.x + box.width - 1, box.y + box.height / 2, { steps: 8 });
     await page.mouse.up();
     await expect(composer.locator(".video-duration-output")).toHaveText("30 秒");
-    await expect(composer.getByRole("button", { name: /立即生成.*100 积分/ })).toBeEnabled();
+    await expect(composer.getByRole("button", { name: /立即生成.*100/ })).toBeEnabled();
     await tools.getByRole("button", { name: "主图制作", exact: true }).click();
     await tools.getByRole("button", { name: "视频创作", exact: true }).click();
     await expect(prompt).toHaveValue("镜头缓慢推近，床品在晨光中展开");
@@ -112,7 +112,7 @@ test("video text-only submission is durable, uses the selected duration and does
     }
   });
   await page.goto("/video");
-  const submit = page.getByRole("button", { name: /立即生成.*100 积分/ });
+  const submit = page.getByRole("button", { name: /立即生成.*100/ });
   await expect(submit).toBeDisabled();
   await page.getByLabel("文字描述", { exact: true }).fill("俯拍商品，镜头平稳向前推进");
   await submit.click();
@@ -157,7 +157,7 @@ test("an ambiguous video submission retains its immutable idempotency key when t
   await page.goto("/video");
   const prompt = page.getByLabel("文字描述", { exact: true });
   await prompt.fill("原始视频画面");
-  await page.getByRole("button", { name: /立即生成.*100 积分/ }).click();
+  await page.getByRole("button", { name: /立即生成.*100/ }).click();
   await expect(page.getByRole("button", { name: /确认上次提交/ })).toBeEnabled();
   await prompt.fill("准备下一条的新草稿");
   await page.getByRole("button", { name: /确认上次提交/ }).click();

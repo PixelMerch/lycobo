@@ -1,9 +1,7 @@
 import { Button, Label, Slider } from "@heroui/react";
 import { videoSeconds, videoUnitCredits } from "@lycoboai/contracts";
-import { IconArrowUp } from "@tabler/icons-react";
 import { CreditCoin } from "../../components/credit-coin";
 import { ReferencePrompt } from "../../components/reference-prompt";
-import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { HomeRatioPicker } from "../generation/composer/ratio-picker";
 import { hasPromptDescription } from "../generation/references/prompt-description";
@@ -121,11 +119,10 @@ export function VideoPage() {
             })
           }
         >
-          <UiIcon icon={IconArrowUp} />
           {submission.hasPending ? "确认上次提交" : "立即生成"}
           <span className="generate-credit-cost">
             <CreditCoin size="default" />
-            {videoUnitCredits} 积分
+            {videoUnitCredits}
           </span>
         </Button>
         {model.data && !model.data.enabled && (
