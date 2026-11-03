@@ -862,6 +862,20 @@
   color: var(--tool-soft);
   font-weight: var(--weight-semibold);
 }
+.unified-workspace
+  .generation-job
+  :is(
+    .generation-meta,
+    .generation-meta dt,
+    .generation-meta dd,
+    .generation-meta time,
+    .generation-task-id.button,
+    .model-tag,
+    .prompt-toggle.button
+  ) {
+  font-size: 11px;
+  line-height: 16px;
+}
 /* Prompt expansion, copy action and references each occupy their own row. */
 .unified-workspace .history-prompt {
   display: grid;
