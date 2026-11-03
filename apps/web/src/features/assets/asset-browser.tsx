@@ -12,10 +12,12 @@ import {
   type TablerIcon,
 } from "@tabler/icons-react";
 import { type CSSProperties, useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { InfiniteLoad } from "../../components/infinite-load";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
-import { useImageSession } from "../generation/generation-client";
+import { LoginDialog } from "../auth/login-dialog";
+import { ImageApiError, useImageSession } from "../generation/generation-client";
 import { modelDisplayName } from "../generation/models/model-display-name";
 import { useModelPresentation } from "../generation/models/model-logos";
 import { ImagePreviewDialog } from "../image-workspace/image-preview";
@@ -143,6 +145,7 @@ export function AssetBrowser({
   generatedOnly = false,
   onChange,
   onViewHistory,
+  onAuthenticationClose,
 }: {
   filters: AssetLibraryFilters;
   defaults: AssetLibraryFilters;
@@ -151,7 +154,9 @@ export function AssetBrowser({
   generatedOnly?: boolean;
   onChange: (filters: AssetLibraryFilters) => void;
   onViewHistory?: (() => void) | undefined;
+  onAuthenticationClose?: (() => void) | undefined;
 }) {
+  const navigate = useNavigate();
   const [columns, setColumns] = useState(6);
   const session = useImageSession();
   const query = useAssetLibrary(filters);
@@ -164,8 +169,17 @@ export function AssetBrowser({
     : query.isError && !query.data
       ? query.error
       : null;
+  const authenticationRequired =
+    (session.error instanceof ImageApiError && session.error.status === 401) ||
+    (query.error instanceof ImageApiError && query.error.status === 401);
   useErrorToast(
-    session.isError ? session.error.message : query.isError ? query.error.message : null,
+    authenticationRequired
+      ? null
+      : session.isError
+        ? session.error.message
+        : query.isError
+          ? query.error.message
+          : null,
   );
   const compact = width > 0 && width < compactWidth;
   const assets = query.data?.pages.flatMap((page) => page.data) ?? [];
@@ -267,6 +281,14 @@ export function AssetBrowser({
       {width > 0 && content}
     </>
   );
+  if (authenticationRequired) {
+    return (
+      <LoginDialog
+        onClose={onAuthenticationClose ?? (() => navigate("/", { replace: true }))}
+        onLoginSuccess={() => void session.refetch()}
+      />
+    );
+  }
   return (
     <div className="asset-browser" ref={frame}>
       <div className="asset-source-panel">{panelContent}</div>

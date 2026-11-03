@@ -40,6 +40,7 @@ export function LibraryDialog({
               </Modal.Header>
               <Modal.Body className="library-body">
                 <AssetBrowser
+                  onAuthenticationClose={onClose}
                   generatedOnly
                   filters={filters}
                   defaults={defaults}

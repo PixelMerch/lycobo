@@ -1,11 +1,9 @@
-import { Button, Drawer, Modal, Tooltip } from "@heroui/react";
+import { Button, Drawer, Tooltip } from "@heroui/react";
 import {
   IconFolderSparkle,
-  IconHelpCircle,
   IconLayoutSidebar,
   IconLayoutSidebarRight,
   IconMenu2,
-  IconSettings,
   IconShoppingBagSearch,
   IconSmartHome,
   IconX,
@@ -45,7 +43,6 @@ export function StudioShell() {
   const expandedSidebarWidth = viewportWidth >= 2560 ? 320 : viewportWidth >= 1800 ? 288 : 274;
   const sidebarWidth =
     viewportWidth < 768 ? "0px" : sidebarCollapsed ? "64px" : `${expandedSidebarWidth}px`;
-  const [info, setInfo] = useState<string | null>(null);
   const nav = (
     <>
       <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
@@ -132,36 +129,7 @@ export function StudioShell() {
           </Button>
         </div>
         <nav id="studio-sidebar-navigation">{nav}</nav>
-        <div className="sidebar-bottom">
-          <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
-            <Button
-              variant="tertiary"
-              className="nav-row"
-              aria-label="帮助中心"
-              onPress={() => setInfo("帮助中心")}
-            >
-              <UiIcon icon={IconHelpCircle} size="default" />
-              <span className="nav-label">帮助中心</span>
-            </Button>
-            <Tooltip.Content placement="right">帮助中心</Tooltip.Content>
-          </Tooltip>
-          {signedIn ? (
-            <AccountMenu />
-          ) : (
-            <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
-              <Button
-                variant="tertiary"
-                className="nav-row"
-                aria-label="账户设置"
-                onPress={() => setInfo("账户设置")}
-              >
-                <UiIcon icon={IconSettings} size="default" />
-                <span className="nav-label">账户设置</span>
-              </Button>
-              <Tooltip.Content placement="right">账户设置</Tooltip.Content>
-            </Tooltip>
-          )}
-        </div>
+        <div className="sidebar-bottom">{signedIn && <AccountMenu />}</div>
       </aside>
       <header className="topbar">
         <Drawer isOpen={menuOpen} onOpenChange={setMenuOpen}>
@@ -203,39 +171,6 @@ export function StudioShell() {
         <Outlet context={{ setHomeHeaderOpaque } satisfies StudioShellContext} />
       </main>
       {signedIn && <AccountOverlayHost onNavigate={() => setMenuOpen(false)} />}
-      <Modal
-        isOpen={info !== null}
-        onOpenChange={(open) => {
-          if (!open) setInfo(null);
-        }}
-      >
-        <Modal.Backdrop>
-          <Modal.Container>
-            <Modal.Dialog className="info-dialog">
-              <Modal.Header>
-                <Modal.Heading>{info}</Modal.Heading>
-                <Modal.CloseTrigger aria-label="关闭说明">
-                  <UiIcon icon={IconX} size="action" />
-                </Modal.CloseTrigger>
-              </Modal.Header>
-              <Modal.Body>
-                <p>
-                  {info === "帮助中心"
-                    ? "选择创作，进入模型工作台；添加参考图并描述画面。查看案例可以获取灵感，草稿会在当前页面会话中保留。"
-                    : info === "账户设置"
-                      ? "账户服务尚未开放。"
-                      : `${info ?? "此功能"}正在准备中。`}
-                </p>
-              </Modal.Body>
-              <Modal.Footer>
-                <Button variant="secondary" onPress={() => setInfo(null)}>
-                  知道了
-                </Button>
-              </Modal.Footer>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
     </motion.div>
   );
 }
