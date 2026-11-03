@@ -809,9 +809,8 @@
   min-height: var(--workspace-toolbar-height);
   margin-bottom: 12px;
 }
-/* Every task is one full-width row card, paired with one thumbnail in the rail. Images
- * share a five-column tile grid; a single result keeps its own ratio up to 400px, and
- * batches past ten images fold to two rows. */
+/* Each task keeps a full-width history card; previews preserve their proportions,
+ * use at most four columns, and fold after twelve images. */
 .unified-workspace .generation-history {
   gap: 16px;
 }
@@ -876,8 +875,30 @@
   gap: 8px;
 }
 .unified-workspace .generation-results[data-count="1"] {
-  grid-template-columns: minmax(0, 400px);
+  grid-template-columns: minmax(0, 560px);
   justify-content: start;
+}
+.unified-workspace .generation-results > div {
+  width: min(100%, 560px, calc(min(360px, 60dvh) * var(--history-image-ratio, 1)));
+  align-self: start;
+}
+.unified-workspace .generation-results .generation-media-open.button,
+.unified-workspace .generation-results[data-count] .generation-placeholder {
+  position: relative;
+  aspect-ratio: var(--history-image-ratio, 1);
+  min-height: 0;
+  overflow: hidden;
+}
+.unified-workspace .generation-results[data-count] img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  object-fit: contain;
+}
+.unified-workspace .generation-results .generation-media {
+  width: 100%;
 }
 .unified-workspace .generation-results :is(.generation-media-open.button, .generation-placeholder) {
   border-radius: 12px;

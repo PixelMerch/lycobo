@@ -1,7 +1,7 @@
 import { Button, EmptyState } from "@heroui/react";
 import { type ImageJob, textileViews } from "@lycoboai/contracts";
 import { IconChevronDown, IconChevronUp, IconPhotoPlus } from "@tabler/icons-react";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { type CSSProperties, Fragment, useEffect, useRef, useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
 import { useErrorToast } from "../../../lib/error-toast";
@@ -183,6 +183,11 @@ export function GenerationHistory({
                 id={`results-${job.id}`}
                 className="generation-results"
                 data-count={job.items.length}
+                style={
+                  {
+                    "--history-image-ratio": job.aspect_ratio.replace(":", " / "),
+                  } as CSSProperties
+                }
                 data-failed={
                   job.items.some(
                     (item) => item.status === "failed" || item.status === "needs_reconciliation",
