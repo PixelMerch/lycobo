@@ -839,9 +839,9 @@
   border-radius: 20px;
   background: #17171b;
 }
-/* Task facts read as one quiet line; spacing replaces the divider bars. */
+/* Task identity uses spacing; output parameters share symmetric dividers. */
 .unified-workspace .generation-job .generation-meta {
-  gap: 2px var(--space-3);
+  gap: 2px 0;
 }
 .unified-workspace .generation-job .generation-meta > div {
   flex-wrap: nowrap;
@@ -849,6 +849,13 @@
 }
 .unified-workspace .generation-job .generation-meta > div + div::before {
   display: none;
+}
+.unified-workspace .generation-job .generation-meta > div:has(~ .generation-meta-ratio) {
+  margin-inline-end: var(--space-3);
+}
+.unified-workspace .generation-job .generation-meta > .generation-meta-ratio ~ div::before {
+  display: block;
+  margin-inline: 6px;
 }
 .unified-workspace:is([data-tool="textile"], [data-tool="variation"]) .generation-job .model-tag {
   background: color-mix(in srgb, var(--tool-accent) 15%, transparent);

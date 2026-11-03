@@ -23,9 +23,6 @@
   background: var(--tool-accent);
   color: var(--tool-ink);
 }
-.unified-workspace .video-history-card .generation-meta > .generation-meta-ratio ~ div::before {
-  display: block;
-}
 .video-history-placeholder {
   display: flex;
   flex-direction: column;

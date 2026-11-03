@@ -409,6 +409,27 @@ test("video history matches image spacing and typography, regenerates with confi
       };
     });
   const image = await measurements();
+  const imageDividerGaps = await page.locator(".generation-meta-units").evaluate((node) => {
+    const previous = node.previousElementSibling;
+    const values = node.querySelectorAll("dd");
+    const inner = node.querySelector(".generation-meta-divider");
+    if (!previous || !values[0] || !values[1] || !inner)
+      throw new Error("Missing image parameters");
+    const style = getComputedStyle(node, "::before");
+    const left = node.getBoundingClientRect().left + Number.parseFloat(style.marginLeft);
+    return {
+      ratio: [
+        Math.round(left - previous.getBoundingClientRect().right),
+        Math.round(values[0].getBoundingClientRect().left - left - Number.parseFloat(style.width)),
+      ],
+      count: [
+        Math.round(inner.getBoundingClientRect().left - values[0].getBoundingClientRect().right),
+        Math.round(values[1].getBoundingClientRect().left - inner.getBoundingClientRect().right),
+      ],
+    };
+  });
+  expect(imageDividerGaps.ratio).toEqual(imageDividerGaps.count);
+  expect(imageDividerGaps.ratio).toEqual([6, 6]);
   await expect(page.getByRole("button", { name: "复制提示词", exact: true })).toHaveCSS(
     "font-size",
     "11px",
@@ -459,6 +480,30 @@ test("video history matches image spacing and typography, regenerates with confi
     "font-size",
     "11px",
   );
+  const dividerGaps = await card.locator(".generation-meta-ratio ~ div").evaluateAll((nodes) =>
+    nodes.flatMap((node) => {
+      const previous = node.previousElementSibling;
+      const text = node.querySelector("dd");
+      if (
+        !previous ||
+        !text ||
+        previous.getBoundingClientRect().top !== node.getBoundingClientRect().top
+      )
+        return [];
+      const divider = getComputedStyle(node, "::before");
+      const left = node.getBoundingClientRect().left + Number.parseFloat(divider.marginLeft);
+      return [
+        {
+          before: Math.round(left - previous.getBoundingClientRect().right),
+          after: Math.round(
+            text.getBoundingClientRect().left - left - Number.parseFloat(divider.width),
+          ),
+        },
+      ];
+    }),
+  );
+  expect(dividerGaps.length).toBeGreaterThan(0);
+  for (const gap of dividerGaps) expect(gap.before).toBe(gap.after);
   const draft = page.getByLabel("场景描述", { exact: true });
   await draft.fill("准备下一条视频的草稿");
   const regenerate = card.getByRole("button", { name: "重新生成", exact: true });
