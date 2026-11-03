@@ -29,6 +29,8 @@ export type PreviewMeta = {
   prompt?: string | null;
   /** Asset IDs of the reference images used by the task. */
   references?: string[];
+  /** The image's own ID; only 素材库 previews show it, history shows the task ID alone. */
+  imagePublicId?: string | null | undefined;
 };
 
 export function ImagePreviewDialog({

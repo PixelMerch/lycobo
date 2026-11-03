@@ -140,14 +140,16 @@ export function useImageAssets({
   enabled = true,
   kind = "all",
   type,
+  favorite = false,
 }: {
   enabled?: boolean;
   kind?: "all" | "output" | "reference";
   type?: "image" | "video" | "audio" | undefined;
+  favorite?: boolean;
 } = {}) {
   const session = useImageSession();
   return useInfiniteQuery({
-    queryKey: ["image-assets", kind, type ?? "all"],
+    queryKey: ["image-assets", kind, type ?? "all", favorite ? "favorite=true" : "any"],
     enabled: enabled && session.isSuccess,
     initialPageParam: "",
     retry: false,
@@ -155,7 +157,7 @@ export function useImageAssets({
       imageAssetsResponseSchema.parse(
         await (
           await imageRequest(
-            `image-assets?limit=30${kind === "all" ? "" : `&kind=${kind}`}${type ? `&type=${type}` : ""}${pageParam ? `&before=${pageParam}` : ""}`,
+            `image-assets?limit=30${kind === "all" ? "" : `&kind=${kind}`}${type ? `&type=${type}` : ""}${favorite ? "&favorite=true" : ""}${pageParam ? `&before=${pageParam}` : ""}`,
             {
               signal,
             },

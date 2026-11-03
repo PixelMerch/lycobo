@@ -19,6 +19,8 @@ export function apiFixture(data: unknown, status = 200) {
 export async function mockImageApi(page: Page) {
   const userId = crypto.randomUUID(),
     organizationId = crypto.randomUUID();
+  // Favorites are server state; the fixture keeps them for the page's lifetime.
+  const favorites = new Set<string>();
   await page.route("**/api/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path.startsWith("/api/v1/auth/")) {
@@ -44,7 +46,14 @@ export async function mockImageApi(page: Page) {
     else if (path.endsWith("/image-assets") && route.request().method() === "POST")
       body = { id: crypto.randomUUID(), width: 2, height: 2, bytes: 100, mimeType: "image/png" };
     else if (path.endsWith("/latest-edit")) body = { job: null };
-    else if (path.endsWith("/wallet")) body = { balance: 200, unitCredits: 2 };
+    else if (path.endsWith("/image-asset-favorites")) body = { data: [...favorites] };
+    else if (path.endsWith("/favorite")) {
+      const id = path.split("/").at(-2) ?? "";
+      const favorite = route.request().method() === "PUT";
+      if (favorite) favorites.add(id);
+      else favorites.delete(id);
+      body = { favorite };
+    } else if (path.endsWith("/wallet")) body = { balance: 200, unitCredits: 2 };
     else if (path.startsWith("/api/v1/wallet/")) body = { data: [] };
     else if (path.endsWith("/image-tasks") || path.endsWith("/image-assets")) body = { data: [] };
     await route.fulfill({ json: apiFixture(body) });

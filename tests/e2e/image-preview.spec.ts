@@ -102,7 +102,11 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
   await expect(viewer).toBeVisible();
   await expect(viewer.locator(".image-preview-facts")).toContainText("ID：W90000001");
-  await expect(viewer.locator(".image-preview-facts")).not.toContainText("P55871231");
+  // 素材库 tiles no longer print the image ID, so library previews add it next to the task ID.
+  await expect(viewer.locator(".image-preview-facts")).toContainText("图片ID：P55871231");
+  await expect(
+    viewer.getByRole("button", { name: "复制图片 ID P55871231", exact: true }),
+  ).toBeVisible();
   await expect(
     viewer.getByRole("button", { name: "复制任务 ID W90000001", exact: true }),
   ).toBeVisible();

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { assetContentUrl } from "../asset-delivery-client";
 import { useImageAssets } from "../generation-client";
-import { type ReferenceImage, useStudioStore } from "../studio-state";
+import type { ReferenceImage } from "../studio-state";
 
 /** Browse only the authenticated user's assets; selecting an asset reuses its durable ID. */
 export function ReferenceMentionOptions({
@@ -24,28 +24,27 @@ export function ReferenceMentionOptions({
   allowHistory: boolean;
 }) {
   const [category, setCategory] = useState("images");
-  const favorites = useStudioStore((state) => state.favorites);
   const [search, setSearch] = useState("");
   const isCurrent = (image: ReferenceImage) =>
     references.some(
       (reference) =>
         reference.id === image.id || (image.assetId && reference.assetId === image.assetId),
     );
+  // 收藏 lists the member's server favorites, uploads and outputs alike.
   const query = useImageAssets({
     enabled: allowHistory,
-    kind: category === "images" ? "reference" : "output",
+    kind: category === "images" ? "reference" : category === "favorites" ? "all" : "output",
     type: "image",
+    favorite: category === "favorites",
   });
   const assets = query.data?.pages.flatMap((page) => page.data) ?? [];
-  const stored: ReferenceImage[] = assets
-    .filter((asset) => category !== "favorites" || favorites.includes(asset.id))
-    .map((asset) => ({
-      id: asset.id,
-      assetId: asset.id,
-      sourceKind: asset.kind,
-      src: assetContentUrl(asset.id, true),
-      name: asset.public_id ?? (asset.kind === "output" ? "生成图片" : "上传图片"),
-    }));
+  const stored: ReferenceImage[] = assets.map((asset) => ({
+    id: asset.id,
+    assetId: asset.id,
+    sourceKind: asset.kind,
+    src: assetContentUrl(asset.id, true),
+    name: asset.public_id ?? (asset.kind === "output" ? "生成图片" : "上传图片"),
+  }));
   const options: ReferenceImage[] =
     category === "images"
       ? [

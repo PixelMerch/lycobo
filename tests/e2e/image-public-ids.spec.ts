@@ -79,5 +79,7 @@ test("task and image IDs stay stable across history, reload and the asset librar
   await preview.getByRole("button", { name: "关闭图片预览", exact: true }).click();
   await expect(preview).toHaveCount(0);
   await page.getByRole("link", { name: "素材库", exact: true }).click();
-  await expect(page.locator(".asset-grid")).toContainText("图片 ID：P82ZX19M4");
+  // 素材库 previews add the image's own ID; history previews keep only the task ID.
+  await page.getByRole("button", { name: "查看图片：短编号示例", exact: true }).click();
+  await expect(preview.locator(".image-preview-facts")).toContainText("图片ID：P82ZX19M4");
 });

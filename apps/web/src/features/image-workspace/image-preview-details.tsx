@@ -10,9 +10,9 @@ import { CollapsibleText } from "../../components/collapsible-text";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
 import { copyToClipboard } from "../../lib/clipboard";
+import { useAssetFavorite } from "../assets/asset-library-client";
 import { downloadAsset } from "../generation/generation-client";
 import { ReferenceThumbnails } from "../generation/references/reference-thumbnails";
-import { useStudioStore } from "../generation/studio-state";
 import type { PreviewImage, PreviewMeta } from "./image-preview";
 
 function CopyIconButton({ value, label }: { value: string; label: string }) {
@@ -40,8 +40,7 @@ export function ImagePreviewDetails({
   modelName: string;
   onRepair: () => void;
 }) {
-  const favorite = useStudioStore((s) => s.favorites.includes(active.id));
-  const toggleFavorite = useStudioStore((s) => s.toggleFavorite);
+  const { favorite, toggle } = useAssetFavorite(active.id);
   return (
     <aside className="image-preview-info image-preview-workspace-panel" aria-label="图片信息">
       <div className="image-preview-close-row">
@@ -60,7 +59,7 @@ export function ImagePreviewDetails({
               className="image-preview-tool"
               aria-label={favorite ? "取消收藏" : "收藏图片"}
               isSelected={favorite}
-              onChange={() => toggleFavorite(active.id)}
+              onChange={toggle}
             >
               <UiIcon icon={favorite ? IconStarFilled : IconStar} />
             </ToggleButton>
@@ -84,6 +83,15 @@ export function ImagePreviewDetails({
         <span className="image-preview-fact-label">任务ID：{meta.taskPublicId ?? "—"}</span>
         {meta.taskPublicId && (
           <CopyIconButton value={meta.taskPublicId} label={`复制任务 ID ${meta.taskPublicId}`} />
+        )}
+        {meta.imagePublicId && (
+          <>
+            <span className="image-preview-fact-label">图片ID：{meta.imagePublicId}</span>
+            <CopyIconButton
+              value={meta.imagePublicId}
+              label={`复制图片 ID ${meta.imagePublicId}`}
+            />
+          </>
         )}
         {meta.createdAt && (
           <time className="image-preview-time" dateTime={meta.createdAt}>

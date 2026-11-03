@@ -7,7 +7,8 @@ import { toolForPath, type workspaceTools } from "./workspace-state";
 import { WorkspaceToolPreview } from "./workspace-tool-preview";
 
 type ToolId = (typeof workspaceTools)[number]["id"];
-const toolIcons = { create: IconCamera, textile: IconLayoutCollage, variation: IconWand };
+/** Shared by the workspace symbols and the asset library's 功能 filter. */
+export const toolIcons = { create: IconCamera, textile: IconLayoutCollage, variation: IconWand };
 
 export function WorkspaceToolSymbol({ tool }: { tool: ToolId }) {
   return (

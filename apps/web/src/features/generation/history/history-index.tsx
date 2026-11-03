@@ -157,7 +157,12 @@ export function HistoryIndex({
             });
         }}
       />
-      {libraryOpen && <LibraryDialog onClose={() => setLibraryOpen(false)} />}
+      {libraryOpen && (
+        <LibraryDialog
+          tool={tool === "all" || tool === null ? undefined : tool}
+          onClose={() => setLibraryOpen(false)}
+        />
+      )}
     </>
   );
 }

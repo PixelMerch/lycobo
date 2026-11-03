@@ -74,8 +74,6 @@ export const useStudioStore = create<{
   addReferences: (model: ModelId, references: ReferenceImage[]) => void;
   recentModels: ModelId[];
   visitModel: (model: ModelId) => void;
-  favorites: string[];
-  toggleFavorite: (id: string) => void;
 }>((set) => ({
   activeHistoryId: null,
   setActiveHistoryId: (activeHistoryId) => set({ activeHistoryId }),
@@ -107,13 +105,6 @@ export const useStudioStore = create<{
   recentModels: [],
   visitModel: (model) =>
     set((state) => ({ recentModels: [model, ...state.recentModels.filter((id) => id !== model)] })),
-  favorites: [],
-  toggleFavorite: (id) =>
-    set((state) => ({
-      favorites: state.favorites.includes(id)
-        ? state.favorites.filter((item) => item !== id)
-        : [...state.favorites, id],
-    })),
 }));
 export const photo = (image: string, thumbnail = false) =>
   `/studio/${image}${thumbnail ? "-thumb" : ""}.webp`;

@@ -92,9 +92,9 @@ test("asset library appends another page and stops when the list is complete", a
     });
   });
   await page.goto("/assets");
-  await expect(page.locator(".asset-grid > .case-card")).toHaveCount(30);
+  await expect(page.locator(".asset-tile")).toHaveCount(30);
   await page.locator(".infinite-load").scrollIntoViewIfNeeded();
-  await expect(page.locator(".asset-grid > .case-card")).toHaveCount(31);
+  await expect(page.locator(".asset-tile")).toHaveCount(31);
   await expect(page.locator(".infinite-load")).toHaveCount(0);
   expect(nextRequests).toBe(1);
 });
