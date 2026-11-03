@@ -4,6 +4,7 @@ import { IconCoins, IconMinus, IconPlus } from "@tabler/icons-react";
 import { useId, useState } from "react";
 import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
+import { SelectionHighlight } from "../generation/composer/selection-highlight";
 import { EnterpriseMembership, MembershipBenefits, MembershipInfo } from "./membership-details";
 import { MembershipFaq } from "./membership-faq";
 import {
@@ -219,9 +220,18 @@ export function MembershipPlans() {
         <div className="membership-switcher">
           <Tabs.ListContainer>
             <Tabs.List aria-label="订阅类型">
-              <Tabs.Tab id="personal">个人</Tabs.Tab>
-              <Tabs.Tab id="team">团队</Tabs.Tab>
-              <Tabs.Tab id="enterprise">企业</Tabs.Tab>
+              <Tabs.Tab id="personal">
+                个人
+                <Tabs.Indicator />
+              </Tabs.Tab>
+              <Tabs.Tab id="team">
+                团队
+                <Tabs.Indicator />
+              </Tabs.Tab>
+              <Tabs.Tab id="enterprise">
+                企业
+                <Tabs.Indicator />
+              </Tabs.Tab>
             </Tabs.List>
           </Tabs.ListContainer>
           {audience !== "enterprise" && (
@@ -247,6 +257,12 @@ export function MembershipPlans() {
                     aria-label={item.label}
                     {...(hint ? { "aria-describedby": hint } : {})}
                   >
+                    {item.id === cycle && (
+                      <SelectionHighlight
+                        layoutId="membership-cycle-selection"
+                        layoutDependency={cycle}
+                      />
+                    )}
                     {item.label}
                     {hint && (
                       <span id={hint} className="membership-cycle-hint">
@@ -259,15 +275,17 @@ export function MembershipPlans() {
             </ToggleButtonGroup>
           )}
         </div>
-        <Tabs.Panel id="personal">
-          <MembershipPlanCards plans={membershipPricing} cycle={cycle} />
-        </Tabs.Panel>
-        <Tabs.Panel id="team">
-          <MembershipPlanCards plans={teamMembershipPricing} cycle={cycle} team />
-        </Tabs.Panel>
-        <Tabs.Panel id="enterprise">
-          <EnterpriseMembership />
-        </Tabs.Panel>
+        <div className="membership-panels">
+          <Tabs.Panel id="personal">
+            <MembershipPlanCards plans={membershipPricing} cycle={cycle} />
+          </Tabs.Panel>
+          <Tabs.Panel id="team">
+            <MembershipPlanCards plans={teamMembershipPricing} cycle={cycle} team />
+          </Tabs.Panel>
+          <Tabs.Panel id="enterprise">
+            <EnterpriseMembership />
+          </Tabs.Panel>
+        </div>
       </Tabs>
       <MembershipFaq />
     </section>

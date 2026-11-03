@@ -50,6 +50,10 @@
     radial-gradient(40% 360px at 100% 0, #54e6a52e, transparent);
   background-attachment: local;
   background-repeat: no-repeat;
+  scrollbar-width: none;
+}
+.membership-dialog .modal__body::-webkit-scrollbar {
+  display: none;
 }
 .membership-plans {
   width: min(1440px, 100%);
@@ -140,6 +144,15 @@
   color: #fff;
   font-weight: var(--weight-semibold);
 }
+/* HeroUI's indicator slides between audiences as a soft pill, not the site-wide underline. */
+.membership-switcher .tabs__indicator {
+  top: 0;
+  bottom: auto;
+  height: 100%;
+  border-radius: 16px;
+  background: #ffffff12;
+  box-shadow: none;
+}
 .membership-cycle.toggle-button-group {
   width: 100%;
   padding: 4px;
@@ -147,6 +160,8 @@
   background: #20211f;
 }
 .membership-cycle .toggle-button {
+  position: relative;
+  isolation: isolate;
   flex: 1;
   gap: 6px;
   min-width: 0;
@@ -155,8 +170,36 @@
   font-size: var(--text-sm);
 }
 .membership-cycle .toggle-button[data-selected="true"] {
-  background: #3a3c37;
+  background: transparent;
   color: #fff;
+}
+.membership-cycle .toggle-selection {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: #3a3c37;
+  pointer-events: none;
+}
+.membership-panels {
+  position: relative;
+}
+.membership-panels .tabs__panel[data-entering] {
+  animation: membership-panel-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.membership-panels .tabs__panel[data-exiting] {
+  animation: membership-panel-out 160ms ease-in forwards;
+}
+@keyframes membership-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes membership-panel-out {
+  to {
+    opacity: 0;
+  }
 }
 .membership-cycle .toggle-button:is(:hover, [data-hovered="true"]):not([data-selected="true"]) {
   background: #ffffff0a;
@@ -352,12 +395,28 @@
 }
 .membership-plan-action.button[data-disabled] {
   opacity: 1;
+  pointer-events: auto;
   background: #f4f5ef;
   color: #151713;
+  transition:
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease;
 }
 .membership-plan[data-ribbon="best"] .membership-plan-action.button[data-disabled] {
   background: var(--accent);
   color: #142000;
+}
+@media (hover: hover) {
+  .membership-plan-action.button:hover {
+    background: #fff;
+    box-shadow: 0 8px 24px -10px #ffffffb3;
+  }
+  .membership-plan[data-ribbon="best"] .membership-plan-action.button:hover {
+    background: var(--accent);
+    filter: brightness(1.04);
+    box-shadow: 0 8px 24px -8px #a8ff00b3;
+  }
 }
 .membership-plan-gift {
   display: grid;
@@ -494,9 +553,12 @@
 }
 .membership-faq .accordion__item {
   border: 0;
-  border-bottom: 1px solid #ffffff12;
   border-radius: 0;
   background: transparent;
+}
+.membership-faq .accordion__item::after {
+  height: 1px;
+  background: #ffffff12;
 }
 .membership-faq .accordion__trigger {
   min-height: 72px;
@@ -635,8 +697,12 @@
 @media (prefers-reduced-motion: reduce) {
   .membership-switcher .tabs__tab,
   .membership-faq .accordion__trigger,
-  .membership-plan.card {
+  .membership-plan.card,
+  .membership-plan-action.button[data-disabled] {
     transition: none;
+  }
+  .membership-panels .tabs__panel:is([data-entering], [data-exiting]) {
+    animation: none;
   }
   .membership-plan.card:hover {
     transform: none;
