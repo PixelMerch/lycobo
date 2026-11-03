@@ -55,6 +55,7 @@ async function mockLibrary(page: Page, assets: ReturnType<typeof asset>[]) {
     queries.push(query);
     const data = assets.filter(
       (row) =>
+        (!query.get("since") || row.created_at >= (query.get("since") ?? "")) &&
         (!query.get("kind") || row.kind === query.get("kind")) &&
         (!query.get("tool") || row.tool === query.get("tool")) &&
         (!query.get("model") || row.model?.startsWith(query.get("model") ?? "")) &&
@@ -98,6 +99,14 @@ test("我的素材 only shows generated images while 素材库 retains its sourc
       .first()
       .evaluate((grid) => getComputedStyle(grid).gridTemplateColumns.split(" ").length);
   await expect.poll(gridColumns).toBe(6);
+  await expect(dialog.locator(".asset-day")).toHaveCount(0);
+  await dialog.getByRole("button", { name: "全部时间 时间", exact: true }).click();
+  await page.getByRole("option", { name: "最近 7 天", exact: true }).click();
+  await expect(dialog.locator(".asset-day")).toHaveCount(1);
+  expect(queries.at(-1)?.get("since")).toBeTruthy();
+  await dialog.getByRole("button", { name: "重置筛选", exact: true }).click();
+  await expect(dialog.locator(".asset-day")).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: "全部时间 时间", exact: true })).toBeVisible();
   const queryCount = queries.length;
   await dialog.getByRole("radio", { name: "中图，每行8张" }).click();
   await expect.poll(gridColumns).toBe(8);

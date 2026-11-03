@@ -17,6 +17,7 @@ export type AssetLibraryFilters = {
   tool: ImageTool | "all";
   type: AssetMediaType;
   model: string;
+  time?: "all" | "today" | "7" | "30" | "90";
 };
 
 export const defaultAssetFilters: AssetLibraryFilters = {
@@ -37,7 +38,8 @@ export function sameFilters(left: AssetLibraryFilters, right: AssetLibraryFilter
     left.source === right.source &&
     left.tool === right.tool &&
     left.type === right.type &&
-    left.model === right.model
+    left.model === right.model &&
+    (left.time ?? "all") === (right.time ?? "all")
   );
 }
 
@@ -71,6 +73,12 @@ function libraryQuery(filters: AssetLibraryFilters) {
   if (filters.type !== "all") query.set("type", filters.type);
   if (filtersApply(filters) && filters.tool !== "all") query.set("tool", filters.tool);
   if (filtersApply(filters) && filters.model !== "all") query.set("model", filters.model);
+  if (filters.time && filters.time !== "all") {
+    const since = new Date();
+    since.setHours(0, 0, 0, 0);
+    since.setDate(since.getDate() - (filters.time === "today" ? 0 : Number(filters.time) - 1));
+    query.set("since", since.toISOString());
+  }
   return query;
 }
 

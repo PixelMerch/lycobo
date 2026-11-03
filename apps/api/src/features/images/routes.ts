@@ -477,6 +477,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
       .regex(/^[a-z0-9][a-z0-9.-]{0,79}$/i)
       .optional()
       .safeParse(c.req.query("model"));
+    const since = z.string().datetime({ offset: true }).optional().safeParse(c.req.query("since"));
     const favorite = z.literal("true").optional().safeParse(c.req.query("favorite"));
     if (
       !limit.success ||
@@ -485,7 +486,8 @@ export function imageRoutes(deps: ImageApiDependencies) {
       !type.success ||
       !tool.success ||
       !model.success ||
-      !favorite.success
+      !favorite.success ||
+      !since.success
     )
       return fail(c, "VALIDATION_ERROR", "筛选或分页参数无效", 400);
     const scope = c.get("principal");
@@ -495,7 +497,12 @@ export function imageRoutes(deps: ImageApiDependencies) {
       before.data,
       kind.data,
       type.data,
-      { tool: tool.data, model: model.data, favorite: favorite.data === "true" },
+      {
+        tool: tool.data,
+        model: model.data,
+        favorite: favorite.data === "true",
+        ...(since.data ? { since: since.data } : {}),
+      },
     );
     return c.json({ data: delivery ? await delivery.assets(scope, assets) : assets });
   });

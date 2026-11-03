@@ -1,6 +1,6 @@
 import { Button, ListBox, Select, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import type { ImageTool } from "@lycoboai/contracts";
-import { IconLayoutGrid, IconRefresh, IconSparkles } from "@tabler/icons-react";
+import { IconCalendar, IconLayoutGrid, IconRefresh, IconSparkles } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { workspaceTools } from "../workspace/workspace-state";
@@ -20,6 +20,14 @@ const mediaTypes: { id: AssetMediaType; label: string; compact: string }[] = [
   { id: "image", label: "图片", compact: "图片" },
   { id: "video", label: "视频", compact: "视频" },
 ];
+
+const timeOptions = [
+  { id: "all", label: "全部时间" },
+  { id: "today", label: "今天" },
+  { id: "7", label: "最近 7 天" },
+  { id: "30", label: "最近 30 天" },
+  { id: "90", label: "最近 90 天" },
+] as const;
 
 /** 功能 / 类型 / 模型 for the selected source; changing any of them restarts paging. */
 export function AssetFilters({
@@ -177,6 +185,41 @@ export function AssetFilters({
           </ListBox>
         </Select.Popover>
       </Select>
+      {mediaSelect && (
+        <Select
+          className="asset-filter"
+          aria-label="时间"
+          value={filters.time ?? "all"}
+          onChange={(key) => {
+            const time = timeOptions.find((option) => option.id === key)?.id;
+            if (time) set({ time });
+          }}
+        >
+          <Select.Trigger
+            className="asset-filter-trigger"
+            data-active={(!!filters.time && filters.time !== "all") || undefined}
+          >
+            <UiIcon icon={IconCalendar} className="asset-filter-lead" />
+            <Select.Value>{({ selectedText }) => selectedText}</Select.Value>
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover className="model-menu asset-filter-menu" placement="bottom start">
+            <ListBox aria-label="时间">
+              {timeOptions.map((option) => (
+                <ListBox.Item
+                  className="model-options"
+                  key={option.id}
+                  id={option.id}
+                  textValue={option.label}
+                >
+                  <span>{option.label}</span>
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
+            </ListBox>
+          </Select.Popover>
+        </Select>
+      )}
       {!sameFilters(filters, reset) && (
         <Button
           size="sm"

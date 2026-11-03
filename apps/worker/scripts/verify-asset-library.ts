@@ -70,6 +70,13 @@ export async function verifyAssetLibrary(repository: ImageRepository, sql: postg
   assert.deepEqual(ids(await filtered({ model: "gpt-image-2" })), [created, variation].sort());
   assert.deepEqual(ids(await filtered({ tool: "textile", model: "gpt-image-2" })), []);
 
+  // A boundary filters before limiting; both native SQL and CloudBase RPC run this suite.
+  await sql`update media_assets set created_at='2020-01-01T00:00:00Z' where id=${created}`;
+  const since = "2021-01-01T00:00:00.000Z";
+  assert.deepEqual(ids(await filtered({ since, tool: "create" })), []);
+  assert.deepEqual(ids(await filtered({ since, tool: "textile" })), [textile]);
+  assert.deepEqual(ids(await filtered({ since: "2099-01-01T00:00:00.000Z" })), []);
+
   // Favorites are idempotent, personal and limited to assets the organization can still see.
   assert.equal(await repository.setAssetFavorite(owner, textile, true), true);
   assert.equal(await repository.setAssetFavorite(owner, textile, true), true);

@@ -1,6 +1,9 @@
 import { Button, EmptyState, Tabs, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import type { ImageAsset, ImageTool } from "@lycoboai/contracts";
 import {
+  IconGrid4x4,
+  IconGridDots,
+  IconLayoutGrid,
   IconMovie,
   IconPhoto,
   IconPhotoSearch,
@@ -78,7 +81,8 @@ function emptyState(
     currentTool &&
     filters.tool === currentTool &&
     filters.type === defaults.type &&
-    filters.model === "all"
+    filters.model === "all" &&
+    (!filters.time || filters.time === "all")
   )
     return filters.source === "favorites"
       ? {
@@ -99,7 +103,7 @@ function emptyState(
     return {
       icon: IconPhotoSearch,
       title: "没有符合筛选的素材",
-      text: "调整功能、类型或模型筛选后再试。",
+      text: "调整功能、类型、模型或时间筛选后再试。",
       ...(sameFilters(filters, reset) ? {} : { action: { label: "重置筛选", filters: reset } }),
     };
   if (filters.source === "favorites")
@@ -216,6 +220,11 @@ export function AssetBrowser({
       onOpen={() => setPreview(index.get(asset.id) ?? 0)}
     />
   );
+  const densityGrid = (items: ImageAsset[]) => (
+    <div className="asset-density-grid" style={{ "--asset-columns": columns } as CSSProperties}>
+      {items.map((asset) => tile(asset, { aspectRatio: 1 }))}
+    </div>
+  );
   const empty = emptyState(filters, defaults, currentTool);
   const content = failure ? (
     <AssetEmpty
@@ -243,46 +252,43 @@ export function AssetBrowser({
     />
   ) : (
     <>
-      {groupByDay(assets).map((group) => {
-        const heading = dayHeading(group.first);
-        return (
-          <section key={group.key} className="asset-day-group" aria-label={heading.label}>
-            <Day className="asset-day">
-              <b>{heading.label}</b>
-              <span>{heading.detail}</span>
-            </Day>
-            {generatedOnly ? (
-              <div
-                className="asset-density-grid"
-                style={{ "--asset-columns": columns } as CSSProperties}
-              >
-                {group.items.map((asset) => tile(asset, { aspectRatio: 1 }))}
-              </div>
-            ) : compact ? (
-              <div className="asset-masonry">
-                {masonryColumns(group.items, 2).map((column, position) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: the two columns are fixed slots.
-                  <div key={position} className="asset-column">
-                    {column.map((asset) => tile(asset, { aspectRatio: aspectRatio(asset) }))}
+      {generatedOnly && (!filters.time || filters.time === "all")
+        ? densityGrid(assets)
+        : groupByDay(assets).map((group) => {
+            const heading = dayHeading(group.first);
+            return (
+              <section key={group.key} className="asset-day-group" aria-label={heading.label}>
+                <Day className="asset-day">
+                  <b>{heading.label}</b>
+                  <span>{heading.detail}</span>
+                </Day>
+                {generatedOnly ? (
+                  densityGrid(group.items)
+                ) : compact ? (
+                  <div className="asset-masonry">
+                    {masonryColumns(group.items, 2).map((column, position) => (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: the two columns are fixed slots.
+                      <div key={position} className="asset-column">
+                        {column.map((asset) => tile(asset, { aspectRatio: aspectRatio(asset) }))}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="asset-rows">
-                {justifyRows(group.items, width, rowHeight, rowGap).map((row) => (
-                  <div
-                    key={row.items[0]?.item.id}
-                    className="asset-row"
-                    style={{ height: row.height }}
-                  >
-                    {row.items.map((entry) => tile(entry.item, { width: entry.width }))}
+                ) : (
+                  <div className="asset-rows">
+                    {justifyRows(group.items, width, rowHeight, rowGap).map((row) => (
+                      <div
+                        key={row.items[0]?.item.id}
+                        className="asset-row"
+                        style={{ height: row.height }}
+                      >
+                        {row.items.map((entry) => tile(entry.item, { width: entry.width }))}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </section>
-        );
-      })}
+                )}
+              </section>
+            );
+          })}
       <InfiniteLoad
         hasMore={query.hasNextPage}
         isLoading={query.isFetchingNextPage}
@@ -315,14 +321,14 @@ export function AssetBrowser({
               className="asset-segment asset-density-control"
               size="sm"
             >
-              <ToggleButton id="6" aria-label="大图，每行6张">
-                大
+              <ToggleButton isIconOnly id="6" aria-label="大图，每行6张">
+                <UiIcon icon={IconLayoutGrid} />
               </ToggleButton>
-              <ToggleButton id="8" aria-label="中图，每行8张">
-                中
+              <ToggleButton isIconOnly id="8" aria-label="中图，每行8张">
+                <UiIcon icon={IconGridDots} />
               </ToggleButton>
-              <ToggleButton id="10" aria-label="小图，每行10张">
-                小
+              <ToggleButton isIconOnly id="10" aria-label="小图，每行10张">
+                <UiIcon icon={IconGrid4x4} />
               </ToggleButton>
             </ToggleButtonGroup>
           ) : undefined

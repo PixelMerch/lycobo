@@ -434,6 +434,12 @@
 .asset-density-control {
   margin-left: auto;
 }
+.asset-density-control .toggle-button {
+  padding-inline: 0;
+}
+.asset-density-control + .asset-filter-meta {
+  margin-left: 0;
+}
 @media (max-width: 1023px) {
   .asset-density-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -444,4 +450,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
+}
+.asset-filters + .asset-density-grid {
+  margin-top: var(--space-4);
 }

@@ -87,6 +87,8 @@ it.each([
   "tool=video",
   "model=..%2Fsecrets",
   `model=${"m".repeat(81)}`,
+  "since=not-a-date",
+  "since=2026-02-30T00:00:00Z",
   "favorite=1",
   "favorite=false",
 ])("rejects the invalid asset filter %s without reading assets", async (query) => {
@@ -145,5 +147,24 @@ it("returns only the signed-in member's favorite ids", async () => {
   });
   expect(favoriteAssetIds).toHaveBeenCalledWith(
     expect.objectContaining({ organizationId: principal.organizationId }),
+  );
+});
+
+it("passes a validated creation-time boundary to scoped pagination", async () => {
+  const listAssets = vi
+    .fn<ImageRepository["listAssets"]>()
+    .mockResolvedValue([] as unknown as Awaited<ReturnType<ImageRepository["listAssets"]>>);
+  const request = fixture({ listAssets });
+  const since = "2026-11-01T16:00:00.000Z";
+  const before = crypto.randomUUID();
+  const response = await request(`/image-assets?since=${since}&before=${before}`);
+  expect(response.status).toBe(200);
+  expect(listAssets).toHaveBeenCalledWith(
+    expect.objectContaining({ organizationId: principal.organizationId }),
+    30,
+    before,
+    undefined,
+    undefined,
+    expect.objectContaining({ since }),
   );
 });

@@ -29,6 +29,7 @@ export class ImageRepositoryError extends Error {
 export type ImagePrincipal = ImageScope & { role: "admin" | "member"; uid?: string };
 /** Asset library filters applied before pagination; favorites belong to the signed-in member. */
 export type AssetFilters = {
+  since?: string | undefined;
   tool?: ImageTool | undefined;
   model?: string | undefined;
   favorite?: boolean | undefined;
@@ -539,6 +540,7 @@ export function openImageRepository(
         ${kind ? sql`and a.kind=${kind}` : sql``}
         ${type ? sql`and a.media_type=${type}` : sql``}
         ${filters.tool ? sql`and j.id is not null and ${toolMatchSql(filters.tool)}` : sql``}
+        ${filters.since ? sql`and a.created_at>=${filters.since}::timestamptz` : sql``}
         ${filters.model ? sql`and ${publicModelSql}=${filters.model}` : sql``}
         ${filters.favorite ? sql`and ${favorite}` : sql``}
         ${before ? sql`and (a.created_at,a.id) < (select created_at,id from media_assets where id=${before} and organization_id=${scope.organizationId})` : sql``}
