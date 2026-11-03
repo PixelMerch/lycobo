@@ -18,6 +18,7 @@ import {
   WalletError,
 } from "@lycoboai/db";
 import { normalizeTextileGeneration } from "@lycoboai/generation";
+import { normalizeReferenceUpload } from "@lycoboai/storage";
 import { type ImageStore, ImageValidationError, maxImageBytes } from "@lycoboai/storage/core";
 import { type Context, Hono } from "hono";
 import { streamSSE } from "hono/streaming";
@@ -539,7 +540,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
     if (bytes.length > maxImageBytes) return fail(c, "PAYLOAD_TOO_LARGE", "图片超过 10MB", 413);
     let asset: StoredImage;
     try {
-      asset = await deps.store.put(c.get("principal"), bytes);
+      asset = await deps.store.put(c.get("principal"), await normalizeReferenceUpload(bytes));
     } catch (error) {
       if (error instanceof ImageValidationError)
         return fail(c, "INVALID_IMAGE", "图片格式或尺寸无效", 400);

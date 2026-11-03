@@ -3,7 +3,12 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
-import { imageStore, normalizeImage, providerReference } from "./image-store";
+import {
+  imageStore,
+  normalizeImage,
+  normalizeReferenceUpload,
+  providerReference,
+} from "./image-store";
 
 const png = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADklEQVQImWP4DwYMEAoAU7oL9W/sIDEAAAAASUVORK5CYII=",
@@ -57,11 +62,11 @@ it("normalizes larger paid output to exact 1254 pixels and rejects smaller sourc
   expect([image.width, image.height]).toEqual([1254, 1254]);
   await expect(normalizeImage(png, target)).rejects.toThrow("OUTPUT_RESOLUTION_TOO_SMALL");
 });
-it("sends opaque references as smaller JPEGs of at most 2048 pixels", async () => {
+it("sends opaque references as smaller JPEGs of at most 3840 pixels", async () => {
   const photo = await sharp({
     create: {
-      width: 2600,
-      height: 1300,
+      width: 4000,
+      height: 2000,
       channels: 3,
       background: "#808080",
       noise: { type: "gaussian", mean: 128, sigma: 24 },
@@ -71,7 +76,7 @@ it("sends opaque references as smaller JPEGs of at most 2048 pixels", async () =
     .toBuffer();
   const sent = await providerReference(photo);
   expect(sent.length).toBeLessThan(photo.length);
-  expect(await sharp(sent).metadata()).toMatchObject({ format: "jpeg", width: 2048, height: 1024 });
+  expect(await sharp(sent).metadata()).toMatchObject({ format: "jpeg", width: 3840, height: 1920 });
 });
 it("keeps transparent references as PNG and returns bytes it cannot improve unchanged", async () => {
   // Noisy alpha: a JPEG would be smaller, so only the transparency check keeps it PNG.
@@ -94,4 +99,35 @@ it("keeps transparent references as PNG and returns bytes it cannot improve unch
   expect(await providerReference(png)).toBe(png);
   const broken = new Uint8Array([1, 2, 3]);
   expect(await providerReference(broken)).toBe(broken);
+});
+
+it("preserves provider-aligned output without padding or upscaling", async () => {
+  const source = await sharp({
+    create: { width: 704, height: 1248, channels: 3, background: "red" },
+  })
+    .png()
+    .toBuffer();
+  expect(await normalizeImage(source, { width: 705, height: 1254 })).toMatchObject({
+    width: 704,
+    height: 1248,
+  });
+  await expect(normalizeImage(source, { width: 720, height: 1280 })).rejects.toThrow(
+    "OUTPUT_RESOLUTION_TOO_SMALL",
+  );
+});
+it("bounds uploaded reference dimensions and preserves small originals", async () => {
+  const source = await sharp({
+    create: { width: 2000, height: 4000, channels: 3, background: "red" },
+  })
+    .png()
+    .toBuffer();
+  expect(await sharp(await normalizeReferenceUpload(source)).metadata()).toMatchObject({
+    width: 1920,
+    height: 3840,
+  });
+  expect(await sharp(await normalizeReferenceUpload(png)).metadata()).toMatchObject({
+    width: 2,
+    height: 2,
+  });
+  await expect(normalizeReferenceUpload(Buffer.from("invalid"))).rejects.toThrow("INVALID_IMAGE");
 });
