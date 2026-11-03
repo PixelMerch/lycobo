@@ -414,6 +414,10 @@ it("expired original download fallback redirects to the original capability", as
   });
   const { app } = fixture(false, false, {
     asset,
+    assetLocations: async (scope, ids) => {
+      const row = await asset(scope, id);
+      return row && ids.includes(id) ? [{ id, objectKey: row.objectKey }] : [];
+    },
     signAsset: assetDeliverySigner(
       "https://assets.example.test",
       "fixture-signing-secret-with-32-characters",

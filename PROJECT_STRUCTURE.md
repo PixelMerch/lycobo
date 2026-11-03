@@ -38,7 +38,7 @@ apps/web/src/
     ├── account/                  # Header账户菜单、账户中心、钱包请求和账务展示
     ├── workspace/                # 统一工作区布局、工具分类搜索、历史筛选、跨工具草稿交接
     ├── commerce/                 # 兼容旧电商入口偏好、家纺裂变参数面板、套图计划语言分析、真实计划确认与生图、本地会话草稿
-    ├── video/                    # 视频创作参数页、会话草稿与空历史（生成未接入，不请求图片任务）
+    ├── video/                    # 视频创作参数、草稿、提交确认、视频历史与按需播放器（独立查询视频任务）
     ├── home/                     # 首页、共享创作输入与提示辅助
     │   ├── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，use-inspiration-columns.ts 订阅断点并派生均衡瀑布流
     │   └── home-grid-motion.tsx   # 按需加载的Grid Motion背景、视差与可见性暂停；参数在react-bit-config.ts
@@ -166,3 +166,5 @@ GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 C
 CloudBase 运行入口为 `apps/api/src/index.ts`（API）、`apps/api/src/assets-server.ts`（私有图片）、`apps/worker/src/cloudbase-consumer.ts`（独立 Event 消费者）。`packages/db/src/cloudbase-*` 通过固定 SQL 业务函数访问共享 PG，原 Node 原生 PG 仓储用于本地/旧部署。实际状态和限制见 [运行迁移记录](docs/cloudbase-runtime-migration.md)。
 
 图片回调接收位于 `apps/api/src/features/images/provider-webhook.ts`；任务与事件的持久化关联位于 `packages/db/src/provider-webhook-repository.ts`。前端低频批量同步、超时补查和发布顺序见 [图片 Webhook](docs/image-webhooks.md)。
+
+视频接入使用 `packages/contracts/src/video-generation.ts`（六种比例、四档时长、每次100积分）、`apps/api/src/features/videos`（薄路由和服务）、`packages/db/src/video-repository.ts`（Node／CloudBase同一固定RPC）。任务与单个执行项复用generation_jobs／generation_job_items以保留钱包外键，generation_video_outbox独立维护持久意图、租约、供应商任务ID与下一次查询时间；图片历史和超时扫描排除视频。`apps/worker/src/video-processor.ts` 由现有本地消费者与CloudBase Event入口调度，供应商协议在 `packages/generation/src/video-provider.ts`；MP4容器校验在storage/video-media，资源服务提供短期签名与Range。服务端密钥为独立VIDEO_API_KEY；默认不开启付费视频，运行边界见[视频接入](docs/video-generation.md)。

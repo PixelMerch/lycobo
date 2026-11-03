@@ -8,10 +8,12 @@ import type { ReferenceImage } from "../studio-state";
 /** Browse only the authenticated user's assets; selecting an asset reuses its durable ID. */
 export function ReferenceMentionOptions({
   references,
+  maxReferences = 5,
   usedIds,
   onSelect,
   allowHistory,
 }: {
+  maxReferences?: number;
   references: readonly {
     id: string;
     src: string;
@@ -68,7 +70,7 @@ export function ReferenceMentionOptions({
       (image) =>
         usedIds.has(image.id) ||
         (image.assetId && usedIds.has(image.assetId)) ||
-        (!isCurrent(image) && references.length >= 5),
+        (!isCurrent(image) && references.length >= maxReferences),
     )
     .map((image) => image.id);
   return (

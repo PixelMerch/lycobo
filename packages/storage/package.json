@@ -12,7 +12,8 @@
     "./bucket": "./src/object-bucket.ts",
     "./cloudbase": "./src/cloudbase-object-bucket.ts",
     "./object-images": "./src/object-image-store.ts",
-    "./asset-server": "./src/private-asset-server.ts"
+    "./asset-server": "./src/private-asset-server.ts",
+    "./video": "./src/video-media.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

@@ -117,6 +117,7 @@ export function ReferencePrompt({
   placeholder,
   inputRef,
   maxLength = 9000,
+  maxReferences = 5,
   showCount = false,
   autoGrow = false,
   onReferencesInsert,
@@ -129,6 +130,7 @@ export function ReferencePrompt({
   placeholder: string;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
   maxLength?: number;
+  maxReferences?: number;
   showCount?: boolean;
   autoGrow?: boolean;
   onReferencesInsert?: (images: ReferenceImage[], prompt: string) => void;
@@ -290,7 +292,7 @@ export function ReferencePrompt({
           reference.id === image.id || (image.assetId && reference.assetId === image.assetId),
       );
       if (index < 0) {
-        if (!onReferencesInsert || nextReferences.length >= 5) continue;
+        if (!onReferencesInsert || nextReferences.length >= maxReferences) continue;
         index = nextReferences.length;
         nextReferences.push(image);
         added.push(image);
@@ -446,6 +448,7 @@ export function ReferencePrompt({
           <Popover.Dialog aria-label="引用图片">
             {mention && (
               <ReferenceMentionOptions
+                maxReferences={maxReferences}
                 references={references}
                 usedIds={usedIds}
                 onSelect={insert}

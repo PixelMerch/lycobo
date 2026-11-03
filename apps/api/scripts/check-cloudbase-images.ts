@@ -3,13 +3,15 @@ import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { imageGenerationInputSchema } from "@lycoboai/contracts";
+import { imageGenerationInputSchema, videoInputSchema } from "@lycoboai/contracts";
 import {
   CloudBaseOperationError,
   type CloudBaseRpc,
   cloudbaseImageEventFeed,
   cloudbaseImageRepository,
   openImageRepository,
+  videoCredentialHash,
+  videoRepository,
 } from "@lycoboai/db";
 import { standaloneModels } from "@lycoboai/generation";
 import postgres from "postgres";
@@ -57,11 +59,20 @@ try {
         await sql`select public.lycobo_image_batch(${a.p_org}::uuid,${a.p_user}::uuid,${a.p_ids}::uuid[]) result`;
       return row?.result;
     }
-    assert(["lycobo_image_operation", "lycobo_provider_webhook"].includes(operation));
+    assert(
+      ["lycobo_image_operation", "lycobo_provider_webhook", "lycobo_video_operation"].includes(
+        operation,
+      ),
+    );
     const args = z
       .object({ p_operation: z.string(), p_args: z.record(z.string(), z.unknown()) })
       .parse(parameters);
     try {
+      if (operation === "lycobo_video_operation") {
+        const [row] =
+          await sql`select public.lycobo_video_operation(${args.p_operation},${sql.json(z.json().parse(JSON.parse(JSON.stringify(args.p_args))))}) result`;
+        return row?.result;
+      }
       if (operation === "lycobo_provider_webhook") {
         const [row] =
           await sql`select public.lycobo_provider_webhook(${args.p_operation},${sql.json(z.json().parse(JSON.parse(JSON.stringify(args.p_args))))}) result`;
@@ -382,6 +393,63 @@ try {
       { code: "42501" },
     );
   }
+  const videoOwner = await native.provision(`rpc-video:${randomUUID()}`, "video RPC fixture", 100);
+  const videos = videoRepository((p_operation, p_args = {}) =>
+    call("lycobo_video_operation", { p_operation, p_args }),
+  );
+  const videoInput = videoInputSchema.parse({ prompt: "隔离视频RPC fixture", seconds: 10 });
+  const video = await videos.create(videoOwner, videoInput, randomUUID(), {
+    origin: "https://api.uselg.top",
+    credentialHash: videoCredentialHash("fixture-only"),
+  });
+  assert.equal((await repository.wallet(videoOwner)).balance, 0);
+  assert.equal(
+    (await repository.list(videoOwner, 100)).length,
+    0,
+    "Image history must exclude video tasks",
+  );
+  const videoClaim = z
+    .object({ id: z.string(), itemId: z.string(), token: z.string() })
+    .parse(await videos.run("claim"));
+  assert.equal(videoClaim.id, video.id);
+  await videos.run("finish", {
+    id: video.id,
+    token: videoClaim.token,
+    status: "succeeded",
+    asset: {
+      objectKey: `${videoOwner.uid}/${videoOwner.organizationId}/${videoClaim.itemId}.mp4`,
+      width: 512,
+      height: 768,
+      bytes: 100,
+      sha256: "0".repeat(64),
+    },
+  });
+  assert.equal(
+    (
+      await repository.listAssets(videoOwner, 100, undefined, "output", "video", {
+        tool: "video",
+        includeVideo: true,
+      })
+    ).length,
+    1,
+  );
+  assert.equal(
+    (await repository.listAssets(videoOwner, 100)).length,
+    0,
+    "Legacy list requests must not receive video tool DTOs",
+  );
+  for (const role of ["anon", "authenticated"]) {
+    await assert.rejects(
+      sql.begin(async (tx) => {
+        await tx.unsafe(`set local role ${role}`);
+        await tx`select public.lycobo_video_operation('claim','{}'::jsonb)`;
+      }),
+      { code: "42501" },
+    );
+  }
+  console.log(
+    "CloudBase video RPC: 100-credit submission, video asset opt-in, image history exclusion and client-role denial passed (local fixtures only)",
+  );
   console.log(
     "CloudBase image RPC integration passed: concurrent submit/claim/outbox, wallet atomicity, idempotency, refunds, retries, stale execution, polling, tenant assets and variation plans (local fixtures only)",
   );

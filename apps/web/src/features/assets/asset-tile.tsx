@@ -1,6 +1,6 @@
 import { Button, ToggleButton, Tooltip } from "@heroui/react";
 import type { ImageAsset } from "@lycoboai/contracts";
-import { IconDownload, IconStar, IconStarFilled } from "@tabler/icons-react";
+import { IconDownload, IconMovie, IconStar, IconStarFilled } from "@tabler/icons-react";
 import type { CSSProperties } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { AssetImage } from "../generation/asset-image";
@@ -33,7 +33,7 @@ export function AssetTile({
       <Button
         variant="tertiary"
         className="asset-tile-open"
-        aria-label={`查看图片：${asset.prompt ?? asset.public_id ?? source}`}
+        aria-label={`查看${asset.type === "video" ? "视频" : "图片"}：${asset.prompt ?? asset.public_id ?? source}`}
         onPress={(event) => {
           // The preview records the focused element as its return target when it mounts.
           if (event.target instanceof HTMLElement) {
@@ -42,16 +42,22 @@ export function AssetTile({
           }
         }}
       >
-        <AssetImage
-          assetId={asset.id}
-          thumbnail
-          width={asset.width}
-          height={asset.height}
-          alt={asset.prompt ?? `${source}图片`}
-          loading="lazy"
-        />
+        {asset.type === "video" ? (
+          <span className="asset-video-placeholder">
+            <UiIcon icon={IconMovie} size="illustration" />
+          </span>
+        ) : (
+          <AssetImage
+            assetId={asset.id}
+            thumbnail
+            width={asset.width}
+            height={asset.height}
+            alt={asset.prompt ?? `${source}图片`}
+            loading="lazy"
+          />
+        )}
       </Button>
-      {asset.kind === "output" && (
+      {asset.kind === "output" && asset.type !== "video" && (
         <span className="model-tag asset-tile-badge">
           <span>{modelName}</span>
         </span>
@@ -86,7 +92,7 @@ export function AssetTile({
             size="sm"
             variant="ghost"
             className="asset-tile-action"
-            aria-label="下载原图"
+            aria-label={asset.type === "video" ? "下载视频" : "下载原图"}
             onPress={() => downloadAsset(asset.id)}
           >
             <UiIcon icon={IconDownload} />

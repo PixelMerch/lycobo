@@ -57,9 +57,13 @@ export function cloudbaseObjectBucket(
       throw new Error("IMAGE_STORAGE_UNAVAILABLE");
     }
   };
-  const objectSize = (response: Response) => {
+  const objectSize = (response: Response, key: string) => {
     const size = Number(response.headers.get("Content-Length"));
-    if (!Number.isSafeInteger(size) || size < 1 || size > imageLimits.outputBytes)
+    if (
+      !Number.isSafeInteger(size) ||
+      size < 1 ||
+      size > (key.endsWith(".mp4") ? 128 * 1024 * 1024 : imageLimits.outputBytes)
+    )
       throw new Error("IMAGE_STORAGE_UNAVAILABLE");
     return size;
   };
@@ -67,13 +71,13 @@ export function cloudbaseObjectBucket(
     async head(key) {
       const response = await send(key, "HEAD");
       if (!response) return null;
-      return { size: objectSize(response), httpEtag: response.headers.get("ETag") ?? '""' };
+      return { size: objectSize(response, key), httpEtag: response.headers.get("ETag") ?? '""' };
     },
     async get(key) {
       const response = await send(key, "GET");
       if (!response) return null;
       try {
-        const size = objectSize(response);
+        const size = objectSize(response, key);
         if (!response.body) throw new Error("IMAGE_STORAGE_UNAVAILABLE");
         return {
           size,

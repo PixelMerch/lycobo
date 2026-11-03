@@ -38,14 +38,15 @@ export async function servePrivateAsset(request: Request, options: PrivateAssetO
   const variant = url.searchParams.get("variant") ?? pathVariant ?? "preview";
   if (
     !assetKeyPattern.test(key) ||
-    !["preview", "thumbnail", "download"].includes(variant) ||
+    !["preview", "thumbnail", "download", "provider"].includes(variant) ||
     (pathVariant && variant !== pathVariant)
   )
     return fail(403);
   if (variant === "download" && request.headers.get("Sec-Fetch-Dest") === "image") return fail(403);
   const allowed = options.allowedOrigins.split(",").map((value) => value.trim());
   // Require a trusted browser source in addition to the scoped signed capability.
-  if (!request.headers.get("Origin") && !request.headers.get("Referer")) return fail(403);
+  if (variant !== "provider" && !request.headers.get("Origin") && !request.headers.get("Referer"))
+    return fail(403);
   for (const value of [request.headers.get("Origin"), request.headers.get("Referer")]) {
     if (!value) continue;
     try {
@@ -61,7 +62,13 @@ export async function servePrivateAsset(request: Request, options: PrivateAssetO
       url.searchParams.get("sig") ?? "",
       await assetSigningKey(options.signingSecret),
       Math.floor(Date.now() / 1000),
-      variant === "download" ? "download" : variant === "thumbnail" ? "thumbnail" : "preview",
+      variant === "provider"
+        ? "provider"
+        : variant === "download"
+          ? "download"
+          : variant === "thumbnail"
+            ? "thumbnail"
+            : "preview",
     ))
   )
     return fail(403);
@@ -79,6 +86,59 @@ export async function servePrivateAsset(request: Request, options: PrivateAssetO
     if (origin && allowed.includes(origin)) headers.set("Access-Control-Allow-Origin", origin);
     headers.set("Vary", "Origin, Referer, Sec-Fetch-Dest");
     return new Response(null, { status: 302, headers });
+  }
+  if (key.endsWith(".mp4") || variant === "provider") {
+    if (pathVariant || (variant === "provider" && !key.endsWith(".png"))) return fail(403);
+    const object = request.method === "HEAD" ? await bucket.head(key) : await bucket.get(key);
+    if (!object) return fail(404);
+    const headers = new Headers({
+      "Content-Type": key.endsWith(".mp4") ? "video/mp4" : "image/png",
+      "Content-Length": String(object.size),
+      "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Accept-Ranges": "bytes",
+      "Content-Disposition": `${variant === "download" ? "attachment" : "inline"}; filename="${key.split("/").at(-1)}"`,
+    });
+    const origin = request.headers.get("Origin");
+    if (origin && allowed.includes(origin)) headers.set("Access-Control-Allow-Origin", origin);
+    let body = "body" in object ? object.body : null;
+    const range = request.headers.get("Range");
+    if (range && key.endsWith(".mp4")) {
+      const parsed = /^bytes=(\d+)-(\d*)$/.exec(range);
+      const start = Number(parsed?.[1]),
+        end = parsed?.[2] ? Number(parsed[2]) : object.size - 1;
+      if (
+        !parsed ||
+        !Number.isSafeInteger(start) ||
+        !Number.isSafeInteger(end) ||
+        start > end ||
+        start >= object.size ||
+        end >= object.size
+      ) {
+        await body?.cancel();
+        return new Response(null, {
+          status: 416,
+          headers: { "Content-Range": `bytes */${object.size}` },
+        });
+      }
+      headers.set("Content-Range", `bytes ${start}-${end}/${object.size}`);
+      headers.set("Content-Length", String(end - start + 1));
+      let offset = 0;
+      body =
+        body?.pipeThrough(
+          new TransformStream<Uint8Array, Uint8Array>({
+            transform(chunk, controller) {
+              const left = Math.max(0, start - offset),
+                right = Math.min(chunk.length, end + 1 - offset);
+              if (right > left) controller.enqueue(chunk.subarray(left, right));
+              offset += chunk.length;
+              if (offset > end) controller.terminate();
+            },
+          }),
+        ) ?? null;
+      return new Response(body, { status: 206, headers });
+    }
+    return new Response(body, { headers });
   }
   // Authenticate before every cache lookup. Signatures never fragment the object cache.
   const displayVariant = variant === "thumbnail" ? "thumbnail" : "preview";

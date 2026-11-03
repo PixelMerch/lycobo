@@ -82,13 +82,13 @@ export const workspaceTools = [
     category: "商品视频",
     image: "/studio/models/image-2-5-2.webp",
     description: "用商品图生成短视频，描述动作与镜头运动",
-    caption: "首帧 · 镜头 · 时长",
+    caption: "参考图 · 镜头 · 时长",
     hero: "/studio/tool-heroes/video.webp",
-    summary: "用商品图生成短视频，生成即将开放",
+    summary: "用文字和参考图片生成768p视频",
     steps: [
-      "上传商品首帧图，可补充尾帧图",
+      "添加参考图片，或直接输入文字描述",
       "描述画面主体、动作和镜头运动",
-      "选择比例、时长与清晰度后生成",
+      "选择比例与10／15／20／30秒时长后生成",
     ],
     examples: [
       "/studio/models/image-2-5-2.webp",
@@ -119,7 +119,9 @@ export function shareProductReference(from: string, to: string) {
       : from === "/commerce/smart-variation"
         ? variation.references
         : from === "/video"
-          ? [video.firstFrame, video.lastFrame].filter((image) => image !== null)
+          ? [video.firstFrame, video.lastFrame, ...video.extraReferences].filter(
+              (image) => image !== null,
+            )
           : (studio.drafts[studio.activeModel]?.references ?? []);
   const mainImage = references[0];
   if (!mainImage) return;

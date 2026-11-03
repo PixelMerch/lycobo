@@ -1,111 +1,136 @@
-import { Button } from "@heroui/react";
-import { IconClock } from "@tabler/icons-react";
-import { useRef } from "react";
+import { Button, Label, Slider } from "@heroui/react";
+import { videoSeconds, videoUnitCredits } from "@lycoboai/contracts";
+import { IconArrowUp } from "@tabler/icons-react";
+import { CreditCoin } from "../../components/credit-coin";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
-import { TextileImageField } from "../commerce/textile-set/textile-image-field";
-import { ParameterGroup } from "../generation/composer/parameter-group";
+import { useErrorToast } from "../../lib/error-toast";
+import { HomeRatioPicker } from "../generation/composer/ratio-picker";
+import { hasPromptDescription } from "../generation/references/prompt-description";
+import { ReferencePicker } from "../generation/references/reference-picker";
 import { WorkspaceComposerTitle } from "../workspace/workspace-tool-symbol";
-import {
-  useVideoDraft,
-  videoDurations,
-  videoPromptLimit,
-  videoRatios,
-  videoResolutions,
-} from "./video-state";
+import { useSubmitVideo, useVideoModel } from "./video-client";
+import { useVideoDraft, videoPromptLimit, videoRatios } from "./video-state";
 import "./video.css";
-
-/**
- * 视频创作 composer. The page is complete, but video generation is not connected yet: the
- * submit stays disabled and nothing is uploaded, submitted or charged.
- */
 export function VideoPage() {
-  const { firstFrame, lastFrame, prompt, ratio, duration, resolution, update } = useVideoDraft();
-  const promptRef = useRef<HTMLTextAreaElement>(null);
-  // @ in the description can point at the frames that are already on the page.
-  const frames = [
-    ...(firstFrame ? [{ ...firstFrame, name: "首帧图" }] : []),
-    ...(lastFrame ? [{ ...lastFrame, name: "尾帧图" }] : []),
-  ];
+  const draft = useVideoDraft();
+  const model = useVideoModel();
+  const submission = useSubmitVideo();
+  const references = [draft.firstFrame, draft.lastFrame, ...draft.extraReferences].filter(
+    (value) => value !== null,
+  );
+  const setReferences = (images: typeof references, prompt = draft.prompt) =>
+    draft.update({
+      firstFrame: images[0] ?? null,
+      lastFrame: images[1] ?? null,
+      extraReferences: images.slice(2),
+      prompt,
+    });
+  useErrorToast(submission.error?.message ?? model.error?.message);
+  const valid =
+    hasPromptDescription(draft.prompt) &&
+    Number.isInteger(draft.seconds) &&
+    videoSeconds.some((value) => value === draft.seconds);
   return (
     <section className="composer-panel video-composer" aria-label="视频创作参数">
       <div className="composer-scroll">
         <WorkspaceComposerTitle />
-        <TextileImageField
-          label="首帧图"
-          required
-          description="上传商品图作为视频的开场画面"
-          exampleSrc="/studio/models/image-2-5-2.webp"
-          value={firstFrame ? [firstFrame] : []}
-          onChange={(images) => update({ firstFrame: images[0] ?? null })}
-          number={1}
+        <ReferencePicker
+          compact
+          references={references}
+          prompt={draft.prompt}
+          onChange={setReferences}
+          limit={9}
+          label="参考图片"
         />
-        <TextileImageField
-          label="尾帧图"
-          description="可选，指定视频结束时的画面"
-          exampleSrc="/studio/bedroom-thumb.webp"
-          value={lastFrame ? [lastFrame] : []}
-          onChange={(images) => update({ lastFrame: images[0] ?? null })}
-          number={2}
-        />
+        <p className="video-reference-hint">
+          参考图片可选，用于画面内容参考；实际画幅以参考图为准。
+        </p>
         <ReferencePrompt
           className="prompt-field"
-          label="视频描述"
-          inputRef={promptRef}
-          value={prompt}
-          onChange={(next) => update({ prompt: next })}
-          references={frames}
-          placeholder="描述画面主体、动作和镜头运动，例如：镜头缓慢推近，床品在晨光中展开"
+          label="文字描述"
+          value={draft.prompt}
+          onChange={(prompt) => draft.update({ prompt })}
+          references={references}
+          onReferencesInsert={(images, prompt) => {
+            if (references.length + images.length <= 9)
+              setReferences([...references, ...images], prompt);
+          }}
+          placeholder="描述主体、动作、场景和镜头运动；多张参考图可按图一、图二描述对应关系"
+          maxReferences={9}
           maxLength={videoPromptLimit}
           showCount
           autoGrow
         />
-        <ParameterGroup
-          label="视频比例"
-          values={videoRatios}
-          value={ratio}
-          selectionId="video-ratio"
-          onChange={(next) => {
-            const value = videoRatios.find((entry) => entry === next);
-            if (value) update({ ratio: value });
-          }}
-        />
-        <ParameterGroup
-          label="视频时长"
-          values={videoDurations}
-          value={duration}
-          selectionId="video-duration"
-          onChange={(next) => {
-            const value = videoDurations.find((entry) => entry === next);
-            if (value) update({ duration: value });
-          }}
-        />
-        <ParameterGroup
-          label="清晰度"
-          values={videoResolutions}
-          value={resolution}
-          selectionId="video-resolution"
-          onChange={(next) => {
-            const value = videoResolutions.find((entry) => entry === next);
-            if (value) update({ resolution: value });
-          }}
-        />
+        <section className="parameter-group video-ratio">
+          <h2>画面比例</h2>
+          <HomeRatioPicker
+            value={draft.ratio}
+            ratios={videoRatios}
+            onChange={(next) => {
+              const ratio = videoRatios.find((value) => value === next);
+              if (ratio) draft.update({ ratio });
+            }}
+          />
+        </section>
+        <Slider
+          className="video-duration-slider"
+          minValue={0}
+          maxValue={3}
+          step={1}
+          value={Math.max(
+            0,
+            videoSeconds.findIndex((value) => value === draft.seconds),
+          )}
+          onChange={(value) => draft.update({ seconds: videoSeconds[Number(value)] ?? 10 })}
+          aria-label="视频时长"
+        >
+          <Label>时长</Label>
+          <div className="video-duration-row">
+            <Slider.Track className="video-duration-track">
+              <Slider.Fill />
+              <Slider.Thumb aria-label={`视频时长：${draft.seconds}秒`} />
+            </Slider.Track>
+            <Slider.Output className="video-duration-output">{draft.seconds} 秒</Slider.Output>
+          </div>
+          <Slider.Marks className="video-duration-marks">
+            {videoSeconds.map((seconds) => (
+              <span key={seconds}>{seconds}s</span>
+            ))}
+          </Slider.Marks>
+        </Slider>
+        <div className="video-model-info">
+          <span>清晰度</span>
+          <strong>768p</strong>
+        </div>
       </div>
       <div className="generate-area">
         <Button
           variant="primary"
           size="lg"
           fullWidth
-          isDisabled
           className="primary-action generation-submit"
-          aria-describedby="video-service-status"
+          isDisabled={
+            !model.data?.enabled || submission.isPending || (!valid && !submission.hasPending)
+          }
+          isPending={submission.isPending}
+          onPress={() =>
+            submission.submit({
+              input: { prompt: draft.prompt, seconds: draft.seconds, aspectRatio: draft.ratio },
+              references,
+            })
+          }
         >
-          <UiIcon icon={IconClock} />
-          视频生成即将开放
+          <UiIcon icon={IconArrowUp} />
+          {submission.hasPending ? "确认上次提交" : "立即生成"}
+          <span className="generate-credit-cost">
+            <CreditCoin size="default" />
+            {videoUnitCredits} 积分
+          </span>
         </Button>
-        <p id="video-service-status" className="video-service-status">
-          可先准备首帧图和视频描述，开放后即可直接生成。
-        </p>
+        {model.data && !model.data.enabled && (
+          <p className="video-service-status">视频生成暂未开放</p>
+        )}
       </div>
     </section>
   );

@@ -274,6 +274,13 @@
       "when": 1793669347862,
       "tag": "0038_asset_favorites",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1793703308988,
+      "tag": "0039_video_outbox",
+      "breakpoints": true
     }
   ]
 }

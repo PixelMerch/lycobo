@@ -1,5 +1,5 @@
 import { Button, EmptyState, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import type { ImageAsset, ImageTool } from "@lycoboai/contracts";
+import type { AssetTool, ImageAsset } from "@lycoboai/contracts";
 import {
   IconGrid4x4,
   IconGridDots,
@@ -21,6 +21,7 @@ import { ImageApiError, useImageSession } from "../generation/generation-client"
 import { modelDisplayName } from "../generation/models/model-display-name";
 import { useModelPresentation } from "../generation/models/model-logos";
 import { ImagePreviewDialog } from "../image-workspace/image-preview";
+import { VideoPlayerDialog } from "../video/video-player-dialog";
 import { AssetFilters, toolNames } from "./asset-filters";
 import { dayHeading, groupByDay } from "./asset-layout";
 import {
@@ -52,7 +53,7 @@ type Empty = { icon: TablerIcon; title: string };
 function emptyState(
   filters: AssetLibraryFilters,
   defaults: AssetLibraryFilters,
-  currentTool: ImageTool | undefined,
+  currentTool: AssetTool | undefined,
 ): Empty {
   if (filters.type === "video") return { icon: IconMovie, title: "暂无视频素材" };
   if (filters.source === "uploads") return { icon: IconPhoto, title: "还没有上传的素材" };
@@ -149,7 +150,7 @@ export function AssetBrowser({
 }: {
   filters: AssetLibraryFilters;
   defaults: AssetLibraryFilters;
-  currentTool?: ImageTool | undefined;
+  currentTool?: AssetTool | undefined;
   headingLevel: 2 | 3;
   generatedOnly?: boolean;
   onChange: (filters: AssetLibraryFilters) => void;
@@ -292,17 +293,30 @@ export function AssetBrowser({
   return (
     <div className="asset-browser" ref={frame}>
       <div className="asset-source-panel">{panelContent}</div>
-      {preview !== null && (
-        <ImagePreviewDialog
-          images={assets.map(toPreview)}
-          initialIndex={preview}
+      {preview !== null && assets[preview]?.type === "video" ? (
+        <VideoPlayerDialog
+          assetId={assets[preview].id}
+          title={assets[preview].prompt ?? "视频预览"}
           onClose={() => setPreview(null)}
-          hasMore={query.hasNextPage}
-          isLoadingMore={query.isFetchingNextPage}
-          isLoadMoreError={query.isError}
-          onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
-          {...(onViewHistory ? { onViewHistory } : {})}
         />
+      ) : (
+        preview !== null && (
+          <ImagePreviewDialog
+            images={assets.filter((asset) => asset.type === "image").map(toPreview)}
+            initialIndex={Math.max(
+              0,
+              assets
+                .filter((asset) => asset.type === "image")
+                .findIndex((asset) => asset.id === assets[preview]?.id),
+            )}
+            onClose={() => setPreview(null)}
+            hasMore={query.hasNextPage}
+            isLoadingMore={query.isFetchingNextPage}
+            isLoadMoreError={query.isError}
+            onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
+            {...(onViewHistory ? { onViewHistory } : {})}
+          />
+        )
       )}
     </div>
   );

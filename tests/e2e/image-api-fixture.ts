@@ -38,7 +38,13 @@ export async function mockImageApi(page: Page, { signedIn = true } = {}) {
       return;
     }
     let body: object = { userId, organizationId };
-    if (path.endsWith("/image-models"))
+    if (path.endsWith("/video-model"))
+      body = { enabled: false, resolution: "768p", unitCredits: 100 };
+    else if (path.startsWith("/api/v1/video-tasks")) {
+      if (route.request().method() !== "GET")
+        return route.fulfill({ status: 503, json: apiFixture({}, 503) });
+      body = { data: [] };
+    } else if (path.endsWith("/image-models"))
       body = {
         enabled: true,
         editsEnabled: true,

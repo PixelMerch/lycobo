@@ -14,6 +14,7 @@ import { authRoutes } from "./features/auth/routes";
 import type { EnterpriseAuth } from "./features/auth/service";
 import { providerWebhookRoutes, type WebhookConfig } from "./features/images/provider-webhook";
 import { type ImageApiDependencies, imageRoutes } from "./features/images/routes";
+import { type VideoApiDependencies, videoRoutes } from "./features/videos/routes";
 import { errorCategory, safeRequestPath } from "./request-diagnostics";
 
 const mappedCode = (code: string) => (Object.hasOwn(businessCodes, code) ? code : "INTERNAL_ERROR");
@@ -35,6 +36,7 @@ export function createApp(
   images?: ImageApiDependencies,
   auth?: EnterpriseAuth,
   webhook?: WebhookConfig,
+  videos?: VideoApiDependencies,
 ) {
   const app = new Hono<ApiEnv>();
   app.use("*", async (c, next) => {
@@ -116,6 +118,7 @@ export function createApp(
     await next();
   });
   app.route("/api/v1/auth", authRoutes(auth));
+  app.route("/api/v1", videoRoutes(videos, auth));
   if (images && webhook)
     app.route(
       "/api/v1/webhooks",

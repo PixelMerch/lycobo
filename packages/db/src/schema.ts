@@ -1003,3 +1003,36 @@ export const providerWebhookTasks = pgTable(
   },
   (t) => [uniqueIndex("provider_webhook_source_task_idx").on(t.source, t.taskId)],
 ).enableRLS();
+
+/** Durable video intent and provider progress; wallet lineage uses the shared task/item. */
+export const generationVideoOutbox = pgTable(
+  "generation_video_outbox",
+  {
+    jobId: uuid("job_id")
+      .primaryKey()
+      .references(() => generationJobs.id),
+    itemId: uuid("item_id")
+      .notNull()
+      .unique()
+      .references(() => generationJobItems.id),
+    origin: text("origin").notNull(),
+    credentialHash: text("credential_hash").notNull(),
+    phase: text("phase").notNull().default("queued"),
+    providerTaskId: text("provider_task_id"),
+    providerStatus: text("provider_status"),
+    nextRunAt: timestamp("next_run_at", { withTimezone: true }).notNull().defaultNow(),
+    deadlineAt: timestamp("deadline_at", { withTimezone: true }).notNull(),
+    leaseUntil: timestamp("lease_until", { withTimezone: true }),
+    executionToken: uuid("execution_token"),
+    failures: integer("failures").notNull().default(0),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("generation_video_due_idx").on(t.nextRunAt).where(sql`${t.processedAt} is null`),
+    check(
+      "generation_video_phase_check",
+      sql`${t.phase} in ('queued','submitting','polling','downloading','done')`,
+    ),
+    check("generation_video_failures_check", sql`${t.failures} >= 0`),
+  ],
+).enableRLS();

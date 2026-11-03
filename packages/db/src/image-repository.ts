@@ -1,10 +1,10 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import {
+  type AssetTool,
   type AssetType,
   assetFavoriteLimit,
   type ImageGenerationInput,
   type ImageScope,
-  type ImageTool,
   imageGenerationInputSchema,
   imageProviderModel,
   imageUnitCredits,
@@ -29,8 +29,9 @@ export class ImageRepositoryError extends Error {
 export type ImagePrincipal = ImageScope & { role: "admin" | "member"; uid?: string };
 /** Asset library filters applied before pagination; favorites belong to the signed-in member. */
 export type AssetFilters = {
+  includeVideo?: boolean | undefined;
   since?: string | undefined;
-  tool?: ImageTool | undefined;
+  tool?: AssetTool | undefined;
   model?: string | undefined;
   favorite?: boolean | undefined;
 };
@@ -136,14 +137,16 @@ export function openImageRepository(
     when j.model in ('gpt-image-2.5','gpt-image-2.5-flare','gpt-image-2.5-sunburst') then 'gpt-image-2.5'
     when j.model in ('gpt-image-2','gpt-image-2-4K') then 'gpt-image-2' else j.model end`;
   // A task's tool is recorded by its input: textile and variation inputs carry their own keys.
-  const toolMatchSql = (tool: ImageTool) =>
-    tool === "textile"
-      ? sql`j.input ? 'textileSet'`
-      : tool === "variation"
-        ? sql`j.input ? 'variation'`
-        : sql`not (j.input ? 'textileSet') and not (j.input ? 'variation')`;
+  const toolMatchSql = (tool: AssetTool) =>
+    tool === "video"
+      ? sql`j.input ? 'video'`
+      : tool === "textile"
+        ? sql`j.input ? 'textileSet'`
+        : tool === "variation"
+          ? sql`j.input ? 'variation'`
+          : sql`not (j.input ? 'textileSet') and not (j.input ? 'variation') and not (j.input ? 'video')`;
   const toolSql = sql`case when j.id is null then null when j.input ? 'textileSet' then 'textile'
-    when j.input ? 'variation' then 'variation' else 'create' end`;
+    when j.input ? 'variation' then 'variation' when j.input ? 'video' then 'video' else 'create' end`;
   const visibleAssetSql = sql`(a.expires_at is null or a.expires_at>now()) and a.storage_deleted_at is null`;
   const jobView = sql`j.public_id,j.id,j.organization_id,j.user_id,${publicModelSql} as model,j.prompt,j.resolution,j.aspect_ratio,
     j.requested_count,j.unit_credits,j.status,j.input,j.created_at,j.updated_at,j.completed_at,
@@ -154,14 +157,14 @@ export function openImageRepository(
       from generation_job_items i left join media_assets a on a.id=i.output_asset_id and a.organization_id=i.organization_id where i.job_id=j.id and i.superseded_at is null) as items`;
   const expireTimedOut = async (organizationId?: string) => {
     const rows = await sql`select i.id,i.job_id from generation_job_items i
-      where i.status='running' and i.superseded_at is null and i.started_at<now()-interval '3 minutes' and not exists(select 1 from provider_webhook_tasks w join provider_executions e on e.item_id=w.item_id where w.item_id=i.id and e.phase='polling')
+      where i.provider<>'fluxport-video' and i.status='running' and i.superseded_at is null and i.started_at<now()-interval '3 minutes' and not exists(select 1 from provider_webhook_tasks w join provider_executions e on e.item_id=w.item_id where w.item_id=i.id and e.phase='polling')
       ${organizationId ? sql`and i.organization_id=${organizationId}` : sql``} limit 100`;
     for (const row of rows)
       await sql.begin(async (tx) => {
         await tx`select id from generation_jobs where id=${row.job_id} for update`;
         const changed =
           await tx`update generation_job_items set status='needs_reconciliation',error_code='PROVIDER_TIMEOUT',completed_at=now()
-        where id=${row.id} and status='running' and superseded_at is null and started_at<now()-interval '3 minutes' and not exists(select 1 from provider_webhook_tasks w join provider_executions e on e.item_id=w.item_id where w.item_id=generation_job_items.id and e.phase='polling') returning id`;
+        where provider<>'fluxport-video' and id=${row.id} and status='running' and superseded_at is null and started_at<now()-interval '3 minutes' and not exists(select 1 from provider_webhook_tasks w join provider_executions e on e.item_id=w.item_id where w.item_id=generation_job_items.id and e.phase='polling') returning id`;
         if (changed.length) await refreshJob(tx, String(row.job_id));
       });
   };
@@ -306,7 +309,7 @@ export function openImageRepository(
         const id = String(inserted[0].id);
         if (input.referenceAssetIds.length) {
           const refs =
-            await tx`select id,width,height from media_assets where organization_id=${scope.organizationId} and id in ${tx(input.referenceAssetIds)} and (expires_at is null or expires_at>now()) and storage_deleted_at is null and cleanup_started_at is null order by id for update`;
+            await tx`select id,width,height from media_assets where media_type='image' and organization_id=${scope.organizationId} and id in ${tx(input.referenceAssetIds)} and (expires_at is null or expires_at>now()) and storage_deleted_at is null and cleanup_started_at is null order by id for update`;
           if (refs.length !== input.referenceAssetIds.length)
             throw new ImageRepositoryError("REFERENCE_NOT_FOUND");
         }
@@ -375,9 +378,10 @@ export function openImageRepository(
     async resumeProvider(scope: ImageScope, jobId: string, itemId: string) {
       return sql.begin(async (tx) => {
         const [job] =
-          await tx`select id from generation_jobs where id=${jobId} and organization_id=${scope.organizationId}
+          await tx`select id,input from generation_jobs where id=${jobId} and organization_id=${scope.organizationId}
           and exists(select 1 from organization_members where organization_id=${scope.organizationId} and user_id=${scope.userId}) for update`;
-        if (!job) throw new ImageRepositoryError("NOT_FOUND");
+        if (!job || (typeof job.input === "object" && job.input !== null && "video" in job.input))
+          throw new ImageRepositoryError("NOT_FOUND");
         const changed =
           await tx`update generation_job_items set status='running',error_code=null,completed_at=null,
           execution_token=gen_random_uuid(),lease_expires_at=null,started_at=now(),reconciled_by=${scope.userId},
@@ -402,7 +406,8 @@ export function openImageRepository(
         if (!members.length) throw new ImageRepositoryError("FORBIDDEN");
         const [job] =
           await tx`select id,status,unit_credits,input,provider_snapshot from generation_jobs where id=${jobId} and organization_id=${scope.organizationId} for update`;
-        if (!job) throw new ImageRepositoryError("NOT_FOUND");
+        if (!job || (typeof job.input === "object" && job.input !== null && "video" in job.input))
+          throw new ImageRepositoryError("NOT_FOUND");
         const [previous] =
           await tx`select job_id,target_item_id from generation_retries where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
         if (previous) {
@@ -477,7 +482,7 @@ export function openImageRepository(
       tool?: "create" | "textile" | "variation",
     ) {
       await expireTimedOut(scope.organizationId);
-      return sql`select ${jobView} from generation_jobs j where j.organization_id=${scope.organizationId} and j.archived_at is null
+      return sql`select ${jobView} from generation_jobs j where j.organization_id=${scope.organizationId} and j.archived_at is null and not (j.input ? 'video')
         ${tool ? sql`and ${toolMatchSql(tool)}` : sql``}
         ${before ? sql`and (j.created_at,j.id) < (select created_at,id from generation_jobs where id=${before} and organization_id=${scope.organizationId})` : sql``}
         order by j.created_at desc,j.id desc limit ${limit}`;
@@ -496,13 +501,13 @@ export function openImageRepository(
       return sql`select ${jobView}, exists(select 1 from generation_job_items i join provider_executions e on e.item_id=i.id
         where i.job_id=j.id and i.superseded_at is null and i.status='running' and e.phase='polling' and e.next_poll_at<=now()
         and (e.lease_until is null or e.lease_until<now())) as recovery_due
-        from generation_jobs j where j.id in ${sql(ids)} and j.organization_id=${scope.organizationId}
+        from generation_jobs j where j.id in ${sql(ids)} and j.organization_id=${scope.organizationId} and not (j.input ? 'video')
         and exists(select 1 from organization_members where organization_id=j.organization_id and user_id=${scope.userId})`;
     },
     async get(scope: ImageScope, id: string) {
       await expireTimedOut(scope.organizationId);
       const [row] =
-        await sql`select ${jobView} from generation_jobs j where j.id=${id} and j.organization_id=${scope.organizationId}`;
+        await sql`select ${jobView} from generation_jobs j where j.id=${id} and j.organization_id=${scope.organizationId} and not (j.input ? 'video')`;
       return row ?? null;
     },
     async latestEdit(scope: ImageScope, sourceId: string) {
@@ -529,7 +534,7 @@ export function openImageRepository(
       kind?: "output" | "reference",
       type?: AssetType,
       filters: AssetFilters = {},
-    ) {
+    ): Promise<Record<string, unknown>[]> {
       const favorite = sql`exists(select 1 from image_asset_favorites f where f.organization_id=a.organization_id
         and f.user_id=${scope.userId} and f.asset_id=a.id)`;
       return sql`select a.public_id,a.id,a.kind,a.media_type as type,a.width,a.height,a.bytes,a.created_at,j.public_id as task_public_id,${publicModelSql} as model,j.prompt,
@@ -537,6 +542,7 @@ export function openImageRepository(
         from media_assets a left join generation_job_items i on i.output_asset_id=a.id and i.organization_id=a.organization_id
         left join generation_jobs j on j.id=i.job_id and j.organization_id=a.organization_id
         where a.organization_id=${scope.organizationId} and ${visibleAssetSql}
+        and (a.media_type<>'video' or ${filters.includeVideo === true})
         ${kind ? sql`and a.kind=${kind}` : sql``}
         ${type ? sql`and a.media_type=${type}` : sql``}
         ${filters.tool ? sql`and j.id is not null and ${toolMatchSql(filters.tool)}` : sql``}
@@ -590,7 +596,7 @@ export function openImageRepository(
     },
     async asset(scope: ImageScope, id: string): Promise<StoredImage | null> {
       const [row] =
-        await sql`select id,object_key,mime_type,width,height,bytes,sha256 from media_assets where id=${id} and organization_id=${scope.organizationId} and (expires_at is null or expires_at>now()) and storage_deleted_at is null`;
+        await sql`select id,object_key,mime_type,width,height,bytes,sha256 from media_assets where media_type='image' and id=${id} and organization_id=${scope.organizationId} and (expires_at is null or expires_at>now()) and storage_deleted_at is null`;
       if (!row) return null;
       return {
         id: String(row.id),
@@ -771,7 +777,7 @@ export function openImageRepository(
           await tx`select user_id from organization_members where organization_id=${scope.organizationId} and user_id=${scope.userId} and role='admin' for share`;
         if (!admins.length) throw new ImageRepositoryError("FORBIDDEN");
         const jobs =
-          await tx`select id from generation_jobs where id=${jobId} and organization_id=${scope.organizationId} for update`;
+          await tx`select id from generation_jobs where id=${jobId} and organization_id=${scope.organizationId} and not (input ? 'video') for update`;
         if (!jobs.length) throw new ImageRepositoryError("NOT_FOUND");
         const changed =
           await tx`update generation_job_items set status='failed',error_code='RECONCILED_FAILED',reconciled_by=${scope.userId},reconciliation_evidence=${evidence},completed_at=now()

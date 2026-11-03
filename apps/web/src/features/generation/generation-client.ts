@@ -379,7 +379,7 @@ export function useGenerateImage() {
 export function downloadAsset(id: string) {
   const link = document.createElement("a");
   link.href = assetContentUrl(id, false, true);
-  link.download = `${id}.png`;
+  link.download = id;
   link.referrerPolicy = "strict-origin-when-cross-origin";
   link.click();
 }

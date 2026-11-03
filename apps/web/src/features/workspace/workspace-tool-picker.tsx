@@ -197,7 +197,7 @@ export function WorkspaceToolPicker() {
                         {tool.id === "variation" ? (
                           <span className="workspace-tool-badge">先确认计划</span>
                         ) : tool.id === "video" ? (
-                          <span className="workspace-tool-badge">生成即将开放</span>
+                          <span className="workspace-tool-badge">768p</span>
                         ) : (
                           tool.id === current.id && (
                             <span className="workspace-tool-badge">当前使用</span>

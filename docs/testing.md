@@ -135,3 +135,9 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 `cloudbase-outbox*.test.ts` 覆盖 Event 调用内继续取回异步结果：使用真实配置处理器与明确的内存持久化/HTTP fixtures，验证一次生成 POST、随后 GET、结果保存一次；同时验证最多两路操作、预算不足时保留 intent、没有后续 receipt 或结果未决时退出。测试不接触外部模型；原账务及 claim/outbox 不变量继续由隔离数据库测试覆盖。
 
 图片 Webhook：`provider-webhook.test.ts` 覆盖原始字节签名、时间窗口、头部一致性和持久化后唤醒；`cloudbase-outbox-provider.test.ts` 覆盖异步等待释放消费者及超时后只 GET 原任务；`test:cloudbase-images` 在独立数据库验证早到/重复/持租约回调、迟到恢复、权限、租户隔离与计费。`generation-live.spec.ts` 中 pending history 用例验证无 SSE 时的批量查询收敛和完成后停止。所有中转调用均为模拟数据，不调用真实模型。
+
+## 视频创作
+
+视频接入的fixture验证包含在现有隔离命令中：`pnpm test:integration`里的`verify-videos`使用一次性本地数据库，验证100积分固定扣费、并发幂等、明确失败单次退款、无ID崩溃不重投、原任务下载、视频素材入库及图片流程隔离。HTTP供应商及对象桶为显式fixture，不消费真实供应商额度。
+
+定向前台回归：`pnpm exec playwright test tests/e2e/video-creation.spec.ts tests/e2e/ratio-pager.spec.ts tests/e2e/library-dialog.spec.ts`。`tests/fixtures/video-playback.mp4`是ffmpeg生成的1秒64×64纯色视频测试文件，只验证浏览器媒体播放／按需加载，不是模型生成结果，也不用于产品展示。真实供应商生成、分组权限和CloudBase资源服务播放必须按[视频接入](video-generation.md)另行验收。

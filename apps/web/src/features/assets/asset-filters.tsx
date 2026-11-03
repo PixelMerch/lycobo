@@ -1,5 +1,5 @@
 import { Button, ListBox, Select, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import type { ImageTool } from "@lycoboai/contracts";
+import type { AssetTool } from "@lycoboai/contracts";
 import {
   IconCalendar,
   IconLayoutGrid,
@@ -20,14 +20,10 @@ import {
   sameFilters,
 } from "./asset-library-client";
 
-// The asset API filters by image tools only; 视频创作 has no generated assets yet.
-const libraryTools = workspaceTools.filter(
-  (tool): tool is Extract<(typeof workspaceTools)[number], { id: ImageTool }> =>
-    tool.id !== "video",
-);
+const libraryTools = workspaceTools;
 export const toolNames = Object.fromEntries(
   libraryTools.map((tool) => [tool.id, tool.name]),
-) as Record<ImageTool, string>;
+) as Record<AssetTool, string>;
 const sources = [
   { id: "generated", label: "生成素材", icon: IconPhoto },
   { id: "uploads", label: "上传素材", icon: IconUpload },
@@ -62,7 +58,7 @@ export function AssetFilters({
 }: {
   filters: AssetLibraryFilters;
   defaults: AssetLibraryFilters;
-  currentTool?: ImageTool | undefined;
+  currentTool?: AssetTool | undefined;
   models: readonly { id: string; name: string }[];
   loaded: number | null;
   compact: boolean;

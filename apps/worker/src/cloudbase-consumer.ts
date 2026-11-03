@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { openCloudBaseImageRepository } from "@lycoboai/db";
-import { readImagePolicy, standaloneModels } from "@lycoboai/generation";
+import { openCloudBaseImageRepository, openVideoRepository } from "@lycoboai/db";
+import { readImagePolicy, standaloneModels, videoConfiguration } from "@lycoboai/generation";
 import { cloudbaseObjectBucket } from "@lycoboai/storage/cloudbase";
 import { objectImageStore } from "@lycoboai/storage/object-images";
 import { z } from "zod";
@@ -8,6 +8,7 @@ import { drainCloudBaseOutbox } from "./cloudbase-outbox";
 import { startAsyncDrain } from "./cloudbase-wake";
 import { processImageItem } from "./image-processor";
 import { slots } from "./slots";
+import { processVideoIntent } from "./video-processor";
 
 const wakeEvent = z.object({ wake: z.literal(true) });
 const drainEvent = z.object({ drain: z.literal(true), resumeAt: z.number().int().optional() });
@@ -17,7 +18,8 @@ export async function main(event?: unknown) {
   const policy = readImagePolicy({
     IMAGE_GENERATION_ENABLED: process.env.IMAGE_GENERATION_ENABLED,
   });
-  if (!policy.enabled) return { enabled: false, processed: 0 };
+  const videoConfig = videoConfiguration(process.env);
+  if (!policy.enabled && !videoConfig) return { enabled: false, processed: 0 };
   // The API wakes this function synchronously. That call only queues an asynchronous drain,
   // so paid work never runs inside an invocation whose caller may disconnect.
   if (wakeEvent.safeParse(event).success)
@@ -45,7 +47,33 @@ export async function main(event?: unknown) {
       setTimeout(resolve, Math.min(90000, Math.max(0, (drain.data.resumeAt ?? 0) - Date.now()))),
     );
   const stopStartingAt = Date.now() + 7 * 60 * 1000;
+  const videos = videoConfig ? openVideoRepository(process.env) : undefined;
   try {
+    if (videos && videoConfig) {
+      if (!process.env.ASSET_PUBLIC_ORIGIN || !process.env.ASSET_SIGNING_SECRET)
+        throw new Error("VIDEO_CONFIGURATION_REQUIRED");
+      for (let count = 0; count < 4 && Date.now() < stopStartingAt; count++) {
+        if (
+          !(await processVideoIntent(videos, cloudbaseObjectBucket(process.env), {
+            ...videoConfig,
+            assetOrigin: process.env.ASSET_PUBLIC_ORIGIN,
+            signingSecret: process.env.ASSET_SIGNING_SECRET,
+            pathPrefix: process.env.ASSET_PATH_PREFIX,
+          }))
+        )
+          break;
+      }
+      const due = await videos.run("due");
+      if (
+        typeof due === "string" &&
+        !(await startAsyncDrain(process.env, {
+          drain: true,
+          resumeAt: Math.min(Date.now() + 60000, Math.max(Date.now() + 5000, Date.parse(due))),
+        }))
+      )
+        console.error("VIDEO_CONTINUATION_FAILED");
+    }
+    if (!policy.enabled) return { enabled: true, processed: 0 };
     await repository.expireClaims();
     // Retention and expired-reference cleanup are not urgent: timer and manual runs keep them current.
     if (!drain.success) {
@@ -80,6 +108,6 @@ export async function main(event?: unknown) {
       console.error("CONSUMER_CONTINUATION_FAILED");
     return { enabled: true, processed };
   } finally {
-    await repository.close();
+    await Promise.all([repository.close(), videos?.close()]);
   }
 }

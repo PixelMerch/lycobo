@@ -20,5 +20,6 @@ export * from "./image-event-repository";
 export * from "./image-repository";
 export type { ProviderWebhookReceipt } from "./provider-webhook-repository";
 export { VariationError } from "./variation-repository";
+export * from "./video-repository";
 export { WalletError } from "./wallet-repository";
 export { schema };

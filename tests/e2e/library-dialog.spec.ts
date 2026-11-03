@@ -159,6 +159,7 @@ test("我的素材 only shows generated images while 素材库 retains its sourc
     "主图制作",
     /家纺裂变\s*当前功能/,
     "套图计划",
+    "视频创作",
   ]);
   await page.getByRole("option", { name: "全部功能" }).click();
   await expect(tiles).toHaveCount(2);

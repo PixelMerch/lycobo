@@ -1,10 +1,10 @@
 import { toast } from "@heroui/react";
 import {
+  type AssetTool,
   assetFavoriteIdsResponseSchema,
   assetFavoriteResponseSchema,
-  type ImageTool,
+  assetToolSchema,
   imageAssetsResponseSchema,
-  imageToolSchema,
 } from "@lycoboai/contracts";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useErrorToast } from "../../lib/error-toast";
@@ -15,7 +15,7 @@ export type AssetMediaType = "all" | "image" | "video";
 /** One filter set drives 素材库 and 我的素材; "all" means the filter is off. */
 export type AssetLibraryFilters = {
   source: AssetSource;
-  tool: ImageTool | "all";
+  tool: AssetTool | "all";
   type: AssetMediaType;
   model: string;
   time?: "all" | "today" | "7" | "30" | "90";
@@ -48,7 +48,7 @@ export function sameFilters(left: AssetLibraryFilters, right: AssetLibraryFilter
 export function filtersFromSearch(search: URLSearchParams): AssetLibraryFilters {
   const pick = <T extends string>(values: readonly T[], value: string | null, fallback: T) =>
     values.find((entry) => entry === value) ?? fallback;
-  const tool = imageToolSchema.safeParse(search.get("tool"));
+  const tool = assetToolSchema.safeParse(search.get("tool"));
   const model = search.get("model");
   const time = pick(["all", "today", "7", "30", "90"] as const, search.get("time"), "all");
   return {
@@ -70,7 +70,7 @@ export function filtersToSearch(filters: AssetLibraryFilters) {
 }
 
 function libraryQuery(filters: AssetLibraryFilters) {
-  const query = new URLSearchParams({ limit: String(pageSize) });
+  const query = new URLSearchParams({ limit: String(pageSize), includeVideo: "true" });
   if (filters.source === "generated") query.set("kind", "output");
   if (filters.source === "uploads") query.set("kind", "reference");
   if (filters.source === "favorites") query.set("favorite", "true");
