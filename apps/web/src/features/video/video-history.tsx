@@ -41,7 +41,7 @@ export function VideoHistory({ onRestore }: { onRestore: () => void }) {
       </EmptyState>
     );
   return (
-    <div className="video-history-list">
+    <div className="generation-history video-history-list">
       {tasks.map((task) => (
         <VideoTaskCard key={task.id} task={task} onRestore={onRestore} />
       ))}

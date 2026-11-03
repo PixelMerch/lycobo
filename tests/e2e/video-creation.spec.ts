@@ -222,7 +222,12 @@ test("completed video fixtures play through the real browser media element", asy
   await expect(task).toContainText("已完成");
   await expect(task).toContainText("9:16");
   await expect(task).toContainText("10秒");
-  await expect(task).toContainText("消耗 100 积分");
+  await expect(task).not.toContainText("消耗 100 积分");
+  await expect(task.locator(".generation-meta-ratio .ui-icon")).toBeVisible();
+  await expect(task.locator(".video-history-tag")).toHaveCSS(
+    "background-color",
+    "rgb(124, 196, 255)",
+  );
   await expect(task.locator("time")).toHaveCount(1);
   await expect(task.getByRole("button", { name: "复制任务 ID W09VIDEO2" })).toBeVisible();
   const player = task.locator("video");
@@ -348,3 +353,132 @@ for (const editWhilePending of [false, true]) {
     expect(requests).toBe(1);
   });
 }
+
+test("video history matches image spacing and typography, regenerates with confirmation and protects the draft", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const id = crypto.randomUUID();
+  const input = { prompt: "商品视频", seconds: 15, aspectRatio: "16:9", referenceAssetIds: [] };
+  const imageJob = {
+    id: crypto.randomUUID(),
+    public_id: "W09IMAGE1",
+    organization_id: crypto.randomUUID(),
+    user_id: crypto.randomUUID(),
+    model: "gpt-image-2.5",
+    prompt: "商品图片",
+    resolution: "1K",
+    aspect_ratio: "1:1",
+    requested_count: 1,
+    status: "running",
+    created_at: "2026-11-03T01:00:00.000Z",
+    completed_at: null,
+    items: [
+      {
+        id: crypto.randomUUID(),
+        position: 0,
+        status: "running",
+        output_asset_id: null,
+        error_code: null,
+        width: null,
+        height: null,
+        worker_id: null,
+      },
+    ],
+  };
+  await page.route("**/api/v1/image-tasks*", (route) =>
+    route.fulfill({ json: apiFixture({ data: [imageJob] }) }),
+  );
+  await page.goto("/create");
+  await expect(page.locator(".generation-job")).toHaveCount(1);
+  const measurements = async () =>
+    page.locator(".generation-job").evaluate((node) => {
+      const list = node.parentElement;
+      const meta = node.querySelector(".generation-meta");
+      const prompt = node.querySelector(".generation-prompt");
+      const action = node.querySelector(".history-icon-action");
+      if (!list || !meta || !prompt || !action) throw new Error("Missing history geometry");
+      return {
+        topInset: Math.round(node.getBoundingClientRect().top - list.getBoundingClientRect().top),
+        promptFont: getComputedStyle(prompt).fontSize,
+        promptLine: getComputedStyle(prompt).lineHeight,
+        metaFont: getComputedStyle(meta).fontSize,
+        actionWidth: action.getBoundingClientRect().width,
+        actionHeight: action.getBoundingClientRect().height,
+      };
+    });
+  const image = await measurements();
+  await expect(page.getByRole("button", { name: "复制提示词", exact: true })).toHaveCSS(
+    "font-size",
+    "11px",
+  );
+  let videoStatus = "succeeded";
+  const posts: { body: unknown; key: string | undefined }[] = [];
+  let release: (() => void) | undefined;
+  await page.route("**/api/v1/video-model", (route) =>
+    route.fulfill({ json: apiFixture({ enabled: true, resolution: "768p", unitCredits: 100 }) }),
+  );
+  await page.route("**/api/v1/video-tasks", async (route) => {
+    if (route.request().method() === "POST") {
+      posts.push({
+        body: route.request().postDataJSON(),
+        key: route.request().headers()["idempotency-key"],
+      });
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return route.fulfill({
+        status: 202,
+        json: apiFixture({ id: crypto.randomUUID(), replayed: false }),
+      });
+    }
+    return route.fulfill({
+      json: apiFixture({
+        data: [
+          {
+            id,
+            public_id: "WVIDEO1",
+            prompt: input.prompt,
+            status: videoStatus,
+            created_at: imageJob.created_at,
+            input: { video: input },
+            error_code: null,
+            asset_id: null,
+            provider_status: null,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto("/video");
+  const card = page.getByRole("article", { name: "视频任务：WVIDEO1" });
+  await expect(card).toBeVisible();
+  expect(await measurements()).toEqual(image);
+  await expect(card.getByRole("button", { name: "复制提示词", exact: true })).toHaveCSS(
+    "font-size",
+    "11px",
+  );
+  const draft = page.getByLabel("场景描述", { exact: true });
+  await draft.fill("准备下一条视频的草稿");
+  const regenerate = card.getByRole("button", { name: "重新生成", exact: true });
+  await regenerate.click();
+  const confirm = page.getByRole("dialog", { name: "重新生成这个视频？" });
+  await expect(confirm).toContainText("本次消耗 100 积分");
+  expect(posts).toHaveLength(0);
+  await confirm.getByRole("button", { name: "确认", exact: true }).click();
+  await expect.poll(() => posts.length).toBe(1);
+  await expect(regenerate).toBeDisabled();
+  await expect(page.locator(".video-composer .generation-submit")).toBeDisabled();
+  release?.();
+  await expect(regenerate).toBeEnabled();
+  expect(posts[0]?.body).toEqual(input);
+  expect(posts[0]?.key).toMatch(/^[a-f0-9-]{36}$/);
+  await expect(draft).toHaveValue("准备下一条视频的草稿");
+  for (const status of ["running", "needs_reconciliation"]) {
+    videoStatus = status;
+    await page.reload();
+    await expect(card.getByRole("button", { name: "重新生成", exact: true })).toBeDisabled();
+  }
+  expect(posts).toHaveLength(1);
+});

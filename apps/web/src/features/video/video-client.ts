@@ -6,8 +6,14 @@ import {
   videoInputSchema,
   videoTasksSchema,
 } from "@lycoboai/contracts";
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import {
+  useInfiniteQuery,
+  useIsMutating,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { useRef, useSyncExternalStore } from "react";
 import { useEnterpriseSession } from "../auth/auth-client";
 import {
   ImageApiError,
@@ -16,6 +22,13 @@ import {
 } from "../generation/generation-client";
 import type { ReferenceImage } from "../generation/studio-state";
 import { useVideoDraft } from "./video-state";
+
+const pendingEvents = new EventTarget();
+const notifyPending = () => pendingEvents.dispatchEvent(new Event("change"));
+const subscribePending = (listener: () => void) => {
+  pendingEvents.addEventListener("change", listener);
+  return () => pendingEvents.removeEventListener("change", listener);
+};
 
 export function useVideoModel() {
   const session = useEnterpriseSession();
@@ -62,15 +75,19 @@ export function useSubmitVideo() {
       return null;
     }
   };
-  const [hasPending, setHasPending] = useState(() => !!pending());
+  const hasPending = useSyncExternalStore(subscribePending, () => !!pending());
+  const activeSubmissions = useIsMutating({ mutationKey: ["submit-video"] });
   const mutation = useMutation({
+    mutationKey: ["submit-video"],
     retry: false,
     mutationFn: async ({
       input,
       references,
+      clearDraft = true,
     }: {
       input: Omit<VideoInput, "referenceAssetIds">;
       references: ReferenceImage[];
+      clearDraft?: boolean;
     }) => {
       if (!session.data) throw new Error("请先登录");
       const submittedDraft = useVideoDraft.getState();
@@ -83,7 +100,7 @@ export function useSubmitVideo() {
           input: videoInputSchema.parse({ ...input, referenceAssetIds: ids }),
         };
         sessionStorage.setItem(storageKey, JSON.stringify(attempt));
-        setHasPending(true);
+        notifyPending();
       }
       const response = await imageRequest("video-tasks", {
         method: "POST",
@@ -92,8 +109,8 @@ export function useSubmitVideo() {
       });
       const accepted = videoAcceptedSchema.parse(await response.json());
       sessionStorage.removeItem(storageKey);
-      setHasPending(false);
-      if (!confirming && useVideoDraft.getState() === submittedDraft)
+      notifyPending();
+      if (clearDraft && !confirming && useVideoDraft.getState() === submittedDraft)
         submittedDraft.update({
           prompt: "",
           firstFrame: null,
@@ -105,7 +122,7 @@ export function useSubmitVideo() {
     onError: (error) => {
       if (error instanceof ImageApiError && [400, 401, 403, 409, 413, 429].includes(error.status)) {
         sessionStorage.removeItem(storageKey);
-        setHasPending(false);
+        notifyPending();
       }
     },
     onSuccess: () => {
@@ -119,6 +136,7 @@ export function useSubmitVideo() {
   });
   return {
     ...mutation,
+    isPending: mutation.isPending || activeSubmissions > 0,
     hasPending,
     submit: (args: Parameters<typeof mutation.mutate>[0]) => {
       if (locked.current) return;

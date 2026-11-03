@@ -2747,8 +2747,8 @@ p.home-hero-kicker {
   line-height: var(--leading-xs);
 }
 .history-prompt .copy-prompt.button {
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
+  font-size: 11px;
+  line-height: 16px;
 }
 .copy-prompt.button:hover,
 .copy-prompt.button[data-hovered="true"],

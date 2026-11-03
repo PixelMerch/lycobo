@@ -1,6 +1,6 @@
-import { Button, Link, Spinner, Tooltip } from "@heroui/react";
-import { type VideoTask, videoUnitCredits } from "@lycoboai/contracts";
-import { IconCopy, IconEdit, IconMovie } from "@tabler/icons-react";
+import { Button, Spinner, Tooltip } from "@heroui/react";
+import type { VideoTask } from "@lycoboai/contracts";
+import { IconAspectRatio, IconCopy, IconMovie } from "@tabler/icons-react";
 import { useState } from "react";
 import { CollapsibleText } from "../../components/collapsible-text";
 import { ConfirmDialog } from "../../components/confirm-dialog";
@@ -9,6 +9,7 @@ import { copyToClipboard } from "../../lib/clipboard";
 import { assetContentUrl } from "../generation/generation-client";
 import { ReferenceThumbnails } from "../generation/references/reference-thumbnails";
 import { useVideoDraft } from "./video-state";
+import { VideoTaskActions } from "./video-task-actions";
 
 const statusText = {
   queued: "排队中",
@@ -50,7 +51,7 @@ export function VideoTaskCard({ task, onRestore }: { task: VideoTask; onRestore:
   return (
     <article
       id={`video-task-${task.id}`}
-      className="video-history-card"
+      className="generation-job video-history-card"
       aria-label={`视频任务：${task.public_id}`}
     >
       <header className="video-history-header">
@@ -58,7 +59,7 @@ export function VideoTaskCard({ task, onRestore }: { task: VideoTask; onRestore:
           <div>
             <dt className="sr-only">功能</dt>
             <dd>
-              <span className="model-tag">视频创作</span>
+              <span className="model-tag video-history-tag">视频创作</span>
             </dd>
           </div>
           <div>
@@ -89,8 +90,9 @@ export function VideoTaskCard({ task, onRestore }: { task: VideoTask; onRestore:
               </Tooltip>
             </dd>
           </div>
-          <div>
+          <div className="generation-meta-ratio">
             <dt className="sr-only">画面比例</dt>
+            <UiIcon icon={IconAspectRatio} size="small" />
             <dd>{input.aspectRatio}</dd>
           </div>
           <div>
@@ -109,18 +111,21 @@ export function VideoTaskCard({ task, onRestore }: { task: VideoTask; onRestore:
                 : "纯文字"}
             </dd>
           </div>
-          <div>
-            <dt className="sr-only">积分</dt>
-            <dd>
-              {task.status === "failed"
-                ? `已退回 ${videoUnitCredits} 积分`
-                : `消耗 ${videoUnitCredits} 积分`}
-            </dd>
-          </div>
         </dl>
-        <span className="video-history-status" role="status">
-          {status}
-        </span>
+        <VideoTaskActions
+          task={task}
+          onEdit={() => {
+            const draft = useVideoDraft.getState();
+            if (
+              draft.prompt.trim() ||
+              draft.firstFrame ||
+              draft.lastFrame ||
+              draft.extraReferences.length
+            )
+              setConfirmRestore(true);
+            else restore();
+          }}
+        />
       </header>
       <div className="history-prompt">
         <CollapsibleText
@@ -134,58 +139,37 @@ export function VideoTaskCard({ task, onRestore }: { task: VideoTask; onRestore:
           onPress={() => void copyToClipboard(task.prompt)}
         >
           <UiIcon icon={IconCopy} size="small" />
-          复制场景描述
+          复制提示词
         </Button>
         <ReferenceThumbnails ids={input.referenceAssetIds} label="视频参考图" />
       </div>
-      {task.delivery ? (
-        // biome-ignore lint/a11y/useMediaCaption: generated videos have no subtitle-track metadata.
-        <video
-          controls
-          playsInline
-          preload="none"
-          src={task.delivery.url}
-          aria-label={`视频：${task.public_id}`}
-        />
-      ) : (
-        <section
-          className={`video-history-placeholder${active ? " generation-pending" : ""}`}
-          aria-label={`视频画面：${status}`}
-        >
-          {active ? (
-            <Spinner size="md" aria-label="视频处理中" />
+      <div className="generation-results" data-count="1">
+        <div>
+          {task.delivery ? (
+            // biome-ignore lint/a11y/useMediaCaption: generated videos have no subtitle-track metadata.
+            <video
+              controls
+              playsInline
+              preload="none"
+              src={task.delivery.url}
+              aria-label={`视频：${task.public_id}`}
+            />
           ) : (
-            <UiIcon icon={IconMovie} size="illustration" />
+            <section
+              className={`video-history-placeholder${active ? " generation-pending" : ""}`}
+              aria-label={`视频画面：${status}`}
+            >
+              {active ? (
+                <Spinner size="md" aria-label="视频处理中" />
+              ) : (
+                <UiIcon icon={IconMovie} size="illustration" />
+              )}
+              <span>{status}</span>
+              {active && <small>可以继续创作，完成后会自动更新</small>}
+            </section>
           )}
-          <span>{status}</span>
-          {active && <small>可以继续创作，完成后会自动更新</small>}
-        </section>
-      )}
-      <footer className="video-history-actions">
-        <Button
-          variant="tertiary"
-          size="sm"
-          onPress={() => {
-            const draft = useVideoDraft.getState();
-            if (
-              draft.prompt.trim() ||
-              draft.firstFrame ||
-              draft.lastFrame ||
-              draft.extraReferences.length
-            )
-              setConfirmRestore(true);
-            else restore();
-          }}
-        >
-          <UiIcon icon={IconEdit} size="small" />
-          重新编辑
-        </Button>
-        {task.delivery && (
-          <Link href={task.delivery.download_url} download>
-            下载视频
-          </Link>
-        )}
-      </footer>
+        </div>
+      </div>
       <ConfirmDialog
         isOpen={confirmRestore}
         title="载入这次创作？"
