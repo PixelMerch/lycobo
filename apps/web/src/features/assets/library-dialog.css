@@ -79,3 +79,17 @@
     padding: 0 var(--space-4) var(--space-4);
   }
 }
+
+/* Fill the remaining viewport so the empty illustration and caption stay centered. */
+.library-body .asset-browser,
+.library-body .asset-source-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+.library-body .asset-empty.empty-state {
+  flex: 1;
+  min-height: 180px;
+  justify-content: center;
+  align-items: center;
+}

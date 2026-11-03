@@ -117,7 +117,22 @@ test("我的素材 only shows generated images while 素材库 retains its sourc
   await dialog.getByRole("button", { name: "全部类型 类型", exact: true }).click();
   await page.getByRole("option", { name: "视频", exact: true }).click();
   await expect(dialog.getByText("暂无视频素材")).toBeVisible();
-  await dialog.getByRole("button", { name: "查看图片", exact: true }).click();
+  const empty = dialog.locator(".asset-empty");
+  await expect(empty.locator("p")).toHaveCount(1);
+  await expect(empty.locator("h2, button")).toHaveCount(0);
+  const emptyBox = await empty.boundingBox();
+  const iconBox = await empty.locator(".asset-empty-icon").boundingBox();
+  const captionBox = await empty.locator("p").boundingBox();
+  expect(emptyBox && iconBox && captionBox).toBeTruthy();
+  if (emptyBox && iconBox && captionBox) {
+    expect(
+      Math.abs(
+        (iconBox.y + captionBox.y + captionBox.height) / 2 - (emptyBox.y + emptyBox.height / 2),
+      ),
+    ).toBeLessThan(3);
+  }
+  await dialog.getByRole("button", { name: "视频 类型", exact: true }).click();
+  await page.getByRole("option", { name: "图片", exact: true }).click();
   await expect(tiles).toHaveCount(1);
   expect(queries.at(-1)?.get("type")).toBe("image");
   await dialog.getByRole("button", { name: "重置筛选", exact: true }).click();
@@ -233,7 +248,7 @@ test("素材库 lays out day groups in full rows and two columns on phones", asy
   await expect(preview).toHaveCount(0);
   await page.getByRole("radio", { name: "视频", exact: true }).click();
   await expect(page.getByText("暂无视频素材")).toBeVisible();
-  await page.getByRole("button", { name: "查看图片", exact: true }).click();
+  await page.getByRole("radio", { name: "图片", exact: true }).click();
   await expect(page).toHaveURL(/\/assets\?type=image$/);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".asset-masonry").first().locator(".asset-column")).toHaveCount(2);

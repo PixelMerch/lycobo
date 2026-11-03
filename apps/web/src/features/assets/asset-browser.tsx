@@ -55,28 +55,14 @@ function useWidth() {
   return [setElement, width] as const;
 }
 
-type Empty = {
-  icon: TablerIcon;
-  title: string;
-  text: string;
-  action?: { label: string; filters: AssetLibraryFilters };
-};
+type Empty = { icon: TablerIcon; title: string };
 function emptyState(
   filters: AssetLibraryFilters,
   defaults: AssetLibraryFilters,
   currentTool: ImageTool | undefined,
 ): Empty {
-  const reset = { ...defaults, source: filters.source };
-  if (filters.type === "video")
-    return {
-      icon: IconMovie,
-      title: "暂无视频素材",
-      text: "当前筛选下没有视频，可切换到图片查看。",
-      action: { label: "查看图片", filters: { ...filters, type: "image" } },
-    };
-  if (filters.source === "uploads")
-    return { icon: IconPhoto, title: "还没有上传的素材", text: "生成时上传的参考图会保存在这里。" };
-  // 我的素材 starts on its tool; an empty default view offers every tool instead.
+  if (filters.type === "video") return { icon: IconMovie, title: "暂无视频素材" };
+  if (filters.source === "uploads") return { icon: IconPhoto, title: "还没有上传的素材" };
   if (
     currentTool &&
     filters.tool === currentTool &&
@@ -85,34 +71,14 @@ function emptyState(
     (!filters.time || filters.time === "all")
   )
     return filters.source === "favorites"
-      ? {
-          icon: IconStar,
-          title: `${toolNames[currentTool]}还没有收藏的素材`,
-          text: "在图片预览或生成结果中点击星标即可收藏。",
-          action: { label: "查看全部收藏", filters: { ...filters, tool: "all" } },
-        }
-      : {
-          icon: IconPhoto,
-          title: `${toolNames[currentTool]}还没有素材`,
-          text: "生成成功的图片会自动保存在这里。",
-          action: { label: "查看全部功能的素材", filters: { ...filters, tool: "all" } },
-        };
+      ? { icon: IconStar, title: `${toolNames[currentTool]}还没有收藏的素材` }
+      : { icon: IconPhoto, title: `${toolNames[currentTool]}还没有素材` };
   if (
     !sameFilters(filters, { ...defaultAssetFilters, source: filters.source, type: defaults.type })
   )
-    return {
-      icon: IconPhotoSearch,
-      title: "没有符合筛选的素材",
-      text: "调整功能、类型、模型或时间筛选后再试。",
-      ...(sameFilters(filters, reset) ? {} : { action: { label: "重置筛选", filters: reset } }),
-    };
-  if (filters.source === "favorites")
-    return {
-      icon: IconStar,
-      title: "还没有收藏的素材",
-      text: "在图片预览或生成结果中点击星标即可收藏。",
-    };
-  return { icon: IconPhoto, title: "还没有生成的素材", text: "生成成功的图片会自动保存在这里。" };
+    return { icon: IconPhotoSearch, title: "没有符合筛选的素材" };
+  if (filters.source === "favorites") return { icon: IconStar, title: "还没有收藏的素材" };
+  return { icon: IconPhoto, title: "还没有生成的素材" };
 }
 
 function AssetEmpty({
@@ -123,7 +89,7 @@ function AssetEmpty({
 }: {
   icon: TablerIcon;
   title: string;
-  text: string;
+  text?: string;
   action?: { label: string; onPress: () => void } | undefined;
 }) {
   return (
@@ -131,8 +97,14 @@ function AssetEmpty({
       <span className="asset-empty-icon">
         <UiIcon icon={icon} size="illustration" />
       </span>
-      <h2>{title}</h2>
-      <p>{text}</p>
+      {text ? (
+        <>
+          <h2>{title}</h2>
+          <p>{text}</p>
+        </>
+      ) : (
+        <p>{title}</p>
+      )}
       {action && (
         <Button size="sm" variant="secondary" onPress={action.onPress}>
           {action.label}
@@ -239,17 +211,7 @@ export function AssetBrowser({
   ) : query.isPending ? (
     <Skeleton compact={compact} />
   ) : assets.length === 0 ? (
-    <AssetEmpty
-      icon={empty.icon}
-      title={empty.title}
-      text={empty.text}
-      action={
-        empty.action && {
-          label: empty.action.label,
-          onPress: () => empty.action && onChange(empty.action.filters),
-        }
-      }
-    />
+    <AssetEmpty icon={empty.icon} title={empty.title} />
   ) : (
     <>
       {generatedOnly && (!filters.time || filters.time === "all")
