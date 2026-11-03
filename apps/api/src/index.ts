@@ -33,7 +33,7 @@ import { videoService } from "./features/videos/service";
 
 const env = readEnv(process.env);
 const logger = pino({ level: env.LOG_LEVEL });
-const policy = readImagePolicy({ IMAGE_GENERATION_ENABLED: process.env.IMAGE_GENERATION_ENABLED });
+const policy = readImagePolicy({});
 const cloudbaseStorage = readCloudBaseStorageConfig(process.env);
 const cloudbaseDatabase = readCloudBaseDatabaseConfig(process.env);
 if (policy.enabled && !cloudbaseStorage && !isAbsolute(process.env.IMAGE_DATA_DIR ?? ""))
@@ -70,13 +70,12 @@ const events =
         ? openImageEventFeed(process.env.DATABASE_URL)
         : undefined
     : undefined;
-const wakeConsumer =
-  cloudbaseDatabase && (policy.enabled || process.env.VIDEO_GENERATION_ENABLED === "true")
-    ? cloudbaseConsumerWake(
-        cloudbaseDatabase,
-        process.env.CLOUDBASE_CONSUMER_FUNCTION ?? "lycobo-consumer",
-      )
-    : undefined;
+const wakeConsumer = cloudbaseDatabase
+  ? cloudbaseConsumerWake(
+      cloudbaseDatabase,
+      process.env.CLOUDBASE_CONSUMER_FUNCTION ?? "lycobo-consumer",
+    )
+  : undefined;
 const store = cloudbaseStorage
   ? objectImageStore(cloudbaseObjectBucket(cloudbaseStorage), repository?.storageUid)
   : process.env.S3_ENDPOINT
@@ -92,14 +91,13 @@ const videoSign =
         allowLocalHttp: process.env.APP_ENV === "development",
       })
     : undefined;
-if (
+const videoReady = !!(
   videoConfig &&
-  (!videoSign ||
-    !auth ||
-    (!cloudbaseStorage && !process.env.S3_ENDPOINT) ||
-    !process.env.ASSET_PUBLIC_ORIGIN?.startsWith("https://"))
-)
-  throw new Error("VIDEO_CONFIGURATION_REQUIRED");
+  videoSign &&
+  auth &&
+  (cloudbaseStorage || process.env.S3_ENDPOINT) &&
+  (cloudbaseStorage || process.env.ASSET_PUBLIC_ORIGIN?.startsWith("https://"))
+);
 const app = createApp(
   (event) => logger.error(event, "Request failed"),
   repository
@@ -143,7 +141,7 @@ const app = createApp(
     : undefined,
   auth,
   readWebhookConfig(process.env),
-  videoConfig && videoRepository && videoSign
+  videoReady && videoConfig && videoRepository && videoSign
     ? {
         service: videoService({
           repository: videoRepository,

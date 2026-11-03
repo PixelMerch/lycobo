@@ -27,7 +27,7 @@ for (const width of [390, 1440]) {
     const composer = page.getByRole("region", { name: "视频创作参数" });
     await expect(composer.locator(".reference-image-card")).toHaveCount(1);
     await expect(composer.getByText("Minimax-h3-933特价", { exact: true })).toHaveCount(0);
-    await expect(composer.getByText("768p", { exact: true })).toBeVisible();
+    await expect(composer.getByText("768p", { exact: true })).toHaveCount(0);
     await expect(composer.getByText("首帧图", { exact: true })).toHaveCount(0);
     await expect(composer.getByText("尾帧图", { exact: true })).toHaveCount(0);
     await expect(composer.locator(".home-ratio-track .toggle-button")).toHaveText([
@@ -38,7 +38,7 @@ for (const width of [390, 1440]) {
       "3:4",
       "1:1",
     ]);
-    const prompt = page.getByLabel("文字描述", { exact: true });
+    const prompt = page.getByLabel("场景描述", { exact: true });
     await prompt.fill("镜头缓慢推近，床品在晨光中展开");
     await composer.getByRole("radio", { name: "16:9", exact: true }).click();
     const durationTrack = composer.locator(".video-duration-track");
@@ -121,7 +121,7 @@ test("video text-only submission is durable, uses the selected duration and does
   await page.goto("/video");
   const submit = page.getByRole("button", { name: /立即生成.*100/ });
   await expect(submit).toBeDisabled();
-  await page.getByLabel("文字描述", { exact: true }).fill("俯拍商品，镜头平稳向前推进");
+  await page.getByLabel("场景描述", { exact: true }).fill("俯拍商品，镜头平稳向前推进");
   await submit.click();
   await expect.poll(() => submissions.length).toBe(1);
   expect(submissions[0]).toEqual({
@@ -162,7 +162,7 @@ test("an ambiguous video submission retains its immutable idempotency key when t
     });
   });
   await page.goto("/video");
-  const prompt = page.getByLabel("文字描述", { exact: true });
+  const prompt = page.getByLabel("场景描述", { exact: true });
   await prompt.fill("原始视频画面");
   await page.getByRole("button", { name: /立即生成.*100/ }).click();
   await expect(page.getByRole("button", { name: /确认上次提交/ })).toBeEnabled();

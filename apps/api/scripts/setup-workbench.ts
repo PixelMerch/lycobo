@@ -27,7 +27,6 @@ try {
     })(),
     IMAGE_DATA_DIR: resolve("../../data/images"),
     IMAGE_WORKBENCH_TOKEN: token,
-    IMAGE_GENERATION_ENABLED: "true",
     VAKV_ENABLE_IMAGE_EDITS: "true",
   };
   for (const [key, value] of Object.entries(values)) {

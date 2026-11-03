@@ -205,7 +205,6 @@ export async function generateVakvImage(
 export function readImagePolicy(input: Record<string, string | undefined>) {
   const parsed = z
     .object({
-      IMAGE_GENERATION_ENABLED: z.enum(["true", "false"]).default("false"),
       VAKV_ENABLE_IMAGE_EDITS: z.enum(["true", "false"]).default("false"),
       IMAGE_CREDITS_PER_IMAGE: z.coerce.number().int().min(1).max(1000000).default(20),
     })
@@ -220,7 +219,7 @@ export function readImagePolicy(input: Record<string, string | undefined>) {
   }
   if (!parsed.success) throw new Error("Invalid image generation policy");
   return {
-    enabled: parsed.data.IMAGE_GENERATION_ENABLED === "true",
+    enabled: true,
     editsEnabled: parsed.data.VAKV_ENABLE_IMAGE_EDITS === "true",
     unitCredits: imageUnitCredits,
     overrides,

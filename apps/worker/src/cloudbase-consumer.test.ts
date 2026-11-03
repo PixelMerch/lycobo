@@ -6,16 +6,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe("CloudBase consumer release boundaries", () => {
-  it("does no external work while generation is disabled", async () => {
-    vi.stubEnv("IMAGE_GENERATION_ENABLED", "false");
-    const request = vi
-      .spyOn(globalThis, "fetch")
-      .mockRejectedValue(new Error("No external requests permitted"));
-    expect(await main()).toEqual({ enabled: false, processed: 0 });
-    expect(request).not.toHaveBeenCalled();
-  });
   it("rejects a mixed source/CloudBase database configuration before claiming tasks", async () => {
-    vi.stubEnv("IMAGE_GENERATION_ENABLED", "true");
     vi.stubEnv("DATABASE_URL", "postgresql://source.invalid/app");
     const request = vi
       .spyOn(globalThis, "fetch")
@@ -24,7 +15,6 @@ describe("CloudBase consumer release boundaries", () => {
     expect(request).not.toHaveBeenCalled();
   });
   it("answers an API wake by queueing an asynchronous drain without database or paid work", async () => {
-    vi.stubEnv("IMAGE_GENERATION_ENABLED", "true");
     vi.stubEnv("TENCENTCLOUD_SECRETID", "AKIDfixture");
     vi.stubEnv("TENCENTCLOUD_SECRETKEY", "fixture-secret-key");
     vi.stubEnv("TENCENTCLOUD_REGION", "ap-shanghai");

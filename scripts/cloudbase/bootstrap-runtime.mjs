@@ -49,7 +49,6 @@ for (const fn of config.functions) {
     ...Object.fromEntries(allowed.map((key) => [key, source[key]])),
     NODE_ENV: "production",
     STANDALONE_MODELS: "true",
-    IMAGE_GENERATION_ENABLED: "false",
     API_HOST: "0.0.0.0",
     API_PORT: "9000",
     AUTH_TRUSTED_ORIGINS: `${origin},https://lycobo.com`,

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   cloudbaseDownloadSigner,
   cloudbaseObjectBucket,
+  cloudbaseProviderReferenceSigner,
   readCloudBaseStorageConfig,
 } from "./cloudbase-object-bucket";
 import { imageObjectBucket } from "./s3-object-bucket";
@@ -98,4 +99,23 @@ it("signs a bounded original download without exposing the service credential", 
   }
   request.mockResolvedValue(new Response("secret upstream body", { status: 403 }));
   await expect(sign("a.png", 120)).rejects.toThrow("IMAGE_STORAGE_UNAVAILABLE");
+});
+
+it("signs private reference images for the provider without requiring an asset host", async () => {
+  const signed =
+    "https://fixture-env-123.api.tcloudbasegateway.com/v1/storages/object/sign/private-images/a.png?token=temporary";
+  const request = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ fullSignedURL: signed }));
+  const sign = cloudbaseProviderReferenceSigner(env, request);
+  expect(await sign("a.png")).toContain("token=temporary");
+  expect(JSON.parse(String(request.mock.calls[0]?.[1]?.body))).toEqual({ expiresIn: 3600 });
+  expect(() => sign("a.mp4")).toThrow("INVALID_REFERENCE_IMAGE");
+});
+it("stores videos larger than the image limit in the same private bucket", async () => {
+  const request = vi.fn<typeof fetch>().mockResolvedValue(new Response(null));
+  const bucket = cloudbaseObjectBucket(env, request);
+  const bytes = new Uint8Array(33 * 1024 * 1024);
+  await expect(
+    bucket.put("a.mp4", bytes, { httpMetadata: { contentType: "video/mp4" } }),
+  ).resolves.toEqual({ stored: true });
+  await expect(bucket.put("a.png", bytes)).rejects.toThrow("INVALID_IMAGE_SIZE");
 });

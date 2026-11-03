@@ -1,6 +1,6 @@
 import { videoInputSchema } from "@lycoboai/contracts";
 import { describe, expect, it } from "vitest";
-import { callVideoProvider, downloadProviderVideo } from "./video-provider";
+import { callVideoProvider, downloadProviderVideo, videoConfiguration } from "./video-provider";
 
 const config = { origin: "https://api.uselg.top", key: "test-secret" };
 describe("Minimax video provider", () => {
@@ -82,5 +82,13 @@ describe("Minimax video provider", () => {
           new Response(null, { status: 302, headers: { Location: "http://127.0.0.1/private" } }),
       ),
     ).rejects.toMatchObject({ code: "VIDEO_DOWNLOAD_ORIGIN_INVALID" });
+  });
+});
+
+it("video is available by default with the server image key and stays unconfigured without credentials", () => {
+  expect(videoConfiguration({})).toBeNull();
+  expect(videoConfiguration({ STANDALONE_IMAGE_API_KEY: "shared-image-key" })).toEqual({
+    origin: "https://api.uselg.top",
+    key: "shared-image-key",
   });
 });

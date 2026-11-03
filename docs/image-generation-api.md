@@ -38,7 +38,7 @@
 
 生产运行于 CloudBase HTTP API、Event 消费者、共享 PG 与私有云存储。旧平台代码已移除，旧源资源仅保留迁移回退资料。见 [CloudBase 部署](cloudbase-deployment.md)。
 
-账号通过现有企业账号体系配置，主子账号共用组织钱包。生成开关默认关闭，确认数据库、权限、对象存储、模型及后台绑定后再显式启用 `IMAGE_GENERATION_ENABLED=true`。本地开发使用隔离Node进程、私有S3和独立loopback数据库；只有在本地配置显式启用 `IMAGE_GENERATION_ENABLED=true` 并提供模型密钥后才能调用真实模型。旧 Node 工作台签发脚本仅供已有的本地调试，不是线上账号注册或充值接口。
+账号通过现有企业账号体系配置，主子账号共用组织钱包。生图默认启用，不再使用 IMAGE_GENERATION_ENABLED 开关；数据库、权限、对象存储、模型及后台绑定必须正确配置。本地开发继续使用隔离Node进程、私有S3和独立loopback数据库，真实模型请求使用服务端配置的密钥。旧 Node 工作台签发脚本仅供已有的本地调试，不是线上账号注册或充值接口。
 
 每张固定 20 币，忽略旧 `IMAGE_CREDITS_PER_IMAGE` 定价；提交扣费、确定失败按张退款。充值订单与账务只读接口已接入，真实支付未接入，见 [企业钱包](enterprise-wallet.md)。
 

@@ -48,7 +48,7 @@ export function VideoPage() {
         </p>
         <ReferencePrompt
           className="prompt-field"
-          label="文字描述"
+          label="场景描述"
           value={draft.prompt}
           onChange={(prompt) => draft.update({ prompt })}
           references={references}
@@ -77,10 +77,6 @@ export function VideoPage() {
           />
         </section>
         <VideoDuration value={draft.seconds} onChange={(seconds) => draft.update({ seconds })} />
-        <div className="video-model-info">
-          <span>清晰度</span>
-          <strong>768p</strong>
-        </div>
       </div>
       <div className="generate-area">
         <Button
@@ -105,9 +101,6 @@ export function VideoPage() {
             {videoUnitCredits}
           </span>
         </Button>
-        {model.data && !model.data.enabled && (
-          <p className="video-service-status">视频生成暂未开放</p>
-        )}
       </div>
     </section>
   );

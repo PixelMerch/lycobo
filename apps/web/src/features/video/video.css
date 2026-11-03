@@ -1,31 +1,10 @@
 /* 视频创作参数与共享表单保持一致。 */
-.video-service-status {
-  margin: 8px 0 0;
-  text-align: center;
-  color: #999;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
-
 .video-reference-hint {
   color: #888;
   font-size: 11px;
   line-height: 16px;
   margin: 0 var(--space-3);
   text-align: left;
-}
-.video-model-info {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 8px 12px;
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-  color: var(--muted);
-}
-.video-model-info strong {
-  font-weight: var(--weight-medium);
-  color: var(--foreground);
-  text-align: right;
 }
 .video-duration {
   width: 100%;

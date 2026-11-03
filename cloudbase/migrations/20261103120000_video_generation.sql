@@ -48,7 +48,7 @@ BEGIN
    RETURN jsonb_build_object('id',task_id,'replayed',true);
   END IF;
   IF jsonb_typeof(payload)<>'object' OR ((payload->>'seconds')::numeric NOT BETWEEN 5 AND 30 OR (payload->>'seconds')::numeric <> trunc((payload->>'seconds')::numeric))
-   OR length(trim(payload->>'prompt')) NOT BETWEEN 1 AND 800
+   OR length(trim(payload->>'prompt')) NOT BETWEEN 1 AND 5000
    OR payload->>'aspectRatio' NOT IN ('16:9','21:9','9:16','4:3','3:4','1:1')
    OR jsonb_array_length(payload->'referenceAssetIds')>9 THEN RAISE EXCEPTION 'STATE_CONFLICT'; END IF;
   IF (SELECT count(*) FROM public.generation_jobs WHERE organization_id=org AND user_id=usr

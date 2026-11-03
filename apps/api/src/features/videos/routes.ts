@@ -48,7 +48,8 @@ export function videoRoutes(
     return fail("GENERATION_NOT_CONFIGURED", "视频服务暂时不可用，请稍后重试", 503);
   });
   app.post("/video-tasks", async (c) => {
-    if (!deps || !auth) return fail("GENERATION_NOT_CONFIGURED", "视频生成暂未开放", 503);
+    if (!deps || !auth)
+      return fail("GENERATION_NOT_CONFIGURED", "视频服务配置不完整，请联系管理员", 503);
     const identity = await enterprisePrincipal(c, auth);
     if (!identity) return fail("UNAUTHORIZED", "请先登录", 401);
     const key = z.uuid().parse(c.req.header("Idempotency-Key"));

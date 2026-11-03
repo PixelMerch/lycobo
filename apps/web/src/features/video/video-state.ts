@@ -3,7 +3,7 @@ import { create } from "zustand";
 import type { ReferenceImage } from "../generation/studio-state";
 
 export { videoRatios };
-export const videoPromptLimit = 800;
+export const videoPromptLimit = 5000;
 type VideoDraft = {
   firstFrame: ReferenceImage | null;
   lastFrame: ReferenceImage | null;

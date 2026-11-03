@@ -9,7 +9,7 @@ export const videoInputSchema = z.strictObject({
     .string()
     .trim()
     .min(1)
-    .max(800)
+    .max(5000)
     .refine((value) => /[\p{L}\p{N}]/u.test(value.replace(/@图片\d+/g, "")), "请输入视频描述"),
   seconds: z.number().int().min(5).max(30),
   aspectRatio: z.enum(videoRatios).default("9:16"),

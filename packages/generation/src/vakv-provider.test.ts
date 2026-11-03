@@ -33,7 +33,7 @@ describe("Vakv adapter and capability evidence", () => {
       "2K",
       "4K",
     ]);
-    expect(readImagePolicy({}).enabled).toBe(false);
+    expect(readImagePolicy({}).enabled).toBe(true);
     expect(() =>
       validateModelInput({ ...input, referenceAssetIds: [crypto.randomUUID()] }),
     ).toThrow("IMAGE_EDITS_NOT_VERIFIED");

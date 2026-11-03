@@ -11,16 +11,14 @@ export class VideoProviderError extends Error {
   }
 }
 export function videoConfiguration(env: {
-  VIDEO_GENERATION_ENABLED?: string;
-  VIDEO_API_KEY?: string;
+  STANDALONE_IMAGE_API_KEY?: string;
   VIDEO_API_ORIGIN?: string;
 }) {
-  if (env.VIDEO_GENERATION_ENABLED !== "true") return null;
-  if (!env.VIDEO_API_KEY) throw new Error("VIDEO_CONFIGURATION_REQUIRED");
+  if (!env.STANDALONE_IMAGE_API_KEY) return null;
   const origin = env.VIDEO_API_ORIGIN ?? "https://api.uselg.top";
   if (!["https://api.uselg.top", "https://api.ai-media.vip"].includes(origin))
     throw new Error("VIDEO_ORIGIN_INVALID");
-  return { origin, key: env.VIDEO_API_KEY };
+  return { origin, key: env.STANDALONE_IMAGE_API_KEY };
 }
 const providerTaskSchema = z.object({
   id: z.string().regex(/^[\w-]{1,200}$/),

@@ -91,7 +91,10 @@ export function cloudbaseObjectBucket(
       }
     },
     async put(key, bytes, options) {
-      if (!bytes.length || bytes.length > imageLimits.outputBytes)
+      if (
+        !bytes.length ||
+        bytes.length > (key.endsWith(".mp4") ? 128 * 1024 * 1024 : imageLimits.outputBytes)
+      )
         throw new Error("INVALID_IMAGE_SIZE");
       // sha256 remains authoritative in media_assets; pgstore owns its system metadata.
       const response = await send(key, "PUT", bytes, options?.httpMetadata?.contentType);
@@ -109,16 +112,17 @@ export function cloudbaseObjectBucket(
 }
 
 /** PG signed download API; call only after validating the application's download capability. */
-export function cloudbaseDownloadSigner(
+function cloudbaseObjectSigner(
   env: CloudBaseStorageBindings,
-  request: typeof fetch = fetch,
+  request: typeof fetch,
+  maxLifetime: number,
 ) {
   const config = readCloudBaseStorageConfig(env);
   if (!config) throw new Error("CLOUDBASE_STORAGE_NOT_CONFIGURED");
   const origin = `https://${config.CLOUDBASE_ENV_ID}.api.tcloudbasegateway.com`;
   return async (key: string, expiresIn: number) => {
     objectKeySchema.parse(key);
-    if (!Number.isInteger(expiresIn) || expiresIn < 1 || expiresIn > 300)
+    if (!Number.isInteger(expiresIn) || expiresIn < 1 || expiresIn > maxLifetime)
       throw new Error("INVALID_DOWNLOAD_LIFETIME");
     const pathname = `/v1/storages/object/sign/${config.CLOUDBASE_STORAGE_BUCKET}/${key.split("/").map(encodeURIComponent).join("/")}`;
     try {
@@ -155,5 +159,23 @@ export function cloudbaseDownloadSigner(
     } catch {
       throw new Error("IMAGE_STORAGE_UNAVAILABLE");
     }
+  };
+}
+
+export function cloudbaseDownloadSigner(
+  env: CloudBaseStorageBindings,
+  request: typeof fetch = fetch,
+) {
+  return cloudbaseObjectSigner(env, request, 300);
+}
+/** Provider reads reference PNGs without browser cookies; never expose this signer to clients. */
+export function cloudbaseProviderReferenceSigner(
+  env: CloudBaseStorageBindings,
+  request: typeof fetch = fetch,
+) {
+  const sign = cloudbaseObjectSigner(env, request, 3600);
+  return (key: string) => {
+    if (!key.endsWith(".png")) throw new Error("INVALID_REFERENCE_IMAGE");
+    return sign(key, 3600);
   };
 }

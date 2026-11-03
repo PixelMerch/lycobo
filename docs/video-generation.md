@@ -4,9 +4,9 @@
 
 ## 用户已确认的规格
 
-- 文字描述800字，参考图片可选，最多9张；支持纯文字。
+- 场景描述5000字，参考图片可选，最多9张；支持纯文字。
 - 图片属于内容参考，没有专用首帧／尾帧参数；原两张草稿图片保留为图片1、图片2。不增加参考视频、音频输入。
-- 固定768p，左侧不展示模型名，也不提供分辨率切换；不向供应商传resolution、quality等无效字段。
+- 固定768p，左侧不展示清晰度和模型名，也不提供分辨率切换；不向供应商传resolution、quality等无效字段。
 - 画面比例按9:16、16:9、21:9、4:3、3:4、1:1排列；默认9:16。有参考图时供应商可能沿用图片比例，不保证参数强制覆盖画幅。
 - 时长滑杆支持5–30秒整数、步长1秒，默认10秒，支持鼠标、触屏和键盘。悬停预览对应秒数，拖动选择后提交实际秒数。
 - 每次任务固定100积分，长短相同，提交时扣费；明确失败只退一次，未知结果不自动退费或重新创建。
@@ -34,15 +34,17 @@ completed但video_available=false时继续查询原任务。只有下载完成�
 
 API与消费者需要：
 
-- VIDEO_API_KEY：单独配置，需具备文档分组105及该型号权限，不自动推定图片Key可用。不经聊天或仓库传递。
+- STANDALONE_IMAGE_API_KEY：复用现有生图Key供API及消费者服务端调用，仍需具备视频型号权限，不再单独配置VIDEO_API_KEY。不经聊天或仓库传递。
 - VIDEO_API_ORIGIN：默认https://api.uselg.top，可显式选择文档列出的https://api.ai-media.vip；不在运行时猜测域名重发。
-- 复用ASSET_PUBLIC_ORIGIN、ASSET_PATH_PREFIX、ASSET_SIGNING_SECRET及私有CloudBase／本地S3配置。真实参考图必须有供应商可达的HTTPS地址，localhost不能作为公网引用。
-- VIDEO_GENERATION_ENABLED：默认false；只有API和消费者都配置完成并验收后才显式设true。
+- 复用ASSET_PUBLIC_ORIGIN、ASSET_PATH_PREFIX、ASSET_SIGNING_SECRET及私有CloudBase／本地S3配置。CloudBase环境直接使用同一私有桶的1小时临时签名URL作为视频参考图，无需另配公网素材域名；普通预览继续走现有资源服务。本地隔离S3模式才需要供应商可访问的HTTPS资源地址。
+- 生图与视频默认启用，不再读取IMAGE_GENERATION_ENABLED／VIDEO_GENERATION_ENABLED。密钥、身份、数据库与私有存储仍必须配置完整。
 
 实施迁移为packages/db/migrations/0039_video_outbox.sql及cloudbase/migrations/20261103120000_video_generation.sql（分别用于Node PG与CloudBase共享PG）。CloudBase迁移除建表／固定视频RPC外，也按断言定位片段扩展既有图片RPC的媒体过滤并排除视频超时处理；不能自动db push或在运行时建表。
 
-先按授权应用目标库迁移，再部署资源服务、消费者与API代码，安全配置密钥及可达性；最后在明确限额下授权真实收费验收并开启视频。必须测试文字及参考图、受理到成品、播放与下载、扣费和失败退款。代码构建或fixture成功不代表生产可用。当前没有执行上述生产步骤。
+先按授权应用目标库迁移，再部署资源服务、消费者与API代码，安全配置密钥及可达性；最后在明确限额下授权真实收费验收并验证视频。必须测试文字及参考图、受理到成品、播放与下载、扣费和失败退款。代码构建或fixture成功不代表生产可用。当前没有执行上述生产步骤。
 
 ## 本地验证
 
 pnpm check；pnpm exec playwright test tests/e2e/video-creation.spec.ts tests/e2e/ratio-pager.spec.ts；按docs/testing.md执行隔离的pnpm test:integration。新增verify-videos在一次性本地数据库中验证并发幂等、100积分扣退、未知提交防重、异步原任务下载、成品video入库及图片超时隔离，不访问真实供应商。
+
+CloudBase消费者复用生图私有桶保存视频MP4，视频上传上限128MiB、图片上限保持32MiB。参考图仍通过已有生图上传接口入库，供应商只收到临时签名，不收到云存储Key。

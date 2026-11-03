@@ -1,7 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { openCloudBaseImageRepository, openVideoRepository } from "@lycoboai/db";
 import { readImagePolicy, standaloneModels, videoConfiguration } from "@lycoboai/generation";
-import { cloudbaseObjectBucket } from "@lycoboai/storage/cloudbase";
+import {
+  cloudbaseObjectBucket,
+  cloudbaseProviderReferenceSigner,
+} from "@lycoboai/storage/cloudbase";
 import { objectImageStore } from "@lycoboai/storage/object-images";
 import { z } from "zod";
 import { drainCloudBaseOutbox } from "./cloudbase-outbox";
@@ -15,11 +18,8 @@ const drainEvent = z.object({ drain: z.literal(true), resumeAt: z.number().int()
 
 /** Event/timer invocation owns the whole execution; no paid work in API handlers. */
 export async function main(event?: unknown) {
-  const policy = readImagePolicy({
-    IMAGE_GENERATION_ENABLED: process.env.IMAGE_GENERATION_ENABLED,
-  });
+  const policy = readImagePolicy({});
   const videoConfig = videoConfiguration(process.env);
-  if (!policy.enabled && !videoConfig) return { enabled: false, processed: 0 };
   // The API wakes this function synchronously. That call only queues an asynchronous drain,
   // so paid work never runs inside an invocation whose caller may disconnect.
   if (wakeEvent.safeParse(event).success)
@@ -50,14 +50,13 @@ export async function main(event?: unknown) {
   const videos = videoConfig ? openVideoRepository(process.env) : undefined;
   try {
     if (videos && videoConfig) {
-      if (!process.env.ASSET_PUBLIC_ORIGIN || !process.env.ASSET_SIGNING_SECRET)
-        throw new Error("VIDEO_CONFIGURATION_REQUIRED");
       for (let count = 0; count < 4 && Date.now() < stopStartingAt; count++) {
         if (
           !(await processVideoIntent(videos, cloudbaseObjectBucket(process.env), {
             ...videoConfig,
-            assetOrigin: process.env.ASSET_PUBLIC_ORIGIN,
-            signingSecret: process.env.ASSET_SIGNING_SECRET,
+            assetOrigin: process.env.ASSET_PUBLIC_ORIGIN ?? "",
+            signingSecret: process.env.ASSET_SIGNING_SECRET ?? "",
+            referenceUrl: cloudbaseProviderReferenceSigner(process.env),
             pathPrefix: process.env.ASSET_PATH_PREFIX,
           }))
         )
@@ -73,7 +72,6 @@ export async function main(event?: unknown) {
       )
         console.error("VIDEO_CONTINUATION_FAILED");
     }
-    if (!policy.enabled) return { enabled: true, processed: 0 };
     await repository.expireClaims();
     // Retention and expired-reference cleanup are not urgent: timer and manual runs keep them current.
     if (!drain.success) {

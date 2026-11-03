@@ -20,4 +20,4 @@ Node PG与CloudBase PG调用同一固定SQL业务函数lycobo_video_operation，
 
 ## 发布边界
 
-默认VIDEO_GENERATION_ENABLED=false，需独立VIDEO_API_KEY及对应分组权限、VIDEO_API_ORIGIN、可被供应商读取的HTTPS资源服务。只修改本地代码，不自动运行远端迁移或付费验收。生产启用顺序见docs/video-generation.md。
+默认启用，无独立生成开关，复用STANDALONE_IMAGE_API_KEY及对应分组权限、VIDEO_API_ORIGIN、可被供应商读取的HTTPS资源服务。只修改本地代码，不自动运行远端迁移或付费验收。生产启用顺序见docs/video-generation.md。

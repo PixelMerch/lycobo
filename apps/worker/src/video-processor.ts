@@ -27,6 +27,7 @@ export type VideoWorkerConfig = {
   assetOrigin: string;
   signingSecret: string;
   pathPrefix?: string | undefined;
+  referenceUrl?: ((key: string) => Promise<string>) | undefined;
 };
 /** Each claim performs one submit, status read or original-file recovery, then persists progress. */
 export async function processVideoIntent(
@@ -50,11 +51,9 @@ export async function processVideoIntent(
   try {
     if (job.references.length !== job.input.referenceAssetIds.length)
       throw new VideoProviderError("REFERENCE_NOT_FOUND", false);
-    const sign = providerReferenceSigner(
-      config.assetOrigin,
-      config.signingSecret,
-      config.pathPrefix,
-    );
+    const sign =
+      config.referenceUrl ??
+      providerReferenceSigner(config.assetOrigin, config.signingSecret, config.pathPrefix);
     const creation = job.submit
       ? {
           input: job.input,

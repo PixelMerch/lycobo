@@ -12,3 +12,10 @@ it("video accepts text-only requests and every supported integer duration for th
     videoInputSchema.safeParse({ prompt: "视频", seconds: 10, resolution: "1080p" }).success,
   ).toBe(false);
 });
+
+it("accepts 5000 scene-description characters and rejects 5001", () => {
+  expect(videoInputSchema.safeParse({ prompt: "景".repeat(5000), seconds: 18 }).success).toBe(true);
+  expect(videoInputSchema.safeParse({ prompt: "景".repeat(5001), seconds: 18 }).success).toBe(
+    false,
+  );
+});
