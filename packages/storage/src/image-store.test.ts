@@ -66,7 +66,7 @@ it("sends opaque references as smaller JPEGs of at most 3840 pixels", async () =
   const photo = await sharp({
     create: {
       width: 4000,
-      height: 2000,
+      height: 200,
       channels: 3,
       background: "#808080",
       noise: { type: "gaussian", mean: 128, sigma: 24 },
@@ -76,7 +76,7 @@ it("sends opaque references as smaller JPEGs of at most 3840 pixels", async () =
     .toBuffer();
   const sent = await providerReference(photo);
   expect(sent.length).toBeLessThan(photo.length);
-  expect(await sharp(sent).metadata()).toMatchObject({ format: "jpeg", width: 3840, height: 1920 });
+  expect(await sharp(sent).metadata()).toMatchObject({ format: "jpeg", width: 3840, height: 192 });
 });
 it("keeps transparent references as PNG and returns bytes it cannot improve unchanged", async () => {
   // Noisy alpha: a JPEG would be smaller, so only the transparency check keeps it PNG.
