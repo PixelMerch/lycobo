@@ -271,12 +271,7 @@
   line-height: var(--leading-base);
   font-weight: var(--weight-semibold);
 }
-.workspace-tool-note {
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  font-weight: var(--weight-regular);
-  color: var(--muted);
-}
+
 .workspace-tool-divider {
   flex-shrink: 0;
   width: 1px;
@@ -284,8 +279,7 @@
   margin: 0 4px;
   background: #ffffff14;
 }
-/* Four tools and 全部工具 need 831px. Narrower desktop docks drop the purpose line, which
- * stays in each tool's preview and description, so every entry remains visible. */
+/* Compact spacing keeps the tool names visible in narrow desktop docks. */
 @media (min-width: 768px) {
   @container workspace-dock (max-width: 830px) {
     .workspace-tool-bar {
@@ -294,9 +288,6 @@
     .workspace-tool-shortcut.button {
       gap: 8px;
       padding-right: 8px;
-    }
-    .workspace-tool-note {
-      display: none;
     }
   }
 }

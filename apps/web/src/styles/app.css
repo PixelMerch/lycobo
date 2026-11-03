@@ -3573,28 +3573,28 @@ p.home-hero-kicker {
   width: 100%;
   flex-wrap: nowrap;
   justify-content: flex-start;
-  gap: 2px;
+  gap: 4px;
   padding: 4px;
   scroll-padding-inline: 4px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
-  border-radius: 20px;
+  border-radius: 16px;
   background: #343434;
 }
 .composer-panel .home-ratio-track::-webkit-scrollbar {
   display: none;
 }
 .composer-panel .home-ratio-track .toggle-button {
-  flex: 0 0 calc((100% - 6px) / 4);
+  flex: 0 0 48px;
   height: 48px;
   min-height: 48px;
   flex-direction: column;
   gap: 1px;
   padding: 3px 2px;
   border: 0;
-  border-radius: 16px;
+  border-radius: 12px;
   background: transparent;
   color: #aaa;
   scroll-snap-align: start;
@@ -3983,7 +3983,7 @@ p.home-hero-kicker {
   }
 }
 
-/* Keep each ratio's feedback square while retaining four-column paging. */
+/* Compact square options align directly with the track inset. */
 .home-ratio-track .ratio-option-visual {
   position: relative;
   isolation: isolate;
@@ -3995,7 +3995,7 @@ p.home-hero-kicker {
   width: 48px;
   height: 48px;
   gap: 1px;
-  border-radius: 16px;
+  border-radius: 12px;
 }
 .home-ratio-track .toggle-button .ratio-preview {
   margin: 0;

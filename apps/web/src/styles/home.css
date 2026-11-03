@@ -455,7 +455,7 @@ body:has(.commerce-home)::-webkit-scrollbar {
   pointer-events: none;
 }
 .home-settings-options [aria-label="画面比例"] .toggle-button {
-  border-radius: 16px;
+  border-radius: 12px;
   height: 48px;
   min-height: 48px;
   flex-direction: column;
@@ -467,6 +467,10 @@ body:has(.commerce-home)::-webkit-scrollbar {
   margin-bottom: 14px;
 }
 .home-settings-options .home-ratio-track {
+  gap: 4px;
+  padding: 4px;
+  scroll-padding-inline: 4px;
+  border-radius: 16px;
   flex-wrap: nowrap;
   justify-content: flex-start;
   overflow-x: auto;
@@ -479,7 +483,7 @@ body:has(.commerce-home)::-webkit-scrollbar {
   display: none;
 }
 .home-ratio-track .toggle-button {
-  flex: 0 0 calc((100% - 6px) / 4);
+  flex: 0 0 48px;
   scroll-snap-align: start;
 }
 .home-ratio-track .ratio-preview {

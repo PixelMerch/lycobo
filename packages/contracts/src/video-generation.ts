@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const videoModel = "Minimax-h3-933特价";
 export const videoUnitCredits = 100;
-export const videoRatios = ["16:9", "21:9", "9:16", "4:3", "3:4", "1:1"] as const;
+export const videoRatios = ["9:16", "16:9", "21:9", "4:3", "3:4", "1:1"] as const;
 export const videoSeconds = [10, 15, 20, 30] as const;
 export const videoInputSchema = z.strictObject({
   prompt: z

@@ -31,9 +31,9 @@ for (const width of [390, 1440]) {
     await expect(composer.getByText("首帧图", { exact: true })).toHaveCount(0);
     await expect(composer.getByText("尾帧图", { exact: true })).toHaveCount(0);
     await expect(composer.locator(".home-ratio-track .toggle-button")).toHaveText([
+      "9:16",
       "16:9",
       "21:9",
-      "9:16",
       "4:3",
       "3:4",
       "1:1",

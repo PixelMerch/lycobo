@@ -158,14 +158,18 @@ export function HomeRatioPicker({
       const track = trackRef.current;
       const index = ratios.indexOf(nextValue);
       if (!track || index < 0) return;
-      const target = track.children[Math.floor(index / 4) * 4];
+      const target = track.children[index];
       if (!(target instanceof HTMLElement)) return;
-      const offset =
-        target.getBoundingClientRect().left -
-        track.getBoundingClientRect().left +
-        track.scrollLeft -
-        (Number.parseFloat(getComputedStyle(track).paddingLeft) || 0);
-      track.scrollTo({ left: Math.max(0, offset), behavior: "auto" });
+      const box = target.getBoundingClientRect();
+      const viewport = track.getBoundingClientRect();
+      const inset = Number.parseFloat(getComputedStyle(track).paddingLeft) || 0;
+      const delta =
+        box.left < viewport.left + inset
+          ? box.left - viewport.left - inset
+          : box.right > viewport.right - inset
+            ? box.right - viewport.right + inset
+            : 0;
+      if (delta) track.scrollTo({ left: Math.max(0, track.scrollLeft + delta), behavior: "auto" });
     },
     [ratios],
   );

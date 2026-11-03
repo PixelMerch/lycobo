@@ -15,7 +15,7 @@ import {
   IconSearch,
 } from "@tabler/icons-react";
 import { MotionConfig, motion } from "motion/react";
-import { useId, useState } from "react";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { DialogClose } from "../../components/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
@@ -27,7 +27,6 @@ export function WorkspaceToolPicker() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const current = toolForPath(pathname);
-  const noteId = useId();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("全部工具");
@@ -48,7 +47,6 @@ export function WorkspaceToolPicker() {
               className="workspace-tool-shortcut"
               data-tool={tool.id}
               aria-label={tool.name}
-              aria-describedby={`${noteId}-${tool.id}`}
               aria-current={current.id === tool.id ? "page" : false}
               onPress={() => {
                 shareProductReference(pathname, tool.path);
@@ -66,9 +64,6 @@ export function WorkspaceToolPicker() {
               <WorkspaceToolSymbol tool={tool.id} />
               <span className="workspace-tool-label">
                 <span className="workspace-tool-name">{tool.name}</span>
-                <span className="workspace-tool-note" id={`${noteId}-${tool.id}`}>
-                  {tool.caption}
-                </span>
               </span>
             </Button>
           ))}
@@ -78,7 +73,6 @@ export function WorkspaceToolPicker() {
             size="sm"
             variant="tertiary"
             aria-label="全部工具"
-            aria-describedby={`${noteId}-more`}
             onPress={() => setOpen(true)}
             aria-haspopup="dialog"
             aria-expanded={open}
@@ -88,9 +82,6 @@ export function WorkspaceToolPicker() {
             </span>
             <span className="workspace-tool-label">
               <span className="workspace-tool-name">全部工具</span>
-              <span className="workspace-tool-note" id={`${noteId}-more`}>
-                按分类查找
-              </span>
             </span>
           </Button>
         </motion.nav>
