@@ -96,7 +96,7 @@
   overflow: hidden;
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
-  background: #121216;
+  background: var(--surface);
   /* No transform: sticky position must remain exact while scrolling. */
 }
 .workspace-composer-hero-image,
