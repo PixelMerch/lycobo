@@ -88,7 +88,7 @@ export const workspaceTools = [
     steps: [
       "添加参考图片，或直接输入文字描述",
       "描述画面主体、动作和镜头运动",
-      "选择比例与10／15／20／30秒时长后生成",
+      "选择比例与5–30秒时长后生成",
     ],
     examples: [
       "/studio/models/image-2-5-2.webp",

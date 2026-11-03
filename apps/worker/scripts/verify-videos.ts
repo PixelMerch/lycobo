@@ -21,7 +21,7 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
     signingSecret: "x".repeat(40),
   };
   const routing = { origin: config.origin, credentialHash: videoCredentialHash(config.key) };
-  const input = videoInputSchema.parse({ prompt: "床品镜头缓慢推进", seconds: 10 });
+  const input = videoInputSchema.parse({ prompt: "床品镜头缓慢推进", seconds: 18 });
   const key = crypto.randomUUID();
   const results = await Promise.all([
     videos.create(owner, input, key, routing),

@@ -3,7 +3,7 @@ import { z } from "zod";
 export const videoModel = "Minimax-h3-933特价";
 export const videoUnitCredits = 100;
 export const videoRatios = ["9:16", "16:9", "21:9", "4:3", "3:4", "1:1"] as const;
-export const videoSeconds = [10, 15, 20, 30] as const;
+export const videoSeconds = Array.from({ length: 26 }, (_, index) => index + 5);
 export const videoInputSchema = z.strictObject({
   prompt: z
     .string()
@@ -11,7 +11,7 @@ export const videoInputSchema = z.strictObject({
     .min(1)
     .max(800)
     .refine((value) => /[\p{L}\p{N}]/u.test(value.replace(/@图片\d+/g, "")), "请输入视频描述"),
-  seconds: z.union([z.literal(10), z.literal(15), z.literal(20), z.literal(30)]),
+  seconds: z.number().int().min(5).max(30),
   aspectRatio: z.enum(videoRatios).default("9:16"),
   referenceAssetIds: z
     .array(z.uuid())

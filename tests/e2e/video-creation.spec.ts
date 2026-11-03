@@ -7,7 +7,7 @@ const png = Buffer.from(
   "base64",
 );
 for (const width of [390, 1440]) {
-  test(`video parameters preserve drafts, show six illustrated ratios and snap duration to four values at ${width}px`, async ({
+  test(`video parameters preserve drafts, show six illustrated ratios and allow integer durations from 5 to 30 seconds at ${width}px`, async ({
     page,
   }) => {
     await mockImageApi(page);
@@ -41,12 +41,19 @@ for (const width of [390, 1440]) {
     const prompt = page.getByLabel("文字描述", { exact: true });
     await prompt.fill("镜头缓慢推近，床品在晨光中展开");
     await composer.getByRole("radio", { name: "16:9", exact: true }).click();
+    const durationTrack = composer.locator(".video-duration-track");
+    const hoverBox = await durationTrack.boundingBox();
+    if (!hoverBox) throw new Error("Duration track missing");
+    await page.mouse.move(hoverBox.x + hoverBox.width * 0.52, hoverBox.y + hoverBox.height / 2);
+    await expect(page.getByRole("tooltip")).toHaveText("18秒");
+    await expect(composer.locator(".video-duration-output")).toHaveText("10 秒");
+    await page.mouse.move(0, 0);
     const slider = composer.getByRole("slider");
     await slider.focus();
     await page.keyboard.press("ArrowRight");
-    await expect(composer.locator(".video-duration-output")).toHaveText("15 秒");
+    await expect(composer.locator(".video-duration-output")).toHaveText("11 秒");
     await page.keyboard.press("ArrowRight");
-    await expect(composer.locator(".video-duration-output")).toHaveText("20 秒");
+    await expect(composer.locator(".video-duration-output")).toHaveText("12 秒");
     const track = composer.locator(".video-duration-track");
     const box = await track.boundingBox();
     if (!box) throw new Error("Slider track missing");

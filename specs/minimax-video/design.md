@@ -16,7 +16,7 @@ Node PG与CloudBase PG调用同一固定SQL业务函数lycobo_video_operation，
 
 视频参考图使用仅消费者签发的provider用途短期签名，可不带浏览器Referer／Cookie读取；不会修改桶公开权限。普通图片签名继续要求受信任浏览器来源。MP4沿用归属检查后签名，资源服务支持Range，视频不进入Sharp图片编码。素材网格只显示视频图标，点击后加载播放器；新客户端通过includeVideo=true显式启用视频列表，旧调用默认仍只接收旧媒体视图，保持部署兼容。
 
-前台TanStack Query管理capability、视频历史及提交，Zustand保留草稿。原两张图片按有序参考图保留；参考图总数上限9，图片工具默认5不变。共用横向图形比例选择器，时长用HeroUI Slider，0–3索引映射10／15／20／30秒。提交编号与原请求在sessionStorage按账号隔离暂存；明确拒绝可重新编辑，网络不确定使用原请求确认，不以新草稿覆盖请求。
+前台TanStack Query管理capability、视频历史及提交，Zustand保留草稿。原两张图片按有序参考图保留；参考图总数上限9，图片工具默认5不变。共用横向图形比例选择器，时长用HeroUI Slider，直接使用5–30整数值，步长1秒。提交编号与原请求在sessionStorage按账号隔离暂存；明确拒绝可重新编辑，网络不确定使用原请求确认，不以新草稿覆盖请求。
 
 ## 发布边界
 

@@ -141,3 +141,45 @@
   .video-duration-track:is([data-fill-start="true"], [data-fill-end="true"]) {
   border-inline-color: transparent;
 }
+
+.video-duration-slider.slider {
+  margin-inline: var(--space-3);
+  width: auto;
+}
+.video-duration-slider[data-orientation="horizontal"] .video-duration-track {
+  position: relative;
+  background: transparent;
+  height: 32px;
+}
+.video-duration-wave {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.video-duration-wave > span {
+  width: 1px;
+  background: #ffffff66;
+  transition: height 100ms ease-out;
+}
+.video-duration-anchor {
+  position: absolute;
+  top: 50%;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+.video-duration-tooltip {
+  background: #f4f4f4;
+  color: #171717;
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .video-duration-wave > span {
+    transition: none;
+  }
+}

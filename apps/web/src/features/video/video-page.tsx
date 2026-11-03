@@ -1,5 +1,5 @@
-import { Button, Label, Slider } from "@heroui/react";
-import { videoSeconds, videoUnitCredits } from "@lycoboai/contracts";
+import { Button } from "@heroui/react";
+import { videoUnitCredits } from "@lycoboai/contracts";
 import { CreditCoin } from "../../components/credit-coin";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { useErrorToast } from "../../lib/error-toast";
@@ -8,6 +8,7 @@ import { hasPromptDescription } from "../generation/references/prompt-descriptio
 import { ReferencePicker } from "../generation/references/reference-picker";
 import { WorkspaceComposerTitle } from "../workspace/workspace-tool-symbol";
 import { useSubmitVideo, useVideoModel } from "./video-client";
+import { VideoDuration } from "./video-duration";
 import { useVideoDraft, videoPromptLimit, videoRatios } from "./video-state";
 import "./video.css";
 export function VideoPage() {
@@ -28,7 +29,8 @@ export function VideoPage() {
   const valid =
     hasPromptDescription(draft.prompt) &&
     Number.isInteger(draft.seconds) &&
-    videoSeconds.some((value) => value === draft.seconds);
+    draft.seconds >= 5 &&
+    draft.seconds <= 30;
   return (
     <section className="composer-panel video-composer" aria-label="视频创作参数">
       <div className="composer-scroll">
@@ -71,32 +73,7 @@ export function VideoPage() {
             }}
           />
         </section>
-        <Slider
-          className="video-duration-slider"
-          minValue={0}
-          maxValue={3}
-          step={1}
-          value={Math.max(
-            0,
-            videoSeconds.findIndex((value) => value === draft.seconds),
-          )}
-          onChange={(value) => draft.update({ seconds: videoSeconds[Number(value)] ?? 10 })}
-          aria-label="视频时长"
-        >
-          <Label>时长</Label>
-          <div className="video-duration-row">
-            <Slider.Track className="video-duration-track">
-              <Slider.Fill />
-              <Slider.Thumb aria-label={`视频时长：${draft.seconds}秒`} />
-            </Slider.Track>
-            <Slider.Output className="video-duration-output">{draft.seconds} 秒</Slider.Output>
-          </div>
-          <Slider.Marks className="video-duration-marks">
-            {videoSeconds.map((seconds) => (
-              <span key={seconds}>{seconds}s</span>
-            ))}
-          </Slider.Marks>
-        </Slider>
+        <VideoDuration value={draft.seconds} onChange={(seconds) => draft.update({ seconds })} />
         <div className="video-model-info">
           <span>清晰度</span>
           <strong>768p</strong>

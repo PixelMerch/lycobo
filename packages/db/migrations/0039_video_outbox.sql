@@ -47,7 +47,7 @@ BEGIN
    IF existing_hash<>p_args->>'inputHash' THEN RAISE EXCEPTION 'IDEMPOTENCY_CONFLICT'; END IF;
    RETURN jsonb_build_object('id',task_id,'replayed',true);
   END IF;
-  IF jsonb_typeof(payload)<>'object' OR (payload->>'seconds')::integer NOT IN (10,15,20,30)
+  IF jsonb_typeof(payload)<>'object' OR ((payload->>'seconds')::numeric NOT BETWEEN 5 AND 30 OR (payload->>'seconds')::numeric <> trunc((payload->>'seconds')::numeric))
    OR length(trim(payload->>'prompt')) NOT BETWEEN 1 AND 800
    OR payload->>'aspectRatio' NOT IN ('16:9','21:9','9:16','4:3','3:4','1:1')
    OR jsonb_array_length(payload->'referenceAssetIds')>9 THEN RAISE EXCEPTION 'STATE_CONFLICT'; END IF;

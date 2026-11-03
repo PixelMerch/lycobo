@@ -53,7 +53,7 @@ describe("video API", () => {
         body: JSON.stringify(body),
       });
     expect((await send({ prompt: "视频描述", seconds: 10 }, false)).status).toBe(401);
-    expect((await send({ prompt: "视频描述", seconds: 12 })).status).toBe(400);
+    expect((await send({ prompt: "视频描述", seconds: 31 })).status).toBe(400);
     expect(
       (await send({ prompt: "视频描述", seconds: 10, ownerId: crypto.randomUUID() })).status,
     ).toBe(400);

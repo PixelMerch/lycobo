@@ -1,4 +1,4 @@
-import { videoRatios, type videoSeconds } from "@lycoboai/contracts";
+import { videoRatios } from "@lycoboai/contracts";
 import { create } from "zustand";
 import type { ReferenceImage } from "../generation/studio-state";
 
@@ -10,7 +10,7 @@ type VideoDraft = {
   extraReferences: ReferenceImage[];
   prompt: string;
   ratio: (typeof videoRatios)[number];
-  seconds: (typeof videoSeconds)[number];
+  seconds: number;
 };
 /** Retain the original two prepared images as ordered references when switching tools. */
 export const useVideoDraft = create<VideoDraft & { update: (patch: Partial<VideoDraft>) => void }>(
