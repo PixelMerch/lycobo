@@ -102,7 +102,10 @@ export function HomeComposer() {
                 ))}
               </div>
               <div className="home-settings-options">
-                <h3>画面比例</h3>
+                <div className="home-ratio-heading">
+                  <h3>画面比例</h3>
+                  <span className="home-ratio-current">{draft.ratio}</span>
+                </div>
                 <HomeRatioPicker
                   value={draft.ratio}
                   onChange={(ratio) => updateDraft(model, { ratio })}

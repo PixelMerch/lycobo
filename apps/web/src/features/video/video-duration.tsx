@@ -70,6 +70,7 @@ export function VideoDuration({
           </Tooltip.Content>
         </Tooltip>
         <span className="video-duration-endpoint">30s</span>
+        <Slider.Output className="video-duration-current">{value} 秒</Slider.Output>
       </div>
     </Slider>
   );

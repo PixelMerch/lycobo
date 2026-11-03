@@ -94,7 +94,7 @@
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
 }
 .video-duration-slider[data-orientation="horizontal"] .video-duration-track {
   flex: 1;
@@ -177,4 +177,24 @@
 .video-duration-slider
   :is(.video-duration-track, .slider__thumb, .slider__thumb[data-dragging="true"]) {
   cursor: ew-resize;
+}
+
+.video-ratio .ratio-heading h2 {
+  margin: 0;
+}
+.video-duration-slider .video-duration-current {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 60px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--interaction-active);
+  color: var(--foreground);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-regular);
+  font-variant-numeric: tabular-nums;
 }

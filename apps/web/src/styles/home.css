@@ -609,3 +609,15 @@ body:has(.commerce-home)::-webkit-scrollbar {
     var(--background) 100%
   );
 }
+
+.home-ratio-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.home-ratio-current {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}

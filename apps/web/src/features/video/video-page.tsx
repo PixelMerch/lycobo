@@ -63,7 +63,10 @@ export function VideoPage() {
           autoGrow
         />
         <section className="parameter-group video-ratio">
-          <h2>画面比例</h2>
+          <div className="ratio-heading">
+            <h2>画面比例</h2>
+            <span className="ratio-current">{draft.ratio}</span>
+          </div>
           <HomeRatioPicker
             value={draft.ratio}
             ratios={videoRatios}
