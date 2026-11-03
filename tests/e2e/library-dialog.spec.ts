@@ -269,3 +269,37 @@ test("a refused favorite rolls the star back and explains the limit", async ({ p
     "false",
   );
 });
+
+test("我的素材 keeps filters visible while scrolling and separates the current-tool badge", async ({
+  page,
+}) => {
+  await mockLibrary(
+    page,
+    Array.from({ length: 48 }, (_, index) =>
+      asset(`P${String(index).padStart(8, "0")}`, { tool: "textile" }),
+    ),
+  );
+  await page.setViewportSize({ width: 1328, height: 906 });
+  await page.goto("/commerce/textile-set");
+  await page.getByRole("button", { name: "打开素材库", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "我的素材", exact: true });
+  await expect(dialog.locator(".asset-tile")).toHaveCount(48);
+  await expect(dialog.locator(".library-shell")).toHaveCSS("transform", "none");
+  const filters = dialog.locator(".asset-filters");
+  const before = await filters.boundingBox();
+  await dialog.locator(".asset-tile").first().hover();
+  await page.mouse.wheel(0, 600);
+  await expect
+    .poll(() => dialog.locator(".library-body").evaluate((el) => el.scrollTop))
+    .toBeGreaterThan(100);
+  const after = await filters.boundingBox();
+  expect(after?.y).toBeCloseTo(before?.y ?? -1, 0);
+  await dialog.getByRole("button", { name: "家纺裂变 功能", exact: true }).click();
+  const selected = page.getByRole("option", { name: /家纺裂变/ });
+  await expect(selected).toHaveAttribute("aria-selected", "true");
+  const badge = await selected.locator(".asset-filter-now").boundingBox();
+  const check = await selected.locator(".list-box-item__indicator").boundingBox();
+  expect(badge).not.toBeNull();
+  expect(check).not.toBeNull();
+  expect((badge?.x ?? 0) + (badge?.width ?? 0)).toBeLessThan(check?.x ?? 0);
+});

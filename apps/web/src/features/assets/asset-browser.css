@@ -109,6 +109,8 @@
 .asset-filter-menu .model-options {
   gap: 10px;
   min-width: 200px;
+  /* Shared menu row padding overrides HeroUI's indicator reservation. */
+  padding-inline-end: 36px;
 }
 .asset-filter-now {
   margin-left: auto;
