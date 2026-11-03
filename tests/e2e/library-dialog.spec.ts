@@ -69,7 +69,7 @@ async function mockLibrary(page: Page, assets: ReturnType<typeof asset>[]) {
   return queries;
 }
 
-test("我的素材 opens on the current tool and shares filters with 素材库", async ({ page }) => {
+test("我的素材 only shows generated images while 素材库 retains its sources", async ({ page }) => {
   const textile = asset("P11111111", { tool: "textile" });
   const created = asset("P22222222", { tool: "create", model: "gpt-image-2" });
   const upload = asset("P33333333", { kind: "reference", model: null });
@@ -87,7 +87,31 @@ test("我的素材 opens on the current tool and shares filters with 素材库",
   const tiles = dialog.locator(".asset-tile");
   await expect(tiles).toHaveCount(1);
   expect(queries.at(-1)?.get("kind")).toBe("output");
+  expect(queries.at(-1)?.has("type")).toBe(false);
+  await expect(dialog.getByRole("tab")).toHaveCount(0);
+  await expect(dialog.getByRole("link", { name: "在素材库中查看" })).toHaveCount(0);
+  await expect(dialog.getByRole("radiogroup", { name: "类型" })).toHaveCount(0);
   expect(queries.at(-1)?.get("tool")).toBe("textile");
+  const gridColumns = () =>
+    dialog
+      .locator(".asset-density-grid")
+      .first()
+      .evaluate((grid) => getComputedStyle(grid).gridTemplateColumns.split(" ").length);
+  await expect.poll(gridColumns).toBe(6);
+  const queryCount = queries.length;
+  await dialog.getByRole("radio", { name: "中图，每行8张" }).click();
+  await expect.poll(gridColumns).toBe(8);
+  await dialog.getByRole("radio", { name: "小图，每行10张" }).click();
+  await expect.poll(gridColumns).toBe(10);
+  expect(queries).toHaveLength(queryCount);
+  await dialog.getByRole("radio", { name: "大图，每行6张" }).click();
+  await dialog.getByRole("button", { name: "全部类型 类型", exact: true }).click();
+  await page.getByRole("option", { name: "视频", exact: true }).click();
+  await expect(dialog.getByText("暂无视频素材")).toBeVisible();
+  await dialog.getByRole("button", { name: "查看图片", exact: true }).click();
+  await expect(tiles).toHaveCount(1);
+  expect(queries.at(-1)?.get("type")).toBe("image");
+  await dialog.getByRole("button", { name: "重置筛选", exact: true }).click();
   const toolFilter = dialog.getByRole("button", { name: "家纺裂变 功能", exact: true });
   await expect(toolFilter).toHaveAttribute("data-active", "true");
   await expect(dialog.getByRole("button", { name: "查看图片：素材 P11111111" })).toBeVisible();
@@ -100,11 +124,9 @@ test("我的素材 opens on the current tool and shares filters with 素材库",
       document.querySelector<HTMLElement>(selector)?.getBoundingClientRect().x ?? -1;
     return {
       close: left(".library-close svg"),
-      tabs: left(".asset-source-tabs [role='tab']"),
       tile: left(".asset-tile"),
     };
   });
-  expect(edges.close).toBeCloseTo(edges.tabs, 0);
   expect(edges.close).toBeCloseTo(edges.tile, 0);
 
   await toolFilter.click();
@@ -128,19 +150,6 @@ test("我的素材 opens on the current tool and shares filters with 素材库",
   await expect(dialog.getByRole("button", { name: "查看图片：素材 P11111111" })).toBeVisible();
   await expect(tiles).toHaveCount(1);
 
-  // Uploads have no tool or model; those filters are disabled rather than silently ignored.
-  await dialog.getByRole("tab", { name: "上传", exact: true }).click();
-  await expect(tiles).toHaveCount(1);
-  expect(queries.at(-1)?.get("kind")).toBe("reference");
-  expect(queries.at(-1)?.has("tool")).toBe(false);
-  await expect(dialog.getByText("上传素材不区分功能和模型")).toBeVisible();
-  await expect(tiles.locator(".asset-tile-badge")).toHaveCount(0);
-  await dialog.getByRole("tab", { name: "收藏", exact: true }).click();
-  expect(queries.at(-1)?.get("favorite")).toBe("true");
-  await expect(dialog.getByText("家纺裂变还没有收藏的素材")).toBeVisible();
-  await expect(dialog.getByRole("button", { name: "查看全部收藏", exact: true })).toBeVisible();
-  await dialog.getByRole("tab", { name: "生成", exact: true }).click();
-
   // Favorites are saved on the server; the star stays after the pointer leaves.
   await tiles.first().hover();
   await tiles.first().getByRole("button", { name: "收藏图片", exact: true }).click();
@@ -149,7 +158,7 @@ test("我的素材 opens on the current tool and shares filters with 素材库",
   ).toHaveAttribute("aria-pressed", "true");
   // Away from pointer and focus, the saved star stays in the tile corner.
   await page.mouse.move(5, 5);
-  await dialog.getByRole("tab", { name: "生成", exact: true }).focus();
+  await dialog.getByRole("button", { name: "关闭我的素材", exact: true }).focus();
   await expect(tiles.first().locator(".asset-tile-star")).toBeVisible();
 
   await dialog.getByRole("button", { name: "关闭我的素材", exact: true }).click();
@@ -162,9 +171,14 @@ test("我的素材 opens on the current tool and shares filters with 素材库",
     [0, 0, 1328, 906],
   );
   await page.screenshot({ path: "/tmp/library-drawer.png" });
-  await dialog.getByRole("link", { name: "在素材库中查看" }).click();
+  await page.goto("/assets?tool=textile");
   await expect(page).toHaveURL(/\/assets\?tool=textile$/);
   await expect(page.getByRole("heading", { name: "素材库", level: 1 })).toBeVisible();
+  await expect(page.getByRole("tab")).toHaveText(["生成", "上传", "收藏"]);
+  await page.getByRole("tab", { name: "上传", exact: true }).click();
+  await expect(page.locator(".asset-tile")).toHaveCount(1);
+  await expect.poll(() => queries.at(-1)?.get("kind")).toBe("reference");
+  await page.getByRole("tab", { name: "生成", exact: true }).click();
   await expect(page.getByRole("button", { name: "家纺裂变 功能", exact: true })).toBeVisible();
 });
 

@@ -1,4 +1,4 @@
-import { Button, EmptyState, Tabs } from "@heroui/react";
+import { Button, EmptyState, Tabs, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import type { ImageAsset, ImageTool } from "@lycoboai/contracts";
 import {
   IconMovie,
@@ -8,7 +8,7 @@ import {
   IconStar,
   type TablerIcon,
 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 import { InfiniteLoad } from "../../components/infinite-load";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
@@ -77,7 +77,7 @@ function emptyState(
   if (
     currentTool &&
     filters.tool === currentTool &&
-    filters.type === "all" &&
+    filters.type === defaults.type &&
     filters.model === "all"
   )
     return filters.source === "favorites"
@@ -93,7 +93,9 @@ function emptyState(
           text: "生成成功的图片会自动保存在这里。",
           action: { label: "查看全部功能的素材", filters: { ...filters, tool: "all" } },
         };
-  if (!sameFilters(filters, { ...defaultAssetFilters, source: filters.source }))
+  if (
+    !sameFilters(filters, { ...defaultAssetFilters, source: filters.source, type: defaults.type })
+  )
     return {
       icon: IconPhotoSearch,
       title: "没有符合筛选的素材",
@@ -171,6 +173,7 @@ export function AssetBrowser({
   defaults,
   currentTool,
   headingLevel,
+  generatedOnly = false,
   onChange,
   onViewHistory,
 }: {
@@ -178,9 +181,11 @@ export function AssetBrowser({
   defaults: AssetLibraryFilters;
   currentTool?: ImageTool | undefined;
   headingLevel: 2 | 3;
+  generatedOnly?: boolean;
   onChange: (filters: AssetLibraryFilters) => void;
   onViewHistory?: (() => void) | undefined;
 }) {
+  const [columns, setColumns] = useState(6);
   const session = useImageSession();
   const query = useAssetLibrary(filters);
   const models = useModelPresentation().data?.models ?? [];
@@ -246,7 +251,14 @@ export function AssetBrowser({
               <b>{heading.label}</b>
               <span>{heading.detail}</span>
             </Day>
-            {compact ? (
+            {generatedOnly ? (
+              <div
+                className="asset-density-grid"
+                style={{ "--asset-columns": columns } as CSSProperties}
+              >
+                {group.items.map((asset) => tile(asset, { aspectRatio: 1 }))}
+              </div>
+            ) : compact ? (
               <div className="asset-masonry">
                 {masonryColumns(group.items, 2).map((column, position) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: the two columns are fixed slots.
@@ -279,41 +291,77 @@ export function AssetBrowser({
       />
     </>
   );
+  const panelContent = (
+    <>
+      <AssetFilters
+        filters={filters}
+        defaults={defaults}
+        currentTool={currentTool}
+        models={models}
+        loaded={query.data ? assets.length : null}
+        compact={compact}
+        mediaSelect={generatedOnly}
+        displayControls={
+          generatedOnly ? (
+            <ToggleButtonGroup
+              aria-label="图片大小"
+              selectionMode="single"
+              disallowEmptySelection
+              selectedKeys={[String(columns)]}
+              onSelectionChange={(keys) => {
+                const count = [6, 8, 10].find((value) => keys.has(String(value)));
+                if (count) setColumns(count);
+              }}
+              className="asset-segment asset-density-control"
+              size="sm"
+            >
+              <ToggleButton id="6" aria-label="大图，每行6张">
+                大
+              </ToggleButton>
+              <ToggleButton id="8" aria-label="中图，每行8张">
+                中
+              </ToggleButton>
+              <ToggleButton id="10" aria-label="小图，每行10张">
+                小
+              </ToggleButton>
+            </ToggleButtonGroup>
+          ) : undefined
+        }
+        onChange={onChange}
+      />
+      {width > 0 && content}
+    </>
+  );
   return (
     <div className="asset-browser" ref={frame}>
-      <Tabs
-        selectedKey={filters.source}
-        onSelectionChange={(key) => {
-          const source = sources.find((entry) => entry.id === key)?.id;
-          if (source) onChange({ ...filters, source });
-        }}
-        className="asset-source-tabs"
-      >
-        <Tabs.ListContainer>
-          <Tabs.List aria-label="素材来源">
-            {sources.map((source) => (
-              <Tabs.Tab key={source.id} id={source.id}>
-                {source.label}
-                <Tabs.Indicator />
-              </Tabs.Tab>
-            ))}
-          </Tabs.List>
-        </Tabs.ListContainer>
-        {sources.map((source) => (
-          <Tabs.Panel key={source.id} id={source.id} className="asset-source-panel">
-            <AssetFilters
-              filters={filters}
-              defaults={defaults}
-              currentTool={currentTool}
-              models={models}
-              loaded={query.data ? assets.length : null}
-              compact={compact}
-              onChange={onChange}
-            />
-            {width > 0 && content}
-          </Tabs.Panel>
-        ))}
-      </Tabs>
+      {generatedOnly ? (
+        <div className="asset-source-panel">{panelContent}</div>
+      ) : (
+        <Tabs
+          selectedKey={filters.source}
+          onSelectionChange={(key) => {
+            const source = sources.find((entry) => entry.id === key)?.id;
+            if (source) onChange({ ...filters, source });
+          }}
+          className="asset-source-tabs"
+        >
+          <Tabs.ListContainer>
+            <Tabs.List aria-label="素材来源">
+              {sources.map((source) => (
+                <Tabs.Tab key={source.id} id={source.id}>
+                  {source.label}
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+              ))}
+            </Tabs.List>
+          </Tabs.ListContainer>
+          {sources.map((source) => (
+            <Tabs.Panel key={source.id} id={source.id} className="asset-source-panel">
+              {panelContent}
+            </Tabs.Panel>
+          ))}
+        </Tabs>
+      )}
       {preview !== null && (
         <ImagePreviewDialog
           images={assets.map(toPreview)}

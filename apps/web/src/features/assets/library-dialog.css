@@ -64,33 +64,11 @@
   padding: 0 var(--space-6) var(--space-6);
   overflow-y: auto;
 }
-/* “在素材库中查看” keeps the current filters and sits at the right of the title row. */
-.library-open-assets {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  height: 36px;
-  margin-left: auto;
-  padding: 0 var(--space-3);
-  border-radius: 999px;
-  background: #ffffff0a;
-  color: #d9d7de;
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-  font-weight: var(--weight-medium);
-}
-.library-open-assets:is(:hover, [data-hovered="true"]) {
-  background: var(--interaction-active);
-  color: var(--foreground);
-}
 @media (max-width: 767px) {
   .library-dialog .library-header {
     padding: 0 var(--space-4);
   }
   .library-dialog .library-body {
     padding: 0 var(--space-4) var(--space-4);
-  }
-  .library-open-assets {
-    height: 44px;
   }
 }

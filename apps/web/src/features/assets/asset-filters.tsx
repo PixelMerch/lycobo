@@ -1,6 +1,7 @@
 import { Button, ListBox, Select, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import type { ImageTool } from "@lycoboai/contracts";
 import { IconLayoutGrid, IconRefresh, IconSparkles } from "@tabler/icons-react";
+import type { ReactNode } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { workspaceTools } from "../workspace/workspace-state";
 import { toolIcons } from "../workspace/workspace-tool-symbol";
@@ -28,6 +29,8 @@ export function AssetFilters({
   models,
   loaded,
   compact,
+  mediaSelect = false,
+  displayControls,
   onChange,
 }: {
   filters: AssetLibraryFilters;
@@ -36,6 +39,8 @@ export function AssetFilters({
   models: readonly { id: string; name: string }[];
   loaded: number | null;
   compact: boolean;
+  mediaSelect?: boolean;
+  displayControls?: ReactNode;
   onChange: (filters: AssetLibraryFilters) => void;
 }) {
   const disabled = !filtersApply(filters);
@@ -85,7 +90,7 @@ export function AssetFilters({
           </ListBox>
         </Select.Popover>
       </Select>
-      {compact ? (
+      {compact || mediaSelect ? (
         <Select
           className="asset-filter"
           aria-label="类型"
@@ -184,6 +189,7 @@ export function AssetFilters({
         </Button>
       )}
       {disabled && !compact && <span className="asset-filter-hint">上传素材不区分功能和模型</span>}
+      {displayControls}
       {loaded !== null && !compact && (
         <span className="asset-filter-meta">
           已加载 <b>{loaded}</b> 项

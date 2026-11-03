@@ -418,3 +418,30 @@
     margin: 14px 0 10px;
   }
 }
+
+/* 我的素材 uses explicit density; the standalone library keeps justified rows. */
+.asset-density-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--asset-columns, 6), minmax(0, 1fr));
+  gap: 12px;
+}
+.asset-density-grid .asset-tile-open img {
+  object-fit: contain;
+}
+.library-body .asset-filters {
+  flex-wrap: wrap;
+}
+.asset-density-control {
+  margin-left: auto;
+}
+@media (max-width: 1023px) {
+  .asset-density-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 719px) {
+  .asset-density-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+}

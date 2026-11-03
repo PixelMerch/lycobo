@@ -41,7 +41,7 @@ export function sameFilters(left: AssetLibraryFilters, right: AssetLibraryFilter
   );
 }
 
-/** 素材库 keeps filters in its URL so “在素材库中查看” and reloads land on the same view. */
+/** 素材库 keeps filters in its URL so reloads and shared links land on the same view. */
 export function filtersFromSearch(search: URLSearchParams): AssetLibraryFilters {
   const pick = <T extends string>(values: readonly T[], value: string | null, fallback: T) =>
     values.find((entry) => entry === value) ?? fallback;
