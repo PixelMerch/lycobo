@@ -1,9 +1,10 @@
-import { Button } from "@heroui/react";
+import { Button, Spinner } from "@heroui/react";
 import { videoUnitCredits } from "@lycoboai/contracts";
 import { CreditCoin } from "../../components/credit-coin";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { useErrorToast } from "../../lib/error-toast";
 import { HomeRatioPicker } from "../generation/composer/ratio-picker";
+import { revealNewestHistory } from "../generation/history/history-navigation";
 import { hasPromptDescription } from "../generation/references/prompt-description";
 import { ReferencePicker } from "../generation/references/reference-picker";
 import { WorkspaceComposerTitle } from "../workspace/workspace-tool-symbol";
@@ -84,19 +85,24 @@ export function VideoPage() {
           variant="primary"
           size="lg"
           fullWidth
-          className="primary-action generation-submit"
+          className={`primary-action generation-submit${submission.isPending ? " generation-pending" : ""}`}
+          data-submitting={submission.isPending || undefined}
           isDisabled={
             !model.data?.enabled || submission.isPending || (!valid && !submission.hasPending)
           }
           isPending={submission.isPending}
-          onPress={() =>
+          onPress={() => {
+            revealNewestHistory();
             submission.submit({
               input: { prompt: draft.prompt, seconds: draft.seconds, aspectRatio: draft.ratio },
               references,
-            })
-          }
+            });
+          }}
         >
-          {submission.hasPending ? "确认上次提交" : "立即生成"}
+          {submission.isPending && (
+            <Spinner size="md" color="current" role="status" aria-label="正在提交视频任务" />
+          )}
+          {submission.hasPending && !submission.isPending ? "确认上次提交" : "立即生成"}
           <span className="generate-credit-cost">
             <CreditCoin size="default" />
             {videoUnitCredits}

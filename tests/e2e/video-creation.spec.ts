@@ -220,6 +220,11 @@ test("completed video fixtures play through the real browser media element", asy
   await page.goto("/video");
   const task = page.getByRole("article", { name: "视频任务：W09VIDEO2" });
   await expect(task).toContainText("已完成");
+  await expect(task).toContainText("9:16");
+  await expect(task).toContainText("10秒");
+  await expect(task).toContainText("消耗 100 积分");
+  await expect(task.locator("time")).toHaveCount(1);
+  await expect(task.getByRole("button", { name: "复制任务 ID W09VIDEO2" })).toBeVisible();
   const player = task.locator("video");
   await player.evaluate(async (element) => {
     if (!(element instanceof HTMLVideoElement)) throw new Error("Video element missing");
@@ -235,6 +240,8 @@ test("completed video fixtures play through the real browser media element", asy
     "href",
     "http://127.0.0.1:5173/fixture-video.mp4",
   );
+  await task.getByRole("button", { name: "重新编辑", exact: true }).click();
+  await expect(page.getByLabel("场景描述", { exact: true })).toHaveValue("已完成的视频fixture");
 });
 
 test("asset grids defer video loading until the video preview opens", async ({ page }) => {
@@ -290,3 +297,54 @@ test("asset grids defer video loading until the video preview opens", async ({ p
   await preview.getByRole("button", { name: "关闭视频预览", exact: true }).click();
   await expect(tile).toBeFocused();
 });
+
+for (const editWhilePending of [false, true]) {
+  test(`video submission animates and ${editWhilePending ? "preserves the next draft" : "clears accepted content while retaining parameters"}`, async ({
+    page,
+  }) => {
+    await mockImageApi(page);
+    await page.route("**/api/v1/video-model", (route) =>
+      route.fulfill({ json: apiFixture({ enabled: true, resolution: "768p", unitCredits: 100 }) }),
+    );
+    let release: (() => void) | undefined;
+    let requests = 0;
+    await page.route("**/api/v1/video-tasks", async (route) => {
+      if (route.request().method() !== "POST")
+        return route.fulfill({ json: apiFixture({ data: [] }) });
+      requests++;
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await route.fulfill({
+        status: 202,
+        json: apiFixture({ id: crypto.randomUUID(), replayed: false }),
+      });
+    });
+    await page.goto("/video");
+    const composer = page.getByRole("region", { name: "视频创作参数" });
+    const prompt = page.getByLabel("场景描述", { exact: true });
+    await prompt.fill("镜头缓慢推近商品");
+    await composer.getByRole("radio", { name: "16:9", exact: true }).click();
+    await page
+      .getByLabel("添加参考图片", { exact: true })
+      .setInputFiles({ name: "reference.png", mimeType: "image/png", buffer: png });
+    await expect(composer.locator(".reference-image-card")).toHaveCount(1);
+    const button = composer.getByRole("button", { name: /立即生成.*100/ });
+    await button.click();
+    await expect.poll(() => requests).toBe(1);
+    await expect(button).toBeDisabled();
+    await expect(button).toHaveClass(/generation-pending/);
+    await expect(page.getByRole("status", { name: "正在提交视频任务" })).toBeVisible();
+    await expect
+      .poll(() => button.evaluate((node) => getComputedStyle(node, "::before").animationName))
+      .toBe("generation-border-flow");
+    if (editWhilePending) await prompt.fill("下一条视频的新场景");
+    release?.();
+    await expect(button).not.toHaveAttribute("data-submitting", "true");
+    await expect(prompt).toHaveValue(editWhilePending ? "下一条视频的新场景" : "");
+    await expect(composer.locator(".reference-image-card")).toHaveCount(editWhilePending ? 1 : 0);
+    await expect(composer.locator(".ratio-current")).toHaveText("16:9");
+    await expect(composer.getByRole("slider")).toHaveValue("10");
+    expect(requests).toBe(1);
+  });
+}

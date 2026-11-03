@@ -1,4 +1,4 @@
-import { Button, EmptyState, Link, Spinner } from "@heroui/react";
+import { Button, EmptyState, Spinner } from "@heroui/react";
 import { IconChevronRight, IconMovie } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -7,15 +7,9 @@ import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { LibraryDialog } from "../assets/library-dialog";
 import { useVideoTasks } from "./video-client";
+import { VideoTaskCard } from "./video-task-card";
 
-const statusText = {
-  queued: "排队中",
-  running: "生成中",
-  succeeded: "已完成",
-  failed: "生成失败，积分已退回",
-  needs_reconciliation: "结果待核对，请勿重复提交",
-};
-export function VideoHistory() {
+export function VideoHistory({ onRestore }: { onRestore: () => void }) {
   const query = useVideoTasks();
   useErrorToast(query.error?.message);
   const tasks = query.data?.pages.flatMap((page) => page.data) ?? [];
@@ -49,44 +43,7 @@ export function VideoHistory() {
   return (
     <div className="video-history-list">
       {tasks.map((task) => (
-        <article
-          key={task.id}
-          id={`video-task-${task.id}`}
-          className="video-history-card"
-          aria-label={`视频任务：${task.public_id}`}
-        >
-          <div className="video-history-meta">
-            <span>
-              {task.public_id} · {task.input.video.seconds}秒 · 768p
-            </span>
-            <span>
-              {task.status === "running" && task.provider_status === "paused"
-                ? "任务暂停，等待恢复"
-                : task.status === "running" && task.provider_status === "pending_confirmation"
-                  ? "结果待确认，请勿重复提交"
-                  : task.status === "running" && task.provider_status === "completed"
-                    ? "正在保存视频"
-                    : statusText[task.status]}
-            </span>
-          </div>
-          <p>{task.prompt}</p>
-          {task.status === "running" && <Spinner size="sm" aria-label="视频生成中" />}
-          {task.delivery && (
-            <>
-              {/* biome-ignore lint/a11y/useMediaCaption: generated videos have no subtitle-track metadata. */}
-              <video
-                controls
-                playsInline
-                preload="none"
-                src={task.delivery.url}
-                aria-label={`视频：${task.public_id}`}
-              />
-              <Link href={task.delivery.download_url} download>
-                下载视频
-              </Link>
-            </>
-          )}
-        </article>
+        <VideoTaskCard key={task.id} task={task} onRestore={onRestore} />
       ))}
       <InfiniteLoad
         hasMore={query.hasNextPage}

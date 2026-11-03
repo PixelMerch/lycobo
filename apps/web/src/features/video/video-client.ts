@@ -15,6 +15,7 @@ import {
   uploadImageReferences,
 } from "../generation/generation-client";
 import type { ReferenceImage } from "../generation/studio-state";
+import { useVideoDraft } from "./video-state";
 
 export function useVideoModel() {
   const session = useEnterpriseSession();
@@ -72,7 +73,9 @@ export function useSubmitVideo() {
       references: ReferenceImage[];
     }) => {
       if (!session.data) throw new Error("请先登录");
+      const submittedDraft = useVideoDraft.getState();
       let attempt = pending();
+      const confirming = !!attempt;
       if (!attempt) {
         const ids = await uploadImageReferences(client, session.data, references);
         attempt = {
@@ -90,6 +93,13 @@ export function useSubmitVideo() {
       const accepted = videoAcceptedSchema.parse(await response.json());
       sessionStorage.removeItem(storageKey);
       setHasPending(false);
+      if (!confirming && useVideoDraft.getState() === submittedDraft)
+        submittedDraft.update({
+          prompt: "",
+          firstFrame: null,
+          lastFrame: null,
+          extraReferences: [],
+        });
       return accepted;
     },
     onError: (error) => {

@@ -96,7 +96,7 @@ export function WorkspaceLayout() {
       <Outlet />
       <section className="results-panel" aria-label="工作区历史记录">
         {historyTool === "video" ? (
-          <VideoHistory />
+          <VideoHistory onRestore={() => setMobilePanel("form")} />
         ) : (
           <GenerationHistory key={historyTool} tool={historyTool} onRestore={restore} />
         )}
