@@ -523,9 +523,9 @@ small {
 }
 /* Header keeps only the mobile menu and the account/login actions. */
 .topbar .header-login {
-  height: 38px;
-  min-height: 38px;
-  border-radius: 20px;
+  height: var(--control-height-sm);
+  min-height: var(--control-height-sm);
+  border-radius: 999px;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
   font-weight: var(--weight-medium);
@@ -1385,10 +1385,6 @@ p.home-hero-kicker {
     font-family: var(--shell-font-family);
   }
   .mobile-nav .nav-row {
-    min-height: 44px;
-    height: 44px;
-  }
-  .topbar .header-login {
     min-height: 44px;
     height: 44px;
   }
@@ -3004,6 +3000,7 @@ p.home-hero-kicker {
 
 /* Login dialog: banner + split panel, matching the approved reference layout. */
 .header-login {
+  position: relative;
   min-width: 64px;
   height: var(--control-height-sm);
   padding: 0 var(--control-padding-md);
@@ -3415,9 +3412,6 @@ p.home-hero-kicker {
     min-height: 44px;
     font-size: var(--text-lg);
     line-height: var(--leading-lg);
-  }
-  .header-login {
-    min-height: 44px;
   }
 }
 
@@ -3976,5 +3970,15 @@ p.home-hero-kicker {
   .generation-submit .spinner,
   .variation-generate .spinner {
     animation: none;
+  }
+}
+
+/* Keep the compact login pill while extending its touch target beyond the visible fill. */
+@media (max-width: 767px), (pointer: coarse) {
+  .topbar .header-login::before {
+    content: "";
+    position: absolute;
+    inset: -6px 0;
+    border-radius: inherit;
   }
 }
