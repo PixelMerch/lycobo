@@ -837,16 +837,14 @@
   color: var(--tool-soft);
   font-weight: var(--weight-semibold);
 }
-/* Prompt, copy action and full-width reference row. */
+/* Prompt expansion, copy action and references each occupy their own row. */
 .unified-workspace .history-prompt {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--history-row-gap);
 }
 .unified-workspace .history-prompt > .collapsible-text {
   /* Match the actual first header action, including the optional archive button. */
-  flex-basis: 100%;
   max-width: max(0px, calc(100% - var(--history-actions-width, 76px) - 12px));
   min-width: 0;
   white-space: pre-wrap;
@@ -861,7 +859,6 @@
   line-height: var(--leading-base);
 }
 .unified-workspace .history-prompt > .generation-output-thumbnails {
-  flex-basis: 100%;
   gap: 8px;
   margin: 0;
 }

@@ -21,9 +21,16 @@ async function decodeImage(bytes: Uint8Array, outputSize?: ImageOutputSize) {
   if (!["png", "jpeg", "webp"].includes(metadata.format ?? "") || (metadata.pages ?? 1) > 1)
     throw new Error("INVALID_IMAGE");
   if (outputSize) {
-    if ((metadata.width ?? 0) < outputSize.width || (metadata.height ?? 0) < outputSize.height)
-      throw new ImageValidationError("OUTPUT_RESOLUTION_TOO_SMALL");
-    source.resize({ ...outputSize, fit: "contain", withoutEnlargement: true });
+    const width = metadata.width ?? 0;
+    const height = metadata.height ?? 0;
+    // Accept at most one 16-pixel alignment block of provider rounding per axis.
+    // Keep these originals unchanged: resizing with contain would pad the missing pixels.
+    if (width < outputSize.width || height < outputSize.height) {
+      if (Math.abs(width - outputSize.width) > 15 || Math.abs(height - outputSize.height) > 15)
+        throw new ImageValidationError("OUTPUT_RESOLUTION_TOO_SMALL");
+    } else {
+      source.resize({ ...outputSize, fit: "contain", withoutEnlargement: true });
+    }
   }
   // Adaptive row filtering keeps originals lossless PNG but 11-25% smaller on photos, for
   // roughly 20 ms of extra encoding per megapixel; sharp disables it by default.
@@ -43,12 +50,24 @@ export async function normalizeImage(bytes: Uint8Array, outputSize?: ImageOutput
     throw new ImageValidationError("INVALID_IMAGE");
   }
 }
+/** Normalize uploaded references before persistence, independently of generated output. */
+export async function normalizeReferenceUpload(bytes: Uint8Array) {
+  try {
+    const image = await normalizeImage(bytes);
+    return await sharp(image.data)
+      .resize({ width: 3840, height: 3840, fit: "inside", withoutEnlargement: true })
+      .png({ adaptiveFiltering: true, compressionLevel: 9 })
+      .toBuffer();
+  } catch {
+    throw new ImageValidationError("INVALID_IMAGE");
+  }
+}
 // Providers analyse references well below this size; larger uploads only add transfer.
-const providerReferenceEdge = 2048;
+const providerReferenceEdge = 3840;
 /**
  * A stored lossless reference re-encoded for a provider request, whose upload is billed per
  * byte: JPEG quality 92 with full-resolution colour (4:4:4) is about 5 times smaller than the
- * stored PNG on product photos at 41-50 dB PSNR, capped at 2048 px. Transparent images stay
+ * stored PNG on product photos at 41-50 dB PSNR, capped at 3840 px. Transparent images stay
  * PNG. The stored bytes are kept when the copy would not be smaller or cannot be decoded.
  */
 export async function providerReference(bytes: Uint8Array) {
@@ -64,7 +83,11 @@ export async function providerReference(bytes: Uint8Array) {
     const encoded = opaque
       ? await resized.jpeg({ quality: 92, mozjpeg: true, chromaSubsampling: "4:4:4" }).toBuffer()
       : await resized.png({ adaptiveFiltering: true }).toBuffer();
-    return encoded.length < bytes.length ? new Uint8Array(encoded) : bytes;
+    const metadata = await input().metadata();
+    const oversized =
+      (metadata.width ?? 0) > providerReferenceEdge ||
+      (metadata.height ?? 0) > providerReferenceEdge;
+    return oversized || encoded.length < bytes.length ? new Uint8Array(encoded) : bytes;
   } catch {
     return bytes;
   }
