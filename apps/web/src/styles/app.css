@@ -3031,11 +3031,11 @@ p.home-hero-kicker {
   backdrop-filter: blur(0);
 }
 .login-container {
-  padding: 24px 60px;
+  padding: 24px 40px;
 }
 .login-dialog {
   position: relative;
-  width: min(920px, calc(100vw - 120px));
+  width: min(1040px, calc(100vw - 80px));
   max-width: none;
   padding: 0;
   border: 0;
@@ -3065,7 +3065,7 @@ p.home-hero-kicker {
   display: grid;
   grid-template-columns: 1fr 1fr;
   padding: 0;
-  min-height: 600px;
+  min-height: 640px;
   background: #fff;
   border-radius: 28px;
 }
@@ -3133,7 +3133,7 @@ p.home-hero-kicker {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 44px 44px 28px;
+  padding: 48px 48px 32px;
   background: #fff;
   border-radius: 0 28px 28px 0;
   color: #000;
@@ -3146,7 +3146,7 @@ p.home-hero-kicker {
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-2);
-  margin-bottom: 26px;
+  margin-bottom: 32px;
   text-align: left;
 }
 .login-brand-mark {
@@ -3178,7 +3178,7 @@ p.home-hero-kicker {
   flex: none;
   flex-direction: column;
   gap: 6px;
-  block-size: 376px;
+  block-size: 400px;
 }
 .login-form {
   display: flex;
@@ -3205,8 +3205,8 @@ p.home-hero-kicker {
 }
 .login-fields :is(.input, .input-group) {
   width: 100%;
-  height: 40px;
-  min-height: 40px;
+  height: 44px;
+  min-height: 44px;
   padding-inline: 16px;
   font-family: var(--login-control-font);
   font-size: var(--text-sm);
@@ -3243,9 +3243,9 @@ p.home-hero-kicker {
   box-shadow: none;
 }
 .login-fields .login-input-group :is(.button, .toggle-button) {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
   padding: 0;
   border: 0;
   border-radius: 8px;
@@ -3317,8 +3317,8 @@ p.home-hero-kicker {
 }
 .login-content .login-submit {
   width: 100%;
-  height: 40px;
-  min-height: 40px;
+  height: 44px;
+  min-height: 44px;
   margin-top: 0;
   border: 0;
   border-radius: 999px;
@@ -3335,8 +3335,8 @@ p.home-hero-kicker {
 .login-content .login-other,
 .login-secondary-methods .button {
   width: 100%;
-  height: 40px;
-  min-height: 40px;
+  height: 44px;
+  min-height: 44px;
   padding: 0 var(--space-4);
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 120px;
