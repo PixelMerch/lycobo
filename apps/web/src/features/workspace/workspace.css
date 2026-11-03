@@ -857,7 +857,7 @@
   display: block;
   margin-inline: 6px;
 }
-.unified-workspace:is([data-tool="textile"], [data-tool="variation"]) .generation-job .model-tag {
+.unified-workspace .generation-job .model-tag {
   background: color-mix(in srgb, var(--tool-accent) 15%, transparent);
   color: var(--tool-soft);
   font-weight: var(--weight-semibold);

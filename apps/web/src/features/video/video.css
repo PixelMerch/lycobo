@@ -19,10 +19,6 @@
   width: min(960px, calc(100vw - 32px));
   max-width: none;
 }
-.video-history-tag {
-  background: var(--tool-accent);
-  color: var(--tool-ink);
-}
 .video-history-placeholder {
   display: flex;
   flex-direction: column;

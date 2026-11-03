@@ -2743,10 +2743,6 @@ p.home-hero-kicker {
   background: #242424;
   box-shadow: none;
   color: #a8a8a8;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
-.history-prompt .copy-prompt.button {
   font-size: 11px;
   line-height: 16px;
 }

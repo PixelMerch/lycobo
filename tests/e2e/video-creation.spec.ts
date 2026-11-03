@@ -224,10 +224,7 @@ test("completed video fixtures play through the real browser media element", asy
   await expect(task).toContainText("10秒");
   await expect(task).not.toContainText("消耗 100 积分");
   await expect(task.locator(".generation-meta-ratio .ui-icon")).toBeVisible();
-  await expect(task.locator(".video-history-tag")).toHaveCSS(
-    "background-color",
-    "rgb(124, 196, 255)",
-  );
+  await expect(task.locator(".video-history-tag")).toHaveCSS("color", "rgb(185, 224, 255)");
   await expect(task.locator("time")).toHaveCount(1);
   await expect(task.getByRole("button", { name: "复制任务 ID W09VIDEO2" })).toBeVisible();
   const player = task.locator("video");
