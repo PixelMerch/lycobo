@@ -8,6 +8,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   unique,
@@ -355,6 +356,38 @@ export const imageLocalEdits = pgTable(
     ),
   ],
 );
+/** Personal favorites over the organization's shared assets; one row per member and asset. */
+export const imageAssetFavorites = pgTable(
+  "image_asset_favorites",
+  {
+    organizationId: uuid("organization_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    assetId: uuid("asset_id").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({
+      name: "image_asset_favorites_pk",
+      columns: [t.organizationId, t.userId, t.assetId],
+    }),
+    foreignKey({
+      columns: [t.assetId, t.organizationId],
+      foreignColumns: [mediaAssets.id, mediaAssets.organizationId],
+      name: "image_asset_favorites_asset_org_fk",
+    }),
+    foreignKey({
+      columns: [t.organizationId, t.userId],
+      foreignColumns: [organizationMembers.organizationId, organizationMembers.userId],
+      name: "image_asset_favorites_member_fk",
+    }),
+    index("image_asset_favorites_recent_idx").on(
+      t.organizationId,
+      t.userId,
+      t.createdAt.desc(),
+      t.assetId.desc(),
+    ),
+  ],
+).enableRLS();
 export const generationJobItems = pgTable(
   "generation_job_items",
   {

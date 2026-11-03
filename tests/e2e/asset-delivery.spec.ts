@@ -55,7 +55,7 @@ test("assets use signed resource URLs without business API image downloads or po
     });
   });
   await page.goto("/assets");
-  const image = page.locator(".asset-grid img");
+  const image = page.locator(".asset-tile img");
   await expect(image).toHaveAttribute("src", `${url}&variant=thumbnail`);
   await expect
     .poll(() => image.evaluate((node) => node instanceof HTMLImageElement && node.naturalWidth))

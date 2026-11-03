@@ -23,6 +23,7 @@ import postgres from "postgres";
 import { z } from "zod";
 import { createApp } from "../../api/src/app";
 import { processImageItem } from "../src/image-processor";
+import { verifyAssetLibrary } from "./verify-asset-library";
 import { verifyGenerationMigration } from "./verify-generation-migration";
 import { verifyLocalEdits } from "./verify-local-edits";
 import { verifyManagedModels } from "./verify-managed-models";
@@ -552,6 +553,7 @@ try {
   await verifyWallet(repository, sql);
   await verifyTextileGeneration(repository, sql, store, png);
   await verifyLocalEdits(repository, sql, async (path, init) => app.request(path, init));
+  await verifyAssetLibrary(repository, sql);
   await sql`update generation_api_keys set revoked_at=now() where id=${first.keyId}`;
   assert.equal((await app.request("/api/v1/image-models", { headers })).status, 401);
   console.info(

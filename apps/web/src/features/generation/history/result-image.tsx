@@ -1,9 +1,9 @@
 import { Button, ToggleButton, Tooltip } from "@heroui/react";
 import { IconDownload, IconStar, IconStarFilled } from "@tabler/icons-react";
 import { UiIcon } from "../../../components/ui-icon";
+import { useAssetFavorite } from "../../assets/asset-library-client";
 import { AssetImage } from "../asset-image";
 import { downloadAsset } from "../generation-client";
-import { useStudioStore } from "../studio-state";
 
 export function ResultImage({
   assetId,
@@ -22,8 +22,7 @@ export function ResultImage({
   width?: number | null;
   height?: number | null;
 }) {
-  const favorite = useStudioStore((s) => s.favorites.includes(assetId));
-  const toggleFavorite = useStudioStore((s) => s.toggleFavorite);
+  const { favorite, toggle } = useAssetFavorite(assetId);
   return (
     <div className="generation-media">
       <Button
@@ -73,7 +72,7 @@ export function ResultImage({
             className="generation-media-action"
             aria-label={favorite ? "取消收藏" : "收藏图片"}
             isSelected={favorite}
-            onChange={() => toggleFavorite(assetId)}
+            onChange={toggle}
           >
             <UiIcon icon={favorite ? IconStarFilled : IconStar} size="default" />
           </ToggleButton>

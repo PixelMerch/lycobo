@@ -1,8 +1,0 @@
-.image-public-id {
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  font-variant-numeric: tabular-nums;
-  user-select: text;
-}

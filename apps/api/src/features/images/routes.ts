@@ -1,8 +1,10 @@
 import {
+  assetFavoriteLimit,
   assetTypeSchema,
   imageGenerationInputSchema,
   imageModelCatalog,
   imageTaskRetrySchema,
+  imageToolSchema,
   imageUnitCredits,
   type StoredImage,
   variationPlanInputSchema,
@@ -411,10 +413,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
       .default(20)
       .safeParse(c.req.query("limit"));
     const before = id.optional().safeParse(c.req.query("before"));
-    const tool = z
-      .enum(["create", "textile", "variation"])
-      .optional()
-      .safeParse(c.req.query("tool"));
+    const tool = imageToolSchema.optional().safeParse(c.req.query("tool"));
     if (!limit.success || !before.success || !tool.success)
       return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
     const scope = c.get("principal");
@@ -471,7 +470,25 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const before = id.optional().safeParse(c.req.query("before"));
     const kind = z.enum(["output", "reference"]).optional().safeParse(c.req.query("kind"));
     const type = assetTypeSchema.optional().safeParse(c.req.query("type"));
-    if (!limit.success || !before.success || !kind.success || !type.success)
+    const tool = imageToolSchema.optional().safeParse(c.req.query("tool"));
+    // Public model ids only, e.g. gpt-image-2.5; the repository maps provider variants onto them.
+    const model = z
+      .string()
+      .regex(/^[a-z0-9][a-z0-9.-]{0,79}$/i)
+      .optional()
+      .safeParse(c.req.query("model"));
+    const since = z.string().datetime({ offset: true }).optional().safeParse(c.req.query("since"));
+    const favorite = z.literal("true").optional().safeParse(c.req.query("favorite"));
+    if (
+      !limit.success ||
+      !before.success ||
+      !kind.success ||
+      !type.success ||
+      !tool.success ||
+      !model.success ||
+      !favorite.success ||
+      !since.success
+    )
       return fail(c, "VALIDATION_ERROR", "筛选或分页参数无效", 400);
     const scope = c.get("principal");
     const assets = await deps.repository.listAssets(
@@ -480,9 +497,41 @@ export function imageRoutes(deps: ImageApiDependencies) {
       before.data,
       kind.data,
       type.data,
+      {
+        tool: tool.data,
+        model: model.data,
+        favorite: favorite.data === "true",
+        ...(since.data ? { since: since.data } : {}),
+      },
     );
     return c.json({ data: delivery ? await delivery.assets(scope, assets) : assets });
   });
+  // The signed-in member's favorite ids, bounded by the per-member favorite limit.
+  app.get("/image-asset-favorites", async (c) =>
+    c.json({ data: await deps.repository.favoriteAssetIds(c.get("principal")) }),
+  );
+  const saveFavorite = async (c: Context<Env>, favorite: boolean) => {
+    const parsed = id.safeParse(c.req.param("id"));
+    if (!parsed.success) return fail(c, "NOT_FOUND", "素材不存在或已不可用", 404);
+    let saved: boolean | null;
+    try {
+      saved = await deps.repository.setAssetFavorite(c.get("principal"), parsed.data, favorite);
+    } catch (error) {
+      if (error instanceof ImageRepositoryError && error.code === "STATE_CONFLICT")
+        return fail(
+          c,
+          "STATE_CONFLICT",
+          `最多收藏 ${assetFavoriteLimit} 项，请先取消部分收藏`,
+          409,
+        );
+      throw error;
+    }
+    return saved === null
+      ? fail(c, "NOT_FOUND", "素材不存在或已不可用", 404)
+      : c.json({ favorite: saved });
+  };
+  app.put("/image-assets/:id/favorite", (c) => saveFavorite(c, true));
+  app.delete("/image-assets/:id/favorite", (c) => saveFavorite(c, false));
   app.post("/image-assets", async (c) => {
     if (!["image/png", "image/jpeg", "image/webp"].includes(c.req.header("Content-Type") ?? ""))
       return fail(c, "INVALID_IMAGE", "仅支持 PNG、JPEG、WebP", 400);

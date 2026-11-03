@@ -77,6 +77,8 @@ function fixture(
     latestEdit: unexpected,
     addReference: unexpected,
     listAssets: unexpected,
+    setAssetFavorite: unexpected,
+    favoriteAssetIds: unexpected,
     asset: extra.asset ?? unexpected,
     leaseOutbox: unexpected,
     ackOutbox: unexpected,

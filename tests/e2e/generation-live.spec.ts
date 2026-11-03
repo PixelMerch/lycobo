@@ -114,9 +114,9 @@ test("four public models submit at 1.5K, queued results become durable history a
   await page.reload();
   await expect(page.locator(".generation-results img")).toHaveCount(modelNames.length);
   await page.getByRole("link", { name: "素材库", exact: true }).click();
-  await expect(page.locator(".asset-grid img")).toHaveCount(modelNames.length);
+  await expect(page.locator(".asset-tile img")).toHaveCount(modelNames.length);
   await page.reload();
-  await expect(page.locator(".asset-grid img")).toHaveCount(modelNames.length);
+  await expect(page.locator(".asset-tile img")).toHaveCount(modelNames.length);
 });
 
 for (const outcome of ["disconnect", "timeout", "auth"] as const) {
