@@ -1,3 +1,4 @@
+import { toast } from "@heroui/react";
 import {
   assetFavoriteIdsResponseSchema,
   assetFavoriteResponseSchema,
@@ -145,6 +146,9 @@ function useSetAssetFavorite() {
           : ids.filter((entry) => entry !== id),
       );
       return { previous };
+    },
+    onSuccess: (favorite) => {
+      toast.success(favorite ? "收藏成功" : "已取消收藏");
     },
     onError: (_error, _variables, context) => {
       client.setQueryData(favoritesKey, context?.previous);
