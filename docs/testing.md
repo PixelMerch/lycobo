@@ -142,4 +142,4 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 定向前台回归：`pnpm exec playwright test tests/e2e/video-creation.spec.ts tests/e2e/ratio-pager.spec.ts tests/e2e/library-dialog.spec.ts`。`tests/fixtures/video-playback.mp4`是ffmpeg生成的1秒64×64纯色视频测试文件，只验证浏览器媒体播放／按需加载，不是模型生成结果，也不用于产品展示。真实供应商生成、分组权限和CloudBase资源服务播放必须按[视频接入](video-generation.md)另行验收。
 
-视频封面与预览验证：`packages/storage/src/video-variants.test.ts`使用真实解码器提取WebP并转码H264，验证竖屏尺寸、缓存合并、源文件保持不变及无效key拒绝；`video-media.test.ts`验证封面／预览／下载签名用途、不同对象内容、Range及禁止回退原文件。`tests/fixtures/video-portrait.mp4`是ffmpeg生成的1秒90×162纯色视频，`video-cover.webp`为其真实帧，仅供测试，不是产品内容。定向`video-creation.spec.ts`验证列表只有封面、点击后播放、原视频仅在明确下载时通过本地fixture HTTP服务器传输、竖屏布局与关闭后焦点恢复。测试不调用模型。
+视频封面与播放验证：`packages/storage/src/video-variants.test.ts`使用真实解码器提取WebP，验证缓存合并、源文件保持不变、只派生封面及无效key拒绝；`video-media.test.ts`验证封面／播放／下载签名用途、内联播放Range、平台302跳转及封面不回退视频。`tests/fixtures/video-portrait.mp4`是ffmpeg生成的1秒90×162纯色视频，`video-cover.webp`为其真实帧，仅供测试，不是产品内容。定向`video-creation.spec.ts`验证列表只有封面、点击后才请求播放地址、附件仅在明确下载时通过本地fixture HTTP服务器传输、竖屏布局、有无Range时的进度条行为与关闭后焦点恢复。测试不调用模型。

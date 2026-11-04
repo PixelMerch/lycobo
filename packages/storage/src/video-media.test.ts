@@ -1,5 +1,9 @@
-import { expect, it } from "vitest";
-import { assetDeliverySigner, providerReferenceSigner } from "./asset-delivery";
+import { expect, it, vi } from "vitest";
+import {
+  assetDeliverySigner,
+  assetPlaybackLifetime,
+  providerReferenceSigner,
+} from "./asset-delivery";
 import type { ImageObjectBucket } from "./object-bucket";
 import { servePrivateAsset } from "./private-asset-server";
 import { videoDimensions } from "./video-media";
@@ -71,9 +75,9 @@ it("non-video and malformed BMFF bodies cannot enter the private video store", (
   expect(() => videoDimensions(truncated)).toThrow("INVALID_VIDEO");
 });
 
-it("separates video cover, preview and original bytes and never falls back to original on preview failure", async () => {
+it("plays and downloads the stored video, derives only the cover and never serves video as a cover", async () => {
   const links = await assetDeliverySigner("https://assets.test", secret)(key);
-  expect(new URL(links.url).pathname).toBe(`/${key}.preview.mp4`);
+  expect(new URL(links.url).pathname).toBe(`/${key}`);
   expect(new URL(links.thumbnail_url).pathname).toBe(`/${key}.thumbnail.webp`);
   expect(new URL(links.download_url).pathname).toBe(`/${key}`);
   const reads: string[] = [];
@@ -96,33 +100,65 @@ it("separates video cover, preview and original bytes and never falls back to or
       : null;
   };
   const headers = { Referer: "https://app.test/" };
-  expect((await servePrivateAsset(new Request(links.url, { headers }), base)).status).toBe(404);
+  expect(
+    (await servePrivateAsset(new Request(links.thumbnail_url, { headers }), base)).status,
+  ).toBe(404);
   expect(reads).not.toContain(key);
-  const createVideoVariant = async (id: string, variant: "preview" | "thumbnail") => {
-    objects.set(
-      `${id}.${variant}.${variant === "thumbnail" ? "webp" : "mp4"}`,
-      new Uint8Array([7, 8, 9]),
-    );
+  const createVideoThumbnail = async (id: string) => {
+    objects.set(`${id}.thumbnail.webp`, new Uint8Array([7, 8, 9]));
   };
   const cover = await servePrivateAsset(new Request(links.thumbnail_url, { headers }), {
     ...base,
-    createVideoVariant,
+    createVideoThumbnail,
   });
   expect(cover.headers.get("Content-Type")).toBe("image/webp");
   expect([...new Uint8Array(await cover.arrayBuffer())]).toEqual([7, 8, 9]);
-  const preview = await servePrivateAsset(
+  const playback = await servePrivateAsset(
     new Request(links.url, { headers: { ...headers, Range: "bytes=0-1" } }),
-    { ...base, createVideoVariant },
+    { ...base, createVideoThumbnail },
   );
-  expect(preview.status).toBe(206);
-  expect([...new Uint8Array(await preview.arrayBuffer())]).toEqual([7, 8]);
+  expect(playback.status).toBe(206);
+  expect(playback.headers.get("Content-Type")).toBe("video/mp4");
+  expect(playback.headers.get("Content-Disposition")).toContain("inline");
+  expect([...new Uint8Array(await playback.arrayBuffer())]).toEqual([1, 2]);
   const original = await servePrivateAsset(new Request(links.download_url, { headers }), base);
   expect([...new Uint8Array(await original.arrayBuffer())]).toEqual([1, 2, 3]);
   expect(original.headers.get("Content-Disposition")).toContain("attachment");
   reads.length = 0;
   expect(
-    (await servePrivateAsset(new Request(links.thumbnail_url), { ...base, createVideoVariant }))
+    (await servePrivateAsset(new Request(links.thumbnail_url), { ...base, createVideoThumbnail }))
       .status,
   ).toBe(403);
   expect(reads).toEqual([]);
+});
+it("redirects playback to a short platform link after the capability check, keeping functions small", async () => {
+  const links = await assetDeliverySigner("https://assets.test", secret)(key);
+  const headers = { Referer: "https://app.test/" };
+  const signPlayback = vi.fn(async () => "https://storage.example.test/signed-video");
+  const signDownload = vi.fn(async () => "https://storage.example.test/signed-attachment");
+  const base = { ...options(new Uint8Array([1, 2, 3])), signPlayback, signDownload };
+  const playback = await servePrivateAsset(
+    new Request(links.url, { headers: { ...headers, Range: "bytes=0-" } }),
+    base,
+  );
+  expect(playback.status).toBe(302);
+  expect(playback.headers.get("Location")).toBe("https://storage.example.test/signed-video");
+  expect(playback.headers.get("Cache-Control")).toBe("private, no-store");
+  expect(signPlayback).toHaveBeenCalledWith(key, assetPlaybackLifetime);
+  expect(signDownload).not.toHaveBeenCalled();
+  signPlayback.mockClear();
+  const head = await servePrivateAsset(new Request(links.url, { method: "HEAD", headers }), base);
+  expect(head.status).toBe(200);
+  expect(
+    (await servePrivateAsset(new Request(links.url.replace("sig=", "sig=x"), { headers }), base))
+      .status,
+  ).toBe(403);
+  expect((await servePrivateAsset(new Request(links.url), base)).status).toBe(403);
+  const image = await assetDeliverySigner(
+    "https://assets.test",
+    secret,
+  )(key.replace(/\.mp4$/, ".png"));
+  await servePrivateAsset(new Request(image.url, { headers }), base);
+  await servePrivateAsset(new Request(links.thumbnail_url, { headers }), base);
+  expect(signPlayback).not.toHaveBeenCalled();
 });

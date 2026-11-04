@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   cloudbaseDownloadSigner,
   cloudbaseObjectBucket,
+  cloudbasePlaybackSigner,
   cloudbaseProviderReferenceSigner,
   readCloudBaseStorageConfig,
 } from "./cloudbase-object-bucket";
@@ -99,6 +100,20 @@ it("signs a bounded original download without exposing the service credential", 
   }
   request.mockResolvedValue(new Response("secret upstream body", { status: 403 }));
   await expect(sign("a.png", 120)).rejects.toThrow("IMAGE_STORAGE_UNAVAILABLE");
+});
+
+it("signs inline playback links for the exact object with a bounded lifetime", async () => {
+  const signed =
+    "https://fixture-env-123.api.tcloudbasegateway.com/v1/storages/object/sign/private-images/a.mp4?token=temporary";
+  const request = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ fullSignedURL: signed }));
+  const sign = cloudbasePlaybackSigner(env, request);
+  const url = new URL(await sign("a.mp4", 900));
+  expect(url.searchParams.get("token")).toBe("temporary");
+  expect(url.searchParams.has("download")).toBe(false);
+  expect(JSON.parse(String(request.mock.calls[0]?.[1]?.body))).toEqual({ expiresIn: 900 });
+  await expect(sign("a.mp4", 901)).rejects.toThrow("INVALID_DOWNLOAD_LIFETIME");
+  request.mockResolvedValue(Response.json({ fullSignedURL: signed.replace("a.mp4", "b.mp4") }));
+  await expect(sign("a.mp4", 900)).rejects.toThrow("IMAGE_STORAGE_UNAVAILABLE");
 });
 
 it("signs private reference images for the provider without requiring an asset host", async () => {

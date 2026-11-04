@@ -1,5 +1,6 @@
 import { imageLimits } from "@lycoboai/contracts";
 import { z } from "zod";
+import { assetPlaybackLifetime } from "./asset-delivery";
 import { objectKeySchema } from "./core";
 import type { ImageObjectBucket } from "./object-bucket";
 
@@ -116,6 +117,7 @@ function cloudbaseObjectSigner(
   env: CloudBaseStorageBindings,
   request: typeof fetch,
   maxLifetime: number,
+  attachment = true,
 ) {
   const config = readCloudBaseStorageConfig(env);
   if (!config) throw new Error("CLOUDBASE_STORAGE_NOT_CONFIGURED");
@@ -154,7 +156,7 @@ function cloudbaseObjectSigner(
         !url.searchParams.get("token")
       )
         throw new Error("IMAGE_STORAGE_UNAVAILABLE");
-      url.searchParams.set("download", key.split("/").at(-1) ?? "image.png");
+      if (attachment) url.searchParams.set("download", key.split("/").at(-1) ?? "image.png");
       return url.href;
     } catch {
       throw new Error("IMAGE_STORAGE_UNAVAILABLE");
@@ -167,6 +169,13 @@ export function cloudbaseDownloadSigner(
   request: typeof fetch = fetch,
 ) {
   return cloudbaseObjectSigner(env, request, 300);
+}
+/** Same exact-object link without the attachment parameter, for the browser video element. */
+export function cloudbasePlaybackSigner(
+  env: CloudBaseStorageBindings,
+  request: typeof fetch = fetch,
+) {
+  return cloudbaseObjectSigner(env, request, assetPlaybackLifetime, false);
 }
 /** Provider reads reference PNGs without browser cookies; never expose this signer to clients. */
 export function cloudbaseProviderReferenceSigner(
