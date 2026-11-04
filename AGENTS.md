@@ -33,16 +33,15 @@ Read relevant project skills before work:
   for the shared control density and audit workflow. Use HeroUI size/variant/isIconOnly;
   geometry belongs to DESIGN.md tokens, not inline styles or a new AppButton wrapper.
   pnpm lint enforces scripts/check-ui-conventions.mjs; do not bypass its component checks.
-- Follow PRD.md for navigation: Home, Create, AI Commerce, Asset Library.
-  Home-textile tools belong to AI Commerce. Image tools use a category selection overlay;
-  TK has no current navigation entry. UI mockups in docs/design are review targets, not services.
+- Follow PRD.md for navigation: Home, Workspace, Asset Library. The workspace holds four tools
+  (main image, textile variation, image-set plan, video) that switch through the tool dock.
+  TK has no current navigation entry.
 - DESIGN.md is the sole visual specification. The user approved and froze the current UI on
   2026-10-22. Documentation, cleanup and component refactors must preserve its appearance;
   a new visual change requires a new explicit design request. Do not reinterpret skill recommendations
   as permission to restyle it. Preserve the actual tokens: brand lime #A8FF00, HeroUI accent
   #A8FF00, lime-to-mint primary gradient (#A8FF00 → #54E6A5) with dark #142000 foreground and pill-shaped generation buttons.
   Image content stays primary. Do not reintroduce retired palettes or bonko branding.
-  Interaction research explains existing decisions; it does not override the approved UI.
 - Distinguish real image APIs from local examples and E2E fixtures. Never represent sample
   content, client-only favorites or future payment/sign-in rewards as durable production services.
 - Keep page components focused on composition. Extract complete reusable features into components
@@ -64,6 +63,10 @@ Read relevant project skills before work:
   and opens its menu upward on press, Enter or Space, as in the approved 小云雀 reference; hovering
   does not open it. Keyboard focus enters the first row and returns to the capsule on close.
 - Preserve pending drafts when switching tasks. Never navigate users away when a background task completes.
+- Product screens use end-user language. Keep preview/debug/reset notes in developer documentation, not headers, cards or dialogs. Never infer production readiness from clean UI copy.
+- Match the measured shell rules in DESIGN.md: sidebar 274/288/320px by breakpoint, collapsed 64px (2× the 32px icon background); desktop rows 40/42/44px, row gap 6px, icon/text gap 8px, radius 16px, icons 18px. Header is 60px on desktop and mobile. Hover/active never change geometry; mobile targets stay 44px.
+- Use Tabler business icons through components/ui-icon.tsx. Sizes: 14 / 18 / 20 / 22 / 28px, stroke 2. Keep icon sizing independent of compact control geometry; do not add another icon library. Credits use Tabler IconCoins (no bitmap coin) and close controls use Tabler IconX; never keep hand-drawn, bitmap or second-library icons.
+- Sidebar text/icons use neutral gray-white: default #FFFFFFB3, hover fill #FFFFFF0A, active fill #FFFFFF14 with white text/icons. Do not restore purple navigation labels. Chevrons rotate left on expansion and respect reduced motion. Tool selectors use spacing instead of extra divider lines.
 - No server modules or secrets in apps/web or packages/contracts. VITE_* is public.
 - UI mockups are references, never a screenshot used as a functional page.
 
@@ -73,8 +76,8 @@ Read relevant project skills before work:
   Runtime inputs are unknown until validated. Avoid any, unchecked casts and hidden global clients.
 - Authenticate and scope every business read/write by server-resolved owner/workspace.
   Request ownerId, projectId and storage keys are never proof of authorization.
-- Generation must remain disabled until auth, ownership, durable submission, provider reconciliation,
-  storage and billing behavior exist. Never replace unavailable persistence with memory success.
+- Paid generation depends on auth, ownership, durable submission, provider reconciliation, storage
+  and billing behavior. Never replace unavailable persistence with memory success.
 - Persist task + outbox intent atomically. CloudBase Event consumers drain durable outbox intents; PostgreSQL is the source of truth. Do not reintroduce Redis/BullMQ.
   Worker processes are separate from API; no fire-and-forget paid work in HTTP handlers.
 - External calls need timeouts, cancellation, idempotency keys and bounded retry. Ambiguous paid
@@ -133,11 +136,3 @@ Read relevant project skills before work:
 - Keep only current, referenced design evidence in docs/design; update its index when adding or
   removing material. Retired mockups and exports must not become a second specification.
   Do not recreate the removed design/ archive without an explicit request.
-
-- Product screens use end-user language. Keep preview/debug/reset notes in developer documentation, not headers, cards or dialogs. Never infer production readiness from clean UI copy.
-
-- Match the measured shell rules in DESIGN.md: sidebar 274/288/320px by breakpoint, collapsed 64px (2× the 32px icon background); desktop rows 40/42/44px, row gap 6px, icon/text gap 8px, radius 16px, icons 18px. Header is 60px on desktop and mobile. Hover/active never change geometry; mobile targets stay 44px.
-
-- Use Tabler business icons through components/ui-icon.tsx. Sizes: 14 / 18 / 20 / 22 / 28px, stroke 2. Keep icon sizing independent of compact control geometry; do not add another icon library. Credits use Tabler IconCoins (no bitmap coin) and close controls use Tabler IconX; never keep hand-drawn, bitmap or second-library icons.
-
-- Sidebar text/icons use neutral gray-white: default #FFFFFFB3, hover fill #FFFFFF0A, active fill #FFFFFF14 with white text/icons. Do not restore purple navigation labels. Chevrons rotate left on expansion and respect reduced motion. Tool selectors use spacing instead of extra divider lines.

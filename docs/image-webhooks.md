@@ -1,8 +1,6 @@
 # 图片 Webhook 与低频批量同步
 
-2026-11-01 已通过 PR #46 合并到 main 并完成 CloudBase 自动部署（合并提交 `10d1c11`，Actions `41291666618`）。数据库迁移已应用，API 签名密钥与中转站 `lyco` Key 回调配置匹配，`IMAGE_WEBHOOK_ENABLED=true`。协议来源：[FluxPort 图片 Webhook 文档](https://uselg.top/docs#api-image-webhook)。
-
-生产验收任务 `WN3QEQ5N5`：收到 1 次 `image.task.completed` 回调并消费，消费者只 GET 核查原任务 1 次；1254×1254 PNG（1,289,534 字节）已写入 `lycobo-images` 私有桶。前端通过 2 次批量查询显示图片，完成后 76 秒未再查询。验收仅生成 1 张图片；家纺、裂变的共享回调链路已部署，本次未逐功能额外付费生成。
+图片完成回调已上线，`IMAGE_WEBHOOK_ENABLED=true`。协议来源：[FluxPort 图片 Webhook 文档](https://uselg.top/docs#api-image-webhook)。
 
 ## 链路
 
