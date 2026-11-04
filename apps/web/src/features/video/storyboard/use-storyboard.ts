@@ -35,6 +35,12 @@ import { emptyStoryboard, originalReference, useStoryboardState } from "./storyb
 const source = "tk-storyboard";
 const modelId = "gpt-image-2.5";
 const resolution = "1.5K";
+type ProductionInput = {
+  description: string;
+  references: ReferenceImage[];
+  retryPosition?: number;
+};
+
 const isRunning = (status: string) => status === "queued" || status === "running";
 const definitive = (error: unknown) =>
   error instanceof ImageApiError && [400, 401, 403, 409, 413, 429].includes(error.status);
@@ -97,6 +103,31 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
     capabilities.data?.enabled === true &&
     model?.enabledResolutions.includes(resolution) === true &&
     supportsReferences(model, 1);
+  const framesIncomplete =
+    !!progress.batchId &&
+    !!progress.frameJobStatus &&
+    !isRunning(progress.frameJobStatus) &&
+    (progress.frames?.length ?? 0) !== draft.count;
+  const waitingForFrames = framesIncomplete && !ownImagePending;
+  const resumingFrames =
+    ownImagePending ||
+    (!!progress.batchId && !progress.frameJobStatus) ||
+    isRunning(progress.frameJobStatus ?? "");
+  const checkingFrames =
+    waitingForFrames &&
+    (progress.failedFramePositions?.length === 0 ||
+      (progress.failedFramePositions === undefined &&
+        progress.frameJobStatus !== "failed" &&
+        progress.frameJobStatus !== "partially_failed"));
+  const incompleteVideoPending =
+    !!progress.batchId &&
+    video.pendingReferenceCount !== undefined &&
+    video.pendingReferenceCount < draft.references.length + draft.count;
+  const blocked =
+    (pendingImage && !ownImagePending) ||
+    video.blockedByPending ||
+    video.isPending ||
+    generation.isPending;
   const current = () => useStoryboardState.getState().drafts[scope] ?? emptyStoryboard;
   const update = (patch: Partial<typeof draft>) =>
     useStoryboardState.getState().update(scope, patch);
@@ -127,23 +158,31 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
     return variationPlanSchema.parse(await response.json());
   }
 
+  async function readImageJob(id: string) {
+    assertOwner();
+    return imageJobSchema.parse(await (await imageRequest(`image-tasks/${id}`)).json());
+  }
+
   async function waitForImages(id: string, plan: VariationPlan, originalAssetIds: string[]) {
     const deadline = Date.now() + 8 * 60_000;
     while (Date.now() < deadline) {
-      assertOwner();
-      const job = imageJobSchema.parse(await (await imageRequest(`image-tasks/${id}`)).json());
+      const job = await readImageJob(id);
       const ready = !isRunning(job.status);
       const shots = completedShots(job, plan, originalAssetIds);
       const frames = shots.map(({ position, assetId, title }) => ({ position, assetId, title }));
+      const failedFramePositions = job.items
+        .filter(({ status }) => status === "failed")
+        .map(({ position }) => position);
       const previous = current().progress;
       if (
         frames.length !== (previous.frames?.length ?? 0) ||
         frames.some((frame, index) => frame.assetId !== previous.frames?.[index]?.assetId) ||
-        job.status !== previous.frameJobStatus
+        job.status !== previous.frameJobStatus ||
+        failedFramePositions.join() !== previous.failedFramePositions?.join()
       ) {
-        save({ frames, frameJobStatus: job.status });
+        save({ frames, frameJobStatus: job.status, failedFramePositions });
       }
-      if (ready) return { job, shots };
+      if (ready) return shots;
       await new Promise((resolve) => setTimeout(resolve, 4000));
     }
     throw new Error("画面仍在制作，请稍后点击继续生成");
@@ -163,12 +202,12 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
   const action = useMutation({
     mutationKey,
     retry: false,
-    mutationFn: async (input: { description: string; references: ReferenceImage[] }) => {
+    mutationFn: async (input: ProductionInput) => {
       if (!owner) throw new Error("请先登录");
       assertOwner();
-      if (videoModel.data?.referenceImagesEnabled === false)
-        throw new Error(videoReferenceUnavailableMessage);
-      if (video.hasPending) {
+      if (video.hasPending && !incompleteVideoPending) {
+        if (videoModel.data?.referenceImagesEnabled === false)
+          throw new Error(videoReferenceUnavailableMessage);
         const result = await video.submitAsync({
           input: { prompt: "", seconds: draft.seconds, aspectRatio: "9:16" },
           references: [],
@@ -179,6 +218,8 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
       }
       const resuming = !!(progress.planAttempt || progress.planId || progress.batchId);
       if (!resuming) {
+        if (videoModel.data?.referenceImagesEnabled === false)
+          throw new Error(videoReferenceUnavailableMessage);
         if (!configured || pendingImage || input.references.length > maxOriginalImages)
           throw new Error("暂时无法制作视频，请检查生成服务和待确认任务");
         update({ ...emptyStoryboard, ...input, submittedDraft: useVideoDraft.getState() });
@@ -225,16 +266,46 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
           throw error;
         }
         if (snapshot.status === "running") throw new Error("正在准备画面，请稍后继续");
-        if (snapshot.status !== "ready" || !snapshot.items.length) {
+        if (snapshot.status !== "ready" || snapshot.items.length !== current().count) {
           save({ planAttempt: undefined });
           throw new Error("画面方案未完成，请稍后重试");
         }
         save({ planId: snapshot.id, planAttempt: undefined });
       }
       const [originalAssetId, ...additionalOriginalAssetIds] = snapshot.referenceAssetIds;
-      if (snapshot.status !== "ready" || !originalAssetId) throw new Error("画面资料不完整");
+      if (
+        snapshot.status !== "ready" ||
+        !originalAssetId ||
+        snapshot.items.length !== current().count
+      )
+        throw new Error("画面资料不完整");
       const originalAssetIds = [originalAssetId, ...additionalOriginalAssetIds];
       let batchId = current().progress.batchId;
+      const imageDraft = {
+        prompt: current().description.slice(0, 600),
+        references: originalAssetIds.map(originalReference),
+        ratio: "9:16" as const,
+        resolution,
+        count: String(snapshot.items.length),
+        quality: "标准" as const,
+      };
+      if (batchId && input.retryPosition !== undefined && !ownImagePending) {
+        const job = await readImageJob(batchId);
+        const item = job.items.find(
+          ({ position, status }) => position === input.retryPosition && status === "failed",
+        );
+        if (item && !isRunning(job.status)) {
+          assertOwner();
+          await generation.mutateAsync({
+            model: modelId,
+            source,
+            draft: imageDraft,
+            retryJobId: batchId,
+            retryItemId: item.id,
+          });
+          save({ frameJobStatus: "queued", failedFramePositions: undefined });
+        }
+      }
       if (!batchId || ownImagePending) {
         assertOwner();
         if (!ownImagePending && !configured) throw new Error("画面生成服务暂时不可用");
@@ -247,28 +318,18 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
         const batch = await generation.mutateAsync({
           model: modelId,
           source,
-          draft: {
-            prompt: current().description.slice(0, 600),
-            references: originalAssetIds.map(originalReference),
-            ratio: "9:16",
-            resolution,
-            count: String(items.length),
-            quality: "标准",
-          },
+          draft: { ...imageDraft, count: String(items.length) },
           variation: { version: 1, planId: snapshot.id, items },
         });
         batchId ??= batch.id;
         save({ batchId, imageTarget: undefined });
       }
-      const { job, shots: completed } = await waitForImages(batchId, snapshot, originalAssetIds);
+      const completed = await waitForImages(batchId, snapshot, originalAssetIds);
       void client.invalidateQueries({ queryKey: ["wallet"] });
       void client.invalidateQueries({ queryKey: ["wallet-entries"] });
       void client.invalidateQueries({ queryKey: ["image-assets"] });
       const shots = completed.map(({ assetId, title, prompt }) => ({ assetId, title, prompt }));
-      if (!shots.length) {
-        if (job.status === "failed") update({ progress: {} });
-        throw new Error("画面未生成，视频任务尚未提交");
-      }
+      if (shots.length !== current().count) return;
       const optimization = storyboardRequestSchema.parse({
         stage: "video",
         description: current().description,
@@ -301,6 +362,8 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
         save({ optimization: { ...attempt, prompt } });
       }
       assertOwner();
+      if (videoModel.data?.referenceImagesEnabled === false)
+        throw new Error(videoReferenceUnavailableMessage);
       const result = await video.submitAsync({
         input: {
           prompt,
@@ -315,6 +378,7 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
           originalReference,
         ),
         clearDraft: false,
+        repairPending: incompleteVideoPending,
       });
       finish(result.id);
     },
@@ -323,6 +387,12 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
     },
   });
   useErrorToast(action.error?.message);
+  const start = (input: ProductionInput) => {
+    if (lock.current || active || blocked || !scope) return;
+    lock.current = true;
+    showHistory();
+    action.mutate(input);
+  };
   return {
     draft,
     configured,
@@ -343,17 +413,14 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
         : draft.count * imageUnitCredits + videoUnitCredits,
     pendingVideo: video.hasPending,
     referenceImagesBlocked: videoModel.data?.referenceImagesEnabled === false,
-    blocked:
-      (pendingImage && !ownImagePending) ||
-      video.blockedByPending ||
-      video.isPending ||
-      generation.isPending,
+    blocked,
+    waitingForFrames,
+    resumingFrames,
+    checkingFrames,
+    canRetryFrame: !blocked && !ownImagePending && framesIncomplete,
     failed: action.isError,
-    start: (input: Parameters<typeof action.mutate>[0]) => {
-      if (lock.current || active || !scope) return;
-      lock.current = true;
-      showHistory();
-      action.mutate(input);
-    },
+    start,
+    retryFrame: (retryPosition: number) =>
+      start({ description: draft.description, references: draft.references, retryPosition }),
   };
 }

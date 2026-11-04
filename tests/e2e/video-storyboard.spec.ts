@@ -1,15 +1,19 @@
 import { expect, type Page, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
-for (const originalCount of [1, 3]) {
-  test(`one video action runs all stages and reuses a lost submission with ${originalCount} product images`, async ({
+test("one video action runs all stages and confirms a lost submission", async ({ page }) => {
+  await verifyStoryboard(page, 1);
+});
+
+for (const legacy of [false, true]) {
+  test(`video waits for a failed frame to be retried (${legacy ? "legacy draft" : "new draft"})`, async ({
     page,
   }) => {
-    await verifyStoryboard(page, originalCount);
+    await verifyStoryboard(page, 3, legacy);
   });
 }
 
-async function verifyStoryboard(page: Page, originalCount: number) {
+async function verifyStoryboard(page: Page, originalCount: number, legacy = false) {
   await mockImageApi(page);
   const original = crypto.randomUUID();
   const additionalOriginalAssetIds = Array.from({ length: originalCount - 1 }, () =>
@@ -27,8 +31,12 @@ async function verifyStoryboard(page: Page, originalCount: number) {
   }));
   const images = items.map(() => crypto.randomUUID());
   const losesFirstFrame = originalCount === 3;
-  const completedImages = losesFirstFrame ? images.slice(1) : images;
-  const completedTitles = (losesFirstFrame ? items.slice(1) : items).map(({ title }) => title);
+  const completedImages = images;
+  const completedTitles = items.map(({ title }) => title);
+  const jobItemIds = items.map(() => crypto.randomUUID());
+  const legacyKey = crypto.randomUUID();
+  let firstFrameRetried = false;
+  const imageRetries: unknown[] = [];
   let imagesReady = false;
   let referenceImagesEnabled = true;
   let partialFrameReady = false;
@@ -112,9 +120,17 @@ async function verifyStoryboard(page: Page, originalCount: number) {
     jobs.set(id, images);
     return route.fulfill({ status: 202, json: apiFixture({ id, replayed: false }) });
   });
+  await page.route("**/api/v1/image-tasks/*/retry", (route) => {
+    const id = new URL(route.request().url()).pathname.split("/").at(-2) ?? "";
+    expect(jobs.has(id)).toBe(true);
+    imageRetries.push(route.request().postDataJSON());
+    firstFrameRetried = true;
+    return route.fulfill({ status: 202, json: apiFixture({ id, replayed: false }) });
+  });
   await page.route("**/api/v1/image-tasks/*", (route) => {
     const id = new URL(route.request().url()).pathname.split("/").at(-1) ?? "";
     const outputs = jobs.get(id) ?? [];
+    const partial = losesFirstFrame && !firstFrameRetried;
     return route.fulfill({
       json: apiFixture({
         id,
@@ -125,14 +141,14 @@ async function verifyStoryboard(page: Page, originalCount: number) {
         resolution: "1.5K",
         aspect_ratio: "9:16",
         requested_count: outputs.length,
-        status: imagesReady ? (losesFirstFrame ? "partially_failed" : "succeeded") : "running",
+        status: imagesReady ? (partial ? "partially_failed" : "succeeded") : "running",
         created_at: new Date().toISOString(),
         completed_at: new Date().toISOString(),
         items: outputs.map((output_asset_id, position) => {
-          const failed = imagesReady && losesFirstFrame && position === 0;
+          const failed = imagesReady && partial && position === 0;
           const ready = (imagesReady && !failed) || (partialFrameReady && position === 1);
           return {
-            id: crypto.randomUUID(),
+            id: jobItemIds[position],
             position,
             status: failed ? "failed" : ready ? "succeeded" : "running",
             output_asset_id: ready ? output_asset_id : null,
@@ -231,6 +247,72 @@ async function verifyStoryboard(page: Page, originalCount: number) {
   await expect(frames.getByRole("img")).toHaveCount(1);
   await expect(progress.getByRole("listitem").nth(0)).toContainText("进行中");
   imagesReady = true;
+  if (losesFirstFrame) {
+    const retryFrame = progress.getByRole("button", { name: /重试第 1 张分镜/ });
+    await expect(progress.getByRole("listitem").nth(0)).toContainText("待补齐");
+    await expect(progress).toContainText("已生成 2/3 张分镜");
+    await expect(composer.getByRole("button", { name: "等待分镜补齐" })).toBeDisabled();
+    await expect(progress.getByRole("listitem").nth(1)).toContainText("等待中");
+    await expect(progress.getByRole("listitem").nth(2)).toContainText("等待中");
+    expect(planningRequests).toHaveLength(1);
+    expect(videoRequests).toHaveLength(0);
+    if (legacy) {
+      await page.evaluate(
+        ({ legacyKey, originals, partialShots, description }) => {
+          const draftKey = Object.keys(sessionStorage).find((key) =>
+            key.startsWith("lycobo-tk-storyboard:"),
+          );
+          if (!draftKey) throw new Error("分镜草稿未保存");
+          const draft = JSON.parse(sessionStorage.getItem(draftKey) ?? "null");
+          const [originalAssetId, ...additionalOriginalAssetIds] = originals;
+          const prompt = "旧版只用了两张分镜。";
+          draft.progress.optimization = {
+            key: crypto.randomUUID(),
+            input: {
+              stage: "video",
+              description,
+              originalAssetId,
+              additionalOriginalAssetIds,
+              seconds: 10,
+              shots: partialShots,
+            },
+            prompt,
+          };
+          delete draft.progress.failedFramePositions;
+          sessionStorage.setItem(draftKey, JSON.stringify(draft));
+          sessionStorage.setItem(
+            draftKey.replace("lycobo-tk-storyboard:", "lycobo-pending-video:"),
+            JSON.stringify({
+              key: legacyKey,
+              source: "storyboard",
+              input: {
+                prompt,
+                seconds: 10,
+                aspectRatio: "9:16",
+                referenceAssetIds: [...originals, ...partialShots.map(({ assetId }) => assetId)],
+                storyboard: { description },
+                storyboardOriginalImageCount: originals.length,
+              },
+            }),
+          );
+        },
+        {
+          legacyKey,
+          originals,
+          description,
+          partialShots: items
+            .slice(1)
+            .map(({ title, prompt }, i) => ({ assetId: images[i + 1], title, prompt })),
+        },
+      );
+      await page.reload();
+      await expect(progress.getByRole("listitem").nth(1)).toContainText("等待中");
+      await expect(progress.getByRole("listitem").nth(2)).toContainText("等待中");
+    }
+    await expect(progress.getByRole("button", { name: /重试第 .* 张分镜/ })).toHaveCount(1);
+    await retryFrame.click();
+    await expect.poll(() => imageRetries).toEqual([{ itemId: jobItemIds[0] }]);
+  }
   await expect(progress.getByRole("listitem").nth(0)).toContainText("已完成");
   await expect(progress.getByRole("listitem").nth(1)).toContainText("进行中");
   expect(
@@ -253,14 +335,12 @@ async function verifyStoryboard(page: Page, originalCount: number) {
     losesFirstFrame ? "参考图不可用" : "待确认",
   );
   await expect(progress).toContainText(completedTitles.join(" → "));
-  if (losesFirstFrame) {
-    await expect(progress).toContainText("已生成 2/3 张分镜");
-    await expect(progress).toContainText("画面未生成");
-  }
   await expect(composer.locator(".video-description-preview")).toContainText(description);
   if (losesFirstFrame) {
     await expect(progress).toContainText("当前环境无法向视频服务提供参考图");
-    await expect(composer.getByRole("button", { name: /继续生成.*100/ })).toBeDisabled();
+    await expect(
+      composer.getByRole("button", { name: /(?:继续生成|确认上次提交).*100/ }),
+    ).toBeDisabled();
     expect(videoRequests).toHaveLength(1);
     referenceImagesEnabled = true;
   } else {
@@ -273,7 +353,7 @@ async function verifyStoryboard(page: Page, originalCount: number) {
   await expect(composer.locator(".reference-image-card")).toHaveCount(originalCount);
   await composer
     .getByRole("button", {
-      name: losesFirstFrame ? /继续生成.*100/ : /确认上次提交.*100/,
+      name: losesFirstFrame && !legacy ? /继续生成.*100/ : /确认上次提交.*100/,
     })
     .click();
   await expect.poll(() => videoRequests.length).toBe(2);
@@ -287,7 +367,8 @@ async function verifyStoryboard(page: Page, originalCount: number) {
   });
   expect(videoRequests[1]).toEqual(videoRequests[0]);
   expect(videoKeys[0]).toMatch(/^[a-f0-9-]{36}$/);
-  if (losesFirstFrame) expect(videoKeys[1]).not.toBe(videoKeys[0]);
+  if (legacy) expect(videoKeys).toEqual([legacyKey, legacyKey]);
+  else if (losesFirstFrame) expect(videoKeys[1]).not.toBe(videoKeys[0]);
   else expect(videoKeys[1]).toBe(videoKeys[0]);
   expect(imageRequests).toHaveLength(1);
   expect(planningRequests).toHaveLength(2);

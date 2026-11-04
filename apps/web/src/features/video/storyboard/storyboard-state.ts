@@ -19,6 +19,7 @@ const frameSchema = storyboardRequestSchema.options[1].shape.shots.element
 const progressSchema = storedStoryboardSchema.shape.progress.extend({
   frames: frameSchema.array().max(storyboardImageLimit).optional(),
   frameJobStatus: imageJobSchema.shape.status.optional(),
+  failedFramePositions: frameSchema.shape.position.array().max(storyboardImageLimit).optional(),
 });
 const storedDraftSchema = storedStoryboardSchema.extend({ progress: progressSchema });
 

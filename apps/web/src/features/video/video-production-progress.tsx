@@ -1,5 +1,6 @@
-import { Skeleton, Spinner } from "@heroui/react";
+import { Button, Skeleton, Spinner } from "@heroui/react";
 import {
+  imageUnitCredits,
   storyboardImageLimit,
   type VideoTask,
   videoReferenceUnavailableMessage,
@@ -12,7 +13,17 @@ import { videoTaskStatus } from "./video-task-card";
 
 export type Production = Pick<
   ReturnType<typeof useStoryboard>,
-  "draft" | "busy" | "needsResume" | "failed" | "pendingVideo" | "referenceImagesBlocked"
+  | "draft"
+  | "busy"
+  | "needsResume"
+  | "failed"
+  | "pendingVideo"
+  | "referenceImagesBlocked"
+  | "waitingForFrames"
+  | "resumingFrames"
+  | "checkingFrames"
+  | "canRetryFrame"
+  | "retryFrame"
 >;
 const steps = ["创建分镜画面", "编写视频提示词", "生成视频"];
 const frameSlots = Array.from({ length: storyboardImageLimit }, (_, position) => ({
@@ -43,13 +54,11 @@ export function VideoProductionProgress({
   task: VideoTask | undefined;
 }) {
   const { progress, count } = production.draft;
-  const framesReady =
-    !!progress.frames?.length &&
-    (progress.frameJobStatus === "succeeded" || progress.frameJobStatus === "partially_failed");
+  const framesReady = progress.frames?.length === count && progress.frameJobStatus === "succeeded";
   const current =
-    progress.acceptedVideoId || progress.optimization?.prompt
+    progress.acceptedVideoId || (framesReady && progress.optimization?.prompt)
       ? 2
-      : framesReady || progress.optimization
+      : framesReady
         ? 1
         : 0;
   const complete = task?.status === "succeeded";
@@ -75,10 +84,21 @@ export function VideoProductionProgress({
       .map((assetId, position) => ({ position, assetId, title: `分镜 ${position + 1}` })) ??
     [];
   const summary = progress.frames?.map(({ title }) => title).join(" → ");
-  const partial = progress.frameJobStatus === "partially_failed";
+  const waitingForFrames = current === 0 && production.waitingForFrames && !production.busy;
+  const retryable = (position: number) =>
+    progress.failedFramePositions?.includes(position) ??
+    (progress.frameJobStatus === "failed" || progress.frameJobStatus === "partially_failed");
   const videoState = task ? videoTaskStatus(task) : progress.acceptedVideoId ? "已提交" : "提交中";
   const states = [
-    current > 0 ? "已完成" : paused ? "待继续" : "进行中",
+    current > 0
+      ? "已完成"
+      : waitingForFrames
+        ? production.checkingFrames
+          ? "待确认"
+          : "待补齐"
+        : paused
+          ? "待继续"
+          : "进行中",
     current > 1 ? "已完成" : current === 0 ? "等待中" : paused ? "待继续" : "进行中",
     current < 2 ? "等待中" : paused ? pausedState : videoState,
   ];
@@ -118,8 +138,21 @@ export function VideoProductionProgress({
                           alt={frame.title}
                           loading="lazy"
                         />
+                      ) : waitingForFrames && retryable(position) ? (
+                        <Button
+                          key={id}
+                          className="video-production-frame-retry"
+                          size="sm"
+                          variant="ghost"
+                          aria-label={`重试第 ${position + 1} 张分镜，${imageUnitCredits} 积分`}
+                          isDisabled={!production.canRetryFrame}
+                          onPress={() => production.retryFrame(position)}
+                        >
+                          <span>画面未生成</span>
+                          <span>重试</span>
+                        </Button>
                       ) : current > 0 || paused ? (
-                        <span key={id}>{partial ? "画面未生成" : "画面未就绪"}</span>
+                        <span key={id}>{waitingForFrames ? "画面待确认" : "画面未就绪"}</span>
                       ) : (
                         <Skeleton
                           key={id}
@@ -130,9 +163,12 @@ export function VideoProductionProgress({
                     })}
                   </section>
                   {current === 0 && !paused && <p>正在准备参考画面，完成后会逐张显示。</p>}
-                  {partial && (
+                  {waitingForFrames && (
                     <p>
-                      已生成 {frames.length}/{count} 张分镜，成片会沿用已完成的画面。
+                      已生成 {frames.length}/{count} 张分镜。
+                      {production.checkingFrames
+                        ? "可重新检查分镜状态。"
+                        : `可重试未生成的画面，每张 ${imageUnitCredits} 积分，全部生成后自动进入下一步。`}
                     </p>
                   )}
                 </div>
@@ -161,13 +197,15 @@ export function VideoProductionProgress({
           );
         })}
       </ol>
-      {paused && (
+      {paused && !waitingForFrames && (
         <p role="status">
-          {production.referenceImagesBlocked
-            ? `${videoReferenceUnavailableMessage}恢复后可沿用已完成的分镜。`
-            : production.pendingVideo
-              ? "请在创作区确认上次提交，沿用原提交编号。"
-              : "可在创作区从中断处继续。"}
+          {production.resumingFrames
+            ? "可在创作区继续检查原分镜任务。"
+            : production.referenceImagesBlocked
+              ? `${videoReferenceUnavailableMessage}恢复后可沿用已完成的分镜。`
+              : production.pendingVideo
+                ? "请在创作区确认上次提交，沿用原提交编号。"
+                : "可在创作区从中断处继续。"}
         </p>
       )}
     </section>

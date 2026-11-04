@@ -715,6 +715,18 @@
   font-size: var(--text-xs);
   text-align: center;
 }
+.video-production-frames > .video-production-frame-retry {
+  height: auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.video-production-frame-retry > span:last-child {
+  color: var(--accent);
+}
 .video-production-media {
   width: min(100%, 126px);
 }

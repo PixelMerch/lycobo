@@ -88,25 +88,28 @@ export function useSubmitVideo(source?: "storyboard") {
       input,
       references,
       clearDraft = true,
+      repairPending = false,
     }: {
       input: Omit<VideoCreateInput, "referenceAssetIds">;
       references: ReferenceImage[];
       clearDraft?: boolean;
+      repairPending?: boolean;
     }) => {
       if (!session.data) throw new Error("请先登录");
       const submittedDraft = useVideoDraft.getState();
       let attempt = pending();
       if (attempt && attempt.source !== source) throw new Error("请回到视频创作确认上次提交");
       const confirming = !!attempt;
-      if (!attempt) {
+      const original = repairPending ? attempt : null;
+      if (!attempt || original) {
         const ids = await uploadImageReferences(client, session.data, references);
-        if (pending()) throw new Error("已有视频提交待确认，请稍后继续");
+        if (pending()?.key !== attempt?.key) throw new Error("已有视频提交待确认，请稍后继续");
         const { storyboard, storyboardOriginalImageCount, ...video } = input;
         const capability = client.getQueryData<ReturnType<typeof videoCapabilitySchema.parse>>([
           "video-model",
         ]);
         attempt = {
-          key: crypto.randomUUID(),
+          key: original?.key ?? crypto.randomUUID(),
           source,
           input: videoCreateSchema.parse({
             ...video,
@@ -122,36 +125,56 @@ export function useSubmitVideo(source?: "storyboard") {
               : {}),
           }),
         };
-        sessionStorage.setItem(storageKey, JSON.stringify(attempt));
-        notifyPending();
-      }
-      const response = await imageRequest("video-tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Idempotency-Key": attempt.key },
-        body: JSON.stringify(attempt.input),
-      }).catch((error: unknown) => {
-        if (
-          error instanceof ImageApiError &&
-          error.businessCode === "VIDEO_REFERENCES_UNAVAILABLE"
-        ) {
-          // An initial rejection occurs before task creation. A confirmation may refer
-          // to a task accepted earlier, so its original key must stay intact.
-          if (!confirming) {
-            sessionStorage.removeItem(storageKey);
-            notifyPending();
-          }
-          void client.invalidateQueries({ queryKey: ["video-model"] });
+        if (!original) {
+          sessionStorage.setItem(storageKey, JSON.stringify(attempt));
+          notifyPending();
         }
-        throw error;
-      });
+      }
+      const submit = (submission: NonNullable<ReturnType<typeof pending>>) =>
+        imageRequest("video-tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Idempotency-Key": submission.key },
+          body: JSON.stringify(submission.input),
+        });
+      const response = await submit(attempt)
+        .catch((error: unknown) => {
+          // Legacy drafts could reach video submission with missing frames. Reuse their key.
+          // A conflict means a task already owns that key, so recover its original receipt.
+          if (
+            original &&
+            error instanceof ImageApiError &&
+            error.businessCode === "IDEMPOTENCY_CONFLICT"
+          )
+            return submit(original);
+          throw error;
+        })
+        .catch((error: unknown) => {
+          if (
+            error instanceof ImageApiError &&
+            error.businessCode === "VIDEO_REFERENCES_UNAVAILABLE"
+          ) {
+            // An initial rejection occurs before task creation. A confirmation may refer
+            // to a task accepted earlier, so its original key must stay intact.
+            if (!confirming) {
+              sessionStorage.removeItem(storageKey);
+              notifyPending();
+            }
+            void client.invalidateQueries({ queryKey: ["video-model"] });
+          }
+          throw error;
+        });
       const accepted = videoAcceptedSchema.parse(await response.json());
       sessionStorage.removeItem(storageKey);
       notifyPending();
       if (clearDraft && !confirming) clearSubmittedVideoDraft(submittedDraft);
       return accepted;
     },
-    onError: (error) => {
-      if (error instanceof ImageApiError && [400, 401, 403, 409, 413, 429].includes(error.status)) {
+    onError: (error, { repairPending }) => {
+      if (
+        !repairPending &&
+        error instanceof ImageApiError &&
+        [400, 401, 403, 409, 413, 429].includes(error.status)
+      ) {
         sessionStorage.removeItem(storageKey);
         notifyPending();
       }
@@ -169,6 +192,7 @@ export function useSubmitVideo(source?: "storyboard") {
     ...mutation,
     isPending: mutation.isPending || activeSubmissions > 0,
     hasPending,
+    pendingReferenceCount: hasPending ? pending()?.input.referenceAssetIds.length : undefined,
     blockedByPending: pendingSource !== null && !hasPending,
     submitAsync: (args: Parameters<typeof mutation.mutateAsync>[0]) => {
       if (locked.current || activeSubmissions > 0)

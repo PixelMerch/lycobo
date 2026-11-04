@@ -51,9 +51,12 @@ export function VideoPage() {
   const valid = hasPromptDescription(draft.prompt);
   const referenceBlocked =
     model.data?.referenceImagesEnabled === false &&
-    (automatic || (!submission.hasPending && references.length > 0));
+    (automatic
+      ? !production.resumingFrames && !production.checkingFrames
+      : !submission.hasPending && references.length > 0);
   const canSubmit = automatic
     ? !production.blocked &&
+      (!production.waitingForFrames || production.checkingFrames) &&
       (production.needsResume ||
         (production.configured && valid && references.length <= production.maxOriginalImages))
     : !submission.blockedByPending && (valid || submission.hasPending);
@@ -124,17 +127,23 @@ export function VideoPage() {
       <div className="generate-area">
         {(automatic || referenceBlocked) && !busy && (
           <p className="video-reference-hint">
-            {referenceBlocked
-              ? videoReferenceUnavailableMessage
-              : production.pendingVideo
-                ? "沿用原提交编号核对视频任务，已生成的分镜会保留。"
-                : production.needsResume
-                  ? production.draft.progress.optimization?.prompt
-                    ? "从提交视频继续，沿用已生成的分镜和提示词。"
-                    : "从中断的步骤继续，沿用已提交的任务。"
-                  : production.unavailable
-                    ? "视频制作暂不可用，请稍后重试。"
-                    : `预计 ${automaticVideoCost} 积分（画面 ${automaticVideoCost - videoUnitCredits} + 视频 ${videoUnitCredits}），竖屏 9:16 · 10 秒。`}
+            {production.checkingFrames
+              ? "有分镜结果待确认，可重新检查状态。"
+              : production.resumingFrames
+                ? "继续检查原分镜任务，已生成的画面会保留。"
+                : production.waitingForFrames
+                  ? "请在制作进度中补齐分镜。全部生成后会自动继续。"
+                  : referenceBlocked
+                    ? videoReferenceUnavailableMessage
+                    : production.pendingVideo
+                      ? "沿用原提交编号核对视频任务，已生成的分镜会保留。"
+                      : production.needsResume
+                        ? production.draft.progress.optimization?.prompt
+                          ? "从提交视频继续，沿用已生成的分镜和提示词。"
+                          : "从中断的步骤继续，沿用已提交的任务。"
+                        : production.unavailable
+                          ? "视频制作暂不可用，请稍后重试。"
+                          : `预计 ${automaticVideoCost} 积分（画面 ${automaticVideoCost - videoUnitCredits} + 视频 ${videoUnitCredits}），竖屏 9:16 · 10 秒。`}
           </p>
         )}
         <Button
@@ -167,19 +176,25 @@ export function VideoPage() {
           )}
           {busy && automatic
             ? "正在制作"
-            : !busy && (submission.hasPending || production.pendingVideo)
-              ? "确认上次提交"
-              : automatic && production.needsResume
-                ? "继续生成"
-                : "立即生成"}
-          <span className="generate-credit-cost">
-            <CreditCoin size="default" />
-            {automatic
-              ? production.needsResume
-                ? production.remainingCost
-                : automaticVideoCost
-              : videoUnitCredits}
-          </span>
+            : automatic && (production.resumingFrames || production.checkingFrames)
+              ? "检查分镜状态"
+              : automatic && production.waitingForFrames
+                ? "等待分镜补齐"
+                : !busy && (submission.hasPending || production.pendingVideo)
+                  ? "确认上次提交"
+                  : automatic && production.needsResume
+                    ? "继续生成"
+                    : "立即生成"}
+          {!(automatic && (production.resumingFrames || production.waitingForFrames)) && (
+            <span className="generate-credit-cost">
+              <CreditCoin size="default" />
+              {automatic
+                ? production.needsResume
+                  ? production.remainingCost
+                  : automaticVideoCost
+                : videoUnitCredits}
+            </span>
+          )}
         </Button>
       </div>
     </section>
