@@ -14,7 +14,7 @@ async function openCreate(page: Page) {
 }
 
 async function confirmOptimization(page: Page) {
-  const dialog = page.getByRole("dialog", { name: "AI 优化提示词" });
+  const dialog = page.getByRole("group", { name: "确认优化提示词" });
   await expect(dialog.getByText(/消耗 1 积分/)).toBeVisible();
   await dialog.getByRole("button", { name: "确认优化" }).click();
 }
@@ -49,20 +49,23 @@ test("the focused prompt loops the wand hint and canceling never requests optimi
 
   await wand.focus();
   await page.keyboard.press("Enter");
-  const dialog = page.getByRole("dialog", { name: "AI 优化提示词" });
+  const dialog = page.getByRole("group", { name: "确认优化提示词" });
   await expect(dialog.getByText(/消耗 1 积分/)).toBeVisible();
   expect(requests).toEqual([]);
-  await expect(dialog).not.toHaveAttribute("aria-modal", "true");
   await expect(prompt).toBeVisible();
-  const [wandBounds, dialogBounds] = await Promise.all([wand.boundingBox(), dialog.boundingBox()]);
-  expect(wandBounds).not.toBeNull();
-  expect(dialogBounds).not.toBeNull();
-  expect(dialogBounds?.y ?? 0).toBeGreaterThan((wandBounds?.y ?? 0) + (wandBounds?.height ?? 0));
-  await expect(page.locator(".prompt-optimize-popover")).toHaveCSS(
-    "background-color",
-    "rgb(36, 36, 43)",
+  const confirm = dialog.getByRole("button", { name: "确认优化" });
+  await expect(confirm).toHaveCSS("height", "24px");
+  await expect(dialog).toHaveCSS("background-color", "rgb(36, 36, 43)");
+  await expect(dialog).toHaveCSS("animation-name", "none");
+  const [promptBounds, confirmationBounds] = await Promise.all([
+    prompt.boundingBox(),
+    dialog.boundingBox(),
+  ]);
+  expect(promptBounds).not.toBeNull();
+  expect(confirmationBounds).not.toBeNull();
+  expect((confirmationBounds?.y ?? 0) + (confirmationBounds?.height ?? 0)).toBeLessThanOrEqual(
+    (promptBounds?.y ?? 0) + (promptBounds?.height ?? 0),
   );
-  await expect(dialog.getByRole("button", { name: "确认优化" })).toHaveCSS("height", "28px");
 
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
@@ -98,10 +101,9 @@ test("pasting text keeps the wand animation tied to editor focus", async ({ page
   const icon = wand.locator("svg");
   await expect(icon).toHaveCSS("animation-name", "prompt-wand-hint");
   await wand.click();
-  await page
-    .getByRole("dialog", { name: "AI 优化提示词" })
-    .getByRole("button", { name: "取消" })
-    .click();
+  const confirmation = page.getByRole("group", { name: "确认优化提示词" });
+  await expect(confirmation).toHaveCSS("animation-name", "prompt-optimize-expand");
+  await confirmation.getByRole("button", { name: "取消" }).click();
   await expect(icon).toHaveCSS("animation-name", "none");
 
   await prompt.press("ControlOrMeta+a");

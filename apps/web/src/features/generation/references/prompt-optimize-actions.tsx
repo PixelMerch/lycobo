@@ -1,6 +1,6 @@
-import { Button, Popover, Spinner, Tooltip } from "@heroui/react";
+import { Button, Spinner, Tooltip } from "@heroui/react";
 import { IconArrowBackUp, IconWand } from "@tabler/icons-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { promptOptimizeCredits } from "./prompt-optimizer-client";
 import type { usePromptOptimizer } from "./use-prompt-optimizer";
@@ -14,30 +14,65 @@ export function PromptOptimizeActions({
 }) {
   const gradientId = useId();
   const trigger = useRef<HTMLButtonElement>(null);
-  const popover = useRef<HTMLDivElement>(null);
+  const actions = useRef<HTMLDivElement>(null);
   const [confirmingPrompt, setConfirmingPrompt] = useState<string | null>(null);
   const isConfirming = optimizer.canStart && confirmingPrompt === prompt;
 
+  const cancelAndRestoreFocus = useCallback(() => {
+    setConfirmingPrompt(null);
+    requestAnimationFrame(() => trigger.current?.focus());
+  }, []);
+
   useEffect(() => {
     if (!isConfirming) return;
-    const document = trigger.current?.ownerDocument;
+    const document = actions.current?.ownerDocument;
     if (!document) return;
-    // A non-modal popover closes on focus changes. Also dismiss clicks on non-focusable surfaces.
     const closeOnOutsideClick = (event: MouseEvent) => {
-      if (
-        event.target instanceof Node &&
-        !trigger.current?.contains(event.target) &&
-        !popover.current?.contains(event.target)
-      )
+      if (event.target instanceof Node && !actions.current?.contains(event.target))
         setConfirmingPrompt(null);
     };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (
+        event.key === "Escape" &&
+        event.target instanceof Node &&
+        actions.current?.contains(event.target)
+      ) {
+        event.preventDefault();
+        cancelAndRestoreFocus();
+      }
+    };
     document.addEventListener("click", closeOnOutsideClick, true);
-    return () => document.removeEventListener("click", closeOnOutsideClick, true);
-  }, [isConfirming]);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("click", closeOnOutsideClick, true);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isConfirming, cancelAndRestoreFocus]);
 
   return (
-    <div className="prompt-optimize">
-      {optimizer.running ? (
+    <div ref={actions} className="prompt-optimize" data-confirming={isConfirming || undefined}>
+      {isConfirming ? (
+        <fieldset aria-label="确认优化提示词" className="prompt-optimize-confirmation">
+          <span className="prompt-optimize-price">
+            消耗 <strong>{promptOptimizeCredits} 积分</strong>
+          </span>
+          <div className="prompt-optimize-confirm-actions">
+            <Button autoFocus size="sm" variant="ghost" onPress={cancelAndRestoreFocus}>
+              取消
+            </Button>
+            <Button
+              size="sm"
+              variant="primary"
+              onPress={() => {
+                setConfirmingPrompt(null);
+                optimizer.start();
+              }}
+            >
+              确认优化
+            </Button>
+          </div>
+        </fieldset>
+      ) : optimizer.running ? (
         <Button
           variant="ghost"
           size="sm"
@@ -49,16 +84,14 @@ export function PromptOptimizeActions({
           停止
         </Button>
       ) : optimizer.canStart ? (
-        <Tooltip delay={0} isDisabled={isConfirming}>
+        <Tooltip delay={0}>
           <Button
             ref={trigger}
             variant="ghost"
             size="sm"
             className="prompt-optimize-button"
             aria-label="AI 优化提示词"
-            aria-haspopup="dialog"
-            aria-expanded={isConfirming}
-            onPress={() => setConfirmingPrompt(isConfirming ? null : prompt)}
+            onPress={() => setConfirmingPrompt(prompt)}
           >
             <span className="prompt-optimize-wand">
               <UiIcon icon={IconWand} size="small" color={`url(#${gradientId})`}>
@@ -75,41 +108,7 @@ export function PromptOptimizeActions({
           <Tooltip.Content placement="top">AI 润色提示词</Tooltip.Content>
         </Tooltip>
       ) : null}
-      <Popover.Content
-        ref={popover}
-        triggerRef={trigger}
-        isOpen={isConfirming}
-        onOpenChange={(open) => {
-          if (!open) setConfirmingPrompt(null);
-        }}
-        shouldCloseOnInteractOutside={(element) => !trigger.current?.contains(element)}
-        isNonModal
-        placement="bottom start"
-        offset={12}
-        className="prompt-optimize-popover"
-      >
-        <Popover.Dialog aria-label="AI 优化提示词" className="prompt-optimize-confirmation">
-          <p>
-            消耗 <strong>{promptOptimizeCredits} 积分</strong>
-          </p>
-          <div className="prompt-optimize-confirm-actions">
-            <Button size="sm" variant="ghost" onPress={() => setConfirmingPrompt(null)}>
-              取消
-            </Button>
-            <Button
-              size="sm"
-              variant="primary"
-              onPress={() => {
-                setConfirmingPrompt(null);
-                if (isConfirming) optimizer.start();
-              }}
-            >
-              确认优化
-            </Button>
-          </div>
-        </Popover.Dialog>
-      </Popover.Content>
-      {optimizer.canUndo && (
+      {optimizer.canUndo && !isConfirming && (
         <Button
           variant="ghost"
           size="sm"

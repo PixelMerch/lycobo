@@ -201,41 +201,77 @@
   color: var(--accent);
   background: transparent;
 }
-.prompt-optimize-popover {
-  width: max-content;
-  max-width: calc(100vw - 24px);
-  border-radius: 12px;
-  background: var(--overlay);
-  box-shadow: var(--overlay-shadow);
+.prompt-optimize[data-confirming="true"] {
+  right: 8px;
+  bottom: 4px;
 }
-.prompt-optimize-confirmation.popover__dialog {
+.prompt-editor:has(.prompt-optimize[data-confirming="true"]) .prompt-meta {
+  visibility: hidden;
+}
+.prompt-field
+  .prompt-editor:has(.prompt-optimize[data-confirming="true"])
+  :is(textarea, .reference-rich-editor.textarea),
+.home-composer .home-prompt .prompt-editor:has(.prompt-optimize[data-confirming="true"]) .textarea {
+  padding-bottom: 36px;
+}
+.prompt-optimize-confirmation {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-2);
-  padding: var(--space-2);
-}
-.prompt-optimize-confirmation p {
+  gap: var(--space-1);
+  width: 100%;
+  min-inline-size: 0;
   margin: 0;
-  padding-inline: var(--space-1);
-  font-size: var(--text-sm);
+  padding: 2px 4px 2px 8px;
+  border: 1px solid #ffffff24;
+  border-radius: 8px;
+  background: var(--overlay);
+  color: var(--foreground);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .prompt-optimize-confirmation {
+    animation: prompt-optimize-expand 160ms ease-out;
+  }
+}
+@keyframes prompt-optimize-expand {
+  from {
+    clip-path: inset(0 100% 0 0 round 8px);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 8px);
+  }
+}
+.prompt-optimize-price {
   white-space: nowrap;
 }
 .prompt-optimize-confirm-actions {
   display: flex;
   gap: var(--space-1);
-  margin-inline-start: auto;
 }
 .prompt-optimize-confirm-actions .button {
-  height: 28px;
-  min-height: 28px;
+  min-width: 0;
+  height: 24px;
+  min-height: 24px;
+  padding-inline: var(--space-2);
+  border-radius: 6px;
+  font-size: var(--text-xs);
   white-space: nowrap;
 }
 @media (pointer: coarse) {
   .prompt-optimize-confirm-actions .button {
     height: 44px;
     min-height: 44px;
+  }
+  .prompt-field
+    .prompt-editor:has(.prompt-optimize[data-confirming="true"])
+    :is(textarea, .reference-rich-editor.textarea),
+  .home-composer
+    .home-prompt
+    .prompt-editor:has(.prompt-optimize[data-confirming="true"])
+    .textarea {
+    padding-bottom: 56px;
   }
 }
 .prompt-optimize-wand {
