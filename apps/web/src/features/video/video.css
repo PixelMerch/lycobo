@@ -249,16 +249,14 @@
 }
 
 /* 预览弹层：复用图片浏览的蒙层与居中缩放；画框按视频实际比例适配视口。 */
-.video-preview-dialog {
-  user-select: none;
-}
 .video-preview-layout {
   position: relative;
   display: grid;
   grid-template-rows: 68px minmax(0, 1fr);
   width: 100%;
   height: 100%;
-  padding: 0 24px 32px;
+  /* Bottom space matches the header, so the frame and its loading sit at the screen centre. */
+  padding: 0 24px 68px;
   transform-origin: center;
 }
 .video-preview-header {
@@ -327,16 +325,10 @@
   min-height: 0;
   container-type: size;
 }
-/* Fit inside the stage, never taller than 720px or wider than 1080px: the preview file
- * is at most 640px on its long edge, so a larger frame would only magnify it. */
+/* The original file is played, so the frame may fill the stage at the clip's own ratio. */
 .video-preview-frame {
   position: relative;
-  height: min(
-    100cqh,
-    720px,
-    calc(100cqw / var(--video-aspect)),
-    calc(1080px / var(--video-aspect))
-  );
+  height: min(100cqh, calc(100cqw / var(--video-aspect)));
   aspect-ratio: var(--video-aspect);
   overflow: hidden;
   border-radius: 12px;
@@ -599,7 +591,7 @@
 @media (max-width: 767px) {
   .video-preview-layout {
     grid-template-rows: 64px minmax(0, 1fr);
-    padding: 0 16px 16px;
+    padding: 0 16px 64px;
   }
   .video-preview-header {
     margin-right: -8px;

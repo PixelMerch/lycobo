@@ -52,7 +52,7 @@ export function VideoPlayerDialog({
     >
       <Modal.Backdrop className="browse-image-backdrop" data-dialog-phase={phase}>
         <Modal.Container size="full" className="browse-image-container">
-          <Modal.Dialog aria-label="视频预览" className="browse-image-dialog video-preview-dialog">
+          <Modal.Dialog aria-label="视频预览" className="browse-image-dialog">
             <motion.div className="video-preview-layout" {...surfaceMotion}>
               <header className="video-preview-header">
                 <div className="video-preview-heading">

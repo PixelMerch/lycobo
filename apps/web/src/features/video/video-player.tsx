@@ -12,7 +12,7 @@ import {
 import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { AssetImage } from "../generation/asset-image";
-import { formatVideoTime, useVideoPlayback } from "./use-video-playback";
+import { canSeek, formatVideoTime, useVideoPlayback } from "./use-video-playback";
 
 const idleDelay = 2500;
 const seekStep = 5;
@@ -27,7 +27,7 @@ function toggleFullscreen(frame: HTMLElement) {
 
 /**
  * Preview playback with product controls instead of the browser chrome. The poster is the cached
- * list cover, so the frame has content before the lightweight preview file arrives.
+ * list cover, so the frame has content while the original video buffers.
  */
 export function VideoPlayer({
   assetId,
@@ -119,7 +119,7 @@ export function VideoPlayer({
       const field = target.closest("input, textarea");
       if ((key === " " && !target.closest("button, a") && !field) || key === "k")
         togglePlayback(video);
-      else if ((key === "arrowleft" || key === "arrowright") && !field) {
+      else if ((key === "arrowleft" || key === "arrowright") && !field && canSeek(video)) {
         const limit = Number.isFinite(video.duration) ? video.duration : video.currentTime;
         const delta = key === "arrowleft" ? -seekStep : seekStep;
         video.currentTime = Math.max(0, Math.min(limit, video.currentTime + delta));
@@ -259,7 +259,7 @@ export function VideoPlayer({
             step={0.1}
             value={Math.min(playback.currentTime, duration || 1)}
             formatOptions={{ style: "unit", unit: "second", maximumFractionDigits: 0 }}
-            isDisabled={!video || !playback.duration}
+            isDisabled={!video || !playback.duration || !playback.seekable}
             onChange={(value) => {
               const next = Array.isArray(value) ? value[0] : value;
               if (video && next !== undefined) video.currentTime = next;

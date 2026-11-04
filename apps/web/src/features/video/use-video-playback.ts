@@ -8,6 +8,8 @@ export type VideoPlayback = {
   /** The current frame is decoded, so the poster may give way to the video. */
   ready: boolean;
   failed: boolean;
+  /** Without range support a browser can only restart, so scrubbing must stay off. */
+  seekable: boolean;
   muted: boolean;
   currentTime: number;
   duration: number;
@@ -21,6 +23,7 @@ const initial: VideoPlayback = {
   waiting: true,
   ready: false,
   failed: false,
+  seekable: false,
   muted: false,
   currentTime: 0,
   duration: 0,
@@ -39,6 +42,9 @@ const changes = [
   "emptied",
 ];
 
+export const canSeek = (video: HTMLVideoElement) =>
+  video.seekable.length > 0 && video.seekable.end(video.seekable.length - 1) > 0;
+
 /** Mirrors a media element into React; the element stays the playback source of truth. */
 export function useVideoPlayback(video: HTMLVideoElement | null) {
   const [state, setState] = useState(initial);
@@ -56,6 +62,7 @@ export function useVideoPlayback(video: HTMLVideoElement | null) {
         waiting: waiting && video.error === null,
         ready: shown,
         failed: video.error !== null,
+        seekable: canSeek(video),
         muted: video.muted,
         currentTime: video.currentTime,
         duration: Number.isFinite(video.duration) ? video.duration : 0,

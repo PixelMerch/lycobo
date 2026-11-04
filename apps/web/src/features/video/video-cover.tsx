@@ -1,15 +1,12 @@
 import { Button, Spinner } from "@heroui/react";
 import { IconMovie, IconPlayerPlayFilled, IconRefresh } from "@tabler/icons-react";
-import { type CSSProperties, lazy, Suspense, useState } from "react";
+import { type CSSProperties, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { AssetImage } from "../generation/asset-image";
 import { formatVideoTime } from "./use-video-playback";
+import { VideoPlayerDialog } from "./video-player-dialog";
 
-const loadDialog = () => import("./video-player-dialog");
-const VideoPlayerDialog = lazy(() =>
-  loadDialog().then((module) => ({ default: module.VideoPlayerDialog })),
-);
-/** Lists load a private still image; only opening the dialog requests the smaller video. */
+/** Lists load a private still image; only opening the dialog requests the video. */
 export function VideoCover({
   assetId,
   title,
@@ -43,8 +40,6 @@ export function VideoCover({
         data-cover-loaded={loaded || undefined}
         data-cover-failed={failed || undefined}
         style={coverStyle}
-        onHoverStart={() => void loadDialog()}
-        onFocus={() => void loadDialog()}
         onPress={() => setOpen(true)}
       >
         {!failed && (
@@ -92,16 +87,14 @@ export function VideoCover({
         </Button>
       )}
       {open && (
-        <Suspense fallback={<Spinner aria-label="正在打开视频预览" />}>
-          <VideoPlayerDialog
-            assetId={assetId}
-            title={title}
-            aspect={aspect}
-            seconds={seconds}
-            meta={meta}
-            onClose={() => setOpen(false)}
-          />
-        </Suspense>
+        <VideoPlayerDialog
+          assetId={assetId}
+          title={title}
+          aspect={aspect}
+          seconds={seconds}
+          meta={meta}
+          onClose={() => setOpen(false)}
+        />
       )}
     </>
   );

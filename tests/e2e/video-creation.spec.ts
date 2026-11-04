@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
 const png = Buffer.from(
@@ -180,7 +180,7 @@ test("an ambiguous video submission retains its immutable idempotency key when t
 });
 
 for (const width of [390, 1440]) {
-  test(`completed video fixtures show portrait covers and preview without downloading originals at ${width}px`, async ({
+  test(`completed video fixtures show portrait covers, play on demand and download only on request at ${width}px`, async ({
     page,
   }, testInfo) => {
     await page.setViewportSize({ width, height: 1000 });
@@ -190,25 +190,26 @@ for (const width of [390, 1440]) {
     );
     const coverBytes = await readFile(new URL("../fixtures/video-cover.webp", import.meta.url));
     const assetId = crypto.randomUUID();
-    let previewReads = 0;
-    let originalReads = 0;
+    const playbackUrl = "http://127.0.0.1:5173/fixture-playback.mp4";
+    let playbackReads = 0;
+    let downloadReads = 0;
     const bytes = await readFile(new URL("../fixtures/video-portrait.mp4", import.meta.url));
-    await page.route("**/fixture-preview.mp4", (route) => {
-      previewReads++;
+    await page.route("**/fixture-playback.mp4", (route) => {
+      playbackReads++;
       return route.fulfill({ status: 200, contentType: "video/mp4", body: bytes });
     });
-    const originalServer = createServer((_request, response) => {
-      originalReads++;
+    const downloadServer = createServer((_request, response) => {
+      downloadReads++;
       response.writeHead(200, {
         "Content-Type": "video/mp4",
         "Content-Disposition": "attachment; filename=original.mp4",
       });
       response.end(bytes);
     });
-    await new Promise<void>((resolve) => originalServer.listen(0, "127.0.0.1", resolve));
-    const address = originalServer.address();
+    await new Promise<void>((resolve) => downloadServer.listen(0, "127.0.0.1", resolve));
+    const address = downloadServer.address();
     if (!address || typeof address === "string") throw new Error("Fixture server missing");
-    const originalUrl = `http://127.0.0.1:${address.port}/original.mp4`;
+    const downloadUrl = `http://127.0.0.1:${address.port}/original.mp4`;
     try {
       await page.route(`**/api/v1/image-assets/${assetId}/content?thumbnail=1`, (route) =>
         route.fulfill({ contentType: "image/webp", body: coverBytes }),
@@ -218,9 +219,9 @@ for (const width of [390, 1440]) {
           json: apiFixture({
             id: assetId,
             delivery: {
-              url: "http://127.0.0.1:5173/fixture-preview.mp4",
+              url: playbackUrl,
               thumbnail_url: "http://127.0.0.1:5173/fixture-cover.webp",
-              download_url: originalUrl,
+              download_url: downloadUrl,
               expires_at: 9999999999,
             },
           }),
@@ -248,8 +249,8 @@ for (const width of [390, 1440]) {
                 asset_id: assetId,
                 provider_status: "completed",
                 delivery: {
-                  url: "http://127.0.0.1:5173/fixture-preview.mp4",
-                  download_url: originalUrl,
+                  url: playbackUrl,
+                  download_url: downloadUrl,
                 },
               },
             ],
@@ -283,8 +284,8 @@ for (const width of [390, 1440]) {
       expect(imageBox?.width).toBeCloseTo(coverBox?.width ?? 0, 0);
       expect(imageBox?.height).toBeCloseTo(coverBox?.height ?? 0, 0);
       await page.screenshot({ path: testInfo.outputPath("video-cover.png") });
-      expect(previewReads).toBe(0);
-      expect(originalReads).toBe(0);
+      expect(playbackReads).toBe(0);
+      expect(downloadReads).toBe(0);
       await expect(task).toContainText("9:16");
       await expect(task).toContainText("10秒");
       await expect(task).not.toContainText("消耗 100 积分");
@@ -302,10 +303,10 @@ for (const width of [390, 1440]) {
       // Product controls replace the browser chrome and its download menu.
       expect(await player.getAttribute("controls")).toBeNull();
       await expect(player).toHaveAttribute("controlslist", "nodownload");
-      await expect(dialog.getByRole("slider", { name: "播放进度" })).toBeAttached();
+      await expect(player).toHaveAttribute("src", playbackUrl);
       await expect(dialog.getByRole("link", { name: "下载视频" })).toHaveAttribute(
         "href",
-        originalUrl,
+        downloadUrl,
       );
       const frameBox = await frame.boundingBox();
       expect(
@@ -329,26 +330,166 @@ for (const width of [390, 1440]) {
       await page.screenshot({ path: testInfo.outputPath("video-preview.png") });
       await expect(task.getByRole("link", { name: "下载视频" })).toHaveAttribute(
         "href",
-        originalUrl,
+        downloadUrl,
       );
-      expect(originalReads).toBe(0);
+      expect(playbackReads).toBeGreaterThan(0);
+      expect(downloadReads).toBe(0);
       await dialog.getByRole("button", { name: "关闭视频预览", exact: true }).click();
       await expect(task.getByRole("button", { name: "预览视频：W09VIDEO2" })).toBeFocused();
       const download = page.waitForEvent("download");
       await task.getByRole("link", { name: "下载视频", exact: true }).click();
       const downloaded = await download;
       const downloadedPath = await downloaded.path();
-      if (!downloadedPath) throw new Error("Original download missing");
+      if (!downloadedPath) throw new Error("Video download missing");
       expect(await readFile(downloadedPath)).toEqual(bytes);
-      await expect.poll(() => originalReads).toBe(1);
+      await expect.poll(() => downloadReads).toBe(1);
       await task.getByRole("button", { name: "重新编辑", exact: true }).click();
       await expect(page.getByLabel("场景描述", { exact: true })).toHaveValue("已完成的视频fixture");
     } finally {
-      originalServer.closeAllConnections();
+      downloadServer.closeAllConnections();
       await new Promise<void>((resolve, reject) =>
-        originalServer.close((error) => (error ? reject(error) : resolve())),
+        downloadServer.close((error) => (error ? reject(error) : resolve())),
       );
     }
+  });
+}
+
+async function mockCompletedVideo(page: Page, publicId: string, beforeDelivery?: Promise<void>) {
+  await mockImageApi(page);
+  await page.route("**/api/v1/video-model", (route) =>
+    route.fulfill({ json: apiFixture({ enabled: true, resolution: "768p", unitCredits: 100 }) }),
+  );
+  const assetId = crypto.randomUUID();
+  const url = "http://127.0.0.1:5173/fixture-seek.mp4";
+  const delivery = {
+    url,
+    thumbnail_url: "http://127.0.0.1:5173/fixture-seek-cover.webp",
+    download_url: "http://127.0.0.1:5173/fixture-seek-original.mp4",
+    expires_at: 9999999999,
+  };
+  await page.route("**/fixture-seek-cover.webp", (route) =>
+    route.fulfill({ contentType: "image/png", body: png }),
+  );
+  await page.route(`**/api/v1/image-assets/${assetId}/content?thumbnail=1`, (route) =>
+    route.fulfill({ contentType: "image/png", body: png }),
+  );
+  await page.route(`**/api/v1/image-assets/${assetId}/delivery`, async (route) => {
+    await beforeDelivery;
+    await route.fulfill({ json: apiFixture({ id: assetId, delivery }) });
+  });
+  await page.route("**/api/v1/video-tasks", (route) =>
+    route.fulfill({
+      json: apiFixture({
+        data: [
+          {
+            id: crypto.randomUUID(),
+            public_id: publicId,
+            prompt: "视频预览fixture",
+            status: "succeeded",
+            created_at: new Date().toISOString(),
+            input: {
+              video: {
+                prompt: "视频预览fixture",
+                seconds: 5,
+                aspectRatio: "9:16",
+                referenceAssetIds: [],
+              },
+            },
+            error_code: null,
+            asset_id: assetId,
+            provider_status: "completed",
+            delivery: { url, download_url: delivery.download_url },
+          },
+        ],
+      }),
+    }),
+  );
+}
+
+for (const width of [390, 1440]) {
+  test(`opening a video shows loading at the screen centre, not under the cover at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    let release = () => {};
+    await mockCompletedVideo(
+      page,
+      "W09VIDEO4",
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+    );
+    await page.goto("/video");
+    if (width === 390) await page.getByRole("radio", { name: "历史记录", exact: true }).click();
+    const task = page.getByRole("article", { name: "视频任务：W09VIDEO4" });
+    await expect(task.locator(".video-cover-image")).toHaveCSS("opacity", "1");
+    await task.getByRole("button", { name: "预览视频：W09VIDEO4" }).click();
+    const dialog = page.getByRole("dialog", { name: "视频预览", exact: true });
+    const loading = dialog.locator(".video-preview-loading");
+    await expect(loading).toBeVisible();
+    await expect(task.locator(".spinner")).toHaveCount(0);
+    await expect
+      .poll(async () => {
+        const box = await loading.boundingBox();
+        return box
+          ? Math.round(Math.hypot(box.x + box.width / 2 - width / 2, box.y + box.height / 2 - 450))
+          : -1;
+      })
+      .toBe(0);
+    release();
+  });
+}
+
+for (const ranges of [true, false]) {
+  test(`video preview ${ranges ? "scrubs with range support" : "stays playable without range support"}`, async ({
+    page,
+  }) => {
+    await mockCompletedVideo(page, "W09VIDEO3");
+    const bytes = await readFile(new URL("../fixtures/video-portrait.mp4", import.meta.url));
+    await page.route("**/fixture-seek.mp4", (route) => {
+      const range = /^bytes=(\d+)-(\d*)$/.exec(route.request().headers().range ?? "");
+      if (!ranges || !range)
+        return route.fulfill({
+          contentType: "video/mp4",
+          body: bytes,
+          headers: ranges ? { "Accept-Ranges": "bytes" } : {},
+        });
+      const start = Number(range[1]);
+      const end = range[2] ? Number(range[2]) : bytes.length - 1;
+      return route.fulfill({
+        status: 206,
+        contentType: "video/mp4",
+        body: bytes.subarray(start, end + 1),
+        headers: {
+          "Accept-Ranges": "bytes",
+          "Content-Range": `bytes ${start}-${end}/${bytes.length}`,
+        },
+      });
+    });
+    await page.goto("/video");
+    await page.getByRole("button", { name: "预览视频：W09VIDEO3" }).click();
+    const dialog = page.getByRole("dialog", { name: "视频预览", exact: true });
+    const player = dialog.locator("video");
+    const progress = dialog.getByRole("slider", { name: "播放进度" });
+    const time = () =>
+      player.evaluate((element) =>
+        element instanceof HTMLVideoElement ? element.currentTime : -1,
+      );
+    await expect.poll(time).toBeGreaterThan(0);
+    if (!ranges) {
+      // Seeking an unseekable file would restart it, so the bar only reports progress.
+      await expect(progress).toBeDisabled();
+      return;
+    }
+    await expect(progress).toBeEnabled();
+    await player.evaluate((element) => {
+      if (element instanceof HTMLVideoElement) element.pause();
+    });
+    await progress.focus();
+    await page.keyboard.press("Home");
+    await expect.poll(time).toBe(0);
+    await page.keyboard.press("ArrowRight");
+    await expect.poll(time).toBeCloseTo(0.1, 1);
   });
 }
 
