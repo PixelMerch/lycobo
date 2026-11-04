@@ -20,14 +20,13 @@ const frameSlots = Array.from({ length: storyboardImageLimit }, (_, position) =>
 
 function ProductionMedia({
   task,
-  paused,
+  executing,
   status,
 }: {
   task: VideoTask | undefined;
-  paused: boolean;
+  executing: boolean;
   status: string;
 }) {
-  const active = !paused && (!task || task.status === "queued" || task.status === "running");
   return (
     <div className="video-production-media">
       {task?.asset_id && task.delivery ? (
@@ -40,8 +39,8 @@ function ProductionMedia({
         />
       ) : (
         <div className="video-production-placeholder">
-          {active ? (
-            <Spinner size="md" aria-label="视频处理中" />
+          {executing ? (
+            <Spinner size="sm" color="current" aria-hidden="true" />
           ) : (
             <UiIcon icon={IconMovie} size="illustration" />
           )}
@@ -73,6 +72,13 @@ export function VideoProductionProgress({
   const paused =
     !progress.acceptedVideoId &&
     (production.failed || (!production.busy && production.needsResume));
+  const executing =
+    !paused &&
+    (current < 2 || !progress.acceptedVideoId
+      ? production.busy
+      : task?.status === "running" &&
+        task.provider_status !== "paused" &&
+        task.provider_status !== "pending_confirmation");
   const frames =
     progress.frames ??
     task?.input.video.referenceAssetIds
@@ -102,7 +108,11 @@ export function VideoProductionProgress({
                 {done ? <UiIcon icon={IconCheck} size="small" /> : index + 1}
               </span>
               <span>{title}</span>
-              <span className="video-production-state" aria-live="polite">
+              <span
+                className="video-production-state"
+                data-executing={(index === current && executing) || undefined}
+                aria-live="polite"
+              >
                 {states[index]}
               </span>
               {index === 0 && (
@@ -121,7 +131,11 @@ export function VideoProductionProgress({
                       ) : current > 0 || paused ? (
                         <span key={id}>画面未就绪</span>
                       ) : (
-                        <Skeleton key={id} animationType="none" aria-hidden="true" />
+                        <Skeleton
+                          key={id}
+                          animationType={executing ? "shimmer" : "none"}
+                          aria-hidden="true"
+                        />
                       );
                     })}
                   </section>
@@ -142,7 +156,7 @@ export function VideoProductionProgress({
                   <div className="video-production-result">
                     <ProductionMedia
                       task={task}
-                      paused={paused}
+                      executing={executing}
                       status={paused ? "待继续" : videoState}
                     />
                     {task?.asset_id && task.delivery && (

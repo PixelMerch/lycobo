@@ -159,6 +159,11 @@ test("video text-only submission is durable, uses the selected duration and does
     referenceAssetIds: [],
   });
   await expect(page.getByRole("article", { name: "视频任务：W09VIDEO1" })).toContainText("排队中");
+  const railSpinner = page
+    .getByRole("button", { name: "定位视频：W09VIDEO1" })
+    .getByRole("status", { name: "视频处理中" });
+  await expect(railSpinner).toHaveCSS("width", "16px");
+  await expect(railSpinner).toHaveCSS("height", "16px");
   expect(imageSubmissions).toBe(0);
   await expect(page.locator(".header-balance-value")).toHaveText("100");
   await expect(page.getByRole("article", { name: "视频任务：W09VIDEO1" })).toContainText(

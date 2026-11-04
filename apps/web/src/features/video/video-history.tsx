@@ -132,7 +132,9 @@ export function VideoHistoryRail() {
                     />
                   </span>
                 ) : task.status === "queued" || task.status === "running" ? (
-                  <Spinner size="sm" aria-label="视频处理中" />
+                  <span className="history-thumbnail-frame">
+                    <Spinner size="sm" aria-label="视频处理中" />
+                  </span>
                 ) : (
                   <UiIcon icon={IconMovie} size="action" />
                 )}

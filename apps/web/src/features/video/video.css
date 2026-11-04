@@ -639,6 +639,29 @@
   :is(.video-production-step, .video-production-state) {
   color: var(--tool-soft);
 }
+.video-production-state[data-executing]::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-inline-end: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  vertical-align: 0.12em;
+  animation: video-production-pulse 1.6s ease-in-out infinite;
+}
+@keyframes video-production-pulse {
+  50% {
+    opacity: 0.5;
+    transform: scale(0.75);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .video-production-state[data-executing]::before,
+  .video-production-frames > .skeleton::after {
+    animation: none;
+  }
+}
 .video-production-progress p {
   font-size: var(--text-xs);
 }
