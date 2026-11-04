@@ -24,12 +24,4 @@ Docker 开发可使用 `docker compose up --build`，对外前端端口8081；�
 
 日常运行 `pnpm check`。隔离集成和手动浏览器检查见 [测试说明](testing.md)。
 
-2026-11-01 已从 CloudBase 同步业务库到本地 Docker，范围、验证、备份及隔离复制任务后开启本地生图的状态见 [本地数据库同步记录](cloudbase-local-database-sync.md)。
-
-## main 自动版本发布
-
-每次合并到 main 后，该提交的 CI 通过才会触发 `.github/workflows/release.yml`，自动创建 `v主版本.次版本.补丁版本` 标签与 GitHub Release，附带更新日志、作者与文件变更附件。CloudBase 自动部署仍由原工作流独立执行；Release 成功不代表部署已完成。
-
-默认基于远端稳定版本标签递增 patch（如 v0.4.0 → v0.4.1）。根 package.json 的 version 作为版本基线；有意将它升到更高的次版本／主版本时优先采用该基线。Release 标签是部署版本标识，不为每次发布额外回写版本提交或修改锁文件。
-
-同一提交重跑会复用已有标签和 Release；不同提交并发通过原子创建标签避让版本冲突，权限等真实错误不会被吞掉。保留手动指定版本和标签触发入口；所有发布都要求提交属于 main 历史且对应 main push CI 成功。完整 E2E 保持手动运行。
+本地 Docker 业务库来自 2026-11-01 的 CloudBase 快照，回退方式见 [CloudBase 迁移记录](cloudbase-migration.md#本地库同步2026-11-01)。版本发布见[发布与部署](releasing.md)。

@@ -1,6 +1,6 @@
 # 模型服务后台与执行适配
 
-2026-10-27。独立后台页面在本地运行；v0.3.0 发布准备已将模型结构迁移到生产 Supabase，并为主站配置新中转站，管理页面不因此视为已上线。
+主站线上以独立模式运行，使用服务端固定模型路由（见下文“主站试用独立模式”）。本文其余部分描述独立后台和可配置渠道；后台页面只在本地运行，未切换到线上环境。
 
 ## 身份与服务边界
 
@@ -34,11 +34,11 @@ MODEL_CREDENTIAL_SECRET 必须为 32 字节随机数的 Base64，独立后台 AP
 
 `retryable: false` 表示不能重新提交生成，不阻止查询已受理的任务。`success` 摘要即使带有 `auto_poll: false`，缺少图片时仍通过同源 `result_url` 获取最终结果；未决／暂停／取消状态继续停止自动查询。
 
-成功后拉取真实图片到私有 R2，再完成任务。摘要 result_url 作为任务 JSON 结果接口继续查询，不当成图片下载。下载仅允许源站与明确配置的 HTTPS 源；不把 Key 发往第三方 CDN，拒绝重定向。
+成功后拉取真实图片到私有存储，再完成任务。摘要 result_url 作为任务 JSON 结果接口继续查询，不当成图片下载。下载仅允许源站与明确配置的 HTTPS 源；不把 Key 发往第三方 CDN，拒绝重定向。
 
 明确失败逐项退款；结果不确定、查询停止或总等待超时转待核对，不自动重复付费提交。连续查询网络／限流／服务错误最多五次后停止。显式用户重试沿用原账务与审计语义。刷新后台、改配置、队列重复投递不重复扣款。
 
-未实现 webhook、自动跨站重试、自动价格同步或任意新增前台模型。本轮未新增付费生成请求；已通过上游任务列表的 `client_request_id` 精确对应本地子项，恢复三张上游已成功、但本地误判待核对的历史结果。恢复只查询／下载已有任务，不修改原扣费，也不重发生成。
+未实现自动跨站重试、自动价格同步或任意新增前台模型。图片完成回调见[图片 Webhook](image-webhooks.md)。
 
 ## 验证和后台规范
 
@@ -52,10 +52,6 @@ provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 
 
 运行时不再读取 VAKV_* 或 GENERATION_TIMEOUT_MS。生图默认启用，无 IMAGE_GENERATION_ENABLED 全局开关；`.env` 保留 MODEL_CREDENTIAL_SECRET 加密主密钥及基础设施配置，供应商凭据在独立后台配置。同步兼容适配器仅留给隔离验证工具，不是产品运行时回退。当前裂变以v5和逻辑gpt-image-2.5绑定后台渠道，见 textile-generation.md。同步结果、异步task ID及上游请求ID用于排查；不记录提示词、响应正文、Key或签名URL。
 
-## v0.3.0 生产渠道
-
-生产统一使用 `https://api.ai-media.vip`，不再为新请求使用旧中转站。FluxPort 渠道为 gpt-image-2／gpt-image-2.5 绑定图片创作及局部修改，家纺裂变使用 gpt-image-2.5；异步优先，当前仅启用1K。当前Key未提供 nano-banana-2.1，因此该渠道禁用，不回退旧站。生产Key加密入库，独立主密钥保存在 CloudBase 消费者云函数环境变量，GitHub不存储。此次只检查配置、加密和公开能力，没有额外付费生成。
-
 ## 简单后台配置扩展（2026-10-28）
 
 独立后台管理中转站与图片、音乐、视频目录；每站一个 Key，渠道选择目录模型、站点和该站实际模型名，不引入密钥池或自动跨站调度。0026_admin_model_configuration 为追加迁移，回填既有图片模型/默认密钥并保留旧密文；model_channels.key_id 可为空以兼容旧写入。
@@ -68,11 +64,9 @@ provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 
 
 0028 曾引入目录 upstream_model，目前仅保留旧版本兼容；实际调用名称按中转站保存在渠道 settings.upstreamModel，目录不再提供统一调用模型输入。主站按默认渠道解析，任务快照不变。
 
-
 ## 中转站与展示目录（2026-10-28）
 
 后台简化为中转站、模型目录、模型渠道、默认渠道四页。每站维护官网 website_url、API 源地址、一个加密 API Key。目录的名称、Logo 和分类供主站展示，同一目录可绑定多个中转站；实际调用名称按站保存在 model_channels.settings.upstreamModel，不能使用目录全局名称替代。原目录 upstream_model、provider_id 仅兼容旧版本，渠道映射为准。主站继续按默认路由解析渠道、站点及不可变凭据快照；不自动发布新目录条目。追加迁移 0029 增加官网与兼容关联列，不改历史任务。音乐、视频仍仅配置管理。后台目录绑定需要 catalog.save 和 channel.save，默认引用保护解绑；每站密钥替换保留旧版本。
-
 
 ## 主站模型展示信息
 
@@ -92,75 +86,21 @@ provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 
 
 渠道 `settings.adapter` 可覆盖中转站默认协议，null／省略则继承；同一个站可同时提供 GPT Images 与 Gemini 原生接口，不需要复制 Key。任务快照固定最终协议，修改渠道不改变旧任务。全部子项明确失败的旧任务，用户主动重试时重新读取当前渠道，并保留旧尝试配置证据；部分成功、在途或结果不确定的任务不更换快照。
 
-本地 Banana 2.1 已配置调用 `gemini-3.1-flash-image-preview`，Banana Pro 配置调用 `gemini-3-pro-image-preview`，两者均使用 Gemini 原生协议；GPT 渠道保留 Images 协议。本轮通过模拟上游的同步／异步请求、不可变快照、重复消费与扣费集成测试，以及后台保存／读取验证；没有付费调用、线上配置变更或部署，实际模型与 Key 分组可用性尚需真实生成验证。
+本地 Banana 2.1 已配置调用 `gemini-3.1-flash-image-preview`，Banana Pro 配置调用 `gemini-3-pro-image-preview`，两者均使用 Gemini 原生协议；GPT 渠道保留 Images 协议。
 
-## 上游额外图片与查询中断恢复（2026-10-28）
+## 上游额外图片与查询中断恢复
 
 裂变继续按每个视角单独请求 `n=1`。若供应商仍返回多张，只按返回顺序交付第一张到当前付费槽位，不新增子任务、不多扣用户积分；其余图片不自动下载或持久化。空结果、非法图片和不可信下载源仍拒绝，不能把未存储结果标为成功。供应商是否按多张收费需以其真实请求记录核对，本地不假定供应商始终遵守 n。
 
 已取得上游任务 ID 的查询，领取执行租约时保留下次查询时间；在总等待期限内，执行进程中断且租约到期后可继续 GET 同一任务。有效租约期间不重复投递，接收新租约后忽略旧执行者的完成；没有上游任务 ID 的付费提交仍转待核对，不自动重发 POST。成功恢复时清理历史错误码，沿用原扣费。
 
-本地任务 WUUURKIBT：原 10 个视角中 8 个成功，正面旧尝试上游返回 3 张触发旧单张校验，平拍查询在本地重载后中断。本轮只恢复仍有效且有明确上游 ID 的平拍结果，没有新增付费提交；当前为 9 个成功、1 个待核对。正面旧尝试已被用户重试替换，替换尝试没有持久化可查询上游 ID，不能自动用被替换尝试的结果覆盖。保留旧请求记录与重试账务以供人工核对。
+## 明确失败任务的渠道修正重试
 
-隔离集成先复现“中断查询误转待核对”与“三张响应丢弃可用图片”的失败断言，再验证修复、一次 POST、一次扣款、租约排他和旧执行者拒绝；测试不调用付费模型。
+旧任务固定了旧协议时，后台改协议后重试不能继续复用旧快照。仅当所有当前子项均明确 failed、且是用户主动重试时，事务内重新解析当前启用渠道；旧快照留在原子项 reconciliation_evidence，退款／扣费／替换／outbox 仍原子执行。重试幂等键先于配置更新检查，渠道不可用或余额不足整体回滚。在途、部分成功或 needs_reconciliation 不借此覆盖快照。
 
-## 明确失败任务的渠道修正重试（2026-10-28）
+## 已下线的模型
 
-W2MTDUFDF 连续 HTTP 400 的原因是旧任务固定了 fluxport-images，后台改为 gemini-native 后重试仍复用旧快照。现在仅当所有当前子项均明确 failed、且是用户主动重试时，事务内重新解析当前启用渠道；旧快照留在原子项 reconciliation_evidence，退款／扣费／替换／outbox 仍原子执行。重试幂等键先于配置更新检查，渠道不可用或余额不足整体回滚。在途、部分成功或 needs_reconciliation 不借此覆盖快照。
-
-用户明确授权真实付费验证后，对本地 W2MTDUFDF 只重试 1 张 Banana Pro（gemini-3-pro-image-preview），原生 Gemini 异步任务完成并入私有存储；主站任务 API succeeded、缩略图 HTTP 200 WebP，人工查看确认粉色改红色且白色保留。该新尝试账本只有一笔 -20 积分，没有自动追加付费重试；未操作线上环境。
-
-隔离回归先复现旧快照仍为 fluxport-images，再验证主动重试切换协议、旧配置留证、重复重试不重复扣费及新协议生成完成；pnpm check 和本地隔离集成通过。不以此单次验证宣称所有模型、分辨率或 Key 分组都已验收。
-
-## Grok 图片接入（2026-10-28）
-
-依据 [grok-imagine-image-2.0 分组 115 文档](https://uselg.top/docs?model=grok-imagine-image-2.0&group_id=115&offer_id=media_6d7e42e826e7510842fd430993768372)，Grok 复用 OpenAI 兼容 Images API，文生图 POST /v1/images/generations，参考图通过 /v1/images/edits 的 images[].image_url Data URI 发送；Bearer 鉴权、n=1、HTTP 200/202 和现有持久化查询／下载／计费流程不变。不增加 Grok 协议下拉选项。
-
-该线路未声明质量枚举，因此按最终上游模型 ID（而非展示名或目录 code）识别 grok-imagine-image-2.0，省略 quality，避免继承 GPT 默认 medium。仍按任务分辨率计算像素 size，4K 最长边 3840；接口的 1K／2K／4K 选项和请求构造测试不证明供应商接受全部尺寸。此文档没有完整发布具体尺寸和参考图上限；最新最小请求实测中参考图编辑仍失败，因此本地现设为文生图专用（editsEnabled=false、maxReferences=0），不能据文档字段宣称真实编辑已验证。
-
-本地已有 Grok 2 目录和渠道，调用名为 grok-imagine-image-2.0；已启用目录，渠道沿用中转站协议、异步优先，仅保留 create 默认路由，移除 local-edit 路由。没有将 Grok 用于家纺默认模型。目录稳定 code 与调用名分离，前端继续读取公开配置。
-
-最初 /v1/models 未包含 Grok；用户明确授权后，已在中转站为现有 lyco 密钥追加分组 115，保留原 7 个分组与顺序，Grok 排第 8。只读复查 HTTP 200 且公开模型列表已包含 grok-imagine-image-2.0。此授权变更发生在共享密钥上，会影响所有使用该密钥的环境；本轮没有部署或修改线上数据库。
-
-已验证请求不带 quality、正确生成／编辑端点和参考图格式、同步／异步图片处理，以及真实隔离数据库下的原子扣费、单次提交和重复消费幂等。付费对照结果见下表；不能据文生图成功宣称参考编辑和各分辨率全部验收。
-
-## Seedream 5.0 Pro（2026-10-28）
-
-按 [分组 113 接入文档](https://uselg.top/docs?model=seedream-5.0-pro&group_id=113&offer_id=media_b530612dbd62b5b6cb48eb56d4845e65)，seedream-5.0-pro 使用 OpenAI 兼容 Images API，与 GPT／Grok 共用 JSON 提交和 HTTP 200／202、任务查询、结果下载流程；Banana 系列仍走 Gemini 原生接口，不新增 Seedream 协议。文生图为 generations，编辑为 edits，参考图使用 images[].image_url Data URI，每个付费子项 n=1。
-
-Seedream 文档未声明质量枚举，与 Grok 一样不发送 GPT 默认 quality。请求参数测试和隔离 DB／存储／扣费集成参数化覆盖两个模型。尺寸仍从任务值计算；本线路没有完整公开具体尺寸和参考图上限，本地暂限 1 张参考图，不以此宣称供应商上限或所有尺寸已验证。
-
-本地启用已有 Seedream 5.0 Pro 目录，调用名 seedream-5.0-pro，渠道沿用中转站 OpenAI 兼容协议、异步优先，绑定 create／local-edit；未修改家纺默认模型。现有 Key 的 /v1/models 已包含该模型，本次没有修改 Seedream 密钥权限。现有密钥已绑定的 Seedream 分组仍按中转站优先级选路，未强制切换到文档中的 113 分组，也不把文档示例当作真实生成验收。
-
-### Grok WPSG90DFK 的实际失败证据
-
-该任务为 2K 参考图编辑，快照为 fluxport-images；请求构造使用 application/json 和 JSON 字符串，字段为 model/prompt/size/n/response_format/async/images。中转站接受异步并返回 imgtask_c4ac7e0e-880a-47a9-ad88-5bfbbe772d37，随后 generation 阶段失败，错误记录提示当前接口要求 JSON。本地并未使用 multipart；尚不能仅凭此错误确定中转站内部转发与上游接口之间的具体原因，禁止将其写为已修复。
-
-依照用户此前付费调试授权，另对同一任务进行一次同步模式诊断（子项 72c4ed79-50b0-46dc-964a-75dbe5ce9450），收到 HTTP 502。随后只读任务列表按 client_request_id 找到 imgtask_c5ef04f1-f87a-4364-adfd-40847391097a，状态 failed、请求 1、成功 0、charged_amount 0；通过组织管理员 reconcile-failure 接口保存证据并退回本次 20 积分。没有再次付费重发，Grok 渠道已恢复原 async-preferred。此诊断没有证明 JSON 错误已修复或供应商 2K 规格可用。需中转站核对该 Grok 生成线路；本地不擅自改用 Gemini 协议或未经文档支持的端点来绕过。
-
-### Grok JSON 最小请求对照（2026-10-28）
-
-用户授权真实付费测试后，在本地账号和本地私有 S3 中逐次创建持久化任务，每次一张、一次付费 POST；轮询和下载未重新生成。通过实际 Request 序列化核对 Content-Type 为 application/json 且正文可解析为 JSON；不记录原始提示词、素材、认证头或供应商完整响应。
-
-| 本地任务 | 端点与字段 | 结果与账务 |
-| --- | --- | --- |
-| WWQKPMA62 | generations：model、prompt、n | 成功，输出960×960，扣20积分 |
-| W6LC7IVER | edits：model、prompt、n、images[].image_url；单张 Data URI，不带size／quality／response_format | 异步受理后失败，仍提示需要JSON；扣20后自动退20 |
-| W9JS0JM54 | generations：正常应用请求model、prompt、size、n、response_format、async | 成功，输出960×960，扣20积分 |
-
-编辑失败的上游任务为 imgtask_0b5d78a2-8ad9-4954-88e3-e9edc23d75d3，终态failed、成功0、charged_amount=0，错误码image_generation_failed。即使移除附加参数仍失败，尚不能判定中转站内部具体转发原因；不将编辑错误记为已修复。本次净扣40积分；两张成功结果均持久化到本地存储。请求1K并收到960×960，未验证精确像素控制、2K或4K能力。
-
-本地Grok渠道现收敛为已验证的文生图，目录继续启用，不修改其他模型或线上配置。主站提交、历史重试、局部编辑和家纺生成均按tools中当前模型的能力及参考图上限判断，不再用全局editsEnabled替代单个渠道能力；tools存在但对应功能未配置时保持不可用，仅对没有tools的旧版响应保留兼容。Grok带参考图的草稿保留并提示移除参考图后生成，不静默丢弃用户素材或产生扣费。
-
-回归验证：pnpm check通过（37个测试文件，187通过、1跳过）；定向浏览器测试覆盖当前模型不支持参考图但全局开启时禁用提交／重试、清除参考图恢复文生图、家纺10视角与6张参考图提交、局部编辑提交，3项通过。未运行完整本地E2E，未推送或部署线上。
-
-### Grok 公网URL参考图对照（2026-10-29）
-
-使用用户提供的公网PNG地址做一次独立供应商诊断；HEAD返回HTTP200、image/png、2,273,225字节。直接按中转站文档发送JSON：model、prompt、单项images[].image_url及async=true，不带size、quality、response_format或额外n。只提交一次，持久化幂等键和任务回执后查询原任务，没有自动重发，也没有更改主站渠道能力。
-
-中转站HTTP202受理，任务imgtask_2bb2e2fa-5bc3-4651-b906-a4c76b665fd2，随后终态failed、image_generation_failed、阶段generation、成功0、charged_amount=0。结构化错误category=service_uncertain、reason_code=service_http_400、cause_confirmed=false；与此前Data URI的JSON／415提示不同，不能将这次失败解释为同一个已确认原因。公网URL未使编辑成功，仍需中转站核查生成服务HTTP400的具体原因。诊断直接使用供应商API，没有创建主站任务或扣主站钱包积分；不代表正常业务路径绕过持久任务和扣费。
-
-用户进一步要求把同一份公网参考图JSON提交到/v1/images/generations，仅切换端点，其余字段不变。一次POST返回HTTP202，任务imgtask_5511e70c-6b27-48a8-8b7f-f81aed491b20；只读查询原任务后终态failed、image_generation_failed、generation阶段、service_http_400，requested=1、successful=0、charged_amount=0。当前实测不能通过切换generations端点解决参考图问题；未修改业务端点、渠道能力或线上配置。
+Grok 与 Seedream 已从可选目录和新任务路由移除，已有任务与素材名称保留。Images 适配器仍对这两个上游省略 `quality`，它们未声明质量枚举。
 
 ## 智能裂变的语言分析
 
@@ -181,10 +121,6 @@ Seedream 文档未声明质量枚举，与 Grok 一样不发送 GPT 默认 quali
 `STANDALONE_MODELS=true` 时，智能裂变固定直连 DeepSeek 官方 `https://api.deepseek.com/chat/completions`，模型 `deepseek-flash`，不读取后台语言渠道或使用语言中转站。`DEEPSEEK_API_KEY` 使用 DeepSeek 官方 Key，仅在 API 服务端配置；图片生成仍用独立的 `STANDALONE_IMAGE_API_KEY`。保留后台表和其他协议适配供后续管理功能使用。
 
 规划请求只发送文字需求和参考图编号，不发送图片内容，不虚构商品视觉分析，见[套图计划](product-variation-plan.md)。依据[思考模式文档](https://api-docs.deepseek.com/guides/thinking_mode/)显式 `thinking.type=disabled`，避免默认开启思考；使用 JSON 输出、`max_tokens=8192`、单轮请求和简短独立提示词来控制费用。最多20条，按用户指定的张数或颜色、场景、视角等目标列表确定数量；如“红色、蓝色、白色”为3条，“换成红色，白色部分不变”为1条，未指定数量或变化项时只生成1条；不为省成本减少用户要求的方案数。保留60秒超时、取消、幂等、严格结果校验，不自动重发。
-
-DeepSeek独立适配真实验证（2026-10-31）：官方Key、低细节商品参考图和非思考JSON输出，3条计划HTTP200，663 token，总耗时约2.7秒；20条计划HTTP200，1955 token，总耗时约10.1秒。未自动重发、未创建或扣费生图任务。结果仅为这两次请求，不保证后续延迟。
-
-计划数量语义验证（2026-10-31）：未写张数、仅列红/蓝/白三色，真实官方请求返回3条（约1.9秒）；仅要求换红并保留白色部分，返回1条（约1.4秒）。保留条件不计作新方案，不默认扩展至10条。
 
 ## 提示词优化
 

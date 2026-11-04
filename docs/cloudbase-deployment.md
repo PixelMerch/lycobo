@@ -1,6 +1,6 @@
 # CloudBase 自动部署与私有图片存储
 
-更新：2026-11-01。目标为上海个人版环境 `lycobo-d9gyvxkegc54a1257`，不升级套餐。主站三个功能已实际生图并保存私有云存储，API/消费者生图开关和每分钟定时触发均已启用，见 [真实验收记录](cloudbase-runtime-migration.md#当前真实验收)。
+更新：2026-11-04。目标为上海个人版环境 `lycobo-d9gyvxkegc54a1257`，不升级套餐。主站已在线运行：API 提交后唤醒消费者，定时器每 3 小时兜底。迁移结果见 [CloudBase 迁移记录](cloudbase-migration.md)。
 
 按用户确认，当前固定使用默认入口：https://lycobo-d9gyvxkegc54a1257-1311968085.ap-shanghai.app.tcloudbase.com/ 。前端、API 和图片资源共用该网关；后续部署更新同一环境的服务和文件，不更换入口。自定义域名暂不接入，不将备案或 DNS 作为本次交付条件。
 
@@ -14,7 +14,7 @@ Actions 中完成构建，临时发布目录只复制 `apps/web/dist`。准备�
 
 使用 `tcb hosting deploy --safe --verify` 将独立 Vite 产物发布到共享静态托管，忽略准备目录中的应用配置文件、不使用 prune。网关默认 HTTP 域名统一挂载前端、`/api` 和 `/_images`，保证 Cookie 同源。当前静态托管已启用，首页和错误页均已配置并回查为 `index.html`，支持 SPA 深链刷新。默认域名为平台测试入口，自定义域名另行核对备案、证书和套餐能力。
 
-候选访问入口为 `https://lycobo-d9gyvxkegc54a1257-1311968085.ap-shanghai.app.tcloudbase.com/`。`tcloudbaseapp.com` 只承载静态文件，不含业务 API；发布包在应用启动前将该项目的静态域名页面转到网关，并保留路径、查询和片段。网关、自定义域名和本地开发不跳转，Cookie 继续使用同源策略。
+访问入口为 `https://lycobo-d9gyvxkegc54a1257-1311968085.ap-shanghai.app.tcloudbase.com/`。`tcloudbaseapp.com` 只承载静态文件，不含业务 API；发布包在应用启动前将该项目的静态域名页面转到网关，并保留路径、查询和片段。网关、自定义域名和本地开发不跳转，Cookie 继续使用同源策略。
 
 ## 部署凭据
 
@@ -27,11 +27,31 @@ GitHub 已创建 `cloudbase-production` Environment，仅允许 main 部署。�
 
 权限限定到本项目发布所需能力，不使用主账号无限制密钥。数据库密码、企业 JWT 主密钥和图片供应商 Key 不进入前端部署环境。临时 device 登录授权不能复制到 GitHub 长期使用。
 
-首次三个函数创建、服务端变量、同源网关与候选读写检查均已完成，Environment 变量 `CLOUDBASE_RUNTIME_READY` 已设置为 `true`。后续 CI 使用固定版本 CloudBase MCP 的两段式代码上传，仅更新代码并保留云端运行凭据和配置；不会自动创建不完整后端或应用数据库迁移。
+Environment 变量 `CLOUDBASE_RUNTIME_READY` 已设置为 `true`。后续 CI 使用固定版本 CloudBase MCP 的两段式代码上传，仅更新代码并保留云端运行凭据和配置；不会自动创建不完整后端或应用数据库迁移。
 
-Secrets 仅在发布登录与后端代码传输步骤注入，不传入前端构建；任务结束后执行 CLI logout。代码进入 main、Secrets 配置完成并实际运行前，不能宣称 GitHub 自动发布已跑通。本地提交不会自动推送或触发发布。
+Secrets 仅在发布登录与后端代码传输步骤注入，不传入前端构建；任务结束后执行 CLI logout。本地提交不会自动推送或触发发布。
 
-GitHub 中的两个 Secret 已通过实际 MCP 认证和函数查询；GitHub 不允许读取原值，代码发布权限仍须以实际发布结果验证。`TCB_SECRET_ID` 应为腾讯云 AKID 开头的 SecretId；工作流会提前拒绝将服务端存储 API Key 误填为发布身份的情况。控制台中的 `lycobo-private-storage` 资源 API Key 不用于这两个发布 Secret。
+`TCB_SECRET_ID` 应为腾讯云 AKID 开头的 SecretId；工作流会提前拒绝将服务端存储 API Key 误填为发布身份的情况。控制台中的 `lycobo-private-storage` 资源 API Key 不用于这两个发布 Secret。
+
+## 运行服务
+
+- `lycobo-api`：HTTP 云函数，Hono，企业鉴权、业务 API、事件流；监听 0.0.0.0:9000。
+- `lycobo-assets`：HTTP 云函数，签名绑定对象/用途/过期时间；校验 Origin/Referer 后读取私有云存储。默认不使用进程缓存，沿用既有授权测试。
+- `lycobo-consumer`：独立 Event 云函数，完整等待任务处理；PostgreSQL outbox/claim 为持久来源，每次最多租用 20 条，同时 2 条提交或读取结果（生成期间以延后读取重叠），图片解码、编码与保存最多 2 条并行。不在 HTTP API 中执行后台付费请求。消费者已实际调用并返回 enabled=false、processed=0；正式切换前不启用定时触发器。
+
+三个函数内存 512 MiB、Nodejs20.19，超时 API／消费者 900 秒、资源服务 60 秒。网关路由：`/` 到静态托管，`/api` 完整路径透传到 API，`/_images` 剥前缀到资源服务。
+
+`scripts/cloudbase/prepare-runtime.mjs` 在仓库外空目录构建 Nodejs20.19 包，外部依赖固定版本，为 Sharp 下载 Linux x64/glibc 二进制；包只含编译代码、依赖和启动文件，不含 .env、用户图片、数据库备份或源目录。两个 HTTP 包含可执行 scf_bootstrap，Event 包使用 index.main。
+
+浏览器只请求业务 API，不直接使用服务端 CloudBase API Key。保留原企业账号、密码哈希、JWT、Cookie/CSRF 和组织成员关系。Node API 拒绝同时配置 CloudBase 与 DATABASE_URL，防止两个库混用。
+
+图片运行仓储通过固定操作分支承接主站任务提交、钱包查询/扣费/退款、幂等重试、归属校验、素材、裂变计划、outbox 租约、任务认领、供应商轮询、完成、超时保留及人工核对。SQL 不接收任意语句或标识符。执行与账务保持原子性，外部供应商调用仍在事务之外。
+
+运行角色不能创建 public 对象，不能直接读写 public 业务表或序列；只授予固定业务函数执行，内部辅助函数不向 service_role 开放。
+
+CloudBase 默认不开启 SSE（`IMAGE_EVENTS_ENABLED=true` 才开启）：每条连接按时长计费且每 3 秒查询数据库，打开的页面会让 API 与共享 PG 持续计量。浏览器只轮询未完成任务，计费分析见下文“运行计费优化”。
+
+首次创建函数使用 `node --env-file=.env scripts/cloudbase/bootstrap-runtime.mjs <准备好的运行目录>`。该入口通过官方 CLI 配置文件直接引用本机凭据；临时配置在函数包外、权限 0600，并在结束时删除。它不打开网关、不启用生图或定时器。
 
 ## 主站私有图片
 
@@ -53,57 +73,11 @@ CLOUDBASE_APIKEY=<server-api-key>
 
 Node API 的 `object-image-store.ts` 使用 Sharp 完成解码校验、去元数据、PNG 原图和展示变体生成，无需 Cloudflare Images。付费原图先落盘到私有云存储，变体失败保留原图。CloudBase 三功能已开启并真实验收，正式域名尚未切换。
 
-## Cloudflare 退出边界
+## 发布实现与注意事项
 
-2026-11-02，按用户明确授权，通过ego-browser在`lycobo`账户完成远端删除：
+后端通过 `scripts/cloudbase/deploy-runtime.mjs` 发布：固定 @cloudbase/cloudbase-mcp 2.36.2、MCP SDK 1.32.2、COS SDK 3.0.0，依赖仅安装到 runner 临时目录，不进入应用包或根锁文件。MCP 获取环境自有 COS 桶的上传能力，限制区域、桶、代码前缀和函数名；三个代码包的全部分块同时传输（runner 到上海 COS 的单连接约 10 KB/s，总速率随连接数增长），COS SDK 按 1 MiB 分块、每包最多 16 路并发，单请求 90 秒空闲超时、最多三次刷新目标重试，仅输出百分比和脱敏错误码。MCP 工具调用逐个发出，仅 COS 传输并发。全部代码包传输成功后，才按 consumer → assets → api 顺序通过 MCP 逐个提交代码更新；任一传输失败则不切换任何函数，并删除已传对象。函数恢复 Active 且修改时间变化后，用 COS SDK 删除本次代码对象；某个函数切换失败时保留其已提交对象，只删除尚未提交的对象。管理凭据仅存在于进程内，不输出或写入应用配置。
 
-| 类型 | 资源 | 核对结果 |
-| --- | --- | --- |
-| Pages | lycobo | 已删除项目及部署 |
-| Worker | lycobo-api | 已删除 |
-| Worker | lycobo-generation | 已删除，消费者绑定一并移除 |
-| Worker | lycobo-assets | 已删除 |
-| R2 | lycobo | 清空原有464个对象后删除桶 |
-
-控制台Workers & Pages列表显示“No projects found”，R2列表显示“You haven't created a bucket yet”。本次删除范围为上述三类资源，未删除Cloudflare账户、域名、Queues或Hyperdrive；Worker删除会解除队列消费者绑定，队列本身不会随之删除。CloudBase生产资源与本地备份继续保留。
-
-
-已删除旧发布工作流、四个生产 `wrangler.jsonc`、Pages Functions 转发入口、远端 setup/deploy 脚本及根命令。日常 build 不再执行 Wrangler 发布 dry run。
-
-旧运行时源码、Wrangler/Miniflare/workerd 依赖、R2/Images/Queues 适配及 `scripts/cloudflare` 已移除。本地改用隔离 Node 进程、PG outbox 与私有 S3，保留图片鉴权和数据库回归测试。旧远端Pages、三个Worker和R2桶已删除；迁移历史与受保护本地备份保留。
-
-本地旧环境文件`.env.cloudflare-production`、`.cloudflare`临时运维目录和API／资源服务的`dist-cloudflare`产物已清理；各旧模拟器状态目录移入被Git忽略的`backups/retired-emulation-20261102`，仅作数据备份，不再参与开发与构建。对象适配删除旧副本fallback参数，当前CloudBase与本地S3均不再读取旧存储副本。忽略规则和本地环境凭据过滤保留，防止旧秘密被误提交或注入本地进程。锁文件中的`@cloudflare/workers-types`仅为Drizzle上游可选peer声明，未安装运行时，不手工篡改供应商依赖元数据。
-
-远端旧资源、源库和对象保留供回溯，旧 API/消费者的生成开关已关闭。新站主站业务读写使用共享 PG、独立消费者和资源服务；三个功能已实际生成并存储图片。独立 admin 未接入目标。当前只使用上述默认网关；自定义域名以后按需处理，不在本次接入范围内。
-
-## 验证与状态
-
-- 私有桶实测 PUT/GET/HEAD/DELETE 成功，字节匹配，匿名无法读取；临时对象已清理。
-- 部署包隔离、存储不回退、凭据/路径校验、重定向、原图及变体失败边界由单元测试覆盖。
-- 工作流通过 actionlint；GitHub 实际发布需补齐 Secrets 并在 main CI 后运行。
-- 图片复制结果见 [图片存储迁移](cloudbase-storage-migration.md)。独立 admin 的公开 Logo 存储不在本轮主站私有图片范围内。
-
-官方参考：[CLI 函数代码更新](https://docs.cloudbase.net/cli-v1/functions/code-update)、[CI/CD 集成](https://docs.cloudbase.net/hosting/cli-devops)、[PG 云存储](https://docs.cloudbase.net/api-reference/webv3/storage)。
-
-后端共享 PG 适配进度及实际验证见 [运行迁移记录](cloudbase-runtime-migration.md)。鉴权、任务、钱包和事件 RPC 已应用目标，运行角色直访业务表已拒绝；三个服务均 Active，候选前后端、鉴权、JPEG 上传及变体访问已验证；正式域名未备案，旧入口尚未切换。
-
-
-本次首次部署已使用替代入口：`node --env-file=.env scripts/cloudbase/bootstrap-runtime.mjs <准备好的运行目录>`。该入口通过官方 CLI 配置文件直接引用原始本机凭据；临时配置在函数包外、权限 0600，并在结束时删除。它不打开网关、不启用生图或定时器。MCP 凭据核对因客户端没有弹窗未能执行，本次按其引用指引直接读取原始配置，通过官方 CLI 完成部署。
-
-
-## 自动发布传输修复
-
-发布 PR #33 已合并到 main（b7a4b70），main Quality/Infrastructure 均通过。首次 GitHub 发布在 CLI 的临时 COS 上传阶段没有完成，已停止该任务，未修改运行配置或前端。
-
-后端改用 `scripts/cloudbase/deploy-runtime.mjs`：固定 @cloudbase/cloudbase-mcp 2.36.2、MCP SDK 1.32.2、COS SDK 3.0.0，依赖仅安装到 runner 临时目录，不进入应用包或根锁文件。MCP 获取环境自有 COS 桶的上传能力，限制区域、桶、代码前缀和函数名；三个代码包同时传输，COS SDK 按 1 MiB 分块、每包最多 16 路并发，单请求 90 秒空闲超时、最多三次刷新目标重试，仅输出百分比和脱敏错误码。MCP 工具调用逐个发出，仅 COS 传输并发。全部代码包传输成功后，才按 consumer → assets → api 顺序通过 MCP 逐个提交代码更新；任一传输失败则不切换任何函数，并删除已传对象。函数恢复 Active 且修改时间变化后，用 COS SDK 删除本次代码对象；某个函数切换失败时保留其已提交对象，只删除尚未提交的对象。管理凭据仅存在于进程内，不输出或写入应用配置。
-
-MCP 安装在登录前的独立步骤完成（5 分钟上限），发布进程直接启动已安装的入口，避免发布时隐式下载。后端跨地域分块传输已有实际进度，步骤上限调整为 20 分钟，整体任务仍为 30 分钟；日志仅记录动作、传输进度和脱敏错误，不包含参数、响应、凭据或上传地址。
-
-本地已用同一两段式入口实际更新三个服务并确认 Active，三个临时代码对象已删除。针对 URL/桶/用途校验、错误脱敏、上传失败重试和代码提交顺序的专项测试通过。新工作流仍需 GitHub 实际运行验证。
-
-GitHub 第三轮发布已确认 MCP 启动和认证成功，但单次 PUT 连续三次在 90 秒超时；随后改为上述分块上传。本地已通过该路径再次更新三个服务，云端变量和定时器保留。GitHub 分块发布结果须以实际 Actions 运行结论为准。
-
-跨境传输瓶颈：GitHub 发布 #5 的后端三个函数均已更新，但步骤恰好超过当时的 10 分钟上限；#6（ffdbfa8）在 20 分钟上限下成功，后端步骤耗时 10 分 9 秒。日志显示 consumer（8.8 MB）与 api（9.3 MB）在 3 路分块下各需 260–285 秒（约 31–36 KB/s），而静态托管 20 路并行上传 93 个文件约 4 MB 仅用 22.7 秒（约 180 KB/s）。runner 到上海 COS 的单连接约 10 KB/s，总速率随连接数增长，因此改为上述全部代码包、全部分块同时传输：当前三个包共 19 个分块同时在途。本地使用固定版本 COS SDK 对接本机模拟端点，确认旧配置最多 3 个分块在途、新配置 19 个分块同时在途；预计传输阶段从约 9.5 分钟降至约一个 1 MiB 分块的耗时（约 2 分钟），实际效果以下一次 Actions 运行为准。
+MCP 安装在登录前的独立步骤完成（5 分钟上限），发布进程直接启动已安装的入口，避免发布时隐式下载。后端传输步骤上限 20 分钟，整体任务仍为 30 分钟；日志仅记录动作、传输进度和脱敏错误，不包含参数、响应、凭据或上传地址。
 
 函数代码的 `CodeSha256` 与平台存储的 zip 一致，但平台会改写 HTTP 函数 `scf_bootstrap` 条目的权限和时间，存储包与上传包不同，因此不能据此跳过未变更函数。
 
@@ -111,11 +85,13 @@ GitHub 第三轮发布已确认 MCP 启动和认证成功，但单次 PUT 连续
 
 GitHub 使用长期 SecretId/SecretKey，不能调用仅支持临时登录态的 MCP `get_temp_credentials`。COS 传输与清理在 CI 直接读取已配置的两个 Environment Secrets；本地 device 授权才走显式临时凭据接口。凭据仅在内存使用，两条路径均由回归覆盖，缺少配对字段时拒绝回退到其他身份。
 
+官方参考：[CLI 函数代码更新](https://docs.cloudbase.net/cli-v1/functions/code-update)、[CI/CD 集成](https://docs.cloudbase.net/hosting/cli-devops)、[PG 云存储](https://docs.cloudbase.net/api-reference/webv3/storage)。
+
 ## 运行计费优化
 
 2026-11-01 按控制台账单与监控核对个人版（每月 40,000 资源点）的计量方式：共享 PostgreSQL 以 5 分钟为计量单位，任一时段有访问即按 0.5 核计 150 核秒，本环境实测约 14 点/时段（197 点对应 2,073 核秒）；云函数按内存 × 时长计费，实测约 0.13 点/GBs（67.49 点对应 513 GBs）；数据库网关调用另按次计量。
 
-实测主要消耗：
+优化前实测的主要消耗：
 
 - API 的 SSE 长连接：每个打开的页面持续占用一个 512 MB 函数实例（10 分钟后重连），并每 3 秒查询数据库。2026-11-01 00:00–01:00 API 函数累计执行约 7,500 秒（约 3,750 GBs），普通请求只占很小部分。
 - 消费者每分钟定时触发：每次 4 次数据库调用，使共享 PG 全天每个 5 分钟时段都计量，约 4,100 点/天，按月会超过套餐额度。
@@ -136,22 +112,11 @@ GitHub 使用长期 SecretId/SecretKey，不能调用仅支持临时登录态的
 
 定时器：2026-11-01 01:42（上海时间）按用户要求将 `lycobo-outbox-minute`（每分钟）替换为 `lycobo-outbox-3h`（`0 0 */3 * * * *`），共享 PG 的兜底计量约 115 点/天。生成依赖 API 唤醒与消费者续排：唤醒需要 CloudBase API Key 调用函数的权限和 `TCB_QcsRole` 的 SCF Invoke 权限，须以线上日志为准（无 `CONSUMER_WAKE_FAILED`、`CONSUMER_CONTINUATION_FAILED`）。唤醒失败时任务最长等到下一次 3 小时兜底，有人查看排队任务时 API 每 15 秒补唤醒一次；如线上确认唤醒不可用，应恢复每分钟触发器 `0 * * * * * *`。
 
-PR #40 于 2026-11-01 合并并由部署 #8 发布（后端发布 1 分 30 秒）。01:49 直接以 `{"wake":true}` 调用 `lycobo-consumer`：唤醒调用 141 ms 返回 `woken: true`，20 ms 后异步 drain 启动，未发现待处理任务，261 ms 正常结束，确认运行角色可排队异步调用。09:30:50 首次真实提交确认了 API 侧唤醒：API 经网关（`TCB_GW`）以 API Key 唤醒消费者，248 ms 返回 `woken: true`；异步 drain（来源 `API`）随即启动，62 s 处理 5 个图片项，内存峰值 278 MB／512 MB。01:48 至 09:36 日志中没有 `CONSUMER_WAKE_FAILED` 或 `CONSUMER_CONTINUATION_FAILED`。
-
-PR #41 于 2026-11-01 09:33 合并，部署 #9 用时 3 分 20 秒（09:35:53–09:39:13），函数按 consumer（09:38:01）→ assets（09:38:14）→ api（09:38:20）顺序切换。09:46:00 一次真实提交由新 API 唤醒新消费者（476 ms，`woken: true`），异步 drain 随即开始处理；6 秒后手动唤醒排队的 drain 租不到已被持有的意向，271 ms 以 `processed: 0` 结束，确认并发 drain 不会重复处理。
-
-两次同类真实任务（gpt-image-2.5、1.5K、1:1、5 张，均首次成功）对比：旧代码（09:30，两两一组）drain 61.7 s，第 5 张在 +20.8 s 开始提交，峰值内存 278 MB；4 个在途（09:46）drain 65.9 s，第 5 张在 +8.9 s 开始提交，但被一张服务商耗时 65.7 s 的图片拖长，峰值内存 381 MB／512 MB。单张通常 41–49 s，图片项只在约 10 s 的提交期间占用名额，此后转为延后读取，生成本已重叠，4 个在途实际只省约 12 s（约 6 GB·s）。存储的最大 PNG 从 3.20 MB 降到 2.35 MB。据此将在途数恢复为 2 个。
-
-PR #42 于 2026-11-01 10:02 合并，部署 #10 成功（10:04:33–10:07:41，3 分 08 秒），消费者恢复为每次 drain 最多 2 个图片项在途。同日 17:00 的同类真实任务（gpt-image-2.5、1.5K、1:1、10 张，均首次成功）：10 张在 16 s 内依次开始提交，drain 95.6 s，单张平均 63.1 s，峰值内存 166 MB／512 MB，图片数是 4 个在途那次的两倍，峰值内存不到一半。之后 PR #43–#53 由部署 #11–#21 发布（#15 失败后由 #16 补发），2026-11-02 13:37 线上函数为部署 #21 版本（consumer 09:13:20 → assets 09:13:33 → api 09:13:40），`itemConcurrency` 仍为 2；13:37:48 以 `{"wake":true}` 调用消费者返回 `woken: true`（205 ms），排队的异步 drain 393 ms 以 `processed: 0` 正常结束。11-01 09:36 至 11-02 13:40 日志中没有 `CONSUMER_CONTINUATION_FAILED`；API 记录了两次 `CONSUMER_WAKE_FAILED`（11-01 17:00:29、22:00:39），都是 3 秒唤醒超时：网关在 API 发起后 6–8 秒才把请求交给冷启动的消费者，唤醒仍返回 `woken: true`，drain 随即处理了对应任务（10 张、1 张），任务没有滞留，该告警属于误报。
-
-### 空闲数据库访问控制（2026-11-01，待发布）
+### 空闲数据库访问控制
 
 前端共享 QueryClient 不再因切回标签页或网络重连自动重查过期查询，避免没有任务时集中访问会话、历史、钱包和素材接口而唤醒共享 PG。首次加载、重新挂载页面的过期查询、提交/重试/删除后的显式失效，以及可见页面中的未完成任务轮询继续执行；实际业务请求仍逐次进行服务端身份与归属校验，不缓存授权结论。其他设备的历史/余额变化需要重新进入相关页面或刷新页面同步。
 
 任务轮询先按查询缓存更新时间合并同一任务的快照，再筛选排队/执行中状态，避免旧历史页或旧详情缓存持续轮询已结束任务；更新后的显式重试仍可被轮询。服务器明确返回 404 时，从已加载历史及详情缓存移除该任务，防止后续历史重载失败造成永久空查；网络错误不移除任务，继续退避恢复。
-
-本次不修改数据库结构、扣费事务、消费者及每 3 小时兜底定时器，也不关闭任务恢复。收益主要是减少用户空闲切回页面引发的额外活跃窗口；活跃生成时的必要查询及兜底访问仍会计费，不能按请求减少比例推算 CU 节省。待上线后应比较相同空闲时段的 PG 核时增量，排除控制台查询、迁移和人工巡检，不以累计账单承诺降幅。
-
 
 ## 图片读取与下载优化（2026-11-02）
 

@@ -1,6 +1,6 @@
 # CloudBase 个人版迁移任务草案
 
-状态：数据库/图片复制和隔离恢复已验证；主站共享 PG 仓储及三个服务包已实现。已通过官方 CLI 原始文件引用完成候选部署和真实读写验收；正式域名未备案，入口尚未切换。详见 [运行迁移记录](../../docs/cloudbase-runtime-migration.md)。设计见 [design.md](design.md)，执行结果见 [数据库复制记录](../../docs/cloudbase-database-migration.md)、[图片复制记录](../../docs/cloudbase-storage-migration.md)。
+状态：数据库/图片复制和隔离恢复已验证；主站共享 PG 仓储及三个服务包已实现。已通过官方 CLI 原始文件引用完成候选部署和真实读写验收；正式域名未备案，入口尚未切换。详见 [运行迁移记录](../../docs/cloudbase-migration.md)。设计见 [design.md](design.md)，执行结果见 [数据库复制记录](../../docs/cloudbase-migration.md)、[图片复制记录](../../docs/cloudbase-migration.md)。
 
 - [x] 验证本地部署授权、目标环境、共享 PG 版本与目标业务 schema 状态。（需求 8）
 - [x] 通过官方 Session pooler 验证源库只读连接，保存行数盘点和私有结构/数据备份。（需求 5）

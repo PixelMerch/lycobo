@@ -92,7 +92,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 CloudBase 函数代码并发布静态前端，使用 cloudbase-production Environment。旧 Cloudflare 工作流、生产 Wrangler 配置和 setup/deploy 脚本已删除。主站图片目标为 CloudBase PG 私有云存储，Node 变体生成不依赖 Cloudflare Images。见 [CloudBase 部署](docs/cloudbase-deployment.md)。旧Pages、三个Worker和R2桶已删除，仅保留本地迁移记录与数据备份。
 
-2026-10-31 已将 Supabase 的 `public`、`drizzle` 结构与数据快照复制到 CloudBase 个人版共享 PG，43 张表、1,156 行及关联结构通过校验。2026-11-01 主站三个功能已使用 CloudBase 共享 PG、后台消费者和私有云存储完成真实生成；独立 admin 仍未切换，旧端生图关闭。初始数据复制、运行启用及正式域名边界分别见 [数据库迁移](docs/cloudbase-database-migration.md)、[图片迁移](docs/cloudbase-storage-migration.md) 和 [运行验收](docs/cloudbase-runtime-migration.md)。
+2026-10-31 已将 Supabase 的 `public`、`drizzle` 结构与数据快照复制到 CloudBase 个人版共享 PG，43 张表、1,156 行及关联结构通过校验。2026-11-01 主站三个功能已使用 CloudBase 共享 PG、后台消费者和私有云存储完成真实生成；独立 admin 仍未切换，旧端生图关闭。迁移结果及正式域名边界见 [CloudBase 迁移记录](docs/cloudbase-migration.md)。
 
 ## 生图服务端接入
 
@@ -138,7 +138,7 @@ GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 C
 
 ## Supabase 结构迁移
 
-`packages/db/scripts/migrate-supabase.mjs` 复用现有 Drizzle Kit 迁移链，`supabase-target.mjs` 校验独立的 `SUPABASE_DATABASE_URL` 与项目引用，`secure-supabase.mjs` 限定本应用表／序列／函数的 RLS 和前端角色权限。当前生产使用 CloudBase 共享 PG；此脚本仅供旧源库显式运维。`pnpm db:migrate:supabase --check` 仅检查配置；填写真实密码后才可实际初始化远端结构。此入口不复制本地业务数据、图片文件或修改现有迁移；连接、Data API 边界和 MCP 操作见 [Supabase 接入](docs/supabase-postgres.md)。
+`packages/db/scripts/migrate-supabase.mjs` 复用现有 Drizzle Kit 迁移链，`supabase-target.mjs` 校验独立的 `SUPABASE_DATABASE_URL` 与项目引用，`secure-supabase.mjs` 限定本应用表／序列／函数的 RLS 和前端角色权限。当前生产使用 CloudBase 共享 PG；此脚本仅供旧源库显式运维。`pnpm db:migrate:supabase --check` 仅检查配置；填写真实密码后才可实际初始化远端结构。此入口不复制本地业务数据、图片文件或修改现有迁移。
 
 ## 发布工具
 
@@ -160,10 +160,9 @@ GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 C
 
 套图计划：`variation-planner.ts` 封装 OpenAI 兼容语言分析；`variation-service.ts` 负责参考素材归属校验与解密密钥；计划阶段仅优化文本和参考图编号，不读取或发送图片，参考图保留至实际生图阶段；`variation-repository.ts` 持久化计划和幂等状态。`model_planners` 独立配置语言模型；`generation_jobs.input.variation` 保存确认后的方案快照，Worker 每条方案只请求一张图。
 
-
 主站独立试用路由由 `packages/generation/src/standalone-models.ts` 定义；API/消费者将纯配置注入图片仓储，绕过后台模型目录、路由及语言模型设置读取。前端展示在 `models/model-presentation.ts`，Logo 位于 `apps/web/public/model-logos/`。不会删除后台表或改变鉴权/积分/素材持久化。
 
-CloudBase 运行入口为 `apps/api/src/index.ts`（API）、`apps/api/src/assets-server.ts`（私有图片）、`apps/worker/src/cloudbase-consumer.ts`（独立 Event 消费者）。`packages/db/src/cloudbase-*` 通过固定 SQL 业务函数访问共享 PG，原 Node 原生 PG 仓储用于本地/旧部署。实际状态和限制见 [运行迁移记录](docs/cloudbase-runtime-migration.md)。
+CloudBase 运行入口为 `apps/api/src/index.ts`（API）、`apps/api/src/assets-server.ts`（私有图片）、`apps/worker/src/cloudbase-consumer.ts`（独立 Event 消费者）。`packages/db/src/cloudbase-*` 通过固定 SQL 业务函数访问共享 PG，原 Node 原生 PG 仓储用于本地/旧部署。实际状态和限制见 [CloudBase 部署](docs/cloudbase-deployment.md)。
 
 图片回调接收位于 `apps/api/src/features/images/provider-webhook.ts`；任务与事件的持久化关联位于 `packages/db/src/provider-webhook-repository.ts`。前端低频批量同步、超时补查和发布顺序见 [图片 Webhook](docs/image-webhooks.md)。
 
