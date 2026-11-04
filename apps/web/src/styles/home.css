@@ -16,6 +16,10 @@ body:has(.commerce-home)::-webkit-scrollbar {
 
 /* Approved commerce homepage composition; sizes inherit DESIGN.md tokens. */
 .commerce-home.page-panel {
+  /* Dark glass over the image wall: a top-lit sheen on a translucent canvas tint. */
+  --home-glass-tint: rgb(15 15 18 / 42%);
+  --home-glass-fill: linear-gradient(180deg, #ffffff14 0%, #ffffff08 40%, #ffffff05 100%);
+  --home-glass-edge: #ffffff1f;
   max-width: 1840px;
   border: 0;
   background: transparent;
@@ -106,10 +110,14 @@ body:has(.commerce-home)::-webkit-scrollbar {
   height: 57.12px;
   min-height: 57.12px;
   padding: 0;
-  border: 1px dashed #ffffff29;
+  border: 1px dashed #ffffff33;
   border-radius: 12px;
-  background: #ffffff04;
-  color: #aaa;
+  background: #ffffff0a;
+  color: #d9d9de;
+}
+.home-upload .add-reference:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
+  border-color: #ffffff59;
+  background: #ffffff14;
 }
 .home-upload .add-reference > span {
   display: none;
@@ -133,14 +141,21 @@ body:has(.commerce-home)::-webkit-scrollbar {
   height: 84px;
   min-width: 0;
   padding: 10px;
-  border: 0;
+  border: 1px solid #ffffff14;
   border-radius: 16px;
-  background: #ffffff06;
+  background: var(--home-glass-fill), var(--home-glass-tint);
+  box-shadow: inset 0 1px 0 #ffffff14;
+  backdrop-filter: blur(20px) saturate(170%);
   text-align: left;
   color: var(--foreground);
+  transition:
+    border-color 180ms ease,
+    translate 180ms ease;
 }
 .home-shortcuts .button:is(:hover, [data-hovered], [data-focus-visible]) {
-  background: var(--interaction-hover);
+  border-color: #ffffff33;
+  background: var(--home-glass-fill), var(--home-glass-tint);
+  translate: 0 -2px;
 }
 .home-shortcuts img {
   flex: none;
@@ -171,6 +186,13 @@ body:has(.commerce-home)::-webkit-scrollbar {
   flex: none;
   margin: 0 0 0 auto;
   color: var(--muted);
+  transition:
+    color 180ms ease,
+    translate 180ms ease;
+}
+.home-shortcuts .button:is(:hover, [data-hovered], [data-focus-visible]) .ui-icon {
+  color: var(--accent);
+  translate: 2px -2px;
 }
 @media (max-width: 1279px) {
   .commerce-home.page-panel {
@@ -228,9 +250,14 @@ body:has(.commerce-home)::-webkit-scrollbar {
   display: flex;
   flex-direction: column;
   padding: 12px 12px 10px;
-  background: #1c1c1c;
-  border: 0;
+  background: var(--home-glass-fill), var(--home-glass-tint);
+  border: 1px solid var(--home-glass-edge);
   border-radius: 28px;
+  box-shadow:
+    inset 0 1px 0 #ffffff26,
+    0 32px 80px -24px #000000b3;
+  backdrop-filter: blur(28px) saturate(180%);
+  transition: border-color 200ms ease;
 }
 .home-prompt {
   flex: 1;
@@ -250,12 +277,11 @@ body:has(.commerce-home)::-webkit-scrollbar {
   font: 400 14px / 21px var(--font-sans);
 }
 .home-composer:focus-within {
-  border: 0;
+  border-color: #ffffff38;
   outline: none;
-  box-shadow: none;
 }
 .home-composer .home-prompt .textarea::placeholder {
-  color: #808080;
+  color: #ffffff85;
   font-weight: var(--weight-regular);
   opacity: 1;
 }
@@ -292,8 +318,9 @@ body:has(.commerce-home)::-webkit-scrollbar {
 .home-settings-trigger.button {
   height: 32px;
   padding: 0 var(--space-3);
-  background: #303030;
-  color: #bdbdbd;
+  background: #ffffff14;
+  box-shadow: inset 0 0 0 1px #ffffff0f;
+  color: #e4e4e8;
   border: 0;
   border-radius: 999px;
   font-size: var(--text-sm);
@@ -312,18 +339,26 @@ body:has(.commerce-home)::-webkit-scrollbar {
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: #3a3a3a;
-  color: #969696;
+  background: linear-gradient(120deg, #a8ff0026 0%, #54e6a526 100%);
+  box-shadow: inset 0 0 0 1px #a8ff0033;
+  color: #a8ff00b3;
+  transition:
+    filter 160ms ease,
+    box-shadow 160ms ease;
 }
-.home-submit.button:hover {
-  background: #3a3a3a;
+/* Idle keeps a brand tint rather than the shared disabled fade, so the action reads as ours. */
+.home-submit.button:is(:disabled, [data-disabled="true"]) {
+  opacity: 1;
 }
 .home-submit.button[data-active="true"] {
-  background: #f4f4f4;
-  color: #171717;
+  background: var(--app-primary-gradient);
+  box-shadow: 0 6px 20px -6px #a8ff0066;
+  color: var(--accent-foreground);
 }
-.home-submit.button[data-active="true"]:hover {
-  background: #ddd;
+.home-submit.button[data-active="true"]:is(:hover, [data-hovered="true"]) {
+  background: var(--app-primary-gradient);
+  box-shadow: 0 0 20px #a8ff0059;
+  filter: brightness(1.04);
 }
 .home-settings.popover {
   width: fit-content;
@@ -606,8 +641,28 @@ body:has(.commerce-home)::-webkit-scrollbar {
     180deg,
     rgb(15 15 18 / var(--home-background-overlay, 0.4)) 0%,
     rgb(15 15 18 / var(--home-background-overlay, 0.4)) 45%,
-    var(--background) 100%
+    var(--background) 84%
   );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-composer,
+  .home-submit.button,
+  .home-shortcuts .button,
+  .home-shortcuts .ui-icon {
+    transition: none;
+  }
+  .home-shortcuts .button:is(:hover, [data-hovered], [data-focus-visible]),
+  .home-shortcuts .button:is(:hover, [data-hovered], [data-focus-visible]) .ui-icon {
+    translate: none;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .home-composer,
+  .home-shortcuts .button {
+    background: #1c1c1c;
+    backdrop-filter: none;
+  }
 }
 
 .home-ratio-heading {
