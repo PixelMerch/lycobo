@@ -38,4 +38,5 @@ export * from "./model-management";
 export * from "./textile-generation";
 export * from "./variation-plan";
 export * from "./video-generation";
+export * from "./video-storyboard";
 export * from "./wallet";

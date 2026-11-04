@@ -34,6 +34,8 @@ type PickerProps = {
   limit?: number;
   label?: string;
   compact?: boolean;
+  disabled?: boolean;
+  required?: boolean;
   references: Draft["references"];
 } & (
   | { model: ModelId; prompt?: never; onChange?: never }
@@ -48,6 +50,8 @@ export function ReferencePicker({
   model,
   references,
   compact = false,
+  disabled = false,
+  required = false,
   limit = 5,
   label = "上传图片",
   prompt = "",
@@ -67,7 +71,7 @@ export function ReferencePicker({
   }
   async function readFiles(files: File[]) {
     if (!requireLogin()) return;
-    if (reading) return;
+    if (reading || disabled) return;
     const issue = referenceFileError(files);
     if (issue) {
       setError(issue);
@@ -108,13 +112,18 @@ export function ReferencePicker({
       <div className="field-title">
         <h2>
           {label}
+          {required && (
+            <span className="reference-required-mark" aria-hidden="true">
+              *
+            </span>
+          )}
           <small>（最多上传{limit}张参考图）</small>
         </h2>
         <Button
           variant="tertiary"
           className="clear-references"
           aria-label="清除全部参考图片"
-          isDisabled={reading || references.length === 0}
+          isDisabled={disabled || reading || references.length === 0}
           onPress={() => {
             const prompt = currentDraft()?.prompt ?? "";
             change([], promptWithoutReferences(prompt));
@@ -133,8 +142,9 @@ export function ReferencePicker({
         accept="image/png,image/jpeg,image/webp"
         multiple
         aria-label="添加参考图片"
+        required={required && references.length === 0}
         className="visually-hidden"
-        disabled={reading || references.length >= limit}
+        disabled={disabled || reading || references.length >= limit}
         onChange={(event) => {
           const files = Array.from(event.target.files ?? []);
           event.target.value = "";
@@ -147,7 +157,7 @@ export function ReferencePicker({
             key={image.id}
             src={referenceDisplaySource(image, true)}
             number={index + 1}
-            isDisabled={reading}
+            isDisabled={disabled || reading}
             onOpen={() => setPreview(index)}
             onRemove={() => {
               const prompt = currentDraft()?.prompt ?? "";
@@ -170,7 +180,7 @@ export function ReferencePicker({
           <Button
             variant="tertiary"
             className="add-reference"
-            isDisabled={reading || references.length >= limit}
+            isDisabled={disabled || reading || references.length >= limit}
             aria-label="添加参考图"
             onPress={() => {
               if (requireLogin()) input.current?.click();

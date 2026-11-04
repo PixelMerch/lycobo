@@ -35,7 +35,8 @@ export function VideoTaskActions({ task, onEdit }: { task: VideoTask; onEdit: ()
     (task.status === "succeeded" || task.status === "failed") &&
     model.data?.enabled &&
     !submission.isPending &&
-    !submission.hasPending;
+    !submission.hasPending &&
+    !submission.blockedByPending;
   return (
     <div ref={actionsRef} className="history-task-actions">
       {task.delivery && (

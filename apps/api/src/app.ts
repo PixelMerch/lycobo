@@ -101,7 +101,7 @@ export function createApp(
   app.use("/api/*", async (c, next) => {
     if (c.req.path !== "/api/v1/image-assets") {
       return bodyLimit({
-        maxSize: 32 * 1024,
+        maxSize: (c.req.path === "/api/v1/video-storyboards" ? 64 : 32) * 1024,
         onError: (ctx) =>
           ctx.json(
             {

@@ -30,11 +30,11 @@ const subscribePending = (listener: () => void) => {
   return () => pendingEvents.removeEventListener("change", listener);
 };
 
-export function useVideoModel() {
+export function useVideoModel(enabled = true) {
   const session = useEnterpriseSession();
   return useQuery({
     queryKey: ["video-model"],
-    enabled: !!session.data,
+    enabled: enabled && !!session.data,
     retry: false,
     queryFn: async ({ signal }) =>
       videoCapabilitySchema.parse(await (await imageRequest("video-model", { signal })).json()),
@@ -63,7 +63,7 @@ export function useVideoTasks() {
         : false,
   });
 }
-export function useSubmitVideo() {
+export function useSubmitVideo(source?: "storyboard") {
   const client = useQueryClient();
   const session = useEnterpriseSession();
   const locked = useRef(false);
@@ -75,7 +75,11 @@ export function useSubmitVideo() {
       return null;
     }
   };
-  const hasPending = useSyncExternalStore(subscribePending, () => !!pending());
+  const pendingSource = useSyncExternalStore(subscribePending, () => {
+    const attempt = pending();
+    return attempt ? (attempt.source ?? "direct") : null;
+  });
+  const hasPending = pendingSource === (source ?? "direct");
   const activeSubmissions = useIsMutating({ mutationKey: ["submit-video"] });
   const mutation = useMutation({
     mutationKey: ["submit-video"],
@@ -92,11 +96,14 @@ export function useSubmitVideo() {
       if (!session.data) throw new Error("请先登录");
       const submittedDraft = useVideoDraft.getState();
       let attempt = pending();
+      if (attempt && attempt.source !== source) throw new Error("请切换回原创作模式确认上次提交");
       const confirming = !!attempt;
       if (!attempt) {
         const ids = await uploadImageReferences(client, session.data, references);
+        if (pending()) throw new Error("已有视频提交待确认，请稍后继续");
         attempt = {
           key: crypto.randomUUID(),
+          source,
           input: videoInputSchema.parse({ ...input, referenceAssetIds: ids }),
         };
         sessionStorage.setItem(storageKey, JSON.stringify(attempt));
@@ -138,8 +145,15 @@ export function useSubmitVideo() {
     ...mutation,
     isPending: mutation.isPending || activeSubmissions > 0,
     hasPending,
+    blockedByPending: pendingSource !== null && !hasPending,
+    submitAsync: (args: Parameters<typeof mutation.mutateAsync>[0]) => {
+      if (locked.current || activeSubmissions > 0)
+        return Promise.reject(new Error("正在提交，请稍候"));
+      locked.current = true;
+      return mutation.mutateAsync(args);
+    },
     submit: (args: Parameters<typeof mutation.mutate>[0]) => {
-      if (locked.current) return;
+      if (locked.current || activeSubmissions > 0) return;
       locked.current = true;
       mutation.mutate(args);
     },

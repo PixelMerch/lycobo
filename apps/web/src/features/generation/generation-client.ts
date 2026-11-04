@@ -257,8 +257,8 @@ export async function uploadImageReferences(
   }
   return referenceAssetIds;
 }
-export function useGenerateImage() {
-  const session = useImageSession();
+export function useGenerateImage(enabled = true) {
+  const session = useImageSession(enabled);
   const client = useQueryClient();
   const locked = useRef(false);
   const mutationKey = ["image-submission", session.data?.organizationId, session.data?.userId];

@@ -41,4 +41,8 @@ export const videoCapabilitySchema = z.object({
   unitCredits: z.literal(videoUnitCredits),
 });
 export const videoAcceptedSchema = z.object({ id: z.uuid(), replayed: z.boolean() });
-export const pendingVideoSchema = z.object({ key: z.uuid(), input: videoInputSchema });
+export const pendingVideoSchema = z.object({
+  key: z.uuid(),
+  input: videoInputSchema,
+  source: z.literal("storyboard").optional(),
+});

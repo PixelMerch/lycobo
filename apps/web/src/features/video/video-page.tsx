@@ -8,11 +8,18 @@ import { revealNewestHistory } from "../generation/history/history-navigation";
 import { hasPromptDescription } from "../generation/references/prompt-description";
 import { ReferencePicker } from "../generation/references/reference-picker";
 import { WorkspaceComposerTitle } from "../workspace/workspace-tool-symbol";
+import { StoryboardComposer } from "./storyboard/storyboard-composer";
 import { useSubmitVideo, useVideoModel } from "./video-client";
 import { VideoDuration } from "./video-duration";
+import { VideoModeSwitch } from "./video-mode-switch";
 import { useVideoDraft, videoPromptLimit, videoRatios } from "./video-state";
 import "./video.css";
 export function VideoPage() {
+  const mode = useVideoDraft((state) => state.mode);
+  return mode === "storyboard" ? <StoryboardComposer /> : <DirectVideoComposer />;
+}
+
+function DirectVideoComposer() {
   const draft = useVideoDraft();
   const model = useVideoModel();
   const submission = useSubmitVideo();
@@ -36,6 +43,7 @@ export function VideoPage() {
     <section className="composer-panel video-composer" aria-label="视频创作参数">
       <div className="composer-scroll">
         <WorkspaceComposerTitle />
+        <VideoModeSwitch />
         <ReferencePicker
           compact
           references={references}
@@ -81,6 +89,9 @@ export function VideoPage() {
         <VideoDuration value={draft.seconds} onChange={(seconds) => draft.update({ seconds })} />
       </div>
       <div className="generate-area">
+        {submission.blockedByPending && (
+          <p className="video-reference-hint">请切换到 TK 分镜创作确认上次视频提交。</p>
+        )}
         <Button
           variant="primary"
           size="lg"
@@ -88,7 +99,10 @@ export function VideoPage() {
           className={`primary-action generation-submit${submission.isPending ? " generation-pending" : ""}`}
           data-submitting={submission.isPending || undefined}
           isDisabled={
-            !model.data?.enabled || submission.isPending || (!valid && !submission.hasPending)
+            !model.data?.enabled ||
+            submission.isPending ||
+            submission.blockedByPending ||
+            (!valid && !submission.hasPending)
           }
           isPending={submission.isPending}
           onPress={() => {

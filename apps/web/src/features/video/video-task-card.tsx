@@ -39,6 +39,7 @@ export function VideoTaskCard({ task, onRestore }: { task: VideoTask; onRestore:
       src: assetContentUrl(id, true),
     }));
     useVideoDraft.getState().update({
+      mode: "direct",
       prompt: input.prompt,
       ratio: input.aspectRatio,
       seconds: input.seconds,

@@ -10,7 +10,11 @@ import { HistoryIndex } from "../generation/history/history-index";
 import type { HistoryRestore } from "../generation/history/history-task-tools";
 import { useStudioStore } from "../generation/studio-state";
 import { BackToTopButton } from "../generation/workspace-page";
+import { StoryboardContext } from "../video/storyboard/storyboard-context";
+import { StoryboardPanel } from "../video/storyboard/storyboard-panel";
+import { useStoryboard } from "../video/storyboard/use-storyboard";
 import { VideoHistory, VideoHistoryRail } from "../video/video-history";
+import { useVideoDraft } from "../video/video-state";
 import { toolForPath, useWorkspaceState } from "./workspace-state";
 import { WorkspaceToolPicker } from "./workspace-tool-picker";
 import "./workspace.css";
@@ -23,6 +27,10 @@ export function WorkspaceLayout() {
   const [mobilePanel, setMobilePanel] = useState("form");
   const currentTool = toolForPath(pathname);
   const historyTool = currentTool.id;
+  const videoMode = useVideoDraft((state) => state.mode);
+  const storyboardMode = historyTool === "video" && videoMode === "storyboard";
+  const storyboard = useStoryboard(storyboardMode, () => setMobilePanel("history"));
+  const showStoryboard = storyboardMode && storyboard.draft.showPanel;
   const [restorePending, setRestorePending] = useState<RestoredTask | null>(null);
   useEffect(() => {
     remember(pathname);
@@ -91,11 +99,18 @@ export function WorkspaceLayout() {
         }}
       >
         <ToggleButton id="form">创作</ToggleButton>
-        <ToggleButton id="history">历史记录</ToggleButton>
+        <ToggleButton id="history">{showStoryboard ? "分镜" : "历史记录"}</ToggleButton>
       </ToggleButtonGroup>
-      <Outlet />
-      <section className="results-panel" aria-label="工作区历史记录">
-        {historyTool === "video" ? (
+      <StoryboardContext.Provider value={storyboard}>
+        <Outlet />
+      </StoryboardContext.Provider>
+      <section
+        className="results-panel"
+        aria-label={showStoryboard ? "分镜工作区" : "工作区历史记录"}
+      >
+        {showStoryboard ? (
+          <StoryboardPanel flow={storyboard} />
+        ) : historyTool === "video" ? (
           <VideoHistory onRestore={() => setMobilePanel("form")} />
         ) : (
           <GenerationHistory key={historyTool} tool={historyTool} onRestore={restore} />

@@ -42,6 +42,7 @@ function fixture(replayed = false, webStatus = 200, origin = "https://api.deepse
   });
   return {
     scope,
+    repository,
     input,
     plan,
     sequence,
@@ -117,5 +118,71 @@ it("never sends a third-party provider credential to DeepSeek Fetch", async () =
   f.input.description = "https://shop.example/item";
   await f.service.create(f.scope, f.input, "key", new AbortController().signal);
   expect(f.request).not.toHaveBeenCalled();
+  expect(f.plan.status).toBe("failed");
+});
+
+it("rejects incomplete TK shot plans and verifies every selected asset before optimization", async () => {
+  const f = fixture();
+  const original = crypto.randomUUID();
+  f.repository.asset = vi.fn<typeof f.repository.asset>(async (_scope, id) =>
+    id === original
+      ? {
+          id,
+          objectKey: "fixture.png",
+          mimeType: "image/png",
+          width: 2,
+          height: 2,
+          bytes: 64,
+          sha256: "0".repeat(64),
+        }
+      : null,
+  );
+  f.request.mockResolvedValueOnce(
+    Response.json({
+      choices: [
+        {
+          finish_reason: "stop",
+          message: {
+            content: JSON.stringify({
+              items: [{ title: "特写", prompt: "保持原图花型，展示商品特写。" }],
+            }),
+          },
+        },
+      ],
+    }),
+  );
+  const signal = new AbortController().signal;
+  await f.service.createStoryboard(
+    f.scope,
+    {
+      stage: "plan",
+      description: "自然晨光",
+      originalAssetId: original,
+      count: 3,
+      seconds: 10,
+    },
+    "plan",
+    signal,
+  );
+  expect(f.plan.status).toBe("failed");
+  expect(f.plan.items).toHaveLength(0);
+  const request = JSON.parse(String(f.request.mock.calls[0]?.[1]?.body));
+  expect(request.model).toBe("deepseek-flash");
+  expect(request.messages[0].content).toContain("恰好 3 条");
+  expect(request.messages[1].content).not.toContain(original);
+
+  await f.service.createStoryboard(
+    f.scope,
+    {
+      stage: "video",
+      description: "自然晨光",
+      originalAssetId: original,
+      seconds: 10,
+      shots: [{ assetId: crypto.randomUUID(), title: "全景", prompt: "展示商品全景。" }],
+    },
+    "video",
+    signal,
+  );
+  expect(f.request).toHaveBeenCalledTimes(1);
   expect(f.plan.status).toBe("failed");
 });

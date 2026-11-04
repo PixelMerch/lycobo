@@ -43,6 +43,7 @@ for (const width of [390, 1440]) {
     await prompt.fill("镜头缓慢推近，床品在晨光中展开");
     await composer.getByRole("radio", { name: "16:9", exact: true }).click();
     const durationTrack = composer.locator(".video-duration-track");
+    await durationTrack.scrollIntoViewIfNeeded();
     const hoverBox = await durationTrack.boundingBox();
     if (!hoverBox) throw new Error("Duration track missing");
     await page.mouse.move(hoverBox.x + hoverBox.width * 0.52, hoverBox.y + hoverBox.height / 2);

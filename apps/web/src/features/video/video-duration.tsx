@@ -5,8 +5,10 @@ const ticks = Array.from({ length: 51 }, (_, index) => index);
 export function VideoDuration({
   value,
   onChange,
+  disabled = false,
 }: {
   value: number;
+  disabled?: boolean;
   onChange: (value: number) => void;
 }) {
   const [hover, setHover] = useState<number | null>(null);
@@ -21,13 +23,14 @@ export function VideoDuration({
       maxValue={30}
       step={1}
       value={value}
+      isDisabled={disabled}
       onChange={(next) => onChange(Number(next))}
       aria-label="视频时长"
     >
       <Label>时长</Label>
       <div className="video-duration-row">
         <span className="video-duration-endpoint">5s</span>
-        <Tooltip isOpen={hover !== null || focused} delay={0}>
+        <Tooltip isOpen={!disabled && (hover !== null || focused)} delay={0}>
           <Slider.Track
             className="video-duration-track"
             onPointerMove={(event) => {
