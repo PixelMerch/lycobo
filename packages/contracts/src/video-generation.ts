@@ -20,13 +20,18 @@ export const videoInputSchema = z.strictObject({
     .refine((ids) => new Set(ids).size === ids.length),
 });
 export type VideoInput = z.infer<typeof videoInputSchema>;
+const videoStoryboardSchema = z.strictObject({ description: videoInputSchema.shape.prompt });
+export const videoCreateSchema = videoInputSchema
+  .extend({ storyboard: videoStoryboardSchema.optional() })
+  .refine(({ storyboard, referenceAssetIds }) => !storyboard || referenceAssetIds.length > 1);
+export type VideoCreateInput = z.infer<typeof videoCreateSchema>;
 export const videoTaskSchema = z.object({
   id: z.uuid(),
   public_id: z.string(),
   prompt: z.string(),
   status: z.enum(["queued", "running", "succeeded", "failed", "needs_reconciliation"]),
   created_at: z.string(),
-  input: z.object({ video: videoInputSchema }),
+  input: z.object({ video: videoInputSchema, storyboard: videoStoryboardSchema.optional() }),
   error_code: z.string().nullable(),
   asset_id: z.uuid().nullable(),
   provider_status: z.string().nullable(),
@@ -37,12 +42,13 @@ export const videoTasksSchema = z.object({ data: z.array(videoTaskSchema) });
 
 export const videoCapabilitySchema = z.object({
   enabled: z.boolean(),
+  storyboardHistory: z.boolean().optional(),
   resolution: z.literal("768p"),
   unitCredits: z.literal(videoUnitCredits),
 });
 export const videoAcceptedSchema = z.object({ id: z.uuid(), replayed: z.boolean() });
 export const pendingVideoSchema = z.object({
   key: z.uuid(),
-  input: videoInputSchema,
+  input: videoCreateSchema,
   source: z.literal("storyboard").optional(),
 });

@@ -35,12 +35,14 @@ export function VideoHistory({
     void client.invalidateQueries({ queryKey: ["image-assets"] });
   }, [settled, client]);
   const videoId = production?.draft.progress.acceptedVideoId;
+  const trackedTask = tasks.find((task) => task.id === videoId);
+  const finished =
+    trackedTask?.status === "succeeded" && trackedTask.asset_id && trackedTask.delivery;
   const progress =
-    production && (production.busy || production.needsResume || production.failed || videoId) ? (
-      <VideoProductionProgress
-        production={production}
-        task={tasks.find((task) => task.id === videoId)}
-      />
+    production &&
+    !finished &&
+    (production.busy || production.needsResume || production.failed || videoId) ? (
+      <VideoProductionProgress production={production} task={trackedTask} />
     ) : null;
   if (query.isLoading && !progress) return <Spinner aria-label="正在加载视频历史" />;
   if (query.isError && !query.data)
@@ -68,7 +70,7 @@ export function VideoHistory({
           key={task.id}
           task={task}
           onRestore={onRestore}
-          showMedia={task.id !== videoId}
+          showMedia={!progress || task.id !== videoId}
         />
       ))}
       <InfiniteLoad

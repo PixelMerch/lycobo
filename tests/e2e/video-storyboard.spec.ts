@@ -33,7 +33,14 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
     route.fulfill({ json: apiFixture({ enabled: true }) }),
   );
   await page.route("**/api/v1/video-model", (route) =>
-    route.fulfill({ json: apiFixture({ enabled: true, resolution: "768p", unitCredits: 100 }) }),
+    route.fulfill({
+      json: apiFixture({
+        enabled: true,
+        storyboardHistory: true,
+        resolution: "768p",
+        unitCredits: 100,
+      }),
+    }),
   );
   await page.route("**/api/v1/image-assets", (route) =>
     route.fulfill({
@@ -114,16 +121,18 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
   await page.route("**/api/v1/video-tasks", (route) => {
     if (route.request().method() === "GET")
       return route.fulfill({ json: apiFixture({ data: completed ? [completed] : [] }) });
-    videoRequests.push(route.request().postDataJSON());
+    const submission = route.request().postDataJSON();
+    videoRequests.push(submission);
     videoKeys.push(route.request().headers()["idempotency-key"]);
     if (videoRequests.length === 1) return route.abort("failed");
+    const { storyboard, ...video } = submission;
     completed = {
       id: videoId,
       public_id: "W09VIDEO1",
       prompt: "先全景，随后特写和定格。",
       status: "succeeded",
       created_at: new Date().toISOString(),
-      input: { video: videoRequests[1] },
+      input: { video, storyboard },
       error_code: null,
       asset_id: original,
       provider_status: "completed",
@@ -198,7 +207,6 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
   await expect(progress).toContainText(items.map(({ title }) => title).join(" → "));
   const videoSlot = progress.locator(".video-production-media");
   await expect(videoSlot).toBeVisible();
-  const pendingSize = await videoSlot.boundingBox();
   await page.reload();
   await expect(frames.getByRole("img")).toHaveCount(3);
   await composer.getByRole("button", { name: /确认上次提交.*100/ }).click();
@@ -208,23 +216,30 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
     seconds: 10,
     aspectRatio: "9:16",
     referenceAssetIds: [original, ...images],
+    storyboard: { description },
   });
   expect(videoRequests[1]).toEqual(videoRequests[0]);
   expect(videoKeys[0]).toMatch(/^[a-f0-9-]{36}$/);
   expect(videoKeys[1]).toBe(videoKeys[0]);
   expect(imageRequests).toHaveLength(1);
   expect(planningRequests).toHaveLength(2);
-  await expect(progress.getByRole("listitem").nth(2)).toContainText("已完成");
-  await expect(videoSlot.getByRole("button", { name: "预览视频：W09VIDEO1" })).toBeVisible();
-  await expect(progress.getByRole("link", { name: "下载视频" })).toBeVisible();
-  const finalSize = await videoSlot.boundingBox();
-  expect(finalSize?.width).toBe(pendingSize?.width);
-  expect(finalSize?.height).toBe(pendingSize?.height);
-  await expect(page.getByRole("button", { name: "预览视频：W09VIDEO1" })).toHaveCount(1);
-  await expect(page.getByRole("article", { name: "视频任务：W09VIDEO1" })).toBeVisible();
-  await page.setViewportSize({ width: 390, height: 900 });
-  await expect(progress).toBeVisible();
-  await expect.poll(() => progress.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
   const history = page.getByRole("article", { name: "视频任务：W09VIDEO1" });
+  await expect(progress).toHaveCount(0);
+  await expect(history.getByRole("button", { name: "预览视频：W09VIDEO1" })).toBeVisible();
+  await expect(history.getByRole("link", { name: "下载视频" })).toBeVisible();
+  await page.reload();
+  await expect(history.getByText(description, { exact: true })).toBeVisible();
+  await expect(history.getByText("先全景，随后特写和定格。", { exact: true })).toBeVisible();
+  await expect(history.getByRole("button", { name: "复制原始描述" })).toBeVisible();
+  await expect(history.getByRole("button", { name: "复制 AI 描述" })).toBeVisible();
+  const originalThumbs = history.getByRole("region", { name: "原始商品图" }).getByRole("img");
+  const storyboardThumbs = history.getByRole("region", { name: "分镜图片" }).getByRole("img");
+  await expect(originalThumbs).toHaveCount(1);
+  await expect(storyboardThumbs).toHaveCount(3);
+  expect(
+    await storyboardThumbs.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("src"))),
+  ).toEqual(images.map((id) => `/api/v1/image-assets/${id}/content?thumbnail=1`));
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.getByRole("radio", { name: "历史记录", exact: true }).click();
   await expect.poll(() => history.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
 });

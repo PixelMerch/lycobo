@@ -8,7 +8,15 @@ const ImageViewer = lazy(() =>
 );
 
 /** Task references open the shared viewer at their position in this reference set. */
-export function ReferenceThumbnails({ ids, label }: { ids: string[]; label?: string }) {
+export function ReferenceThumbnails({
+  ids,
+  label,
+  itemLabel = "参考图片",
+}: {
+  ids: string[];
+  label?: string;
+  itemLabel?: string;
+}) {
   const [preview, setPreview] = useState<number | null>(null);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   if (ids.length === 0) return null;
@@ -26,9 +34,14 @@ export function ReferenceThumbnails({ ids, label }: { ids: string[]; label?: str
             buttons.current[index]?.focus();
             setPreview(index);
           }}
-          aria-label={`查看参考图片 ${index + 1}`}
+          aria-label={`查看${itemLabel} ${index + 1}`}
         >
-          <AssetImage assetId={id} thumbnail alt={`参考图片 ${index + 1} 缩略图`} loading="lazy" />
+          <AssetImage
+            assetId={id}
+            thumbnail
+            alt={`${itemLabel} ${index + 1} 缩略图`}
+            loading="lazy"
+          />
         </Button>
       ))}
       {preview !== null && (
@@ -37,7 +50,7 @@ export function ReferenceThumbnails({ ids, label }: { ids: string[]; label?: str
             images={ids.map((id, index) => ({
               src: assetContentUrl(id),
               thumbnailSrc: assetContentUrl(id, true),
-              alt: `参考图片 ${index + 1}`,
+              alt: `${itemLabel} ${index + 1}`,
             }))}
             initialIndex={preview}
             onClose={() => setPreview(null)}

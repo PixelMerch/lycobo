@@ -27,6 +27,7 @@ export function videoRoutes(
   app.get("/video-model", (c) =>
     c.json({
       enabled: !!deps,
+      storyboardHistory: !!deps,
       model: videoModel,
       resolution: "768p",
       unitCredits: videoUnitCredits,

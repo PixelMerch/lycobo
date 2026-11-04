@@ -122,7 +122,6 @@ export function VideoTaskCard({
         </dl>
         <VideoTaskActions
           task={task}
-          showDownload={showMedia}
           onEdit={() => {
             const draft = useVideoDraft.getState();
             if (
@@ -137,20 +136,39 @@ export function VideoTaskCard({
         />
       </header>
       <div className="history-prompt">
-        <CollapsibleText
+        {task.input.storyboard && (
+          <VideoHistoryPrompt
+            text={task.input.storyboard.description}
+            label="原始场景描述"
+            copyLabel="复制原始描述"
+          />
+        )}
+        <VideoHistoryPrompt
           text={task.prompt}
-          id={`video-prompt-${task.id}`}
-          className="generation-prompt"
+          {...(task.input.storyboard ? { label: "AI 生成描述", copyLabel: "复制 AI 描述" } : {})}
         />
-        <Button
-          variant="secondary"
-          className="copy-prompt"
-          onPress={() => void copyToClipboard(task.prompt)}
-        >
-          <UiIcon icon={IconCopy} size="small" />
-          复制提示词
-        </Button>
-        <ReferenceThumbnails ids={input.referenceAssetIds} label="视频参考图" />
+        {task.input.storyboard ? (
+          <div className="video-history-reference-groups">
+            <div>
+              <h3 className="video-history-content-label">原始商品图</h3>
+              <ReferenceThumbnails
+                ids={input.referenceAssetIds.slice(0, 1)}
+                label="原始商品图"
+                itemLabel="原始商品图"
+              />
+            </div>
+            <div>
+              <h3 className="video-history-content-label">分镜图片</h3>
+              <ReferenceThumbnails
+                ids={input.referenceAssetIds.slice(1)}
+                label="分镜图片"
+                itemLabel="分镜图片"
+              />
+            </div>
+          </div>
+        ) : (
+          <ReferenceThumbnails ids={input.referenceAssetIds} label="视频参考图" />
+        )}
       </div>
       {showMedia && (
         <div className="generation-results" data-count="1">
@@ -187,5 +205,30 @@ export function VideoTaskCard({
         onConfirm={restore}
       />
     </article>
+  );
+}
+
+function VideoHistoryPrompt({
+  text,
+  label,
+  copyLabel = "复制提示词",
+}: {
+  text: string;
+  label?: string;
+  copyLabel?: string;
+}) {
+  return (
+    <>
+      {label && <h3 className="video-history-content-label">{label}</h3>}
+      <CollapsibleText text={text} className="generation-prompt" />
+      <Button
+        variant="secondary"
+        className="copy-prompt"
+        onPress={() => void copyToClipboard(text)}
+      >
+        <UiIcon icon={IconCopy} size="small" />
+        {copyLabel}
+      </Button>
+    </>
   );
 }

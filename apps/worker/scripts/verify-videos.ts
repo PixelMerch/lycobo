@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
-import { imageGenerationInputSchema, videoInputSchema } from "@lycoboai/contracts";
+import {
+  imageGenerationInputSchema,
+  videoCreateSchema,
+  videoInputSchema,
+  videoTaskSchema,
+} from "@lycoboai/contracts";
 import { type ImageRepository, videoCredentialHash, videoRepository } from "@lycoboai/db";
 import type { ImageObjectBucket } from "@lycoboai/storage/bucket";
 import type postgres from "postgres";
@@ -17,7 +22,7 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
   const config = {
     origin: "https://api.uselg.top",
     key: "fixture-key",
-    assetOrigin: "http://127.0.0.1:8791",
+    assetOrigin: "https://assets.fixture.test",
     signingSecret: "x".repeat(40),
   };
   const routing = { origin: config.origin, credentialHash: videoCredentialHash(config.key) };
@@ -84,7 +89,32 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
     /REFERENCE_NOT_FOUND/,
   );
   assert.equal((await images.wallet(owner)).balance, 900, "Rejected references never charge");
-  const accepted = await videos.create(owner, input, crypto.randomUUID(), routing);
+  const referenceAssetIds = [crypto.randomUUID(), crypto.randomUUID()];
+  for (const id of referenceAssetIds) {
+    await images.addReference(owner, {
+      id,
+      objectKey: `${owner.uid}/${owner.organizationId}/${id}.png`,
+      mimeType: "image/png",
+      width: 2,
+      height: 2,
+      bytes: 10,
+      sha256: id.replace(/-/g, "").repeat(2),
+    });
+  }
+  const storyboard = { description: "一条床品视频" };
+  const storyInput = videoCreateSchema.parse({ ...input, referenceAssetIds, storyboard });
+  const storyboardKey = crypto.randomUUID();
+  const accepted = await videos.create(owner, storyInput, storyboardKey, routing);
+  assert.equal((await videos.create(owner, storyInput, storyboardKey, routing)).replayed, true);
+  await assert.rejects(
+    videos.create(
+      owner,
+      { ...storyInput, storyboard: { description: "另一段原始描述" } },
+      storyboardKey,
+      routing,
+    ),
+    /IDEMPOTENCY_CONFLICT/,
+  );
   const memory = new Map<string, Uint8Array>();
   const bucket: ImageObjectBucket = {
     head: async () => null,
@@ -118,6 +148,15 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
   const methods: string[] = [];
   const request: typeof fetch = async (url, init) => {
     methods.push(init?.method ?? "GET");
+    if (init?.method === "POST") {
+      const body = z
+        .object({ prompt: z.string(), images: z.array(z.string()) })
+        .passthrough()
+        .parse(JSON.parse(String(init.body)));
+      assert.equal(body.prompt, input.prompt);
+      assert.equal(body.images.length, 2);
+      assert.ok(!("storyboard" in body));
+    }
     return String(url).endsWith("/content")
       ? new Response(mp4, { headers: { "Content-Type": "video/mp4" } })
       : Response.json({
@@ -139,10 +178,12 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
   await processVideoIntent(videos, bucket, config, request);
   assert.deepEqual(methods, ["POST", "GET", "GET"]);
   assert.equal(memory.size, 1);
-  const final = z
-    .array(z.object({ status: z.string(), asset_id: z.string() }))
-    .parse(await videos.get(owner, accepted.id));
+  const final = videoTaskSchema.array().parse(await videos.get(owner, accepted.id));
   assert.equal(final[0]?.status, "succeeded");
+  assert.deepEqual(final[0]?.input, {
+    video: { ...input, referenceAssetIds },
+    storyboard,
+  });
   assert.equal((await images.wallet(owner)).balance, 800);
   assert.equal(
     (await images.list(owner, 100)).some((j) => j.id === accepted.id),

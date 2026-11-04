@@ -279,7 +279,12 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
       }
       assertOwner();
       const result = await video.submitAsync({
-        input: { prompt, seconds: optimization.seconds, aspectRatio: "9:16" },
+        input: {
+          prompt,
+          seconds: optimization.seconds,
+          aspectRatio: "9:16",
+          storyboard: { description: optimization.description },
+        },
         references: [originalAssetId, ...shots.map(({ assetId }) => assetId)].map(
           originalReference,
         ),

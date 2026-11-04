@@ -281,6 +281,13 @@
       "when": 1793703308988,
       "tag": "0039_video_outbox",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1793767211336,
+      "tag": "0040_video_storyboard_history",
+      "breakpoints": true
     }
   ]
 }

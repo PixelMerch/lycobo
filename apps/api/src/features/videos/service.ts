@@ -1,5 +1,5 @@
 import type { ImageScope } from "@lycoboai/contracts";
-import { videoInputSchema, videoTaskSchema } from "@lycoboai/contracts";
+import { videoCreateSchema, videoTaskSchema } from "@lycoboai/contracts";
 import { type VideoRepository, videoCredentialHash } from "@lycoboai/db";
 import type { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { z } from "zod";
@@ -28,7 +28,7 @@ export function videoService(deps: {
     get: async (scope: ImageScope, id: string) =>
       (await deliver(await deps.repository.get(scope, id)))[0] ?? null,
     create: async (scope: ImageScope, raw: unknown, key: string) => {
-      const input = videoInputSchema.parse(raw);
+      const input = videoCreateSchema.parse(raw);
       if (input.referenceAssetIds.length && deps.referencesReady === false)
         throw new Error("GENERATION_NOT_CONFIGURED");
       const accepted = await deps.repository.create(scope, input, key, {

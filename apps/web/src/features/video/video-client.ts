@@ -1,9 +1,9 @@
 import {
   pendingVideoSchema,
-  type VideoInput,
+  type VideoCreateInput,
   videoAcceptedSchema,
   videoCapabilitySchema,
-  videoInputSchema,
+  videoCreateSchema,
   videoTasksSchema,
 } from "@lycoboai/contracts";
 import {
@@ -89,7 +89,7 @@ export function useSubmitVideo(source?: "storyboard") {
       references,
       clearDraft = true,
     }: {
-      input: Omit<VideoInput, "referenceAssetIds">;
+      input: Omit<VideoCreateInput, "referenceAssetIds">;
       references: ReferenceImage[];
       clearDraft?: boolean;
     }) => {
@@ -101,10 +101,18 @@ export function useSubmitVideo(source?: "storyboard") {
       if (!attempt) {
         const ids = await uploadImageReferences(client, session.data, references);
         if (pending()) throw new Error("已有视频提交待确认，请稍后继续");
+        const { storyboard, ...video } = input;
+        const capability = client.getQueryData<ReturnType<typeof videoCapabilitySchema.parse>>([
+          "video-model",
+        ]);
         attempt = {
           key: crypto.randomUUID(),
           source,
-          input: videoInputSchema.parse({ ...input, referenceAssetIds: ids }),
+          input: videoCreateSchema.parse({
+            ...video,
+            referenceAssetIds: ids,
+            ...(storyboard && capability?.storyboardHistory ? { storyboard } : {}),
+          }),
         };
         sessionStorage.setItem(storageKey, JSON.stringify(attempt));
         notifyPending();

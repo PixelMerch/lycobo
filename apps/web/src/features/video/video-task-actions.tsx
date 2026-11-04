@@ -8,24 +8,7 @@ import { useErrorToast } from "../../lib/error-toast";
 import { assetContentUrl } from "../generation/generation-client";
 import { useSubmitVideo, useVideoModel } from "./video-client";
 
-export function VideoDownloadLink({ url }: { url: string }) {
-  return (
-    <Link className="button copy-prompt" href={url} download>
-      <UiIcon icon={IconDownload} size="small" />
-      下载视频
-    </Link>
-  );
-}
-
-export function VideoTaskActions({
-  task,
-  onEdit,
-  showDownload,
-}: {
-  task: VideoTask;
-  onEdit: () => void;
-  showDownload: boolean;
-}) {
+export function VideoTaskActions({ task, onEdit }: { task: VideoTask; onEdit: () => void }) {
   const [confirm, setConfirm] = useState(false);
   const actionsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -56,7 +39,12 @@ export function VideoTaskActions({
     !submission.blockedByPending;
   return (
     <div ref={actionsRef} className="history-task-actions">
-      {showDownload && task.delivery && <VideoDownloadLink url={task.delivery.download_url} />}
+      {task.delivery && (
+        <Link className="button copy-prompt" href={task.delivery.download_url} download>
+          <UiIcon icon={IconDownload} size="small" />
+          下载视频
+        </Link>
+      )}
       <Tooltip delay={0}>
         <Button
           isIconOnly
@@ -92,7 +80,12 @@ export function VideoTaskActions({
           if (!canRegenerate) return;
           const input = task.input.video;
           submission.submit({
-            input: { prompt: input.prompt, seconds: input.seconds, aspectRatio: input.aspectRatio },
+            input: {
+              prompt: input.prompt,
+              seconds: input.seconds,
+              aspectRatio: input.aspectRatio,
+              storyboard: task.input.storyboard,
+            },
             references: input.referenceAssetIds.map((id, index) => ({
               id,
               assetId: id,

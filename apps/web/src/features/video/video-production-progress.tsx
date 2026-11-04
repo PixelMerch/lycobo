@@ -4,8 +4,6 @@ import { IconCheck, IconMovie } from "@tabler/icons-react";
 import { UiIcon } from "../../components/ui-icon";
 import { AssetImage } from "../generation/asset-image";
 import type { useStoryboard } from "./storyboard/use-storyboard";
-import { VideoCover } from "./video-cover";
-import { VideoDownloadLink } from "./video-task-actions";
 import { videoTaskStatus } from "./video-task-card";
 
 export type Production = Pick<
@@ -18,35 +16,17 @@ const frameSlots = Array.from({ length: storyboardImageLimit }, (_, position) =>
   id: `shot-${position}`,
 }));
 
-function ProductionMedia({
-  task,
-  executing,
-  status,
-}: {
-  task: VideoTask | undefined;
-  executing: boolean;
-  status: string;
-}) {
+function ProductionMedia({ executing, status }: { executing: boolean; status: string }) {
   return (
     <div className="video-production-media">
-      {task?.asset_id && task.delivery ? (
-        <VideoCover
-          assetId={task.asset_id}
-          title={task.public_id}
-          ratio={task.input.video.aspectRatio}
-          seconds={task.input.video.seconds}
-          fixedRatio
-        />
-      ) : (
-        <div className="video-production-placeholder">
-          {executing ? (
-            <Spinner size="sm" color="current" aria-hidden="true" />
-          ) : (
-            <UiIcon icon={IconMovie} size="illustration" />
-          )}
-          <span>{status}</span>
-        </div>
-      )}
+      <div className="video-production-placeholder">
+        {executing ? (
+          <Spinner size="sm" color="current" aria-hidden="true" />
+        ) : (
+          <UiIcon icon={IconMovie} size="illustration" />
+        )}
+        <span>{status}</span>
+      </div>
     </div>
   );
 }
@@ -153,16 +133,7 @@ export function VideoProductionProgress({
               )}
               {index === 2 && current === 2 && (
                 <div className="video-production-detail">
-                  <div className="video-production-result">
-                    <ProductionMedia
-                      task={task}
-                      executing={executing}
-                      status={paused ? "待继续" : videoState}
-                    />
-                    {task?.asset_id && task.delivery && (
-                      <VideoDownloadLink url={task.delivery.download_url} />
-                    )}
-                  </div>
+                  <ProductionMedia executing={executing} status={paused ? "待继续" : videoState} />
                   {(task?.status === "queued" || task?.status === "running") && (
                     <p>可以先继续创作，稍后在历史记录查看成片。</p>
                   )}
