@@ -138,13 +138,11 @@ for (const width of [320, 390, 768, 1024, 1440]) {
   });
 }
 
-test("tool cards open their workspace", async ({ page }) => {
+test("tool shortcuts open their workspace", async ({ page }) => {
   await page.goto("/create");
-  await page.getByRole("button", { name: "全部工具", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "选择工具" });
-  await dialog
-    .getByRole("button", { name: /^主图制作/ })
-    .locator("img")
+  await page
+    .getByRole("navigation", { name: "电商创作工具" })
+    .getByRole("button", { name: "主图制作", exact: true })
     .click();
   await expect(page).toHaveURL(/\/create$/);
   await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();

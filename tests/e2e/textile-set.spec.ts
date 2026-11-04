@@ -65,15 +65,13 @@ test("textile form has only required product inputs and retains confirmed choice
   await ratios.getByRole("button", { name: "下一页画面比例", exact: true }).click();
   await ratios.getByRole("radio", { name: "3:4", exact: true }).click();
   await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeEnabled();
-  await page.getByRole("button", { name: "全部工具", exact: true }).click();
   await page
-    .getByRole("dialog", { name: "选择工具" })
-    .getByRole("button", { name: /^主图制作/ })
+    .getByRole("navigation", { name: "电商创作工具" })
+    .getByRole("button", { name: "主图制作", exact: true })
     .click();
-  await page.getByRole("button", { name: "全部工具", exact: true }).click();
   await page
-    .getByRole("dialog", { name: "选择工具" })
-    .getByRole("button", { name: /^家纺裂变/ })
+    .getByRole("navigation", { name: "电商创作工具" })
+    .getByRole("button", { name: "家纺裂变", exact: true })
     .click();
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
   await expect(form.locator(".reference-tile")).toHaveCount(1);
