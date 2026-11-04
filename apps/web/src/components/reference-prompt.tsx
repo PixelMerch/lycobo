@@ -99,7 +99,7 @@ function useAutoGrow(ref: RefObject<HTMLElement | null>, value: string, enabled:
     };
     const observer = new ResizeObserver((entries) => {
       const nextWidth = entries[0]?.contentRect.width ?? 0;
-      // The inline confirmation changes the content box without changing the editor width.
+      // Responsive toolbar spacing can change the content box without changing its width.
       const nextPadding = getComputedStyle(element).paddingBottom;
       if (Math.abs(nextWidth - width) < 1 && nextPadding === bottomPadding) return;
       width = nextWidth;

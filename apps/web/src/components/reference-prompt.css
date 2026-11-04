@@ -142,8 +142,9 @@
   resize: none;
   overflow: hidden;
 }
-.prompt-field .prompt-editor[data-count] :is(textarea, .reference-rich-editor.textarea) {
-  padding-bottom: 44px;
+.prompt-field .prompt-editor[data-count] :is(textarea, .reference-rich-editor.textarea),
+.home-composer .home-prompt .prompt-editor[data-optimizable] .textarea {
+  padding-bottom: 48px;
 }
 .prompt-meta {
   display: flex;
@@ -208,12 +209,6 @@
 .prompt-editor:has(.prompt-optimize[data-confirming="true"]) .prompt-meta {
   visibility: hidden;
 }
-.prompt-field
-  .prompt-editor:has(.prompt-optimize[data-confirming="true"])
-  :is(textarea, .reference-rich-editor.textarea),
-.home-composer .home-prompt .prompt-editor:has(.prompt-optimize[data-confirming="true"]) .textarea {
-  padding-bottom: 48px;
-}
 .prompt-optimize-confirmation {
   display: flex;
   align-items: center;
@@ -263,15 +258,6 @@
   .prompt-optimize-confirm-actions .button {
     height: 44px;
     min-height: 44px;
-  }
-  .prompt-field
-    .prompt-editor:has(.prompt-optimize[data-confirming="true"])
-    :is(textarea, .reference-rich-editor.textarea),
-  .home-composer
-    .home-prompt
-    .prompt-editor:has(.prompt-optimize[data-confirming="true"])
-    .textarea {
-    padding-bottom: 68px;
   }
 }
 .prompt-optimize-wand {
@@ -383,8 +369,9 @@
     height: 44px;
     padding-inline: 8px;
   }
-  .prompt-field .prompt-editor[data-count] :is(textarea, .reference-rich-editor.textarea) {
-    padding-bottom: 64px;
+  .prompt-field .prompt-editor[data-count] :is(textarea, .reference-rich-editor.textarea),
+  .home-composer .home-prompt .prompt-editor[data-optimizable] .textarea {
+    padding-bottom: 68px;
   }
 }
 
