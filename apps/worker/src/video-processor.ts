@@ -3,7 +3,7 @@ import { videoInputSchema } from "@lycoboai/contracts";
 import { type VideoRepository, videoCredentialHash } from "@lycoboai/db";
 import { callVideoProvider, downloadProviderVideo, VideoProviderError } from "@lycoboai/generation";
 import type { ImageObjectBucket } from "@lycoboai/storage/bucket";
-import { providerReferenceSigner } from "@lycoboai/storage/delivery";
+import { isVideoReferenceUrl, providerReferenceSigner } from "@lycoboai/storage/delivery";
 import { videoDimensions } from "@lycoboai/storage/video";
 import { z } from "zod";
 
@@ -56,7 +56,9 @@ export async function processVideoIntent(
       const sign =
         config.referenceUrl ??
         providerReferenceSigner(config.assetOrigin, config.signingSecret, config.pathPrefix);
-      images.push(...(await Promise.all(job.references.map((asset) => sign(asset.objectKey)))));
+      const signed = await Promise.all(job.references.map(({ objectKey }) => sign(objectKey)));
+      await Promise.all(signed.map((url) => verifyReferenceImage(url, request)));
+      images.push(...signed);
     }
     const creation = job.submit
       ? {
@@ -119,6 +121,24 @@ export async function processVideoIntent(
   }
   return true;
 }
+async function verifyReferenceImage(url: string, request: typeof fetch) {
+  try {
+    if (!isVideoReferenceUrl(url)) throw new Error("INVALID_REFERENCE_URL");
+    const response = await request(url, {
+      method: "GET",
+      headers: { Range: "bytes=0-7" },
+      redirect: "manual",
+      signal: AbortSignal.timeout(8000),
+    });
+    const contentType = response.headers.get("Content-Type")?.split(";")[0]?.trim().toLowerCase();
+    await response.body?.cancel();
+    if (response.ok && contentType === "image/png") return;
+  } catch {
+    // Signed URLs and upstream response details must never leave the worker.
+  }
+  throw new VideoProviderError("VIDEO_REFERENCES_UNAVAILABLE", false);
+}
+
 async function repositoryStorageUid(
   repository: VideoRepository,
   organizationId: string,

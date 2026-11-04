@@ -8,6 +8,8 @@ import {
   imageToolSchema,
   imageUnitCredits,
   type StoredImage,
+  storyboardOriginalImageLimit,
+  storyboardRequestSchema,
   variationPlanInputSchema,
 } from "@lycoboai/contracts";
 import {
@@ -292,6 +294,25 @@ export function imageRoutes(deps: ImageApiDependencies) {
     }
     const plan = await variation.create(c.get("principal"), input.data, key.data, c.req.raw.signal);
     return plan ? c.json(plan) : fail(c, "GENERATION_NOT_CONFIGURED", "智能分析尚未配置", 503);
+  });
+  app.get("/video-storyboards/capabilities", async (c) =>
+    c.json({
+      enabled: await variation.storyboardEnabled(),
+      maxStoryboardOriginalImages: storyboardOriginalImageLimit,
+    }),
+  );
+  app.post("/video-storyboards", async (c) => {
+    const input = storyboardRequestSchema.safeParse(await c.req.json().catch(() => null));
+    const key = id.safeParse(c.req.header("Idempotency-Key"));
+    if (!input.success || !key.success)
+      return fail(c, "VALIDATION_ERROR", "请检查商品图、分镜和视频时长", 400);
+    const plan = await variation.createStoryboard(
+      c.get("principal"),
+      input.data,
+      key.data,
+      c.req.raw.signal,
+    );
+    return plan ? c.json(plan) : fail(c, "GENERATION_NOT_CONFIGURED", "分镜分析尚未配置", 503);
   });
   app.get("/variation-plans/:id", async (c) => {
     const parsed = id.safeParse(c.req.param("id"));

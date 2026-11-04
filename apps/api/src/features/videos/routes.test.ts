@@ -43,6 +43,12 @@ describe("video API", () => {
       }),
     });
     const app = createApp(undefined, undefined, auth, undefined, { service });
+    const capability = await app.request("/api/v1/video-model", {
+      headers: { Authorization: "Bearer fixture" },
+    });
+    expect(await capability.json()).toMatchObject({
+      data: { enabled: true, referenceImagesEnabled: false },
+    });
     const send = (body: object, authorized = true) =>
       app.request("/api/v1/video-tasks", {
         method: "POST",
@@ -61,10 +67,16 @@ describe("video API", () => {
     for (const prompt of ["", "   ", "@图片1"])
       expect((await send({ prompt, seconds: 10 })).status).toBe(400);
     expect((await send({ seconds: 10 })).status).toBe(400);
-    expect(
-      (await send({ prompt: "视频描述", seconds: 10, referenceAssetIds: [crypto.randomUUID()] }))
-        .status,
-    ).toBe(503);
+    const rejected = await send({
+      prompt: "视频描述",
+      seconds: 10,
+      referenceAssetIds: [crypto.randomUUID()],
+    });
+    expect(rejected.status).toBe(503);
+    expect(await rejected.json()).toMatchObject({
+      message: "当前环境无法向视频服务提供参考图。",
+      error: { code: "VIDEO_REFERENCES_UNAVAILABLE" },
+    });
     expect(calls).toEqual([]);
     const response = await send({ prompt: "视频描述", seconds: 15 });
     expect(response.status).toBe(202);

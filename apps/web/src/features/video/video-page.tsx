@@ -1,5 +1,9 @@
 import { Button, Spinner } from "@heroui/react";
-import { videoUnitCredits } from "@lycoboai/contracts";
+import {
+  storyboardOriginalImageLimit,
+  videoReferenceUnavailableMessage,
+  videoUnitCredits,
+} from "@lycoboai/contracts";
 import { CreditCoin } from "../../components/credit-coin";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { useErrorToast } from "../../lib/error-toast";
@@ -8,6 +12,8 @@ import { revealNewestHistory } from "../generation/history/history-navigation";
 import { hasPromptDescription } from "../generation/references/prompt-description";
 import { ReferencePicker } from "../generation/references/reference-picker";
 import { WorkspaceComposerTitle } from "../workspace/workspace-tool-symbol";
+import { useStoryboardWorkspace } from "./storyboard/storyboard-context";
+import { automaticVideoCost } from "./storyboard/use-storyboard";
 import { useSubmitVideo, useVideoModel } from "./video-client";
 import { VideoDuration } from "./video-duration";
 import { useVideoDraft, videoPromptLimit, videoRatios } from "./video-state";
@@ -16,6 +22,7 @@ export function VideoPage() {
   const draft = useVideoDraft();
   const model = useVideoModel();
   const submission = useSubmitVideo();
+  const production = useStoryboardWorkspace();
   const references = [draft.firstFrame, draft.lastFrame, ...draft.extraReferences].filter(
     (value) => value !== null,
   );
@@ -25,13 +32,35 @@ export function VideoPage() {
       lastFrame: images[1] ?? null,
       extraReferences: images.slice(2),
       prompt,
+      reuseReferences: false,
     });
-  useErrorToast(submission.error?.message ?? model.error?.message);
-  const valid =
-    hasPromptDescription(draft.prompt) &&
-    Number.isInteger(draft.seconds) &&
-    draft.seconds >= 5 &&
-    draft.seconds <= 30;
+  const automatic =
+    !submission.hasPending &&
+    !draft.reuseReferences &&
+    references.length > 0 &&
+    references.length <= storyboardOriginalImageLimit;
+  const referenceLimit = Math.max(production.maxOriginalImages, references.length);
+  const busy = submission.isPending || production.busy;
+  const valid = hasPromptDescription(draft.prompt);
+  const productionInProgress = production.busy || production.needsResume;
+  const referenceBlocked =
+    model.data?.referenceImagesEnabled === false && !submission.hasPending && references.length > 0;
+  const canSubmit = automatic
+    ? !production.blocked &&
+      production.configured &&
+      valid &&
+      references.length <= production.maxOriginalImages
+    : !submission.blockedByPending && (valid || submission.hasPending);
+  const storyboardUnavailable = automatic && production.unavailable;
+  useErrorToast(
+    submission.error?.message ??
+      model.error?.message ??
+      (!productionInProgress && referenceBlocked
+        ? videoReferenceUnavailableMessage
+        : !productionInProgress && storyboardUnavailable
+          ? "视频制作暂不可用，请稍后重试。"
+          : undefined),
+  );
   return (
     <section className="composer-panel video-composer" aria-label="视频创作参数">
       <div className="composer-scroll">
@@ -41,12 +70,12 @@ export function VideoPage() {
           references={references}
           prompt={draft.prompt}
           onChange={setReferences}
-          limit={9}
-          label="参考图片"
+          limit={referenceLimit}
+          label="商品图片"
         />
-        <p className="video-reference-hint">
-          参考图片可选，用于画面内容参考；实际画幅以参考图为准。
-        </p>
+        {references.length > 1 && !draft.reuseReferences && (
+          <p className="video-reference-hint">第 1 张为主图，其余为补充参考。</p>
+        )}
         <ReferencePrompt
           className="prompt-field"
           label="场景描述"
@@ -55,43 +84,64 @@ export function VideoPage() {
           onChange={(prompt) => draft.update({ prompt })}
           references={references}
           onReferencesInsert={(images, prompt) => {
-            if (references.length + images.length <= 9)
+            if (references.length + images.length <= referenceLimit)
               setReferences([...references, ...images], prompt);
           }}
-          placeholder="描述主体、动作、场景和镜头运动；多张参考图可按图一、图二描述对应关系"
-          maxReferences={9}
+          placeholder="例如：晨光卧室，镜头推近，展示被面的绗缝和纹理"
+          maxReferences={referenceLimit}
           maxLength={videoPromptLimit}
           showCount
           autoGrow
         />
-        <section className="parameter-group video-ratio">
-          <div className="ratio-heading">
-            <h2>画面比例</h2>
-            <span className="ratio-current">{draft.ratio}</span>
-          </div>
-          <HomeRatioPicker
-            value={draft.ratio}
-            ratios={videoRatios}
-            onChange={(next) => {
-              const ratio = videoRatios.find((value) => value === next);
-              if (ratio) draft.update({ ratio });
-            }}
-          />
-        </section>
-        <VideoDuration value={draft.seconds} onChange={(seconds) => draft.update({ seconds })} />
+        {!automatic && (
+          <>
+            <section className="parameter-group video-ratio">
+              <div className="ratio-heading">
+                <h2>画面比例</h2>
+                <span className="ratio-current">{draft.ratio}</span>
+              </div>
+              <HomeRatioPicker
+                value={draft.ratio}
+                ratios={videoRatios}
+                onChange={(next) => {
+                  const ratio = videoRatios.find((value) => value === next);
+                  if (ratio) draft.update({ ratio });
+                }}
+              />
+            </section>
+            <VideoDuration
+              value={draft.seconds}
+              onChange={(seconds) => draft.update({ seconds })}
+            />
+          </>
+        )}
       </div>
       <div className="generate-area">
+        {automatic &&
+          !productionInProgress &&
+          !busy &&
+          !referenceBlocked &&
+          !storyboardUnavailable && (
+            <p className="video-reference-hint">
+              预计 {automaticVideoCost} 积分（画面 {automaticVideoCost - videoUnitCredits} + 视频{" "}
+              {videoUnitCredits}），竖屏 9:16 · 10 秒。
+            </p>
+          )}
         <Button
           variant="primary"
           size="lg"
           fullWidth
-          className={`primary-action generation-submit${submission.isPending ? " generation-pending" : ""}`}
-          data-submitting={submission.isPending || undefined}
+          className={`primary-action generation-submit${busy ? " generation-pending" : ""}`}
+          data-submitting={busy || undefined}
           isDisabled={
-            !model.data?.enabled || submission.isPending || (!valid && !submission.hasPending)
+            !model.data?.enabled || productionInProgress || busy || referenceBlocked || !canSubmit
           }
-          isPending={submission.isPending}
+          isPending={busy}
           onPress={() => {
+            if (automatic) {
+              production.start({ description: draft.prompt, references });
+              return;
+            }
             revealNewestHistory();
             submission.submit({
               input: { prompt: draft.prompt, seconds: draft.seconds, aspectRatio: draft.ratio },
@@ -99,13 +149,22 @@ export function VideoPage() {
             });
           }}
         >
-          {submission.isPending && (
-            <Spinner size="md" color="current" role="status" aria-label="正在提交视频任务" />
+          {busy && (
+            <Spinner
+              size="md"
+              color="current"
+              role="status"
+              aria-label={production.busy ? "正在制作视频" : "正在提交视频任务"}
+            />
           )}
-          {submission.hasPending && !submission.isPending ? "确认上次提交" : "立即生成"}
+          {production.busy
+            ? "正在制作"
+            : !busy && submission.hasPending
+              ? "确认上次提交"
+              : "立即生成"}
           <span className="generate-credit-cost">
             <CreditCoin size="default" />
-            {videoUnitCredits}
+            {automatic ? automaticVideoCost : videoUnitCredits}
           </span>
         </Button>
       </div>

@@ -37,3 +37,12 @@ it("imports configured model secrets without a generation enable flag", () => {
   expect(env.DEEPSEEK_API_KEY).toBe("fixture-text");
   expect(localEnvironment({}, false, {})).not.toHaveProperty("STANDALONE_IMAGE_API_KEY");
 });
+
+it("passes through only the configured provider reference origin and preserves local previews", () => {
+  const env = localEnvironment({}, false, {
+    VIDEO_REFERENCE_ORIGIN: "https://assets.example.com",
+    ASSET_PUBLIC_ORIGIN: "https://production.example.com",
+  });
+  expect(env.VIDEO_REFERENCE_ORIGIN).toBe("https://assets.example.com");
+  expect(env.ASSET_PUBLIC_ORIGIN).toBe("http://127.0.0.1:8791");
+});

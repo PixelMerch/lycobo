@@ -9,9 +9,16 @@ import { LibraryDialog } from "../assets/library-dialog";
 import { AssetImage } from "../generation/asset-image";
 import { historyContentTop } from "../generation/history/history-navigation";
 import { useVideoTasks } from "./video-client";
+import { type Production, VideoProductionProgress } from "./video-production-progress";
 import { VideoTaskCard } from "./video-task-card";
 
-export function VideoHistory({ onRestore }: { onRestore: () => void }) {
+export function VideoHistory({
+  onRestore,
+  production,
+}: {
+  onRestore: () => void;
+  production?: Production;
+}) {
   const query = useVideoTasks();
   useErrorToast(query.error?.message);
   const tasks = query.data?.pages.flatMap((page) => page.data) ?? [];
@@ -27,15 +34,28 @@ export function VideoHistory({ onRestore }: { onRestore: () => void }) {
     void client.invalidateQueries({ queryKey: ["wallet-entries"] });
     void client.invalidateQueries({ queryKey: ["image-assets"] });
   }, [settled, client]);
-  if (query.isLoading) return <Spinner aria-label="正在加载视频历史" />;
+  const videoId = production?.draft.progress.acceptedVideoId;
+  const trackedTask = tasks.find((task) => task.id === videoId);
+  const finished =
+    trackedTask?.status === "succeeded" && trackedTask.asset_id && trackedTask.delivery;
+  const progress =
+    production &&
+    !finished &&
+    (production.busy || production.needsResume || production.failed || videoId) ? (
+      <VideoProductionProgress production={production} task={trackedTask} />
+    ) : null;
+  if (query.isLoading && !progress) return <Spinner aria-label="正在加载视频历史" />;
   if (query.isError && !query.data)
     return (
-      <EmptyState>
-        <p>视频历史暂不可用</p>
-        <Button onPress={() => void query.refetch()}>重试</Button>
-      </EmptyState>
+      <>
+        {progress && <div className="generation-history video-history-list">{progress}</div>}
+        <EmptyState>
+          <p>视频历史暂不可用</p>
+          <Button onPress={() => void query.refetch()}>重试</Button>
+        </EmptyState>
+      </>
     );
-  if (!tasks.length)
+  if (!tasks.length && !progress)
     return (
       <EmptyState className="empty-state generation-empty-state">
         <UiIcon icon={IconMovie} size="illustration" />
@@ -44,8 +64,14 @@ export function VideoHistory({ onRestore }: { onRestore: () => void }) {
     );
   return (
     <div className="generation-history video-history-list">
+      {progress}
       {tasks.map((task) => (
-        <VideoTaskCard key={task.id} task={task} onRestore={onRestore} />
+        <VideoTaskCard
+          key={task.id}
+          task={task}
+          onRestore={onRestore}
+          showMedia={!progress || task.id !== videoId}
+        />
       ))}
       <InfiniteLoad
         hasMore={query.hasNextPage}
@@ -85,7 +111,9 @@ export function VideoHistoryRail() {
                 aria-current={(activeId ?? tasks[0]?.id) === task.id ? "true" : "false"}
                 onPress={() => {
                   setActiveId(task.id);
-                  const target = document.getElementById(`video-task-${task.id}`);
+                  const target =
+                    document.getElementById(`video-production-${task.id}`) ??
+                    document.getElementById(`video-task-${task.id}`);
                   if (target)
                     window.scrollTo({
                       top: Math.max(
@@ -106,7 +134,9 @@ export function VideoHistoryRail() {
                     />
                   </span>
                 ) : task.status === "queued" || task.status === "running" ? (
-                  <Spinner size="sm" aria-label="视频处理中" />
+                  <span className="history-thumbnail-frame">
+                    <Spinner size="sm" aria-label="视频处理中" />
+                  </span>
                 ) : (
                   <UiIcon icon={IconMovie} size="action" />
                 )}

@@ -35,7 +35,8 @@ export function VideoTaskActions({ task, onEdit }: { task: VideoTask; onEdit: ()
     (task.status === "succeeded" || task.status === "failed") &&
     model.data?.enabled &&
     !submission.isPending &&
-    !submission.hasPending;
+    !submission.hasPending &&
+    !submission.blockedByPending;
   return (
     <div ref={actionsRef} className="history-task-actions">
       {task.delivery && (
@@ -79,7 +80,13 @@ export function VideoTaskActions({ task, onEdit }: { task: VideoTask; onEdit: ()
           if (!canRegenerate) return;
           const input = task.input.video;
           submission.submit({
-            input: { prompt: input.prompt, seconds: input.seconds, aspectRatio: input.aspectRatio },
+            input: {
+              prompt: input.prompt,
+              seconds: input.seconds,
+              aspectRatio: input.aspectRatio,
+              storyboard: task.input.storyboard,
+              storyboardOriginalImageCount: task.input.storyboardOriginalImageCount,
+            },
             references: input.referenceAssetIds.map((id, index) => ({
               id,
               assetId: id,

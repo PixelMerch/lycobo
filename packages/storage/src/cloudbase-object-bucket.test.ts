@@ -121,7 +121,7 @@ it("signs private reference images for the provider without requiring an asset h
     "https://fixture-env-123.api.tcloudbasegateway.com/v1/storages/object/sign/private-images/a.png?token=temporary";
   const request = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ fullSignedURL: signed }));
   const sign = cloudbaseProviderReferenceSigner(env, request);
-  expect(await sign("a.png")).toContain("token=temporary");
+  expect(new URL(await sign("a.png")).searchParams.has("download")).toBe(false);
   expect(JSON.parse(String(request.mock.calls[0]?.[1]?.body))).toEqual({ expiresIn: 3600 });
   expect(() => sign("a.mp4")).toThrow("INVALID_REFERENCE_IMAGE");
 });

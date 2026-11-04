@@ -1,6 +1,6 @@
-import { Button, Spinner, Tooltip } from "@heroui/react";
+import { Button, Disclosure, Spinner, Tooltip } from "@heroui/react";
 import type { VideoTask } from "@lycoboai/contracts";
-import { IconAspectRatio, IconCopy, IconMovie } from "@tabler/icons-react";
+import { IconAspectRatio, IconChevronDown, IconCopy, IconMovie } from "@tabler/icons-react";
 import { useState } from "react";
 import { CollapsibleText } from "../../components/collapsible-text";
 import { ConfirmDialog } from "../../components/confirm-dialog";
@@ -19,18 +19,29 @@ const statusText = {
   failed: "生成失败，积分已退回",
   needs_reconciliation: "结果待核对，请勿重复提交",
 };
-function taskStatus(task: VideoTask) {
+export function videoTaskStatus(task: VideoTask) {
+  if (task.status === "failed" && task.error_code === "VIDEO_REFERENCES_UNAVAILABLE")
+    return "参考图无法读取，视频积分已退回";
   if (task.status !== "running") return statusText[task.status];
   if (task.provider_status === "paused") return "任务暂停，等待恢复";
   if (task.provider_status === "pending_confirmation") return "结果待确认，请勿重复提交";
   if (task.provider_status === "completed") return "正在保存视频";
   return statusText.running;
 }
-export function VideoTaskCard({ task, onRestore }: { task: VideoTask; onRestore: () => void }) {
+export function VideoTaskCard({
+  task,
+  onRestore,
+  showMedia = true,
+}: {
+  task: VideoTask;
+  onRestore: () => void;
+  showMedia?: boolean;
+}) {
   const [confirmRestore, setConfirmRestore] = useState(false);
   const input = task.input.video;
+  const originalCount = task.input.storyboardOriginalImageCount ?? 1;
   const active = task.status === "queued" || task.status === "running";
-  const status = taskStatus(task);
+  const status = videoTaskStatus(task);
   function restore() {
     const references = input.referenceAssetIds.map((id, index) => ({
       id,
@@ -39,6 +50,7 @@ export function VideoTaskCard({ task, onRestore }: { task: VideoTask; onRestore:
       src: assetContentUrl(id, true),
     }));
     useVideoDraft.getState().update({
+      reuseReferences: true,
       prompt: input.prompt,
       ratio: input.aspectRatio,
       seconds: input.seconds,
@@ -127,46 +139,75 @@ export function VideoTaskCard({ task, onRestore }: { task: VideoTask; onRestore:
         />
       </header>
       <div className="history-prompt">
-        <CollapsibleText
-          text={task.prompt}
-          id={`video-prompt-${task.id}`}
-          className="generation-prompt"
+        <VideoHistoryPrompt text={task.input.storyboard?.description ?? task.prompt} />
+        <ReferenceThumbnails
+          ids={
+            task.input.storyboard
+              ? input.referenceAssetIds.slice(0, originalCount)
+              : input.referenceAssetIds
+          }
+          label="视频参考图"
         />
-        <Button
-          variant="secondary"
-          className="copy-prompt"
-          onPress={() => void copyToClipboard(task.prompt)}
-        >
-          <UiIcon icon={IconCopy} size="small" />
-          复制提示词
-        </Button>
-        <ReferenceThumbnails ids={input.referenceAssetIds} label="视频参考图" />
+        {task.input.storyboard && (
+          <Disclosure className="video-history-ai">
+            {({ isExpanded }) => (
+              <>
+                <Disclosure.Heading level={3}>
+                  <Disclosure.Trigger className="video-history-ai-trigger">
+                    AI 生成内容
+                    <Disclosure.Indicator>
+                      <span>
+                        <UiIcon icon={IconChevronDown} size="small" />
+                      </span>
+                    </Disclosure.Indicator>
+                  </Disclosure.Trigger>
+                </Disclosure.Heading>
+                <Disclosure.Content>
+                  {isExpanded && (
+                    <Disclosure.Body className="history-prompt">
+                      <h4 className="video-history-content-label">AI 生成描述</h4>
+                      <VideoHistoryPrompt text={task.prompt} copyLabel="复制 AI 描述" />
+                      <h4 className="video-history-content-label">分镜图片</h4>
+                      <ReferenceThumbnails
+                        ids={input.referenceAssetIds.slice(originalCount)}
+                        label="分镜图片"
+                        itemLabel="分镜图片"
+                      />
+                    </Disclosure.Body>
+                  )}
+                </Disclosure.Content>
+              </>
+            )}
+          </Disclosure>
+        )}
       </div>
-      <div className="generation-results" data-count="1">
-        <div>
-          {task.delivery && task.asset_id ? (
-            <VideoCover
-              assetId={task.asset_id}
-              title={task.public_id}
-              ratio={input.aspectRatio}
-              seconds={input.seconds}
-            />
-          ) : (
-            <section
-              className={`video-history-placeholder${active ? " generation-pending" : ""}`}
-              aria-label={`视频画面：${status}`}
-            >
-              {active ? (
-                <Spinner size="md" aria-label="视频处理中" />
-              ) : (
-                <UiIcon icon={IconMovie} size="illustration" />
-              )}
-              <span>{status}</span>
-              {active && <small>可以继续创作，完成后会自动更新</small>}
-            </section>
-          )}
+      {showMedia && (
+        <div className="generation-results" data-count="1">
+          <div>
+            {task.delivery && task.asset_id ? (
+              <VideoCover
+                assetId={task.asset_id}
+                title={task.public_id}
+                ratio={input.aspectRatio}
+                seconds={input.seconds}
+              />
+            ) : (
+              <section
+                className={`video-history-placeholder${active ? " generation-pending" : ""}`}
+                aria-label={`视频画面：${status}`}
+              >
+                {active ? (
+                  <Spinner size="md" aria-label="视频处理中" />
+                ) : (
+                  <UiIcon icon={IconMovie} size="illustration" />
+                )}
+                <span>{status}</span>
+                {active && <small>可以继续创作，完成后会自动更新</small>}
+              </section>
+            )}
+          </div>
         </div>
-      </div>
+      )}
       <ConfirmDialog
         isOpen={confirmRestore}
         title="载入这次创作？"
@@ -175,5 +216,27 @@ export function VideoTaskCard({ task, onRestore }: { task: VideoTask; onRestore:
         onConfirm={restore}
       />
     </article>
+  );
+}
+
+function VideoHistoryPrompt({
+  text,
+  copyLabel = "复制提示词",
+}: {
+  text: string;
+  copyLabel?: string;
+}) {
+  return (
+    <>
+      <CollapsibleText text={text} className="generation-prompt" />
+      <Button
+        variant="secondary"
+        className="copy-prompt"
+        onPress={() => void copyToClipboard(text)}
+      >
+        <UiIcon icon={IconCopy} size="small" />
+        {copyLabel}
+      </Button>
+    </>
   );
 }

@@ -27,6 +27,7 @@ for (const width of [390, 1440]) {
     await tools.getByRole("button", { name: "视频创作", exact: true }).click();
     const composer = page.getByRole("region", { name: "视频创作参数" });
     await expect(composer.locator(".reference-image-card")).toHaveCount(1);
+    await composer.getByRole("button", { name: "清除全部参考图片" }).click();
     await expect(composer.getByText("Minimax-h3-933特价", { exact: true })).toHaveCount(0);
     await expect(composer.getByText("768p", { exact: true })).toHaveCount(0);
     await expect(composer.getByText("首帧图", { exact: true })).toHaveCount(0);
@@ -43,10 +44,28 @@ for (const width of [390, 1440]) {
     await prompt.fill("镜头缓慢推近，床品在晨光中展开");
     await composer.getByRole("radio", { name: "16:9", exact: true }).click();
     const durationTrack = composer.locator(".video-duration-track");
+    await durationTrack.scrollIntoViewIfNeeded();
     const hoverBox = await durationTrack.boundingBox();
     if (!hoverBox) throw new Error("Duration track missing");
     await page.mouse.move(hoverBox.x + hoverBox.width * 0.52, hoverBox.y + hoverBox.height / 2);
-    await expect(page.getByRole("tooltip")).toHaveText("18秒");
+    const durationPreview = page.locator(".video-duration-preview");
+    await expect(durationPreview).toHaveText("18秒");
+    const previewElement = await durationPreview.elementHandle();
+    for (const fraction of [0.9, 0.2, 0.8, 0.3, 0.59]) {
+      await page.mouse.move(
+        hoverBox.x + hoverBox.width * fraction,
+        hoverBox.y + hoverBox.height / 2,
+      );
+    }
+    await expect(durationPreview).toHaveText("20秒");
+    expect(
+      await durationPreview.evaluate((current, initial) => current === initial, previewElement),
+    ).toBe(true);
+    const previewBox = await durationPreview.boundingBox();
+    expect(
+      previewBox &&
+        Math.abs(previewBox.x + previewBox.width / 2 - (hoverBox.x + hoverBox.width * 0.59)),
+    ).toBeLessThan(2);
     await expect(composer.getByRole("slider")).toHaveValue("10");
     await page.mouse.move(0, 0);
     const slider = composer.getByRole("slider");
@@ -54,21 +73,24 @@ for (const width of [390, 1440]) {
     await page.keyboard.press("ArrowRight");
     await expect(composer.getByRole("slider")).toHaveValue("11");
     await page.keyboard.press("ArrowRight");
-    await expect(composer.getByRole("slider")).toHaveValue("12");
+    await expect(slider).toHaveValue("12");
+    await expect(durationPreview).toHaveText("12秒");
     const track = composer.locator(".video-duration-track");
     const box = await track.boundingBox();
     if (!box) throw new Error("Slider track missing");
     await page.mouse.move(box.x + (box.width * 2) / 3, box.y + box.height / 2);
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 1, box.y + box.height / 2, { steps: 8 });
+    await expect(slider).toHaveValue("30");
+    await expect(durationPreview).toHaveText("30秒");
     await page.mouse.up();
-    await expect(composer.getByRole("slider")).toHaveValue("30");
+    await expect(slider).toHaveValue("30");
     await expect(composer.getByRole("button", { name: /立即生成.*100/ })).toBeEnabled();
     await tools.getByRole("button", { name: "主图制作", exact: true }).click();
     await tools.getByRole("button", { name: "视频创作", exact: true }).click();
     await expect(prompt).toHaveValue("镜头缓慢推近，床品在晨光中展开");
     await expect(composer.getByRole("slider")).toHaveValue("30");
-    await expect(composer.locator(".reference-image-card")).toHaveCount(1);
+    await expect(composer.locator(".reference-image-card")).toHaveCount(0);
     await page.screenshot({ path: `/tmp/lycobo-video-${width}.png` });
   });
 }
@@ -137,6 +159,11 @@ test("video text-only submission is durable, uses the selected duration and does
     referenceAssetIds: [],
   });
   await expect(page.getByRole("article", { name: "视频任务：W09VIDEO1" })).toContainText("排队中");
+  const railSpinner = page
+    .getByRole("button", { name: "定位视频：W09VIDEO1" })
+    .getByRole("status", { name: "视频处理中" });
+  await expect(railSpinner).toHaveCSS("width", "16px");
+  await expect(railSpinner).toHaveCSS("height", "16px");
   expect(imageSubmissions).toBe(0);
   await expect(page.locator(".header-balance-value")).toHaveText("100");
   await expect(page.getByRole("article", { name: "视频任务：W09VIDEO1" })).toContainText(
@@ -641,10 +668,6 @@ for (const editWhilePending of [false, true]) {
     const prompt = page.getByLabel("场景描述", { exact: true });
     await prompt.fill("镜头缓慢推近商品");
     await composer.getByRole("radio", { name: "16:9", exact: true }).click();
-    await page
-      .getByLabel("添加参考图片", { exact: true })
-      .setInputFiles({ name: "reference.png", mimeType: "image/png", buffer: png });
-    await expect(composer.locator(".reference-image-card")).toHaveCount(1);
     const button = composer.getByRole("button", { name: /立即生成.*100/ });
     await button.click();
     await expect.poll(() => requests).toBe(1);
@@ -658,7 +681,6 @@ for (const editWhilePending of [false, true]) {
     release?.();
     await expect(button).not.toHaveAttribute("data-submitting", "true");
     await expect(prompt).toHaveValue(editWhilePending ? "下一条视频的新场景" : "");
-    await expect(composer.locator(".reference-image-card")).toHaveCount(editWhilePending ? 1 : 0);
     await expect(composer.locator(".ratio-current")).toHaveText("16:9");
     await expect(composer.getByRole("slider")).toHaveValue("10");
     expect(requests).toBe(1);
@@ -837,4 +859,44 @@ test("video history matches image spacing and typography, regenerates with confi
     await expect(card.getByRole("button", { name: "重新生成", exact: true })).toBeDisabled();
   }
   expect(posts).toHaveLength(1);
+});
+
+test("unavailable reference delivery blocks paid storyboard work and keeps text video available", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  await page.route("**/api/v1/video-model", (route) =>
+    route.fulfill({
+      json: apiFixture({
+        enabled: true,
+        referenceImagesEnabled: false,
+        resolution: "768p",
+        unitCredits: 100,
+      }),
+    }),
+  );
+  await page.route("**/api/v1/video-storyboards/capabilities", (route) =>
+    route.fulfill({ json: apiFixture({ enabled: true }) }),
+  );
+  const submissions: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (request.method() === "POST" && /\/(image-tasks|video-storyboards|video-tasks)$/.test(path))
+      submissions.push(path);
+  });
+  await page.goto("/video");
+  const composer = page.getByRole("region", { name: "视频创作参数" });
+  await composer.getByRole("textbox", { name: "场景描述" }).fill("拍一段家纺商品展示");
+  await expect(composer.getByRole("button", { name: /立即生成.*100/ })).toBeEnabled();
+  await composer.getByLabel("添加参考图片").setInputFiles({
+    name: "product.png",
+    mimeType: "image/png",
+    buffer: png,
+  });
+  await expect(page.getByText("当前环境无法向视频服务提供参考图。", { exact: true })).toBeVisible();
+  await expect(composer).not.toContainText("当前环境无法向视频服务提供参考图。");
+  await expect(composer.getByRole("button", { name: /立即生成.*106/ })).toBeDisabled();
+  await composer.getByRole("button", { name: "清除全部参考图片" }).click();
+  await expect(composer.getByRole("button", { name: /立即生成.*100/ })).toBeEnabled();
+  expect(submissions).toEqual([]);
 });

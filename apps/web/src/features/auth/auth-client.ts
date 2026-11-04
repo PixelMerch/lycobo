@@ -10,7 +10,7 @@ import { rememberSessionExpiry, resetSessionRenewal, sessionFetch } from "../../
 
 import { clearPreviewLinks } from "../generation/preview-link-cache";
 
-const authKey = ["enterprise-session"];
+export const enterpriseSessionKey = ["enterprise-session"];
 async function authRequest(path: string, init: RequestInit = {}) {
   const request = path === "session" ? sessionFetch : fetch;
   let response: Response;
@@ -48,7 +48,7 @@ async function errorMessage(response: Response) {
 }
 export function useEnterpriseSession() {
   return useQuery({
-    queryKey: authKey,
+    queryKey: enterpriseSessionKey,
     retry: false,
     staleTime: 30000,
     queryFn: async ({ signal }) => {
@@ -77,10 +77,12 @@ export function useEnterpriseLogin() {
     onSuccess: async (user) => {
       clearPreviewLinks();
       await client.cancelQueries();
-      client.setQueryData(authKey, user);
+      client.setQueryData(enterpriseSessionKey, user);
       // Reset notifies mounted observers and refetches active queries with the new cookie.
       // Removing queries leaves those observers attached to the previous login state.
-      await client.resetQueries({ predicate: (query) => query.queryKey[0] !== authKey[0] });
+      await client.resetQueries({
+        predicate: (query) => query.queryKey[0] !== enterpriseSessionKey[0],
+      });
     },
   });
 }
@@ -95,8 +97,10 @@ export function useEnterpriseLogout() {
     onSuccess: async () => {
       clearPreviewLinks();
       await client.cancelQueries();
-      client.setQueryData(authKey, null);
-      await client.resetQueries({ predicate: (query) => query.queryKey[0] !== authKey[0] });
+      client.setQueryData(enterpriseSessionKey, null);
+      await client.resetQueries({
+        predicate: (query) => query.queryKey[0] !== enterpriseSessionKey[0],
+      });
     },
   });
 }

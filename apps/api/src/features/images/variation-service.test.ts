@@ -42,6 +42,7 @@ function fixture(replayed = false, webStatus = 200, origin = "https://api.deepse
   });
   return {
     scope,
+    repository,
     input,
     plan,
     sequence,
@@ -118,4 +119,125 @@ it("never sends a third-party provider credential to DeepSeek Fetch", async () =
   await f.service.create(f.scope, f.input, "key", new AbortController().signal);
   expect(f.request).not.toHaveBeenCalled();
   expect(f.plan.status).toBe("failed");
+});
+
+it("rejects incomplete TK shot plans and verifies every selected asset before optimization", async () => {
+  const f = fixture();
+  const original = crypto.randomUUID();
+  f.repository.asset = vi.fn<typeof f.repository.asset>(async (_scope, id) =>
+    id === original
+      ? {
+          id,
+          objectKey: "fixture.png",
+          mimeType: "image/png",
+          width: 2,
+          height: 2,
+          bytes: 64,
+          sha256: "0".repeat(64),
+        }
+      : null,
+  );
+  f.request.mockResolvedValueOnce(
+    Response.json({
+      choices: [
+        {
+          finish_reason: "stop",
+          message: {
+            content: JSON.stringify({
+              items: [{ title: "特写", prompt: "保持原图花型，展示商品特写。" }],
+            }),
+          },
+        },
+      ],
+    }),
+  );
+  const signal = new AbortController().signal;
+  await f.service.createStoryboard(
+    f.scope,
+    {
+      stage: "plan",
+      description: "自然晨光",
+      originalAssetId: original,
+      count: 3,
+      seconds: 10,
+    },
+    "plan",
+    signal,
+  );
+  expect(f.plan.status).toBe("failed");
+  expect(f.plan.items).toHaveLength(0);
+  const request = JSON.parse(String(f.request.mock.calls[0]?.[1]?.body));
+  expect(request.model).toBe("deepseek-flash");
+  expect(request.messages[0].content).toContain("恰好 3 条");
+  expect(request.messages[1].content).not.toContain(original);
+
+  await f.service.createStoryboard(
+    f.scope,
+    {
+      stage: "video",
+      description: "自然晨光",
+      originalAssetId: original,
+      seconds: 10,
+      shots: [{ assetId: crypto.randomUUID(), title: "全景", prompt: "展示商品全景。" }],
+    },
+    "video",
+    signal,
+  );
+  expect(f.request).toHaveBeenCalledTimes(1);
+  expect(f.plan.status).toBe("failed");
+});
+
+it("checks all original images and numbers the storyboard after the product references", async () => {
+  const f = fixture();
+  const ids = Array.from({ length: 4 }, () => crypto.randomUUID());
+  const [originalAssetId, detail, reverse, frame] = ids;
+  if (!originalAssetId || !detail || !reverse || !frame) throw new Error("Missing fixture images");
+  const additionalOriginalAssetIds = [detail, reverse];
+  const asset = vi.fn<typeof f.repository.asset>(async (_scope, id) => ({
+    id,
+    objectKey: "fixture.png",
+    mimeType: "image/png",
+    width: 2,
+    height: 2,
+    bytes: 64,
+    sha256: "0".repeat(64),
+  }));
+  f.repository.asset = asset;
+  const begin = vi.spyOn(f.repository.variation, "begin");
+  f.request.mockResolvedValueOnce(
+    Response.json({
+      choices: [
+        {
+          finish_reason: "stop",
+          message: {
+            content: JSON.stringify({
+              items: [{ title: "成片", prompt: "使用图片4，平稳推进展示双面材质。" }],
+            }),
+          },
+        },
+      ],
+    }),
+  );
+  const result = await f.service.createStoryboard(
+    f.scope,
+    {
+      stage: "video",
+      description: "长绒质感与双面设计",
+      originalAssetId,
+      additionalOriginalAssetIds,
+      seconds: 10,
+      shots: [{ assetId: frame, title: "翻被角", prompt: "展示被子的两面材质。" }],
+    },
+    "video",
+    new AbortController().signal,
+  );
+  expect(result?.status).toBe("ready");
+  expect(begin.mock.calls[0]?.[1].referenceAssetIds).toEqual(ids.slice(0, 3));
+  expect(asset.mock.calls.map(([, id]) => id)).toEqual(ids);
+  const request = JSON.parse(String(f.request.mock.calls[0]?.[1]?.body));
+  expect(request.messages[0].content).toContain("图片4起");
+  expect(JSON.parse(request.messages[1].content)).toMatchObject({
+    originals: [1, 2, 3],
+    shots: [{ image: 4, title: "翻被角" }],
+  });
 });

@@ -20,6 +20,7 @@ export function localEnvironment(source, docker = false, settings = source) {
     ])
       if (settings[key]) env[key] = settings[key];
   }
+  if (settings.VIDEO_REFERENCE_ORIGIN) env.VIDEO_REFERENCE_ORIGIN = settings.VIDEO_REFERENCE_ORIGIN;
   Object.assign(env, {
     APP_ENV: "development",
     NODE_ENV: "development",

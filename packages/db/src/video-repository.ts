@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { ImageScope, VideoInput } from "@lycoboai/contracts";
+import type { ImageScope, VideoCreateInput } from "@lycoboai/contracts";
 import postgres from "postgres";
 import { z } from "zod";
 import { type CloudBaseDatabaseBindings, cloudbaseRpc } from "./cloudbase-rpc";
@@ -24,18 +24,22 @@ export function videoRepository(run: VideoRun, close: () => Promise<void> = asyn
     close,
     create: (
       scope: ImageScope,
-      input: VideoInput,
+      input: VideoCreateInput,
       key: string,
       config: { origin: string; credentialHash: string },
-    ) =>
-      run("create", {
+    ) => {
+      const { storyboard, storyboardOriginalImageCount, ...video } = input;
+      return run("create", {
         organizationId: scope.organizationId,
         userId: scope.userId,
-        input,
+        input: video,
+        ...(storyboard ? { storyboard } : {}),
+        ...(storyboardOriginalImageCount !== undefined ? { storyboardOriginalImageCount } : {}),
         key,
         ...config,
         inputHash: videoCredentialHash(JSON.stringify(input)),
-      }).then((value) => z.object({ id: z.uuid(), replayed: z.boolean() }).parse(value)),
+      }).then((value) => z.object({ id: z.uuid(), replayed: z.boolean() }).parse(value));
+    },
     list: (scope: ImageScope, before?: string) =>
       run("list", { organizationId: scope.organizationId, userId: scope.userId, before }),
     get: (scope: ImageScope, id: string) =>

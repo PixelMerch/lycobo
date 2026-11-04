@@ -19,7 +19,7 @@ import {
 } from "@lycoboai/generation";
 import { imageStore } from "@lycoboai/storage";
 import { cloudbaseObjectBucket, readCloudBaseStorageConfig } from "@lycoboai/storage/cloudbase";
-import { assetDeliverySigner } from "@lycoboai/storage/delivery";
+import { assetDeliverySigner, videoReferenceOrigin } from "@lycoboai/storage/delivery";
 import { objectImageStore } from "@lycoboai/storage/object-images";
 import { imageObjectBucket } from "@lycoboai/storage/s3";
 import pino from "pino";
@@ -146,9 +146,7 @@ const app = createApp(
           repository: videoRepository,
           ...videoConfig,
           sign: videoSign,
-          referencesReady: !!(
-            cloudbaseStorage || process.env.ASSET_PUBLIC_ORIGIN?.startsWith("https://")
-          ),
+          referencesReady: !!(cloudbaseStorage || videoReferenceOrigin(process.env)),
           wake: wakeConsumer
             ? async () => {
                 await wakeConsumer();

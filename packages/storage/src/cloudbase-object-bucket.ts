@@ -182,7 +182,7 @@ export function cloudbaseProviderReferenceSigner(
   env: CloudBaseStorageBindings,
   request: typeof fetch = fetch,
 ) {
-  const sign = cloudbaseObjectSigner(env, request, 3600);
+  const sign = cloudbaseObjectSigner(env, request, 3600, false);
   return (key: string) => {
     if (!key.endsWith(".png")) throw new Error("INVALID_REFERENCE_IMAGE");
     return sign(key, 3600);

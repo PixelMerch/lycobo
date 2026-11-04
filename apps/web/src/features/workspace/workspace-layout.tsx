@@ -10,6 +10,8 @@ import { HistoryIndex } from "../generation/history/history-index";
 import type { HistoryRestore } from "../generation/history/history-task-tools";
 import { useStudioStore } from "../generation/studio-state";
 import { BackToTopButton } from "../generation/workspace-page";
+import { StoryboardContext } from "../video/storyboard/storyboard-context";
+import { useStoryboard } from "../video/storyboard/use-storyboard";
 import { VideoHistory, VideoHistoryRail } from "../video/video-history";
 import { toolForPath, useWorkspaceState } from "./workspace-state";
 import { WorkspaceToolPicker } from "./workspace-tool-picker";
@@ -23,6 +25,7 @@ export function WorkspaceLayout() {
   const [mobilePanel, setMobilePanel] = useState("form");
   const currentTool = toolForPath(pathname);
   const historyTool = currentTool.id;
+  const storyboard = useStoryboard(historyTool === "video", () => setMobilePanel("history"));
   const [restorePending, setRestorePending] = useState<RestoredTask | null>(null);
   useEffect(() => {
     remember(pathname);
@@ -93,10 +96,12 @@ export function WorkspaceLayout() {
         <ToggleButton id="form">创作</ToggleButton>
         <ToggleButton id="history">历史记录</ToggleButton>
       </ToggleButtonGroup>
-      <Outlet />
+      <StoryboardContext.Provider value={storyboard}>
+        <Outlet />
+      </StoryboardContext.Provider>
       <section className="results-panel" aria-label="工作区历史记录">
         {historyTool === "video" ? (
-          <VideoHistory onRestore={() => setMobilePanel("form")} />
+          <VideoHistory onRestore={() => setMobilePanel("form")} production={storyboard} />
         ) : (
           <GenerationHistory key={historyTool} tool={historyTool} onRestore={restore} />
         )}
