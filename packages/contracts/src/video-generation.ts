@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const videoModel = "Minimax-h3-933特价";
 export const videoUnitCredits = 100;
+export const videoReferenceUnavailableMessage = "当前环境无法向视频服务提供参考图。";
 export const videoReferenceLimit = 9;
 export const storyboardOriginalImageLimit = 3;
 const storyboardOriginalImageCountSchema = z
@@ -60,6 +61,7 @@ export const videoTasksSchema = z.object({ data: z.array(videoTaskSchema) });
 
 export const videoCapabilitySchema = z.object({
   enabled: z.boolean(),
+  referenceImagesEnabled: z.boolean().optional(),
   storyboardHistory: z.boolean().optional(),
   maxStoryboardOriginalImages: storyboardOriginalImageCountSchema.optional(),
   resolution: z.literal("768p"),

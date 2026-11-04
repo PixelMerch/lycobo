@@ -1,5 +1,9 @@
 import { Button, Spinner } from "@heroui/react";
-import { storyboardOriginalImageLimit, videoUnitCredits } from "@lycoboai/contracts";
+import {
+  storyboardOriginalImageLimit,
+  videoReferenceUnavailableMessage,
+  videoUnitCredits,
+} from "@lycoboai/contracts";
 import { CreditCoin } from "../../components/credit-coin";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { useErrorToast } from "../../lib/error-toast";
@@ -45,6 +49,9 @@ export function VideoPage() {
   const referenceLimit = Math.max(production.maxOriginalImages, references.length);
   const busy = submission.isPending || production.busy;
   const valid = hasPromptDescription(draft.prompt);
+  const referenceBlocked =
+    model.data?.referenceImagesEnabled === false &&
+    (automatic || (!submission.hasPending && references.length > 0));
   const canSubmit = automatic
     ? !production.blocked &&
       (production.needsResume ||
@@ -115,15 +122,17 @@ export function VideoPage() {
         )}
       </div>
       <div className="generate-area">
-        {automatic && !busy && (
+        {(automatic || referenceBlocked) && !busy && (
           <p className="video-reference-hint">
-            {production.pendingVideo
-              ? "可确认上次提交，沿用原任务编号。"
-              : production.needsResume
-                ? "继续本次制作，已提交的画面会沿用。"
-                : production.unavailable
-                  ? "视频制作暂不可用，请稍后重试。"
-                  : `预计 ${automaticVideoCost} 积分（画面 ${automaticVideoCost - videoUnitCredits} + 视频 ${videoUnitCredits}），竖屏 9:16 · 10 秒。`}
+            {referenceBlocked
+              ? videoReferenceUnavailableMessage
+              : production.pendingVideo
+                ? "可确认上次提交，沿用原任务编号。"
+                : production.needsResume
+                  ? "继续本次制作，已提交的画面会沿用。"
+                  : production.unavailable
+                    ? "视频制作暂不可用，请稍后重试。"
+                    : `预计 ${automaticVideoCost} 积分（画面 ${automaticVideoCost - videoUnitCredits} + 视频 ${videoUnitCredits}），竖屏 9:16 · 10 秒。`}
           </p>
         )}
         <Button
@@ -132,7 +141,7 @@ export function VideoPage() {
           fullWidth
           className={`primary-action generation-submit${busy ? " generation-pending" : ""}`}
           data-submitting={busy || undefined}
-          isDisabled={!model.data?.enabled || busy || !canSubmit}
+          isDisabled={!model.data?.enabled || busy || referenceBlocked || !canSubmit}
           isPending={busy}
           onPress={() => {
             if (automatic) {

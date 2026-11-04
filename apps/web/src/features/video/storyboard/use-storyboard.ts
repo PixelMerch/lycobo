@@ -8,6 +8,7 @@ import {
   type VariationPlan,
   variationPlanSchema,
   videoReferenceLimit,
+  videoReferenceUnavailableMessage,
   videoUnitCredits,
   walletBalanceSchema,
 } from "@lycoboai/contracts";
@@ -157,6 +158,8 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
     mutationFn: async (input: { description: string; references: ReferenceImage[] }) => {
       if (!owner) throw new Error("请先登录");
       assertOwner();
+      if (videoModel.data?.referenceImagesEnabled === false)
+        throw new Error(videoReferenceUnavailableMessage);
       if (video.hasPending) {
         const result = await video.submitAsync({
           input: { prompt: "", seconds: draft.seconds, aspectRatio: "9:16" },

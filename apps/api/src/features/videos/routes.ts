@@ -1,4 +1,9 @@
-import { storyboardOriginalImageLimit, videoModel, videoUnitCredits } from "@lycoboai/contracts";
+import {
+  storyboardOriginalImageLimit,
+  videoModel,
+  videoReferenceUnavailableMessage,
+  videoUnitCredits,
+} from "@lycoboai/contracts";
 import { Hono } from "hono";
 import { z } from "zod";
 import { enterprisePrincipal } from "../auth/routes";
@@ -27,6 +32,7 @@ export function videoRoutes(
   app.get("/video-model", (c) =>
     c.json({
       enabled: !!deps,
+      referenceImagesEnabled: deps?.service.referenceImagesEnabled ?? false,
       storyboardHistory: !!deps,
       maxStoryboardOriginalImages: storyboardOriginalImageLimit,
       model: videoModel,
@@ -43,6 +49,8 @@ export function videoRoutes(
       return fail(symbol, "积分不足，每次视频生成需要100积分", 409);
     if (symbol === "REFERENCE_NOT_FOUND")
       return fail(symbol, "参考图片不存在或不属于当前账号", 400);
+    if (symbol === "VIDEO_REFERENCES_UNAVAILABLE")
+      return fail("GENERATION_NOT_CONFIGURED", videoReferenceUnavailableMessage, 503);
     if (symbol === "IDEMPOTENCY_CONFLICT")
       return fail(symbol, "提交编号已用于其他内容，请重新确认", 409);
     if (symbol === "RATE_LIMITED") return fail(symbol, "请等待已有视频任务完成或核对后再提交", 429);

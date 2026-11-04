@@ -11,6 +11,7 @@ export function videoService(deps: {
   referencesReady?: boolean;
   wake?: (() => Promise<void>) | undefined;
 }) {
+  const referenceImagesEnabled = deps.referencesReady !== false;
   const deliver = async (raw: unknown) =>
     Promise.all(
       z
@@ -22,6 +23,7 @@ export function videoService(deps: {
         }),
     );
   return {
+    referenceImagesEnabled,
     list: async (scope: ImageScope, before?: string) => ({
       data: await deliver(await deps.repository.list(scope, before)),
     }),
@@ -29,8 +31,8 @@ export function videoService(deps: {
       (await deliver(await deps.repository.get(scope, id)))[0] ?? null,
     create: async (scope: ImageScope, raw: unknown, key: string) => {
       const input = videoCreateSchema.parse(raw);
-      if (input.referenceAssetIds.length && deps.referencesReady === false)
-        throw new Error("GENERATION_NOT_CONFIGURED");
+      if (input.referenceAssetIds.length && !referenceImagesEnabled)
+        throw new Error("VIDEO_REFERENCES_UNAVAILABLE");
       const accepted = await deps.repository.create(scope, input, key, {
         origin: deps.origin,
         credentialHash: videoCredentialHash(deps.key),

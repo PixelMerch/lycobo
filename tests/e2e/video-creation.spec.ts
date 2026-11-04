@@ -860,3 +860,42 @@ test("video history matches image spacing and typography, regenerates with confi
   }
   expect(posts).toHaveLength(1);
 });
+
+test("unavailable reference delivery blocks paid storyboard work and keeps text video available", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  await page.route("**/api/v1/video-model", (route) =>
+    route.fulfill({
+      json: apiFixture({
+        enabled: true,
+        referenceImagesEnabled: false,
+        resolution: "768p",
+        unitCredits: 100,
+      }),
+    }),
+  );
+  await page.route("**/api/v1/video-storyboards/capabilities", (route) =>
+    route.fulfill({ json: apiFixture({ enabled: true }) }),
+  );
+  const submissions: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (request.method() === "POST" && /\/(image-tasks|video-storyboards|video-tasks)$/.test(path))
+      submissions.push(path);
+  });
+  await page.goto("/video");
+  const composer = page.getByRole("region", { name: "视频创作参数" });
+  await composer.getByRole("textbox", { name: "场景描述" }).fill("拍一段家纺商品展示");
+  await expect(composer.getByRole("button", { name: /立即生成.*100/ })).toBeEnabled();
+  await composer.getByLabel("添加参考图片").setInputFiles({
+    name: "product.png",
+    mimeType: "image/png",
+    buffer: png,
+  });
+  await expect(composer).toContainText("当前环境无法向视频服务提供参考图。");
+  await expect(composer.getByRole("button", { name: /立即生成.*106/ })).toBeDisabled();
+  await composer.getByRole("button", { name: "清除全部参考图片" }).click();
+  await expect(composer.getByRole("button", { name: /立即生成.*100/ })).toBeEnabled();
+  expect(submissions).toEqual([]);
+});
