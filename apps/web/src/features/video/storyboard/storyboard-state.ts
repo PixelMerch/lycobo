@@ -1,13 +1,32 @@
-import { type StoryboardProgress, storedStoryboardSchema } from "@lycoboai/contracts";
+import {
+  imageJobSchema,
+  storedStoryboardSchema,
+  storyboardImageLimit,
+  storyboardRequestSchema,
+} from "@lycoboai/contracts";
 import { create } from "zustand";
 import type { ReferenceImage } from "../../generation/studio-state";
+
+const frameSchema = storyboardRequestSchema.options[1].shape.shots.element
+  .pick({ assetId: true, title: true })
+  .extend({
+    position: imageJobSchema.shape.items.element.shape.position
+      .int()
+      .min(0)
+      .max(storyboardImageLimit - 1),
+  });
+const progressSchema = storedStoryboardSchema.shape.progress.extend({
+  frames: frameSchema.array().max(storyboardImageLimit).optional(),
+  frameJobStatus: imageJobSchema.shape.status.optional(),
+});
+const storedDraftSchema = storedStoryboardSchema.extend({ progress: progressSchema });
 
 type Draft = {
   description: string;
   references: ReferenceImage[];
   count: number;
   seconds: number;
-  progress: StoryboardProgress;
+  progress: ReturnType<typeof progressSchema.parse>;
 };
 export const emptyStoryboard: Draft = {
   description: "",
@@ -34,7 +53,7 @@ export const useStoryboardState = create<{
     if (!scope || get().drafts[scope]) return;
     let draft = emptyStoryboard;
     try {
-      const parsed = storedStoryboardSchema.safeParse(
+      const parsed = storedDraftSchema.safeParse(
         JSON.parse(sessionStorage.getItem(key(scope)) ?? "null"),
       );
       if (parsed.success) {

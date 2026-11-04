@@ -8,7 +8,24 @@ import { useErrorToast } from "../../lib/error-toast";
 import { assetContentUrl } from "../generation/generation-client";
 import { useSubmitVideo, useVideoModel } from "./video-client";
 
-export function VideoTaskActions({ task, onEdit }: { task: VideoTask; onEdit: () => void }) {
+export function VideoDownloadLink({ url }: { url: string }) {
+  return (
+    <Link className="button copy-prompt" href={url} download>
+      <UiIcon icon={IconDownload} size="small" />
+      下载视频
+    </Link>
+  );
+}
+
+export function VideoTaskActions({
+  task,
+  onEdit,
+  showDownload,
+}: {
+  task: VideoTask;
+  onEdit: () => void;
+  showDownload: boolean;
+}) {
   const [confirm, setConfirm] = useState(false);
   const actionsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -39,12 +56,7 @@ export function VideoTaskActions({ task, onEdit }: { task: VideoTask; onEdit: ()
     !submission.blockedByPending;
   return (
     <div ref={actionsRef} className="history-task-actions">
-      {task.delivery && (
-        <Link className="button copy-prompt" href={task.delivery.download_url} download>
-          <UiIcon icon={IconDownload} size="small" />
-          下载视频
-        </Link>
-      )}
+      {showDownload && task.delivery && <VideoDownloadLink url={task.delivery.download_url} />}
       <Tooltip delay={0}>
         <Button
           isIconOnly

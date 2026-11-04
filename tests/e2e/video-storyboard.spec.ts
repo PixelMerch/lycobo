@@ -13,6 +13,7 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
   }));
   const images = items.map(() => crypto.randomUUID());
   let imagesReady = false;
+  let partialFrameReady = false;
   let allowOptimization: (() => void) | undefined;
   let completed: object | null = null;
   const imageRequests: unknown[] = [];
@@ -94,16 +95,19 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
         status: imagesReady ? "succeeded" : "running",
         created_at: new Date().toISOString(),
         completed_at: new Date().toISOString(),
-        items: outputs.map((output_asset_id, position) => ({
-          id: crypto.randomUUID(),
-          position,
-          status: imagesReady ? "succeeded" : "running",
-          output_asset_id: imagesReady ? output_asset_id : null,
-          error_code: null,
-          width: 768,
-          height: 1360,
-          worker_id: null,
-        })),
+        items: outputs.map((output_asset_id, position) => {
+          const ready = imagesReady || (partialFrameReady && position === 1);
+          return {
+            id: crypto.randomUUID(),
+            position,
+            status: ready ? "succeeded" : "running",
+            output_asset_id: ready ? output_asset_id : null,
+            error_code: null,
+            width: 768,
+            height: 1360,
+            worker_id: null,
+          };
+        }),
       }),
     });
   });
@@ -123,6 +127,10 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
       error_code: null,
       asset_id: original,
       provider_status: "completed",
+      delivery: {
+        url: "http://127.0.0.1:5173/fixture-video.mp4",
+        download_url: "http://127.0.0.1:5173/fixture-video.mp4",
+      },
     };
     return route.fulfill({ status: 202, json: apiFixture({ id: videoId, replayed: false }) });
   });
@@ -163,9 +171,19 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
     }),
   );
 
+  const frames = progress.getByRole("region", { name: "分镜画面" });
+  partialFrameReady = true;
+  await expect(frames.getByRole("img", { name: "卧室全景" })).toBeVisible();
+  await expect(frames.getByRole("img")).toHaveCount(1);
+  await expect(progress.getByRole("listitem").nth(0)).toContainText("进行中");
   imagesReady = true;
   await expect(progress.getByRole("listitem").nth(0)).toContainText("已完成");
   await expect(progress.getByRole("listitem").nth(1)).toContainText("进行中");
+  expect(
+    await frames
+      .getByRole("img")
+      .evaluateAll((images) => images.map((image) => image.getAttribute("alt"))),
+  ).toEqual(items.map(({ title }) => title));
   expect(videoRequests).toHaveLength(0);
   expect(planningRequests[1]).toEqual(
     expect.objectContaining({
@@ -177,7 +195,12 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
   allowOptimization?.();
   await expect.poll(() => videoRequests.length).toBe(1);
   await expect(progress.getByRole("listitem").nth(2)).toContainText("待继续");
+  await expect(progress).toContainText(items.map(({ title }) => title).join(" → "));
+  const videoSlot = progress.locator(".video-production-media");
+  await expect(videoSlot).toBeVisible();
+  const pendingSize = await videoSlot.boundingBox();
   await page.reload();
+  await expect(frames.getByRole("img")).toHaveCount(3);
   await composer.getByRole("button", { name: /确认上次提交.*100/ }).click();
   await expect.poll(() => videoRequests.length).toBe(2);
   expect(videoRequests[0]).toEqual({
@@ -192,9 +215,16 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
   expect(imageRequests).toHaveLength(1);
   expect(planningRequests).toHaveLength(2);
   await expect(progress.getByRole("listitem").nth(2)).toContainText("已完成");
+  await expect(videoSlot.getByRole("button", { name: "预览视频：W09VIDEO1" })).toBeVisible();
+  await expect(progress.getByRole("link", { name: "下载视频" })).toBeVisible();
+  const finalSize = await videoSlot.boundingBox();
+  expect(finalSize?.width).toBe(pendingSize?.width);
+  expect(finalSize?.height).toBe(pendingSize?.height);
+  await expect(page.getByRole("button", { name: "预览视频：W09VIDEO1" })).toHaveCount(1);
   await expect(page.getByRole("article", { name: "视频任务：W09VIDEO1" })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 900 });
   await expect(progress).toBeVisible();
+  await expect.poll(() => progress.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
   const history = page.getByRole("article", { name: "视频任务：W09VIDEO1" });
   await expect.poll(() => history.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
 });

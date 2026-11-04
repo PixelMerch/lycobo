@@ -1,4 +1,5 @@
 import {
+  type ImageJob,
   imageJobSchema,
   imageUnitCredits,
   type StoryboardRequest,
@@ -34,6 +35,19 @@ const isRunning = (status: string) => status === "queued" || status === "running
 const definitive = (error: unknown) =>
   error instanceof ImageApiError && [400, 401, 403, 409, 413, 429].includes(error.status);
 export const automaticVideoCost = emptyStoryboard.count * imageUnitCredits + videoUnitCredits;
+
+function completedShots(job: ImageJob, plan: VariationPlan, originalAssetId: string) {
+  const seen = new Set([originalAssetId]);
+  return [...job.items]
+    .sort((a, b) => a.position - b.position)
+    .flatMap(({ position, status, output_asset_id: assetId }) => {
+      const shot = plan.items[position];
+      if (!shot || status !== "succeeded" || !assetId || seen.has(assetId)) return [];
+      seen.add(assetId);
+      return [{ position, assetId, title: shot.title, prompt: shot.prompt.slice(0, 250) }];
+    })
+    .slice(0, storyboardVideoShotLimit);
+}
 
 export function useStoryboard(enabled: boolean, showHistory: () => void) {
   const owner = useEnterpriseSession().data ?? undefined;
@@ -103,19 +117,31 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
     return variationPlanSchema.parse(await response.json());
   }
 
-  async function waitForImages(id: string) {
+  async function waitForImages(id: string, plan: VariationPlan, originalAssetId: string) {
     const deadline = Date.now() + 8 * 60_000;
     while (Date.now() < deadline) {
       assertOwner();
       const job = imageJobSchema.parse(await (await imageRequest(`image-tasks/${id}`)).json());
-      if (!isRunning(job.status)) return job;
+      const ready = !isRunning(job.status);
+      const shots = completedShots(job, plan, originalAssetId);
+      const frames = shots.map(({ position, assetId, title }) => ({ position, assetId, title }));
+      const previous = current().progress;
+      if (
+        frames.length !== (previous.frames?.length ?? 0) ||
+        frames.some((frame, index) => frame.assetId !== previous.frames?.[index]?.assetId) ||
+        job.status !== previous.frameJobStatus
+      ) {
+        save({ frames, frameJobStatus: job.status });
+      }
+      if (ready) return { job, shots };
       await new Promise((resolve) => setTimeout(resolve, 4000));
     }
     throw new Error("画面仍在制作，请稍后点击继续生成");
   }
 
   function finish(id: string) {
-    update({ progress: { acceptedVideoId: id } });
+    const frames = current().progress.frames;
+    update({ progress: { acceptedVideoId: id, frames } });
   }
 
   const action = useMutation({
@@ -212,28 +238,11 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
         batchId ??= batch.id;
         save({ batchId, imageTarget: undefined });
       }
-      const job = await waitForImages(batchId);
+      const { job, shots: completed } = await waitForImages(batchId, snapshot, originalAssetId);
       void client.invalidateQueries({ queryKey: ["wallet"] });
       void client.invalidateQueries({ queryKey: ["wallet-entries"] });
       void client.invalidateQueries({ queryKey: ["image-assets"] });
-      const seen = new Set([originalAssetId]);
-      const shots = [...job.items]
-        .sort((a, b) => a.position - b.position)
-        .flatMap((item) => {
-          const plan = snapshot.items[item.position];
-          if (
-            !plan ||
-            item.status !== "succeeded" ||
-            !item.output_asset_id ||
-            seen.has(item.output_asset_id)
-          )
-            return [];
-          seen.add(item.output_asset_id);
-          return [
-            { assetId: item.output_asset_id, title: plan.title, prompt: plan.prompt.slice(0, 250) },
-          ];
-        })
-        .slice(0, storyboardVideoShotLimit);
+      const shots = completed.map(({ assetId, title, prompt }) => ({ assetId, title, prompt }));
       if (!shots.length) {
         if (job.status === "failed") update({ progress: {} });
         throw new Error("画面未生成，视频任务尚未提交");

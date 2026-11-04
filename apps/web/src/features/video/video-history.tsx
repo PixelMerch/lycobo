@@ -1,5 +1,4 @@
 import { Button, EmptyState, Spinner } from "@heroui/react";
-import type { VideoTask } from "@lycoboai/contracts";
 import { IconChevronRight, IconMovie } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -9,61 +8,9 @@ import { useErrorToast } from "../../lib/error-toast";
 import { LibraryDialog } from "../assets/library-dialog";
 import { AssetImage } from "../generation/asset-image";
 import { historyContentTop } from "../generation/history/history-navigation";
-import type { useStoryboard } from "./storyboard/use-storyboard";
 import { useVideoTasks } from "./video-client";
+import { type Production, VideoProductionProgress } from "./video-production-progress";
 import { VideoTaskCard } from "./video-task-card";
-
-type Production = Pick<
-  ReturnType<typeof useStoryboard>,
-  "draft" | "busy" | "needsResume" | "failed"
->;
-const productionSteps = ["创建分镜画面", "编写视频提示词", "生成视频"];
-
-function VideoProductionProgress({
-  production,
-  task,
-}: {
-  production: Production;
-  task: VideoTask | undefined;
-}) {
-  const { progress } = production.draft;
-  const current =
-    progress.acceptedVideoId || progress.optimization?.prompt ? 2 : progress.optimization ? 1 : 0;
-  const status = task?.status;
-  const complete = status === "succeeded";
-  const paused = production.failed || (!production.busy && production.needsResume);
-  return (
-    <section className="video-production-progress" aria-label="视频制作进度">
-      <h2>视频制作进度</h2>
-      <ol aria-live="polite">
-        {productionSteps.map((title, index) => {
-          const done = complete || index < current;
-          const state = done
-            ? "已完成"
-            : index > current
-              ? "等待中"
-              : status === "failed"
-                ? "未完成"
-                : status === "needs_reconciliation"
-                  ? "结果待核对"
-                  : paused
-                    ? "待继续"
-                    : status === "queued" || (progress.acceptedVideoId && !status)
-                      ? "已提交"
-                      : "进行中";
-          return (
-            <li key={title} data-current={(index === current && !done) || undefined}>
-              <span className="video-production-step">{index + 1}</span>
-              <span>{title}</span>
-              <span className="video-production-state">{state}</span>
-            </li>
-          );
-        })}
-      </ol>
-      {paused && <p>可回到创作区查看提示并继续本次制作。</p>}
-    </section>
-  );
-}
 
 export function VideoHistory({
   onRestore,
@@ -95,31 +42,34 @@ export function VideoHistory({
         task={tasks.find((task) => task.id === videoId)}
       />
     ) : null;
-  if (query.isLoading) return progress ?? <Spinner aria-label="正在加载视频历史" />;
+  if (query.isLoading && !progress) return <Spinner aria-label="正在加载视频历史" />;
   if (query.isError && !query.data)
     return (
       <>
-        {progress}
+        {progress && <div className="generation-history video-history-list">{progress}</div>}
         <EmptyState>
           <p>视频历史暂不可用</p>
           <Button onPress={() => void query.refetch()}>重试</Button>
         </EmptyState>
       </>
     );
-  if (!tasks.length)
+  if (!tasks.length && !progress)
     return (
-      progress ?? (
-        <EmptyState className="empty-state generation-empty-state">
-          <UiIcon icon={IconMovie} size="illustration" />
-          <p>生成的视频会显示在这里</p>
-        </EmptyState>
-      )
+      <EmptyState className="empty-state generation-empty-state">
+        <UiIcon icon={IconMovie} size="illustration" />
+        <p>生成的视频会显示在这里</p>
+      </EmptyState>
     );
   return (
     <div className="generation-history video-history-list">
       {progress}
       {tasks.map((task) => (
-        <VideoTaskCard key={task.id} task={task} onRestore={onRestore} />
+        <VideoTaskCard
+          key={task.id}
+          task={task}
+          onRestore={onRestore}
+          showMedia={task.id !== videoId}
+        />
       ))}
       <InfiniteLoad
         hasMore={query.hasNextPage}
@@ -159,7 +109,9 @@ export function VideoHistoryRail() {
                 aria-current={(activeId ?? tasks[0]?.id) === task.id ? "true" : "false"}
                 onPress={() => {
                   setActiveId(task.id);
-                  const target = document.getElementById(`video-task-${task.id}`);
+                  const target =
+                    document.getElementById(`video-production-${task.id}`) ??
+                    document.getElementById(`video-task-${task.id}`);
                   if (target)
                     window.scrollTo({
                       top: Math.max(

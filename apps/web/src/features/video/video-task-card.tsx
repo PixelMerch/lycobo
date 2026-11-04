@@ -19,18 +19,26 @@ const statusText = {
   failed: "生成失败，积分已退回",
   needs_reconciliation: "结果待核对，请勿重复提交",
 };
-function taskStatus(task: VideoTask) {
+export function videoTaskStatus(task: VideoTask) {
   if (task.status !== "running") return statusText[task.status];
   if (task.provider_status === "paused") return "任务暂停，等待恢复";
   if (task.provider_status === "pending_confirmation") return "结果待确认，请勿重复提交";
   if (task.provider_status === "completed") return "正在保存视频";
   return statusText.running;
 }
-export function VideoTaskCard({ task, onRestore }: { task: VideoTask; onRestore: () => void }) {
+export function VideoTaskCard({
+  task,
+  onRestore,
+  showMedia = true,
+}: {
+  task: VideoTask;
+  onRestore: () => void;
+  showMedia?: boolean;
+}) {
   const [confirmRestore, setConfirmRestore] = useState(false);
   const input = task.input.video;
   const active = task.status === "queued" || task.status === "running";
-  const status = taskStatus(task);
+  const status = videoTaskStatus(task);
   function restore() {
     const references = input.referenceAssetIds.map((id, index) => ({
       id,
@@ -114,6 +122,7 @@ export function VideoTaskCard({ task, onRestore }: { task: VideoTask; onRestore:
         </dl>
         <VideoTaskActions
           task={task}
+          showDownload={showMedia}
           onEdit={() => {
             const draft = useVideoDraft.getState();
             if (
@@ -143,31 +152,33 @@ export function VideoTaskCard({ task, onRestore }: { task: VideoTask; onRestore:
         </Button>
         <ReferenceThumbnails ids={input.referenceAssetIds} label="视频参考图" />
       </div>
-      <div className="generation-results" data-count="1">
-        <div>
-          {task.delivery && task.asset_id ? (
-            <VideoCover
-              assetId={task.asset_id}
-              title={task.public_id}
-              ratio={input.aspectRatio}
-              seconds={input.seconds}
-            />
-          ) : (
-            <section
-              className={`video-history-placeholder${active ? " generation-pending" : ""}`}
-              aria-label={`视频画面：${status}`}
-            >
-              {active ? (
-                <Spinner size="md" aria-label="视频处理中" />
-              ) : (
-                <UiIcon icon={IconMovie} size="illustration" />
-              )}
-              <span>{status}</span>
-              {active && <small>可以继续创作，完成后会自动更新</small>}
-            </section>
-          )}
+      {showMedia && (
+        <div className="generation-results" data-count="1">
+          <div>
+            {task.delivery && task.asset_id ? (
+              <VideoCover
+                assetId={task.asset_id}
+                title={task.public_id}
+                ratio={input.aspectRatio}
+                seconds={input.seconds}
+              />
+            ) : (
+              <section
+                className={`video-history-placeholder${active ? " generation-pending" : ""}`}
+                aria-label={`视频画面：${status}`}
+              >
+                {active ? (
+                  <Spinner size="md" aria-label="视频处理中" />
+                ) : (
+                  <UiIcon icon={IconMovie} size="illustration" />
+                )}
+                <span>{status}</span>
+                {active && <small>可以继续创作，完成后会自动更新</small>}
+              </section>
+            )}
+          </div>
         </div>
-      </div>
+      )}
       <ConfirmDialog
         isOpen={confirmRestore}
         title="载入这次创作？"

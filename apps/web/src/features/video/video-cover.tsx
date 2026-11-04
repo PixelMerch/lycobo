@@ -12,11 +12,13 @@ export function VideoCover({
   title,
   ratio,
   seconds,
+  fixedRatio = false,
 }: {
   assetId: string;
   title: string;
   ratio: string;
   seconds: number;
+  fixedRatio?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -50,9 +52,10 @@ export function VideoCover({
             className="video-cover-image"
             onLoad={(event) => {
               setLoaded(true);
-              setMeasuredRatio(
-                event.currentTarget.naturalWidth / event.currentTarget.naturalHeight,
-              );
+              if (!fixedRatio)
+                setMeasuredRatio(
+                  event.currentTarget.naturalWidth / event.currentTarget.naturalHeight,
+                );
             }}
             onError={() => {
               setFailed(true);

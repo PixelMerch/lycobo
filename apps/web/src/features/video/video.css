@@ -181,7 +181,8 @@
 .video-cover[data-cover-loaded="true"] .video-cover-image {
   opacity: 1;
 }
-.unified-workspace .generation-results[data-count] .video-cover-image {
+:is(.video-production-media, .unified-workspace .generation-results[data-count])
+  .video-cover-image {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -607,14 +608,14 @@
   margin: 0;
   font-size: var(--text-base);
 }
-.video-production-progress ol {
+.video-production-progress > ol {
   display: grid;
-  gap: 8px;
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.video-production-progress li {
+.video-production-progress > ol > li {
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr) auto;
   align-items: center;
@@ -631,10 +632,61 @@
 .video-production-state {
   color: var(--muted);
   font-size: var(--text-xs);
+  text-align: right;
 }
-.video-production-progress li[data-current] :is(.video-production-step, .video-production-state) {
+.video-production-progress
+  [aria-current="step"]
+  :is(.video-production-step, .video-production-state) {
   color: var(--tool-soft);
 }
 .video-production-progress p {
   font-size: var(--text-xs);
+}
+.video-production-detail {
+  grid-column: 2 / -1;
+  min-width: 0;
+}
+.video-production-frames {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 72px));
+  gap: 6px;
+}
+.video-production-frames > * {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  background: var(--surface-secondary);
+}
+.video-production-frames > span {
+  display: grid;
+  place-items: center;
+  padding: 2px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+.video-production-media {
+  width: min(100%, 126px);
+}
+.video-production-media .video-cover.button {
+  width: 100%;
+}
+.video-production-placeholder {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 8px;
+  aspect-ratio: 9 / 16;
+  border-radius: 12px;
+  background: var(--surface-secondary);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+.video-production-result {
+  display: flex;
+  align-items: end;
+  gap: 10px;
 }
