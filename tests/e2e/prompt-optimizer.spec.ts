@@ -75,6 +75,32 @@ test("the wand hints after typing and canceling never requests optimization", as
   await expect(wand).toHaveCount(0);
 });
 
+test("pasting the same prompt again replays the wand hint", async ({ page, context }) => {
+  const { prompt, wand } = await openCreate(page);
+  const text = "奶油色床品 晨光";
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.evaluate((value) => navigator.clipboard.writeText(value), text);
+
+  await prompt.press("ControlOrMeta+v");
+  await expect(prompt).toHaveValue(text);
+  const icon = wand.locator("svg");
+  await expect(icon).toHaveCSS("animation-name", "prompt-wand-hint");
+  await wand.click();
+  await page
+    .getByRole("dialog", { name: "AI 优化提示词" })
+    .getByRole("button", { name: "取消" })
+    .click();
+  await expect(icon).toHaveCSS("animation-name", "none");
+
+  await prompt.press("ControlOrMeta+a");
+  await prompt.press("ControlOrMeta+v");
+  await expect(prompt).toHaveValue(text);
+  await expect(icon).toHaveCSS("animation-name", "prompt-wand-hint");
+  await expect(wand.locator(".prompt-optimize-label")).toHaveCSS("font-size", "12px");
+  await expect(page.getByRole("button", { name: "清空提示词" })).toHaveCSS("font-size", "12px");
+  await expect(page.locator(".prompt-count")).toHaveCSS("font-size", "12px");
+});
+
 test("the wand rewrites a described prompt, which stays editable and can be undone", async ({
   page,
 }) => {

@@ -8,24 +8,27 @@ import type { usePromptOptimizer } from "./use-prompt-optimizer";
 export function PromptOptimizeActions({
   optimizer,
   prompt,
+  pasteRevision,
 }: {
   optimizer: ReturnType<typeof usePromptOptimizer>;
   prompt: string;
+  pasteRevision: number;
 }) {
   const gradientId = useId();
   const trigger = useRef<HTMLButtonElement>(null);
   const popover = useRef<HTMLDivElement>(null);
   const [confirmingPrompt, setConfirmingPrompt] = useState<string | null>(null);
-  const [hintedPrompt, setHintedPrompt] = useState<string | null>(null);
-  const [acknowledgedPrompt, setAcknowledgedPrompt] = useState<string | null>(null);
+  const [hintedDraft, setHintedDraft] = useState<string | null>(null);
+  const [acknowledgedDraft, setAcknowledgedDraft] = useState<string | null>(null);
   const isConfirming = optimizer.canStart && confirmingPrompt === prompt;
-  const canHint = optimizer.canStart && !optimizer.canUndo && acknowledgedPrompt !== prompt;
-  const showHint = canHint && hintedPrompt === prompt;
+  const hintDraft = `${pasteRevision}:${prompt}`;
+  const canHint = optimizer.canStart && !optimizer.canUndo && acknowledgedDraft !== hintDraft;
+  const showHint = canHint && hintedDraft === hintDraft;
   useEffect(() => {
     if (!canHint) return;
-    const timer = window.setTimeout(() => setHintedPrompt(prompt), 650);
+    const timer = window.setTimeout(() => setHintedDraft(hintDraft), 650);
     return () => window.clearTimeout(timer);
-  }, [canHint, prompt]);
+  }, [canHint, hintDraft]);
 
   useEffect(() => {
     if (!isConfirming) return;
@@ -68,7 +71,7 @@ export function PromptOptimizeActions({
             aria-haspopup="dialog"
             aria-expanded={isConfirming}
             onPress={() => {
-              setAcknowledgedPrompt(prompt);
+              setAcknowledgedDraft(hintDraft);
               setConfirmingPrompt(isConfirming ? null : prompt);
             }}
           >

@@ -83,6 +83,7 @@ export function usePromptOptimizer({
     canUndo: !running && revision?.optimized === value,
     start: () => void start(),
     stop: () => controller.current?.abort(),
+    dismissUndo: () => setRevision(null),
     undo: () => {
       if (revision) onChange(revision.original);
       setRevision(null);

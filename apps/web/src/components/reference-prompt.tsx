@@ -143,6 +143,7 @@ export function ReferencePrompt({
   /** Shows the AI rewrite control for this tool's prompt. */
   optimizeTool?: PromptOptimizeTool;
 }) {
+  const [pasteRevision, setPasteRevision] = useState(0);
   const optimizer = usePromptOptimizer({
     value: draftValue,
     onChange,
@@ -274,6 +275,11 @@ export function ReferencePrompt({
     onChange(text);
     if (!composing.current) detect(text, cursor);
   }
+  function noteTextPaste(text: string) {
+    if (!optimizeTool || optimizer.running || !text.trim()) return;
+    optimizer.dismissUndo();
+    setPasteRevision((revision) => revision + 1);
+  }
   function clear() {
     onChange("");
     cursorRef.current = 0;
@@ -393,7 +399,7 @@ export function ReferencePrompt({
                 event.preventDefault();
                 const editor = richRef.current;
                 const selection = window.getSelection();
-                if (!editor || !selection?.rangeCount) return;
+                if (optimizer.running || !editor || !selection?.rangeCount) return;
                 const range = selection.getRangeAt(0);
                 if (!editor.contains(range.commonAncestorContainer)) return;
                 const text = event.clipboardData
@@ -413,6 +419,7 @@ export function ReferencePrompt({
                 selection.removeAllRanges();
                 selection.addRange(range);
                 handleRichInput();
+                noteTextPaste(text);
               }}
             />
           ) : (
@@ -424,6 +431,7 @@ export function ReferencePrompt({
               aria-busy={optimizer.running || undefined}
               readOnly={optimizer.running}
               value={value}
+              onPaste={(event) => noteTextPaste(event.clipboardData.getData("text/plain"))}
               onChange={(event) => {
                 const next = event.target.value.slice(0, maxLength);
                 const cursor = Math.min(event.currentTarget.selectionStart, next.length);
@@ -443,7 +451,13 @@ export function ReferencePrompt({
               data-auto-grow={autoGrow ? "" : undefined}
             />
           )}
-          {optimizeTool && <PromptOptimizeActions optimizer={optimizer} prompt={draftValue} />}
+          {optimizeTool && (
+            <PromptOptimizeActions
+              optimizer={optimizer}
+              prompt={draftValue}
+              pasteRevision={pasteRevision}
+            />
+          )}
           {showCount && (
             <div className="prompt-meta">
               {value.length > 0 && (
