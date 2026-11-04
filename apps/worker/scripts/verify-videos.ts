@@ -22,7 +22,7 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
   const config = {
     origin: "https://api.uselg.top",
     key: "fixture-key",
-    assetOrigin: "https://assets.fixture.test",
+    assetOrigin: "https://assets.example.com",
     signingSecret: "x".repeat(40),
   };
   const routing = { origin: config.origin, credentialHash: videoCredentialHash(config.key) };
@@ -153,6 +153,8 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
   const methods: string[] = [];
   const request: typeof fetch = async (url, init) => {
     methods.push(init?.method ?? "GET");
+    if (new URL(String(url)).origin === config.assetOrigin)
+      return new Response(null, { status: 206, headers: { "Content-Type": "image/png" } });
     if (init?.method === "POST") {
       const body = z
         .object({ prompt: z.string(), images: z.array(z.string()) })
@@ -182,7 +184,7 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
     "running",
   );
   await processVideoIntent(videos, bucket, config, request);
-  assert.deepEqual(methods, ["POST", "GET", "GET"]);
+  assert.deepEqual(methods, [...referenceAssetIds.map(() => "GET"), "POST", "GET", "GET"]);
   assert.equal(memory.size, 1);
   const final = videoTaskSchema.array().parse(await videos.get(owner, accepted.id));
   assert.equal(final[0]?.status, "succeeded");

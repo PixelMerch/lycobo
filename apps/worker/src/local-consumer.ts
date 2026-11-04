@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { openImageRepository, openVideoRepository } from "@lycoboai/db";
 import { readImagePolicy, standaloneModels, videoConfiguration } from "@lycoboai/generation";
+import { videoReferenceOrigin } from "@lycoboai/storage/delivery";
 import { objectImageStore } from "@lycoboai/storage/object-images";
 import { imageObjectBucket } from "@lycoboai/storage/s3";
 import { drainCloudBaseOutbox } from "./cloudbase-outbox";
@@ -20,6 +21,7 @@ const videoConfig =
   process.env.ASSET_PUBLIC_ORIGIN && process.env.ASSET_SIGNING_SECRET
     ? videoConfiguration(process.env)
     : null;
+const referenceOrigin = videoReferenceOrigin(process.env);
 const videos = videoConfig ? openVideoRepository(process.env) : undefined;
 let stopping = false;
 for (const signal of ["SIGINT", "SIGTERM"])
@@ -34,7 +36,7 @@ try {
           throw new Error("VIDEO_CONFIGURATION_REQUIRED");
         await processVideoIntent(videos, imageObjectBucket(process.env), {
           ...videoConfig,
-          assetOrigin: process.env.ASSET_PUBLIC_ORIGIN,
+          assetOrigin: referenceOrigin ?? "",
           signingSecret: process.env.ASSET_SIGNING_SECRET,
           pathPrefix: process.env.ASSET_PATH_PREFIX,
         });

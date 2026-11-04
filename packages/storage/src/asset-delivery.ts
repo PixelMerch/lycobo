@@ -116,22 +116,40 @@ export function assetDeliverySigner(
   };
 }
 
+/** Provider links use named HTTPS hosts and carry no browser or service credentials. */
+export function isVideoReferenceUrl(value: string) {
+  if (!URL.canParse(value)) return false;
+  const url = new URL(value);
+  return (
+    url.protocol === "https:" &&
+    /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z][a-z0-9-]*$/.test(url.hostname) &&
+    !/\.(?:localhost|local|internal|test|invalid|example|onion)$/.test(url.hostname) &&
+    !url.username &&
+    !url.password &&
+    !url.hash
+  );
+}
+
+export function videoReferenceOrigin(env: {
+  VIDEO_REFERENCE_ORIGIN?: string;
+  ASSET_PUBLIC_ORIGIN?: string;
+}) {
+  const value = env.VIDEO_REFERENCE_ORIGIN || env.ASSET_PUBLIC_ORIGIN;
+  if (!value || !isVideoReferenceUrl(value)) return undefined;
+  const url = new URL(value);
+  return url.pathname === "/" && !url.search ? url.origin : undefined;
+}
+
 /** Only the worker issues this raw-image capability; it requires no browser headers. */
 export function providerReferenceSigner(origin: string, secret: string, prefix = "/") {
-  const base = new URL(origin);
-  if (
-    base.protocol !== "https:" ||
-    base.pathname !== "/" ||
-    base.username ||
-    base.password ||
-    !/^\/(?:[a-z0-9_-]+\/)*$/.test(prefix)
-  )
+  const publicOrigin = videoReferenceOrigin({ VIDEO_REFERENCE_ORIGIN: origin });
+  if (!publicOrigin || !/^\/(?:[a-z0-9_-]+\/)*$/.test(prefix))
     throw new Error("INVALID_ASSET_ORIGIN");
   const signingKey = assetSigningKey(secret);
   return async (key: string) => {
     if (!key.endsWith(".png")) throw new Error("INVALID_REFERENCE");
     const expires = Math.floor(Date.now() / 1000) + 3600;
-    const url = new URL(prefix + key, base);
+    const url = new URL(prefix + key, publicOrigin);
     url.searchParams.set("expires", String(expires));
     url.searchParams.set("variant", "provider");
     url.searchParams.set("sig", await signAsset(key, expires, await signingKey, "provider"));

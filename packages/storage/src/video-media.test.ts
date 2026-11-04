@@ -55,7 +55,7 @@ it("video delivery validates the signed capability and returns byte ranges witho
 });
 it("provider references use a separate capability and need no browser origin", async () => {
   const link = await providerReferenceSigner(
-    "https://assets.test",
+    "https://assets.example.com",
     secret,
   )(key.replace(/\.mp4$/, ".png"));
   const response = await servePrivateAsset(new Request(link), options(new Uint8Array([1, 2])));

@@ -20,6 +20,8 @@ const statusText = {
   needs_reconciliation: "结果待核对，请勿重复提交",
 };
 export function videoTaskStatus(task: VideoTask) {
+  if (task.status === "failed" && task.error_code === "VIDEO_REFERENCES_UNAVAILABLE")
+    return "参考图无法读取，视频积分已退回";
   if (task.status !== "running") return statusText[task.status];
   if (task.provider_status === "paused") return "任务暂停，等待恢复";
   if (task.provider_status === "pending_confirmation") return "结果待确认，请勿重复提交";

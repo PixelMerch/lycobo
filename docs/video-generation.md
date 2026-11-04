@@ -44,7 +44,7 @@ API与消费者需要：
 
 - STANDALONE_IMAGE_API_KEY：复用现有生图Key供API及消费者服务端调用，仍需具备视频型号权限，不再单独配置VIDEO_API_KEY。不经聊天或仓库传递。
 - VIDEO_API_ORIGIN：默认https://api.uselg.top，可显式选择文档列出的https://api.ai-media.vip；不在运行时猜测域名重发。
-- 复用ASSET_PUBLIC_ORIGIN、ASSET_PATH_PREFIX、ASSET_SIGNING_SECRET及私有CloudBase／本地S3配置。CloudBase环境直接使用同一私有桶的1小时临时签名URL作为视频参考图，无需另配公网素材域名；普通预览继续走现有资源服务。本地隔离S3模式的纯文字视频不需要公网资源地址，成品保存至同一本地私有桶；仅使用参考图时需要供应商可访问的HTTPS资源地址。未配置时，视频能力接口返回 `referenceImagesEnabled: false`，网页在生成分镜前提示并停用带图提交，API 在扣费前以 `VIDEO_REFERENCES_UNAVAILABLE` 拒绝含参考图的请求。首次提交明确拒绝时保留分镜与提示词，从视频阶段继续。上次提交结果未知时保留原编号，参考图恢复后核对原提交。纯文字视频仍可使用。
+- 复用ASSET_PUBLIC_ORIGIN、ASSET_PATH_PREFIX、ASSET_SIGNING_SECRET及私有CloudBase／本地S3配置。CloudBase环境直接使用同一私有桶的1小时临时签名URL作为视频参考图，无需另配公网素材域名；普通预览继续走现有资源服务。本地隔离S3模式的纯文字视频不需要公网资源地址，成品保存至同一本地私有桶；使用参考图时可将 `VIDEO_REFERENCE_ORIGIN` 设为指向本地资源服务的公网 HTTPS 源站，详见[本地开发](development.md)。消费者会逐张检查签名原图能否无登录读取。检查失败时不提交模型，视频任务失败并走现有退款流程。未配置时，视频能力接口返回 `referenceImagesEnabled: false`，网页在生成分镜前提示并停用带图提交，API 在扣费前以 `VIDEO_REFERENCES_UNAVAILABLE` 拒绝含参考图的请求。首次提交明确拒绝时保留分镜与提示词，从视频阶段继续。上次提交结果未知时保留原编号，参考图恢复后核对原提交。纯文字视频仍可使用。
 - 生图与视频默认启用，不再读取IMAGE_GENERATION_ENABLED／VIDEO_GENERATION_ENABLED。密钥、身份、数据库与私有存储仍必须配置完整。
 
 实施迁移为packages/db/migrations/0039_video_outbox.sql及cloudbase/migrations/20261103120000_video_generation.sql（分别用于Node PG与CloudBase共享PG）；CloudBase素材列表的分辨率与时长另需cloudbase/migrations/20261104100000_video_asset_specs.sql，未执行时素材封面只是不显示这两项。CloudBase迁移除建表／固定视频RPC外，也按断言定位片段扩展既有图片RPC的媒体过滤并排除视频超时处理；不能自动db push或在运行时建表。
