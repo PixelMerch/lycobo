@@ -229,12 +229,20 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
   await expect(history.getByRole("link", { name: "下载视频" })).toBeVisible();
   await page.reload();
   await expect(history.getByText(description, { exact: true })).toBeVisible();
-  await expect(history.getByText("先全景，随后特写和定格。", { exact: true })).toBeVisible();
-  await expect(history.getByRole("button", { name: "复制原始描述" })).toBeVisible();
-  await expect(history.getByRole("button", { name: "复制 AI 描述" })).toBeVisible();
-  const originalThumbs = history.getByRole("region", { name: "原始商品图" }).getByRole("img");
+  const aiContent = history.getByRole("button", { name: "AI 生成内容" });
+  const aiDescription = history.getByText("先全景，随后特写和定格。", { exact: true });
+  const originalThumbs = history.getByRole("region", { name: "视频参考图" }).getByRole("img");
   const storyboardThumbs = history.getByRole("region", { name: "分镜图片" }).getByRole("img");
+  await expect(history.getByRole("button", { name: "复制提示词", exact: true })).toBeVisible();
   await expect(originalThumbs).toHaveCount(1);
+  await expect(aiContent).toHaveAttribute("aria-expanded", "false");
+  await expect(aiDescription).toBeHidden();
+  await expect(storyboardThumbs).toHaveCount(0);
+  await aiContent.focus();
+  await aiContent.press("Enter");
+  await expect(aiContent).toHaveAttribute("aria-expanded", "true");
+  await expect(aiDescription).toBeVisible();
+  await expect(history.getByRole("button", { name: "复制 AI 描述" })).toBeVisible();
   await expect(storyboardThumbs).toHaveCount(3);
   expect(
     await storyboardThumbs.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("src"))),
@@ -242,4 +250,8 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
   await page.setViewportSize({ width: 390, height: 900 });
   await page.getByRole("radio", { name: "历史记录", exact: true }).click();
   await expect.poll(() => history.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await aiContent.click();
+  await expect(aiContent).toHaveAttribute("aria-expanded", "false");
+  await expect(aiDescription).toBeHidden();
+  await expect(originalThumbs).toHaveCount(1);
 });

@@ -1,6 +1,6 @@
-import { Button, Spinner, Tooltip } from "@heroui/react";
+import { Button, Disclosure, Spinner, Tooltip } from "@heroui/react";
 import type { VideoTask } from "@lycoboai/contracts";
-import { IconAspectRatio, IconCopy, IconMovie } from "@tabler/icons-react";
+import { IconAspectRatio, IconChevronDown, IconCopy, IconMovie } from "@tabler/icons-react";
 import { useState } from "react";
 import { CollapsibleText } from "../../components/collapsible-text";
 import { ConfirmDialog } from "../../components/confirm-dialog";
@@ -136,38 +136,44 @@ export function VideoTaskCard({
         />
       </header>
       <div className="history-prompt">
-        {task.input.storyboard && (
-          <VideoHistoryPrompt
-            text={task.input.storyboard.description}
-            label="原始场景描述"
-            copyLabel="复制原始描述"
-          />
-        )}
-        <VideoHistoryPrompt
-          text={task.prompt}
-          {...(task.input.storyboard ? { label: "AI 生成描述", copyLabel: "复制 AI 描述" } : {})}
+        <VideoHistoryPrompt text={task.input.storyboard?.description ?? task.prompt} />
+        <ReferenceThumbnails
+          ids={
+            task.input.storyboard ? input.referenceAssetIds.slice(0, 1) : input.referenceAssetIds
+          }
+          label="视频参考图"
         />
-        {task.input.storyboard ? (
-          <div className="video-history-reference-groups">
-            <div>
-              <h3 className="video-history-content-label">原始商品图</h3>
-              <ReferenceThumbnails
-                ids={input.referenceAssetIds.slice(0, 1)}
-                label="原始商品图"
-                itemLabel="原始商品图"
-              />
-            </div>
-            <div>
-              <h3 className="video-history-content-label">分镜图片</h3>
-              <ReferenceThumbnails
-                ids={input.referenceAssetIds.slice(1)}
-                label="分镜图片"
-                itemLabel="分镜图片"
-              />
-            </div>
-          </div>
-        ) : (
-          <ReferenceThumbnails ids={input.referenceAssetIds} label="视频参考图" />
+        {task.input.storyboard && (
+          <Disclosure className="video-history-ai">
+            {({ isExpanded }) => (
+              <>
+                <Disclosure.Heading level={3}>
+                  <Disclosure.Trigger className="video-history-ai-trigger">
+                    AI 生成内容
+                    <Disclosure.Indicator>
+                      <span>
+                        <UiIcon icon={IconChevronDown} size="small" />
+                      </span>
+                    </Disclosure.Indicator>
+                  </Disclosure.Trigger>
+                </Disclosure.Heading>
+                <Disclosure.Content>
+                  {isExpanded && (
+                    <Disclosure.Body className="history-prompt">
+                      <h4 className="video-history-content-label">AI 生成描述</h4>
+                      <VideoHistoryPrompt text={task.prompt} copyLabel="复制 AI 描述" />
+                      <h4 className="video-history-content-label">分镜图片</h4>
+                      <ReferenceThumbnails
+                        ids={input.referenceAssetIds.slice(1)}
+                        label="分镜图片"
+                        itemLabel="分镜图片"
+                      />
+                    </Disclosure.Body>
+                  )}
+                </Disclosure.Content>
+              </>
+            )}
+          </Disclosure>
         )}
       </div>
       {showMedia && (
@@ -210,16 +216,13 @@ export function VideoTaskCard({
 
 function VideoHistoryPrompt({
   text,
-  label,
   copyLabel = "复制提示词",
 }: {
   text: string;
-  label?: string;
   copyLabel?: string;
 }) {
   return (
     <>
-      {label && <h3 className="video-history-content-label">{label}</h3>}
       <CollapsibleText text={text} className="generation-prompt" />
       <Button
         variant="secondary"

@@ -602,19 +602,25 @@
   font-size: var(--text-xs);
   font-weight: var(--weight-medium);
 }
-.video-history-reference-groups {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
+.video-history-ai-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding-inline: 8px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
 }
-.video-history-reference-groups > div {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-  max-width: 100%;
+.video-history-ai-trigger:is([data-hovered], [aria-expanded="true"]) {
+  background: var(--control-hover-fill);
+  color: var(--foreground);
 }
-.video-history-reference-groups .generation-output-thumbnails {
-  margin: 0;
+@media (max-width: 767px), (pointer: coarse) {
+  .video-history-ai-trigger {
+    min-height: 44px;
+  }
 }
 .video-production-progress {
   display: grid;
