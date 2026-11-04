@@ -1,9 +1,23 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
-test("one video action runs all stages and reuses a lost submission", async ({ page }) => {
+for (const originalCount of [1, 3]) {
+  test(`one video action runs all stages and reuses a lost submission with ${originalCount} product images`, async ({
+    page,
+  }) => {
+    await verifyStoryboard(page, originalCount);
+  });
+}
+
+async function verifyStoryboard(page: Page, originalCount: number) {
   await mockImageApi(page);
   const original = crypto.randomUUID();
+  const additionalOriginalAssetIds = Array.from({ length: originalCount - 1 }, () =>
+    crypto.randomUUID(),
+  );
+  const originals = [original, ...additionalOriginalAssetIds];
+  const storyboardOriginals = originalCount > 1 ? { additionalOriginalAssetIds } : {};
+  let uploaded = 0;
   const planId = crypto.randomUUID();
   const videoId = crypto.randomUUID();
   const items = ["绗缝特写", "卧室全景", "商品定格"].map((title) => ({
@@ -26,17 +40,18 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
     id: planId,
     status: "ready",
     description,
-    referenceAssetIds: [original],
+    referenceAssetIds: originals,
     items,
   };
   await page.route("**/api/v1/video-storyboards/capabilities", (route) =>
-    route.fulfill({ json: apiFixture({ enabled: true }) }),
+    route.fulfill({ json: apiFixture({ enabled: true, maxStoryboardOriginalImages: 3 }) }),
   );
   await page.route("**/api/v1/video-model", (route) =>
     route.fulfill({
       json: apiFixture({
         enabled: true,
         storyboardHistory: true,
+        maxStoryboardOriginalImages: 3,
         resolution: "768p",
         unitCredits: 100,
       }),
@@ -44,7 +59,13 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
   );
   await page.route("**/api/v1/image-assets", (route) =>
     route.fulfill({
-      json: apiFixture({ id: original, width: 2, height: 2, bytes: 100, mimeType: "image/png" }),
+      json: apiFixture({
+        id: originals[uploaded++],
+        width: 2,
+        height: 2,
+        bytes: 100,
+        mimeType: "image/webp",
+      }),
     }),
   );
   await page.route("**/api/v1/image-assets/*/content*", (route) =>
@@ -125,14 +146,14 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
     videoRequests.push(submission);
     videoKeys.push(route.request().headers()["idempotency-key"]);
     if (videoRequests.length === 1) return route.abort("failed");
-    const { storyboard, ...video } = submission;
+    const { storyboard, storyboardOriginalImageCount, ...video } = submission;
     completed = {
       id: videoId,
       public_id: "W09VIDEO1",
       prompt: "先全景，随后特写和定格。",
       status: "succeeded",
       created_at: new Date().toISOString(),
-      input: { video, storyboard },
+      input: { video, storyboard, storyboardOriginalImageCount },
       error_code: null,
       asset_id: original,
       provider_status: "completed",
@@ -148,14 +169,19 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
   const composer = page.getByRole("region", { name: "视频创作参数" });
   await expect(page.getByRole("radio", { name: "直接生成" })).toHaveCount(0);
   await expect(page.getByRole("radio", { name: "TK 分镜创作" })).toHaveCount(0);
-  await composer.getByLabel("添加参考图片").setInputFiles({
-    name: "product.png",
-    mimeType: "image/png",
-    buffer: Buffer.from(
-      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
-      "base64",
-    ),
-  });
+  await expect(composer).toContainText("最多上传3张参考图");
+  await composer
+    .getByLabel("添加参考图片")
+    .setInputFiles(
+      ["front.webp", "close-up.webp", "overhead-wide.webp"]
+        .slice(0, originalCount)
+        .map((name) => `apps/web/public/studio/textile-views/${name}`),
+    );
+  await expect(composer.locator(".reference-image-card")).toHaveCount(originalCount);
+  if (originalCount === 3) {
+    await expect(composer.getByLabel("添加参考图片")).toBeDisabled();
+    await expect(composer.getByText("第 1 张为主图，其余为补充参考。")).toBeVisible();
+  }
   await composer.getByRole("textbox", { name: "场景描述" }).fill(description);
   await expect(composer).toContainText("预计 106 积分");
   await composer.getByRole("button", { name: /立即生成.*106/ }).click();
@@ -168,6 +194,7 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
     stage: "plan",
     description,
     originalAssetId: original,
+    ...storyboardOriginals,
     count: 3,
     seconds: 10,
   });
@@ -176,7 +203,7 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
       model: "gpt-image-2.5",
       count: 3,
       aspectRatio: "9:16",
-      referenceAssetIds: [original],
+      referenceAssetIds: originals,
     }),
   );
 
@@ -198,6 +225,7 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
     expect.objectContaining({
       stage: "video",
       originalAssetId: original,
+      ...storyboardOriginals,
       shots: images.map((assetId) => expect.objectContaining({ assetId })),
     }),
   );
@@ -209,14 +237,16 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
   await expect(videoSlot).toBeVisible();
   await page.reload();
   await expect(frames.getByRole("img")).toHaveCount(3);
+  await expect(composer.locator(".reference-image-card")).toHaveCount(originalCount);
   await composer.getByRole("button", { name: /确认上次提交.*100/ }).click();
   await expect.poll(() => videoRequests.length).toBe(2);
   expect(videoRequests[0]).toEqual({
     prompt: "先全景，随后特写和定格。",
     seconds: 10,
     aspectRatio: "9:16",
-    referenceAssetIds: [original, ...images],
+    referenceAssetIds: [...originals, ...images],
     storyboard: { description },
+    ...(originalCount > 1 ? { storyboardOriginalImageCount: originalCount } : {}),
   });
   expect(videoRequests[1]).toEqual(videoRequests[0]);
   expect(videoKeys[0]).toMatch(/^[a-f0-9-]{36}$/);
@@ -234,7 +264,7 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
   const originalThumbs = history.getByRole("region", { name: "视频参考图" }).getByRole("img");
   const storyboardThumbs = history.getByRole("region", { name: "分镜图片" }).getByRole("img");
   await expect(history.getByRole("button", { name: "复制提示词", exact: true })).toBeVisible();
-  await expect(originalThumbs).toHaveCount(1);
+  await expect(originalThumbs).toHaveCount(originalCount);
   await expect(aiContent).toHaveAttribute("aria-expanded", "false");
   await expect(aiDescription).toBeHidden();
   await expect(storyboardThumbs).toHaveCount(0);
@@ -253,5 +283,5 @@ test("one video action runs all stages and reuses a lost submission", async ({ p
   await aiContent.click();
   await expect(aiContent).toHaveAttribute("aria-expanded", "false");
   await expect(aiDescription).toBeHidden();
-  await expect(originalThumbs).toHaveCount(1);
-});
+  await expect(originalThumbs).toHaveCount(originalCount);
+}

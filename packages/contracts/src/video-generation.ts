@@ -2,6 +2,13 @@ import { z } from "zod";
 
 export const videoModel = "Minimax-h3-933特价";
 export const videoUnitCredits = 100;
+export const videoReferenceLimit = 9;
+export const storyboardOriginalImageLimit = 3;
+const storyboardOriginalImageCountSchema = z
+  .number()
+  .int()
+  .min(1)
+  .max(storyboardOriginalImageLimit);
 export const videoRatios = ["9:16", "16:9", "21:9", "4:3", "3:4", "1:1"] as const;
 export const videoSeconds = Array.from({ length: 26 }, (_, index) => index + 5);
 export const videoInputSchema = z.strictObject({
@@ -15,15 +22,22 @@ export const videoInputSchema = z.strictObject({
   aspectRatio: z.enum(videoRatios).default("9:16"),
   referenceAssetIds: z
     .array(z.uuid())
-    .max(9)
+    .max(videoReferenceLimit)
     .default([])
     .refine((ids) => new Set(ids).size === ids.length),
 });
 export type VideoInput = z.infer<typeof videoInputSchema>;
 const videoStoryboardSchema = z.strictObject({ description: videoInputSchema.shape.prompt });
 export const videoCreateSchema = videoInputSchema
-  .extend({ storyboard: videoStoryboardSchema.optional() })
-  .refine(({ storyboard, referenceAssetIds }) => !storyboard || referenceAssetIds.length > 1);
+  .extend({
+    storyboard: videoStoryboardSchema.optional(),
+    storyboardOriginalImageCount: storyboardOriginalImageCountSchema.optional(),
+  })
+  .refine(({ storyboard, storyboardOriginalImageCount, referenceAssetIds }) =>
+    storyboard
+      ? referenceAssetIds.length > (storyboardOriginalImageCount ?? 1)
+      : storyboardOriginalImageCount === undefined,
+  );
 export type VideoCreateInput = z.infer<typeof videoCreateSchema>;
 export const videoTaskSchema = z.object({
   id: z.uuid(),
@@ -31,7 +45,11 @@ export const videoTaskSchema = z.object({
   prompt: z.string(),
   status: z.enum(["queued", "running", "succeeded", "failed", "needs_reconciliation"]),
   created_at: z.string(),
-  input: z.object({ video: videoInputSchema, storyboard: videoStoryboardSchema.optional() }),
+  input: z.object({
+    video: videoInputSchema,
+    storyboard: videoStoryboardSchema.optional(),
+    storyboardOriginalImageCount: storyboardOriginalImageCountSchema.optional(),
+  }),
   error_code: z.string().nullable(),
   asset_id: z.uuid().nullable(),
   provider_status: z.string().nullable(),
@@ -43,6 +61,7 @@ export const videoTasksSchema = z.object({ data: z.array(videoTaskSchema) });
 export const videoCapabilitySchema = z.object({
   enabled: z.boolean(),
   storyboardHistory: z.boolean().optional(),
+  maxStoryboardOriginalImages: storyboardOriginalImageCountSchema.optional(),
   resolution: z.literal("768p"),
   unitCredits: z.literal(videoUnitCredits),
 });

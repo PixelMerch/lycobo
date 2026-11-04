@@ -62,7 +62,7 @@ export function VideoProductionProgress({
   const frames =
     progress.frames ??
     task?.input.video.referenceAssetIds
-      .slice(1)
+      .slice(task.input.storyboardOriginalImageCount ?? 1)
       .map((assetId, position) => ({ position, assetId, title: `分镜 ${position + 1}` })) ??
     [];
   const summary = progress.frames?.map(({ title }) => title).join(" → ");

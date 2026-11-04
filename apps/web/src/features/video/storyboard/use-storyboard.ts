@@ -3,10 +3,11 @@ import {
   imageJobSchema,
   imageUnitCredits,
   type StoryboardRequest,
+  storyboardCapabilitiesSchema,
   storyboardVideoShotLimit,
   type VariationPlan,
-  variationCapabilitiesSchema,
   variationPlanSchema,
+  videoReferenceLimit,
   videoUnitCredits,
   walletBalanceSchema,
 } from "@lycoboai/contracts";
@@ -25,7 +26,7 @@ import {
 } from "../../generation/generation-client";
 import { modelCapabilities, supportsReferences } from "../../generation/models/model-capabilities";
 import type { ReferenceImage } from "../../generation/studio-state";
-import { useSubmitVideo } from "../video-client";
+import { useSubmitVideo, useVideoModel } from "../video-client";
 import { emptyStoryboard, originalReference, useStoryboardState } from "./storyboard-state";
 
 const source = "tk-storyboard";
@@ -36,8 +37,8 @@ const definitive = (error: unknown) =>
   error instanceof ImageApiError && [400, 401, 403, 409, 413, 429].includes(error.status);
 export const automaticVideoCost = emptyStoryboard.count * imageUnitCredits + videoUnitCredits;
 
-function completedShots(job: ImageJob, plan: VariationPlan, originalAssetId: string) {
-  const seen = new Set([originalAssetId]);
+function completedShots(job: ImageJob, plan: VariationPlan, originalAssetIds: string[]) {
+  const seen = new Set(originalAssetIds);
   return [...job.items]
     .sort((a, b) => a.position - b.position)
     .flatMap(({ position, status, output_asset_id: assetId }) => {
@@ -46,7 +47,7 @@ function completedShots(job: ImageJob, plan: VariationPlan, originalAssetId: str
       seen.add(assetId);
       return [{ position, assetId, title: shot.title, prompt: shot.prompt.slice(0, 250) }];
     })
-    .slice(0, storyboardVideoShotLimit);
+    .slice(0, Math.min(storyboardVideoShotLimit, videoReferenceLimit - originalAssetIds.length));
 }
 
 export function useStoryboard(enabled: boolean, showHistory: () => void) {
@@ -57,6 +58,7 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
   const client = useQueryClient();
   const generation = useGenerateImage(enabled);
   const models = useImageModels(enabled);
+  const videoModel = useVideoModel(enabled);
   const video = useSubmitVideo("storyboard");
   const pendingImage = usePendingSubmission(owner);
   let ownImagePending = false;
@@ -78,11 +80,16 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
     enabled: enabled && !!scope,
     retry: false,
     queryFn: async ({ signal }) =>
-      variationCapabilitiesSchema.parse(
+      storyboardCapabilitiesSchema.parse(
         await (await imageRequest("video-storyboards/capabilities", { signal })).json(),
       ),
   });
   const model = modelCapabilities(models.data, modelId, "create");
+  const maxOriginalImages = Math.min(
+    capabilities.data?.maxStoryboardOriginalImages ?? 1,
+    videoModel.data?.maxStoryboardOriginalImages ?? 1,
+    model?.maxReferences ?? 1,
+  );
   const configured =
     capabilities.data?.enabled === true &&
     model?.enabledResolutions.includes(resolution) === true &&
@@ -117,13 +124,13 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
     return variationPlanSchema.parse(await response.json());
   }
 
-  async function waitForImages(id: string, plan: VariationPlan, originalAssetId: string) {
+  async function waitForImages(id: string, plan: VariationPlan, originalAssetIds: string[]) {
     const deadline = Date.now() + 8 * 60_000;
     while (Date.now() < deadline) {
       assertOwner();
       const job = imageJobSchema.parse(await (await imageRequest(`image-tasks/${id}`)).json());
       const ready = !isRunning(job.status);
-      const shots = completedShots(job, plan, originalAssetId);
+      const shots = completedShots(job, plan, originalAssetIds);
       const frames = shots.map(({ position, assetId, title }) => ({ position, assetId, title }));
       const previous = current().progress;
       if (
@@ -161,7 +168,7 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
       }
       const resuming = !!(progress.planAttempt || progress.planId || progress.batchId);
       if (!resuming) {
-        if (!configured || pendingImage)
+        if (!configured || pendingImage || input.references.length > maxOriginalImages)
           throw new Error("暂时无法制作视频，请检查生成服务和待确认任务");
         update({ ...emptyStoryboard, ...input });
         const balance = walletBalanceSchema.parse(await (await imageRequest("wallet")).json());
@@ -178,7 +185,7 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
         let attempt = current().progress.planAttempt;
         if (!attempt) {
           assertOwner();
-          const [originalAssetId] = await uploadImageReferences(
+          const [originalAssetId, ...additionalOriginalAssetIds] = await uploadImageReferences(
             client,
             owner,
             current().references,
@@ -190,11 +197,14 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
               stage: "plan",
               description: current().description.trim(),
               originalAssetId,
+              ...(additionalOriginalAssetIds.length ? { additionalOriginalAssetIds } : {}),
               count: current().count,
               seconds: current().seconds,
             },
           };
-          update({ references: [originalReference(originalAssetId)] });
+          update({
+            references: [originalAssetId, ...additionalOriginalAssetIds].map(originalReference),
+          });
           save({ planAttempt: attempt });
         }
         try {
@@ -210,8 +220,9 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
         }
         save({ planId: snapshot.id, planAttempt: undefined });
       }
-      const originalAssetId = snapshot.referenceAssetIds[0];
+      const [originalAssetId, ...additionalOriginalAssetIds] = snapshot.referenceAssetIds;
       if (snapshot.status !== "ready" || !originalAssetId) throw new Error("画面资料不完整");
+      const originalAssetIds = [originalAssetId, ...additionalOriginalAssetIds];
       let batchId = current().progress.batchId;
       if (!batchId || ownImagePending) {
         assertOwner();
@@ -227,7 +238,7 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
           source,
           draft: {
             prompt: current().description.slice(0, 600),
-            references: [originalReference(originalAssetId)],
+            references: originalAssetIds.map(originalReference),
             ratio: "9:16",
             resolution,
             count: String(items.length),
@@ -238,7 +249,7 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
         batchId ??= batch.id;
         save({ batchId, imageTarget: undefined });
       }
-      const { job, shots: completed } = await waitForImages(batchId, snapshot, originalAssetId);
+      const { job, shots: completed } = await waitForImages(batchId, snapshot, originalAssetIds);
       void client.invalidateQueries({ queryKey: ["wallet"] });
       void client.invalidateQueries({ queryKey: ["wallet-entries"] });
       void client.invalidateQueries({ queryKey: ["image-assets"] });
@@ -251,6 +262,7 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
         stage: "video",
         description: current().description,
         originalAssetId,
+        ...(additionalOriginalAssetIds.length ? { additionalOriginalAssetIds } : {}),
         seconds: current().seconds,
         shots,
       };
@@ -284,8 +296,11 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
           seconds: optimization.seconds,
           aspectRatio: "9:16",
           storyboard: { description: optimization.description },
+          ...(originalAssetIds.length > 1
+            ? { storyboardOriginalImageCount: originalAssetIds.length }
+            : {}),
         },
-        references: [originalAssetId, ...shots.map(({ assetId }) => assetId)].map(
+        references: [...originalAssetIds, ...shots.map(({ assetId }) => assetId)].map(
           originalReference,
         ),
         clearDraft: false,
@@ -300,6 +315,7 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
   return {
     draft,
     configured,
+    maxOriginalImages,
     unavailable:
       capabilities.isError ||
       models.isError ||

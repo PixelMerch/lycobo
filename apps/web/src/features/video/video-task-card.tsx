@@ -37,6 +37,7 @@ export function VideoTaskCard({
 }) {
   const [confirmRestore, setConfirmRestore] = useState(false);
   const input = task.input.video;
+  const originalCount = task.input.storyboardOriginalImageCount ?? 1;
   const active = task.status === "queued" || task.status === "running";
   const status = videoTaskStatus(task);
   function restore() {
@@ -139,7 +140,9 @@ export function VideoTaskCard({
         <VideoHistoryPrompt text={task.input.storyboard?.description ?? task.prompt} />
         <ReferenceThumbnails
           ids={
-            task.input.storyboard ? input.referenceAssetIds.slice(0, 1) : input.referenceAssetIds
+            task.input.storyboard
+              ? input.referenceAssetIds.slice(0, originalCount)
+              : input.referenceAssetIds
           }
           label="视频参考图"
         />
@@ -164,7 +167,7 @@ export function VideoTaskCard({
                       <VideoHistoryPrompt text={task.prompt} copyLabel="复制 AI 描述" />
                       <h4 className="video-history-content-label">分镜图片</h4>
                       <ReferenceThumbnails
-                        ids={input.referenceAssetIds.slice(1)}
+                        ids={input.referenceAssetIds.slice(originalCount)}
                         label="分镜图片"
                         itemLabel="分镜图片"
                       />

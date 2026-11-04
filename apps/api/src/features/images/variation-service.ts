@@ -1,5 +1,10 @@
 import { createHash } from "node:crypto";
-import type { ImageScope, StoryboardRequest, VariationPlanInput } from "@lycoboai/contracts";
+import {
+  type ImageScope,
+  type StoryboardRequest,
+  storyboardOriginals,
+  type VariationPlanInput,
+} from "@lycoboai/contracts";
 import type { ImageRuntimeRepository } from "@lycoboai/db";
 import {
   createPlannerWebReader,
@@ -111,7 +116,7 @@ export function variationService(deps: {
         scope,
         {
           description: `TK分镜 ${input.stage} ${createHash("sha256").update(JSON.stringify(input)).digest("hex")}\n${input.description.slice(0, 4800)}`,
-          referenceAssetIds: [input.originalAssetId],
+          referenceAssetIds: storyboardOriginals(input),
         },
         key,
         signal,

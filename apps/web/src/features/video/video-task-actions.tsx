@@ -85,6 +85,7 @@ export function VideoTaskActions({ task, onEdit }: { task: VideoTask; onEdit: ()
               seconds: input.seconds,
               aspectRatio: input.aspectRatio,
               storyboard: task.input.storyboard,
+              storyboardOriginalImageCount: task.input.storyboardOriginalImageCount,
             },
             references: input.referenceAssetIds.map((id, index) => ({
               id,

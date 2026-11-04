@@ -101,7 +101,7 @@ export function useSubmitVideo(source?: "storyboard") {
       if (!attempt) {
         const ids = await uploadImageReferences(client, session.data, references);
         if (pending()) throw new Error("已有视频提交待确认，请稍后继续");
-        const { storyboard, ...video } = input;
+        const { storyboard, storyboardOriginalImageCount, ...video } = input;
         const capability = client.getQueryData<ReturnType<typeof videoCapabilitySchema.parse>>([
           "video-model",
         ]);
@@ -111,7 +111,15 @@ export function useSubmitVideo(source?: "storyboard") {
           input: videoCreateSchema.parse({
             ...video,
             referenceAssetIds: ids,
-            ...(storyboard && capability?.storyboardHistory ? { storyboard } : {}),
+            ...(storyboard && capability?.storyboardHistory
+              ? {
+                  storyboard,
+                  ...(capability.maxStoryboardOriginalImages &&
+                  storyboardOriginalImageCount !== undefined
+                    ? { storyboardOriginalImageCount }
+                    : {}),
+                }
+              : {}),
           }),
         };
         sessionStorage.setItem(storageKey, JSON.stringify(attempt));

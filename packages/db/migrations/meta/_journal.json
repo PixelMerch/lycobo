@@ -288,6 +288,13 @@
       "when": 1793767211336,
       "tag": "0040_video_storyboard_history",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793768377516,
+      "tag": "0041_video_storyboard_original_count",
+      "breakpoints": true
     }
   ]
 }

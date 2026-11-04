@@ -1,4 +1,4 @@
-import { videoModel, videoUnitCredits } from "@lycoboai/contracts";
+import { storyboardOriginalImageLimit, videoModel, videoUnitCredits } from "@lycoboai/contracts";
 import { Hono } from "hono";
 import { z } from "zod";
 import { enterprisePrincipal } from "../auth/routes";
@@ -28,6 +28,7 @@ export function videoRoutes(
     c.json({
       enabled: !!deps,
       storyboardHistory: !!deps,
+      maxStoryboardOriginalImages: storyboardOriginalImageLimit,
       model: videoModel,
       resolution: "768p",
       unitCredits: videoUnitCredits,

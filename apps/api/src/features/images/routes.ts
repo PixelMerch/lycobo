@@ -8,6 +8,7 @@ import {
   imageToolSchema,
   imageUnitCredits,
   type StoredImage,
+  storyboardOriginalImageLimit,
   storyboardRequestSchema,
   variationPlanInputSchema,
 } from "@lycoboai/contracts";
@@ -295,7 +296,10 @@ export function imageRoutes(deps: ImageApiDependencies) {
     return plan ? c.json(plan) : fail(c, "GENERATION_NOT_CONFIGURED", "智能分析尚未配置", 503);
   });
   app.get("/video-storyboards/capabilities", async (c) =>
-    c.json({ enabled: await variation.storyboardEnabled() }),
+    c.json({
+      enabled: await variation.storyboardEnabled(),
+      maxStoryboardOriginalImages: storyboardOriginalImageLimit,
+    }),
   );
   app.post("/video-storyboards", async (c) => {
     const input = storyboardRequestSchema.safeParse(await c.req.json().catch(() => null));

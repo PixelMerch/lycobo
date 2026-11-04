@@ -89,7 +89,7 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
     /REFERENCE_NOT_FOUND/,
   );
   assert.equal((await images.wallet(owner)).balance, 900, "Rejected references never charge");
-  const referenceAssetIds = [crypto.randomUUID(), crypto.randomUUID()];
+  const referenceAssetIds = Array.from({ length: 6 }, () => crypto.randomUUID());
   for (const id of referenceAssetIds) {
     await images.addReference(owner, {
       id,
@@ -102,7 +102,12 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
     });
   }
   const storyboard = { description: "一条床品视频" };
-  const storyInput = videoCreateSchema.parse({ ...input, referenceAssetIds, storyboard });
+  const storyInput = videoCreateSchema.parse({
+    ...input,
+    referenceAssetIds,
+    storyboard,
+    storyboardOriginalImageCount: 3,
+  });
   const storyboardKey = crypto.randomUUID();
   const accepted = await videos.create(owner, storyInput, storyboardKey, routing);
   assert.equal((await videos.create(owner, storyInput, storyboardKey, routing)).replayed, true);
@@ -154,8 +159,9 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
         .passthrough()
         .parse(JSON.parse(String(init.body)));
       assert.equal(body.prompt, input.prompt);
-      assert.equal(body.images.length, 2);
+      assert.equal(body.images.length, referenceAssetIds.length);
       assert.ok(!("storyboard" in body));
+      assert.ok(!("storyboardOriginalImageCount" in body));
     }
     return String(url).endsWith("/content")
       ? new Response(mp4, { headers: { "Content-Type": "video/mp4" } })
@@ -183,6 +189,7 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
   assert.deepEqual(final[0]?.input, {
     video: { ...input, referenceAssetIds },
     storyboard,
+    storyboardOriginalImageCount: 3,
   });
   assert.equal((await images.wallet(owner)).balance, 800);
   assert.equal(

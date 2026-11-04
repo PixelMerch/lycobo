@@ -15,16 +15,16 @@
 
 ## 自动成片
 
-上传一张商品图片并填写场景描述后，「立即生成」依次调用 DeepSeek 规划、Image 2.5 出图、DeepSeek 优化成片提示词和现有视频提交。默认准备三张参考画面，视频使用商品原图与按分镜顺序生成成功的画面，请求 9:16、10 秒。右侧显示三步制作进度与视频历史。纯文字和载入历史的已有参考组使用原有视频提交路径。
+上传 1–3 张商品图片并填写场景描述后，「立即生成」依次调用 DeepSeek 规划、Image 2.5 出图、DeepSeek 优化成片提示词和现有视频提交。默认准备三张参考画面，视频使用商品原图与按分镜顺序生成成功的画面，请求 9:16、10 秒。右侧显示三步制作进度与视频历史。纯文字和载入历史的已有参考组使用原有视频提交路径。
 
 预计积分分为画面 6 和视频 100。首次启动前检查余额，图片和视频分别按各自任务规则扣退。部分出图成功时使用成功画面，全部未生成时暂停视频提交。同一浏览器会话保留待确认请求及已受理的阶段，页面刷新后可继续，沿用已有任务及其幂等编号。
 
-`GET /api/v1/video-storyboards/capabilities` 检查已配置的 DeepSeek 规划渠道，`POST /api/v1/video-storyboards` 以 `plan` 或 `video` 阶段调用现有的服务端规划通道。两阶段使用独立幂等键和已有计划持久化、限频与归属校验，DeepSeek 只接收文字和图号。图片和视频继续使用各自的现有任务接口，无新增数据库迁移。
+`GET /api/v1/video-storyboards/capabilities` 检查已配置的 DeepSeek 规划渠道，`POST /api/v1/video-storyboards` 以 `plan` 或 `video` 阶段调用现有的服务端规划通道。两阶段使用独立幂等键和已有计划持久化、限频与归属校验，DeepSeek 只接收文字和图号。图片和视频继续使用各自的现有任务接口。历史记录元数据的迁移见文末。
 
 ## API与持久数据
 
 - GET /api/v1/video-model：登录后读取可用状态、固定分辨率及固定积分。
-- POST /api/v1/video-tasks：企业身份／受信任来源保护，Idempotency-Key为UUID，正文为prompt、seconds、aspectRatio及referenceAssetIds，不接受客户端owner／storage key。
+- POST /api/v1/video-tasks：企业身份／受信任来源保护，Idempotency-Key为UUID，正文为prompt、seconds、aspectRatio及referenceAssetIds，自动成片可附加storyboard和storyboardOriginalImageCount，不接受客户端owner／storage key。
 - GET /api/v1/video-tasks：按成员读取历史，before游标分页（每页20），服务端先筛选再分页。
 - GET /api/v1/video-tasks/:id：读取归属内的单任务及完成后的签名链接。
 
@@ -71,4 +71,4 @@ CloudBase消费者复用生图私有桶保存视频MP4。发布前应用 `cloudb
 
 本地依赖允许ffmpeg-static安装脚本。CloudBase发布准备脚本为资源函数单独安装Linux x64二进制并随包携带；这属于本地制品准备，仍需单独授权才部署。修改依赖与根锁文件须随PR显式审查。
 
-自动成片的任务输入在原 `input.video` 旁保存可选的 `input.storyboard.description`。原始商品图仍是参考列表的第一张，之后是按顺序提交的分镜图片。该字段只用于历史展示和任务幂等，Worker 领取的供应商输入沿用原结构。上线时先应用 `20261104130000_video_storyboard_history.sql`，再发布 API 和网页；网页通过视频能力接口的 `storyboardHistory` 识别旧 API。已保存的旧任务按当时保留的描述和参考图展示。
+自动成片的任务输入在原 `input.video` 旁保存可选的 `input.storyboard.description`。参考列表先放 1–3 张原始商品图（第 1 张为主图），随后是按顺序提交的分镜图片。多图任务另存可选的 `input.storyboardOriginalImageCount`，历史记录据此分组，旧任务按一张原始商品图展示。该字段只用于历史展示和任务幂等，Worker 领取的供应商输入沿用原结构。上线时先依次应用 `20261104130000_video_storyboard_history.sql` 和 `20261104140000_video_storyboard_original_count.sql`，再发布 API 和网页；网页根据规划与视频能力接口返回的 `maxStoryboardOriginalImages` 开放多图上传，兼容旧 API 的单图流程。已保存的旧任务按当时保留的描述和参考图展示。

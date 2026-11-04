@@ -28,12 +28,13 @@ export function videoRepository(run: VideoRun, close: () => Promise<void> = asyn
       key: string,
       config: { origin: string; credentialHash: string },
     ) => {
-      const { storyboard, ...video } = input;
+      const { storyboard, storyboardOriginalImageCount, ...video } = input;
       return run("create", {
         organizationId: scope.organizationId,
         userId: scope.userId,
         input: video,
         ...(storyboard ? { storyboard } : {}),
+        ...(storyboardOriginalImageCount !== undefined ? { storyboardOriginalImageCount } : {}),
         key,
         ...config,
         inputHash: videoCredentialHash(JSON.stringify(input)),

@@ -1,5 +1,5 @@
 import { Button, Spinner } from "@heroui/react";
-import { videoUnitCredits } from "@lycoboai/contracts";
+import { storyboardOriginalImageLimit, videoUnitCredits } from "@lycoboai/contracts";
 import { CreditCoin } from "../../components/credit-coin";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { useErrorToast } from "../../lib/error-toast";
@@ -34,17 +34,21 @@ export function VideoPage() {
     !submission.hasPending &&
     (production.needsResume ||
       production.busy ||
-      (!draft.reuseReferences && references.length === 1));
+      (!draft.reuseReferences &&
+        references.length > 0 &&
+        references.length <= storyboardOriginalImageLimit));
   const locked = production.busy || production.needsResume;
   const currentReferences =
     locked && production.draft.references.length ? production.draft.references : references;
   const description =
     locked && production.draft.description ? production.draft.description : draft.prompt;
-  const referenceLimit = Math.max(1, references.length);
+  const referenceLimit = Math.max(production.maxOriginalImages, references.length);
   const busy = submission.isPending || production.busy;
   const valid = hasPromptDescription(draft.prompt);
   const canSubmit = automatic
-    ? !production.blocked && (production.needsResume || (production.configured && valid))
+    ? !production.blocked &&
+      (production.needsResume ||
+        (production.configured && valid && references.length <= production.maxOriginalImages))
     : !submission.blockedByPending && (valid || submission.hasPending);
   useErrorToast(submission.error?.message ?? model.error?.message);
   return (
@@ -60,6 +64,9 @@ export function VideoPage() {
           disabled={locked}
           label="商品图片"
         />
+        {currentReferences.length > 1 && !draft.reuseReferences && (
+          <p className="video-reference-hint">第 1 张为主图，其余为补充参考。</p>
+        )}
         {locked ? (
           <div className="video-description-preview">
             <h2>场景描述</h2>

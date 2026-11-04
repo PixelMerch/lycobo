@@ -57,10 +57,12 @@ export const useStoryboardState = create<{
         JSON.parse(sessionStorage.getItem(key(scope)) ?? "null"),
       );
       if (parsed.success) {
-        const { originalAssetId, ...rest } = parsed.data;
+        const { originalAssetId, additionalOriginalAssetIds, ...rest } = parsed.data;
         draft = {
           ...rest,
-          references: originalAssetId ? [originalReference(originalAssetId)] : [],
+          references: originalAssetId
+            ? [originalAssetId, ...(additionalOriginalAssetIds ?? [])].map(originalReference)
+            : [],
         };
       }
     } catch {
@@ -79,6 +81,9 @@ export const useStoryboardState = create<{
           count: next.count,
           seconds: next.seconds,
           originalAssetId: next.references[0]?.assetId,
+          additionalOriginalAssetIds: next.references
+            .slice(1)
+            .flatMap(({ assetId }) => (assetId ? [assetId] : [])),
           progress: next.progress,
         }),
       );
