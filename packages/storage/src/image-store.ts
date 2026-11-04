@@ -14,12 +14,17 @@ import {
 
 export { ImageValidationError, maxImageBytes } from "./core";
 
-async function decodeImage(bytes: Uint8Array, outputSize?: ImageOutputSize) {
+async function openImage(bytes: Uint8Array) {
   if (!bytes.length || bytes.length > imageLimits.outputBytes) throw new Error("INVALID_IMAGE");
   const source = sharp(bytes, { limitInputPixels: 32 * 1024 * 1024, failOn: "warning" });
   const metadata = await source.metadata();
   if (!["png", "jpeg", "webp"].includes(metadata.format ?? "") || (metadata.pages ?? 1) > 1)
     throw new Error("INVALID_IMAGE");
+  return { source, metadata };
+}
+
+async function decodeImage(bytes: Uint8Array, outputSize?: ImageOutputSize) {
+  const { source, metadata } = await openImage(bytes);
   if (outputSize) {
     const width = metadata.width ?? 0;
     const height = metadata.height ?? 0;
@@ -50,20 +55,29 @@ export async function normalizeImage(bytes: Uint8Array, outputSize?: ImageOutput
     throw new ImageValidationError("INVALID_IMAGE");
   }
 }
-/** Normalize uploaded references before persistence, independently of generated output. */
+const providerReferenceEdge = 3840;
+const storedReferenceBytes = 4 * 1024 * 1024;
+
+/** Normalize reference uploads without affecting the stored resolution of paid outputs. */
 export async function normalizeReferenceUpload(bytes: Uint8Array) {
   try {
-    const image = await normalizeImage(bytes);
-    return await sharp(image.data)
-      .resize({ width: 3840, height: 3840, fit: "inside", withoutEnlargement: true })
-      .png({ adaptiveFiltering: true, compressionLevel: 9 })
-      .toBuffer();
+    const { source, metadata } = await openImage(bytes);
+    let edge = Math.min(providerReferenceEdge, Math.max(metadata.width, metadata.height));
+    while (true) {
+      const normalized = await source
+        .clone()
+        .rotate()
+        .resize({ width: edge, height: edge, fit: "inside", withoutEnlargement: true })
+        .png({ adaptiveFiltering: true })
+        .toBuffer();
+      if (normalized.length <= storedReferenceBytes) return normalized;
+      const scale = Math.min(0.85, Math.sqrt(storedReferenceBytes / normalized.length) * 0.95);
+      edge = Math.max(1, Math.floor(edge * scale));
+    }
   } catch {
     throw new ImageValidationError("INVALID_IMAGE");
   }
 }
-// Providers analyse references well below this size; larger uploads only add transfer.
-const providerReferenceEdge = 3840;
 /**
  * A stored lossless reference re-encoded for a provider request, whose upload is billed per
  * byte: JPEG quality 92 with full-resolution colour (4:4:4) is about 5 times smaller than the

@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -130,4 +131,20 @@ it("bounds uploaded reference dimensions and preserves small originals", async (
     height: 2,
   });
   await expect(normalizeReferenceUpload(Buffer.from("invalid"))).rejects.toThrow("INVALID_IMAGE");
+});
+
+it("keeps large uploaded references below the storage target without flattening transparency", async () => {
+  const width = 2048;
+  const height = 768;
+  const pixels = randomBytes(width * height * 4);
+  const source = await sharp(pixels, { raw: { width, height, channels: 4 } })
+    .png()
+    .toBuffer();
+  const reference = await normalizeReferenceUpload(source);
+  const stored = await normalizeImage(reference);
+  expect(source.length).toBeGreaterThan(4 * 1024 * 1024);
+  expect(stored.data.length).toBeLessThanOrEqual(4 * 1024 * 1024);
+  expect(stored.width).toBeLessThan(width);
+  expect(stored.height / stored.width).toBeCloseTo(height / width);
+  expect(await sharp(stored.data).metadata()).toMatchObject({ format: "png", hasAlpha: true });
 });

@@ -31,10 +31,14 @@ test("textile angles submit one durable ten-image job and isolate history across
   );
   const jobs: ImageJob[] = [];
   const referenceIds: string[] = [];
+  const uploadedReferences: Buffer[] = [];
   await page.route("**/api/v1/image-assets", async (route) => {
     if (route.request().method() !== "POST")
       return route.fulfill({ json: apiFixture({ data: [] }) });
     const id = crypto.randomUUID();
+    const body = route.request().postDataBuffer();
+    if (!body) throw new Error("Missing reference upload");
+    uploadedReferences.push(body);
     referenceIds.push(id);
     return route.fulfill({ json: apiFixture({ id }) });
   });
@@ -90,9 +94,42 @@ test("textile angles submit one durable ten-image job and isolate history across
   await page.getByRole("radio", { name: "2K", exact: true }).click();
   const submit = page.getByRole("button", { name: "立即生成", exact: true });
   await expect(submit).toBeDisabled();
-  await page
-    .getByLabel("主图文件", { exact: true })
-    .setInputFiles({ name: "main.png", mimeType: "image/png", buffer: png });
+  const mainFile = page.getByLabel("主图文件", { exact: true });
+  await mainFile.setInputFiles({
+    name: "oversize.png",
+    mimeType: "image/png",
+    buffer: Buffer.alloc(11 * 1024 * 1024),
+  });
+  await expect(page.getByText("第 1 张图片超过单张 10 MB 的上限，当前为 11.00 MB。")).toBeVisible();
+  expect(uploadedReferences).toHaveLength(0);
+
+  const originalSize = await mainFile.evaluate(async (input: HTMLInputElement) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 4000;
+    canvas.height = 700;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Canvas unavailable");
+    const pixels = context.createImageData(canvas.width, canvas.height);
+    const words = new Uint32Array(pixels.data.buffer);
+    let random = 7927;
+    for (let index = 0; index < words.length; index++) {
+      random ^= random << 13;
+      random ^= random >>> 17;
+      random ^= random << 5;
+      words[index] = random | 0xff000000;
+    }
+    context.putImageData(pixels, 0, 0);
+    const image = await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("PNG unavailable")))),
+    );
+    const selection = new DataTransfer();
+    selection.items.add(new File([image], "main.png", { type: "image/png" }));
+    input.files = selection.files;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    return image.size;
+  });
+  expect(originalSize).toBeGreaterThan(6 * 1024 * 1024);
+  expect(originalSize).toBeLessThanOrEqual(10 * 1024 * 1024);
   await page.getByLabel("详情图文件", { exact: true }).setInputFiles(
     Array.from({ length: 5 }, (_, index) => ({
       name: `detail-${index}.png`,
@@ -110,6 +147,19 @@ test("textile angles submit one durable ten-image job and isolate history across
   await submit.click();
   await expect(page.locator(".generation-job")).toHaveCount(1);
   expect(referenceIds.length).toBe(6);
+  const compressed = uploadedReferences[0];
+  if (!compressed) throw new Error("Missing compressed main image");
+  expect(compressed.length).toBeLessThanOrEqual(5 * 1024 * 1024);
+  const dimensions = await page.evaluate(async (encoded) => {
+    const response = await fetch(`data:image/webp;base64,${encoded}`);
+    const bitmap = await createImageBitmap(await response.blob());
+    const size = { width: bitmap.width, height: bitmap.height };
+    bitmap.close();
+    return size;
+  }, compressed.toString("base64"));
+  expect(dimensions.width).toBeLessThanOrEqual(3840);
+  expect(dimensions.height / dimensions.width).toBeCloseTo(700 / 4000);
+  expect(uploadedReferences.slice(1)).toEqual(Array.from({ length: 5 }, () => png));
   await expect(page.locator(".reference-tile")).toHaveCount(0);
   await expect(page.locator(".textile-selected-view")).toHaveCount(0);
   await expect(page.getByRole("radio", { name: "2K", exact: true })).toHaveAttribute(

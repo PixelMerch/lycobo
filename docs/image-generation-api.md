@@ -249,4 +249,4 @@ Worker 以 `Image generation stage timing` 输出结构化分段计时，包含 
 
 迁移：本地与 Supabase 链路为 `packages/db/migrations/0038_asset_favorites.sql`；CloudBase 共享 PG 为 `cloudbase/migrations/20261103100000_asset_favorites.sql`，新建同一张表并撤销运行角色的直接表权限，只按原文逐段替换 `lycobo_image_operation` 中的 listAssets 与作用域列表并新增 setAssetFavorite、favoriteAssetIds，任一片段不匹配即中止。发布流水线不迁移数据库：需先应用 CloudBase 迁移再部署 API；新函数兼容旧 API 的调用参数，反之旧函数不认识新的收藏操作。
 
-上传参考图在服务端验证后等比例缩小至宽、高均不超过3840像素，较小图片不放大，以压缩PNG入库。此上限独立于生成请求尺寸；向中转站发送参考图时，不透明图片可转JPEG压缩，透明图片保持PNG。
+参考图单张原文件最多 10 MB（10 MiB）。超过 5 MiB 的原文件在浏览器中生成不超过 5 MiB 的上传副本，以满足 CloudBase 请求体限制，原文件保留在本地。副本按比例缩小至最长边最多 3840 像素并保留透明通道。服务端验证后将参考图规范化为宽、高均不超过 3840 像素的 PNG。超过 4 MiB 的参考 PNG 会按比例继续缩小后入库，较小图片不放大，付费生成结果不使用该规则。此上限独立于生成请求尺寸；向中转站发送参考图时，不透明图片可转JPEG压缩，透明图片保持PNG。

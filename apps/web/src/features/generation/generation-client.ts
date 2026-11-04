@@ -24,6 +24,8 @@ import { useRef, useSyncExternalStore } from "react";
 import { normalizeApiResponse } from "../../lib/api-response";
 import { sessionFetch } from "../../lib/session-fetch";
 import { assetContentUrl, rememberImageDeliveries } from "./asset-delivery-client";
+import { prepareReferenceUpload } from "./references/prepare-reference-upload";
+import { referenceSizeError } from "./references/read-reference-images";
 
 export { assetContentUrl } from "./asset-delivery-client";
 
@@ -231,7 +233,7 @@ export async function uploadImageReferences(
   references: readonly ReferenceImage[],
 ) {
   const referenceAssetIds: string[] = [];
-  for (const reference of references) {
+  for (const [index, reference] of references.entries()) {
     if (reference.assetId) {
       referenceAssetIds.push(reference.assetId);
       continue;
@@ -245,10 +247,23 @@ export async function uploadImageReferences(
         const blob = await (
           await fetch(reference.src, { signal: AbortSignal.timeout(30000) })
         ).blob();
+        const position = index + 1;
+        const issue = referenceSizeError(blob.size, position);
+        if (issue) throw new Error(issue);
+        const prepared = await prepareReferenceUpload(blob, position);
         const upload = await imageRequest("image-assets", {
           method: "POST",
-          headers: { "Content-Type": blob.type },
-          body: blob,
+          headers: { "Content-Type": prepared.type },
+          body: prepared,
+        }).catch((error: unknown) => {
+          if (error instanceof ImageApiError && [406, 413].includes(error.status)) {
+            throw new ImageApiError(
+              `第 ${position} 张图片超过当前上传入口允许的大小，请缩小图片后重试。`,
+              error.status,
+              error.businessCode,
+            );
+          }
+          throw error;
         });
         const uploaded = imageUploadResponseSchema.parse(await upload.json());
         void client.invalidateQueries({ queryKey: ["image-assets"] });
