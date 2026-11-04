@@ -95,19 +95,22 @@ test("textile angles submit one durable ten-image job and isolate history across
   const submit = page.getByRole("button", { name: "立即生成", exact: true });
   await expect(submit).toBeDisabled();
   const mainFile = page.getByLabel("主图文件", { exact: true });
-  await mainFile.setInputFiles({
-    name: "oversize.png",
-    mimeType: "image/png",
-    buffer: Buffer.alloc(11 * 1024 * 1024),
+  await mainFile.evaluate((input: HTMLInputElement) => {
+    const selection = new DataTransfer();
+    selection.items.add(
+      new File([new Uint8Array(51 * 1024 * 1024)], "oversize.png", { type: "image/png" }),
+    );
+    input.files = selection.files;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
   });
-  await expect(page.getByText("第 1 张图片超过单张 10 MB 的上限，当前为 11.00 MB。")).toBeVisible();
+  await expect(page.getByText("第 1 张图片超过单张 50 MB 的上限，当前为 51.00 MB。")).toBeVisible();
   expect(uploadedReferences).toHaveLength(0);
 
   const originalSize = await mainFile.evaluate(async (input: HTMLInputElement) => {
     const canvas = document.createElement("canvas");
-    canvas.width = 4000;
-    canvas.height = 700;
-    const context = canvas.getContext("2d");
+    canvas.width = 5600;
+    canvas.height = 3100;
+    const context = canvas.getContext("2d", { alpha: false });
     if (!context) throw new Error("Canvas unavailable");
     const pixels = context.createImageData(canvas.width, canvas.height);
     const words = new Uint32Array(pixels.data.buffer);
@@ -128,8 +131,8 @@ test("textile angles submit one durable ten-image job and isolate history across
     input.dispatchEvent(new Event("change", { bubbles: true }));
     return image.size;
   });
-  expect(originalSize).toBeGreaterThan(6 * 1024 * 1024);
-  expect(originalSize).toBeLessThanOrEqual(10 * 1024 * 1024);
+  expect(originalSize).toBeGreaterThan(49 * 1024 * 1024);
+  expect(originalSize).toBeLessThanOrEqual(50 * 1024 * 1024);
   await page.getByLabel("详情图文件", { exact: true }).setInputFiles(
     Array.from({ length: 5 }, (_, index) => ({
       name: `detail-${index}.png`,
@@ -158,7 +161,7 @@ test("textile angles submit one durable ten-image job and isolate history across
     return size;
   }, compressed.toString("base64"));
   expect(dimensions.width).toBeLessThanOrEqual(3840);
-  expect(dimensions.height / dimensions.width).toBeCloseTo(700 / 4000);
+  expect(dimensions.height / dimensions.width).toBeCloseTo(3100 / 5600);
   expect(uploadedReferences.slice(1)).toEqual(Array.from({ length: 5 }, () => png));
   await expect(page.locator(".reference-tile")).toHaveCount(0);
   await expect(page.locator(".textile-selected-view")).toHaveCount(0);

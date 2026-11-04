@@ -98,8 +98,8 @@ export function ReferencePicker({
         return;
       }
       change([...current, ...unique], currentDraft()?.prompt ?? "");
-    } catch {
-      setError("图片无法读取，请检查文件后重试。");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "图片无法读取，请检查文件后重试。");
     } finally {
       setReading(false);
       if (input.current) input.current.value = "";
