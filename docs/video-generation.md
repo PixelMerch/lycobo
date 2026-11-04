@@ -41,7 +41,7 @@ API与消费者需要：
 
 实施迁移为packages/db/migrations/0039_video_outbox.sql及cloudbase/migrations/20261103120000_video_generation.sql（分别用于Node PG与CloudBase共享PG）；CloudBase素材列表的分辨率与时长另需cloudbase/migrations/20261104100000_video_asset_specs.sql，未执行时素材封面只是不显示这两项。CloudBase迁移除建表／固定视频RPC外，也按断言定位片段扩展既有图片RPC的媒体过滤并排除视频超时处理；不能自动db push或在运行时建表。
 
-先按授权应用目标库迁移，再部署资源服务、消费者与API代码，安全配置密钥及可达性；最后在明确限额下授权真实收费验收并验证视频。必须测试文字及参考图、受理到成品、播放与下载、扣费和失败退款。代码构建或fixture成功不代表生产可用。当前没有执行上述生产步骤。
+部署资源服务、消费者与API之前，先在目标库应用视频任务、素材规格、私有桶和权限迁移。`20261104120000_video_runtime_privileges.sql` 撤销 CloudBase 默认赋予客户端角色的 RPC 与 outbox 权限，服务端角色通过固定 RPC 执行任务。真实收费验收须验证纯文字、参考图、成品播放与下载、扣费和失败退款，并在明确限额下进行。
 
 ## 本地验证
 

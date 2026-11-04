@@ -44,6 +44,9 @@ try {
       `DO $$ BEGIN CREATE ROLE ${role}; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
     );
   }
+  // Model CloudBase's default grants in the isolated database.
+  await sql`alter default privileges in schema public grant execute on functions to anon, authenticated`;
+  await sql`alter default privileges in schema public grant all on tables to anon, authenticated, service_role`;
   // CloudBase provisions this catalog. Plain PostgreSQL in CI needs a local fixture.
   await sql`create schema storage`;
   await sql`create table storage.buckets (
@@ -65,6 +68,15 @@ try {
   assert.equal(videoBucket?.public, false);
   assert.equal(videoBucket?.max_bytes, 128 * 1024 * 1024);
   assert.deepEqual(videoBucket?.allowed_mime_types, ["image/png", "image/webp", "video/mp4"]);
+  const [videoGrants] = await sql`select has_function_privilege(
+    'service_role', 'public.lycobo_video_operation(text,jsonb)', 'EXECUTE'
+  ) as runtime_execute`;
+  assert.equal(videoGrants?.runtime_execute, true);
+  for (const role of ["anon", "authenticated", "service_role"]) {
+    const [grant] = await sql`select has_table_privilege(${role}, 'public.generation_video_outbox',
+      'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') as direct_access`;
+    assert.equal(grant?.direct_access, false, `${role} must access video data through the API`);
+  }
   const call: CloudBaseRpc = async (operation, parameters) => {
     if (operation === "lycobo_image_batch") {
       const a = z
