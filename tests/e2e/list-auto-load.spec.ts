@@ -50,6 +50,8 @@ test("reference list loads the next page at its bottom, shows a spinner and stop
     await gate;
     return route.fulfill({ status: 500, json: apiFixture({}, 500) });
   });
+  // The sentinel can only fire on screen; the popover opens below the prompt and never flips.
+  await page.setViewportSize({ width: 1280, height: 1000 });
   await page.goto("/commerce/smart-variation");
   await page.locator(".prompt-field").getByRole("textbox").press("@");
   const dialog = page.getByRole("dialog", { name: "引用图片", exact: true });
@@ -91,6 +93,8 @@ test("asset library appends another page and stops when the list is complete", a
       json: apiFixture({ data: more ? assets.slice(30) : assets.slice(0, 30) }),
     });
   });
+  // Short enough that the first page's sentinel starts below the fold at the default density.
+  await page.setViewportSize({ width: 1280, height: 420 });
   await page.goto("/assets");
   await expect(page.locator(".asset-tile")).toHaveCount(30);
   await page.locator(".infinite-load").scrollIntoViewIfNeeded();

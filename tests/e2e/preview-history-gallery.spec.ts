@@ -125,8 +125,8 @@ test("result preview browses successful history images, highlights the entry and
   const previewFrameBox = await previewFrame.boundingBox();
   await expect(previewThumb.locator("img")).toHaveCSS("transform", "none");
   await previewThumb.hover();
-  await expect(previewThumb.locator("img")).toHaveCSS("transform", "matrix(1.1, 0, 0, 1.1, 0, 0)");
-  // The frame keeps its size and corners; the picture is clipped inside it.
+  await expect(previewThumb.locator("img")).toHaveCSS("transform", "none");
+  // The frame keeps its size and corners, and the whole picture stays visible.
   const previewSize = (box: { width: number; height: number } | null) => ({
     width: box?.width,
     height: box?.height,
@@ -148,7 +148,9 @@ test("result preview browses successful history images, highlights the entry and
   await expect(viewer.locator(".image-preview-bar-id")).toHaveCount(0);
 });
 
-test("history rail thumbnails zoom on hover and keep a stable tile", async ({ page }) => {
+test("history rail thumbnails keep the whole image and a stable tile on hover", async ({
+  page,
+}) => {
   await mockImageApi(page);
   const outputId = crypto.randomUUID();
   const job = {
@@ -193,16 +195,17 @@ test("history rail thumbnails zoom on hover and keep a stable tile", async ({ pa
   const beforeFrame = await frame.boundingBox();
   await expect(image).toHaveCSS("transform", "none");
   await thumb.hover();
-  await expect(image).toHaveCSS("transform", "matrix(1.1, 0, 0, 1.1, 0, 0)");
-  // Only the picture scales; the tile, its padding and the selected ring keep
-  // their size, so the frame never changes shape on hover.
+  await expect(image).toHaveCSS("transform", "none");
+  await expect(image).toHaveCSS("object-fit", "contain");
+  // The picture is never cropped, and the tile, its padding and the selected
+  // ring keep their size, so the frame never changes shape on hover.
   expect(await thumb.boundingBox()).toEqual(before);
   expect(await frame.boundingBox()).toEqual(beforeFrame);
   await expect(frame).toHaveCSS("border-radius", "6px");
   await expect(frame).toHaveCSS("overflow", "hidden");
-  // Keyboard focus gets the same feedback.
+  // Keyboard focus leaves the picture alone too.
   await page.mouse.move(0, 0);
-  await expect(image).toHaveCSS("transform", "none");
   await thumb.focus();
-  await expect(image).toHaveCSS("transform", "matrix(1.1, 0, 0, 1.1, 0, 0)");
+  await expect(image).toHaveCSS("transform", "none");
+  expect(await thumb.boundingBox()).toEqual(before);
 });
