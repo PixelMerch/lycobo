@@ -1,14 +1,19 @@
+import { imageLimits } from "@lycoboai/contracts";
 import type { ReferenceImage } from "../studio-state";
 
+export function referenceSizeError(size: number, position: number) {
+  if (size <= imageLimits.uploadBytes) return null;
+  const sizeMb = (size / (1024 * 1024)).toFixed(2);
+  const actual = Number(sizeMb) > 10 ? `当前为 ${sizeMb} MB` : "当前略高于 10 MB";
+  return `第 ${position} 张图片超过单张 10 MB 的上限，${actual}。`;
+}
+
 export function referenceFileError(files: File[]) {
-  if (
-    files.some(
-      (file) =>
-        !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
-        file.size > 10 * 1024 * 1024,
-    )
-  ) {
-    return "请选择 PNG、JPEG 或 WebP 图片，单张不超过 10MB。";
+  for (const [index, file] of files.entries()) {
+    const issue = referenceSizeError(file.size, index + 1);
+    if (issue) return issue;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type))
+      return `第 ${index + 1} 张图片格式不支持，请选择 PNG、JPEG 或 WebP。`;
   }
   return null;
 }
