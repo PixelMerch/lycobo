@@ -50,7 +50,7 @@ export function videoRoutes(
     if (symbol === "REFERENCE_NOT_FOUND")
       return fail(symbol, "参考图片不存在或不属于当前账号", 400);
     if (symbol === "VIDEO_REFERENCES_UNAVAILABLE")
-      return fail("GENERATION_NOT_CONFIGURED", videoReferenceUnavailableMessage, 503);
+      return fail(symbol, videoReferenceUnavailableMessage, 503);
     if (symbol === "IDEMPOTENCY_CONFLICT")
       return fail(symbol, "提交编号已用于其他内容，请重新确认", 409);
     if (symbol === "RATE_LIMITED") return fail(symbol, "请等待已有视频任务完成或核对后再提交", 429);

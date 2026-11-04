@@ -75,6 +75,7 @@ describe("video API", () => {
     expect(rejected.status).toBe(503);
     expect(await rejected.json()).toMatchObject({
       message: "当前环境无法向视频服务提供参考图。",
+      error: { code: "VIDEO_REFERENCES_UNAVAILABLE" },
     });
     expect(calls).toEqual([]);
     const response = await send({ prompt: "视频描述", seconds: 15 });

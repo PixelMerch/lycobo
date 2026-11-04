@@ -1,5 +1,9 @@
 import { Skeleton, Spinner } from "@heroui/react";
-import { storyboardImageLimit, type VideoTask } from "@lycoboai/contracts";
+import {
+  storyboardImageLimit,
+  type VideoTask,
+  videoReferenceUnavailableMessage,
+} from "@lycoboai/contracts";
 import { IconCheck, IconMovie } from "@tabler/icons-react";
 import { UiIcon } from "../../components/ui-icon";
 import { AssetImage } from "../generation/asset-image";
@@ -8,7 +12,7 @@ import { videoTaskStatus } from "./video-task-card";
 
 export type Production = Pick<
   ReturnType<typeof useStoryboard>,
-  "draft" | "busy" | "needsResume" | "failed"
+  "draft" | "busy" | "needsResume" | "failed" | "pendingVideo" | "referenceImagesBlocked"
 >;
 const steps = ["创建分镜画面", "编写视频提示词", "生成视频"];
 const frameSlots = Array.from({ length: storyboardImageLimit }, (_, position) => ({
@@ -52,6 +56,11 @@ export function VideoProductionProgress({
   const paused =
     !progress.acceptedVideoId &&
     (production.failed || (!production.busy && production.needsResume));
+  const pausedState = production.referenceImagesBlocked
+    ? "参考图不可用"
+    : production.pendingVideo
+      ? "待确认"
+      : "待继续";
   const executing =
     !paused &&
     (current < 2 || !progress.acceptedVideoId
@@ -71,7 +80,7 @@ export function VideoProductionProgress({
   const states = [
     current > 0 ? "已完成" : paused ? "待继续" : "进行中",
     current > 1 ? "已完成" : current === 0 ? "等待中" : paused ? "待继续" : "进行中",
-    current < 2 ? "等待中" : paused ? "待继续" : videoState,
+    current < 2 ? "等待中" : paused ? pausedState : videoState,
   ];
   return (
     <section
@@ -139,7 +148,10 @@ export function VideoProductionProgress({
               )}
               {index === 2 && current === 2 && (
                 <div className="video-production-detail">
-                  <ProductionMedia executing={executing} status={paused ? "待继续" : videoState} />
+                  <ProductionMedia
+                    executing={executing}
+                    status={paused ? pausedState : videoState}
+                  />
                   {(task?.status === "queued" || task?.status === "running") && (
                     <p>可以先继续创作，稍后在历史记录查看成片。</p>
                   )}
@@ -149,7 +161,15 @@ export function VideoProductionProgress({
           );
         })}
       </ol>
-      {paused && <p>可回到创作区查看提示。</p>}
+      {paused && (
+        <p role="status">
+          {production.referenceImagesBlocked
+            ? `${videoReferenceUnavailableMessage}恢复后可沿用已完成的分镜。`
+            : production.pendingVideo
+              ? "请在创作区确认上次提交，沿用原提交编号。"
+              : "可在创作区从中断处继续。"}
+        </p>
+      )}
     </section>
   );
 }

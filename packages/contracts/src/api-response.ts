@@ -18,6 +18,7 @@ export const businessCodes = {
   STATE_CONFLICT: 30004,
   GENERATION_NOT_CONFIGURED: 40001,
   AUTH_NOT_CONFIGURED: 40002,
+  VIDEO_REFERENCES_UNAVAILABLE: 40003,
   INTERNAL_ERROR: 50000,
 } as const;
 const base = { request_id: z.uuid(), message: z.string() };

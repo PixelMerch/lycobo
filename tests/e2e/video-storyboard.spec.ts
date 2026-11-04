@@ -30,6 +30,7 @@ async function verifyStoryboard(page: Page, originalCount: number) {
   const completedImages = losesFirstFrame ? images.slice(1) : images;
   const completedTitles = (losesFirstFrame ? items.slice(1) : items).map(({ title }) => title);
   let imagesReady = false;
+  let referenceImagesEnabled = true;
   let partialFrameReady = false;
   let allowOptimization: (() => void) | undefined;
   let completed: object | null = null;
@@ -54,6 +55,7 @@ async function verifyStoryboard(page: Page, originalCount: number) {
       json: apiFixture({
         enabled: true,
         storyboardHistory: true,
+        referenceImagesEnabled,
         maxStoryboardOriginalImages: 3,
         resolution: "768p",
         unitCredits: 100,
@@ -149,7 +151,19 @@ async function verifyStoryboard(page: Page, originalCount: number) {
     const submission = route.request().postDataJSON();
     videoRequests.push(submission);
     videoKeys.push(route.request().headers()["idempotency-key"]);
-    if (videoRequests.length === 1) return route.abort("failed");
+    if (videoRequests.length === 1) {
+      if (!losesFirstFrame) return route.abort("failed");
+      referenceImagesEnabled = false;
+      return route.fulfill({
+        status: 503,
+        json: {
+          ...apiFixture({}, 503),
+          code: 40003,
+          message: "当前环境无法向视频服务提供参考图。",
+          error: { code: "VIDEO_REFERENCES_UNAVAILABLE" },
+        },
+      });
+    }
     const { storyboard, storyboardOriginalImageCount, ...video } = submission;
     completed = {
       id: videoId,
@@ -235,20 +249,33 @@ async function verifyStoryboard(page: Page, originalCount: number) {
   );
   allowOptimization?.();
   await expect.poll(() => videoRequests.length).toBe(1);
-  await expect(progress.getByRole("listitem").nth(2)).toContainText("待继续");
+  await expect(progress.getByRole("listitem").nth(2)).toContainText(
+    losesFirstFrame ? "参考图不可用" : "待确认",
+  );
   await expect(progress).toContainText(completedTitles.join(" → "));
   if (losesFirstFrame) {
     await expect(progress).toContainText("已生成 2/3 张分镜");
     await expect(progress).toContainText("画面未生成");
   }
   await expect(composer.locator(".video-description-preview")).toContainText(description);
-  await expect(composer).toContainText("沿用原提交编号核对视频任务");
+  if (losesFirstFrame) {
+    await expect(progress).toContainText("当前环境无法向视频服务提供参考图");
+    await expect(composer.getByRole("button", { name: /继续生成.*100/ })).toBeDisabled();
+    expect(videoRequests).toHaveLength(1);
+    referenceImagesEnabled = true;
+  } else {
+    await expect(composer).toContainText("沿用原提交编号核对视频任务");
+  }
   const videoSlot = progress.locator(".video-production-media");
   await expect(videoSlot).toBeVisible();
   if (originalCount === 3) await page.reload();
   await expect(frames.getByRole("img")).toHaveCount(completedImages.length);
   await expect(composer.locator(".reference-image-card")).toHaveCount(originalCount);
-  await composer.getByRole("button", { name: /确认上次提交.*100/ }).click();
+  await composer
+    .getByRole("button", {
+      name: losesFirstFrame ? /继续生成.*100/ : /确认上次提交.*100/,
+    })
+    .click();
   await expect.poll(() => videoRequests.length).toBe(2);
   expect(videoRequests[0]).toEqual({
     prompt: "先全景，随后特写和定格。",
@@ -260,7 +287,8 @@ async function verifyStoryboard(page: Page, originalCount: number) {
   });
   expect(videoRequests[1]).toEqual(videoRequests[0]);
   expect(videoKeys[0]).toMatch(/^[a-f0-9-]{36}$/);
-  expect(videoKeys[1]).toBe(videoKeys[0]);
+  if (losesFirstFrame) expect(videoKeys[1]).not.toBe(videoKeys[0]);
+  else expect(videoKeys[1]).toBe(videoKeys[0]);
   expect(imageRequests).toHaveLength(1);
   expect(planningRequests).toHaveLength(2);
   const history = page.getByRole("article", { name: "视频任务：W09VIDEO1" });

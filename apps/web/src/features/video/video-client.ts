@@ -129,6 +129,20 @@ export function useSubmitVideo(source?: "storyboard") {
         method: "POST",
         headers: { "Content-Type": "application/json", "Idempotency-Key": attempt.key },
         body: JSON.stringify(attempt.input),
+      }).catch((error: unknown) => {
+        if (
+          error instanceof ImageApiError &&
+          error.businessCode === "VIDEO_REFERENCES_UNAVAILABLE"
+        ) {
+          // An initial rejection occurs before task creation. A confirmation may refer
+          // to a task accepted earlier, so its original key must stay intact.
+          if (!confirming) {
+            sessionStorage.removeItem(storageKey);
+            notifyPending();
+          }
+          void client.invalidateQueries({ queryKey: ["video-model"] });
+        }
+        throw error;
       });
       const accepted = videoAcceptedSchema.parse(await response.json());
       sessionStorage.removeItem(storageKey);

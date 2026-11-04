@@ -33,6 +33,7 @@ export class ImageApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    readonly businessCode?: string,
   ) {
     super(message);
   }
@@ -60,6 +61,7 @@ export async function imageRequest(path: string, init: RequestInit = {}, timeout
         ? failure.data.message
         : (messages[response.status] ?? "服务暂时不可用，请稍后重试。"),
       response.status,
+      failure.success ? failure.data.error.code : undefined,
     );
   }
   const normalized = await normalizeApiResponse(response);

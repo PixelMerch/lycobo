@@ -4,6 +4,7 @@ import {
   imageUnitCredits,
   type StoryboardRequest,
   storyboardCapabilitiesSchema,
+  storyboardRequestSchema,
   storyboardVideoShotLimit,
   type VariationPlan,
   variationPlanSchema,
@@ -268,14 +269,14 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
         if (job.status === "failed") update({ progress: {} });
         throw new Error("画面未生成，视频任务尚未提交");
       }
-      const optimization: StoryboardRequest = {
+      const optimization = storyboardRequestSchema.parse({
         stage: "video",
         description: current().description,
         originalAssetId,
         ...(additionalOriginalAssetIds.length ? { additionalOriginalAssetIds } : {}),
         seconds: current().seconds,
         shots,
-      };
+      });
       const prior = current().progress.optimization;
       const attempt =
         prior && JSON.stringify(prior.input) === JSON.stringify(optimization)
@@ -341,6 +342,7 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
         ? videoUnitCredits
         : draft.count * imageUnitCredits + videoUnitCredits,
     pendingVideo: video.hasPending,
+    referenceImagesBlocked: videoModel.data?.referenceImagesEnabled === false,
     blocked:
       (pendingImage && !ownImagePending) ||
       video.blockedByPending ||
