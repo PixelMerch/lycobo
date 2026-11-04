@@ -158,7 +158,7 @@ export function AssetBrowser({
   onAuthenticationClose?: (() => void) | undefined;
 }) {
   const navigate = useNavigate();
-  const [columns, setColumns] = useState(6);
+  const [columns, setColumns] = useState(8);
   const session = useImageSession();
   const query = useAssetLibrary(filters);
   const models = useModelPresentation().data?.models ?? [];
@@ -200,7 +200,16 @@ export function AssetBrowser({
   );
   const densityGrid = (items: ImageAsset[]) => (
     <div className="asset-density-grid" style={{ "--asset-columns": columns } as CSSProperties}>
-      {items.map((asset) => tile(asset, { aspectRatio: 1 }))}
+      {items.map((asset) =>
+        tile(asset, {
+          aspectRatio:
+            asset.type === "video"
+              ? asset.width > 0 && asset.height > 0
+                ? asset.width / asset.height
+                : 9 / 16
+              : 1,
+        }),
+      )}
     </div>
   );
   const empty = emptyState(filters, defaults, currentTool);

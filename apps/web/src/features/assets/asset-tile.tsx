@@ -29,7 +29,12 @@ export function AssetTile({
   const { favorite, toggle } = useAssetFavorite(asset.id, asset.favorite ?? false);
   const source = asset.kind === "reference" ? "上传" : asset.tool ? toolNames[asset.tool] : "生成";
   return (
-    <div className="asset-tile" style={style} data-favorite={favorite || undefined}>
+    <div
+      className="asset-tile"
+      style={style}
+      data-media-type={asset.type}
+      data-favorite={favorite || undefined}
+    >
       <Button
         variant="tertiary"
         className="asset-tile-open"

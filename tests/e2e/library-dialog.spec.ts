@@ -98,7 +98,7 @@ test("我的素材 only shows generated images while 素材库 retains its sourc
       .locator(".asset-density-grid")
       .first()
       .evaluate((grid) => getComputedStyle(grid).gridTemplateColumns.split(" ").length);
-  await expect.poll(gridColumns).toBe(6);
+  await expect.poll(gridColumns).toBe(8);
   await expect(dialog.locator(".asset-day")).toHaveCount(0);
   await dialog.getByRole("button", { name: "全部时间 时间", exact: true }).click();
   await page.getByRole("option", { name: "最近 7 天", exact: true }).click();
@@ -226,7 +226,7 @@ test("素材库 shares density and time filters with 我的素材", async ({ pag
   await expect(page.locator(".asset-day")).toHaveCount(0);
   await expect(page.locator(".asset-density-grid")).toHaveCSS(
     "grid-template-columns",
-    /^(\S+ ){5}\S+$/,
+    /^(\S+ ){7}\S+$/,
   );
   await page.getByRole("button", { name: "全部时间 时间", exact: true }).click();
   await page.getByRole("option", { name: "最近 7 天", exact: true }).click();
@@ -323,11 +323,11 @@ test("我的素材 keeps filters visible while scrolling and separates the curre
 test("素材库 keeps source and filters below the header while scrolling", async ({ page }) => {
   await mockLibrary(
     page,
-    Array.from({ length: 48 }, (_, i) => asset(`P${String(i).padStart(8, "0")}`)),
+    Array.from({ length: 64 }, (_, i) => asset(`P${String(i).padStart(8, "0")}`)),
   );
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/assets");
-  await expect(page.locator(".asset-tile")).toHaveCount(48);
+  await expect(page.locator(".asset-tile")).toHaveCount(64);
   await page.mouse.wheel(0, 700);
   await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(200);
   await expect
