@@ -47,7 +47,7 @@ API与消费者需要：
 
 pnpm check；pnpm exec playwright test tests/e2e/video-creation.spec.ts tests/e2e/ratio-pager.spec.ts；按docs/testing.md执行隔离的pnpm test:integration。新增verify-videos在一次性本地数据库中验证并发幂等、100积分扣退、未知提交防重、异步原任务下载、成品video入库及图片超时隔离，不访问真实供应商。
 
-CloudBase消费者复用生图私有桶保存视频MP4，视频上传上限128MiB、图片上限保持32MiB。参考图仍通过已有生图上传接口入库，供应商只收到临时签名，不收到云存储Key。
+CloudBase消费者复用生图私有桶保存视频MP4。发布前应用 `cloudbase/migrations/20261104110000_private_video_storage.sql`，给现有私有桶追加 `video/mp4`，并将桶的单对象上限提高至至少128MiB。应用层视频上传上限128MiB，图片上限32MiB。参考图仍通过已有生图上传接口入库，供应商只收到临时签名，不收到云存储Key。
 
 ## 封面与播放
 
