@@ -339,9 +339,12 @@ async function verifyStoryboard(page: Page, originalCount: number, legacy = fals
   );
   allowOptimization?.();
   await expect.poll(() => videoRequests.length).toBe(1);
-  await expect(progress.getByRole("listitem").nth(2)).toContainText(
-    losesFirstFrame && !legacy ? "待继续" : "待确认",
-  );
+  const videoStep = progress.getByRole("listitem").nth(2);
+  const resume = videoStep.getByRole("button", {
+    name: losesFirstFrame && !legacy ? /继续生成.*100/ : "待确认",
+  });
+  await expect(resume).toBeVisible();
+  await expect(progress.getByRole("button", { name: /确认上次提交/ })).toHaveCount(0);
   await expect(progress).toContainText(completedTitles.join(" → "));
   await expect(descriptionInput).toBeEditable();
   if (losesFirstFrame) {
@@ -349,9 +352,10 @@ async function verifyStoryboard(page: Page, originalCount: number, legacy = fals
       page.getByText("当前环境无法向视频服务提供参考图。", { exact: true }),
     ).toBeVisible();
     await expect(progress).not.toContainText("当前环境无法向视频服务提供参考图");
+    await resume.click();
     await expect(
-      progress.getByRole("button", { name: /(?:继续生成|确认上次提交).*100/ }),
-    ).toBeDisabled();
+      page.getByText("当前环境无法向视频服务提供参考图。", { exact: true }).first(),
+    ).toBeVisible();
     expect(videoRequests).toHaveLength(1);
     referenceImagesEnabled = true;
   }
@@ -361,11 +365,11 @@ async function verifyStoryboard(page: Page, originalCount: number, legacy = fals
   if (originalCount === 3) await page.reload();
   await expect(frames.getByRole("img")).toHaveCount(completedImages.length);
   await expect(composer.locator(".reference-image-card")).toHaveCount(0);
-  await progress
-    .getByRole("button", {
-      name: losesFirstFrame && !legacy ? /继续生成.*100/ : /确认上次提交.*100/,
-    })
-    .click();
+  if (losesFirstFrame) await resume.click();
+  else {
+    await resume.focus();
+    await resume.press("Enter");
+  }
   await expect.poll(() => videoRequests.length).toBe(2);
   expect(videoRequests[0]).toEqual({
     prompt: "先全景，随后特写和定格。",

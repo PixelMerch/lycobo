@@ -651,6 +651,14 @@
   font-size: var(--text-xs);
   text-align: right;
 }
+.video-production-state-action {
+  justify-self: end;
+}
+@media (max-width: 767px), (pointer: coarse) {
+  .video-production-state-action {
+    min-height: 44px;
+  }
+}
 .video-production-progress
   [aria-current="step"]
   :is(.video-production-step, .video-production-state) {

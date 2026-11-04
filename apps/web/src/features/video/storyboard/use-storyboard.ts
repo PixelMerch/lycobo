@@ -1,3 +1,4 @@
+import { toast } from "@heroui/react";
 import {
   type ImageJob,
   imageJobSchema,
@@ -425,7 +426,6 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
         ? videoUnitCredits
         : draft.count * imageUnitCredits + videoUnitCredits,
     pendingVideo: video.hasPending,
-    referenceImagesBlocked,
     blocked,
     waitingForFrames,
     resumingFrames,
@@ -435,7 +435,13 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
     start: (input: Omit<ProductionInput, "retryPosition">) => {
       if (!needsResume) run(input);
     },
-    resume: () => run({ description: draft.description, references: draft.references }),
+    resume: () => {
+      if (resumeBlockedByReferences) {
+        toast.danger(videoReferenceUnavailableMessage);
+        return;
+      }
+      run({ description: draft.description, references: draft.references });
+    },
     retryFrame: (retryPosition: number) =>
       run({ description: draft.description, references: draft.references, retryPosition }),
   };

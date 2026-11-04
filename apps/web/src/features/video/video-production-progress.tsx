@@ -13,7 +13,6 @@ export type Production = Pick<
   | "needsResume"
   | "failed"
   | "pendingVideo"
-  | "referenceImagesBlocked"
   | "waitingForFrames"
   | "resumingFrames"
   | "checkingFrames"
@@ -83,9 +82,9 @@ export function VideoProductionProgress({
   const canResume = paused && production.needsResume && (!waitingForFrames || checkFrames);
   const resumeLabel = checkFrames
     ? "检查分镜状态"
-    : production.pendingVideo
-      ? "确认上次提交"
-      : "继续生成";
+    : production.pendingVideo && current === 2
+      ? "待确认"
+      : `继续生成 · ${production.remainingCost}`;
   const retryable = (position: number) =>
     progress.failedFramePositions?.includes(position) ??
     (progress.frameJobStatus === "failed" || progress.frameJobStatus === "partially_failed");
@@ -119,13 +118,25 @@ export function VideoProductionProgress({
                 {done ? <UiIcon icon={IconCheck} size="small" /> : index + 1}
               </span>
               <span>{title}</span>
-              <span
-                className="video-production-state"
-                data-executing={(index === current && executing) || undefined}
-                aria-live="polite"
-              >
-                {states[index]}
-              </span>
+              {index === current && canResume ? (
+                <Button
+                  className="video-production-state video-production-state-action"
+                  size="sm"
+                  variant="ghost"
+                  isDisabled={production.blocked}
+                  onPress={production.resume}
+                >
+                  {resumeLabel}
+                </Button>
+              ) : (
+                <span
+                  className="video-production-state"
+                  data-executing={(index === current && executing) || undefined}
+                  aria-live="polite"
+                >
+                  {states[index]}
+                </span>
+              )}
               {index === 0 && (
                 <div className="video-production-detail">
                   <section className="video-production-frames" aria-label="分镜画面">
@@ -198,19 +209,6 @@ export function VideoProductionProgress({
           );
         })}
       </ol>
-      {canResume && (
-        <div>
-          <Button
-            size="sm"
-            variant="secondary"
-            isDisabled={production.blocked || (!checkFrames && production.referenceImagesBlocked)}
-            onPress={production.resume}
-          >
-            {resumeLabel}
-            {!checkFrames && ` · ${production.remainingCost}`}
-          </Button>
-        </div>
-      )}
     </section>
   );
 }
