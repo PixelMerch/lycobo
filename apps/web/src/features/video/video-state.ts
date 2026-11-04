@@ -37,3 +37,17 @@ export function clearSubmittedVideoDraft(submitted?: ReturnType<typeof useVideoD
     extraReferences: [],
   });
 }
+
+/** An abandoned run hands its content back, unless a newer draft already sits in the form. */
+export function restoreVideoDraft(prompt: string, references: ReferenceImage[]) {
+  const draft = useVideoDraft.getState();
+  if (draft.prompt.trim() || draft.firstFrame || draft.lastFrame || draft.extraReferences.length)
+    return;
+  draft.update({
+    reuseReferences: false,
+    prompt,
+    firstFrame: references[0] ?? null,
+    lastFrame: references[1] ?? null,
+    extraReferences: references.slice(2),
+  });
+}

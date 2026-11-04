@@ -25,7 +25,7 @@ export function WorkspaceLayout() {
   const [mobilePanel, setMobilePanel] = useState("form");
   const currentTool = toolForPath(pathname);
   const historyTool = currentTool.id;
-  const storyboard = useStoryboard(historyTool === "video", () => setMobilePanel("history"));
+  const storyboard = useStoryboard(historyTool === "video", setMobilePanel);
   const [restorePending, setRestorePending] = useState<RestoredTask | null>(null);
   useEffect(() => {
     remember(pathname);
@@ -107,7 +107,7 @@ export function WorkspaceLayout() {
         )}
       </section>
       {historyTool === "video" ? (
-        <VideoHistoryRail />
+        <VideoHistoryRail production={storyboard} />
       ) : (
         <HistoryIndex key={historyTool} tool={historyTool} />
       )}

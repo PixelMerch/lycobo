@@ -30,7 +30,7 @@ import {
 import { modelCapabilities, supportsReferences } from "../../generation/models/model-capabilities";
 import type { ReferenceImage } from "../../generation/studio-state";
 import { useSubmitVideo, useVideoModel } from "../video-client";
-import { clearSubmittedVideoDraft, useVideoDraft } from "../video-state";
+import { clearSubmittedVideoDraft, restoreVideoDraft, useVideoDraft } from "../video-state";
 import { emptyStoryboard, originalReference, useStoryboardState } from "./storyboard-state";
 
 const source = "tk-storyboard";
@@ -43,6 +43,9 @@ type ProductionInput = {
 };
 
 const isRunning = (status: string) => status === "queued" || status === "running";
+/** Anything saved here is durable work a failed attempt can resume instead of starting over. */
+const hasStarted = (progress: typeof emptyStoryboard.progress) =>
+  !!(progress.planAttempt || progress.planId || progress.batchId);
 const definitive = (error: unknown) =>
   error instanceof ImageApiError && [400, 401, 403, 409, 413, 429].includes(error.status);
 export const automaticVideoCost = emptyStoryboard.count * imageUnitCredits + videoUnitCredits;
@@ -60,7 +63,7 @@ function completedShots(job: ImageJob, plan: VariationPlan, originalAssetIds: st
     .slice(0, Math.min(storyboardVideoShotLimit, videoReferenceLimit - originalAssetIds.length));
 }
 
-export function useStoryboard(enabled: boolean, showHistory: () => void) {
+export function useStoryboard(enabled: boolean, showPanel: (panel: "form" | "history") => void) {
   const owner = useEnterpriseSession().data ?? undefined;
   const scope = owner ? `${owner.organizationId}:${owner.userId}` : "";
   const draft = useStoryboardState((state) => state.drafts[scope]) ?? emptyStoryboard;
@@ -129,10 +132,7 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
     video.blockedByPending ||
     video.isPending ||
     generation.isPending;
-  const needsResume =
-    video.hasPending ||
-    ownImagePending ||
-    !!(progress.planAttempt || progress.planId || progress.batchId);
+  const needsResume = video.hasPending || ownImagePending || hasStarted(progress);
   const current = () => useStoryboardState.getState().drafts[scope] ?? emptyStoryboard;
   const update = (patch: Partial<typeof draft>) =>
     useStoryboardState.getState().update(scope, patch);
@@ -195,9 +195,9 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
 
   function finish(id: string) {
     const { progress } = current();
+    // The description and images stay until the next run so the card has content until the
+    // history list returns the new task.
     update({
-      description: "",
-      references: [],
       submittedDraft: undefined,
       progress: { acceptedVideoId: id, frames: progress.frames },
     });
@@ -220,13 +220,11 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
         finish(result.id);
         return;
       }
-      const resuming = !!(progress.planAttempt || progress.planId || progress.batchId);
-      if (!resuming) {
+      if (!hasStarted(progress)) {
         if (videoModel.data?.referenceImagesEnabled === false)
           throw new Error(videoReferenceUnavailableMessage);
         if (!configured || pendingImage || input.references.length > maxOriginalImages)
           throw new Error("暂时无法制作视频，请检查生成服务和待确认任务");
-        update({ ...emptyStoryboard, ...input, submittedDraft: useVideoDraft.getState() });
         const balance = walletBalanceSchema.parse(await (await imageRequest("wallet")).json());
         if (balance.balance < automaticVideoCost)
           throw new Error(`本次预计需要 ${automaticVideoCost} 积分，请补充积分后再试`);
@@ -391,6 +389,10 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
       });
       finish(result.id);
     },
+    onError: () => {
+      // Nothing durable exists yet: the draft is still in the form, so return to it.
+      if (!hasStarted(current().progress)) showPanel("form");
+    },
     onSettled: () => {
       lock.current = false;
     },
@@ -404,10 +406,14 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
           (resumeBlockedByReferences ? videoReferenceUnavailableMessage : undefined))
       : undefined,
   );
+  const busy = active || action.isPending;
+  // An ambiguous submission may already be charged; it has to be confirmed, not forgotten.
+  const canAbandon = !busy && hasStarted(progress) && !video.hasPending && !ownImagePending;
+  const canRun = () => !lock.current && !active && !blocked && !!scope;
   const run = (input: ProductionInput) => {
-    if (lock.current || active || blocked || !scope) return;
+    if (!canRun()) return;
     lock.current = true;
-    showHistory();
+    showPanel("history");
     action.mutate(input);
   };
   return {
@@ -419,8 +425,10 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
       models.isError ||
       (capabilities.isSuccess && models.isSuccess && !configured),
     scope,
-    busy: active || action.isPending,
+    busy,
     needsResume,
+    /** The run holds its own copy from here on, so the form is free for the next draft. */
+    handedOff: !!progress.batchId,
     remainingCost:
       progress.batchId || video.hasPending
         ? videoUnitCredits
@@ -431,9 +439,24 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
     resumingFrames,
     checkingFrames,
     canRetryFrame: !blocked && !ownImagePending && framesIncomplete,
-    failed: action.isError,
+    canAbandon,
+    abandon: () => {
+      if (!canAbandon) return;
+      const { description, references } = current();
+      restoreVideoDraft(description, references);
+      update({ ...emptyStoryboard, startedAt: undefined, submittedDraft: undefined });
+      action.reset();
+    },
     start: (input: Omit<ProductionInput, "retryPosition">) => {
-      if (!needsResume) run(input);
+      if (needsResume || !canRun()) return;
+      // Saved before the request so the new card never shows the previous run's content.
+      update({
+        ...emptyStoryboard,
+        ...input,
+        startedAt: new Date().toISOString(),
+        submittedDraft: useVideoDraft.getState(),
+      });
+      run(input);
     },
     resume: () => {
       if (resumeBlockedByReferences) {

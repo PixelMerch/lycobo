@@ -9,8 +9,10 @@ import { LibraryDialog } from "../assets/library-dialog";
 import { AssetImage } from "../generation/asset-image";
 import { historyContentTop } from "../generation/history/history-navigation";
 import { useVideoTasks } from "./video-client";
-import { type Production, VideoProductionProgress } from "./video-production-progress";
+import { VideoProductionCard, videoProductionCardId } from "./video-production-card";
+import type { Production } from "./video-production-progress";
 import { VideoTaskCard } from "./video-task-card";
+import { isVideoTaskActive } from "./video-task-status";
 
 export function VideoHistory({
   onRestore,
@@ -35,27 +37,29 @@ export function VideoHistory({
     void client.invalidateQueries({ queryKey: ["image-assets"] });
   }, [settled, client]);
   const videoId = production?.draft.progress.acceptedVideoId;
-  const trackedTask = tasks.find((task) => task.id === videoId);
-  const finished =
-    trackedTask?.status === "succeeded" && trackedTask.asset_id && trackedTask.delivery;
-  const progress =
+  // A run is one history entry. It stays a local card until its task reaches this list, which
+  // the refetch after acceptance takes a moment to do; a task no longer listed drops the card.
+  const unlisted = !tasks.some((task) => task.id === videoId);
+  const productionCard =
     production &&
-    !finished &&
-    (production.busy || production.needsResume || production.failed || videoId) ? (
-      <VideoProductionProgress production={production} task={trackedTask} />
+    unlisted &&
+    (production.busy || production.needsResume || (videoId && query.isFetching)) ? (
+      <VideoProductionCard production={production} />
     ) : null;
-  if (query.isLoading && !progress) return <Spinner aria-label="正在加载视频历史" />;
+  if (query.isLoading && !productionCard) return <Spinner aria-label="正在加载视频历史" />;
   if (query.isError && !query.data)
     return (
       <>
-        {progress && <div className="generation-history video-history-list">{progress}</div>}
+        {productionCard && (
+          <div className="generation-history video-history-list">{productionCard}</div>
+        )}
         <EmptyState>
           <p>视频历史暂不可用</p>
           <Button onPress={() => void query.refetch()}>重试</Button>
         </EmptyState>
       </>
     );
-  if (!tasks.length && !progress)
+  if (!tasks.length && !productionCard)
     return (
       <EmptyState className="empty-state generation-empty-state">
         <UiIcon icon={IconMovie} size="illustration" />
@@ -64,13 +68,13 @@ export function VideoHistory({
     );
   return (
     <div className="generation-history video-history-list">
-      {progress}
+      {productionCard}
       {tasks.map((task) => (
         <VideoTaskCard
           key={task.id}
           task={task}
           onRestore={onRestore}
-          showMedia={!progress || task.id !== videoId}
+          production={task.id === videoId && isVideoTaskActive(task) ? production : undefined}
         />
       ))}
       <InfiniteLoad
@@ -82,11 +86,27 @@ export function VideoHistory({
     </div>
   );
 }
-export function VideoHistoryRail() {
+export function VideoHistoryRail({ production }: { production: Production }) {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const query = useVideoTasks();
   const tasks = query.data?.pages.flatMap((page) => page.data) ?? [];
+  const producing =
+    !production.draft.progress.acceptedVideoId && (production.busy || production.needsResume);
+  const entryIds = [
+    ...(producing ? [videoProductionCardId] : []),
+    ...tasks.map(({ id }) => `video-task-${id}`),
+  ];
+  const currentId = entryIds.includes(activeId ?? "") ? activeId : entryIds[0];
+  const locate = (id: string) => {
+    setActiveId(id);
+    const target = document.getElementById(id);
+    if (target)
+      window.scrollTo({
+        top: Math.max(0, window.scrollY + target.getBoundingClientRect().top - historyContentTop()),
+        behavior: "instant",
+      });
+  };
   return (
     <>
       <aside className="history-rail" aria-label="视频历史索引">
@@ -102,27 +122,33 @@ export function VideoHistoryRail() {
           </Button>
         </h2>
         <div className="history-rail-list">
+          {producing && (
+            <div className="history-rail-item">
+              <Button
+                variant="tertiary"
+                className={`history-thumbnail${production.busy ? " generation-pending" : ""}`}
+                aria-label="定位正在制作的视频"
+                aria-current={currentId === videoProductionCardId ? "true" : "false"}
+                onPress={() => locate(videoProductionCardId)}
+              >
+                {production.busy ? (
+                  <span className="history-thumbnail-frame">
+                    <Spinner size="sm" aria-label="视频处理中" />
+                  </span>
+                ) : (
+                  <UiIcon icon={IconMovie} size="action" />
+                )}
+              </Button>
+            </div>
+          )}
           {tasks.map((task) => (
             <div className="history-rail-item" key={task.id}>
               <Button
                 variant="tertiary"
-                className={`history-thumbnail${task.status === "queued" || task.status === "running" ? " generation-pending" : ""}`}
+                className={`history-thumbnail${isVideoTaskActive(task) ? " generation-pending" : ""}`}
                 aria-label={`定位视频：${task.public_id}`}
-                aria-current={(activeId ?? tasks[0]?.id) === task.id ? "true" : "false"}
-                onPress={() => {
-                  setActiveId(task.id);
-                  const target =
-                    document.getElementById(`video-production-${task.id}`) ??
-                    document.getElementById(`video-task-${task.id}`);
-                  if (target)
-                    window.scrollTo({
-                      top: Math.max(
-                        0,
-                        window.scrollY + target.getBoundingClientRect().top - historyContentTop(),
-                      ),
-                      behavior: "instant",
-                    });
-                }}
+                aria-current={currentId === `video-task-${task.id}` ? "true" : "false"}
+                onPress={() => locate(`video-task-${task.id}`)}
               >
                 {task.asset_id ? (
                   <span className="history-thumbnail-frame">
@@ -133,7 +159,7 @@ export function VideoHistoryRail() {
                       loading="lazy"
                     />
                   </span>
-                ) : task.status === "queued" || task.status === "running" ? (
+                ) : isVideoTaskActive(task) ? (
                   <span className="history-thumbnail-frame">
                     <Spinner size="sm" aria-label="视频处理中" />
                   </span>

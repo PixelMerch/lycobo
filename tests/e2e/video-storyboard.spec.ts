@@ -13,6 +13,255 @@ for (const legacy of [false, true]) {
   });
 }
 
+type FlowOptions = { planStatus?: number; width?: number };
+
+/** A storyboard run with paid endpoints counted, for checks that stop at one stage. */
+async function startFlow(page: Page, { planStatus = 200, width = 1440 }: FlowOptions = {}) {
+  await mockImageApi(page);
+  const originals = [crypto.randomUUID(), crypto.randomUUID()];
+  const frames = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
+  const items = ["绗缝特写", "卧室全景", "商品定格"].map((title) => ({
+    id: crypto.randomUUID(),
+    title,
+    prompt: `以商品原图为准，展示${title}。`,
+  }));
+  const description = "晨光卧室，保留奶油色菱格绗缝";
+  const plan = {
+    id: crypto.randomUUID(),
+    status: "ready",
+    description,
+    referenceAssetIds: originals,
+    items,
+  };
+  const jobId = crypto.randomUUID();
+  const flow = {
+    planStatus,
+    imagesReady: false,
+    imagesFailed: false,
+    imageSubmissions: 0,
+    videoSubmissions: 0,
+    video: null as Record<string, unknown> | null,
+    description,
+  };
+  const frameStatus = () =>
+    flow.imagesFailed ? "failed" : flow.imagesReady ? "succeeded" : "running";
+  let uploaded = 0;
+  await page.route("**/api/v1/video-storyboards/capabilities", (route) =>
+    route.fulfill({ json: apiFixture({ enabled: true, maxStoryboardOriginalImages: 3 }) }),
+  );
+  await page.route("**/api/v1/video-model", (route) =>
+    route.fulfill({
+      json: apiFixture({
+        enabled: true,
+        storyboardHistory: true,
+        referenceImagesEnabled: true,
+        maxStoryboardOriginalImages: 3,
+        resolution: "768p",
+        unitCredits: 100,
+      }),
+    }),
+  );
+  await page.route("**/api/v1/image-assets", (route) =>
+    route.fulfill({
+      json: apiFixture({
+        id: originals[uploaded++ % originals.length],
+        width: 2,
+        height: 2,
+        bytes: 100,
+        mimeType: "image/webp",
+      }),
+    }),
+  );
+  await page.route("**/api/v1/image-assets/*/content*", (route) =>
+    route.fulfill({
+      path: "apps/web/public/studio/textile-views/front.webp",
+      contentType: "image/webp",
+    }),
+  );
+  await page.route("**/api/v1/video-storyboards", (route) => {
+    if (flow.planStatus !== 200)
+      return route.fulfill({
+        status: flow.planStatus,
+        json: { ...apiFixture({}, flow.planStatus), message: "画面方案暂时无法生成" },
+      });
+    const { stage } = route.request().postDataJSON();
+    return route.fulfill({
+      json: apiFixture(
+        stage === "plan"
+          ? plan
+          : {
+              ...plan,
+              id: crypto.randomUUID(),
+              items: [{ id: crypto.randomUUID(), title: "成片", prompt: "先全景后特写。" }],
+            },
+      ),
+    });
+  });
+  await page.route(`**/api/v1/variation-plans/${plan.id}`, (route) =>
+    route.fulfill({ json: apiFixture(plan) }),
+  );
+  await page.route("**/api/v1/image-tasks", (route) => {
+    if (route.request().method() === "GET")
+      return route.fulfill({ json: apiFixture({ data: [] }) });
+    flow.imageSubmissions++;
+    return route.fulfill({ status: 202, json: apiFixture({ id: jobId, replayed: false }) });
+  });
+  await page.route("**/api/v1/image-tasks/*", (route) =>
+    route.fulfill({
+      json: apiFixture({
+        id: jobId,
+        organization_id: crypto.randomUUID(),
+        user_id: crypto.randomUUID(),
+        model: "gpt-image-2.5",
+        prompt: description,
+        resolution: "1.5K",
+        aspect_ratio: "9:16",
+        requested_count: frames.length,
+        status: frameStatus(),
+        created_at: new Date().toISOString(),
+        completed_at: new Date().toISOString(),
+        items: frames.map((output_asset_id, position) => ({
+          id: crypto.randomUUID(),
+          position,
+          status: frameStatus(),
+          output_asset_id: flow.imagesReady ? output_asset_id : null,
+          error_code: flow.imagesFailed ? "PROVIDER_TASK_FAILED" : null,
+          width: 768,
+          height: 1360,
+          worker_id: null,
+        })),
+      }),
+    }),
+  );
+  await page.route("**/api/v1/video-tasks", (route) => {
+    if (route.request().method() === "GET")
+      return route.fulfill({ json: apiFixture({ data: flow.video ? [flow.video] : [] }) });
+    flow.videoSubmissions++;
+    const { storyboard, storyboardOriginalImageCount, ...video } = route.request().postDataJSON();
+    const id = crypto.randomUUID();
+    flow.video = {
+      id,
+      public_id: "W09FLOW01",
+      prompt: "先全景后特写。",
+      status: "running",
+      created_at: new Date().toISOString(),
+      input: { video, storyboard, storyboardOriginalImageCount },
+      error_code: null,
+      asset_id: null,
+      provider_status: "processing",
+    };
+    return route.fulfill({ status: 202, json: apiFixture({ id, replayed: false }) });
+  });
+  await page.setViewportSize({ width, height: 900 });
+  await page.goto("/video");
+  const composer = page.getByRole("region", { name: "视频创作参数" });
+  await expect(composer).toContainText("最多上传3张参考图", { timeout: 15000 });
+  await composer
+    .getByLabel("添加参考图片")
+    .setInputFiles(
+      ["front.webp", "close-up.webp"].map((name) => `apps/web/public/studio/textile-views/${name}`),
+    );
+  await expect(composer.locator(".reference-image-card")).toHaveCount(2);
+  const descriptionInput = composer.getByRole("textbox", { name: "场景描述" });
+  await descriptionInput.fill(description);
+  return { flow, composer, descriptionInput };
+}
+
+for (const width of [1440, 390]) {
+  test(`a rejected start leaves no progress behind and keeps the draft at ${width}px`, async ({
+    page,
+  }) => {
+    const { flow, composer, descriptionInput } = await startFlow(page, { planStatus: 429, width });
+    await composer.getByRole("button", { name: /立即生成.*106/ }).click();
+    await expect(page.getByText("画面方案暂时无法生成", { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("region", { name: "视频制作进度" })).toHaveCount(0);
+    await expect(page.getByRole("article", { name: "正在制作的视频" })).toHaveCount(0);
+    await expect(composer).toBeVisible();
+    await expect(descriptionInput).toHaveText(flow.description);
+    await expect(composer.locator(".reference-image-card")).toHaveCount(2);
+
+    flow.planStatus = 200;
+    await composer.getByRole("button", { name: /立即生成.*106/ }).click();
+    await expect(page.getByRole("article", { name: "正在制作的视频" })).toBeVisible();
+    await expect.poll(() => flow.imageSubmissions).toBe(1);
+  });
+}
+
+test("an interrupted run can be abandoned without charging or losing the draft", async ({
+  page,
+}) => {
+  const { flow, composer, descriptionInput } = await startFlow(page, { planStatus: 503 });
+  await composer.getByRole("button", { name: /立即生成.*106/ }).click();
+  const card = page.getByRole("article", { name: "正在制作的视频" });
+  await expect(card.getByRole("button", { name: /继续生成.*106/ })).toBeVisible();
+  await expect(composer.getByRole("button", { name: "请先处理上一条视频" })).toBeDisabled();
+  await expect(card).toContainText(flow.description);
+
+  await card.getByRole("button", { name: "放弃制作" }).click();
+  const confirm = page.getByRole("dialog", { name: "放弃这次制作？" });
+  await expect(confirm).toContainText("不会扣积分");
+  await confirm.getByRole("button", { name: "放弃制作" }).click();
+  await expect(card).toHaveCount(0);
+  await expect(descriptionInput).toHaveText(flow.description);
+  await expect(composer.getByRole("button", { name: /立即生成.*106/ })).toBeEnabled();
+  expect(flow.imageSubmissions).toBe(0);
+  expect(flow.videoSubmissions).toBe(0);
+});
+
+test("abandoning failed frames returns the content the form had handed over", async ({ page }) => {
+  const { flow, composer, descriptionInput } = await startFlow(page);
+  await composer.getByRole("button", { name: /立即生成.*106/ }).click();
+  const card = page.getByRole("article", { name: "正在制作的视频" });
+  await expect.poll(() => flow.imageSubmissions).toBe(1);
+  await expect(descriptionInput).toBeEmpty();
+  flow.imagesFailed = true;
+  await expect(card.getByRole("listitem").nth(0)).toContainText("待补齐", { timeout: 15000 });
+
+  await card.getByRole("button", { name: "放弃制作" }).click();
+  const confirm = page.getByRole("dialog", { name: "放弃这次制作？" });
+  await expect(confirm).toContainText("已扣的画面积分不退回");
+  await confirm.getByRole("button", { name: "放弃制作" }).click();
+  await expect(card).toHaveCount(0);
+  await expect(descriptionInput).toHaveText(flow.description);
+  await expect(composer.locator(".reference-image-card")).toHaveCount(2);
+  await expect(composer.getByRole("button", { name: /立即生成.*106/ })).toBeEnabled();
+  expect(flow.videoSubmissions).toBe(0);
+});
+
+test("a run stays one history entry from first click to a failed video", async ({ page }) => {
+  const { flow, composer, descriptionInput } = await startFlow(page);
+  await composer.getByRole("button", { name: /立即生成.*106/ }).click();
+  const card = page.getByRole("article", { name: "正在制作的视频" });
+  const rail = page.getByRole("complementary", { name: "视频历史索引" });
+  await expect(card).toContainText(flow.description);
+  await expect(card.getByRole("region", { name: "视频参考图" }).getByRole("img")).toHaveCount(2);
+  await expect(card.getByRole("region", { name: "视频制作进度" })).toBeVisible();
+  await expect(rail.getByRole("button", { name: "定位正在制作的视频" })).toBeVisible();
+  await expect.poll(() => flow.imageSubmissions).toBe(1);
+  await expect(descriptionInput).toBeEmpty();
+  await expect(composer.getByRole("button", { name: "上一条视频制作中" })).toBeDisabled();
+  await expect(card.getByRole("button", { name: "放弃制作" })).toHaveCount(0);
+
+  flow.imagesReady = true;
+  const task = page.getByRole("article", { name: "视频任务：W09FLOW01" });
+  await expect(task.getByRole("region", { name: "视频制作进度" })).toBeVisible({ timeout: 15000 });
+  await expect(card).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "视频制作进度" })).toHaveCount(1);
+  await expect(task).toContainText(flow.description);
+  await expect(task).toContainText("2 张参考图");
+  await expect(task.getByRole("listitem").nth(2)).toContainText("生成中");
+  await expect(rail.getByRole("button", { name: "定位正在制作的视频" })).toHaveCount(0);
+
+  if (!flow.video) throw new Error("Missing video task");
+  Object.assign(flow.video, { status: "failed", error_code: "PROVIDER_TASK_FAILED" });
+  await page.reload();
+  await expect(task.getByRole("region", { name: "视频画面：生成失败，积分已退回" })).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(page.getByRole("region", { name: "视频制作进度" })).toHaveCount(0);
+  expect(flow.videoSubmissions).toBe(1);
+});
+
 async function verifyStoryboard(page: Page, originalCount: number, legacy = false) {
   await mockImageApi(page);
   const original = crypto.randomUUID();
@@ -258,7 +507,7 @@ async function verifyStoryboard(page: Page, originalCount: number, legacy = fals
     const retryFrame = progress.getByRole("button", { name: /重试第 1 张分镜/ });
     await expect(progress.getByRole("listitem").nth(0)).toContainText("待补齐");
     await expect(progress).toContainText("已生成 2/3 张分镜");
-    await expect(composer.getByRole("button", { name: /立即生成/ })).toBeDisabled();
+    await expect(composer.getByRole("button", { name: "请先处理上一条视频" })).toBeDisabled();
     await expect(descriptionInput).toBeEditable();
     await expect(progress.getByRole("listitem").nth(1)).toContainText("等待中");
     await expect(progress.getByRole("listitem").nth(2)).toContainText("等待中");

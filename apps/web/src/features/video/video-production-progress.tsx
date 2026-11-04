@@ -4,14 +4,15 @@ import { IconCheck, IconMovie } from "@tabler/icons-react";
 import { UiIcon } from "../../components/ui-icon";
 import { AssetImage } from "../generation/asset-image";
 import type { useStoryboard } from "./storyboard/use-storyboard";
-import { videoTaskStatus } from "./video-task-card";
+import { videoTaskStatus } from "./video-task-status";
 
 export type Production = Pick<
   ReturnType<typeof useStoryboard>,
   | "draft"
   | "busy"
   | "needsResume"
-  | "failed"
+  | "canAbandon"
+  | "abandon"
   | "pendingVideo"
   | "waitingForFrames"
   | "resumingFrames"
@@ -58,18 +59,14 @@ export function VideoProductionProgress({
       : framesReady
         ? 1
         : 0;
-  const complete = task?.status === "succeeded";
-  const paused =
-    !progress.acceptedVideoId &&
-    (production.failed || (!production.busy && production.needsResume));
+  // Shown only while unfinished, so an idle run has stopped and waits for the user.
+  const paused = !progress.acceptedVideoId && !production.busy;
   const pausedState = production.pendingVideo ? "待确认" : "待继续";
-  const executing =
-    !paused &&
-    (current < 2 || !progress.acceptedVideoId
-      ? production.busy
-      : task?.status === "running" &&
-        task.provider_status !== "paused" &&
-        task.provider_status !== "pending_confirmation");
+  const executing = progress.acceptedVideoId
+    ? task?.status === "running" &&
+      task.provider_status !== "paused" &&
+      task.provider_status !== "pending_confirmation"
+    : production.busy;
   const frames =
     progress.frames ??
     task?.input.video.referenceAssetIds
@@ -79,7 +76,7 @@ export function VideoProductionProgress({
   const summary = progress.frames?.map(({ title }) => title).join(" → ");
   const waitingForFrames = current === 0 && production.waitingForFrames && !production.busy;
   const checkFrames = production.resumingFrames || production.checkingFrames;
-  const canResume = paused && production.needsResume && (!waitingForFrames || checkFrames);
+  const canResume = paused && (!waitingForFrames || checkFrames);
   const resumeLabel = checkFrames
     ? "检查分镜状态"
     : production.pendingVideo && current === 2
@@ -103,15 +100,10 @@ export function VideoProductionProgress({
     current < 2 ? "等待中" : paused ? pausedState : videoState,
   ];
   return (
-    <section
-      className="video-production-progress"
-      id={task ? `video-production-${task.id}` : undefined}
-      aria-label="视频制作进度"
-    >
-      <h2>视频制作进度</h2>
+    <section className="video-production-progress" aria-label="视频制作进度">
       <ol>
         {steps.map((title, index) => {
-          const done = complete || index < current;
+          const done = index < current;
           return (
             <li key={title} aria-current={index === current && !done ? "step" : undefined}>
               <span className="video-production-step" aria-hidden="true">
@@ -175,6 +167,13 @@ export function VideoProductionProgress({
                     })}
                   </section>
                   {current === 0 && !paused && <p>正在准备参考画面，完成后会逐张显示。</p>}
+                  {current === 0 && paused && !waitingForFrames && (
+                    <p>
+                      {checkFrames
+                        ? "分镜可能已经生成，可检查最新状态。"
+                        : "参考画面还没有开始生成，可继续制作。"}
+                    </p>
+                  )}
                   {waitingForFrames && (
                     <p>
                       已生成 {frames.length}/{count} 张分镜。
@@ -201,7 +200,7 @@ export function VideoProductionProgress({
                     status={paused ? pausedState : videoState}
                   />
                   {(task?.status === "queued" || task?.status === "running") && (
-                    <p>可以先继续创作，稍后在历史记录查看成片。</p>
+                    <p>可以先继续创作，成片完成后会显示在这里。</p>
                   )}
                 </div>
               )}
