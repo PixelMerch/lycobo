@@ -161,6 +161,8 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
     "Legacy clients do not receive video DTOs without opting in",
   );
   assert.equal(library[0]?.type, "video");
+  assert.equal(library[0]?.duration_seconds, 18);
+  assert.equal(library[0]?.resolution, "768p");
   const [intent] =
     await sql`select item_id from generation_video_outbox where job_id=${accepted.id}`;
   const videoItem = z.object({ item_id: z.string() }).parse(intent).item_id;

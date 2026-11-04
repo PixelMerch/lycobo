@@ -258,6 +258,10 @@ export const imageAssetSchema = z.object({
   tool: assetToolSchema.nullable().optional(),
   /** Whether the signed-in member favorited the asset. Optional for older servers. */
   favorite: z.boolean().optional(),
+  /** Requested length of a generated video. Optional for older servers. */
+  duration_seconds: z.number().nullable().optional(),
+  /** Resolution tier of the producing task. Optional for older servers. */
+  resolution: z.string().nullable().optional(),
 });
 export type ImageAsset = z.infer<typeof imageAssetSchema>;
 export const imageAssetsResponseSchema = z.object({ data: z.array(imageAssetSchema) });

@@ -538,7 +538,8 @@ export function openImageRepository(
       const favorite = sql`exists(select 1 from image_asset_favorites f where f.organization_id=a.organization_id
         and f.user_id=${scope.userId} and f.asset_id=a.id)`;
       return sql`select a.public_id,a.id,a.kind,a.media_type as type,a.width,a.height,a.bytes,a.created_at,j.public_id as task_public_id,${publicModelSql} as model,j.prompt,
-        ${toolSql} as tool,${favorite} as favorite
+        ${toolSql} as tool,${favorite} as favorite,
+        (j.input->'video'->>'seconds')::integer as duration_seconds,j.resolution
         from media_assets a left join generation_job_items i on i.output_asset_id=a.id and i.organization_id=a.organization_id
         left join generation_jobs j on j.id=i.job_id and j.organization_id=a.organization_id
         where a.organization_id=${scope.organizationId} and ${visibleAssetSql}

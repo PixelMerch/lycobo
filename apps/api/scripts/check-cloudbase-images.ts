@@ -424,15 +424,13 @@ try {
       sha256: "0".repeat(64),
     },
   });
-  assert.equal(
-    (
-      await repository.listAssets(videoOwner, 100, undefined, "output", "video", {
-        tool: "video",
-        includeVideo: true,
-      })
-    ).length,
-    1,
-  );
+  const videoAssets = await repository.listAssets(videoOwner, 100, undefined, "output", "video", {
+    tool: "video",
+    includeVideo: true,
+  });
+  assert.equal(videoAssets.length, 1);
+  assert.equal(videoAssets[0]?.duration_seconds, 10);
+  assert.equal(videoAssets[0]?.resolution, "768p");
   assert.equal(
     (await repository.listAssets(videoOwner, 100)).length,
     0,
