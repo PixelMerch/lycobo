@@ -199,30 +199,51 @@
   color: var(--accent);
   background: transparent;
 }
+.prompt-optimize-wand {
+  position: relative;
+  display: inline-flex;
+}
 .prompt-optimize-label {
   background: var(--app-primary-gradient);
   background-clip: text;
   color: transparent;
 }
 .prompt-optimize-button.button:is(:hover, [data-hovered="true"])
-  > :is(.ui-icon, .prompt-optimize-label) {
+  > :is(.prompt-optimize-wand, .prompt-optimize-label) {
   filter: brightness(1.12);
-}
-.prompt-optimize-button.button:is(:disabled, [data-disabled="true"]) {
-  opacity: 0.45;
 }
 @media (forced-colors: active) {
   .prompt-optimize-label {
     background: none;
     color: ButtonText;
   }
-  .prompt-optimize-button.button > .ui-icon {
+  .prompt-optimize-wand > .ui-icon {
     stroke: ButtonText;
   }
 }
 @media (prefers-reduced-motion: no-preference) {
   .prompt-optimize-wand-hint {
     animation: prompt-wand-hint 620ms ease-in-out both;
+  }
+  .prompt-optimize-wand[data-spark="true"]::before,
+  .prompt-optimize-wand[data-spark="true"]::after {
+    position: absolute;
+    top: -2px;
+    right: -1px;
+    width: 7px;
+    height: 7px;
+    pointer-events: none;
+    content: "";
+    clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+    background: var(--app-primary-gradient);
+    animation: prompt-wand-spark 460ms 70ms ease-out both;
+  }
+  .prompt-optimize-wand[data-spark="true"]::after {
+    top: 4px;
+    right: -3px;
+    width: 5px;
+    height: 5px;
+    animation-delay: 125ms;
   }
 }
 @keyframes prompt-wand-hint {
@@ -235,6 +256,20 @@
   }
   60% {
     transform: rotate(12deg);
+  }
+}
+@keyframes prompt-wand-spark {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  34% {
+    opacity: 1;
+    transform: translate(1px, -2px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(4px, -5px) scale(0.4);
   }
 }
 .prompt-optimize-undo.button {

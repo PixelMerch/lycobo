@@ -30,8 +30,15 @@ test("the wand hints after typing and canceling never requests optimization", as
   await expect(wand).toHaveText("优化");
   const icon = wand.locator("svg");
   await expect(icon).toHaveCSS("animation-name", "prompt-wand-hint");
+  const spark = wand.locator(".prompt-optimize-wand");
+  const sparkAnimation = () =>
+    spark.evaluate((element) =>
+      ["::before", "::after"].map((part) => getComputedStyle(element, part).animationName),
+    );
+  await expect.poll(sparkAnimation).toEqual(["prompt-wand-spark", "prompt-wand-spark"]);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(icon).toHaveCSS("animation-name", "none");
+  await expect.poll(sparkAnimation).toEqual(["none", "none"]);
 
   await wand.focus();
   await page.keyboard.press("Enter");
@@ -43,6 +50,10 @@ test("the wand hints after typing and canceling never requests optimization", as
   await expect(wand).toBeFocused();
   await expect(prompt).toHaveValue("奶油色床品 晨光");
   expect(requests).toEqual([]);
+  await page.getByRole("button", { name: "清空提示词" }).click();
+  await expect(wand).toHaveCount(0);
+  await prompt.fill("  。 ");
+  await expect(wand).toHaveCount(0);
 });
 
 test("the wand rewrites a described prompt, which stays editable and can be undone", async ({
@@ -60,7 +71,7 @@ test("the wand rewrites a described prompt, which stays editable and can be undo
       body: `${delta(rewrite.slice(0, 12))}${delta(rewrite.slice(12))}event: complete\ndata: ${JSON.stringify({ text: rewrite })}\n\n`,
     });
   });
-  await expect(wand).toBeDisabled();
+  await expect(wand).toHaveCount(0);
   await prompt.fill("奶油色床品 晨光");
   await wand.click();
   await confirmOptimization(page);

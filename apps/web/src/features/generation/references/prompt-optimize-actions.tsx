@@ -19,6 +19,7 @@ export function PromptOptimizeActions({
   const [acknowledgedPrompt, setAcknowledgedPrompt] = useState<string | null>(null);
   const isConfirming = optimizer.canStart && confirmingPrompt === prompt;
   const canHint = optimizer.canStart && !optimizer.canUndo && acknowledgedPrompt !== prompt;
+  const showHint = canHint && hintedPrompt === prompt;
   useEffect(() => {
     if (!canHint) return;
     const timer = window.setTimeout(() => setHintedPrompt(prompt), 650);
@@ -38,7 +39,7 @@ export function PromptOptimizeActions({
           <Spinner size="sm" color="current" aria-hidden="true" />
           停止
         </Button>
-      ) : (
+      ) : optimizer.canStart ? (
         <Tooltip delay={0}>
           <Button
             variant="ghost"
@@ -46,30 +47,31 @@ export function PromptOptimizeActions({
             className="prompt-optimize-button"
             aria-label="AI 优化提示词"
             aria-haspopup="dialog"
-            isDisabled={!optimizer.canStart}
             onPress={() => {
               setAcknowledgedPrompt(prompt);
               setConfirmingPrompt(prompt);
             }}
           >
-            <UiIcon
-              icon={IconWand}
-              size="small"
-              color={`url(#${gradientId})`}
-              className={canHint && hintedPrompt === prompt ? "prompt-optimize-wand-hint" : ""}
-            >
-              <defs>
-                <linearGradient id={gradientId} x2="100%" y2="55%">
-                  <stop stopColor="var(--accent)" />
-                  <stop offset="100%" stopColor="#54e6a5" />
-                </linearGradient>
-              </defs>
-            </UiIcon>
+            <span className="prompt-optimize-wand" data-spark={showHint || undefined}>
+              <UiIcon
+                icon={IconWand}
+                size="small"
+                color={`url(#${gradientId})`}
+                className={showHint ? "prompt-optimize-wand-hint" : ""}
+              >
+                <defs>
+                  <linearGradient id={gradientId} x2="100%" y2="55%">
+                    <stop stopColor="var(--accent)" />
+                    <stop offset="100%" stopColor="#54e6a5" />
+                  </linearGradient>
+                </defs>
+              </UiIcon>
+            </span>
             <span className="prompt-optimize-label">优化</span>
           </Button>
           <Tooltip.Content placement="top">AI 润色提示词</Tooltip.Content>
         </Tooltip>
-      )}
+      ) : null}
       <ConfirmDialog
         isOpen={isConfirming}
         title="AI 优化提示词"
