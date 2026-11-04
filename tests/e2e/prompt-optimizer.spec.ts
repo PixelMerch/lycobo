@@ -19,7 +19,9 @@ async function confirmOptimization(page: Page) {
   await dialog.getByRole("button", { name: "确认优化" }).click();
 }
 
-test("the wand hints after typing and canceling never requests optimization", async ({ page }) => {
+test("the focused prompt loops the wand hint and canceling never requests optimization", async ({
+  page,
+}) => {
   const { prompt, wand } = await openCreate(page);
   const requests: string[] = [];
   await page.route("**/api/v1/prompt-optimizations", (route) => {
@@ -30,12 +32,17 @@ test("the wand hints after typing and canceling never requests optimization", as
   await expect(wand).toHaveText("优化");
   const icon = wand.locator("svg");
   await expect(icon).toHaveCSS("animation-name", "prompt-wand-hint");
+  await expect(icon).toHaveCSS("animation-iteration-count", "infinite");
   const spark = wand.locator(".prompt-optimize-wand");
   const sparkAnimation = () =>
     spark.evaluate((element) =>
       ["::before", "::after"].map((part) => getComputedStyle(element, part).animationName),
     );
   await expect.poll(sparkAnimation).toEqual(["prompt-wand-spark", "prompt-wand-spark"]);
+  await wand.focus();
+  await expect(icon).toHaveCSS("animation-name", "none");
+  await prompt.focus();
+  await expect(icon).toHaveCSS("animation-name", "prompt-wand-hint");
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(icon).toHaveCSS("animation-name", "none");
   await expect.poll(sparkAnimation).toEqual(["none", "none"]);
@@ -50,7 +57,12 @@ test("the wand hints after typing and canceling never requests optimization", as
   const [wandBounds, dialogBounds] = await Promise.all([wand.boundingBox(), dialog.boundingBox()]);
   expect(wandBounds).not.toBeNull();
   expect(dialogBounds).not.toBeNull();
-  expect((dialogBounds?.y ?? 0) + (dialogBounds?.height ?? 0)).toBeLessThan(wandBounds?.y ?? 0);
+  expect(dialogBounds?.y ?? 0).toBeGreaterThan((wandBounds?.y ?? 0) + (wandBounds?.height ?? 0));
+  await expect(page.locator(".prompt-optimize-popover")).toHaveCSS(
+    "background-color",
+    "rgb(36, 36, 43)",
+  );
+  await expect(dialog.getByRole("button", { name: "确认优化" })).toHaveCSS("height", "28px");
 
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
@@ -75,7 +87,7 @@ test("the wand hints after typing and canceling never requests optimization", as
   await expect(wand).toHaveCount(0);
 });
 
-test("pasting the same prompt again replays the wand hint", async ({ page, context }) => {
+test("pasting text keeps the wand animation tied to editor focus", async ({ page, context }) => {
   const { prompt, wand } = await openCreate(page);
   const text = "奶油色床品 晨光";
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);

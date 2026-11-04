@@ -8,27 +8,15 @@ import type { usePromptOptimizer } from "./use-prompt-optimizer";
 export function PromptOptimizeActions({
   optimizer,
   prompt,
-  pasteRevision,
 }: {
   optimizer: ReturnType<typeof usePromptOptimizer>;
   prompt: string;
-  pasteRevision: number;
 }) {
   const gradientId = useId();
   const trigger = useRef<HTMLButtonElement>(null);
   const popover = useRef<HTMLDivElement>(null);
   const [confirmingPrompt, setConfirmingPrompt] = useState<string | null>(null);
-  const [hintedDraft, setHintedDraft] = useState<string | null>(null);
-  const [acknowledgedDraft, setAcknowledgedDraft] = useState<string | null>(null);
   const isConfirming = optimizer.canStart && confirmingPrompt === prompt;
-  const hintDraft = `${pasteRevision}:${prompt}`;
-  const canHint = optimizer.canStart && !optimizer.canUndo && acknowledgedDraft !== hintDraft;
-  const showHint = canHint && hintedDraft === hintDraft;
-  useEffect(() => {
-    if (!canHint) return;
-    const timer = window.setTimeout(() => setHintedDraft(hintDraft), 650);
-    return () => window.clearTimeout(timer);
-  }, [canHint, hintDraft]);
 
   useEffect(() => {
     if (!isConfirming) return;
@@ -70,18 +58,10 @@ export function PromptOptimizeActions({
             aria-label="AI 优化提示词"
             aria-haspopup="dialog"
             aria-expanded={isConfirming}
-            onPress={() => {
-              setAcknowledgedDraft(hintDraft);
-              setConfirmingPrompt(isConfirming ? null : prompt);
-            }}
+            onPress={() => setConfirmingPrompt(isConfirming ? null : prompt)}
           >
-            <span className="prompt-optimize-wand" data-spark={showHint || undefined}>
-              <UiIcon
-                icon={IconWand}
-                size="small"
-                color={`url(#${gradientId})`}
-                className={showHint ? "prompt-optimize-wand-hint" : ""}
-              >
+            <span className="prompt-optimize-wand">
+              <UiIcon icon={IconWand} size="small" color={`url(#${gradientId})`}>
                 <defs>
                   <linearGradient id={gradientId} x2="100%" y2="55%">
                     <stop stopColor="var(--accent)" />
@@ -104,8 +84,8 @@ export function PromptOptimizeActions({
         }}
         shouldCloseOnInteractOutside={(element) => !trigger.current?.contains(element)}
         isNonModal
-        placement="top start"
-        offset={8}
+        placement="bottom start"
+        offset={12}
         className="prompt-optimize-popover"
       >
         <Popover.Dialog aria-label="AI 优化提示词" className="prompt-optimize-confirmation">

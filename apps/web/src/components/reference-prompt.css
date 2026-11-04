@@ -204,27 +204,37 @@
 .prompt-optimize-popover {
   width: max-content;
   max-width: calc(100vw - 24px);
+  border-radius: 12px;
+  background: var(--overlay);
+  box-shadow: var(--overlay-shadow);
 }
 .prompt-optimize-confirmation.popover__dialog {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--space-2);
-  padding: var(--space-3);
+  padding: var(--space-2);
 }
 .prompt-optimize-confirmation p {
   margin: 0;
+  padding-inline: var(--space-1);
   font-size: var(--text-sm);
+  white-space: nowrap;
 }
 .prompt-optimize-confirm-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2);
+  gap: var(--space-1);
+  margin-inline-start: auto;
 }
 .prompt-optimize-confirm-actions .button {
-  min-height: 32px;
+  height: 28px;
+  min-height: 28px;
   white-space: nowrap;
 }
 @media (pointer: coarse) {
   .prompt-optimize-confirm-actions .button {
+    height: 44px;
     min-height: 44px;
   }
 }
@@ -251,11 +261,13 @@
   }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .prompt-optimize-wand-hint {
-    animation: prompt-wand-hint 620ms ease-in-out both;
+  .prompt-editor:has(> :is(textarea, .reference-rich-editor):focus)
+    .prompt-optimize-wand
+    > .ui-icon {
+    animation: prompt-wand-hint 2.4s ease-in-out infinite;
   }
-  .prompt-optimize-wand[data-spark="true"]::before,
-  .prompt-optimize-wand[data-spark="true"]::after {
+  .prompt-editor:has(> :is(textarea, .reference-rich-editor):focus) .prompt-optimize-wand::before,
+  .prompt-editor:has(> :is(textarea, .reference-rich-editor):focus) .prompt-optimize-wand::after {
     position: absolute;
     top: -2px;
     right: -1px;
@@ -265,9 +277,9 @@
     content: "";
     clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
     background: var(--app-primary-gradient);
-    animation: prompt-wand-spark 460ms 70ms ease-out both;
+    animation: prompt-wand-spark 2.4s 70ms ease-out infinite both;
   }
-  .prompt-optimize-wand[data-spark="true"]::after {
+  .prompt-editor:has(> :is(textarea, .reference-rich-editor):focus) .prompt-optimize-wand::after {
     top: 4px;
     right: -3px;
     width: 5px;
@@ -277,13 +289,14 @@
 }
 @keyframes prompt-wand-hint {
   0%,
+  26%,
   100% {
     transform: rotate(0);
   }
-  30% {
+  8% {
     transform: rotate(-20deg) scale(1.16);
   }
-  60% {
+  16% {
     transform: rotate(12deg);
   }
 }
@@ -292,10 +305,11 @@
     opacity: 0;
     transform: scale(0.2);
   }
-  34% {
+  7% {
     opacity: 1;
     transform: translate(1px, -2px) scale(1);
   }
+  20%,
   100% {
     opacity: 0;
     transform: translate(4px, -5px) scale(0.4);

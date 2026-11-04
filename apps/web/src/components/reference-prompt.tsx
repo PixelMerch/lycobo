@@ -143,7 +143,6 @@ export function ReferencePrompt({
   /** Shows the AI rewrite control for this tool's prompt. */
   optimizeTool?: PromptOptimizeTool;
 }) {
-  const [pasteRevision, setPasteRevision] = useState(0);
   const optimizer = usePromptOptimizer({
     value: draftValue,
     onChange,
@@ -278,7 +277,6 @@ export function ReferencePrompt({
   function noteTextPaste(text: string) {
     if (!optimizeTool || optimizer.running || !text.trim()) return;
     optimizer.dismissUndo();
-    setPasteRevision((revision) => revision + 1);
   }
   function clear() {
     onChange("");
@@ -451,13 +449,7 @@ export function ReferencePrompt({
               data-auto-grow={autoGrow ? "" : undefined}
             />
           )}
-          {optimizeTool && (
-            <PromptOptimizeActions
-              optimizer={optimizer}
-              prompt={draftValue}
-              pasteRevision={pasteRevision}
-            />
-          )}
+          {optimizeTool && <PromptOptimizeActions optimizer={optimizer} prompt={draftValue} />}
           {showCount && (
             <div className="prompt-meta">
               {value.length > 0 && (
