@@ -128,6 +128,10 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
     video.blockedByPending ||
     video.isPending ||
     generation.isPending;
+  const needsResume =
+    video.hasPending ||
+    ownImagePending ||
+    !!(progress.planAttempt || progress.planId || progress.batchId);
   const current = () => useStoryboardState.getState().drafts[scope] ?? emptyStoryboard;
   const update = (patch: Partial<typeof draft>) =>
     useStoryboardState.getState().update(scope, patch);
@@ -189,8 +193,7 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
   }
 
   function finish(id: string) {
-    const { progress, submittedDraft } = current();
-    clearSubmittedVideoDraft(submittedDraft);
+    const { progress } = current();
     update({
       description: "",
       references: [],
@@ -324,6 +327,11 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
         batchId ??= batch.id;
         save({ batchId, imageTarget: undefined });
       }
+      const { submittedDraft } = current();
+      if (submittedDraft) {
+        clearSubmittedVideoDraft(submittedDraft);
+        update({ submittedDraft: undefined });
+      }
       const completed = await waitForImages(batchId, snapshot, originalAssetIds);
       void client.invalidateQueries({ queryKey: ["wallet"] });
       void client.invalidateQueries({ queryKey: ["wallet-entries"] });
@@ -386,8 +394,16 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
       lock.current = false;
     },
   });
-  useErrorToast(action.error?.message);
-  const start = (input: ProductionInput) => {
+  const referenceImagesBlocked = videoModel.data?.referenceImagesEnabled === false;
+  const resumeBlockedByReferences =
+    referenceImagesBlocked && needsResume && !resumingFrames && !waitingForFrames;
+  useErrorToast(
+    enabled
+      ? (action.error?.message ??
+          (resumeBlockedByReferences ? videoReferenceUnavailableMessage : undefined))
+      : undefined,
+  );
+  const run = (input: ProductionInput) => {
     if (lock.current || active || blocked || !scope) return;
     lock.current = true;
     showHistory();
@@ -403,24 +419,24 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
       (capabilities.isSuccess && models.isSuccess && !configured),
     scope,
     busy: active || action.isPending,
-    needsResume:
-      video.hasPending ||
-      ownImagePending ||
-      !!(progress.planAttempt || progress.planId || progress.batchId),
+    needsResume,
     remainingCost:
       progress.batchId || video.hasPending
         ? videoUnitCredits
         : draft.count * imageUnitCredits + videoUnitCredits,
     pendingVideo: video.hasPending,
-    referenceImagesBlocked: videoModel.data?.referenceImagesEnabled === false,
+    referenceImagesBlocked,
     blocked,
     waitingForFrames,
     resumingFrames,
     checkingFrames,
     canRetryFrame: !blocked && !ownImagePending && framesIncomplete,
     failed: action.isError,
-    start,
+    start: (input: Omit<ProductionInput, "retryPosition">) => {
+      if (!needsResume) run(input);
+    },
+    resume: () => run({ description: draft.description, references: draft.references }),
     retryFrame: (retryPosition: number) =>
-      start({ description: draft.description, references: draft.references, retryPosition }),
+      run({ description: draft.description, references: draft.references, retryPosition }),
   };
 }

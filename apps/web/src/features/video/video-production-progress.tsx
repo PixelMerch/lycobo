@@ -1,10 +1,5 @@
 import { Button, Skeleton, Spinner } from "@heroui/react";
-import {
-  imageUnitCredits,
-  storyboardImageLimit,
-  type VideoTask,
-  videoReferenceUnavailableMessage,
-} from "@lycoboai/contracts";
+import { imageUnitCredits, storyboardImageLimit, type VideoTask } from "@lycoboai/contracts";
 import { IconCheck, IconMovie } from "@tabler/icons-react";
 import { UiIcon } from "../../components/ui-icon";
 import { AssetImage } from "../generation/asset-image";
@@ -24,6 +19,9 @@ export type Production = Pick<
   | "checkingFrames"
   | "canRetryFrame"
   | "retryFrame"
+  | "blocked"
+  | "remainingCost"
+  | "resume"
 >;
 const steps = ["创建分镜画面", "编写视频提示词", "生成视频"];
 const frameSlots = Array.from({ length: storyboardImageLimit }, (_, position) => ({
@@ -65,11 +63,7 @@ export function VideoProductionProgress({
   const paused =
     !progress.acceptedVideoId &&
     (production.failed || (!production.busy && production.needsResume));
-  const pausedState = production.referenceImagesBlocked
-    ? "参考图不可用"
-    : production.pendingVideo
-      ? "待确认"
-      : "待继续";
+  const pausedState = production.pendingVideo ? "待确认" : "待继续";
   const executing =
     !paused &&
     (current < 2 || !progress.acceptedVideoId
@@ -85,6 +79,13 @@ export function VideoProductionProgress({
     [];
   const summary = progress.frames?.map(({ title }) => title).join(" → ");
   const waitingForFrames = current === 0 && production.waitingForFrames && !production.busy;
+  const checkFrames = production.resumingFrames || production.checkingFrames;
+  const canResume = paused && production.needsResume && (!waitingForFrames || checkFrames);
+  const resumeLabel = checkFrames
+    ? "检查分镜状态"
+    : production.pendingVideo
+      ? "确认上次提交"
+      : "继续生成";
   const retryable = (position: number) =>
     progress.failedFramePositions?.includes(position) ??
     (progress.frameJobStatus === "failed" || progress.frameJobStatus === "partially_failed");
@@ -197,16 +198,18 @@ export function VideoProductionProgress({
           );
         })}
       </ol>
-      {paused && !waitingForFrames && (
-        <p role="status">
-          {production.resumingFrames
-            ? "可在创作区继续检查原分镜任务。"
-            : production.referenceImagesBlocked
-              ? `${videoReferenceUnavailableMessage}恢复后可沿用已完成的分镜。`
-              : production.pendingVideo
-                ? "请在创作区确认上次提交，沿用原提交编号。"
-                : "可在创作区从中断处继续。"}
-        </p>
+      {canResume && (
+        <div>
+          <Button
+            size="sm"
+            variant="secondary"
+            isDisabled={production.blocked || (!checkFrames && production.referenceImagesBlocked)}
+            onPress={production.resume}
+          >
+            {resumeLabel}
+            {!checkFrames && ` · ${production.remainingCost}`}
+          </Button>
+        </div>
       )}
     </section>
   );

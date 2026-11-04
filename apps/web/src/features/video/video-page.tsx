@@ -36,71 +36,63 @@ export function VideoPage() {
     });
   const automatic =
     !submission.hasPending &&
-    (production.needsResume ||
-      production.busy ||
-      (!draft.reuseReferences &&
-        references.length > 0 &&
-        references.length <= storyboardOriginalImageLimit));
-  const locked = production.busy || production.needsResume;
-  const currentReferences =
-    locked && production.draft.references.length ? production.draft.references : references;
-  const description =
-    locked && production.draft.description ? production.draft.description : draft.prompt;
+    !draft.reuseReferences &&
+    references.length > 0 &&
+    references.length <= storyboardOriginalImageLimit;
   const referenceLimit = Math.max(production.maxOriginalImages, references.length);
   const busy = submission.isPending || production.busy;
   const valid = hasPromptDescription(draft.prompt);
+  const productionInProgress = production.busy || production.needsResume;
   const referenceBlocked =
-    model.data?.referenceImagesEnabled === false &&
-    (automatic
-      ? !production.resumingFrames && !production.checkingFrames
-      : !submission.hasPending && references.length > 0);
+    model.data?.referenceImagesEnabled === false && !submission.hasPending && references.length > 0;
   const canSubmit = automatic
     ? !production.blocked &&
-      (!production.waitingForFrames || production.checkingFrames) &&
-      (production.needsResume ||
-        (production.configured && valid && references.length <= production.maxOriginalImages))
+      production.configured &&
+      valid &&
+      references.length <= production.maxOriginalImages
     : !submission.blockedByPending && (valid || submission.hasPending);
-  useErrorToast(submission.error?.message ?? model.error?.message);
+  const storyboardUnavailable = automatic && production.unavailable;
+  useErrorToast(
+    submission.error?.message ??
+      model.error?.message ??
+      (!productionInProgress && referenceBlocked
+        ? videoReferenceUnavailableMessage
+        : !productionInProgress && storyboardUnavailable
+          ? "视频制作暂不可用，请稍后重试。"
+          : undefined),
+  );
   return (
     <section className="composer-panel video-composer" aria-label="视频创作参数">
       <div className="composer-scroll">
         <WorkspaceComposerTitle />
         <ReferencePicker
           compact
-          references={currentReferences}
-          prompt={description}
+          references={references}
+          prompt={draft.prompt}
           onChange={setReferences}
           limit={referenceLimit}
-          disabled={locked}
           label="商品图片"
         />
-        {currentReferences.length > 1 && !draft.reuseReferences && (
+        {references.length > 1 && !draft.reuseReferences && (
           <p className="video-reference-hint">第 1 张为主图，其余为补充参考。</p>
         )}
-        {locked ? (
-          <div className="video-description-preview">
-            <h2>场景描述</h2>
-            <p>{description}</p>
-          </div>
-        ) : (
-          <ReferencePrompt
-            className="prompt-field"
-            label="场景描述"
-            isRequired
-            value={draft.prompt}
-            onChange={(prompt) => draft.update({ prompt })}
-            references={references}
-            onReferencesInsert={(images, prompt) => {
-              if (references.length + images.length <= referenceLimit)
-                setReferences([...references, ...images], prompt);
-            }}
-            placeholder="例如：晨光卧室，镜头推近，展示被面的绗缝和纹理"
-            maxReferences={referenceLimit}
-            maxLength={videoPromptLimit}
-            showCount
-            autoGrow
-          />
-        )}
+        <ReferencePrompt
+          className="prompt-field"
+          label="场景描述"
+          isRequired
+          value={draft.prompt}
+          onChange={(prompt) => draft.update({ prompt })}
+          references={references}
+          onReferencesInsert={(images, prompt) => {
+            if (references.length + images.length <= referenceLimit)
+              setReferences([...references, ...images], prompt);
+          }}
+          placeholder="例如：晨光卧室，镜头推近，展示被面的绗缝和纹理"
+          maxReferences={referenceLimit}
+          maxLength={videoPromptLimit}
+          showCount
+          autoGrow
+        />
         {!automatic && (
           <>
             <section className="parameter-group video-ratio">
@@ -125,34 +117,25 @@ export function VideoPage() {
         )}
       </div>
       <div className="generate-area">
-        {(automatic || referenceBlocked) && !busy && (
-          <p className="video-reference-hint">
-            {production.checkingFrames
-              ? "有分镜结果待确认，可重新检查状态。"
-              : production.resumingFrames
-                ? "继续检查原分镜任务，已生成的画面会保留。"
-                : production.waitingForFrames
-                  ? "请在制作进度中补齐分镜。全部生成后会自动继续。"
-                  : referenceBlocked
-                    ? videoReferenceUnavailableMessage
-                    : production.pendingVideo
-                      ? "沿用原提交编号核对视频任务，已生成的分镜会保留。"
-                      : production.needsResume
-                        ? production.draft.progress.optimization?.prompt
-                          ? "从提交视频继续，沿用已生成的分镜和提示词。"
-                          : "从中断的步骤继续，沿用已提交的任务。"
-                        : production.unavailable
-                          ? "视频制作暂不可用，请稍后重试。"
-                          : `预计 ${automaticVideoCost} 积分（画面 ${automaticVideoCost - videoUnitCredits} + 视频 ${videoUnitCredits}），竖屏 9:16 · 10 秒。`}
-          </p>
-        )}
+        {automatic &&
+          !productionInProgress &&
+          !busy &&
+          !referenceBlocked &&
+          !storyboardUnavailable && (
+            <p className="video-reference-hint">
+              预计 {automaticVideoCost} 积分（画面 {automaticVideoCost - videoUnitCredits} + 视频{" "}
+              {videoUnitCredits}），竖屏 9:16 · 10 秒。
+            </p>
+          )}
         <Button
           variant="primary"
           size="lg"
           fullWidth
           className={`primary-action generation-submit${busy ? " generation-pending" : ""}`}
           data-submitting={busy || undefined}
-          isDisabled={!model.data?.enabled || busy || referenceBlocked || !canSubmit}
+          isDisabled={
+            !model.data?.enabled || productionInProgress || busy || referenceBlocked || !canSubmit
+          }
           isPending={busy}
           onPress={() => {
             if (automatic) {
@@ -171,30 +154,18 @@ export function VideoPage() {
               size="md"
               color="current"
               role="status"
-              aria-label={automatic ? "正在制作视频" : "正在提交视频任务"}
+              aria-label={production.busy ? "正在制作视频" : "正在提交视频任务"}
             />
           )}
-          {busy && automatic
+          {production.busy
             ? "正在制作"
-            : automatic && (production.resumingFrames || production.checkingFrames)
-              ? "检查分镜状态"
-              : automatic && production.waitingForFrames
-                ? "等待分镜补齐"
-                : !busy && (submission.hasPending || production.pendingVideo)
-                  ? "确认上次提交"
-                  : automatic && production.needsResume
-                    ? "继续生成"
-                    : "立即生成"}
-          {!(automatic && (production.resumingFrames || production.waitingForFrames)) && (
-            <span className="generate-credit-cost">
-              <CreditCoin size="default" />
-              {automatic
-                ? production.needsResume
-                  ? production.remainingCost
-                  : automaticVideoCost
-                : videoUnitCredits}
-            </span>
-          )}
+            : !busy && submission.hasPending
+              ? "确认上次提交"
+              : "立即生成"}
+          <span className="generate-credit-cost">
+            <CreditCoin size="default" />
+            {automatic ? automaticVideoCost : videoUnitCredits}
+          </span>
         </Button>
       </div>
     </section>

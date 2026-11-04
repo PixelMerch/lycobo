@@ -17,7 +17,7 @@
 
 上传 1–3 张商品图片并填写场景描述后，「立即生成」依次调用 DeepSeek 规划、Image 2.5 出图、DeepSeek 优化成片提示词和现有视频提交。默认准备三张参考画面，视频使用商品原图与按分镜顺序生成成功的画面，请求 9:16、10 秒。右侧显示三步制作进度与视频历史。纯文字和载入历史的已有参考组使用原有视频提交路径。
 
-预计积分分为画面 6 和视频 100。首次启动前检查余额，图片和视频分别按各自任务规则扣退。分镜全部生成后才编写视频提示词并提交视频。失败画面可逐张重试，沿用原画面任务并按单张计费，已生成画面会保留。同一浏览器会话保留待确认请求及已受理的阶段，页面刷新后可继续，沿用已有任务及其幂等编号。视频提交尚未确认时保留左侧内容；收到受理结果后清空本次未再编辑的草稿，后台任务仍可在历史查看。
+预计积分分为画面 6 和视频 100。首次启动前检查余额，图片和视频分别按各自任务规则扣退。分镜全部生成后才编写视频提示词并提交视频。失败画面可逐张重试，沿用原画面任务并按单张计费，已生成画面会保留。同一浏览器会话保留待确认请求及已受理的阶段，页面刷新后可继续，沿用已有任务及其幂等编号。首批分镜图片任务受理后清空左侧本次未再编辑的描述和商品图。用户可准备下一份草稿，右侧进度保留原任务及继续或确认入口。成片任务受理后可提交下一份草稿，上一条视频仍可在历史查看。
 
 `GET /api/v1/video-storyboards/capabilities` 检查已配置的 DeepSeek 规划渠道，`POST /api/v1/video-storyboards` 以 `plan` 或 `video` 阶段调用现有的服务端规划通道。两阶段使用独立幂等键和已有计划持久化、限频与归属校验，DeepSeek 只接收文字和图号。图片和视频继续使用各自的现有任务接口。历史记录元数据的迁移见文末。
 
@@ -44,7 +44,7 @@ API与消费者需要：
 
 - STANDALONE_IMAGE_API_KEY：复用现有生图Key供API及消费者服务端调用，仍需具备视频型号权限，不再单独配置VIDEO_API_KEY。不经聊天或仓库传递。
 - VIDEO_API_ORIGIN：默认https://api.uselg.top，可显式选择文档列出的https://api.ai-media.vip；不在运行时猜测域名重发。
-- 复用ASSET_PUBLIC_ORIGIN、ASSET_PATH_PREFIX、ASSET_SIGNING_SECRET及私有CloudBase／本地S3配置。CloudBase环境直接使用同一私有桶的1小时临时签名URL作为视频参考图，无需另配公网素材域名；普通预览继续走现有资源服务。本地隔离S3模式的纯文字视频不需要公网资源地址，成品保存至同一本地私有桶；使用参考图时可将 `VIDEO_REFERENCE_ORIGIN` 设为指向本地资源服务的公网 HTTPS 源站，详见[本地开发](development.md)。消费者会逐张检查签名原图能否无登录读取。检查失败时不提交模型，视频任务失败并走现有退款流程。未配置时，视频能力接口返回 `referenceImagesEnabled: false`，网页在生成分镜前提示并停用带图提交，API 在扣费前以 `VIDEO_REFERENCES_UNAVAILABLE` 拒绝含参考图的请求。首次提交明确拒绝时保留分镜与提示词，从视频阶段继续。上次提交结果未知时保留原编号，参考图恢复后核对原提交。纯文字视频仍可使用。
+- 复用ASSET_PUBLIC_ORIGIN、ASSET_PATH_PREFIX、ASSET_SIGNING_SECRET及私有CloudBase／本地S3配置。CloudBase环境直接使用同一私有桶的1小时临时签名URL作为视频参考图，无需另配公网素材域名；普通预览继续走现有资源服务。本地隔离S3模式的纯文字视频不需要公网资源地址，成品保存至同一本地私有桶；使用参考图时可将 `VIDEO_REFERENCE_ORIGIN` 设为指向本地资源服务的公网 HTTPS 源站，详见[本地开发](development.md)。消费者会逐张检查签名原图能否无登录读取。检查失败时不提交模型，视频任务失败并走现有退款流程。未配置时，视频能力接口返回 `referenceImagesEnabled: false`，网页通过顶部 Toast 提示并停用带图提交，API 在扣费前以 `VIDEO_REFERENCES_UNAVAILABLE` 拒绝含参考图的请求。首次提交明确拒绝时保留分镜与提示词，从视频阶段继续。上次提交结果未知时保留原编号，参考图恢复后核对原提交。纯文字视频仍可使用。
 - 生图与视频默认启用，不再读取IMAGE_GENERATION_ENABLED／VIDEO_GENERATION_ENABLED。密钥、身份、数据库与私有存储仍必须配置完整。
 
 实施迁移为packages/db/migrations/0039_video_outbox.sql及cloudbase/migrations/20261103120000_video_generation.sql（分别用于Node PG与CloudBase共享PG）；CloudBase素材列表的分辨率与时长另需cloudbase/migrations/20261104100000_video_asset_specs.sql，未执行时素材封面只是不显示这两项。CloudBase迁移除建表／固定视频RPC外，也按断言定位片段扩展既有图片RPC的媒体过滤并排除视频超时处理；不能自动db push或在运行时建表。

@@ -893,7 +893,8 @@ test("unavailable reference delivery blocks paid storyboard work and keeps text 
     mimeType: "image/png",
     buffer: png,
   });
-  await expect(composer).toContainText("当前环境无法向视频服务提供参考图。");
+  await expect(page.getByText("当前环境无法向视频服务提供参考图。", { exact: true })).toBeVisible();
+  await expect(composer).not.toContainText("当前环境无法向视频服务提供参考图。");
   await expect(composer.getByRole("button", { name: /立即生成.*106/ })).toBeDisabled();
   await composer.getByRole("button", { name: "清除全部参考图片" }).click();
   await expect(composer.getByRole("button", { name: /立即生成.*100/ })).toBeEnabled();

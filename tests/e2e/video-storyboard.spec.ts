@@ -245,13 +245,21 @@ async function verifyStoryboard(page: Page, originalCount: number, legacy = fals
   partialFrameReady = true;
   await expect(frames.getByRole("img", { name: "卧室全景" })).toBeVisible();
   await expect(frames.getByRole("img")).toHaveCount(1);
+  await expect(composer.getByRole("textbox", { name: "场景描述" })).toBeEmpty({
+    timeout: 1500,
+  });
+  await expect(composer.locator(".reference-image-card")).toHaveCount(0);
+  const nextDescription = "下一条视频的草稿";
+  const descriptionInput = composer.getByRole("textbox", { name: "场景描述" });
+  if (!losesFirstFrame) await descriptionInput.fill(nextDescription);
   await expect(progress.getByRole("listitem").nth(0)).toContainText("进行中");
   imagesReady = true;
   if (losesFirstFrame) {
     const retryFrame = progress.getByRole("button", { name: /重试第 1 张分镜/ });
     await expect(progress.getByRole("listitem").nth(0)).toContainText("待补齐");
     await expect(progress).toContainText("已生成 2/3 张分镜");
-    await expect(composer.getByRole("button", { name: "等待分镜补齐" })).toBeDisabled();
+    await expect(composer.getByRole("button", { name: /立即生成/ })).toBeDisabled();
+    await expect(descriptionInput).toBeEditable();
     await expect(progress.getByRole("listitem").nth(1)).toContainText("等待中");
     await expect(progress.getByRole("listitem").nth(2)).toContainText("等待中");
     expect(planningRequests).toHaveLength(1);
@@ -332,26 +340,28 @@ async function verifyStoryboard(page: Page, originalCount: number, legacy = fals
   allowOptimization?.();
   await expect.poll(() => videoRequests.length).toBe(1);
   await expect(progress.getByRole("listitem").nth(2)).toContainText(
-    losesFirstFrame ? "参考图不可用" : "待确认",
+    losesFirstFrame && !legacy ? "待继续" : "待确认",
   );
   await expect(progress).toContainText(completedTitles.join(" → "));
-  await expect(composer.locator(".video-description-preview")).toContainText(description);
+  await expect(descriptionInput).toBeEditable();
   if (losesFirstFrame) {
-    await expect(progress).toContainText("当前环境无法向视频服务提供参考图");
     await expect(
-      composer.getByRole("button", { name: /(?:继续生成|确认上次提交).*100/ }),
+      page.getByText("当前环境无法向视频服务提供参考图。", { exact: true }),
+    ).toBeVisible();
+    await expect(progress).not.toContainText("当前环境无法向视频服务提供参考图");
+    await expect(
+      progress.getByRole("button", { name: /(?:继续生成|确认上次提交).*100/ }),
     ).toBeDisabled();
     expect(videoRequests).toHaveLength(1);
     referenceImagesEnabled = true;
-  } else {
-    await expect(composer).toContainText("沿用原提交编号核对视频任务");
   }
+  await expect(composer).not.toContainText("上一条视频可在历史记录中继续");
   const videoSlot = progress.locator(".video-production-media");
   await expect(videoSlot).toBeVisible();
   if (originalCount === 3) await page.reload();
   await expect(frames.getByRole("img")).toHaveCount(completedImages.length);
-  await expect(composer.locator(".reference-image-card")).toHaveCount(originalCount);
-  await composer
+  await expect(composer.locator(".reference-image-card")).toHaveCount(0);
+  await progress
     .getByRole("button", {
       name: losesFirstFrame && !legacy ? /继续生成.*100/ : /确认上次提交.*100/,
     })
@@ -374,7 +384,11 @@ async function verifyStoryboard(page: Page, originalCount: number, legacy = fals
   expect(planningRequests).toHaveLength(2);
   const history = page.getByRole("article", { name: "视频任务：W09VIDEO1" });
   await expect(progress).toHaveCount(0);
-  await expect(composer.getByRole("textbox", { name: "场景描述" })).toBeEmpty();
+  if (losesFirstFrame) await expect(descriptionInput).toBeEmpty();
+  else {
+    await expect(descriptionInput).toHaveText(nextDescription);
+    await expect(composer.getByRole("button", { name: /立即生成.*100/ })).toBeEnabled();
+  }
   await expect(composer.locator(".reference-image-card")).toHaveCount(0);
   await expect(history.getByRole("button", { name: "预览视频：W09VIDEO1" })).toBeVisible();
   await expect(history.getByRole("link", { name: "下载视频" })).toBeVisible();

@@ -579,19 +579,10 @@
   }
 }
 
-.video-composer .video-description-preview h2 {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-}
-.video-description-preview p,
 .video-production-progress p {
   margin: 4px 0 0;
   color: var(--muted);
   overflow-wrap: anywhere;
-}
-.video-description-preview p {
-  white-space: pre-wrap;
 }
 .video-history-card {
   grid-template-columns: minmax(0, 1fr);
