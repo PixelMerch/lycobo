@@ -105,7 +105,7 @@ for (const action of [
     let fileChoosers = 0;
     page.on("filechooser", () => fileChoosers++);
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "电商创作灵感" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "创作灵感" })).toBeVisible();
     await expect(page.getByRole("dialog", { name: "欢迎使用 Lycobo" })).toHaveCount(0);
     const upload = page.getByRole("button", { name: "添加参考图", exact: true });
     if (action === "upload") await upload.click();
@@ -145,7 +145,7 @@ test("homepage inspirations remain browsable while applying a prompt requires lo
     .click();
   const detail = page.getByRole("dialog", { name: /^灵感详情：/ });
   await expect(detail).toBeVisible();
-  await detail.getByRole("button", { name: "使用提示词", exact: true }).click();
+  await detail.getByRole("button", { name: "做同款", exact: true }).click();
   const login = page.getByRole("dialog", { name: "欢迎使用 Lycobo", exact: true });
   await expect(login).toBeVisible();
   await login.getByRole("button", { name: "关闭登录", exact: true }).click();

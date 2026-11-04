@@ -230,7 +230,7 @@ test("home inspiration filters examples and confirms prompt replacement without 
       submissions++;
   });
   await page.goto("/");
-  const gallery = page.getByRole("region", { name: "电商创作灵感", exact: true });
+  const gallery = page.getByRole("region", { name: "创作灵感", exact: true });
   await expect(gallery.locator(".home-inspiration-card")).toHaveCount(13);
   await page.getByRole("textbox", { name: "创作需求" }).fill("我的原提示词");
   await gallery.getByRole("tab", { name: "家纺展示", exact: true }).click();
@@ -238,10 +238,17 @@ test("home inspiration filters examples and confirms prompt replacement without 
   await gallery.getByRole("button", { name: "查看灵感：枕间细节", exact: true }).click();
   const detail = page.getByRole("dialog", { name: "灵感详情：枕间细节", exact: true });
   await expect(detail.getByText("家纺展示 · 示例素材")).toBeVisible();
-  await detail.getByRole("button", { name: "使用提示词", exact: true }).click();
+  const heading = await detail.getByRole("heading", { name: "枕间细节" }).boundingBox();
+  const close = await detail
+    .getByRole("button", { name: "关闭灵感详情", exact: true })
+    .boundingBox();
+  if (!heading || !close) throw new Error("Missing inspiration detail header");
+  expect(close.x).toBeGreaterThan(heading.x + heading.width);
+  expect(close.y).toBeLessThan(heading.y + heading.height);
+  await detail.getByRole("button", { name: "做同款", exact: true }).click();
   await page.getByRole("button", { name: "保留当前内容", exact: true }).click();
   await expect(detail).toBeVisible();
-  await detail.getByRole("button", { name: "使用提示词", exact: true }).click();
+  await detail.getByRole("button", { name: "做同款", exact: true }).click();
   await page.getByRole("button", { name: "替换并进入", exact: true }).click();
   await expect(page).toHaveURL(/\/create$/);
   await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
@@ -250,11 +257,85 @@ test("home inspiration filters examples and confirms prompt replacement without 
   expect(submissions).toBe(0);
 });
 
+test("home inspiration cards offer 做同款 by hover or keyboard without submitting paid work", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  let submissions = 0;
+  page.on("request", (request) => {
+    if (request.method() === "POST" && new URL(request.url()).pathname.endsWith("/image-tasks"))
+      submissions++;
+  });
+  await page.goto("/");
+  const gallery = page.getByRole("region", { name: "创作灵感", exact: true });
+  const tileOf = (title: string) =>
+    gallery.locator(".home-inspiration-tile").filter({
+      has: page.getByRole("button", { name: `查看灵感：${title}`, exact: true }),
+    });
+  const card = gallery.getByRole("button", { name: "查看灵感：水光香氛", exact: true });
+  const tile = tileOf("水光香氛");
+  const panel = tile.locator(".home-inspiration-panel");
+  const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
+  await card.scrollIntoViewIfNeeded();
+  await expect(card.getByRole("button")).toHaveCount(0);
+  await expect(panel).toHaveCSS("opacity", "0");
+
+  // Only 做同款 takes the pointer: the rest of the panel still opens the detail.
+  await tile.hover();
+  await expect(panel).toHaveCSS("opacity", "1");
+  await panel.locator("strong").click({ force: true });
+  const detail = page.getByRole("dialog", { name: "灵感详情：水光香氛", exact: true });
+  await expect(detail).toBeVisible();
+  await detail.getByRole("button", { name: "关闭灵感详情", exact: true }).click();
+  await expect(detail).toBeHidden();
+
+  await page.mouse.move(0, 0);
+  await card.focus();
+  await page.keyboard.press("Tab");
+  await expect(
+    gallery.getByRole("button", { name: "做同款：水光香氛", exact: true }),
+  ).toBeFocused();
+  await expect(panel).toHaveCSS("opacity", "1");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/create$/);
+  await expect(prompt).toHaveValue(/将商品放在水边石台上/);
+
+  await page.goBack();
+  const other = tileOf("原木与晨光");
+  await other.scrollIntoViewIfNeeded();
+  await other.hover();
+  const makeOther = gallery.getByRole("button", { name: "做同款：原木与晨光", exact: true });
+  await makeOther.click();
+  await page.getByRole("button", { name: "保留当前内容", exact: true }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await makeOther.click();
+  await page.getByRole("button", { name: "替换并进入", exact: true }).click();
+  await expect(page).toHaveURL(/\/create$/);
+  await expect(prompt).not.toHaveValue(/将商品放在水边石台上/);
+  expect(submissions).toBe(0);
+});
+
+test.describe("touch home inspiration", () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+
+  test("taps open the detail because touch has no hover panel", async ({ page }) => {
+    await mockImageApi(page);
+    await page.goto("/");
+    const gallery = page.getByRole("region", { name: "创作灵感", exact: true });
+    const card = gallery.getByRole("button", { name: "查看灵感：水光香氛", exact: true });
+    await expect(card).toBeVisible({ timeout: 15000 });
+    await expect(gallery.getByRole("button", { name: /^做同款：/ })).toHaveCount(0);
+    await card.tap();
+    const detail = page.getByRole("dialog", { name: "灵感详情：水光香氛", exact: true });
+    await expect(detail.getByRole("button", { name: "做同款", exact: true })).toBeVisible();
+  });
+});
+
 test("wide home inspiration fills every column with equal side gutters", async ({ page }) => {
   await mockImageApi(page);
   await page.setViewportSize({ width: 2400, height: 1100 });
   await page.goto("/");
-  const gallery = page.getByRole("region", { name: "电商创作灵感", exact: true });
+  const gallery = page.getByRole("region", { name: "创作灵感", exact: true });
   await expect(gallery.locator(".home-inspiration-card")).toHaveCount(13);
   await expect(gallery.getByText("示例素材 · 找到下一张商品图的方向")).toHaveCount(0);
   const layout = await gallery.evaluate((element) => {

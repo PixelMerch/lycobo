@@ -1,8 +1,6 @@
 import { Button } from "@heroui/react";
-import { IconArrowUpRight } from "@tabler/icons-react";
 import { type CSSProperties, lazy, Suspense } from "react";
 import { useNavigate } from "react-router";
-import { UiIcon } from "../../components/ui-icon";
 import { useRequireLogin } from "../auth/login-prompt";
 import { defaultDraft, useStudioStore } from "../generation/studio-state";
 import { HomeComposer } from "./home-composer";
@@ -87,12 +85,11 @@ export function HomePage() {
               aria-label={item.name}
               onPress={() => start(item.prompt)}
             >
-              <img src={item.image} alt="" width="64" height="64" decoding="async" />
+              <img src={item.image} alt="" width="112" height="88" decoding="async" />
               <span className="home-shortcut-copy">
                 <strong>{item.name}</strong>
                 <small>{item.description}</small>
               </span>
-              <UiIcon icon={IconArrowUpRight} size="small" />
             </Button>
           ))}
         </section>

@@ -1,49 +1,58 @@
 .home-inspiration {
-  margin: 56px auto 24px;
+  margin: 88px auto 24px;
   width: 100%;
   min-width: 0;
 }
 .home-inspiration-heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
   margin: 0;
+  text-align: center;
 }
 .home-inspiration-heading h2 {
   margin: 0;
-  font-size: var(--text-xl);
-  font-weight: var(--weight-semibold);
-  color: var(--foreground);
-  line-height: var(--leading-xl);
+  font-size: clamp(28px, 2.6vw, 36px);
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: 0.02em;
+  color: transparent;
+  background: linear-gradient(180deg, #fff 30%, #9a9aa4 100%);
+  background-clip: text;
+}
+.home-inspiration-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
 }
 .home-inspiration .tabs {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  column-gap: 32px;
-  row-gap: 24px;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  row-gap: 22px;
 }
 .home-inspiration .tabs__panel {
-  grid-column: 1 / -1;
+  width: 100%;
   min-width: 0;
 }
 .home-inspiration .tabs__list-container {
-  justify-self: end;
   max-width: 100%;
-  overflow-x: auto;
-  scrollbar-width: none;
 }
 .home-inspiration .tabs__list {
   width: max-content;
-  padding: 0;
-  gap: 6px;
-  background: transparent;
+  padding: 4px;
+  gap: 2px;
   border-bottom: 0;
+  border-radius: 999px;
+  background: #ffffff0d;
+  box-shadow: inset 0 0 0 1px #ffffff14;
 }
 .home-inspiration .tabs__tab {
-  min-height: 36px;
-  padding: 8px 14px;
+  position: relative;
+  isolation: isolate;
+  min-height: 34px;
+  padding: 6px 16px;
   border-radius: 999px;
   font-size: var(--text-base);
   color: var(--muted);
@@ -52,31 +61,49 @@
 .home-inspiration .tabs__tab[data-selected] {
   color: var(--foreground);
 }
-.home-inspiration .tabs__indicator {
-  inset: 0;
-  width: auto;
-  height: auto;
-  background: linear-gradient(180deg, #ffffff1f, #ffffff0f);
-  border-radius: 999px;
-  box-shadow: inset 0 1px 0 #ffffff14;
-}
-.home-inspiration .tabs__list {
-  box-shadow: none;
-}
 .home-inspiration .tabs__tab:is(:hover, [data-hovered]):not([data-selected]) {
   color: var(--foreground);
   background: var(--interaction-hover);
 }
+.home-inspiration .toggle-selection {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(180deg, #ffffff24, #ffffff12);
+  box-shadow: inset 0 1px 0 #ffffff1f;
+}
+/* A local stacking root keeps each glow behind every card, not just its own. */
 .home-inspiration-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  gap: 18px;
   align-items: start;
+  isolation: isolate;
 }
 .home-inspiration-column {
   display: grid;
-  gap: 16px;
+  gap: 18px;
   min-width: 0;
+}
+.home-inspiration-tile {
+  position: relative;
+  min-width: 0;
+}
+/* The example's own colours bloom around it, so hover feels different on every image. */
+.home-inspiration-glow {
+  position: absolute;
+  inset: -16px;
+  z-index: -1;
+  width: calc(100% + 32px);
+  max-width: none;
+  height: calc(100% + 32px);
+  border-radius: 24px;
+  object-fit: cover;
+  filter: blur(44px) saturate(1.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 240ms ease;
 }
 .home-inspiration-card.button {
   position: relative;
@@ -87,7 +114,7 @@
   padding: 0;
   overflow: hidden;
   border: 0;
-  border-radius: 16px;
+  border-radius: 20px;
   background: var(--surface);
   text-align: left;
   isolation: isolate;
@@ -103,9 +130,6 @@
   pointer-events: none;
   transition: box-shadow 200ms ease;
 }
-.home-inspiration-card.button:is(:hover, [data-hovered], [data-focus-visible])::after {
-  box-shadow: inset 0 0 0 1px #ffffff40;
-}
 .home-inspiration-card img {
   display: block;
   width: 100%;
@@ -119,66 +143,144 @@
 .home-inspiration-card:where([data-shape="landscape"]) img {
   aspect-ratio: 4 / 3;
 }
-.home-inspiration-preview {
-  position: absolute;
-  z-index: 1;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  color: #fff;
-  background: #00000059;
-  box-shadow: inset 0 0 0 1px #ffffff26;
-  backdrop-filter: blur(12px) saturate(140%);
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 180ms ease;
-}
-.home-inspiration-card:is(:hover, [data-hovered], [data-focus-visible]) .home-inspiration-preview {
-  opacity: 1;
-}
 .home-inspiration-caption {
   position: absolute;
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 12px;
   inset: auto 0 0;
-  padding: 72px 16px 14px;
+  display: block;
+  padding: 56px 16px 14px;
   color: #fff;
   background: linear-gradient(#00000000, #00000073 45%, #000000cc);
   pointer-events: none;
-}
-.home-inspiration-caption > span {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
-}
-.home-inspiration-caption small {
-  font-size: var(--text-xs);
-  font-weight: var(--weight-regular);
-  color: #ffffffd9;
-  line-height: var(--leading-xs);
+  transition: opacity 160ms ease;
 }
 .home-inspiration-caption strong {
+  display: block;
+  overflow: hidden;
   font-size: var(--text-base);
   line-height: var(--leading-base);
   font-weight: var(--weight-medium);
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.home-inspiration-caption > .ui-icon {
-  flex: none;
+/* Sits beside the card button rather than inside it; only 做同款 takes the pointer,
+ * so a click anywhere else on the panel still opens the detail. */
+.home-inspiration-panel {
+  position: absolute;
+  z-index: 3;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  color: #fff;
+  background: #0f0f12a6;
+  box-shadow:
+    inset 0 0 0 1px #ffffff26,
+    inset 0 1px 0 #ffffff26;
+  backdrop-filter: blur(20px) saturate(170%);
+  opacity: 0;
+  translate: 0 8px;
+  pointer-events: none;
+  transition:
+    opacity 200ms ease,
+    translate 200ms ease;
 }
-.home-inspiration-detail.modal__dialog {
+.home-inspiration-panel strong {
+  overflow: hidden;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-inspiration-panel p {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: #ffffffcc;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.home-inspiration-cta.button {
+  justify-self: start;
+  border-radius: 999px;
+  pointer-events: auto;
+}
+.home-inspiration-tile:has([data-focus-visible]) .home-inspiration-panel {
+  opacity: 1;
+  translate: 0;
+}
+.home-inspiration-tile:has([data-focus-visible]) .home-inspiration-caption {
+  opacity: 0;
+}
+.home-inspiration-tile:has([data-focus-visible]) .home-inspiration-glow {
+  opacity: 0.55;
+}
+.home-inspiration-tile:has([data-focus-visible]) .home-inspiration-card.button::after {
+  box-shadow: inset 0 0 0 1px #ffffff4d;
+}
+@media (hover: hover) {
+  .home-inspiration-tile:hover .home-inspiration-panel {
+    opacity: 1;
+    translate: 0;
+  }
+  .home-inspiration-tile:hover .home-inspiration-caption {
+    opacity: 0;
+  }
+  .home-inspiration-tile:hover .home-inspiration-glow {
+    opacity: 0.55;
+  }
+  .home-inspiration-tile:hover .home-inspiration-card.button::after {
+    box-shadow: inset 0 0 0 1px #ffffff4d;
+  }
+}
+/* Touch has no hover: a tap opens the detail, where 做同款 lives. */
+@media (hover: none) {
+  .home-inspiration-panel,
+  .home-inspiration-glow {
+    display: none;
+  }
+}
+/* The only glass dialog so far. The HeroUI backdrop already blurs the page and is a
+ * backdrop root, so the panel tints that blur instead of adding a filter of its own. */
+.modal__dialog.home-inspiration-detail {
+  position: relative;
+  overflow: hidden;
   width: min(960px, calc(100vw - 32px));
   max-width: 960px;
+  border: 1px solid #ffffff24;
+  border-radius: 28px;
+  background: linear-gradient(180deg, #ffffff12, #ffffff05), rgb(15 15 18 / 58%);
+  box-shadow:
+    inset 0 1px 0 #ffffff2e,
+    0 40px 120px -20px #000000d9;
+}
+.home-inspiration-ambient {
+  position: absolute;
+  inset: -20%;
+  z-index: 0;
+  width: 140%;
+  max-width: none;
+  height: 140%;
+  object-fit: cover;
+  filter: blur(70px) saturate(1.6) brightness(0.62);
+  opacity: 0.34;
+  pointer-events: none;
+}
+.home-inspiration-detail .modal__header,
+.home-inspiration-detail .modal__body {
+  position: relative;
+  z-index: 1;
+}
+.home-inspiration-detail .modal__header {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 .home-inspiration-detail-content {
   display: grid;
@@ -191,32 +293,37 @@
   width: 100%;
   height: auto;
   max-height: 60vh;
-  border-radius: 16px;
+  border-radius: 18px;
   object-fit: contain;
-  background: var(--surface);
 }
 .home-inspiration-description {
   padding: var(--space-2) 0;
 }
 .home-inspiration-description > span {
-  color: var(--muted);
+  color: #ffffffcc;
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
 }
 .home-inspiration-description h3 {
-  margin: 24px 0 12px;
-  font-size: var(--text-lg);
+  margin: 20px 0 10px;
+  color: #ffffffcc;
+  font-size: var(--text-sm);
   font-weight: var(--weight-medium);
-  line-height: var(--leading-lg);
+  line-height: var(--leading-sm);
 }
-.home-inspiration-description p {
+.home-inspiration-prompt {
   margin: 0;
-  line-height: var(--leading-base);
+  padding: 14px 16px;
+  border-radius: 14px;
+  color: #fff;
+  background: #ffffff0f;
+  box-shadow: inset 0 0 0 1px #ffffff14;
   font-size: var(--text-base);
+  line-height: var(--leading-base);
 }
-.home-inspiration-description .home-inspiration-hint {
-  margin-top: var(--space-6);
-  color: var(--muted);
+.home-inspiration-hint {
+  margin: var(--space-4) 0 0;
+  color: #ffffffcc;
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
 }
@@ -226,18 +333,54 @@
   gap: 8px;
   margin-top: 24px;
 }
+.home-inspiration-actions .button {
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+}
+.home-inspiration-actions .button--secondary {
+  color: #fff;
+  background: #ffffff14;
+}
+.home-inspiration-actions .button--secondary:is(:hover, [data-hovered="true"]) {
+  background: #ffffff1f;
+}
 @media (prefers-reduced-motion: reduce) {
-  .home-inspiration-preview,
+  .home-inspiration-glow,
+  .home-inspiration-caption,
+  .home-inspiration-panel,
   .home-inspiration-card.button::after {
     transition: none;
+  }
+  .home-inspiration-panel {
+    translate: 0;
   }
 }
 @media (prefers-reduced-motion: no-preference) {
   .home-inspiration-card img {
-    transition: transform 200ms ease;
+    transition: scale 320ms ease;
   }
-  .home-inspiration-card:is(:hover, [data-hovered], [data-focus-visible]) img {
-    transform: scale(1.04);
+  .home-inspiration-tile:has([data-focus-visible]) .home-inspiration-card img {
+    scale: 1.05;
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+  .home-inspiration-tile:hover .home-inspiration-card img {
+    scale: 1.05;
+  }
+}
+/* Glass is decoration: anyone who asks for less of it gets solid, readable surfaces. */
+@media (prefers-reduced-transparency: reduce) {
+  .home-inspiration-glow,
+  .home-inspiration-ambient {
+    display: none;
+  }
+  .home-inspiration-panel {
+    background: var(--surface);
+    backdrop-filter: none;
+  }
+  .modal__dialog.home-inspiration-detail {
+    background: var(--surface);
   }
 }
 @media (min-width: 1800px) {
@@ -250,31 +393,25 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
-@media (max-width: 1199px) {
-  .home-inspiration .tabs {
-    grid-template-columns: minmax(0, 1fr);
-    row-gap: 20px;
-  }
-  .home-inspiration .tabs__list-container {
-    justify-self: start;
-  }
-}
 @media (max-width: 767px) {
   .home-inspiration {
-    margin-top: 40px;
+    margin-top: 56px;
   }
-  .home-inspiration-heading {
-    align-items: start;
-    flex-direction: column;
-    gap: 8px;
+  .home-inspiration .tabs {
+    row-gap: 18px;
   }
-  .home-inspiration-heading h2 {
-    font-size: var(--text-xl);
-    line-height: var(--leading-xl);
+  /* All five tabs share the capsule: a scrolling strip would put HeroUI's chevron over the last one. */
+  .home-inspiration .tabs__list-container {
+    width: min(100%, 400px);
+  }
+  .home-inspiration .tabs__list {
+    width: 100%;
+    gap: 0;
   }
   .home-inspiration .tabs__tab {
+    flex: 1 1 auto;
     min-height: 44px;
-    padding-inline: 12px;
+    padding-inline: 2px;
     font-size: var(--text-sm);
     line-height: var(--leading-sm);
   }
@@ -286,24 +423,26 @@
     gap: 12px;
   }
   .home-inspiration-card.button {
-    border-radius: 12px;
+    border-radius: 14px;
   }
   .home-inspiration-caption {
-    padding: 48px 12px 12px;
+    padding: 40px 12px 12px;
   }
-  .home-inspiration-caption > .ui-icon {
+  .home-inspiration-panel p {
     display: none;
+  }
+  .modal__dialog.home-inspiration-detail {
+    border-radius: 22px;
   }
   .home-inspiration-detail-content {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
   .home-inspiration-detail-content > img {
     max-height: 40vh;
   }
-}
-
-@media (hover: none) {
-  .home-inspiration-preview {
-    opacity: 1;
+  .home-inspiration-actions .button {
+    flex: 1 1 0;
+    height: 44px;
   }
 }
