@@ -21,7 +21,7 @@ import {
   uploadImageReferences,
 } from "../generation/generation-client";
 import type { ReferenceImage } from "../generation/studio-state";
-import { useVideoDraft } from "./video-state";
+import { clearSubmittedVideoDraft, useVideoDraft } from "./video-state";
 
 const pendingEvents = new EventTarget();
 const notifyPending = () => pendingEvents.dispatchEvent(new Event("change"));
@@ -133,14 +133,7 @@ export function useSubmitVideo(source?: "storyboard") {
       const accepted = videoAcceptedSchema.parse(await response.json());
       sessionStorage.removeItem(storageKey);
       notifyPending();
-      if (clearDraft && !confirming && useVideoDraft.getState() === submittedDraft)
-        submittedDraft.update({
-          reuseReferences: false,
-          prompt: "",
-          firstFrame: null,
-          lastFrame: null,
-          extraReferences: [],
-        });
+      if (clearDraft && !confirming) clearSubmittedVideoDraft(submittedDraft);
       return accepted;
     },
     onError: (error) => {

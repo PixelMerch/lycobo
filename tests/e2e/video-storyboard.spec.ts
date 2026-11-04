@@ -26,6 +26,9 @@ async function verifyStoryboard(page: Page, originalCount: number) {
     prompt: `以商品原图为准，展示${title}。`,
   }));
   const images = items.map(() => crypto.randomUUID());
+  const losesFirstFrame = originalCount === 3;
+  const completedImages = losesFirstFrame ? images.slice(1) : images;
+  const completedTitles = (losesFirstFrame ? items.slice(1) : items).map(({ title }) => title);
   let imagesReady = false;
   let partialFrameReady = false;
   let allowOptimization: (() => void) | undefined;
@@ -120,17 +123,18 @@ async function verifyStoryboard(page: Page, originalCount: number) {
         resolution: "1.5K",
         aspect_ratio: "9:16",
         requested_count: outputs.length,
-        status: imagesReady ? "succeeded" : "running",
+        status: imagesReady ? (losesFirstFrame ? "partially_failed" : "succeeded") : "running",
         created_at: new Date().toISOString(),
         completed_at: new Date().toISOString(),
         items: outputs.map((output_asset_id, position) => {
-          const ready = imagesReady || (partialFrameReady && position === 1);
+          const failed = imagesReady && losesFirstFrame && position === 0;
+          const ready = (imagesReady && !failed) || (partialFrameReady && position === 1);
           return {
             id: crypto.randomUUID(),
             position,
-            status: ready ? "succeeded" : "running",
+            status: failed ? "failed" : ready ? "succeeded" : "running",
             output_asset_id: ready ? output_asset_id : null,
-            error_code: null,
+            error_code: failed ? "PROVIDER_TASK_FAILED" : null,
             width: 768,
             height: 1360,
             worker_id: null,
@@ -219,24 +223,30 @@ async function verifyStoryboard(page: Page, originalCount: number) {
     await frames
       .getByRole("img")
       .evaluateAll((images) => images.map((image) => image.getAttribute("alt"))),
-  ).toEqual(items.map(({ title }) => title));
+  ).toEqual(completedTitles);
   expect(videoRequests).toHaveLength(0);
   expect(planningRequests[1]).toEqual(
     expect.objectContaining({
       stage: "video",
       originalAssetId: original,
       ...storyboardOriginals,
-      shots: images.map((assetId) => expect.objectContaining({ assetId })),
+      shots: completedImages.map((assetId) => expect.objectContaining({ assetId })),
     }),
   );
   allowOptimization?.();
   await expect.poll(() => videoRequests.length).toBe(1);
   await expect(progress.getByRole("listitem").nth(2)).toContainText("待继续");
-  await expect(progress).toContainText(items.map(({ title }) => title).join(" → "));
+  await expect(progress).toContainText(completedTitles.join(" → "));
+  if (losesFirstFrame) {
+    await expect(progress).toContainText("已生成 2/3 张分镜");
+    await expect(progress).toContainText("画面未生成");
+  }
+  await expect(composer.locator(".video-description-preview")).toContainText(description);
+  await expect(composer).toContainText("沿用原提交编号核对视频任务");
   const videoSlot = progress.locator(".video-production-media");
   await expect(videoSlot).toBeVisible();
-  await page.reload();
-  await expect(frames.getByRole("img")).toHaveCount(3);
+  if (originalCount === 3) await page.reload();
+  await expect(frames.getByRole("img")).toHaveCount(completedImages.length);
   await expect(composer.locator(".reference-image-card")).toHaveCount(originalCount);
   await composer.getByRole("button", { name: /确认上次提交.*100/ }).click();
   await expect.poll(() => videoRequests.length).toBe(2);
@@ -244,7 +254,7 @@ async function verifyStoryboard(page: Page, originalCount: number) {
     prompt: "先全景，随后特写和定格。",
     seconds: 10,
     aspectRatio: "9:16",
-    referenceAssetIds: [...originals, ...images],
+    referenceAssetIds: [...originals, ...completedImages],
     storyboard: { description },
     ...(originalCount > 1 ? { storyboardOriginalImageCount: originalCount } : {}),
   });
@@ -255,6 +265,8 @@ async function verifyStoryboard(page: Page, originalCount: number) {
   expect(planningRequests).toHaveLength(2);
   const history = page.getByRole("article", { name: "视频任务：W09VIDEO1" });
   await expect(progress).toHaveCount(0);
+  await expect(composer.getByRole("textbox", { name: "场景描述" })).toBeEmpty();
+  await expect(composer.locator(".reference-image-card")).toHaveCount(0);
   await expect(history.getByRole("button", { name: "预览视频：W09VIDEO1" })).toBeVisible();
   await expect(history.getByRole("link", { name: "下载视频" })).toBeVisible();
   await page.reload();
@@ -273,10 +285,10 @@ async function verifyStoryboard(page: Page, originalCount: number) {
   await expect(aiContent).toHaveAttribute("aria-expanded", "true");
   await expect(aiDescription).toBeVisible();
   await expect(history.getByRole("button", { name: "复制 AI 描述" })).toBeVisible();
-  await expect(storyboardThumbs).toHaveCount(3);
+  await expect(storyboardThumbs).toHaveCount(completedImages.length);
   expect(
     await storyboardThumbs.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("src"))),
-  ).toEqual(images.map((id) => `/api/v1/image-assets/${id}/content?thumbnail=1`));
+  ).toEqual(completedImages.map((id) => `/api/v1/image-assets/${id}/content?thumbnail=1`));
   await page.setViewportSize({ width: 390, height: 900 });
   await page.getByRole("radio", { name: "历史记录", exact: true }).click();
   await expect.poll(() => history.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);

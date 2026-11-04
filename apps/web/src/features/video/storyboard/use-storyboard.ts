@@ -28,6 +28,7 @@ import {
 import { modelCapabilities, supportsReferences } from "../../generation/models/model-capabilities";
 import type { ReferenceImage } from "../../generation/studio-state";
 import { useSubmitVideo, useVideoModel } from "../video-client";
+import { clearSubmittedVideoDraft, useVideoDraft } from "../video-state";
 import { emptyStoryboard, originalReference, useStoryboardState } from "./storyboard-state";
 
 const source = "tk-storyboard";
@@ -148,8 +149,14 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
   }
 
   function finish(id: string) {
-    const frames = current().progress.frames;
-    update({ progress: { acceptedVideoId: id, frames } });
+    const { progress, submittedDraft } = current();
+    clearSubmittedVideoDraft(submittedDraft);
+    update({
+      description: "",
+      references: [],
+      submittedDraft: undefined,
+      progress: { acceptedVideoId: id, frames: progress.frames },
+    });
   }
 
   const action = useMutation({
@@ -173,7 +180,7 @@ export function useStoryboard(enabled: boolean, showHistory: () => void) {
       if (!resuming) {
         if (!configured || pendingImage || input.references.length > maxOriginalImages)
           throw new Error("暂时无法制作视频，请检查生成服务和待确认任务");
-        update({ ...emptyStoryboard, ...input });
+        update({ ...emptyStoryboard, ...input, submittedDraft: useVideoDraft.getState() });
         const balance = walletBalanceSchema.parse(await (await imageRequest("wallet")).json());
         if (balance.balance < automaticVideoCost)
           throw new Error(`本次预计需要 ${automaticVideoCost} 积分，请补充积分后再试`);

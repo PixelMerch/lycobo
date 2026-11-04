@@ -6,6 +6,7 @@ import {
 } from "@lycoboai/contracts";
 import { create } from "zustand";
 import type { ReferenceImage } from "../../generation/studio-state";
+import type { useVideoDraft } from "../video-state";
 
 const frameSchema = storyboardRequestSchema.options[1].shape.shots.element
   .pick({ assetId: true, title: true })
@@ -27,6 +28,7 @@ type Draft = {
   count: number;
   seconds: number;
   progress: ReturnType<typeof progressSchema.parse>;
+  submittedDraft?: ReturnType<typeof useVideoDraft.getState> | undefined;
 };
 export const emptyStoryboard: Draft = {
   description: "",

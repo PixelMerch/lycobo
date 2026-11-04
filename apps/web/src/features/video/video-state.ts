@@ -26,3 +26,14 @@ export const useVideoDraft = create<VideoDraft & { update: (patch: Partial<Video
     update: (patch) => set(patch),
   }),
 );
+
+export function clearSubmittedVideoDraft(submitted?: ReturnType<typeof useVideoDraft.getState>) {
+  if (!submitted || useVideoDraft.getState() !== submitted) return;
+  submitted.update({
+    reuseReferences: false,
+    prompt: "",
+    firstFrame: null,
+    lastFrame: null,
+    extraReferences: [],
+  });
+}

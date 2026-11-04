@@ -66,6 +66,7 @@ export function VideoProductionProgress({
       .map((assetId, position) => ({ position, assetId, title: `分镜 ${position + 1}` })) ??
     [];
   const summary = progress.frames?.map(({ title }) => title).join(" → ");
+  const partial = progress.frameJobStatus === "partially_failed";
   const videoState = task ? videoTaskStatus(task) : progress.acceptedVideoId ? "已提交" : "提交中";
   const states = [
     current > 0 ? "已完成" : paused ? "待继续" : "进行中",
@@ -109,7 +110,7 @@ export function VideoProductionProgress({
                           loading="lazy"
                         />
                       ) : current > 0 || paused ? (
-                        <span key={id}>画面未就绪</span>
+                        <span key={id}>{partial ? "画面未生成" : "画面未就绪"}</span>
                       ) : (
                         <Skeleton
                           key={id}
@@ -120,6 +121,11 @@ export function VideoProductionProgress({
                     })}
                   </section>
                   {current === 0 && !paused && <p>正在准备参考画面，完成后会逐张显示。</p>}
+                  {partial && (
+                    <p>
+                      已生成 {frames.length}/{count} 张分镜，成片会沿用已完成的画面。
+                    </p>
+                  )}
                 </div>
               )}
               {index === 1 && current > 0 && (

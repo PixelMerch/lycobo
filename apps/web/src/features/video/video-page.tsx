@@ -127,9 +127,11 @@ export function VideoPage() {
             {referenceBlocked
               ? videoReferenceUnavailableMessage
               : production.pendingVideo
-                ? "可确认上次提交，沿用原任务编号。"
+                ? "沿用原提交编号核对视频任务，已生成的分镜会保留。"
                 : production.needsResume
-                  ? "继续本次制作，已提交的画面会沿用。"
+                  ? production.draft.progress.optimization?.prompt
+                    ? "从提交视频继续，沿用已生成的分镜和提示词。"
+                    : "从中断的步骤继续，沿用已提交的任务。"
                   : production.unavailable
                     ? "视频制作暂不可用，请稍后重试。"
                     : `预计 ${automaticVideoCost} 积分（画面 ${automaticVideoCost - videoUnitCredits} + 视频 ${videoUnitCredits}），竖屏 9:16 · 10 秒。`}
