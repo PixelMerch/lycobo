@@ -9,38 +9,99 @@ import { copyToClipboard } from "../../lib/clipboard";
 import { assetContentUrl } from "../generation/generation-client";
 import { ReferenceThumbnails } from "../generation/references/reference-thumbnails";
 import { VideoCover } from "./video-cover";
+import { type Production, VideoProductionProgress } from "./video-production-progress";
 import { useVideoDraft } from "./video-state";
 import { VideoTaskActions } from "./video-task-actions";
+import { isVideoTaskActive, videoTaskStatus } from "./video-task-status";
 
-const statusText = {
-  queued: "排队中",
-  running: "生成中",
-  succeeded: "已完成",
-  failed: "生成失败，积分已退回",
-  needs_reconciliation: "结果待核对，请勿重复提交",
-};
-export function videoTaskStatus(task: VideoTask) {
-  if (task.status === "failed" && task.error_code === "VIDEO_REFERENCES_UNAVAILABLE")
-    return "参考图无法读取，视频积分已退回";
-  if (task.status !== "running") return statusText[task.status];
-  if (task.provider_status === "paused") return "任务暂停，等待恢复";
-  if (task.provider_status === "pending_confirmation") return "结果待确认，请勿重复提交";
-  if (task.provider_status === "completed") return "正在保存视频";
-  return statusText.running;
+export function VideoHistoryMeta({
+  createdAt,
+  publicId,
+  aspectRatio,
+  seconds,
+  referenceCount,
+}: {
+  createdAt?: string | undefined;
+  publicId?: string;
+  aspectRatio: string;
+  seconds: number;
+  referenceCount: number;
+}) {
+  return (
+    <dl className="generation-meta" aria-label="视频任务信息">
+      <div>
+        <dt className="sr-only">功能</dt>
+        <dd>
+          <span className="model-tag video-history-tag">视频创作</span>
+        </dd>
+      </div>
+      {createdAt && (
+        <div>
+          <dt className="sr-only">时间</dt>
+          <dd>
+            <time dateTime={createdAt}>{new Date(createdAt).toLocaleString("zh-CN")}</time>
+          </dd>
+        </div>
+      )}
+      {publicId && (
+        <div className="generation-task-id-field">
+          <dt>任务ID：</dt>
+          <dd>
+            <Tooltip delay={0}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="generation-task-id"
+                aria-label={`复制任务 ID ${publicId}`}
+                onPress={(event) => {
+                  if (event.pointerType !== "mouse") void copyToClipboard(publicId);
+                }}
+                onDoubleClick={() => void copyToClipboard(publicId)}
+              >
+                {publicId}
+              </Button>
+              <Tooltip.Content placement="top">双击复制任务 ID</Tooltip.Content>
+            </Tooltip>
+          </dd>
+        </div>
+      )}
+      <div className="generation-meta-ratio">
+        <dt className="sr-only">画面比例</dt>
+        <UiIcon icon={IconAspectRatio} size="small" />
+        <dd>{aspectRatio}</dd>
+      </div>
+      <div>
+        <dt className="sr-only">时长</dt>
+        <dd>{seconds}秒</dd>
+      </div>
+      <div>
+        <dt className="sr-only">清晰度</dt>
+        <dd>768p</dd>
+      </div>
+      {referenceCount > 0 && (
+        <div>
+          <dt className="sr-only">参考图</dt>
+          <dd>{referenceCount} 张参考图</dd>
+        </div>
+      )}
+    </dl>
+  );
 }
+
 export function VideoTaskCard({
   task,
   onRestore,
-  showMedia = true,
+  production,
 }: {
   task: VideoTask;
   onRestore: () => void;
-  showMedia?: boolean;
+  /** Present only while this task is the storyboard run still making its video. */
+  production?: Production | undefined;
 }) {
   const [confirmRestore, setConfirmRestore] = useState(false);
   const input = task.input.video;
   const originalCount = task.input.storyboardOriginalImageCount ?? 1;
-  const active = task.status === "queued" || task.status === "running";
+  const active = isVideoTaskActive(task);
   const status = videoTaskStatus(task);
   function restore() {
     const references = input.referenceAssetIds.map((id, index) => ({
@@ -68,61 +129,13 @@ export function VideoTaskCard({
       aria-label={`视频任务：${task.public_id}`}
     >
       <header className="video-history-header">
-        <dl className="generation-meta" aria-label="视频任务信息">
-          <div>
-            <dt className="sr-only">功能</dt>
-            <dd>
-              <span className="model-tag video-history-tag">视频创作</span>
-            </dd>
-          </div>
-          <div>
-            <dt className="sr-only">时间</dt>
-            <dd>
-              <time dateTime={task.created_at}>
-                {new Date(task.created_at).toLocaleString("zh-CN")}
-              </time>
-            </dd>
-          </div>
-          <div className="generation-task-id-field">
-            <dt>任务ID：</dt>
-            <dd>
-              <Tooltip delay={0}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="generation-task-id"
-                  aria-label={`复制任务 ID ${task.public_id}`}
-                  onPress={(event) => {
-                    if (event.pointerType !== "mouse") void copyToClipboard(task.public_id);
-                  }}
-                  onDoubleClick={() => void copyToClipboard(task.public_id)}
-                >
-                  {task.public_id}
-                </Button>
-                <Tooltip.Content placement="top">双击复制任务 ID</Tooltip.Content>
-              </Tooltip>
-            </dd>
-          </div>
-          <div className="generation-meta-ratio">
-            <dt className="sr-only">画面比例</dt>
-            <UiIcon icon={IconAspectRatio} size="small" />
-            <dd>{input.aspectRatio}</dd>
-          </div>
-          <div>
-            <dt className="sr-only">时长</dt>
-            <dd>{input.seconds}秒</dd>
-          </div>
-          <div>
-            <dt className="sr-only">清晰度</dt>
-            <dd>768p</dd>
-          </div>
-          {input.referenceAssetIds.length > 0 && (
-            <div>
-              <dt className="sr-only">参考图</dt>
-              <dd>{input.referenceAssetIds.length} 张参考图</dd>
-            </div>
-          )}
-        </dl>
+        <VideoHistoryMeta
+          createdAt={task.created_at}
+          publicId={task.public_id}
+          aspectRatio={input.aspectRatio}
+          seconds={input.seconds}
+          referenceCount={task.input.storyboard ? originalCount : input.referenceAssetIds.length}
+        />
         <VideoTaskActions
           task={task}
           onEdit={() => {
@@ -181,7 +194,9 @@ export function VideoTaskCard({
           </Disclosure>
         )}
       </div>
-      {showMedia && (
+      {production ? (
+        <VideoProductionProgress production={production} task={task} />
+      ) : (
         <div className="generation-results" data-count="1">
           <div>
             {task.delivery && task.asset_id ? (
@@ -219,7 +234,7 @@ export function VideoTaskCard({
   );
 }
 
-function VideoHistoryPrompt({
+export function VideoHistoryPrompt({
   text,
   copyLabel = "复制提示词",
 }: {

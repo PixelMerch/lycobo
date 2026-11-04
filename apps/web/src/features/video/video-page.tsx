@@ -43,6 +43,15 @@ export function VideoPage() {
   const busy = submission.isPending || production.busy;
   const valid = hasPromptDescription(draft.prompt);
   const productionInProgress = production.busy || production.needsResume;
+  // The button reflects the form's own submission; a run it has handed off only blocks the next.
+  const submitting = production.busy ? !production.handedOff : submission.isPending;
+  const previousVideo = submitting
+    ? undefined
+    : production.busy
+      ? "上一条视频制作中"
+      : production.needsResume
+        ? "请先处理上一条视频"
+        : undefined;
   const referenceBlocked =
     model.data?.referenceImagesEnabled === false && !submission.hasPending && references.length > 0;
   const canSubmit = automatic
@@ -131,25 +140,25 @@ export function VideoPage() {
           variant="primary"
           size="lg"
           fullWidth
-          className={`primary-action generation-submit${busy ? " generation-pending" : ""}`}
-          data-submitting={busy || undefined}
+          className={`primary-action generation-submit${submitting ? " generation-pending" : ""}`}
+          data-submitting={submitting || undefined}
           isDisabled={
             !model.data?.enabled || productionInProgress || busy || referenceBlocked || !canSubmit
           }
-          isPending={busy}
+          isPending={submitting}
           onPress={() => {
+            revealNewestHistory();
             if (automatic) {
               production.start({ description: draft.prompt, references });
               return;
             }
-            revealNewestHistory();
             submission.submit({
               input: { prompt: draft.prompt, seconds: draft.seconds, aspectRatio: draft.ratio },
               references,
             });
           }}
         >
-          {busy && (
+          {submitting && (
             <Spinner
               size="md"
               color="current"
@@ -157,15 +166,18 @@ export function VideoPage() {
               aria-label={production.busy ? "正在制作视频" : "正在提交视频任务"}
             />
           )}
-          {production.busy
-            ? "正在制作"
-            : !busy && submission.hasPending
-              ? "确认上次提交"
-              : "立即生成"}
-          <span className="generate-credit-cost">
-            <CreditCoin size="default" />
-            {automatic ? automaticVideoCost : videoUnitCredits}
-          </span>
+          {previousVideo ??
+            (production.busy
+              ? "正在制作"
+              : !busy && submission.hasPending
+                ? "确认上次提交"
+                : "立即生成")}
+          {!previousVideo && (
+            <span className="generate-credit-cost">
+              <CreditCoin size="default" />
+              {automatic ? automaticVideoCost : videoUnitCredits}
+            </span>
+          )}
         </Button>
       </div>
     </section>

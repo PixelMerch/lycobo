@@ -21,7 +21,10 @@ const progressSchema = storedStoryboardSchema.shape.progress.extend({
   frameJobStatus: imageJobSchema.shape.status.optional(),
   failedFramePositions: frameSchema.shape.position.array().max(storyboardImageLimit).optional(),
 });
-const storedDraftSchema = storedStoryboardSchema.extend({ progress: progressSchema });
+const storedDraftSchema = storedStoryboardSchema.extend({
+  progress: progressSchema,
+  startedAt: imageJobSchema.shape.created_at.optional(),
+});
 
 type Draft = {
   description: string;
@@ -29,6 +32,7 @@ type Draft = {
   count: number;
   seconds: number;
   progress: ReturnType<typeof progressSchema.parse>;
+  startedAt?: string | undefined;
   submittedDraft?: ReturnType<typeof useVideoDraft.getState> | undefined;
 };
 export const emptyStoryboard: Draft = {
@@ -88,6 +92,7 @@ export const useStoryboardState = create<{
             .slice(1)
             .flatMap(({ assetId }) => (assetId ? [assetId] : [])),
           progress: next.progress,
+          startedAt: next.startedAt,
         }),
       );
     } catch {
