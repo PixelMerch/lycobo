@@ -44,12 +44,27 @@ try {
       `DO $$ BEGIN CREATE ROLE ${role}; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
     );
   }
+  // CloudBase provisions this catalog. Plain PostgreSQL in CI needs a local fixture.
+  await sql`create schema storage`;
+  await sql`create table storage.buckets (
+    id text primary key, name text not null, public boolean not null,
+    file_size_limit bigint, allowed_mime_types text[]
+  )`;
   const migrations = new URL("../../../cloudbase/migrations/", import.meta.url);
   for (const migration of (await readdir(fileURLToPath(migrations.href)))
-    .filter((name) => name.endsWith(".sql") && name >= "20261031223500")
+    .filter(
+      (name) =>
+        name.endsWith(".sql") &&
+        (name === "20261031223300_private_image_storage.sql" || name >= "20261031223500"),
+    )
     .sort()) {
     await sql.unsafe(await readFile(fileURLToPath(new URL(migration, migrations).href), "utf8"));
   }
+  const [videoBucket] = await sql`select public, file_size_limit::integer as max_bytes,
+    allowed_mime_types from storage.buckets where id = 'lycobo-images'`;
+  assert.equal(videoBucket?.public, false);
+  assert.equal(videoBucket?.max_bytes, 128 * 1024 * 1024);
+  assert.deepEqual(videoBucket?.allowed_mime_types, ["image/png", "image/webp", "video/mp4"]);
   const call: CloudBaseRpc = async (operation, parameters) => {
     if (operation === "lycobo_image_batch") {
       const a = z
