@@ -24,7 +24,7 @@ import { useWallet, useWalletEntries } from "./wallet-client";
 
 const kinds = [
   { id: "all", name: "全部" },
-  { id: "consume", name: "生成消耗" },
+  { id: "consume", name: "积分消耗" },
   { id: "refund", name: "失败退款" },
   { id: "recharge", name: "充值到账" },
   { id: "opening", name: "期初" },
@@ -138,7 +138,11 @@ export function CreditLedger() {
                     <Table.Cell className="account-cell-type">
                       <span className="account-entry-type">
                         <EntryMark kind={entry.kind} />
-                        {entryNames[entry.kind]}
+                        {entryDetail(entry) === "提示词优化"
+                          ? entry.kind === "consume"
+                            ? "积分消耗"
+                            : "积分退还"
+                          : entryNames[entry.kind]}
                       </span>
                     </Table.Cell>
                     <Table.Cell className="account-cell-detail">{entryDetail(entry)}</Table.Cell>

@@ -1,6 +1,9 @@
 import { Button, Label, Popover, TextArea, TextField } from "@heroui/react";
 import { type RefObject, useId, useLayoutEffect, useRef, useState } from "react";
+import { PromptOptimizeActions } from "../features/generation/references/prompt-optimize-actions";
+import type { PromptOptimizeTool } from "../features/generation/references/prompt-optimizer-client";
 import { ReferenceMentionOptions } from "../features/generation/references/reference-mention-options";
+import { usePromptOptimizer } from "../features/generation/references/use-prompt-optimizer";
 import type { ReferenceImage } from "../features/generation/studio-state";
 import "./reference-prompt.css";
 import "./studio-control-feedback.css";
@@ -109,7 +112,7 @@ function useAutoGrow(ref: RefObject<HTMLElement | null>, value: string, enabled:
 
 /** Mentions refer to the current ordered reference list; no files are uploaded here. */
 export function ReferencePrompt({
-  value,
+  value: draftValue,
   onChange,
   references,
   className,
@@ -122,6 +125,7 @@ export function ReferencePrompt({
   autoGrow = false,
   isRequired = false,
   onReferencesInsert,
+  optimizeTool,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -136,7 +140,16 @@ export function ReferencePrompt({
   autoGrow?: boolean;
   isRequired?: boolean;
   onReferencesInsert?: (images: ReferenceImage[], prompt: string) => void;
+  /** Shows the AI rewrite control for this tool's prompt. */
+  optimizeTool?: PromptOptimizeTool;
 }) {
+  const optimizer = usePromptOptimizer({
+    value: draftValue,
+    onChange,
+    maxLength,
+    tool: optimizeTool,
+  });
+  const value = optimizer.preview ?? draftValue;
   const countId = useId();
   const labelId = useId();
   const composing = useRef(false);
@@ -330,6 +343,8 @@ export function ReferencePrompt({
           className="prompt-editor"
           data-count={showCount ? "" : undefined}
           data-auto-grow={autoGrow ? "" : undefined}
+          data-optimizable={optimizeTool ? "" : undefined}
+          data-optimizing={optimizer.running ? "" : undefined}
         >
           {hasReferences ? (
             // biome-ignore lint/a11y/useSemanticElements: Native contenteditable is required for atomic image chips, which a textarea cannot render.
@@ -341,7 +356,8 @@ export function ReferencePrompt({
               aria-multiline="true"
               aria-required={isRequired || undefined}
               aria-describedby={showCount ? countId : undefined}
-              contentEditable
+              aria-busy={optimizer.running || undefined}
+              contentEditable={!optimizer.running}
               suppressContentEditableWarning
               className="textarea reference-rich-editor"
               data-auto-grow={autoGrow ? "" : undefined}
@@ -405,6 +421,8 @@ export function ReferencePrompt({
               aria-label={label ?? "创作需求"}
               aria-labelledby={label ? labelId : undefined}
               aria-describedby={showCount ? countId : undefined}
+              aria-busy={optimizer.running || undefined}
+              readOnly={optimizer.running}
               value={value}
               onChange={(event) => {
                 const next = event.target.value.slice(0, maxLength);
@@ -425,6 +443,7 @@ export function ReferencePrompt({
               data-auto-grow={autoGrow ? "" : undefined}
             />
           )}
+          {optimizeTool && <PromptOptimizeActions optimizer={optimizer} />}
           {showCount && (
             <div className="prompt-meta">
               {value.length > 0 && (
@@ -433,6 +452,7 @@ export function ReferencePrompt({
                   size="sm"
                   className="prompt-clear"
                   aria-label="清空提示词"
+                  isDisabled={optimizer.running}
                   onPress={clear}
                 >
                   清空

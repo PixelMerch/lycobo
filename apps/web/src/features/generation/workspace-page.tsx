@@ -99,6 +99,7 @@ function Workspace({ model }: { model: ModelId }) {
           }
           references={draft.references}
           placeholder="描述商品、场景或需要调整的细节，输入 @ 引用商品图"
+          optimizeTool="create"
           maxLength={promptLimit}
           showCount
           autoGrow

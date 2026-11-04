@@ -34,6 +34,8 @@ export function memberLabel(uid: string | null, currentUid: string | undefined) 
 
 export function entryDetail(entry: WalletEntry) {
   if (entry.task_id) return `任务 ${entry.task_id}`;
+  if (!entry.job_id && !entry.item_id && (entry.kind === "consume" || entry.kind === "refund"))
+    return "提示词优化";
   if (entry.recharge_id) return `充值订单 ${entry.recharge_id.slice(0, 8).toUpperCase()}`;
   return "—";
 }

@@ -45,6 +45,7 @@ it("describes entries by their task or recharge order", () => {
   expect(
     entryDetail(entry({ kind: "recharge", recharge_id: "3f8a2c10-0000-4000-8000-000000000000" })),
   ).toBe("充值订单 3F8A2C10");
+  expect(entryDetail(entry({ amount: -1 }))).toBe("提示词优化");
   expect(entryDetail(entry({ kind: "opening" }))).toBe("—");
 });
 

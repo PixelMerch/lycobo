@@ -87,14 +87,22 @@ try {
       return row?.result;
     }
     assert(
-      ["lycobo_image_operation", "lycobo_provider_webhook", "lycobo_video_operation"].includes(
-        operation,
-      ),
+      [
+        "lycobo_image_operation",
+        "lycobo_provider_webhook",
+        "lycobo_video_operation",
+        "lycobo_prompt_optimization",
+      ].includes(operation),
     );
     const args = z
       .object({ p_operation: z.string(), p_args: z.record(z.string(), z.unknown()) })
       .parse(parameters);
     try {
+      if (operation === "lycobo_prompt_optimization") {
+        const [row] =
+          await sql`select public.lycobo_prompt_optimization(${args.p_operation},${sql.json(z.json().parse(args.p_args))}) result`;
+        return row?.result;
+      }
       if (operation === "lycobo_video_operation") {
         const [row] =
           await sql`select public.lycobo_video_operation(${args.p_operation},${sql.json(z.json().parse(JSON.parse(JSON.stringify(args.p_args))))}) result`;
@@ -125,6 +133,55 @@ try {
   const stranger = await native.provision(`cloudbase-images:${randomUUID()}`, "Other fixture", 0);
   assert.equal(await repository.storageUid(scope), scope.uid);
   assert.equal((await repository.authenticate(scope.token))?.organizationId, scope.organizationId);
+  const optimizerScope = await native.provision(
+    `prompt-optimizer:${randomUUID()}`,
+    "Optimizer fixture",
+    3,
+  );
+  const attemptKey = randomUUID();
+  const hashes = await Promise.all([
+    native.promptOptimization.begin(optimizerScope, attemptKey, "same"),
+    repository.promptOptimization.begin(optimizerScope, attemptKey, "same"),
+  ]);
+  assert.deepEqual(hashes.map(({ status }) => status).sort(), ["running", "started"]);
+  assert.equal((await repository.wallet(optimizerScope)).balance, 2);
+  assert.equal(
+    (await repository.promptOptimization.begin(stranger, attemptKey, "same")).status,
+    "insufficient",
+  );
+  await assert.rejects(
+    repository.promptOptimization.begin(optimizerScope, attemptKey, "different"),
+    {
+      code: "IDEMPOTENCY_CONFLICT",
+    },
+  );
+  const result = "把床品铺在原木床上，使用侧光表现面料纹理。";
+  assert.equal(
+    (await repository.promptOptimization.finish(optimizerScope, attemptKey, result)).status,
+    "ready",
+  );
+  assert.deepEqual(await native.promptOptimization.begin(optimizerScope, attemptKey, "same"), {
+    status: "ready",
+    result,
+  });
+  const failedKey = randomUUID();
+  await repository.promptOptimization.begin(optimizerScope, failedKey, "failure");
+  await Promise.all([
+    native.promptOptimization.finish(optimizerScope, failedKey, null),
+    repository.promptOptimization.finish(optimizerScope, failedKey, null),
+  ]);
+  assert.equal((await repository.wallet(optimizerScope)).balance, 2);
+  assert.equal(
+    (await native.promptOptimization.finish(optimizerScope, failedKey, result)).status,
+    "failed",
+  );
+  for (const role of ["anon", "authenticated", "service_role"]) {
+    const [grant] =
+      await sql`select has_table_privilege(${role}, 'public.prompt_optimizations', 'SELECT,INSERT,UPDATE,DELETE') as direct_access,
+      has_function_privilege(${role}, 'public.lycobo_prompt_optimization(text,jsonb)', 'EXECUTE') as rpc_access`;
+    assert.equal(grant?.direct_access, false);
+    assert.equal(grant?.rpc_access, role === "service_role");
+  }
   const input = imageGenerationInputSchema.parse({
     model: "gpt-image-2",
     prompt: "CloudBase isolated fixture",

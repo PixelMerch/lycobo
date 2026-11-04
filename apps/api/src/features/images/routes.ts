@@ -30,6 +30,7 @@ import { enterprisePrincipal } from "../auth/routes";
 import type { EnterpriseAuth } from "../auth/service";
 import { type DeliverySigner, imageDeliveries } from "./delivery";
 import { imageEventStream } from "./events";
+import { promptOptimization, promptOptimizationInput } from "./prompt-optimization";
 import { providerRetryService } from "./provider-retry-service";
 import {
   setWorkbenchCookie,
@@ -66,6 +67,7 @@ const id = z.uuid();
 export function imageRoutes(deps: ImageApiDependencies) {
   const app = new Hono<Env>();
   const variation = variationService(deps);
+  const optimizer = promptOptimization(deps);
   // A task still queued while its owner polls means the submission wake was lost or the
   // consumer was busy; retry the wake at most every 15 seconds per task in this instance.
   const wokenAt = new Map<string, number>();
@@ -251,6 +253,47 @@ export function imageRoutes(deps: ImageApiDependencies) {
             ? []
             : deps.resolutions(m.id),
       })),
+    });
+  });
+  app.post("/prompt-optimizations", async (c) => {
+    const input = promptOptimizationInput.safeParse(await c.req.json().catch(() => null));
+    const key = id.safeParse(c.req.header("Idempotency-Key"));
+    if (!input.success || !key.success)
+      return fail(c, "VALIDATION_ERROR", "请填写需要优化的提示词", 400);
+    const service = await optimizer.prepare();
+    if (!service) return fail(c, "GENERATION_NOT_CONFIGURED", "提示词优化暂未开放", 503);
+    const scope = c.get("principal");
+    const attempt = await service.begin(scope, key.data, input.data);
+    if (attempt.status === "insufficient")
+      return fail(c, "INSUFFICIENT_CREDITS", "企业积分余额不足，优化提示词需要 1 积分", 409);
+    if (attempt.status === "running" || attempt.status === "busy")
+      return fail(c, "STATE_CONFLICT", "已有优化进行中或操作过于频繁，请稍后重试", 409);
+    c.header("Cache-Control", "no-cache, no-transform");
+    c.header("X-Accel-Buffering", "no");
+    return streamSSE(c, async (stream) => {
+      const abort = new AbortController();
+      stream.onAbort(() => abort.abort());
+      try {
+        const result =
+          attempt.status === "started"
+            ? await service.run(
+                scope,
+                key.data,
+                input.data,
+                AbortSignal.any([abort.signal, c.req.raw.signal]),
+                (text) => stream.writeSSE({ event: "delta", data: JSON.stringify({ text }) }),
+              )
+            : attempt.result;
+        if (result) {
+          await stream.writeSSE({ event: "complete", data: JSON.stringify({ text: result }) });
+          return;
+        }
+      } catch {
+        // A connection or database failure may have an unknown settlement outcome.
+        if (!abort.signal.aborted) await stream.writeSSE({ event: "interrupted", data: "{}" });
+        return;
+      }
+      if (!abort.signal.aborted) await stream.writeSSE({ event: "failed", data: "{}" });
     });
   });
   app.get("/variation-plans/capabilities", async (c) =>

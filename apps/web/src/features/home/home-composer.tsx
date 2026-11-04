@@ -47,6 +47,7 @@ export function HomeComposer() {
         }
         references={draft.references}
         placeholder="描述你想要的画面，输入 @ 引用已上传图片"
+        optimizeTool="create"
       />
       <div className="home-composer-tools">
         <Popover>

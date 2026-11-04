@@ -652,7 +652,7 @@ export const walletEntries = pgTable(
     ),
     check(
       "wallet_entry_source_check",
-      sql`(${t.kind} in ('consume','refund') and ${t.jobId} is not null and ${t.itemId} is not null and ${t.rechargeId} is null) or (${t.kind} = 'recharge' and ${t.rechargeId} is not null and ${t.jobId} is null and ${t.itemId} is null) or (${t.kind} in ('opening','checkin') and ${t.jobId} is null and ${t.itemId} is null and ${t.rechargeId} is null)`,
+      sql`(${t.kind} in ('consume','refund') and ${t.jobId} is not null and ${t.itemId} is not null and ${t.rechargeId} is null) or (${t.kind} in ('consume','refund') and ${t.eventKey} like 'prompt-optimize:%' and ${t.jobId} is null and ${t.itemId} is null and ${t.rechargeId} is null) or (${t.kind} = 'recharge' and ${t.rechargeId} is not null and ${t.jobId} is null and ${t.itemId} is null) or (${t.kind} in ('opening','checkin') and ${t.jobId} is null and ${t.itemId} is null and ${t.rechargeId} is null)`,
     ),
   ],
 );
@@ -1036,3 +1036,28 @@ export const generationVideoOutbox = pgTable(
     check("generation_video_failures_check", sql`${t.failures} >= 0`),
   ],
 ).enableRLS();
+
+export const promptOptimizations = pgTable(
+  "prompt_optimizations",
+  {
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    key: uuid("key").notNull(),
+    inputHash: text("input_hash").notNull(),
+    status: text("status").notNull().default("running"),
+    result: text("result"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.organizationId, t.userId, t.key] }),
+    index("prompt_optimizations_scope_created_idx").on(t.organizationId, t.userId, t.createdAt),
+    check(
+      "prompt_optimizations_result_check",
+      sql`(${t.status} = 'ready' and ${t.result} is not null and char_length(${t.result}) between 1 and 5000) or (${t.status} in ('running','failed') and ${t.result} is null)`,
+    ),
+  ],
+);

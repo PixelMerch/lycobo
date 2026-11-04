@@ -17,6 +17,7 @@ import {
 import postgres from "postgres";
 import { recordImageEvent } from "./image-event-repository";
 import { modelManagementRepository, resolveProviderSnapshot } from "./model-management-repository";
+import { promptOptimizationRepository } from "./prompt-optimization-repository";
 import { nativeProviderWebhooks } from "./provider-webhook-repository";
 import { variationRepository } from "./variation-repository";
 import { appendWalletEntry, ensureWallet, walletRepository } from "./wallet-repository";
@@ -177,6 +178,17 @@ export function openImageRepository(
       if (!row || !/^[0-9]{10}$/.test(String(row.uid))) throw new ImageRepositoryError("FORBIDDEN");
       return String(row.uid);
     },
+    promptOptimization: promptOptimizationRepository(async (operation, args) => {
+      try {
+        const [row] =
+          await sql`select public.lycobo_prompt_optimization(${operation}, ${sql.json(args)}::jsonb) as result`;
+        return row?.result;
+      } catch (error) {
+        if (error instanceof Error && error.message === "IDEMPOTENCY_CONFLICT")
+          throw new ImageRepositoryError(error.message);
+        throw error;
+      }
+    }),
     variation: {
       ...variationRepository(sql),
       ...(independent ? { config: async () => independent.planner } : {}),
