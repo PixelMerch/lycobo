@@ -1,48 +1,130 @@
-import { Link, Modal } from "@heroui/react";
+import { Modal } from "@heroui/react";
 import { imageDeliverySchema } from "@lycoboai/contracts";
-import { IconDownload } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
-import { useRef } from "react";
-import { DialogClose } from "../../components/dialog-close";
-import { UiIcon } from "../../components/ui-icon";
+import { useEffect, useRef, useState } from "react";
 import { useCenteredDialogMotion } from "../../components/use-centered-dialog-motion";
 import { useErrorToast } from "../../lib/error-toast";
 import { imageRequest } from "../generation/generation-client";
+import { ImagePreviewRail } from "../image-workspace/image-preview-rail";
+import { PreviewDotGrid } from "../image-workspace/preview-dot-grid";
 import { VideoPlayer } from "./video-player";
-// The preview shares the image browser's dim-and-blur layer and centred grow motion.
-import "../../components/image-viewer.css";
+import { VideoPreviewDetails } from "./video-preview-details";
+import "../../styles/fullscreen-dialog.css";
+import "../image-workspace/image-preview.css";
+import "../image-workspace/preview-workspace.css";
 import "./video.css";
 
-export function VideoPlayerDialog({
-  assetId,
-  title,
-  aspect = 9 / 16,
-  seconds,
-  meta = [],
-  onClose,
-}: {
-  assetId: string;
-  title: string;
+export type PreviewVideo = {
+  /** Asset id: covers, delivery and favorites all key on it. */
+  id: string;
   /** Known width / height, so the frame keeps its shape before the media loads. */
-  aspect?: number;
-  seconds?: number;
-  meta?: string[];
-  onClose: () => void;
-}) {
-  const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
-  const dismissStart = useRef<{ id: number; x: number; y: number } | null>(null);
+  aspect: number;
+  seconds?: number | undefined;
+  taskPublicId?: string | null | undefined;
+  createdAt?: string | null | undefined;
+  prompt?: string | null | undefined;
+  references?: string[] | undefined;
+  params?: { label: string; value: string }[] | undefined;
+};
+
+/** Remounted per video, so each one signs its own link and starts from a fresh player. */
+function VideoPreviewStage({ video }: { video: PreviewVideo }) {
+  const stage = useRef<HTMLElement>(null);
   const delivery = useQuery({
-    queryKey: ["video-delivery", assetId],
+    queryKey: ["video-delivery", video.id],
     retry: false,
     queryFn: async ({ signal }) => {
       const response = await (
-        await imageRequest(`image-assets/${assetId}/delivery`, { signal })
+        await imageRequest(`image-assets/${video.id}/delivery`, { signal })
       ).json();
       return imageDeliverySchema.parse(response.delivery);
     },
   });
   useErrorToast(delivery.error?.message);
+  return (
+    <section
+      ref={stage}
+      className="image-preview-stage preview-dot-surface video-preview-stage"
+      aria-label="视频画面"
+    >
+      <PreviewDotGrid stage={stage} />
+      <VideoPlayer
+        assetId={video.id}
+        title={video.taskPublicId ?? "视频预览"}
+        src={delivery.data?.url}
+        unavailable={delivery.isError}
+        aspect={video.aspect}
+        seconds={video.seconds}
+        onRetry={() => void delivery.refetch()}
+      />
+    </section>
+  );
+}
+
+/** Same three columns as the image detail: stage, information and the full thumbnail rail. */
+export function VideoPlayerDialog({
+  videos,
+  initialId,
+  onClose,
+  hasMore = false,
+  isLoadingMore = false,
+  isLoadMoreError = false,
+  onLoadMore,
+}: {
+  videos: PreviewVideo[];
+  initialId: string;
+  onClose: () => void;
+  hasMore?: boolean | undefined;
+  isLoadingMore?: boolean | undefined;
+  isLoadMoreError?: boolean | undefined;
+  onLoadMore?: (() => Promise<unknown>) | undefined;
+}) {
+  const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
+  const surface = useRef<HTMLDivElement>(null);
+  // Tracked by id: a task finishing while this is open must not change the selection.
+  const [activeId, setActiveId] = useState(initialId);
+  const index = Math.max(
+    videos.findIndex((video) => video.id === activeId),
+    0,
+  );
+  const active = videos[index];
+  // Up and down walk the rail. Left and right seek, unless the rail itself has focus.
+  useEffect(() => {
+    const dialog = surface.current?.closest('[role="dialog"]');
+    if (!dialog) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement) || target.closest('[role="dialog"]') !== dialog) return;
+      const inRail = !!target.closest(".image-preview-rail");
+      const direction =
+        event.key === "ArrowUp" || (inRail && event.key === "ArrowLeft")
+          ? -1
+          : event.key === "ArrowDown" || (inRail && event.key === "ArrowRight")
+            ? 1
+            : 0;
+      if (
+        !direction ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        target.closest("input, textarea")
+      )
+        return;
+      event.preventDefault();
+      event.stopPropagation();
+      const next = (index + direction + videos.length) % videos.length;
+      const video = videos[next];
+      if (video) setActiveId(video.id);
+      if (inRail)
+        dialog
+          .querySelectorAll<HTMLButtonElement>(".image-preview-thumb")
+          [next]?.focus({ preventScroll: true });
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, [index, videos]);
+  if (!active) return null;
   return (
     <Modal
       isOpen
@@ -50,66 +132,30 @@ export function VideoPlayerDialog({
         if (!open) requestClose();
       }}
     >
-      <Modal.Backdrop className="browse-image-backdrop" data-dialog-phase={phase}>
-        <Modal.Container size="full" className="browse-image-container">
-          <Modal.Dialog aria-label="视频预览" className="browse-image-dialog">
-            <motion.div className="video-preview-layout" {...surfaceMotion}>
-              <header className="video-preview-header">
-                <div className="video-preview-heading">
-                  <Modal.Heading className="video-preview-title">{title}</Modal.Heading>
-                  {meta.length > 0 && (
-                    <p className="video-preview-meta">
-                      {meta.map((item) => (
-                        <span key={item}>{item}</span>
-                      ))}
-                    </p>
-                  )}
-                </div>
-                {delivery.data && (
-                  <Link
-                    className="button video-preview-download"
-                    href={delivery.data.download_url}
-                    download
-                  >
-                    <UiIcon icon={IconDownload} />
-                    下载视频
-                  </Link>
-                )}
-                <DialogClose fullScreen label="关闭视频预览" />
-              </header>
-              {/* Pressing the empty stage around the frame dismisses, as in the image browser. */}
-              <div
-                className="video-preview-stage"
-                onPointerDown={(event) => {
-                  dismissStart.current =
-                    event.button === 0 && event.target === event.currentTarget
-                      ? { id: event.pointerId, x: event.clientX, y: event.clientY }
-                      : null;
+      <Modal.Backdrop className="fullscreen-dialog__backdrop image-preview-backdrop">
+        <Modal.Container size="full" className="fullscreen-dialog__container">
+          <Modal.Dialog className="image-preview-dialog" aria-label="视频预览">
+            <motion.div
+              ref={surface}
+              className="image-preview"
+              data-dialog-phase={phase}
+              {...surfaceMotion}
+            >
+              <VideoPreviewStage key={active.id} video={active} />
+              <VideoPreviewDetails video={active} />
+              <ImagePreviewRail
+                kind="video"
+                images={videos}
+                index={index}
+                onSelect={(position) => {
+                  const video = videos[position];
+                  if (video) setActiveId(video.id);
                 }}
-                onPointerUp={(event) => {
-                  const start = dismissStart.current;
-                  dismissStart.current = null;
-                  if (
-                    start?.id === event.pointerId &&
-                    event.target === event.currentTarget &&
-                    Math.hypot(event.clientX - start.x, event.clientY - start.y) < 4
-                  )
-                    requestClose();
-                }}
-                onPointerCancel={() => {
-                  dismissStart.current = null;
-                }}
-              >
-                <VideoPlayer
-                  assetId={assetId}
-                  title={title}
-                  src={delivery.data?.url}
-                  unavailable={delivery.isError}
-                  aspect={aspect}
-                  seconds={seconds}
-                  onRetry={() => void delivery.refetch()}
-                />
-              </div>
+                hasMore={hasMore}
+                isLoadingMore={isLoadingMore}
+                isLoadMoreError={isLoadMoreError}
+                onLoadMore={onLoadMore}
+              />
             </motion.div>
           </Modal.Dialog>
         </Modal.Container>

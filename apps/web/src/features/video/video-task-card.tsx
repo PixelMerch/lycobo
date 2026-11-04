@@ -150,7 +150,6 @@ export function VideoTaskCard({ task, onRestore }: { task: VideoTask; onRestore:
               title={task.public_id}
               ratio={input.aspectRatio}
               seconds={input.seconds}
-              meta={[input.aspectRatio, `${input.seconds}秒`, "768p"]}
             />
           ) : (
             <section

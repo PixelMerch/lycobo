@@ -4,8 +4,22 @@ import { InfiniteLoad } from "../../components/infinite-load";
 import { AssetImage } from "../generation/asset-image";
 import type { PreviewImage } from "./image-preview";
 
+const railCopy = {
+  image: {
+    rail: "全部图片",
+    item: (position: number) => `预览第 ${position} 张`,
+    alt: (position: number) => `第 ${position} 张缩略图`,
+  },
+  video: {
+    rail: "全部视频",
+    item: (position: number) => `预览第 ${position} 个视频`,
+    alt: (position: number) => `第 ${position} 个视频封面`,
+  },
+};
+
 export function ImagePreviewRail({
   images,
+  kind = "image",
   index,
   onSelect,
   hasMore,
@@ -13,7 +27,8 @@ export function ImagePreviewRail({
   isLoadMoreError,
   onLoadMore,
 }: {
-  images: PreviewImage[];
+  images: Pick<PreviewImage, "id">[];
+  kind?: keyof typeof railCopy;
   index: number;
   onSelect: (index: number) => void;
   hasMore: boolean;
@@ -22,6 +37,7 @@ export function ImagePreviewRail({
   onLoadMore?: (() => Promise<unknown>) | undefined;
 }) {
   const rail = useRef<HTMLElement>(null);
+  const copy = railCopy[kind];
   const activeId = images[index]?.id;
   useLayoutEffect(() => {
     const element = rail.current;
@@ -43,23 +59,18 @@ export function ImagePreviewRail({
     return () => resize.disconnect();
   }, [activeId]);
   return (
-    <nav className="image-preview-rail" aria-label="全部图片" ref={rail}>
+    <nav className="image-preview-rail" aria-label={copy.rail} ref={rail}>
       {images.map((image, position) => (
         <Button
           key={image.id}
           variant="tertiary"
           className="history-thumbnail image-preview-thumb"
-          aria-label={`预览第 ${position + 1} 张`}
+          aria-label={copy.item(position + 1)}
           aria-current={position === index ? "true" : "false"}
           onPress={() => onSelect(position)}
         >
           <span className="history-thumbnail-frame">
-            <AssetImage
-              assetId={image.id}
-              thumbnail
-              alt={`第 ${position + 1} 张缩略图`}
-              loading="lazy"
-            />
+            <AssetImage assetId={image.id} thumbnail alt={copy.alt(position + 1)} loading="lazy" />
           </span>
         </Button>
       ))}

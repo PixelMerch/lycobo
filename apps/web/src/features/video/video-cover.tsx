@@ -4,7 +4,7 @@ import { type CSSProperties, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { AssetImage } from "../generation/asset-image";
 import { formatVideoTime } from "./use-video-playback";
-import { VideoPlayerDialog } from "./video-player-dialog";
+import { VideoHistoryPreview } from "./video-history-preview";
 
 /** Lists load a private still image; only opening the dialog requests the video. */
 export function VideoCover({
@@ -12,13 +12,11 @@ export function VideoCover({
   title,
   ratio,
   seconds,
-  meta,
 }: {
   assetId: string;
   title: string;
   ratio: string;
   seconds: number;
-  meta: string[];
 }) {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -86,16 +84,7 @@ export function VideoCover({
           重试封面
         </Button>
       )}
-      {open && (
-        <VideoPlayerDialog
-          assetId={assetId}
-          title={title}
-          aspect={aspect}
-          seconds={seconds}
-          meta={meta}
-          onClose={() => setOpen(false)}
-        />
-      )}
+      {open && <VideoHistoryPreview assetId={assetId} onClose={() => setOpen(false)} />}
     </>
   );
 }

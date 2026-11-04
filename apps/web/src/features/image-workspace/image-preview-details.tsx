@@ -15,7 +15,7 @@ import { downloadAsset } from "../generation/generation-client";
 import { ReferenceThumbnails } from "../generation/references/reference-thumbnails";
 import type { PreviewImage, PreviewMeta } from "./image-preview";
 
-function CopyIconButton({ value, label }: { value: string; label: string }) {
+export function CopyIconButton({ value, label }: { value: string; label: string }) {
   return (
     <Button
       isIconOnly

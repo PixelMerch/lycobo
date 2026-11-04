@@ -133,6 +133,17 @@ const toPreview = (asset: ImageAsset) => ({
     imagePublicId: asset.public_id,
   },
 });
+const toPreviewVideo = (asset: ImageAsset) => {
+  const sized = asset.width > 0 && asset.height > 0;
+  return {
+    id: asset.id,
+    aspect: sized ? asset.width / asset.height : 9 / 16,
+    taskPublicId: asset.task_public_id,
+    createdAt: asset.created_at,
+    prompt: asset.prompt,
+    params: sized ? [{ label: "尺寸", value: `${asset.width}×${asset.height}` }] : [],
+  };
+};
 
 /**
  * 素材库 and 我的素材 share one browser: 生成 / 上传 / 收藏, then 功能 / 类型 / 模型 filters,
@@ -304,12 +315,13 @@ export function AssetBrowser({
       <div className="asset-source-panel">{panelContent}</div>
       {preview !== null && assets[preview]?.type === "video" ? (
         <VideoPlayerDialog
-          assetId={assets[preview].id}
-          title={assets[preview].prompt ?? "视频预览"}
-          {...(assets[preview].width > 0 && assets[preview].height > 0
-            ? { aspect: assets[preview].width / assets[preview].height }
-            : {})}
+          videos={assets.filter((asset) => asset.type === "video").map(toPreviewVideo)}
+          initialId={assets[preview].id}
           onClose={() => setPreview(null)}
+          hasMore={query.hasNextPage}
+          isLoadingMore={query.isFetchingNextPage}
+          isLoadMoreError={query.isError}
+          onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
         />
       ) : (
         preview !== null && (
