@@ -15,7 +15,7 @@ async function openCreate(page: Page) {
 
 async function confirmOptimization(page: Page) {
   const dialog = page.getByRole("dialog", { name: "AI 优化提示词" });
-  await expect(dialog.getByText(/本次优化将消耗 1 积分/)).toBeVisible();
+  await expect(dialog.getByText(/消耗 1 积分/)).toBeVisible();
   await dialog.getByRole("button", { name: "确认优化" }).click();
 }
 
@@ -43,8 +43,27 @@ test("the wand hints after typing and canceling never requests optimization", as
   await wand.focus();
   await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog", { name: "AI 优化提示词" });
-  await expect(dialog.getByText(/本次优化将消耗 1 积分/)).toBeVisible();
+  await expect(dialog.getByText(/消耗 1 积分/)).toBeVisible();
   expect(requests).toEqual([]);
+  await expect(dialog).not.toHaveAttribute("aria-modal", "true");
+  await expect(prompt).toBeVisible();
+  const [wandBounds, dialogBounds] = await Promise.all([wand.boundingBox(), dialog.boundingBox()]);
+  expect(wandBounds).not.toBeNull();
+  expect(dialogBounds).not.toBeNull();
+  expect((dialogBounds?.y ?? 0) + (dialogBounds?.height ?? 0)).toBeLessThan(wandBounds?.y ?? 0);
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(wand).toBeFocused();
+  await wand.click();
+  await expect(dialog).toBeVisible();
+  await page.mouse.click(1, 1);
+  await expect(dialog).toBeHidden();
+  await wand.click();
+  await expect(dialog).toBeVisible();
+  await prompt.click();
+  await expect(dialog).toBeHidden();
+  await wand.click();
   await dialog.getByRole("button", { name: "取消" }).click();
   await expect(dialog).toBeHidden();
   await expect(wand).toBeFocused();

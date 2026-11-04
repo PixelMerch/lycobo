@@ -199,6 +199,33 @@
   color: var(--accent);
   background: transparent;
 }
+.prompt-optimize-popover {
+  width: max-content;
+  max-width: calc(100vw - 24px);
+}
+.prompt-optimize-confirmation.popover__dialog {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+}
+.prompt-optimize-confirmation p {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+.prompt-optimize-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+.prompt-optimize-confirm-actions .button {
+  min-height: 32px;
+  white-space: nowrap;
+}
+@media (pointer: coarse) {
+  .prompt-optimize-confirm-actions .button {
+    min-height: 44px;
+  }
+}
 .prompt-optimize-wand {
   position: relative;
   display: inline-flex;
