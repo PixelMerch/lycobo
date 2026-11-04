@@ -32,7 +32,16 @@ test("the focused prompt loops the wand hint and canceling never requests optimi
   await prompt.fill(text);
   const height = () => prompt.evaluate((element) => element.getBoundingClientRect().height);
   const originalHeight = await height();
+  await expect(prompt).toHaveCSS("padding-bottom", "44px");
   await expect(wand).toHaveText("优化");
+  const [editorBounds, toolbarBounds] = await Promise.all([
+    prompt.boundingBox(),
+    page.locator(".prompt-meta").boundingBox(),
+  ]);
+  expect(editorBounds).not.toBeNull();
+  expect(toolbarBounds).not.toBeNull();
+  const textBottom = (editorBounds?.y ?? 0) + (editorBounds?.height ?? 0) - 44;
+  expect((toolbarBounds?.y ?? 0) - textBottom).toBeGreaterThanOrEqual(12);
   const icon = wand.locator("svg");
   await expect(icon).toHaveCSS("animation-name", "prompt-wand-hint");
   await expect(icon).toHaveCSS("animation-iteration-count", "infinite");
@@ -57,7 +66,7 @@ test("the focused prompt loops the wand hint and canceling never requests optimi
   expect(requests).toEqual([]);
   await expect(prompt).toBeVisible();
   await expect(prompt).toHaveCSS("padding-bottom", "48px");
-  await expect.poll(height).toBeGreaterThanOrEqual(originalHeight + 15);
+  await expect.poll(height).toBeGreaterThanOrEqual(originalHeight + 3);
   await expect
     .poll(() => prompt.evaluate((element) => element.scrollHeight - element.clientHeight))
     .toBeLessThanOrEqual(2);

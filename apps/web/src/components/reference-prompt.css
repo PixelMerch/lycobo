@@ -143,7 +143,7 @@
   overflow: hidden;
 }
 .prompt-field .prompt-editor[data-count] :is(textarea, .reference-rich-editor.textarea) {
-  padding-bottom: var(--space-8);
+  padding-bottom: 44px;
 }
 .prompt-meta {
   display: flex;
@@ -384,7 +384,7 @@
     padding-inline: 8px;
   }
   .prompt-field .prompt-editor[data-count] :is(textarea, .reference-rich-editor.textarea) {
-    padding-bottom: 52px;
+    padding-bottom: 64px;
   }
 }
 
