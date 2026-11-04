@@ -10,8 +10,40 @@ async function openCreate(page: Page) {
   await page.goto("/create");
   const prompt = page.getByRole("textbox", { name: "提示词" });
   await expect(prompt).toBeVisible({ timeout: 15000 });
-  return { prompt, wand: page.getByRole("button", { name: /AI 优化提示词.*1 积分/ }) };
+  return { prompt, wand: page.getByRole("button", { name: "AI 优化提示词" }) };
 }
+
+async function confirmOptimization(page: Page) {
+  const dialog = page.getByRole("dialog", { name: "AI 优化提示词" });
+  await expect(dialog.getByText(/本次优化将消耗 1 积分/)).toBeVisible();
+  await dialog.getByRole("button", { name: "确认优化" }).click();
+}
+
+test("the wand hints after typing and canceling never requests optimization", async ({ page }) => {
+  const { prompt, wand } = await openCreate(page);
+  const requests: string[] = [];
+  await page.route("**/api/v1/prompt-optimizations", (route) => {
+    requests.push(route.request().url());
+    return route.abort();
+  });
+  await prompt.fill("奶油色床品 晨光");
+  await expect(wand).toHaveText("优化");
+  const icon = wand.locator("svg");
+  await expect(icon).toHaveCSS("animation-name", "prompt-wand-hint");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(icon).toHaveCSS("animation-name", "none");
+
+  await wand.focus();
+  await page.keyboard.press("Enter");
+  const dialog = page.getByRole("dialog", { name: "AI 优化提示词" });
+  await expect(dialog.getByText(/本次优化将消耗 1 积分/)).toBeVisible();
+  expect(requests).toEqual([]);
+  await dialog.getByRole("button", { name: "取消" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(wand).toBeFocused();
+  await expect(prompt).toHaveValue("奶油色床品 晨光");
+  expect(requests).toEqual([]);
+});
 
 test("the wand rewrites a described prompt, which stays editable and can be undone", async ({
   page,
@@ -31,6 +63,7 @@ test("the wand rewrites a described prompt, which stays editable and can be undo
   await expect(wand).toBeDisabled();
   await prompt.fill("奶油色床品 晨光");
   await wand.click();
+  await confirmOptimization(page);
   await expect(prompt).toHaveValue(rewrite);
   expect(requests).toEqual([
     {
@@ -45,6 +78,7 @@ test("the wand rewrites a described prompt, which stays editable and can be undo
   await expect(undo).toHaveCount(0);
 
   await wand.click();
+  await confirmOptimization(page);
   await expect(prompt).toHaveValue(rewrite);
   await prompt.fill(`${rewrite}再加一句`);
   await expect(prompt).toHaveValue(`${rewrite}再加一句`);
@@ -58,6 +92,7 @@ test("a failed rewrite gives the prompt back", async ({ page }) => {
   );
   await prompt.fill("奶油色床品 晨光");
   await wand.click();
+  await confirmOptimization(page);
   await expect(page.getByText("提示词优化失败，已退还积分", { exact: true }).first()).toBeVisible();
   await expect(prompt).toHaveValue("奶油色床品 晨光");
   await expect(page.getByRole("button", { name: "恢复优化前的提示词" })).toHaveCount(0);
@@ -70,6 +105,7 @@ test("stopping gives the prompt back without an error", async ({ page }) => {
   });
   await prompt.fill("奶油色床品 晨光");
   await wand.click();
+  await confirmOptimization(page);
   const stop = page.getByRole("button", { name: "停止优化" });
   await expect(stop).toBeVisible();
   await expect(prompt).not.toBeEditable();
@@ -88,6 +124,7 @@ test("the wand says so while the service is not available", async ({ page }) => 
   );
   await prompt.fill("奶油色床品 晨光");
   await wand.click();
+  await confirmOptimization(page);
   await expect(page.getByText("提示词优化暂未开放", { exact: true }).first()).toBeVisible();
   await expect(prompt).toHaveValue("奶油色床品 晨光");
 });
@@ -106,7 +143,8 @@ test("video scene descriptions ask for a video rewrite", async ({ page }) => {
   const prompt = page.getByRole("textbox", { name: "场景描述" });
   await expect(prompt).toBeVisible({ timeout: 15000 });
   await prompt.fill("晨光卧室，镜头推近");
-  await page.getByRole("button", { name: /AI 优化提示词/ }).click();
+  await page.getByRole("button", { name: "AI 优化提示词" }).click();
+  await confirmOptimization(page);
   await expect(prompt).toHaveValue(rewrite);
   expect(bodies).toEqual([{ prompt: "晨光卧室，镜头推近", tool: "video" }]);
 });

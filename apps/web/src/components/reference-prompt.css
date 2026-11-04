@@ -202,13 +202,22 @@
 .prompt-optimize-button.button:is(:disabled, [data-disabled="true"]) {
   opacity: 0.45;
 }
-.prompt-optimize-cost {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  margin-inline-start: 2px;
-  color: #ffffffa6;
-  font-variant-numeric: tabular-nums;
+@media (prefers-reduced-motion: no-preference) {
+  .prompt-optimize-wand-hint {
+    animation: prompt-wand-hint 620ms ease-in-out both;
+  }
+}
+@keyframes prompt-wand-hint {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  30% {
+    transform: rotate(-20deg) scale(1.16);
+  }
+  60% {
+    transform: rotate(12deg);
+  }
 }
 .prompt-optimize-undo.button {
   gap: 4px;

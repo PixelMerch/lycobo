@@ -443,7 +443,7 @@ export function ReferencePrompt({
               data-auto-grow={autoGrow ? "" : undefined}
             />
           )}
-          {optimizeTool && <PromptOptimizeActions optimizer={optimizer} />}
+          {optimizeTool && <PromptOptimizeActions optimizer={optimizer} prompt={draftValue} />}
           {showCount && (
             <div className="prompt-meta">
               {value.length > 0 && (
