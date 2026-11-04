@@ -176,6 +176,7 @@
   position: relative;
   flex: none;
   overflow: hidden;
+  container-type: inline-size;
   border-radius: 12px;
   background: #17171b;
 }
@@ -211,6 +212,23 @@
   padding: 0 8px;
   border-radius: 12px 0 8px 0;
   background: #000000a6;
+  pointer-events: none;
+}
+/* Video specs stay visible on the cover; the hover foot only adds the actions. */
+.asset-tile-specs {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  z-index: 1;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #00000073;
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 11px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
   pointer-events: none;
 }
 .asset-tile-star {
@@ -291,6 +309,12 @@
 }
 .asset-tile:focus-within .asset-tile-star {
   display: none;
+}
+/* Small tiles have no room for the specs beside the two actions. */
+@container (max-width: 160px) {
+  .asset-tile:is(:hover, :focus-within) .asset-tile-specs {
+    opacity: 0;
+  }
 }
 
 /* ---------- states ---------- */

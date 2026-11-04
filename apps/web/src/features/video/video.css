@@ -208,14 +208,15 @@
   z-index: 1;
 }
 /* The play triangle's visual centre sits right of its box centre. */
-.video-cover[data-cover-loaded="true"] .video-cover-play .ui-icon {
+:is(.video-cover[data-cover-loaded="true"], .asset-tile-open) .video-cover-play .ui-icon {
   translate: 2px 0;
 }
 @media (hover: hover) {
   .video-cover.button:is([data-hovered="true"], [data-focus-visible="true"]) .video-cover-image {
     scale: 1.03;
   }
-  .video-cover.button:is([data-hovered="true"], [data-focus-visible="true"]) .video-cover-play {
+  :is(.video-cover, .asset-tile-open).button:is([data-hovered="true"], [data-focus-visible="true"])
+    .video-cover-play {
     background: #ffffff33;
     scale: 1.08;
   }
@@ -486,13 +487,16 @@
   cursor: pointer;
   transition: background-size 150ms ease;
 }
+/* The slider snaps to 0.1s steps; a matching linear glide keeps short clips from ticking. */
 .video-preview-progress .slider__fill {
   top: 50%;
   height: 3px;
   translate: 0 -50%;
   border-radius: 999px;
   background: #fff;
-  transition: height 150ms ease;
+  transition:
+    height 150ms ease,
+    width 100ms linear;
 }
 .video-preview-progress .slider__thumb {
   width: 12px;
@@ -502,7 +506,9 @@
   background: #fff;
   box-shadow: 0 1px 4px #00000066;
   opacity: 0;
-  transition: opacity 150ms ease;
+  transition:
+    opacity 150ms ease,
+    left 100ms linear;
 }
 .video-preview-progress .slider__thumb::after {
   content: none;
@@ -519,6 +525,11 @@
 .video-preview-progress:is(:hover, [data-hovered="true"]) .slider__thumb,
 .video-preview-progress .slider__thumb:is([data-dragging="true"], [data-focus-visible="true"]) {
   opacity: 1;
+}
+.video-preview-progress
+  .slider__track:has([data-dragging="true"])
+  :is(.slider__fill, .slider__thumb) {
+  transition-property: height, opacity;
 }
 .video-preview-progress .slider__thumb[data-focus-visible="true"] {
   outline: 2px solid var(--focus);
@@ -556,7 +567,7 @@
   .video-preview-progress :is(.slider__track, .slider__fill, .slider__thumb) {
     transition: none;
   }
-  .video-cover.button:is([data-hovered="true"], [data-focus-visible="true"])
+  :is(.video-cover, .asset-tile-open).button:is([data-hovered="true"], [data-focus-visible="true"])
     :is(.video-cover-image, .video-cover-play),
   .video-preview-play.button:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
     scale: none;

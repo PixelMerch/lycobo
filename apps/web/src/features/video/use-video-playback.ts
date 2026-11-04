@@ -37,6 +37,8 @@ const changes = [
   "durationchange",
   "loadedmetadata",
   "timeupdate",
+  // currentTime already holds the target here, so the slider never lags behind a slow seek.
+  "seeking",
   "seeked",
   "volumechange",
   "emptied",

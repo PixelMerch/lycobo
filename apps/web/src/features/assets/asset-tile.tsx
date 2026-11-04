@@ -1,12 +1,14 @@
 import { Button, ToggleButton, Tooltip } from "@heroui/react";
 import type { ImageAsset } from "@lycoboai/contracts";
-import { IconDownload, IconStar, IconStarFilled } from "@tabler/icons-react";
+import { IconDownload, IconPlayerPlayFilled, IconStar, IconStarFilled } from "@tabler/icons-react";
 import type { CSSProperties } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { AssetImage } from "../generation/asset-image";
 import { downloadAsset } from "../generation/generation-client";
+import { formatVideoTime } from "../video/use-video-playback";
 import { toolNames } from "./asset-filters";
 import { useAssetFavorite } from "./asset-library-client";
+import "../video/video.css";
 
 const time = (iso: string) =>
   new Date(iso).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false });
@@ -28,6 +30,13 @@ export function AssetTile({
 }) {
   const { favorite, toggle } = useAssetFavorite(asset.id, asset.favorite ?? false);
   const source = asset.kind === "reference" ? "上传" : asset.tool ? toolNames[asset.tool] : "生成";
+  const video = asset.type === "video";
+  const videoSpecs = [
+    asset.resolution,
+    asset.duration_seconds ? formatVideoTime(asset.duration_seconds) : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   return (
     <div
       className="asset-tile"
@@ -38,7 +47,7 @@ export function AssetTile({
       <Button
         variant="tertiary"
         className="asset-tile-open"
-        aria-label={`查看${asset.type === "video" ? "视频" : "图片"}：${asset.prompt ?? asset.public_id ?? source}`}
+        aria-label={`查看${video ? "视频" : "图片"}：${asset.prompt ?? asset.public_id ?? source}`}
         onPress={(event) => {
           // The preview records the focused element as its return target when it mounts.
           if (event.target instanceof HTMLElement) {
@@ -52,13 +61,18 @@ export function AssetTile({
           thumbnail
           width={asset.width}
           height={asset.height}
-          alt={asset.prompt ?? `${source}${asset.type === "video" ? "视频封面" : "图片"}`}
+          alt={asset.prompt ?? `${source}${video ? "视频封面" : "图片"}`}
           loading="lazy"
         />
+        {video && (
+          <span className="video-cover-play" aria-hidden="true">
+            <UiIcon icon={IconPlayerPlayFilled} size="navigation" />
+          </span>
+        )}
       </Button>
-      {asset.kind === "output" && asset.type !== "video" && (
+      {(video || asset.kind === "output") && (
         <span className="model-tag asset-tile-badge">
-          <span>{modelName}</span>
+          <span>{video ? source : modelName}</span>
         </span>
       )}
       {favorite && (
@@ -66,10 +80,15 @@ export function AssetTile({
           <UiIcon icon={IconStarFilled} size="small" />
         </span>
       )}
+      {video && videoSpecs && <span className="asset-tile-specs">{videoSpecs}</span>}
       <div className="asset-tile-foot">
         <span className="asset-tile-meta">
-          <b>{source}</b>
-          <span> · {time(asset.created_at)}</span>
+          {!video && (
+            <>
+              <b>{source}</b>
+              <span> · {time(asset.created_at)}</span>
+            </>
+          )}
         </span>
         <Tooltip delay={0}>
           <ToggleButton
@@ -77,7 +96,7 @@ export function AssetTile({
             size="sm"
             variant="ghost"
             className="asset-tile-action"
-            aria-label={favorite ? "取消收藏" : "收藏图片"}
+            aria-label={favorite ? "取消收藏" : `收藏${video ? "视频" : "图片"}`}
             isSelected={favorite}
             onChange={toggle}
           >
@@ -91,7 +110,7 @@ export function AssetTile({
             size="sm"
             variant="ghost"
             className="asset-tile-action"
-            aria-label={asset.type === "video" ? "下载视频" : "下载原图"}
+            aria-label={video ? "下载视频" : "下载原图"}
             onPress={() => downloadAsset(asset.id)}
           >
             <UiIcon icon={IconDownload} />

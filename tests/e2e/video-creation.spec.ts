@@ -533,8 +533,14 @@ for (const ranges of [true, false]) {
       if (element instanceof HTMLVideoElement) element.pause();
     });
     await progress.focus();
+    // Each key acts on the slider's rendered value, so wait for it to follow the media clock.
+    const shown = () => progress.inputValue().then(Number);
+    await page.keyboard.press("End");
+    await expect.poll(time).toBeGreaterThan(0.9);
+    await expect.poll(shown).toBeGreaterThan(0.9);
     await page.keyboard.press("Home");
     await expect.poll(time).toBe(0);
+    await expect.poll(shown).toBe(0);
     await page.keyboard.press("ArrowRight");
     await expect.poll(time).toBeCloseTo(0.1, 1);
   });
@@ -575,6 +581,8 @@ test("asset grids defer video loading until the video preview opens", async ({ p
             created_at: new Date().toISOString(),
             model: null,
             prompt: "素材库视频fixture",
+            duration_seconds: 10,
+            resolution: "768p",
             delivery,
           },
         ],
@@ -593,6 +601,11 @@ test("asset grids defer video loading until the video preview opens", async ({ p
   await expect(tile.locator("img")).toHaveCount(1);
   await expect(tile.locator("video")).toHaveCount(0);
   expect(mediaReads).toBe(0);
+  const card = page.locator(".asset-tile").filter({ has: tile });
+  await expect(tile.locator(".video-cover-play")).toBeVisible();
+  await expect(card.locator(".asset-tile-badge")).toHaveText("视频创作");
+  await expect(card.locator(".asset-tile-specs")).toHaveText("768p · 0:10");
+  await expect(card.locator(".asset-tile-meta")).toBeEmpty();
   await tile.click();
   const preview = page.getByRole("dialog", { name: "视频预览", exact: true });
   await expect(preview.locator("video")).toBeVisible();

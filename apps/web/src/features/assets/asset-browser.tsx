@@ -138,10 +138,15 @@ const toPreviewVideo = (asset: ImageAsset) => {
   return {
     id: asset.id,
     aspect: sized ? asset.width / asset.height : 9 / 16,
+    seconds: asset.duration_seconds ?? undefined,
     taskPublicId: asset.task_public_id,
     createdAt: asset.created_at,
     prompt: asset.prompt,
-    params: sized ? [{ label: "尺寸", value: `${asset.width}×${asset.height}` }] : [],
+    params: [
+      ...(sized ? [{ label: "尺寸", value: `${asset.width}×${asset.height}` }] : []),
+      ...(asset.duration_seconds ? [{ label: "时长", value: `${asset.duration_seconds}秒` }] : []),
+      ...(asset.resolution ? [{ label: "清晰度", value: asset.resolution }] : []),
+    ],
   };
 };
 
