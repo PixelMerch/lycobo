@@ -39,6 +39,7 @@ export function SmartVariationPage() {
               update({ references: [...references, ...images], description })
             }
             placeholder="描述整套图片的用途、场景和卖点，输入 @ 引用商品图"
+            optimizeTool="variation"
             maxLength={5000}
             showCount
             autoGrow

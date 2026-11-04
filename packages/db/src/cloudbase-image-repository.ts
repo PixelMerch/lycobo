@@ -20,6 +20,7 @@ import {
   type ImageRuntimeRepository,
   type IndependentModelConfiguration,
 } from "./image-repository";
+import { promptOptimizationRepository } from "./prompt-optimization-repository";
 import { cloudbaseProviderWebhooks } from "./provider-webhook-repository";
 import { VariationError } from "./variation-repository";
 
@@ -297,6 +298,14 @@ export function cloudbaseImageRepository(
         return true;
       },
     },
+    promptOptimization: promptOptimizationRepository(async (operation, args) => {
+      try {
+        return await call("lycobo_prompt_optimization", { p_operation: operation, p_args: args });
+      } catch (error) {
+        if (error instanceof CloudBaseOperationError) throw new ImageRepositoryError(error.message);
+        throw error;
+      }
+    }),
     variation: {
       config: async () => independent.planner,
       begin: async (scope, input, key) => {

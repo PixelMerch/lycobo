@@ -19,6 +19,11 @@ function fixture(
     assetLocations?: ImageRepository["assetLocations"];
     asset?: ImageRepository["asset"];
     signAsset?: ReturnType<typeof assetDeliverySigner>;
+    optimizer?: {
+      repository: ImageRepository["promptOptimization"];
+      config: ImageRepository["variation"]["config"];
+      request: typeof fetch;
+    };
   } = {},
 ) {
   const create = vi
@@ -26,7 +31,13 @@ function fixture(
     .mockResolvedValue({ id: crypto.randomUUID(), replayed: false });
   const repository: ImageRepository = {
     close: unexpected,
-    variation: { config: unexpected, begin: unexpected, get: unexpected, finish: unexpected },
+    promptOptimization: extra.optimizer?.repository ?? { begin: unexpected, finish: unexpected },
+    variation: {
+      config: extra.optimizer?.config ?? unexpected,
+      begin: unexpected,
+      get: unexpected,
+      finish: unexpected,
+    },
     models: {
       logos: async () => ({
         models: [
@@ -101,6 +112,8 @@ function fixture(
     repository,
     store,
     signAsset: extra.signAsset,
+    plannerKey: extra.optimizer ? "fixture" : undefined,
+    plannerRequest: extra.optimizer?.request,
     enabled: true,
     managedModelsOnly,
     unitCredits: 1,
@@ -438,4 +451,62 @@ it("expired original download fallback redirects to the original capability", as
       })
     ).status,
   ).toBe(404);
+});
+
+it("streams DeepSeek text and only completes after the result is settled", async () => {
+  const rewritten = "晨光照亮浅色床品，使用侧光突出纹理，参考 @图片1。";
+  const begin = vi
+    .fn<ImageRepository["promptOptimization"]["begin"]>()
+    .mockResolvedValue({ status: "started" });
+  const finish = vi
+    .fn<ImageRepository["promptOptimization"]["finish"]>()
+    .mockResolvedValue({ status: "ready", result: rewritten });
+  const request = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      new Response(
+        [
+          `data: ${JSON.stringify({ choices: [{ delta: { content: rewritten, reasoning_content: "private" } }] })}`,
+          'data: {"choices":[{"finish_reason":"stop"}]}',
+          "data: [DONE]",
+          "",
+        ].join("\n\n"),
+        { headers: { "Content-Type": "text/event-stream" } },
+      ),
+    );
+  const { app } = fixture(false, false, {
+    optimizer: {
+      repository: { begin, finish },
+      config: async () => ({
+        origin: "https://api.deepseek.com/",
+        model: "deepseek-flash",
+        protocol: "openai-chat",
+        timeoutMs: 1000,
+        ciphertext: "",
+      }),
+      request,
+    },
+  });
+  const key = crypto.randomUUID();
+  const optimize = () =>
+    app.request("/api/v1/prompt-optimizations", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer fixture",
+        "Content-Type": "application/json",
+        "Idempotency-Key": key,
+      },
+      body: JSON.stringify({ tool: "create", prompt: "床品 @图片1" }),
+    });
+  const response = await optimize();
+  const stream = await response.text();
+  expect(response.headers.get("Content-Type")).toContain("text/event-stream");
+  expect(stream).toContain(`event: delta\ndata: ${JSON.stringify({ text: rewritten })}`);
+  expect(stream).toContain(`event: complete\ndata: ${JSON.stringify({ text: rewritten })}`);
+  expect(stream).not.toContain("private");
+  expect(finish).toHaveBeenCalledWith(expect.anything(), key, rewritten);
+  begin.mockResolvedValue({ status: "ready", result: rewritten });
+  expect(await (await optimize()).text()).toContain("event: complete");
+  expect(request).toHaveBeenCalledTimes(1);
+  expect(finish).toHaveBeenCalledTimes(1);
 });

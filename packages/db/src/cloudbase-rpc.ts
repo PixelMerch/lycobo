@@ -15,6 +15,7 @@ export function readCloudBaseDatabaseConfig(env: CloudBaseDatabaseBindings) {
   return parsed.data;
 }
 export type CloudBaseOperation =
+  | "lycobo_prompt_optimization"
   | "lycobo_video_operation"
   | "lycobo_image_operation"
   | "lycobo_provider_webhook"

@@ -97,6 +97,7 @@ export function VideoPage() {
               setReferences([...references, ...images], prompt);
           }}
           placeholder="例如：晨光卧室，镜头推近，展示被面的绗缝和纹理"
+          optimizeTool="video"
           maxReferences={referenceLimit}
           maxLength={videoPromptLimit}
           showCount
