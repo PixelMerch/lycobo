@@ -7,17 +7,14 @@ type Draft = {
   references: ReferenceImage[];
   count: number;
   seconds: number;
-  showPanel: boolean;
   progress: StoryboardProgress;
 };
-const emptyProgress = (): StoryboardProgress => ({ order: [], excluded: [], replacements: {} });
 export const emptyStoryboard: Draft = {
   description: "",
   references: [],
   count: 3,
   seconds: 10,
-  showPanel: true,
-  progress: emptyProgress(),
+  progress: {},
 };
 const key = (scope: string) => `lycobo-tk-storyboard:${scope}`;
 export const originalReference = (assetId: string): ReferenceImage => ({
@@ -31,7 +28,6 @@ export const useStoryboardState = create<{
   drafts: Record<string, Draft>;
   load: (scope: string) => void;
   update: (scope: string, patch: Partial<Draft>) => void;
-  reset: (scope: string) => void;
 }>((set, get) => ({
   drafts: {},
   load(scope) {
@@ -63,7 +59,6 @@ export const useStoryboardState = create<{
           description: next.description,
           count: next.count,
           seconds: next.seconds,
-          showPanel: next.showPanel,
           originalAssetId: next.references[0]?.assetId,
           progress: next.progress,
         }),
@@ -71,8 +66,5 @@ export const useStoryboardState = create<{
     } catch {
       // The current workspace still retains its draft.
     }
-  },
-  reset(scope) {
-    get().update(scope, { progress: emptyProgress(), showPanel: true });
   },
 }));

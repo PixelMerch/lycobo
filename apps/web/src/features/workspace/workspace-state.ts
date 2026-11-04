@@ -135,6 +135,6 @@ export function shareProductReference(from: string, to: string) {
   } else if (to === "/commerce/smart-variation" && !variation.references.length) {
     variation.update({ references: references.slice(0, 5) });
   } else if (to === "/video" && !video.firstFrame) {
-    video.update({ firstFrame: mainImage });
+    video.update({ firstFrame: mainImage, reuseReferences: false });
   }
 }

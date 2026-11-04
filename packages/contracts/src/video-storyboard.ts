@@ -41,10 +41,8 @@ const storyboardProgressSchema = z.object({
   planId: z.uuid().optional(),
   planAttempt: requestSchema.optional(),
   batchId: z.uuid().optional(),
-  order: z.array(z.uuid()).max(9),
-  excluded: z.array(z.uuid()).max(9),
-  replacements: z.record(z.uuid(), z.array(z.uuid())),
   imageTarget: z.union([z.literal("batch"), z.uuid()]).optional(),
+  acceptedVideoId: z.uuid().optional(),
   optimization: requestSchema.extend({ prompt: z.string().optional() }).optional(),
 });
 export type StoryboardProgress = z.infer<typeof storyboardProgressSchema>;
@@ -52,7 +50,6 @@ export const storedStoryboardSchema = z.object({
   description: z.string().max(5000),
   count: z.number().int().min(1).max(9),
   seconds: z.number().int().min(5).max(30),
-  showPanel: z.boolean(),
   originalAssetId: z.uuid().optional(),
   progress: storyboardProgressSchema,
 });

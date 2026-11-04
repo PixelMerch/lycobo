@@ -96,7 +96,7 @@ export function useSubmitVideo(source?: "storyboard") {
       if (!session.data) throw new Error("请先登录");
       const submittedDraft = useVideoDraft.getState();
       let attempt = pending();
-      if (attempt && attempt.source !== source) throw new Error("请切换回原创作模式确认上次提交");
+      if (attempt && attempt.source !== source) throw new Error("请回到视频创作确认上次提交");
       const confirming = !!attempt;
       if (!attempt) {
         const ids = await uploadImageReferences(client, session.data, references);
@@ -119,6 +119,7 @@ export function useSubmitVideo(source?: "storyboard") {
       notifyPending();
       if (clearDraft && !confirming && useVideoDraft.getState() === submittedDraft)
         submittedDraft.update({
+          reuseReferences: false,
           prompt: "",
           firstFrame: null,
           lastFrame: null,

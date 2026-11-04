@@ -1,9 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
-test("TK 分镜 separates image and video submissions, saves order and redraws only one shot", async ({
-  page,
-}) => {
+test("one video action runs all stages and reuses a lost submission", async ({ page }) => {
   await mockImageApi(page);
   const original = crypto.randomUUID();
   const planId = crypto.randomUUID();
@@ -14,7 +12,9 @@ test("TK 分镜 separates image and video submissions, saves order and redraws o
     prompt: `以商品原图为准，展示${title}。`,
   }));
   const images = items.map(() => crypto.randomUUID());
-  const replacement = crypto.randomUUID();
+  let imagesReady = false;
+  let allowOptimization: (() => void) | undefined;
+  let completed: object | null = null;
   const imageRequests: unknown[] = [];
   const planningRequests: unknown[] = [];
   const videoRequests: unknown[] = [];
@@ -45,9 +45,13 @@ test("TK 分镜 separates image and video submissions, saves order and redraws o
       contentType: "image/webp",
     }),
   );
-  await page.route("**/api/v1/video-storyboards", (route) => {
+  await page.route("**/api/v1/video-storyboards", async (route) => {
     const input = route.request().postDataJSON();
     planningRequests.push(input);
+    if (input.stage === "video")
+      await new Promise<void>((resolve) => {
+        allowOptimization = resolve;
+      });
     return route.fulfill({
       json: apiFixture(
         input.stage === "plan"
@@ -71,7 +75,7 @@ test("TK 分镜 separates image and video submissions, saves order and redraws o
     const input = route.request().postDataJSON();
     imageRequests.push(input);
     const id = crypto.randomUUID();
-    jobs.set(id, input.count === 3 ? images : [replacement]);
+    jobs.set(id, images);
     return route.fulfill({ status: 202, json: apiFixture({ id, replayed: false }) });
   });
   await page.route("**/api/v1/image-tasks/*", (route) => {
@@ -87,14 +91,14 @@ test("TK 分镜 separates image and video submissions, saves order and redraws o
         resolution: "1.5K",
         aspect_ratio: "9:16",
         requested_count: outputs.length,
-        status: "succeeded",
+        status: imagesReady ? "succeeded" : "running",
         created_at: new Date().toISOString(),
         completed_at: new Date().toISOString(),
         items: outputs.map((output_asset_id, position) => ({
           id: crypto.randomUUID(),
           position,
-          status: "succeeded",
-          output_asset_id,
+          status: imagesReady ? "succeeded" : "running",
+          output_asset_id: imagesReady ? output_asset_id : null,
           error_code: null,
           width: 768,
           height: 1360,
@@ -105,21 +109,28 @@ test("TK 分镜 separates image and video submissions, saves order and redraws o
   });
   await page.route("**/api/v1/video-tasks", (route) => {
     if (route.request().method() === "GET")
-      return route.fulfill({ json: apiFixture({ data: [] }) });
+      return route.fulfill({ json: apiFixture({ data: completed ? [completed] : [] }) });
     videoRequests.push(route.request().postDataJSON());
     videoKeys.push(route.request().headers()["idempotency-key"]);
     if (videoRequests.length === 1) return route.abort("failed");
+    completed = {
+      id: videoId,
+      public_id: "W09VIDEO1",
+      prompt: "先全景，随后特写和定格。",
+      status: "succeeded",
+      created_at: new Date().toISOString(),
+      input: { video: videoRequests[1] },
+      error_code: null,
+      asset_id: original,
+      provider_status: "completed",
+    };
     return route.fulfill({ status: 202, json: apiFixture({ id: videoId, replayed: false }) });
   });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/video");
-  await page.getByRole("textbox", { name: "场景描述" }).fill("保留直接生成草稿");
-  await page.getByRole("radio", { name: "TK 分镜创作" }).click();
-  const composer = page.getByRole("region", { name: "TK 分镜创作参数" });
-  await expect(composer.getByRole("textbox", { name: "分镜图张数" })).toHaveValue("3");
-  await expect(composer.getByRole("slider")).toHaveValue("10");
-  const draw = composer.getByRole("button", { name: /生成分镜.*6/ });
-  await expect(draw).toBeDisabled();
+  const composer = page.getByRole("region", { name: "视频创作参数" });
+  await expect(page.getByRole("radio", { name: "直接生成" })).toHaveCount(0);
+  await expect(page.getByRole("radio", { name: "TK 分镜创作" })).toHaveCount(0);
   await composer.getByLabel("添加参考图片").setInputFiles({
     name: "product.png",
     mimeType: "image/png",
@@ -129,10 +140,13 @@ test("TK 分镜 separates image and video submissions, saves order and redraws o
     ),
   });
   await composer.getByRole("textbox", { name: "场景描述" }).fill(description);
-  await draw.click();
-  const panel = page.getByRole("region", { name: "分镜工作区" });
-  const shots = panel.getByRole("list", { name: "分镜顺序" });
-  await expect(shots.getByRole("img")).toHaveCount(3);
+  await expect(composer).toContainText("预计 106 积分");
+  await composer.getByRole("button", { name: /立即生成.*106/ }).click();
+  const progress = page.getByRole("region", { name: "视频制作进度" });
+  await expect(progress.getByRole("listitem").nth(0)).toContainText("进行中");
+  await expect(progress.getByRole("listitem").nth(1)).toContainText("等待中");
+  await expect.poll(() => imageRequests.length).toBe(1);
+  expect(videoRequests).toHaveLength(0);
   expect(planningRequests[0]).toEqual({
     stage: "plan",
     description,
@@ -140,75 +154,47 @@ test("TK 分镜 separates image and video submissions, saves order and redraws o
     count: 3,
     seconds: 10,
   });
-  expect(imageRequests).toEqual([
+  expect(imageRequests[0]).toEqual(
     expect.objectContaining({
       model: "gpt-image-2.5",
       count: 3,
       aspectRatio: "9:16",
       referenceAssetIds: [original],
     }),
-  ]);
-  expect(videoRequests).toHaveLength(0);
-  await page.screenshot({ path: "/tmp/lycobo-tk-storyboard-desktop.png" });
-
-  await panel.getByRole("button", { name: "前移第 2 张" }).click();
-  await expect(shots.getByRole("listitem").first()).toContainText("卧室全景");
-  await panel.getByRole("button", { name: /重做第 1 张/ }).click();
-  await page
-    .getByRole("dialog", { name: "重做这张分镜图？" })
-    .getByRole("button", { name: "确认", exact: true })
-    .click();
-  await expect(shots.getByRole("img").first()).toHaveAttribute("src", new RegExp(replacement));
-  expect(imageRequests[1]).toEqual(
-    expect.objectContaining({
-      count: 1,
-      variation: expect.objectContaining({ items: [items[1]] }),
-    }),
   );
 
-  await page.getByRole("radio", { name: "直接生成" }).click();
-  await expect(page.getByRole("textbox", { name: "场景描述" })).toHaveValue("保留直接生成草稿");
-  await page.getByRole("radio", { name: "TK 分镜创作" }).click();
-  await expect(shots.getByRole("listitem").first()).toContainText("卧室全景");
-  await panel.getByRole("button", { name: /生成视频.*100/ }).click();
+  imagesReady = true;
+  await expect(progress.getByRole("listitem").nth(0)).toContainText("已完成");
+  await expect(progress.getByRole("listitem").nth(1)).toContainText("进行中");
   expect(videoRequests).toHaveLength(0);
-  await page
-    .getByRole("dialog", { name: "按当前分镜生成视频？" })
-    .getByRole("button", { name: "确认", exact: true })
-    .click();
-  await expect.poll(() => videoRequests.length).toBe(1);
   expect(planningRequests[1]).toEqual(
     expect.objectContaining({
       stage: "video",
       originalAssetId: original,
-      shots: [replacement, images[0], images[2]].map((assetId) =>
-        expect.objectContaining({ assetId }),
-      ),
+      shots: images.map((assetId) => expect.objectContaining({ assetId })),
     }),
   );
+  allowOptimization?.();
+  await expect.poll(() => videoRequests.length).toBe(1);
+  await expect(progress.getByRole("listitem").nth(2)).toContainText("待继续");
+  await page.reload();
+  await composer.getByRole("button", { name: /确认上次提交.*100/ }).click();
+  await expect.poll(() => videoRequests.length).toBe(2);
   expect(videoRequests[0]).toEqual({
     prompt: "先全景，随后特写和定格。",
     seconds: 10,
     aspectRatio: "9:16",
-    referenceAssetIds: [original, replacement, images[0], images[2]],
+    referenceAssetIds: [original, ...images],
   });
-  const resume = panel.getByRole("button", { name: /确认上次视频提交/ });
-  await expect(resume).toBeEnabled();
-  await page.getByRole("radio", { name: "直接生成" }).click();
-  await expect(page.getByText("请切换到 TK 分镜创作确认上次视频提交。")).toBeVisible();
-  await page.getByRole("radio", { name: "TK 分镜创作" }).click();
-  await resume.click();
-  await expect.poll(() => videoRequests.length).toBe(2);
   expect(videoRequests[1]).toEqual(videoRequests[0]);
   expect(videoKeys[0]).toMatch(/^[a-f0-9-]{36}$/);
   expect(videoKeys[1]).toBe(videoKeys[0]);
+  expect(imageRequests).toHaveLength(1);
   expect(planningRequests).toHaveLength(2);
-  await expect(page.getByRole("region", { name: "工作区历史记录" })).toBeVisible();
+  await expect(progress.getByRole("listitem").nth(2)).toContainText("已完成");
+  await expect(page.getByRole("article", { name: "视频任务：W09VIDEO1" })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 900 });
-  await page.getByRole("radio", { name: "创作", exact: true }).click();
-  await composer.getByRole("button", { name: "查看分镜" }).click();
-  await expect(panel).toBeVisible();
-  await expect(shots.getByRole("listitem").first()).toContainText("卧室全景");
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: "/tmp/lycobo-tk-storyboard-mobile.png" });
+  await expect(progress).toBeVisible();
+  const history = page.getByRole("article", { name: "视频任务：W09VIDEO1" });
+  await expect.poll(() => history.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
 });

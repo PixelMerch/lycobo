@@ -27,6 +27,7 @@ for (const width of [390, 1440]) {
     await tools.getByRole("button", { name: "视频创作", exact: true }).click();
     const composer = page.getByRole("region", { name: "视频创作参数" });
     await expect(composer.locator(".reference-image-card")).toHaveCount(1);
+    await composer.getByRole("button", { name: "清除全部参考图片" }).click();
     await expect(composer.getByText("Minimax-h3-933特价", { exact: true })).toHaveCount(0);
     await expect(composer.getByText("768p", { exact: true })).toHaveCount(0);
     await expect(composer.getByText("首帧图", { exact: true })).toHaveCount(0);
@@ -69,7 +70,7 @@ for (const width of [390, 1440]) {
     await tools.getByRole("button", { name: "视频创作", exact: true }).click();
     await expect(prompt).toHaveValue("镜头缓慢推近，床品在晨光中展开");
     await expect(composer.getByRole("slider")).toHaveValue("30");
-    await expect(composer.locator(".reference-image-card")).toHaveCount(1);
+    await expect(composer.locator(".reference-image-card")).toHaveCount(0);
     await page.screenshot({ path: `/tmp/lycobo-video-${width}.png` });
   });
 }
@@ -642,10 +643,6 @@ for (const editWhilePending of [false, true]) {
     const prompt = page.getByLabel("场景描述", { exact: true });
     await prompt.fill("镜头缓慢推近商品");
     await composer.getByRole("radio", { name: "16:9", exact: true }).click();
-    await page
-      .getByLabel("添加参考图片", { exact: true })
-      .setInputFiles({ name: "reference.png", mimeType: "image/png", buffer: png });
-    await expect(composer.locator(".reference-image-card")).toHaveCount(1);
     const button = composer.getByRole("button", { name: /立即生成.*100/ });
     await button.click();
     await expect.poll(() => requests).toBe(1);
@@ -659,7 +656,6 @@ for (const editWhilePending of [false, true]) {
     release?.();
     await expect(button).not.toHaveAttribute("data-submitting", "true");
     await expect(prompt).toHaveValue(editWhilePending ? "下一条视频的新场景" : "");
-    await expect(composer.locator(".reference-image-card")).toHaveCount(editWhilePending ? 1 : 0);
     await expect(composer.locator(".ratio-current")).toHaveText("16:9");
     await expect(composer.getByRole("slider")).toHaveValue("10");
     expect(requests).toBe(1);

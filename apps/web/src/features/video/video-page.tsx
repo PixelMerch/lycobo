@@ -8,21 +8,17 @@ import { revealNewestHistory } from "../generation/history/history-navigation";
 import { hasPromptDescription } from "../generation/references/prompt-description";
 import { ReferencePicker } from "../generation/references/reference-picker";
 import { WorkspaceComposerTitle } from "../workspace/workspace-tool-symbol";
-import { StoryboardComposer } from "./storyboard/storyboard-composer";
+import { useStoryboardWorkspace } from "./storyboard/storyboard-context";
+import { automaticVideoCost } from "./storyboard/use-storyboard";
 import { useSubmitVideo, useVideoModel } from "./video-client";
 import { VideoDuration } from "./video-duration";
-import { VideoModeSwitch } from "./video-mode-switch";
 import { useVideoDraft, videoPromptLimit, videoRatios } from "./video-state";
 import "./video.css";
 export function VideoPage() {
-  const mode = useVideoDraft((state) => state.mode);
-  return mode === "storyboard" ? <StoryboardComposer /> : <DirectVideoComposer />;
-}
-
-function DirectVideoComposer() {
   const draft = useVideoDraft();
   const model = useVideoModel();
   const submission = useSubmitVideo();
+  const production = useStoryboardWorkspace();
   const references = [draft.firstFrame, draft.lastFrame, ...draft.extraReferences].filter(
     (value) => value !== null,
   );
@@ -32,80 +28,110 @@ function DirectVideoComposer() {
       lastFrame: images[1] ?? null,
       extraReferences: images.slice(2),
       prompt,
+      reuseReferences: false,
     });
+  const automatic =
+    !submission.hasPending &&
+    (production.needsResume ||
+      production.busy ||
+      (!draft.reuseReferences && references.length === 1));
+  const locked = production.busy || production.needsResume;
+  const currentReferences =
+    locked && production.draft.references.length ? production.draft.references : references;
+  const description =
+    locked && production.draft.description ? production.draft.description : draft.prompt;
+  const referenceLimit = Math.max(1, references.length);
+  const busy = submission.isPending || production.busy;
+  const valid = hasPromptDescription(draft.prompt);
+  const canSubmit = automatic
+    ? !production.blocked && (production.needsResume || (production.configured && valid))
+    : !submission.blockedByPending && (valid || submission.hasPending);
   useErrorToast(submission.error?.message ?? model.error?.message);
-  const valid =
-    hasPromptDescription(draft.prompt) &&
-    Number.isInteger(draft.seconds) &&
-    draft.seconds >= 5 &&
-    draft.seconds <= 30;
   return (
     <section className="composer-panel video-composer" aria-label="视频创作参数">
       <div className="composer-scroll">
         <WorkspaceComposerTitle />
-        <VideoModeSwitch />
         <ReferencePicker
           compact
-          references={references}
-          prompt={draft.prompt}
+          references={currentReferences}
+          prompt={description}
           onChange={setReferences}
-          limit={9}
-          label="参考图片"
+          limit={referenceLimit}
+          disabled={locked}
+          label="商品图片"
         />
-        <p className="video-reference-hint">
-          参考图片可选，用于画面内容参考；实际画幅以参考图为准。
-        </p>
-        <ReferencePrompt
-          className="prompt-field"
-          label="场景描述"
-          isRequired
-          value={draft.prompt}
-          onChange={(prompt) => draft.update({ prompt })}
-          references={references}
-          onReferencesInsert={(images, prompt) => {
-            if (references.length + images.length <= 9)
-              setReferences([...references, ...images], prompt);
-          }}
-          placeholder="描述主体、动作、场景和镜头运动；多张参考图可按图一、图二描述对应关系"
-          maxReferences={9}
-          maxLength={videoPromptLimit}
-          showCount
-          autoGrow
-        />
-        <section className="parameter-group video-ratio">
-          <div className="ratio-heading">
-            <h2>画面比例</h2>
-            <span className="ratio-current">{draft.ratio}</span>
+        {locked ? (
+          <div className="video-description-preview">
+            <h2>场景描述</h2>
+            <p>{description}</p>
           </div>
-          <HomeRatioPicker
-            value={draft.ratio}
-            ratios={videoRatios}
-            onChange={(next) => {
-              const ratio = videoRatios.find((value) => value === next);
-              if (ratio) draft.update({ ratio });
+        ) : (
+          <ReferencePrompt
+            className="prompt-field"
+            label="场景描述"
+            isRequired
+            value={draft.prompt}
+            onChange={(prompt) => draft.update({ prompt })}
+            references={references}
+            onReferencesInsert={(images, prompt) => {
+              if (references.length + images.length <= referenceLimit)
+                setReferences([...references, ...images], prompt);
             }}
+            placeholder="例如：晨光卧室，镜头推近，展示被面的绗缝和纹理"
+            maxReferences={referenceLimit}
+            maxLength={videoPromptLimit}
+            showCount
+            autoGrow
           />
-        </section>
-        <VideoDuration value={draft.seconds} onChange={(seconds) => draft.update({ seconds })} />
+        )}
+        {!automatic && (
+          <>
+            <section className="parameter-group video-ratio">
+              <div className="ratio-heading">
+                <h2>画面比例</h2>
+                <span className="ratio-current">{draft.ratio}</span>
+              </div>
+              <HomeRatioPicker
+                value={draft.ratio}
+                ratios={videoRatios}
+                onChange={(next) => {
+                  const ratio = videoRatios.find((value) => value === next);
+                  if (ratio) draft.update({ ratio });
+                }}
+              />
+            </section>
+            <VideoDuration
+              value={draft.seconds}
+              onChange={(seconds) => draft.update({ seconds })}
+            />
+          </>
+        )}
       </div>
       <div className="generate-area">
-        {submission.blockedByPending && (
-          <p className="video-reference-hint">请切换到 TK 分镜创作确认上次视频提交。</p>
+        {automatic && !busy && (
+          <p className="video-reference-hint">
+            {production.pendingVideo
+              ? "可确认上次提交，沿用原任务编号。"
+              : production.needsResume
+                ? "继续本次制作，已提交的画面会沿用。"
+                : production.unavailable
+                  ? "视频制作暂不可用，请稍后重试。"
+                  : `预计 ${automaticVideoCost} 积分（画面 ${automaticVideoCost - videoUnitCredits} + 视频 ${videoUnitCredits}），竖屏 9:16 · 10 秒。`}
+          </p>
         )}
         <Button
           variant="primary"
           size="lg"
           fullWidth
-          className={`primary-action generation-submit${submission.isPending ? " generation-pending" : ""}`}
-          data-submitting={submission.isPending || undefined}
-          isDisabled={
-            !model.data?.enabled ||
-            submission.isPending ||
-            submission.blockedByPending ||
-            (!valid && !submission.hasPending)
-          }
-          isPending={submission.isPending}
+          className={`primary-action generation-submit${busy ? " generation-pending" : ""}`}
+          data-submitting={busy || undefined}
+          isDisabled={!model.data?.enabled || busy || !canSubmit}
+          isPending={busy}
           onPress={() => {
+            if (automatic) {
+              production.start({ description: draft.prompt, references });
+              return;
+            }
             revealNewestHistory();
             submission.submit({
               input: { prompt: draft.prompt, seconds: draft.seconds, aspectRatio: draft.ratio },
@@ -113,13 +139,28 @@ function DirectVideoComposer() {
             });
           }}
         >
-          {submission.isPending && (
-            <Spinner size="md" color="current" role="status" aria-label="正在提交视频任务" />
+          {busy && (
+            <Spinner
+              size="md"
+              color="current"
+              role="status"
+              aria-label={automatic ? "正在制作视频" : "正在提交视频任务"}
+            />
           )}
-          {submission.hasPending && !submission.isPending ? "确认上次提交" : "立即生成"}
+          {busy && automatic
+            ? "正在制作"
+            : !busy && (submission.hasPending || production.pendingVideo)
+              ? "确认上次提交"
+              : automatic && production.needsResume
+                ? "继续生成"
+                : "立即生成"}
           <span className="generate-credit-cost">
             <CreditCoin size="default" />
-            {videoUnitCredits}
+            {automatic
+              ? production.needsResume
+                ? production.remainingCost
+                : automaticVideoCost
+              : videoUnitCredits}
           </span>
         </Button>
       </div>

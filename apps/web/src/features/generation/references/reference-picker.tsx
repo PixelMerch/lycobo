@@ -35,7 +35,6 @@ type PickerProps = {
   label?: string;
   compact?: boolean;
   disabled?: boolean;
-  required?: boolean;
   references: Draft["references"];
 } & (
   | { model: ModelId; prompt?: never; onChange?: never }
@@ -51,7 +50,6 @@ export function ReferencePicker({
   references,
   compact = false,
   disabled = false,
-  required = false,
   limit = 5,
   label = "上传图片",
   prompt = "",
@@ -112,11 +110,6 @@ export function ReferencePicker({
       <div className="field-title">
         <h2>
           {label}
-          {required && (
-            <span className="reference-required-mark" aria-hidden="true">
-              *
-            </span>
-          )}
           <small>（最多上传{limit}张参考图）</small>
         </h2>
         <Button
@@ -142,7 +135,6 @@ export function ReferencePicker({
         accept="image/png,image/jpeg,image/webp"
         multiple
         aria-label="添加参考图片"
-        required={required && references.length === 0}
         className="visually-hidden"
         disabled={disabled || reading || references.length >= limit}
         onChange={(event) => {

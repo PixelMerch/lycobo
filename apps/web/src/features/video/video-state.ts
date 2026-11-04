@@ -5,7 +5,7 @@ import type { ReferenceImage } from "../generation/studio-state";
 export { videoRatios };
 export const videoPromptLimit = 5000;
 type VideoDraft = {
-  mode: "direct" | "storyboard";
+  reuseReferences: boolean;
   firstFrame: ReferenceImage | null;
   lastFrame: ReferenceImage | null;
   extraReferences: ReferenceImage[];
@@ -16,7 +16,7 @@ type VideoDraft = {
 /** Retain the original two prepared images as ordered references when switching tools. */
 export const useVideoDraft = create<VideoDraft & { update: (patch: Partial<VideoDraft>) => void }>(
   (set) => ({
-    mode: "direct",
+    reuseReferences: false,
     firstFrame: null,
     lastFrame: null,
     extraReferences: [],
