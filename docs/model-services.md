@@ -172,11 +172,15 @@ Seedream 文档未声明质量枚举，与 Grok 一样不发送 GPT 默认 quali
 
 `generation_jobs.input.variation` 保存用户确认后的方案快照；服务端校验计划所有权和参考图一致性，固定 Image 2.5，沿用图片任务的原子扣费及outbox。Worker按方案位置提取对应提示词，每次 `count=1`，不会把整组数量传给每个方案。重复创建、失败退款与不明确付费结果沿用现有任务机制。
 
+### 主站试用独立模式（2026-10-31）
+
+浏览器从主站代码和本地静态资源读取四个模型的名称、说明及 Logo，不请求管理后台模型目录。API 与消费者启用 `STANDALONE_MODELS=true` 后使用服务端固定图片/语言路由，密钥由 CloudBase 服务端环境配置提供；普通生图、家纺裂变、套图计划继续共用真实鉴权、积分、任务、outbox 与私有素材存储。后台表结构、渠道记录和管理接口完整保留，不影响独立模式开关；关闭独立模式可继续使用原后台配置。历史任务保留既有供应商快照和旧密钥解密流程，不将未决任务静默改投新渠道。
+
 ### 主站独立计划服务
 
 `STANDALONE_MODELS=true` 时，智能裂变固定直连 DeepSeek 官方 `https://api.deepseek.com/chat/completions`，模型 `deepseek-flash`，不读取后台语言渠道或使用语言中转站。`DEEPSEEK_API_KEY` 使用 DeepSeek 官方 Key，仅在 API 服务端配置；图片生成仍用独立的 `STANDALONE_IMAGE_API_KEY`。保留后台表和其他协议适配供后续管理功能使用。
 
-按[官方视觉文档](https://api-docs.deepseek.com/guides/vision/)发送已授权缩略图 Base64 与 `detail=low`；无参考图仅发送文字，不虚构商品视觉分析。依据[思考模式文档](https://api-docs.deepseek.com/guides/thinking_mode/)显式 `thinking.type=disabled`，避免默认开启思考；使用 JSON 输出、`max_tokens=8192`、单轮请求和简短独立提示词来控制费用。最多20条，按用户指定的张数或颜色、场景、视角等目标列表确定数量；如“红色、蓝色、白色”为3条，“换成红色，白色部分不变”为1条，未指定数量或变化项时只生成1条；不为省成本减少用户要求的方案数。保留60秒超时、取消、幂等、严格结果校验，不自动重发。
+规划请求只发送文字需求和参考图编号，不发送图片内容，不虚构商品视觉分析，见[套图计划](product-variation-plan.md)。依据[思考模式文档](https://api-docs.deepseek.com/guides/thinking_mode/)显式 `thinking.type=disabled`，避免默认开启思考；使用 JSON 输出、`max_tokens=8192`、单轮请求和简短独立提示词来控制费用。最多20条，按用户指定的张数或颜色、场景、视角等目标列表确定数量；如“红色、蓝色、白色”为3条，“换成红色，白色部分不变”为1条，未指定数量或变化项时只生成1条；不为省成本减少用户要求的方案数。保留60秒超时、取消、幂等、严格结果校验，不自动重发。
 
 DeepSeek独立适配真实验证（2026-10-31）：官方Key、低细节商品参考图和非思考JSON输出，3条计划HTTP200，663 token，总耗时约2.7秒；20条计划HTTP200，1955 token，总耗时约10.1秒。未自动重发、未创建或扣费生图任务。结果仅为这两次请求，不保证后续延迟。
 
