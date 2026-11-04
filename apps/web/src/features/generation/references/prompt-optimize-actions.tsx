@@ -1,6 +1,6 @@
 import { Button, Spinner, Tooltip } from "@heroui/react";
 import { IconArrowBackUp, IconWand } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { ConfirmDialog } from "../../../components/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
 import { promptOptimizeCredits } from "./prompt-optimizer-client";
@@ -13,6 +13,7 @@ export function PromptOptimizeActions({
   optimizer: ReturnType<typeof usePromptOptimizer>;
   prompt: string;
 }) {
+  const gradientId = useId();
   const [confirmingPrompt, setConfirmingPrompt] = useState<string | null>(null);
   const [hintedPrompt, setHintedPrompt] = useState<string | null>(null);
   const [acknowledgedPrompt, setAcknowledgedPrompt] = useState<string | null>(null);
@@ -54,11 +55,19 @@ export function PromptOptimizeActions({
             <UiIcon
               icon={IconWand}
               size="small"
+              color={`url(#${gradientId})`}
               className={canHint && hintedPrompt === prompt ? "prompt-optimize-wand-hint" : ""}
-            />
-            优化
+            >
+              <defs>
+                <linearGradient id={gradientId} x2="100%" y2="55%">
+                  <stop stopColor="var(--accent)" />
+                  <stop offset="100%" stopColor="#54e6a5" />
+                </linearGradient>
+              </defs>
+            </UiIcon>
+            <span className="prompt-optimize-label">优化</span>
           </Button>
-          <Tooltip.Content placement="top">让 AI 把描述写得更详细，写完还能修改</Tooltip.Content>
+          <Tooltip.Content placement="top">AI 润色提示词</Tooltip.Content>
         </Tooltip>
       )}
       <ConfirmDialog

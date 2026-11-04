@@ -190,17 +190,35 @@
   padding: 0 8px;
   border-radius: 999px;
   color: var(--accent);
-  background: #a8ff0014;
+  background: transparent;
   font-size: var(--text-xs);
   font-weight: var(--weight-medium);
   line-height: var(--leading-xs);
 }
-.prompt-optimize-button.button:is(:hover, [data-hovered="true"]) {
+.prompt-optimize-button.button:is(:hover, :active, [data-hovered="true"], [data-pressed="true"]) {
   color: var(--accent);
-  background: #a8ff0026;
+  background: transparent;
+}
+.prompt-optimize-label {
+  background: var(--app-primary-gradient);
+  background-clip: text;
+  color: transparent;
+}
+.prompt-optimize-button.button:is(:hover, [data-hovered="true"])
+  > :is(.ui-icon, .prompt-optimize-label) {
+  filter: brightness(1.12);
 }
 .prompt-optimize-button.button:is(:disabled, [data-disabled="true"]) {
   opacity: 0.45;
+}
+@media (forced-colors: active) {
+  .prompt-optimize-label {
+    background: none;
+    color: ButtonText;
+  }
+  .prompt-optimize-button.button > .ui-icon {
+    stroke: ButtonText;
+  }
 }
 @media (prefers-reduced-motion: no-preference) {
   .prompt-optimize-wand-hint {
