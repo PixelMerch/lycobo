@@ -74,8 +74,8 @@ export function TextileImageField({
         const first = images[0];
         if (first) onChange(value.map((image, position) => (position === index ? first : image)));
       } else onChange(multiple ? [...value, ...images] : images);
-    } catch {
-      setError("图片无法读取，请检查文件后重试。");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "图片无法读取，请检查文件后重试。");
     } finally {
       setReading(false);
     }

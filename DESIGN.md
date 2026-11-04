@@ -206,7 +206,7 @@ Header只保留一个双入口胶囊，点击余额打开积分概览，再从�
 - 创作框最大宽 1040px、高 212px、圆角 28px、毛玻璃表面（见上），内部透明输入高 138px，输入 14px / 21px，占位文字 #FFFFFF85，不加内外双框。
 - 底栏参数胶囊 32px、#FFFFFF14底与1px #FFFFFF0F内描边；发送按钮 36px 圆形：未输入时为品牌渐变15%淡底、1px #A8FF0033内描边、#A8FF00B3箭头，可提交时为品牌渐变与#142000箭头，hover提亮4%并带青柠柔光；手机命中区至少 44px并允许换行。
 - 设置 Popover 桌面 560–640px、圆角 18px、内容 padding 19px 21px、两栏 gap 16px；手机单列滚动。模型行只以对号选中，不铺 hover 底。
-- 参考图最多 5 张、单张 10MB；首页和工作台共用 `ReferencePicker`、`ReferenceImageCard`、`ReferencePrompt`。保留当前上传缩略图布局与预览行为，不显示原始文件名。
+- 参考图最多 5 张、单张原文件 50 MB，大图选中后在浏览器压缩；首页和工作台共用 `ReferencePicker`、`ReferenceImageCard`、`ReferencePrompt`。保留当前上传缩略图布局与预览行为，不显示原始文件名。
 - 上传缩略图 contain 完整展示，左上纯数字角标常显；右上删除在桌面 hover / focus-within 显示，触屏可用。删除独立于预览，删除后同步编号与提示词引用。
 - 点击参考图打开共享 `ImageViewer`，关闭后回到该入口；文件格式、大小、张数在客户端提示，服务端仍独立验证。
 - `@` 候选为已上传图片：Popover + ListBox，宽 280px、padding 10px、圆角 12px、行高 40px / 手机 44px、缩略图 32px。

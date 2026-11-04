@@ -72,7 +72,7 @@ curl http://127.0.0.1:8787/api/v1/image-tasks \
 
 查询记录会返回任务级 organization_id、user_id、model、prompt、resolution、aspect_ratio、requested_count、input、unit_credits、created_at、updated_at、completed_at，以及 items 的 worker_id、provider、provider_request_id、attempts、started_at、completed_at、output_asset_id、width、height、bytes、error_code。缺少服务商请求 ID 时保留 null，不用本地 ID 冒充。
 
-服务端原图信息还保存在 media_assets：object_key、mime_type、bytes、width、height、sha256、组织、用户和创建时间。参考上传原文件上限 10MB；生成结果和规范化 PNG 上限 32MB，服务商 JSON 响应上限 45MB，避免高分辨率结果沿用上传体积限制。图片字节保存在私有 R2，以服务端解析的 UID 分目录；数据库保存元数据和关联，不塞入 JSON 或队列消息。
+服务端原图信息还保存在 media_assets：object_key、mime_type、bytes、width、height、sha256、组织、用户和创建时间。参考图上传接口请求体上限 10 MB，浏览器选图上限 50 MB；生成结果和规范化 PNG 上限 32MB，服务商 JSON 响应上限 45MB，避免高分辨率结果沿用上传体积限制。图片字节保存在私有 R2，以服务端解析的 UID 分目录；数据库保存元数据和关联，不塞入 JSON 或队列消息。
 
 ## 任务与计费边界
 
@@ -249,4 +249,4 @@ Worker 以 `Image generation stage timing` 输出结构化分段计时，包含 
 
 迁移：本地与 Supabase 链路为 `packages/db/migrations/0038_asset_favorites.sql`；CloudBase 共享 PG 为 `cloudbase/migrations/20261103100000_asset_favorites.sql`，新建同一张表并撤销运行角色的直接表权限，只按原文逐段替换 `lycobo_image_operation` 中的 listAssets 与作用域列表并新增 setAssetFavorite、favoriteAssetIds，任一片段不匹配即中止。发布流水线不迁移数据库：需先应用 CloudBase 迁移再部署 API；新函数兼容旧 API 的调用参数，反之旧函数不认识新的收藏操作。
 
-参考图单张原文件最多 10 MB（10 MiB）。超过 5 MiB 的原文件在浏览器中生成不超过 5 MiB 的上传副本，以满足 CloudBase 请求体限制，原文件保留在本地。副本按比例缩小至最长边最多 3840 像素并保留透明通道。服务端验证后将参考图规范化为宽、高均不超过 3840 像素的 PNG。超过 4 MiB 的参考 PNG 会按比例继续缩小后入库，较小图片不放大，付费生成结果不使用该规则。此上限独立于生成请求尺寸；向中转站发送参考图时，不透明图片可转JPEG压缩，透明图片保持PNG。
+参考图单张原文件最多 50 MB（50 MiB）。选图时浏览器将超过 5 MiB 的原文件压缩成不超过 5 MiB 的上传副本，以满足 CloudBase 请求体限制，原文件保留在本地。副本按比例缩小至最长边最多 3840 像素并保留透明通道。服务端验证后将参考图规范化为宽、高均不超过 3840 像素的 PNG。超过 4 MiB 的参考 PNG 会按比例继续缩小后入库，较小图片不放大，付费生成结果不使用该规则。此上限独立于生成请求尺寸；向中转站发送参考图时，不透明图片可转JPEG压缩，透明图片保持PNG。
