@@ -1,4 +1,4 @@
-/** Oii public personal pricing, checked 2026-11-02. Display only; no payment SKU. */
+/** Oii public pricing, checked 2026-11-02 and re-checked 2026-11-03. Display only; no payment SKU. */
 export type MembershipCycle = "monthly" | "quarterly" | "yearly";
 export const membershipCycles = [
   { id: "yearly", label: "年付", months: 12, unit: "/ 年" },
@@ -154,3 +154,38 @@ export const teamMembershipPricing: readonly MembershipPlan[] = [
     ],
   },
 ];
+
+type MembershipOption = MembershipPlan["options"][number];
+const cycleMonths = (cycle: MembershipCycle) =>
+  membershipCycles.find((item) => item.id === cycle)?.months ?? 12;
+
+/** Cycle price against the struck-through price, in 折 with one decimal (8388 of 19152 → 4.4). */
+export function discountTenths(option: MembershipOption, cycle: MembershipCycle) {
+  return Math.round((option[cycle] / (option.original * cycleMonths(cycle))) * 100) / 10;
+}
+
+/** Yuan per credit for one month of the cycle, the figure each plan card highlights. */
+export function creditPrice(option: MembershipOption, cycle: MembershipCycle) {
+  return option[cycle] / cycleMonths(cycle) / option.credits;
+}
+
+/** The deepest discount any plan reaches in this cycle, shown next to the cycle choice. */
+export function lowestDiscount(plans: readonly MembershipPlan[], cycle: MembershipCycle) {
+  return Math.min(
+    ...plans.flatMap((plan) => plan.options.map((option) => discountTenths(option, cycle))),
+  );
+}
+
+/** The cheapest credit any plan reaches in this cycle. */
+export function lowestCreditPrice(plans: readonly MembershipPlan[], cycle: MembershipCycle) {
+  return Math.min(
+    ...plans.flatMap((plan) => plan.options.map((option) => creditPrice(option, cycle))),
+  );
+}
+
+/** The plan holding the cheapest credit of this cycle; its card carries the highlight. */
+export function cheapestPlanId(plans: readonly MembershipPlan[], cycle: MembershipCycle) {
+  const lowest = lowestCreditPrice(plans, cycle);
+  return plans.find((plan) => plan.options.some((option) => creditPrice(option, cycle) === lowest))
+    ?.id;
+}

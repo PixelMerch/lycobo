@@ -24,7 +24,13 @@ const loginMethods: { mode: LoginMode; label: string; hint: string }[] = [
   { mode: "wechat", label: "微信扫码", hint: "使用微信扫码登录创作工作台" },
 ];
 
-export function LoginDialog({ onClose }: { onClose: () => void }) {
+export function LoginDialog({
+  onClose,
+  onLoginSuccess = onClose,
+}: {
+  onClose: () => void;
+  onLoginSuccess?: () => void;
+}) {
   const reduceMotion = useReducedMotion();
   const login = useEnterpriseLogin();
   const passwordInput = useRef<HTMLInputElement>(null);
@@ -154,7 +160,7 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
                               setPassword("");
                               try {
                                 await login.mutateAsync(credentials);
-                                onClose();
+                                onLoginSuccess();
                               } catch (cause) {
                                 passwordInput.current?.focus();
                                 setError(

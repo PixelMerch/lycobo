@@ -190,8 +190,6 @@
 }
 .variation-plan-card textarea {
   width: 100%;
-  line-height: var(--leading-base);
-  font-size: var(--text-base);
   resize: none;
   overflow: hidden;
   max-height: none;

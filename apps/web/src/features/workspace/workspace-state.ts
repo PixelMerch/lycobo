@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { useSmartVariationDraft } from "../commerce/smart-variation/smart-variation-state";
 import { useTextileSetDraft } from "../commerce/textile-set/textile-set-state";
 import { useStudioStore } from "../generation/studio-state";
+import { useVideoDraft } from "../video/video-state";
 
 export const workspaceTools = [
   {
@@ -74,6 +75,27 @@ export const workspaceTools = [
       "/studio/set-thumb.webp",
     ],
   },
+  {
+    id: "video",
+    name: "视频创作",
+    path: "/video",
+    category: "商品视频",
+    image: "/studio/models/image-2-5-2.webp",
+    description: "用文字和参考图片生成精美宣传视频",
+    caption: "参考图 · 镜头 · 时长",
+    hero: "/studio/tool-heroes/video.webp",
+    summary: "用文字和参考图片生成精美宣传视频",
+    steps: [
+      "添加参考图片，或直接输入文字描述",
+      "描述画面主体、动作和镜头运动",
+      "选择比例与5–30秒时长后生成",
+    ],
+    examples: [
+      "/studio/models/image-2-5-2.webp",
+      "/studio/bedroom-thumb.webp",
+      "/studio/models/image-2-1.webp",
+    ],
+  },
 ] as const;
 export const toolForPath = (path: string) =>
   workspaceTools.find((tool) => tool.path === path) ?? workspaceTools[0];
@@ -90,12 +112,17 @@ export function shareProductReference(from: string, to: string) {
   const studio = useStudioStore.getState();
   const textile = useTextileSetDraft.getState();
   const variation = useSmartVariationDraft.getState();
+  const video = useVideoDraft.getState();
   const references =
     from === "/commerce/textile-set"
       ? [textile.mainImage, ...textile.detailImages].filter((image) => image !== null)
       : from === "/commerce/smart-variation"
         ? variation.references
-        : (studio.drafts[studio.activeModel]?.references ?? []);
+        : from === "/video"
+          ? [video.firstFrame, video.lastFrame, ...video.extraReferences].filter(
+              (image) => image !== null,
+            )
+          : (studio.drafts[studio.activeModel]?.references ?? []);
   const mainImage = references[0];
   if (!mainImage) return;
   if (to === "/create" && !studio.drafts[studio.activeModel]?.references.length) {
@@ -107,5 +134,7 @@ export function shareProductReference(from: string, to: string) {
     });
   } else if (to === "/commerce/smart-variation" && !variation.references.length) {
     variation.update({ references: references.slice(0, 5) });
+  } else if (to === "/video" && !video.firstFrame) {
+    video.update({ firstFrame: mainImage });
   }
 }

@@ -1,5 +1,5 @@
 import { Button, EmptyState, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import type { ImageAsset, ImageTool } from "@lycoboai/contracts";
+import type { AssetTool, ImageAsset } from "@lycoboai/contracts";
 import {
   IconGrid4x4,
   IconGridDots,
@@ -12,13 +12,16 @@ import {
   type TablerIcon,
 } from "@tabler/icons-react";
 import { type CSSProperties, useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { InfiniteLoad } from "../../components/infinite-load";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
-import { useImageSession } from "../generation/generation-client";
+import { LoginDialog } from "../auth/login-dialog";
+import { ImageApiError, useImageSession } from "../generation/generation-client";
 import { modelDisplayName } from "../generation/models/model-display-name";
 import { useModelPresentation } from "../generation/models/model-logos";
 import { ImagePreviewDialog } from "../image-workspace/image-preview";
+import { VideoPlayerDialog } from "../video/video-player-dialog";
 import { AssetFilters, toolNames } from "./asset-filters";
 import { dayHeading, groupByDay } from "./asset-layout";
 import {
@@ -50,7 +53,7 @@ type Empty = { icon: TablerIcon; title: string };
 function emptyState(
   filters: AssetLibraryFilters,
   defaults: AssetLibraryFilters,
-  currentTool: ImageTool | undefined,
+  currentTool: AssetTool | undefined,
 ): Empty {
   if (filters.type === "video") return { icon: IconMovie, title: "暂无视频素材" };
   if (filters.source === "uploads") return { icon: IconPhoto, title: "还没有上传的素材" };
@@ -130,6 +133,22 @@ const toPreview = (asset: ImageAsset) => ({
     imagePublicId: asset.public_id,
   },
 });
+const toPreviewVideo = (asset: ImageAsset) => {
+  const sized = asset.width > 0 && asset.height > 0;
+  return {
+    id: asset.id,
+    aspect: sized ? asset.width / asset.height : 9 / 16,
+    seconds: asset.duration_seconds ?? undefined,
+    taskPublicId: asset.task_public_id,
+    createdAt: asset.created_at,
+    prompt: asset.prompt,
+    params: [
+      ...(sized ? [{ label: "尺寸", value: `${asset.width}×${asset.height}` }] : []),
+      ...(asset.duration_seconds ? [{ label: "时长", value: `${asset.duration_seconds}秒` }] : []),
+      ...(asset.resolution ? [{ label: "清晰度", value: asset.resolution }] : []),
+    ],
+  };
+};
 
 /**
  * 素材库 and 我的素材 share one browser: 生成 / 上传 / 收藏, then 功能 / 类型 / 模型 filters,
@@ -143,16 +162,19 @@ export function AssetBrowser({
   generatedOnly = false,
   onChange,
   onViewHistory,
+  onAuthenticationClose,
 }: {
   filters: AssetLibraryFilters;
   defaults: AssetLibraryFilters;
-  currentTool?: ImageTool | undefined;
+  currentTool?: AssetTool | undefined;
   headingLevel: 2 | 3;
   generatedOnly?: boolean;
   onChange: (filters: AssetLibraryFilters) => void;
   onViewHistory?: (() => void) | undefined;
+  onAuthenticationClose?: (() => void) | undefined;
 }) {
-  const [columns, setColumns] = useState(6);
+  const navigate = useNavigate();
+  const [columns, setColumns] = useState(8);
   const session = useImageSession();
   const query = useAssetLibrary(filters);
   const models = useModelPresentation().data?.models ?? [];
@@ -164,8 +186,17 @@ export function AssetBrowser({
     : query.isError && !query.data
       ? query.error
       : null;
+  const authenticationRequired =
+    (session.error instanceof ImageApiError && session.error.status === 401) ||
+    (query.error instanceof ImageApiError && query.error.status === 401);
   useErrorToast(
-    session.isError ? session.error.message : query.isError ? query.error.message : null,
+    authenticationRequired
+      ? null
+      : session.isError
+        ? session.error.message
+        : query.isError
+          ? query.error.message
+          : null,
   );
   const compact = width > 0 && width < compactWidth;
   const assets = query.data?.pages.flatMap((page) => page.data) ?? [];
@@ -185,7 +216,16 @@ export function AssetBrowser({
   );
   const densityGrid = (items: ImageAsset[]) => (
     <div className="asset-density-grid" style={{ "--asset-columns": columns } as CSSProperties}>
-      {items.map((asset) => tile(asset, { aspectRatio: 1 }))}
+      {items.map((asset) =>
+        tile(asset, {
+          aspectRatio:
+            asset.type === "video"
+              ? asset.width > 0 && asset.height > 0
+                ? asset.width / asset.height
+                : 9 / 16
+              : 1,
+        }),
+      )}
     </div>
   );
   const empty = emptyState(filters, defaults, currentTool);
@@ -267,20 +307,45 @@ export function AssetBrowser({
       {width > 0 && content}
     </>
   );
+  if (authenticationRequired) {
+    return (
+      <LoginDialog
+        onClose={onAuthenticationClose ?? (() => navigate("/", { replace: true }))}
+        onLoginSuccess={() => void session.refetch()}
+      />
+    );
+  }
   return (
     <div className="asset-browser" ref={frame}>
       <div className="asset-source-panel">{panelContent}</div>
-      {preview !== null && (
-        <ImagePreviewDialog
-          images={assets.map(toPreview)}
-          initialIndex={preview}
+      {preview !== null && assets[preview]?.type === "video" ? (
+        <VideoPlayerDialog
+          videos={assets.filter((asset) => asset.type === "video").map(toPreviewVideo)}
+          initialId={assets[preview].id}
           onClose={() => setPreview(null)}
           hasMore={query.hasNextPage}
           isLoadingMore={query.isFetchingNextPage}
           isLoadMoreError={query.isError}
           onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
-          {...(onViewHistory ? { onViewHistory } : {})}
         />
+      ) : (
+        preview !== null && (
+          <ImagePreviewDialog
+            images={assets.filter((asset) => asset.type === "image").map(toPreview)}
+            initialIndex={Math.max(
+              0,
+              assets
+                .filter((asset) => asset.type === "image")
+                .findIndex((asset) => asset.id === assets[preview]?.id),
+            )}
+            onClose={() => setPreview(null)}
+            hasMore={query.hasNextPage}
+            isLoadingMore={query.isFetchingNextPage}
+            isLoadMoreError={query.isError}
+            onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
+            {...(onViewHistory ? { onViewHistory } : {})}
+          />
+        )
       )}
     </div>
   );

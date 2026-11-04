@@ -1,5 +1,5 @@
 import { Button, ListBox, Select, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import type { ImageTool } from "@lycoboai/contracts";
+import type { AssetTool } from "@lycoboai/contracts";
 import {
   IconCalendar,
   IconLayoutGrid,
@@ -20,9 +20,10 @@ import {
   sameFilters,
 } from "./asset-library-client";
 
+const libraryTools = workspaceTools;
 export const toolNames = Object.fromEntries(
-  workspaceTools.map((tool) => [tool.id, tool.name]),
-) as Record<ImageTool, string>;
+  libraryTools.map((tool) => [tool.id, tool.name]),
+) as Record<AssetTool, string>;
 const sources = [
   { id: "generated", label: "生成素材", icon: IconPhoto },
   { id: "uploads", label: "上传素材", icon: IconUpload },
@@ -57,7 +58,7 @@ export function AssetFilters({
 }: {
   filters: AssetLibraryFilters;
   defaults: AssetLibraryFilters;
-  currentTool?: ImageTool | undefined;
+  currentTool?: AssetTool | undefined;
   models: readonly { id: string; name: string }[];
   loaded: number | null;
   compact: boolean;
@@ -112,7 +113,7 @@ export function AssetFilters({
         value={filters.tool}
         isDisabled={disabled}
         onChange={(key) => {
-          const tool = workspaceTools.find((entry) => entry.id === key)?.id;
+          const tool = libraryTools.find((entry) => entry.id === key)?.id;
           set({ tool: tool ?? "all" });
         }}
       >
@@ -131,7 +132,7 @@ export function AssetFilters({
               <span>全部功能</span>
               <ListBox.ItemIndicator />
             </ListBox.Item>
-            {workspaceTools.map((tool) => (
+            {libraryTools.map((tool) => (
               <ListBox.Item
                 className="model-options"
                 key={tool.id}

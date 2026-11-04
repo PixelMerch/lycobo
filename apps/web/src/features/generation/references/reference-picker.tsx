@@ -3,6 +3,7 @@ import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { lazy, Suspense, useRef, useState } from "react";
 import { ReferenceImageCard } from "../../../components/reference-image-card";
 import { UiIcon } from "../../../components/ui-icon";
+import { useRequireLogin } from "../../auth/login-prompt";
 import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "../studio-state";
 import { readReferenceImages, referenceFileError } from "./read-reference-images";
 import { referenceDisplaySource } from "./reference-display";
@@ -29,7 +30,12 @@ function promptWithoutReferences(prompt: string) {
     .replace(/^[ \t]+/gm, "");
 }
 
-type PickerProps = { compact?: boolean; references: Draft["references"] } & (
+type PickerProps = {
+  limit?: number;
+  label?: string;
+  compact?: boolean;
+  references: Draft["references"];
+} & (
   | { model: ModelId; prompt?: never; onChange?: never }
   | {
       model?: never;
@@ -42,9 +48,12 @@ export function ReferencePicker({
   model,
   references,
   compact = false,
+  limit = 5,
+  label = "上传图片",
   prompt = "",
   onChange,
 }: PickerProps) {
+  const requireLogin = useRequireLogin();
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
   const [reading, setReading] = useState(false);
@@ -57,6 +66,7 @@ export function ReferencePicker({
     else onChange?.(next, text);
   }
   async function readFiles(files: File[]) {
+    if (!requireLogin()) return;
     if (reading) return;
     const issue = referenceFileError(files);
     if (issue) {
@@ -81,8 +91,8 @@ export function ReferencePicker({
       }
       if (duplicates > 0) toast.warning("存在相同素材，已自动过滤");
       if (!unique.length) return;
-      if (unique.length > 5 - current.length) {
-        setError("最多添加 5 张参考图，请减少文件后重试。");
+      if (unique.length > limit - current.length) {
+        setError(`最多添加 ${limit} 张参考图，请减少文件后重试。`);
         return;
       }
       change([...current, ...unique], currentDraft()?.prompt ?? "");
@@ -97,7 +107,8 @@ export function ReferencePicker({
     <section className="reference-picker">
       <div className="field-title">
         <h2>
-          上传图片<small>（最多上传5张参考图）</small>
+          {label}
+          <small>（最多上传{limit}张参考图）</small>
         </h2>
         <Button
           variant="tertiary"
@@ -123,7 +134,7 @@ export function ReferencePicker({
         multiple
         aria-label="添加参考图片"
         className="visually-hidden"
-        disabled={reading || references.length >= 5}
+        disabled={reading || references.length >= limit}
         onChange={(event) => {
           const files = Array.from(event.target.files ?? []);
           event.target.value = "";
@@ -155,13 +166,15 @@ export function ReferencePicker({
             }}
           />
         ))}
-        {references.length < 5 ? (
+        {references.length < limit ? (
           <Button
             variant="tertiary"
             className="add-reference"
-            isDisabled={reading || references.length >= 5}
+            isDisabled={reading || references.length >= limit}
             aria-label="添加参考图"
-            onPress={() => input.current?.click()}
+            onPress={() => {
+              if (requireLogin()) input.current?.click();
+            }}
           >
             <UiIcon icon={IconPlus} size={compact ? "default" : "action"} />
             <span>{reading ? "读取中…" : compact ? "上传商品图" : "添加图片"}</span>

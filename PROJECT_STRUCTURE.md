@@ -10,7 +10,7 @@
 | apps/web/src/lib | 浏览器 API 客户端与工具 |
 | apps/web/src/styles | 共享设计 tokens 与全局基础样式 |
 | apps/api/src | Hono 入口、应用工厂、配置与组织隔离的生图 feature API |
-| apps/assets/src | 独立 Node 私有图片资源服务：短期签名、Referer/CORS、WebP 展示变体缓存、原图下载及旧图 Sharp 变体补生成 |
+| apps/assets/src | 独立 Node 私有媒体资源服务：短期签名、Referer/CORS、WebP 展示变体缓存、原图下载、旧图 Sharp 变体补生成，经授权后按需生成并缓存真实视频封面，以及原视频内联播放（Range） |
 | apps/worker/src | 队列消费者、生命周期与任务执行 |
 | packages/contracts | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖 |
 | packages/db | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY |
@@ -38,12 +38,13 @@ apps/web/src/
     ├── account/                  # Header账户菜单、账户中心、钱包请求和账务展示
     ├── workspace/                # 统一工作区布局、工具分类搜索、历史筛选、跨工具草稿交接
     ├── commerce/                 # 兼容旧电商入口偏好、家纺裂变参数面板、套图计划语言分析、真实计划确认与生图、本地会话草稿
+    ├── video/                    # 视频创作参数、草稿、提交确认、视频历史、封面与按需预览播放器（独立查询视频任务）
     ├── home/                     # 首页、共享创作输入与提示辅助
     │   ├── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，use-inspiration-columns.ts 订阅断点并派生均衡瀑布流
     │   └── home-grid-motion.tsx   # 按需加载的Grid Motion背景、视差与可见性暂停；参数在react-bit-config.ts
     ├── assets/                   # 素材库页面、全屏我的素材与共用浏览组件（筛选、按天等高行、收藏）
     ├── generation/               # 生图请求、事件、会话草稿及工作台页面
-    │   ├── composer/             # 比例选择、参数选中背景
+    │   ├── composer/             # 比例选择、参数选中背景、图片与视频共用的单选参数行
     │   ├── models/               # 创作直达入口、整行悬停模型小卡片与下拉选择
     │   ├── references/           # 共享参考图上传、当前／历史上传／生成素材分类搜索与多选引用、缩略图
     │   └── history/              # 历史查询、任务信息、操作和定位
@@ -53,7 +54,8 @@ apps/web/src/
 
 - 先按业务功能归类，功能内部就近存放组件、hook、样式与单元测试；只有存在明确子职责时再增加目录，不为每个组件建立一层文件夹。
 - 保留描述性文件名和直接导入，不新增 `index.ts` 聚合出口，也不建立覆盖所有功能的 components/hooks/services 分类目录。浏览器端到端测试仍在根目录 `tests/e2e`。
-- 主导航统一使用工作区入口；`features/workspace` 组合参数子路由、随功能切换的历史及工具选择面板；`workspace-tool-symbol.tsx` 共享功能入口与参数标题的图标身份，只使用Tabler矢量图标。旧 `components/feature-navigation.tsx` 保留兼容组件，不再挂载在主导航。`components/use-hover-menu.ts` 共享账户及模型菜单的悬停、键盘焦点恢复逻辑。
+- 主导航统一使用工作区入口；`features/workspace` 组合参数子路由、随功能切换的历史及四个功能的直达工具栏；`workspace-tool-symbol.tsx` 共享功能入口与参数标题的图标身份，只使用Tabler矢量图标。旧 `components/feature-navigation.tsx` 保留兼容组件，不再挂载在主导航。`components/use-hover-menu.ts` 共享账户及模型菜单的悬停、键盘焦点恢复逻辑。
+- `features/auth/login-prompt.tsx` 共享登录请求与首页创作交互门禁；Header及首页操作共用应用壳的一份登录弹窗。`app/studio-shell.tsx` 在登录状态确认前不挂载非首页业务内容，登录成功保留目标地址、取消返回首页，生图事件仅在登录后挂载。
 - `app/studio-shell.tsx` 组合导航、登录、账户和生图事件；路由页面留在各 feature。首页、工作台和素材页继续由路由懒加载，`image-workspace/preview-workspace.tsx` 及 Konva 继续按预览需要加载。
 - `generation/generation-client.ts` 维护现有生图、历史和素材 API 查询与缓存，被历史、素材库和编辑工作区直接引用；目录维护不改变 query key 或增加请求层。
 - `assets/asset-library-client.ts` 负责素材库查询（生成／上传／收藏与功能、类型、模型筛选，素材库页面写入地址栏）和服务端收藏：一个有上限的收藏 ID 查询供所有星标共用，切换乐观更新、失败回滚；`asset-browser.tsx` 组合页签、`asset-filters.tsx`、`asset-tile.tsx` 与现有图片预览，`asset-layout.ts` 为按天分组、等高行与手机两列瀑布流的纯函数。`assets-page.tsx` 与 `library-dialog.tsx`（我的素材，功能默认当前工具）只组合该浏览组件。
@@ -127,7 +129,7 @@ GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 C
 
 - `features/account/account-menu.tsx` 的 HeaderLogin 与 AccountMenu 封装未登录入口和侧栏账户菜单（积分卡片、会员行与个人中心快捷入口）；`header-benefits.tsx` 组合登录后的双入口胶囊，积分点击用官方Popover展示 `CreditPreview` 的真实余额及最多三条记录。`account-overlays.tsx` 以Zustand记录个人中心页签、充值／会员弹层及各自打开者，`AccountOverlayHost` 由StudioShell挂载，统一渲染懒加载个人中心、`RechargeDialog`（`credits-dialog.tsx`、`credit-packs.tsx` 订单预览）与懒加载会员弹窗；充值和会员可叠在个人中心上方，各层关闭后焦点返回各自打开者，退出登录时清空。
 - `features/account/account-center-dialog.tsx` 是懒加载的个人中心弹窗（不设路由），页签定义在 `account-center-tabs.ts`；`account-overview.tsx`、`credit-ledger.tsx`、`recharge-orders.tsx`、`account-membership.tsx`、`account-security.tsx` 分别为各页签，`account-format.ts` 提供纯格式化函数（张数换算、成员、相对时间），`account-entry.tsx` 为收支类型图标。查询共用TanStack Query，只在页签选中时挂载。
-- `features/account/membership-page.tsx` 导出懒加载全屏 MembershipDialog，Header在当前工作区打开；/membership仅为旧链接兼容入口，不展示返回与明细按钮；`MembershipPlans` 管理分类、周期、档位和团队席位展示；membership-details组合工具／协作能力与Tooltip，membership-faq用官方Accordion承载本站FAQ，`CreditPacks` 只管理所选包。`wallet-client.ts` 共享钱包查询，最近记录按需读取并缓存30秒，不新增轮询。未接入的会员、绑定、验证码及支付不会模拟成功。
+- `features/account/membership-page.tsx` 导出懒加载全屏 MembershipDialog，Header在当前工作区打开；/membership仅为旧链接兼容入口，不展示返回与明细按钮；`MembershipPlans` 管理分类、周期、档位和团队席位展示；标语单价、周期最低折扣、折扣标签、单位积分价与“积分单价最低”飘带均由 `membership-pricing.ts` 的纯函数从价格表推导，并由同目录单元测试覆盖；membership-details组合工具／协作能力与Tooltip，membership-faq用官方Accordion承载本站FAQ，`CreditPacks` 只管理所选包。`wallet-client.ts` 共享钱包查询，最近记录按需读取并缓存30秒，不新增轮询。未接入的会员、绑定、验证码及支付不会模拟成功。
 
 ## 数据库领域命名
 
@@ -164,3 +166,5 @@ GitHub main CI 成功且运行环境首次配置验证完成后，更新三个 C
 CloudBase 运行入口为 `apps/api/src/index.ts`（API）、`apps/api/src/assets-server.ts`（私有图片）、`apps/worker/src/cloudbase-consumer.ts`（独立 Event 消费者）。`packages/db/src/cloudbase-*` 通过固定 SQL 业务函数访问共享 PG，原 Node 原生 PG 仓储用于本地/旧部署。实际状态和限制见 [运行迁移记录](docs/cloudbase-runtime-migration.md)。
 
 图片回调接收位于 `apps/api/src/features/images/provider-webhook.ts`；任务与事件的持久化关联位于 `packages/db/src/provider-webhook-repository.ts`。前端低频批量同步、超时补查和发布顺序见 [图片 Webhook](docs/image-webhooks.md)。
+
+视频接入使用 `packages/contracts/src/video-generation.ts`（六种比例、5–30秒整数时长、每次100积分）、`apps/api/src/features/videos`（薄路由和服务）、`packages/db/src/video-repository.ts`（Node／CloudBase同一固定RPC）。任务与单个执行项复用generation_jobs／generation_job_items以保留钱包外键，generation_video_outbox独立维护持久意图、租约、供应商任务ID与下一次查询时间；图片历史和超时扫描排除视频。`apps/worker/src/video-processor.ts` 由现有本地消费者与CloudBase Event入口调度，供应商协议在 `packages/generation/src/video-provider.ts`；MP4容器校验在storage/video-media，资源服务提供短期签名与Range。服务端复用生图密钥STANDALONE_IMAGE_API_KEY；默认启用视频，缺少密钥或存储配置时不接受付费提交，运行边界见[视频接入](docs/video-generation.md)。

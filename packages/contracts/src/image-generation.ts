@@ -236,6 +236,8 @@ export const assetTypeSchema = z.enum(["image", "video", "audio"]);
 export type AssetType = z.infer<typeof assetTypeSchema>;
 /** Workspace tools that create images; history and the asset library filter by them. */
 export const imageToolSchema = z.enum(["create", "textile", "variation"]);
+export const assetToolSchema = z.enum(["create", "textile", "variation", "video"]);
+export type AssetTool = z.infer<typeof assetToolSchema>;
 export type ImageTool = z.infer<typeof imageToolSchema>;
 /** Each member keeps at most this many favorites, so the favorite id list stays bounded. */
 export const assetFavoriteLimit = 1000;
@@ -253,9 +255,13 @@ export const imageAssetSchema = z.object({
   model: z.string().nullable(),
   prompt: z.string().nullable(),
   /** Tool of the task that produced an output; uploads have none. Optional for older servers. */
-  tool: imageToolSchema.nullable().optional(),
+  tool: assetToolSchema.nullable().optional(),
   /** Whether the signed-in member favorited the asset. Optional for older servers. */
   favorite: z.boolean().optional(),
+  /** Requested length of a generated video. Optional for older servers. */
+  duration_seconds: z.number().nullable().optional(),
+  /** Resolution tier of the producing task. Optional for older servers. */
+  resolution: z.string().nullable().optional(),
 });
 export type ImageAsset = z.infer<typeof imageAssetSchema>;
 export const imageAssetsResponseSchema = z.object({ data: z.array(imageAssetSchema) });

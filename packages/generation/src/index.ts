@@ -26,3 +26,4 @@ export * from "./standalone-models";
 export * from "./textile-generation";
 export * from "./vakv-provider";
 export * from "./variation-planner";
+export * from "./video-provider";

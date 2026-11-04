@@ -1,11 +1,13 @@
 const encoder = new TextEncoder();
 export const assetLinkLifetime = 86400;
 export const assetDownloadLifetime = 1800;
+// Covers a paused clip; kept short because a platform link skips application origin checks.
+export const assetPlaybackLifetime = 900;
 // Links issued within the same window share their expiry, so a reload or refetch yields the same
 // URL and the browser reuses its cached image instead of fetching it again through the function.
 export const assetLinkWindow = 900;
-export const assetKeyPattern = /^[0-9]{10}\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.png$/;
-export type AssetVariant = "preview" | "thumbnail" | "download";
+export const assetKeyPattern = /^[0-9]{10}\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(png|mp4)$/;
+export type AssetVariant = "preview" | "thumbnail" | "download" | "provider";
 const message = (key: string, expires: number, variant: AssetVariant) =>
   encoder.encode(`lycobo-asset-v2\n${key}\n${expires}\n${variant}`);
 export async function assetSigningKey(secret: string) {
@@ -89,7 +91,14 @@ export function assetDeliverySigner(
       Math.ceil((Math.floor(Date.now() / 1000) + assetDownloadLifetime) / assetLinkWindow) *
       assetLinkWindow;
     const variant = async (value: AssetVariant) => {
-      const pathname = value === "download" ? key : key.replace(/\.png$/, `.${value}.webp`);
+      // Videos are played as stored; the cover is their only derived object.
+      const pathname = key.endsWith(".mp4")
+        ? value === "thumbnail"
+          ? `${key}.thumbnail.webp`
+          : key
+        : value === "download"
+          ? key
+          : key.replace(/\.png$/, `.${value}.webp`);
       const url = new URL(`${prefix}${pathname}`, base);
       const expires = value === "download" ? expires_at : previewExpires;
       url.searchParams.set("expires", String(expires));
@@ -104,5 +113,28 @@ export function assetDeliverySigner(
       // Keep the envelope expiry at the shortest capability for older web clients.
       expires_at,
     };
+  };
+}
+
+/** Only the worker issues this raw-image capability; it requires no browser headers. */
+export function providerReferenceSigner(origin: string, secret: string, prefix = "/") {
+  const base = new URL(origin);
+  if (
+    base.protocol !== "https:" ||
+    base.pathname !== "/" ||
+    base.username ||
+    base.password ||
+    !/^\/(?:[a-z0-9_-]+\/)*$/.test(prefix)
+  )
+    throw new Error("INVALID_ASSET_ORIGIN");
+  const signingKey = assetSigningKey(secret);
+  return async (key: string) => {
+    if (!key.endsWith(".png")) throw new Error("INVALID_REFERENCE");
+    const expires = Math.floor(Date.now() / 1000) + 3600;
+    const url = new URL(prefix + key, base);
+    url.searchParams.set("expires", String(expires));
+    url.searchParams.set("variant", "provider");
+    url.searchParams.set("sig", await signAsset(key, expires, await signingKey, "provider"));
+    return url.href;
   };
 }

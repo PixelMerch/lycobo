@@ -3,13 +3,15 @@ import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { imageGenerationInputSchema } from "@lycoboai/contracts";
+import { imageGenerationInputSchema, videoInputSchema } from "@lycoboai/contracts";
 import {
   CloudBaseOperationError,
   type CloudBaseRpc,
   cloudbaseImageEventFeed,
   cloudbaseImageRepository,
   openImageRepository,
+  videoCredentialHash,
+  videoRepository,
 } from "@lycoboai/db";
 import { standaloneModels } from "@lycoboai/generation";
 import postgres from "postgres";
@@ -42,11 +44,38 @@ try {
       `DO $$ BEGIN CREATE ROLE ${role}; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
     );
   }
+  // Model CloudBase's default grants in the isolated database.
+  await sql`alter default privileges in schema public grant execute on functions to anon, authenticated`;
+  await sql`alter default privileges in schema public grant all on tables to anon, authenticated, service_role`;
+  // CloudBase provisions this catalog. Plain PostgreSQL in CI needs a local fixture.
+  await sql`create schema storage`;
+  await sql`create table storage.buckets (
+    id text primary key, name text not null, public boolean not null,
+    file_size_limit bigint, allowed_mime_types text[]
+  )`;
   const migrations = new URL("../../../cloudbase/migrations/", import.meta.url);
   for (const migration of (await readdir(fileURLToPath(migrations.href)))
-    .filter((name) => name.endsWith(".sql") && name >= "20261031223500")
+    .filter(
+      (name) =>
+        name.endsWith(".sql") &&
+        (name === "20261031223300_private_image_storage.sql" || name >= "20261031223500"),
+    )
     .sort()) {
     await sql.unsafe(await readFile(fileURLToPath(new URL(migration, migrations).href), "utf8"));
+  }
+  const [videoBucket] = await sql`select public, file_size_limit::integer as max_bytes,
+    allowed_mime_types from storage.buckets where id = 'lycobo-images'`;
+  assert.equal(videoBucket?.public, false);
+  assert.equal(videoBucket?.max_bytes, 128 * 1024 * 1024);
+  assert.deepEqual(videoBucket?.allowed_mime_types, ["image/png", "image/webp", "video/mp4"]);
+  const [videoGrants] = await sql`select has_function_privilege(
+    'service_role', 'public.lycobo_video_operation(text,jsonb)', 'EXECUTE'
+  ) as runtime_execute`;
+  assert.equal(videoGrants?.runtime_execute, true);
+  for (const role of ["anon", "authenticated", "service_role"]) {
+    const [grant] = await sql`select has_table_privilege(${role}, 'public.generation_video_outbox',
+      'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') as direct_access`;
+    assert.equal(grant?.direct_access, false, `${role} must access video data through the API`);
   }
   const call: CloudBaseRpc = async (operation, parameters) => {
     if (operation === "lycobo_image_batch") {
@@ -57,11 +86,20 @@ try {
         await sql`select public.lycobo_image_batch(${a.p_org}::uuid,${a.p_user}::uuid,${a.p_ids}::uuid[]) result`;
       return row?.result;
     }
-    assert(["lycobo_image_operation", "lycobo_provider_webhook"].includes(operation));
+    assert(
+      ["lycobo_image_operation", "lycobo_provider_webhook", "lycobo_video_operation"].includes(
+        operation,
+      ),
+    );
     const args = z
       .object({ p_operation: z.string(), p_args: z.record(z.string(), z.unknown()) })
       .parse(parameters);
     try {
+      if (operation === "lycobo_video_operation") {
+        const [row] =
+          await sql`select public.lycobo_video_operation(${args.p_operation},${sql.json(z.json().parse(JSON.parse(JSON.stringify(args.p_args))))}) result`;
+        return row?.result;
+      }
       if (operation === "lycobo_provider_webhook") {
         const [row] =
           await sql`select public.lycobo_provider_webhook(${args.p_operation},${sql.json(z.json().parse(JSON.parse(JSON.stringify(args.p_args))))}) result`;
@@ -382,6 +420,61 @@ try {
       { code: "42501" },
     );
   }
+  const videoOwner = await native.provision(`rpc-video:${randomUUID()}`, "video RPC fixture", 100);
+  const videos = videoRepository((p_operation, p_args = {}) =>
+    call("lycobo_video_operation", { p_operation, p_args }),
+  );
+  const videoInput = videoInputSchema.parse({ prompt: "隔离视频RPC fixture", seconds: 10 });
+  const video = await videos.create(videoOwner, videoInput, randomUUID(), {
+    origin: "https://api.uselg.top",
+    credentialHash: videoCredentialHash("fixture-only"),
+  });
+  assert.equal((await repository.wallet(videoOwner)).balance, 0);
+  assert.equal(
+    (await repository.list(videoOwner, 100)).length,
+    0,
+    "Image history must exclude video tasks",
+  );
+  const videoClaim = z
+    .object({ id: z.string(), itemId: z.string(), token: z.string() })
+    .parse(await videos.run("claim"));
+  assert.equal(videoClaim.id, video.id);
+  await videos.run("finish", {
+    id: video.id,
+    token: videoClaim.token,
+    status: "succeeded",
+    asset: {
+      objectKey: `${videoOwner.uid}/${videoOwner.organizationId}/${videoClaim.itemId}.mp4`,
+      width: 512,
+      height: 768,
+      bytes: 100,
+      sha256: "0".repeat(64),
+    },
+  });
+  const videoAssets = await repository.listAssets(videoOwner, 100, undefined, "output", "video", {
+    tool: "video",
+    includeVideo: true,
+  });
+  assert.equal(videoAssets.length, 1);
+  assert.equal(videoAssets[0]?.duration_seconds, 10);
+  assert.equal(videoAssets[0]?.resolution, "768p");
+  assert.equal(
+    (await repository.listAssets(videoOwner, 100)).length,
+    0,
+    "Legacy list requests must not receive video tool DTOs",
+  );
+  for (const role of ["anon", "authenticated"]) {
+    await assert.rejects(
+      sql.begin(async (tx) => {
+        await tx.unsafe(`set local role ${role}`);
+        await tx`select public.lycobo_video_operation('claim','{}'::jsonb)`;
+      }),
+      { code: "42501" },
+    );
+  }
+  console.log(
+    "CloudBase video RPC: 100-credit submission, video asset opt-in, image history exclusion and client-role denial passed (local fixtures only)",
+  );
   console.log(
     "CloudBase image RPC integration passed: concurrent submit/claim/outbox, wallet atomicity, idempotency, refunds, retries, stale execution, polling, tenant assets and variation plans (local fixtures only)",
   );

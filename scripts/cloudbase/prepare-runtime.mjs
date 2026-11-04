@@ -23,7 +23,12 @@ const definitions = [
     http: true,
     dependencies: { sharp: "0.35.5", postgres: "3.4.9", pino: "10.4.0" },
   },
-  { name: "lycobo-assets", entry: "apps/api/src/assets-server.ts", http: true, dependencies: {} },
+  {
+    name: "lycobo-assets",
+    entry: "apps/api/src/assets-server.ts",
+    http: true,
+    dependencies: { "ffmpeg-static": "5.3.0" },
+  },
   {
     name: "lycobo-consumer",
     entry: "apps/worker/src/cloudbase-consumer.ts",
@@ -100,5 +105,14 @@ for (const definition of definitions) {
   );
   if (installed.status !== 0)
     throw new Error(`Runtime dependency installation failed: ${definition.name}`);
+  if (definition.dependencies["ffmpeg-static"]) {
+    const binary = spawnSync("node", ["node_modules/ffmpeg-static/install.js"], {
+      cwd: directory,
+      stdio: "pipe",
+      timeout: 180000,
+      env: { ...process.env, npm_config_platform: "linux", npm_config_arch: "x64", FFMPEG_BIN: "" },
+    });
+    if (binary.status !== 0) throw new Error("Video decoder preparation failed");
+  }
   console.log(`Prepared ${definition.name} (Nodejs20.19, Linux x64)`);
 }

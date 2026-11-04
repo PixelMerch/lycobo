@@ -1,11 +1,21 @@
+/* React Aria caps this box at the room below the mention. The flex chain passes that cap down so
+   the list gives up height first; the box itself only scrolls once the list is at its floor. */
 .reference-mention-popover.popover {
+  display: flex;
+  flex-direction: column;
   width: min(320px, calc(100vw - 32px));
   padding: 12px;
+  overflow: hidden auto;
   border: 1px solid #ffffff1f;
   border-radius: 16px;
   background: #202020;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff33 transparent;
 }
 .reference-mention-popover .popover__dialog {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   padding: 0;
 }
 .reference-mention-popover .popover__heading {
@@ -17,6 +27,7 @@
   font-weight: var(--weight-medium);
 }
 .reference-mention-scroll {
+  min-height: 32px;
   max-height: 232px;
   overflow: auto;
   scrollbar-width: thin;
@@ -180,8 +191,10 @@
 }
 
 .reference-mention-options {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
+  min-height: 0;
 }
 .reference-source-tabs .tabs__list {
   gap: 18px;

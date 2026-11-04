@@ -1,51 +1,53 @@
 # 项目文档
 
-先阅读根目录 [PRD.md](../PRD.md)、[DESIGN.md](../DESIGN.md) 和 [PROJECT_STRUCTURE.md](../PROJECT_STRUCTURE.md)。当前页面UI已于2026-10-22确认定稿，后续维护保持现有外观。这里仅保留持续维护的实施文档，不重复堆积历史修改记录与过期设计稿。
+产品范围见 [PRD](../PRD.md)，视觉与交互以 [DESIGN](../DESIGN.md) 为唯一规范，代码目录与依赖方向见 [PROJECT_STRUCTURE](../PROJECT_STRUCTURE.md)。本目录保留当前实现说明、维护手册和必要的迁移校验记录。
 
-## 产品与设计
+## 开发入口
 
-按产品范围 → 视觉规范 → 组件选型 → 一致性检查的顺序阅读。视觉数值只在 DESIGN.md 维护，研究资料用于解释决策。
+| 需要做什么 | 文档 |
+| --- | --- |
+| 启动本地环境、配置服务 | [本地开发](development.md) · [技术栈](tech-stack.md) |
+| 选择组件、统一界面 | [HeroUI 组件清单](heroui-components.md) · [UI 一致性](ui-consistency.md) |
+| 验证改动 | [测试说明](testing.md) |
+| 提交、发布与回滚 | [发布流程](releasing.md) · [CloudBase 部署](cloudbase-deployment.md) |
+
+## 功能与接口
 
 | 主题 | 文档 |
 | --- | --- |
-| 产品范围、导航与功能边界 | [产品需求](../PRD.md) |
-| 唯一视觉与交互规范 | [设计规范](../DESIGN.md) |
-| 功能目录与依赖方向 | [项目结构](../PROJECT_STRUCTURE.md) |
-| HeroUI 组件选型 | [组件清单](heroui-components.md) |
-| UI 复用、审查与交付 | [一致性维护](ui-consistency.md) |
-| 当前研究依据与素材来源 | [设计资料](design/README.md) |
+| 账号与权限 | [企业鉴权](enterprise-auth.md) |
+| 积分与会员 | [共享钱包](enterprise-wallet.md) · [会员定价](membership-pricing.md) |
+| 图片生成与供应商配置 | [生图 API](image-generation-api.md) · [模型服务](model-services.md) |
+| 异步任务与回调 | [任务生命周期](task-lifecycle.md) · [图片 Webhook](image-webhooks.md) |
+| 套图计划与链接分析 | [套图计划](product-variation-plan.md) |
+| 家纺裂变 | [家纺生成](textile-generation.md) · [视角示例](textile-view-examples.md) |
+| 多区域图片修改 | [局部编辑](local-image-repair.md) |
+| API 与数据约定 | [返回规范](api-response.md) · [数据库命名](database-naming.md) |
 
-## 功能与服务
-
-| 主题 | 文档 |
-| --- | --- |
-| 智能商品裂变菜单与确认流程（待实施） | [商品裂变方案](product-variation-plan.md) |
-| 工作台状态与素材 | [工作台实现](image-studio-implementation.md) |
-| 多区域图片修改与画布 | [局部编辑](local-image-repair.md) |
-| JSON 返回结构与业务码 | [API 返回规范](api-response.md) |
-| 企业账号密码与 JWT | [企业鉴权](enterprise-auth.md) |
-| 生图鉴权、任务、Worker 与存储 | [生图 API](image-generation-api.md) |
-| 任务生命周期 | [任务与幂等约束](task-lifecycle.md) |
-| 企业共享余额、充值与收支 | [企业钱包](enterprise-wallet.md) |
-| 素材与生成任务的数据库命名 | [数据库命名](database-naming.md) |
-
-## 开发与维护
+## 数据与运维
 
 | 主题 | 文档 |
 | --- | --- |
-| 本地启动与配置 | [本地开发](development.md) |
-| 技术选择与边界 | [技术栈](tech-stack.md) |
-| 测试与隔离环境 | [测试说明](testing.md) |
-| CloudBase GitHub 自动发布与私有图片存储 | [CloudBase 部署](cloudbase-deployment.md) |
-| 共享 PG 事务、运行服务和部署进度 | [CloudBase 运行迁移](cloudbase-runtime-migration.md) |
-| Supabase PostgreSQL 结构迁移 | [Supabase 接入](supabase-postgres.md) |
-| CloudBase 个人版共享 PG 数据副本与校验 | [CloudBase 数据迁移](cloudbase-database-migration.md) |
-| 主站私有图片复制与逐对象校验 | [CloudBase 图片迁移](cloudbase-storage-migration.md) |
-| 数据库完整导出与恢复 | [数据库备份](database-backup.md) |
-| 发布与分支流程 | [发布说明](releasing.md) |
-| 技能及来源 | [项目技能](skills.md) |
-| 依赖和素材声明 | [第三方说明](third-party.md) |
+| 数据库导出与恢复 | [数据库备份](database-backup.md) |
+| 云端数据同步到本地 Docker | [本地数据库同步](cloudbase-local-database-sync.md) |
+| 本地 S3、COS 与私有存储边界 | [对象存储](s3-storage.md) |
+| 原 PostgreSQL 环境与迁移工具 | [Supabase PostgreSQL](supabase-postgres.md) |
 
-维护要求：产品范围写入 PRD，视觉参数写入 DESIGN，实现状态写入对应模块文档；不要新增同一主题的 v2／v3 副本。图片必须被当前文档或应用引用；删除旧资料时同步检查链接，避免索引保留失效入口。
+以下迁移记录用于核对数据、定位历史问题和维护迁移脚本；日常发布使用上面的部署手册：
 
-- [统一对象存储](s3-storage.md)：本地 S3 与独立后台的存储参数、COS/Docker 寻址、公开与私有桶边界。
+- [CloudBase 运行时迁移](cloudbase-runtime-migration.md)
+- [CloudBase 数据库迁移与校验](cloudbase-database-migration.md)
+- [CloudBase 图片迁移与校验](cloudbase-storage-migration.md)
+
+## 设计依据与来源
+
+- [设计资料索引](design/README.md)：当前保留的设计依据、已确认方案与素材来源；实际样式以 DESIGN 为准。
+- [项目技能](skills.md)：开发技能及来源。
+- [第三方说明](third-party.md) · [React Bits 许可](licenses/react-bits.md)：依赖与素材声明。
+
+## 维护约定
+
+- 产品范围写入 PRD，视觉参数写入 DESIGN，实现与运维约束写入对应模块文档，避免同一主题出现 v2／v3 副本。
+- 实现变化时直接更新对应说明；只保留有排障、恢复或审计价值的历史记录。
+- 新增文档同步更新本索引。删除资料时检查文档和代码引用，配套图片一并清理。
+- 示例、设计稿和未来契约必须与生产能力区分，不以文档或 UI 文案代替功能验收。

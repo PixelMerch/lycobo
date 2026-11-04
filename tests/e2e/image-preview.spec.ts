@@ -125,7 +125,10 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   await expect(viewer.locator(".image-preview-close svg")).toHaveCSS("width", "28px");
   const topAlignment = await viewer.evaluate((dialog) => {
     const close = dialog.querySelector(".image-preview-close svg")!.getBoundingClientRect();
-    const thumb = dialog.querySelector(".image-preview-thumb img")!.getBoundingClientRect();
+    // Pictures are letterboxed inside the 1:1 tile, so the tile frame is the stable edge.
+    const thumb = dialog
+      .querySelector(".image-preview-thumb .history-thumbnail-frame")!
+      .getBoundingClientRect();
     return Math.abs(close.top - thumb.top);
   });
   expect(topAlignment).toBeLessThanOrEqual(1);
@@ -279,7 +282,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test("rail thumbnails zoom on hover like reference thumbnails", async ({ page }) => {
+test("rail thumbnails keep the whole image on hover", async ({ page }) => {
   await page.setViewportSize({ width: 1328, height: 906 });
   await mockImageApi(page);
   await page.route("**/api/v1/image-assets?*", (route) =>
@@ -299,5 +302,6 @@ test("rail thumbnails zoom on hover like reference thumbnails", async ({ page })
   const image = thumb.locator("img");
   await expect(image).toHaveCSS("transform", "none");
   await thumb.hover();
-  await expect(image).toHaveCSS("transform", "matrix(1.1, 0, 0, 1.1, 0, 0)");
+  await expect(image).toHaveCSS("transform", "none");
+  await expect(image).toHaveCSS("object-fit", "contain");
 });

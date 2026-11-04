@@ -1,5 +1,5 @@
 import { Modal } from "@heroui/react";
-import type { ImageTool } from "@lycoboai/contracts";
+import type { AssetTool } from "@lycoboai/contracts";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { DialogClose } from "../../components/dialog-close";
@@ -14,12 +14,13 @@ export function LibraryDialog({
   tool,
   onClose,
 }: {
-  tool?: ImageTool | undefined;
+  tool?: AssetTool | undefined;
   onClose: () => void;
 }) {
   const defaults: AssetLibraryFilters = {
     ...defaultAssetFilters,
     tool: tool ?? "all",
+    ...(tool === "video" ? { type: "video" as const } : {}),
   };
   const [filters, setFilters] = useState(defaults);
   const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
@@ -40,6 +41,7 @@ export function LibraryDialog({
               </Modal.Header>
               <Modal.Body className="library-body">
                 <AssetBrowser
+                  onAuthenticationClose={onClose}
                   generatedOnly
                   filters={filters}
                   defaults={defaults}

@@ -7,6 +7,7 @@ import {
   openCloudBaseImageRepository,
   openImageEventFeed,
   openImageRepository,
+  openVideoRepository,
   readCloudBaseDatabaseConfig,
 } from "@lycoboai/db";
 import {
@@ -14,6 +15,7 @@ import {
   standaloneModels,
   supportedResolutions,
   validateModelInput,
+  videoConfiguration,
 } from "@lycoboai/generation";
 import { imageStore } from "@lycoboai/storage";
 import { cloudbaseObjectBucket, readCloudBaseStorageConfig } from "@lycoboai/storage/cloudbase";
@@ -27,10 +29,11 @@ import { enterpriseAuth, readAuthConfig } from "./features/auth/service";
 import { cloudbaseConsumerWake } from "./features/images/consumer-wake";
 import { readWebhookConfig } from "./features/images/provider-webhook";
 import { readWorkbenchSession } from "./features/images/session";
+import { videoService } from "./features/videos/service";
 
 const env = readEnv(process.env);
 const logger = pino({ level: env.LOG_LEVEL });
-const policy = readImagePolicy({ IMAGE_GENERATION_ENABLED: process.env.IMAGE_GENERATION_ENABLED });
+const policy = readImagePolicy({});
 const cloudbaseStorage = readCloudBaseStorageConfig(process.env);
 const cloudbaseDatabase = readCloudBaseDatabaseConfig(process.env);
 if (policy.enabled && !cloudbaseStorage && !isAbsolute(process.env.IMAGE_DATA_DIR ?? ""))
@@ -67,19 +70,33 @@ const events =
         ? openImageEventFeed(process.env.DATABASE_URL)
         : undefined
     : undefined;
-const wakeConsumer =
-  cloudbaseDatabase && policy.enabled
-    ? cloudbaseConsumerWake(
-        cloudbaseDatabase,
-        process.env.CLOUDBASE_CONSUMER_FUNCTION ?? "lycobo-consumer",
-      )
-    : undefined;
+const wakeConsumer = cloudbaseDatabase
+  ? cloudbaseConsumerWake(
+      cloudbaseDatabase,
+      process.env.CLOUDBASE_CONSUMER_FUNCTION ?? "lycobo-consumer",
+    )
+  : undefined;
 const store = cloudbaseStorage
   ? objectImageStore(cloudbaseObjectBucket(cloudbaseStorage), repository?.storageUid)
   : process.env.S3_ENDPOINT
     ? objectImageStore(imageObjectBucket(process.env), repository?.storageUid)
     : imageStore(process.env.IMAGE_DATA_DIR ?? "./data/images", repository?.storageUid);
 if (policy.enabled) await store.ready();
+const videoConfig = videoConfiguration(process.env);
+const videoRepository = videoConfig ? openVideoRepository(process.env) : undefined;
+const videoSign =
+  process.env.ASSET_PUBLIC_ORIGIN && process.env.ASSET_SIGNING_SECRET
+    ? assetDeliverySigner(process.env.ASSET_PUBLIC_ORIGIN, process.env.ASSET_SIGNING_SECRET, {
+        pathPrefix: process.env.ASSET_PATH_PREFIX ?? "/",
+        allowLocalHttp: process.env.APP_ENV === "development",
+      })
+    : undefined;
+const videoReady = !!(
+  videoConfig &&
+  videoSign &&
+  auth &&
+  (cloudbaseStorage || process.env.S3_ENDPOINT)
+);
 const app = createApp(
   (event) => logger.error(event, "Request failed"),
   repository
@@ -123,6 +140,23 @@ const app = createApp(
     : undefined,
   auth,
   readWebhookConfig(process.env),
+  videoReady && videoConfig && videoRepository && videoSign
+    ? {
+        service: videoService({
+          repository: videoRepository,
+          ...videoConfig,
+          sign: videoSign,
+          referencesReady: !!(
+            cloudbaseStorage || process.env.ASSET_PUBLIC_ORIGIN?.startsWith("https://")
+          ),
+          wake: wakeConsumer
+            ? async () => {
+                await wakeConsumer();
+              }
+            : undefined,
+        }),
+      }
+    : undefined,
 );
 const server = serve({ fetch: app.fetch, hostname: env.API_HOST, port: env.API_PORT }, (info) => {
   const host = env.API_HOST === "0.0.0.0" || env.API_HOST === "::" ? "127.0.0.1" : env.API_HOST;
@@ -141,7 +175,12 @@ function shutdown() {
   void events?.close();
   server.close(async (error) => {
     try {
-      await Promise.all([repository?.close(), authRepository?.close(), events?.close()]);
+      await Promise.all([
+        repository?.close(),
+        videoRepository?.close(),
+        authRepository?.close(),
+        events?.close(),
+      ]);
       process.exitCode = error ? 1 : 0;
     } catch {
       process.exitCode = 1;

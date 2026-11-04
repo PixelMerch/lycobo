@@ -4,6 +4,8 @@ import { useNavigate } from "react-router";
 import { ReferencePrompt } from "../../components/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
+import { useEnterpriseSession } from "../auth/auth-client";
+import { LoginRequiredInteraction } from "../auth/login-prompt";
 import { HomeRatioPicker } from "../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../generation/composer/selection-highlight";
 import { ImageApiError, useImageModels } from "../generation/generation-client";
@@ -19,7 +21,8 @@ export function HomeComposer() {
   const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const setModel = useStudioStore((s) => s.setActiveModel);
-  const catalog = useImageModels();
+  const signedIn = !!useEnterpriseSession().data;
+  const catalog = useImageModels(signedIn);
   const navigate = useNavigate();
   const catalogError = catalog.isError
     ? catalog.error instanceof ImageApiError
@@ -30,12 +33,13 @@ export function HomeComposer() {
   const canSubmit = hasPromptDescription(draft.prompt);
   const resolutions = catalog.data?.models.find((item) => item.id === model)?.enabledResolutions;
   return (
-    <div className="home-composer">
+    <LoginRequiredInteraction className="home-composer">
       <div className="home-upload">
         <ReferencePicker compact model={model} references={draft.references} />
       </div>
       <ReferencePrompt
         className="home-prompt"
+        isRequired
         value={draft.prompt}
         onChange={(prompt) => updateDraft(model, { prompt })}
         onReferencesInsert={(images, prompt) =>
@@ -99,7 +103,10 @@ export function HomeComposer() {
                 ))}
               </div>
               <div className="home-settings-options">
-                <h3>画面比例</h3>
+                <div className="home-ratio-heading">
+                  <h3>画面比例</h3>
+                  <span className="home-ratio-current">{draft.ratio}</span>
+                </div>
                 <HomeRatioPicker
                   value={draft.ratio}
                   onChange={(ratio) => updateDraft(model, { ratio })}
@@ -187,6 +194,6 @@ export function HomeComposer() {
           <UiIcon icon={IconArrowUp} size="action" />
         </Button>
       </div>
-    </div>
+    </LoginRequiredInteraction>
   );
 }

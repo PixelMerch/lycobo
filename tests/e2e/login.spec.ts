@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
 test.beforeEach(async ({ page }) => {
-  await mockImageApi(page);
+  await mockImageApi(page, { signedIn: false });
 });
 
 test("header login opens account/password dialog and validates without faking authentication", async ({
@@ -139,12 +139,10 @@ test("login panel animates open and close, and reduced motion skips the animatio
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
-test("mobile login closes without losing the current creation draft", async ({ page }) => {
+test("mobile protected-route login closes back to the homepage", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/create");
-  const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
-  await prompt.fill("保留当前创作草稿");
-  await page.getByRole("button", { name: "登录领积分", exact: true }).click();
+  await expect(page.locator(".composer-panel")).toHaveCount(0);
   const dialog = page.getByRole("dialog", { name: "欢迎使用 Lycobo" });
   await expect(dialog).toBeVisible();
   await expect
@@ -153,7 +151,7 @@ test("mobile login closes without losing the current creation draft", async ({ p
   await page.screenshot({ path: "/tmp/lycoboai-login-mobile.png" });
   await dialog.getByRole("button", { name: "关闭登录" }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(prompt).toHaveValue("保留当前创作草稿");
+  await expect(page).toHaveURL(/\/$/);
 });
 
 test("phone login validates the phone and code without pretending to send SMS", async ({

@@ -1,6 +1,11 @@
 import { serve } from "@hono/node-server";
 import { servePrivateAsset } from "@lycoboai/storage/asset-server";
-import { cloudbaseDownloadSigner, cloudbaseObjectBucket } from "@lycoboai/storage/cloudbase";
+import {
+  cloudbaseDownloadSigner,
+  cloudbaseObjectBucket,
+  cloudbasePlaybackSigner,
+} from "@lycoboai/storage/cloudbase";
+import { videoThumbnailCache } from "@lycoboai/storage/video-variants";
 import { z } from "zod";
 
 const env = z
@@ -14,11 +19,14 @@ for (const origin of env.ASSET_ALLOWED_ORIGINS.split(",")) {
   const url = new URL(origin);
   if (url.protocol !== "https:" || url.origin !== origin) throw new Error("INVALID_ASSET_ORIGIN");
 }
+const bucket = cloudbaseObjectBucket(process.env);
 const options = {
-  bucket: cloudbaseObjectBucket(process.env),
+  bucket,
+  createVideoThumbnail: videoThumbnailCache(bucket),
   signingSecret: env.ASSET_SIGNING_SECRET,
   allowedOrigins: env.ASSET_ALLOWED_ORIGINS,
   signDownload: cloudbaseDownloadSigner(process.env),
+  signPlayback: cloudbasePlaybackSigner(process.env),
 };
 const server = serve({
   hostname: "0.0.0.0",

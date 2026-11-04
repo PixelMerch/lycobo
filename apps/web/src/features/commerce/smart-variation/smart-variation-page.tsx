@@ -31,6 +31,7 @@ export function SmartVariationPage() {
           <ReferencePrompt
             className="prompt-field"
             label="创作需求"
+            isRequired
             value={description}
             onChange={(description) => update({ description })}
             references={references}

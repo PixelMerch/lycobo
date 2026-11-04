@@ -22,12 +22,11 @@ it("keeps business infrastructure local and discards production credentials", ()
   ])
     expect(env).not.toHaveProperty(key);
   expect(env.AUTH_JWT_SECRET).not.toBe("production");
-  expect(env.IMAGE_GENERATION_ENABLED).toBe("false");
+  expect(env).not.toHaveProperty("IMAGE_GENERATION_ENABLED");
   expect(env.PATH).toBe("/usr/bin");
 });
-it("only imports model secrets when generation is explicitly enabled", () => {
+it("imports configured model secrets without a generation enable flag", () => {
   const env = localEnvironment({}, true, {
-    IMAGE_GENERATION_ENABLED: "true",
     MODEL_CREDENTIAL_SECRET: "fixture",
     STANDALONE_MODELS: "true",
     STANDALONE_IMAGE_API_KEY: "fixture-image",
@@ -36,7 +35,5 @@ it("only imports model secrets when generation is explicitly enabled", () => {
   expect(new URL(env.DATABASE_URL).hostname).toBe("postgres");
   expect(new URL(env.S3_ENDPOINT).hostname).toBe("image-storage");
   expect(env.DEEPSEEK_API_KEY).toBe("fixture-text");
-  expect(() => localEnvironment({}, false, { IMAGE_GENERATION_ENABLED: "true" })).toThrow(
-    "MODEL_CREDENTIAL_SECRET_REQUIRED",
-  );
+  expect(localEnvironment({}, false, {})).not.toHaveProperty("STANDALONE_IMAGE_API_KEY");
 });

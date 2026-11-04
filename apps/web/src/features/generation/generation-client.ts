@@ -67,9 +67,10 @@ export async function imageRequest(path: string, init: RequestInit = {}, timeout
     rememberImageDeliveries(await normalized.clone().json());
   return normalized;
 }
-export function useImageSession() {
+export function useImageSession(enabled = true) {
   return useQuery({
     queryKey: ["image-session"],
+    enabled,
     retry: false,
     staleTime: 5 * 60 * 1000,
     queryFn: async ({ signal }) => {
@@ -79,11 +80,11 @@ export function useImageSession() {
     },
   });
 }
-export function useImageModels() {
-  const session = useImageSession();
+export function useImageModels(enabled = true) {
+  const session = useImageSession(enabled);
   return useQuery({
     queryKey: ["image-models"],
-    enabled: session.isSuccess,
+    enabled: enabled && session.isSuccess,
     retry: false,
     // Model capabilities change only with server configuration; avoid refetching on every focus.
     staleTime: 10 * 60 * 1000,
@@ -378,7 +379,7 @@ export function useGenerateImage() {
 export function downloadAsset(id: string) {
   const link = document.createElement("a");
   link.href = assetContentUrl(id, false, true);
-  link.download = `${id}.png`;
+  link.download = id;
   link.referrerPolicy = "strict-origin-when-cross-origin";
   link.click();
 }

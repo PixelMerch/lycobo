@@ -117,8 +117,10 @@ export function ReferencePrompt({
   placeholder,
   inputRef,
   maxLength = 9000,
+  maxReferences = 5,
   showCount = false,
   autoGrow = false,
+  isRequired = false,
   onReferencesInsert,
 }: {
   value: string;
@@ -129,11 +131,14 @@ export function ReferencePrompt({
   placeholder: string;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
   maxLength?: number;
+  maxReferences?: number;
   showCount?: boolean;
   autoGrow?: boolean;
+  isRequired?: boolean;
   onReferencesInsert?: (images: ReferenceImage[], prompt: string) => void;
 }) {
   const countId = useId();
+  const labelId = useId();
   const composing = useRef(false);
   const ownRef = useRef<HTMLTextAreaElement>(null);
   const ref = inputRef ?? ownRef;
@@ -290,7 +295,7 @@ export function ReferencePrompt({
           reference.id === image.id || (image.assetId && reference.assetId === image.assetId),
       );
       if (index < 0) {
-        if (!onReferencesInsert || nextReferences.length >= 5) continue;
+        if (!onReferencesInsert || nextReferences.length >= maxReferences) continue;
         index = nextReferences.length;
         nextReferences.push(image);
         added.push(image);
@@ -311,8 +316,16 @@ export function ReferencePrompt({
   }
   return (
     <>
-      <TextField className={className} {...(label ? {} : { "aria-label": "创作需求" })}>
-        {label && <Label>{label}</Label>}
+      <TextField
+        isRequired={isRequired}
+        className={className}
+        {...(label ? {} : { "aria-label": "创作需求" })}
+      >
+        {label && (
+          <Label>
+            <span id={labelId}>{label}</span>
+          </Label>
+        )}
         <div
           className="prompt-editor"
           data-count={showCount ? "" : undefined}
@@ -326,6 +339,7 @@ export function ReferencePrompt({
               tabIndex={0}
               aria-label={label ?? "创作需求"}
               aria-multiline="true"
+              aria-required={isRequired || undefined}
               aria-describedby={showCount ? countId : undefined}
               contentEditable
               suppressContentEditableWarning
@@ -388,7 +402,8 @@ export function ReferencePrompt({
           ) : (
             <TextArea
               ref={ref}
-              aria-label={label ? undefined : "创作需求"}
+              aria-label={label ?? "创作需求"}
+              aria-labelledby={label ? labelId : undefined}
               aria-describedby={showCount ? countId : undefined}
               value={value}
               onChange={(event) => {
@@ -446,6 +461,7 @@ export function ReferencePrompt({
           <Popover.Dialog aria-label="引用图片">
             {mention && (
               <ReferenceMentionOptions
+                maxReferences={maxReferences}
                 references={references}
                 usedIds={usedIds}
                 onSelect={insert}

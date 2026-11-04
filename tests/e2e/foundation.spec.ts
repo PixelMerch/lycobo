@@ -1,13 +1,14 @@
 import { expect, test } from "@playwright/test";
 
-test("workspace entry opens creation and the categorized tool selector", async ({ page }) => {
+test("workspace entry opens creation with direct tool navigation", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: "工作区", exact: true }).click();
   await expect(page).toHaveURL(/\/create$/);
-  await page.getByRole("button", { name: "全部工具", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "选择工具" });
-  await dialog.getByRole("button", { name: /^主图制作/ }).click();
-  await expect(dialog).toBeHidden();
+  await expect(page.getByRole("button", { name: "全部工具", exact: true })).toHaveCount(0);
+  await page
+    .getByRole("navigation", { name: "电商创作工具" })
+    .getByRole("button", { name: "主图制作", exact: true })
+    .click();
   await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: /^生成商品主图/ })).toBeDisabled();
 });

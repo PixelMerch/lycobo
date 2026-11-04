@@ -10,39 +10,39 @@ test("workspace switches tools without discarding drafts and remembers the curre
 }) => {
   await page.goto("/create");
   await page.getByLabel("提示词", { exact: true }).fill("保留我的商品草稿");
-  await page.getByRole("button", { name: "全部工具", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "选择工具" });
-  await dialog.getByRole("button", { name: /^家纺裂变/ }).click();
+  const tools = page.getByRole("navigation", { name: "电商创作工具" });
+  await tools.getByRole("button", { name: "家纺裂变", exact: true }).click();
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
-  await expect(dialog).toBeHidden();
   await page.getByRole("link", { name: "首页", exact: true }).click();
   await page.getByRole("link", { name: "工作区", exact: true }).click();
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
-  await page.getByRole("button", { name: "全部工具", exact: true }).click();
-  await dialog.getByRole("button", { name: /^主图制作/ }).click();
+  await tools.getByRole("button", { name: "主图制作", exact: true }).click();
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("保留我的商品草稿");
 });
 
-test("tool search, categories and unavailable tools do not trigger paid work", async ({ page }) => {
+test("switching to video creation does not trigger paid work", async ({ page }) => {
   const submissions: string[] = [];
   page.on("request", (r) => {
     if (r.method() === "POST" && r.url().includes("image-tasks")) submissions.push(r.url());
   });
   await page.goto("/create");
-  await page.getByRole("button", { name: "全部工具", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "选择工具" });
-  await dialog.getByRole("textbox", { name: "搜索电商工具" }).fill("不存在的工具");
-  await expect(dialog.getByText("没有匹配的工具")).toBeVisible();
-  await dialog.getByRole("textbox", { name: "搜索电商工具" }).fill("");
-  await dialog.getByRole("radio", { name: "商品视频", exact: true }).click();
-  await expect(dialog.getByRole("button", { name: /商品视频/ })).toBeDisabled();
+  await page
+    .getByRole("navigation", { name: "电商创作工具" })
+    .getByRole("button", { name: "视频创作", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/video$/);
+  await expect(page.getByRole("button", { name: /立即生成.*100/ })).toBeDisabled();
   expect(submissions).toEqual([]);
 });
 
 test("legacy commerce URL remains supported", async ({ page }) => {
   await page.goto("/commerce");
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
-  await expect(page.getByRole("button", { name: "全部工具", exact: true })).toBeVisible();
+  await expect(
+    page
+      .getByRole("navigation", { name: "电商创作工具" })
+      .getByRole("button", { name: "家纺裂变", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
 });
 
 test("tool-scoped history follows navigation and preserves the main-image draft", async ({

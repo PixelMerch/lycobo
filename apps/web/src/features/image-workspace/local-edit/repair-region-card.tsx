@@ -36,6 +36,9 @@ export function RepairRegionCard({
           onPress={onSelect}
         >
           <span className="repair-badge">{number}</span>区域 {number}
+          <span className="required-indicator" aria-hidden="true">
+            *
+          </span>
         </Button>
         <Button
           size="sm"
@@ -51,6 +54,7 @@ export function RepairRegionCard({
       </div>
       <TextField
         aria-label={`区域 ${number} 修改说明`}
+        isRequired
         value={region.prompt}
         isDisabled={locked}
         onFocus={onSelect}

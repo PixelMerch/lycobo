@@ -1,5 +1,6 @@
 import { imageLimits } from "@lycoboai/contracts";
 import { z } from "zod";
+import { assetPlaybackLifetime } from "./asset-delivery";
 import { objectKeySchema } from "./core";
 import type { ImageObjectBucket } from "./object-bucket";
 
@@ -57,9 +58,13 @@ export function cloudbaseObjectBucket(
       throw new Error("IMAGE_STORAGE_UNAVAILABLE");
     }
   };
-  const objectSize = (response: Response) => {
+  const objectSize = (response: Response, key: string) => {
     const size = Number(response.headers.get("Content-Length"));
-    if (!Number.isSafeInteger(size) || size < 1 || size > imageLimits.outputBytes)
+    if (
+      !Number.isSafeInteger(size) ||
+      size < 1 ||
+      size > (key.endsWith(".mp4") ? 128 * 1024 * 1024 : imageLimits.outputBytes)
+    )
       throw new Error("IMAGE_STORAGE_UNAVAILABLE");
     return size;
   };
@@ -67,13 +72,13 @@ export function cloudbaseObjectBucket(
     async head(key) {
       const response = await send(key, "HEAD");
       if (!response) return null;
-      return { size: objectSize(response), httpEtag: response.headers.get("ETag") ?? '""' };
+      return { size: objectSize(response, key), httpEtag: response.headers.get("ETag") ?? '""' };
     },
     async get(key) {
       const response = await send(key, "GET");
       if (!response) return null;
       try {
-        const size = objectSize(response);
+        const size = objectSize(response, key);
         if (!response.body) throw new Error("IMAGE_STORAGE_UNAVAILABLE");
         return {
           size,
@@ -87,7 +92,10 @@ export function cloudbaseObjectBucket(
       }
     },
     async put(key, bytes, options) {
-      if (!bytes.length || bytes.length > imageLimits.outputBytes)
+      if (
+        !bytes.length ||
+        bytes.length > (key.endsWith(".mp4") ? 128 * 1024 * 1024 : imageLimits.outputBytes)
+      )
         throw new Error("INVALID_IMAGE_SIZE");
       // sha256 remains authoritative in media_assets; pgstore owns its system metadata.
       const response = await send(key, "PUT", bytes, options?.httpMetadata?.contentType);
@@ -105,16 +113,18 @@ export function cloudbaseObjectBucket(
 }
 
 /** PG signed download API; call only after validating the application's download capability. */
-export function cloudbaseDownloadSigner(
+function cloudbaseObjectSigner(
   env: CloudBaseStorageBindings,
-  request: typeof fetch = fetch,
+  request: typeof fetch,
+  maxLifetime: number,
+  attachment = true,
 ) {
   const config = readCloudBaseStorageConfig(env);
   if (!config) throw new Error("CLOUDBASE_STORAGE_NOT_CONFIGURED");
   const origin = `https://${config.CLOUDBASE_ENV_ID}.api.tcloudbasegateway.com`;
   return async (key: string, expiresIn: number) => {
     objectKeySchema.parse(key);
-    if (!Number.isInteger(expiresIn) || expiresIn < 1 || expiresIn > 300)
+    if (!Number.isInteger(expiresIn) || expiresIn < 1 || expiresIn > maxLifetime)
       throw new Error("INVALID_DOWNLOAD_LIFETIME");
     const pathname = `/v1/storages/object/sign/${config.CLOUDBASE_STORAGE_BUCKET}/${key.split("/").map(encodeURIComponent).join("/")}`;
     try {
@@ -146,10 +156,35 @@ export function cloudbaseDownloadSigner(
         !url.searchParams.get("token")
       )
         throw new Error("IMAGE_STORAGE_UNAVAILABLE");
-      url.searchParams.set("download", key.split("/").at(-1) ?? "image.png");
+      if (attachment) url.searchParams.set("download", key.split("/").at(-1) ?? "image.png");
       return url.href;
     } catch {
       throw new Error("IMAGE_STORAGE_UNAVAILABLE");
     }
+  };
+}
+
+export function cloudbaseDownloadSigner(
+  env: CloudBaseStorageBindings,
+  request: typeof fetch = fetch,
+) {
+  return cloudbaseObjectSigner(env, request, 300);
+}
+/** Same exact-object link without the attachment parameter, for the browser video element. */
+export function cloudbasePlaybackSigner(
+  env: CloudBaseStorageBindings,
+  request: typeof fetch = fetch,
+) {
+  return cloudbaseObjectSigner(env, request, assetPlaybackLifetime, false);
+}
+/** Provider reads reference PNGs without browser cookies; never expose this signer to clients. */
+export function cloudbaseProviderReferenceSigner(
+  env: CloudBaseStorageBindings,
+  request: typeof fetch = fetch,
+) {
+  const sign = cloudbaseObjectSigner(env, request, 3600);
+  return (key: string) => {
+    if (!key.endsWith(".png")) throw new Error("INVALID_REFERENCE_IMAGE");
+    return sign(key, 3600);
   };
 }

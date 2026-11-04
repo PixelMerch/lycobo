@@ -523,9 +523,9 @@ small {
 }
 /* Header keeps only the mobile menu and the account/login actions. */
 .topbar .header-login {
-  height: 38px;
-  min-height: 38px;
-  border-radius: 20px;
+  height: var(--control-height-sm);
+  min-height: var(--control-height-sm);
+  border-radius: 999px;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
   font-weight: var(--weight-medium);
@@ -1012,6 +1012,9 @@ p.home-hero-kicker {
   line-height: var(--leading-sm);
   font-weight: var(--weight-medium);
 }
+.required-indicator {
+  color: var(--danger);
+}
 .field-title small {
   color: var(--muted);
 }
@@ -1385,10 +1388,6 @@ p.home-hero-kicker {
     font-family: var(--shell-font-family);
   }
   .mobile-nav .nav-row {
-    min-height: 44px;
-    height: 44px;
-  }
-  .topbar .header-login {
     min-height: 44px;
     height: 44px;
   }
@@ -2330,36 +2329,27 @@ p.home-hero-kicker {
     grid-template-columns: minmax(0, 450px);
   }
 }
-/* Shared thumbnail behaviour for the history rail and the preview rail: the
- * picture zooms inside its clipped frame on hover and keyboard focus, so both
- * lists feel identical and the frame keeps its size, radius and padding. */
+/* Keep the complete image visible in both square thumbnail rails. */
 .history-thumbnail > .history-thumbnail-frame {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
   padding: 0;
   overflow: hidden;
   border-radius: 6px;
-  background: transparent;
+  background: var(--surface);
 }
 .history-thumbnail img {
   display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 0;
-  transition: transform 180ms ease;
-}
-.history-thumbnail:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) img {
-  transform: scale(1.1);
-}
-@media (prefers-reduced-motion: reduce) {
-  .history-thumbnail img {
-    transition: none;
-  }
-  .history-thumbnail:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) img {
-    transform: none;
-  }
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 6px;
 }
 .generation-meta {
   display: flex;
@@ -2753,12 +2743,8 @@ p.home-hero-kicker {
   background: #242424;
   box-shadow: none;
   color: #a8a8a8;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
-.history-prompt .copy-prompt.button {
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
+  font-size: 11px;
+  line-height: 16px;
 }
 .copy-prompt.button:hover,
 .copy-prompt.button[data-hovered="true"],
@@ -3013,6 +2999,7 @@ p.home-hero-kicker {
 
 /* Login dialog: banner + split panel, matching the approved reference layout. */
 .header-login {
+  position: relative;
   min-width: 64px;
   height: var(--control-height-sm);
   padding: 0 var(--control-padding-md);
@@ -3043,11 +3030,11 @@ p.home-hero-kicker {
   backdrop-filter: blur(0);
 }
 .login-container {
-  padding: 24px 60px;
+  padding: 24px 40px;
 }
 .login-dialog {
   position: relative;
-  width: min(920px, calc(100vw - 120px));
+  width: min(1040px, calc(100vw - 80px));
   max-width: none;
   padding: 0;
   border: 0;
@@ -3077,7 +3064,7 @@ p.home-hero-kicker {
   display: grid;
   grid-template-columns: 1fr 1fr;
   padding: 0;
-  min-height: 600px;
+  min-height: 640px;
   background: #fff;
   border-radius: 28px;
 }
@@ -3145,7 +3132,7 @@ p.home-hero-kicker {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 44px 44px 28px;
+  padding: 48px 48px 32px;
   background: #fff;
   border-radius: 0 28px 28px 0;
   color: #000;
@@ -3158,7 +3145,7 @@ p.home-hero-kicker {
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-2);
-  margin-bottom: 26px;
+  margin-bottom: 32px;
   text-align: left;
 }
 .login-brand-mark {
@@ -3190,7 +3177,7 @@ p.home-hero-kicker {
   flex: none;
   flex-direction: column;
   gap: 6px;
-  block-size: 376px;
+  block-size: 400px;
 }
 .login-form {
   display: flex;
@@ -3217,8 +3204,8 @@ p.home-hero-kicker {
 }
 .login-fields :is(.input, .input-group) {
   width: 100%;
-  height: 40px;
-  min-height: 40px;
+  height: 44px;
+  min-height: 44px;
   padding-inline: 16px;
   font-family: var(--login-control-font);
   font-size: var(--text-sm);
@@ -3255,9 +3242,9 @@ p.home-hero-kicker {
   box-shadow: none;
 }
 .login-fields .login-input-group :is(.button, .toggle-button) {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
   padding: 0;
   border: 0;
   border-radius: 8px;
@@ -3329,8 +3316,8 @@ p.home-hero-kicker {
 }
 .login-content .login-submit {
   width: 100%;
-  height: 40px;
-  min-height: 40px;
+  height: 44px;
+  min-height: 44px;
   margin-top: 0;
   border: 0;
   border-radius: 999px;
@@ -3347,8 +3334,8 @@ p.home-hero-kicker {
 .login-content .login-other,
 .login-secondary-methods .button {
   width: 100%;
-  height: 40px;
-  min-height: 40px;
+  height: 44px;
+  min-height: 44px;
   padding: 0 var(--space-4);
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 120px;
@@ -3424,9 +3411,6 @@ p.home-hero-kicker {
     min-height: 44px;
     font-size: var(--text-lg);
     line-height: var(--leading-lg);
-  }
-  .header-login {
-    min-height: 44px;
   }
 }
 
@@ -3588,28 +3572,28 @@ p.home-hero-kicker {
   width: 100%;
   flex-wrap: nowrap;
   justify-content: flex-start;
-  gap: 2px;
+  gap: 4px;
   padding: 4px;
   scroll-padding-inline: 4px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
-  border-radius: 20px;
+  border-radius: 16px;
   background: #343434;
 }
 .composer-panel .home-ratio-track::-webkit-scrollbar {
   display: none;
 }
 .composer-panel .home-ratio-track .toggle-button {
-  flex: 0 0 calc((100% - 6px) / 4);
-  height: 64px;
-  min-height: 64px;
+  flex: 0 0 48px;
+  height: 48px;
+  min-height: 48px;
   flex-direction: column;
-  gap: 4px;
-  padding: 6px 2px;
+  gap: 1px;
+  padding: 3px 2px;
   border: 0;
-  border-radius: 18px;
+  border-radius: 12px;
   background: transparent;
   color: #aaa;
   scroll-snap-align: start;
@@ -3627,8 +3611,8 @@ p.home-hero-kicker {
   pointer-events: none;
 }
 .composer-panel .home-ratio-track .ratio-preview {
-  width: 30px;
-  height: 30px;
+  width: 20px;
+  height: 20px;
 }
 .composer-panel .home-ratio-arrow.button {
   position: absolute;
@@ -3683,7 +3667,7 @@ p.home-hero-kicker {
   }
   .composer-panel .home-ratio-track .toggle-button:hover:not([data-selected="true"]) {
     color: #eee;
-    background: var(--control-hover-fill);
+    background: transparent;
   }
   .composer-panel .model-field .model-select:hover {
     background: var(--control-hover-fill);
@@ -3787,6 +3771,8 @@ p.home-hero-kicker {
   margin-bottom: 6px;
 }
 .composer-panel .prompt-field :is(textarea, .reference-rich-editor.textarea) {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
   height: 100px;
   min-height: 70px;
   max-height: 280px;
@@ -3794,6 +3780,13 @@ p.home-hero-kicker {
   resize: vertical;
   background: var(--field-background);
   border-radius: 12px;
+}
+@media (max-width: 767px) {
+  .composer-panel .prompt-field > label,
+  .composer-panel .prompt-field :is(textarea, .reference-rich-editor.textarea) {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+  }
 }
 .composer-panel
   .prompt-field
@@ -3976,5 +3969,43 @@ p.home-hero-kicker {
   .generation-submit .spinner,
   .variation-generate .spinner {
     animation: none;
+  }
+}
+
+/* Keep the compact login pill while extending its touch target beyond the visible fill. */
+@media (max-width: 767px), (pointer: coarse) {
+  .topbar .header-login::before {
+    content: "";
+    position: absolute;
+    inset: -6px 0;
+    border-radius: inherit;
+  }
+}
+
+/* Compact square options align directly with the track inset. */
+.home-ratio-track .ratio-option-visual {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  gap: 1px;
+  border-radius: 12px;
+}
+.home-ratio-track .toggle-button .ratio-preview {
+  margin: 0;
+}
+.composer-panel .home-ratio-track .toggle-button,
+.home-settings-options .home-ratio-track .toggle-button {
+  padding: 0;
+  background: transparent;
+}
+@media (hover: hover) {
+  .home-ratio-track .toggle-button:hover:not([data-selected="true"]) .ratio-option-visual {
+    background: var(--control-hover-fill);
   }
 }

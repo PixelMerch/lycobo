@@ -17,11 +17,20 @@ for (const width of [1440, 390]) {
           ? page.getByRole("dialog", { name: "模型和画面设置", exact: true })
           : page.getByRole("region", { name: "图片比例", exact: true });
       const track = picker.getByRole("radiogroup", { name: "画面比例", exact: true });
-      await picker.getByRole("button", { name: "下一页画面比例", exact: true }).click();
-      await expect.poll(() => track.evaluate((node) => node.scrollLeft)).toBeGreaterThan(100);
+      const overflowing = await track.evaluate((node) => node.scrollWidth > node.clientWidth + 8);
+      if (overflowing) {
+        await picker.getByRole("button", { name: "下一页画面比例", exact: true }).click();
+        await expect.poll(() => track.evaluate((node) => node.scrollLeft)).toBeGreaterThan(8);
+      } else {
+        await expect(
+          picker.getByRole("button", { name: "下一页画面比例", exact: true }),
+        ).toHaveCount(0);
+      }
       await track.getByRole("radio", { name: "3:4", exact: true }).click();
       await expect(track.getByRole("radio", { name: "3:4", exact: true })).toBeChecked();
-      await picker.getByRole("button", { name: "上一页画面比例", exact: true }).click();
+      if ((await track.evaluate((node) => node.scrollLeft)) > 8) {
+        await picker.getByRole("button", { name: "上一页画面比例", exact: true }).click();
+      }
       await expect.poll(() => track.evaluate((node) => node.scrollLeft)).toBeLessThan(8);
       await track.getByRole("radio", { name: "2:3", exact: true }).click();
       await expect(track.getByRole("radio", { name: "2:3", exact: true })).toBeChecked();

@@ -64,15 +64,15 @@ test("login and logout synchronize mounted history without reloading or losing t
     route.fulfill({ json: apiFixture({ data: loggedIn ? [job] : [] }) }),
   );
   await page.goto("/create");
-  await expect(page.getByText("登录后查看生成记录", { exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "欢迎使用 Lycobo" })).toBeVisible();
+  await expect(page.locator(".composer-panel")).toHaveCount(0);
+  expect(sessionRequests).toBe(0);
   const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
-  await prompt.fill("登录前编辑的草稿");
   let navigations = 0;
   page.on("framenavigated", (frame) => {
     if (frame === page.mainFrame()) navigations++;
   });
-  await page.getByRole("button", { name: "登录领积分", exact: true }).click();
-  const dialog = page.getByRole("dialog");
+  const dialog = page.getByRole("dialog", { name: "欢迎使用 Lycobo" });
   await dialog.getByLabel("企业账号", { exact: true }).fill(user.account);
   await dialog.getByLabel("密码", { exact: true }).fill("fixture-password");
   await dialog.getByRole("button", { name: "登录", exact: true }).click();
@@ -80,15 +80,17 @@ test("login and logout synchronize mounted history without reloading or losing t
   await expect(page.locator(".account-trigger")).toHaveAccessibleName(`账户菜单：${user.account}`);
   await expect(page.locator(".generation-job")).toContainText(job.prompt);
   await expect(page.getByText("登录后查看生成记录", { exact: true })).toHaveCount(0);
-  await expect(prompt).toHaveValue("登录前编辑的草稿");
-  expect(sessionRequests).toBeGreaterThan(1);
+  await prompt.fill("登录后的创作草稿");
+  expect(sessionRequests).toBeGreaterThan(0);
   expect(navigations).toBe(0);
   await page.locator(".account-trigger").click();
   await page.getByRole("menuitem", { name: "退出登录", exact: true }).click();
-  await expect(page.getByText("登录后查看生成记录", { exact: true })).toBeVisible();
+  await expect(dialog).toBeVisible();
   await expect(page.locator(".generation-job")).toHaveCount(0);
-  await expect(prompt).toHaveValue("登录前编辑的草稿");
-  expect(navigations).toBe(0);
+  await expect(page.locator(".composer-panel")).toHaveCount(0);
+  await dialog.getByRole("button", { name: "关闭登录", exact: true }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("登录后的创作草稿");
 });
 
 for (const layout of ["expanded", "collapsed", "mobile"] as const) {

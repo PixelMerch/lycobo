@@ -110,13 +110,13 @@ test("text generation requires a prompt and an available model", async ({ page }
 });
 
 for (const width of [320, 390, 768, 1024, 1440]) {
-  test(`responsive pages, model chooser and login stay reachable at ${width}px`, async ({
+  test(`responsive signed-in pages and model chooser stay reachable at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
     for (const path of ["/", "/create", "/assets"]) {
       await page.goto(path);
-      await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();
+      await expect(page.locator(".header-benefits")).toBeVisible();
       await expect(
         page.locator("header").getByRole("button", { name: /任务中心|通知/ }),
       ).toHaveCount(0);
@@ -138,13 +138,11 @@ for (const width of [320, 390, 768, 1024, 1440]) {
   });
 }
 
-test("tool cards open their workspace", async ({ page }) => {
+test("tool shortcuts open their workspace", async ({ page }) => {
   await page.goto("/create");
-  await page.getByRole("button", { name: "全部工具", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "选择工具" });
-  await dialog
-    .getByRole("button", { name: /^主图制作/ })
-    .locator("img")
+  await page
+    .getByRole("navigation", { name: "电商创作工具" })
+    .getByRole("button", { name: "主图制作", exact: true })
     .click();
   await expect(page).toHaveURL(/\/create$/);
   await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();

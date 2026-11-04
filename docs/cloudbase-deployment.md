@@ -159,6 +159,7 @@ PR #42 于 2026-11-01 10:02 合并，部署 #10 成功（10:04:33–10:07:41，3
 - 历史记录已有的签名链接在剩余有效期超过 60 秒时继续用于批量下载；缺失或临近过期的链接通过 `POST /api/v1/image-assets/deliveries` 一次补取（每批最多 100 个）。服务端使用当前身份和组织范围批量查找对象，仅返回可访问素材，客户端在任何素材缺失时中止打包。打包仍顺序读取原图，保留原有内存上限、取消及总超时。
 - 单图签名失效时回退 `/image-assets/:id/content?download=1`，重新验证归属后跳转原图下载能力，不能回退成 WebP 预览；旧版预览/缩略图接口兼容保留。
 - CloudBase `lycobo-assets` 校验既有来源、精确对象、到期时间与 download 签名后，调用 PG `POST /v1/storages/object/sign/{bucketId}/{objectName}`，返回 302 到平台短期 URL。有效期最多 300 秒且不超过当前应用签名剩余时间；跳转响应 `private, no-store`，平台 URL 使用 `download` 参数指定原 PNG 文件名。预览和缩略图继续走现有浏览器私有缓存；本地 S3 仍流式读取原图。
+- 视频播放同样不经函数转发（云函数响应体上限6MB）：校验 preview 签名后 302 到不带 `download` 参数的平台短期 URL，有效期最多15分钟；是否支持 Range 待首次部署验收，见[视频接入](video-generation.md#封面与播放)。
 - 平台签名链接是短期持有者凭证，在有效期内可由持有者访问，不再次经过应用来源校验。桶仍为私有，不新增公开读或列目录权限。签名请求固定环境网关、禁止跟随重定向，返回 URL 必须匹配当前网关与原对象路径，服务端 API Key 不下发、不记录签名 URL。签名服务失败不回退公开地址。
 - 接口依据：[PG 签名接口](https://docs.cloudbase.net/http-api/storage-pg/获取预签名下载链接)、[签名访问与下载](https://docs.cloudbase.net/storage/pg/serving)。已对现有对象做只读验证：授权直读与签名 GET 的 SHA-256 一致、附件下载和网站 Origin 的 CORS 正常、无效与过期 token 返回 401。未改线上函数或存储配置；代码需正常发布后生效。
 

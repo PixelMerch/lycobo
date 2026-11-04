@@ -8,13 +8,13 @@ import {
   IconShieldLock,
   IconUserCircle,
 } from "@tabler/icons-react";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { useNavigate } from "react-router";
 import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { useEnterpriseLogout, useEnterpriseSession } from "../auth/auth-client";
-import { LoginDialog } from "../auth/login-dialog";
+import { useLoginPrompt } from "../auth/login-prompt";
 import { formatCredits, imagesFor, roleLabel } from "./account-format";
 import { useAccountOverlays } from "./account-overlays";
 import { AccountUpdates } from "./account-updates";
@@ -25,20 +25,14 @@ import "./account-menu.css";
 /** Signed out, the header offers login; once signed in the account lives in the navigation. */
 export function HeaderLogin() {
   const session = useEnterpriseSession();
-  const [loginOpen, setLoginOpen] = useState(false);
+  const openLogin = useLoginPrompt((state) => state.open);
   return (
     <>
       {!session.data && (
-        <Button
-          variant="tertiary"
-          size="sm"
-          className="header-login"
-          onPress={() => setLoginOpen(true)}
-        >
+        <Button variant="tertiary" size="sm" className="header-login" onPress={openLogin}>
           登录领积分
         </Button>
       )}
-      {loginOpen && <LoginDialog onClose={() => setLoginOpen(false)} />}
     </>
   );
 }

@@ -17,7 +17,7 @@ export function MembershipDialog({ onClose }: { onClose: () => void }) {
         <Modal.Container className="membership-container">
           <Modal.Dialog className="membership-dialog">
             <Modal.Header className="membership-dialog-header">
-              <Modal.Heading>会员订阅</Modal.Heading>
+              <Modal.Heading className="visually-hidden">会员订阅</Modal.Heading>
               <Modal.CloseTrigger aria-label="关闭会员订阅">
                 <UiIcon icon={IconX} size="action" />
               </Modal.CloseTrigger>

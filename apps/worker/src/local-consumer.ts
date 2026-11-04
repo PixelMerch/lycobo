@@ -1,11 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { openImageRepository } from "@lycoboai/db";
-import { readImagePolicy, standaloneModels } from "@lycoboai/generation";
+import { openImageRepository, openVideoRepository } from "@lycoboai/db";
+import { readImagePolicy, standaloneModels, videoConfiguration } from "@lycoboai/generation";
 import { objectImageStore } from "@lycoboai/storage/object-images";
 import { imageObjectBucket } from "@lycoboai/storage/s3";
 import { drainCloudBaseOutbox } from "./cloudbase-outbox";
 import { processImageItem } from "./image-processor";
 import { slots } from "./slots";
+import { processVideoIntent } from "./video-processor";
 
 const url = new URL(process.env.DATABASE_URL ?? "");
 if (!["127.0.0.1", "localhost", "postgres"].includes(url.hostname))
@@ -15,6 +16,11 @@ const objects = objectImageStore(imageObjectBucket(process.env), repository.stor
 const encode = slots(2);
 const store: typeof objects = { ...objects, put: (...args) => encode(() => objects.put(...args)) };
 const policy = readImagePolicy(process.env);
+const videoConfig =
+  process.env.ASSET_PUBLIC_ORIGIN && process.env.ASSET_SIGNING_SECRET
+    ? videoConfiguration(process.env)
+    : null;
+const videos = videoConfig ? openVideoRepository(process.env) : undefined;
 let stopping = false;
 for (const signal of ["SIGINT", "SIGTERM"])
   process.once(signal, () => {
@@ -22,6 +28,19 @@ for (const signal of ["SIGINT", "SIGTERM"])
   });
 try {
   while (!stopping) {
+    if (videos && videoConfig)
+      try {
+        if (!process.env.ASSET_PUBLIC_ORIGIN || !process.env.ASSET_SIGNING_SECRET)
+          throw new Error("VIDEO_CONFIGURATION_REQUIRED");
+        await processVideoIntent(videos, imageObjectBucket(process.env), {
+          ...videoConfig,
+          assetOrigin: process.env.ASSET_PUBLIC_ORIGIN,
+          signingSecret: process.env.ASSET_SIGNING_SECRET,
+          pathPrefix: process.env.ASSET_PATH_PREFIX,
+        });
+      } catch {
+        console.error("VIDEO_CONSUMER_FAILED");
+      }
     if (policy.enabled)
       try {
         await repository.expireClaims();
@@ -46,5 +65,5 @@ try {
     if (!stopping) await new Promise((resolve) => setTimeout(resolve, 1000));
   }
 } finally {
-  await repository.close();
+  await Promise.all([repository.close(), videos?.close()]);
 }

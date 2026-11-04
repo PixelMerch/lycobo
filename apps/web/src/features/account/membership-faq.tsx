@@ -56,7 +56,9 @@ export function MembershipFaq() {
               <Accordion.Trigger>
                 {item.title}
                 <Accordion.Indicator>
-                  <UiIcon icon={IconChevronDown} size="default" />
+                  <span>
+                    <UiIcon icon={IconChevronDown} size="default" />
+                  </span>
                 </Accordion.Indicator>
               </Accordion.Trigger>
             </Accordion.Heading>

@@ -75,6 +75,18 @@ for (const width of [1440, 320]) {
     await expect(membership.locator(".membership-plan")).toHaveCount(4);
     const pro = membership.locator('[data-plan="pro"]');
     await expect(pro.locator(".membership-plan-price strong")).toHaveText("¥8,388");
+    // Headline, cycle hint, badge, estimate and ribbon all derive from the same price table.
+    await expect(membership.locator(".membership-hero")).toContainText("低至 ¥0.047 / 积分");
+    await expect(
+      membership.getByRole("radio", { name: "年付", exact: true }),
+    ).toHaveAccessibleDescription("最低 3.8 折");
+    await expect(pro.locator(".membership-plan-discount")).toHaveText("4.4 折");
+    await expect(pro.locator(".membership-plan-estimate")).toContainText("约生成 6,775 张图片");
+    await expect(membership.locator(".membership-plan-ribbon")).toHaveText([
+      "3 档额度可选",
+      "积分单价最低",
+    ]);
+    await expect(membership.locator('[data-plan="apex"]')).toHaveAttribute("data-ribbon", "best");
     await pro.getByRole("radio", { name: "PRO 6050积分/月", exact: true }).click();
     await expect(pro.locator(".membership-plan-price strong")).toHaveText("¥3,899");
     await membership.getByRole("radio", { name: "月付", exact: true }).click();
@@ -166,7 +178,7 @@ test("unavailable balance stays unknown in recharge instead of becoming zero", a
 });
 
 test("signed-out header keeps login without inventing benefits", async ({ page }) => {
-  await mockImageApi(page);
+  await mockImageApi(page, { signedIn: false });
   await page.goto("/");
   await expect(
     page.locator(".topbar").getByRole("button", { name: "登录领积分", exact: true }),
@@ -263,6 +275,12 @@ test("full-screen membership supports audiences, seats, explanations and FAQ wit
   await dialog.getByRole("tab", { name: "团队", exact: true }).click();
   const lite = dialog.locator('[data-plan="team-lite"]');
   await expect(lite.locator(".membership-plan-price strong")).toHaveText("¥3,828");
+  // Team prices carry their own deepest discount and cheapest-credit highlight.
+  await expect(
+    dialog.getByRole("radio", { name: "年付", exact: true }),
+  ).toHaveAccessibleDescription("最低 3.5 折");
+  await expect(dialog.locator('[data-plan="team-max"]')).toHaveAttribute("data-ribbon", "best");
+  await expect(dialog.locator(".membership-plan-ribbon")).toHaveText(["积分单价最低"]);
   await lite.getByRole("button", { name: "增加TEAM LITE席位", exact: true }).click();
   await expect(lite.locator(".membership-seat-total")).toContainText("3 席位 · 合计 ¥11,484");
   await dialog.getByRole("radio", { name: "月付", exact: true }).click();
@@ -277,10 +295,16 @@ test("full-screen membership supports audiences, seats, explanations and FAQ wit
   const question = dialog.getByRole("button", { name: "生成失败后，积分会退回吗？", exact: true });
   await question.click();
   await expect(question).toHaveAttribute("aria-expanded", "true");
+  // The chevron follows the open state and the question row keeps no hover fill.
+  const chevron = question.locator('[data-slot="accordion-indicator"]');
+  await expect(chevron).toHaveAttribute("data-expanded", "true");
+  await question.hover();
+  await expect(question).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(dialog.getByText(/多张图片部分失败时，只退回失败部分/)).toBeVisible();
   await page.screenshot({ path: "/tmp/lycobo-membership-faq.png" });
   await question.click();
   await expect(question).toHaveAttribute("aria-expanded", "false");
+  await expect(chevron).not.toHaveAttribute("data-expanded", "true");
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
   expect(writes).toEqual([]);

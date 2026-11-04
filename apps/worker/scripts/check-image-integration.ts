@@ -31,6 +31,7 @@ import { verifyReferenceRetention } from "./verify-reference-retention";
 import { verifyStandaloneModels } from "./verify-standalone-models";
 import { verifyTextileGeneration } from "./verify-textile-generation";
 import { verifyVariationPlans } from "./verify-variation-plans";
+import { verifyVideos } from "./verify-videos";
 import { verifyWallet } from "./verify-wallet";
 
 if (process.env.ALLOW_LOCAL_INTEGRATION !== "true")
@@ -551,6 +552,7 @@ try {
   await verifyReferenceRetention(repository, sql);
   await verifyVariationPlans(repository, sql, store, png);
   await verifyWallet(repository, sql);
+  await verifyVideos(repository, sql);
   await verifyTextileGeneration(repository, sql, store, png);
   await verifyLocalEdits(repository, sql, async (path, init) => app.request(path, init));
   await verifyAssetLibrary(repository, sql);

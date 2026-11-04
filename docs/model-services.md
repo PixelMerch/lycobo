@@ -50,7 +50,7 @@ MODEL_CREDENTIAL_SECRET 必须为 32 字节随机数的 Base64，独立后台 AP
 
 provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 负责公共响应、任务查询和结果下载，provider-errors.ts 统一已知失败与未知结果语义。已支持 OpenAI 同步 Images、FluxPort 同异步 Images 和 Gemini 原生 generateContent；新中转站同协议只改后台，异步路径／鉴权／响应不同则新增适配器，不在前端或计费层添加分支。
 
-运行时不再读取 VAKV_* 或 GENERATION_TIMEOUT_MS。`.env` 仅保留 IMAGE_GENERATION_ENABLED 全局开关、MODEL_CREDENTIAL_SECRET 加密主密钥及基础设施配置，供应商凭据在独立后台配置。同步兼容适配器仅留给隔离验证工具，不是产品运行时回退。当前裂变以v5和逻辑gpt-image-2.5绑定后台渠道，见 textile-generation.md。同步结果、异步task ID及上游请求ID用于排查；不记录提示词、响应正文、Key或签名URL。
+运行时不再读取 VAKV_* 或 GENERATION_TIMEOUT_MS。生图默认启用，无 IMAGE_GENERATION_ENABLED 全局开关；`.env` 保留 MODEL_CREDENTIAL_SECRET 加密主密钥及基础设施配置，供应商凭据在独立后台配置。同步兼容适配器仅留给隔离验证工具，不是产品运行时回退。当前裂变以v5和逻辑gpt-image-2.5绑定后台渠道，见 textile-generation.md。同步结果、异步task ID及上游请求ID用于排查；不记录提示词、响应正文、Key或签名URL。
 
 ## v0.3.0 生产渠道
 

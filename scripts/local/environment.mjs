@@ -5,20 +5,13 @@ export function localEnvironment(source, docker = false, settings = source) {
   const env = Object.fromEntries(
     Object.entries(source).filter(
       ([key]) =>
-        !/^(CLOUDBASE_|TCB_|TENCENTCLOUD_|CLOUDFLARE_|CF_|SUPABASE_|AUTH_|ASSET_|VAKV_|IMAGE_|MODEL_|WRANGLER_|S3_|STANDALONE_|LOCAL_|DEEPSEEK_|DATABASE_URL)/.test(
+        !/^(CLOUDBASE_|TCB_|TENCENTCLOUD_|CLOUDFLARE_|CF_|SUPABASE_|AUTH_|ASSET_|VIDEO_|VAKV_|IMAGE_|MODEL_|WRANGLER_|S3_|STANDALONE_|LOCAL_|DEEPSEEK_|DATABASE_URL)/.test(
           key,
         ),
     ),
   );
   env.DATABASE_URL = `postgresql://lycoboai:local_dev_only@${docker ? "postgres:5432" : "127.0.0.1:55432"}/lycoboai`;
-  if (
-    settings.IMAGE_GENERATION_ENABLED !== undefined &&
-    !["true", "false"].includes(settings.IMAGE_GENERATION_ENABLED)
-  )
-    throw new Error("INVALID_GENERATION_FLAG");
-  env.IMAGE_GENERATION_ENABLED = String(settings.IMAGE_GENERATION_ENABLED === "true");
-  if (env.IMAGE_GENERATION_ENABLED === "true") {
-    if (!settings.MODEL_CREDENTIAL_SECRET) throw new Error("MODEL_CREDENTIAL_SECRET_REQUIRED");
+  if (settings.MODEL_CREDENTIAL_SECRET) {
     for (const key of [
       "MODEL_CREDENTIAL_SECRET",
       "STANDALONE_MODELS",

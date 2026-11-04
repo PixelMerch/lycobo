@@ -1,5 +1,6 @@
 import {
   assetFavoriteLimit,
+  assetToolSchema,
   assetTypeSchema,
   imageGenerationInputSchema,
   imageModelCatalog,
@@ -471,7 +472,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
     const before = id.optional().safeParse(c.req.query("before"));
     const kind = z.enum(["output", "reference"]).optional().safeParse(c.req.query("kind"));
     const type = assetTypeSchema.optional().safeParse(c.req.query("type"));
-    const tool = imageToolSchema.optional().safeParse(c.req.query("tool"));
+    const tool = assetToolSchema.optional().safeParse(c.req.query("tool"));
     // Public model ids only, e.g. gpt-image-2.5; the repository maps provider variants onto them.
     const model = z
       .string()
@@ -491,6 +492,8 @@ export function imageRoutes(deps: ImageApiDependencies) {
       !since.success
     )
       return fail(c, "VALIDATION_ERROR", "筛选或分页参数无效", 400);
+    const includeVideo = z.literal("true").optional().safeParse(c.req.query("includeVideo"));
+    if (!includeVideo.success) return fail(c, "VALIDATION_ERROR", "素材类型参数无效", 400);
     const scope = c.get("principal");
     const assets = await deps.repository.listAssets(
       scope,
@@ -503,6 +506,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
         model: model.data,
         favorite: favorite.data === "true",
         ...(since.data ? { since: since.data } : {}),
+        ...(includeVideo.data ? { includeVideo: true } : {}),
       },
     );
     return c.json({ data: delivery ? await delivery.assets(scope, assets) : assets });
@@ -580,7 +584,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
   app.get("/image-assets/:id/delivery", async (c) => {
     const parsed = id.safeParse(c.req.param("id"));
     if (!parsed.success) return fail(c, "NOT_FOUND", "图片不存在", 404);
-    const asset = await deps.repository.asset(c.get("principal"), parsed.data);
+    const [asset] = await deps.repository.assetLocations(c.get("principal"), [parsed.data]);
     if (!asset) return fail(c, "NOT_FOUND", "图片不存在", 404);
     if (!deps.signAsset) return fail(c, "GENERATION_NOT_CONFIGURED", "图片访问尚未配置", 503);
     return c.json({ id: asset.id, delivery: await deps.signAsset(asset.objectKey) });
@@ -588,10 +592,10 @@ export function imageRoutes(deps: ImageApiDependencies) {
   app.get("/image-assets/:id/content", async (c) => {
     const parsed = id.safeParse(c.req.param("id"));
     if (!parsed.success) return fail(c, "NOT_FOUND", "图片不存在", 404);
-    const asset = await deps.repository.asset(c.get("principal"), parsed.data);
-    if (!asset) return fail(c, "NOT_FOUND", "图片不存在", 404);
     if (deps.signAsset) {
-      const urls = await deps.signAsset(asset.objectKey);
+      const [location] = await deps.repository.assetLocations(c.get("principal"), [parsed.data]);
+      if (!location) return fail(c, "NOT_FOUND", "素材不存在", 404);
+      const urls = await deps.signAsset(location.objectKey);
       return c.redirect(
         c.req.query("download") === "1"
           ? urls.download_url
@@ -601,6 +605,8 @@ export function imageRoutes(deps: ImageApiDependencies) {
         302,
       );
     }
+    const asset = await deps.repository.asset(c.get("principal"), parsed.data);
+    if (!asset) return fail(c, "NOT_FOUND", "图片不存在", 404);
     const bytes =
       c.req.query("thumbnail") === "1" && c.req.query("download") !== "1"
         ? await deps.store.thumbnail(asset)

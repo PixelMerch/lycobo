@@ -50,6 +50,7 @@ export function HistoryDownloadButton({ job }: { job: ImageJob }) {
   useEffect(() => () => active.current?.abort(), []);
   if (!entries.length) return null;
   const partial = entries.length < job.requested_count;
+  const downloadLabel = job.input?.variation ? "下载套图" : partial ? "下载已生成" : "下载全部";
   return (
     <Tooltip delay={0} closeDelay={0} isOpen={showCount && !packing} onOpenChange={setShowCount}>
       <Button
@@ -90,9 +91,9 @@ export function HistoryDownloadButton({ job }: { job: ImageJob }) {
         }}
       >
         <UiIcon icon={IconDownload} size="small" />
-        {packing ? "正在打包" : partial ? "下载已生成" : "下载全部"}
+        {packing ? "正在打包" : downloadLabel}
       </Button>
-      <Tooltip.Content placement="bottom">{`${entries.length} 张`}</Tooltip.Content>
+      <Tooltip.Content placement="bottom">{`共 ${entries.length} 张`}</Tooltip.Content>
     </Tooltip>
   );
 }

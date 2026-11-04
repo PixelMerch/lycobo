@@ -84,7 +84,7 @@ it("applies tool, model and favorite filters in the repository, before paginatio
 });
 
 it.each([
-  "tool=video",
+  "tool=unknown",
   "model=..%2Fsecrets",
   `model=${"m".repeat(81)}`,
   "since=not-a-date",
@@ -166,5 +166,21 @@ it("passes a validated creation-time boundary to scoped pagination", async () =>
     undefined,
     undefined,
     expect.objectContaining({ since }),
+  );
+});
+
+it("accepts video tool filtering before asset pagination", async () => {
+  const listAssets = vi.fn<ImageRepository["listAssets"]>().mockResolvedValue([]);
+  const response = await fixture({ listAssets })(
+    "/image-assets?tool=video&type=video&includeVideo=true",
+  );
+  expect(response.status).toBe(200);
+  expect(listAssets).toHaveBeenCalledWith(
+    expect.anything(),
+    30,
+    undefined,
+    undefined,
+    "video",
+    expect.objectContaining({ tool: "video", includeVideo: true }),
   );
 });
