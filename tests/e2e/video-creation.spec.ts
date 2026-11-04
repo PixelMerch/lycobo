@@ -48,7 +48,24 @@ for (const width of [390, 1440]) {
     const hoverBox = await durationTrack.boundingBox();
     if (!hoverBox) throw new Error("Duration track missing");
     await page.mouse.move(hoverBox.x + hoverBox.width * 0.52, hoverBox.y + hoverBox.height / 2);
-    await expect(page.getByRole("tooltip")).toHaveText("18秒");
+    const durationPreview = page.locator(".video-duration-preview");
+    await expect(durationPreview).toHaveText("18秒");
+    const previewElement = await durationPreview.elementHandle();
+    for (const fraction of [0.9, 0.2, 0.8, 0.3, 0.59]) {
+      await page.mouse.move(
+        hoverBox.x + hoverBox.width * fraction,
+        hoverBox.y + hoverBox.height / 2,
+      );
+    }
+    await expect(durationPreview).toHaveText("20秒");
+    expect(
+      await durationPreview.evaluate((current, initial) => current === initial, previewElement),
+    ).toBe(true);
+    const previewBox = await durationPreview.boundingBox();
+    expect(
+      previewBox &&
+        Math.abs(previewBox.x + previewBox.width / 2 - (hoverBox.x + hoverBox.width * 0.59)),
+    ).toBeLessThan(2);
     await expect(composer.getByRole("slider")).toHaveValue("10");
     await page.mouse.move(0, 0);
     const slider = composer.getByRole("slider");
@@ -56,15 +73,18 @@ for (const width of [390, 1440]) {
     await page.keyboard.press("ArrowRight");
     await expect(composer.getByRole("slider")).toHaveValue("11");
     await page.keyboard.press("ArrowRight");
-    await expect(composer.getByRole("slider")).toHaveValue("12");
+    await expect(slider).toHaveValue("12");
+    await expect(durationPreview).toHaveText("12秒");
     const track = composer.locator(".video-duration-track");
     const box = await track.boundingBox();
     if (!box) throw new Error("Slider track missing");
     await page.mouse.move(box.x + (box.width * 2) / 3, box.y + box.height / 2);
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 1, box.y + box.height / 2, { steps: 8 });
+    await expect(slider).toHaveValue("30");
+    await expect(durationPreview).toHaveText("30秒");
     await page.mouse.up();
-    await expect(composer.getByRole("slider")).toHaveValue("30");
+    await expect(slider).toHaveValue("30");
     await expect(composer.getByRole("button", { name: /立即生成.*100/ })).toBeEnabled();
     await tools.getByRole("button", { name: "主图制作", exact: true }).click();
     await tools.getByRole("button", { name: "视频创作", exact: true }).click();

@@ -110,14 +110,15 @@
   background: #ffffff66;
   transition: height 100ms ease-out;
 }
-.video-duration-anchor {
+.video-duration-preview {
   position: absolute;
-  top: 50%;
-  width: 1px;
-  height: 1px;
-  pointer-events: none;
-}
-.video-duration-tooltip {
+  bottom: calc(50% + 12px);
+  z-index: 1;
+  transform: translateX(-50%);
+  padding: 4px 6px;
+  font-size: var(--text-xs);
+  line-height: 16px;
+  white-space: nowrap;
   background: #f4f4f4;
   color: #171717;
   border-radius: 6px;
