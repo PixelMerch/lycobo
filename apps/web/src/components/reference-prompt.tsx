@@ -72,6 +72,7 @@ function useAutoGrow(ref: RefObject<HTMLElement | null>, value: string, enabled:
       return;
     }
     let width = -1;
+    let bottomPadding = "";
     const fit = () => {
       // Measure out of flow: collapsing the live editor clamps its ancestor's scrollTop.
       const measure = element.cloneNode(true);
@@ -97,9 +98,12 @@ function useAutoGrow(ref: RefObject<HTMLElement | null>, value: string, enabled:
       element.style.overflowY = "hidden";
     };
     const observer = new ResizeObserver((entries) => {
-      const next = entries[0]?.contentRect.width ?? 0;
-      if (Math.abs(next - width) < 1) return;
-      width = next;
+      const nextWidth = entries[0]?.contentRect.width ?? 0;
+      // The inline confirmation changes the content box without changing the editor width.
+      const nextPadding = getComputedStyle(element).paddingBottom;
+      if (Math.abs(nextWidth - width) < 1 && nextPadding === bottomPadding) return;
+      width = nextWidth;
+      bottomPadding = nextPadding;
       fit();
     });
     fit();

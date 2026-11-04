@@ -28,7 +28,10 @@ test("the focused prompt loops the wand hint and canceling never requests optimi
     requests.push(route.request().url());
     return route.abort();
   });
-  await prompt.fill("奶油色床品 晨光");
+  const text = "奶油色床品\n清晨的侧光\n突出面料纹理\n保持商品原色\n留出构图空间";
+  await prompt.fill(text);
+  const height = () => prompt.evaluate((element) => element.getBoundingClientRect().height);
+  const originalHeight = await height();
   await expect(wand).toHaveText("优化");
   const icon = wand.locator("svg");
   await expect(icon).toHaveCSS("animation-name", "prompt-wand-hint");
@@ -53,6 +56,11 @@ test("the focused prompt loops the wand hint and canceling never requests optimi
   await expect(dialog.getByText(/消耗 1 积分/)).toBeVisible();
   expect(requests).toEqual([]);
   await expect(prompt).toBeVisible();
+  await expect(prompt).toHaveCSS("padding-bottom", "48px");
+  await expect.poll(height).toBeGreaterThanOrEqual(originalHeight + 15);
+  await expect
+    .poll(() => prompt.evaluate((element) => element.scrollHeight - element.clientHeight))
+    .toBeLessThanOrEqual(2);
   const confirm = dialog.getByRole("button", { name: "确认优化" });
   await expect(confirm).toHaveCSS("height", "24px");
   await expect(dialog).toHaveCSS("background-color", "rgb(36, 36, 43)");
@@ -63,13 +71,16 @@ test("the focused prompt loops the wand hint and canceling never requests optimi
   ]);
   expect(promptBounds).not.toBeNull();
   expect(confirmationBounds).not.toBeNull();
+  const promptBottom = (promptBounds?.y ?? 0) + (promptBounds?.height ?? 0);
   expect((confirmationBounds?.y ?? 0) + (confirmationBounds?.height ?? 0)).toBeLessThanOrEqual(
-    (promptBounds?.y ?? 0) + (promptBounds?.height ?? 0),
+    promptBottom,
   );
+  expect((confirmationBounds?.y ?? 0) - (promptBottom - 48)).toBeGreaterThanOrEqual(12);
 
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
   await expect(wand).toBeFocused();
+  await expect.poll(height).toBe(originalHeight);
   await wand.click();
   await expect(dialog).toBeVisible();
   await page.mouse.click(1, 1);
@@ -82,7 +93,7 @@ test("the focused prompt loops the wand hint and canceling never requests optimi
   await dialog.getByRole("button", { name: "取消" }).click();
   await expect(dialog).toBeHidden();
   await expect(wand).toBeFocused();
-  await expect(prompt).toHaveValue("奶油色床品 晨光");
+  await expect(prompt).toHaveValue(text);
   expect(requests).toEqual([]);
   await page.getByRole("button", { name: "清空提示词" }).click();
   await expect(wand).toHaveCount(0);

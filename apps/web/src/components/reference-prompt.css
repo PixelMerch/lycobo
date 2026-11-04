@@ -212,7 +212,7 @@
   .prompt-editor:has(.prompt-optimize[data-confirming="true"])
   :is(textarea, .reference-rich-editor.textarea),
 .home-composer .home-prompt .prompt-editor:has(.prompt-optimize[data-confirming="true"]) .textarea {
-  padding-bottom: 36px;
+  padding-bottom: 48px;
 }
 .prompt-optimize-confirmation {
   display: flex;
@@ -271,7 +271,7 @@
     .home-prompt
     .prompt-editor:has(.prompt-optimize[data-confirming="true"])
     .textarea {
-    padding-bottom: 56px;
+    padding-bottom: 68px;
   }
 }
 .prompt-optimize-wand {
