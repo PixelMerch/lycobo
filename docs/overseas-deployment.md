@@ -53,6 +53,10 @@ TLS: require
 
 `.env` 仅更新 `SUPABASE_PROJECT_REF`、`SUPABASE_DATABASE_URL` 两个迁移配置；原 `DATABASE_URL` 与 CloudBase 配置保留。应用运行库尚未切换，不能把这两个迁移变量更新解释为海外 API 已接入。
 
+本机根目录另有 `.env.cloudflare`，按中文注释集中整理海外 Cloudflare 管理配置、R2 S3 配置、新加坡数据库及计划使用的媒体/账号授权配置。该文件被 Git 忽略、权限为 600；当前 R2 两项访问密钥留空待填写，桶名与 Endpoint 需要按实际创建结果核对。海外 JWT 与媒体签名密钥已单独生成并仅保存在该私密文件中，尚未部署。
+
+`.env.cloudflare` 不自动被 `pnpm dev` 或现有 CloudBase 发布流程读取，没有修改环境加载行为。后续工具需显式加载；不得与包含 `CLOUDBASE_*` 的原 `.env` 混合启动海外运行时。它不设置运行时 `DATABASE_URL`，后续部署时再由部署流程注入海外服务；当前填好参数不代表 R2 已接入或媒体服务已上线。
+
 Codex 的 Supabase MCP 原来绑定旧项目，本次已将 `supabase` 服务的 `project_ref` 改为新项目并重新完成 OAuth 登录；未在配置中写入数据库密码。当前聊天的工具列表可能需要在重新加载后才显示更新后的连接。
 
 `packages/db/scripts/supabase-target.mjs` 支持项目匹配的直连及官方 Session Pooler，要求 TLS，拒绝其他项目、伪造域名、6543 端口和覆盖连接目标的参数。`secure-supabase.mjs` 对当前业务表、序列及业务函数实施前端访问加固，包含提示词优化、回调和视频函数。
