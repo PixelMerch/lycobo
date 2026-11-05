@@ -1,0 +1,34 @@
+/* Each task shares a preview height; its image frames follow the actual output ratios. */
+.unified-workspace .proportional-results[data-count] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 8px;
+  container-type: inline-size;
+}
+.unified-workspace .proportional-results[data-count] > div {
+  --result-height: min(320px, 60dvh, calc(100cqw / var(--result-max-ratio)));
+  flex: none;
+  width: calc(var(--result-height) * var(--result-ratio));
+  height: var(--result-height);
+  max-width: 100%;
+  position: relative;
+}
+.unified-workspace .proportional-results[data-count] .generation-media,
+.unified-workspace .proportional-results[data-count] .generation-media-open.button,
+.unified-workspace .proportional-results[data-count] .generation-placeholder {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+}
+.unified-workspace .proportional-results[data-count] img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+@media (max-width: 767px) {
+  .unified-workspace .proportional-results[data-count] > div {
+    --result-height: min(240px, 60dvh, calc(100cqw / var(--result-max-ratio)));
+  }
+}
