@@ -101,10 +101,13 @@
   max-height: calc(100dvh - 84px);
   overflow-y: auto;
   padding: 8px;
-  border: 1px solid var(--interaction-active);
+  border: 1px solid #ffffff1f;
   border-radius: 24px;
-  background: #262626cc;
-  backdrop-filter: blur(24px);
+  background: linear-gradient(180deg, #ffffff0f, #ffffff03), rgb(20 20 23 / 84%);
+  box-shadow:
+    inset 0 1px 0 #ffffff14,
+    0 24px 64px -16px #00000099;
+  backdrop-filter: blur(28px) saturate(140%);
   color: #eee;
 }
 .account-menu-identity {
@@ -121,7 +124,7 @@
   min-width: 40px;
   height: 40px;
   font-size: var(--text-lg);
-  background: #343434;
+  background: #ffffff0f;
   color: #fff;
 }
 .account-menu-details {
@@ -146,7 +149,8 @@
 .account-menu-balance {
   padding: 14px 14px 12px;
   border-radius: 16px 16px 0 0;
-  background: var(--interaction-hover);
+  background: #ffffff08;
+  box-shadow: inset 0 1px 0 #ffffff0a;
 }
 .account-menu-balance-row {
   display: flex;
@@ -184,7 +188,7 @@
   margin-bottom: 8px;
   padding: 0 14px 14px;
   border-radius: 0 0 16px 16px;
-  background: var(--interaction-hover);
+  background: #ffffff08;
 }
 .account-menu .menu-item.account-menu-pill {
   justify-content: center;
@@ -195,7 +199,7 @@
   font-weight: var(--weight-medium);
 }
 .account-menu .menu-item.account-menu-pill:is([data-hovered="true"], [data-focused="true"]) {
-  background: var(--control-hover-fill);
+  background: #ffffff1f;
 }
 .account-menu .menu-item.account-menu-pill--primary,
 .account-menu
@@ -210,7 +214,8 @@
 .account-menu .menu-item.account-menu-member {
   margin-bottom: 6px;
   gap: 8px;
-  background: var(--interaction-hover);
+  background: #ffffff06;
+  box-shadow: inset 0 1px 0 #ffffff08;
 }
 .account-menu .menu-item.account-menu-member:is([data-hovered="true"], [data-focused="true"]) {
   background: var(--interaction-active);
@@ -289,5 +294,17 @@
     min-width: 44px;
     height: 44px;
     min-height: 44px;
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .account-menu {
+    background: #202023;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .account-menu {
+    background: #202023;
+    backdrop-filter: none;
   }
 }
