@@ -1,14 +1,22 @@
-/* 个人中心: one fixed-size dialog for profile, credits, orders, membership and security
- * (DESIGN.md §9). The heading, profile and tab row stay in place and only the selected tab
- * scrolls, so switching tabs never resizes the dialog. Cards use the recharge dialog's dark
- * fill so they stay distinct from the #1A1A1A dialog surface. */
+/* The profile and tabs stay fixed; only the selected panel scrolls.
+ * Frosting belongs to the dialog, so its backdrop must not form a separate blur root. */
+.account-backdrop.modal__backdrop:has(.account-center-dialog) {
+  backdrop-filter: none;
+}
 .account-dialog.account-center-dialog.modal__dialog {
-  --account-card-background: #121212;
+  --account-card-background: #ffffff08;
   --account-center-padding: var(--space-6);
   width: min(1040px, calc(100vw - 48px));
   max-width: none;
   height: min(760px, calc(100dvh - 48px));
   padding: var(--account-center-padding);
+  background:
+    linear-gradient(180deg, #ffffff14 0%, #ffffff08 40%, #ffffff05 100%), rgb(15 15 18 / 42%);
+  border-color: #ffffff1f;
+  box-shadow:
+    inset 0 1px 0 #ffffff26,
+    0 32px 80px -24px #000000b3;
+  backdrop-filter: blur(28px) saturate(180%);
 }
 .account-center-dialog .modal__header {
   margin-bottom: var(--space-4);
@@ -352,4 +360,16 @@
 }
 .account-inline-link {
   color: var(--accent);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .account-dialog.account-center-dialog.modal__dialog {
+    background: #1c1c1c;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .account-dialog.account-center-dialog.modal__dialog {
+    background: #1c1c1c;
+    backdrop-filter: none;
+  }
 }

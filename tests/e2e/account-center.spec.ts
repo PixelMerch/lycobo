@@ -117,7 +117,6 @@ test("overview summarizes real data and stacks recharge above the center", async
   await draft.fill("保留正在准备的商品图");
   const trigger = page.getByRole("button", { name: "账户菜单：overview-fixture", exact: true });
   const center = await openCenter(page, "overview-fixture", "个人中心");
-  await expect(center).toHaveCSS("background-color", "rgb(26, 26, 26)");
   const overview = center.getByRole("tabpanel", { name: "概览", exact: true });
   const wallet = overview.getByRole("region", { name: "企业共享积分" });
   // 200 credits at 2 per image: the center states the whole images, never a rounded-up count.
