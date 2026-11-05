@@ -18,18 +18,54 @@ import { storyboardProfile } from "./storyboard-planner";
 
 const isDeepSeek = (model: string) => /^deepseek(?:[-/]|$)/i.test(model);
 
+function planningErrorCode(error: unknown) {
+  if (error instanceof PlannerError) return error.code;
+  return error instanceof PlannerWebError ? "PLANNER_WEB_FAILED" : "PLANNER_INVALID_RESULT";
+}
+
+async function verifyPlanningAssets(
+  repository: Pick<ImageRuntimeRepository, "asset">,
+  scope: ImageScope,
+  references: string[],
+  storyboard?: StoryboardRequest,
+) {
+  const shots = storyboard?.stage === "video" ? storyboard.shots.map((shot) => shot.assetId) : [];
+  await Promise.all(
+    [...references, ...shots].map(async (id) => {
+      if (!(await repository.asset(scope, id))) throw new PlannerError("PLANNER_INVALID_RESULT");
+    }),
+  );
+}
+
 export function variationService(deps: {
   repository: Pick<ImageRuntimeRepository, "variation" | "asset">;
   modelSecret?: string | undefined;
   plannerKey?: string | undefined;
   plannerRequest?: typeof fetch | undefined;
 }) {
+  const hasCredentials = () => !!(deps.plannerKey || deps.modelSecret);
   const readWeb = createPlannerWebReader(deps.plannerRequest);
+  async function readPlannerKey(ciphertext: string) {
+    return deps.plannerKey ?? openProviderKey(ciphertext, deps.modelSecret ?? "");
+  }
+  async function readPlanningContext(
+    input: VariationPlanInput,
+    storyboard: StoryboardRequest | undefined,
+    origin: string,
+    secret: string,
+    scope: ImageScope,
+    signal: AbortSignal,
+    onStatus?: (stage: "reading") => Promise<void>,
+  ) {
+    const urls = storyboard ? [] : plannerUrls(input.description);
+    if (!urls.length) return undefined;
+    await onStatus?.("reading");
+    if (new URL(origin).origin !== "https://api.deepseek.com") throw new PlannerWebError();
+    return readWeb(urls, secret, `${scope.organizationId}:${scope.userId}`, signal);
+  }
   const service = {
     async enabled() {
-      return (
-        !!(deps.plannerKey || deps.modelSecret) && !!(await deps.repository.variation.config())
-      );
+      return hasCredentials() && !!(await deps.repository.variation.config());
     },
     async create(
       scope: ImageScope,
@@ -41,36 +77,23 @@ export function variationService(deps: {
       storyboard?: StoryboardRequest,
     ) {
       const config = await deps.repository.variation.config();
-      if (!config || (!deps.plannerKey && !deps.modelSecret)) return null;
+      if (!config || !hasCredentials()) return null;
       if (storyboard && !isDeepSeek(config.model)) return null;
       const result = await deps.repository.variation.begin(scope, input, key);
       if (result.replayed) return result.plan;
       try {
         // Keep ownership checks without reading or encoding image content for the planner.
-        await Promise.all(
-          [
-            ...input.referenceAssetIds,
-            ...(storyboard?.stage === "video" ? storyboard.shots.map((shot) => shot.assetId) : []),
-          ].map(async (id) => {
-            if (!(await deps.repository.asset(scope, id)))
-              throw new PlannerError("PLANNER_INVALID_RESULT");
-          }),
+        await verifyPlanningAssets(deps.repository, scope, input.referenceAssetIds, storyboard);
+        const secret = await readPlannerKey(config.ciphertext);
+        const webContext = await readPlanningContext(
+          input,
+          storyboard,
+          config.origin,
+          secret,
+          scope,
+          signal,
+          onStatus,
         );
-        const secret =
-          deps.plannerKey ?? (await openProviderKey(config.ciphertext, deps.modelSecret ?? ""));
-        const urls = storyboard ? [] : plannerUrls(input.description);
-        let webContext: string | undefined;
-        if (urls.length) {
-          await onStatus?.("reading");
-          if (new URL(config.origin).origin !== "https://api.deepseek.com")
-            throw new PlannerWebError();
-          webContext = await readWeb(
-            urls,
-            secret,
-            `${scope.organizationId}:${scope.userId}`,
-            signal,
-          );
-        }
         await onStatus?.("planning");
         const items = await planVariation(
           input,
@@ -84,16 +107,7 @@ export function variationService(deps: {
         );
         await deps.repository.variation.finish(scope, result.plan.id, items);
       } catch (error) {
-        await deps.repository.variation.finish(
-          scope,
-          result.plan.id,
-          [],
-          error instanceof PlannerError
-            ? error.code
-            : error instanceof PlannerWebError
-              ? "PLANNER_WEB_FAILED"
-              : "PLANNER_INVALID_RESULT",
-        );
+        await deps.repository.variation.finish(scope, result.plan.id, [], planningErrorCode(error));
         if (error instanceof PlannerWebError) await onStatus?.("link_failed");
       }
       return deps.repository.variation.get(scope, result.plan.id);
@@ -102,7 +116,7 @@ export function variationService(deps: {
   return {
     ...service,
     async storyboardEnabled() {
-      if (!deps.plannerKey && !deps.modelSecret) return false;
+      if (!hasCredentials()) return false;
       const config = await deps.repository.variation.config();
       return !!config && isDeepSeek(config.model);
     },

@@ -1,67 +1,33 @@
 import { toast } from "@heroui/react";
 import {
-  type ImageJob,
-  imageJobSchema,
   imageUnitCredits,
-  type StoryboardRequest,
   storyboardCapabilitiesSchema,
-  storyboardRequestSchema,
-  storyboardVideoShotLimit,
-  type VariationPlan,
-  variationPlanSchema,
-  videoReferenceLimit,
   videoReferenceUnavailableMessage,
   videoUnitCredits,
-  walletBalanceSchema,
 } from "@lycoboai/contracts";
-import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useIsMutating, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type RefObject, useEffect, useRef } from "react";
 import { useErrorToast } from "../../../lib/error-toast";
-import { enterpriseSessionKey, useEnterpriseSession } from "../../auth/auth-client";
+import { useEnterpriseSession } from "../../auth/auth-client";
 import {
-  ImageApiError,
   imageRequest,
   pendingSubmissionSource,
-  uploadImageReferences,
   useGenerateImage,
   useImageModels,
   usePendingSubmission,
 } from "../../generation/generation-client";
 import { modelCapabilities, supportsReferences } from "../../generation/models/model-capabilities";
-import type { ReferenceImage } from "../../generation/studio-state";
 import { useSubmitVideo, useVideoModel } from "../video-client";
-import { clearSubmittedVideoDraft, restoreVideoDraft, useVideoDraft } from "../video-state";
-import { emptyStoryboard, originalReference, useStoryboardState } from "./storyboard-state";
+import { restoreVideoDraft, useVideoDraft } from "../video-state";
+import { hasStarted, isRunning, modelId, resolution, source } from "./storyboard-stages";
+import { emptyStoryboard, useStoryboardState } from "./storyboard-state";
+import {
+  type ProductionInput,
+  storyboardExecutionContext,
+  useStoryboardAction,
+} from "./use-storyboard-action";
 
-const source = "tk-storyboard";
-const modelId = "gpt-image-2.5";
-const resolution = "1.5K";
-type ProductionInput = {
-  description: string;
-  references: ReferenceImage[];
-  retryPosition?: number;
-};
-
-const isRunning = (status: string) => status === "queued" || status === "running";
-/** Anything saved here is durable work a failed attempt can resume instead of starting over. */
-const hasStarted = (progress: typeof emptyStoryboard.progress) =>
-  !!(progress.planAttempt || progress.planId || progress.batchId);
-const definitive = (error: unknown) =>
-  error instanceof ImageApiError && [400, 401, 403, 409, 413, 429].includes(error.status);
 export const automaticVideoCost = emptyStoryboard.count * imageUnitCredits + videoUnitCredits;
-
-function completedShots(job: ImageJob, plan: VariationPlan, originalAssetIds: string[]) {
-  const seen = new Set(originalAssetIds);
-  return [...job.items]
-    .sort((a, b) => a.position - b.position)
-    .flatMap(({ position, status, output_asset_id: assetId }) => {
-      const shot = plan.items[position];
-      if (!shot || status !== "succeeded" || !assetId || seen.has(assetId)) return [];
-      seen.add(assetId);
-      return [{ position, assetId, title: shot.title, prompt: shot.prompt.slice(0, 250) }];
-    })
-    .slice(0, Math.min(storyboardVideoShotLimit, videoReferenceLimit - originalAssetIds.length));
-}
 
 export function useStoryboard(enabled: boolean, showPanel: (panel: "form" | "history") => void) {
   const owner = useEnterpriseSession().data ?? undefined;
@@ -74,21 +40,93 @@ export function useStoryboard(enabled: boolean, showPanel: (panel: "form" | "his
   const videoModel = useVideoModel(enabled);
   const video = useSubmitVideo("storyboard");
   const pendingImage = usePendingSubmission(owner);
-  let ownImagePending = false;
-  if (enabled && owner && pendingImage) {
-    try {
-      ownImagePending = pendingSubmissionSource(owner) === source;
-    } catch {
-      // A damaged confirmation record still blocks new paid submissions.
-    }
-  }
+  const ownImagePending = isOwnStoryboardSubmission(enabled, owner, pendingImage);
   const lock = useRef(false);
   const mutationKey = ["tk-storyboard-action", scope];
   const active = useIsMutating({ mutationKey }) > 0;
   useEffect(() => {
     if (enabled) useStoryboardState.getState().load(scope);
   }, [enabled, scope]);
-  const capabilities = useQuery({
+  const capabilities = useStoryboardCapabilities(enabled, scope);
+  const limits = storyboardLimits(capabilities, models, videoModel);
+  const { configured, maxOriginalImages, unavailable } = limits;
+  const frames = storyboardFrameState(draft, ownImagePending, video.pendingReferenceCount);
+  const {
+    framesIncomplete,
+    waitingForFrames,
+    resumingFrames,
+    checkingFrames,
+    incompleteVideoPending,
+  } = frames;
+  const blocked = hasBlockingSubmission(pendingImage, ownImagePending, video, generation);
+  const needsResume = video.hasPending || ownImagePending || hasStarted(progress);
+  const execution = storyboardExecutionContext(scope, owner, client);
+  const { current, update } = execution;
+
+  const action = useStoryboardAction({
+    mutationKey,
+    lock,
+    owner,
+    execution,
+    video,
+    videoModel,
+    generation,
+    draft,
+    pendingImage,
+    ownImagePending,
+    incompleteVideoPending,
+    configured,
+    maxOriginalImages,
+    showPanel,
+  });
+  const controls = useStoryboardControls({
+    action,
+    enabled,
+    referenceImagesBlocked: videoModel.data?.referenceImagesEnabled === false,
+    needsResume,
+    resumingFrames,
+    waitingForFrames,
+    active,
+    progress,
+    pendingVideo: video.hasPending,
+    ownImagePending,
+    lock,
+    blocked,
+    scope,
+    showPanel,
+    current,
+    update,
+    draft,
+  });
+  return {
+    draft,
+    configured,
+    maxOriginalImages,
+    unavailable,
+    scope,
+    needsResume,
+    /** The run holds its own copy from here on, so the form is free for the next draft. */
+    handedOff: !!progress.batchId,
+    remainingCost:
+      progress.batchId || video.hasPending
+        ? videoUnitCredits
+        : draft.count * imageUnitCredits + videoUnitCredits,
+    pendingVideo: video.hasPending,
+    blocked,
+    waitingForFrames,
+    resumingFrames,
+    checkingFrames,
+    canRetryFrame: canRetryStoryboardFrame(blocked, ownImagePending, framesIncomplete),
+    ...controls,
+  };
+}
+
+type Owner = NonNullable<ReturnType<typeof useEnterpriseSession>["data"]>;
+type Draft = typeof emptyStoryboard;
+type Progress = Draft["progress"];
+
+function useStoryboardCapabilities(enabled: boolean, scope: string) {
+  return useQuery({
     queryKey: ["tk-storyboard-capabilities", scope],
     enabled: enabled && !!scope,
     retry: false,
@@ -97,6 +135,29 @@ export function useStoryboard(enabled: boolean, showPanel: (panel: "form" | "his
         await (await imageRequest("video-storyboards/capabilities", { signal })).json(),
       ),
   });
+}
+
+function isOwnStoryboardSubmission(
+  enabled: boolean,
+  owner: Owner | undefined,
+  pendingImage: boolean,
+) {
+  let ownImagePending = false;
+  if (enabled && owner && pendingImage) {
+    try {
+      ownImagePending = pendingSubmissionSource(owner) === source;
+    } catch {
+      // A damaged confirmation record still blocks new paid submissions.
+    }
+  }
+  return ownImagePending;
+}
+
+function storyboardLimits(
+  capabilities: ReturnType<typeof useStoryboardCapabilities>,
+  models: ReturnType<typeof useImageModels>,
+  videoModel: ReturnType<typeof useVideoModel>,
+) {
   const model = modelCapabilities(models.data, modelId, "create");
   const maxOriginalImages = Math.min(
     capabilities.data?.maxStoryboardOriginalImages ?? 1,
@@ -107,6 +168,19 @@ export function useStoryboard(enabled: boolean, showPanel: (panel: "form" | "his
     capabilities.data?.enabled === true &&
     model?.enabledResolutions.includes(resolution) === true &&
     supportsReferences(model, 1);
+  const unavailable =
+    capabilities.isError ||
+    models.isError ||
+    (capabilities.isSuccess && models.isSuccess && !configured);
+  return { configured, maxOriginalImages, unavailable };
+}
+
+function storyboardFrameState(
+  draft: Draft,
+  ownImagePending: boolean,
+  pendingReferenceCount: number | undefined,
+) {
+  const { progress } = draft;
   const framesIncomplete =
     !!progress.batchId &&
     !!progress.frameJobStatus &&
@@ -125,279 +199,76 @@ export function useStoryboard(enabled: boolean, showPanel: (panel: "form" | "his
         progress.frameJobStatus !== "partially_failed"));
   const incompleteVideoPending =
     !!progress.batchId &&
-    video.pendingReferenceCount !== undefined &&
-    video.pendingReferenceCount < draft.references.length + draft.count;
-  const blocked =
+    pendingReferenceCount !== undefined &&
+    pendingReferenceCount < draft.references.length + draft.count;
+  return {
+    framesIncomplete,
+    waitingForFrames,
+    resumingFrames,
+    checkingFrames,
+    incompleteVideoPending,
+  };
+}
+
+function hasBlockingSubmission(
+  pendingImage: boolean,
+  ownImagePending: boolean,
+  video: ReturnType<typeof useSubmitVideo>,
+  generation: ReturnType<typeof useGenerateImage>,
+) {
+  return (
     (pendingImage && !ownImagePending) ||
     video.blockedByPending ||
     video.isPending ||
-    generation.isPending;
-  const needsResume = video.hasPending || ownImagePending || hasStarted(progress);
-  const current = () => useStoryboardState.getState().drafts[scope] ?? emptyStoryboard;
-  const update = (patch: Partial<typeof draft>) =>
-    useStoryboardState.getState().update(scope, patch);
-  const save = (patch: Partial<typeof progress>) =>
-    update({ progress: { ...current().progress, ...patch } });
+    generation.isPending
+  );
+}
 
-  function assertOwner() {
-    const identity = client.getQueryData<typeof owner>(enterpriseSessionKey);
-    if (
-      !identity ||
-      identity.organizationId !== owner?.organizationId ||
-      identity.userId !== owner.userId
-    )
-      throw new Error("登录身份已变化，请回到原账号继续制作");
-  }
+function canRetryStoryboardFrame(
+  blocked: boolean,
+  ownImagePending: boolean,
+  framesIncomplete: boolean,
+) {
+  return !blocked && !ownImagePending && framesIncomplete;
+}
 
-  async function planRequest(attempt: { key: string; input: StoryboardRequest }) {
-    assertOwner();
-    const response = await imageRequest(
-      "video-storyboards",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Idempotency-Key": attempt.key },
-        body: JSON.stringify(attempt.input),
-      },
-      90_000,
-    );
-    return variationPlanSchema.parse(await response.json());
-  }
-
-  async function readImageJob(id: string) {
-    assertOwner();
-    return imageJobSchema.parse(await (await imageRequest(`image-tasks/${id}`)).json());
-  }
-
-  async function waitForImages(id: string, plan: VariationPlan, originalAssetIds: string[]) {
-    const deadline = Date.now() + 8 * 60_000;
-    while (Date.now() < deadline) {
-      const job = await readImageJob(id);
-      const ready = !isRunning(job.status);
-      const shots = completedShots(job, plan, originalAssetIds);
-      const frames = shots.map(({ position, assetId, title }) => ({ position, assetId, title }));
-      const failedFramePositions = job.items
-        .filter(({ status }) => status === "failed")
-        .map(({ position }) => position);
-      const previous = current().progress;
-      if (
-        frames.length !== (previous.frames?.length ?? 0) ||
-        frames.some((frame, index) => frame.assetId !== previous.frames?.[index]?.assetId) ||
-        job.status !== previous.frameJobStatus ||
-        failedFramePositions.join() !== previous.failedFramePositions?.join()
-      ) {
-        save({ frames, frameJobStatus: job.status, failedFramePositions });
-      }
-      if (ready) return shots;
-      await new Promise((resolve) => setTimeout(resolve, 4000));
-    }
-    throw new Error("画面仍在制作，请稍后点击继续生成");
-  }
-
-  function finish(id: string) {
-    const { progress } = current();
-    // The description and images stay until the next run so the card has content until the
-    // history list returns the new task.
-    update({
-      submittedDraft: undefined,
-      progress: { acceptedVideoId: id, frames: progress.frames },
-    });
-  }
-
-  const action = useMutation({
-    mutationKey,
-    retry: false,
-    mutationFn: async (input: ProductionInput) => {
-      if (!owner) throw new Error("请先登录");
-      assertOwner();
-      if (video.hasPending && !incompleteVideoPending) {
-        if (videoModel.data?.referenceImagesEnabled === false)
-          throw new Error(videoReferenceUnavailableMessage);
-        const result = await video.submitAsync({
-          input: { prompt: "", seconds: draft.seconds, aspectRatio: "9:16" },
-          references: [],
-          clearDraft: false,
-        });
-        finish(result.id);
-        return;
-      }
-      if (!hasStarted(progress)) {
-        if (videoModel.data?.referenceImagesEnabled === false)
-          throw new Error(videoReferenceUnavailableMessage);
-        if (!configured || pendingImage || input.references.length > maxOriginalImages)
-          throw new Error("暂时无法制作视频，请检查生成服务和待确认任务");
-        const balance = walletBalanceSchema.parse(await (await imageRequest("wallet")).json());
-        if (balance.balance < automaticVideoCost)
-          throw new Error(`本次预计需要 ${automaticVideoCost} 积分，请补充积分后再试`);
-      }
-      let snapshot: VariationPlan;
-      const planId = current().progress.planId;
-      if (planId) {
-        snapshot = variationPlanSchema.parse(
-          await (await imageRequest(`variation-plans/${planId}`)).json(),
-        );
-      } else {
-        let attempt = current().progress.planAttempt;
-        if (!attempt) {
-          assertOwner();
-          const [originalAssetId, ...additionalOriginalAssetIds] = await uploadImageReferences(
-            client,
-            owner,
-            current().references,
-          );
-          if (!originalAssetId) throw new Error("请上传商品图片");
-          attempt = {
-            key: crypto.randomUUID(),
-            input: {
-              stage: "plan",
-              description: current().description.trim(),
-              originalAssetId,
-              ...(additionalOriginalAssetIds.length ? { additionalOriginalAssetIds } : {}),
-              count: current().count,
-              seconds: current().seconds,
-            },
-          };
-          update({
-            references: [originalAssetId, ...additionalOriginalAssetIds].map(originalReference),
-          });
-          save({ planAttempt: attempt });
-        }
-        try {
-          snapshot = await planRequest(attempt);
-        } catch (error) {
-          if (definitive(error)) save({ planAttempt: undefined });
-          throw error;
-        }
-        if (snapshot.status === "running") throw new Error("正在准备画面，请稍后继续");
-        if (snapshot.status !== "ready" || snapshot.items.length !== current().count) {
-          save({ planAttempt: undefined });
-          throw new Error("画面方案未完成，请稍后重试");
-        }
-        save({ planId: snapshot.id, planAttempt: undefined });
-      }
-      const [originalAssetId, ...additionalOriginalAssetIds] = snapshot.referenceAssetIds;
-      if (
-        snapshot.status !== "ready" ||
-        !originalAssetId ||
-        snapshot.items.length !== current().count
-      )
-        throw new Error("画面资料不完整");
-      const originalAssetIds = [originalAssetId, ...additionalOriginalAssetIds];
-      let batchId = current().progress.batchId;
-      const imageDraft = {
-        prompt: current().description.slice(0, 600),
-        references: originalAssetIds.map(originalReference),
-        ratio: "9:16" as const,
-        resolution,
-        count: String(snapshot.items.length),
-        quality: "标准" as const,
-      };
-      if (batchId && input.retryPosition !== undefined && !ownImagePending) {
-        const job = await readImageJob(batchId);
-        const item = job.items.find(
-          ({ position, status }) => position === input.retryPosition && status === "failed",
-        );
-        if (item && !isRunning(job.status)) {
-          assertOwner();
-          await generation.mutateAsync({
-            model: modelId,
-            source,
-            draft: imageDraft,
-            retryJobId: batchId,
-            retryItemId: item.id,
-          });
-          save({ frameJobStatus: "queued", failedFramePositions: undefined });
-        }
-      }
-      if (!batchId || ownImagePending) {
-        assertOwner();
-        if (!ownImagePending && !configured) throw new Error("画面生成服务暂时不可用");
-        const target = ownImagePending ? current().progress.imageTarget : "batch";
-        const items =
-          target === "batch" || !target
-            ? snapshot.items
-            : snapshot.items.filter(({ id }) => id === target);
-        save({ imageTarget: target ?? "batch" });
-        const batch = await generation.mutateAsync({
-          model: modelId,
-          source,
-          draft: { ...imageDraft, count: String(items.length) },
-          variation: { version: 1, planId: snapshot.id, items },
-        });
-        batchId ??= batch.id;
-        save({ batchId, imageTarget: undefined });
-      }
-      const { submittedDraft } = current();
-      if (submittedDraft) {
-        clearSubmittedVideoDraft(submittedDraft);
-        update({ submittedDraft: undefined });
-      }
-      const completed = await waitForImages(batchId, snapshot, originalAssetIds);
-      void client.invalidateQueries({ queryKey: ["wallet"] });
-      void client.invalidateQueries({ queryKey: ["wallet-entries"] });
-      void client.invalidateQueries({ queryKey: ["image-assets"] });
-      const shots = completed.map(({ assetId, title, prompt }) => ({ assetId, title, prompt }));
-      if (shots.length !== current().count) return;
-      const optimization = storyboardRequestSchema.parse({
-        stage: "video",
-        description: current().description,
-        originalAssetId,
-        ...(additionalOriginalAssetIds.length ? { additionalOriginalAssetIds } : {}),
-        seconds: current().seconds,
-        shots,
-      });
-      const prior = current().progress.optimization;
-      const attempt =
-        prior && JSON.stringify(prior.input) === JSON.stringify(optimization)
-          ? prior
-          : { key: crypto.randomUUID(), input: optimization, prompt: undefined };
-      save({ optimization: attempt });
-      let prompt = attempt.prompt;
-      if (!prompt) {
-        let optimized: VariationPlan;
-        try {
-          optimized = await planRequest(attempt);
-        } catch (error) {
-          if (definitive(error)) save({ optimization: undefined });
-          throw error;
-        }
-        if (optimized.status === "running") throw new Error("正在编写视频提示词，请稍后继续");
-        prompt = optimized.status === "ready" ? optimized.items[0]?.prompt : undefined;
-        if (!prompt) {
-          save({ optimization: undefined });
-          throw new Error("视频提示词未完成，请稍后继续");
-        }
-        save({ optimization: { ...attempt, prompt } });
-      }
-      assertOwner();
-      if (videoModel.data?.referenceImagesEnabled === false)
-        throw new Error(videoReferenceUnavailableMessage);
-      const result = await video.submitAsync({
-        input: {
-          prompt,
-          seconds: optimization.seconds,
-          aspectRatio: "9:16",
-          storyboard: { description: optimization.description },
-          ...(originalAssetIds.length > 1
-            ? { storyboardOriginalImageCount: originalAssetIds.length }
-            : {}),
-        },
-        references: [...originalAssetIds, ...shots.map(({ assetId }) => assetId)].map(
-          originalReference,
-        ),
-        clearDraft: false,
-        repairPending: incompleteVideoPending,
-      });
-      finish(result.id);
-    },
-    onError: () => {
-      // Nothing durable exists yet: the draft is still in the form, so return to it.
-      if (!hasStarted(current().progress)) showPanel("form");
-    },
-    onSettled: () => {
-      lock.current = false;
-    },
-  });
-  const referenceImagesBlocked = videoModel.data?.referenceImagesEnabled === false;
+function useStoryboardControls({
+  action,
+  enabled,
+  referenceImagesBlocked,
+  needsResume,
+  resumingFrames,
+  waitingForFrames,
+  active,
+  progress,
+  pendingVideo,
+  ownImagePending,
+  lock,
+  blocked,
+  scope,
+  showPanel,
+  current,
+  update,
+  draft,
+}: {
+  action: ReturnType<typeof useStoryboardAction>;
+  enabled: boolean;
+  referenceImagesBlocked: boolean;
+  needsResume: boolean;
+  resumingFrames: boolean;
+  waitingForFrames: boolean;
+  active: boolean;
+  progress: Progress;
+  pendingVideo: boolean;
+  ownImagePending: boolean;
+  lock: RefObject<boolean>;
+  blocked: boolean;
+  scope: string;
+  showPanel: (panel: "form" | "history") => void;
+  current: () => Draft;
+  update: (patch: Partial<Draft>) => void;
+  draft: Draft;
+}) {
   const resumeBlockedByReferences =
     referenceImagesBlocked && needsResume && !resumingFrames && !waitingForFrames;
   useErrorToast(
@@ -408,7 +279,7 @@ export function useStoryboard(enabled: boolean, showPanel: (panel: "form" | "his
   );
   const busy = active || action.isPending;
   // An ambiguous submission may already be charged; it has to be confirmed, not forgotten.
-  const canAbandon = !busy && hasStarted(progress) && !video.hasPending && !ownImagePending;
+  const canAbandon = !busy && hasStarted(progress) && !pendingVideo && !ownImagePending;
   const canRun = () => !lock.current && !active && !blocked && !!scope;
   const run = (input: ProductionInput) => {
     if (!canRun()) return;
@@ -417,28 +288,7 @@ export function useStoryboard(enabled: boolean, showPanel: (panel: "form" | "his
     action.mutate(input);
   };
   return {
-    draft,
-    configured,
-    maxOriginalImages,
-    unavailable:
-      capabilities.isError ||
-      models.isError ||
-      (capabilities.isSuccess && models.isSuccess && !configured),
-    scope,
     busy,
-    needsResume,
-    /** The run holds its own copy from here on, so the form is free for the next draft. */
-    handedOff: !!progress.batchId,
-    remainingCost:
-      progress.batchId || video.hasPending
-        ? videoUnitCredits
-        : draft.count * imageUnitCredits + videoUnitCredits,
-    pendingVideo: video.hasPending,
-    blocked,
-    waitingForFrames,
-    resumingFrames,
-    checkingFrames,
-    canRetryFrame: !blocked && !ownImagePending && framesIncomplete,
     canAbandon,
     abandon: () => {
       if (!canAbandon) return;

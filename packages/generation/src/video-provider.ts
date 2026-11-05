@@ -35,10 +35,25 @@ const providerTaskSchema = z.object({
   video_available: z.boolean().optional(),
 });
 export type ProviderVideoTask = z.infer<typeof providerTaskSchema>;
+type VideoCreation = { input: VideoInput; images: string[]; key: string };
+
+function videoCreationBody(creation: VideoCreation | undefined, input: VideoInput | undefined) {
+  if (!creation || !input) return {};
+  return {
+    body: JSON.stringify({
+      model: videoModel,
+      prompt: input.prompt.replace(/@图片(\d+)/g, "图$1"),
+      seconds: input.seconds,
+      aspect_ratio: input.aspectRatio,
+      ...(creation.images.length ? { images: creation.images } : {}),
+    }),
+  };
+}
+
 export async function callVideoProvider(
   config: { origin: string; key: string },
   taskId?: string,
-  creation?: { input: VideoInput; images: string[]; key: string },
+  creation?: VideoCreation,
   request: typeof fetch = fetch,
 ): Promise<ProviderVideoTask> {
   if (
@@ -60,17 +75,7 @@ export async function callVideoProvider(
           ? { "Content-Type": "application/json", "Idempotency-Key": creation.key }
           : {}),
       },
-      ...(creation && input
-        ? {
-            body: JSON.stringify({
-              model: videoModel,
-              prompt: input.prompt.replace(/@图片(\d+)/g, "图$1"),
-              seconds: input.seconds,
-              aspect_ratio: input.aspectRatio,
-              ...(creation.images.length ? { images: creation.images } : {}),
-            }),
-          }
-        : {}),
+      ...videoCreationBody(creation, input),
     });
     if (!response.ok) {
       await response.body?.cancel();
@@ -104,7 +109,7 @@ export async function readVideoResponse(response: Response, limit = videoOutputL
       chunks.push(part.value);
     }
   } catch (error) {
-    await reader.cancel().catch(() => {});
+    await reader.cancel().catch(() => undefined);
     throw error;
   }
   const output = new Uint8Array(size);
@@ -143,16 +148,20 @@ export async function downloadProviderVideo(
       url = new URL(location, url);
       continue;
     }
-    if (
-      !response.ok ||
-      !/^(video\/mp4|application\/octet-stream)(;|$)/i.test(
-        response.headers.get("Content-Type") ?? "",
-      )
-    ) {
-      await response.body?.cancel();
-      throw new VideoProviderError("VIDEO_DOWNLOAD_UNAVAILABLE");
-    }
-    return readVideoResponse(response);
+    return readDownloadedVideo(response);
   }
   throw new VideoProviderError("VIDEO_DOWNLOAD_REDIRECT_LIMIT");
+}
+
+async function readDownloadedVideo(response: Response) {
+  if (
+    !response.ok ||
+    !/^(video\/mp4|application\/octet-stream)(;|$)/i.test(
+      response.headers.get("Content-Type") ?? "",
+    )
+  ) {
+    await response.body?.cancel();
+    throw new VideoProviderError("VIDEO_DOWNLOAD_UNAVAILABLE");
+  }
+  return readVideoResponse(response);
 }

@@ -1,4 +1,19 @@
 import { variationPlanSchema } from "@lycoboai/contracts";
+import { readEventData } from "../../../lib/read-event-data";
+
+function readPlanStage(value: unknown) {
+  if (!value || typeof value !== "object" || !("stage" in value)) return undefined;
+  const { stage } = value;
+  if (stage === "reading" || stage === "planning" || stage === "link_failed") return stage;
+  return undefined;
+}
+
+function readPlanText(value: unknown) {
+  if (!value || typeof value !== "object" || !("text" in value) || typeof value.text !== "string") {
+    throw new Error("计划响应格式无效");
+  }
+  return value.text;
+}
 
 export async function readPlanResponse(
   response: Response,
@@ -9,99 +24,85 @@ export async function readPlanResponse(
     return variationPlanSchema.parse(await response.json());
   const reader = response.body?.getReader();
   if (!reader) throw new Error("计划响应为空，请稍后重试");
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let event = "";
   let bytes = 0;
-  try {
-    for (;;) {
-      const chunk = await reader.read();
-      if (chunk.done) break;
-      bytes += chunk.value.byteLength;
-      if (bytes > 1024 * 1024) throw new Error("计划内容过长，请缩小需求范围");
-      buffer += decoder.decode(chunk.value, { stream: true });
-      let boundary = buffer.indexOf("\n");
-      while (boundary >= 0) {
-        const line = buffer.slice(0, boundary).trimEnd();
-        buffer = buffer.slice(boundary + 1);
-        boundary = buffer.indexOf("\n");
-        if (line.startsWith("event:")) event = line.slice(6).trim();
-        if (!line.startsWith("data:")) continue;
-        const value: unknown = JSON.parse(line.slice(5));
-        if (
-          event === "status" &&
-          value &&
-          typeof value === "object" &&
-          "stage" in value &&
-          (value.stage === "reading" || value.stage === "planning" || value.stage === "link_failed")
-        )
-          onStatus?.(value.stage);
-        if (event === "delta") {
-          if (
-            !value ||
-            typeof value !== "object" ||
-            !("text" in value) ||
-            typeof value.text !== "string"
-          )
-            throw new Error("计划响应格式无效");
-          onText(value.text);
-        }
-        if (event === "complete") return variationPlanSchema.parse(value);
-        if (event === "failed") throw new Error("计划未完成，请稍后重试");
-      }
+  const events = readEventData(reader, (size) => {
+    bytes += size;
+    if (bytes > 1024 * 1024) throw new Error("计划内容过长，请缩小需求范围");
+  });
+  for await (const { event, data } of events) {
+    const value: unknown = JSON.parse(data);
+    if (event === "complete") return variationPlanSchema.parse(value);
+    if (event === "failed") throw new Error("计划未完成，请稍后重试");
+    if (event === "delta") onText(readPlanText(value));
+    if (event === "status") {
+      const stage = readPlanStage(value);
+      if (stage) onStatus?.(stage);
     }
-    throw new Error("连接已中断，请稍后继续获取计划");
-  } finally {
-    await reader.cancel().catch(() => {});
   }
+  throw new Error("连接已中断，请稍后继续获取计划");
+}
+
+function readStringToken(text: string, start: number) {
+  let raw = "";
+  let end = start + 1;
+  for (; end < text.length; end++) {
+    const character = text[end];
+    if (character === '"') break;
+    if (character === "\\") {
+      if (end + 1 >= text.length) break;
+      raw += character + text[++end];
+    } else raw += character;
+  }
+  try {
+    return { end, value: parseString(raw) };
+  } catch {
+    // A Unicode escape can itself be split across transport chunks.
+    try {
+      return { end, value: parseString(raw.replace(/\\u[0-9a-f]{0,3}$/i, "")) };
+    } catch {
+      return undefined;
+    }
+  }
+}
+
+function parseString(raw: string) {
+  const parsed: unknown = JSON.parse(`"${raw}"`);
+  return typeof parsed === "string" ? parsed : "";
+}
+
+type PreviewItem = { id: string; title: string; prompt: string };
+type PlanField = "title" | "prompt";
+
+function planField(text: string, end: number, value: string): PlanField | undefined {
+  if (text[end] !== '"' || !/^\s*:/.test(text.slice(end + 1))) return undefined;
+  return value === "title" || value === "prompt" ? value : undefined;
+}
+
+function applyPreviewField(items: PreviewItem[], field: PlanField, start: number, value: string) {
+  if (field === "title" && items.length < 20) {
+    items.push({ id: `token-${start}`, title: value, prompt: "" });
+  }
+  const last = items.at(-1);
+  if (field === "prompt" && last) last.prompt = value;
 }
 
 /** Read only JSON string tokens, including the last unfinished string, for a read-only preview. */
 export function previewPlanItems(text: string) {
-  const items: Array<{ id: string; title: string; prompt: string }> = [];
-  let field: "title" | "prompt" | undefined;
+  const items: PreviewItem[] = [];
+  let field: PlanField | undefined;
   for (let i = 0; i < text.length; i++) {
     if (text[i] !== '"') continue;
     const tokenStart = i;
-    let raw = "";
-    let closed = false;
-    for (i++; i < text.length; i++) {
-      const ch = text[i];
-      if (ch === '"') {
-        closed = true;
-        break;
-      }
-      if (ch === "\\") {
-        if (i + 1 >= text.length) break;
-        raw += ch + text[++i];
-      } else raw += ch;
+    const token = readStringToken(text, i);
+    if (!token) break;
+    i = token.end;
+    const { value } = token;
+    if (!field) {
+      field = planField(text, i, value);
+      continue;
     }
-    let value = "";
-    try {
-      value = JSON.parse(`"${raw}"`);
-    } catch {
-      // A Unicode escape can itself be split across transport chunks.
-      try {
-        value = JSON.parse(`"${raw.replace(/\\u[0-9a-f]{0,3}$/i, "")}"`);
-      } catch {
-        break;
-      }
-    }
-    if (field) {
-      if (field === "title" && items.length < 20)
-        items.push({ id: `token-${tokenStart}`, title: value, prompt: "" });
-      if (field === "prompt" && items.length) {
-        const item = items.at(-1);
-        if (item) item.prompt = value;
-      }
-      field = undefined;
-    } else if (
-      closed &&
-      /^\s*:/.test(text.slice(i + 1)) &&
-      (value === "title" || value === "prompt")
-    ) {
-      field = value;
-    }
+    applyPreviewField(items, field, tokenStart, value);
+    field = undefined;
   }
   return items;
 }

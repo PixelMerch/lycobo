@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   cloudbaseDownloadSigner,
+  cloudbaseImageReferenceSigner,
   cloudbaseObjectBucket,
   cloudbasePlaybackSigner,
   cloudbaseProviderReferenceSigner,
@@ -124,6 +125,18 @@ it("signs private reference images for the provider without requiring an asset h
   expect(new URL(await sign("a.png")).searchParams.has("download")).toBe(false);
   expect(JSON.parse(String(request.mock.calls[0]?.[1]?.body))).toEqual({ expiresIn: 3600 });
   expect(() => sign("a.mp4")).toThrow("INVALID_REFERENCE_IMAGE");
+});
+
+it("signs only the exact JPEG derivative for image providers", async () => {
+  const signed =
+    "https://fixture-env-123.api.tcloudbasegateway.com/v1/storages/object/sign/private-images/a.png.provider-v1.jpg?token=temporary";
+  const request = vi
+    .fn<typeof fetch>()
+    .mockImplementation(async () => Response.json({ fullSignedURL: signed }));
+  const sign = cloudbaseImageReferenceSigner(env, request);
+  expect((await sign("a.png.provider-v1.jpg")).href).toBe(signed);
+  expect(JSON.parse(String(request.mock.calls[0]?.[1]?.body))).toEqual({ expiresIn: 3600 });
+  await expect(sign("b.png.provider-v1.jpg")).rejects.toThrow("IMAGE_STORAGE_UNAVAILABLE");
 });
 it("stores videos larger than the image limit in the same private bucket", async () => {
   const request = vi.fn<typeof fetch>().mockResolvedValue(new Response(null));

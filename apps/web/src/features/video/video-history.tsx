@@ -150,22 +150,7 @@ export function VideoHistoryRail({ production }: { production: Production }) {
                 aria-current={currentId === `video-task-${task.id}` ? "true" : "false"}
                 onPress={() => locate(`video-task-${task.id}`)}
               >
-                {task.asset_id ? (
-                  <span className="history-thumbnail-frame">
-                    <AssetImage
-                      assetId={task.asset_id}
-                      thumbnail
-                      alt={`视频 ${task.public_id} 封面`}
-                      loading="lazy"
-                    />
-                  </span>
-                ) : isVideoTaskActive(task) ? (
-                  <span className="history-thumbnail-frame">
-                    <Spinner size="sm" aria-label="视频处理中" />
-                  </span>
-                ) : (
-                  <UiIcon icon={IconMovie} size="action" />
-                )}
+                <VideoTaskThumbnail task={task} />
               </Button>
             </div>
           ))}
@@ -174,4 +159,25 @@ export function VideoHistoryRail({ production }: { production: Production }) {
       {libraryOpen && <LibraryDialog tool="video" onClose={() => setLibraryOpen(false)} />}
     </>
   );
+}
+
+function VideoTaskThumbnail({ task }: { task: Parameters<typeof isVideoTaskActive>[0] }) {
+  if (task.asset_id)
+    return (
+      <span className="history-thumbnail-frame">
+        <AssetImage
+          assetId={task.asset_id}
+          thumbnail
+          alt={`视频 ${task.public_id} 封面`}
+          loading="lazy"
+        />
+      </span>
+    );
+  if (isVideoTaskActive(task))
+    return (
+      <span className="history-thumbnail-frame">
+        <Spinner size="sm" aria-label="视频处理中" />
+      </span>
+    );
+  return <UiIcon icon={IconMovie} size="action" />;
 }

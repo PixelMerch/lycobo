@@ -1,9 +1,17 @@
-import type { StoredImage } from "@lycoboai/contracts";
+import type { ImageGenerationInput, StoredImage } from "@lycoboai/contracts";
+import type { ClaimedImage, ImageRuntimeRepository } from "@lycoboai/db";
+import { ImageProviderError } from "@lycoboai/generation";
 import { type ImageStore, providerReference } from "@lycoboai/storage";
 
 // Every item of a job sends the same references, so each is read and re-encoded once per
 // instance. Stored assets never change; the content hash is part of the key regardless.
 const recent = new Map<string, Promise<Uint8Array>>();
+
+export function mainImageHasReferences(input: ImageGenerationInput) {
+  return (
+    input.referenceAssetIds.length > 0 && !input.textileSet && !input.variation && !input.localEdit
+  );
+}
 
 /** Reference bytes for a provider request. A local-edit source is sent exactly as stored. */
 export function providerReferenceBytes(
@@ -24,4 +32,28 @@ export function providerReferenceBytes(
     if (oldest !== undefined) recent.delete(oldest);
   }
   return pending;
+}
+
+export async function readProviderReferences(
+  job: ClaimedImage,
+  repository: Pick<ImageRuntimeRepository, "asset">,
+  store: Pick<ImageStore, "read">,
+) {
+  return mapProviderReferences(job, repository, (asset) =>
+    providerReferenceBytes(store, asset, !!job.input.localEdit),
+  );
+}
+
+export async function mapProviderReferences<T>(
+  job: ClaimedImage,
+  repository: Pick<ImageRuntimeRepository, "asset">,
+  prepare: (asset: StoredImage) => Promise<T>,
+) {
+  const references: T[] = [];
+  for (const id of job.input.referenceAssetIds) {
+    const asset = await repository.asset(job, id);
+    if (!asset) throw new ImageProviderError("REFERENCE_NOT_FOUND", false);
+    references.push(await prepare(asset));
+  }
+  return references;
 }

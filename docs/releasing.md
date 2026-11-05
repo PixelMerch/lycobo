@@ -1,16 +1,15 @@
 # 发布与部署
 
-本地提交、远程推送、PR 合并、版本发布、生产部署是不同动作。
-初始化只建立本地仓库和 CI 文件，不自动创建远程仓库或上线。
+本地提交、远程推送和 PR 合并是不同动作。dev 合并到 main 后，CI 通过即自动发布版本并部署到 CloudBase；数据库迁移始终手动执行。
 
 ## 合并
 
 日常开发直接在本地 dev 进行，先 fetch 并在可快进时同步 origin/dev，保留本地工作；只有用户要求时才创建短分支。完成验证后默认只做本地提交。
 用户明确要求推送、PR 或合并后再执行；临时功能分支向 dev 提 PR，发布集成由 dev 向 main 提 PR，填写模板，运行 pnpm check:release。
-main 为稳定分支，只有用户明确要求发布集成时才由 dev 向 main 提 PR，不自动部署。
+main 为稳定分支，只有用户明确要求发布集成时才由 dev 向 main 提 PR。
 契约/数据库/计费变更安排领域审查；合并前同步目标分支，不覆盖其他作者的迁移。
 PR 标题采用 Conventional Commits，合并前必须等 CI 通过并满足目标分支保护。
-本次整合使用 merge commit 保留各本地分支的提交祖先关系；后续普通功能 PR 可使用 squash。
+dev 到 main 使用 merge commit 保留提交祖先关系；普通功能 PR 可使用 squash。
 dev 合并到 main 后，本地和远程都必须保留 main、dev，不使用 --delete-branch 删除 dev。同步对应本地分支后回到 dev 继续开发。
 分支清理始终排除 main、dev；用户要求清理时，只有确认已合入或已被替代的临时分支才可删除，不删除未核实合入的独立工作。
 
@@ -26,15 +25,10 @@ Dependabot 从默认分支读取 `.github/dependabot.yml`，因此该配置推�
 
 ## 部署顺序
 
-1. 先备份并验证恢复，评估 expand/contract 数据迁移。
-2. 部署兼容新旧客户端的 API/Worker，执行经审查的迁移。
-3. 发布前端静态产物，验证健康、真实读写和错误率。
+1. 评估 expand/contract，手动应用经审查的 `cloudbase/migrations/` 迁移，再合并到 main。迁移必须兼容正在运行的旧代码。
+2. main CI 通过后自动部署云函数和前端，见 [CloudBase 部署](cloudbase-deployment.md)。
+3. 验证健康、真实读写和错误率。
 4. 稳定后才清理旧字段/契约。
-
-API/Worker 由进程管理器或容器接管，SIGTERM 留足关闭时间。
-同域 /api 使用反向代理；SSE 配置不缓冲与合理超时。
-数据库池、Worker 并发和模型服务限额一起计算。
-国内对象存储/CDN、鉴权、备份、生产密钥尚未配置，本版本不能直接作为生产产品。
 
 ## 回滚
 
@@ -42,18 +36,17 @@ API/Worker 由进程管理器或容器接管，SIGTERM 留足关闭时间。
 计费/上传/模型请求等外部副作用需要业务对账，不随代码回滚自动消失。
 发布记录保留实际执行人、版本、目标环境、验证与回滚点。
 
-
 ## GitHub Release 与自动日志
 
-`.github/workflows/release.yml` 提供两个显式发布入口：
+每次合并到 main 后，该提交的 CI 通过才会触发 `.github/workflows/release.yml`，自动创建 `v主版本.次版本.补丁版本` 标签与 GitHub Release，附带更新日志、作者与文件变更附件。CloudBase 自动部署仍由原工作流独立执行；Release 成功不代表部署已完成。
 
-- 在 GitHub Actions 的 **Release → Run workflow** 选择 `main`，填写 `vX.Y.Z`。
-- 将 `main` 上已通过 CI 的提交标记为 `vX.Y.Z` 并推送该 tag。
+默认基于远端稳定版本标签递增 patch（如 v0.4.0 → v0.4.1）。根 package.json 的 version 作为版本基线；有意将它升到更高的次版本／主版本时优先采用该基线。Release 标签是部署版本标识，不为每次发布额外回写版本提交或修改锁文件。
 
-普通分支推送和 PR 合并不会自动发布。版本号必须与根 `package.json` 一致，
-只接受正式 SemVer 标签（如 `v0.1.0`）；工作流验证目标提交属于 `main`，
-并要求该提交的 main/push CI 已成功。合并后应先等待 main CI，再触发 Release。
-工作流只发布 GitHub Release，不部署网站、执行业务迁移或调用模型。
+同一提交重跑会复用已有标签和 Release；不同提交并发通过原子创建标签避让版本冲突，权限等真实错误不会被吞掉。保留手动指定版本和标签触发入口；所有发布都要求提交属于 main 历史且对应 main push CI 成功。完整 E2E 保持手动运行。
+
+手动入口：在 GitHub Actions 的 **Release → Run workflow** 选择 `main` 并填写 `vX.Y.Z`，或将 `main` 上已通过 CI 的提交标记为 `vX.Y.Z` 并推送该 tag。
+
+Release 工作流只发布 GitHub Release，不部署网站、执行业务迁移或调用模型；部署由 `.github/workflows/deploy-cloudbase.yml` 完成。
 
 自动说明由 `scripts/release-notes.mjs` 从真实 Git 历史生成：
 

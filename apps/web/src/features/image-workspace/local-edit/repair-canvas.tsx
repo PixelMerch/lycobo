@@ -143,25 +143,73 @@ function Region({
 }
 
 export function RepairCanvas(props: Props) {
-  const {
-    width,
-    height,
-    regions,
-    selected,
-    tool,
-    zoom,
-    disabled,
-    onSelect,
-    onChange,
-    pan,
-    interactive,
-  } = props;
+  const { width, height, regions, selected, tool, disabled, onSelect, onChange, interactive } =
+    props;
+  const hand = tool === "hand";
+  const { container, group, viewport, drawing, safeScale, offset, start, move, finish, cancel } =
+    useRepairCanvasGestures(props);
+  return (
+    <section
+      className="repair-canvas"
+      ref={container}
+      data-tool={hand ? "hand" : tool}
+      data-interactive={interactive && !hand ? "true" : "false"}
+      aria-label="局部编辑画布"
+    >
+      <Stage
+        width={viewport.width}
+        height={viewport.height}
+        onPointerDown={start}
+        onPointerMove={move}
+        onPointerUp={finish}
+        onPointerLeave={finish}
+        onPointerCancel={cancel}
+      >
+        <Layer>
+          <Group ref={group} x={offset.x} y={offset.y} scaleX={safeScale} scaleY={safeScale}>
+            {regions.map((region, index) => (
+              <Region
+                key={region.id}
+                region={region}
+                number={index + 1}
+                bounds={{ width, height }}
+                selected={region.id === selected}
+                scale={safeScale}
+                disabled={disabled || hand}
+                onSelect={() => onSelect(region.id)}
+                onChange={(next) =>
+                  onChange(
+                    regions.map((value) =>
+                      value.id === next.id ? constrainRegion(next, width, height) : value,
+                    ),
+                  )
+                }
+              />
+            ))}
+            {drawing && (
+              <Rect
+                {...drawing}
+                stroke={accent}
+                strokeWidth={1}
+                strokeScaleEnabled={false}
+                listening={false}
+              />
+            )}
+          </Group>
+        </Layer>
+      </Stage>
+    </section>
+  );
+}
+
+function useRepairCanvasGestures(props: Props) {
+  const { width, height, regions, tool, zoom, disabled, onSelect, onChange, pan, interactive } =
+    props;
   const container = useRef<HTMLDivElement>(null);
   const group = useRef<Konva.Group>(null);
   const [viewport, setViewport] = useState({ width: 1, height: 1 });
   const [drawing, setDrawing] = useState<RepairRegion | null>(null);
   const gesture = useRef<{ start: Point; drawing: boolean } | null>(null);
-  const hand = tool === "hand";
   const scale =
     (Math.min(viewport.width / width, viewport.height / height, props.maxFitScale ?? 1) * zoom) /
     100;
@@ -217,91 +265,43 @@ export function RepairCanvas(props: Props) {
     gesture.current = null;
     setDrawing(null);
   };
-  return (
-    <section
-      className="repair-canvas"
-      ref={container}
-      data-tool={hand ? "hand" : tool}
-      data-interactive={interactive && !hand ? "true" : "false"}
-      aria-label="局部编辑画布"
-    >
-      <Stage
-        width={viewport.width}
-        height={viewport.height}
-        onPointerDown={(event) => {
-          const stage = event.target.getStage();
-          const pointer = stage?.getPointerPosition();
-          if (!pointer || event.evt.button > 0) return;
-          if (
-            disabled ||
-            tool !== "rect" ||
-            regions.length >= 8 ||
-            (event.target !== stage && event.target.name() !== "repair-base")
-          )
-            return;
-          const start = point();
-          const local = group.current?.getRelativePointerPosition();
-          if (!start || !local || local.x < 0 || local.x > width || local.y < 0 || local.y > height)
-            return;
-          gesture.current = { start, drawing: true };
-          setDrawing({ id: crypto.randomUUID(), ...start, width: 0, height: 0, prompt: "" });
-        }}
-        onPointerMove={() => {
-          const current = gesture.current;
-          if (!current) return;
-          const end = point();
-          if (end)
-            setDrawing(
-              (value) =>
-                value && {
-                  ...value,
-                  x: Math.min(current.start.x, end.x),
-                  y: Math.min(current.start.y, end.y),
-                  width: Math.abs(end.x - current.start.x),
-                  height: Math.abs(end.y - current.start.y),
-                },
-            );
-        }}
-        onPointerUp={finish}
-        onPointerLeave={finish}
-        onPointerCancel={() => {
-          gesture.current = null;
-          setDrawing(null);
-        }}
-      >
-        <Layer>
-          <Group ref={group} x={offset.x} y={offset.y} scaleX={safeScale} scaleY={safeScale}>
-            {regions.map((region, index) => (
-              <Region
-                key={region.id}
-                region={region}
-                number={index + 1}
-                bounds={{ width, height }}
-                selected={region.id === selected}
-                scale={safeScale}
-                disabled={disabled || hand}
-                onSelect={() => onSelect(region.id)}
-                onChange={(next) =>
-                  onChange(
-                    regions.map((value) =>
-                      value.id === next.id ? constrainRegion(next, width, height) : value,
-                    ),
-                  )
-                }
-              />
-            ))}
-            {drawing && (
-              <Rect
-                {...drawing}
-                stroke={accent}
-                strokeWidth={1}
-                strokeScaleEnabled={false}
-                listening={false}
-              />
-            )}
-          </Group>
-        </Layer>
-      </Stage>
-    </section>
-  );
+  const start = (event: Konva.KonvaEventObject<PointerEvent>) => {
+    const stage = event.target.getStage();
+    const pointer = stage?.getPointerPosition();
+    if (!pointer || event.evt.button > 0) return;
+    if (
+      disabled ||
+      tool !== "rect" ||
+      regions.length >= 8 ||
+      (event.target !== stage && event.target.name() !== "repair-base")
+    )
+      return;
+    const start = point();
+    const local = group.current?.getRelativePointerPosition();
+    if (!start || !local || local.x < 0 || local.x > width || local.y < 0 || local.y > height)
+      return;
+    gesture.current = { start, drawing: true };
+    setDrawing({ id: crypto.randomUUID(), ...start, width: 0, height: 0, prompt: "" });
+  };
+  const move = () => {
+    const current = gesture.current;
+    if (!current) return;
+    const end = point();
+    if (end)
+      setDrawing(
+        (value) =>
+          value && {
+            ...value,
+            x: Math.min(current.start.x, end.x),
+            y: Math.min(current.start.y, end.y),
+            width: Math.abs(end.x - current.start.x),
+            height: Math.abs(end.y - current.start.y),
+          },
+      );
+  };
+  const cancel = () => {
+    gesture.current = null;
+    setDrawing(null);
+  };
+  return { container, group, viewport, drawing, safeScale, offset, start, move, finish, cancel };
 }

@@ -1,0 +1,180 @@
+/* Advanced parameters (quality, count) stay collapsed until the user asks for more. */
+.composer-panel .parameter-more.button {
+  align-self: flex-start;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 10px;
+  gap: 6px;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  background: transparent;
+}
+.composer-panel .parameter-more.button:hover,
+.composer-panel .parameter-more.button[data-hovered="true"],
+.composer-panel .parameter-more.button[data-focus-visible="true"] {
+  color: #eee;
+  background: transparent;
+}
+@media (max-width: 767px) {
+  .composer-panel .parameter-more.button {
+    min-height: 44px;
+    height: 44px;
+  }
+}
+
+.generation-placeholder.generation-failed {
+  position: relative;
+  overflow: hidden;
+}
+.generation-retry-overlay {
+  border-radius: inherit;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #343434;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease;
+}
+.generation-placeholder:is(:hover, :focus-within) .generation-retry-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+.generation-retry-button.button {
+  gap: 8px;
+  color: #fff;
+  background: #ffffff14;
+}
+.generation-retry-button.button:is(:hover, [data-hovered="true"]) {
+  background: #ffffff24;
+}
+@media (hover: none), (pointer: coarse) {
+  .generation-retry-overlay {
+    position: static;
+    margin-top: 8px;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .generation-retry-overlay {
+    transition: none;
+  }
+}
+
+.history-rail-item {
+  position: relative;
+  flex: none;
+  width: 100%;
+  min-width: 0;
+}
+.history-thumbnail-delete.button {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  z-index: 1;
+  opacity: 0;
+  width: 21.6px;
+  min-width: 21.6px;
+  height: 21.6px;
+  min-height: 21.6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0 6px 0 8px;
+  background: #1c1c1ce6;
+  color: #ff6b75;
+}
+.history-rail-item:hover .history-thumbnail-delete,
+.history-rail-item:focus-within .history-thumbnail-delete,
+.history-rail-item:has(.history-thumbnail[aria-current="true"]) .history-thumbnail-delete {
+  opacity: 1;
+}
+@media (hover: none) {
+  .history-thumbnail-delete.button {
+    opacity: 1;
+  }
+  .history-thumbnail-delete.button::after {
+    content: "";
+    position: absolute;
+    inset: -11.2px;
+  }
+}
+@media (max-width: 1300px) {
+  .history-rail-item {
+    width: 72px;
+  }
+}
+
+.history-thumbnail-count {
+  position: absolute;
+  bottom: 3px;
+  left: 3px;
+  z-index: 1;
+  min-width: 18px;
+  padding: 1px 5px;
+  border-radius: 0 6px 0 6px;
+  background: #1c1c1ce6;
+  color: #eee;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* Inputs and tabs stay neutral; primary actions and asset selection retain brand color. */
+:is(.text-field, .input-group, .tabs__tab) {
+  --focus: var(--muted);
+}
+:is(.tabs__tab, .tabs__indicator) {
+  --accent: var(--foreground);
+  --accent-soft: #ffffff0a;
+  --accent-soft-foreground: var(--foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .generation-submit .spinner,
+  .variation-generate .spinner {
+    animation: none;
+  }
+}
+
+/* Keep the compact login pill while extending its touch target beyond the visible fill. */
+@media (max-width: 767px), (pointer: coarse) {
+  .topbar .header-login::before {
+    content: "";
+    position: absolute;
+    inset: -6px 0;
+    border-radius: inherit;
+  }
+}
+
+/* Compact square options align directly with the track inset. */
+.home-ratio-track .ratio-option-visual {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  gap: 1px;
+  border-radius: 12px;
+}
+.home-ratio-track .toggle-button .ratio-preview {
+  margin: 0;
+}
+.composer-panel .home-ratio-track .toggle-button,
+.home-settings-options .home-ratio-track .toggle-button {
+  padding: 0;
+  background: transparent;
+}
+@media (hover: hover) {
+  .home-ratio-track .toggle-button:hover:not([data-selected="true"]) .ratio-option-visual {
+    background: var(--control-hover-fill);
+  }
+}

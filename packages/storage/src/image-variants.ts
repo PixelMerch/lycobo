@@ -5,3 +5,7 @@ export const displayVariants = {
 export type DisplayVariant = keyof typeof displayVariants;
 export const displayObjectKey = (key: string, variant: DisplayVariant) =>
   key.replace(/\.png$/, `.${variant}.webp`);
+
+// Bump the version if the provider reference encoding changes.
+export const providerReferenceObjectKey = (key: string, extension: "jpg" | "png") =>
+  `${key}.provider-v1.${extension}`;

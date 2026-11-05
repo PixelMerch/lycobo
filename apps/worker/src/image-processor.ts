@@ -1,4 +1,4 @@
-import { imageOutputDimensions } from "@lycoboai/contracts";
+import { type ImageGenerationInput, imageOutputDimensions } from "@lycoboai/contracts";
 import type { ImageRuntimeRepository } from "@lycoboai/db";
 import {
   type CapabilityOverrides,
@@ -10,8 +10,9 @@ import {
   validateModelInput,
 } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
+import type { DeliverProviderReference } from "./cloudbase-image-references";
 import { processConfiguredImage } from "./configured-image-processor";
-import { providerReferenceBytes } from "./provider-references";
+import { mainImageHasReferences, readProviderReferences } from "./provider-references";
 
 export type ImageProcessorDependencies = {
   repository: ImageRuntimeRepository;
@@ -23,8 +24,18 @@ export type ImageProcessorDependencies = {
   modelSecret?: string | undefined;
   standaloneKey?: string | undefined;
   request?: typeof fetch;
+  deliverReference?: DeliverProviderReference;
+  requireMainImageReferenceUrls?: boolean;
   onDeferred?: ((delayMs: number) => void) | undefined;
 };
+
+function legacyProvider(input: ImageGenerationInput, deps: ImageProcessorDependencies) {
+  if (deps.requireMainImageReferenceUrls && mainImageHasReferences(input))
+    throw new VakvError("PROVIDER_REFERENCE_URL_REQUIRED", false);
+  if (!deps.provider?.key) throw new VakvError("MODEL_CHANNEL_NOT_CONFIGURED", false);
+  return deps.provider;
+}
+
 export async function processImageItem(itemId: string, deps: ImageProcessorDependencies) {
   const started = performance.now();
   const timing = (stage: string, since: number) =>
@@ -42,21 +53,16 @@ export async function processImageItem(itemId: string, deps: ImageProcessorDepen
   if (job.configuredProvider) return processConfiguredImage(job, deps);
   let submitted = false;
   try {
-    if (!deps.provider?.key) throw new VakvError("MODEL_CHANNEL_NOT_CONFIGURED", false);
+    const provider = legacyProvider(job.input, deps);
     validateModelInput(job.input, deps.overrides, deps.editsEnabled);
     const referencesStarted = performance.now();
-    const references: Uint8Array[] = [];
-    for (const id of job.input.referenceAssetIds) {
-      const asset = await deps.repository.asset(job, id);
-      if (!asset) throw new VakvError("REFERENCE_NOT_FOUND", false);
-      references.push(await providerReferenceBytes(deps.store, asset, !!job.input.localEdit));
-    }
+    const references = await readProviderReferences(job, deps.repository, deps.store);
     timing("reference_read", referencesStarted);
     submitted = true;
     const result = await generateVakvImage(
       textileItemInput(job.input, job.position),
       references,
-      deps.provider,
+      provider,
       job.itemId,
       deps.request,
       job.providerModel,
@@ -77,12 +83,9 @@ export async function processImageItem(itemId: string, deps: ImageProcessorDepen
     timing("item_complete", started);
   } catch (error) {
     const known = error instanceof VakvError;
+    const fallbackCode = submitted ? "OUTPUT_OUTCOME_UNKNOWN" : "REFERENCE_STORAGE_UNAVAILABLE";
     await deps.repository.finish(job, {
-      errorCode: known
-        ? error.code
-        : submitted
-          ? "OUTPUT_OUTCOME_UNKNOWN"
-          : "REFERENCE_STORAGE_UNAVAILABLE",
+      errorCode: known ? error.code : fallbackCode,
       unknown: known ? error.unknownOutcome : submitted,
       requestId: known ? error.requestId : undefined,
     });

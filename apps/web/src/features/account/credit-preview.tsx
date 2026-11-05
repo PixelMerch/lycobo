@@ -30,6 +30,8 @@ export function CreditPreview({
   const recent = entries.data?.pages[0]?.data.slice(0, 3) ?? [];
   const unit = wallet.data?.unitCredits ?? imageUnitCredits;
   const balance = wallet.data?.balance;
+  const errorMessage = entries.isError ? "记录暂不可用，请查看积分明细" : "暂无积分记录";
+  const entriesStatusText = entries.isPending ? "正在加载记录…" : errorMessage;
   return (
     <div className="credit-preview">
       <div className="credit-preview-head">
@@ -78,11 +80,7 @@ export function CreditPreview({
         </ul>
       ) : (
         <p className="credit-preview-empty" role="status">
-          {entries.isPending
-            ? "正在加载记录…"
-            : entries.isError
-              ? "记录暂不可用，请查看积分明细"
-              : "暂无积分记录"}
+          {entriesStatusText}
         </p>
       )}
       <div className="credit-preview-footer">

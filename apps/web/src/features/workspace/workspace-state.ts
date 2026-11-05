@@ -107,25 +107,33 @@ export const useWorkspaceState = create<{
   setLastPath: (lastPath) => set({ lastPath }),
 }));
 
+function referencesForPath(path: string) {
+  if (path === "/commerce/textile-set") {
+    const textile = useTextileSetDraft.getState();
+    return [textile.mainImage, ...textile.detailImages].filter((image) => image !== null);
+  }
+  if (path === "/commerce/smart-variation") return useSmartVariationDraft.getState().references;
+  if (path === "/video") {
+    const video = useVideoDraft.getState();
+    return [video.firstFrame, video.lastFrame, ...video.extraReferences].filter(
+      (image) => image !== null,
+    );
+  }
+  const studio = useStudioStore.getState();
+  return studio.drafts[studio.activeModel]?.references ?? [];
+}
+
 /** Seed only an empty destination; switching never discards an existing tool draft. */
 export function shareProductReference(from: string, to: string) {
   const studio = useStudioStore.getState();
   const textile = useTextileSetDraft.getState();
   const variation = useSmartVariationDraft.getState();
   const video = useVideoDraft.getState();
-  const references =
-    from === "/commerce/textile-set"
-      ? [textile.mainImage, ...textile.detailImages].filter((image) => image !== null)
-      : from === "/commerce/smart-variation"
-        ? variation.references
-        : from === "/video"
-          ? [video.firstFrame, video.lastFrame, ...video.extraReferences].filter(
-              (image) => image !== null,
-            )
-          : (studio.drafts[studio.activeModel]?.references ?? []);
+  const references = referencesForPath(from);
   const mainImage = references[0];
   if (!mainImage) return;
-  if (to === "/create" && !studio.drafts[studio.activeModel]?.references.length) {
+  const destinationHasReferences = !!studio.drafts[studio.activeModel]?.references.length;
+  if (to === "/create" && !destinationHasReferences) {
     studio.updateDraft(studio.activeModel, { references: references.slice(0, 5) });
   } else if (to === "/commerce/textile-set" && !textile.mainImage) {
     textile.update({

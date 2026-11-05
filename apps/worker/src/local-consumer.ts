@@ -56,6 +56,7 @@ try {
               workerId: `local:${randomUUID()}`,
               modelSecret: process.env.MODEL_CREDENTIAL_SECRET,
               standaloneKey: process.env.STANDALONE_IMAGE_API_KEY,
+              requireMainImageReferenceUrls: process.env.STANDALONE_MODELS === "true",
               overrides: policy.overrides,
               editsEnabled: policy.editsEnabled,
               onDeferred,

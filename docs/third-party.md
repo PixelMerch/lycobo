@@ -13,7 +13,7 @@
   同时归档至 .agents/licenses/heroui-react.txt。
 
 来源和准确 SHA 见 .agents/skills-lock.json，未经审查不变更原始材料。
-docs/design 的参考站交互研究不构成品牌素材授权；实际示例素材的生成来源单独记录，不冒充真实客户案例。
+`apps/web/public/studio` 下的样例图由内置 image_gen 生成，不代表真实客户商品或生成结果；家纺裂变视角示例见[视角示例](textile-view-examples.md)。参考站研究不构成品牌素材授权。
 
 ## React Bits 视觉效果
 

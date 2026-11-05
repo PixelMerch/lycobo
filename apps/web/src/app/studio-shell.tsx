@@ -29,8 +29,7 @@ export interface StudioShellContext {
 
 export function StudioShell() {
   const { pathname } = useLocation();
-  const inWorkspace =
-    pathname.startsWith("/create") || pathname.startsWith("/commerce") || pathname === "/workspace";
+  const inWorkspace = isWorkspacePath(pathname);
   const session = useEnterpriseSession();
   const signedIn = !!session.data;
   const navigate = useNavigate();
@@ -41,58 +40,14 @@ export function StudioShell() {
   const [homeHeaderOpaque, setHomeHeaderOpaque] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
   const reduceMotion = useReducedMotion();
-  useEffect(() => {
-    const update = () => setViewportWidth(window.innerWidth);
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-  const expandedSidebarWidth = viewportWidth >= 2560 ? 320 : viewportWidth >= 1800 ? 288 : 274;
-  const sidebarWidth =
-    viewportWidth < 768 ? "0px" : sidebarCollapsed ? "64px" : `${expandedSidebarWidth}px`;
+  const sidebarWidth = useSidebarWidth(sidebarCollapsed);
   const nav = (
-    <>
-      <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
-        <RouteLink
-          nav
-          to="/"
-          end
-          aria-label="首页"
-          className="nav-row"
-          onClick={() => setMenuOpen(false)}
-        >
-          <UiIcon icon={IconSmartHome} size="default" />
-          <span className="nav-label">首页</span>
-        </RouteLink>
-        <Tooltip.Content placement="right">首页</Tooltip.Content>
-      </Tooltip>
-      <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
-        <RouteLink
-          to="/workspace"
-          aria-label="工作区"
-          className={`nav-row${inWorkspace ? " active" : ""}`}
-          onClick={() => setMenuOpen(false)}
-        >
-          <UiIcon icon={IconShoppingBagSearch} size="default" />
-          <span className="nav-label">工作区</span>
-        </RouteLink>
-        <Tooltip.Content placement="right">工作区</Tooltip.Content>
-      </Tooltip>
-      <Tooltip delay={300} isDisabled={!sidebarCollapsed}>
-        <RouteLink
-          nav
-          to="/assets"
-          aria-label="素材库"
-          className="nav-row"
-          onClick={() => setMenuOpen(false)}
-        >
-          <UiIcon icon={IconFolderSparkle} size="default" />
-          <span className="nav-label">素材库</span>
-        </RouteLink>
-        <Tooltip.Content placement="right">素材库</Tooltip.Content>
-      </Tooltip>
-    </>
+    <StudioNavigation
+      collapsed={sidebarCollapsed}
+      inWorkspace={inWorkspace}
+      onNavigate={() => setMenuOpen(false)}
+    />
   );
   return (
     <motion.div
@@ -176,11 +131,8 @@ export function StudioShell() {
         <div className="header-actions">{signedIn ? <HeaderBenefits /> : <HeaderLogin />}</div>
       </header>
       <main className="main-content">
-        {routeNeedsLogin ? (
-          session.isPending ? (
-            <PageLoading />
-          ) : null
-        ) : (
+        {routeNeedsLogin && session.isPending && <PageLoading />}
+        {!routeNeedsLogin && (
           <Outlet context={{ setHomeHeaderOpaque } satisfies StudioShellContext} />
         )}
       </main>
@@ -190,7 +142,7 @@ export function StudioShell() {
         <LoginDialog
           onClose={() => {
             closeLogin();
-            if (protectedRoute) navigate("/", { replace: true });
+            if (protectedRoute) void navigate("/", { replace: true });
           }}
           onLoginSuccess={closeLogin}
         />
@@ -202,4 +154,64 @@ export function StudioShell() {
 function SignedInEvents() {
   useImageEvents();
   return null;
+}
+
+function useSidebarWidth(sidebarCollapsed: boolean) {
+  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
+  useEffect(() => {
+    const update = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  const expandedSidebarWidth = viewportWidth >= 1800 ? 288 : 274;
+  const desktopSidebarWidth = viewportWidth >= 2560 ? 320 : expandedSidebarWidth;
+  const expandedOrCollapsedWidth = sidebarCollapsed ? 64 : desktopSidebarWidth;
+  return viewportWidth < 768 ? "0px" : `${expandedOrCollapsedWidth}px`;
+}
+
+function StudioNavigation({
+  collapsed,
+  inWorkspace,
+  onNavigate,
+}: {
+  collapsed: boolean;
+  inWorkspace: boolean;
+  onNavigate: () => void;
+}) {
+  return (
+    <>
+      <Tooltip delay={300} isDisabled={!collapsed}>
+        <RouteLink nav to="/" end aria-label="首页" className="nav-row" onClick={onNavigate}>
+          <UiIcon icon={IconSmartHome} size="default" />
+          <span className="nav-label">首页</span>
+        </RouteLink>
+        <Tooltip.Content placement="right">首页</Tooltip.Content>
+      </Tooltip>
+      <Tooltip delay={300} isDisabled={!collapsed}>
+        <RouteLink
+          to="/workspace"
+          aria-label="工作区"
+          className={`nav-row${inWorkspace ? " active" : ""}`}
+          onClick={onNavigate}
+        >
+          <UiIcon icon={IconShoppingBagSearch} size="default" />
+          <span className="nav-label">工作区</span>
+        </RouteLink>
+        <Tooltip.Content placement="right">工作区</Tooltip.Content>
+      </Tooltip>
+      <Tooltip delay={300} isDisabled={!collapsed}>
+        <RouteLink nav to="/assets" aria-label="素材库" className="nav-row" onClick={onNavigate}>
+          <UiIcon icon={IconFolderSparkle} size="default" />
+          <span className="nav-label">素材库</span>
+        </RouteLink>
+        <Tooltip.Content placement="right">素材库</Tooltip.Content>
+      </Tooltip>
+    </>
+  );
+}
+
+function isWorkspacePath(pathname: string) {
+  return (
+    pathname.startsWith("/create") || pathname.startsWith("/commerce") || pathname === "/workspace"
+  );
 }

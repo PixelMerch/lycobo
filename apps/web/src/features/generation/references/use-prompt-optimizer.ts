@@ -10,6 +10,14 @@ import {
   requestPromptOptimization,
 } from "./prompt-optimizer-client";
 
+type Attempt = { original: string; key: string; tool: PromptOptimizeTool };
+
+function optimizationKey(attempt: Attempt | null, original: string, tool: PromptOptimizeTool) {
+  return attempt?.original === original && attempt.tool === tool
+    ? attempt.key
+    : crypto.randomUUID();
+}
+
 /** Streams a rewrite into the field. The user's text comes back on stop, failure or undo. */
 export function usePromptOptimizer({
   value,
@@ -26,7 +34,7 @@ export function usePromptOptimizer({
   const requireLogin = useRequireLogin();
   const [running, setRunning] = useState(false);
   const [preview, setPreview] = useState<string>();
-  const retry = useRef<{ original: string; key: string; tool: PromptOptimizeTool } | null>(null);
+  const retry = useRef<Attempt | null>(null);
   const [revision, setRevision] = useState<{ original: string; optimized: string } | null>(null);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
@@ -40,9 +48,7 @@ export function usePromptOptimizer({
     const abort = new AbortController();
     const original = value;
     let preview = "";
-    const prior = retry.current;
-    const key =
-      prior?.original === original && prior.tool === tool ? prior.key : crypto.randomUUID();
+    const key = optimizationKey(retry.current, original, tool);
     retry.current = { original, tool, key };
     controller.current = abort;
     setRunning(true);

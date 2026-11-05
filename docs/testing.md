@@ -2,7 +2,7 @@
 
 ## 自动检查
 
-- pnpm lint：Biome + 浏览器/server-only 边界检查。
+- pnpm lint：Biome（警告也算失败）、浏览器/server-only 边界、HeroUI 组件约定和[代码质量约束](code-quality.md)。
 - pnpm typecheck：所有 workspace 包 strict TypeScript。
 - pnpm test：契约、API、Worker 的单元行为。
 - pnpm build：实际前端和两个 Node 应用生产构建。
@@ -39,17 +39,10 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 ```
 
 仅接受 loopback 的数据库 URL，且必须显式允许。
-运行时 `DATABASE_URL` 已指向 Supabase 时，测试命令须显式覆盖为本项目本地 PostgreSQL 地址，例如 `DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW_LOCAL_INTEGRATION=true pnpm test:integration`；不修改远端库，也不将运行时配置改回本地。
 数据库测试在 loopback 服务插入唯一用户/项目/任务，验证归属和幂等约束，finally 清理并验证。
 任务通过独立数据库中的 outbox 验证认领、幂等和计费；已删除旧平台队列模拟测试。
 不调用模型、不扣积分、不上传对象。迁移可以在空白 CI 库上验证；
 本地已有数据不能用清库方式测试。
-
-## 需要继续补齐的产品测试
-
-鉴权/跨用户隔离、重复提交、回调重放、断线恢复、单图失败重试、
-计费并发、图片上传校验、草稿恢复、下载权限和画布版本冲突。
-初始化测试通过不等于这些尚未实现的功能已验收。
 
 ## 手动验收
 
@@ -79,7 +72,7 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 并行执行不同测试任务时，为每次运行设置独立 `--output=/tmp/<本次运行目录>`，避免 Playwright 清理其他运行的 trace。历史时间断言使用浏览器自身时区计算，不能写死本机的 UTC+8 时间。完整 `pnpm test:e2e` 由远程 CI 手动触发；本地复现可指定文件或用例，不能以跳过失败用例代替查明原因。
 
-企业共享钱包测试纳入 worker test:images：verify-wallet.ts 验证主子账号并发扣款、20币固定价格、逐图退款、充值重复入账、账本不可修改和分页。wallet.spec.ts 验证账户中心真实接口契约（浏览器 fixture）。
+企业共享钱包测试纳入 worker test:images：verify-wallet.ts 验证主子账号并发扣款、固定单价、逐图退款、充值重复入账、账本不可修改和分页。wallet.spec.ts 验证账户中心真实接口契约（浏览器 fixture）。
 
 弹层焦点回归同时覆盖鼠标点击和不预先聚焦的虚拟点击。受控预览在挂载时记录返回目标，因此打开前需聚焦入口按钮；预览入口位于 Modal 的触发器树外，由历史组件保留其引用，在关闭动画结束、弹层卸载后恢复焦点；弹层内部的焦点约束仍交给 HeroUI。不能通过预先在测试中 focus 或删除焦点断言掩盖问题。
 
@@ -92,11 +85,11 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 数据库函数不再引用旧表名。后续图片／钱包／SSE 检查全部在无兼容视图的结构上运行。
 测试数据库和临时迁移目录结束后清理，不操作现有业务数据，也不调用付费模型。
 
-## 家纺主图裂变
+## 家纺裂变
 
 `packages/generation/src/textile-generation.test.ts` 验证10个独立服务端视角预设、版本、重复与未知视角、普通任务4张上限和一视角一张约束；图片API测试验证客户端模型／提示词／质量无法覆盖服务端固定配置。
 
-`verify-textile-generation.ts` 纳入 worker `test:images`，在隔离临时库与私有临时图片目录中验证10张提交、原子扣200积分及10条outbox、同键重放、跨组织引用拒绝、工具历史筛选、每个position不同提示词及每次请求携带有序的1张主图和5张详情图、重复消费不调用服务商、9成功1失败净扣180积分、失败重试仅保留原position。服务商为本地注入fixture，未调用外部模型。根集成命令仍覆盖Queues/R2/Images与鉴权SSE。
+`verify-textile-generation.ts` 纳入 worker `test:images`，在隔离临时库与私有临时图片目录中验证10张提交、原子扣费及10条outbox、同键重放、跨组织引用拒绝、工具历史筛选、每个position不同提示词及每次请求携带有序的1张主图和5张详情图、重复消费不调用服务商、9成功1失败只按成功张数净扣、失败重试仅保留原position。服务商为本地注入fixture，未调用外部模型。
 
 `tests/e2e/textile-generation.spec.ts` 使用接口fixture验证选中10视角后提交10张与六张有序参考、历史视角标记、部分失败与实时更新、刷新和重新编辑、普通创作历史隔离，以及丢失响应后刷新仍复用同一幂等键。全量浏览器测试可由远程CI手动运行。
 
@@ -114,11 +107,9 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 `docker compose up -d image-storage` 后，`ALLOW_LOCAL_S3_INTEGRATION=true pnpm exec vitest run packages/storage/src/s3-object-bucket.test.ts` 使用固定 loopback:9004 的独立私有桶，真实 Images binding 处理 fixture，验证原图/PNG 缩略图/WebP 预览与缩略图写入、签名访问、匿名拒绝、R2 旧对象回退和清理。只创建随机 fixture key，结束删除自己的原图与变体，不调用付费模型。默认单元验证 S3 故障不能静默写回 R2；本地环境测试确保不会导入正式 S3 凭据。
 
-智能裂变接入测试：`variation-planner.test.ts` 覆盖视觉JSON、独立提示词、坏结果及不自动重试；`verify-variation-plans.ts` 由隔离图片集成脚本执行，覆盖计划幂等、所有权、确认前不扣费、20方案创建、40积分原子扣款、20条outbox及历史隔离。`tests/e2e/smart-variation.spec.ts` 使用明确的API fixtures，检查文字校验、编辑/勾选/删除、跨工具保留草稿及确认后的单次提交，包含320/390/1440px。Fixture通过不代表外部语言供应商可用，外部实测另行记录结果。
+套图计划接入测试：`variation-planner.test.ts` 覆盖计划JSON、独立提示词、坏结果及不自动重试；`verify-variation-plans.ts` 由隔离图片集成脚本执行，覆盖计划幂等、所有权、确认前不扣费、20方案创建、40积分原子扣款、20条outbox及历史隔离。`tests/e2e/smart-variation.spec.ts` 使用明确的API fixtures，检查文字校验、编辑/勾选/删除、跨工具保留草稿及确认后的单次提交，包含320/390/1440px。Fixture通过不代表外部语言供应商可用，外部实测另行记录结果。
 
 独立主站配置由 `standalone-models.test.ts` 验证开关、密钥缺失时关闭、四模型路由与快照不包含密钥。`verify-standalone-models.ts` 随隔离图片集成运行，在临时库禁用后台模型目录后验证主站仍可创建任务、同键只扣一次、outbox和计划配置可用。`model-catalog.spec.ts` 验证后台目录503时不发送目录请求、四模型与本地SVG仍显示、图片加载失败回退；保留历史与预览名称一致断言。
-
-2026-10-31 主站独立配置线上验收：Cloudflare Pages/Workers + Supabase 完成普通生图、家纺套图、智能裂变各1张真实生成，三张均成功写入素材，输出1254×1254；裂变计划由Claude Sonnet 5实际生成后确认提交，合计扣60积分。首次普通任务被结果域名白名单拦截，核对原上游任务成功后，仅补充已确认的下载源并恢复原任务GET轮询，未重复提交或扣费。固定配置仅允许`download.ai-media.vip`作为额外图片下载源；单测验证CDN下载不带API Key、其他域名仍拒绝。六模型目录已上线，但本次付费验收只验证Image 2.5链路，不代表其他五模型全部完成真实调用。
 
 2026-10-31 模型列表调整：主站仅提供 Image 2、Image 2.5、Banana 2.1、Banana Pro；Grok 与 Seedream 从可选目录和独立新任务路由移除，已有任务与素材名称保留。发布回归更新旧工具入口、展示名、1K转1.5K重试、草稿替换确认和移动素材入口断言，不恢复已移除的筛选／固定模型信息栏。
 

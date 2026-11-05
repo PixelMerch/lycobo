@@ -19,18 +19,45 @@ const chunkSchema = z.object({
     .optional(),
 });
 
+function parsePlannerChunk(data: string) {
+  const chunk = chunkSchema.parse(JSON.parse(data));
+  if (chunk.type === "error") throw new Error("PROVIDER_ERROR");
+  const choice = chunk.choices?.[0];
+  const reason = choice?.finish_reason ?? chunk.delta?.stop_reason;
+  if (reason && !["stop", "end_turn"].includes(reason)) throw new Error("TRUNCATED");
+  const complete = reason === "stop" || reason === "end_turn";
+  const text =
+    choice?.delta?.content ?? (chunk.delta?.type === "text_delta" ? chunk.delta.text : "");
+  return { complete, text };
+}
+
 /** Decode bounded provider SSE; only model text is forwarded, never reasoning or metadata. */
 export async function readPlannerStream(
   response: Response,
   onText: (text: string) => Promise<void>,
 ) {
+  let content = "";
+  let complete = false;
+  for await (const data of plannerEventData(response)) {
+    const chunk = parsePlannerChunk(data);
+    if (chunk.complete) complete = true;
+    const { text } = chunk;
+    if (text) {
+      content += text;
+      if (content.length > 256 * 1024) throw new Error("SIZE");
+      await onText(text);
+    }
+  }
+  if (!complete) throw new Error("INCOMPLETE");
+  return content;
+}
+
+async function* plannerEventData(response: Response) {
   const reader = response.body?.getReader();
   if (!reader) throw new Error("EMPTY");
   const decoder = new TextDecoder();
   let buffer = "";
-  let content = "";
   let bytes = 0;
-  let complete = false;
   try {
     for (;;) {
       const part = await reader.read();
@@ -45,25 +72,10 @@ export async function readPlannerStream(
         boundary = buffer.indexOf("\n");
         if (!line.startsWith("data:")) continue;
         const data = line.slice(5).trim();
-        if (data === "[DONE]") continue;
-        const chunk = chunkSchema.parse(JSON.parse(data));
-        if (chunk.type === "error") throw new Error("PROVIDER_ERROR");
-        const choice = chunk.choices?.[0];
-        const reason = choice?.finish_reason ?? chunk.delta?.stop_reason;
-        if (reason && !["stop", "end_turn"].includes(reason)) throw new Error("TRUNCATED");
-        if (reason === "stop" || reason === "end_turn") complete = true;
-        const text =
-          choice?.delta?.content ?? (chunk.delta?.type === "text_delta" ? chunk.delta.text : "");
-        if (text) {
-          content += text;
-          if (content.length > 256 * 1024) throw new Error("SIZE");
-          await onText(text);
-        }
+        if (data !== "[DONE]") yield data;
       }
     }
-    if (!complete) throw new Error("INCOMPLETE");
-    return content;
   } finally {
-    await reader.cancel().catch(() => {});
+    await reader.cancel().catch(() => undefined);
   }
 }

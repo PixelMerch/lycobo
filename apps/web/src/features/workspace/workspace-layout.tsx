@@ -40,7 +40,7 @@ export function WorkspaceLayout() {
         resolution: draft.resolution,
         items: variation.items.map((item) => ({ ...item, selected: true })),
       });
-      navigate("/commerce/smart-variation");
+      void navigate("/commerce/smart-variation");
     } else if (textileSet) {
       useTextileSetDraft.getState().update({
         mainImage: draft.references[0] ?? null,
@@ -49,12 +49,12 @@ export function WorkspaceLayout() {
         ratio: draft.ratio,
         resolution: imageResolutionSchema.parse(draft.resolution),
       });
-      navigate("/commerce/textile-set");
+      void navigate("/commerce/textile-set");
     } else {
       const studio = useStudioStore.getState();
       studio.updateDraft(model, draft);
       studio.setActiveModel(model);
-      navigate("/create");
+      void navigate("/create");
     }
     setRestorePending(null);
     setMobilePanel("form");
@@ -63,13 +63,16 @@ export function WorkspaceLayout() {
     const textile = useTextileSetDraft.getState();
     const draft = useStudioStore.getState().drafts[task.model];
     const variation = useSmartVariationDraft.getState();
-    const occupied = task.variation
-      ? !!variation.description.trim() ||
-        variation.references.length > 0 ||
-        variation.items.length > 0
-      : task.textileSet
-        ? !!textile.mainImage || textile.detailImages.length > 0 || textile.views.length > 0
-        : !!draft?.prompt.trim() || !!draft?.references.length;
+    const variationOccupied =
+      !!variation.description.trim() ||
+      variation.references.length > 0 ||
+      variation.items.length > 0;
+    const textileOccupied =
+      !!textile.mainImage || textile.detailImages.length > 0 || textile.views.length > 0;
+    const imageOccupied = !!draft?.prompt.trim() || !!draft?.references.length;
+    let occupied = imageOccupied;
+    if (task.variation) occupied = variationOccupied;
+    else if (task.textileSet) occupied = textileOccupied;
     if (occupied) setRestorePending(task);
     else applyRestore(task);
   };

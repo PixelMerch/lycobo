@@ -1,0 +1,82 @@
+/* The account center uses the studio's dark surface; only the login panel
+ * keeps the approved light exception. One dialog with tabs holds every
+ * section instead of a separate dialog per menu entry. */
+.account-dialog {
+  width: min(560px, calc(100vw - 48px));
+  max-width: none;
+  padding: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--app-dialog-background);
+  color: var(--foreground);
+  box-shadow: var(--overlay-shadow);
+}
+.account-dialog h2 {
+  font-size: var(--text-xl);
+  line-height: var(--leading-xl);
+  font-weight: var(--weight-semibold);
+}
+.account-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 4px 0 20px;
+}
+.account-avatar,
+.account-avatar .avatar__fallback {
+  background: #343434;
+  color: #fff;
+  font-weight: var(--weight-semibold);
+}
+.account-identity strong {
+  display: block;
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
+  font-weight: var(--weight-medium);
+}
+.account-identity small {
+  display: block;
+  color: #a1a1aa;
+}
+.account-rows {
+  display: grid;
+  gap: 1px;
+  margin: 16px 0 0;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--separator);
+}
+.account-rows > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: #202026;
+}
+.account-rows dt {
+  color: #a1a1aa;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+.account-rows dd {
+  margin: 0;
+  color: var(--foreground);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.account-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 16px;
+  color: #a1a1aa;
+  font-size: var(--text-xs);
+  line-height: 18px;
+}
+.account-dialog .tabs__list {
+  border-bottom-color: var(--border);
+}
+.account-dialog .tabs__tab[data-selected="true"] {
+  color: var(--foreground);
+}

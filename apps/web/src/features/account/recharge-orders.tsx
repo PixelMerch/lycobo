@@ -21,6 +21,9 @@ export function RechargeOrders() {
   useErrorToast(recharges.error?.message);
   const orders = recharges.data?.pages.flatMap((page) => page.data) ?? [];
   const visible = orders.filter((order) => status === "all" || order.status === status);
+  const availableMessage = orders.length ? "已加载订单中暂无此状态" : "暂无充值订单";
+  const errorMessage = recharges.isError ? "订单记录暂时不可用" : availableMessage;
+  const rechargesStatusText = recharges.isPending ? "正在加载订单…" : errorMessage;
   return (
     <section className="account-orders" aria-label="充值订单">
       <div className="account-toolbar">
@@ -65,13 +68,7 @@ export function RechargeOrders() {
                 items={visible}
                 renderEmptyState={() => (
                   <p className="account-empty" role="status">
-                    {recharges.isPending
-                      ? "正在加载订单…"
-                      : recharges.isError
-                        ? "订单记录暂时不可用"
-                        : orders.length
-                          ? "已加载订单中暂无此状态"
-                          : "暂无充值订单"}
+                    {rechargesStatusText}
                   </p>
                 )}
               >

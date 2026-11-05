@@ -41,50 +41,52 @@ if (policy.enabled && !cloudbaseStorage && !isAbsolute(process.env.IMAGE_DATA_DI
 if (cloudbaseDatabase && process.env.DATABASE_URL) throw new Error("DATABASE_BACKEND_CONFLICT");
 const independent = await standaloneModels(process.env);
 if (cloudbaseDatabase && !independent) throw new Error("CLOUDBASE_STANDALONE_MODELS_REQUIRED");
-const repository =
-  cloudbaseDatabase && independent
-    ? openCloudBaseImageRepository(cloudbaseDatabase, independent)
-    : process.env.DATABASE_URL
-      ? openImageRepository(process.env.DATABASE_URL, false, independent)
-      : null;
+const databaseUrl = process.env.DATABASE_URL;
+function openImageBackend() {
+  if (cloudbaseDatabase && independent)
+    return openCloudBaseImageRepository(cloudbaseDatabase, independent);
+  return databaseUrl ? openImageRepository(databaseUrl, false, independent) : null;
+}
+const repository = openImageBackend();
 if (policy.enabled && !repository) throw new Error("DATABASE_URL is required for the Image API");
 const authConfig = readAuthConfig(process.env);
-if (authConfig && !process.env.DATABASE_URL && !cloudbaseDatabase)
+if (authConfig && !databaseUrl && !cloudbaseDatabase)
   throw new Error("Enterprise auth database is required");
-const authRepository =
-  authConfig && cloudbaseDatabase
-    ? openCloudBaseAuthRepository(cloudbaseDatabase)
-    : authConfig && process.env.DATABASE_URL
-      ? openAuthRepository(process.env.DATABASE_URL)
-      : null;
+function openAuthBackend() {
+  if (!authConfig) return null;
+  if (cloudbaseDatabase) return openCloudBaseAuthRepository(cloudbaseDatabase);
+  return databaseUrl ? openAuthRepository(databaseUrl) : null;
+}
+const authRepository = openAuthBackend();
 const auth = authRepository && authConfig ? enterpriseAuth(authRepository, authConfig) : undefined;
 // CloudBase bills a held SSE response as function time, and its feed polls keep the shared
 // PostgreSQL instance metered; browsers poll unfinished tasks instead unless explicitly enabled.
-const events =
-  repository && process.env.IMAGE_EVENTS_ENABLED !== "false"
-    ? cloudbaseDatabase
-      ? process.env.IMAGE_EVENTS_ENABLED === "true"
-        ? openCloudBaseImageEventFeed(cloudbaseDatabase)
-        : undefined
-      : process.env.DATABASE_URL
-        ? openImageEventFeed(process.env.DATABASE_URL)
-        : undefined
-    : undefined;
+function openEventBackend() {
+  const enabled = process.env.IMAGE_EVENTS_ENABLED;
+  if (!repository || enabled === "false") return undefined;
+  if (cloudbaseDatabase)
+    return enabled === "true" ? openCloudBaseImageEventFeed(cloudbaseDatabase) : undefined;
+  return databaseUrl ? openImageEventFeed(databaseUrl) : undefined;
+}
+const events = openEventBackend();
 const wakeConsumer = cloudbaseDatabase
   ? cloudbaseConsumerWake(
       cloudbaseDatabase,
       process.env.CLOUDBASE_CONSUMER_FUNCTION ?? "lycobo-consumer",
     )
   : undefined;
-const store = cloudbaseStorage
-  ? objectImageStore(cloudbaseObjectBucket(cloudbaseStorage), repository?.storageUid)
-  : process.env.S3_ENDPOINT
-    ? objectImageStore(imageObjectBucket(process.env), repository?.storageUid)
-    : imageStore(process.env.IMAGE_DATA_DIR ?? "./data/images", repository?.storageUid);
+function openImageStore() {
+  const storageUid = repository?.storageUid;
+  if (cloudbaseStorage)
+    return objectImageStore(cloudbaseObjectBucket(cloudbaseStorage), storageUid);
+  if (process.env.S3_ENDPOINT) return objectImageStore(imageObjectBucket(process.env), storageUid);
+  return imageStore(process.env.IMAGE_DATA_DIR ?? "./data/images", storageUid);
+}
+const store = openImageStore();
 if (policy.enabled) await store.ready();
 const videoConfig = videoConfiguration(process.env);
 const videoRepository = videoConfig ? openVideoRepository(process.env) : undefined;
-const videoSign =
+const signAsset =
   process.env.ASSET_PUBLIC_ORIGIN && process.env.ASSET_SIGNING_SECRET
     ? assetDeliverySigner(process.env.ASSET_PUBLIC_ORIGIN, process.env.ASSET_SIGNING_SECRET, {
         pathPrefix: process.env.ASSET_PATH_PREFIX ?? "/",
@@ -93,7 +95,7 @@ const videoSign =
     : undefined;
 const videoReady = !!(
   videoConfig &&
-  videoSign &&
+  signAsset &&
   auth &&
   (cloudbaseStorage || process.env.S3_ENDPOINT)
 );
@@ -117,17 +119,7 @@ const app = createApp(
               logger.warn({ code: "CONSUMER_WAKE_FAILED" }, "Consumer wake failed");
           }),
         store,
-        signAsset:
-          process.env.ASSET_PUBLIC_ORIGIN && process.env.ASSET_SIGNING_SECRET
-            ? assetDeliverySigner(
-                process.env.ASSET_PUBLIC_ORIGIN,
-                process.env.ASSET_SIGNING_SECRET,
-                {
-                  pathPrefix: process.env.ASSET_PATH_PREFIX ?? "/",
-                  allowLocalHttp: process.env.APP_ENV === "development",
-                },
-              )
-            : undefined,
+        signAsset,
         enabled: policy.enabled,
         managedModelsOnly: true,
         unitCredits: policy.unitCredits,
@@ -140,12 +132,12 @@ const app = createApp(
     : undefined,
   auth,
   readWebhookConfig(process.env),
-  videoReady && videoConfig && videoRepository && videoSign
+  videoReady && videoConfig && videoRepository && signAsset
     ? {
         service: videoService({
           repository: videoRepository,
           ...videoConfig,
-          sign: videoSign,
+          sign: signAsset,
           referencesReady: !!(cloudbaseStorage || videoReferenceOrigin(process.env)),
           wake: wakeConsumer
             ? async () => {

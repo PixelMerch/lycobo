@@ -17,19 +17,17 @@ export function providerRetryService(deps: {
   standaloneKey?: string | undefined;
   providerRequest?: typeof fetch | undefined;
 }) {
+  const readKey = async (credentialId: string) => {
+    if (credentialId === standaloneCredentialId) return deps.standaloneKey;
+    if (!deps.modelSecret) return undefined;
+    const ciphertext = await deps.repository.providerCipher(credentialId);
+    return openProviderKey(ciphertext, deps.modelSecret);
+  };
   return async (scope: ImageScope, jobId: string, itemId?: string) => {
     const candidates = await deps.repository.providerRetryCandidates(scope, jobId, itemId);
     const resumable: string[] = [];
     for (const candidate of candidates) {
-      const key =
-        candidate.snapshot.credentialId === standaloneCredentialId
-          ? deps.standaloneKey
-          : deps.modelSecret
-            ? await openProviderKey(
-                await deps.repository.providerCipher(candidate.snapshot.credentialId),
-                deps.modelSecret,
-              )
-            : undefined;
+      const key = await readKey(candidate.snapshot.credentialId);
       if (!key) throw new ImageRepositoryError("STATE_CONFLICT");
       try {
         await configuredProviderCall(
