@@ -101,15 +101,12 @@
   max-height: calc(100dvh - 84px);
   overflow-y: auto;
   padding: 8px;
-  border: 1px solid #ffffff1f;
+  border: 1px solid var(--glass-edge);
   border-radius: 24px;
   /* Match the approved homepage composer material; menu geometry stays independent. */
-  background:
-    linear-gradient(180deg, #ffffff14 0%, #ffffff08 40%, #ffffff05 100%), rgb(15 15 18 / 42%);
-  box-shadow:
-    inset 0 1px 0 #ffffff26,
-    0 32px 80px -24px #000000b3;
-  backdrop-filter: blur(28px) saturate(180%);
+  background: var(--glass-fill), var(--glass-tint);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: var(--glass-blur);
   color: #eee;
 }
 .account-menu-identity {
@@ -301,12 +298,12 @@
 
 @supports not (backdrop-filter: blur(1px)) {
   .account-menu {
-    background: #1c1c1c;
+    background: var(--glass-fallback);
   }
 }
 @media (prefers-reduced-transparency: reduce) {
   .account-menu {
-    background: #1c1c1c;
+    background: var(--glass-fallback);
     backdrop-filter: none;
   }
 }

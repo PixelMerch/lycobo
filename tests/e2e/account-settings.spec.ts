@@ -43,7 +43,7 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole("dialog", { name: "积分与账单", exact: true })).toHaveCount(0);
     await expect(settings.getByRole("tab")).toHaveText(["个人资料", "登录与安全", "企业成员"]);
     await expect(settings.getByRole("button", { name: "上传头像", exact: true })).toBeDisabled();
-    await expect(settings.locator(".account-profile-meta")).toContainText("UID 0123456789");
+    await expect(settings.locator(".settings-hero-meta")).toContainText("UID 0123456789");
     await page.screenshot({ path: `/tmp/lycobo-settings-profile-${width}.png` });
     await settings.getByRole("tab", { name: "登录与安全", exact: true }).click();
     await expect(settings.getByRole("button", { name: "绑定微信", exact: true })).toBeDisabled();

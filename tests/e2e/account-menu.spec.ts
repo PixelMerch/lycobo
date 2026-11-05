@@ -154,7 +154,7 @@ for (const width of [1440, 320]) {
     await menu.getByRole("menuitem", { name: "设置", exact: true }).click();
     const settings = page.getByRole("dialog", { name: "设置", exact: true });
     await expect(settings.getByRole("tab", { name: "个人资料", selected: true })).toBeVisible();
-    await expect(settings.locator(".account-profile-meta")).toContainText("UID 0123456789");
+    await expect(settings.locator(".settings-hero-meta")).toContainText("UID 0123456789");
     await expect(page).toHaveURL(/\/create$/);
     const centerClose = settings.getByRole("button", { name: "关闭设置" });
     await expect(centerClose).toHaveCSS("width", "44px");

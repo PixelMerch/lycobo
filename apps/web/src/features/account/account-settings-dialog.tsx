@@ -1,9 +1,10 @@
 import { Modal, Tabs } from "@heroui/react";
-import { IconX } from "@tabler/icons-react";
+import { IconShieldLock, IconUserCircle, IconUsersGroup, IconX } from "@tabler/icons-react";
 import { UiIcon } from "../../components/ui-icon";
 import { useEnterpriseSession } from "../auth/auth-client";
 import { AccountPasswordForm } from "./account-password-form";
 import { AccountSettingsMembers, AccountSettingsProfile } from "./account-settings-panels";
+import { useWideViewport } from "./use-wide-viewport";
 import "./account-panel.css";
 import "./account-center.css";
 import "./account-settings.css";
@@ -11,6 +12,8 @@ import "./account-settings.css";
 /** Settings are independent of billing; unavailable account services never simulate success. */
 export function AccountSettingsDialog({ onClose }: { onClose: () => void }) {
   const account = useEnterpriseSession().data;
+  // Wide screens show a side list of sections; phones keep scrollable top tabs.
+  const orientation = useWideViewport() ? "vertical" : "horizontal";
   if (!account) return null;
   const canManageMembers = account.role === "admin";
   return (
@@ -30,19 +33,26 @@ export function AccountSettingsDialog({ onClose }: { onClose: () => void }) {
               </Modal.CloseTrigger>
             </Modal.Header>
             <Modal.Body className="account-center">
-              <Tabs defaultSelectedKey="profile" className="account-center-tabs">
+              <Tabs
+                defaultSelectedKey="profile"
+                orientation={orientation}
+                className="account-center-tabs settings-tabs"
+              >
                 <Tabs.ListContainer>
                   <Tabs.List aria-label="设置">
                     <Tabs.Tab id="profile">
+                      <UiIcon icon={IconUserCircle} />
                       个人资料
                       <Tabs.Indicator />
                     </Tabs.Tab>
                     <Tabs.Tab id="security">
+                      <UiIcon icon={IconShieldLock} />
                       登录与安全
                       <Tabs.Indicator />
                     </Tabs.Tab>
                     {canManageMembers && (
                       <Tabs.Tab id="members">
+                        <UiIcon icon={IconUsersGroup} />
                         企业成员
                         <Tabs.Indicator />
                       </Tabs.Tab>

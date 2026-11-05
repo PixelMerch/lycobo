@@ -96,6 +96,15 @@
   --control-padding-lg: 16px;
   --control-gap: 6px;
   --control-radius: 8px;
+  /* Dark frosted material shared by the homepage composer, account menu and dialogs. */
+  --glass-tint: rgb(15 15 18 / 42%);
+  --glass-fill: linear-gradient(180deg, #ffffff14 0%, #ffffff08 40%, #ffffff05 100%);
+  --glass-edge: #ffffff1f;
+  --glass-shadow: inset 0 1px 0 #ffffff26, 0 32px 80px -24px #000000b3;
+  --glass-blur: blur(28px) saturate(180%);
+  --glass-fallback: #1c1c1c;
+  --glass-card: #ffffff08;
+  --glass-card-edge: #ffffff0f;
 }
 * {
   box-sizing: border-box;

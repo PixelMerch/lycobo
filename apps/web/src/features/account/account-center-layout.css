@@ -10,13 +10,10 @@
   max-width: none;
   height: min(760px, calc(100dvh - 48px));
   padding: var(--account-center-padding);
-  background:
-    linear-gradient(180deg, #ffffff14 0%, #ffffff08 40%, #ffffff05 100%), rgb(15 15 18 / 42%);
-  border-color: #ffffff1f;
-  box-shadow:
-    inset 0 1px 0 #ffffff26,
-    0 32px 80px -24px #000000b3;
-  backdrop-filter: blur(28px) saturate(180%);
+  background: var(--glass-fill), var(--glass-tint);
+  border-color: var(--glass-edge);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: var(--glass-blur);
 }
 .account-center-dialog .modal__header {
   margin-bottom: var(--space-3);
@@ -153,12 +150,12 @@
 
 @supports not (backdrop-filter: blur(1px)) {
   .account-dialog.account-center-dialog.modal__dialog {
-    background: #1c1c1c;
+    background: var(--glass-fallback);
   }
 }
 @media (prefers-reduced-transparency: reduce) {
   .account-dialog.account-center-dialog.modal__dialog {
-    background: #1c1c1c;
+    background: var(--glass-fallback);
     backdrop-filter: none;
   }
 }
