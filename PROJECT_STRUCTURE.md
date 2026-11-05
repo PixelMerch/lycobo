@@ -1,6 +1,6 @@
 # 架构与目录
 
-一个 pnpm workspace 仓库，四个独立应用：前端、API、消费者和图片服务，当前网站运行在 CloudBase，使用共享 PG 和私有云存储。CloudBase 保留作国内内测；海外 Supabase 新加坡已完成独立数据库快照复制，海外应用与媒体尚未部署。分别见 [CloudBase 部署](docs/cloudbase-deployment.md)与[双环境部署](docs/overseas-deployment.md)。
+一个 pnpm workspace 仓库，四个独立应用：前端、API、消费者和图片服务，当前网站运行在 CloudBase，使用共享 PG 和私有云存储。CloudBase 保留作国内内测；海外 Supabase 新加坡已完成独立数据库快照复制，关联媒体文件已复制到私有 R2，海外应用与鉴权媒体服务尚未部署。分别见 [CloudBase 部署](docs/cloudbase-deployment.md)与[双环境部署](docs/overseas-deployment.md)。
 代码同仓不表示进程合并或强制一起发布。
 
 | 路径                  | 职责                                                                                                                                                                    |
@@ -158,3 +158,4 @@ main 的 CI 成功后更新三个 CloudBase 函数代码并发布静态前端，
 - 视频接入使用 `packages/contracts/src/video-generation.ts`（六种比例、5–30秒整数时长、每次100积分）、`apps/api/src/features/videos`（薄路由和服务）、`packages/db/src/video-repository.ts`（Node／CloudBase同一固定RPC）。任务与单个执行项复用generation_jobs／generation_job_items以保留钱包外键，generation_video_outbox独立维护持久意图、租约、供应商任务ID与下一次查询时间；图片历史和超时扫描排除视频。`apps/worker/src/video-processor.ts` 由现有本地消费者与CloudBase Event入口调度，供应商协议在 `packages/generation/src/video-provider.ts`；MP4容器校验在storage/video-media，资源服务提供短期签名与Range。服务端复用生图密钥STANDALONE_IMAGE_API_KEY；默认启用视频，缺少密钥或存储配置时不接受付费提交，运行边界见[视频接入](docs/video-generation.md)。
 - 视频分镜通过 `features/images/storyboard-planner.ts` 与现有套图计划服务调用 DeepSeek，使用已有计划记录保存分析结果并复用图像任务的幂等、扣费和 outbox。前端 `features/video/storyboard` 保存会话内的已受理阶段与幂等请求，等待图片任务完成后自动按原分镜顺序优化提示词并提交视频。右侧进度复用视频历史查询。
 - 海外数据库工具：`packages/db/scripts/migrate-supabase.mjs` 复用现有 Drizzle Kit 迁移链，`supabase-target.mjs` 校验独立的 `SUPABASE_DATABASE_URL` 与项目引用，支持直连及 Session Pooler；`secure-supabase.mjs` 限定本应用表／序列／函数的 RLS 和前端角色权限。当前网站仍使用 CloudBase 共享 PG；海外数据库复制不自动切换运行时，详见[双环境部署](docs/overseas-deployment.md)。
+- 海外文件迁移工具：`apps/api/scripts/migrate-storage.ts` 读取海外快照素材，按 `storage-copy-manifest.ts` 筛选原始与派生文件，再由 `storage-copy.ts` 逐对象复制并校验；仅用于显式的一次性迁移与续传，不自动切换应用存储。详见[双环境部署](docs/overseas-deployment.md)。
