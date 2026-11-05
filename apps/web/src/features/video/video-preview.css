@@ -165,7 +165,7 @@
 }
 /* Keyboard focus inside the bar keeps it on screen while the clip plays. */
 .video-preview-frame[data-controls="hidden"]:has([data-focus-visible="true"])
-.video-preview-controls {
+  .video-preview-controls {
   opacity: 1;
   translate: none;
   pointer-events: auto;

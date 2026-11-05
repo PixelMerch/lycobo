@@ -4,24 +4,24 @@
 
 ## 固定方案
 
-| 层 | 技术 | 理由 |
-| --- | --- | --- |
-| 运行时 | CloudBase Node 云函数；Node.js 24 构建／测试 | HTTP API 与独立 Event 消费者 |
-| 包管理 | pnpm 10.34.7 workspace | 单仓库、固定锁文件、明确包边界 |
-| 语言 | TypeScript 5.9.3 strict | 与已验证工具链兼容，升级单独评估 |
-| 前端 | React 19 + Vite 8 | 登录后交互工作台采用 CSR |
-| UI | HeroUI 3 + Tailwind CSS 4 + Tabler icons | 单一组件系统，遵守 V3 设计 |
-| 路由 | React Router | 页面路由与重型功能懒加载 |
-| 数据/本地状态 | TanStack Query 5 / Zustand 5 | 服务端缓存与本地交互状态分离 |
-| 画布 | Konva 10 + react-konva 19 | 图片编辑/排布基础，尚未实现持久画布 |
-| API | Hono 4 + CloudBase HTTP 云函数 | 轻量路由、中间件与可测试应用工厂 |
-| 参数校验 | Zod 4 + Hono zod-validator | 共享输入输出契约 |
-| 日志 | Pino | 结构化、脱敏、不打印原始请求内容 |
-| 数据 | PostgreSQL 17 + Drizzle ORM / Kit | 关系约束、可审查迁移、持久任务 |
-| 后台 | CloudBase Event 消费者 + PG outbox | PostgreSQL outbox、独立消费与 Cron 恢复 |
-| 文件 | CloudBase PG 私有存储 + Node Sharp | 按 UID 分目录，原图、预览与缩略图分开；旧源对象保留 |
-| 通知 | 持久事件 + SSE + 查询兜底 | 推送丢失也能找回结果 |
-| 检查 | Biome、Vitest、Playwright、commitlint | 类型之外的规则、行为、浏览器与提交检查 |
+| 层            | 技术                                         | 理由                                                |
+| ------------- | -------------------------------------------- | --------------------------------------------------- |
+| 运行时        | CloudBase Node 云函数；Node.js 24 构建／测试 | HTTP API 与独立 Event 消费者                        |
+| 包管理        | pnpm 10.34.7 workspace                       | 单仓库、固定锁文件、明确包边界                      |
+| 语言          | TypeScript 5.9.3 strict                      | 与已验证工具链兼容，升级单独评估                    |
+| 前端          | React 19 + Vite 8                            | 登录后交互工作台采用 CSR                            |
+| UI            | HeroUI 3 + Tailwind CSS 4 + Tabler icons     | 单一组件系统，遵守 V3 设计                          |
+| 路由          | React Router                                 | 页面路由与重型功能懒加载                            |
+| 数据/本地状态 | TanStack Query 5 / Zustand 5                 | 服务端缓存与本地交互状态分离                        |
+| 画布          | Konva 10 + react-konva 19                    | 图片编辑/排布基础，尚未实现持久画布                 |
+| API           | Hono 4 + CloudBase HTTP 云函数               | 轻量路由、中间件与可测试应用工厂                    |
+| 参数校验      | Zod 4 + Hono zod-validator                   | 共享输入输出契约                                    |
+| 日志          | Pino                                         | 结构化、脱敏、不打印原始请求内容                    |
+| 数据          | PostgreSQL 17 + Drizzle ORM / Kit            | 关系约束、可审查迁移、持久任务                      |
+| 后台          | CloudBase Event 消费者 + PG outbox           | PostgreSQL outbox、独立消费与 Cron 恢复             |
+| 文件          | CloudBase PG 私有存储 + Node Sharp           | 按 UID 分目录，原图、预览与缩略图分开；旧源对象保留 |
+| 通知          | 持久事件 + SSE + 查询兜底                    | 推送丢失也能找回结果                                |
+| 检查          | Biome、Vitest、Playwright、commitlint        | 类型之外的规则、行为、浏览器与提交检查              |
 
 精确依赖版本以各 package.json 与 pnpm-lock.yaml 为准，不在此重复维护全部补丁号。
 所有直接依赖使用精确版本；更新通过独立 PR，检查 peer dependencies 与运行时。

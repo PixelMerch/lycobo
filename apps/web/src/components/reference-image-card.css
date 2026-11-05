@@ -33,7 +33,7 @@
 /* Keep the keyboard ring on the tile itself so no purple frame is drawn over
  * the artwork. */
 .reference-tile.reference-image-card
-.reference-preview.button:is(:focus-visible, [data-focus-visible="true"]) {
+  .reference-preview.button:is(:focus-visible, [data-focus-visible="true"]) {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }

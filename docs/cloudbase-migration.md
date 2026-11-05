@@ -4,11 +4,11 @@
 
 ## 结果
 
-| 项目 | 结果 |
-| --- | --- |
-| 数据库 | Supabase 到 CloudBase 共享 PG，两端 PostgreSQL 17.11。范围为 `public`、`drizzle`，共 43 张表（42 张业务表和 Drizzle 迁移表）、1,156 行，逐表行数和全行内容指纹匹配，钱包余额与账本无差异 |
-| 图片 | 116 条素材、464 个对象（约 408 MiB）复制到 `lycobo-images` 私有桶，逐对象比对字节数和 SHA-256，`object_key` 未改 |
-| 运行时 | API、资源服务和消费者切到 CloudBase 云函数。2026-11-01 主图制作、家纺裂变、套图计划各真实生成 1 张，原图、预览和缩略图均可读取，钱包与流水核对差异 0 |
+| 项目   | 结果                                                                                                                                                                                                                                           |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 数据库 | Supabase 到 CloudBase 共享 PG，两端 PostgreSQL 17.11。范围为 `public`、`drizzle`，共 43 张表（42 张业务表和 Drizzle 迁移表）、1,156 行，逐表行数和全行内容指纹匹配，钱包余额与账本无差异                                                       |
+| 图片   | 116 条素材、464 个对象（约 408 MiB）复制到 `lycobo-images` 私有桶，逐对象比对字节数和 SHA-256，`object_key` 未改                                                                                                                               |
+| 运行时 | API、资源服务和消费者切到 CloudBase 云函数。2026-11-01 主图制作、家纺裂变、套图计划各真实生成 1 张，原图、预览和缩略图均可读取，钱包与流水核对差异 0                                                                                           |
 | 旧平台 | 2026-11-02 按用户授权删除 Cloudflare Pages `lycobo`、Workers `lycobo-api`／`lycobo-generation`／`lycobo-assets` 和 R2 桶 `lycobo`（清空 464 个对象后删除）。未删除 Cloudflare 账户、域名、Queues 或 Hyperdrive。旧运行时代码和依赖已从仓库移除 |
 
 ## 仍然有效的约束
@@ -29,10 +29,10 @@
 
 以下文件被 Git 忽略，只存在于本机，含私有业务数据：
 
-| 目录 | 内容 |
-| --- | --- |
+| 目录                                                 | 内容                                                                                                                           |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `backups/database/cloudbase-20261031/database-copy/` | 数据库复制备份 `source.dump`（SHA-256 `10116bda9bfe7a488ab390922ea70e9b7e96830d13e9bbbff3232fcde502636b`）、逐表清单和核对结果 |
-| `backups/storage/cloudbase-20261031/progress.json` | 逐素材和逐对象迁移清单 |
-| `backups/database/cloudbase-to-docker-20261101/` | 本地库同步前备份、云端快照和核对结果 |
-| `backups/database/local-generation-enable-20261101/` | 隔离复制任务前的本地备份 |
-| `backups/retired-emulation-20261102/` | 旧模拟器状态 |
+| `backups/storage/cloudbase-20261031/progress.json`   | 逐素材和逐对象迁移清单                                                                                                         |
+| `backups/database/cloudbase-to-docker-20261101/`     | 本地库同步前备份、云端快照和核对结果                                                                                           |
+| `backups/database/local-generation-enable-20261101/` | 隔离复制任务前的本地备份                                                                                                       |
+| `backups/retired-emulation-20261102/`                | 旧模拟器状态                                                                                                                   |
