@@ -12,7 +12,7 @@ export function cloudbaseConsumerWake(
   request: typeof fetch = fetch,
 ) {
   const url = `https://${config.CLOUDBASE_ENV_ID}.api.tcloudbasegateway.com/v1/functions/${encodeURIComponent(functionName)}`;
-  return async () => {
+  return async (scope?: "images") => {
     try {
       const response = await request(url, {
         method: "POST",
@@ -20,7 +20,7 @@ export function cloudbaseConsumerWake(
           Authorization: `Bearer ${config.CLOUDBASE_APIKEY}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ wake: true }),
+        body: JSON.stringify({ wake: true, scope }),
         redirect: "manual",
         signal: AbortSignal.timeout(3000),
       });

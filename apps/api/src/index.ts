@@ -115,7 +115,7 @@ const app = createApp(
         wake:
           wakeConsumer &&
           (async () => {
-            if (!(await wakeConsumer()))
+            if (!(await wakeConsumer("images")))
               logger.warn({ code: "CONSUMER_WAKE_FAILED" }, "Consumer wake failed");
           }),
         store,

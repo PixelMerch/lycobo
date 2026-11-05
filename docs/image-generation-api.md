@@ -124,6 +124,10 @@ StudioShell 只轮询缓存中排队或生成中的任务详情（含局部修�
 
 Worker 以 `Image generation stage timing` 输出结构化分段计时，包含 itemId、stage、durationMs，必要时包含响应字节数与 HTTP 状态码。禁止输出提示词、参考图、响应正文、凭据或签名 URL。
 
+CloudBase 配置渠道记录参考图准备 `reference_prepare`、提交 `provider_submit`、回执入库 `provider_receipt`、原任务查询 `provider_result_lookup`、结果读取 `provider_download`、存储 `image_storage` 和完成事务 `database_finish`。存储总耗时包含原图编码 `image_encode`、原图上传 `image_original_put`、两种 WebP 编码 `image_variant_encode` 和并行上传 `image_variant_put`，总项和子项不相加。
+
+旧同步渠道的阶段如下。
+
 - claim / reference_read：领取任务与参考图片读取。
 - provider_request_started / provider_headers：开始请求与收到响应头；此段包含连接、上传、网关等待和模型执行，不能直接等同于模型推理时间。
 - provider_body / provider_decode：响应体接收与 base64 解码。

@@ -2,11 +2,13 @@ import { imageOutputDimensions, providerModelForResolution } from "@lycoboai/con
 import type { ClaimedImage, ImageRuntimeRepository } from "@lycoboai/db";
 import {
   configuredProviderCall,
+  type GenerationTiming,
   ImageProviderError,
   openProviderKey,
   ProviderPollError,
   type ProviderResult,
   providerOutputBytes,
+  reportGenerationTiming,
   standaloneCredentialId,
   textileItemInput,
 } from "@lycoboai/generation";
@@ -30,6 +32,8 @@ type ConfiguredImageDependencies = {
   deliverReference?: DeliverProviderReference;
   requireMainImageReferenceUrls?: boolean;
   onDeferred?: ((delayMs: number) => void) | undefined;
+  onWebhookAccepted?: ((ready: boolean) => void) | undefined;
+  onTiming?: ((event: GenerationTiming & { itemId: string }) => void) | undefined;
 };
 
 type ConfiguredProvider = NonNullable<ClaimedImage["configuredProvider"]>;
@@ -100,9 +104,7 @@ async function deferPendingImage(
       result.statusPath,
       result.requestId,
     );
-    // Only an already-received callback needs immediate continuation. Otherwise exit:
-    // the durable next_poll_at is recovered by a callback, visible batch read or timer.
-    if (ready) deps.onDeferred?.(2000);
+    deps.onWebhookAccepted?.(ready);
     return;
   }
   await deps.repository.deferProvider(
@@ -170,41 +172,62 @@ export async function processConfiguredImage(job: ClaimedImage, deps: Configured
     state.phase === "polling" && state.taskId && state.statusPath
       ? { taskId: state.taskId, statusPath: state.statusPath }
       : undefined;
+  const report = (event: GenerationTiming) =>
+    reportGenerationTiming((timing) => deps.onTiming?.({ ...timing, itemId: job.itemId }), event);
+  const time = async <T>(stage: string, operation: () => Promise<T>) => {
+    const started = performance.now();
+    try {
+      return await operation();
+    } finally {
+      report({ stage, durationMs: Math.round(performance.now() - started) });
+    }
+  };
   let sent = false;
   try {
     if (Date.now() > state.deadlineAt.getTime() && !(poll && state.snapshot.webhook))
       throw new ImageProviderError("PROVIDER_TASK_DEADLINE", true);
     const key = await readCredential(deps, state.snapshot.credentialId);
     if (!key) throw new ImageProviderError("MODEL_SECRET_NOT_CONFIGURED", !!poll);
-    const references = poll ? { bytes: [] } : await configuredReferences(job, state.snapshot, deps);
+    const references = poll
+      ? { bytes: [] }
+      : await time("reference_prepare", () => configuredReferences(job, state.snapshot, deps));
     sent = true;
-    const result = await configuredProviderCall(
-      state.snapshot,
-      key,
-      textileItemInput(job.input, job.position),
-      references.bytes,
-      job.itemId,
-      poll,
-      deps.request,
-      references.urls,
+    const result = await time(poll ? "provider_result_lookup" : "provider_submit", () =>
+      configuredProviderCall(
+        state.snapshot,
+        key,
+        textileItemInput(job.input, job.position),
+        references.bytes,
+        job.itemId,
+        poll,
+        deps.request,
+        references.urls,
+      ),
     );
     if (result.kind === "pending") {
-      return await deferPendingImage(job, deps, state, result);
+      return await time("provider_receipt", () => deferPendingImage(job, deps, state, result));
     }
     // A paid slot requests n=1; surplus provider outputs must not discard its usable result.
     // Preserve stable provider order and deliver one image without creating extra charges/items.
     const output = result.outputs[0];
     if (!output) throw new ImageProviderError("PROVIDER_EMPTY_IMAGE", true);
-    const bytes = await providerOutputBytes(output, state.snapshot, key, deps.request);
-    const image = await deps.store.put(
-      job,
-      bytes,
-      job.itemId,
-      job.input.resolution === "1.5K"
-        ? imageOutputDimensions(job.input.aspectRatio, job.input.resolution)
-        : undefined,
+    const bytes = await time("provider_download", () =>
+      providerOutputBytes(output, state.snapshot, key, deps.request),
     );
-    await deps.repository.finish(job, { image, requestId: result.requestId });
+    const image = await time("image_storage", () =>
+      deps.store.put(
+        job,
+        bytes,
+        job.itemId,
+        job.input.resolution === "1.5K"
+          ? imageOutputDimensions(job.input.aspectRatio, job.input.resolution)
+          : undefined,
+        report,
+      ),
+    );
+    await time("database_finish", () =>
+      deps.repository.finish(job, { image, requestId: result.requestId }),
+    );
   } catch (error) {
     await settleConfiguredFailure(job, deps, state, poll, sent, error);
   }

@@ -49,7 +49,7 @@ try {
         await drainCloudBaseOutbox({
           repository,
           stopStartingAt: Date.now() + 5000,
-          process: (itemId, onDeferred) =>
+          process: (itemId, onDeferred, onWebhookAccepted) =>
             processImageItem(itemId, {
               repository,
               store,
@@ -60,6 +60,7 @@ try {
               overrides: policy.overrides,
               editsEnabled: policy.editsEnabled,
               onDeferred,
+              onWebhookAccepted,
             }),
         });
       } catch {

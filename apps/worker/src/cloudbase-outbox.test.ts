@@ -55,6 +55,28 @@ it("does not retry an unresolved outcome or idle after completed work", async ()
   expect(process).toHaveBeenCalledOnce();
   expect(wait).not.toHaveBeenCalled();
 });
+it.each([false, true])(
+  "releases a persisted webhook submission with an early callback = %s",
+  async (early) => {
+    const intent = entry();
+    const repository = {
+      leaseOutbox: vi.fn(async () => [intent]),
+      ackOutbox: vi.fn(async () => {}),
+    };
+    const wait = vi.fn(async () => {});
+    const result = await drainCloudBaseOutbox({
+      repository,
+      now: () => 1000,
+      stopStartingAt: 20000,
+      wait,
+      process: async (_itemId, _onDeferred, onWebhookAccepted) => onWebhookAccepted(early),
+    });
+    expect(result).toEqual({ processed: 1, resumeAt: early ? 1000 : null });
+    expect(repository.leaseOutbox).toHaveBeenCalledOnce();
+    expect(repository.ackOutbox).toHaveBeenCalledExactlyOnceWith(intent.id, intent.leaseToken);
+    expect(wait).not.toHaveBeenCalled();
+  },
+);
 it("leaves a deferred intent durable when its next read exceeds the invocation budget", async () => {
   const intent = entry();
   const repository = { leaseOutbox: vi.fn(async () => [intent]), ackOutbox: vi.fn(async () => {}) };

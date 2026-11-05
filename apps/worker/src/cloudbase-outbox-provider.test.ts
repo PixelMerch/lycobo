@@ -207,6 +207,8 @@ it.each([false, true])(
     };
     const store = { read: vi.fn(), put: vi.fn() };
     const onDeferred = vi.fn();
+    const onWebhookAccepted = vi.fn();
+    const onTiming = vi.fn();
     const request = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json(
         {
@@ -223,12 +225,20 @@ it.each([false, true])(
       standaloneKey: "fixture",
       request,
       onDeferred,
+      onWebhookAccepted,
+      onTiming,
     });
     expect(repository.webhookWait).toHaveBeenCalledOnce();
     expect(repository.deferProvider).not.toHaveBeenCalled();
     expect(repository.finish).not.toHaveBeenCalled();
     expect(store.put).not.toHaveBeenCalled();
-    expect(onDeferred).toHaveBeenCalledTimes(early ? 1 : 0);
+    expect(onDeferred).not.toHaveBeenCalled();
+    expect(onWebhookAccepted).toHaveBeenCalledExactlyOnceWith(early);
+    expect(onTiming.mock.calls.map(([timing]) => timing.stage)).toEqual([
+      "reference_prepare",
+      "provider_submit",
+      "provider_receipt",
+    ]);
     // Recovery past the deadline still reads the accepted task once; it never submits again.
     const state = job.configuredProvider;
     if (!state) throw new Error("fixture");

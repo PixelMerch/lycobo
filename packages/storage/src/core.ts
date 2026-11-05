@@ -27,6 +27,10 @@ export function userObjectKey(uid: string, organizationId: string, id: string) {
   return `${uid}/${organizationId}/${id}.png`;
 }
 export type ImageOutputSize = { width: number; height: number };
+export type ImageStorageTiming = {
+  stage: "image_encode" | "image_original_put" | "image_variant_encode" | "image_variant_put";
+  durationMs: number;
+};
 export interface ImageStore {
   ready(): Promise<void>;
   put(
@@ -34,6 +38,7 @@ export interface ImageStore {
     input: Uint8Array,
     id?: string,
     outputSize?: ImageOutputSize,
+    onTiming?: (event: ImageStorageTiming) => void,
   ): Promise<StoredImage>;
   read(asset: StoredImage): Promise<Uint8Array>;
   thumbnail(asset: StoredImage): Promise<Uint8Array>;
