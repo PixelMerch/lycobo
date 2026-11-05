@@ -341,7 +341,7 @@ export function openImageRepository(
         if (input.variation) {
           const [plan] =
             await tx`select input,status from variation_plans where id=${input.variation.planId} and organization_id=${scope.organizationId} and user_id=${scope.userId}`;
-          if (!plan || plan.status !== "ready") throw new ImageRepositoryError("STATE_CONFLICT");
+          if (plan?.status !== "ready") throw new ImageRepositoryError("STATE_CONFLICT");
           const original = variationPlanInputSchema.parse(plan.input);
           if (
             JSON.stringify(original.referenceAssetIds) !== JSON.stringify(input.referenceAssetIds)
@@ -662,8 +662,12 @@ export function openImageRepository(
       await sql`update generation_outbox set dispatched_at=coalesce(dispatched_at,now()),next_attempt_at=now()+interval '30 seconds',
         lease_token=null,lease_expires_at=null where id=${id} and lease_token=${token}`;
     },
-    async claim(itemId: string, workerId: string, leaseMs: number): Promise<ClaimedImage | null> {
-      leaseMs = Math.min(leaseMs, 90000);
+    async claim(
+      itemId: string,
+      workerId: string,
+      requestedLeaseMs: number,
+    ): Promise<ClaimedImage | null> {
+      const leaseMs = Math.min(requestedLeaseMs, 90000);
       return sql.begin(async (tx) => {
         const [candidate] =
           await tx`select job_id from generation_job_items where id=${itemId} and (status='queued' or (status='running' and exists(select 1 from provider_executions e where e.item_id=${itemId} and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now()))))`;

@@ -48,34 +48,36 @@ export function modelManagementRepository(sql: postgres.Sql) {
             await tx`insert into model_credentials (ciphertext) values (${ciphertext}) returning id`;
           credentialId = String(key?.id);
         }
-        if (id) {
+        let savedId = id;
+        if (savedId) {
           const [row] =
-            await tx`update model_providers set name=${input.name},origin=${input.origin},adapter=${input.adapter},enabled=${Number(input.enabled)},credential_id=coalesce(${credentialId ?? null},credential_id),updated_at=now() where id=${id} returning id`;
+            await tx`update model_providers set name=${input.name},origin=${input.origin},adapter=${input.adapter},enabled=${Number(input.enabled)},credential_id=coalesce(${credentialId ?? null},credential_id),updated_at=now() where id=${savedId} returning id`;
           if (!row) throw new Error("NOT_FOUND");
         } else {
           if (!credentialId) throw new Error("KEY_REQUIRED");
           const [row] =
             await tx`insert into model_providers(name,origin,adapter,credential_id,enabled) values (${input.name},${input.origin},${input.adapter},${credentialId},${Number(input.enabled)}) returning id`;
-          id = String(row?.id);
+          savedId = String(row?.id);
         }
-        await audit(tx, actor, "provider.save", id);
-        return { id };
+        await audit(tx, actor, "provider.save", savedId);
+        return { id: savedId };
       });
     },
     async saveChannel(actor: string, id: string | undefined, value: unknown) {
       const input = channelInputSchema.parse(value);
       return sql.begin(async (tx) => {
-        if (id) {
+        let savedId = id;
+        if (savedId) {
           const rows =
-            await tx`update model_channels set name=${input.name},provider_id=${input.providerId},model=${input.model},settings=${tx.json(input)},enabled=${Number(input.enabled)} where id=${id} returning id`;
+            await tx`update model_channels set name=${input.name},provider_id=${input.providerId},model=${input.model},settings=${tx.json(input)},enabled=${Number(input.enabled)} where id=${savedId} returning id`;
           if (!rows.length) throw new Error("NOT_FOUND");
         } else {
           const [row] =
             await tx`insert into model_channels(name,provider_id,model,settings,enabled) values (${input.name},${input.providerId},${input.model},${tx.json(input)},${Number(input.enabled)}) returning id`;
-          id = String(row?.id);
+          savedId = String(row?.id);
         }
-        await audit(tx, actor, "channel.save", id);
-        return { id };
+        await audit(tx, actor, "channel.save", savedId);
+        return { id: savedId };
       });
     },
     async saveRoute(actor: string, value: unknown) {
