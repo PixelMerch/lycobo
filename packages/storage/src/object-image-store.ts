@@ -2,10 +2,41 @@ import { createHash, randomUUID } from "node:crypto";
 import type { ImageScope, StoredImage } from "@lycoboai/contracts";
 import { imageLimits } from "@lycoboai/contracts";
 import sharp from "sharp";
-import { type ImageStore, objectKeySchema, type StorageUid, userObjectKey } from "./core";
+import {
+  type ImageStorageTiming,
+  type ImageStore,
+  objectKeySchema,
+  type StorageUid,
+  userObjectKey,
+} from "./core";
 import { normalizeImage } from "./image-store";
-import { displayObjectKey, providerReferenceObjectKey } from "./image-variants";
+import { displayObjectKey, displayVariants, providerReferenceObjectKey } from "./image-variants";
 import type { ImageObjectBucket } from "./object-bucket";
+
+function reportStorageTiming(
+  onTiming: ((event: ImageStorageTiming) => void) | undefined,
+  stage: ImageStorageTiming["stage"],
+  started: number,
+) {
+  try {
+    onTiming?.({ stage, durationMs: Math.round(performance.now() - started) });
+  } catch {
+    // Telemetry cannot change the outcome of an image write.
+  }
+}
+
+async function encodeDisplayVariants(original: Uint8Array, key: string) {
+  const variants = [];
+  for (const variant of ["thumbnail", "preview"] as const) {
+    const { width, height, quality } = displayVariants[variant];
+    const bytes = await sharp(original)
+      .resize({ width, height, fit: "inside", withoutEnlargement: true })
+      .webp({ quality })
+      .toBuffer();
+    variants.push({ key: displayObjectKey(key, variant), bytes });
+  }
+  return variants;
+}
 
 /** Node image processing for private cloud storage. */
 export function objectImageStore(bucket: ImageObjectBucket, resolveUid?: StorageUid): ImageStore {
@@ -21,25 +52,31 @@ export function objectImageStore(bucket: ImageObjectBucket, resolveUid?: Storage
     async ready() {
       // Credentials are validated when the bucket adapter is constructed.
     },
-    async put(scope: ImageScope, input, id = randomUUID(), outputSize) {
+    async put(scope: ImageScope, input, id = randomUUID(), outputSize, onTiming) {
       if (!resolveUid) throw new Error("STORAGE_IDENTITY_NOT_CONFIGURED");
+      const encodeStarted = performance.now();
       const image = await normalizeImage(input, outputSize);
+      reportStorageTiming(onTiming, "image_encode", encodeStarted);
       const key = userObjectKey(await resolveUid(scope), scope.organizationId, id);
       const sha256 = createHash("sha256").update(image.data).digest("hex");
+      const originalStarted = performance.now();
       await bucket.put(key, image.data, { httpMetadata: { contentType: "image/png" } });
+      reportStorageTiming(onTiming, "image_original_put", originalStarted);
       // Save the paid original first; failed variants must never cause provider resubmission.
       // Pages only show the WebP variants. The PNG thumbnail (about 16 times the WebP size)
       // serves the variation planner alone, so thumbnail() creates it on first use.
-      for (const variant of ["thumbnail", "preview"] as const) {
-        const size = variant === "thumbnail" ? 512 : 1600;
-        const bytes = await sharp(image.data)
-          .resize({ width: size, height: size, fit: "inside", withoutEnlargement: true })
-          .webp({ quality: variant === "thumbnail" ? 76 : 82 })
-          .toBuffer();
-        await bucket.put(displayObjectKey(key, variant), bytes, {
-          httpMetadata: { contentType: "image/webp" },
-        });
-      }
+      const variantEncodeStarted = performance.now();
+      const variants = await encodeDisplayVariants(image.data, key);
+      reportStorageTiming(onTiming, "image_variant_encode", variantEncodeStarted);
+      const variantPutStarted = performance.now();
+      const uploads = await Promise.allSettled(
+        variants.map(({ key: variantKey, bytes }) =>
+          bucket.put(variantKey, bytes, { httpMetadata: { contentType: "image/webp" } }),
+        ),
+      );
+      reportStorageTiming(onTiming, "image_variant_put", variantPutStarted);
+      const failedUpload = uploads.find((upload) => upload.status === "rejected");
+      if (failedUpload) throw failedUpload.reason;
       return {
         id,
         objectKey: key,

@@ -4,35 +4,35 @@
 
 ## 开发入口
 
-| 需要做什么 | 文档 |
-| --- | --- |
-| 启动本地环境、配置服务 | [本地开发](development.md) · [技术栈](tech-stack.md) |
-| 选择组件、统一界面 | [HeroUI 组件清单](heroui-components.md) · [UI 一致性](ui-consistency.md) |
-| 代码规则与质量门禁 | [代码质量约束](code-quality.md) |
-| 学习 TypeScript 和 Node | [学习文档](learning-path.md) |
-| 验证改动 | [测试说明](testing.md) |
-| 提交、发布与回滚 | [发布流程](releasing.md) · [CloudBase 部署](cloudbase-deployment.md) |
+| 需要做什么              | 文档                                                                     |
+| ----------------------- | ------------------------------------------------------------------------ |
+| 启动本地环境、配置服务  | [本地开发](development.md) · [技术栈](tech-stack.md)                     |
+| 选择组件、统一界面      | [HeroUI 组件清单](heroui-components.md) · [UI 一致性](ui-consistency.md) |
+| 代码规则与质量门禁      | [代码质量约束](code-quality.md)                                          |
+| 学习 TypeScript 和 Node | [学习文档](learning-path.md)                                             |
+| 验证改动                | [测试说明](testing.md)                                                   |
+| 提交、发布与回滚        | [发布流程](releasing.md) · [CloudBase 部署](cloudbase-deployment.md)     |
 
 ## 功能与接口
 
-| 主题 | 文档 |
-| --- | --- |
-| 账号与权限 | [企业鉴权](enterprise-auth.md) |
-| 积分与会员 | [共享钱包](enterprise-wallet.md) · [会员定价](membership-pricing.md) |
-| 图片生成与供应商配置 | [生图 API](image-generation-api.md) · [模型服务](model-services.md) |
-| 图片回调 | [图片 Webhook](image-webhooks.md) |
-| 视频创作 | [视频接入](video-generation.md) |
-| 套图计划与链接分析 | [套图计划](product-variation-plan.md) |
-| 家纺裂变 | [家纺生成](textile-generation.md) · [视角示例](textile-view-examples.md) |
-| 多区域图片修改 | [局部编辑](local-image-repair.md) |
-| API 与数据约定 | [返回规范](api-response.md) · [数据库命名](database-naming.md) |
+| 主题                 | 文档                                                                     |
+| -------------------- | ------------------------------------------------------------------------ |
+| 账号与权限           | [企业鉴权](enterprise-auth.md)                                           |
+| 积分与会员           | [共享钱包](enterprise-wallet.md) · [会员定价](membership-pricing.md)     |
+| 图片生成与供应商配置 | [生图 API](image-generation-api.md) · [模型服务](model-services.md)      |
+| 图片回调             | [图片 Webhook](image-webhooks.md)                                        |
+| 视频创作             | [视频接入](video-generation.md)                                          |
+| 套图计划与链接分析   | [套图计划](product-variation-plan.md)                                    |
+| 家纺裂变             | [家纺生成](textile-generation.md) · [视角示例](textile-view-examples.md) |
+| 多区域图片修改       | [局部编辑](local-image-repair.md)                                        |
+| API 与数据约定       | [返回规范](api-response.md) · [数据库命名](database-naming.md)           |
 
 ## 数据与运维
 
-| 主题 | 文档 |
-| --- | --- |
-| 本地数据库导出与恢复 | [数据库备份](database-backup.md) |
-| 本地 S3、COS 与私有存储边界 | [对象存储](s3-storage.md) |
+| 主题                             | 文档                                         |
+| -------------------------------- | -------------------------------------------- |
+| 本地数据库导出与恢复             | [数据库备份](database-backup.md)             |
+| 本地 S3、COS 与私有存储边界      | [对象存储](s3-storage.md)                    |
 | 迁移结果、仍有效的约束与私有证据 | [CloudBase 迁移记录](cloudbase-migration.md) |
 
 ## 设计素材与来源

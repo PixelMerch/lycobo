@@ -56,12 +56,12 @@ docker compose up --build
 
 ## 开发检查
 
-| 命令 | 用途 |
-| --- | --- |
-| `pnpm check` | lint、边界、类型、单元测试与生产构建 |
-| `pnpm test:e2e` | 完整浏览器回归，按需运行 |
+| 命令                    | 用途                                     |
+| ----------------------- | ---------------------------------------- |
+| `pnpm check`            | lint、边界、类型、单元测试与生产构建     |
+| `pnpm test:e2e`         | 完整浏览器回归，按需运行                 |
 | `pnpm test:integration` | 隔离数据库与队列集成检查，需显式本地配置 |
-| `pnpm build` | 构建各工作区包 |
+| `pnpm build`            | 构建各工作区包                           |
 
 首次运行浏览器测试需执行 `pnpm exec playwright install chromium`。完整流程见 [测试说明](docs/testing.md)。开发使用 `dev`，稳定版本使用 `main`；提交与合并约定见 [协作规范](CONTRIBUTING.md)。
 

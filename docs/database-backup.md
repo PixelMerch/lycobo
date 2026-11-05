@@ -2,11 +2,11 @@
 
 本文只适用于本地 Docker 数据库。`schema.sql` 结构快照只到迁移 0015，不代表当前结构；当前结构以迁移链为准。CloudBase 与本地库的同步记录见 [CloudBase 迁移记录](cloudbase-migration.md)。
 
-| 文件 | 内容 | Git |
-| --- | --- | --- |
-| `packages/db/snapshots/schema.sql` | 完整表结构、索引、约束、函数、触发器与序列定义，不含业务数据 | 提交 |
-| `backups/database/lycoboai-20261021.dump` | PostgreSQL custom 格式完整结构和数据备份 | 忽略，仅保存在本地项目 |
-| `backups/database/lycoboai-20261021.sql` | 从同一备份转换的完整 SQL，含结构与数据 | 忽略，仅保存在本地项目 |
+| 文件                                      | 内容                                                         | Git                    |
+| ----------------------------------------- | ------------------------------------------------------------ | ---------------------- |
+| `packages/db/snapshots/schema.sql`        | 完整表结构、索引、约束、函数、触发器与序列定义，不含业务数据 | 提交                   |
+| `backups/database/lycoboai-20261021.dump` | PostgreSQL custom 格式完整结构和数据备份                     | 忽略，仅保存在本地项目 |
+| `backups/database/lycoboai-20261021.sql`  | 从同一备份转换的完整 SQL，含结构与数据                       | 忽略，仅保存在本地项目 |
 
 完整备份包含账号、登录会话、组织余额及业务记录；目录权限 700、文件权限 600，不上传 Git。备份不包含 PostgreSQL 集群角色密码、环境密钥和图片二进制；图片位于 `data/images`，迁移应用时需另行备份。数据库中的图片记录不能代替图片文件。
 

@@ -33,11 +33,16 @@ describe("Node cloud image processing", () => {
     expect((await sharp(preview).metadata()).width).toBe(1600);
     expect(asset.objectKey).toMatch(/^1234567890\//);
   });
-  it("retains a paid original when derived-image persistence fails", async () => {
+  it("uploads variants concurrently and retains the paid original when a variant fails", async () => {
+    let finishThumbnail = () => {};
+    const thumbnail = new Promise<{ stored: true }>((resolve) => {
+      finishThumbnail = () => resolve({ stored: true });
+    });
     const put = vi
       .fn<ImageObjectBucket["put"]>()
       .mockResolvedValueOnce({ stored: true })
-      .mockRejectedValue(new Error("storage unavailable"));
+      .mockReturnValueOnce(thumbnail)
+      .mockRejectedValueOnce(new Error("storage unavailable"));
     const bucket: ImageObjectBucket = {
       head: async () => null,
       get: async () => null,
@@ -49,10 +54,23 @@ describe("Node cloud image processing", () => {
     })
       .png()
       .toBuffer();
-    await expect(
-      objectImageStore(bucket, async () => "1234567890").put(scope, input),
-    ).rejects.toThrow("storage unavailable");
-    expect(put).toHaveBeenCalledTimes(2);
+    const finished = vi.fn();
+    const saved = objectImageStore(bucket, async () => "1234567890")
+      .put(scope, input)
+      .catch(finished);
+    try {
+      await vi.waitFor(() => expect(put).toHaveBeenCalledTimes(3));
+      expect(put.mock.calls.map(([key]) => key.split(".").slice(1).join("."))).toEqual([
+        "png",
+        "thumbnail.webp",
+        "preview.webp",
+      ]);
+      expect(finished).not.toHaveBeenCalled();
+    } finally {
+      finishThumbnail();
+      await saved;
+    }
+    expect(finished).toHaveBeenCalledExactlyOnceWith(new Error("storage unavailable"));
     expect(bucket.delete).not.toHaveBeenCalled();
   });
   it("creates the planner PNG thumbnail on first use and reuses it afterwards", async () => {

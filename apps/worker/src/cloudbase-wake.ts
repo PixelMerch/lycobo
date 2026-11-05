@@ -54,7 +54,7 @@ const responseSchema = z.object({ Response: z.object({ Error: z.unknown().option
  */
 export async function startAsyncDrain(
   env: NodeJS.ProcessEnv,
-  event: { drain: true; resumeAt?: number },
+  event: { drain: true; resumeAt?: number; scope?: "images" | undefined },
   request: typeof fetch = fetch,
   now = Date.now,
 ) {

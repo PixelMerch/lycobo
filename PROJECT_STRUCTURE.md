@@ -3,25 +3,25 @@
 一个 pnpm workspace 仓库，四个独立应用：前端、API、消费者和图片服务，线上运行在 CloudBase，使用共享 PG 和私有云存储。部署见 [CloudBase 部署](docs/cloudbase-deployment.md)。
 代码同仓不表示进程合并或强制一起发布。
 
-| 路径 | 职责 |
-| --- | --- |
-| apps/web/src/app | 路由、共享应用壳（studio-shell.tsx）、providers |
-| apps/web/src/features | 按业务功能组织：首页、身份、账户、素材、生图与图片编辑工作区 |
-| apps/web/src/lib | 浏览器 API 客户端与工具 |
-| apps/web/src/styles | 共享设计 tokens 与全局基础样式 |
-| apps/api/src | Hono 入口、应用工厂、配置与组织隔离的生图 feature API |
-| apps/assets/src | 独立 Node 私有媒体资源服务：短期签名、Referer/CORS、WebP 展示变体缓存、原图下载、旧图 Sharp 变体补生成，经授权后按需生成并缓存真实视频封面，以及原视频内联播放（Range） |
-| apps/worker/src | outbox 消费者、生命周期与任务执行 |
-| packages/contracts | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖 |
-| packages/db | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY |
-| cloudbase/migrations | CloudBase 共享 PG 的源库结构基线与约束恢复；原 Drizzle 历史随数据复制保留 |
-| packages/queue | ID-only 消息契约与通用 outbox 投递；CloudBase 消费者直接认领 PG outbox，通用投递接口用于隔离集成测试 |
-| packages/generation | 服务商契约、Vakv 同步兼容、可配置 OpenAI／FluxPort 同异步适配与密钥加密 |
-| packages/storage | CloudBase PG 私有存储、UID 路径、Node Sharp 变体；S3 适配用于本地开发和迁移，CloudBase 不回退旧存储 |
-| scripts/cloudbase | 静态及 Linux 云函数发布包准备、固定目标配置与敏感文件隔离 |
-| tests/e2e | 浏览器关键路径验收 |
-| docs/design | 规范仍在引用的品牌素材 |
-| .agents/skills | 锁定来源的团队技能快照 |
+| 路径                  | 职责                                                                                                                                                                    |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| apps/web/src/app      | 路由、共享应用壳（studio-shell.tsx）、providers                                                                                                                         |
+| apps/web/src/features | 按业务功能组织：首页、身份、账户、素材、生图与图片编辑工作区                                                                                                            |
+| apps/web/src/lib      | 浏览器 API 客户端与工具                                                                                                                                                 |
+| apps/web/src/styles   | 共享设计 tokens 与全局基础样式                                                                                                                                          |
+| apps/api/src          | Hono 入口、应用工厂、配置与组织隔离的生图 feature API                                                                                                                   |
+| apps/assets/src       | 独立 Node 私有媒体资源服务：短期签名、Referer/CORS、WebP 展示变体缓存、原图下载、旧图 Sharp 变体补生成，经授权后按需生成并缓存真实视频封面，以及原视频内联播放（Range） |
+| apps/worker/src       | outbox 消费者、生命周期与任务执行                                                                                                                                       |
+| packages/contracts    | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖                                                                                                                    |
+| packages/db           | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY                                                                                                   |
+| cloudbase/migrations  | CloudBase 共享 PG 的源库结构基线与约束恢复；原 Drizzle 历史随数据复制保留                                                                                               |
+| packages/queue        | ID-only 消息契约与通用 outbox 投递；CloudBase 消费者直接认领 PG outbox，通用投递接口用于隔离集成测试                                                                    |
+| packages/generation   | 服务商契约、Vakv 同步兼容、可配置 OpenAI／FluxPort 同异步适配与密钥加密                                                                                                 |
+| packages/storage      | CloudBase PG 私有存储、UID 路径、Node Sharp 变体；S3 适配用于本地开发和迁移，CloudBase 不回退旧存储                                                                     |
+| scripts/cloudbase     | 静态及 Linux 云函数发布包准备、固定目标配置与敏感文件隔离                                                                                                               |
+| tests/e2e             | 浏览器关键路径验收                                                                                                                                                      |
+| docs/design           | 规范仍在引用的品牌素材                                                                                                                                                  |
+| .agents/skills        | 锁定来源的团队技能快照                                                                                                                                                  |
 
 生图接口在 `apps/api/src/features/images/routes.ts` 统一注册会话、鉴权中间件和错误处理。任务、素材、规划、事件、模型和钱包由各自的路由模块注册到同一个 Hono 实例，业务服务和持久化仍在各自的层中。
 

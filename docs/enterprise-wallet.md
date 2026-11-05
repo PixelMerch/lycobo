@@ -14,12 +14,12 @@ Header提供积分与会员入口；会员采用全屏HeroUI Modal，包含个�
 
 线上独立模式的映射来自 `packages/generation/src/standalone-models.ts`：
 
-| 展示名称 | 模型 ID | 实际供应商模型 |
-| --- | --- | --- |
-| Image 2 | gpt-image-2 | gpt-image-2 |
-| Image 2.5 | gpt-image-2.5 | gpt-image-2.5-sunburst |
-| Banana 2.1 | nano-banana-2.1 | gemini-3.1-flash-image-preview |
-| Banana Pro | gemini-3-pro-image-preview | gemini-3-pro-image-preview |
+| 展示名称   | 模型 ID                    | 实际供应商模型                 |
+| ---------- | -------------------------- | ------------------------------ |
+| Image 2    | gpt-image-2                | gpt-image-2                    |
+| Image 2.5  | gpt-image-2.5              | gpt-image-2.5-sunburst         |
+| Banana 2.1 | nano-banana-2.1            | gemini-3.1-flash-image-preview |
+| Banana Pro | gemini-3-pro-image-preview | gemini-3-pro-image-preview     |
 
 统一每张 **2 积分**，与分辨率、质量无关。以 contracts 的 imageUnitCredits 为唯一价格来源；旧 IMAGE_CREDITS_PER_IMAGE 配置及 repository 旧价格参数保留读取兼容但不再决定扣费。前台提交公开模型；实际 provider_model 在入队事务中存为快照。历史供应商 ID 继续可读；迁移前排队任务没有快照时沿用原 input.model。生成与编辑共用映射，经现有 Vakv 兼容 images 接口提交。真实渠道尤其 Nano Banana 的参数兼容性仍需供应商实测，测试 fixture 不能当成模型可用证明。
 

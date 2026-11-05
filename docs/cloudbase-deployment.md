@@ -20,10 +20,10 @@ Actions 中完成构建，临时发布目录只复制 `apps/web/dist`。准备�
 
 GitHub 已创建 `cloudbase-production` Environment，仅允许 main 部署。凭据持有人须在该 Environment Secrets 中配置：
 
-| 名称 | 内容 |
-| --- | --- |
-| `TCB_SECRET_ID` | 本项目部署身份的腾讯云 SecretId |
-| `TCB_SECRET_KEY` | 对应 SecretKey |
+| 名称             | 内容                            |
+| ---------------- | ------------------------------- |
+| `TCB_SECRET_ID`  | 本项目部署身份的腾讯云 SecretId |
+| `TCB_SECRET_KEY` | 对应 SecretKey                  |
 
 权限限定到本项目发布所需能力，不使用主账号无限制密钥。数据库密码、企业 JWT 主密钥和图片供应商 Key 不进入前端部署环境。临时 device 登录授权不能复制到 GitHub 长期使用。
 

@@ -2,6 +2,7 @@ import { type ImageGenerationInput, imageOutputDimensions } from "@lycoboai/cont
 import type { ImageRuntimeRepository } from "@lycoboai/db";
 import {
   type CapabilityOverrides,
+  type GenerationTiming,
   generateVakvImage,
   reportGenerationTiming,
   textileItemInput,
@@ -27,6 +28,8 @@ export type ImageProcessorDependencies = {
   deliverReference?: DeliverProviderReference;
   requireMainImageReferenceUrls?: boolean;
   onDeferred?: ((delayMs: number) => void) | undefined;
+  onWebhookAccepted?: ((ready: boolean) => void) | undefined;
+  onTiming?: ((event: GenerationTiming & { itemId: string }) => void) | undefined;
 };
 
 function legacyProvider(input: ImageGenerationInput, deps: ImageProcessorDependencies) {

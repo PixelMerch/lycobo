@@ -21,7 +21,7 @@ const definitions = [
     name: "lycobo-api",
     entry: "apps/api/src/index.ts",
     http: true,
-    dependencies: { sharp: "0.35.5", postgres: "3.4.9", pino: "10.4.0" },
+    dependencies: { sharp: "0.35.5", postgres: "4.0.0", pino: "10.4.0" },
   },
   {
     name: "lycobo-assets",
@@ -33,7 +33,7 @@ const definitions = [
     name: "lycobo-consumer",
     entry: "apps/worker/src/cloudbase-consumer.ts",
     http: false,
-    dependencies: { sharp: "0.35.5", postgres: "3.4.9" },
+    dependencies: { sharp: "0.35.5", postgres: "4.0.0" },
   },
 ];
 await writeFile(

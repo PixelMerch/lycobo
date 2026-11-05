@@ -15,8 +15,13 @@ import { processImageItem } from "./image-processor";
 import { slots } from "./slots";
 import { processVideoIntent } from "./video-processor";
 
-const wakeEvent = z.object({ wake: z.literal(true) });
-const drainEvent = z.object({ drain: z.literal(true), resumeAt: z.number().int().optional() });
+const imageScope = z.literal("images").optional();
+const wakeEvent = z.object({ wake: z.literal(true), scope: imageScope });
+const drainEvent = z.object({
+  drain: z.literal(true),
+  resumeAt: z.number().int().optional(),
+  scope: imageScope,
+});
 
 async function drainVideos(
   videos: ReturnType<typeof openVideoRepository>,
@@ -65,14 +70,14 @@ async function pruneImageData(
 /** Event/timer invocation owns the whole execution; no paid work in API handlers. */
 export async function main(event?: unknown) {
   const policy = readImagePolicy({});
-  const videoConfig = videoConfiguration(process.env);
   // The API wakes this function synchronously. That call only queues an asynchronous drain,
   // so paid work never runs inside an invocation whose caller may disconnect.
-  if (wakeEvent.safeParse(event).success)
+  const wake = wakeEvent.safeParse(event);
+  if (wake.success)
     return {
       enabled: true,
       processed: 0,
-      woken: await startAsyncDrain(process.env, { drain: true }),
+      woken: await startAsyncDrain(process.env, { drain: true, scope: wake.data.scope }),
     };
   if (process.env.DATABASE_URL) throw new Error("DATABASE_BACKEND_CONFLICT");
   const independent = await standaloneModels(process.env);
@@ -93,6 +98,8 @@ export async function main(event?: unknown) {
     put: (...args) => encode(() => objects.put(...args)),
   };
   const drain = drainEvent.safeParse(event);
+  const scope = drain.data?.scope;
+  const videoConfig = scope === "images" ? null : videoConfiguration(process.env);
   // A continuation waits for the deferred work it was queued for (at most a provider poll delay).
   if (drain.success && drain.data.resumeAt)
     await new Promise((resolve) =>
@@ -112,7 +119,7 @@ export async function main(event?: unknown) {
     const { processed, resumeAt } = await drainCloudBaseOutbox({
       repository,
       stopStartingAt,
-      process: (itemId, onDeferred) =>
+      process: (itemId, onDeferred, onWebhookAccepted) =>
         processImageItem(itemId, {
           repository,
           store,
@@ -123,11 +130,16 @@ export async function main(event?: unknown) {
           editsEnabled: policy.editsEnabled,
           deliverReference,
           requireMainImageReferenceUrls: true,
+          onTiming: (timing) => console.info("Image generation stage timing", timing),
           onDeferred,
+          onWebhookAccepted,
         }),
     });
     // Continue work left behind now instead of at the next timer run; the timer stays the fallback.
-    if (resumeAt !== null && !(await startAsyncDrain(process.env, { drain: true, resumeAt })))
+    if (
+      resumeAt !== null &&
+      !(await startAsyncDrain(process.env, { drain: true, resumeAt, scope }))
+    )
       console.error("CONSUMER_CONTINUATION_FAILED");
     return { enabled: true, processed };
   } finally {
