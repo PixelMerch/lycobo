@@ -1,5 +1,5 @@
 import { Link as HeroLink } from "@heroui/react";
-import type { KeyboardEventHandler, ReactNode, Ref } from "react";
+import type { KeyboardEventHandler, ReactNode } from "react";
 import {
   type NavLinkRenderProps,
   Link as RouterLink,
@@ -37,8 +37,10 @@ export function RouteLink({
       {...rest}
       render={(renderProps) => {
         const { children: content, ref, style, ...props } = renderProps;
-        // HeroLink renders an anchor because href is always provided.
-        const linkRef = ref as Ref<HTMLAnchorElement>;
+        const linkRef = (node: HTMLAnchorElement | null) => {
+          if (typeof ref === "function") return ref(node);
+          if (ref) ref.current = node;
+        };
         const navProps = style ? { ...props, style } : props;
         return nav ? (
           <RouterNavLink

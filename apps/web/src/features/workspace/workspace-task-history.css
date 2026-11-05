@@ -1,0 +1,269 @@
+/* The tool row belongs to the workspace, below the account header. */
+.unified-workspace > .composer-panel {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+.unified-workspace > .results-panel {
+  grid-column: 2;
+  grid-row: 2;
+}
+:where(.unified-workspace) > .results-panel:has(> .generation-empty-state) {
+  display: grid;
+  place-items: center;
+  padding-block: 0;
+  min-height: calc(
+    100dvh -
+    var(--header-height) -
+    2 *
+    var(--content-padding) -
+    var(--workspace-toolbar-height) -
+    var(--workspace-view-switch-height) -
+    12px
+  );
+}
+.generation-empty-state.empty-state {
+  min-height: 0;
+  gap: 12px;
+  max-width: 360px;
+  padding: 24px 16px;
+  color: var(--muted);
+}
+.generation-empty-state.empty-state p {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-regular);
+}
+.unified-workspace > .history-rail {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  padding-top: 0;
+}
+.unified-workspace .history-rail-title {
+  display: flex;
+  align-items: center;
+  min-height: var(--workspace-toolbar-height);
+  margin-bottom: 12px;
+}
+/* Each task keeps a full-width history card; previews preserve their proportions,
+ * use at most four columns, and fold after twelve images. */
+.unified-workspace .generation-history {
+  gap: 16px;
+}
+.unified-workspace .generation-job {
+  padding: var(--space-4);
+  border: 0;
+  border-radius: 20px;
+  background: #17171b;
+}
+/* Task identity uses spacing; output parameters share symmetric dividers. */
+.unified-workspace .generation-job .generation-meta {
+  gap: 2px 0;
+}
+.unified-workspace .generation-results > div {
+  width: min(100%, 360px, 60dvh);
+  align-self: start;
+}
+.unified-workspace .generation-job .generation-meta > div {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+.unified-workspace .generation-job .generation-meta > div + div::before {
+  display: none;
+}
+.unified-workspace .generation-job .generation-meta > div:has(~ .generation-meta-ratio) {
+  margin-inline-end: var(--space-3);
+}
+.unified-workspace .generation-job .generation-meta > .generation-meta-ratio ~ div::before {
+  display: block;
+  margin-inline: 6px;
+}
+.unified-workspace .generation-job .model-tag {
+  background: color-mix(in srgb, var(--tool-accent) 15%, transparent);
+  color: var(--tool-soft);
+  font-weight: var(--weight-semibold);
+}
+.unified-workspace .generation-job :is(.model-tag, .prompt-toggle.button) {
+  font-size: 11px;
+  line-height: 16px;
+}
+/* Prompt expansion, copy action and references each occupy their own row. */
+.unified-workspace .history-prompt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--history-row-gap);
+}
+.unified-workspace .history-prompt > .collapsible-text {
+  /* Match the actual first header action, including the optional archive button. */
+  max-width: max(0px, calc(100% - var(--history-actions-width, 76px) - 12px));
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.unified-workspace .history-prompt .prompt-collapsed {
+  -webkit-line-clamp: 3;
+}
+.unified-workspace .generation-job .generation-prompt {
+  color: #c8c8c8;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+}
+.unified-workspace .history-prompt > .generation-output-thumbnails {
+  gap: 8px;
+  margin: 0;
+}
+.unified-workspace .history-prompt .generation-output-thumbnail {
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
+}
+.unified-workspace .generation-results[data-count] {
+  grid-template-columns: repeat(
+      auto-fill,
+      minmax(min(100%, max(180px, calc((100% - 24px) / 4))), 1fr)
+    );
+  justify-content: stretch;
+  gap: 8px;
+}
+.unified-workspace .generation-results[data-count="1"] {
+  grid-template-columns: minmax(0, 360px);
+  justify-content: start;
+}
+.unified-workspace .generation-results .generation-media-open.button,
+.unified-workspace .generation-results[data-count] .generation-placeholder {
+  position: relative;
+  aspect-ratio: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.unified-workspace .generation-results .generation-media-open.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.unified-workspace .generation-results[data-count] img {
+  position: static;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: auto;
+  object-fit: contain;
+  border-radius: 12px;
+}
+.unified-workspace .generation-results .generation-media {
+  width: 100%;
+}
+.unified-workspace .generation-results :is(.generation-media-open.button, .generation-placeholder) {
+  border-radius: 12px;
+}
+.unified-workspace .generation-placeholder:not(.generation-failed) {
+  border: 0;
+  background: #1c1c21;
+}
+.unified-workspace .generation-results:not([data-count="1"]) .generation-failure-message {
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+/* Per-image labels (view names, variation titles) sit on the tile's top-left corner;
+ * a failed tile starts its note below the label. */
+.unified-workspace .generation-results .textile-result-view {
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  top: 6px;
+  left: 6px;
+  translate: none;
+  max-width: calc(100% - 12px);
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #0f0f12cc;
+  color: #f3f1f7;
+}
+.unified-workspace .generation-results > div:has(> .textile-result-view) .generation-failed {
+  padding: 30px 8px 8px;
+}
+.history-batch-progress {
+  margin: 0 0 0 auto;
+  color: #d9d7de;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-variant-numeric: tabular-nums;
+}
+.history-batch-progress > span {
+  white-space: nowrap;
+}
+.history-batch-progress + .history-task-actions {
+  margin-left: 0;
+}
+.history-batch-toggle.button {
+  justify-self: center;
+  gap: 6px;
+  color: #d9d7de;
+  background: #202026;
+}
+.history-batch-toggle.button[data-hovered="true"] {
+  color: #ffffff;
+  background: #2a2a31;
+}
+@media (max-width: 767px) {
+  .history-batch-progress {
+    flex: 1 1 0;
+    min-width: 0;
+    margin-left: 0;
+  }
+  .history-batch-progress + .history-task-actions {
+    margin-left: auto;
+  }
+}
+@media (max-width: 479px) {
+  .unified-workspace .generation-results[data-count]:not([data-count="1"]) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1300px) {
+  .unified-workspace > .composer-panel {
+    grid-row: 1 / span 3;
+  }
+  .workspace-history-heading {
+    grid-row: 1 / span 3;
+  }
+  .unified-workspace > .history-rail {
+    grid-column: 2;
+    grid-row: 3;
+  }
+}
+@media (max-width: 1023px) {
+  .workspace-history-heading {
+    grid-column: 1 / -1;
+    grid-row: 1 / span 4;
+  }
+  .unified-workspace > .composer-panel {
+    grid-row: 2;
+  }
+  .unified-workspace > .results-panel {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .unified-workspace > .history-rail {
+    grid-column: 1;
+    grid-row: 4;
+  }
+}
+@media (max-width: 767px) {
+  .unified-workspace {
+    --workspace-view-switch-height: 56px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .workspace-history-heading {
+    gap: 12px;
+    grid-row: 1 / span 3;
+  }
+  .workspace-mobile-panels {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .unified-workspace > .composer-panel,
+  .unified-workspace > .results-panel {
+    grid-row: 3;
+  }
+}

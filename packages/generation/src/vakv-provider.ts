@@ -68,14 +68,7 @@ export type VakvConfig = {
   allowHttpForTests?: boolean;
   onTiming?: (event: GenerationTiming) => void;
 };
-export async function generateVakvImage(
-  input: ImageGenerationInput,
-  references: Uint8Array[],
-  config: VakvConfig,
-  idempotencyKey: string,
-  request: typeof fetch = fetch,
-  providerModel = imageProviderModel(input),
-): Promise<{ bytes: Buffer; requestId?: string | undefined }> {
+function validatedVakvOrigin(config: VakvConfig) {
   const url = new URL(imageProviderOrigin(config.baseUrl));
   if (url.username || url.password || url.search || url.hash || url.pathname !== "/")
     throw new VakvError("INVALID_PROVIDER_URL", false);
@@ -88,9 +81,12 @@ export async function generateVakvImage(
     )
   )
     throw new VakvError("INVALID_PROVIDER_URL", false);
+  return url;
+}
+
+function vakvBody(input: ImageGenerationInput, references: Uint8Array[], providerModel: string) {
   const dimensions = imageDimensions(input.aspectRatio, input.resolution);
   const size = `${dimensions.width}x${dimensions.height}`;
-  let requestId: string | undefined;
   let body: FormData | string;
   if (references.length) {
     const form = new FormData();
@@ -121,6 +117,63 @@ export async function generateVakvImage(
       response_format: "b64_json",
       quality: input.quality ?? "medium",
     });
+  return body;
+}
+
+async function readVakvBody(response: Response, requestId: string | undefined) {
+  const reader = response.body?.getReader();
+  if (!reader) throw new VakvError("PROVIDER_EMPTY_RESPONSE", true, requestId);
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  try {
+    for (;;) {
+      const part = await reader.read();
+      if (part.done) break;
+      length += part.value.length;
+      if (length > imageLimits.providerResponseBytes)
+        throw new VakvError("PROVIDER_RESPONSE_TOO_LARGE", true, requestId);
+      chunks.push(part.value);
+    }
+  } finally {
+    await reader.cancel().catch(() => undefined);
+  }
+  return { chunks, length };
+}
+
+function decodeVakvBody(
+  chunks: Uint8Array[],
+  requestId: string | undefined,
+  timing: (stage: string, since: number, extra?: { bytes?: number; status?: number }) => void,
+) {
+  const decodeStarted = performance.now();
+  const parsed = responseSchema.safeParse(JSON.parse(Buffer.concat(chunks).toString("utf8")));
+  if (!parsed.success) {
+    timing("provider_invalid_response_shape", decodeStarted);
+    throw new VakvError("PROVIDER_INVALID_IMAGE_RESPONSE", true, requestId);
+  }
+  const encoded = parsed.data.data[0]?.b64_json ?? "";
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(encoded) || encoded.length % 4 !== 0) {
+    timing("provider_invalid_base64", decodeStarted);
+    throw new VakvError("PROVIDER_INVALID_IMAGE_RESPONSE", true, requestId);
+  }
+  const bytes = Buffer.from(encoded, "base64");
+  if (bytes.length > imageLimits.outputBytes)
+    throw new VakvError("PROVIDER_IMAGE_TOO_LARGE", true, requestId);
+  timing("provider_decode", decodeStarted, { bytes: bytes.length });
+  return bytes;
+}
+
+export async function generateVakvImage(
+  input: ImageGenerationInput,
+  references: Uint8Array[],
+  config: VakvConfig,
+  idempotencyKey: string,
+  request: typeof fetch = fetch,
+  providerModel = imageProviderModel(input),
+): Promise<{ bytes: Buffer; requestId?: string | undefined }> {
+  const url = validatedVakvOrigin(config);
+  let requestId: string | undefined;
+  const body = vakvBody(input, references, providerModel);
   const deadline = AbortSignal.timeout(config.timeoutMs);
   const started = performance.now();
   const timing = (stage: string, since: number, extra: { bytes?: number; status?: number } = {}) =>
@@ -156,38 +209,9 @@ export async function generateVakvImage(
       const definite = [400, 401, 403, 404, 413, 415, 422, 429].includes(response.status);
       throw new VakvError(`PROVIDER_HTTP_${response.status}`, !definite, requestId);
     }
-    const reader = response.body?.getReader();
-    if (!reader) throw new VakvError("PROVIDER_EMPTY_RESPONSE", true, requestId);
-    const chunks: Uint8Array[] = [];
-    let length = 0;
-    try {
-      for (;;) {
-        const part = await reader.read();
-        if (part.done) break;
-        length += part.value.length;
-        if (length > imageLimits.providerResponseBytes)
-          throw new VakvError("PROVIDER_RESPONSE_TOO_LARGE", true, requestId);
-        chunks.push(part.value);
-      }
-    } finally {
-      await reader.cancel().catch(() => {});
-    }
+    const { chunks, length } = await readVakvBody(response, requestId);
     timing("provider_body", bodyStarted, { bytes: length });
-    const decodeStarted = performance.now();
-    const parsed = responseSchema.safeParse(JSON.parse(Buffer.concat(chunks).toString("utf8")));
-    if (!parsed.success) {
-      timing("provider_invalid_response_shape", decodeStarted);
-      throw new VakvError("PROVIDER_INVALID_IMAGE_RESPONSE", true, requestId);
-    }
-    const encoded = parsed.data.data[0]?.b64_json ?? "";
-    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(encoded) || encoded.length % 4 !== 0) {
-      timing("provider_invalid_base64", decodeStarted);
-      throw new VakvError("PROVIDER_INVALID_IMAGE_RESPONSE", true, requestId);
-    }
-    const bytes = Buffer.from(encoded, "base64");
-    if (bytes.length > imageLimits.outputBytes)
-      throw new VakvError("PROVIDER_IMAGE_TOO_LARGE", true, requestId);
-    timing("provider_decode", decodeStarted, { bytes: bytes.length });
+    const bytes = decodeVakvBody(chunks, requestId, timing);
     timing("provider_complete", started);
     return { bytes, requestId };
   } catch (error) {

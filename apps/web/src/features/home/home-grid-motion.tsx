@@ -1,6 +1,12 @@
 import type React from "react";
 import { isValidElement, useEffect, useMemo, useRef, useState } from "react";
 
+import {
+  clamp,
+  gridLayout,
+  type Motion,
+  useGridMotionAnimation,
+} from "./use-grid-motion-animation";
 import "./home-grid-motion.css";
 
 export type GridMotionItem = React.ReactNode | { src: string; alt?: string };
@@ -29,18 +35,13 @@ export type GridMotionProps = {
   style?: React.CSSProperties;
 };
 
+type GridStyle = React.CSSProperties & Partial<Record<`--gm-${string}`, string | number>>;
+
 type TileData =
   | { kind: "empty" }
   | { kind: "node"; node: React.ReactNode }
   | { kind: "image"; src: string; alt: string }
   | { kind: "text"; text: string };
-
-type Motion = {
-  offsets: number[];
-  shifts: number[];
-  intro: number;
-  pointer: { x: number; y: number; active: boolean };
-};
 
 const THEMES = {
   dark: {
@@ -58,16 +59,6 @@ const THEMES = {
 const DIRECTIONS: GridMotionDirection[] = ["alternate", "left", "right"];
 const IMAGE =
   /^(https?:\/\/|\/\/|\/|\.\.?\/|data:image\/|blob:)|\.(avif|gif|jpe?g|png|svg|webp)(\?.*)?$/i;
-const INERTIA = [0.42, 0.32, 0.26, 0.22];
-const PACE = [1, 0.86, 1.12, 0.94];
-
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
-const wrap = (value: number, total: number) => ((value % total) + total) % total;
-const smoothstep = (edge0: number, edge1: number, value: number) => {
-  const t = clamp((value - edge0) / (edge1 - edge0), 0, 1);
-  return t * t * (3 - 2 * t);
-};
-
 const feather = (side: string, zone: number) => {
   const stops: string[] = [];
   for (let i = 0; i <= 12; i++) {
@@ -104,6 +95,61 @@ const Tile = ({ tile }: { tile: TileData }) => (
     {tile.kind === "node" && tile.node}
   </div>
 );
+
+function useGridMotionPointer(
+  rootRef: React.RefObject<HTMLDivElement | null>,
+  motionRef: React.RefObject<Motion>,
+  setSize: React.Dispatch<React.SetStateAction<{ width: number; height: number }>>,
+) {
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return undefined;
+    const observer = new ResizeObserver(() => {
+      const width = Math.round(root.clientWidth);
+      const height = Math.round(root.clientHeight);
+      setSize((current) =>
+        current.width === width && current.height === height ? current : { width, height },
+      );
+    });
+    observer.observe(root);
+    const motion = motionRef.current;
+    const onMove = (event: PointerEvent) => {
+      // The decorative layer is inert: only exposed page surfaces may drive it.
+      // A descendant control, card, header or portalled overlay is foreground UI.
+      const target = event.target;
+      if (
+        event.pointerType === "touch" ||
+        !(target instanceof Element) ||
+        !target.matches(".studio-app, .main-content, .commerce-home, .home-start")
+      ) {
+        motion.pointer.active = false;
+        return;
+      }
+      motion.pointer.x = event.clientX;
+      motion.pointer.y = event.clientY;
+      motion.pointer.active = true;
+    };
+    const onUp = (event: PointerEvent) => {
+      if (event.pointerType === "touch") motion.pointer.active = false;
+    };
+    const onLeave = () => {
+      motion.pointer.active = false;
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerdown", onMove, { passive: true });
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("blur", onLeave);
+    document.documentElement.addEventListener("pointerleave", onLeave);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerdown", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("blur", onLeave);
+      document.documentElement.removeEventListener("pointerleave", onLeave);
+    };
+  }, [rootRef, motionRef, setSize]);
+}
 
 // Adapted from React Bits Grid Motion. Source and license: docs/third-party.md.
 const GridMotion = ({
@@ -162,219 +208,17 @@ const GridMotion = ({
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
 
-  const layout = useMemo(() => {
-    const { width, height } = size;
-    if (!width || !height) return null;
-    const turn = (settings.angle * Math.PI) / 180;
-    const lean = (settings.tilt * Math.PI) / 180;
-    const cos = Math.abs(Math.cos(turn));
-    const sin = Math.abs(Math.sin(turn));
-    const planeHeight = ((width * sin + height * cos) / Math.max(0.3, Math.cos(lean))) * 1.12;
-    const planeWidth = (width * cos + height * sin) * (1 + Math.sin(lean) * 0.9) * 1.12;
-    const tileHeight = Math.max(
-      16,
-      (planeHeight - settings.gap * (settings.rows - 1)) / settings.rows,
-    );
-    const tileWidth = tileHeight * settings.aspect;
-    const step = tileWidth + settings.gap;
-    const perRow = Math.ceil(planeWidth / step) + 1;
-    const period = perRow * step;
-    return {
-      planeWidth,
-      planeHeight,
-      tileWidth,
-      tileHeight,
-      step,
-      perRow,
-      period,
-      copies: Math.ceil(planeWidth / period) + 2,
-      top: (planeHeight - settings.rows * tileHeight - (settings.rows - 1) * settings.gap) / 2,
-      perspective: Math.max(width, height) * 1.5,
-    };
-  }, [size, settings.angle, settings.tilt, settings.rows, settings.gap, settings.aspect]);
+  const layout = useMemo(
+    () =>
+      gridLayout(size, settings.angle, settings.tilt, settings.rows, settings.gap, settings.aspect),
+    [size, settings.angle, settings.tilt, settings.rows, settings.gap, settings.aspect],
+  );
 
   const tiles = useMemo(() => items.map(toTile), [items]);
 
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return undefined;
-    const observer = new ResizeObserver(() => {
-      const width = Math.round(root.clientWidth);
-      const height = Math.round(root.clientHeight);
-      setSize((current) =>
-        current.width === width && current.height === height ? current : { width, height },
-      );
-    });
-    observer.observe(root);
-    const motion = motionRef.current;
-    const onMove = (event: PointerEvent) => {
-      // The decorative layer is inert: only exposed page surfaces may drive it.
-      // A descendant control, card, header or portalled overlay is foreground UI.
-      const target = event.target;
-      if (
-        event.pointerType === "touch" ||
-        !(target instanceof Element) ||
-        !target.matches(".studio-app, .main-content, .commerce-home, .home-start")
-      ) {
-        motion.pointer.active = false;
-        return;
-      }
-      motion.pointer.x = event.clientX;
-      motion.pointer.y = event.clientY;
-      motion.pointer.active = true;
-    };
-    const onUp = (event: PointerEvent) => {
-      if (event.pointerType === "touch") motion.pointer.active = false;
-    };
-    const onLeave = () => {
-      motion.pointer.active = false;
-    };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    window.addEventListener("pointerdown", onMove, { passive: true });
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("blur", onLeave);
-    document.documentElement.addEventListener("pointerleave", onLeave);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerdown", onMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("blur", onLeave);
-      document.documentElement.removeEventListener("pointerleave", onLeave);
-    };
-  }, []);
+  useGridMotionPointer(rootRef, motionRef, setSize);
 
-  useEffect(() => {
-    const root = rootRef.current;
-    const plane = planeRef.current;
-    if (!root || !plane || !layout) return undefined;
-
-    const reduce = reduced;
-    const motion = motionRef.current;
-    const rowEls = Array.from(plane.children).filter(
-      (element): element is HTMLElement => element instanceof HTMLElement,
-    );
-    const tileEls = rowEls.map((row) =>
-      Array.from(row.children).filter(
-        (element): element is HTMLElement => element instanceof HTMLElement,
-      ),
-    );
-    const spots = tileEls.map((list) => new Float32Array(list.length));
-    const written = tileEls.map((list) => new Float32Array(list.length));
-    let raf = 0;
-    let last = performance.now();
-    let visible = !document.hidden;
-    let alive = true;
-    if (reduce) motion.intro = 1;
-    if (motion.intro >= 1) plane.style.opacity = "1";
-
-    const frame = (now: number) => {
-      raf = 0;
-      if (!alive) return;
-      const s = settingsRef.current;
-      const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
-      last = now;
-
-      if (motion.intro < 1) {
-        motion.intro = Math.min(1, motion.intro + dt / 0.9);
-        plane.style.opacity = String(1 - (1 - motion.intro) ** 3);
-      }
-
-      const rect = root.getBoundingClientRect();
-      const scale = rect.width ? root.clientWidth / rect.width : 1;
-      const halfWidth = root.clientWidth / 2 || 1;
-      const halfHeight = root.clientHeight / 2 || 1;
-      const px = (motion.pointer.x - rect.left) * scale - halfWidth;
-      const py = (motion.pointer.y - rect.top) * scale - halfHeight;
-      const inside =
-        motion.pointer.active && Math.abs(px) <= halfWidth && Math.abs(py) <= halfHeight;
-      const lean = (s.tilt * Math.PI) / 180;
-      const turn = (s.angle * Math.PI) / 180;
-      const depth = layout.perspective;
-      let flatY = py;
-      let flatX = px;
-      if (lean > 0.0001) {
-        flatY = (py * depth) / (depth * Math.cos(lean) + py * Math.sin(lean));
-        flatX = (px * (depth - flatY * Math.sin(lean))) / depth;
-      }
-      const planeX = flatX * Math.cos(turn) + flatY * Math.sin(turn);
-      const planeY = -flatX * Math.sin(turn) + flatY * Math.cos(turn);
-      const nudge = motion.pointer.active ? clamp(px / halfWidth, -1, 1) : 0;
-      const reach = (0.6 + 2.2 * s.spotlight) * Math.max(layout.tileWidth, layout.tileHeight);
-      const settle = 1 - Math.exp(-dt / 0.22);
-
-      rowEls.forEach((row, r) => {
-        const drift = s.direction === "left" ? -1 : s.direction === "right" ? 1 : r % 2 ? 1 : -1;
-        let offset = motion.offsets[r] ?? r * layout.step * 0.37;
-        let shift = motion.shifts[r] ?? 0;
-        if (!reduce) offset += s.speed * drift * (PACE[r % PACE.length] ?? 1) * dt;
-        const target = reduce ? 0 : s.parallax * layout.tileWidth * 1.2 * nudge * (r % 2 ? -1 : 1);
-        shift += (target - shift) * (1 - Math.exp(-dt / (INERTIA[r % INERTIA.length] ?? 0.22)));
-        motion.offsets[r] = offset;
-        motion.shifts[r] = shift;
-        const x = -layout.period + wrap(offset + shift, layout.period);
-        row.style.transform = `translate3d(${x.toFixed(2)}px, 0, 0)`;
-
-        const rowY =
-          layout.top +
-          r * (layout.tileHeight + s.gap) +
-          layout.tileHeight / 2 -
-          layout.planeHeight / 2;
-        const left = x - layout.planeWidth / 2 + layout.tileWidth / 2;
-        const list = tileEls[r];
-        const values = spots[r];
-        const marks = written[r];
-        if (!list || !values || !marks) return;
-        for (let k = 0; k < list.length; k++) {
-          let wanted = 0;
-          if (inside && s.spotlight > 0) {
-            const distance = Math.hypot(left + k * layout.step - planeX, rowY - planeY) / reach;
-            wanted = 1 - smoothstep(0.25, 1, distance);
-          }
-          const previous = values[k] ?? 0;
-          const value = previous + (wanted - previous) * settle;
-          const mark = marks[k] ?? 0;
-          values[k] = value;
-          const tile = list[k];
-          if (
-            tile &&
-            (Math.abs(value - mark) > 0.004 || (wanted === 0 && value < 0.004 && mark !== 0))
-          ) {
-            const nextMark = value < 0.004 ? 0 : value;
-            marks[k] = nextMark;
-            tile.style.setProperty("--spot", nextMark.toFixed(3));
-          }
-        }
-      });
-
-      if (visible && !document.hidden && !reduce) raf = requestAnimationFrame(frame);
-    };
-
-    const refresh = () => {
-      root.dataset.playing = String(visible && !document.hidden && !reduce);
-      if (visible && !document.hidden && !raf) {
-        last = performance.now();
-        raf = requestAnimationFrame(frame);
-      } else if (document.hidden) {
-        cancelAnimationFrame(raf);
-        raf = 0;
-      }
-    };
-    document.addEventListener("visibilitychange", refresh);
-    const visibility = new IntersectionObserver((entries) => {
-      visible = entries.some((entry) => entry.isIntersecting);
-      refresh();
-    });
-    visibility.observe(root);
-    raf = requestAnimationFrame(frame);
-
-    return () => {
-      alive = false;
-      cancelAnimationFrame(raf);
-      visibility.disconnect();
-      document.removeEventListener("visibilitychange", refresh);
-    };
-  }, [layout, reduced]);
+  useGridMotionAnimation(rootRef, planeRef, motionRef, settingsRef, layout, reduced);
 
   const rowTiles = layout
     ? Array.from({ length: settings.rows }, (_, r) => ({
@@ -391,45 +235,40 @@ const GridMotion = ({
       ? `${feather("to right", settings.fade * 34)}, linear-gradient(to bottom, #000 0%, #000 ${100 - settings.fade * 40}%, transparent 100%)`
       : undefined;
 
+  const rootStyle: GridStyle = {
+    "--gm-tile": tileColor ?? palette.tile,
+    "--gm-text": textColor ?? palette.text,
+    "--gm-border": palette.border,
+    "--gm-radius": `${Math.max(0, radius)}px`,
+    "--gm-dim": settings.dim,
+    perspective: layout && settings.tilt > 0 ? `${layout.perspective}px` : undefined,
+    maskImage: mask,
+    WebkitMaskImage: mask,
+    maskComposite: mask ? "intersect" : undefined,
+    WebkitMaskComposite: mask ? "source-in" : undefined,
+    ...style,
+  };
+  const planeStyle: GridStyle | undefined = layout
+    ? {
+        width: layout.planeWidth,
+        height: layout.planeHeight,
+        transform: `translate(-50%, -50%) rotateX(${settings.tilt}deg) rotateZ(${settings.angle}deg)`,
+        "--gm-gap": `${settings.gap}px`,
+        "--gm-tile-w": `${layout.tileWidth}px`,
+        "--gm-tile-h": `${layout.tileHeight}px`,
+        "--gm-font": `${clamp(layout.tileHeight * 0.12, 12, 32)}px`,
+      }
+    : undefined;
   return (
     <div
       ref={rootRef}
       aria-hidden="true"
       inert
       className={`grid-motion${grayscale ? " grid-motion--gray" : ""}${className ? ` ${className}` : ""}`}
-      style={
-        {
-          "--gm-tile": tileColor ?? palette.tile,
-          "--gm-text": textColor ?? palette.text,
-          "--gm-border": palette.border,
-          "--gm-radius": `${Math.max(0, radius)}px`,
-          "--gm-dim": settings.dim,
-          perspective: layout && settings.tilt > 0 ? `${layout.perspective}px` : undefined,
-          maskImage: mask,
-          WebkitMaskImage: mask,
-          maskComposite: mask ? "intersect" : undefined,
-          WebkitMaskComposite: mask ? "source-in" : undefined,
-          ...style,
-        } as React.CSSProperties
-      }
+      style={rootStyle}
     >
       {layout && (
-        <div
-          ref={planeRef}
-          className="grid-motion__plane"
-          aria-hidden="true"
-          style={
-            {
-              width: layout.planeWidth,
-              height: layout.planeHeight,
-              transform: `translate(-50%, -50%) rotateX(${settings.tilt}deg) rotateZ(${settings.angle}deg)`,
-              "--gm-gap": `${settings.gap}px`,
-              "--gm-tile-w": `${layout.tileWidth}px`,
-              "--gm-tile-h": `${layout.tileHeight}px`,
-              "--gm-font": `${clamp(layout.tileHeight * 0.12, 12, 32)}px`,
-            } as React.CSSProperties
-          }
-        >
+        <div ref={planeRef} className="grid-motion__plane" aria-hidden="true" style={planeStyle}>
           {rowTiles.map((row) => (
             <div key={row.id} className="grid-motion__row" style={{ top: row.top }}>
               {row.tiles.map((item) => (

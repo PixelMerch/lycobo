@@ -20,7 +20,6 @@ import { useVideoDraft, videoPromptLimit, videoRatios } from "./video-state";
 import "./video.css";
 export function VideoPage() {
   const draft = useVideoDraft();
-  const model = useVideoModel();
   const submission = useSubmitVideo();
   const production = useStoryboardWorkspace();
   const references = [draft.firstFrame, draft.lastFrame, ...draft.extraReferences].filter(
@@ -40,36 +39,6 @@ export function VideoPage() {
     references.length > 0 &&
     references.length <= storyboardOriginalImageLimit;
   const referenceLimit = Math.max(production.maxOriginalImages, references.length);
-  const busy = submission.isPending || production.busy;
-  const valid = hasPromptDescription(draft.prompt);
-  const productionInProgress = production.busy || production.needsResume;
-  // The button reflects the form's own submission; a run it has handed off only blocks the next.
-  const submitting = production.busy ? !production.handedOff : submission.isPending;
-  const previousVideo = submitting
-    ? undefined
-    : production.busy
-      ? "上一条视频制作中"
-      : production.needsResume
-        ? "请先处理上一条视频"
-        : undefined;
-  const referenceBlocked =
-    model.data?.referenceImagesEnabled === false && !submission.hasPending && references.length > 0;
-  const canSubmit = automatic
-    ? !production.blocked &&
-      production.configured &&
-      valid &&
-      references.length <= production.maxOriginalImages
-    : !submission.blockedByPending && (valid || submission.hasPending);
-  const storyboardUnavailable = automatic && production.unavailable;
-  useErrorToast(
-    submission.error?.message ??
-      model.error?.message ??
-      (!productionInProgress && referenceBlocked
-        ? videoReferenceUnavailableMessage
-        : !productionInProgress && storyboardUnavailable
-          ? "视频制作暂不可用，请稍后重试。"
-          : undefined),
-  );
   return (
     <section className="composer-panel video-composer" aria-label="视频创作参数">
       <div className="composer-scroll">
@@ -126,61 +95,152 @@ export function VideoPage() {
           </>
         )}
       </div>
-      <div className="generate-area">
-        {automatic &&
-          !productionInProgress &&
-          !busy &&
-          !referenceBlocked &&
-          !storyboardUnavailable && (
-            <p className="video-reference-hint">
-              预计 {automaticVideoCost} 积分（画面 {automaticVideoCost - videoUnitCredits} + 视频{" "}
-              {videoUnitCredits}），竖屏 9:16 · 10 秒。
-            </p>
-          )}
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          className={`primary-action generation-submit${submitting ? " generation-pending" : ""}`}
-          data-submitting={submitting || undefined}
-          isDisabled={
-            !model.data?.enabled || productionInProgress || busy || referenceBlocked || !canSubmit
-          }
-          isPending={submitting}
-          onPress={() => {
-            revealNewestHistory();
-            if (automatic) {
-              production.start({ description: draft.prompt, references });
-              return;
-            }
-            submission.submit({
-              input: { prompt: draft.prompt, seconds: draft.seconds, aspectRatio: draft.ratio },
-              references,
-            });
-          }}
-        >
-          {submitting && (
-            <Spinner
-              size="md"
-              color="current"
-              role="status"
-              aria-label={production.busy ? "正在制作视频" : "正在提交视频任务"}
-            />
-          )}
-          {previousVideo ??
-            (production.busy
-              ? "正在制作"
-              : !busy && submission.hasPending
-                ? "确认上次提交"
-                : "立即生成")}
-          {!previousVideo && (
-            <span className="generate-credit-cost">
-              <CreditCoin size="default" />
-              {automatic ? automaticVideoCost : videoUnitCredits}
-            </span>
-          )}
-        </Button>
-      </div>
+      <VideoGeneration
+        draft={draft}
+        references={references}
+        automatic={automatic}
+        production={production}
+        submission={submission}
+      />
     </section>
+  );
+}
+
+type Production = ReturnType<typeof useStoryboardWorkspace>;
+type VideoDraft = ReturnType<typeof useVideoDraft.getState>;
+
+function previousVideoLabel(submitting: boolean, production: Production) {
+  if (submitting) return undefined;
+  if (production.busy) return "上一条视频制作中";
+  return production.needsResume ? "请先处理上一条视频" : undefined;
+}
+
+function videoAvailabilityMessage(referenceBlocked: boolean, storyboardUnavailable: boolean) {
+  if (referenceBlocked) return videoReferenceUnavailableMessage;
+  return storyboardUnavailable ? "视频制作暂不可用，请稍后重试。" : undefined;
+}
+
+function VideoGeneration({
+  draft,
+  references,
+  automatic,
+  production,
+  submission,
+}: {
+  draft: VideoDraft;
+  references: NonNullable<VideoDraft["firstFrame"]>[];
+  automatic: boolean;
+  production: Production;
+  submission: ReturnType<typeof useSubmitVideo>;
+}) {
+  const { submitting, previousVideo, submitLabel, showEstimate, disabled } =
+    useVideoGenerationState({
+      prompt: draft.prompt,
+      referenceCount: references.length,
+      automatic,
+      production,
+      submission,
+    });
+  return (
+    <div className="generate-area">
+      {showEstimate && (
+        <p className="video-reference-hint">
+          预计 {automaticVideoCost} 积分（画面 {automaticVideoCost - videoUnitCredits} + 视频{" "}
+          {videoUnitCredits}），竖屏 9:16 · 10 秒。
+        </p>
+      )}
+      <Button
+        variant="primary"
+        size="lg"
+        fullWidth
+        className={`primary-action generation-submit${submitting ? " generation-pending" : ""}`}
+        data-submitting={submitting || undefined}
+        isDisabled={disabled}
+        isPending={submitting}
+        onPress={() => {
+          revealNewestHistory();
+          if (automatic) {
+            production.start({ description: draft.prompt, references });
+            return;
+          }
+          submission.submit({
+            input: { prompt: draft.prompt, seconds: draft.seconds, aspectRatio: draft.ratio },
+            references,
+          });
+        }}
+      >
+        {submitting && (
+          <Spinner
+            size="md"
+            color="current"
+            role="status"
+            aria-label={production.busy ? "正在制作视频" : "正在提交视频任务"}
+          />
+        )}
+        {previousVideo ?? submitLabel}
+        {!previousVideo && (
+          <span className="generate-credit-cost">
+            <CreditCoin size="default" />
+            {automatic ? automaticVideoCost : videoUnitCredits}
+          </span>
+        )}
+      </Button>
+    </div>
+  );
+}
+
+function useVideoGenerationState({
+  prompt,
+  referenceCount,
+  automatic,
+  production,
+  submission,
+}: {
+  prompt: string;
+  referenceCount: number;
+  automatic: boolean;
+  production: Production;
+  submission: ReturnType<typeof useSubmitVideo>;
+}) {
+  const model = useVideoModel();
+  const busy = submission.isPending || production.busy;
+  const valid = hasPromptDescription(prompt);
+  const productionInProgress = production.busy || production.needsResume;
+  // The button reflects the form's own submission; a run it has handed off only blocks the next.
+  const submitting = production.busy ? !production.handedOff : submission.isPending;
+  const previousVideo = previousVideoLabel(submitting, production);
+  const referenceBlocked =
+    model.data?.referenceImagesEnabled === false && !submission.hasPending && referenceCount > 0;
+  const canSubmit = canSubmitVideo(automatic, production, submission, valid, referenceCount);
+  const storyboardUnavailable = automatic && production.unavailable;
+  const unavailable = productionInProgress
+    ? undefined
+    : videoAvailabilityMessage(referenceBlocked, storyboardUnavailable);
+  useErrorToast(submission.error?.message ?? model.error?.message ?? unavailable);
+  const idleLabel = !busy && submission.hasPending ? "确认上次提交" : "立即生成";
+  const submitLabel = production.busy ? "正在制作" : idleLabel;
+  const idle = !productionInProgress && !busy && !referenceBlocked;
+  return {
+    submitting,
+    previousVideo,
+    submitLabel,
+    showEstimate: automatic && idle && !storyboardUnavailable,
+    disabled: !model.data?.enabled || !idle || !canSubmit,
+  };
+}
+
+function canSubmitVideo(
+  automatic: boolean,
+  production: Production,
+  submission: ReturnType<typeof useSubmitVideo>,
+  valid: boolean,
+  referenceCount: number,
+) {
+  if (!automatic) return !submission.blockedByPending && (valid || submission.hasPending);
+  return (
+    !production.blocked &&
+    production.configured &&
+    valid &&
+    referenceCount <= production.maxOriginalImages
   );
 }

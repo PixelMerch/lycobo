@@ -48,6 +48,13 @@
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
 }
+.reference-prompt-chip img {
+  width: 18px;
+  height: 18px;
+  object-fit: cover;
+  border-radius: 4px;
+  pointer-events: none;
+}
 .reference-mention-popover .list-box-item img {
   width: 32px;
   height: 32px;
@@ -123,13 +130,6 @@
   user-select: all;
   transform: translateY(-2px);
 }
-.reference-prompt-chip img {
-  width: 18px;
-  height: 18px;
-  object-fit: cover;
-  border-radius: 4px;
-  pointer-events: none;
-}
 
 .prompt-editor {
   display: flex;
@@ -141,6 +141,10 @@
   min-height: 100px;
   resize: none;
   overflow: hidden;
+}
+.prompt-editor[data-optimizing] :is(textarea, .reference-rich-editor.textarea) {
+  box-shadow: inset 0 0 0 1px #a8ff0059;
+  caret-color: transparent;
 }
 .prompt-field .prompt-editor[data-count] :is(textarea, .reference-rich-editor.textarea),
 .home-composer .home-prompt .prompt-editor[data-optimizable] .textarea {
@@ -352,10 +356,6 @@
 .prompt-optimize-undo.button:is(:hover, [data-hovered="true"]) {
   color: var(--foreground);
   background: transparent;
-}
-.prompt-editor[data-optimizing] :is(textarea, .reference-rich-editor.textarea) {
-  box-shadow: inset 0 0 0 1px #a8ff0059;
-  caret-color: transparent;
 }
 .prompt-count {
   color: #808080;

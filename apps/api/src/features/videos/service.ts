@@ -37,8 +37,9 @@ export function videoService(deps: {
         origin: deps.origin,
         credentialHash: videoCredentialHash(deps.key),
       });
-      // The durable outbox survives a failed wake; timer and subsequent reads can wake it again.
-      await deps.wake?.().catch(() => {});
+      await deps.wake?.().catch(() => {
+        // A failed wake leaves the durable outbox available for a later drain.
+      });
       return accepted;
     },
   };

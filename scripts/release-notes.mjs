@@ -89,13 +89,30 @@ export async function loadGitHubAuthors(repository, sha, token, fetcher = fetch)
   }
   return authors;
 }
+const person = (login, name) =>
+  login && /^[\w-]+(?:\[bot\])?$/.test(login)
+    ? `[@${login}](https://github.com/${encodeURIComponent(login)})`
+    : escapeMarkdown(name);
+
+function commitNote(commit, url, authors, contributor) {
+  const lines = [];
+  const committer = person(authors.get(commit.sha)?.committer, commit.committer);
+  lines.push(
+    `- ${escapeMarkdown(commit.subject)} ([${commit.sha.slice(0, 7)}](${url}/commit/${commit.sha})) · 作者 ${contributor(commit)}${committer !== contributor(commit) ? ` · 提交人 ${committer}` : ""}`,
+  );
+  if (commit.files.length)
+    lines.push(
+      `  - 涉及 ${commit.files.length} 个文件：${commit.files
+        .slice(0, 6)
+        .map((file) => `\`${file.replaceAll("`", "′").replace(/[\r\n]/g, " ")}\``)
+        .join("、")}${commit.files.length > 6 ? "；其余见提交链接及 changes.json" : ""}`,
+    );
+  return lines;
+}
+
 export function renderNotes(data, repository, authors = new Map(), limit = Infinity) {
   if (!/^[\w.-]+\/[\w.-]+$/.test(repository)) throw new Error("Invalid repository");
   const url = `https://github.com/${repository}`;
-  const person = (login, name) =>
-    login && /^[\w-]+(?:\[bot\])?$/.test(login)
-      ? `[@${login}](https://github.com/${encodeURIComponent(login)})`
-      : escapeMarkdown(name);
   const contributor = (commit) => person(authors.get(commit.sha)?.author, commit.author);
   const contributors = [...new Set(data.commits.map(contributor))];
   const visible = data.commits.slice(0, limit);
@@ -117,19 +134,7 @@ export function renderNotes(data, repository, authors = new Map(), limit = Infin
     const items = visible.filter((commit) => commit.type === type);
     if (!items.length) continue;
     lines.push(`## ${title}`, "");
-    for (const commit of items) {
-      const committer = person(authors.get(commit.sha)?.committer, commit.committer);
-      lines.push(
-        `- ${escapeMarkdown(commit.subject)} ([${commit.sha.slice(0, 7)}](${url}/commit/${commit.sha})) · 作者 ${contributor(commit)}${committer !== contributor(commit) ? ` · 提交人 ${committer}` : ""}`,
-      );
-      if (commit.files.length)
-        lines.push(
-          `  - 涉及 ${commit.files.length} 个文件：${commit.files
-            .slice(0, 6)
-            .map((file) => `\`${file.replaceAll("`", "′").replace(/[\r\n]/g, " ")}\``)
-            .join("、")}${commit.files.length > 6 ? "；其余见提交链接及 changes.json" : ""}`,
-        );
-    }
+    for (const commit of items) lines.push(...commitNote(commit, url, authors, contributor));
     lines.push("");
   }
   lines.push(

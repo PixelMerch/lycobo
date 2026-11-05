@@ -1,0 +1,233 @@
+/* Keep the complete image visible in both square thumbnail rails. */
+.history-thumbnail > .history-thumbnail-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--surface);
+}
+.history-thumbnail img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 6px;
+}
+.generation-meta {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 6px var(--space-3);
+  margin: 0;
+  min-width: 0;
+}
+.generation-meta > div {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.generation-meta dt {
+  color: var(--muted);
+}
+.generation-meta dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.history-thumbnail {
+  flex: none;
+  display: flex;
+  aspect-ratio: 1;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  padding: 3px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+  white-space: normal;
+}
+.history-thumbnail:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.history-thumbnail > .history-failure-label {
+  display: grid;
+  place-items: center;
+  gap: 3px;
+  color: #fda4af;
+}
+/* Placeholder copy for a task without a thumbnail picture; the picture frame
+ * has its own geometry rule above. */
+.history-thumbnail > span:not(.history-thumbnail-frame) {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background: var(--surface);
+  border-radius: 6px;
+  font-size: var(--text-xs);
+  padding: 4px;
+  line-height: var(--leading-xs);
+}
+/* The rail turns into a row at 1300px, so its thumbnails shrink at the same breakpoint. */
+@media (max-width: 1300px) {
+  .history-thumbnail {
+    width: 72px;
+  }
+  .history-rail {
+    max-height: none;
+  }
+}
+@media (max-width: 767px) {
+  .generation-meta {
+    justify-content: flex-start;
+    flex-basis: 100%;
+  }
+}
+
+.generation-meta dt {
+  display: flex;
+  align-items: center;
+}
+.history-task-actions {
+  display: flex;
+  flex: none;
+  gap: 4px;
+  align-items: center;
+  margin-left: auto;
+  position: relative;
+}
+.history-icon-action {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 6px;
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+}
+.history-icon-action:hover,
+.history-icon-action[data-hovered="true"],
+.history-icon-action[data-focus-visible="true"] {
+  background: var(--surface-secondary);
+}
+.history-confirm-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.history-prompt {
+  display: grid;
+  gap: var(--history-row-gap);
+  min-width: 0;
+}
+.history-prompt + .generation-results {
+  margin-top: 12px;
+}
+.prompt-collapsed {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.collapsible-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--history-row-gap, 12px);
+  min-width: 0;
+}
+.prompt-toggle.button {
+  display: flex;
+  height: 22px;
+  min-height: 22px;
+  width: max-content;
+  padding: 0;
+  background: transparent;
+}
+.prompt-toggle.button > svg {
+  transition: transform 160ms ease;
+}
+.prompt-toggle.button[aria-expanded="true"] > svg {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .prompt-toggle.button > svg {
+    transition: none;
+  }
+}
+.copy-prompt {
+  display: flex;
+  width: max-content;
+  height: 24px;
+  min-height: 24px;
+  margin-top: 0;
+  padding: 3px 6px;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: var(--weight-regular);
+  line-height: 16px;
+}
+
+.generation-output-thumbnails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.history-prompt > .generation-output-thumbnails {
+  margin-top: 0;
+}
+.generation-output-thumbnail {
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
+  padding: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: transparent;
+  box-shadow: none;
+}
+.generation-output-thumbnail img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 180ms ease;
+}
+.generation-output-thumbnail:hover img,
+.generation-output-thumbnail[data-hovered="true"] img,
+.generation-output-thumbnail[data-focus-visible="true"] img {
+  transform: scale(1.1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .generation-output-thumbnail img {
+    transition: none;
+  }
+  .generation-output-thumbnail:hover img,
+  .generation-output-thumbnail[data-hovered="true"] img,
+  .generation-output-thumbnail[data-focus-visible="true"] img {
+    transform: none;
+  }
+}
+.history-thumbnail:hover,
+.history-thumbnail[data-hovered="true"] {
+  background: transparent;
+  box-shadow: none;
+}
+.history-thumbnail[aria-current="true"] {
+  box-shadow: inset 0 0 0 2px var(--focus);
+}

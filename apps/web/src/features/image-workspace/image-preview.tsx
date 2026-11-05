@@ -1,5 +1,6 @@
 import { Modal } from "@heroui/react";
 import { motion } from "motion/react";
+import type { RefObject } from "react";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { ConfirmDialog } from "../../components/confirm-dialog";
@@ -79,44 +80,7 @@ export function ImagePreviewDialog({
   );
   const needsExitConfirm = repair && editingDraft > 0;
   const select = useCallback((next: number | ((current: number) => number)) => setIndex(next), []);
-  useEffect(() => {
-    const dialog = surface.current?.closest('[role="dialog"]');
-    if (!dialog) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      const direction = {
-        ArrowLeft: -1,
-        ArrowUp: -1,
-        ArrowRight: 1,
-        ArrowDown: 1,
-      }[event.key];
-      const target = event.target;
-      if (
-        (repair &&
-          !(event.target instanceof HTMLElement && event.target.closest(".image-preview-rail"))) ||
-        !direction ||
-        event.altKey ||
-        event.ctrlKey ||
-        event.metaKey ||
-        !(target instanceof HTMLElement) ||
-        target.closest('[role="dialog"]') !== dialog ||
-        target.closest(
-          'input, textarea, select, .preview-canvas-toolbar, [contenteditable="true"], [role="slider"], [role="textbox"], [role="combobox"], [role="spinbutton"]',
-        )
-      )
-        return;
-      event.preventDefault();
-      event.stopPropagation();
-      const next = (index + direction + images.length) % images.length;
-      select(next);
-      if (target.closest(".image-preview-rail")) {
-        dialog
-          .querySelectorAll<HTMLButtonElement>(".image-preview-thumb")
-          [next]?.focus({ preventScroll: true });
-      }
-    };
-    document.addEventListener("keydown", onKeyDown, true);
-    return () => document.removeEventListener("keydown", onKeyDown, true);
-  }, [index, images.length, repair, select]);
+  usePreviewRailKeyboard(surface, index, images.length, repair, select);
   if (!active) return null;
   const discardAndClose = () => {
     setExitConfirm(false);
@@ -196,4 +160,51 @@ export function ImagePreviewDialog({
       </Modal.Backdrop>
     </Modal>
   );
+}
+
+function usePreviewRailKeyboard(
+  surface: RefObject<HTMLDivElement | null>,
+  index: number,
+  count: number,
+  repair: boolean,
+  select: (index: number) => void,
+) {
+  useEffect(() => {
+    const dialog = surface.current?.closest('[role="dialog"]');
+    if (!dialog) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const direction = {
+        ArrowLeft: -1,
+        ArrowUp: -1,
+        ArrowRight: 1,
+        ArrowDown: 1,
+      }[event.key];
+      const target = event.target;
+      if (
+        (repair &&
+          !(event.target instanceof HTMLElement && event.target.closest(".image-preview-rail"))) ||
+        !direction ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        !(target instanceof HTMLElement) ||
+        target.closest('[role="dialog"]') !== dialog ||
+        target.closest(
+          'input, textarea, select, .preview-canvas-toolbar, [contenteditable="true"], [role="slider"], [role="textbox"], [role="combobox"], [role="spinbutton"]',
+        )
+      )
+        return;
+      event.preventDefault();
+      event.stopPropagation();
+      const next = (index + direction + count) % count;
+      select(next);
+      if (target.closest(".image-preview-rail")) {
+        dialog
+          .querySelectorAll<HTMLButtonElement>(".image-preview-thumb")
+          [next]?.focus({ preventScroll: true });
+      }
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, [index, count, repair, select, surface]);
 }

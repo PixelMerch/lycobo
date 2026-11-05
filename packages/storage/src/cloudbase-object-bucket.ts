@@ -188,3 +188,15 @@ export function cloudbaseProviderReferenceSigner(
     return sign(key, 3600);
   };
 }
+
+/** Private, exact-object reference for the image provider, including JPEG derivatives. */
+export function cloudbaseImageReferenceSigner(
+  env: CloudBaseStorageBindings,
+  request: typeof fetch = fetch,
+) {
+  const sign = cloudbaseObjectSigner(env, request, 3600, false);
+  return async (key: string) => {
+    if (!/\.(png|jpg)$/.test(key)) throw new Error("INVALID_REFERENCE_IMAGE");
+    return new URL(await sign(key, 3600));
+  };
+}

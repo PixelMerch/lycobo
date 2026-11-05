@@ -20,17 +20,20 @@
   <a href="#快速开始">快速开始</a> · <a href="#开发检查">开发检查</a> · <a href="docs/README.md">项目文档</a>
 </p>
 
-上传商品参考图、描述画面，生成结果自动进入历史记录和素材库。支持文生图、参考图编辑和多区域局部修改，面向家纺等电商商品图片的日常创作。
+上传商品参考图、描述画面，生成结果自动进入历史记录和素材库。面向电商公司运营，支持文生图、参考图编辑、批量套图、多区域局部修改和商品视频，当前重点是家纺。
 
 ## 主要能力
 
-- **图片创作**：模型与输出参数选择、参考图上传、跨页面草稿保留。
-- **历史与素材**：任务定位、重新编辑、失败重试、图片预览与下载。
+- **主图制作**：模型与输出参数选择、参考图上传、提示词优化、跨页面草稿保留。
+- **家纺裂变**：一张主图按所选视角生成多视角与细节图。
+- **套图计划**：用文字需求生成可编辑方案，确认后每条方案出一张图。
+- **视频创作**：用商品图和场景描述自动成片。
+- **历史与素材**：任务定位、重新编辑、失败重试、预览、下载和收藏。
 - **局部修改**：画布框选、逐区描述，保存最近提交的编辑并跳转查看修改版。
 - **企业账户**：账号登录、组织共享钱包与收支记录。
-- **后台任务**：PostgreSQL 持久化、outbox 与独立 Worker 执行。
+- **后台任务**：PostgreSQL 持久化、outbox 与独立消费者执行。
 
-模型能力和真实调用验收范围见 [生图 API](docs/image-generation-api.md)。微信扫码、短信登录、在线支付、对象存储及视频发布等仍待接入，具体边界见对应文档。
+模型能力和真实调用验收范围见 [生图 API](docs/image-generation-api.md)。微信扫码、短信登录、在线支付和 TK 发布仍待接入，具体边界见 [PRD](PRD.md)。
 
 ## 快速开始
 
@@ -49,14 +52,14 @@ docker compose up --build
 
 访问 <http://localhost:8081/>。Compose 提供本地 PostgreSQL、私有 S3 与 Node API／独立消费者／图片服务／Vite。首次运行需显式迁移本地数据库，启动器过滤线上基础设施凭据；真实生图按模型开关启用并消耗供应商额度。图片通过 `http://127.0.0.1:8791` 签名读取。账号、积分和图片需本地准备；详见 [本地开发](docs/development.md)。
 
-**CloudBase 自动发布**：main 的 CI 通过后发布前端至 CloudBase 静态应用，使用 GitHub `cloudbase-production` Environment。Cloudflare 发布配置已删除，主站私有图片改用 CloudBase PG 云存储。凭据、后端迁移边界和实际状态见 [CloudBase 部署](docs/cloudbase-deployment.md)，数据副本见 [数据库迁移](docs/cloudbase-database-migration.md)。
+**CloudBase 自动发布**：main 的 CI 通过后部署云函数和前端，使用 GitHub `cloudbase-production` Environment。凭据和实际状态见 [CloudBase 部署](docs/cloudbase-deployment.md)，迁移结果见 [CloudBase 迁移记录](docs/cloudbase-migration.md)。
 
 ## 开发检查
 
 | 命令 | 用途 |
 | --- | --- |
 | `pnpm check` | lint、边界、类型、单元测试与生产构建 |
-| `pnpm test:e2e` | 完整浏览器回归 |
+| `pnpm test:e2e` | 完整浏览器回归，按需运行 |
 | `pnpm test:integration` | 隔离数据库与队列集成检查，需显式本地配置 |
 | `pnpm build` | 构建各工作区包 |
 
@@ -68,5 +71,5 @@ React / Vite 前端、Hono API 和独立 Worker 位于 `apps/`；契约、数据
 
 - [产品范围](PRD.md) · [设计规范](DESIGN.md) · [技术栈](docs/tech-stack.md)
 - [企业鉴权](docs/enterprise-auth.md) · [企业钱包](docs/enterprise-wallet.md)
-- [局部修改](docs/local-image-repair.md) · [数据库备份](docs/database-backup.md) · [Supabase 接入](docs/supabase-postgres.md) · [CloudBase 部署](docs/cloudbase-deployment.md)
+- [局部修改](docs/local-image-repair.md) · [数据库备份](docs/database-backup.md) · [CloudBase 部署](docs/cloudbase-deployment.md)
 - [发布说明](docs/releasing.md) · [安全](SECURITY.md) · [完整文档索引](docs/README.md)

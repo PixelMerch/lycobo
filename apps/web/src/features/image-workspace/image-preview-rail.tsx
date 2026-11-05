@@ -17,6 +17,16 @@ const railCopy = {
   },
 };
 
+function revealRailThumb(element: HTMLElement, thumb: HTMLElement) {
+  // Layout offsets remain accurate during the dialog's opening scale animation.
+  if (thumb.offsetTop < element.scrollTop) element.scrollTop = thumb.offsetTop;
+  else if (thumb.offsetTop + thumb.offsetHeight > element.scrollTop + element.clientHeight)
+    element.scrollTop = thumb.offsetTop + thumb.offsetHeight - element.clientHeight;
+  if (thumb.offsetLeft < element.scrollLeft) element.scrollLeft = thumb.offsetLeft;
+  else if (thumb.offsetLeft + thumb.offsetWidth > element.scrollLeft + element.clientWidth)
+    element.scrollLeft = thumb.offsetLeft + thumb.offsetWidth - element.clientWidth;
+}
+
 export function ImagePreviewRail({
   images,
   kind = "image",
@@ -45,13 +55,7 @@ export function ImagePreviewRail({
     const reveal = () => {
       const thumb = element.querySelector<HTMLElement>('[aria-current="true"]');
       if (!thumb || !element.clientHeight) return;
-      // Layout offsets remain accurate during the dialog's opening scale animation.
-      if (thumb.offsetTop < element.scrollTop) element.scrollTop = thumb.offsetTop;
-      else if (thumb.offsetTop + thumb.offsetHeight > element.scrollTop + element.clientHeight)
-        element.scrollTop = thumb.offsetTop + thumb.offsetHeight - element.clientHeight;
-      if (thumb.offsetLeft < element.scrollLeft) element.scrollLeft = thumb.offsetLeft;
-      else if (thumb.offsetLeft + thumb.offsetWidth > element.scrollLeft + element.clientWidth)
-        element.scrollLeft = thumb.offsetLeft + thumb.offsetWidth - element.clientWidth;
+      revealRailThumb(element, thumb);
     };
     reveal();
     const resize = new ResizeObserver(reveal);

@@ -7,6 +7,23 @@ const LIFETIME = 1000;
 type Ripple = { x: number; y: number; started: number };
 
 /** Decorative only: pointer events stay with the image and its editing layer. */
+function dotOpacity(ripples: Ripple[], now: number, x: number, y: number) {
+  let alpha = 0;
+  for (const ripple of ripples) {
+    const age = (now - ripple.started) / LIFETIME;
+    const distance = Math.hypot(x - ripple.x, y - ripple.y);
+    const ring = Math.max(0, 1 - Math.abs(distance - age * 240) / 48);
+    const center = Math.max(0, 1 - distance / 95) * (1 - age);
+    alpha = Math.max(alpha, Math.max(ring, center) * (1 - age) * 0.95);
+  }
+  return alpha;
+}
+
+function canTrackPointer(event: PointerEvent, reduced: boolean, finePointer: boolean) {
+  if (reduced || !finePointer || document.hidden || event.pointerType !== "mouse") return false;
+  return !(event.target instanceof Element && event.target.closest(".preview-canvas-dock"));
+}
+
 export function PreviewDotGrid({ stage }: { stage: RefObject<HTMLElement | null> }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -35,14 +52,7 @@ export function PreviewDotGrid({ stage }: { stage: RefObject<HTMLElement | null>
       ripples = ripples.filter((ripple) => now - ripple.started < LIFETIME);
       for (let x = OFFSET; x < width; x += SPACING) {
         for (let y = OFFSET; y < height; y += SPACING) {
-          let alpha = 0;
-          for (const ripple of ripples) {
-            const age = (now - ripple.started) / LIFETIME;
-            const distance = Math.hypot(x - ripple.x, y - ripple.y);
-            const ring = Math.max(0, 1 - Math.abs(distance - age * 240) / 48);
-            const center = Math.max(0, 1 - distance / 95) * (1 - age);
-            alpha = Math.max(alpha, Math.max(ring, center) * (1 - age) * 0.95);
-          }
+          const alpha = dotOpacity(ripples, now, x, y);
           if (alpha < 0.01) continue;
           context.fillStyle = `rgba(255,255,255,${alpha})`;
           context.fillRect(x - 0.5, y - 0.5, 1, 1);
@@ -60,14 +70,7 @@ export function PreviewDotGrid({ stage }: { stage: RefObject<HTMLElement | null>
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
     };
     const move = (event: PointerEvent) => {
-      if (
-        reduced.matches ||
-        !finePointer.matches ||
-        document.hidden ||
-        event.pointerType !== "mouse"
-      )
-        return;
-      if (event.target instanceof Element && event.target.closest(".preview-canvas-dock")) return;
+      if (!canTrackPointer(event, reduced.matches, finePointer.matches)) return;
       const bounds = area.getBoundingClientRect();
       const next = {
         x: event.clientX - bounds.left,

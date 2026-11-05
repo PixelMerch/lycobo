@@ -45,7 +45,7 @@ CSS 仍负责主题与尺寸，见 [DESIGN.md](../DESIGN.md)。
 
 | 组件 | 用途 |
 | --- | --- |
-| `Modal` | 确认、说明、工具选择层；`Modal.Backdrop/Container/Dialog/Header/Heading/Body/Footer/CloseTrigger` |
+| `Modal` | 确认、说明；`Modal.Backdrop/Container/Dialog/Header/Heading/Body/Footer/CloseTrigger` |
 | `Drawer` | 移动导航及经确认的侧滑面板 |
 | `Popover` | 小设置与说明面板，官方 Dialog 区域 |
 | `Tooltip` | 辅助提示，不能承载唯一必要说明 |

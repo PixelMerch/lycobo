@@ -14,6 +14,7 @@ export function modelCapabilities(
     candidates?.find((entry) => entry.id === model) ??
     candidates?.find((entry) => entry.id === publicImageModel(model));
   if (!match) return undefined;
+  const defaultMaxReferences = tool === "textile-set" ? 6 : 5;
   return {
     enabledResolutions: match.enabledResolutions,
     editsEnabled:
@@ -23,9 +24,7 @@ export function modelCapabilities(
     maxReferences:
       "maxReferences" in match && typeof match.maxReferences === "number"
         ? match.maxReferences
-        : tool === "textile-set"
-          ? 6
-          : 5,
+        : defaultMaxReferences,
   };
 }
 

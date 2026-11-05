@@ -163,12 +163,9 @@ export function HomeRatioPicker({
       const box = target.getBoundingClientRect();
       const viewport = track.getBoundingClientRect();
       const inset = Number.parseFloat(getComputedStyle(track).paddingLeft) || 0;
-      const delta =
-        box.left < viewport.left + inset
-          ? box.left - viewport.left - inset
-          : box.right > viewport.right - inset
-            ? box.right - viewport.right + inset
-            : 0;
+      const leftOverflow = box.left - viewport.left - inset;
+      const rightOverflow = Math.max(0, box.right - viewport.right + inset);
+      const delta = leftOverflow < 0 ? leftOverflow : rightOverflow;
       if (delta) track.scrollTo({ left: Math.max(0, track.scrollLeft + delta), behavior: "auto" });
     },
     [ratios],

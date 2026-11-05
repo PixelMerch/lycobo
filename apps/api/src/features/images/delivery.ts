@@ -65,3 +65,5 @@ export function imageDeliveries(
     },
   };
 }
+
+export type ImageDeliveries = ReturnType<typeof imageDeliveries>;

@@ -1,0 +1,427 @@
+/* Keep official primitives compact while matching the approved studio layout. */
+.quick-card {
+  width: 100%;
+}
+.tabs__list {
+  min-width: 0;
+  width: max-content;
+  align-self: flex-start;
+}
+.tabs__tab {
+  width: auto;
+  flex: none;
+}
+.tabs__indicator {
+  top: auto;
+  bottom: 0;
+  height: 2px;
+  box-shadow: none;
+}
+.tabs__panel {
+  margin-top: 0;
+}
+.info-dialog,
+.case-dialog {
+  padding: 0;
+}
+.model-select {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+}
+.model-select .select__value {
+  font-size: inherit;
+  line-height: inherit;
+  font-weight: inherit;
+}
+.model-options {
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-regular);
+}
+@media (max-width: 767px) {
+  .model-select {
+    min-height: 44px;
+  }
+}
+
+:is(.sidebar, .mobile-nav):has(.nav-row[aria-expanded="true"]) .nav-row[aria-current="page"] {
+  background: transparent;
+  color: var(--shell-nav-foreground);
+}
+
+/* Workspace layers: clear groups without restoring panel borders. */
+.composer-panel .reference-picker,
+.composer-panel .prompt-field,
+.composer-panel .parameter-group {
+  padding: var(--space-3);
+  border-radius: 8px;
+  background: var(--composer-group);
+}
+.composer-panel .parameter-group legend {
+  float: left;
+  width: 100%;
+}
+.composer-panel .parameter-options {
+  clear: both;
+  background: var(--surface);
+}
+.composer-panel .parameter-options :is(.button, .toggle-button)[data-selected="true"] {
+  background: var(--composer-selected);
+}
+/* HeroUI ToggleButtonGroup keeps the approved compact track geometry. */
+.parameter-options.toggle-button-group {
+  width: 100%;
+}
+.ratio-options .toggle-button-group {
+  display: flex;
+  flex: 5 1 0;
+  gap: 2px;
+  min-width: 0;
+}
+.ratio-options .toggle-button {
+  flex: 1;
+}
+.ratio-options .ratio-more {
+  flex: 1;
+}
+.composer-panel .model-select {
+  background: var(--surface-tertiary);
+}
+.composer-panel .generate-area {
+  padding-top: 0;
+}
+/* Workspace parameter palette mirrors the home model settings. */
+.composer-panel .parameter-group {
+  background: #272727;
+}
+.composer-panel .parameter-options {
+  background: #343434;
+  border-radius: 20px;
+}
+.composer-panel .parameter-options.ratio-options {
+  background: #343434;
+}
+.composer-panel .parameter-options :is(.button, .toggle-button) {
+  color: #aaa;
+  border-radius: 18px;
+}
+.composer-panel .parameter-options :is(.button, .toggle-button)[data-selected="true"] {
+  color: #eee;
+  background: #505050;
+}
+/* Unified workspace groups and model menu. */
+.composer-panel .reference-picker,
+.composer-panel .prompt-field,
+.composer-panel .model-field,
+.composer-panel .parameter-group {
+  background: #272727;
+}
+.composer-panel .model-select {
+  color: #eee;
+  background: #343434;
+  border-radius: 18px;
+}
+.model-menu {
+  background: #272727;
+  border-radius: 12px;
+}
+.model-menu .model-options {
+  color: #ddd;
+}
+.model-menu .model-options[aria-selected="true"] {
+  color: #eee;
+  background: #505050;
+}
+@media (hover: hover) {
+  .model-menu .model-options:hover,
+  .model-menu .model-options[data-hovered="true"] {
+    background: var(--control-hover-fill);
+  }
+  .model-menu .model-options[aria-selected="true"]:hover {
+    background: #505050;
+  }
+}
+.model-menu .model-options:focus-visible,
+.model-menu .model-options[data-focus-visible="true"] {
+  background: var(--control-hover-fill);
+}
+
+.main-content:has(> .workspace) {
+  --content-padding: var(--workspace-padding);
+  padding: var(--content-padding);
+}
+
+.parameter-options.ratio-options :is(.button, .toggle-button) {
+  flex-direction: column;
+  gap: 2px;
+  height: 64px;
+  min-height: 64px;
+  padding: 6px 2px;
+  line-height: var(--leading-xs);
+}
+.ratio-preview {
+  display: block;
+  width: 32px;
+  height: 32px;
+  flex: none;
+}
+
+.composer-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  min-width: 0;
+}
+.ratio-heading,
+.ratio-popover-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ratio-heading h2 {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
+}
+.ratio-heading .ratio-expand {
+  min-height: 28px;
+  height: 28px;
+  min-width: 0;
+  padding: 0 2px 0 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+.ratio-preview {
+  max-width: 100%;
+}
+.ratio-more-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ratio-popover {
+  width: min(368px, calc(100vw - 24px));
+  padding: 0;
+  background: var(--overlay);
+  border: 0;
+  border-radius: 12px;
+}
+.ratio-popover .ratio-popover-dialog {
+  position: relative;
+  padding: 12px;
+}
+.ratio-extra-options {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(44px, 1fr));
+  gap: 6px;
+  padding: 0;
+  background: transparent;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.ratio-popover .ratio-extra-options :is(.button, .toggle-button) {
+  width: 100%;
+  min-width: 44px;
+}
+.ratio-popover .parameter-options :is(.button, .toggle-button)[data-selected="true"] {
+  background: var(--surface-tertiary);
+}
+@media (min-width: 768px) {
+  .composer-panel {
+    /* The composer fills the viewport; parameters scroll inside it and the
+       generate action stays pinned to the bottom edge of the panel. */
+    height: calc(100dvh - var(--header-height) - 2 * var(--content-padding));
+    max-height: calc(100dvh - var(--header-height) - 2 * var(--content-padding));
+    min-height: 0;
+    overflow: hidden;
+  }
+  .composer-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-tertiary) transparent;
+    scrollbar-gutter: stable;
+  }
+  .composer-scroll > * {
+    flex-shrink: 0;
+  }
+  .composer-panel .generate-area {
+    flex: none;
+    margin-top: 12px;
+  }
+}
+
+.ratio-popover-heading .popover__heading {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
+}
+.composer-panel .ratio-options {
+  background: transparent;
+}
+.parameter-options.ratio-options :is(.button, .toggle-button) {
+  background: var(--surface-secondary);
+}
+.composer-panel .parameter-options.ratio-options :is(.button, .toggle-button) {
+  background: transparent;
+}
+.parameter-options.ratio-options .button[data-selected="true"] {
+  color: var(--link);
+  background: var(--surface-tertiary);
+}
+.composer-panel
+  .parameter-options.ratio-options
+  :is(.button, .toggle-button)[data-selected="true"] {
+  color: #eee;
+  background: #505050;
+}
+.ratio-popover {
+  box-shadow: var(--overlay-shadow);
+}
+
+.composer-panel .model-field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  background: var(--composer-group);
+  border-radius: 8px;
+}
+.model-field-label {
+  flex: none;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
+}
+.model-field .model-select {
+  min-width: 0;
+  width: 160px;
+  max-width: calc(100% - 40px);
+  margin-left: auto;
+}
+
+.ratio-popover-heading {
+  align-items: flex-start;
+  min-height: 28px;
+  padding-right: 36px;
+}
+.ratio-popover .ratio-close {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #ffffff;
+}
+@media (hover: hover) {
+  .parameter-options.ratio-options :is(.button, .toggle-button):hover {
+    background: color-mix(in srgb, var(--surface-tertiary) 92%, var(--foreground));
+    color: var(--foreground);
+  }
+}
+.ratio-popover .ratio-close:active,
+.ratio-popover .ratio-close[data-pressed="true"] {
+  background: transparent;
+}
+
+/* Compact model menu: text rows and a restrained corner radius. */
+.composer-panel .model-field {
+  padding-block: 4px;
+}
+.composer-panel .model-field .model-select {
+  width: max-content;
+  flex: 0 1 auto;
+  gap: 8px;
+  height: 36px;
+  min-height: 36px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--field-background);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-regular);
+}
+.model-menu {
+  width: max-content;
+  min-width: var(--trigger-width);
+  max-width: calc(100vw - 24px);
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: var(--field-background);
+  box-shadow: var(--overlay-shadow);
+  overflow: hidden;
+}
+.model-menu .list-box {
+  padding: 0;
+  gap: 0;
+}
+.model-menu .list-box > * + * {
+  margin-top: 0;
+}
+.model-menu .model-options {
+  height: 40px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-regular);
+  transform: none;
+}
+.model-menu .model-options[aria-selected="true"] {
+  background: var(--surface-tertiary);
+}
+@media (hover: hover) {
+  .model-menu .model-options:hover,
+  .model-menu .model-options[data-hovered="true"] {
+    background: var(--surface-secondary);
+  }
+  .model-menu .model-options[aria-selected="true"]:hover {
+    background: var(--surface-tertiary);
+  }
+}
+@media (max-width: 767px) {
+  .composer-panel .model-field .model-select,
+  .model-menu .model-options {
+    height: 44px;
+    min-height: 44px;
+  }
+}
+
+.model-menu .model-options:focus-visible,
+.model-menu .model-options[data-focus-visible="true"] {
+  outline: none;
+  background: color-mix(in srgb, var(--surface-tertiary) 92%, var(--foreground));
+}
+
+.model-field .model-select .select__value {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+.model-field .model-select .select__indicator {
+  position: static;
+  inset: auto;
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  flex: none;
+}

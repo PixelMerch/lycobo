@@ -22,6 +22,18 @@ export class VariationError extends Error {
     super(code);
   }
 }
+async function verifyPlanReferences(
+  tx: postgres.TransactionSql,
+  scope: ImageScope,
+  referenceIds: string[],
+) {
+  if (referenceIds.length) {
+    const assets =
+      await tx`select id from media_assets where organization_id=${scope.organizationId} and id in ${tx(referenceIds)} and (expires_at is null or expires_at>now()) and cleanup_started_at is null`;
+    if (assets.length !== referenceIds.length) throw new VariationError("REFERENCE_NOT_FOUND");
+  }
+}
+
 export function variationRepository(sql: postgres.Sql) {
   const view = (row: postgres.Row) => {
     const input = z
@@ -33,6 +45,10 @@ export function variationRepository(sql: postgres.Sql) {
       ...input,
       items: row.items,
     });
+  };
+  const replayVariation = (prior: postgres.Row, hash: string) => {
+    if (prior.input_hash !== hash) throw new VariationError("IDEMPOTENCY_CONFLICT");
+    return { plan: view(prior), replayed: true };
   };
   return {
     async config() {
@@ -57,19 +73,12 @@ export function variationRepository(sql: postgres.Sql) {
         await tx`update variation_plans set status='uncertain',error_code='PLANNER_OUTCOME_UNKNOWN' where organization_id=${scope.organizationId} and user_id=${scope.userId} and status='running' and created_at<now()-interval '120 seconds'`;
         const [prior] =
           await tx`select * from variation_plans where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
-        if (prior) {
-          if (prior.input_hash !== hash) throw new VariationError("IDEMPOTENCY_CONFLICT");
-          return { plan: view(prior), replayed: true };
-        }
+        if (prior) return replayVariation(prior, hash);
+
         const [recent] =
           await tx`select count(*)::integer as count from variation_plans where organization_id=${scope.organizationId} and user_id=${scope.userId} and created_at>now()-interval '1 minute'`;
         if (Number(recent?.count) >= 3) throw new VariationError("RATE_LIMITED");
-        if (input.referenceAssetIds.length) {
-          const assets =
-            await tx`select id from media_assets where organization_id=${scope.organizationId} and id in ${tx(input.referenceAssetIds)} and (expires_at is null or expires_at>now()) and cleanup_started_at is null`;
-          if (assets.length !== input.referenceAssetIds.length)
-            throw new VariationError("REFERENCE_NOT_FOUND");
-        }
+        await verifyPlanReferences(tx, scope, input.referenceAssetIds);
         const [row] =
           await tx`insert into variation_plans(organization_id,user_id,idempotency_key,input_hash,input) values(${scope.organizationId},${scope.userId},${key},${hash},${tx.json(input)}) returning *`;
         if (!row) throw new Error("PLAN_PERSIST_FAILED");
@@ -84,7 +93,9 @@ export function variationRepository(sql: postgres.Sql) {
     },
     async finish(scope: ImageScope, id: string, items: unknown, errorCode?: string) {
       const checked = z.array(variationPlanItemSchema).max(variationPlanLimit).parse(items);
-      await sql`update variation_plans set status=${errorCode ? (errorCode === "PLANNER_OUTCOME_UNKNOWN" ? "uncertain" : "failed") : "ready"},items=${sql.json(checked)},error_code=${errorCode ?? null}
+      const failureStatus = errorCode === "PLANNER_OUTCOME_UNKNOWN" ? "uncertain" : "failed";
+      const status = errorCode ? failureStatus : "ready";
+      await sql`update variation_plans set status=${status},items=${sql.json(checked)},error_code=${errorCode ?? null}
         where id=${id} and organization_id=${scope.organizationId} and user_id=${scope.userId} and status='running'`;
     },
   };
