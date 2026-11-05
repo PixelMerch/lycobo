@@ -18,6 +18,7 @@
 | 主题                 | 文档                                                                     |
 | -------------------- | ------------------------------------------------------------------------ |
 | 账号与权限           | [企业鉴权](enterprise-auth.md)                                           |
+| 账号设置待开发任务   | [账号设置功能任务书](account-settings-tasks.md)                           |
 | 积分与会员           | [共享钱包](enterprise-wallet.md) · [会员定价](membership-pricing.md)     |
 | 图片生成与供应商配置 | [生图 API](image-generation-api.md) · [模型服务](model-services.md)      |
 | 图片回调             | [图片 Webhook](image-webhooks.md)                                        |
