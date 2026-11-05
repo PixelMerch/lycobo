@@ -149,28 +149,6 @@
   line-height: var(--leading-base);
   font-weight: var(--weight-semibold);
 }
-.asset-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.asset-row {
-  display: flex;
-  gap: 12px;
-}
-.asset-masonry {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-2);
-  align-items: start;
-}
-.asset-column {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
 /* ---------- tiles ---------- */
 .asset-tile {
   position: relative;
@@ -409,12 +387,15 @@
   }
 }
 
-/* Both asset entry points share the same responsive density grid. */
+/* Both entries use the same masonry; DOM order stays newest-first. */
 .asset-density-grid {
   display: grid;
   align-items: start;
-  grid-template-columns: repeat(var(--asset-columns, 8), minmax(0, 1fr));
-  gap: 12px;
+  --asset-layout-columns: var(--asset-columns, 8);
+  grid-template-columns: repeat(var(--asset-layout-columns), minmax(0, 1fr));
+  column-gap: 12px;
+  grid-auto-rows: 1px;
+  row-gap: 0;
 }
 .asset-density-grid .asset-tile-open img {
   object-fit: contain;
@@ -436,13 +417,13 @@
 }
 @media (max-width: 1023px) {
   .asset-density-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    --asset-layout-columns: 4;
   }
 }
 @media (max-width: 719px) {
   .asset-density-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    --asset-layout-columns: 2;
+    column-gap: 8px;
   }
 }
 .asset-filters + .asset-density-grid {

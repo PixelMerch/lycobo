@@ -66,7 +66,7 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 ## 工作台浏览器回归
 
-`tests/e2e/image-preview.spec.ts` 验证全屏预览、缩放拖动、移动布局和图片切换后的说明同步；`library-dialog.spec.ts` 验证我的素材默认当前工具、页签与功能／模型筛选在分页前请求、重置、上传页签禁用筛选、服务端收藏与失败回滚、带筛选进入素材库、按天等高行与手机两列，以及弹层焦点恢复。接口均由浏览器 fixture 拦截，不调用模型。
+`tests/e2e/image-preview.spec.ts` 验证全屏预览、缩放拖动、移动布局和图片切换后的说明同步；`library-dialog.spec.ts` 验证我的素材默认当前工具、页签与功能／模型筛选在分页前请求、重置、上传页签禁用筛选、服务端收藏与失败回滚、带筛选进入素材库、按天分组与手机两列瀑布流，以及弹层焦点恢复。接口均由浏览器 fixture 拦截，不调用模型。
 
 素材库筛选与收藏的数据库约束由两处隔离检查覆盖：worker `test:images` 中的 `verify-asset-library.ts` 在真实 PostgreSQL 上验证工具与模型筛选（含服务商变体归并）、参考图不命中工具筛选、收藏幂等与成员隔离、跨组织与过期素材拒绝，以及每位成员1000项上限；api `test:cloudbase-images` 对 CloudBase RPC 应用新迁移后重复验证同样的筛选、收藏与上限。
 
@@ -93,7 +93,7 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 `tests/e2e/textile-generation.spec.ts` 使用接口fixture验证选中10视角后提交10张与六张有序参考、历史视角标记、部分失败与实时更新、刷新和重新编辑、普通创作历史隔离，以及丢失响应后刷新仍复用同一幂等键。全量浏览器测试可由远程CI手动运行。
 
-结果布局回归 `generation-result-layout.spec.ts` 验证单图全宽原比例、多图中的失败／待确认项保持同列正方形且不跨行。供应商适配器单测分别覆盖响应头等待与响应体等待超时，确认`PROVIDER_TIMEOUT`仍为未知收费结果并且只调用一次，不自动重试。默认总超时600000ms，租约在其上增加60000ms，Redis桥接请求保留610000ms上限。
+结果布局回归 `generation-result-layout.spec.ts` 验证单图与多图按原比例完整展示，失败／待确认项保留任务请求比例和原有顺序。供应商适配器单测分别覆盖响应头等待与响应体等待超时，确认`PROVIDER_TIMEOUT`仍为未知收费结果并且只调用一次，不自动重试。默认总超时600000ms，租约在其上增加60000ms，Redis桥接请求保留610000ms上限。
 
 单图卡片重试由`card-image-retry.spec.ts`验证hover、键盘和触屏入口、单张金额确认、取消不提交、仅传itemId及丢失响应后刷新同键重放。隔离verify-textile-generation覆盖其他子项仍排队时仅替换选中未决项、另一个失败项不变、单次退款／扣费、同键换图拒绝与旧执行完成隔离。命名迁移回归先单独验证0015的数据保全，再应用后续扩展迁移，避免把新增可空列误判为旧数据变化。
 

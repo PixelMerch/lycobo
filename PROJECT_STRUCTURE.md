@@ -58,7 +58,7 @@ apps/web/src/
 - `features/auth/login-prompt.tsx` 共享登录请求与首页创作交互门禁；Header及首页操作共用应用壳的一份登录弹窗。`app/studio-shell.tsx` 在登录状态确认前不挂载非首页业务内容，登录成功保留目标地址、取消返回首页，生图事件仅在登录后挂载。
 - `app/studio-shell.tsx` 组合导航、登录、账户和生图事件；路由页面留在各 feature。首页、工作台和素材页继续由路由懒加载，`image-workspace/preview-workspace.tsx` 及 Konva 继续按预览需要加载。
 - `generation/generation-client.ts` 维护现有生图、历史和素材 API 查询与缓存，被历史、素材库和编辑工作区直接引用；目录维护不改变 query key 或增加请求层。
-- `assets/asset-library-client.ts` 负责素材库查询（生成／上传／收藏与功能、类型、模型筛选，素材库页面写入地址栏）和服务端收藏：一个有上限的收藏 ID 查询供所有星标共用，切换乐观更新、失败回滚；`asset-browser.tsx` 组合页签、`asset-filters.tsx`、`asset-tile.tsx` 与现有图片预览，`asset-layout.ts` 为按天分组、等高行与手机两列瀑布流的纯函数。`assets-page.tsx` 与 `library-dialog.tsx`（我的素材，功能默认当前工具）只组合该浏览组件。
+- `assets/asset-library-client.ts` 负责素材库查询（生成／上传／收藏与功能、类型、模型筛选，素材库页面写入地址栏）和服务端收藏：一个有上限的收藏 ID 查询供所有星标共用，切换乐观更新、失败回滚；`asset-browser.tsx` 组合页签、`asset-filters.tsx`、`asset-tile.tsx` 与现有图片预览，`asset-masonry.tsx` 订阅网格尺寸并组合原比例瀑布流，`asset-layout.ts` 提供按天分组与保持输入顺序的最短列定位纯函数。`assets-page.tsx` 与 `library-dialog.tsx`（我的素材，功能默认当前工具）只组合该浏览组件。
 - `generation/studio-state.ts` 保留原有客户端草稿、跨页面交互状态及样例定义，现有引用直接指向它；目录归类不把样例转换成持久服务，也不改变状态生命周期。
 - `image-workspace/local-edit` 负责编辑交互，调用生图请求；预览壳组合画布与编辑面板。底层请求不反向依赖页面。类型依赖继续使用 `import type`，不为目录入口建立运行时循环。
 - `styles/fullscreen-dialog.css` 是图片详情与素材库共用的全屏动效；各功能 CSS 随对应组件导入。目录维护保持 DOM、class、样式内容、文案及交互逻辑不变。

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dayHeading, groupByDay, justifyRows, masonryColumns } from "./asset-layout";
+import { aspectRatio, dayHeading, groupByDay, masonryPositions } from "./asset-layout";
 
 const sized = (width: number, height: number, id = `${width}x${height}`) => ({
   id,
@@ -8,42 +8,22 @@ const sized = (width: number, height: number, id = `${width}x${height}`) => ({
 });
 
 describe("asset library layout", () => {
-  it("fills every full row exactly and keeps the last row at the target height", () => {
-    const items = [
-      sized(1000, 1000),
-      sized(750, 1000),
-      sized(2000, 1000),
-      sized(1000, 1000),
-      sized(1333, 1000),
-      sized(800, 1000),
-      sized(750, 1000),
-    ];
-    const rows = justifyRows(items, 1278, 220, 12);
-    for (const row of rows.slice(0, -1)) {
-      const used = row.items.reduce((sum, entry) => sum + entry.width, 0);
-      expect(used + 12 * (row.items.length - 1)).toBeCloseTo(1278, 6);
-    }
-    expect(rows.at(-1)?.height).toBe(220);
-    // Order never changes, so the newest picture stays first.
-    expect(rows.flatMap((row) => row.items.map((entry) => entry.item))).toEqual(items);
+  it("packs mixed proportions without overlaps or changing input order", () => {
+    const items = [sized(1, 2, "tall"), sized(2, 1, "wide"), sized(1, 1, "square")];
+    const positions = masonryPositions(items, 412, 2, 12);
+    expect(positions.map((item) => item.column)).toEqual([1, 2, 2]);
+    expect(positions[2]?.row).toBeGreaterThan((positions[1]?.row ?? 0) + (positions[1]?.span ?? 0));
+    expect(positions[0]?.height).toBe(400);
+    expect(items.map((item) => item.id)).toEqual(["tall", "wide", "square"]);
+    const appended = masonryPositions([...items, sized(3, 4)], 412, 2, 12);
+    expect(appended.slice(0, items.length)).toEqual(positions);
   });
 
-  it("keeps each picture's own ratio and clamps extreme strips", () => {
-    const [row] = justifyRows([sized(4000, 1000), sized(1000, 1000)], 900, 200, 10);
-    const [strip, square] = row?.items ?? [];
-    expect(strip && square && strip.width / square.width).toBeCloseTo(3, 6);
-    expect(justifyRows([sized(10, 10)], 0, 200, 10)).toEqual([]);
-  });
-
-  it("sends each phone picture to the shorter of two columns", () => {
-    const columns = masonryColumns(
-      [sized(1, 2, "tall"), sized(1, 1, "a"), sized(1, 1, "b"), sized(1, 1, "c")],
-      2,
-    );
-    expect(columns.map((column) => column.map((item) => item.id))).toEqual([
-      ["tall", "c"],
-      ["a", "b"],
-    ]);
+  it("preserves extreme ratios and reserves a square for unknown dimensions", () => {
+    expect(aspectRatio(sized(4000, 100))).toBe(40);
+    expect(aspectRatio(sized(0, 0))).toBe(1);
+    expect(masonryPositions([sized(10, 10)], 0, 2, 12)).toEqual([]);
+    expect(masonryPositions([sized(10, 10)], 100, 0, 12)).toEqual([]);
   });
 
   it("groups newest-first assets by local day and names recent days", () => {

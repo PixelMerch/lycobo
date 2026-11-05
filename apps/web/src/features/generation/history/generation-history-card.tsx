@@ -1,12 +1,14 @@
 import { Button } from "@heroui/react";
 import { type ImageJob, textileViews } from "@lycoboai/contracts";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
-import { Fragment } from "react";
+import { type CSSProperties, Fragment } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { GenerationLoading, statusLabel } from "../generation-status";
+import { historyResultRatio } from "./history-result-layout";
 import { HistoryTaskMeta } from "./history-task-meta";
 import { HistoryPrompt, HistoryTaskActions } from "./history-task-tools";
 import { ResultImage } from "./result-image";
+import "./history-result-layout.css";
 
 /** Batches of five or more report their progress; larger batches initially show twelve images. */
 const batchSize = 5;
@@ -83,8 +85,12 @@ function HistoryResult({
   item: Item;
   onPreview: ShowPreview;
 }) {
+  const style: CSSProperties & { "--result-ratio": number } = {
+    "--result-ratio": historyResultRatio(job, item),
+  };
   return (
     <div
+      style={style}
       id={`result-${item.id}`}
       className={
         item.status === "failed" || item.status === "needs_reconciliation"
@@ -155,7 +161,8 @@ export function GenerationHistoryCard({
       {!compact && (
         <div
           id={`results-${job.id}`}
-          className="generation-results"
+          className="generation-results proportional-results"
+          style={resultLayoutStyle(job)}
           data-count={job.items.length}
           data-failed={
             job.items.some(
@@ -183,4 +190,11 @@ export function GenerationHistoryCard({
       )}
     </article>
   );
+}
+
+function resultLayoutStyle(job: ImageJob) {
+  const style: CSSProperties & { "--result-max-ratio": number } = {
+    "--result-max-ratio": Math.max(1, ...job.items.map((item) => historyResultRatio(job, item))),
+  };
+  return style;
 }

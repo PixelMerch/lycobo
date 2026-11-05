@@ -11,14 +11,13 @@ import {
   IconStar,
   type TablerIcon,
 } from "@tabler/icons-react";
-import { type CSSProperties, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { InfiniteLoad } from "../../components/infinite-load";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { LoginDialog } from "../auth/login-dialog";
 import { ImageApiError, useImageSession } from "../generation/generation-client";
-import { modelDisplayName } from "../generation/models/model-display-name";
 import { useModelPresentation } from "../generation/models/model-logos";
 import { AssetFilters, assetToolName } from "./asset-filters";
 import { dayHeading, groupByDay } from "./asset-layout";
@@ -28,8 +27,8 @@ import {
   sameFilters,
   useAssetLibrary,
 } from "./asset-library-client";
+import { AssetMasonry } from "./asset-masonry";
 import { AssetPreview } from "./asset-preview";
-import { AssetTile } from "./asset-tile";
 import "./asset-browser.css";
 
 const compactWidth = 720;
@@ -218,11 +217,6 @@ function useAssetStatus(session: ReturnType<typeof useImageSession>, query: Asse
   return { failure, authenticationRequired };
 }
 
-function assetAspect(asset: ImageAsset) {
-  if (asset.type !== "video") return 1;
-  return asset.width > 0 && asset.height > 0 ? asset.width / asset.height : 9 / 16;
-}
-
 function AssetResults({
   assets,
   columns,
@@ -250,25 +244,13 @@ function AssetResults({
 }) {
   const index = new Map(assets.map((asset, position) => [asset.id, position]));
   const Day = headingLevel === 2 ? "h2" : "h3";
-  const tile = (
-    asset: ImageAsset,
-    style: { width?: number; height?: number; aspectRatio?: number },
-  ) => (
-    <AssetTile
-      key={asset.id}
-      asset={asset}
-      modelName={modelDisplayName(asset.model, models)}
-      style={style}
-      onOpen={() => onOpen(index.get(asset.id) ?? 0)}
-    />
-  );
-  const densityStyle: CSSProperties & { "--asset-columns": number } = {
-    "--asset-columns": columns,
-  };
   const densityGrid = (items: ImageAsset[]) => (
-    <div className="asset-density-grid" style={densityStyle}>
-      {items.map((asset) => tile(asset, { aspectRatio: assetAspect(asset) }))}
-    </div>
+    <AssetMasonry
+      assets={items}
+      columns={columns}
+      models={models}
+      onOpen={(asset) => onOpen(index.get(asset.id) ?? 0)}
+    />
   );
   if (failure)
     return (

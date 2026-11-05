@@ -254,6 +254,33 @@ test("素材库 shares density and time filters with 我的素材", async ({ pag
     /^\S+ \S+$/,
   );
   await expect(page.getByRole("button", { name: "图片 类型", exact: true })).toBeVisible();
+  const tiles = page.locator(".asset-density-grid").first().locator(".asset-tile");
+  await expect(tiles).toHaveCount(6);
+  const boxes = await tiles.evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const { x, y, width, height } = node.getBoundingClientRect();
+      return { x, y, width, height };
+    }),
+  );
+  for (const [index, box] of boxes.entries()) {
+    const original = assets[index];
+    if (!original) throw new Error("Missing fixture asset");
+    expect(box.width / box.height).toBeCloseTo(original.width / original.height, 1);
+    for (const previous of boxes.slice(0, index)) {
+      const overlaps =
+        box.x < previous.x + previous.width - 1 &&
+        box.x + box.width > previous.x + 1 &&
+        box.y < previous.y + previous.height - 1 &&
+        box.y + box.height > previous.y + 1;
+      expect(overlaps).toBe(false);
+    }
+  }
+  expect(
+    await tiles
+      .locator(".asset-tile-open")
+      .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("aria-label"))),
+  ).toEqual(assets.slice(0, 6).map((item) => `查看图片：${item.prompt}`));
+
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
     .toBe(true);

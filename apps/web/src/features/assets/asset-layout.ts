@@ -32,47 +32,25 @@ export function groupByDay<T extends { created_at: string }>(items: readonly T[]
   return groups;
 }
 
-/** Extreme panoramas or strips are clamped so one picture cannot flatten a whole row. */
+/** Missing dimensions reserve a square until authoritative metadata is available. */
 export const aspectRatio = ({ width, height }: Sized) =>
-  width > 0 && height > 0 ? Math.min(Math.max(width / height, 0.4), 3) : 1;
+  width > 0 && height > 0 ? width / height : 1;
 
-/**
- * Rows share one height and fill the width exactly, so pictures keep their own ratio uncropped.
- * The last row of a group keeps the target height instead of stretching a few pictures.
- */
-export function justifyRows<T extends Sized>(
+/** Place in the shortest column while keeping the input/keyboard/preview order unchanged. */
+export function masonryPositions<T extends Sized>(
   items: readonly T[],
   width: number,
-  target: number,
+  count: number,
   gap: number,
 ) {
-  if (width <= 0) return [];
-  const rows: { height: number; items: { item: T; width: number }[] }[] = [];
-  let row: T[] = [];
-  const close = (height: number) => {
-    rows.push({ height, items: row.map((item) => ({ item, width: height * aspectRatio(item) })) });
-    row = [];
-  };
-  for (const item of items) {
-    row.push(item);
-    const ratio = row.reduce((sum, entry) => sum + aspectRatio(entry), 0);
-    if (ratio * target + gap * (row.length - 1) >= width)
-      close((width - gap * (row.length - 1)) / ratio);
-  }
-  if (row.length) close(target);
-  return rows;
-}
-
-/** Phones use two columns; each picture joins the currently shorter column. */
-export function masonryColumns<T extends Sized>(items: readonly T[], count: number) {
-  const columns = Array.from({ length: count }, (): { height: number; items: T[] } => ({
-    height: 0,
-    items: [],
-  }));
-  for (const item of items) {
-    const column = columns.reduce((low, next) => (next.height < low.height ? next : low));
-    column.items.push(item);
-    column.height += 1 / aspectRatio(item);
-  }
-  return columns.map((column) => column.items);
+  if (width <= 0 || count < 1) return [];
+  const heights = Array.from({ length: count }, () => 0);
+  const columnWidth = (width - gap * (count - 1)) / count;
+  return items.map((item) => {
+    const column = heights.indexOf(Math.min(...heights));
+    const top = heights[column] ?? 0;
+    const height = columnWidth / aspectRatio(item);
+    heights[column] = top + Math.ceil(height) + gap;
+    return { column: column + 1, row: top + 1, span: Math.ceil(height), height };
+  });
 }
