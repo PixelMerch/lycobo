@@ -16,6 +16,32 @@ const ImageViewer = lazy(() =>
   import("../../../components/image-viewer").then((module) => ({ default: module.ImageViewer })),
 );
 
+function textileUploadError(
+  files: File[],
+  replacing: boolean,
+  previousCount: number,
+  maxImages: number,
+) {
+  if (replacing && files.length > 1) {
+    return "每次只能上传一张图片。";
+  }
+  if (!replacing && previousCount + files.length > maxImages) {
+    return `详情图最多上传 ${maxImages} 张。`;
+  }
+  return referenceFileError(files);
+}
+
+function nextTextileImages(
+  value: ReferenceImage[],
+  images: ReferenceImage[],
+  index: number | null,
+  multiple: boolean,
+) {
+  if (index === null) return multiple ? [...value, ...images] : images;
+  const first = images[0];
+  return first ? value.map((image, position) => (position === index ? first : image)) : value;
+}
+
 export function TextileImageField({
   label,
   required = false,
@@ -52,16 +78,7 @@ export function TextileImageField({
     const index = replacement.current;
     replacement.current = null;
     if (!files.length || reading) return;
-    const replacing = index !== null || !multiple;
-    if (replacing && files.length > 1) {
-      setError("每次只能上传一张图片。");
-      return;
-    }
-    if (!replacing && value.length + files.length > maxImages) {
-      setError(`详情图最多上传 ${maxImages} 张。`);
-      return;
-    }
-    const issue = referenceFileError(files);
+    const issue = textileUploadError(files, index !== null || !multiple, value.length, maxImages);
     if (issue) {
       setError(issue);
       return;
@@ -70,10 +87,8 @@ export function TextileImageField({
     setError("");
     try {
       const images = await readReferenceImages(files);
-      if (index !== null) {
-        const first = images[0];
-        if (first) onChange(value.map((image, position) => (position === index ? first : image)));
-      } else onChange(multiple ? [...value, ...images] : images);
+      const next = nextTextileImages(value, images, index, multiple);
+      if (next !== value) onChange(next);
     } catch (error) {
       setError(error instanceof Error ? error.message : "图片无法读取，请检查文件后重试。");
     } finally {
@@ -156,29 +171,13 @@ export function TextileImageField({
           )}
         </div>
       ) : (
-        <Button
-          variant="tertiary"
-          className="textile-upload-area"
-          aria-label={`上传${label}`}
-          isDisabled={reading}
-          onPress={() => openPicker()}
-        >
-          <span className="textile-upload-example" aria-hidden="true">
-            <img
-              src={exampleSrc}
-              alt=""
-              width="108"
-              height="144"
-              decoding="async"
-              draggable={false}
-            />
-            <span>示例</span>
-          </span>
-          <span className="textile-upload-copy">
-            <UiIcon icon={IconPlus} size="action" />
-            <span>{reading ? "读取中…" : description}</span>
-          </span>
-        </Button>
+        <TextileUploadExample
+          label={label}
+          reading={reading}
+          exampleSrc={exampleSrc}
+          description={description}
+          openPicker={() => openPicker()}
+        />
       )}
       {error && (
         <ErrorMessage role="alert" className="field-error">
@@ -199,5 +198,38 @@ export function TextileImageField({
         </Suspense>
       )}
     </section>
+  );
+}
+
+function TextileUploadExample({
+  label,
+  reading,
+  exampleSrc,
+  description,
+  openPicker,
+}: {
+  label: string;
+  reading: boolean;
+  exampleSrc: string;
+  description: string;
+  openPicker: () => void;
+}) {
+  return (
+    <Button
+      variant="tertiary"
+      className="textile-upload-area"
+      aria-label={`上传${label}`}
+      isDisabled={reading}
+      onPress={openPicker}
+    >
+      <span className="textile-upload-example" aria-hidden="true">
+        <img src={exampleSrc} alt="" width="108" height="144" decoding="async" draggable={false} />
+        <span>示例</span>
+      </span>
+      <span className="textile-upload-copy">
+        <UiIcon icon={IconPlus} size="action" />
+        <span>{reading ? "读取中…" : description}</span>
+      </span>
+    </Button>
   );
 }

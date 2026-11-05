@@ -1,0 +1,332 @@
+/* Preserve compact desktop density while providing touch targets. Upload removal
+ * uses its existing transparent 44px hit area around the visible 24px circle. */
+@media (max-width: 767px), (pointer: coarse) {
+  .button:not(.remove-reference),
+  .toggle-button,
+  .icon-button {
+    min-height: var(--control-touch-target);
+  }
+  .button--icon-only:not(.remove-reference),
+  .toggle-button--icon-only,
+  .icon-button {
+    min-width: var(--control-touch-target);
+  }
+}
+
+/* Unified workspace groups and model selection palette. */
+.composer-panel .model-field {
+  background: #272727;
+}
+.composer-panel .model-field .model-select {
+  color: #eee;
+  background: #343434;
+  border-radius: 18px;
+}
+.composer-panel .model-field .model-select:focus-visible,
+.composer-panel .model-field .model-select[data-focus-visible="true"] {
+  background: var(--control-hover-fill);
+}
+.model-menu {
+  background: #272727;
+  border-radius: 12px;
+}
+.model-menu .model-options {
+  color: #ddd;
+}
+.model-menu .model-options[aria-selected="true"] {
+  color: #eee;
+  background: #505050;
+}
+@media (hover: hover) {
+  .model-menu .model-options:hover,
+  .model-menu .model-options[data-hovered="true"] {
+    background: var(--control-hover-fill);
+  }
+  .model-menu .model-options[aria-selected="true"]:hover {
+    background: #505050;
+  }
+}
+.model-menu .model-options:focus-visible {
+  background: #3c3c3c;
+}
+.model-menu
+  .model-options[aria-selected="true"]:is(
+    :hover,
+    [data-hovered],
+    [data-focused],
+    [data-focus-visible]
+  ) {
+  color: #eee;
+  background: #505050;
+}
+
+/* Workspace ratio pager mirrors the home ratio selector. */
+.home-ratio-pager.toolbar {
+  display: block;
+  width: 100%;
+}
+.composer-panel .home-ratio-pager {
+  position: relative;
+  margin-bottom: 0;
+}
+.composer-panel .home-ratio-track {
+  display: flex;
+  width: 100%;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 4px;
+  scroll-padding-inline: 4px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  border-radius: 16px;
+  background: #343434;
+}
+.composer-panel .home-ratio-track::-webkit-scrollbar {
+  display: none;
+}
+.composer-panel .home-ratio-track .toggle-button {
+  flex: 0 0 48px;
+  height: 48px;
+  min-height: 48px;
+  flex-direction: column;
+  gap: 1px;
+  padding: 3px 2px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #aaa;
+  scroll-snap-align: start;
+}
+.composer-panel .home-ratio-track .toggle-button[data-selected="true"] {
+  color: #eee;
+  background: transparent;
+}
+.composer-panel .home-ratio-track .toggle-selection {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: #505050;
+  pointer-events: none;
+}
+.composer-panel .home-ratio-track .ratio-preview {
+  width: 20px;
+  height: 20px;
+}
+.composer-panel .home-ratio-arrow.button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #4a4a4a;
+  color: #ddd;
+  box-shadow: 0 2px 8px #00000066;
+  z-index: 2;
+}
+.composer-panel .home-ratio-arrow.button:hover {
+  background: #555;
+}
+.composer-panel .home-ratio-arrow-left {
+  left: 6px;
+}
+.composer-panel .home-ratio-arrow-right {
+  right: 6px;
+}
+.composer-panel .ratio-current {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+
+/* Workspace selection and hover feedback mirrors the home controls. */
+.composer-panel .parameter-options .toggle-selection {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: #505050;
+  pointer-events: none;
+}
+.composer-panel .parameter-options :is(.button, .toggle-button)[data-selected="true"] {
+  color: #eee;
+  background: transparent;
+}
+@media (hover: hover) {
+  .composer-panel
+    .parameter-options
+    :is(.button, .toggle-button):hover:not([data-selected="true"]) {
+    color: #eee;
+    background: var(--control-hover-fill);
+  }
+  .composer-panel .home-ratio-track .toggle-button:hover:not([data-selected="true"]) {
+    color: #eee;
+    background: transparent;
+  }
+  .composer-panel .model-field .model-select:hover {
+    background: var(--control-hover-fill);
+  }
+}
+.composer-panel .reference-grid {
+  width: 90%;
+}
+
+/* Input wells follow the home composer surface; primary action is a capsule. */
+.composer-panel .prompt-field textarea,
+.composer-panel .add-reference {
+  background: #1c1c1c;
+  border-radius: 12px;
+}
+
+/* Add-image tile mirrors the home composer: icon only, centered. */
+.composer-panel .add-reference {
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  color: #aaa;
+}
+.composer-panel .add-reference > span {
+  display: none;
+}
+
+/* Input wells use the same translucent overlay as the home composer. */
+.composer-panel .prompt-field textarea,
+.composer-panel .add-reference {
+  background: #ffffff04;
+}
+
+.composer-panel .prompt-field textarea {
+  background: transparent;
+}
+
+/* Workspace typography and density follow the home controls. */
+.composer-panel .prompt-field textarea::placeholder {
+  color: #808080;
+  font-weight: var(--weight-regular);
+  opacity: 1;
+}
+.composer-panel .parameter-options :is(.button, .toggle-button) {
+  height: 32px;
+  min-height: 32px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.composer-panel .home-ratio-track .toggle-button {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+@media (max-width: 767px) {
+  .composer-panel .parameter-options :is(.button, .toggle-button) {
+    height: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Shared group rhythm for all three composers. */
+.composer-panel {
+  gap: var(--space-3);
+}
+/* Field content uses the same inset across tools. */
+
+.composer-panel .model-field,
+.composer-panel .reference-picker,
+.composer-panel .prompt-field,
+.composer-panel .parameter-group {
+  padding: var(--space-2);
+}
+.composer-panel .generate-area {
+  margin-top: 8px;
+}
+
+.composer-panel .model-field,
+.composer-panel .reference-picker,
+.composer-panel .prompt-field,
+.composer-panel .parameter-group {
+  padding: var(--space-3);
+}
+.composer-panel .prompt-field textarea {
+  min-height: 110px;
+}
+.composer-panel .generate-area {
+  margin-top: 6px;
+}
+
+.composer-panel .parameter-group legend {
+  margin-bottom: 6px;
+}
+.composer-panel .prompt-field textarea {
+  min-height: 80px;
+}
+.composer-panel .generate-area {
+  margin-top: 4px;
+}
+
+.composer-panel .ratio-heading {
+  margin-bottom: 6px;
+}
+.composer-panel .prompt-field :is(textarea, .reference-rich-editor.textarea) {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  height: 100px;
+  min-height: 70px;
+  max-height: 280px;
+  overflow-y: auto;
+  resize: vertical;
+  background: var(--field-background);
+  border-radius: 12px;
+}
+@media (max-width: 767px) {
+  .composer-panel .prompt-field > label,
+  .composer-panel .prompt-field :is(textarea, .reference-rich-editor.textarea) {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+  }
+}
+.composer-panel
+  .prompt-field
+  .prompt-editor[data-auto-grow]
+  :is(textarea, .reference-rich-editor.textarea) {
+  height: auto;
+  min-height: 100px;
+  max-height: none;
+  overflow: hidden;
+  resize: none;
+}
+.composer-panel .generate-area {
+  margin-top: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .sidebar-header,
+  .nav-row,
+  .nav-row::before,
+  .main-content {
+    transition: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .history-rail-open.button {
+    min-height: 44px;
+  }
+}
+
+.account-rows small {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #a1a1aa;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+.account-rows dd {
+  flex-shrink: 0;
+}

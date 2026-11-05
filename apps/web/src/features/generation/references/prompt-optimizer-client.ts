@@ -1,3 +1,4 @@
+import { readEventData } from "../../../lib/read-event-data";
 import { ImageApiError, imageRequest } from "../generation-client";
 
 export const promptOptimizeCredits = 1;
@@ -10,41 +11,22 @@ class PromptOptimizeError extends Error {}
 export async function readOptimizedPrompt(response: Response, onText: (text: string) => void) {
   const reader = response.body?.getReader();
   if (!reader) throw new PromptOptimizeError("优化结果为空，请稍后重试");
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let event = "";
-  try {
-    for (;;) {
-      const chunk = await reader.read();
-      if (chunk.done) break;
-      buffer += decoder.decode(chunk.value, { stream: true });
-      let boundary = buffer.indexOf("\n");
-      while (boundary >= 0) {
-        const line = buffer.slice(0, boundary).trimEnd();
-        buffer = buffer.slice(boundary + 1);
-        boundary = buffer.indexOf("\n");
-        if (line.startsWith("event:")) event = line.slice(6).trim();
-        if (!line.startsWith("data:")) continue;
-        if (event === "failed") throw new PromptOptimizeRejected("提示词优化失败，已退还积分");
-        if (event === "interrupted")
-          throw new PromptOptimizeError("优化连接已中断，请重试以核对结果");
-        if (event !== "delta" && event !== "complete") continue;
-        const value: unknown = JSON.parse(line.slice(5));
-        if (
-          value &&
-          typeof value === "object" &&
-          "text" in value &&
-          typeof value.text === "string"
-        ) {
-          if (event === "complete") return value.text;
-          onText(value.text);
-        }
-      }
-    }
-    throw new PromptOptimizeError("连接已中断，请稍后重试");
-  } finally {
-    await reader.cancel().catch(() => {});
+  for await (const { event, data } of readEventData(reader)) {
+    if (event === "failed") throw new PromptOptimizeRejected("提示词优化失败，已退还积分");
+    if (event === "interrupted") throw new PromptOptimizeError("优化连接已中断，请重试以核对结果");
+    if (event !== "delta" && event !== "complete") continue;
+    const text = promptEventText(data);
+    if (text === undefined) continue;
+    if (event === "complete") return text;
+    onText(text);
   }
+  throw new PromptOptimizeError("连接已中断，请稍后重试");
+}
+
+function promptEventText(data: string) {
+  const value: unknown = JSON.parse(data);
+  if (!value || typeof value !== "object" || !("text" in value)) return undefined;
+  return typeof value.text === "string" ? value.text : undefined;
 }
 
 export async function requestPromptOptimization({

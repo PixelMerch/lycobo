@@ -29,22 +29,26 @@ const source = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
 const config = JSON.parse(await readFile(path.join(directory, "cloudbaserc.json"), "utf8"));
 if (config.envId !== envId || config.functionRoot !== "." || config.functions.length !== 3)
   throw new Error("Unexpected runtime manifest");
+const scopedKeys = {
+  "lycobo-assets": [
+    "CLOUDBASE_ENV_ID",
+    "CLOUDBASE_APIKEY",
+    "CLOUDBASE_STORAGE_BUCKET",
+    "ASSET_SIGNING_SECRET",
+  ],
+  "lycobo-consumer": [
+    "CLOUDBASE_ENV_ID",
+    "CLOUDBASE_APIKEY",
+    "CLOUDBASE_STORAGE_BUCKET",
+    "MODEL_CREDENTIAL_SECRET",
+    "STANDALONE_IMAGE_API_KEY",
+    "DEEPSEEK_API_KEY",
+  ],
+};
 for (const fn of config.functions) {
   if (!["lycobo-api", "lycobo-assets", "lycobo-consumer"].includes(fn.name))
     throw new Error("Unexpected function name");
-  const allowed =
-    fn.name === "lycobo-assets"
-      ? ["CLOUDBASE_ENV_ID", "CLOUDBASE_APIKEY", "CLOUDBASE_STORAGE_BUCKET", "ASSET_SIGNING_SECRET"]
-      : fn.name === "lycobo-consumer"
-        ? [
-            "CLOUDBASE_ENV_ID",
-            "CLOUDBASE_APIKEY",
-            "CLOUDBASE_STORAGE_BUCKET",
-            "MODEL_CREDENTIAL_SECRET",
-            "STANDALONE_IMAGE_API_KEY",
-            "DEEPSEEK_API_KEY",
-          ]
-        : keys;
+  const allowed = scopedKeys[fn.name] ?? keys;
   fn.envVariables = {
     ...Object.fromEntries(allowed.map((key) => [key, source[key]])),
     NODE_ENV: "production",
@@ -99,5 +103,5 @@ try {
     );
   }
 } finally {
-  if (createdPrivateConfig) await unlink(privateConfig).catch(() => {});
+  if (createdPrivateConfig) await unlink(privateConfig).catch(() => undefined);
 }

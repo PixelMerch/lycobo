@@ -11,7 +11,7 @@ import {
 } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
 import { processConfiguredImage } from "./configured-image-processor";
-import { providerReferenceBytes } from "./provider-references";
+import { readProviderReferences } from "./provider-references";
 
 export type ImageProcessorDependencies = {
   repository: ImageRuntimeRepository;
@@ -45,12 +45,7 @@ export async function processImageItem(itemId: string, deps: ImageProcessorDepen
     if (!deps.provider?.key) throw new VakvError("MODEL_CHANNEL_NOT_CONFIGURED", false);
     validateModelInput(job.input, deps.overrides, deps.editsEnabled);
     const referencesStarted = performance.now();
-    const references: Uint8Array[] = [];
-    for (const id of job.input.referenceAssetIds) {
-      const asset = await deps.repository.asset(job, id);
-      if (!asset) throw new VakvError("REFERENCE_NOT_FOUND", false);
-      references.push(await providerReferenceBytes(deps.store, asset, !!job.input.localEdit));
-    }
+    const references = await readProviderReferences(job, deps.repository, deps.store);
     timing("reference_read", referencesStarted);
     submitted = true;
     const result = await generateVakvImage(
@@ -77,12 +72,9 @@ export async function processImageItem(itemId: string, deps: ImageProcessorDepen
     timing("item_complete", started);
   } catch (error) {
     const known = error instanceof VakvError;
+    const fallbackCode = submitted ? "OUTPUT_OUTCOME_UNKNOWN" : "REFERENCE_STORAGE_UNAVAILABLE";
     await deps.repository.finish(job, {
-      errorCode: known
-        ? error.code
-        : submitted
-          ? "OUTPUT_OUTCOME_UNKNOWN"
-          : "REFERENCE_STORAGE_UNAVAILABLE",
+      errorCode: known ? error.code : fallbackCode,
       unknown: known ? error.unknownOutcome : submitted,
       requestId: known ? error.requestId : undefined,
     });

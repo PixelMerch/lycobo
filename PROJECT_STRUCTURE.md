@@ -96,7 +96,7 @@ main 的 CI 成功后更新三个 CloudBase 函数代码并发布静态前端，
 
 - apps/api/src/features/images：组织访问令牌鉴权、图片上传/读取、模型能力、任务提交/查询、管理员核对。
 - packages/contracts/src/image-generation.ts：独立生图输入契约与公开模型目录；不改变既有任务契约。
-- packages/db/src/image-repository.ts：组织、令牌、任务、逐图 outbox 与积分账本持久化。
+- packages/db/src/image-repository.ts：管理连接池并组装生图仓储。身份、素材、历史、提交、执行和结算各自维护对应的持久化逻辑。提交模块在同一事务中写入任务、扣费和逐图 outbox。
 - packages/generation/src/vakv-provider.ts：同步兼容适配器，只留给隔离验证工具。
 - apps/worker/src/cloudbase-consumer.ts / local-consumer.ts / image-processor.ts：生产 Event、本地 PG 消费及共享任务处理。
 - packages/storage/src/image-store.ts：服务端图片解码、去元数据、私有 PNG 文件与实际尺寸/哈希。

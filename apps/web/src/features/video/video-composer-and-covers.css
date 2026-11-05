@@ -1,0 +1,252 @@
+/* 视频创作参数与共享表单保持一致。 */
+.video-reference-hint {
+  color: #888;
+  font-size: 11px;
+  line-height: 16px;
+  margin: 0 var(--space-3);
+  text-align: left;
+}
+.video-duration {
+  width: 100%;
+}
+.video-history-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 220px;
+  padding: 24px;
+  border-radius: 12px;
+  background: var(--surface-secondary);
+  color: var(--muted);
+  text-align: center;
+}
+.video-history-placeholder small {
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+.asset-video-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background: var(--surface-secondary);
+  color: var(--muted);
+}
+
+.video-ratio h2 {
+  margin: 0 0 10px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
+}
+.video-duration-slider.slider {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.video-duration-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.video-duration-slider[data-orientation="horizontal"] .video-duration-track {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  border-inline-color: transparent;
+  background: repeating-linear-gradient(90deg, #ffffff40 0 1px, transparent 1px 6px);
+  height: 12px;
+}
+.video-duration-track .slider__fill {
+  background: transparent;
+}
+.video-duration-endpoint {
+  flex: none;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.video-duration-slider .slider__thumb {
+  width: 28px;
+  height: 44px;
+  background: transparent;
+}
+.video-duration-slider .slider__thumb::after {
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--foreground);
+  box-shadow: none;
+}
+.video-duration-slider[data-orientation="horizontal"]
+  .video-duration-track:is([data-fill-start="true"], [data-fill-end="true"]) {
+  border-inline-color: transparent;
+}
+
+.video-duration-slider.slider {
+  margin-inline: var(--space-3);
+  width: auto;
+}
+.video-duration-slider[data-orientation="horizontal"] .video-duration-track {
+  position: relative;
+  background: transparent;
+  height: 32px;
+}
+.video-duration-wave {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.video-duration-wave > span {
+  width: 1px;
+  background: #ffffff66;
+  transition: height 100ms ease-out;
+}
+.video-duration-preview {
+  position: absolute;
+  bottom: calc(50% + 12px);
+  z-index: 1;
+  transform: translateX(-50%);
+  padding: 2px 6px;
+  font-size: var(--text-xs);
+  line-height: 16px;
+  white-space: nowrap;
+  background: #f4f4f4;
+  color: #171717;
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .video-duration-wave > span {
+    transition: none;
+  }
+}
+
+.video-duration-slider
+  :is(.video-duration-track, .slider__thumb, .slider__thumb[data-dragging="true"]) {
+  cursor: ew-resize;
+}
+
+.video-ratio .ratio-heading h2 {
+  margin: 0;
+}
+.video-duration-slider .video-duration-current {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 60px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--interaction-active);
+  color: var(--foreground);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-regular);
+  font-variant-numeric: tabular-nums;
+}
+/* 列表封面：只加载真实帧WebP，播放入口与时长角标不遮挡画面主体。 */
+.video-cover.button {
+  position: relative;
+  display: block;
+  width: min(100%, calc(320px * var(--video-cover-aspect, 0.5625)));
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  transition-property: background-color, box-shadow;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 12px;
+  background: var(--surface-secondary);
+  box-shadow: inset 0 0 0 1px #ffffff0f;
+  color: #fff;
+}
+.video-cover-image {
+  opacity: 0;
+  transition:
+    opacity 200ms ease,
+    scale 320ms cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+.video-cover[data-cover-loaded="true"] .video-cover-image {
+  opacity: 1;
+}
+:is(.video-production-media, .unified-workspace .generation-results[data-count])
+  .video-cover-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  border-radius: inherit;
+}
+.video-cover-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #00000059;
+  box-shadow: inset 0 0 0 1px #ffffff2e;
+  backdrop-filter: blur(12px) saturate(140%);
+  transition:
+    background-color 180ms ease,
+    scale 180ms ease;
+  z-index: 1;
+}
+/* The play triangle's visual centre sits right of its box centre. */
+:is(.video-cover[data-cover-loaded="true"], .asset-tile-open) .video-cover-play .ui-icon {
+  translate: 2px 0;
+}
+@media (hover: hover) {
+  .video-cover.button:is([data-hovered="true"], [data-focus-visible="true"]) .video-cover-image {
+    scale: 1.03;
+  }
+  :is(.video-cover, .asset-tile-open).button:is([data-hovered="true"], [data-focus-visible="true"])
+    .video-cover-play {
+    background: #ffffff33;
+    scale: 1.08;
+  }
+}
+.video-cover-duration {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 1;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #00000073;
+  backdrop-filter: blur(8px);
+  font-size: 11px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.video-cover-caption {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: calc(50% + 36px);
+  z-index: 1;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  text-align: center;
+}
+.video-cover-retry.button {
+  align-self: start;
+}

@@ -66,18 +66,7 @@ export function validateUpload(upload, name) {
   }
   return { url, headers };
 }
-export async function publishRuntime({
-  call,
-  root,
-  archiveDirectory,
-  request = fetch,
-  wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-  plan = false,
-  functions = runtimeFunctions,
-  removeUploadedObject,
-  uploadArchive,
-}) {
-  if (!plan && typeof removeUploadedObject !== "function") throw new Error("CODE_CLEANUP_REQUIRED");
+async function prepareReleases(call, root, archiveDirectory, plan, functions) {
   const releases = [];
   for (const name of functions) {
     if (!runtimeFunctions.includes(name)) throw new Error("INVALID_FUNCTION");
@@ -100,40 +89,74 @@ export async function publishRuntime({
     if (bytes.length > 50 * 1024 * 1024) throw new Error(`${name}: ZIP_TOO_LARGE`);
     releases.push({ name, before, archive, bytes });
   }
-  const transfer = async ({ name, archive, bytes }) => {
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const upload = (
-        await call("queryFunctions", { action: "getFunctionUploadUrl", functionName: name })
-      ).data;
-      const { url, headers } = validateUpload(upload, name);
-      try {
-        console.log(`Uploading ${name}: attempt ${attempt + 1}`);
-        if (uploadArchive) {
-          await uploadArchive(upload, name, archive);
-        } else {
-          const response = await request(url, {
-            method: "PUT",
-            headers,
-            body: bytes,
-            redirect: "manual",
-            signal: AbortSignal.timeout(90000),
-          });
-          await response.body?.cancel();
-          if (!response.ok) {
-            if (![408, 429, 500, 502, 503, 504].includes(response.status))
-              throw new Error("UPLOAD_REJECTED");
-            throw new Error("UPLOAD_TRANSIENT");
-          }
-        }
-        return upload;
-      } catch (error) {
-        if (error?.message === "CODE_UPLOAD_CREDENTIALS_UNAVAILABLE") throw error;
-        if (error?.message === "UPLOAD_REJECTED") throw new Error(`${name}: UPLOAD_REJECTED`);
-      }
-      if (attempt < 2) await wait(2000 * (attempt + 1));
+  return releases;
+}
+
+async function sendArchive({ uploadArchive, upload, name, archive, request, url, headers, bytes }) {
+  if (uploadArchive) {
+    await uploadArchive(upload, name, archive);
+  } else {
+    const response = await request(url, {
+      method: "PUT",
+      headers,
+      body: bytes,
+      redirect: "manual",
+      signal: AbortSignal.timeout(90000),
+    });
+    await response.body?.cancel();
+    if (!response.ok) {
+      if (![408, 429, 500, 502, 503, 504].includes(response.status))
+        throw new Error("UPLOAD_REJECTED");
+      throw new Error("UPLOAD_TRANSIENT");
     }
-    throw new Error(`${name}: UPLOAD_FAILED`);
-  };
+  }
+}
+
+async function transferRelease({ name, archive, bytes }, { call, uploadArchive, request, wait }) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const upload = (
+      await call("queryFunctions", { action: "getFunctionUploadUrl", functionName: name })
+    ).data;
+    const { url, headers } = validateUpload(upload, name);
+    try {
+      console.log(`Uploading ${name}: attempt ${attempt + 1}`);
+      await sendArchive({ uploadArchive, upload, name, archive, request, url, headers, bytes });
+      return upload;
+    } catch (error) {
+      if (error?.message === "CODE_UPLOAD_CREDENTIALS_UNAVAILABLE") throw error;
+      if (error?.message === "UPLOAD_REJECTED") throw new Error(`${name}: UPLOAD_REJECTED`);
+    }
+    if (attempt < 2) await wait(2000 * (attempt + 1));
+  }
+  throw new Error(`${name}: UPLOAD_FAILED`);
+}
+
+async function waitForActiveRelease(call, wait, name, previousModTime) {
+  for (let attempt = 0; attempt < 45; attempt++) {
+    await wait(2000);
+    const current = (
+      await call("queryFunctions", { action: "getFunctionDetail", functionName: name })
+    ).data.functionDetail;
+    if (current.Status === "Active" && current.ModTime !== previousModTime) return;
+    if (["CreateFailed", "UpdateFailed", "DeployFailed"].includes(current.Status))
+      throw new Error(`${name}: DEPLOY_FAILED`);
+  }
+  throw new Error(`${name}: DEPLOY_NOT_CONFIRMED`);
+}
+
+export async function publishRuntime({
+  call,
+  root,
+  archiveDirectory,
+  request = fetch,
+  wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  plan = false,
+  functions = runtimeFunctions,
+  removeUploadedObject,
+  uploadArchive,
+}) {
+  if (!plan && typeof removeUploadedObject !== "function") throw new Error("CODE_CLEANUP_REQUIRED");
+  const releases = await prepareReleases(call, root, archiveDirectory, plan, functions);
   const discard = async (unsubmitted) => {
     for (const { name, uploaded } of unsubmitted)
       await removeUploadedObject(uploaded, name).catch(() =>
@@ -142,7 +165,9 @@ export async function publishRuntime({
   };
   // Cross-region transfer dominates a release, so every package moves concurrently. No function
   // switches until all packages are stored: a failed transfer leaves every current version running.
-  const transfers = await Promise.allSettled(releases.map(transfer));
+  const transfers = await Promise.allSettled(
+    releases.map((release) => transferRelease(release, { call, uploadArchive, request, wait })),
+  );
   const stored = releases.flatMap((release, index) =>
     transfers[index].status === "fulfilled"
       ? [{ ...release, uploaded: transfers[index].value }]
@@ -167,20 +192,7 @@ export async function publishRuntime({
         },
         confirm: true,
       });
-      let active = false;
-      for (let attempt = 0; attempt < 45; attempt++) {
-        await wait(2000);
-        const current = (
-          await call("queryFunctions", { action: "getFunctionDetail", functionName: name })
-        ).data.functionDetail;
-        if (current.Status === "Active" && current.ModTime !== before.ModTime) {
-          active = true;
-          break;
-        }
-        if (["CreateFailed", "UpdateFailed", "DeployFailed"].includes(current.Status))
-          throw new Error(`${name}: DEPLOY_FAILED`);
-      }
-      if (!active) throw new Error(`${name}: DEPLOY_NOT_CONFIRMED`);
+      await waitForActiveRelease(call, wait, name, before.ModTime);
       await removeUploadedObject(uploaded, name);
     } catch (error) {
       // A submitted package may still be read by the platform; only later, unsubmitted ones go.
@@ -190,6 +202,62 @@ export async function publishRuntime({
     console.log(`Updated ${name}: Active; temporary code object deleted`);
   }
 }
+function cosArchiveOperations(getCos) {
+  return {
+    uploadArchive: async (upload, name, archive) => {
+      const { url } = validateUpload(upload, name);
+      const uploader = await getCos();
+      let progress = -1;
+      await new Promise((resolve, reject) =>
+        uploader.uploadFile(
+          {
+            Bucket: url.hostname.split(".cos.")[0],
+            Region: upload.cosBucketRegion,
+            Key: upload.cosObjectName,
+            FilePath: archive,
+            SliceSize: 1024 * 1024,
+            ChunkSize: 1024 * 1024,
+            onProgress: ({ percent }) => {
+              const step = Math.floor(percent * 4);
+              if (step > progress) console.log(`Uploading ${name}: ${step * 25}%`);
+              progress = step;
+            },
+          },
+          (error) => {
+            if (!error) return resolve();
+            const status = Number(error.statusCode) || 0;
+            const code = /^[A-Za-z0-9_]{1,60}$/.test(error.code ?? "")
+              ? error.code
+              : "NETWORK_ERROR";
+            console.error(`Upload ${name} failed: status=${status}; code=${code}`);
+            reject(
+              new Error(
+                status >= 400 && status < 500 && status !== 429
+                  ? "UPLOAD_REJECTED"
+                  : "UPLOAD_TRANSIENT",
+              ),
+            );
+          },
+        ),
+      );
+    },
+    removeUploadedObject: async (upload, name) => {
+      const { url } = validateUpload(upload, name);
+      const cos = await getCos();
+      await new Promise((resolve, reject) =>
+        cos.deleteObject(
+          {
+            Bucket: url.hostname.split(".cos.")[0],
+            Region: upload.cosBucketRegion,
+            Key: upload.cosObjectName,
+          },
+          (error) => (error ? reject(new Error(`${name}: CODE_OBJECT_CLEANUP_FAILED`)) : resolve()),
+        ),
+      );
+    },
+  };
+}
+
 async function main() {
   if (!process.argv[2] || !process.argv[3])
     throw new Error("Prepared runtime and MCP client directories required");
@@ -234,7 +302,7 @@ async function main() {
           name,
         );
       });
-      previous = result.catch(() => {});
+      previous = result.catch(() => undefined);
       return result;
     };
     const status = await call("auth", { action: "status" });
@@ -268,58 +336,7 @@ async function main() {
       root,
       archiveDirectory,
       plan: process.argv.includes("--plan"),
-      uploadArchive: async (upload, name, archive) => {
-        const { url } = validateUpload(upload, name);
-        const uploader = await getCos();
-        let progress = -1;
-        await new Promise((resolve, reject) =>
-          uploader.uploadFile(
-            {
-              Bucket: url.hostname.split(".cos.")[0],
-              Region: upload.cosBucketRegion,
-              Key: upload.cosObjectName,
-              FilePath: archive,
-              SliceSize: 1024 * 1024,
-              ChunkSize: 1024 * 1024,
-              onProgress: ({ percent }) => {
-                const step = Math.floor(percent * 4);
-                if (step > progress) console.log(`Uploading ${name}: ${step * 25}%`);
-                progress = step;
-              },
-            },
-            (error) => {
-              if (!error) return resolve();
-              const status = Number(error.statusCode) || 0;
-              const code = /^[A-Za-z0-9_]{1,60}$/.test(error.code ?? "")
-                ? error.code
-                : "NETWORK_ERROR";
-              console.error(`Upload ${name} failed: status=${status}; code=${code}`);
-              reject(
-                new Error(
-                  status >= 400 && status < 500 && status !== 429
-                    ? "UPLOAD_REJECTED"
-                    : "UPLOAD_TRANSIENT",
-                ),
-              );
-            },
-          ),
-        );
-      },
-      removeUploadedObject: async (upload, name) => {
-        const { url } = validateUpload(upload, name);
-        const cos = await getCos();
-        await new Promise((resolve, reject) =>
-          cos.deleteObject(
-            {
-              Bucket: url.hostname.split(".cos.")[0],
-              Region: upload.cosBucketRegion,
-              Key: upload.cosObjectName,
-            },
-            (error) =>
-              error ? reject(new Error(`${name}: CODE_OBJECT_CLEANUP_FAILED`)) : resolve(),
-          ),
-        );
-      },
+      ...cosArchiveOperations(getCos),
     });
   } finally {
     await client.close();

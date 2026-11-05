@@ -22,7 +22,7 @@ import { modelCapabilities, supportsReferences } from "./models/model-capabiliti
 import { ModelSelect } from "./models/model-select";
 import { hasPromptDescription } from "./references/prompt-description";
 import { ReferencePicker } from "./references/reference-picker";
-import { defaultDraft, type ModelId, useStudioStore } from "./studio-state";
+import { type Draft, defaultDraft, type ModelId, useStudioStore } from "./studio-state";
 
 const promptLimit = 5000;
 const resolutionField = { label: "分辨率", values: ["1.5K", "2K", "4K"] } as const;
@@ -35,31 +35,15 @@ export function WorkspacePage() {
 function Workspace({ model }: { model: ModelId }) {
   const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
-  const setActiveModel = useStudioStore((s) => s.setActiveModel);
   const visitModel = useStudioStore((s) => s.visitModel);
   const inputId = useRef<HTMLTextAreaElement>(null);
   const session = useImageSession();
   const modelQuery = useImageModels();
   const generate = useGenerateImage();
-  const [submissionPhase, setSubmissionPhase] = useState<"idle" | "submitting" | "settled">("idle");
   const [showMore, setShowMore] = useState(false);
-  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const activeSubmission = submissionPhase !== "idle" || generate.isPending;
-  const modelsError = modelQuery.isError
-    ? modelQuery.error instanceof ImageApiError
-      ? modelQuery.error.message
-      : "服务暂时不可用，请稍后重试。"
-    : null;
-  useErrorToast(modelsError);
-  useErrorToast(
-    session.isError
-      ? (session.error?.message ?? "服务暂时不可用，请稍后重试。")
-      : generate.isError
-        ? generate.error instanceof ImageApiError
-          ? generate.error.message
-          : "服务暂时不可用，请稍后重试。"
-        : null,
-  );
+  useErrorToast(modelQuery.isError ? imageErrorMessage(modelQuery.error) : null);
+  const submissionError = generate.isError ? imageErrorMessage(generate.error) : null;
+  useErrorToast(session.isError ? (session.error?.message ?? unavailable) : submissionError);
   const capabilities = modelCapabilities(modelQuery.data, model, "create");
   const resolutions = capabilities?.enabledResolutions ?? [];
   const referencesSupported = supportsReferences(capabilities, draft.references.length);
@@ -76,12 +60,6 @@ function Workspace({ model }: { model: ModelId }) {
   useEffect(() => {
     visitModel(model);
   }, [model, visitModel]);
-  useEffect(
-    () => () => {
-      if (settleTimer.current) clearTimeout(settleTimer.current);
-    },
-    [],
-  );
   return (
     <section className="composer-panel" aria-label="创作设置">
       <section className="composer-scroll" aria-label="创作参数">
@@ -155,93 +133,150 @@ function Workspace({ model }: { model: ModelId }) {
           <UiIcon icon={showMore ? IconChevronUp : IconChevronDown} size="small" />
         </Button>
       </section>
-      <div className="generate-area">
-        <ModelSelect
-          value={model}
-          onChange={(nextModel) => {
-            if (nextModel === model) return;
-            const supported = modelQuery.data?.models.find(
-              (entry) => entry.id === nextModel,
-            )?.enabledResolutions;
-            updateDraft(nextModel, {
-              ...draft,
-              resolution: supported?.some((value) => value === draft.resolution)
-                ? draft.resolution
-                : "1.5K",
-            });
-            setActiveModel(nextModel);
-          }}
-        />
-
-        {modelQuery.data && !modelQuery.data.enabled && (
-          <Alert className="generation-message" role="status" status="warning">
-            <Alert.Content>
-              <Alert.Description>生图服务尚未启用</Alert.Description>
-            </Alert.Content>
-          </Alert>
-        )}
-        {draft.references.length > 0 && capabilities && !referencesSupported && (
-          <Alert className="generation-message" role="status" status="warning">
-            <Alert.Content>
-              <Alert.Description>
-                {capabilities?.editsEnabled
-                  ? `当前模型最多支持 ${capabilities.maxReferences} 张参考图，请减少后生成。`
-                  : "当前模型暂不支持参考图编辑，请移除参考图后生成。"}
-              </Alert.Description>
-            </Alert.Content>
-          </Alert>
-        )}
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          className={`primary-action generation-submit${activeSubmission ? " generation-pending" : ""}`}
-          data-submitting={activeSubmission || undefined}
-          isPending={activeSubmission}
-          aria-label={pending && !activeSubmission ? "确认上次提交" : "生成商品主图"}
-          aria-description={
-            !pending && !activeSubmission
-              ? `本次生成消耗 ${imageUnitCredits * Number(draft.count)} 币`
-              : undefined
-          }
-          isDisabled={!canGenerate || activeSubmission}
-          onPress={() => {
-            setSubmissionPhase("submitting");
-            revealNewestHistory();
-            generate.mutate(
-              { model, draft },
-              {
-                onSuccess: () => {
-                  const cleared = !pending && useStudioStore.getState().drafts[model] === draft;
-                  if (cleared) {
-                    updateDraft(model, { prompt: "", references: [] });
-                    setSubmissionPhase("settled");
-                    if (settleTimer.current) clearTimeout(settleTimer.current);
-                    settleTimer.current = setTimeout(() => {
-                      setSubmissionPhase("idle");
-                    }, 600);
-                  } else {
-                    setSubmissionPhase("idle");
-                  }
-                },
-                onError: () => setSubmissionPhase("idle"),
-              },
-            );
-          }}
-        >
-          {activeSubmission && (
-            <Spinner size="md" color="current" role="status" aria-label="正在提交生图任务" />
-          )}
-          {pending && !activeSubmission ? "确认上次提交" : "生成商品主图"}
-          {(!pending || activeSubmission) && (
-            <span className="generate-credit-cost" aria-hidden="true">
-              <CreditCoin />
-              <span>{imageUnitCredits * Number(draft.count)}</span>
-            </span>
-          )}
-        </Button>
-      </div>
+      <WorkspaceGeneration
+        model={model}
+        draft={draft}
+        modelQuery={modelQuery}
+        generate={generate}
+        pending={pending}
+        canGenerate={!!canGenerate}
+      />
     </section>
+  );
+}
+
+const unavailable = "服务暂时不可用，请稍后重试。";
+
+function imageErrorMessage(error: unknown) {
+  return error instanceof ImageApiError ? error.message : unavailable;
+}
+
+function useWorkspaceSubmission(
+  model: ModelId,
+  draft: Draft,
+  generate: ReturnType<typeof useGenerateImage>,
+  pending: boolean,
+) {
+  const updateDraft = useStudioStore((state) => state.updateDraft);
+  const [submissionPhase, setSubmissionPhase] = useState<"idle" | "submitting" | "settled">("idle");
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (settleTimer.current) clearTimeout(settleTimer.current);
+    },
+    [],
+  );
+  const submit = () => {
+    setSubmissionPhase("submitting");
+    revealNewestHistory();
+    generate.mutate(
+      { model, draft },
+      {
+        onSuccess: () => {
+          const cleared = !pending && useStudioStore.getState().drafts[model] === draft;
+          if (cleared) {
+            updateDraft(model, { prompt: "", references: [] });
+            setSubmissionPhase("settled");
+            if (settleTimer.current) clearTimeout(settleTimer.current);
+            settleTimer.current = setTimeout(() => {
+              setSubmissionPhase("idle");
+            }, 600);
+          } else {
+            setSubmissionPhase("idle");
+          }
+        },
+        onError: () => setSubmissionPhase("idle"),
+      },
+    );
+  };
+  return { submit, activeSubmission: submissionPhase !== "idle" || generate.isPending };
+}
+
+function WorkspaceGeneration({
+  model,
+  draft,
+  modelQuery,
+  generate,
+  pending,
+  canGenerate,
+}: {
+  model: ModelId;
+  draft: Draft;
+  modelQuery: ReturnType<typeof useImageModels>;
+  generate: ReturnType<typeof useGenerateImage>;
+  pending: boolean;
+  canGenerate: boolean;
+}) {
+  const { submit, activeSubmission } = useWorkspaceSubmission(model, draft, generate, pending);
+  const updateDraft = useStudioStore((state) => state.updateDraft);
+  const setActiveModel = useStudioStore((state) => state.setActiveModel);
+  const capabilities = modelCapabilities(modelQuery.data, model, "create");
+  const referencesSupported = supportsReferences(capabilities, draft.references.length);
+  return (
+    <div className="generate-area">
+      <ModelSelect
+        value={model}
+        onChange={(nextModel) => {
+          if (nextModel === model) return;
+          const supported = modelQuery.data?.models.find(
+            (entry) => entry.id === nextModel,
+          )?.enabledResolutions;
+          updateDraft(nextModel, {
+            ...draft,
+            resolution: supported?.some((value) => value === draft.resolution)
+              ? draft.resolution
+              : "1.5K",
+          });
+          setActiveModel(nextModel);
+        }}
+      />
+
+      {modelQuery.data && !modelQuery.data.enabled && (
+        <Alert className="generation-message" role="status" status="warning">
+          <Alert.Content>
+            <Alert.Description>生图服务尚未启用</Alert.Description>
+          </Alert.Content>
+        </Alert>
+      )}
+      {draft.references.length > 0 && capabilities && !referencesSupported && (
+        <Alert className="generation-message" role="status" status="warning">
+          <Alert.Content>
+            <Alert.Description>
+              {capabilities?.editsEnabled
+                ? `当前模型最多支持 ${capabilities.maxReferences} 张参考图，请减少后生成。`
+                : "当前模型暂不支持参考图编辑，请移除参考图后生成。"}
+            </Alert.Description>
+          </Alert.Content>
+        </Alert>
+      )}
+      <Button
+        variant="primary"
+        size="lg"
+        fullWidth
+        className={`primary-action generation-submit${activeSubmission ? " generation-pending" : ""}`}
+        data-submitting={activeSubmission || undefined}
+        isPending={activeSubmission}
+        aria-label={pending && !activeSubmission ? "确认上次提交" : "生成商品主图"}
+        aria-description={
+          !pending && !activeSubmission
+            ? `本次生成消耗 ${imageUnitCredits * Number(draft.count)} 币`
+            : undefined
+        }
+        isDisabled={!canGenerate || activeSubmission}
+        onPress={submit}
+      >
+        {activeSubmission && (
+          <Spinner size="md" color="current" role="status" aria-label="正在提交生图任务" />
+        )}
+        {pending && !activeSubmission ? "确认上次提交" : "生成商品主图"}
+        {(!pending || activeSubmission) && (
+          <span className="generate-credit-cost" aria-hidden="true">
+            <CreditCoin />
+            <span>{imageUnitCredits * Number(draft.count)}</span>
+          </span>
+        )}
+      </Button>
+    </div>
   );
 }
 export function BackToTopButton() {

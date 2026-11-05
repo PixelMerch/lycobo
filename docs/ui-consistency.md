@@ -32,7 +32,7 @@
 | 生成图片操作 | ResultImage | 预览、下载、收藏、焦点入口由同一组件承担 |
 | 任务元信息 | HistoryTaskMeta | 标签、时间、比例、任务ID复制一致；父级用 modelDisplayName 从共享模型目录派生展示名称，不渲染原始 model 标识 |
 | 历史索引 | HistoryIndex | 定位与滚动同步；“我的素材”标题固定、列表独立滚动；不承担重试或草稿覆盖 |
-| 生成提交按钮 | HeroUI Button + styles/app.css 的 .generation-submit | 工作台与局部修改高度、胶囊圆角、青柠至薄荷绿渐变与深色前景、字级及积分间距统一引用 DESIGN；不创建按钮包装组件 |
+| 生成提交按钮 | HeroUI Button + styles/studio-workspace-form.css 的 .generation-submit | 工作台与局部修改高度、胶囊圆角、青柠至薄荷绿渐变与深色前景、字级及积分间距统一引用 DESIGN；不创建按钮包装组件 |
 | 生成阶段 | generation-status | 中文状态与生成图标共用，不从颜色推断状态 |
 | 全屏开关动画 | components/use-centered-dialog-motion | 关闭动画结束后卸载；不复制 hook |
 | 请求错误 | useErrorToast | 去重、统一顶部反馈；字段校验继续用 FieldError／ErrorMessage |

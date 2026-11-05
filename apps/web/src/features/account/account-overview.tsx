@@ -112,6 +112,8 @@ export function MembershipSummary() {
 function RecentEntries({ onShowTab }: { onShowTab: ShowTab }) {
   const entries = useWalletEntries();
   const recent = entries.data?.pages[0]?.data.slice(0, 4) ?? [];
+  const errorMessage = entries.isError ? "记录暂时不可用" : "暂无积分记录";
+  const entriesStatusText = entries.isPending ? "正在加载记录…" : errorMessage;
   return (
     <section className="account-card account-recent" aria-labelledby="account-recent-heading">
       <div className="account-card-head">
@@ -147,11 +149,7 @@ function RecentEntries({ onShowTab }: { onShowTab: ShowTab }) {
         </ul>
       ) : (
         <p className="account-empty" role="status">
-          {entries.isPending
-            ? "正在加载记录…"
-            : entries.isError
-              ? "记录暂时不可用"
-              : "暂无积分记录"}
+          {entriesStatusText}
         </p>
       )}
     </section>
@@ -188,11 +186,9 @@ function RecentWorks({ onLeave }: { onLeave: () => void }) {
         </ul>
       ) : (
         <p className="account-empty" role="status">
-          {assets.isPending ? (
-            "正在加载作品…"
-          ) : assets.isError ? (
-            "作品暂时不可用"
-          ) : (
+          {assets.isPending && "正在加载作品…"}
+          {assets.isError && "作品暂时不可用"}
+          {assets.isSuccess && (
             <>
               暂无作品，
               <RouteLink to="/workspace" className="account-inline-link" onClick={onLeave}>

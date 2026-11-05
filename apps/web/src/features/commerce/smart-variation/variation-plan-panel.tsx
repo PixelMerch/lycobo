@@ -66,6 +66,10 @@ export function VariationPlanPanel({
   const patchItem = (id: string, patch: Partial<(typeof items)[number]>) =>
     update({ items: items.map((item) => (item.id === id ? { ...item, ...patch } : item)) });
   if (!isOpen) return null;
+  const planningStatus = previews.length
+    ? "正在完善方案，完成后即可编辑确认…"
+    : "正在规划，请稍候…";
+  const analysisStatus = readingWeb ? "DeepSeek 正在读取网页内容…" : planningStatus;
   return (
     <section
       className="variation-plan-panel"
@@ -98,12 +102,7 @@ export function VariationPlanPanel({
           {showPreview && (
             <>
               <p className="variation-plan-stream-status" role="status">
-                {analysisError ||
-                  (readingWeb
-                    ? "DeepSeek 正在读取网页内容…"
-                    : previews.length
-                      ? "正在完善方案，完成后即可编辑确认…"
-                      : "正在规划，请稍候…")}
+                {analysisError || analysisStatus}
               </p>
               {previews.map((item, index) => (
                 <section
@@ -188,7 +187,7 @@ export function VariationPlanPanel({
             void generation
               .submit()
               .then(() => onOpenChange(false))
-              .catch(() => {});
+              .catch(() => undefined);
           }}
         >
           {generation.submitting && (

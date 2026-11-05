@@ -18,7 +18,7 @@ export type VideoRun = (
   operation: VideoOperation,
   args?: Record<string, unknown>,
 ) => Promise<unknown>;
-export function videoRepository(run: VideoRun, close: () => Promise<void> = async () => {}) {
+export function videoRepository(run: VideoRun, close: () => Promise<void> = async () => undefined) {
   return {
     run,
     close,

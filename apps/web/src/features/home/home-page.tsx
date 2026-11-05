@@ -54,18 +54,14 @@ export function HomePage() {
     if (prompt && !draft.prompt.trim()) updateDraft(model, { prompt });
     void navigate("/create");
   }
+  const backgroundStyle: CSSProperties & Record<`--home-${string}`, string | number> = {
+    "--home-background-height": `${reactBitConfig.home.backgroundHeight}px`,
+    "--home-background-overlay": reactBitConfig.home.overlayOpacity,
+    "--home-start-spacing": `${reactBitConfig.home.topSpacing}px`,
+    "--home-mobile-start-spacing": `${reactBitConfig.home.mobileTopSpacing}px`,
+  };
   return (
-    <section
-      className="commerce-home page-panel"
-      style={
-        {
-          "--home-background-height": `${reactBitConfig.home.backgroundHeight}px`,
-          "--home-background-overlay": reactBitConfig.home.overlayOpacity,
-          "--home-start-spacing": `${reactBitConfig.home.topSpacing}px`,
-          "--home-mobile-start-spacing": `${reactBitConfig.home.mobileTopSpacing}px`,
-        } as CSSProperties
-      }
-    >
+    <section className="commerce-home page-panel" style={backgroundStyle}>
       <div className="home-motion-background" aria-hidden="true" inert>
         <Suspense fallback={null}>
           <HomeGridMotion {...reactBitConfig.gridMotion} items={backgroundImages} />

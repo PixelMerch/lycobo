@@ -31,7 +31,7 @@ TypeScript 使用 strict 模式，并开启 `noUncheckedIndexedAccess`、`exactO
 
 ## 只减不增的规则
 
-旧代码一次全改风险太大，所以用棘轮：新代码必须达标，旧代码的违规记在 `scripts/code-quality-baseline.json`，数字只能变小。
+质量棘轮会把实际扫描结果和 `scripts/code-quality-baseline.json` 比对。历史违规已清理，基线当前为 `{}`。新增违规会直接导致检查失败，`pnpm quality:update` 只会收紧基线。
 
 | 指标 | 基线字段 | 新代码上限 | 为什么 |
 | --- | --- | --- | --- |

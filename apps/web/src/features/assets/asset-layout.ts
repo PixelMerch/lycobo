@@ -65,7 +65,10 @@ export function justifyRows<T extends Sized>(
 
 /** Phones use two columns; each picture joins the currently shorter column. */
 export function masonryColumns<T extends Sized>(items: readonly T[], count: number) {
-  const columns = Array.from({ length: count }, () => ({ height: 0, items: [] as T[] }));
+  const columns = Array.from({ length: count }, (): { height: number; items: T[] } => ({
+    height: 0,
+    items: [],
+  }));
   for (const item of items) {
     const column = columns.reduce((low, next) => (next.height < low.height ? next : low));
     column.items.push(item);

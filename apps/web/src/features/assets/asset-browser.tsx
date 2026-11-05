@@ -20,9 +20,7 @@ import { LoginDialog } from "../auth/login-dialog";
 import { ImageApiError, useImageSession } from "../generation/generation-client";
 import { modelDisplayName } from "../generation/models/model-display-name";
 import { useModelPresentation } from "../generation/models/model-logos";
-import { ImagePreviewDialog } from "../image-workspace/image-preview";
-import { VideoPlayerDialog } from "../video/video-player-dialog";
-import { AssetFilters, toolNames } from "./asset-filters";
+import { AssetFilters, assetToolName } from "./asset-filters";
 import { dayHeading, groupByDay } from "./asset-layout";
 import {
   type AssetLibraryFilters,
@@ -30,6 +28,7 @@ import {
   sameFilters,
   useAssetLibrary,
 } from "./asset-library-client";
+import { AssetPreview } from "./asset-preview";
 import { AssetTile } from "./asset-tile";
 import "./asset-browser.css";
 
@@ -65,8 +64,8 @@ function emptyState(
     (!filters.time || filters.time === "all")
   )
     return filters.source === "favorites"
-      ? { icon: IconStar, title: `${toolNames[currentTool]}还没有收藏的素材` }
-      : { icon: IconPhoto, title: `${toolNames[currentTool]}还没有素材` };
+      ? { icon: IconStar, title: `${assetToolName(currentTool)}还没有收藏的素材` }
+      : { icon: IconPhoto, title: `${assetToolName(currentTool)}还没有素材` };
   if (
     !sameFilters(filters, { ...defaultAssetFilters, source: filters.source, type: defaults.type })
   )
@@ -120,36 +119,6 @@ function Skeleton({ compact }: { compact: boolean }) {
   );
 }
 
-const toPreview = (asset: ImageAsset) => ({
-  id: asset.id,
-  publicId: asset.public_id,
-  width: asset.width,
-  height: asset.height,
-  meta: {
-    taskPublicId: asset.task_public_id,
-    model: asset.model,
-    createdAt: asset.created_at,
-    prompt: asset.prompt,
-    imagePublicId: asset.public_id,
-  },
-});
-const toPreviewVideo = (asset: ImageAsset) => {
-  const sized = asset.width > 0 && asset.height > 0;
-  return {
-    id: asset.id,
-    aspect: sized ? asset.width / asset.height : 9 / 16,
-    seconds: asset.duration_seconds ?? undefined,
-    taskPublicId: asset.task_public_id,
-    createdAt: asset.created_at,
-    prompt: asset.prompt,
-    params: [
-      ...(sized ? [{ label: "尺寸", value: `${asset.width}×${asset.height}` }] : []),
-      ...(asset.duration_seconds ? [{ label: "时长", value: `${asset.duration_seconds}秒` }] : []),
-      ...(asset.resolution ? [{ label: "清晰度", value: asset.resolution }] : []),
-    ],
-  };
-};
-
 /**
  * 素材库 and 我的素材 share one browser: 生成 / 上传 / 收藏, then 功能 / 类型 / 模型 filters,
  * newest-first day groups and the existing image preview.
@@ -180,26 +149,105 @@ export function AssetBrowser({
   const models = useModelPresentation().data?.models ?? [];
   const [frame, width] = useWidth();
   const [preview, setPreview] = useState<number | null>(null);
+  const { failure, authenticationRequired } = useAssetStatus(session, query);
+  const compact = width > 0 && width < compactWidth;
+  const assets = query.data?.pages.flatMap((page) => page.data) ?? [];
+  if (authenticationRequired) {
+    return (
+      <LoginDialog
+        onClose={onAuthenticationClose ?? (() => navigate("/", { replace: true }))}
+        onLoginSuccess={() => void session.refetch()}
+      />
+    );
+  }
+  return (
+    <div className="asset-browser" ref={frame}>
+      <div className="asset-source-panel">
+        <AssetFilters
+          filters={filters}
+          defaults={defaults}
+          currentTool={currentTool}
+          models={models}
+          loaded={query.data ? assets.length : null}
+          compact={compact}
+          mediaSelect
+          showSource={!generatedOnly}
+          displayControls={<AssetDensityControls columns={columns} onChange={setColumns} />}
+          onChange={onChange}
+        />
+        {width > 0 && (
+          <AssetResults
+            assets={assets}
+            columns={columns}
+            compact={compact}
+            headingLevel={headingLevel}
+            filters={filters}
+            empty={emptyState(filters, defaults, currentTool)}
+            models={models}
+            onOpen={setPreview}
+            query={query}
+            failure={failure}
+            retry={() => void (session.isError ? session.refetch() : query.refetch())}
+          />
+        )}
+      </div>
+      {preview !== null && (
+        <AssetPreview
+          assets={assets}
+          index={preview}
+          query={query}
+          onClose={() => setPreview(null)}
+          onViewHistory={onViewHistory}
+        />
+      )}
+    </div>
+  );
+}
+
+type AssetQuery = ReturnType<typeof useAssetLibrary>;
+
+function useAssetStatus(session: ReturnType<typeof useImageSession>, query: AssetQuery) {
   // The list waits for the image session, so a failed session is the list's failure too.
-  const failure = session.isError
-    ? session.error
-    : query.isError && !query.data
-      ? query.error
-      : null;
+  const initialQueryFailure = query.isError && !query.data ? query.error : null;
+  const failure = session.isError ? session.error : initialQueryFailure;
   const authenticationRequired =
     (session.error instanceof ImageApiError && session.error.status === 401) ||
     (query.error instanceof ImageApiError && query.error.status === 401);
-  useErrorToast(
-    authenticationRequired
-      ? null
-      : session.isError
-        ? session.error.message
-        : query.isError
-          ? query.error.message
-          : null,
-  );
-  const compact = width > 0 && width < compactWidth;
-  const assets = query.data?.pages.flatMap((page) => page.data) ?? [];
+  const message = (session.error ?? query.error)?.message;
+  useErrorToast(authenticationRequired ? null : message);
+  return { failure, authenticationRequired };
+}
+
+function assetAspect(asset: ImageAsset) {
+  if (asset.type !== "video") return 1;
+  return asset.width > 0 && asset.height > 0 ? asset.width / asset.height : 9 / 16;
+}
+
+function AssetResults({
+  assets,
+  columns,
+  compact,
+  headingLevel,
+  filters,
+  empty,
+  models,
+  onOpen,
+  query,
+  failure,
+  retry,
+}: {
+  assets: ImageAsset[];
+  columns: number;
+  compact: boolean;
+  headingLevel: 2 | 3;
+  filters: AssetLibraryFilters;
+  empty: Empty;
+  models: NonNullable<ReturnType<typeof useModelPresentation>["data"]>["models"];
+  onOpen: (index: number) => void;
+  query: AssetQuery;
+  failure: Error | null;
+  retry: () => void;
+}) {
   const index = new Map(assets.map((asset, position) => [asset.id, position]));
   const Day = headingLevel === 2 ? "h2" : "h3";
   const tile = (
@@ -211,39 +259,32 @@ export function AssetBrowser({
       asset={asset}
       modelName={modelDisplayName(asset.model, models)}
       style={style}
-      onOpen={() => setPreview(index.get(asset.id) ?? 0)}
+      onOpen={() => onOpen(index.get(asset.id) ?? 0)}
     />
   );
+  const densityStyle: CSSProperties & { "--asset-columns": number } = {
+    "--asset-columns": columns,
+  };
   const densityGrid = (items: ImageAsset[]) => (
-    <div className="asset-density-grid" style={{ "--asset-columns": columns } as CSSProperties}>
-      {items.map((asset) =>
-        tile(asset, {
-          aspectRatio:
-            asset.type === "video"
-              ? asset.width > 0 && asset.height > 0
-                ? asset.width / asset.height
-                : 9 / 16
-              : 1,
-        }),
-      )}
+    <div className="asset-density-grid" style={densityStyle}>
+      {items.map((asset) => tile(asset, { aspectRatio: assetAspect(asset) }))}
     </div>
   );
-  const empty = emptyState(filters, defaults, currentTool);
-  const content = failure ? (
-    <AssetEmpty
-      icon={IconPhotoX}
-      title="素材暂时不可用"
-      text={failure.message || "请检查网络后重新加载。"}
-      action={{
-        label: "重新加载",
-        onPress: () => void (session.isError ? session.refetch() : query.refetch()),
-      }}
-    />
-  ) : query.isPending ? (
-    <Skeleton compact={compact} />
-  ) : assets.length === 0 ? (
-    <AssetEmpty icon={empty.icon} title={empty.title} />
-  ) : (
+  if (failure)
+    return (
+      <AssetEmpty
+        icon={IconPhotoX}
+        title="素材暂时不可用"
+        text={failure.message || "请检查网络后重新加载。"}
+        action={{
+          label: "重新加载",
+          onPress: retry,
+        }}
+      />
+    );
+  if (query.isPending) return <Skeleton compact={compact} />;
+  if (!assets.length) return <AssetEmpty icon={empty.icon} title={empty.title} />;
+  return (
     <>
       {!filters.time || filters.time === "all"
         ? densityGrid(assets)
@@ -267,86 +308,37 @@ export function AssetBrowser({
       />
     </>
   );
-  const panelContent = (
-    <>
-      <AssetFilters
-        filters={filters}
-        defaults={defaults}
-        currentTool={currentTool}
-        models={models}
-        loaded={query.data ? assets.length : null}
-        compact={compact}
-        mediaSelect
-        showSource={!generatedOnly}
-        displayControls={
-          <ToggleButtonGroup
-            aria-label="图片大小"
-            selectionMode="single"
-            disallowEmptySelection
-            selectedKeys={[String(columns)]}
-            onSelectionChange={(keys) => {
-              const count = [6, 8, 10].find((value) => keys.has(String(value)));
-              if (count) setColumns(count);
-            }}
-            className="asset-segment asset-density-control"
-            size="sm"
-          >
-            <ToggleButton isIconOnly id="6" aria-label="大图，每行6张">
-              <UiIcon icon={IconLayoutGrid} />
-            </ToggleButton>
-            <ToggleButton isIconOnly id="8" aria-label="中图，每行8张">
-              <UiIcon icon={IconGridDots} />
-            </ToggleButton>
-            <ToggleButton isIconOnly id="10" aria-label="小图，每行10张">
-              <UiIcon icon={IconGrid4x4} />
-            </ToggleButton>
-          </ToggleButtonGroup>
-        }
-        onChange={onChange}
-      />
-      {width > 0 && content}
-    </>
-  );
-  if (authenticationRequired) {
-    return (
-      <LoginDialog
-        onClose={onAuthenticationClose ?? (() => navigate("/", { replace: true }))}
-        onLoginSuccess={() => void session.refetch()}
-      />
-    );
-  }
+}
+
+function AssetDensityControls({
+  columns,
+  onChange,
+}: {
+  columns: number;
+  onChange: (columns: number) => void;
+}) {
   return (
-    <div className="asset-browser" ref={frame}>
-      <div className="asset-source-panel">{panelContent}</div>
-      {preview !== null && assets[preview]?.type === "video" ? (
-        <VideoPlayerDialog
-          videos={assets.filter((asset) => asset.type === "video").map(toPreviewVideo)}
-          initialId={assets[preview].id}
-          onClose={() => setPreview(null)}
-          hasMore={query.hasNextPage}
-          isLoadingMore={query.isFetchingNextPage}
-          isLoadMoreError={query.isError}
-          onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
-        />
-      ) : (
-        preview !== null && (
-          <ImagePreviewDialog
-            images={assets.filter((asset) => asset.type === "image").map(toPreview)}
-            initialIndex={Math.max(
-              0,
-              assets
-                .filter((asset) => asset.type === "image")
-                .findIndex((asset) => asset.id === assets[preview]?.id),
-            )}
-            onClose={() => setPreview(null)}
-            hasMore={query.hasNextPage}
-            isLoadingMore={query.isFetchingNextPage}
-            isLoadMoreError={query.isError}
-            onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
-            {...(onViewHistory ? { onViewHistory } : {})}
-          />
-        )
-      )}
-    </div>
+    <ToggleButtonGroup
+      aria-label="图片大小"
+      selectionMode="single"
+      disallowEmptySelection
+      selectedKeys={[String(columns)]}
+      onSelectionChange={(keys) => {
+        const count = [6, 8, 10].find((value) => keys.has(String(value)));
+        if (count) onChange(count);
+      }}
+      className="asset-segment asset-density-control"
+      size="sm"
+    >
+      <ToggleButton isIconOnly id="6" aria-label="大图，每行6张">
+        <UiIcon icon={IconLayoutGrid} />
+      </ToggleButton>
+      <ToggleButton isIconOnly id="8" aria-label="中图，每行8张">
+        <UiIcon icon={IconGridDots} />
+      </ToggleButton>
+      <ToggleButton isIconOnly id="10" aria-label="小图，每行10张">
+        <UiIcon icon={IconGrid4x4} />
+      </ToggleButton>
+    </ToggleButtonGroup>
   );
 }

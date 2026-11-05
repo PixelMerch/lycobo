@@ -113,7 +113,7 @@ try {
       store,
       enabled: true,
       unitCredits: 1,
-      validate: () => {},
+      validate: () => undefined,
       resolutions: () => ["1K"],
     },
     auth,

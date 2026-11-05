@@ -44,9 +44,8 @@ try {
   images = openImageRepository(testUrl.href);
   const sql = postgres(testUrl.href, { max: 5 });
   try {
-    for (const kind of ["user", "task", "image"]) {
-      const pattern =
-        kind === "user" ? /^[0-9]{10}$/ : kind === "task" ? /^W[0-9A-Z]{8}$/ : /^P[0-9A-Z]{8}$/;
+    const patterns = { user: /^[0-9]{10}$/, task: /^W[0-9A-Z]{8}$/, image: /^P[0-9A-Z]{8}$/ };
+    for (const [kind, pattern] of Object.entries(patterns)) {
       const allocated = await Promise.all(
         Array.from({ length: 50 }, async () => {
           const [row] = await sql`select public.allocate_public_identifier(${kind}) as value`;
@@ -95,7 +94,7 @@ try {
         auth,
         enabled: false,
         unitCredits: 1,
-        validate: () => {},
+        validate: () => undefined,
         resolutions: () => ["1K"],
       },
       auth,

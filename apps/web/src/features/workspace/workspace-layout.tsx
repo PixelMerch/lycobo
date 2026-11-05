@@ -63,13 +63,16 @@ export function WorkspaceLayout() {
     const textile = useTextileSetDraft.getState();
     const draft = useStudioStore.getState().drafts[task.model];
     const variation = useSmartVariationDraft.getState();
-    const occupied = task.variation
-      ? !!variation.description.trim() ||
-        variation.references.length > 0 ||
-        variation.items.length > 0
-      : task.textileSet
-        ? !!textile.mainImage || textile.detailImages.length > 0 || textile.views.length > 0
-        : !!draft?.prompt.trim() || !!draft?.references.length;
+    const variationOccupied =
+      !!variation.description.trim() ||
+      variation.references.length > 0 ||
+      variation.items.length > 0;
+    const textileOccupied =
+      !!textile.mainImage || textile.detailImages.length > 0 || textile.views.length > 0;
+    const imageOccupied = !!draft?.prompt.trim() || !!draft?.references.length;
+    let occupied = imageOccupied;
+    if (task.variation) occupied = variationOccupied;
+    else if (task.textileSet) occupied = textileOccupied;
     if (occupied) setRestorePending(task);
     else applyRestore(task);
   };

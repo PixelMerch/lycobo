@@ -22,16 +22,21 @@ export function nextVersion(tags, baseline) {
   return `v${major}.${minor}.${BigInt(patch) + 1n}`;
 }
 
+async function tagForCommit(tags, sha, resolveTag) {
+  for (const tag of tags) {
+    if (!stable.test(tag.ref.slice("refs/tags/".length))) continue;
+    const target = tag.object.type === "commit" ? tag.object.sha : await resolveTag(tag.object.sha);
+    if (target === sha) return tag.ref.slice("refs/tags/".length);
+  }
+  return undefined;
+}
+
 /** Atomic tag reservation makes concurrent main releases safe; reruns reuse the same SHA. */
 export async function reserveVersion({ sha, baseline, listTags, resolveTag, createTag }) {
   for (let attempt = 0; attempt < 5; attempt++) {
     const tags = await listTags();
-    for (const tag of tags) {
-      if (!stable.test(tag.ref.slice("refs/tags/".length))) continue;
-      const target =
-        tag.object.type === "commit" ? tag.object.sha : await resolveTag(tag.object.sha);
-      if (target === sha) return tag.ref.slice("refs/tags/".length);
-    }
+    const existing = await tagForCommit(tags, sha, resolveTag);
+    if (existing) return existing;
     const version = nextVersion(
       tags.map((tag) => tag.ref.slice("refs/tags/".length)),
       baseline,

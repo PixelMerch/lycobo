@@ -29,7 +29,7 @@ async function readOriginal(id: string, remaining: number, signal: AbortSignal) 
       chunks.push(value);
     }
   } finally {
-    await reader.cancel().catch(() => {});
+    await reader.cancel().catch(() => undefined);
     reader.releaseLock();
   }
   if (!size) throw new Error("图片下载失败，请稍后重试。");
@@ -50,7 +50,8 @@ export function HistoryDownloadButton({ job }: { job: ImageJob }) {
   useEffect(() => () => active.current?.abort(), []);
   if (!entries.length) return null;
   const partial = entries.length < job.requested_count;
-  const downloadLabel = job.input?.variation ? "下载套图" : partial ? "下载已生成" : "下载全部";
+  const imageDownloadLabel = partial ? "下载已生成" : "下载全部";
+  const downloadLabel = job.input?.variation ? "下载套图" : imageDownloadLabel;
   return (
     <Tooltip delay={0} closeDelay={0} isOpen={showCount && !packing} onOpenChange={setShowCount}>
       <Button

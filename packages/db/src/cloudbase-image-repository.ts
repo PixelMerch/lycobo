@@ -9,6 +9,7 @@ import {
   variationPlanSchema,
 } from "@lycoboai/contracts";
 import { z } from "zod";
+import { cloudbaseImageExecution } from "./cloudbase-image-execution";
 import {
   type CloudBaseDatabaseBindings,
   CloudBaseOperationError,
@@ -53,49 +54,15 @@ const variationView = (value: unknown) => {
     items: parsed.items,
   });
 };
-/** Main-site runtime uses its existing independent model configuration. */
-export function cloudbaseImageRepository(
-  call: CloudBaseRpc,
-  independent: IndependentModelConfiguration,
-): ImageRuntimeRepository {
-  const run = async (operation: string, args: Record<string, unknown> = {}) => {
-    try {
-      return await call("lycobo_image_operation", { p_operation: operation, p_args: args });
-    } catch (error) {
-      if (error instanceof CloudBaseOperationError) throw new ImageRepositoryError(error.message);
-      throw error;
-    }
-  };
-  const variationRun = async (operation: string, args: Record<string, unknown>) => {
-    try {
-      return await run(operation, args);
-    } catch (error) {
-      if (error instanceof ImageRepositoryError) {
-        const code = z
-          .enum([
-            "RATE_LIMITED",
-            "NOT_FOUND",
-            "IDEMPOTENCY_CONFLICT",
-            "REFERENCE_NOT_FOUND",
-            "STATE_CONFLICT",
-          ])
-          .safeParse(error.code);
-        if (code.success) throw new VariationError(code.data);
-      }
-      throw error;
-    }
-  };
-  const repository: ImageRuntimeRepository = {
-    close: async () => {},
-    ...cloudbaseProviderWebhooks(call),
-    getMany: async (scope, ids) =>
-      rows.parse(
-        await call("lycobo_image_batch", {
-          p_org: scope.organizationId,
-          p_user: scope.userId,
-          p_ids: ids,
-        }),
-      ),
+type RunImageOperation = (operation: string, args?: Record<string, unknown>) => Promise<unknown>;
+
+function cloudbaseImageIdentity(
+  run: RunImageOperation,
+): Pick<
+  ImageRuntimeRepository,
+  "storageUid" | "authenticate" | "wallet" | "walletEntries" | "rechargeOrders"
+> {
+  return {
     storageUid: async (scope) =>
       z
         .string()
@@ -125,6 +92,14 @@ export function cloudbaseImageRepository(
       rows.parse(await run("walletEntries", { ...scope, limit, beforeEntry: before })),
     rechargeOrders: async (scope, limit, before) =>
       rows.parse(await run("rechargeOrders", { ...scope, limit, before })),
+  };
+}
+
+function cloudbaseImageSubmission(
+  run: RunImageOperation,
+  independent: IndependentModelConfiguration,
+): Pick<ImageRuntimeRepository, "create" | "retry" | "providerRetryCandidates" | "resumeProvider"> {
+  return {
     create: async (scope, input, key) => {
       const checked = imageGenerationInputSchema.parse(input);
       let snapshot: ReturnType<IndependentModelConfiguration["resolve"]> | null = null;
@@ -185,6 +160,14 @@ export function cloudbaseImageRepository(
     resumeProvider: async (scope, jobId, itemId) => {
       await run("resumeProvider", { ...scope, jobId, itemId });
     },
+  };
+}
+
+function cloudbaseImageHistory(
+  run: RunImageOperation,
+  call: CloudBaseRpc,
+): Pick<ImageRuntimeRepository, "list" | "get" | "latestEdit" | "archive" | "getMany"> {
+  return {
     list: async (scope, limit, before, tool) =>
       rows.parse(await run("list", { ...scope, limit, before, tool })),
     get: async (scope, id) => row.nullable().parse(await run("get", { ...scope, id })),
@@ -193,6 +176,31 @@ export function cloudbaseImageRepository(
     archive: async (scope, id) => {
       await run("archive", { ...scope, id });
     },
+    getMany: async (scope, ids) =>
+      rows.parse(
+        await call("lycobo_image_batch", {
+          p_org: scope.organizationId,
+          p_user: scope.userId,
+          p_ids: ids,
+        }),
+      ),
+  };
+}
+
+function cloudbaseImageAssets(
+  run: RunImageOperation,
+): Pick<
+  ImageRuntimeRepository,
+  | "addReference"
+  | "listAssets"
+  | "setAssetFavorite"
+  | "favoriteAssetIds"
+  | "assetLocations"
+  | "asset"
+  | "expiredReferences"
+  | "markReferenceDeleted"
+> {
+  return {
     addReference: async (scope, image) => {
       await run("addReference", { ...scope, image });
     },
@@ -214,78 +222,49 @@ export function cloudbaseImageRepository(
     markReferenceDeleted: async (id) => {
       await run("markReferenceDeleted", { id });
     },
-    leaseOutbox: async () =>
-      z
-        .array(z.object({ id: z.uuid(), itemId: z.uuid(), leaseToken: z.uuid() }))
-        .parse(await run("leaseOutbox")),
-    ackOutbox: async (id, leaseToken) => {
-      await run("ackOutbox", { id, leaseToken });
-    },
-    claim: async (itemId, workerId, leaseMs) => {
-      const value = z
-        .object({
-          itemId: z.uuid(),
-          position: z.number().int(),
-          jobId: z.uuid(),
-          organizationId: z.uuid(),
-          userId: z.uuid(),
-          executionToken: z.uuid(),
-          input: imageGenerationInputSchema,
-          providerModel: imageGenerationInputSchema.shape.model,
-          configuredProvider: z
-            .object({
-              snapshot: providerSnapshotSchema,
-              phase: z.string(),
-              taskId: z.string().nullable(),
-              statusPath: z.string().nullable(),
-              deadlineAt: z.coerce.date(),
-              pollFailures: z.number().int(),
-            })
-            .nullable(),
-        })
-        .nullable()
-        .parse(await run("claim", { itemId, workerId, leaseMs }));
-      return value ? { ...value, configuredProvider: value.configuredProvider ?? undefined } : null;
-    },
-    providerCipher: async (credentialId) => {
-      if (credentialId === independent.credentialId) return independent.credentialCipher;
-      return z
-        .string()
-        .min(1)
-        .parse(await run("providerCipher", { id: credentialId }));
-    },
-    deferProvider: async (job, taskId, statusPath, delayMs, failed = false, requestId) => {
-      await run("deferProvider", {
-        itemId: job.itemId,
-        executionToken: job.executionToken,
-        taskId,
-        statusPath,
-        delayMs,
-        failed,
-        requestId,
-      });
-    },
-    finish: async (job, result) =>
-      z.boolean().parse(
-        await run("finish", {
-          jobId: job.jobId,
-          itemId: job.itemId,
-          executionToken: job.executionToken,
-          result,
-        }),
-      ),
-    pruneEvents: async () => {
-      await run("pruneEvents");
-    },
-    expireClaims: async () => {
-      await run("expireClaims");
-    },
-    settleInvalidResponses: async () => {
-      await run("settleInvalidResponses");
-    },
-    reconcile: async (scope, jobId, itemId, evidence) => {
-      await run("reconcile", { ...scope, jobId, itemId, evidence });
-    },
+  };
+}
+
+/** Main-site runtime uses its existing independent model configuration. */
+export function cloudbaseImageRepository(
+  call: CloudBaseRpc,
+  independent: IndependentModelConfiguration,
+): ImageRuntimeRepository {
+  const run = async (operation: string, args: Record<string, unknown> = {}) => {
+    try {
+      return await call("lycobo_image_operation", { p_operation: operation, p_args: args });
+    } catch (error) {
+      if (error instanceof CloudBaseOperationError) throw new ImageRepositoryError(error.message);
+      throw error;
+    }
+  };
+  const variationRun = async (operation: string, args: Record<string, unknown>) => {
+    try {
+      return await run(operation, args);
+    } catch (error) {
+      if (error instanceof ImageRepositoryError) {
+        const code = z
+          .enum([
+            "RATE_LIMITED",
+            "NOT_FOUND",
+            "IDEMPOTENCY_CONFLICT",
+            "REFERENCE_NOT_FOUND",
+            "STATE_CONFLICT",
+          ])
+          .safeParse(error.code);
+        if (code.success) throw new VariationError(code.data);
+      }
+      throw error;
+    }
+  };
+  const repository: ImageRuntimeRepository = {
+    close: async () => undefined,
+    ...cloudbaseProviderWebhooks(call),
+    ...cloudbaseImageIdentity(run),
+    ...cloudbaseImageSubmission(run, independent),
+    ...cloudbaseImageHistory(run, call),
+    ...cloudbaseImageAssets(run),
+    ...cloudbaseImageExecution(run, independent),
     models: {
       logos: async () => ({
         models:

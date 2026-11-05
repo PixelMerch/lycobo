@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import type { HomeInspiration } from "./home-inspiration-data";
 
+const heightByShape = { portrait: 1.25, landscape: 0.75, square: 1 };
 const breakpoints = ["(min-width: 768px)", "(min-width: 1200px)", "(min-width: 1800px)"];
 
 function subscribe(onChange: () => void) {
@@ -29,8 +30,7 @@ export function useInspirationColumns(items: HomeInspiration[]) {
   for (const item of items) {
     const shortest = columns.reduce((left, right) => (left.height <= right.height ? left : right));
     shortest.items.push(item);
-    const ratio = item.shape === "portrait" ? 1.25 : item.shape === "landscape" ? 0.75 : 1;
-    shortest.height += ratio + 0.06;
+    shortest.height += heightByShape[item.shape] + 0.06;
   }
   return columns;
 }

@@ -103,7 +103,8 @@ export function LocalRepairPanel({
           isDisabled={!available || !image || busy || !canGenerate || (pending && !ownPending)}
           onPress={() => void submit()}
         >
-          {ownPending ? "确认上次提交" : busy ? "生成中…" : "立即生成"}
+          {ownPending && "确认上次提交"}
+          {!ownPending && (busy ? "生成中…" : "立即生成")}
           {!ownPending && !busy && models.data && (
             <span className="generate-credit-cost" aria-hidden="true">
               <CreditCoin />

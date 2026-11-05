@@ -6,6 +6,15 @@ import { useImageAssets } from "../generation-client";
 import type { ReferenceImage } from "../studio-state";
 
 /** Browse only the authenticated user's assets; selecting an asset reuses its durable ID. */
+function mentionAssetKind(category: string) {
+  if (category === "images") return "reference";
+  return category === "favorites" ? "all" : "output";
+}
+
+function alreadyUsed(image: ReferenceImage, usedIds: Set<string>) {
+  return usedIds.has(image.id) || Boolean(image.assetId && usedIds.has(image.assetId));
+}
+
 export function ReferenceMentionOptions({
   references,
   maxReferences = 5,
@@ -35,7 +44,7 @@ export function ReferenceMentionOptions({
   // 收藏 lists the member's server favorites, uploads and outputs alike.
   const query = useImageAssets({
     enabled: allowHistory,
-    kind: category === "images" ? "reference" : category === "favorites" ? "all" : "output",
+    kind: mentionAssetKind(category),
     type: "image",
     favorite: category === "favorites",
   });
@@ -68,11 +77,11 @@ export function ReferenceMentionOptions({
   const disabled = options
     .filter(
       (image) =>
-        usedIds.has(image.id) ||
-        (image.assetId && usedIds.has(image.assetId)) ||
-        (!isCurrent(image) && references.length >= maxReferences),
+        alreadyUsed(image, usedIds) || (!isCurrent(image) && references.length >= maxReferences),
     )
     .map((image) => image.id);
+  const emptyLabel = allowHistory && query.isError ? "图片暂时无法加载" : "暂无匹配图片";
+  const loading = allowHistory && query.isFetching;
   return (
     <div className="reference-mention-options">
       <Tabs
@@ -122,20 +131,12 @@ export function ReferenceMentionOptions({
               <ListBox.Item key={image.id} id={image.id} textValue={image.name}>
                 <img src={image.src} alt="" loading="lazy" />
                 <span>{image.name}</span>
-                {usedIds.has(image.id) || (image.assetId && usedIds.has(image.assetId)) ? (
-                  <small>已引用</small>
-                ) : null}
+                {alreadyUsed(image, usedIds) ? <small>已引用</small> : null}
               </ListBox.Item>
             ))}
           </ListBox>
         ) : (
-          <p className="reference-mention-empty">
-            {allowHistory && query.isFetching
-              ? null
-              : allowHistory && query.isError
-                ? "图片暂时无法加载"
-                : "暂无匹配图片"}
-          </p>
+          <p className="reference-mention-empty">{!loading && emptyLabel}</p>
         )}
         {allowHistory && query.isError && (
           <Button size="sm" variant="ghost" onPress={() => void query.refetch()}>

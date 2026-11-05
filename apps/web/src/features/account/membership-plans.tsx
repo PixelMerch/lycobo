@@ -68,6 +68,9 @@ function MembershipPlanCards({
   const [selected, setSelected] = useState<Record<string, number>>({ pro: 13550, apex: 31860 });
   const period = membershipCycles.find((item) => item.id === cycle) ?? membershipCycles[0];
   const cheapest = cheapestPlanId(plans, cycle);
+  function changeSeats(id: string, value: number) {
+    if (Number.isFinite(value)) setSeats((previous) => ({ ...previous, [id]: value }));
+  }
   return (
     <div className="membership-plan-grid">
       {plans.map((plan) => {
@@ -78,6 +81,7 @@ function MembershipPlanCards({
         const seatCount = seats[plan.id] ?? 2;
         const discount = discountTenths(option, cycle);
         const ribbon = planRibbon(plan, cheapest);
+        const seatLabel = team ? " / 席" : "";
         return (
           <Card
             key={plan.id}
@@ -100,7 +104,7 @@ function MembershipPlanCards({
                   </strong>
                   <span>
                     {period.unit}
-                    {team ? " / 席" : ""}
+                    {seatLabel}
                   </span>
                   <s className="membership-original-price">
                     <span className="visually-hidden">原价</span>¥
@@ -114,10 +118,7 @@ function MembershipPlanCards({
                       minValue={2}
                       maxValue={99}
                       value={seatCount}
-                      onChange={(value) => {
-                        if (Number.isFinite(value))
-                          setSeats((previous) => ({ ...previous, [plan.id]: value }));
-                      }}
+                      onChange={(value) => changeSeats(plan.id, value)}
                       className="membership-seats"
                     >
                       <NumberField.Group>
@@ -137,40 +138,13 @@ function MembershipPlanCards({
                   </div>
                 )}
                 <div className="membership-plan-choice">
-                  <div className="membership-quota-select">
-                    {plan.options.length > 1 ? (
-                      <ToggleButtonGroup
-                        aria-label={`${plan.name}积分档位`}
-                        size="sm"
-                        fullWidth
-                        selectionMode="single"
-                        disallowEmptySelection
-                        selectedKeys={[String(option.credits)]}
-                        onSelectionChange={(keys) => {
-                          const next = plan.options.find((item) => keys.has(String(item.credits)));
-                          if (next)
-                            setSelected((previous) => ({ ...previous, [plan.id]: next.credits }));
-                        }}
-                      >
-                        {plan.options.map((item, index) => (
-                          <ToggleButton
-                            key={item.credits}
-                            id={String(item.credits)}
-                            aria-label={`${plan.name} ${item.credits}积分/月`}
-                          >
-                            {index > 0 && <ToggleButtonGroup.Separator />}
-                            <UiIcon icon={IconCoins} size="small" />
-                            {item.label}/月
-                          </ToggleButton>
-                        ))}
-                      </ToggleButtonGroup>
-                    ) : (
-                      <span>
-                        <UiIcon icon={IconCoins} size="small" />
-                        {option.label}/月
-                      </span>
-                    )}
-                  </div>
+                  <PlanQuotaSelect
+                    plan={plan}
+                    option={option}
+                    onSelect={(credits) =>
+                      setSelected((previous) => ({ ...previous, [plan.id]: credits }))
+                    }
+                  />
                   <Button
                     variant={ribbon?.tone === "best" ? "primary" : "secondary"}
                     isDisabled
@@ -184,7 +158,7 @@ function MembershipPlanCards({
                   <div className="membership-plan-credits">
                     <CreditCoin size="default" />
                     <strong>{option.credits.toLocaleString("zh-CN")}</strong>
-                    <span>/ 月{team ? " / 席" : ""}</span>
+                    <span>/ 月{seatLabel}</span>
                   </div>
                   <p>
                     ¥{Number((price / period.months).toFixed(1))} / 月，<em>1</em> 积分 ={" "}
@@ -293,5 +267,51 @@ export function MembershipPlans() {
       </Tabs>
       <MembershipFaq />
     </section>
+  );
+}
+
+function PlanQuotaSelect({
+  plan,
+  option,
+  onSelect,
+}: {
+  plan: MembershipPlan;
+  option: MembershipPlan["options"][number];
+  onSelect: (credits: number) => void;
+}) {
+  return (
+    <div className="membership-quota-select">
+      {plan.options.length > 1 ? (
+        <ToggleButtonGroup
+          aria-label={`${plan.name}积分档位`}
+          size="sm"
+          fullWidth
+          selectionMode="single"
+          disallowEmptySelection
+          selectedKeys={[String(option.credits)]}
+          onSelectionChange={(keys) => {
+            const next = plan.options.find((item) => keys.has(String(item.credits)));
+            if (next) onSelect(next.credits);
+          }}
+        >
+          {plan.options.map((item, index) => (
+            <ToggleButton
+              key={item.credits}
+              id={String(item.credits)}
+              aria-label={`${plan.name} ${item.credits}积分/月`}
+            >
+              {index > 0 && <ToggleButtonGroup.Separator />}
+              <UiIcon icon={IconCoins} size="small" />
+              {item.label}/月
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+      ) : (
+        <span>
+          <UiIcon icon={IconCoins} size="small" />
+          {option.label}/月
+        </span>
+      )}
+    </div>
   );
 }

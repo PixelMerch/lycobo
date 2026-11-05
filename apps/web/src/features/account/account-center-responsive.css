@@ -1,0 +1,154 @@
+/* ---------- narrow screens ---------- */
+@media (max-width: 1023px) {
+  .account-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .account-info-rows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 767px) {
+  .account-dialog.account-center-dialog.modal__dialog {
+    --account-center-padding: var(--space-4);
+    width: calc(100vw - 24px);
+    height: min(760px, calc(100dvh - 24px));
+    max-height: calc(100dvh - 24px);
+    /* Same top inset as the recharge dialog under the shared close button. */
+    padding-top: var(--space-5);
+    border-radius: 20px;
+  }
+  .account-center-dialog .modal__header {
+    margin-bottom: var(--space-3);
+  }
+  .account-center-tabs > .tabs__list-container .tabs__list {
+    gap: 20px;
+  }
+  .account-profile-card {
+    padding: var(--space-4);
+  }
+  .account-profile-dot {
+    display: none;
+  }
+  .account-profile-avatar,
+  .account-profile-avatar .avatar__fallback {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    font-size: var(--text-lg);
+  }
+  .account-profile-action.button {
+    display: none;
+  }
+  .account-copy.button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    margin-block: -10px;
+  }
+  .account-center-tabs .tabs__tab {
+    min-height: 44px;
+  }
+  .account-card,
+  .account-recent,
+  .account-works {
+    padding: var(--space-4);
+  }
+  .account-card-actions .button {
+    flex: 1;
+    min-height: 44px;
+  }
+  .account-facts > span + span::before {
+    content: none;
+  }
+  .account-toolbar-meta {
+    width: 100%;
+    margin-left: 0;
+  }
+  .account-segment.toggle-button-group {
+    justify-content: flex-start;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .account-segment .toggle-button {
+    flex: none;
+    min-height: 36px;
+  }
+  /* The ledger reflows into two-line rows; the header stays for assistive technology. */
+  .account-ledger-table .table__header {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .account-ledger-table :is(.table__content, .table__body) {
+    display: block;
+  }
+  .account-ledger-table .table__body > .table__row {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "type type type amount"
+      "time detail member after";
+    column-gap: 6px;
+    padding: 10px var(--space-4);
+    border-bottom: 1px solid #ffffff0a;
+  }
+  .account-ledger-table.table-root .table__row .table__cell {
+    padding: 0;
+    border: 0;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+  .account-ledger-table .account-cell-type {
+    grid-area: type;
+    padding-bottom: 2px;
+  }
+  .account-ledger-table.table-root .table__row .account-cell-type {
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+  }
+  .account-ledger-table .account-cell-amount {
+    grid-area: amount;
+    align-self: center;
+  }
+  .account-ledger-table.table-root .table__row .account-cell-amount {
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+  }
+  .account-ledger-table .account-cell-time {
+    grid-area: time;
+    padding-left: 38px;
+  }
+  .account-ledger-table.table-root
+    .table__row
+    :is(.account-cell-time, .account-cell-detail, .account-cell-member) {
+    color: var(--muted);
+  }
+  .account-ledger-table .account-cell-detail {
+    grid-area: detail;
+  }
+  .account-ledger-table .account-cell-member {
+    grid-area: member;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .account-ledger-table :is(.account-cell-detail, .account-cell-member)::before {
+    content: "· ";
+  }
+  .account-ledger-table .account-cell-after {
+    grid-area: after;
+  }
+  .account-ledger-table .account-after-label {
+    display: inline;
+  }
+  .account-orders-table .table__content {
+    min-width: 720px;
+  }
+  .account-info-rows {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

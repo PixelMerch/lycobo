@@ -9,14 +9,14 @@ async function copyTaskId(id: string | undefined) {
   await copyToClipboard(id);
 }
 export function HistoryTaskMeta({ job, modelName }: { job: ImageJob; modelName: string }) {
+  const imageModelName = job.input?.textileSet ? "家纺裂变" : modelName;
+  const taskModelName = job.input?.variation ? "套图计划" : imageModelName;
   return (
     <dl className="generation-meta" aria-label="任务信息">
       <div>
         <dt className="sr-only">模型</dt>
         <dd>
-          <span className="model-tag">
-            {job.input?.variation ? "套图计划" : job.input?.textileSet ? "家纺裂变" : modelName}
-          </span>
+          <span className="model-tag">{taskModelName}</span>
         </dd>
       </div>
       <div>

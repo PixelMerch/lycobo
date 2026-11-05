@@ -16,6 +16,50 @@ import { processVideoIntent } from "./video-processor";
 const wakeEvent = z.object({ wake: z.literal(true) });
 const drainEvent = z.object({ drain: z.literal(true), resumeAt: z.number().int().optional() });
 
+async function drainVideos(
+  videos: ReturnType<typeof openVideoRepository>,
+  videoConfig: NonNullable<ReturnType<typeof videoConfiguration>>,
+  stopStartingAt: number,
+) {
+  for (let count = 0; count < 4 && Date.now() < stopStartingAt; count++) {
+    if (
+      !(await processVideoIntent(videos, cloudbaseObjectBucket(process.env), {
+        ...videoConfig,
+        assetOrigin: process.env.ASSET_PUBLIC_ORIGIN ?? "",
+        signingSecret: process.env.ASSET_SIGNING_SECRET ?? "",
+        referenceUrl: cloudbaseProviderReferenceSigner(process.env),
+        pathPrefix: process.env.ASSET_PATH_PREFIX,
+      }))
+    )
+      break;
+  }
+  const due = await videos.run("due");
+  if (
+    typeof due === "string" &&
+    !(await startAsyncDrain(process.env, {
+      drain: true,
+      resumeAt: Math.min(Date.now() + 60000, Math.max(Date.now() + 5000, Date.parse(due))),
+    }))
+  )
+    console.error("VIDEO_CONTINUATION_FAILED");
+}
+
+async function pruneImageData(
+  repository: ReturnType<typeof openCloudBaseImageRepository>,
+  store: ReturnType<typeof objectImageStore>,
+) {
+  await repository.pruneEvents();
+  await repository.pruneWebhooks();
+  for (const asset of await repository.expiredReferences()) {
+    try {
+      await store.remove(asset);
+      await repository.markReferenceDeleted(asset.id);
+    } catch {
+      console.error("REFERENCE_CLEANUP_FAILED", asset.id);
+    }
+  }
+}
+
 /** Event/timer invocation owns the whole execution; no paid work in API handlers. */
 export async function main(event?: unknown) {
   const policy = readImagePolicy({});
@@ -50,41 +94,12 @@ export async function main(event?: unknown) {
   const videos = videoConfig ? openVideoRepository(process.env) : undefined;
   try {
     if (videos && videoConfig) {
-      for (let count = 0; count < 4 && Date.now() < stopStartingAt; count++) {
-        if (
-          !(await processVideoIntent(videos, cloudbaseObjectBucket(process.env), {
-            ...videoConfig,
-            assetOrigin: process.env.ASSET_PUBLIC_ORIGIN ?? "",
-            signingSecret: process.env.ASSET_SIGNING_SECRET ?? "",
-            referenceUrl: cloudbaseProviderReferenceSigner(process.env),
-            pathPrefix: process.env.ASSET_PATH_PREFIX,
-          }))
-        )
-          break;
-      }
-      const due = await videos.run("due");
-      if (
-        typeof due === "string" &&
-        !(await startAsyncDrain(process.env, {
-          drain: true,
-          resumeAt: Math.min(Date.now() + 60000, Math.max(Date.now() + 5000, Date.parse(due))),
-        }))
-      )
-        console.error("VIDEO_CONTINUATION_FAILED");
+      await drainVideos(videos, videoConfig, stopStartingAt);
     }
     await repository.expireClaims();
     // Retention and expired-reference cleanup are not urgent: timer and manual runs keep them current.
     if (!drain.success) {
-      await repository.pruneEvents();
-      await repository.pruneWebhooks();
-      for (const asset of await repository.expiredReferences()) {
-        try {
-          await store.remove(asset);
-          await repository.markReferenceDeleted(asset.id);
-        } catch {
-          console.error("REFERENCE_CLEANUP_FAILED", asset.id);
-        }
-      }
+      await pruneImageData(repository, store);
     }
     const { processed, resumeAt } = await drainCloudBaseOutbox({
       repository,

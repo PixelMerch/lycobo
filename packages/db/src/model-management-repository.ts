@@ -10,31 +10,25 @@ import {
 } from "@lycoboai/contracts";
 import type postgres from "postgres";
 
-export function modelManagementRepository(sql: postgres.Sql) {
+function imageRouteTool(input: ImageGenerationInput) {
+  if (input.textileSet) return "textile-set";
+  return input.localEdit ? "local-edit" : "create";
+}
+
+async function createModelCredential(tx: postgres.TransactionSql, ciphertext: string | undefined) {
+  let credentialId: string | undefined;
+  if (ciphertext) {
+    const [key] =
+      await tx`insert into model_credentials (ciphertext) values (${ciphertext}) returning id`;
+    credentialId = String(key?.id);
+  }
+  return credentialId;
+}
+
+function modelManagementWrites(sql: postgres.Sql) {
   const audit = (tx: postgres.TransactionSql, actor: string, action: string, id: string) =>
     tx`insert into model_audit_events (actor_id,action,resource_id) values (${actor},${action},${id})`;
   return {
-    async logos() {
-      const rows =
-        await sql`select code,name,logo_url,description,capability_summary from model_catalog where category='image' and enabled=1 order by sort_order,created_at`;
-      return imageModelLogosResponseSchema.parse({
-        models: rows.map((row) => ({
-          id: row.code,
-          name: row.name,
-          logoUrl: row.logo_url,
-          description: row.description ?? "",
-          capabilitySummary: row.capability_summary ?? "",
-        })),
-      });
-    },
-    async list() {
-      const [providers, channels, routes] = await Promise.all([
-        sql`select id,name,origin,adapter,enabled=1 as enabled,true as key_configured,updated_at from model_providers order by created_at`,
-        sql`select id,provider_id,name,model,settings,enabled=1 as enabled from model_channels order by created_at`,
-        sql`select tool,model,channel_id from model_routes order by tool,model`,
-      ]);
-      return { providers, channels, routes };
-    },
     async saveProvider(
       actor: string,
       id: string | undefined,
@@ -42,12 +36,7 @@ export function modelManagementRepository(sql: postgres.Sql) {
       ciphertext?: string,
     ) {
       return sql.begin(async (tx) => {
-        let credentialId: string | undefined;
-        if (ciphertext) {
-          const [key] =
-            await tx`insert into model_credentials (ciphertext) values (${ciphertext}) returning id`;
-          credentialId = String(key?.id);
-        }
+        const credentialId = await createModelCredential(tx, ciphertext);
         let savedId = id;
         if (savedId) {
           const [row] =
@@ -91,8 +80,35 @@ export function modelManagementRepository(sql: postgres.Sql) {
         return { saved: true };
       });
     },
+  };
+}
+
+export function modelManagementRepository(sql: postgres.Sql) {
+  return {
+    async logos() {
+      const rows =
+        await sql`select code,name,logo_url,description,capability_summary from model_catalog where category='image' and enabled=1 order by sort_order,created_at`;
+      return imageModelLogosResponseSchema.parse({
+        models: rows.map((row) => ({
+          id: row.code,
+          name: row.name,
+          logoUrl: row.logo_url,
+          description: row.description ?? "",
+          capabilitySummary: row.capability_summary ?? "",
+        })),
+      });
+    },
+    async list() {
+      const [providers, channels, routes] = await Promise.all([
+        sql`select id,name,origin,adapter,enabled=1 as enabled,true as key_configured,updated_at from model_providers order by created_at`,
+        sql`select id,provider_id,name,model,settings,enabled=1 as enabled from model_channels order by created_at`,
+        sql`select tool,model,channel_id from model_routes order by tool,model`,
+      ]);
+      return { providers, channels, routes };
+    },
+    ...modelManagementWrites(sql),
     async hasRoute(input: ImageGenerationInput) {
-      const tool = input.textileSet ? "textile-set" : input.localEdit ? "local-edit" : "create";
+      const tool = imageRouteTool(input);
       const rows =
         await sql`select tool from model_routes where tool=${tool} and model=${input.model}`;
       return rows.length > 0;
@@ -167,7 +183,7 @@ export async function resolveProviderSnapshot(
   input: ImageGenerationInput,
   requireManaged = false,
 ) {
-  const tool = input.textileSet ? "textile-set" : input.localEdit ? "local-edit" : "create";
+  const tool = imageRouteTool(input);
   const [catalog] = await tx`select enabled,category from model_catalog where code=${input.model}`;
   if (catalog && (catalog.enabled !== 1 || catalog.category !== "image"))
     throw new Error("MODEL_CHANNEL_DISABLED");

@@ -66,21 +66,81 @@ async function readJson(response: Response) {
       chunks.push(part.value);
     }
   } finally {
-    await reader.cancel().catch(() => {});
+    await reader.cancel().catch(() => undefined);
   }
   try {
-    return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
+    const payload: unknown = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    return payload;
   } catch {
     throw new ImageProviderError("PROVIDER_UNRECOGNIZED_RESPONSE", true);
   }
 }
+type PendingProviderTask = { taskId: string; statusPath: string };
+
+function retryDelay(retryAfter: string | null) {
+  const seconds = retryAfter ? Number(retryAfter) : Number.NaN;
+  let delay = 0;
+  if (Number.isFinite(seconds)) delay = seconds * 1000;
+  else if (retryAfter) delay = Date.parse(retryAfter) - Date.now();
+  return Number.isFinite(delay) ? Math.max(0, delay) : 0;
+}
+
+async function assertProviderResponse(
+  response: Response,
+  isPoll: boolean,
+  requestId: string | undefined,
+) {
+  if (
+    isPoll &&
+    (["stop"].includes(response.headers.get("X-FluxPort-Poll-Action") ?? "") ||
+      [401, 403, 404, 410].includes(response.status))
+  ) {
+    await response.body?.cancel();
+    throw new ImageProviderError("PROVIDER_POLL_STOPPED", true, requestId);
+  }
+  if (!response.ok) {
+    await response.body?.cancel();
+    if (isPoll && (response.status === 429 || response.status >= 500)) {
+      const delay = retryDelay(response.headers.get("Retry-After"));
+      throw new ProviderPollError(`PROVIDER_HTTP_${response.status}`, delay, requestId);
+    }
+    throw new ImageProviderError(
+      `PROVIDER_HTTP_${response.status}`,
+      isPoll || ![400, 401, 403, 404, 413, 415, 422, 429].includes(response.status),
+      requestId,
+    );
+  }
+}
+
+async function readProviderReply(
+  response: Response,
+  adapter: (typeof imageProtocolAdapters)[ProviderSnapshot["adapter"]],
+  requestId: string | undefined,
+) {
+  let json: unknown;
+  try {
+    json = await readJson(response);
+    if (adapter.normalizeReply) json = adapter.normalizeReply(json);
+  } catch (error) {
+    throw new ImageProviderError(
+      error instanceof ImageProviderError ? error.code : "PROVIDER_RESPONSE_UNAVAILABLE",
+      true,
+      requestId,
+    );
+  }
+  const parsed = reply.safeParse(json);
+  if (!parsed.success)
+    throw new ImageProviderError("PROVIDER_UNRECOGNIZED_RESPONSE", true, requestId);
+  return parsed.data;
+}
+
 export async function configuredProviderCall(
   snapshot: ProviderSnapshot,
   key: string,
   input: ImageGenerationInput,
   references: Uint8Array[],
   idempotencyKey: string,
-  pending?: { taskId: string; statusPath: string },
+  pending?: PendingProviderTask,
   request: typeof fetch = fetch,
 ): Promise<ProviderResult> {
   const isPoll = !!pending;
@@ -108,62 +168,32 @@ export async function configuredProviderCall(
   const rawRequestId = response.headers.get("x-request-id");
   const requestId =
     rawRequestId && /^[\w.:/-]{1,200}$/.test(rawRequestId) ? rawRequestId : undefined;
-  if (
-    isPoll &&
-    (["stop"].includes(response.headers.get("X-FluxPort-Poll-Action") ?? "") ||
-      [401, 403, 404, 410].includes(response.status))
-  ) {
-    await response.body?.cancel();
-    throw new ImageProviderError("PROVIDER_POLL_STOPPED", true, requestId);
-  }
-  if (!response.ok) {
-    await response.body?.cancel();
-    if (isPoll && (response.status === 429 || response.status >= 500)) {
-      const retryAfter = response.headers.get("Retry-After");
-      const seconds = retryAfter ? Number(retryAfter) : Number.NaN;
-      const delay = Number.isFinite(seconds)
-        ? seconds * 1000
-        : retryAfter
-          ? Date.parse(retryAfter) - Date.now()
-          : 0;
-      throw new ProviderPollError(
-        `PROVIDER_HTTP_${response.status}`,
-        Number.isFinite(delay) ? Math.max(0, delay) : 0,
-        requestId,
-      );
-    }
-    throw new ImageProviderError(
-      `PROVIDER_HTTP_${response.status}`,
-      isPoll || ![400, 401, 403, 404, 413, 415, 422, 429].includes(response.status),
-      requestId,
-    );
-  }
-  let json: unknown;
-  try {
-    json = await readJson(response);
-    if (adapter.normalizeReply) json = adapter.normalizeReply(json);
-  } catch (error) {
-    throw new ImageProviderError(
-      error instanceof ImageProviderError ? error.code : "PROVIDER_RESPONSE_UNAVAILABLE",
-      true,
-      requestId,
-    );
-  }
-  const parsed = reply.safeParse(json);
-  if (!parsed.success)
-    throw new ImageProviderError("PROVIDER_UNRECOGNIZED_RESPONSE", true, requestId);
-  const result = parsed.data;
-  if (result.status === "failed")
-    throw new ImageProviderError("PROVIDER_TASK_FAILED", false, requestId);
+  await assertProviderResponse(response, isPoll, requestId);
+  const result = await readProviderReply(response, adapter, requestId);
+  return providerResult(result, snapshot, adapter.acceptsTasks, pending, requestId);
+}
+function providerOutputs(result: z.infer<typeof reply>) {
   const direct =
     result.data?.filter(
       (output) => output.url || output.b64_json || output.signed_url || output.download_url,
     ) ?? [];
-  const outputs = direct.length
+  return direct.length
     ? direct
     : (result.assets ?? []).filter(
         (output) => output.url || output.b64_json || output.signed_url || output.download_url,
       );
+}
+
+function providerResult(
+  result: z.infer<typeof reply>,
+  snapshot: ProviderSnapshot,
+  acceptsTasks: boolean,
+  pending: PendingProviderTask | undefined,
+  requestId: string | undefined,
+): ProviderResult {
+  if (result.status === "failed")
+    throw new ImageProviderError("PROVIDER_TASK_FAILED", false, requestId);
+  const outputs = providerOutputs(result);
   if (outputs.length && (!result.status || ["success", "succeeded"].includes(result.status)))
     return { kind: "complete", outputs, requestId };
   // retryable controls new submissions, not reads of an already accepted task.
@@ -174,22 +204,32 @@ export async function configuredProviderCall(
   )
     throw new ImageProviderError("PROVIDER_OUTCOME_UNKNOWN", true, requestId);
   const taskId = result.task_id ?? pending?.taskId;
-  if (!adapter.acceptsTasks || !taskId)
+  if (!acceptsTasks || !taskId)
     throw new ImageProviderError("PROVIDER_UNRECOGNIZED_RESPONSE", true);
+  const statusPath = resultStatusPath(result, snapshot.origin, pending, taskId);
+  return { kind: "pending", taskId, statusPath, delayMs: result.poll_after_ms ?? 2000, requestId };
+}
+function resultStatusPath(
+  result: z.infer<typeof reply>,
+  origin: string,
+  pending: PendingProviderTask | undefined,
+  taskId: string,
+) {
   let statusPath = providerTaskPath(
     result.status_url ??
       result.poll_url ??
       pending?.statusPath ??
       `/v1/images/tasks/${encodeURIComponent(taskId)}?view=summary`,
-    snapshot.origin,
+    origin,
   );
   if (result.status === "success" || result.status === "succeeded") {
-    const full = new URL(result.result_url ?? statusPath, snapshot.origin);
+    const full = new URL(result.result_url ?? statusPath, origin);
     full.searchParams.delete("view");
-    statusPath = providerTaskPath(full.href, snapshot.origin);
+    statusPath = providerTaskPath(full.href, origin);
   }
-  return { kind: "pending", taskId, statusPath, delayMs: result.poll_after_ms ?? 2000, requestId };
+  return statusPath;
 }
+
 function decodeImageBase64(value: string) {
   if (value.length > imageLimits.providerResponseBytes || !/^[A-Za-z0-9+/]+={0,2}$/.test(value))
     throw new ImageProviderError("PROVIDER_UNRECOGNIZED_RESPONSE", true);
@@ -221,55 +261,73 @@ export async function providerOutputBytes(
   let last: unknown = new ImageProviderError("PROVIDER_DOWNLOAD_UNAVAILABLE", true);
   for (const candidate of candidates) {
     try {
-      if (candidate.value.startsWith("data:")) {
-        const data = /^data:image\/(?:png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/.exec(
-          candidate.value,
-        );
-        if (!data?.[1]) throw new ImageProviderError("PROVIDER_UNRECOGNIZED_RESPONSE", true);
-        return decodeImageBase64(data[1]);
-      }
-      const url = new URL(candidate.value, snapshot.origin);
-      if (
-        url.protocol !== "https:" ||
-        url.username ||
-        url.password ||
-        !allowedOrigins.includes(url.origin)
-      )
-        throw new ImageProviderError("PROVIDER_UNTRUSTED_RESULT_URL", true);
-      const response = await request(url, {
-        redirect: "manual",
-        signal: AbortSignal.timeout(30000),
-        headers:
-          url.origin === providerOrigin && !candidate.signed
-            ? { Authorization: `Bearer ${key}` }
-            : {},
-      });
-      if (!response.ok) {
-        await response.body?.cancel();
-        throw new ImageProviderError("PROVIDER_DOWNLOAD_UNAVAILABLE", true);
-      }
-      const reader = response.body?.getReader();
-      if (!reader) throw new ImageProviderError("PROVIDER_EMPTY_IMAGE", true);
-      const chunks: Uint8Array[] = [];
-      let size = 0;
-      try {
-        for (;;) {
-          const part = await reader.read();
-          if (part.done) break;
-          size += part.value.length;
-          if (size > imageLimits.outputBytes)
-            throw new ImageProviderError("PROVIDER_IMAGE_TOO_LARGE", true);
-          chunks.push(part.value);
-        }
-      } finally {
-        await reader.cancel().catch(() => {});
-      }
-      if (!size) throw new ImageProviderError("PROVIDER_EMPTY_IMAGE", true);
-      return Buffer.concat(chunks);
+      return await downloadImageCandidate(
+        candidate,
+        snapshot.origin,
+        providerOrigin,
+        allowedOrigins,
+        key,
+        request,
+      );
     } catch (error) {
       last = error;
       if (!candidate.signed) throw error;
     }
   }
   throw last;
+}
+
+async function downloadImageCandidate(
+  candidate: { value: string; signed: boolean },
+  origin: string,
+  providerOrigin: string,
+  allowedOrigins: string[],
+  key: string,
+  request: typeof fetch,
+) {
+  if (candidate.value.startsWith("data:")) {
+    const data = /^data:image\/(?:png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/.exec(candidate.value);
+    if (!data?.[1]) throw new ImageProviderError("PROVIDER_UNRECOGNIZED_RESPONSE", true);
+    return decodeImageBase64(data[1]);
+  }
+  const url = new URL(candidate.value, origin);
+  if (
+    url.protocol !== "https:" ||
+    url.username ||
+    url.password ||
+    !allowedOrigins.includes(url.origin)
+  )
+    throw new ImageProviderError("PROVIDER_UNTRUSTED_RESULT_URL", true);
+  const response = await request(url, {
+    redirect: "manual",
+    signal: AbortSignal.timeout(30000),
+    headers:
+      url.origin === providerOrigin && !candidate.signed ? { Authorization: `Bearer ${key}` } : {},
+  });
+  if (!response.ok) {
+    await response.body?.cancel();
+    throw new ImageProviderError("PROVIDER_DOWNLOAD_UNAVAILABLE", true);
+  }
+  return readImageBytes(response);
+}
+
+async function readImageBytes(response: Response) {
+  const reader = response.body?.getReader();
+  if (!reader) throw new ImageProviderError("PROVIDER_EMPTY_IMAGE", true);
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    for (;;) {
+      const part = await reader.read();
+      if (part.done) break;
+      size += part.value.length;
+      if (size > imageLimits.outputBytes)
+        throw new ImageProviderError("PROVIDER_IMAGE_TOO_LARGE", true);
+      chunks.push(part.value);
+    }
+  } finally {
+    await reader.cancel().catch(() => undefined);
+  }
+  if (!size) throw new ImageProviderError("PROVIDER_EMPTY_IMAGE", true);
+  return Buffer.concat(chunks);
 }

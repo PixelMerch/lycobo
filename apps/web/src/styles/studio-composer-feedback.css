@@ -1,0 +1,124 @@
+/* Upload actions and prompt focus stay local to the composer. */
+.reference-picker .field-title {
+  gap: 8px;
+  align-items: flex-start;
+}
+.reference-picker .field-title h2 {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  row-gap: 2px;
+}
+.reference-picker .field-title small {
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-weight: var(--weight-regular);
+}
+.reference-picker .clear-references {
+  flex: none;
+  gap: 4px;
+  min-width: 0;
+  min-height: 28px;
+  height: 28px;
+  padding: 0 2px;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-weight: var(--weight-regular);
+}
+.reference-picker .clear-references[data-disabled="true"] {
+  background: transparent;
+  opacity: 0.5;
+}
+@media (hover: hover) {
+  .reference-picker .clear-references:hover:not([data-disabled="true"]) {
+    color: var(--foreground);
+    background: var(--surface-tertiary);
+  }
+}
+.prompt-field textarea {
+  caret-color: var(--accent);
+}
+.prompt-field textarea:focus,
+.prompt-field textarea:focus-visible,
+.prompt-field textarea[data-focused="true"] {
+  outline: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+@media (max-width: 767px) {
+  .reference-picker .clear-references {
+    min-height: 44px;
+    height: 44px;
+  }
+}
+
+@media (hover: hover) {
+  .reference-tile .remove-reference:hover {
+    background: #121216e6;
+    border-color: #ffffff99;
+    color: #ffffffd9;
+  }
+}
+
+/* Model choice uses a surface change instead of an outline in every state. */
+.composer-panel .model-field .model-select,
+.model-menu,
+.model-menu .list-box,
+.model-menu .model-options {
+  outline: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+.model-menu {
+  box-shadow: var(--overlay-shadow);
+}
+.model-field .model-select:focus-visible,
+.model-field .model-select[data-focus-visible="true"] {
+  background: var(--surface-secondary);
+}
+
+@media (max-width: 767px) {
+  .composer-panel .model-field {
+    padding-block: 0;
+  }
+}
+
+.ratio-chevron {
+  display: inline-flex;
+  color: var(--muted);
+  transition: transform 160ms ease;
+}
+.ratio-expand[aria-expanded="true"] .ratio-chevron {
+  transform: rotate(180deg);
+}
+.ratio-close-visual {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  transition: background-color 150ms ease;
+}
+@media (hover: hover) {
+  .ratio-popover .ratio-close:hover {
+    background: transparent;
+    color: #ffffff;
+  }
+  .ratio-close:hover .ratio-close-visual {
+    background: var(--interaction-active);
+  }
+}
+.ratio-close:active .ratio-close-visual,
+.ratio-close[data-pressed="true"] .ratio-close-visual {
+  background: var(--surface-secondary);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ratio-chevron,
+  .ratio-close-visual {
+    transition: none;
+  }
+}

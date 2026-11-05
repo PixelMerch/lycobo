@@ -37,9 +37,46 @@ export function plannerUrls(description: string) {
 
 const pageSchema = z.object({ title: z.string(), content: z.string().trim().min(40) });
 
+async function readFetchedPage(response: Response) {
+  if (!response.ok) {
+    await response.body?.cancel();
+    throw new PlannerWebError();
+  }
+  const reader = response.body?.getReader();
+  if (!reader) throw new PlannerWebError();
+  let text = "";
+  let bytes = 0;
+  const decoder = new TextDecoder();
+  try {
+    for (;;) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      bytes += chunk.value.byteLength;
+      if (bytes > 1024 * 1024) throw new PlannerWebError();
+      text += decoder.decode(chunk.value, { stream: true });
+    }
+    text += decoder.decode();
+  } finally {
+    await reader.cancel().catch(() => undefined);
+  }
+  const page = pageSchema.parse(JSON.parse(text));
+  if (/captcha|verify you are human|access denied|请完成验证|安全验证/i.test(page.title))
+    throw new PlannerWebError();
+  return page;
+}
+
+type PageCache = Map<string, { expires: number; text: string }>;
+function prunePageCache(cache: PageCache, now: () => number) {
+  for (const [entryKey, entry] of cache) if (entry.expires <= now()) cache.delete(entryKey);
+  if (cache.size >= 100) {
+    const first = cache.keys().next().value;
+    if (first) cache.delete(first);
+  }
+}
+
 /** Only DeepSeek fetches target pages. Never send provider keys to user URLs or redirects. */
 export function createPlannerWebReader(request: typeof fetch = fetch, now = Date.now) {
-  const cache = new Map<string, { expires: number; text: string }>();
+  const cache: PageCache = new Map();
   return async (urls: string[], key: string, partition: string, signal: AbortSignal) => {
     const group = new AbortController();
     const timeout = AbortSignal.any([signal, group.signal, AbortSignal.timeout(15000)]);
@@ -58,40 +95,13 @@ export function createPlannerWebReader(request: typeof fetch = fetch, now = Date
             headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
             body: JSON.stringify({ url }),
           });
-          if (!response.ok) {
-            await response.body?.cancel();
-            throw new PlannerWebError();
-          }
-          const reader = response.body?.getReader();
-          if (!reader) throw new PlannerWebError();
-          let text = "";
-          let bytes = 0;
-          const decoder = new TextDecoder();
-          try {
-            for (;;) {
-              const chunk = await reader.read();
-              if (chunk.done) break;
-              bytes += chunk.value.byteLength;
-              if (bytes > 1024 * 1024) throw new PlannerWebError();
-              text += decoder.decode(chunk.value, { stream: true });
-            }
-            text += decoder.decode();
-          } finally {
-            await reader.cancel().catch(() => {});
-          }
-          const page = pageSchema.parse(JSON.parse(text));
-          if (/captcha|verify you are human|access denied|请完成验证|安全验证/i.test(page.title))
-            throw new PlannerWebError();
+          const page = await readFetchedPage(response);
           const result = JSON.stringify({
             url,
             title: page.title.slice(0, 300),
             content: page.content.slice(0, 10000),
           });
-          for (const [entryKey, entry] of cache) if (entry.expires <= now()) cache.delete(entryKey);
-          if (cache.size >= 100) {
-            const first = cache.keys().next().value;
-            if (first) cache.delete(first);
-          }
+          prunePageCache(cache, now);
           cache.set(cacheKey, { expires: now() + 5 * 60000, text: result });
           return result;
         }),
