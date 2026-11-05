@@ -16,7 +16,7 @@
 - 不得把旧 Drizzle 迁移全部重放到 CloudBase 已导入的结构上。CloudBase 结构变更只走 `cloudbase/migrations/` 的追加迁移。
 - 复制时已有 1 条 `needs_reconciliation / WORKER_OUTCOME_UNKNOWN` 任务，保留待核对状态，不自动重新提交、退款或补扣费。
 - 独立 admin 未接入目标库，不能用它向旧库调整新站余额或配置。公开 Logo 桶也不在本次切换范围内。
-- Supabase 旧源库和备份保留供回溯，不作为当前应用的回退存储。`pnpm db:migrate:supabase` 只用于显式运维，使用独立的 `SUPABASE_DATABASE_URL`。
+- Supabase 旧源库和备份保留供回溯，不作为当前应用的回退存储。2026-11-05 另向新加坡新项目复制独立数据库供海外环境使用；国内继续使用 CloudBase，不做双写或自动同步。`pnpm db:migrate:supabase` 使用独立的 `SUPABASE_DATABASE_URL`，当前指向新海外项目，详见[双环境部署](overseas-deployment.md)。
 - `lycobo.com` 曾配置 CloudBase 域名和证书，平台状态 FAIL，返回域名未备案。用户已确认暂不接入自定义域名，未修改 DNS。
 
 ## 本地库同步（2026-11-01）

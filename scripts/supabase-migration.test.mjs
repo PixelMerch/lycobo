@@ -17,6 +17,20 @@ describe("Supabase migration target", () => {
     expect(new URL(target.url).password).toBe("fixture-password");
     expect(base.DATABASE_URL).toContain("127.0.0.1");
   });
+  it("accepts a session pooler only when its login matches the explicit project", () => {
+    const sessionUrl = `postgresql://postgres.${project}:fixture-password@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require`;
+    const target = supabaseMigrationTarget({ ...base, SUPABASE_DATABASE_URL: sessionUrl });
+    expect(target.host).toBe("aws-0-ap-southeast-1.pooler.supabase.com");
+    for (const invalid of [
+      sessionUrl.replace(`postgres.${project}`, "postgres.anotherprojectaaaaaa"),
+      sessionUrl.replace(":5432/", ":6543/"),
+      sessionUrl.replace("pooler.supabase.com", "pooler.supabase.com.example.com"),
+    ]) {
+      expect(() => supabaseMigrationTarget({ ...base, SUPABASE_DATABASE_URL: invalid })).toThrow(
+        "迁移目标须为",
+      );
+    }
+  });
   it.each(["", "[YOUR-PASSWORD]", "%5BYOUR-PASSWORD%5D"])(
     "rejects an unfilled password before connecting: %s",
     (password) => {
