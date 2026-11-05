@@ -9,7 +9,7 @@
 | CloudBase 上海 `lycobo-d9gyvxkegc54a1257` | 国内内测，继续使用原数据库、私有存储与已有云函数，入口及自动部署保持现状    |
 | Supabase 新加坡 `uyfgzmqijdsesnlsiwqu`    | 海外数据库，区域 `ap-southeast-1`；当前控制台为 Free / Nano，本次未升级套餐 |
 | Cloudflare 海外应用                       | 后续部署目标，前端、API、媒体及后台执行方式尚待实施                         |
-| Cloudflare R2 `lycobo-media-prod` | 已复制并校验 3,391 个私有对象，公开入口关闭 |
+| Cloudflare R2 `lycobo-media-prod`         | 已复制并校验 3,391 个私有对象，公开入口关闭                                 |
 | 本地 Docker                               | 继续使用原 `lycoboai` 数据库及私有 S3，未替换为海外库                       |
 
 两端是独立数据库。本次为一次性快照复制，不是主从复制、双写或持续同步；快照后的国内新任务、资料修改、余额变化不会自动出现在海外，反向同样如此。后续账号与钱包各自变化，不能把两个环境的余额相加解释为一份共同可消费额度。
@@ -72,6 +72,39 @@ pnpm db:migrate:supabase
 
 国内后续结构更新继续走 `cloudbase/migrations/`；海外结构更新走 `packages/db/migrations/`。任何新增业务结构都要核对两端兼容性，不把其中一端的 SQL 原样重放到另一端已存在的结构。
 
+## Cloudflare 前端部署步骤（已配置，尚未部署）
+
+仓库根目录的 `wrangler.jsonc` 仅部署 React/Vite 静态前端，Worker 名称为 `lycobo`，资源目录为 `apps/web/dist`。SPA 回退让工作区等前端路径在刷新时返回 `index.html`；没有配置 API、R2、Hyperdrive、密钥或自定义域名绑定。本次仅准备配置，不执行发布。
+
+在 Cloudflare 的 Workers 创建应用页面选择 `PixelMerch/lycobo`，按下表填写：
+
+| 字段                     | 值                                                          |
+| ------------------------ | ----------------------------------------------------------- |
+| Project name             | `lycobo`，必须与 `wrangler.jsonc` 的 `name` 一致            |
+| Build command            | `pnpm --filter @lycoboai/web build`                         |
+| Deploy command           | `npx wrangler deploy`                                       |
+| Preview command          | `npx wrangler preview`                                      |
+| Advanced settings → Path | `/`，从仓库根目录构建，不填 `apps/web`                      |
+| API token                | 保留 `Create new token`，由 Cloudflare 自动创建构建部署凭据 |
+| API token name           | `lycobo-workers-build`，这是名称，不是密钥内容              |
+| 构建变量 `NODE_VERSION`  | `24.13.0`                                                   |
+| 构建变量 `PNPM_VERSION`  | `10.34.7`                                                   |
+
+前端不需要 `.env.cloudflare` 中的服务端参数，不把数据库密码、R2 密钥、JWT 密钥或 Hyperdrive ID 填为前端变量。构建系统的 API token 用于授权发布，不是 R2 的 S3 Access Key，也不需要复制到 `wrangler.jsonc`。
+
+操作顺序：
+
+1. 确认所选远程分支包含 `wrangler.jsonc` 和需要发布的前端代码。Cloudflare 读取 GitHub 分支，本地提交不会自动出现在构建中；推送仍需用户单独授权。
+2. 填写上表字段及构建变量。构建从根目录安装 pnpm workspace 依赖，仅构建 `@lycoboai/web`，产物为 `apps/web/dist`。
+3. 当前停在配置阶段，不点 **Deploy**。用户决定发布时再执行该按钮；发布分支的后续提交也可能触发自动部署，需在 Builds 设置中确认分支规则。
+4. 发布后先用 Cloudflare 提供的预览或默认地址核对首页、静态资源及前端路由刷新，再配置正式域名。域名和 API 接入不由本次配置自动完成。
+
+本地可以用 `pnpm --filter @lycoboai/web build` 检查构建，不会发布。仓库尚未安装固定版本的 Wrangler；上表沿用控制台提供的 `npx` 命令，执行时会解析 Wrangler，后续自动化发布前应固定其版本。
+
+前端请求使用同域 `/api/v1/...`；Vite 的 `server.proxy` 只用于本地开发。纯静态部署尚无海外 API，登录、钱包、素材和生成流程不能验收为可用。后续需要让站点的 `/api/*` 转到海外 API，并将 `media.lycobo.com` 交由鉴权媒体服务承接；SPA 回退不替代 API。
+
+配置依据：[Workers Builds 配置与构建凭据](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/)、[Workers SPA 静态资源路由](https://developers.cloudflare.com/workers/static-assets/routing/single-page-application/)。
+
 ## 私有证据与恢复
 
 本机 `backups/database/overseas-20261105/` 被 Git 忽略，目录权限 700，敏感文件权限 600。包含：
@@ -108,16 +141,16 @@ pnpm db:migrate:supabase
 
 完成时间：**2026-11-05 20:52 +08:00**。从国内私有桶 `lycobo-images` 复制至海外私有 R2 桶 `lycobo-media-prod`，保留原对象 key，不修改素材表。
 
-| 核对项目 | 结果 |
-| --- | --- |
-| 迁移范围 | 海外数据库快照引用的 1,061 个有效原始文件：1,060 张图片及 1 个视频 |
-| 派生文件 | 2,330 个已有预览图、缩略图、视频封面及供应商引用变体 |
-| 合计 | 3,391 个对象，2,520,290,653 字节（约 2.52 GB） |
-| 内容校验 | 每个对象读回比对字节数与 SHA-256；原始文件同时匹配数据库记录 |
-| 完整性复查 | R2 分页清单共 4 页，3,391 项全部匹配，无缺项、大小差异或额外对象 |
-| 删除记录 | 6 条已标记存储删除的素材排除，没有恢复已删除文件 |
-| 失败项 | 0 |
-| 公开访问 | `r2.dev` 与桶自定义域名均关闭，未直接公开私有素材 |
+| 核对项目   | 结果                                                               |
+| ---------- | ------------------------------------------------------------------ |
+| 迁移范围   | 海外数据库快照引用的 1,061 个有效原始文件：1,060 张图片及 1 个视频 |
+| 派生文件   | 2,330 个已有预览图、缩略图、视频封面及供应商引用变体               |
+| 合计       | 3,391 个对象，2,520,290,653 字节（约 2.52 GB）                     |
+| 内容校验   | 每个对象读回比对字节数与 SHA-256；原始文件同时匹配数据库记录       |
+| 完整性复查 | R2 分页清单共 4 页，3,391 项全部匹配，无缺项、大小差异或额外对象   |
+| 删除记录   | 6 条已标记存储删除的素材排除，没有恢复已删除文件                   |
+| 失败项     | 0                                                                  |
+| 公开访问   | `r2.dev` 与桶自定义域名均关闭，未直接公开私有素材                  |
 
 本次仅复制数据库快照关联的文件及实际存在的派生文件；快照后国内新增的素材和无关对象不纳入。没有重新生成图片、调用付费模型、删除国内文件或切换国内配置。源库与源存储均只读。
 
