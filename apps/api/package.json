@@ -26,7 +26,7 @@
     "@lycoboai/storage": "workspace:*",
     "@lycoboai/generation": "workspace:*",
     "sharp": "0.35.5",
-    "postgres": "3.4.9",
+    "postgres": "4.0.0",
     "@lycoboai/queue": "workspace:*"
   },
   "devDependencies": {
