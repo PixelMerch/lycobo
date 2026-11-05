@@ -59,11 +59,12 @@ async function main() {
     baseline: `v${pkg.version}`,
     listTags: async () => api(`repos/${repo}/git/matching-refs/tags/v`),
     resolveTag: async (id) => {
+      let tagId = id;
       for (let depth = 0; depth < 10; depth++) {
-        const tag = api(`repos/${repo}/git/tags/${id}`);
+        const tag = api(`repos/${repo}/git/tags/${tagId}`);
         if (tag.object.type === "commit") return tag.object.sha;
         if (tag.object.type !== "tag") break;
-        id = tag.object.sha;
+        tagId = tag.object.sha;
       }
       throw new Error("Invalid annotated version tag");
     },

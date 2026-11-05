@@ -34,6 +34,7 @@ GitHub 使用 squash merge 时，PR 标题也必须满足该规范，CI 会检�
 
 ## 代码与审查
 
+- 代码质量规则由 `pnpm lint` 和提交钩子强制执行，见 [代码质量约束](docs/code-quality.md)。
 - strict TypeScript；边界用 unknown + schema 校验，避免 any/非空断言掩盖问题。
 - React 函数组件与 hooks，hooks 顶层调用，服务端数据用 TanStack Query。
 - Hono 使用组合路由；请求处理与 listen 分离。异步 IO 不能阻塞 API。

@@ -46,7 +46,7 @@ Read relevant project skills before work:
   content, client-only favorites or future payment/sign-in rewards as durable production services.
 - Keep page components focused on composition. Extract complete reusable features into components
   and external synchronization into hooks; preserve DOM semantics, classes, focus and paid-task
-  behavior during refactors. Do not create another base-control wrapper or split by line count.
+  behavior during refactors. Do not create another base-control wrapper or split components at an arbitrary line.
 - Use TanStack Query for server data, Zustand only for client interaction state. Derive values during
   render; effects synchronize external systems, not redundant state.
 - Lazy-load heavy canvas/editor routes. Do not load original full-resolution images into grid cards.
@@ -69,6 +69,21 @@ Read relevant project skills before work:
 - Sidebar text/icons use neutral gray-white: default #FFFFFFB3, hover fill #FFFFFF0A, active fill #FFFFFF14 with white text/icons. Do not restore purple navigation labels. Chevrons rotate left on expansion and respect reduced motion. Tool selectors use spacing instead of extra divider lines.
 - No server modules or secrets in apps/web or packages/contracts. VITE_* is public.
 - UI mockups are references, never a screenshot used as a functional page.
+
+## Code quality
+
+- Most code here is agent-written and the owner is learning TypeScript, Node and React from it.
+  Write plain, idiomatic code a beginner can follow: descriptive names, early returns, one job per
+  function and a short comment where the reason is not obvious. Prefer that over clever abstractions.
+- pnpm lint fails on any Biome warning and runs scripts/check-code-quality.mjs. Limits for new code:
+  functions 100 lines, cognitive complexity 15, files 400 lines (CSS 500), no nested ternaries,
+  no `as` except `as const`, no non-null assertions, no empty blocks, no unhandled promises,
+  no import cycles and no unreferenced modules. docs/code-quality.md explains each rule.
+- scripts/code-quality-baseline.json records older violations and may only shrink. After improving
+  code run pnpm quality:update. Never raise a number, add an entry or add a suppression comment
+  without the user's explicit approval; change the code instead.
+- Split an over-budget file or function by responsibility, not at an arbitrary line. Delete dead
+  code instead of keeping it for compatibility.
 
 ## API, tasks and storage
 

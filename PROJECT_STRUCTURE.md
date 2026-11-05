@@ -52,7 +52,7 @@ apps/web/src/
 
 - 先按业务功能归类，功能内部就近存放组件、hook、样式与单元测试；只有存在明确子职责时再增加目录，不为每个组件建立一层文件夹。
 - 保留描述性文件名和直接导入，不新增 `index.ts` 聚合出口，也不建立覆盖所有功能的 components/hooks/services 分类目录。浏览器端到端测试仍在根目录 `tests/e2e`。
-- 主导航统一使用工作区入口；`features/workspace` 组合参数子路由、随功能切换的历史及四个功能的直达工具栏；`workspace-tool-symbol.tsx` 共享功能入口与参数标题的图标身份，只使用Tabler矢量图标。旧 `components/feature-navigation.tsx` 保留兼容组件，不再挂载在主导航。`components/use-hover-menu.ts` 共享账户及模型菜单的悬停、键盘焦点恢复逻辑。
+- 主导航统一使用工作区入口；`features/workspace` 组合参数子路由、随功能切换的历史及四个功能的直达工具栏；`workspace-tool-symbol.tsx` 共享功能入口与参数标题的图标身份，只使用Tabler矢量图标。
 - `features/auth/login-prompt.tsx` 共享登录请求与首页创作交互门禁；Header及首页操作共用应用壳的一份登录弹窗。`app/studio-shell.tsx` 在登录状态确认前不挂载非首页业务内容，登录成功保留目标地址、取消返回首页，生图事件仅在登录后挂载。
 - `app/studio-shell.tsx` 组合导航、登录、账户和生图事件；路由页面留在各 feature。首页、工作台和素材页继续由路由懒加载，`image-workspace/preview-workspace.tsx` 及 Konva 继续按预览需要加载。
 - `generation/generation-client.ts` 维护现有生图、历史和素材 API 查询与缓存，被历史、素材库和编辑工作区直接引用；目录维护不改变 query key 或增加请求层。
@@ -131,6 +131,10 @@ main 的 CI 成功后更新三个 CloudBase 函数代码并发布静态前端，
 
 通用素材实体使用 `media_assets`（Drizzle `mediaAssets`），生成任务及其执行、投递、重试、事件、令牌和任务账本统一使用 `generation_*`；图片选区编辑扩展保留 `image_local_edits`。
 表职责与媒体扩展边界见 [数据库命名](docs/database-naming.md)。
+
+## 质量门禁
+
+`scripts/check-boundaries.mjs`、`check-ui-conventions.mjs` 和 `check-code-quality.mjs` 随 `pnpm lint` 运行。旧代码的违规记在 `scripts/code-quality-baseline.json`，只能减少，规则见 [代码质量约束](docs/code-quality.md)。
 
 ## 发布工具
 

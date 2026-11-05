@@ -2,7 +2,7 @@
 
 ## 自动检查
 
-- pnpm lint：Biome + 浏览器/server-only 边界检查。
+- pnpm lint：Biome（警告也算失败）、浏览器/server-only 边界、HeroUI 组件约定和[代码质量约束](code-quality.md)。
 - pnpm typecheck：所有 workspace 包 strict TypeScript。
 - pnpm test：契约、API、Worker 的单元行为。
 - pnpm build：实际前端和两个 Node 应用生产构建。
