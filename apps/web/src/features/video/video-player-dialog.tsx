@@ -63,6 +63,16 @@ function VideoPreviewStage({ video }: { video: PreviewVideo }) {
 }
 
 /** Same three columns as the image detail: stage, information and the full thumbnail rail. */
+function railDirection(key: string, inRail: boolean) {
+  if (key === "ArrowUp" || (inRail && key === "ArrowLeft")) return -1;
+  if (key === "ArrowDown" || (inRail && key === "ArrowRight")) return 1;
+  return 0;
+}
+
+function ignoreRailKey(event: KeyboardEvent, target: HTMLElement) {
+  return event.altKey || event.ctrlKey || event.metaKey || target.closest("input, textarea");
+}
+
 export function VideoPlayerDialog({
   videos,
   initialId,
@@ -97,20 +107,8 @@ export function VideoPlayerDialog({
       const target = event.target;
       if (!(target instanceof HTMLElement) || target.closest('[role="dialog"]') !== dialog) return;
       const inRail = !!target.closest(".image-preview-rail");
-      const direction =
-        event.key === "ArrowUp" || (inRail && event.key === "ArrowLeft")
-          ? -1
-          : event.key === "ArrowDown" || (inRail && event.key === "ArrowRight")
-            ? 1
-            : 0;
-      if (
-        !direction ||
-        event.altKey ||
-        event.ctrlKey ||
-        event.metaKey ||
-        target.closest("input, textarea")
-      )
-        return;
+      const direction = railDirection(event.key, inRail);
+      if (!direction || ignoreRailKey(event, target)) return;
       event.preventDefault();
       event.stopPropagation();
       const next = (index + direction + videos.length) % videos.length;

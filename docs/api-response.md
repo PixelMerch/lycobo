@@ -34,26 +34,26 @@
 
 唯一代码表为 packages/contracts/src/api-response.ts，不在业务模块另定义同名数值。
 
-| 数值 | 标识 |
-| --- | --- |
-| 0 | 成功 |
-| 10001 | VALIDATION_ERROR |
-| 10002 | INVALID_REQUEST |
-| 10003 | PAYLOAD_TOO_LARGE |
-| 10004 | INVALID_IMAGE |
-| 10005 | REFERENCE_NOT_FOUND |
+| 数值  | 标识                        |
+| ----- | --------------------------- |
+| 0     | 成功                        |
+| 10001 | VALIDATION_ERROR            |
+| 10002 | INVALID_REQUEST             |
+| 10003 | PAYLOAD_TOO_LARGE           |
+| 10004 | INVALID_IMAGE               |
+| 10005 | REFERENCE_NOT_FOUND         |
 | 10006 | MODEL_CAPABILITY_UNVERIFIED |
-| 20001 | UNAUTHORIZED |
-| 20002 | INVALID_CREDENTIALS |
-| 20003 | FORBIDDEN |
-| 20004 | UNTRUSTED_ORIGIN |
-| 20005 | RATE_LIMITED |
-| 30001 | NOT_FOUND |
-| 30002 | IDEMPOTENCY_CONFLICT |
-| 30003 | INSUFFICIENT_CREDITS |
-| 30004 | STATE_CONFLICT |
-| 40001 | GENERATION_NOT_CONFIGURED |
-| 40002 | AUTH_NOT_CONFIGURED |
+| 20001 | UNAUTHORIZED                |
+| 20002 | INVALID_CREDENTIALS         |
+| 20003 | FORBIDDEN                   |
+| 20004 | UNTRUSTED_ORIGIN            |
+| 20005 | RATE_LIMITED                |
+| 30001 | NOT_FOUND                   |
+| 30002 | IDEMPOTENCY_CONFLICT        |
+| 30003 | INSUFFICIENT_CREDITS        |
+| 30004 | STATE_CONFLICT              |
+| 40001 | GENERATION_NOT_CONFIGURED   |
+| 40002 | AUTH_NOT_CONFIGURED         |
 | 50000 | INTERNAL_ERROR 或未分类异常 |
 
 HTTP 状态码保留：任务首次提交 202、幂等重放 200，失败根据原因返回 400／401／403／404／409／413／429／500／503。退出登录改为 HTTP 200 + 成功空对象，统一替代旧 204。查询到一个状态为 failed 的任务仍是成功查询，code=0，任务状态在 data 中。

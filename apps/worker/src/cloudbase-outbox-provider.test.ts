@@ -9,7 +9,14 @@ import { expect, it, vi } from "vitest";
 import { drainCloudBaseOutbox } from "./cloudbase-outbox";
 import { processConfiguredImage } from "./configured-image-processor";
 
-it("continues a durable provider receipt with GET and stores it without a second paid POST", async () => {
+it.each(["signed", "signing-failed", "unverified"] as const)(
+  "continues a durable provider receipt without a second paid POST (%s)",
+  verifyProviderReferenceTransport,
+);
+
+async function verifyProviderReferenceTransport(
+  transport: "signed" | "signing-failed" | "unverified",
+) {
   const itemId = crypto.randomUUID(),
     jobId = crypto.randomUUID(),
     organizationId = crypto.randomUUID(),
@@ -18,10 +25,10 @@ it("continues a durable provider receipt with GET and stores it without a second
   const snapshot = providerSnapshotSchema.parse({
     channelId: crypto.randomUUID(),
     credentialId: standaloneCredentialId,
-    origin: "https://api.example.com/",
+    origin: "https://api.ai-media.vip/",
     adapter: "fluxport-images",
     model: "gpt-image-2.5",
-    upstreamModel: "fixture",
+    upstreamModel: transport === "unverified" ? "fixture" : "gpt-image-2.5-sunburst",
     mode: "async-preferred",
     resolutions: ["1K"],
     editsEnabled: true,
@@ -35,6 +42,7 @@ it("continues a durable provider receipt with GET and stores it without a second
     prompt: "isolated fixture",
     resolution: "1K",
     count: 1,
+    referenceAssetIds: [itemId],
   });
   const stored: StoredImage = {
     id: itemId,
@@ -61,7 +69,7 @@ it("continues a durable provider receipt with GET and stores it without a second
     leaseOutbox: async () => (done ? [] : [intent]),
     ackOutbox: async () => {},
     providerCipher: async () => "unused",
-    asset: async () => null,
+    asset: async () => stored,
     webhookWait: async () => false,
     deferProvider: async (_job, taskId, statusPath) => {
       receipt = { taskId, statusPath };
@@ -87,7 +95,15 @@ it("continues a durable provider receipt with GET and stores it without a second
     .mockResolvedValueOnce(
       Response.json({ status: "success", assets: [{ b64_json: "aGVsbG8=" }] }),
     );
-  const store = { read: async () => new Uint8Array(), put: vi.fn(async () => stored) };
+  const store = {
+    read: vi.fn(async () => new Uint8Array([1, 2, 3])),
+    put: vi.fn(async () => stored),
+  };
+  const signed = new URL("https://private.example.com/reference.png?token=fixture");
+  const deliverReference = vi.fn(async () => {
+    if (transport === "signing-failed") throw new Error("fixture signing unavailable");
+    return signed;
+  });
   const result = await drainCloudBaseOutbox({
     repository,
     now: () => time,
@@ -119,6 +135,7 @@ it("continues a durable provider receipt with GET and stores it without a second
         repository,
         store,
         standaloneKey: "fixture-only",
+        deliverReference,
         request,
         onDeferred,
       });
@@ -127,11 +144,17 @@ it("continues a durable provider receipt with GET and stores it without a second
   expect(result).toEqual({ processed: 1, resumeAt: null });
   expect(time).toBe(3000);
   expect(request.mock.calls.map(([, init]) => init?.method)).toEqual(["POST", "GET"]);
+  expect(String(request.mock.calls[0]?.[0])).toBe("https://api.ai-media.vip/v1/images/edits");
+  expect(JSON.parse(String(request.mock.calls[0]?.[1]?.body)).images).toEqual([
+    { image_url: transport === "signed" ? signed.href : "data:image/png;base64,AQID" },
+  ]);
+  expect(deliverReference).toHaveBeenCalledTimes(transport === "unverified" ? 0 : 1);
+  expect(store.read).toHaveBeenCalledTimes(transport === "signed" ? 0 : 1);
   expect(request.mock.calls[1]?.[1]?.headers).not.toHaveProperty("Idempotency-Key");
   expect(store.put).toHaveBeenCalledOnce();
   expect(repository.finish).toHaveBeenCalledOnce();
   expect(done).toBe(true);
-});
+}
 
 it.each([false, true])(
   "releases webhook waits without holding the consumer open (early receipt: %s)",

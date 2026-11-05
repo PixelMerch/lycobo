@@ -4,16 +4,16 @@
 
 ## 服务端配置
 
-| 参数 | 约定 |
-| --- | --- |
-| S3_ENDPOINT | 服务源地址，不带桶名、对象路径、账号、查询或签名；正式环境HTTPS |
-| S3_BUCKET | 桶名；COS包含APPID后缀 |
-| S3_REGION | 默认us-east-1；COS使用桶实际地域 |
-| S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY | 服务端凭据，不写入源码、日志或VITE变量 |
-| S3_SESSION_TOKEN | 可选临时令牌，与配套访问密钥同时更新 |
-| S3_FORCE_PATH_STYLE | true或false，默认true |
-| S3_REQUEST_TIMEOUT_MS | 默认20000ms，范围1000–120000ms；请求最多重试一次 |
-| S3_PUBLIC_BASE_URL | 仅公开Logo桶使用，不能用于主站私有图片 |
+| 参数                                    | 约定                                                            |
+| --------------------------------------- | --------------------------------------------------------------- |
+| S3_ENDPOINT                             | 服务源地址，不带桶名、对象路径、账号、查询或签名；正式环境HTTPS |
+| S3_BUCKET                               | 桶名；COS包含APPID后缀                                          |
+| S3_REGION                               | 默认us-east-1；COS使用桶实际地域                                |
+| S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY | 服务端凭据，不写入源码、日志或VITE变量                          |
+| S3_SESSION_TOKEN                        | 可选临时令牌，与配套访问密钥同时更新                            |
+| S3_FORCE_PATH_STYLE                     | true或false，默认true                                           |
+| S3_REQUEST_TIMEOUT_MS                   | 默认20000ms，范围1000–120000ms；请求最多重试一次                |
+| S3_PUBLIC_BASE_URL                      | 仅公开Logo桶使用，不能用于主站私有图片                          |
 
 配置缺失时明确返回IMAGE_STORAGE_NOT_CONFIGURED，部分配置报错，不静默切换供应商。配置CloudBase后，缺失对象和存储错误都不会回退S3。S3对象缺失返回null，权限、超时与服务异常返回结构化错误；请求拒绝重定向，避免转发存储凭据。
 
@@ -21,12 +21,12 @@
 
 ## 当前环境
 
-| 环境 | S3_ENDPOINT | S3_REGION | S3_FORCE_PATH_STYLE |
-| --- | --- | --- | --- |
-| 本地主站私有图片 | http://image-storage:8333 | us-east-1 | true |
-| 本地后台公开Logo | http://model-storage:8333 | us-east-1 | true |
-| 宿主机私有图片 | http://127.0.0.1:9004 | us-east-1 | true |
-| 腾讯云COS | https://cos.ap-guangzhou.myqcloud.com | ap-guangzhou | false |
+| 环境             | S3_ENDPOINT                           | S3_REGION    | S3_FORCE_PATH_STYLE |
+| ---------------- | ------------------------------------- | ------------ | ------------------- |
+| 本地主站私有图片 | http://image-storage:8333             | us-east-1    | true                |
+| 本地后台公开Logo | http://model-storage:8333             | us-east-1    | true                |
+| 宿主机私有图片   | http://127.0.0.1:9004                 | us-east-1    | true                |
+| 腾讯云COS        | https://cos.ap-guangzhou.myqcloud.com | ap-guangzhou | false               |
 
 主站Node适配使用aws4fetch签署标准S3请求；该库也用于本地S3，不是旧平台运行时。独立admin使用AWS SDK v3。两者共享配置约定，不强行混用运行时依赖。开发启动脚本隔离正式凭据，不能因远端环境文件改连生产桶。
 
@@ -46,6 +46,6 @@ ALLOW_LOCAL_S3_INTEGRATION=true pnpm exec vitest run packages/storage/src/s3-con
 
 选择文件只在本地预览；点击生成时才上传私有对象存储。上传记录 `media_assets.expires_at` 默认为上传时间加3天。创建任务校验参考图、锁定记录、扣积分、取消参考图期限与写入任务/outbox 属于同一事务；额度不足、参数或权限校验失败不会转为长期保存。这里的成功扣积分指任务受理的扣费，后续生成失败退款不会把已经长期保存的参考图重新变回临时图片。生成结果继续长期保存。
 
-每分钟现有消费者维护任务最多领取20个过期对象。领取与付费使用竞争相同的行锁，已领取清理的图片不能再次生成；原图、预览和缩略图一起删除。存储失败保留待清理记录，下轮重试；保留数据库墓碑，过期素材立即从读取和引用接口中隐藏。旧图片没有新增期限，不追溯删除。迁移0032与消费者需要一同发布，未部署的环境不会自动执行清理。
+消费者维护任务每次最多领取20个过期对象。领取与付费使用竞争相同的行锁，已领取清理的图片不能再次生成；原图、预览和缩略图一起删除。存储失败保留待清理记录，下轮重试；保留数据库墓碑，过期素材立即从读取和引用接口中隐藏。旧图片没有新增期限，不追溯删除。迁移0032与消费者需要一同发布，未部署的环境不会自动执行清理。
 
 长期保存指对象生命周期，不代表公开永久URL；访问仍校验归属并使用短期签名。当前尚无账号上传容量或频率配额，3天到期不等同于防滥用限制。会话内成功上传的草稿ID缓存2天，避免部分上传失败后重试重复传已成功文件；浏览器刷新前尚未提交的本地草稿不保证云端保存。

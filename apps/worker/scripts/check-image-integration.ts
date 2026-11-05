@@ -1,7 +1,5 @@
 import assert from "node:assert/strict";
-import { once } from "node:events";
 import { mkdtemp, rm } from "node:fs/promises";
-import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
@@ -10,10 +8,7 @@ import {
   imageGenerationInputSchema,
   imageJobSchema,
   imageUnitCredits,
-  rechargeOrdersSchema,
   unwrapApiData,
-  walletBalanceSchema,
-  walletEntriesSchema,
 } from "@lycoboai/contracts";
 import { openImageRepository } from "@lycoboai/db";
 import { supportedResolutions, validateModelInput } from "@lycoboai/generation";
@@ -23,16 +18,14 @@ import postgres from "postgres";
 import { z } from "zod";
 import { createApp } from "../../api/src/app";
 import { processImageItem } from "../src/image-processor";
-import { verifyAssetLibrary } from "./verify-asset-library";
+import { startImageProviderFixture } from "./image-provider-fixture";
 import { verifyGenerationMigration } from "./verify-generation-migration";
-import { verifyLocalEdits } from "./verify-local-edits";
-import { verifyManagedModels } from "./verify-managed-models";
-import { verifyReferenceRetention } from "./verify-reference-retention";
-import { verifyStandaloneModels } from "./verify-standalone-models";
-import { verifyTextileGeneration } from "./verify-textile-generation";
-import { verifyVariationPlans } from "./verify-variation-plans";
-import { verifyVideos } from "./verify-videos";
-import { verifyWallet } from "./verify-wallet";
+import {
+  verifyBrowserImageSession,
+  verifyExhaustedWallet,
+  verifyRetryRequest,
+} from "./verify-image-api-flows";
+import { verifyImageFeatures } from "./verify-image-features";
 
 if (process.env.ALLOW_LOCAL_INTEGRATION !== "true")
   throw new Error("Explicit isolated test opt-in required");
@@ -68,35 +61,8 @@ const png = Buffer.from(
 );
 const organizations: string[] = [],
   users: string[] = [];
-let calls = 0,
-  mixed = 0;
-const server = createServer(async (req, res) => {
-  calls++;
-  let raw = "";
-  for await (const bytes of req) raw += bytes.toString();
-  const body = z
-    .object({
-      model: imageGenerationInputSchema.shape.model,
-      prompt: imageGenerationInputSchema.shape.prompt,
-    })
-    .parse(JSON.parse(raw));
-  if (body.prompt === "ambiguous") {
-    res.writeHead(503);
-    res.end("sensitive provider data");
-    return;
-  }
-  if (body.prompt === "mixed" && mixed++ === 1) {
-    res.writeHead(400);
-    res.end("sensitive provider data");
-    return;
-  }
-  res.writeHead(200, { "Content-Type": "application/json", "x-request-id": `fixture-${calls}` });
-  res.end(JSON.stringify({ data: [{ b64_json: png.toString("base64") }] }));
-});
-server.listen(0, "127.0.0.1");
-await once(server, "listening");
-const address = server.address();
-if (!address || typeof address === "string") throw new Error("Fixture startup failed");
+const fixture = await startImageProviderFixture(png);
+const { server, address } = fixture;
 const consume = async (payload: unknown) =>
   processImageItem(imageQueueJobSchema.parse(payload).itemId, {
     repository,
@@ -111,7 +77,7 @@ const consume = async (payload: unknown) =>
     overrides: {},
     editsEnabled: false,
   });
-const app = createApp(() => {}, {
+const app = createApp(undefined, {
   repository,
   store,
   enabled: true,
@@ -242,7 +208,7 @@ try {
     await sql`select balance as available_credits from organization_wallets where organization_id=${first.organizationId}`;
   assert.equal(balance[0]?.available_credits, 19 * imageUnitCredits);
   await consume({ version: 1, itemId: String(success.id) });
-  assert.equal(calls, 2);
+  assert.equal(fixture.calls(), 2);
   const persisted = openImageRepository(databaseUrl);
   try {
     assert.equal((await persisted.get(first, taskId))?.status, "partially_failed");
@@ -394,168 +360,22 @@ try {
   await repository.expireClaims();
   assert.equal((await repository.get(first, crashed.id))?.status, "needs_reconciliation");
   assert.equal(await repository.claim(crashItem.id, "worker-c", 1000), null);
-  assert.equal(calls, 4);
-  const browserApp = createApp(() => {}, {
+  assert.equal(fixture.calls(), 4);
+  await verifyBrowserImageSession(repository, store, first, second, asset, dispatch);
+  await verifyRetryRequest(
     repository,
-    store,
-    enabled: true,
-    editsEnabled: true,
-    unitCredits: 1,
-    validate: (value) => validateModelInput(value, {}, true),
-    resolutions: supportedResolutions,
-    session: { token: first.token, origins: ["http://localhost:5173"] },
-  });
-  assert.equal(
-    (
-      await browserApp.request("/api/v1/image-session", {
-        method: "POST",
-        headers: { Origin: "https://attacker.example" },
-      })
-    ).status,
-    401,
+    sql,
+    app,
+    first,
+    second,
+    taskId,
+    headers,
+    success.id,
+    asset,
+    dispatch,
   );
-  const login = await browserApp.request("/api/v1/image-session", {
-    method: "POST",
-    headers: { Origin: "http://localhost:5173" },
-  });
-  assert.equal(login.status, 200);
-  const cookie = login.headers.get("set-cookie")?.split(";")[0];
-  assert.ok(cookie);
-  assert.match(login.headers.get("set-cookie") ?? "", /HttpOnly/i);
-  assert.match(login.headers.get("set-cookie") ?? "", /SameSite=Strict/i);
-  const cookieHeaders = {
-    Cookie: cookie,
-    Origin: "http://localhost:5173",
-    "Content-Type": "application/json",
-  };
-  assert.equal(
-    (
-      await browserApp.request("/api/v1/image-tasks", {
-        method: "POST",
-        headers: { Cookie: cookie, Origin: "https://attacker.example" },
-        body: "{}",
-      })
-    ).status,
-    401,
-  );
-  for (const model of [
-    "gpt-image-2",
-    "gpt-image-2-4K",
-    "gpt-image-2.5",
-    "gpt-image-2.5-flare",
-    "gpt-image-2.5-sunburst",
-  ] as const) {
-    const submitted = await browserApp.request("/api/v1/image-tasks", {
-      method: "POST",
-      headers: { ...cookieHeaders, "Idempotency-Key": crypto.randomUUID() },
-      body: JSON.stringify({ ...input("browser-flow"), model }),
-    });
-    assert.equal(submitted.status, 202);
-    const task = z.object({ id: z.uuid() }).parse(unwrapApiData(await submitted.json()));
-    await dispatch();
-    assert.equal((await repository.get(first, task.id))?.status, "succeeded");
-  }
-  const library = await browserApp.request("/api/v1/image-assets", { headers: { Cookie: cookie } });
-  const saved = z
-    .object({ data: z.array(z.object({ id: z.uuid(), kind: z.string() })) })
-    .parse(unwrapApiData(await library.json()));
-  assert.equal(saved.data.filter((asset) => asset.kind === "output").length, 7);
-  assert.equal((await repository.listAssets(second, 30)).length, 0);
-  const thumbnail = await browserApp.request(
-    `/api/v1/image-assets/${asset.id}/content?thumbnail=1`,
-    { headers: { Cookie: cookie } },
-  );
-  assert.equal(thumbnail.status, 200);
-  assert.equal(thumbnail.headers.get("content-type"), "image/png");
-  const retryKey = crypto.randomUUID();
-  assert.equal(
-    (
-      await app.request(`/api/v1/image-tasks/${taskId}/retry`, {
-        method: "POST",
-        headers: {
-          ...headers,
-          Authorization: `Bearer ${second.token}`,
-          "Idempotency-Key": retryKey,
-        },
-      })
-    ).status,
-    404,
-  );
-  const retryResponses = await Promise.all(
-    Array.from({ length: 4 }, () =>
-      app.request(`/api/v1/image-tasks/${taskId}/retry`, {
-        method: "POST",
-        headers: { ...headers, "Idempotency-Key": retryKey },
-      }),
-    ),
-  );
-  assert.equal(retryResponses.filter((response) => response.status === 202).length, 1);
-  assert.equal(retryResponses.filter((response) => response.status === 200).length, 3);
-  const beforeRetry = await repository.get(first, taskId);
-  assert.equal(beforeRetry?.items.length, 2);
-  assert.equal(
-    beforeRetry?.items.find((entry: { id: string }) => entry.id === success.id)?.output_asset_id,
-    asset.id,
-  );
-  await dispatch();
-  const afterRetry = await repository.get(first, taskId);
-  assert.equal(afterRetry?.status, "succeeded");
-  assert.equal(afterRetry?.items.length, 2);
-  assert.equal(
-    afterRetry?.items.filter((entry: { status: string }) => entry.status === "succeeded").length,
-    2,
-  );
-  assert.equal(
-    (await sql`select count(*)::int as count from generation_job_items where job_id=${taskId}`)[0]
-      ?.count,
-    3,
-  );
-  // Retry the already-reserved idempotency key even when the available balance has become zero.
-  while ((await repository.wallet(first)).balance >= imageUnitCredits) {
-    const count = Math.min(
-      4,
-      Math.floor((await repository.wallet(first)).balance / imageUnitCredits),
-    );
-    await repository.create(first, input("exhaust-fixture", count), crypto.randomUUID());
-  }
-  assert.equal((await repository.create(first, input("mixed", 2), key, 1)).replayed, true);
-  await assert.rejects(
-    repository.create(first, input("no-credit"), crypto.randomUUID(), 1),
-    /INSUFFICIENT_CREDITS/,
-  );
-  walletBalanceSchema.parse(
-    unwrapApiData(await (await app.request("/api/v1/wallet", { headers })).json()),
-  );
-  walletEntriesSchema.parse(
-    unwrapApiData(await (await app.request("/api/v1/wallet/entries", { headers })).json()),
-  );
-  rechargeOrdersSchema.parse(
-    unwrapApiData(await (await app.request("/api/v1/wallet/recharges", { headers })).json()),
-  );
-  assert.equal((await app.request("/api/v1/wallet")).status, 401);
-  assert.equal(
-    (await app.request("/api/v1/wallet/entries?before=9999999999999999999", { headers })).status,
-    400,
-  );
-  assert.equal(
-    (
-      await app.request("/api/v1/wallet/recharges", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ credits: 10000 }),
-      })
-    ).status,
-    404,
-  );
-  await verifyStandaloneModels(databaseUrl, sql, store, png);
-  await verifyManagedModels(repository, sql, store, png);
-  await verifyReferenceRetention(repository, sql);
-  await verifyVariationPlans(repository, sql, store, png);
-  await verifyWallet(repository, sql);
-  await verifyVideos(repository, sql);
-  await verifyTextileGeneration(repository, sql, store, png);
-  await verifyLocalEdits(repository, sql, async (path, init) => app.request(path, init));
-  await verifyAssetLibrary(repository, sql);
+  await verifyExhaustedWallet(repository, app, first, headers, key);
+  await verifyImageFeatures(databaseUrl, repository, sql, store, png, app);
   await sql`update generation_api_keys set revoked_at=now() where id=${first.keyId}`;
   assert.equal((await app.request("/api/v1/image-models", { headers })).status, 401);
   console.info(

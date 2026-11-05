@@ -88,6 +88,24 @@ export function VideoHistoryMeta({
   );
 }
 
+function restoreVideoTaskDraft(input: VideoTask["input"]["video"]) {
+  const references = input.referenceAssetIds.map((id, index) => ({
+    id,
+    assetId: id,
+    name: `图片${index + 1}`,
+    src: assetContentUrl(id, true),
+  }));
+  useVideoDraft.getState().update({
+    reuseReferences: true,
+    prompt: input.prompt,
+    ratio: input.aspectRatio,
+    seconds: input.seconds,
+    firstFrame: references[0] ?? null,
+    lastFrame: references[1] ?? null,
+    extraReferences: references.slice(2),
+  });
+}
+
 export function VideoTaskCard({
   task,
   onRestore,
@@ -101,24 +119,8 @@ export function VideoTaskCard({
   const [confirmRestore, setConfirmRestore] = useState(false);
   const input = task.input.video;
   const originalCount = task.input.storyboardOriginalImageCount ?? 1;
-  const active = isVideoTaskActive(task);
-  const status = videoTaskStatus(task);
   function restore() {
-    const references = input.referenceAssetIds.map((id, index) => ({
-      id,
-      assetId: id,
-      name: `图片${index + 1}`,
-      src: assetContentUrl(id, true),
-    }));
-    useVideoDraft.getState().update({
-      reuseReferences: true,
-      prompt: input.prompt,
-      ratio: input.aspectRatio,
-      seconds: input.seconds,
-      firstFrame: references[0] ?? null,
-      lastFrame: references[1] ?? null,
-      extraReferences: references.slice(2),
-    });
+    restoreVideoTaskDraft(input);
     setConfirmRestore(false);
     onRestore();
   }
@@ -139,14 +141,7 @@ export function VideoTaskCard({
         <VideoTaskActions
           task={task}
           onEdit={() => {
-            const draft = useVideoDraft.getState();
-            if (
-              draft.prompt.trim() ||
-              draft.firstFrame ||
-              draft.lastFrame ||
-              draft.extraReferences.length
-            )
-              setConfirmRestore(true);
+            if (hasVideoDraft()) setConfirmRestore(true);
             else restore();
           }}
         />
@@ -162,66 +157,13 @@ export function VideoTaskCard({
           label="视频参考图"
         />
         {task.input.storyboard && (
-          <Disclosure className="video-history-ai">
-            {({ isExpanded }) => (
-              <>
-                <Disclosure.Heading level={3}>
-                  <Disclosure.Trigger className="video-history-ai-trigger">
-                    AI 生成内容
-                    <Disclosure.Indicator>
-                      <span>
-                        <UiIcon icon={IconChevronDown} size="small" />
-                      </span>
-                    </Disclosure.Indicator>
-                  </Disclosure.Trigger>
-                </Disclosure.Heading>
-                <Disclosure.Content>
-                  {isExpanded && (
-                    <Disclosure.Body className="history-prompt">
-                      <h4 className="video-history-content-label">AI 生成描述</h4>
-                      <VideoHistoryPrompt text={task.prompt} copyLabel="复制 AI 描述" />
-                      <h4 className="video-history-content-label">分镜图片</h4>
-                      <ReferenceThumbnails
-                        ids={input.referenceAssetIds.slice(originalCount)}
-                        label="分镜图片"
-                        itemLabel="分镜图片"
-                      />
-                    </Disclosure.Body>
-                  )}
-                </Disclosure.Content>
-              </>
-            )}
-          </Disclosure>
+          <VideoStoryboardDetails task={task} originalCount={originalCount} />
         )}
       </div>
       {production ? (
         <VideoProductionProgress production={production} task={task} />
       ) : (
-        <div className="generation-results" data-count="1">
-          <div>
-            {task.delivery && task.asset_id ? (
-              <VideoCover
-                assetId={task.asset_id}
-                title={task.public_id}
-                ratio={input.aspectRatio}
-                seconds={input.seconds}
-              />
-            ) : (
-              <section
-                className={`video-history-placeholder${active ? " generation-pending" : ""}`}
-                aria-label={`视频画面：${status}`}
-              >
-                {active ? (
-                  <Spinner size="md" aria-label="视频处理中" />
-                ) : (
-                  <UiIcon icon={IconMovie} size="illustration" />
-                )}
-                <span>{status}</span>
-                {active && <small>可以继续创作，完成后会自动更新</small>}
-              </section>
-            )}
-          </div>
-        </div>
+        <VideoTaskResult task={task} />
       )}
       <ConfirmDialog
         isOpen={confirmRestore}
@@ -253,5 +195,90 @@ export function VideoHistoryPrompt({
         {copyLabel}
       </Button>
     </>
+  );
+}
+
+function VideoStoryboardDetails({
+  task,
+  originalCount,
+}: {
+  task: VideoTask;
+  originalCount: number;
+}) {
+  const input = task.input.video;
+  return (
+    <Disclosure className="video-history-ai">
+      {({ isExpanded }) => (
+        <>
+          <Disclosure.Heading level={3}>
+            <Disclosure.Trigger className="video-history-ai-trigger">
+              AI 生成内容
+              <Disclosure.Indicator>
+                <span>
+                  <UiIcon icon={IconChevronDown} size="small" />
+                </span>
+              </Disclosure.Indicator>
+            </Disclosure.Trigger>
+          </Disclosure.Heading>
+          <Disclosure.Content>
+            {isExpanded && (
+              <Disclosure.Body className="history-prompt">
+                <h4 className="video-history-content-label">AI 生成描述</h4>
+                <VideoHistoryPrompt text={task.prompt} copyLabel="复制 AI 描述" />
+                <h4 className="video-history-content-label">分镜图片</h4>
+                <ReferenceThumbnails
+                  ids={input.referenceAssetIds.slice(originalCount)}
+                  label="分镜图片"
+                  itemLabel="分镜图片"
+                />
+              </Disclosure.Body>
+            )}
+          </Disclosure.Content>
+        </>
+      )}
+    </Disclosure>
+  );
+}
+
+function hasVideoDraft() {
+  const draft = useVideoDraft.getState();
+  return !!(
+    draft.prompt.trim() ||
+    draft.firstFrame ||
+    draft.lastFrame ||
+    draft.extraReferences.length
+  );
+}
+
+function VideoTaskResult({ task }: { task: VideoTask }) {
+  const input = task.input.video;
+  const active = isVideoTaskActive(task);
+  const status = videoTaskStatus(task);
+  return (
+    <div className="generation-results" data-count="1">
+      <div>
+        {task.delivery && task.asset_id ? (
+          <VideoCover
+            assetId={task.asset_id}
+            title={task.public_id}
+            ratio={input.aspectRatio}
+            seconds={input.seconds}
+          />
+        ) : (
+          <section
+            className={`video-history-placeholder${active ? " generation-pending" : ""}`}
+            aria-label={`视频画面：${status}`}
+          >
+            {active ? (
+              <Spinner size="md" aria-label="视频处理中" />
+            ) : (
+              <UiIcon icon={IconMovie} size="illustration" />
+            )}
+            <span>{status}</span>
+            {active && <small>可以继续创作，完成后会自动更新</small>}
+          </section>
+        )}
+      </div>
+    </div>
   );
 }

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { ImageScope } from "@lycoboai/contracts";
 import { openProviderKey, readPlannerStream } from "@lycoboai/generation";
 import { z } from "zod";
-import type { ImageApiDependencies } from "./routes";
+import type { ImageApiDependencies } from "./route-context";
 
 export const promptOptimizationInput = z.strictObject({
   prompt: z
@@ -23,6 +23,10 @@ const toolDescription = {
 };
 const referenceTags = (prompt: string) =>
   [...new Set(prompt.match(/@图片[1-9]\d*/g))].sort().join(",");
+
+function isImprovedPrompt(prompt: string, result: string) {
+  return !!result && result !== prompt && referenceTags(result) === referenceTags(prompt);
+}
 
 export function promptOptimization(deps: ImageApiDependencies) {
   const repository = deps.repository.promptOptimization;
@@ -93,12 +97,7 @@ export function promptOptimization(deps: ImageApiDependencies) {
             });
             const normalized = text.trim();
             signal.throwIfAborted();
-            if (
-              normalized &&
-              normalized !== input.prompt &&
-              referenceTags(normalized) === referenceTags(input.prompt)
-            )
-              result = normalized;
+            if (isImprovedPrompt(input.prompt, normalized)) result = normalized;
           } catch {
             // Provider bodies and prompts must never enter request logs.
           }

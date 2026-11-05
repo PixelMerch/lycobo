@@ -1,7 +1,7 @@
 import { Button, Popover, Spinner, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { imageUnitCredits, publicImageResolutions } from "@lycoboai/contracts";
 import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
-import { useId, useRef, useState } from "react";
+import { type RefObject, useId, useRef, useState } from "react";
 import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
@@ -18,12 +18,8 @@ import "./textile-set.css";
 export function TextileSetPage() {
   const { mainImage, detailImages, views, ratio, resolution, update } = useTextileSetDraft();
   const viewsAnchor = useRef<HTMLDivElement>(null);
-  const viewsTrigger = useRef<HTMLButtonElement>(null);
-  const viewsPressWasOpen = useRef<boolean | null>(null);
-  const [viewsOpen, setViewsOpen] = useState(false);
   const generation = useTextileGeneration();
   const costDescriptionId = useId();
-  const selectedViews = textileViews.filter((view) => views.includes(view.id));
   return (
     <>
       <div ref={viewsAnchor} className="textile-views-anchor" aria-hidden="true" />
@@ -48,97 +44,7 @@ export function TextileSetPage() {
             onChange={(images) => update({ detailImages: images })}
             number={2}
           />
-          <section className="parameter-group textile-view-field" aria-label="裂变类型">
-            <div className="field-title">
-              <h2>
-                <span aria-hidden="true" className="textile-required">
-                  *
-                </span>
-                裂变类型
-              </h2>
-              {selectedViews.length > 0 && (
-                <Button
-                  variant="tertiary"
-                  size="sm"
-                  className="clear-references"
-                  aria-label="清除裂变类型"
-                  onPress={() => {
-                    update({ views: [] });
-                    setViewsOpen(false);
-                    viewsTrigger.current?.focus();
-                  }}
-                >
-                  <UiIcon icon={IconTrash} size="small" />
-                  清除
-                </Button>
-              )}
-            </div>
-            <div className={selectedViews.length ? "textile-selected-grid" : undefined}>
-              {selectedViews.map((view) => (
-                <div className="textile-selected-view" key={view.id}>
-                  <span className="textile-selected-example" aria-hidden="true">
-                    {textileViewImages[view.id] && (
-                      <img
-                        src={textileViewImages[view.id]}
-                        alt=""
-                        width={480}
-                        height={480}
-                        loading="lazy"
-                        decoding="async"
-                        draggable={false}
-                      />
-                    )}
-                  </span>
-                  <span className="textile-selected-name">{view.name}</span>
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="tertiary"
-                    className="textile-selected-remove"
-                    aria-label={`移除裂变类型：${view.name}`}
-                    onPress={() => {
-                      update({ views: views.filter((id) => id !== view.id) });
-                      viewsTrigger.current?.focus();
-                    }}
-                  >
-                    <UiIcon icon={IconX} size="small" />
-                  </Button>
-                </div>
-              ))}
-              <Popover isOpen={viewsOpen} onOpenChange={setViewsOpen}>
-                <Button
-                  ref={viewsTrigger}
-                  onPointerDown={() => {
-                    // Blur may close the non-modal popover before this press completes.
-                    viewsPressWasOpen.current = viewsOpen;
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ")
-                      viewsPressWasOpen.current = viewsOpen;
-                  }}
-                  onPress={() => {
-                    setViewsOpen(!(viewsPressWasOpen.current ?? viewsOpen));
-                    viewsPressWasOpen.current = null;
-                  }}
-                  variant="tertiary"
-                  className="textile-view-trigger"
-                  aria-label="选择裂变类型"
-                >
-                  <UiIcon icon={IconPlus} size="action" />
-                  {!selectedViews.length && <span>选择裂变类型</span>}
-                </Button>
-                {viewsOpen && (
-                  <TextileViewsDialog
-                    anchorRef={viewsAnchor}
-                    triggerRef={viewsTrigger}
-                    selected={views}
-                    onConfirm={(value) => update({ views: value })}
-                    onClose={() => setViewsOpen(false)}
-                  />
-                )}
-              </Popover>
-            </div>
-          </section>
+          <TextileViewField views={views} update={update} viewsAnchor={viewsAnchor} />
           <section className="parameter-group" aria-label="图片比例">
             <div className="ratio-heading">
               <h2>图片比例</h2>
@@ -208,5 +114,112 @@ export function TextileSetPage() {
         </div>
       </section>
     </>
+  );
+}
+
+function TextileViewField({
+  views,
+  update,
+  viewsAnchor,
+}: {
+  views: ReturnType<typeof useTextileSetDraft.getState>["views"];
+  update: ReturnType<typeof useTextileSetDraft.getState>["update"];
+  viewsAnchor: RefObject<HTMLDivElement | null>;
+}) {
+  const viewsTrigger = useRef<HTMLButtonElement>(null);
+  const viewsPressWasOpen = useRef<boolean | null>(null);
+  const [viewsOpen, setViewsOpen] = useState(false);
+  const selectedViews = textileViews.filter((view) => views.includes(view.id));
+  return (
+    <section className="parameter-group textile-view-field" aria-label="裂变类型">
+      <div className="field-title">
+        <h2>
+          <span aria-hidden="true" className="textile-required">
+            *
+          </span>
+          裂变类型
+        </h2>
+        {selectedViews.length > 0 && (
+          <Button
+            variant="tertiary"
+            size="sm"
+            className="clear-references"
+            aria-label="清除裂变类型"
+            onPress={() => {
+              update({ views: [] });
+              setViewsOpen(false);
+              viewsTrigger.current?.focus();
+            }}
+          >
+            <UiIcon icon={IconTrash} size="small" />
+            清除
+          </Button>
+        )}
+      </div>
+      <div className={selectedViews.length ? "textile-selected-grid" : undefined}>
+        {selectedViews.map((view) => (
+          <div className="textile-selected-view" key={view.id}>
+            <span className="textile-selected-example" aria-hidden="true">
+              {textileViewImages[view.id] && (
+                <img
+                  src={textileViewImages[view.id]}
+                  alt=""
+                  width={480}
+                  height={480}
+                  loading="lazy"
+                  decoding="async"
+                  draggable={false}
+                />
+              )}
+            </span>
+            <span className="textile-selected-name">{view.name}</span>
+            <Button
+              isIconOnly
+              size="sm"
+              variant="tertiary"
+              className="textile-selected-remove"
+              aria-label={`移除裂变类型：${view.name}`}
+              onPress={() => {
+                update({ views: views.filter((id) => id !== view.id) });
+                viewsTrigger.current?.focus();
+              }}
+            >
+              <UiIcon icon={IconX} size="small" />
+            </Button>
+          </div>
+        ))}
+        <Popover isOpen={viewsOpen} onOpenChange={setViewsOpen}>
+          <Button
+            ref={viewsTrigger}
+            onPointerDown={() => {
+              // Blur may close the non-modal popover before this press completes.
+              viewsPressWasOpen.current = viewsOpen;
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") viewsPressWasOpen.current = viewsOpen;
+            }}
+            onPress={() => {
+              setViewsOpen(!(viewsPressWasOpen.current ?? viewsOpen));
+              viewsPressWasOpen.current = null;
+            }}
+            variant="tertiary"
+            className="textile-view-trigger"
+            aria-label="选择裂变类型"
+          >
+            <UiIcon icon={IconPlus} size="action" />
+            {!selectedViews.length && <span>选择裂变类型</span>}
+          </Button>
+          {viewsOpen && (
+            <TextileViewsDialog
+              anchorRef={viewsAnchor}
+              triggerRef={viewsTrigger}
+              selected={views}
+              onConfirm={(value) => update({ views: value })}
+              onClose={() => setViewsOpen(false)}
+            />
+          )}
+        </Popover>
+      </div>
+    </section>
   );
 }

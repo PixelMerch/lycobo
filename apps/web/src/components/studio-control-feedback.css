@@ -52,6 +52,6 @@
     .reference-mention-popover .list-box-item
   ) {
     transition: none;
-    scale: 1 !important;
+    scale: 1;
   }
 }

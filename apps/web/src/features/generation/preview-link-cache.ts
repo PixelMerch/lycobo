@@ -4,6 +4,16 @@ import { queryClient } from "../../lib/query-client";
 const prefix = "lycobo-preview-links-v1:";
 type Delivery = ReturnType<typeof imageDeliverySchema.parse>;
 
+export function samePreview(a: string, b: string) {
+  const before = new URL(a),
+    after = new URL(b);
+  return (
+    before.origin === after.origin &&
+    before.pathname === after.pathname &&
+    before.searchParams.get("variant") === after.searchParams.get("variant")
+  );
+}
+
 /** Only reuse after fresh authorized metadata confirms this asset and its current serving path. */
 export function reusePreviewLinks(id: string, incoming: Delivery): Delivery {
   const scope = imageSessionResponseSchema.safeParse(queryClient.getQueryData(["image-session"]));
@@ -28,19 +38,10 @@ export function reusePreviewLinks(id: string, incoming: Delivery): Delivery {
         });
     }
     const previous = valid.find((entry) => entry.id === id);
-    const sameResource = (a: string, b: string) => {
-      const before = new URL(a),
-        after = new URL(b);
-      return (
-        before.origin === after.origin &&
-        before.pathname === after.pathname &&
-        before.searchParams.get("variant") === after.searchParams.get("variant")
-      );
-    };
     const result =
       previous &&
-      sameResource(previous.url, incoming.url) &&
-      sameResource(previous.thumbnail_url, incoming.thumbnail_url)
+      samePreview(previous.url, incoming.url) &&
+      samePreview(previous.thumbnail_url, incoming.thumbnail_url)
         ? {
             ...incoming,
             url: previous.url,

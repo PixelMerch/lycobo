@@ -22,7 +22,7 @@ export function WorkspaceToolPicker() {
             aria-current={current.id === tool.id ? "page" : false}
             onPress={() => {
               shareProductReference(pathname, tool.path);
-              navigate(tool.path);
+              void navigate(tool.path);
             }}
           >
             {current.id === tool.id && (

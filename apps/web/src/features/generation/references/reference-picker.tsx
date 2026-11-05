@@ -55,56 +55,19 @@ export function ReferencePicker({
   prompt = "",
   onChange,
 }: PickerProps) {
-  const requireLogin = useRequireLogin();
-  const input = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState("");
-  const [reading, setReading] = useState(false);
-  const [preview, setPreview] = useState<number | null>(null);
-  const updateDraft = useStudioStore((s) => s.updateDraft);
-  const currentDraft = () =>
-    model !== undefined ? useStudioStore.getState().drafts[model] : { references, prompt };
-  function change(next: ReferenceImage[], text: string) {
-    if (model !== undefined) updateDraft(model, { references: next, prompt: text });
-    else onChange?.(next, text);
-  }
-  async function readFiles(files: File[]) {
-    if (!requireLogin()) return;
-    if (reading || disabled) return;
-    const issue = referenceFileError(files);
-    if (issue) {
-      setError(issue);
-      return;
-    }
-    setReading(true);
-    setError("");
-    try {
-      const images = await readReferenceImages(files);
-      const current = currentDraft()?.references ?? [];
-      const seen = new Set(current.map((image) => image.src));
-      const unique: ReferenceImage[] = [];
-      let duplicates = 0;
-      for (const image of images) {
-        if (seen.has(image.src)) {
-          duplicates += 1;
-          continue;
-        }
-        seen.add(image.src);
-        unique.push(image);
-      }
-      if (duplicates > 0) toast.warning("存在相同素材，已自动过滤");
-      if (!unique.length) return;
-      if (unique.length > limit - current.length) {
-        setError(`最多添加 ${limit} 张参考图，请减少文件后重试。`);
-        return;
-      }
-      change([...current, ...unique], currentDraft()?.prompt ?? "");
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "图片无法读取，请检查文件后重试。");
-    } finally {
-      setReading(false);
-      if (input.current) input.current.value = "";
-    }
-  }
+  const {
+    requireLogin,
+    input,
+    error,
+    setError,
+    reading,
+    preview,
+    setPreview,
+    currentDraft,
+    change,
+    readFiles,
+  } = useReferencePicker({ model, references, prompt, onChange, disabled, limit });
+  const addLabel = compact ? "上传商品图" : "添加图片";
   return (
     <section className="reference-picker">
       <div className="field-title">
@@ -156,15 +119,7 @@ export function ReferencePicker({
               const remaining = references.filter((item) => item.id !== image.id);
               change(remaining, promptAfterReferenceRemoval(prompt, index + 1));
               // Keep an open preview valid after the removed image disappears.
-              setPreview((current) =>
-                current === null
-                  ? null
-                  : current === index
-                    ? null
-                    : current > index
-                      ? current - 1
-                      : current,
-              );
+              setPreview((current) => previewAfterRemoval(current, index));
             }}
           />
         ))}
@@ -179,7 +134,7 @@ export function ReferencePicker({
             }}
           >
             <UiIcon icon={IconPlus} size={compact ? "default" : "action"} />
-            <span>{reading ? "读取中…" : compact ? "上传商品图" : "添加图片"}</span>
+            <span>{reading ? "读取中…" : addLabel}</span>
           </Button>
         ) : null}
       </div>
@@ -207,4 +162,100 @@ export function ReferencePicker({
       ) : null}
     </section>
   );
+}
+
+function previewAfterRemoval(current: number | null, removed: number) {
+  if (current === null || current === removed) return null;
+  return current > removed ? current - 1 : current;
+}
+
+function uniqueReferenceImages(current: ReferenceImage[], images: ReferenceImage[]) {
+  const seen = new Set(current.map((image) => image.src));
+  const unique: ReferenceImage[] = [];
+  let duplicates = 0;
+  for (const image of images) {
+    if (seen.has(image.src)) {
+      duplicates += 1;
+      continue;
+    }
+    seen.add(image.src);
+    unique.push(image);
+  }
+  return { unique, duplicates };
+}
+
+function useReferencePicker({
+  model,
+  references,
+  prompt,
+  onChange,
+  disabled,
+  limit,
+}: {
+  model: ModelId | undefined;
+  references: ReferenceImage[];
+  prompt: string;
+  onChange: PickerProps["onChange"];
+  disabled: boolean;
+  limit: number;
+}) {
+  const requireLogin = useRequireLogin();
+  const input = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState("");
+  const [reading, setReading] = useState(false);
+  const [preview, setPreview] = useState<number | null>(null);
+  const updateDraft = useStudioStore((s) => s.updateDraft);
+  const currentDraft = () =>
+    model !== undefined ? useStudioStore.getState().drafts[model] : { references, prompt };
+  function change(next: ReferenceImage[], text: string) {
+    if (model !== undefined) updateDraft(model, { references: next, prompt: text });
+    else onChange?.(next, text);
+  }
+  function appendImages(current: ReferenceImage[], unique: ReferenceImage[], duplicates: number) {
+    if (duplicates > 0) toast.warning("存在相同素材，已自动过滤");
+    if (!unique.length) return;
+    if (unique.length > limit - current.length) {
+      setError(`最多添加 ${limit} 张参考图，请减少文件后重试。`);
+      return;
+    }
+    change([...current, ...unique], currentDraft()?.prompt ?? "");
+  }
+  async function readFiles(files: File[]) {
+    const unavailable = reading || disabled;
+    if (!requireLogin() || unavailable) return;
+    const issue = referenceFileError(files);
+    if (issue) {
+      setError(issue);
+      return;
+    }
+    setReading(true);
+    setError("");
+    try {
+      const images = await readReferenceImages(files);
+      const current = currentDraft()?.references ?? [];
+      const { unique, duplicates } = uniqueReferenceImages(current, images);
+      appendImages(current, unique, duplicates);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "图片无法读取，请检查文件后重试。");
+    } finally {
+      setReading(false);
+      clearReferenceInput(input.current);
+    }
+  }
+  return {
+    requireLogin,
+    input,
+    error,
+    setError,
+    reading,
+    preview,
+    setPreview,
+    currentDraft,
+    change,
+    readFiles,
+  };
+}
+
+function clearReferenceInput(input: HTMLInputElement | null) {
+  if (input) input.value = "";
 }

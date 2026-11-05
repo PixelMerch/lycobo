@@ -11,7 +11,7 @@ import {
 } from "@heroui/react";
 import { IconBrandWechat, IconEye, IconEyeOff, IconQrcode, IconX } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
-import { useRef, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { photo } from "../generation/studio-state";
@@ -32,29 +32,9 @@ export function LoginDialog({
   onLoginSuccess?: () => void;
 }) {
   const reduceMotion = useReducedMotion();
-  const login = useEnterpriseLogin();
-  const passwordInput = useRef<HTMLInputElement>(null);
   const [phase, setPhase] = useState<"open" | "closed">("open");
-  const [mode, setMode] = useState<LoginMode>("enterprise");
-  const [account, setAccount] = useState("");
-  const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  const [code, setCode] = useState("");
-  const [visible, setVisible] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState("");
-  useErrorToast(error);
-  const phoneValid = /^1[3-9]\d{9}$/.test(phone);
-  const hint = loginMethods.find((method) => method.mode === mode)?.hint;
-  const switchMode = (next: LoginMode) => {
-    if (next === mode) return;
-    setMode(next);
-    setSubmitted(false);
-    setError("");
-    setPassword("");
-    setCode("");
-    setVisible(false);
-  };
+  const form = useLoginForm(onLoginSuccess);
+  const { mode, hint, switchMode } = form;
   // Closing is animated first; the modal unmounts once the panel settles.
   const requestClose = () => {
     if (reduceMotion) {
@@ -129,180 +109,7 @@ export function LoginDialog({
                   </Modal.Header>
                   <Modal.Body className="login-body">
                     <div className="login-form">
-                      {mode === "wechat" ? (
-                        <div className="login-wechat">
-                          <div
-                            className="login-qr-unavailable"
-                            role="status"
-                            aria-label="扫码登录暂未开放"
-                          >
-                            <UiIcon icon={IconQrcode} size="illustration" />
-                            <span>扫码登录暂未开放</span>
-                          </div>
-                          <p className="login-wechat-copy">
-                            请使用微信扫描公众号二维码登录。扫码服务暂未开放，请稍后再试。
-                          </p>
-                        </div>
-                      ) : (
-                        <Form
-                          key={mode}
-                          className="login-fields"
-                          validationBehavior="aria"
-                          onSubmit={async (event) => {
-                            event.preventDefault();
-                            if (login.isPending) return;
-                            setError("");
-                            setSubmitted(true);
-                            if (mode === "enterprise") {
-                              if (!account.trim() || !password) return;
-                              setSubmitted(false);
-                              const credentials = { account: account.trim(), password };
-                              setPassword("");
-                              try {
-                                await login.mutateAsync(credentials);
-                                onLoginSuccess();
-                              } catch (cause) {
-                                passwordInput.current?.focus();
-                                setError(
-                                  cause instanceof Error
-                                    ? cause.message
-                                    : "登录服务暂时不可用，请稍后重试。",
-                                );
-                              } finally {
-                                login.reset();
-                              }
-                            } else {
-                              if (!phoneValid || !/^\d{6}$/.test(code)) return;
-                              setError("手机号登录服务暂未开放，请稍后再试。");
-                            }
-                          }}
-                        >
-                          {mode === "enterprise" ? (
-                            <>
-                              <TextField
-                                name="account"
-                                value={account}
-                                onChange={(value) => {
-                                  setAccount(value);
-                                  setError("");
-                                }}
-                                isRequired
-                                isInvalid={submitted && !account.trim()}
-                              >
-                                <Label>企业账号</Label>
-                                <Input
-                                  autoFocus
-                                  autoComplete="username"
-                                  placeholder="请输入企业账号"
-                                  maxLength={128}
-                                />
-                                <FieldError>请输入企业账号</FieldError>
-                              </TextField>
-                              <TextField
-                                name="password"
-                                value={password}
-                                onChange={(value) => {
-                                  setPassword(value);
-                                  setError("");
-                                }}
-                                type={visible ? "text" : "password"}
-                                isRequired
-                                isInvalid={submitted && !password}
-                              >
-                                <Label>密码</Label>
-                                <InputGroup className="login-input-group">
-                                  <InputGroup.Input
-                                    ref={passwordInput}
-                                    autoComplete="current-password"
-                                    placeholder="请输入密码"
-                                    maxLength={256}
-                                  />
-                                  <InputGroup.Suffix>
-                                    <ToggleButton
-                                      isIconOnly
-                                      isSelected={visible}
-                                      variant="ghost"
-                                      aria-label={visible ? "隐藏密码" : "显示密码"}
-                                      onChange={setVisible}
-                                    >
-                                      <UiIcon icon={visible ? IconEyeOff : IconEye} />
-                                    </ToggleButton>
-                                  </InputGroup.Suffix>
-                                </InputGroup>
-                                <FieldError>请输入密码</FieldError>
-                              </TextField>
-                            </>
-                          ) : (
-                            <>
-                              <TextField
-                                name="phone"
-                                type="tel"
-                                value={phone}
-                                onChange={(value) => {
-                                  setPhone(value);
-                                  setError("");
-                                }}
-                                isRequired
-                                isInvalid={submitted && !phoneValid}
-                              >
-                                <Label>手机号</Label>
-                                <Input
-                                  autoFocus
-                                  autoComplete="tel-national"
-                                  inputMode="tel"
-                                  placeholder="请输入手机号"
-                                  maxLength={11}
-                                />
-                                <FieldError>请输入有效的中国大陆手机号</FieldError>
-                              </TextField>
-                              <TextField
-                                name="code"
-                                value={code}
-                                onChange={(value) => {
-                                  setCode(value);
-                                  setError("");
-                                }}
-                                isRequired
-                                isInvalid={submitted && !/^\d{6}$/.test(code)}
-                              >
-                                <Label>验证码</Label>
-                                <InputGroup className="login-input-group">
-                                  <InputGroup.Input
-                                    autoComplete="one-time-code"
-                                    inputMode="numeric"
-                                    placeholder="请输入验证码"
-                                    maxLength={6}
-                                  />
-                                  <InputGroup.Suffix>
-                                    <Button
-                                      type="button"
-                                      variant="tertiary"
-                                      className="login-send-code"
-                                      onPress={() => {
-                                        if (!phoneValid) {
-                                          setSubmitted(true);
-                                          return;
-                                        }
-                                        setError("短信验证码服务暂未开放，请稍后再试。");
-                                      }}
-                                    >
-                                      发送验证码
-                                    </Button>
-                                  </InputGroup.Suffix>
-                                </InputGroup>
-                                <FieldError>请输入6位数字验证码</FieldError>
-                              </TextField>
-                            </>
-                          )}
-                          <Button
-                            type="submit"
-                            className="login-submit"
-                            isPending={login.isPending}
-                          >
-                            {login.isPending ? "登录中…" : "登录"}
-                          </Button>
-                        </Form>
-                      )}
+                      <LoginFields form={form} />
                     </div>
                     <div className="login-alternative">
                       <span className="login-divider">或</span>
@@ -335,5 +142,239 @@ export function LoginDialog({
         </Modal.Container>
       </Modal.Backdrop>
     </Modal>
+  );
+}
+
+function useLoginForm(onLoginSuccess: () => void) {
+  const login = useEnterpriseLogin();
+  const passwordInput = useRef<HTMLInputElement>(null);
+  const [mode, setMode] = useState<LoginMode>("enterprise");
+  const [account, setAccount] = useState("");
+  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+  const [visible, setVisible] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  useErrorToast(error);
+  const phoneValid = /^1[3-9]\d{9}$/.test(phone);
+  const hint = loginMethods.find((method) => method.mode === mode)?.hint;
+  const switchMode = (next: LoginMode) => {
+    if (next === mode) return;
+    setMode(next);
+    setSubmitted(false);
+    setError("");
+    setPassword("");
+    setCode("");
+    setVisible(false);
+  };
+
+  function submitPhone() {
+    if (!phoneValid || !/^\d{6}$/.test(code)) return;
+    setError("手机号登录服务暂未开放，请稍后再试。");
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (login.isPending) return;
+    setError("");
+    setSubmitted(true);
+    if (mode !== "enterprise") {
+      submitPhone();
+
+      return;
+    }
+    if (!account.trim() || !password) return;
+    setSubmitted(false);
+    const credentials = { account: account.trim(), password };
+    setPassword("");
+    try {
+      await login.mutateAsync(credentials);
+      onLoginSuccess();
+    } catch (cause) {
+      passwordInput.current?.focus();
+      setError(cause instanceof Error ? cause.message : "登录服务暂时不可用，请稍后重试。");
+    } finally {
+      login.reset();
+    }
+  }
+  return {
+    mode,
+    hint,
+    switchMode,
+    submit,
+    pending: login.isPending,
+    passwordInput,
+    account,
+    setAccount,
+    password,
+    setPassword,
+    phone,
+    setPhone,
+    code,
+    setCode,
+    visible,
+    setVisible,
+    submitted,
+    setSubmitted,
+    phoneValid,
+    setError,
+  };
+}
+
+type LoginForm = ReturnType<typeof useLoginForm>;
+
+function LoginFields({ form }: { form: LoginForm }) {
+  const { mode, pending } = form;
+  if (mode === "wechat")
+    return (
+      <div className="login-wechat">
+        <div className="login-qr-unavailable" role="status" aria-label="扫码登录暂未开放">
+          <UiIcon icon={IconQrcode} size="illustration" />
+          <span>扫码登录暂未开放</span>
+        </div>
+        <p className="login-wechat-copy">
+          请使用微信扫描公众号二维码登录。扫码服务暂未开放，请稍后再试。
+        </p>
+      </div>
+    );
+  return (
+    <Form key={mode} className="login-fields" validationBehavior="aria" onSubmit={form.submit}>
+      {mode === "enterprise" ? <EnterpriseFields form={form} /> : <PhoneFields form={form} />}
+      <Button type="submit" className="login-submit" isPending={pending}>
+        {pending ? "登录中…" : "登录"}
+      </Button>
+    </Form>
+  );
+}
+
+function EnterpriseFields({ form }: { form: LoginForm }) {
+  const {
+    account,
+    setAccount,
+    password,
+    setPassword,
+    setError,
+    visible,
+    setVisible,
+    passwordInput,
+    submitted,
+  } = form;
+  return (
+    <>
+      <TextField
+        name="account"
+        value={account}
+        onChange={(value) => {
+          setAccount(value);
+          setError("");
+        }}
+        isRequired
+        isInvalid={submitted && !account.trim()}
+      >
+        <Label>企业账号</Label>
+        <Input autoFocus autoComplete="username" placeholder="请输入企业账号" maxLength={128} />
+        <FieldError>请输入企业账号</FieldError>
+      </TextField>
+      <TextField
+        name="password"
+        value={password}
+        onChange={(value) => {
+          setPassword(value);
+          setError("");
+        }}
+        type={visible ? "text" : "password"}
+        isRequired
+        isInvalid={submitted && !password}
+      >
+        <Label>密码</Label>
+        <InputGroup className="login-input-group">
+          <InputGroup.Input
+            ref={passwordInput}
+            autoComplete="current-password"
+            placeholder="请输入密码"
+            maxLength={256}
+          />
+          <InputGroup.Suffix>
+            <ToggleButton
+              isIconOnly
+              isSelected={visible}
+              variant="ghost"
+              aria-label={visible ? "隐藏密码" : "显示密码"}
+              onChange={setVisible}
+            >
+              <UiIcon icon={visible ? IconEyeOff : IconEye} />
+            </ToggleButton>
+          </InputGroup.Suffix>
+        </InputGroup>
+        <FieldError>请输入密码</FieldError>
+      </TextField>
+    </>
+  );
+}
+
+function PhoneFields({ form }: { form: LoginForm }) {
+  const { phone, setPhone, code, setCode, submitted, setSubmitted, phoneValid, setError } = form;
+  return (
+    <>
+      <TextField
+        name="phone"
+        type="tel"
+        value={phone}
+        onChange={(value) => {
+          setPhone(value);
+          setError("");
+        }}
+        isRequired
+        isInvalid={submitted && !phoneValid}
+      >
+        <Label>手机号</Label>
+        <Input
+          autoFocus
+          autoComplete="tel-national"
+          inputMode="tel"
+          placeholder="请输入手机号"
+          maxLength={11}
+        />
+        <FieldError>请输入有效的中国大陆手机号</FieldError>
+      </TextField>
+      <TextField
+        name="code"
+        value={code}
+        onChange={(value) => {
+          setCode(value);
+          setError("");
+        }}
+        isRequired
+        isInvalid={submitted && !/^\d{6}$/.test(code)}
+      >
+        <Label>验证码</Label>
+        <InputGroup className="login-input-group">
+          <InputGroup.Input
+            autoComplete="one-time-code"
+            inputMode="numeric"
+            placeholder="请输入验证码"
+            maxLength={6}
+          />
+          <InputGroup.Suffix>
+            <Button
+              type="button"
+              variant="tertiary"
+              className="login-send-code"
+              onPress={() => {
+                if (!phoneValid) {
+                  setSubmitted(true);
+                  return;
+                }
+                setError("短信验证码服务暂未开放，请稍后再试。");
+              }}
+            >
+              发送验证码
+            </Button>
+          </InputGroup.Suffix>
+        </InputGroup>
+        <FieldError>请输入6位数字验证码</FieldError>
+      </TextField>
+    </>
   );
 }

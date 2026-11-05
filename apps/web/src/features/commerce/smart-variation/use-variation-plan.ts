@@ -1,7 +1,13 @@
 import { toast } from "@heroui/react";
 import { pendingVariationPlanSchema, variationCapabilitiesSchema } from "@lycoboai/contracts";
-import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import {
+  type QueryClient,
+  useIsMutating,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { type Dispatch, type SetStateAction, useRef, useState } from "react";
 import {
   imageRequest,
   uploadImageReferences,
@@ -10,6 +16,79 @@ import {
 import { hasPromptDescription } from "../../generation/references/prompt-description";
 import { readPlanResponse } from "./plan-stream";
 import { useSmartVariationDraft } from "./smart-variation-state";
+
+type SessionScope = { organizationId: string; userId: string };
+type VariationDraft = ReturnType<typeof useSmartVariationDraft.getState>;
+
+async function preparePendingPlan(
+  storageKey: string,
+  client: QueryClient,
+  scope: SessionScope,
+  draft: VariationDraft,
+) {
+  let saved: unknown = null;
+  try {
+    saved = JSON.parse(sessionStorage.getItem(storageKey) ?? "null");
+  } catch {
+    sessionStorage.removeItem(storageKey);
+  }
+  let pending = pendingVariationPlanSchema.safeParse(saved);
+  if (!pending.success) {
+    const referenceAssetIds = await uploadImageReferences(client, scope, draft.references);
+    const value = {
+      key: crypto.randomUUID(),
+      input: { description: draft.description, referenceAssetIds },
+    };
+    sessionStorage.setItem(storageKey, JSON.stringify(value));
+    pending = pendingVariationPlanSchema.safeParse(value);
+  }
+  if (!pending.success) throw new Error("分析请求无法保存");
+  return pending.data;
+}
+
+async function analyzeVariation(
+  client: QueryClient,
+  scope: SessionScope,
+  draft: VariationDraft,
+  setStreamText: Dispatch<SetStateAction<string>>,
+  setReadingWeb: (reading: boolean) => void,
+) {
+  const storageKey = `lycobo-variation-plan:${scope.organizationId}:${scope.userId}`;
+  const pending = await preparePendingPlan(storageKey, client, scope, draft);
+  const response = await imageRequest(
+    "variation-plans",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        "Idempotency-Key": pending.key,
+      },
+      body: JSON.stringify(pending.input),
+    },
+    90000,
+  );
+  let linkFailed = false;
+  const plan = await readPlanResponse(
+    response,
+    (text) => setStreamText((current) => current + text),
+    (stage) => {
+      setReadingWeb(stage === "reading");
+      linkFailed = stage === "link_failed";
+    },
+  );
+  if (plan.status === "running") throw new Error("分析仍在处理，请稍后点击继续获取计划");
+  sessionStorage.removeItem(storageKey);
+  if (linkFailed)
+    throw new Error("网页读取未完成：请使用最多 3 个公开网页链接，或移除链接并粘贴商品信息后重试");
+  if (plan.status !== "ready")
+    throw new Error(
+      plan.status === "uncertain"
+        ? "分析结果待确认，请稍后再试"
+        : "分析未完成，请检查模型配置或稍后重试",
+    );
+  return plan;
+}
 
 export function useVariationPlan() {
   const session = useImageSession();
@@ -39,63 +118,7 @@ export function useVariationPlan() {
     },
     mutationFn: async () => {
       if (!session.data) throw new Error("请先登录");
-      const storageKey = `lycobo-variation-plan:${session.data.organizationId}:${session.data.userId}`;
-      let saved: unknown = null;
-      try {
-        saved = JSON.parse(sessionStorage.getItem(storageKey) ?? "null");
-      } catch {
-        sessionStorage.removeItem(storageKey);
-      }
-      let pending = pendingVariationPlanSchema.safeParse(saved);
-      if (!pending.success) {
-        const referenceAssetIds = await uploadImageReferences(
-          client,
-          session.data,
-          draft.references,
-        );
-        const value = {
-          key: crypto.randomUUID(),
-          input: { description: draft.description, referenceAssetIds },
-        };
-        sessionStorage.setItem(storageKey, JSON.stringify(value));
-        pending = pendingVariationPlanSchema.safeParse(value);
-      }
-      if (!pending.success) throw new Error("分析请求无法保存");
-      const response = await imageRequest(
-        "variation-plans",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "text/event-stream",
-            "Idempotency-Key": pending.data.key,
-          },
-          body: JSON.stringify(pending.data.input),
-        },
-        90000,
-      );
-      let linkFailed = false;
-      const plan = await readPlanResponse(
-        response,
-        (text) => setStreamText((current) => current + text),
-        (stage) => {
-          setReadingWeb(stage === "reading");
-          linkFailed = stage === "link_failed";
-        },
-      );
-      if (plan.status === "running") throw new Error("分析仍在处理，请稍后点击继续获取计划");
-      sessionStorage.removeItem(storageKey);
-      if (linkFailed)
-        throw new Error(
-          "网页读取未完成：请使用最多 3 个公开网页链接，或移除链接并粘贴商品信息后重试",
-        );
-      if (plan.status !== "ready")
-        throw new Error(
-          plan.status === "uncertain"
-            ? "分析结果待确认，请稍后再试"
-            : "分析未完成，请检查模型配置或稍后重试",
-        );
-      return plan;
+      return analyzeVariation(client, session.data, draft, setStreamText, setReadingWeb);
     },
     onSuccess: (plan, _variables, snapshot) => {
       const current = useSmartVariationDraft.getState();

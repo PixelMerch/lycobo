@@ -94,19 +94,20 @@ export const imageGenerationInputSchema = z
     variation: variationGenerationSchema.optional(),
   })
   .superRefine((input, ctx) => {
-    if (
-      input.variation
-        ? input.count !== input.variation.items.length ||
-          input.referenceAssetIds.length > 5 ||
-          !!input.textileSet ||
-          !!input.localEdit
-        : input.textileSet
-          ? input.count !== input.textileSet.views.length ||
-            input.referenceAssetIds.length < 1 ||
-            input.referenceAssetIds.length > (input.textileSet.version >= 2 ? 6 : 2) ||
-            !!input.localEdit
-          : input.count > 4
-    )
+    const maxTextileReferences = (input.textileSet?.version ?? 0) >= 2 ? 6 : 2;
+    const invalidImageTask = input.textileSet
+      ? input.count !== input.textileSet.views.length ||
+        input.referenceAssetIds.length < 1 ||
+        input.referenceAssetIds.length > maxTextileReferences ||
+        !!input.localEdit
+      : input.count > 4;
+    const invalidCount = input.variation
+      ? input.count !== input.variation.items.length ||
+        input.referenceAssetIds.length > 5 ||
+        !!input.textileSet ||
+        !!input.localEdit
+      : invalidImageTask;
+    if (invalidCount)
       ctx.addIssue({
         code: "custom",
         message:
@@ -168,9 +169,10 @@ export const imageModelLogosResponseSchema = z.object({
   ),
 });
 
+const defaultAllowedResolutions: ImageResolution[] = ["1K", ...publicImageResolutions];
 export const imageModelCatalog = publicImageModelIds.map((id) => ({
   id,
-  allowedResolutions: ["1K", ...publicImageResolutions] as ImageResolution[],
+  allowedResolutions: [...defaultAllowedResolutions],
 }));
 
 export const imageItemStatusSchema = z.enum([

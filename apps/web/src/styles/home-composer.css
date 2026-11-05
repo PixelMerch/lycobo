@@ -1,0 +1,318 @@
+/* Xiaoyunque composer measurements: 1040 × 212, 28px radius, 14/21 type. */
+.home-start {
+  margin-top: var(--home-start-spacing, 120px);
+  margin-bottom: 48px;
+}
+.home-start h1.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.home-composer {
+  min-height: 212px;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 12px 10px;
+  background: var(--home-glass-fill), var(--home-glass-tint);
+  border: 1px solid var(--home-glass-edge);
+  border-radius: 28px;
+  box-shadow:
+    inset 0 1px 0 #ffffff26,
+    0 32px 80px -24px #000000b3;
+  backdrop-filter: blur(28px) saturate(180%);
+  transition: border-color 200ms ease;
+}
+.home-prompt {
+  flex: 1;
+}
+.home-composer .home-prompt .textarea {
+  height: 138px;
+  min-height: 138px;
+  max-height: 138px;
+  padding: 10px 12px;
+  overflow-y: auto;
+  resize: none;
+  border: 0;
+  border-radius: 12px;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+  font: 400 14px / 21px var(--font-sans);
+}
+.home-composer:focus-within {
+  border-color: #ffffff38;
+  outline: none;
+}
+.home-composer .home-prompt .textarea::placeholder {
+  color: #ffffff85;
+  font-weight: var(--weight-regular);
+  opacity: 1;
+}
+.home-composer .home-prompt .textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+/* The settings pill owns the row centre; the submit action docks to the right. */
+.home-composer-tools {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  gap: 8px;
+  min-height: 36px;
+  margin-top: 12px;
+}
+/* The chevron turns over when the settings popover opens, matching the sidebar. */
+.home-settings-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  transition: transform 160ms ease;
+}
+.home-settings-trigger[aria-expanded="true"] .home-settings-chevron {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-settings-chevron {
+    transition: none;
+  }
+}
+.home-settings-trigger.button {
+  height: 32px;
+  padding: 0 var(--space-3);
+  background: #ffffff14;
+  box-shadow: inset 0 0 0 1px #ffffff0f;
+  color: #e4e4e8;
+  border: 0;
+  border-radius: 999px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  gap: var(--space-2);
+  line-height: var(--leading-sm);
+}
+.home-submit.button {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(120deg, #a8ff0026 0%, #54e6a526 100%);
+  box-shadow: inset 0 0 0 1px #a8ff0033;
+  color: #a8ff00b3;
+  transition:
+    filter 160ms ease,
+    box-shadow 160ms ease;
+}
+/* Idle keeps a brand tint rather than the shared disabled fade, so the action reads as ours. */
+.home-submit.button:is(:disabled, [data-disabled="true"]) {
+  opacity: 1;
+}
+.home-submit.button[data-active="true"] {
+  background: var(--app-primary-gradient);
+  box-shadow: 0 6px 20px -6px #a8ff0066;
+  color: var(--accent-foreground);
+}
+.home-submit.button[data-active="true"]:is(:hover, [data-hovered="true"]) {
+  background: var(--app-primary-gradient);
+  box-shadow: 0 0 20px #a8ff0059;
+  filter: brightness(1.04);
+}
+.home-settings.popover {
+  width: fit-content;
+  min-width: min(560px, calc(100vw - 32px));
+  max-width: min(640px, calc(100vw - 32px));
+  padding: 19px 21px;
+  border: 0;
+  border-radius: 18px;
+  background: #272727;
+  color: #ddd;
+}
+.home-settings .popover__dialog {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 1fr);
+  gap: var(--space-4);
+  padding: 0;
+}
+.home-settings h2,
+.home-settings h3 {
+  color: #999;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  margin: 0 0 8px;
+  line-height: var(--leading-sm);
+}
+.home-settings-models {
+  border-right: 1px solid #ffffff0a;
+  padding-right: 12px;
+}
+.home-model-option.toggle-button {
+  width: 100%;
+  height: auto;
+  justify-content: flex-start;
+  text-align: left;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  gap: 8px;
+}
+.home-model-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  flex-shrink: 0;
+  color: #ddd;
+}
+.home-model-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #666;
+}
+.home-model-option.toggle-button:hover,
+.home-model-option.toggle-button[data-hovered="true"],
+.home-model-option.toggle-button[data-selected="true"],
+.home-model-option.toggle-button[data-selected="true"]:hover {
+  background: transparent;
+  color: #ddd;
+}
+.home-model-check .ui-icon {
+  animation: model-check-in 180ms ease-out;
+}
+@keyframes model-check-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-model-check .ui-icon {
+    animation: none;
+  }
+}
+.home-model-option strong {
+  display: block;
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-base);
+}
+.home-model-option small {
+  display: block;
+  margin-top: 6px;
+  font-size: var(--text-xs);
+  color: #999;
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-xs);
+}
+.home-settings-options .toggle-button-group {
+  display: flex;
+  width: 100%;
+  gap: 2px;
+  padding: 3px;
+  border: 0;
+  border-radius: 20px;
+  background: #343434;
+  margin-bottom: var(--space-3);
+}
+.home-settings-options .toggle-button-group:last-child {
+  margin-bottom: 0;
+}
+.home-settings-options .toggle-button {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  color: #aaa;
+  padding: var(--space-1);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.home-settings-options .toggle-button[data-selected] {
+  background: #505050;
+  color: #eee;
+  box-shadow: none;
+}
+.home-settings-options .toggle-button[data-selected="true"],
+.home-settings-options .toggle-button[data-selected="true"]:hover {
+  background: transparent;
+}
+.home-settings-options .toggle-selection {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: #505050;
+  pointer-events: none;
+}
+.home-ratio-track .toggle-button {
+  flex: 0 0 48px;
+  scroll-snap-align: start;
+}
+.home-settings-options [aria-label="画面比例"] .toggle-button {
+  border-radius: 12px;
+  height: 48px;
+  min-height: 48px;
+  flex-direction: column;
+  gap: 1px;
+  padding-block: 3px;
+}
+.home-ratio-pager {
+  position: relative;
+  margin-bottom: 14px;
+}
+.home-settings-options .home-ratio-track {
+  gap: 4px;
+  padding: 4px;
+  scroll-padding-inline: 4px;
+  border-radius: 16px;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  margin-bottom: 0;
+}
+.home-ratio-track::-webkit-scrollbar {
+  display: none;
+}
+.home-ratio-track .ratio-preview {
+  width: 20px;
+  height: 20px;
+}
+.home-ratio-arrow.button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #4a4a4a;
+  color: #ddd;
+  box-shadow: 0 2px 8px #00000066;
+  z-index: 2;
+}
+.home-ratio-arrow.button:hover {
+  background: #555;
+}
+.home-ratio-arrow-left {
+  left: 6px;
+}
+.home-ratio-arrow-right {
+  right: 6px;
+}

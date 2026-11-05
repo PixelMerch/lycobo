@@ -42,24 +42,14 @@ export async function processVideoIntent(
   const job = claimed.parse(raw);
   const finish = (status: string, errorCode?: string, asset?: Record<string, unknown>) =>
     repository.run("finish", { id: job.id, token: job.token, status, errorCode, asset });
-  if (job.credentialHash !== videoCredentialHash(config.key) || job.origin !== config.origin) {
+  if (!matchesVideoConfig(job, config)) {
     await finish(job.submit ? "failed" : "needs_reconciliation", "VIDEO_CONFIGURATION_CHANGED");
     return true;
   }
   let taskId = job.providerTaskId;
   let sent = false;
   try {
-    if (job.references.length !== job.input.referenceAssetIds.length)
-      throw new VideoProviderError("REFERENCE_NOT_FOUND", false);
-    const images: string[] = [];
-    if (job.submit && job.references.length) {
-      const sign =
-        config.referenceUrl ??
-        providerReferenceSigner(config.assetOrigin, config.signingSecret, config.pathPrefix);
-      const signed = await Promise.all(job.references.map(({ objectKey }) => sign(objectKey)));
-      await Promise.all(signed.map((url) => verifyReferenceImage(url, request)));
-      images.push(...signed);
-    }
+    const images = await signVideoReferences(job, config, request);
     const creation = job.submit
       ? {
           input: job.input,
@@ -86,41 +76,86 @@ export async function processVideoIntent(
       });
       return true;
     }
-    const bytes = await downloadProviderVideo(config, taskId, request);
-    const dimensions = videoDimensions(bytes);
-    const uidObject = job.references[0]?.objectKey.split("/")[0];
-    // A text-only task resolves its UID through the injected worker storage callback below.
-    const uid =
-      uidObject ?? (await repositoryStorageUid(repository, job.organizationId, job.userId));
-    const objectKey = `${uid}/${job.organizationId}/${job.itemId}.mp4`;
-    await bucket.put(objectKey, bytes, { httpMetadata: { contentType: "video/mp4" } });
-    await finish("succeeded", undefined, {
-      objectKey,
-      ...dimensions,
-      bytes: bytes.length,
-      sha256: createHash("sha256").update(bytes).digest("hex"),
-    });
+    const asset = await storeVideoResult(repository, bucket, job, taskId, config, request);
+    await finish("succeeded", undefined, asset);
   } catch (error) {
-    if (taskId && job.failures < 4) {
-      await repository.run("defer", {
-        id: job.id,
-        token: job.token,
-        providerTaskId: taskId,
-        delaySeconds: Math.min(60, 10 * 2 ** job.failures),
-        failure: true,
-      });
-    } else {
-      const known = error instanceof VideoProviderError;
-      await finish(
-        !taskId && job.submit && (!sent || (known && !error.uncertain))
-          ? "failed"
-          : "needs_reconciliation",
-        known ? error.code : "VIDEO_EXECUTION_UNAVAILABLE",
-      );
-    }
+    await settleVideoFailure(repository, job, taskId, sent, error, finish);
   }
   return true;
 }
+type VideoClaim = z.infer<typeof claimed>;
+function matchesVideoConfig(job: VideoClaim, config: VideoWorkerConfig) {
+  return job.credentialHash === videoCredentialHash(config.key) && job.origin === config.origin;
+}
+
+type FinishVideo = (status: string, errorCode?: string) => Promise<unknown>;
+
+async function signVideoReferences(
+  job: VideoClaim,
+  config: VideoWorkerConfig,
+  request: typeof fetch,
+) {
+  if (job.references.length !== job.input.referenceAssetIds.length)
+    throw new VideoProviderError("REFERENCE_NOT_FOUND", false);
+  if (!job.submit || !job.references.length) return [];
+  const sign =
+    config.referenceUrl ??
+    providerReferenceSigner(config.assetOrigin, config.signingSecret, config.pathPrefix);
+  const signed = await Promise.all(job.references.map(({ objectKey }) => sign(objectKey)));
+  await Promise.all(signed.map((url) => verifyReferenceImage(url, request)));
+  return signed;
+}
+
+async function storeVideoResult(
+  repository: VideoRepository,
+  bucket: ImageObjectBucket,
+  job: VideoClaim,
+  taskId: string,
+  config: VideoWorkerConfig,
+  request: typeof fetch,
+) {
+  const bytes = await downloadProviderVideo(config, taskId, request);
+  const dimensions = videoDimensions(bytes);
+  const uidObject = job.references[0]?.objectKey.split("/")[0];
+  // A text-only task resolves its UID through the injected worker storage callback below.
+  const uid = uidObject ?? (await repositoryStorageUid(repository, job.organizationId, job.userId));
+  const objectKey = `${uid}/${job.organizationId}/${job.itemId}.mp4`;
+  await bucket.put(objectKey, bytes, { httpMetadata: { contentType: "video/mp4" } });
+  return {
+    objectKey,
+    ...dimensions,
+    bytes: bytes.length,
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+  };
+}
+
+async function settleVideoFailure(
+  repository: VideoRepository,
+  job: VideoClaim,
+  taskId: string | null,
+  sent: boolean,
+  error: unknown,
+  finish: FinishVideo,
+) {
+  if (taskId && job.failures < 4) {
+    await repository.run("defer", {
+      id: job.id,
+      token: job.token,
+      providerTaskId: taskId,
+      delaySeconds: Math.min(60, 10 * 2 ** job.failures),
+      failure: true,
+    });
+    return;
+  }
+  const known = error instanceof VideoProviderError;
+  await finish(
+    !taskId && job.submit && (!sent || (known && !error.uncertain))
+      ? "failed"
+      : "needs_reconciliation",
+    known ? error.code : "VIDEO_EXECUTION_UNAVAILABLE",
+  );
+}
+
 async function verifyReferenceImage(url: string, request: typeof fetch) {
   try {
     if (!isVideoReferenceUrl(url)) throw new Error("INVALID_REFERENCE_URL");

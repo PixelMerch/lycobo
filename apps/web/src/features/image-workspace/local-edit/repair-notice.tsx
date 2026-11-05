@@ -18,6 +18,19 @@ export function RepairNoticeRegion() {
 
 const endedStatuses = ["failed", "partially_failed", "needs_reconciliation"];
 
+function repairStage(status: string | undefined, succeeded: boolean) {
+  if (status === undefined || status === "queued" || status === "running") return "running";
+  return succeeded ? "succeeded" : status;
+}
+
+function repairMessage(stage: string | null) {
+  if (stage === "running") return "修改版生成中，可返回详情继续查看图片";
+  if (stage === "succeeded") return "修改版已生成，可点击查看";
+  return stage && endedStatuses.includes(stage)
+    ? "修改版未能完成，请在历史记录查看任务与积分状态"
+    : null;
+}
+
 /**
  * Announces the edit task once per state change. The toast auto-dismisses, so
  * repeated polls of the same state never re-notify.
@@ -34,13 +47,7 @@ export function useRepairNotice({
   const shown = useRef<string | null>(null);
   /* Collapse "not loaded yet", queued and running into one stage, so polling
    * the same task cannot post the same notice twice. */
-  const stage = !jobId
-    ? null
-    : status === undefined || status === "queued" || status === "running"
-      ? "running"
-      : succeeded
-        ? "succeeded"
-        : status;
+  const stage = jobId ? repairStage(status, succeeded) : null;
   const key = jobId && stage ? `${jobId}:${stage}` : null;
   useEffect(() => {
     if (!key) {
@@ -49,14 +56,7 @@ export function useRepairNotice({
     }
     if (shown.current === key) return;
     shown.current = key;
-    const message =
-      stage === "running"
-        ? "修改版生成中，可返回详情继续查看图片"
-        : stage === "succeeded"
-          ? "修改版已生成，可点击查看"
-          : endedStatuses.includes(stage ?? "")
-            ? "修改版未能完成，请在历史记录查看任务与积分状态"
-            : null;
+    const message = repairMessage(stage);
     if (message) repairQueue.add({ title: message }, { timeout: NOTICE_TIMEOUT });
   }, [key, stage]);
 }

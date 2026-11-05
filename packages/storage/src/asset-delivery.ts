@@ -59,6 +59,11 @@ export async function verifyAsset(
   );
   return crypto.subtle.verify("HMAC", signingKey, bytes, message(key, expires, variant));
 }
+function variantPath(key: string, variant: AssetVariant) {
+  if (key.endsWith(".mp4")) return variant === "thumbnail" ? `${key}.thumbnail.webp` : key;
+  return variant === "download" ? key : key.replace(/\.png$/, `.${variant}.webp`);
+}
+
 export function assetDeliverySigner(
   origin: string,
   secret: string,
@@ -92,13 +97,7 @@ export function assetDeliverySigner(
       assetLinkWindow;
     const variant = async (value: AssetVariant) => {
       // Videos are played as stored; the cover is their only derived object.
-      const pathname = key.endsWith(".mp4")
-        ? value === "thumbnail"
-          ? `${key}.thumbnail.webp`
-          : key
-        : value === "download"
-          ? key
-          : key.replace(/\.png$/, `.${value}.webp`);
+      const pathname = variantPath(key, value);
       const url = new URL(`${prefix}${pathname}`, base);
       const expires = value === "download" ? expires_at : previewExpires;
       url.searchParams.set("expires", String(expires));

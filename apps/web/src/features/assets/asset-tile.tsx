@@ -6,7 +6,7 @@ import { UiIcon } from "../../components/ui-icon";
 import { AssetImage } from "../generation/asset-image";
 import { downloadAsset } from "../generation/generation-client";
 import { formatVideoTime } from "../video/use-video-playback";
-import { toolNames } from "./asset-filters";
+import { assetToolName } from "./asset-filters";
 import { useAssetFavorite } from "./asset-library-client";
 import "../video/video.css";
 
@@ -29,7 +29,8 @@ export function AssetTile({
   onOpen: (trigger: HTMLElement) => void;
 }) {
   const { favorite, toggle } = useAssetFavorite(asset.id, asset.favorite ?? false);
-  const source = asset.kind === "reference" ? "上传" : asset.tool ? toolNames[asset.tool] : "生成";
+  const generatedSource = asset.tool ? assetToolName(asset.tool) : "生成";
+  const source = asset.kind === "reference" ? "上传" : generatedSource;
   const video = asset.type === "video";
   const videoSpecs = [
     asset.resolution,
@@ -81,43 +82,61 @@ export function AssetTile({
         </span>
       )}
       {video && videoSpecs && <span className="asset-tile-specs">{videoSpecs}</span>}
-      <div className="asset-tile-foot">
-        <span className="asset-tile-meta">
-          {!video && (
-            <>
-              <b>{source}</b>
-              <span> · {time(asset.created_at)}</span>
-            </>
-          )}
-        </span>
-        <Tooltip delay={0}>
-          <ToggleButton
-            isIconOnly
-            size="sm"
-            variant="ghost"
-            className="asset-tile-action"
-            aria-label={favorite ? "取消收藏" : `收藏${video ? "视频" : "图片"}`}
-            isSelected={favorite}
-            onChange={toggle}
-          >
-            <UiIcon icon={favorite ? IconStarFilled : IconStar} />
-          </ToggleButton>
-          <Tooltip.Content placement="top">{favorite ? "取消收藏" : "收藏"}</Tooltip.Content>
-        </Tooltip>
-        <Tooltip delay={0}>
-          <Button
-            isIconOnly
-            size="sm"
-            variant="ghost"
-            className="asset-tile-action"
-            aria-label={video ? "下载视频" : "下载原图"}
-            onPress={() => downloadAsset(asset.id)}
-          >
-            <UiIcon icon={IconDownload} />
-          </Button>
-          <Tooltip.Content placement="top">下载</Tooltip.Content>
-        </Tooltip>
-      </div>
+      <AssetTileActions asset={asset} source={source} favorite={favorite} toggle={toggle} />
+    </div>
+  );
+}
+
+function AssetTileActions({
+  asset,
+  source,
+  favorite,
+  toggle,
+}: {
+  asset: ImageAsset;
+  source: string;
+  favorite: boolean;
+  toggle: ReturnType<typeof useAssetFavorite>["toggle"];
+}) {
+  const video = asset.type === "video";
+  const favoriteAction = video ? "收藏视频" : "收藏图片";
+  return (
+    <div className="asset-tile-foot">
+      <span className="asset-tile-meta">
+        {!video && (
+          <>
+            <b>{source}</b>
+            <span> · {time(asset.created_at)}</span>
+          </>
+        )}
+      </span>
+      <Tooltip delay={0}>
+        <ToggleButton
+          isIconOnly
+          size="sm"
+          variant="ghost"
+          className="asset-tile-action"
+          aria-label={favorite ? "取消收藏" : favoriteAction}
+          isSelected={favorite}
+          onChange={toggle}
+        >
+          <UiIcon icon={favorite ? IconStarFilled : IconStar} />
+        </ToggleButton>
+        <Tooltip.Content placement="top">{favorite ? "取消收藏" : "收藏"}</Tooltip.Content>
+      </Tooltip>
+      <Tooltip delay={0}>
+        <Button
+          isIconOnly
+          size="sm"
+          variant="ghost"
+          className="asset-tile-action"
+          aria-label={video ? "下载视频" : "下载原图"}
+          onPress={() => downloadAsset(asset.id)}
+        >
+          <UiIcon icon={IconDownload} />
+        </Button>
+        <Tooltip.Content placement="top">下载</Tooltip.Content>
+      </Tooltip>
     </div>
   );
 }

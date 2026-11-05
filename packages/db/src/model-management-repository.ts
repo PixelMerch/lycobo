@@ -10,9 +10,80 @@ import {
 } from "@lycoboai/contracts";
 import type postgres from "postgres";
 
-export function modelManagementRepository(sql: postgres.Sql) {
+function imageRouteTool(input: ImageGenerationInput) {
+  if (input.textileSet) return "textile-set";
+  return input.localEdit ? "local-edit" : "create";
+}
+
+async function createModelCredential(tx: postgres.TransactionSql, ciphertext: string | undefined) {
+  let credentialId: string | undefined;
+  if (ciphertext) {
+    const [key] =
+      await tx`insert into model_credentials (ciphertext) values (${ciphertext}) returning id`;
+    credentialId = String(key?.id);
+  }
+  return credentialId;
+}
+
+function modelManagementWrites(sql: postgres.Sql) {
   const audit = (tx: postgres.TransactionSql, actor: string, action: string, id: string) =>
     tx`insert into model_audit_events (actor_id,action,resource_id) values (${actor},${action},${id})`;
+  return {
+    async saveProvider(
+      actor: string,
+      id: string | undefined,
+      input: { name: string; origin: string; adapter: string; enabled: boolean },
+      ciphertext?: string,
+    ) {
+      return sql.begin(async (tx) => {
+        const credentialId = await createModelCredential(tx, ciphertext);
+        let savedId = id;
+        if (savedId) {
+          const [row] =
+            await tx`update model_providers set name=${input.name},origin=${input.origin},adapter=${input.adapter},enabled=${Number(input.enabled)},credential_id=coalesce(${credentialId ?? null},credential_id),updated_at=now() where id=${savedId} returning id`;
+          if (!row) throw new Error("NOT_FOUND");
+        } else {
+          if (!credentialId) throw new Error("KEY_REQUIRED");
+          const [row] =
+            await tx`insert into model_providers(name,origin,adapter,credential_id,enabled) values (${input.name},${input.origin},${input.adapter},${credentialId},${Number(input.enabled)}) returning id`;
+          savedId = String(row?.id);
+        }
+        await audit(tx, actor, "provider.save", savedId);
+        return { id: savedId };
+      });
+    },
+    async saveChannel(actor: string, id: string | undefined, value: unknown) {
+      const input = channelInputSchema.parse(value);
+      return sql.begin(async (tx) => {
+        let savedId = id;
+        if (savedId) {
+          const rows =
+            await tx`update model_channels set name=${input.name},provider_id=${input.providerId},model=${input.model},settings=${tx.json(input)},enabled=${Number(input.enabled)} where id=${savedId} returning id`;
+          if (!rows.length) throw new Error("NOT_FOUND");
+        } else {
+          const [row] =
+            await tx`insert into model_channels(name,provider_id,model,settings,enabled) values (${input.name},${input.providerId},${input.model},${tx.json(input)},${Number(input.enabled)}) returning id`;
+          savedId = String(row?.id);
+        }
+        await audit(tx, actor, "channel.save", savedId);
+        return { id: savedId };
+      });
+    },
+    async saveRoute(actor: string, value: unknown) {
+      const input = modelRouteInputSchema.parse(value);
+      return sql.begin(async (tx) => {
+        const rows =
+          await tx`select id from model_channels where id=${input.channelId} and model=${input.model}`;
+        if (!rows.length) throw new Error("CHANNEL_MODEL_MISMATCH");
+        await tx`insert into model_routes(tool,model,channel_id) values (${input.tool},${input.model},${input.channelId}) on conflict(tool,model) do update set channel_id=excluded.channel_id`;
+        await audit(tx, actor, "route.save", input.channelId);
+        return { saved: true };
+      });
+    },
+  };
+}
+
+export function modelManagementRepository(sql: postgres.Sql) {
   return {
     async logos() {
       const rows =
@@ -35,62 +106,9 @@ export function modelManagementRepository(sql: postgres.Sql) {
       ]);
       return { providers, channels, routes };
     },
-    async saveProvider(
-      actor: string,
-      id: string | undefined,
-      input: { name: string; origin: string; adapter: string; enabled: boolean },
-      ciphertext?: string,
-    ) {
-      return sql.begin(async (tx) => {
-        let credentialId: string | undefined;
-        if (ciphertext) {
-          const [key] =
-            await tx`insert into model_credentials (ciphertext) values (${ciphertext}) returning id`;
-          credentialId = String(key?.id);
-        }
-        if (id) {
-          const [row] =
-            await tx`update model_providers set name=${input.name},origin=${input.origin},adapter=${input.adapter},enabled=${Number(input.enabled)},credential_id=coalesce(${credentialId ?? null},credential_id),updated_at=now() where id=${id} returning id`;
-          if (!row) throw new Error("NOT_FOUND");
-        } else {
-          if (!credentialId) throw new Error("KEY_REQUIRED");
-          const [row] =
-            await tx`insert into model_providers(name,origin,adapter,credential_id,enabled) values (${input.name},${input.origin},${input.adapter},${credentialId},${Number(input.enabled)}) returning id`;
-          id = String(row?.id);
-        }
-        await audit(tx, actor, "provider.save", id);
-        return { id };
-      });
-    },
-    async saveChannel(actor: string, id: string | undefined, value: unknown) {
-      const input = channelInputSchema.parse(value);
-      return sql.begin(async (tx) => {
-        if (id) {
-          const rows =
-            await tx`update model_channels set name=${input.name},provider_id=${input.providerId},model=${input.model},settings=${tx.json(input)},enabled=${Number(input.enabled)} where id=${id} returning id`;
-          if (!rows.length) throw new Error("NOT_FOUND");
-        } else {
-          const [row] =
-            await tx`insert into model_channels(name,provider_id,model,settings,enabled) values (${input.name},${input.providerId},${input.model},${tx.json(input)},${Number(input.enabled)}) returning id`;
-          id = String(row?.id);
-        }
-        await audit(tx, actor, "channel.save", id);
-        return { id };
-      });
-    },
-    async saveRoute(actor: string, value: unknown) {
-      const input = modelRouteInputSchema.parse(value);
-      return sql.begin(async (tx) => {
-        const rows =
-          await tx`select id from model_channels where id=${input.channelId} and model=${input.model}`;
-        if (!rows.length) throw new Error("CHANNEL_MODEL_MISMATCH");
-        await tx`insert into model_routes(tool,model,channel_id) values (${input.tool},${input.model},${input.channelId}) on conflict(tool,model) do update set channel_id=excluded.channel_id`;
-        await audit(tx, actor, "route.save", input.channelId);
-        return { saved: true };
-      });
-    },
+    ...modelManagementWrites(sql),
     async hasRoute(input: ImageGenerationInput) {
-      const tool = input.textileSet ? "textile-set" : input.localEdit ? "local-edit" : "create";
+      const tool = imageRouteTool(input);
       const rows =
         await sql`select tool from model_routes where tool=${tool} and model=${input.model}`;
       return rows.length > 0;
@@ -165,7 +183,7 @@ export async function resolveProviderSnapshot(
   input: ImageGenerationInput,
   requireManaged = false,
 ) {
-  const tool = input.textileSet ? "textile-set" : input.localEdit ? "local-edit" : "create";
+  const tool = imageRouteTool(input);
   const [catalog] = await tx`select enabled,category from model_catalog where code=${input.model}`;
   if (catalog && (catalog.enabled !== 1 || catalog.category !== "image"))
     throw new Error("MODEL_CHANNEL_DISABLED");

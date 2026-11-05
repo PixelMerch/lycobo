@@ -24,14 +24,14 @@ Compose 修改环境变量后运行 `docker compose up -d --no-deps --wait api`�
 
 所有 JSON 响应遵循 [统一返回格式](api-response.md)，下表业务结果均放在顶层 data 内。登录令牌读取 data.accessToken，用户信息读取 data.user。
 
-| 方法与路径 | 输入／行为 |
-| --- | --- |
+| 方法与路径                         | 输入／行为                                                                                                                                                     |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | POST /api/v1/auth/enterprise/login | JSON `{account,password}`；必须携带可信 Origin；成功返回 `{accessToken,tokenType:"Bearer",expiresIn:86400,refreshExpiresIn:2592000,user}` 并写 HttpOnly Cookie |
-| GET /api/v1/auth/session | 验证 JWT 后返回 `{userId,organizationId,role,account}`；未登录／过期返回 401 |
-| POST /api/v1/auth/refresh | 仅接受可信 Origin 和 HttpOnly 刷新 Cookie；轮换刷新凭据并签发新访问 Token，返回同登录的字段；刷新 Token 不进入 JSON |
-| POST /api/v1/auth/password | 已登录；JSON `{currentPassword,newPassword}`，新密码 12–256 字符；验证旧密码，原子更新密码并撤销该账号全部会话 |
-| POST /api/v1/auth/logout | 撤销服务端会话并删除 Cookie；重复退出可安全返回 HTTP 200、code=0、data={} |
-| POST /api/v1/image-session | 企业模式下读取当前 JWT 身份，不再创建本地身份 |
+| GET /api/v1/auth/session           | 验证 JWT 后返回 `{userId,organizationId,role,account}`；未登录／过期返回 401                                                                                   |
+| POST /api/v1/auth/refresh          | 仅接受可信 Origin 和 HttpOnly 刷新 Cookie；轮换刷新凭据并签发新访问 Token，返回同登录的字段；刷新 Token 不进入 JSON                                            |
+| POST /api/v1/auth/password         | 已登录；JSON `{currentPassword,newPassword}`，新密码 12–256 字符；验证旧密码，原子更新密码并撤销该账号全部会话                                                 |
+| POST /api/v1/auth/logout           | 撤销服务端会话并删除 Cookie；重复退出可安全返回 HTTP 200、code=0、data={}                                                                                      |
+| POST /api/v1/image-session         | 企业模式下读取当前 JWT 身份，不再创建本地身份                                                                                                                  |
 
 兼容性：`system/capabilities` 保留旧 foundation 字段和值，新增加可选 `enterprisePasswordLoginEnabled` 标记企业登录是否已配置，旧客户端可忽略该字段。
 
@@ -54,7 +54,7 @@ API 实例不缓存会话校验结果：后台停用账号、替换凭据以及�
 - `pnpm check`：密码哈希、错误口令、伪造／过期／错误受众 JWT、Cookie 标志、来源校验、退出撤销等单元测试。
 - `pnpm test:e2e`：表单校验、接口错误、登录成功、刷新恢复和退出；浏览器 fixture 不代表服务端验证。
 - `ALLOW_LOCAL_INTEGRATION=true pnpm --filter @lycoboai/api test:auth`：在 loopback PostgreSQL 创建独立临时数据库、执行全部迁移，验证账号、组织隔离、并发限流、禁用、重置与撤销，最后删除测试数据库和临时图片目录。不调用付费模型，不修改共享业务记录。
-- 根 `pnpm test:integration` 已串联上述鉴权测试及原 DB／Redis／图片任务测试。
+- 根 `pnpm test:integration` 已串联上述鉴权测试及原 DB／图片任务测试。
 
 依赖 API 依据：[Hono JWT](https://hono.dev/docs/helpers/jwt)、[Hono Cookie](https://hono.dev/docs/helpers/cookie)、[Node.js crypto](https://nodejs.org/docs/latest-v24.x/api/crypto.html)。
 

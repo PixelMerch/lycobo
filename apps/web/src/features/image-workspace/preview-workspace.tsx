@@ -38,13 +38,119 @@ export default function PreviewWorkspace({
     status: editor.job.data?.status,
     succeeded: !!editor.result,
   });
+  const { stage, tool, pan, setPan, dragging, startPan, movePan, endPan } = usePreviewPan(
+    editor.tool,
+    repairing,
+    wheelZoom,
+  );
+  const zoomed = zoom > 100;
+  const enterRepair = () => {
+    editor.setTool("rect");
+    onRepairChange(true);
+  };
+  const leaveRepair = () => {
+    editor.setTool("select");
+    onRepairChange(false);
+    requestAnimationFrame(() =>
+      document.getElementById("open-local-repair")?.focus({ preventScroll: true }),
+    );
+  };
+  const fit = () => {
+    setZoom(previewDefaultZoom);
+    setPan({ x: 0, y: 0 });
+  };
+  const size = source.width && source.height ? `${source.width} x ${source.height}` : "尺寸待同步";
+  return (
+    <>
+      <section
+        className="image-preview-stage preview-canvas-stage preview-dot-surface"
+        aria-label="图片预览"
+        ref={stage}
+      >
+        <PreviewDotGrid stage={stage} />
+        <PreviewCanvasToolbar
+          editor={editor}
+          repairing={repairing}
+          onTool={(next) => {
+            editor.setTool(next);
+            if (next === "rect") onRepairChange(true);
+          }}
+        />
+        <section
+          className="image-preview-frame"
+          aria-label="图片画布"
+          tabIndex={-1}
+          data-zoomed={zoomed}
+          data-pannable={!repairing || tool === "hand"}
+          data-dragging={dragging}
+          data-tool={tool}
+          onPointerDown={startPan}
+          onPointerMove={movePan}
+          onPointerUp={endPan}
+          onPointerCancel={endPan}
+          onLostPointerCapture={endPan}
+        >
+          <AssetImage
+            className="image-preview-image"
+            assetId={source.id}
+            alt={meta.prompt || "生成图片"}
+            draggable={false}
+            style={{ scale: `${zoom / 100}`, translate: `${pan.x}px ${pan.y}px` }}
+          />
+          {editor.image && (
+            <RepairCanvas
+              width={editor.width}
+              height={editor.height}
+              maxFitScale={Math.min(
+                1,
+                editor.image.naturalWidth / editor.width,
+                editor.image.naturalHeight / editor.height,
+              )}
+              regions={repairing ? editor.draft.regions : []}
+              selected={editor.selected}
+              tool={tool}
+              zoom={zoom}
+              pan={pan}
+              interactive={repairing}
+              disabled={!repairing || !!editor.locked}
+              onSelect={editor.select}
+              onChange={editor.change}
+            />
+          )}
+        </section>
+        <PreviewZoomBar size={size} zoom={zoom} setZoom={setZoom} fit={fit} />
+      </section>
+      {repairing ? (
+        <LocalRepairPanel
+          source={source}
+          editor={editor}
+          onBack={leaveRepair}
+          onPreview={onPreview}
+        />
+      ) : (
+        <ImagePreviewDetails
+          source={source}
+          meta={meta}
+          modelName={modelDisplayName(meta.model, catalog.data?.models ?? [])}
+          onRepair={enterRepair}
+        />
+      )}
+      <RepairNoticeRegion />
+    </>
+  );
+}
+
+function usePreviewPan(
+  baseTool: string,
+  repairing: boolean,
+  wheelZoom: ReturnType<typeof usePreviewZoom>["wheelZoom"],
+) {
   const stage = useRef<HTMLElement>(null);
   const dragOrigin = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const [space, setSpace] = useState(false);
-  const tool = space ? "hand" : editor.tool;
-  const zoomed = zoom > 100;
+  const tool = space ? "hand" : baseTool;
   useEffect(() => {
     const frameId = requestAnimationFrame(() => {
       const active = document.activeElement;
@@ -125,126 +231,43 @@ export default function PreviewWorkspace({
     if (event.currentTarget.hasPointerCapture(event.pointerId))
       event.currentTarget.releasePointerCapture(event.pointerId);
   };
-  const enterRepair = () => {
-    editor.setTool("rect");
-    onRepairChange(true);
-  };
-  const leaveRepair = () => {
-    editor.setTool("select");
-    onRepairChange(false);
-    requestAnimationFrame(() =>
-      document.getElementById("open-local-repair")?.focus({ preventScroll: true }),
-    );
-  };
-  const fit = () => {
-    setZoom(previewDefaultZoom);
-    setPan({ x: 0, y: 0 });
-  };
-  const size = source.width && source.height ? `${source.width} x ${source.height}` : "尺寸待同步";
+  return { stage, tool, pan, setPan, dragging, startPan, movePan, endPan };
+}
+
+function PreviewZoomBar({
+  size,
+  zoom,
+  setZoom,
+  fit,
+}: {
+  size: string;
+  zoom: number;
+  setZoom: ReturnType<typeof usePreviewZoom>["setZoom"];
+  fit: () => void;
+}) {
   return (
-    <>
-      <section
-        className="image-preview-stage preview-canvas-stage preview-dot-surface"
-        aria-label="图片预览"
-        ref={stage}
+    <footer className="image-preview-bar">
+      <span className="image-preview-bar-size">{size}</span>
+      <Button size="sm" variant="ghost" className="preview-fit" aria-label="适应画布" onPress={fit}>
+        适应画布
+      </Button>
+      <Slider
+        className="image-preview-zoom"
+        aria-label="缩放"
+        minValue={previewMinZoom}
+        maxValue={500}
+        step={5}
+        value={zoom}
+        onChange={(value) => setZoom(Number(value))}
       >
-        <PreviewDotGrid stage={stage} />
-        <PreviewCanvasToolbar
-          editor={editor}
-          repairing={repairing}
-          onTool={(next) => {
-            editor.setTool(next);
-            if (next === "rect") onRepairChange(true);
-          }}
-        />
-        <section
-          className="image-preview-frame"
-          aria-label="图片画布"
-          tabIndex={-1}
-          data-zoomed={zoomed}
-          data-pannable={!repairing || tool === "hand"}
-          data-dragging={dragging}
-          data-tool={tool}
-          onPointerDown={startPan}
-          onPointerMove={movePan}
-          onPointerUp={endPan}
-          onPointerCancel={endPan}
-          onLostPointerCapture={endPan}
-        >
-          <AssetImage
-            className="image-preview-image"
-            assetId={source.id}
-            alt={meta.prompt || "生成图片"}
-            draggable={false}
-            style={{ scale: `${zoom / 100}`, translate: `${pan.x}px ${pan.y}px` }}
-          />
-          {editor.image && (
-            <RepairCanvas
-              width={editor.width}
-              height={editor.height}
-              maxFitScale={Math.min(
-                1,
-                editor.image.naturalWidth / editor.width,
-                editor.image.naturalHeight / editor.height,
-              )}
-              regions={repairing ? editor.draft.regions : []}
-              selected={editor.selected}
-              tool={tool}
-              zoom={zoom}
-              pan={pan}
-              interactive={repairing}
-              disabled={!repairing || !!editor.locked}
-              onSelect={editor.select}
-              onChange={editor.change}
-            />
-          )}
-        </section>
-        <footer className="image-preview-bar">
-          <span className="image-preview-bar-size">{size}</span>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="preview-fit"
-            aria-label="适应画布"
-            onPress={fit}
-          >
-            适应画布
-          </Button>
-          <Slider
-            className="image-preview-zoom"
-            aria-label="缩放"
-            minValue={previewMinZoom}
-            maxValue={500}
-            step={5}
-            value={zoom}
-            onChange={(value) => setZoom(Number(value))}
-          >
-            <Slider.Track>
-              <Slider.Fill />
-              <Slider.Thumb />
-            </Slider.Track>
-          </Slider>
-          <output className="image-preview-zoom-value" aria-label="画布缩放比例">
-            {Math.round(zoom)}%
-          </output>
-        </footer>
-      </section>
-      {repairing ? (
-        <LocalRepairPanel
-          source={source}
-          editor={editor}
-          onBack={leaveRepair}
-          onPreview={onPreview}
-        />
-      ) : (
-        <ImagePreviewDetails
-          source={source}
-          meta={meta}
-          modelName={modelDisplayName(meta.model, catalog.data?.models ?? [])}
-          onRepair={enterRepair}
-        />
-      )}
-      <RepairNoticeRegion />
-    </>
+        <Slider.Track>
+          <Slider.Fill />
+          <Slider.Thumb />
+        </Slider.Track>
+      </Slider>
+      <output className="image-preview-zoom-value" aria-label="画布缩放比例">
+        {Math.round(zoom)}%
+      </output>
+    </footer>
   );
 }

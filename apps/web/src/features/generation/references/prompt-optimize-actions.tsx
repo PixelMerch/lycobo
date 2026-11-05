@@ -51,7 +51,7 @@ export function PromptOptimizeActions({
 
   return (
     <div ref={actions} className="prompt-optimize" data-confirming={isConfirming || undefined}>
-      {isConfirming ? (
+      {isConfirming && (
         <fieldset aria-label="确认优化提示词" className="prompt-optimize-confirmation">
           <span className="prompt-optimize-price">
             消耗 <strong>{promptOptimizeCredits} 积分</strong>
@@ -72,7 +72,8 @@ export function PromptOptimizeActions({
             </Button>
           </div>
         </fieldset>
-      ) : optimizer.running ? (
+      )}
+      {!isConfirming && optimizer.running && (
         <Button
           variant="ghost"
           size="sm"
@@ -83,7 +84,8 @@ export function PromptOptimizeActions({
           <Spinner size="sm" color="current" aria-hidden="true" />
           停止
         </Button>
-      ) : optimizer.canStart ? (
+      )}
+      {!isConfirming && !optimizer.running && optimizer.canStart && (
         <Tooltip delay={0}>
           <Button
             ref={trigger}
@@ -107,7 +109,7 @@ export function PromptOptimizeActions({
           </Button>
           <Tooltip.Content placement="top">AI 润色提示词</Tooltip.Content>
         </Tooltip>
-      ) : null}
+      )}
       {optimizer.canUndo && !isConfirming && (
         <Button
           variant="ghost"

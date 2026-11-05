@@ -1,0 +1,327 @@
+/* 视频详情复用图片详情的三栏与信息栏；舞台内画框按视频实际比例适配。 */
+.image-preview-stage.video-preview-stage {
+  padding: var(--image-preview-inset);
+  container-type: size;
+}
+.video-preview-frame {
+  position: relative;
+  flex: none;
+  height: min(100cqh, calc(100cqw / var(--video-aspect)));
+  aspect-ratio: var(--video-aspect);
+  overflow: hidden;
+  background: #000;
+  isolation: isolate;
+  user-select: none;
+}
+.video-preview-params {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #111114;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+.video-preview-params > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.video-preview-params dt {
+  color: #8f8f8f;
+}
+.video-preview-params dd {
+  margin: 0;
+  color: #cfcfcf;
+  font-variant-numeric: tabular-nums;
+}
+.video-preview-frame[data-controls="hidden"] {
+  cursor: none;
+}
+.video-preview-media,
+.video-preview-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.video-preview-poster {
+  transition: opacity 200ms ease;
+  pointer-events: none;
+}
+.video-preview-poster[data-hidden="true"] {
+  opacity: 0;
+}
+.video-preview-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.video-preview-center {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.video-preview-center > * {
+  pointer-events: auto;
+}
+.video-preview-loading {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #00000059;
+  backdrop-filter: blur(12px);
+  color: #fff;
+  pointer-events: none;
+}
+.video-preview-play.button {
+  width: 64px;
+  min-width: 64px;
+  height: 64px;
+  min-height: 64px;
+  border: 0;
+  border-radius: 50%;
+  background: #00000059;
+  box-shadow:
+    inset 0 0 0 1px #ffffff33,
+    0 8px 24px #0000004d;
+  backdrop-filter: blur(12px) saturate(140%);
+  color: #fff;
+  transition:
+    background-color 180ms ease,
+    scale 180ms ease;
+}
+.video-preview-play.button:not([data-replay="true"]) .ui-icon {
+  translate: 2px 0;
+}
+.video-preview-play.button:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
+  background: #ffffff33;
+  scale: 1.06;
+}
+/* The failure notice sits on a dark glass panel so it stays legible over a bright cover. */
+.video-preview-error {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  max-width: calc(100% - 32px);
+  padding: 20px 24px;
+  border-radius: 12px;
+  background: #000000a6;
+  box-shadow: inset 0 0 0 1px #ffffff14;
+  backdrop-filter: blur(12px);
+  color: #fff;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  text-align: center;
+}
+.video-preview-error p {
+  margin: 0 0 4px;
+}
+.video-preview-retry.button {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: #ffffff1f;
+  color: #fff;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.video-preview-frame
+  .video-preview-retry.button:is(
+    :hover,
+    [data-hovered="true"],
+    :focus-visible,
+    [data-focus-visible="true"]
+  ) {
+  background: #ffffff33;
+}
+.video-preview-controls {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  display: grid;
+  gap: 2px;
+  padding: 36px 12px 8px;
+  background: linear-gradient(#00000000, #00000073 45%, #000000b3);
+  transition:
+    opacity 200ms ease,
+    translate 200ms ease;
+}
+.video-preview-frame[data-controls="hidden"] .video-preview-controls {
+  opacity: 0;
+  translate: 0 8px;
+  pointer-events: none;
+}
+/* Keyboard focus inside the bar keeps it on screen while the clip plays. */
+.video-preview-frame[data-controls="hidden"]:has([data-focus-visible="true"])
+  .video-preview-controls {
+  opacity: 1;
+  translate: none;
+  pointer-events: auto;
+}
+.video-preview-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.video-preview-time {
+  margin-left: 4px;
+  color: #ffffffd9;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.video-preview-spacer {
+  flex: 1;
+}
+.video-preview-control:is(.button, .toggle-button) {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+}
+.video-preview-control:is(.button, .toggle-button):is(
+  :hover,
+  [data-hovered="true"],
+  [data-selected="true"]
+) {
+  background: transparent;
+  color: #fff;
+}
+.video-preview-control:is(.button, .toggle-button):is([data-hovered="true"], :hover) {
+  background: #ffffff1f;
+}
+/* Same neutral keyboard focus as the image browser toolbar on dark media. */
+.video-preview-frame :is(.button, .toggle-button):is(:focus-visible, [data-focus-visible="true"]) {
+  outline: none;
+  box-shadow: none;
+  background: #ffffff1f;
+  color: #fff;
+}
+.video-preview-play.button:is(:focus-visible, [data-focus-visible="true"]) {
+  background: #ffffff33;
+  box-shadow:
+    inset 0 0 0 1px #ffffff33,
+    0 8px 24px #0000004d;
+}
+/* Official HeroUI Slider as a thin white progress line with a hit area of 16px. */
+.video-preview-progress.slider {
+  display: block;
+  width: auto;
+  gap: 0;
+  margin-inline: 6px;
+}
+.video-preview-progress .slider__track {
+  height: 16px;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(#ffffff40, #ffffff40) center / 100% 3px no-repeat;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background-size 150ms ease;
+}
+/* The slider snaps to 0.1s steps; a matching linear glide keeps short clips from ticking. */
+.video-preview-progress .slider__fill {
+  top: 50%;
+  height: 3px;
+  translate: 0 -50%;
+  border-radius: 999px;
+  background: #fff;
+  transition:
+    height 150ms ease,
+    width 100ms linear;
+}
+.video-preview-progress .slider__thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px #00000066;
+  opacity: 0;
+  transition:
+    opacity 150ms ease,
+    left 100ms linear;
+}
+.video-preview-progress .slider__thumb::after {
+  content: none;
+  display: none;
+}
+.video-preview-progress:is(:hover, [data-hovered="true"]) .slider__track,
+.video-preview-progress .slider__track:has([data-dragging="true"]) {
+  background-size: 100% 5px;
+}
+.video-preview-progress:is(:hover, [data-hovered="true"]) .slider__fill,
+.video-preview-progress .slider__track:has([data-dragging="true"]) .slider__fill {
+  height: 5px;
+}
+.video-preview-progress:is(:hover, [data-hovered="true"]) .slider__thumb,
+.video-preview-progress .slider__thumb:is([data-dragging="true"], [data-focus-visible="true"]) {
+  opacity: 1;
+}
+.video-preview-progress
+  .slider__track:has([data-dragging="true"])
+  :is(.slider__fill, .slider__thumb) {
+  transition-property: height, opacity;
+}
+.video-preview-progress .slider__thumb[data-focus-visible="true"] {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.video-preview-progress[data-disabled="true"] {
+  opacity: 1;
+}
+@media (pointer: coarse) {
+  .video-preview-progress .slider__thumb {
+    opacity: 1;
+  }
+}
+@media (max-width: 767px) {
+  .image-preview-stage.video-preview-stage {
+    height: min(62dvh, 560px);
+    padding: 0;
+  }
+  .video-preview-controls {
+    padding-inline: 6px;
+  }
+  .video-preview-control:is(.button, .toggle-button) {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .video-cover-image,
+  .video-cover-play,
+  .video-preview-poster,
+  .video-preview-play.button,
+  .video-preview-controls,
+  .video-preview-progress :is(.slider__track, .slider__fill, .slider__thumb) {
+    transition: none;
+  }
+  :is(.video-cover, .asset-tile-open).button:is([data-hovered="true"], [data-focus-visible="true"])
+    :is(.video-cover-image, .video-cover-play),
+  .video-preview-play.button:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
+    scale: none;
+  }
+  .video-preview-frame[data-controls="hidden"] .video-preview-controls {
+    translate: none;
+  }
+}

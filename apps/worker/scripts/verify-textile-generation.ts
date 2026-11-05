@@ -33,7 +33,7 @@ export async function verifyTextileGeneration(
     await repository.addReference(owner, asset);
     references.push(asset.id);
   }
-  const app = createApp(() => {}, {
+  const app = createApp(undefined, {
     repository,
     store,
     enabled: true,
@@ -80,6 +80,19 @@ export async function verifyTextileGeneration(
   });
   assert.equal(forbidden.status, 400);
   assert.equal((await repository.wallet(other)).balance, 40);
+  await verifyTextileProviderPrompts(png, repository, store, job, owner, sql);
+  // A card retries one unresolved item while another item remains queued.
+  await verifyTextileTargetedRetry(repository, owner, app, sql, other, store, png, references);
+}
+
+async function verifyTextileProviderPrompts(
+  png: Uint8Array,
+  repository: ImageRepository,
+  store: ImageStore,
+  job: ReturnType<typeof imageJobSchema.parse>,
+  owner: Awaited<ReturnType<ImageRepository["provision"]>>,
+  sql: postgres.Sql,
+) {
   const prompts: string[] = [];
   const request: typeof fetch = async (_url, init) => {
     assert(init?.body instanceof FormData);
@@ -136,7 +149,18 @@ export async function verifyTextileGeneration(
     )[0]?.n,
     11,
   );
-  // A card retries one unresolved item while another item remains queued.
+}
+
+async function verifyTextileTargetedRetry(
+  repository: ImageRepository,
+  owner: Awaited<ReturnType<ImageRepository["provision"]>>,
+  app: ReturnType<typeof createApp>,
+  sql: postgres.Sql,
+  other: Awaited<ReturnType<ImageRepository["provision"]>>,
+  store: ImageStore,
+  png: Uint8Array<ArrayBufferLike>,
+  references: string[],
+) {
   const batch = await repository.create(
     owner,
     imageGenerationInputSchema.parse({
@@ -196,6 +220,43 @@ export async function verifyTextileGeneration(
     4,
   );
   // History deletion archives display state, never billing, source images or running work.
+  await verifyArchivedTextileHistory(
+    repository,
+    owner,
+    app,
+    batch,
+    other,
+    thirdItem,
+    store,
+    png,
+    references,
+  );
+}
+
+async function verifyArchivedTextileHistory(
+  repository: ImageRepository,
+  owner: Awaited<ReturnType<ImageRepository["provision"]>>,
+  app: ReturnType<typeof createApp>,
+  batch: { id: string; replayed: boolean },
+  other: Awaited<ReturnType<ImageRepository["provision"]>>,
+  thirdItem: {
+    id: string;
+    position: number;
+    status: "queued" | "running" | "succeeded" | "failed" | "needs_reconciliation";
+    output_asset_id: string | null;
+    error_code: string | null;
+    width: number | null;
+    height: number | null;
+    worker_id: string | null;
+    output_delivery?:
+      | { url: string; thumbnail_url: string; download_url: string; expires_at: number }
+      | undefined;
+    output_public_id?: string | null | undefined;
+  },
+  store: ImageStore,
+  png: Uint8Array<ArrayBufferLike>,
+  references: string[],
+) {
   const balanceBeforeDelete = (await repository.wallet(owner)).balance;
   const remove = (token: string) =>
     app.request(`/api/v1/image-tasks/${batch.id}`, {

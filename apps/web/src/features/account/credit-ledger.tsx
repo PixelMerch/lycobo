@@ -46,6 +46,9 @@ export function CreditLedger() {
       (member === "all" || (entry.user_uid ?? "system") === member),
   );
   const currentUid = session.data?.uid;
+  const availableMessage = ledger.length ? "已加载记录中暂无此类型" : "暂无收支记录";
+  const errorMessage = entries.isError ? "收支记录暂时不可用" : availableMessage;
+  const entriesStatusText = entries.isPending ? "正在加载收支记录…" : errorMessage;
   return (
     <section className="account-ledger" aria-label="积分明细">
       <div className="account-toolbar">
@@ -82,10 +85,8 @@ export function CreditLedger() {
             <Select.Popover>
               <ListBox>
                 {["all", ...members].map((uid) => {
-                  const name =
-                    uid === "all"
-                      ? "全部成员"
-                      : memberLabel(uid === "system" ? null : uid, currentUid);
+                  const memberId = uid === "system" ? null : uid;
+                  const name = uid === "all" ? "全部成员" : memberLabel(memberId, currentUid);
                   return (
                     <ListBox.Item key={uid} id={uid} textValue={name}>
                       {name}
@@ -120,46 +121,41 @@ export function CreditLedger() {
                 items={visible}
                 renderEmptyState={() => (
                   <p className="account-empty" role="status">
-                    {entries.isPending
-                      ? "正在加载收支记录…"
-                      : entries.isError
-                        ? "收支记录暂时不可用"
-                        : ledger.length
-                          ? "已加载记录中暂无此类型"
-                          : "暂无收支记录"}
+                    {entriesStatusText}
                   </p>
                 )}
               >
-                {(entry) => (
-                  <Table.Row id={entry.id}>
-                    <Table.Cell className="account-cell-time">
-                      {recordTime(entry.created_at)}
-                    </Table.Cell>
-                    <Table.Cell className="account-cell-type">
-                      <span className="account-entry-type">
-                        <EntryMark kind={entry.kind} />
-                        {entryDetail(entry) === "提示词优化"
-                          ? entry.kind === "consume"
-                            ? "积分消耗"
-                            : "积分退还"
-                          : entryNames[entry.kind]}
-                      </span>
-                    </Table.Cell>
-                    <Table.Cell className="account-cell-detail">{entryDetail(entry)}</Table.Cell>
-                    <Table.Cell className="account-cell-member">
-                      {memberLabel(entry.user_uid, currentUid)}
-                    </Table.Cell>
-                    <Table.Cell
-                      className={`account-cell-amount${entry.amount > 0 ? " is-positive" : ""}`}
-                    >
-                      {signedCredits(entry.amount)}
-                    </Table.Cell>
-                    <Table.Cell className="account-cell-after">
-                      <span className="account-after-label">结余 </span>
-                      {formatCredits(entry.balance_after)}
-                    </Table.Cell>
-                  </Table.Row>
-                )}
+                {(entry) => {
+                  const detail = entryDetail(entry);
+                  const optimizationName = entry.kind === "consume" ? "积分消耗" : "积分退还";
+                  const name = detail === "提示词优化" ? optimizationName : entryNames[entry.kind];
+                  return (
+                    <Table.Row id={entry.id}>
+                      <Table.Cell className="account-cell-time">
+                        {recordTime(entry.created_at)}
+                      </Table.Cell>
+                      <Table.Cell className="account-cell-type">
+                        <span className="account-entry-type">
+                          <EntryMark kind={entry.kind} />
+                          {name}
+                        </span>
+                      </Table.Cell>
+                      <Table.Cell className="account-cell-detail">{detail}</Table.Cell>
+                      <Table.Cell className="account-cell-member">
+                        {memberLabel(entry.user_uid, currentUid)}
+                      </Table.Cell>
+                      <Table.Cell
+                        className={`account-cell-amount${entry.amount > 0 ? " is-positive" : ""}`}
+                      >
+                        {signedCredits(entry.amount)}
+                      </Table.Cell>
+                      <Table.Cell className="account-cell-after">
+                        <span className="account-after-label">结余 </span>
+                        {formatCredits(entry.balance_after)}
+                      </Table.Cell>
+                    </Table.Row>
+                  );
+                }}
               </Table.Body>
             </Table.Content>
           </Table.ScrollContainer>
