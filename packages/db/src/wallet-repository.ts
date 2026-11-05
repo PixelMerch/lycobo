@@ -42,6 +42,20 @@ export async function appendWalletEntry(
     values (${walletId},${entry.eventKey},${entry.kind},${entry.amount},${balance.balance},${entry.userId},${entry.jobId ?? null},${entry.itemId ?? null},${entry.rechargeId ?? null})`;
   return true;
 }
+function checkRechargeOrder(
+  order: postgres.Row | undefined,
+  input: { amountMinor: number; currency: string; channel: string },
+) {
+  if (
+    !order ||
+    order.amount_minor !== input.amountMinor ||
+    order.currency !== input.currency ||
+    order.channel !== input.channel
+  )
+    throw new WalletError("STATE_CONFLICT");
+  return order;
+}
+
 export function walletRepository(sql: postgres.Sql) {
   return {
     async wallet(scope: ImageScope) {
@@ -117,24 +131,18 @@ export function walletRepository(sql: postgres.Sql) {
           userId: String(candidate.user_id),
         });
         const [order] = await tx`select * from recharge_orders where id=${input.id} for update`;
-        if (
-          !order ||
-          order.amount_minor !== input.amountMinor ||
-          order.currency !== input.currency ||
-          order.channel !== input.channel
-        )
-          throw new WalletError("STATE_CONFLICT");
-        if (order.status === "paid") {
-          if (order.provider_transaction_id !== input.transactionId)
+        const orderForSettlement = checkRechargeOrder(order, input);
+        if (orderForSettlement.status === "paid") {
+          if (orderForSettlement.provider_transaction_id !== input.transactionId)
             throw new WalletError("STATE_CONFLICT");
           return { replayed: true };
         }
-        if (order.status !== "pending") throw new WalletError("STATE_CONFLICT");
+        if (orderForSettlement.status !== "pending") throw new WalletError("STATE_CONFLICT");
         await tx`update recharge_orders set status='paid',provider_transaction_id=${input.transactionId},paid_at=now() where id=${input.id}`;
         await appendWalletEntry(tx, wallet.id, {
           eventKey: `recharge:${input.id}`,
           kind: "recharge",
-          amount: Number(order.credits),
+          amount: Number(orderForSettlement.credits),
           userId: String(candidate.user_id),
           rechargeId: input.id,
         });

@@ -52,6 +52,11 @@ export function constrainRegion(region: RepairRegion, width: number, height: num
   };
 }
 
+function repairResolution(edge: number): ImageResolution {
+  if (edge <= 1254) return "1.5K";
+  return edge <= 2048 ? "2K" : "4K";
+}
+
 export function repairOutput(
   width: number,
   height: number,
@@ -66,8 +71,7 @@ export function repairOutput(
   });
   return {
     ratio,
-    resolution:
-      Math.max(width, height) <= 1254 ? "1.5K" : Math.max(width, height) <= 2048 ? "2K" : "4K",
+    resolution: repairResolution(Math.max(width, height)),
   };
 }
 

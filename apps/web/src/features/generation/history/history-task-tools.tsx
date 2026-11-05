@@ -75,7 +75,7 @@ async function taskDraft(
       prompt: input.prompt,
       ratio: input.aspectRatio,
       resolution: input.resolution === "1K" ? "1.5K" : input.resolution,
-      quality: input.quality === "low" ? "低" : input.quality === "high" ? "高" : "标准",
+      quality: draftQuality(input.quality),
       count: String(input.count),
       references: input.referenceAssetIds.map((id, index) => ({
         id,
@@ -95,127 +95,10 @@ export function HistoryTaskActions({
   onRestore?: HistoryRestore | undefined;
   item?: ImageJob["items"][number] | undefined;
 }) {
-  const actionsRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (item) return;
-    const actions = actionsRef.current;
-    const article = actions?.closest<HTMLElement>(".generation-job");
-    if (!actions || !article) return;
-    const measure = () =>
-      article.style.setProperty(
-        "--history-actions-width",
-        `${actions.getBoundingClientRect().width}px`,
-      );
-    const observer = new ResizeObserver(measure);
-    observer.observe(actions);
-    measure();
-    return () => {
-      observer.disconnect();
-      article.style.removeProperty("--history-actions-width");
-    };
-  }, [item]);
-  const client = useQueryClient();
+  const actionsRef = useHistoryActionsWidth(item);
   const [regenerateOpen, setRegenerateOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const generation = useGenerateImage();
-  const session = useImageSession();
-  useErrorToast(
-    generation.isError
-      ? hasPendingSubmission(session.data)
-        ? "提交结果待确认，请在左侧确认上次提交。"
-        : generation.error?.message
-      : null,
-  );
-  const models = useImageModels();
-  const pending = usePendingSubmission(session.data);
-  const blocked =
-    (item
-      ? !["failed", "needs_reconciliation"].includes(item.status)
-      : ["queued", "running"].includes(job.status)) || pending;
-  const targets = item
-    ? [item]
-    : job.items.filter((entry) => ["failed", "needs_reconciliation"].includes(entry.status));
-  const upgradeTextile =
-    !!job.input?.textileSet &&
-    job.input.textileSet.version < 5 &&
-    targets.every((entry) => entry.status === "failed");
-  const capabilities = modelCapabilities(
-    models.data,
-    upgradeTextile ? "gpt-image-2.5" : job.model,
-    job.input?.textileSet ? "textile-set" : job.input?.localEdit ? "local-edit" : "create",
-  );
-  const configured =
-    capabilities?.enabledResolutions.some((resolution) => resolution === job.resolution) &&
-    supportsReferences(capabilities, job.input?.referenceAssetIds.length ?? 0);
-  const retrying =
-    !!item || ["failed", "partially_failed", "needs_reconciliation"].includes(job.status);
-  const count = item
-    ? 1
-    : retrying
-      ? Math.max(
-          1,
-          job.items.filter((item) => ["failed", "needs_reconciliation"].includes(item.status))
-            .length,
-        )
-      : job.requested_count;
-  const unitCredits = imageUnitCredits;
-  const regenerateContent = targets.some((entry) => entry.status === "needs_reconciliation")
-    ? "先查询原任务，已有结果将直接保存；确认需重新生成时才扣除积分。"
-    : `本次消耗 ${count * unitCredits} 积分${
-        upgradeTextile ? "。使用最新裂变配置创建新任务，原记录保留。" : ""
-      }`;
-  const restore = (value: Awaited<ReturnType<typeof taskDraft>>) => {
-    if (onRestore) {
-      onRestore(value);
-      return;
-    }
-    const { model, draft } = value;
-    useStudioStore.getState().updateDraft(model, draft);
-    useStudioStore.getState().setActiveModel(model);
-    requestAnimationFrame(() =>
-      document
-        .querySelector<HTMLTextAreaElement>(".composer-panel textarea")
-        ?.focus({ preventScroll: true }),
-    );
-  };
-  const regenerate = async () => {
-    if (hasPendingSubmission(session.data)) return;
-    setLoading(true);
-    generation.reset();
-    try {
-      const restored = await taskDraft(job, client);
-      if (upgradeTextile && restored.textileSet) {
-        const views = retrying
-          ? restored.textileSet.views.filter((_, position) =>
-              targets.some((entry) => entry.position === position),
-            )
-          : restored.textileSet.views;
-        generation.mutate({
-          ...restored,
-          model: "gpt-image-2.5",
-          draft: { ...restored.draft, count: String(views.length) },
-          textileSet: { version: 5, views },
-          source: "textile-set",
-        });
-        return;
-      }
-      generation.mutate({
-        ...restored,
-        ...(job.input?.textileSet
-          ? { source: "textile-set" }
-          : job.input?.variation
-            ? { source: "smart-variation" }
-            : {}),
-        ...(item || ["failed", "partially_failed", "needs_reconciliation"].includes(job.status)
-          ? { retryJobId: job.id, ...(item ? { retryItemId: item.id } : {}) }
-          : {}),
-      });
-    } catch (failure) {
-      toast.danger(failure instanceof Error ? failure.message : "无法读取任务。");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { generation, loading, blocked, configured, regenerateContent, regenerate, edit } =
+    useHistoryTaskActions(job, item, onRestore);
   return (
     <div ref={actionsRef} className={item ? "generation-retry-overlay" : "history-task-actions"}>
       {!item && <HistoryDownloadButton job={job} />}
@@ -227,17 +110,7 @@ export function HistoryTaskActions({
             className="history-icon-action"
             aria-label="重新编辑"
             isDisabled={loading}
-            onPress={async () => {
-              setLoading(true);
-              generation.reset();
-              try {
-                restore(await taskDraft(job, client));
-              } catch (failure) {
-                toast.danger(failure instanceof Error ? failure.message : "无法读取任务。");
-              } finally {
-                setLoading(false);
-              }
-            }}
+            onPress={edit}
           >
             <UiIcon icon={IconEdit} size="action" />
           </Button>
@@ -271,4 +144,177 @@ export function HistoryTaskActions({
       />
     </div>
   );
+}
+
+type HistoryItem = ImageJob["items"][number];
+
+function draftQuality(quality: string | undefined) {
+  if (quality === "low") return "低";
+  return quality === "high" ? "高" : "标准";
+}
+
+function historyModelOperation(job: ImageJob) {
+  if (job.input?.textileSet) return "textile-set";
+  return job.input?.localEdit ? "local-edit" : "create";
+}
+
+function historyTaskSource(job: ImageJob) {
+  if (job.input?.textileSet) return "textile-set";
+  return job.input?.variation ? "smart-variation" : undefined;
+}
+
+function useHistoryActionsWidth(item: HistoryItem | undefined) {
+  const actionsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (item) return;
+    const actions = actionsRef.current;
+    const article = actions?.closest<HTMLElement>(".generation-job");
+    if (!actions || !article) return;
+    const measure = () =>
+      article.style.setProperty(
+        "--history-actions-width",
+        `${actions.getBoundingClientRect().width}px`,
+      );
+    const observer = new ResizeObserver(measure);
+    observer.observe(actions);
+    measure();
+    return () => {
+      observer.disconnect();
+      article.style.removeProperty("--history-actions-width");
+    };
+  }, [item]);
+  return actionsRef;
+}
+
+function historyRetryPlan(
+  job: ImageJob,
+  item: HistoryItem | undefined,
+  pending: boolean,
+  models: ReturnType<typeof useImageModels>["data"],
+) {
+  const blocked =
+    (item
+      ? !["failed", "needs_reconciliation"].includes(item.status)
+      : ["queued", "running"].includes(job.status)) || pending;
+  const targets = item
+    ? [item]
+    : job.items.filter((entry) => ["failed", "needs_reconciliation"].includes(entry.status));
+  const upgradeTextile =
+    !!job.input?.textileSet &&
+    job.input.textileSet.version < 5 &&
+    targets.every((entry) => entry.status === "failed");
+  const capabilities = modelCapabilities(
+    models,
+    upgradeTextile ? "gpt-image-2.5" : job.model,
+    historyModelOperation(job),
+  );
+  const configured =
+    capabilities?.enabledResolutions.some((resolution) => resolution === job.resolution) &&
+    supportsReferences(capabilities, job.input?.referenceAssetIds.length ?? 0);
+  const retrying =
+    !!item || ["failed", "partially_failed", "needs_reconciliation"].includes(job.status);
+  const retryCount = retrying ? Math.max(1, targets.length) : job.requested_count;
+  const count = item ? 1 : retryCount;
+  const unitCredits = imageUnitCredits;
+  const regenerateContent = targets.some((entry) => entry.status === "needs_reconciliation")
+    ? "先查询原任务，已有结果将直接保存；确认需重新生成时才扣除积分。"
+    : `本次消耗 ${count * unitCredits} 积分${
+        upgradeTextile ? "。使用最新裂变配置创建新任务，原记录保留。" : ""
+      }`;
+  return { blocked, configured, regenerateContent, upgradeTextile, retrying, targets };
+}
+
+function historyRetryPayload(
+  restored: Awaited<ReturnType<typeof taskDraft>>,
+  job: ImageJob,
+  item: HistoryItem | undefined,
+  {
+    upgradeTextile,
+    retrying,
+    targets,
+  }: Pick<ReturnType<typeof historyRetryPlan>, "upgradeTextile" | "retrying" | "targets">,
+): Parameters<ReturnType<typeof useGenerateImage>["mutate"]>[0] {
+  if (upgradeTextile && restored.textileSet) {
+    const views = retrying
+      ? restored.textileSet.views.filter((_, position) =>
+          targets.some((entry) => entry.position === position),
+        )
+      : restored.textileSet.views;
+    return {
+      ...restored,
+      model: "gpt-image-2.5",
+      draft: { ...restored.draft, count: String(views.length) },
+      textileSet: { version: 5, views },
+      source: "textile-set",
+    };
+  }
+  const source = historyTaskSource(job);
+  const retry = retrying ? { retryJobId: job.id } : {};
+  return {
+    ...restored,
+    ...(source ? { source } : {}),
+    ...retry,
+    ...(item ? { retryItemId: item.id } : {}),
+  };
+}
+
+function useHistoryTaskActions(
+  job: ImageJob,
+  item: HistoryItem | undefined,
+  onRestore: HistoryRestore | undefined,
+) {
+  const client = useQueryClient();
+  const [loading, setLoading] = useState(false);
+  const generation = useGenerateImage();
+  const session = useImageSession();
+  const error =
+    generation.isError && hasPendingSubmission(session.data)
+      ? "提交结果待确认，请在左侧确认上次提交。"
+      : generation.error?.message;
+  useErrorToast(generation.isError ? error : null);
+  const models = useImageModels();
+  const pending = usePendingSubmission(session.data);
+  const { blocked, configured, regenerateContent, upgradeTextile, retrying, targets } =
+    historyRetryPlan(job, item, pending, models.data);
+  const restore = (value: Awaited<ReturnType<typeof taskDraft>>) => {
+    if (onRestore) {
+      onRestore(value);
+      return;
+    }
+    const { model, draft } = value;
+    useStudioStore.getState().updateDraft(model, draft);
+    useStudioStore.getState().setActiveModel(model);
+    requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLTextAreaElement>(".composer-panel textarea")
+        ?.focus({ preventScroll: true }),
+    );
+  };
+  const regenerate = async () => {
+    if (hasPendingSubmission(session.data)) return;
+    setLoading(true);
+    generation.reset();
+    try {
+      const restored = await taskDraft(job, client);
+      generation.mutate(
+        historyRetryPayload(restored, job, item, { upgradeTextile, retrying, targets }),
+      );
+    } catch (failure) {
+      toast.danger(failure instanceof Error ? failure.message : "无法读取任务。");
+    } finally {
+      setLoading(false);
+    }
+  };
+  const edit = async () => {
+    setLoading(true);
+    generation.reset();
+    try {
+      restore(await taskDraft(job, client));
+    } catch (failure) {
+      toast.danger(failure instanceof Error ? failure.message : "无法读取任务。");
+    } finally {
+      setLoading(false);
+    }
+  };
+  return { generation, loading, blocked, configured, regenerateContent, regenerate, edit };
 }

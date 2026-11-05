@@ -6,6 +6,7 @@ import {
   videoCreateSchema,
   videoTasksSchema,
 } from "@lycoboai/contracts";
+import type { QueryClient } from "@tanstack/react-query";
 import {
   useInfiniteQuery,
   useIsMutating,
@@ -68,13 +69,7 @@ export function useSubmitVideo(source?: "storyboard") {
   const session = useEnterpriseSession();
   const locked = useRef(false);
   const storageKey = `lycobo-pending-video:${session.data?.organizationId}:${session.data?.userId}`;
-  const pending = () => {
-    try {
-      return pendingVideoSchema.parse(JSON.parse(sessionStorage.getItem(storageKey) ?? "null"));
-    } catch {
-      return null;
-    }
-  };
+  const pending = () => readPendingVideo(storageKey);
   const pendingSource = useSyncExternalStore(subscribePending, () => {
     const attempt = pending();
     return attempt ? (attempt.source ?? "direct") : null;
@@ -84,90 +79,9 @@ export function useSubmitVideo(source?: "storyboard") {
   const mutation = useMutation({
     mutationKey: ["submit-video"],
     retry: false,
-    mutationFn: async ({
-      input,
-      references,
-      clearDraft = true,
-      repairPending = false,
-    }: {
-      input: Omit<VideoCreateInput, "referenceAssetIds">;
-      references: ReferenceImage[];
-      clearDraft?: boolean;
-      repairPending?: boolean;
-    }) => {
+    mutationFn: (args: VideoSubmission) => {
       if (!session.data) throw new Error("请先登录");
-      const submittedDraft = useVideoDraft.getState();
-      let attempt = pending();
-      if (attempt && attempt.source !== source) throw new Error("请回到视频创作确认上次提交");
-      const confirming = !!attempt;
-      const original = repairPending ? attempt : null;
-      if (!attempt || original) {
-        const ids = await uploadImageReferences(client, session.data, references);
-        if (pending()?.key !== attempt?.key) throw new Error("已有视频提交待确认，请稍后继续");
-        const { storyboard, storyboardOriginalImageCount, ...video } = input;
-        const capability = client.getQueryData<ReturnType<typeof videoCapabilitySchema.parse>>([
-          "video-model",
-        ]);
-        attempt = {
-          key: original?.key ?? crypto.randomUUID(),
-          source,
-          input: videoCreateSchema.parse({
-            ...video,
-            referenceAssetIds: ids,
-            ...(storyboard && capability?.storyboardHistory
-              ? {
-                  storyboard,
-                  ...(capability.maxStoryboardOriginalImages &&
-                  storyboardOriginalImageCount !== undefined
-                    ? { storyboardOriginalImageCount }
-                    : {}),
-                }
-              : {}),
-          }),
-        };
-        if (!original) {
-          sessionStorage.setItem(storageKey, JSON.stringify(attempt));
-          notifyPending();
-        }
-      }
-      const submit = (submission: NonNullable<ReturnType<typeof pending>>) =>
-        imageRequest("video-tasks", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Idempotency-Key": submission.key },
-          body: JSON.stringify(submission.input),
-        });
-      const response = await submit(attempt)
-        .catch((error: unknown) => {
-          // Legacy drafts could reach video submission with missing frames. Reuse their key.
-          // A conflict means a task already owns that key, so recover its original receipt.
-          if (
-            original &&
-            error instanceof ImageApiError &&
-            error.businessCode === "IDEMPOTENCY_CONFLICT"
-          )
-            return submit(original);
-          throw error;
-        })
-        .catch((error: unknown) => {
-          if (
-            error instanceof ImageApiError &&
-            error.businessCode === "VIDEO_REFERENCES_UNAVAILABLE"
-          ) {
-            // An initial rejection occurs before task creation. A confirmation may refer
-            // to a task accepted earlier, so its original key must stay intact.
-            if (!confirming) {
-              sessionStorage.removeItem(storageKey);
-              notifyPending();
-            }
-            void client.invalidateQueries({ queryKey: ["video-model"] });
-          }
-          throw error;
-        });
-      const accepted = videoAcceptedSchema.parse(await response.json());
-      sessionStorage.removeItem(storageKey);
-      notifyPending();
-      if (clearDraft && !confirming) clearSubmittedVideoDraft(submittedDraft);
-      return accepted;
+      return submitVideoAttempt(args, session.data, source, storageKey, client);
     },
     onError: (error, { repairPending }) => {
       if (
@@ -206,4 +120,106 @@ export function useSubmitVideo(source?: "storyboard") {
       mutation.mutate(args);
     },
   };
+}
+
+type PendingVideo = ReturnType<typeof pendingVideoSchema.parse>;
+type VideoSubmission = {
+  input: Omit<VideoCreateInput, "referenceAssetIds">;
+  references: ReferenceImage[];
+  clearDraft?: boolean;
+  repairPending?: boolean;
+};
+
+function readPendingVideo(storageKey: string) {
+  try {
+    return pendingVideoSchema.parse(JSON.parse(sessionStorage.getItem(storageKey) ?? "null"));
+  } catch {
+    return null;
+  }
+}
+
+function buildVideoAttempt(
+  input: VideoSubmission["input"],
+  ids: string[],
+  client: QueryClient,
+  source: PendingVideo["source"],
+  key: string,
+): PendingVideo {
+  const { storyboard, storyboardOriginalImageCount, ...video } = input;
+  const capability = client.getQueryData<ReturnType<typeof videoCapabilitySchema.parse>>([
+    "video-model",
+  ]);
+  return {
+    key: key,
+    source,
+    input: videoCreateSchema.parse({
+      ...video,
+      referenceAssetIds: ids,
+      ...(storyboard && capability?.storyboardHistory
+        ? {
+            storyboard,
+            ...(capability.maxStoryboardOriginalImages && storyboardOriginalImageCount !== undefined
+              ? { storyboardOriginalImageCount }
+              : {}),
+          }
+        : {}),
+    }),
+  };
+}
+
+function sendVideoAttempt(attempt: PendingVideo, original: PendingVideo | null) {
+  const submit = (submission: PendingVideo) =>
+    imageRequest("video-tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Idempotency-Key": submission.key },
+      body: JSON.stringify(submission.input),
+    });
+  return submit(attempt).catch((error: unknown) => {
+    // Legacy drafts could reach video submission with missing frames. Reuse their key.
+    // A conflict means a task already owns that key, so recover its original receipt.
+    if (original && error instanceof ImageApiError && error.businessCode === "IDEMPOTENCY_CONFLICT")
+      return submit(original);
+    throw error;
+  });
+}
+
+async function submitVideoAttempt(
+  { input, references, clearDraft = true, repairPending = false }: VideoSubmission,
+  owner: NonNullable<ReturnType<typeof useEnterpriseSession>["data"]>,
+  source: PendingVideo["source"],
+  storageKey: string,
+  client: QueryClient,
+) {
+  const pending = () => readPendingVideo(storageKey);
+  const submittedDraft = useVideoDraft.getState();
+  let attempt = pending();
+  if (attempt && attempt.source !== source) throw new Error("请回到视频创作确认上次提交");
+  const confirming = !!attempt;
+  const original = repairPending ? attempt : null;
+  if (!attempt || original) {
+    const ids = await uploadImageReferences(client, owner, references);
+    if (pending()?.key !== attempt?.key) throw new Error("已有视频提交待确认，请稍后继续");
+    attempt = buildVideoAttempt(input, ids, client, source, original?.key ?? crypto.randomUUID());
+    if (!original) {
+      sessionStorage.setItem(storageKey, JSON.stringify(attempt));
+      notifyPending();
+    }
+  }
+  const response = await sendVideoAttempt(attempt, original).catch((error: unknown) => {
+    if (error instanceof ImageApiError && error.businessCode === "VIDEO_REFERENCES_UNAVAILABLE") {
+      // An initial rejection occurs before task creation. A confirmation may refer
+      // to a task accepted earlier, so its original key must stay intact.
+      if (!confirming) {
+        sessionStorage.removeItem(storageKey);
+        notifyPending();
+      }
+      void client.invalidateQueries({ queryKey: ["video-model"] });
+    }
+    throw error;
+  });
+  const accepted = videoAcceptedSchema.parse(await response.json());
+  sessionStorage.removeItem(storageKey);
+  notifyPending();
+  if (clearDraft && !confirming) clearSubmittedVideoDraft(submittedDraft);
+  return accepted;
 }

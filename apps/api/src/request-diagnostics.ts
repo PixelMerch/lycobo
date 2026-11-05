@@ -80,7 +80,10 @@ export function safeRequestPath(request: Request) {
     "system",
   ]);
   return parts
-    .map((part, i) => (i === 0 ? "" : allowed.has(part) ? part : ":id"))
+    .map((part, index) => {
+      if (index === 0) return "";
+      return allowed.has(part) ? part : ":id";
+    })
     .slice(0, 7)
     .join("/");
 }

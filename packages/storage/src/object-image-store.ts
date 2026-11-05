@@ -4,7 +4,7 @@ import { imageLimits } from "@lycoboai/contracts";
 import sharp from "sharp";
 import { type ImageStore, objectKeySchema, type StorageUid, userObjectKey } from "./core";
 import { normalizeImage } from "./image-store";
-import { displayObjectKey } from "./image-variants";
+import { displayObjectKey, providerReferenceObjectKey } from "./image-variants";
 import type { ImageObjectBucket } from "./object-bucket";
 
 /** Node image processing for private cloud storage. */
@@ -71,6 +71,8 @@ export function objectImageStore(bucket: ImageObjectBucket, resolveUid?: Storage
         thumbnailKey(asset.objectKey),
         displayObjectKey(asset.objectKey, "preview"),
         displayObjectKey(asset.objectKey, "thumbnail"),
+        providerReferenceObjectKey(asset.objectKey, "jpg"),
+        providerReferenceObjectKey(asset.objectKey, "png"),
       ]);
     },
   };

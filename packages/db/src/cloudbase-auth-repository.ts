@@ -19,7 +19,7 @@ const identitySchema = z.object({
 });
 export function cloudbaseAuthRepository(call: CloudBaseRpc): AuthRepository {
   return {
-    close: async () => {},
+    close: async () => undefined,
     async allowLogin(account) {
       return z.boolean().parse(
         await call("lycobo_auth_allow_login", {

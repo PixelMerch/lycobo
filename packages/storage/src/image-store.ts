@@ -136,7 +136,7 @@ export function imageStore(directory: string, resolveUid?: StorageUid) {
         await writeFile(temporary, image.data, { mode: 0o600, flag: "wx" });
         await rename(temporary, file);
       } finally {
-        await unlink(temporary).catch(() => {});
+        await unlink(temporary).catch(() => undefined);
       }
       return {
         id,

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   imageGenerationInputSchema,
   imageUnitCredits,
+  type StoredImage,
   unwrapApiData,
   variationPlanSchema,
 } from "@lycoboai/contracts";
@@ -63,7 +64,7 @@ export async function verifyVariationPlans(
       }),
     );
   };
-  const app = createApp(() => {}, {
+  const app = createApp(undefined, {
     repository,
     store,
     modelSecret: secret,
@@ -106,6 +107,35 @@ export async function verifyVariationPlans(
     1000,
     "Analysis must not debit image credits",
   );
+  await verifyConfirmedVariation(asset, plan, repository, owner, sql, other);
+  const unknownHeaders = { ...headers, "Idempotency-Key": crypto.randomUUID() };
+  const uncertainPost = () =>
+    app.request("/api/v1/variation-plans", {
+      method: "POST",
+      headers: unknownHeaders,
+      body: JSON.stringify({ description: "网络异常测试", referenceAssetIds: [] }),
+    });
+  const uncertain = variationPlanSchema.parse(unwrapApiData(await (await uncertainPost()).json()));
+  assert.equal(uncertain.status, "uncertain");
+  const beforeReplay = calls;
+  await uncertainPost();
+  assert.equal(calls, beforeReplay);
+  assert.equal(
+    (await repository.wallet(owner)).balance,
+    1000 - 20 * imageUnitCredits,
+    "Uncertain analysis must not debit image credits",
+  );
+  await sql`delete from model_planners where tool='smart-variation'`;
+}
+
+async function verifyConfirmedVariation(
+  asset: StoredImage,
+  plan: ReturnType<typeof variationPlanSchema.parse>,
+  repository: ImageRepository,
+  owner: Awaited<ReturnType<ImageRepository["provision"]>>,
+  sql: postgres.Sql,
+  other: Awaited<ReturnType<ImageRepository["provision"]>>,
+) {
   const generation = imageGenerationInputSchema.parse({
     model: "gpt-image-2.5",
     prompt: "智能裂变",
@@ -143,22 +173,4 @@ export async function verifyVariationPlans(
     ),
     /STATE_CONFLICT/,
   );
-  const unknownHeaders = { ...headers, "Idempotency-Key": crypto.randomUUID() };
-  const uncertainPost = () =>
-    app.request("/api/v1/variation-plans", {
-      method: "POST",
-      headers: unknownHeaders,
-      body: JSON.stringify({ description: "网络异常测试", referenceAssetIds: [] }),
-    });
-  const uncertain = variationPlanSchema.parse(unwrapApiData(await (await uncertainPost()).json()));
-  assert.equal(uncertain.status, "uncertain");
-  const beforeReplay = calls;
-  await uncertainPost();
-  assert.equal(calls, beforeReplay);
-  assert.equal(
-    (await repository.wallet(owner)).balance,
-    1000 - 20 * imageUnitCredits,
-    "Uncertain analysis must not debit image credits",
-  );
-  await sql`delete from model_planners where tool='smart-variation'`;
 }

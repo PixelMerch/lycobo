@@ -34,7 +34,7 @@ export function HomeInspirationGallery() {
     updateDraft(activeModel, { prompt: item.prompt });
     setReplacing(null);
     setSelected(null);
-    navigate("/create");
+    void navigate("/create");
   }
   // Only fills the prompt: entering the workspace never uploads the example or submits paid work.
   function use(item: HomeInspiration) {

@@ -1,6 +1,6 @@
 # 企业共享钱包与图片计费
 
-更新：2026-10-21。主账号对应组织，子账号是组织成员；整个组织只有一个金币余额。金额和金币都是整数，金币不等同于人民币。支付渠道与兑换比例尚未接入，不开放浏览器确认充值或签到领币。
+主账号对应组织，子账号是组织成员；整个组织只有一个积分余额。金额和积分都是整数，积分不等同于人民币。支付渠道与兑换比例尚未接入，不开放浏览器确认充值或签到领积分。
 
 ## 会员与积分页面及后续边界
 
@@ -12,21 +12,23 @@ Header提供积分与会员入口；会员采用全屏HeroUI Modal，包含个�
 
 ## 模型与价格
 
-| 前台模型 | 分辨率 | 实际供应商模型 |
-| --- | --- | --- |
-| gpt-image-2 | 1K | gpt-image-2 |
-| gpt-image-2 | 2K / 4K | gpt-image-2-4K |
-| gpt-image-2.5 | 1K / 2K / 4K | gpt-image-2.5-sunburst |
-| nano-banana-2.1 | 1K / 2K / 4K | gemini-nano-banana-2.1 |
+线上独立模式的映射来自 `packages/generation/src/standalone-models.ts`：
 
-统一每张 **2 币**，与分辨率、质量无关。以 contracts 的 imageUnitCredits 为唯一价格来源；旧 IMAGE_CREDITS_PER_IMAGE 配置及 repository 旧价格参数保留读取兼容但不再决定扣费。前台提交公开模型；实际 provider_model 在入队事务中存为快照。历史供应商 ID 继续可读；迁移前排队任务没有快照时沿用原 input.model。生成与编辑共用映射，经现有 Vakv 兼容 images 接口提交。真实渠道尤其 Nano Banana 的参数兼容性仍需供应商实测，测试 fixture 不能当成模型可用证明。
+| 展示名称 | 模型 ID | 实际供应商模型 |
+| --- | --- | --- |
+| Image 2 | gpt-image-2 | gpt-image-2 |
+| Image 2.5 | gpt-image-2.5 | gpt-image-2.5-sunburst |
+| Banana 2.1 | nano-banana-2.1 | gemini-3.1-flash-image-preview |
+| Banana Pro | gemini-3-pro-image-preview | gemini-3-pro-image-preview |
+
+统一每张 **2 积分**，与分辨率、质量无关。以 contracts 的 imageUnitCredits 为唯一价格来源；旧 IMAGE_CREDITS_PER_IMAGE 配置及 repository 旧价格参数保留读取兼容但不再决定扣费。前台提交公开模型；实际 provider_model 在入队事务中存为快照。历史供应商 ID 继续可读；迁移前排队任务没有快照时沿用原 input.model。生成与编辑共用映射，经现有 Vakv 兼容 images 接口提交。真实渠道尤其 Nano Banana 的参数兼容性仍需供应商实测，测试 fixture 不能当成模型可用证明。
 
 ## 数据结构
 
 ### organization_wallets：企业余额
 
 - id：内部 UUID；organization_id 唯一并关联 organizations。
-- balance：当前可用金币，integer、非负；created_at、updated_at：带时区时间。
+- balance：当前可用积分，integer、非负；created_at、updated_at：带时区时间。
 - 主账号与子账号按服务端身份解析出的 organization_id 访问同一钱包。不能传入另一个组织或用户 ID 来选择扣款账户。
 
 ### wallet_entries：不可修改的收支明细
@@ -43,7 +45,7 @@ Header提供积分与会员入口；会员采用全屏HeroUI Modal，包含个�
 ### recharge_orders：充值订单
 
 - wallet_id、user_id：企业与操作人；idempotency_key：组织内唯一建单键。
-- credits：该订单固定到账金币；amount_minor：人民币分；currency：CNY。
+- credits：该订单固定到账积分；amount_minor：人民币分；currency：CNY。
 - status：pending / paid / closed；channel、provider_transaction_id：支付来源及渠道流水号，组合唯一。
 - paid_at、created_at：支付与创建时间。
 - 创建 pending 订单不增加余额。内部 settleRecharge 校验金额、币种、渠道，锁住钱包和订单，再将订单改为 paid、增加余额、插入充值流水；所有步骤一起提交。
@@ -76,7 +78,7 @@ Header提供积分与会员入口；会员采用全屏HeroUI Modal，包含个�
 - GET /api/v1/wallet/entries?limit=20&before=<流水游标>：企业共享收支、操作人、任务/图片关联与余额快照。
 - GET /api/v1/wallet/recharges?limit=20&before=<订单UUID>：企业充值订单及到账状态。
 
-本轮所有成员可读取所属企业账务，与现有企业共享任务/素材权限一致。跨企业不可见。后续如需要“主账号看全部、子账号仅看自己的明细”，应新增明确权限策略，不改变共享余额。
+所有成员可读取所属企业账务，与现有企业共享任务/素材权限一致。跨企业不可见。后续如需要“主账号看全部、子账号仅看自己的明细”，应新增明确权限策略，不改变共享余额。
 
 前台账户中心替换原占位，展示企业余额、收支和充值记录，可分页。提交成功与 SSE 任务事件批次失效相关 Query 缓存，重新读取真实余额；断线重连同步余额。不伪造充值成功或自动赠送额度。
 
@@ -86,16 +88,11 @@ Header提供积分与会员入口；会员采用全屏HeroUI Modal，包含个�
 - 旧 generation_credit_ledger 与 organizations.available_credits 保留历史证据；新业务只使用 organization_wallets，不能把旧值再次作为可消费余额或再次充值。旧流水不伪装成新账本流水，历史审计查旧表。
 - 0009 添加 provider_model 快照。
 - 发布时应暂停新提交、排空/停旧 Worker，执行迁移，然后同时切换 API 与 Worker，再恢复提交。新旧扣费代码不可混跑，否则会分别操作两个余额。不能回滚到继续写旧余额的程序。
-- 本轮已通过隔离数据库迁移验证，并在备份、暂停 API/Worker 后迁移本地开发数据库：原余额保持一致，已有2条待核对任务保持原状态。生产数据库尚未执行；上线前仍需检查目标与备份。schema/迁移/contracts 在 PR 中需要明确审查。
 
 ## 验证
 
-隔离 PostgreSQL/Redis + 本地 HTTP fixture 覆盖：跨成员并发支出、固定20币、余额不足回滚、批量提交重放、逐张失败退款、充值金额不符、支付重复回调、渠道流水号复用、余额与流水和对账、不可修改流水、跨组织隔离与分页。生成/编辑单测验证全部公开模型映射。浏览器测试验证三个模型、分辨率、共享余额和明细。未调用付费模型、未接入真实支付。
+隔离 PostgreSQL + 本地 HTTP fixture 覆盖：跨成员并发支出、固定单价、余额不足回滚、批量提交重放、逐张失败退款、充值金额不符、支付重复回调、渠道流水号复用、余额与流水和对账、不可修改流水、跨组织隔离与分页。生成/编辑单测验证全部公开模型映射。浏览器测试验证三个模型、分辨率、共享余额和明细。未调用付费模型、未接入真实支付。
 
 ## 原任务重试迁移
 
 0010 添加 image_retries 幂等请求表及 image_job_items.superseded_at（0014 后分别为 generation_retries 和 generation_job_items.superseded_at），将任务位置唯一约束改为仅当前项唯一。查询/聚合只包含当前项；保留旧项用于账务审计。先执行追加迁移，再更新 API 和 Worker。测试包含并发重试、成功项保留、跨组织拒绝、重复退款及历史无效响应修复；不调用付费模型。
-
-本地验证：2026-10-22 在备份并暂停 API/Worker 后执行 0010；历史无效响应结算通过统一幂等退款逻辑完成，W174YOWZN 退回20币。服务已恢复，未触发付费重试。其他超时待确认记录不会据此自动退币；用户之后手动确认重试时按上述原尝试退款与新尝试扣费规则处理。
-
-任务相关表已通过 0014 统一为 `generation_*`；原有费用、账务来源和归属规则保持不变。升级需协调停止旧写入进程，见 [数据库命名](database-naming.md#生成任务迁移与发布顺序)。

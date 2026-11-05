@@ -16,7 +16,7 @@ import { useErrorToast } from "../../lib/error-toast";
 import { useEnterpriseLogout, useEnterpriseSession } from "../auth/auth-client";
 import { useLoginPrompt } from "../auth/login-prompt";
 import { formatCredits, imagesFor, roleLabel } from "./account-format";
-import { useAccountOverlays } from "./account-overlays";
+import { useAccountOverlays } from "./account-overlay-store";
 import { AccountUpdates } from "./account-updates";
 import { useWallet } from "./wallet-client";
 import "./account-common.css";
@@ -57,7 +57,7 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
   const balance = wallet.data?.balance;
   const go = (path: string) => {
     onNavigate?.();
-    navigate(path);
+    void navigate(path);
   };
   // The account center and its dialogs stack above the phone navigation drawer, so focus can
   // return to this row.

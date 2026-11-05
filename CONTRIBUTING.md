@@ -34,6 +34,7 @@ GitHub 使用 squash merge 时，PR 标题也必须满足该规范，CI 会检�
 
 ## 代码与审查
 
+- 代码质量规则由 `pnpm lint` 和提交钩子强制执行，见 [代码质量约束](docs/code-quality.md)。
 - strict TypeScript；边界用 unknown + schema 校验，避免 any/非空断言掩盖问题。
 - React 函数组件与 hooks，hooks 顶层调用，服务端数据用 TanStack Query。
 - Hono 使用组合路由；请求处理与 listen 分离。异步 IO 不能阻塞 API。
@@ -53,18 +54,18 @@ GitHub 使用 squash merge 时，PR 标题也必须满足该规范，CI 会检�
 
 ```sh
 pnpm check
-pnpm test:e2e
 git diff --check
 ```
 
+UI 变更做定向浏览器验证；完整 E2E 只在 CI 手动触发。
+
 数据库/队列变更另跑隔离集成检查，详见 docs/testing.md。
 至少一位非作者审查；涉及鉴权、计费、迁移和存储权限时需熟悉该领域的审查者。
-仓库管理员创建远程仓库后，需要实际启用分支保护；本地文件不能替代远程设置。
 
 ## 远程仓库设置清单
 
 - 保护 main，禁止强推/删除，PR 合并，至少 1 个 approval。
-- 要求 Quality / Browser / Infrastructure / PR title 检查通过，名称以工作流实际 job 为准。
+- 要求 Quality / Infrastructure / PR title 检查通过（Browser 手动触发），名称以工作流实际 job 为准。
 - 启用 secret scanning / dependency alerts（以托管服务支持为准）。
 - 确定 GitHub 团队后再添加真实 CODEOWNERS；本项目不写不存在的 @组织/团队。
 - 生产使用独立 environment、密钥和审批，发布 tag 不等于生产部署。

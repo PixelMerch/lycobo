@@ -1,52 +1,22 @@
-import { Button, EmptyState } from "@heroui/react";
-import { type ImageJob, textileViews } from "@lycoboai/contracts";
-import { IconChevronDown, IconChevronUp, IconPhotoPlus } from "@tabler/icons-react";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { EmptyState } from "@heroui/react";
+import type { ImageJob } from "@lycoboai/contracts";
+import { IconPhotoPlus } from "@tabler/icons-react";
+import { type RefObject, useEffect, useRef, useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
 import { useErrorToast } from "../../../lib/error-toast";
 import type { PreviewImage } from "../../image-workspace/image-preview";
 import { useImageHistory, useImageSession } from "../generation-client";
-import { GenerationLoading, statusLabel } from "../generation-status";
 import { modelDisplayName } from "../models/model-display-name";
 import { useModelPresentation } from "../models/model-logos";
 import { useStudioStore } from "../studio-state";
+import { GenerationHistoryCard } from "./generation-history-card";
 import { HistoryImagePreview, historyPreviewImages } from "./history-image-preview";
 import { historyContentTop } from "./history-navigation";
-import { HistoryTaskMeta } from "./history-task-meta";
-import { HistoryPrompt, HistoryTaskActions } from "./history-task-tools";
-import { ResultImage } from "./result-image";
 import { useHistoryTaskTarget } from "./use-history-task-target";
 
 /** Batches of five or more report their progress; larger batches initially show twelve images. */
-const batchSize = 5;
 const batchFold = 12;
-function BatchProgress({ items }: { items: ImageJob["items"] }) {
-  const tally = (...statuses: ImageJob["items"][number]["status"][]) =>
-    items.filter((item) => statuses.includes(item.status)).length;
-  const done = tally("succeeded");
-  if (done === items.length) return null;
-  const running = tally("queued", "running");
-  const failed = tally("failed");
-  const unresolved = tally("needs_reconciliation");
-  const parts = [
-    `已完成 ${done}/${items.length}`,
-    running ? `生成中 ${running}` : "",
-    failed ? `失败 ${failed}` : "",
-    unresolved ? `待确认 ${unresolved}` : "",
-  ].filter(Boolean);
-  return (
-    <p className="history-batch-progress">
-      {parts.map((part, index) => (
-        <Fragment key={part}>
-          {index > 0 && " · "}
-          <span>{part}</span>
-        </Fragment>
-      ))}
-    </p>
-  );
-}
-
 export function GenerationHistory({
   compact = false,
   tool = "create",
@@ -60,21 +30,7 @@ export function GenerationHistory({
   const query = useImageHistory(tool);
   const catalog = useModelPresentation();
   const target = useHistoryTaskTarget(compact || tool === null);
-  const targetJob =
-    target &&
-    (tool === "all" ||
-      (tool === "variation"
-        ? !!target.input?.variation
-        : tool === "textile"
-          ? !!target.input?.textileSet
-          : !target.input?.textileSet && !target.input?.variation))
-      ? target
-      : undefined;
-  const loadedJobs = query.data?.pages.flatMap((page) => page.data) ?? [];
-  const jobs =
-    targetJob && !loadedJobs.some((job) => job.id === targetJob.id)
-      ? [targetJob, ...loadedJobs]
-      : loadedJobs;
+  const jobs = historyJobs(query, target, tool);
   const [preview, setPreview] = useState<{ images: PreviewImage[]; assetId: string } | null>(null);
   const previewTrigger = useRef<HTMLElement | null>(null);
   useEffect(() => {
@@ -103,6 +59,100 @@ export function GenerationHistory({
       ? (query.error?.message ?? "服务暂时不可用，请稍后重试。")
       : null,
   );
+  useActiveHistory(listRef, compact, jobIds, setActiveHistoryId);
+  const notice = historyNotice(session, query, tool, compact, jobs.length > 0);
+  if (notice !== undefined) return notice;
+  return (
+    <>
+      <div className="generation-history" ref={listRef}>
+        {jobs.map((job) => (
+          <GenerationHistoryCard
+            key={job.id}
+            job={job}
+            compact={compact}
+            active={activeHistoryId === job.id}
+            modelName={modelDisplayName(job.model, catalog.data?.models ?? [])}
+            onRestore={onRestore}
+            folded={folded(job)}
+            toggleFold={() => toggleFold(job.id)}
+            onPreview={(trigger, assetId) => {
+              previewTrigger.current = trigger;
+              setPreview({ images: historyPreviewImages(jobs), assetId });
+            }}
+          />
+        ))}
+        <InfiniteLoad
+          hasMore={query.hasNextPage}
+          isLoading={query.isFetchingNextPage}
+          isError={query.isError}
+          onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
+        />
+      </div>
+      {preview && tool !== null && (
+        <HistoryImagePreview
+          images={preview.images}
+          assetId={preview.assetId}
+          tool={tool}
+          onClose={() => setPreview(null)}
+        />
+      )}
+    </>
+  );
+}
+
+type HistoryTool = Parameters<typeof useImageHistory>[0];
+
+function historyNotice(
+  session: ReturnType<typeof useImageSession>,
+  query: ReturnType<typeof useImageHistory>,
+  tool: HistoryTool,
+  compact: boolean,
+  hasJobs: boolean,
+) {
+  if (session.isError && /请先登录|登录已过期|重新登录/.test(session.error?.message ?? ""))
+    return (
+      <EmptyState className="empty-state generation-empty-state">
+        <UiIcon icon={IconPhotoPlus} size="illustration" />
+        <p>登录后查看生成记录</p>
+      </EmptyState>
+    );
+  if (session.isError || query.isError) return null;
+  if (session.isPending || (tool !== null && query.isPending)) return null;
+  if (!hasJobs)
+    return (
+      <EmptyState className="empty-state generation-empty-state">
+        <UiIcon icon={IconPhotoPlus} size="illustration" />
+        <p>{compact ? "暂无任务" : "生成的图片会显示在这里"}</p>
+      </EmptyState>
+    );
+  return undefined;
+}
+
+function historyJobs(
+  query: ReturnType<typeof useImageHistory>,
+  target: ImageJob | null | undefined,
+  tool: HistoryTool,
+) {
+  const targetJob = target && matchesHistoryTool(target, tool) ? target : undefined;
+  const loadedJobs = query.data?.pages.flatMap((page) => page.data) ?? [];
+  return targetJob && !loadedJobs.some((job) => job.id === targetJob.id)
+    ? [targetJob, ...loadedJobs]
+    : loadedJobs;
+}
+
+function matchesHistoryTool(job: ImageJob, tool: Parameters<typeof useImageHistory>[0]) {
+  if (tool === "all") return true;
+  if (tool === "variation") return !!job.input?.variation;
+  if (tool === "textile") return !!job.input?.textileSet;
+  return !job.input?.textileSet && !job.input?.variation;
+}
+
+function useActiveHistory(
+  listRef: RefObject<HTMLDivElement | null>,
+  compact: boolean,
+  jobIds: string,
+  setActiveHistoryId: (id: string) => void,
+) {
   useEffect(() => {
     const list = listRef.current;
     if (compact || !list || !jobIds) return;
@@ -137,160 +187,5 @@ export function GenerationHistory({
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
     };
-  }, [compact, jobIds, setActiveHistoryId]);
-  if (session.isError && /请先登录|登录已过期|重新登录/.test(session.error?.message ?? ""))
-    return (
-      <EmptyState className="empty-state generation-empty-state">
-        <UiIcon icon={IconPhotoPlus} size="illustration" />
-        <p>登录后查看生成记录</p>
-      </EmptyState>
-    );
-  if (session.isError || query.isError) return null;
-  if (session.isPending || (tool !== null && query.isPending)) return null;
-  if (!jobs.length)
-    return (
-      <EmptyState className="empty-state generation-empty-state">
-        <UiIcon icon={IconPhotoPlus} size="illustration" />
-        <p>{compact ? "暂无任务" : "生成的图片会显示在这里"}</p>
-      </EmptyState>
-    );
-  return (
-    <>
-      <div className="generation-history" ref={listRef}>
-        {jobs.map((job) => (
-          <article
-            className="generation-job"
-            key={job.id}
-            id={compact ? undefined : `job-${job.id}`}
-            data-history-id={compact ? undefined : job.id}
-            data-active={!compact && activeHistoryId === job.id ? "true" : undefined}
-          >
-            <header>
-              <HistoryTaskMeta
-                job={job}
-                modelName={modelDisplayName(job.model, catalog.data?.models ?? [])}
-              />
-              {!compact && job.items.length >= batchSize && <BatchProgress items={job.items} />}
-              {!compact && <HistoryTaskActions job={job} onRestore={onRestore} />}
-            </header>
-            {compact ? (
-              <p className="generation-prompt">{job.prompt}</p>
-            ) : (
-              <HistoryPrompt job={job} />
-            )}
-            {!compact && (
-              <div
-                id={`results-${job.id}`}
-                className="generation-results"
-                data-count={job.items.length}
-                data-failed={
-                  job.items.some(
-                    (item) => item.status === "failed" || item.status === "needs_reconciliation",
-                  ) || undefined
-                }
-              >
-                {(folded(job) ? job.items.slice(0, batchFold) : job.items).map((item) => (
-                  <div
-                    key={item.id}
-                    id={`result-${item.id}`}
-                    className={
-                      item.status === "failed" || item.status === "needs_reconciliation"
-                        ? "generation-failed-result"
-                        : undefined
-                    }
-                  >
-                    {job.input?.variation && (
-                      <p className="textile-result-view">
-                        {job.input.variation.items[item.position]?.title}
-                      </p>
-                    )}
-                    {job.input?.textileSet && (
-                      <p className="textile-result-view">
-                        {
-                          textileViews.find(
-                            (view) => view.id === job.input?.textileSet?.views[item.position],
-                          )?.name
-                        }
-                      </p>
-                    )}
-                    {item.output_asset_id ? (
-                      <ResultImage
-                        assetId={item.output_asset_id}
-                        thumbnail={job.requested_count > 1}
-                        position={item.position}
-                        width={item.width}
-                        height={item.height}
-                        prompt={job.prompt}
-                        onPreview={(trigger) => {
-                          previewTrigger.current = trigger;
-                          setPreview({
-                            images: historyPreviewImages(jobs),
-                            assetId: item.output_asset_id ?? "",
-                          });
-                        }}
-                      />
-                    ) : (
-                      <div
-                        className={`generation-placeholder${
-                          item.status === "running" || item.status === "queued"
-                            ? " generation-pending"
-                            : item.status === "failed" || item.status === "needs_reconciliation"
-                              ? " generation-failed"
-                              : ""
-                        }`}
-                        role="status"
-                        aria-label={statusLabel[item.status]}
-                      >
-                        {item.status === "running" || item.status === "queued" ? (
-                          <GenerationLoading />
-                        ) : (
-                          <p className="generation-failure-message">
-                            {item.status === "failed"
-                              ? "任务未能完成，积分已退回，请您稍后重试。"
-                              : item.error_code === "PROVIDER_TIMEOUT"
-                                ? "生成超时，请重新生成。将先查询并恢复已有结果。"
-                                : "生成结果和积分状态正在确认，请稍后查看。"}
-                          </p>
-                        )}
-                        {(item.status === "failed" || item.status === "needs_reconciliation") && (
-                          <HistoryTaskActions job={job} item={item} />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            {!compact && job.items.length > batchFold && (
-              <Button
-                size="sm"
-                variant="tertiary"
-                className="history-batch-toggle"
-                aria-expanded={!folded(job)}
-                aria-controls={`results-${job.id}`}
-                onPress={() => toggleFold(job.id)}
-              >
-                <UiIcon icon={folded(job) ? IconChevronDown : IconChevronUp} size="small" />
-                {folded(job) ? `展开全部 ${job.items.length} 张` : "收起"}
-              </Button>
-            )}
-          </article>
-        ))}
-        <InfiniteLoad
-          hasMore={query.hasNextPage}
-          isLoading={query.isFetchingNextPage}
-          isError={query.isError}
-          onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
-        />
-      </div>
-      {preview && tool !== null && (
-        <HistoryImagePreview
-          images={preview.images}
-          assetId={preview.assetId}
-          tool={tool}
-          onClose={() => setPreview(null)}
-        />
-      )}
-    </>
-  );
+  }, [compact, jobIds, listRef, setActiveHistoryId]);
 }

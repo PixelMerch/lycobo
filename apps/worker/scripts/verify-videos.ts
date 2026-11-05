@@ -89,6 +89,18 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
     /REFERENCE_NOT_FOUND/,
   );
   assert.equal((await images.wallet(owner)).balance, 900, "Rejected references never charge");
+  await verifyStoryboardVideoLifecycle(images, owner, input, videos, routing, config, sql);
+}
+
+async function verifyStoryboardVideoLifecycle(
+  images: ImageRepository,
+  owner: Awaited<ReturnType<ImageRepository["provision"]>>,
+  input: ReturnType<typeof videoInputSchema.parse>,
+  videos: ReturnType<typeof videoRepository>,
+  routing: { origin: string; credentialHash: string },
+  config: import("../src/video-processor").VideoWorkerConfig,
+  sql: postgres.Sql,
+) {
   const referenceAssetIds = Array.from({ length: 6 }, () => crypto.randomUUID());
   for (const id of referenceAssetIds) {
     await images.addReference(owner, {
@@ -120,36 +132,15 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
     ),
     /IDEMPOTENCY_CONFLICT/,
   );
-  const memory = new Map<string, Uint8Array>();
-  const bucket: ImageObjectBucket = {
-    head: async () => null,
-    get: async () => null,
-    delete: async () => {},
-    put: async (key, bytes) => {
-      memory.set(key, bytes);
-    },
-  };
-  const box = (type: string, bytes: Uint8Array) => {
-    const value = new Uint8Array(bytes.length + 8);
-    new DataView(value.buffer).setUint32(0, value.length);
-    value.set(new TextEncoder().encode(type), 4);
-    value.set(bytes, 8);
-    return value;
-  };
-  const tkhd = new Uint8Array(84);
-  new DataView(tkhd.buffer).setUint32(76, 512 * 65536);
-  new DataView(tkhd.buffer).setUint32(80, 768 * 65536);
-  const parts = [
-    box("ftyp", new TextEncoder().encode("isom0000")),
-    box("moov", box("trak", box("tkhd", tkhd))),
-    box("mdat", new Uint8Array([1, 2, 3, 4])),
-  ];
-  const mp4 = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
-  let offset = 0;
-  for (const part of parts) {
-    mp4.set(part, offset);
-    offset += part.length;
-  }
+  const {
+    mp4,
+    bucket,
+    memory,
+  }: {
+    mp4: Uint8Array<ArrayBuffer>;
+    bucket: ImageObjectBucket;
+    memory: Map<string, Uint8Array<ArrayBufferLike>>;
+  } = createVideoFixture();
   const methods: string[] = [];
   const request: typeof fetch = async (url, init) => {
     methods.push(init?.method ?? "GET");
@@ -186,6 +177,28 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
   await processVideoIntent(videos, bucket, config, request);
   assert.deepEqual(methods, [...referenceAssetIds.map(() => "GET"), "POST", "GET", "GET"]);
   assert.equal(memory.size, 1);
+  await verifyVideoAssetDelivery(
+    videos,
+    owner,
+    accepted,
+    input,
+    referenceAssetIds,
+    storyboard,
+    images,
+    sql,
+  );
+}
+
+async function verifyVideoAssetDelivery(
+  videos: ReturnType<typeof videoRepository>,
+  owner: Awaited<ReturnType<ImageRepository["provision"]>>,
+  accepted: { id: string },
+  input: ReturnType<typeof videoInputSchema.parse>,
+  referenceAssetIds: `${string}-${string}-${string}-${string}-${string}`[],
+  storyboard: { description: string },
+  images: ImageRepository,
+  sql: postgres.Sql,
+) {
   const final = videoTaskSchema.array().parse(await videos.get(owner, accepted.id));
   assert.equal(final[0]?.status, "succeeded");
   assert.deepEqual(final[0]?.input, {
@@ -245,4 +258,38 @@ export async function verifyVideos(images: ImageRepository, sql: postgres.Sql) {
       )[0],
     );
   assert.equal(count, "1");
+}
+
+function createVideoFixture() {
+  const memory = new Map<string, Uint8Array>();
+  const bucket: ImageObjectBucket = {
+    head: async () => null,
+    get: async () => null,
+    delete: async () => undefined,
+    put: async (key, bytes) => {
+      memory.set(key, bytes);
+    },
+  };
+  const box = (type: string, bytes: Uint8Array) => {
+    const value = new Uint8Array(bytes.length + 8);
+    new DataView(value.buffer).setUint32(0, value.length);
+    value.set(new TextEncoder().encode(type), 4);
+    value.set(bytes, 8);
+    return value;
+  };
+  const tkhd = new Uint8Array(84);
+  new DataView(tkhd.buffer).setUint32(76, 512 * 65536);
+  new DataView(tkhd.buffer).setUint32(80, 768 * 65536);
+  const parts = [
+    box("ftyp", new TextEncoder().encode("isom0000")),
+    box("moov", box("trak", box("tkhd", tkhd))),
+    box("mdat", new Uint8Array([1, 2, 3, 4])),
+  ];
+  const mp4 = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+  let offset = 0;
+  for (const part of parts) {
+    mp4.set(part, offset);
+    offset += part.length;
+  }
+  return { mp4, bucket, memory };
 }

@@ -33,6 +33,7 @@ export type ImageProtocolAdapter = {
     snapshot: ProviderSnapshot,
     input: ImageGenerationInput,
     references: Uint8Array[],
+    referenceUrls?: URL[],
   ) => { path?: string; body: string | FormData; headers: Record<string, string> };
 };
 function fields(snapshot: ProviderSnapshot, input: ImageGenerationInput) {
@@ -72,7 +73,7 @@ export const imageProtocolAdapters: Record<ProviderSnapshot["adapter"], ImagePro
   "gemini-native": {
     acceptsTasks: true,
     normalizeReply: normalizeGeminiReply,
-    prepare: (snapshot, input, references) => ({
+    prepare: (snapshot, input, references, referenceUrls) => ({
       path: `/v1beta/models/${encodeURIComponent(providerModelForResolution(snapshot, input.resolution))}:generateContent`,
       body: JSON.stringify({
         contents: [
@@ -80,6 +81,12 @@ export const imageProtocolAdapters: Record<ProviderSnapshot["adapter"], ImagePro
             role: "user",
             parts: [
               { text: input.prompt },
+              ...(referenceUrls ?? []).map((url) => ({
+                fileData: {
+                  fileUri: url.href,
+                  mimeType: url.pathname.endsWith(".jpg") ? "image/jpeg" : "image/png",
+                },
+              })),
               ...references.map((bytes) => ({
                 inlineData: {
                   mimeType: referenceType(bytes).mime,
@@ -102,13 +109,16 @@ export const imageProtocolAdapters: Record<ProviderSnapshot["adapter"], ImagePro
   },
   "fluxport-images": {
     acceptsTasks: true,
-    prepare: (snapshot, input, references) => ({
+    prepare: (snapshot, input, references, referenceUrls) => ({
       body: JSON.stringify({
         ...fields(snapshot, input),
         response_format: "url",
         ...(snapshot.mode === "provider-default"
           ? {}
           : { async: snapshot.mode === "async-preferred" }),
+        ...(referenceUrls?.length
+          ? { images: referenceUrls.map((url) => ({ image_url: url.href })) }
+          : {}),
         ...(references.length
           ? {
               images: references.map((bytes) => ({

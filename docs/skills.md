@@ -2,7 +2,6 @@
 
 技能安装在 .agents/skills，随仓库共享；不是只装在当前开发者的全局目录。
 .agents/skills-lock.json 固定原有技能的上游 repository/path/commit；UI/UX Pro Max 使用安装工具生成的根目录 skills-lock.json 记录来源与内容哈希。两种锁文件随对应快照提交，避免不同开发者拿到不同规则。
-新安装技能会在下一轮会话中被自动发现；本轮已按文件读取相关规则。
 
 | 技能 | 来源 | 使用范围 |
 | --- | --- | --- |
