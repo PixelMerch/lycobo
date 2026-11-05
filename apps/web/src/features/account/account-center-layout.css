@@ -143,21 +143,7 @@
   scrollbar-gutter: stable;
 }
 
-/* ---------- security cards and billing empty state ---------- */
-.account-card {
-  position: relative;
-  overflow: hidden;
-  padding: var(--space-6);
-  border: 1px solid #ffffff0f;
-  border-radius: 20px;
-  background: var(--account-card-background);
-}
-.account-card-title {
-  margin: 0;
-  font-size: var(--text-lg);
-  line-height: var(--leading-lg);
-  font-weight: var(--weight-semibold);
-}
+/* ---------- billing empty state ---------- */
 .account-empty {
   margin: var(--space-4) 0 0;
   color: var(--muted);

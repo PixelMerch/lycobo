@@ -1,0 +1,72 @@
+.account-dialog.account-settings-dialog.modal__dialog {
+  width: min(720px, calc(100vw - 48px));
+  height: min(660px, calc(100dvh - 48px));
+}
+.account-settings-dialog .account-center-tabs > .tabs__list-container {
+  margin-top: 0;
+}
+.account-settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.account-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid #ffffff0f;
+  border-radius: 14px;
+  background: #ffffff08;
+}
+.account-setting-row > div {
+  min-width: 0;
+}
+.account-setting-row .button {
+  flex: none;
+}
+.account-setting-row h3,
+.account-setting-heading h3 {
+  margin: 0;
+  color: var(--foreground);
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-medium);
+}
+.account-setting-row p,
+.account-setting-heading p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.account-settings-logout {
+  align-self: flex-start;
+}
+.account-password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.account-password-form .account-field {
+  margin-bottom: 0;
+}
+.account-password-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+@media (max-width: 767px) {
+  .account-dialog.account-settings-dialog.modal__dialog {
+    width: calc(100vw - 24px);
+    height: min(660px, calc(100dvh - 24px));
+  }
+  .account-setting-row {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px;
+  }
+  .account-settings-dialog .account-password-actions .button {
+    min-height: 44px;
+  }
+}

@@ -1,14 +1,10 @@
 import { create } from "zustand";
 import type { AccountCenterTab } from "./account-center-tabs";
 
-type AccountDialog = "recharge" | "membership";
+type AccountDialog = "recharge" | "membership" | "settings";
 export type AccountLayer = "center" | "dialog";
 
-/**
- * The account center, recharge and membership open from the header, the account menu and the
- * center itself; one host renders them. Recharge and membership stack above an open center, and
- * each layer returns focus to its own opener.
- */
+/** Billing and settings are separate dialogs; each layer restores its own opener. */
 export const useAccountOverlays = create<{
   center: AccountCenterTab | null;
   dialog: AccountDialog | null;
@@ -27,12 +23,16 @@ export const useAccountOverlays = create<{
     // Menus and popovers unmount their buttons; focus the surviving opener first so the modal
     // records it as the place to return to.
     opener?.focus({ preventScroll: true });
-    set((state) => ({ center, openers: { ...state.openers, center: opener } }));
+    set((state) => ({ center, dialog: null, openers: { ...state.openers, center: opener } }));
   },
   selectTab: (center) => set({ center }),
   open: (dialog, opener = null) => {
     opener?.focus({ preventScroll: true });
-    set((state) => ({ dialog, openers: { ...state.openers, dialog: opener } }));
+    set((state) => ({
+      dialog,
+      ...(dialog === "settings" ? { center: null } : {}),
+      openers: { ...state.openers, dialog: opener },
+    }));
   },
   close: (layer) => set(layer === "center" ? { center: null } : { dialog: null }),
   release: (layer) => set((state) => ({ openers: { ...state.openers, [layer]: null } })),

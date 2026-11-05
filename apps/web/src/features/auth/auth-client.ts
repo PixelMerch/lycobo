@@ -1,9 +1,11 @@
+import { toast } from "@heroui/react";
 import {
   apiErrorSchema,
   enterpriseIdentitySchema,
   enterpriseLoginResponseSchema,
+  enterprisePasswordChangeSchema,
 } from "@lycoboai/contracts";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { normalizeApiResponse } from "../../lib/api-response";
 import { reportRequestFailure } from "../../lib/request-diagnostics";
 import { rememberSessionExpiry, resetSessionRenewal, sessionFetch } from "../../lib/session-fetch";
@@ -95,12 +97,39 @@ export function useEnterpriseLogout() {
       if (!response.ok) throw new Error("退出失败，请稍后重试");
     },
     onSuccess: async () => {
-      clearPreviewLinks();
-      await client.cancelQueries();
-      client.setQueryData(enterpriseSessionKey, null);
-      await client.resetQueries({
-        predicate: (query) => query.queryKey[0] !== enterpriseSessionKey[0],
+      await clearEnterpriseSession(client);
+    },
+  });
+}
+
+async function clearEnterpriseSession(client: QueryClient) {
+  clearPreviewLinks();
+  await client.cancelQueries();
+  client.setQueryData(enterpriseSessionKey, null);
+  await client.resetQueries({
+    predicate: (query) => query.queryKey[0] !== enterpriseSessionKey[0],
+  });
+}
+
+/** The server revokes all sessions on password change; clear the current client session too. */
+export function useEnterprisePasswordChange() {
+  const client = useQueryClient();
+  return useMutation({
+    gcTime: 0,
+    retry: false,
+    mutationFn: async (input: { currentPassword: string; newPassword: string }) => {
+      const validated = enterprisePasswordChangeSchema.parse(input);
+      const response = await authRequest("password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validated),
       });
+      if (!response.ok) throw new Error(await errorMessage(response));
+    },
+    onSuccess: async () => {
+      resetSessionRenewal();
+      toast.success("密码已修改，请重新登录");
+      await clearEnterpriseSession(client);
     },
   });
 }

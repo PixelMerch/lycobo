@@ -35,7 +35,7 @@ apps/web/src/
 ├── styles/                       # 共享 tokens、基础样式与全屏动效样式
 └── features/
     ├── auth/                     # 身份请求与登录弹窗
-    ├── account/                  # 侧栏账户菜单、个人中心、钱包请求和账务展示
+    ├── account/                  # 侧栏账户菜单、独立账单与设置弹窗、钱包请求和账务展示
     ├── workspace/                # 统一工作区布局、工具坞、跨工具草稿交接
     ├── commerce/                 # 家纺裂变、套图计划（方案规划、确认与生图）及本地会话草稿
     ├── video/                    # 视频创作参数、自动成片流程、草稿、视频历史、封面与按需预览播放器
@@ -125,8 +125,8 @@ main 的 CI 成功后更新三个 CloudBase 函数代码并发布静态前端，
 
 功能组件使用直接依赖；服务端缓存属于TanStack Query，临时草稿与交互属于Zustand，纯展示组件从props获得数据。具体规则见[UI一致性维护](docs/ui-consistency.md)。
 
-- `features/account/account-menu.tsx` 的 HeaderLogin 与 AccountMenu 封装未登录入口和侧栏账户菜单（积分卡片、会员行与个人中心快捷入口）；`header-benefits.tsx` 组合登录后的双入口胶囊，积分点击用官方Popover展示 `CreditPreview` 的真实余额及最多三条记录。`account-overlays.tsx` 以Zustand记录个人中心页签、充值／会员弹层及各自打开者，`AccountOverlayHost` 由StudioShell挂载，统一渲染懒加载个人中心、`RechargeDialog`（`credits-dialog.tsx`、`credit-packs.tsx` 订单预览）与懒加载会员弹窗；充值和会员可叠在个人中心上方，各层关闭后焦点返回各自打开者，退出登录时清空。
-- `features/account/account-center-dialog.tsx` 是懒加载的个人中心弹窗（不设路由），页签定义在 `account-center-tabs.ts`；仅保留 `credit-ledger.tsx`、`recharge-orders.tsx`、`account-security.tsx` 三个页签，默认打开积分明细，顶部为紧凑账号信息条，`account-format.ts` 提供纯格式化函数（张数换算、成员、相对时间），`account-entry.tsx` 为收支类型图标。查询共用TanStack Query，只在页签选中时挂载。
+- `features/account/account-menu.tsx` 组合HeaderLogin与侧栏账户菜单；积分与账单、设置分别打开独立弹窗。`header-benefits.tsx` 保留余额概览与会员入口。`account-overlays.tsx` 通过Zustand记录弹窗及打开者，统一懒加载账单、设置和会员；关闭后各自恢复焦点，退出或改密成功清空状态。
+- `features/account/account-center-dialog.tsx` 承载积分明细、充值订单两个页签，默认打开积分明细；`account-settings-dialog.tsx` 承载个人资料、登录与安全及管理员可见的企业成员。`account-profile.tsx` 共用紧凑账号信息条；`account-password-form.tsx` 通过auth-client接入既有改密接口，成功清理登录状态。`account-settings-panels.tsx` 如实保留未接入的头像、微信、子账号入口。`account-format.ts` 提供格式化，`account-entry.tsx` 提供收支图标；各页签查询按需挂载。
 - `features/account/membership-page.tsx` 导出懒加载全屏 MembershipDialog，Header在当前工作区打开；/membership仅为旧链接兼容入口，不展示返回与明细按钮；`MembershipPlans` 管理分类、周期、档位和团队席位展示；标语单价、周期最低折扣、折扣标签、单位积分价与“积分单价最低”飘带均由 `membership-pricing.ts` 的纯函数从价格表推导，并由同目录单元测试覆盖；membership-details组合工具／协作能力与Tooltip，membership-faq用官方Accordion承载本站FAQ，`CreditPacks` 只管理所选包。`wallet-client.ts` 共享钱包查询，最近记录按需读取并缓存30秒，不新增轮询。未接入的会员、绑定、验证码及支付不会模拟成功。
 
 ## 数据库领域命名

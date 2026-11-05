@@ -5,6 +5,9 @@ import { RechargeDialog } from "./credits-dialog";
 const AccountCenterDialog = lazy(() =>
   import("./account-center-dialog").then((module) => ({ default: module.AccountCenterDialog })),
 );
+const AccountSettingsDialog = lazy(() =>
+  import("./account-settings-dialog").then((module) => ({ default: module.AccountSettingsDialog })),
+);
 const MembershipDialog = lazy(() =>
   import("./membership-page").then((module) => ({ default: module.MembershipDialog })),
 );
@@ -35,6 +38,11 @@ export function AccountOverlayHost() {
       {center !== null && (
         <Suspense fallback={null}>
           <AccountCenterDialog tab={center} onClose={() => close("center")} />
+        </Suspense>
+      )}
+      {dialog === "settings" && (
+        <Suspense fallback={null}>
+          <AccountSettingsDialog onClose={() => close("dialog")} />
         </Suspense>
       )}
       {dialog === "recharge" && <RechargeDialog onClose={() => close("dialog")} />}

@@ -35,7 +35,7 @@ async function openCenter(page: Page, account: string, row: string) {
     await page.getByRole("button", { name: "打开导航", exact: true }).click();
   await page.getByRole("button", { name: `账户菜单：${account}`, exact: true }).click();
   await page.getByRole("menuitem", { name: row, exact: true }).click();
-  const center = page.getByRole("dialog", { name: "个人中心", exact: true });
+  const center = page.getByRole("dialog", { name: "积分与账单", exact: true });
   await expect(center).toBeVisible();
   // Measure only after the opening zoom has settled.
   await expect(page.locator(".modal__container").filter({ has: center })).not.toHaveAttribute(
@@ -66,42 +66,6 @@ async function expectInsideViewport(page: Page, center: Locator) {
     .toBe(true);
 }
 
-for (const width of [1440, 390]) {
-  test(`account security uses neutral fields and truthful disabled actions at ${width}px`, async ({
-    page,
-  }) => {
-    await signIn(page, "merchant-fixture");
-    const writes: string[] = [];
-    page.on("request", (request) => {
-      if (request.method() === "POST" && !request.url().endsWith("/api/v1/image-session"))
-        writes.push(request.url());
-    });
-    await page.setViewportSize({ width, height: 900 });
-    await page.goto("/create");
-    const center = await openCenter(page, "merchant-fixture", "账号与安全");
-    // The center never becomes a page: the workspace URL stays as it was.
-    await expect(page).toHaveURL(/\/create$/);
-    const panel = center.getByRole("tabpanel", { name: "账号与安全", exact: true });
-    await expect(panel.getByText("merchant-fixture", { exact: true }).first()).toBeVisible();
-    await expect(panel.getByRole("button", { name: "绑定手机号", exact: true })).toBeDisabled();
-    await expect(panel.getByRole("button", { name: "绑定邮箱", exact: true })).toBeDisabled();
-    await expect(panel.getByText("UID 0123456789", { exact: true })).toBeVisible();
-    await panel.getByRole("tab", { name: "重置密码", exact: true }).click();
-    const account = panel.getByRole("textbox", { name: "企业账号", exact: true });
-    await expect(account).toHaveValue("merchant-fixture");
-    await expect(account).toHaveAttribute("readonly", "");
-    await account.focus();
-    await expect(account).toHaveCSS("outline-color", "rgb(161, 161, 170)");
-    await expect(account).toHaveCSS("box-shadow", "none");
-    await expect(panel.getByRole("button", { name: "发送验证码", exact: true })).toBeDisabled();
-    await expect(panel.getByRole("button", { name: "确认", exact: true })).toBeDisabled();
-    await expect(panel.getByLabel("验证码", { exact: true })).toBeDisabled();
-    expect(writes).toEqual([]);
-    await page.screenshot({ path: `/tmp/lycobo-account-security-${width}.png` });
-    await expectInsideViewport(page, center);
-  });
-}
-
 test("personal center opens billing by default and preserves drafts and focus", async ({
   page,
 }) => {
@@ -111,9 +75,9 @@ test("personal center opens billing by default and preserves drafts and focus", 
   const draft = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   await draft.fill("保留正在准备的商品图");
   const trigger = page.getByRole("button", { name: "账户菜单：billing-fixture", exact: true });
-  const center = await openCenter(page, "billing-fixture", "个人中心");
-  const tabs = center.getByRole("tablist", { name: "个人中心", exact: true });
-  await expect(tabs.getByRole("tab")).toHaveText(["积分明细", "充值订单", "账号与安全"]);
+  const center = await openCenter(page, "billing-fixture", "积分与账单");
+  const tabs = center.getByRole("tablist", { name: "积分与账单", exact: true });
+  await expect(tabs.getByRole("tab")).toHaveText(["积分明细", "充值订单"]);
   await expect(tabs.getByRole("tab", { name: "积分明细", exact: true })).toHaveAttribute(
     "aria-selected",
     "true",
@@ -124,8 +88,6 @@ test("personal center opens billing by default and preserves drafts and focus", 
   await expect(center.getByRole("button", { name: "复制 UID", exact: true })).toBeVisible();
   await tabs.getByRole("tab", { name: "充值订单", exact: true }).click();
   await expect(center.getByText("暂无充值订单", { exact: true })).toBeVisible();
-  await tabs.getByRole("tab", { name: "账号与安全", exact: true }).click();
-  await expect(center.getByRole("heading", { name: "账号信息", exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/create$/);
   await page.keyboard.press("Escape");
   await expect(center).toHaveCount(0);
@@ -177,15 +139,15 @@ for (const width of [1440, 390]) {
     await signIn(page, "tabs-fixture");
     await page.setViewportSize({ width, height: width < 768 ? 700 : 900 });
     await page.goto("/create");
-    const center = await openCenter(page, "tabs-fixture", "个人中心");
-    const tabs = center.getByRole("tablist", { name: "个人中心", exact: true });
+    const center = await openCenter(page, "tabs-fixture", "积分与账单");
+    const tabs = center.getByRole("tablist", { name: "积分与账单", exact: true });
     await expect(tabs.getByRole("tab", { name: "积分明细", exact: true })).toHaveAttribute(
       "aria-selected",
       "true",
     );
     const [frame, row] = [await center.boundingBox(), await tabs.boundingBox()];
     if (!frame || !row) throw new Error("Missing account center bounds");
-    for (const name of ["充值订单", "账号与安全", "积分明细"]) {
+    for (const name of ["充值订单", "积分明细"]) {
       await tabs.getByRole("tab", { name, exact: true }).click();
       await expect(tabs.getByRole("tab", { name, exact: true })).toHaveAttribute(
         "aria-selected",

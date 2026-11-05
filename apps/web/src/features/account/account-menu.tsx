@@ -120,7 +120,7 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
               else if (key === "ledger") openCenter("credits", triggerRef.current);
               else if (key === "center") openCenter("credits", triggerRef.current);
               else if (key === "works") go("/assets");
-              else if (key === "security") openCenter("security", triggerRef.current);
+              else if (key === "settings") openOverlay("settings", triggerRef.current);
               else if (key === "logout") logout.mutate();
             }}
           >
@@ -154,9 +154,9 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
               </Dropdown.Item>
             </Dropdown.Section>
             <Dropdown.Section aria-label="个人空间">
-              <Dropdown.Item id="center" textValue="个人中心">
+              <Dropdown.Item id="center" textValue="积分与账单">
                 <UiIcon icon={IconUserCircle} />
-                <span>个人中心</span>
+                <span>积分与账单</span>
               </Dropdown.Item>
               <Dropdown.Item id="works" textValue="个人作品">
                 <UiIcon icon={IconPhoto} />
@@ -165,9 +165,9 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
             </Dropdown.Section>
             <Separator className="account-menu-separator" />
             <Dropdown.Section aria-label="账号操作">
-              <Dropdown.Item id="security" textValue="账号与安全">
+              <Dropdown.Item id="settings" textValue="设置">
                 <UiIcon icon={IconShieldLock} />
-                <span>账号与安全</span>
+                <span>设置</span>
               </Dropdown.Item>
               <Dropdown.Item id="logout" textValue="退出登录">
                 <UiIcon icon={IconLogout} />
