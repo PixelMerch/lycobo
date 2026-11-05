@@ -102,63 +102,35 @@ for (const width of [1440, 390]) {
   });
 }
 
-test("overview summarizes real data and stacks recharge above the center", async ({ page }) => {
-  await signIn(page, "overview-fixture");
-  await page.route("**/api/v1/wallet/entries?*", (route) =>
-    route.fulfill({
-      json: apiFixture({
-        data: [entry(3), entry(2, { kind: "refund", amount: 2 }), entry(1)],
-      }),
-    }),
-  );
+test("personal center opens billing by default and preserves drafts and focus", async ({
+  page,
+}) => {
+  await signIn(page, "billing-fixture");
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/create");
   const draft = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   await draft.fill("保留正在准备的商品图");
-  const trigger = page.getByRole("button", { name: "账户菜单：overview-fixture", exact: true });
-  const center = await openCenter(page, "overview-fixture", "个人中心");
-  const overview = center.getByRole("tabpanel", { name: "概览", exact: true });
-  const wallet = overview.getByRole("region", { name: "企业共享积分" });
-  // 200 credits at 2 per image: the center states the whole images, never a rounded-up count.
-  await expect(wallet.locator(".account-balance")).toHaveText("200");
-  await expect(wallet).toContainText("约可生成 100 张");
-  await expect(overview.getByRole("region", { name: "会员" })).toContainText("暂未开通");
-  await expect(
-    overview.getByRole("region", { name: "最近积分记录" }).getByRole("listitem"),
-  ).toHaveCount(3);
-  await expect(overview.getByText("暂无作品，", { exact: false })).toBeVisible();
-  await page.screenshot({ path: "/tmp/lycobo-account-overview.png" });
-
-  // Recharge opens above the center; Escape closes only the top dialog.
-  await overview.getByRole("button", { name: "充值积分", exact: true }).click();
-  const recharge = page.getByRole("dialog", { name: "充值积分", exact: true });
-  // The order preview adds the default 500-credit pack to the real balance.
-  await expect(recharge.locator(".credit-order-after strong")).toContainText("200");
-  await expect(recharge.locator(".credit-order-after strong")).toContainText("700");
-  await expect(recharge.getByRole("button", { name: "立即购买", exact: true })).toBeDisabled();
-  await page.keyboard.press("Tab");
-  await expect(recharge.locator(":focus")).toHaveCount(1);
-  await page.keyboard.press("Escape");
-  await expect(recharge).toHaveCount(0);
-  await expect(center).toBeVisible();
-  await expect(overview.getByRole("button", { name: "充值积分", exact: true })).toBeFocused();
-
-  // In-panel shortcuts switch tabs inside the dialog and keep focus on the selected tab.
-  await overview.getByRole("button", { name: "全部明细" }).click();
-  const ledgerTab = center.getByRole("tab", { name: "积分明细", exact: true });
-  await expect(ledgerTab).toHaveAttribute("aria-selected", "true");
-  await expect(ledgerTab).toBeFocused();
+  const trigger = page.getByRole("button", { name: "账户菜单：billing-fixture", exact: true });
+  const center = await openCenter(page, "billing-fixture", "个人中心");
+  const tabs = center.getByRole("tablist", { name: "个人中心", exact: true });
+  await expect(tabs.getByRole("tab")).toHaveText(["积分明细", "充值订单", "账号与安全"]);
+  await expect(tabs.getByRole("tab", { name: "积分明细", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(center.getByRole("region", { name: "积分明细", exact: true })).toBeVisible();
+  await expect(center.locator(".account-profile-main")).toContainText("billing-fixture");
+  await expect(center.locator(".account-profile-meta")).toContainText("UID 0123456789");
+  await expect(center.getByRole("button", { name: "复制 UID", exact: true })).toBeVisible();
+  await tabs.getByRole("tab", { name: "充值订单", exact: true }).click();
+  await expect(center.getByText("暂无充值订单", { exact: true })).toBeVisible();
+  await tabs.getByRole("tab", { name: "账号与安全", exact: true }).click();
+  await expect(center.getByRole("heading", { name: "账号信息", exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/create$/);
   await page.keyboard.press("Escape");
   await expect(center).toHaveCount(0);
   await expect(trigger).toBeFocused();
   await expect(draft).toHaveValue("保留正在准备的商品图");
-
-  // Links to other pages close the center before the page changes.
-  await openCenter(page, "overview-fixture", "个人中心");
-  await center.getByRole("link", { name: "进入素材库" }).click();
-  await expect(page).toHaveURL(/\/assets$/);
-  await expect(center).toHaveCount(0);
 });
 
 test("ledger filters loaded pages without losing older records or exposing payment actions", async ({
@@ -207,13 +179,13 @@ for (const width of [1440, 390]) {
     await page.goto("/create");
     const center = await openCenter(page, "tabs-fixture", "个人中心");
     const tabs = center.getByRole("tablist", { name: "个人中心", exact: true });
-    await expect(tabs.getByRole("tab", { name: "概览", exact: true })).toHaveAttribute(
+    await expect(tabs.getByRole("tab", { name: "积分明细", exact: true })).toHaveAttribute(
       "aria-selected",
       "true",
     );
     const [frame, row] = [await center.boundingBox(), await tabs.boundingBox()];
     if (!frame || !row) throw new Error("Missing account center bounds");
-    for (const name of ["积分明细", "充值订单", "会员", "账号与安全", "概览"]) {
+    for (const name of ["充值订单", "账号与安全", "积分明细"]) {
       await tabs.getByRole("tab", { name, exact: true }).click();
       await expect(tabs.getByRole("tab", { name, exact: true })).toHaveAttribute(
         "aria-selected",

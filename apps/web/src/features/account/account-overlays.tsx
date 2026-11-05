@@ -20,8 +20,8 @@ function useReturnFocus(layer: AccountLayer, isOpen: boolean) {
   }, [isOpen, layer, opener, release]);
 }
 
-/** `onNavigate` closes the phone navigation drawer when a link inside the center leaves the page. */
-export function AccountOverlayHost({ onNavigate }: { onNavigate?: () => void }) {
+/** One host renders the account layers and restores each opener on close. */
+export function AccountOverlayHost() {
   const center = useAccountOverlays((state) => state.center);
   const dialog = useAccountOverlays((state) => state.dialog);
   const close = useAccountOverlays((state) => state.close);
@@ -34,14 +34,7 @@ export function AccountOverlayHost({ onNavigate }: { onNavigate?: () => void }) 
     <>
       {center !== null && (
         <Suspense fallback={null}>
-          <AccountCenterDialog
-            tab={center}
-            onClose={() => close("center")}
-            onLeave={() => {
-              close("center");
-              onNavigate?.();
-            }}
-          />
+          <AccountCenterDialog tab={center} onClose={() => close("center")} />
         </Suspense>
       )}
       {dialog === "recharge" && <RechargeDialog onClose={() => close("dialog")} />}

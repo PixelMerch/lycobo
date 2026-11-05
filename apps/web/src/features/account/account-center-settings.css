@@ -1,11 +1,4 @@
-/* ---------- membership and security tabs ---------- */
-.account-membership {
-  display: grid;
-  gap: var(--space-6);
-}
-.account-membership .membership-faq {
-  margin: 0;
-}
+/* ---------- security tab ---------- */
 .account-security {
   display: grid;
   gap: var(--space-4);

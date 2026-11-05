@@ -164,7 +164,7 @@ for (const width of [1440, 320]) {
     await expect(draft).toHaveValue("保留正在准备的商品图");
     await trigger.click();
     await menu.getByRole("menuitem", { name: "个人中心", exact: true }).click();
-    await expect(center.getByRole("tab", { name: "概览", selected: true })).toBeVisible();
+    await expect(center.getByRole("tab", { name: "积分明细", selected: true })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(center).toHaveCount(0);
     await expect(trigger).toBeFocused();

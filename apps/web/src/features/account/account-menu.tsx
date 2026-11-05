@@ -118,7 +118,7 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
             onAction={(key) => {
               if (key === "recharge" || key === "membership") open(key);
               else if (key === "ledger") openCenter("credits", triggerRef.current);
-              else if (key === "center") openCenter("overview", triggerRef.current);
+              else if (key === "center") openCenter("credits", triggerRef.current);
               else if (key === "works") go("/assets");
               else if (key === "security") openCenter("security", triggerRef.current);
               else if (key === "logout") logout.mutate();

@@ -1,14 +1,11 @@
 import { Avatar, Button, Chip, Modal, Tabs } from "@heroui/react";
-import { IconCopy, IconSettings, IconX } from "@tabler/icons-react";
-import { useRef } from "react";
+import { IconCopy, IconX } from "@tabler/icons-react";
 import { UiIcon } from "../../components/ui-icon";
 import { copyToClipboard } from "../../lib/clipboard";
 import { useEnterpriseSession } from "../auth/auth-client";
 import { type AccountCenterTab, accountCenterTabs } from "./account-center-tabs";
 import { roleLabel } from "./account-format";
-import { AccountMembership } from "./account-membership";
 import { useAccountOverlays } from "./account-overlay-store";
-import { AccountOverview } from "./account-overview";
 import { AccountSecurity } from "./account-security";
 import { CreditLedger } from "./credit-ledger";
 import { RechargeOrders } from "./recharge-orders";
@@ -22,23 +19,15 @@ import "./account-center.css";
 export function AccountCenterDialog({
   tab,
   onClose,
-  onLeave,
 }: {
   tab: AccountCenterTab;
   onClose: () => void;
-  onLeave: () => void;
 }) {
   const session = useEnterpriseSession();
   const selectTab = useAccountOverlays((state) => state.selectTab);
-  const tabs = useRef(new Map<AccountCenterTab, HTMLElement>());
   const account = session.data;
   if (!account) return null;
   const initial = Array.from(account.account)[0]?.toUpperCase() ?? "";
-  // Buttons inside a panel unmount with it; focus moves to the tab that is now selected.
-  const showTab = (next: AccountCenterTab) => {
-    selectTab(next);
-    tabs.current.get(next)?.focus({ preventScroll: true });
-  };
   return (
     <Modal
       isOpen
@@ -81,19 +70,8 @@ export function AccountCenterDialog({
                         <UiIcon icon={IconCopy} size="small" />
                       </Button>
                     )}
-                    <span className="account-profile-dot" aria-hidden="true" />
-                    <span>企业账号登录</span>
                   </div>
                 </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="account-profile-action"
-                  onPress={() => showTab("security")}
-                >
-                  <UiIcon icon={IconSettings} />
-                  账号与安全
-                </Button>
               </section>
               <Tabs
                 selectedKey={tab}
@@ -106,31 +84,18 @@ export function AccountCenterDialog({
                 <Tabs.ListContainer>
                   <Tabs.List aria-label="个人中心">
                     {accountCenterTabs.map((item) => (
-                      <Tabs.Tab
-                        key={item.id}
-                        id={item.id}
-                        ref={(element: HTMLElement | null) => {
-                          if (element) tabs.current.set(item.id, element);
-                          else tabs.current.delete(item.id);
-                        }}
-                      >
+                      <Tabs.Tab key={item.id} id={item.id}>
                         {item.label}
                         <Tabs.Indicator />
                       </Tabs.Tab>
                     ))}
                   </Tabs.List>
                 </Tabs.ListContainer>
-                <Tabs.Panel id="overview">
-                  <AccountOverview onShowTab={showTab} onLeave={onLeave} />
-                </Tabs.Panel>
                 <Tabs.Panel id="credits">
                   <CreditLedger />
                 </Tabs.Panel>
                 <Tabs.Panel id="orders">
                   <RechargeOrders />
-                </Tabs.Panel>
-                <Tabs.Panel id="membership">
-                  <AccountMembership />
                 </Tabs.Panel>
                 <Tabs.Panel id="security">
                   <AccountSecurity />

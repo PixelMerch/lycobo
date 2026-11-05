@@ -81,9 +81,6 @@ test("enterprise account shows shared balance, member spending and recharge reco
   await expect(order).toContainText("¥10.00");
   // Unknown provider codes are shown as recorded instead of being renamed.
   await expect(order).toContainText("fixture");
-  await center.getByRole("tab", { name: "概览", exact: true }).click();
-  await expect(center.getByRole("button", { name: "充值积分", exact: true })).toBeEnabled();
-  await expect(center.getByRole("button", { name: /查看会员方案/ })).toBeEnabled();
   await page.setViewportSize({ width: 320, height: 760 });
   await center.getByRole("tab", { name: "积分明细", exact: true }).click();
   await page.screenshot({ path: "/tmp/lycobo-account-ledger-mobile.png" });
@@ -123,6 +120,4 @@ test("billing failures stay unknown and retry real reads", async ({ page }) => {
   const initialReads = reads;
   await ledger.getByRole("button", { name: "重新加载收支", exact: true }).click();
   await expect.poll(() => reads).toBeGreaterThan(initialReads);
-  await center.getByRole("tab", { name: "概览", exact: true }).click();
-  await expect(center.locator(".account-balance")).toHaveText("—");
 });
