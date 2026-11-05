@@ -2,11 +2,13 @@ import { randomUUID } from "node:crypto";
 import { openCloudBaseImageRepository, openVideoRepository } from "@lycoboai/db";
 import { readImagePolicy, standaloneModels, videoConfiguration } from "@lycoboai/generation";
 import {
+  cloudbaseImageReferenceSigner,
   cloudbaseObjectBucket,
   cloudbaseProviderReferenceSigner,
 } from "@lycoboai/storage/cloudbase";
 import { objectImageStore } from "@lycoboai/storage/object-images";
 import { z } from "zod";
+import { cloudbaseImageReferences } from "./cloudbase-image-references";
 import { drainCloudBaseOutbox } from "./cloudbase-outbox";
 import { startAsyncDrain } from "./cloudbase-wake";
 import { processImageItem } from "./image-processor";
@@ -76,7 +78,13 @@ export async function main(event?: unknown) {
   const independent = await standaloneModels(process.env);
   if (!independent) throw new Error("CLOUDBASE_STANDALONE_MODELS_REQUIRED");
   const repository = openCloudBaseImageRepository(process.env, independent);
-  const objects = objectImageStore(cloudbaseObjectBucket(process.env), repository.storageUid);
+  const bucket = cloudbaseObjectBucket(process.env);
+  const objects = objectImageStore(bucket, repository.storageUid);
+  const deliverReference = cloudbaseImageReferences(
+    bucket,
+    objects,
+    cloudbaseImageReferenceSigner(process.env),
+  );
   // Image persistence is the memory-heavy step (a 4K original alone needs about 200 MB of the
   // 512 MB function), so at most two items decode and encode at once however many are in flight.
   const encode = slots(2);
@@ -113,6 +121,7 @@ export async function main(event?: unknown) {
           standaloneKey: process.env.STANDALONE_IMAGE_API_KEY,
           overrides: policy.overrides,
           editsEnabled: policy.editsEnabled,
+          deliverReference,
           onDeferred,
         }),
     });

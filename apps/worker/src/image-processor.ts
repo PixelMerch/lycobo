@@ -10,6 +10,7 @@ import {
   validateModelInput,
 } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
+import type { DeliverProviderReference } from "./cloudbase-image-references";
 import { processConfiguredImage } from "./configured-image-processor";
 import { readProviderReferences } from "./provider-references";
 
@@ -23,6 +24,7 @@ export type ImageProcessorDependencies = {
   modelSecret?: string | undefined;
   standaloneKey?: string | undefined;
   request?: typeof fetch;
+  deliverReference?: DeliverProviderReference;
   onDeferred?: ((delayMs: number) => void) | undefined;
 };
 export async function processImageItem(itemId: string, deps: ImageProcessorDependencies) {

@@ -1,4 +1,4 @@
-import { imageOutputDimensions } from "@lycoboai/contracts";
+import { imageOutputDimensions, providerModelForResolution } from "@lycoboai/contracts";
 import type { ClaimedImage, ImageRuntimeRepository } from "@lycoboai/db";
 import {
   configuredProviderCall,
@@ -11,7 +11,8 @@ import {
   textileItemInput,
 } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
-import { readProviderReferences } from "./provider-references";
+import type { DeliverProviderReference } from "./cloudbase-image-references";
+import { mapProviderReferences, readProviderReferences } from "./provider-references";
 
 type ConfiguredImageDependencies = {
   repository: Pick<
@@ -22,10 +23,36 @@ type ConfiguredImageDependencies = {
   modelSecret?: string | undefined;
   standaloneKey?: string | undefined;
   request?: typeof fetch;
+  deliverReference?: DeliverProviderReference;
   onDeferred?: ((delayMs: number) => void) | undefined;
 };
 
 type ConfiguredProvider = NonNullable<ClaimedImage["configuredProvider"]>;
+
+async function configuredReferences(
+  job: ClaimedImage,
+  snapshot: ConfiguredProvider["snapshot"],
+  deps: ConfiguredImageDependencies,
+): Promise<{ bytes: Uint8Array[]; urls?: URL[] }> {
+  const deliver = deps.deliverReference;
+  if (
+    deliver &&
+    snapshot.adapter === "fluxport-images" &&
+    snapshot.credentialId === standaloneCredentialId &&
+    new URL(snapshot.origin).origin === "https://api.ai-media.vip" &&
+    providerModelForResolution(snapshot, job.input.resolution) === "gpt-image-2.5-sunburst"
+  ) {
+    try {
+      const urls = await mapProviderReferences(job, deps.repository, (asset) =>
+        deliver(asset, !!job.input.localEdit),
+      );
+      return { bytes: [], urls };
+    } catch {
+      // No paid request has been sent, so the same attempt can still use inline images.
+    }
+  }
+  return { bytes: await readProviderReferences(job, deps.repository, deps.store) };
+}
 
 async function readCredential(deps: ConfiguredImageDependencies, credentialId: string) {
   if (credentialId === standaloneCredentialId) return deps.standaloneKey;
@@ -124,16 +151,17 @@ export async function processConfiguredImage(job: ClaimedImage, deps: Configured
       throw new ImageProviderError("PROVIDER_TASK_DEADLINE", true);
     const key = await readCredential(deps, state.snapshot.credentialId);
     if (!key) throw new ImageProviderError("MODEL_SECRET_NOT_CONFIGURED", !!poll);
-    const references = poll ? [] : await readProviderReferences(job, deps.repository, deps.store);
+    const references = poll ? { bytes: [] } : await configuredReferences(job, state.snapshot, deps);
     sent = true;
     const result = await configuredProviderCall(
       state.snapshot,
       key,
       textileItemInput(job.input, job.position),
-      references,
+      references.bytes,
       job.itemId,
       poll,
       deps.request,
+      references.urls,
     );
     if (result.kind === "pending") {
       return await deferPendingImage(job, deps, state, result);

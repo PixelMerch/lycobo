@@ -71,7 +71,12 @@ try {
     allowed_mime_types from storage.buckets where id = 'lycobo-images'`;
   assert.equal(videoBucket?.public, false);
   assert.equal(videoBucket?.max_bytes, 128 * 1024 * 1024);
-  assert.deepEqual(videoBucket?.allowed_mime_types, ["image/png", "image/webp", "video/mp4"]);
+  assert.deepEqual(videoBucket?.allowed_mime_types, [
+    "image/png",
+    "image/webp",
+    "video/mp4",
+    "image/jpeg",
+  ]);
   const [videoGrants] = await sql`select has_function_privilege(
     'service_role', 'public.lycobo_video_operation(text,jsonb)', 'EXECUTE'
   ) as runtime_execute`;

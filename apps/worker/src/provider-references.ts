@@ -33,11 +33,21 @@ export async function readProviderReferences(
   repository: Pick<ImageRuntimeRepository, "asset">,
   store: Pick<ImageStore, "read">,
 ) {
-  const references: Uint8Array[] = [];
+  return mapProviderReferences(job, repository, (asset) =>
+    providerReferenceBytes(store, asset, !!job.input.localEdit),
+  );
+}
+
+export async function mapProviderReferences<T>(
+  job: ClaimedImage,
+  repository: Pick<ImageRuntimeRepository, "asset">,
+  prepare: (asset: StoredImage) => Promise<T>,
+) {
+  const references: T[] = [];
   for (const id of job.input.referenceAssetIds) {
     const asset = await repository.asset(job, id);
     if (!asset) throw new ImageProviderError("REFERENCE_NOT_FOUND", false);
-    references.push(await providerReferenceBytes(store, asset, !!job.input.localEdit));
+    references.push(await prepare(asset));
   }
   return references;
 }
