@@ -7,7 +7,7 @@ import { useEnterpriseSession } from "../auth/auth-client";
 import { type AccountCenterTab, accountCenterTabs } from "./account-center-tabs";
 import { roleLabel } from "./account-format";
 import { AccountMembership } from "./account-membership";
-import { useAccountOverlays } from "./account-overlays";
+import { useAccountOverlays } from "./account-overlay-store";
 import { AccountOverview } from "./account-overview";
 import { AccountSecurity } from "./account-security";
 import { CreditLedger } from "./credit-ledger";

@@ -52,7 +52,7 @@ export function HomePage() {
     if (!requireLogin()) return;
     // The homepage edits the same draft. Entering the workspace never submits paid work.
     if (prompt && !draft.prompt.trim()) updateDraft(model, { prompt });
-    navigate("/create");
+    void navigate("/create");
   }
   return (
     <section

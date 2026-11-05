@@ -23,7 +23,7 @@ import {
   recordTime,
   signedCredits,
 } from "./account-format";
-import { useAccountOverlays } from "./account-overlays";
+import { useAccountOverlays } from "./account-overlay-store";
 import { useWallet, useWalletEntries } from "./wallet-client";
 
 export const pressedElement = (target: EventTarget) =>

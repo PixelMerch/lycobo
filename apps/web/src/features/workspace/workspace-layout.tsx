@@ -40,7 +40,7 @@ export function WorkspaceLayout() {
         resolution: draft.resolution,
         items: variation.items.map((item) => ({ ...item, selected: true })),
       });
-      navigate("/commerce/smart-variation");
+      void navigate("/commerce/smart-variation");
     } else if (textileSet) {
       useTextileSetDraft.getState().update({
         mainImage: draft.references[0] ?? null,
@@ -49,12 +49,12 @@ export function WorkspaceLayout() {
         ratio: draft.ratio,
         resolution: imageResolutionSchema.parse(draft.resolution),
       });
-      navigate("/commerce/textile-set");
+      void navigate("/commerce/textile-set");
     } else {
       const studio = useStudioStore.getState();
       studio.updateDraft(model, draft);
       studio.setActiveModel(model);
-      navigate("/create");
+      void navigate("/create");
     }
     setRestorePending(null);
     setMobilePanel("form");

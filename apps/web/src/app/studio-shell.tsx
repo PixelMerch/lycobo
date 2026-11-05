@@ -190,7 +190,7 @@ export function StudioShell() {
         <LoginDialog
           onClose={() => {
             closeLogin();
-            if (protectedRoute) navigate("/", { replace: true });
+            if (protectedRoute) void navigate("/", { replace: true });
           }}
           onLoginSuccess={closeLogin}
         />

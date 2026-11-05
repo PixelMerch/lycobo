@@ -3,7 +3,7 @@ import { IconChevronRight, IconCrown } from "@tabler/icons-react";
 import { useRef, useState } from "react";
 import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
-import { useAccountOverlays } from "./account-overlays";
+import { useAccountOverlays } from "./account-overlay-store";
 import { CreditPreview } from "./credit-preview";
 import { useWallet } from "./wallet-client";
 import "./header-benefits.css";
