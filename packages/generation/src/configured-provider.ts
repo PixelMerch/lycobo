@@ -150,7 +150,7 @@ export async function configuredProviderCall(
   let submissionPath: string | undefined;
   const adapter = imageProtocolAdapters[snapshot.adapter];
   if (!isPoll) {
-    if (referenceUrls?.length && (snapshot.adapter !== "fluxport-images" || references.length))
+    if (referenceUrls?.length && (snapshot.adapter === "openai-images" || references.length))
       throw new ImageProviderError("INVALID_PROVIDER_REFERENCE_TRANSPORT", false);
     headers["Idempotency-Key"] = idempotencyKey;
     const prepared = adapter.prepare(snapshot, input, references, referenceUrls);

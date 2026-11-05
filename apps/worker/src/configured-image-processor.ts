@@ -12,7 +12,11 @@ import {
 } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
 import type { DeliverProviderReference } from "./cloudbase-image-references";
-import { mapProviderReferences, readProviderReferences } from "./provider-references";
+import {
+  mainImageHasReferences,
+  mapProviderReferences,
+  readProviderReferences,
+} from "./provider-references";
 
 type ConfiguredImageDependencies = {
   repository: Pick<
@@ -24,6 +28,7 @@ type ConfiguredImageDependencies = {
   standaloneKey?: string | undefined;
   request?: typeof fetch;
   deliverReference?: DeliverProviderReference;
+  requireMainImageReferenceUrls?: boolean;
   onDeferred?: ((delayMs: number) => void) | undefined;
 };
 
@@ -35,11 +40,18 @@ async function configuredReferences(
   deps: ConfiguredImageDependencies,
 ): Promise<{ bytes: Uint8Array[]; urls?: URL[] }> {
   const deliver = deps.deliverReference;
+  const fixedFluxPort =
+    snapshot.credentialId === standaloneCredentialId &&
+    new URL(snapshot.origin).origin === "https://api.ai-media.vip";
+  if (deps.requireMainImageReferenceUrls && mainImageHasReferences(job.input)) {
+    if (!deliver || !fixedFluxPort || snapshot.adapter === "openai-images")
+      throw new ImageProviderError("PROVIDER_REFERENCE_URL_REQUIRED", false);
+    return { bytes: [], urls: await requiredReferenceUrls(job, deps.repository, deliver) };
+  }
   if (
     deliver &&
+    fixedFluxPort &&
     snapshot.adapter === "fluxport-images" &&
-    snapshot.credentialId === standaloneCredentialId &&
-    new URL(snapshot.origin).origin === "https://api.ai-media.vip" &&
     providerModelForResolution(snapshot, job.input.resolution) === "gpt-image-2.5-sunburst"
   ) {
     try {
@@ -52,6 +64,19 @@ async function configuredReferences(
     }
   }
   return { bytes: await readProviderReferences(job, deps.repository, deps.store) };
+}
+
+async function requiredReferenceUrls(
+  job: ClaimedImage,
+  repository: ConfiguredImageDependencies["repository"],
+  deliver: DeliverProviderReference,
+) {
+  try {
+    return await mapProviderReferences(job, repository, (asset) => deliver(asset, false));
+  } catch (error) {
+    if (error instanceof ImageProviderError) throw error;
+    throw new ImageProviderError("REFERENCE_STORAGE_UNAVAILABLE", false);
+  }
 }
 
 async function readCredential(deps: ConfiguredImageDependencies, credentialId: string) {

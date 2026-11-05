@@ -1,4 +1,4 @@
-import type { StoredImage } from "@lycoboai/contracts";
+import type { ImageGenerationInput, StoredImage } from "@lycoboai/contracts";
 import type { ClaimedImage, ImageRuntimeRepository } from "@lycoboai/db";
 import { ImageProviderError } from "@lycoboai/generation";
 import { type ImageStore, providerReference } from "@lycoboai/storage";
@@ -6,6 +6,12 @@ import { type ImageStore, providerReference } from "@lycoboai/storage";
 // Every item of a job sends the same references, so each is read and re-encoded once per
 // instance. Stored assets never change; the content hash is part of the key regardless.
 const recent = new Map<string, Promise<Uint8Array>>();
+
+export function mainImageHasReferences(input: ImageGenerationInput) {
+  return (
+    input.referenceAssetIds.length > 0 && !input.textileSet && !input.variation && !input.localEdit
+  );
+}
 
 /** Reference bytes for a provider request. A local-edit source is sent exactly as stored. */
 export function providerReferenceBytes(
