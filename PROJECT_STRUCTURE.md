@@ -23,6 +23,8 @@
 | docs/design | 规范仍在引用的品牌素材 |
 | .agents/skills | 锁定来源的团队技能快照 |
 
+生图接口在 `apps/api/src/features/images/routes.ts` 统一注册会话、鉴权中间件和错误处理。任务、素材、规划、事件、模型和钱包由各自的路由模块注册到同一个 Hono 实例，业务服务和持久化仍在各自的层中。
+
 ## 前端功能目录
 
 ```text

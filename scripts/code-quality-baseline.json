@@ -9,45 +9,6 @@
   "apps/api/scripts/check-image-events-integration.ts": {
     "noEmptyBlockStatements": 1
   },
-  "apps/api/src/app.ts": {
-    "noEmptyBlockStatements": 1,
-    "noExcessiveCognitiveComplexity": 1,
-    "noExcessiveLinesPerFunction": 1,
-    "noNestedTernary": 1
-  },
-  "apps/api/src/features/images/events.ts": {
-    "noExcessiveCognitiveComplexity": 1
-  },
-  "apps/api/src/features/images/prompt-optimization.ts": {
-    "noExcessiveCognitiveComplexity": 1
-  },
-  "apps/api/src/features/images/provider-retry-service.ts": {
-    "noExcessiveCognitiveComplexity": 1,
-    "noNestedTernary": 1
-  },
-  "apps/api/src/features/images/routes.ts": {
-    "lines": 706,
-    "noEmptyBlockStatements": 1,
-    "noExcessiveCognitiveComplexity": 5,
-    "noExcessiveLinesPerFunction": 1,
-    "noNestedTernary": 8
-  },
-  "apps/api/src/features/images/variation-service.ts": {
-    "noExcessiveCognitiveComplexity": 1,
-    "noNestedTernary": 1
-  },
-  "apps/api/src/features/videos/routes.ts": {
-    "noExcessiveCognitiveComplexity": 1
-  },
-  "apps/api/src/features/videos/service.ts": {
-    "noEmptyBlockStatements": 1
-  },
-  "apps/api/src/index.ts": {
-    "noNestedTernary": 5
-  },
-  "apps/api/src/request-diagnostics.ts": {
-    "noNestedTernary": 1
-  },
   "apps/web/src/app/studio-shell.tsx": {
     "noExcessiveCognitiveComplexity": 1,
     "noNestedTernary": 3

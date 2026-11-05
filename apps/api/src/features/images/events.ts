@@ -89,6 +89,32 @@ export async function imageEventStream(
           }
         return true;
       };
+      const isActive = () => !stopped && !stream.aborted && !feed.isClosed();
+      async function waitForWake() {
+        await new Promise<void>((resolve) => {
+          wake = resolve;
+          timer = setTimeout(resolve, heartbeatMs);
+          if (dirty || stopped) resolve();
+        });
+        clearTimeout(timer);
+        wake = undefined;
+      }
+      async function heartbeat() {
+        if (!isActive() || Date.now() - started >= (options.maxAgeMs ?? 10 * 60 * 1000)) {
+          return false;
+        }
+        if (Date.now() - lastAuthCheck >= 60000 && !(await authorized())) return false;
+        if (!dirty) await stream.writeSSE({ event: "heartbeat", data: "{}" });
+        return true;
+      }
+      async function nextCycle() {
+        if (dirty) {
+          dirty = false;
+          return flush();
+        }
+        await waitForWake();
+        return heartbeat();
+      }
       try {
         const latest = await feed.latest(scope);
         if (cursor === "0" || BigInt(cursor) > BigInt(latest)) cursor = latest;
@@ -96,23 +122,8 @@ export async function imageEventStream(
         // Always calibrate current state: cursors can be older than retention or a restored database.
         await stream.writeSSE({ event: "ready", id: cursor, data: "{}", retry: 3000 });
         calibrated = true;
-        while (!stopped && !stream.aborted && !feed.isClosed()) {
-          if (dirty) {
-            dirty = false;
-            if (!(await flush())) break;
-            continue;
-          }
-          await new Promise<void>((resolve) => {
-            wake = resolve;
-            timer = setTimeout(resolve, heartbeatMs);
-            if (dirty || stopped) resolve();
-          });
-          clearTimeout(timer);
-          wake = undefined;
-          if (stopped || stream.aborted || feed.isClosed()) break;
-          if (Date.now() - started >= (options.maxAgeMs ?? 10 * 60 * 1000)) break;
-          if (Date.now() - lastAuthCheck >= 60000 && !(await authorized())) break;
-          if (!dirty) await stream.writeSSE({ event: "heartbeat", data: "{}" });
+        while (isActive()) {
+          if (!(await nextCycle())) break;
         }
       } finally {
         cleanup();

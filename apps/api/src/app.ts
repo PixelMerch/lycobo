@@ -5,7 +5,7 @@ import {
   type CreateTaskInput,
   createTaskSchema,
 } from "@lycoboai/contracts";
-import { Hono } from "hono";
+import { type Context, Hono, type MiddlewareHandler } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
 import { secureHeaders } from "hono/secure-headers";
@@ -31,15 +31,54 @@ type ErrorReporter = (event: {
   businessCode: string;
 }) => void;
 
-export function createApp(
-  reportError: ErrorReporter = () => {},
-  images?: ImageApiDependencies,
-  auth?: EnterpriseAuth,
-  webhook?: WebhookConfig,
-  videos?: VideoApiDependencies,
+function reportRequestFailure(
+  c: Context<ApiEnv>,
+  startedAt: number,
+  symbol: string,
+  reportError: ErrorReporter | undefined,
 ) {
-  const app = new Hono<ApiEnv>();
-  app.use("*", async (c, next) => {
+  const shouldReport =
+    c.res.status >= 500 || (c.res.status >= 400 && !["GET", "HEAD"].includes(c.req.method));
+  if (!reportError || !shouldReport) return;
+  const category = c.get("failure");
+  reportError({
+    event: "API_REQUEST_FAILED",
+    requestId: c.get("requestId"),
+    name: category?.name ?? "BusinessError",
+    ...(category?.errorCode ? { errorCode: category.errorCode } : {}),
+    method: c.req.method,
+    path: safeRequestPath(c.req.raw),
+    status: c.res.status,
+    durationMs: Date.now() - startedAt,
+    businessCode: mappedCode(symbol),
+  });
+}
+
+async function jsonEnvelope(
+  c: Context<ApiEnv>,
+  startedAt: number,
+  reportError: ErrorReporter | undefined,
+) {
+  const payload: unknown = await c.res.json();
+  const success = c.res.status >= 200 && c.res.status < 300;
+  const failure = z
+    .object({ error: z.object({ code: z.string(), message: z.string() }) })
+    .safeParse(payload);
+  const symbol = failure.success ? failure.data.error.code : "INTERNAL_ERROR";
+  reportRequestFailure(c, startedAt, symbol, reportError);
+  const failureMessage = failure.success ? failure.data.error.message : "服务暂时不可用";
+  const mapped = Object.entries(businessCodes).find(([name]) => name === symbol)?.[1];
+  return {
+    request_id: c.get("requestId"),
+    code: success ? 0 : (mapped ?? businessCodes.INTERNAL_ERROR),
+    message: success ? "成功" : failureMessage,
+    data: success ? (payload ?? {}) : {},
+    error: success ? {} : { code: symbol },
+  };
+}
+
+function responseEnvelope(reportError: ErrorReporter | undefined): MiddlewareHandler<ApiEnv> {
+  return async (c, next) => {
     const startedAt = Date.now();
     c.set("requestId", crypto.randomUUID());
     c.header("X-Request-Id", c.get("requestId"));
@@ -47,75 +86,49 @@ export function createApp(
     await next();
     if (c.req.method === "HEAD" || !c.res.headers.get("Content-Type")?.includes("application/json"))
       return;
-    const payload: unknown = await c.res.json();
-    const success = c.res.status >= 200 && c.res.status < 300;
-    const failure = z
-      .object({ error: z.object({ code: z.string(), message: z.string() }) })
-      .safeParse(payload);
-    const symbol = failure.success ? failure.data.error.code : "INTERNAL_ERROR";
-    if (c.res.status >= 500 || (c.res.status >= 400 && !["GET", "HEAD"].includes(c.req.method))) {
-      const category = c.get("failure");
-      reportError({
-        event: "API_REQUEST_FAILED",
-        requestId: c.get("requestId"),
-        name: category?.name ?? "BusinessError",
-        ...(category?.errorCode ? { errorCode: category.errorCode } : {}),
-        method: c.req.method,
-        path: safeRequestPath(c.req.raw),
-        status: c.res.status,
-        durationMs: Date.now() - startedAt,
-        businessCode: mappedCode(symbol),
-      });
-    }
-    const mapped = Object.entries(businessCodes).find(([name]) => name === symbol)?.[1];
-    const envelope = {
-      request_id: c.get("requestId"),
-      code: success ? 0 : (mapped ?? businessCodes.INTERNAL_ERROR),
-      message: success ? "成功" : failure.success ? failure.data.error.message : "服务暂时不可用",
-      data: success ? (payload ?? {}) : {},
-      error: success ? {} : { code: symbol },
-    };
+    const envelope = await jsonEnvelope(c, startedAt, reportError);
     const headers = new Headers(c.res.headers);
     headers.delete("Content-Length");
     headers.delete("ETag");
     c.res = new Response(JSON.stringify(envelope), { status: c.res.status, headers });
-  });
-  app.use("*", secureHeaders());
-  app.use(
-    "/api/*",
-    bodyLimit({
-      maxSize: 11 * 1024 * 1024,
-      onError: (c) =>
-        c.json(
-          {
-            error: {
-              code: "PAYLOAD_TOO_LARGE",
-              message: "请求内容过大",
-              requestId: c.get("requestId"),
-            },
+  };
+}
+
+function requestSizeLimit(maxSize: number) {
+  return bodyLimit({
+    maxSize,
+    onError: (c) =>
+      c.json(
+        {
+          error: {
+            code: "PAYLOAD_TOO_LARGE",
+            message: "请求内容过大",
+            requestId: c.get("requestId"),
           },
-          413,
-        ),
-    }),
-  );
+        },
+        413,
+      ),
+  });
+}
+
+export function createApp(
+  reportError?: ErrorReporter,
+  images?: ImageApiDependencies,
+  auth?: EnterpriseAuth,
+  webhook?: WebhookConfig,
+  videos?: VideoApiDependencies,
+) {
+  const app = new Hono<ApiEnv>();
+  app.use("*", responseEnvelope(reportError));
+  app.use("*", secureHeaders());
+  app.use("/api/*", requestSizeLimit(11 * 1024 * 1024));
   app.use("/api/*", async (c, next) => {
-    if (c.req.path !== "/api/v1/image-assets") {
-      return bodyLimit({
-        maxSize: (c.req.path === "/api/v1/video-storyboards" ? 64 : 32) * 1024,
-        onError: (ctx) =>
-          ctx.json(
-            {
-              error: {
-                code: "PAYLOAD_TOO_LARGE",
-                message: "请求内容过大",
-                requestId: c.get("requestId"),
-              },
-            },
-            413,
-          ),
-      })(c, next);
+    if (c.req.path === "/api/v1/image-assets") {
+      await next();
+      return;
     }
-    await next();
+    const limit = (c.req.path === "/api/v1/video-storyboards" ? 64 : 32) * 1024;
+    return requestSizeLimit(limit)(c, next);
   });
   app.route("/api/v1/auth", authRoutes(auth));
   app.route("/api/v1", videoRoutes(videos, auth));
