@@ -122,6 +122,7 @@ export async function main(event?: unknown) {
           overrides: policy.overrides,
           editsEnabled: policy.editsEnabled,
           deliverReference,
+          requireMainImageReferenceUrls: true,
           onDeferred,
         }),
     });

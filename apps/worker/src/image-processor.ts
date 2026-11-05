@@ -1,4 +1,4 @@
-import { imageOutputDimensions } from "@lycoboai/contracts";
+import { type ImageGenerationInput, imageOutputDimensions } from "@lycoboai/contracts";
 import type { ImageRuntimeRepository } from "@lycoboai/db";
 import {
   type CapabilityOverrides,
@@ -12,7 +12,7 @@ import {
 import type { ImageStore } from "@lycoboai/storage";
 import type { DeliverProviderReference } from "./cloudbase-image-references";
 import { processConfiguredImage } from "./configured-image-processor";
-import { readProviderReferences } from "./provider-references";
+import { mainImageHasReferences, readProviderReferences } from "./provider-references";
 
 export type ImageProcessorDependencies = {
   repository: ImageRuntimeRepository;
@@ -25,8 +25,17 @@ export type ImageProcessorDependencies = {
   standaloneKey?: string | undefined;
   request?: typeof fetch;
   deliverReference?: DeliverProviderReference;
+  requireMainImageReferenceUrls?: boolean;
   onDeferred?: ((delayMs: number) => void) | undefined;
 };
+
+function legacyProvider(input: ImageGenerationInput, deps: ImageProcessorDependencies) {
+  if (deps.requireMainImageReferenceUrls && mainImageHasReferences(input))
+    throw new VakvError("PROVIDER_REFERENCE_URL_REQUIRED", false);
+  if (!deps.provider?.key) throw new VakvError("MODEL_CHANNEL_NOT_CONFIGURED", false);
+  return deps.provider;
+}
+
 export async function processImageItem(itemId: string, deps: ImageProcessorDependencies) {
   const started = performance.now();
   const timing = (stage: string, since: number) =>
@@ -44,7 +53,7 @@ export async function processImageItem(itemId: string, deps: ImageProcessorDepen
   if (job.configuredProvider) return processConfiguredImage(job, deps);
   let submitted = false;
   try {
-    if (!deps.provider?.key) throw new VakvError("MODEL_CHANNEL_NOT_CONFIGURED", false);
+    const provider = legacyProvider(job.input, deps);
     validateModelInput(job.input, deps.overrides, deps.editsEnabled);
     const referencesStarted = performance.now();
     const references = await readProviderReferences(job, deps.repository, deps.store);
@@ -53,7 +62,7 @@ export async function processImageItem(itemId: string, deps: ImageProcessorDepen
     const result = await generateVakvImage(
       textileItemInput(job.input, job.position),
       references,
-      deps.provider,
+      provider,
       job.itemId,
       deps.request,
       job.providerModel,
