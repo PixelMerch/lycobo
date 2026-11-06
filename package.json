@@ -35,7 +35,8 @@
     "test:cloudflare": "node scripts/check-cloudflare-runtime.mjs",
     "cf:build:web": "wrangler deploy --config wrangler.jsonc --dry-run --outdir dist-cloudflare/web",
     "cf:build:images": "wrangler deploy --config wrangler.images.jsonc --dry-run --outdir dist-cloudflare/images",
-    "dev:cloudflare:images": "wrangler dev --config wrangler.images.jsonc"
+    "dev:cloudflare:images": "wrangler dev --config wrangler.images.jsonc",
+    "cf:check:config": "node --env-file-if-exists=.env.cloudflare scripts/check-cloudflare-config.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",

@@ -154,3 +154,5 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 独立图片 Worker 的部署边界由 `scripts/cloudflare-deployment.test.mjs` 验证：主站没有 Queue/Cron handler，消费者没有 HTTP handler，复用同一持久队列、R2、Hyperdrive 和接管时间，两个配置均关闭付费执行且消费者不持有 JWT。`pnpm cf:build` 分别打包两个配置。
 
 Webhook 与无回调兼容：`scripts/cloudflare-webhook.test.mjs` 验证 Workers API 挂载来源指纹和签名配置，生成关闭时仍可接收已存在任务的通知；`cloudflare-consumer.test.mjs` 验证无回调延迟查询、丢失回调 60 秒兜底和提前回调 2 秒核查。已有 provider/outbox 和隔离集成继续验证查询原任务不再次提交付费生成。配置变更不等于真实付费生成验收。
+
+`pnpm cf:check:config` 是授权部署后的只读外部校验，不进入无凭据的默认 CI。`cloudflare-config.test.mjs` 覆盖活动版本正确但控制台草稿过期、仓库与活动版本不一致、Secret 名称缺失及完全一致的场景。
