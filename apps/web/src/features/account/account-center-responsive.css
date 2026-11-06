@@ -1,12 +1,4 @@
 /* ---------- narrow screens ---------- */
-@media (max-width: 1023px) {
-  .account-overview {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .account-info-rows {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
 @media (max-width: 767px) {
   .account-dialog.account-center-dialog.modal__dialog {
     --account-center-padding: var(--space-4);
@@ -24,20 +16,7 @@
     gap: 20px;
   }
   .account-profile-card {
-    padding: var(--space-4);
-  }
-  .account-profile-dot {
-    display: none;
-  }
-  .account-profile-avatar,
-  .account-profile-avatar .avatar__fallback {
-    width: 44px;
-    min-width: 44px;
-    height: 44px;
-    font-size: var(--text-lg);
-  }
-  .account-profile-action.button {
-    display: none;
+    padding: 10px 12px;
   }
   .account-copy.button {
     width: 44px;
@@ -48,18 +27,6 @@
   }
   .account-center-tabs .tabs__tab {
     min-height: 44px;
-  }
-  .account-card,
-  .account-recent,
-  .account-works {
-    padding: var(--space-4);
-  }
-  .account-card-actions .button {
-    flex: 1;
-    min-height: 44px;
-  }
-  .account-facts > span + span::before {
-    content: none;
   }
   .account-toolbar-meta {
     width: 100%;
@@ -147,8 +114,5 @@
   }
   .account-orders-table .table__content {
     min-width: 720px;
-  }
-  .account-info-rows {
-    grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -130,7 +130,7 @@ test("credit preview opens only on press, shares reads and supports keyboard", a
   await preview.screenshot({ path: "/tmp/lycobo-redesign-credit-preview.png" });
   await preview.getByRole("button", { name: "全部明细" }).click();
   // The full ledger opens in the account center dialog and reuses the preview's read.
-  const center = page.getByRole("dialog", { name: "个人中心", exact: true });
+  const center = page.getByRole("dialog", { name: "积分与账单", exact: true });
   await expect(center.getByText("暂无收支记录", { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/create$/);
   expect(ledgerResponses).toBe(1);

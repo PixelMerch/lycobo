@@ -45,8 +45,10 @@ export async function secureSupabase(url) {
       }
       const functions = await tx`select p.oid::regprocedure::text as signature from pg_proc p
         join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'
-        and p.oid in (to_regprocedure('public.allocate_public_identifier(text)'),
-          to_regprocedure('public.prevent_wallet_entry_mutation()'), to_regprocedure('public.validate_wallet_entry_scope()'))`;
+        and p.proname in ('allocate_public_identifier', 'prevent_wallet_entry_mutation',
+          'validate_wallet_entry_scope', 'lycobo_prompt_optimization',
+          'lycobo_provider_webhook', 'lycobo_video_operation')
+        and not exists (select 1 from pg_depend d where d.objid=p.oid and d.deptype='e')`;
       for (const fn of functions) {
         await tx.unsafe(`REVOKE EXECUTE ON FUNCTION ${fn.signature} FROM ${grantees}`);
       }

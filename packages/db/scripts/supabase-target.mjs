@@ -1,3 +1,11 @@
+function matchesProjectAddress(url, project) {
+  const direct = url.hostname === `db.${project}.supabase.co` && url.username === "postgres";
+  const sessionPooler =
+    /^aws-[0-9]+-[a-z]+-[a-z]+-[0-9]+\.pooler\.supabase\.com$/.test(url.hostname) &&
+    url.username === `postgres.${project}`;
+  return direct || sessionPooler;
+}
+
 /** Validate the explicit migration target without exposing credentials in errors. */
 export function supabaseMigrationTarget(env) {
   const project = env.SUPABASE_PROJECT_REF;
@@ -12,13 +20,14 @@ export function supabaseMigrationTarget(env) {
   }
   if (
     !["postgres:", "postgresql:"].includes(url.protocol) ||
-    url.hostname !== `db.${project}.supabase.co` ||
+    !matchesProjectAddress(url, project) ||
     (url.port && url.port !== "5432") ||
     url.pathname !== "/postgres" ||
-    url.username !== "postgres" ||
     url.hash
   ) {
-    throw new Error("迁移目标须为 SUPABASE_PROJECT_REF 对应项目的 PostgreSQL 5432 直连地址。");
+    throw new Error(
+      "迁移目标须为 SUPABASE_PROJECT_REF 对应项目的 5432 直连或 Session Pooler 地址。",
+    );
   }
   let password;
   try {

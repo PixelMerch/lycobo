@@ -60,7 +60,7 @@ test("enterprise account shows shared balance, member spending and recharge reco
   await page.locator(".account-trigger").click();
   await page.getByRole("menuitem", { name: "积分明细", exact: true }).click();
   // The ledger opens in the account center dialog above the current page.
-  const center = page.getByRole("dialog", { name: "个人中心", exact: true });
+  const center = page.getByRole("dialog", { name: "积分与账单", exact: true });
   await expect(center.getByRole("tab", { name: "积分明细", exact: true })).toHaveAttribute(
     "aria-selected",
     "true",
@@ -81,9 +81,6 @@ test("enterprise account shows shared balance, member spending and recharge reco
   await expect(order).toContainText("¥10.00");
   // Unknown provider codes are shown as recorded instead of being renamed.
   await expect(order).toContainText("fixture");
-  await center.getByRole("tab", { name: "概览", exact: true }).click();
-  await expect(center.getByRole("button", { name: "充值积分", exact: true })).toBeEnabled();
-  await expect(center.getByRole("button", { name: /查看会员方案/ })).toBeEnabled();
   await page.setViewportSize({ width: 320, height: 760 });
   await center.getByRole("tab", { name: "积分明细", exact: true }).click();
   await page.screenshot({ path: "/tmp/lycobo-account-ledger-mobile.png" });
@@ -115,7 +112,7 @@ test("billing failures stay unknown and retry real reads", async ({ page }) => {
   await page.goto("/create");
   await page.locator(".account-trigger").click();
   await page.getByRole("menuitem", { name: "积分明细", exact: true }).click();
-  const center = page.getByRole("dialog", { name: "个人中心", exact: true });
+  const center = page.getByRole("dialog", { name: "积分与账单", exact: true });
   const ledger = center.getByRole("region", { name: "积分明细", exact: true });
   await expect(ledger.locator(".account-toolbar-meta")).toContainText("当前可用 — 积分");
   await expect(ledger.getByText("收支记录暂时不可用", { exact: true })).toBeVisible();
@@ -123,6 +120,4 @@ test("billing failures stay unknown and retry real reads", async ({ page }) => {
   const initialReads = reads;
   await ledger.getByRole("button", { name: "重新加载收支", exact: true }).click();
   await expect.poll(() => reads).toBeGreaterThan(initialReads);
-  await center.getByRole("tab", { name: "概览", exact: true }).click();
-  await expect(center.locator(".account-balance")).toHaveText("—");
 });

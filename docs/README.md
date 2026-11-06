@@ -18,6 +18,7 @@
 | 主题                 | 文档                                                                     |
 | -------------------- | ------------------------------------------------------------------------ |
 | 账号与权限           | [企业鉴权](enterprise-auth.md)                                           |
+| 账号设置待开发任务   | [账号设置功能任务书](account-settings-tasks.md)                          |
 | 积分与会员           | [共享钱包](enterprise-wallet.md) · [会员定价](membership-pricing.md)     |
 | 图片生成与供应商配置 | [生图 API](image-generation-api.md) · [模型服务](model-services.md)      |
 | 图片回调             | [图片 Webhook](image-webhooks.md)                                        |
@@ -32,6 +33,7 @@
 | 主题                             | 文档                                         |
 | -------------------------------- | -------------------------------------------- |
 | 本地数据库导出与恢复             | [数据库备份](database-backup.md)             |
+| 国内内测与海外环境、数据库复制   | [双环境部署与迁移](overseas-deployment.md)   |
 | 本地 S3、COS 与私有存储边界      | [对象存储](s3-storage.md)                    |
 | 迁移结果、仍有效的约束与私有证据 | [CloudBase 迁移记录](cloudbase-migration.md) |
 

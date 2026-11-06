@@ -1,28 +1,20 @@
 name: Release
-run-name: Release ${{ inputs.version || github.event.workflow_run.head_sha || github.ref_name }}
+run-name: Release ${{ inputs.version }}
 on:
-  workflow_run:
-    workflows: [CI]
-    branches: [main]
-    types: [completed]
   workflow_dispatch:
     inputs:
       version:
-        description: "版本号（例如 v0.4.1；日常合并由 CI 自动分配）"
+        description: "手动指定版本号（例如 v0.4.18）"
         required: true
         type: string
-  push:
-    tags: ["v*"]
 permissions:
   contents: read
 concurrency:
-  group: release-${{ github.event.workflow_run.head_sha || github.sha }}
+  group: release-${{ github.sha }}
   cancel-in-progress: false
 jobs:
   release:
-    if: >-
-      github.event_name != 'workflow_run' ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository)
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -31,11 +23,11 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      RELEASE_VERSION: ${{ inputs.version || github.ref_name }}
+      RELEASE_VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -43,20 +35,17 @@ jobs:
           node-version-file: .node-version
       - name: Validate version, main ancestry and successful CI
         env:
-          EVENT_NAME: ${{ github.event_name }}
           EVENT_REF: ${{ github.ref }}
         run: |
           set -euo pipefail
-          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$EVENT_REF" != "refs/heads/main" ]; then
+          if [ "$EVENT_REF" != "refs/heads/main" ]; then
             echo "Release must be dispatched from main" >&2
             exit 1
           fi
           RELEASE_SHA="$(git rev-parse HEAD)"
           git merge-base --is-ancestor "$RELEASE_SHA" origin/main
-          if [ "$EVENT_NAME" != "workflow_run" ]; then
-            node --input-type=module -e 'import {validateVersion} from "./scripts/release-notes.mjs"; validateVersion(process.env.RELEASE_VERSION)'
-          fi
-          if [ "$EVENT_NAME" != "workflow_run" ] && git show-ref --verify --quiet "refs/tags/$RELEASE_VERSION"; then
+          node --input-type=module -e 'import {validateVersion} from "./scripts/release-notes.mjs"; validateVersion(process.env.RELEASE_VERSION)'
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_VERSION"; then
             test "$(git rev-parse "refs/tags/$RELEASE_VERSION^{commit}")" = "$RELEASE_SHA"
           fi
           CI_RESULT="$(gh run list --workflow ci.yml --commit "$RELEASE_SHA" --branch main --event push --limit 1 --json conclusion --jq '.[0].conclusion // ""')"
@@ -65,9 +54,6 @@ jobs:
             exit 1
           fi
           printf 'RELEASE_SHA=%s\n' "$RELEASE_SHA" >> "$GITHUB_ENV"
-      - name: Allocate automatic patch version
-        if: github.event_name == 'workflow_run'
-        run: node scripts/release-version.mjs
       - name: Generate changelog, authors and file changes
         run: node scripts/release-notes.mjs --sha "$RELEASE_SHA" --output "$RUNNER_TEMP/lycobo-release"
       - name: Publish GitHub Release

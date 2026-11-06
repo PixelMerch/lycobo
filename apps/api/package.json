@@ -11,6 +11,7 @@
     "images:provision": "node --env-file-if-exists=../../.env --import tsx scripts/provision-images.ts",
     "images:setup": "node --env-file-if-exists=../../.env --import tsx scripts/setup-workbench.ts",
     "auth:account": "node --env-file-if-exists=../../.env --import tsx scripts/enterprise-account.ts",
+    "storage:migrate": "node --import tsx scripts/migrate-storage.ts",
     "test:auth": "node --env-file-if-exists=../../.env --import tsx scripts/check-auth-integration.ts",
     "test:events": "node --env-file-if-exists=../../.env --import tsx scripts/check-image-events-integration.ts",
     "test:cloudbase-images": "node --import tsx scripts/check-cloudbase-images.ts"

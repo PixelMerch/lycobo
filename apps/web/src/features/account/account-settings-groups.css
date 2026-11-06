@@ -1,0 +1,186 @@
+/* Grouped settings cards: one light glass card per group, hairline rows inside. */
+.settings-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--glass-card-edge);
+  border-radius: 20px;
+  background: radial-gradient(120% 140% at 0% 0%, #a8ff0014 0%, transparent 55%), var(--glass-card);
+}
+.settings-hero-avatar,
+.settings-hero-avatar .avatar__fallback {
+  flex: none;
+  width: 64px;
+  min-width: 64px;
+  height: 64px;
+  background: #ffffff0f;
+  color: #fff;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+}
+.settings-hero-avatar {
+  box-shadow: 0 0 0 1px #ffffff1f;
+}
+.settings-hero-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.settings-hero-main > strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-xl);
+  line-height: var(--leading-xl);
+  font-weight: var(--weight-semibold);
+}
+.settings-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) 10px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-variant-numeric: tabular-nums;
+}
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.settings-group-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0 4px;
+}
+.settings-group-header h3 {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
+}
+.settings-group-header p {
+  margin: 2px 0 0;
+  color: #ffffff73;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+.settings-group-body {
+  overflow: hidden;
+  border: 1px solid var(--glass-card-edge);
+  border-radius: 16px;
+  background: var(--glass-card);
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 56px;
+  padding: 10px var(--space-4);
+}
+.settings-row + .settings-row {
+  border-top: 1px solid var(--glass-card-edge);
+}
+.settings-row-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.settings-row-label {
+  color: var(--foreground);
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+}
+.settings-row-hint {
+  color: #ffffff73;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+.settings-row-value {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-row-action {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+.settings-row-icon.button {
+  color: var(--muted);
+}
+.settings-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.settings-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffffff4d;
+}
+.settings-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 40px var(--space-4);
+  text-align: center;
+}
+.settings-empty-mark {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--space-1);
+  border-radius: 16px;
+  background: #ffffff0f;
+  color: var(--muted);
+}
+.settings-empty strong {
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-medium);
+}
+.settings-empty p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+@media (max-width: 767px) {
+  .settings-hero {
+    padding: var(--space-4);
+  }
+  .settings-hero-avatar,
+  .settings-hero-avatar .avatar__fallback {
+    width: 52px;
+    min-width: 52px;
+    height: 52px;
+  }
+  .settings-row {
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    padding: 10px var(--space-3);
+  }
+  .settings-row-icon.button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    margin-block: -10px;
+  }
+}

@@ -17,9 +17,9 @@ body:has(.commerce-home)::-webkit-scrollbar {
 /* Approved commerce homepage composition; sizes inherit DESIGN.md tokens. */
 .commerce-home.page-panel {
   /* Dark glass over the image wall: a top-lit sheen on a translucent canvas tint. */
-  --home-glass-tint: rgb(15 15 18 / 42%);
-  --home-glass-fill: linear-gradient(180deg, #ffffff14 0%, #ffffff08 40%, #ffffff05 100%);
-  --home-glass-edge: #ffffff1f;
+  --home-glass-tint: var(--glass-tint);
+  --home-glass-fill: var(--glass-fill);
+  --home-glass-edge: var(--glass-edge);
   max-width: 1840px;
   border: 0;
   background: transparent;

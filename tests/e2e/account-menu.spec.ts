@@ -86,9 +86,9 @@ for (const width of [1440, 320]) {
       "充值积分",
       "积分明细",
       /会员\s*未开通\s*查看方案/,
-      "个人中心",
+      "积分与账单",
       "个人作品",
-      "账号与安全",
+      "设置",
       "退出登录",
     ]);
     await expect(page.locator(".account-menu-name")).toHaveText(account);
@@ -124,7 +124,7 @@ for (const width of [1440, 320]) {
     // HeroUI focuses the menu container and the hovered row for assistive tech.
     // Neither may paint the global purple ring around the list or the row.
     await expect(popover.locator(".dropdown__menu")).toHaveCSS("outline-style", "none");
-    const hovered = menu.getByRole("menuitem", { name: "个人中心", exact: true });
+    const hovered = menu.getByRole("menuitem", { name: "积分与账单", exact: true });
     await hovered.hover();
     await expect(hovered).toHaveCSS("outline-style", "none");
     await page.keyboard.press("Escape");
@@ -151,20 +151,21 @@ for (const width of [1440, 320]) {
     // The account center opens above the current page (and above the phone drawer, like
     // recharge); closing it returns focus to the account row and keeps the creative draft.
     await trigger.click();
-    await menu.getByRole("menuitem", { name: "账号与安全", exact: true }).click();
-    const center = page.getByRole("dialog", { name: "个人中心", exact: true });
-    await expect(center.getByRole("tab", { name: "账号与安全", selected: true })).toBeVisible();
-    await expect(center.locator(".account-management-summary")).toContainText("UID 0123456789");
+    await menu.getByRole("menuitem", { name: "设置", exact: true }).click();
+    const settings = page.getByRole("dialog", { name: "设置", exact: true });
+    await expect(settings.getByRole("tab", { name: "个人资料", selected: true })).toBeVisible();
+    await expect(settings.locator(".settings-hero-meta")).toContainText("UID 0123456789");
     await expect(page).toHaveURL(/\/create$/);
-    const centerClose = center.getByRole("button", { name: "关闭个人中心" });
+    const centerClose = settings.getByRole("button", { name: "关闭设置" });
     await expect(centerClose).toHaveCSS("width", "44px");
     await centerClose.click();
-    await expect(center).toHaveCount(0);
+    await expect(settings).toHaveCount(0);
     await expect(trigger).toBeFocused();
     await expect(draft).toHaveValue("保留正在准备的商品图");
     await trigger.click();
-    await menu.getByRole("menuitem", { name: "个人中心", exact: true }).click();
-    await expect(center.getByRole("tab", { name: "概览", selected: true })).toBeVisible();
+    await menu.getByRole("menuitem", { name: "积分与账单", exact: true }).click();
+    const center = page.getByRole("dialog", { name: "积分与账单", exact: true });
+    await expect(center.getByRole("tab", { name: "积分明细", selected: true })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(center).toHaveCount(0);
     await expect(trigger).toBeFocused();
@@ -215,11 +216,11 @@ test.describe("touch", () => {
     const menu = page.getByRole("menu", { name: "账户菜单：touch-fixture", exact: true });
     await expect(menu).toBeVisible();
     await expect(page.locator(".account-menu")).not.toHaveAttribute("data-entering", "true");
-    const item = menu.getByRole("menuitem", { name: "个人中心", exact: true });
+    const item = menu.getByRole("menuitem", { name: "积分与账单", exact: true });
     const box = await item.boundingBox();
     if (!box) throw new Error("Missing account menu row");
     await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
-    await expect(page.getByRole("dialog", { name: "个人中心", exact: true })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "积分与账单", exact: true })).toBeVisible();
     await expect(page).toHaveURL(/\/create$/);
   });
 });

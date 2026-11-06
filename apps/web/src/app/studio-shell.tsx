@@ -137,7 +137,7 @@ export function StudioShell() {
         )}
       </main>
       {signedIn && <SignedInEvents />}
-      {signedIn && <AccountOverlayHost onNavigate={() => setMenuOpen(false)} />}
+      {signedIn && <AccountOverlayHost />}
       {(loginRequested || (routeNeedsLogin && !session.isPending)) && (
         <LoginDialog
           onClose={() => {
