@@ -7,8 +7,8 @@
 - This is React/Vite on Cloudflare Workers Static Assets, Hono Workers APIs, Cloudflare Queue consumers, private R2 and existing PostgreSQL through Hyperdrive. Production no longer supports CloudBase. Node entrypoints are for isolated local development only; video is not enabled in the Workers runtime.
 - Distinguish implemented functionality, fixtures, UI references and future contracts.
   Never fabricate completed generation, uploaded files, persistence, users, credits or notifications.
-- Keep product UI in Simplified Chinese. Keep identifiers in English. Team documentation is Chinese;
-  this compact agent entrypoint uses English for interoperability.
+- Keep product UI and code comments in Simplified Chinese. Keep identifiers in English. Team
+  documentation is Chinese; this compact agent entrypoint uses English for interoperability.
 - Inspect installed versions and official APIs before using framework features. Pin direct dependencies.
 
 ## Skills
@@ -73,8 +73,13 @@ Read relevant project skills before work:
 ## Code quality
 
 - Most code here is agent-written and the owner is learning TypeScript, Node and React from it.
-  Write plain, idiomatic code a beginner can follow: descriptive names, early returns, one job per
-  function and a short comment where the reason is not obvious. Prefer that over clever abstractions.
+  Write plain, idiomatic code a beginner can follow: descriptive names, early returns and one job
+  per function. Prefer that over clever abstractions.
+- Code must carry concise Simplified Chinese comments. New or changed exported functions, classes
+  and React components get a one-line `/** */` purpose comment; non-obvious logic and billing,
+  idempotency, permission, retry and timeout rules get a short reason. Never restate the code.
+  Convert comments in code you touch; do not bulk-translate unrelated files. Exceptions and
+  examples are in docs/node-ts-best-practices.md.
 - pnpm lint fails on any Biome warning and runs scripts/check-code-quality.mjs. Limits for new code:
   functions 100 lines, cognitive complexity 15, files 400 lines (CSS 500), no nested ternaries,
   no `as` except `as const`, no non-null assertions, no empty blocks, no unhandled promises,
@@ -87,6 +92,9 @@ Read relevant project skills before work:
 
 ## API, tasks and storage
 
+- Read docs/node-ts-best-practices.md before changing apps/api, apps/worker or packages. It defines
+  code placement, dependency direction and layer duties, and wins over the older module convention
+  in PROJECT_STRUCTURE.md. Do not copy the existing exceptions it lists.
 - Hono routes stay thin; domain services own use cases and repositories own persistence.
   Runtime inputs are unknown until validated. Avoid any, unchecked casts and hidden global clients.
 - Authenticate and scope every business read/write by server-resolved owner/workspace.

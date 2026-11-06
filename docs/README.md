@@ -9,6 +9,7 @@
 | 启动本地环境、配置服务  | [本地开发](development.md) · [技术栈](tech-stack.md)                       |
 | 选择组件、统一界面      | [HeroUI 组件清单](heroui-components.md) · [UI 一致性](ui-consistency.md)   |
 | 代码规则与质量门禁      | [代码质量约束](code-quality.md)                                            |
+| 服务端结构与中文注释    | [Node + TypeScript 最佳实践](node-ts-best-practices.md)                    |
 | 学习 TypeScript 和 Node | [学习文档](learning-path.md)                                               |
 | 验证改动                | [测试说明](testing.md)                                                     |
 | 提交、发布与回滚        | [发布流程](releasing.md) · [Cloudflare 部署准备](cloudflare-deployment.md) |

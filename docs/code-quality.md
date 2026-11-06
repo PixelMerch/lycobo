@@ -63,7 +63,7 @@ TypeScript 使用 strict 模式，并开启 `noUncheckedIndexedAccess`、`exactO
 - 名字要说清是什么：写 `selectedAssetIds`，不写 `data`、`tmp`、`arr`。布尔值用 `is`、`has`、`can` 开头。
 - 先处理异常情况并提前返回，减少嵌套。
 - 一个函数只做一件事，函数名能说清它做什么。
-- 注释写“为什么”，不写“做了什么”。
+- 代码必须有简洁的中文注释，写用途和原因，不复述代码，见[中文注释规范](node-ts-best-practices.md#中文注释)。
 - 优先用直白的写法，不为少写几行用技巧。
 - 外部输入都当作 `unknown`，用 Zod 校验后再用。
 - 服务端数据用 TanStack Query，交互状态用 Zustand，能算出来的值不存 state。
