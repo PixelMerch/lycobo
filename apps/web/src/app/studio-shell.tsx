@@ -10,15 +10,14 @@ import {
 } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
 import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router";
+import { Navigate, Outlet, useLocation } from "react-router";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
 import { AccountMenu, HeaderLogin } from "../features/account/account-menu";
 import { AccountOverlayHost } from "../features/account/account-overlays";
 import { HeaderBenefits } from "../features/account/header-benefits";
 import { useEnterpriseSession } from "../features/auth/auth-client";
-import { LoginDialog } from "../features/auth/login-dialog";
-import { useLoginPrompt } from "../features/auth/login-prompt";
+import { loginHref } from "../features/auth/login-navigation";
 import { useImageEvents } from "../features/generation/use-image-events";
 import { PageLoading } from "./page-loading";
 import "../styles/brand.css";
@@ -27,14 +26,13 @@ export interface StudioShellContext {
   setHomeHeaderOpaque: Dispatch<SetStateAction<boolean>>;
 }
 
+/** 组合应用导航和业务区域，未登录时转往独立登录页面。 */
 export function StudioShell() {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
   const inWorkspace = isWorkspacePath(pathname);
   const session = useEnterpriseSession();
   const signedIn = !!session.data;
-  const navigate = useNavigate();
-  const loginRequested = useLoginPrompt((state) => state.isOpen);
-  const closeLogin = useLoginPrompt((state) => state.close);
   const protectedRoute = pathname !== "/";
   const routeNeedsLogin = protectedRoute && !signedIn;
   const [homeHeaderOpaque, setHomeHeaderOpaque] = useState(false);
@@ -49,6 +47,8 @@ export function StudioShell() {
       onNavigate={() => setMenuOpen(false)}
     />
   );
+  if (routeNeedsLogin && !session.isPending)
+    return <Navigate to={loginHref(`${pathname}${location.search}${location.hash}`)} replace />;
   return (
     <motion.div
       className="studio-app"
@@ -138,15 +138,6 @@ export function StudioShell() {
       </main>
       <RealtimeEvents />
       {signedIn && <AccountOverlayHost />}
-      {(loginRequested || (routeNeedsLogin && !session.isPending)) && (
-        <LoginDialog
-          onClose={() => {
-            closeLogin();
-            if (protectedRoute) void navigate("/", { replace: true });
-          }}
-          onLoginSuccess={closeLogin}
-        />
-      )}
     </motion.div>
   );
 }

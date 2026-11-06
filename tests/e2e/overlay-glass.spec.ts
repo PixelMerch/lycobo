@@ -115,11 +115,11 @@ for (const mobile of [false, true]) {
     await expect(opener).toBeFocused();
   });
 }
-test("login adopts light glass without changing form semantics", async ({ page }) => {
+test("login adopts dark glass without changing form semantics", async ({ page }) => {
   await mockImageApi(page, { signedIn: false });
   await page.goto("/");
   await page.getByRole("button", { name: "登录领积分", exact: true }).click();
   await glass(page.locator(".login-panel"));
-  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.locator(".login-page")).toBeVisible();
   await page.screenshot({ path: "/tmp/lycobo-glass-login.png", animations: "disabled" });
 });

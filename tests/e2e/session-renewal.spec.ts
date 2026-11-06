@@ -66,9 +66,9 @@ test("expired access is renewed once and restores the mounted workspace without 
   await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("自动续期保留的草稿");
   await page.locator(".account-trigger").click();
   await page.getByRole("menuitem", { name: "退出登录", exact: true }).click();
-  await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();
-  await expect(page.getByText("登录后查看生成记录", { exact: true })).toBeVisible();
-  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
+  await expect(page.locator(".login-page")).toBeVisible();
+  await page.getByRole("button", { name: "关闭登录", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "创作需求", exact: true })).toHaveValue(
     "自动续期保留的草稿",
   );
   await page.reload();

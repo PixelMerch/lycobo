@@ -9,7 +9,7 @@ import { AssetBrowser } from "./asset-browser";
 import { type AssetLibraryFilters, defaultAssetFilters } from "./asset-library-client";
 import "./library-dialog.css";
 
-/** 我的素材 only browses generated assets, defaulting to the current tool. */
+/** 我的素材只展示生成素材，默认按当前工具筛选。 */
 export function LibraryDialog({
   tool,
   onClose,
@@ -41,7 +41,6 @@ export function LibraryDialog({
               </Modal.Header>
               <Modal.Body className="library-body">
                 <AssetBrowser
-                  onAuthenticationClose={onClose}
                   generatedOnly
                   filters={filters}
                   defaults={defaults}

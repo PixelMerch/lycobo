@@ -1,21 +1,21 @@
 import type { ReactNode, SyntheticEvent } from "react";
-import { create } from "zustand";
+import { useLocation, useNavigate } from "react-router";
 import { useEnterpriseSession } from "./auth-client";
+import { loginHref } from "./login-navigation";
 
-/** One login request is shared by homepage actions and the application shell. */
-export const useLoginPrompt = create<{
-  isOpen: boolean;
-  open: () => void;
-  close: () => void;
-}>((set) => ({
-  isOpen: false,
-  open: () => set({ isOpen: true }),
-  close: () => set({ isOpen: false }),
-}));
+/** 所有登录入口导航到同一页面，并记录本次操作所在的地址。 */
+export function useOpenLogin() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  return () => {
+    void navigate(loginHref(`${location.pathname}${location.search}${location.hash}`));
+  };
+}
 
+/** 创作交互在未登录时只跳转登录，不修改草稿或读取文件。 */
 export function useRequireLogin() {
   const session = useEnterpriseSession();
-  const open = useLoginPrompt((state) => state.open);
+  const open = useOpenLogin();
   return () => {
     if (session.data) return true;
     open();
@@ -23,7 +23,7 @@ export function useRequireLogin() {
   };
 }
 
-/** Preserve the composer preview while gating pointer, keyboard, paste and file-drop edits. */
+/** 登录前拦截创作区的指针、键盘、粘贴与文件拖入，保留原有草稿。 */
 export function LoginRequiredInteraction({
   children,
   className,
@@ -32,7 +32,7 @@ export function LoginRequiredInteraction({
   className: string;
 }) {
   const session = useEnterpriseSession();
-  const open = useLoginPrompt((state) => state.open);
+  const open = useOpenLogin();
   const block = (event: SyntheticEvent) => {
     if (session.data) return;
     event.preventDefault();

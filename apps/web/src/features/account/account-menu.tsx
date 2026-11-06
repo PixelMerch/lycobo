@@ -14,7 +14,7 @@ import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { useEnterpriseLogout, useEnterpriseSession } from "../auth/auth-client";
-import { useLoginPrompt } from "../auth/login-prompt";
+import { useOpenLogin } from "../auth/login-prompt";
 import { formatCredits, imagesFor, roleLabel } from "./account-format";
 import { useAccountOverlays } from "./account-overlay-store";
 import { AccountUpdates } from "./account-updates";
@@ -22,10 +22,10 @@ import { useWallet } from "./wallet-client";
 import "./account-common.css";
 import "./account-menu.css";
 
-/** Signed out, the header offers login; once signed in the account lives in the navigation. */
+/** 未登录入口前往独立登录页，已登录账户仍保留在侧栏。 */
 export function HeaderLogin() {
   const session = useEnterpriseSession();
-  const openLogin = useLoginPrompt((state) => state.open);
+  const openLogin = useOpenLogin();
   return (
     <>
       {!session.data && (

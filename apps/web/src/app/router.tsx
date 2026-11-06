@@ -11,6 +11,13 @@ import { PageLoading } from "./page-loading";
 
 export const router = createBrowserRouter([
   {
+    path: "/login",
+    HydrateFallback: PageLoading,
+    lazy: async () => ({
+      Component: (await import("../features/auth/login-page")).LoginPage,
+    }),
+  },
+  {
     path: "/chatdraw",
     loader: ({ request }) => redirect(`/commerce/create${new URL(request.url).search}`),
   },

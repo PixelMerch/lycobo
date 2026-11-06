@@ -36,7 +36,7 @@ Read relevant project skills before work:
 - All new and updated overlays (Modal, Drawer, Popover, Dropdown, Tooltip and Toast) use
   the shared frosted-glass material in styles/overlay-glass.css and DESIGN.md. Preserve readable
   contrast, reduced-transparency fallback and native HeroUI focus handling; never add an opaque
-  surface as a local default. The login panel uses the named light-glass variant.
+  surface as a local default. The standalone login page uses the same dark-glass material and swaps its two faces.
   The full-screen membership page is an explicit exception: opaque background, no backdrop blur
   or modal fade/scale transitions.
 - Follow PRD.md for navigation: Home, Workspace, Asset Library. The workspace holds four tools

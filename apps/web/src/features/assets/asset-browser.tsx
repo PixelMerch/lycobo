@@ -12,11 +12,11 @@ import {
   type TablerIcon,
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { Navigate, useLocation } from "react-router";
 import { InfiniteLoad } from "../../components/infinite-load";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
-import { LoginDialog } from "../auth/login-dialog";
+import { loginHref } from "../auth/login-navigation";
 import { ImageApiError, useImageSession } from "../generation/generation-client";
 import { useModelPresentation } from "../generation/models/model-logos";
 import { AssetFilters, assetToolName } from "./asset-filters";
@@ -118,10 +118,7 @@ function Skeleton({ compact }: { compact: boolean }) {
   );
 }
 
-/**
- * 素材库 and 我的素材 share one browser: 生成 / 上传 / 收藏, then 功能 / 类型 / 模型 filters,
- * newest-first day groups and the existing image preview.
- */
+/** 素材库与我的素材共用筛选、分页与预览，认证过期时前往登录页。 */
 export function AssetBrowser({
   filters,
   defaults,
@@ -130,7 +127,6 @@ export function AssetBrowser({
   generatedOnly = false,
   onChange,
   onViewHistory,
-  onAuthenticationClose,
 }: {
   filters: AssetLibraryFilters;
   defaults: AssetLibraryFilters;
@@ -139,9 +135,8 @@ export function AssetBrowser({
   generatedOnly?: boolean;
   onChange: (filters: AssetLibraryFilters) => void;
   onViewHistory?: (() => void) | undefined;
-  onAuthenticationClose?: (() => void) | undefined;
 }) {
-  const navigate = useNavigate();
+  const location = useLocation();
   const [columns, setColumns] = useState(8);
   const session = useImageSession();
   const query = useAssetLibrary(filters);
@@ -151,14 +146,14 @@ export function AssetBrowser({
   const { failure, authenticationRequired } = useAssetStatus(session, query);
   const compact = width > 0 && width < compactWidth;
   const assets = query.data?.pages.flatMap((page) => page.data) ?? [];
-  if (authenticationRequired) {
+  if (authenticationRequired)
     return (
-      <LoginDialog
-        onClose={onAuthenticationClose ?? (() => navigate("/", { replace: true }))}
-        onLoginSuccess={() => void session.refetch()}
+      <Navigate
+        to={`${loginHref(`${location.pathname}${location.search}${location.hash}`)}&reauth=1`}
+        replace
       />
     );
-  }
+
   return (
     <div className="asset-browser" ref={frame}>
       <div className="asset-source-panel">
