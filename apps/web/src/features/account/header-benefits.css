@@ -4,7 +4,10 @@
   min-width: 0;
   padding: 3px;
   border-radius: 999px;
-  background: #242424;
+  background: var(--glass-fill), var(--glass-tint);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }
 .header-benefits .button {
   height: 32px;

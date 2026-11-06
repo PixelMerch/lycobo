@@ -20,6 +20,7 @@ for (const mobile of [false, true]) {
     const draft = page.getByRole("textbox", { name: "创作需求", exact: true });
     await draft.fill("关闭积分概览后保留草稿");
     const balance = page.locator(".header-balance");
+    await glass(page.locator(".header-benefits"));
     await balance.click();
     const panel = page.getByRole("dialog", { name: "积分概览", exact: true });
     await glass(page.locator(".credit-preview-popover"));
@@ -36,6 +37,7 @@ for (const mobile of [false, true]) {
       features: [{ name: "prefers-reduced-transparency", value: "reduce" }],
     });
     await expect(page.locator(".credit-preview-popover")).toHaveCSS("backdrop-filter", "none");
+    await expect(page.locator(".header-benefits")).toHaveCSS("backdrop-filter", "none");
     await page.keyboard.press("Escape");
     await expect(panel).toHaveCount(0);
     await expect(balance).toBeFocused();
