@@ -106,9 +106,9 @@
   caret-color: var(--accent);
 }
 .home-composer .home-prompt .reference-rich-editor.textarea {
-  height: 138px;
+  height: auto;
   min-height: 138px;
-  max-height: 138px;
+  max-height: 360px;
   padding: 10px 12px;
   line-height: 26px;
   overflow-y: auto;

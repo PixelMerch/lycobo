@@ -14,6 +14,7 @@ import { hasPromptDescription } from "../generation/references/prompt-descriptio
 import { ReferencePicker } from "../generation/references/reference-picker";
 import { defaultDraft, useStudioStore } from "../generation/studio-state";
 
+/** 组合首页参考图、可伸展提示词与创作入口，沿用工作台草稿。 */
 export function HomeComposer() {
   const models = useModelPresentation().data?.models ?? [];
   const model = useStudioStore((s) => s.activeModel);
@@ -27,7 +28,7 @@ export function HomeComposer() {
     catalog.error instanceof ImageApiError ? catalog.error.message : "服务暂时不可用，请稍后重试。";
   const catalogError = catalog.isError ? requestError : null;
   useErrorToast(catalogError);
-  const canSubmit = hasPromptDescription(draft.prompt);
+  const canSubmit = hasPromptDescription(draft.prompt) && draft.prompt.length <= 5000;
   return (
     <LoginRequiredInteraction className="home-composer">
       <div className="home-upload">
@@ -35,6 +36,9 @@ export function HomeComposer() {
       </div>
       <ReferencePrompt
         className="home-prompt"
+        maxLength={5000}
+        showCount
+        autoGrow
         isRequired
         value={draft.prompt}
         onChange={(prompt) => updateDraft(model, { prompt })}
