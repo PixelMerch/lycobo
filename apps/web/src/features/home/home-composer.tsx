@@ -1,4 +1,5 @@
 import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { mainImageModelIds } from "@lycoboai/contracts";
 import { IconArrowUp, IconCheck, IconChevronDown } from "@tabler/icons-react";
 import { useNavigate } from "react-router";
 import { ReferencePrompt } from "../../components/reference-prompt";
@@ -16,7 +17,8 @@ import { defaultDraft, useStudioStore } from "../generation/studio-state";
 
 /** 组合首页参考图、可伸展提示词与创作入口，沿用工作台草稿。 */
 export function HomeComposer() {
-  const models = useModelPresentation().data?.models ?? [];
+  const presentation = useModelPresentation().data?.models ?? [];
+  const models = mainImageModelIds.flatMap((id) => presentation.filter((model) => model.id === id));
   const model = useStudioStore((s) => s.activeModel);
   const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
@@ -64,7 +66,7 @@ export function HomeComposer() {
           data-active={canSubmit || undefined}
           isDisabled={!canSubmit}
           aria-label="开始创作"
-          onPress={() => navigate("/create")}
+          onPress={() => navigate("/commerce/create")}
         >
           <UiIcon icon={IconArrowUp} size="action" />
         </Button>

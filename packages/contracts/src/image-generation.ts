@@ -9,6 +9,7 @@ export const imageLimits = {
 } as const;
 
 export const imageModelIds = [
+  "gpt-image-2.6",
   "gpt-image-2.5",
   "gpt-image-2",
   "gpt-image-2-4K",
@@ -136,8 +137,9 @@ export type StoredImage = {
   height: number;
   sha256: string;
 };
-// Public choices are separate from provider aliases retained for historical tasks.
-export const publicImageModelIds = ["gpt-image-2", "gpt-image-2.5", "nano-banana-2.1"] as const;
+// 公开选项与历史任务保留的供应商别名分开，主图型号顺序由产品定义。
+export const mainImageModelIds = ["gpt-image-2.6", "gpt-image-2.5", "gpt-image-2"] as const;
+export const publicImageModelIds = [...mainImageModelIds, "nano-banana-2.1"] as const;
 export type PublicImageModelId = string;
 export const imageUnitCredits = 2;
 export function publicImageModel(model: ImageGenerationInput["model"]): PublicImageModelId {
@@ -146,9 +148,11 @@ export function publicImageModel(model: ImageGenerationInput["model"]): PublicIm
   if (model === "gpt-image-2.5-flare" || model === "gpt-image-2.5-sunburst") return "gpt-image-2.5";
   return model;
 }
+/** 将公开模型映射到中转站型号，历史别名继续按原规则解析。 */
 export function imageProviderModel(input: Pick<ImageGenerationInput, "model" | "resolution">) {
   if (input.model === "gpt-image-2-4K") return "gpt-image-2-4K";
   const model = publicImageModel(input.model);
+  if (model === "gpt-image-2.6") return model;
   if (model === "gpt-image-2")
     return input.resolution === "1K" || input.resolution === "1.5K"
       ? "gpt-image-2"

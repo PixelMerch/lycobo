@@ -31,7 +31,7 @@ for (const width of [1440, 390]) {
       }),
     );
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.goto("/create");
+    await page.goto("/commerce/create");
     await page.getByRole("button", { name: "打开素材库", exact: true }).click();
     await page.setViewportSize({ width, height: 1000 });
     await page.getByRole("button", { name: `查看图片：${items[0]?.prompt}`, exact: true }).click();

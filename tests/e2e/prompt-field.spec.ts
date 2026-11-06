@@ -5,7 +5,7 @@ test("workspace prompt grows with content, uses the full prompt limit and shows 
   page,
 }) => {
   await mockImageApi(page);
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.getByRole("group", { name: "主图用途", exact: true })).toHaveCount(0);
   const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   const counter = page.locator(".prompt-count");
@@ -36,7 +36,7 @@ test("workspace rich prompt matches the counter and grows after inserting a refe
   page,
 }) => {
   await mockImageApi(page);
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const png = Buffer.from(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
     "base64",
@@ -56,7 +56,7 @@ test("workspace rich prompt matches the counter and grows after inserting a refe
 
 test("image count stays visible and quality is available under more", async ({ page }) => {
   await mockImageApi(page);
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const count = page.getByRole("group", { name: "生成张数", exact: true });
   const quality = page.getByRole("group", { name: "质量", exact: true });
   await expect(count).toBeVisible();
@@ -81,7 +81,7 @@ test("main image submission keeps the user's full prompt without a purpose prefi
   await page.route("**/api/v1/image-tasks", (route) =>
     route.fulfill({ status: 202, json: { id: crypto.randomUUID(), replayed: false } }),
   );
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const prompt = page.getByLabel("提示词", { exact: true });
   const description = `保留商品，使用自然光。${"细节".repeat(2494)}`;
   await prompt.fill(description);

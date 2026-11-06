@@ -10,13 +10,13 @@ test("standalone models remain available when the admin catalog is unavailable",
     catalogRequests += 1;
     return route.fulfill({ status: 503 });
   });
-  await page.goto("/create/gpt-image-2.5");
+  await page.goto("/commerce/create/gpt-image-2.5");
   const select = page.getByRole("button", { name: "创作模型" });
   await expect(select).toContainText("Image 2.5");
   await select.click();
-  await expect(page.getByRole("option")).toHaveCount(4);
-  await page.getByRole("option", { name: "Banana Pro", exact: true }).click();
-  await expect(select).toContainText("Banana Pro");
+  await expect(page.getByRole("option")).toHaveText(["Image 2.6", "Image 2.5", "Image 2"]);
+  await page.getByRole("option", { name: "Image 2.6", exact: true }).click();
+  await expect(select).toContainText("Image 2.6");
   await select.click();
   await expect(page.getByRole("option", { name: /Grok|Seedream/ })).toHaveCount(0);
   expect(catalogRequests).toBe(0);
@@ -80,7 +80,7 @@ for (const { stored, id, name } of [
         body: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" fill="gray"/></svg>',
       }),
     );
-    await page.goto("/create");
+    await page.goto("/commerce/create");
     await expect(page.locator(".generation-meta .model-tag")).toHaveText(name);
     await expect(page.locator(".generation-meta .model-tag")).not.toContainText(stored);
     await page.getByRole("button", { name: "预览图片 1", exact: true }).click();
@@ -91,13 +91,14 @@ for (const { stored, id, name } of [
 
 test("model selectors load local logos and retain image-error fallbacks", async ({ page }) => {
   await mockImageApi(page);
-  await page.route("**/model-logos/google.svg", (route) => route.fulfill({ status: 404 }));
   await page.goto("/");
   const trigger = page.getByRole("button", { name: "选择创作模型", exact: true });
   await expect(trigger.locator("img")).toHaveAttribute("src", "/model-logos/openai.svg");
+  await page.route("**/model-logos/openai.svg", (route) => route.fulfill({ status: 404 }));
+  await page.reload();
   await trigger.click();
   const options = page.locator(".home-model-option");
-  await expect(options).toHaveCount(4);
+  await expect(options).toHaveCount(3);
   await expect(options.nth(2).locator(".creation-model-logo-fallback")).toBeVisible();
   await options.nth(1).click();
   await expect(trigger).toContainText("Image 2.5");

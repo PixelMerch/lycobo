@@ -83,7 +83,9 @@ it("counts background completions once, summarizes on return and only opens on e
   expect(notify.mock.calls[0]?.[0]).toHaveLength(2);
   expect(doc.title).toBe("Lycobo · 电商创作工作台");
   notify.mock.calls[0]?.[1]();
-  expect(open).toHaveBeenCalledWith(expect.objectContaining({ path: `/create?task=${second.id}` }));
+  expect(open).toHaveBeenCalledWith(
+    expect.objectContaining({ path: `/commerce/create?task=${second.id}` }),
+  );
   await alerts.receive(first);
   expect(notify).toHaveBeenCalledTimes(1);
   alerts.stop();

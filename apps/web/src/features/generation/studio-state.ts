@@ -63,7 +63,7 @@ const emptyDraft = (): Draft => ({
 
 export const defaultDraft = emptyDraft();
 
-// Client interaction only. No persisted tasks, paid submissions, or simulated completion.
+// 这里只保存客户端草稿；任务、扣费与完成状态均由服务端持久化。
 export const useStudioStore = create<{
   activeHistoryId: string | null;
   setActiveHistoryId: (id: string) => void;
@@ -77,13 +77,14 @@ export const useStudioStore = create<{
 }>((set) => ({
   activeHistoryId: null,
   setActiveHistoryId: (activeHistoryId) => set({ activeHistoryId }),
-  activeModel: "gpt-image-2",
+  activeModel: "gpt-image-2.6",
   setActiveModel: (activeModel) =>
     set((state) => ({
       activeModel,
       drafts: { ...state.drafts, [activeModel]: state.drafts[activeModel] ?? emptyDraft() },
     })),
   drafts: {
+    "gpt-image-2.6": emptyDraft(),
     "gpt-image-2.5": emptyDraft(),
     "gpt-image-2": emptyDraft(),
     "nano-banana-2.1": emptyDraft(),

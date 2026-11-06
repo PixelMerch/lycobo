@@ -56,7 +56,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
     route.fulfill({ contentType: "image/svg+xml", body: svg }),
   );
   await page.setViewportSize({ width: 1328, height: 906 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
 
   // History results open the viewer in place instead of a new browser tab.
   const historyDialog = page.getByRole("dialog", { name: "图片预览", exact: true });
@@ -83,7 +83,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
     "border-radius",
     "8px",
   );
-  expect(new URL(page.url()).pathname).toBe("/create");
+  expect(new URL(page.url()).pathname).toBe("/commerce/create");
   // The redundant bottom download row is gone; the icon actions stay in the panel.
   await expect(historyDialog.locator(".image-preview-actions")).toHaveCount(0);
   await expect(
@@ -294,7 +294,7 @@ test("rail thumbnails keep the whole image on hover", async ({ page }) => {
   await page.route("**/api/v1/image-assets/**/content*", (route) =>
     route.fulfill({ contentType: "image/svg+xml", body: svg }),
   );
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page.getByRole("button", { name: "打开素材库", exact: true }).click();
   await page.getByRole("button", { name: "查看图片：素材 1 的创意描述", exact: true }).click();
   const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });

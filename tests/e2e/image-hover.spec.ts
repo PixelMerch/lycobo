@@ -39,7 +39,7 @@ test("image actions download and toggle favorites; sticky history blocks scrolle
     route.fulfill({ contentType: "image/png", body: png }),
   );
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const media = page.locator(".generation-media").first();
   const actions = media.locator(".generation-media-actions");
   await expect(actions).toHaveCSS("opacity", "0");

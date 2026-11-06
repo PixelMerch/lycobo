@@ -1,6 +1,8 @@
 import { Label, ListBox, Select } from "@heroui/react";
+import { mainImageModelIds } from "@lycoboai/contracts";
 import { isModelId, type ModelId } from "../studio-state";
 import { ModelLogo, useModelPresentation } from "./model-logos";
+/** 主图制作按固定顺序展示可选模型，历史展示资料仍保留全部型号。 */
 export function ModelSelect({
   value,
   onChange,
@@ -9,7 +11,9 @@ export function ModelSelect({
   onChange: (model: ModelId) => void;
 }) {
   const catalog = useModelPresentation();
-  const models = catalog.data?.models ?? [];
+  const models = mainImageModelIds.flatMap((id) =>
+    (catalog.data?.models ?? []).filter((model) => model.id === id),
+  );
   const selectedModel = models.find((model) => model.id === value);
   return (
     <Select

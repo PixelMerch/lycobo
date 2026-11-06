@@ -34,6 +34,7 @@ export type PreviewMeta = {
   imagePublicId?: string | null | undefined;
 };
 
+/** 展示图片详情与局部编辑，关闭时保护未提交的修改。 */
 export function ImagePreviewDialog({
   images: originalImages,
   meta: sharedMeta = {},
@@ -64,7 +65,7 @@ export function ImagePreviewDialog({
     onClose();
     if (historyTask.current) {
       onViewHistory?.();
-      void navigate(`/create?task=${encodeURIComponent(historyTask.current)}`);
+      void navigate(`/commerce/create?task=${encodeURIComponent(historyTask.current)}`);
     }
   });
   const [index, setIndex] = useState(Math.min(Math.max(initialIndex, 0), images.length - 1));
@@ -73,8 +74,7 @@ export function ImagePreviewDialog({
   const meta = active?.meta ?? sharedMeta;
   const session = useImageSession();
   const draftKey = active ? repairDraftKey(session.data, active.id) : "";
-  /* Closing while the editor holds unsubmitted regions must not silently throw
-   * them away, so the modal close and Escape ask first. */
+  // 有未提交编辑区域时，关闭或 Escape 必须先确认，不能静默丢弃。
   const editingDraft = useRepairDrafts((state) =>
     draftKey ? (state.drafts[draftKey]?.regions.length ?? 0) : 0,
   );
@@ -135,8 +135,7 @@ export function ImagePreviewDialog({
                   }}
                 />
               </Suspense>
-              {/* Thumbnail rail stays on the far right so the image and its
-               * details never shift while switching pictures. */}
+              {/* 缩略图固定在最右侧，切换图片时主图与详情位置保持稳定。 */}
               <ImagePreviewRail
                 images={images}
                 index={index}

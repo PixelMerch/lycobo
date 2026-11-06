@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
-for (const path of ["/create", "/commerce/textile-set"]) {
+for (const path of ["/commerce/create", "/commerce/textile-set"]) {
   test(`history thumbnails confirm deletion and preserve failed requests on ${path}`, async ({
     page,
   }) => {
@@ -124,7 +124,7 @@ for (const path of ["/create", "/commerce/textile-set"]) {
   });
 }
 
-for (const path of ["/create", "/commerce/textile-set"]) {
+for (const path of ["/commerce/create", "/commerce/textile-set"]) {
   test(`hide history deletion until generation ends on ${path}`, async ({ page }) => {
     await mockImageApi(page);
     const id = crypto.randomUUID();

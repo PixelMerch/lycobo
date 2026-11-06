@@ -8,7 +8,7 @@ export const workspaceTools = [
   {
     id: "create",
     name: "主图制作",
-    path: "/create",
+    path: "/commerce/create",
     category: "主图制作",
     image: "/studio/models/image-2-1.webp",
     description: "场景主图 · 白底主图 · 活动主图",
@@ -103,7 +103,7 @@ export const useWorkspaceState = create<{
   lastPath: string;
   setLastPath: (path: string) => void;
 }>((set) => ({
-  lastPath: "/create",
+  lastPath: "/commerce/create",
   setLastPath: (lastPath) => set({ lastPath }),
 }));
 
@@ -123,7 +123,7 @@ function referencesForPath(path: string) {
   return studio.drafts[studio.activeModel]?.references ?? [];
 }
 
-/** Seed only an empty destination; switching never discards an existing tool draft. */
+/** 只为尚无参考图的目标工具带入商品图，切换时不覆盖现有草稿。 */
 export function shareProductReference(from: string, to: string) {
   const studio = useStudioStore.getState();
   const textile = useTextileSetDraft.getState();
@@ -133,7 +133,7 @@ export function shareProductReference(from: string, to: string) {
   const mainImage = references[0];
   if (!mainImage) return;
   const destinationHasReferences = !!studio.drafts[studio.activeModel]?.references.length;
-  if (to === "/create" && !destinationHasReferences) {
+  if (to === "/commerce/create" && !destinationHasReferences) {
     studio.updateDraft(studio.activeModel, { references: references.slice(0, 5) });
   } else if (to === "/commerce/textile-set" && !textile.mainImage) {
     textile.update({

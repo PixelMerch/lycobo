@@ -46,7 +46,7 @@ for (const width of [390, 1440]) {
       });
     });
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/create");
+    await page.goto("/commerce/create");
     const prompt = "保留商品主体，使用自然光。";
     if (width >= 768) {
       await page.getByRole("textbox", { name: "提示词", exact: true }).fill(prompt);
@@ -77,7 +77,7 @@ for (const width of [390, 1440]) {
       await page.keyboard.press("Escape");
       await expect(preview).toHaveCount(0);
     }
-    await expect(page).toHaveURL(/\/create$/);
+    await expect(page).toHaveURL(/\/commerce\/create$/);
     await page.mouse.move(0, 0);
     const dock = page.getByRole("navigation", { name: "电商创作工具" });
     await expect(dock.getByRole("button")).toHaveCount(4);

@@ -44,7 +44,7 @@ for (const [width, height] of [
         }),
       );
       await page.setViewportSize({ width: 1920, height: 1080 });
-      await page.goto("/create");
+      await page.goto("/commerce/create");
       const results = page.locator(".generation-results");
       await expect(results).toBeVisible();
       const image = results.locator("img").first();

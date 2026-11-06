@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
-for (const path of ["/create", "/"]) {
+for (const path of ["/commerce/create", "/"]) {
   test(`a prompt needs a description rather than only references in ${path}`, async ({ page }) => {
     await mockImageApi(page);
     await page.goto(path);
@@ -21,7 +21,7 @@ for (const path of ["/create", "/"]) {
   });
 }
 
-for (const path of ["/", "/create", "/commerce/smart-variation", "/video"]) {
+for (const path of ["/", "/commerce/create", "/commerce/smart-variation", "/video"]) {
   test(`reference list in ${path} stays in the window, pages at its bottom and stops on error`, async ({
     page,
   }) => {

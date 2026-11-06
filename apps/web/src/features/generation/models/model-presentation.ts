@@ -2,6 +2,13 @@
 export const modelPresentation = {
   models: [
     {
+      id: "gpt-image-2.6",
+      name: "Image 2.6",
+      logoUrl: "/model-logos/openai.svg",
+      description: "商品图片生成与编辑",
+      capabilitySummary: "图文生成 · 参考图编辑",
+    },
+    {
       id: "gpt-image-2",
       name: "Image 2",
       logoUrl: "/model-logos/openai.svg",

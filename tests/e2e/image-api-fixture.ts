@@ -1,12 +1,13 @@
 import type { Page } from "@playwright/test";
 import { mockRealtime } from "./realtime-fixture";
 export const modelNames = [
+  "gpt-image-2.6",
   "gpt-image-2",
   "gpt-image-2.5",
   "nano-banana-2.1",
   "gemini-3-pro-image-preview",
 ];
-export const modelDisplayNames = ["Image 2", "Image 2.5", "Banana 2.1", "Banana Pro"];
+export const modelDisplayNames = ["Image 2.6", "Image 2.5", "Image 2"];
 export function apiFixture(data: unknown, status = 200) {
   const success = status >= 200 && status < 300;
   return {

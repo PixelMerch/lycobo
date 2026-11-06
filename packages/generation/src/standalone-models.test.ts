@@ -16,7 +16,12 @@ it("requires explicit standalone opt-in and refuses missing keys", async () => {
 });
 it("routes all public models without any admin or database lookups", async () => {
   const config = await standaloneModels(env);
-  expect(config?.capabilities().create).toHaveLength(4);
+  expect(config?.capabilities().create?.map((model) => model.id)).toEqual([
+    "gpt-image-2.6",
+    "gpt-image-2.5",
+    "gpt-image-2",
+  ]);
+  expect(config?.capabilities()["textile-set"]).toHaveLength(4);
   const input = imageGenerationInputSchema.parse({
     model: "gpt-image-2.5",
     prompt: "商品摄影",
@@ -29,6 +34,11 @@ it("routes all public models without any admin or database lookups", async () =>
     credentialId: standaloneCredentialId,
   });
   expect(JSON.stringify(snapshot)).not.toContain(env.STANDALONE_IMAGE_API_KEY);
+  expect(config?.resolve({ ...input, model: "gpt-image-2.6" })).toMatchObject({
+    upstreamModel: "gpt-image-2.6",
+    adapter: "fluxport-images",
+    origin: "https://api.ai-media.vip/",
+  });
   expect(config?.resolve({ ...input, model: "nano-banana-2.1" }).adapter).toBe("gemini-native");
   expect(config?.planner).toMatchObject({
     model: "deepseek-flash",

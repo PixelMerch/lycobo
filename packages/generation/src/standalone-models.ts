@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import {
   type ImageGenerationInput,
   imageResolutionSchema,
+  mainImageModelIds,
   providerSnapshotSchema,
 } from "@lycoboai/contracts";
 
@@ -16,6 +17,7 @@ export interface StandaloneModelEnvironment {
 export const standaloneCredentialId = "8fd01c10-fb8c-4ed0-bdab-000000000001";
 const channelId = "8fd01c10-fb8c-4ed0-bdab-000000000002";
 const models = [
+  { id: "gpt-image-2.6", upstream: "gpt-image-2.6", adapter: "fluxport-images" },
   { id: "gpt-image-2", upstream: "gpt-image-2", adapter: "fluxport-images" },
   { id: "gpt-image-2.5", upstream: "gpt-image-2.5-sunburst", adapter: "fluxport-images" },
   { id: "nano-banana-2.1", upstream: "gemini-3.1-flash-image-preview", adapter: "gemini-native" },
@@ -25,6 +27,7 @@ const models = [
     adapter: "gemini-native",
   },
 ] as const;
+/** 从环境密钥组装主站渠道，主图制作只开放指定的三个型号。 */
 export async function standaloneModels(env: StandaloneModelEnvironment) {
   if (env.STANDALONE_MODELS !== "true") return undefined;
   if (!env.STANDALONE_IMAGE_API_KEY || !env.DEEPSEEK_API_KEY)
@@ -74,7 +77,10 @@ export async function standaloneModels(env: StandaloneModelEnvironment) {
       Object.fromEntries(
         ["create", "textile-set", "local-edit"].map((tool) => [
           tool,
-          models.map(({ id }) => ({
+          (tool === "create"
+            ? mainImageModelIds.map((id) => ({ id }))
+            : models.filter((model) => model.id !== "gpt-image-2.6")
+          ).map(({ id }) => ({
             id,
             managed: true,
             enabledResolutions: imageResolutionSchema.options,

@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { mockImageApi } from "./image-api-fixture";
 
 for (const width of [1440, 390]) {
-  for (const path of ["/create", "/commerce/smart-variation", "/"]) {
+  for (const path of ["/commerce/create", "/commerce/smart-variation", "/"]) {
     test(`ratio pager returns to the first page after selecting an extended ratio at ${width}px in ${path}`, async ({
       page,
     }) => {

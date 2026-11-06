@@ -53,7 +53,7 @@ test("expired access is renewed once and restores the mounted workspace without 
           },
     }),
   );
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.locator(".account-trigger")).toHaveAccessibleName(`账户菜单：${user.account}`);
   await expect(page.getByText("登录后查看生成记录", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeVisible();

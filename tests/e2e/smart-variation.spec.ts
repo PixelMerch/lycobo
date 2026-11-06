@@ -272,7 +272,7 @@ test("failed webpage reading keeps the draft and permits a fresh retry", async (
   ).toEqual([]);
 });
 
-for (const path of ["/commerce/smart-variation", "/create"])
+for (const path of ["/commerce/smart-variation", "/commerce/create"])
   test(`editing a long prompt preserves composer scroll and caret on ${path}`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(path);

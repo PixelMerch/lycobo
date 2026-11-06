@@ -58,7 +58,7 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
       return route.fulfill({ json: apiFixture({ data: [job] }) });
     });
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto("/create");
+    await page.goto("/commerce/create");
     const preview = page.locator(".generation-placeholder");
     const rail = page.locator(".history-failure-thumbnail");
     const dialog = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
@@ -126,7 +126,7 @@ test("partial retry confirms only the cost of failed images", async ({ page }) =
       body: '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>',
     }),
   );
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page.getByRole("button", { name: "重新生成", exact: true }).click();
   await expect(
     page
@@ -192,7 +192,7 @@ test("rejected regeneration uses a top toast without inserting an error into his
     }
     return route.fulfill({ json: apiFixture({ data: [job] }) });
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page.getByRole("button", { name: "重新生成", exact: true }).click();
   // An unresolved attempt is looked up before any new charge, so the dialog names no amount.
   await expect(page.getByRole("dialog", { name: "重新生成这张图片？", exact: true })).toContainText(

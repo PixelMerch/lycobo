@@ -43,7 +43,7 @@ test("home composer shares prompt and real reference drafts without submitting g
   await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "开始创作", exact: true }).click();
-  await expect(page).toHaveURL(/\/create$/);
+  await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
     "为我的商品搭配自然光场景",
   );
@@ -250,7 +250,7 @@ test("home inspiration filters examples and confirms prompt replacement without 
   await expect(detail).toBeVisible();
   await detail.getByRole("button", { name: "做同款", exact: true }).click();
   await page.getByRole("button", { name: "替换并进入", exact: true }).click();
-  await expect(page).toHaveURL(/\/create$/);
+  await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
     /基于参考床品拍摄枕头特写/,
   );
@@ -297,7 +297,7 @@ test("home inspiration cards offer 做同款 by hover or keyboard without submit
   ).toBeFocused();
   await expect(panel).toHaveCSS("opacity", "1");
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/create$/);
+  await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(prompt).toHaveValue(/将商品放在水边石台上/);
 
   await page.goBack();
@@ -310,7 +310,7 @@ test("home inspiration cards offer 做同款 by hover or keyboard without submit
   await expect(page).toHaveURL(/\/$/);
   await makeOther.click();
   await page.getByRole("button", { name: "替换并进入", exact: true }).click();
-  await expect(page).toHaveURL(/\/create$/);
+  await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(prompt).not.toHaveValue(/将商品放在水边石台上/);
   expect(submissions).toBe(0);
 });
@@ -379,7 +379,7 @@ test("image shortcuts preserve the current draft and never submit paid work", as
   await expect(shortcuts.getByRole("button")).toHaveCount(4);
   await page.getByRole("textbox", { name: "创作需求" }).fill("保留我的商品描述");
   await shortcuts.getByRole("button", { name: "场景图", exact: true }).click();
-  await expect(page).toHaveURL(/\/create$/);
+  await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
     "保留我的商品描述",
   );

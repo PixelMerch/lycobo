@@ -1,5 +1,5 @@
 import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { imageResolutionSchema } from "@lycoboai/contracts";
+import { imageResolutionSchema, mainImageModelIds } from "@lycoboai/contracts";
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { ConfirmDialog } from "../../components/confirm-dialog";
@@ -58,9 +58,13 @@ export function WorkspaceLayout() {
       void navigate("/commerce/textile-set");
     } else {
       const studio = useStudioStore.getState();
-      studio.updateDraft(model, draft);
-      studio.setActiveModel(model);
-      void navigate("/create");
+      const targetModel = mainImageModelIds.some((id) => id === model)
+        ? model
+        : mainImageModelIds[0];
+      // 旧型号仍可浏览；重新创作时只带回草稿，使用当前可选型号。
+      studio.updateDraft(targetModel, draft);
+      studio.setActiveModel(targetModel);
+      void navigate("/commerce/create");
     }
     setRestorePending(null);
     setMobilePanel("form");

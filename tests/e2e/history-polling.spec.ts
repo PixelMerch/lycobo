@@ -8,7 +8,7 @@ test("idle history is fetched once and does not keep polling", async ({ page }) 
     requests++;
     return route.fulfill({ json: apiFixture({ data: [] }) });
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.locator(".history-rail")).toContainText("暂无记录");
   await new Promise((resolve) => setTimeout(resolve, 7000));
   expect(requests).toBe(1);
@@ -44,7 +44,7 @@ test("active history stays unchanged without push until the user reloads", async
       }),
     });
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.locator(".generation-job")).toContainText(job.prompt);
   await page.clock.install();
   await page.clock.fastForward(65000);

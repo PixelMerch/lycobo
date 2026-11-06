@@ -24,7 +24,7 @@ for (const width of [1440, 320]) {
     const account = "13800138000";
     await signIn(page, account);
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/create");
+    await page.goto("/commerce/create");
     const draft = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
     await draft.fill("保留正在准备的商品图");
     // The account stays in navigation; the header only adds shared credits and membership.
@@ -153,7 +153,7 @@ for (const width of [1440, 320]) {
     const settings = page.getByRole("dialog", { name: "设置", exact: true });
     await expect(settings.getByRole("tab", { name: "个人资料", selected: true })).toBeVisible();
     await expect(settings.locator(".settings-hero-meta")).toContainText("UID 0123456789");
-    await expect(page).toHaveURL(/\/create$/);
+    await expect(page).toHaveURL(/\/commerce\/create$/);
     const centerClose = settings.getByRole("button", { name: "关闭设置" });
     await expect(centerClose).toHaveCSS("width", "44px");
     await centerClose.click();
@@ -190,7 +190,7 @@ for (const width of [1440, 320]) {
 test("the collapsed sidebar keeps the account as its avatar", async ({ page }) => {
   await signIn(page, "collapsed-fixture");
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page.getByRole("button", { name: "收起导航栏", exact: true }).click();
   const trigger = page.getByRole("button", { name: "账户菜单：collapsed-fixture", exact: true });
   await expect(trigger.locator(".account-trigger-name")).toBeHidden();
@@ -207,7 +207,7 @@ test.describe("touch", () => {
     page,
   }) => {
     await signIn(page, "touch-fixture");
-    await page.goto("/create");
+    await page.goto("/commerce/create");
     await page.getByRole("button", { name: "打开导航", exact: true }).tap();
     const trigger = page.getByRole("button", { name: "账户菜单：touch-fixture", exact: true });
     await trigger.tap();
@@ -219,14 +219,14 @@ test.describe("touch", () => {
     if (!box) throw new Error("Missing account menu row");
     await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
     await expect(page.getByRole("dialog", { name: "积分与账单", exact: true })).toBeVisible();
-    await expect(page).toHaveURL(/\/create$/);
+    await expect(page).toHaveURL(/\/commerce\/create$/);
   });
 });
 
 test("account news slides from the right and respects reduced motion", async ({ page }) => {
   await signIn(page, "13800138000");
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const motion = page.evaluate(async () => {
     await new Promise<void>((resolve) =>
       document.addEventListener("click", () => resolve(), { once: true, capture: true }),

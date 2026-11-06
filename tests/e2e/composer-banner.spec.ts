@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mockImageApi } from "./image-api-fixture";
 
-for (const path of ["/create", "/commerce/textile-set", "/commerce/smart-variation"]) {
+for (const path of ["/commerce/create", "/commerce/textile-set", "/commerce/smart-variation"]) {
   test(`composer banner collapses without changing scroll geometry on ${path}`, async ({
     page,
   }) => {
@@ -51,7 +51,7 @@ for (const path of ["/create", "/commerce/textile-set", "/commerce/smart-variati
   });
 }
 
-for (const path of ["/create", "/commerce/textile-set", "/commerce/smart-variation"]) {
+for (const path of ["/commerce/create", "/commerce/textile-set", "/commerce/smart-variation"]) {
   test(`mobile composer banner restores at the top on ${path}`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await mockImageApi(page);

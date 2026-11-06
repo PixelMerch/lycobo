@@ -4,7 +4,7 @@ import { showDesktopCompletion } from "./desktop-notifications";
 
 /** 只生成本站历史定位，不携带图片签名、任务输入或恢复草稿指令。 */
 export function completedResult(job: ImageJob): CompletedResult {
-  let path = "/create";
+  let path = "/commerce/create";
   if (job.input?.textileSet) path = "/commerce/textile-set";
   if (job.input?.variation) path = "/commerce/smart-variation";
   return { id: job.id, path: `${path}?task=${job.id}`, label: "图片生成完成" };

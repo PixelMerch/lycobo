@@ -45,7 +45,7 @@ test("one live connection replaces history polling and updates the task by detai
     details++;
     return route.fulfill({ json: apiFixture(job) });
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.locator(".generation-job")).toContainText(job.prompt);
   await expect(page.locator("html")).toHaveAttribute("data-ws-active", "1");
   await expect.poll(() => historyReads).toBeGreaterThan(0);
@@ -100,7 +100,7 @@ test("reconnect uses the last cursor, calibrates missed state and keeps a single
   await page.route(`**/api/v1/image-tasks/${job.id}`, (route) =>
     route.fulfill({ json: apiFixture(job) }),
   );
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.locator("html")).toHaveAttribute("data-ws-active", "1");
   await page.evaluate(
     (id) =>
@@ -164,7 +164,7 @@ test("logout closes the shared stream and removes prior identity data", async ({
           },
     }),
   );
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.locator(".account-trigger")).toHaveAccessibleName(`账户菜单：${user.account}`);
   await expect(page.locator("html")).toHaveAttribute("data-ws-active", "1");
   await page.locator(".account-trigger").click();
@@ -202,7 +202,7 @@ test("only wallet events refresh balance, task states do not duplicate the read"
     details++;
     return route.fulfill({ json: apiFixture(job) });
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.locator(".generation-job")).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("data-ws-active", "1");
   await page.waitForTimeout(700);
@@ -246,7 +246,7 @@ test("only wallet events refresh balance, task states do not duplicate the read"
 
 test("release push preserves the draft and offers a deliberate refresh", async ({ page }) => {
   await mockImageEvents(page);
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const draft = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   await draft.fill("更新提示到来时保留草稿");
   await expect(page.locator("html")).toHaveAttribute("data-ws-active", "1");
@@ -319,7 +319,7 @@ test("notification push updates unread state and persists an explicit read", asy
       ),
     );
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.getByRole("button", { name: "消息（0 条未读）", exact: true })).toBeVisible();
   visible = true;
   await page.evaluate(() =>
@@ -375,7 +375,7 @@ for (const connected of [true, false]) {
         json: apiFixture({ id: crypto.randomUUID(), replayed: false }),
       });
     });
-    await page.goto("/create");
+    await page.goto("/commerce/create");
     await expect(page.locator("html")).toHaveAttribute("data-ws-active", "1");
     await expect.poll(() => wallets).toBeGreaterThan(0);
     await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("fixture 减少重复读取");

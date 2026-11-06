@@ -211,7 +211,5 @@ function StudioNavigation({
 }
 
 function isWorkspacePath(pathname: string) {
-  return (
-    pathname.startsWith("/create") || pathname.startsWith("/commerce") || pathname === "/workspace"
-  );
+  return pathname.startsWith("/commerce") || pathname === "/workspace";
 }

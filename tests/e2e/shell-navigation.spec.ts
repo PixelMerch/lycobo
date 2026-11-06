@@ -6,7 +6,7 @@ test("workspace navigation remains compact and aligned across desktop and mobile
 }) => {
   await mockImageApi(page);
   await page.setViewportSize({ width: 1584, height: 993 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const prompt = page.getByLabel("提示词", { exact: true });
   await prompt.fill("保留这份商品创作草稿");
   const rows = page.locator(".sidebar nav .nav-row");
@@ -62,7 +62,7 @@ for (const mobile of [false, true]) {
 
 for (const path of [
   "/workspace",
-  "/create",
+  "/commerce/create",
   "/commerce/textile-set",
   "/commerce/smart-variation",
   "/video",

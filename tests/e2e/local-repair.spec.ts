@@ -91,7 +91,7 @@ test("multiple repair regions retain original coordinates, submit one image and 
     });
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page.getByRole("button", { name: "打开素材库", exact: true }).click();
   await page.getByRole("button", { name: "查看图片：原始商品图", exact: true }).click();
   const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
@@ -197,7 +197,7 @@ test("multiple repair regions retain original coordinates, submit one image and 
   await viewer.getByRole("button", { name: "查看修改版", exact: true }).click();
   await expect(viewer).toHaveCount(0);
   await expect(page.getByRole("dialog", { name: "我的素材", exact: true })).toHaveCount(0);
-  await expect(page).toHaveURL(new RegExp(`/create\\?task=${jobId}$`));
+  await expect(page).toHaveURL(new RegExp(`/commerce/create\\?task=${jobId}$`));
   const record = page.locator(`#job-${jobId}`);
   await expect(record).toBeVisible();
   await expect(record).toContainText("WREPAIR01");
@@ -265,7 +265,7 @@ test("repair regions remain usable on a narrow screen", async ({ page }) => {
       }),
     }),
   );
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page.getByRole("radio", { name: "历史记录", exact: true }).click();
   await page.getByRole("button", { name: "预览图片 1", exact: true }).click();
   const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
@@ -307,7 +307,7 @@ test("closing with unsubmitted regions asks first and then clears the draft", as
     route.fulfill({ json: apiFixture({ data: [] }) }),
   );
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page.getByRole("button", { name: "打开素材库", exact: true }).click();
   await page.getByRole("button", { name: "查看图片：原始商品图", exact: true }).click();
   const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
@@ -426,7 +426,7 @@ test("submitted repairs clear their draft and reopen without discard warnings wh
     await page.getByRole("button", { name: "查看图片：原始商品图", exact: true }).click();
     await page.getByRole("button", { name: "局部编辑", exact: true }).click();
   };
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await openEditor();
   const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });
   const prompt = viewer.getByRole("textbox", { name: "区域 1 修改说明", exact: true });

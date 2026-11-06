@@ -13,7 +13,7 @@ async function setup(page: Page, identity?: { userId: string; organizationId: st
       }),
     );
   }
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.locator("html")).toHaveAttribute("data-ws-active", "1");
   const scope = await page.evaluate(async () => {
     const response = await fetch("/api/v1/image-session", { method: "POST" });
@@ -114,7 +114,7 @@ test("background title counts once, returns to a result action and preserves the
   await page.screenshot({ path: "/tmp/lycobo-completion-toast.png" });
   await expect(page).toHaveURL(/\/assets/);
   await page.getByRole("button", { name: "查看结果", exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/create\\?task=${job.id}`));
+  await expect(page).toHaveURL(new RegExp(`/commerce/create\\?task=${job.id}`));
   await expect(prompt).toContainText("保留这份未提交草稿");
   await expect(page.locator(`#job-${job.id}`)).toBeVisible();
   await emit(page, job.id, "3");

@@ -28,7 +28,7 @@ for (const width of [1440, 320]) {
       if (request.url().includes("/api/v1/wallet/entries")) ledgerReads++;
     });
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/create");
+    await page.goto("/commerce/create");
     const draft = page.getByLabel("提示词", { exact: true });
     await draft.fill("保留创作草稿，不创建付费任务");
     const header = page.locator(".topbar");
@@ -57,7 +57,7 @@ for (const width of [1440, 320]) {
     await expect(balance).toBeFocused();
     await expect(draft).toHaveValue("保留创作草稿，不创建付费任务");
     await header.getByRole("button", { name: "开通会员", exact: true }).click();
-    await expect(page).toHaveURL(/\/create$/);
+    await expect(page).toHaveURL(/\/commerce\/create$/);
     const membership = page.getByRole("dialog", { name: "会员订阅", exact: true });
     await expect(membership).toBeVisible();
     await expect(membership).toHaveCSS("width", `${width}px`);
@@ -115,7 +115,7 @@ test("credit preview opens only on press, shares reads and supports keyboard", a
   page.on("response", (response) => {
     if (response.ok() && response.url().includes("/api/v1/wallet/entries")) ledgerResponses++;
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const balance = page.locator(".topbar .header-balance");
   await balance.hover();
   await page.waitForTimeout(350);
@@ -132,7 +132,7 @@ test("credit preview opens only on press, shares reads and supports keyboard", a
   // The full ledger opens in the account center dialog and reuses the preview's read.
   const center = page.getByRole("dialog", { name: "积分与账单", exact: true });
   await expect(center.getByText("暂无收支记录", { exact: true })).toBeVisible();
-  await expect(page).toHaveURL(/\/create$/);
+  await expect(page).toHaveURL(/\/commerce\/create$/);
   expect(ledgerResponses).toBe(1);
   await page.keyboard.press("Escape");
   await expect(center).toHaveCount(0);
@@ -211,7 +211,7 @@ test("credit preview shows only three real entries and reopens from cache", asyn
     orders++;
     return route.fulfill({ json: apiFixture({ data: [] }) });
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const balance = page.locator(".topbar .header-balance");
   await expect(balance).toContainText("200");
   expect(reads).toBe(0);
@@ -252,7 +252,7 @@ test("direct membership visits have a safe return to the workspace", async ({ pa
   await signIn(page);
   await page.goto("/membership");
   await page.getByRole("button", { name: "关闭会员订阅", exact: true }).click();
-  await expect(page).toHaveURL(/\/create$/);
+  await expect(page).toHaveURL(/\/commerce\/create$/);
 });
 
 test("full-screen membership supports audiences, seats, explanations and FAQ without writes", async ({
@@ -264,7 +264,7 @@ test("full-screen membership supports audiences, seats, explanations and FAQ wit
     if (request.method() !== "GET" && !request.url().endsWith("/api/v1/image-session"))
       writes.push(request.url());
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page.locator(".topbar").getByRole("button", { name: "开通会员", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "会员订阅", exact: true });
   await dialog.getByRole("tab", { name: "团队", exact: true }).hover();
@@ -315,7 +315,7 @@ test("credit and account overlays block background wheel scrolling and restore i
 }) => {
   await signIn(page);
   await page.setViewportSize({ width: 1440, height: 700 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page.getByLabel("提示词", { exact: true }).fill("商品创作需求\n".repeat(100));
   const background = page.locator(".composer-scroll");
   await expect

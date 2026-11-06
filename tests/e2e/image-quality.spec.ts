@@ -14,7 +14,7 @@ for (const [label, quality] of [
       expect(body).toMatchObject({ quality, prompt: "质量参数验收" });
       await route.fulfill({ status: 202, json: { id: crypto.randomUUID(), replayed: false } });
     });
-    await page.goto("/create");
+    await page.goto("/commerce/create");
     await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("质量参数验收");
     await page.getByRole("button", { name: "更多", exact: true }).click();
     await page.getByRole("radio", { name: label, exact: true }).click();

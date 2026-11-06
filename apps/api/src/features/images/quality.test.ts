@@ -191,8 +191,9 @@ it("advertises and enforces the same per-model resolution policy", async () => {
   const response = await app.request("/api/v1/image-models", { headers });
   const body = imageModelsResponseSchema.parse(unwrapApiData(await response.json()));
   expect(body.models.map((model) => model.id)).toEqual([
-    "gpt-image-2",
+    "gpt-image-2.6",
     "gpt-image-2.5",
+    "gpt-image-2",
     "nano-banana-2.1",
   ]);
   expect(body.unitCredits).toBe(2);
@@ -208,7 +209,7 @@ it("advertises and enforces the same per-model resolution policy", async () => {
       expect(result.status).toBe(expected.includes(resolution) ? 202 : 400);
     }
   }
-  expect(create).toHaveBeenCalledTimes(12);
+  expect(create).toHaveBeenCalledTimes(16);
 });
 
 it("normalizes textile presets on the server and rejects missing references", async () => {

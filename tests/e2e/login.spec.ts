@@ -141,7 +141,7 @@ test("login panel animates open and close, and reduced motion skips the animatio
 
 test("mobile protected-route login closes back to the homepage", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.locator(".composer-panel")).toHaveCount(0);
   const dialog = page.getByRole("dialog", { name: "欢迎使用 Lycobo" });
   await expect(dialog).toBeVisible();

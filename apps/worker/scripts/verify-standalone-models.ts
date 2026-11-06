@@ -28,17 +28,17 @@ export async function verifyStandaloneModels(
       200,
     );
     const input = imageGenerationInputSchema.parse({
-      model: "gpt-image-2.5",
+      model: "gpt-image-2.6",
       prompt: "固定主站路由",
       resolution: "1K",
     });
-    assert.equal((await repository.models.capabilities()).create?.length, 4);
+    assert.equal((await repository.models.capabilities()).create?.length, 3);
     assert.equal((await repository.variation.config())?.model, "deepseek-flash");
     const key = crypto.randomUUID();
     const task = await repository.create(owner, input, key, 20, true);
     assert.equal((await repository.create(owner, input, key, 20, true)).replayed, true);
     const [row] = await sql`select provider_snapshot from generation_jobs where id=${task.id}`;
-    assert.equal(row?.provider_snapshot.upstreamModel, "gpt-image-2.5-sunburst");
+    assert.equal(row?.provider_snapshot.upstreamModel, "gpt-image-2.6");
     assert.equal(JSON.stringify(row?.provider_snapshot).includes("fixture-image"), false);
     assert.equal((await repository.wallet(owner)).balance, 200 - imageUnitCredits);
     const [outbox] =

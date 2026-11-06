@@ -63,7 +63,7 @@ test("login and logout synchronize mounted history without reloading or losing t
   await page.route("**/api/v1/image-tasks*", (route) =>
     route.fulfill({ json: apiFixture({ data: loggedIn ? [job] : [] }) }),
   );
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.getByRole("dialog", { name: "欢迎使用 Lycobo" })).toBeVisible();
   await expect(page.locator(".composer-panel")).toHaveCount(0);
   expect(sessionRequests).toBe(0);

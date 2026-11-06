@@ -83,7 +83,7 @@ test("four public models submit at 1.5K, queued results become durable history a
       },
     });
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   for (const model of modelNames) {
     await page.getByRole("button", { name: /创作模型/ }).click();
     await page
@@ -139,7 +139,7 @@ for (const outcome of ["disconnect", "timeout", "auth"] as const) {
       }
       await route.fulfill({ json: { id: crypto.randomUUID(), replayed: true } });
     });
-    await page.goto("/create");
+    await page.goto("/commerce/create");
     await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("保留同一次提交");
     await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
     if (outcome === "auth") {
@@ -167,7 +167,7 @@ test("unavailable authentication does not show fabricated history or enable gene
 }) => {
   await mockImageApi(page);
   await page.route("**/api/v1/image-session", (route) => route.fulfill({ status: 401, json: {} }));
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("陶瓷杯");
   await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeDisabled();
   await expect(page.locator(".generation-results img")).toHaveCount(0);
@@ -190,7 +190,7 @@ test("reference images are uploaded before submitting their server asset IDs", a
     expect(route.request().postDataJSON().referenceAssetIds).toEqual([referenceId]);
     await route.fulfill({ status: 202, json: { id: crypto.randomUUID(), replayed: false } });
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles({ name: "reference.png", mimeType: "image/png", buffer: png });
@@ -221,7 +221,7 @@ test("submission success preserves edits made while the request is pending", asy
     await response;
     await route.fulfill({ status: 202, json: { id: crypto.randomUUID(), replayed: false } });
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("提交的商品图");
   await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
   await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeDisabled();
@@ -283,7 +283,7 @@ test("pending history catches up after reconnect without status polling", async 
   await page.route("**/api/v1/image-assets/*/content**", (route) =>
     route.fulfill({ contentType: "image/png", body: png }),
   );
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.locator(".generation-placeholder.generation-pending")).toBeVisible();
   await page.clock.install();
   await page.clock.fastForward(65000);
@@ -315,7 +315,7 @@ test("idle focus and reconnect do not reload database-backed queries", async ({ 
     if (/^\/api\/v1\/(image-tasks|wallet|notifications)/.test(new URL(request.url()).pathname))
       reads++;
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.getByText("生成的图片会显示在这里", { exact: true })).toBeVisible();
   await page.waitForLoadState("networkidle");
   // Advance cache age without a wall-clock wait; the event handlers remain real browser code.
