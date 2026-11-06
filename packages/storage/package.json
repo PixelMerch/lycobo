@@ -10,11 +10,12 @@
     "./variants": "./src/image-variants.ts",
     "./s3": "./src/s3-object-bucket.ts",
     "./bucket": "./src/object-bucket.ts",
-    "./cloudbase": "./src/cloudbase-object-bucket.ts",
     "./object-images": "./src/object-image-store.ts",
     "./asset-server": "./src/private-asset-server.ts",
     "./video": "./src/video-media.ts",
-    "./video-variants": "./src/video-variants.ts"
+    "./video-variants": "./src/video-variants.ts",
+    "./cloudflare": "./src/cloudflare.ts",
+    "./uploads": "./src/cloudflare-uploads.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

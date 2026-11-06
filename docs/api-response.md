@@ -72,7 +72,7 @@ createApp 的唯一出口层统一包装 JSON；业务路由只返回业务 payl
 `API_RUNTIME_UNAVAILABLE`；Pages 服务绑定失败记录 `PAGES_API_BINDING_UNAVAILABLE`。
 日志包含服务端生成的 requestId、HTTP 状态、请求方法、脱敏路径、已注册业务码，
 常规 API 额外包含耗时和白名单异常分类／数据库或网络错误码。
-使用浏览器 Network 的 `X-Request-Id`（也在响应 `request_id` 中）关联 CloudBase 函数日志。
+使用浏览器 Network 的 `X-Request-Id`（也在响应 `request_id` 中）关联 Cloudflare Workers 结构化日志。
 浏览器控制台同时记录失败请求元数据；断网没有服务端回执时记录 `API_NETWORK_FAILED`。
 正常未登录的 GET 401 不作为异常告警记录，避免匿名会话检查刷屏。
 Pages 对有限 JSON 响应完整读取并校验后再转发；不缓冲 SSE 或图片下载。

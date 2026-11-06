@@ -14,6 +14,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useRef } from "react";
+import { refreshWithoutRealtime } from "../realtime/availability";
 import { assetContentUrl } from "./asset-delivery-client";
 
 export { assetContentUrl } from "./asset-delivery-client";
@@ -147,10 +148,9 @@ export function useGenerateImage(enabled = true) {
       locked.current = false;
     },
     onSuccess: () => {
-      void client.invalidateQueries({ queryKey: ["wallet"] });
-      void client.invalidateQueries({ queryKey: ["wallet-entries"] });
+      // 账本事件与提交回执属于同一次变更，在线时交由唯一推送通道刷新余额。
+      refreshWithoutRealtime(client, "wallet", "wallet-entries");
       void client.invalidateQueries({ queryKey: ["image-tasks"] });
-      void client.invalidateQueries({ queryKey: ["image-assets"] });
       void client.invalidateQueries({ queryKey: ["image-latest-edit"] });
     },
   });

@@ -52,7 +52,7 @@ docker compose up --build
 
 访问 <http://localhost:8081/>。Compose 提供本地 PostgreSQL、私有 S3 与 Node API／独立消费者／图片服务／Vite。首次运行需显式迁移本地数据库，启动器过滤线上基础设施凭据；真实生图按模型开关启用并消耗供应商额度。图片通过 `http://127.0.0.1:8791` 签名读取。账号、积分和图片需本地准备；详见 [本地开发](docs/development.md)。
 
-**CloudBase 自动发布**：main 的 CI 通过后部署云函数和前端，使用 GitHub `cloudbase-production` Environment。凭据和实际状态见 [CloudBase 部署](docs/cloudbase-deployment.md)，迁移结果见 [CloudBase 迁移记录](docs/cloudbase-migration.md)。
+**Cloudflare 运行目标**：`dev` 使用 `lycobo` Worker 承接前端、Hono API、私有资源和可休眠 WebSocket，独立 `lycobo-images` Worker 消费图片 Queue 并执行恢复 Cron，Images binding 处理图片。图片生成和提示词优化已开启，视频关闭；配置与验证边界见 [Cloudflare 运行与部署](docs/cloudflare-deployment.md)。
 
 ## 开发检查
 
@@ -71,5 +71,5 @@ React / Vite 前端、Hono API 和独立 Worker 位于 `apps/`；契约、数据
 
 - [产品范围](PRD.md) · [设计规范](DESIGN.md) · [技术栈](docs/tech-stack.md)
 - [企业鉴权](docs/enterprise-auth.md) · [企业钱包](docs/enterprise-wallet.md)
-- [局部修改](docs/local-image-repair.md) · [数据库备份](docs/database-backup.md) · [CloudBase 部署](docs/cloudbase-deployment.md)
+- [局部修改](docs/local-image-repair.md) · [数据库备份](docs/database-backup.md) · [Cloudflare 运行与部署](docs/cloudflare-deployment.md)
 - [发布说明](docs/releasing.md) · [安全](SECURITY.md) · [完整文档索引](docs/README.md)

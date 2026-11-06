@@ -1,25 +1,33 @@
+import { toast } from "@heroui/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useImageModels, useImageSession } from "./generation-client";
-import { connectImageEvents } from "./image-event-connection";
-import { pollImageTasks } from "./image-task-polling";
+import { useEffect, useRef } from "react";
+import { useEnterpriseSession } from "../auth/auth-client";
+import { useSiteRelease } from "../realtime/client";
+import { connectRealtime } from "../realtime/connection";
+import { useImageSession } from "./generation-client";
 
-/** Keeps task, wallet and asset caches current: SSE when offered, otherwise task polling. */
+/** 在应用壳中统一同步任务、积分、站内消息与版本，正常连接不启动 API 轮询。 */
 export function useImageEvents() {
-  const session = useImageSession();
-  const models = useImageModels();
+  const account = useEnterpriseSession();
+  const session = useImageSession(!!account.data);
+  const release = useSiteRelease().data?.release;
+  const announced = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (
+      !release ||
+      release.version === import.meta.env.VITE_APP_RELEASE_VERSION ||
+      announced.current === release.version
+    )
+      return;
+    announced.current = release.version;
+    toast.info("网站有新版本可用，请先保存草稿，再刷新页面体验。");
+  }, [release]);
   const client = useQueryClient();
   const userId = session.data?.userId;
   const organizationId = session.data?.organizationId;
-  const enabled = models.data?.eventsEnabled;
-  const signedIn = session.isSuccess;
+  const signedIn = !!account.data && session.isSuccess;
   useEffect(() => {
-    if (!userId || !organizationId || !signedIn || !enabled || typeof EventSource === "undefined")
-      return;
-    return connectImageEvents(client);
-  }, [client, userId, organizationId, enabled, signedIn]);
-  useEffect(() => {
-    if (!userId || !organizationId || !signedIn || enabled === undefined) return;
-    return pollImageTasks(client, enabled);
-  }, [client, userId, organizationId, enabled, signedIn]);
+    if (typeof WebSocket === "undefined") return;
+    return connectRealtime(client, signedIn && !!userId && !!organizationId);
+  }, [client, userId, organizationId, signedIn]);
 }

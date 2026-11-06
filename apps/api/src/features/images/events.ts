@@ -4,6 +4,7 @@ import type { Context } from "hono";
 import { streamSSE } from "hono/streaming";
 
 type Options = { heartbeatMs?: number; maxAgeMs?: number };
+/** 隔离 Node 环境按事务事件发送 SSE，并在断线时释放订阅。 */
 export async function imageEventStream(
   c: Context,
   feed: ImageEventFeed,
@@ -31,7 +32,7 @@ export async function imageEventStream(
       if (organizationId === null && calibrated) resyncRequired = true;
       wake?.();
     }
-  }, scope.organizationId);
+  });
   c.header("Cache-Control", "no-cache, no-transform");
   c.header("X-Accel-Buffering", "no");
   return streamSSE(
@@ -119,7 +120,7 @@ export async function imageEventStream(
         const latest = await feed.latest(scope);
         if (cursor === "0" || BigInt(cursor) > BigInt(latest)) cursor = latest;
         if (!(await flush())) return;
-        // Always calibrate current state: cursors can be older than retention or a restored database.
+        // 首次连接校准当前状态，兼容日志保留期及数据库恢复造成的游标变化。
         await stream.writeSSE({ event: "ready", id: cursor, data: "{}", retry: 3000 });
         calibrated = true;
         while (isActive()) {

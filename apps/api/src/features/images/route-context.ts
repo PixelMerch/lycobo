@@ -9,6 +9,14 @@ import type { WorkbenchSession } from "./session";
 
 export type ImageApiDependencies = {
   repository: ImageRuntimeRepository;
+  uploadsEnabled?: boolean;
+  uploads?: {
+    enqueue(scope: ImagePrincipal, bytes: Uint8Array): Promise<string>;
+    status(
+      scope: ImagePrincipal,
+      id: string,
+    ): Promise<{ status: string; image?: import("@lycoboai/contracts").StoredImage } | null>;
+  };
   modelSecret?: string | undefined;
   plannerKey?: string | undefined;
   plannerRequest?: typeof fetch | undefined;

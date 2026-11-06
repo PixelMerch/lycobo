@@ -8,7 +8,7 @@ import {
 import { type ImageRepository, ImageRepositoryError } from "@lycoboai/db";
 import type postgres from "postgres";
 
-/** Asset library filters and personal favorites; caller owns a disposable migrated database. */
+/** 在隔离数据库中验证素材筛选、分页、收藏幂等与成员归属。 */
 export async function verifyAssetLibrary(repository: ImageRepository, sql: postgres.Sql) {
   const owner = await repository.provision(
     `library-${randomUUID()}`,
@@ -16,7 +16,7 @@ export async function verifyAssetLibrary(repository: ImageRepository, sql: postg
     3 * imageUnitCredits,
   );
   const outsider = await repository.provision(`library-out-${randomUUID()}`, "library-out", 0);
-  // A second member of the same organization sees the shared assets but keeps own favorites.
+  // 同组织成员共享可见素材，收藏状态按用户独立保存。
   const [colleagueUser] =
     await sql`insert into users (auth_subject) values (${`library-colleague-${randomUUID()}`}) returning id`;
   await sql`insert into organization_members (organization_id,user_id,role)
@@ -31,7 +31,7 @@ export async function verifyAssetLibrary(repository: ImageRepository, sql: postg
     bytes: 10,
     sha256: "c".repeat(64),
   });
-  // Outputs are attached to real tasks; tools come from input keys, models from provider variants.
+  // 输出关联真实测试任务，功能从输入识别，模型按供应商变体归并。
   const output = async (inputKey: "textileSet" | "variation" | null, model: string) => {
     const input = imageGenerationInputSchema.parse({ model: "gpt-image-2", prompt: "library" });
     const job = await repository.create(owner, input, randomUUID());
@@ -64,20 +64,20 @@ export async function verifyAssetLibrary(repository: ImageRepository, sql: postg
     repository.listAssets(owner, 30, undefined, undefined, undefined, filters);
   assert.deepEqual(ids(await filtered({ tool: "textile" })), [textile]);
   assert.deepEqual(ids(await filtered({ tool: "variation" })), [variation]);
-  // Uploads have no task, so a tool filter never includes them.
+  // 上传素材没有生成任务，不应命中生成工具筛选。
   assert.deepEqual(ids(await filtered({ tool: "create" })), [created]);
   assert.deepEqual(ids(await filtered({ model: "gpt-image-2.5" })), [textile]);
   assert.deepEqual(ids(await filtered({ model: "gpt-image-2" })), [created, variation].sort());
   assert.deepEqual(ids(await filtered({ tool: "textile", model: "gpt-image-2" })), []);
 
-  // A boundary filters before limiting; both native SQL and CloudBase RPC run this suite.
+  // 先按时间边界过滤，再应用分页上限，避免混入范围外素材。
   await sql`update media_assets set created_at='2020-01-01T00:00:00Z' where id=${created}`;
   const since = "2021-01-01T00:00:00.000Z";
   assert.deepEqual(ids(await filtered({ since, tool: "create" })), []);
   assert.deepEqual(ids(await filtered({ since, tool: "textile" })), [textile]);
   assert.deepEqual(ids(await filtered({ since: "2099-01-01T00:00:00.000Z" })), []);
 
-  // Favorites are idempotent, personal and limited to assets the organization can still see.
+  // 收藏重复操作保持幂等，只允许收藏当前组织仍可见的素材。
   assert.equal(await repository.setAssetFavorite(owner, textile, true), true);
   assert.equal(await repository.setAssetFavorite(owner, textile, true), true);
   assert.equal(await repository.setAssetFavorite(owner, upload, true), true);
@@ -102,7 +102,7 @@ export async function verifyAssetLibrary(repository: ImageRepository, sql: postg
   assert.deepEqual(await repository.favoriteAssetIds(owner), []);
   assert.equal(await repository.setAssetFavorite(owner, upload, true), null);
 
-  // The limit counts visible favorites only and holds per member.
+  // 收藏上限按成员独立计算，已失效素材不占可见名额。
   await sql`insert into media_assets (organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256)
     select ${owner.organizationId},${owner.userId},'output','image','fixtures/limit-'||${randomUUID()}||'-'||n,'image/png',4,3,10,${"c".repeat(64)}
     from generate_series(1,${assetFavoriteLimit}) n`;

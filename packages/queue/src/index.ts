@@ -3,6 +3,11 @@ import { z } from "zod";
 export const diagnosticJobSchema = z.strictObject({ runId: z.uuid() });
 // Transport carries identifiers only. PostgreSQL owns task, attempt and billing state.
 export const imageQueueJobSchema = z.strictObject({ version: z.literal(1), itemId: z.uuid() });
+export const imageVariantJobSchema = z.strictObject({
+  version: z.literal(1),
+  assetId: z.uuid(),
+  organizationId: z.uuid(),
+});
 export type ImageQueueJob = z.infer<typeof imageQueueJobSchema>;
 export interface ImageQueueSender {
   send(message: ImageQueueJob): Promise<unknown>;
@@ -22,3 +27,5 @@ export async function dispatchImageOutbox(repository: OutboxRepository, queue: I
   }
   return sent;
 }
+
+export * from "./realtime";

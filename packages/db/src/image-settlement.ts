@@ -2,7 +2,7 @@ import type postgres from "postgres";
 import { recordImageEvent } from "./image-event-repository";
 import { appendWalletEntry, ensureWallet } from "./wallet-repository";
 
-export function imageSettlement(sql: postgres.Sql) {
+export function imageSettlement(sql: postgres.Sql, tasksSince?: Date) {
   const refreshJob = async (tx: postgres.TransactionSql, jobId: string) => {
     await tx`update generation_jobs j set status = case
       when exists(select 1 from generation_job_items i where i.job_id=j.id and i.superseded_at is null and i.status='running') then 'running'
@@ -45,7 +45,7 @@ export function imageSettlement(sql: postgres.Sql) {
   };
   const settleInvalidResponses = async () => {
     const rows =
-      await sql`select id,job_id from generation_job_items where status='needs_reconciliation' and error_code='PROVIDER_INVALID_IMAGE_RESPONSE' and superseded_at is null limit 100`;
+      await sql`select id,job_id from generation_job_items where status='needs_reconciliation' and error_code='PROVIDER_INVALID_IMAGE_RESPONSE' and superseded_at is null ${tasksSince ? sql`and created_at>=${tasksSince}` : sql``} limit 100`;
     for (const row of rows)
       await sql.begin(async (tx) => {
         await tx`select id from generation_jobs where id=${row.job_id} for update`;
@@ -59,7 +59,7 @@ export function imageSettlement(sql: postgres.Sql) {
   const expireTimedOut = async (organizationId?: string) => {
     const rows = await sql`select i.id,i.job_id from generation_job_items i
       where i.provider<>'fluxport-video' and i.status='running' and i.superseded_at is null and i.started_at<now()-interval '3 minutes' and not exists(select 1 from provider_webhook_tasks w join provider_executions e on e.item_id=w.item_id where w.item_id=i.id and e.phase='polling')
-      ${organizationId ? sql`and i.organization_id=${organizationId}` : sql``} limit 100`;
+      ${organizationId ? sql`and i.organization_id=${organizationId}` : sql``} ${tasksSince ? sql`and i.created_at>=${tasksSince}` : sql``} limit 100`;
     for (const row of rows)
       await sql.begin(async (tx) => {
         await tx`select id from generation_jobs where id=${row.job_id} for update`;

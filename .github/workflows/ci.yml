@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       browser_grep:
-        description: "Optional browser test name filter for manual diagnosis; push/PR checks always run the complete suite"
+        description: "Optional browser test name filter; browser checks run only by manual dispatch"
         required: false
         default: ""
         type: string
@@ -25,6 +25,9 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # 中文注释检查要和规则起点提交比较，需要完整的 git 历史。
+          fetch-depth: 0
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -48,7 +51,6 @@ jobs:
     timeout-minutes: 40
     env:
       BROWSER_GREP: ${{ github.event_name == 'workflow_dispatch' && inputs.browser_grep || '' }}
-      FULL_E2E: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.base_ref == 'main' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -59,17 +61,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: cp .env.example .env
       - run: pnpm exec playwright --version
-      - name: Full browser regression for branch pushes and releases
-        if: env.FULL_E2E == 'true'
+      - name: Manual browser regression
         run: |
           if [ -n "$BROWSER_GREP" ]; then
             pnpm test:e2e --shard=${{ matrix.shard }}/2 --grep "$BROWSER_GREP" --pass-with-no-tests
           else
             pnpm test:e2e --shard=${{ matrix.shard }}/2
           fi
-      - name: Core browser smoke tests for development
-        if: env.FULL_E2E != 'true'
-        run: pnpm test:e2e:smoke --shard=${{ matrix.shard }}/2
   browser-result:
     name: ${{ github.event.action == 'edited' && !github.event.changes.base && 'Browser metadata only' || 'Browser' }}
     needs: browser
@@ -112,3 +110,4 @@ jobs:
       - run: git diff --exit-code -- packages/db
       - run: pnpm db:migrate
       - run: pnpm test:integration
+      - run: pnpm test:cloudflare

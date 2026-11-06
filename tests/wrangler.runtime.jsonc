@@ -1,0 +1,44 @@
+{
+  "name": "lycobo-runtime-fixture",
+  "main": "fixtures/workers-runtime.mjs",
+  "compatibility_date": "2026-11-06",
+  "compatibility_flags": ["nodejs_compat"],
+  "images": {
+    "binding": "IMAGES"
+  },
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "lycobo-runtime-fixture"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "IMAGE_QUEUE",
+        "queue": "lycobo-runtime-fixture"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "lycobo-runtime-fixture",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1
+      }
+    ]
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "REALTIME",
+        "class_name": "RealtimeHub"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["RealtimeHub"]
+    }
+  ]
+}

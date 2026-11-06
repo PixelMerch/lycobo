@@ -2,6 +2,7 @@ import { toast } from "@heroui/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useRequireLogin } from "../../auth/login-prompt";
+import { refreshWithoutRealtime } from "../../realtime/availability";
 import { hasPromptDescription } from "./prompt-description";
 import {
   PromptOptimizeRejected,
@@ -74,8 +75,7 @@ export function usePromptOptimizer({
       if (error instanceof PromptOptimizeRejected) retry.current = null;
       if (!abort.signal.aborted) toast.danger(promptOptimizeFailure(error));
     } finally {
-      void client.invalidateQueries({ queryKey: ["wallet"] });
-      void client.invalidateQueries({ queryKey: ["wallet-entries"] });
+      refreshWithoutRealtime(client, "wallet", "wallet-entries");
       setPreview(undefined);
       controller.current = null;
       setRunning(false);

@@ -23,7 +23,9 @@ const eventSchema = z
       ? event.data.task.status === "success"
       : event.data.task.status !== "success",
   );
+/** 服务端验签密钥及生图 Key 来源指纹，不向浏览器暴露。 */
 export type WebhookConfig = { secret: string; source: string };
+/** 从服务端环境读取可选回调配置，缺失生图 Key 时拒绝启用。 */
 export function readWebhookConfig(env: {
   IMAGE_WEBHOOK_SECRET?: string;
   STANDALONE_IMAGE_API_KEY?: string;
@@ -33,6 +35,7 @@ export function readWebhookConfig(env: {
   if (!env.STANDALONE_IMAGE_API_KEY) throw new Error("WEBHOOK_KEY_REQUIRED");
   return { secret, source: imageWebhookSource(env.STANDALONE_IMAGE_API_KEY) };
 }
+/** 校验原始请求体签名和五分钟时间窗，拒绝篡改与过期投递。 */
 export function verifyWebhook(
   body: Uint8Array,
   headers: Headers,
@@ -50,6 +53,7 @@ export function verifyWebhook(
   const expected = createHmac("sha256", secret).update(`${timestamp}.`).update(body).digest();
   return timingSafeEqual(expected, Buffer.from(signature.slice(3), "hex"));
 }
+/** 验签后持久化回执并唤醒原任务，回调不能直接完成任务或改变账务。 */
 export function providerWebhookRoutes(deps: {
   config: WebhookConfig;
   repository: Pick<ImageRuntimeRepository, "webhookReceive">;
@@ -62,7 +66,7 @@ export function providerWebhookRoutes(deps: {
       return c.json({ error: { code: "UNAUTHORIZED", message: "回调签名无效" } }, 401);
     let value: unknown;
     try {
-      value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(raw));
+      value = JSON.parse(new TextDecoder("utf-8", { fatal: true, ignoreBOM: false }).decode(raw));
     } catch {
       return c.json({ error: { code: "VALIDATION_ERROR", message: "回调内容无效" } }, 400);
     }
@@ -81,8 +85,7 @@ export function providerWebhookRoutes(deps: {
       taskId: event.data.data.task.task_id,
       taskStatus: event.data.data.task.status,
     });
-    // Receipt and outbox are committed before transport. A failed wake is safely retried by
-    // provider delivery / foreground recovery / timer; never perform paid work in this route.
+    // 回执和 outbox 先提交，再发送唤醒消息；传输失败由重复投递或 Cron 恢复。
     if (ready) await deps.wake?.();
     return c.json({ received: true });
   });

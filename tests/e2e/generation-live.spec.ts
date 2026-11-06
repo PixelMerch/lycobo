@@ -106,7 +106,9 @@ test("four public models submit at 1.5K, queued results become durable history a
     ),
   ).toBe(true);
   await page.evaluate(() =>
-    window.dispatchEvent(new CustomEvent("fixture:sse", { detail: { type: "resync", id: "1" } })),
+    window.dispatchEvent(
+      new CustomEvent("fixture:realtime", { detail: { type: "resync", id: "1" } }),
+    ),
   );
   await expect(page.locator(".generation-results img")).toHaveCount(modelNames.length, {
     timeout: 12000,
@@ -140,6 +142,13 @@ for (const outcome of ["disconnect", "timeout", "auth"] as const) {
     await page.goto("/create");
     await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("保留同一次提交");
     await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
+    if (outcome === "auth") {
+      // 401 发生在业务受理前，现有会话刷新可以安全地用原键自动重试。
+      await expect.poll(() => keys.length).toBe(2);
+      expect(keys[0]).toBe(keys[1]);
+      expect(bodies[0]).toBe(bodies[1]);
+      return;
+    }
     await expect(page.getByRole("button", { name: "确认上次提交", exact: true })).toBeEnabled();
     await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
       "保留同一次提交",
@@ -235,11 +244,9 @@ test("submission success preserves edits made while the request is pending", asy
   );
 });
 
-test("pending history converges without an SSE notification and stops polling once complete", async ({
-  page,
-}) => {
+test("pending history catches up after reconnect without status polling", async ({ page }) => {
   test.setTimeout(45000);
-  await mockImageEvents(page, false);
+  await mockImageEvents(page);
   let reads = 0;
   const job: ImageJob = {
     id: crypto.randomUUID(),
@@ -271,18 +278,6 @@ test("pending history converges without an SSE notification and stops polling on
   });
   await page.route("**/api/v1/image-tasks/status?ids=*", async (route) => {
     reads++;
-    if (reads >= 1) {
-      job.status = "succeeded";
-      job.completed_at = new Date().toISOString();
-      job.items[0] = {
-        ...job.items[0]!,
-        status: "succeeded",
-        output_asset_id: crypto.randomUUID(),
-        width: 1024,
-        height: 1024,
-      };
-    }
-    expect(new URL(route.request().url()).searchParams.get("ids")).toBe(job.id);
     await route.fulfill({ json: { data: [job] } });
   });
   await page.route("**/api/v1/image-assets/*/content**", (route) =>
@@ -290,20 +285,35 @@ test("pending history converges without an SSE notification and stops polling on
   );
   await page.goto("/create");
   await expect(page.locator(".generation-placeholder.generation-pending")).toBeVisible();
-  await expect(page.locator(".generation-results .generation-media img")).toBeVisible({
-    timeout: 22000,
-  });
-  await expect(page.locator(".generation-pending")).toHaveCount(0);
-  const completedReads = reads;
-  await page.waitForTimeout(16000);
-  expect(reads).toBe(completedReads);
+  await page.clock.install();
+  await page.clock.fastForward(65000);
+  expect(reads).toBe(0);
+  job.status = "succeeded";
+  job.completed_at = new Date().toISOString();
+  const item = job.items[0];
+  if (!item) throw new Error("FIXTURE_ITEM_MISSING");
+  job.items[0] = {
+    ...item,
+    status: "succeeded",
+    output_asset_id: crypto.randomUUID(),
+    width: 1024,
+    height: 1024,
+  };
+  await page.evaluate(() =>
+    window.dispatchEvent(
+      new CustomEvent("fixture:realtime", { detail: { type: "resync", id: "1" } }),
+    ),
+  );
+  await expect(page.locator(".generation-results .generation-media img")).toBeVisible();
+  expect(reads).toBe(0);
 });
 
 test("idle focus and reconnect do not reload database-backed queries", async ({ page }) => {
-  await mockImageEvents(page, false);
+  await mockImageEvents(page);
   let reads = 0;
   page.on("request", (request) => {
-    if (new URL(request.url()).pathname.startsWith("/api/v1/")) reads++;
+    if (/^\/api\/v1\/(image-tasks|wallet|notifications)/.test(new URL(request.url()).pathname))
+      reads++;
   });
   await page.goto("/create");
   await expect(page.getByText("生成的图片会显示在这里", { exact: true })).toBeVisible();

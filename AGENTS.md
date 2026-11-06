@@ -4,11 +4,11 @@
 
 - Follow the user's latest request. Read relevant code, Git status, PRD.md, DESIGN.md and
   PROJECT_STRUCTURE.md before changing behavior. Keep unrelated changes and local assets intact.
-- This is React/Vite on CloudBase hosting + Hono Node HTTP functions, with Event consumers, private CloudBase storage and shared PostgreSQL. It is not bonko's Astro application; Node entrypoints serve production functions and isolated local development.
+- This is React/Vite on Cloudflare Workers Static Assets, Hono Workers APIs, a separate image Queue/Cron Worker, private R2 and existing PostgreSQL through Hyperdrive. Production uses only these runtimes; do not add compatibility adapters for retired platforms. Node entrypoints are for isolated local development only; video is not enabled in the Workers runtime.
 - Distinguish implemented functionality, fixtures, UI references and future contracts.
   Never fabricate completed generation, uploaded files, persistence, users, credits or notifications.
-- Keep product UI in Simplified Chinese. Keep identifiers in English. Team documentation is Chinese;
-  this compact agent entrypoint uses English for interoperability.
+- Keep product UI and code comments in Simplified Chinese. Keep identifiers in English. Team
+  documentation is Chinese; this compact agent entrypoint uses English for interoperability.
 - Inspect installed versions and official APIs before using framework features. Pin direct dependencies.
 
 ## Skills
@@ -73,8 +73,16 @@ Read relevant project skills before work:
 ## Code quality
 
 - Most code here is agent-written and the owner is learning TypeScript, Node and React from it.
-  Write plain, idiomatic code a beginner can follow: descriptive names, early returns, one job per
-  function and a short comment where the reason is not obvious. Prefer that over clever abstractions.
+  Write plain, idiomatic code a beginner can follow: descriptive names, early returns and one job
+  per function. Prefer that over clever abstractions.
+- Code must carry concise Simplified Chinese comments. New or changed exported functions, classes
+  and React components get a one-line `/** */` purpose comment; non-obvious logic and billing,
+  idempotency, permission, retry and timeout rules get a short reason. Never restate the code.
+  Convert comments in code you touch; do not bulk-translate unrelated files. Exceptions and
+  examples are in docs/node-ts-best-practices.md.
+- pnpm lint runs scripts/check-code-comments.mjs, which checks comment language, comment length
+  and exported purpose comments on code changed since its start commit. Fix the code it reports;
+  never move ruleStartCommit to get past the check.
 - pnpm lint fails on any Biome warning and runs scripts/check-code-quality.mjs. Limits for new code:
   functions 100 lines, cognitive complexity 15, files 400 lines (CSS 500), no nested ternaries,
   no `as` except `as const`, no non-null assertions, no empty blocks, no unhandled promises,
@@ -87,13 +95,16 @@ Read relevant project skills before work:
 
 ## API, tasks and storage
 
+- Read docs/node-ts-best-practices.md before changing apps/api, apps/worker or packages. It defines
+  code placement, dependency direction and layer duties, and wins over the older module convention
+  in PROJECT_STRUCTURE.md. Do not copy the existing exceptions it lists.
 - Hono routes stay thin; domain services own use cases and repositories own persistence.
   Runtime inputs are unknown until validated. Avoid any, unchecked casts and hidden global clients.
 - Authenticate and scope every business read/write by server-resolved owner/workspace.
   Request ownerId, projectId and storage keys are never proof of authorization.
 - Paid generation depends on auth, ownership, durable submission, provider reconciliation, storage
   and billing behavior. Never replace unavailable persistence with memory success.
-- Persist task + outbox intent atomically. CloudBase Event consumers drain durable outbox intents; PostgreSQL is the source of truth. Do not reintroduce Redis/BullMQ.
+- Persist task + outbox intent atomically. Cloudflare Queue consumers drain durable outbox intents; PostgreSQL is the source of truth. Do not reintroduce Redis/BullMQ.
   Worker processes are separate from API; no fire-and-forget paid work in HTTP handlers.
 - External calls need timeouts, cancellation, idempotency keys and bounded retry. Ambiguous paid
   submissions must not be automatically resubmitted. An explicit user-confirmed retry may retire
@@ -106,7 +117,7 @@ Read relevant project skills before work:
   Register numeric business codes in contracts; preserve HTTP statuses and binary downloads.
 - No wildcard credentialed CORS. Cookie auth requires trusted-origin/CSRF protection.
   Validate uploads at the server; MIME and extension checks in the browser are convenience only.
-- Node database pools are process-scoped and closed on shutdown; CloudBase shared PG uses scoped HTTP RPC calls and Event invocations close repository resources on completion. No network calls inside DB transactions.
+- Local Node database pools are process-scoped and closed on shutdown; Workers create invocation-scoped clients through Hyperdrive and close them at invocation completion. Disable Hyperdrive query caching for business state. No network calls inside DB transactions.
   Migrations are append-only once merged; use expand/contract changes, review SQL, no automatic db push.
 
 ## Collaboration and Git

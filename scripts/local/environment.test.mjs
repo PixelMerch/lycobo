@@ -5,8 +5,7 @@ it("keeps business infrastructure local and discards production credentials", ()
   const env = localEnvironment({
     PATH: "/usr/bin",
     DATABASE_URL: "postgresql://secret@remote/db",
-    CLOUDBASE_APIKEY: "secret",
-    TCB_SECRET_KEY: "secret",
+    UNRELATED_API_KEY: "secret",
     CLOUDFLARE_API_TOKEN: "secret",
     AUTH_JWT_SECRET: "production",
     S3_ENDPOINT: "https://remote",
@@ -14,12 +13,7 @@ it("keeps business infrastructure local and discards production credentials", ()
   });
   expect(new URL(env.DATABASE_URL).hostname).toBe("127.0.0.1");
   expect(new URL(env.S3_ENDPOINT).hostname).toBe("127.0.0.1");
-  for (const key of [
-    "CLOUDBASE_APIKEY",
-    "TCB_SECRET_KEY",
-    "CLOUDFLARE_API_TOKEN",
-    "DEEPSEEK_API_KEY",
-  ])
+  for (const key of ["UNRELATED_API_KEY", "CLOUDFLARE_API_TOKEN", "DEEPSEEK_API_KEY"])
     expect(env).not.toHaveProperty(key);
   expect(env.AUTH_JWT_SECRET).not.toBe("production");
   expect(env).not.toHaveProperty("IMAGE_GENERATION_ENABLED");
@@ -45,4 +39,20 @@ it("passes through only the configured provider reference origin and preserves l
   });
   expect(env.VIDEO_REFERENCE_ORIGIN).toBe("https://assets.example.com");
   expect(env.ASSET_PUBLIC_ORIGIN).toBe("http://127.0.0.1:8791");
+});
+
+it("inherits process tooling without copying arbitrary deployment secrets", () => {
+  const env = localEnvironment({
+    PATH: "/usr/bin",
+    HOME: "/tmp/fixture-home",
+    HTTP_PROXY: "http://127.0.0.1:7890",
+    DEV_WEB_PUBLIC_PORT: "8081",
+    VENDOR_SECRET_TOKEN: "private-fixture",
+    UNRECOGNIZED_DEPLOY_KEY: "private-fixture",
+  });
+  expect(env.PATH).toBe("/usr/bin");
+  expect(env.HTTP_PROXY).toBe("http://127.0.0.1:7890");
+  expect(env.DEV_WEB_PUBLIC_PORT).toBe("8081");
+  expect(env).not.toHaveProperty("VENDOR_SECRET_TOKEN");
+  expect(env).not.toHaveProperty("UNRECOGNIZED_DEPLOY_KEY");
 });

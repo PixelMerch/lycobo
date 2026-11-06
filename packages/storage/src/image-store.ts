@@ -115,6 +115,8 @@ export function imageStore(directory: string, resolveUid?: StorageUid) {
     return file;
   };
   return {
+    prepareReferenceUpload: normalizeReferenceUpload,
+    prepareProviderReference: providerReference,
     async ready() {
       await mkdir(root, { recursive: true, mode: 0o700 });
       await access(root, constants.R_OK | constants.W_OK);

@@ -1,7 +1,9 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import release from "../../release.json" with { type: "json" };
 export default defineConfig({
+  define: { "import.meta.env.VITE_APP_RELEASE_VERSION": JSON.stringify(release.version) },
   plugins: [
     react(),
     tailwindcss(),
@@ -23,7 +25,9 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
-    proxy: { "/api": process.env.DEV_API_PROXY_TARGET ?? "http://127.0.0.1:8787" },
+    proxy: {
+      "/api": { target: process.env.DEV_API_PROXY_TARGET ?? "http://127.0.0.1:8787", ws: true },
+    },
     watch: { usePolling: process.env.DEV_USE_POLLING === "true" },
   },
   build: { target: "es2022", sourcemap: false },

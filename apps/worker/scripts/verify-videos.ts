@@ -194,7 +194,7 @@ async function verifyVideoAssetDelivery(
   owner: Awaited<ReturnType<ImageRepository["provision"]>>,
   accepted: { id: string },
   input: ReturnType<typeof videoInputSchema.parse>,
-  referenceAssetIds: `${string}-${string}-${string}-${string}-${string}`[],
+  referenceAssetIds: string[],
   storyboard: { description: string },
   images: ImageRepository,
   sql: postgres.Sql,

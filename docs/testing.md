@@ -7,7 +7,7 @@
 - pnpm test：契约、API、Worker 的单元行为。
 - pnpm build：实际前端和两个 Node 应用生产构建。
 - pnpm test:e2e：真实 Chromium 下接口连接、路由、禁用态与窄屏溢出。
-- pnpm test:integration：明确 opt-in 的本地 PostgreSQL 和 CloudBase RPC 集成验证。
+- pnpm test:integration：明确 opt-in 的隔离 PostgreSQL、队列、鉴权及持久事件集成验证。
 
 首次运行浏览器测试需 pnpm exec playwright install chromium。
 CI 使用 pnpm exec playwright install --with-deps chromium。
@@ -68,7 +68,7 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 `tests/e2e/image-preview.spec.ts` 验证全屏预览、缩放拖动、移动布局和图片切换后的说明同步；`library-dialog.spec.ts` 验证我的素材默认当前工具、页签与功能／模型筛选在分页前请求、重置、上传页签禁用筛选、服务端收藏与失败回滚、带筛选进入素材库、按天分组与手机两列瀑布流，以及弹层焦点恢复。接口均由浏览器 fixture 拦截，不调用模型。
 
-素材库筛选与收藏的数据库约束由两处隔离检查覆盖：worker `test:images` 中的 `verify-asset-library.ts` 在真实 PostgreSQL 上验证工具与模型筛选（含服务商变体归并）、参考图不命中工具筛选、收藏幂等与成员隔离、跨组织与过期素材拒绝，以及每位成员1000项上限；api `test:cloudbase-images` 对 CloudBase RPC 应用新迁移后重复验证同样的筛选、收藏与上限。
+素材库筛选与收藏由 worker `test:images` 的 `verify-asset-library.ts` 在隔离 PostgreSQL 验证：功能、模型、收藏幂等与成员隔离、跨组织及过期素材拒绝、每位成员 1000 项上限。
 
 并行执行不同测试任务时，为每次运行设置独立 `--output=/tmp/<本次运行目录>`，避免 Playwright 清理其他运行的 trace。历史时间断言使用浏览器自身时区计算，不能写死本机的 UTC+8 时间。完整 `pnpm test:e2e` 由远程 CI 手动触发；本地复现可指定文件或用例，不能以跳过失败用例代替查明原因。
 
@@ -115,24 +115,50 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 发布浏览器回归：按当前四模型展示名、工具导航、历史隔离、草稿载入确认、移动素材入口与1.5K参数更新旧断言；保持请求体、单次收费、退款、坐标和草稿保留验证。空历史居中规则降低选择器优先级，避免覆盖移动端创作视图对历史区的隐藏；390px家纺与空历史回归覆盖此问题。本地失败用例分组复验通过，完整套件可手动触发远程CI跑两分片。
 
-结果恢复回归：独立主站集成覆盖3分钟超时、90秒领取租约、跨企业恢复拒绝、原task_id只读查询与恢复、旧执行token不能覆盖结果、恢复不重复扣费。浏览器定向检查未收到SSE通知时每5秒刷新并最终显示成功图片，成功后停止轮询。R2测试验证已校验PNG直接保存、原图与缩略预览版本完整、派生图失败保留原图，不因优化跳过格式或动画校验。
+结果恢复回归：独立主站集成覆盖3分钟超时、90秒领取租约、跨企业恢复拒绝、原task_id只读查询与恢复、旧执行token不能覆盖结果、恢复不重复扣费。浏览器定向检查按推送更新结果，断线后按游标补齐，空闲时不定时查询任务。R2测试验证已校验PNG直接保存、原图与缩略预览版本完整、派生图失败保留原图，不因优化跳过格式或动画校验。
 
-## CloudBase 共享 PG 鉴权事务
+## 鉴权与持久事件
 
-根 `pnpm test:integration` 已包含 `@lycoboai/db test:cloudbase-auth`。该检查只接受显式允许的 loopback PostgreSQL，每次新建独立数据库并执行完整迁移链和 CloudBase 鉴权 RPC，验证条件会话创建、并发刷新单次使用、改密原子撤销会话及匿名/普通登录角色拒绝执行服务端函数。无需 CloudBase 生产凭据，不写远端业务数据。
+根 `pnpm test:integration` 在独立 loopback PostgreSQL 数据库中执行完整迁移链，覆盖会话创建、并发刷新、改密撤销、任务与 outbox 并发、扣费及退款幂等、跨组织拒绝和事件回滚。`verify-realtime.ts` 额外验证消息、个人已读、分页和批量投递确认；失败事件保留待重试。
 
-`@lycoboai/api test:cloudbase-images` 在独立临时库加载图片 RPC 及后续追加迁移，覆盖提交/claim/outbox 并发、扣费、退款、幂等、旧执行隔离与跨组织访问。计划 ready 后还会实际确认一张裂变图片，检查仅一笔扣费和一条 outbox、同键重放不重复收费，确定失败后退款；不仅验证计划生成。该回归已先复现 SQLSTATE 42702，再验证 `20261031235900_variation_plan_confirmation.sql` 修复。运行仍需显式 loopback DATABASE_URL 和 ALLOW_LOCAL_INTEGRATION=true，不调用付费供应商。
-
-`cloudbase-outbox*.test.ts` 覆盖 Event 调用内继续取回异步结果：使用真实配置处理器与明确的内存持久化/HTTP fixtures，验证一次生成 POST、随后 GET、结果保存一次；同时验证最多两路操作、预算不足时保留 intent、没有后续 receipt 或结果未决时退出。测试不接触外部模型；原账务及 claim/outbox 不变量继续由隔离数据库测试覆盖。
-
-图片 Webhook：`provider-webhook.test.ts` 覆盖原始字节签名、时间窗口、头部一致性和持久化后唤醒；`cloudbase-outbox-provider.test.ts` 覆盖异步等待释放消费者及超时后只 GET 原任务；`test:cloudbase-images` 在独立数据库验证早到/重复/持租约回调、迟到恢复、权限、租户隔离与计费。`generation-live.spec.ts` 中 pending history 用例验证无 SSE 时的批量查询收敛和完成后停止。所有中转调用均为模拟数据，不调用真实模型。
+图片 Webhook 单元测试验证原始字节签名、时间窗口与头部一致性；隔离图片集成验证提前、重复、迟到和持租约回调，以及无回调时只查询原任务。浏览器 `generation-live.spec.ts` 和 `realtime.spec.ts` 验证主动推送、断线游标、空闲无任务查询和资源请求去重，不调用真实供应商。
 
 ## 视频创作
 
 视频接入的fixture验证包含在现有隔离命令中：`pnpm test:integration`里的`verify-videos`使用一次性本地数据库，验证100积分固定扣费、并发幂等、明确失败单次退款、无ID崩溃不重投、原任务下载、视频素材入库及图片流程隔离。HTTP供应商及对象桶为显式fixture，不消费真实供应商额度。
 
-定向前台回归：`pnpm exec playwright test tests/e2e/video-creation.spec.ts tests/e2e/ratio-pager.spec.ts tests/e2e/library-dialog.spec.ts`。`tests/fixtures/video-playback.mp4`是ffmpeg生成的1秒64×64纯色视频测试文件，只验证浏览器媒体播放／按需加载，不是模型生成结果，也不用于产品展示。真实供应商生成、分组权限和CloudBase资源服务播放必须按[视频接入](video-generation.md)另行验收。
+视频测试文件使用明确的本地 HTTP fixture 验证媒体播放和按需加载，不代表当前 Workers 已开放视频或已完成真实供应商验收。
 
 视频封面与播放验证：`packages/storage/src/video-variants.test.ts`使用真实解码器提取WebP，验证缓存合并、源文件保持不变、只派生封面及无效key拒绝；`video-media.test.ts`验证封面／播放／下载签名用途、内联播放Range、平台302跳转及封面不回退视频。`tests/fixtures/video-portrait.mp4`是ffmpeg生成的1秒90×162纯色视频，`video-cover.webp`为其真实帧，仅供测试，不是产品内容。定向`video-creation.spec.ts`验证列表只有封面、点击后才请求播放地址、附件仅在明确下载时通过本地fixture HTTP服务器传输、竖屏布局、详情信息栏、缩略图和方向键切换、有无Range时的进度条行为与关闭后焦点恢复。测试不调用模型。
 
 账户弹框拆分回归由`account-center.spec.ts`、`account-menu.spec.ts`和`account-settings.spec.ts`覆盖：账单仅保留积分明细/充值订单，设置独立打开并恢复焦点，普通成员不显示企业管理，改密不匹配不提交、错误密码不退出、成功提交后清理当前登录状态。浏览器使用接口fixture，不修改真实账号密码；服务器改密和会话撤销仍由既有鉴权单测与隔离集成覆盖。
+
+## Cloudflare Workers 迁移验证（2026-11-06）
+
+当前生产以 [Cloudflare 部署](cloudflare-deployment.md) 为准。`pnpm test:integration` 使用独立本地 PostgreSQL 验证任务、outbox、鉴权和持久事件；Workers 平台行为由 `pnpm test:cloudflare` 验证。
+
+`pnpm check` 的构建已包含 `pnpm cf:build`（Wrangler dry-run）。`pnpm test:cloudflare` 启动独立、本地 fixture Worker，不使用生产 Hyperdrive、R2 或密钥，验证 workerd 内现有 scrypt 密码兼容、Images 真实本地解码与 WebP 输出、R2 写入以及 Queue handler 投递。
+
+新增 `cloudflare-uploads.test.ts` 覆盖暂存后不提前登记、上传人隔离、发送失败恢复、重复消息、存储故障、图片无效失败及登记后回执丢失恢复；`cloudflare.test.ts` 覆盖透明 PNG、展示图尺寸、标准化不重复编码、动画/超限拒绝和转换失败保留源结果。客户端测试验证等待真实素材和显式失败。`verify-cloudflare-isolation.ts` 随隔离图片集成检查素材登记幂等/内容冲突、新旧任务接管边界、旧执行不被自动过期、用户明确重试旧任务的新执行可领取，以及新任务重复领取拒绝。
+
+这些检查不调用真实付费模型，不证明 Cloudflare 远端绑定可用，也不替代真实商品图的质量、延迟和费用验收。当前 Images 模拟与生产编码器的差异需在单独授权候选部署后验证；完整本地 E2E 仍不默认执行。
+
+补充本地实测：实际应用 Worker（不是简化 fixture）使用一次性 PostgreSQL、本地 Hyperdrive/R2/Images/Queue 完成登录、202 上传、队列处理、素材登记、回执查询及签名缩略图读取；临时数据库已清理。定向 `pnpm exec playwright test tests/e2e/queued-reference-upload.spec.ts` 两项通过，覆盖未完成不提交生成及失败保留草稿/具体错误。测试未调用模型。
+
+本次远端部署验证：主页与登录弹层、JSON API、Hyperdrive 读库及不存在账号登录拒绝正常；已有素材的签名 WebP/PNG 返回 200，未签名媒体返回 403；不存在上传意图的无副作用 Queue 探测消息已投递且积压归零。线上真实账号登录和有效图片上传/转换未验证，未调用付费模型。新增 `scripts/cloudflare-consumer.test.mjs` 验证生成关闭时仍处理上传，但不执行付费消息、不扫描或结算付费任务。
+
+独立图片 Worker 的部署边界由 `scripts/cloudflare-deployment.test.mjs` 验证：主站没有 Queue/Cron handler，消费者没有 HTTP handler，复用同一持久队列、R2、Hyperdrive 和接管时间，两个配置均关闭付费执行且消费者不持有 JWT。`pnpm cf:build` 分别打包两个配置。
+
+Webhook 与无回调兼容：`scripts/cloudflare-webhook.test.mjs` 验证 Workers API 挂载来源指纹和签名配置，生成关闭时仍可接收已存在任务的通知；`cloudflare-consumer.test.mjs` 验证无回调延迟查询、丢失回调 60 秒兜底和提前回调 2 秒核查。已有 provider/outbox 和隔离集成继续验证查询原任务不再次提交付费生成。配置变更不等于真实付费生成验收。
+
+`pnpm cf:check:config` 是授权部署后的只读外部校验，不进入无凭据的默认 CI。`cloudflare-config.test.mjs` 覆盖活动版本正确但控制台草稿过期、仓库与活动版本不一致、Secret 名称缺失及完全一致的场景。
+
+`pnpm test:cloudflare` 已增加真实 workerd 下的提示词优化 fixture：由原生 Request 验证请求选项，再消费模拟供应商 SSE 并完成结算。旧 `redirect:error` 在此检查中失败，改为 `manual` 后通过；Node 单测覆盖拒绝重定向、供应商拒绝请求时只结算一次，以及 SSE 尚未结束时不提前关闭仓储。
+
+## Cloudflare 实时推送
+
+`pnpm test:cloudflare` 覆盖独立本地 SQLite DO WebSocket 握手、自动心跳、组织隔离、重复游标、重连回放与失效会话关闭。worker `test:images` 增加 `verify-realtime.ts`，在隔离 PostgreSQL 验证回滚、钱包与任务事件、个人消息、幂等已读和分页。客户端单测确认空闲时不查询业务 API、重连携带游标、版本事件不刷新页面。详细限制与发布顺序见 [实时推送](realtime.md)。
+
+## 运行边界与规则检查
+
+本地 `pnpm lint` 同时运行全仓运行时边界、浏览器 server-only 导入、代码质量和中文注释检查。CI Infrastructure 在隔离数据库集成后增加 `pnpm test:cloudflare`，真实 workerd 检查不读取生产绑定或付费模型。完整浏览器回归仍仅由手动 workflow_dispatch 触发，普通 push／PR 不运行全套浏览器测试。

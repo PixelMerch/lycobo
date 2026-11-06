@@ -14,6 +14,7 @@ import { authRoutes } from "./features/auth/routes";
 import type { EnterpriseAuth } from "./features/auth/service";
 import { providerWebhookRoutes, type WebhookConfig } from "./features/images/provider-webhook";
 import { type ImageApiDependencies, imageRoutes } from "./features/images/routes";
+import { type RealtimeDependencies, realtimeRoutes } from "./features/realtime/routes";
 import { type VideoApiDependencies, videoRoutes } from "./features/videos/routes";
 import { errorCategory, safeRequestPath } from "./request-diagnostics";
 
@@ -117,6 +118,7 @@ export function createApp(
   auth?: EnterpriseAuth,
   webhook?: WebhookConfig,
   videos?: VideoApiDependencies,
+  realtime?: RealtimeDependencies,
 ) {
   const app = new Hono<ApiEnv>();
   app.use("*", responseEnvelope(reportError));
@@ -137,6 +139,7 @@ export function createApp(
       "/api/v1/webhooks",
       providerWebhookRoutes({ config: webhook, repository: images.repository, wake: images.wake }),
     );
+  if (realtime) app.route("/api/v1", realtimeRoutes(realtime));
   if (images) app.route("/api/v1", imageRoutes(images));
   app.get("/api/health/live", (c) => c.json({ status: "ok", service: "lycoboai-api" }));
   app.get("/api/v1/system/capabilities", (c) => {

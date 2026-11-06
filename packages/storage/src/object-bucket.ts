@@ -1,7 +1,8 @@
-import type { CloudBaseStorageBindings } from "./cloudbase-object-bucket";
 import type { S3Bindings } from "./s3-config";
 
-export interface StorageBindings extends S3Bindings, CloudBaseStorageBindings {}
+export interface StorageBindings extends S3Bindings {
+  [key: string]: string | undefined;
+}
 
 /** Minimal private object operations; authorization stays in the caller. */
 export interface ImageObjectBucket {

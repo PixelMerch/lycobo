@@ -1,6 +1,6 @@
 # 发布与部署
 
-本地提交、远程推送和 PR 合并是不同动作。dev 合并到 main 后仅运行 CI，不自动创建版本或部署。GitHub Release、CloudBase 部署和数据库迁移分别由用户明确授权后手动执行。
+本地提交、远程推送和 PR 合并是不同动作。dev 合并到 main 后仅运行 CI，不自动创建版本或部署。GitHub Release、Cloudflare 部署和数据库迁移分别由用户明确授权后手动执行。
 
 ## 合并
 
@@ -25,8 +25,8 @@ Dependabot 从默认分支读取 `.github/dependabot.yml`，因此该配置推�
 
 ## 部署顺序
 
-1. 评估 expand/contract，手动应用经审查的 `cloudbase/migrations/` 迁移，再合并到 main。迁移必须兼容正在运行的旧代码。
-2. main CI 通过且用户授权后，在 Actions 的 **Deploy CloudBase → Run workflow** 选择 `main`，手动部署云函数和前端，见 [CloudBase 部署](cloudbase-deployment.md)。
+1. 评估 expand/contract，手动应用经审查的 `packages/db/migrations/` 追加迁移；迁移必须兼容正在运行的代码。
+2. CI 通过且用户授权后，部署主站与独立图片 Worker；首次启用 DO 先部署主站命名空间，再部署消费者绑定。运行与验收见 [Cloudflare 部署](cloudflare-deployment.md)。
 3. 验证健康、真实读写和错误率。
 4. 稳定后才清理旧字段/契约。
 
@@ -42,7 +42,7 @@ Dependabot 从默认分支读取 `.github/dependabot.yml`，因此该配置推�
 
 手动入口：在 GitHub Actions 的 **Release → Run workflow** 选择 `main` 并填写 `vX.Y.Z`。目标提交必须属于 main 历史且对应 main push CI 成功。发布会生成标签、更新日志、作者与文件变更附件；完整 E2E 保持手动运行。相同版本已有 Release 时跳过，不覆盖其内容。
 
-Release 工作流只发布 GitHub Release，不部署网站、执行业务迁移或调用模型；部署由 `.github/workflows/deploy-cloudbase.yml` 完成。
+Release 工作流只发布 GitHub Release。Cloudflare 的两个 Worker 使用受控 Wrangler 流程单独部署；产品公告在部署成功后由 `release.json` 与发布脚本写入，见 [实时推送](realtime.md)。
 
 自动说明由 `scripts/release-notes.mjs` 从真实 Git 历史生成：
 

@@ -3,11 +3,11 @@ import {
   imageGenerationInputSchema,
   imageSubmissionResponseSchema,
   imageTaskRetrySchema,
-  imageUploadResponseSchema,
 } from "@lycoboai/contracts";
 import type { QueryClient } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
 import { ImageApiError, imageRequest } from "./image-request";
+import { completeReferenceUpload } from "./references/complete-reference-upload";
 import { prepareReferenceUpload } from "./references/prepare-reference-upload";
 import { referenceSizeError } from "./references/read-reference-images";
 import type { Draft, ModelId, ReferenceImage } from "./studio-state";
@@ -105,7 +105,7 @@ export async function uploadImageReferences(
           }
           throw error;
         });
-        const uploaded = imageUploadResponseSchema.parse(await upload.json());
+        const uploaded = await completeReferenceUpload(upload);
         void client.invalidateQueries({ queryKey: ["image-assets"] });
         return uploaded;
       },

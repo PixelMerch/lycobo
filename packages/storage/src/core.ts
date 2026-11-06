@@ -32,6 +32,8 @@ export type ImageStorageTiming = {
   durationMs: number;
 };
 export interface ImageStore {
+  prepareReferenceUpload?(bytes: Uint8Array): Promise<Uint8Array>;
+  prepareProviderReference?(bytes: Uint8Array): Promise<Uint8Array>;
   ready(): Promise<void>;
   put(
     scope: ImageScope,

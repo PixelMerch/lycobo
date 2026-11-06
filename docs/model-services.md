@@ -80,7 +80,7 @@ provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 
 
 ## Gemini 原生图片协议
 
-按 [FluxPort Gemini 文档](https://uselg.top/docs?model=gemini-3.1-flash-image-preview) 对接 `gemini-native`：POST `/v1beta/models/{upstreamModel}:generateContent`，Bearer 鉴权，提示词和参考图放入 `contents[].parts`（不透明参考图发送前压缩为 JPEG，透明图保持 PNG，`mimeType` 按实际内容声明，见[运行计费优化](cloudbase-deployment.md#运行计费优化)）；比例、1K／2K／4K 使用 `generationConfig.imageConfig.aspectRatio/imageSize`。不发送 Images API 的 n、quality、async 或像素 size。Gemini 的 4K 使用供应商档位，不套用 Images API 最长边 3840 的尺寸计算。
+按 [FluxPort Gemini 文档](https://uselg.top/docs?model=gemini-3.1-flash-image-preview) 对接 `gemini-native`：POST `/v1beta/models/{upstreamModel}:generateContent`，Bearer 鉴权，提示词和参考图放入 `contents[].parts`（不透明参考图发送前压缩为 JPEG，透明图保持 PNG，`mimeType` 按实际内容声明，见[图片处理](cloudflare-deployment.md#图片处理)）；比例、1K／2K／4K 使用 `generationConfig.imageConfig.aspectRatio/imageSize`。不发送 Images API 的 n、quality、async 或像素 size。Gemini 的 4K 使用供应商档位，不套用 Images API 最长边 3840 的尺寸计算。
 
 同步解析 candidates 中的 inlineData 或 fileData；纯文字、空图片结果不视为成功。异步 202 的 task_id/status_url/result_url 继续使用持久化查询流程，查询返回的原生结果同样解析，不重新付费 POST。结果文件仍需通过现有来源白名单、大小限制与真实图片校验，入私有存储后才能完成任务。
 
@@ -114,7 +114,7 @@ Grok 与 Seedream 已从可选目录和新任务路由移除，已有任务与�
 
 ### 主站试用独立模式
 
-浏览器从主站代码和本地静态资源读取四个模型的名称、说明及 Logo，不请求管理后台模型目录。API 与消费者启用 `STANDALONE_MODELS=true` 后使用服务端固定图片/语言路由，密钥由 CloudBase 服务端环境配置提供；普通生图、家纺裂变、套图计划继续共用真实鉴权、积分、任务、outbox 与私有素材存储。后台表结构、渠道记录和管理接口完整保留，不影响独立模式开关；关闭独立模式可继续使用原后台配置。历史任务保留既有供应商快照和旧密钥解密流程，不将未决任务静默改投新渠道。
+浏览器从主站代码和本地静态资源读取四个模型的名称、说明及 Logo，不请求管理后台模型目录。生产使用 `STANDALONE_MODELS=true` 的服务端固定路由，密钥通过 Workers Secrets 配置。普通生图、家纺裂变和套图计划共用真实鉴权、积分、任务、outbox 与私有 R2。模型管理表和管理接口保留独立用途，历史任务沿用已保存的供应商快照，不能把未决尝试自动改投新渠道。
 
 ### 主站独立计划服务
 
@@ -128,4 +128,4 @@ Grok 与 Seedream 已从可选目录和新任务路由移除，已有任务与�
 
 - `POST /api/v1/prompt-optimizations` 使用企业身份和可信来源检查，请求含 UUID 幂等键及 `{prompt, tool}`。响应逐段发送 `delta`，`complete` 返回持久化的完整结果。客户端在流结束前仅展示预览，结束后才更新可编辑草稿。
 - 领取时原子扣 1 积分并写入请求记录，同键重放返回原结果。失败或服务端在结算前收到取消时退回积分。异常中断后，超过两分钟的未结算请求在该用户再次发起优化时退回积分。连接中断时当前页面可用原键核对结果。
-- 发布前先应用 CloudBase 迁移 `20261104150000_prompt_optimizations.sql`；本地 PostgreSQL 对应 `0042_prompt_optimizations.sql`。云端网关实际逐段透传和真实 DeepSeek 调用须在目标环境验收。
+- 提示词优化依赖当前 PostgreSQL 迁移链中的 `0042_prompt_optimizations.sql`。先完成追加迁移再部署 API；SSE 请求使用 Workers 支持的请求选项，并在流结束或取消后关闭调用级数据库连接。真实模型费用只由用户授权的线上操作产生。

@@ -3,7 +3,7 @@ import postgres from "postgres";
 import { z } from "zod";
 
 const channel = "lycobo_image_events";
-// Call last in each business transaction. The per-tenant lock keeps committed cursors ordered.
+/** 在业务事务末尾追加事件，以组织锁保证已提交游标有序。 */
 export async function recordImageEvent(
   tx: postgres.TransactionSql,
   organizationId: string,
@@ -14,10 +14,10 @@ export async function recordImageEvent(
   await tx`insert into generation_events (organization_id,kind,resource_id) values (${organizationId},${kind},${resourceId})`;
   await tx`select pg_notify(${channel}, ${organizationId})`;
 }
-export function openImageEventFeed(url: string, pollOrganizationId?: string) {
+/** 隔离 Node 环境通过 LISTEN 接收事务通知，不创建后台轮询计时器。 */
+export function openImageEventFeed(url: string) {
   const sql = postgres(url, {
-    max: pollOrganizationId ? 1 : 2,
-    fetch_types: !pollOrganizationId,
+    max: 2,
     idle_timeout: 20,
     connect_timeout: 5,
     connection: { statement_timeout: 10000, lock_timeout: 5000 },
@@ -28,10 +28,8 @@ export function openImageEventFeed(url: string, pollOrganizationId?: string) {
   const emit = (organizationId: string | null) => {
     for (const listener of listeners) listener(organizationId);
   };
-  const timers = new Set<ReturnType<typeof setInterval>>();
   const ready = async () => {
     if (closed) throw new Error("EVENT_FEED_CLOSED");
-    if (pollOrganizationId) return;
     starting ??= sql
       .listen(
         channel,
@@ -50,16 +48,8 @@ export function openImageEventFeed(url: string, pollOrganizationId?: string) {
   return {
     isClosed: () => closed,
     ready,
-    async subscribe(listener: (organizationId: string | null) => void, _organizationId?: string) {
+    async subscribe(listener: (organizationId: string | null) => void) {
       if (closed) throw new Error("EVENT_FEED_CLOSED");
-      if (pollOrganizationId) {
-        const timer = setInterval(() => listener(pollOrganizationId), 3000);
-        timers.add(timer);
-        return () => {
-          clearInterval(timer);
-          timers.delete(timer);
-        };
-      }
       listeners.add(listener);
       try {
         await ready();
@@ -86,8 +76,6 @@ export function openImageEventFeed(url: string, pollOrganizationId?: string) {
       closed = true;
       emit(null);
       listeners.clear();
-      for (const timer of timers) clearInterval(timer);
-      timers.clear();
       await sql.end({ timeout: 5 });
     },
   };

@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 import type { ImageScope, VideoCreateInput } from "@lycoboai/contracts";
 import postgres from "postgres";
 import { z } from "zod";
-import { type CloudBaseDatabaseBindings, cloudbaseRpc } from "./cloudbase-rpc";
 
 export const videoCredentialHash = (key: string) => createHash("sha256").update(key).digest("hex");
 type VideoOperation =
@@ -47,8 +46,7 @@ export function videoRepository(run: VideoRun, close: () => Promise<void> = asyn
   };
 }
 export type VideoRepository = ReturnType<typeof videoRepository>;
-export function openVideoRepository(env: CloudBaseDatabaseBindings & { DATABASE_URL?: string }) {
-  if (env.DATABASE_URL && env.CLOUDBASE_ENV_ID) throw new Error("DATABASE_BACKEND_CONFLICT");
+export function openVideoRepository(env: { DATABASE_URL?: string }) {
   if (env.DATABASE_URL) {
     const sql = postgres(env.DATABASE_URL, {
       max: 2,
@@ -65,8 +63,5 @@ export function openVideoRepository(env: CloudBaseDatabaseBindings & { DATABASE_
       () => sql.end(),
     );
   }
-  const call = cloudbaseRpc(env);
-  return videoRepository((p_operation, p_args = {}) =>
-    call("lycobo_video_operation", { p_operation, p_args }),
-  );
+  throw new Error("DATABASE_URL_REQUIRED");
 }

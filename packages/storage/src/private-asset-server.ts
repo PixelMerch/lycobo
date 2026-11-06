@@ -16,6 +16,7 @@ export interface PrivateAssetOptions {
     body: ReadableStream<Uint8Array>,
     variant: "preview" | "thumbnail",
   ) => Promise<Uint8Array>;
+  queueVariant?: (key: string) => Promise<void>;
   createVideoThumbnail?: (key: string) => Promise<void>;
   signDownload?: (key: string, expiresIn: number) => Promise<string>;
   /** Inline platform link: original videos exceed what a function response may carry. */
@@ -252,7 +253,12 @@ async function readImageObject(
   const { bucket } = options;
   if (request.method === "HEAD") return bucket.head(objectKey);
   const object = await bucket.get(objectKey);
-  if (object || variant === "download" || !options.createVariant) return object;
+  if (object || variant === "download") return object;
+  if (options.queueVariant) {
+    await options.queueVariant(key);
+    return null;
+  }
+  if (!options.createVariant) return object;
   // Backfill a missing display variant only after authorization.
   const original = await bucket.get(key);
   if (!original) return null;
@@ -304,7 +310,13 @@ async function serveImage(
   const hit = !!response;
   if (!response) {
     const object = await readImageObject(request, options, key, objectKey, variant);
-    if (!object) return fail(404);
+    if (!object)
+      return options.queueVariant
+        ? new Response(null, {
+            status: 503,
+            headers: { "Retry-After": "2", "Cache-Control": "no-store" },
+          })
+        : fail(404);
     response = cacheImageResponse(request, options, cacheKey, variant, object);
   }
   const headers = new Headers(response.headers);

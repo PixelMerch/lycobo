@@ -35,6 +35,7 @@ export * from "./auth";
 export * from "./image-events";
 export * from "./image-generation";
 export * from "./model-management";
+export * from "./realtime";
 export * from "./textile-generation";
 export * from "./variation-plan";
 export * from "./video-generation";

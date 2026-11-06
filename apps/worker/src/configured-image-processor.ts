@@ -13,7 +13,7 @@ import {
   textileItemInput,
 } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
-import type { DeliverProviderReference } from "./cloudbase-image-references";
+import type { DeliverProviderReference } from "./provider-references";
 import {
   mainImageHasReferences,
   mapProviderReferences,

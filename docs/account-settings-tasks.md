@@ -147,8 +147,8 @@
 
 按以下顺序推进；勾选必须以代码和实际验证结果为依据。
 
-- [ ] T1：读取 AGENTS.md、相关目录规则及 React、HeroUI、PostgreSQL、安全和 CloudBase 相关技能；核实安装版本、当前实现与微信接入条件。记录外部缺项，不在本任务中批量更新依赖。
-- [ ] T2：明确用户资料、企业身份、微信身份映射和首次改密状态的数据归属；以追加迁移支持旧账号兼容，分别覆盖本地 PostgreSQL 与 CloudBase 共享 PG RPC 路径。不改写已合并迁移。
+- [ ] T1：读取 AGENTS.md、相关目录规则及 React、HeroUI、PostgreSQL 和 Cloudflare 技能，核实安装版本与微信接入条件。外部缺项单独记录，不批量更新依赖。
+- [ ] T2：明确用户资料、企业身份、微信身份映射和首次改密状态的数据归属；沿用当前 PostgreSQL 追加迁移，覆盖 Workers 调用级连接与现有原生仓储，不改写已合并迁移。
 - [ ] T3：建立资料读取、昵称更新、头像上传与授权读取接口，补充向后兼容的身份/资料契约；前端同步所有共用资料展示。
 - [ ] T4：实现管理员本企业成员分页查询、幂等创建、随机账号密码及一次性凭据结果界面；验证普通成员和跨企业请求被拒绝。
 - [ ] T5：实现持久化强制改密、受限会话、统一业务门禁和前端必经流程；复用并扩展现有改密与会话撤销。
@@ -166,8 +166,8 @@
 | `apps/web/src/app/`                                                                    | 全局登录门禁及首次改密呈现                             |
 | `apps/api/src/features/auth/`                                                          | 登录、会话、改密与服务端授权；相关新路由按领域拆分     |
 | `packages/contracts/src/auth.ts`                                                       | 身份与鉴权契约；新字段兼容历史响应和发布顺序           |
-| `packages/db/src/auth-repository.ts`、`cloudbase-auth-repository.ts`                   | 本地数据库与 CloudBase 鉴权持久化                      |
-| `packages/db/src/schema.ts`、`cloudbase/migrations/`                                   | 核实当前表定义、追加迁移及服务端 RPC 权限              |
+| `packages/db/src/auth-repository.ts`                                                   | 当前 PostgreSQL 鉴权持久化                             |
+| `packages/db/src/schema.ts`、`packages/db/migrations/`                                 | 当前表定义、追加迁移及服务端权限                       |
 | `packages/storage/`、`apps/assets/`                                                    | 头像安全存储、派生尺寸和授权读取                       |
 | `apps/api/scripts/enterprise-account.ts`                                               | 既有受控创建/重置工具，不能作为公开成员接口直接暴露    |
 | `tests/e2e/account-settings.spec.ts`、`account-menu.spec.ts`、`account-center.spec.ts` | 既有交互回归入口                                       |
