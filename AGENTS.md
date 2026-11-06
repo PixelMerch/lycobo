@@ -37,6 +37,8 @@ Read relevant project skills before work:
   the shared frosted-glass material in styles/overlay-glass.css and DESIGN.md. Preserve readable
   contrast, reduced-transparency fallback and native HeroUI focus handling; never add an opaque
   surface as a local default. The login panel uses the named light-glass variant.
+  The full-screen membership page is an explicit exception: opaque background, no backdrop blur
+  or modal fade/scale transitions.
 - Follow PRD.md for navigation: Home, Workspace, Asset Library. The workspace holds four tools
   (main image, textile variation, image-set plan, video) that switch through the tool dock.
   TK has no current navigation entry.

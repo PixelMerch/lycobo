@@ -1,7 +1,12 @@
-/* 会员订阅: full-screen HeroUI Modal; only its body scrolls (DESIGN.md 顶部积分、充值与会员页). */
+/* 全屏会员页使用稳定实底，仅正文滚动，避免玻璃采样随底页变化。 */
 .membership-backdrop {
-  background: #000b;
-  backdrop-filter: blur(8px);
+  background: #0f0f12;
+  backdrop-filter: none;
+}
+/* 全屏页面不沿用普通弹框的缩放与淡入，首帧就完整覆盖底页。 */
+.membership-backdrop.modal__backdrop,
+.membership-container.modal__container {
+  animation: none;
 }
 .membership-container.modal__container {
   width: 100vw;
@@ -19,7 +24,10 @@
   overflow: hidden;
   border: 0;
   border-radius: 0;
-  background: var(--glass-fill), var(--glass-tint);
+  background: #0f0f12;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
   color: var(--foreground);
 }
 /* No title band: the heading only names the dialog, and the close button floats top right
@@ -35,7 +43,6 @@
 .membership-dialog-header .modal__close-trigger {
   border-radius: 999px;
   background: #090a09b3;
-  backdrop-filter: blur(8px);
 }
 /* Brand glows at the top corners scroll away with the content. */
 .membership-dialog .modal__body {
@@ -185,7 +192,6 @@
   box-shadow:
     inset 0 1px 0 #ffffff14,
     0 6px 16px -10px #000000cc;
-  backdrop-filter: blur(12px) saturate(140%);
   pointer-events: none;
 }
 .membership-switcher .toggle-selection {

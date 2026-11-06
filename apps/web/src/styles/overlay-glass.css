@@ -8,13 +8,17 @@
     .tooltip,
     .alert-dialog,
     .toast
-  ):not(.login-dialog),
+  ):not(.login-dialog, .membership-dialog),
 :root .login-panel {
   background: var(--glass-fill), var(--glass-tint);
   border: 1px solid var(--glass-edge);
   box-shadow: var(--glass-shadow);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
+}
+/* 提示气泡只保留外投影，避免顶部内高光与细边叠加成双线。 */
+:root .tooltip {
+  box-shadow: 0 8px 24px #00000040;
 }
 /* 浅色登录表单保留原有文字对比度，只将材质统一为玻璃。 */
 :root .login-panel {
