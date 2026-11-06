@@ -104,3 +104,5 @@ pnpm test:cloudflare   # 隔离的 workerd + 本地 Images/R2 + scrypt fixture
 2026-11-06 北京时间 10:47:05 发布主站后，10:47:20 控制台又保存了一份未发布版本 `65a183cb-24c2-4c1f-a3c9-aae765410646`，标注为 `Updated variable: CLOUDFLARE_GENERATION_ENABLED`。该版本基于旧配置，回调开关仍为 `false` 且缺少 `IMAGE_WEBHOOK_SECRET`；主站活动版本仍为已启用回调的 `cd9af2a2-f08f-4e51-b360-9c66bc69672c`。因此设置页显示旧值，并非当时运行中的版本关闭了回调。
 
 配置以仓库为准；发布时显式上传正确 Secrets，完成后执行 `pnpm cf:check:config`。该只读命令比对两个 Worker 的仓库变量、必需 Secret 名称、脚本设置记录和 100% 活动版本，差异仅输出字段名，不读取或打印加密密钥值。需要已有 Cloudflare 管理凭据，本地自动读取被忽略的 `.env.cloudflare`；使用网络代理时可加 `NODE_USE_ENV_PROXY=1`。控制台保存后的新版本不等于当前承接流量的版本，不应从旧设置页面直接覆盖新部署。
+
+提示词优化的 Workers 兼容修复：供应商请求使用 `redirect: manual` 并检查响应状态，拒绝 3xx，不跟随重定向发送密钥。Workers 不支持 `redirect: error`，旧配置会在真正发送请求前抛出 TypeError，业务失败后退还预扣积分。SSE 响应的数据库连接保持到流完成、失败或取消后再释放，不在返回响应头时提前关闭。新增实际 workerd 的 fixture 优化链路，避免 Node fetch mock 忽略运行时选项差异。验证未调用真实模型，用户复测结果单独确认。

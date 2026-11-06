@@ -30,6 +30,11 @@ try {
       reject(new Error(`WORKER_EXIT_${code}`));
     });
   });
+  const optimizer = await (
+    await fetch(`${url}/optimizer-runtime`, { signal: AbortSignal.timeout(5000) })
+  ).json();
+  assert.equal(optimizer.optimized, true, "Prompt optimization failed inside workerd");
+  assert.equal(optimizer.requests, 1);
   const response = await fetch(url, { signal: AbortSignal.timeout(30000) });
   assert.equal(response.status, 200);
   const result = await response.json();
@@ -49,7 +54,7 @@ try {
   }
   assert(queueCompleted, "Local Queue did not persist its result");
   console.info(
-    "Local workerd verified scrypt credentials, Images decoding/WebP output, private R2 writes and Queue delivery (fixture only)",
+    "Local workerd verified prompt optimization request options, scrypt credentials, Images decoding/WebP output, private R2 writes and Queue delivery (fixture only)",
   );
 } finally {
   if (child.pid && process.platform !== "win32") process.kill(-child.pid, "SIGTERM");

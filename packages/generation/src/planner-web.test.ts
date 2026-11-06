@@ -31,7 +31,7 @@ it("uses only the official Fetch endpoint and caches scoped successful content f
   expect(request).toHaveBeenCalledTimes(1);
   expect(request.mock.calls[0]?.[0]).toBe("https://api.deepseek.com/v1/tools/fetch");
   expect(request.mock.calls[0]?.[1]).toMatchObject({
-    redirect: "error",
+    redirect: "manual",
     body: JSON.stringify({ url: "https://shop.example/item" }),
   });
   await read(["https://shop.example/item"], "test-key", "user-b", signal);
@@ -40,7 +40,7 @@ it("uses only the official Fetch endpoint and caches scoped successful content f
   await read(["https://shop.example/item"], "test-key", "user-a", signal);
   expect(request).toHaveBeenCalledTimes(3);
 });
-it.each([401, 402, 403, 404, 429, 504])(
+it.each([302, 401, 402, 403, 404, 429, 504])(
   "rejects Fetch %s without retrying or caching failures",
   async (status) => {
     const request = vi.fn<typeof fetch>(

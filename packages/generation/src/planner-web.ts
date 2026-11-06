@@ -74,7 +74,7 @@ function prunePageCache(cache: PageCache, now: () => number) {
   }
 }
 
-/** Only DeepSeek fetches target pages. Never send provider keys to user URLs or redirects. */
+/** 仅由 DeepSeek 抓取目标网页，不向用户网址或重定向目标发送供应商密钥。 */
 export function createPlannerWebReader(request: typeof fetch = fetch, now = Date.now) {
   const cache: PageCache = new Map();
   return async (urls: string[], key: string, partition: string, signal: AbortSignal) => {
@@ -90,7 +90,8 @@ export function createPlannerWebReader(request: typeof fetch = fetch, now = Date
           cache.delete(cacheKey);
           const response = await request("https://api.deepseek.com/v1/tools/fetch", {
             method: "POST",
-            redirect: "error",
+            // 保留 3xx 响应交给状态检查，禁止跟随重定向泄露密钥。
+            redirect: "manual",
             signal: timeout,
             headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
             body: JSON.stringify({ url }),

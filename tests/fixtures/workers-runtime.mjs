@@ -1,10 +1,12 @@
 import { hashPassword, verifyPassword } from "../../apps/api/src/features/auth/password";
 import { cloudflareImages } from "../../packages/storage/src/cloudflare-images";
+import { optimizerRuntimeProbe } from "./optimizer-runtime.mjs";
 
-/** Isolated local runtime probe. Never included in the application Worker. */
+/** 隔离本地运行时探测，不进入生产 Worker，也不调用真实付费模型。 */
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === "/optimizer-runtime") return Response.json(await optimizerRuntimeProbe());
     if (url.pathname === "/queue-result")
       return Response.json({
         completed: !!(await env.MEDIA.head(`queue-${url.searchParams.get("id")}`)),

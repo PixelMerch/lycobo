@@ -66,7 +66,8 @@ export function promptOptimization(deps: ImageApiDependencies) {
             const timeout = AbortSignal.timeout(Math.min(config.timeoutMs, 40000));
             const response = await (deps.plannerRequest ?? fetch)(`${origin}/chat/completions`, {
               method: "POST",
-              redirect: "error",
+              // Workers 不支持 error 模式；manual 配合 response.ok 拒绝重定向。
+              redirect: "manual",
               signal: AbortSignal.any([signal, timeout]),
               headers: {
                 Authorization: `Bearer ${secret}`,

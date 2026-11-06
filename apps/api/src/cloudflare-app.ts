@@ -4,6 +4,7 @@ import { dispatchImageOutbox } from "@lycoboai/queue";
 import { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { openCloudflareRuntime } from "../../worker/src/cloudflare-runtime";
 import { createApp } from "./app";
+import { closeAfterStream } from "./cloudflare-response";
 import { enterpriseAuth, readAuthConfig } from "./features/auth/service";
 import { readWebhookConfig } from "./features/images/provider-webhook";
 
@@ -12,6 +13,10 @@ export async function serveCloudflareApi(request: Request, env: CloudflareEnv) {
   if (new URL(request.url).pathname === "/api/health/live") return createApp().fetch(request);
   const runtime = await openCloudflareRuntime(env);
   const authRepository = openAuthRepository(env.HYPERDRIVE.connectionString, true);
+  let streaming = false;
+  const close = async () => {
+    await Promise.all([authRepository.close(), runtime.repository.close()]);
+  };
   try {
     const authConfig = readAuthConfig({
       AUTH_JWT_SECRET: env.AUTH_JWT_SECRET,
@@ -62,8 +67,14 @@ export async function serveCloudflareApi(request: Request, env: CloudflareEnv) {
       auth,
       webhook,
     );
-    return await app.fetch(request);
+    const response = await app.fetch(request);
+    if (response.body && response.headers.get("Content-Type")?.includes("text/event-stream")) {
+      const deferred = closeAfterStream(response, close);
+      streaming = true;
+      return deferred;
+    }
+    return response;
   } finally {
-    await Promise.all([authRepository.close(), runtime.repository.close()]);
+    if (!streaming) await close();
   }
 }

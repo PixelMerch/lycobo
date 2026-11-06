@@ -48,3 +48,33 @@ it.each([true, false])(
     expect(close).toHaveBeenCalledTimes(2);
   },
 );
+
+it("keeps database clients open until the streaming response finishes", async () => {
+  const close = vi.fn(async () => undefined);
+  vi.mocked(openAuthRepository).mockReturnValue({ close });
+  vi.mocked(openCloudflareRuntime).mockResolvedValue({ repository: { close }, policy: {} });
+  const { promise, resolve } = Promise.withResolvers();
+  const body = new ReadableStream({
+    async start(controller) {
+      await promise;
+      controller.enqueue(new TextEncoder().encode("event: complete\ndata: {}\n\n"));
+      controller.close();
+    },
+  });
+  vi.mocked(createApp).mockReturnValue({
+    fetch: async () => new Response(body, { headers: { "Content-Type": "text/event-stream" } }),
+  });
+  const env = {
+    AUTH_JWT_SECRET: "fixture-auth-secret-with-at-least-32-characters",
+    AUTH_TRUSTED_ORIGINS: "https://fixture.example",
+    HYPERDRIVE: { connectionString: "fixture-only" },
+    ASSET_PUBLIC_ORIGIN: "https://media.fixture.example",
+    ASSET_SIGNING_SECRET: "fixture-asset-secret-with-at-least-32-characters",
+  };
+  const response = await serveCloudflareApi(new Request("https://fixture.example/api/stream"), env);
+  expect(close).not.toHaveBeenCalled();
+  const text = response.text();
+  resolve();
+  expect(await text).toContain("event: complete");
+  expect(close).toHaveBeenCalledTimes(2);
+});
