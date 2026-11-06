@@ -70,6 +70,8 @@ Queue 初始配置：batch size 1、最多 2 个并发 consumer、3 次传输重
 
 本机开发 token 不能认证海外账号，未绕过账号权限；真实用户登录、线上参考图上传到 Queue 后的转换质量和延迟仍待用有效账号验收。本地实际应用 workerd 的完整上传链路已有隔离验证记录。未调用任何真实付费模型，视频不开放。
 
+拆分后远端复查：`lycobo` 版本 `4d702b56-4f6f-4045-9c3a-053fe8b45b6e`，`lycobo-images` 版本 `084e4d14-c8ef-44bf-860b-7c76127706de`，均为 100% 活动部署。Queue 唯一消费者为 `lycobo-images`，主站 schedules 为空，图片 Worker 每分钟执行恢复 Cron，两个 Worker 的生成开关均为 `false`。新消费者绑定后投递不存在上传意图的探测消息，队列与死信积压均为 0；该检查不代表有效图片转换质量验收。
+
 ## 本地验证与再次发布
 
 ```sh
@@ -80,7 +82,7 @@ pnpm test:cloudflare   # 隔离的 workerd + 本地 Images/R2 + scrypt fixture
 
 `pnpm dev:cloudflare` 是主站 Wrangler 本地开发入口，`pnpm dev:cloudflare:images` 是图片消费者入口，真实 API 还需要显式的本地 Hyperdrive 连接与 `.dev.vars`。不得把生产数据库连接用于测试写入。`pnpm dev` 保留独立的 loopback PostgreSQL/S3 开发环境。
 
-首次拆分部署先发布不接消息、无 Cron 的消费者候选，核对可用后，将现有 Queue 的 consumer 从 `lycobo` 替换为 `lycobo-images`；随后发布主站移除 Queue/Cron handler 及旧 Cron，最后使用正式图片配置启用独立 Cron。队列消息和上传意图不清空；切换后确认只有一个消费者且只有图片 Worker 挂载 Cron。之后两个配置可独立发布，不能重新向主站加回消费者。
+首次拆分部署先发布不接消息、无 Cron 的消费者候选，核对可用后，清除主站旧 Cron 并解绑旧 Queue consumer，再使用正式图片配置将同一队列和 Cron 挂到 `lycobo-images`；最后发布主站移除 Queue/Cron handler。不能仅依据消费者更新接口回显判断切换成功，必须 GET 复查实际 script 归属；旧绑定仍存在时，Cloudflare 会拒绝上传没有 Queue handler 的主站版本。队列消息和上传意图不清空；切换后确认只有一个消费者且只有图片 Worker 挂载 Cron。之后两个配置可独立发布，不能重新向主站加回消费者。
 
 再次发布需用户授权，并核对目标账号、真实资源绑定、固定接管时间和运行开关。使用项目固定版本 Wrangler，通过受保护的 Secrets 文件部署；不要将密钥写入命令参数。现存旧 Hyperdrive `lycobo-supabase` 指向不同项目，未复用或修改。真实付费模型调用另需明确授权。部署成功不能证明图片质量、端到端延迟或线上生成可用。
 
