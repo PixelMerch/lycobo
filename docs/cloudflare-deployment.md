@@ -106,3 +106,15 @@ pnpm test:cloudflare   # 隔离的 workerd + 本地 Images/R2 + scrypt fixture
 配置以仓库为准；发布时显式上传正确 Secrets，完成后执行 `pnpm cf:check:config`。该只读命令比对两个 Worker 的仓库变量、必需 Secret 名称、脚本设置记录和 100% 活动版本，差异仅输出字段名，不读取或打印加密密钥值。需要已有 Cloudflare 管理凭据，本地自动读取被忽略的 `.env.cloudflare`；使用网络代理时可加 `NODE_USE_ENV_PROXY=1`。控制台保存后的新版本不等于当前承接流量的版本，不应从旧设置页面直接覆盖新部署。
 
 提示词优化的 Workers 兼容修复：供应商请求使用 `redirect: manual` 并检查响应状态，拒绝 3xx，不跟随重定向发送密钥。Workers 不支持 `redirect: error`，旧配置会在真正发送请求前抛出 TypeError，业务失败后退还预扣积分。SSE 响应的数据库连接保持到流完成、失败或取消后再释放，不在返回响应头时提前关闭。新增实际 workerd 的 fixture 优化链路，避免 Node fetch mock 忽略运行时选项差异。验证未调用真实模型，用户复测结果单独确认。
+
+## 2026-11-06 实时推送发布
+
+本次实现提交 `019ee22d`，更新提示文案修正 `51e02fd5`，已推送 `origin/dev`。生产数据库完成 `0043_realtime_push`，迁移链共 44 项，51 张业务表保持 RLS 和前端角色权限限制。未导入测试数据、未调用真实付费模型，视频保持关闭。
+
+- 主站 `lycobo`：`a8a6f54b-58f7-4e39-9a0e-ac03e4e4f472`，100% 活动版本。
+- 图片消费者 `lycobo-images`：`6d739b49-dd2c-4993-b0ee-327902910ef9`，100% 活动版本。
+- SQLite DO 命名空间 `lycobo_RealtimeHub`：`631c155e20c2425ab2926cba7c790813`。两个 Worker 的 `REALTIME` 绑定指向同一命名空间，消费者使用 `script_name=lycobo`。
+- 控制台设置与活动版本的变量／Secret 类型检查均无差异，既有生成、消费者与 Webhook 开关保持 `true`，固定接管时间未改变。
+- 发布摘要版本 `2026.11.06-realtime.1` 已在两个 Worker 部署成功后幂等写入，系统消息与更新事件由持久 outbox 投递。
+
+验证：`pnpm check`（399 通过、1 跳过）、隔离 `pnpm test:integration`、真实本地 `pnpm test:cloudflare`，以及 account-menu／generation-live／realtime 三份定向浏览器文件（20 通过）。未运行完整本地 E2E。线上首页、工作台入口、健康接口和私有媒体拒绝规则正常，真实浏览器已验证公开 WebSocket 的握手、ready 与自动 pong，并实际收到 `2026.11.06-realtime.1` 公告，确认 PostgreSQL outbox → 图片 Worker Cron → DO RPC → 浏览器推送整条链路。协议及已知浏览器冻结行为见 [实时推送](realtime.md)。
