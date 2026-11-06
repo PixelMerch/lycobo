@@ -56,10 +56,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0;
-  border: 1px solid var(--interaction-active);
   border-radius: 20px;
-  background: #202020;
-  box-shadow: 0 16px 48px #0000004d;
 }
 .credit-preview-dialog {
   padding: var(--space-5);
@@ -190,7 +187,7 @@
   margin-top: var(--space-3);
   padding: 6px 4px 6px var(--space-3);
   border-radius: 14px;
-  background: #ffffff08;
+  background: var(--glass-card);
 }
 .credit-preview-footer .credit-preview-member {
   margin-left: auto;

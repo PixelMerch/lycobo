@@ -181,6 +181,8 @@ HeroUI 是唯一交互基础：Button、ToggleButtonGroup、Select、Modal、Pop
 
 ### 统一浮层材质（2026-11-06 用户确认）
 
+顶部积分概览同样使用共享透明玻璃，保留现有尺寸、布局与渐变充值按钮；会员信息条使用 `--glass-card` 轻透底。独立挂载的 HeroUI Popover.Content／Dialog 必须显式保留 `popover`／`popover__dialog` 类，让共享材质与焦点规则生效。
+
 所有新增及修改的 Modal、Drawer、Popover、Dropdown、Tooltip 和 Toast 使用 `styles/overlay-glass.css` 的共享磨砂材质：半透明深色底、现有玻璃高光渐变、1px 高光边框、28px blur 与 180% 饱和度、现有玻璃阴影。遮罩只调暗，不能在父层叠加模糊而截断面板采样。业务 CSS 负责尺寸与布局，不另设不透明浮层底色。登录沿用浅色文字体系，承载面改为白色 82% 透明玻璃，内层表面透明。图片本身和编辑舞台不作模糊处理。减少透明或不支持 backdrop-filter 时使用具名实色回退，键盘焦点及 HeroUI 弹层行为保持不变。
 
 ### 右侧更新与消息

@@ -8,7 +8,7 @@ import { CreditPreview } from "./credit-preview";
 import { useWallet } from "./wallet-client";
 import "./header-benefits.css";
 
-/** Official press-triggered popover; wallet reads mount only while open. */
+/** 点击展开积分概览，仅在打开时读取最近流水。 */
 export function HeaderBenefits() {
   const wallet = useWallet();
   const trigger = useRef<HTMLButtonElement>(null);
@@ -60,9 +60,9 @@ export function HeaderBenefits() {
         isNonModal={false}
         placement="bottom end"
         offset={10}
-        className="credit-preview-popover"
+        className="popover credit-preview-popover"
       >
-        <Popover.Dialog aria-label="积分概览" className="credit-preview-dialog">
+        <Popover.Dialog aria-label="积分概览" className="popover__dialog credit-preview-dialog">
           {previewOpen && (
             <CreditPreview
               onRecharge={() => open("recharge", trigger.current)}
