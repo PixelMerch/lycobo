@@ -1,0 +1,69 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "compatibility_date": "2026-11-06",
+  "compatibility_flags": ["nodejs_compat"],
+  "placement": {
+    "region": "aws:ap-southeast-1"
+  },
+  "observability": {
+    "enabled": true,
+    "traces": {
+      "enabled": true
+    },
+    "redact_query_string": true
+  },
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "lycobo-media-prod"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "7ce66ede4e634fab8dc16240a6cedb6c"
+    }
+  ],
+  "name": "lycobo-images",
+  "main": "apps/worker/src/cloudflare.ts",
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": {
+    "ASSET_PUBLIC_ORIGIN": "https://media.lycobo.com",
+    "ASSET_PATH_PREFIX": "/images/",
+    "STANDALONE_MODELS": "true",
+    "IMAGE_WEBHOOK_ENABLED": "false",
+    "CLOUDFLARE_GENERATION_ENABLED": "false",
+    "CLOUDFLARE_CONSUMER_ENABLED": "true",
+    "CLOUDFLARE_TASKS_SINCE": "2026-11-06T02:05:11.556Z"
+  },
+  "secrets": {
+    "required": ["ASSET_SIGNING_SECRET", "STANDALONE_IMAGE_API_KEY", "DEEPSEEK_API_KEY"]
+  },
+  "queues": {
+    "producers": [
+      {
+        "binding": "IMAGE_QUEUE",
+        "queue": "lycobo-images"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "lycobo-images",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_concurrency": 2,
+        "max_retries": 3,
+        "retry_delay": 30,
+        "dead_letter_queue": "lycobo-images-dead"
+      }
+    ]
+  },
+  "triggers": {
+    "crons": ["* * * * *"]
+  },
+  "account_id": "9a65fad90669d9c27b58d856ab3ce410"
+}

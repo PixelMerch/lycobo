@@ -4,13 +4,16 @@
 
 ## 运行边界
 
-根 `wrangler.jsonc` 使用已有 Worker 名称 `lycobo`，同时绑定静态前端。`apps/api/src/cloudflare.ts` 的三个事件处理器有独立调用生命周期：
+生产使用两个独立 Worker，分别发布和回滚：
 
-- `fetch`：同域 `/api/*` 的 Hono API，以及 `/images/*` 的签名私有媒体分发；其他地址交给 Static Assets，保留 SPA 刷新。
-- `queue`：上传参考图、付费生图和展示变体补齐。图片解码与编码通过 Images binding 执行，不在 HTTP 请求里运行 Sharp，不执行付费生成。
-- `scheduled`：每分钟补投 PostgreSQL outbox 和待处理上传。没有常驻 Node 循环、LISTEN 或 HTTP 请求后的付费后台 Promise。
+| Worker          | 配置与入口                                               | 职责                                                                                                              |
+| --------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `lycobo`        | `wrangler.jsonc`、`apps/api/src/cloudflare.ts`           | Static Assets 前端、Hono `/api/*`、签名 `/images/*`；只投递图片消息                                               |
+| `lycobo-images` | `wrangler.images.jsonc`、`apps/worker/src/cloudflare.ts` | `queue` 图片上传及变体处理、`scheduled` 每分钟恢复持久上传意图；不提供 HTTP handler、域名、workers.dev 或预览 URL |
 
-API 与消费者用 Hyperdrive 连接现有 PostgreSQL。每次调用创建并关闭自己的 Postgres.js 客户端，沿用 `prepare: true`；Hyperdrive 配置必须关闭查询缓存，钱包、会话、任务状态要求及时读取。Worker placement 配置为 `aws:ap-southeast-1`。当前不挂载 SSE，前端沿用已有任务查询兜底。
+图片解码和编码由消费者调用 Images binding，不在 HTTP 请求里运行 Sharp。付费开关关闭时，Queue 不调用模型，Cron 不派发或结算付费执行项。没有常驻 Node 循环、LISTEN 或 HTTP 请求后的付费后台 Promise。API 与消费者共用现有 Queue、私有 R2、禁用查询缓存的 Hyperdrive 和固定接管时间；拆分不迁移业务数据，也不增加数据库容量。
+
+API 与消费者用 Hyperdrive 连接现有 PostgreSQL。每次调用创建并关闭自己的 Postgres.js 客户端，沿用 `prepare: true`；Hyperdrive 配置必须关闭查询缓存，钱包、会话、任务状态要求及时读取。两个 Worker 的 placement 均配置为 `aws:ap-southeast-1`。当前不挂载 SSE，前端沿用已有任务查询兜底。
 
 Node API、S3/Sharp 和本地消费者仅用于隔离开发及既有测试，不是生产备用入口。CloudBase 数据库适配、HTTP/Event 入口、唤醒代码和部署工作流已移除。`cloudbase/migrations/`、旧部署记录和一次性源文件复制适配保留为历史证据，不在 Worker 中加载。
 
@@ -47,7 +50,7 @@ Queue 初始配置：batch size 1、最多 2 个并发 consumer、3 次传输重
 | `MEDIA`          | 私有 R2 `lycobo-media-prod`，保持直接公开入口关闭                                                  |
 | `IMAGES`         | Images binding，需确认账号套餐与转换额度                                                           |
 | `HYPERDRIVE`     | `lycobo-supabase-overseas`，ID `7ce66ede4e634fab8dc16240a6cedb6c`；新加坡 PostgreSQL，查询缓存关闭 |
-| `IMAGE_QUEUE`    | `lycobo-images`，消费者为同一 Worker 的 Queue handler                                              |
+| `IMAGE_QUEUE`    | `lycobo-images`，由独立 `lycobo-images` Worker 消费，主站只投递                                    |
 | 死信 Queue       | `lycobo-images-dead`，不自动消费和重新收费                                                         |
 | `ASSETS`         | `apps/web/dist`，后端密钥不进入 Vite 构建变量                                                      |
 | Origin、媒体前缀 | 核对 `AUTH_TRUSTED_ORIGINS`、`ASSET_ALLOWED_ORIGINS`、`ASSET_PUBLIC_ORIGIN` 和 `/images/`          |
@@ -59,7 +62,7 @@ Queue 初始配置：batch size 1、最多 2 个并发 consumer、3 次传输重
 
 ## 本次部署与验收
 
-2026-11-06 已发布版本 `930bfff8-f833-451a-8ee0-becf11190087`，100% 流量。根域与 `media.lycobo.com` 均为 `lycobo` Worker Custom Domain；已移除原先禁用的 R2 媒体域名映射，R2 的直接公开入口保持关闭。四项 Secrets 已上传，配置和日志不保存其值；观测配置开启查询参数脱敏，避免签名 URL 进入请求日志。
+2026-11-06 首次单 Worker 发布版本为 `930bfff8-f833-451a-8ee0-becf11190087`，该编号仅作迁移历史记录。当前发布单元已拆为 `lycobo` 与 `lycobo-images`，实际活动版本以 Cloudflare Deployments 为准。根域与 `media.lycobo.com` 均为 `lycobo` Worker Custom Domain；已移除原先禁用的 R2 媒体域名映射，R2 的直接公开入口保持关闭。主站保留四项 Secrets；消费者仅配置媒体签名和两个模型密钥，不持有账号 JWT 密钥。当前 standalone 模型目录初始化仍需要模型密钥，但两个 Worker 的生成开关均关闭。配置和日志不保存密钥值；观测配置开启查询参数脱敏，避免签名 URL 进入请求日志。
 
 当前账号在上传时被 Cloudflare 判定为 Free 计划，自定义 CPU 上限被 API 拒绝，因此已移除 `limits.cpu_ms`，使用平台默认限制，未变更付费套餐。不能用本次轻量检查推断大图并发、真实账号密码校验和付费生成的性能上限。
 
@@ -71,11 +74,13 @@ Queue 初始配置：batch size 1、最多 2 个并发 consumer、3 次传输重
 
 ```sh
 pnpm cf:types          # 从固定版本 Wrangler 生成绑定类型
-pnpm check            # 包含前端/本地 Node 构建和 Workers dry-run，不发布
+pnpm check            # 包含前端/本地 Node 构建和两个 Workers dry-run，不发布
 pnpm test:cloudflare   # 隔离的 workerd + 本地 Images/R2 + scrypt fixture
 ```
 
-`pnpm dev:cloudflare` 是 Wrangler 本地开发入口，真实 API 还需要显式的本地 Hyperdrive 连接与 `.dev.vars`。不得把生产数据库连接用于测试写入。`pnpm dev` 保留独立的 loopback PostgreSQL/S3 开发环境。
+`pnpm dev:cloudflare` 是主站 Wrangler 本地开发入口，`pnpm dev:cloudflare:images` 是图片消费者入口，真实 API 还需要显式的本地 Hyperdrive 连接与 `.dev.vars`。不得把生产数据库连接用于测试写入。`pnpm dev` 保留独立的 loopback PostgreSQL/S3 开发环境。
+
+首次拆分部署先发布不接消息、无 Cron 的消费者候选，核对可用后，将现有 Queue 的 consumer 从 `lycobo` 替换为 `lycobo-images`；随后发布主站移除 Queue/Cron handler 及旧 Cron，最后使用正式图片配置启用独立 Cron。队列消息和上传意图不清空；切换后确认只有一个消费者且只有图片 Worker 挂载 Cron。之后两个配置可独立发布，不能重新向主站加回消费者。
 
 再次发布需用户授权，并核对目标账号、真实资源绑定、固定接管时间和运行开关。使用项目固定版本 Wrangler，通过受保护的 Secrets 文件部署；不要将密钥写入命令参数。现存旧 Hyperdrive `lycobo-supabase` 指向不同项目，未复用或修改。真实付费模型调用另需明确授权。部署成功不能证明图片质量、端到端延迟或线上生成可用。
 
@@ -84,5 +89,6 @@ pnpm test:cloudflare   # 隔离的 workerd + 本地 Images/R2 + scrypt fixture
 ## 官方依据
 
 - [Images binding](https://developers.cloudflare.com/images/optimization/binding/)、[图片限制](https://developers.cloudflare.com/images/get-started/limits/)
+- [Queue 消费者管理](https://developers.cloudflare.com/queues/configuration/configure-queues/)
 - [Queues 重试和延迟](https://developers.cloudflare.com/queues/configuration/batching-retries/)、[Queues 限制](https://developers.cloudflare.com/queues/platform/limits/)
 - [Hyperdrive/Postgres.js](https://developers.cloudflare.com/hyperdrive/examples/connect-to-postgres/postgres-drivers-and-libraries/postgres-js/)、[查询缓存](https://developers.cloudflare.com/hyperdrive/concepts/query-caching/)

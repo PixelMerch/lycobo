@@ -48,7 +48,7 @@ Node 官方没有规定项目结构，这是社区的常见做法。`features` �
 - `features` 不引用 `app.ts` 和入口文件。
 - `packages` 不引用 `apps`。
 - 业务之间尽量不互相引用。确实需要时，引用对方的 `service.ts` 或专门的共享文件，不引用路由文件。
-- 只有入口文件可以跨 app 组装。生产环境只有一个 Worker，`fetch`、`queue`、`scheduled` 都从 `cloudflare.ts` 导出，所以 `cloudflare.ts` 和 `cloudflare-app.ts` 可以引用 `apps/worker/src`。
+- 只有入口文件可以跨 app 组装。生产环境拆为主站与图片消费者：`apps/api/src/cloudflare.ts` 只导出 `fetch`，`apps/worker/src/cloudflare.ts` 导出 `queue` 和 `scheduled`。`cloudflare-app.ts` 可以引用 `apps/worker/src/cloudflare-runtime.ts` 复用调用级依赖组装，不得从主站入口引用或执行消费者。
 - `apps/worker/scripts` 的验证脚本可以引用 `createApp`。
 
 ## 每层的职责

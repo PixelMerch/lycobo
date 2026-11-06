@@ -1,13 +1,14 @@
 import { cloudflareImages } from "@lycoboai/storage/cloudflare";
 import { displayObjectKey } from "@lycoboai/storage/variants";
-import type { openCloudflareRuntime } from "./cloudflare-runtime";
+import type { CloudflareImageEnv, openCloudflareRuntime } from "./cloudflare-runtime";
 
+/** 查询素材归属后补齐展示变体，原图与已有变体保持不变。 */
 export async function processCloudflareVariants(
   job: { assetId: string; organizationId: string },
-  env: CloudflareEnv,
+  env: CloudflareImageEnv,
   runtime: Awaited<ReturnType<typeof openCloudflareRuntime>>,
 ) {
-  // The media endpoint enqueues only after signature verification; PG verifies the asset's tenant.
+  // 媒体入口验证签名后才投递消息，消费时仍由数据库确认组织归属。
   const asset = await runtime.repository.asset(
     { organizationId: job.organizationId, userId: job.organizationId },
     job.assetId,

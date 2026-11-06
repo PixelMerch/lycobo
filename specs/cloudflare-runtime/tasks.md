@@ -12,3 +12,5 @@
 - [x] 完成最终 pnpm check、Workers dry-run、隔离集成与 git diff --check，提交本地 dev。（R4）
 - [x] 按本次授权建立/核对 Queue、Hyperdrive、Secrets、域名并部署；验证读库与签名素材访问。（R4）
 - [ ] 使用有效海外账号验收登录、线上图片上传转换质量与延迟；真实付费模型调用另需授权。（R4）
+
+- [x] 按最新要求将图片 Queue 与恢复 Cron 拆到 `lycobo-images`；主站保留前端、Hono API 和签名媒体，两个付费开关保持关闭。

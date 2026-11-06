@@ -3,13 +3,9 @@ import { businessCodes } from "@lycoboai/contracts";
 import { imageVariantJobSchema } from "@lycoboai/queue";
 import { servePrivateAsset } from "@lycoboai/storage/asset-server";
 import { r2ObjectBucket } from "@lycoboai/storage/cloudflare";
-import {
-  consumeCloudflareImages,
-  dispatchCloudflareImages,
-} from "../../worker/src/cloudflare-consumer";
 import { serveCloudflareApi } from "./cloudflare-app";
 
-/** HTTP, Queue and Cron invocations have independent lifetimes. HTTP never starts paid work. */
+/** 提供前端、Hono API 和鉴权媒体访问；图片处理仅投递到独立消费者。 */
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -51,9 +47,5 @@ export default {
         { status: 503, headers: { "Cache-Control": "no-store" } },
       );
     }
-  },
-  queue: consumeCloudflareImages,
-  async scheduled(_controller, env) {
-    await dispatchCloudflareImages(env);
   },
 } satisfies ExportedHandler<CloudflareEnv>;

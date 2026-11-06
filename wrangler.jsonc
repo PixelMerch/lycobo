@@ -60,21 +60,7 @@
         "binding": "IMAGE_QUEUE",
         "queue": "lycobo-images"
       }
-    ],
-    "consumers": [
-      {
-        "queue": "lycobo-images",
-        "max_batch_size": 1,
-        "max_batch_timeout": 1,
-        "max_concurrency": 2,
-        "max_retries": 3,
-        "retry_delay": 30,
-        "dead_letter_queue": "lycobo-images-dead"
-      }
     ]
-  },
-  "triggers": {
-    "crons": ["* * * * *"]
   },
   "account_id": "9a65fad90669d9c27b58d856ab3ce410",
   "routes": [

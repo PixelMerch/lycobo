@@ -25,6 +25,7 @@ const sizeExempt = new Set(["packages/db/src/schema.ts"]);
 const entryPoints = new Set([
   "apps/api/src/index.ts",
   "apps/api/src/cloudflare.ts",
+  "apps/worker/src/cloudflare.ts",
   "apps/assets/src/index.ts",
   "apps/web/src/main.tsx",
   "apps/worker/src/local-consumer.ts",

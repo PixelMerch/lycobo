@@ -4,7 +4,7 @@
 
 ## 入口与依赖
 
-保留已有 Worker 名称 `lycobo`，在同一版本内提供 Static Assets、fetch、queue 和 scheduled。HTTP 与队列处理具有独立生命周期，HTTP 不执行付费图片生成。`apps/api/src/cloudflare-app.ts` 组合原 Hono 服务；`apps/worker/src/cloudflare-runtime.ts` 为每次调用创建 Hyperdrive 仓储、R2 适配和 Images 图片存储。
+保留已有 Worker 名称 `lycobo` 提供 Static Assets 与 fetch；`lycobo-images` 独立提供 queue 和 scheduled，两者独立发布和回滚。HTTP 与队列处理具有独立生命周期，HTTP 不执行付费图片生成。`apps/api/src/cloudflare-app.ts` 组合原 Hono 服务；`apps/worker/src/cloudflare-runtime.ts` 为每次调用创建 Hyperdrive 仓储、R2 适配和 Images 图片存储。
 
 保留 PostgreSQL 事务、表和已合并迁移。新增的任务接管时间过滤是仓储查询参数，不新增表；素材登记按固定 ID 幂等，并核对组织、用户、key 与内容哈希。Node 入口只接受本地数据库，不能用它继续部署 CloudBase。
 

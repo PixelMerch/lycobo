@@ -4,7 +4,7 @@
 
 - Follow the user's latest request. Read relevant code, Git status, PRD.md, DESIGN.md and
   PROJECT_STRUCTURE.md before changing behavior. Keep unrelated changes and local assets intact.
-- This is React/Vite on Cloudflare Workers Static Assets, Hono Workers APIs, Cloudflare Queue consumers, private R2 and existing PostgreSQL through Hyperdrive. Production no longer supports CloudBase. Node entrypoints are for isolated local development only; video is not enabled in the Workers runtime.
+- This is React/Vite on Cloudflare Workers Static Assets, Hono Workers APIs, a separate image Queue/Cron Worker, private R2 and existing PostgreSQL through Hyperdrive. Production no longer supports CloudBase. Node entrypoints are for isolated local development only; video is not enabled in the Workers runtime.
 - Distinguish implemented functionality, fixtures, UI references and future contracts.
   Never fabricate completed generation, uploaded files, persistence, users, credits or notifications.
 - Keep product UI and code comments in Simplified Chinese. Keep identifiers in English. Team

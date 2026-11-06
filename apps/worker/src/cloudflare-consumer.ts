@@ -2,12 +2,15 @@ import type { MessageBatch } from "@cloudflare/workers-types";
 import { dispatchImageOutbox, imageQueueJobSchema, imageVariantJobSchema } from "@lycoboai/queue";
 import { uploadJobSchema } from "@lycoboai/storage/uploads";
 import { z } from "zod";
-import { openCloudflareRuntime } from "./cloudflare-runtime";
+import { type CloudflareImageEnv, openCloudflareRuntime } from "./cloudflare-runtime";
 import { processCloudflareVariants } from "./cloudflare-variants";
 import { processImageItem } from "./image-processor";
 
-/** Only transport failures retry messages. Database claims fence all paid attempts. */
-export async function consumeCloudflareImages(batch: MessageBatch<unknown>, env: CloudflareEnv) {
+/** 独立消费图片消息，传输失败可重试，付费尝试始终受数据库领取保护。 */
+export async function consumeCloudflareImages(
+  batch: MessageBatch<unknown>,
+  env: CloudflareImageEnv,
+) {
   if (env.CLOUDFLARE_CONSUMER_ENABLED !== "true") {
     batch.retryAll({ delaySeconds: 60 });
     return;
@@ -69,8 +72,8 @@ export async function consumeCloudflareImages(batch: MessageBatch<unknown>, env:
   }
 }
 
-/** Cron repairs send/ack gaps; messages are wake-ups, never the task or billing authority. */
-export async function dispatchCloudflareImages(env: CloudflareEnv) {
+/** 定时修复持久意图的投递间隙，消息不作为任务或账务依据。 */
+export async function dispatchCloudflareImages(env: CloudflareImageEnv) {
   if (env.CLOUDFLARE_CONSUMER_ENABLED !== "true") return;
   const runtime = await openCloudflareRuntime(env);
   try {
@@ -85,7 +88,7 @@ export async function dispatchCloudflareImages(env: CloudflareEnv) {
   }
 }
 
-async function recoverUploads(env: CloudflareEnv, recover: (id: string) => Promise<void>) {
+async function recoverUploads(env: CloudflareImageEnv, recover: (id: string) => Promise<void>) {
   const stored = await env.MEDIA.get("_upload-scan-cursor");
   const cursor = stored ? await stored.text() : undefined;
   const page = await env.MEDIA.list({

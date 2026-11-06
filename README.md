@@ -52,7 +52,7 @@ docker compose up --build
 
 访问 <http://localhost:8081/>。Compose 提供本地 PostgreSQL、私有 S3 与 Node API／独立消费者／图片服务／Vite。首次运行需显式迁移本地数据库，启动器过滤线上基础设施凭据；真实生图按模型开关启用并消耗供应商额度。图片通过 `http://127.0.0.1:8791` 签名读取。账号、积分和图片需本地准备；详见 [本地开发](docs/development.md)。
 
-**Cloudflare 运行目标**：`dev` 使用 Workers 承接前端、API 和私有资源，Queue 执行图片任务，Images binding 处理图片。CloudBase 运行与发布入口已移除；本次后端已部署到 `lycobo.com`，图片消费者开启、真实付费模型关闭，配置与验证边界见 [Cloudflare 运行与部署](docs/cloudflare-deployment.md)。
+**Cloudflare 运行目标**：`dev` 使用 `lycobo` Worker 承接前端、API 和私有资源，独立 `lycobo-images` Worker 消费图片 Queue 并执行恢复 Cron，Images binding 处理图片。CloudBase 运行与发布入口已移除；本次后端已部署到 `lycobo.com`，图片消费者开启、真实付费模型关闭，配置与验证边界见 [Cloudflare 运行与部署](docs/cloudflare-deployment.md)。
 
 ## 开发检查
 
