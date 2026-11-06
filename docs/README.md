@@ -30,12 +30,13 @@
 
 ## 数据与运维
 
-| 主题                             | 文档                                         |
-| -------------------------------- | -------------------------------------------- |
-| 本地数据库导出与恢复             | [数据库备份](database-backup.md)             |
-| 国内内测与海外环境、数据库复制   | [双环境部署与迁移](overseas-deployment.md)   |
-| 本地 S3、COS 与私有存储边界      | [对象存储](s3-storage.md)                    |
-| 迁移结果、仍有效的约束与私有证据 | [CloudBase 迁移记录](cloudbase-migration.md) |
+| 主题                                | 文档                                                                   |
+| ----------------------------------- | ---------------------------------------------------------------------- |
+| 本地数据库导出与恢复                | [数据库备份](database-backup.md)                                       |
+| 国内内测与海外环境、数据库复制      | [双环境部署与迁移](overseas-deployment.md)                             |
+| 海外计算统一 Cloudflare（需求草案） | [Cloudflare 后端迁移需求](../specs/cloudflare-runtime/requirements.md) |
+| 本地 S3、COS 与私有存储边界         | [对象存储](s3-storage.md)                                              |
+| 迁移结果、仍有效的约束与私有证据    | [CloudBase 迁移记录](cloudbase-migration.md)                           |
 
 ## 设计素材与来源
 
