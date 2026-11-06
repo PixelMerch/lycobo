@@ -22,7 +22,8 @@ Node 官方没有规定项目结构，这是社区的常见做法。`features` �
 
 | 代码                       | 位置                                                        | 要求                                                      |
 | -------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
-| 生产入口                   | `apps/api/src/cloudflare.ts`、`cloudflare-app.ts`           | 只组装依赖，不写业务逻辑                                  |
+| 主站入口                   | `apps/api/src/cloudflare.ts`、`cloudflare-app.ts`           | 只组装依赖，不写业务逻辑                                  |
+| 图片消费者入口             | `apps/worker/src/cloudflare.ts`                             | 只组装依赖，不写业务逻辑                                  |
 | 本地入口                   | `apps/api/src/index.ts`                                     | 只用于隔离开发，不是生产备用入口                          |
 | 应用组装                   | `apps/api/src/app.ts`                                       | 注册中间件和错误处理，挂载业务路由                        |
 | 配置和全局诊断             | `apps/api/src/env.ts`、`request-diagnostics.ts`             | 不放业务逻辑                                              |
