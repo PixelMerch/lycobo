@@ -39,30 +39,31 @@ function NotificationMessages() {
   return (
     <>
       {messages.map((message) => (
-        <article className="account-release" key={message.id}>
-          <span className="account-release-icon">
-            <UiIcon icon={IconBell} size="action" />
+        <article className="account-message" data-unread={!message.read} key={message.id}>
+          <span className="account-message-icon">
+            <UiIcon icon={IconBell} size="default" />
           </span>
-          <div>
-            <h3>{message.title}</h3>
+          <div className="account-message-content">
+            <div className="account-message-heading">
+              <h3>{message.title}</h3>
+              <span className="account-message-status">{message.read ? "已读" : "未读"}</span>
+            </div>
             <p>{message.body}</p>
-            <p className="account-release-meta">
+            <div className="account-message-footer">
               <time dateTime={message.createdAt}>
                 {new Date(message.createdAt).toLocaleString("zh-CN")}
               </time>
-            </p>
-            {message.read ? (
-              <span>已读</span>
-            ) : (
-              <Button
-                size="sm"
-                variant="tertiary"
-                isPending={read.isPending}
-                onPress={() => read.mutate(message.id)}
-              >
-                标为已读
-              </Button>
-            )}
+              {!message.read && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  isPending={read.isPending}
+                  onPress={() => read.mutate(message.id)}
+                >
+                  标为已读
+                </Button>
+              )}
+            </div>
           </div>
         </article>
       ))}

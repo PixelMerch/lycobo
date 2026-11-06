@@ -33,6 +33,10 @@ Read relevant project skills before work:
   for the shared control density and audit workflow. Use HeroUI size/variant/isIconOnly;
   geometry belongs to DESIGN.md tokens, not inline styles or a new AppButton wrapper.
   pnpm lint enforces scripts/check-ui-conventions.mjs; do not bypass its component checks.
+- All new and updated overlays (Modal, Drawer, Popover, Dropdown, Tooltip and Toast) use
+  the shared frosted-glass material in styles/overlay-glass.css and DESIGN.md. Preserve readable
+  contrast, reduced-transparency fallback and native HeroUI focus handling; never add an opaque
+  surface as a local default. The login panel uses the named light-glass variant.
 - Follow PRD.md for navigation: Home, Workspace, Asset Library. The workspace holds four tools
   (main image, textile variation, image-set plan, video) that switch through the tool dock.
   TK has no current navigation entry.

@@ -1,5 +1,7 @@
 import { Button } from "@heroui/react";
+import { IconBell } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { UiIcon } from "../../components/ui-icon";
 import { useImageSession } from "../generation/generation-client";
 import { desktopNotificationsEnabled, setDesktopNotifications } from "./desktop-notifications";
 
@@ -60,20 +62,23 @@ export function DesktopNotificationControl() {
   if (access === "denied") hint = "通知权限已被阻止，请在浏览器的网站设置中允许通知后再开启。";
   if (failed) hint = "未能开启桌面提醒，请检查浏览器权限和存储设置后重试。";
   return (
-    <section className="account-release" aria-label="生成完成提醒">
-      <div>
+    <section className="notification-preferences" aria-label="生成完成提醒">
+      <span className="notification-preferences-icon">
+        <UiIcon icon={IconBell} size="default" />
+      </span>
+      <div className="notification-preferences-copy">
         <h3>桌面通知</h3>
         <p>{hint}</p>
-        <Button
-          size="sm"
-          variant="tertiary"
-          isPending={pending}
-          isDisabled={!scope || access === "unsupported" || access === "denied"}
-          onPress={() => void toggle()}
-        >
-          {active ? "关闭桌面通知" : "开启桌面通知"}
-        </Button>
       </div>
+      <Button
+        size="sm"
+        variant="tertiary"
+        isPending={pending}
+        isDisabled={!scope || access === "unsupported" || access === "denied"}
+        onPress={() => void toggle()}
+      >
+        {active ? "关闭桌面通知" : "开启桌面通知"}
+      </Button>
     </section>
   );
 }

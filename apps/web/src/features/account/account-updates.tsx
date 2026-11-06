@@ -41,7 +41,7 @@ export function AccountUpdates({ kind }: { kind: "updates" | "messages" }) {
             <Drawer.Header className="account-news-header">
               <div>
                 <Drawer.Heading>{title}</Drawer.Heading>
-                {!updates && <p>系统消息和活动通知</p>}
+                {!updates && <p>{unread > 0 ? `${unread} 条未读消息` : "任务进展与系统消息"}</p>}
               </div>
               <Drawer.CloseTrigger aria-label={`关闭${title}`}>
                 <UiIcon icon={IconX} size="action" />

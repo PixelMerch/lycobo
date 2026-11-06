@@ -159,3 +159,5 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 - 远端数据库工具：`packages/db/scripts/migrate-supabase.mjs` 复用当前 Drizzle 迁移链，`supabase-target.mjs` 校验目标项目与 Session Pooler；`secure-supabase.mjs` 维护业务表、序列与函数的服务端权限。生产经 Hyperdrive 使用该 PostgreSQL，不在 Worker 内执行结构迁移。
 
 图片存储的受限并行编排位于 `packages/storage/src/cloudflare-image-write.ts`，由 `cloudflare.ts` 调用；原图和两个变体完成后才返回，遥测只记录阶段与耗时。
+
+`apps/web/src/styles/overlay-glass.css` 统一 HeroUI 浮层的毛玻璃材质与减少透明回退；消息中心布局与状态卡片由 `features/account/account-updates.css` 维护。

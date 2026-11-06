@@ -19,7 +19,7 @@
   overflow: hidden;
   border: 0;
   border-radius: 0;
-  background: #090a09;
+  background: var(--glass-fill), var(--glass-tint);
   color: var(--foreground);
 }
 /* No title band: the heading only names the dialog, and the close button floats top right
