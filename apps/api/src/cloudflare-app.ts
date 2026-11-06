@@ -26,8 +26,10 @@ export async function serveCloudflareApi(request: Request, env: CloudflareEnv) {
         uploads,
         uploadsEnabled: env.CLOUDFLARE_CONSUMER_ENABLED === "true",
         auth,
-        standaloneKey: env.STANDALONE_IMAGE_API_KEY,
-        plannerKey: env.DEEPSEEK_API_KEY,
+        // 提示词优化与规划也会收费，必须受同一个生成开关约束。
+        standaloneKey:
+          env.CLOUDFLARE_GENERATION_ENABLED === "true" ? env.STANDALONE_IMAGE_API_KEY : undefined,
+        plannerKey: env.CLOUDFLARE_GENERATION_ENABLED === "true" ? env.DEEPSEEK_API_KEY : undefined,
         signAsset: assetDeliverySigner(env.ASSET_PUBLIC_ORIGIN, env.ASSET_SIGNING_SECRET, {
           pathPrefix: env.ASSET_PATH_PREFIX,
         }),
@@ -38,7 +40,11 @@ export async function serveCloudflareApi(request: Request, env: CloudflareEnv) {
         unitCredits: policy.unitCredits,
         editsEnabled: policy.editsEnabled,
         wake: async () => {
-          if (env.CLOUDFLARE_CONSUMER_ENABLED !== "true") return;
+          if (
+            env.CLOUDFLARE_CONSUMER_ENABLED !== "true" ||
+            env.CLOUDFLARE_GENERATION_ENABLED !== "true"
+          )
+            return;
           try {
             await dispatchImageOutbox(repository, env.IMAGE_QUEUE);
           } catch {

@@ -1,6 +1,6 @@
-# Cloudflare Workers 运行与发布准备
+# Cloudflare Workers 运行与部署
 
-更新：2026-11-06。`dev` 的生产运行目标统一为 Cloudflare Workers，不再提供 CloudBase 运行或发布入口。当前是代码与本地验证阶段，尚未部署本次后端、创建 Queue/Hyperdrive 或切换媒体域名。Supabase 新加坡 PostgreSQL 与已复制的私有 R2 数据继续使用；不是将 PostgreSQL 改为 D1。
+更新：2026-11-06。`dev` 的生产运行目标统一为 Cloudflare Workers，不再提供 CloudBase 运行或发布入口。本次后端已部署到 `lycobo.com`，图片 Queue、Hyperdrive、Secrets 和媒体域名已绑定；当前仅开放图片上传和展示处理，真实付费生成保持关闭。Supabase 新加坡 PostgreSQL 与已复制的私有 R2 数据继续使用；不是将 PostgreSQL 改为 D1。
 
 ## 运行边界
 
@@ -30,7 +30,7 @@ Queue 初始配置：batch size 1、最多 2 个并发 consumer、3 次传输重
 
 接收供应商图片后，先保存私有 `.png.source` 检查点，再进行 Images 转换。变体失败保留已写原图及检查点，不能因此重投模型。当前没有新增“从检查点自动恢复全部图片处理阶段”的业务状态机：付费结果的存储故障按现有逻辑进入待确认，不能宣传成全自动恢复。此类检查点的自动清理后续单独制定；当前 Cron 不删除快照中的原始素材。
 
-`CLOUDFLARE_TASKS_SINCE` 是本次接管新任务的固定时间。outbox、claim、超时扫描和无效响应自动退款均按执行项创建时间限制在此时间之后；旧任务经用户明确确认而新建的重试执行项仍可处理，防止接管复制的国内旧执行意图。默认使用未来时间且两个运行开关均关闭；启用前必须设定实际接管时间，不能每次部署重置它。
+`CLOUDFLARE_TASKS_SINCE` 是本次接管新任务的固定时间。outbox、claim、超时扫描和无效响应自动退款均按执行项创建时间限制在此时间之后；旧任务经用户明确确认而新建的重试执行项仍可处理，防止接管复制的国内旧执行意图。当前固定接管时间为 `2026-11-06T02:05:11.556Z`，后续部署不能重置。消费者开关为 `true`，付费生成开关为 `false`：上传和展示变体继续处理；API 不注入模型规划密钥，Queue 不执行付费任务，Cron 不扫描、派发或结算付费执行项。
 
 ## 图片与视频边界
 
@@ -42,22 +42,32 @@ Queue 初始配置：batch size 1、最多 2 个并发 consumer、3 次传输重
 
 ## 绑定与变量
 
-| 项目             | 配置与用途                                                                                |
-| ---------------- | ----------------------------------------------------------------------------------------- |
-| `MEDIA`          | 私有 R2 `lycobo-media-prod`，保持直接公开入口关闭                                         |
-| `IMAGES`         | Images binding，需确认账号套餐与转换额度                                                  |
-| `HYPERDRIVE`     | 现有新加坡 PostgreSQL；配置内全零 ID 是待替换占位，不能直接部署                           |
-| `IMAGE_QUEUE`    | `lycobo-images`，消费者为同一 Worker 的 Queue handler                                     |
-| 死信 Queue       | `lycobo-images-dead`，不自动消费和重新收费                                                |
-| `ASSETS`         | `apps/web/dist`，后端密钥不进入 Vite 构建变量                                             |
-| Origin、媒体前缀 | 核对 `AUTH_TRUSTED_ORIGINS`、`ASSET_ALLOWED_ORIGINS`、`ASSET_PUBLIC_ORIGIN` 和 `/images/` |
-| 运行开关         | `CLOUDFLARE_GENERATION_ENABLED` 与 `CLOUDFLARE_CONSUMER_ENABLED` 默认 `false`             |
-| 接管时间         | `CLOUDFLARE_TASKS_SINCE`，固定 ISO UTC 时间，启用时必须不晚于当前时间                     |
-| Secrets          | `AUTH_JWT_SECRET`、`ASSET_SIGNING_SECRET`、`STANDALONE_IMAGE_API_KEY`、`DEEPSEEK_API_KEY` |
+| 项目             | 配置与用途                                                                                         |
+| ---------------- | -------------------------------------------------------------------------------------------------- |
+| `MEDIA`          | 私有 R2 `lycobo-media-prod`，保持直接公开入口关闭                                                  |
+| `IMAGES`         | Images binding，需确认账号套餐与转换额度                                                           |
+| `HYPERDRIVE`     | `lycobo-supabase-overseas`，ID `7ce66ede4e634fab8dc16240a6cedb6c`；新加坡 PostgreSQL，查询缓存关闭 |
+| `IMAGE_QUEUE`    | `lycobo-images`，消费者为同一 Worker 的 Queue handler                                              |
+| 死信 Queue       | `lycobo-images-dead`，不自动消费和重新收费                                                         |
+| `ASSETS`         | `apps/web/dist`，后端密钥不进入 Vite 构建变量                                                      |
+| Origin、媒体前缀 | 核对 `AUTH_TRUSTED_ORIGINS`、`ASSET_ALLOWED_ORIGINS`、`ASSET_PUBLIC_ORIGIN` 和 `/images/`          |
+| 运行开关         | `CLOUDFLARE_GENERATION_ENABLED=false`、`CLOUDFLARE_CONSUMER_ENABLED=true`                          |
+| 接管时间         | `CLOUDFLARE_TASKS_SINCE`，固定 ISO UTC 时间，启用时必须不晚于当前时间                              |
+| Secrets          | `AUTH_JWT_SECRET`、`ASSET_SIGNING_SECRET`、`STANDALONE_IMAGE_API_KEY`、`DEEPSEEK_API_KEY`          |
 
 海外使用独立签名密钥，旧环境会话不能视为海外登录凭据。Secrets 通过受保护的输入或文件配置，不写入 Git、命令参数、日志和前端；不依赖从旧 `.env` 自动继承 CloudBase 参数。
 
-## 本地验证与后续发布
+## 本次部署与验收
+
+2026-11-06 已发布版本 `930bfff8-f833-451a-8ee0-becf11190087`，100% 流量。根域与 `media.lycobo.com` 均为 `lycobo` Worker Custom Domain；已移除原先禁用的 R2 媒体域名映射，R2 的直接公开入口保持关闭。四项 Secrets 已上传，配置和日志不保存其值；观测配置开启查询参数脱敏，避免签名 URL 进入请求日志。
+
+当前账号在上传时被 Cloudflare 判定为 Free 计划，自定义 CPU 上限被 API 拒绝，因此已移除 `limits.cpu_ms`，使用平台默认限制，未变更付费套餐。不能用本次轻量检查推断大图并发、真实账号密码校验和付费生成的性能上限。
+
+已验证：浏览器首页与登录弹层正常；健康 API 返回 JSON；未登录 API 返回 401；模型展示数据通过 Hyperdrive 读库返回 200；随机不存在账号的登录探测返回 `INVALID_CREDENTIALS`；已复制素材的签名 WebP 缩略图和 PNG 下载均返回 200，未签名媒体返回 403。向图片 Queue 投递不存在上传 ID 的无副作用探测消息，随后积压为 0；这仅验证消息接收与空意图处理，不代表真实图片转换验收。未创建线上测试用户、素材或付费任务。
+
+本机开发 token 不能认证海外账号，未绕过账号权限；真实用户登录、线上参考图上传到 Queue 后的转换质量和延迟仍待用有效账号验收。本地实际应用 workerd 的完整上传链路已有隔离验证记录。未调用任何真实付费模型，视频不开放。
+
+## 本地验证与再次发布
 
 ```sh
 pnpm cf:types          # 从固定版本 Wrangler 生成绑定类型
@@ -67,7 +77,7 @@ pnpm test:cloudflare   # 隔离的 workerd + 本地 Images/R2 + scrypt fixture
 
 `pnpm dev:cloudflare` 是 Wrangler 本地开发入口，真实 API 还需要显式的本地 Hyperdrive 连接与 `.dev.vars`。不得把生产数据库连接用于测试写入。`pnpm dev` 保留独立的 loopback PostgreSQL/S3 开发环境。
 
-后续单独授权发布时：先建立并核对 Queue、死信 Queue、禁用查询缓存的 Hyperdrive 和 Secrets，替换占位 ID；审查真实域名路由、接管时间及运行开关，再用候选部署验证登录、上传、素材权限和 fixture 任务。真实付费模型调用另需明确授权。仅 dry-run 成功不能证明外部资源、图片质量、端到端延迟或线上生成可用。
+再次发布需用户授权，并核对目标账号、真实资源绑定、固定接管时间和运行开关。使用项目固定版本 Wrangler，通过受保护的 Secrets 文件部署；不要将密钥写入命令参数。现存旧 Hyperdrive `lycobo-supabase` 指向不同项目，未复用或修改。真实付费模型调用另需明确授权。部署成功不能证明图片质量、端到端延迟或线上生成可用。
 
 本地验证记录见 [测试与验收](testing.md)。旧环境数据复制证据见 [海外迁移记录](overseas-deployment.md)。
 

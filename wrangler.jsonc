@@ -17,10 +17,8 @@
     "enabled": true,
     "traces": {
       "enabled": true
-    }
-  },
-  "limits": {
-    "cpu_ms": 300000
+    },
+    "redact_query_string": true
   },
   "vars": {
     "AUTH_TRUSTED_ORIGINS": "https://lycobo.com",
@@ -30,8 +28,8 @@
     "STANDALONE_MODELS": "true",
     "IMAGE_WEBHOOK_ENABLED": "false",
     "CLOUDFLARE_GENERATION_ENABLED": "false",
-    "CLOUDFLARE_CONSUMER_ENABLED": "false",
-    "CLOUDFLARE_TASKS_SINCE": "2099-01-01T00:00:00.000Z"
+    "CLOUDFLARE_CONSUMER_ENABLED": "true",
+    "CLOUDFLARE_TASKS_SINCE": "2026-11-06T02:05:11.556Z"
   },
   "secrets": {
     "required": [
@@ -53,7 +51,7 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "00000000000000000000000000000000"
+      "id": "7ce66ede4e634fab8dc16240a6cedb6c"
     }
   ],
   "queues": {
@@ -77,5 +75,16 @@
   },
   "triggers": {
     "crons": ["* * * * *"]
-  }
+  },
+  "account_id": "9a65fad90669d9c27b58d856ab3ce410",
+  "routes": [
+    {
+      "pattern": "lycobo.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "media.lycobo.com",
+      "custom_domain": true
+    }
+  ]
 }

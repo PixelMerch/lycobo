@@ -34,6 +34,11 @@ export async function consumeCloudflareImages(batch: MessageBatch<unknown>, env:
           message.retry({ delaySeconds: 30 });
           continue;
         }
+        // 图片上传可单独试用，关闭生成时绝不领取或执行付费任务。
+        if (env.CLOUDFLARE_GENERATION_ENABLED !== "true") {
+          message.retry({ delaySeconds: 60 });
+          continue;
+        }
         let nextPollMs: number | undefined;
         await processImageItem(parsed.data.itemId, {
           repository: runtime.repository,
@@ -69,8 +74,11 @@ export async function dispatchCloudflareImages(env: CloudflareEnv) {
   if (env.CLOUDFLARE_CONSUMER_ENABLED !== "true") return;
   const runtime = await openCloudflareRuntime(env);
   try {
-    await runtime.repository.expireClaims();
-    await dispatchImageOutbox(runtime.repository, env.IMAGE_QUEUE);
+    // 试用期间也不改变历史付费任务的租约、账务或投递状态。
+    if (env.CLOUDFLARE_GENERATION_ENABLED === "true") {
+      await runtime.repository.expireClaims();
+      await dispatchImageOutbox(runtime.repository, env.IMAGE_QUEUE);
+    }
     await recoverUploads(env, runtime.uploads.recover);
   } finally {
     await runtime.repository.close();

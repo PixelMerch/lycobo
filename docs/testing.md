@@ -139,7 +139,7 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 ## Cloudflare Workers 迁移验证（2026-11-06）
 
-当前 dev 以 [Cloudflare 部署准备](cloudflare-deployment.md) 为准。上文 CloudBase RPC 的命令和说明属于旧运行时记录，相关旧运行/发布测试已随实现移除。当前 `pnpm test:integration` 运行本地 PostgreSQL、任务/outbox、鉴权和持久事件集成；历史 SQL 保留不改写。
+当前 dev 以 [Cloudflare 运行与部署](cloudflare-deployment.md) 为准。上文 CloudBase RPC 的命令和说明属于旧运行时记录，相关旧运行/发布测试已随实现移除。当前 `pnpm test:integration` 运行本地 PostgreSQL、任务/outbox、鉴权和持久事件集成；历史 SQL 保留不改写。
 
 `pnpm check` 的构建已包含 `pnpm cf:build`（Wrangler dry-run）。`pnpm test:cloudflare` 启动独立、本地 fixture Worker，不使用生产 Hyperdrive、R2 或密钥，验证 workerd 内现有 scrypt 密码兼容、Images 真实本地解码与 WebP 输出、R2 写入以及 Queue handler 投递。
 
@@ -148,3 +148,5 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 这些检查不调用真实付费模型，不证明 Cloudflare 远端绑定可用，也不替代真实商品图的质量、延迟和费用验收。当前 Images 模拟与生产编码器的差异需在单独授权候选部署后验证；完整本地 E2E 仍不默认执行。
 
 补充本地实测：实际应用 Worker（不是简化 fixture）使用一次性 PostgreSQL、本地 Hyperdrive/R2/Images/Queue 完成登录、202 上传、队列处理、素材登记、回执查询及签名缩略图读取；临时数据库已清理。定向 `pnpm exec playwright test tests/e2e/queued-reference-upload.spec.ts` 两项通过，覆盖未完成不提交生成及失败保留草稿/具体错误。测试未调用模型。
+
+本次远端部署验证：主页与登录弹层、JSON API、Hyperdrive 读库及不存在账号登录拒绝正常；已有素材的签名 WebP/PNG 返回 200，未签名媒体返回 403；不存在上传意图的无副作用 Queue 探测消息已投递且积压归零。线上真实账号登录和有效图片上传/转换未验证，未调用付费模型。新增 `scripts/cloudflare-consumer.test.mjs` 验证生成关闭时仍处理上传，但不执行付费消息、不扫描或结算付费任务。

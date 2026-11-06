@@ -1,6 +1,6 @@
 # 架构与目录
 
-一个 pnpm workspace 仓库，生产运行目标为 Cloudflare Workers：Static Assets 前端、Hono API、签名私有 R2 资源分发及 Queue 消费者。现有新加坡 PostgreSQL 经 Hyperdrive 访问。当前后端代码已适配，尚未部署或启用付费任务；见 [Cloudflare 部署准备](docs/cloudflare-deployment.md)。Node 入口仅供隔离本地开发，CloudBase 运行入口已移除，历史 SQL 与迁移证据保留。
+一个 pnpm workspace 仓库，生产运行目标为 Cloudflare Workers：Static Assets 前端、Hono API、签名私有 R2 资源分发及 Queue 消费者。现有新加坡 PostgreSQL 经 Hyperdrive 访问。当前已部署 `lycobo.com` 与鉴权媒体域名，图片消费者开启、付费任务关闭；见 [Cloudflare 运行与部署](docs/cloudflare-deployment.md)。Node 入口仅供隔离本地开发，CloudBase 运行入口已移除，历史 SQL 与迁移证据保留。
 代码同仓不表示进程合并或强制一起发布。
 
 | 路径                                 | 职责                                                                                                 |
