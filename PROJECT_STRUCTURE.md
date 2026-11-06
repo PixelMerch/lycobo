@@ -136,7 +136,7 @@ main 的 CI 成功且用户授权后，通过手动工作流更新三个 CloudBa
 
 ## 质量门禁
 
-`scripts/check-boundaries.mjs`、`check-ui-conventions.mjs` 和 `check-code-quality.mjs` 随 `pnpm lint` 运行。旧代码的违规记在 `scripts/code-quality-baseline.json`，只能减少，规则见 [代码质量约束](docs/code-quality.md)。
+`scripts/check-boundaries.mjs`、`check-ui-conventions.mjs`、`check-code-quality.mjs` 和 `check-code-comments.mjs` 随 `pnpm lint` 运行。旧代码的违规记在 `scripts/code-quality-baseline.json`，只能减少，规则见 [代码质量约束](docs/code-quality.md)。
 
 ## 发布工具
 

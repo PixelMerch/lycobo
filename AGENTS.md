@@ -80,6 +80,9 @@ Read relevant project skills before work:
   idempotency, permission, retry and timeout rules get a short reason. Never restate the code.
   Convert comments in code you touch; do not bulk-translate unrelated files. Exceptions and
   examples are in docs/node-ts-best-practices.md.
+- pnpm lint runs scripts/check-code-comments.mjs, which checks comment language, comment length
+  and exported purpose comments on code changed since its start commit. Fix the code it reports;
+  never move ruleStartCommit to get past the check.
 - pnpm lint fails on any Biome warning and runs scripts/check-code-quality.mjs. Limits for new code:
   functions 100 lines, cognitive complexity 15, files 400 lines (CSS 500), no nested ternaries,
   no `as` except `as const`, no non-null assertions, no empty blocks, no unhandled promises,
