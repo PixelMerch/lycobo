@@ -1,7 +1,7 @@
 import type { ImageJob } from "@lycoboai/contracts";
 import { QueryClient } from "@tanstack/react-query";
 import { expect, it } from "vitest";
-import { cachedJob, chargesChanged, type ImageHistory, replaceJob } from "./task-sync";
+import { cachedJob, type ImageHistory, replaceJob } from "./task-sync";
 
 const item = (overrides: Partial<ImageJob["items"][number]> = {}) => ({
   id: crypto.randomUUID(),
@@ -44,14 +44,4 @@ it("merges pushed task state into history without losing other tasks", () => {
   expect(cachedJob(client, first.id)).toEqual(changed);
   expect(cachedJob(client, other.id)).toEqual(other);
   expect(replaceJob(client, job())).toBe(false);
-});
-it("only recalibrates credits for a new attempt or new refund", () => {
-  const running = job();
-  expect(chargesChanged(running, structuredClone(running))).toBe(false);
-  const failed = job({
-    ...running,
-    items: running.items.map((item) => ({ ...item, status: "failed" as const })),
-  });
-  expect(chargesChanged(running, failed)).toBe(true);
-  expect(chargesChanged(failed, failed)).toBe(false);
 });

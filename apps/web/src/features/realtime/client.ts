@@ -1,6 +1,7 @@
 import { notificationListSchema, releaseResponseSchema } from "@lycoboai/contracts";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { imageRequest, useImageSession } from "../generation/generation-client";
+import { refreshWithoutRealtime } from "./availability";
 
 /** 发布内容与推送共用缓存，首次读取一次，不设置定时刷新。 */
 export function useSiteRelease() {
@@ -36,7 +37,7 @@ export function useReadNotification() {
   return useMutation({
     mutationFn: (id: string) => imageRequest(`notifications/${id}/read`, { method: "POST" }),
     onSuccess: () => {
-      void client.invalidateQueries({ queryKey: ["notifications"] });
+      refreshWithoutRealtime(client, "notifications");
     },
   });
 }

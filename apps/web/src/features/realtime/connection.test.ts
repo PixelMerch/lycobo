@@ -73,6 +73,7 @@ it("keeps business APIs idle and applies task, wallet and inbox events once", as
     cursor: "3",
     event: { id: crypto.randomUUID(), kind: "notification" },
   });
+  await vi.advanceTimersByTimeAsync(150);
   expect(batchImageUpdates).toHaveBeenCalled();
   const updates = vi.mocked(batchImageUpdates).mock.results.at(-1)?.value;
   expect(updates?.enqueue).toHaveBeenCalledTimes(1);

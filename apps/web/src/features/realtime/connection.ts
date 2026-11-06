@@ -2,6 +2,8 @@ import { type RealtimeEvent, realtimeFrameSchema } from "@lycoboai/contracts";
 import type { QueryClient } from "@tanstack/react-query";
 import { imageRequest } from "../generation/generation-client";
 import { batchImageUpdates } from "../generation/image-event-updates";
+import { setRealtimeReady } from "./availability";
+import { applyResourceEvent, batchResourceUpdates } from "./resource-updates";
 
 /** 共享单条连接；断线与恢复前台时按游标重连，不定时查询业务 API。 */
 export function connectRealtime(client: QueryClient, privateChannel: boolean) {
@@ -16,18 +18,15 @@ export function connectRealtime(client: QueryClient, privateChannel: boolean) {
   let expiry: ReturnType<typeof setTimeout> | undefined;
   let lastPong = Date.now();
   const updates = batchImageUpdates(client, () => stopped);
+  const resources = batchResourceUpdates(client, () => stopped);
   const invalidate = (key: string) => void client.invalidateQueries({ queryKey: [key] });
   const apply = (event: RealtimeEvent) => {
-    if (event.kind === "release" && event.release)
-      client.setQueryData(["site-release"], { release: event.release });
-    else if (event.kind === "notification") invalidate("notifications");
-    else if (event.kind === "wallet") {
-      invalidate("wallet");
-      invalidate("wallet-entries");
-    } else if ((event.kind === "task" || event.kind === "asset") && event.resourceId)
+    if (applyResourceEvent(client, resources, event)) return;
+    if ((event.kind === "task" || event.kind === "asset") && event.resourceId)
       updates.enqueue({ id: "0", kind: event.kind, resourceId: event.resourceId });
   };
   const restart = () => {
+    setRealtimeReady(client, false);
     epoch++;
     if (connectedAt !== undefined && Date.now() - connectedAt >= 60000) failures = 0;
     connectedAt = undefined;
@@ -56,6 +55,7 @@ export function connectRealtime(client: QueryClient, privateChannel: boolean) {
       if (typeof data !== "string") return restart();
       const frame = realtimeFrameSchema.parse(JSON.parse(data));
       if (frame.type === "ready") {
+        setRealtimeReady(client, privateChannel);
         if (frame.resync && privateChannel) {
           updates.calibrate();
           invalidate("notifications");
@@ -125,6 +125,7 @@ export function connectRealtime(client: QueryClient, privateChannel: boolean) {
     clearTimeout(reconnect);
     restart();
     updates.cancel();
+    resources.cancel();
     window.removeEventListener("online", resume);
     document.removeEventListener("visibilitychange", resume);
   };

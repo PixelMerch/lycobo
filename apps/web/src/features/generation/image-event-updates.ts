@@ -1,7 +1,7 @@
 import { type imageEventSchema, imageJobSchema } from "@lycoboai/contracts";
 import type { QueryClient } from "@tanstack/react-query";
 import { imageRequest } from "./generation-client";
-import { cachedJob, chargesChanged, replaceJob } from "./task-sync";
+import { cachedJob, replaceJob } from "./task-sync";
 
 const fetchJob = (client: QueryClient, id: string) =>
   client.fetchQuery({
@@ -10,18 +10,9 @@ const fetchJob = (client: QueryClient, id: string) =>
     queryFn: async ({ signal }) =>
       imageJobSchema.parse(await (await imageRequest(`image-tasks/${id}`, { signal })).json()),
   });
+/** 将任务推送合并为详情读取，钱包只由独立账本事件校准。 */
 export function batchImageUpdates(client: QueryClient, isStopped: () => boolean) {
   let batchTimer: ReturnType<typeof setTimeout> | undefined;
-  let walletTimer: ReturnType<typeof setTimeout> | undefined;
-  const refreshWallet = () => {
-    if (walletTimer) return;
-    walletTimer = setTimeout(() => {
-      walletTimer = undefined;
-      if (isStopped()) return;
-      void client.invalidateQueries({ queryKey: ["wallet"] });
-      void client.invalidateQueries({ queryKey: ["wallet-entries"] });
-    }, 500);
-  };
   let flushing = false;
   let calibration = 0;
   let assetsChanged = false;
@@ -44,9 +35,12 @@ export function batchImageUpdates(client: QueryClient, isStopped: () => boolean)
     }
     if (taskIds.has(id)) return;
     return {
-      wallet: chargesChanged(previous, job),
       history: !replaceJob(client, job),
-      assets: job.items.some((item) => item.output_asset_id),
+      assets: job.items.some(
+        (item) =>
+          item.output_asset_id &&
+          !previous?.items.some((old) => old.output_asset_id === item.output_asset_id),
+      ),
     };
   }
   function invalidateBatch(
@@ -54,18 +48,15 @@ export function batchImageUpdates(client: QueryClient, isStopped: () => boolean)
     updateAssets: boolean,
   ) {
     let reloadHistory = false;
-    let walletChanged = false;
     let reloadAssets = updateAssets;
     for (const result of results) {
       if (result.status === "rejected") {
         reloadHistory = true;
         continue;
       }
-      walletChanged ||= !!result.value?.wallet;
       reloadHistory ||= !!result.value?.history;
       reloadAssets ||= !!result.value?.assets;
     }
-    if (walletChanged) refreshWallet();
     if (reloadHistory) void client.invalidateQueries({ queryKey: ["image-tasks"] });
     if (reloadAssets) void client.invalidateQueries({ queryKey: ["image-assets"] });
   }
@@ -96,7 +87,6 @@ export function batchImageUpdates(client: QueryClient, isStopped: () => boolean)
     },
     cancel() {
       clearTimeout(batchTimer);
-      clearTimeout(walletTimer);
     },
   };
 }

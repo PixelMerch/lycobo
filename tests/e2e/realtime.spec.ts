@@ -173,7 +173,9 @@ test("logout closes the shared stream and removes prior identity data", async ({
   await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();
 });
 
-test("running task events do not refetch wallet but a refund does", async ({ page }) => {
+test("only wallet events refresh balance, task states do not duplicate the read", async ({
+  page,
+}) => {
   await mockImageEvents(page);
   // The signed-in account capsule shows the shared balance, so it observes the wallet.
   await page.route("**/api/v1/auth/session", (route) =>
@@ -226,8 +228,17 @@ test("running task events do not refetch wallet but a refund does", async ({ pag
   job.status = "failed";
   for (const item of job.items) item.status = "failed";
   await send("2");
+  await expect.poll(() => details).toBe(2);
+  expect(wallets).toBe(baseline);
+  await page.evaluate(() =>
+    window.dispatchEvent(
+      new CustomEvent("fixture:realtime", {
+        detail: { type: "event", cursor: "3", event: { id: crypto.randomUUID(), kind: "wallet" } },
+      }),
+    ),
+  );
   await expect.poll(() => wallets).toBe(baseline + 1);
-  await send("3");
+  await send("4");
   await expect.poll(() => details).toBe(3);
   await page.waitForTimeout(800);
   expect(wallets).toBe(baseline + 1);
@@ -293,9 +304,20 @@ test("notification push updates unread state and persists an explicit read", asy
       }),
     }),
   );
-  await page.route(`**/api/v1/notifications/${id}/read`, (route) => {
+  await page.route(`**/api/v1/notifications/${id}/read`, async (route) => {
     read = true;
-    return route.fulfill({ json: apiFixture({}) });
+    await route.fulfill({ json: apiFixture({}) });
+    await page.evaluate(() =>
+      window.dispatchEvent(
+        new CustomEvent("fixture:realtime", {
+          detail: {
+            type: "event",
+            cursor: "2",
+            event: { id: crypto.randomUUID(), kind: "notification" },
+          },
+        }),
+      ),
+    );
   });
   await page.goto("/create");
   await expect(page.getByRole("button", { name: "消息（0 条未读）", exact: true })).toBeVisible();
@@ -318,3 +340,56 @@ test("notification push updates unread state and persists an explicit read", asy
   await expect(panel.getByText("已读", { exact: true })).toBeVisible();
   expect(read).toBe(true);
 });
+
+for (const connected of [true, false]) {
+  test(`submission receipt refreshes balance once with push connected=${connected}`, async ({
+    page,
+  }) => {
+    await mockImageEvents(page);
+    let wallets = 0,
+      assets = 0;
+    await page.route("**/api/v1/wallet", (route) => {
+      wallets++;
+      return route.fulfill({ json: apiFixture({ balance: 200, unitCredits: 2 }) });
+    });
+    await page.route("**/api/v1/image-assets?**", (route) => {
+      assets++;
+      return route.fulfill({ json: apiFixture({ data: [] }) });
+    });
+    await page.route("**/api/v1/image-tasks", async (route) => {
+      if (route.request().method() !== "POST")
+        return route.fulfill({ json: apiFixture({ data: [] }) });
+      await page.evaluate(() =>
+        window.dispatchEvent(
+          new CustomEvent("fixture:realtime", {
+            detail: {
+              type: "event",
+              cursor: "1",
+              event: { id: crypto.randomUUID(), kind: "wallet" },
+            },
+          }),
+        ),
+      );
+      return route.fulfill({
+        status: 202,
+        json: apiFixture({ id: crypto.randomUUID(), replayed: false }),
+      });
+    });
+    await page.goto("/create");
+    await expect(page.locator("html")).toHaveAttribute("data-ws-active", "1");
+    await expect.poll(() => wallets).toBeGreaterThan(0);
+    await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("fixture 减少重复读取");
+    if (!connected)
+      await page.evaluate(() =>
+        window.dispatchEvent(new CustomEvent("fixture:realtime", { detail: { type: "error" } })),
+      );
+    const baselineWallets = wallets,
+      baselineAssets = assets;
+    await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
+    await expect.poll(() => wallets).toBe(baselineWallets + 1);
+    await page.clock.install();
+    await page.clock.fastForward(3000);
+    expect(wallets).toBe(baselineWallets + 1);
+    expect(assets).toBe(baselineAssets);
+  });
+}

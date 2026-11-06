@@ -32,11 +32,3 @@ export function replaceJob(client: QueryClient, job: ImageJob) {
   });
   return found;
 }
-
-/** 启动与成功状态不改变已预扣余额，新增失败项才需要校准退款。 */
-export const chargesChanged = (previous: ImageJob | undefined, job: ImageJob) =>
-  !previous ||
-  job.items.some((item) => {
-    const old = previous.items.find((entry) => entry.id === item.id);
-    return !old || (item.status === "failed" && old.status !== "failed");
-  });
