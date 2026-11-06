@@ -162,3 +162,5 @@ Webhook 与无回调兼容：`scripts/cloudflare-webhook.test.mjs` 验证 Worker
 ## 运行边界与规则检查
 
 本地 `pnpm lint` 同时运行全仓运行时边界、浏览器 server-only 导入、代码质量和中文注释检查。CI Infrastructure 在隔离数据库集成后增加 `pnpm test:cloudflare`，真实 workerd 检查不读取生产绑定或付费模型。完整浏览器回归仍仅由手动 workflow_dispatch 触发，普通 push／PR 不运行全套浏览器测试。
+
+图片存储并行回归：`packages/storage/src/cloudflare-image-write.test.ts` 验证三路写入重叠、失败等待其余分支、源图保存与转换重叠及受控延迟比较；该模拟耗时不代表生产网络表现。真实本地 workerd 的 Images/R2 路径继续由 `pnpm test:cloudflare` 验证，不调用付费模型。

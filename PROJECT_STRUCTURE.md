@@ -157,3 +157,5 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 - 视频接入使用 `packages/contracts/src/video-generation.ts`（六种比例、5–30秒整数时长、每次100积分）、`apps/api/src/features/videos`（薄路由和服务）、`packages/db/src/video-repository.ts`（固定 PostgreSQL 业务操作）。任务与单个执行项复用generation_jobs／generation_job_items以保留钱包外键，generation_video_outbox独立维护持久意图、租约、供应商任务ID与下一次查询时间；图片历史和超时扫描排除视频。`apps/worker/src/video-processor.ts` 为保留的历史实现，当前 Workers 不调度，供应商协议在 `packages/generation/src/video-provider.ts`；MP4容器校验在storage/video-media，资源服务提供短期签名与Range。服务端复用生图密钥STANDALONE_IMAGE_API_KEY；当前 Workers 和本地 API 不启用视频提交，运行边界见[视频接入](docs/video-generation.md)。
 - 视频分镜通过 `features/images/storyboard-planner.ts` 与现有套图计划服务调用 DeepSeek，使用已有计划记录保存分析结果并复用图像任务的幂等、扣费和 outbox。前端 `features/video/storyboard` 保存会话内的已受理阶段与幂等请求，等待图片任务完成后自动按原分镜顺序优化提示词并提交视频。右侧进度复用视频历史查询。
 - 远端数据库工具：`packages/db/scripts/migrate-supabase.mjs` 复用当前 Drizzle 迁移链，`supabase-target.mjs` 校验目标项目与 Session Pooler；`secure-supabase.mjs` 维护业务表、序列与函数的服务端权限。生产经 Hyperdrive 使用该 PostgreSQL，不在 Worker 内执行结构迁移。
+
+图片存储的受限并行编排位于 `packages/storage/src/cloudflare-image-write.ts`，由 `cloudflare.ts` 调用；原图和两个变体完成后才返回，遥测只记录阶段与耗时。

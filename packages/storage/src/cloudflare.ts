@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { ImagesBinding, R2Bucket } from "@cloudflare/workers-types";
+import { persistImageOutput, preserveAndNormalize, timeImageWrite } from "./cloudflare-image-write";
 import { cloudflareImages } from "./cloudflare-images";
 import {
   type ImageOutputSize,
@@ -12,6 +13,7 @@ import {
 import { displayObjectKey, providerReferenceObjectKey } from "./image-variants";
 import type { ImageObjectBucket } from "./object-bucket";
 
+/** 将已有 R2 绑定适配为私有图片存储操作。 */
 export function r2ObjectBucket(
   bucket: Pick<R2Bucket, "head" | "get" | "put" | "delete">,
 ): ImageObjectBucket {
@@ -44,6 +46,7 @@ async function normalizeOutput(
   );
 }
 
+/** 保存规范化图片及完整展示变体，失败时保留供应商源图。 */
 export function cloudflareImageStore(
   bucket: ImageObjectBucket,
   images: Pick<ImagesBinding, "info" | "input">,
@@ -65,29 +68,27 @@ export function cloudflareImageStore(
       preparedReferences.add(prepared);
       return prepared;
     },
-    // Keep transparency and original pixels for references; JPEG optimization can be measured later.
+    // 参考图保留透明通道与原始像素。
     async prepareProviderReference(bytes) {
       return bytes;
     },
-    async put(scope, input, id = randomUUID(), outputSize) {
+    async put(scope, input, id = randomUUID(), outputSize, onTiming) {
       const key = userObjectKey(await resolveUid(scope), scope.organizationId, id);
-      // Preserve a received paid result even if Images or a subsequent R2 write fails.
-      await bucket.put(`${key}.source`, input, {
-        httpMetadata: { contentType: "application/octet-stream" },
-      });
-      const data = preparedReferences.has(input)
-        ? input
-        : await normalizeOutput(codec, input, outputSize);
-      const metadata = await codec.info(data);
+      const data = await preserveAndNormalize(
+        bucket,
+        key,
+        input,
+        () =>
+          preparedReferences.has(input)
+            ? Promise.resolve(input)
+            : normalizeOutput(codec, input, outputSize),
+        onTiming,
+      );
+      const metadata = await timeImageWrite("image_metadata", () => codec.info(data), onTiming);
       if (metadata.width > 8192 || metadata.height > 8192)
         throw new ImageValidationError("INVALID_IMAGE");
-      await bucket.put(key, data, { httpMetadata: { contentType: "image/png" } });
-      for (const variant of ["thumbnail", "preview"] as const) {
-        await bucket.put(displayObjectKey(key, variant), await codec.variant(data, variant), {
-          httpMetadata: { contentType: "image/webp" },
-        });
-      }
-      await bucket.delete(`${key}.source`);
+      await persistImageOutput(bucket, codec, key, data, onTiming);
+      await timeImageWrite("image_source_delete", () => bucket.delete(`${key}.source`), onTiming);
       return {
         id,
         objectKey: key,

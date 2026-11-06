@@ -28,7 +28,14 @@ export function userObjectKey(uid: string, organizationId: string, id: string) {
 }
 export type ImageOutputSize = { width: number; height: number };
 export type ImageStorageTiming = {
-  stage: "image_encode" | "image_original_put" | "image_variant_encode" | "image_variant_put";
+  stage:
+    | "image_encode"
+    | "image_metadata"
+    | "image_source_put"
+    | "image_source_delete"
+    | "image_original_put"
+    | "image_variant_encode"
+    | "image_variant_put";
   durationMs: number;
 };
 export interface ImageStore {
