@@ -99,6 +99,8 @@ pnpm db:migrate:supabase
 3. 当前停在配置阶段，不点 **Deploy**。用户决定发布时再执行该按钮；发布分支的后续提交也可能触发自动部署，需在 Builds 设置中确认分支规则。
 4. 发布后先用 Cloudflare 提供的预览或默认地址核对首页、静态资源及前端路由刷新，再配置正式域名。域名和 API 接入不由本次配置自动完成。
 
+2026-11-06 合并前检查发现 `lycobo` 已接入 Cloudflare Git 构建，推送 dev 曾自动启动预览构建。为遵守本次不部署要求，已停止该构建，并在控制台 **Settings → Builds → Production** 开启 **Disable builds**，在 **Previews Base** 关闭 **Builds for Preview branches**，均已保存。Git 连接保留；后续明确授权部署后再决定手动发布方式或恢复构建，不将该次停止的构建视为成功部署。
+
 若日志提示在 workspace 根目录执行应用检测，先核对构建选中的分支和提交是否包含根目录 `wrangler.jsonc`，以及 Path 是否为 `/`。没有配置时 Wrangler 会尝试自动识别应用，在多包仓库根目录可能失败；部署命令显式添加 `--config wrangler.jsonc`，避免依赖自动识别。本地配置未推送前，远程构建仍会使用旧代码，不应仅把 Path 改为 `apps/web`。
 
 本地可以用 `pnpm --filter @lycoboai/web build` 检查构建，不会发布。仓库尚未安装固定版本的 Wrangler；上表沿用控制台提供的 `npx` 命令，执行时会解析 Wrangler，后续自动化发布前应固定其版本。
