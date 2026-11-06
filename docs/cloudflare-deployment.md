@@ -96,3 +96,5 @@ pnpm test:cloudflare   # 隔离的 workerd + 本地 Images/R2 + scrypt fixture
 - [Hyperdrive/Postgres.js](https://developers.cloudflare.com/hyperdrive/examples/connect-to-postgres/postgres-drivers-and-libraries/postgres-js/)、[查询缓存](https://developers.cloudflare.com/hyperdrive/concepts/query-caching/)
 
 本次开放付费模型并挂载 Webhook 接收端：支持原始字节签名、时间窗及事件头校验；独立图片消费者在等待回调时也投递延迟查询，收到提前回调则尽快查原任务。供应商回调配置和缺失回调恢复策略见 [图片 Webhook 与延迟查询](image-webhooks.md)。之前关闭开关的发布版本仅为试用历史记录，当前配置以本节开头和仓库配置为准。
+
+本次开放部署复查（2026-11-06）：主站 `cd9af2a2-f08f-4e51-b360-9c66bc69672c`，图片消费者 `60edcbc7-9e6d-4437-ba68-cae2229c5ee8`，均为 100% 活动版本。两边生成和回调开关为 `true`；独立 Key 的四个已配置图片型号通过只读模型目录核对。公网无签名、错误签名、过期签名、篡改请求均返回 401，合法签名但无效 JSON 返回 400；未写入伪造任务或回调事件，未调用真实付费模型。主站健康检查正常，唯一消费者仍为 `lycobo-images`，队列积压为 0。真实供应商回调、生图、结果转换和账务完整闭环留给用户在线验收。
