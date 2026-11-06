@@ -13,7 +13,7 @@
     "dev:worker": "pnpm --filter @lycoboai/worker dev",
     "build": "pnpm -r --if-present build && pnpm cf:build",
     "typecheck": "tsc -p tsconfig.tools.json --noEmit && pnpm -r typecheck",
-    "lint": "biome check . --diagnostic-level=warn --error-on-warnings && node scripts/check-boundaries.mjs && node scripts/check-ui-conventions.mjs && node scripts/check-code-quality.mjs",
+    "lint": "biome check . --diagnostic-level=warn --error-on-warnings && node scripts/check-boundaries.mjs && node scripts/check-ui-conventions.mjs && node scripts/check-code-quality.mjs && node scripts/check-code-comments.mjs",
     "quality:update": "node scripts/check-code-quality.mjs --update",
     "format": "biome check --write .",
     "test": "vitest run",
@@ -53,7 +53,8 @@
   "lint-staged": {
     "*.{ts,tsx,js,mjs,json,css}": [
       "biome check --write --no-errors-on-unmatched --diagnostic-level=warn --error-on-warnings",
-      "node scripts/check-code-quality.mjs"
+      "node scripts/check-code-quality.mjs",
+      "node scripts/check-code-comments.mjs"
     ]
   }
 }
