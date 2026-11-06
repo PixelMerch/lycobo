@@ -20,7 +20,7 @@ export function useImageEvents() {
     )
       return;
     announced.current = release.version;
-    toast.info("网站有新版本可用，可在侧栏更新记录查看；请先保存草稿再刷新。");
+    toast.info("网站有新版本可用，请先保存草稿，再刷新页面体验。");
   }, [release]);
   const client = useQueryClient();
   const userId = session.data?.userId;
