@@ -4,6 +4,7 @@ import { openProviderKey, readPlannerStream } from "@lycoboai/generation";
 import { z } from "zod";
 import type { ImageApiDependencies } from "./route-context";
 
+/** 限制优化输入长度和用途，拒绝空提示词。 */
 export const promptOptimizationInput = z.strictObject({
   prompt: z
     .string()
@@ -28,6 +29,7 @@ function isImprovedPrompt(prompt: string, result: string) {
   return !!result && result !== prompt && referenceTags(result) === referenceTags(prompt);
 }
 
+/** 优化提示词并按实际结果结算，失败保留幂等退款语义。 */
 export function promptOptimization(deps: ImageApiDependencies) {
   const repository = deps.repository.promptOptimization;
   return {
@@ -58,6 +60,8 @@ export function promptOptimization(deps: ImageApiDependencies) {
           onText: (text: string) => Promise<void>,
         ) {
           let result: string | null = null;
+          let failureCode = "PROVIDER_REQUEST_FAILED";
+          let status: number | undefined;
           try {
             const timeout = AbortSignal.timeout(Math.min(config.timeoutMs, 40000));
             const response = await (deps.plannerRequest ?? fetch)(`${origin}/chat/completions`, {
@@ -83,11 +87,14 @@ export function promptOptimization(deps: ImageApiDependencies) {
                 ],
               }),
             });
+            status = response.status;
+            failureCode = "PROVIDER_RESPONSE_REJECTED";
             if (
               !response.ok ||
               !response.headers.get("Content-Type")?.includes("text/event-stream")
             )
               throw new Error("PROVIDER_UNAVAILABLE");
+            failureCode = "PROVIDER_STREAM_ERROR";
             let length = 0;
             const text = await readPlannerStream(response, async (part) => {
               signal.throwIfAborted();
@@ -99,7 +106,13 @@ export function promptOptimization(deps: ImageApiDependencies) {
             signal.throwIfAborted();
             if (isImprovedPrompt(input.prompt, normalized)) result = normalized;
           } catch {
-            // Provider bodies and prompts must never enter request logs.
+            // 只记录固定错误码及状态，禁止记录提示词、响应体和密钥。
+            console.error({
+              event: "PROMPT_OPTIMIZATION_FAILED",
+              code: failureCode,
+              status,
+              aborted: signal.aborted,
+            });
           }
           const settled = await repository.finish(scope, key, result);
           return settled.status === "ready" ? (settled.result ?? null) : null;
