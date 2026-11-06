@@ -158,3 +158,7 @@ Webhook 与无回调兼容：`scripts/cloudflare-webhook.test.mjs` 验证 Worker
 `pnpm cf:check:config` 是授权部署后的只读外部校验，不进入无凭据的默认 CI。`cloudflare-config.test.mjs` 覆盖活动版本正确但控制台草稿过期、仓库与活动版本不一致、Secret 名称缺失及完全一致的场景。
 
 `pnpm test:cloudflare` 已增加真实 workerd 下的提示词优化 fixture：由原生 Request 验证请求选项，再消费模拟供应商 SSE 并完成结算。旧 `redirect:error` 在此检查中失败，改为 `manual` 后通过；Node 单测覆盖拒绝重定向、供应商拒绝请求时只结算一次，以及 SSE 尚未结束时不提前关闭仓储。
+
+## Cloudflare 实时推送
+
+`pnpm test:cloudflare` 覆盖独立本地 SQLite DO WebSocket 握手、自动心跳、组织隔离、重复游标、重连回放与失效会话关闭。worker `test:images` 增加 `verify-realtime.ts`，在隔离 PostgreSQL 验证回滚、钱包与任务事件、个人消息、幂等已读和分页。客户端单测确认空闲时不查询业务 API、重连携带游标、版本事件不刷新页面。详细限制与发布顺序见 [实时推送](realtime.md)。

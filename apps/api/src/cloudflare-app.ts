@@ -1,6 +1,6 @@
-import { openAuthRepository } from "@lycoboai/db";
+import { openAuthRepository, openRealtimeRepository } from "@lycoboai/db";
 import { supportedResolutions, validateModelInput } from "@lycoboai/generation";
-import { dispatchImageOutbox } from "@lycoboai/queue";
+import { dispatchImageOutbox, dispatchRealtime } from "@lycoboai/queue";
 import { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { openCloudflareRuntime } from "../../worker/src/cloudflare-runtime";
 import { createApp } from "./app";
@@ -13,9 +13,10 @@ export async function serveCloudflareApi(request: Request, env: CloudflareEnv) {
   if (new URL(request.url).pathname === "/api/health/live") return createApp().fetch(request);
   const runtime = await openCloudflareRuntime(env);
   const authRepository = openAuthRepository(env.HYPERDRIVE.connectionString, true);
+  const realtime = openRealtimeRepository(env.HYPERDRIVE.connectionString);
   let streaming = false;
   const close = async () => {
-    await Promise.all([authRepository.close(), runtime.repository.close()]);
+    await Promise.all([authRepository.close(), runtime.repository.close(), realtime.close()]);
   };
   try {
     const authConfig = readAuthConfig({
@@ -66,10 +67,27 @@ export async function serveCloudflareApi(request: Request, env: CloudflareEnv) {
       },
       auth,
       webhook,
+      undefined,
+      { repository: realtime, hubs: env.REALTIME, auth },
     );
     const response = await app.fetch(request);
+    // 只在写操作后唤醒，传输失败保留 outbox，交由独立消费者的 Cron 修复。
+    if (!["GET", "HEAD"].includes(request.method)) {
+      try {
+        await dispatchRealtime(realtime, env.REALTIME);
+      } catch {
+        console.error("REALTIME_DISPATCH_FAILED");
+      }
+    }
     if (response.body && response.headers.get("Content-Type")?.includes("text/event-stream")) {
-      const deferred = closeAfterStream(response, close);
+      const deferred = closeAfterStream(response, async () => {
+        try {
+          await dispatchRealtime(realtime, env.REALTIME);
+        } catch {
+          console.error("REALTIME_DISPATCH_FAILED");
+        }
+        await close();
+      });
       streaming = true;
       return deferred;
     }

@@ -103,7 +103,7 @@ main 的 CI 成功且用户授权后，通过手动工作流更新三个 CloudBa
 
 接口、工作台和登录的实现范围，以及供应商、存储等外部验收边界见 [生图 API 文档](docs/image-generation-api.md)。
 
-实时任务通知入口为 apps/api/src/features/images/events.ts；apps/web/src/features/generation/use-image-events.ts 在应用壳维护共享 SSE 连接，无 SSE（CloudBase 默认）时只轮询未完成任务，二者经 task-sync.ts 定向更新 Query 缓存。事件日志和业务状态事务提交，独立于生图消费者；具体协议见 docs/image-generation-api.md。
+实时推送入口为 apps/api/src/features/realtime/（Hono 鉴权路由和 RealtimeHub DO）；apps/web/src/features/realtime/ 管理共享可休眠 WebSocket、消息与版本缓存。任务、积分与消息的可靠事件使用 packages/db/src/realtime-repository.ts 和 realtime-schema.ts；API 与图片消费者通过 packages/queue/src/realtime.ts 投递。断线按游标回放，过期游标定向校准，不启用任务 API 定时轮询；提示词优化继续 SSE。详见 docs/realtime.md。
 
 - packages/db/src/wallet-repository.ts：企业共享钱包、充值订单与只读账务查询。数据表与扣费规则见 [企业钱包](docs/enterprise-wallet.md)。
 

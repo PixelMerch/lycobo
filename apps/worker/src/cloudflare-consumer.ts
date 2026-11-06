@@ -1,5 +1,11 @@
 import type { MessageBatch } from "@cloudflare/workers-types";
-import { dispatchImageOutbox, imageQueueJobSchema, imageVariantJobSchema } from "@lycoboai/queue";
+import { openRealtimeRepository } from "@lycoboai/db";
+import {
+  dispatchImageOutbox,
+  dispatchRealtime,
+  imageQueueJobSchema,
+  imageVariantJobSchema,
+} from "@lycoboai/queue";
 import { uploadJobSchema } from "@lycoboai/storage/uploads";
 import { z } from "zod";
 import { type CloudflareImageEnv, openCloudflareRuntime } from "./cloudflare-runtime";
@@ -72,6 +78,7 @@ export async function consumeCloudflareImages(
       }
     }
   } finally {
+    await flushRealtime(env);
     await runtime.repository.close();
   }
 }
@@ -88,6 +95,7 @@ export async function dispatchCloudflareImages(env: CloudflareImageEnv) {
     }
     await recoverUploads(env, runtime.uploads.recover);
   } finally {
+    await flushRealtime(env);
     await runtime.repository.close();
   }
 }
@@ -111,4 +119,17 @@ async function recoverUploads(env: CloudflareImageEnv, recover: (id: string) => 
   }
   if (page.truncated) await env.MEDIA.put("_upload-scan-cursor", page.cursor);
   else await env.MEDIA.delete("_upload-scan-cursor");
+}
+
+/** 每次消费完成立即推送，Cron 同时补偿 API 或 Queue 中断留下的意图。 */
+async function flushRealtime(env: CloudflareImageEnv) {
+  const repository = openRealtimeRepository(env.HYPERDRIVE.connectionString);
+  try {
+    await dispatchRealtime(repository, env.REALTIME);
+    await repository.prune();
+  } catch {
+    console.error("REALTIME_DISPATCH_FAILED");
+  } finally {
+    await repository.close();
+  }
 }

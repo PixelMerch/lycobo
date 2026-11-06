@@ -6,6 +6,14 @@ import {
 import { openCloudflareRuntime } from "../apps/worker/src/cloudflare-runtime";
 import { processImageItem } from "../apps/worker/src/image-processor";
 
+vi.mock("../packages/db/src/index", async (importOriginal) => ({
+  ...(await importOriginal()),
+  openRealtimeRepository: () => ({
+    pending: async () => [],
+    prune: async () => undefined,
+    close: async () => undefined,
+  }),
+}));
 vi.mock("../apps/worker/src/cloudflare-runtime", () => ({ openCloudflareRuntime: vi.fn() }));
 vi.mock("../apps/worker/src/image-processor", () => ({ processImageItem: vi.fn() }));
 
@@ -19,6 +27,7 @@ it("processes uploads but never starts, scans or settles paid work while generat
     repository: { close, expireClaims, leaseOutbox },
   });
   const env = {
+    HYPERDRIVE: { connectionString: "fixture-only" },
     CLOUDFLARE_CONSUMER_ENABLED: "true",
     CLOUDFLARE_GENERATION_ENABLED: "false",
     MEDIA: {
@@ -61,6 +70,7 @@ it.each([
     });
     const send = vi.fn(async () => undefined);
     const env = {
+      HYPERDRIVE: { connectionString: "fixture-only" },
       CLOUDFLARE_CONSUMER_ENABLED: "true",
       CLOUDFLARE_GENERATION_ENABLED: "true",
       IMAGE_QUEUE: { send },

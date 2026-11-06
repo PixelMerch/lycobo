@@ -136,7 +136,7 @@ export function StudioShell() {
           <Outlet context={{ setHomeHeaderOpaque } satisfies StudioShellContext} />
         )}
       </main>
-      {signedIn && <SignedInEvents />}
+      <RealtimeEvents />
       {signedIn && <AccountOverlayHost />}
       {(loginRequested || (routeNeedsLogin && !session.isPending)) && (
         <LoginDialog
@@ -151,7 +151,7 @@ export function StudioShell() {
   );
 }
 
-function SignedInEvents() {
+function RealtimeEvents() {
   useImageEvents();
   return null;
 }

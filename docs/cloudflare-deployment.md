@@ -13,7 +13,7 @@
 
 图片解码和编码由消费者调用 Images binding，不在 HTTP 请求里运行 Sharp。付费开关关闭时，Queue 不调用模型，Cron 不派发或结算付费执行项；当前两边付费开关已按用户授权开启。没有常驻 Node 循环、LISTEN 或 HTTP 请求后的付费后台 Promise。API 与消费者共用现有 Queue、私有 R2、禁用查询缓存的 Hyperdrive 和固定接管时间；拆分不迁移业务数据，也不增加数据库容量。
 
-API 与消费者用 Hyperdrive 连接现有 PostgreSQL。每次调用创建并关闭自己的 Postgres.js 客户端，沿用 `prepare: true`；Hyperdrive 配置必须关闭查询缓存，钱包、会话、任务状态要求及时读取。两个 Worker 的 placement 均配置为 `aws:ap-southeast-1`。当前不挂载 SSE，前端沿用已有任务查询兜底。
+API 与消费者用 Hyperdrive 连接现有 PostgreSQL。每次调用创建并关闭自己的 Postgres.js 客户端，沿用 `prepare: true`；Hyperdrive 配置必须关闭查询缓存，钱包、会话、任务状态要求及时读取。两个 Worker 的 placement 均配置为 `aws:ap-southeast-1`。任务、钱包、消息和版本更新统一使用 Durable Objects + 可休眠 WebSocket，正常情况下不再定时轮询任务 API；提示词优化保留 SSE。协议与发布步骤见 [实时推送](realtime.md)。
 
 Node API、S3/Sharp 和本地消费者仅用于隔离开发及既有测试，不是生产备用入口。CloudBase 数据库适配、HTTP/Event 入口、唤醒代码和部署工作流已移除。`cloudbase/migrations/`、旧部署记录和一次性源文件复制适配保留为历史证据，不在 Worker 中加载。
 

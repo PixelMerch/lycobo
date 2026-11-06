@@ -49,3 +49,5 @@ export default {
     }
   },
 } satisfies ExportedHandler<CloudflareEnv>;
+
+export { RealtimeHub } from "./features/realtime/object";

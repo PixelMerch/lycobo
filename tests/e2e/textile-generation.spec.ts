@@ -183,7 +183,7 @@ test("textile angles submit one durable ten-image job and isolate history across
   await page.evaluate(
     (id) =>
       window.dispatchEvent(
-        new CustomEvent("fixture:sse", {
+        new CustomEvent("fixture:realtime", {
           detail: {
             type: "image.updated",
             id: "1",

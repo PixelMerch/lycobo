@@ -9,6 +9,7 @@ vi.mock("../apps/worker/src/cloudflare-runtime", () => ({ openCloudflareRuntime:
 vi.mock("../packages/db/src/index", async (importOriginal) => ({
   ...(await importOriginal()),
   openAuthRepository: vi.fn(),
+  openRealtimeRepository: () => ({ pending: async () => [], close: async () => undefined }),
 }));
 
 it.each([true, false])(

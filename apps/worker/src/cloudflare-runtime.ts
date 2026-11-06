@@ -13,6 +13,7 @@ const tasksSinceSchema = z
 /** 从生成的绑定类型选取 API 和独立图片消费者共用的运行依赖。 */
 export type CloudflareImageEnv = Pick<
   CloudflareEnv,
+  | "REALTIME"
   | "MEDIA"
   | "HYPERDRIVE"
   | "IMAGE_QUEUE"

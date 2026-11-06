@@ -169,7 +169,7 @@ test("multiple repair regions retain original coordinates, submit one image and 
   await page.evaluate(
     (id) =>
       window.dispatchEvent(
-        new CustomEvent("fixture:sse", {
+        new CustomEvent("fixture:realtime", {
           detail: {
             type: "image.updated",
             id: "1",

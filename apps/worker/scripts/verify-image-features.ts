@@ -6,6 +6,7 @@ import { verifyAssetLibrary } from "./verify-asset-library";
 import { verifyCloudflareIsolation } from "./verify-cloudflare-isolation";
 import { verifyLocalEdits } from "./verify-local-edits";
 import { verifyManagedModels } from "./verify-managed-models";
+import { verifyRealtime } from "./verify-realtime";
 import { verifyReferenceRetention } from "./verify-reference-retention";
 import { verifyStandaloneModels } from "./verify-standalone-models";
 import { verifyTextileGeneration } from "./verify-textile-generation";
@@ -27,6 +28,7 @@ export async function verifyImageFeatures(
   await verifyReferenceRetention(repository, sql);
   await verifyVariationPlans(repository, sql, store, png);
   await verifyWallet(repository, sql);
+  await verifyRealtime(databaseUrl, repository, sql);
   await verifyVideos(repository, sql);
   await verifyTextileGeneration(repository, sql, store, png);
   await verifyLocalEdits(repository, sql, async (path, init) => app.request(path, init));

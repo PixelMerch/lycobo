@@ -73,5 +73,19 @@
       "pattern": "media.lycobo.com",
       "custom_domain": true
     }
-  ]
+  ],
+  "migrations": [
+    {
+      "tag": "realtime-v1",
+      "new_sqlite_classes": ["RealtimeHub"]
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "REALTIME",
+        "class_name": "RealtimeHub"
+      }
+    ]
+  }
 }

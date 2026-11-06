@@ -4,8 +4,7 @@ export const queryClient = new QueryClient({
     queries: {
       staleTime: 30_000,
       retry: 1,
-      // Merely returning to an idle tab must not wake shared PG. Mounts, explicit
-      // invalidation and the visible unfinished-task poller still refresh data.
+      // 空闲标签页恢复不会额外查询业务数据，由实时事件和显式操作校准缓存。
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
     },

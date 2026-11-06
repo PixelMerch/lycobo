@@ -229,6 +229,12 @@ importers:
 
   packages/queue:
     dependencies:
+      '@lycoboai/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@lycoboai/db':
+        specifier: workspace:*
+        version: link:../db
       zod:
         specifier: 4.6.7
         version: 4.6.7

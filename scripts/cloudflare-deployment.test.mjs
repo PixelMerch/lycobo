@@ -1,7 +1,9 @@
 import { readFile } from "node:fs/promises";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import webWorker from "../apps/api/src/cloudflare";
 import imageWorker from "../apps/worker/src/cloudflare";
+
+vi.mock("../apps/api/src/features/realtime/object", () => ({ RealtimeHub: class {} }));
 
 it("keeps background entrypoints out of the public Worker and exposes no image HTTP handler", () => {
   expect(webWorker).not.toHaveProperty("queue");

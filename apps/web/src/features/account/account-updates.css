@@ -142,3 +142,16 @@
     transition: none;
   }
 }
+
+.account-footer-action {
+  position: relative;
+}
+.account-news-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}

@@ -1,12 +1,29 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { verifyRealtimeRuntime } from "./realtime-runtime.mjs";
 
 // Separate local fixture Worker: no Hyperdrive, production bucket, secrets or model calls.
+const state = await mkdtemp(join(tmpdir(), "lycobo-workerd-"));
 const child = spawn(
   "pnpm",
-  ["exec", "wrangler", "dev", "--config", "tests/wrangler.runtime.jsonc", "--local", "--port", "0"],
+  [
+    "exec",
+    "wrangler",
+    "dev",
+    "--config",
+    "tests/wrangler.runtime.jsonc",
+    "--local",
+    "--port",
+    "0",
+    "--persist-to",
+    state,
+  ],
   { detached: process.platform !== "win32", stdio: ["ignore", "pipe", "pipe"] },
 );
+if (process.env.DEBUG_RUNTIME) child.stderr.on("data", (chunk) => process.stderr.write(chunk));
 try {
   const url = await new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error("WORKER_START_TIMEOUT")), 45000);
@@ -30,6 +47,7 @@ try {
       reject(new Error(`WORKER_EXIT_${code}`));
     });
   });
+  await verifyRealtimeRuntime(url);
   const optimizer = await (
     await fetch(`${url}/optimizer-runtime`, { signal: AbortSignal.timeout(5000) })
   ).json();
@@ -59,4 +77,5 @@ try {
 } finally {
   if (child.pid && process.platform !== "win32") process.kill(-child.pid, "SIGTERM");
   else child.kill("SIGTERM");
+  await rm(state, { recursive: true, force: true });
 }

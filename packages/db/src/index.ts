@@ -15,6 +15,8 @@ export * from "./auth-repository";
 export * from "./image-event-repository";
 export * from "./image-repository";
 export type { ProviderWebhookReceipt } from "./provider-webhook-repository";
+export * from "./realtime-repository";
+export * from "./realtime-schema";
 export { VariationError } from "./variation-repository";
 export * from "./video-repository";
 export { WalletError } from "./wallet-repository";

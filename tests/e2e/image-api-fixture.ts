@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import { mockRealtime } from "./realtime-fixture";
 export const modelNames = [
   "gpt-image-2",
   "gpt-image-2.5",
@@ -71,67 +72,10 @@ export async function mockImageApi(page: Page, { signedIn = true } = {}) {
     else if (path.endsWith("/image-tasks") || path.endsWith("/image-assets")) body = { data: [] };
     await route.fulfill({ json: apiFixture(body) });
   });
+  await mockRealtime(page);
 }
 
-/** `enabled` may be a function, read on every capability request, to change it mid-test. */
-export async function mockImageEvents(page: Page, enabled: boolean | (() => boolean) = true) {
+/** 为实时测试提供模型能力，传输始终使用共享 WebSocket fixture。 */
+export async function mockImageEvents(page: Page) {
   await mockImageApi(page);
-  await page.route("**/api/v1/image-models", (route) =>
-    route.fulfill({
-      json: apiFixture({
-        enabled: true,
-        eventsEnabled: typeof enabled === "function" ? enabled() : enabled,
-        editsEnabled: true,
-        unitCredits: 1,
-        models: modelNames.map((id) => ({ id, enabledResolutions: ["1K", "1.5K"] })),
-      }),
-    }),
-  );
-  await page.addInitScript(() => {
-    let active = 0,
-      total = 0;
-    class FixtureEventSource extends EventTarget {
-      onerror: ((event: Event) => void) | null = null;
-      closed = false;
-      constructor(url: string) {
-        super();
-        active++;
-        total++;
-        document.documentElement.dataset.sseActive = String(active);
-        document.documentElement.dataset.sseTotal = String(total);
-        document.documentElement.dataset.sseUrl = url;
-        window.addEventListener("fixture:sse", this.receive);
-        queueMicrotask(() => {
-          if (!this.closed)
-            this.dispatchEvent(
-              new MessageEvent("ready", {
-                data: "{}",
-                lastEventId: new URL(url, location.href).searchParams.get("cursor") ?? "0",
-              }),
-            );
-        });
-      }
-      receive = (event: Event) => {
-        if (!(event instanceof CustomEvent) || this.closed) return;
-        if (event.detail.type === "error") {
-          this.onerror?.(new Event("error"));
-          return;
-        }
-        this.dispatchEvent(
-          new MessageEvent(event.detail.type, {
-            data: JSON.stringify(event.detail.data ?? {}),
-            lastEventId: event.detail.id ?? "",
-          }),
-        );
-      };
-      close() {
-        if (this.closed) return;
-        this.closed = true;
-        active--;
-        document.documentElement.dataset.sseActive = String(active);
-        window.removeEventListener("fixture:sse", this.receive);
-      }
-    }
-    Object.defineProperty(window, "EventSource", { value: FixtureEventSource });
-  });
 }

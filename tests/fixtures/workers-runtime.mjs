@@ -1,3 +1,7 @@
+import { realtimeRuntime } from "./realtime-runtime.mjs";
+
+export { RealtimeHub } from "../../apps/api/src/features/realtime/object";
+
 import { hashPassword, verifyPassword } from "../../apps/api/src/features/auth/password";
 import { cloudflareImages } from "../../packages/storage/src/cloudflare-images";
 import { optimizerRuntimeProbe } from "./optimizer-runtime.mjs";
@@ -6,6 +10,8 @@ import { optimizerRuntimeProbe } from "./optimizer-runtime.mjs";
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/fixture/"))
+      return realtimeRuntime(request, env);
     if (url.pathname === "/optimizer-runtime") return Response.json(await optimizerRuntimeProbe());
     if (url.pathname === "/queue-result")
       return Response.json({

@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import release from "../../release.json" with { type: "json" };
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
 async function signIn(page: Page, account: string) {
@@ -55,17 +56,14 @@ for (const width of [1440, 320]) {
     await expect(updatesPanel).toHaveCSS("width", `${Math.min(640, width)}px`);
     await expect(page.locator(".drawer__backdrop").last()).toHaveCSS("opacity", "1");
     await updatesPanel.screenshot({ path: `/tmp/lycobo-updates-${width}.png` });
-    await expect(updatesPanel.getByText("v0.4.4", { exact: true })).toBeVisible();
-    await expect(updatesPanel.getByRole("link", { name: "查看版本详情" })).toHaveAttribute(
-      "href",
-      "https://github.com/PixelMerch/lycobo/releases/tag/v0.4.4",
-    );
+    await expect(updatesPanel.getByText(release.version, { exact: true })).toBeVisible();
+    await expect(updatesPanel.getByText("已更新至当前版本")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(updatesPanel).toBeHidden();
     await expect(updates).toBeFocused();
-    await navigation.getByRole("button", { name: "消息", exact: true }).click();
+    await navigation.getByRole("button", { name: /消息（.*未读）/ }).click();
     const messagesPanel = page.getByRole("dialog", { name: "消息中心" });
-    await expect(messagesPanel.getByText("消息功能即将开放")).toBeVisible();
+    await expect(messagesPanel.getByText("暂无消息")).toBeVisible();
     const messageClose = messagesPanel.getByRole("button", { name: "关闭消息中心" });
     await messageClose.hover();
     await expect(messageClose).toHaveCSS("width", "44px");
@@ -272,7 +270,7 @@ test("account news slides from the right and respects reduced motion", async ({ 
   expect(Number(exit.duration)).toBeGreaterThanOrEqual(300);
   await expect(panel).toBeHidden();
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.getByRole("button", { name: "消息", exact: true }).click();
+  await page.getByRole("button", { name: /消息（.*未读）/ }).click();
   const messages = page.getByRole("dialog", { name: "消息中心" });
   await expect(messages).toHaveCSS("transition-duration", "0s");
   await expect(messages).toHaveCSS("translate", "none");
