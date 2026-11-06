@@ -4,13 +4,13 @@
 
 ## 环境与隔离
 
-| 环境                                      | 用途与现状                                                                  |
-| ----------------------------------------- | --------------------------------------------------------------------------- |
-| CloudBase 上海 `lycobo-d9gyvxkegc54a1257` | 国内内测，继续使用原数据库、私有存储与已有云函数，入口及自动部署保持现状    |
-| Supabase 新加坡 `uyfgzmqijdsesnlsiwqu`    | 海外数据库，区域 `ap-southeast-1`；当前控制台为 Free / Nano，本次未升级套餐 |
-| Cloudflare 海外应用                       | 后续部署目标，前端、API、媒体及后台执行方式尚待实施                         |
-| Cloudflare R2 `lycobo-media-prod`         | 已复制并校验 3,391 个私有对象，公开入口关闭                                 |
-| 本地 Docker                               | 继续使用原 `lycoboai` 数据库及私有 S3，未替换为海外库                       |
+| 环境                                      | 用途与现状                                                                       |
+| ----------------------------------------- | -------------------------------------------------------------------------------- |
+| CloudBase 上海 `lycobo-d9gyvxkegc54a1257` | 国内内测，继续使用原数据库、私有存储与已有云函数，入口保持现状，部署改为手动触发 |
+| Supabase 新加坡 `uyfgzmqijdsesnlsiwqu`    | 海外数据库，区域 `ap-southeast-1`；当前控制台为 Free / Nano，本次未升级套餐      |
+| Cloudflare 海外应用                       | 后续部署目标，前端、API、媒体及后台执行方式尚待实施                              |
+| Cloudflare R2 `lycobo-media-prod`         | 已复制并校验 3,391 个私有对象，公开入口关闭                                      |
+| 本地 Docker                               | 继续使用原 `lycoboai` 数据库及私有 S3，未替换为海外库                            |
 
 两端是独立数据库。本次为一次性快照复制，不是主从复制、双写或持续同步；快照后的国内新任务、资料修改、余额变化不会自动出现在海外，反向同样如此。后续账号与钱包各自变化，不能把两个环境的余额相加解释为一份共同可消费额度。
 
@@ -82,8 +82,8 @@ pnpm db:migrate:supabase
 | ------------------------ | ----------------------------------------------------------- |
 | Project name             | `lycobo`，必须与 `wrangler.jsonc` 的 `name` 一致            |
 | Build command            | `pnpm --filter @lycoboai/web build`                         |
-| Deploy command           | `npx wrangler deploy`                                       |
-| Preview command          | `npx wrangler preview`                                      |
+| Deploy command           | `npx wrangler deploy --config wrangler.jsonc`               |
+| Preview command          | `npx wrangler preview --config wrangler.jsonc`              |
 | Advanced settings → Path | `/`，从仓库根目录构建，不填 `apps/web`                      |
 | API token                | 保留 `Create new token`，由 Cloudflare 自动创建构建部署凭据 |
 | API token name           | `lycobo-workers-build`，这是名称，不是密钥内容              |
@@ -98,6 +98,8 @@ pnpm db:migrate:supabase
 2. 填写上表字段及构建变量。构建从根目录安装 pnpm workspace 依赖，仅构建 `@lycoboai/web`，产物为 `apps/web/dist`。
 3. 当前停在配置阶段，不点 **Deploy**。用户决定发布时再执行该按钮；发布分支的后续提交也可能触发自动部署，需在 Builds 设置中确认分支规则。
 4. 发布后先用 Cloudflare 提供的预览或默认地址核对首页、静态资源及前端路由刷新，再配置正式域名。域名和 API 接入不由本次配置自动完成。
+
+若日志提示在 workspace 根目录执行应用检测，先核对构建选中的分支和提交是否包含根目录 `wrangler.jsonc`，以及 Path 是否为 `/`。没有配置时 Wrangler 会尝试自动识别应用，在多包仓库根目录可能失败；部署命令显式添加 `--config wrangler.jsonc`，避免依赖自动识别。本地配置未推送前，远程构建仍会使用旧代码，不应仅把 Path 改为 `apps/web`。
 
 本地可以用 `pnpm --filter @lycoboai/web build` 检查构建，不会发布。仓库尚未安装固定版本的 Wrangler；上表沿用控制台提供的 `npx` 命令，执行时会解析 Wrangler，后续自动化发布前应固定其版本。
 
@@ -134,7 +136,7 @@ pnpm db:migrate:supabase
 - 部署海外 API 前建立独立运行凭据、JWT/签名密钥及可信 Origin；处理复制的会话和 API 凭据，不让两端登录或资源签名互相替代。
 - 如启用后台加密的模型配置，核对凭据加密密钥及渠道归属。新加坡库里有密文不代表海外运行时已能解密或调用。
 - 确定海外 API、消费者和媒体处理的实际运行方式；保持任务、扣费与 outbox 原子写入及未知结果不重投规则。
-- CloudBase 国内内测与海外入口分别配置发布目标及凭据，避免一次发布把另一端配置覆盖。现有 main 自动发布仍仅指向 CloudBase。
+- CloudBase 国内内测与海外入口分别配置发布目标及凭据，避免一次发布把另一端配置覆盖。CloudBase 工作流已改为手动触发，main 合并不自动部署或创建版本。
 - 本次未升级 Supabase 付费套餐；正式承接客户前按容量、备份和可用性需求另行决定，未自动购买付费能力。
 
 ## 第二阶段：文件迁移结果

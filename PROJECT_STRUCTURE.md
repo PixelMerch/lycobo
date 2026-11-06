@@ -90,7 +90,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 ## 部署
 
-main 的 CI 成功后更新三个 CloudBase 函数代码并发布静态前端，使用 cloudbase-production Environment，见 [CloudBase 部署](docs/cloudbase-deployment.md)。
+main 的 CI 成功且用户授权后，通过手动工作流更新三个 CloudBase 函数代码并发布静态前端，使用 cloudbase-production Environment，见 [CloudBase 部署](docs/cloudbase-deployment.md)。
 
 ## 生图服务端接入
 
@@ -140,7 +140,7 @@ main 的 CI 成功后更新三个 CloudBase 函数代码并发布静态前端，
 
 ## 发布工具
 
-合并到 main 且 CI 通过后，`.github/workflows/release.yml` 自动发布版本，`scripts/release-notes.mjs` 生成提交分类、作者／提交人及文件改动清单。版本只发布已通过 main CI 的提交；发布日志与操作边界见 [发布说明](docs/releasing.md)。
+合并到 main 仅执行 CI；用户授权后在 `.github/workflows/release.yml` 手动指定版本发布，`scripts/release-notes.mjs` 生成提交分类、作者／提交人及文件改动清单。版本只发布已通过 main CI 的提交；发布日志与操作边界见 [发布说明](docs/releasing.md)。
 
 ## 其他模块位置
 
