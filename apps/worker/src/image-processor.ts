@@ -11,8 +11,8 @@ import {
   validateModelInput,
 } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
-import type { DeliverProviderReference } from "./cloudbase-image-references";
 import { processConfiguredImage } from "./configured-image-processor";
+import type { DeliverProviderReference } from "./provider-references";
 import { mainImageHasReferences, readProviderReferences } from "./provider-references";
 
 export type ImageProcessorDependencies = {

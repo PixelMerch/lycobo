@@ -23,11 +23,10 @@ const testFile = /\.(?:test|spec)\.|^tests\//;
 /** Table definitions grow with the data model, so the size limit does not apply. */
 const sizeExempt = new Set(["packages/db/src/schema.ts"]);
 const entryPoints = new Set([
-  "apps/api/src/assets-server.ts",
   "apps/api/src/index.ts",
+  "apps/api/src/cloudflare.ts",
   "apps/assets/src/index.ts",
   "apps/web/src/main.tsx",
-  "apps/worker/src/cloudbase-consumer.ts",
   "apps/worker/src/local-consumer.ts",
 ]);
 

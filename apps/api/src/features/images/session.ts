@@ -3,7 +3,9 @@ import type { Context } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 
 export type WorkbenchSession = { token: string; origins: string[] };
-export function readWorkbenchSession(env: NodeJS.ProcessEnv): WorkbenchSession | undefined {
+export function readWorkbenchSession(
+  env: Record<string, string | undefined>,
+): WorkbenchSession | undefined {
   if (!env.IMAGE_WORKBENCH_TOKEN) return undefined;
   if (env.NODE_ENV !== "development" || !/^[\w-]{43}$/.test(env.IMAGE_WORKBENCH_TOKEN))
     throw new Error("Workbench auto-session requires local development configuration");

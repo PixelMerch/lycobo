@@ -5,7 +5,7 @@ import { z } from "zod";
 import { dummyPasswordHash, hashPassword, verifyPassword } from "./password";
 
 export type AuthConfig = { secret: string; origins: string[]; secureCookie: boolean };
-export function readAuthConfig(env: NodeJS.ProcessEnv): AuthConfig | undefined {
+export function readAuthConfig(env: Record<string, string | undefined>): AuthConfig | undefined {
   if (!env.AUTH_JWT_SECRET) return undefined;
   if (Buffer.byteLength(env.AUTH_JWT_SECRET) < 32)
     throw new Error("AUTH_JWT_SECRET requires at least 32 bytes");

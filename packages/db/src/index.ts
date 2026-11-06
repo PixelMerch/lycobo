@@ -12,10 +12,6 @@ export function openDatabase(url: string) {
 }
 
 export * from "./auth-repository";
-export * from "./cloudbase-auth-repository";
-export * from "./cloudbase-image-events";
-export * from "./cloudbase-image-repository";
-export * from "./cloudbase-rpc";
 export * from "./image-event-repository";
 export * from "./image-repository";
 export type { ProviderWebhookReceipt } from "./provider-webhook-repository";

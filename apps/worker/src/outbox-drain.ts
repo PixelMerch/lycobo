@@ -19,7 +19,7 @@ function remainingOutboxDue(now: number, leased: number, started: number) {
  * Continue accepted provider reads within the owning Event invocation. `resumeAt` is when work
  * left behind becomes due once this invocation stops starting work, or null when none remains.
  */
-export async function drainCloudBaseOutbox({
+export async function drainImageOutbox({
   repository,
   process,
   stopStartingAt,

@@ -1,5 +1,7 @@
 # CloudBase 手动部署与私有图片存储
 
+> 2026-11-06 更新：本文保留历史操作与数据复制证据。dev 当前运行和发布方案以 [Cloudflare 部署准备](cloudflare-deployment.md) 为准；已移除旧 CloudBase 运行与发布入口，下面的历史命令不是当前部署步骤。
+
 更新：2026-11-06。目标为上海个人版环境 `lycobo-d9gyvxkegc54a1257`，不升级套餐。主站已在线运行：API 提交后唤醒消费者，定时器每 3 小时兜底。迁移结果见 [CloudBase 迁移记录](cloudbase-migration.md)。
 
 按用户确认，当前固定使用默认入口：https://lycobo-d9gyvxkegc54a1257-1311968085.ap-shanghai.app.tcloudbase.com/ 。前端、API 和图片资源共用该网关；后续部署更新同一环境的服务和文件，不更换入口。自定义域名暂不接入，不将备案或 DNS 作为本次交付条件。

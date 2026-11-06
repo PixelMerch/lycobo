@@ -1,8 +1,8 @@
+/** Historical source adapter for explicit one-time storage copying, never a Worker fallback. */
 import { imageLimits } from "@lycoboai/contracts";
+import type { ImageObjectBucket } from "@lycoboai/storage/bucket";
+import { objectKeySchema } from "@lycoboai/storage/core";
 import { z } from "zod";
-import { assetPlaybackLifetime } from "./asset-delivery";
-import { objectKeySchema } from "./core";
-import type { ImageObjectBucket } from "./object-bucket";
 
 export interface CloudBaseStorageBindings {
   CLOUDBASE_ENV_ID?: string;
@@ -109,94 +109,5 @@ export function cloudbaseObjectBucket(
         await response?.body?.cancel();
       }
     },
-  };
-}
-
-/** PG signed download API; call only after validating the application's download capability. */
-function cloudbaseObjectSigner(
-  env: CloudBaseStorageBindings,
-  request: typeof fetch,
-  maxLifetime: number,
-  attachment = true,
-) {
-  const config = readCloudBaseStorageConfig(env);
-  if (!config) throw new Error("CLOUDBASE_STORAGE_NOT_CONFIGURED");
-  const origin = `https://${config.CLOUDBASE_ENV_ID}.api.tcloudbasegateway.com`;
-  return async (key: string, expiresIn: number) => {
-    objectKeySchema.parse(key);
-    if (!Number.isInteger(expiresIn) || expiresIn < 1 || expiresIn > maxLifetime)
-      throw new Error("INVALID_DOWNLOAD_LIFETIME");
-    const pathname = `/v1/storages/object/sign/${config.CLOUDBASE_STORAGE_BUCKET}/${key.split("/").map(encodeURIComponent).join("/")}`;
-    try {
-      const response = await request(origin + pathname, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${config.CLOUDBASE_APIKEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ expiresIn }),
-        signal: AbortSignal.timeout(10000),
-        redirect: "manual",
-      });
-      if (!response.ok) {
-        await response.body?.cancel();
-        throw new Error("IMAGE_STORAGE_UNAVAILABLE");
-      }
-      const parsed = z
-        .object({ fullSignedURL: z.string().max(16384) })
-        .parse(await response.json());
-      const url = new URL(parsed.fullSignedURL);
-      // Only redirect to this environment's exact signed object, never an arbitrary upstream URL.
-      if (
-        url.origin !== origin ||
-        url.pathname !== pathname ||
-        url.username ||
-        url.password ||
-        url.hash ||
-        !url.searchParams.get("token")
-      )
-        throw new Error("IMAGE_STORAGE_UNAVAILABLE");
-      if (attachment) url.searchParams.set("download", key.split("/").at(-1) ?? "image.png");
-      return url.href;
-    } catch {
-      throw new Error("IMAGE_STORAGE_UNAVAILABLE");
-    }
-  };
-}
-
-export function cloudbaseDownloadSigner(
-  env: CloudBaseStorageBindings,
-  request: typeof fetch = fetch,
-) {
-  return cloudbaseObjectSigner(env, request, 300);
-}
-/** Same exact-object link without the attachment parameter, for the browser video element. */
-export function cloudbasePlaybackSigner(
-  env: CloudBaseStorageBindings,
-  request: typeof fetch = fetch,
-) {
-  return cloudbaseObjectSigner(env, request, assetPlaybackLifetime, false);
-}
-/** Provider reads reference PNGs without browser cookies; never expose this signer to clients. */
-export function cloudbaseProviderReferenceSigner(
-  env: CloudBaseStorageBindings,
-  request: typeof fetch = fetch,
-) {
-  const sign = cloudbaseObjectSigner(env, request, 3600, false);
-  return (key: string) => {
-    if (!key.endsWith(".png")) throw new Error("INVALID_REFERENCE_IMAGE");
-    return sign(key, 3600);
-  };
-}
-
-/** Private, exact-object reference for the image provider, including JPEG derivatives. */
-export function cloudbaseImageReferenceSigner(
-  env: CloudBaseStorageBindings,
-  request: typeof fetch = fetch,
-) {
-  const sign = cloudbaseObjectSigner(env, request, 3600, false);
-  return async (key: string) => {
-    if (!/\.(png|jpg)$/.test(key)) throw new Error("INVALID_REFERENCE_IMAGE");
-    return new URL(await sign(key, 3600));
   };
 }

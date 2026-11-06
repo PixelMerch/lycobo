@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { URL } from "node:url";
 import sharp from "sharp";
 import { expect, it, vi } from "vitest";
 import type { ImageObjectBucket } from "./object-bucket";

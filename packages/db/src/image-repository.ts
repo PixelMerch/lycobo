@@ -25,6 +25,7 @@ export function openImageRepository(
   url: string,
   edge = false,
   independent?: IndependentModelConfiguration,
+  tasksSince?: Date,
 ) {
   const sql = postgres(url, {
     max: edge ? 1 : 5,
@@ -34,14 +35,14 @@ export function openImageRepository(
     connect_timeout: 10,
     connection: { statement_timeout: 15000, lock_timeout: 5000 },
   });
-  const settlement = imageSettlement(sql);
+  const settlement = imageSettlement(sql, tasksSince);
   return {
     ...nativeProviderWebhooks(sql),
     ...imageIdentityRepository(sql),
     ...imageSubmissionRepository(sql, settlement, independent),
     ...imageHistoryRepository(sql, settlement.expireTimedOut),
     ...imageAssetRepository(sql),
-    ...imageExecutionRepository(sql, settlement, independent),
+    ...imageExecutionRepository(sql, settlement, independent, tasksSince),
     promptOptimization: promptOptimizationRepository(async (operation, args) => {
       try {
         const [row] =

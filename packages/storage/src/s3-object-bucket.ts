@@ -1,6 +1,5 @@
 import { imageLimits } from "@lycoboai/contracts";
 import { AwsClient } from "aws4fetch";
-import { cloudbaseObjectBucket, readCloudBaseStorageConfig } from "./cloudbase-object-bucket";
 import { objectKeySchema } from "./core";
 import type { ImageObjectBucket, StorageBindings } from "./object-bucket";
 
@@ -11,8 +10,6 @@ export type { S3Bindings } from "./s3-config";
 
 /** No public S3 URLs: existing owner-scoped API / signed asset delivery remains authoritative. */
 export function imageObjectBucket(env: StorageBindings): ImageObjectBucket {
-  // CloudBase is authoritative once configured, including missing objects and failures.
-  if (readCloudBaseStorageConfig(env)) return cloudbaseObjectBucket(env);
   const config = readS3Config(env);
   if (!config) throw new Error("IMAGE_STORAGE_NOT_CONFIGURED");
   const client = new AwsClient({

@@ -1,6 +1,5 @@
 import type postgres from "postgres";
 import { z } from "zod";
-import type { CloudBaseRpc } from "./cloudbase-rpc";
 import type { ClaimedImage } from "./image-repository";
 
 export type ProviderWebhookReceipt = {
@@ -43,9 +42,4 @@ export function nativeProviderWebhooks(sql: postgres.Sql) {
       await sql`select public.lycobo_provider_webhook(${operation},${sql.json(z.json().parse(JSON.parse(JSON.stringify(args))))}) result`;
     return row?.result;
   });
-}
-export function cloudbaseProviderWebhooks(call: CloudBaseRpc) {
-  return providerWebhookRepository((operation, args) =>
-    call("lycobo_provider_webhook", { p_operation: operation, p_args: args }),
-  );
 }

@@ -73,6 +73,7 @@ export function imageExecutionRepository(
   sql: postgres.Sql,
   settlement: ReturnType<typeof imageSettlement>,
   independent?: IndependentModelConfiguration,
+  tasksSince?: Date,
 ) {
   const { refreshJob, refund } = settlement;
   return {
@@ -80,7 +81,7 @@ export function imageExecutionRepository(
       return sql.begin(async (tx) => {
         const rows =
           await tx`select o.id,o.item_id from generation_outbox o join generation_job_items i on i.id=o.item_id
-          where (i.status='queued' or (i.status='running' and exists(select 1 from provider_executions e where e.item_id=i.id and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now())))) and o.next_attempt_at<=now() and (o.lease_expires_at is null or o.lease_expires_at<now())
+          where ${tasksSince ? sql`i.created_at>=${tasksSince} and` : sql``} (i.status='queued' or (i.status='running' and exists(select 1 from provider_executions e where e.item_id=i.id and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now())))) and o.next_attempt_at<=now() and (o.lease_expires_at is null or o.lease_expires_at<now())
           order by o.next_attempt_at limit 20 for update of o skip locked`;
         const result: Array<{ id: string; itemId: string; leaseToken: string }> = [];
         for (const row of rows) {
@@ -103,7 +104,7 @@ export function imageExecutionRepository(
       const leaseMs = Math.min(requestedLeaseMs, 90000);
       return sql.begin(async (tx) => {
         const [candidate] =
-          await tx`select job_id from generation_job_items where id=${itemId} and (status='queued' or (status='running' and exists(select 1 from provider_executions e where e.item_id=${itemId} and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now()))))`;
+          await tx`select job_id from generation_job_items where id=${itemId} ${tasksSince ? tx`and created_at>=${tasksSince}` : tx``} and (status='queued' or (status='running' and exists(select 1 from provider_executions e where e.item_id=${itemId} and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now()))))`;
         if (!candidate) return null;
         // Match completion/reconciliation lock order to avoid sibling-item deadlocks.
         await tx`select id from generation_jobs where id=${candidate.job_id} for update`;
@@ -170,13 +171,14 @@ export function imageExecutionRepository(
         return true;
       });
     },
-    ...imageExecutionMaintenance(sql, settlement),
+    ...imageExecutionMaintenance(sql, settlement, tasksSince),
   };
 }
 
 function imageExecutionMaintenance(
   sql: postgres.Sql,
   settlement: ReturnType<typeof imageSettlement>,
+  tasksSince?: Date,
 ) {
   const { refreshJob, refund, expireTimedOut, settleInvalidResponses } = settlement;
   return {
@@ -188,7 +190,7 @@ function imageExecutionMaintenance(
       await settleInvalidResponses();
       // An expired paid attempt is held for operator reconciliation, never queued again.
       const rows =
-        await sql`select id,job_id from generation_job_items where status='running' and lease_expires_at<now() and not exists(select 1 from provider_executions e where e.item_id=generation_job_items.id and e.phase='polling' and e.task_id is not null and e.status_path is not null and e.next_poll_at is not null and (e.deadline_at>now() or exists(select 1 from provider_webhook_tasks w where w.item_id=e.item_id))) limit 100`;
+        await sql`select id,job_id from generation_job_items where ${tasksSince ? sql`created_at>=${tasksSince} and` : sql``} status='running' and lease_expires_at<now() and not exists(select 1 from provider_executions e where e.item_id=generation_job_items.id and e.phase='polling' and e.task_id is not null and e.status_path is not null and e.next_poll_at is not null and (e.deadline_at>now() or exists(select 1 from provider_webhook_tasks w where w.item_id=e.item_id))) limit 100`;
       for (const row of rows)
         await sql.begin(async (tx) => {
           await tx`select id from generation_jobs where id=${row.job_id} for update`;

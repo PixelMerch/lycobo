@@ -299,6 +299,14 @@ export const imageUploadResponseSchema = z.object({
   delivery: imageDeliverySchema.optional(),
 });
 
+// Overseas Workers accept uploads before Queue processing; existing 201 clients remain supported.
+export const imageUploadTicketSchema = z.object({ uploadId: z.uuid() });
+export const imageUploadStatusSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("pending") }),
+  z.object({ status: z.literal("failed") }),
+  z.object({ status: z.literal("succeeded"), asset: imageUploadResponseSchema }),
+]);
+
 export const imageSessionResponseSchema = z.object({ userId: z.uuid(), organizationId: z.uuid() });
 
 export const latestImageEditResponseSchema = z.object({ job: imageJobSchema.nullable() });

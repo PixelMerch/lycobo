@@ -136,3 +136,15 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 视频封面与播放验证：`packages/storage/src/video-variants.test.ts`使用真实解码器提取WebP，验证缓存合并、源文件保持不变、只派生封面及无效key拒绝；`video-media.test.ts`验证封面／播放／下载签名用途、内联播放Range、平台302跳转及封面不回退视频。`tests/fixtures/video-portrait.mp4`是ffmpeg生成的1秒90×162纯色视频，`video-cover.webp`为其真实帧，仅供测试，不是产品内容。定向`video-creation.spec.ts`验证列表只有封面、点击后才请求播放地址、附件仅在明确下载时通过本地fixture HTTP服务器传输、竖屏布局、详情信息栏、缩略图和方向键切换、有无Range时的进度条行为与关闭后焦点恢复。测试不调用模型。
 
 账户弹框拆分回归由`account-center.spec.ts`、`account-menu.spec.ts`和`account-settings.spec.ts`覆盖：账单仅保留积分明细/充值订单，设置独立打开并恢复焦点，普通成员不显示企业管理，改密不匹配不提交、错误密码不退出、成功提交后清理当前登录状态。浏览器使用接口fixture，不修改真实账号密码；服务器改密和会话撤销仍由既有鉴权单测与隔离集成覆盖。
+
+## Cloudflare Workers 迁移验证（2026-11-06）
+
+当前 dev 以 [Cloudflare 部署准备](cloudflare-deployment.md) 为准。上文 CloudBase RPC 的命令和说明属于旧运行时记录，相关旧运行/发布测试已随实现移除。当前 `pnpm test:integration` 运行本地 PostgreSQL、任务/outbox、鉴权和持久事件集成；历史 SQL 保留不改写。
+
+`pnpm check` 的构建已包含 `pnpm cf:build`（Wrangler dry-run）。`pnpm test:cloudflare` 启动独立、本地 fixture Worker，不使用生产 Hyperdrive、R2 或密钥，验证 workerd 内现有 scrypt 密码兼容、Images 真实本地解码与 WebP 输出、R2 写入以及 Queue handler 投递。
+
+新增 `cloudflare-uploads.test.ts` 覆盖暂存后不提前登记、上传人隔离、发送失败恢复、重复消息、存储故障、图片无效失败及登记后回执丢失恢复；`cloudflare.test.ts` 覆盖透明 PNG、展示图尺寸、标准化不重复编码、动画/超限拒绝和转换失败保留源结果。客户端测试验证等待真实素材和显式失败。`verify-cloudflare-isolation.ts` 随隔离图片集成检查素材登记幂等/内容冲突、新旧任务接管边界、旧执行不被自动过期、用户明确重试旧任务的新执行可领取，以及新任务重复领取拒绝。
+
+这些检查不调用真实付费模型，不证明 Cloudflare 远端绑定可用，也不替代真实商品图的质量、延迟和费用验收。当前 Images 模拟与生产编码器的差异需在单独授权候选部署后验证；完整本地 E2E 仍不默认执行。
+
+补充本地实测：实际应用 Worker（不是简化 fixture）使用一次性 PostgreSQL、本地 Hyperdrive/R2/Images/Queue 完成登录、202 上传、队列处理、素材登记、回执查询及签名缩略图读取；临时数据库已清理。定向 `pnpm exec playwright test tests/e2e/queued-reference-upload.spec.ts` 两项通过，覆盖未完成不提交生成及失败保留草稿/具体错误。测试未调用模型。

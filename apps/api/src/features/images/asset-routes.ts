@@ -1,15 +1,10 @@
-import {
-  assetFavoriteLimit,
-  assetToolSchema,
-  assetTypeSchema,
-  type StoredImage,
-} from "@lycoboai/contracts";
+import { assetFavoriteLimit, assetToolSchema, assetTypeSchema } from "@lycoboai/contracts";
 import { ImageRepositoryError } from "@lycoboai/db";
-import { normalizeReferenceUpload } from "@lycoboai/storage";
-import { ImageValidationError, maxImageBytes } from "@lycoboai/storage/core";
+import { maxImageBytes } from "@lycoboai/storage/core";
 import type { Context, Hono } from "hono";
 import { z } from "zod";
 import type { ImageDeliveries } from "./delivery";
+import { saveReferenceUpload } from "./reference-upload";
 import { type Env, fail, type ImageApiDependencies, id } from "./route-context";
 
 export function registerImageAssetLibrary(
@@ -120,33 +115,25 @@ export function registerImageAssetDelivery(
       return fail(c, "INVALID_IMAGE", "仅支持 PNG、JPEG、WebP", 400);
     const bytes = new Uint8Array(await c.req.arrayBuffer());
     if (bytes.length > maxImageBytes) return fail(c, "PAYLOAD_TOO_LARGE", "图片超过 10MB", 413);
-    let asset: StoredImage;
-    try {
-      asset = await deps.store.put(c.get("principal"), await normalizeReferenceUpload(bytes));
-    } catch (error) {
-      if (error instanceof ImageValidationError)
-        return fail(c, "INVALID_IMAGE", "图片格式或尺寸无效", 400);
-      throw error;
+    if (deps.uploadsEnabled === false)
+      return fail(c, "GENERATION_NOT_CONFIGURED", "图片上传暂不可用", 503);
+    if (deps.uploads) {
+      const uploadId = await deps.uploads.enqueue(c.get("principal"), bytes);
+      return c.json({ uploadId }, 202);
     }
-    try {
-      await deps.repository.addReference(c.get("principal"), asset);
-    } catch (error) {
-      await deps.store.remove(asset).catch(() => {
-        // Preserve the repository failure if storage cleanup also fails.
-      });
-      throw error;
-    }
-    return c.json(
-      {
-        id: asset.id,
-        width: asset.width,
-        height: asset.height,
-        bytes: asset.bytes,
-        mimeType: asset.mimeType,
-        ...(deps.signAsset ? { delivery: await deps.signAsset(asset.objectKey) } : {}),
-      },
-      201,
-    );
+    return saveReferenceUpload(c, deps, bytes);
+  });
+  app.get("/image-uploads/:id", async (c) => {
+    const parsed = id.safeParse(c.req.param("id"));
+    if (!parsed.success || !deps.uploads) return fail(c, "NOT_FOUND", "上传记录不存在", 404);
+    const result = await deps.uploads.status(c.get("principal"), parsed.data);
+    if (!result) return fail(c, "NOT_FOUND", "上传记录不存在或已过期", 404);
+    if (!result.image) return c.json({ status: result.status });
+    const delivery = deps.signAsset ? await deps.signAsset(result.image.objectKey) : undefined;
+    return c.json({
+      status: "succeeded",
+      asset: { id: result.image.id, ...(delivery ? { delivery } : {}) },
+    });
   });
   app.post("/image-assets/deliveries", async (c) => {
     const input = z

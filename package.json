@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "node scripts/local/dev.mjs",
     "dev:worker": "pnpm --filter @lycoboai/worker dev",
-    "build": "pnpm -r --if-present build",
+    "build": "pnpm -r --if-present build && pnpm cf:build",
     "typecheck": "tsc -p tsconfig.tools.json --noEmit && pnpm -r typecheck",
     "lint": "biome check . --diagnostic-level=warn --error-on-warnings && node scripts/check-boundaries.mjs && node scripts/check-ui-conventions.mjs && node scripts/check-code-quality.mjs",
     "quality:update": "node scripts/check-code-quality.mjs --update",
@@ -28,17 +28,23 @@
     "infra:up": "docker compose up -d --wait postgres image-storage",
     "infra:down": "docker compose down",
     "prepare": "node scripts/setup-hooks.mjs",
-    "test:integration": "pnpm --filter @lycoboai/worker test:integration && pnpm --filter @lycoboai/worker test:images && pnpm --filter @lycoboai/api test:auth && pnpm --filter @lycoboai/api test:events && pnpm --filter @lycoboai/db test:cloudbase-auth && pnpm --filter @lycoboai/api test:cloudbase-images"
+    "test:integration": "pnpm --filter @lycoboai/worker test:integration && pnpm --filter @lycoboai/worker test:images && pnpm --filter @lycoboai/api test:auth && pnpm --filter @lycoboai/api test:events",
+    "cf:types": "wrangler types worker-configuration.d.ts --env-interface CloudflareEnv --include-runtime=false --strict-vars=false",
+    "cf:build": "wrangler deploy --dry-run --outdir dist-cloudflare",
+    "dev:cloudflare": "wrangler dev",
+    "test:cloudflare": "node scripts/check-cloudflare-runtime.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",
+    "@cloudflare/workers-types": "5.20261106.1",
     "@commitlint/cli": "21.2.4",
     "@commitlint/config-conventional": "21.2.4",
     "@playwright/test": "1.64.1",
     "@types/node": "24.19.2",
     "lint-staged": "17.6.0",
     "typescript": "5.9.3",
-    "vitest": "5.0.5"
+    "vitest": "5.0.5",
+    "wrangler": "4.158.0"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,json,css}": [

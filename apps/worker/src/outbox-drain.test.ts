@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { drainCloudBaseOutbox } from "./cloudbase-outbox";
+import { drainImageOutbox } from "./outbox-drain";
 
 const entry = () => ({
   id: crypto.randomUUID(),
@@ -19,7 +19,7 @@ it("retrieves an accepted result in the same invocation without another paid sub
     leaseOutbox: vi.fn(async () => (phase === "complete" ? [] : [intent])),
     ackOutbox: vi.fn(async () => {}),
   };
-  const result = await drainCloudBaseOutbox({
+  const result = await drainImageOutbox({
     repository,
     now: () => time,
     wait,
@@ -50,7 +50,7 @@ it("does not retry an unresolved outcome or idle after completed work", async ()
   const process = vi.fn(async () => {}),
     wait = vi.fn(async () => {});
   expect(
-    await drainCloudBaseOutbox({ repository, process, now: () => 0, wait, stopStartingAt: 20000 }),
+    await drainImageOutbox({ repository, process, now: () => 0, wait, stopStartingAt: 20000 }),
   ).toEqual({ processed: 1, resumeAt: null });
   expect(process).toHaveBeenCalledOnce();
   expect(wait).not.toHaveBeenCalled();
@@ -64,7 +64,7 @@ it.each([false, true])(
       ackOutbox: vi.fn(async () => {}),
     };
     const wait = vi.fn(async () => {});
-    const result = await drainCloudBaseOutbox({
+    const result = await drainImageOutbox({
       repository,
       now: () => 1000,
       stopStartingAt: 20000,
@@ -86,7 +86,7 @@ it("leaves a deferred intent durable when its next read exceeds the invocation b
   );
   // The next read is reported so the consumer can continue it instead of waiting for the timer.
   expect(
-    await drainCloudBaseOutbox({ repository, process, now: () => 0, wait, stopStartingAt: 20000 }),
+    await drainImageOutbox({ repository, process, now: () => 0, wait, stopStartingAt: 20000 }),
   ).toEqual({ processed: 1, resumeAt: 60000 });
   expect(process).toHaveBeenCalledOnce();
   expect(wait).not.toHaveBeenCalled();
@@ -100,7 +100,7 @@ it("keeps draining full batches and reports intents left unstarted at the budget
   };
   const wait = vi.fn(async () => {});
   expect(
-    await drainCloudBaseOutbox({
+    await drainImageOutbox({
       repository,
       process: async () => {},
       now: () => time,
@@ -110,7 +110,7 @@ it("keeps draining full batches and reports intents left unstarted at the budget
   ).toEqual({ processed: 40, resumeAt: null });
   expect(repository.leaseOutbox).toHaveBeenCalledTimes(3);
   const slow = [Array.from({ length: 4 }, entry)];
-  const stopped = await drainCloudBaseOutbox({
+  const stopped = await drainImageOutbox({
     repository: { leaseOutbox: async () => slow.shift() ?? [], ackOutbox: async () => {} },
     process: async () => {
       time = 25000;
@@ -134,7 +134,7 @@ it("starts no new paid work after a failure but lets in-flight items finish", as
     if (itemId === entries[0]?.itemId) throw new Error("DATABASE_UNAVAILABLE");
   });
   await expect(
-    drainCloudBaseOutbox({ repository, process, now: () => 0, stopStartingAt: 20000 }),
+    drainImageOutbox({ repository, process, now: () => 0, stopStartingAt: 20000 }),
   ).rejects.toThrow("DATABASE_UNAVAILABLE");
   // The second item was in flight when the first failed: it finishes and is acknowledged, and
   // its slot starts nothing new.
@@ -148,7 +148,7 @@ it("keeps at most two task operations in flight", async () => {
     leaseOutbox: async () => Array.from({ length: 5 }, entry),
     ackOutbox: async () => {},
   };
-  await drainCloudBaseOutbox({
+  await drainImageOutbox({
     repository,
     now: () => 0,
     stopStartingAt: 20000,

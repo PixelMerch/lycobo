@@ -62,7 +62,7 @@ export function providerWebhookRoutes(deps: {
       return c.json({ error: { code: "UNAUTHORIZED", message: "回调签名无效" } }, 401);
     let value: unknown;
     try {
-      value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(raw));
+      value = JSON.parse(new TextDecoder("utf-8", { fatal: true, ignoreBOM: false }).decode(raw));
     } catch {
       return c.json({ error: { code: "VALIDATION_ERROR", message: "回调内容无效" } }, 400);
     }

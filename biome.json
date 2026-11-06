@@ -11,6 +11,7 @@
       "!!.agents/skills",
       "!!docs/design",
       "!!pnpm-lock.yaml",
+      "!!worker-configuration.d.ts",
       "!!packages/db/migrations"
     ]
   },

@@ -1,27 +1,27 @@
 # 架构与目录
 
-一个 pnpm workspace 仓库，四个独立应用：前端、API、消费者和图片服务，当前网站运行在 CloudBase，使用共享 PG 和私有云存储。CloudBase 保留作国内内测；海外 Supabase 新加坡已完成独立数据库快照复制，关联媒体文件已复制到私有 R2，海外应用与鉴权媒体服务尚未部署。分别见 [CloudBase 部署](docs/cloudbase-deployment.md)与[双环境部署](docs/overseas-deployment.md)。
+一个 pnpm workspace 仓库，生产运行目标为 Cloudflare Workers：Static Assets 前端、Hono API、签名私有 R2 资源分发及 Queue 消费者。现有新加坡 PostgreSQL 经 Hyperdrive 访问。当前后端代码已适配，尚未部署或启用付费任务；见 [Cloudflare 部署准备](docs/cloudflare-deployment.md)。Node 入口仅供隔离本地开发，CloudBase 运行入口已移除，历史 SQL 与迁移证据保留。
 代码同仓不表示进程合并或强制一起发布。
 
-| 路径                  | 职责                                                                                                                                                                    |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| apps/web/src/app      | 路由、共享应用壳（studio-shell.tsx）、providers                                                                                                                         |
-| apps/web/src/features | 按业务功能组织：首页、身份、账户、素材、生图与图片编辑工作区                                                                                                            |
-| apps/web/src/lib      | 浏览器 API 客户端与工具                                                                                                                                                 |
-| apps/web/src/styles   | 共享设计 tokens 与全局基础样式                                                                                                                                          |
-| apps/api/src          | Hono 入口、应用工厂、配置与组织隔离的生图 feature API                                                                                                                   |
-| apps/assets/src       | 独立 Node 私有媒体资源服务：短期签名、Referer/CORS、WebP 展示变体缓存、原图下载、旧图 Sharp 变体补生成，经授权后按需生成并缓存真实视频封面，以及原视频内联播放（Range） |
-| apps/worker/src       | outbox 消费者、生命周期与任务执行                                                                                                                                       |
-| packages/contracts    | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖                                                                                                                    |
-| packages/db           | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY                                                                                                   |
-| cloudbase/migrations  | CloudBase 共享 PG 的源库结构基线与约束恢复；原 Drizzle 历史随数据复制保留                                                                                               |
-| packages/queue        | ID-only 消息契约与通用 outbox 投递；CloudBase 消费者直接认领 PG outbox，通用投递接口用于隔离集成测试                                                                    |
-| packages/generation   | 服务商契约、Vakv 同步兼容、可配置 OpenAI／FluxPort 同异步适配与密钥加密                                                                                                 |
-| packages/storage      | CloudBase PG 私有存储、UID 路径、Node Sharp 变体；S3 适配用于本地开发和迁移，CloudBase 不回退旧存储                                                                     |
-| scripts/cloudbase     | 静态及 Linux 云函数发布包准备、固定目标配置与敏感文件隔离                                                                                                               |
-| tests/e2e             | 浏览器关键路径验收                                                                                                                                                      |
-| docs/design           | 规范仍在引用的品牌素材                                                                                                                                                  |
-| .agents/skills        | 锁定来源的团队技能快照                                                                                                                                                  |
+| 路径                                 | 职责                                                                                                 |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| apps/web/src/app                     | 路由、共享应用壳（studio-shell.tsx）、providers                                                      |
+| apps/web/src/features                | 按业务功能组织：首页、身份、账户、素材、生图与图片编辑工作区                                         |
+| apps/web/src/lib                     | 浏览器 API 客户端与工具                                                                              |
+| apps/web/src/styles                  | 共享设计 tokens 与全局基础样式                                                                       |
+| apps/api/src                         | Hono 入口、应用工厂、配置与组织隔离的生图 feature API                                                |
+| apps/assets/src                      | 隔离本地开发的 Node/S3 资源服务；生产资源由 Workers 签名校验后读取 R2，缺失变体通过 Queue 补齐       |
+| apps/worker/src                      | outbox 消费者、生命周期与任务执行                                                                    |
+| packages/contracts                   | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖                                                 |
+| packages/db                          | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY                                |
+| cloudbase/migrations                 | CloudBase 共享 PG 的源库结构基线与约束恢复；原 Drizzle 历史随数据复制保留                            |
+| packages/queue                       | ID-only 消息契约与通用 outbox 投递；CloudBase 消费者直接认领 PG outbox，通用投递接口用于隔离集成测试 |
+| packages/generation                  | 服务商契约、Vakv 同步兼容、可配置 OpenAI／FluxPort 同异步适配与密钥加密                              |
+| packages/storage                     | 私有 R2、Images binding、Queue 上传意图；Node Sharp/S3 用于隔离开发，源云存储适配仅用于一次性迁移    |
+| scripts/check-cloudflare-runtime.mjs | 隔离 workerd、Images/R2 与密码验证                                                                   |
+| tests/e2e                            | 浏览器关键路径验收                                                                                   |
+| docs/design                          | 规范仍在引用的品牌素材                                                                               |
+| .agents/skills                       | 锁定来源的团队技能快照                                                                               |
 
 生图接口在 `apps/api/src/features/images/routes.ts` 统一注册会话、鉴权中间件和错误处理。任务、素材、规划、事件、模型和钱包由各自的路由模块注册到同一个 Hono 实例，业务服务和持久化仍在各自的层中。
 
@@ -153,9 +153,9 @@ main 的 CI 成功且用户授权后，通过手动工作流更新三个 CloudBa
 - 共享列表分页在 `components/infinite-load.tsx`，组合 IntersectionObserver 与 HeroUI Spinner；主站分页列表统一复用，业务查询仍由各功能的 TanStack Query hook 管理。提示词有效描述判断在 `features/generation/references/prompt-description.ts`，首页与创作页共用。
 - 套图计划：`variation-planner.ts` 封装 OpenAI 兼容语言分析；`variation-service.ts` 负责参考素材归属校验与解密密钥；计划阶段仅优化文本和参考图编号，不读取或发送图片，参考图保留至实际生图阶段；`variation-repository.ts` 持久化计划和幂等状态。`model_planners` 独立配置语言模型；`generation_jobs.input.variation` 保存确认后的方案快照，Worker 每条方案只请求一张图。
 - 主站独立试用路由由 `packages/generation/src/standalone-models.ts` 定义；API/消费者将纯配置注入图片仓储，绕过后台模型目录、路由及语言模型设置读取。前端展示在 `models/model-presentation.ts`，Logo 位于 `apps/web/public/model-logos/`。不会删除后台表或改变鉴权/积分/素材持久化。
-- CloudBase 运行入口为 `apps/api/src/index.ts`（API）、`apps/api/src/assets-server.ts`（私有图片）、`apps/worker/src/cloudbase-consumer.ts`（独立 Event 消费者）。`packages/db/src/cloudbase-*` 通过固定 SQL 业务函数访问共享 PG，原 Node 原生 PG 仓储用于本地/旧部署。实际状态和限制见 [CloudBase 部署](docs/cloudbase-deployment.md)。
+- Cloudflare 入口为 `apps/api/src/cloudflare.ts`，API 组合在 `cloudflare-app.ts`；`apps/worker/src/cloudflare-consumer.ts` 处理 Queue/Cron，`cloudflare-runtime.ts` 创建调用级资源。PostgreSQL 与钱包仍由原生仓储维护，绑定与状态见 [Cloudflare 部署准备](docs/cloudflare-deployment.md)。
 - 图片回调接收位于 `apps/api/src/features/images/provider-webhook.ts`；任务与事件的持久化关联位于 `packages/db/src/provider-webhook-repository.ts`。前端低频批量同步、超时补查和发布顺序见 [图片 Webhook](docs/image-webhooks.md)。
-- 视频接入使用 `packages/contracts/src/video-generation.ts`（六种比例、5–30秒整数时长、每次100积分）、`apps/api/src/features/videos`（薄路由和服务）、`packages/db/src/video-repository.ts`（Node／CloudBase同一固定RPC）。任务与单个执行项复用generation_jobs／generation_job_items以保留钱包外键，generation_video_outbox独立维护持久意图、租约、供应商任务ID与下一次查询时间；图片历史和超时扫描排除视频。`apps/worker/src/video-processor.ts` 由现有本地消费者与CloudBase Event入口调度，供应商协议在 `packages/generation/src/video-provider.ts`；MP4容器校验在storage/video-media，资源服务提供短期签名与Range。服务端复用生图密钥STANDALONE_IMAGE_API_KEY；默认启用视频，缺少密钥或存储配置时不接受付费提交，运行边界见[视频接入](docs/video-generation.md)。
+- 视频接入使用 `packages/contracts/src/video-generation.ts`（六种比例、5–30秒整数时长、每次100积分）、`apps/api/src/features/videos`（薄路由和服务）、`packages/db/src/video-repository.ts`（Node／CloudBase同一固定RPC）。任务与单个执行项复用generation_jobs／generation_job_items以保留钱包外键，generation_video_outbox独立维护持久意图、租约、供应商任务ID与下一次查询时间；图片历史和超时扫描排除视频。`apps/worker/src/video-processor.ts` 为保留的历史实现，当前 Workers 不调度，供应商协议在 `packages/generation/src/video-provider.ts`；MP4容器校验在storage/video-media，资源服务提供短期签名与Range。服务端复用生图密钥STANDALONE_IMAGE_API_KEY；当前 Workers 和本地 API 不启用视频提交，运行边界见[视频接入](docs/video-generation.md)。
 - 视频分镜通过 `features/images/storyboard-planner.ts` 与现有套图计划服务调用 DeepSeek，使用已有计划记录保存分析结果并复用图像任务的幂等、扣费和 outbox。前端 `features/video/storyboard` 保存会话内的已受理阶段与幂等请求，等待图片任务完成后自动按原分镜顺序优化提示词并提交视频。右侧进度复用视频历史查询。
 - 海外数据库工具：`packages/db/scripts/migrate-supabase.mjs` 复用现有 Drizzle Kit 迁移链，`supabase-target.mjs` 校验独立的 `SUPABASE_DATABASE_URL` 与项目引用，支持直连及 Session Pooler；`secure-supabase.mjs` 限定本应用表／序列／函数的 RLS 和前端角色权限。当前网站仍使用 CloudBase 共享 PG；海外数据库复制不自动切换运行时，详见[双环境部署](docs/overseas-deployment.md)。
 - 海外文件迁移工具：`apps/api/scripts/migrate-storage.ts` 读取海外快照素材，按 `storage-copy-manifest.ts` 筛选原始与派生文件，再由 `storage-copy.ts` 逐对象复制并校验；仅用于显式的一次性迁移与续传，不自动切换应用存储。详见[双环境部署](docs/overseas-deployment.md)。

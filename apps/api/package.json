@@ -13,8 +13,7 @@
     "auth:account": "node --env-file-if-exists=../../.env --import tsx scripts/enterprise-account.ts",
     "storage:migrate": "node --import tsx scripts/migrate-storage.ts",
     "test:auth": "node --env-file-if-exists=../../.env --import tsx scripts/check-auth-integration.ts",
-    "test:events": "node --env-file-if-exists=../../.env --import tsx scripts/check-image-events-integration.ts",
-    "test:cloudbase-images": "node --import tsx scripts/check-cloudbase-images.ts"
+    "test:events": "node --env-file-if-exists=../../.env --import tsx scripts/check-image-events-integration.ts"
   },
   "dependencies": {
     "hono": "4.13.14",

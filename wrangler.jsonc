@@ -1,8 +1,81 @@
 {
+  "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "lycobo",
-  "compatibility_date": "2026-11-05",
+  "main": "apps/api/src/cloudflare.ts",
+  "compatibility_date": "2026-11-06",
+  "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": "./apps/web/dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/images/*"]
+  },
+  "placement": {
+    "region": "aws:ap-southeast-1"
+  },
+  "observability": {
+    "enabled": true,
+    "traces": {
+      "enabled": true
+    }
+  },
+  "limits": {
+    "cpu_ms": 300000
+  },
+  "vars": {
+    "AUTH_TRUSTED_ORIGINS": "https://lycobo.com",
+    "ASSET_ALLOWED_ORIGINS": "https://lycobo.com",
+    "ASSET_PUBLIC_ORIGIN": "https://media.lycobo.com",
+    "ASSET_PATH_PREFIX": "/images/",
+    "STANDALONE_MODELS": "true",
+    "IMAGE_WEBHOOK_ENABLED": "false",
+    "CLOUDFLARE_GENERATION_ENABLED": "false",
+    "CLOUDFLARE_CONSUMER_ENABLED": "false",
+    "CLOUDFLARE_TASKS_SINCE": "2099-01-01T00:00:00.000Z"
+  },
+  "secrets": {
+    "required": [
+      "AUTH_JWT_SECRET",
+      "ASSET_SIGNING_SECRET",
+      "STANDALONE_IMAGE_API_KEY",
+      "DEEPSEEK_API_KEY"
+    ]
+  },
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "lycobo-media-prod"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "00000000000000000000000000000000"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "IMAGE_QUEUE",
+        "queue": "lycobo-images"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "lycobo-images",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_concurrency": 2,
+        "max_retries": 3,
+        "retry_delay": 30,
+        "dead_letter_queue": "lycobo-images-dead"
+      }
+    ]
+  },
+  "triggers": {
+    "crons": ["* * * * *"]
   }
 }

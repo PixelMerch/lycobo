@@ -6,8 +6,8 @@ import {
 import type { ClaimedImage, ImageRuntimeRepository } from "@lycoboai/db";
 import { standaloneCredentialId } from "@lycoboai/generation";
 import { expect, it, vi } from "vitest";
-import { drainCloudBaseOutbox } from "./cloudbase-outbox";
 import { processConfiguredImage } from "./configured-image-processor";
+import { drainImageOutbox } from "./outbox-drain";
 
 it.each(["signed", "signing-failed", "unverified"] as const)(
   "continues a durable provider receipt without a second paid POST (%s)",
@@ -104,7 +104,7 @@ async function verifyProviderReferenceTransport(
     if (transport === "signing-failed") throw new Error("fixture signing unavailable");
     return signed;
   });
-  const result = await drainCloudBaseOutbox({
+  const result = await drainImageOutbox({
     repository,
     now: () => time,
     stopStartingAt: 20000,

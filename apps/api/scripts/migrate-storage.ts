@@ -1,10 +1,10 @@
 import { appendFile, chmod, mkdir, readFile, writeFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, URL } from "node:url";
 import { parseEnv } from "node:util";
-import { cloudbaseObjectBucket } from "@lycoboai/storage/cloudbase";
 import { imageObjectBucket } from "@lycoboai/storage/s3";
 import postgres from "postgres";
 import { z } from "zod";
+import { cloudbaseObjectBucket } from "./source-cloudbase-bucket";
 import { type CopyResult, copyWithRetry, storageMigrationError } from "./storage-copy";
 import { createCopyManifest, migrationAssetSchema } from "./storage-copy-manifest";
 

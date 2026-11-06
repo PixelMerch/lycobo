@@ -9,7 +9,7 @@ import {
   type StorageUid,
   userObjectKey,
 } from "./core";
-import { normalizeImage } from "./image-store";
+import { normalizeImage, normalizeReferenceUpload, providerReference } from "./image-store";
 import { displayObjectKey, displayVariants, providerReferenceObjectKey } from "./image-variants";
 import type { ImageObjectBucket } from "./object-bucket";
 
@@ -49,6 +49,8 @@ export function objectImageStore(bucket: ImageObjectBucket, resolveUid?: Storage
     return new Uint8Array(await object.arrayBuffer());
   };
   return {
+    prepareReferenceUpload: normalizeReferenceUpload,
+    prepareProviderReference: providerReference,
     async ready() {
       // Credentials are validated when the bucket adapter is constructed.
     },

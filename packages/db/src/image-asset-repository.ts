@@ -17,7 +17,10 @@ export function imageAssetRepository(sql: postgres.Sql) {
     async addReference(scope: ImageScope, image: StoredImage) {
       await sql.begin(async (tx) => {
         await tx`insert into media_assets (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256,expires_at)
-          values (${image.id},${scope.organizationId},${scope.userId},'reference','image',${image.objectKey},${image.mimeType},${image.width},${image.height},${image.bytes},${image.sha256},now()+interval '3 days')`;
+          values (${image.id},${scope.organizationId},${scope.userId},'reference','image',${image.objectKey},${image.mimeType},${image.width},${image.height},${image.bytes},${image.sha256},now()+interval '3 days') on conflict (id) do nothing`;
+        const [stored] =
+          await tx`select id from media_assets where id=${image.id} and organization_id=${scope.organizationId} and user_id=${scope.userId} and sha256=${image.sha256} and object_key=${image.objectKey}`;
+        if (!stored) throw new ImageRepositoryError("STATE_CONFLICT");
         await recordImageEvent(tx, scope.organizationId, "asset", image.id);
       });
     },

@@ -3,6 +3,7 @@ import type { ImageStore } from "@lycoboai/storage";
 import type postgres from "postgres";
 import type { createApp } from "../../api/src/app";
 import { verifyAssetLibrary } from "./verify-asset-library";
+import { verifyCloudflareIsolation } from "./verify-cloudflare-isolation";
 import { verifyLocalEdits } from "./verify-local-edits";
 import { verifyManagedModels } from "./verify-managed-models";
 import { verifyReferenceRetention } from "./verify-reference-retention";
@@ -20,6 +21,7 @@ export async function verifyImageFeatures(
   png: Buffer,
   app: ReturnType<typeof createApp>,
 ) {
+  await verifyCloudflareIsolation(databaseUrl, sql, store, png);
   await verifyStandaloneModels(databaseUrl, sql, store, png);
   await verifyManagedModels(repository, sql, store, png);
   await verifyReferenceRetention(repository, sql);
