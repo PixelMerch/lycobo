@@ -1,14 +1,58 @@
 import { randomBytes } from "node:crypto";
 import { resolve } from "node:path";
 
+// 只继承进程工具所需的设置，避免未来增加的供应商密钥进入本地子进程。
+const processKeys = new Set([
+  "PATH",
+  "HOME",
+  "USER",
+  "LOGNAME",
+  "SHELL",
+  "TMPDIR",
+  "TMP",
+  "TEMP",
+  "SystemRoot",
+  "SYSTEMROOT",
+  "WINDIR",
+  "COMSPEC",
+  "PATHEXT",
+  "LANG",
+  "LC_ALL",
+  "LC_CTYPE",
+  "TERM",
+  "COLORTERM",
+  "NO_COLOR",
+  "FORCE_COLOR",
+  "TZ",
+  "LOG_LEVEL",
+  "NODE_OPTIONS",
+  "NODE_EXTRA_CA_CERTS",
+  "NODE_USE_ENV_PROXY",
+  "SSL_CERT_FILE",
+  "SSL_CERT_DIR",
+  "HTTP_PROXY",
+  "HTTPS_PROXY",
+  "ALL_PROXY",
+  "NO_PROXY",
+  "http_proxy",
+  "https_proxy",
+  "all_proxy",
+  "no_proxy",
+  "CI",
+  "GITHUB_ACTIONS",
+  "PNPM_HOME",
+  "NPM_CONFIG_USERCONFIG",
+  "npm_config_userconfig",
+  "npm_config_cache",
+  "XDG_CACHE_HOME",
+  "XDG_CONFIG_HOME",
+  "XDG_DATA_HOME",
+]);
+
+/** 为隔离开发组装固定基础设施，仅显式导入模型与进程工具配置。 */
 export function localEnvironment(source, docker = false, settings = source) {
   const env = Object.fromEntries(
-    Object.entries(source).filter(
-      ([key]) =>
-        !/^(CLOUDBASE_|TCB_|TENCENTCLOUD_|CLOUDFLARE_|CF_|SUPABASE_|AUTH_|ASSET_|VIDEO_|VAKV_|IMAGE_|MODEL_|WRANGLER_|S3_|STANDALONE_|LOCAL_|DEEPSEEK_|DATABASE_URL)/.test(
-          key,
-        ),
-    ),
+    Object.entries(source).filter(([key]) => processKeys.has(key) || key.startsWith("DEV_")),
   );
   env.DATABASE_URL = `postgresql://lycoboai:local_dev_only@${docker ? "postgres:5432" : "127.0.0.1:55432"}/lycoboai`;
   if (settings.MODEL_CREDENTIAL_SECRET) {

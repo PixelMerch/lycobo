@@ -6,7 +6,7 @@
 
 `0043_realtime_push` 新增 `realtime_outbox`、`realtime_notifications`、`realtime_notification_reads` 和 `realtime_releases`。数据库触发器把 generation_events、wallet_entries 和消息插入转为同事务 outbox；回滚不会发出虚假通知。任务进入终态时产生一条面向提交用户的结果消息。积分包括生图、提示词优化、退款和充值等所有账本写入渠道，不依赖客户端推测。
 
-API 写操作结束、提示词优化 SSE 关闭、图片 Queue 消费结束立即尝试投递；图片 Worker 每分钟的 Cron 恢复未确认意图。DO 确认后才标记 delivered_at，传输失败不重提付费任务。每批最多 100 条，重复投递使用同一事件 ID 和 DO 游标。业务数据以 PostgreSQL 为准，不以连接内存为准。正常推送无需等待 Cron；异常投递及部署公告由 Cron 补偿，积压较大时分批处理。
+API 写操作结束、提示词优化 SSE 关闭、图片 Queue 消费结束立即尝试投递；图片 Worker 每分钟的 Cron 恢复未确认意图。DO 确认后才标记 delivered_at，传输失败不重提付费任务。每批最多 100 条，DO 回执成功的 ID 在批次结束时通过一次 SQL 统一确认；中途失败只确认此前成功的记录，剩余项保留重试。重复投递使用同一事件 ID 和 DO 游标。业务数据以 PostgreSQL 为准，不以连接内存为准。正常推送无需等待 Cron；异常投递及部署公告由 Cron 补偿，积压较大时分批处理。
 
 事件内容仅为资源 ID 和安全的发布摘要，不能包含提示词、模型响应、凭证和签名地址。按组织 UUID 路由 DO；个人消息同时按 userId 过滤。公开 `public` DO 只接收发布事件。
 

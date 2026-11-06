@@ -19,13 +19,19 @@ export async function dispatchRealtime(
 ) {
   const pending = await repository.pending();
   const sessions = new Map<string, string[]>();
-  for (const row of pending) {
-    let active = sessions.get(row.channel);
-    if (!active) {
-      active = row.channel === "public" ? [] : await repository.sessions(row.channel);
-      sessions.set(row.channel, active);
+  const published: string[] = [];
+  try {
+    for (const row of pending) {
+      let active = sessions.get(row.channel);
+      if (!active) {
+        active = row.channel === "public" ? [] : await repository.sessions(row.channel);
+        sessions.set(row.channel, active);
+      }
+      await hubs.getByName(row.channel).publish(row.id, row.event, row.userId, active);
+      published.push(row.id);
     }
-    await hubs.getByName(row.channel).publish(row.id, row.event, row.userId, active);
-    await repository.delivered(row.id);
+  } finally {
+    // 只批量确认已收到 DO 回执的事件，后续失败项保留原 ID 重试。
+    if (published.length) await repository.delivered(published);
   }
 }

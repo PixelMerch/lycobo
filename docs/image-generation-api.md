@@ -10,7 +10,7 @@
 
 ## 服务端配置与启动
 
-生产运行于 CloudBase HTTP API、Event 消费者、共享 PG 与私有云存储。旧平台代码已移除，旧源资源仅保留迁移回退资料。见 [CloudBase 部署](cloudbase-deployment.md)。
+生产运行于 Cloudflare Workers：同域 Hono API、独立图片 Queue/Cron Worker、Hyperdrive PostgreSQL 与私有 R2。状态通过 Durable Objects + 可休眠 WebSocket 推送，提示词优化保留 SSE。见 [Cloudflare 部署](cloudflare-deployment.md)。
 
 账号通过现有企业账号体系配置，主子账号共用组织钱包。生图默认启用，不再使用 IMAGE_GENERATION_ENABLED 开关；数据库、权限、对象存储、模型及后台绑定必须正确配置。本地开发继续使用隔离Node进程、私有S3和独立loopback数据库，真实模型请求使用服务端配置的密钥。旧 Node 工作台签发脚本仅供已有的本地调试，不是线上账号注册或充值接口。
 
@@ -55,7 +55,7 @@ curl http://127.0.0.1:8787/api/v1/image-tasks \
 - 任务、全部图片项、每图 outbox 和积分预留位于同一 PostgreSQL 事务。HTTP 事务不发消息或调用服务商；提交后只触发 outbox 投递。
 - 独立 Event 消费者认领 PostgreSQL outbox，通过数据库领取与执行令牌防止重复付费调用；定时器负责兜底恢复。
 - outbox 最早 30 秒后可重新租赁，API 提交后即时投递、定时器每 3 小时补偿，可恢复消息丢失或投递确认中断。running 不回到 queued，重复消息不重复调用模型。
-- CloudBase 没有队列推送：API 提交或重试成功后同步唤醒消费者函数，消费者只用运行角色排队一次异步 drain 后立即返回，付费请求不在同步调用中执行；仍在排队的任务被轮询时最多每 15 秒补唤醒一次。drain 结束时如有延后读取、未开始或满批的意向，会按到期时间自行续排；定时器始终是兜底。
+- API 提交或重试先原子写入任务、扣费和持久 outbox，再通过 Cloudflare Queue 唤醒独立消费者。每分钟 Cron 补投未确认意图并恢复租约；无回调任务由延迟消息查询原任务，不重投有歧义的付费提交。
 - 每图独立执行与保存：成功保留扣除积分，明确拒绝退回该图积分；部分失败不删除成功兄弟图片。积分退款有唯一约束，不重复返还。
 - 超时、断连、5xx、无法验证的响应、图片结果保存异常或执行租约到期，进入 needs_reconciliation，额度继续预留；不能靠队列重试重复付费。
 - 服务商没有文档化幂等/查询协议。虽然发送稳定 Idempotency-Key 请求头，但不将其视为上游保证，不自动重试付费调用。
@@ -68,7 +68,7 @@ curl http://127.0.0.1:8787/api/v1/image-tasks \
 - `/create` 调用真实提交接口；支持纯文生图，参考图先上传并校验，再以资产 ID 提交。新草稿默认 1.5K。
 - 历史、右侧索引与素材库不轮询列表；只有可见页面中存在排队或生成中的任务时才按任务详情查询，状态通过 SSE 或这些查询定向更新缓存；支持游标加载更多。列表使用提前生成的 512px 缩略图，下载读取原图。
 - 提交响应不确定时，浏览器会按用户和组织在 sessionStorage 保留同一请求快照与幂等编号，刷新后通过“确认上次提交”复用请求；不会自动重新生成。已运行但结果不确定的任务不自动重发；用户可以明确确认后在原记录重试，先结束旧尝试并退回原扣款，再提交新尝试，操作与未知结果依据可审计。管理员核对入口仍保留。
-- `GET /api/v1/image-assets?limit=30&before=UUID` 返回组织内素材与短期签名链接；历史输出和参考图同时返回链接。API 批量解析组织范围内的对象位置，不逐图查询数据库；任务没有输出和参考图时不查询。签名至少保留 30 分钟有效期，并向上取整到 15 分钟边界，同一时段内重复签发的链接完全相同，刷新页面可复用浏览器缓存；资源服务最多接受 45 分钟内到期的签名。独立 Node 图片服务验签、校验 Referer／Origin，并读取 CloudBase 私有对象；浏览器按签名有效期缓存。上传与生成结果在入库前保存原图及缩略图；旧 content 链接兼容重定向。具体配置与域名验收边界见 CloudBase 部署文档。
+- `GET /api/v1/image-assets?limit=30&before=UUID` 返回组织内素材和短期签名链接。API 批量解析对象位置，主站 Worker 验证签名、过期时间与来源后读取私有 R2。原图、预览和缩略图分别存储，派生变体缺失时交给图片 Queue 补齐；浏览器按签名有效期缓存。配置见 [Cloudflare 部署](cloudflare-deployment.md)。
 
 ## 企业账号身份
 
@@ -110,7 +110,7 @@ StudioShell 只轮询缓存中排队或生成中的任务详情（含局部修�
 
 `GET /api/v1/image-events` 使用现有 Cookie／Bearer 身份；事件范围与任务、素材读取一致，由服务端解析组织成员关系。`image-models` 增加可选 `eventsEnabled`，用于兼容旧部署。SSE 响应为 `text/event-stream`，不包装 JSON 信封；鉴权、参数和服务不可用错误仍使用统一信封。支持 Last-Event-ID 请求头或非敏感 cursor 查询参数，游标为十进制 bigint 字符串。
 
-通知链路为 PostgreSQL generation_events 持久化日志＋事务内 NOTIFY＋API 进程级 LISTEN＋SSE，CloudBase 通过组织范围的日志轮询维持 SSE（默认关闭）；生图任务由 PostgreSQL outbox 承载。提交、开始、每张结果、租约到期与人工核对、参考图上传在对应事务末尾写事件，回滚不留事件或通知。每组织事务级 advisory lock 在事件追加前获取，确保同一组织已提交游标顺序，不把并发事务的序列分配顺序误当成提交顺序；锁后只追加事件并提交，不调用外部服务。事件只含编号、类型和资源 UUID，不保存提示词、图片内容、凭据或供应商响应。
+生产通知链路为事务内 realtime_outbox → DO RPC → 可休眠 WebSocket，详见 [实时推送](realtime.md)。generation_events 继续保存任务与素材事件；原生 LISTEN/SSE 仅供隔离 Node 运行与测试，不再保留组织日志轮询适配。事件和业务写入同事务提交，回滚不会产生通知，事件内容不保存提示词、图片、凭证或供应商响应。
 
 每个 API 进程共用一个专用 LISTEN 连接和固定大小查询池，不为每个浏览器占一条数据库连接。原生通知仅作唤醒，实际内容从持久化日志读取；监听自动恢复后唤醒已有连接补读。支持 ready、image.updated、resync、heartbeat、auth-expired 事件。正常事件带 id；ready／resync 要求客户端重新校准现有列表，超过 200 条补读时转为快照校准。Worker 每小时最多清理 1000 条超过 7 天的事件；旧游标重连仍校准快照。
 
@@ -124,7 +124,7 @@ StudioShell 只轮询缓存中排队或生成中的任务详情（含局部修�
 
 Worker 以 `Image generation stage timing` 输出结构化分段计时，包含 itemId、stage、durationMs，必要时包含响应字节数与 HTTP 状态码。禁止输出提示词、参考图、响应正文、凭据或签名 URL。
 
-CloudBase 配置渠道记录参考图准备 `reference_prepare`、提交 `provider_submit`、回执入库 `provider_receipt`、原任务查询 `provider_result_lookup`、结果读取 `provider_download`、存储 `image_storage` 和完成事务 `database_finish`。存储总耗时包含原图编码 `image_encode`、原图上传 `image_original_put`、两种 WebP 编码 `image_variant_encode` 和并行上传 `image_variant_put`，总项和子项不相加。
+图片消费者记录参考图准备、供应商提交、回执入库、原任务查询、结果读取、图片存储和完成事务的阶段耗时。原图及变体编码、写入是存储总耗时的子项，不与总项相加；日志仅包含任务 ID、阶段和耗时。
 
 旧同步渠道的阶段如下。
 
@@ -151,9 +151,9 @@ CloudBase 配置渠道记录参考图准备 `reference_prepare`、提交 `provid
 
 2026-11-03 起，素材库页面与各工具右侧的“我的素材”使用上表的筛选和收藏接口。收藏存于 `image_asset_favorites`（组织、成员、素材联合主键，组合外键约束素材归属与成员关系，按成员与收藏时间建索引），按成员区分；数量上限在同一成员的事务级 advisory lock 内校验，并发收藏不会超出。工具由任务输入判定：含 `textileSet` 为家纺裂变，含 `variation` 为套图计划，其余为主图制作，与历史筛选一致。
 
-迁移：本地与 Supabase 链路为 `packages/db/migrations/0038_asset_favorites.sql`；CloudBase 共享 PG 为 `cloudbase/migrations/20261103100000_asset_favorites.sql`，新建同一张表并撤销运行角色的直接表权限，只按原文逐段替换 `lycobo_image_operation` 中的 listAssets 与作用域列表并新增 setAssetFavorite、favoriteAssetIds，任一片段不匹配即中止。发布流水线不迁移数据库：需先应用 CloudBase 迁移再部署 API；新函数兼容旧 API 的调用参数，反之旧函数不认识新的收藏操作。
+迁移统一使用 `packages/db/migrations/0038_asset_favorites.sql` 及其后续追加迁移。先升级目标 PostgreSQL，再部署 API；主站和独立图片 Worker 共用同一条 Drizzle 迁移链，不在运行时修改结构。
 
-参考图单张原文件最多 50 MB（50 MiB）。选图时浏览器将超过 5 MiB 的原文件压缩成不超过 5 MiB 的上传副本，以满足 CloudBase 请求体限制，原文件保留在本地。副本按比例缩小至最长边最多 3840 像素并保留透明通道。服务端验证后将参考图规范化为宽、高均不超过 3840 像素的 PNG。超过 4 MiB 的参考 PNG 会按比例继续缩小后入库，较小图片不放大，付费生成结果不使用该规则。此上限独立于生成请求尺寸；向中转站发送参考图时，不透明图片可转JPEG压缩，透明图片保持PNG。
+参考图单张原文件最多 50 MiB。浏览器把超过 5 MiB 的文件压缩为不超过 5 MiB 的上传副本，以减少网络传输，原文件保留在本地。副本最长边最多 3840 像素并保留透明通道。服务端再次校验并生成规范化 PNG，超过 4 MiB 时继续按比例缩小；该规则不应用于付费生成结果。不透明参考图发送中转站前可转 JPEG，透明图保持 PNG。
 
 ## Cloudflare 当前实时通道
 

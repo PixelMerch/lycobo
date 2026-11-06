@@ -57,10 +57,14 @@ export async function verifyRealtime(url: string, images: ImageRepository, sql: 
     assert.equal(new Set([...page.data, ...rest.data].map((row) => row.id)).size, 105);
     const events = await repository.pending();
     assert.ok(events.length);
-    const event = events[0];
-    assert.ok(event);
-    await repository.delivered(event.id);
-    assert.ok(!(await repository.pending()).some((row) => row.id === event.id));
+    const confirmed = events.slice(0, 2);
+    const unconfirmedEvent = events[2];
+    assert.ok(unconfirmedEvent);
+    await repository.delivered(confirmed.map((event) => event.id));
+    await repository.delivered([]);
+    const remaining = await repository.pending();
+    assert.ok(confirmed.every((event) => !remaining.some((row) => row.id === event.id)));
+    assert.ok(remaining.some((row) => row.id === unconfirmedEvent.id));
   } finally {
     await repository.close();
   }

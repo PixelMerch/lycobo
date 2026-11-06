@@ -35,9 +35,9 @@ Queue 与 Cron 可能同时唤醒同一项，数据库的 `next_poll_at` 和租�
 
 事件记录有七天清理接口；当前 Workers Cron 不主动执行该清理，不能把保留期描述为已自动落实。需要单独增加维护调度后才可自动清理。
 
-## CloudBase 隔离
+## 供应商 Key 与目标数据库
 
-Cloudflare 使用独立 FluxPort Key `lycobo-cloudflare`，仅沿用原 Key 的图片分组和相对优先级。原 `lyco` Key、CloudBase 回调地址及签名密钥不修改；两边共享同一供应商账号余额，但回调配置分别管理。DeepSeek 使用既有服务端 Key。
+当前 Workers 使用独立 FluxPort Key `lycobo-cloudflare`，图片消费者与 API 使用同一个服务端 Key，回调地址指向当前主站。更换 Key 前需排空或核对未决任务，避免来源指纹改变导致无法匹配。DeepSeek Key 单独保存在 Workers Secrets。
 
 同一个 Key 通常只有一份回调配置，不能通过更改地址同时服务两个独立数据库。更换生图 Key 会改变来源指纹，正在运行的任务应先排空再切换。停用新任务的回调等待时保留接收端，确保已登记任务仍可收回调和补查。
 
@@ -45,7 +45,7 @@ Cloudflare 使用独立 FluxPort Key `lycobo-cloudflare`，仅沿用原 Key 的�
 
 1. 核对目标 PostgreSQL 已有 `provider_webhook_events`、`provider_webhook_tasks` 和 `lycobo_provider_webhook(text,jsonb)`；已有迁移不重复执行，不执行自动 db push。
 2. 用隔离本地数据库验证提前/重复回调、无回调查询、租约、幂等、计费和失败恢复；运行 `pnpm check`，分别打包两个 Worker。
-3. 为海外独立 Key 配置上面的 HTTPS URL 和相同签名密钥，保留原环境配置。
+3. 为当前独立 Key 配置上面的 HTTPS URL 和相同签名密钥。
 4. 先部署图片消费者，再部署主站，主站上传新的 Webhook Secret；两个配置保持相同生图 Key、接管时间和回调模式。
 5. 远端用无签名、错误签名、过期签名、合法签名但无效事件验证接收与拒绝行为，不提交付费任务。真实生成由用户在线测试，结果以实际供应商回执、私有存储和账本为准。
 

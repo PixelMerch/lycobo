@@ -109,7 +109,7 @@ TypeScript 就是 JavaScript 加上类型，所以先学 JavaScript。
 | 1    | 接口收到请求，校验参数              | [routes.ts](../apps/api/src/features/images/routes.ts) 的 `app.post("/image-tasks")`                           |
 | 2    | 一个事务里扣积分、建任务、写 outbox | [image-repository.ts](../packages/db/src/image-repository.ts) 的 `create`                                      |
 | 3    | 接口立刻返回，并唤醒后台消费者      | 第 1 步里的 `deps.wake`                                                                                        |
-| 4    | 消费者领取任务                      | [cloudbase-outbox.ts](../apps/worker/src/cloudbase-outbox.ts) 的 `drainCloudBaseOutbox`                        |
+| 4    | 消费者领取任务                      | [cloudflare-consumer.ts](../apps/worker/src/cloudflare-consumer.ts) 的 `consumeCloudflareImages`               |
 | 5    | 锁定这张图，准备生成                | [image-processor.ts](../apps/worker/src/image-processor.ts) 的 `processImageItem`                              |
 | 6    | 调用模型服务                        | [configured-provider.ts](../packages/generation/src/configured-provider.ts) 的 `configuredProviderCall`        |
 | 7    | 保存图片，结束任务                  | [configured-image-processor.ts](../apps/worker/src/configured-image-processor.ts) 里的 `store.put` 和 `finish` |

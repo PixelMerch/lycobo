@@ -1,27 +1,27 @@
 # 技术栈与决策
 
-2026-11-06：`dev` 的生产运行目标改为 Cloudflare Workers + Queues + Images + 私有 R2，保留现有 PostgreSQL。已准备代码与本地验证，不表示后端已部署。见 [Cloudflare 部署准备](cloudflare-deployment.md)。
+2026-11-06：`dev` 的生产环境统一为 Cloudflare Workers、Queues、Durable Objects、Images 与私有 R2，现有 PostgreSQL 通过 Hyperdrive 访问。已部署到 `lycobo.com`，详见 [Cloudflare 部署](cloudflare-deployment.md)。
 
 ## 固定方案
 
-| 层            | 技术                                          | 理由                                                |
-| ------------- | --------------------------------------------- | --------------------------------------------------- |
-| 运行时        | Cloudflare Workers；Node.js 24 构建／本地测试 | HTTP 与 Queue 独立调用生命周期                      |
-| 包管理        | pnpm 10.34.7 workspace                        | 单仓库、固定锁文件、明确包边界                      |
-| 语言          | TypeScript 5.9.3 strict                       | 与已验证工具链兼容，升级单独评估                    |
-| 前端          | React 19 + Vite 8                             | 登录后交互工作台采用 CSR                            |
-| UI            | HeroUI 3 + Tailwind CSS 4 + Tabler icons      | 单一组件系统，遵守 V3 设计                          |
-| 路由          | React Router                                  | 页面路由与重型功能懒加载                            |
-| 数据/本地状态 | TanStack Query 5 / Zustand 5                  | 服务端缓存与本地交互状态分离                        |
-| 画布          | Konva 10 + react-konva 19                     | 图片编辑/排布基础，尚未实现持久画布                 |
-| API           | Hono 4 + Workers fetch handler                | 轻量路由、中间件与可测试应用工厂                    |
-| 参数校验      | Zod 4 + Hono zod-validator                    | 共享输入输出契约                                    |
-| 日志          | Workers 结构化日志；本地 Pino                 | 结构化、脱敏、不打印原始请求内容                    |
-| 数据          | PostgreSQL 17 + Drizzle ORM / Kit             | 关系约束、可审查迁移、持久任务                      |
-| 后台          | Cloudflare Queues + PG outbox                 | PostgreSQL outbox、独立消费与 Cron 恢复             |
-| 文件          | 私有 R2 + Images binding                      | 按 UID 分目录，原图、预览与缩略图分开；旧源对象保留 |
-| 通知          | 持久任务 + 批量查询兜底                       | Workers 不使用原生 LISTEN/SSE                       |
-| 检查          | Biome、Vitest、Playwright、commitlint         | 类型之外的规则、行为、浏览器与提交检查              |
+| 层            | 技术                                          | 理由                                    |
+| ------------- | --------------------------------------------- | --------------------------------------- |
+| 运行时        | Cloudflare Workers；Node.js 24 构建／本地测试 | HTTP 与 Queue 独立调用生命周期          |
+| 包管理        | pnpm 10.34.7 workspace                        | 单仓库、固定锁文件、明确包边界          |
+| 语言          | TypeScript 5.9.3 strict                       | 与已验证工具链兼容，升级单独评估        |
+| 前端          | React 19 + Vite 8                             | 登录后交互工作台采用 CSR                |
+| UI            | HeroUI 3 + Tailwind CSS 4 + Tabler icons      | 单一组件系统，遵守 V3 设计              |
+| 路由          | React Router                                  | 页面路由与重型功能懒加载                |
+| 数据/本地状态 | TanStack Query 5 / Zustand 5                  | 服务端缓存与本地交互状态分离            |
+| 画布          | Konva 10 + react-konva 19                     | 图片编辑/排布基础，尚未实现持久画布     |
+| API           | Hono 4 + Workers fetch handler                | 轻量路由、中间件与可测试应用工厂        |
+| 参数校验      | Zod 4 + Hono zod-validator                    | 共享输入输出契约                        |
+| 日志          | Workers 结构化日志；本地 Pino                 | 结构化、脱敏、不打印原始请求内容        |
+| 数据          | PostgreSQL 17 + Drizzle ORM / Kit             | 关系约束、可审查迁移、持久任务          |
+| 后台          | Cloudflare Queues + PG outbox                 | PostgreSQL outbox、独立消费与 Cron 恢复 |
+| 文件          | 私有 R2 + Images binding                      | 按 UID 分目录，原图、预览与缩略图分开   |
+| 通知          | Durable Objects + 可休眠 WebSocket            | 主动推送与游标补齐；提示词优化使用 SSE  |
+| 检查          | Biome、Vitest、Playwright、commitlint         | 类型之外的规则、行为、浏览器与提交检查  |
 
 精确依赖版本以各 package.json 与 pnpm-lock.yaml 为准，不在此重复维护全部补丁号。
 所有直接依赖使用精确版本；更新通过独立 PR，检查 peer dependencies 与运行时。
@@ -43,7 +43,7 @@ CPU 密集图片处理另设受控任务，不阻塞 API 事件循环。
 
 ## 资源与部署
 
-前端使用 Workers Static Assets；`/api/*` 由同域 Worker 处理，`/images/*` 在鉴权后读取私有 R2。上传暂存后通过 Queue 转换与登记素材，生成任务必须先持久化任务、扣费及 outbox。当前不接视频，也不启用 CloudBase 兼容路径。Node/Sharp/S3 保留供隔离测试与开发。
+前端使用 Workers Static Assets；`/api/*` 由同域 Worker 处理，`/images/*` 在鉴权后读取私有 R2。上传暂存后通过 Queue 转换与登记素材，生成任务必须先持久化任务、扣费及 outbox。当前不接视频；Node、Sharp 和 S3 仅供隔离测试与开发。
 
 ## 官方资料
 

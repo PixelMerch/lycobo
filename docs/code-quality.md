@@ -46,6 +46,10 @@ TypeScript 使用 strict 模式，并开启 `noUncheckedIndexedAccess`、`exactO
 
 测试文件不受这些限制。`packages/db/src/schema.ts` 不受文件长度限制，表定义会随数据模型增长。
 
+## 运行时边界
+
+`check-boundaries.mjs` 扫描所有 app／package 的运行源码、管理脚本和依赖声明，阻止已退役平台的 SDK、网关及凭据适配重新进入项目。浏览器仍只能引用安全 contracts 和前端依赖，不能导入数据库、队列、存储、供应商或 Node 模块。规则中的历史名称只用于拒绝检查，不是兼容入口。
+
 ## 中文注释检查
 
 `scripts/check-code-comments.mjs` 只检查规则起点之后新增或改过的 TS、TSX、MJS 代码。旧代码没改到不会报错，所以不用批量翻译，基线也不用记录旧注释。

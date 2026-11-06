@@ -1,7 +1,8 @@
-// Leave room below the CloudBase 6 MiB request limit. The original file limit is checked separately.
+// 限制上传副本以减少网络传输，原文件大小由独立规则校验。
 const transportLimit = 5 * 1024 * 1024;
 const referenceEdge = 3840;
 
+/** 将较大的参考图转为保留透明度的上传副本，原文件保持在浏览器本地。 */
 export async function prepareReferenceUpload(original: Blob, position: number): Promise<Blob> {
   if (original.size <= transportLimit) return original;
   let image: ImageBitmap;
@@ -28,7 +29,7 @@ export async function prepareReferenceUpload(original: Blob, position: number): 
       scale *= 0.75;
     }
   } catch {
-    // The next message also covers browsers that cannot encode this image.
+    // 统一提示也覆盖浏览器无法编码该格式的情况。
   } finally {
     image.close();
   }

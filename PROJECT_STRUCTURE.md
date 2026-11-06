@@ -1,27 +1,26 @@
 # 架构与目录
 
-一个 pnpm workspace 仓库，生产运行目标为 Cloudflare Workers：Static Assets 前端、Hono API、签名私有 R2 资源分发及 Queue 消费者。现有新加坡 PostgreSQL 经 Hyperdrive 访问。当前已部署 `lycobo.com` 与鉴权媒体域名，图片消费者和付费模型已开启，视频关闭；见 [Cloudflare 运行与部署](docs/cloudflare-deployment.md)。Node 入口仅供隔离本地开发，CloudBase 运行入口已移除，历史 SQL 与迁移证据保留。
+已完成的一次性迁移工具与旧平台资料已清理；当前数据库初始化只使用 Drizzle 追加迁移链。
 `lycobo` 提供前端、Hono API 和签名媒体；`lycobo-images` 独立运行图片 Queue 与恢复 Cron。配置分别为根 `wrangler.jsonc` 和 `wrangler.images.jsonc`，可独立发布和回滚。代码同仓不表示进程合并或强制一起发布。
 
-| 路径                                 | 职责                                                                                                 |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| apps/web/src/app                     | 路由、共享应用壳（studio-shell.tsx）、providers                                                      |
-| apps/web/src/features                | 按业务功能组织：首页、身份、账户、素材、生图与图片编辑工作区                                         |
-| apps/web/src/lib                     | 浏览器 API 客户端与工具                                                                              |
-| apps/web/src/styles                  | 共享设计 tokens 与全局基础样式                                                                       |
-| apps/api/src                         | Hono 入口、应用工厂、配置与组织隔离的生图 feature API                                                |
-| apps/assets/src                      | 隔离本地开发的 Node/S3 资源服务；生产资源由 Workers 签名校验后读取 R2，缺失变体通过 Queue 补齐       |
-| apps/worker/src                      | outbox 消费者、生命周期与任务执行                                                                    |
-| packages/contracts                   | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖                                                 |
-| packages/db                          | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY                                |
-| cloudbase/migrations                 | CloudBase 共享 PG 的源库结构基线与约束恢复；原 Drizzle 历史随数据复制保留                            |
-| packages/queue                       | ID-only 消息契约与通用 outbox 投递；CloudBase 消费者直接认领 PG outbox，通用投递接口用于隔离集成测试 |
-| packages/generation                  | 服务商契约、Vakv 同步兼容、可配置 OpenAI／FluxPort 同异步适配与密钥加密                              |
-| packages/storage                     | 私有 R2、Images binding、Queue 上传意图；Node Sharp/S3 用于隔离开发，源云存储适配仅用于一次性迁移    |
-| scripts/check-cloudflare-runtime.mjs | 隔离 workerd、Images/R2 与密码验证                                                                   |
-| tests/e2e                            | 浏览器关键路径验收                                                                                   |
-| docs/design                          | 规范仍在引用的品牌素材                                                                               |
-| .agents/skills                       | 锁定来源的团队技能快照                                                                               |
+| 路径                                 | 职责                                                                                           |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| apps/web/src/app                     | 路由、共享应用壳（studio-shell.tsx）、providers                                                |
+| apps/web/src/features                | 按业务功能组织：首页、身份、账户、素材、生图与图片编辑工作区                                   |
+| apps/web/src/lib                     | 浏览器 API 客户端与工具                                                                        |
+| apps/web/src/styles                  | 共享设计 tokens 与全局基础样式                                                                 |
+| apps/api/src                         | Hono 入口、应用工厂、配置与组织隔离的生图 feature API                                          |
+| apps/assets/src                      | 隔离本地开发的 Node/S3 资源服务；生产资源由 Workers 签名校验后读取 R2，缺失变体通过 Queue 补齐 |
+| apps/worker/src                      | outbox 消费者、生命周期与任务执行                                                              |
+| packages/contracts                   | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖                                           |
+| packages/db                          | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY                          |
+| packages/queue                       | ID-only 消息契约、图片 outbox 投递与实时事件批量确认                                           |
+| packages/generation                  | 服务商契约、Vakv 同步兼容、可配置 OpenAI／FluxPort 同异步适配与密钥加密                        |
+| packages/storage                     | 私有 R2、Images binding 与 Queue 上传；Node Sharp/S3 仅供隔离开发和测试                        |
+| scripts/check-cloudflare-runtime.mjs | 隔离 workerd、Images/R2 与密码验证                                                             |
+| tests/e2e                            | 浏览器关键路径验收                                                                             |
+| docs/design                          | 规范仍在引用的品牌素材                                                                         |
+| .agents/skills                       | 锁定来源的团队技能快照                                                                         |
 
 生图接口在 `apps/api/src/features/images/routes.ts` 统一注册会话、鉴权中间件和错误处理。任务、素材、规划、事件、模型和钱包由各自的路由模块注册到同一个 Hono 实例，业务服务和持久化仍在各自的层中。
 
@@ -55,7 +54,7 @@ apps/web/src/
 - 先按业务功能归类，功能内部就近存放组件、hook、样式与单元测试；只有存在明确子职责时再增加目录，不为每个组件建立一层文件夹。
 - 保留描述性文件名和直接导入，不新增 `index.ts` 聚合出口，也不建立覆盖所有功能的 components/hooks/services 分类目录。浏览器端到端测试仍在根目录 `tests/e2e`。
 - 主导航统一使用工作区入口；`features/workspace` 组合参数子路由、随功能切换的历史及四个功能的直达工具栏；`workspace-tool-symbol.tsx` 共享功能入口与参数标题的图标身份，只使用Tabler矢量图标。
-- `features/auth/login-prompt.tsx` 共享登录请求与首页创作交互门禁；Header及首页操作共用应用壳的一份登录弹窗。`app/studio-shell.tsx` 在登录状态确认前不挂载非首页业务内容，登录成功保留目标地址、取消返回首页，生图事件仅在登录后挂载。
+- `features/auth/login-prompt.tsx` 共享登录请求与首页创作交互门禁；Header及首页操作共用应用壳的一份登录弹窗。`app/studio-shell.tsx` 在登录状态确认前不挂载非首页业务内容，登录成功保留目标地址、取消返回首页，实时连接始终挂载，登录后订阅私人通道，退出后只接收公开版本公告。
 - `app/studio-shell.tsx` 组合导航、登录、账户和生图事件；路由页面留在各 feature。首页、工作台和素材页继续由路由懒加载，`image-workspace/preview-workspace.tsx` 及 Konva 继续按预览需要加载。
 - `generation/generation-client.ts` 维护现有生图、历史和素材 API 查询与缓存，被历史、素材库和编辑工作区直接引用；目录维护不改变 query key 或增加请求层。
 - `assets/asset-library-client.ts` 负责素材库查询（生成／上传／收藏与功能、类型、模型筛选，素材库页面写入地址栏）和服务端收藏：一个有上限的收藏 ID 查询供所有星标共用，切换乐观更新、失败回滚；`asset-browser.tsx` 组合页签、`asset-filters.tsx`、`asset-tile.tsx` 与现有图片预览，`asset-masonry.tsx` 订阅网格尺寸并组合原比例瀑布流，`asset-layout.ts` 提供按天分组与保持输入顺序的最短列定位纯函数。`assets-page.tsx` 与 `library-dialog.tsx`（我的素材，功能默认当前工具）只组合该浏览组件。
@@ -78,9 +77,9 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 - API：短请求、身份、授权、参数校验、业务编排。
 - Worker：有持久任务托管的后台工作，绝不能依赖浏览器连接。
-- PostgreSQL：业务与状态真相；CloudBase Event 消费者和本地独立消费者认领持久 outbox。
+- PostgreSQL：业务状态真相，Queue 与隔离本地消费者认领持久 outbox；DO 承担传输和短期回放。
 - 对象存储：图片原件、缩略图、下载包；业务库只保存元数据和对象 key。
-- SSE：状态变化信号；断线后按游标/数据库补查。
+- WebSocket：统一推送任务、钱包、站内消息与版本；提示词优化保留 SSE。
 
 ## 服务端模块约定
 
@@ -90,7 +89,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 ## 部署
 
-main 的 CI 成功且用户授权后，通过手动工作流更新三个 CloudBase 函数代码并发布静态前端，使用 cloudbase-production Environment，见 [CloudBase 部署](docs/cloudbase-deployment.md)。
+两个 Worker 分别通过受控 Wrangler 流程发布。先运行 CI、核对授权、目标与迁移，再按 [Cloudflare 部署](docs/cloudflare-deployment.md) 验证活动版本、绑定和域名。GitHub Release 与数据库迁移分别授权，不由普通推送自动执行。
 
 ## 生图服务端接入
 
@@ -98,7 +97,7 @@ main 的 CI 成功且用户授权后，通过手动工作流更新三个 CloudBa
 - packages/contracts/src/image-generation.ts：独立生图输入契约与公开模型目录；不改变既有任务契约。
 - packages/db/src/image-repository.ts：管理连接池并组装生图仓储。身份、素材、历史、提交、执行和结算各自维护对应的持久化逻辑。提交模块在同一事务中写入任务、扣费和逐图 outbox。
 - packages/generation/src/vakv-provider.ts：同步兼容适配器，只留给隔离验证工具。
-- apps/worker/src/cloudbase-consumer.ts / local-consumer.ts / image-processor.ts：生产 Event、本地 PG 消费及共享任务处理。
+- apps/worker/src/cloudflare-consumer.ts / local-consumer.ts / image-processor.ts：生产 Queue/Cron、隔离本地 PG 消费和共享图片处理。
 - packages/storage/src/image-store.ts：服务端图片解码、去元数据、私有 PNG 文件与实际尺寸/哈希。
 
 接口、工作台和登录的实现范围，以及供应商、存储等外部验收边界见 [生图 API 文档](docs/image-generation-api.md)。
@@ -154,8 +153,7 @@ main 的 CI 成功且用户授权后，通过手动工作流更新三个 CloudBa
 - 套图计划：`variation-planner.ts` 封装 OpenAI 兼容语言分析；`variation-service.ts` 负责参考素材归属校验与解密密钥；计划阶段仅优化文本和参考图编号，不读取或发送图片，参考图保留至实际生图阶段；`variation-repository.ts` 持久化计划和幂等状态。`model_planners` 独立配置语言模型；`generation_jobs.input.variation` 保存确认后的方案快照，Worker 每条方案只请求一张图。
 - 主站独立试用路由由 `packages/generation/src/standalone-models.ts` 定义；API/消费者将纯配置注入图片仓储，绕过后台模型目录、路由及语言模型设置读取。前端展示在 `models/model-presentation.ts`，Logo 位于 `apps/web/public/model-logos/`。不会删除后台表或改变鉴权/积分/素材持久化。
 - Cloudflare 入口为 `apps/api/src/cloudflare.ts`，API 组合在 `cloudflare-app.ts`；`apps/worker/src/cloudflare-consumer.ts` 处理 Queue/Cron，`cloudflare-runtime.ts` 创建调用级资源。PostgreSQL 与钱包仍由原生仓储维护，绑定与状态见 [Cloudflare 部署准备](docs/cloudflare-deployment.md)。
-- 图片回调接收位于 `apps/api/src/features/images/provider-webhook.ts`；任务与事件的持久化关联位于 `packages/db/src/provider-webhook-repository.ts`。前端低频批量同步、超时补查和发布顺序见 [图片 Webhook](docs/image-webhooks.md)。
-- 视频接入使用 `packages/contracts/src/video-generation.ts`（六种比例、5–30秒整数时长、每次100积分）、`apps/api/src/features/videos`（薄路由和服务）、`packages/db/src/video-repository.ts`（Node／CloudBase同一固定RPC）。任务与单个执行项复用generation_jobs／generation_job_items以保留钱包外键，generation_video_outbox独立维护持久意图、租约、供应商任务ID与下一次查询时间；图片历史和超时扫描排除视频。`apps/worker/src/video-processor.ts` 为保留的历史实现，当前 Workers 不调度，供应商协议在 `packages/generation/src/video-provider.ts`；MP4容器校验在storage/video-media，资源服务提供短期签名与Range。服务端复用生图密钥STANDALONE_IMAGE_API_KEY；当前 Workers 和本地 API 不启用视频提交，运行边界见[视频接入](docs/video-generation.md)。
+- 图片回调接收位于 `apps/api/src/features/images/provider-webhook.ts`；任务与事件的持久化关联位于 `packages/db/src/provider-webhook-repository.ts`。前端主动推送、服务端超时补查和发布顺序见 [图片 Webhook](docs/image-webhooks.md)。
+- 视频接入使用 `packages/contracts/src/video-generation.ts`（六种比例、5–30秒整数时长、每次100积分）、`apps/api/src/features/videos`（薄路由和服务）、`packages/db/src/video-repository.ts`（固定 PostgreSQL 业务操作）。任务与单个执行项复用generation_jobs／generation_job_items以保留钱包外键，generation_video_outbox独立维护持久意图、租约、供应商任务ID与下一次查询时间；图片历史和超时扫描排除视频。`apps/worker/src/video-processor.ts` 为保留的历史实现，当前 Workers 不调度，供应商协议在 `packages/generation/src/video-provider.ts`；MP4容器校验在storage/video-media，资源服务提供短期签名与Range。服务端复用生图密钥STANDALONE_IMAGE_API_KEY；当前 Workers 和本地 API 不启用视频提交，运行边界见[视频接入](docs/video-generation.md)。
 - 视频分镜通过 `features/images/storyboard-planner.ts` 与现有套图计划服务调用 DeepSeek，使用已有计划记录保存分析结果并复用图像任务的幂等、扣费和 outbox。前端 `features/video/storyboard` 保存会话内的已受理阶段与幂等请求，等待图片任务完成后自动按原分镜顺序优化提示词并提交视频。右侧进度复用视频历史查询。
-- 海外数据库工具：`packages/db/scripts/migrate-supabase.mjs` 复用现有 Drizzle Kit 迁移链，`supabase-target.mjs` 校验独立的 `SUPABASE_DATABASE_URL` 与项目引用，支持直连及 Session Pooler；`secure-supabase.mjs` 限定本应用表／序列／函数的 RLS 和前端角色权限。当前网站仍使用 CloudBase 共享 PG；海外数据库复制不自动切换运行时，详见[双环境部署](docs/overseas-deployment.md)。
-- 海外文件迁移工具：`apps/api/scripts/migrate-storage.ts` 读取海外快照素材，按 `storage-copy-manifest.ts` 筛选原始与派生文件，再由 `storage-copy.ts` 逐对象复制并校验；仅用于显式的一次性迁移与续传，不自动切换应用存储。详见[双环境部署](docs/overseas-deployment.md)。
+- 远端数据库工具：`packages/db/scripts/migrate-supabase.mjs` 复用当前 Drizzle 迁移链，`supabase-target.mjs` 校验目标项目与 Session Pooler；`secure-supabase.mjs` 维护业务表、序列与函数的服务端权限。生产经 Hyperdrive 使用该 PostgreSQL，不在 Worker 内执行结构迁移。

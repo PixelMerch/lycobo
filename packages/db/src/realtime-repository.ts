@@ -3,6 +3,13 @@ import { notificationListSchema, realtimeEventSchema, releaseSchema } from "@lyc
 import postgres from "postgres";
 import { z } from "zod";
 
+const outboxEventSchema = z.object({
+  id: z.uuid(),
+  channel: z.string(),
+  userId: z.uuid().nullable(),
+  event: realtimeEventSchema,
+});
+
 /** 调用级实时仓储：数据库保留投递意图，DO 只承担传输与短期回放。 */
 export function openRealtimeRepository(url: string) {
   const sql = postgres(url, {
@@ -15,19 +22,11 @@ export function openRealtimeRepository(url: string) {
     async pending(limit = 100) {
       const rows = await sql`select id,channel,user_id as "userId",event from realtime_outbox
         where delivered_at is null order by created_at,id limit ${limit}`;
-      return rows.map((row) =>
-        z
-          .object({
-            id: z.uuid(),
-            channel: z.string(),
-            userId: z.uuid().nullable(),
-            event: realtimeEventSchema,
-          })
-          .parse(row),
-      );
+      return outboxEventSchema.array().parse(rows);
     },
-    async delivered(id: string) {
-      await sql`update realtime_outbox set delivered_at=now() where id=${id} and delivered_at is null`;
+    async delivered(ids: string[]) {
+      if (!ids.length) return;
+      await sql`update realtime_outbox set delivered_at=now() where id in ${sql(ids)} and delivered_at is null`;
     },
     async sessions(organizationId: string) {
       const rows = await sql`select s.id from enterprise_sessions s

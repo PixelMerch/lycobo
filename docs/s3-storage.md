@@ -1,32 +1,31 @@
 # 本地与独立后台的 S3 存储
 
-主站生产使用CloudBase PG私有云存储，配置和权限见[CloudBase部署](cloudbase-deployment.md)。本文件只描述本地Docker私有图片及独立admin的S3兼容存储，不提供旧平台绑定或旧对象回退。
+主站生产使用私有 R2 和 Workers binding，配置见 [Cloudflare 部署](cloudflare-deployment.md)。本文件只描述隔离本地 Node 开发与独立后台的 S3 兼容存储。
 
 ## 服务端配置
 
 | 参数                                    | 约定                                                            |
 | --------------------------------------- | --------------------------------------------------------------- |
 | S3_ENDPOINT                             | 服务源地址，不带桶名、对象路径、账号、查询或签名；正式环境HTTPS |
-| S3_BUCKET                               | 桶名；COS包含APPID后缀                                          |
-| S3_REGION                               | 默认us-east-1；COS使用桶实际地域                                |
+| S3_BUCKET                               | 桶名，不包含对象路径                                            |
+| S3_REGION                               | 按当前 S3 端点配置地域，默认 us-east-1                          |
 | S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY | 服务端凭据，不写入源码、日志或VITE变量                          |
 | S3_SESSION_TOKEN                        | 可选临时令牌，与配套访问密钥同时更新                            |
 | S3_FORCE_PATH_STYLE                     | true或false，默认true                                           |
 | S3_REQUEST_TIMEOUT_MS                   | 默认20000ms，范围1000–120000ms；请求最多重试一次                |
 | S3_PUBLIC_BASE_URL                      | 仅公开Logo桶使用，不能用于主站私有图片                          |
 
-配置缺失时明确返回IMAGE_STORAGE_NOT_CONFIGURED，部分配置报错，不静默切换供应商。配置CloudBase后，缺失对象和存储错误都不会回退S3。S3对象缺失返回null，权限、超时与服务异常返回结构化错误；请求拒绝重定向，避免转发存储凭据。
+配置缺失时明确返回IMAGE_STORAGE_NOT_CONFIGURED，部分配置报错，不静默切换供应商。生产 R2 缺失或请求失败时明确报告错误，不切换到其他存储。S3对象缺失返回null，权限、超时与服务异常返回结构化错误；请求拒绝重定向，避免转发存储凭据。
 
 路径式地址为https://service.example.com/bucket/object-key；虚拟主机式地址为https://bucket.service.example.com/object-key。带点桶名与IP端点只允许路径式。HTTP仅允许loopback及既有Docker存储主机。
 
 ## 当前环境
 
-| 环境             | S3_ENDPOINT                           | S3_REGION    | S3_FORCE_PATH_STYLE |
-| ---------------- | ------------------------------------- | ------------ | ------------------- |
-| 本地主站私有图片 | http://image-storage:8333             | us-east-1    | true                |
-| 本地后台公开Logo | http://model-storage:8333             | us-east-1    | true                |
-| 宿主机私有图片   | http://127.0.0.1:9004                 | us-east-1    | true                |
-| 腾讯云COS        | https://cos.ap-guangzhou.myqcloud.com | ap-guangzhou | false               |
+| 环境             | S3_ENDPOINT               | S3_REGION | S3_FORCE_PATH_STYLE |
+| ---------------- | ------------------------- | --------- | ------------------- |
+| 本地主站私有图片 | http://image-storage:8333 | us-east-1 | true                |
+| 本地后台公开Logo | http://model-storage:8333 | us-east-1 | true                |
+| 宿主机私有图片   | http://127.0.0.1:9004     | us-east-1 | true                |
 
 主站Node适配使用aws4fetch签署标准S3请求；该库也用于本地S3，不是旧平台运行时。独立admin使用AWS SDK v3。两者共享配置约定，不强行混用运行时依赖。开发启动脚本隔离正式凭据，不能因远端环境文件改连生产桶。
 

@@ -20,7 +20,7 @@ it("keeps failed publication pending and retries the same identity before acknow
   await dispatchRealtime(repository, { getByName });
   expect(publish).toHaveBeenCalledTimes(2);
   expect(publish).toHaveBeenLastCalledWith(row.id, event, null, ["session"]);
-  expect(repository.delivered).toHaveBeenCalledExactlyOnceWith(row.id);
+  expect(repository.delivered).toHaveBeenCalledExactlyOnceWith([row.id]);
   expect(getByName).toHaveBeenCalledWith(row.channel);
 });
 it("never queries or routes private sessions for public release events", async () => {
@@ -39,4 +39,30 @@ it("never queries or routes private sessions for public release events", async (
   await dispatchRealtime(repository, { getByName: () => ({ publish }) });
   expect(repository.sessions).not.toHaveBeenCalled();
   expect(publish).toHaveBeenCalledWith(row.id, row.event, null, []);
+});
+
+it("acknowledges a published batch once and leaves the failed event pending", async () => {
+  const channel = crypto.randomUUID();
+  const rows = Array.from({ length: 3 }, () => ({
+    id: crypto.randomUUID(),
+    channel,
+    userId: null,
+    event: { id: crypto.randomUUID(), kind: "wallet" as const },
+  }));
+  const repository = {
+    pending: async () => rows,
+    sessions: vi.fn(async () => ["session"]),
+    delivered: vi.fn(async () => undefined),
+  };
+  const publish = vi
+    .fn(async () => undefined)
+    .mockResolvedValueOnce(undefined)
+    .mockResolvedValueOnce(undefined)
+    .mockRejectedValueOnce(new Error("TRANSPORT_UNAVAILABLE"));
+  await expect(dispatchRealtime(repository, { getByName: () => ({ publish }) })).rejects.toThrow(
+    "TRANSPORT_UNAVAILABLE",
+  );
+  expect(repository.delivered).toHaveBeenCalledTimes(1);
+  expect(repository.delivered).toHaveBeenCalledWith(rows.slice(0, 2).map((row) => row.id));
+  expect(repository.sessions).toHaveBeenCalledTimes(1);
 });

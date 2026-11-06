@@ -242,7 +242,7 @@ Header 登录后展示共享积分与会员入口。会员解锁对应专属能�
 
 2026-11-06 起，`dev` 的生产运行目标统一为 Cloudflare Workers、Queues、Images 与私有 R2；数据库保留新加坡 PostgreSQL，经 Hyperdrive 连接。`lycobo.com` 与鉴权媒体域名已部署，图片上传消费者、图片生成、提示词优化和智能规划已开启，视频保持关闭。独立管理后台的演示功能不算生产服务。配置和实际验证范围见 [Cloudflare 运行与部署](docs/cloudflare-deployment.md)。
 
-2026-11-05 曾选择保留国内内测并建设海外环境，已完成一次性数据库快照和媒体文件复制；两端数据独立且不自动同步。2026-11-06 按最新决定移除 `dev` 的 CloudBase 运行兼容，现有国内资源未删除。历史复制证据见[海外迁移记录](docs/overseas-deployment.md)。
+当前主站统一运行于 Cloudflare Workers，图片 Queue 独立消费，PostgreSQL 经 Hyperdrive 访问，素材保存在私有 R2。任务、积分、消息与版本更新由可休眠 WebSocket 主动推送；提示词优化保留 SSE，视频不开放。运行和发布记录见 [Cloudflare 运行与部署](docs/cloudflare-deployment.md)。
 
 图片模型接入统一 API，文生图允许不上传参考图，新草稿默认 1.5K。成功结果自动进入素材库和历史记录，不要求手动入库。真实验收范围与本地身份限制见[生图接入](docs/image-generation-api.md)。
 
