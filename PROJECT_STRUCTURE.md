@@ -102,7 +102,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 接口、工作台和登录的实现范围，以及供应商、存储等外部验收边界见 [生图 API 文档](docs/image-generation-api.md)。
 
-实时推送入口为 apps/api/src/features/realtime/（Hono 鉴权路由和 RealtimeHub DO）；apps/web/src/features/realtime/ 管理共享可休眠 WebSocket、消息与版本缓存。任务、积分与消息的可靠事件使用 packages/db/src/realtime-repository.ts 和 realtime-schema.ts；API 与图片消费者通过 packages/queue/src/realtime.ts 投递。断线按游标回放，过期游标定向校准，不启用任务 API 定时轮询；提示词优化继续 SSE。详见 docs/realtime.md。
+实时推送入口为 apps/api/src/features/realtime/（Hono 鉴权路由和 RealtimeHub DO）；apps/web/src/features/realtime/ 管理共享可休眠 WebSocket、消息与版本缓存；completion-observer.ts 观察现有任务缓存，completion-alerts.ts 与 completion-storage.ts 管理后台标题、完成提示及跨标签回执，desktop-notification-control.tsx 提供手动桌面通知开关。任务、积分与消息的可靠事件使用 packages/db/src/realtime-repository.ts 和 realtime-schema.ts；API 与图片消费者通过 packages/queue/src/realtime.ts 投递。断线按游标回放，过期游标定向校准，不启用任务 API 定时轮询；提示词优化继续 SSE。详见 docs/realtime.md。
 
 - packages/db/src/wallet-repository.ts：企业共享钱包、充值订单与只读账务查询。数据表与扣费规则见 [企业钱包](docs/enterprise-wallet.md)。
 

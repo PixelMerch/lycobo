@@ -4,9 +4,19 @@ import { InfiniteLoad } from "../../components/infinite-load";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { useNotifications, useReadNotification, useSiteRelease } from "../realtime/client";
+import { DesktopNotificationControl } from "../realtime/desktop-notification-control";
 
 /** 展示真实服务端消息和独立已读状态，不为消息导航或覆盖草稿。 */
 export function NotificationBody() {
+  return (
+    <>
+      <DesktopNotificationControl />
+      <NotificationMessages />
+    </>
+  );
+}
+
+function NotificationMessages() {
   const notifications = useNotifications();
   const read = useReadNotification();
   useErrorToast(read.error?.message);

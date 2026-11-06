@@ -18,11 +18,14 @@ import { WorkspaceToolPicker } from "./workspace-tool-picker";
 import "./workspace.css";
 
 type RestoredTask = Parameters<HistoryRestore>[0];
+/** 组合工具与历史区域，显式结果定位不覆盖当前创作草稿。 */
 export function WorkspaceLayout() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const navigate = useNavigate();
   const remember = useWorkspaceState((state) => state.setLastPath);
-  const [mobilePanel, setMobilePanel] = useState("form");
+  const [mobilePanel, setMobilePanel] = useState(() =>
+    new URLSearchParams(search).has("task") ? "history" : "form",
+  );
   const currentTool = toolForPath(pathname);
   const historyTool = currentTool.id;
   const storyboard = useStoryboard(historyTool === "video", setMobilePanel);
@@ -30,6 +33,9 @@ export function WorkspaceLayout() {
   useEffect(() => {
     remember(pathname);
   }, [pathname, remember]);
+  useEffect(() => {
+    if (new URLSearchParams(search).has("task")) setMobilePanel("history");
+  }, [search]);
   const applyRestore = ({ model, draft, textileSet, variation }: RestoredTask) => {
     if (variation) {
       useSmartVariationDraft.getState().update({
