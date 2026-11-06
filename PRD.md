@@ -240,7 +240,7 @@ Header 登录后展示共享积分与会员入口。会员解锁对应专属能�
 | 会话交互与静态示例 | 客户端草稿和浏览状态；模型封面与登录插画仅作示例，设计图仅供评审                                                                                                 |
 | 待接入             | 自助账号绑定和验证码、订阅支付、签到、音频生成、TK 发布                                                                                                          |
 
-2026-11-06 起，`dev` 的生产运行目标统一为 Cloudflare Workers、Queues、Images 与私有 R2；数据库保留新加坡 PostgreSQL，经 Hyperdrive 连接。`lycobo.com` 与鉴权媒体域名已部署，图片上传消费者开启，真实付费生成、规划和视频保持关闭。独立管理后台的演示功能不算生产服务。配置和实际验证范围见 [Cloudflare 运行与部署](docs/cloudflare-deployment.md)。
+2026-11-06 起，`dev` 的生产运行目标统一为 Cloudflare Workers、Queues、Images 与私有 R2；数据库保留新加坡 PostgreSQL，经 Hyperdrive 连接。`lycobo.com` 与鉴权媒体域名已部署，图片上传消费者、图片生成、提示词优化和智能规划已开启，视频保持关闭。独立管理后台的演示功能不算生产服务。配置和实际验证范围见 [Cloudflare 运行与部署](docs/cloudflare-deployment.md)。
 
 2026-11-05 曾选择保留国内内测并建设海外环境，已完成一次性数据库快照和媒体文件复制；两端数据独立且不自动同步。2026-11-06 按最新决定移除 `dev` 的 CloudBase 运行兼容，现有国内资源未删除。历史复制证据见[海外迁移记录](docs/overseas-deployment.md)。
 

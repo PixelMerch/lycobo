@@ -26,8 +26,8 @@
     "ASSET_PUBLIC_ORIGIN": "https://media.lycobo.com",
     "ASSET_PATH_PREFIX": "/images/",
     "STANDALONE_MODELS": "true",
-    "IMAGE_WEBHOOK_ENABLED": "false",
-    "CLOUDFLARE_GENERATION_ENABLED": "false",
+    "IMAGE_WEBHOOK_ENABLED": "true",
+    "CLOUDFLARE_GENERATION_ENABLED": "true",
     "CLOUDFLARE_CONSUMER_ENABLED": "true",
     "CLOUDFLARE_TASKS_SINCE": "2026-11-06T02:05:11.556Z"
   },
@@ -36,7 +36,8 @@
       "AUTH_JWT_SECRET",
       "ASSET_SIGNING_SECRET",
       "STANDALONE_IMAGE_API_KEY",
-      "DEEPSEEK_API_KEY"
+      "DEEPSEEK_API_KEY",
+      "IMAGE_WEBHOOK_SECRET"
     ]
   },
   "r2_buckets": [

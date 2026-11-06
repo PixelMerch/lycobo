@@ -55,6 +55,10 @@ export async function consumeCloudflareImages(
           onDeferred: (delayMs) => {
             nextPollMs = delayMs;
           },
+          // 回调可能丢失或先于提交回执到达，延迟消息只核查原任务，不重投生图。
+          onWebhookAccepted: (ready) => {
+            nextPollMs = ready ? 2000 : 60000;
+          },
           onTiming: (event) => console.info({ event: "IMAGE_STAGE", ...event }),
         });
         if (nextPollMs !== undefined)

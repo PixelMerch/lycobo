@@ -11,7 +11,7 @@ it("keeps background entrypoints out of the public Worker and exposes no image H
   expect(imageWorker.scheduled).toBeTypeOf("function");
 });
 
-it("keeps the existing durable queue and cutover while disabling paid work in both deployments", async () => {
+it("keeps the existing durable queue and cutover with explicit paid authorization in both deployments", async () => {
   const web = JSON.parse(await readFile("wrangler.jsonc", "utf8"));
   const images = JSON.parse(await readFile("wrangler.images.jsonc", "utf8"));
   expect(web.queues.consumers).toBeUndefined();
@@ -23,9 +23,12 @@ it("keeps the existing durable queue and cutover while disabling paid work in bo
   expect(images.r2_buckets).toEqual(web.r2_buckets);
   expect(images.vars.CLOUDFLARE_TASKS_SINCE).toBe(web.vars.CLOUDFLARE_TASKS_SINCE);
   for (const config of [web, images]) {
-    expect(config.vars.CLOUDFLARE_GENERATION_ENABLED).toBe("false");
+    expect(config.vars.CLOUDFLARE_GENERATION_ENABLED).toBe("true");
+    expect(config.vars.IMAGE_WEBHOOK_ENABLED).toBe("true");
     expect(config.vars.CLOUDFLARE_CONSUMER_ENABLED).toBe("true");
   }
+  expect(web.secrets.required).toContain("IMAGE_WEBHOOK_SECRET");
+  expect(images.secrets.required).not.toContain("IMAGE_WEBHOOK_SECRET");
   expect(images.workers_dev).toBe(false);
   expect(images.preview_urls).toBe(false);
   expect(images.routes).toBeUndefined();

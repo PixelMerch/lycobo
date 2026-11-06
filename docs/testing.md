@@ -152,3 +152,5 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 本次远端部署验证：主页与登录弹层、JSON API、Hyperdrive 读库及不存在账号登录拒绝正常；已有素材的签名 WebP/PNG 返回 200，未签名媒体返回 403；不存在上传意图的无副作用 Queue 探测消息已投递且积压归零。线上真实账号登录和有效图片上传/转换未验证，未调用付费模型。新增 `scripts/cloudflare-consumer.test.mjs` 验证生成关闭时仍处理上传，但不执行付费消息、不扫描或结算付费任务。
 
 独立图片 Worker 的部署边界由 `scripts/cloudflare-deployment.test.mjs` 验证：主站没有 Queue/Cron handler，消费者没有 HTTP handler，复用同一持久队列、R2、Hyperdrive 和接管时间，两个配置均关闭付费执行且消费者不持有 JWT。`pnpm cf:build` 分别打包两个配置。
+
+Webhook 与无回调兼容：`scripts/cloudflare-webhook.test.mjs` 验证 Workers API 挂载来源指纹和签名配置，生成关闭时仍可接收已存在任务的通知；`cloudflare-consumer.test.mjs` 验证无回调延迟查询、丢失回调 60 秒兜底和提前回调 2 秒核查。已有 provider/outbox 和隔离集成继续验证查询原任务不再次提交付费生成。配置变更不等于真实付费生成验收。

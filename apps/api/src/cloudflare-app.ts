@@ -5,7 +5,9 @@ import { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { openCloudflareRuntime } from "../../worker/src/cloudflare-runtime";
 import { createApp } from "./app";
 import { enterpriseAuth, readAuthConfig } from "./features/auth/service";
+import { readWebhookConfig } from "./features/images/provider-webhook";
 
+/** 为每次请求组装 Hono API、鉴权和 Webhook 验签依赖。 */
 export async function serveCloudflareApi(request: Request, env: CloudflareEnv) {
   if (new URL(request.url).pathname === "/api/health/live") return createApp().fetch(request);
   const runtime = await openCloudflareRuntime(env);
@@ -17,6 +19,9 @@ export async function serveCloudflareApi(request: Request, env: CloudflareEnv) {
     });
     if (!authConfig) throw new Error("AUTH_CONFIGURATION_REQUIRED");
     const auth = enterpriseAuth(authRepository, authConfig);
+    const webhook = readWebhookConfig(env);
+    if (env.IMAGE_WEBHOOK_ENABLED === "true" && !webhook)
+      throw new Error("WEBHOOK_CONFIGURATION_REQUIRED");
     const { policy, repository, store, uploads } = runtime;
     const app = createApp(
       (event) => console.error(event),
@@ -55,6 +60,7 @@ export async function serveCloudflareApi(request: Request, env: CloudflareEnv) {
         resolutions: (model) => supportedResolutions(model, policy.overrides),
       },
       auth,
+      webhook,
     );
     return await app.fetch(request);
   } finally {
