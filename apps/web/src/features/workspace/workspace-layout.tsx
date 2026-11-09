@@ -16,10 +16,13 @@ import { useStoryboard } from "../video/storyboard/use-storyboard";
 import { toolForPath, useWorkspaceState } from "./workspace-state";
 import { WorkspaceToolPicker } from "./workspace-tool-picker";
 import "./workspace.css";
+import { useMessages } from "../../i18n/messages";
+import { workspaceToolMessages } from "./workspace-tool-messages";
 
 type RestoredTask = Parameters<HistoryRestore>[0];
 /** 组合工具与历史区域，显式结果定位不覆盖当前创作草稿。 */
 export function WorkspaceLayout() {
+  const t = useMessages(workspaceToolMessages);
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
   const remember = useWorkspaceState((state) => state.setLastPath);
@@ -97,7 +100,7 @@ export function WorkspaceLayout() {
       </div>
       <ToggleButtonGroup
         className="workspace-mobile-panels"
-        aria-label="工作区视图"
+        aria-label={t.workspaceViews}
         selectionMode="single"
         disallowEmptySelection
         selectedKeys={[mobilePanel]}
@@ -106,13 +109,13 @@ export function WorkspaceLayout() {
           if (key) setMobilePanel(String(key));
         }}
       >
-        <ToggleButton id="form">创作</ToggleButton>
-        <ToggleButton id="history">历史记录</ToggleButton>
+        <ToggleButton id="form">{t.createView}</ToggleButton>
+        <ToggleButton id="history">{t.historyView}</ToggleButton>
       </ToggleButtonGroup>
       <StoryboardContext.Provider value={storyboard}>
         <Outlet />
       </StoryboardContext.Provider>
-      <section className="results-panel" aria-label="工作区历史记录">
+      <section className="results-panel" aria-label={t.history}>
         {historyTool === "video" ? (
           <VideoHistory onRestore={() => setMobilePanel("form")} production={storyboard} />
         ) : (
@@ -127,9 +130,9 @@ export function WorkspaceLayout() {
       <BackToTopButton />
       <ConfirmDialog
         isOpen={restorePending !== null}
-        title="载入这次创作？"
-        content="当前工具还有未提交的内容，载入后将替换该工具的草稿。"
-        confirmLabel="载入"
+        title={t.restoreTitle}
+        content={t.restoreContent}
+        confirmLabel={t.restore}
         onCancel={() => setRestorePending(null)}
         onConfirm={() => {
           if (restorePending) applyRestore(restorePending);

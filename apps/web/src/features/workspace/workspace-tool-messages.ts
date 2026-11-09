@@ -8,6 +8,13 @@ export const workspaceToolMessages = defineMessages({
     inUse: "正在使用",
     switchHint: "点击切换到此功能",
     usageGuide: (name: string) => `${name}使用说明`,
+    workspaceViews: "工作区视图",
+    createView: "创作",
+    historyView: "历史记录",
+    history: "工作区历史记录",
+    restoreTitle: "载入这次创作？",
+    restoreContent: "当前工具还有未提交的内容，载入后将替换该工具的草稿。",
+    restore: "载入",
     tools: {
       create: {
         name: "主图制作",
@@ -53,6 +60,13 @@ export const workspaceToolMessages = defineMessages({
     inUse: "In use",
     switchHint: "Click to switch to this tool",
     usageGuide: (name) => `How to use ${name}`,
+    workspaceViews: "Workspace views",
+    createView: "Create",
+    historyView: "History",
+    history: "Workspace history",
+    restoreTitle: "Load this creation?",
+    restoreContent: "This tool still has unsubmitted content. Loading replaces this tool's draft.",
+    restore: "Load",
     tools: {
       create: {
         name: "Main Image",

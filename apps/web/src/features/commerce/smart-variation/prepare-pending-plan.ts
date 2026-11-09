@@ -1,4 +1,6 @@
 import { pendingVariationPlanSchema } from "@lycoboai/contracts";
+import { currentMessages } from "../../../i18n/messages";
+import { variationMessages } from "./variation-messages";
 
 type PlanningDraft = { description: string; references: readonly { id: string }[] };
 
@@ -21,10 +23,10 @@ export function preparePendingPlan(
     "referenceIds" in saved &&
     JSON.stringify(saved.referenceIds) !== JSON.stringify(referenceIds)
   )
-    throw new Error("上次计划请求尚待确认，请恢复上次参考图后继续获取计划。");
+    throw new Error(currentMessages(variationMessages).restoreReferences);
   let pending = pendingVariationPlanSchema.safeParse(saved);
   if (pending.success && pending.data.input.description.trim() !== draft.description.trim())
-    throw new Error("上次计划请求尚待确认，请恢复上次需求后继续获取计划。");
+    throw new Error(currentMessages(variationMessages).restoreBrief);
   if (!pending.success) {
     const value = {
       key: crypto.randomUUID(),
@@ -38,7 +40,7 @@ export function preparePendingPlan(
     sessionStorage.setItem(storageKey, JSON.stringify(value));
     pending = pendingVariationPlanSchema.safeParse(value);
   }
-  if (!pending.success) throw new Error("分析请求无法保存");
+  if (!pending.success) throw new Error(currentMessages(variationMessages).cannotSave);
   // 上传失败不丢弃文本计划；生图提交会复用缓存、等待上传或重试，才允许创建付费任务。
   void Promise.allSettled([upload()]);
   return pending.data;

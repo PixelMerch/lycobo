@@ -11,6 +11,12 @@ import { modelCapabilities, supportsReferences } from "../../generation/models/m
 import type { Draft } from "../../generation/studio-state";
 import { useTextileSetDraft } from "./textile-set-state";
 
+/**
+ * 家纺裂变任务固定提交的提示词标记：服务端按所选视角生成，不读这段文字，只把它存为任务提示词。
+ * 不随界面语言变化；显示时换成当前语言的工具名称。
+ */
+export const textilePromptMarker = "家纺裂变";
+
 /** 家纺裂变的生成：按选中的视角提交整套图片，提交前校验登录、模型与主图。 */
 export function useTextileGeneration() {
   const draft = useTextileSetDraft();
@@ -38,7 +44,7 @@ export function useTextileGeneration() {
     submit: () => {
       const references = [draft.mainImage, ...draft.detailImages].filter((image) => image !== null);
       const input: Draft = {
-        prompt: "家纺裂变",
+        prompt: textilePromptMarker,
         ratio: draft.ratio,
         resolution: draft.resolution,
         quality: "medium",

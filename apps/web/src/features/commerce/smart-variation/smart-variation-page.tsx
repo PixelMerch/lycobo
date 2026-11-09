@@ -10,16 +10,20 @@ import { useVariationPlan } from "./use-variation-plan";
 import { VariationPlanPanel } from "./variation-plan-panel";
 import "../textile-set/textile-set.css";
 import "./smart-variation.css";
+import { useMessages } from "../../../i18n/messages";
+import { variationMessages } from "./variation-messages";
 
+/** 套图计划的参数面板：参考图、创作需求、比例与分辨率，生成计划后打开确认面板。 */
 export function SmartVariationPage() {
   const { references, description, ratio, resolution, update } = useSmartVariationDraft();
   const [planOpen, setPlanOpen] = useState(false);
   const analysis = useVariationPlan();
   const planId = useSmartVariationDraft((state) => state.planId);
+  const t = useMessages(variationMessages);
 
   return (
     <>
-      <section className="composer-panel" aria-label="套图计划参数">
+      <section className="composer-panel" aria-label={t.parameters}>
         <div className="composer-scroll">
           <WorkspaceComposerTitle />
           <ReferencePicker
@@ -30,7 +34,7 @@ export function SmartVariationPage() {
           />
           <ReferencePrompt
             className="prompt-field"
-            label="创作需求"
+            label={t.brief}
             isRequired
             value={description}
             onChange={(description) => update({ description })}
@@ -38,25 +42,25 @@ export function SmartVariationPage() {
             onReferencesInsert={(images, description) =>
               update({ references: [...references, ...images], description })
             }
-            placeholder="描述整套图片的用途、场景和卖点，输入 @ 引用商品图"
+            placeholder={t.briefPlaceholder}
             optimizeTool="variation"
             maxLength={5000}
             showCount
             autoGrow
           />
-          <section className="parameter-group" aria-label="图片比例">
+          <section className="parameter-group" aria-label={t.aspectRatio}>
             <div className="field-title">
-              <h2>图片比例</h2>
+              <h2>{t.aspectRatio}</h2>
               <span className="ratio-current">{ratio}</span>
             </div>
             <HomeRatioPicker value={ratio} onChange={(value) => update({ ratio: value })} />
           </section>
           <section className="parameter-group">
             <div className="field-title">
-              <h2>分辨率</h2>
+              <h2>{t.resolution}</h2>
             </div>
             <ToggleButtonGroup
-              aria-label="分辨率"
+              aria-label={t.resolution}
               className="parameter-options"
               isDetached
               selectionMode="single"
@@ -86,7 +90,7 @@ export function SmartVariationPage() {
               className="variation-example-button"
               onPress={() => setPlanOpen(true)}
             >
-              查看生成计划
+              {t.viewPlan}
             </Button>
           )}
           <Button
@@ -102,9 +106,9 @@ export function SmartVariationPage() {
             className="primary-action generation-submit"
           >
             {analysis.isPending && (
-              <Spinner size="md" color="current" role="status" aria-label="正在生成计划" />
+              <Spinner size="md" color="current" role="status" aria-label={t.generatingPlan} />
             )}
-            {analysis.isPending ? "正在生成计划" : "生成计划"}
+            {analysis.isPending ? t.generatingPlan : t.generatePlan}
           </Button>
         </div>
       </section>
