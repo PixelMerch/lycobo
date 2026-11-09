@@ -9,7 +9,11 @@ import { enterpriseAuth, readAuthConfig } from "./features/auth/service";
 import { readWebhookConfig } from "./features/images/webhooks/provider-webhook";
 
 /** 为每次请求组装 Hono API、鉴权和 Webhook 验签依赖。 */
-export async function serveCloudflareApi(request: Request, env: CloudflareEnv) {
+export async function serveCloudflareApi(
+  request: Request,
+  env: CloudflareEnv,
+  background?: (work: Promise<void>) => void,
+) {
   if (new URL(request.url).pathname === "/api/health/live") return createApp().fetch(request);
   const runtime = await openCloudflareRuntime(env);
   const authRepository = openAuthRepository(env.HYPERDRIVE.connectionString, true);
@@ -71,14 +75,6 @@ export async function serveCloudflareApi(request: Request, env: CloudflareEnv) {
       { repository: realtime, hubs: env.REALTIME, auth },
     );
     const response = await app.fetch(request);
-    // 只在写操作后唤醒，传输失败保留 outbox，交由独立消费者的 Cron 修复。
-    if (!["GET", "HEAD"].includes(request.method)) {
-      try {
-        await dispatchRealtime(realtime, env.REALTIME);
-      } catch {
-        console.error("REALTIME_DISPATCH_FAILED");
-      }
-    }
     if (response.body && response.headers.get("Content-Type")?.includes("text/event-stream")) {
       const deferred = closeAfterStream(response, async () => {
         try {
@@ -91,8 +87,41 @@ export async function serveCloudflareApi(request: Request, env: CloudflareEnv) {
       streaming = true;
       return deferred;
     }
+    // 业务已落库，消息投递不阻塞响应；连接随受管任务结束关闭，失败仍有 outbox 恢复。
+    if (background) {
+      background(deliverAndClose(request, realtime, env, close));
+      streaming = true;
+    } else {
+      await deliverRealtime(request, realtime, env);
+    }
     return response;
   } finally {
     if (!streaming) await close();
+  }
+}
+
+async function deliverRealtime(
+  request: Request,
+  realtime: ReturnType<typeof openRealtimeRepository>,
+  env: CloudflareEnv,
+) {
+  if (["GET", "HEAD"].includes(request.method)) return;
+  try {
+    await dispatchRealtime(realtime, env.REALTIME);
+  } catch {
+    console.error("REALTIME_DISPATCH_FAILED");
+  }
+}
+
+async function deliverAndClose(
+  request: Request,
+  realtime: ReturnType<typeof openRealtimeRepository>,
+  env: CloudflareEnv,
+  close: () => Promise<void>,
+) {
+  try {
+    await deliverRealtime(request, realtime, env);
+  } finally {
+    await close();
   }
 }

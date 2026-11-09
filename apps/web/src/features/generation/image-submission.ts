@@ -67,52 +67,66 @@ export function usePendingSubmission(scope?: SessionScope) {
     () => false,
   );
 }
+/** 最多同时上传三张参考图，保留编号顺序并复用查询缓存，避免跨境等待逐张累加。 */
 export async function uploadImageReferences(
   client: QueryClient,
   scope: SessionScope,
   references: readonly ReferenceImage[],
 ) {
-  const referenceAssetIds: string[] = [];
-  for (const [index, reference] of references.entries()) {
-    if (reference.assetId) {
-      referenceAssetIds.push(reference.assetId);
-      continue;
-    }
-    const asset = await client.fetchQuery({
-      queryKey: ["reference-upload", scope.organizationId, scope.userId, reference.id],
-      staleTime: 2 * 24 * 60 * 60 * 1000,
-      gcTime: 2 * 24 * 60 * 60 * 1000,
-      retry: false,
-      queryFn: async () => {
-        const blob = await (
-          await fetch(reference.src, { signal: AbortSignal.timeout(30000) })
-        ).blob();
-        const position = index + 1;
-        const issue = referenceSizeError(blob.size, position);
-        if (issue) throw new Error(issue);
-        const prepared = await prepareReferenceUpload(blob, position);
-        const upload = await imageRequest("image-assets", {
-          method: "POST",
-          headers: { "Content-Type": prepared.type },
-          body: prepared,
-        }).catch((error: unknown) => {
-          if (error instanceof ImageApiError && [406, 413].includes(error.status)) {
-            throw new ImageApiError(
-              `第 ${position} 张图片超过当前上传入口允许的大小，请缩小图片后重试。`,
-              error.status,
-              error.businessCode,
-            );
-          }
-          throw error;
-        });
-        const uploaded = await completeReferenceUpload(upload);
-        void client.invalidateQueries({ queryKey: ["image-assets"] });
-        return uploaded;
-      },
-    });
-    referenceAssetIds.push(asset.id);
+  const ids: string[] = [];
+  for (let offset = 0; offset < references.length; offset += 3) {
+    const assets = await Promise.all(
+      references
+        .slice(offset, offset + 3)
+        .map((reference, index) =>
+          reference.assetId
+            ? Promise.resolve({ id: reference.assetId })
+            : uploadReference(client, scope, reference, offset + index),
+        ),
+    );
+    ids.push(...assets.map((asset) => asset.id));
   }
-  return referenceAssetIds;
+  return ids;
+}
+
+function uploadReference(
+  client: QueryClient,
+  scope: SessionScope,
+  reference: ReferenceImage,
+  index: number,
+) {
+  return client.fetchQuery({
+    queryKey: ["reference-upload", scope.organizationId, scope.userId, reference.id],
+    staleTime: 2 * 24 * 60 * 60 * 1000,
+    gcTime: 2 * 24 * 60 * 60 * 1000,
+    retry: false,
+    queryFn: async () => {
+      const blob = await (
+        await fetch(reference.src, { signal: AbortSignal.timeout(30000) })
+      ).blob();
+      const position = index + 1;
+      const issue = referenceSizeError(blob.size, position);
+      if (issue) throw new Error(issue);
+      const prepared = await prepareReferenceUpload(blob, position);
+      const upload = await imageRequest("image-assets", {
+        method: "POST",
+        headers: { "Content-Type": prepared.type },
+        body: prepared,
+      }).catch((error: unknown) => {
+        if (error instanceof ImageApiError && [406, 413].includes(error.status)) {
+          throw new ImageApiError(
+            `第 ${position} 张图片超过当前上传入口允许的大小，请缩小图片后重试。`,
+            error.status,
+            error.businessCode,
+          );
+        }
+        throw error;
+      });
+      const uploaded = await completeReferenceUpload(upload);
+      void client.invalidateQueries({ queryKey: ["image-assets"] });
+      return uploaded;
+    },
+  });
 }
 export type ImageSubmission = {
   model: ModelId;

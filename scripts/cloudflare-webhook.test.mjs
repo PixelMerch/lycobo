@@ -3,6 +3,12 @@ import { createApp } from "../apps/api/src/app";
 import { serveCloudflareApi } from "../apps/api/src/cloudflare-app";
 import { openCloudflareRuntime } from "../apps/worker/src/cloudflare/cloudflare-runtime";
 import { openAuthRepository } from "../packages/db/src/index";
+import { dispatchRealtime } from "../packages/queue/src/index";
+
+vi.mock("../packages/queue/src/index", async (original) => ({
+  ...(await original()),
+  dispatchRealtime: vi.fn(async () => undefined),
+}));
 
 vi.mock("../apps/api/src/app", () => ({ createApp: vi.fn() }));
 vi.mock("../apps/worker/src/cloudflare/cloudflare-runtime", () => ({
@@ -79,5 +85,35 @@ it("keeps database clients open until the streaming response finishes", async ()
   const text = response.text();
   resolve();
   expect(await text).toContain("event: complete");
+  expect(close).toHaveBeenCalledTimes(2);
+});
+
+it("returns a persisted write without waiting for realtime transport and retains clients until delivery", async () => {
+  const close = vi.fn(async () => undefined);
+  vi.mocked(openAuthRepository).mockReturnValue({ close });
+  vi.mocked(openCloudflareRuntime).mockResolvedValue({ repository: { close }, policy: {} });
+  vi.mocked(createApp).mockReturnValue({ fetch: async () => new Response(null, { status: 202 }) });
+  const delivery = Promise.withResolvers();
+  vi.mocked(dispatchRealtime).mockReturnValueOnce(delivery.promise);
+  const work = [];
+  let response;
+  const pending = serveCloudflareApi(
+    new Request("https://fixture.example/api/submit", { method: "POST" }),
+    {
+      AUTH_JWT_SECRET: "fixture-auth-secret-with-at-least-32-characters",
+      AUTH_TRUSTED_ORIGINS: "https://fixture.example",
+      HYPERDRIVE: { connectionString: "fixture-only" },
+      ASSET_PUBLIC_ORIGIN: "https://media.fixture.example",
+      ASSET_SIGNING_SECRET: "fixture-asset-secret-with-at-least-32-characters",
+    },
+    (promise) => work.push(promise),
+  ).then((value) => {
+    response = value;
+  });
+  await vi.waitFor(() => expect(response?.status).toBe(202), { timeout: 100 });
+  expect(close).not.toHaveBeenCalled();
+  delivery.resolve();
+  await pending;
+  await Promise.all(work);
   expect(close).toHaveBeenCalledTimes(2);
 });
