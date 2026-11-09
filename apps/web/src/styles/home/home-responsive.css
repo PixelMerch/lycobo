@@ -71,6 +71,14 @@
     font-size: var(--text-base);
     line-height: var(--leading-base);
   }
+  /* 英文模式名较长，手机上允许折成两行，避免相邻页签文字重叠。 */
+  .home-modes .tabs__tab:lang(en) {
+    font-size: var(--text-sm);
+    line-height: 16px;
+    text-align: center;
+    white-space: normal;
+    text-wrap: balance;
+  }
   .home-mode-icon {
     display: none;
   }
@@ -200,4 +208,11 @@
   color: var(--muted);
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
+}
+/* 320px 一类的最窄屏上，英文页签再小一号，保证每个名称最多两行。 */
+@media (max-width: 359px) {
+  .home-modes .tabs__tab:lang(en) {
+    font-size: var(--text-xs);
+    line-height: 15px;
+  }
 }

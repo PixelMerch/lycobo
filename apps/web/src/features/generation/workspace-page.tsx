@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { CreditCoin } from "../../components/credit-coin";
 import { ReferencePrompt } from "../../components/reference-prompt/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
+import { useLocale } from "../../i18n/locale-store";
 import { useErrorToast } from "../../lib/error-toast";
 import { WorkspaceComposerTitle } from "../workspace/workspace-tool-symbol";
 import { ParameterGroup } from "./composer/parameter-group";
@@ -20,19 +21,27 @@ import { revealNewestHistory } from "./history/history-navigation";
 
 import { modelCapabilities, supportsReferences } from "./models/model-capabilities";
 import { ModelSelect } from "./models/model-select";
+import { qualityLabel } from "./quality-label";
+import { qualityMessages } from "./quality-messages";
 import { hasPromptDescription } from "./references/prompt-description";
 import { ReferencePicker } from "./references/reference-picker";
-import { type Draft, defaultDraft, type ModelId, useStudioStore } from "./studio-state";
+import {
+  type Draft,
+  defaultDraft,
+  type ModelId,
+  qualityLevels,
+  useStudioStore,
+} from "./studio-state";
 
 const promptLimit = 5000;
 const resolutionField = { label: "分辨率", values: ["1.5K", "2K", "4K"] } as const;
-const advancedFields = [{ key: "quality", label: "质量", values: ["低", "标准", "高"] }] as const;
 
 export function WorkspacePage() {
   const model = useStudioStore((s) => s.activeModel);
   return <Workspace model={model} />;
 }
 function Workspace({ model }: { model: ModelId }) {
+  const locale = useLocale();
   const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const visitModel = useStudioStore((s) => s.visitModel);
@@ -109,19 +118,16 @@ function Workspace({ model }: { model: ModelId }) {
           selectionId="count"
           onChange={(count) => updateDraft(model, { count })}
         />
-        {showMore &&
-          advancedFields.map((field) => (
-            <ParameterGroup
-              key={field.key}
-              label={field.label}
-              values={field.values}
-              value={draft[field.key]}
-              selectionId={field.key}
-              onChange={(value) =>
-                updateDraft(model, field.key === "quality" ? { quality: value } : { count: value })
-              }
-            />
-          ))}
+        {showMore && (
+          <ParameterGroup
+            label={qualityMessages[locale].title}
+            values={qualityLevels}
+            value={draft.quality}
+            selectionId="quality"
+            optionLabel={(level) => qualityLabel(locale, level)}
+            onChange={(value) => updateDraft(model, { quality: value })}
+          />
+        )}
         <Button
           className="parameter-more"
           variant="ghost"

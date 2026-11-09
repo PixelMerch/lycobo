@@ -26,7 +26,7 @@ import {
 } from "../generation-client";
 import { modelCapabilities, supportsReferences } from "../models/model-capabilities";
 import { ReferenceThumbnails } from "../references/reference-thumbnails";
-import { type Draft, type ModelId, useStudioStore } from "../studio-state";
+import { type Draft, type ModelId, qualityLevels, useStudioStore } from "../studio-state";
 import { HistoryDownloadButton } from "./history-download-button";
 
 export function HistoryPrompt({ job }: { job: ImageJob }) {
@@ -148,9 +148,9 @@ export function HistoryTaskActions({
 
 type HistoryItem = ImageJob["items"][number];
 
+// 历史任务的质量档位带回草稿；缺失或未知时用标准档。
 function draftQuality(quality: string | undefined) {
-  if (quality === "low") return "低";
-  return quality === "high" ? "高" : "标准";
+  return qualityLevels.find((level) => level === quality) ?? "medium";
 }
 
 function historyModelOperation(job: ImageJob) {

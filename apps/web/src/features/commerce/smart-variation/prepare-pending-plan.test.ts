@@ -58,7 +58,7 @@ it("returns the plan input while upload is pending, but blocks paid submission u
       prompt: draft.description,
       ratio: "1:1",
       resolution: "1.5K",
-      quality: "标准",
+      quality: "medium",
       count: "1",
     },
   });

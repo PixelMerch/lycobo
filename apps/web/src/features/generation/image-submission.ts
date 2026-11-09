@@ -139,13 +139,6 @@ export type ImageSubmission = {
   variation?: import("@lycoboai/contracts").VariationGeneration | undefined;
 };
 
-function requestQuality(quality: string) {
-  if (quality === "低") return "low";
-  if (quality === "标准") return "medium";
-  if (quality === "高") return "high";
-  return quality;
-}
-
 async function prepareSubmissionInput(
   client: QueryClient,
   scope: SessionScope,
@@ -156,7 +149,7 @@ async function prepareSubmissionInput(
     model,
     prompt: draft.prompt,
     resolution: draft.resolution,
-    quality: requestQuality(draft.quality),
+    quality: draft.quality,
     aspectRatio: draft.ratio,
     count: Number(draft.count),
     referenceAssetIds,

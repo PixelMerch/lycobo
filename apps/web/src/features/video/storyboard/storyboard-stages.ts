@@ -143,6 +143,7 @@ async function retryStoryboardFrame(
   }
 }
 
+/** 提交分镜关键帧的生成任务，并把排队状态写回视频草稿。 */
 export async function submitStoryboardFrames({
   current,
   save,
@@ -173,7 +174,7 @@ export async function submitStoryboardFrames({
     ratio: "9:16" as const,
     resolution,
     count: String(snapshot.items.length),
-    quality: "标准" as const,
+    quality: "medium" as const,
   };
   await retryStoryboardFrame(
     batchId,

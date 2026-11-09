@@ -115,6 +115,10 @@ body:has(.commerce-home) {
   letter-spacing: -0.025em;
   text-align: center;
 }
+/* 英文标语的两段之间要有词距；中文标语第一段以逗号结尾，不需要。 */
+.home-slogan:lang(en) {
+  column-gap: 0.25em;
+}
 /* Lycobo 自己的标语样式：正体，关键词用当前模式的强调渐变（主图制作即品牌青柠→薄荷）。 */
 .home-slogan-highlight {
   background: linear-gradient(120deg, var(--home-glow) 15%, var(--home-glow-soft) 95%);

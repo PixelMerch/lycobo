@@ -11,6 +11,7 @@ import { modelCapabilities, supportsReferences } from "../../generation/models/m
 import type { Draft } from "../../generation/studio-state";
 import { useTextileSetDraft } from "./textile-set-state";
 
+/** 家纺裂变的生成：按选中的视角提交整套图片，提交前校验登录、模型与主图。 */
 export function useTextileGeneration() {
   const draft = useTextileSetDraft();
   const session = useImageSession();
@@ -40,7 +41,7 @@ export function useTextileGeneration() {
         prompt: "家纺裂变",
         ratio: draft.ratio,
         resolution: draft.resolution,
-        quality: "标准",
+        quality: "medium",
         count: String(draft.views.length),
         references,
       };

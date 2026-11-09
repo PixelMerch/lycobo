@@ -44,6 +44,9 @@ export type ReferenceImage = {
   thumbnailSrc?: string;
   previewSrc?: string;
 };
+/** 生成质量的三个档位，取值直接用于接口请求；界面名称在 quality-messages.ts。 */
+export const qualityLevels = ["low", "medium", "high"] as const;
+
 export type Draft = {
   prompt: string;
   references: ReferenceImage[];
@@ -57,7 +60,7 @@ const emptyDraft = (): Draft => ({
   references: [],
   ratio: "1:1",
   resolution: "1.5K",
-  quality: "标准",
+  quality: "medium",
   count: "1",
 });
 

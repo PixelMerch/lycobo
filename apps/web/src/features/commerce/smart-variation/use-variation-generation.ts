@@ -11,6 +11,7 @@ import { revealNewestHistory } from "../../generation/history/history-navigation
 import { modelCapabilities, supportsReferences } from "../../generation/models/model-capabilities";
 import { useSmartVariationDraft } from "./smart-variation-state";
 
+/** 套图计划确认后的批量生成：每条方案提交一张图，提交前校验登录、模型与参考图。 */
 export function useVariationGeneration() {
   const draft = useSmartVariationDraft();
   const session = useImageSession();
@@ -51,7 +52,7 @@ export function useVariationGeneration() {
           ratio: draft.ratio,
           resolution: draft.resolution,
           count: String(selected.length),
-          quality: "标准",
+          quality: "medium",
         },
         ...(draft.planId
           ? {

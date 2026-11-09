@@ -2,6 +2,8 @@ import { Tabs } from "@heroui/react";
 import { useRef } from "react";
 import { useSearchParams } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
+import { useLocale } from "../../i18n/locale-store";
+import { useMessages } from "../../i18n/messages";
 import { SelectionHighlight } from "../generation/composer/selection-highlight";
 import { shareProductReference } from "../workspace/workspace-state";
 import { toolIcons } from "../workspace/workspace-tool-symbol";
@@ -10,7 +12,8 @@ import { HomeComposer } from "./home-composer";
 import { HomeDock } from "./home-dock";
 import { HomeFooter } from "./home-footer";
 import { HomeInspirationGallery } from "./home-inspiration-gallery";
-import { homeModeFor, homeModes } from "./home-modes";
+import { homeMessages } from "./home-messages";
+import { homeModeFor, homeModesFor } from "./home-modes";
 import { HomeTemplates } from "./home-templates";
 import type { SilkHandle } from "./silk/silk-background";
 import "../../styles/home/home.css";
@@ -18,7 +21,10 @@ import "../../styles/home/home.css";
 /** 组合首页标语、创作模式、创作框、模板与灵感列表；切换模式保留各工具草稿。 */
 export function HomePage() {
   const [search, setSearch] = useSearchParams();
-  const mode = homeModeFor(search.get("mode"));
+  const locale = useLocale();
+  const t = useMessages(homeMessages);
+  const homeModes = homeModesFor(locale);
+  const mode = homeModeFor(search.get("mode"), locale);
   const backdrop = useRef<SilkHandle>(null);
   const start = useRef<HTMLElement>(null);
   // 切换页签时，丝绸从被选中的页签处荡开一圈涟漪（鼠标与键盘切换都一样）。
@@ -55,7 +61,7 @@ export function HomePage() {
           onSelectionChange={(key) => selectMode(String(key))}
         >
           <Tabs.ListContainer>
-            <Tabs.List aria-label="创作模式">
+            <Tabs.List aria-label={t.modes}>
               {homeModes.map((item) => (
                 <Tabs.Tab id={item.id} key={item.id}>
                   {item.id === mode.id && (

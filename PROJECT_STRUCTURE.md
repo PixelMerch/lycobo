@@ -79,7 +79,7 @@ apps/web/src/
     ├── commerce/                 # 家纺裂变、套图计划（方案规划、确认与生图）及本地会话草稿
     ├── video/                    # 视频页面、请求与草稿；history / player / production / storyboard 分职责
     ├── home/                     # 首页、共享创作输入与提示辅助
-    │   ├── home-modes.ts         # 四个创作模式的标语、上传规则与描述模板；名称和路径来自工作区工具定义
+    │   ├── home-modes.ts         # 四个创作模式的上传规则与模板顺序；标语、上传名称与模板文字在 home-modes-messages.ts
     │   ├── home-composer.tsx     # 按模式组合上传列、描述区与“开始创作”；草稿读写在 use-home-mode-draft.ts
     │   ├── home-templates.tsx    # 描述模板与替换确认；主图设置在 home-model-settings.tsx，家纺视角在 home-textile-views.tsx
     │   ├── home-backdrop.tsx     # 首屏丝绸背景：每个模式一种缎面配色，切换页签时由首页触发涟漪

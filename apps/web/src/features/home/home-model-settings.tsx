@@ -2,13 +2,18 @@ import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react"
 import { mainImageModelIds } from "@lycoboai/contracts";
 import { IconCheck, IconChevronDown } from "@tabler/icons-react";
 import { UiIcon } from "../../components/ui-icon";
+import { useLocale } from "../../i18n/locale-store";
+import { useMessages } from "../../i18n/messages";
 import { useErrorToast } from "../../lib/error-toast";
 import { useEnterpriseSession } from "../auth/auth-client";
 import { HomeRatioPicker } from "../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../generation/composer/selection-highlight";
 import { ImageApiError, useImageModels } from "../generation/generation-client";
 import { ModelLogo, useModelPresentation } from "../generation/models/model-logos";
-import { defaultDraft, useStudioStore } from "../generation/studio-state";
+import { qualityLabel } from "../generation/quality-label";
+import { qualityMessages } from "../generation/quality-messages";
+import { defaultDraft, qualityLevels, useStudioStore } from "../generation/studio-state";
+import { homeMessages } from "./home-messages";
 
 type ModelCatalog = ReturnType<typeof useImageModels>;
 type PresentedModels = NonNullable<ReturnType<typeof useModelPresentation>["data"]>["models"];
@@ -21,15 +26,16 @@ export function HomeModelSettings() {
   const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const signedIn = !!useEnterpriseSession().data;
   const catalog = useImageModels(signedIn);
+  const t = useMessages(homeMessages);
   const requestError =
-    catalog.error instanceof ImageApiError ? catalog.error.message : "服务暂时不可用，请稍后重试。";
+    catalog.error instanceof ImageApiError ? catalog.error.message : t.serviceUnavailable;
   useErrorToast(catalog.isError ? requestError : null);
   const selectedModel = models.find((item) => item.id === model);
   return (
     <Popover>
-      <Button className="home-settings-trigger" variant="ghost" aria-label="选择创作模型">
+      <Button className="home-settings-trigger" variant="ghost" aria-label={t.chooseModel}>
         <ModelLogo src={selectedModel?.logoUrl} size="compact" />
-        <span>{selectedModel?.name ?? "图片创作"}</span>
+        <span>{selectedModel?.name ?? t.imageCreation}</span>
         <span>·</span>
         <span>{draft.ratio}</span>
         <span>·</span>
@@ -39,7 +45,7 @@ export function HomeModelSettings() {
         </span>
       </Button>
       <Popover.Content className="home-settings" placement="bottom end" offset={8}>
-        <Popover.Dialog aria-label="模型和画面设置">
+        <Popover.Dialog aria-label={t.settings}>
           <HomeModelList models={models} catalog={catalog} />
           <HomePictureOptions catalog={catalog} />
         </Popover.Dialog>
@@ -53,6 +59,7 @@ function HomeModelList({ models, catalog }: { models: PresentedModels; catalog: 
   const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const setModel = useStudioStore((s) => s.setActiveModel);
+  const t = useMessages(homeMessages);
   function choose(id: string) {
     if (id === model) return;
     const supported = catalog.data?.models.find((entry) => entry.id === id)?.enabledResolutions;
@@ -67,7 +74,7 @@ function HomeModelList({ models, catalog }: { models: PresentedModels; catalog: 
   }
   return (
     <div className="home-settings-models">
-      <Popover.Heading>模型</Popover.Heading>
+      <Popover.Heading>{t.model}</Popover.Heading>
       {models.map((item) => (
         <ToggleButton
           key={item.id}
@@ -101,16 +108,18 @@ function HomePictureOptions({ catalog }: { catalog: ModelCatalog }) {
   const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const resolutions = catalog.data?.models.find((item) => item.id === model)?.enabledResolutions;
+  const t = useMessages(homeMessages);
+  const locale = useLocale();
   return (
     <div className="home-settings-options">
       <div className="home-ratio-heading">
-        <h3>画面比例</h3>
+        <h3>{t.aspectRatio}</h3>
         <span className="home-ratio-current">{draft.ratio}</span>
       </div>
       <HomeRatioPicker value={draft.ratio} onChange={(ratio) => updateDraft(model, { ratio })} />
-      <h3>图片分辨率</h3>
+      <h3>{t.resolution}</h3>
       <ToggleButtonGroup
-        aria-label="图片分辨率"
+        aria-label={t.resolution}
         selectionMode="single"
         disallowEmptySelection
         selectedKeys={[draft.resolution]}
@@ -132,15 +141,15 @@ function HomePictureOptions({ catalog }: { catalog: ModelCatalog }) {
           </ToggleButton>
         ))}
       </ToggleButtonGroup>
-      <h3>质量</h3>
+      <h3>{qualityMessages[locale].title}</h3>
       <ToggleButtonGroup
-        aria-label="质量"
+        aria-label={qualityMessages[locale].title}
         selectionMode="single"
         disallowEmptySelection
         selectedKeys={[draft.quality]}
         onSelectionChange={(keys) => updateDraft(model, { quality: String([...keys][0]) })}
       >
-        {["低", "标准", "高"].map((quality) => (
+        {qualityLevels.map((quality) => (
           <ToggleButton id={quality} key={quality}>
             {quality === draft.quality && (
               <SelectionHighlight
@@ -148,13 +157,13 @@ function HomePictureOptions({ catalog }: { catalog: ModelCatalog }) {
                 layoutDependency={draft.quality}
               />
             )}
-            {quality}
+            {qualityLabel(locale, quality)}
           </ToggleButton>
         ))}
       </ToggleButtonGroup>
-      <h3>生成张数</h3>
+      <h3>{t.imageCount}</h3>
       <ToggleButtonGroup
-        aria-label="生成张数"
+        aria-label={t.imageCount}
         selectionMode="single"
         disallowEmptySelection
         selectedKeys={[draft.count]}
@@ -165,7 +174,7 @@ function HomePictureOptions({ catalog }: { catalog: ModelCatalog }) {
             {count === draft.count && (
               <SelectionHighlight layoutId="home-count-selection" layoutDependency={draft.count} />
             )}
-            {count} 张
+            {t.imageCountOption(count)}
           </ToggleButton>
         ))}
       </ToggleButtonGroup>

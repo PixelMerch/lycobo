@@ -4,11 +4,13 @@ import { type ReactNode, useRef } from "react";
 import { useNavigate } from "react-router";
 import { ReferencePrompt } from "../../components/reference-prompt/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
+import { useMessages } from "../../i18n/messages";
 import { LoginRequiredInteraction } from "../auth/login-prompt";
 import type { PromptOptimizeTool } from "../generation/references/prompt-optimizer-client";
 import { ReferencePicker } from "../generation/references/reference-picker";
 import type { ReferenceImage } from "../generation/studio-state";
 import { useStudioStore } from "../generation/studio-state";
+import { homeMessages } from "./home-messages";
 import { HomeModelSettings } from "./home-model-settings";
 import type { HomeMode } from "./home-modes";
 import { HomeTextileViews } from "./home-textile-views";
@@ -191,6 +193,7 @@ function ComposerShell({
   openFiles: OpenFiles;
 }) {
   const navigate = useNavigate();
+  const t = useMessages(homeMessages);
   const secondary = mode.upload[1];
   return (
     <LoginRequiredInteraction className="home-composer">
@@ -216,7 +219,7 @@ function ComposerShell({
             onPress={() => void navigate(mode.path)}
           >
             <UiIcon icon={IconSparkles} size="small" />
-            开始创作
+            {t.start}
           </Button>
         </div>
       </div>

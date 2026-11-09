@@ -222,13 +222,13 @@ function useRepairSubmission({
           ],
           ratio: output.ratio,
           resolution: output.resolution,
-          quality: "标准",
+          quality: "medium",
           count: "1",
         },
       });
       onAccepted(submitted.id);
     } catch {
-      /* The shared error toast and pending submission retain the exact paid request. */
+      /* 共享的错误提示与待提交记录会保留这次付费请求的原样，这里不再重复处理。 */
     } finally {
       submissionLock.current = false;
     }
