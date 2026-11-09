@@ -8,7 +8,7 @@
 
 一个任务包含N个子任务，对应N个有序视角。API在保存前替换客户端提示词、模型、质量、分辨率为服务端固定配置；Worker按子任务的稳定position读取视角预设，各请求 `n=1`，得到独立单图，避免一个多图请求重复同一构图。模板包含商品身份／颜色／花型／绗缝保留、详情图辅助规则、视角构图及禁止拼图文字水印；实际模型还原程度需真实图片验收，不能保证所有材质和花型都完全一致。
 
-模板在 `packages/generation/src/textile-generation.ts`，元数据 textileSet.version 与有序 views 保存到任务。当前新任务使用 v5，逻辑模型 gpt-image-2.5，必须有后台 textile-set／gpt-image-2.5 路由才可提交，否则在扣款前拒绝，不能回落到旧 sunburst 别名。上游使用渠道快照中的 upstreamModel，每个视角固定一次 n=1 提交；第一张为主图，后续最多5张详情图，提示词仍由服务端带入。分辨率由渠道公开能力约束。
+模板在 `packages/generation/src/images/textile-generation.ts`，元数据 textileSet.version 与有序 views 保存到任务。当前新任务使用 v5，逻辑模型 gpt-image-2.5，必须有后台 textile-set／gpt-image-2.5 路由才可提交，否则在扣款前拒绝，不能回落到旧 sunburst 别名。上游使用渠道快照中的 upstreamModel，每个视角固定一次 n=1 提交；第一张为主图，后续最多5张详情图，提示词仍由服务端带入。分辨率由渠道公开能力约束。
 
 v1 保留原1张详情图规则；v2 允许5张详情图；v1/v2固定1K，v3保留旧gpt-image-2.5-sunburst通道与所选分辨率，v4保留gpt-image-2-4K。已接收任务、快照和旧版语义不变。升级后的确定失败视角须用户确认新任务；未知结果不自动切换渠道或重发。
 

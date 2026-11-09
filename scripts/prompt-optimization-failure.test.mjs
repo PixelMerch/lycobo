@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { promptOptimization } from "../apps/api/src/features/images/prompt-optimization";
+import { promptOptimization } from "../apps/api/src/features/images/planning/prompt-optimization";
 
 it.each([302, 403])(
   "refunds provider rejection %s once without logging private data",

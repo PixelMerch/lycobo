@@ -1,6 +1,6 @@
 import { Button, Spinner, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { useState } from "react";
-import { ReferencePrompt } from "../../../components/reference-prompt";
+import { ReferencePrompt } from "../../../components/reference-prompt/reference-prompt";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../../generation/composer/selection-highlight";
 import { ReferencePicker } from "../../generation/references/reference-picker";

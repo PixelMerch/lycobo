@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { AccountCenterTab } from "./account-center-tabs";
+import type { AccountCenterTab } from "./center/account-center-tabs";
 
 type AccountDialog = "recharge" | "membership" | "settings";
 export type AccountLayer = "center" | "dialog";

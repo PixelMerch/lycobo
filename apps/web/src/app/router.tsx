@@ -105,7 +105,8 @@ export const router = createBrowserRouter([
       {
         path: "membership",
         lazy: async () => ({
-          Component: (await import("../features/account/membership-page")).MembershipPage,
+          Component: (await import("../features/account/membership/membership-page"))
+            .MembershipPage,
         }),
       },
       {

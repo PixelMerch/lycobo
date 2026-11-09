@@ -135,7 +135,8 @@ for (const width of [1440, 320]) {
     await expect(recharge).toBeVisible();
     // The dialog container takes programmatic focus without a purple frame.
     await expect(recharge).toHaveCSS("outline-style", "none");
-    await expect(recharge).toHaveCSS("background-color", "rgb(26, 26, 26)");
+    // 充值弹窗沿用共享毛玻璃，不能回退到旧的实底材质。
+    await expect(recharge).toHaveCSS("backdrop-filter", /blur\(/);
     const rechargeClose = recharge.getByRole("button", { name: "关闭充值积分" });
     await rechargeClose.hover();
     await expect(rechargeClose).toHaveCSS("background-image", closeHover);

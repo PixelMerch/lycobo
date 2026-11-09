@@ -4,7 +4,9 @@ import { AssetImage } from "../asset-image";
 import { assetContentUrl } from "../generation-client";
 
 const ImageViewer = lazy(() =>
-  import("../../../components/image-viewer").then((module) => ({ default: module.ImageViewer })),
+  import("../../../components/image-viewer/image-viewer").then((module) => ({
+    default: module.ImageViewer,
+  })),
 );
 
 /** Task references open the shared viewer at their position in this reference set. */

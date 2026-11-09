@@ -2,7 +2,7 @@
 
 本文是 Agent 开发时必须遵守的规范。目录和分层规则适用于 `apps/api`、`apps/worker` 和 `packages/*`，[中文注释](#中文注释)规则适用于全仓。
 
-工具规则见[代码质量约束](code-quality.md)，模块清单见 [PROJECT_STRUCTURE](../PROJECT_STRUCTURE.md)。鉴权、付费任务、外部调用和日志的硬性要求见根目录 [AGENTS.md](../AGENTS.md)。`PROJECT_STRUCTURE` 的“服务端模块约定”与本文不一致时，以本文为准。
+工具规则见[代码质量约束](code-quality.md)，模块清单见 [PROJECT_STRUCTURE](../PROJECT_STRUCTURE.md)。鉴权、付费任务、外部调用和日志的硬性要求见根目录 [AGENTS.md](../AGENTS.md)。目录清单与本文保持同步；新增目录前先确认业务归属。
 
 ## 基本原则
 
@@ -29,7 +29,7 @@ Node 官方没有规定项目结构，这是社区的常见做法。`features` �
 | 配置和全局诊断             | `apps/api/src/env.ts`、`request-diagnostics.ts`             | 不放业务逻辑                                              |
 | HTTP 路由                  | `apps/api/src/features/<domain>/routes.ts`                  | 路由多时拆成 `<topic>-routes.ts`，由 `routes.ts` 统一注册 |
 | 业务用例                   | `apps/api/src/features/<domain>/service.ts`                 | 逻辑只有一两行时可以不建                                  |
-| 数据库读写                 | `packages/db/src/<domain>-repository.ts`                    | API 和 worker 共用，不放进 `features`                     |
+| 数据库读写                 | `packages/db/src/<domain>/<topic>-repository.ts`            | API 和 worker 共用，不放进 `features`                     |
 | 前后端共用的类型和校验     | `packages/contracts`                                        | 不引入服务端模块和密钥                                    |
 | 后台任务                   | `apps/worker/src`                                           | 不依赖 HTTP 请求或浏览器连接                              |
 | 模型供应商、队列、对象存储 | `packages/generation`、`packages/queue`、`packages/storage` | 放 API 和 worker 共用的基础能力                           |
@@ -49,7 +49,7 @@ Node 官方没有规定项目结构，这是社区的常见做法。`features` �
 - `features` 不引用 `app.ts` 和入口文件。
 - `packages` 不引用 `apps`。
 - 业务之间尽量不互相引用。确实需要时，引用对方的 `service.ts` 或专门的共享文件，不引用路由文件。
-- 只有入口文件可以跨 app 组装。生产环境拆为主站与图片消费者：`apps/api/src/cloudflare.ts` 的默认入口只提供 `fetch`，并导出 `RealtimeHub` DO 类，`apps/worker/src/cloudflare.ts` 导出 `queue` 和 `scheduled`。`cloudflare-app.ts` 可以引用 `apps/worker/src/cloudflare-runtime.ts` 复用调用级依赖组装，不得从主站入口引用或执行消费者。
+- 只有入口文件可以跨 app 组装。生产环境拆为主站与图片消费者：`apps/api/src/cloudflare.ts` 的默认入口只提供 `fetch`，并导出 `RealtimeHub` DO 类，`apps/worker/src/cloudflare.ts` 导出 `queue` 和 `scheduled`。`cloudflare-app.ts` 可以引用 `apps/worker/src/cloudflare/cloudflare-runtime.ts` 复用调用级依赖组装，不得从主站入口引用或执行消费者。
 - `apps/worker/scripts` 的验证脚本可以引用 `createApp`。
 
 ## 每层的职责
@@ -74,7 +74,7 @@ Node 官方没有规定项目结构，这是社区的常见做法。`features` �
 最小完整示例是 `apps/api/src/features/videos/`。按这个顺序做：
 
 1. 前后端共用的类型和校验写进 `packages/contracts`。
-2. 数据库读写写进 `packages/db/src/<domain>-repository.ts`，并从 `packages/db/src/index.ts` 导出。涉及表结构时先读 [packages/db/AGENTS.md](../packages/db/AGENTS.md)。
+2. 数据库读写写进 `packages/db/src/<domain>/<topic>-repository.ts`，并从 `packages/db/src/index.ts` 导出。涉及表结构时先读 [packages/db/AGENTS.md](../packages/db/AGENTS.md)。
 3. 业务用例写进 `features/<domain>/service.ts`。
 4. 路由写进 `features/<domain>/routes.ts`。
 5. 在 `app.ts` 挂载路由，在入口文件组装依赖。
@@ -140,14 +140,17 @@ const body: unknown = await c.req.json();
 
 `biome-ignore` 这类工具指令、第三方代码、生成文件和已合并的数据库迁移不受这条规则约束。测试的 `it()` 标题不算注释。
 
-## 不要照抄的现有写法
+## 目录粒度与公开入口
 
-| 位置                               | 问题                                                                       | 新代码怎么做                                   |
-| ---------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------- |
-| `features/images`                  | 混入了积分钱包（`wallet-routes.ts`）和视频分镜（`storyboard-planner.ts`）  | 新业务建自己的目录，不继续往这里放             |
-| `features/auth/routes.ts`          | 共享的 `enterprisePrincipal` 放在路由文件里，`images` 和 `videos` 都引用它 | 可以继续调用它，但新的共享函数不要放进路由文件 |
-| `PROJECT_STRUCTURE` 的模块约定     | 写着 repository 放在 `features`，实际在 `packages/db/src`                  | 以本文为准                                     |
-| `PROJECT_STRUCTURE` 的模型配置说明 | 指向 `features/model-management`，但仓库里没有这个模块                     | 不要按这条说明找代码                           |
+- `packages/db/src` 按 `auth`、`images`、`wallet`、`models`、`webhooks`、`realtime`、`planning`、`videos` 归类。`connection.ts` 管理本地连接池；`index.ts` 保留包的公开出口。`schema.ts` 是既有表定义，追加迁移链保持原位。
+- `packages/generation/src` 按 `providers`、`planning`、`images`、`videos` 归类；供应商协议、密钥与错误在 `providers`，语言规划在 `planning`。
+- `packages/storage/src` 按 `buckets`、`images`、`delivery`、`cloudflare`、`local`、`videos` 归类。生产代码通过已有公开子路径导入，`local` 下的 Sharp 文件存储仅用于隔离开发。
+- `packages/contracts/src` 按业务分目录，外部继续使用 `@lycoboai/contracts`，不得绕过包出口引用实现文件。
+- Worker 的入口留在 `src` 根目录，运行时装配在 `cloudflare`，图片执行在 `images`，outbox 投递与并发控制在 `queue`；诊断和保留的视频实现各有目录。集成脚本入口留在 `scripts`，验证模块与 fixture 分别归类。
+- API 的 `images` 内按 `assets`、`tasks`、`events`、`planning`、`webhooks` 分职责。钱包放在 `features/wallet`，分镜规划放在 `features/videos`。共享身份解析放在 `auth/principal.ts`，业务模块不再引用认证路由文件。
+- 文件和测试就近放置，保留描述性文件名。不为每个文件建一层目录，不按固定文件数拆分，也不新增 `utils`、`common`、`helpers` 或每层 `index.ts`。
+- API 和 Worker 通过包的公开出口使用共享能力，包内按需直接引用具体文件。现有包出口保持稳定，目录调整不要求调用方感知内部结构。
+- 目录调整只改变职责归属和导入路径，不能顺便修改 SQL、计费、重试、鉴权、样式或部署配置。调整后核对动态导入、测试 fixture、文件 URL、包 exports、Drizzle 配置及文档路径。
 
 ## 提交前自查
 

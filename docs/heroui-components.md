@@ -78,7 +78,7 @@ CSS 仍负责主题与尺寸，见 [DESIGN.md](../DESIGN.md)。
 
 ## 共享图片浏览
 
-`apps/web/src/components/image-viewer.tsx` 导出 `ImageViewer` 与 `ViewerImage`。传入 `images: { src, alt }[]`、`initialIndex` 和 `onClose`，调用方保留缩略图入口并在打开前聚焦它。支持多图切换、左右旋转、按钮／滚轮缩放、放大拖动、Escape 与嵌套弹层焦点返回。历史记录及图片详情参考图通过 ReferenceThumbnails 按需加载此组件。尺寸与视觉遵循 DESIGN.md 的通用图片浏览章节；只改变浏览状态，不写回素材。
+`apps/web/src/components/image-viewer/image-viewer.tsx` 导出 `ImageViewer` 与 `ViewerImage`。传入 `images: { src, alt }[]`、`initialIndex` 和 `onClose`，调用方保留缩略图入口并在打开前聚焦它。支持多图切换、左右旋转、按钮／滚轮缩放、放大拖动、Escape 与嵌套弹层焦点返回。历史记录及图片详情参考图通过 ReferenceThumbnails 按需加载此组件。尺寸与视觉遵循 DESIGN.md 的通用图片浏览章节；只改变浏览状态，不写回素材。
 
 ## 状态与数据展示
 

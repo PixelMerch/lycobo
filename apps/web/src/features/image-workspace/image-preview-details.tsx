@@ -7,7 +7,7 @@ import {
   IconStarFilled,
 } from "@tabler/icons-react";
 import { CollapsibleText } from "../../components/collapsible-text";
-import { DialogClose } from "../../components/dialog-close";
+import { DialogClose } from "../../components/overlays/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
 import { copyToClipboard } from "../../lib/clipboard";
 import { useAssetFavorite } from "../assets/asset-library-client";

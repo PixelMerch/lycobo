@@ -3,7 +3,7 @@ import { imageUnitCredits } from "@lycoboai/contracts";
 import { IconArrowBarToUp, IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { CreditCoin } from "../../components/credit-coin";
-import { ReferencePrompt } from "../../components/reference-prompt";
+import { ReferencePrompt } from "../../components/reference-prompt/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { WorkspaceComposerTitle } from "../workspace/workspace-tool-symbol";

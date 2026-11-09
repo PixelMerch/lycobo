@@ -2,7 +2,7 @@ import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react"
 import { mainImageModelIds } from "@lycoboai/contracts";
 import { IconArrowUp, IconCheck, IconChevronDown } from "@tabler/icons-react";
 import { useNavigate } from "react-router";
-import { ReferencePrompt } from "../../components/reference-prompt";
+import { ReferencePrompt } from "../../components/reference-prompt/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { useEnterpriseSession } from "../auth/auth-client";

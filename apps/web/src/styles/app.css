@@ -3,16 +3,16 @@
 @import "./studio-theme.css";
 @import "./studio-shell.css";
 @import "./studio-landing-and-overlays.css";
-@import "./studio-workspace-form.css";
-@import "./studio-workspace-layout.css";
-@import "./studio-composer-controls.css";
-@import "./studio-composer-feedback.css";
-@import "./studio-generation-results.css";
-@import "./studio-history-thumbnails.css";
-@import "./studio-history-details.css";
-@import "./studio-login.css";
+@import "./workspace/studio-workspace-form.css";
+@import "./workspace/studio-workspace-layout.css";
+@import "./composer/studio-composer-controls.css";
+@import "./composer/studio-composer-feedback.css";
+@import "./history/studio-generation-results.css";
+@import "./history/studio-history-thumbnails.css";
+@import "./history/studio-history-details.css";
+@import "./auth/studio-login.css";
 @import "./studio-account-dialog.css";
-@import "./studio-composer-refinements.css";
-@import "./studio-advanced-controls.css";
+@import "./composer/studio-composer-refinements.css";
+@import "./composer/studio-advanced-controls.css";
 
 @import "./overlay-glass.css";

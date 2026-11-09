@@ -1,7 +1,7 @@
 import { useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { easedImageZoom, imageWheelFactor } from "../../components/image-zoom-motion";
+import { easedImageZoom, imageWheelFactor } from "../../components/image-viewer/image-zoom-motion";
 
 export const previewDefaultZoom = 80;
 export const previewMinZoom = 25;

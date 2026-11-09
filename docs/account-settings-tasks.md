@@ -165,8 +165,8 @@
 | `apps/web/src/features/auth/`、`apps/web/src/lib/session-fetch.ts`                     | 登录、身份缓存、刷新、改密后清理与授权回调             |
 | `apps/web/src/app/`                                                                    | 全局登录门禁及首次改密呈现                             |
 | `apps/api/src/features/auth/`                                                          | 登录、会话、改密与服务端授权；相关新路由按领域拆分     |
-| `packages/contracts/src/auth.ts`                                                       | 身份与鉴权契约；新字段兼容历史响应和发布顺序           |
-| `packages/db/src/auth-repository.ts`                                                   | 当前 PostgreSQL 鉴权持久化                             |
+| `packages/contracts/src/auth/auth.ts`                                                  | 身份与鉴权契约；新字段兼容历史响应和发布顺序           |
+| `packages/db/src/auth/auth-repository.ts`                                              | 当前 PostgreSQL 鉴权持久化                             |
 | `packages/db/src/schema.ts`、`packages/db/migrations/`                                 | 当前表定义、追加迁移及服务端权限                       |
 | `packages/storage/`、`apps/assets/`                                                    | 头像安全存储、派生尺寸和授权读取                       |
 | `apps/api/scripts/enterprise-account.ts`                                               | 既有受控创建/重置工具，不能作为公开成员接口直接暴露    |

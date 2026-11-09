@@ -291,6 +291,7 @@ test("login return target survives refresh and rejects external destinations", a
     "/commerce/create?task=fixture#result",
   );
   await page.goto("/login?returnTo=https%3A%2F%2Fexample.com%2F");
+  const homeUrl = new URL("/", page.url()).href;
   await page.getByRole("button", { name: "关闭登录", exact: true }).click();
-  await expect(page).toHaveURL(/127\.0\.0\.1:5173\/$/);
+  await expect(page).toHaveURL(homeUrl);
 });

@@ -12,8 +12,11 @@ import { secureHeaders } from "hono/secure-headers";
 import { z } from "zod";
 import { authRoutes } from "./features/auth/routes";
 import type { EnterpriseAuth } from "./features/auth/service";
-import { providerWebhookRoutes, type WebhookConfig } from "./features/images/provider-webhook";
 import { type ImageApiDependencies, imageRoutes } from "./features/images/routes";
+import {
+  providerWebhookRoutes,
+  type WebhookConfig,
+} from "./features/images/webhooks/provider-webhook";
 import { type RealtimeDependencies, realtimeRoutes } from "./features/realtime/routes";
 import { type VideoApiDependencies, videoRoutes } from "./features/videos/routes";
 import { errorCategory, safeRequestPath } from "./request-diagnostics";

@@ -30,14 +30,14 @@ export const capabilitiesSchema = z.object({
 });
 export type Capabilities = z.infer<typeof capabilitiesSchema>;
 
-export * from "./api-response";
-export * from "./auth";
-export * from "./image-events";
-export * from "./image-generation";
-export * from "./model-management";
-export * from "./realtime";
-export * from "./textile-generation";
-export * from "./variation-plan";
-export * from "./video-generation";
-export * from "./video-storyboard";
-export * from "./wallet";
+export * from "./api/api-response";
+export * from "./auth/auth";
+export * from "./images/image-events";
+export * from "./images/image-generation";
+export * from "./images/textile-generation";
+export * from "./models/model-management";
+export * from "./planning/variation-plan";
+export * from "./realtime/realtime";
+export * from "./videos/video-generation";
+export * from "./videos/video-storyboard";
+export * from "./wallet/wallet";

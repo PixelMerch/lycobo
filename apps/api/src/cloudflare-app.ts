@@ -2,11 +2,11 @@ import { openAuthRepository, openRealtimeRepository } from "@lycoboai/db";
 import { supportedResolutions, validateModelInput } from "@lycoboai/generation";
 import { dispatchImageOutbox, dispatchRealtime } from "@lycoboai/queue";
 import { assetDeliverySigner } from "@lycoboai/storage/delivery";
-import { openCloudflareRuntime } from "../../worker/src/cloudflare-runtime";
+import { openCloudflareRuntime } from "../../worker/src/cloudflare/cloudflare-runtime";
 import { createApp } from "./app";
 import { closeAfterStream } from "./cloudflare-response";
 import { enterpriseAuth, readAuthConfig } from "./features/auth/service";
-import { readWebhookConfig } from "./features/images/provider-webhook";
+import { readWebhookConfig } from "./features/images/webhooks/provider-webhook";
 
 /** 为每次请求组装 Hono API、鉴权和 Webhook 验签依赖。 */
 export async function serveCloudflareApi(request: Request, env: CloudflareEnv) {

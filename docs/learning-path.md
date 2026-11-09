@@ -45,14 +45,14 @@ TypeScript 就是 JavaScript 加上类型，所以先学 JavaScript。
 
 下面的例子按从易到难排列：
 
-| 概念                           | 看哪里                                                              | 看什么                                          |
-| ------------------------------ | ------------------------------------------------------------------- | ----------------------------------------------- |
-| 函数、条件判断、数组下标       | [reference-type.ts](../packages/generation/src/reference-type.ts)   | 只看文件开头几个字节，就能判断图片格式          |
-| 类和继承                       | [provider-errors.ts](../packages/generation/src/provider-errors.ts) | 自定义错误怎么多带几个字段                      |
-| 字符串方法、`some`、箭头函数   | [core.ts](../packages/storage/src/core.ts) 的 `objectKeySchema`     | 怎么判断一个存储路径是否安全                    |
-| `async`、`await`、正则、可选链 | [password.ts](../apps/api/src/features/auth/password.ts)            | 密码怎么加密保存，登录时怎么比对                |
-| `Map`、Promise                 | [provider-references.ts](../apps/worker/src/provider-references.ts) | 用 Map 做缓存，读取失败时把缓存删掉             |
-| 闭包、`try`/`finally`          | [slots.ts](../apps/worker/src/slots.ts)                             | 17 行代码限制同时运行的任务数，放到本阶段最后看 |
+| 概念                           | 看哪里                                                                            | 看什么                                          |
+| ------------------------------ | --------------------------------------------------------------------------------- | ----------------------------------------------- |
+| 函数、条件判断、数组下标       | [reference-type.ts](../packages/generation/src/providers/reference-type.ts)       | 只看文件开头几个字节，就能判断图片格式          |
+| 类和继承                       | [provider-errors.ts](../packages/generation/src/providers/provider-errors.ts)     | 自定义错误怎么多带几个字段                      |
+| 字符串方法、`some`、箭头函数   | [core.ts](../packages/storage/src/images/core.ts) 的 `objectKeySchema`            | 怎么判断一个存储路径是否安全                    |
+| `async`、`await`、正则、可选链 | [password.ts](../apps/api/src/features/auth/password.ts)                          | 密码怎么加密保存，登录时怎么比对                |
+| `Map`、Promise                 | [images/provider-references.ts](../apps/worker/src/images/provider-references.ts) | 用 Map 做缓存，读取失败时把缓存删掉             |
+| 闭包、`try`/`finally`          | [queue/slots.ts](../apps/worker/src/queue/slots.ts)                               | 17 行代码限制同时运行的任务数，放到本阶段最后看 |
 
 **学完自查：** 能逐行讲清 `reference-type.ts` 和 `password.ts`。
 
@@ -62,16 +62,16 @@ TypeScript 就是 JavaScript 加上类型，所以先学 JavaScript。
 
 外部数据的校验再看 [Zod 基础](https://zod.dev/basics)。这个项目大量使用它。
 
-| 概念                       | 看哪里                                                                                 | 看什么                               |
-| -------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------ |
-| 联合类型                   | [wallet-repository.ts](../packages/db/src/wallet-repository.ts) 的 `appendWalletEntry` | `kind` 只能取列出的几个值            |
-| `interface`                | [core.ts](../packages/storage/src/core.ts) 的 `ImageStore`                             | 只规定能做什么，不管怎么实现         |
-| `Pick`                     | [provider-references.ts](../apps/worker/src/provider-references.ts)                    | 函数只要求对方提供 `read` 这一个能力 |
-| `as const`、`keyof typeof` | [image-variants.ts](../packages/storage/src/image-variants.ts)                         | 从一个值推导出类型                   |
-| `unknown` 和类型收窄       | [api-response.ts](../packages/contracts/src/api-response.ts) 的 `unwrapApiData`        | 外部数据先当未知，判断之后才能用     |
-| 泛型                       | [slots.ts](../apps/worker/src/slots.ts) 的 `<T>`                                       | 任务返回什么类型，结果就是什么类型   |
-| Zod 定义数据               | [wallet.ts](../packages/contracts/src/wallet.ts)                                       | 一份定义，前后端共用                 |
-| 从 Zod 推导类型            | [queue 的 index.ts](../packages/queue/src/index.ts) 的 `ImageQueueJob`                 | `z.infer` 让类型和校验保持一致       |
+| 概念                       | 看哪里                                                                                        | 看什么                               |
+| -------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------ |
+| 联合类型                   | [wallet-repository.ts](../packages/db/src/wallet/wallet-repository.ts) 的 `appendWalletEntry` | `kind` 只能取列出的几个值            |
+| `interface`                | [core.ts](../packages/storage/src/images/core.ts) 的 `ImageStore`                             | 只规定能做什么，不管怎么实现         |
+| `Pick`                     | [images/provider-references.ts](../apps/worker/src/images/provider-references.ts)             | 函数只要求对方提供 `read` 这一个能力 |
+| `as const`、`keyof typeof` | [image-variants.ts](../packages/storage/src/images/image-variants.ts)                         | 从一个值推导出类型                   |
+| `unknown` 和类型收窄       | [api-response.ts](../packages/contracts/src/api/api-response.ts) 的 `unwrapApiData`           | 外部数据先当未知，判断之后才能用     |
+| 泛型                       | [queue/slots.ts](../apps/worker/src/queue/slots.ts) 的 `<T>`                                  | 任务返回什么类型，结果就是什么类型   |
+| Zod 定义数据               | [wallet.ts](../packages/contracts/src/wallet/wallet.ts)                                       | 一份定义，前后端共用                 |
+| 从 Zod 推导类型            | [queue 的 index.ts](../packages/queue/src/index.ts) 的 `ImageQueueJob`                        | `z.infer` 让类型和校验保持一致       |
 
 **学完自查：** 能说清 `any`、`unknown` 和 `as` 的区别，能看懂[代码质量约束](code-quality.md)里每条规则为什么存在。
 
@@ -79,16 +79,16 @@ TypeScript 就是 JavaScript 加上类型，所以先学 JavaScript。
 
 教程先看 Node 官方的[入门介绍](https://nodejs.org/zh-cn/learn/getting-started/introduction-to-nodejs)、[阻塞与非阻塞](https://nodejs.org/zh-cn/learn/asynchronous-work/overview-of-blocking-vs-non-blocking)和[环境变量](https://nodejs.org/zh-cn/learn/command-line/how-to-read-environment-variables-from-nodejs)。接口框架看 Hono 的[基础](https://hono.dev/docs/getting-started/basic)、[中间件](https://hono.dev/docs/guides/middleware)和[测试](https://hono.dev/docs/guides/testing)。数据库看 PostgreSQL 教程的 [SQL 语言](https://www.postgresql.org/docs/current/tutorial-sql.html)和[事务](https://www.postgresql.org/docs/current/tutorial-transactions.html)。
 
-| 概念         | 看哪里                                                                                                                                                                  | 看什么                               |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| 环境变量     | [env.ts](../apps/api/src/env.ts)                                                                                                                                        | 配置也要校验，不能直接信任           |
-| 启动与退出   | [index.ts](../apps/api/src/index.ts) 的末尾                                                                                                                             | 服务收到停止信号时怎么安全关闭       |
-| 路由和中间件 | [app.ts](../apps/api/src/app.ts)                                                                                                                                        | 请求进来先经过哪些步骤               |
-| 分层         | [视频 routes](../apps/api/src/features/videos/routes.ts) → [service](../apps/api/src/features/videos/service.ts) → [repository](../packages/db/src/video-repository.ts) | 路由管请求，服务管业务，仓储管数据库 |
-| SQL 和事务   | [wallet-repository.ts](../packages/db/src/wallet-repository.ts) 的 `appendWalletEntry`                                                                                  | 积分怎么防止重复扣、扣成负数         |
-| 接口测试     | [app.test.ts](../apps/api/src/app.test.ts)                                                                                                                              | 不启动服务也能测接口                 |
-| 后台任务     | [local-consumer.ts](../apps/worker/src/local-consumer.ts)                                                                                                               | 一个循环不断取任务来做               |
-| 文件和子进程 | [check-code-quality.mjs](../scripts/check-code-quality.mjs)                                                                                                             | Node 怎么读文件、运行其他命令        |
+| 概念         | 看哪里                                                                                                                                                                         | 看什么                               |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
+| 环境变量     | [env.ts](../apps/api/src/env.ts)                                                                                                                                               | 配置也要校验，不能直接信任           |
+| 启动与退出   | [index.ts](../apps/api/src/index.ts) 的末尾                                                                                                                                    | 服务收到停止信号时怎么安全关闭       |
+| 路由和中间件 | [app.ts](../apps/api/src/app.ts)                                                                                                                                               | 请求进来先经过哪些步骤               |
+| 分层         | [视频 routes](../apps/api/src/features/videos/routes.ts) → [service](../apps/api/src/features/videos/service.ts) → [repository](../packages/db/src/videos/video-repository.ts) | 路由管请求，服务管业务，仓储管数据库 |
+| SQL 和事务   | [wallet-repository.ts](../packages/db/src/wallet/wallet-repository.ts) 的 `appendWalletEntry`                                                                                  | 积分怎么防止重复扣、扣成负数         |
+| 接口测试     | [app.test.ts](../apps/api/src/app.test.ts)                                                                                                                                     | 不启动服务也能测接口                 |
+| 后台任务     | [local-consumer.ts](../apps/worker/src/local-consumer.ts)                                                                                                                      | 一个循环不断取任务来做               |
+| 文件和子进程 | [check-code-quality.mjs](../scripts/check-code-quality.mjs)                                                                                                                    | Node 怎么读文件、运行其他命令        |
 
 这个项目反复用到三个后端概念，要真正理解：
 
@@ -104,16 +104,16 @@ TypeScript 就是 JavaScript 加上类型，所以先学 JavaScript。
 
 用户点“立即生成”后，后端依次走过下面这些地方。对照着读一遍，前面学的内容就都串起来了。读代码就够了，不需要真的点生成，本地生图也会调用真实模型服务，产生费用。
 
-| 步骤 | 发生了什么                          | 代码                                                                                                           |
-| ---- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| 1    | 接口收到请求，校验参数              | [routes.ts](../apps/api/src/features/images/routes.ts) 的 `app.post("/image-tasks")`                           |
-| 2    | 一个事务里扣积分、建任务、写 outbox | [image-repository.ts](../packages/db/src/image-repository.ts) 的 `create`                                      |
-| 3    | 接口立刻返回，并唤醒后台消费者      | 第 1 步里的 `deps.wake`                                                                                        |
-| 4    | 消费者领取任务                      | [cloudflare-consumer.ts](../apps/worker/src/cloudflare-consumer.ts) 的 `consumeCloudflareImages`               |
-| 5    | 锁定这张图，准备生成                | [image-processor.ts](../apps/worker/src/image-processor.ts) 的 `processImageItem`                              |
-| 6    | 调用模型服务                        | [configured-provider.ts](../packages/generation/src/configured-provider.ts) 的 `configuredProviderCall`        |
-| 7    | 保存图片，结束任务                  | [configured-image-processor.ts](../apps/worker/src/configured-image-processor.ts) 里的 `store.put` 和 `finish` |
-| 8    | 浏览器来查询时，接口返回结果        | [routes.ts](../apps/api/src/features/images/routes.ts) 的 `app.get("/image-tasks/status")`                     |
+| 步骤 | 发生了什么                          | 代码                                                                                                                   |
+| ---- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 1    | 接口收到请求，校验参数              | [routes.ts](../apps/api/src/features/images/routes.ts) 的 `app.post("/image-tasks")`                                   |
+| 2    | 一个事务里扣积分、建任务、写 outbox | [image-repository.ts](../packages/db/src/images/image-repository.ts) 的 `create`                                       |
+| 3    | 接口立刻返回，并唤醒后台消费者      | 第 1 步里的 `deps.wake`                                                                                                |
+| 4    | 消费者领取任务                      | [cloudflare/cloudflare-consumer.ts](../apps/worker/src/cloudflare/cloudflare-consumer.ts) 的 `consumeCloudflareImages` |
+| 5    | 锁定这张图，准备生成                | [images/image-processor.ts](../apps/worker/src/images/image-processor.ts) 的 `processImageItem`                        |
+| 6    | 调用模型服务                        | [configured-provider.ts](../packages/generation/src/providers/configured-provider.ts) 的 `configuredProviderCall`      |
+| 7    | 保存图片，结束任务                  | [configured-image-processor.ts](../apps/worker/src/images/configured-image-processor.ts) 里的 `store.put` 和 `finish`  |
+| 8    | 浏览器来查询时，接口返回结果        | [routes.ts](../apps/api/src/features/images/routes.ts) 的 `app.get("/image-tasks/status")`                             |
 
 **学完自查：** 不看表格，把这条链路讲给 AI 听，让它指出讲错和漏掉的地方。再回答两个问题：第 2 步如果拆成三次独立的数据库操作，会出什么问题？第 6 步失败时，积分怎么退回？
 

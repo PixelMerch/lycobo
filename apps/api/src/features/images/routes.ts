@@ -1,20 +1,20 @@
 import { imageUnitCredits } from "@lycoboai/contracts";
 import { ImageRepositoryError, VariationError, WalletError } from "@lycoboai/db";
 import { type Context, Hono } from "hono";
-import { enterprisePrincipal } from "../auth/routes";
-import { registerImageAssetDelivery, registerImageAssetLibrary } from "./asset-routes";
-import { imageDeliveries } from "./delivery";
-import { registerImageEvents } from "./event-routes";
+import { enterprisePrincipal } from "../auth/principal";
+import { registerImageWallet } from "../wallet/wallet-routes";
+import { registerImageAssetDelivery, registerImageAssetLibrary } from "./assets/asset-routes";
+import { imageDeliveries } from "./assets/delivery";
+import { registerImageEvents } from "./events/event-routes";
 import { registerImageModels } from "./model-routes";
-import { registerImagePlanning, registerPromptOptimization } from "./planning-routes";
+import { registerImagePlanning, registerPromptOptimization } from "./planning/planning-routes";
 import { type Env, fail, type ImageApiDependencies } from "./route-context";
 import { setWorkbenchCookie, trustedWorkbenchRequest, workbenchPrincipal } from "./session";
 import {
   registerImageTaskHistory,
   registerImageTaskReconciliation,
   registerImageTaskSubmission,
-} from "./task-routes";
-import { registerImageWallet } from "./wallet-routes";
+} from "./tasks/task-routes";
 
 export type { ImageApiDependencies } from "./route-context";
 

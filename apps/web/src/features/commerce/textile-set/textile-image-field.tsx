@@ -1,7 +1,7 @@
 import { Button, ErrorMessage } from "@heroui/react";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { lazy, Suspense, useRef, useState } from "react";
-import { ReferenceImageCard } from "../../../components/reference-image-card";
+import { ReferenceImageCard } from "../../../components/reference-image/reference-image-card";
 import { UiIcon } from "../../../components/ui-icon";
 import {
   readReferenceImages,
@@ -13,7 +13,9 @@ import type { ReferenceImage } from "../../generation/studio-state";
 import "./textile-set.css";
 
 const ImageViewer = lazy(() =>
-  import("../../../components/image-viewer").then((module) => ({ default: module.ImageViewer })),
+  import("../../../components/image-viewer/image-viewer").then((module) => ({
+    default: module.ImageViewer,
+  })),
 );
 
 function textileUploadError(

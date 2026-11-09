@@ -17,15 +17,15 @@ import { imageStore } from "@lycoboai/storage";
 import postgres from "postgres";
 import { z } from "zod";
 import { createApp } from "../../api/src/app";
-import { processImageItem } from "../src/image-processor";
-import { startImageProviderFixture } from "./image-provider-fixture";
-import { verifyGenerationMigration } from "./verify-generation-migration";
+import { processImageItem } from "../src/images/image-processor";
+import { startImageProviderFixture } from "./fixtures/image-provider-fixture";
+import { verifyGenerationMigration } from "./verifications/verify-generation-migration";
 import {
   verifyBrowserImageSession,
   verifyExhaustedWallet,
   verifyRetryRequest,
-} from "./verify-image-api-flows";
-import { verifyImageFeatures } from "./verify-image-features";
+} from "./verifications/verify-image-api-flows";
+import { verifyImageFeatures } from "./verifications/verify-image-features";
 
 if (process.env.ALLOW_LOCAL_INTEGRATION !== "true")
   throw new Error("Explicit isolated test opt-in required");

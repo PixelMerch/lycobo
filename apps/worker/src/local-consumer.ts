@@ -3,9 +3,9 @@ import { openImageRepository } from "@lycoboai/db";
 import { readImagePolicy, standaloneModels } from "@lycoboai/generation";
 import { objectImageStore } from "@lycoboai/storage/object-images";
 import { imageObjectBucket } from "@lycoboai/storage/s3";
-import { processImageItem } from "./image-processor";
-import { drainImageOutbox } from "./outbox-drain";
-import { slots } from "./slots";
+import { processImageItem } from "./images/image-processor";
+import { drainImageOutbox } from "./queue/outbox-drain";
+import { slots } from "./queue/slots";
 
 const url = new URL(process.env.DATABASE_URL ?? "");
 if (!["127.0.0.1", "localhost", "postgres"].includes(url.hostname))

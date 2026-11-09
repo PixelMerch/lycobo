@@ -8,7 +8,7 @@ import { homeInspirations } from "./home-inspiration-data";
 import { HomeInspirationGallery } from "./home-inspiration-gallery";
 import { reactBitConfig } from "./react-bit-config";
 import { useHomeHeaderSurface } from "./use-home-header-surface";
-import "../../styles/home.css";
+import "../../styles/home/home.css";
 
 const HomeGridMotion = lazy(() => import("./home-grid-motion"));
 
