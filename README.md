@@ -56,6 +56,8 @@ docker compose up --build
 
 ## 开发检查
 
+AI 接手可先执行 `pnpm ai:context` 获取只读 Git 摘要；文档修改执行 `pnpm docs:check`，该检查也已包含在 lint 中。
+
 | 命令                    | 用途                                     |
 | ----------------------- | ---------------------------------------- |
 | `pnpm check`            | lint、边界、类型、单元测试与生产构建     |

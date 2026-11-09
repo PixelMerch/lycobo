@@ -2,8 +2,8 @@
 
 ## 开始工作
 
-1. 阅读 README、AGENTS、对应设计/架构文档。
-2. 使用固定 Node/pnpm，执行 pnpm install --frozen-lockfile。
+1. 阅读 AGENTS，按 [AI 任务索引](docs/ai-workflow.md) 读取对应目录规则和设计/架构章节。
+2. 使用固定 Node/pnpm；首次安装或依赖/锁文件变化后执行 pnpm install --frozen-lockfile，避免每个小任务重复安装。
 3. 默认直接在本地 dev 开发，开始前检查状态、fetch origin，并在可快进时同步 origin/dev；保留本地未提交内容与提交。只有用户明确要求时才创建额外分支或 worktree。
 4. 一次提交解决一个完整问题。完成验证后默认只提交本地；推送、PR、合并与发布需要明确授权。
 

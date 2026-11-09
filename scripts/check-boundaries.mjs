@@ -1,21 +1,69 @@
 import { readdir, readFile } from "node:fs/promises";
+import { builtinModules } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 
 const serverPackages = /@lycoboai\/(db|queue|generation|storage)(?:[/"']|$)/;
 // 只检查运行源代码和依赖声明，防止已移除的平台被当作备用路径重新接入。
 const retiredRuntime =
   /@cloudbase\/|tcloudbasegateway\.com|\b(?:CLOUDBASE|TCB|TENCENTCLOUD)_[A-Z_]+/i;
-const serverImport =
-  /(?:from\s*|import\s*\()\s*["'](?:node:|[^"']*apps\/(?:api|worker)\/|[^"']*packages\/(?:db|queue|generation|storage)\/)/;
+const nodeModules = new Set(builtinModules.map((name) => name.replace(/^node:/, "")));
+
+/** 提取真实导入、重导出和静态动态导入，避免注释与普通字符串误报。 */
+export function importSpecifiers(file, text) {
+  const specifiers = [];
+  const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
+  const visit = (node) => {
+    if (
+      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+      node.moduleSpecifier &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    )
+      specifiers.push(node.moduleSpecifier.text);
+    if (
+      ts.isCallExpression(node) &&
+      (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+        (ts.isIdentifier(node.expression) && node.expression.text === "require")) &&
+      node.arguments[0] &&
+      ts.isStringLiteral(node.arguments[0])
+    )
+      specifiers.push(node.arguments[0].text);
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return specifiers;
+}
+
+/** 检查依赖方向，同时覆盖包名与相对路径，保留既定入口装配例外。 */
+export function importBoundaryProblems(file, specifier) {
+  const target = specifier.startsWith(".")
+    ? path.posix.normalize(path.posix.join(path.posix.dirname(file), specifier))
+    : specifier;
+  const appTarget = /^(?:apps\/|@lycoboai\/(?:api|worker|web|assets)(?:\/|$))/.test(target);
+  const serverTarget =
+    serverPackages.test(`${target}/`) ||
+    /^packages\/(?:db|queue|generation|storage)\//.test(target);
+  const nodeTarget = target.startsWith("node:") || nodeModules.has(target);
+  const problems = [];
+  if (
+    /^(?:apps\/web|packages\/contracts)\/src\//.test(file) &&
+    (/^(?:apps\/(?:api|worker|assets)\/|@lycoboai\/(?:api|worker|assets)(?:\/|$))/.test(target) ||
+      serverTarget ||
+      nodeTarget)
+  )
+    problems.push("SERVER_DEPENDENCY_IN_BROWSER");
+  if (file.startsWith("packages/") && appTarget) problems.push("PACKAGE_DEPENDS_ON_APP");
+  return problems;
+}
 
 /** 返回源文件的运行时边界问题，不输出代码正文或配置值。 */
 export function sourceBoundaryProblems(file, text) {
   const problems = [];
   if (retiredRuntime.test(text)) problems.push("RETIRED_RUNTIME_REFERENCE");
-  if (file.startsWith("apps/web/src/") && (serverPackages.test(text) || serverImport.test(text)))
-    problems.push("SERVER_DEPENDENCY_IN_BROWSER");
-  return problems;
+  for (const specifier of importSpecifiers(file, text))
+    problems.push(...importBoundaryProblems(file, specifier));
+  return [...new Set(problems)];
 }
 
 async function inspectSource(dir, problems) {
@@ -37,8 +85,11 @@ async function inspectManifest(file, problems) {
   };
   for (const name of Object.keys(dependencies)) {
     if (retiredRuntime.test(name)) problems.push({ file, code: "RETIRED_RUNTIME_DEPENDENCY" });
-    if (file === "apps/web/package.json" && serverPackages.test(name))
-      problems.push({ file, code: "SERVER_DEPENDENCY_IN_BROWSER" });
+    for (const code of importBoundaryProblems(
+      file.replace("package.json", "src/manifest.ts"),
+      name,
+    ))
+      problems.push({ file, code });
   }
 }
 async function inspectWorkspace(workspace, problems) {

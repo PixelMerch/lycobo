@@ -31,3 +31,41 @@ it("permits browser contracts and current Workers bindings", () => {
     sourceBoundaryProblems("apps/api/src/cloudflare.ts", "env.REALTIME; env.HYPERDRIVE;"),
   ).toEqual([]);
 });
+it("rejects contract re-exports, bare Node modules and package-to-app dependencies", () => {
+  expect(
+    sourceBoundaryProblems(
+      "packages/contracts/src/example.ts",
+      'export * from "../../db/src/index";',
+    ),
+  ).toContain("SERVER_DEPENDENCY_IN_BROWSER");
+  expect(
+    sourceBoundaryProblems(
+      "packages/contracts/src/example.ts",
+      'const fs = require("fs/promises");',
+    ),
+  ).toContain("SERVER_DEPENDENCY_IN_BROWSER");
+  expect(
+    sourceBoundaryProblems(
+      "packages/db/src/example.ts",
+      'const app = import("../../../apps/api/src/app");',
+    ),
+  ).toContain("PACKAGE_DEPENDS_ON_APP");
+  expect(
+    sourceBoundaryProblems("packages/db/src/example.ts", 'export * from "@lycoboai/api";'),
+  ).toContain("PACKAGE_DEPENDS_ON_APP");
+});
+it("allows local browser modules, Node server imports and existing runtime assembly", () => {
+  expect(
+    sourceBoundaryProblems(
+      "apps/web/src/features/example.ts",
+      'import { value } from "../other"; // import "node:fs"',
+    ),
+  ).toEqual([]);
+  expect(sourceBoundaryProblems("apps/api/src/index.ts", 'import fs from "node:fs";')).toEqual([]);
+  expect(
+    sourceBoundaryProblems(
+      "apps/api/src/cloudflare-app.ts",
+      'import { openCloudflareRuntime } from "../../worker/src/cloudflare/cloudflare-runtime";',
+    ),
+  ).toEqual([]);
+});

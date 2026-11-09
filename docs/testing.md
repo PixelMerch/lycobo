@@ -13,6 +13,19 @@
 CI 使用 pnpm exec playwright install --with-deps chromium。
 浏览器测试失败留 trace/report；测试使用本地应用，不能连接线上接口。
 
+## 按改动选择验证
+
+开发中先执行相关测试，代码完成后仍运行 `pnpm check`。契约、身份或持久化行为跨域时扩大范围，不以文件位置代替影响分析。
+
+- 文档：`pnpm docs:check` 与 `git diff --check`，人工核对功能事实；纯文档无需运行构建或浏览器用例。
+- 检查脚本：`pnpm exec vitest run scripts/check-docs.test.mjs scripts/check-boundaries.test.mjs`，再完成全量质量检查。
+- 登录与会话：API 鉴权相关测试；关键交互追加 `tests/e2e/login-history-sync.spec.ts`、`tests/e2e/session-renewal.spec.ts` 的相关用例。
+- 任务、积分与回调：对应模块单测及本文隔离 DB/队列集成；不能只验证 HTTP 成功响应。
+- 图片存储：`packages/storage/src` 对应测试；Cloudflare 绑定行为追加 `pnpm test:cloudflare`。
+- 实时推送：`apps/web/src/features/realtime` 测试及 `pnpm test:cloudflare`；关键浏览器行为追加 `tests/e2e/realtime.spec.ts`、`tests/e2e/generation-live.spec.ts` 的相关用例。
+
+检查结果记录对应提交/工作区依据。仅在代码、依赖或测试环境变化、失败或仍有风险时重跑；最终检查不能沿用不匹配的旧结果。完整浏览器回归仍只在远程 CI 手动触发。
+
 ## 本地开发与远程回归
 
 日常 AI 开发默认执行 `pnpm check` 和 `git diff --check`，不在每次样式、文案或布局调整后运行本地全量 E2E。关键交互变化、已知回归或用户明确要求时，只运行相关浏览器用例；例如 `pnpm test:e2e tests/e2e/preview-workspace.spec.ts`。不为纯视觉数值补写镜像测试。
