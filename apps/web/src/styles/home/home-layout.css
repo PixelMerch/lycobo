@@ -52,42 +52,41 @@ body:has(.commerce-home) {
   --home-glow: #7cc4ff;
   --home-glow-soft: #4fe3b0;
 }
-/* 顶部聚光：中心最亮、向两侧扩散，底部渐隐到页面底色。 */
+/*
+ * 首屏背景：随模式换色的丝绸（WebGL，改编自 React Bits Silk）铺在顶部栏后方，切换页签时荡开涟漪。
+ * 这层深色渐变是不支持 WebGL2 时的兜底；底部 45% 渐隐到页面底色。
+ */
 .home-atmosphere {
   position: absolute;
   inset: 0 0 auto;
   z-index: -1;
-  height: 560px;
+  height: 720px;
   overflow: hidden;
   pointer-events: none;
   background:
     radial-gradient(
-      26% 34% at 52% -6%,
-      color-mix(in oklab, #fff 30%, var(--home-glow)) 0%,
-      color-mix(in oklab, var(--home-glow) 70%, transparent) 30%,
-      transparent 72%
+      70% 90% at 50% 0%,
+      color-mix(in oklab, var(--home-glow) 22%, transparent) 0%,
+      transparent 70%
     ),
-    radial-gradient(
-      56% 70% at 50% -14%,
-      color-mix(in oklab, var(--home-glow) 34%, transparent) 0%,
-      transparent 74%
-    ),
-    radial-gradient(
-      44% 80% at 100% -10%,
-      color-mix(in oklab, var(--home-glow-soft) 16%, transparent) 0%,
-      transparent 72%
-    ),
-    radial-gradient(
-      40% 70% at 0% -6%,
-      color-mix(in oklab, var(--home-glow-soft) 12%, transparent) 0%,
-      transparent 72%
-    );
+    var(--home-page);
 }
+.home-atmosphere::before,
 .home-atmosphere::after {
   position: absolute;
-  inset: auto 0 0;
-  height: 55%;
+  z-index: 1;
   content: "";
+}
+/* 顶部压暗让导航清楚，标语与页签后方再压一层椭圆暗角，保证文字对比度。 */
+.home-atmosphere::before {
+  inset: 0;
+  background:
+    linear-gradient(rgb(13 16 12 / 60%), transparent 160px),
+    radial-gradient(42% 26% at 50% 27%, rgb(13 16 12 / 45%) 0%, transparent 100%);
+}
+.home-atmosphere::after {
+  inset: auto 0 0;
+  height: 45%;
   background: linear-gradient(transparent, var(--home-page));
 }
 
@@ -182,6 +181,7 @@ body:has(.commerce-home) {
 }
 
 /* 创作舞台：模式色的模糊光斑托住创作框，下方是一排模板胶囊。 */
+/* 创作舞台是一块磨砂玻璃：透出下方流动的丝绸，不再自带光斑。 */
 .home-stage.tabs__panel {
   position: relative;
   isolation: isolate;
@@ -189,24 +189,14 @@ body:has(.commerce-home) {
   margin-top: 32px;
   padding: 28px 24px;
   overflow: hidden;
+  border: 1px solid #ffffff14;
   border-radius: 24px;
-  background:
-    radial-gradient(
-      48% 90% at 14% 104%,
-      color-mix(in oklab, var(--home-glow-soft) 30%, transparent) 0%,
-      transparent 70%
-    ),
-    radial-gradient(
-      40% 80% at 86% -6%,
-      color-mix(in oklab, var(--home-glow) 24%, transparent) 0%,
-      transparent 70%
-    ),
-    radial-gradient(
-      36% 70% at 62% 64%,
-      color-mix(in oklab, var(--home-glow-soft) 14%, transparent) 0%,
-      transparent 74%
-    ),
-    linear-gradient(120deg, #0f1d12 0%, #0b140d 55%, #102016 100%);
+  background: rgb(13 16 12 / 42%);
+  box-shadow:
+    inset 0 1px 0 #ffffff14,
+    0 32px 80px -32px #000000b3;
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
 }
 .home-templates {
   display: flex;

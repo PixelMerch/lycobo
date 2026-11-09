@@ -29,6 +29,9 @@ Local uploads stay preview-only until submission; the server validates and store
 - The home page borrows the vidmuse layout but must keep Lycobo's own character (user, 2026-11-09):
   upright slogan with a mode-gradient keyword, tool-accent mode tabs, lime-to-mint generation pills,
   in-card glass hover panels and our own wording. Do not copy reference-site styling, copy or assets.
+  The hero background is the React Bits Silk port in features/home/silk (no runtime dependency): keep it
+  decorative, paused offscreen or in background tabs, static under reduced motion, and keep its
+  third-party notice and pinned commit current when it changes.
 - Follow PRD.md for navigation: the top bar shows Home, 电商 (a dropdown with the four tools:
   main image, textile variation, image-set plan, video) and Asset Library. Inside the workspace
   the tool dock still switches tools. TK has no current navigation entry.

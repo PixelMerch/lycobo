@@ -601,6 +601,22 @@ for (const width of [1440, 390]) {
     expect(bounds?.y).toBe(0);
     expect(bounds?.width).toBe(width);
     await expect(page.locator(".grid-motion, .home-motion-background")).toHaveCount(0);
+    // 首屏背景是丝绸 WebGL 画布：纯装饰、不接收指针。有 GPU 加速时画布上下文在切换页签后依然有效；
+    // 无头浏览器用软件渲染，这时不启用丝绸，只留静态渐变。
+    const silk = atmosphere.locator(".silk-background");
+    await expect(silk).toHaveAttribute("aria-hidden", "true");
+    await expect(silk).toHaveCSS("pointer-events", "none");
+    const canvas = silk.locator("canvas");
+    const contextAlive = async () => {
+      if ((await canvas.count()) === 0) return true;
+      return canvas.evaluate((element) => {
+        if (!(element instanceof HTMLCanvasElement)) return false;
+        const gl = element.getContext("webgl2");
+        return gl !== null && !gl.isContextLost();
+      });
+    };
+    expect(await canvas.count()).toBeLessThanOrEqual(1);
+    expect(await contextAlive()).toBe(true);
     const prompt = page.getByRole("textbox", { name: "创作需求", exact: true });
     await prompt.fill("保留商品的颜色与材质");
     const modes = page.getByRole("tablist", { name: "创作模式" });
@@ -610,6 +626,8 @@ for (const width of [1440, 390]) {
     await modes.getByRole("tab", { name: "主图制作" }).click();
     await expect(page.locator(".commerce-home")).toHaveAttribute("data-mode", "create");
     await expect(prompt).toHaveValue("保留商品的颜色与材质");
+    expect(await canvas.count()).toBeLessThanOrEqual(1);
+    expect(await contextAlive()).toBe(true);
     await page.screenshot({ path: `/tmp/lycobo-home-modes-${width}.png` });
     await expect
       .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))

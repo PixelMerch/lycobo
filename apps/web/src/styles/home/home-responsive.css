@@ -18,7 +18,7 @@
     padding-bottom: 0;
   }
   .home-atmosphere {
-    height: 460px;
+    height: 820px;
   }
   .home-start {
     padding: 36px 20px 0;
@@ -178,8 +178,10 @@
 /* 减少透明度时改用实色表面。 */
 @media (prefers-reduced-transparency: reduce) {
   .home-composer,
-  .home-dock {
+  .home-dock,
+  .home-stage.tabs__panel {
     background: #1c1f1b;
+    -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
   .home-template-try {
