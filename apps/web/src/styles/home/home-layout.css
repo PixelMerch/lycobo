@@ -15,9 +15,9 @@ body:has(.commerce-home) {
   background: var(--home-page);
 }
 
-/* 氛围光铺在顶部栏后方，内容区不再额外留出顶部内边距。 */
+/* 氛围光铺在顶部栏后方；首页各区自己留边（与 vidmuse 一致），主内容区不再加内边距。 */
 .main-content:has(> .commerce-home) {
-  padding-top: 0;
+  padding: 0;
 }
 .studio-app:has(.commerce-home) {
   position: relative;
@@ -34,7 +34,7 @@ body:has(.commerce-home) {
   --home-glow-soft: #54e6a5;
   max-width: none;
   margin: 0;
-  padding: 0 32px 40px 92px;
+  padding: 0;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -91,25 +91,29 @@ body:has(.commerce-home) {
   background: linear-gradient(transparent, var(--home-page));
 }
 
-/* 首屏：大标语、四个创作模式、创作舞台。 */
+/*
+ * 首屏按 vidmuse 实测：左 90px（让出左侧悬浮入口）、右 32px，内容最宽 1150px 居中；
+ * 标语距顶部栏 44px、60px／72px；模式页签距标语 44px，舞台距页签 32px。
+ */
 .home-start {
+  box-sizing: content-box;
   max-width: 1150px;
   margin: 0 auto;
-  padding-top: 56px;
+  padding: 44px 32px 0 90px;
 }
 .home-slogan {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  min-height: 80px;
+  min-height: 72px;
   margin: 0;
   padding: 0 0.08em;
   color: #f0f7e6;
-  font-size: clamp(32px, 4.2vw, 60px);
+  font-size: 60px;
   font-style: italic;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 72px;
   letter-spacing: -0.025em;
   text-align: center;
 }
@@ -118,7 +122,7 @@ body:has(.commerce-home) {
   grid-template-columns: minmax(0, 1fr);
   justify-items: center;
   gap: 0;
-  margin-top: 28px;
+  margin-top: 44px;
 }
 .home-modes .tabs__list-container {
   width: min(100%, 688px);
@@ -130,10 +134,9 @@ body:has(.commerce-home) {
   min-width: 0;
   gap: 0;
   padding: 2px;
-  border: 0;
+  border: 0.5px solid #ffffff29;
   border-radius: 999px;
   background: #ffffff14;
-  box-shadow: inset 0 0 0 0.5px #ffffff29;
 }
 .home-modes .tabs__tab {
   position: relative;
@@ -174,7 +177,7 @@ body:has(.commerce-home) {
   position: relative;
   isolation: isolate;
   width: min(100%, 973px);
-  margin-top: 28px;
+  margin-top: 32px;
   padding: 28px 24px;
   overflow: hidden;
   border-radius: 24px;
@@ -281,4 +284,9 @@ body:has(.commerce-home) {
 .home-dock-link:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
   background: #ffffff14;
   color: #fff;
+}
+/* 桌面悬浮条不显示文字和首页入口；文字与首页只在手机底部横条里出现。 */
+.home-dock-label,
+.home-dock-link--phone {
+  display: none;
 }

@@ -8,7 +8,7 @@ import {
   type TablerIcon,
 } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
+import { type CSSProperties, useState } from "react";
 import { useNavigate } from "react-router";
 import { ConfirmDialog } from "../../components/overlays/confirm-dialog";
 import { DialogClose } from "../../components/overlays/dialog-close";
@@ -130,6 +130,34 @@ export function HomeInspirationGallery() {
   );
 }
 
+/** 取图片最底一行的平均色；悬停时卡片下方的标题面板用它和图片衔接（与 vidmuse 一致）。 */
+function bottomColorOf(image: HTMLImageElement) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 8;
+  canvas.height = 8;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  try {
+    context.drawImage(image, 0, 0, 8, 8);
+    const pixels = context.getImageData(0, 7, 8, 1).data;
+    let red = 0;
+    let green = 0;
+    let blue = 0;
+    for (let index = 0; index < pixels.length; index += 4) {
+      red += pixels[index] ?? 0;
+      green += pixels[index + 1] ?? 0;
+      blue += pixels[index + 2] ?? 0;
+    }
+    // 保留色相但把最亮通道压到 96 以内：面板再叠 40% 黑后，白色标题与说明的对比度都不低于 4.5:1。
+    const scale = Math.min(1, 96 / Math.max(red / 8, green / 8, blue / 8, 1));
+    const channel = (sum: number) => Math.round((sum / 8) * scale);
+    return `rgb(${channel(red)} ${channel(green)} ${channel(blue)})`;
+  } catch {
+    // 图片无法读取像素时沿用默认深色面板，不影响查看与做同款。
+    return null;
+  }
+}
+
 /** 点图片打开详情；“做同款”是并列按钮，不嵌套在图片按钮里。 */
 function InspirationTile({
   item,
@@ -143,6 +171,10 @@ function InspirationTile({
   onUse: () => void;
 }) {
   const reduceMotion = useReducedMotion();
+  const [bottomColor, setBottomColor] = useState<string | null>(null);
+  const tileStyle: CSSProperties & { "--tile-bottom": string } = {
+    "--tile-bottom": bottomColor ?? "#1c1c1f",
+  };
   return (
     <motion.div
       className="home-inspiration-tile"
@@ -159,35 +191,42 @@ function InspirationTile({
         variant="tertiary"
         className="home-inspiration-card"
         data-shape={item.shape}
+        style={tileStyle}
         aria-label={`查看灵感：${item.title}`}
         onPress={onOpen}
       >
-        <img
-          src={item.image}
-          alt={item.title}
-          width="480"
-          height="480"
-          loading="lazy"
-          decoding="async"
-        />
-        <span className="home-inspiration-tag">
-          <UiIcon icon={categoryIcons[item.category]} size="small" />
-          {item.category}
+        <span className="home-inspiration-media">
+          <img
+            src={item.image}
+            alt={item.title}
+            width="480"
+            height="480"
+            loading="lazy"
+            decoding="async"
+            onLoad={(event) => setBottomColor(bottomColorOf(event.currentTarget))}
+          />
+          <span className="home-inspiration-fade" aria-hidden="true" />
+          <span className="home-inspiration-tag">
+            <UiIcon icon={categoryIcons[item.category]} size="small" />
+            {item.category}
+          </span>
+        </span>
+        {/* 悬停面板接在图片下方，仍属于卡片按钮：点面板任意处都打开这张卡的详情，不会点到下面的卡。 */}
+        <span className="home-inspiration-panel" aria-hidden="true">
+          <strong>{item.title}</strong>
+          <span className="home-inspiration-panel-prompt">{item.prompt}</span>
         </span>
       </Button>
-      <div className="home-inspiration-panel">
-        <strong aria-hidden="true">{item.title}</strong>
-        <p aria-hidden="true">{item.prompt}</p>
-        <Button
-          size="sm"
-          variant="primary"
-          className="home-inspiration-cta"
-          aria-label={`做同款：${item.title}`}
-          onPress={onUse}
-        >
-          做同款
-        </Button>
-      </div>
+      {/* “做同款”与卡片按钮并列（按钮不能嵌套），定位在面板第二行左侧。 */}
+      <Button
+        size="sm"
+        variant="primary"
+        className="home-inspiration-cta"
+        aria-label={`做同款：${item.title}`}
+        onPress={onUse}
+      >
+        做同款
+      </Button>
     </motion.div>
   );
 }

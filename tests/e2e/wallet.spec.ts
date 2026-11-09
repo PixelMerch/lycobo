@@ -56,7 +56,7 @@ test("enterprise account shows shared balance, member spending and recharge reco
     }),
   );
   await page.goto("/commerce/create");
-  await expect(page.locator(".header-balance")).toContainText("200");
+  await expect(page.locator(".header-credits")).toContainText("200");
   await page.locator(".account-trigger").click();
   await page.getByRole("menuitem", { name: "积分明细", exact: true }).click();
   // The ledger opens in the account center dialog above the current page.

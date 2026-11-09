@@ -1,8 +1,12 @@
 import { type RefObject, useLayoutEffect } from "react";
 
-const autoGrowMinHeight = 100;
-/** 按实际内容伸展输入区，达到样式上限后保留内部滚动。 */
-export function useAutoGrow(ref: RefObject<HTMLElement | null>, value: string, enabled: boolean) {
+/** 按实际内容伸展输入区，达到样式上限后保留内部滚动；空白时至少 minHeight 高（默认 100px）。 */
+export function useAutoGrow(
+  ref: RefObject<HTMLElement | null>,
+  value: string,
+  enabled: boolean,
+  minHeight = 100,
+) {
   useLayoutEffect(() => {
     const element = ref.current;
     if (!element) return;
@@ -33,9 +37,9 @@ export function useAutoGrow(ref: RefObject<HTMLElement | null>, value: string, e
         width: `${element.getBoundingClientRect().width}px`,
       });
       element.parentElement?.append(measure);
-      const contentHeight = value.length ? measure.scrollHeight : autoGrowMinHeight;
+      const contentHeight = value.length ? measure.scrollHeight : minHeight;
       measure.remove();
-      element.style.height = `${Math.max(contentHeight, autoGrowMinHeight)}px`;
+      element.style.height = `${Math.max(contentHeight, minHeight)}px`;
       const capped = getComputedStyle(element).maxHeight !== "none";
       element.style.overflowY =
         capped && element.scrollHeight > element.clientHeight + 1 ? "auto" : "hidden";
@@ -54,5 +58,5 @@ export function useAutoGrow(ref: RefObject<HTMLElement | null>, value: string, e
     return () => {
       observer.disconnect();
     };
-  }, [enabled, ref, value]);
+  }, [enabled, minHeight, ref, value]);
 }

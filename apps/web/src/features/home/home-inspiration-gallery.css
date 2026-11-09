@@ -1,23 +1,17 @@
-/* 创作灵感：吸顶的下划线分类条加紧凑瀑布流，参考用户确认的 vidmuse 首页作品墙。 */
+/* 创作灵感按 vidmuse 作品墙：距舞台 36px 的下划线分类（随页面滚动、不吸顶），下方 20px 起紧凑瀑布流。 */
 .home-inspiration {
-  width: 100%;
   min-width: 0;
-  margin: 40px auto 24px;
+  margin: 36px 0 0;
+  padding: 0 60px 40px 116px;
 }
 .home-inspiration .tabs {
   display: block;
 }
 .home-inspiration-bar {
-  position: sticky;
-  top: var(--header-height);
-  z-index: 6;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 8px 0 0;
-  background: color-mix(in srgb, var(--home-page) 88%, transparent);
-  backdrop-filter: blur(16px);
 }
 .home-inspiration .tabs__list-container {
   min-width: 0;
@@ -66,7 +60,7 @@
   width: 100%;
   min-width: 0;
   margin-top: 0;
-  padding: 12px 0 0;
+  padding: 20px 0 0;
 }
 .home-inspiration-grid {
   display: grid;
@@ -79,10 +73,14 @@
   gap: 4px;
   min-width: 0;
 }
+/* 悬停按 vidmuse：整张卡上移 6px 并放大 1.05 倍，下方接出与图片底色衔接的标题面板。 */
 .home-inspiration-tile {
   position: relative;
   min-width: 0;
-  transition: translate 200ms ease;
+  transform-origin: top;
+  transition:
+    translate 200ms ease,
+    scale 200ms ease;
 }
 .home-inspiration-card.button {
   position: relative;
@@ -91,15 +89,24 @@
   height: auto;
   min-width: 0;
   padding: 0;
-  overflow: hidden;
+  overflow: visible;
   border: 0;
-  border-radius: 6px;
-  background: var(--surface);
+  border-radius: 4px;
+  background: transparent;
   text-align: left;
+}
+/* 图片区单独裁切与圆角；悬停时下沿变直角，与下方面板接成一张卡。 */
+.home-inspiration-media {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--surface);
   isolation: isolate;
+  transition: border-radius 200ms ease;
 }
 /* 图片上方一圈细线，让浅色图片在深色页面上仍有边界。 */
-.home-inspiration-card.button::after {
+.home-inspiration-media::after {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -124,14 +131,14 @@
 }
 .home-inspiration-tag {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
-  z-index: 1;
+  bottom: 12px;
+  left: 12px;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   height: 28px;
-  max-width: calc(100% - 16px);
+  max-width: calc(100% - 24px);
   padding: 0 8px;
   border-radius: 8px;
   background: rgb(15 15 18 / 62%);
@@ -145,80 +152,105 @@
   pointer-events: none;
   transition: opacity 160ms ease;
 }
-/* 面板与图片按钮并列；只有“做同款”接收指针，点面板其他位置仍打开详情。 */
-.home-inspiration-panel {
+/* 图片下半部渐变到图片底色（再压 40% 黑），与下方面板无缝衔接；只在悬停或键盘聚焦时出现。 */
+.home-inspiration-fade {
   position: absolute;
   inset: auto 0 0;
+  z-index: 1;
+  height: 62%;
+  background:
+    linear-gradient(rgb(0 0 0 / 0%), rgb(0 0 0 / 40%)),
+    linear-gradient(rgb(32 32 32 / 0%), var(--tile-bottom));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+/* 面板接在图片下方：标题一行，第二行左侧给“做同款”留位，右侧是一行提示词摘要。 */
+.home-inspiration-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
   z-index: 3;
   display: grid;
-  gap: 6px;
-  padding: 48px 12px 12px;
-  border-radius: 0 0 6px 6px;
-  background: linear-gradient(#00000000, #000000b3 42%, #000000e6);
+  gap: 4px;
+  padding: 0 12px 12px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(rgb(0 0 0 / 40%), rgb(0 0 0 / 40%)), var(--tile-bottom);
+  box-shadow: 0 18px 34px rgb(0 0 0 / 35%);
   color: #fff;
   opacity: 0;
-  translate: 0 6px;
+  /* 隐藏时不接收点击，免得盖住下方卡片；悬停或聚焦显示后才接收。 */
   pointer-events: none;
-  transition:
-    opacity 200ms ease,
-    translate 200ms ease;
+  transition: opacity 200ms ease;
 }
 .home-inspiration-panel strong {
   overflow: hidden;
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
-  line-height: var(--leading-base);
+  line-height: 18px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.home-inspiration-panel p {
-  display: -webkit-box;
-  margin: 0;
+.home-inspiration-panel-prompt {
+  min-width: 0;
+  padding: 3px 0 3px 64px;
   overflow: hidden;
-  color: #ffffffcc;
+  color: #ffffff99;
   font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .home-inspiration-cta.button {
-  justify-self: start;
+  position: absolute;
+  top: calc(100% + 22px);
+  left: 12px;
+  z-index: 4;
+  height: 22px;
+  min-height: 22px;
+  padding: 0 8px;
   border-radius: 999px;
-  pointer-events: auto;
+  font-size: var(--text-xs);
+  line-height: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
 }
 .home-inspiration-tile:has([data-focus-visible]) {
-  z-index: 4;
-  translate: 0 -4px;
+  z-index: 5;
+  translate: 0 -6px;
+  scale: 1.05;
 }
-.home-inspiration-tile:has([data-focus-visible]) .home-inspiration-panel {
+.home-inspiration-tile:has([data-focus-visible])
+  :is(.home-inspiration-panel, .home-inspiration-fade, .home-inspiration-cta.button) {
   opacity: 1;
-  translate: 0;
+  pointer-events: auto;
 }
-.home-inspiration-tile:has([data-focus-visible]) .home-inspiration-tag {
-  opacity: 0;
-}
-.home-inspiration-tile:has([data-focus-visible]) .home-inspiration-card.button::after {
-  box-shadow: inset 0 0 0 1px #ffffff4d;
+.home-inspiration-tile:has([data-focus-visible]) .home-inspiration-media {
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
 }
 @media (hover: hover) {
   .home-inspiration-tile:hover {
-    z-index: 4;
-    translate: 0 -4px;
+    z-index: 5;
+    translate: 0 -6px;
+    scale: 1.05;
   }
-  .home-inspiration-tile:hover .home-inspiration-panel {
+  .home-inspiration-tile:hover
+    :is(.home-inspiration-panel, .home-inspiration-fade, .home-inspiration-cta.button) {
     opacity: 1;
-    translate: 0;
+    pointer-events: auto;
   }
-  .home-inspiration-tile:hover .home-inspiration-tag {
-    opacity: 0;
-  }
-  .home-inspiration-tile:hover .home-inspiration-card.button::after {
-    box-shadow: inset 0 0 0 1px #ffffff4d;
+  .home-inspiration-tile:hover .home-inspiration-media {
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
   }
 }
 /* 触屏没有悬停：点按图片打开详情，“做同款”在详情里。 */
 @media (hover: none) {
-  .home-inspiration-panel {
+  .home-inspiration-panel,
+  .home-inspiration-cta.button {
     display: none;
   }
 }
@@ -323,48 +355,30 @@
 .home-inspiration-actions .button--secondary:is(:hover, [data-hovered="true"]) {
   background: #ffffff1f;
 }
+/* 减少动态效果时只显示面板，不上移、不放大。 */
 @media (prefers-reduced-motion: reduce) {
   .home-inspiration-tile,
-  .home-inspiration-tag,
+  .home-inspiration-media,
+  .home-inspiration-fade,
   .home-inspiration-panel,
-  .home-inspiration-card.button::after {
+  .home-inspiration-media::after {
     transition: none;
   }
-  .home-inspiration-panel {
-    translate: 0;
+  .home-inspiration-tile:has([data-focus-visible]) {
+    translate: none;
+    scale: none;
   }
 }
 @media (prefers-reduced-motion: reduce) and (hover: hover) {
   .home-inspiration-tile:hover {
     translate: none;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .home-inspiration-tile:has([data-focus-visible]) {
-    translate: none;
-  }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .home-inspiration-card img {
-    transition: scale 320ms ease;
-  }
-  .home-inspiration-tile:has([data-focus-visible]) .home-inspiration-card img {
-    scale: 1.04;
-  }
-}
-@media (prefers-reduced-motion: no-preference) and (hover: hover) {
-  .home-inspiration-tile:hover .home-inspiration-card img {
-    scale: 1.04;
+    scale: none;
   }
 }
 /* 减少透明度时改用实色，保证文字可读。 */
 @media (prefers-reduced-transparency: reduce) {
   .home-inspiration-ambient {
     display: none;
-  }
-  .home-inspiration-bar {
-    background: var(--background);
-    backdrop-filter: none;
   }
   .home-inspiration-tag {
     background: #1c1c1c;
@@ -387,6 +401,7 @@
 @media (max-width: 767px) {
   .home-inspiration {
     margin-top: 32px;
+    padding: 0 20px 32px;
   }
   .home-inspiration-note {
     display: none;

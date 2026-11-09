@@ -118,7 +118,7 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     for (const path of ["/", "/commerce/create", "/assets"]) {
       await page.goto(path);
-      await expect(page.locator(".header-benefits")).toBeVisible();
+      await expect(page.locator(".header-credits")).toBeVisible();
       await expect(
         page.locator("header").getByRole("button", { name: /任务中心|通知/ }),
       ).toHaveCount(0);

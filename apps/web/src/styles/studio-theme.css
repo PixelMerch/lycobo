@@ -57,7 +57,7 @@
   --text-display: 40px;
   --leading-display: 48px;
   --app-primary-gradient: linear-gradient(120deg, #a8ff00 0%, #54e6a5 100%);
-  --shell-inline-inset: 20px;
+  --shell-inline-inset: 12px;
   --header-height: 64px;
   --workspace-history-width: 88px;
   --workspace-padding: 12px;
@@ -80,7 +80,6 @@
   --dismiss-foreground: #ffffff;
   --dismiss-hover: #ffffff1f;
   --shell-sidebar-background: #161616;
-  --shell-header-background: #111;
   --shell-nav-foreground: #ffffffb3;
   --shell-nav-hover: var(--interaction-hover);
   --shell-nav-active: var(--interaction-active);

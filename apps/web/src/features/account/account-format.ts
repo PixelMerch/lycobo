@@ -18,9 +18,17 @@ const channelNames: Record<string, string> = {
   alipay: "支付宝",
 };
 
+/** 会员状态尚未接入、会员也还不能购买，所有账号都按免费版展示；接入后改为读取服务端会员等级。 */
+export const currentPlanName = "免费版";
+
 export const formatCredits = (value: number) => value.toLocaleString("zh-CN");
 export const signedCredits = (amount: number) =>
   `${amount > 0 ? "+" : ""}${amount.toLocaleString("zh-CN")}`;
+/** 积分使用明细里的变动额：符号与数字之间留一个空格，例如“- 35”“+ 100”。 */
+export function usageAmount(amount: number) {
+  if (amount === 0) return "0";
+  return `${amount > 0 ? "+" : "-"} ${Math.abs(amount).toLocaleString("zh-CN")}`;
+}
 /** Whole images the credits cover at the current price; never rounds a partial image up. */
 export const imagesFor = (credits: number, unitCredits: number) =>
   unitCredits > 0 ? Math.floor(credits / unitCredits) : 0;
@@ -52,6 +60,21 @@ const fullDate = new Intl.DateTimeFormat("zh-CN", {
   month: "2-digit",
   day: "2-digit",
 });
+
+const twoDigits = (value: number) => String(value).padStart(2, "0");
+
+/** 积分使用明细的完整本地时间，格式为“2026.11.05 18:19”。 */
+export function usageTime(iso: string) {
+  const date = new Date(iso);
+  const day = `${date.getFullYear()}.${twoDigits(date.getMonth() + 1)}.${twoDigits(date.getDate())}`;
+  return `${day} ${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`;
+}
+
+/** 积分使用明细的标题：没有生成任务的消耗与退还来自提示词优化，其余按收支类型命名。 */
+export function usageTitle(entry: WalletEntry) {
+  if (entryDetail(entry) !== "提示词优化") return entryNames[entry.kind];
+  return entry.kind === "consume" ? "提示词优化" : "提示词优化退还";
+}
 
 /** Ledger time with a relative day label, so loaded records read in order without totals. */
 export function recordTime(iso: string, now = new Date()) {

@@ -1,80 +1,87 @@
-import { Button, Popover } from "@heroui/react";
-import { IconChevronRight, IconCrown } from "@tabler/icons-react";
-import { useRef, useState } from "react";
+import { Dropdown, Header } from "@heroui/react";
+import { IconFileInvoice, IconShoppingBag } from "@tabler/icons-react";
 import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
+import { useHoverMenu } from "../../../lib/use-hover-menu";
+import { currentPlanName, formatCredits } from "../account-format";
 import { useAccountOverlays } from "../account-overlay-store";
-import { CreditPreview } from "../credits/credit-preview";
 import { useWallet } from "../wallet-client";
 import "./header-benefits.css";
 
-/** 点击展开积分概览，仅在打开时读取最近流水。 */
+/**
+ * 顶部栏积分胶囊（按 vidmuse）：左侧积分与真实企业共享余额，右侧会员等级；
+ * 悬停或点按展开积分菜单，可升级、查看余额、去订阅或打开积分使用详情。
+ */
 export function HeaderBenefits() {
   const wallet = useWallet();
-  const trigger = useRef<HTMLButtonElement>(null);
-  const membership = useRef<HTMLButtonElement>(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const overlayOpen = useAccountOverlays((state) => state.center !== null || state.dialog !== null);
+  const menu = useHoverMenu();
   const openOverlay = useAccountOverlays((state) => state.open);
-  const openCenter = useAccountOverlays((state) => state.openCenter);
-  const balanceLabel = wallet.data?.balance.toLocaleString("zh-CN") ?? "—";
-  const open = (next: "recharge" | "membership", opener: HTMLElement | null) => {
-    setPreviewOpen(false);
-    openOverlay(next, opener);
-  };
+  // 读取失败或尚未读到时显示“—”，不把未知余额当成 0。
+  const balance = wallet.data ? formatCredits(wallet.data.balance) : "—";
+  function openFromMenu(key: string | number) {
+    menu.close();
+    // 菜单收起后积分胶囊仍在，弹窗关闭时焦点回到这里。
+    const opener = menu.triggerRef.current;
+    if (key === "usage") openOverlay("usage", opener);
+    else openOverlay("membership", opener);
+  }
   return (
-    <>
-      <div className="header-benefits">
-        <Button
-          ref={trigger}
-          variant="tertiary"
-          size="sm"
-          className="header-balance"
-          aria-label={`积分 ${balanceLabel}，查看积分概览`}
-          aria-haspopup="dialog"
-          aria-expanded={previewOpen}
-          onPress={() => setPreviewOpen((current) => !current)}
-        >
-          <CreditCoin size="default" />
-          <span className="header-balance-value">{balanceLabel}</span>
-          <span className="header-balance-unit">积分</span>
-        </Button>
-        <span className="header-benefits-divider" aria-hidden="true" />
-        <Button
-          ref={membership}
-          variant="tertiary"
-          size="sm"
-          className="header-membership"
-          onPress={() => open("membership", membership.current)}
-        >
-          <UiIcon icon={IconCrown} />
-          开通会员
-          <UiIcon icon={IconChevronRight} size="small" />
-        </Button>
-      </div>
-      <Popover.Content
-        triggerRef={trigger}
-        isOpen={previewOpen && !overlayOpen}
-        onOpenChange={setPreviewOpen}
-        shouldCloseOnInteractOutside={(element) => !trigger.current?.contains(element)}
-        isNonModal={false}
-        placement="bottom end"
-        offset={10}
-        className="popover credit-preview-popover"
+    <Dropdown isOpen={menu.isOpen} onOpenChange={menu.onOpenChange}>
+      <Dropdown.Trigger
+        ref={menu.triggerRef}
+        className="header-credits"
+        aria-label={`积分 ${balance}，${currentPlanName}`}
+        onHoverStart={(event) => {
+          if (event.pointerType === "mouse") menu.openOnHover();
+        }}
+        onHoverEnd={menu.closeSoon}
       >
-        <Popover.Dialog aria-label="积分概览" className="popover__dialog credit-preview-dialog">
-          {previewOpen && (
-            <CreditPreview
-              onRecharge={() => open("recharge", trigger.current)}
-              onDetails={() => {
-                setPreviewOpen(false);
-                openCenter("credits", trigger.current);
-              }}
-              onMembership={() => open("membership", trigger.current)}
-            />
-          )}
-        </Popover.Dialog>
-      </Popover.Content>
-    </>
+        <CreditCoin />
+        <span className="header-credits-value">{balance}</span>
+        <span className="header-credits-divider" aria-hidden="true" />
+        <span className="header-credits-plan">{currentPlanName}</span>
+      </Dropdown.Trigger>
+      <Dropdown.Popover
+        ref={menu.popoverRef}
+        className="credits-menu header-menu"
+        placement="bottom end"
+        offset={4}
+        isNonModal
+        onPointerEnter={menu.cancelClose}
+        onPointerLeave={menu.closeSoon}
+      >
+        <Dropdown.Menu
+          aria-label="积分与会员"
+          {...(menu.openedByHover ? { autoFocus: false } : {})}
+          onAction={openFromMenu}
+        >
+          <Dropdown.Section aria-label="会员等级">
+            <Dropdown.Item
+              id="upgrade"
+              textValue={`${currentPlanName}，升级`}
+              aria-label={`${currentPlanName}，升级`}
+              className="credits-menu-plan"
+            >
+              <span className="credits-menu-plan-name">{currentPlanName}</span>
+              <span className="credits-menu-upgrade">升级</span>
+            </Dropdown.Item>
+          </Dropdown.Section>
+          <Dropdown.Section>
+            <Header className="credits-menu-balance">
+              <span>积分余额</span>
+              <strong>{balance}</strong>
+            </Header>
+            <Dropdown.Item id="subscribe" textValue="去订阅" className="credits-menu-action">
+              <UiIcon icon={IconShoppingBag} size="navigation" />
+              去订阅
+            </Dropdown.Item>
+            <Dropdown.Item id="usage" textValue="积分使用详情" className="credits-menu-action">
+              <UiIcon icon={IconFileInvoice} size="navigation" />
+              积分使用详情
+            </Dropdown.Item>
+          </Dropdown.Section>
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown>
   );
 }

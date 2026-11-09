@@ -32,12 +32,16 @@ export type HomeTemplate = { name: string; icon: TablerIcon; prompt: string };
 /** 上传列的两行入口：两行都打开同一个文件选择框，第一张图在工具里作为主图。 */
 type UploadRow = { label: string; icon: TablerIcon };
 
+/** 描述框空白时的提示：前后两段文字之间嵌一个“上传商品图”胶囊（按 vidmuse 的提示行）。 */
+export type PromptHint = { before: string; after: string };
+
 type ModeCopy = {
   /** 标语按逗号分成两段，窄屏只在逗号后换行。 */
   slogan: [string, string];
   upload: [UploadRow, UploadRow];
   uploadLimit: number;
-  placeholder: string;
+  /** 家纺裂变没有文字描述，也就没有提示行。 */
+  promptHint: PromptHint | null;
   templates: HomeTemplate[];
 };
 
@@ -49,7 +53,7 @@ const modeCopy: Record<HomeModeId, ModeCopy> = {
       { label: "参考图", icon: IconFolder },
     ],
     uploadLimit: 5,
-    placeholder: "描述你想要的画面，输入 @ 引用已上传图片",
+    promptHint: { before: "帮我根据", after: "生成一张……的电商主图" },
     templates: [
       {
         name: "白底主图",
@@ -87,7 +91,7 @@ const modeCopy: Record<HomeModeId, ModeCopy> = {
       { label: "详情图", icon: IconPhotoPlus },
     ],
     uploadLimit: 6,
-    placeholder: "",
+    promptHint: null,
     templates: [],
   },
   variation: {
@@ -97,7 +101,7 @@ const modeCopy: Record<HomeModeId, ModeCopy> = {
       { label: "参考图", icon: IconFolder },
     ],
     uploadLimit: 5,
-    placeholder: "描述整套图片的用途、场景和卖点，输入 @ 引用商品图",
+    promptHint: { before: "帮我根据", after: "规划一整套……的商品套图" },
     templates: [
       {
         name: "详情页套图",
@@ -130,7 +134,7 @@ const modeCopy: Record<HomeModeId, ModeCopy> = {
       { label: "补充参考", icon: IconPhoto },
     ],
     uploadLimit: storyboardOriginalImageLimit,
-    placeholder: "描述画面主体、动作和镜头运动，例如：晨光卧室，镜头推近展示面料纹理",
+    promptHint: { before: "帮我把", after: "做成一段……的商品视频" },
     templates: [
       {
         name: "商品展示",

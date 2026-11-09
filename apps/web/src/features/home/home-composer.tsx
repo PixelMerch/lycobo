@@ -1,5 +1,5 @@
 import { Button } from "@heroui/react";
-import { IconPlus, IconSparkles } from "@tabler/icons-react";
+import { IconPhoto, IconPlus, IconSparkles } from "@tabler/icons-react";
 import { type ReactNode, useRef } from "react";
 import { useNavigate } from "react-router";
 import { ReferencePrompt } from "../../components/reference-prompt/reference-prompt";
@@ -10,7 +10,7 @@ import { ReferencePicker } from "../generation/references/reference-picker";
 import type { ReferenceImage } from "../generation/studio-state";
 import { useStudioStore } from "../generation/studio-state";
 import { HomeModelSettings } from "./home-model-settings";
-import type { HomeMode } from "./home-modes";
+import type { HomeMode, PromptHint } from "./home-modes";
 import { HomeTextileViews } from "./home-textile-views";
 import {
   type HomePromptDraft,
@@ -49,7 +49,9 @@ function CreateComposer({ mode }: { mode: HomeMode }) {
           openRef={openFiles}
         />
       }
-      body={<ComposerPrompt mode={mode} draft={draft} optimizeTool="create" />}
+      body={
+        <ComposerPrompt mode={mode} draft={draft} optimizeTool="create" openFiles={openFiles} />
+      }
       settings={<HomeModelSettings />}
     />
   );
@@ -89,7 +91,14 @@ function ControlledPromptComposer({
           openFiles={openFiles}
         />
       }
-      body={<ComposerPrompt mode={mode} draft={draft} optimizeTool={optimizeTool} />}
+      body={
+        <ComposerPrompt
+          mode={mode}
+          draft={draft}
+          optimizeTool={optimizeTool}
+          openFiles={openFiles}
+        />
+      }
     />
   );
 }
@@ -146,30 +155,71 @@ function ComposerPrompt({
   mode,
   draft,
   optimizeTool,
+  openFiles,
 }: {
   mode: HomeMode;
   draft: HomePromptDraft;
   optimizeTool: PromptOptimizeTool;
+  openFiles: OpenFiles;
+}) {
+  const hint = mode.promptHint;
+  const chipLabel = mode.upload[0].label;
+  return (
+    <div className="home-prompt-shell" data-empty={draft.prompt === "" || undefined}>
+      <ReferencePrompt
+        className="home-prompt"
+        maxLength={5000}
+        showCount
+        autoGrow
+        autoGrowMinHeight={82}
+        isRequired
+        value={draft.prompt}
+        onChange={draft.setPrompt}
+        onReferencesInsert={(images, prompt) => {
+          // @ 引用素材也算上传图片，超过当前模式的张数上限时不写入草稿。
+          if (draft.references.length + images.length > mode.uploadLimit) return;
+          draft.setReferences([...draft.references, ...images], prompt);
+        }}
+        references={draft.references}
+        maxReferences={mode.uploadLimit}
+        placeholder={hint ? `${hint.before}${chipLabel}${hint.after}` : ""}
+        optimizeTool={optimizeTool}
+      />
+      {hint && draft.prompt === "" && (
+        <PromptHintRow hint={hint} chipLabel={chipLabel} openFiles={openFiles} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * 描述框空白且未聚焦时的提示行（按 vidmuse）：文字中间嵌一个上传胶囊，点它打开选图。
+ * 文字只做展示，读屏仍读输入框自己的占位文字；聚焦后提示行隐藏，改回原生占位，避免遮住输入法候选。
+ */
+function PromptHintRow({
+  hint,
+  chipLabel,
+  openFiles,
+}: {
+  hint: PromptHint;
+  chipLabel: string;
+  openFiles: OpenFiles;
 }) {
   return (
-    <ReferencePrompt
-      className="home-prompt"
-      maxLength={5000}
-      showCount
-      autoGrow
-      isRequired
-      value={draft.prompt}
-      onChange={draft.setPrompt}
-      onReferencesInsert={(images, prompt) => {
-        // @ 引用素材也算上传图片，超过当前模式的张数上限时不写入草稿。
-        if (draft.references.length + images.length > mode.uploadLimit) return;
-        draft.setReferences([...draft.references, ...images], prompt);
-      }}
-      references={draft.references}
-      maxReferences={mode.uploadLimit}
-      placeholder={mode.placeholder}
-      optimizeTool={optimizeTool}
-    />
+    <div className="home-prompt-hint">
+      <span aria-hidden="true">{hint.before}</span>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="home-prompt-chip"
+        aria-label={`上传${chipLabel}`}
+        onPress={() => openFiles.current?.()}
+      >
+        {chipLabel}
+        <UiIcon icon={IconPhoto} size="small" />
+      </Button>
+      <span aria-hidden="true">{hint.after}</span>
+    </div>
   );
 }
 

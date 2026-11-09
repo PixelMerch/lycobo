@@ -8,7 +8,8 @@ for (const width of [1440, 390]) {
     await page.goto("/");
     const draft = page.getByRole("textbox", { name: "创作需求", exact: true });
     await draft.fill("打开会员页前的草稿");
-    await page.locator(".header-membership").click();
+    await page.locator(".header-credits").click();
+    await page.getByRole("menuitem", { name: "去订阅", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "会员订阅", exact: true });
     await expect(dialog).toBeAttached();
     const frames = await dialog.evaluate(async (node) => {
@@ -31,7 +32,7 @@ for (const width of [1440, 390]) {
     }
     await dialog.getByRole("button", { name: "关闭会员订阅", exact: true }).click();
     await expect(dialog).toHaveCount(0);
-    await expect(page.locator(".header-membership")).toBeFocused();
+    await expect(page.locator(".header-credits")).toBeFocused();
     await expect(draft).toHaveValue("打开会员页前的草稿");
   });
 }

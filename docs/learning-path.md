@@ -148,7 +148,7 @@ React 学会后，再看这个项目用到的三个库：[TanStack Query](https:
 | state                 | [collapsible-text.tsx](../apps/web/src/components/collapsible-text.tsx) 的 `expanded`                  | 状态变化后页面怎么更新           |
 | `useEffect`、`useRef` | [collapsible-text.tsx](../apps/web/src/components/collapsible-text.tsx)                                | 怎么和浏览器打交道，用完怎么清理 |
 | 条件渲染、懒加载      | [account-overlays.tsx](../apps/web/src/features/account/account-overlays.tsx)                          | 弹窗什么时候显示，什么时候才加载 |
-| 自定义 Hook           | [use-home-header-surface.ts](../apps/web/src/features/home/use-home-header-surface.ts)                 | 把一段逻辑从组件里抽出来         |
+| 自定义 Hook           | [use-window-scrolled.ts](../apps/web/src/app/use-window-scrolled.ts)                                   | 把一段逻辑从组件里抽出来         |
 | Zustand               | [account-overlay-store.ts](../apps/web/src/features/account/account-overlay-store.ts)                  | 多个组件共用一份状态             |
 | 读取接口数据          | [wallet-client.ts](../apps/web/src/features/account/wallet-client.ts) 的 `useWallet`                   | `queryKey` 的作用，数据缓存在哪  |
 | 提交数据              | [generation-client.ts](../apps/web/src/features/generation/generation-client.ts) 的 `useGenerateImage` | 这个比较长，放到最后看           |

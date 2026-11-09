@@ -24,7 +24,9 @@ Local uploads stay preview-only until submission; the server validates and store
   contrast, reduced-transparency fallback and native HeroUI focus handling; never add an opaque
   surface as a local default. The standalone login page uses the same dark-glass material and swaps its two faces.
   The full-screen membership page is an explicit exception: opaque background, no backdrop blur
-  or modal fade/scale transitions.
+  or modal fade/scale transitions. Two more named exceptions follow vidmuse (2026-11-09): the top-bar
+  dropdowns (电商, credits) use the `header-menu` surface (#FFFFFF14, 40px blur, no edge) and the
+  credit usage dialog is an opaque #2B302A panel over an 85% black mask. Add no others without a request.
 - Follow PRD.md for navigation: the top bar shows Home, 电商 (a dropdown with the four tools:
   main image, textile variation, image-set plan, video) and Asset Library. Inside the workspace
   the tool dock still switches tools. TK has no current navigation entry.
@@ -44,7 +46,8 @@ Local uploads stay preview-only until submission; the server validates and store
 - Lazy-load heavy canvas/editor routes. Do not load original full-resolution images into grid cards.
 - Accessible labels, visible focus, semantic controls, reduced motion and narrow-screen behavior
   are required. Signed out, the top bar shows the pill-shaped login action; signed in, it shows the
-  update and message buttons, the shared credits and membership pill and the account avatar.
+  update and message buttons, the credits pill (balance and plan; hover/press opens the credits menu
+  like the 电商 dropdown, without stealing focus on hover) and the account avatar.
   Do not restore task-center entries.
 - Keep the brand focus ring keyboard-only. React Aria moves focus on hover, restored focus and
   programmatic opens, and Chromium reports those moves as `:focus-visible`; suppress the ring for
@@ -56,7 +59,7 @@ Local uploads stay preview-only until submission; the server validates and store
   upward. Hovering does not open it. Keyboard focus enters the first row and returns to the trigger on close.
 - Preserve pending drafts when switching tasks. Never navigate users away when a background task completes.
 - Product screens use end-user language. Keep preview/debug/reset notes in developer documentation, not headers, cards or dialogs. Never infer production readiness from clean UI copy.
-- Match the measured shell rules in DESIGN.md: a sticky top bar (64px desktop, 60px mobile) modeled on the user-approved vidmuse header, 36px pill navigation items, a hover/press 电商 dropdown, 40px round utility buttons and avatar, and no left sidebar. Hover/active never change geometry; mobile targets stay 44px.
+- Match the measured shell rules in DESIGN.md: a sticky top bar (64px desktop, 60px mobile, transparent at the top and frosted 4px shorter once the page scrolls) modeled on the user-approved vidmuse header, 36px pill navigation items, a hover/press 电商 dropdown, 40px round utility buttons and avatar, and no left sidebar. Hover/active never change geometry; mobile targets stay 44px.
 - Use Tabler business icons through components/ui-icon.tsx. Sizes: 14 / 18 / 20 / 22 / 28px, stroke 2. Keep icon sizing independent of compact control geometry; do not add another icon library. Credits use Tabler IconCoins (no bitmap coin) and close controls use Tabler IconX; never keep hand-drawn, bitmap or second-library icons.
 - Navigation text uses neutral gray-white: default #FFFFFF99, hover fill #FFFFFF0A with #FFFFFFCC text, current page bold white. Do not restore purple navigation labels. Chevrons rotate on expansion and respect reduced motion. Tool selectors use spacing instead of extra divider lines.
 - No server modules or secrets in apps/web or packages/contracts. VITE_* is public.

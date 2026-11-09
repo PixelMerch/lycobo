@@ -16,10 +16,11 @@ export function useWallet() {
       walletBalanceSchema.parse(await (await imageRequest("wallet", { signal })).json()),
   });
 }
-export function useWalletEntries() {
+/** 按页读取企业共享积分收支；每页条数不同的列表各自缓存，提交和任务事件按前缀一起失效。 */
+export function useWalletEntries(pageSize = 20) {
   const session = useImageSession();
   return useInfiniteQuery({
-    queryKey: ["wallet-entries", session.data?.organizationId, session.data?.userId],
+    queryKey: ["wallet-entries", session.data?.organizationId, session.data?.userId, pageSize],
     enabled: session.isSuccess,
     retry: false,
     staleTime: 30000,
@@ -27,12 +28,13 @@ export function useWalletEntries() {
     queryFn: async ({ signal, pageParam }) =>
       walletEntriesSchema.parse(
         await (
-          await imageRequest(`wallet/entries?limit=20${pageParam ? `&before=${pageParam}` : ""}`, {
-            signal,
-          })
+          await imageRequest(
+            `wallet/entries?limit=${pageSize}${pageParam ? `&before=${pageParam}` : ""}`,
+            { signal },
+          )
         ).json(),
       ),
-    getNextPageParam: (page) => (page.data.length === 20 ? page.data.at(-1)?.id : undefined),
+    getNextPageParam: (page) => (page.data.length === pageSize ? page.data.at(-1)?.id : undefined),
   });
 }
 export function useRechargeOrders() {

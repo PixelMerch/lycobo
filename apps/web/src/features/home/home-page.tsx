@@ -6,15 +6,14 @@ import { shareProductReference } from "../workspace/workspace-state";
 import { toolIcons } from "../workspace/workspace-tool-symbol";
 import { HomeComposer } from "./home-composer";
 import { HomeDock } from "./home-dock";
+import { HomeFooter } from "./home-footer";
 import { HomeInspirationGallery } from "./home-inspiration-gallery";
 import { homeModeFor, homeModes } from "./home-modes";
 import { HomeTemplates } from "./home-templates";
-import { useHomeHeaderSurface } from "./use-home-header-surface";
 import "../../styles/home/home.css";
 
 /** 组合首页标语、创作模式、创作框、模板与灵感列表；切换模式保留各工具草稿。 */
 export function HomePage() {
-  const intro = useHomeHeaderSurface();
   const [search, setSearch] = useSearchParams();
   const mode = homeModeFor(search.get("mode"));
   function selectMode(id: string) {
@@ -30,7 +29,7 @@ export function HomePage() {
   return (
     <section className="commerce-home page-panel" data-mode={mode.id}>
       <div className="home-atmosphere" aria-hidden="true" />
-      <section ref={intro} className="home-start" aria-labelledby="home-title">
+      <section className="home-start" aria-labelledby="home-title">
         <h1 id="home-title" className="home-slogan">
           {mode.slogan.map((part) => (
             <span key={part}>{part}</span>
@@ -70,6 +69,7 @@ export function HomePage() {
         </Tabs>
       </section>
       <HomeInspirationGallery />
+      <HomeFooter />
       <HomeDock />
     </section>
   );

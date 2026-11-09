@@ -165,12 +165,12 @@ test("video text-only submission is durable, uses the selected duration and does
   await expect(railSpinner).toHaveCSS("width", "16px");
   await expect(railSpinner).toHaveCSS("height", "16px");
   expect(imageSubmissions).toBe(0);
-  await expect(page.locator(".header-balance-value")).toHaveText("100");
+  await expect(page.locator(".header-credits-value")).toHaveText("100");
   await expect(page.getByRole("article", { name: "视频任务：W09VIDEO1" })).toContainText(
     "积分已退回",
     { timeout: 15000 },
   );
-  await expect(page.locator(".header-balance-value")).toHaveText("200");
+  await expect(page.locator(".header-credits-value")).toHaveText("200");
 });
 
 test("an ambiguous video submission retains its immutable idempotency key when the draft changes", async ({

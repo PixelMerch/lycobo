@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { AccountCenterTab } from "./center/account-center-tabs";
 
-type AccountDialog = "recharge" | "membership" | "settings";
+type AccountDialog = "recharge" | "membership" | "settings" | "usage";
 export type AccountLayer = "center" | "dialog";
 
 /** Billing and settings are separate dialogs; each layer restores its own opener. */

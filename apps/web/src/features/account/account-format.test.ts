@@ -6,6 +6,9 @@ import {
   memberLabel,
   recordTime,
   signedCredits,
+  usageAmount,
+  usageTime,
+  usageTitle,
   type WalletEntry,
 } from "./account-format";
 
@@ -55,4 +58,18 @@ it("prefixes ledger times with today, yesterday or the date", () => {
   expect(recordTime(new Date(2026, 10, 1, 21, 5).toISOString(), now)).toBe("昨天 21:05");
   expect(recordTime(new Date(2026, 9, 28, 14, 10).toISOString(), now)).toBe("10/28 14:10");
   expect(recordTime(new Date(2025, 11, 31, 9, 0).toISOString(), now)).toBe("2025/12/31 09:00");
+});
+
+it("formats credit usage rows like the usage dialog", () => {
+  expect(usageAmount(-35)).toBe("- 35");
+  expect(usageAmount(1200)).toBe("+ 1,200");
+  expect(usageAmount(0)).toBe("0");
+  expect(usageTime(new Date(2026, 10, 5, 8, 9).toISOString())).toBe("2026.11.05 08:09");
+  expect(usageTitle(entry({ task_id: "W26110215" }))).toBe("图片生成");
+  expect(usageTitle(entry())).toBe("提示词优化");
+  expect(usageTitle(entry({ kind: "refund", amount: 1 }))).toBe("提示词优化退还");
+  expect(usageTitle(entry({ kind: "refund", amount: 4, task_id: "W26110215" }))).toBe(
+    "生成失败退款",
+  );
+  expect(usageTitle(entry({ kind: "recharge", amount: 500 }))).toBe("充值到账");
 });

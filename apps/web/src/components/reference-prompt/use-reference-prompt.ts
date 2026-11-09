@@ -77,6 +77,7 @@ function useControlledPrompt({
   });
 }
 
+/** 描述输入框的编辑状态：纯文本与带 @ 引用的富文本输入共用，负责光标、引用插入与自动增高。 */
 export function useReferencePrompt({
   value,
   onChange,
@@ -85,6 +86,7 @@ export function useReferencePrompt({
   maxLength,
   maxReferences,
   autoGrow,
+  autoGrowMinHeight,
   onReferencesInsert,
 }: {
   value: string;
@@ -94,6 +96,7 @@ export function useReferencePrompt({
   maxLength: number;
   maxReferences: number;
   autoGrow: boolean;
+  autoGrowMinHeight: number | undefined;
   onReferencesInsert: ((images: ReferenceImage[], prompt: string) => void) | undefined;
 }) {
   const composing = useRef(false);
@@ -107,8 +110,8 @@ export function useReferencePrompt({
   const mentionAnchor = useRef<HTMLElement | null>(null);
   const [anchoredMention, setAnchoredMention] = useState<number | null>(null);
   useControlledPrompt({ richRef, ref, value, parts, references, cursorRef, focusPending });
-  useAutoGrow(richRef, value, autoGrow && hasReferences);
-  useAutoGrow(ref, value, autoGrow && !hasReferences);
+  useAutoGrow(richRef, value, autoGrow && hasReferences, autoGrowMinHeight);
+  useAutoGrow(ref, value, autoGrow && !hasReferences, autoGrowMinHeight);
   const [mention, setMention] = useState<{ start: number; end: number } | null>(null);
   useLayoutEffect(() => {
     mentionAnchor.current =

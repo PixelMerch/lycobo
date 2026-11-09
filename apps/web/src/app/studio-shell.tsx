@@ -1,6 +1,6 @@
 import { Drawer } from "@heroui/react";
 import { IconFolderSparkle, IconMenu2, IconSmartHome, IconX } from "@tabler/icons-react";
-import { type Dispatch, type SetStateAction, useState } from "react";
+import { useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
@@ -15,11 +15,8 @@ import { shareProductReference, workspaceTools } from "../features/workspace/wor
 import { toolIcons } from "../features/workspace/workspace-tool-symbol";
 import { CommerceNavMenu } from "./commerce-nav-menu";
 import { PageLoading } from "./page-loading";
+import { useWindowScrolled } from "./use-window-scrolled";
 import "../styles/brand.css";
-
-export interface StudioShellContext {
-  setHomeHeaderOpaque: Dispatch<SetStateAction<boolean>>;
-}
 
 /** 组合应用导航和业务区域，未登录时转往独立登录页面。 */
 export function StudioShell() {
@@ -30,13 +27,13 @@ export function StudioShell() {
   const signedIn = !!session.data;
   const protectedRoute = pathname !== "/";
   const routeNeedsLogin = protectedRoute && !signedIn;
-  const [homeHeaderOpaque, setHomeHeaderOpaque] = useState(false);
+  const scrolled = useWindowScrolled();
   const [menuOpen, setMenuOpen] = useState(false);
   if (routeNeedsLogin && !session.isPending)
     return <Navigate to={loginHref(`${pathname}${location.search}${location.hash}`)} replace />;
   return (
-    <div className="studio-app" data-home-header-opaque={pathname === "/" && homeHeaderOpaque}>
-      <header className="topbar">
+    <div className="studio-app">
+      <header className="topbar" data-scrolled={scrolled || undefined}>
         <Drawer isOpen={menuOpen} onOpenChange={setMenuOpen}>
           <Drawer.Trigger className="mobile-menu icon-button" aria-label="打开导航">
             <UiIcon icon={IconMenu2} size="navigation" />
@@ -105,9 +102,7 @@ export function StudioShell() {
       </header>
       <main className="main-content">
         {routeNeedsLogin && session.isPending && <PageLoading />}
-        {!routeNeedsLogin && (
-          <Outlet context={{ setHomeHeaderOpaque } satisfies StudioShellContext} />
-        )}
+        {!routeNeedsLogin && <Outlet />}
       </main>
       <RealtimeEvents />
       {signedIn && <AccountOverlayHost />}

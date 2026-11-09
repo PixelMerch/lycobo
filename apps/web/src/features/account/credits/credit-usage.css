@@ -1,0 +1,311 @@
+/*
+ * 积分使用明细按 vidmuse：85% 黑色遮罩上的 800px 实色面板。
+ * 具名例外：不用共享玻璃，面板为 #2B302A 实色、24px 圆角与内边距。
+ */
+:root .credit-usage-backdrop.modal__backdrop {
+  background: rgb(0 0 0 / 85%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.credit-usage-container.modal__container {
+  padding: 16px;
+}
+.credit-usage-dialog.modal__dialog {
+  --usage-spent: #c4e58c;
+  position: relative;
+  width: min(800px, calc(100vw - 32px));
+  max-width: none;
+  height: auto;
+  max-height: calc(100dvh - 32px);
+  padding: 24px;
+  border: 0;
+  border-radius: 24px;
+  background: #2b302a;
+  box-shadow:
+    0 6px 16px rgb(0 0 0 / 8%),
+    0 3px 6px -4px rgb(0 0 0 / 12%),
+    0 9px 28px 8px rgb(0 0 0 / 5%);
+  color: #ffffffd9;
+}
+/* 标题行：标题靠左，已消耗／已获得切换靠右，右侧给关闭按钮留 40px。 */
+.credit-usage-header.modal__header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+  padding: 0 40px 0 0;
+}
+.credit-usage-header .credit-usage-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  color: #fff;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: 22px;
+}
+.credit-usage-close.modal__close-trigger {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: #ffffff66;
+}
+.credit-usage-close.modal__close-trigger:is(
+  :hover,
+  [data-hovered="true"],
+  [data-focus-visible="true"]
+) {
+  color: #fff;
+}
+/* 切换胶囊：3px 内边距、#FFFFFF0A 底、0.5px 细边；每项 72×32，选中 #FFFFFF14 底与白字。 */
+.credit-usage-views.toggle-button-group {
+  flex: none;
+  gap: 0;
+  padding: 3px;
+  border: 0.5px solid #ffffff1f;
+  border-radius: 999px;
+  background: #ffffff0a;
+}
+.credit-usage-views .toggle-button {
+  height: 32px;
+  min-height: 32px;
+  min-width: 72px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  color: #ffffff99;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: 18px;
+}
+.credit-usage-views .toggle-button:is(:hover, [data-hovered="true"]) {
+  background: transparent;
+  color: #ffffffcc;
+}
+.credit-usage-views .toggle-button[data-selected="true"] {
+  background: #ffffff14;
+  color: #fffffff5;
+}
+.credit-usage-content.modal__body {
+  display: block;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  color: inherit;
+}
+
+/* 记录列表：上距 24px、最高 60vh 内部滚动、12px 圆角与 0.5px 细边，行间 1px 分隔。 */
+.credit-usage-list {
+  max-height: 60vh;
+  margin-top: 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 0.5px solid #ffffff1f;
+  border-radius: 12px;
+  scrollbar-width: thin;
+}
+.credit-usage-row.disclosure {
+  padding: 16px;
+}
+.credit-usage-row + .credit-usage-row {
+  border-top: 1px solid #ffffff1f;
+}
+.credit-usage-heading {
+  margin: 0;
+}
+.credit-usage-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+}
+.credit-usage-trigger[data-focus-visible="true"] {
+  outline: 1px solid #ffffff66;
+  outline-offset: 4px;
+}
+.credit-usage-chevron {
+  flex: none;
+  align-self: flex-start;
+  margin-top: 3px;
+  color: #ffffffb3;
+  transition: transform 200ms ease;
+}
+.credit-usage-row[data-expanded="true"] .credit-usage-chevron {
+  transform: rotate(90deg);
+}
+.credit-usage-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.credit-usage-name {
+  overflow: hidden;
+  color: #fff;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.credit-usage-time {
+  color: #ffffff80;
+  font-size: var(--text-xs);
+  line-height: 16px;
+}
+.credit-usage-amount {
+  flex: none;
+  margin-left: 8px;
+  color: #fff;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+.credit-usage-amount[data-spent="true"] {
+  color: var(--usage-spent);
+}
+/* 展开说明：左缩进 24px，标签与数值之间用虚线引导。 */
+.credit-usage-body.disclosure__body {
+  padding: 0;
+}
+.credit-usage-details {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0 0;
+  padding-left: 24px;
+}
+.credit-usage-detail {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--text-base);
+  line-height: 20px;
+}
+.credit-usage-detail dt {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  color: #ffffff99;
+}
+.credit-usage-detail dt::after {
+  flex: 1;
+  min-width: 24px;
+  border-top: 1px dashed #ffffff1f;
+  content: "";
+}
+.credit-usage-detail dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #ffffffcc;
+  text-align: right;
+}
+.credit-usage-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 0;
+  padding: 32px 16px;
+  border: 0.5px solid #ffffff1f;
+  border-radius: 12px;
+  color: #ffffff99;
+  font-size: var(--text-base);
+  line-height: 20px;
+  text-align: center;
+}
+.credit-usage-status p {
+  margin: 0;
+}
+
+/* 分页：上距 24px 居中，40px 方块、8px 圆角，项间距 24px；当前页 #FFFFFF14 底白色粗体。 */
+.credit-usage-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+.credit-usage-pagination .pagination__content {
+  gap: 24px;
+}
+.credit-usage-pagination :is(.pagination__link, .pagination__previous, .pagination__next) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffff99;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  line-height: 20px;
+}
+.credit-usage-pagination :is(.pagination__previous, .pagination__next) {
+  background: #ffffff0a;
+  color: #ffffffcc;
+}
+.credit-usage-pagination :is(.pagination__previous, .pagination__next)[data-disabled="true"] {
+  color: #ffffff40;
+}
+.credit-usage-pagination .pagination__link[data-active="true"] {
+  background: #ffffff14;
+  color: #fff;
+}
+.credit-usage-pagination
+  :is(.pagination__link, .pagination__previous, .pagination__next):is(
+    :hover,
+    [data-hovered="true"]
+  ):not([data-disabled="true"]) {
+  background: #ffffff1f;
+  color: #fff;
+}
+
+@media (max-width: 767px) {
+  .credit-usage-dialog.modal__dialog {
+    padding: 16px;
+    border-radius: 20px;
+  }
+  .credit-usage-header.modal__header {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-right: 44px;
+  }
+  .credit-usage-close.modal__close-trigger {
+    top: 4px;
+    right: 4px;
+  }
+  .credit-usage-list {
+    margin-top: 16px;
+  }
+  .credit-usage-pagination .pagination__content {
+    gap: 12px;
+  }
+  .credit-usage-pagination :is(.pagination__link, .pagination__previous, .pagination__next) {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .credit-usage-chevron {
+    transition: none;
+  }
+}

@@ -276,14 +276,35 @@ test("home inspiration cards offer 做同款 by hover or keyboard without submit
   const tile = tileOf("水光香氛");
   const panel = tile.locator(".home-inspiration-panel");
   const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
-  await card.scrollIntoViewIfNeeded();
+  // 悬停面板接在卡片下方：先把卡片滚到靠上的位置再直接移动鼠标，
+  // 避免 Playwright 的 hover 把卡片重新滚到视口底边、让面板落到视口外。
+  const centerOf = async (target: typeof tile) => {
+    const box = await target.boundingBox();
+    if (!box) throw new Error("Missing inspiration target");
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  };
+  const hoverNearTop = async (target: typeof tile) => {
+    await target.evaluate((element) =>
+      window.scrollTo(0, element.getBoundingClientRect().top + window.scrollY - 120),
+    );
+    const center = await centerOf(target);
+    await page.mouse.move(center.x, center.y);
+  };
+  // 卡片悬停时有 200ms 的上移与放大，等目标淡入完成（动画同时结束）再按它的中心点击。
+  const clickCenter = async (target: typeof tile) => {
+    await expect(target).toHaveCSS("opacity", "1");
+    const center = await centerOf(target);
+    await page.mouse.click(center.x, center.y);
+  };
+  await hoverNearTop(tile);
+  await page.mouse.move(0, 0);
   await expect(card.getByRole("button")).toHaveCount(0);
   await expect(panel).toHaveCSS("opacity", "0");
 
-  // Only 做同款 takes the pointer: the rest of the panel still opens the detail.
-  await tile.hover();
+  // 面板属于卡片按钮：点面板标题打开这张卡的详情，不会点到下面的卡。
+  await hoverNearTop(tile);
   await expect(panel).toHaveCSS("opacity", "1");
-  await panel.locator("strong").click({ force: true });
+  await clickCenter(panel);
   const detail = page.getByRole("dialog", { name: "灵感详情：水光香氛", exact: true });
   await expect(detail).toBeVisible();
   await detail.getByRole("button", { name: "关闭灵感详情", exact: true }).click();
@@ -302,13 +323,13 @@ test("home inspiration cards offer 做同款 by hover or keyboard without submit
 
   await page.goBack();
   const other = tileOf("原木与晨光");
-  await other.scrollIntoViewIfNeeded();
-  await other.hover();
+  await hoverNearTop(other);
   const makeOther = gallery.getByRole("button", { name: "做同款：原木与晨光", exact: true });
-  await makeOther.click();
+  await clickCenter(makeOther);
   await page.getByRole("button", { name: "保留当前内容", exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
-  await makeOther.click();
+  await hoverNearTop(other);
+  await clickCenter(makeOther);
   await page.getByRole("button", { name: "替换并进入", exact: true }).click();
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(prompt).not.toHaveValue(/将商品放在水边石台上/);
@@ -355,10 +376,10 @@ test("wide home inspiration fills every column and clears the left dock", async 
       columns: new Set(cards.map((card) => Math.round(card.left))).size,
     };
   });
-  // 与 vidmuse 一样，内容整体右移为左侧悬浮入口让位，右侧留白 32px。
+  // 与 vidmuse 一样，作品墙左侧为悬浮入口让位，右侧留白 60px。
   const dock = await page.locator(".home-dock").boundingBox();
   expect(layout.gridLeft).toBeGreaterThanOrEqual((dock?.x ?? 0) + (dock?.width ?? 0) + 16);
-  expect(Math.abs(layout.rightGutter - 32)).toBeLessThan(1);
+  expect(Math.abs(layout.rightGutter - 60)).toBeLessThan(1);
   expect(Math.abs(layout.lastCardRight - layout.gridRight)).toBeLessThan(1);
   expect(layout.columns).toBe(5);
   await gallery.scrollIntoViewIfNeeded();
@@ -456,33 +477,110 @@ test("textile mode selects views and opens the textile tool with the uploaded ma
 });
 
 for (const width of [1440, 390]) {
-  test(`home header matches the page background over inspiration and restores at the top at ${width}px`, async ({
+  test(`header frosts once the page leaves the top without moving content at ${width}px`, async ({
     page,
   }) => {
     await mockImageApi(page);
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/");
     const header = page.locator(".topbar");
-    await expect(page.locator(".home-start")).toBeVisible();
-    await expect(header).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-    const initialHeight = await header.evaluate((el) => el.getBoundingClientRect().height);
-    await page
-      .locator(".home-inspiration")
-      .evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY));
-    const pageBackground = await page
-      .locator("body")
-      .evaluate((el) => getComputedStyle(el).backgroundColor);
-    await expect(header).toHaveCSS("background-color", pageBackground);
-    expect(await header.evaluate((el) => el.getBoundingClientRect().height)).toBe(initialHeight);
-    expect(await header.evaluate((el) => el.getBoundingClientRect().top)).toBe(0);
-    await page.screenshot({ path: `/tmp/lycobo-home-header-matched-${width}.png` });
+    const surface = () =>
+      header.evaluate((element) => {
+        const style = getComputedStyle(element, "::before");
+        return { background: style.backgroundColor, blur: style.backdropFilter };
+      });
+    const height = () => header.evaluate((element) => element.getBoundingClientRect().height);
+    const start = page.locator(".home-start");
+    const startTop = () =>
+      start.evaluate((element) => element.getBoundingClientRect().top + window.scrollY);
+    await expect(start).toBeVisible();
+    await expect(header).not.toHaveAttribute("data-scrolled");
+    expect(await surface()).toEqual({ background: "rgba(0, 0, 0, 0)", blur: "none" });
+    const full = width < 768 ? 60 : 64;
+    expect(await height()).toBe(full);
+    const top = await startTop();
+    // 按 vidmuse：一离开顶部就铺 38% 深色磨砂、收窄 4px，外边距补齐，页面内容不跳动。
+    await page.evaluate(() => window.scrollTo(0, 400));
+    await expect(header).toHaveAttribute("data-scrolled", "true");
+    await expect.poll(surface).toEqual({ background: "rgba(30, 35, 29, 0.38)", blur: "blur(8px)" });
+    await expect.poll(height).toBe(full - 4);
+    expect(await startTop()).toBe(top);
+    expect(await header.evaluate((element) => element.getBoundingClientRect().top)).toBe(0);
+    await page.screenshot({ path: `/tmp/lycobo-home-header-frosted-${width}.png` });
     await page.evaluate(() => window.scrollTo(0, 0));
-    await expect(header).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-    if (width < 768) await page.getByRole("button", { name: "打开导航", exact: true }).click();
-    await page.getByRole("link", { name: "素材库", exact: true }).last().click();
-    await expect(page.locator(".studio-app")).toHaveAttribute("data-home-header-opaque", "false");
+    await expect(header).not.toHaveAttribute("data-scrolled");
+    await expect.poll(surface).toEqual({ background: "rgba(0, 0, 0, 0)", blur: "none" });
   });
 }
+
+test("prompt hint chip opens the picker and yields to the native placeholder on focus", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  await page.goto("/");
+  const hint = page.locator(".home-prompt-hint");
+  await expect(hint).toHaveText("帮我根据商品图生成一张……的电商主图");
+  const prompt = page.getByRole("textbox", { name: "创作需求", exact: true });
+  await expect(prompt).toHaveAttribute("placeholder", "帮我根据商品图生成一张……的电商主图");
+  const chooser = page.waitForEvent("filechooser");
+  await hint.getByRole("button", { name: "上传商品图", exact: true }).click();
+  await chooser;
+  await prompt.focus();
+  await expect(hint).toBeHidden();
+  await prompt.fill("白底主图");
+  await prompt.blur();
+  await expect(hint).toHaveCount(0);
+  await page.getByRole("tab", { name: "家纺裂变" }).click();
+  await expect(page.locator(".home-prompt-hint")).toHaveCount(0);
+  await page.getByRole("tab", { name: "视频创作" }).click();
+  await expect(page.locator(".home-prompt-hint")).toHaveText("帮我把商品主图做成一段……的商品视频");
+});
+
+test("home footer links only to real pages", async ({ page }) => {
+  await mockImageApi(page);
+  await page.goto("/");
+  const footer = page.locator(".home-footer");
+  await footer.scrollIntoViewIfNeeded();
+  const links = footer.getByRole("link");
+  await expect(links).toHaveText([
+    "",
+    "主图制作",
+    "家纺裂变",
+    "套图计划",
+    "视频创作",
+    "工作区",
+    "素材库",
+    "会员订阅",
+  ]);
+  const hrefs = await links.evaluateAll((items) => items.map((item) => item.getAttribute("href")));
+  expect(hrefs).toEqual([
+    "/",
+    "/commerce/create",
+    "/commerce/textile-set",
+    "/commerce/smart-variation",
+    "/video",
+    "/workspace",
+    "/assets",
+    "/membership",
+  ]);
+  await expect(footer).toContainText(`© ${new Date().getFullYear()} Lycobo。保留所有权利。`);
+});
+
+test("phones get the vidmuse bottom bar with labelled shortcuts", async ({ page }) => {
+  await mockImageApi(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  const dock = page.getByRole("navigation", { name: "快捷入口", exact: true });
+  const box = await dock.boundingBox();
+  expect(box?.x).toBe(0);
+  expect(box?.width).toBe(390);
+  expect(Math.round((box?.y ?? 0) + (box?.height ?? 0))).toBe(844);
+  await expect(dock.getByRole("link")).toHaveText(["首页", "工作区", "素材库"]);
+  await expect(dock.getByRole("link", { name: "首页", exact: true })).toHaveClass(/active/);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(dock.getByRole("link", { name: "首页", exact: true })).toBeHidden();
+  await expect(dock.locator(".home-dock-label").first()).toBeHidden();
+});
 
 for (const width of [1440, 390]) {
   test(`home atmosphere sits behind the header and follows the selected mode at ${width}px`, async ({
