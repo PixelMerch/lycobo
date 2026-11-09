@@ -69,3 +69,58 @@ it("allows local browser modules, Node server imports and existing runtime assem
     ),
   ).toEqual([]);
 });
+
+it("rejects business imports of application entrypoints and foreign HTTP routes", () => {
+  expect(
+    sourceBoundaryProblems(
+      "apps/api/src/features/images/service.ts",
+      'export { createApp } from "../../app.js";',
+    ),
+  ).toContain("FEATURE_DEPENDS_ON_ENTRYPOINT");
+  expect(
+    sourceBoundaryProblems(
+      "apps/api/src/features/images/service.ts",
+      'const routes = import("../wallet/wallet-routes");',
+    ),
+  ).toContain("BUSINESS_DEPENDS_ON_FOREIGN_ROUTES");
+});
+it("limits cross-app assembly to the documented dependency edges", () => {
+  expect(
+    sourceBoundaryProblems(
+      "apps/api/src/features/images/service.ts",
+      'import runtime from "../../../../worker/src/cloudflare/cloudflare-runtime";',
+    ),
+  ).toContain("UNAUTHORIZED_CROSS_APP_IMPORT");
+  expect(
+    sourceBoundaryProblems(
+      "apps/api/src/cloudflare-app.ts",
+      'import consumer from "../../worker/src/cloudflare/cloudflare-consumer";',
+    ),
+  ).toContain("UNAUTHORIZED_CROSS_APP_IMPORT");
+  expect(
+    sourceBoundaryProblems("apps/worker/src/images/example.ts", 'import app from "@lycoboai/api";'),
+  ).toContain("UNAUTHORIZED_CROSS_APP_IMPORT");
+  expect(
+    sourceBoundaryProblems("apps/worker/scripts/check.ts", 'import app from "../../api/src/app";'),
+  ).toEqual([]);
+});
+it("preserves route registration, service sharing and local app integration tests", () => {
+  expect(
+    sourceBoundaryProblems(
+      "apps/api/src/features/images/routes.ts",
+      'import routes from "../wallet/wallet-routes";',
+    ),
+  ).toEqual([]);
+  expect(
+    sourceBoundaryProblems(
+      "apps/api/src/features/images/service.ts",
+      'import service from "../wallet/service";',
+    ),
+  ).toEqual([]);
+  expect(
+    sourceBoundaryProblems(
+      "apps/api/src/features/images/routes.test.ts",
+      'import app from "../../app";',
+    ),
+  ).toEqual([]);
+});

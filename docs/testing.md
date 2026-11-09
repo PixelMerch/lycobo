@@ -13,6 +13,8 @@
 CI 使用 pnpm exec playwright install --with-deps chromium。
 浏览器测试失败留 trace/report；测试使用本地应用，不能连接线上接口。
 
+关键计费、恢复、推送规则与测试证据范围见[关键业务验证索引](business-test-map.md)，其中待验证场景不代表已覆盖。
+
 ## 按改动选择验证
 
 开发中先执行相关测试，代码完成后仍运行 `pnpm check`。契约、身份或持久化行为跨域时扩大范围，不以文件位置代替影响分析。

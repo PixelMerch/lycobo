@@ -35,6 +35,39 @@ export function importSpecifiers(file, text) {
   return specifiers;
 }
 
+/** 限制业务反向引用入口及跨应用调用，测试可以使用本应用装配入口。 */
+export function layerBoundaryProblems(file, target) {
+  const sourceApp = file.match(/^apps\/([^/]+)\//)?.[1];
+  const targetApp =
+    target.match(/^apps\/([^/]+)\//)?.[1] ??
+    target.match(/^@lycoboai\/(api|worker|web|assets)(?:\/|$)/)?.[1];
+  const normalized = target.replace(/\.(?:tsx?|m?js)$/, "");
+  const problems = [];
+  const fixture = /\.(?:test|spec)\.[^/]+$/.test(file);
+  const domain = file.match(/^apps\/api\/src\/features\/([^/]+)\//)?.[1];
+  if (domain && !fixture) {
+    if (/^apps\/api\/src\/(?:app|index|cloudflare|cloudflare-app)$/.test(normalized))
+      problems.push("FEATURE_DEPENDS_ON_ENTRYPOINT");
+    const targetDomain = normalized.match(/^apps\/api\/src\/features\/([^/]+)\//)?.[1];
+    // 路由注册器可以组合路由；服务等业务实现不能依赖另一个业务的 HTTP 层。
+    if (
+      targetDomain &&
+      targetDomain !== domain &&
+      /(?:^|\/)(?:[^/]+-)?routes$/.test(normalized) &&
+      !/(?:^|\/)(?:[^/]+-)?routes\.ts$/.test(file)
+    )
+      problems.push("BUSINESS_DEPENDS_ON_FOREIGN_ROUTES");
+  }
+  const runtimeAssembly =
+    file === "apps/api/src/cloudflare-app.ts" &&
+    normalized === "apps/worker/src/cloudflare/cloudflare-runtime";
+  const integrationAssembly =
+    file.startsWith("apps/worker/scripts/") && normalized === "apps/api/src/app";
+  if (sourceApp && targetApp && sourceApp !== targetApp && !runtimeAssembly && !integrationAssembly)
+    problems.push("UNAUTHORIZED_CROSS_APP_IMPORT");
+  return problems;
+}
+
 /** 检查依赖方向，同时覆盖包名与相对路径，保留既定入口装配例外。 */
 export function importBoundaryProblems(file, specifier) {
   const target = specifier.startsWith(".")
@@ -45,7 +78,7 @@ export function importBoundaryProblems(file, specifier) {
     serverPackages.test(`${target}/`) ||
     /^packages\/(?:db|queue|generation|storage)\//.test(target);
   const nodeTarget = target.startsWith("node:") || nodeModules.has(target);
-  const problems = [];
+  const problems = layerBoundaryProblems(file, target);
   if (
     /^(?:apps\/web|packages\/contracts)\/src\//.test(file) &&
     (/^(?:apps\/(?:api|worker|assets)\/|@lycoboai\/(?:api|worker|assets)(?:\/|$))/.test(target) ||
