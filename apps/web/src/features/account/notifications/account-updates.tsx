@@ -6,7 +6,7 @@ import "./account-updates.css";
 import { useNotifications, useSiteRelease } from "../../realtime/client";
 import { NotificationBody, ReleaseBody } from "./account-news-body";
 
-/** 沿用侧栏消息与更新抽屉，未读数与版本状态来自实时服务。 */
+/** 顶部栏与手机导航抽屉共用的更新、消息入口，未读数与版本状态来自实时服务。 */
 export function AccountUpdates({ kind }: { kind: "updates" | "messages" }) {
   const updates = kind === "updates";
   const title = updates ? "最近更新" : "消息中心";

@@ -92,7 +92,7 @@ test("login returns to the target and logout keeps the draft without a document 
   await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("登录后的创作草稿");
 });
 
-for (const layout of ["expanded", "collapsed", "mobile"] as const) {
+for (const layout of ["desktop", "mobile"] as const) {
   test(`rejected login toast stays viewport-centered with ${layout} navigation`, async ({
     page,
   }) => {
@@ -115,8 +115,6 @@ for (const layout of ["expanded", "collapsed", "mobile"] as const) {
     );
     if (layout === "mobile") await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
-    if (layout === "collapsed")
-      await page.getByRole("button", { name: "收起导航栏", exact: true }).click();
     await page.getByRole("button", { name: "登录领积分", exact: true }).click();
     const dialog = page.locator(".login-page");
     await dialog.getByRole("button", { name: "企业账号登录", exact: true }).click();

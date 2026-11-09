@@ -1,31 +1,117 @@
+/* 首页顶部栏在首屏保持透明，滚到作品墙后与页面同色，遮住下方图片。 */
+.studio-app:has(.commerce-home) .topbar {
+  background: transparent;
+}
+.studio-app[data-home-header-opaque="true"]:has(.commerce-home) .topbar {
+  background: var(--home-page);
+}
+
+/* 小于 1024px 时隐藏左侧悬浮入口，内容回到两侧等距。 */
+@media (max-width: 1023px) {
+  .commerce-home.page-panel {
+    padding-inline: 24px;
+  }
+  .home-dock {
+    display: none;
+  }
+}
 @media (max-width: 767px) {
+  .commerce-home.page-panel {
+    padding: 0 16px 24px;
+  }
+  .home-atmosphere {
+    height: 460px;
+  }
   .home-start {
-    margin-top: var(--home-mobile-start-spacing, 72px);
+    padding-top: 28px;
+  }
+  .home-slogan {
+    min-height: 80px;
+  }
+  .home-modes.tabs {
+    margin-top: 20px;
+  }
+  .home-modes .tabs__tab {
+    height: 44px;
+    padding-inline: 4px;
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+  }
+  .home-mode-icon {
+    display: none;
+  }
+  .home-stage.tabs__panel {
+    margin-top: 20px;
+    padding: 12px 12px 16px;
+    border-radius: 20px;
+  }
+  /* 手机上上传列改成顶部横条，描述区在下方占满宽度。 */
+  .home-composer {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+  .home-upload {
+    flex-direction: row;
+    width: 100%;
+    min-height: 0;
+  }
+  .home-upload .reference-picker {
+    flex: 1;
+  }
+  .home-upload .add-reference,
+  .home-upload-secondary.button {
+    min-height: 56px;
+    font-size: var(--text-base);
+  }
+  .home-upload-secondary.button {
+    box-shadow: inset 1px 0 0 #ffffff14;
+  }
+  .home-upload .reference-grid:has(.reference-tile),
+  .home-upload .reference-grid:has(> .reference-tile:only-child) {
+    grid-template-columns: repeat(auto-fill, 56px);
+  }
+  .home-composer .home-prompt .textarea {
+    max-height: 260px;
+    font-size: 16px;
   }
   .home-composer-tools {
     flex-wrap: wrap;
     min-height: 44px;
   }
-  /* The pill takes its own full-width row so it stays centred beside the 44px target. */
   .home-settings-trigger.button {
     order: 3;
     width: 100%;
     height: 44px;
-    margin-top: var(--space-1);
     padding: 0 var(--space-3);
     gap: 6px;
+    background: #ffffff0f;
     font-size: var(--text-xs);
   }
   .home-submit.button {
-    position: static;
-    transform: none;
+    height: 44px;
     margin-left: auto;
-    width: 44px;
+  }
+  /* 模板在手机上横向滑动，不换成多行。 */
+  .home-templates {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 10px;
+    margin-inline: -12px;
+    padding-inline: 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .home-templates::-webkit-scrollbar {
+    display: none;
+  }
+  .home-template.button {
+    flex: none;
     height: 44px;
   }
   .home-settings.popover {
-    padding: var(--space-4);
     max-height: 70vh;
+    padding: var(--space-4);
     overflow: auto;
   }
   .home-settings .popover__dialog {
@@ -33,78 +119,33 @@
     gap: var(--space-5);
   }
   .home-settings-models {
+    padding: 0 0 var(--space-3);
     border-right: 0;
     border-bottom: 1px solid #ffffff0a;
-    padding: 0 0 var(--space-3);
-  }
-  .home-shortcuts {
-    gap: 10px;
-    margin-top: 20px;
-  }
-  .home-shortcuts .button {
-    height: 72px;
-    padding: 0 6px 0 64px;
-    border-radius: 12px;
-  }
-  .home-shortcuts img {
-    width: 60px;
-  }
-  .home-shortcut-copy strong {
-    font-size: var(--text-sm);
-    line-height: var(--leading-sm);
   }
 }
 
-/* Anchor the home background to the shell, not the padded/narrow content panel. */
-.studio-app:has(.commerce-home) {
-  position: relative;
-  isolation: isolate;
-}
-.studio-app:has(.commerce-home) .topbar {
-  background: transparent;
-}
-.studio-app[data-home-header-opaque="true"]:has(.commerce-home) .topbar {
-  background: var(--background);
-}
-
-.home-motion-background {
-  position: absolute;
-  inset: 0 0 auto var(--sidebar-width);
-  z-index: -1;
-  height: var(--home-background-height, 720px);
-  overflow: hidden;
-  pointer-events: none;
-}
-.home-motion-background::after {
-  position: absolute;
-  inset: 0;
-  content: "";
-  background: linear-gradient(
-    180deg,
-    rgb(15 15 18 / var(--home-background-overlay, 0.4)) 0%,
-    rgb(15 15 18 / var(--home-background-overlay, 0.4)) 45%,
-    var(--background) 84%
-  );
-}
-
+/* 减少动态效果时取消氛围光、模式页签、模板与设置箭头的过渡。 */
 @media (prefers-reduced-motion: reduce) {
+  .commerce-home.page-panel,
   .home-composer,
+  .home-modes .tabs__tab,
+  .home-settings-chevron,
   .home-submit.button,
-  .home-shortcuts .button,
-  .home-shortcuts img {
+  .home-template-try,
+  .home-dock-link {
     transition: none;
   }
-  .home-shortcuts .button:is(:hover, [data-hovered], [data-focus-visible]) {
-    translate: none;
-  }
-  .home-shortcuts .button:is(:hover, [data-hovered], [data-focus-visible]) img {
-    scale: none;
-  }
 }
+/* 减少透明度时改用实色表面。 */
 @media (prefers-reduced-transparency: reduce) {
   .home-composer,
-  .home-shortcuts .button {
-    background: #1c1c1c;
+  .home-dock {
+    background: #1c1f1b;
+    backdrop-filter: none;
+  }
+  .home-template-try {
+    background: #2a302a;
     backdrop-filter: none;
   }
 }

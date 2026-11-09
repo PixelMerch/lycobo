@@ -60,14 +60,14 @@ apps/worker/
 
 ```text
 apps/web/src/
-├── app/                          # 路由、应用壳、providers
+├── app/                          # 路由、应用壳（顶部导航栏、“电商”悬停下拉、手机导航抽屉）、providers
 ├── components/                   # 跨功能复用的 HeroUI 组合与图片浏览基础能力
 ├── lib/                          # 请求、会话、错误和剪贴板等通用能力
 ├── styles/                       # 共享 tokens、基础样式与全屏动效样式
 └── features/
     ├── auth/                     # 身份请求、独立全屏登录页及登录方式切换
     ├── account/                  # 共享钱包请求、账户格式化及浮层组装
-    │   ├── menu/                 # 侧栏账户菜单和顶部积分入口
+    │   ├── menu/                 # 顶部栏账户头像菜单、手机抽屉账户行和积分入口
     │   ├── center/               # 账户中心、个人资料
     │   ├── credits/              # 积分预览、明细、充值及订单
     │   ├── membership/           # 独立会员页和定价
@@ -77,8 +77,10 @@ apps/web/src/
     ├── commerce/                 # 家纺裂变、套图计划（方案规划、确认与生图）及本地会话草稿
     ├── video/                    # 视频页面、请求与草稿；history / player / production / storyboard 分职责
     ├── home/                     # 首页、共享创作输入与提示辅助
-    │   ├── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，use-inspiration-columns.ts 订阅断点并派生均衡瀑布流
-    │   └── home-grid-motion.tsx   # 按需加载的Grid Motion背景、视差与可见性暂停；参数在react-bit-config.ts
+    │   ├── home-modes.ts         # 四个创作模式的标语、上传规则与描述模板；名称和路径来自工作区工具定义
+    │   ├── home-composer.tsx     # 按模式组合上传列、描述区与“开始创作”；草稿读写在 use-home-mode-draft.ts
+    │   ├── home-templates.tsx    # 描述模板与替换确认；主图设置在 home-model-settings.tsx，家纺视角在 home-textile-views.tsx
+    │   └── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，use-inspiration-columns.ts 订阅断点并派生均衡瀑布流
     ├── assets/                   # 素材库页面、全屏我的素材与共用浏览组件（筛选、密度网格、收藏）
     ├── generation/               # 生图请求、事件、会话草稿及工作台页面
     │   ├── composer/             # 比例选择、参数选中背景、图片与视频共用的单选参数行
@@ -163,7 +165,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 功能组件使用直接依赖；服务端缓存属于TanStack Query，临时草稿与交互属于Zustand，纯展示组件从props获得数据。具体规则见[UI一致性维护](docs/ui-consistency.md)。
 
-- `features/account/menu/account-menu.tsx` 组合HeaderLogin与侧栏账户菜单；积分与账单、设置分别打开独立弹窗。`header-benefits.tsx` 保留余额概览与会员入口。`account-overlays.tsx` 通过Zustand记录弹窗及打开者，统一懒加载账单、设置和会员；关闭后各自恢复焦点，退出或改密成功清空状态。
+- `features/account/menu/account-menu.tsx` 组合HeaderLogin与账户菜单（桌面顶部栏头像、手机抽屉账户行）；积分与账单、设置分别打开独立弹窗。`header-benefits.tsx` 保留余额概览与会员入口。`account-overlays.tsx` 通过Zustand记录弹窗及打开者，统一懒加载账单、设置和会员；关闭后各自恢复焦点，退出或改密成功清空状态。
 - `features/account/center/account-center-dialog.tsx` 承载积分明细、充值订单两个页签，默认打开积分明细；`account-settings-dialog.tsx` 承载个人资料、登录与安全及管理员可见的企业成员。`account-profile.tsx` 共用紧凑账号信息条；`account-password-form.tsx` 通过auth-client接入既有改密接口，成功清理登录状态。`account-settings-panels.tsx` 如实保留未接入的头像、微信、子账号入口。`account-format.ts` 提供格式化，`account-entry.tsx` 提供收支图标；各页签查询按需挂载。
 - `features/account/membership/membership-page.tsx` 导出懒加载全屏 MembershipDialog，Header在当前工作区打开；/membership仅为旧链接兼容入口，不展示返回与明细按钮；`MembershipPlans` 管理分类、周期、档位和团队席位展示；标语单价、周期最低折扣、折扣标签、单位积分价与“积分单价最低”飘带均由 `membership-pricing.ts` 的纯函数从价格表推导，并由同目录单元测试覆盖；membership-details组合工具／协作能力与Tooltip，membership-faq用官方Accordion承载本站FAQ，`CreditPacks` 只管理所选包。`wallet-client.ts` 共享钱包查询，最近记录按需读取并缓存30秒，不新增轮询。未接入的会员、绑定、验证码及支付不会模拟成功。
 

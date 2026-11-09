@@ -22,7 +22,7 @@ import { useWallet } from "../wallet-client";
 import "../account-common.css";
 import "./account-menu.css";
 
-/** 未登录入口前往独立登录页，已登录账户仍保留在侧栏。 */
+/** 未登录入口前往独立登录页；登录后桌面账户在顶部栏右侧，手机在导航抽屉底部。 */
 export function HeaderLogin() {
   const session = useEnterpriseSession();
   const openLogin = useOpenLogin();
@@ -38,10 +38,16 @@ export function HeaderLogin() {
 }
 
 /**
- * The signed-in account sits in a quiet footer row and opens its menu upward. The menu is the
- * shortcut into the account center: shared credits, membership status and the common actions.
+ * 账户菜单是账户中心的快捷入口：共享积分、会员状态与常用操作。桌面顶部栏只显示头像并向下展开；
+ * 手机导航抽屉底部显示头像、昵称及更新与消息，向上展开。
  */
-export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
+export function AccountMenu({
+  onNavigate,
+  variant = "footer",
+}: {
+  onNavigate?: () => void;
+  variant?: "header" | "footer";
+}) {
   const session = useEnterpriseSession();
   const wallet = useWallet();
   const logout = useEnterpriseLogout();
@@ -59,11 +65,11 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
     onNavigate?.();
     void navigate(path);
   };
-  // The account center and its dialogs stack above the phone navigation drawer, so focus can
-  // return to this row.
+  // 账户中心及其弹窗叠在手机导航抽屉之上，关闭后焦点能回到这个入口。
   const open = (overlay: "recharge" | "membership") => openOverlay(overlay, triggerRef.current);
+  const inHeader = variant === "header";
   return (
-    <div className="account-footer">
+    <div className={inHeader ? "account-header" : "account-footer"}>
       <Dropdown>
         <Dropdown.Trigger
           ref={triggerRef}
@@ -73,13 +79,15 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
           <Avatar className="account-avatar" size="sm" aria-hidden="true">
             <Avatar.Fallback>{initial}</Avatar.Fallback>
           </Avatar>
-          <span className="account-trigger-name" title={account.account} aria-hidden="true">
-            {account.account}
-          </span>
+          {!inHeader && (
+            <span className="account-trigger-name" title={account.account} aria-hidden="true">
+              {account.account}
+            </span>
+          )}
         </Dropdown.Trigger>
         <Dropdown.Popover
           className="account-menu"
-          placement="top start"
+          placement={inHeader ? "bottom end" : "top start"}
           offset={8}
           isNonModal={false}
         >
@@ -177,10 +185,12 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
           </Dropdown.Menu>
         </Dropdown.Popover>
       </Dropdown>
-      <div className="account-footer-tools">
-        <AccountUpdates kind="updates" />
-        <AccountUpdates kind="messages" />
-      </div>
+      {!inHeader && (
+        <div className="account-footer-tools">
+          <AccountUpdates kind="updates" />
+          <AccountUpdates kind="messages" />
+        </div>
+      )}
     </div>
   );
 }

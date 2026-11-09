@@ -22,7 +22,8 @@ test("create workspace fills the viewport and pins generation to the composer bo
   if (!composerBox || !resultsBox || !buttonBox) return;
   const viewport = page.viewportSize();
   const padding = 12;
-  expect(Math.abs(composerBox.y - (60 + padding))).toBeLessThan(1);
+  // 桌面顶部栏高 64px。
+  expect(Math.abs(composerBox.y - (64 + padding))).toBeLessThan(1);
   expect(Math.abs(composerBox.y + composerBox.height - (906 - padding))).toBeLessThan(1);
   expect(Math.abs(resultsBox.y + resultsBox.height - (906 - padding))).toBeLessThan(1);
   expect(
@@ -67,7 +68,8 @@ test("current draft, references and output choices follow model switches and sur
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await page.getByRole("link", { name: "素材库", exact: true }).click();
   await expect(page.getByRole("heading", { name: "素材库", exact: true })).toBeVisible();
-  await page.getByRole("link", { name: "工作区", exact: true }).click();
+  await page.getByRole("button", { name: "电商", exact: true }).click();
+  await page.getByRole("menuitem", { name: "主图制作", exact: true }).click();
   await expect(prompt).toHaveValue("保留我的商品草稿");
 });
 

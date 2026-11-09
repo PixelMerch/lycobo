@@ -329,7 +329,7 @@ test("credit and account overlays block background wheel scrolling and restore i
   if (!bounds) throw new Error("Missing composer scroll region");
   for (const trigger of [
     page.locator(".topbar .header-balance"),
-    page.locator(".sidebar .account-trigger"),
+    page.locator(".topbar .account-trigger"),
   ]) {
     await trigger.click();
     const overlay = page.locator(".credit-preview-popover, .account-menu");

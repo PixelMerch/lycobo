@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { apiFixture, mockImageApi } from "./image-api-fixture";
+import { mockImageApi } from "./image-api-fixture";
 
 test("home composer shares prompt and real reference drafts without submitting generation", async ({
   page,
@@ -22,7 +22,7 @@ test("home composer shares prompt and real reference drafts without submitting g
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   const uploadBox = await page.locator(".home-upload").boundingBox();
   const promptBox = await page.getByRole("textbox", { name: "创作需求" }).boundingBox();
-  expect(uploadBox && promptBox && uploadBox.y + uploadBox.height <= promptBox.y).toBe(true);
+  expect(uploadBox && promptBox && uploadBox.x + uploadBox.width <= promptBox.x).toBe(true);
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles([
@@ -331,7 +331,7 @@ test.describe("touch home inspiration", () => {
   });
 });
 
-test("wide home inspiration fills every column with equal side gutters", async ({ page }) => {
+test("wide home inspiration fills every column and clears the left dock", async ({ page }) => {
   await mockImageApi(page);
   await page.setViewportSize({ width: 2400, height: 1100 });
   await page.goto("/");
@@ -348,14 +348,17 @@ test("wide home inspiration fills every column with equal side gutters", async (
       card.getBoundingClientRect(),
     );
     return {
-      leftGutter: bounds.left - outer.left,
+      gridLeft: bounds.left,
       rightGutter: outer.right - bounds.right,
       lastCardRight: Math.max(...cards.map((card) => card.right)),
       gridRight: bounds.right,
       columns: new Set(cards.map((card) => Math.round(card.left))).size,
     };
   });
-  expect(Math.abs(layout.leftGutter - layout.rightGutter)).toBeLessThan(1);
+  // 与 vidmuse 一样，内容整体右移为左侧悬浮入口让位，右侧留白 32px。
+  const dock = await page.locator(".home-dock").boundingBox();
+  expect(layout.gridLeft).toBeGreaterThanOrEqual((dock?.x ?? 0) + (dock?.width ?? 0) + 16);
+  expect(Math.abs(layout.rightGutter - 32)).toBeLessThan(1);
   expect(Math.abs(layout.lastCardRight - layout.gridRight)).toBeLessThan(1);
   expect(layout.columns).toBe(5);
   await gallery.scrollIntoViewIfNeeded();
@@ -367,7 +370,9 @@ test("wide home inspiration fills every column with equal side gutters", async (
   await expect(gallery.locator(".home-inspiration-card")).toHaveCount(4);
 });
 
-test("image shortcuts preserve the current draft and never submit paid work", async ({ page }) => {
+test("templates fill the prompt in place, confirm replacement and never submit paid work", async ({
+  page,
+}) => {
   await mockImageApi(page);
   let submissions = 0;
   page.on("request", (request) => {
@@ -375,15 +380,79 @@ test("image shortcuts preserve the current draft and never submit paid work", as
       submissions++;
   });
   await page.goto("/");
-  const shortcuts = page.getByRole("region", { name: "创作用途", exact: true });
-  await expect(shortcuts.getByRole("button")).toHaveCount(4);
-  await page.getByRole("textbox", { name: "创作需求" }).fill("保留我的商品描述");
-  await shortcuts.getByRole("button", { name: "场景图", exact: true }).click();
-  await expect(page).toHaveURL(/\/commerce\/create$/);
-  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
-    "保留我的商品描述",
-  );
+  const templates = page.getByRole("region", { name: "创作用途", exact: true });
+  await expect(templates.getByRole("button")).toHaveCount(5);
+  const prompt = page.getByRole("textbox", { name: "创作需求" });
+  await templates.getByRole("button", { name: "白底主图", exact: true }).click();
+  await expect(prompt).toHaveValue(/纯白背景/);
+  await prompt.fill("保留我的商品描述");
+  await templates.getByRole("button", { name: "场景主图", exact: true }).click();
+  await page.getByRole("button", { name: "保留当前内容", exact: true }).click();
+  await expect(prompt).toHaveValue("保留我的商品描述");
+  await templates.getByRole("button", { name: "场景主图", exact: true }).click();
+  await page.getByRole("button", { name: "替换", exact: true }).click();
+  await expect(prompt).toHaveValue(/真实自然的使用场景/);
+  await expect(page).toHaveURL(/\/$/);
   expect(submissions).toBe(0);
+});
+
+test("home modes keep each tool's draft and hand off to the matching workspace tool", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  await page.goto("/");
+  const modes = page.getByRole("tablist", { name: "创作模式" });
+  const prompt = page.getByRole("textbox", { name: "创作需求" });
+  await prompt.fill("主图描述");
+  await page
+    .getByLabel("添加参考图片", { exact: true })
+    .setInputFiles("apps/web/public/studio/bedroom-thumb.webp");
+  await expect(page.locator(".reference-tile")).toHaveCount(1);
+
+  await modes.getByRole("tab", { name: "视频创作" }).click();
+  await expect(page).toHaveURL(/\?mode=video$/);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("动起来讲卖点");
+  await expect(prompt).toHaveValue("");
+  // 切换模式只向空图片槽带入商品图，与工作区工具坞一致。
+  await expect(page.locator(".reference-tile")).toHaveCount(1);
+  await prompt.fill("镜头推近展示面料");
+
+  await modes.getByRole("tab", { name: "主图制作" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(prompt).toHaveValue("主图描述");
+  await modes.getByRole("tab", { name: "视频创作" }).click();
+  await expect(prompt).toHaveValue("镜头推近展示面料");
+  await page.getByRole("button", { name: "开始创作", exact: true }).click();
+  await expect(page).toHaveURL(/\/video$/);
+  await expect(page.getByLabel("场景描述", { exact: true })).toHaveValue("镜头推近展示面料");
+});
+
+test("textile mode selects views and opens the textile tool with the uploaded main image", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  await page.goto("/?mode=textile");
+  await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveCount(0);
+  const start = page.getByRole("button", { name: "开始创作", exact: true });
+  await expect(start).toBeDisabled();
+  const views = page.getByRole("toolbar", { name: "裂变视角" });
+  await views.getByRole("button", { name: "正面", exact: true }).click();
+  await expect(views.getByRole("button", { name: "正面", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page
+    .getByLabel("添加参考图片", { exact: true })
+    .setInputFiles([
+      "apps/web/public/studio/bedroom-thumb.webp",
+      "apps/web/public/studio/textile-views/fabric.webp",
+    ]);
+  await expect(page.locator(".reference-tile")).toHaveCount(2);
+  await expect(start).toBeEnabled();
+  await start.click();
+  await expect(page).toHaveURL(/\/commerce\/textile-set$/);
+  await expect(page.locator(".textile-selected-name", { hasText: "正面" })).toBeVisible();
+  await expect(page.locator(".reference-image-card")).toHaveCount(2);
 });
 
 for (const width of [1440, 390]) {
@@ -410,106 +479,36 @@ for (const width of [1440, 390]) {
     await page.evaluate(() => window.scrollTo(0, 0));
     await expect(header).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     if (width < 768) await page.getByRole("button", { name: "打开导航", exact: true }).click();
-    await page.getByRole("link", { name: "工作区", exact: true }).last().click();
+    await page.getByRole("link", { name: "素材库", exact: true }).last().click();
     await expect(page.locator(".studio-app")).toHaveAttribute("data-home-header-opaque", "false");
   });
 }
 
 for (const width of [1440, 390]) {
-  test(`home moving image background leaves the composer stable at ${width}px`, async ({
+  test(`home atmosphere sits behind the header and follows the selected mode at ${width}px`, async ({
     page,
   }) => {
     await mockImageApi(page);
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/");
-    const wall = page.locator(".grid-motion");
-    await expect(wall).toHaveAttribute("data-playing", "true");
-    await expect(page.locator(".home-intro, .home-intro-heading")).toHaveCount(0);
-    await expect(page.locator(".grid-motion__row")).toHaveCount(8);
-    const background = page.locator(".home-motion-background");
-    const backgroundBounds = await background.boundingBox();
-    expect(backgroundBounds?.y).toBe(0);
-    expect(backgroundBounds?.width).toBe(width < 768 ? width : width - 274);
-    await expect(page.locator(".home-intro-character, .home-dot-background")).toHaveCount(0);
-    await expect
-      .poll(() =>
-        wall
-          .locator("img")
-          .evaluateAll((images) =>
-            images.every(
-              (image) =>
-                image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
-            ),
-          ),
-      )
-      .toBe(true);
+    const atmosphere = page.locator(".home-atmosphere");
+    await expect(atmosphere).toHaveAttribute("aria-hidden", "true");
+    const bounds = await atmosphere.boundingBox();
+    expect(bounds?.y).toBe(0);
+    expect(bounds?.width).toBe(width);
+    await expect(page.locator(".grid-motion, .home-motion-background")).toHaveCount(0);
     const prompt = page.getByRole("textbox", { name: "创作需求", exact: true });
-    const before = await prompt.boundingBox();
-    const row = page.locator(".grid-motion__row").first();
-    const transform = await row.evaluate((el) => getComputedStyle(el).transform);
-    await expect
-      .poll(() => row.evaluate((el) => getComputedStyle(el).transform))
-      .not.toBe(transform);
     await prompt.fill("保留商品的颜色与材质");
-    expect((await prompt.boundingBox())?.y).toBe(before?.y);
-    await page.screenshot({ path: `/tmp/lycobo-grid-motion-home-${width}.png` });
-    await wall.evaluate((el) =>
-      window.scrollTo(0, el.getBoundingClientRect().bottom + window.scrollY + 16),
-    );
-    await expect(wall).toHaveAttribute("data-playing", "false");
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await expect(wall).toHaveAttribute("data-playing", "true");
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await expect(wall).toHaveAttribute("data-playing", "false");
-    await expect(row).toHaveCSS("will-change", "auto");
+    const modes = page.getByRole("tablist", { name: "创作模式" });
+    await modes.getByRole("tab", { name: "套图计划" }).click();
+    await expect(page.locator(".commerce-home")).toHaveAttribute("data-mode", "variation");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("先规划再生成");
+    await modes.getByRole("tab", { name: "主图制作" }).click();
+    await expect(page.locator(".commerce-home")).toHaveAttribute("data-mode", "create");
     await expect(prompt).toHaveValue("保留商品的颜色与材质");
+    await page.screenshot({ path: `/tmp/lycobo-home-modes-${width}.png` });
     await expect
       .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
       .toBe(true);
   });
 }
-
-test("image background ignores pointer movement over the composer and credit popover", async ({
-  page,
-}) => {
-  await mockImageApi(page);
-  await page.route("**/api/v1/auth/session", (route) =>
-    route.fulfill({
-      json: apiFixture({
-        userId: crypto.randomUUID(),
-        organizationId: crypto.randomUUID(),
-        role: "admin",
-        account: "background-pointer-fixture",
-      }),
-    }),
-  );
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/");
-  await expect(page.locator(".grid-motion")).toHaveAttribute("data-playing", "true");
-  const maxSpot = () =>
-    page
-      .locator(".grid-motion__tile")
-      .evaluateAll((tiles) =>
-        Math.max(
-          0,
-          ...tiles.map((tile) =>
-            Number.parseFloat(
-              (tile instanceof HTMLElement ? tile.style.getPropertyValue("--spot") : "") || "0",
-            ),
-          ),
-        ),
-      );
-  await page.getByRole("textbox", { name: "创作需求", exact: true }).hover();
-  await expect.poll(maxSpot).toBe(0);
-  await page.mouse.move(450, 90);
-  await expect.poll(maxSpot).toBeGreaterThan(0.05);
-  await page.getByRole("textbox", { name: "创作需求", exact: true }).hover();
-  await expect.poll(maxSpot).toBe(0);
-  await page.locator(".header-balance").click();
-  const preview = page.getByRole("dialog", { name: "积分概览", exact: true });
-  await preview.getByRole("button", { name: "充值积分", exact: true }).hover();
-  await expect.poll(maxSpot).toBe(0);
-  await preview.getByRole("button", { name: "全部明细" }).hover();
-  await expect.poll(maxSpot).toBe(0);
-  await expect(preview).toBeVisible();
-});

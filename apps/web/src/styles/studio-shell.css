@@ -1,60 +1,4 @@
-/* App chrome is measured against the approved reference; business controls keep their theme. */
-.sidebar {
-  width: var(--sidebar-width);
-  position: fixed;
-  inset: 0 auto 0 0;
-  border: 0;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  background: var(--shell-sidebar-background);
-  font-family: var(--shell-font-family);
-  z-index: 20;
-  transition: background-color 160ms ease;
-}
-.sidebar-header {
-  height: var(--header-height);
-  min-height: var(--header-height);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: var(--sidebar-header-offset) var(--shell-inline-inset) 0;
-  transition: padding 450ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-.brand {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-}
-.sidebar .sidebar-toggle {
-  width: 28px;
-  min-width: 28px;
-  height: 28px;
-  min-height: 28px;
-  padding: 0;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--shell-nav-foreground);
-  box-shadow: none;
-}
-.sidebar .sidebar-toggle:is(:hover, [data-hovered="true"]) {
-  background: var(--shell-nav-active);
-  color: #fff;
-}
-.sidebar-compact-mark {
-  display: none;
-  object-fit: contain;
-}
-.sidebar nav {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 16px 12px 0;
-  overflow-y: auto;
-  min-height: 0;
-}
+/* 应用外壳：全站顶部导航栏，手机改用导航抽屉；业务控件沿用各自主题。 */
 .nav-row {
   position: relative;
   isolation: isolate;
@@ -82,10 +26,7 @@
   text-decoration: none;
   transition:
     background-color 160ms ease,
-    color 160ms ease,
-    width 450ms cubic-bezier(0.22, 1, 0.36, 1),
-    padding 450ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-radius 450ms cubic-bezier(0.22, 1, 0.36, 1);
+    color 160ms ease;
 }
 .nav-row::before {
   content: "";
@@ -149,118 +90,149 @@
   outline: 1px solid #ffffff66;
   outline-offset: -1px;
 }
-.sidebar-bottom {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: auto 12px 16px;
-  padding-top: 8px;
-  border-top: 1px solid #ffffff0a;
-}
+/* 顶部栏按用户指定的 vidmuse 首页复刻：左侧 Logo 与导航，右侧圆形工具按钮、积分胶囊和头像。 */
 .topbar {
   position: sticky;
   top: 0;
-  height: var(--header-height);
-  margin-left: var(--sidebar-width);
-  background: var(--shell-header-background);
-  border: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 32px;
+  height: var(--header-height);
   padding: 0 var(--shell-inline-inset);
+  border: 0;
+  background: var(--shell-header-background);
   font-family: var(--shell-font-family);
   z-index: 15;
 }
-@media (min-width: 1800px) {
-  :root,
-  .dark {
-    --sidebar-width: 288px;
-    --sidebar-header-offset: 22px;
-    --shell-nav-height: 42px;
-  }
-  .nav-row {
-    padding-right: 18px;
-  }
+.topbar .brand {
+  flex: none;
 }
-@media (min-width: 2560px) {
-  :root,
-  .dark {
-    --sidebar-width: 320px;
-    --sidebar-header-offset: 24px;
-    --shell-nav-height: 44px;
-  }
-  .nav-row {
-    padding-right: 20px;
-  }
+.topbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
 }
-@media (min-width: 768px) {
-  .studio-app[data-sidebar-collapsed="true"] {
-    --sidebar-width: 64px;
-  }
-  .studio-app[data-sidebar-collapsed="true"] .sidebar {
-    background: var(--shell-header-background);
-  }
-  .studio-app[data-sidebar-collapsed="true"] .sidebar-header {
-    justify-content: flex-start;
-    padding: var(--sidebar-header-offset) 0 0 18px;
-  }
-  .studio-app[data-sidebar-collapsed="true"] .sidebar .brand,
-  .studio-app[data-sidebar-collapsed="true"] .sidebar .nav-label,
-  .studio-app[data-sidebar-collapsed="true"] .sidebar .nav-chevron {
-    display: none;
-  }
-  .studio-app[data-sidebar-collapsed="true"] .sidebar .nav-row {
-    width: 32px;
-    min-width: 32px;
-    height: 32px;
-    min-height: 32px;
-    margin: 4px auto;
-    padding: 0;
-    justify-content: center;
-    border-radius: 32px;
-  }
-  .studio-app[data-sidebar-collapsed="true"] .sidebar-toggle .ui-icon {
-    display: none;
-  }
-  .studio-app[data-sidebar-collapsed="true"] .sidebar-toggle .sidebar-compact-mark {
-    display: block;
-  }
-  .studio-app[data-sidebar-collapsed="true"]
-    .sidebar-toggle:is(:hover, [data-hovered="true"], :focus-visible, [data-focus-visible="true"])
-    .sidebar-compact-mark {
-    display: none;
-  }
-  .studio-app[data-sidebar-collapsed="true"]
-    .sidebar-toggle:is(:hover, [data-hovered="true"], :focus-visible, [data-focus-visible="true"])
-    .ui-icon {
-    display: block;
-  }
-}
-/* Header keeps only the mobile menu and the account/login actions. */
-.topbar .header-login {
-  height: var(--control-height-sm);
-  min-height: var(--control-height-sm);
+.topbar-nav .nav-row {
+  width: auto;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 20px;
+  gap: 4px;
   border-radius: 999px;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
+  background: transparent;
+  color: #ffffff99;
+  font-size: var(--text-base);
   font-weight: var(--weight-medium);
+  line-height: 20px;
+}
+.topbar-nav .nav-row::before {
+  display: none;
+}
+.topbar-nav .nav-row:is(:hover, [data-hovered="true"], [aria-expanded="true"]) {
+  background: #ffffff0a;
+  color: #ffffffcc;
+}
+.topbar-nav .nav-row:is(.active, [aria-current="page"]) {
+  background: transparent;
+  color: #fff;
+  font-weight: 700;
+}
+.topbar-menu-chevron {
+  flex: none;
+  transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.topbar-menu-trigger[aria-expanded="true"] .topbar-menu-chevron {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .topbar-menu-chevron {
+    transition: none;
+  }
+}
+/* “电商”下拉：沿用共享磨砂材质，四个工具各一行，图标与文字间距 8px。 */
+.topbar-menu {
+  min-width: 160px;
+  padding: 6px;
+  border-radius: 12px;
+}
+.topbar-menu .dropdown__menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
+  outline: none;
+}
+.topbar-menu .topbar-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  min-height: 48px;
+  padding: 6px 16px;
+  border-radius: 6px;
+  color: #ffffffb3;
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: 22px;
+  cursor: pointer;
+}
+.topbar-menu .topbar-menu-item:is([data-hovered="true"], [data-focused="true"]) {
+  background: #ffffff0f;
+  color: #fff;
+}
+.topbar-menu .topbar-menu-item[data-current="true"] {
+  color: #fff;
+}
+/* 右侧更新与消息为 40px 圆形按钮。 */
+.header-news {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.header-news .account-footer-action.button {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  border-radius: 50%;
+  background: #ffffff14;
+  color: #ffffffcc;
+}
+.header-news .account-footer-action.button:is(:hover, [data-hovered="true"]) {
+  background: #ffffff24;
+  color: #fff;
+}
+/* 未登录时顶部栏右侧只放“登录领积分”胶囊。 */
+.topbar .header-login.button {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--app-primary-gradient);
+  color: var(--accent-foreground);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: 20px;
   font-family: var(--shell-font-family);
+}
+.topbar .header-login.button:is(:hover, [data-hovered="true"]) {
+  background: var(--app-primary-gradient);
+  filter: brightness(1.04);
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   flex: none;
-  /* The breadcrumb is gone, so the actions pin themselves to the right edge. */
   margin-inline-start: auto;
 }
 .mobile-menu {
   display: none;
 }
 .main-content {
-  margin-left: var(--sidebar-width);
   padding: var(--content-padding);
   min-width: 0;
 }
@@ -282,4 +254,21 @@
   margin-top: 6px;
   font-size: var(--text-base);
   line-height: var(--leading-base);
+}
+/* 手机导航抽屉里“电商”分组的小标题。 */
+.nav-group-label {
+  margin: 10px 0 2px;
+  padding: 0 14px;
+  color: #ffffff80;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+/* 手机顶部栏：导航、更新消息与账户都收进导航抽屉，只保留菜单、Logo 和积分会员入口。 */
+@media (max-width: 767px) {
+  .topbar :is(.topbar-nav, .header-news, .account-header) {
+    display: none;
+  }
+  .topbar .brand .lycobo-logo {
+    width: 96px;
+  }
 }

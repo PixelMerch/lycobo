@@ -1,24 +1,25 @@
+/* 顶部栏积分胶囊：40px 高、#FFFFFF14 半透明底，左侧余额、右侧开通会员（参考 vidmuse 的积分胶囊）。 */
 .header-benefits {
   display: flex;
   align-items: center;
+  height: 40px;
   min-width: 0;
-  padding: 3px;
+  padding: 0 4px;
   border-radius: 999px;
-  background: var(--glass-fill), var(--glass-tint);
-  box-shadow: var(--glass-shadow);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
+  background: #ffffff14;
+  -webkit-backdrop-filter: blur(40px);
+  backdrop-filter: blur(40px);
 }
 .header-benefits .button {
   height: 32px;
   min-height: 32px;
-  padding-inline: var(--space-3);
+  padding-inline: 10px;
   gap: 6px;
   border: 0;
   border-radius: 999px;
   background: transparent;
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
+  font-size: var(--text-base);
+  line-height: 20px;
   font-weight: var(--weight-medium);
   box-shadow: none;
 }
@@ -40,8 +41,9 @@
   text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
 }
-.header-balance-unit {
-  color: var(--muted);
+.header-balance-unit,
+.header-membership > .ui-icon:last-child {
+  display: none;
 }
 .header-benefits-divider {
   height: 14px;
@@ -208,13 +210,18 @@
     min-width: 0;
   }
   .header-benefits {
+    height: auto;
     padding: 0;
   }
   .header-benefits .button {
     padding-inline: 10px;
   }
-  .header-balance-unit,
-  .header-membership > .ui-icon:last-child {
-    display: none;
+}
+/* 减少透明度时积分胶囊改用实色，不做背景模糊。 */
+@media (prefers-reduced-transparency: reduce) {
+  .header-benefits {
+    background: #1c1f1b;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }

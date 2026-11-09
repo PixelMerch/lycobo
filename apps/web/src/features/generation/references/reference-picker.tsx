@@ -1,6 +1,6 @@
 import { Alert, Button, toast } from "@heroui/react";
-import { IconPlus, IconTrash } from "@tabler/icons-react";
-import { lazy, Suspense, useRef, useState } from "react";
+import { IconPlus, IconTrash, type TablerIcon } from "@tabler/icons-react";
+import { lazy, type RefObject, Suspense, useEffect, useRef, useState } from "react";
 import { ReferenceImageCard } from "../../../components/reference-image/reference-image-card";
 import { UiIcon } from "../../../components/ui-icon";
 import { useRequireLogin } from "../../auth/login-prompt";
@@ -35,6 +35,12 @@ function promptWithoutReferences(prompt: string) {
 type PickerProps = {
   limit?: number;
   label?: string;
+  /** 上传按钮上的文字；首页按创作模式显示“商品图”“家纺主图”等。 */
+  addLabel?: string;
+  /** 上传按钮图标，默认加号。 */
+  addIcon?: TablerIcon;
+  /** 让调用方的其他入口也能打开同一个文件选择框，仍先检查登录。 */
+  openRef?: RefObject<(() => void) | null>;
   compact?: boolean;
   disabled?: boolean;
   references: Draft["references"];
@@ -47,6 +53,7 @@ type PickerProps = {
     }
 );
 
+/** 参考图上传与预览：首页和各工具共用编号、删除及提示词引用的同步规则。 */
 export function ReferencePicker({
   model,
   references,
@@ -54,6 +61,9 @@ export function ReferencePicker({
   disabled = false,
   limit = 5,
   label = "上传图片",
+  addLabel,
+  addIcon = IconPlus,
+  openRef,
   prompt = "",
   onChange,
 }: PickerProps) {
@@ -69,7 +79,18 @@ export function ReferencePicker({
     change,
     readFiles,
   } = useReferencePicker({ model, references, prompt, onChange, disabled, limit });
-  const addLabel = compact ? "上传商品图" : "添加图片";
+  const addText = addLabel ?? (compact ? "上传商品图" : "添加图片");
+  const openFiles = () => {
+    if (requireLogin()) input.current?.click();
+  };
+  // 每次渲染后同步给调用方的额外入口，卸载时清空，避免指向已失效的输入框。
+  useEffect(() => {
+    if (!openRef) return;
+    openRef.current = openFiles;
+    return () => {
+      openRef.current = null;
+    };
+  });
   return (
     <section className="reference-picker">
       <div className="field-title">
@@ -120,7 +141,7 @@ export function ReferencePicker({
               const prompt = currentDraft()?.prompt ?? "";
               const remaining = references.filter((item) => item.id !== image.id);
               change(remaining, promptAfterReferenceRemoval(prompt, index + 1));
-              // Keep an open preview valid after the removed image disappears.
+              // 删除图片后修正正在打开的预览序号，避免指向已移除的图片。
               setPreview((current) => previewAfterRemoval(current, index));
             }}
           />
@@ -131,12 +152,10 @@ export function ReferencePicker({
             className="add-reference"
             isDisabled={disabled || reading || references.length >= limit}
             aria-label="添加参考图"
-            onPress={() => {
-              if (requireLogin()) input.current?.click();
-            }}
+            onPress={openFiles}
           >
-            <UiIcon icon={IconPlus} size={compact ? "default" : "action"} />
-            <span>{reading ? "读取中…" : addLabel}</span>
+            <UiIcon icon={addIcon} size={compact ? "default" : "action"} />
+            <span>{reading ? "读取中…" : addText}</span>
           </Button>
         ) : null}
       </div>
@@ -147,8 +166,7 @@ export function ReferencePicker({
           </Alert.Content>
         </Alert>
       ) : null}
-      {/* Uploaded drafts become previewable the moment they are added, reusing
-       * the shared viewer instead of a second image overlay. */}
+      {/* 图片加入草稿后即可预览，复用共享查看器，不另建图片浮层。 */}
       {preview !== null && references[preview] ? (
         <Suspense fallback={null}>
           <ImageViewer

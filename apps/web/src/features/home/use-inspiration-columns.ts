@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 import type { HomeInspiration } from "./home-inspiration-data";
 
 const heightByShape = { portrait: 1.25, landscape: 0.75, square: 1 };
-const breakpoints = ["(min-width: 768px)", "(min-width: 1200px)", "(min-width: 1800px)"];
+const breakpoints = ["(min-width: 768px)", "(min-width: 1024px)", "(min-width: 1280px)"];
 
 function subscribe(onChange: () => void) {
   const queries = breakpoints.map((query) => window.matchMedia(query));
@@ -16,7 +16,7 @@ function getColumnCount() {
   return 2 + breakpoints.filter((query) => window.matchMedia(query).matches).length;
 }
 
-/** Fill the shortest column rather than leaving the final CSS multi-column track empty. */
+/** 按较短列依次分配卡片，避免最后一列大片留空；列数与 CSS 断点一致。 */
 export function useInspirationColumns(items: HomeInspiration[]) {
   const count = useSyncExternalStore(subscribe, getColumnCount, () => 4);
   const columns = Array.from(
@@ -30,7 +30,7 @@ export function useInspirationColumns(items: HomeInspiration[]) {
   for (const item of items) {
     const shortest = columns.reduce((left, right) => (left.height <= right.height ? left : right));
     shortest.items.push(item);
-    shortest.height += heightByShape[item.shape] + 0.06;
+    shortest.height += heightByShape[item.shape] + 0.02;
   }
   return columns;
 }

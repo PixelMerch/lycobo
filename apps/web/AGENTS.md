@@ -25,9 +25,9 @@ Local uploads stay preview-only until submission; the server validates and store
   surface as a local default. The standalone login page uses the same dark-glass material and swaps its two faces.
   The full-screen membership page is an explicit exception: opaque background, no backdrop blur
   or modal fade/scale transitions.
-- Follow PRD.md for navigation: Home, Workspace, Asset Library. The workspace holds four tools
-  (main image, textile variation, image-set plan, video) that switch through the tool dock.
-  TK has no current navigation entry.
+- Follow PRD.md for navigation: the top bar shows Home, 电商 (a dropdown with the four tools:
+  main image, textile variation, image-set plan, video) and Asset Library. Inside the workspace
+  the tool dock still switches tools. TK has no current navigation entry.
 - DESIGN.md is the sole visual specification. The user approved and froze the current UI on
   2026-10-22. Documentation, cleanup and component refactors must preserve its appearance;
   a new visual change requires a new explicit design request. Do not reinterpret skill recommendations
@@ -43,21 +43,21 @@ Local uploads stay preview-only until submission; the server validates and store
   render; effects synchronize external systems, not redundant state.
 - Lazy-load heavy canvas/editor routes. Do not load original full-resolution images into grid cards.
 - Accessible labels, visible focus, semantic controls, reduced motion and narrow-screen behavior
-  are required. Signed out, the header keeps the borderless pill-shaped login action; signed in,
-  it shows shared credits and membership entries. Accounts and notifications remain in the sidebar;
-  do not restore task-center or notification entries in the header.
+  are required. Signed out, the top bar shows the pill-shaped login action; signed in, it shows the
+  update and message buttons, the shared credits and membership pill and the account avatar.
+  Do not restore task-center entries.
 - Keep the brand focus ring keyboard-only. React Aria moves focus on hover, restored focus and
   programmatic opens, and Chromium reports those moves as `:focus-visible`; suppress the ring for
   pointer focus (`data-focused` without `data-focus-visible`) and for HeroUI overlay containers
   (dialog, popover, dropdown menu). No purple box around the account capsule, menu list, row or
   dialog after hover or click. Cover this with E2E assertions, not only CSS.
-- Signed in, the account capsule sits at the foot of the sidebar (the navigation drawer on phones)
-  and opens its menu upward on press, Enter or Space, as in the approved 小云雀 reference; hovering
-  does not open it. Keyboard focus enters the first row and returns to the capsule on close.
+- Signed in, the account avatar sits at the right end of the top bar and opens its menu downward on
+  press, Enter or Space; on phones the account row sits at the foot of the navigation drawer and opens
+  upward. Hovering does not open it. Keyboard focus enters the first row and returns to the trigger on close.
 - Preserve pending drafts when switching tasks. Never navigate users away when a background task completes.
 - Product screens use end-user language. Keep preview/debug/reset notes in developer documentation, not headers, cards or dialogs. Never infer production readiness from clean UI copy.
-- Match the measured shell rules in DESIGN.md: sidebar 274/288/320px by breakpoint, collapsed 64px (2× the 32px icon background); desktop rows 40/42/44px, row gap 6px, icon/text gap 8px, pill radius 999px, icons 18px. Header is 60px on desktop and mobile. Hover/active never change geometry; mobile targets stay 44px.
+- Match the measured shell rules in DESIGN.md: a sticky top bar (64px desktop, 60px mobile) modeled on the user-approved vidmuse header, 36px pill navigation items, a hover/press 电商 dropdown, 40px round utility buttons and avatar, and no left sidebar. Hover/active never change geometry; mobile targets stay 44px.
 - Use Tabler business icons through components/ui-icon.tsx. Sizes: 14 / 18 / 20 / 22 / 28px, stroke 2. Keep icon sizing independent of compact control geometry; do not add another icon library. Credits use Tabler IconCoins (no bitmap coin) and close controls use Tabler IconX; never keep hand-drawn, bitmap or second-library icons.
-- Sidebar text/icons use neutral gray-white: default #FFFFFFB3, hover fill #FFFFFF0A, active fill #FFFFFF14 with white text/icons. Do not restore purple navigation labels. Chevrons rotate left on expansion and respect reduced motion. Tool selectors use spacing instead of extra divider lines.
+- Navigation text uses neutral gray-white: default #FFFFFF99, hover fill #FFFFFF0A with #FFFFFFCC text, current page bold white. Do not restore purple navigation labels. Chevrons rotate on expansion and respect reduced motion. Tool selectors use spacing instead of extra divider lines.
 - No server modules or secrets in apps/web or packages/contracts. VITE_* is public.
 - UI mockups are references, never a screenshot used as a functional page.

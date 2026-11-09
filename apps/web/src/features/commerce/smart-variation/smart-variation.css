@@ -327,8 +327,7 @@
         var(--workspace-view-switch-height) +
         12px
       )
-      var(--content-padding) var(--content-padding)
-      calc(var(--sidebar-width) + var(--content-padding));
+      var(--content-padding) var(--content-padding) var(--content-padding);
     width: auto;
     height: auto;
     margin: 0;

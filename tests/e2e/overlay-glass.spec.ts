@@ -20,7 +20,8 @@ for (const mobile of [false, true]) {
     const draft = page.getByRole("textbox", { name: "创作需求", exact: true });
     await draft.fill("关闭积分概览后保留草稿");
     const balance = page.locator(".header-balance");
-    await glass(page.locator(".header-benefits"));
+    // 顶部积分胶囊按 vidmuse 顶部栏改为 #FFFFFF14 半透明底加 40px 背景模糊。
+    await expect(page.locator(".header-benefits")).toHaveCSS("backdrop-filter", "blur(40px)");
     await balance.click();
     const panel = page.getByRole("dialog", { name: "积分概览", exact: true });
     await glass(page.locator(".credit-preview-popover"));

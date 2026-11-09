@@ -305,8 +305,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sidebar,
-  .sidebar-header,
   .nav-row,
   .nav-row::before,
   .main-content {

@@ -168,12 +168,8 @@
 @media (max-width: 767px) {
   :root,
   .dark {
-    --sidebar-width: 0px;
     --header-height: 60px;
     --shell-inline-inset: 12px;
-  }
-  .sidebar {
-    display: none;
   }
   .mobile-menu {
     display: inline-flex;

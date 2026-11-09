@@ -43,7 +43,7 @@ AI 接手先看 [按任务阅读与交接](ai-workflow.md)，需要时使用 [�
 
 - [设计资料索引](design/README.md)：规范仍在引用的品牌素材；实际样式以 DESIGN 为准。
 - [项目技能](skills.md)：开发技能及来源。
-- [第三方说明](third-party.md) · [React Bits 许可](licenses/react-bits.md)：依赖与素材声明。
+- [第三方说明](third-party.md)：依赖与素材声明。
 
 ## 维护约定
 

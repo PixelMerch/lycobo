@@ -45,7 +45,7 @@
   }
 }
 
-:is(.sidebar, .mobile-nav):has(.nav-row[aria-expanded="true"]) .nav-row[aria-current="page"] {
+:is(.topbar-nav, .mobile-nav):has(.nav-row[aria-expanded="true"]) .nav-row[aria-current="page"] {
   background: transparent;
   color: var(--shell-nav-foreground);
 }

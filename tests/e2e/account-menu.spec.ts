@@ -18,7 +18,7 @@ async function signIn(page: Page, account: string) {
 }
 
 for (const width of [1440, 320]) {
-  test(`signed-in account sits at the foot of the navigation and opens its menu upward at ${width}px`, async ({
+  test(`signed-in account opens from the top bar on desktop and the drawer foot on phones at ${width}px`, async ({
     page,
   }) => {
     const account = "13800138000";
@@ -27,27 +27,30 @@ for (const width of [1440, 320]) {
     await page.goto("/commerce/create");
     const draft = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
     await draft.fill("保留正在准备的商品图");
-    // The account stays in navigation; the header only adds shared credits and membership.
-    await expect(page.locator(".topbar .account-trigger")).toHaveCount(0);
+    const desktop = width >= 768;
+    // 桌面账户头像在顶部栏右侧；手机顶部栏只放积分与会员，账户在导航抽屉底部。
+    if (!desktop) await expect(page.locator(".topbar .account-trigger")).toBeHidden();
     await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toHaveCount(0);
     const openNavigation = async () => {
       if (width < 768) await page.getByRole("button", { name: "打开导航", exact: true }).click();
     };
     await openNavigation();
-    const navigation = page.locator(width < 768 ? ".mobile-nav" : ".sidebar");
+    const navigation = page.locator(desktop ? ".topbar" : ".mobile-nav");
     const trigger = navigation.getByRole("button", {
       name: `账户菜单：${account}`,
       exact: true,
     });
-    await expect(trigger.locator(".account-trigger-name")).toHaveText(account);
+    if (desktop) await expect(trigger.locator(".account-trigger-name")).toHaveCount(0);
+    else await expect(trigger.locator(".account-trigger-name")).toHaveText(account);
     await expect(trigger.locator(".account-credits")).toHaveCount(0);
     await expect(trigger.locator(".avatar")).toHaveCount(1);
     await expect(trigger).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-    await expect(navigation.locator(".account-footer")).toHaveCSS("border-top-width", "1px");
+    if (!desktop)
+      await expect(navigation.locator(".account-footer")).toHaveCSS("border-top-width", "1px");
     await expect(page.locator(".credit-pill")).toHaveCount(0);
     if (width < 768) await expect(page.locator(".drawer__backdrop")).toHaveCSS("opacity", "1");
     await navigation
-      .locator(".account-footer")
+      .locator(desktop ? ".account-header" : ".account-footer")
       .screenshot({ path: `/tmp/lycobo-footer-${width}.png` });
     const updates = navigation.getByRole("button", { name: "更新记录", exact: true });
     await updates.click();
@@ -100,7 +103,7 @@ for (const width of [1440, 320]) {
     await expect(trigger).toBeFocused();
     await expect(trigger).toHaveCSS("outline-style", "solid");
 
-    // A press opens the menu above the capsule; hovering alone does not.
+    // 按下才展开菜单：桌面在头像下方，手机在抽屉底部入口上方；悬停不展开。
     await trigger.hover();
     await expect(menu).toHaveCount(0);
     await trigger.click();
@@ -108,7 +111,11 @@ for (const width of [1440, 320]) {
     const popover = page.locator(".account-menu");
     await expect(popover).not.toHaveAttribute("data-entering", "true");
     const [menuBox, triggerBox] = [await popover.boundingBox(), await trigger.boundingBox()];
-    expect((menuBox?.y ?? 0) + (menuBox?.height ?? 0)).toBeLessThanOrEqual(triggerBox?.y ?? 0);
+    if (desktop)
+      expect(menuBox?.y ?? 0).toBeGreaterThanOrEqual(
+        (triggerBox?.y ?? 0) + (triggerBox?.height ?? 0),
+      );
+    else expect((menuBox?.y ?? 0) + (menuBox?.height ?? 0)).toBeLessThanOrEqual(triggerBox?.y ?? 0);
     expect(menuBox?.x).toBeGreaterThanOrEqual(0);
     expect((menuBox?.x ?? 0) + (menuBox?.width ?? 0)).toBeLessThanOrEqual(width);
     // Compact menu: the shared balance leads a small card, never a page-sized figure.
@@ -187,19 +194,6 @@ for (const width of [1440, 320]) {
     await page.screenshot({ path: `/tmp/lycoboai-account-menu-${width}.png` });
   });
 }
-
-test("the collapsed sidebar keeps the account as its avatar", async ({ page }) => {
-  await signIn(page, "collapsed-fixture");
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/commerce/create");
-  await page.getByRole("button", { name: "收起导航栏", exact: true }).click();
-  const trigger = page.getByRole("button", { name: "账户菜单：collapsed-fixture", exact: true });
-  await expect(trigger.locator(".account-trigger-name")).toBeHidden();
-  await expect(page.locator(".sidebar .account-footer-tools")).toBeHidden();
-  await expect.poll(async () => (await trigger.boundingBox())?.width).toBe(32);
-  await trigger.click();
-  await expect(page.getByRole("menu", { name: "账户菜单：collapsed-fixture" })).toBeVisible();
-});
 
 test.describe("touch", () => {
   test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });

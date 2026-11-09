@@ -201,7 +201,7 @@
   --textile-composer-width: 320px;
   position: fixed;
   top: calc(var(--header-height) + var(--content-padding));
-  left: calc(var(--sidebar-width) + var(--content-padding) + var(--textile-composer-width) + 12px);
+  left: calc(var(--content-padding) + var(--textile-composer-width) + 12px);
   right: calc(var(--content-padding) + var(--workspace-history-width) + 12px);
   height: 0;
   pointer-events: none;
@@ -209,8 +209,7 @@
 /* Keep the non-modal picker anchored while background panels stay in place. */
 html:has(.textile-views-popover),
 body:has(.textile-views-popover),
-body:has(.textile-views-popover)
-  :is(.composer-scroll, .results-panel, .history-rail, .sidebar nav) {
+body:has(.textile-views-popover) :is(.composer-scroll, .results-panel, .history-rail) {
   overflow: hidden;
 }
 .textile-views-popover {

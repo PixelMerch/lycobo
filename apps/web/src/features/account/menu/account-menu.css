@@ -1,4 +1,4 @@
-/* A quiet footer row, separated from navigation by a thin rule. */
+/* 手机导航抽屉底部的账户行，与导航之间用细线分隔。 */
 .account-footer {
   display: flex;
   align-items: center;
@@ -7,13 +7,6 @@
   min-height: calc(var(--shell-nav-height) + 9px);
   padding-top: 8px;
   border-top: 1px solid var(--interaction-hover);
-}
-.sidebar-bottom:has(.account-footer) {
-  padding-top: 0;
-  border-top: 0;
-}
-.sidebar-bottom .account-footer {
-  margin-top: 6px;
 }
 .account-trigger {
   display: flex;
@@ -67,24 +60,6 @@
 }
 .account-credits strong {
   font-weight: 600;
-}
-@media (min-width: 768px) {
-  .studio-app[data-sidebar-collapsed="true"] .sidebar .account-trigger {
-    flex: none;
-    width: 32px;
-    min-width: 32px;
-    height: 32px;
-    min-height: 32px;
-    margin: 4px auto;
-    padding: 2px;
-    justify-content: center;
-    background: transparent;
-  }
-  .studio-app[data-sidebar-collapsed="true"]
-    .sidebar
-    :is(.account-trigger-name, .account-footer-tools) {
-    display: none;
-  }
 }
 .mobile-nav-account {
   width: 100%;
@@ -305,5 +280,41 @@
   .account-menu {
     background: var(--glass-fallback);
     backdrop-filter: none;
+  }
+}
+
+/* 桌面顶部栏右侧的账户入口只显示头像，菜单向下展开。 */
+.account-header {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+.account-header .account-trigger {
+  flex: none;
+  justify-content: center;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  border-radius: 50%;
+}
+.account-header .account-trigger .account-avatar {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+.account-header .account-avatar .avatar__fallback {
+  background: var(--app-primary-gradient);
+  color: var(--accent-foreground);
+}
+@media (pointer: coarse) {
+  .account-header .account-trigger {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
   }
 }

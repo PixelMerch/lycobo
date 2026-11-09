@@ -2,14 +2,18 @@ import { useEffect, useRef } from "react";
 import { useOutletContext } from "react-router";
 import type { StudioShellContext } from "../../app/studio-shell";
 
-/** Change the header surface only when the home intro leaves its lower edge. */
+/** 首屏滚出 Header 下沿时才切换 Header 底色，回到顶部恢复透明。 */
 export function useHomeHeaderSurface() {
   const intro = useRef<HTMLElement>(null);
   const { setHomeHeaderOpaque } = useOutletContext<StudioShellContext>();
   useEffect(() => {
     const element = intro.current;
     if (!element) return;
-    const headerHeight = 60;
+    // Header 高度来自全站变量：桌面 64px、手机 60px。
+    const headerHeight =
+      Number.parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue("--header-height"),
+      ) || 64;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry) setHomeHeaderOpaque(entry.boundingClientRect.bottom <= headerHeight);

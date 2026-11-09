@@ -107,9 +107,9 @@
 }
 .home-composer .home-prompt .reference-rich-editor.textarea {
   height: auto;
-  min-height: 138px;
+  min-height: 88px;
   max-height: 360px;
-  padding: 10px 12px;
+  padding: 4px 0 8px;
   line-height: 26px;
   overflow-y: auto;
   background: transparent;

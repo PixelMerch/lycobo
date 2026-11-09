@@ -1,5 +1,12 @@
 import { Button, Modal, Tabs } from "@heroui/react";
-import { IconCopy } from "@tabler/icons-react";
+import {
+  IconCamera,
+  IconCopy,
+  IconLayoutCollage,
+  IconPhoto,
+  IconSparkles,
+  type TablerIcon,
+} from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
@@ -18,6 +25,14 @@ import {
 } from "./home-inspiration-data";
 import { useInspirationColumns } from "./use-inspiration-columns";
 import "./home-inspiration-gallery.css";
+
+// 卡片左下角的分类标签图标，与工作区工具图标保持同一风格。
+const categoryIcons = {
+  商品主图: IconCamera,
+  场景灵感: IconPhoto,
+  家纺展示: IconLayoutCollage,
+  创意视觉: IconSparkles,
+} satisfies Record<HomeInspiration["category"], TablerIcon>;
 
 /** 展示灵感示例，用户确认后带入主图草稿，不自动提交任务。 */
 export function HomeInspirationGallery() {
@@ -47,6 +62,9 @@ export function HomeInspirationGallery() {
   }
   return (
     <section className="home-inspiration" aria-labelledby="home-inspiration-title">
+      <h2 id="home-inspiration-title" className="sr-only">
+        创作灵感
+      </h2>
       <Tabs
         selectedKey={category}
         onSelectionChange={(key) => {
@@ -54,25 +72,24 @@ export function HomeInspirationGallery() {
           if (next) setCategory(next);
         }}
       >
-        <div className="home-inspiration-heading">
-          <h2 id="home-inspiration-title">创作灵感</h2>
-          <p>挑一个喜欢的风格，一键做同款</p>
+        <div className="home-inspiration-bar">
+          <Tabs.ListContainer>
+            <Tabs.List aria-label="灵感分类">
+              {inspirationCategories.map((name) => (
+                <Tabs.Tab id={name} key={name}>
+                  {name === category && (
+                    <SelectionHighlight
+                      layoutId="home-inspiration-selection"
+                      layoutDependency={category}
+                    />
+                  )}
+                  {name}
+                </Tabs.Tab>
+              ))}
+            </Tabs.List>
+          </Tabs.ListContainer>
+          <p className="home-inspiration-note">AI 示例素材 · 挑一个风格，一键做同款</p>
         </div>
-        <Tabs.ListContainer>
-          <Tabs.List aria-label="灵感分类">
-            {inspirationCategories.map((name) => (
-              <Tabs.Tab id={name} key={name}>
-                {name === category && (
-                  <SelectionHighlight
-                    layoutId="home-inspiration-selection"
-                    layoutDependency={category}
-                  />
-                )}
-                {name}
-              </Tabs.Tab>
-            ))}
-          </Tabs.List>
-        </Tabs.ListContainer>
         <Tabs.Panel id={category}>
           <div className="home-inspiration-grid">
             {columns.map((column, columnIndex) => (
@@ -113,7 +130,7 @@ export function HomeInspirationGallery() {
   );
 }
 
-/** The picture opens the detail; 做同款 is a sibling button, never nested inside the picture. */
+/** 点图片打开详情；“做同款”是并列按钮，不嵌套在图片按钮里。 */
 function InspirationTile({
   item,
   order,
@@ -138,13 +155,6 @@ function InspirationTile({
         ease: [0.215, 0.61, 0.355, 1],
       }}
     >
-      <img
-        className="home-inspiration-glow"
-        src={item.image}
-        alt=""
-        loading="lazy"
-        decoding="async"
-      />
       <Button
         variant="tertiary"
         className="home-inspiration-card"
@@ -160,8 +170,9 @@ function InspirationTile({
           loading="lazy"
           decoding="async"
         />
-        <span className="home-inspiration-caption">
-          <strong>{item.title}</strong>
+        <span className="home-inspiration-tag">
+          <UiIcon icon={categoryIcons[item.category]} size="small" />
+          {item.category}
         </span>
       </Button>
       <div className="home-inspiration-panel">

@@ -4,7 +4,8 @@ import { mockImageApi } from "./image-api-fixture";
 test("workspace entry opens creation with direct tool navigation", async ({ page }) => {
   await mockImageApi(page);
   await page.goto("/");
-  await page.getByRole("link", { name: "工作区", exact: true }).click();
+  await page.getByRole("button", { name: "电商", exact: true }).click();
+  await page.getByRole("menuitem", { name: "主图制作", exact: true }).click();
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(page.getByRole("button", { name: "全部工具", exact: true })).toHaveCount(0);
   await page
@@ -18,7 +19,7 @@ test("workspace entry opens creation with direct tool navigation", async ({ page
 test("old entry links recover to current home; malformed model is rejected", async ({ page }) => {
   await page.goto("/design/canvas?task=demo-skin");
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: "为你的商品，创作下一张好图" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("让每件商品，都有一张好主图");
   await page.goto("/commerce/create/not%20a%20model");
   await expect(page.getByRole("heading", { name: "页面暂时无法打开" })).toBeVisible();
 });

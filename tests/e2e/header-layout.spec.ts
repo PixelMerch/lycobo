@@ -36,15 +36,16 @@ for (const width of [390, 1440, 1920, 2560]) {
     }
     const trigger = page.getByRole("button", { name: `账户菜单：${account.account}`, exact: true });
     await expect(trigger).toBeVisible({ timeout: 15000 });
-    await expect(trigger.locator(".account-trigger-name")).toBeVisible();
-    await expect(page.locator(".topbar .account-trigger")).toHaveCount(0);
+    // 桌面账户入口在顶部栏右侧只显示头像；手机在导航抽屉底部显示头像与昵称。
+    await expect(trigger.locator(".account-trigger-name")).toHaveCount(mobile ? 1 : 0);
+    if (mobile) await expect(page.locator(".topbar .account-trigger")).toBeHidden();
     const measure = () =>
       page.evaluate((mobile) => {
         const left = document.querySelector<HTMLElement>(
-          mobile ? ".mobile-nav" : ".sidebar .lycobo-logo",
+          mobile ? ".mobile-nav" : ".topbar .lycobo-logo",
         );
         const capsule = document.querySelector<HTMLElement>(
-          mobile ? ".mobile-nav .account-trigger" : ".sidebar .account-trigger",
+          mobile ? ".mobile-nav .account-trigger" : ".topbar .account-trigger",
         );
         if (!left || !capsule) throw new Error("Shell edges not found");
         return {
@@ -53,6 +54,11 @@ for (const width of [390, 1440, 1920, 2560]) {
           scrollbar: innerWidth - document.documentElement.clientWidth,
         };
       }, mobile);
+    // 抽屉滑入结束后再取基准位置，避免量到动画中途的坐标。
+    if (mobile)
+      await expect
+        .poll(async () => (await page.locator(".mobile-nav").boundingBox())?.x ?? -1)
+        .toBeCloseTo(0, 0);
     const baseline = await measure();
     expect(baseline.left).toBeCloseTo(mobile ? 0 : 20, 0);
     expect(baseline.scrollbar).toBe(0);
