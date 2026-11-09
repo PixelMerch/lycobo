@@ -1,0 +1,96 @@
+/* 顶部栏语言入口：与积分胶囊同高同底色，地球图标、语言短名和展开箭头。 */
+.language-trigger {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #ffffff14;
+  color: #ffffffcc;
+  font-family: var(--shell-font-family);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 200ms ease;
+}
+.language-trigger:is(:hover, [data-hovered="true"], [aria-expanded="true"]) {
+  background: #ffffff24;
+  color: #fff;
+}
+.language-trigger[data-focus-visible="true"] {
+  outline: 1px solid #ffffff66;
+  outline-offset: 2px;
+}
+.language-trigger-chevron {
+  flex: none;
+  transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.language-trigger[aria-expanded="true"] .language-trigger-chevron {
+  transform: rotate(180deg);
+}
+
+/* 语言下拉：与“电商”下拉同一套尺寸，当前语言右侧显示青柠对勾。 */
+.language-menu {
+  min-width: 160px;
+  padding: 6px;
+  border-radius: 12px;
+}
+.language-menu .dropdown__menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
+  outline: none;
+}
+.language-menu .language-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 40px 0 16px;
+  border-radius: 6px;
+  color: #ffffffb3;
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: 20px;
+  cursor: pointer;
+}
+.language-menu .language-menu-item:is([data-hovered="true"], [data-focused="true"]) {
+  background: #ffffff0f;
+  color: #fff;
+}
+.language-menu .language-menu-item[data-selected="true"] {
+  color: #fff;
+}
+/* HeroUI 默认把对勾放在左侧并给整行留出左边距，这里改到右侧，语言名左对齐。 */
+.language-menu .language-menu-item .menu-item__indicator {
+  inset-inline: auto 16px;
+  color: var(--accent);
+}
+
+/* 手机顶部栏只留地球图标，触控目标 44px。 */
+@media (max-width: 767px) {
+  .language-trigger {
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+  .language-trigger :is(.language-trigger-name, .language-trigger-chevron) {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .language-trigger,
+  .language-trigger-chevron {
+    transition: none;
+  }
+}

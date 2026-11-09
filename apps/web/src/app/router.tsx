@@ -1,4 +1,3 @@
-import { EmptyState, Link } from "@heroui/react";
 import { mainImageModelIds } from "@lycoboai/contracts";
 import { createBrowserRouter, redirect } from "react-router";
 import {
@@ -8,6 +7,7 @@ import {
 import { useStudioStore } from "../features/generation/studio-state";
 import { useWorkspaceState } from "../features/workspace/workspace-state";
 import { PageLoading } from "./page-loading";
+import { PageNotFound, PageUnavailable } from "./page-states";
 
 export const router = createBrowserRouter([
   {
@@ -32,12 +32,7 @@ export const router = createBrowserRouter([
   {
     path: "/",
     HydrateFallback: PageLoading,
-    errorElement: (
-      <EmptyState className="empty-state">
-        <h1>页面暂时无法打开</h1>
-        <Link href="/">返回首页</Link>
-      </EmptyState>
-    ),
+    errorElement: <PageUnavailable />,
     lazy: async () => ({
       Component: (await import("./studio-shell")).StudioShell,
     }),
@@ -117,12 +112,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "*",
-        element: (
-          <EmptyState className="empty-state">
-            <h1>页面不存在</h1>
-            <Link href="/">返回首页</Link>
-          </EmptyState>
-        ),
+        element: <PageNotFound />,
       },
     ],
   },

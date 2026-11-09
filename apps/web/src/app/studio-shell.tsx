@@ -12,9 +12,13 @@ import { useEnterpriseSession } from "../features/auth/auth-client";
 import { loginHref } from "../features/auth/login-navigation";
 import { useImageEvents } from "../features/generation/use-image-events";
 import { shareProductReference, workspaceTools } from "../features/workspace/workspace-state";
+import { workspaceToolMessages } from "../features/workspace/workspace-tool-messages";
 import { toolIcons } from "../features/workspace/workspace-tool-symbol";
+import { useMessages } from "../i18n/messages";
 import { CommerceNavMenu } from "./commerce-nav-menu";
+import { LanguageMenu } from "./language-menu";
 import { PageLoading } from "./page-loading";
+import { shellMessages } from "./shell-messages";
 import { useWindowScrolled } from "./use-window-scrolled";
 import "../styles/brand.css";
 
@@ -29,13 +33,14 @@ export function StudioShell() {
   const routeNeedsLogin = protectedRoute && !signedIn;
   const scrolled = useWindowScrolled();
   const [menuOpen, setMenuOpen] = useState(false);
+  const t = useMessages(shellMessages);
   if (routeNeedsLogin && !session.isPending)
     return <Navigate to={loginHref(`${pathname}${location.search}${location.hash}`)} replace />;
   return (
     <div className="studio-app">
       <header className="topbar" data-scrolled={scrolled || undefined}>
         <Drawer isOpen={menuOpen} onOpenChange={setMenuOpen}>
-          <Drawer.Trigger className="mobile-menu icon-button" aria-label="打开导航">
+          <Drawer.Trigger className="mobile-menu icon-button" aria-label={t.openNavigation}>
             <UiIcon icon={IconMenu2} size="navigation" />
           </Drawer.Trigger>
           <Drawer.Backdrop>
@@ -51,7 +56,7 @@ export function StudioShell() {
                       height="24"
                     />
                   </Drawer.Heading>
-                  <Drawer.CloseTrigger aria-label="关闭导航">
+                  <Drawer.CloseTrigger aria-label={t.closeNavigation}>
                     <UiIcon icon={IconX} size="action" />
                   </Drawer.CloseTrigger>
                 </Drawer.Header>
@@ -76,13 +81,13 @@ export function StudioShell() {
             height="24"
           />
         </RouteLink>
-        <nav className="topbar-nav" aria-label="主导航">
+        <nav className="topbar-nav" aria-label={t.mainNavigation}>
           <RouteLink nav to="/" end className="nav-row">
-            首页
+            {t.home}
           </RouteLink>
           <CommerceNavMenu active={inWorkspace} />
           <RouteLink nav to="/assets" className="nav-row">
-            素材库
+            {t.assets}
           </RouteLink>
         </nav>
         <div className="header-actions">
@@ -92,11 +97,15 @@ export function StudioShell() {
                 <AccountUpdates kind="updates" />
                 <AccountUpdates kind="messages" />
               </div>
+              <LanguageMenu />
               <HeaderBenefits />
               <AccountMenu variant="header" />
             </>
           ) : (
-            <HeaderLogin />
+            <>
+              <LanguageMenu />
+              <HeaderLogin />
+            </>
           )}
         </div>
       </header>
@@ -117,13 +126,15 @@ function RealtimeEvents() {
 
 /** 手机导航抽屉：首页、电商四个工具与素材库；切换工具时与工具坞一样只向空图片槽带图。 */
 function DrawerNavigation({ pathname, onNavigate }: { pathname: string; onNavigate: () => void }) {
+  const t = useMessages(shellMessages);
+  const toolText = useMessages(workspaceToolMessages);
   return (
-    <nav aria-label="主导航">
+    <nav aria-label={t.mainNavigation}>
       <RouteLink nav to="/" end className="nav-row" onClick={onNavigate}>
         <UiIcon icon={IconSmartHome} size="default" />
-        <span className="nav-label">首页</span>
+        <span className="nav-label">{t.home}</span>
       </RouteLink>
-      <p className="nav-group-label">电商</p>
+      <p className="nav-group-label">{t.commerce}</p>
       {workspaceTools.map((tool) => (
         <RouteLink
           key={tool.id}
@@ -136,12 +147,12 @@ function DrawerNavigation({ pathname, onNavigate }: { pathname: string; onNaviga
           }}
         >
           <UiIcon icon={toolIcons[tool.id]} size="default" />
-          <span className="nav-label">{tool.name}</span>
+          <span className="nav-label">{toolText.tools[tool.id].name}</span>
         </RouteLink>
       ))}
       <RouteLink nav to="/assets" className="nav-row" onClick={onNavigate}>
         <UiIcon icon={IconFolderSparkle} size="default" />
-        <span className="nav-label">素材库</span>
+        <span className="nav-label">{t.assets}</span>
       </RouteLink>
     </nav>
   );

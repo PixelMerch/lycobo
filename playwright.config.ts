@@ -6,7 +6,8 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"], ["html", { open: "never" }]],
-  use: { baseURL: "http://127.0.0.1:5173", trace: "retain-on-failure" },
+  // 用例按中文界面编写，固定浏览器语言为简体中文；英文界面由 language.spec.ts 单独覆盖。
+  use: { baseURL: "http://127.0.0.1:5173", trace: "retain-on-failure", locale: "zh-CN" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: [
     {

@@ -1,16 +1,20 @@
 import { Button } from "@heroui/react";
 import { MotionConfig, motion } from "motion/react";
 import { useLocation, useNavigate } from "react-router";
+import { useMessages } from "../../i18n/messages";
 import { shareProductReference, toolForPath, workspaceTools } from "./workspace-state";
+import { workspaceToolMessages } from "./workspace-tool-messages";
 import { WorkspaceToolSymbol } from "./workspace-tool-symbol";
 
+/** 工作区顶部的工具切换栏：切换时只向空图片槽带入商品图。 */
 export function WorkspaceToolPicker() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const current = toolForPath(pathname);
+  const t = useMessages(workspaceToolMessages);
   return (
     <MotionConfig reducedMotion="user">
-      <motion.nav layoutScroll className="workspace-tool-bar" aria-label="电商创作工具">
+      <motion.nav layoutScroll className="workspace-tool-bar" aria-label={t.toolBar}>
         {workspaceTools.map((tool) => (
           <Button
             key={tool.id}
@@ -18,7 +22,7 @@ export function WorkspaceToolPicker() {
             variant="tertiary"
             className="workspace-tool-shortcut"
             data-tool={tool.id}
-            aria-label={tool.name}
+            aria-label={t.tools[tool.id].name}
             aria-current={current.id === tool.id ? "page" : false}
             onPress={() => {
               shareProductReference(pathname, tool.path);
@@ -35,7 +39,7 @@ export function WorkspaceToolPicker() {
             )}
             <WorkspaceToolSymbol tool={tool.id} />
             <span className="workspace-tool-label">
-              <span className="workspace-tool-name">{tool.name}</span>
+              <span className="workspace-tool-name">{t.tools[tool.id].name}</span>
             </span>
           </Button>
         ))}

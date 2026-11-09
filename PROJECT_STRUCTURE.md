@@ -10,6 +10,7 @@ AI 开发按 [任务阅读索引](docs/ai-workflow.md) 读取相关目录和依�
 | apps/web/src/app                     | 路由、共享应用壳（studio-shell.tsx）、providers                                                |
 | apps/web/src/features                | 按业务功能组织：首页、身份、账户、素材、生图与图片编辑工作区                                   |
 | apps/web/src/lib                     | 浏览器 API 客户端与工具                                                                        |
+| apps/web/src/i18n                    | 界面语言：浏览器语言检测、语言存储、文案目录工具与 HeroUI 语言同步                             |
 | apps/web/src/styles                  | 共享设计 tokens 与全局基础样式                                                                 |
 | apps/api/src                         | Hono 入口、应用工厂、配置与组织隔离的生图 feature API                                          |
 | apps/assets/src                      | 隔离本地开发的 Node/S3 资源服务；生产资源由 Workers 签名校验后读取 R2，缺失变体通过 Queue 补齐 |
@@ -60,8 +61,9 @@ apps/worker/
 
 ```text
 apps/web/src/
-├── app/                          # 路由、应用壳（顶部导航栏、“电商”悬停下拉、手机导航抽屉）、providers
+├── app/                          # 路由、应用壳（顶部导航栏、“电商”与语言悬停下拉、手机导航抽屉）、providers
 ├── components/                   # 跨功能复用的 HeroUI 组合与图片浏览基础能力
+├── i18n/                         # 简体中文／English：语言检测与记忆、defineMessages 文案目录、页面 lang 与标题同步
 ├── lib/                          # 请求、会话、错误和剪贴板等通用能力
 ├── styles/                       # 共享 tokens、基础样式与全屏动效样式
 └── features/
@@ -94,6 +96,7 @@ apps/web/src/
 ```
 
 - `components` 中参考图输入、参考图卡片、图片浏览和通用弹层分别在 `reference-prompt`、`reference-image`、`image-viewer`、`overlays`；基础图标、路由链接等小型公共组件留在根目录。`styles` 中 `auth`、`composer`、`history`、`home`、`workspace` 按用途归类，共享材质、主题和基础样式留在根目录，CSS 导入顺序保持稳定。
+- 界面文案就近放在各功能的 `*-messages.ts`，用 `i18n/messages.ts` 的 `defineMessages` 同时写简体中文与英文两份，结构以中文版为准；组件用 `useMessages` 读取，组件之外用 `currentMessages`。
 - 先按业务功能归类，功能内部就近存放组件、hook、样式与单元测试；只有存在明确子职责时再增加目录，不为每个组件建立一层文件夹。
 - 保留描述性文件名和直接导入，不新增 `index.ts` 聚合出口，也不建立覆盖所有功能的 components/hooks/services 分类目录。浏览器端到端测试仍在根目录 `tests/e2e`。
 - 主导航统一使用工作区入口；`features/workspace` 组合参数子路由、随功能切换的历史及四个功能的直达工具栏；`workspace-tool-symbol.tsx` 共享功能入口与参数标题的图标身份，只使用Tabler矢量图标。

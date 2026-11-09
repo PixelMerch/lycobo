@@ -25,7 +25,7 @@ Local uploads stay preview-only until submission; the server validates and store
   surface as a local default. The standalone login page uses the same dark-glass material and swaps its two faces.
   The full-screen membership page is an explicit exception: opaque background, no backdrop blur
   or modal fade/scale transitions. One more named exception (2026-11-09): the top-bar dropdowns
-  (电商, credits) use the `header-menu` surface (#FFFFFF14, 40px blur, no edge). Add no others without a request.
+  (电商, language, credits) use the `header-menu` surface (#FFFFFF14, 40px blur, no edge). Add no others without a request.
 - The home page borrows the vidmuse layout but must keep Lycobo's own character (user, 2026-11-09):
   upright slogan with a mode-gradient keyword, tool-accent mode tabs, lime-to-mint generation pills,
   in-card glass hover panels and our own wording. Do not copy reference-site styling, copy or assets.
@@ -50,8 +50,8 @@ Local uploads stay preview-only until submission; the server validates and store
   render; effects synchronize external systems, not redundant state.
 - Lazy-load heavy canvas/editor routes. Do not load original full-resolution images into grid cards.
 - Accessible labels, visible focus, semantic controls, reduced motion and narrow-screen behavior
-  are required. Signed out, the top bar shows the pill-shaped login action; signed in, it shows the
-  update and message buttons, the credits pill (balance and plan; hover/press opens the credits menu
+  are required. Signed out, the top bar shows the language entry and the pill-shaped login action; signed in, it shows the
+  update and message buttons, the language entry, the credits pill (balance and plan; hover/press opens the credits menu
   like the 电商 dropdown, without stealing focus on hover) and the account avatar.
   Do not restore task-center entries.
 - Keep the brand focus ring keyboard-only. React Aria moves focus on hover, restored focus and
@@ -67,5 +67,10 @@ Local uploads stay preview-only until submission; the server validates and store
 - Match the measured shell rules in DESIGN.md: a sticky top bar (64px desktop, 60px mobile, transparent at the top and frosted 4px shorter once the page scrolls) modeled on the user-approved vidmuse header, 36px pill navigation items, a hover/press 电商 dropdown, 40px round utility buttons and avatar, and no left sidebar. Hover/active never change geometry; mobile targets stay 44px.
 - Use Tabler business icons through components/ui-icon.tsx. Sizes: 14 / 18 / 20 / 22 / 28px, stroke 2. Keep icon sizing independent of compact control geometry; do not add another icon library. Credits use Tabler IconCoins (no bitmap coin) and close controls use Tabler IconX; never keep hand-drawn, bitmap or second-library icons.
 - Navigation text uses neutral gray-white: default #FFFFFF99, hover fill #FFFFFF0A with #FFFFFFCC text, current page bold white. Do not restore purple navigation labels. Chevrons rotate on expansion and respect reduced motion. Tool selectors use spacing instead of extra divider lines.
+- The UI is bilingual (user, 2026-11-09): Simplified Chinese and English. Every user-facing string, accessible
+  name, toast and client-side error message comes from a colocated `*-messages.ts` catalog built with
+  `defineMessages` from src/i18n; the zh-CN entry sets the shape and the English entry must match it. Components read
+  text with `useMessages`, code outside React with `currentMessages`; dates and numbers use the current locale.
+  Never translate user input or model-generated plans.
 - No server modules or secrets in apps/web or packages/contracts. VITE_* is public.
 - UI mockups are references, never a screenshot used as a functional page.

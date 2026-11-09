@@ -4,22 +4,13 @@ import { useTextileSetDraft } from "../commerce/textile-set/textile-set-state";
 import { useStudioStore } from "../generation/studio-state";
 import { useVideoDraft } from "../video/video-state";
 
+/** 四个电商工具的 id、路径和示例图；名称与用法文案在 workspace-tool-messages.ts。 */
 export const workspaceTools = [
   {
     id: "create",
     name: "主图制作",
     path: "/commerce/create",
-    category: "主图制作",
-    image: "/studio/models/image-2-1.webp",
-    description: "场景主图 · 白底主图 · 活动主图",
-    caption: "场景 · 白底 · 活动",
     hero: "/studio/tool-heroes/create.webp",
-    summary: "一张图讲清卖点：场景、白底、活动主图",
-    steps: [
-      "上传商品参考图（可选，最多 5 张）",
-      "用提示词描述场景、白底或活动风格",
-      "选好比例、分辨率与模型，点击生成",
-    ],
     examples: [
       "/studio/models/image-2-1.webp",
       "/studio/models/image-2-3.webp",
@@ -30,10 +21,6 @@ export const workspaceTools = [
     id: "textile",
     name: "家纺裂变",
     path: "/commerce/textile-set",
-    category: "套图与裂变",
-    image: "/studio/textile-views/front.webp",
-    description: "一张家纺主图，生成多视角与细节图",
-    caption: "多视角 · 细节图",
     hero: "/studio/tool-heroes/textile.webp",
     bannerImages: [
       "/studio/textile-views/front.webp",
@@ -41,12 +28,6 @@ export const workspaceTools = [
       "/studio/textile-views/pillow.webp",
       "/studio/textile-views/bed-end.webp",
       "/studio/textile-views/fabric.webp",
-    ],
-    summary: "一张主图，延展多视角与细节图",
-    steps: [
-      "上传 1 张家纺主图，可补充细节图",
-      "在裂变类型里选择需要的视角",
-      "选好比例与分辨率，一次生成整套",
     ],
     examples: [
       "/studio/textile-views/front.webp",
@@ -58,17 +39,7 @@ export const workspaceTools = [
     id: "variation",
     name: "套图计划",
     path: "/commerce/smart-variation",
-    category: "套图与裂变",
-    image: "/studio/models/image-2-3.webp",
-    description: "先规划每张图的内容，确认后批量生成",
-    caption: "先规划 · 再生成",
     hero: "/studio/tool-heroes/variation.webp",
-    summary: "先规划每张图，确认后批量生成",
-    steps: [
-      "上传商品参考图，描述整套图片的用途",
-      "生成套图计划，逐张检查并修改提示词",
-      "确认方案后批量生成",
-    ],
     examples: [
       "/studio/bedroom-thumb.webp",
       "/studio/lavender-thumb.webp",
@@ -79,17 +50,7 @@ export const workspaceTools = [
     id: "video",
     name: "视频创作",
     path: "/video",
-    category: "商品视频",
-    image: "/studio/models/image-2-5-2.webp",
-    description: "用文字和参考图片生成精美宣传视频",
-    caption: "参考图 · 镜头 · 时长",
     hero: "/studio/tool-heroes/video.webp",
-    summary: "用文字和参考图片生成精美宣传视频",
-    steps: [
-      "添加参考图片，或直接输入文字描述",
-      "描述画面主体、动作和镜头运动",
-      "选择比例与5–30秒时长后生成",
-    ],
     examples: [
       "/studio/models/image-2-5-2.webp",
       "/studio/bedroom-thumb.webp",
