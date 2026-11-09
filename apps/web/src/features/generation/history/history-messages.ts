@@ -111,7 +111,7 @@ export const historyMessages = defineMessages({
       "It will be removed from the history list. Saved assets stay in the asset library. This doesn't cancel generation or refund credits.",
     delete: "Delete",
     deleted: "Deleted",
-    noRecords: "No records yet",
+    noRecords: "No records",
     viewTask: (failed, id) => `${failed ? "View failed task" : "View task"} ${id}`,
     generatedBefore: "Generated",
     generatedAfter: "images",

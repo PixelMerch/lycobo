@@ -100,8 +100,9 @@ export const referencesMessages = defineMessages({
     uploadLabel: "Upload images",
     uploadProduct: "Upload product images",
     addImages: "Add images",
-    limitBefore: "(up to ",
-    limitAfter: " reference images)",
+    // 标题是弹性布局，开头的普通空格会被去掉，用不换行空格隔开。
+    limitBefore: "\u00a0(up to ",
+    limitAfter: ")",
     clearAll: "Clear all reference images",
     clear: "Clear",
     addReferenceImages: "Add reference images",

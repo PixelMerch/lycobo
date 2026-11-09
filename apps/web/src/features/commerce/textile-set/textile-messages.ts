@@ -67,7 +67,8 @@ export const textileMessages = defineMessages({
     oneAtATime: "Upload one image at a time.",
     detailLimit: (max) => `You can upload up to ${max} detail images.`,
     unreadable: "The image can't be read. Check the file and try again.",
-    optionalLimitBefore: "(optional, up to ",
+    // 标题是弹性布局，开头的普通空格会被去掉，用不换行空格隔开。
+    optionalLimitBefore: "\u00a0(optional, up to ",
     optionalLimitAfter: ")",
     clearField: (label) => `Clear ${label.toLowerCase()}`,
     fieldFile: (label) => `${label} file`,

@@ -47,6 +47,41 @@ test.describe("English browser", () => {
   });
 });
 
+test.describe("English workspace", () => {
+  test.use({ locale: "en-US" });
+
+  test("shows the workspace in English", async ({ page }) => {
+    await mockImageApi(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/commerce/create");
+    const tools = page.getByRole("navigation", { name: "E-commerce tools", exact: true });
+    await expect(tools.getByRole("button")).toHaveText([
+      "Main Image",
+      "Textile Set",
+      "Image Set Planner",
+      "Product Video",
+    ]);
+    await expect(page.getByRole("textbox", { name: "Prompt" })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Generate main image", exact: true }),
+    ).toBeVisible();
+  });
+
+  test("replaces Chinese server errors with English by error code", async ({ page }) => {
+    await mockImageApi(page, { signedIn: false });
+    await page.goto("/login");
+    await page.getByRole("button", { name: "Sign in with a team account", exact: true }).click();
+    await page.getByLabel("Team account", { exact: true }).fill("team-fixture");
+    await page.getByLabel("Password", { exact: true }).fill("password-fixture");
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    // 夹具返回中文的 AUTH_NOT_CONFIGURED 错误，英文界面按错误代码显示英文说明。
+    await expect(
+      page.getByText("Sign-in is unavailable right now. Please try again later.").first(),
+    ).toBeVisible();
+    await expect(page.getByText("企业账号登录服务暂未开放")).toHaveCount(0);
+  });
+});
+
 test.describe("Japanese browser", () => {
   test.use({ locale: "ja-JP" });
 

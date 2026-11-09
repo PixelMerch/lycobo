@@ -70,7 +70,7 @@ export const workspaceToolMessages = defineMessages({
     tools: {
       create: {
         name: "Main Image",
-        summary: "One image that sells: scene, white-background and campaign shots",
+        summary: "Scene, white and promo main images",
         steps: [
           "Upload product reference images (optional, up to 5)",
           "Describe the scene, white background or campaign style in a prompt",
@@ -79,7 +79,7 @@ export const workspaceToolMessages = defineMessages({
       },
       textile: {
         name: "Textile Set",
-        summary: "One main image, expanded into more angles and detail shots",
+        summary: "More angles and details from one image",
         steps: [
           "Upload 1 home textile main image, plus detail shots if you have them",
           "Choose the views you need under Variation types",
@@ -88,7 +88,7 @@ export const workspaceToolMessages = defineMessages({
       },
       variation: {
         name: "Image Set Planner",
-        summary: "Plan every image first, then generate the set once you confirm",
+        summary: "Plan each image, then generate the set",
         steps: [
           "Upload product reference images and describe what the set is for",
           "Generate a plan, then check and edit each image's prompt",
@@ -97,7 +97,7 @@ export const workspaceToolMessages = defineMessages({
       },
       video: {
         name: "Product Video",
-        summary: "Turn text and reference images into polished promo videos",
+        summary: "Promo videos from text and images",
         steps: [
           "Add reference images, or just type a description",
           "Describe the subject, the action and the camera movement",
