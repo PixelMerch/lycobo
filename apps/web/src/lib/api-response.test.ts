@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { completeApiResponse } from "../../server/api-binding-response";
+import { useLocaleStore } from "../i18n/locale-store";
 import { normalizeApiResponse } from "./api-response";
 
 afterEach(() => vi.restoreAllMocks());
@@ -34,11 +35,18 @@ it("does not buffer event streams or downloads", async () => {
 });
 it("reports truncated client JSON safely without showing parser internals", async () => {
   const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  useLocaleStore.setState({ locale: "zh-CN" });
   await expect(
     normalizeApiResponse(
       new Response('{"data":"private', { headers: { "Content-Type": "application/json" } }),
     ),
   ).rejects.toThrow("响应未完整接收");
+  useLocaleStore.setState({ locale: "en" });
+  await expect(
+    normalizeApiResponse(
+      new Response('{"data":"private', { headers: { "Content-Type": "application/json" } }),
+    ),
+  ).rejects.toThrow("The response didn't arrive in full");
   expect(JSON.stringify(log.mock.calls)).not.toContain("private");
 });
 it("correlates an interrupted upstream body without leaking the stream error", async () => {

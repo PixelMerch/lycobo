@@ -1,0 +1,50 @@
+import { defineMessages } from "../../i18n/messages";
+
+/** 账户与积分格式化用到的名称：收支类型、订单状态、角色、支付渠道、会员等级与时间前缀。 */
+export const accountFormatMessages = defineMessages({
+  "zh-CN": {
+    entries: {
+      opening: "期初余额",
+      consume: "图片生成",
+      refund: "生成失败退款",
+      recharge: "充值到账",
+      checkin: "签到奖励",
+    },
+    orderStatuses: { pending: "待支付", paid: "已到账", closed: "已关闭" },
+    roles: { member: "成员", admin: "管理员", owner: "拥有者" },
+    channels: { manual: "人工充值", wechat: "微信支付", alipay: "支付宝" },
+    /** 会员状态尚未接入，所有账号都按免费版展示。 */
+    freePlan: "免费版",
+    system: "系统",
+    me: "我",
+    uid: (uid: string) => `UID ${uid}`,
+    task: (id: string) => `任务 ${id}`,
+    promptOptimization: "提示词优化",
+    promptOptimizationRefund: "提示词优化退还",
+    rechargeOrder: (id: string) => `充值订单 ${id}`,
+    today: (time: string) => `今天 ${time}`,
+    yesterday: (time: string) => `昨天 ${time}`,
+  },
+  en: {
+    entries: {
+      opening: "Opening balance",
+      consume: "Image generation",
+      refund: "Refund for failed generation",
+      recharge: "Top-up received",
+      checkin: "Check-in reward",
+    },
+    orderStatuses: { pending: "Awaiting payment", paid: "Credited", closed: "Closed" },
+    roles: { member: "Member", admin: "Admin", owner: "Owner" },
+    channels: { manual: "Manual top-up", wechat: "WeChat Pay", alipay: "Alipay" },
+    freePlan: "Free",
+    system: "System",
+    me: "Me",
+    uid: (uid) => `UID ${uid}`,
+    task: (id) => `Task ${id}`,
+    promptOptimization: "Prompt optimization",
+    promptOptimizationRefund: "Prompt optimization refund",
+    rechargeOrder: (id) => `Top-up order ${id}`,
+    today: (time) => `Today ${time}`,
+    yesterday: (time) => `Yesterday ${time}`,
+  },
+});

@@ -2,17 +2,21 @@ import { Avatar, Button, Chip } from "@heroui/react";
 import type { EnterpriseIdentity } from "@lycoboai/contracts";
 import { IconCopy, IconLogout, IconUsersGroup } from "@tabler/icons-react";
 import { UiIcon } from "../../../components/ui-icon";
+import { useLocale } from "../../../i18n/locale-store";
+import { useMessages } from "../../../i18n/messages";
 import { copyToClipboard } from "../../../lib/clipboard";
 import { useErrorToast } from "../../../lib/error-toast";
 import { useEnterpriseLogout } from "../../auth/auth-client";
 import { roleLabel } from "../account-format";
+import { accountSettingsMessages } from "./account-settings-messages";
 import { SettingsGroup, SettingsRow } from "./account-settings-rows";
 
-/** Large identity header at the top of the profile panel. */
-function ProfileHero({ account }: { account: EnterpriseIdentity }) {
+/** 个人资料面板顶部的大号身份信息。 */
+function ProfileHero({ account, role }: { account: EnterpriseIdentity; role: string }) {
+  const t = useMessages(accountSettingsMessages);
   const initial = Array.from(account.account)[0]?.toUpperCase() ?? "";
   return (
-    <section className="settings-hero" aria-label="账号信息">
+    <section className="settings-hero" aria-label={t.accountInfo}>
       <Avatar className="settings-hero-avatar" aria-hidden="true">
         <Avatar.Fallback>{initial}</Avatar.Fallback>
       </Avatar>
@@ -20,7 +24,7 @@ function ProfileHero({ account }: { account: EnterpriseIdentity }) {
         <strong title={account.account}>{account.account}</strong>
         <div className="settings-hero-meta">
           <Chip size="sm" className="account-chip">
-            企业{roleLabel(account.role)}
+            {role}
           </Chip>
           <span>{account.uid ? `UID ${account.uid}` : "UID —"}</span>
         </div>
@@ -29,24 +33,27 @@ function ProfileHero({ account }: { account: EnterpriseIdentity }) {
   );
 }
 
+/** 个人资料面板：基本资料、企业身份与退出登录；头像上传尚未开放。 */
 export function AccountSettingsProfile({ account }: { account: EnterpriseIdentity }) {
   const logout = useEnterpriseLogout();
+  const t = useMessages(accountSettingsMessages);
+  const role = t.enterpriseRole(roleLabel(account.role, useLocale()));
   useErrorToast(logout.error?.message);
   const uid = account.uid;
   return (
     <div className="account-settings-section">
-      <ProfileHero account={account} />
-      <SettingsGroup title="基本资料">
+      <ProfileHero account={account} role={role} />
+      <SettingsGroup title={t.basicInfo}>
         <SettingsRow
-          label="头像"
-          hint="头像上传暂未开放"
+          label={t.avatar}
+          hint={t.avatarUnavailable}
           action={
             <Button size="sm" variant="secondary" isDisabled>
-              上传头像
+              {t.uploadAvatar}
             </Button>
           }
         />
-        <SettingsRow label="登录账号" value={account.account} />
+        <SettingsRow label={t.loginAccount} value={account.account} />
         <SettingsRow
           label="UID"
           value={uid ?? "—"}
@@ -56,9 +63,9 @@ export function AccountSettingsProfile({ account }: { account: EnterpriseIdentit
                 isIconOnly
                 size="sm"
                 variant="ghost"
-                aria-label="复制 UID"
+                aria-label={t.copyUid}
                 className="settings-row-icon"
-                onPress={() => void copyToClipboard(uid, "UID 已复制")}
+                onPress={() => void copyToClipboard(uid, t.uidCopied)}
               >
                 <UiIcon icon={IconCopy} size="small" />
               </Button>
@@ -66,9 +73,9 @@ export function AccountSettingsProfile({ account }: { account: EnterpriseIdentit
           }
         />
       </SettingsGroup>
-      <SettingsGroup title="企业身份">
-        <SettingsRow label="身份" value={`企业${roleLabel(account.role)}`} />
-        <SettingsRow label="登录方式" value="企业账号登录" />
+      <SettingsGroup title={t.enterpriseIdentity}>
+        <SettingsRow label={t.identity} value={role} />
+        <SettingsRow label={t.loginMethod} value={t.enterpriseLogin} />
       </SettingsGroup>
       <div className="settings-footer">
         <Button
@@ -79,22 +86,24 @@ export function AccountSettingsProfile({ account }: { account: EnterpriseIdentit
           onPress={() => logout.mutate()}
         >
           <UiIcon icon={IconLogout} size="small" />
-          退出登录
+          {t.logout}
         </Button>
       </div>
     </div>
   );
 }
 
+/** 企业成员面板：成员管理尚未开放，只说明用途。 */
 export function AccountSettingsMembers() {
+  const t = useMessages(accountSettingsMessages);
   return (
     <div className="account-settings-section">
       <SettingsGroup
-        title="企业成员"
-        description="管理员可为企业添加成员，成员共用企业积分。"
+        title={t.members}
+        description={t.membersDescription}
         action={
           <Button size="sm" variant="secondary" isDisabled>
-            添加子账号
+            {t.addMember}
           </Button>
         }
       >
@@ -102,8 +111,8 @@ export function AccountSettingsMembers() {
           <span className="settings-empty-mark" aria-hidden="true">
             <UiIcon icon={IconUsersGroup} size="action" />
           </span>
-          <strong>成员管理暂未开放</strong>
-          <p>开放后可在这里添加成员并查看成员列表。</p>
+          <strong>{t.membersUnavailable}</strong>
+          <p>{t.membersLater}</p>
         </div>
       </SettingsGroup>
     </div>

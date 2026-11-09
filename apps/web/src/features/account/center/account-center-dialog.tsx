@@ -1,18 +1,20 @@
 import { Modal, Tabs } from "@heroui/react";
 import { IconX } from "@tabler/icons-react";
 import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
 import { useEnterpriseSession } from "../../auth/auth-client";
 import { useAccountOverlays } from "../account-overlay-store";
 import { CreditLedger } from "../credits/credit-ledger";
 import { RechargeOrders } from "../credits/recharge-orders";
+import { accountCenterMessages } from "./account-center-messages";
 import { type AccountCenterTab, accountCenterTabs } from "./account-center-tabs";
 import { AccountProfile } from "./account-profile";
 import "../account-panel.css";
 import "./account-center.css";
 
 /**
- * The account center opens above the current page, so drafts and the URL stay as they are.
- * Only the selected tab mounts, so each tab reads (and reports failures for) its own data.
+ * 积分与账单弹窗叠在当前页面之上，草稿与地址保持不变；
+ * 只挂载选中的页签，各页签自己读取数据并报告失败。
  */
 export function AccountCenterDialog({
   tab,
@@ -23,6 +25,7 @@ export function AccountCenterDialog({
 }) {
   const session = useEnterpriseSession();
   const selectTab = useAccountOverlays((state) => state.selectTab);
+  const t = useMessages(accountCenterMessages);
   const account = session.data;
   if (!account) return null;
   return (
@@ -36,8 +39,8 @@ export function AccountCenterDialog({
         <Modal.Container>
           <Modal.Dialog className="account-dialog account-center-dialog">
             <Modal.Header>
-              <Modal.Heading>积分与账单</Modal.Heading>
-              <Modal.CloseTrigger aria-label="关闭积分与账单">
+              <Modal.Heading>{t.title}</Modal.Heading>
+              <Modal.CloseTrigger aria-label={t.close}>
                 <UiIcon icon={IconX} size="action" />
               </Modal.CloseTrigger>
             </Modal.Header>
@@ -46,16 +49,16 @@ export function AccountCenterDialog({
               <Tabs
                 selectedKey={tab}
                 onSelectionChange={(key) => {
-                  const next = accountCenterTabs.find((item) => item.id === key);
-                  if (next) selectTab(next.id);
+                  const next = accountCenterTabs.find((id) => id === key);
+                  if (next) selectTab(next);
                 }}
                 className="account-center-tabs"
               >
                 <Tabs.ListContainer>
-                  <Tabs.List aria-label="积分与账单">
-                    {accountCenterTabs.map((item) => (
-                      <Tabs.Tab key={item.id} id={item.id}>
-                        {item.label}
+                  <Tabs.List aria-label={t.title}>
+                    {accountCenterTabs.map((id) => (
+                      <Tabs.Tab key={id} id={id}>
+                        {t.tabs[id]}
                         <Tabs.Indicator />
                       </Tabs.Tab>
                     ))}

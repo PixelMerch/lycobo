@@ -12,6 +12,8 @@ import { useRef } from "react";
 import { useNavigate } from "react-router";
 import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
+import { useLocale } from "../../../i18n/locale-store";
+import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { useEnterpriseLogout, useEnterpriseSession } from "../../auth/auth-client";
 import { useOpenLogin } from "../../auth/login-prompt";
@@ -19,6 +21,7 @@ import { formatCredits, imagesFor, roleLabel } from "../account-format";
 import { useAccountOverlays } from "../account-overlay-store";
 import { AccountUpdates } from "../notifications/account-updates";
 import { useWallet } from "../wallet-client";
+import { accountMenuMessages } from "./account-menu-messages";
 import "../account-common.css";
 import "./account-menu.css";
 
@@ -26,11 +29,12 @@ import "./account-menu.css";
 export function HeaderLogin() {
   const session = useEnterpriseSession();
   const openLogin = useOpenLogin();
+  const t = useMessages(accountMenuMessages);
   return (
     <>
       {!session.data && (
         <Button variant="tertiary" size="sm" className="header-login" onPress={openLogin}>
-          登录领积分
+          {t.login}
         </Button>
       )}
     </>
@@ -55,6 +59,8 @@ export function AccountMenu({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const openOverlay = useAccountOverlays((state) => state.open);
   const openCenter = useAccountOverlays((state) => state.openCenter);
+  const t = useMessages(accountMenuMessages);
+  const locale = useLocale();
   useErrorToast(logout.error?.message);
   const account = session.data;
   if (!account) return null;
@@ -74,7 +80,7 @@ export function AccountMenu({
         <Dropdown.Trigger
           ref={triggerRef}
           className="account-trigger"
-          aria-label={`账户菜单：${account.account}`}
+          aria-label={t.accountMenu(account.account)}
         >
           <Avatar className="account-avatar" size="sm" aria-hidden="true">
             <Avatar.Fallback>{initial}</Avatar.Fallback>
@@ -100,7 +106,7 @@ export function AccountMenu({
                 {account.account}
               </strong>
               <span>
-                {account.uid ? `UID ${account.uid}` : "UID —"} · {roleLabel(account.role)}
+                {account.uid ? `UID ${account.uid}` : "UID —"} · {roleLabel(account.role, locale)}
               </span>
             </div>
           </div>
@@ -108,17 +114,15 @@ export function AccountMenu({
             <div className="account-menu-balance-row">
               <span>
                 <CreditCoin size="default" />
-                企业共享积分
+                {t.sharedCredits}
               </span>
               <strong className="account-credits">
                 {balance === undefined ? "—" : formatCredits(balance)}
               </strong>
             </div>
             <small>
-              每张 {unit} 积分
-              {balance === undefined
-                ? ""
-                : ` · 约可生成 ${formatCredits(imagesFor(balance, unit))} 张`}
+              {t.perImage(unit)}
+              {balance === undefined ? "" : t.imagesLeft(formatCredits(imagesFor(balance, unit)))}
             </small>
           </div>
           <Dropdown.Menu
@@ -133,54 +137,54 @@ export function AccountMenu({
               else if (key === "logout") logout.mutate();
             }}
           >
-            <Dropdown.Section aria-label="积分" className="account-menu-quick">
+            <Dropdown.Section aria-label={t.credits} className="account-menu-quick">
               <Dropdown.Item
                 id="recharge"
-                textValue="充值积分"
+                textValue={t.recharge}
                 className="account-menu-pill account-menu-pill--primary"
               >
-                充值积分
+                {t.recharge}
               </Dropdown.Item>
-              <Dropdown.Item id="ledger" textValue="积分明细" className="account-menu-pill">
-                积分明细
+              <Dropdown.Item id="ledger" textValue={t.usage} className="account-menu-pill">
+                {t.usage}
               </Dropdown.Item>
             </Dropdown.Section>
-            <Dropdown.Section aria-label="会员" className="account-menu-membership">
+            <Dropdown.Section aria-label={t.membership} className="account-menu-membership">
               <Dropdown.Item
                 id="membership"
-                textValue="会员 未开通 查看方案"
+                textValue={t.membershipText}
                 className="account-menu-member"
               >
                 <UiIcon icon={IconCrown} className="account-menu-crown" />
-                <span>会员</span>
+                <span>{t.membership}</span>
                 <Chip size="sm" className="account-chip">
-                  未开通
+                  {t.notMember}
                 </Chip>
                 <span className="account-menu-member-link">
-                  查看方案
+                  {t.viewPlans}
                   <UiIcon icon={IconChevronRight} size="small" />
                 </span>
               </Dropdown.Item>
             </Dropdown.Section>
-            <Dropdown.Section aria-label="个人空间">
-              <Dropdown.Item id="center" textValue="积分与账单">
+            <Dropdown.Section aria-label={t.personalSpace}>
+              <Dropdown.Item id="center" textValue={t.creditsAndBilling}>
                 <UiIcon icon={IconUserCircle} />
-                <span>积分与账单</span>
+                <span>{t.creditsAndBilling}</span>
               </Dropdown.Item>
-              <Dropdown.Item id="works" textValue="个人作品">
+              <Dropdown.Item id="works" textValue={t.works}>
                 <UiIcon icon={IconPhoto} />
-                <span>个人作品</span>
+                <span>{t.works}</span>
               </Dropdown.Item>
             </Dropdown.Section>
             <Separator className="account-menu-separator" />
-            <Dropdown.Section aria-label="账号操作">
-              <Dropdown.Item id="settings" textValue="设置">
+            <Dropdown.Section aria-label={t.accountActions}>
+              <Dropdown.Item id="settings" textValue={t.settings}>
                 <UiIcon icon={IconShieldLock} />
-                <span>设置</span>
+                <span>{t.settings}</span>
               </Dropdown.Item>
-              <Dropdown.Item id="logout" textValue="退出登录">
+              <Dropdown.Item id="logout" textValue={t.logout}>
                 <UiIcon icon={IconLogout} />
-                <span>{logout.isPending ? "正在退出…" : "退出登录"}</span>
+                <span>{logout.isPending ? t.loggingOut : t.logout}</span>
               </Dropdown.Item>
             </Dropdown.Section>
           </Dropdown.Menu>

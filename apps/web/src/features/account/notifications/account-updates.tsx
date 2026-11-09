@@ -1,23 +1,26 @@
 import { Button, Drawer, Link, Tooltip } from "@heroui/react";
 import { IconBell, IconExternalLink, IconList, IconX } from "@tabler/icons-react";
 import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
 import "./account-updates.css";
 
 import { useNotifications, useSiteRelease } from "../../realtime/client";
 import { NotificationBody, ReleaseBody } from "./account-news-body";
+import { notificationsMessages } from "./notifications-messages";
 
 /** 顶部栏与手机导航抽屉共用的更新、消息入口，未读数与版本状态来自实时服务。 */
 export function AccountUpdates({ kind }: { kind: "updates" | "messages" }) {
   const updates = kind === "updates";
-  const title = updates ? "最近更新" : "消息中心";
+  const t = useMessages(notificationsMessages);
+  const title = updates ? t.updatesTitle : t.messagesTitle;
   const notifications = useNotifications();
   const latest = useSiteRelease();
   const newRelease =
     !!latest.data?.release &&
     latest.data.release.version !== import.meta.env.VITE_APP_RELEASE_VERSION;
   const unread = notifications.data?.pages[0]?.unread ?? 0;
-  const updateLabel = newRelease ? "更新记录（有新版本）" : "更新记录";
-  const label = updates ? updateLabel : `消息（${unread} 条未读）`;
+  const updateLabel = newRelease ? t.updatesLabelNew : t.updatesLabel;
+  const label = updates ? updateLabel : t.messagesLabel(unread);
   return (
     <Drawer>
       <Tooltip delay={200}>
@@ -41,9 +44,9 @@ export function AccountUpdates({ kind }: { kind: "updates" | "messages" }) {
             <Drawer.Header className="account-news-header">
               <div>
                 <Drawer.Heading>{title}</Drawer.Heading>
-                {!updates && <p>{unread > 0 ? `${unread} 条未读消息` : "任务进展与系统消息"}</p>}
+                {!updates && <p>{unread > 0 ? t.unreadCount(unread) : t.messagesHint}</p>}
               </div>
-              <Drawer.CloseTrigger aria-label={`关闭${title}`}>
+              <Drawer.CloseTrigger aria-label={t.close(title)}>
                 <UiIcon icon={IconX} size="action" />
               </Drawer.CloseTrigger>
             </Drawer.Header>
@@ -57,7 +60,7 @@ export function AccountUpdates({ kind }: { kind: "updates" | "messages" }) {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  查看全部更新记录 <UiIcon icon={IconExternalLink} size="small" />
+                  {t.allReleases} <UiIcon icon={IconExternalLink} size="small" />
                 </Link>
               </Drawer.Footer>
             )}

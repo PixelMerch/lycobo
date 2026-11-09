@@ -5,7 +5,9 @@ import { useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { PageLoading } from "../../app/page-loading";
 import { UiIcon } from "../../components/ui-icon";
+import { useMessages } from "../../i18n/messages";
 import { useEnterpriseSession } from "./auth-client";
+import { authMessages } from "./auth-messages";
 import { EnterpriseLogin } from "./enterprise-login";
 import { LoginMethods } from "./login-methods";
 import { safeLoginReturnTo } from "./login-navigation";
@@ -15,6 +17,7 @@ import "../../styles/brand.css";
 export function LoginPage() {
   const [enterprise, setEnterprise] = useState(false);
   const reduceMotion = useReducedMotion();
+  const t = useMessages(authMessages);
   const session = useEnterpriseSession();
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -30,7 +33,7 @@ export function LoginPage() {
           size="lg"
           variant="ghost"
           className="login-close"
-          aria-label="关闭登录"
+          aria-label={t.closeLogin}
           onPress={() => {
             void navigate("/", { replace: true });
           }}
@@ -50,8 +53,8 @@ export function LoginPage() {
               <span className="login-brand-mark" aria-hidden="true">
                 <img src="/brand/lycobo-product-pilot-mark.svg" alt="" width="44" height="34" />
               </span>
-              <h1 id="login-title">{enterprise ? "企业账号登录" : "登录 Lycobo"}</h1>
-              <p>{enterprise ? "使用企业账号和密码登录" : "开启你的电商创作"}</p>
+              <h1 id="login-title">{enterprise ? t.enterpriseTitle : t.title}</h1>
+              <p>{enterprise ? t.enterpriseSubtitle : t.subtitle}</p>
             </header>
             <div className="login-body">
               {enterprise ? (
@@ -72,13 +75,13 @@ export function LoginPage() {
                     autoFocus
                   >
                     <UiIcon icon={IconBuilding} />
-                    企业账号登录
+                    {t.enterpriseLogin}
                     <UiIcon icon={IconChevronRight} />
                   </Button>
                 </>
               )}
             </div>
-            <p className="login-support">账号问题请联系企业管理员</p>
+            <p className="login-support">{t.support}</p>
           </motion.div>
         </AnimatePresence>
       </div>

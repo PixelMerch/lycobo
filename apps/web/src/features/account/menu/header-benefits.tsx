@@ -2,10 +2,13 @@ import { Dropdown, Header } from "@heroui/react";
 import { IconCrown, IconFileInvoice } from "@tabler/icons-react";
 import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
+import { useLocale } from "../../../i18n/locale-store";
+import { useMessages } from "../../../i18n/messages";
 import { useHoverMenu } from "../../../lib/use-hover-menu";
 import { currentPlanName, formatCredits } from "../account-format";
 import { useAccountOverlays } from "../account-overlay-store";
 import { useWallet } from "../wallet-client";
+import { accountMenuMessages } from "./account-menu-messages";
 import "./header-benefits.css";
 
 /**
@@ -16,6 +19,8 @@ export function HeaderBenefits() {
   const wallet = useWallet();
   const menu = useHoverMenu();
   const openOverlay = useAccountOverlays((state) => state.open);
+  const t = useMessages(accountMenuMessages);
+  const plan = currentPlanName(useLocale());
   // 读取失败或尚未读到时显示“—”，不把未知余额当成 0。
   const balance = wallet.data ? formatCredits(wallet.data.balance) : "—";
   function openFromMenu(key: string | number) {
@@ -30,7 +35,7 @@ export function HeaderBenefits() {
       <Dropdown.Trigger
         ref={menu.triggerRef}
         className="header-credits"
-        aria-label={`积分 ${balance}，${currentPlanName}`}
+        aria-label={t.creditsPill(balance, plan)}
         onHoverStart={(event) => {
           if (event.pointerType === "mouse") menu.openOnHover();
         }}
@@ -39,7 +44,7 @@ export function HeaderBenefits() {
         <CreditCoin />
         <span className="header-credits-value">{balance}</span>
         <span className="header-credits-divider" aria-hidden="true" />
-        <span className="header-credits-plan">{currentPlanName}</span>
+        <span className="header-credits-plan">{plan}</span>
       </Dropdown.Trigger>
       <Dropdown.Popover
         ref={menu.popoverRef}
@@ -51,33 +56,37 @@ export function HeaderBenefits() {
         onPointerLeave={menu.closeSoon}
       >
         <Dropdown.Menu
-          aria-label="积分与会员"
+          aria-label={t.creditsMenu}
           {...(menu.openedByHover ? { autoFocus: false } : {})}
           onAction={openFromMenu}
         >
-          <Dropdown.Section aria-label="会员等级">
+          <Dropdown.Section aria-label={t.planTier}>
             <Dropdown.Item
               id="upgrade"
-              textValue={`${currentPlanName}，升级`}
-              aria-label={`${currentPlanName}，升级`}
+              textValue={t.upgradePlan(plan)}
+              aria-label={t.upgradePlan(plan)}
               className="credits-menu-plan"
             >
-              <span className="credits-menu-plan-name">{currentPlanName}</span>
-              <span className="credits-menu-upgrade">升级</span>
+              <span className="credits-menu-plan-name">{plan}</span>
+              <span className="credits-menu-upgrade">{t.upgrade}</span>
             </Dropdown.Item>
           </Dropdown.Section>
           <Dropdown.Section>
             <Header className="credits-menu-balance">
-              <span>积分余额</span>
+              <span>{t.balance}</span>
               <strong>{balance}</strong>
             </Header>
-            <Dropdown.Item id="membership" textValue="开通会员" className="credits-menu-action">
+            <Dropdown.Item
+              id="membership"
+              textValue={t.joinMembership}
+              className="credits-menu-action"
+            >
               <UiIcon icon={IconCrown} size="navigation" />
-              开通会员
+              {t.joinMembership}
             </Dropdown.Item>
-            <Dropdown.Item id="usage" textValue="积分明细" className="credits-menu-action">
+            <Dropdown.Item id="usage" textValue={t.usage} className="credits-menu-action">
               <UiIcon icon={IconFileInvoice} size="navigation" />
-              积分明细
+              {t.usage}
             </Dropdown.Item>
           </Dropdown.Section>
         </Dropdown.Menu>

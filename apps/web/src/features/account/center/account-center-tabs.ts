@@ -1,7 +1,5 @@
-/** Account center tabs; the menu and the credit overview open the dialog on one of them. */
-export const accountCenterTabs = [
-  { id: "credits", label: "积分明细" },
-  { id: "orders", label: "充值订单" },
-] as const;
+/** 积分与账单弹窗的两个页签；账户菜单打开弹窗时指定其中之一。 */
+export const accountCenterTabs = ["credits", "orders"] as const;
 
-export type AccountCenterTab = (typeof accountCenterTabs)[number]["id"];
+/** 积分与账单弹窗的页签 id。 */
+export type AccountCenterTab = (typeof accountCenterTabs)[number];

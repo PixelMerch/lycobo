@@ -1,18 +1,21 @@
 import { Modal, Tabs } from "@heroui/react";
 import { IconShieldLock, IconUserCircle, IconUsersGroup, IconX } from "@tabler/icons-react";
 import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
 import { useEnterpriseSession } from "../../auth/auth-client";
 import { useWideViewport } from "../use-wide-viewport";
 import { AccountPasswordForm } from "./account-password-form";
+import { accountSettingsMessages } from "./account-settings-messages";
 import { AccountSettingsMembers, AccountSettingsProfile } from "./account-settings-panels";
 import "../account-panel.css";
 import "../center/account-center.css";
 import "./account-settings.css";
 
-/** Settings are independent of billing; unavailable account services never simulate success. */
+/** 设置弹窗与账单分开；尚未开放的账户服务如实显示，不模拟成功。 */
 export function AccountSettingsDialog({ onClose }: { onClose: () => void }) {
   const account = useEnterpriseSession().data;
-  // Wide screens show a side list of sections; phones keep scrollable top tabs.
+  const t = useMessages(accountSettingsMessages);
+  // 宽屏在左侧列出分区，手机保留可横向滚动的顶部页签。
   const orientation = useWideViewport() ? "vertical" : "horizontal";
   if (!account) return null;
   const canManageMembers = account.role === "admin";
@@ -27,8 +30,8 @@ export function AccountSettingsDialog({ onClose }: { onClose: () => void }) {
         <Modal.Container>
           <Modal.Dialog className="account-dialog account-center-dialog account-settings-dialog">
             <Modal.Header>
-              <Modal.Heading>设置</Modal.Heading>
-              <Modal.CloseTrigger aria-label="关闭设置">
+              <Modal.Heading>{t.title}</Modal.Heading>
+              <Modal.CloseTrigger aria-label={t.close}>
                 <UiIcon icon={IconX} size="action" />
               </Modal.CloseTrigger>
             </Modal.Header>
@@ -39,21 +42,21 @@ export function AccountSettingsDialog({ onClose }: { onClose: () => void }) {
                 className="account-center-tabs settings-tabs"
               >
                 <Tabs.ListContainer>
-                  <Tabs.List aria-label="设置">
+                  <Tabs.List aria-label={t.title}>
                     <Tabs.Tab id="profile">
                       <UiIcon icon={IconUserCircle} />
-                      个人资料
+                      {t.profile}
                       <Tabs.Indicator />
                     </Tabs.Tab>
                     <Tabs.Tab id="security">
                       <UiIcon icon={IconShieldLock} />
-                      登录与安全
+                      {t.security}
                       <Tabs.Indicator />
                     </Tabs.Tab>
                     {canManageMembers && (
                       <Tabs.Tab id="members">
                         <UiIcon icon={IconUsersGroup} />
-                        企业成员
+                        {t.members}
                         <Tabs.Indicator />
                       </Tabs.Tab>
                     )}

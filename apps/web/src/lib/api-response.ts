@@ -1,5 +1,8 @@
 import { unwrapApiData } from "@lycoboai/contracts";
-/** Normalize JSON data once at the HTTP boundary; downloads keep their original response. */
+import { currentMessages } from "../i18n/messages";
+import { libMessages } from "./lib-messages";
+
+/** 在 HTTP 边界统一拆开 JSON 响应的数据；下载类响应保持原样。 */
 export async function normalizeApiResponse(response: Response) {
   if (!response.ok || !response.headers.get("Content-Type")?.includes("application/json"))
     return response;
@@ -13,7 +16,7 @@ export async function normalizeApiResponse(response: Response) {
       status: response.status,
       ...(id && /^[0-9a-f-]{36}$/i.test(id) ? { requestId: id } : {}),
     });
-    throw new Error("响应未完整接收，请重试查询；已提交的任务请勿重复生成");
+    throw new Error(currentMessages(libMessages).incompleteResponse);
   }
   const data = unwrapApiData(payload);
   const headers = new Headers(response.headers);

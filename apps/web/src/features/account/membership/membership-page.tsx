@@ -2,11 +2,14 @@ import { Modal } from "@heroui/react";
 import { IconX } from "@tabler/icons-react";
 import { useLocation, useNavigate } from "react-router";
 import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
+import { membershipMessages } from "./membership-messages";
 import { MembershipPlans } from "./membership-plans";
 import "./membership-page.css";
 
 /** 全屏展示会员方案，使用实色表面并保留当前页面草稿。 */
 export function MembershipDialog({ onClose }: { onClose: () => void }) {
+  const t = useMessages(membershipMessages);
   return (
     <Modal
       isOpen
@@ -18,8 +21,8 @@ export function MembershipDialog({ onClose }: { onClose: () => void }) {
         <Modal.Container className="membership-container">
           <Modal.Dialog className="membership-dialog">
             <Modal.Header className="membership-dialog-header">
-              <Modal.Heading className="visually-hidden">会员订阅</Modal.Heading>
-              <Modal.CloseTrigger aria-label="关闭会员订阅">
+              <Modal.Heading className="visually-hidden">{t.title}</Modal.Heading>
+              <Modal.CloseTrigger aria-label={t.close}>
                 <UiIcon icon={IconX} size="action" />
               </Modal.CloseTrigger>
             </Modal.Header>

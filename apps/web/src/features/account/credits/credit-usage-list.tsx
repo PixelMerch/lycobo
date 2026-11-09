@@ -1,6 +1,9 @@
 import { Button, Disclosure, Pagination } from "@heroui/react";
 import { IconChevronRight } from "@tabler/icons-react";
 import { UiIcon } from "../../../components/ui-icon";
+import type { Locale } from "../../../i18n/locale";
+import { useLocale } from "../../../i18n/locale-store";
+import { useMessages } from "../../../i18n/messages";
 import { useEnterpriseSession } from "../../auth/auth-client";
 import {
   entryDetail,
@@ -11,9 +14,8 @@ import {
   usageTitle,
   type WalletEntry,
 } from "../account-format";
+import { creditsMessages } from "./credits-messages";
 import { type CreditUsage, pageWindow, type UsageView, useCreditUsage } from "./use-credit-usage";
-
-const viewNames: Record<UsageView, string> = { spent: "消耗", earned: "获得" };
 
 /** 当前视图的一页收支与分页；加载、失败和空状态如实说明，读取失败不显示成“没有记录”。 */
 export function CreditUsageList({ view }: { view: UsageView }) {
@@ -28,65 +30,68 @@ export function CreditUsageList({ view }: { view: UsageView }) {
           ))}
         </div>
       ) : (
-        <UsageStatus name={viewNames[view]} usage={usage} />
+        <UsageStatus view={view} usage={usage} />
       )}
       {(usage.rows.length > 0 || usage.page > 1) && <UsagePagination usage={usage} />}
     </>
   );
 }
 
-function UsageStatus({ name, usage }: { name: string; usage: CreditUsage }) {
+function UsageStatus({ view, usage }: { view: UsageView; usage: CreditUsage }) {
+  const t = useMessages(creditsMessages);
   if (usage.isLoading)
     return (
       <p className="credit-usage-status" role="status">
-        正在加载记录…
+        {t.loadingRecords}
       </p>
     );
   if (usage.isError)
     return (
       <div className="credit-usage-status" role="status">
-        <p>积分记录暂时不可用</p>
+        <p>{t.recordsUnavailable}</p>
         <Button size="sm" variant="secondary" onPress={usage.retry}>
-          重新加载
+          {t.reload}
         </Button>
       </div>
     );
   if (usage.canLoadOlder)
     return (
       <div className="credit-usage-status" role="status">
-        <p>近期暂无{name}记录</p>
+        <p>{t.noRecentRecords[view]}</p>
         <Button size="sm" variant="secondary" onPress={usage.loadOlder}>
-          查看更早记录
+          {t.showOlder}
         </Button>
       </div>
     );
   return (
     <p className="credit-usage-status" role="status">
-      暂无{name}记录
+      {t.noRecords[view]}
     </p>
   );
 }
 
 /** 展开后的说明行：任务或充值订单、操作成员和变动后结余，都来自真实收支记录。 */
-function usageDetails(entry: WalletEntry, currentUid: string | undefined) {
-  const detail = entryDetail(entry);
+function usageDetails(entry: WalletEntry, currentUid: string | undefined, locale: Locale) {
+  const labels = creditsMessages[locale].detailLabels;
+  const detail = entryDetail(entry, locale);
   const lines = [
-    { label: "成员", value: memberLabel(entry.user_uid, currentUid) },
-    { label: "变动后结余", value: formatCredits(entry.balance_after) },
+    { label: labels.member, value: memberLabel(entry.user_uid, currentUid, locale) },
+    { label: labels.balanceAfter, value: formatCredits(entry.balance_after) },
   ];
-  if (detail !== "—" && detail !== usageTitle(entry))
-    lines.unshift({ label: "说明", value: detail });
+  if (detail !== "—" && detail !== usageTitle(entry, locale))
+    lines.unshift({ label: labels.detail, value: detail });
   return lines;
 }
 
 function UsageRow({ entry, currentUid }: { entry: WalletEntry; currentUid: string | undefined }) {
+  const locale = useLocale();
   return (
     <Disclosure className="credit-usage-row">
       <Disclosure.Heading className="credit-usage-heading">
         <Disclosure.Trigger className="credit-usage-trigger">
           <UiIcon icon={IconChevronRight} size="small" className="credit-usage-chevron" />
           <span className="credit-usage-main">
-            <span className="credit-usage-name">{usageTitle(entry)}</span>
+            <span className="credit-usage-name">{usageTitle(entry, locale)}</span>
             <span className="credit-usage-time">{usageTime(entry.created_at)}</span>
           </span>
           <span className="credit-usage-amount" data-positive={entry.amount > 0 || undefined}>
@@ -97,7 +102,7 @@ function UsageRow({ entry, currentUid }: { entry: WalletEntry; currentUid: strin
       <Disclosure.Content>
         <Disclosure.Body className="credit-usage-body">
           <dl className="credit-usage-details">
-            {usageDetails(entry, currentUid).map((line) => (
+            {usageDetails(entry, currentUid, locale).map((line) => (
               <div key={line.label} className="credit-usage-detail">
                 <dt>{line.label}</dt>
                 <dd>{line.value}</dd>
@@ -111,12 +116,13 @@ function UsageRow({ entry, currentUid }: { entry: WalletEntry; currentUid: strin
 }
 
 function UsagePagination({ usage }: { usage: CreditUsage }) {
+  const t = useMessages(creditsMessages);
   return (
-    <Pagination className="credit-usage-pagination" aria-label="积分明细分页">
+    <Pagination className="credit-usage-pagination" aria-label={t.pages}>
       <Pagination.Content>
         <Pagination.Item>
           <Pagination.Previous
-            aria-label="上一页"
+            aria-label={t.previousPage}
             isDisabled={usage.page <= 1}
             onPress={() => usage.goTo(usage.page - 1)}
           >
@@ -131,7 +137,7 @@ function UsagePagination({ usage }: { usage: CreditUsage }) {
           ) : (
             <Pagination.Item key={item}>
               <Pagination.Link
-                aria-label={`第 ${item} 页`}
+                aria-label={t.page(item)}
                 isActive={item === usage.page}
                 onPress={() => usage.goTo(item)}
               >
@@ -142,7 +148,7 @@ function UsagePagination({ usage }: { usage: CreditUsage }) {
         )}
         <Pagination.Item>
           <Pagination.Next
-            aria-label="下一页"
+            aria-label={t.nextPage}
             isDisabled={!usage.canNext}
             onPress={() => usage.goTo(usage.page + 1)}
           >

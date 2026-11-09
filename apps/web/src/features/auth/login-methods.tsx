@@ -2,31 +2,34 @@ import { Button, Description, InputGroup, Label, TextField } from "@heroui/react
 import { IconBrandAppleFilled, IconBrandGoogleFilled, IconMail } from "@tabler/icons-react";
 import { useId } from "react";
 import { UiIcon } from "../../components/ui-icon";
+import { useMessages } from "../../i18n/messages";
+import { authMessages } from "./auth-messages";
 
 /** 预留第三方与邮箱入口，接入认证前不发请求或模拟发送验证码。 */
 export function LoginMethods() {
   const unavailableId = useId();
+  const t = useMessages(authMessages);
   return (
     <div className="login-methods">
       <div className="login-social-methods" aria-describedby={unavailableId}>
         <Button variant="secondary" size="lg" className="login-social" isDisabled>
           <UiIcon icon={IconBrandGoogleFilled} />
-          使用 Google 登录
+          {t.google}
         </Button>
         <Button variant="secondary" size="lg" className="login-social" isDisabled>
           <UiIcon icon={IconBrandAppleFilled} />
-          使用 Apple 登录
+          {t.apple}
         </Button>
       </div>
-      <span className="login-divider">或使用邮箱</span>
+      <span className="login-divider">{t.orEmail}</span>
       <div className="login-fields login-email">
         <TextField name="email" type="email" isDisabled aria-describedby={unavailableId}>
-          <Label>邮箱</Label>
+          <Label>{t.email}</Label>
           <InputGroup className="login-input-group">
             <InputGroup.Prefix>
               <UiIcon icon={IconMail} />
             </InputGroup.Prefix>
-            <InputGroup.Input autoComplete="email" placeholder="请输入邮箱地址" />
+            <InputGroup.Input autoComplete="email" placeholder={t.emailPlaceholder} />
           </InputGroup>
         </TextField>
         <Button
@@ -35,10 +38,10 @@ export function LoginMethods() {
           isDisabled
           aria-describedby={unavailableId}
         >
-          发送验证码
+          {t.sendCode}
         </Button>
         <Description id={unavailableId} className="login-unavailable">
-          Google、Apple 和邮箱登录暂未开放
+          {t.otherMethodsUnavailable}
         </Description>
       </div>
     </div>

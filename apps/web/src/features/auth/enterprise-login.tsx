@@ -17,8 +17,10 @@ import {
 } from "@tabler/icons-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
+import { currentMessages, useMessages } from "../../i18n/messages";
 import { useErrorToast } from "../../lib/error-toast";
 import { useEnterpriseLogin } from "./auth-client";
+import { authMessages } from "./auth-messages";
 
 /** 企业登录独占卡片背面，沿用原有认证与会话刷新。 */
 export function EnterpriseLogin({
@@ -29,6 +31,7 @@ export function EnterpriseLogin({
   onBack: () => void;
 }) {
   const form = useEnterpriseForm(onLoginSuccess);
+  const t = useMessages(authMessages);
   return (
     <div className="login-enterprise">
       <Form className="login-fields" validationBehavior="aria" onSubmit={form.submit}>
@@ -40,7 +43,7 @@ export function EnterpriseLogin({
           className="login-submit"
           isPending={form.pending}
         >
-          {form.pending ? "登录中…" : "登录企业账号"}
+          {form.pending ? t.signingIn : t.signIn}
           <UiIcon icon={IconArrowRight} />
         </Button>
       </Form>
@@ -52,7 +55,7 @@ export function EnterpriseLogin({
         onPress={onBack}
       >
         <UiIcon icon={IconArrowLeft} />
-        返回其他登录方式
+        {t.back}
       </Button>
     </div>
   );
@@ -89,7 +92,9 @@ function useEnterpriseForm(onLoginSuccess: () => void) {
       await login.mutateAsync(credentials);
       onLoginSuccess();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "登录服务暂时不可用，请稍后重试。");
+      setError(
+        cause instanceof Error ? cause.message : currentMessages(authMessages).serviceUnavailable,
+      );
     } finally {
       login.reset();
     }
@@ -111,6 +116,7 @@ function useEnterpriseForm(onLoginSuccess: () => void) {
 }
 
 function EnterpriseFields({ form }: { form: ReturnType<typeof useEnterpriseForm> }) {
+  const t = useMessages(authMessages);
   return (
     <>
       <TextField
@@ -124,7 +130,7 @@ function EnterpriseFields({ form }: { form: ReturnType<typeof useEnterpriseForm>
         isDisabled={form.pending}
         isInvalid={form.submitted && !form.account.trim()}
       >
-        <Label>企业账号</Label>
+        <Label>{t.account}</Label>
         <InputGroup className="login-input-group">
           <InputGroup.Prefix>
             <UiIcon icon={IconUser} />
@@ -132,11 +138,11 @@ function EnterpriseFields({ form }: { form: ReturnType<typeof useEnterpriseForm>
           <InputGroup.Input
             ref={form.accountInput}
             autoComplete="username"
-            placeholder="请输入企业账号"
+            placeholder={t.accountPlaceholder}
             maxLength={128}
           />
         </InputGroup>
-        <FieldError>请输入企业账号</FieldError>
+        <FieldError>{t.accountPlaceholder}</FieldError>
       </TextField>
       <TextField
         name="password"
@@ -150,7 +156,7 @@ function EnterpriseFields({ form }: { form: ReturnType<typeof useEnterpriseForm>
         isDisabled={form.pending}
         isInvalid={form.submitted && !form.password}
       >
-        <Label>密码</Label>
+        <Label>{t.password}</Label>
         <InputGroup className="login-input-group">
           <InputGroup.Prefix>
             <UiIcon icon={IconLock} />
@@ -158,7 +164,7 @@ function EnterpriseFields({ form }: { form: ReturnType<typeof useEnterpriseForm>
           <InputGroup.Input
             ref={form.passwordInput}
             autoComplete="current-password"
-            placeholder="请输入密码"
+            placeholder={t.passwordPlaceholder}
             maxLength={256}
           />
           <InputGroup.Suffix>
@@ -168,14 +174,14 @@ function EnterpriseFields({ form }: { form: ReturnType<typeof useEnterpriseForm>
               variant="ghost"
               isSelected={form.visible}
               isDisabled={form.pending}
-              aria-label={form.visible ? "隐藏密码" : "显示密码"}
+              aria-label={form.visible ? t.hidePassword : t.showPassword}
               onChange={form.setVisible}
             >
               <UiIcon icon={form.visible ? IconEyeOff : IconEye} />
             </ToggleButton>
           </InputGroup.Suffix>
         </InputGroup>
-        <FieldError>请输入密码</FieldError>
+        <FieldError>{t.passwordPlaceholder}</FieldError>
       </TextField>
     </>
   );
