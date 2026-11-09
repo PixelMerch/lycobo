@@ -71,7 +71,7 @@ test("personal center opens billing by default and preserves drafts and focus", 
 }) => {
   await signIn(page, "billing-fixture");
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const draft = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   await draft.fill("保留正在准备的商品图");
   const trigger = page.getByRole("button", { name: "账户菜单：billing-fixture", exact: true });
@@ -88,7 +88,7 @@ test("personal center opens billing by default and preserves drafts and focus", 
   await expect(center.getByRole("button", { name: "复制 UID", exact: true })).toBeVisible();
   await tabs.getByRole("tab", { name: "充值订单", exact: true }).click();
   await expect(center.getByText("暂无充值订单", { exact: true })).toBeVisible();
-  await expect(page).toHaveURL(/\/create$/);
+  await expect(page).toHaveURL(/\/commerce\/create$/);
   await page.keyboard.press("Escape");
   await expect(center).toHaveCount(0);
   await expect(trigger).toBeFocused();
@@ -109,7 +109,7 @@ test("ledger filters loaded pages without losing older records or exposing payme
     }),
   );
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const center = await openCenter(page, "ledger-fixture", "积分明细");
   const toolbar = center.locator(".account-ledger .account-toolbar");
   await expect(toolbar).toContainText("已加载 20 条");
@@ -138,7 +138,7 @@ for (const width of [1440, 390]) {
   test(`switching tabs keeps the dialog and its tab row steady at ${width}px`, async ({ page }) => {
     await signIn(page, "tabs-fixture");
     await page.setViewportSize({ width, height: width < 768 ? 700 : 900 });
-    await page.goto("/create");
+    await page.goto("/commerce/create");
     const center = await openCenter(page, "tabs-fixture", "积分与账单");
     const tabs = center.getByRole("tablist", { name: "积分与账单", exact: true });
     await expect(tabs.getByRole("tab", { name: "积分明细", exact: true })).toHaveAttribute(
@@ -153,7 +153,7 @@ for (const width of [1440, 390]) {
         "aria-selected",
         "true",
       );
-      await expect(page).toHaveURL(/\/create$/);
+      await expect(page).toHaveURL(/\/commerce\/create$/);
       const [nextFrame, nextRow] = [await center.boundingBox(), await tabs.boundingBox()];
       expect(nextFrame?.height).toBeCloseTo(frame.height, 0);
       expect(nextRow?.y).toBeCloseTo(row.y, 0);

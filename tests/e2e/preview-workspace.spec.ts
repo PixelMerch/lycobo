@@ -27,7 +27,7 @@ test("preview keeps one canvas while repair changes only the property panel and 
     route.fulfill({ contentType: "image/svg+xml", body: svg }),
   );
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page.getByRole("button", { name: "打开素材库", exact: true }).click();
   await page.getByRole("button", { name: "查看图片：画布测试 1", exact: true }).click();
   const viewer = page.getByRole("dialog", { name: "图片预览", exact: true });

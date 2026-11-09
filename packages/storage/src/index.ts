@@ -1,4 +1,4 @@
-export * from "./core";
+export * from "./images/core";
 export interface ObjectStorage {
   signUpload(input: {
     objectKey: string;
@@ -7,6 +7,6 @@ export interface ObjectStorage {
   }): Promise<{ url: string; expiresAt: string }>;
   signDownload(objectKey: string): Promise<{ url: string; expiresAt: string }>;
 }
-// Generic upload signing is a future interface; private image delivery is implemented in ./delivery.
+// 通用上传签名仅为未来接口，私有图片交付由 delivery 模块实现。
 
-export * from "./image-store";
+export * from "./local/image-store";

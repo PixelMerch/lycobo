@@ -1,4 +1,4 @@
-import { promptOptimization } from "../../apps/api/src/features/images/prompt-optimization";
+import { promptOptimization } from "../../apps/api/src/features/images/planning/prompt-optimization";
 
 /** 用 workerd 原生 Request 校验供应商请求选项，不连接真实模型或数据库。 */
 export async function optimizerRuntimeProbe() {

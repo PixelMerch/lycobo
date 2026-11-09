@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mockImageApi, modelDisplayNames } from "./image-api-fixture";
 
-for (const path of ["/", "/create"]) {
+for (const path of ["/", "/commerce/create"]) {
   test(`all model resolution options follow the API at ${path}`, async ({ page }) => {
     await mockImageApi(page);
     await page.goto(path);

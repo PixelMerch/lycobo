@@ -57,7 +57,7 @@ async function fixture(page: Page) {
     }),
   );
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
 }
 
 /** Record real rendered exit frames, including the time before the modal unmounts. */

@@ -32,7 +32,7 @@
 
 ## 业务码
 
-唯一代码表为 packages/contracts/src/api-response.ts，不在业务模块另定义同名数值。
+唯一代码表为 packages/contracts/src/api/api-response.ts，不在业务模块另定义同名数值。
 
 | 数值  | 标识                        |
 | ----- | --------------------------- |

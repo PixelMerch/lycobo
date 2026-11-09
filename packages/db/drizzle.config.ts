@@ -4,7 +4,7 @@ if (process.argv.includes("migrate") && !process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL must be explicit when running migrations");
 }
 export default defineConfig({
-  schema: ["./src/schema.ts", "./src/realtime-schema.ts"],
+  schema: ["./src/schema.ts", "./src/realtime/realtime-schema.ts"],
   out: "./migrations",
   dialect: "postgresql",
   dbCredentials: {

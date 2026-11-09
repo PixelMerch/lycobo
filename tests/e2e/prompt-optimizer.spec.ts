@@ -7,7 +7,7 @@ const sse = { "Content-Type": "text/event-stream" };
 
 async function openCreate(page: Page) {
   await mockImageApi(page);
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const prompt = page.getByRole("textbox", { name: "提示词" });
   await expect(prompt).toBeVisible({ timeout: 15000 });
   return { prompt, wand: page.getByRole("button", { name: "AI 优化提示词" }) };

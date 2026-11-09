@@ -1,7 +1,7 @@
 import { Alert, Button, toast } from "@heroui/react";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { lazy, Suspense, useRef, useState } from "react";
-import { ReferenceImageCard } from "../../../components/reference-image-card";
+import { ReferenceImageCard } from "../../../components/reference-image/reference-image-card";
 import { UiIcon } from "../../../components/ui-icon";
 import { useRequireLogin } from "../../auth/login-prompt";
 import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "../studio-state";
@@ -9,7 +9,9 @@ import { readReferenceImages, referenceFileError } from "./read-reference-images
 import { referenceDisplaySource } from "./reference-display";
 
 const ImageViewer = lazy(() =>
-  import("../../../components/image-viewer").then((module) => ({ default: module.ImageViewer })),
+  import("../../../components/image-viewer/image-viewer").then((module) => ({
+    default: module.ImageViewer,
+  })),
 );
 
 /** Drop the removed image mention and renumber later mentions to the new order. */

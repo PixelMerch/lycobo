@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
-for (const path of ["/create", "/commerce/smart-variation", "/"]) {
+for (const path of ["/commerce/create", "/commerce/smart-variation", "/"]) {
   test(`references browse history, search, reject duplicates and cap at five in ${path}`, async ({
     page,
   }) => {
@@ -152,7 +152,7 @@ test("files stay local until generation and partial upload retries reuse success
     expect(route.request().postDataJSON().referenceAssetIds).toEqual([first, second]);
     return route.fulfill({ status: 400, json: apiFixture({}, 400) });
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles(["apps/web/public/studio/bedroom.webp", "apps/web/public/studio/lavender.webp"]);

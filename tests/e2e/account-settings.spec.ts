@@ -22,7 +22,7 @@ async function setup(page: Page, role = "admin") {
   };
 }
 async function openSettings(page: Page) {
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   if ((page.viewportSize()?.width ?? 1440) < 768)
     await page.getByRole("button", { name: "打开导航", exact: true }).click();
   await page.getByRole("button", { name: "账户菜单：settings-fixture", exact: true }).click();

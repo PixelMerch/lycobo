@@ -15,7 +15,7 @@ test("a disabled service keeps references without claiming the model cannot edit
       }),
     }),
   );
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles("apps/web/public/studio/bedroom.webp");
@@ -55,7 +55,7 @@ test("running images animate with the model icon and stop for reduced motion", a
   await page.route("**/api/v1/image-tasks*", (route) => route.fulfill({ json: { data: [job] } }));
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const loading = page.locator(".generation-results .generation-loading-icon");
   await expect(loading).toHaveCount(4);
   await expect(loading.first()).toHaveCSS("animation-name", "generation-breathe");
@@ -138,7 +138,7 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     };
     await page.route("**/api/v1/image-tasks*", (route) => route.fulfill({ json: { data: [job] } }));
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto("/create");
+    await page.goto("/commerce/create");
     await expect(page.locator(".generation-job header").getByRole("status")).toHaveCount(0);
     await expect(page.locator(".generation-placeholder")).toHaveAttribute(
       "aria-label",

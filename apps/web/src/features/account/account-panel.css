@@ -1,7 +1,7 @@
 /* Neutral account surfaces stay distinct from the dimmed workspace. */
 .account-backdrop.modal__backdrop {
   background: #000000a6;
-  backdrop-filter: blur(6px);
+  backdrop-filter: none;
 }
 .account-dialog.modal__dialog {
   height: auto;

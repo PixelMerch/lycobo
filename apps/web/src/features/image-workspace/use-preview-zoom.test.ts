@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { easedImageZoom, imageWheelFactor } from "../../components/image-zoom-motion";
+import { easedImageZoom, imageWheelFactor } from "../../components/image-viewer/image-zoom-motion";
 import { wheelZoomTarget } from "./use-preview-zoom";
 
 describe("shared preview wheel zoom", () => {

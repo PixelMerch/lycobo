@@ -1,6 +1,9 @@
 import type { ExportedHandler } from "@cloudflare/workers-types";
-import { consumeCloudflareImages, dispatchCloudflareImages } from "./cloudflare-consumer";
-import type { CloudflareImageEnv } from "./cloudflare-runtime";
+import {
+  consumeCloudflareImages,
+  dispatchCloudflareImages,
+} from "./cloudflare/cloudflare-consumer";
+import type { CloudflareImageEnv } from "./cloudflare/cloudflare-runtime";
 
 /** 仅处理图片队列与恢复定时任务，不提供公开 HTTP 入口。 */
 export default {

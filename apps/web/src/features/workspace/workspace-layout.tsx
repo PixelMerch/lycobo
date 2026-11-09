@@ -1,8 +1,8 @@
 import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { imageResolutionSchema } from "@lycoboai/contracts";
+import { imageResolutionSchema, mainImageModelIds } from "@lycoboai/contracts";
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
-import { ConfirmDialog } from "../../components/confirm-dialog";
+import { ConfirmDialog } from "../../components/overlays/confirm-dialog";
 import { useSmartVariationDraft } from "../commerce/smart-variation/smart-variation-state";
 import { useTextileSetDraft } from "../commerce/textile-set/textile-set-state";
 import { GenerationHistory } from "../generation/history/generation-history";
@@ -10,19 +10,22 @@ import { HistoryIndex } from "../generation/history/history-index";
 import type { HistoryRestore } from "../generation/history/history-task-tools";
 import { useStudioStore } from "../generation/studio-state";
 import { BackToTopButton } from "../generation/workspace-page";
+import { VideoHistory, VideoHistoryRail } from "../video/history/video-history";
 import { StoryboardContext } from "../video/storyboard/storyboard-context";
 import { useStoryboard } from "../video/storyboard/use-storyboard";
-import { VideoHistory, VideoHistoryRail } from "../video/video-history";
 import { toolForPath, useWorkspaceState } from "./workspace-state";
 import { WorkspaceToolPicker } from "./workspace-tool-picker";
 import "./workspace.css";
 
 type RestoredTask = Parameters<HistoryRestore>[0];
+/** 组合工具与历史区域，显式结果定位不覆盖当前创作草稿。 */
 export function WorkspaceLayout() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const navigate = useNavigate();
   const remember = useWorkspaceState((state) => state.setLastPath);
-  const [mobilePanel, setMobilePanel] = useState("form");
+  const [mobilePanel, setMobilePanel] = useState(() =>
+    new URLSearchParams(search).has("task") ? "history" : "form",
+  );
   const currentTool = toolForPath(pathname);
   const historyTool = currentTool.id;
   const storyboard = useStoryboard(historyTool === "video", setMobilePanel);
@@ -30,6 +33,9 @@ export function WorkspaceLayout() {
   useEffect(() => {
     remember(pathname);
   }, [pathname, remember]);
+  useEffect(() => {
+    if (new URLSearchParams(search).has("task")) setMobilePanel("history");
+  }, [search]);
   const applyRestore = ({ model, draft, textileSet, variation }: RestoredTask) => {
     if (variation) {
       useSmartVariationDraft.getState().update({
@@ -52,9 +58,13 @@ export function WorkspaceLayout() {
       void navigate("/commerce/textile-set");
     } else {
       const studio = useStudioStore.getState();
-      studio.updateDraft(model, draft);
-      studio.setActiveModel(model);
-      void navigate("/create");
+      const targetModel = mainImageModelIds.some((id) => id === model)
+        ? model
+        : mainImageModelIds[0];
+      // 旧型号仍可浏览；重新创作时只带回草稿，使用当前可选型号。
+      studio.updateDraft(targetModel, draft);
+      studio.setActiveModel(targetModel);
+      void navigate("/commerce/create");
     }
     setRestorePending(null);
     setMobilePanel("form");

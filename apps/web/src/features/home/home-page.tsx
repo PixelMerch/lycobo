@@ -8,7 +8,7 @@ import { homeInspirations } from "./home-inspiration-data";
 import { HomeInspirationGallery } from "./home-inspiration-gallery";
 import { reactBitConfig } from "./react-bit-config";
 import { useHomeHeaderSurface } from "./use-home-header-surface";
-import "../../styles/home.css";
+import "../../styles/home/home.css";
 
 const HomeGridMotion = lazy(() => import("./home-grid-motion"));
 
@@ -41,6 +41,7 @@ const shortcuts = [
   },
 ];
 
+/** 组合首页创作输入、工具入口与灵感列表，保留当前草稿。 */
 export function HomePage() {
   const requireLogin = useRequireLogin();
   const intro = useHomeHeaderSurface();
@@ -50,9 +51,9 @@ export function HomePage() {
   const navigate = useNavigate();
   function start(prompt?: string) {
     if (!requireLogin()) return;
-    // The homepage edits the same draft. Entering the workspace never submits paid work.
+    // 首页与工作台共用草稿，跳转本身不会提交付费任务。
     if (prompt && !draft.prompt.trim()) updateDraft(model, { prompt });
-    void navigate("/create");
+    void navigate("/commerce/create");
   }
   const backgroundStyle: CSSProperties & Record<`--home-${string}`, string | number> = {
     "--home-background-height": `${reactBitConfig.home.backgroundHeight}px`,

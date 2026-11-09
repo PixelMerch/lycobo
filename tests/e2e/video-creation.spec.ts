@@ -723,7 +723,7 @@ test("video history matches image spacing and typography, regenerates with confi
   await page.route("**/api/v1/image-tasks*", (route) =>
     route.fulfill({ json: apiFixture({ data: [imageJob] }) }),
   );
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.locator(".generation-job")).toHaveCount(1);
   const measurements = async () =>
     page.locator(".generation-job").evaluate((node) => {

@@ -1,7 +1,8 @@
 import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { mainImageModelIds } from "@lycoboai/contracts";
 import { IconArrowUp, IconCheck, IconChevronDown } from "@tabler/icons-react";
 import { useNavigate } from "react-router";
-import { ReferencePrompt } from "../../components/reference-prompt";
+import { ReferencePrompt } from "../../components/reference-prompt/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { useEnterpriseSession } from "../auth/auth-client";
@@ -14,8 +15,10 @@ import { hasPromptDescription } from "../generation/references/prompt-descriptio
 import { ReferencePicker } from "../generation/references/reference-picker";
 import { defaultDraft, useStudioStore } from "../generation/studio-state";
 
+/** 组合首页参考图、可伸展提示词与创作入口，沿用工作台草稿。 */
 export function HomeComposer() {
-  const models = useModelPresentation().data?.models ?? [];
+  const presentation = useModelPresentation().data?.models ?? [];
+  const models = mainImageModelIds.flatMap((id) => presentation.filter((model) => model.id === id));
   const model = useStudioStore((s) => s.activeModel);
   const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
@@ -27,7 +30,7 @@ export function HomeComposer() {
     catalog.error instanceof ImageApiError ? catalog.error.message : "服务暂时不可用，请稍后重试。";
   const catalogError = catalog.isError ? requestError : null;
   useErrorToast(catalogError);
-  const canSubmit = hasPromptDescription(draft.prompt);
+  const canSubmit = hasPromptDescription(draft.prompt) && draft.prompt.length <= 5000;
   return (
     <LoginRequiredInteraction className="home-composer">
       <div className="home-upload">
@@ -35,6 +38,9 @@ export function HomeComposer() {
       </div>
       <ReferencePrompt
         className="home-prompt"
+        maxLength={5000}
+        showCount
+        autoGrow
         isRequired
         value={draft.prompt}
         onChange={(prompt) => updateDraft(model, { prompt })}
@@ -60,7 +66,7 @@ export function HomeComposer() {
           data-active={canSubmit || undefined}
           isDisabled={!canSubmit}
           aria-label="开始创作"
-          onPress={() => navigate("/create")}
+          onPress={() => navigate("/commerce/create")}
         >
           <UiIcon icon={IconArrowUp} size="action" />
         </Button>

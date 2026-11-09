@@ -1,8 +1,8 @@
 import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { IconCheck, IconX } from "@tabler/icons-react";
 import { type RefObject, useEffect, useRef, useState } from "react";
-import "../../../components/dialog-close.css";
-import "../../../components/confirm-dialog.css";
+import "../../../components/overlays/dialog-close.css";
+import "../../../components/overlays/confirm-dialog.css";
 import { UiIcon } from "../../../components/ui-icon";
 import { type TextileViewId, textileViewImages, textileViews } from "./textile-views";
 

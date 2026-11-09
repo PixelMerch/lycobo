@@ -70,20 +70,29 @@ function importedSpecifiers(file, text) {
   return specifiers;
 }
 
+/** 按包的公开出口定位模块，避免把嵌套实现误报为未引用文件。 */
+function workspaceExport(name, subpath) {
+  const root = `packages/${name}`;
+  const manifest = JSON.parse(readFileSync(`${root}/package.json`, "utf8"));
+  const entry = manifest.exports?.[subpath];
+  return typeof entry === "string" ? path.posix.join(root, entry) : null;
+}
+
 function resolveImport(from, specifier, known) {
   let base;
   if (specifier.startsWith(".")) {
     base = path.posix.join(path.posix.dirname(from), specifier).replace(/\.js$/, "");
   } else if (specifier.startsWith("@lycoboai/")) {
     const [, name, ...rest] = specifier.split("/");
-    base = `packages/${name}/src/${rest.join("/") || "index"}`;
+    const subpath = rest.length ? `./${rest.join("/")}` : ".";
+    base = workspaceExport(name, subpath) ?? `packages/${name}/src/${rest.join("/") || "index"}`;
   } else {
     return null;
   }
   return [base, `${base}.ts`, `${base}.tsx`, `${base}/index.ts`].find((file) => known.has(file));
 }
 
-/** Source modules that nothing imports. `sources` maps each file to its text. */
+/** 检查没有被引用的模块，沿相对路径、公开包出口和动态导入查找。 */
 export function findOrphans(sources) {
   const known = new Set(sources.keys());
   const imported = new Set();

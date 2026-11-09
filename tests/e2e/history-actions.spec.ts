@@ -51,7 +51,7 @@ async function historyFixture(
     route.fulfill({ contentType: "image/png", body: png }),
   );
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.locator(".generation-job")).toHaveCount(1);
   return { input, job };
 }

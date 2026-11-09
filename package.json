@@ -1,6 +1,6 @@
 {
   "name": "lycoboai",
-  "version": "0.4.18",
+  "version": "0.4.19",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.34.7",
@@ -13,7 +13,7 @@
     "dev:worker": "pnpm --filter @lycoboai/worker dev",
     "build": "pnpm -r --if-present build && pnpm cf:build",
     "typecheck": "tsc -p tsconfig.tools.json --noEmit && pnpm -r typecheck",
-    "lint": "biome check . --diagnostic-level=warn --error-on-warnings && node scripts/check-boundaries.mjs && node scripts/check-ui-conventions.mjs && node scripts/check-code-quality.mjs && node scripts/check-code-comments.mjs",
+    "lint": "biome check . --diagnostic-level=warn --error-on-warnings && node scripts/check-boundaries.mjs && node scripts/check-ui-conventions.mjs && node scripts/check-code-quality.mjs && node scripts/check-code-comments.mjs && pnpm docs:check",
     "quality:update": "node scripts/check-code-quality.mjs --update",
     "format": "biome check --write .",
     "test": "vitest run",
@@ -36,7 +36,9 @@
     "cf:build:web": "wrangler deploy --config wrangler.jsonc --dry-run --outdir dist-cloudflare/web",
     "cf:build:images": "wrangler deploy --config wrangler.images.jsonc --dry-run --outdir dist-cloudflare/images",
     "dev:cloudflare:images": "wrangler dev --config wrangler.images.jsonc",
-    "cf:check:config": "node --env-file-if-exists=.env.cloudflare scripts/check-cloudflare-config.mjs"
+    "cf:check:config": "node --env-file-if-exists=.env.cloudflare scripts/check-cloudflare-config.mjs",
+    "docs:check": "node scripts/check-docs.mjs",
+    "ai:context": "node scripts/ai-context.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",

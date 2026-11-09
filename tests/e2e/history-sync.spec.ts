@@ -47,7 +47,7 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
     route.fulfill({ contentType: "image/png", body: png }),
   );
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const articles = page.locator(".generation-job");
   await expect(articles).toHaveCount(3);
   await expect(page.getByRole("button", { name: "回到顶部", exact: true })).toHaveCount(0);
@@ -131,7 +131,7 @@ test("generating returns the history and its thumbnail index to the newest task"
     route.fulfill({ contentType: "image/png", body: png }),
   );
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const list = page.locator(".history-rail-list");
   await expect(list.locator(".history-thumbnail")).toHaveCount(14);
   await list.evaluate((node) => {
@@ -156,7 +156,7 @@ test("the asset entry stays fixed above the scrolling thumbnail list", async ({ 
     route.fulfill({ contentType: "image/png", body: png }),
   );
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const list = page.locator(".history-rail-list");
   await expect(list.locator(".history-thumbnail")).toHaveCount(14);
   const entry = page.getByRole("button", { name: "打开素材库", exact: true });

@@ -1,7 +1,7 @@
 import { Button } from "@heroui/react";
 import { IconArrowLeft, IconPlus } from "@tabler/icons-react";
 import { CreditCoin } from "../../../components/credit-coin";
-import { DialogClose } from "../../../components/dialog-close";
+import { DialogClose } from "../../../components/overlays/dialog-close";
 import { UiIcon } from "../../../components/ui-icon";
 import type { PreviewImage } from "../image-preview";
 import { RepairRegionCard } from "./repair-region-card";

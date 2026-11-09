@@ -4,7 +4,7 @@ import type { ImageStore } from "@lycoboai/storage/core";
 import type { Context } from "hono";
 import { z } from "zod";
 import type { EnterpriseAuth } from "../auth/service";
-import type { DeliverySigner } from "./delivery";
+import type { DeliverySigner } from "./assets/delivery";
 import type { WorkbenchSession } from "./session";
 
 export type ImageApiDependencies = {

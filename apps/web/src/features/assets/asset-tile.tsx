@@ -5,7 +5,7 @@ import type { CSSProperties } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { AssetImage } from "../generation/asset-image";
 import { downloadAsset } from "../generation/generation-client";
-import { formatVideoTime } from "../video/use-video-playback";
+import { formatVideoTime } from "../video/player/use-video-playback";
 import { assetToolName } from "./asset-filters";
 import { useAssetFavorite } from "./asset-library-client";
 import "../video/video.css";

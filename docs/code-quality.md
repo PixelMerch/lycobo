@@ -10,7 +10,7 @@
 | 本地完整检查 | 全仓       | `pnpm lint`，`pnpm check` 已包含        |
 | CI           | 全仓       | `pnpm check`                            |
 
-任何一步失败，代码都进不了仓库。Biome 的警告也按失败处理。
+本地提交钩子检查暂存文件，CI 执行完整检查；远端是否阻止合并由实际分支保护配置决定。不能将本地钩子视为不可绕过的保障。Biome 的警告也按失败处理。
 
 ## 必须为零的规则
 
@@ -48,7 +48,9 @@ TypeScript 使用 strict 模式，并开启 `noUncheckedIndexedAccess`、`exactO
 
 ## 运行时边界
 
-`check-boundaries.mjs` 扫描所有 app／package 的运行源码、管理脚本和依赖声明，阻止已退役平台的 SDK、网关及凭据适配重新进入项目。浏览器仍只能引用安全 contracts 和前端依赖，不能导入数据库、队列、存储、供应商或 Node 模块。规则中的历史名称只用于拒绝检查，不是兼容入口。
+`check-boundaries.mjs` 扫描所有 app／package 的运行源码、管理脚本和依赖声明，阻止已退役平台的 SDK、网关及凭据适配重新进入项目。浏览器仍只能引用安全 contracts 和前端依赖，不能导入数据库、队列、存储、供应商或 Node 模块。规则中的历史名称只用于拒绝检查，不是兼容入口。导入检查通过 TypeScript 语法树识别静态导入、重导出、字符串动态导入及 require，避免注释误报；同时约束 contracts 的浏览器安全性和 packages 不依赖 apps，覆盖相对路径及工作区包名。动态拼接路径不在静态检查的保证范围内。
+
+API features 的生产业务代码不能引用 app/index/cloudflare/cloudflare-app 入口；业务实现不能引用其他业务的 routes，路由注册器仍可组合路由。跨应用导入仅保留主站 cloudflare-app 到图片 cloudflare-runtime、Worker 集成脚本到 API app 两条既有装配边界。测试可以引用本应用入口，但不能任意跨应用。检查覆盖字面量路径，不做完整别名解析或传递依赖分析。
 
 ## 中文注释检查
 
@@ -89,3 +91,9 @@ TypeScript 使用 strict 模式，并开启 `noUncheckedIndexedAccess`、`exactO
 - 优先用直白的写法，不为少写几行用技巧。
 - 外部输入都当作 `unknown`，用 Zod 校验后再用。
 - 服务端数据用 TanStack Query，交互状态用 Zustand，能算出来的值不存 state。
+
+## 文档检查
+
+`pnpm docs:check` 已纳入 lint 与 CI 的 `pnpm check`。检查 Git 管理及本地未忽略的新 Markdown 文件，排除第三方技能快照；覆盖内联链接、图片、引用式链接定义、本地文件与井号标题锚点（含重复标题及中文）。跳过围栏和行内代码中的示例，不联网检查外部地址。
+
+这是仓库常用 Markdown 语法的静态检查，不是完整渲染器：HTML href、Setext 标题、复杂嵌套括号链接和未定义的快捷引用需要人工复核。业务描述、版本、权限和部署状态仍要核对代码，链接通过不能证明文档事实正确。错误输出只包含文档路径、链接及错误码。

@@ -37,6 +37,15 @@ describe("countTypeAssertions", () => {
 });
 
 describe("findOrphans", () => {
+  it("resolves a public package subpath to its nested implementation", () => {
+    const sources = new Map([
+      ["apps/api/src/cloudflare.ts", 'import "@lycoboai/storage/cloudflare";'],
+      ["packages/storage/src/index.ts", ""],
+      ["packages/storage/src/cloudflare/cloudflare.ts", ""],
+    ]);
+    expect(findOrphans(sources)).toEqual([]);
+  });
+
   it("finds modules nothing imports, following relative, package and dynamic imports", () => {
     const sources = new Map([
       ["apps/web/src/main.tsx", 'import "./used";\nimport("./lazy");'],

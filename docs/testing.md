@@ -13,6 +13,21 @@
 CI 使用 pnpm exec playwright install --with-deps chromium。
 浏览器测试失败留 trace/report；测试使用本地应用，不能连接线上接口。
 
+关键计费、恢复、推送规则与测试证据范围见[关键业务验证索引](business-test-map.md)，其中待验证场景不代表已覆盖。
+
+## 按改动选择验证
+
+开发中先执行相关测试，代码完成后仍运行 `pnpm check`。契约、身份或持久化行为跨域时扩大范围，不以文件位置代替影响分析。
+
+- 文档：`pnpm docs:check` 与 `git diff --check`，人工核对功能事实；纯文档无需运行构建或浏览器用例。
+- 检查脚本：`pnpm exec vitest run scripts/check-docs.test.mjs scripts/check-boundaries.test.mjs`，再完成全量质量检查。
+- 登录与会话：API 鉴权相关测试；关键交互追加 `tests/e2e/login-history-sync.spec.ts`、`tests/e2e/session-renewal.spec.ts` 的相关用例。
+- 任务、积分与回调：对应模块单测及本文隔离 DB/队列集成；不能只验证 HTTP 成功响应。
+- 图片存储：`packages/storage/src` 对应测试；Cloudflare 绑定行为追加 `pnpm test:cloudflare`。
+- 实时推送：`apps/web/src/features/realtime` 测试及 `pnpm test:cloudflare`；关键浏览器行为追加 `tests/e2e/realtime.spec.ts`、`tests/e2e/generation-live.spec.ts` 的相关用例。
+
+检查结果记录对应提交/工作区依据。仅在代码、依赖或测试环境变化、失败或仍有风险时重跑；最终检查不能沿用不匹配的旧结果。完整浏览器回归仍只在远程 CI 手动触发。
+
 ## 本地开发与远程回归
 
 日常 AI 开发默认执行 `pnpm check` 和 `git diff --check`，不在每次样式、文案或布局调整后运行本地全量 E2E。关键交互变化、已知回归或用户明确要求时，只运行相关浏览器用例；例如 `pnpm test:e2e tests/e2e/preview-workspace.spec.ts`。不为纯视觉数值补写镜像测试。
@@ -87,13 +102,13 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 ## 家纺裂变
 
-`packages/generation/src/textile-generation.test.ts` 验证10个独立服务端视角预设、版本、重复与未知视角、普通任务4张上限和一视角一张约束；图片API测试验证客户端模型／提示词／质量无法覆盖服务端固定配置。
+`packages/generation/src/images/textile-generation.test.ts` 验证10个独立服务端视角预设、版本、重复与未知视角、普通任务4张上限和一视角一张约束；图片API测试验证客户端模型／提示词／质量无法覆盖服务端固定配置。
 
 `verify-textile-generation.ts` 纳入 worker `test:images`，在隔离临时库与私有临时图片目录中验证10张提交、原子扣费及10条outbox、同键重放、跨组织引用拒绝、工具历史筛选、每个position不同提示词及每次请求携带有序的1张主图和5张详情图、重复消费不调用服务商、9成功1失败只按成功张数净扣、失败重试仅保留原position。服务商为本地注入fixture，未调用外部模型。
 
 `tests/e2e/textile-generation.spec.ts` 使用接口fixture验证选中10视角后提交10张与六张有序参考、历史视角标记、部分失败与实时更新、刷新和重新编辑、普通创作历史隔离，以及丢失响应后刷新仍复用同一幂等键。全量浏览器测试可由远程CI手动运行。
 
-结果布局回归 `generation-result-layout.spec.ts` 验证单图与多图按原比例完整展示，失败／待确认项保留任务请求比例和原有顺序。供应商适配器单测分别覆盖响应头等待与响应体等待超时，确认`PROVIDER_TIMEOUT`仍为未知收费结果并且只调用一次，不自动重试。默认总超时600000ms，租约在其上增加60000ms，Redis桥接请求保留610000ms上限。
+结果布局回归 `generation-result-layout.spec.ts` 验证单图与多图按原比例完整展示，失败／待确认项保留任务请求比例和原有顺序。供应商适配器单测分别覆盖响应头等待与响应体等待超时，确认`PROVIDER_TIMEOUT`仍为未知收费结果并且只调用一次，不自动重试。消费者在未指定供应商超时时使用600000ms，并为执行租约增加60000ms；实际领取租约及恢复期限由持久化仓储约束。生产通过 Cloudflare Queue 与 PostgreSQL outbox 执行，不再有 Redis 桥接请求。
 
 单图卡片重试由`card-image-retry.spec.ts`验证hover、键盘和触屏入口、单张金额确认、取消不提交、仅传itemId及丢失响应后刷新同键重放。隔离verify-textile-generation覆盖其他子项仍排队时仅替换选中未决项、另一个失败项不变、单次退款／扣费、同键换图拒绝与旧执行完成隔离。命名迁移回归先单独验证0015的数据保全，再应用后续扩展迁移，避免把新增可空列误判为旧数据变化。
 
@@ -105,7 +120,7 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 ## 私有 S3
 
-`docker compose up -d image-storage` 后，`ALLOW_LOCAL_S3_INTEGRATION=true pnpm exec vitest run packages/storage/src/s3-object-bucket.test.ts` 使用固定 loopback:9004 的独立私有桶，真实 Images binding 处理 fixture，验证原图/PNG 缩略图/WebP 预览与缩略图写入、签名访问、匿名拒绝、R2 旧对象回退和清理。只创建随机 fixture key，结束删除自己的原图与变体，不调用付费模型。默认单元验证 S3 故障不能静默写回 R2；本地环境测试确保不会导入正式 S3 凭据。
+`docker compose up -d image-storage` 后，`ALLOW_LOCAL_S3_INTEGRATION=true pnpm exec vitest run packages/storage/src/buckets/s3-object-bucket.test.ts` 使用固定 loopback:9004 的独立私有桶，真实 Images binding 处理 fixture，验证原图/PNG 缩略图/WebP 预览与缩略图写入、签名访问、匿名拒绝、R2 旧对象回退和清理。只创建随机 fixture key，结束删除自己的原图与变体，不调用付费模型。默认单元验证 S3 故障不能静默写回 R2；本地环境测试确保不会导入正式 S3 凭据。
 
 套图计划接入测试：`variation-planner.test.ts` 覆盖计划JSON、独立提示词、坏结果及不自动重试；`verify-variation-plans.ts` 由隔离图片集成脚本执行，覆盖计划幂等、所有权、确认前不扣费、20方案创建、40积分原子扣款、20条outbox及历史隔离。`tests/e2e/smart-variation.spec.ts` 使用明确的API fixtures，检查文字校验、编辑/勾选/删除、跨工具保留草稿及确认后的单次提交，包含320/390/1440px。Fixture通过不代表外部语言供应商可用，外部实测另行记录结果。
 
@@ -129,7 +144,7 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 视频测试文件使用明确的本地 HTTP fixture 验证媒体播放和按需加载，不代表当前 Workers 已开放视频或已完成真实供应商验收。
 
-视频封面与播放验证：`packages/storage/src/video-variants.test.ts`使用真实解码器提取WebP，验证缓存合并、源文件保持不变、只派生封面及无效key拒绝；`video-media.test.ts`验证封面／播放／下载签名用途、内联播放Range、平台302跳转及封面不回退视频。`tests/fixtures/video-portrait.mp4`是ffmpeg生成的1秒90×162纯色视频，`video-cover.webp`为其真实帧，仅供测试，不是产品内容。定向`video-creation.spec.ts`验证列表只有封面、点击后才请求播放地址、附件仅在明确下载时通过本地fixture HTTP服务器传输、竖屏布局、详情信息栏、缩略图和方向键切换、有无Range时的进度条行为与关闭后焦点恢复。测试不调用模型。
+视频封面与播放验证：`packages/storage/src/videos/video-variants.test.ts`使用真实解码器提取WebP，验证缓存合并、源文件保持不变、只派生封面及无效key拒绝；`video-media.test.ts`验证封面／播放／下载签名用途、内联播放Range、平台302跳转及封面不回退视频。`tests/fixtures/video-portrait.mp4`是ffmpeg生成的1秒90×162纯色视频，`video-cover.webp`为其真实帧，仅供测试，不是产品内容。定向`video-creation.spec.ts`验证列表只有封面、点击后才请求播放地址、附件仅在明确下载时通过本地fixture HTTP服务器传输、竖屏布局、详情信息栏、缩略图和方向键切换、有无Range时的进度条行为与关闭后焦点恢复。测试不调用模型。
 
 账户弹框拆分回归由`account-center.spec.ts`、`account-menu.spec.ts`和`account-settings.spec.ts`覆盖：账单仅保留积分明细/充值订单，设置独立打开并恢复焦点，普通成员不显示企业管理，改密不匹配不提交、错误密码不退出、成功提交后清理当前登录状态。浏览器使用接口fixture，不修改真实账号密码；服务器改密和会话撤销仍由既有鉴权单测与隔离集成覆盖。
 
@@ -162,3 +177,5 @@ Webhook 与无回调兼容：`scripts/cloudflare-webhook.test.mjs` 验证 Worker
 ## 运行边界与规则检查
 
 本地 `pnpm lint` 同时运行全仓运行时边界、浏览器 server-only 导入、代码质量和中文注释检查。CI Infrastructure 在隔离数据库集成后增加 `pnpm test:cloudflare`，真实 workerd 检查不读取生产绑定或付费模型。完整浏览器回归仍仅由手动 workflow_dispatch 触发，普通 push／PR 不运行全套浏览器测试。
+
+图片存储并行回归：`packages/storage/src/cloudflare/cloudflare-image-write.test.ts` 验证三路写入重叠、失败等待其余分支、源图保存与转换重叠及受控延迟比较；该模拟耗时不代表生产网络表现。真实本地 workerd 的 Images/R2 路径继续由 `pnpm test:cloudflare` 验证，不调用付费模型。

@@ -53,7 +53,7 @@ test("expired access is renewed once and restores the mounted workspace without 
           },
     }),
   );
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.locator(".account-trigger")).toHaveAccessibleName(`账户菜单：${user.account}`);
   await expect(page.getByText("登录后查看生成记录", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeVisible();
@@ -66,9 +66,9 @@ test("expired access is renewed once and restores the mounted workspace without 
   await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("自动续期保留的草稿");
   await page.locator(".account-trigger").click();
   await page.getByRole("menuitem", { name: "退出登录", exact: true }).click();
-  await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();
-  await expect(page.getByText("登录后查看生成记录", { exact: true })).toBeVisible();
-  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
+  await expect(page.locator(".login-page")).toBeVisible();
+  await page.getByRole("button", { name: "关闭登录", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "创作需求", exact: true })).toHaveValue(
     "自动续期保留的草稿",
   );
   await page.reload();

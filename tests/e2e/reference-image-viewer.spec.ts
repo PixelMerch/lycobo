@@ -46,7 +46,7 @@ async function references(page: Page, count = 2) {
       body: '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900"><rect width="1200" height="900" fill="#e3d4bc"/></svg>',
     }),
   );
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   return ids;
 }
 
@@ -310,7 +310,7 @@ test("uploaded draft references preview in the shared viewer and stay deletable"
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await mockImageApi(page);
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles(["apps/web/public/studio/bedroom.webp", "apps/web/public/studio/lavender.webp"]);

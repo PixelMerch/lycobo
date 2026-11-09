@@ -55,7 +55,7 @@ test("enterprise account shows shared balance, member spending and recharge reco
       }),
     }),
   );
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.locator(".header-balance")).toContainText("200");
   await page.locator(".account-trigger").click();
   await page.getByRole("menuitem", { name: "积分明细", exact: true }).click();
@@ -65,7 +65,7 @@ test("enterprise account shows shared balance, member spending and recharge reco
     "aria-selected",
     "true",
   );
-  await expect(page).toHaveURL(/\/create$/);
+  await expect(page).toHaveURL(/\/commerce\/create$/);
   const ledger = center.getByRole("region", { name: "积分明细", exact: true });
   await expect(ledger.locator(".account-toolbar-meta")).toContainText("当前可用 200 积分");
   const row = ledger.locator(".table__body .table__row");
@@ -109,7 +109,7 @@ test("billing failures stay unknown and retry real reads", async ({ page }) => {
     reads++;
     return route.fulfill({ status: 503, json: apiFixture({}, 503) });
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page.locator(".account-trigger").click();
   await page.getByRole("menuitem", { name: "积分明细", exact: true }).click();
   const center = page.getByRole("dialog", { name: "积分与账单", exact: true });

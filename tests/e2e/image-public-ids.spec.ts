@@ -60,7 +60,7 @@ test("task and image IDs stay stable across history, reload and the asset librar
       },
     });
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const history = page.locator(".generation-job");
   await expect(history).toContainText("W07AZ9T2Q");
   await expect(history.locator(".image-public-id")).toHaveCount(0);

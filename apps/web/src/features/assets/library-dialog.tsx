@@ -2,14 +2,14 @@ import { Modal } from "@heroui/react";
 import type { AssetTool } from "@lycoboai/contracts";
 import { motion } from "motion/react";
 import { useState } from "react";
-import { DialogClose } from "../../components/dialog-close";
-import { useCenteredDialogMotion } from "../../components/use-centered-dialog-motion";
+import { DialogClose } from "../../components/overlays/dialog-close";
+import { useCenteredDialogMotion } from "../../components/overlays/use-centered-dialog-motion";
 import "../../styles/fullscreen-dialog.css";
 import { AssetBrowser } from "./asset-browser";
 import { type AssetLibraryFilters, defaultAssetFilters } from "./asset-library-client";
 import "./library-dialog.css";
 
-/** 我的素材 only browses generated assets, defaulting to the current tool. */
+/** 我的素材只展示生成素材，默认按当前工具筛选。 */
 export function LibraryDialog({
   tool,
   onClose,
@@ -41,7 +41,6 @@ export function LibraryDialog({
               </Modal.Header>
               <Modal.Body className="library-body">
                 <AssetBrowser
-                  onAuthenticationClose={onClose}
                   generatedOnly
                   filters={filters}
                   defaults={defaults}

@@ -9,7 +9,7 @@ test("create workspace fills the viewport and pins generation to the composer bo
   page,
 }) => {
   await page.setViewportSize({ width: 1328, height: 906 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const composer = page.getByRole("region", { name: "创作设置", exact: true });
   const results = page.getByRole("region", { name: "工作区历史记录", exact: true });
   const generate = page.getByRole("button", { name: /生成商品主图/ });
@@ -41,7 +41,7 @@ const png = Buffer.from(
 test("current draft, references and output choices follow model switches and survive navigation", async ({
   page,
 }) => {
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   await prompt.fill("保留我的商品草稿");
   const ratioPicker = page.getByRole("region", { name: "图片比例", exact: true });
@@ -72,7 +72,7 @@ test("current draft, references and output choices follow model switches and sur
 });
 
 test("invalid references and limit errors do not destroy valid images", async ({ page }) => {
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const input = page.getByLabel("添加参考图片", { exact: true });
   await input.setInputFiles({
     name: "broken.png",
@@ -97,7 +97,7 @@ test("invalid references and limit errors do not destroy valid images", async ({
 });
 
 test("text generation requires a prompt and an available model", async ({ page }) => {
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const generate = page.getByRole("button", { name: "生成商品主图", exact: true });
   await expect(generate).toBeDisabled();
   await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("米白陶瓷杯");
@@ -114,7 +114,7 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
-    for (const path of ["/", "/create", "/assets"]) {
+    for (const path of ["/", "/commerce/create", "/assets"]) {
       await page.goto(path);
       await expect(page.locator(".header-benefits")).toBeVisible();
       await expect(
@@ -134,17 +134,17 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     await dialog.press("Escape");
     await page.getByRole("textbox", { name: "创作需求" }).fill("商品摄影");
     await page.getByRole("button", { name: "开始创作", exact: true }).click();
-    await expect(page).toHaveURL(/\/create$/);
+    await expect(page).toHaveURL(/\/commerce\/create$/);
   });
 }
 
 test("tool shortcuts open their workspace", async ({ page }) => {
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await page
     .getByRole("navigation", { name: "电商创作工具" })
     .getByRole("button", { name: "主图制作", exact: true })
     .click();
-  await expect(page).toHaveURL(/\/create$/);
+  await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
 });
 
@@ -152,7 +152,7 @@ test("extended ratios preserve selection and composer scroll stays independent",
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 600 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   await expect(page.getByText("更多设置", { exact: true })).toHaveCount(0);
   const ratioPicker = page.getByRole("region", { name: "图片比例", exact: true });
   const track = ratioPicker.locator(".home-ratio-track");
@@ -194,7 +194,7 @@ test("extended ratios preserve selection and composer scroll stays independent",
 });
 
 test("reference limit and clearing remain consistent when switching models", async ({ page }) => {
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   await prompt.fill("保留提示词");
   await page
@@ -219,7 +219,7 @@ test("reference limit and clearing remain consistent when switching models", asy
   await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /创作模型/ }).click();
   await page.getByRole("option", { name: "Banana 2.1", exact: true }).click();
-  await expect(page).toHaveURL(/\/create$/);
+  await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(page.locator(".reference-tile")).toHaveCount(4);
   await page.getByRole("button", { name: /创作模型/ }).click();
   await page.getByRole("option", { name: "Image 2", exact: true }).click();
@@ -238,14 +238,14 @@ test("all three public models switch without changing the workspace URL or the c
   page,
 }) => {
   const models = modelDisplayNames;
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   await prompt.fill("同一份商品草稿");
   for (const model of models) {
     await page.getByRole("button", { name: /创作模型/ }).click();
     await expect(page.getByRole("option")).toHaveText(models);
     await page.getByRole("option", { name: model, exact: true }).click();
-    await expect(page).toHaveURL(/\/create$/);
+    await expect(page).toHaveURL(/\/commerce\/create$/);
     await expect(prompt).toHaveValue("同一份商品草稿");
   }
   for (const model of models) {

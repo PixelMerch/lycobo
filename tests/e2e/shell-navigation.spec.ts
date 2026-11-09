@@ -6,7 +6,7 @@ test("workspace navigation remains compact and aligned across desktop and mobile
 }) => {
   await mockImageApi(page);
   await page.setViewportSize({ width: 1584, height: 993 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const prompt = page.getByLabel("提示词", { exact: true });
   await prompt.fill("保留这份商品创作草稿");
   const rows = page.locator(".sidebar nav .nav-row");
@@ -52,7 +52,7 @@ for (const mobile of [false, true]) {
         0,
       );
       await navigation.getByRole("link", { name: entry, exact: true }).click();
-      const login = page.getByRole("dialog", { name: "欢迎使用 Lycobo", exact: true });
+      const login = page.locator(".login-page");
       await expect(login).toBeVisible();
       await login.getByRole("button", { name: "关闭登录", exact: true }).click();
       await expect(page).toHaveURL(/\/$/);
@@ -62,7 +62,7 @@ for (const mobile of [false, true]) {
 
 for (const path of [
   "/workspace",
-  "/create",
+  "/commerce/create",
   "/commerce/textile-set",
   "/commerce/smart-variation",
   "/video",
@@ -79,7 +79,7 @@ for (const path of [
         requests.push(request.url());
     });
     await page.goto(path);
-    const login = page.getByRole("dialog", { name: "欢迎使用 Lycobo", exact: true });
+    const login = page.locator(".login-page");
     await expect(login).toBeVisible();
     await expect(page.getByText("素材暂时不可用", { exact: true })).toHaveCount(0);
     await expect(page.getByText("请先登录", { exact: true })).toHaveCount(0);
@@ -106,7 +106,7 @@ for (const action of [
     page.on("filechooser", () => fileChoosers++);
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "创作灵感" })).toBeVisible();
-    await expect(page.getByRole("dialog", { name: "欢迎使用 Lycobo" })).toHaveCount(0);
+    await expect(page.locator(".login-page")).toHaveCount(0);
     const upload = page.getByRole("button", { name: "添加参考图", exact: true });
     if (action === "upload") await upload.click();
     if (action === "keyboard-upload") {
@@ -124,7 +124,7 @@ for (const action of [
         mimeType: "image/png",
         buffer: Buffer.from("not-read-before-login"),
       });
-    const login = page.getByRole("dialog", { name: "欢迎使用 Lycobo", exact: true });
+    const login = page.locator(".login-page");
     await expect(login).toBeVisible();
     expect(fileChoosers).toBe(0);
     await login.getByRole("button", { name: "关闭登录", exact: true }).click();
@@ -146,10 +146,9 @@ test("homepage inspirations remain browsable while applying a prompt requires lo
   const detail = page.getByRole("dialog", { name: /^灵感详情：/ });
   await expect(detail).toBeVisible();
   await detail.getByRole("button", { name: "做同款", exact: true }).click();
-  const login = page.getByRole("dialog", { name: "欢迎使用 Lycobo", exact: true });
+  const login = page.locator(".login-page");
   await expect(login).toBeVisible();
   await login.getByRole("button", { name: "关闭登录", exact: true }).click();
-  await expect(detail).toBeVisible();
-  await detail.getByRole("button", { name: "关闭灵感详情", exact: true }).click();
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("");
 });

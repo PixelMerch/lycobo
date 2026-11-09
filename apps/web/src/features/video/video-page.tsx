@@ -5,17 +5,17 @@ import {
   videoUnitCredits,
 } from "@lycoboai/contracts";
 import { CreditCoin } from "../../components/credit-coin";
-import { ReferencePrompt } from "../../components/reference-prompt";
+import { ReferencePrompt } from "../../components/reference-prompt/reference-prompt";
 import { useErrorToast } from "../../lib/error-toast";
 import { HomeRatioPicker } from "../generation/composer/ratio-picker";
 import { revealNewestHistory } from "../generation/history/history-navigation";
 import { hasPromptDescription } from "../generation/references/prompt-description";
 import { ReferencePicker } from "../generation/references/reference-picker";
 import { WorkspaceComposerTitle } from "../workspace/workspace-tool-symbol";
+import { VideoDuration } from "./production/video-duration";
 import { useStoryboardWorkspace } from "./storyboard/storyboard-context";
 import { automaticVideoCost } from "./storyboard/use-storyboard";
 import { useSubmitVideo, useVideoModel } from "./video-client";
-import { VideoDuration } from "./video-duration";
 import { useVideoDraft, videoPromptLimit, videoRatios } from "./video-state";
 import "./video.css";
 export function VideoPage() {

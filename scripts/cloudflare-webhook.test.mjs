@@ -1,11 +1,13 @@
 import { expect, it, vi } from "vitest";
 import { createApp } from "../apps/api/src/app";
 import { serveCloudflareApi } from "../apps/api/src/cloudflare-app";
-import { openCloudflareRuntime } from "../apps/worker/src/cloudflare-runtime";
+import { openCloudflareRuntime } from "../apps/worker/src/cloudflare/cloudflare-runtime";
 import { openAuthRepository } from "../packages/db/src/index";
 
 vi.mock("../apps/api/src/app", () => ({ createApp: vi.fn() }));
-vi.mock("../apps/worker/src/cloudflare-runtime", () => ({ openCloudflareRuntime: vi.fn() }));
+vi.mock("../apps/worker/src/cloudflare/cloudflare-runtime", () => ({
+  openCloudflareRuntime: vi.fn(),
+}));
 vi.mock("../packages/db/src/index", async (importOriginal) => ({
   ...(await importOriginal()),
   openAuthRepository: vi.fn(),

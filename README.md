@@ -56,6 +56,8 @@ docker compose up --build
 
 ## 开发检查
 
+AI 接手可先执行 `pnpm ai:context` 获取只读 Git 摘要；文档修改执行 `pnpm docs:check`，该检查也已包含在 lint 中。
+
 | 命令                    | 用途                                     |
 | ----------------------- | ---------------------------------------- |
 | `pnpm check`            | lint、边界、类型、单元测试与生产构建     |
@@ -70,6 +72,7 @@ docker compose up --build
 React / Vite 前端、Hono API 和独立 Worker 位于 `apps/`；契约、数据库、队列、模型适配与存储位于 `packages/`。前端按功能分目录，详细边界见 [架构与目录](PROJECT_STRUCTURE.md)。
 
 - [产品范围](PRD.md) · [设计规范](DESIGN.md) · [技术栈](docs/tech-stack.md)
+- [AI 按任务阅读与交接](docs/ai-workflow.md) · [任务模板](docs/templates/ai-task.md) · [交接模板](docs/templates/ai-handoff.md)
 - [企业鉴权](docs/enterprise-auth.md) · [企业钱包](docs/enterprise-wallet.md)
 - [局部修改](docs/local-image-repair.md) · [数据库备份](docs/database-backup.md) · [Cloudflare 运行与部署](docs/cloudflare-deployment.md)
 - [发布说明](docs/releasing.md) · [安全](SECURITY.md) · [完整文档索引](docs/README.md)

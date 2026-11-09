@@ -36,7 +36,7 @@
 配置测试覆盖COS与Docker寻址、编码、地域、临时凭据和错误脱敏。对象测试覆盖授权请求、错误处理、私有访问、变体和删除；云端权限不由本地测试代替。
 
 ```sh
-ALLOW_LOCAL_S3_INTEGRATION=true pnpm exec vitest run packages/storage/src/s3-config.test.ts packages/storage/src/s3-object-bucket.test.ts
+ALLOW_LOCAL_S3_INTEGRATION=true pnpm exec vitest run packages/storage/src/buckets/s3-config.test.ts packages/storage/src/buckets/s3-object-bucket.test.ts
 ```
 
 此命令只连接固定loopback测试存储并清理本轮对象，不删除共享卷或历史数据。

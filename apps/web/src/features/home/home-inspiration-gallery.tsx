@@ -3,8 +3,8 @@ import { IconCopy } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { ConfirmDialog } from "../../components/confirm-dialog";
-import { DialogClose } from "../../components/dialog-close";
+import { ConfirmDialog } from "../../components/overlays/confirm-dialog";
+import { DialogClose } from "../../components/overlays/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
 import { copyToClipboard } from "../../lib/clipboard";
 import { useRequireLogin } from "../auth/login-prompt";
@@ -19,6 +19,7 @@ import {
 import { useInspirationColumns } from "./use-inspiration-columns";
 import "./home-inspiration-gallery.css";
 
+/** 展示灵感示例，用户确认后带入主图草稿，不自动提交任务。 */
 export function HomeInspirationGallery() {
   const navigate = useNavigate();
   const requireLogin = useRequireLogin();
@@ -34,9 +35,9 @@ export function HomeInspirationGallery() {
     updateDraft(activeModel, { prompt: item.prompt });
     setReplacing(null);
     setSelected(null);
-    void navigate("/create");
+    void navigate("/commerce/create");
   }
-  // Only fills the prompt: entering the workspace never uploads the example or submits paid work.
+  // 示例只填入提示词，进入工作台不上传示例或提交付费任务。
   function use(item: HomeInspiration) {
     if (!requireLogin()) return;
     const { activeModel, drafts } = useStudioStore.getState();

@@ -12,7 +12,7 @@ Header提供积分与会员入口；会员采用全屏HeroUI Modal，包含个�
 
 ## 模型与价格
 
-线上独立模式的映射来自 `packages/generation/src/standalone-models.ts`：
+线上独立模式的映射来自 `packages/generation/src/images/standalone-models.ts`：
 
 | 展示名称   | 模型 ID                    | 实际供应商模型                 |
 | ---------- | -------------------------- | ------------------------------ |

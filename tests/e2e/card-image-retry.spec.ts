@@ -53,7 +53,7 @@ test("hover retries only the chosen image after confirming its own cost", async 
     }
     return route.fulfill({ json: apiFixture({ data: [job] }) });
   });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const card = page.locator(".generation-placeholder").first();
   const action = card.getByRole("button", { name: "重新生成第 1 张", exact: true });
   await expect(card.locator(".generation-retry-overlay")).toHaveCSS("opacity", "0");
@@ -120,7 +120,7 @@ test("touch users can regenerate a failed image without hovering", async ({ brow
     await page.route("**/api/v1/image-tasks?*", (route) =>
       route.fulfill({ json: apiFixture({ data: [job] }) }),
     );
-    await page.goto("/create");
+    await page.goto("/commerce/create");
     await page.getByRole("radio", { name: "历史记录", exact: true }).click();
     const card = page.locator(".generation-placeholder");
     await expect(card.locator(".generation-retry-overlay")).toHaveCSS("opacity", "1");

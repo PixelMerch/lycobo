@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
-test("login and logout synchronize mounted history without reloading or losing the draft", async ({
+test("login returns to the target and logout keeps the draft without a document reload", async ({
   page,
 }) => {
   await mockImageApi(page);
@@ -63,26 +63,25 @@ test("login and logout synchronize mounted history without reloading or losing t
   await page.route("**/api/v1/image-tasks*", (route) =>
     route.fulfill({ json: apiFixture({ data: loggedIn ? [job] : [] }) }),
   );
-  await page.goto("/create");
-  await expect(page.getByRole("dialog", { name: "欢迎使用 Lycobo" })).toBeVisible();
+  await page.goto("/commerce/create");
+  await expect(page.locator(".login-page")).toBeVisible();
   await expect(page.locator(".composer-panel")).toHaveCount(0);
   expect(sessionRequests).toBe(0);
   const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
-  let navigations = 0;
-  page.on("framenavigated", (frame) => {
-    if (frame === page.mainFrame()) navigations++;
-  });
-  const dialog = page.getByRole("dialog", { name: "欢迎使用 Lycobo" });
+  const initialDocument = await page.evaluate(() => performance.timeOrigin);
+  const dialog = page.locator(".login-page");
+  await dialog.getByRole("button", { name: "企业账号登录", exact: true }).click();
   await dialog.getByLabel("企业账号", { exact: true }).fill(user.account);
   await dialog.getByLabel("密码", { exact: true }).fill("fixture-password");
-  await dialog.getByRole("button", { name: "登录", exact: true }).click();
+  await dialog.getByRole("button", { name: "登录企业账号", exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await expect(page.locator(".account-trigger")).toHaveAccessibleName(`账户菜单：${user.account}`);
   await expect(page.locator(".generation-job")).toContainText(job.prompt);
   await expect(page.getByText("登录后查看生成记录", { exact: true })).toHaveCount(0);
   await prompt.fill("登录后的创作草稿");
   expect(sessionRequests).toBeGreaterThan(0);
-  expect(navigations).toBe(0);
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(initialDocument);
+  await expect(page).toHaveURL(/\/commerce\/create$/);
   await page.locator(".account-trigger").click();
   await page.getByRole("menuitem", { name: "退出登录", exact: true }).click();
   await expect(dialog).toBeVisible();
@@ -119,13 +118,13 @@ for (const layout of ["expanded", "collapsed", "mobile"] as const) {
     if (layout === "collapsed")
       await page.getByRole("button", { name: "收起导航栏", exact: true }).click();
     await page.getByRole("button", { name: "登录领积分", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "欢迎使用 Lycobo" });
-    // The panel springs into place; compare form positions only once it has settled.
-    await expect(dialog.locator(".login-panel")).toHaveCSS("transform", "none");
+    const dialog = page.locator(".login-page");
+    await dialog.getByRole("button", { name: "企业账号登录", exact: true }).click();
     await dialog.getByLabel("企业账号", { exact: true }).fill("login-fixture");
     const password = dialog.getByLabel("密码", { exact: true });
     await password.fill("wrong-fixture-password");
-    const submit = dialog.getByRole("button", { name: "登录", exact: true });
+    const submit = dialog.getByRole("button", { name: "登录企业账号", exact: true });
+    await expect(dialog.locator(".login-face")).toHaveCSS("transform", "none");
     const before = await submit.boundingBox();
     await submit.click();
     await expect(page.locator(".toast-region")).toContainText(message);

@@ -4,6 +4,8 @@
 
 本任务书记录本次新增需求，不代表功能已经上线。开发遵守根目录及相关目录的 AGENTS.md；产品基础见 [PRD](../PRD.md)，视觉沿用 [DESIGN](../DESIGN.md)，架构见 [PROJECT_STRUCTURE](../PROJECT_STRUCTURE.md)。本次只补齐账号设置相关功能，积分与账单按现有逻辑保留。
 
+本文是总需求，不要求一次性交给一个 AI 全部实施。按 [AI 协作](ai-workflow.md) 为昵称、头像、企业成员、首次改密和微信接入等目标分别建立可验收任务，使用 [任务模板](templates/ai-task.md)；共享会话契约与迁移先协调。下文各项仍为待开发需求，拆分不代表授权并行或承诺接入外部能力。
+
 ## 1. 目标与范围
 
 - 个人资料显示真实头像、昵称和账号身份；用户可以上传头像、修改昵称。
@@ -165,8 +167,8 @@
 | `apps/web/src/features/auth/`、`apps/web/src/lib/session-fetch.ts`                     | 登录、身份缓存、刷新、改密后清理与授权回调             |
 | `apps/web/src/app/`                                                                    | 全局登录门禁及首次改密呈现                             |
 | `apps/api/src/features/auth/`                                                          | 登录、会话、改密与服务端授权；相关新路由按领域拆分     |
-| `packages/contracts/src/auth.ts`                                                       | 身份与鉴权契约；新字段兼容历史响应和发布顺序           |
-| `packages/db/src/auth-repository.ts`                                                   | 当前 PostgreSQL 鉴权持久化                             |
+| `packages/contracts/src/auth/auth.ts`                                                  | 身份与鉴权契约；新字段兼容历史响应和发布顺序           |
+| `packages/db/src/auth/auth-repository.ts`                                              | 当前 PostgreSQL 鉴权持久化                             |
 | `packages/db/src/schema.ts`、`packages/db/migrations/`                                 | 当前表定义、追加迁移及服务端权限                       |
 | `packages/storage/`、`apps/assets/`                                                    | 头像安全存储、派生尺寸和授权读取                       |
 | `apps/api/scripts/enterprise-account.ts`                                               | 既有受控创建/重置工具，不能作为公开成员接口直接暴露    |

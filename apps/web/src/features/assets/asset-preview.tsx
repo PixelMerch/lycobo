@@ -1,6 +1,6 @@
 import type { ImageAsset } from "@lycoboai/contracts";
 import { ImagePreviewDialog } from "../image-workspace/image-preview";
-import { VideoPlayerDialog } from "../video/video-player-dialog";
+import { VideoPlayerDialog } from "../video/player/video-player-dialog";
 import type { useAssetLibrary } from "./asset-library-client";
 
 const toPreview = (asset: ImageAsset) => ({

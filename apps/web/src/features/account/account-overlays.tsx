@@ -1,15 +1,19 @@
 import { lazy, Suspense, useEffect } from "react";
 import { type AccountLayer, useAccountOverlays } from "./account-overlay-store";
-import { RechargeDialog } from "./credits-dialog";
+import { RechargeDialog } from "./credits/credits-dialog";
 
 const AccountCenterDialog = lazy(() =>
-  import("./account-center-dialog").then((module) => ({ default: module.AccountCenterDialog })),
+  import("./center/account-center-dialog").then((module) => ({
+    default: module.AccountCenterDialog,
+  })),
 );
 const AccountSettingsDialog = lazy(() =>
-  import("./account-settings-dialog").then((module) => ({ default: module.AccountSettingsDialog })),
+  import("./settings/account-settings-dialog").then((module) => ({
+    default: module.AccountSettingsDialog,
+  })),
 );
 const MembershipDialog = lazy(() =>
-  import("./membership-page").then((module) => ({ default: module.MembershipDialog })),
+  import("./membership/membership-page").then((module) => ({ default: module.MembershipDialog })),
 );
 
 /** Return focus only after the layer unmounted; a mounted modal keeps focus contained. */

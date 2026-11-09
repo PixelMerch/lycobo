@@ -1,0 +1,44 @@
+/* 浮层共用材质；业务样式只负责布局，不再各自选择不透明底色。 */
+:root
+  :is(
+    .modal__dialog,
+    .drawer__dialog,
+    .popover,
+    .dropdown__popover,
+    .tooltip,
+    .alert-dialog,
+    .toast
+  ):not(.membership-dialog),
+:root .login-panel {
+  background: var(--glass-fill), var(--glass-tint);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+/* 提示气泡只保留外投影，避免顶部内高光与细边叠加成双线。 */
+:root .tooltip {
+  box-shadow: 0 8px 24px #00000040;
+}
+/* 遮罩只调暗，避免在父层先模糊而截断弹层对页面的磨砂采样。 */
+:root :is(.modal__backdrop, .drawer__backdrop) {
+  background: rgb(0 0 0 / 36%);
+  backdrop-filter: none;
+}
+@supports not (backdrop-filter: blur(1px)) {
+  :root {
+    --glass-fill: linear-gradient(transparent, transparent);
+    --glass-tint: var(--glass-fallback);
+  }
+  :root .login-panel {
+    --glass-tint: var(--glass-fallback);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  :root .login-panel {
+    --glass-fill: linear-gradient(transparent, transparent);
+    --glass-tint: var(--glass-fallback);
+    --glass-blur: none;
+  }
+}

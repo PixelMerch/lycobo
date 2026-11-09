@@ -2,9 +2,9 @@ import { expect, it, vi } from "vitest";
 import {
   consumeCloudflareImages,
   dispatchCloudflareImages,
-} from "../apps/worker/src/cloudflare-consumer";
-import { openCloudflareRuntime } from "../apps/worker/src/cloudflare-runtime";
-import { processImageItem } from "../apps/worker/src/image-processor";
+} from "../apps/worker/src/cloudflare/cloudflare-consumer";
+import { openCloudflareRuntime } from "../apps/worker/src/cloudflare/cloudflare-runtime";
+import { processImageItem } from "../apps/worker/src/images/image-processor";
 
 vi.mock("../packages/db/src/index", async (importOriginal) => ({
   ...(await importOriginal()),
@@ -14,8 +14,10 @@ vi.mock("../packages/db/src/index", async (importOriginal) => ({
     close: async () => undefined,
   }),
 }));
-vi.mock("../apps/worker/src/cloudflare-runtime", () => ({ openCloudflareRuntime: vi.fn() }));
-vi.mock("../apps/worker/src/image-processor", () => ({ processImageItem: vi.fn() }));
+vi.mock("../apps/worker/src/cloudflare/cloudflare-runtime", () => ({
+  openCloudflareRuntime: vi.fn(),
+}));
+vi.mock("../apps/worker/src/images/image-processor", () => ({ processImageItem: vi.fn() }));
 
 it("processes uploads but never starts, scans or settles paid work while generation is disabled", async () => {
   const process = vi.fn(async () => undefined);

@@ -1,6 +1,6 @@
 # HeroUI 组件清单（已安装版本）
 
-本文件记录 `@heroui/react` 3.2.6 实际导出的组件能力，供实现前查阅。
+本文件记录 `@heroui/react` 3.2.7 实际导出的组件能力，供实现前查阅。
 规则只有一条：**交互能力在下面的清单里已经存在时，直接组合官方组件，不要自己实现。**
 CSS 仍负责主题与尺寸，见 [DESIGN.md](../DESIGN.md)。
 
@@ -78,7 +78,7 @@ CSS 仍负责主题与尺寸，见 [DESIGN.md](../DESIGN.md)。
 
 ## 共享图片浏览
 
-`apps/web/src/components/image-viewer.tsx` 导出 `ImageViewer` 与 `ViewerImage`。传入 `images: { src, alt }[]`、`initialIndex` 和 `onClose`，调用方保留缩略图入口并在打开前聚焦它。支持多图切换、左右旋转、按钮／滚轮缩放、放大拖动、Escape 与嵌套弹层焦点返回。历史记录及图片详情参考图通过 ReferenceThumbnails 按需加载此组件。尺寸与视觉遵循 DESIGN.md 的通用图片浏览章节；只改变浏览状态，不写回素材。
+`apps/web/src/components/image-viewer/image-viewer.tsx` 导出 `ImageViewer` 与 `ViewerImage`。传入 `images: { src, alt }[]`、`initialIndex` 和 `onClose`，调用方保留缩略图入口并在打开前聚焦它。支持多图切换、左右旋转、按钮／滚轮缩放、放大拖动、Escape 与嵌套弹层焦点返回。历史记录及图片详情参考图通过 ReferenceThumbnails 按需加载此组件。尺寸与视觉遵循 DESIGN.md 的通用图片浏览章节；只改变浏览状态，不写回素材。
 
 ## 状态与数据展示
 
@@ -113,7 +113,7 @@ CSS 仍负责主题与尺寸，见 [DESIGN.md](../DESIGN.md)。
 
 ## 与 DESIGN.md 的关系
 
-包括账户表单的中性焦点、登录浅色表面和不同关闭规格在内，所有局部视觉规则只在 DESIGN.md 维护。
+包括账户表单的中性焦点、登录深色玻璃和不同关闭规格在内，所有局部视觉规则只在 DESIGN.md 维护。
 DESIGN.md 决定视觉与几何，本文件决定“用什么组件”与“不要自己实现什么”。
 两者冲突时以 DESIGN.md 的视觉规范为准，但不得据此重新手写交互组件。
 

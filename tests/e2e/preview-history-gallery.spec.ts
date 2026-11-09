@@ -53,7 +53,7 @@ test("result preview browses successful history images, highlights the entry and
     route.fulfill({ contentType: "image/svg+xml", body: svg }),
   );
   await page.setViewportSize({ width: 1440, height: 760 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const target = jobs[19];
   if (!target) throw new Error("Missing target fixture");
   await page
@@ -187,7 +187,7 @@ test("history rail thumbnails keep the whole image and a stable tile on hover", 
     route.fulfill({ contentType: "image/svg+xml", body: svg }),
   );
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/create");
+  await page.goto("/commerce/create");
   const thumb = page.locator(".history-rail .history-thumbnail").first();
   const image = thumb.locator("img");
   const frame = thumb.locator(".history-thumbnail-frame");

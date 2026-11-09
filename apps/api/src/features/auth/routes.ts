@@ -1,8 +1,8 @@
 import { enterpriseLoginSchema, enterprisePasswordChangeSchema } from "@lycoboai/contracts";
 import { type Context, Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { enterpriseCookie, enterprisePrincipal, trustedAuthRequest } from "./principal";
 import type { EnterpriseAuth } from "./service";
-export const enterpriseCookie = "lycobo_enterprise_session";
 export const refreshCookie = "lycobo_enterprise_refresh";
 const refreshPath = "/api/v1/auth";
 function clearAuthCookies(c: Context, auth: EnterpriseAuth) {
@@ -31,25 +31,6 @@ function tokenResponse(
   deleteCookie(c, "lycobo_image_session", { path: "/api" });
   c.header("X-Auth-Expires-At", String(Math.floor(Date.now() / 1000) + result.expiresIn));
   return c.json(body);
-}
-export function trustedAuthRequest(c: Context, auth: EnterpriseAuth) {
-  const origin = c.req.header("Origin");
-  return (
-    !!origin &&
-    auth.config.origins.includes(origin) &&
-    c.req.header("Sec-Fetch-Site") !== "cross-site"
-  );
-}
-export async function enterprisePrincipal(c: Context, auth: EnterpriseAuth) {
-  const authorization = c.req.header("Authorization");
-  if (authorization !== undefined) {
-    if (!authorization.startsWith("Bearer ")) return null;
-    return auth.authenticate(authorization.slice(7));
-  }
-  if (c.req.header("Sec-Fetch-Site") === "cross-site") return null;
-  if (!["GET", "HEAD"].includes(c.req.method) && !trustedAuthRequest(c, auth)) return null;
-  const token = getCookie(c, enterpriseCookie);
-  return token ? auth.authenticate(token) : null;
 }
 type Env = { Variables: { requestId: string } };
 export function authRoutes(auth?: EnterpriseAuth) {

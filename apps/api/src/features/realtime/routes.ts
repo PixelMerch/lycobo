@@ -2,7 +2,7 @@ import { realtimeCursorSchema } from "@lycoboai/contracts";
 import type { RealtimeRepository } from "@lycoboai/db";
 import { Hono } from "hono";
 import { z } from "zod";
-import { enterprisePrincipal, trustedAuthRequest } from "../auth/routes";
+import { enterprisePrincipal, trustedAuthRequest } from "../auth/principal";
 import type { EnterpriseAuth } from "../auth/service";
 import type { RealtimeHub } from "./object";
 

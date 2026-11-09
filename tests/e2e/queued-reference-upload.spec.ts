@@ -36,7 +36,7 @@ for (const failure of [false, true]) {
         json: apiFixture({ id: crypto.randomUUID(), replayed: false }, 202),
       });
     });
-    await page.goto("/create");
+    await page.goto("/commerce/create");
     await page
       .getByLabel("添加参考图片", { exact: true })
       .setInputFiles("apps/web/public/studio/bedroom.webp");

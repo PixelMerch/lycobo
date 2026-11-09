@@ -32,12 +32,14 @@
 | 生成图片操作 | ResultImage                                                                                     | 预览、下载、收藏、焦点入口由同一组件承担                                                                                                                                           |
 | 任务元信息   | HistoryTaskMeta                                                                                 | 标签、时间、比例、任务ID复制一致；父级用 modelDisplayName 从共享模型目录派生展示名称，不渲染原始 model 标识                                                                        |
 | 历史索引     | HistoryIndex                                                                                    | 定位与滚动同步；“我的素材”标题固定、列表独立滚动；不承担重试或草稿覆盖                                                                                                             |
-| 生成提交按钮 | HeroUI Button + styles/studio-workspace-form.css 的 .generation-submit                          | 工作台与局部修改高度、胶囊圆角、青柠至薄荷绿渐变与深色前景、字级及积分间距统一引用 DESIGN；不创建按钮包装组件                                                                      |
+| 生成提交按钮 | HeroUI Button + styles/workspace/studio-workspace-form.css 的 .generation-submit                | 工作台与局部修改高度、胶囊圆角、青柠至薄荷绿渐变与深色前景、字级及积分间距统一引用 DESIGN；不创建按钮包装组件                                                                      |
 | 生成阶段     | generation-status                                                                               | 中文状态与生成图标共用，不从颜色推断状态                                                                                                                                           |
-| 全屏开关动画 | components/use-centered-dialog-motion                                                           | 关闭动画结束后卸载；不复制 hook                                                                                                                                                    |
+| 全屏开关动画 | components/overlays/use-centered-dialog-motion                                                  | 关闭动画结束后卸载；不复制 hook                                                                                                                                                    |
 | 请求错误     | useErrorToast                                                                                   | 去重、统一顶部反馈；字段校验继续用 FieldError／ErrorMessage                                                                                                                        |
 
 纯展示组件不增加另一份服务端状态；在父级派生数据，通过props传递。Zustand订阅选择所需字段，不用effect维持可在render计算的冗余状态。支付、鉴权、计费和任务快照不属于视觉重构范围。
+
+浮层统一采用 `styles/overlay-glass.css` 与 DESIGN.md 的毛玻璃材质；新浮层只补布局和具名变体，不复制实色背景。验收覆盖减少透明回退、可读性和关闭后焦点恢复。
 
 ## 设计与代码清理流程
 
@@ -66,7 +68,7 @@ pnpm lint运行`scripts/check-ui-conventions.mjs`，以TypeScript AST识别组�
 
 | 审查面   | 应检查的现状                                                 | 不应通过“统一”引入的变化                   |
 | -------- | ------------------------------------------------------------ | ------------------------------------------ |
-| 视觉     | 同类控件使用同一 token、字级、间距和状态；具名例外有明确范围 | 扩散登录浅色、账户焦点或参考站配色         |
+| 视觉     | 同类控件使用同一 token、字级、间距和状态；具名例外有明确范围 | 扩散账户焦点或参考站配色                   |
 | 组件     | 页面组合完整功能组件，通用交互通过 HeroUI 和既有共享入口复用 | 第二套按钮、弹窗、焦点陷阱或无意义包装层   |
 | 内容     | 简体中文；任务 ID 与图片 ID 分开；素材来源与媒体类型分开     | 改名后误称视频／音频已经可生成             |
 | 状态     | 区分加载、失败、空态、禁用与成功；错误去重                   | 内存成功、虚构余额、验证码倒计时或退款承诺 |
@@ -80,7 +82,7 @@ pnpm lint运行`scripts/check-ui-conventions.mjs`，以TypeScript AST识别组�
 
 - 排版按DESIGN的12/13/14/16/18/24px语义字级成对使用行高；不能把辅助角标的小字扩散到正文。手机可编辑字段至少16px。
 - 内容间距复用 `--space-*`，保留图片、画布、轨道和导航的具名几何；不以缩小图片或触控区实现紧凑。
-- hover复用 `--interaction-*` 与 `--control-*-fill`，检查常态到hover仍有可见反馈，不能因共用色让同底控件失去状态差异。品牌、危险、登录浅色和图片舞台保留语义例外。
+- hover复用 `--interaction-*` 与 `--control-*-fill`，检查常态到hover仍有可见反馈，不能因共用色让同底控件失去状态差异。品牌、危险和图片舞台保留语义例外。
 - 鼠标hover不改变尺寸和位置；键盘焦点仍可见，点击后的程序化焦点不出现多余整块外框；抽屉与图片动效继续验证减少动态效果。
 - 用实际页面核对阅读密度，用带明确fixture来源的针对性E2E核对草稿、焦点、窄屏、展开收起、计划和编辑操作；不为CSS数值编写镜像测试，也不把fixture通过视为生产生图验收。
 
