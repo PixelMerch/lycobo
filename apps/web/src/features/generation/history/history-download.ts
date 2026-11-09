@@ -1,6 +1,11 @@
-import { type ImageJob, textileViews } from "@lycoboai/contracts";
+import type { ImageJob } from "@lycoboai/contracts";
+import type { Locale } from "../../../i18n/locale";
+import { currentMessages } from "../../../i18n/messages";
+import { textileViewMessages } from "../../commerce/textile-set/textile-view-messages";
+import { historyMessages } from "./history-messages";
 
-export function historyDownloadEntries(job: ImageJob) {
+/** 可整组下载的成功图片与文件名；文件名按序号加视角名称，用当前界面语言。 */
+export function historyDownloadEntries(job: ImageJob, locale: Locale) {
   if (
     job.requested_count < 2 ||
     ["queued", "running"].includes(job.status) ||
@@ -12,7 +17,9 @@ export function historyDownloadEntries(job: ImageJob) {
     .flatMap((item) => {
       if (item.status !== "succeeded" || !item.output_asset_id) return [];
       const view = job.input?.textileSet?.views[item.position];
-      const label = textileViews.find((entry) => entry.id === view)?.name ?? "生成图片";
+      const label = view
+        ? textileViewMessages[locale][view]
+        : historyMessages[locale].generatedImage;
       return [
         {
           id: item.output_asset_id,
@@ -22,24 +29,24 @@ export function historyDownloadEntries(job: ImageJob) {
     });
 }
 
-/** Download sequentially and keep an explicit memory bound for browser ZIP creation. */
+/** 依次下载原图并打包成 ZIP，限制总大小避免浏览器内存过高。 */
 export async function createHistoryArchive(
   entries: ReturnType<typeof historyDownloadEntries>,
   readOriginal: (id: string, remainingBytes: number, signal: AbortSignal) => Promise<Uint8Array>,
   signal: AbortSignal,
 ) {
-  if (!entries.length) throw new Error("暂无可下载的图片。");
+  if (!entries.length) throw new Error(currentMessages(historyMessages).nothingToDownload);
   const files: Record<string, Uint8Array> = {};
   let remaining = 256 * 1024 * 1024;
   for (const entry of entries) {
     signal.throwIfAborted();
     const bytes = await readOriginal(entry.id, remaining, signal);
     remaining -= bytes.byteLength;
-    if (remaining < 0) throw new Error("图片总大小过大，请分别下载。");
+    if (remaining < 0) throw new Error(currentMessages(historyMessages).tooLarge);
     files[entry.name] = bytes;
   }
   signal.throwIfAborted();
-  // PNGs are already compressed; storing them preserves bytes without recompression work.
+  // PNG 本身已压缩，直接存入可保留原始字节，也省去重复压缩。
   const { zipSync } = await import("fflate");
   signal.throwIfAborted();
   return zipSync(files, { level: 0 });

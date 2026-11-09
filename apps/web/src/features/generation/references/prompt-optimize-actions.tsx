@@ -2,9 +2,12 @@ import { Button, Spinner, Tooltip } from "@heroui/react";
 import { IconArrowBackUp, IconWand } from "@tabler/icons-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
 import { promptOptimizeCredits } from "./prompt-optimizer-client";
+import { referencesMessages } from "./references-messages";
 import type { usePromptOptimizer } from "./use-prompt-optimizer";
 
+/** 提示词旁的 AI 优化操作：确认扣费、停止与撤销。 */
 export function PromptOptimizeActions({
   optimizer,
   prompt,
@@ -16,6 +19,7 @@ export function PromptOptimizeActions({
   const trigger = useRef<HTMLButtonElement>(null);
   const actions = useRef<HTMLDivElement>(null);
   const [confirmingPrompt, setConfirmingPrompt] = useState<string | null>(null);
+  const t = useMessages(referencesMessages);
   const isConfirming = optimizer.canStart && confirmingPrompt === prompt;
 
   const cancelAndRestoreFocus = useCallback(() => {
@@ -52,13 +56,14 @@ export function PromptOptimizeActions({
   return (
     <div ref={actions} className="prompt-optimize" data-confirming={isConfirming || undefined}>
       {isConfirming && (
-        <fieldset aria-label="确认优化提示词" className="prompt-optimize-confirmation">
+        <fieldset aria-label={t.confirmOptimize} className="prompt-optimize-confirmation">
           <span className="prompt-optimize-price">
-            消耗 <strong>{promptOptimizeCredits} 积分</strong>
+            {t.costBefore}
+            <strong>{t.cost(promptOptimizeCredits)}</strong>
           </span>
           <div className="prompt-optimize-confirm-actions">
             <Button autoFocus size="sm" variant="ghost" onPress={cancelAndRestoreFocus}>
-              取消
+              {t.cancel}
             </Button>
             <Button
               size="sm"
@@ -68,7 +73,7 @@ export function PromptOptimizeActions({
                 optimizer.start();
               }}
             >
-              确认优化
+              {t.confirm}
             </Button>
           </div>
         </fieldset>
@@ -78,11 +83,11 @@ export function PromptOptimizeActions({
           variant="ghost"
           size="sm"
           className="prompt-optimize-button"
-          aria-label="停止优化"
+          aria-label={t.stopOptimizing}
           onPress={optimizer.stop}
         >
           <Spinner size="sm" color="current" aria-hidden="true" />
-          停止
+          {t.stop}
         </Button>
       )}
       {!isConfirming && !optimizer.running && optimizer.canStart && (
@@ -92,7 +97,7 @@ export function PromptOptimizeActions({
             variant="ghost"
             size="sm"
             className="prompt-optimize-button"
-            aria-label="AI 优化提示词"
+            aria-label={t.optimizePrompt}
             onPress={() => setConfirmingPrompt(prompt)}
           >
             <span className="prompt-optimize-wand">
@@ -105,9 +110,9 @@ export function PromptOptimizeActions({
                 </defs>
               </UiIcon>
             </span>
-            <span className="prompt-optimize-label">优化</span>
+            <span className="prompt-optimize-label">{t.optimize}</span>
           </Button>
-          <Tooltip.Content placement="top">AI 润色提示词</Tooltip.Content>
+          <Tooltip.Content placement="top">{t.polishPrompt}</Tooltip.Content>
         </Tooltip>
       )}
       {optimizer.canUndo && !isConfirming && (
@@ -115,11 +120,11 @@ export function PromptOptimizeActions({
           variant="ghost"
           size="sm"
           className="prompt-optimize-undo"
-          aria-label="恢复优化前的提示词"
+          aria-label={t.restorePrompt}
           onPress={optimizer.undo}
         >
           <UiIcon icon={IconArrowBackUp} size="small" />
-          撤销
+          {t.undo}
         </Button>
       )}
     </div>

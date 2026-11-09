@@ -1,8 +1,10 @@
 import { Spinner } from "@heroui/react";
 import { useEffect, useRef } from "react";
 import "./infinite-load.css";
+import { useMessages } from "../i18n/messages";
+import { componentsMessages } from "./components-messages";
 
-/** A shared end-of-list sentinel, clipped by its enclosing scroll viewport. */
+/** 列表末尾的共用加载哨兵，进入所在滚动区域的可视范围时加载下一页。 */
 export function InfiniteLoad({
   hasMore,
   isLoading,
@@ -14,6 +16,7 @@ export function InfiniteLoad({
   isError?: boolean;
   onLoadMore: () => unknown;
 }) {
+  const t = useMessages(componentsMessages);
   const sentinel = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = sentinel.current;
@@ -25,7 +28,7 @@ export function InfiniteLoad({
       void Promise.resolve()
         .then(onLoadMore)
         .catch(() => {
-          // The owning query exposes its error and owns any explicit retry action.
+          // 失败由所属查询报告，重试也由它负责。
         });
     });
     observer.observe(element);
@@ -34,7 +37,7 @@ export function InfiniteLoad({
   if (!hasMore && !isLoading) return null;
   return (
     <div className="infinite-load" ref={sentinel}>
-      {isLoading && <Spinner size="sm" aria-label="正在加载列表" />}
+      {isLoading && <Spinner size="sm" aria-label={t.loadingList} />}
     </div>
   );
 }

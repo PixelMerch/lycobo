@@ -2,15 +2,18 @@ import { IconPhoto } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
-import { modelPresentation } from "./model-presentation";
+import { useLocale } from "../../../i18n/locale-store";
+import { modelPresentationFor } from "./model-presentation";
 import "./model-logos.css";
 
+/** 模型展示资料：名称、Logo 与按当前语言的用途说明。 */
 export function useModelPresentation() {
+  const locale = useLocale();
   return useQuery({
-    queryKey: ["image-model-logos"],
+    queryKey: ["image-model-logos", locale],
     staleTime: Infinity,
-    initialData: modelPresentation,
-    queryFn: async () => modelPresentation,
+    initialData: modelPresentationFor(locale),
+    queryFn: async () => modelPresentationFor(locale),
   });
 }
 

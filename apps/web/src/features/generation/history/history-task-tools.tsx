@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { CollapsibleText } from "../../../components/collapsible-text";
 import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
+import { currentMessages, useMessages } from "../../../i18n/messages";
 import { copyToClipboard } from "../../../lib/clipboard";
 import { useErrorToast } from "../../../lib/error-toast";
 import {
@@ -28,8 +29,11 @@ import { modelCapabilities, supportsReferences } from "../models/model-capabilit
 import { ReferenceThumbnails } from "../references/reference-thumbnails";
 import { type Draft, type ModelId, qualityLevels, useStudioStore } from "../studio-state";
 import { HistoryDownloadButton } from "./history-download-button";
+import { historyMessages } from "./history-messages";
 
+/** 历史任务的提示词：可展开的正文、复制按钮与任务参考图。 */
 export function HistoryPrompt({ job }: { job: ImageJob }) {
+  const t = useMessages(historyMessages);
   return (
     <div className="history-prompt">
       <CollapsibleText text={job.prompt} id={`prompt-${job.id}`} className="generation-prompt" />
@@ -39,9 +43,9 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
         onPress={() => void copyToClipboard(job.prompt)}
       >
         <UiIcon icon={IconCopy} size="small" />
-        复制提示词
+        {t.copyPrompt}
       </Button>
-      <ReferenceThumbnails ids={job.input?.referenceAssetIds ?? []} label="任务参考图" />
+      <ReferenceThumbnails ids={job.input?.referenceAssetIds ?? []} label={t.taskReferences} />
     </div>
   );
 }
@@ -66,7 +70,8 @@ async function taskDraft(
           ),
       })
     ).input;
-  if (!input) throw new Error("任务输入不完整，无法恢复，请重新创作。");
+  const t = currentMessages(historyMessages);
+  if (!input) throw new Error(t.inputIncomplete);
   return {
     model: publicImageModel(input.model),
     textileSet: input.textileSet,
@@ -80,12 +85,13 @@ async function taskDraft(
       references: input.referenceAssetIds.map((id, index) => ({
         id,
         assetId: id,
-        name: `图片${index + 1}`,
+        name: t.imageName(index + 1),
         src: assetContentUrl(id, true),
       })),
     },
   };
 }
+/** 历史任务的操作：整组下载、重新编辑与重新生成。 */
 export function HistoryTaskActions({
   job,
   onRestore,
@@ -99,6 +105,7 @@ export function HistoryTaskActions({
   const [regenerateOpen, setRegenerateOpen] = useState(false);
   const { generation, loading, blocked, configured, regenerateContent, regenerate, edit } =
     useHistoryTaskActions(job, item, onRestore);
+  const t = useMessages(historyMessages);
   return (
     <div ref={actionsRef} className={item ? "generation-retry-overlay" : "history-task-actions"}>
       {!item && <HistoryDownloadButton job={job} />}
@@ -108,13 +115,13 @@ export function HistoryTaskActions({
             isIconOnly
             variant="tertiary"
             className="history-icon-action"
-            aria-label="重新编辑"
+            aria-label={t.edit}
             isDisabled={loading}
             onPress={edit}
           >
             <UiIcon icon={IconEdit} size="action" />
           </Button>
-          <Tooltip.Content placement="bottom">重新编辑</Tooltip.Content>
+          <Tooltip.Content placement="bottom">{t.edit}</Tooltip.Content>
         </Tooltip>
       )}
       <Tooltip delay={0}>
@@ -122,20 +129,20 @@ export function HistoryTaskActions({
           isIconOnly={!item}
           variant="tertiary"
           className={item ? "generation-retry-button" : "history-icon-action"}
-          aria-label={item ? `重新生成第 ${item.position + 1} 张` : "重新生成"}
+          aria-label={item ? t.regenerateItem(item.position + 1) : t.regenerate}
           isDisabled={blocked || !configured || generation.isPending || loading}
           onPress={() => setRegenerateOpen(true)}
         >
           <UiIcon icon={IconRefresh} size="action" />
-          {item && <span>重新生成</span>}
+          {item && <span>{t.regenerate}</span>}
         </Button>
-        <Tooltip.Content placement="bottom">重新生成</Tooltip.Content>
+        <Tooltip.Content placement="bottom">{t.regenerate}</Tooltip.Content>
       </Tooltip>
       <ConfirmDialog
         isOpen={regenerateOpen}
-        title="重新生成这张图片？"
+        title={t.regenerateTitle}
         content={regenerateContent}
-        closeLabel="关闭重新生成确认"
+        closeLabel={t.closeRegenerate}
         onCancel={() => setRegenerateOpen(false)}
         onConfirm={() => {
           setRegenerateOpen(false);
@@ -216,11 +223,10 @@ function historyRetryPlan(
   const retryCount = retrying ? Math.max(1, targets.length) : job.requested_count;
   const count = item ? 1 : retryCount;
   const unitCredits = imageUnitCredits;
+  const t = currentMessages(historyMessages);
   const regenerateContent = targets.some((entry) => entry.status === "needs_reconciliation")
-    ? "先查询原任务，已有结果将直接保存；确认需重新生成时才扣除积分。"
-    : `本次消耗 ${count * unitCredits} 积分${
-        upgradeTextile ? "。使用最新裂变配置创建新任务，原记录保留。" : ""
-      }`;
+    ? t.reconcileFirst
+    : `${t.regenerateCost(count * unitCredits)}${upgradeTextile ? t.upgradeTextile : ""}`;
   return { blocked, configured, regenerateContent, upgradeTextile, retrying, targets };
 }
 
@@ -267,9 +273,10 @@ function useHistoryTaskActions(
   const [loading, setLoading] = useState(false);
   const generation = useGenerateImage();
   const session = useImageSession();
+  const t = useMessages(historyMessages);
   const error =
     generation.isError && hasPendingSubmission(session.data)
-      ? "提交结果待确认，请在左侧确认上次提交。"
+      ? t.submissionPending
       : generation.error?.message;
   useErrorToast(generation.isError ? error : null);
   const models = useImageModels();
@@ -300,7 +307,7 @@ function useHistoryTaskActions(
         historyRetryPayload(restored, job, item, { upgradeTextile, retrying, targets }),
       );
     } catch (failure) {
-      toast.danger(failure instanceof Error ? failure.message : "无法读取任务。");
+      toast.danger(failure instanceof Error ? failure.message : t.taskUnreadable);
     } finally {
       setLoading(false);
     }
@@ -311,7 +318,7 @@ function useHistoryTaskActions(
     try {
       restore(await taskDraft(job, client));
     } catch (failure) {
-      toast.danger(failure instanceof Error ? failure.message : "无法读取任务。");
+      toast.danger(failure instanceof Error ? failure.message : t.taskUnreadable);
     } finally {
       setLoading(false);
     }

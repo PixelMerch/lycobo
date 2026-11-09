@@ -1,16 +1,18 @@
 import { Button, Modal } from "@heroui/react";
 import { motion } from "motion/react";
-import { type RefObject, useEffect, useRef, useState } from "react";
+import { type PointerEvent, type RefObject, useEffect, useRef, useState } from "react";
 import { DialogClose } from "../overlays/dialog-close";
 import { useCenteredDialogMotion } from "../overlays/use-centered-dialog-motion";
 import "./image-viewer.css";
 
+import { useMessages } from "../../i18n/messages";
+import { componentsMessages } from "../components-messages";
 import { ImageViewerStage, useImageViewerStage, type ViewerImage } from "./image-viewer-stage";
 import { ImageViewerToolbar } from "./image-viewer-toolbar";
 
 export type { ViewerImage } from "./image-viewer-stage";
 
-/** Reusable, read-only image viewer. Callers supply URLs and keep the opener mounted. */
+/** 只读的共用图片浏览器：调用方提供图片地址，并保持打开它的入口挂载。 */
 export function ImageViewer({
   images,
   initialIndex = 0,
@@ -20,6 +22,7 @@ export function ImageViewer({
   initialIndex?: number;
   onClose: () => void;
 }) {
+  const t = useMessages(componentsMessages);
   const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
   const [index, setIndex] = useState(Math.max(0, Math.min(initialIndex, images.length - 1)));
   const active = images[index];
@@ -38,7 +41,7 @@ export function ImageViewer({
   const stage = useImageViewerStage(active);
   const { ready, zoom, rotate, zoomStep, reset } = stage;
   const loadingFocus = useRef<HTMLElement | null>(null);
-  const dismissStart = useRef<{ id: number; x: number; y: number } | null>(null);
+  const backdropDismiss = useBackdropDismiss(requestClose);
   useEffect(() => {
     if (!ready) return;
     const target = loadingFocus.current;
@@ -65,45 +68,18 @@ export function ImageViewer({
       <Modal.Backdrop
         className="browse-image-backdrop"
         data-dialog-phase={phase}
-        onPointerDownCapture={(event) => {
-          dismissStart.current =
-            event.button === 0 &&
-            event.target instanceof Element &&
-            !event.target.closest(
-              "button, .browse-image-picture, .browse-image-thumbnails, .browse-image-toolbar",
-            )
-              ? { id: event.pointerId, x: event.clientX, y: event.clientY }
-              : null;
-        }}
-        onPointerUpCapture={(event) => {
-          const start = dismissStart.current;
-          dismissStart.current = null;
-          if (
-            start &&
-            start.id === event.pointerId &&
-            Math.hypot(event.clientX - start.x, event.clientY - start.y) < 4 &&
-            event.target instanceof Element &&
-            !event.target.closest(
-              "button, .browse-image-picture, .browse-image-thumbnails, .browse-image-toolbar",
-            )
-          )
-            requestClose();
-        }}
-        onPointerCancelCapture={() => {
-          dismissStart.current = null;
-        }}
+        {...backdropDismiss}
       >
         <Modal.Container size="full" className="browse-image-container">
-          <Modal.Dialog aria-label="图片浏览" className="browse-image-dialog">
+          <Modal.Dialog aria-label={t.viewer} className="browse-image-dialog">
             <motion.div
               className="browse-image-surface"
               data-ready={ready}
               data-multiple={images.length > 1}
               {...surfaceMotion}
               onKeyDownCapture={(event) => {
-                /* Arrow keys always flip between images, including when the
-                 * toolbar owns focus; the toolbar must not move its own focus
-                 * ring instead. */
+                /* 方向键始终用来切换图片，焦点在工具栏上也一样，
+                 * 不让工具栏移动自己的焦点环。 */
                 if (
                   images.length < 2 ||
                   event.altKey ||
@@ -141,7 +117,7 @@ export function ImageViewer({
                 />
               )}
               <div className="browse-image-close">
-                <DialogClose fullScreen label="关闭图片浏览" />
+                <DialogClose fullScreen label={t.closeViewer} />
               </div>
             </motion.div>
           </Modal.Dialog>
@@ -149,6 +125,38 @@ export function ImageViewer({
       </Modal.Backdrop>
     </Modal>
   );
+}
+
+const interactiveParts =
+  "button, .browse-image-picture, .browse-image-thumbnails, .browse-image-toolbar";
+
+// 在图片以外的空白处轻点（按下与松开几乎同一位置）才关闭浏览器，拖动或点在图片、工具上都不关闭。
+function useBackdropDismiss(requestClose: () => void) {
+  const dismissStart = useRef<{ id: number; x: number; y: number } | null>(null);
+  const onBlank = (target: EventTarget) =>
+    target instanceof Element && !target.closest(interactiveParts);
+  return {
+    onPointerDownCapture: (event: PointerEvent<HTMLElement>) => {
+      dismissStart.current =
+        event.button === 0 && onBlank(event.target)
+          ? { id: event.pointerId, x: event.clientX, y: event.clientY }
+          : null;
+    },
+    onPointerUpCapture: (event: PointerEvent<HTMLElement>) => {
+      const start = dismissStart.current;
+      dismissStart.current = null;
+      if (
+        start &&
+        start.id === event.pointerId &&
+        Math.hypot(event.clientX - start.x, event.clientY - start.y) < 4 &&
+        onBlank(event.target)
+      )
+        requestClose();
+    },
+    onPointerCancelCapture: () => {
+      dismissStart.current = null;
+    },
+  };
 }
 
 function ImageViewerThumbnails({
@@ -164,8 +172,9 @@ function ImageViewerThumbnails({
   thumbnails: RefObject<(HTMLButtonElement | null)[]>;
   thumbnailRail: RefObject<HTMLElement | null>;
 }) {
+  const t = useMessages(componentsMessages);
   return (
-    <nav ref={thumbnailRail} className="browse-image-thumbnails" aria-label="本组图片">
+    <nav ref={thumbnailRail} className="browse-image-thumbnails" aria-label={t.groupImages}>
       {images.map((image, position) => (
         <Button
           key={`${image.src}-${image.alt}`}
@@ -174,7 +183,7 @@ function ImageViewerThumbnails({
           }}
           variant="ghost"
           className="browse-image-thumbnail"
-          aria-label={`查看第 ${position + 1} 张图片`}
+          aria-label={t.viewNumbered(position + 1)}
           aria-current={position === index}
           onPress={() => select(position)}
         >

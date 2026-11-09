@@ -1,10 +1,13 @@
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { useLocaleStore } from "../../i18n/locale-store";
 import { queryClient } from "../../lib/query-client";
 import { rememberImageDeliveries } from "./asset-delivery-client";
 import { prepareDownloadDeliveries, resolveDownloadDelivery } from "./download-deliveries";
 import { imageRequest } from "./generation-client";
 
 vi.mock("./generation-client", () => ({ imageRequest: vi.fn() }));
+// 断言按中文文案编写，固定界面语言。
+beforeEach(() => useLocaleStore.setState({ locale: "zh-CN" }));
 afterEach(() => queryClient.clear());
 const delivery = () => ({
   url: "https://assets.example.test/preview.webp",

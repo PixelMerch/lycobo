@@ -13,8 +13,9 @@ import { PreviewCanvasToolbar } from "./preview-canvas-toolbar";
 import { PreviewDotGrid } from "./preview-dot-grid";
 import { previewDefaultZoom, previewMinZoom, usePreviewZoom } from "./use-preview-zoom";
 import "./preview-workspace.css";
+import { useLocale } from "../../i18n/locale-store";
 
-/** One persistent image, viewport and tool dock; only its property panel changes. */
+/** 图片预览工作区：图片、视口与工具坞常驻，只切换右侧属性面板。 */
 export default function PreviewWorkspace({
   source,
   meta,
@@ -29,10 +30,10 @@ export default function PreviewWorkspace({
   onPreview: (image: PreviewImage) => void;
 }) {
   const catalog = useModelPresentation();
+  const locale = useLocale();
   const editor = useLocalRepair(source, meta, repairing ? "rect" : "select");
   const { zoom, setZoom, wheelZoom } = usePreviewZoom();
-  /* Task progress is announced in the bottom-right notice instead of the form,
-   * so the editor keeps only inputs and the submit action. */
+  /* 任务进度在右下角提示里播报，表单里只留输入和提交。 */
   useRepairNotice({
     jobId: editor.draft.jobId,
     status: editor.job.data?.status,
@@ -131,7 +132,7 @@ export default function PreviewWorkspace({
         <ImagePreviewDetails
           source={source}
           meta={meta}
-          modelName={modelDisplayName(meta.model, catalog.data?.models ?? [])}
+          modelName={modelDisplayName(meta.model, catalog.data?.models ?? [], locale)}
           onRepair={enterRepair}
         />
       )}

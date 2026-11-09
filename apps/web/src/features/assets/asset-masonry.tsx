@@ -1,11 +1,12 @@
 import type { ImageAsset } from "@lycoboai/contracts";
 import { type CSSProperties, useLayoutEffect, useState } from "react";
+import { useLocale } from "../../i18n/locale-store";
 import { modelDisplayName } from "../generation/models/model-display-name";
 import type { useModelPresentation } from "../generation/models/model-logos";
 import { aspectRatio, masonryPositions } from "./asset-layout";
 import { AssetTile } from "./asset-tile";
 
-/** Explicit grid positions preserve DOM order, including when pagination appends assets. */
+/** 素材瀑布流：用明确的网格位置保持 DOM 顺序，分页追加素材时也一样。 */
 export function AssetMasonry({
   assets,
   columns,
@@ -19,6 +20,7 @@ export function AssetMasonry({
 }) {
   const [element, setElement] = useState<HTMLDivElement | null>(null);
   const [geometry, setGeometry] = useState({ width: 0, columns, gap: 12 });
+  const locale = useLocale();
   useLayoutEffect(() => {
     if (!element) return;
     const measure = () => {
@@ -53,7 +55,7 @@ export function AssetMasonry({
           <AssetTile
             key={asset.id}
             asset={asset}
-            modelName={modelDisplayName(asset.model, models)}
+            modelName={modelDisplayName(asset.model, models, locale)}
             style={{
               aspectRatio: aspectRatio(asset),
               gridColumn: position?.column,

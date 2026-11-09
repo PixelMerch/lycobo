@@ -2,11 +2,12 @@ import { Button } from "@heroui/react";
 import { IconPencil, IconX } from "@tabler/icons-react";
 import { UiIcon } from "../ui-icon";
 import "./reference-image-card.css";
+import { useMessages } from "../../i18n/messages";
+import { componentsMessages } from "../components-messages";
 
 /**
- * Shared reference thumbnail. The caller owns files, ordering and removal state.
- * The picture is the preview trigger and the corner control only removes, so a
- * delete press can never open the viewer.
+ * 共用参考图缩略图：文件、顺序与删除状态由调用方管理。
+ * 点图片打开预览，角上的按钮只负责删除，按删除不会打开浏览器。
  */
 export function ReferenceImageCard({
   src,
@@ -25,12 +26,14 @@ export function ReferenceImageCard({
   onReplace?: () => void;
   isDisabled?: boolean;
 }) {
+  const t = useMessages(componentsMessages);
+  const name = t.imageName(number);
   return (
     <div className="reference-tile reference-image-card">
       <Button
         variant="ghost"
         className="reference-preview"
-        aria-label={`查看参考图片：图片${number}`}
+        aria-label={t.viewReference(name)}
         isDisabled={isDisabled}
         onPress={onOpen}
       >
@@ -41,7 +44,7 @@ export function ReferenceImageCard({
           isIconOnly
           variant="secondary"
           className="replace-reference"
-          aria-label={`替换参考图：图片${number}`}
+          aria-label={t.replaceReference(name)}
           isDisabled={isDisabled}
           onPress={onReplace}
         >
@@ -52,7 +55,7 @@ export function ReferenceImageCard({
         isIconOnly
         variant="secondary"
         className="remove-reference"
-        aria-label={`移除参考图：图片${number}`}
+        aria-label={t.removeReference(name)}
         isDisabled={isDisabled}
         onPress={onRemove}
       >

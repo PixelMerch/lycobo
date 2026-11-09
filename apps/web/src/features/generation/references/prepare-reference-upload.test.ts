@@ -1,6 +1,9 @@
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { useLocaleStore } from "../../../i18n/locale-store";
 import { prepareReferenceUpload } from "./prepare-reference-upload";
 
+// 断言按中文文案编写，固定界面语言。
+beforeEach(() => useLocaleStore.setState({ locale: "zh-CN" }));
 afterEach(() => vi.unstubAllGlobals());
 function browser(outputBytes: number, width = 1200) {
   const close = vi.fn();

@@ -1,3 +1,6 @@
+import { currentMessages } from "../../../i18n/messages";
+import { referencesMessages } from "./references-messages";
+
 // 限制上传副本以减少网络传输，原文件大小由独立规则校验。
 const transportLimit = 5 * 1024 * 1024;
 const referenceEdge = 3840;
@@ -9,7 +12,7 @@ export async function prepareReferenceUpload(original: Blob, position: number): 
   try {
     image = await createImageBitmap(original);
   } catch {
-    throw new Error(`第 ${position} 张图片无法解码，请重新导出为 PNG、JPEG 或 WebP 后重试。`);
+    throw new Error(currentMessages(referencesMessages).cannotDecode(position));
   }
   try {
     const edge = Math.max(image.width, image.height);
@@ -27,7 +30,7 @@ export async function prepareReferenceUpload(original: Blob, position: number): 
   } finally {
     image.close();
   }
-  throw new Error(`第 ${position} 张图片无法压缩到可上传的大小，请缩小图片后重试。`);
+  throw new Error(currentMessages(referencesMessages).cannotCompress(position));
 }
 
 async function compressReference(image: ImageBitmap) {

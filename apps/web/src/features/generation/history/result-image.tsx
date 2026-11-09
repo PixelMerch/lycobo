@@ -1,10 +1,13 @@
 import { Button, ToggleButton, Tooltip } from "@heroui/react";
 import { IconDownload, IconStar, IconStarFilled } from "@tabler/icons-react";
 import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
 import { useAssetFavorite } from "../../assets/asset-library-client";
 import { AssetImage } from "../asset-image";
 import { downloadAsset } from "../generation-client";
+import { historyMessages } from "./history-messages";
 
+/** 一张生成结果：点开预览，悬停可下载原图或收藏。 */
 export function ResultImage({
   assetId,
   position,
@@ -23,15 +26,15 @@ export function ResultImage({
   height?: number | null;
 }) {
   const { favorite, toggle } = useAssetFavorite(assetId);
+  const t = useMessages(historyMessages);
   return (
     <div className="generation-media">
       <Button
         variant="tertiary"
         className="generation-media-open"
-        aria-label={`预览图片 ${position + 1}`}
+        aria-label={t.previewImage(position + 1)}
         onPress={(event) => {
-          // The controlled modal captures the active element when it mounts.
-          // Virtual clicks may activate this button without first focusing it.
+          // 受控弹窗挂载时记住当前焦点；虚拟点击可能不先聚焦按钮，这里手动聚焦。
           if (event.target instanceof HTMLElement) {
             event.target.focus({ preventScroll: true });
             onPreview(event.target);
@@ -47,7 +50,7 @@ export function ResultImage({
             !thumbnail && width && height ? { aspectRatio: `${width} / ${height}` } : undefined
           }
           loading="lazy"
-          alt={`${prompt}，图片${position + 1}`}
+          alt={t.imageAlt(prompt, position + 1)}
         />
       </Button>
       <div className="generation-media-actions">
@@ -57,12 +60,12 @@ export function ResultImage({
             size="sm"
             variant="tertiary"
             className="generation-media-action"
-            aria-label="下载原图"
+            aria-label={t.downloadOriginal}
             onPress={() => downloadAsset(assetId)}
           >
             <UiIcon icon={IconDownload} size="default" />
           </Button>
-          <Tooltip.Content placement="top">下载</Tooltip.Content>
+          <Tooltip.Content placement="top">{t.download}</Tooltip.Content>
         </Tooltip>
         <Tooltip delay={0}>
           <ToggleButton
@@ -70,13 +73,13 @@ export function ResultImage({
             size="sm"
             variant="ghost"
             className="generation-media-action"
-            aria-label={favorite ? "取消收藏" : "收藏图片"}
+            aria-label={favorite ? t.unfavorite : t.favoriteImage}
             isSelected={favorite}
             onChange={toggle}
           >
             <UiIcon icon={favorite ? IconStarFilled : IconStar} size="default" />
           </ToggleButton>
-          <Tooltip.Content placement="top">{favorite ? "取消收藏" : "收藏"}</Tooltip.Content>
+          <Tooltip.Content placement="top">{favorite ? t.unfavorite : t.favorite}</Tooltip.Content>
         </Tooltip>
       </div>
     </div>

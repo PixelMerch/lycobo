@@ -1,4 +1,6 @@
 import { Spinner } from "@heroui/react";
+import { useMessages } from "../i18n/messages";
+import { componentsMessages } from "./components-messages";
 
 type LoadingStateProps = {
   label?: string;
@@ -6,11 +8,9 @@ type LoadingStateProps = {
   size?: "sm" | "md" | "lg" | "xl";
 };
 
-/**
- * Full-screen loading surface. The opaque background covers page content so the
- * indicator never overlaps navigation, cards or other background elements.
- */
-export function LoadingState({ label = "加载中", className, size = "lg" }: LoadingStateProps) {
+/** 整屏加载状态：不透明底色盖住页面内容，加载指示不会叠在导航或卡片上。 */
+export function LoadingState({ label, className, size = "lg" }: LoadingStateProps) {
+  const t = useMessages(componentsMessages);
   return (
     <div
       className={className ? `loading-state ${className}` : "loading-state"}
@@ -19,7 +19,7 @@ export function LoadingState({ label = "加载中", className, size = "lg" }: Lo
       aria-live="polite"
     >
       <Spinner aria-hidden size={size} />
-      <span className="loading-state-label">{label}</span>
+      <span className="loading-state-label">{label ?? t.loading}</span>
     </div>
   );
 }

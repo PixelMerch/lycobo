@@ -3,10 +3,12 @@ import { IconPlus, IconTrash, type TablerIcon } from "@tabler/icons-react";
 import { lazy, type RefObject, Suspense, useEffect, useRef, useState } from "react";
 import { ReferenceImageCard } from "../../../components/reference-image/reference-image-card";
 import { UiIcon } from "../../../components/ui-icon";
+import { currentMessages, useMessages } from "../../../i18n/messages";
 import { useRequireLogin } from "../../auth/login-prompt";
 import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "../studio-state";
 import { readReferenceImages, referenceFileError } from "./read-reference-images";
 import { referenceDisplaySource } from "./reference-display";
+import { referencesMessages } from "./references-messages";
 
 const ImageViewer = lazy(() =>
   import("../../../components/image-viewer/image-viewer").then((module) => ({
@@ -60,7 +62,7 @@ export function ReferencePicker({
   compact = false,
   disabled = false,
   limit = 5,
-  label = "上传图片",
+  label,
   addLabel,
   addIcon = IconPlus,
   openRef,
@@ -79,7 +81,8 @@ export function ReferencePicker({
     change,
     readFiles,
   } = useReferencePicker({ model, references, prompt, onChange, disabled, limit });
-  const addText = addLabel ?? (compact ? "上传商品图" : "添加图片");
+  const t = useMessages(referencesMessages);
+  const addText = addLabel ?? (compact ? t.uploadProduct : t.addImages);
   const openFiles = () => {
     if (requireLogin()) input.current?.click();
   };
@@ -95,13 +98,17 @@ export function ReferencePicker({
     <section className="reference-picker">
       <div className="field-title">
         <h2>
-          {label}
-          <small>（最多上传{limit}张参考图）</small>
+          {label ?? t.uploadLabel}
+          <small>
+            {t.limitBefore}
+            {limit}
+            {t.limitAfter}
+          </small>
         </h2>
         <Button
           variant="tertiary"
           className="clear-references"
-          aria-label="清除全部参考图片"
+          aria-label={t.clearAll}
           isDisabled={disabled || reading || references.length === 0}
           onPress={() => {
             const prompt = currentDraft()?.prompt ?? "";
@@ -112,7 +119,7 @@ export function ReferencePicker({
           }}
         >
           <UiIcon icon={IconTrash} size="small" />
-          清除
+          {t.clear}
         </Button>
       </div>
       <input
@@ -120,7 +127,7 @@ export function ReferencePicker({
         type="file"
         accept="image/png,image/jpeg,image/webp"
         multiple
-        aria-label="添加参考图片"
+        aria-label={t.addReferenceImages}
         className="visually-hidden"
         disabled={disabled || reading || references.length >= limit}
         onChange={(event) => {
@@ -151,11 +158,11 @@ export function ReferencePicker({
             variant="tertiary"
             className="add-reference"
             isDisabled={disabled || reading || references.length >= limit}
-            aria-label="添加参考图"
+            aria-label={t.addReference}
             onPress={openFiles}
           >
             <UiIcon icon={addIcon} size={compact ? "default" : "action"} />
-            <span>{reading ? "读取中…" : addText}</span>
+            <span>{reading ? t.reading : addText}</span>
           </Button>
         ) : null}
       </div>
@@ -173,7 +180,7 @@ export function ReferencePicker({
             images={references.map((image, index) => ({
               src: referenceDisplaySource(image),
               thumbnailSrc: referenceDisplaySource(image, true),
-              alt: `图片${index + 1}`,
+              alt: t.imageName(index + 1),
             }))}
             initialIndex={preview}
             onClose={() => setPreview(null)}
@@ -232,10 +239,10 @@ function useReferencePicker({
     else onChange?.(next, text);
   }
   function appendImages(current: ReferenceImage[], unique: ReferenceImage[], duplicates: number) {
-    if (duplicates > 0) toast.warning("存在相同素材，已自动过滤");
+    if (duplicates > 0) toast.warning(currentMessages(referencesMessages).duplicatesFiltered);
     if (!unique.length) return;
     if (unique.length > limit - current.length) {
-      setError(`最多添加 ${limit} 张参考图，请减少文件后重试。`);
+      setError(currentMessages(referencesMessages).overLimit(limit));
       return;
     }
     change([...current, ...unique], currentDraft()?.prompt ?? "");
@@ -256,7 +263,9 @@ function useReferencePicker({
       const { unique, duplicates } = uniqueReferenceImages(current, images);
       appendImages(current, unique, duplicates);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "图片无法读取，请检查文件后重试。");
+      setError(
+        error instanceof Error ? error.message : currentMessages(referencesMessages).unreadable,
+      );
     } finally {
       setReading(false);
       clearReferenceInput(input.current);

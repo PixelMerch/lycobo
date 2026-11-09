@@ -10,6 +10,8 @@ import {
   useSyncExternalStore,
 } from "react";
 import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
+import { composerMessages } from "./composer-messages";
 import { SelectionHighlight } from "./selection-highlight";
 
 const commonRatios = ["1:1", "16:9", "2:1", "3:2", "4:3"];
@@ -24,7 +26,7 @@ function subscribeRatioViewport(onChange: () => void) {
 const getRatioViewport = () => window.matchMedia("(min-width: 900px)").matches;
 const getServerRatioViewport = () => false;
 
-/** Shared ratio selector used by the workspace and the home model settings. */
+/** 工作台与首页设置共用的图片比例选择器。 */
 export function RatioPicker({
   value,
   onChange,
@@ -34,6 +36,7 @@ export function RatioPicker({
 }) {
   const [open, setOpen] = useState(false);
   const groupRef = useRef<HTMLElement>(null);
+  const t = useMessages(composerMessages);
   const wideViewport = useSyncExternalStore(
     subscribeRatioViewport,
     getRatioViewport,
@@ -47,11 +50,11 @@ export function RatioPicker({
     if (additionalRatios.includes(String(next))) setOpen(false);
   };
   return (
-    <section ref={groupRef} className="parameter-group ratio-group" aria-label="图片比例">
+    <section ref={groupRef} className="parameter-group ratio-group" aria-label={t.aspectRatio}>
       <div className="ratio-heading">
-        <h2>图片比例</h2>
+        <h2>{t.aspectRatio}</h2>
         <Popover isOpen={open} onOpenChange={setOpen}>
-          <Button className="ratio-expand" variant="tertiary" aria-label="展开全部图片比例">
+          <Button className="ratio-expand" variant="tertiary" aria-label={t.expandRatios}>
             <span>{value}</span>
             <span className="ratio-chevron">
               <UiIcon icon={IconChevronRight} size="small" />
@@ -64,14 +67,14 @@ export function RatioPicker({
             shouldFlip={!wideViewport}
             className="ratio-popover"
           >
-            <Popover.Dialog className="ratio-popover-dialog" aria-label="更多图片比例">
+            <Popover.Dialog className="ratio-popover-dialog" aria-label={t.moreRatios}>
               <div className="ratio-popover-heading">
-                <Popover.Heading>图片比例</Popover.Heading>
+                <Popover.Heading>{t.aspectRatio}</Popover.Heading>
                 <Button
                   isIconOnly
                   variant="tertiary"
                   className="icon-button ratio-close"
-                  aria-label="关闭图片比例"
+                  aria-label={t.closeRatios}
                   onPress={() => setOpen(false)}
                 >
                   <span className="ratio-close-visual">
@@ -80,7 +83,7 @@ export function RatioPicker({
                 </Button>
               </div>
               <ToggleButtonGroup
-                aria-label="更多图片比例"
+                aria-label={t.moreRatios}
                 className="parameter-options ratio-options ratio-extra-options"
                 disallowEmptySelection
                 isDetached
@@ -101,7 +104,7 @@ export function RatioPicker({
       </div>
       <div className="parameter-options ratio-options">
         <ToggleButtonGroup
-          aria-label="常用图片比例"
+          aria-label={t.commonRatios}
           className="ratio-common-options"
           disallowEmptySelection
           isDetached
@@ -119,7 +122,7 @@ export function RatioPicker({
         <Button
           className="ratio-more"
           variant="tertiary"
-          aria-label="更多图片比例"
+          aria-label={t.moreRatios}
           aria-haspopup="dialog"
           aria-expanded={open}
           data-selected={extendedSelected || undefined}
@@ -132,14 +135,14 @@ export function RatioPicker({
               <UiIcon icon={IconLayersIntersect} />
             </span>
           )}
-          <span>{extendedSelected ? value : "更多"}</span>
+          <span>{extendedSelected ? value : t.more}</span>
         </Button>
       </div>
     </section>
   );
 }
 
-/** Horizontal ratio pager for the home model settings. */
+/** 首页设置里可横向翻页的图片比例选择器。 */
 export function HomeRatioPicker({
   value,
   onChange,
@@ -150,6 +153,7 @@ export function HomeRatioPicker({
   onChange: (ratio: string) => void;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
+  const t = useMessages(composerMessages);
   const valueRef = useRef(value);
   valueRef.current = value;
   const [edges, setEdges] = useState({ start: false, end: true });
@@ -200,12 +204,11 @@ export function HomeRatioPicker({
     track.scrollBy({ left: direction * track.clientWidth, behavior: reduce ? "auto" : "smooth" });
   }
   return (
-    // Keep page arrows inside the group's focus boundary. Otherwise returning
-    // from an arrow restores the previously focused offscreen ratio mid-press.
-    <Toolbar className="home-ratio-pager" aria-label="图片比例选择器">
+    // 翻页箭头放在同一个焦点边界内，否则从箭头返回时会在按下途中聚焦到屏幕外的比例。
+    <Toolbar className="home-ratio-pager" aria-label={t.ratioPicker}>
       <ToggleButtonGroup
         ref={trackRef}
-        aria-label="画面比例"
+        aria-label={t.frameRatio}
         className="home-ratio-track"
         selectionMode="single"
         disallowEmptySelection
@@ -233,7 +236,7 @@ export function HomeRatioPicker({
           size="sm"
           variant="tertiary"
           className="home-ratio-arrow home-ratio-arrow-left"
-          aria-label="上一页画面比例"
+          aria-label={t.previousRatios}
           onPress={() => page(-1)}
         >
           <UiIcon icon={IconChevronLeft} size="small" />
@@ -245,7 +248,7 @@ export function HomeRatioPicker({
           size="sm"
           variant="tertiary"
           className="home-ratio-arrow home-ratio-arrow-right"
-          aria-label="下一页画面比例"
+          aria-label={t.nextRatios}
           onPress={() => page(1)}
         >
           <UiIcon icon={IconChevronRight} size="small" />

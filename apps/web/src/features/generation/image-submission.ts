@@ -6,6 +6,8 @@ import {
 } from "@lycoboai/contracts";
 import type { QueryClient } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
+import { currentMessages } from "../../i18n/messages";
+import { generationMessages } from "./generation-messages";
 import { ImageApiError, imageRequest } from "./image-request";
 import { completeReferenceUpload } from "./references/complete-reference-upload";
 import { prepareReferenceUpload } from "./references/prepare-reference-upload";
@@ -32,7 +34,7 @@ function pendingSubmission(pendingKey: string): {
     typeof value.key !== "string" ||
     !("input" in value)
   )
-    throw new Error("待确认的提交信息无法读取，请联系管理员核对历史记录。");
+    throw new Error(currentMessages(generationMessages).pendingUnreadable);
   return {
     key: value.key,
     retryJobId:
@@ -115,7 +117,7 @@ function uploadReference(
       }).catch((error: unknown) => {
         if (error instanceof ImageApiError && [406, 413].includes(error.status)) {
           throw new ImageApiError(
-            `第 ${position} 张图片超过当前上传入口允许的大小，请缩小图片后重试。`,
+            currentMessages(generationMessages).uploadTooLarge(position),
             error.status,
             error.businessCode,
           );
@@ -159,6 +161,7 @@ async function prepareSubmissionInput(
   });
 }
 
+/** 提交生图任务：先保存待确认的请求，回执丢失或刷新后用同一个请求确认，不重复扣费。 */
 export async function submitImage(
   client: QueryClient,
   scope: SessionScope,
@@ -168,11 +171,11 @@ export async function submitImage(
   const pendingKey = pendingStorageKey(scope);
   let pending = pendingSubmission(pendingKey);
   if (pending && pending.source !== source)
-    throw new Error("请先在原提交入口确认上次提交，再开始新的生成。");
+    throw new Error(currentMessages(generationMessages).confirmElsewhere);
   if (!pending) {
     const input = await prepareSubmissionInput(client, scope, submission);
     pending = { key: crypto.randomUUID(), input, source, retryJobId, retryItemId };
-    // Retain the same request after a lost response or reload: never create another paid task blindly.
+    // 回执丢失或刷新后保留同一个请求，绝不盲目再建一个付费任务。
     sessionStorage.setItem(pendingKey, JSON.stringify(pending));
     window.dispatchEvent(new Event(pendingEvent));
   }

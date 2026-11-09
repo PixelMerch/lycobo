@@ -4,19 +4,25 @@ import { IconPhotoPlus } from "@tabler/icons-react";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
+import type { Locale } from "../../../i18n/locale";
+import { useLocale } from "../../../i18n/locale-store";
+import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import type { PreviewImage } from "../../image-workspace/image-preview";
 import { useImageHistory, useImageSession } from "../generation-client";
+import { isSignInError } from "../image-request";
 import { modelDisplayName } from "../models/model-display-name";
 import { useModelPresentation } from "../models/model-logos";
 import { useStudioStore } from "../studio-state";
 import { GenerationHistoryCard } from "./generation-history-card";
 import { HistoryImagePreview, historyPreviewImages } from "./history-image-preview";
+import { historyMessages } from "./history-messages";
 import { historyContentTop } from "./history-navigation";
 import { useHistoryTaskTarget } from "./use-history-task-target";
 
 /** Batches of five or more report their progress; larger batches initially show twelve images. */
 const batchFold = 12;
+/** 生成历史列表：按工具筛选任务，可预览结果并定位当前任务。 */
 export function GenerationHistory({
   compact = false,
   tool = "create",
@@ -28,15 +34,16 @@ export function GenerationHistory({
 }) {
   const session = useImageSession();
   const query = useImageHistory(tool);
+  const t = useMessages(historyMessages);
   const catalog = useModelPresentation();
+  const locale = useLocale();
   const target = useHistoryTaskTarget(compact || tool === null);
   const jobs = historyJobs(query, target, tool);
   const [preview, setPreview] = useState<{ images: PreviewImage[]; assetId: string } | null>(null);
   const previewTrigger = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (preview || !previewTrigger.current) return;
-    // Restore only after the animated controlled dialog has unmounted. The
-    // trigger lives outside Modal's DialogTrigger tree, so retain it explicitly.
+    // 等带动画的受控弹窗卸载后再把焦点还给入口；入口不在 Modal 的 DialogTrigger 里，需要单独记住。
     if (previewTrigger.current.isConnected) {
       previewTrigger.current.focus({ preventScroll: true });
     }
@@ -55,12 +62,12 @@ export function GenerationHistory({
   const setActiveHistoryId = useStudioStore((s) => s.setActiveHistoryId);
   const jobIds = jobs.map((job) => job.id).join(",");
   useErrorToast(
-    query.isError && !/请先登录|登录已过期|重新登录/.test(query.error?.message ?? "")
-      ? (query.error?.message ?? "服务暂时不可用，请稍后重试。")
+    query.isError && !isSignInError(query.error)
+      ? (query.error?.message ?? t.serviceUnavailable)
       : null,
   );
   useActiveHistory(listRef, compact, jobIds, setActiveHistoryId);
-  const notice = historyNotice(session, query, tool, compact, jobs.length > 0);
+  const notice = historyNotice(session, query, tool, compact, jobs.length > 0, t);
   if (notice !== undefined) return notice;
   return (
     <>
@@ -71,7 +78,7 @@ export function GenerationHistory({
             job={job}
             compact={compact}
             active={activeHistoryId === job.id}
-            modelName={modelDisplayName(job.model, catalog.data?.models ?? [])}
+            modelName={modelDisplayName(job.model, catalog.data?.models ?? [], locale)}
             onRestore={onRestore}
             folded={folded(job)}
             toggleFold={() => toggleFold(job.id)}
@@ -108,12 +115,13 @@ function historyNotice(
   tool: HistoryTool,
   compact: boolean,
   hasJobs: boolean,
+  t: (typeof historyMessages)[Locale],
 ) {
-  if (session.isError && /请先登录|登录已过期|重新登录/.test(session.error?.message ?? ""))
+  if (session.isError && isSignInError(session.error))
     return (
       <EmptyState className="empty-state generation-empty-state">
         <UiIcon icon={IconPhotoPlus} size="illustration" />
-        <p>登录后查看生成记录</p>
+        <p>{t.signInForHistory}</p>
       </EmptyState>
     );
   if (session.isError || query.isError) return null;
@@ -122,7 +130,7 @@ function historyNotice(
     return (
       <EmptyState className="empty-state generation-empty-state">
         <UiIcon icon={IconPhotoPlus} size="illustration" />
-        <p>{compact ? "暂无任务" : "生成的图片会显示在这里"}</p>
+        <p>{compact ? t.noTasks : t.emptyHistory}</p>
       </EmptyState>
     );
   return undefined;

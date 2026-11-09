@@ -30,6 +30,9 @@ export {
   usePendingSubmission,
 } from "./image-submission";
 
+import { currentMessages } from "../../i18n/messages";
+import { generationMessages } from "./generation-messages";
+
 export function useImageSession(enabled = true) {
   return useQuery({
     queryKey: ["image-session"],
@@ -131,6 +134,7 @@ export function useImageAssets({
     getNextPageParam: (last) => (last.data.length === 30 ? last.data.at(-1)?.id : undefined),
   });
 }
+/** 提交生图任务：同一账号同时只允许一个提交，成功后刷新余额与历史。 */
 export function useGenerateImage(enabled = true) {
   const session = useImageSession(enabled);
   const client = useQueryClient();
@@ -141,7 +145,8 @@ export function useGenerateImage(enabled = true) {
     mutationKey,
     retry: false,
     mutationFn: (submission: ImageSubmission) => {
-      if (!session.data) return Promise.reject(new Error("请先登录工作台。"));
+      if (!session.data)
+        return Promise.reject(new Error(currentMessages(generationMessages).signInFirst));
       return submitImage(client, session.data, submission);
     },
     onSettled: () => {
@@ -164,7 +169,7 @@ export function useGenerateImage(enabled = true) {
     },
     mutateAsync: (...args: Parameters<typeof mutation.mutateAsync>) => {
       if (locked.current || activeRequests > 0)
-        return Promise.reject(new Error("正在提交，请稍候"));
+        return Promise.reject(new Error(currentMessages(generationMessages).submittingWait));
       locked.current = true;
       return mutation.mutateAsync(...args);
     },
