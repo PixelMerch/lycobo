@@ -117,7 +117,9 @@ test("successful password change sends the real contract and ends the client ses
   await settings.getByLabel("确认新密码", { exact: true }).fill("new-password-12345");
   await settings.getByRole("button", { name: "保存新密码", exact: true }).click();
   await expect(settings).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();
+  // 会话结束后，受保护的创作页转到全屏登录页。
+  await expect(page.getByRole("heading", { name: "登录 Lycobo", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/login\?returnTo=/);
   expect(requests).toEqual([
     { currentPassword: "current-password-123", newPassword: "new-password-12345" },
   ]);

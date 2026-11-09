@@ -110,7 +110,8 @@ test("ledger filters loaded pages without losing older records or exposing payme
   );
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/commerce/create");
-  const center = await openCenter(page, "ledger-fixture", "积分明细");
+  // 账户菜单的“积分明细”打开积分明细弹窗；完整收支表在“积分与账单”的积分明细页签。
+  const center = await openCenter(page, "ledger-fixture", "积分与账单");
   const toolbar = center.locator(".account-ledger .account-toolbar");
   await expect(toolbar).toContainText("已加载 20 条");
   // Only the tab panel scrolls; reaching its end loads older records.
