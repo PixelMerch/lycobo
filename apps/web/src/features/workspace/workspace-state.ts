@@ -8,7 +8,6 @@ import { useVideoDraft } from "../video/video-state";
 export const workspaceTools = [
   {
     id: "create",
-    name: "主图制作",
     path: "/commerce/create",
     hero: "/studio/tool-heroes/create.webp",
     examples: [
@@ -19,7 +18,6 @@ export const workspaceTools = [
   },
   {
     id: "textile",
-    name: "家纺裂变",
     path: "/commerce/textile-set",
     hero: "/studio/tool-heroes/textile.webp",
     bannerImages: [
@@ -37,7 +35,6 @@ export const workspaceTools = [
   },
   {
     id: "variation",
-    name: "套图计划",
     path: "/commerce/smart-variation",
     hero: "/studio/tool-heroes/variation.webp",
     examples: [
@@ -48,7 +45,6 @@ export const workspaceTools = [
   },
   {
     id: "video",
-    name: "视频创作",
     path: "/video",
     hero: "/studio/tool-heroes/video.webp",
     examples: [

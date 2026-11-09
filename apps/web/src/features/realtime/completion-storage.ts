@@ -1,3 +1,9 @@
+/**
+ * 跨标签回执里固定写入的类型标记：只用于校验存储内容，不显示给用户，所以不随界面语言变化，
+ * 改动会让已保存的回执失效。
+ */
+export const completionReceiptLabel = "图片生成完成";
+
 export type CompletedResult = { id: string; path: string; label: string };
 type Receipts = { seen: string[]; pending: CompletedResult[] };
 const taskId = /^[0-9a-f]{8}-[0-9a-f-]{27}$/i;
@@ -13,7 +19,7 @@ function isResult(value: unknown): value is CompletedResult {
     typeof value.path === "string" &&
     resultPath.test(value.path) &&
     "label" in value &&
-    value.label === "图片生成完成"
+    value.label === completionReceiptLabel
   );
 }
 function isReceipts(value: unknown): value is Receipts {

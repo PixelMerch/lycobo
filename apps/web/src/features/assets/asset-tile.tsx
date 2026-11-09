@@ -9,13 +9,17 @@ import { formatVideoTime } from "../video/player/use-video-playback";
 import { assetToolName } from "./asset-filters";
 import { useAssetFavorite } from "./asset-library-client";
 import "../video/video.css";
+import type { Locale } from "../../i18n/locale";
+import { useLocale } from "../../i18n/locale-store";
+import { useMessages } from "../../i18n/messages";
+import { displayPrompt } from "../generation/prompt-display";
+import { assetsMessages } from "./assets-messages";
 
-const time = (iso: string) =>
-  new Date(iso).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false });
+const time = (iso: string, locale: Locale) =>
+  new Date(iso).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", hour12: false });
 
 /**
- * The picture opens the existing preview; favorite and download are sibling buttons revealed on
- * hover or keyboard focus, never nested inside the picture button.
+ * 素材卡：点图片打开预览；收藏和下载是悬停或键盘聚焦时出现的并列按钮，不嵌套在图片按钮里。
  */
 export function AssetTile({
   asset,
@@ -29,8 +33,11 @@ export function AssetTile({
   onOpen: (trigger: HTMLElement) => void;
 }) {
   const { favorite, toggle } = useAssetFavorite(asset.id, asset.favorite ?? false);
-  const generatedSource = asset.tool ? assetToolName(asset.tool) : "生成";
-  const source = asset.kind === "reference" ? "上传" : generatedSource;
+  const t = useMessages(assetsMessages);
+  const locale = useLocale();
+  const generatedSource = asset.tool ? assetToolName(asset.tool, locale) : t.generatedFallback;
+  const source = asset.kind === "reference" ? t.uploaded : generatedSource;
+  const prompt = asset.prompt ? displayPrompt(asset.prompt, locale) : undefined;
   const video = asset.type === "video";
   const videoSpecs = [
     asset.resolution,
@@ -48,9 +55,9 @@ export function AssetTile({
       <Button
         variant="tertiary"
         className="asset-tile-open"
-        aria-label={`查看${video ? "视频" : "图片"}：${asset.prompt ?? asset.public_id ?? source}`}
+        aria-label={t.viewAsset(video, prompt ?? asset.public_id ?? source)}
         onPress={(event) => {
-          // The preview records the focused element as its return target when it mounts.
+          // 预览挂载时把当前焦点记为关闭后的返回位置，这里先手动聚焦。
           if (event.target instanceof HTMLElement) {
             event.target.focus({ preventScroll: true });
             onOpen(event.target);
@@ -62,7 +69,7 @@ export function AssetTile({
           thumbnail
           width={asset.width}
           height={asset.height}
-          alt={asset.prompt ?? `${source}${video ? "视频封面" : "图片"}`}
+          alt={prompt ?? t.assetAlt(source, video)}
           loading="lazy"
         />
         {video && (
@@ -99,14 +106,16 @@ function AssetTileActions({
   toggle: ReturnType<typeof useAssetFavorite>["toggle"];
 }) {
   const video = asset.type === "video";
-  const favoriteAction = video ? "收藏视频" : "收藏图片";
+  const t = useMessages(assetsMessages);
+  const locale = useLocale();
+  const favoriteAction = video ? t.favoriteVideo : t.favoriteImage;
   return (
     <div className="asset-tile-foot">
       <span className="asset-tile-meta">
         {!video && (
           <>
             <b>{source}</b>
-            <span> · {time(asset.created_at)}</span>
+            <span> · {time(asset.created_at, locale)}</span>
           </>
         )}
       </span>
@@ -116,13 +125,13 @@ function AssetTileActions({
           size="sm"
           variant="ghost"
           className="asset-tile-action"
-          aria-label={favorite ? "取消收藏" : favoriteAction}
+          aria-label={favorite ? t.unfavorite : favoriteAction}
           isSelected={favorite}
           onChange={toggle}
         >
           <UiIcon icon={favorite ? IconStarFilled : IconStar} />
         </ToggleButton>
-        <Tooltip.Content placement="top">{favorite ? "取消收藏" : "收藏"}</Tooltip.Content>
+        <Tooltip.Content placement="top">{favorite ? t.unfavorite : t.favorite}</Tooltip.Content>
       </Tooltip>
       <Tooltip delay={0}>
         <Button
@@ -130,12 +139,12 @@ function AssetTileActions({
           size="sm"
           variant="ghost"
           className="asset-tile-action"
-          aria-label={video ? "下载视频" : "下载原图"}
+          aria-label={video ? t.downloadVideo : t.downloadOriginal}
           onPress={() => downloadAsset(asset.id)}
         >
           <UiIcon icon={IconDownload} />
         </Button>
-        <Tooltip.Content placement="top">下载</Tooltip.Content>
+        <Tooltip.Content placement="top">{t.download}</Tooltip.Content>
       </Tooltip>
     </div>
   );

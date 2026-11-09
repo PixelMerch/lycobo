@@ -8,6 +8,8 @@ import "../../styles/fullscreen-dialog.css";
 import { AssetBrowser } from "./asset-browser";
 import { type AssetLibraryFilters, defaultAssetFilters } from "./asset-library-client";
 import "./library-dialog.css";
+import { useMessages } from "../../i18n/messages";
+import { assetsMessages } from "./assets-messages";
 
 /** 我的素材只展示生成素材，默认按当前工具筛选。 */
 export function LibraryDialog({
@@ -23,6 +25,7 @@ export function LibraryDialog({
     ...(tool === "video" ? { type: "video" as const } : {}),
   };
   const [filters, setFilters] = useState(defaults);
+  const t = useMessages(assetsMessages);
   const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
   return (
     <Modal
@@ -33,11 +36,11 @@ export function LibraryDialog({
     >
       <Modal.Backdrop className="fullscreen-dialog__backdrop library-backdrop">
         <Modal.Container size="full" className="fullscreen-dialog__container">
-          <Modal.Dialog className="library-dialog" aria-label="我的素材">
+          <Modal.Dialog className="library-dialog" aria-label={t.myAssets}>
             <motion.div className="library-shell" data-dialog-phase={phase} {...surfaceMotion}>
               <Modal.Header className="library-header">
-                <DialogClose fullScreen label="关闭我的素材" className="library-close" />
-                <Modal.Heading>我的素材</Modal.Heading>
+                <DialogClose fullScreen label={t.closeMyAssets} className="library-close" />
+                <Modal.Heading>{t.myAssets}</Modal.Heading>
               </Modal.Header>
               <Modal.Body className="library-body">
                 <AssetBrowser

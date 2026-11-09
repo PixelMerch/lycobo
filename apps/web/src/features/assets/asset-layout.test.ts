@@ -36,12 +36,18 @@ describe("asset library layout", () => {
       { created_at: at(1, 8) },
     ]);
     expect(groups.map((group) => group.items.length)).toEqual([2, 1, 1]);
-    expect(dayHeading(at(3, 14), now)).toEqual({ label: "今天", detail: "11月3日 周二" });
-    expect(dayHeading(at(2, 21), now)).toEqual({ label: "昨天", detail: "11月2日 周一" });
-    expect(dayHeading(new Date(2026, 9, 31, 10).toISOString(), now)).toEqual({
+    expect(dayHeading(at(3, 14), "zh-CN", now)).toEqual({ label: "今天", detail: "11月3日 周二" });
+    expect(dayHeading(at(2, 21), "zh-CN", now)).toEqual({ label: "昨天", detail: "11月2日 周一" });
+    expect(dayHeading(new Date(2026, 9, 31, 10).toISOString(), "zh-CN", now)).toEqual({
       label: "10月31日",
       detail: "周六",
     });
-    expect(dayHeading(new Date(2025, 11, 31, 10).toISOString(), now).label).toBe("2025年12月31日");
+    expect(dayHeading(new Date(2025, 11, 31, 10).toISOString(), "zh-CN", now).label).toBe(
+      "2025年12月31日",
+    );
+    expect(dayHeading(at(3, 14), "en", now)).toEqual({ label: "Today", detail: "Nov 3 Tue" });
+    expect(dayHeading(new Date(2025, 11, 31, 10).toISOString(), "en", now).label).toBe(
+      "Dec 31, 2025",
+    );
   });
 });

@@ -1,22 +1,30 @@
+import type { Locale } from "../../i18n/locale";
+import { assetsMessages } from "./assets-messages";
+
 /** Pure layout for the asset library: day groups, equal-height rows and a phone masonry. */
 type Sized = { width: number; height: number };
 
-const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
-const monthDay = (date: Date) => `${date.getMonth() + 1}月${date.getDate()}日`;
 
-/** “今天 · 11月3日 周二”, “昨天 · …”, or the date itself; local time, like the rest of the app. */
-export function dayHeading(iso: string, now = new Date()) {
+/**
+ * 素材的日期分组标题：“今天 · 11月3日 周二”“昨天 · …”，更早的显示日期本身；按本地时间与界面语言书写，
+ * 英文为 “Today · Nov 3 Tue”“Dec 31, 2025”。
+ */
+export function dayHeading(iso: string, locale: Locale, now = new Date()) {
   const date = new Date(iso);
   const days = Math.round((startOfDay(now).getTime() - startOfDay(date).getTime()) / 86_400_000);
-  const weekday = weekdays[date.getDay()] ?? "";
-  if (days === 0) return { label: "今天", detail: `${monthDay(date)} ${weekday}` };
-  if (days === 1) return { label: "昨天", detail: `${monthDay(date)} ${weekday}` };
-  const label =
-    date.getFullYear() === now.getFullYear()
-      ? monthDay(date)
-      : `${date.getFullYear()}年${monthDay(date)}`;
-  return { label, detail: weekday };
+  const t = assetsMessages[locale];
+  const weekday = new Intl.DateTimeFormat(locale, { weekday: "short" }).format(date);
+  const monthDay = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" }).format(date);
+  if (days === 0) return { label: t.today, detail: `${monthDay} ${weekday}` };
+  if (days === 1) return { label: t.yesterday, detail: `${monthDay} ${weekday}` };
+  if (date.getFullYear() === now.getFullYear()) return { label: monthDay, detail: weekday };
+  const fullDate = new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(date);
+  return { label: fullDate, detail: weekday };
 }
 
 /** Keeps the server's newest-first order and starts a group whenever the local day changes. */

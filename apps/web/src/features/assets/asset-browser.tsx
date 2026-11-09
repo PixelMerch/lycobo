@@ -30,6 +30,10 @@ import {
 import { AssetMasonry } from "./asset-masonry";
 import { AssetPreview } from "./asset-preview";
 import "./asset-browser.css";
+import type { Locale } from "../../i18n/locale";
+import { useLocale } from "../../i18n/locale-store";
+import { useMessages } from "../../i18n/messages";
+import { assetsMessages } from "./assets-messages";
 
 const compactWidth = 720;
 
@@ -52,9 +56,11 @@ function emptyState(
   filters: AssetLibraryFilters,
   defaults: AssetLibraryFilters,
   currentTool: AssetTool | undefined,
+  locale: Locale,
 ): Empty {
-  if (filters.type === "video") return { icon: IconMovie, title: "暂无视频素材" };
-  if (filters.source === "uploads") return { icon: IconPhoto, title: "还没有上传的素材" };
+  const t = assetsMessages[locale];
+  if (filters.type === "video") return { icon: IconMovie, title: t.noVideos };
+  if (filters.source === "uploads") return { icon: IconPhoto, title: t.noUploads };
   if (
     currentTool &&
     filters.tool === currentTool &&
@@ -63,14 +69,14 @@ function emptyState(
     (!filters.time || filters.time === "all")
   )
     return filters.source === "favorites"
-      ? { icon: IconStar, title: `${assetToolName(currentTool)}还没有收藏的素材` }
-      : { icon: IconPhoto, title: `${assetToolName(currentTool)}还没有素材` };
+      ? { icon: IconStar, title: t.noToolFavorites(assetToolName(currentTool, locale)) }
+      : { icon: IconPhoto, title: t.noToolAssets(assetToolName(currentTool, locale)) };
   if (
     !sameFilters(filters, { ...defaultAssetFilters, source: filters.source, type: defaults.type })
   )
-    return { icon: IconPhotoSearch, title: "没有符合筛选的素材" };
-  if (filters.source === "favorites") return { icon: IconStar, title: "还没有收藏的素材" };
-  return { icon: IconPhoto, title: "还没有生成的素材" };
+    return { icon: IconPhotoSearch, title: t.noMatches };
+  if (filters.source === "favorites") return { icon: IconStar, title: t.noFavorites };
+  return { icon: IconPhoto, title: t.noGenerated };
 }
 
 function AssetEmpty({
@@ -143,6 +149,7 @@ export function AssetBrowser({
   const models = useModelPresentation().data?.models ?? [];
   const [frame, width] = useWidth();
   const [preview, setPreview] = useState<number | null>(null);
+  const locale = useLocale();
   const { failure, authenticationRequired } = useAssetStatus(session, query);
   const compact = width > 0 && width < compactWidth;
   const assets = query.data?.pages.flatMap((page) => page.data) ?? [];
@@ -176,7 +183,7 @@ export function AssetBrowser({
             compact={compact}
             headingLevel={headingLevel}
             filters={filters}
-            empty={emptyState(filters, defaults, currentTool)}
+            empty={emptyState(filters, defaults, currentTool, locale)}
             models={models}
             onOpen={setPreview}
             query={query}
@@ -237,6 +244,8 @@ function AssetResults({
   failure: Error | null;
   retry: () => void;
 }) {
+  const t = useMessages(assetsMessages);
+  const locale = useLocale();
   const index = new Map(assets.map((asset, position) => [asset.id, position]));
   const Day = headingLevel === 2 ? "h2" : "h3";
   const densityGrid = (items: ImageAsset[]) => (
@@ -251,10 +260,10 @@ function AssetResults({
     return (
       <AssetEmpty
         icon={IconPhotoX}
-        title="素材暂时不可用"
-        text={failure.message || "请检查网络后重新加载。"}
+        title={t.unavailable}
+        text={failure.message || t.checkNetwork}
         action={{
-          label: "重新加载",
+          label: t.reload,
           onPress: retry,
         }}
       />
@@ -266,7 +275,7 @@ function AssetResults({
       {!filters.time || filters.time === "all"
         ? densityGrid(assets)
         : groupByDay(assets).map((group) => {
-            const heading = dayHeading(group.first);
+            const heading = dayHeading(group.first, locale);
             return (
               <section key={group.key} className="asset-day-group" aria-label={heading.label}>
                 <Day className="asset-day">
@@ -294,9 +303,10 @@ function AssetDensityControls({
   columns: number;
   onChange: (columns: number) => void;
 }) {
+  const t = useMessages(assetsMessages);
   return (
     <ToggleButtonGroup
-      aria-label="图片大小"
+      aria-label={t.density}
       selectionMode="single"
       disallowEmptySelection
       selectedKeys={[String(columns)]}
@@ -307,13 +317,13 @@ function AssetDensityControls({
       className="asset-segment asset-density-control"
       size="sm"
     >
-      <ToggleButton isIconOnly id="6" aria-label="大图，每行6张">
+      <ToggleButton isIconOnly id="6" aria-label={t.large}>
         <UiIcon icon={IconLayoutGrid} />
       </ToggleButton>
-      <ToggleButton isIconOnly id="8" aria-label="中图，每行8张">
+      <ToggleButton isIconOnly id="8" aria-label={t.medium}>
         <UiIcon icon={IconGridDots} />
       </ToggleButton>
-      <ToggleButton isIconOnly id="10" aria-label="小图，每行10张">
+      <ToggleButton isIconOnly id="10" aria-label={t.small}>
         <UiIcon icon={IconGrid4x4} />
       </ToggleButton>
     </ToggleButtonGroup>

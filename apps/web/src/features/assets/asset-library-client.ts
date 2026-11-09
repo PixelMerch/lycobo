@@ -7,8 +7,10 @@ import {
   imageAssetsResponseSchema,
 } from "@lycoboai/contracts";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { currentMessages } from "../../i18n/messages";
 import { useErrorToast } from "../../lib/error-toast";
 import { imageRequest, useImageSession } from "../generation/generation-client";
+import { assetsMessages } from "./assets-messages";
 
 export type AssetSource = "generated" | "uploads" | "favorites";
 export type AssetMediaType = "all" | "image" | "video";
@@ -148,14 +150,15 @@ function useSetAssetFavorite() {
       return { previous };
     },
     onSuccess: (favorite) => {
-      toast.success(favorite ? "收藏成功" : "已取消收藏");
+      const t = currentMessages(assetsMessages);
+      toast.success(favorite ? t.favorited : t.unfavorited);
     },
     onError: (_error, _variables, context) => {
       client.setQueryData(favoritesKey, context?.previous);
     },
     onSettled: () => {
       void client.invalidateQueries({ queryKey: favoritesKey });
-      // Only lists filtered by favorite change membership; other views read stars from the ids.
+      // 只有按收藏筛选的列表成员会变；其他视图从收藏 id 读取星标状态。
       void client.invalidateQueries({
         queryKey: ["image-assets"],
         predicate: (query) => query.queryKey.some((part) => String(part).includes("favorite=true")),

@@ -1,7 +1,9 @@
 import type { ImageAsset } from "@lycoboai/contracts";
+import { currentMessages } from "../../i18n/messages";
 import { ImagePreviewDialog } from "../image-workspace/image-preview";
 import { VideoPlayerDialog } from "../video/player/video-player-dialog";
 import type { useAssetLibrary } from "./asset-library-client";
+import { assetsMessages } from "./assets-messages";
 
 const toPreview = (asset: ImageAsset) => ({
   id: asset.id,
@@ -18,6 +20,7 @@ const toPreview = (asset: ImageAsset) => ({
 });
 const toPreviewVideo = (asset: ImageAsset) => {
   const sized = asset.width > 0 && asset.height > 0;
+  const t = currentMessages(assetsMessages);
   return {
     id: asset.id,
     aspect: sized ? asset.width / asset.height : 9 / 16,
@@ -26,9 +29,11 @@ const toPreviewVideo = (asset: ImageAsset) => {
     createdAt: asset.created_at,
     prompt: asset.prompt,
     params: [
-      ...(sized ? [{ label: "尺寸", value: `${asset.width}×${asset.height}` }] : []),
-      ...(asset.duration_seconds ? [{ label: "时长", value: `${asset.duration_seconds}秒` }] : []),
-      ...(asset.resolution ? [{ label: "清晰度", value: asset.resolution }] : []),
+      ...(sized ? [{ label: t.size, value: `${asset.width}×${asset.height}` }] : []),
+      ...(asset.duration_seconds
+        ? [{ label: t.duration, value: t.seconds(asset.duration_seconds) }]
+        : []),
+      ...(asset.resolution ? [{ label: t.clarity, value: asset.resolution }] : []),
     ],
   };
 };
