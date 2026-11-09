@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { CollapsibleText } from "../../../components/collapsible-text";
 import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
+import { useLocale } from "../../../i18n/locale-store";
 import { currentMessages, useMessages } from "../../../i18n/messages";
 import { copyToClipboard } from "../../../lib/clipboard";
 import { useErrorToast } from "../../../lib/error-toast";
@@ -26,6 +27,7 @@ import {
   usePendingSubmission,
 } from "../generation-client";
 import { modelCapabilities, supportsReferences } from "../models/model-capabilities";
+import { displayPrompt } from "../prompt-display";
 import { ReferenceThumbnails } from "../references/reference-thumbnails";
 import { type Draft, type ModelId, qualityLevels, useStudioStore } from "../studio-state";
 import { HistoryDownloadButton } from "./history-download-button";
@@ -34,13 +36,14 @@ import { historyMessages } from "./history-messages";
 /** 历史任务的提示词：可展开的正文、复制按钮与任务参考图。 */
 export function HistoryPrompt({ job }: { job: ImageJob }) {
   const t = useMessages(historyMessages);
+  const prompt = displayPrompt(job.prompt, useLocale());
   return (
     <div className="history-prompt">
-      <CollapsibleText text={job.prompt} id={`prompt-${job.id}`} className="generation-prompt" />
+      <CollapsibleText text={prompt} id={`prompt-${job.id}`} className="generation-prompt" />
       <Button
         variant="secondary"
         className="copy-prompt"
-        onPress={() => void copyToClipboard(job.prompt)}
+        onPress={() => void copyToClipboard(prompt)}
       >
         <UiIcon icon={IconCopy} size="small" />
         {t.copyPrompt}

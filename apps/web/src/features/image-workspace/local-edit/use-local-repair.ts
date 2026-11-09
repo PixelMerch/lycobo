@@ -1,6 +1,7 @@
 import { imageJobSchema, latestImageEditResponseSchema } from "@lycoboai/contracts";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { currentMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import {
   assetContentUrl,
@@ -14,6 +15,7 @@ import {
 import { modelCapabilities, supportsReferences } from "../../generation/models/model-capabilities";
 import { isModelId } from "../../generation/studio-state";
 import type { PreviewImage, PreviewMeta } from "../image-preview";
+import { imageWorkspaceMessages } from "../image-workspace-messages";
 import {
   emptyRepairDraft,
   type RepairRegion,
@@ -135,7 +137,7 @@ function useRepairImage(assetId: string) {
     loaded.crossOrigin = "anonymous";
     loaded.referrerPolicy = "strict-origin-when-cross-origin";
     loaded.onload = () => setImage(loaded);
-    loaded.onerror = () => setImageError("图片预览加载失败，请重新打开图片后再试。");
+    loaded.onerror = () => setImageError(currentMessages(imageWorkspaceMessages).imageLoadFailed);
     loaded.src = assetContentUrl(assetId);
     return () => {
       loaded.onload = null;
@@ -218,7 +220,12 @@ function useRepairSubmission({
         draft: {
           prompt,
           references: [
-            { id: assetId, assetId: assetId, name: "原图", src: assetContentUrl(assetId) },
+            {
+              id: assetId,
+              assetId: assetId,
+              name: currentMessages(imageWorkspaceMessages).original,
+              src: assetContentUrl(assetId),
+            },
           ],
           ratio: output.ratio,
           resolution: output.resolution,

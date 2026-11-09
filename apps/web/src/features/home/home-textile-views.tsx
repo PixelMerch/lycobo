@@ -1,6 +1,7 @@
 import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { useMessages } from "../../i18n/messages";
 import { useTextileSetDraft } from "../commerce/textile-set/textile-set-state";
+import { textileViewMessages } from "../commerce/textile-set/textile-view-messages";
 import { textileViews } from "../commerce/textile-set/textile-views";
 import { homeMessages } from "./home-messages";
 import "./home-textile-views.css";
@@ -10,6 +11,7 @@ export function HomeTextileViews() {
   const views = useTextileSetDraft((s) => s.views);
   const update = useTextileSetDraft((s) => s.update);
   const t = useMessages(homeMessages);
+  const viewNames = useMessages(textileViewMessages);
   return (
     <div className="home-textile-views">
       <p className="home-textile-views-title">
@@ -30,7 +32,7 @@ export function HomeTextileViews() {
       >
         {textileViews.map((view) => (
           <ToggleButton key={view.id} id={view.id} size="sm">
-            {view.name}
+            {viewNames[view.id]}
           </ToggleButton>
         ))}
       </ToggleButtonGroup>

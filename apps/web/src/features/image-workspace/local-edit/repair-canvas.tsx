@@ -1,6 +1,8 @@
 import type Konva from "konva";
 import { useEffect, useRef, useState } from "react";
 import { Circle, Group, Layer, Rect, Stage, Text, Transformer } from "react-konva";
+import { useMessages } from "../../../i18n/messages";
+import { imageWorkspaceMessages } from "../image-workspace-messages";
 import { constrainRegion, type RepairRegion } from "./local-repair-state";
 
 type Point = { x: number; y: number };
@@ -142,7 +144,9 @@ function Region({
   );
 }
 
+/** 局部编辑画布：显示原图并绘制、选择和拖动修改区域。 */
 export function RepairCanvas(props: Props) {
+  const t = useMessages(imageWorkspaceMessages);
   const { width, height, regions, selected, tool, disabled, onSelect, onChange, interactive } =
     props;
   const hand = tool === "hand";
@@ -154,7 +158,7 @@ export function RepairCanvas(props: Props) {
       ref={container}
       data-tool={hand ? "hand" : tool}
       data-interactive={interactive && !hand ? "true" : "false"}
-      aria-label="局部编辑画布"
+      aria-label={t.editCanvas}
     >
       <Stage
         width={viewport.width}

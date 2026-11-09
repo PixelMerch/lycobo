@@ -1,9 +1,11 @@
 import { Button, TextArea, TextField } from "@heroui/react";
 import { IconTrash } from "@tabler/icons-react";
 import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
+import { imageWorkspaceMessages } from "../image-workspace-messages";
 import type { RepairRegion } from "./local-repair-state";
 
-/** A region's user-facing instructions; pixel geometry stays on the canvas. */
+/** 一个修改区域的说明卡：用户填写修改要求，像素位置留在画布上。 */
 export function RepairRegionCard({
   region,
   number,
@@ -21,6 +23,7 @@ export function RepairRegionCard({
   onRemove: () => void;
   onPrompt: (prompt: string) => void;
 }) {
+  const t = useMessages(imageWorkspaceMessages);
   return (
     <section
       className="repair-region-card"
@@ -32,10 +35,11 @@ export function RepairRegionCard({
           variant="ghost"
           size="sm"
           className="repair-region-select"
-          aria-label={`区域 ${number}`}
+          aria-label={t.region(number)}
           onPress={onSelect}
         >
-          <span className="repair-badge">{number}</span>区域 {number}
+          <span className="repair-badge">{number}</span>
+          {t.region(number)}
           <span className="required-indicator" aria-hidden="true">
             *
           </span>
@@ -45,7 +49,7 @@ export function RepairRegionCard({
           variant="ghost"
           isIconOnly
           className="repair-region-remove"
-          aria-label={`删除区域 ${number}`}
+          aria-label={t.deleteRegion(number)}
           isDisabled={locked}
           onPress={onRemove}
         >
@@ -53,14 +57,14 @@ export function RepairRegionCard({
         </Button>
       </div>
       <TextField
-        aria-label={`区域 ${number} 修改说明`}
+        aria-label={t.regionNote(number)}
         isRequired
         value={region.prompt}
         isDisabled={locked}
         onFocus={onSelect}
         onChange={onPrompt}
       >
-        <TextArea rows={4} maxLength={900} placeholder="描述你想修改的内容…" />
+        <TextArea rows={4} maxLength={900} placeholder={t.regionPlaceholder} />
       </TextField>
     </section>
   );

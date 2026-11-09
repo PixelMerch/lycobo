@@ -1,21 +1,10 @@
 import { Button } from "@heroui/react";
 import { useLayoutEffect, useRef } from "react";
 import { InfiniteLoad } from "../../components/infinite-load";
+import { useMessages } from "../../i18n/messages";
 import { AssetImage } from "../generation/asset-image";
 import type { PreviewImage } from "./image-preview";
-
-const railCopy = {
-  image: {
-    rail: "全部图片",
-    item: (position: number) => `预览第 ${position} 张`,
-    alt: (position: number) => `第 ${position} 张缩略图`,
-  },
-  video: {
-    rail: "全部视频",
-    item: (position: number) => `预览第 ${position} 个视频`,
-    alt: (position: number) => `第 ${position} 个视频封面`,
-  },
-};
+import { imageWorkspaceMessages } from "./image-workspace-messages";
 
 function revealRailThumb(element: HTMLElement, thumb: HTMLElement) {
   // Layout offsets remain accurate during the dialog's opening scale animation.
@@ -27,6 +16,7 @@ function revealRailThumb(element: HTMLElement, thumb: HTMLElement) {
     element.scrollLeft = thumb.offsetLeft + thumb.offsetWidth - element.clientWidth;
 }
 
+/** 图片预览左侧的缩略图栏：同组图片或视频，选中项保持在可视范围内。 */
 export function ImagePreviewRail({
   images,
   kind = "image",
@@ -38,7 +28,7 @@ export function ImagePreviewRail({
   onLoadMore,
 }: {
   images: Pick<PreviewImage, "id">[];
-  kind?: keyof typeof railCopy;
+  kind?: "image" | "video";
   index: number;
   onSelect: (index: number) => void;
   hasMore: boolean;
@@ -47,7 +37,7 @@ export function ImagePreviewRail({
   onLoadMore?: (() => Promise<unknown>) | undefined;
 }) {
   const rail = useRef<HTMLElement>(null);
-  const copy = railCopy[kind];
+  const copy = useMessages(imageWorkspaceMessages).rail[kind];
   const activeId = images[index]?.id;
   useLayoutEffect(() => {
     const element = rail.current;

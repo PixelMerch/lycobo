@@ -15,6 +15,8 @@ import {
 } from "@tabler/icons-react";
 import { useSyncExternalStore } from "react";
 import { UiIcon } from "../../components/ui-icon";
+import { useMessages } from "../../i18n/messages";
+import { imageWorkspaceMessages } from "./image-workspace-messages";
 import type { LocalRepairEditor } from "./local-edit/use-local-repair";
 
 function subscribeToolbarViewport(onChange: () => void) {
@@ -25,6 +27,7 @@ function subscribeToolbarViewport(onChange: () => void) {
 const getToolbarViewport = () => window.matchMedia("(min-width: 768px)").matches;
 const getServerToolbarViewport = () => false;
 
+/** 画布工具坞：选择、框选与抓手工具，以及区域修改的撤销与重做。 */
 export function PreviewCanvasToolbar({
   editor,
   repairing,
@@ -34,6 +37,7 @@ export function PreviewCanvasToolbar({
   repairing: boolean;
   onTool: (tool: string) => void;
 }) {
+  const t = useMessages(imageWorkspaceMessages);
   const vertical = useSyncExternalStore(
     subscribeToolbarViewport,
     getToolbarViewport,
@@ -42,36 +46,45 @@ export function PreviewCanvasToolbar({
   const orientation = vertical ? "vertical" : "horizontal";
   return (
     <div className="preview-canvas-dock">
-      <Toolbar className="preview-canvas-toolbar" aria-label="画布工具" orientation={orientation}>
+      <Toolbar
+        className="preview-canvas-toolbar"
+        aria-label={t.canvasTools}
+        orientation={orientation}
+      >
         <ToggleButtonGroup
           size="sm"
           orientation={orientation}
           selectionMode="single"
           disallowEmptySelection
           selectedKeys={[editor.tool]}
-          aria-label="画布工具选择"
+          aria-label={t.toolChoice}
           onSelectionChange={(keys) => {
             const next = Array.from(keys)[0];
             if (next) onTool(String(next));
           }}
         >
           <Tooltip delay={0}>
-            <ToggleButton id="select" isIconOnly aria-label="选择区域">
+            <ToggleButton id="select" isIconOnly aria-label={t.selectRegion}>
               <UiIcon icon={IconPointer} />
             </ToggleButton>
-            <Tooltip.Content>选择</Tooltip.Content>
+            <Tooltip.Content>{t.select}</Tooltip.Content>
           </Tooltip>
           <Tooltip delay={0}>
-            <ToggleButton id="rect" isIconOnly aria-label="框选区域" isDisabled={!!editor.locked}>
+            <ToggleButton
+              id="rect"
+              isIconOnly
+              aria-label={t.drawRegion}
+              isDisabled={!!editor.locked}
+            >
               <UiIcon icon={IconRectangle} />
             </ToggleButton>
-            <Tooltip.Content>框选修改区域</Tooltip.Content>
+            <Tooltip.Content>{t.drawRegionHint}</Tooltip.Content>
           </Tooltip>
           <Tooltip delay={0}>
-            <ToggleButton id="hand" isIconOnly aria-label="拖动画布">
+            <ToggleButton id="hand" isIconOnly aria-label={t.panCanvas}>
               <UiIcon icon={IconHandStop} />
             </ToggleButton>
-            <Tooltip.Content>抓手 · 按住空格</Tooltip.Content>
+            <Tooltip.Content>{t.panHint}</Tooltip.Content>
           </Tooltip>
         </ToggleButtonGroup>
         <ButtonGroup
@@ -84,7 +97,7 @@ export function PreviewCanvasToolbar({
             size="sm"
             isIconOnly
             variant="ghost"
-            aria-label="撤销区域修改"
+            aria-label={t.undoRegion}
             isDisabled={!repairing || !editor.canUndo}
             onPress={editor.undo}
           >
@@ -94,7 +107,7 @@ export function PreviewCanvasToolbar({
             size="sm"
             isIconOnly
             variant="ghost"
-            aria-label="重做区域修改"
+            aria-label={t.redoRegion}
             isDisabled={!repairing || !editor.canRedo}
             onPress={editor.redo}
           >
@@ -102,13 +115,12 @@ export function PreviewCanvasToolbar({
           </Button>
         </ButtonGroup>
       </Toolbar>
-      {/* The count is only useful once regions exist; the empty state keeps the
-       * canvas clean instead of showing a permanent "0 / 8". */}
+      {/* 有选区后才显示数量；没有选区时不常驻显示“0 / 8”，保持画布干净。 */}
       {editor.draft.regions.length > 0 && (
         <span
           className="preview-canvas-status"
           data-editing={repairing}
-          title={`已选 ${editor.draft.regions.length} 个区域，最多 8 个`}
+          title={t.regionCount(editor.draft.regions.length)}
         >
           {editor.draft.regions.length} / 8
         </span>

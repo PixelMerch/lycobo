@@ -1,5 +1,5 @@
 import { Button } from "@heroui/react";
-import { type ImageJob, textileViews } from "@lycoboai/contracts";
+import type { ImageJob } from "@lycoboai/contracts";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { type CSSProperties, Fragment } from "react";
 import { UiIcon } from "../../../components/ui-icon";
@@ -10,7 +10,10 @@ import { HistoryPrompt, HistoryTaskActions } from "./history-task-tools";
 import { ResultImage } from "./result-image";
 import "./history-result-layout.css";
 import type { Locale } from "../../../i18n/locale";
+import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
+import { textileViewMessages } from "../../commerce/textile-set/textile-view-messages";
+import { displayPrompt } from "../prompt-display";
 import { historyMessages } from "./history-messages";
 
 type HistoryText = (typeof historyMessages)[Locale];
@@ -92,6 +95,8 @@ function HistoryResult({
   item: Item;
   onPreview: ShowPreview;
 }) {
+  const locale = useLocale();
+  const textileView = job.input?.textileSet?.views[item.position];
   const style: CSSProperties & { "--result-ratio": number } = {
     "--result-ratio": historyResultRatio(job, item),
   };
@@ -108,13 +113,8 @@ function HistoryResult({
       {job.input?.variation && (
         <p className="textile-result-view">{job.input.variation.items[item.position]?.title}</p>
       )}
-      {job.input?.textileSet && (
-        <p className="textile-result-view">
-          {
-            textileViews.find((view) => view.id === job.input?.textileSet?.views[item.position])
-              ?.name
-          }
-        </p>
+      {textileView && (
+        <p className="textile-result-view">{textileViewMessages[locale][textileView]}</p>
       )}
       {item.output_asset_id ? (
         <ResultImage
@@ -123,7 +123,7 @@ function HistoryResult({
           position={item.position}
           width={item.width}
           height={item.height}
-          prompt={job.prompt}
+          prompt={displayPrompt(job.prompt, locale)}
           onPreview={(trigger) => onPreview(trigger, item.output_asset_id ?? "")}
         />
       ) : (
@@ -154,6 +154,7 @@ export function GenerationHistoryCard({
   onPreview: ShowPreview;
 }) {
   const t = useMessages(historyMessages);
+  const locale = useLocale();
   return (
     <article
       className="generation-job"
@@ -166,7 +167,11 @@ export function GenerationHistoryCard({
         {!compact && job.items.length >= batchSize && <BatchProgress items={job.items} />}
         {!compact && <HistoryTaskActions job={job} onRestore={onRestore} />}
       </header>
-      {compact ? <p className="generation-prompt">{job.prompt}</p> : <HistoryPrompt job={job} />}
+      {compact ? (
+        <p className="generation-prompt">{displayPrompt(job.prompt, locale)}</p>
+      ) : (
+        <HistoryPrompt job={job} />
+      )}
       {!compact && (
         <div
           id={`results-${job.id}`}

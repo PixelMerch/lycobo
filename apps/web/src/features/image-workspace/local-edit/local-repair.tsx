@@ -7,7 +7,10 @@ import type { PreviewImage } from "../image-preview";
 import { RepairRegionCard } from "./repair-region-card";
 import type { LocalRepairEditor } from "./use-local-repair";
 import "./local-repair.css";
+import { useMessages } from "../../../i18n/messages";
+import { imageWorkspaceMessages } from "../image-workspace-messages";
 
+/** 局部编辑面板：框选区域并填写修改说明，确认后生成修改版。 */
 export function LocalRepairPanel({
   source,
   editor,
@@ -19,6 +22,7 @@ export function LocalRepairPanel({
   onBack: () => void;
   onPreview: (image: PreviewImage) => void;
 }) {
+  const t = useMessages(imageWorkspaceMessages);
   const {
     draft,
     image,
@@ -41,18 +45,18 @@ export function LocalRepairPanel({
   return (
     <aside
       className="image-preview-info repair-info image-preview-workspace-panel"
-      aria-label="局部编辑设置"
+      aria-label={t.editSettings}
     >
       <div className="image-preview-close-row">
-        <DialogClose fullScreen label="关闭图片预览" className="image-preview-close" />
+        <DialogClose fullScreen label={t.closePreview} className="image-preview-close" />
       </div>
       <header>
         <Button variant="ghost" size="sm" className="repair-back" onPress={onBack}>
           <UiIcon icon={IconArrowLeft} />
-          返回详情
+          {t.backToDetails}
         </Button>
-        <h2>修改图片</h2>
-        <p className="repair-lead">框选位置，描述你想修改的内容</p>
+        <h2>{t.editImage}</h2>
+        <p className="repair-lead">{t.editLead}</p>
       </header>
       <div className="repair-regions">
         {draft.regions.map((region, index) => (
@@ -82,17 +86,14 @@ export function LocalRepairPanel({
           onPress={add}
         >
           <UiIcon icon={IconPlus} />
-          添加区域
+          {t.addRegion}
         </Button>
       </div>
       <div className="repair-submit">
-        {!available && models.isSuccess && (
-          <p className="repair-message">当前模型暂不支持此规格的图片编辑。</p>
-        )}
-        {pending && !ownPending && <p className="repair-message">请先在原提交入口确认上次提交。</p>}
-        {/* Task progress is announced in the bottom-right notice, not here. */}
-        {/* Same action shape as the composer: label plus the credit token, so the
-         * cost is read at submission instead of in a separate billing row. */}
+        {!available && models.isSuccess && <p className="repair-message">{t.unsupported}</p>}
+        {pending && !ownPending && <p className="repair-message">{t.confirmElsewhere}</p>}
+        {/* 任务进度在右下角提示里播报，这里不重复。 */}
+        {/* 与创作面板相同：文字加积分标记，提交时就能看到费用，不另起一行账单。 */}
         <Button
           fullWidth
           variant="primary"
@@ -103,8 +104,8 @@ export function LocalRepairPanel({
           isDisabled={!available || !image || busy || !canGenerate || (pending && !ownPending)}
           onPress={() => void submit()}
         >
-          {ownPending && "确认上次提交"}
-          {!ownPending && (busy ? "生成中…" : "立即生成")}
+          {ownPending && t.confirmLastSubmission}
+          {!ownPending && (busy ? t.generating : t.generateNow)}
           {!ownPending && !busy && models.data && (
             <span className="generate-credit-cost" aria-hidden="true">
               <CreditCoin />
@@ -135,7 +136,7 @@ export function LocalRepairPanel({
               });
             }}
           >
-            查看修改版
+            {t.viewEdited}
           </Button>
         )}
       </div>

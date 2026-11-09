@@ -1,5 +1,7 @@
 import { Toast } from "@heroui/react";
 import { useEffect, useRef } from "react";
+import { currentMessages } from "../../../i18n/messages";
+import { imageWorkspaceMessages } from "../image-workspace-messages";
 
 /**
  * Local-edit status channel. It deliberately uses its own queue and a
@@ -24,11 +26,10 @@ function repairStage(status: string | undefined, succeeded: boolean) {
 }
 
 function repairMessage(stage: string | null) {
-  if (stage === "running") return "修改版生成中，可返回详情继续查看图片";
-  if (stage === "succeeded") return "修改版已生成，可点击查看";
-  return stage && endedStatuses.includes(stage)
-    ? "修改版未能完成，请在历史记录查看任务与积分状态"
-    : null;
+  const t = currentMessages(imageWorkspaceMessages);
+  if (stage === "running") return t.editRunning;
+  if (stage === "succeeded") return t.editDone;
+  return stage && endedStatuses.includes(stage) ? t.editFailed : null;
 }
 
 /**
