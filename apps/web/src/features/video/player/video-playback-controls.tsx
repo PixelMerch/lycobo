@@ -9,7 +9,9 @@ import {
 } from "@tabler/icons-react";
 import type { RefObject } from "react";
 import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
 import { formatVideoTime, type useVideoPlayback } from "./use-video-playback";
+import { videoPlayerMessages } from "./video-player-messages";
 
 export function togglePlayback(video: HTMLVideoElement) {
   if (video.paused || video.ended) void video.play().catch(() => undefined);
@@ -22,6 +24,7 @@ export function toggleFullscreen(frame: HTMLElement) {
 
 type Playback = ReturnType<typeof useVideoPlayback>;
 
+/** 视频播放控制栏：进度、播放暂停、静音与全屏。 */
 export function VideoPlaybackControls({
   video,
   playback,
@@ -39,11 +42,12 @@ export function VideoPlaybackControls({
   frame: RefObject<HTMLDivElement | null>;
   barToggle: RefObject<HTMLButtonElement | null>;
 }) {
+  const t = useMessages(videoPlayerMessages);
   return (
     <div className="video-preview-controls">
       <Slider
         className="video-preview-progress"
-        aria-label="播放进度"
+        aria-label={t.progress}
         minValue={0}
         maxValue={duration || 1}
         step={0.1}
@@ -68,7 +72,7 @@ export function VideoPlaybackControls({
             isIconOnly
             variant="ghost"
             className="video-preview-control"
-            aria-label={playback.playing ? "暂停" : "播放"}
+            aria-label={playback.playing ? t.pause : t.play}
             isDisabled={!video}
             onPress={() => video && togglePlayback(video)}
           >
@@ -77,7 +81,7 @@ export function VideoPlaybackControls({
               size="navigation"
             />
           </Button>
-          <Tooltip.Content placement="top">{playback.playing ? "暂停" : "播放"}</Tooltip.Content>
+          <Tooltip.Content placement="top">{playback.playing ? t.pause : t.play}</Tooltip.Content>
         </Tooltip>
         <span className="video-preview-time">
           {formatVideoTime(playback.currentTime)}
@@ -89,7 +93,7 @@ export function VideoPlaybackControls({
             isIconOnly
             variant="ghost"
             className="video-preview-control"
-            aria-label="静音"
+            aria-label={t.mute}
             isSelected={playback.muted}
             isDisabled={!video}
             onChange={(muted) => {
@@ -98,7 +102,7 @@ export function VideoPlaybackControls({
           >
             <UiIcon icon={playback.muted ? IconVolumeOff : IconVolume} size="navigation" />
           </ToggleButton>
-          <Tooltip.Content placement="top">{playback.muted ? "取消静音" : "静音"}</Tooltip.Content>
+          <Tooltip.Content placement="top">{playback.muted ? t.unmute : t.mute}</Tooltip.Content>
         </Tooltip>
         {document.fullscreenEnabled && (
           <Tooltip delay={0}>
@@ -106,13 +110,13 @@ export function VideoPlaybackControls({
               isIconOnly
               variant="ghost"
               className="video-preview-control"
-              aria-label={fullscreen ? "退出全屏" : "全屏播放"}
+              aria-label={fullscreen ? t.exitFullscreen : t.fullscreen}
               onPress={() => frame.current && toggleFullscreen(frame.current)}
             >
               <UiIcon icon={fullscreen ? IconMinimize : IconMaximize} size="navigation" />
             </Button>
             <Tooltip.Content placement="top">
-              {fullscreen ? "退出全屏" : "全屏播放"}
+              {fullscreen ? t.exitFullscreen : t.fullscreen}
             </Tooltip.Content>
           </Tooltip>
         )}

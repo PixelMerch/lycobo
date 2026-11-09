@@ -4,11 +4,15 @@ import { IconDownload, IconEdit, IconRefresh } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { assetContentUrl } from "../../generation/generation-client";
 import { useSubmitVideo, useVideoModel } from "../video-client";
+import { videoHistoryMessages } from "./video-history-messages";
 
+/** 视频任务的操作：下载、重新编辑与重新生成。 */
 export function VideoTaskActions({ task, onEdit }: { task: VideoTask; onEdit: () => void }) {
+  const t = useMessages(videoHistoryMessages);
   const [confirm, setConfirm] = useState(false);
   const actionsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -42,7 +46,7 @@ export function VideoTaskActions({ task, onEdit }: { task: VideoTask; onEdit: ()
       {task.delivery && (
         <Link className="button copy-prompt" href={task.delivery.download_url} download>
           <UiIcon icon={IconDownload} size="small" />
-          下载视频
+          {t.downloadVideo}
         </Link>
       )}
       <Tooltip delay={0}>
@@ -50,30 +54,30 @@ export function VideoTaskActions({ task, onEdit }: { task: VideoTask; onEdit: ()
           isIconOnly
           variant="tertiary"
           className="history-icon-action"
-          aria-label="重新编辑"
+          aria-label={t.edit}
           onPress={onEdit}
         >
           <UiIcon icon={IconEdit} size="action" />
         </Button>
-        <Tooltip.Content placement="bottom">重新编辑</Tooltip.Content>
+        <Tooltip.Content placement="bottom">{t.edit}</Tooltip.Content>
       </Tooltip>
       <Tooltip delay={0}>
         <Button
           isIconOnly
           variant="tertiary"
           className="history-icon-action"
-          aria-label="重新生成"
+          aria-label={t.regenerate}
           isDisabled={!canRegenerate}
           onPress={() => setConfirm(true)}
         >
           <UiIcon icon={IconRefresh} size="action" />
         </Button>
-        <Tooltip.Content placement="bottom">重新生成</Tooltip.Content>
+        <Tooltip.Content placement="bottom">{t.regenerate}</Tooltip.Content>
       </Tooltip>
       <ConfirmDialog
         isOpen={confirm}
-        title="重新生成这个视频？"
-        content={`本次消耗 ${videoUnitCredits} 积分`}
+        title={t.regenerateTitle}
+        content={t.regenerateCost(videoUnitCredits)}
         onCancel={() => setConfirm(false)}
         onConfirm={() => {
           setConfirm(false);
@@ -90,7 +94,7 @@ export function VideoTaskActions({ task, onEdit }: { task: VideoTask; onEdit: ()
             references: input.referenceAssetIds.map((id, index) => ({
               id,
               assetId: id,
-              name: `图片${index + 1}`,
+              name: t.imageName(index + 1),
               src: assetContentUrl(id, true),
             })),
             clearDraft: false,

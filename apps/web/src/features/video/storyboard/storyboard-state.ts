@@ -5,7 +5,9 @@ import {
   storyboardRequestSchema,
 } from "@lycoboai/contracts";
 import { create } from "zustand";
+import { currentMessages } from "../../../i18n/messages";
 import type { ReferenceImage } from "../../generation/studio-state";
+import { videoMessages } from "../video-messages";
 import type { useVideoDraft } from "../video-state";
 
 const frameSchema = storyboardRequestSchema.options[1].shape.shots.element
@@ -43,10 +45,11 @@ export const emptyStoryboard: Draft = {
   progress: {},
 };
 const key = (scope: string) => `lycobo-tk-storyboard:${scope}`;
+/** 商品原图作为参考图的写法。 */
 export const originalReference = (assetId: string): ReferenceImage => ({
   id: assetId,
   assetId,
-  name: "商品原图",
+  name: currentMessages(videoMessages).productOriginal,
   src: `/api/v1/image-assets/${assetId}/content`,
 });
 

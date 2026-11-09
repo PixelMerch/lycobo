@@ -5,15 +5,19 @@ import { useState } from "react";
 import { CollapsibleText } from "../../../components/collapsible-text";
 import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
+import { useLocale } from "../../../i18n/locale-store";
+import { currentMessages, useMessages } from "../../../i18n/messages";
 import { copyToClipboard } from "../../../lib/clipboard";
 import { assetContentUrl } from "../../generation/generation-client";
 import { ReferenceThumbnails } from "../../generation/references/reference-thumbnails";
 import { VideoCover } from "../player/video-cover";
 import { type Production, VideoProductionProgress } from "../production/video-production-progress";
 import { useVideoDraft } from "../video-state";
+import { videoHistoryMessages } from "./video-history-messages";
 import { VideoTaskActions } from "./video-task-actions";
 import { isVideoTaskActive, videoTaskStatus } from "./video-task-status";
 
+/** 视频任务的信息行：功能、时间、任务 ID、比例、时长、清晰度与参考图数。 */
 export function VideoHistoryMeta({
   createdAt,
   publicId,
@@ -27,32 +31,34 @@ export function VideoHistoryMeta({
   seconds: number;
   referenceCount: number;
 }) {
+  const locale = useLocale();
+  const t = useMessages(videoHistoryMessages);
   return (
-    <dl className="generation-meta" aria-label="视频任务信息">
+    <dl className="generation-meta" aria-label={t.taskInfo}>
       <div>
-        <dt className="sr-only">功能</dt>
+        <dt className="sr-only">{t.tool}</dt>
         <dd>
-          <span className="model-tag video-history-tag">视频创作</span>
+          <span className="model-tag video-history-tag">{t.videoTool}</span>
         </dd>
       </div>
       {createdAt && (
         <div>
-          <dt className="sr-only">时间</dt>
+          <dt className="sr-only">{t.time}</dt>
           <dd>
-            <time dateTime={createdAt}>{new Date(createdAt).toLocaleString("zh-CN")}</time>
+            <time dateTime={createdAt}>{new Date(createdAt).toLocaleString(locale)}</time>
           </dd>
         </div>
       )}
       {publicId && (
         <div className="generation-task-id-field">
-          <dt>任务ID：</dt>
+          <dt>{t.taskId}</dt>
           <dd>
             <Tooltip delay={0}>
               <Button
                 variant="ghost"
                 size="sm"
                 className="generation-task-id"
-                aria-label={`复制任务 ID ${publicId}`}
+                aria-label={t.copyTaskId(publicId)}
                 onPress={(event) => {
                   if (event.pointerType !== "mouse") void copyToClipboard(publicId);
                 }}
@@ -60,28 +66,28 @@ export function VideoHistoryMeta({
               >
                 {publicId}
               </Button>
-              <Tooltip.Content placement="top">双击复制任务 ID</Tooltip.Content>
+              <Tooltip.Content placement="top">{t.doubleClickToCopy}</Tooltip.Content>
             </Tooltip>
           </dd>
         </div>
       )}
       <div className="generation-meta-ratio">
-        <dt className="sr-only">画面比例</dt>
+        <dt className="sr-only">{t.aspectRatio}</dt>
         <UiIcon icon={IconAspectRatio} size="small" />
         <dd>{aspectRatio}</dd>
       </div>
       <div>
-        <dt className="sr-only">时长</dt>
-        <dd>{seconds}秒</dd>
+        <dt className="sr-only">{t.duration}</dt>
+        <dd>{t.seconds(seconds)}</dd>
       </div>
       <div>
-        <dt className="sr-only">清晰度</dt>
+        <dt className="sr-only">{t.clarity}</dt>
         <dd>768p</dd>
       </div>
       {referenceCount > 0 && (
         <div>
-          <dt className="sr-only">参考图</dt>
-          <dd>{referenceCount} 张参考图</dd>
+          <dt className="sr-only">{t.references}</dt>
+          <dd>{t.referenceCount(referenceCount)}</dd>
         </div>
       )}
     </dl>
@@ -92,7 +98,7 @@ function restoreVideoTaskDraft(input: VideoTask["input"]["video"]) {
   const references = input.referenceAssetIds.map((id, index) => ({
     id,
     assetId: id,
-    name: `图片${index + 1}`,
+    name: currentMessages(videoHistoryMessages).imageName(index + 1),
     src: assetContentUrl(id, true),
   }));
   useVideoDraft.getState().update({
@@ -106,6 +112,7 @@ function restoreVideoTaskDraft(input: VideoTask["input"]["video"]) {
   });
 }
 
+/** 一条视频历史：信息、提示词、参考图与成片或制作进度。 */
 export function VideoTaskCard({
   task,
   onRestore,
@@ -113,9 +120,10 @@ export function VideoTaskCard({
 }: {
   task: VideoTask;
   onRestore: () => void;
-  /** Present only while this task is the storyboard run still making its video. */
+  /** 只在这个任务是仍在制作视频的分镜流程时传入。 */
   production?: Production | undefined;
 }) {
+  const t = useMessages(videoHistoryMessages);
   const [confirmRestore, setConfirmRestore] = useState(false);
   const input = task.input.video;
   const originalCount = task.input.storyboardOriginalImageCount ?? 1;
@@ -128,7 +136,7 @@ export function VideoTaskCard({
     <article
       id={`video-task-${task.id}`}
       className="generation-job video-history-card"
-      aria-label={`视频任务：${task.public_id}`}
+      aria-label={t.task(task.public_id)}
     >
       <header className="video-history-header">
         <VideoHistoryMeta
@@ -154,7 +162,7 @@ export function VideoTaskCard({
               ? input.referenceAssetIds.slice(0, originalCount)
               : input.referenceAssetIds
           }
-          label="视频参考图"
+          label={t.videoReferences}
         />
         {task.input.storyboard && (
           <VideoStoryboardDetails task={task} originalCount={originalCount} />
@@ -167,8 +175,8 @@ export function VideoTaskCard({
       )}
       <ConfirmDialog
         isOpen={confirmRestore}
-        title="载入这次创作？"
-        content="当前还有未提交的内容，载入后将替换视频草稿。"
+        title={t.restoreTitle}
+        content={t.restoreContent}
         onCancel={() => setConfirmRestore(false)}
         onConfirm={restore}
       />
@@ -176,13 +184,9 @@ export function VideoTaskCard({
   );
 }
 
-export function VideoHistoryPrompt({
-  text,
-  copyLabel = "复制提示词",
-}: {
-  text: string;
-  copyLabel?: string;
-}) {
+/** 视频任务的提示词：可展开的正文与复制按钮。 */
+export function VideoHistoryPrompt({ text, copyLabel }: { text: string; copyLabel?: string }) {
+  const t = useMessages(videoHistoryMessages);
   return (
     <>
       <CollapsibleText text={text} className="generation-prompt" />
@@ -192,7 +196,7 @@ export function VideoHistoryPrompt({
         onPress={() => void copyToClipboard(text)}
       >
         <UiIcon icon={IconCopy} size="small" />
-        {copyLabel}
+        {copyLabel ?? t.copyPrompt}
       </Button>
     </>
   );
@@ -205,6 +209,7 @@ function VideoStoryboardDetails({
   task: VideoTask;
   originalCount: number;
 }) {
+  const t = useMessages(videoHistoryMessages);
   const input = task.input.video;
   return (
     <Disclosure className="video-history-ai">
@@ -212,7 +217,7 @@ function VideoStoryboardDetails({
         <>
           <Disclosure.Heading level={3}>
             <Disclosure.Trigger className="video-history-ai-trigger">
-              AI 生成内容
+              {t.aiContent}
               <Disclosure.Indicator>
                 <span>
                   <UiIcon icon={IconChevronDown} size="small" />
@@ -223,13 +228,13 @@ function VideoStoryboardDetails({
           <Disclosure.Content>
             {isExpanded && (
               <Disclosure.Body className="history-prompt">
-                <h4 className="video-history-content-label">AI 生成描述</h4>
-                <VideoHistoryPrompt text={task.prompt} copyLabel="复制 AI 描述" />
-                <h4 className="video-history-content-label">分镜图片</h4>
+                <h4 className="video-history-content-label">{t.aiDescription}</h4>
+                <VideoHistoryPrompt text={task.prompt} copyLabel={t.copyAiDescription} />
+                <h4 className="video-history-content-label">{t.storyboardImages}</h4>
                 <ReferenceThumbnails
                   ids={input.referenceAssetIds.slice(originalCount)}
-                  label="分镜图片"
-                  itemLabel="分镜图片"
+                  label={t.storyboardImages}
+                  itemLabel={t.storyboardImages}
                 />
               </Disclosure.Body>
             )}
@@ -251,6 +256,7 @@ function hasVideoDraft() {
 }
 
 function VideoTaskResult({ task }: { task: VideoTask }) {
+  const t = useMessages(videoHistoryMessages);
   const input = task.input.video;
   const active = isVideoTaskActive(task);
   const status = videoTaskStatus(task);
@@ -267,15 +273,15 @@ function VideoTaskResult({ task }: { task: VideoTask }) {
         ) : (
           <section
             className={`video-history-placeholder${active ? " generation-pending" : ""}`}
-            aria-label={`视频画面：${status}`}
+            aria-label={t.videoFrame(status)}
           >
             {active ? (
-              <Spinner size="md" aria-label="视频处理中" />
+              <Spinner size="md" aria-label={t.processing} />
             ) : (
               <UiIcon icon={IconMovie} size="illustration" />
             )}
             <span>{status}</span>
-            {active && <small>可以继续创作，完成后会自动更新</small>}
+            {active && <small>{t.keepCreating}</small>}
           </section>
         )}
       </div>

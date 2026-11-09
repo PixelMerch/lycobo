@@ -9,9 +9,11 @@ import {
   useState,
 } from "react";
 import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
 import { AssetImage } from "../../generation/asset-image";
 import { canSeek, useVideoPlayback } from "./use-video-playback";
 import { toggleFullscreen, togglePlayback, VideoPlaybackControls } from "./video-playback-controls";
+import { videoPlayerMessages } from "./video-player-messages";
 
 const idleDelay = 2500;
 const seekStep = 5;
@@ -95,10 +97,7 @@ function usePlaybackShortcuts(
   }, [video, frame, wake]);
 }
 
-/**
- * Preview playback with product controls instead of the browser chrome. The poster is the cached
- * list cover, so the frame has content while the original video buffers.
- */
+/** 预览播放器：用自己的控制栏代替浏览器自带控件；封面用列表缓存的封面图，原视频缓冲时画面也不空。 */
 export function VideoPlayer({
   assetId,
   title,
@@ -116,6 +115,7 @@ export function VideoPlayer({
   seconds: number | undefined;
   onRetry: () => void;
 }) {
+  const t = useMessages(videoPlayerMessages);
   const [video, setVideo] = useState<HTMLVideoElement | null>(null);
   const frame = useRef<HTMLDivElement>(null);
   const barToggle = useRef<HTMLButtonElement>(null);
@@ -178,7 +178,7 @@ export function VideoPlayer({
           playsInline
           preload="auto"
           controlsList="nodownload"
-          aria-label={`视频：${title}`}
+          aria-label={t.video(title)}
         />
       )}
       {!posterFailed && (
@@ -238,20 +238,21 @@ function VideoPlaybackStatus({
   barToggle: RefObject<HTMLButtonElement | null>;
   retry: () => void;
 }) {
+  const t = useMessages(videoPlayerMessages);
   if (failed)
     return (
       <div className="video-preview-error">
         <UiIcon icon={IconMovieOff} size="illustration" />
-        <p>视频暂时无法播放</p>
+        <p>{t.cannotPlay}</p>
         <Button size="sm" variant="ghost" className="video-preview-retry" onPress={retry}>
-          重新加载
+          {t.reload}
         </Button>
       </div>
     );
   if (loading)
     return (
       <span className="video-preview-loading">
-        <Spinner size="md" color="current" aria-label="正在加载视频" />
+        <Spinner size="md" color="current" aria-label={t.loading} />
       </span>
     );
   if (playback.playing || !video) return null;
@@ -261,10 +262,10 @@ function VideoPlaybackStatus({
       variant="ghost"
       className="video-preview-play"
       data-replay={playback.ended || undefined}
-      aria-label={playback.ended ? "重新播放" : "播放视频"}
+      aria-label={playback.ended ? t.replay : t.playVideo}
       onPress={(event) => {
         togglePlayback(video);
-        // This button leaves once playback starts; keep keyboard focus on the bar toggle.
+        // 播放开始后这个按钮会消失，键盘焦点交给控制栏的播放按钮。
         if (event.pointerType === "keyboard" || event.pointerType === "virtual")
           barToggle.current?.focus();
       }}

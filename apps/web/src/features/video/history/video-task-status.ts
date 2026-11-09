@@ -1,22 +1,19 @@
 import type { VideoTask } from "@lycoboai/contracts";
+import { currentMessages } from "../../../i18n/messages";
+import { videoHistoryMessages } from "./video-history-messages";
 
-const statusText = {
-  queued: "排队中",
-  running: "生成中",
-  succeeded: "已完成",
-  failed: "生成失败，积分已退回",
-  needs_reconciliation: "结果待核对，请勿重复提交",
-};
-
+/** 视频任务是否还在排队或生成。 */
 export const isVideoTaskActive = (task: VideoTask) =>
   task.status === "queued" || task.status === "running";
 
+/** 视频任务当前状态的说明，细分参考图失效、暂停、待确认与正在保存。 */
 export function videoTaskStatus(task: VideoTask) {
+  const t = currentMessages(videoHistoryMessages);
   if (task.status === "failed" && task.error_code === "VIDEO_REFERENCES_UNAVAILABLE")
-    return "参考图无法读取，视频积分已退回";
-  if (task.status !== "running") return statusText[task.status];
-  if (task.provider_status === "paused") return "任务暂停，等待恢复";
-  if (task.provider_status === "pending_confirmation") return "结果待确认，请勿重复提交";
-  if (task.provider_status === "completed") return "正在保存视频";
-  return statusText.running;
+    return t.referencesUnavailable;
+  if (task.status !== "running") return t.statuses[task.status];
+  if (task.provider_status === "paused") return t.paused;
+  if (task.provider_status === "pending_confirmation") return t.pendingConfirmation;
+  if (task.provider_status === "completed") return t.saving;
+  return t.statuses.running;
 }

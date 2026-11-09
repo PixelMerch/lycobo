@@ -1,9 +1,5 @@
 import { Button, Spinner } from "@heroui/react";
-import {
-  storyboardOriginalImageLimit,
-  videoReferenceUnavailableMessage,
-  videoUnitCredits,
-} from "@lycoboai/contracts";
+import { storyboardOriginalImageLimit, videoUnitCredits } from "@lycoboai/contracts";
 import { CreditCoin } from "../../components/credit-coin";
 import { ReferencePrompt } from "../../components/reference-prompt/reference-prompt";
 import { useErrorToast } from "../../lib/error-toast";
@@ -18,7 +14,12 @@ import { automaticVideoCost } from "./storyboard/use-storyboard";
 import { useSubmitVideo, useVideoModel } from "./video-client";
 import { useVideoDraft, videoPromptLimit, videoRatios } from "./video-state";
 import "./video.css";
+import type { Locale } from "../../i18n/locale";
+import { useMessages } from "../../i18n/messages";
+import { videoMessages } from "./video-messages";
+/** 视频创作的参数面板：商品图、场景描述、比例与时长，或自动分镜制作。 */
 export function VideoPage() {
+  const t = useMessages(videoMessages);
   const draft = useVideoDraft();
   const submission = useSubmitVideo();
   const production = useStoryboardWorkspace();
@@ -40,7 +41,7 @@ export function VideoPage() {
     references.length <= storyboardOriginalImageLimit;
   const referenceLimit = Math.max(production.maxOriginalImages, references.length);
   return (
-    <section className="composer-panel video-composer" aria-label="视频创作参数">
+    <section className="composer-panel video-composer" aria-label={t.parameters}>
       <div className="composer-scroll">
         <WorkspaceComposerTitle />
         <ReferencePicker
@@ -49,14 +50,14 @@ export function VideoPage() {
           prompt={draft.prompt}
           onChange={setReferences}
           limit={referenceLimit}
-          label="商品图片"
+          label={t.productImages}
         />
         {references.length > 1 && !draft.reuseReferences && (
-          <p className="video-reference-hint">第 1 张为主图，其余为补充参考。</p>
+          <p className="video-reference-hint">{t.productImagesHint}</p>
         )}
         <ReferencePrompt
           className="prompt-field"
-          label="场景描述"
+          label={t.scene}
           isRequired
           value={draft.prompt}
           onChange={(prompt) => draft.update({ prompt })}
@@ -65,7 +66,7 @@ export function VideoPage() {
             if (references.length + images.length <= referenceLimit)
               setReferences([...references, ...images], prompt);
           }}
-          placeholder="例如：晨光卧室，镜头推近，展示被面的绗缝和纹理"
+          placeholder={t.scenePlaceholder}
           optimizeTool="video"
           maxReferences={referenceLimit}
           maxLength={videoPromptLimit}
@@ -76,7 +77,7 @@ export function VideoPage() {
           <>
             <section className="parameter-group video-ratio">
               <div className="ratio-heading">
-                <h2>画面比例</h2>
+                <h2>{t.aspectRatio}</h2>
                 <span className="ratio-current">{draft.ratio}</span>
               </div>
               <HomeRatioPicker
@@ -109,15 +110,21 @@ export function VideoPage() {
 type Production = ReturnType<typeof useStoryboardWorkspace>;
 type VideoDraft = ReturnType<typeof useVideoDraft.getState>;
 
-function previousVideoLabel(submitting: boolean, production: Production) {
+type VideoText = (typeof videoMessages)[Locale];
+
+function previousVideoLabel(submitting: boolean, production: Production, t: VideoText) {
   if (submitting) return undefined;
-  if (production.busy) return "上一条视频制作中";
-  return production.needsResume ? "请先处理上一条视频" : undefined;
+  if (production.busy) return t.previousRunning;
+  return production.needsResume ? t.resolvePrevious : undefined;
 }
 
-function videoAvailabilityMessage(referenceBlocked: boolean, storyboardUnavailable: boolean) {
-  if (referenceBlocked) return videoReferenceUnavailableMessage;
-  return storyboardUnavailable ? "视频制作暂不可用，请稍后重试。" : undefined;
+function videoAvailabilityMessage(
+  referenceBlocked: boolean,
+  storyboardUnavailable: boolean,
+  t: VideoText,
+) {
+  if (referenceBlocked) return t.referencesUnavailable;
+  return storyboardUnavailable ? t.unavailable : undefined;
 }
 
 function VideoGeneration({
@@ -141,12 +148,12 @@ function VideoGeneration({
       production,
       submission,
     });
+  const t = useMessages(videoMessages);
   return (
     <div className="generate-area">
       {showEstimate && (
         <p className="video-reference-hint">
-          预计 {automaticVideoCost} 积分（画面 {automaticVideoCost - videoUnitCredits} + 视频{" "}
-          {videoUnitCredits}），竖屏 9:16 · 10 秒。
+          {t.estimate(automaticVideoCost, automaticVideoCost - videoUnitCredits, videoUnitCredits)}
         </p>
       )}
       <Button
@@ -174,7 +181,7 @@ function VideoGeneration({
             size="md"
             color="current"
             role="status"
-            aria-label={production.busy ? "正在制作视频" : "正在提交视频任务"}
+            aria-label={production.busy ? t.producing : t.submitting}
           />
         )}
         {previousVideo ?? submitLabel}
@@ -203,22 +210,23 @@ function useVideoGenerationState({
   submission: ReturnType<typeof useSubmitVideo>;
 }) {
   const model = useVideoModel();
+  const t = useMessages(videoMessages);
   const busy = submission.isPending || production.busy;
   const valid = hasPromptDescription(prompt);
   const productionInProgress = production.busy || production.needsResume;
-  // The button reflects the form's own submission; a run it has handed off only blocks the next.
+  // 按钮只反映这个表单自己的提交；已交出去的制作只会挡住下一次提交。
   const submitting = production.busy ? !production.handedOff : submission.isPending;
-  const previousVideo = previousVideoLabel(submitting, production);
+  const previousVideo = previousVideoLabel(submitting, production, t);
   const referenceBlocked =
     model.data?.referenceImagesEnabled === false && !submission.hasPending && referenceCount > 0;
   const canSubmit = canSubmitVideo(automatic, production, submission, valid, referenceCount);
   const storyboardUnavailable = automatic && production.unavailable;
   const unavailable = productionInProgress
     ? undefined
-    : videoAvailabilityMessage(referenceBlocked, storyboardUnavailable);
+    : videoAvailabilityMessage(referenceBlocked, storyboardUnavailable, t);
   useErrorToast(submission.error?.message ?? model.error?.message ?? unavailable);
-  const idleLabel = !busy && submission.hasPending ? "确认上次提交" : "立即生成";
-  const submitLabel = production.busy ? "正在制作" : idleLabel;
+  const idleLabel = !busy && submission.hasPending ? t.confirmLastSubmission : t.generateNow;
+  const submitLabel = production.busy ? t.inProduction : idleLabel;
   const idle = !productionInProgress && !busy && !referenceBlocked;
   return {
     submitting,
