@@ -34,7 +34,7 @@ for (const width of [1440, 320]) {
     const header = page.locator(".topbar");
     const credits = header.getByRole("button", { name: "积分 200，免费版" });
     await expect(credits).toBeVisible();
-    // 积分菜单按 vidmuse 只有升级、余额、去订阅与使用详情；充值从账户菜单进入。
+    // 积分菜单只有升级、余额、开通会员与积分明细；充值从账户菜单进入。
     if (width < 768) await page.getByRole("button", { name: "打开导航", exact: true }).click();
     const account = page.getByRole("button", { name: "账户菜单：membership-fixture", exact: true });
     await account.click();
@@ -59,7 +59,7 @@ for (const width of [1440, 320]) {
     if (width < 768) await page.getByRole("button", { name: "关闭导航", exact: true }).click();
     await expect(draft).toHaveValue("保留创作草稿，不创建付费任务");
     await credits.click();
-    await page.getByRole("menuitem", { name: "去订阅", exact: true }).click();
+    await page.getByRole("menuitem", { name: "开通会员", exact: true }).click();
     await expect(page).toHaveURL(/\/commerce\/create$/);
     const membership = page.getByRole("dialog", { name: "会员订阅", exact: true });
     await expect(membership).toBeVisible();
@@ -130,7 +130,7 @@ test("credits menu opens on hover without taking focus and works from the keyboa
   const menu = page.getByRole("menu", { name: "积分 200，免费版", exact: true });
   await expect(menu).toBeVisible();
   await expect(draft).toBeFocused();
-  await expect(menu.getByRole("menuitem")).toHaveText(["免费版升级", "去订阅", "积分使用详情"]);
+  await expect(menu.getByRole("menuitem")).toHaveText(["免费版升级", "开通会员", "积分明细"]);
   await expect(menu.getByText("积分余额", { exact: true })).toBeVisible();
   await expect(page.locator(".credits-menu-balance strong")).toHaveText("200");
   await expect(credits).toHaveCSS("outline-style", "none");
@@ -138,15 +138,15 @@ test("credits menu opens on hover without taking focus and works from the keyboa
   await page.mouse.move(400, 600);
   await expect(menu).toHaveCount(0);
 
-  // 键盘：Enter 打开后焦点进入第一项，上下键移动，Enter 打开积分使用明细。
+  // 键盘：Enter 打开后焦点进入第一项，上下键移动，Enter 打开积分明细。
   await credits.focus();
   await page.keyboard.press("Enter");
   await expect(menu.getByRole("menuitem", { name: "免费版，升级", exact: true })).toBeFocused();
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("ArrowDown");
-  await expect(menu.getByRole("menuitem", { name: "积分使用详情", exact: true })).toBeFocused();
+  await expect(menu.getByRole("menuitem", { name: "积分明细", exact: true })).toBeFocused();
   await page.keyboard.press("Enter");
-  const usage = page.getByRole("dialog", { name: "积分使用明细", exact: true });
+  const usage = page.getByRole("dialog", { name: "积分明细", exact: true });
   await expect(usage).toBeVisible();
   await expect(usage.getByText("暂无消耗记录", { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/commerce\/create$/);
@@ -154,7 +154,7 @@ test("credits menu opens on hover without taking focus and works from the keyboa
   await expect(usage).toHaveCount(0);
   await expect(credits).toBeFocused();
 
-  // “升级”与“去订阅”都打开会员订阅，关闭后焦点回到积分胶囊。
+  // “升级”与“开通会员”都打开会员订阅，关闭后焦点回到积分胶囊。
   await credits.click();
   await menu.getByRole("menuitem", { name: "免费版，升级", exact: true }).click();
   const membership = page.getByRole("dialog", { name: "会员订阅", exact: true });
@@ -240,8 +240,8 @@ test("credit usage pages spent and earned records with expandable details", asyn
   await page.goto("/commerce/create");
   const credits = page.locator(".topbar").getByRole("button", { name: "积分 200，免费版" });
   await credits.click();
-  await page.getByRole("menuitem", { name: "积分使用详情", exact: true }).click();
-  const usage = page.getByRole("dialog", { name: "积分使用明细", exact: true });
+  await page.getByRole("menuitem", { name: "积分明细", exact: true }).click();
+  const usage = page.getByRole("dialog", { name: "积分明细", exact: true });
   const rows = usage.locator(".credit-usage-row");
   await expect(rows).toHaveCount(10);
   await expect(rows.first()).toContainText("图片生成");
@@ -255,7 +255,7 @@ test("credit usage pages spent and earned records with expandable details", asyn
   await expect(rows).toHaveCount(3);
   await expect(pager.getByRole("button", { name: "下一页", exact: true })).toBeDisabled();
 
-  await usage.getByRole("radio", { name: "已获得", exact: true }).click();
+  await usage.getByRole("radio", { name: "获得", exact: true }).click();
   await expect(rows).toHaveCount(2);
   await expect(rows.nth(0)).toContainText("生成失败退款");
   await expect(rows.nth(0)).toContainText("+ 8");
@@ -269,7 +269,7 @@ test("credit usage pages spent and earned records with expandable details", asyn
   await expect(usage).toHaveCSS("outline-style", "none");
   await page.screenshot({ path: "/tmp/lycobo-credit-usage.png" });
   expect([...new Set(requests)]).toEqual(["?limit=100"]);
-  await usage.getByRole("button", { name: "关闭积分使用明细", exact: true }).click();
+  await usage.getByRole("button", { name: "关闭积分明细", exact: true }).click();
   await expect(credits).toBeFocused();
 });
 
@@ -286,11 +286,11 @@ test("sparse earned records load older batches automatically", async ({ page }) 
   });
   await page.goto("/commerce/create");
   await page.locator(".topbar .header-credits").click();
-  await page.getByRole("menuitem", { name: "积分使用详情", exact: true }).click();
-  const usage = page.getByRole("dialog", { name: "积分使用明细", exact: true });
+  await page.getByRole("menuitem", { name: "积分明细", exact: true }).click();
+  const usage = page.getByRole("dialog", { name: "积分明细", exact: true });
   await expect(usage.locator(".credit-usage-row")).toHaveCount(10);
-  await usage.getByRole("radio", { name: "已获得", exact: true }).click();
-  // 第一批全是消耗，切到已获得时自动续读更早一批，凑出真实的获得记录。
+  await usage.getByRole("radio", { name: "获得", exact: true }).click();
+  // 第一批全是消耗，切到获得时自动续读更早一批，凑出真实的获得记录。
   await expect(usage.locator(".credit-usage-row")).toHaveCount(2);
   await expect(usage.locator(".credit-usage-row").first()).toContainText("签到奖励");
   expect([...new Set(requests)]).toEqual(["?limit=100", "?limit=100&before=801"]);
@@ -314,7 +314,7 @@ test("full-screen membership supports audiences, seats, explanations and FAQ wit
   });
   await page.goto("/commerce/create");
   await page.locator(".topbar .header-credits").click();
-  await page.getByRole("menuitem", { name: "去订阅", exact: true }).click();
+  await page.getByRole("menuitem", { name: "开通会员", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "会员订阅", exact: true });
   await dialog.getByRole("tab", { name: "团队", exact: true }).hover();
   await expect(dialog.getByRole("tab", { name: "个人", exact: true })).toHaveAttribute(

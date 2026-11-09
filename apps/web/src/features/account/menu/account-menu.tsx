@@ -125,7 +125,8 @@ export function AccountMenu({
             disabledKeys={logout.isPending ? ["logout"] : []}
             onAction={(key) => {
               if (key === "recharge" || key === "membership") open(key);
-              else if (key === "ledger") openCenter("credits", triggerRef.current);
+              // “积分明细”与顶部栏积分菜单打开同一个明细弹窗；完整账单在“积分与账单”。
+              else if (key === "ledger") openOverlay("usage", triggerRef.current);
               else if (key === "center") openCenter("credits", triggerRef.current);
               else if (key === "works") go("/assets");
               else if (key === "settings") openOverlay("settings", triggerRef.current);

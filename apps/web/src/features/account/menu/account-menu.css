@@ -32,15 +32,18 @@
   background: var(--interaction-hover);
   transform: none;
 }
+/* 账户头像一律是正圆：顶部栏、手机抽屉账户行与菜单身份区（HeroUI 默认是圆角方形）。 */
 .account-trigger .account-avatar {
   width: 24px;
   height: 24px;
   min-width: 24px;
+  border-radius: 50%;
   background: #505050;
   color: #fff;
   font-size: 12px;
 }
 .account-avatar .avatar__fallback {
+  border-radius: 50%;
   background: #505050;
   color: #fff;
 }
@@ -94,6 +97,7 @@
 .account-menu-avatar,
 .account-menu-avatar .avatar__fallback {
   flex: none;
+  border-radius: 50%;
   width: 40px;
   min-width: 40px;
   height: 40px;

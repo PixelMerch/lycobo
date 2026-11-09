@@ -32,7 +32,7 @@ export function HomePage() {
       <section className="home-start" aria-labelledby="home-title">
         <h1 id="home-title" className="home-slogan">
           {mode.slogan.map((part) => (
-            <span key={part}>{part}</span>
+            <SloganPart key={part} text={part} highlight={mode.sloganHighlight} />
           ))}
         </h1>
         <Tabs
@@ -72,5 +72,18 @@ export function HomePage() {
       <HomeFooter />
       <HomeDock />
     </section>
+  );
+}
+
+/** 标语的一段；含关键词时，关键词用当前模式的强调渐变显示（Lycobo 自己的标语样式）。 */
+function SloganPart({ text, highlight }: { text: string; highlight: string }) {
+  const index = text.indexOf(highlight);
+  if (index < 0) return <span>{text}</span>;
+  return (
+    <span>
+      {text.slice(0, index)}
+      <em className="home-slogan-highlight">{highlight}</em>
+      {text.slice(index + highlight.length)}
+    </span>
   );
 }

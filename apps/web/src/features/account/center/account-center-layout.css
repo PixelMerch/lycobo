@@ -43,6 +43,7 @@
 .account-profile-avatar,
 .account-profile-avatar .avatar__fallback {
   flex: none;
+  border-radius: 50%;
   width: 32px;
   min-width: 32px;
   height: 32px;

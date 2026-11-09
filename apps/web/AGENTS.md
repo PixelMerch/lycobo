@@ -24,9 +24,11 @@ Local uploads stay preview-only until submission; the server validates and store
   contrast, reduced-transparency fallback and native HeroUI focus handling; never add an opaque
   surface as a local default. The standalone login page uses the same dark-glass material and swaps its two faces.
   The full-screen membership page is an explicit exception: opaque background, no backdrop blur
-  or modal fade/scale transitions. Two more named exceptions follow vidmuse (2026-11-09): the top-bar
-  dropdowns (电商, credits) use the `header-menu` surface (#FFFFFF14, 40px blur, no edge) and the
-  credit usage dialog is an opaque #2B302A panel over an 85% black mask. Add no others without a request.
+  or modal fade/scale transitions. One more named exception (2026-11-09): the top-bar dropdowns
+  (电商, credits) use the `header-menu` surface (#FFFFFF14, 40px blur, no edge). Add no others without a request.
+- The home page borrows the vidmuse layout but must keep Lycobo's own character (user, 2026-11-09):
+  upright slogan with a mode-gradient keyword, tool-accent mode tabs, lime-to-mint generation pills,
+  in-card glass hover panels and our own wording. Do not copy reference-site styling, copy or assets.
 - Follow PRD.md for navigation: the top bar shows Home, 电商 (a dropdown with the four tools:
   main image, textile variation, image-set plan, video) and Asset Library. Inside the workspace
   the tool dock still switches tools. TK has no current navigation entry.

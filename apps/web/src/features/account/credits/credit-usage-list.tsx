@@ -89,7 +89,7 @@ function UsageRow({ entry, currentUid }: { entry: WalletEntry; currentUid: strin
             <span className="credit-usage-name">{usageTitle(entry)}</span>
             <span className="credit-usage-time">{usageTime(entry.created_at)}</span>
           </span>
-          <span className="credit-usage-amount" data-spent={entry.amount < 0 || undefined}>
+          <span className="credit-usage-amount" data-positive={entry.amount > 0 || undefined}>
             {usageAmount(entry.amount)}
           </span>
         </Disclosure.Trigger>

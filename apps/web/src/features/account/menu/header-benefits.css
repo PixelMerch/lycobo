@@ -94,15 +94,15 @@
   height: 28px;
   padding: 0 12px;
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--app-primary-gradient);
   color: var(--accent-foreground);
   font-size: var(--text-xs);
   font-weight: var(--weight-medium);
   line-height: 16px;
-  transition: background-color 200ms ease;
+  transition: filter 200ms ease;
 }
 .credits-menu-plan:is([data-hovered="true"], [data-focused="true"]) .credits-menu-upgrade {
-  background: color-mix(in oklab, var(--accent) 85%, #fff);
+  filter: brightness(1.06);
 }
 /* 余额行只展示数字：左侧 #FFFFFF80 标签，右侧白色等宽数字。 */
 .credits-menu .credits-menu-balance {

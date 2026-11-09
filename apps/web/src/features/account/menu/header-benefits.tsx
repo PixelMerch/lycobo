@@ -1,5 +1,5 @@
 import { Dropdown, Header } from "@heroui/react";
-import { IconFileInvoice, IconShoppingBag } from "@tabler/icons-react";
+import { IconCrown, IconFileInvoice } from "@tabler/icons-react";
 import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
 import { useHoverMenu } from "../../../lib/use-hover-menu";
@@ -9,8 +9,8 @@ import { useWallet } from "../wallet-client";
 import "./header-benefits.css";
 
 /**
- * 顶部栏积分胶囊（按 vidmuse）：左侧积分与真实企业共享余额，右侧会员等级；
- * 悬停或点按展开积分菜单，可升级、查看余额、去订阅或打开积分使用详情。
+ * 顶部栏积分胶囊：左侧积分与真实企业共享余额，右侧会员等级；
+ * 悬停或点按展开积分菜单，可升级、查看余额、开通会员或打开积分明细。
  */
 export function HeaderBenefits() {
   const wallet = useWallet();
@@ -71,13 +71,13 @@ export function HeaderBenefits() {
               <span>积分余额</span>
               <strong>{balance}</strong>
             </Header>
-            <Dropdown.Item id="subscribe" textValue="去订阅" className="credits-menu-action">
-              <UiIcon icon={IconShoppingBag} size="navigation" />
-              去订阅
+            <Dropdown.Item id="membership" textValue="开通会员" className="credits-menu-action">
+              <UiIcon icon={IconCrown} size="navigation" />
+              开通会员
             </Dropdown.Item>
-            <Dropdown.Item id="usage" textValue="积分使用详情" className="credits-menu-action">
+            <Dropdown.Item id="usage" textValue="积分明细" className="credits-menu-action">
               <UiIcon icon={IconFileInvoice} size="navigation" />
-              积分使用详情
+              积分明细
             </Dropdown.Item>
           </Dropdown.Section>
         </Dropdown.Menu>

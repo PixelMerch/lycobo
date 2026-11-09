@@ -32,28 +32,27 @@ export type HomeTemplate = { name: string; icon: TablerIcon; prompt: string };
 /** 上传列的两行入口：两行都打开同一个文件选择框，第一张图在工具里作为主图。 */
 type UploadRow = { label: string; icon: TablerIcon };
 
-/** 描述框空白时的提示：前后两段文字之间嵌一个“上传商品图”胶囊（按 vidmuse 的提示行）。 */
-export type PromptHint = { before: string; after: string };
-
 type ModeCopy = {
   /** 标语按逗号分成两段，窄屏只在逗号后换行。 */
   slogan: [string, string];
+  /** 标语第二段里用当前模式强调渐变突出的关键词。 */
+  sloganHighlight: string;
   upload: [UploadRow, UploadRow];
   uploadLimit: number;
-  /** 家纺裂变没有文字描述，也就没有提示行。 */
-  promptHint: PromptHint | null;
+  placeholder: string;
   templates: HomeTemplate[];
 };
 
 const modeCopy: Record<HomeModeId, ModeCopy> = {
   create: {
     slogan: ["让每件商品，", "都有一张好主图"],
+    sloganHighlight: "好主图",
     upload: [
       { label: "商品图", icon: IconShoppingBag },
       { label: "参考图", icon: IconFolder },
     ],
     uploadLimit: 5,
-    promptHint: { before: "帮我根据", after: "生成一张……的电商主图" },
+    placeholder: "描述你想要的画面，输入 @ 引用已上传图片",
     templates: [
       {
         name: "白底主图",
@@ -86,22 +85,24 @@ const modeCopy: Record<HomeModeId, ModeCopy> = {
   },
   textile: {
     slogan: ["一张家纺主图，", "裂变整套视角"],
+    sloganHighlight: "整套视角",
     upload: [
       { label: "家纺主图", icon: IconLayoutCollage },
       { label: "详情图", icon: IconPhotoPlus },
     ],
     uploadLimit: 6,
-    promptHint: null,
+    placeholder: "",
     templates: [],
   },
   variation: {
     slogan: ["整套商品图，", "先规划再生成"],
+    sloganHighlight: "先规划",
     upload: [
       { label: "商品图", icon: IconShoppingBag },
       { label: "参考图", icon: IconFolder },
     ],
     uploadLimit: 5,
-    promptHint: { before: "帮我根据", after: "规划一整套……的商品套图" },
+    placeholder: "描述整套图片的用途、场景和卖点，输入 @ 引用商品图",
     templates: [
       {
         name: "详情页套图",
@@ -129,12 +130,13 @@ const modeCopy: Record<HomeModeId, ModeCopy> = {
   },
   video: {
     slogan: ["让商品图片，", "动起来讲卖点"],
+    sloganHighlight: "动起来",
     upload: [
       { label: "商品主图", icon: IconShoppingBag },
       { label: "补充参考", icon: IconPhoto },
     ],
     uploadLimit: storyboardOriginalImageLimit,
-    promptHint: { before: "帮我把", after: "做成一段……的商品视频" },
+    placeholder: "描述画面主体、动作和镜头运动，例如：晨光卧室，镜头推近展示面料纹理",
     templates: [
       {
         name: "商品展示",

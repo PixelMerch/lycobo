@@ -132,48 +132,8 @@
   gap: 12px;
   min-width: 0;
 }
-.home-prompt-shell {
-  position: relative;
+.home-prompt {
   flex: 1;
-  min-width: 0;
-}
-/* 空白提示行（按 vidmuse）：#FFFFFF66 文字中间嵌 28px 上传胶囊；聚焦后隐藏，改回原生占位。 */
-.home-prompt-hint {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 12px;
-  color: #ffffff66;
-  font-size: var(--text-base);
-  line-height: 21px;
-  pointer-events: none;
-}
-/* 只在输入区本身聚焦时隐藏；点胶囊时焦点落在胶囊上，提示行不能先消失，否则按下会被取消。 */
-.home-prompt-shell:has(.home-prompt:focus-within) .home-prompt-hint {
-  display: none;
-}
-.home-prompt-chip.button {
-  height: 28px;
-  min-height: 28px;
-  padding: 4px 16px;
-  gap: 6px;
-  border: 0;
-  border-radius: 6px;
-  background: rgb(160 180 140 / 10%);
-  color: #ffffff80;
-  font-size: var(--text-base);
-  font-weight: var(--weight-regular);
-  line-height: 20px;
-  backdrop-filter: blur(15px);
-  pointer-events: auto;
-}
-.home-prompt-chip.button:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
-  background: rgb(160 180 140 / 18%);
-  color: #ffffffcc;
 }
 .home-prompt.text-field {
   gap: 0;
@@ -224,12 +184,6 @@
   font-weight: var(--weight-regular);
   opacity: 1;
 }
-/* 提示行显示时原生占位透明（读屏仍读得到），聚焦后恢复显示。 */
-.home-prompt-shell[data-empty]:not(:has(.home-prompt:focus-within))
-  .home-prompt
-  .textarea::placeholder {
-  color: transparent;
-}
 .home-composer .home-prompt .textarea:focus-visible {
   outline: none;
   box-shadow: none;
@@ -268,7 +222,7 @@
   line-height: var(--leading-base);
   backdrop-filter: blur(15px);
 }
-/* “开始创作”与 vidmuse 的 Create 一样是白底黑字胶囊；未填写时降低不透明度。 */
+/* “开始创作”用 Lycobo 生成按钮：青柠→薄荷渐变胶囊、#142000 字；未填写时降低不透明度。 */
 .home-submit.button {
   height: 40px;
   min-width: 0;
@@ -276,9 +230,9 @@
   gap: 4px;
   border: 0;
   border-radius: 28px;
-  background: #fff;
+  background: var(--app-primary-gradient);
   box-shadow: none;
-  color: #111;
+  color: var(--accent-foreground);
   font-size: var(--text-base);
   font-weight: var(--weight-medium);
   line-height: 20px;
@@ -290,8 +244,9 @@
   opacity: 0.4;
 }
 .home-submit.button[data-active="true"]:is(:hover, [data-hovered="true"]) {
-  background: #fff;
+  background: var(--app-primary-gradient);
   box-shadow: 0 0 24px #a8ff0059;
+  filter: brightness(1.04);
 }
 
 /* 模型和画面设置弹层（主图制作模式）。 */

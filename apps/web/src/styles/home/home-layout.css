@@ -111,11 +111,18 @@ body:has(.commerce-home) {
   padding: 0 0.08em;
   color: #f0f7e6;
   font-size: 60px;
-  font-style: italic;
   font-weight: 700;
   line-height: 72px;
   letter-spacing: -0.025em;
   text-align: center;
+}
+/* Lycobo 自己的标语样式：正体，关键词用当前模式的强调渐变（主图制作即品牌青柠→薄荷）。 */
+.home-slogan-highlight {
+  background: linear-gradient(120deg, var(--home-glow) 15%, var(--home-glow-soft) 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-style: normal;
 }
 .home-modes.tabs {
   display: grid;
@@ -159,14 +166,16 @@ body:has(.commerce-home) {
   opacity: 1;
 }
 .home-modes .tabs__tab[data-selected="true"] {
-  color: #000;
+  color: #0d100c;
 }
+/* 选中底色跟随工具强调色（主图青柠、家纺杏色、套图青绿、视频天蓝），带一圈同色柔光。 */
 .home-modes .toggle-selection {
   position: absolute;
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: #fff;
+  background: var(--home-glow);
+  box-shadow: 0 0 20px color-mix(in oklab, var(--home-glow) 35%, transparent);
 }
 .home-mode-icon {
   flex: none;

@@ -276,8 +276,7 @@ test("home inspiration cards offer 做同款 by hover or keyboard without submit
   const tile = tileOf("水光香氛");
   const panel = tile.locator(".home-inspiration-panel");
   const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
-  // 悬停面板接在卡片下方：先把卡片滚到靠上的位置再直接移动鼠标，
-  // 避免 Playwright 的 hover 把卡片重新滚到视口底边、让面板落到视口外。
+  // 先把卡片滚到靠上的位置再直接移动鼠标，避免 Playwright 的 hover 自行滚动页面、让卡片停在视口底边。
   const centerOf = async (target: typeof tile) => {
     const box = await target.boundingBox();
     if (!box) throw new Error("Missing inspiration target");
@@ -301,7 +300,7 @@ test("home inspiration cards offer 做同款 by hover or keyboard without submit
   await expect(card.getByRole("button")).toHaveCount(0);
   await expect(panel).toHaveCSS("opacity", "0");
 
-  // 面板属于卡片按钮：点面板标题打开这张卡的详情，不会点到下面的卡。
+  // 玻璃面板在卡片内、属于卡片按钮：点面板打开这张卡的详情。
   await hoverNearTop(tile);
   await expect(panel).toHaveCSS("opacity", "1");
   await clickCenter(panel);
@@ -513,27 +512,34 @@ for (const width of [1440, 390]) {
   });
 }
 
-test("prompt hint chip opens the picker and yields to the native placeholder on focus", async ({
+test("home uses Lycobo's own brand language instead of copying the reference look", async ({
   page,
 }) => {
   await mockImageApi(page);
   await page.goto("/");
-  const hint = page.locator(".home-prompt-hint");
-  await expect(hint).toHaveText("帮我根据商品图生成一张……的电商主图");
-  const prompt = page.getByRole("textbox", { name: "创作需求", exact: true });
-  await expect(prompt).toHaveAttribute("placeholder", "帮我根据商品图生成一张……的电商主图");
-  const chooser = page.waitForEvent("filechooser");
-  await hint.getByRole("button", { name: "上传商品图", exact: true }).click();
-  await chooser;
-  await prompt.focus();
-  await expect(hint).toBeHidden();
-  await prompt.fill("白底主图");
-  await prompt.blur();
-  await expect(hint).toHaveCount(0);
-  await page.getByRole("tab", { name: "家纺裂变" }).click();
+  // 标语正体，关键词用当前模式的强调渐变；模式页签选中底色跟随工具强调色。
+  await expect(page.locator(".home-slogan")).toHaveCSS("font-style", "normal");
+  const highlight = page.locator(".home-slogan-highlight");
+  await expect(highlight).toHaveText("好主图");
+  await expect(highlight).toHaveCSS("background-image", /linear-gradient/);
+  const selection = page.locator(".home-modes .toggle-selection");
+  await expect(selection).toHaveCSS("background-color", "rgb(168, 255, 0)");
+  // 开始创作是青柠→薄荷渐变胶囊；描述框用本站占位文字。
+  await expect(page.locator(".home-submit")).toHaveCSS("background-image", /linear-gradient/);
+  await expect(page.getByRole("textbox", { name: "创作需求", exact: true })).toHaveAttribute(
+    "placeholder",
+    "描述你想要的画面，输入 @ 引用已上传图片",
+  );
   await expect(page.locator(".home-prompt-hint")).toHaveCount(0);
-  await page.getByRole("tab", { name: "视频创作" }).click();
-  await expect(page.locator(".home-prompt-hint")).toHaveText("帮我把商品主图做成一段……的商品视频");
+  await page.getByRole("tab", { name: "家纺裂变" }).click();
+  await expect(highlight).toHaveText("整套视角");
+  await expect
+    .poll(() => selection.evaluate((element) => getComputedStyle(element).backgroundColor))
+    .toBe("rgb(255, 178, 122)");
+  // 顶部栏头像是正圆。
+  const avatar = page.locator(".topbar .account-avatar");
+  await expect(avatar).toHaveCSS("border-top-left-radius", "50%");
+  await expect(avatar.locator(".avatar__fallback")).toHaveCSS("border-top-left-radius", "50%");
 });
 
 test("home footer links only to real pages", async ({ page }) => {

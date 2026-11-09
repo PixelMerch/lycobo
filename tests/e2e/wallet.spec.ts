@@ -58,7 +58,8 @@ test("enterprise account shows shared balance, member spending and recharge reco
   await page.goto("/commerce/create");
   await expect(page.locator(".header-credits")).toContainText("200");
   await page.locator(".account-trigger").click();
-  await page.getByRole("menuitem", { name: "积分明细", exact: true }).click();
+  // 头像菜单的“积分明细”打开积分明细弹窗；完整账单表格在“积分与账单”。
+  await page.getByRole("menuitem", { name: "积分与账单", exact: true }).click();
   // The ledger opens in the account center dialog above the current page.
   const center = page.getByRole("dialog", { name: "积分与账单", exact: true });
   await expect(center.getByRole("tab", { name: "积分明细", exact: true })).toHaveAttribute(
@@ -111,7 +112,8 @@ test("billing failures stay unknown and retry real reads", async ({ page }) => {
   });
   await page.goto("/commerce/create");
   await page.locator(".account-trigger").click();
-  await page.getByRole("menuitem", { name: "积分明细", exact: true }).click();
+  // 头像菜单的“积分明细”打开积分明细弹窗；完整账单表格在“积分与账单”。
+  await page.getByRole("menuitem", { name: "积分与账单", exact: true }).click();
   const center = page.getByRole("dialog", { name: "积分与账单", exact: true });
   const ledger = center.getByRole("region", { name: "积分明细", exact: true });
   await expect(ledger.locator(".account-toolbar-meta")).toContainText("当前可用 — 积分");

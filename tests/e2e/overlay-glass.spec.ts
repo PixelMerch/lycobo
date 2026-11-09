@@ -30,7 +30,7 @@ for (const mobile of [false, true]) {
     await expect(menu).toHaveCSS("background-color", "rgba(255, 255, 255, 0.08)");
     await expect(menu).toHaveCSS("backdrop-filter", "blur(40px)");
     await expect(menu).toHaveCSS("border-top-width", "0px");
-    await expect(page.getByRole("menuitem", { name: "去订阅", exact: true })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "开通会员", exact: true })).toBeVisible();
     await expect(page.getByRole("menu")).toHaveCSS("outline-style", "none");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,

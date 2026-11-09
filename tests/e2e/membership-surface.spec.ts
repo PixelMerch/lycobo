@@ -9,7 +9,7 @@ for (const width of [1440, 390]) {
     const draft = page.getByRole("textbox", { name: "创作需求", exact: true });
     await draft.fill("打开会员页前的草稿");
     await page.locator(".header-credits").click();
-    await page.getByRole("menuitem", { name: "去订阅", exact: true }).click();
+    await page.getByRole("menuitem", { name: "开通会员", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "会员订阅", exact: true });
     await expect(dialog).toBeAttached();
     const frames = await dialog.evaluate(async (node) => {
