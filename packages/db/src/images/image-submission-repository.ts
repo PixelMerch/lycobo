@@ -54,8 +54,12 @@ async function verifySubmissionReferences(
       await tx`select input,status from variation_plans where id=${input.variation.planId} and organization_id=${scope.organizationId} and user_id=${scope.userId}`;
     if (plan?.status !== "ready") throw new ImageRepositoryError("STATE_CONFLICT");
     const original = variationPlanInputSchema.parse(plan.input);
-    if (JSON.stringify(original.referenceAssetIds) !== JSON.stringify(input.referenceAssetIds))
-      throw new ImageRepositoryError("REFERENCE_NOT_FOUND");
+    // 新文本计划在提交时绑定素材数量，已有计划仍锁定原素材与顺序；素材归属已在上方校验。
+    const referencesMatch =
+      original.referenceCount !== undefined && !original.referenceAssetIds.length
+        ? original.referenceCount === input.referenceAssetIds.length
+        : JSON.stringify(original.referenceAssetIds) === JSON.stringify(input.referenceAssetIds);
+    if (!referencesMatch) throw new ImageRepositoryError("REFERENCE_NOT_FOUND");
   }
 }
 

@@ -8,6 +8,7 @@ export const variationPlanItemSchema = z.strictObject({
   prompt: z.string().trim().min(5).max(4000),
 });
 export const variationPlanInputSchema = z.strictObject({
+  referenceCount: z.number().int().min(0).max(5).optional(),
   description: z
     .string()
     .trim()
@@ -23,6 +24,7 @@ export const variationPlanSchema = z.object({
   id: z.uuid(),
   status: z.enum(["running", "ready", "failed", "uncertain"]),
   referenceAssetIds: z.array(z.uuid()).max(5),
+  referenceCount: z.number().int().min(0).max(5).optional(),
   description: z.string(),
   items: z.array(variationPlanItemSchema).max(variationPlanLimit),
 });

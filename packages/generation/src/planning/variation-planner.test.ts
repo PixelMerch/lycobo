@@ -191,3 +191,20 @@ it.each(["length", "stop"])(
     expect(calls).toBe(1);
   },
 );
+
+it("plans with reference numbers before uploads exist and never sends image content", async () => {
+  const request: typeof fetch = async (_url, init) => {
+    const body = JSON.parse(String(init?.body));
+    expect(body.messages[1].content).toContain("参考图1、参考图2");
+    expect(JSON.stringify(body)).not.toMatch(/image_url|data:image|base64/);
+    return reply([{ title: "商品", prompt: "参考图1与参考图2，保留主体材质，柔和自然光。" }]);
+  };
+  const items = await planVariation(
+    { description: "生成一张商品图", referenceAssetIds: [], referenceCount: 2 },
+    config,
+    "count-only",
+    undefined,
+    request,
+  );
+  expect(items).toHaveLength(1);
+});

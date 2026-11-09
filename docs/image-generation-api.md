@@ -152,3 +152,10 @@ Worker 以 `Image generation stage timing` 输出结构化分段计时，包含 
 迁移统一使用 `packages/db/migrations/0038_asset_favorites.sql` 及其后续追加迁移。先升级目标 PostgreSQL，再部署 API；主站和独立图片 Worker 共用同一条 Drizzle 迁移链，不在运行时修改结构。
 
 参考图单张原文件最多 50 MiB。浏览器把超过 5 MiB 的文件压缩为不超过 5 MiB 的上传副本，以减少网络传输，原文件保留在本地。副本最长边最多 3840 像素并保留透明通道。服务端再次校验并生成规范化 PNG，超过 4 MiB 时继续按比例缩小；该规则不应用于付费生成结果。不透明参考图发送中转站前可转 JPEG，透明图保持 PNG。
+
+
+## 文本规划与参考图并行
+
+POST /variation-plans 的可选 referenceCount 为 0–5，仅表达参考图数量；前端新计划发送 referenceAssetIds=[] 与实际 referenceCount，同时独立上传。模型只收到参考图编号。计划响应保留 referenceCount，旧客户端忽略新增字段；已有带素材 ID 的计划继续按原规则处理。
+
+确认生成时，image-tasks 必须携带已持久化素材 ID，事务内校验归属、有效期和数量后才扣费。数量型计划匹配上传后的素材数量，已绑定 ID 的旧计划仍要求 ID 和顺序一致。上传缓存按组织、用户、原图片 ID 隔离；上传错误不重复调用规划模型。该变更使用既有 JSON input，不新增迁移；部署需先更新服务端再发布新前端。

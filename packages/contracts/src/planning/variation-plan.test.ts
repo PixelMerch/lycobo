@@ -66,3 +66,10 @@ it("rejects more than twenty plans without widening ordinary output limits", () 
       .success,
   ).toBe(false);
 });
+
+it("accepts count-only planning without weakening the maximum reference count", () => {
+  const input = { description: "生成商品图", referenceAssetIds: [] };
+  expect(variationPlanInputSchema.parse({ ...input, referenceCount: 2 }).referenceCount).toBe(2);
+  for (const referenceCount of [-1, 6, 1.5, "2"])
+    expect(variationPlanInputSchema.safeParse({ ...input, referenceCount }).success).toBe(false);
+});
