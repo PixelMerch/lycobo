@@ -71,6 +71,9 @@ Local uploads stay preview-only until submission; the server validates and store
   name, toast and client-side error message comes from a colocated `*-messages.ts` catalog built with
   `defineMessages` from src/i18n; the zh-CN entry sets the shape and the English entry must match it. Components read
   text with `useMessages`, code outside React with `currentMessages`; dates and numbers use the current locale.
-  Never translate user input or model-generated plans.
+  Server errors arrive in Chinese: show them as sent in Chinese and map the error code to English through
+  lib/server-error.ts. Never translate user input, model-generated plans or model-facing instructions, and keep
+  shared protocol text (the @图片N prompt token, the textile prompt marker) unchanged. `pnpm lint` runs
+  scripts/check-ui-text.mjs, which rejects Chinese literals outside catalogs and Chinese inside English entries.
 - No server modules or secrets in apps/web or packages/contracts. VITE_* is public.
 - UI mockups are references, never a screenshot used as a functional page.

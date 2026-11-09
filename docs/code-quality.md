@@ -52,6 +52,18 @@ TypeScript 使用 strict 模式，并开启 `noUncheckedIndexedAccess`、`exactO
 
 API features 的生产业务代码不能引用 app/index/cloudflare/cloudflare-app 入口；业务实现不能引用其他业务的 routes，路由注册器仍可组合路由。跨应用导入仅保留主站 cloudflare-app 到图片 cloudflare-runtime、Worker 集成脚本到 API app 两条既有装配边界。测试可以引用本应用入口，但不能任意跨应用。检查覆盖字面量路径，不做完整别名解析或传递依赖分析。
 
+## 界面文字检查
+
+界面提供简体中文与英文。`scripts/check-ui-text.mjs` 扫描 `apps/web/src` 的 TS、TSX 源码（测试除外）：
+
+| 检查项     | 要求                                                                   |
+| ---------- | ---------------------------------------------------------------------- |
+| 中文字面量 | 字符串、模板字符串和 JSX 文字里的中文只能写在 `*-messages.ts` 文案目录 |
+| 英文文案   | 文案目录 `defineMessages` 的 `en` 版本里不能出现中文                   |
+| 提示词引用 | “@图片N”是与服务端共用的提示词写法，不算界面文字                       |
+
+不随界面语言变化的固定中文（语言菜单里的语言自称、交给模型的局部修改说明、家纺裂变的提示词标记、完成回执的校验标记）列在脚本的 `allowedFiles` 里并写明原因；新增条目要说明它为什么不是界面文字。注释不受这项检查影响。
+
 ## 中文注释检查
 
 `scripts/check-code-comments.mjs` 只检查规则起点之后新增或改过的 TS、TSX、MJS 代码。旧代码没改到不会报错，所以不用批量翻译，基线也不用记录旧注释。
