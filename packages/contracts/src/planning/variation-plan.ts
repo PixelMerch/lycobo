@@ -28,11 +28,22 @@ export const variationPlanSchema = z.object({
   description: z.string(),
   items: z.array(variationPlanItemSchema).max(variationPlanLimit),
 });
+/**
+ * 生成时的一条方案：可选 referenceAssetIds 指定这一条只发送哪些参考图（必须是任务参考图的子集）；
+ * 缺省时沿用旧行为，发送任务的全部参考图，已保存任务的输入与幂等哈希不变。
+ */
+export const variationGenerationItemSchema = variationPlanItemSchema.extend({
+  referenceAssetIds: z
+    .array(z.uuid())
+    .max(5)
+    .refine((ids) => new Set(ids).size === ids.length)
+    .optional(),
+});
 export const variationGenerationSchema = z.strictObject({
   version: z.literal(1),
   planId: z.uuid(),
   items: z
-    .array(variationPlanItemSchema)
+    .array(variationGenerationItemSchema)
     .min(1)
     .max(variationPlanLimit)
     .refine((items) => new Set(items.map((item) => item.id)).size === items.length),

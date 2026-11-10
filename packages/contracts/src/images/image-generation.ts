@@ -59,6 +59,11 @@ export const imageLocalEditSchema = z
   });
 export type ImageLocalEdit = z.infer<typeof imageLocalEditSchema>;
 
+/** 参考图角色：商品保持外观不变、原图是要处理的图、风格只借鉴观感。 */
+export const referenceRoleSchema = z.enum(["product", "source", "style"]);
+/** 参考图角色。 */
+export type ReferenceRole = z.infer<typeof referenceRoleSchema>;
+
 export const imageGenerationInputSchema = z
   .strictObject({
     model: imageModelCodeSchema,
@@ -86,10 +91,12 @@ export const imageGenerationInputSchema = z
       .max(10)
       .default([])
       .refine((ids) => new Set(ids).size === ids.length, "Duplicate references"),
+    // 与 referenceAssetIds 一一对应的角色；只在用户标了原图或风格时出现，旧输入缺省、哈希不变。
+    referenceRoles: z.array(referenceRoleSchema).max(10).optional(),
     count: z.number().int().min(1).max(variationPlanLimit).default(1),
-    // Keep absent on legacy snapshots so their stored idempotency hashes remain valid.
+    // 旧任务快照里缺省，保持已存幂等哈希有效。
     quality: imageQualitySchema.optional(),
-    // Absent on legacy inputs, preserving their original idempotency hashes.
+    // 旧输入里缺省，保持原有幂等哈希不变。
     localEdit: imageLocalEditSchema.optional(),
     textileSet: textileGenerationSchema.optional(),
     variation: variationGenerationSchema.optional(),
@@ -114,6 +121,17 @@ export const imageGenerationInputSchema = z
         message:
           "Textile views require one output each and one main reference and up to five detail references; ordinary tasks allow four outputs",
       });
+
+    if (input.referenceRoles && input.referenceRoles.length !== input.referenceAssetIds.length)
+      ctx.addIssue({ code: "custom", message: "Reference roles must match references" });
+    const taskReferences = new Set(input.referenceAssetIds);
+    // 每条方案指定的参考图必须来自本任务，归属已随任务参考图一起校验。
+    if (
+      input.variation?.items.some((item) =>
+        item.referenceAssetIds?.some((id) => !taskReferences.has(id)),
+      )
+    )
+      ctx.addIssue({ code: "custom", message: "Plan item references must belong to the task" });
 
     if (
       input.localEdit &&

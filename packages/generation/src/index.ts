@@ -17,6 +17,7 @@ export interface GenerationProvider {
   >;
 }
 
+export * from "./images/reference-roles";
 export * from "./images/standalone-models";
 export * from "./images/textile-generation";
 export { readPlannerStream } from "./planning/planner-stream";

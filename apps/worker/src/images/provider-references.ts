@@ -1,21 +1,22 @@
 import type { ImageGenerationInput, StoredImage } from "@lycoboai/contracts";
 import type { ClaimedImage, ImageRuntimeRepository } from "@lycoboai/db";
-import { ImageProviderError } from "@lycoboai/generation";
+import { ImageProviderError, itemReferenceAssetIds } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage/core";
 
 export type DeliverProviderReference = (asset: StoredImage, exact: boolean) => Promise<URL>;
 
-// Every item of a job sends the same references, so each is read and re-encoded once per
-// instance. Stored assets never change; the content hash is part of the key regardless.
+// 同一任务的各条输出常共用参考图，每张图在本实例只读取、压缩一次。
+// 已存的素材不会改变；缓存键始终包含内容哈希。
 const recent = new WeakMap<object, Map<string, Promise<Uint8Array>>>();
 
+/** 普通主图任务（非家纺、套图计划或局部修改）是否带参考图。 */
 export function mainImageHasReferences(input: ImageGenerationInput) {
   return (
     input.referenceAssetIds.length > 0 && !input.textileSet && !input.variation && !input.localEdit
   );
 }
 
-/** Reference bytes for a provider request. A local-edit source is sent exactly as stored. */
+/** 发给模型的参考图字节；局部修改的原图按原样发送，不压缩。 */
 export function providerReferenceBytes(
   store: Pick<ImageStore, "read" | "prepareProviderReference">,
   asset: StoredImage,
@@ -34,7 +35,7 @@ export function providerReferenceBytes(
     .read(asset)
     .then((bytes) => store.prepareProviderReference?.(bytes) ?? bytes);
   cache.set(key, pending);
-  // A failed storage read must be retried on the next attempt, not served from the cache.
+  // 存储读取失败时下次重试要重新读取，不能从缓存里拿到失败结果。
   const references = cache;
   pending.catch(() => references.delete(key));
   if (cache.size > 10) {
@@ -44,6 +45,7 @@ export function providerReferenceBytes(
   return pending;
 }
 
+/** 读取一条输出要发送的全部参考图字节。 */
 export async function readProviderReferences(
   job: ClaimedImage,
   repository: Pick<ImageRuntimeRepository, "asset">,
@@ -54,13 +56,15 @@ export async function readProviderReferences(
   );
 }
 
+/** 按一条输出要发送的参考图逐张准备内容（字节或链接），缺图时报参考图不存在。 */
 export async function mapProviderReferences<T>(
   job: ClaimedImage,
   repository: Pick<ImageRuntimeRepository, "asset">,
   prepare: (asset: StoredImage) => Promise<T>,
 ) {
   const references: T[] = [];
-  for (const id of job.input.referenceAssetIds) {
+  // 套图计划的方案指定了参考图时只发这些；其他任务与旧方案仍发送任务的全部参考图。
+  for (const id of itemReferenceAssetIds(job.input, job.position)) {
     const asset = await repository.asset(job, id);
     if (!asset) throw new ImageProviderError("REFERENCE_NOT_FOUND", false);
     references.push(await prepare(asset));

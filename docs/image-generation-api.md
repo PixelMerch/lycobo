@@ -48,6 +48,12 @@ curl http://127.0.0.1:8787/api/v1/image-tasks \
 
 服务端原图信息还保存在 media_assets：object_key、mime_type、bytes、width、height、sha256、组织、用户和创建时间。参考图上传接口请求体上限 10 MB，浏览器选图上限 50 MB；生成结果和规范化 PNG 上限 32MB，服务商 JSON 响应上限 45MB，避免高分辨率结果沿用上传体积限制。图片字节保存在私有存储，以服务端解析的 UID 分目录；数据库保存元数据和关联，不塞入 JSON 或队列消息。
 
+## 参考图角色与套图逐条参考图
+
+任务输入可选 `referenceRoles`（与 `referenceAssetIds` 一一对应，取值 `product`／`source`／`style`），只在用户标了原图或风格时出现；套图计划的方案可选 `referenceAssetIds`，必须是任务参考图的子集。Worker 通过 `itemReferenceAssetIds` 只发送这一条的图片，`textileItemInput` 在提示词前加按发送顺序的角色说明；字段缺省时发送全部参考图、提示词不变，旧任务与重试完全沿用原行为。
+
+这两个字段是向后兼容的可选字段，但图片 Worker 用严格 schema 解析已存任务：发布时先部署图片 Worker，再部署主站，避免旧消费者读到新字段而让任务失败。
+
 ## 任务与计费边界
 
 - generation_jobs 保存输入和逐图价格快照；generation_job_items 保存执行实例、租约和图片关联。

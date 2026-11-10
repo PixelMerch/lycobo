@@ -1,4 +1,5 @@
 import { type ImageGenerationInput, type TextileViewId, textileViews } from "@lycoboai/contracts";
+import { itemReferenceAssetIds, referenceRoleNotes } from "./reference-roles";
 
 const cameras: Record<TextileViewId, string> = {
   "overhead-wide":
@@ -40,6 +41,15 @@ export function normalizeTextileGeneration(input: ImageGenerationInput): ImageGe
     count: input.textileSet.views.length,
   };
 }
+/** 普通任务带角色时，把角色说明加在提示词前面；没有角色时原样返回，旧任务不受影响。 */
+function withRoleNotes(input: ImageGenerationInput): ImageGenerationInput {
+  if (!input.referenceRoles || input.localEdit) return input;
+  const { referenceRoles: _roles, ...providerInput } = input;
+  const notes = referenceRoleNotes(input, input.referenceAssetIds);
+  return notes ? { ...providerInput, prompt: `${notes}\n${input.prompt}` } : providerInput;
+}
+
+/** 一条输出的模型请求：套图计划按方案取提示词和参考图，家纺裂变按视角，普通任务加角色说明。 */
 export function textileItemInput(
   input: ImageGenerationInput,
   position: number,
@@ -47,14 +57,18 @@ export function textileItemInput(
   if (input.variation) {
     const item = input.variation.items[position];
     if (!item) throw new Error("VARIATION_POSITION_INVALID");
-    const { variation: _plan, ...providerInput } = input;
+    const { variation: _plan, referenceRoles: _roles, ...providerInput } = input;
+    // 方案指定了参考图时只发这些，并说明每张图的角色；旧方案仍发送全部参考图，提示词不变。
+    const referenceAssetIds = itemReferenceAssetIds(input, position);
+    const notes = referenceRoleNotes(input, referenceAssetIds);
     return {
       ...providerInput,
-      prompt: `${item.prompt}\n只生成一张独立图片，不拼图。输出比例：${input.aspectRatio}。`,
+      referenceAssetIds,
+      prompt: `${notes ? `${notes}\n` : ""}${item.prompt}\n只生成一张独立图片，不拼图。输出比例：${input.aspectRatio}。`,
       count: 1,
     };
   }
-  if (!input.textileSet) return input;
+  if (!input.textileSet) return withRoleNotes(input);
   const view = input.textileSet.views[position];
   if (!view) throw new Error("TEXTILE_VIEW_POSITION_INVALID");
   const referenceRules =
