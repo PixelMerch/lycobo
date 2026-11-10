@@ -355,6 +355,19 @@ body:has(.textile-views-popover) :is(.composer-scroll, .results-panel, .history-
     --textile-composer-width: 360px;
   }
 }
+/* 超宽屏工作区封顶 1872px 居中，锚点随两侧留白一起内移，视角浮层仍贴在参数栏右侧。 */
+@media (min-width: 1921px) {
+  .textile-views-anchor {
+    left: calc(var(--content-padding) + var(--textile-composer-width) + 12px + (100% - 1920px) / 2);
+    right: calc(
+      var(--content-padding) +
+      var(--workspace-history-width) +
+      12px +
+      (100% - 1920px) /
+      2
+    );
+  }
+}
 @media (max-width: 1300px) {
   .textile-views-anchor {
     --textile-composer-width: 300px;
