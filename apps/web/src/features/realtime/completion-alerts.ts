@@ -14,6 +14,7 @@ import { realtimeMessages } from "./realtime-messages";
 export function completedResult(job: ImageJob): CompletedResult {
   let path = "/commerce/create";
   if (job.input?.textileSet) path = "/commerce/textile-set";
+  if (job.input?.replica) path = "/commerce/replica";
   if (job.input?.variation) path = "/commerce/smart-variation";
   return { id: job.id, path: `${path}?task=${job.id}`, label: completionReceiptLabel };
 }

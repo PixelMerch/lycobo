@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useReplicaDraft } from "../commerce/replica/replica-state";
 import { useSmartVariationDraft } from "../commerce/smart-variation/smart-variation-state";
 import { useTextileSetDraft } from "../commerce/textile-set/textile-set-state";
 import { useStudioStore } from "../generation/studio-state";
@@ -44,6 +45,16 @@ export const workspaceTools = [
     ],
   },
   {
+    id: "replica",
+    path: "/commerce/replica",
+    hero: "/studio/tool-heroes/create.webp",
+    examples: [
+      "/studio/textile-views/front.webp",
+      "/studio/textile-views/pillow.webp",
+      "/studio/textile-views/fabric.webp",
+    ],
+  },
+  {
     id: "video",
     path: "/video",
     hero: "/studio/tool-heroes/video.webp",
@@ -54,6 +65,10 @@ export const workspaceTools = [
     ],
   },
 ] as const;
+/** 视频未开放，创作入口只显示已启用的图片工具。 */
+export const visibleWorkspaceTools = workspaceTools.filter((tool) => tool.id !== "video");
+
+/** 根据业务路径找到当前工具。 */
 export const toolForPath = (path: string) =>
   workspaceTools.find((tool) => tool.path === path) ?? workspaceTools[0];
 export const useWorkspaceState = create<{
@@ -70,6 +85,10 @@ function referencesForPath(path: string) {
     return [textile.mainImage, ...textile.detailImages].filter((image) => image !== null);
   }
   if (path === "/commerce/smart-variation") return useSmartVariationDraft.getState().references;
+  if (path === "/commerce/replica") {
+    const { product } = useReplicaDraft.getState();
+    return product ? [product] : [];
+  }
   if (path === "/video") {
     const video = useVideoDraft.getState();
     return [video.firstFrame, video.lastFrame, ...video.extraReferences].filter(
@@ -90,7 +109,9 @@ export function shareProductReference(from: string, to: string) {
   const mainImage = references[0];
   if (!mainImage) return;
   const destinationHasReferences = !!studio.drafts[studio.activeModel]?.references.length;
-  if (to === "/commerce/create" && !destinationHasReferences) {
+  if (to === "/commerce/replica" && !useReplicaDraft.getState().product) {
+    useReplicaDraft.getState().update({ product: mainImage });
+  } else if (to === "/commerce/create" && !destinationHasReferences) {
     studio.updateDraft(studio.activeModel, { references: references.slice(0, 5) });
   } else if (to === "/commerce/textile-set" && !textile.mainImage) {
     textile.update({

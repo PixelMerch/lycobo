@@ -1,5 +1,5 @@
 import { Button } from "@heroui/react";
-import { IconCamera, IconLayoutCollage, IconWand } from "@tabler/icons-react";
+import { IconCamera, IconCopy, IconLayoutCollage, IconWand } from "@tabler/icons-react";
 import { RouteLink } from "../../components/router-link";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
@@ -12,7 +12,12 @@ import { siteFooterMessages } from "./site-footer-messages";
 import { SiteFooterSocials } from "./site-footer-socials";
 import "./site-footer.css";
 
-const footerToolIcons = { create: IconCamera, textile: IconLayoutCollage, variation: IconWand };
+const footerToolIcons = {
+  create: IconCamera,
+  textile: IconLayoutCollage,
+  variation: IconWand,
+  replica: IconCopy,
+};
 
 /** 用品牌社交标识与三组真实入口收尾，首页和法律文本页共用。 */
 export function SiteFooter() {

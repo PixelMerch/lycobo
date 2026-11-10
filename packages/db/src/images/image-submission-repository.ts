@@ -33,12 +33,13 @@ async function verifySubmissionReferences(
   scope: ImageScope,
   id: string,
   input: ImageGenerationInput,
+  acceptedUploadIds: readonly string[] = [],
 ) {
-  if (input.referenceAssetIds.length) {
+  const readyIds = input.referenceAssetIds.filter((id) => !acceptedUploadIds.includes(id));
+  if (readyIds.length) {
     const refs =
-      await tx`select id,width,height from media_assets where media_type='image' and organization_id=${scope.organizationId} and id in ${tx(input.referenceAssetIds)} and (expires_at is null or expires_at>now()) and storage_deleted_at is null and cleanup_started_at is null order by id for update`;
-    if (refs.length !== input.referenceAssetIds.length)
-      throw new ImageRepositoryError("REFERENCE_NOT_FOUND");
+      await tx`select id,width,height from media_assets where media_type='image' and organization_id=${scope.organizationId} and id in ${tx(readyIds)} and (expires_at is null or expires_at>now()) and storage_deleted_at is null and cleanup_started_at is null order by id for update`;
+    if (refs.length !== readyIds.length) throw new ImageRepositoryError("REFERENCE_NOT_FOUND");
   }
   if (input.localEdit) {
     const edit = input.localEdit;
@@ -269,6 +270,7 @@ async function refreshManagedRetry(
   await refreshRetryRouting(tx, jobId, job, independent);
 }
 
+/** 原子保存任务、计费与 outbox，已接收上传可由后台完成后继续生成。 */
 export function imageSubmissionRepository(
   sql: postgres.Sql,
   settlement: ReturnType<typeof imageSettlement>,
@@ -283,6 +285,7 @@ export function imageSubmissionRepository(
       key: string,
       _legacyUnitCredits?: number,
       requireManaged = false,
+      acceptedUploadIds: readonly string[] = [],
     ) {
       const unitCredits = imageUnitCredits;
       const inputHash = hash(JSON.stringify(input));
@@ -299,7 +302,7 @@ export function imageSubmissionRepository(
         );
         if (submission.replayed) return submission;
         const { id } = submission;
-        await verifySubmissionReferences(tx, scope, id, input);
+        await verifySubmissionReferences(tx, scope, id, input, acceptedUploadIds);
         const total = unitCredits * input.count;
         const wallet = await ensureWallet(tx, scope);
         if (wallet.balance < total) throw new ImageRepositoryError("INSUFFICIENT_CREDITS");

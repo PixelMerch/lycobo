@@ -15,7 +15,10 @@ import { loginHref } from "../features/auth/login-navigation";
 import { useImageEvents } from "../features/generation/use-image-events";
 import { inspirationLibraryPath } from "../features/home/inspiration-path";
 import { legalPaths } from "../features/legal/legal-document";
-import { shareProductReference, workspaceTools } from "../features/workspace/workspace-state";
+import {
+  shareProductReference,
+  visibleWorkspaceTools,
+} from "../features/workspace/workspace-state";
 import { workspaceToolMessages } from "../features/workspace/workspace-tool-messages";
 import { toolIcons } from "../features/workspace/workspace-tool-symbol";
 import { useMessages } from "../i18n/messages";
@@ -160,7 +163,7 @@ function DrawerNavigation({ pathname, onNavigate }: { pathname: string; onNaviga
         <span className="nav-label">{t.home}</span>
       </RouteLink>
       <p className="nav-group-label">{t.commerce}</p>
-      {workspaceTools.map((tool) => (
+      {visibleWorkspaceTools.map((tool) => (
         <RouteLink
           key={tool.id}
           nav

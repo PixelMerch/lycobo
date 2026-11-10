@@ -19,7 +19,7 @@ import { workspaceTools } from "../workspace/workspace-state";
 import { workspaceToolMessages } from "../workspace/workspace-tool-messages";
 import { homeModeMessages } from "./home-modes-messages";
 
-type WorkspaceTool = (typeof workspaceTools)[number];
+type WorkspaceTool = Exclude<(typeof workspaceTools)[number], { id: "replica" }>;
 
 /** 首页创作模式与工作区四个工具一一对应。 */
 export type HomeModeId = WorkspaceTool["id"];
@@ -89,7 +89,9 @@ function toHomeMode(tool: WorkspaceTool, locale: Locale) {
 
 /** 首页各模式按当前语言组装的完整配置，顺序与工作区工具坞一致。 */
 export function homeModesFor(locale: Locale) {
-  return workspaceTools.map((tool) => toHomeMode(tool, locale));
+  return workspaceTools
+    .filter((tool) => tool.id !== "video" && tool.id !== "replica")
+    .map((tool) => toHomeMode(tool, locale));
 }
 
 /** 首页单个创作模式的完整配置。 */
@@ -97,6 +99,9 @@ export type HomeMode = ReturnType<typeof toHomeMode>;
 
 /** 读取地址里的模式参数，缺失或未知时回到主图制作。 */
 export function homeModeFor(value: string | null, locale: Locale): HomeMode {
-  const tool = workspaceTools.find((item) => item.id === value) ?? workspaceTools[0];
+  const tool =
+    workspaceTools
+      .filter((item) => item.id !== "replica" && item.id !== "video")
+      .find((item) => item.id === value) ?? workspaceTools[0];
   return toHomeMode(tool, locale);
 }

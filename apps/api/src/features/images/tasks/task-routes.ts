@@ -42,6 +42,7 @@ async function supportsStoredTaskModel(deps: ImageApiDependencies, input: unknow
   }
 }
 
+/** 校验任务与服务端上传意图，再原子接收付费生成。 */
 export function registerImageTaskSubmission(app: Hono<Env>, deps: ImageApiDependencies) {
   app.post("/image-tasks", async (c) => {
     if (!deps.enabled) return fail(c, "GENERATION_NOT_CONFIGURED", "生图服务尚未启用", 503);
@@ -58,12 +59,22 @@ export function registerImageTaskSubmission(app: Hono<Env>, deps: ImageApiDepend
       : normalizeTextileGeneration(input.data);
     if (!(await supportsTaskModel(deps, normalized)))
       return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "当前模型暂不可用，请选择其他模型", 400);
+    // 仅信任服务端按当前身份读取的 R2 上传意图，不接受客户端声明“已上传”。
+    const acceptedUploads = deps.uploads
+      ? await Promise.all(
+          normalized.referenceAssetIds.map(async (id) => {
+            const upload = await deps.uploads?.status(c.get("principal"), id);
+            return upload?.status === "pending" ? id : null;
+          }),
+        )
+      : [];
     const result = await deps.repository.create(
       c.get("principal"),
       normalized,
       key.data,
       imageUnitCredits,
       deps.managedModelsOnly,
+      acceptedUploads.filter((id) => id !== null),
     );
     return taskSubmissionResponse(c, deps.wake, result);
   });

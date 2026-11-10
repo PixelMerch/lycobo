@@ -30,6 +30,7 @@ function fixture(
     .fn<ImageRepository["create"]>()
     .mockResolvedValue({ id: crypto.randomUUID(), replayed: false });
   const repository: ImageRepository = {
+    waitingReferenceUploads: unexpected,
     close: unexpected,
     promptOptimization: extra.optimizer?.repository ?? { begin: unexpected, finish: unexpected },
     variation: {

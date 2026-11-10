@@ -74,6 +74,12 @@ const localizedRoutes: RouteObject[] = [
             },
           },
           {
+            path: "commerce/replica",
+            lazy: async () => ({
+              Component: (await import("../features/commerce/replica/replica-page")).ReplicaPage,
+            }),
+          },
+          {
             path: "video",
             lazy: async () => ({
               Component: (await import("../features/video/video-page")).VideoPage,

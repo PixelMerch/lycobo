@@ -7,7 +7,8 @@ export const completionReceiptLabel = "图片生成完成";
 export type CompletedResult = { id: string; path: string; label: string };
 type Receipts = { seen: string[]; pending: CompletedResult[] };
 const taskId = /^[0-9a-f]{8}-[0-9a-f-]{27}$/i;
-const resultPath = /^\/(create|commerce\/(textile-set|smart-variation))\?task=[0-9a-f-]{36}$/i;
+const resultPath =
+  /^\/commerce\/(create|textile-set|smart-variation|replica)\?task=[0-9a-f-]{36}$/i;
 
 function isResult(value: unknown): value is CompletedResult {
   if (!value || typeof value !== "object") return false;

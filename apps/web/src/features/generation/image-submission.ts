@@ -3,6 +3,7 @@ import {
   imageGenerationInputSchema,
   imageSubmissionResponseSchema,
   imageTaskRetrySchema,
+  imageUploadTicketSchema,
 } from "@lycoboai/contracts";
 import type { QueryClient } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
@@ -124,7 +125,11 @@ function uploadReference(
         }
         throw error;
       });
-      const uploaded = await completeReferenceUpload(upload);
+      // 202 表示原图与上传意图已持久化；由服务端等待处理，不再阻塞任务提交。
+      const uploaded =
+        upload.status === 202
+          ? { id: imageUploadTicketSchema.parse(await upload.json()).uploadId }
+          : await completeReferenceUpload(upload);
       void client.invalidateQueries({ queryKey: ["image-assets"] });
       return uploaded;
     },
@@ -140,6 +145,8 @@ export type ImageSubmission = {
   textileSet?: import("@lycoboai/contracts").TextileGeneration | undefined;
   variation?: import("@lycoboai/contracts").VariationGeneration | undefined;
   /** 与 draft.references 顺序一致的角色；只在标了原图或风格时提供。 */
+  /** 独立风格复制任务的标记，随输入落库以隔离历史。 */
+  replica?: true | undefined;
   referenceRoles?: import("@lycoboai/contracts").ReferenceRole[] | undefined;
   /** 套图计划每条方案要发送的参考图下标（从 0 开始）；上传后换成素材 ID。 */
   itemReferences?: Record<string, number[]> | undefined;
@@ -178,6 +185,7 @@ async function prepareSubmissionInput(
     variation,
     referenceRoles,
     itemReferences,
+    replica,
   }: ImageSubmission,
 ) {
   const referenceAssetIds = await uploadImageReferences(client, scope, draft.references);
@@ -194,6 +202,7 @@ async function prepareSubmissionInput(
     count: Number(draft.count),
     referenceAssetIds,
     ...(referenceRoles ? { referenceRoles } : {}),
+    ...(replica ? { replica } : {}),
     ...(localEdit ? { localEdit } : {}),
     ...(textileSet ? { textileSet } : {}),
     ...(plan ? { variation: plan } : {}),

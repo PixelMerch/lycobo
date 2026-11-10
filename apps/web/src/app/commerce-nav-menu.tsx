@@ -1,7 +1,10 @@
 import { Dropdown } from "@heroui/react";
 import { IconChevronDown } from "@tabler/icons-react";
 import { UiIcon } from "../components/ui-icon";
-import { shareProductReference, workspaceTools } from "../features/workspace/workspace-state";
+import {
+  shareProductReference,
+  visibleWorkspaceTools,
+} from "../features/workspace/workspace-state";
 import { workspaceToolMessages } from "../features/workspace/workspace-tool-messages";
 import { toolIcons } from "../features/workspace/workspace-tool-symbol";
 import { useMessages } from "../i18n/messages";
@@ -20,7 +23,7 @@ export function CommerceNavMenu({ active }: { active: boolean }) {
   const t = useMessages(shellMessages);
   const toolText = useMessages(workspaceToolMessages);
   function openTool(key: string | number) {
-    const tool = workspaceTools.find((item) => item.id === key);
+    const tool = visibleWorkspaceTools.find((item) => item.id === key);
     if (!tool) return;
     menu.close();
     shareProductReference(pathname, tool.path);
@@ -43,7 +46,7 @@ export function CommerceNavMenu({ active }: { active: boolean }) {
         isNonModal
       >
         <Dropdown.Menu aria-label={t.commerceTools} onAction={openTool}>
-          {workspaceTools.map((tool) => (
+          {visibleWorkspaceTools.map((tool) => (
             <Dropdown.Item
               key={tool.id}
               id={tool.id}

@@ -1,3 +1,4 @@
+import { toast } from "@heroui/react";
 import {
   type ImageJob,
   imageAssetsResponseSchema,
@@ -60,8 +61,9 @@ export function useImageModels(enabled = true) {
       ),
   });
 }
+/** 按工具分页读取历史，未完成任务由实时事件单独同步。 */
 export function useImageHistory(
-  tool: "create" | "textile" | "variation" | "all" | null = "create",
+  tool: "create" | "textile" | "variation" | "replica" | "all" | null = "create",
 ) {
   const session = useImageSession();
   return useInfiniteQuery<
@@ -76,8 +78,7 @@ export function useImageHistory(
     initialPageParam: "",
     retry: false,
     staleTime: 30000,
-    // Unfinished tasks converge through useImageEvents, which refetches only those tasks
-    // instead of every loaded history page.
+    // 未完成任务由实时事件定向刷新，不重复读取所有历史分页。
     queryFn: async ({ pageParam, signal }) =>
       tool === null
         ? { data: [] }
@@ -153,6 +154,7 @@ export function useGenerateImage(enabled = true) {
       locked.current = false;
     },
     onSuccess: () => {
+      toast.success(currentMessages(generationMessages).submissionAccepted);
       // 账本事件与提交回执属于同一次变更，在线时交由唯一推送通道刷新余额。
       refreshWithoutRealtime(client, "wallet", "wallet-entries");
       void client.invalidateQueries({ queryKey: ["image-tasks"] });

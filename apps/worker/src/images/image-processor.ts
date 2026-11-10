@@ -27,6 +27,7 @@ export type ImageProcessorDependencies = {
   request?: typeof fetch;
   deliverReference?: DeliverProviderReference;
   requireMainImageReferenceUrls?: boolean;
+  prepareReferences?: ((itemId: string) => Promise<"ready" | "pending" | "failed">) | undefined;
   onDeferred?: ((delayMs: number) => void) | undefined;
   onWebhookAccepted?: ((ready: boolean) => void) | undefined;
   onTiming?: ((event: GenerationTiming & { itemId: string }) => void) | undefined;
@@ -39,6 +40,7 @@ function legacyProvider(input: ImageGenerationInput, deps: ImageProcessorDepende
   return deps.provider;
 }
 
+/** 领取前等待参考图，只有图片就绪后才进入供应商执行与计费结算。 */
 export async function processImageItem(itemId: string, deps: ImageProcessorDependencies) {
   const started = performance.now();
   const timing = (stage: string, since: number) =>
@@ -46,6 +48,11 @@ export async function processImageItem(itemId: string, deps: ImageProcessorDepen
       stage,
       durationMs: Math.round(performance.now() - since),
     });
+  const references = await deps.prepareReferences?.(itemId);
+  if (references === "pending") {
+    deps.onDeferred?.(15000);
+    return;
+  }
   const job = await deps.repository.claim(
     itemId,
     deps.workerId,
@@ -53,6 +60,10 @@ export async function processImageItem(itemId: string, deps: ImageProcessorDepen
   );
   timing("claim", started);
   if (!job) return;
+  if (references === "failed") {
+    await deps.repository.finish(job, { errorCode: "REFERENCE_PROCESSING_FAILED", unknown: false });
+    return;
+  }
   if (job.configuredProvider) return processConfiguredImage(job, deps);
   let submitted = false;
   try {

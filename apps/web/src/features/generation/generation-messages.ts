@@ -21,7 +21,8 @@ export const generationMessages = defineMessages({
     confirmLastSubmission: "确认上次提交",
     generateMainImage: "生成商品主图",
     runCost: (credits: number) => `本次生成消耗 ${credits} 币`,
-    submitting: "正在提交生图任务",
+    submitting: "正在上传并提交，请保持页面打开",
+    submissionAccepted: "任务已提交，关闭页面也会继续处理。",
     backToTop: "回到顶部",
     statuses: {
       queued: "排队中",
@@ -74,7 +75,8 @@ export const generationMessages = defineMessages({
     confirmLastSubmission: "Confirm last submission",
     generateMainImage: "Generate main image",
     runCost: (credits) => `This run costs ${credits} credits`,
-    submitting: "Submitting the image task",
+    submitting: "Uploading and submitting. Keep this page open.",
+    submissionAccepted: "Task submitted. Processing continues even if you close this page.",
     backToTop: "Back to top",
     statuses: {
       queued: "Queued",

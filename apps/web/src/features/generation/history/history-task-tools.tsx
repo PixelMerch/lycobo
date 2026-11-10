@@ -55,6 +55,7 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
 export type HistoryRestore = (value: {
   model: ModelId;
   draft: Draft;
+  replica?: true | undefined;
   textileSet?: TextileGeneration | undefined;
   variation?: VariationGeneration | undefined;
 }) => void;
@@ -77,10 +78,11 @@ async function taskDraft(
   if (!input) throw new Error(t.inputIncomplete);
   return {
     model: publicImageModel(input.model),
+    replica: input.replica,
     textileSet: input.textileSet,
     variation: input.variation,
     draft: {
-      prompt: input.prompt,
+      prompt: input.replica ? input.prompt.split("\n").slice(1).join("\n") : input.prompt,
       ratio: input.aspectRatio,
       resolution: input.resolution === "1K" ? "1.5K" : input.resolution,
       quality: draftQuality(input.quality),
@@ -170,6 +172,7 @@ function historyModelOperation(job: ImageJob) {
 }
 
 function historyTaskSource(job: ImageJob) {
+  if (job.input?.replica) return "replica";
   if (job.input?.textileSet) return "textile-set";
   return job.input?.variation ? "smart-variation" : undefined;
 }
@@ -262,6 +265,8 @@ function historyRetryPayload(
   const retry = retrying ? { retryJobId: job.id } : {};
   return {
     ...restored,
+    referenceRoles: job.input?.referenceRoles,
+    draft: job.input?.replica ? { ...restored.draft, prompt: job.input.prompt } : restored.draft,
     ...(source ? { source } : {}),
     ...retry,
     ...(item ? { retryItemId: item.id } : {}),

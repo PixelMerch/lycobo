@@ -1,5 +1,5 @@
 import { Tooltip } from "@heroui/react";
-import { IconCamera, IconLayoutCollage, IconMovie, IconWand } from "@tabler/icons-react";
+import { IconCamera, IconCopy, IconLayoutCollage, IconMovie, IconWand } from "@tabler/icons-react";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
 import { useAppLocation } from "../../i18n/use-localized-navigation";
@@ -9,14 +9,16 @@ import { workspaceToolMessages } from "./workspace-tool-messages";
 import { WorkspaceToolPreview } from "./workspace-tool-preview";
 
 type ToolId = (typeof workspaceTools)[number]["id"];
-/** Shared by the workspace symbols and the asset library's 功能 filter. */
+/** 工作区工具与素材库功能筛选共用的业务图标。 */
 export const toolIcons = {
   create: IconCamera,
   textile: IconLayoutCollage,
   variation: IconWand,
+  replica: IconCopy,
   video: IconMovie,
 };
 
+/** 工具入口使用统一线性图标，颜色由当前状态决定。 */
 export function WorkspaceToolSymbol({ tool }: { tool: ToolId }) {
   return (
     <span className="workspace-tool-symbol" data-tool={tool} aria-hidden="true">
@@ -54,7 +56,7 @@ export function WorkspaceComposerTitle() {
         </div>
       </Tooltip.Trigger>
       <Tooltip.Content placement="right top" offset={10} className="workspace-tool-preview">
-        <WorkspaceToolPreview tool={tool} current />
+        <WorkspaceToolPreview tool={tool} />
       </Tooltip.Content>
     </Tooltip>
   );

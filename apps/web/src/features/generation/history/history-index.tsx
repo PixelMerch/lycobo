@@ -22,7 +22,7 @@ import { scrollToHistoryTask } from "./history-navigation";
 export function HistoryIndex({
   tool = "create",
 }: {
-  tool?: "create" | "textile" | "variation" | "all" | null;
+  tool?: "create" | "textile" | "variation" | "replica" | "all" | null;
 }) {
   const query = useImageHistory(tool);
   const catalog = useModelPresentation();

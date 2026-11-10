@@ -100,6 +100,19 @@ export const imageGenerationInputSchema = z
     localEdit: imageLocalEditSchema.optional(),
     textileSet: textileGenerationSchema.optional(),
     variation: variationGenerationSchema.optional(),
+    // 新任务才携带标记，不改变已有任务的幂等输入。
+    replica: z.literal(true).optional(),
+  })
+  .superRefine((input, ctx) => {
+    if (input.replica) {
+      const validRoles = input.referenceRoles?.join(",") === "style,product";
+      const mixedTools = !!input.textileSet || !!input.variation || !!input.localEdit;
+      if (input.referenceAssetIds.length !== 2 || !validRoles || mixedTools)
+        ctx.addIssue({
+          code: "custom",
+          message: "Style matching requires one style image followed by one product image",
+        });
+    }
   })
   .superRefine((input, ctx) => {
     const maxTextileReferences = (input.textileSet?.version ?? 0) >= 2 ? 6 : 2;
@@ -258,9 +271,9 @@ export type ImageJob = z.infer<typeof imageJobSchema>;
 export const imageTasksResponseSchema = z.object({ data: z.array(imageJobSchema) });
 export const assetTypeSchema = z.enum(["image", "video", "audio"]);
 export type AssetType = z.infer<typeof assetTypeSchema>;
-/** Workspace tools that create images; history and the asset library filter by them. */
-export const imageToolSchema = z.enum(["create", "textile", "variation"]);
-export const assetToolSchema = z.enum(["create", "textile", "variation", "video"]);
+/** 图片创作工具标识，用于历史和素材库的独立筛选。 */
+export const imageToolSchema = z.enum(["create", "textile", "variation", "replica"]);
+export const assetToolSchema = z.enum(["create", "textile", "variation", "replica", "video"]);
 export type AssetTool = z.infer<typeof assetToolSchema>;
 export type ImageTool = z.infer<typeof imageToolSchema>;
 /** Each member keeps at most this many favorites, so the favorite id list stays bounded. */

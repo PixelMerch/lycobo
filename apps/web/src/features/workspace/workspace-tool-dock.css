@@ -28,46 +28,10 @@
   :is(.reference-picker, .prompt-field, .model-field, .parameter-group) {
   background: transparent;
 }
-/* Each tool carries one accent: the current dock tile, its hover preview and history tags use it. */
-:is(
-  .unified-workspace,
-  .workspace-tool-shortcut,
-  .workspace-composer-hero,
-  .workspace-tool-symbol,
-  .workspace-tool-preview-card
-)[data-tool="create"] {
+/* 工作区只保留品牌青柠，不再按功能分配多种强调色。 */
+.unified-workspace {
   --tool-accent: #a8ff00;
-  --tool-soft: #d4ff8a;
-}
-:is(
-  .unified-workspace,
-  .workspace-tool-shortcut,
-  .workspace-composer-hero,
-  .workspace-tool-symbol,
-  .workspace-tool-preview-card
-)[data-tool="textile"] {
-  --tool-accent: #ffb27a;
-  --tool-soft: #ffcfa8;
-}
-:is(
-  .unified-workspace,
-  .workspace-tool-shortcut,
-  .workspace-composer-hero,
-  .workspace-tool-symbol,
-  .workspace-tool-preview-card
-)[data-tool="variation"] {
-  --tool-accent: #4fe3b0;
-  --tool-soft: #9ff0d0;
-}
-:is(
-  .unified-workspace,
-  .workspace-tool-shortcut,
-  .workspace-composer-hero,
-  .workspace-tool-symbol,
-  .workspace-tool-preview-card
-)[data-tool="video"] {
-  --tool-accent: #7cc4ff;
-  --tool-soft: #b9e0ff;
+  --tool-soft: #ffffffb3;
 }
 .workspace-tool-symbol {
   display: inline-flex;
@@ -231,8 +195,8 @@
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: var(--fill-medium);
-  color: #d8d8d8;
+  background: transparent;
+  color: #ffffffb3;
   transition:
     transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
     background-color 180ms ease,
@@ -243,13 +207,13 @@
   transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .workspace-tool-shortcut.button[data-hovered="true"] .workspace-tool-symbol {
-  background: var(--fill-strong);
-  color: var(--tool-accent, #ffffff);
+  background: transparent;
+  color: #fff;
 }
-/* 当前工具用淡色强调底与强调色图标标出，不再用整块饱和色和彩色投影；工具配色仍可区分。 */
+/* 选中项只点亮图标，避免行底与图标底叠成厚重的两层。 */
 .workspace-tool-shortcut.button[aria-current="page"] .workspace-tool-symbol {
-  background: color-mix(in srgb, var(--tool-accent) 18%, transparent);
-  color: var(--tool-accent);
+  background: transparent;
+  color: var(--accent);
   box-shadow: none;
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -294,114 +258,6 @@
   .workspace-tool-shortcut .workspace-tool-symbol > .ui-icon {
     transition: none;
   }
-}
-/* Hover or keyboard focus on a tool previews it: sample results, what it does and how to use it. */
-.tooltip.workspace-tool-preview {
-  width: 300px;
-  max-width: calc(100vw - 24px);
-  padding: 10px;
-  border-radius: 16px;
-  background: #1a1a1a;
-  box-shadow:
-    inset 0 0 0 1px #ffffff14,
-    0 18px 40px -12px #000000cc;
-  color: #f2f2f2;
-  word-break: normal;
-}
-.workspace-tool-preview-card {
-  display: grid;
-  gap: 8px;
-}
-.workspace-tool-preview-media {
-  position: relative;
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  grid-template-rows: repeat(2, 66px);
-  gap: 4px;
-  overflow: hidden;
-  border-radius: 12px;
-}
-.workspace-tool-preview-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  background: #ffffff;
-}
-.workspace-tool-preview-media img:first-child {
-  grid-row: 1 / span 2;
-}
-.workspace-tool-preview-badge {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  padding: 1px 6px;
-  border-radius: 6px;
-  background: #0f0f0fcc;
-  color: #f2f2f2;
-  font-size: 11px;
-  line-height: 16px;
-}
-.workspace-tool-preview-card p {
-  margin: 0;
-}
-.workspace-tool-preview-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 2px;
-  font-size: var(--text-base);
-  line-height: var(--leading-base);
-}
-.workspace-tool-preview-current {
-  padding: 0 6px;
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--tool-accent) 15%, transparent);
-  color: var(--tool-soft);
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  font-weight: var(--weight-semibold);
-}
-.workspace-tool-preview-summary {
-  color: #c8c8c8;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
-.workspace-tool-preview-steps {
-  display: grid;
-  gap: 6px;
-  margin: 2px 0 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: preview-step;
-}
-.workspace-tool-preview-steps li {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  color: #d8d8d8;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  counter-increment: preview-step;
-}
-.workspace-tool-preview-steps li::before {
-  content: counter(preview-step);
-  display: inline-grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--tool-accent) 18%, transparent);
-  color: var(--tool-soft);
-  font-size: 11px;
-  font-weight: var(--weight-semibold);
-}
-.workspace-tool-preview-hint {
-  padding-top: 8px;
-  border-top: 1px solid #ffffff0f;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
 }
 /* 历史上方的吸顶条：窄屏是工具坞，桌面是“生成记录”标题行（工具坞改成左侧竖排工具栏）。 */
 .workspace-tool-dock {

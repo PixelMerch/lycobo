@@ -29,7 +29,7 @@ export function GenerationHistory({
   onRestore,
 }: {
   compact?: boolean;
-  tool?: "create" | "textile" | "variation" | "all" | null;
+  tool?: "create" | "textile" | "variation" | "replica" | "all" | null;
   onRestore?: import("./history-task-tools").HistoryRestore;
 }) {
   const session = useImageSession();
@@ -150,9 +150,10 @@ function historyJobs(
 
 function matchesHistoryTool(job: ImageJob, tool: Parameters<typeof useImageHistory>[0]) {
   if (tool === "all") return true;
+  if (tool === "replica") return !!job.input?.replica;
   if (tool === "variation") return !!job.input?.variation;
   if (tool === "textile") return !!job.input?.textileSet;
-  return !job.input?.textileSet && !job.input?.variation;
+  return !job.input?.textileSet && !job.input?.variation && !job.input?.replica;
 }
 
 function useActiveHistory(
