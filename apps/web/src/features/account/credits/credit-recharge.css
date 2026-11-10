@@ -36,17 +36,17 @@
   padding: 18px;
   border: 1px solid #ffffff0f;
   border-radius: 20px;
-  background: #121212;
+  background: var(--fill-faint);
   color: var(--foreground);
   box-shadow: none;
   text-align: left;
 }
 .credit-pack:is(:hover, [data-hovered]) {
-  background: #191a18;
+  background: var(--fill-medium);
 }
 .credit-pack[data-selected] {
   border-color: var(--accent);
-  background: linear-gradient(160deg, #263510 0%, #121212 72%);
+  background: linear-gradient(160deg, #a8ff001f 0%, var(--fill-faint) 72%);
 }
 .credit-pack-value {
   display: flex;
@@ -82,7 +82,7 @@
   flex-direction: column;
   padding: var(--space-5);
   border-radius: 20px;
-  background: #222225;
+  background: var(--fill-faint);
 }
 .credit-order h3 {
   margin: 0 0 10px;

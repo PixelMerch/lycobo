@@ -38,13 +38,13 @@
   height: 24px;
   min-width: 24px;
   border-radius: 50%;
-  background: #505050;
+  background: var(--fill-selected);
   color: #fff;
   font-size: 12px;
 }
 .account-avatar .avatar__fallback {
   border-radius: 50%;
-  background: #505050;
+  background: var(--fill-selected);
   color: #fff;
 }
 .account-trigger-name {

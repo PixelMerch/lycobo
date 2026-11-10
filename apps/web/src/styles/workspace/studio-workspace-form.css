@@ -164,7 +164,7 @@
 }
 .parameter-options :is(.button, .toggle-button)[data-selected="true"] {
   color: var(--link);
-  background: var(--surface-tertiary);
+  background: var(--control-selected-fill);
 }
 .parameter-options :is(.button, .toggle-button):disabled,
 .parameter-options :is(.button, .toggle-button)[data-disabled="true"] {
@@ -175,10 +175,10 @@
 }
 @media (hover: hover) {
   .parameter-options :is(.button, .toggle-button):hover {
-    background: var(--surface-secondary);
+    background: var(--control-hover-fill);
   }
   .parameter-options :is(.button, .toggle-button)[data-selected="true"]:hover {
-    background: var(--surface-tertiary);
+    background: var(--control-selected-fill);
   }
 }
 .generate-area {
@@ -207,7 +207,7 @@
   box-shadow: 0 0 16px #a8ff0020;
 }
 .generation-submit.button:is(:disabled, [data-disabled="true"]) {
-  background: #343434;
+  background: var(--fill-medium);
   color: #8b8794;
   filter: none;
   box-shadow: none;

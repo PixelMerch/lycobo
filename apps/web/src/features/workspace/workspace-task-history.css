@@ -159,7 +159,7 @@
 }
 .unified-workspace .generation-placeholder:not(.generation-failed) {
   border: 0;
-  background: #1c1c21;
+  background: var(--fill-faint);
 }
 .unified-workspace .generation-results:not([data-count="1"]) .generation-failure-message {
   font-size: var(--text-xs);
@@ -199,11 +199,11 @@
   justify-self: center;
   gap: 6px;
   color: #d9d7de;
-  background: #202026;
+  background: var(--fill-medium);
 }
 .history-batch-toggle.button[data-hovered="true"] {
   color: #ffffff;
-  background: #2a2a31;
+  background: var(--fill-strong);
 }
 @media (max-width: 767px) {
   .history-batch-progress {

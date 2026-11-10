@@ -303,7 +303,6 @@
   padding: 19px 21px;
   border: 0;
   border-radius: 18px;
-  background: #272727;
   color: #ddd;
 }
 .home-settings .popover__dialog {
@@ -390,7 +389,7 @@
   padding: 3px;
   border: 0;
   border-radius: 20px;
-  background: #ffffff0f;
+  background: var(--fill-soft);
   margin-bottom: var(--space-3);
 }
 .home-settings-options .toggle-button-group:last-child {
@@ -471,13 +470,13 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: #4a4a4a;
+  background: var(--fill-selected);
   color: #ddd;
   box-shadow: 0 2px 8px #00000066;
   z-index: 2;
 }
 .home-ratio-arrow.button:hover {
-  background: #555;
+  background: var(--fill-bright);
 }
 .home-ratio-arrow-left {
   left: 6px;

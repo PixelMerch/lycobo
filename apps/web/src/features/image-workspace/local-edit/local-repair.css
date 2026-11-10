@@ -60,7 +60,7 @@
 }
 .repair-region-card[data-selected="true"] {
   border-color: #ffffff29;
-  background: #1c1c21;
+  background: var(--fill-faint);
 }
 .repair-region-heading {
   display: flex;
@@ -93,14 +93,14 @@
   height: 24px;
   border: 0;
   border-radius: 50%;
-  background: #343434;
+  background: var(--fill-medium);
   color: #eee;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
   font-weight: var(--weight-medium);
 }
 .repair-region-card[data-selected="true"] .repair-badge {
-  background: #505050;
+  background: var(--fill-selected);
   color: #fff;
 }
 .repair-region-remove.button {
@@ -170,14 +170,14 @@
   min-height: 40px;
   border: 1px solid #ffffff0a;
   border-radius: 10px;
-  background: #26262d;
+  background: var(--fill-medium);
   color: #eee;
   font-size: var(--text-base);
   line-height: var(--leading-base);
   box-shadow: none;
 }
 .repair-result.button:is(:hover, [data-hovered="true"]) {
-  background: var(--control-hover-fill);
+  background: var(--fill-strong);
   color: #fff;
 }
 @media (max-width: 767px) {

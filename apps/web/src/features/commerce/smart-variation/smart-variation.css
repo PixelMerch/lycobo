@@ -154,7 +154,7 @@
 }
 .variation-plan-card {
   padding: var(--space-4);
-  background: #222;
+  background: var(--fill-faint);
   border-radius: 16px;
 }
 .variation-plan-card-heading {
@@ -181,7 +181,7 @@
 }
 .variation-plan-card input,
 .variation-plan-card textarea {
-  background: #171717;
+  background: var(--fill-inset);
   font-size: var(--text-sm);
   color: #eee;
   border: 1px solid #ffffff12;
@@ -293,7 +293,7 @@
 
 /* Selection is explicit; inactive plans stay editable but visually subdued. */
 .variation-plan-card[data-selected="false"] {
-  background: #1c1c1c;
+  background: transparent;
 }
 .variation-plan-card[data-selected="false"] :is(input, textarea) {
   color: #909090;
@@ -303,7 +303,7 @@
   color: var(--accent-foreground);
 }
 .variation-plan-card .checkbox__control {
-  background: #292929;
+  background: var(--fill-medium);
   border: 1px solid #ffffff26;
   color: #aaa;
 }

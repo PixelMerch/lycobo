@@ -98,7 +98,7 @@
   background: transparent;
 }
 .preview-canvas-toolbar .toggle-button[data-selected="true"] {
-  background: #505050;
+  background: var(--fill-selected);
   color: #fff;
 }
 /* Neutral hover on the dark pill, matching the option tracks elsewhere. */
@@ -108,7 +108,7 @@
   color: #fff;
 }
 .preview-canvas-toolbar .toggle-button[data-selected="true"]:is(:hover, [data-hovered="true"]) {
-  background: #5a5a5a;
+  background: var(--fill-bright);
   color: #fff;
 }
 .preview-canvas-status {

@@ -3,9 +3,9 @@
  * 随玻璃底色变化，不出现与底色不搭的实色灰块。
  */
 :is(.home-settings, .home-settings-trigger, .reference-mention-popover) {
-  --studio-control-hover: #ffffff14;
-  --studio-control-pressed: #ffffff1f;
-  --studio-control-selected: #ffffff29;
+  --studio-control-hover: var(--control-hover-fill);
+  --studio-control-pressed: var(--control-pressed-fill);
+  --studio-control-selected: var(--control-selected-fill);
 }
 :is(
   .home-settings-trigger.button,

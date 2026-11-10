@@ -15,11 +15,11 @@
 
 /* Unified workspace groups and model selection palette. */
 .composer-panel .model-field {
-  background: #272727;
+  background: var(--fill-faint);
 }
 .composer-panel .model-field .model-select {
   color: #eee;
-  background: #343434;
+  background: var(--fill-soft);
   border-radius: 18px;
 }
 .composer-panel .model-field .model-select:focus-visible,
@@ -27,7 +27,6 @@
   background: var(--control-hover-fill);
 }
 .model-menu {
-  background: #272727;
   border-radius: 12px;
 }
 .model-menu .model-options {
@@ -35,7 +34,7 @@
 }
 .model-menu .model-options[aria-selected="true"] {
   color: #eee;
-  background: #505050;
+  background: var(--control-selected-fill);
 }
 @media (hover: hover) {
   .model-menu .model-options:hover,
@@ -43,11 +42,11 @@
     background: var(--control-hover-fill);
   }
   .model-menu .model-options[aria-selected="true"]:hover {
-    background: #505050;
+    background: var(--control-selected-fill);
   }
 }
 .model-menu .model-options:focus-visible {
-  background: #3c3c3c;
+  background: var(--control-hover-fill);
 }
 .model-menu
   .model-options[aria-selected="true"]:is(
@@ -57,7 +56,7 @@
     [data-focus-visible]
   ) {
   color: #eee;
-  background: #505050;
+  background: var(--control-selected-fill);
 }
 
 /* Workspace ratio pager mirrors the home ratio selector. */
@@ -82,7 +81,7 @@
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   border-radius: 16px;
-  background: #343434;
+  background: var(--fill-soft);
 }
 .composer-panel .home-ratio-track::-webkit-scrollbar {
   display: none;
@@ -109,7 +108,7 @@
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: #505050;
+  background: var(--control-selected-fill);
   pointer-events: none;
 }
 .composer-panel .home-ratio-track .ratio-preview {
@@ -127,13 +126,13 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: #4a4a4a;
+  background: var(--fill-selected);
   color: #ddd;
   box-shadow: 0 2px 8px #00000066;
   z-index: 2;
 }
 .composer-panel .home-ratio-arrow.button:hover {
-  background: #555;
+  background: var(--fill-bright);
 }
 .composer-panel .home-ratio-arrow-left {
   left: 6px;
@@ -153,7 +152,7 @@
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: #505050;
+  background: var(--control-selected-fill);
   pointer-events: none;
 }
 .composer-panel .parameter-options :is(.button, .toggle-button)[data-selected="true"] {
@@ -182,7 +181,7 @@
 /* Input wells follow the home composer surface; primary action is a capsule. */
 .composer-panel .prompt-field textarea,
 .composer-panel .add-reference {
-  background: #1c1c1c;
+  background: var(--fill-inset);
   border-radius: 12px;
 }
 

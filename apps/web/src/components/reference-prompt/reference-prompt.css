@@ -8,7 +8,6 @@
   overflow: hidden auto;
   border: 1px solid #ffffff1f;
   border-radius: 16px;
-  background: #202020;
   scrollbar-width: thin;
   scrollbar-color: #ffffff33 transparent;
 }
@@ -123,7 +122,7 @@
   padding: 2px 6px 2px 2px;
   border-radius: 6px;
   color: #a8ff00;
-  background: #343434;
+  background: var(--fill-medium);
   font-size: var(--text-xs);
   line-height: 18px;
   white-space: nowrap;
@@ -416,7 +415,7 @@
 .reference-mention-options .input {
   min-width: 0;
   font-size: var(--text-xs);
-  background: #171719;
+  background: var(--field-background);
   line-height: var(--leading-xs);
 }
 .reference-mention-options .list-box-item span {

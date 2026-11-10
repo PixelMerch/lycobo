@@ -15,9 +15,10 @@
   --overlay: #24242b;
   --app-dialog-background: #1a1a1a;
   --overlay-foreground: var(--foreground);
-  --default: #2a2a32;
+  /* HeroUI 默认填充（次要按钮、切换按钮、标签等）改用半透明白，不再是旧紫灰。 */
+  --default: #ffffff14;
   --default-foreground: var(--foreground);
-  --field-background: #121216;
+  --field-background: #ffffff0a;
   --field-foreground: var(--foreground);
   --field-placeholder: #8b8794;
   --field-border: #ffffff14;
@@ -70,11 +71,23 @@
   --space-5: 20px;
   --space-6: 24px;
   --space-8: 32px;
-  --control-hover-fill: #3c3c3c;
-  --control-pressed-fill: #454545;
-  --control-selected-fill: #505050;
-  --interaction-hover: #ffffff0a;
-  --interaction-active: #ffffff14;
+  /*
+   * 统一的中性填充（用户 2026-11-10 要求）：全是半透明白，叠在毛玻璃和深色页面上都随底色变化，
+   * 不再出现与底色不搭的实色灰块。叠在常见的 #1C1C1C 深色底上，卡片≈#262626、轨道≈#2F2F2F、
+   * 选中≈#4D4D4D，与旧实色观感接近；--fill-inset 是比所在卡片更暗的输入区。
+   */
+  --fill-faint: #ffffff0a;
+  --fill-soft: #ffffff0f;
+  --fill-medium: #ffffff14;
+  --fill-strong: #ffffff1f;
+  --fill-selected: #ffffff29;
+  --fill-bright: #ffffff33;
+  --fill-inset: rgb(0 0 0 / 20%);
+  --control-hover-fill: var(--fill-medium);
+  --control-pressed-fill: var(--fill-strong);
+  --control-selected-fill: var(--fill-selected);
+  --interaction-hover: var(--fill-faint);
+  --interaction-active: var(--fill-medium);
   --dismiss-target: 44px;
   --dismiss-disc: 33px;
   --dismiss-foreground: #ffffff;
@@ -255,8 +268,8 @@ small {
 .button[data-disabled="true"] {
   cursor: not-allowed;
   opacity: 1;
-  color: #8b8794;
-  background: #2a2a32;
+  color: #ffffff66;
+  background: var(--fill-soft);
 }
 .button--primary,
 .primary-action {
@@ -274,8 +287,8 @@ small {
 .button--primary:is(:disabled, [data-disabled="true"]),
 .primary-action:disabled,
 .primary-action[data-disabled="true"] {
-  background: #343434;
-  color: #8b8794;
+  background: var(--fill-medium);
+  color: #ffffff66;
   filter: none;
   box-shadow: none;
 }

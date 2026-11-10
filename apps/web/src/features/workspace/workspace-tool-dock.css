@@ -228,7 +228,7 @@
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: #202026;
+  background: var(--fill-medium);
   color: #d9d7de;
   transition:
     transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
@@ -240,7 +240,7 @@
   transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .workspace-tool-shortcut.button[data-hovered="true"] .workspace-tool-symbol {
-  background: #26262d;
+  background: var(--fill-strong);
   color: var(--tool-accent, #ffffff);
 }
 .workspace-tool-shortcut.button[aria-current="page"] .workspace-tool-symbol {

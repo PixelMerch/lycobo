@@ -122,7 +122,7 @@
 .history-icon-action:hover,
 .history-icon-action[data-hovered="true"],
 .history-icon-action[data-focus-visible="true"] {
-  background: var(--surface-secondary);
+  background: var(--control-hover-fill);
 }
 .history-confirm-actions {
   display: flex;

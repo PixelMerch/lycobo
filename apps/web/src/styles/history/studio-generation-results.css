@@ -169,7 +169,7 @@
   justify-content: center;
   aspect-ratio: 1;
   max-height: none;
-  background: #343434;
+  background: var(--fill-strong);
   border: 0;
 }
 .generation-results[data-count="1"] .generation-placeholder.generation-failed {

@@ -65,7 +65,7 @@
 .account-table.table-root .table__column {
   padding: 11px var(--space-4);
   border-radius: 0;
-  background: #222226;
+  background: var(--fill-faint);
   color: var(--muted);
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
