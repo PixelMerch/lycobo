@@ -19,9 +19,9 @@
 }
 .workspace-history-title {
   margin: 0;
-  font-size: var(--text-base);
-  line-height: var(--leading-base);
-  font-weight: var(--weight-medium);
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
+  font-weight: var(--weight-semibold);
 }
 .workspace-composer-toggle.button {
   display: none;
