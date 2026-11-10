@@ -5,12 +5,12 @@ import { UiIcon } from "../../components/ui-icon";
 import { useLocale } from "../../i18n/locale-store";
 import { useMessages } from "../../i18n/messages";
 import { SelectionHighlight } from "../generation/composer/selection-highlight";
+import { SiteFooter } from "../site/site-footer";
 import { shareProductReference } from "../workspace/workspace-state";
 import { toolIcons } from "../workspace/workspace-tool-symbol";
 import { HomeBackdrop } from "./home-backdrop";
 import { HomeComposer } from "./home-composer";
 import { HomeDock } from "./home-dock";
-import { HomeFooter } from "./home-footer";
 import { HomeInspirationGallery } from "./home-inspiration-gallery";
 import { homeMessages } from "./home-messages";
 import { homeModeFor, homeModesFor } from "./home-modes";
@@ -89,7 +89,7 @@ export function HomePage() {
         </Tabs>
       </section>
       <HomeInspirationGallery />
-      <HomeFooter />
+      <SiteFooter />
       <HomeDock />
     </section>
   );

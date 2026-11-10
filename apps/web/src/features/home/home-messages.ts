@@ -1,6 +1,6 @@
 import { defineMessages } from "../../i18n/messages";
 
-/** 首页的界面文案：模式页签、创作按钮、模板、主图设置、家纺视角、快捷入口与页脚。 */
+/** 首页的界面文案：模式页签、创作按钮、模板、主图设置、家纺视角与快捷入口；页脚文案在 site-footer-messages.ts。 */
 export const homeMessages = defineMessages({
   "zh-CN": {
     modes: "创作模式",
@@ -25,13 +25,6 @@ export const homeMessages = defineMessages({
     views: "裂变视角",
     shortcuts: "快捷入口",
     dock: { home: "首页", workspace: "工作区", assets: "素材库" },
-    footerTools: "电商工具",
-    footerSpace: "工作空间",
-    footerLinks: { workspace: "工作区", assets: "素材库", membership: "会员订阅" },
-    homeLink: "Lycobo 首页",
-    tagline: "用一张商品图，做出整套上架图片",
-    footerNavigation: "页脚导航",
-    copyright: (year: number) => `© ${year} Lycobo。保留所有权利。`,
   },
   en: {
     modes: "Creation modes",
@@ -57,12 +50,5 @@ export const homeMessages = defineMessages({
     views: "Views",
     shortcuts: "Shortcuts",
     dock: { home: "Home", workspace: "Workspace", assets: "Assets" },
-    footerTools: "E-commerce tools",
-    footerSpace: "Your space",
-    footerLinks: { workspace: "Workspace", assets: "Assets", membership: "Membership" },
-    homeLink: "Lycobo home",
-    tagline: "From one product photo to a full set of listing images",
-    footerNavigation: "Footer navigation",
-    copyright: (year) => `© ${year} Lycobo. All rights reserved.`,
   },
 });

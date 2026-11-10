@@ -65,6 +65,10 @@
     font-size: var(--text-xs);
     line-height: 16px;
   }
+  /* 页脚底部给横条留出 64px，协议链接与版权不被遮住，大字标下缘收进横条后面。 */
+  .commerce-home .site-footer {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
   .home-modes .tabs__tab {
     height: 44px;
     padding-inline: 4px;

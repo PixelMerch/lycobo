@@ -111,6 +111,18 @@ export const router = createBrowserRouter([
         }),
       },
       {
+        path: "terms",
+        lazy: async () => ({
+          Component: (await import("../features/legal/legal-page")).TermsPage,
+        }),
+      },
+      {
+        path: "privacy",
+        lazy: async () => ({
+          Component: (await import("../features/legal/legal-page")).PrivacyPage,
+        }),
+      },
+      {
         path: "*",
         element: <PageNotFound />,
       },

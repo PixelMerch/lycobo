@@ -86,6 +86,8 @@ apps/web/src/
     │   ├── home-backdrop.tsx     # 首屏丝绸背景：每个模式一种缎面配色，切换页签时由首页触发涟漪
     │   ├── silk/                 # React Bits Silk 移植：着色器、WebGL 渲染器、动画状态与组件（来源见第三方材料）
     │   └── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，justified-rows.ts 按容器宽度（use-element-width.ts）算出等高行拼图
+    ├── site/                     # 站点页脚：首页与用户协议、隐私政策页共用
+    ├── legal/                    # 用户协议与隐私政策公开页；运营主体等待补信息集中在 legal-entity-messages.ts
     ├── assets/                   # 素材库页面、全屏我的素材与共用浏览组件（筛选、密度网格、收藏）
     ├── generation/               # 生图请求、事件、会话草稿及工作台页面
     │   ├── composer/             # 比例选择、参数选中背景、图片与视频共用的单选参数行

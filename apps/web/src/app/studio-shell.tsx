@@ -11,6 +11,7 @@ import { AccountMessages } from "../features/account/notifications/account-messa
 import { useEnterpriseSession } from "../features/auth/auth-client";
 import { loginHref } from "../features/auth/login-navigation";
 import { useImageEvents } from "../features/generation/use-image-events";
+import { legalPaths } from "../features/legal/legal-document";
 import { shareProductReference, workspaceTools } from "../features/workspace/workspace-state";
 import { workspaceToolMessages } from "../features/workspace/workspace-tool-messages";
 import { toolIcons } from "../features/workspace/workspace-tool-symbol";
@@ -22,6 +23,9 @@ import { shellMessages } from "./shell-messages";
 import { useWindowScrolled } from "./use-window-scrolled";
 import "../styles/brand.css";
 
+// 首页与用户协议、隐私政策不需要登录，其他页面未登录时先去登录。
+const publicPaths = new Set<string>(["/", legalPaths.terms, legalPaths.privacy]);
+
 /** 组合应用导航和业务区域，未登录时转往独立登录页面。 */
 export function StudioShell() {
   const location = useLocation();
@@ -29,7 +33,7 @@ export function StudioShell() {
   const inWorkspace = isWorkspacePath(pathname);
   const session = useEnterpriseSession();
   const signedIn = !!session.data;
-  const protectedRoute = pathname !== "/";
+  const protectedRoute = !publicPaths.has(pathname);
   const routeNeedsLogin = protectedRoute && !signedIn;
   const scrolled = useWindowScrolled();
   const [menuOpen, setMenuOpen] = useState(false);
