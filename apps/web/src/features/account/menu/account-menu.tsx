@@ -4,8 +4,8 @@ import { useRef } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
-import { useAppNavigate } from "../../../i18n/use-localized-navigation";
 import { useErrorToast } from "../../../lib/error-toast";
+import { useOpenAssetLibrary } from "../../assets/asset-library-store";
 import { useEnterpriseLogout, useEnterpriseSession } from "../../auth/auth-client";
 import { useOpenLogin } from "../../auth/login-prompt";
 import { roleLabel } from "../account-format";
@@ -45,17 +45,18 @@ export function AccountMenu({
 }) {
   const session = useEnterpriseSession();
   const logout = useEnterpriseLogout();
-  const navigate = useAppNavigate();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const openSettings = useAccountOverlays((state) => state.openSettings);
+  const openLibrary = useOpenAssetLibrary();
   const t = useMessages(accountMenuMessages);
   const locale = useLocale();
   useErrorToast(logout.error?.message);
   const account = session.data;
   if (!account) return null;
-  const go = (path: string) => {
+  // 个人作品就是素材库弹窗；手机上先收起导航抽屉，关闭后焦点回到头像入口。
+  const openWorks = () => {
     onNavigate?.();
-    void navigate(path);
+    openLibrary(triggerRef.current);
   };
   const inHeader = variant === "header";
   return (
@@ -95,7 +96,7 @@ export function AccountMenu({
             onAction={(key) => {
               // 账户设置叠在手机导航抽屉之上，关闭后焦点回到头像入口。
               if (key === "settings") openSettings("account", triggerRef.current);
-              else if (key === "works") go("/assets");
+              else if (key === "works") openWorks();
               else if (key === "logout") logout.mutate();
             }}
           >

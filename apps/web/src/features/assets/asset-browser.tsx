@@ -1,9 +1,6 @@
-import { Button, EmptyState, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { Button, EmptyState } from "@heroui/react";
 import type { AssetTool, ImageAsset } from "@lycoboai/contracts";
 import {
-  IconGrid4x4,
-  IconGridDots,
-  IconLayoutGrid,
   IconMovie,
   IconPhoto,
   IconPhotoSearch,
@@ -11,24 +8,19 @@ import {
   IconStar,
   type TablerIcon,
 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router";
 import { InfiniteLoad } from "../../components/infinite-load";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { loginHref } from "../auth/login-navigation";
 import { ImageApiError, useImageSession } from "../generation/generation-client";
-import { useModelPresentation } from "../generation/models/model-logos";
 import { AssetFilters, assetToolName } from "./asset-filters";
 import { dayHeading, groupByDay } from "./asset-layout";
-import {
-  type AssetLibraryFilters,
-  defaultAssetFilters,
-  sameFilters,
-  useAssetLibrary,
-} from "./asset-library-client";
+import { type AssetLibraryFilters, useAssetLibrary } from "./asset-library-client";
 import { AssetMasonry } from "./asset-masonry";
 import { AssetPreview } from "./asset-preview";
+import { type AssetSelection, AssetSelectionControls, useAssetSelection } from "./asset-selection";
 import "./asset-browser.css";
 import type { Locale } from "../../i18n/locale";
 import { useLocale } from "../../i18n/locale-store";
@@ -52,31 +44,22 @@ function useWidth() {
 }
 
 type Empty = { icon: TablerIcon; title: string };
-function emptyState(
-  filters: AssetLibraryFilters,
-  defaults: AssetLibraryFilters,
-  currentTool: AssetTool | undefined,
-  locale: Locale,
-): Empty {
+
+/** 空列表的说明跟着筛选走：时间范围、收藏、视频、上传、某个功能，各说各的。 */
+function emptyState(filters: AssetLibraryFilters, locale: Locale): Empty {
   const t = assetsMessages[locale];
+  const tool =
+    filters.source === "generated" && filters.tool !== "all"
+      ? assetToolName(filters.tool, locale)
+      : null;
+  if (filters.time !== "all") return { icon: IconPhotoSearch, title: t.noMatches };
+  if (filters.favorite)
+    return { icon: IconStar, title: tool ? t.noToolFavorites(tool) : t.noFavorites };
   if (filters.type === "video") return { icon: IconMovie, title: t.noVideos };
   if (filters.source === "uploads") return { icon: IconPhoto, title: t.noUploads };
-  if (
-    currentTool &&
-    filters.tool === currentTool &&
-    filters.type === defaults.type &&
-    filters.model === "all" &&
-    (!filters.time || filters.time === "all")
-  )
-    return filters.source === "favorites"
-      ? { icon: IconStar, title: t.noToolFavorites(assetToolName(currentTool, locale)) }
-      : { icon: IconPhoto, title: t.noToolAssets(assetToolName(currentTool, locale)) };
-  if (
-    !sameFilters(filters, { ...defaultAssetFilters, source: filters.source, type: defaults.type })
-  )
-    return { icon: IconPhotoSearch, title: t.noMatches };
-  if (filters.source === "favorites") return { icon: IconStar, title: t.noFavorites };
-  return { icon: IconPhoto, title: t.noGenerated };
+  if (tool) return { icon: IconPhoto, title: t.noToolAssets(tool) };
+  if (filters.source === "generated") return { icon: IconPhoto, title: t.noGenerated };
+  return { icon: IconPhoto, title: t.noAssets };
 }
 
 function AssetEmpty({
@@ -124,35 +107,38 @@ function Skeleton({ compact }: { compact: boolean }) {
   );
 }
 
-/** 素材库与我的素材共用筛选、分页与预览，认证过期时前往登录页。 */
+/**
+ * 我的素材：筛选、按天分组的瀑布流、多选批量下载与预览，弹窗和素材库页面共用；认证过期时前往登录页。
+ * 换筛选时退出多选，因为没加载出来的素材选不到。
+ */
 export function AssetBrowser({
   filters,
-  defaults,
   currentTool,
   headingLevel,
-  generatedOnly = false,
   onChange,
   onViewHistory,
+  onSelectingChange,
 }: {
   filters: AssetLibraryFilters;
-  defaults: AssetLibraryFilters;
   currentTool?: AssetTool | undefined;
   headingLevel: 2 | 3;
-  generatedOnly?: boolean;
   onChange: (filters: AssetLibraryFilters) => void;
   onViewHistory?: (() => void) | undefined;
+  onSelectingChange?: ((selecting: boolean) => void) | undefined;
 }) {
   const location = useLocation();
-  const [columns, setColumns] = useState(8);
   const session = useImageSession();
   const query = useAssetLibrary(filters);
-  const models = useModelPresentation().data?.models ?? [];
+  const selection = useAssetSelection(onSelectingChange);
   const [frame, width] = useWidth();
   const [preview, setPreview] = useState<number | null>(null);
-  const locale = useLocale();
+  // 缩略图加载失败的素材不能下载：不出现在全选和批量下载里。
+  const [unavailable, setUnavailable] = useState<ReadonlySet<string>>(() => new Set());
   const { failure, authenticationRequired } = useAssetStatus(session, query);
-  const compact = width > 0 && width < compactWidth;
   const assets = query.data?.pages.flatMap((page) => page.data) ?? [];
+  const downloadable = assets.filter((asset) => !unavailable.has(asset.id));
+  const markUnavailable = (asset: ImageAsset) =>
+    setUnavailable((current) => (current.has(asset.id) ? current : new Set(current).add(asset.id)));
   if (authenticationRequired)
     return (
       <Navigate
@@ -166,26 +152,23 @@ export function AssetBrowser({
       <div className="asset-source-panel">
         <AssetFilters
           filters={filters}
-          defaults={defaults}
           currentTool={currentTool}
-          models={models}
-          loaded={query.data ? assets.length : null}
-          compact={compact}
-          mediaSelect
-          showSource={!generatedOnly}
-          displayControls={<AssetDensityControls columns={columns} onChange={setColumns} />}
-          onChange={onChange}
+          trailing={<AssetSelectionControls assets={downloadable} selection={selection} />}
+          onChange={(next) => {
+            selection.exit();
+            onChange(next);
+          }}
         />
         {width > 0 && (
           <AssetResults
             assets={assets}
-            columns={columns}
-            compact={compact}
+            compact={width < compactWidth}
             headingLevel={headingLevel}
             filters={filters}
-            empty={emptyState(filters, defaults, currentTool, locale)}
-            models={models}
+            selection={selection}
+            unavailable={unavailable}
             onOpen={setPreview}
+            onUnavailable={markUnavailable}
             query={query}
             failure={failure}
             retry={() => void (session.isError ? session.refetch() : query.refetch())}
@@ -219,27 +202,54 @@ function useAssetStatus(session: ReturnType<typeof useImageSession>, query: Asse
   return { failure, authenticationRequired };
 }
 
+/** 选了时间范围后按天分组：每天一个标题加一段瀑布流。 */
+function AssetDays({
+  assets,
+  headingLevel,
+  masonry,
+}: {
+  assets: ImageAsset[];
+  headingLevel: 2 | 3;
+  masonry: (items: ImageAsset[]) => ReactNode;
+}) {
+  const locale = useLocale();
+  const Day = headingLevel === 2 ? "h2" : "h3";
+  return groupByDay(assets).map((group) => {
+    const heading = dayHeading(group.first, locale);
+    return (
+      <section key={group.key} className="asset-day-group" aria-label={heading.label}>
+        <Day className="asset-day">
+          <b>{heading.label}</b>
+          <span>{heading.detail}</span>
+        </Day>
+        {masonry(group.items)}
+      </section>
+    );
+  });
+}
+
+/** 素材列表：全部时间时连续一整片瀑布流、不显示日期；选了时间范围才按天分组。滚到底自动加载下一页。 */
 function AssetResults({
   assets,
-  columns,
   compact,
   headingLevel,
   filters,
-  empty,
-  models,
+  selection,
+  unavailable,
   onOpen,
+  onUnavailable,
   query,
   failure,
   retry,
 }: {
   assets: ImageAsset[];
-  columns: number;
   compact: boolean;
   headingLevel: 2 | 3;
   filters: AssetLibraryFilters;
-  empty: Empty;
-  models: NonNullable<ReturnType<typeof useModelPresentation>["data"]>["models"];
+  selection: AssetSelection;
+  unavailable: ReadonlySet<string>;
   onOpen: (index: number) => void;
+  onUnavailable: (asset: ImageAsset) => void;
   query: AssetQuery;
   failure: Error | null;
   retry: () => void;
@@ -247,13 +257,14 @@ function AssetResults({
   const t = useMessages(assetsMessages);
   const locale = useLocale();
   const index = new Map(assets.map((asset, position) => [asset.id, position]));
-  const Day = headingLevel === 2 ? "h2" : "h3";
-  const densityGrid = (items: ImageAsset[]) => (
+  const masonry = (items: ImageAsset[]) => (
     <AssetMasonry
       assets={items}
-      columns={columns}
-      models={models}
+      showUploadTag={filters.source === "all"}
+      selection={selection}
+      unavailable={unavailable}
       onOpen={(asset) => onOpen(index.get(asset.id) ?? 0)}
+      onUnavailable={onUnavailable}
     />
   );
   if (failure)
@@ -269,23 +280,17 @@ function AssetResults({
       />
     );
   if (query.isPending) return <Skeleton compact={compact} />;
-  if (!assets.length) return <AssetEmpty icon={empty.icon} title={empty.title} />;
+  if (!assets.length) {
+    const empty = emptyState(filters, locale);
+    return <AssetEmpty icon={empty.icon} title={empty.title} />;
+  }
   return (
     <>
-      {!filters.time || filters.time === "all"
-        ? densityGrid(assets)
-        : groupByDay(assets).map((group) => {
-            const heading = dayHeading(group.first, locale);
-            return (
-              <section key={group.key} className="asset-day-group" aria-label={heading.label}>
-                <Day className="asset-day">
-                  <b>{heading.label}</b>
-                  <span>{heading.detail}</span>
-                </Day>
-                {densityGrid(group.items)}
-              </section>
-            );
-          })}
+      {filters.time === "all" ? (
+        masonry(assets)
+      ) : (
+        <AssetDays assets={assets} headingLevel={headingLevel} masonry={masonry} />
+      )}
       <InfiniteLoad
         hasMore={query.hasNextPage}
         isLoading={query.isFetchingNextPage}
@@ -293,39 +298,5 @@ function AssetResults({
         onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
       />
     </>
-  );
-}
-
-function AssetDensityControls({
-  columns,
-  onChange,
-}: {
-  columns: number;
-  onChange: (columns: number) => void;
-}) {
-  const t = useMessages(assetsMessages);
-  return (
-    <ToggleButtonGroup
-      aria-label={t.density}
-      selectionMode="single"
-      disallowEmptySelection
-      selectedKeys={[String(columns)]}
-      onSelectionChange={(keys) => {
-        const count = [6, 8, 10].find((value) => keys.has(String(value)));
-        if (count) onChange(count);
-      }}
-      className="asset-segment asset-density-control"
-      size="sm"
-    >
-      <ToggleButton isIconOnly id="6" aria-label={t.large}>
-        <UiIcon icon={IconLayoutGrid} />
-      </ToggleButton>
-      <ToggleButton isIconOnly id="8" aria-label={t.medium}>
-        <UiIcon icon={IconGridDots} />
-      </ToggleButton>
-      <ToggleButton isIconOnly id="10" aria-label={t.small}>
-        <UiIcon icon={IconGrid4x4} />
-      </ToggleButton>
-    </ToggleButtonGroup>
   );
 }

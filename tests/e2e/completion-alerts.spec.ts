@@ -99,20 +99,23 @@ test("background title counts once, returns to a result action and preserves the
   const { job } = await setup(page);
   const prompt = page.getByRole("textbox", { name: "提示词", exact: true });
   await prompt.fill("保留这份未提交草稿");
-  await page.getByRole("link", { name: "素材库", exact: true }).click();
-  await expect(page).toHaveURL(/\/assets/);
+  await page
+    .getByRole("navigation", { name: "主导航", exact: true })
+    .getByRole("link", { name: "首页", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   const title = await page.title();
   await hidden(page, true);
   await emit(page, job.id, "1");
   await expect(page).toHaveTitle("（1）生成完成 · Lycobo");
   await emit(page, job.id, "2");
   await expect(page).toHaveTitle("（1）生成完成 · Lycobo");
-  await expect(page).toHaveURL(/\/assets/);
+  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await hidden(page, false);
   await expect(page).toHaveTitle(title);
   await expect(page.getByRole("button", { name: "查看结果", exact: true })).toBeVisible();
   await page.screenshot({ path: "/tmp/lycobo-completion-toast.png" });
-  await expect(page).toHaveURL(/\/assets/);
+  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await page.getByRole("button", { name: "查看结果", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/commerce/create\\?task=${job.id}`));
   await expect(prompt).toContainText("保留这份未提交草稿");
@@ -145,11 +148,14 @@ test("visible other page offers a result without navigating and desktop permissi
     Object.defineProperty(window, "Notification", { value: FixtureNotification });
   });
   const { job } = await setup(page);
-  await page.getByRole("link", { name: "素材库", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "主导航", exact: true })
+    .getByRole("link", { name: "首页", exact: true })
+    .click();
   await expect(page.locator("html")).not.toHaveAttribute("data-permission-requests");
   await emit(page, job.id, "1");
   await expect(page.getByRole("button", { name: "查看结果", exact: true })).toBeVisible();
-  await expect(page).toHaveURL(/\/assets/);
+  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await page.getByRole("button", { name: /^消息（/ }).click();
   await page.getByRole("button", { name: "开启桌面通知", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("data-permission-requests", "1");
@@ -200,7 +206,10 @@ test("two tabs share one completion receipt", async ({ page, context }) => {
       reads++;
       return route.fulfill({ json: apiFixture(result) });
     });
-    await tab.getByRole("link", { name: "素材库", exact: true }).click();
+    await tab
+      .getByRole("navigation", { name: "主导航", exact: true })
+      .getByRole("link", { name: "首页", exact: true })
+      .click();
     await hidden(tab, false);
     await expect(tab.locator("html")).toHaveAttribute("data-ws-active", "1");
   }
@@ -218,7 +227,10 @@ test("two tabs share one completion receipt", async ({ page, context }) => {
 test("mobile result action reveals history and keeps the form draft", async ({ page }) => {
   const { job } = await setup(page);
   await page.getByRole("textbox", { name: "提示词", exact: true }).fill("手机未提交草稿");
-  await page.getByRole("link", { name: "素材库", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "主导航", exact: true })
+    .getByRole("link", { name: "首页", exact: true })
+    .click();
   await emit(page, job.id, "1");
   await expect(page.getByRole("button", { name: "查看结果", exact: true })).toBeVisible();
   await page.setViewportSize({ width: 393, height: 852 });

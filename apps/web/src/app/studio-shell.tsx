@@ -1,4 +1,4 @@
-import { Drawer } from "@heroui/react";
+import { Button, Drawer } from "@heroui/react";
 import { IconFolderSparkle, IconMenu2, IconSmartHome, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { Navigate, Outlet } from "react-router";
@@ -8,6 +8,8 @@ import { AccountOverlayHost } from "../features/account/account-overlays";
 import { AccountMenu, HeaderLogin } from "../features/account/menu/account-menu";
 import { HeaderBenefits } from "../features/account/menu/header-benefits";
 import { AccountMessages } from "../features/account/notifications/account-messages";
+import { AssetLibraryHost } from "../features/assets/asset-library-host";
+import { useOpenAssetLibrary } from "../features/assets/asset-library-store";
 import { useEnterpriseSession } from "../features/auth/auth-client";
 import { loginHref } from "../features/auth/login-navigation";
 import { useImageEvents } from "../features/generation/use-image-events";
@@ -102,14 +104,12 @@ export function StudioShell() {
             height="32"
           />
         </RouteLink>
+        {/* 素材库不在顶部导航（用户 2026-11-10 要求）：从首页快捷入口、账户菜单等处直接打开弹窗。 */}
         <nav className="topbar-nav" aria-label={t.mainNavigation}>
           <RouteLink nav to="/" end className="nav-row">
             {t.home}
           </RouteLink>
           <CommerceNavMenu active={inWorkspace} />
-          <RouteLink nav to="/assets" className="nav-row">
-            {t.assets}
-          </RouteLink>
         </nav>
         <div className="header-actions">
           {signedIn ? (
@@ -135,6 +135,7 @@ export function StudioShell() {
       </main>
       <RealtimeEvents />
       {signedIn && <AccountOverlayHost />}
+      {signedIn && <AssetLibraryHost />}
     </div>
   );
 }
@@ -144,10 +145,14 @@ function RealtimeEvents() {
   return null;
 }
 
-/** 手机导航抽屉：首页、电商四个工具与素材库；切换工具时与工具坞一样只向空图片槽带图。 */
+/**
+ * 手机导航抽屉：首页、电商四个工具与素材库；切换工具时与工具坞一样只向空图片槽带图。
+ * 素材库是弹窗，点它先收起抽屉再打开，不跳转页面。
+ */
 function DrawerNavigation({ pathname, onNavigate }: { pathname: string; onNavigate: () => void }) {
   const t = useMessages(shellMessages);
   const toolText = useMessages(workspaceToolMessages);
+  const openLibrary = useOpenAssetLibrary();
   return (
     <nav aria-label={t.mainNavigation}>
       <RouteLink nav to="/" end className="nav-row" onClick={onNavigate}>
@@ -170,10 +175,17 @@ function DrawerNavigation({ pathname, onNavigate }: { pathname: string; onNaviga
           <span className="nav-label">{toolText.tools[tool.id].name}</span>
         </RouteLink>
       ))}
-      <RouteLink nav to="/assets" className="nav-row" onClick={onNavigate}>
+      <Button
+        variant="ghost"
+        className="nav-row"
+        onPress={() => {
+          onNavigate();
+          openLibrary();
+        }}
+      >
         <UiIcon icon={IconFolderSparkle} size="default" />
         <span className="nav-label">{t.assets}</span>
-      </RouteLink>
+      </Button>
     </nav>
   );
 }

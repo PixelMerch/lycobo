@@ -1,41 +1,26 @@
-/* 素材库 / 我的素材 shared browser (DESIGN.md §8 我的素材与素材库). */
+/* 我的素材浏览区（DESIGN.md §8 我的素材与素材库），弹窗与素材库页面共用。 */
 .asset-browser {
   min-width: 0;
 }
 
-/* ---------- 素材库 page ---------- */
-.assets-page-heading {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-3);
-  margin: var(--space-1) 0 var(--space-3);
-}
-.assets-page-heading h1 {
-  margin: 0;
-  font-size: var(--text-xl);
-  line-height: var(--leading-xl);
-  font-weight: var(--weight-semibold);
-}
-.assets-page-heading p {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-}
-
-/* ---------- filters ---------- */
+/* ---------- 筛选行：图片 | 视频、来源、仅看收藏，最右是多选 ---------- */
 .asset-filters {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-4) 0 var(--space-1);
+  min-height: 56px;
+  padding: 10px 0;
+  border-bottom: 1px solid #ffffff0f;
+}
+.asset-filters-end {
+  display: flex;
+  flex: none;
+  margin-left: auto;
 }
 .asset-filter {
   flex: none;
 }
-/* Options carry icons and tags; the trigger shows only the chosen option's text. The end
- * padding leaves room for HeroUI's absolutely positioned chevron. */
+/* 触发器只显示选中项的文字；右侧给 HeroUI 绝对定位的箭头留位。 */
 .asset-filter-trigger.select__trigger {
   align-items: center;
   height: 36px;
@@ -52,10 +37,7 @@
   font-weight: var(--weight-medium);
   box-shadow: none;
 }
-.asset-filter-trigger.select__trigger:is(:hover, [data-hovered="true"], [data-pressed="true"]) {
-  background: var(--interaction-active);
-  color: var(--foreground);
-}
+.asset-filter-trigger.select__trigger:is(:hover, [data-hovered="true"], [data-pressed="true"]),
 .asset-filter-trigger.select__trigger[data-active="true"] {
   background: var(--interaction-active);
   color: var(--foreground);
@@ -66,14 +48,31 @@
 .asset-filter-trigger[data-active="true"] .asset-filter-lead {
   color: var(--accent);
 }
-.asset-filter[data-disabled="true"] {
-  opacity: 0.4;
+/* 来源菜单压在图片上打开（用户 2026-11-10 要求）：用不透明深色底，不透出下面图片的颜色。 */
+.select__popover.asset-filter-menu {
+  border: 0;
+  background: #1f1f1f;
+  box-shadow:
+    0 0 0 1px #ffffff14,
+    0 18px 48px #000000b3;
 }
 .asset-filter-menu .model-options {
   gap: 10px;
-  min-width: 200px;
+  min-width: 220px;
   /* Shared menu row padding overrides HeroUI's indicator reservation. */
   padding-inline-end: 36px;
+}
+.asset-filter-section {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: 1px solid #ffffff0f;
+}
+.asset-filter-heading {
+  padding: 6px 10px 4px;
+  color: #ffffff66;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-weight: var(--weight-regular);
 }
 .asset-filter-now {
   margin-left: auto;
@@ -90,16 +89,17 @@
   gap: 2px;
   padding: 3px;
   border-radius: 999px;
-  background: #1c1c1c;
+  background: #ffffff0a;
 }
 .asset-segment .toggle-button {
+  gap: 6px;
   height: 30px;
   min-height: 30px;
-  padding: 0 14px;
+  padding: 0 14px 0 11px;
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: var(--muted);
+  color: #ffffff99;
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
   font-weight: var(--weight-medium);
@@ -113,26 +113,84 @@
   background: var(--control-selected-fill);
   color: #fff;
 }
-.asset-filter-reset.button {
-  gap: var(--space-1);
-  color: var(--muted);
-}
-.asset-filter-hint,
-.asset-filter-meta {
-  color: #808080;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
+.asset-favorite-filter .switch__content {
+  gap: var(--space-2);
+  height: 36px;
+  padding: 0 10px 0 12px;
+  border-radius: 999px;
+  background: #ffffff0a;
+  color: #ffffffcc;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
   white-space: nowrap;
 }
-.asset-filter-meta {
-  margin-left: auto;
+.asset-favorite-filter[data-selected="true"] .switch__content {
+  background: var(--interaction-active);
+  color: var(--foreground);
 }
-.asset-filter-meta b {
-  color: #d8d8d8;
+.asset-favorite-filter .label {
+  color: inherit;
+  font: inherit;
+}
+.asset-selection-start.button {
+  gap: 6px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 14px 0 12px;
+  border-radius: 999px;
+  background: #ffffff0a;
+  color: #ffffffcc;
+  font-size: var(--text-sm);
   font-weight: var(--weight-medium);
 }
+.asset-selection-start.button:is(:hover, [data-hovered="true"]) {
+  background: var(--interaction-active);
+  color: var(--foreground);
+}
+/* 多选操作条替换“多选”按钮：已选数量、全选、下载与退出。 */
+.asset-selection-bar.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  margin-block: -4px;
+  padding: 0 4px 0 16px;
+  border-radius: 999px;
+  background: #1c1c1c;
+  box-shadow: 0 0 0 1px #ffffff14;
+}
+.asset-selection-count {
+  margin-right: 6px;
+  color: #fff;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.asset-selection-bar .button {
+  height: 36px;
+  min-height: 36px;
+  border-radius: 999px;
+  font-size: var(--text-sm);
+}
+.asset-selection-all.button {
+  padding: 0 12px;
+  color: #ffffffcc;
+}
+.asset-selection-download.button {
+  gap: 6px;
+  padding: 0 16px 0 14px;
+  font-weight: var(--weight-semibold);
+}
+.asset-selection-exit.button {
+  width: 36px;
+  min-width: 36px;
+  color: #ffffffb3;
+}
 
-/* ---------- day groups ---------- */
+/* ---------- 按天分组 ---------- */
 .asset-day {
   display: flex;
   align-items: baseline;
@@ -141,7 +199,7 @@
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
   font-weight: var(--weight-regular);
-  color: var(--muted);
+  color: #ffffff66;
 }
 .asset-day b {
   color: var(--foreground);
@@ -149,153 +207,23 @@
   line-height: var(--leading-base);
   font-weight: var(--weight-semibold);
 }
-/* ---------- tiles ---------- */
-.asset-tile {
-  position: relative;
-  flex: none;
-  overflow: hidden;
-  container-type: inline-size;
-  border-radius: 12px;
-  background: #171717;
-}
-.asset-tile-open.button {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  border-radius: inherit;
-  background: transparent;
-  box-shadow: none;
-}
-.asset-tile-open img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 240ms ease;
-}
-.asset-tile:has(.asset-tile-open[data-focus-visible="true"]) {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-/* Model tag pinned to the tile corner, like the previous 我的素材 tiles. */
-.asset-tile-badge.model-tag {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 22px;
-  padding: 0 8px;
-  border-radius: 12px 0 8px 0;
-  background: #000000a6;
-  pointer-events: none;
-}
-/* Video specs stay visible on the cover; the hover foot only adds the actions. */
-.asset-tile-specs {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  z-index: 1;
-  padding: 1px 6px;
-  border-radius: 6px;
-  background: #00000073;
-  backdrop-filter: blur(8px);
-  color: #fff;
-  font-size: 11px;
-  line-height: 16px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  pointer-events: none;
-}
-.asset-tile-star {
-  position: absolute;
-  top: var(--space-2);
-  right: var(--space-2);
+
+/* ---------- 瀑布流：列数由 asset-layout.ts 按宽度给出，DOM 保持接口原顺序 ---------- */
+.asset-grid {
   display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #000000a6;
-  color: var(--accent);
-  pointer-events: none;
+  align-items: start;
+  grid-template-columns: repeat(var(--asset-columns, 5), minmax(0, 1fr));
+  column-gap: 12px;
+  grid-auto-rows: 1px;
+  row-gap: 0;
 }
-.asset-tile-foot {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 32px var(--space-2) var(--space-2) 10px;
-  background: linear-gradient(180deg, transparent, #000000c2);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 160ms ease;
-}
-.asset-tile-meta {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: #d8d8d8;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.asset-tile-meta b {
-  color: #fff;
-  font-weight: var(--weight-medium);
-}
-.asset-tile-action.button,
-.asset-tile-action.toggle-button {
-  flex: none;
-  width: 32px;
-  min-width: 32px;
-  height: 32px;
-  min-height: 32px;
-  border-radius: 50%;
-  background: #000000a6;
-  color: #fff;
-  backdrop-filter: blur(8px);
-}
-.asset-tile-action.toggle-button[data-selected] {
-  color: var(--accent);
-}
-@media (hover: hover) {
-  .asset-tile:hover .asset-tile-open img {
-    transform: scale(1.04);
-  }
-  .asset-tile:hover .asset-tile-foot {
-    opacity: 1;
-  }
-  .asset-tile:hover .asset-tile-action {
-    pointer-events: auto;
-  }
-  .asset-tile:hover .asset-tile-star {
-    display: none;
-  }
-}
-.asset-tile:focus-within .asset-tile-foot {
-  opacity: 1;
-}
-.asset-tile:focus-within .asset-tile-action {
-  pointer-events: auto;
-}
-.asset-tile:focus-within .asset-tile-star {
-  display: none;
-}
-/* Small tiles have no room for the specs beside the two actions. */
-@container (max-width: 160px) {
-  .asset-tile:is(:hover, :focus-within) .asset-tile-specs {
-    opacity: 0;
+@media (max-width: 719px) {
+  .asset-grid {
+    column-gap: 8px;
   }
 }
 
-/* ---------- states ---------- */
+/* ---------- 空状态、加载与失败 ---------- */
 .asset-empty.empty-state {
   min-height: 320px;
   gap: var(--space-2);
@@ -354,89 +282,59 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .asset-tile-open img,
-  .asset-tile-foot {
-    transition: none;
-  }
-  .asset-tile:hover .asset-tile-open img {
-    transform: none;
-  }
   .asset-skeleton span {
     animation: none;
   }
 }
 
-/* ---------- narrow containers ---------- */
+/* ---------- 窄屏：筛选一行横向滑动，触控目标 44px ---------- */
 @media (max-width: 767px) {
   .asset-filters {
     overflow-x: auto;
-    padding-top: var(--space-3);
     scrollbar-width: none;
   }
   .asset-filter-trigger.select__trigger,
+  .asset-favorite-filter .switch__content,
+  .asset-selection-start.button,
+  .asset-selection-bar .button {
+    height: 44px;
+    min-height: 44px;
+  }
   .asset-segment .toggle-button {
     min-height: 44px;
   }
-  .asset-tile-badge.model-tag {
-    height: 20px;
-    padding: 0 6px;
-    font-size: var(--text-xs);
+  .asset-selection-exit.button {
+    width: 44px;
+    min-width: 44px;
+  }
+  /* 手机上多选操作条固定在底部，大拇指够得着。 */
+  .asset-selection-bar.toolbar {
+    position: fixed;
+    right: 12px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    left: 12px;
+    z-index: 20;
+    height: 56px;
+    margin: 0;
+    padding: 0 6px 0 16px;
+    background: #1f1f1f;
+    box-shadow:
+      0 0 0 1px #ffffff14,
+      0 12px 32px #000000b3;
+  }
+  .asset-selection-count {
+    flex: 1;
   }
   .asset-day {
     margin: 14px 0 10px;
   }
 }
 
-/* Both entries use the same masonry; DOM order stays newest-first. */
-.asset-density-grid {
-  display: grid;
-  align-items: start;
-  --asset-layout-columns: var(--asset-columns, 8);
-  grid-template-columns: repeat(var(--asset-layout-columns), minmax(0, 1fr));
-  column-gap: 12px;
-  grid-auto-rows: 1px;
-  row-gap: 0;
-}
-.asset-density-grid .asset-tile-open img {
-  object-fit: contain;
-}
-.asset-density-grid .asset-tile[data-media-type="video"] .asset-tile-open img {
-  object-fit: cover;
-}
-.library-body .asset-filters {
-  flex-wrap: wrap;
-}
-.asset-density-control {
-  margin-left: auto;
-}
-.asset-density-control .toggle-button {
-  padding-inline: 0;
-}
-.asset-density-control + .asset-filter-meta {
-  margin-left: 0;
-}
-@media (max-width: 1023px) {
-  .asset-density-grid {
-    --asset-layout-columns: 4;
-  }
-}
-@media (max-width: 719px) {
-  .asset-density-grid {
-    --asset-layout-columns: 2;
-    column-gap: 8px;
-  }
-}
-.asset-filters + .asset-density-grid {
-  margin-top: var(--space-4);
-}
-
-/* 页面随文档滚动；筛选栏吸顶时顶部栏已离开顶部并收窄 4px，所以紧贴收窄后的底边，不留缝。 */
+/* ---------- 素材库页面：随文档滚动，筛选栏吸在收窄 4px 后的顶部栏下方 ---------- */
 .assets-page .asset-filters {
   position: sticky;
   top: calc(var(--header-height) - 4px);
   z-index: 10;
-  flex-wrap: wrap;
-  padding-bottom: 16px;
   background: var(--background);
 }
 .assets-page .asset-source-panel {
@@ -448,4 +346,9 @@
   flex: 1;
   justify-content: center;
   align-items: center;
+}
+
+/* 全部时间时瀑布流紧跟在筛选行下面；按天分组时由日期标题留出间距。 */
+.asset-filters + .asset-grid {
+  margin-top: var(--space-4);
 }

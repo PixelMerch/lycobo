@@ -40,6 +40,19 @@ export function groupByDay<T extends { created_at: string }>(items: readonly T[]
   return groups;
 }
 
+// 素材区宽度对应的列数：1920 屏 6 列、1440 屏 5 列，越窄越少，手机 2 列。
+const columnSteps = [
+  [1560, 6],
+  [1180, 5],
+  [880, 4],
+  [600, 3],
+] as const;
+
+/** 按素材区实际宽度决定瀑布流列数。 */
+export function assetColumns(width: number) {
+  return columnSteps.find(([minimum]) => width >= minimum)?.[1] ?? 2;
+}
+
 /** Missing dimensions reserve a square until authoritative metadata is available. */
 export const aspectRatio = ({ width, height }: Sized) =>
   width > 0 && height > 0 ? width / height : 1;

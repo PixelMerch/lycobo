@@ -1,0 +1,218 @@
+/* 素材卡（DESIGN.md §8 素材网格）：平时只有图片；悬停或键盘聚焦时左上勾选圈、右上收藏和下载、
+ * 底部来源与时间；多选时勾选圈常驻，选中的卡片有 2px 青柠内框。 */
+.asset-tile {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  container-type: inline-size;
+  border-radius: 12px;
+  background: #171717;
+}
+.asset-tile-open:is(.button, .toggle-button) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  box-shadow: none;
+}
+.asset-tile-open img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 240ms ease;
+}
+.asset-tile[data-media-type="video"] .asset-tile-open img {
+  object-fit: cover;
+}
+.asset-tile:has(.asset-tile-open[data-focus-visible="true"]) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.asset-tile-unavailable {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  height: 100%;
+  color: #ffffff66;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+/* 选中的卡片：青柠内框压在图片上面、勾选圈下面。 */
+.asset-tile[data-selected="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px var(--accent);
+  pointer-events: none;
+}
+.asset-tile-check.toggle-button {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
+  min-height: 22px;
+  padding: 0;
+  border: 1.5px solid #ffffffcc;
+  border-radius: 50%;
+  background: #00000059;
+  color: transparent;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+.asset-tile-check.toggle-button[data-selected] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+.asset-tile[data-selecting="true"] .asset-tile-check {
+  opacity: 1;
+  pointer-events: auto;
+}
+.asset-tile-star {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #000000a6;
+  color: var(--accent);
+  pointer-events: none;
+}
+.asset-tile-upload {
+  position: absolute;
+  bottom: var(--space-2);
+  left: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px 0 6px;
+  border-radius: 6px;
+  background: #000000a6;
+  color: #fff;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  pointer-events: none;
+}
+/* 视频规格常驻封面左下角。 */
+.asset-tile-specs {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  z-index: 1;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #00000073;
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 11px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.asset-tile-actions {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 2;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+.asset-tile-action:is(.button, .toggle-button) {
+  flex: none;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  border-radius: 8px;
+  background: #000000a6;
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+.asset-tile-action.toggle-button[data-selected] {
+  color: var(--accent);
+}
+.asset-tile-foot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  padding: 30px var(--space-3) 10px;
+  background: linear-gradient(180deg, transparent, #000000b3);
+  color: #ffffffcc;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+.asset-tile-foot b {
+  color: #fff;
+  font-weight: var(--weight-medium);
+}
+@media (hover: hover) {
+  .asset-tile:hover .asset-tile-open img {
+    transform: scale(1.04);
+  }
+  .asset-tile:hover :is(.asset-tile-actions, .asset-tile-foot, .asset-tile-check) {
+    opacity: 1;
+  }
+  .asset-tile:hover :is(.asset-tile-actions, .asset-tile-check) {
+    pointer-events: auto;
+  }
+  .asset-tile:not([data-selecting="true"]):hover :is(.asset-tile-star, .asset-tile-upload) {
+    display: none;
+  }
+}
+.asset-tile:focus-within :is(.asset-tile-actions, .asset-tile-foot) {
+  opacity: 1;
+}
+.asset-tile:focus-within .asset-tile-actions {
+  pointer-events: auto;
+}
+.asset-tile:not([data-selecting="true"]):focus-within :is(.asset-tile-star, .asset-tile-upload) {
+  display: none;
+}
+/* 小卡片放不下视频规格和两个按钮。 */
+@container (max-width: 160px) {
+  .asset-tile:is(:hover, :focus-within) .asset-tile-specs {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .asset-tile-open img,
+  .asset-tile-actions,
+  .asset-tile-foot,
+  .asset-tile-check {
+    transition: none;
+  }
+  .asset-tile:hover .asset-tile-open img {
+    transform: none;
+  }
+}

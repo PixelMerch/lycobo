@@ -270,10 +270,10 @@ test("home inspiration loads two more batches on scroll, then links to the examp
   const gallery = page.getByRole("region", { name: "创作灵感", exact: true });
   const cards = gallery.locator(".home-inspiration-card");
   await expect(cards).toHaveCount(10);
-  const more = gallery.getByRole("button", { name: "查看更多案例", exact: true });
+  const more = gallery.getByRole("button", { name: "查看更多灵感", exact: true });
   await expect(more).toHaveCount(0);
   await gallery.scrollIntoViewIfNeeded();
-  // 每次滚到作品墙底部补 4 张，最多补两次，然后出现“查看更多案例”。
+  // 每次滚到作品墙底部补 4 张，最多补两次，然后出现“查看更多灵感”。
   for (const expected of [14, 18]) {
     await expect(async () => {
       await page.mouse.wheel(0, 600);
@@ -285,9 +285,9 @@ test("home inspiration loads two more batches on scroll, then links to the examp
   await expect(cards).toHaveCount(18);
   await more.click();
   await expect(page).toHaveURL(/\/inspiration$/);
-  await expect(page.getByRole("heading", { name: "案例库", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "灵感库", level: 1 })).toBeVisible();
   await expect(page.locator(".home-inspiration-card")).toHaveCount(23);
-  await expect(page.getByRole("button", { name: "查看更多案例", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "查看更多灵感", exact: true })).toHaveCount(0);
 });
 
 test("home inspiration cards offer 做同款 by hover or keyboard without submitting paid work", async ({
@@ -593,7 +593,6 @@ test("home footer links only to real pages", async ({ page }) => {
     "家纺裂变",
     "套图计划",
     "工作区",
-    "素材库",
     "会员订阅",
     "用户协议",
     "隐私政策",
@@ -605,11 +604,12 @@ test("home footer links only to real pages", async ({ page }) => {
     "/zh-CN/commerce/textile-set",
     "/zh-CN/commerce/smart-variation",
     "/zh-CN/workspace",
-    "/zh-CN/assets",
     "/zh-CN/membership",
     "/zh-CN/terms",
     "/zh-CN/privacy",
   ]);
+  // 页脚的素材库是打开弹窗的按钮，不再链接到素材库页面。
+  await expect(footer.getByRole("button", { name: "素材库", exact: true })).toBeVisible();
   await expect(footer).toContainText(`© ${new Date().getFullYear()} Lycobo。保留所有权利。`);
 });
 
@@ -622,11 +622,21 @@ test("phones get the vidmuse bottom bar with labelled shortcuts", async ({ page 
   expect(box?.x).toBe(0);
   expect(box?.width).toBe(390);
   expect(Math.round((box?.y ?? 0) + (box?.height ?? 0))).toBe(844);
-  await expect(dock.getByRole("link")).toHaveText(["首页", "工作区", "素材库"]);
+  await expect(dock.getByRole("link")).toHaveText(["首页", "工作区"]);
+  await expect(dock.getByRole("button", { name: "素材库", exact: true })).toBeVisible();
   await expect(dock.getByRole("link", { name: "首页", exact: true })).toHaveClass(/active/);
   await page.setViewportSize({ width: 1440, height: 900 });
   await expect(dock.getByRole("link", { name: "首页", exact: true })).toBeHidden();
   await expect(dock.locator(".home-dock-label").first()).toBeHidden();
+  // 素材库入口直接打开弹窗，不跳转页面；关闭后焦点回到入口。
+  const entry = dock.getByRole("button", { name: "素材库", exact: true });
+  await entry.click();
+  const library = page.getByRole("dialog", { name: "素材库", exact: true });
+  await expect(library).toBeVisible();
+  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
+  await page.keyboard.press("Escape");
+  await expect(library).toHaveCount(0);
+  await expect(entry).toBeFocused();
 });
 
 for (const width of [1440, 390]) {

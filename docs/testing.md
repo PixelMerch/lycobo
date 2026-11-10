@@ -84,7 +84,7 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 ## 工作台浏览器回归
 
-`tests/e2e/image-preview.spec.ts` 验证全屏预览、缩放拖动、移动布局和图片切换后的说明同步；`library-dialog.spec.ts` 验证我的素材默认当前工具、页签与功能／模型筛选在分页前请求、重置、上传页签禁用筛选、服务端收藏与失败回滚、带筛选进入素材库、按天分组与手机两列瀑布流，以及弹层焦点恢复。接口均由浏览器 fixture 拦截，不调用模型。
+`tests/e2e/image-preview.spec.ts` 验证全屏预览、缩放拖动、移动布局和图片切换后的说明同步；`library-dialog.spec.ts` 验证素材库弹窗默认当前功能、来源／时间／收藏筛选在分页前请求、不透明筛选菜单、选了时间才按天分组、多选单张直下与多张打包 ZIP、Esc 先退出多选、灵感库“做同款”带入提示词并关闭弹窗、页面标签与筛选写入地址栏、服务端收藏与失败回滚、手机两列瀑布流与底部操作条，以及弹层焦点恢复。接口均由浏览器 fixture 拦截，不调用模型。
 
 素材库筛选与收藏由 worker `test:images` 的 `verify-asset-library.ts` 在隔离 PostgreSQL 验证：功能、模型、收藏幂等与成员隔离、跨组织及过期素材拒绝、每位成员 1000 项上限。
 

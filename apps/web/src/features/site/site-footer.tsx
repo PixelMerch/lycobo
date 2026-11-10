@@ -1,7 +1,9 @@
+import { Button } from "@heroui/react";
 import { IconCamera, IconLayoutCollage, IconWand } from "@tabler/icons-react";
 import { RouteLink } from "../../components/router-link";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
+import { useOpenAssetLibrary } from "../assets/asset-library-store";
 import { legalDocumentIds, legalPaths } from "../legal/legal-document";
 import { legalMessages } from "../legal/legal-messages";
 import { workspaceTools } from "../workspace/workspace-state";
@@ -17,6 +19,7 @@ export function SiteFooter() {
   const t = useMessages(siteFooterMessages);
   const legal = useMessages(legalMessages);
   const tools = useMessages(workspaceToolMessages).tools;
+  const openLibrary = useOpenAssetLibrary();
   const columns = [
     {
       label: t.tools,
@@ -33,7 +36,8 @@ export function SiteFooter() {
       label: t.space,
       links: [
         { to: "/workspace", label: t.links.workspace },
-        { to: "/assets", label: t.links.assets },
+        // 素材库是弹窗，点它直接打开，不跳转页面。
+        { to: "/assets", label: t.links.assets, opensLibrary: true },
         { to: "/membership", label: t.links.membership },
       ],
     },
@@ -58,10 +62,20 @@ export function SiteFooter() {
               <ul className="site-footer-links">
                 {column.links.map((link) => (
                   <li key={link.to}>
-                    <RouteLink to={link.to} className="site-footer-link">
-                      {"icon" in link && <UiIcon icon={link.icon} size="default" />}
-                      {link.label}
-                    </RouteLink>
+                    {"opensLibrary" in link ? (
+                      <Button
+                        variant="ghost"
+                        className="site-footer-link"
+                        onPress={(event) => openLibrary(event.target)}
+                      >
+                        {link.label}
+                      </Button>
+                    ) : (
+                      <RouteLink to={link.to} className="site-footer-link">
+                        {"icon" in link && <UiIcon icon={link.icon} size="default" />}
+                        {link.label}
+                      </RouteLink>
+                    )}
                   </li>
                 ))}
               </ul>

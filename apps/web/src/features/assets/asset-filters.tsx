@@ -1,13 +1,21 @@
-import { Button, ListBox, Select, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import {
+  Header,
+  Label,
+  ListBox,
+  Select,
+  Switch,
+  ToggleButton,
+  ToggleButtonGroup,
+} from "@heroui/react";
 import type { AssetTool } from "@lycoboai/contracts";
 import {
   IconCalendar,
   IconLayoutGrid,
+  IconMovie,
   IconPhoto,
-  IconRefresh,
   IconSparkles,
-  IconStar,
   IconUpload,
+  type TablerIcon,
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { UiIcon } from "../../components/ui-icon";
@@ -20,306 +28,184 @@ import { toolIcons } from "../workspace/workspace-tool-symbol";
 import {
   type AssetLibraryFilters,
   type AssetMediaType,
-  filtersApply,
-  sameFilters,
+  type AssetSource,
+  type AssetTimeRange,
+  assetTimeRanges,
 } from "./asset-library-client";
-
 import { assetsMessages } from "./assets-messages";
 
-const libraryTools = workspaceTools;
 /** 素材所属工具的名称；未知工具显示“生成”。 */
 export function assetToolName(tool: AssetTool, locale: Locale = currentLocale()) {
   const known = workspaceTools.find((entry) => entry.id === tool);
   if (!known) return assetsMessages[locale].generatedFallback;
   return workspaceToolMessages[locale].tools[known.id].name;
 }
-const sources = [
-  { id: "generated", icon: IconPhoto },
-  { id: "uploads", icon: IconUpload },
-  { id: "favorites", icon: IconStar },
-] as const;
-const mediaTypes: AssetMediaType[] = ["all", "image", "video"];
-const timeOptions = ["all", "today", "7", "30", "90"] as const;
-type AssetsText = (typeof assetsMessages)[Locale];
 
-/** 当前来源的功能、类型与模型筛选；改动任一项都会从头分页。 */
+// 来源菜单的一项：全部来源、我上传的、全部 AI 生成，或者 AI 生成里的某个功能。
+type SourceKey = AssetSource | AssetTool;
+const sourceIcons = {
+  all: IconLayoutGrid,
+  uploads: IconUpload,
+  generated: IconSparkles,
+} satisfies Record<AssetSource, TablerIcon>;
+const sourceKeys: SourceKey[] = [
+  "all",
+  "uploads",
+  "generated",
+  ...workspaceTools.map((tool) => tool.id),
+];
+const mediaTypes = [
+  { id: "image", icon: IconPhoto },
+  { id: "video", icon: IconMovie },
+] as const satisfies readonly { id: AssetMediaType; icon: TablerIcon }[];
+
+const isSource = (key: SourceKey): key is AssetSource =>
+  key === "all" || key === "uploads" || key === "generated";
+
+function sourceKey(filters: AssetLibraryFilters): SourceKey {
+  return filters.source === "generated" && filters.tool !== "all" ? filters.tool : filters.source;
+}
+
+function filtersForKey(key: SourceKey): Pick<AssetLibraryFilters, "source" | "tool"> {
+  return isSource(key) ? { source: key, tool: "all" } : { source: "generated", tool: key };
+}
+
+/**
+ * 我的素材的筛选行：图片或视频、来源（AI 生成可直接选功能）、时间、仅看收藏，末尾放多选入口或多选操作条；
+ * 改动任一项都会从头分页。
+ */
 export function AssetFilters({
   filters,
-  defaults,
   currentTool,
-  models,
-  loaded,
-  compact,
-  mediaSelect = false,
-  showSource = false,
-  displayControls,
+  trailing,
   onChange,
 }: {
   filters: AssetLibraryFilters;
-  defaults: AssetLibraryFilters;
   currentTool?: AssetTool | undefined;
-  models: readonly { id: string; name: string }[];
-  loaded: number | null;
-  compact: boolean;
-  mediaSelect?: boolean;
-  showSource?: boolean;
-  displayControls?: ReactNode;
+  trailing: ReactNode;
   onChange: (filters: AssetLibraryFilters) => void;
 }) {
   const t = useMessages(assetsMessages);
-  const toolText = useMessages(workspaceToolMessages).tools;
-  const disabled = !filtersApply(filters);
   const set = (patch: Partial<AssetLibraryFilters>) => onChange({ ...filters, ...patch });
-  const ToolIcon = filters.tool === "all" ? IconLayoutGrid : toolIcons[filters.tool];
-  const reset = { ...defaults, source: filters.source };
   return (
     <div className="asset-filters">
-      {showSource && <AssetSourceFilter source={filters.source} set={set} t={t} />}
-      <Select
-        className="asset-filter"
-        aria-label={t.tool}
-        value={filters.tool}
-        isDisabled={disabled}
-        onChange={(key) => {
-          const tool = libraryTools.find((entry) => entry.id === key)?.id;
-          set({ tool: tool ?? "all" });
+      <ToggleButtonGroup
+        aria-label={t.type}
+        selectionMode="single"
+        disallowEmptySelection
+        selectedKeys={[filters.type]}
+        onSelectionChange={(keys) => {
+          const type = mediaTypes.find((entry) => keys.has(entry.id));
+          if (type) set({ type: type.id });
         }}
+        className="asset-segment"
       >
-        <Select.Trigger
-          className="asset-filter-trigger"
-          data-active={(!disabled && filters.tool !== "all") || undefined}
-        >
-          <UiIcon icon={ToolIcon} className="asset-filter-lead" />
-          <Select.Value>{({ selectedText }) => selectedText}</Select.Value>
-          <Select.Indicator />
-        </Select.Trigger>
-        <Select.Popover className="model-menu asset-filter-menu" placement="bottom start">
-          <ListBox aria-label={t.tool}>
-            <ListBox.Item className="model-options" id="all" textValue={t.allTools}>
-              <UiIcon icon={IconLayoutGrid} />
-              <span>{t.allTools}</span>
-              <ListBox.ItemIndicator />
-            </ListBox.Item>
-            {libraryTools.map((tool) => (
-              <ListBox.Item
-                className="model-options"
-                key={tool.id}
-                id={tool.id}
-                textValue={toolText[tool.id].name}
-              >
-                <UiIcon icon={toolIcons[tool.id]} />
-                <span>{toolText[tool.id].name}</span>
-                {tool.id === currentTool && (
-                  <span className="asset-filter-now">{t.currentTool}</span>
-                )}
-                <ListBox.ItemIndicator />
-              </ListBox.Item>
-            ))}
-          </ListBox>
-        </Select.Popover>
-      </Select>
-      <AssetMediaFilter type={filters.type} dropdown={compact || mediaSelect} set={set} t={t} />
-      <Select
-        className="asset-filter"
-        aria-label={t.model}
-        value={filters.model}
-        isDisabled={disabled}
-        onChange={(key) => set({ model: key === null ? "all" : String(key) })}
+        {mediaTypes.map((type) => (
+          <ToggleButton key={type.id} id={type.id}>
+            <UiIcon icon={type.icon} size="small" />
+            {t.mediaTypes[type.id]}
+          </ToggleButton>
+        ))}
+      </ToggleButtonGroup>
+      <AssetSourceMenu filters={filters} currentTool={currentTool} onChange={set} />
+      <AssetTimeMenu time={filters.time} onChange={(time) => set({ time })} />
+      <Switch
+        className="asset-favorite-filter"
+        isSelected={filters.favorite}
+        onChange={(favorite) => set({ favorite })}
       >
-        <Select.Trigger
-          className="asset-filter-trigger"
-          data-active={(!disabled && filters.model !== "all") || undefined}
-        >
-          <UiIcon icon={IconSparkles} className="asset-filter-lead" />
-          <Select.Value>{({ selectedText }) => selectedText}</Select.Value>
-          <Select.Indicator />
-        </Select.Trigger>
-        <Select.Popover className="model-menu asset-filter-menu" placement="bottom start">
-          <ListBox aria-label={t.model}>
-            <ListBox.Item className="model-options" id="all" textValue={t.allModels}>
-              <span>{t.allModels}</span>
-              <ListBox.ItemIndicator />
-            </ListBox.Item>
-            {models.map((model) => (
-              <ListBox.Item
-                className="model-options"
-                key={model.id}
-                id={model.id}
-                textValue={model.name}
-              >
-                <span>{model.name}</span>
-                <ListBox.ItemIndicator />
-              </ListBox.Item>
-            ))}
-          </ListBox>
-        </Select.Popover>
-      </Select>
-      {mediaSelect && <AssetTimeFilter time={filters.time} set={set} t={t} />}
-      {!sameFilters(filters, reset) && (
-        <Button
-          size="sm"
-          variant="ghost"
-          className="asset-filter-reset"
-          onPress={() => onChange(reset)}
-        >
-          <UiIcon icon={IconRefresh} size="small" />
-          {t.resetFilters}
-        </Button>
-      )}
-      {disabled && !compact && <span className="asset-filter-hint">{t.uploadsNoFilters}</span>}
-      {displayControls}
-      {loaded !== null && !compact && (
-        <span className="asset-filter-meta">
-          {t.loadedBefore}
-          <b>{loaded}</b>
-          {t.loadedAfter}
-        </span>
-      )}
+        <Switch.Content>
+          <Label>{t.favoritesOnly}</Label>
+          <Switch.Control>
+            <Switch.Thumb />
+          </Switch.Control>
+        </Switch.Content>
+      </Switch>
+      <span className="asset-filters-end">{trailing}</span>
     </div>
   );
 }
 
-type SetAssetFilters = (patch: Partial<AssetLibraryFilters>) => void;
-
-function AssetSourceFilter({
-  source,
-  set,
-  t,
+/** 来源菜单：全部来源、我上传的，以及“AI 生成”分组（全部 AI 生成和各个功能，当前功能标“当前”）。 */
+function AssetSourceMenu({
+  filters,
+  currentTool,
+  onChange,
 }: {
-  source: AssetLibraryFilters["source"];
-  set: SetAssetFilters;
-  t: AssetsText;
+  filters: AssetLibraryFilters;
+  currentTool?: AssetTool | undefined;
+  onChange: (patch: Pick<AssetLibraryFilters, "source" | "tool">) => void;
 }) {
-  const SourceIcon = sources.find((entry) => entry.id === source)?.icon ?? IconPhoto;
+  const t = useMessages(assetsMessages);
+  const toolText = useMessages(workspaceToolMessages).tools;
+  const key = sourceKey(filters);
+  const label = (entry: SourceKey) => (isSource(entry) ? t.sources[entry] : toolText[entry].name);
+  const icon = (entry: SourceKey) => (isSource(entry) ? sourceIcons[entry] : toolIcons[entry]);
+  const option = (entry: SourceKey, text: string) => (
+    <ListBox.Item className="model-options" key={entry} id={entry} textValue={text}>
+      <UiIcon icon={icon(entry)} />
+      <span>{text}</span>
+      {entry === currentTool && <span className="asset-filter-now">{t.currentTool}</span>}
+      <ListBox.ItemIndicator />
+    </ListBox.Item>
+  );
   return (
     <Select
       className="asset-filter"
       aria-label={t.source}
-      value={source}
-      onChange={(key) => {
-        const source = sources.find((entry) => entry.id === key)?.id;
-        if (source) set({ source });
+      value={key}
+      onChange={(next) => {
+        const match = sourceKeys.find((entry) => entry === next);
+        if (match) onChange(filtersForKey(match));
       }}
     >
-      <Select.Trigger className="asset-filter-trigger">
-        <UiIcon icon={SourceIcon} className="asset-filter-lead" />
-        <Select.Value>{({ selectedText }) => selectedText}</Select.Value>
+      <Select.Trigger className="asset-filter-trigger" data-active={key !== "all" || undefined}>
+        <UiIcon icon={icon(key)} className="asset-filter-lead" />
+        <Select.Value>{() => label(key)}</Select.Value>
         <Select.Indicator />
       </Select.Trigger>
       <Select.Popover className="model-menu asset-filter-menu" placement="bottom start">
         <ListBox aria-label={t.source}>
-          {sources.map((source) => (
-            <ListBox.Item
-              className="model-options"
-              key={source.id}
-              id={source.id}
-              textValue={t.sources[source.id]}
-            >
-              <UiIcon icon={source.icon} />
-              <span>{t.sources[source.id]}</span>
-              <ListBox.ItemIndicator />
-            </ListBox.Item>
-          ))}
+          {option("all", t.sources.all)}
+          {option("uploads", t.sources.uploads)}
+          <ListBox.Section className="asset-filter-section">
+            <Header className="asset-filter-heading">{t.sources.generated}</Header>
+            {option("generated", t.allGenerated)}
+            {workspaceTools.map((tool) => option(tool.id, toolText[tool.id].name))}
+          </ListBox.Section>
         </ListBox>
       </Select.Popover>
     </Select>
   );
 }
 
-function AssetMediaFilter({
-  type,
-  dropdown,
-  set,
-  t,
-}: {
-  type: AssetMediaType;
-  dropdown: boolean;
-  set: SetAssetFilters;
-  t: AssetsText;
-}) {
-  if (dropdown)
-    return (
-      <Select
-        className="asset-filter"
-        aria-label={t.type}
-        value={type}
-        onChange={(key) => {
-          const type = mediaTypes.find((entry) => entry === key);
-          if (type) set({ type });
-        }}
-      >
-        <Select.Trigger className="asset-filter-trigger" data-active={type !== "all" || undefined}>
-          <Select.Value>{({ selectedText }) => selectedText}</Select.Value>
-          <Select.Indicator />
-        </Select.Trigger>
-        <Select.Popover className="model-menu asset-filter-menu" placement="bottom start">
-          <ListBox aria-label={t.type}>
-            {mediaTypes.map((type) => (
-              <ListBox.Item
-                className="model-options"
-                key={type}
-                id={type}
-                textValue={t.mediaTypes[type].compact}
-              >
-                <span>{t.mediaTypes[type].compact}</span>
-                <ListBox.ItemIndicator />
-              </ListBox.Item>
-            ))}
-          </ListBox>
-        </Select.Popover>
-      </Select>
-    );
-  return (
-    <ToggleButtonGroup
-      aria-label={t.type}
-      selectionMode="single"
-      disallowEmptySelection
-      selectedKeys={[type]}
-      onSelectionChange={(keys) => {
-        const type = mediaTypes.find((entry) => keys.has(entry));
-        if (type) set({ type });
-      }}
-      className="asset-segment"
-    >
-      {mediaTypes.map((type) => (
-        <ToggleButton key={type} id={type}>
-          {t.mediaTypes[type].label}
-        </ToggleButton>
-      ))}
-    </ToggleButtonGroup>
-  );
-}
-
-function AssetTimeFilter({
+/** 时间菜单：全部时间、今天、最近 7／30／90 天；选了时间范围，列表才按天分组。 */
+function AssetTimeMenu({
   time,
-  set,
-  t,
+  onChange,
 }: {
-  time: AssetLibraryFilters["time"];
-  set: SetAssetFilters;
-  t: AssetsText;
+  time: AssetTimeRange;
+  onChange: (time: AssetTimeRange) => void;
 }) {
+  const t = useMessages(assetsMessages);
   return (
     <Select
       className="asset-filter"
       aria-label={t.time}
-      value={time ?? "all"}
-      onChange={(key) => {
-        const time = timeOptions.find((option) => option === key);
-        if (time) set({ time });
+      value={time}
+      onChange={(next) => {
+        const match = assetTimeRanges.find((entry) => entry === next);
+        if (match) onChange(match);
       }}
     >
-      <Select.Trigger
-        className="asset-filter-trigger"
-        data-active={(!!time && time !== "all") || undefined}
-      >
+      <Select.Trigger className="asset-filter-trigger" data-active={time !== "all" || undefined}>
         <UiIcon icon={IconCalendar} className="asset-filter-lead" />
-        <Select.Value>{({ selectedText }) => selectedText}</Select.Value>
+        <Select.Value>{() => t.times[time]}</Select.Value>
         <Select.Indicator />
       </Select.Trigger>
       <Select.Popover className="model-menu asset-filter-menu" placement="bottom start">
         <ListBox aria-label={t.time}>
-          {timeOptions.map((option) => (
+          {assetTimeRanges.map((option) => (
             <ListBox.Item
               className="model-options"
               key={option}

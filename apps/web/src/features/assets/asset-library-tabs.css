@@ -1,0 +1,133 @@
+/* 素材库标签行（DESIGN.md §8 素材库）：“我的素材 / 灵感库”两个标签就是标题，20px／28px／600，
+ * 未选中 #FFFFFF66、悬停 #FFFFFFB3、选中 #EEE，下方 2px 灰白下划线；弹窗里关闭按钮在标签左侧。 */
+.asset-library-tabs.tabs {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.asset-library-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-3);
+  height: var(--header-height);
+}
+.asset-library-head .tabs__list-container {
+  min-width: 0;
+}
+.asset-library-head .tabs__list {
+  gap: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+/* 标签与标签行同高，文字在行内居中，下划线落在文字下方 9px。 */
+.asset-library-head .tabs__tab {
+  height: var(--header-height);
+  padding: 0;
+  border-radius: 0;
+  color: #ffffff66;
+  font-size: var(--text-xl);
+  line-height: var(--leading-xl);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+.asset-library-head .tabs__tab:is(:hover, [data-hovered="true"]) {
+  color: #ffffffb3;
+  opacity: 1;
+}
+.asset-library-head .tabs__tab[data-selected="true"] {
+  color: #eee;
+}
+.asset-library-head .tabs__indicator {
+  top: auto;
+  bottom: 9px;
+  height: 2px;
+  border: 0;
+  border-radius: 999px;
+  background: #eee;
+  box-shadow: none;
+}
+.asset-library-panel.tabs__panel {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* 灵感库标签沿用首页作品墙的卡片、详情与“做同款”；分类改成与“图片 | 视频”同款的胶囊分段，
+ * 右侧一行说明示例都是 AI 生成。 */
+.asset-library-inspiration .home-inspiration {
+  margin: 0;
+  padding: 0 0 var(--space-6);
+}
+.asset-library-inspiration .home-inspiration-bar {
+  min-height: 56px;
+}
+.asset-library-inspiration .home-inspiration .tabs__list {
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: #ffffff0a;
+}
+.asset-library-inspiration .home-inspiration .tabs__tab {
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 999px;
+  color: #ffffff99;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
+}
+.asset-library-inspiration .home-inspiration .tabs__tab:is(:hover, [data-hovered="true"]) {
+  color: var(--foreground);
+}
+.asset-library-inspiration .home-inspiration .tabs__tab[data-selected="true"] {
+  color: #fff;
+  font-weight: var(--weight-medium);
+}
+.asset-library-inspiration .home-inspiration .toggle-selection {
+  inset: 0;
+  height: auto;
+  background: var(--control-selected-fill);
+}
+.asset-library-inspiration .home-inspiration .tabs__panel {
+  padding-top: var(--space-4);
+  border-top: 1px solid #ffffff0f;
+}
+@media (max-width: 767px) {
+  .asset-library-head {
+    gap: var(--space-2);
+  }
+  .asset-library-head .tabs__list {
+    gap: 22px;
+  }
+  .asset-library-head .tabs__tab {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+  }
+  .asset-library-inspiration .home-inspiration {
+    padding: 0 0 var(--space-4);
+  }
+  .asset-library-inspiration .home-inspiration .tabs__tab {
+    height: 44px;
+  }
+}
+/* 分类条右侧的说明（首页不显示，用户 2026-11-10 要求去掉）；手机放到分类下方一行。 */
+.asset-library-inspiration .home-inspiration-note {
+  margin: 0;
+  color: #ffffff66;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  text-align: right;
+}
+@media (max-width: 767px) {
+  .asset-library-inspiration .home-inspiration-bar {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding-bottom: var(--space-2);
+  }
+  .asset-library-inspiration .home-inspiration-note {
+    width: 100%;
+    text-align: left;
+  }
+}

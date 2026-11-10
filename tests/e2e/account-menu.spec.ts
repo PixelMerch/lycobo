@@ -174,11 +174,15 @@ for (const width of [1440, 320]) {
     await expect(trigger).toBeFocused();
 
     await trigger.click();
+    const url = page.url();
     await menu.getByRole("menuitem", { name: "个人作品", exact: true }).click();
-    await expect(page).toHaveURL(/\/assets$/);
-    // Leaving through the menu also closes the mobile navigation drawer.
+    // 个人作品直接打开素材库弹窗，不离开当前页面；手机上同时收起导航抽屉。
+    const library = page.getByRole("dialog", { name: "素材库", exact: true });
+    await expect(library).toBeVisible();
+    expect(page.url()).toBe(url);
     await expect(page.locator(".mobile-nav")).toHaveCount(0);
-    await page.goBack();
+    await page.keyboard.press("Escape");
+    await expect(library).toHaveCount(0);
     await expect(draft).toHaveValue("保留正在准备的商品图");
     await expect
       .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-// 首页作品墙先显示 10 张，滚到底部附近再补两次、每次 4 张，之后换成“查看更多案例”。
+// 首页作品墙先显示 10 张，滚到底部附近再补两次、每次 4 张，之后换成“查看更多灵感”。
 const firstPage = 10;
 const pageStep = 4;
 const maxLoads = 2;

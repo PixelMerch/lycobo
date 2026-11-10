@@ -630,9 +630,10 @@ test("asset grids defer video loading until the video preview opens", async ({ p
   expect(mediaReads).toBe(0);
   const card = page.locator(".asset-tile").filter({ has: tile });
   await expect(tile.locator(".video-cover-play")).toBeVisible();
-  await expect(card.locator(".asset-tile-badge")).toHaveText("视频创作");
   await expect(card.locator(".asset-tile-specs")).toHaveText("768p · 0:10");
-  await expect(card.locator(".asset-tile-meta")).toBeEmpty();
+  // 视频封面只显示规格，不显示来源与时间那一行，也不再贴模型角标。
+  await expect(card.locator(".asset-tile-foot")).toHaveCount(0);
+  await expect(card.locator(".model-tag")).toHaveCount(0);
   await tile.click();
   const preview = page.getByRole("dialog", { name: "视频预览", exact: true });
   await expect(preview.locator("video")).toBeVisible();

@@ -153,7 +153,7 @@ Worker 以 `Image generation stage timing` 输出结构化分段计时，包含 
 
 ## 素材库筛选与收藏
 
-2026-11-03 起，素材库页面与各工具右侧的“我的素材”使用上表的筛选和收藏接口。收藏存于 `image_asset_favorites`（组织、成员、素材联合主键，组合外键约束素材归属与成员关系，按成员与收藏时间建索引），按成员区分；数量上限在同一成员的事务级 advisory lock 内校验，并发收藏不会超出。工具由任务输入判定：含 `textileSet` 为家纺裂变，含 `variation` 为套图计划，其余为主图制作，与历史筛选一致。
+2026-11-03 起，素材库页面与各工具右侧的“我的素材”使用上表的筛选和收藏接口；2026-11-10 改版后来源“全部”不传 `kind`，“仅看收藏”传 `favorite=true`，前端不再传 `model`。收藏存于 `image_asset_favorites`（组织、成员、素材联合主键，组合外键约束素材归属与成员关系，按成员与收藏时间建索引），按成员区分；数量上限在同一成员的事务级 advisory lock 内校验，并发收藏不会超出。工具由任务输入判定：含 `textileSet` 为家纺裂变，含 `variation` 为套图计划，其余为主图制作，与历史筛选一致。
 
 迁移统一使用 `packages/db/migrations/0038_asset_favorites.sql` 及其后续追加迁移。先升级目标 PostgreSQL，再部署 API；主站和独立图片 Worker 共用同一条 Drizzle 迁移链，不在运行时修改结构。
 

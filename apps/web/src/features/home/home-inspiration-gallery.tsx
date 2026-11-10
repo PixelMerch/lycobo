@@ -1,6 +1,6 @@
 import { Button, Modal } from "@heroui/react";
 import { IconCopy } from "@tabler/icons-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { ConfirmDialog } from "../../components/overlays/confirm-dialog";
 import { DialogClose } from "../../components/overlays/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
@@ -17,12 +17,23 @@ import "./home-inspiration-gallery.css";
 
 /**
  * 展示灵感示例，用户确认后带入主图草稿，不自动提交任务。
- * 首页作品墙分批加载后给出“查看更多案例”；案例库页面传 library，一次显示全部。
+ * 首页作品墙分批加载后给出“查看更多灵感”；灵感库页面和素材库的灵感库标签传 library，一次显示全部。
+ * note 放在分类条右侧；onApplied 在带着提示词去工作台后调用，素材库弹窗借此关闭自己。
  */
-export function HomeInspirationGallery({ library = false }: { library?: boolean }) {
+export function HomeInspirationGallery({
+  library = false,
+  note,
+  onApplied,
+}: {
+  library?: boolean;
+  note?: string;
+  onApplied?: () => void;
+}) {
   const navigate = useAppNavigate();
   const requireLogin = useRequireLogin();
   const t = useMessages(homeInspirationMessages);
+  // 首页作品墙和素材库弹窗里的灵感库可能同时在页面上，标题 id 各用各的。
+  const titleId = useId();
   const inspirations = homeInspirationsFor(useLocale());
   // 记住示例 id 而不是文字，切换语言后弹窗里的标题和提示词跟着换。
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -35,6 +46,7 @@ export function HomeInspirationGallery({ library = false }: { library?: boolean 
     setReplacingId(null);
     setSelectedId(null);
     void navigate("/commerce/create");
+    onApplied?.();
   }
   // 示例只填入提示词，进入工作台不上传示例或提交付费任务。
   function use(item: HomeInspiration) {
@@ -45,13 +57,14 @@ export function HomeInspirationGallery({ library = false }: { library?: boolean 
     else apply(item);
   }
   return (
-    <section className="home-inspiration" aria-labelledby="home-inspiration-title">
-      <h2 id="home-inspiration-title" className="sr-only">
+    <section className="home-inspiration" aria-labelledby={titleId}>
+      <h2 id={titleId} className="sr-only">
         {t.title}
       </h2>
       <InspirationWall
         items={inspirations}
         library={library}
+        note={note}
         onOpen={(item) => setSelectedId(item.id)}
         onUse={use}
       />

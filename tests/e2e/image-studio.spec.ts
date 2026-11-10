@@ -66,8 +66,11 @@ test("current draft, references and output choices follow model switches and sur
       .getByRole("radio", { name: "3:4", exact: true }),
   ).toHaveAttribute("data-selected", "true");
   await expect(page.locator(".reference-tile")).toHaveCount(1);
-  await page.getByRole("link", { name: "素材库", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "素材库", exact: true })).toBeVisible();
+  await page
+    .getByRole("navigation", { name: "主导航", exact: true })
+    .getByRole("link", { name: "首页", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await page.getByRole("button", { name: "电商", exact: true }).click();
   await page.getByRole("menuitem", { name: "主图制作", exact: true }).click();
   await expect(prompt).toHaveValue("保留我的商品草稿");

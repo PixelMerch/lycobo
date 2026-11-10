@@ -119,7 +119,7 @@ test("each main image model submits at 1.5K, queued results become durable histo
   });
   await page.reload();
   await expect(page.locator(".generation-results img")).toHaveCount(mainModels.length);
-  await page.getByRole("link", { name: "素材库", exact: true }).click();
+  await page.goto("/assets");
   await expect(page.locator(".asset-tile img")).toHaveCount(mainModels.length);
   await page.reload();
   await expect(page.locator(".asset-tile img")).toHaveCount(mainModels.length);

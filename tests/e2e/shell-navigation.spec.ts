@@ -12,7 +12,7 @@ test("top navigation stays in one row and keeps drafts across desktop and mobile
   await expect(page.locator(".sidebar")).toHaveCount(0);
   const navigation = page.getByRole("navigation", { name: "主导航", exact: true });
   const rows = navigation.locator(".nav-row");
-  await expect(rows).toHaveText(["首页", "电商", "素材库"]);
+  await expect(rows).toHaveText(["首页", "电商"]);
   const tops = await rows.evaluateAll((nodes) =>
     nodes.map((node) => Math.round(node.getBoundingClientRect().top)),
   );
@@ -59,7 +59,8 @@ for (const mobile of [false, true]) {
   }) => {
     await mockImageApi(page, { signedIn: false });
     await page.setViewportSize(mobile ? { width: 390, height: 844 } : { width: 1584, height: 993 });
-    for (const entry of ["主图制作", "素材库"]) {
+    // 顶部导航不再有素材库；手机抽屉里的素材库是打开弹窗的按钮，未登录时同样先去登录。
+    for (const entry of mobile ? ["主图制作", "素材库"] : ["主图制作"]) {
       await page.goto("/");
       if (mobile) await page.getByRole("button", { name: "打开导航", exact: true }).click();
       const navigation = page.locator(mobile ? ".mobile-nav" : ".topbar");
@@ -72,7 +73,9 @@ for (const mobile of [false, true]) {
       if (!mobile && entry === "主图制作") {
         await navigation.getByRole("button", { name: "电商", exact: true }).click();
         await page.getByRole("menuitem", { name: entry, exact: true }).click();
-      } else await navigation.getByRole("link", { name: entry, exact: true }).click();
+      } else if (entry === "素材库")
+        await navigation.getByRole("button", { name: entry, exact: true }).click();
+      else await navigation.getByRole("link", { name: entry, exact: true }).click();
       const login = page.locator(".login-page");
       await expect(login).toBeVisible();
       await login.getByRole("button", { name: "关闭登录", exact: true }).click();

@@ -81,6 +81,21 @@
   text-decoration: none;
   transition: color 160ms ease;
 }
+/* 素材库入口是打开弹窗的按钮，外观与其他页脚链接相同。 */
+.site-footer-link.button {
+  justify-content: flex-start;
+  height: auto;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-weight: inherit;
+}
+.site-footer-link.button:is(:hover, [data-hovered="true"], [data-pressed="true"]) {
+  background: transparent;
+}
 .site-footer-link .ui-icon {
   flex: none;
   color: #ffffff80;

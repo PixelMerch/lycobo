@@ -139,7 +139,7 @@ body:has(.commerce-home) {
 }
 .home-modes .tabs__list {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   width: 100%;
   min-width: 0;
   gap: 0;
@@ -285,6 +285,18 @@ body:has(.commerce-home) {
     background-color 160ms ease;
 }
 .home-dock-link:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
+  background: #ffffff14;
+  color: #fff;
+}
+/* 素材库入口是打开弹窗的按钮（用户 2026-11-10 要求不跳转页面），外观与旁边的链接相同。 */
+.home-dock-link.button {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.home-dock-link.button:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
   background: #ffffff14;
   color: #fff;
 }

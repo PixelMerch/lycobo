@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { aspectRatio, dayHeading, groupByDay, masonryPositions } from "./asset-layout";
+import {
+  aspectRatio,
+  assetColumns,
+  dayHeading,
+  groupByDay,
+  masonryPositions,
+} from "./asset-layout";
 
 const sized = (width: number, height: number, id = `${width}x${height}`) => ({
   id,
@@ -49,5 +55,13 @@ describe("asset library layout", () => {
     expect(dayHeading(new Date(2025, 11, 31, 10).toISOString(), "en", now).label).toBe(
       "Dec 31, 2025",
     );
+  });
+
+  it("fits six columns on a 1920 screen, five on 1440 and two on a phone", () => {
+    expect(assetColumns(1872)).toBe(6);
+    expect(assetColumns(1392)).toBe(5);
+    expect(assetColumns(976)).toBe(4);
+    expect(assetColumns(720)).toBe(3);
+    expect(assetColumns(358)).toBe(2);
   });
 });

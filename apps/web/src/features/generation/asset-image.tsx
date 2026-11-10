@@ -47,14 +47,21 @@ export function AssetImage({
       src={src}
       onError={(event) => {
         onError?.(event);
+        const failed = src;
+        const markFailed = () => {
+          setFailedSrc(failed);
+          onUnavailable?.();
+        };
         if (!query.isFetching && query.data && !refreshAttempted.current.has(assetId)) {
           refreshAttempted.current.add(assetId);
           clearPreviewLinks();
-          void query.refetch();
+          // 刷新后地址没变（或刷新失败）时浏览器不会重新加载，也不会再报错，这里直接按失败处理。
+          void query.refetch().then(() => {
+            if (assetContentUrl(assetId, thumbnail) === failed) markFailed();
+          });
           return;
         }
-        setFailedSrc(src);
-        onUnavailable?.();
+        markFailed();
       }}
     />
   );

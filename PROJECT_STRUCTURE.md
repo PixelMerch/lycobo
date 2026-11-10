@@ -88,7 +88,7 @@ apps/web/src/
     │   └── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，justified-rows.ts 按容器宽度（use-element-width.ts）算出等高行拼图
     ├── site/                     # 站点页脚：首页与用户协议、隐私政策页共用
     ├── legal/                    # 用户协议与隐私政策公开页；运营主体等待补信息集中在 legal-entity-messages.ts
-    ├── assets/                   # 素材库页面、全屏我的素材与共用浏览组件（筛选、密度网格、收藏）
+    ├── assets/                   # 素材库页面与工作区全屏素材库：我的素材／灵感库标签、筛选、瀑布流、多选批量下载与收藏
     ├── generation/               # 生图请求、事件、会话草稿及工作台页面
     │   ├── composer/             # 比例选择、参数选中背景、图片与视频共用的单选参数行
     │   ├── models/               # 模型展示资料、Logo 与下拉选择
@@ -106,7 +106,7 @@ apps/web/src/
 - `features/auth/login-prompt.tsx` 共享登录导航与首页创作交互门禁；Header及首页操作前往懒加载的 `/login`，`login-navigation.ts` 校验站内返回地址。`login-page.tsx` 在青柠丝绸背景（`login-backdrop.tsx`）上居中固定尺寸玻璃卡片并负责翻面，版式在同目录 `login-page.css`；`login-methods.tsx` 如实展示尚未接入的入口，`enterprise-login.tsx` 保留真实密码认证。`app/studio-shell.tsx` 在登录状态确认前不挂载非首页业务内容，未登录时重定向；登录页不挂载应用壳或实时连接，回到业务页后按原有持久游标重连补齐。
 - `app/studio-shell.tsx` 组合导航、身份门禁、账户和生图事件；`use-window-scrolled.ts` 提供页面是否离开顶部，顶部栏据此切换透明与滚动磨砂。路由页面留在各 feature。首页、工作台和素材页继续由路由懒加载，`image-workspace/preview-workspace.tsx` 及 Konva 继续按预览需要加载。
 - `generation/generation-client.ts` 维护现有生图、历史和素材 API 查询与缓存，被历史、素材库和编辑工作区直接引用；目录维护不改变 query key 或增加请求层。
-- `assets/asset-library-client.ts` 负责素材库查询（生成／上传／收藏与功能、类型、模型筛选，素材库页面写入地址栏）和服务端收藏：一个有上限的收藏 ID 查询供所有星标共用，切换乐观更新、失败回滚；`asset-browser.tsx` 组合页签、`asset-filters.tsx`、`asset-tile.tsx` 与现有图片预览，`asset-masonry.tsx` 订阅网格尺寸并组合原比例瀑布流，`asset-layout.ts` 提供按天分组与保持输入顺序的最短列定位纯函数。`assets-page.tsx` 与 `library-dialog.tsx`（我的素材，功能默认当前工具）只组合该浏览组件。
+- `assets/asset-library-client.ts` 负责素材库查询（来源含 AI 生成的功能、类型、时间与仅看收藏，素材库页面写入地址栏）和服务端收藏：一个有上限的收藏 ID 查询供所有星标共用，切换乐观更新、失败回滚；`asset-browser.tsx` 组合 `asset-filters.tsx`、`asset-selection.tsx`（多选与批量下载，打包在 `asset-archive.ts`）、`asset-tile.tsx` 与现有图片预览，`asset-masonry.tsx` 订阅网格宽度并组合原比例瀑布流，`asset-layout.ts` 提供列数、按天分组与保持输入顺序的最短列定位纯函数。`asset-library-tabs.tsx` 是“我的素材 / 灵感库”标签行；`assets-page.tsx` 与 `library-dialog.tsx`（工作区打开，来源默认当前功能）只组合标签、浏览组件与首页的灵感作品墙。生成记录整组下载与素材批量下载共用 `generation/original-download.ts` 读取原文件。
 - `generation/studio-state.ts` 保留原有客户端草稿、跨页面交互状态及样例定义，现有引用直接指向它；目录归类不把样例转换成持久服务，也不改变状态生命周期。
 - `image-workspace/local-edit` 负责编辑交互，调用生图请求；预览壳组合画布与编辑面板。底层请求不反向依赖页面。类型依赖继续使用 `import type`，不为目录入口建立运行时循环。
 - `styles/fullscreen-dialog.css` 是图片详情与素材库共用的全屏动效；各功能 CSS 随对应组件导入。目录维护保持 DOM、class、样式内容、文案及交互逻辑不变。
