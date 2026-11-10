@@ -2,11 +2,6 @@ import { lazy, Suspense, useEffect } from "react";
 import { type AccountLayer, useAccountOverlays } from "./account-overlay-store";
 import { RechargeDialog } from "./credits/credits-dialog";
 
-const AccountCenterDialog = lazy(() =>
-  import("./center/account-center-dialog").then((module) => ({
-    default: module.AccountCenterDialog,
-  })),
-);
 const AccountSettingsDialog = lazy(() =>
   import("./settings/account-settings-dialog").then((module) => ({
     default: module.AccountSettingsDialog,
@@ -32,26 +27,21 @@ function useReturnFocus(layer: AccountLayer, isOpen: boolean) {
   }, [isOpen, layer, opener, release]);
 }
 
-/** 统一挂载账户相关弹层（账单、设置、充值、会员、积分使用明细），关闭后各自把焦点还给打开它的入口。 */
+/** 统一挂载账户相关弹层（账户设置及叠在其上的充值、会员、积分明细），关闭后各自把焦点还给打开它的入口。 */
 export function AccountOverlayHost() {
-  const center = useAccountOverlays((state) => state.center);
+  const settings = useAccountOverlays((state) => state.settings);
   const dialog = useAccountOverlays((state) => state.dialog);
   const close = useAccountOverlays((state) => state.close);
   const reset = useAccountOverlays((state) => state.reset);
-  useReturnFocus("center", center !== null);
+  useReturnFocus("settings", settings !== null);
   useReturnFocus("dialog", dialog !== null);
   // 退出登录会卸载这里并清空状态，下次登录后不会自动重开任何弹层。
   useEffect(() => reset, [reset]);
   return (
     <>
-      {center !== null && (
+      {settings !== null && (
         <Suspense fallback={null}>
-          <AccountCenterDialog tab={center} onClose={() => close("center")} />
-        </Suspense>
-      )}
-      {dialog === "settings" && (
-        <Suspense fallback={null}>
-          <AccountSettingsDialog onClose={() => close("dialog")} />
+          <AccountSettingsDialog section={settings} onClose={() => close("settings")} />
         </Suspense>
       )}
       {dialog === "recharge" && <RechargeDialog onClose={() => close("dialog")} />}

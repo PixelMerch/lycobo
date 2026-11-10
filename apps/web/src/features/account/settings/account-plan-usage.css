@@ -1,0 +1,126 @@
+/* 套餐与用量：当前套餐、积分余额两行（左侧标题与数值、右侧操作），下方为积分用量。 */
+.plan-usage {
+  display: flex;
+  flex-direction: column;
+}
+.plan-usage-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) 0;
+  border-bottom: 1px solid var(--glass-card-edge);
+}
+.plan-usage-row:first-child {
+  padding-top: 0;
+}
+.plan-usage-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.plan-usage-label {
+  color: #ffffffb3;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.plan-usage-value {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: #fff;
+  font-size: var(--text-2xl);
+  line-height: var(--leading-2xl);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+.plan-usage-value .credit-coin {
+  color: var(--accent);
+}
+.plan-usage-main small {
+  color: #ffffff80;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+/* 升级用品牌青柠渐变胶囊，充值积分用中性玻璃胶囊。 */
+.plan-usage-row .button {
+  flex: none;
+  height: 40px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+  font-size: var(--text-base);
+  line-height: 20px;
+  font-weight: var(--weight-medium);
+}
+.plan-usage-row .plan-usage-upgrade.button {
+  background: var(--app-primary-gradient);
+  color: var(--accent-foreground);
+}
+.plan-usage-row .plan-usage-upgrade.button:is(:hover, [data-hovered="true"]) {
+  box-shadow: 0 0 24px #a8ff0059;
+  filter: brightness(1.04);
+}
+.plan-usage-row .plan-usage-recharge.button {
+  background: #ffffff14;
+  color: #fff;
+}
+.plan-usage-row .plan-usage-recharge.button:is(:hover, [data-hovered="true"]) {
+  background: #ffffff1f;
+}
+.plan-usage-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-top: var(--space-5);
+}
+.plan-usage-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.plan-usage-history-head h3 {
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
+  font-weight: var(--weight-semibold);
+}
+/* 积分明细／充值订单分段切换：半透明轨道，选中用浅白底，叠在玻璃上不显灰块。 */
+.plan-usage-views.toggle-button-group {
+  gap: 2px;
+  padding: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: #ffffff0f;
+}
+.plan-usage-views .toggle-button {
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #ffffffb3;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.plan-usage-views .toggle-button:is(:hover, [data-hovered="true"]) {
+  background: #ffffff0f;
+  color: #fff;
+}
+.plan-usage-views .toggle-button[data-selected="true"] {
+  background: #ffffff1f;
+  color: #fff;
+}
+@media (max-width: 767px) {
+  .plan-usage-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .plan-usage-row .button,
+  .plan-usage-views .toggle-button {
+    min-height: 44px;
+  }
+}

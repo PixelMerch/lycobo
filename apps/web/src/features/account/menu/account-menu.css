@@ -55,15 +55,6 @@
   white-space: nowrap;
   text-align: left;
 }
-.account-credits {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-variant-numeric: tabular-nums;
-}
-.account-credits strong {
-  font-weight: 600;
-}
 .mobile-nav-account {
   width: 100%;
   padding-top: 0;
@@ -123,91 +114,6 @@
   color: #a1a1aa;
   font-size: 12px;
   line-height: 18px;
-}
-.account-menu-balance {
-  padding: 14px 14px 12px;
-  border-radius: 16px 16px 0 0;
-  background: #ffffff08;
-  box-shadow: inset 0 1px 0 #ffffff0a;
-}
-.account-menu-balance-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-.account-menu-balance-row > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: #d9d7de;
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-}
-.account-menu-balance .credit-coin {
-  color: var(--accent);
-}
-.account-menu-balance strong {
-  font-size: var(--text-xl);
-  line-height: var(--leading-xl);
-}
-.account-menu-balance small {
-  display: block;
-  margin-top: 2px;
-  color: #a1a1aa;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
-/* The two credit shortcuts continue the balance card as a pill pair. */
-.account-menu .account-menu-quick {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 8px;
-  padding: 0 14px 14px;
-  border-radius: 0 0 16px 16px;
-  background: #ffffff08;
-}
-.account-menu .menu-item.account-menu-pill {
-  justify-content: center;
-  min-height: 32px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: #ffffff14;
-  font-weight: var(--weight-medium);
-}
-.account-menu .menu-item.account-menu-pill:is([data-hovered="true"], [data-focused="true"]) {
-  background: #ffffff1f;
-}
-.account-menu .menu-item.account-menu-pill--primary,
-.account-menu
-  .menu-item.account-menu-pill--primary:is([data-hovered="true"], [data-focused="true"]) {
-  background: linear-gradient(120deg, #a8ff00, #54e6a5);
-  color: #142000;
-}
-.account-menu
-  .menu-item.account-menu-pill--primary:is([data-hovered="true"], [data-focused="true"]) {
-  filter: brightness(1.04);
-}
-.account-menu .menu-item.account-menu-member {
-  margin-bottom: 6px;
-  gap: 8px;
-  background: #ffffff06;
-  box-shadow: inset 0 1px 0 #ffffff08;
-}
-.account-menu .menu-item.account-menu-member:is([data-hovered="true"], [data-focused="true"]) {
-  background: var(--interaction-active);
-}
-.account-menu-crown {
-  color: var(--accent);
-}
-.account-menu-member-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  margin-left: auto;
-  color: var(--accent);
-  font-weight: var(--weight-medium);
 }
 .account-menu .dropdown__menu {
   padding: 0;

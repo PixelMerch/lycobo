@@ -4,9 +4,9 @@ import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { useEnterprisePasswordChange } from "../../auth/auth-client";
 import { accountSettingsMessages } from "./account-settings-messages";
-import { SettingsGroup, SettingsRow } from "./account-settings-rows";
+import { SettingsGroup } from "./account-settings-rows";
 
-/** 登录与安全面板：第三方账号绑定（尚未开放）与修改密码。 */
+/** 登录与安全面板：修改密码。 */
 export function AccountPasswordForm() {
   const t = useMessages(accountSettingsMessages);
   const change = useEnterprisePasswordChange();
@@ -18,18 +18,6 @@ export function AccountPasswordForm() {
   useErrorToast(change.error?.message);
   return (
     <div className="account-settings-section">
-      <SettingsGroup title={t.thirdParty}>
-        <SettingsRow
-          label={t.wechat}
-          hint={t.wechatUnavailable}
-          value={<span className="settings-status">{t.notBound}</span>}
-          action={
-            <Button size="sm" variant="secondary" isDisabled>
-              {t.bindWechat}
-            </Button>
-          }
-        />
-      </SettingsGroup>
       <SettingsGroup title={t.changePassword} description={t.changePasswordHint}>
         <Form
           className="account-password-form"

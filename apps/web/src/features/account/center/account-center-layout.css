@@ -1,4 +1,4 @@
-/* The profile and tabs stay fixed; only the selected panel scrolls.
+/* The section list stays fixed; only the selected panel scrolls.
  * Frosting belongs to the dialog, so its backdrop must not form a separate blur root. */
 .account-backdrop.modal__backdrop:has(.account-center-dialog) {
   backdrop-filter: none;
@@ -29,75 +29,17 @@
   line-height: var(--leading-base);
 }
 
-/* ---------- profile ---------- */
-.account-profile-card {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: var(--space-3);
-  padding: 10px 14px;
-  border: 1px solid #ffffff0f;
-  border-radius: 14px;
-  background: var(--account-card-background);
-}
-.account-profile-avatar,
-.account-profile-avatar .avatar__fallback {
-  flex: none;
-  border-radius: 50%;
-  width: 32px;
-  min-width: 32px;
-  height: 32px;
-  background: #34343a;
-  color: #fff;
-  font-size: var(--text-base);
-  font-weight: var(--weight-semibold);
-}
-.account-profile-main {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 2px var(--space-3);
-  min-width: 0;
-}
-.account-profile-main > strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-  font-size: var(--text-base);
-  line-height: var(--leading-base);
-  font-weight: var(--weight-semibold);
-}
-.account-profile-meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-1) 10px;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  font-variant-numeric: tabular-nums;
-}
-.account-copy.button {
-  width: 24px;
-  min-width: 24px;
-  height: 24px;
-  min-height: 24px;
-  margin-left: -6px;
-  color: var(--muted);
-}
 /* ---------- tabs ---------- */
 .account-center-tabs {
   flex: 1;
   min-height: 0;
 }
-.account-center-tabs > .tabs__list-container {
+.account-center-tabs .tabs__list-container {
   flex: none;
   margin-top: var(--space-2);
   border-bottom: 1px solid var(--interaction-active);
 }
-.account-center-tabs > .tabs__list-container .tabs__list {
+.account-center-tabs .tabs__list-container .tabs__list {
   gap: 28px;
   padding: 0 4px;
   border: 0;

@@ -33,8 +33,17 @@ function ProfileHero({ account, role }: { account: EnterpriseIdentity; role: str
   );
 }
 
-/** 个人资料面板：基本资料、企业身份与退出登录；头像上传尚未开放。 */
-export function AccountSettingsProfile({ account }: { account: EnterpriseIdentity }) {
+/**
+ * 账户分区：基本资料与企业身份；头像上传尚未开放。
+ * 手机没有左侧栏，withIdentity 时在顶部显示身份、底部放退出登录。
+ */
+export function AccountSettingsProfile({
+  account,
+  withIdentity,
+}: {
+  account: EnterpriseIdentity;
+  withIdentity: boolean;
+}) {
   const logout = useEnterpriseLogout();
   const t = useMessages(accountSettingsMessages);
   const role = t.enterpriseRole(roleLabel(account.role, useLocale()));
@@ -42,7 +51,7 @@ export function AccountSettingsProfile({ account }: { account: EnterpriseIdentit
   const uid = account.uid;
   return (
     <div className="account-settings-section">
-      <ProfileHero account={account} role={role} />
+      {withIdentity && <ProfileHero account={account} role={role} />}
       <SettingsGroup title={t.basicInfo}>
         <SettingsRow
           label={t.avatar}
@@ -77,18 +86,20 @@ export function AccountSettingsProfile({ account }: { account: EnterpriseIdentit
         <SettingsRow label={t.identity} value={role} />
         <SettingsRow label={t.loginMethod} value={t.enterpriseLogin} />
       </SettingsGroup>
-      <div className="settings-footer">
-        <Button
-          size="sm"
-          variant="secondary"
-          className="account-settings-logout"
-          isPending={logout.isPending}
-          onPress={() => logout.mutate()}
-        >
-          <UiIcon icon={IconLogout} size="small" />
-          {t.logout}
-        </Button>
-      </div>
+      {withIdentity && (
+        <div className="settings-footer">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="account-settings-logout"
+            isPending={logout.isPending}
+            onPress={() => logout.mutate()}
+          >
+            <UiIcon icon={IconLogout} size="small" />
+            {t.logout}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
