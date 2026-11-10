@@ -47,6 +47,7 @@ const refreshClaimsSchema = claimsSchema
     purpose: z.literal("enterprise-refresh"),
     nonce: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
   });
+/** 企业账号鉴权服务：签发与校验 JWT、刷新、改密、保存头像与撤销会话。 */
 export function enterpriseAuth(repository: AuthRepository, config: AuthConfig) {
   const mintRefresh = (sessionId: string, expiresAt: Date) =>
     sign(
@@ -153,9 +154,11 @@ export function enterpriseAuth(repository: AuthRepository, config: AuthConfig) {
         return false;
       return repository.changePassword(credential, await hashPassword(newPassword));
     },
+    /** 保存当前用户的预设头像；id 已由路由按契约校验。 */
+    setAvatarPreset: (userId: string, avatarPreset: string | null) =>
+      repository.setAvatarPreset(userId, avatarPreset),
     async revokeRefresh(token: string) {
-      // Just-rotated credentials may still revoke their own session during logout,
-      // but are never accepted for renewal. This closes the logout/refresh race.
+      // 刚轮换的凭据在退出时仍可撤销自己的会话，但永远不会再被接受用于续期，避免退出与刷新的竞争。
       const claims = await refreshClaims(token);
       if (claims) await repository.revoke(claims.jti);
     },

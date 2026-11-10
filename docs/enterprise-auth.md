@@ -24,14 +24,15 @@ Compose 修改环境变量后运行 `docker compose up -d --no-deps --wait api`�
 
 所有 JSON 响应遵循 [统一返回格式](api-response.md)，下表业务结果均放在顶层 data 内。登录令牌读取 data.accessToken，用户信息读取 data.user。
 
-| 方法与路径                         | 输入／行为                                                                                                                                                     |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| POST /api/v1/auth/enterprise/login | JSON `{account,password}`；必须携带可信 Origin；成功返回 `{accessToken,tokenType:"Bearer",expiresIn:86400,refreshExpiresIn:2592000,user}` 并写 HttpOnly Cookie |
-| GET /api/v1/auth/session           | 验证 JWT 后返回 `{userId,organizationId,role,account}`；未登录／过期返回 401                                                                                   |
-| POST /api/v1/auth/refresh          | 仅接受可信 Origin 和 HttpOnly 刷新 Cookie；轮换刷新凭据并签发新访问 Token，返回同登录的字段；刷新 Token 不进入 JSON                                            |
-| POST /api/v1/auth/password         | 已登录；JSON `{currentPassword,newPassword}`，新密码 12–256 字符；验证旧密码，原子更新密码并撤销该账号全部会话                                                 |
-| POST /api/v1/auth/logout           | 撤销服务端会话并删除 Cookie；重复退出可安全返回 HTTP 200、code=0、data={}                                                                                      |
-| POST /api/v1/image-session         | 企业模式下读取当前 JWT 身份，不再创建本地身份                                                                                                                  |
+| 方法与路径                         | 输入／行为                                                                                                                                                                            |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST /api/v1/auth/enterprise/login | JSON `{account,password}`；必须携带可信 Origin；成功返回 `{accessToken,tokenType:"Bearer",expiresIn:86400,refreshExpiresIn:2592000,user}` 并写 HttpOnly Cookie                        |
+| GET /api/v1/auth/session           | 验证 JWT 后返回 `{userId,organizationId,role,account}`，另带可选 `uid` 与 `avatarPreset`（未选择为 null）；未登录／过期返回 401                                                       |
+| POST /api/v1/auth/refresh          | 仅接受可信 Origin 和 HttpOnly 刷新 Cookie；轮换刷新凭据并签发新访问 Token，返回同登录的字段；刷新 Token 不进入 JSON                                                                   |
+| POST /api/v1/auth/password         | 已登录；JSON `{currentPassword,newPassword}`，新密码 12–256 字符；验证旧密码，原子更新密码并撤销该账号全部会话                                                                        |
+| PUT /api/v1/auth/avatar            | 已登录；Cookie 写请求同样校验可信 Origin；JSON `{avatarPreset}` 只接受 12 个预设 id 或 null（恢复默认），未知 id 或多余字段返回 400；只更新当前会话用户，返回带 `avatarPreset` 的身份 |
+| POST /api/v1/auth/logout           | 撤销服务端会话并删除 Cookie；重复退出可安全返回 HTTP 200、code=0、data={}                                                                                                             |
+| POST /api/v1/image-session         | 企业模式下读取当前 JWT 身份，不再创建本地身份                                                                                                                                         |
 
 兼容性：`system/capabilities` 保留旧 foundation 字段和值，新增加可选 `enterprisePasswordLoginEnabled` 标记企业登录是否已配置，旧客户端可忽略该字段。
 
@@ -70,6 +71,14 @@ API 实例不缓存会话校验结果：后台停用账号、替换凭据以及�
 
 隔离数据库集成验证 1 天／30 天期限、Cookie、并发轮换和旧凭据拒绝、仅刷新 Cookie 的退出、修改密码后双凭据撤销、30 天到期拒绝。浏览器测试覆盖自动恢复、并发请求合并、不保存可读 Token、退出后不自动登录。
 
+## 预设头像
+
+用户 2026-11-10 决定取消头像上传，头像只能从预设中选择，不涉及文件上传或对象存储。迁移 0044 为 `users` 新增可空的 `avatar_preset` 和 CHECK 约束（只允许 2–32 位小写短 id），未选择为 null。新代码会读取这一列，因此必须先应用迁移再部署 API，否则会话查询会失败。
+
+契约 `enterpriseAvatarChangeSchema` 写入时严格限定为 `avatarPresetIds` 中的 12 个 id 或 null；身份响应读取时只要求短字符串且可缺省，后续部署新增预设时旧页面不会登录失败，只显示默认头像。登录、续期和会话响应都从同一身份查询返回 `avatarPreset`，前端保存成功后用返回的身份更新登录状态，顶部栏、账户菜单和设置立即同步，换设备登录也一样。配色只在前端定义，服务端只保存 id。
+
+`test:auth` 隔离集成覆盖：新账号为 null、保存后会话返回新值、其他用户不受影响、数据库拒绝非法 id；单元测试覆盖未登录、未知预设、多余字段、恶意来源和恢复默认。
+
 ## 前端设置
 
-账户菜单“设置”独立打开个人资料、登录与安全，以及企业管理员可见的企业成员分区。登录与安全调用既有`POST /api/v1/auth/password`，按当前密码和新密码提交，不发送确认密码；前端验证新密码长度及两次输入一致性，失败保留会话，成功清理当前登录查询、短期资源链接及续期状态并提示重新登录。密码仅存在当前表单及短生命周期mutation中，不写浏览器持久存储。头像、微信公众号绑定、企业子账号的主站接口尚未接入，相关入口保持禁用；成员页签可见性不代表已完成服务端成员管理权限。
+账户菜单“设置”独立打开个人资料、登录与安全，以及企业管理员可见的企业成员分区。登录与安全调用既有`POST /api/v1/auth/password`，按当前密码和新密码提交，不发送确认密码；前端验证新密码长度及两次输入一致性，失败保留会话，成功清理当前登录查询、短期资源链接及续期状态并提示重新登录。密码仅存在当前表单及短生命周期mutation中，不写浏览器持久存储。头像只能从预设中选择（见上节“预设头像”）；设置不显示第三方账号绑定；企业子账号的主站接口尚未接入，相关入口保持禁用；成员页签可见性不代表已完成服务端成员管理权限。

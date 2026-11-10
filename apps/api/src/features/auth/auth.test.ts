@@ -36,6 +36,7 @@ async function fixture() {
     setCredential: vi.fn(),
     rotateRefresh: vi.fn(async () => null),
     changePassword: vi.fn(async () => true),
+    setAvatarPreset: vi.fn(async () => true),
   };
   const auth = enterpriseAuth(repository, { secret, origins: [origin], secureCookie: false });
   return { auth, repository, app: createApp(undefined, undefined, auth) };
@@ -83,6 +84,40 @@ describe("enterprise JWT login", () => {
     const limited = await request(user.account, "fixture-password-123");
     expect(limited.status).toBe(429);
     expect(limited.headers.get("retry-after")).toBe("900");
+  });
+  it("saves a preset avatar only for the session user and rejects unknown presets or hostile origins", async () => {
+    const { app, auth, repository } = await fixture();
+    const login = await auth.login(user.account, "fixture-password-123");
+    if ("error" in login) throw new Error("fixture login failed");
+    const put = (body: unknown, headers: Record<string, string>) =>
+      app.request("/api/v1/auth/avatar", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify(body),
+      });
+    const bearer = { Authorization: `Bearer ${login.accessToken}` };
+    expect((await put({ avatarPreset: "sky" }, {})).status).toBe(401);
+    expect((await put({ avatarPreset: "glitter" }, bearer)).status).toBe(400);
+    // 请求体不能指定别人的 userId：严格校验拒绝多余字段。
+    expect((await put({ avatarPreset: "sky", userId: crypto.randomUUID() }, bearer)).status).toBe(
+      400,
+    );
+    const saved = await put({ avatarPreset: "sky" }, bearer);
+    expect(saved.status).toBe(200);
+    expect(unwrapApiData(await saved.json())).toMatchObject({ avatarPreset: "sky" });
+    expect(repository.setAvatarPreset).toHaveBeenCalledWith(user.userId, "sky");
+    // Cookie 登录的写请求来自不可信来源时不能改头像。
+    const hostile = await put(
+      { avatarPreset: "rose" },
+      {
+        Cookie: `lycobo_enterprise_session=${login.accessToken}`,
+        Origin: "https://hostile.example",
+      },
+    );
+    expect(hostile.status).toBe(401);
+    expect(repository.setAvatarPreset).toHaveBeenCalledTimes(1);
+    expect((await put({ avatarPreset: null }, bearer)).status).toBe(200);
+    expect(repository.setAvatarPreset).toHaveBeenLastCalledWith(user.userId, null);
   });
   it("sets an HttpOnly JWT cookie, accepts Bearer, rejects tampering and revokes logout", async () => {
     const { app } = await fixture();

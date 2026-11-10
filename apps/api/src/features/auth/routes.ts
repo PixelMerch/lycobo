@@ -1,4 +1,8 @@
-import { enterpriseLoginSchema, enterprisePasswordChangeSchema } from "@lycoboai/contracts";
+import {
+  enterpriseAvatarChangeSchema,
+  enterpriseLoginSchema,
+  enterprisePasswordChangeSchema,
+} from "@lycoboai/contracts";
 import { type Context, Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { enterpriseCookie, enterprisePrincipal, trustedAuthRequest } from "./principal";
@@ -33,6 +37,7 @@ function tokenResponse(
   return c.json(body);
 }
 type Env = { Variables: { requestId: string } };
+/** 企业账号的登录、刷新、改密、头像、会话与退出路由；未配置登录服务时统一返回 503。 */
 export function authRoutes(auth?: EnterpriseAuth) {
   const app = new Hono<Env>();
   const fail = (
@@ -65,7 +70,7 @@ export function authRoutes(auth?: EnterpriseAuth) {
     if (!trustedAuthRequest(c, auth)) return fail(c, "UNTRUSTED_ORIGIN", "请求来源不受信任", 403);
     const token = getCookie(c, refreshCookie);
     const result = token ? await auth.refresh(token) : null;
-    // A concurrent tab may already have rotated the shared cookie. Never clear it on rejection.
+    // 其他标签页可能已经轮换了共用的 Cookie，拒绝时不要清除它。
     return result
       ? tokenResponse(c, auth, result)
       : fail(c, "UNAUTHORIZED", "登录已过期，请重新登录", 401);
@@ -86,6 +91,18 @@ export function authRoutes(auth?: EnterpriseAuth) {
       return fail(c, "INVALID_CREDENTIALS", "当前密码错误或会话已失效", 401);
     clearAuthCookies(c, auth);
     return c.json({});
+  });
+  app.put("/avatar", async (c) => {
+    if (!auth) return fail(c, "AUTH_NOT_CONFIGURED", "登录服务尚未配置", 503);
+    // 只改当前会话对应的用户；Cookie 写请求的来源校验在 enterprisePrincipal 里完成。
+    const session = await enterprisePrincipal(c, auth);
+    if (!session) return fail(c, "UNAUTHORIZED", "请先登录", 401);
+    const input = enterpriseAvatarChangeSchema.safeParse(await c.req.json().catch(() => null));
+    if (!input.success) return fail(c, "VALIDATION_ERROR", "请选择有效的预设头像", 400);
+    const { avatarPreset } = input.data;
+    if (!(await auth.setAvatarPreset(session.user.userId, avatarPreset)))
+      return fail(c, "UNAUTHORIZED", "请先登录", 401);
+    return c.json({ ...session.user, avatarPreset });
   });
   app.get("/session", async (c) => {
     if (!auth) return fail(c, "AUTH_NOT_CONFIGURED", "登录服务尚未配置", 503);

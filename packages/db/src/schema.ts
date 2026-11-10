@@ -36,16 +36,27 @@ export const publicIdentifiers = pgTable("public_identifiers", {
   value: text("value").primaryKey(),
   createdAt: createdAt(),
 });
-export const users = pgTable("users", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  uid: text("uid")
-    .notNull()
-    .unique()
-    .references(() => publicIdentifiers.value)
-    .default(sql`public.allocate_public_identifier('user')`),
-  authSubject: text("auth_subject").notNull().unique(),
-  createdAt: createdAt(),
-});
+export const users = pgTable(
+  "users",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    uid: text("uid")
+      .notNull()
+      .unique()
+      .references(() => publicIdentifiers.value)
+      .default(sql`public.allocate_public_identifier('user')`),
+    authSubject: text("auth_subject").notNull().unique(),
+    // 用户选择的预设头像 id；为空时显示默认头像。可选值由 API 校验，这里只限制格式。
+    avatarPreset: text("avatar_preset"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check(
+      "users_avatar_preset_check",
+      sql`${t.avatarPreset} is null or ${t.avatarPreset} ~ '^[a-z][a-z0-9-]{1,31}$'`,
+    ),
+  ],
+);
 export const projects = pgTable(
   "projects",
   {

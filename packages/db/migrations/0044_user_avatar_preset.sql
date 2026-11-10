@@ -1,0 +1,2 @@
+ALTER TABLE "users" ADD COLUMN "avatar_preset" text;--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_avatar_preset_check" CHECK ("users"."avatar_preset" is null or "users"."avatar_preset" ~ '^[a-z][a-z0-9-]{1,31}$');

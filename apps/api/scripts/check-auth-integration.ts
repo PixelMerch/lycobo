@@ -117,6 +117,21 @@ try {
       unwrapApiData(await (await app.request("/api/v1/auth/session", { headers })).json()),
     );
     assert.equal(session.uid, first.uid);
+    // 预设头像存在 users 表：只改当前会话的用户，会话读取带回同一个值，格式约束拒绝非法 id。
+    assert.equal(session.avatarPreset, null);
+    const savedAvatar = await app.request("/api/v1/auth/avatar", {
+      method: "PUT",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ avatarPreset: "sky" }),
+    });
+    assert.equal(savedAvatar.status, 200);
+    const withAvatar = enterpriseIdentitySchema.parse(
+      unwrapApiData(await (await app.request("/api/v1/auth/session", { headers })).json()),
+    );
+    assert.equal(withAvatar.avatarPreset, "sky");
+    const [otherUser] = await sql`select avatar_preset from users where id=${second.userId}`;
+    assert.equal(otherUser?.avatar_preset ?? null, null);
+    await assert.rejects(sql`update users set avatar_preset='Not Valid!' where id=${first.userId}`);
     const cookie = response.headers.get("set-cookie")?.split(";")[0] ?? "";
     assert.equal((await app.request("/api/v1/image-models", { headers })).status, 200);
     assert.equal(
@@ -151,7 +166,7 @@ try {
       1,
     );
     assert.equal((await app.request(`/api/v1/image-tasks/${job.id}`, { headers })).status, 404);
-    // Existing service API keys remain valid, while cookies never use local fallback.
+    // 现有服务 API 密钥继续有效；Cookie 登录从不回退到本地身份。
     assert.equal(
       (
         await app.request("/api/v1/image-models", {
@@ -188,7 +203,7 @@ try {
       (await app.request("/api/v1/auth/session", { headers: freshHeaders })).status,
       401,
     );
-    // Refresh credentials are HttpOnly, rotated atomically and bounded by the original login.
+    // 刷新凭据只放 HttpOnly Cookie，原子轮换，有效期不超过最初登录的时限。
     const cookieOf = (response: Response, name: string) =>
       response.headers
         .getSetCookie()
@@ -233,7 +248,7 @@ try {
       (await app.request("/api/v1/auth/session", { headers: refreshedHeaders })).status,
       200,
     );
-    // Logout must revoke the refresh session even when the access cookie has expired/disappeared.
+    // 即使访问 Cookie 已过期或丢失，退出登录也必须撤销刷新会话。
     assert.equal(
       (
         await app.request("/api/v1/auth/logout", {

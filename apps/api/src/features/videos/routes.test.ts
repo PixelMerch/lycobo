@@ -20,6 +20,7 @@ const auth: EnterpriseAuth = {
       ? { user, sessionId: crypto.randomUUID(), expiresAt: Date.now() / 1000 + 900 }
       : null,
   changePassword: async () => false,
+  setAvatarPreset: async () => false,
   revokeRefresh: async () => {},
   revoke: async () => {},
 };
