@@ -235,10 +235,10 @@ test("home inspiration filters examples and confirms prompt replacement without 
   });
   await page.goto("/");
   const gallery = page.getByRole("region", { name: "创作灵感", exact: true });
-  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(13);
+  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(10);
   await page.getByRole("textbox", { name: "创作需求" }).fill("我的原提示词");
   await gallery.getByRole("tab", { name: "家纺展示", exact: true }).click();
-  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(4);
+  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(6);
   await gallery.getByRole("button", { name: "查看灵感：枕间细节", exact: true }).click();
   const detail = page.getByRole("dialog", { name: "灵感详情：枕间细节", exact: true });
   await expect(detail.getByText("家纺展示 · 示例素材")).toBeVisible();
@@ -259,6 +259,35 @@ test("home inspiration filters examples and confirms prompt replacement without 
     /基于参考床品拍摄枕头特写/,
   );
   expect(submissions).toBe(0);
+});
+
+test("home inspiration loads two more batches on scroll, then links to the example library", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  const gallery = page.getByRole("region", { name: "创作灵感", exact: true });
+  const cards = gallery.locator(".home-inspiration-card");
+  await expect(cards).toHaveCount(10);
+  const more = gallery.getByRole("button", { name: "查看更多案例", exact: true });
+  await expect(more).toHaveCount(0);
+  await gallery.scrollIntoViewIfNeeded();
+  // 每次滚到作品墙底部补 4 张，最多补两次，然后出现“查看更多案例”。
+  for (const expected of [14, 18]) {
+    await expect(async () => {
+      await page.mouse.wheel(0, 600);
+      await expect(cards).toHaveCount(expected, { timeout: 1000 });
+    }).toPass();
+  }
+  await expect(more).toBeVisible();
+  await page.mouse.wheel(0, 600);
+  await expect(cards).toHaveCount(18);
+  await more.click();
+  await expect(page).toHaveURL(/\/inspiration$/);
+  await expect(page.getByRole("heading", { name: "案例库", level: 1 })).toBeVisible();
+  await expect(page.locator(".home-inspiration-card")).toHaveCount(23);
+  await expect(page.getByRole("button", { name: "查看更多案例", exact: true })).toHaveCount(0);
 });
 
 test("home inspiration cards offer 做同款 by hover or keyboard without submitting paid work", async ({

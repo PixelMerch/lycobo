@@ -28,6 +28,9 @@ export const homeInspirationMessages = defineMessages({
     prompt: "创作提示词",
     hint: "上传你的商品图，使用这段描述开始创作。",
     copyPrompt: "复制提示词",
+    more: "查看更多案例",
+    libraryTitle: "案例库",
+    libraryIntro: "这里的图片都是 AI 生成的示例，不是客户作品。点“做同款”，带着提示词去创作。",
     items: {
       "water-perfume": {
         title: "水光香氛",
@@ -94,6 +97,56 @@ export const homeInspirationMessages = defineMessages({
         prompt:
           "以参考床品为主体，将被子与枕套整齐折叠陈列，保留商品颜色、绗缝和材质纹理，使用干净背景与柔和自然光，不添加文字或品牌。",
       },
+      "white-perfume": {
+        title: "白底香水主图",
+        prompt:
+          "保留参考香水的瓶身、瓶盖与颜色，纯白背景居中摆放，柔和棚拍光与自然投影，符合电商平台主图要求，不添加文字。",
+      },
+      "white-handbag": {
+        title: "白底手袋主图",
+        prompt:
+          "保留参考手袋的形状、颜色、五金和皮革纹理，纯白背景正面展示，光线均匀，细节清晰，不添加道具或文字。",
+      },
+      "white-soda": {
+        title: "白底饮料主图",
+        prompt:
+          "保留参考饮料罐的颜色、图案和罐身细节，纯白背景居中直立，柔和反光与淡淡投影，干净的电商主图，不添加文字。",
+      },
+      "citrus-splash": {
+        title: "西柚水花海报",
+        prompt:
+          "保留参考饮料的罐体、包装和标签，搭配西柚切片、冰块与清澈水花，蓝色清爽背景，夏日商业广告摄影，不编造产品功效，不添加额外文字。",
+      },
+      "stone-perfume": {
+        title: "石台上的香水",
+        prompt:
+          "保留参考商品的瓶身、标签与颜色，将香水放在阳光照射的米色石台上，点缀洋甘菊，柔和自然光，真实商业产品摄影，不添加文字。",
+      },
+      "sunlit-handbag": {
+        title: "暖光石台手袋",
+        prompt:
+          "保留参考包袋的形状、颜色、五金和皮革纹理，在暖色石质展台上拍摄干净的电商商品主图，柔和侧光，细节清晰，不添加文字。",
+      },
+      "glass-pavilion": {
+        title: "林间玻璃建筑",
+        prompt:
+          "以参考商品为主角，置于林间瀑布旁的流线型玻璃建筑场景中，保留商品外观不变，清透自然光，构图有纵深，不添加文字。",
+      },
+      "alpine-sunrise": {
+        title: "云海日出",
+        prompt:
+          "为参考商品搭配雪山云海与粉橙色日出天光，保持商品外观、颜色和比例不变，商品清晰突出，画面辽阔，不添加文字。",
+      },
+      "textile-draped": {
+        title: "垂到地面的被子",
+        prompt:
+          "从床尾斜侧拍摄参考床品，让被子自然垂到地面，保持颜色、绗缝和套件组成不变，晨光卧室，完整展示垂坠感。",
+      },
+      "textile-overhead": {
+        title: "俯拍整床",
+        prompt:
+          "从正上方俯拍参考床品铺好的整张床，保持颜色、花型、绗缝和枕头数量不变，对称构图，光线均匀柔和。",
+      },
     },
   },
   en: {
@@ -120,6 +173,10 @@ export const homeInspirationMessages = defineMessages({
     prompt: "Prompt",
     hint: "Upload your product photo and start creating with this description.",
     copyPrompt: "Copy prompt",
+    more: "View more examples",
+    libraryTitle: "Examples",
+    libraryIntro:
+      "Every image here is an AI-generated sample, not customer work. Choose “Use this style” to start with its prompt.",
     items: {
       "water-perfume": {
         title: "Perfume by the water",
@@ -185,6 +242,56 @@ export const homeInspirationMessages = defineMessages({
         title: "Folded set display",
         prompt:
           "Feature the reference bedding with the duvet and pillowcases neatly folded, keeping the product's colors, quilting and material texture, on a clean background with soft natural light. Don't add text or brands.",
+      },
+      "white-perfume": {
+        title: "Perfume on white",
+        prompt:
+          "Keep the reference perfume's bottle, cap and colors. Center it on a pure white background with soft studio light and a natural shadow, ready for a marketplace main image. Don't add text.",
+      },
+      "white-handbag": {
+        title: "Handbag on white",
+        prompt:
+          "Keep the reference handbag's shape, colors, hardware and leather grain. Show it from the front on a pure white background with even light and clear detail, with no props or text.",
+      },
+      "white-soda": {
+        title: "Drink can on white",
+        prompt:
+          "Keep the reference can's colors, artwork and details. Stand it upright in the center of a pure white background with soft highlights and a light shadow for a clean main image. Don't add text.",
+      },
+      "citrus-splash": {
+        title: "Grapefruit splash poster",
+        prompt:
+          "Keep the reference drink's can, packaging and label. Add grapefruit slices, ice and clear splashes on a fresh blue background for a summer commercial ad. Don't invent product benefits or add extra text.",
+      },
+      "stone-perfume": {
+        title: "Perfume on sunlit stone",
+        prompt:
+          "Keep the reference product's bottle, label and colors. Place the perfume on a sunlit beige stone ledge with chamomile flowers in soft natural light, as a realistic commercial product photo. Don't add text.",
+      },
+      "sunlit-handbag": {
+        title: "Handbag on warm stone",
+        prompt:
+          "Keep the reference bag's shape, colors, hardware and leather grain. Shoot a clean marketplace main image on a warm stone plinth with soft side light and sharp detail. Don't add text.",
+      },
+      "glass-pavilion": {
+        title: "Glass pavilion in the woods",
+        prompt:
+          "Make the reference product the hero of a scene with a flowing glass building beside a forest waterfall, keeping its look unchanged, with clear natural light and a deep composition. Don't add text.",
+      },
+      "alpine-sunrise": {
+        title: "Sunrise above the clouds",
+        prompt:
+          "Pair the reference product with snowy peaks, a sea of clouds and a pink-orange sunrise, keeping its look, colors and proportions unchanged so it stands out in a wide view. Don't add text.",
+      },
+      "textile-draped": {
+        title: "Duvet draped to the floor",
+        prompt:
+          "Shoot the reference bedding from an angle at the foot of the bed with the duvet falling naturally to the floor, keeping its colors, quilting and set pieces unchanged in a morning-lit bedroom.",
+      },
+      "textile-overhead": {
+        title: "Whole bed from above",
+        prompt:
+          "Shoot the made bed with the reference bedding straight from above, keeping its colors, pattern, quilting and number of pillows unchanged, in a symmetrical frame with soft, even light.",
       },
     },
   },

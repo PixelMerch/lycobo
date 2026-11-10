@@ -25,7 +25,7 @@ export const router = createBrowserRouter([
     path: "/design/:view?",
     loader: ({ params }) => redirect(params.view === "assets" ? "/assets" : "/"),
   },
-  ...["history", "canvas", "projects", "inspiration", "templates", "library"].map((path) => ({
+  ...["history", "canvas", "projects", "templates", "library"].map((path) => ({
     path,
     loader: () => redirect("/"),
   })),
@@ -108,6 +108,13 @@ export const router = createBrowserRouter([
         path: "assets",
         lazy: async () => ({
           Component: (await import("../features/assets/assets-page")).AssetsPage,
+        }),
+      },
+      {
+        path: "inspiration",
+        lazy: async () => ({
+          Component: (await import("../features/home/inspiration-library-page"))
+            .InspirationLibraryPage,
         }),
       },
       {

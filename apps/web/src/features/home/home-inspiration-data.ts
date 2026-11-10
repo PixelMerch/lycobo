@@ -15,8 +15,8 @@ type InspirationSample = {
 /** 按界面语言带上标题与提示词的灵感示例。 */
 export type HomeInspiration = InspirationSample & { title: string; prompt: string };
 
-// 顺序按等高行拼图安排：桌面第一行五张竖图、第二行四张方图、第三行方横竖方，
-// 五张米白家纺穿插在彩色图之间，不挤在一起。
+// 顺序按瀑布流安排：竖、方、横交替，米白家纺穿插在彩色图之间；首页先显示前 10 张，向下滚动再各补 4 张。
+// samples/ 下的图切自 commerce-atlas.webp（内置 imagegen 生成的示例图集，见 docs/image-studio-implementation.md）。
 const inspirationSamples: InspirationSample[] = [
   {
     id: "water-perfume",
@@ -28,7 +28,7 @@ const inspirationSamples: InspirationSample[] = [
     id: "glass-flower",
     category: "creative",
     image: "/studio/models/banana-1.webp",
-    shape: "portrait",
+    shape: "square",
   },
   {
     id: "textile-front",
@@ -37,45 +37,51 @@ const inspirationSamples: InspirationSample[] = [
     shape: "portrait",
   },
   {
+    id: "white-perfume",
+    category: "product",
+    image: "/studio/samples/white-perfume.webp",
+    shape: "square",
+  },
+  {
     id: "fashion-blue",
     category: "scene",
     image: "/studio/models/image-2-5-1.webp",
     shape: "portrait",
   },
   {
-    id: "amber-perfume",
-    category: "product",
-    image: "/studio/models/image-2-2.webp",
+    id: "citrus-splash",
+    category: "creative",
+    image: "/studio/samples/citrus-splash.webp",
     shape: "portrait",
   },
   {
-    id: "white-footwear",
+    id: "amber-perfume",
     category: "product",
-    image: "/studio/models/image-2-3.webp",
+    image: "/studio/models/image-2-2.webp",
     shape: "square",
   },
   {
     id: "textile-pillow",
     category: "textile",
     image: "/studio/textile-views/pillow.webp",
-    shape: "square",
+    shape: "landscape",
+  },
+  {
+    id: "stone-perfume",
+    category: "scene",
+    image: "/studio/samples/stone-perfume.webp",
+    shape: "portrait",
+  },
+  {
+    id: "white-footwear",
+    category: "product",
+    image: "/studio/models/image-2-3.webp",
+    shape: "landscape",
   },
   {
     id: "lavender-bedding",
     category: "textile",
     image: "/studio/lavender-thumb.webp",
-    shape: "square",
-  },
-  {
-    id: "textile-fabric",
-    category: "textile",
-    image: "/studio/textile-views/fabric.webp",
-    shape: "square",
-  },
-  {
-    id: "cream-bedroom",
-    category: "scene",
-    image: "/studio/bedroom-thumb.webp",
     shape: "square",
   },
   {
@@ -85,15 +91,64 @@ const inspirationSamples: InspirationSample[] = [
     shape: "landscape",
   },
   {
+    id: "white-handbag",
+    category: "product",
+    image: "/studio/samples/white-handbag.webp",
+    shape: "square",
+  },
+  {
+    id: "cream-bedroom",
+    category: "scene",
+    image: "/studio/bedroom-thumb.webp",
+    shape: "portrait",
+  },
+  {
+    id: "glass-pavilion",
+    category: "creative",
+    image: "/studio/models/banana-2.webp",
+    shape: "landscape",
+  },
+  {
+    id: "textile-fabric",
+    category: "textile",
+    image: "/studio/textile-views/fabric.webp",
+    shape: "square",
+  },
+  {
     id: "bag-editorial",
     category: "scene",
     image: "/studio/models/image-2-5-2.webp",
     shape: "portrait",
   },
   {
-    id: "folded-textile",
+    id: "white-soda",
     category: "product",
-    image: "/studio/set-thumb.webp",
+    image: "/studio/samples/white-soda.webp",
+    shape: "portrait",
+  },
+  {
+    id: "textile-draped",
+    category: "textile",
+    image: "/studio/textile-views/draped.webp",
+    shape: "portrait",
+  },
+  {
+    id: "sunlit-handbag",
+    category: "scene",
+    image: "/studio/samples/sunlit-handbag.webp",
+    shape: "square",
+  },
+  {
+    id: "alpine-sunrise",
+    category: "creative",
+    image: "/studio/models/banana-3.webp",
+    shape: "landscape",
+  },
+  { id: "folded-textile", category: "product", image: "/studio/set-thumb.webp", shape: "square" },
+  {
+    id: "textile-overhead",
+    category: "textile",
+    image: "/studio/textile-views/overhead-wide.webp",
     shape: "square",
   },
 ];

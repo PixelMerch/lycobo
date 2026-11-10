@@ -1,6 +1,6 @@
 /*
- * 创作灵感：距舞台 36px 的下划线分类（随页面滚动、不吸顶），下方 20px 起等高行拼图（用户 2026-11-10 选定）：
- * 每行左右占满、行内等高，整块底边齐平；固定 13 张示例，不无限加载，页脚始终看得到。
+ * 创作灵感：距舞台 36px 的下划线分类（随页面滚动、不吸顶），下方 20px 起瀑布流（用户 2026-11-10 改回瀑布流）：
+ * 首页先显示 10 张，滚动到底部再补两次、每次 4 张，之后居中一枚“查看更多案例”进入案例库，页脚始终看得到。
  */
 .home-inspiration {
   min-width: 0;
@@ -58,47 +58,72 @@
   margin-top: 0;
   padding: 20px 0 0;
 }
-/* Lycobo 自己的悬停：卡片上移 4px、图片放大 1.04 倍，卡内升起玻璃面板（标题、两行提示词与青柠“做同款”）。 */
+/*
+ * 悬停（用户 2026-11-10 要求恢复之前的效果）：卡片外框大小不变，只有图片在框内放大 1.05 倍；
+ * 边框亮起一圈细光，示例图自己的颜色在卡片四周晕开；卡内升起玻璃面板（标题、两行提示词与青柠“做同款”）。
+ */
 .home-inspiration-tile {
   position: relative;
   min-width: 0;
-  transition: translate 200ms ease;
 }
-/* 行的划分由 justified-rows.ts 按容器宽度计算；行间与图间 4px，与 tileGap 一致。 */
-.home-inspiration-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+/*
+ * 瀑布流：列数由 inspiration-columns.ts 按断点决定（手机 2、≥768px 3、≥1024px 4、≥1280px 5），
+ * 列间与卡间 16px（手机 8px），给光晕留出位置；isolation 让每张卡的光晕都垫在所有卡片下面。
+ */
+.home-inspiration-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: start;
+  gap: 16px;
+  isolation: isolate;
+}
+.home-inspiration-column {
+  display: grid;
+  gap: 16px;
   min-width: 0;
 }
-.home-inspiration-row {
+@media (max-width: 1279px) {
+  .home-inspiration-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1023px) {
+  .home-inspiration-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 767px) {
+  .home-inspiration-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-inspiration-grid,
+  .home-inspiration-column {
+    gap: 8px;
+  }
+}
+/* 滚动加载的哨兵贴在瀑布流下方；加载完后换成居中的“查看更多案例”。 */
+.home-inspiration-sentinel {
+  height: 1px;
+}
+/* “查看更多案例”用白底黑字胶囊，不用主题色（用户 2026-11-10 要求）。 */
+.home-inspiration-more .button {
+  height: 40px;
+  padding: 0 20px;
+  gap: 6px;
+  border-radius: 999px;
+  background: #fff;
+  color: #0d100c;
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: 20px;
+}
+.home-inspiration-more .button:is(:hover, [data-hovered="true"]) {
+  background: #ffffffe0;
+}
+.home-inspiration-more {
   display: flex;
-  gap: 4px;
-  min-width: 0;
-}
-/* 每张按宽高比分宽度（伸展系数 = 宽 ÷ 高），同一行因此等高。 */
-.home-inspiration-row > .home-inspiration-tile {
-  flex: 1 1 0;
-}
-.home-inspiration-row > .home-inspiration-tile:where([data-shape="portrait"]) {
-  flex-grow: 0.8;
-}
-.home-inspiration-row > .home-inspiration-tile:where([data-shape="landscape"]) {
-  flex-grow: calc(4 / 3);
-}
-/* 图片太少、占满会过高的一行：按计算出的行高靠左排。 */
-.home-inspiration-row:where([data-filled="false"]) > .home-inspiration-tile {
-  flex: none;
-  height: 100%;
-  aspect-ratio: 1;
-}
-.home-inspiration-row:where([data-filled="false"])
-  > .home-inspiration-tile:where([data-shape="portrait"]) {
-  aspect-ratio: 4 / 5;
-}
-.home-inspiration-row:where([data-filled="false"])
-  > .home-inspiration-tile:where([data-shape="landscape"]) {
-  aspect-ratio: 4 / 3;
+  justify-content: center;
+  padding-top: 32px;
 }
 .home-inspiration-card.button {
   position: relative;
@@ -109,10 +134,25 @@
   padding: 0;
   overflow: hidden;
   border: 0;
-  border-radius: 6px;
+  border-radius: 20px;
   background: var(--surface);
   text-align: left;
   isolation: isolate;
+}
+/* 光晕：同一张示例图放大模糊后垫在卡片下面，平时透明，悬停或键盘聚焦时显示。 */
+.home-inspiration-glow {
+  position: absolute;
+  inset: -16px;
+  z-index: -1;
+  width: calc(100% + 32px);
+  max-width: none;
+  height: calc(100% + 32px);
+  border-radius: 24px;
+  object-fit: cover;
+  filter: blur(44px) saturate(1.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 240ms ease;
 }
 /* 图片上方一圈细线，让浅色图片在深色页面上仍有边界。 */
 .home-inspiration-card.button::after {
@@ -162,7 +202,8 @@
   transition: opacity 160ms ease;
 }
 /*
- * 玻璃面板距卡片三边 8px：65% 深色底叠白色高光渐变、1px 高光边与 16px 模糊，浅色图片上文字对比度仍不低于 4.5:1。
+ * 玻璃面板距卡片三边 8px，与顶部栏下拉同款毛玻璃（用户 2026-11-10 要求）：#FFFFFF14 白色叠层、40px 模糊、
+ * 不显示描边，透出图片自己的颜色；背景再压暗一些并给文字加淡阴影，浅色商品图上也读得清。
  * 面板属于卡片按钮，点它打开详情；底部留出“做同款”的位置。
  */
 .home-inspiration-panel {
@@ -172,16 +213,15 @@
   display: grid;
   gap: 4px;
   padding: 12px 12px 48px;
-  border: 1px solid #ffffff1f;
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
-  background: linear-gradient(180deg, #ffffff14, #ffffff05), rgb(15 15 15 / 65%);
-  box-shadow:
-    inset 0 1px 0 #ffffff26,
-    0 16px 40px -16px #000000b3;
+  background: var(--glass-fill), var(--glass-tint);
+  box-shadow: var(--glass-shadow);
   color: #fff;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 35%);
   opacity: 0;
   translate: 0 8px;
-  backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(40px) saturate(1.4) brightness(0.72);
   /* 面板在 HeroUI 按钮里，按钮默认不换行；提示词需要两行。 */
   white-space: normal;
   pointer-events: none;
@@ -228,9 +268,8 @@
     opacity 200ms ease,
     translate 200ms ease;
 }
-.home-inspiration-tile:has([data-focus-visible]) {
-  z-index: 4;
-  translate: 0 -4px;
+.home-inspiration-tile:has([data-focus-visible]) .home-inspiration-glow {
+  opacity: 0.55;
 }
 .home-inspiration-tile:has([data-focus-visible])
   :is(.home-inspiration-panel, .home-inspiration-cta.button) {
@@ -245,9 +284,8 @@
   box-shadow: inset 0 0 0 1px #ffffff4d;
 }
 @media (hover: hover) {
-  .home-inspiration-tile:hover {
-    z-index: 4;
-    translate: 0 -4px;
+  .home-inspiration-tile:hover .home-inspiration-glow {
+    opacity: 0.55;
   }
   .home-inspiration-tile:hover :is(.home-inspiration-panel, .home-inspiration-cta.button) {
     opacity: 1;
@@ -266,18 +304,19 @@
     transition: scale 320ms ease;
   }
   .home-inspiration-tile:has([data-focus-visible]) .home-inspiration-card img {
-    scale: 1.04;
+    scale: 1.05;
   }
 }
 @media (prefers-reduced-motion: no-preference) and (hover: hover) {
   .home-inspiration-tile:hover .home-inspiration-card img {
-    scale: 1.04;
+    scale: 1.05;
   }
 }
 /* 触屏没有悬停：点按图片打开详情，“做同款”在详情里。 */
 @media (hover: none) {
   .home-inspiration-panel,
-  .home-inspiration-cta.button {
+  .home-inspiration-cta.button,
+  .home-inspiration-glow {
     display: none;
   }
 }
@@ -382,10 +421,10 @@
 .home-inspiration-actions .button--secondary:is(:hover, [data-hovered="true"]) {
   background: #ffffff1f;
 }
-/* 减少动态效果时只显示面板，不上移、不放大。 */
+/* 减少动态效果时直接显示面板和光晕，图片不放大。 */
 @media (prefers-reduced-motion: reduce) {
-  .home-inspiration-tile,
   .home-inspiration-tag,
+  .home-inspiration-glow,
   .home-inspiration-panel,
   .home-inspiration-cta.button,
   .home-inspiration-card.button::after {
@@ -395,18 +434,11 @@
   .home-inspiration-cta.button {
     translate: 0;
   }
-  .home-inspiration-tile:has([data-focus-visible]) {
-    translate: none;
-  }
-}
-@media (prefers-reduced-motion: reduce) and (hover: hover) {
-  .home-inspiration-tile:hover {
-    translate: none;
-  }
 }
 /* 减少透明度时改用实色，保证文字可读。 */
 @media (prefers-reduced-transparency: reduce) {
-  .home-inspiration-ambient {
+  .home-inspiration-ambient,
+  .home-inspiration-glow {
     display: none;
   }
   .home-inspiration-tag,
@@ -425,6 +457,9 @@
   }
   .home-inspiration .tabs__list {
     gap: 14px;
+  }
+  .home-inspiration-card.button {
+    border-radius: 12px;
   }
   .home-inspiration .tabs__tab {
     height: 44px;
