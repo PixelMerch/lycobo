@@ -148,8 +148,9 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     const box = await preview.boundingBox();
     const history = await page.locator(".generation-results").boundingBox();
     expect(box?.width).toBeLessThanOrEqual(history?.width ?? 0);
-    expect(box?.width).toBeCloseTo(400, 0);
-    expect(box?.height).toBeCloseTo(200, 0);
+    // 失败占位与成功结果同样按任务等高排列：桌面高 320px，宽度按请求的 1:1 比例。
+    expect(box?.width).toBeCloseTo(320, 0);
+    expect(box?.height).toBeCloseTo(320, 0);
     await expect(preview).toHaveCSS("border-top-width", "0px");
     await expect(preview).toHaveCSS("background-color", "rgb(52, 52, 52)");
     await expect(preview.getByRole("button", { name: "重试", exact: true })).toHaveCount(0);
