@@ -20,3 +20,7 @@
 首页首屏的丝绸背景改编自 [React Bits Silk](https://reactbits.dev/backgrounds/silk)，来源 [DavidHDev/react-bits](https://github.com/DavidHDev/react-bits/tree/ed33ebe4acfe29e60fb759bcccc70a138ce2dcef/src/ts-default/Backgrounds/Silk)，固定 commit `ed33ebe4acfe29e60fb759bcccc70a138ce2dcef`。代码位于 `apps/web/src/features/home/silk/`：着色器算法保留原样，只去掉浅色模式、边缘渐隐与随机偏移；组件按本仓库规则重写为着色器、渲染器、动画状态与组件四个模块，去掉类型断言，增加配色平滑过渡、页签切换涟漪、每次挂载新建画布（避免复用已释放的 WebGL 上下文）与像素比上限，未增加第三方运行时依赖。
 
 上游采用 MIT + Commons Clause，版权 David Haz (2026)。完整许可保留在 [React Bits 许可](licenses/react-bits.md)：允许作为应用、网站或产品的一部分使用，不允许出售或重新分发组件本身／组件包。本站仅将其用于首页背景，不提供 React Bits 组件或工具分发服务。
+
+## 思源黑体（Noto Sans SC）
+
+界面字体使用思源黑体可变字体，经 npm 包 `@fontsource-variable/noto-sans-sc` 固定为 5.3.1 引入（`apps/web/src/main.tsx`），构建时随站点静态资源发布，不使用第三方字体 CDN。字体采用 SIL Open Font License 1.1，允许在网站中嵌入与随软件分发；包内附带的 LICENSE 保留原文，不单独出售字体文件。用户 2026-11-10 确认以它替换从未实际加载的阿里巴巴普惠体。

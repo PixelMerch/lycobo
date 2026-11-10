@@ -11,6 +11,7 @@
 | 语言          | TypeScript 5.9.3 strict                       | 与已验证工具链兼容，升级单独评估        |
 | 前端          | React 19 + Vite 8                             | 登录后交互工作台采用 CSR                |
 | UI            | HeroUI 3 + Tailwind CSS 4 + Tabler icons      | 单一组件系统，遵守 V3 设计              |
+| 字体          | 思源黑体（@fontsource-variable/noto-sans-sc） | 随站点自托管、按字切片，不走第三方 CDN  |
 | 路由          | React Router                                  | 页面路由与重型功能懒加载                |
 | 数据/本地状态 | TanStack Query 5 / Zustand 5                  | 服务端缓存与本地交互状态分离            |
 | 画布          | Konva 10 + react-konva 19                     | 图片编辑/排布基础，尚未实现持久画布     |
