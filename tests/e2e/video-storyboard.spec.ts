@@ -262,6 +262,25 @@ test("a run stays one history entry from first click to a failed video", async (
   expect(flow.videoSubmissions).toBe(1);
 });
 
+// 参考图并行上传、到达顺序不固定；三张示例图宽度各不相同，按宽度认出每次上传是第几张。
+const storyboardReferences = [
+  { path: "apps/web/public/studio/textile-views/front.webp", width: 480 },
+  { path: "apps/web/public/studio/bedroom.webp", width: 960 },
+  { path: "apps/web/public/studio/commerce-atlas.webp", width: 1774 },
+];
+
+/** 在页面里解码一次上传并返回宽度；压缩会改变字节，但不会改变这些示例图的尺寸。 */
+async function uploadedImageWidth(page: Page, body: Buffer | null) {
+  if (!body) throw new Error("Missing reference upload");
+  return page.evaluate(async (encoded) => {
+    const response = await fetch(`data:image/webp;base64,${encoded}`);
+    const bitmap = await createImageBitmap(await response.blob());
+    const width = bitmap.width;
+    bitmap.close();
+    return width;
+  }, body.toString("base64"));
+}
+
 async function verifyStoryboard(page: Page, originalCount: number, legacy = false) {
   await mockImageApi(page);
   const original = crypto.randomUUID();
@@ -270,7 +289,6 @@ async function verifyStoryboard(page: Page, originalCount: number, legacy = fals
   );
   const originals = [original, ...additionalOriginalAssetIds];
   const storyboardOriginals = originalCount > 1 ? { additionalOriginalAssetIds } : {};
-  let uploaded = 0;
   const planId = crypto.randomUUID();
   const videoId = crypto.randomUUID();
   const items = ["绗缝特写", "卧室全景", "商品定格"].map((title) => ({
@@ -319,17 +337,20 @@ async function verifyStoryboard(page: Page, originalCount: number, legacy = fals
       }),
     }),
   );
-  await page.route("**/api/v1/image-assets", (route) =>
-    route.fulfill({
+  await page.route("**/api/v1/image-assets", async (route) => {
+    const width = await uploadedImageWidth(page, route.request().postDataBuffer());
+    const position = storyboardReferences.findIndex((reference) => reference.width === width);
+    if (position < 0) throw new Error(`Unexpected reference width ${width}`);
+    return route.fulfill({
       json: apiFixture({
-        id: originals[uploaded++],
+        id: originals[position],
         width: 2,
         height: 2,
         bytes: 100,
         mimeType: "image/webp",
       }),
-    }),
-  );
+    });
+  });
   await page.route("**/api/v1/image-assets/*/content*", (route) =>
     route.fulfill({
       path: "apps/web/public/studio/textile-views/front.webp",
@@ -455,11 +476,7 @@ async function verifyStoryboard(page: Page, originalCount: number, legacy = fals
   await expect(composer).toContainText("最多上传3张参考图");
   await composer
     .getByLabel("添加参考图片")
-    .setInputFiles(
-      ["front.webp", "close-up.webp", "overhead-wide.webp"]
-        .slice(0, originalCount)
-        .map((name) => `apps/web/public/studio/textile-views/${name}`),
-    );
+    .setInputFiles(storyboardReferences.slice(0, originalCount).map((reference) => reference.path));
   await expect(composer.locator(".reference-image-card")).toHaveCount(originalCount);
   if (originalCount === 3) {
     await expect(composer.getByLabel("添加参考图片")).toBeDisabled();
