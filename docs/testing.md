@@ -87,6 +87,8 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 并行执行不同测试任务时，为每次运行设置独立 `--output=/tmp/<本次运行目录>`，避免 Playwright 清理其他运行的 trace。历史时间断言使用浏览器自身时区计算，不能写死本机的 UTC+8 时间。完整 `pnpm test:e2e` 由远程 CI 手动触发；本地复现可指定文件或用例，不能以跳过失败用例代替查明原因。
 
+浏览器 fixture 有三处容易出错：内联图片必须是校验正确的真实图片，新版 Chromium 拒绝解码 CRC 损坏的 PNG，参考图会停在“无法解码”；`<a download>` 发起的下载不经过 `page.route`，要核对下载内容时像 `video-creation.spec.ts` 那样起本地 HTTP 服务，否则只核对下载地址；参考图最多三张并行上传、到达顺序不固定，fixture 要按上传内容（例如图片宽度）而不是到达顺序分配素材 ID。
+
 企业共享钱包测试纳入 worker test:images：verify-wallet.ts 验证主子账号并发扣款、固定单价、逐图退款、充值重复入账、账本不可修改和分页。wallet.spec.ts 验证账户中心真实接口契约（浏览器 fixture）。
 
 弹层焦点回归同时覆盖鼠标点击和不预先聚焦的虚拟点击。受控预览在挂载时记录返回目标，因此打开前需聚焦入口按钮；预览入口位于 Modal 的触发器树外，由历史组件保留其引用，在关闭动画结束、弹层卸载后恢复焦点；弹层内部的焦点约束仍交给 HeroUI。不能通过预先在测试中 focus 或删除焦点断言掩盖问题。
