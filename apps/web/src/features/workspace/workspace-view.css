@@ -1,0 +1,177 @@
+/* 超宽屏：工作区最宽为 1920 屏的内容宽度（1872px），更宽时三栏一起居中；1920 及以下不受影响。 */
+.unified-workspace {
+  max-width: 1872px;
+  margin-inline: auto;
+}
+@media (min-width: 1921px) {
+  .back-to-top-button {
+    right: calc(var(--content-padding) + 96px + 34px + 16px + (100% - 1920px) / 2);
+  }
+}
+
+/* 宽屏任务卡：任务列表内容宽度不小于 1200px 时，信息组排在左侧 320px 列、结果图在右侧铺开；
+ * 只作用于带信息组的图片任务卡，视频卡片保持原样。 */
+.unified-workspace .generation-history {
+  container: workspace-feed / inline-size;
+}
+@container workspace-feed (min-width: 1200px) {
+  .unified-workspace .generation-job:has(> .history-task-info) {
+    grid-template-columns: 320px minmax(0, 1fr);
+    column-gap: 32px;
+  }
+  .unified-workspace .history-task-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--history-row-gap);
+  }
+  /* 信息行拆开排：标签和参数在上，提示词居中，操作按钮沉到信息列底部、与结果图底边对齐。 */
+  .unified-workspace .history-task-info > header {
+    display: contents;
+  }
+  .unified-workspace .history-task-info .generation-meta {
+    flex: none;
+    row-gap: 6px;
+  }
+  .unified-workspace .history-task-info .history-batch-progress {
+    margin: 0;
+  }
+  .unified-workspace .history-task-info .history-task-actions {
+    order: 1;
+    align-self: flex-start;
+    margin: auto 0 0;
+  }
+  .unified-workspace .history-task-info .history-prompt > .collapsible-text {
+    max-width: none;
+  }
+  .unified-workspace .history-task-info .prompt-collapsed {
+    -webkit-line-clamp: 5;
+  }
+  .unified-workspace .history-task-info + .generation-results {
+    align-self: start;
+    margin-top: 0;
+  }
+  .unified-workspace .generation-job > .history-batch-toggle {
+    grid-column: 2;
+  }
+}
+
+/* 紧凑视图：行高 120–240px，提示词两行、参考图 48px，一屏多看几组；手机不提供切换。 */
+@media (min-width: 768px) {
+  .unified-workspace[data-density="compact"] {
+    --result-height-max: 240px;
+    --result-height-min: 120px;
+  }
+  .unified-workspace[data-density="compact"] .history-task-info .prompt-collapsed {
+    -webkit-line-clamp: 2;
+  }
+  .unified-workspace[data-density="compact"] .history-task-info .generation-output-thumbnail {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+  }
+}
+.workspace-density-toggle.toggle-button-group {
+  flex: none;
+  gap: 2px;
+  margin-left: auto;
+  padding: 4px;
+  border-radius: 12px;
+  background: #141414;
+}
+.workspace-density-toggle .toggle-button {
+  --toggle-button-bg: transparent;
+  --toggle-button-bg-hover: #ffffff0a;
+  --toggle-button-bg-pressed: #ffffff0a;
+  --toggle-button-fg: #ffffff99;
+  --toggle-button-bg-selected: var(--fill-medium);
+  --toggle-button-bg-selected-hover: var(--fill-strong);
+  --toggle-button-bg-selected-pressed: var(--fill-strong);
+  --toggle-button-fg-selected: var(--foreground);
+  border-radius: 8px;
+}
+@media (max-width: 1023px) {
+  .workspace-density-toggle.toggle-button-group {
+    display: none;
+  }
+}
+
+/* 参数栏收起：≥1024px 时右上角显示收起按钮；收起后参数栏换成 56px 窄边，整条都可点开。 */
+.workspace-composer-toggle.button {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .workspace-composer-toggle.button {
+    display: inline-flex;
+    position: sticky;
+    top: calc(var(--header-height) + var(--content-padding) + 8px);
+    z-index: 14;
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: end;
+    align-self: start;
+    margin: 8px 8px 0 0;
+    border-radius: 12px;
+    background: #0f0f0fcc;
+    color: #ffffffcc;
+  }
+  .workspace-composer-toggle.button:is([data-hovered="true"], [data-focus-visible="true"]) {
+    background: #0f0f0fe6;
+    color: var(--foreground);
+  }
+  .unified-workspace[data-composer="collapsed"] {
+    grid-template-columns: 56px minmax(0, 1fr) var(--workspace-history-width);
+  }
+  .unified-workspace[data-composer="collapsed"] > .composer-panel {
+    display: none;
+  }
+  .unified-workspace[data-composer="collapsed"] > .workspace-composer-toggle.button {
+    top: calc(var(--header-height) + var(--content-padding));
+    grid-row: 1 / span 2;
+    justify-self: stretch;
+    align-items: flex-start;
+    width: auto;
+    height: calc(100dvh - var(--header-height) - 2 * var(--content-padding));
+    margin: 0;
+    padding-top: 16px;
+    border-radius: 20px;
+    background: var(--surface);
+    color: #ffffffb3;
+  }
+  /* HeroUI 让按钮里的图标自身垂直居中，窄边里改为停在顶部。 */
+  .unified-workspace[data-composer="collapsed"] > .workspace-composer-toggle.button > .ui-icon {
+    align-self: flex-start;
+  }
+  .unified-workspace[data-composer="collapsed"]
+    > .workspace-composer-toggle.button:is([data-hovered="true"], [data-focus-visible="true"]) {
+    background: var(--surface-secondary);
+    color: var(--foreground);
+  }
+}
+@media (min-width: 1024px) and (max-width: 1300px) {
+  .unified-workspace[data-composer="collapsed"] {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+  .unified-workspace[data-composer="collapsed"] > .workspace-composer-toggle.button {
+    grid-row: 1 / span 3;
+  }
+}
+
+/* 右侧索引按日期分组：缩略图之间插入“今天／昨天／月日”小标题；横排索引（≤1300px）不显示。 */
+.history-rail-day {
+  flex: none;
+  margin: 6px 0 0;
+  padding-inline: 3px;
+  color: #ffffff66;
+  font-size: 11px;
+  font-weight: var(--weight-regular);
+  line-height: 16px;
+  white-space: nowrap;
+}
+.history-rail-list > .history-rail-day:first-child {
+  margin-top: 0;
+}
+@media (max-width: 1300px) {
+  .history-rail-day {
+    display: none;
+  }
+}

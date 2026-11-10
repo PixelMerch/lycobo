@@ -15,6 +15,11 @@ export const workspaceToolMessages = defineMessages({
     restoreTitle: "载入这次创作？",
     restoreContent: "当前工具还有未提交的内容，载入后将替换该工具的草稿。",
     restore: "载入",
+    collapseComposer: "收起参数栏",
+    expandComposer: "展开参数栏",
+    historyDensity: "历史视图",
+    largeView: "大图",
+    compactView: "紧凑",
     tools: {
       create: {
         name: "主图制作",
@@ -67,6 +72,11 @@ export const workspaceToolMessages = defineMessages({
     restoreTitle: "Load this creation?",
     restoreContent: "This tool still has unsubmitted content. Loading replaces this tool's draft.",
     restore: "Load",
+    collapseComposer: "Collapse settings",
+    expandComposer: "Expand settings",
+    historyDensity: "History view",
+    largeView: "Large",
+    compactView: "Compact",
     tools: {
       create: {
         name: "Main Image",

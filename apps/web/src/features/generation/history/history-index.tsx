@@ -1,7 +1,7 @@
 import { Button, toast } from "@heroui/react";
 import type { ImageJob } from "@lycoboai/contracts";
 import { IconChevronRight, IconPhotoX, IconTrash } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
@@ -15,6 +15,7 @@ import { GenerationLoading, useStatusLabel } from "../generation-status";
 import { modelDisplayName } from "../models/model-display-name";
 import { useModelPresentation } from "../models/model-logos";
 import { useStudioStore } from "../studio-state";
+import { historyDayLabel } from "./history-day";
 import { historyMessages } from "./history-messages";
 import { scrollToHistoryTask } from "./history-navigation";
 
@@ -131,16 +132,25 @@ function HistoryIndexEntries({
   onSelect: (job: ImageJob) => void;
   onDelete: (job: ImageJob) => void;
 }) {
+  const t = useMessages(historyMessages);
+  const locale = useLocale();
   if (!jobs.length) return <p>{currentMessages(historyMessages).noRecords}</p>;
-  return jobs.map((job) => (
-    <HistoryIndexEntry
-      key={job.id}
-      job={job}
-      selectedId={selectedId}
-      modelName={modelName(job)}
-      onSelect={onSelect}
-      onDelete={onDelete}
-    />
+  // 按本机日期分组：和上一条不是同一天时，在缩略图前插入“今天／昨天／月日”小标题。
+  const now = new Date();
+  const days = jobs.map((job) => historyDayLabel(job.created_at, now, locale, t));
+  return jobs.map((job, index) => (
+    <Fragment key={job.id}>
+      {days[index] && days[index] !== days[index - 1] && (
+        <h3 className="history-rail-day">{days[index]}</h3>
+      )}
+      <HistoryIndexEntry
+        job={job}
+        selectedId={selectedId}
+        modelName={modelName(job)}
+        onSelect={onSelect}
+        onDelete={onDelete}
+      />
+    </Fragment>
   ));
 }
 

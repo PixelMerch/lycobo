@@ -92,7 +92,8 @@ test("running images animate with the model icon and stop for reduced motion", a
   await page.reload();
   await expect(placeholders).toHaveCount(1);
   const box = await placeholders.first().boundingBox();
-  expect(box?.width).toBeLessThanOrEqual(400);
+  // 1920 屏的宽屏任务卡里，单张占位与结果一样放大到 480px，比例仍按请求的 1:1。
+  expect(box?.width).toBeCloseTo(480, 0);
   expect(box?.height).toBe(box?.width);
   await expect(placeholders.first()).toHaveCSS("aspect-ratio", "1 / 1");
   await page.emulateMedia({ reducedMotion: "no-preference" });
@@ -148,9 +149,9 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     const box = await preview.boundingBox();
     const history = await page.locator(".generation-results").boundingBox();
     expect(box?.width).toBeLessThanOrEqual(history?.width ?? 0);
-    // 失败占位与成功结果同样按任务等高排列：桌面高 320px，宽度按请求的 1:1 比例。
-    expect(box?.width).toBeCloseTo(320, 0);
-    expect(box?.height).toBeCloseTo(320, 0);
+    // 失败占位与成功结果同样按任务等高排列：1920 屏单张高 480px，宽度按请求的 1:1 比例。
+    expect(box?.width).toBeCloseTo(480, 0);
+    expect(box?.height).toBeCloseTo(480, 0);
     await expect(preview).toHaveCSS("border-top-width", "0px");
     await expect(preview).toHaveCSS("background-color", "rgb(52, 52, 52)");
     await expect(preview.getByRole("button", { name: "重试", exact: true })).toHaveCount(0);

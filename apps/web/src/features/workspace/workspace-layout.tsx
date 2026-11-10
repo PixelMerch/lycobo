@@ -19,6 +19,12 @@ import { WorkspaceToolPicker } from "./workspace-tool-picker";
 import "./workspace.css";
 import { useMessages } from "../../i18n/messages";
 import { workspaceToolMessages } from "./workspace-tool-messages";
+import {
+  ComposerCollapseToggle,
+  HistoryDensityToggle,
+  useRevealComposerOnEntry,
+} from "./workspace-view-controls";
+import { useWorkspaceView } from "./workspace-view-preferences";
 
 type RestoredTask = Parameters<HistoryRestore>[0];
 /** 组合工具与历史区域，显式结果定位不覆盖当前创作草稿。 */
@@ -40,6 +46,9 @@ export function WorkspaceLayout() {
   useEffect(() => {
     if (new URLSearchParams(search).has("task")) setMobilePanel("history");
   }, [search]);
+  const composerCollapsed = useWorkspaceView((state) => state.composerCollapsed);
+  const density = useWorkspaceView((state) => state.density);
+  useRevealComposerOnEntry();
   const applyRestore = ({ model, draft, textileSet, variation }: RestoredTask) => {
     if (variation) {
       useSmartVariationDraft.getState().update({
@@ -72,6 +81,8 @@ export function WorkspaceLayout() {
     }
     setRestorePending(null);
     setMobilePanel("form");
+    // 重新编辑把输入带回参数栏；参数栏收起时先展开，让用户看到带回的内容。
+    useWorkspaceView.getState().setComposerCollapsed(false);
   };
   const restore: HistoryRestore = (task) => {
     const textile = useTextileSetDraft.getState();
@@ -94,10 +105,13 @@ export function WorkspaceLayout() {
     <div
       data-mobile-panel={mobilePanel}
       data-tool={currentTool.id}
+      data-composer={composerCollapsed ? "collapsed" : "open"}
+      data-density={density}
       className={`workspace unified-workspace${pathname.includes("textile-set") ? " textile-workspace" : ""}`}
     >
       <div className="workspace-history-heading">
         <WorkspaceToolPicker />
+        {historyTool !== "video" && <HistoryDensityToggle />}
       </div>
       <ToggleButtonGroup
         className="workspace-mobile-panels"
@@ -113,6 +127,7 @@ export function WorkspaceLayout() {
         <ToggleButton id="form">{t.createView}</ToggleButton>
         <ToggleButton id="history">{t.historyView}</ToggleButton>
       </ToggleButtonGroup>
+      <ComposerCollapseToggle />
       <StoryboardContext.Provider value={storyboard}>
         <Outlet />
       </StoryboardContext.Provider>
