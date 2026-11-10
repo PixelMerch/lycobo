@@ -38,7 +38,7 @@ navigation; never prefix API, WebSocket, image or font URLs. See docs/localized-
   third-party notice and pinned commit current when it changes.
 - Follow PRD.md for navigation: the top bar shows Home, 电商 (a dropdown with the four tools:
   main image, textile variation, image-set plan, video) and Asset Library. Inside the workspace
-  the tool dock still switches tools. TK has no current navigation entry.
+  the tool dock still switches tools (a left rail on desktop). TK has no current navigation entry.
 - DESIGN.md is the sole visual specification. The user approved and froze the current UI on
   2026-10-22. Documentation, cleanup and component refactors must preserve its appearance;
   a new visual change requires a new explicit design request. Do not reinterpret skill recommendations
@@ -68,7 +68,7 @@ navigation; never prefix API, WebSocket, image or font URLs. See docs/localized-
   upward. Hovering does not open it. Keyboard focus enters the first row and returns to the trigger on close.
 - Preserve pending drafts when switching tasks. Never navigate users away when a background task completes.
 - Product screens use end-user language. Keep preview/debug/reset notes in developer documentation, not headers, cards or dialogs. Never infer production readiness from clean UI copy.
-- Match the measured shell rules in DESIGN.md: a sticky top bar (64px desktop, 60px mobile, transparent at the top and frosted 4px shorter once the page scrolls) modeled on the user-approved vidmuse header, 36px pill navigation items, a hover/press 电商 dropdown, 40px round utility buttons and avatar, and no left sidebar. Hover/active never change geometry; mobile targets stay 44px.
+- Match the measured shell rules in DESIGN.md: a sticky top bar (64px desktop, 60px mobile, transparent at the top and frosted 4px shorter once the page scrolls; workspace pages keep it solid and fixed, user 2026-11-10) modeled on the user-approved vidmuse header, 36px pill navigation items, a 电商 dropdown that opens on press only, 40px round utility buttons and avatar, and no left sidebar. Hover/active never change geometry; mobile targets stay 44px.
 - Use Tabler business icons through components/ui-icon.tsx. Sizes: 14 / 18 / 20 / 22 / 28px, stroke 2. Keep icon sizing independent of compact control geometry; do not add another icon library. Credits use Tabler IconCoins (no bitmap coin) and close controls use Tabler IconX; never keep hand-drawn, bitmap or second-library icons.
 - Navigation text uses neutral gray-white: default #FFFFFF99, hover fill #FFFFFF0A with #FFFFFFCC text, current page bold white. Do not restore purple navigation labels. Chevrons rotate on expansion and respect reduced motion. Tool selectors use spacing instead of extra divider lines.
 - The UI is bilingual (user, 2026-11-09): Simplified Chinese and English. Every user-facing string, accessible

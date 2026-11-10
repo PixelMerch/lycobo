@@ -197,12 +197,27 @@
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
 }
+/* 视角浮层贴在参数栏右侧：左缘 = 页边距 + 左侧工具栏（桌面 152px 加 12px 间距）+ 参数栏宽 + 12px 间距，
+ * 超宽屏再加上工作区居中后的两侧留白。 */
 .textile-views-anchor {
   --textile-composer-width: 320px;
+  --textile-tool-rail: 0px;
+  --textile-gutter: 0px;
   position: fixed;
   top: calc(var(--header-height) + var(--content-padding));
-  left: calc(var(--content-padding) + var(--textile-composer-width) + 12px);
-  right: calc(var(--content-padding) + var(--workspace-history-width) + 12px);
+  left: calc(
+    var(--content-padding) +
+    var(--textile-tool-rail) +
+    var(--textile-composer-width) +
+    12px +
+    var(--textile-gutter)
+  );
+  right: calc(
+    var(--content-padding) +
+    var(--workspace-history-width) +
+    12px +
+    var(--textile-gutter)
+  );
   height: 0;
   pointer-events: none;
 }
@@ -355,17 +370,14 @@ body:has(.textile-views-popover) :is(.composer-scroll, .results-panel, .history-
     --textile-composer-width: 360px;
   }
 }
-/* 超宽屏工作区封顶 1872px 居中，锚点随两侧留白一起内移，视角浮层仍贴在参数栏右侧。 */
+@media (min-width: 1024px) {
+  .textile-views-anchor {
+    --textile-tool-rail: calc(var(--workspace-tool-rail-width, 152px) + 12px);
+  }
+}
 @media (min-width: 1921px) {
   .textile-views-anchor {
-    left: calc(var(--content-padding) + var(--textile-composer-width) + 12px + (100% - 1920px) / 2);
-    right: calc(
-      var(--content-padding) +
-      var(--workspace-history-width) +
-      12px +
-      (100% - 1920px) /
-      2
-    );
+    --textile-gutter: calc((100% - 1920px) / 2);
   }
 }
 @media (max-width: 1300px) {

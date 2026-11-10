@@ -23,9 +23,12 @@ test("top navigation stays in one row and keeps drafts across desktop and mobile
   expect(main?.x).toBe(0);
   await navigation.getByRole("link", { name: "首页", exact: true }).click();
   await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
-  // 电商入口悬停或点击都展开四个工具，选择后回到原工具且草稿仍在。
+  // 电商入口鼠标经过不展开（免得挡住工作区），点击才展开四个工具；选择后回到原工具且草稿仍在。
   await commerce.hover();
   const tools = page.getByRole("menu", { name: "电商" });
+  await page.waitForTimeout(300);
+  await expect(tools).toHaveCount(0);
+  await commerce.click();
   await expect(tools.getByRole("menuitem")).toHaveText([
     "主图制作",
     "家纺裂变",

@@ -12,15 +12,14 @@ import { useMessages } from "../../i18n/messages";
 import { workspaceToolMessages } from "./workspace-tool-messages";
 import { useWorkspaceView } from "./workspace-view-preferences";
 
-/** 参数栏右上角的收起按钮；收起后同一个按钮变成整条 56px 窄边，点哪里都能展开。 */
+/** 左侧工具栏底部的参数栏收起／展开按钮；收起后工具栏留着，仍能直接切换工具。 */
 export function ComposerCollapseToggle() {
   const t = useMessages(workspaceToolMessages);
   const collapsed = useWorkspaceView((state) => state.composerCollapsed);
   const setCollapsed = useWorkspaceView((state) => state.setComposerCollapsed);
   const label = collapsed ? t.expandComposer : t.collapseComposer;
   return (
-    // 收起后按钮占满整条窄边，提示气泡会落在屏幕中间，所以只在展开时显示提示。
-    <Tooltip delay={0} isDisabled={collapsed}>
+    <Tooltip delay={0}>
       <Button
         isIconOnly
         size="sm"
@@ -35,14 +34,14 @@ export function ComposerCollapseToggle() {
           size="default"
         />
       </Button>
-      <Tooltip.Content placement="bottom">{label}</Tooltip.Content>
+      <Tooltip.Content placement="right">{label}</Tooltip.Content>
     </Tooltip>
   );
 }
 
 const densityIcons = { large: IconSquare, compact: IconLayoutGrid };
 
-/** 工具栏右侧的历史视图切换：大图或紧凑，选择记在本机。 */
+/** “生成记录”标题行右侧的历史视图切换：大图或紧凑，选择记在本机。 */
 export function HistoryDensityToggle() {
   const t = useMessages(workspaceToolMessages);
   const density = useWorkspaceView((state) => state.density);

@@ -106,11 +106,16 @@ export function WorkspaceLayout() {
       data-mobile-panel={mobilePanel}
       data-tool={currentTool.id}
       data-composer={composerCollapsed ? "collapsed" : "open"}
-      data-density={density}
+      data-density={historyTool === "video" ? undefined : density}
       className={`workspace unified-workspace${pathname.includes("textile-set") ? " textile-workspace" : ""}`}
     >
-      <div className="workspace-history-heading">
+      {/* 工具坞：桌面是参数栏左侧的竖排工具栏（底部带收起按钮），窄屏是历史上方的横排工具栏。 */}
+      <div className="workspace-tool-dock">
         <WorkspaceToolPicker />
+        <ComposerCollapseToggle />
+      </div>
+      <div className="workspace-history-heading">
+        <h2 className="workspace-history-title">{t.historyHeading}</h2>
         {historyTool !== "video" && <HistoryDensityToggle />}
       </div>
       <ToggleButtonGroup
@@ -127,7 +132,6 @@ export function WorkspaceLayout() {
         <ToggleButton id="form">{t.createView}</ToggleButton>
         <ToggleButton id="history">{t.historyView}</ToggleButton>
       </ToggleButtonGroup>
-      <ComposerCollapseToggle />
       <StoryboardContext.Provider value={storyboard}>
         <Outlet />
       </StoryboardContext.Provider>

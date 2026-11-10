@@ -134,14 +134,7 @@
   gap: var(--history-row-gap);
   min-width: 0;
 }
-/* 任务信息组（信息行、提示词与操作）内部沿用统一行距；结果区与其上方内容相距 24px。 */
-.history-task-info {
-  display: grid;
-  gap: var(--history-row-gap);
-  min-width: 0;
-}
-.history-prompt + .generation-results,
-.history-task-info + .generation-results {
+.history-prompt + .generation-results {
   margin-top: 12px;
 }
 .prompt-collapsed {

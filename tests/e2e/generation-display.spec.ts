@@ -71,9 +71,11 @@ test("running images animate with the model icon and stop for reduced motion", a
       width: element.getBoundingClientRect().width,
     })),
   );
-  // The five-column tile grid keeps a four-image task on one row of equal tiles.
-  expect(new Set(boxes.map((box) => box.top)).size).toBe(1);
+  // 四张占位等宽；左侧有工具栏后 1920 屏一行放不下四张 320px，按原顺序换行，不拉伸最后一行。
   expect(new Set(boxes.map((box) => Math.round(box.width))).size).toBe(1);
+  expect(boxes.map((box) => box.top)).toEqual(
+    [...boxes.map((box) => box.top)].sort((a, b) => a - b),
+  );
   const borderAngle = () =>
     placeholders
       .first()
@@ -92,8 +94,7 @@ test("running images animate with the model icon and stop for reduced motion", a
   await page.reload();
   await expect(placeholders).toHaveCount(1);
   const box = await placeholders.first().boundingBox();
-  // 1920 屏的宽屏任务卡里，单张占位与结果一样放大到 480px，比例仍按请求的 1:1。
-  expect(box?.width).toBeCloseTo(480, 0);
+  expect(box?.width).toBeLessThanOrEqual(400);
   expect(box?.height).toBe(box?.width);
   await expect(placeholders.first()).toHaveCSS("aspect-ratio", "1 / 1");
   await page.emulateMedia({ reducedMotion: "no-preference" });
@@ -149,9 +150,9 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     const box = await preview.boundingBox();
     const history = await page.locator(".generation-results").boundingBox();
     expect(box?.width).toBeLessThanOrEqual(history?.width ?? 0);
-    // 失败占位与成功结果同样按任务等高排列：1920 屏单张高 480px，宽度按请求的 1:1 比例。
-    expect(box?.width).toBeCloseTo(480, 0);
-    expect(box?.height).toBeCloseTo(480, 0);
+    // 失败占位与成功结果同样按任务等高排列：桌面高 320px，宽度按请求的 1:1 比例。
+    expect(box?.width).toBeCloseTo(320, 0);
+    expect(box?.height).toBeCloseTo(320, 0);
     await expect(preview).toHaveCSS("border-top-width", "0px");
     // 失败占位用 --fill-strong（12% 白）半透明底。
     await expect(preview).toHaveCSS("background-color", "rgba(255, 255, 255, 0.12)");

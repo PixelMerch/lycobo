@@ -403,8 +403,11 @@
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }
-.workspace-history-heading {
+/* 历史上方的吸顶条：窄屏是工具坞，桌面是“生成记录”标题行（工具坞改成左侧竖排工具栏）。 */
+.workspace-tool-dock {
   container: workspace-dock / inline-size;
+}
+:is(.workspace-tool-dock, .workspace-history-heading) {
   display: flex;
   align-items: center;
   position: sticky;
@@ -419,7 +422,7 @@
   height: var(--workspace-toolbar-height);
   background: var(--background);
 }
-.workspace-history-heading::before {
+:is(.workspace-tool-dock, .workspace-history-heading)::before {
   content: "";
   position: absolute;
   inset: -12px 0 auto;

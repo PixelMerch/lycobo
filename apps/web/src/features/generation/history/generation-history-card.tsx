@@ -4,11 +4,7 @@ import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { type CSSProperties, Fragment } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { GenerationLoading, useStatusLabel } from "../generation-status";
-import {
-  historyResultRatio,
-  historyResultRowStyle,
-  historyResultUsesThumbnail,
-} from "./history-result-layout";
+import { historyResultRatio } from "./history-result-layout";
 import { HistoryTaskMeta } from "./history-task-meta";
 import { HistoryPrompt, HistoryTaskActions } from "./history-task-tools";
 import { ResultImage } from "./result-image";
@@ -123,7 +119,7 @@ function HistoryResult({
       {item.output_asset_id ? (
         <ResultImage
           assetId={item.output_asset_id}
-          thumbnail={historyResultUsesThumbnail(job)}
+          thumbnail={job.requested_count > 1}
           position={item.position}
           width={item.width}
           height={item.height}
@@ -166,24 +162,21 @@ export function GenerationHistoryCard({
       data-history-id={compact ? undefined : job.id}
       data-active={!compact && active ? "true" : undefined}
     >
-      {/* 任务信息、提示词与操作是一组：宽屏时整组排在结果图左侧，窄屏时排在结果图上方。 */}
-      <div className="history-task-info">
-        <header>
-          <HistoryTaskMeta job={job} modelName={modelName} />
-          {!compact && job.items.length >= batchSize && <BatchProgress items={job.items} />}
-          {!compact && <HistoryTaskActions job={job} onRestore={onRestore} />}
-        </header>
-        {compact ? (
-          <p className="generation-prompt">{displayPrompt(job.prompt, locale)}</p>
-        ) : (
-          <HistoryPrompt job={job} />
-        )}
-      </div>
+      <header>
+        <HistoryTaskMeta job={job} modelName={modelName} />
+        {!compact && job.items.length >= batchSize && <BatchProgress items={job.items} />}
+        {!compact && <HistoryTaskActions job={job} onRestore={onRestore} />}
+      </header>
+      {compact ? (
+        <p className="generation-prompt">{displayPrompt(job.prompt, locale)}</p>
+      ) : (
+        <HistoryPrompt job={job} />
+      )}
       {!compact && (
         <div
           id={`results-${job.id}`}
           className="generation-results proportional-results"
-          style={historyResultRowStyle(job)}
+          style={resultLayoutStyle(job)}
           data-count={job.items.length}
           data-failed={
             job.items.some(
@@ -211,4 +204,11 @@ export function GenerationHistoryCard({
       )}
     </article>
   );
+}
+
+function resultLayoutStyle(job: ImageJob) {
+  const style: CSSProperties & { "--result-max-ratio": number } = {
+    "--result-max-ratio": Math.max(1, ...job.items.map((item) => historyResultRatio(job, item))),
+  };
+  return style;
 }

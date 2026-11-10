@@ -1,10 +1,4 @@
-/* 同一任务的结果共用一个行高，图框按真实比例排。行高把一行铺满（结果区宽 720px 起一行最多 4 张，
- * 更窄时 2 张），并限制在下面的上下限之间、不超过 60dvh，也不让最宽的图超出结果区；
- * 紧凑视图调低上下限，手机固定 240px。 */
-.unified-workspace {
-  --result-height-max: 480px;
-  --result-height-min: 160px;
-}
+/* Each task shares a preview height; its image frames follow the actual output ratios. */
 .unified-workspace .proportional-results[data-count] {
   display: flex;
   flex-wrap: wrap;
@@ -14,29 +8,12 @@
   container-type: inline-size;
 }
 .unified-workspace .proportional-results[data-count] > div {
-  --result-row-ratio: var(--result-narrow-ratio, 1);
-  --result-row-count: var(--result-narrow-count, 1);
-  /* 留 1px 余量，避免小数取整把一行最后一张挤到下一行。 */
-  --result-height: min(
-    var(--result-height-max),
-    60dvh,
-    calc(100cqw / var(--result-max-ratio)),
-    max(
-      var(--result-height-min),
-      calc((100cqw - (var(--result-row-count) - 1) * 8px - 1px) / var(--result-row-ratio))
-    )
-  );
+  --result-height: min(320px, 60dvh, calc(100cqw / var(--result-max-ratio)));
   flex: none;
   width: calc(var(--result-height) * var(--result-ratio));
   height: var(--result-height);
   max-width: 100%;
   position: relative;
-}
-@container (min-width: 720px) {
-  .unified-workspace .proportional-results[data-count] > div {
-    --result-row-ratio: var(--result-wide-ratio, 1);
-    --result-row-count: var(--result-wide-count, 1);
-  }
 }
 .unified-workspace .proportional-results[data-count] .generation-media,
 .unified-workspace .proportional-results[data-count] .generation-media-open.button,

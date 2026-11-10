@@ -9,7 +9,10 @@ import { useAppLocation, useAppNavigate } from "../i18n/use-localized-navigation
 import { useHoverMenu } from "../lib/use-hover-menu";
 import { shellMessages } from "./shell-messages";
 
-/** 顶部栏“电商”入口：展开四个创作工具，选中后进入工具，并沿用工具坞只向空图片槽带图的规则。 */
+/**
+ * 顶部栏“电商”入口：点击或按键展开四个创作工具，选中后进入工具，并沿用工具坞只向空图片槽带图的规则。
+ * 鼠标经过不展开，免得移向工作区时弹出的菜单挡住参数栏和任务。
+ */
 export function CommerceNavMenu({ active }: { active: boolean }) {
   const { pathname } = useAppLocation();
   const navigate = useAppNavigate();
@@ -28,10 +31,6 @@ export function CommerceNavMenu({ active }: { active: boolean }) {
       <Dropdown.Trigger
         ref={menu.triggerRef}
         className={`nav-row topbar-menu-trigger${active ? " active" : ""}`}
-        onHoverStart={(event) => {
-          if (event.pointerType === "mouse") menu.openOnHover();
-        }}
-        onHoverEnd={menu.closeSoon}
       >
         <span className="nav-label">{t.commerce}</span>
         <UiIcon icon={IconChevronDown} size="small" className="topbar-menu-chevron" />
@@ -42,14 +41,8 @@ export function CommerceNavMenu({ active }: { active: boolean }) {
         placement="bottom start"
         offset={4}
         isNonModal
-        onPointerEnter={menu.cancelClose}
-        onPointerLeave={menu.closeSoon}
       >
-        <Dropdown.Menu
-          aria-label={t.commerceTools}
-          {...(menu.openedByHover ? { autoFocus: false } : {})}
-          onAction={openTool}
-        >
+        <Dropdown.Menu aria-label={t.commerceTools} onAction={openTool}>
           {workspaceTools.map((tool) => (
             <Dropdown.Item
               key={tool.id}

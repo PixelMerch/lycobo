@@ -54,29 +54,31 @@ async function workspaceFixture(page: Page) {
   );
 }
 
-const frameTops = (page: Page, card: number) =>
-  page
-    .locator(".generation-job")
-    .nth(card)
-    .locator(".generation-results > div")
-    .evaluateAll((frames) => frames.map((frame) => Math.round(frame.getBoundingClientRect().top)));
-
-test("wide screens place task details beside larger results and group the rail by day", async ({
+test("desktop keeps the tools in a left rail beside the settings panel and stacked history cards", async ({
   page,
 }) => {
   await workspaceFixture(page);
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/commerce/create");
-  const first = page.locator(".generation-job").first();
   await expect(page.locator(".generation-job")).toHaveCount(2);
-  const info = await first.locator(".history-task-info").boundingBox();
+  const dock = await page.locator(".workspace-tool-dock").boundingBox();
+  const composer = await page.locator(".composer-panel").boundingBox();
+  if (!dock || !composer) throw new Error("Workspace geometry missing");
+  // 152px 竖排工具栏在最左侧、与参数栏顶边对齐，参数栏排在它右侧 12px 处，不再贴着页面边缘。
+  expect(dock.width).toBe(152);
+  expect(dock.y).toBe(composer.y);
+  expect(composer.x - (dock.x + dock.width)).toBe(12);
+  await expect(
+    page.getByRole("navigation", { name: "电商创作工具" }).getByRole("button"),
+  ).toHaveCount(4);
+  await expect(page.getByRole("heading", { name: "生成记录", exact: true })).toBeVisible();
+  // 任务卡保持上方信息、下方结果，单张结果高 320px。
+  const first = page.locator(".generation-job").first();
+  const prompt = await first.locator(".history-prompt").boundingBox();
   const result = await first.locator(".generation-results > div").first().boundingBox();
-  if (!info || !result) throw new Error("History card geometry missing");
-  // 信息组在左侧 320px 列，单张结果放大到 480px，四张图排满同一行。
-  expect(info.width).toBe(320);
-  expect(info.x + info.width).toBeLessThan(result.x);
-  expect(result.height).toBeCloseTo(480, 0);
-  expect(new Set(await frameTops(page, 1)).size).toBe(1);
+  if (!prompt || !result) throw new Error("History card geometry missing");
+  expect(result.y).toBeGreaterThan(prompt.y + prompt.height);
+  expect(result.height).toBeCloseTo(320, 0);
   const days = page.locator(".history-rail-day");
   await expect(days).toHaveCount(2);
   await expect(days.first()).toHaveText("今天");
@@ -91,7 +93,7 @@ test("wide screens place task details beside larger results and group the rail b
   expect(compact?.height).toBeCloseTo(240, 0);
 });
 
-test("the settings panel collapses to a strip and reopens for editing or a new visit", async ({
+test("the settings panel collapses beside the tool rail and reopens for editing or a new visit", async ({
   page,
 }) => {
   await workspaceFixture(page);
@@ -101,10 +103,15 @@ test("the settings panel collapses to a strip and reopens for editing or a new v
   await expect(composer).toBeVisible();
   await page.getByRole("button", { name: "收起参数栏", exact: true }).click();
   await expect(composer).toBeHidden();
-  const strip = page.getByRole("button", { name: "展开参数栏", exact: true });
-  await expect(strip).toHaveAttribute("aria-expanded", "false");
-  await expect(strip).toBeFocused();
-  expect((await strip.boundingBox())?.width).toBe(56);
+  const expand = page.getByRole("button", { name: "展开参数栏", exact: true });
+  await expect(expand).toHaveAttribute("aria-expanded", "false");
+  await expect(expand).toBeFocused();
+  // 收起后工具栏还在，切换工具时参数栏保持收起。
+  const tools = page.getByRole("navigation", { name: "电商创作工具" });
+  await tools.getByRole("button", { name: "家纺裂变", exact: true }).click();
+  await expect(page).toHaveURL(/\/commerce\/textile-set$/);
+  await expect(composer).toBeHidden();
+  await tools.getByRole("button", { name: "主图制作", exact: true }).click();
   // 刷新保持收起；重新编辑会把输入带回参数栏，所以先展开。
   await page.reload();
   await expect(composer).toBeHidden();
@@ -115,7 +122,7 @@ test("the settings panel collapses to a strip and reopens for editing or a new v
   await expect(composer).toBeHidden();
   const navigation = page.getByRole("navigation", { name: "主导航", exact: true });
   await navigation.getByRole("link", { name: "首页", exact: true }).click();
-  await navigation.getByRole("button", { name: "电商", exact: true }).hover();
+  await navigation.getByRole("button", { name: "电商", exact: true }).click();
   await page
     .getByRole("menu", { name: "电商" })
     .getByRole("menuitem", { name: "主图制作", exact: true })

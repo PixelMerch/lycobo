@@ -54,7 +54,12 @@ export function StudioShell() {
     );
   return (
     <div className="studio-app">
-      <header className="topbar" data-scrolled={scrolled || undefined}>
+      {/* 工作区里顶部栏固定为实色、滚动时不收窄；其他页面在顶部透明、滚动后变磨砂。 */}
+      <header
+        className="topbar"
+        data-scrolled={(scrolled && !inWorkspace) || undefined}
+        data-solid={inWorkspace || undefined}
+      >
         <Drawer isOpen={menuOpen} onOpenChange={setMenuOpen}>
           <Drawer.Trigger className="mobile-menu icon-button" aria-label={t.openNavigation}>
             <UiIcon icon={IconMenu2} size="navigation" />
