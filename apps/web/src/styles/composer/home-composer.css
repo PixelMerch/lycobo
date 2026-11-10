@@ -390,7 +390,7 @@
   padding: 3px;
   border: 0;
   border-radius: 20px;
-  background: #343434;
+  background: #ffffff0f;
   margin-bottom: var(--space-3);
 }
 .home-settings-options .toggle-button-group:last-child {
@@ -409,7 +409,7 @@
   line-height: var(--leading-sm);
 }
 .home-settings-options .toggle-button[data-selected] {
-  background: #505050;
+  background: var(--studio-control-selected);
   color: #eee;
   box-shadow: none;
 }
@@ -422,7 +422,7 @@
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: #505050;
+  background: var(--studio-control-selected);
   pointer-events: none;
 }
 /* 比例格按类名匹配（不依赖界面语言）：48px 方格，图标在上、比例在下。 */

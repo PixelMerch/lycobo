@@ -57,7 +57,7 @@ function LoginCard({
         isIconOnly
         size="lg"
         variant="ghost"
-        className="login-close"
+        className="login-close dialog-close"
         aria-label={t.closeLogin}
         onPress={onClose}
       >

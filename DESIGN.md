@@ -123,7 +123,7 @@ HeroUI 是唯一交互基础：Button、ToggleButtonGroup、Select、Modal、Pop
 
 内容间距引用 `--space-1/2/3/4/5/6/8`，对应4/8/12/16/20/24/32px；控件组优先8或12px，内容分区16或24px。导航6px行距、参数轨道4px边距、图片80px参考图、历史图块及画布等具名几何保持各自规格，不把所有尺寸机械吸附到间距表。
 
-透明控件hover统一 `--interaction-hover: #FFFFFF0A`，激活 `--interaction-active: #FFFFFF14`。填充式参数与菜单使用 `--control-hover-fill: #3C3C3C`、`--control-pressed-fill: #454545`、`--control-selected-fill: #505050`；常态较暗的控件才通过该hover提亮。普通文字、图标按钮不位移、不缩放，不因hover改变宽高或圆角。图片内缩放、抽屉滑入、选中底板等具名动效继续保留，并遵守减少动态效果偏好。
+透明控件hover统一 `--interaction-hover: #FFFFFF0A`，激活 `--interaction-active: #FFFFFF14`；HeroUI ghost 按钮的悬停与按下同样使用这两个值，不用主题 `--default` 的蓝灰（用户2026-11-10要求统一）。填充式参数与菜单使用 `--control-hover-fill: #3C3C3C`、`--control-pressed-fill: #454545`、`--control-selected-fill: #505050`；常态较暗的控件才通过该hover提亮。普通文字、图标按钮不位移、不缩放，不因hover改变宽高或圆角。图片内缩放、抽屉滑入、选中底板等具名动效继续保留，并遵守减少动态效果偏好。
 
 具名排版例外：行内图片引用编辑器保留26px行盒，模型标签保留13/18；图片数量等小角标可用11/16、参考图的紧凑“示例”标识可用10/16。Tooltip保持12/16；这些小字不用于正文或可编辑字段。手机可编辑字段至少16/24，点击目标至少44px。登录、危险操作、品牌主按钮、工具强调标签和全屏关闭控件保留各自语义，不扩散到普通hover。
 
@@ -308,7 +308,7 @@ HeroUI 是唯一交互基础：Button、ToggleButtonGroup、Select、Modal、Pop
 
 ### 共享参数控件
 
-共享参数使用 `studio-control-feedback.css`：hover #3C3C3C、pressed #454545、selected #505050。选中底板通过 `SelectionHighlight` 滑动，背景 140ms、按压反馈 100ms，按压不缩放；模型文字列表不套用参数高亮。
+首页设置浮层、设置胶囊与 @ 引用菜单叠在毛玻璃上，共用 `studio-control-feedback.css` 的半透明白：hover #FFFFFF14、pressed #FFFFFF1F、selected #FFFFFF29，参数轨道 #FFFFFF0F，不用与玻璃底色不搭的实色灰块（用户2026-11-10要求统一）。比例格按类名设为48px方格，不随界面语言变化。选中底板通过 `SelectionHighlight` 滑动，背景 140ms、按压反馈 100ms，按压不缩放；模型文字列表不套用参数高亮。
 
 分辨率选择共用三个公开档位1.5K／2K／4K，新草稿默认1.5K。1.5K正方形1254×1254、其他比例长边1254；历史1K仍显示原值，重新编辑时默认切换为新1.5K，不改写旧任务。生成结果显示与下载都使用存储的实际尺寸，不把1024结果标成1254。
 

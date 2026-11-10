@@ -219,6 +219,11 @@ small {
   font-size: var(--text-base);
   line-height: var(--leading-base);
 }
+/* 透明（ghost）按钮悬停、按下统一用半透明白：深色底和带色玻璃上都不显出蓝灰色块。 */
+.button--ghost {
+  --button-bg-hover: var(--interaction-hover);
+  --button-bg-pressed: var(--interaction-active);
+}
 .button--sm {
   height: var(--control-height-sm);
   padding-inline: var(--control-padding-sm);
