@@ -22,8 +22,8 @@ test("create workspace fills the viewport and pins generation to the composer bo
   if (!composerBox || !resultsBox || !buttonBox) return;
   const viewport = page.viewportSize();
   const padding = 12;
-  // 桌面顶部栏高 64px。
-  expect(Math.abs(composerBox.y - (64 + padding))).toBeLessThan(1);
+  // 桌面顶部栏高 64px；参数栏顶边再下移 13.5px，与“生成记录”标题文字对齐（48px 标题行里 21px 行高居中）。
+  expect(Math.abs(composerBox.y - (64 + padding + 13.5))).toBeLessThan(1);
   expect(Math.abs(composerBox.y + composerBox.height - (906 - padding))).toBeLessThan(1);
   expect(Math.abs(resultsBox.y + resultsBox.height - (906 - padding))).toBeLessThan(1);
   expect(
