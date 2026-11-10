@@ -153,7 +153,8 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     expect(box?.width).toBeCloseTo(480, 0);
     expect(box?.height).toBeCloseTo(480, 0);
     await expect(preview).toHaveCSS("border-top-width", "0px");
-    await expect(preview).toHaveCSS("background-color", "rgb(52, 52, 52)");
+    // 失败占位用 --fill-strong（12% 白）半透明底。
+    await expect(preview).toHaveCSS("background-color", "rgba(255, 255, 255, 0.12)");
     await expect(preview.getByRole("button", { name: "重试", exact: true })).toHaveCount(0);
     const message = preview.locator(".generation-failure-message");
     await expect(message).toHaveText(

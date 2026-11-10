@@ -1,14 +1,15 @@
 import { expect, type Locator, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
+/** 共享浮层玻璃：8% 白色渐变底（第二层是透明底色）与 40px 背景模糊。 */
 async function glass(panel: Locator) {
   await expect(panel).toBeVisible();
   await expect
     .poll(() => panel.evaluate((node) => getComputedStyle(node).backdropFilter))
-    .toContain("blur(28px)");
+    .toBe("blur(40px)");
   await expect
     .poll(() => panel.evaluate((node) => getComputedStyle(node).backgroundImage))
-    .toContain("linear-gradient");
+    .toBe("linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)), none");
 }
 for (const mobile of [false, true]) {
   test(`credits menu uses the vidmuse header surface and keeps draft and focus ${mobile ? "mobile" : "desktop"}`, async ({
@@ -26,8 +27,11 @@ for (const mobile of [false, true]) {
     await credits.focus();
     await page.keyboard.press("Enter");
     const menu = page.locator(".credits-menu");
-    // 顶部栏下拉是具名例外：#FFFFFF14 底与 40px 背景模糊，不叠共享玻璃的描边与渐变。
-    await expect(menu).toHaveCSS("background-color", "rgba(255, 255, 255, 0.08)");
+    // 顶部栏下拉与其他浮层同一套玻璃：#FFFFFF14 渐变底与 40px 背景模糊，只是不留描边。
+    await expect(menu).toHaveCSS(
+      "background-image",
+      "linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)), none",
+    );
     await expect(menu).toHaveCSS("backdrop-filter", "blur(40px)");
     await expect(menu).toHaveCSS("border-top-width", "0px");
     await expect(page.getByRole("menuitem", { name: "开通会员", exact: true })).toBeVisible();

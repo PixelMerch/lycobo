@@ -174,17 +174,20 @@ test("regenerate submits the original snapshot once and leaves the composer draf
   const confirm = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
   await expect(confirm).toBeVisible();
   await expect(confirm.locator(".confirm-dialog__content")).toHaveText("本次消耗 2 积分");
-  // 确认面板使用共享深色玻璃（1px 细边、半透明深底、28px 模糊），取消文字和右上关闭图标在上面保持可读。
+  // 确认面板使用共享浮层玻璃（8% 白底、40px 模糊、透明 1px 边），取消文字和右上关闭图标在上面保持可读。
   await expect(confirm).toHaveCSS("border-top-width", "1px");
-  await expect(confirm).toHaveCSS("background-color", "rgba(15, 15, 18, 0.42)");
-  await expect(confirm).toHaveCSS("backdrop-filter", "blur(28px) saturate(1.8)");
+  await expect(confirm).toHaveCSS(
+    "background-image",
+    "linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)), none",
+  );
+  await expect(confirm).toHaveCSS("backdrop-filter", "blur(40px)");
   await expect(confirm.locator(".confirm-dialog__content")).toHaveCSS(
     "color",
-    "rgb(184, 184, 192)",
+    "rgb(185, 185, 185)",
   );
   await expect(confirm.getByRole("button", { name: "取消", exact: true })).toHaveCSS(
     "color",
-    "rgb(184, 184, 192)",
+    "rgb(185, 185, 185)",
   );
   const closeRegenerate = confirm.getByRole("button", {
     name: "关闭重新生成确认",

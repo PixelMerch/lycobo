@@ -32,10 +32,7 @@ test("login offers unavailable providers without requests and keeps enterprise f
   await expect(dialog.getByLabel("企业账号", { exact: true })).toHaveCount(0);
   await expect(dialog.getByLabel("密码", { exact: true })).toHaveCount(0);
   await expect(page.locator(".sidebar, .topbar")).toHaveCount(0);
-  await expect(dialog.locator(".login-panel")).toHaveCSS(
-    "backdrop-filter",
-    "blur(28px) saturate(1.8)",
-  );
+  await expect(dialog.locator(".login-panel")).toHaveCSS("backdrop-filter", "blur(40px)");
 
   await enterprise.hover();
   await page.screenshot({
