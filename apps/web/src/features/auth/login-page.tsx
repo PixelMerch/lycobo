@@ -1,4 +1,4 @@
-import { Button } from "@heroui/react";
+import { Button, Link } from "@heroui/react";
 import { IconBuilding, IconChevronRight, IconX } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
@@ -6,6 +6,8 @@ import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { PageLoading } from "../../app/page-loading";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
+import { type LegalDocumentId, legalPaths } from "../legal/legal-document";
+import { legalMessages } from "../legal/legal-messages";
 import { useEnterpriseSession } from "./auth-client";
 import { authMessages } from "./auth-messages";
 import { EnterpriseLogin } from "./enterprise-login";
@@ -106,8 +108,35 @@ function LoginCard({
             )}
           </div>
           {enterprise && <p className="login-support">{t.support}</p>}
+          <LoginAgreement />
         </motion.div>
       </AnimatePresence>
     </div>
+  );
+}
+
+/** 卡片底部的协议提示：登录即表示同意用户协议与隐私政策；两份文本在新标签页打开，不打断登录。 */
+function LoginAgreement() {
+  const t = useMessages(authMessages);
+  const legal = useMessages(legalMessages);
+  const link = (id: LegalDocumentId) => (
+    <Link
+      href={legalPaths[id]}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="login-agreement-link"
+      aria-label={t.agreementNewTab(legal.names[id])}
+    >
+      {t.agreementName(legal.names[id])}
+    </Link>
+  );
+  return (
+    <p className="login-agreement">
+      {t.agreement.before}
+      {link("terms")}
+      {t.agreement.between}
+      {link("privacy")}
+      {t.agreement.after}
+    </p>
   );
 }

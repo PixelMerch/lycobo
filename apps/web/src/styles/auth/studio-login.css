@@ -19,11 +19,11 @@
 .header-login[data-pressed="true"] {
   background: #ddd;
 }
-/* 登录卡片：居中的固定尺寸深色玻璃，在两种登录方式间翻面，内容较高时只在卡片内滚动。 */
+/* 登录卡片：居中的固定尺寸深色玻璃（420×640，底部留出协议提示），在两种登录方式间翻面，内容较高时只在卡片内滚动。 */
 .login-panel {
   position: relative;
   width: min(420px, 100%);
-  height: min(600px, calc(100dvh - 48px));
+  height: min(640px, calc(100dvh - 48px));
   overflow: hidden;
   border-radius: 28px;
   perspective: 1200px;
@@ -219,6 +219,29 @@
   flex: none;
   padding-top: var(--space-4);
 }
+/* 卡片最底部的协议提示：12/18 灰字，两个协议链接稍亮，悬停白字加下划线；紧跟在企业账号说明下方时间距收窄。 */
+.login-agreement {
+  flex: none;
+  padding-top: var(--space-3);
+  text-align: center;
+  color: #ffffff66;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+.login-support + .login-agreement {
+  padding-top: var(--space-1);
+}
+.login-agreement .login-agreement-link {
+  color: #ffffffb3;
+  font-size: inherit;
+  line-height: inherit;
+  text-decoration: none;
+}
+.login-agreement .login-agreement-link:is(:hover, [data-hovered="true"]) {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 /* 企业账号是次要入口：说明文字下方一行小号文字按钮。 */
 .login-face .login-enterprise-trigger {
   align-self: center;
@@ -252,7 +275,7 @@
 @media (max-width: 600px) {
   .login-panel {
     width: 100%;
-    height: min(600px, calc(100dvh - 24px));
+    height: min(640px, calc(100dvh - 24px));
   }
   .login-face {
     padding: 40px 20px 24px;
