@@ -119,15 +119,15 @@
   position: relative;
   z-index: 1;
   width: calc(100% - 176px);
-  margin: 8px 60px -5.5% 116px;
-  aspect-ratio: 1264 / 256;
+  margin: 8px 60px -6.5% 116px;
+  aspect-ratio: 957 / 256;
   background: linear-gradient(
     180deg,
     rgb(168 255 0 / 16%),
     rgb(84 230 165 / 5%) 55%,
     transparent 90%
   );
-  mask: url("/brand/lycobo-product-pilot.svg") center top / 100% auto no-repeat;
+  mask: url("/brand/lycobo-reveal.svg") center top / 100% auto no-repeat;
   pointer-events: none;
 }
 @media (max-width: 1023px) {

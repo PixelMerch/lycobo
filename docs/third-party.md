@@ -24,3 +24,7 @@
 ## 思源黑体（Noto Sans SC）
 
 界面字体使用思源黑体可变字体，经 npm 包 `@fontsource-variable/noto-sans-sc` 固定为 5.3.1 引入（`apps/web/src/main.tsx`），构建时随站点静态资源发布，不使用第三方字体 CDN。字体采用 SIL Open Font License 1.1，允许在网站中嵌入与随软件分发；包内附带的 LICENSE 保留原文，不单独出售字体文件。用户 2026-11-10 确认以它替换从未实际加载的阿里巴巴普惠体。
+
+## 阿里巴巴普惠体 Logo 字标
+
+2026-11-10 用户确认将 A「显影」字标改为阿里巴巴普惠体 3.0 Bold，恢复常规 L 并增加图形与文字间距。字体从[官方站点](https://www.alibabafonts.com/)提供的 `AlibabaPuHuiTi-3-85-Bold.ttf` 获取，字体文件版本为 3.01；[法律声明](https://www.yuque.com/yiguang-wkqc2/hgpff0/nus9wiinq4aeiegy)与来源记录保存在 `apps/web/public/brand/AlibabaPuHuiTi-NOTICE.txt`。Logo 仅发布转曲后的 SVG 路径，不分发字体文件，不新增运行时字体或依赖；界面字体仍使用思源黑体。

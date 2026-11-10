@@ -65,13 +65,10 @@
   place-items: center;
   width: 64px;
   height: 64px;
-  border-radius: 50%;
-  background: var(--app-primary-gradient);
-  box-shadow: 0 12px 32px -12px #a8ff0066;
 }
 .login-logo-badge img {
   display: block;
-  width: 36px;
+  width: 56px;
   height: auto;
 }
 .login-header h1 {

@@ -36,7 +36,7 @@ export function showDesktopCompletion(scope: string, id: string, open: () => voi
     const notice = new Notification(t.noticeTitle, {
       body: t.noticeBody,
       tag: `lycobo-completion-${scope}-${id}`,
-      icon: "/brand/lycobo-product-pilot-mark.svg",
+      icon: "/brand/lycobo-reveal-icon-192.png",
     });
     notice.onclick = () => {
       window.focus();

@@ -35,7 +35,7 @@ export function SiteFooter() {
         <div className="site-footer-main">
           <div className="site-footer-brand">
             <RouteLink to="/" className="site-footer-logo" aria-label={t.homeLink}>
-              <img src="/brand/lycobo-product-pilot.svg" alt="Lycobo" width="120" height="24" />
+              <img src="/brand/lycobo-reveal.svg" alt="Lycobo" width="120" height="32" />
             </RouteLink>
             <p>{t.tagline}</p>
           </div>
