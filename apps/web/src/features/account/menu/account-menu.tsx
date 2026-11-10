@@ -19,7 +19,7 @@ import { useEnterpriseLogout, useEnterpriseSession } from "../../auth/auth-clien
 import { useOpenLogin } from "../../auth/login-prompt";
 import { formatCredits, imagesFor, roleLabel } from "../account-format";
 import { useAccountOverlays } from "../account-overlay-store";
-import { AccountUpdates } from "../notifications/account-updates";
+import { AccountMessages } from "../notifications/account-messages";
 import { useWallet } from "../wallet-client";
 import { accountMenuMessages } from "./account-menu-messages";
 import "../account-common.css";
@@ -192,8 +192,7 @@ export function AccountMenu({
       </Dropdown>
       {!inHeader && (
         <div className="account-footer-tools">
-          <AccountUpdates kind="updates" />
-          <AccountUpdates kind="messages" />
+          <AccountMessages />
         </div>
       )}
     </div>

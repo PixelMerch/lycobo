@@ -31,7 +31,7 @@
 - **任务提交、计费、重试**：[API](../apps/api/AGENTS.md)、[Worker](../apps/worker/AGENTS.md)、[共享包](../packages/AGENTS.md)、[DB](../packages/db/AGENTS.md)；各层 `images`、`wallet`。阅读：[生图 API](image-generation-api.md)、[企业钱包](enterprise-wallet.md)、[服务端分层](node-ts-best-practices.md)。
 - **Webhook、无回调恢复**：API/Worker/共享包/DB 规则；`webhooks`、`images`、`queue`。阅读：[图片回调](image-webhooks.md)、生图 API 的相关生命周期、企业钱包的结算规则。
 - **图片上传、转换、媒体访问**：API/Worker/共享包/DB 中涉及的规则；`packages/storage/src`、图片素材仓储。阅读：[对象存储](s3-storage.md)、[Cloudflare 部署](cloudflare-deployment.md)「图片处理」「绑定与 Secrets」、生图 API 上传部分。
-- **主动推送、站内消息**：API/Worker/共享包/DB/Web 中涉及的规则；各层 `realtime`。阅读：[实时推送](realtime.md)；改提醒界面时读 DESIGN「右侧更新与消息」与「反馈、响应式与维护约束」。
+- **主动推送、站内消息**：API/Worker/共享包/DB/Web 中涉及的规则；各层 `realtime`。阅读：[实时推送](realtime.md)；改提醒界面时读 DESIGN「右侧消息」与「反馈、响应式与维护约束」。
 - **数据表、SQL、迁移**：共享包/DB 规则及调用方。阅读：PostgreSQL 技能、服务端分层、[数据库命名](database-naming.md)、对应业务文档。
 - **目录维护、公共代码重构**：被移动文件所在目录规则及导入方。阅读：[架构与目录](../PROJECT_STRUCTURE.md) 的相关目录和依赖方向、服务端分层；前端重构仍受 DESIGN 约束。
 - **发布、绑定、域名、回滚**：根规则；涉及运行单元的目录规则及 Wrangler 配置。阅读：[发布流程](releasing.md)、Cloudflare 部署；授权范围不由文档授予。

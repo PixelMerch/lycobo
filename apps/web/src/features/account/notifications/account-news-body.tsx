@@ -1,11 +1,11 @@
-import { Button, Link } from "@heroui/react";
-import { IconBell, IconExternalLink, IconList } from "@tabler/icons-react";
+import { Button } from "@heroui/react";
+import { IconBell } from "@tabler/icons-react";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
-import { useNotifications, useReadNotification, useSiteRelease } from "../../realtime/client";
+import { useNotifications, useReadNotification } from "../../realtime/client";
 import { DesktopNotificationControl } from "../../realtime/desktop-notification-control";
 import { notificationsMessages } from "./notifications-messages";
 
@@ -84,53 +84,5 @@ function NotificationMessages() {
         </Button>
       )}
     </>
-  );
-}
-
-/** 只显示已发布摘要；主动刷新前提醒用户保留草稿。 */
-export function ReleaseBody() {
-  const latest = useSiteRelease();
-  const t = useMessages(notificationsMessages);
-  const release = latest.data?.release;
-  const available = !!release && release.version !== import.meta.env.VITE_APP_RELEASE_VERSION;
-  if (!release)
-    return (
-      <div className="account-news-empty">
-        <h3>{latest.isError ? t.releasesFailed : t.noReleases}</h3>
-      </div>
-    );
-  return (
-    <article className="account-release">
-      <span className="account-release-icon">
-        <UiIcon icon={IconList} size="action" />
-      </span>
-      <div>
-        <h3>{release.title}</h3>
-        <p className="account-release-meta">
-          <span>{release.version}</span>
-          <time dateTime={release.publishedAt}>{release.publishedAt.slice(0, 10)}</time>
-        </p>
-        <p>{release.description}</p>
-        {available ? (
-          <>
-            <p>{t.newVersion}</p>
-            <Button size="sm" variant="primary" onPress={() => location.reload()}>
-              {t.refresh}
-            </Button>
-          </>
-        ) : (
-          <p>{t.upToDate}</p>
-        )}
-        <p>
-          <Link
-            href="https://github.com/PixelMerch/lycobo/releases"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {t.viewReleases} <UiIcon icon={IconExternalLink} size="small" />
-          </Link>
-        </p>
-      </div>
-    </article>
   );
 }

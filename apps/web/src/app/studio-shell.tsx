@@ -7,7 +7,7 @@ import { UiIcon } from "../components/ui-icon";
 import { AccountOverlayHost } from "../features/account/account-overlays";
 import { AccountMenu, HeaderLogin } from "../features/account/menu/account-menu";
 import { HeaderBenefits } from "../features/account/menu/header-benefits";
-import { AccountUpdates } from "../features/account/notifications/account-updates";
+import { AccountMessages } from "../features/account/notifications/account-messages";
 import { useEnterpriseSession } from "../features/auth/auth-client";
 import { loginHref } from "../features/auth/login-navigation";
 import { useImageEvents } from "../features/generation/use-image-events";
@@ -94,8 +94,7 @@ export function StudioShell() {
           {signedIn ? (
             <>
               <div className="header-news">
-                <AccountUpdates kind="updates" />
-                <AccountUpdates kind="messages" />
+                <AccountMessages />
               </div>
               <LanguageMenu />
               <HeaderBenefits />

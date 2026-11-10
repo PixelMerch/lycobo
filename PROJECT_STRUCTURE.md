@@ -74,7 +74,7 @@ apps/web/src/
     │   ├── credits/              # 积分预览、明细、充值及订单
     │   ├── membership/           # 独立会员页和定价
     │   ├── settings/             # 账户设置和密码表单
-    │   └── notifications/        # 消息中心和更新内容
+    │   └── notifications/        # 消息中心
     ├── workspace/                # 统一工作区布局、工具坞、跨工具草稿交接
     ├── commerce/                 # 家纺裂变、套图计划（方案规划、确认与生图）及本地会话草稿
     ├── video/                    # 视频页面、请求与草稿；history / player / production / storyboard 分职责
@@ -206,6 +206,6 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 图片存储的受限并行编排位于 `packages/storage/src/cloudflare/cloudflare-image-write.ts`，由 `cloudflare.ts` 调用；原图和两个变体完成后才返回，遥测只记录阶段与耗时。
 
-`apps/web/src/styles/overlay-glass.css` 统一 HeroUI 浮层的毛玻璃材质与减少透明回退；全屏会员页按具名例外使用稳定实底；消息中心布局与状态卡片由 `features/account/notifications/account-updates.css` 维护。
+`apps/web/src/styles/overlay-glass.css` 统一 HeroUI 浮层的毛玻璃材质与减少透明回退；全屏会员页按具名例外使用稳定实底；消息中心布局与状态卡片由 `features/account/notifications/account-messages.css` 维护。
 
 主图制作统一位于 `/commerce/create`，默认 `gpt-image-2.6`，模型选择按 2.6、2.5、2 排列。`mainImageModelIds` 统一前后端主图选项；历史展示资料和其他工具保留原有型号。首页与工作台共用草稿，首页提示词最多 5000 字，操作栏独立于自动伸展输入区。

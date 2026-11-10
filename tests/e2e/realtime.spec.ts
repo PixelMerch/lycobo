@@ -250,7 +250,7 @@ test("only wallet events refresh balance, task states do not duplicate the read"
   expect(wallets).toBe(baseline + 1);
 });
 
-test("release push preserves the draft and offers a deliberate refresh", async ({ page }) => {
+test("release push preserves the draft and asks the user to refresh", async ({ page }) => {
   await mockImageEvents(page);
   await page.goto("/commerce/create");
   const draft = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
@@ -278,11 +278,8 @@ test("release push preserves the draft and offers a deliberate refresh", async (
   );
   await expect(page.getByText(/网站有新版本可用/)).toBeVisible();
   await expect(draft).toHaveValue("更新提示到来时保留草稿");
-  await page.getByRole("button", { name: "更新记录（有新版本）", exact: true }).click();
-  const panel = page.getByRole("dialog", { name: "最近更新" });
-  await expect(panel.getByText("新的功能已上线")).toBeVisible();
-  await expect(panel.getByRole("button", { name: "刷新体验", exact: true })).toBeVisible();
-  await page.keyboard.press("Escape");
+  // 新版本只用 Toast 提示，顶部栏不再有更新记录入口，也不会自动刷新。
+  await expect(page.getByRole("button", { name: /^更新记录/ })).toHaveCount(0);
   await expect(draft).toHaveValue("更新提示到来时保留草稿");
 });
 

@@ -51,7 +51,7 @@ Local uploads stay preview-only until submission; the server validates and store
 - Lazy-load heavy canvas/editor routes. Do not load original full-resolution images into grid cards.
 - Accessible labels, visible focus, semantic controls, reduced motion and narrow-screen behavior
   are required. Signed out, the top bar shows the language entry and the pill-shaped login action; signed in, it shows the
-  update and message buttons, the language entry, the credits pill (balance and plan; hover/press opens the credits menu
+  message button, the language entry, the credits pill (balance and plan; hover/press opens the credits menu
   like the 电商 dropdown, without stealing focus on hover) and the account avatar.
   Do not restore task-center entries.
 - Keep the brand focus ring keyboard-only. React Aria moves focus on hover, restored focus and
