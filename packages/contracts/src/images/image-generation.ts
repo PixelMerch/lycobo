@@ -88,11 +88,11 @@ export const imageGenerationInputSchema = z
       .default("1:1"),
     referenceAssetIds: z
       .array(z.uuid())
-      .max(10)
+      .max(11)
       .default([])
       .refine((ids) => new Set(ids).size === ids.length, "Duplicate references"),
     // 与 referenceAssetIds 一一对应的角色；只在用户标了原图或风格时出现，旧输入缺省、哈希不变。
-    referenceRoles: z.array(referenceRoleSchema).max(10).optional(),
+    referenceRoles: z.array(referenceRoleSchema).max(11).optional(),
     count: z.number().int().min(1).max(variationPlanLimit).default(1),
     // 旧任务快照里缺省，保持已存幂等哈希有效。
     quality: imageQualitySchema.optional(),
@@ -104,13 +104,22 @@ export const imageGenerationInputSchema = z
     replica: z.literal(true).optional(),
   })
   .superRefine((input, ctx) => {
+    if (!input.replica && input.referenceAssetIds.length > 10)
+      ctx.addIssue({ code: "custom", message: "Too many references" });
     if (input.replica) {
-      const validRoles = input.referenceRoles?.join(",") === "style,product";
+      const validRoles =
+        input.referenceRoles?.[0] === "style" &&
+        input.referenceRoles.slice(1).every((role) => role === "product");
       const mixedTools = !!input.textileSet || !!input.variation || !!input.localEdit;
-      if (input.referenceAssetIds.length !== 2 || !validRoles || mixedTools)
+      if (
+        input.referenceAssetIds.length < 2 ||
+        !validRoles ||
+        mixedTools ||
+        (input.referenceAssetIds.length > 2 && input.count !== input.referenceAssetIds.length - 1)
+      )
         ctx.addIssue({
           code: "custom",
-          message: "Style matching requires one style image followed by one product image",
+          message: "Style matching requires one style image and one output per product reference",
         });
     }
   })
@@ -121,7 +130,7 @@ export const imageGenerationInputSchema = z
         input.referenceAssetIds.length < 1 ||
         input.referenceAssetIds.length > maxTextileReferences ||
         !!input.localEdit
-      : input.count > 4;
+      : input.count > (input.replica ? 10 : 4);
     const invalidCount = input.variation
       ? input.count !== input.variation.items.length ||
         input.referenceAssetIds.length > 5 ||

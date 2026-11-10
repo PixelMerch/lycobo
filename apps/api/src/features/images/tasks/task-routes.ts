@@ -50,13 +50,16 @@ export function registerImageTaskSubmission(app: Hono<Env>, deps: ImageApiDepend
     const key = id.safeParse(c.req.header("Idempotency-Key"));
     if (!input.success || !key.success)
       return fail(c, "VALIDATION_ERROR", "请检查参数和 Idempotency-Key", 400);
-    const normalized = input.data.variation
+    const taskInput = input.data.replica
+      ? { ...input.data, model: "gpt-image-2.6", count: input.data.referenceAssetIds.length - 1 }
+      : input.data;
+    const normalized = taskInput.variation
       ? {
-          ...input.data,
+          ...taskInput,
           model: "gpt-image-2.5",
           quality: "medium" as const,
         }
-      : normalizeTextileGeneration(input.data);
+      : normalizeTextileGeneration(taskInput);
     if (!(await supportsTaskModel(deps, normalized)))
       return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "当前模型暂不可用，请选择其他模型", 400);
     // 仅信任服务端按当前身份读取的 R2 上传意图，不接受客户端声明“已上传”。

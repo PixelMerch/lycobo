@@ -64,3 +64,23 @@ describe("reference roles and plan item bindings", () => {
     expect(styled.referenceAssetIds).toEqual([product, sourceA]);
   });
 });
+
+it("splits ten style matches into target/product pairs and rejects mismatched billing counts", () => {
+  const ids = Array.from({ length: 11 }, () => crypto.randomUUID());
+  const raw = {
+    model: "gpt-image-2.6",
+    prompt: "保持商品",
+    replica: true,
+    referenceAssetIds: ids,
+    referenceRoles: ["style", ...Array(10).fill("product")],
+    count: 10,
+  };
+  const input = imageGenerationInputSchema.parse(raw);
+  for (let index = 0; index < 10; index++) {
+    const output = textileItemInput(input, index);
+    expect(output.referenceAssetIds).toEqual([ids[0], ids[index + 1]]);
+    expect(output.count).toBe(1);
+  }
+  expect(imageGenerationInputSchema.safeParse({ ...raw, count: 1 }).success).toBe(false);
+  expect(imageGenerationInputSchema.safeParse({ ...raw, replica: undefined }).success).toBe(false);
+});

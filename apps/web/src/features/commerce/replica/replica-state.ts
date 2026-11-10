@@ -1,11 +1,13 @@
 import { create } from "zustand";
 import { type Draft, defaultDraft, type ReferenceImage } from "../../generation/studio-state";
 
+/** 页面沿用2.6能力声明，具体复制渠道由服务端固定到 sunburst。 */
+export const replicaModel = "gpt-image-2.6";
+
 type ReplicaDraft = {
-  model: string;
   draft: Draft;
   target: ReferenceImage | null;
-  product: ReferenceImage | null;
+  products: ReferenceImage[];
 };
 
 /** 两种图片分槽保存，切换工具不会覆盖风格图或商品图。 */
@@ -14,9 +16,8 @@ export const useReplicaDraft = create<
     update: (patch: Partial<ReplicaDraft>) => void;
   }
 >((set) => ({
-  model: "gpt-image-2.6",
   draft: { ...defaultDraft },
   target: null,
-  product: null,
+  products: [],
   update: (patch) => set(patch),
 }));

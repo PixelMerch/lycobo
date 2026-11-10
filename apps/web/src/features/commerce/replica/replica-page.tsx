@@ -17,16 +17,15 @@ import {
 import { generationMessages } from "../../generation/generation-messages";
 import { revealNewestHistory } from "../../generation/history/history-navigation";
 import { modelCapabilities, supportsReferences } from "../../generation/models/model-capabilities";
-import { ModelSelect } from "../../generation/models/model-select";
 import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
 import { replicaMessages } from "./replica-messages";
 import { ReplicaReferences } from "./replica-references";
-import { useReplicaDraft } from "./replica-state";
+import { replicaModel, useReplicaDraft } from "./replica-state";
 
 /** 复制目标图的视觉风格，沿用现有素材上传、幂等提交、队列与计费链路。 */
 export function ReplicaPage() {
   const state = useReplicaDraft();
-  const { model, draft, target, product, update } = state;
+  const { draft, target, products, update } = state;
   const t = useMessages(replicaMessages);
   const common = useMessages(generationMessages);
   const models = useImageModels();
@@ -35,12 +34,12 @@ export function ReplicaPage() {
   const anyPending = usePendingSubmission(session.data);
   const pending =
     anyPending && !!session.data && pendingSubmissionSource(session.data) === "replica";
-  const capabilities = modelCapabilities(models.data, model, "create");
+  const capabilities = modelCapabilities(models.data, replicaModel, "replica");
   const valid =
     !!target &&
-    !!product &&
-    target.id !== product.id &&
-    supportsReferences(capabilities, 2) &&
+    products.length > 0 &&
+    products.every((product) => product.id !== target.id) &&
+    supportsReferences(capabilities, products.length + 1) &&
     capabilities?.enabledResolutions.some((value) => value === draft.resolution);
   const error = generate.error ?? models.error ?? session.error;
   const errorMessage = error instanceof ImageApiError ? error.message : common.serviceUnavailable;
@@ -60,6 +59,7 @@ export function ReplicaPage() {
           references={[]}
           placeholder={t.placeholder}
           maxLength={5000}
+          optimizeTool="create"
           showCount
           autoGrow
         />
@@ -80,19 +80,11 @@ export function ReplicaPage() {
           )}
           onChange={(resolution) => patchDraft({ resolution })}
         />
-        <ParameterGroup
-          label={common.imageCount}
-          values={["1", "2", "3", "4"]}
-          value={draft.count}
-          selectionId="replica-count"
-          onChange={(count) => patchDraft({ count })}
-        />
       </section>
       <div className="generate-area">
-        <ModelSelect
-          value={model}
-          onChange={(next) => update({ model: next, draft: { ...draft, resolution: "1.5K" } })}
-        />
+        <p className="field-description">
+          {t.summary(products.length, imageUnitCredits * products.length)}
+        </p>
         <Button
           className="primary-action generation-submit"
           variant="primary"
@@ -112,7 +104,7 @@ export function ReplicaPage() {
           {!pending && (
             <>
               <CreditCoin />
-              <span>{imageUnitCredits * Number(draft.count)}</span>
+              <span>{imageUnitCredits * products.length}</span>
             </>
           )}
         </Button>
@@ -128,20 +120,21 @@ function useReplicaSubmission(
   pending: boolean,
   valid: boolean,
 ) {
-  const { model, draft, target, product, update } = state;
+  const { draft, target, products, update } = state;
   const t = useMessages(replicaMessages);
   const submit = () => {
     if (!pending && !valid) return;
     generate.mutate(
       {
-        model,
+        model: replicaModel,
         source: "replica",
         replica: true,
-        referenceRoles: ["style", "product"],
+        referenceRoles: ["style", ...products.map(() => "product" as const)],
         draft: {
           ...draft,
+          count: String(products.length),
           prompt: `${t.instruction}\n${draft.prompt}`,
-          references: target && product ? [target, product] : [],
+          references: target ? [target, ...products] : [],
         },
       },
       {
@@ -151,9 +144,9 @@ function useReplicaSubmission(
             !pending &&
             useReplicaDraft.getState().draft === draft &&
             useReplicaDraft.getState().target === target &&
-            useReplicaDraft.getState().product === product
+            useReplicaDraft.getState().products === products
           )
-            update({ target: null, product: null, draft: { ...draft, prompt: "" } });
+            update({ target: null, products: [], draft: { ...draft, prompt: "" } });
           revealNewestHistory();
         },
       },

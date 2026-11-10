@@ -74,3 +74,20 @@ it("downloads standalone provider results without forwarding credentials to its 
     ),
   ).rejects.toThrow("PROVIDER_UNTRUSTED_RESULT_URL");
 });
+
+it("uses the dedicated sunburst channel only for style matching", async () => {
+  const config = await standaloneModels(env);
+  const input = imageGenerationInputSchema.parse({
+    model: "gpt-image-2.6",
+    prompt: "style fixture",
+    replica: true,
+    referenceAssetIds: [crypto.randomUUID(), crypto.randomUUID()],
+    referenceRoles: ["style", "product"],
+  });
+  expect(config?.resolve(input).upstreamModel).toBe("gpt-image-2.6-sunburst");
+  expect(
+    config?.resolve(
+      imageGenerationInputSchema.parse({ model: "gpt-image-2.6", prompt: "ordinary fixture" }),
+    ).upstreamModel,
+  ).toBe("gpt-image-2.6");
+});

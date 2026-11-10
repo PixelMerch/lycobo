@@ -57,20 +57,56 @@ test("style matching requires both slots and submits their roles without a paid 
     });
   });
   await page.goto("/zh-CN/commerce/replica");
+  await expect(page.getByRole("radiogroup", { name: "生成张数" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Image 2.6/ })).toHaveCount(0);
   const generate = page.getByRole("button", { name: /生成同风格图片/ });
   await expect(generate).toBeDisabled();
   await page
-    .getByLabel("目标图（想参考的风格）文件", { exact: true })
+    .getByRole("region", { name: "目标图（想参考的风格）", exact: true })
+    .locator("input[type=file]")
     .setInputFiles({ name: "style.webp", mimeType: "image/webp", buffer: png });
   await expect(generate).toBeDisabled();
   await page
-    .getByLabel("参考图（你的商品）文件", { exact: true })
-    .setInputFiles({ name: "product.webp", mimeType: "image/webp", buffer: png });
+    .getByRole("region", { name: "参考图（你的商品）", exact: true })
+    .locator("input[type=file]")
+    .setInputFiles(
+      Array.from({ length: 10 }, (_, index) => ({
+        name: `product-${index}.webp`,
+        mimeType: "image/webp",
+        buffer: readFileSync(
+          new URL(
+            `../../apps/web/public/studio/textile-views/${
+              [
+                "angled-level",
+                "angled-overhead",
+                "bed-end",
+                "close-up",
+                "draped",
+                "fabric",
+                "front",
+                "overhead-close",
+                "overhead-wide",
+                "pillow",
+              ][index]
+            }.webp`,
+            import.meta.url,
+          ),
+        ),
+      })),
+    );
   await expect(generate).toBeEnabled();
+  await expect(generate).toContainText("20");
+  await page.getByRole("textbox", { name: "补充要求（选填）" }).fill("保留商品细节");
+  await expect(page.getByRole("button", { name: /优化/, exact: false })).toBeVisible();
   await generate.click();
   await expect
     .poll(() => submitted)
-    .toMatchObject({ replica: true, referenceRoles: ["style", "product"], model: "gpt-image-2.6" });
+    .toMatchObject({
+      replica: true,
+      referenceRoles: ["style", ...Array(10).fill("product")],
+      model: "gpt-image-2.6",
+      count: 10,
+    });
   expect(statusReads).toBe(0);
   await expect(page.getByText("任务已提交，关闭页面也会继续处理。", { exact: true })).toBeVisible();
 });

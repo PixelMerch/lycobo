@@ -54,6 +54,13 @@ export function textileItemInput(
   input: ImageGenerationInput,
   position: number,
 ): ImageGenerationInput {
+  if (input.replica) {
+    // 每条输出只使用共同目标图和对应商品，避免多张商品相互混入。
+    const referenceAssetIds = itemReferenceAssetIds(input, position);
+    const notes = referenceRoleNotes(input, referenceAssetIds);
+    const { referenceRoles: _roles, ...providerInput } = input;
+    return { ...providerInput, referenceAssetIds, count: 1, prompt: `${notes}\n${input.prompt}` };
+  }
   if (input.variation) {
     const item = input.variation.items[position];
     if (!item) throw new Error("VARIATION_POSITION_INVALID");

@@ -22,7 +22,7 @@ export async function verifyReplica(
     20,
   );
   const ids: string[] = [];
-  for (let index = 0; index < 2; index++) {
+  for (let index = 0; index < 11; index++) {
     const asset = await store.put(owner, png, crypto.randomUUID());
     await repository.addReference(owner, asset);
     ids.push(asset.id);
@@ -41,7 +41,8 @@ export async function verifyReplica(
     prompt: "style fixture",
     replica: true,
     referenceAssetIds: ids,
-    referenceRoles: ["style", "product"],
+    referenceRoles: ["style", ...ids.slice(1).map(() => "product" as const)],
+    count: 10,
     resolution: "1.5K",
   });
   const headers = {
@@ -55,7 +56,7 @@ export async function verifyReplica(
   assert.equal(response.status, 202);
   const task = imageSubmissionResponseSchema.parse(unwrapApiData(await response.json()));
   assert.equal((await submit()).status, 200);
-  assert.equal((await repository.wallet(owner)).balance, 18);
+  assert.equal((await repository.wallet(owner)).balance, 0);
   assert.equal((await repository.list(owner, 20, undefined, "replica"))[0]?.id, task.id);
   assert.equal((await repository.list(owner, 20, undefined, "create")).length, 0);
   assert.equal((await repository.list(other, 20, undefined, "replica")).length, 0);

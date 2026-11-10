@@ -86,8 +86,7 @@ function referencesForPath(path: string) {
   }
   if (path === "/commerce/smart-variation") return useSmartVariationDraft.getState().references;
   if (path === "/commerce/replica") {
-    const { product } = useReplicaDraft.getState();
-    return product ? [product] : [];
+    return useReplicaDraft.getState().products;
   }
   if (path === "/video") {
     const video = useVideoDraft.getState();
@@ -109,8 +108,8 @@ export function shareProductReference(from: string, to: string) {
   const mainImage = references[0];
   if (!mainImage) return;
   const destinationHasReferences = !!studio.drafts[studio.activeModel]?.references.length;
-  if (to === "/commerce/replica" && !useReplicaDraft.getState().product) {
-    useReplicaDraft.getState().update({ product: mainImage });
+  if (to === "/commerce/replica" && !useReplicaDraft.getState().products.length) {
+    useReplicaDraft.getState().update({ products: [mainImage] });
   } else if (to === "/commerce/create" && !destinationHasReferences) {
     studio.updateDraft(studio.activeModel, { references: references.slice(0, 5) });
   } else if (to === "/commerce/textile-set" && !textile.mainImage) {

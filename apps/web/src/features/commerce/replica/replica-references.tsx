@@ -1,32 +1,37 @@
+import "./replica.css";
 import { useMessages } from "../../../i18n/messages";
-import { TextileImageField } from "../textile-set/textile-image-field";
+import { ReferencePicker } from "../../generation/references/reference-picker";
 import { replicaMessages } from "./replica-messages";
 import { useReplicaDraft } from "./replica-state";
 
-/** 两个必填图片槽明确区分风格来源与需要保留的商品。 */
+/** 目标图提供共同风格，每张商品参考图分别生成一张结果。 */
 export function ReplicaReferences() {
   const t = useMessages(replicaMessages);
-  const { target, product, update } = useReplicaDraft();
+  const { target, products, update } = useReplicaDraft();
   return (
     <>
-      <TextileImageField
-        label={t.target}
-        description={t.targetHint}
-        required
-        number={1}
-        exampleSrc="/studio/textile-views/front.webp"
-        value={target ? [target] : []}
-        onChange={(images) => update({ target: images[0] ?? null })}
-      />
-      <TextileImageField
-        label={t.product}
-        description={t.productHint}
-        required
-        number={2}
-        exampleSrc="/studio/textile-views/pillow.webp"
-        value={product ? [product] : []}
-        onChange={(images) => update({ product: images[0] ?? null })}
-      />
+      <section aria-label={t.target}>
+        <ReferencePicker
+          compact
+          label={t.target}
+          limit={1}
+          prompt=""
+          references={target ? [target] : []}
+          onChange={(images) => update({ target: images[0] ?? null })}
+        />
+        <p className="replica-reference-hint">{t.targetHint}</p>
+      </section>
+      <section aria-label={t.product}>
+        <ReferencePicker
+          compact
+          label={t.product}
+          limit={10}
+          prompt=""
+          references={products}
+          onChange={(products) => update({ products })}
+        />
+        <p className="replica-reference-hint">{t.productHint}</p>
+      </section>
     </>
   );
 }

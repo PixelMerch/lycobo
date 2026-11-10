@@ -324,7 +324,7 @@ export const generationJobs = pgTable(
     index("generation_jobs_member_idx").on(t.organizationId, t.userId),
     check(
       "generation_jobs_count_check",
-      sql`${t.requestedCount} between 1 and 20 and ${t.unitCredits} > 0 and (${t.requestedCount} <= 4 or (${t.requestedCount} <= 10 and ${t.input} ? 'textileSet') or ${t.input} ? 'variation')`,
+      sql`${t.requestedCount} between 1 and 20 and ${t.unitCredits} > 0 and (${t.requestedCount} <= 4 or (${t.requestedCount} <= 10 and ${t.input} ? 'textileSet') or ${t.input} ? 'variation' or (${t.requestedCount} <= 10 and ${t.input}->>'replica' = 'true' and jsonb_array_length(${t.input}->'referenceAssetIds') = ${t.requestedCount} + 1))`,
     ),
     check(
       "generation_jobs_status_check",

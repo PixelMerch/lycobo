@@ -16,10 +16,9 @@ export function useWorkspaceRestore(setMobilePanel: (value: string) => void) {
   const applyRestore = ({ model, draft, textileSet, variation, replica }: RestoredTask) => {
     if (replica) {
       useReplicaDraft.getState().update({
-        model,
-        draft,
+        draft: { ...draft, count: "1" },
         target: draft.references[0] ?? null,
-        product: draft.references[1] ?? null,
+        products: draft.references.slice(1),
       });
       void navigate("/commerce/replica");
     } else if (variation) {
@@ -68,7 +67,7 @@ export function useWorkspaceRestore(setMobilePanel: (value: string) => void) {
     let occupied = imageOccupied;
     if (task.replica) {
       const replica = useReplicaDraft.getState();
-      occupied = !!replica.target || !!replica.product || !!replica.draft.prompt.trim();
+      occupied = !!replica.target || !!replica.products.length || !!replica.draft.prompt.trim();
     } else if (task.variation) occupied = variationOccupied;
     else if (task.textileSet) occupied = textileOccupied;
     if (occupied) setRestorePending(task);

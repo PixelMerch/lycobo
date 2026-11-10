@@ -75,25 +75,26 @@ export async function standaloneModels(env: StandaloneModelEnvironment) {
     },
     capabilities: () =>
       Object.fromEntries(
-        ["create", "textile-set", "local-edit"].map((tool) => [
+        ["create", "textile-set", "local-edit", "replica"].map((tool) => [
           tool,
-          (tool === "create"
-            ? mainImageModelIds.map((id) => ({ id }))
-            : models.filter((model) => model.id !== "gpt-image-2.6")
-          ).map(({ id }) => ({
+          modelsForTool(tool).map(({ id }) => ({
             id,
             managed: true,
             enabledResolutions: imageResolutionSchema.options,
             editsEnabled: true,
-            maxReferences: 6,
+            maxReferences: tool === "replica" ? 11 : 6,
           })),
         ]),
       ),
     resolve: (input: ImageGenerationInput) => {
       const snapshot = snapshots[input.model];
-      if (!snapshot || input.referenceAssetIds.length > snapshot.maxReferences)
+      if (
+        !snapshot ||
+        input.referenceAssetIds.length > (input.replica ? 11 : snapshot.maxReferences)
+      )
         throw new Error("MODEL_CHANNEL_DISABLED");
-      return snapshot;
+      // 复制爆款固定使用专用上游型号，不改变主图制作的2.6渠道。
+      return input.replica ? { ...snapshot, upstreamModel: "gpt-image-2.6-sunburst" } : snapshot;
     },
   };
 }
@@ -101,4 +102,11 @@ export async function standaloneModels(env: StandaloneModelEnvironment) {
 /** Key-scoped routing identifier; never expose the generation credential. */
 export function imageWebhookSource(key: string) {
   return createHash("sha256").update(`fluxport:${key}`).digest("hex");
+}
+
+/** 复制工具单独声明容量，不扩大主图制作的模型列表或参考图上限。 */
+function modelsForTool(tool: string) {
+  if (tool === "replica") return [{ id: "gpt-image-2.6" }];
+  if (tool === "create") return mainImageModelIds.map((id) => ({ id }));
+  return models.filter((model) => model.id !== "gpt-image-2.6");
 }

@@ -12,6 +12,14 @@ const roleRules: Record<ReferenceRole, string> = {
  * 否则沿用旧行为，发送任务的全部参考图。
  */
 export function itemReferenceAssetIds(input: ImageGenerationInput, position: number): string[] {
+  if (input.replica) {
+    // 旧版双图任务可能要求多张输出，保留其原始快照语义。
+    if (input.referenceAssetIds.length === 2) return input.referenceAssetIds;
+    const target = input.referenceAssetIds[0];
+    const product = input.referenceAssetIds[position + 1];
+    if (!target || !product) throw new Error("REPLICA_POSITION_INVALID");
+    return [target, product];
+  }
   const chosen = input.variation?.items[position]?.referenceAssetIds;
   if (!chosen) return input.referenceAssetIds;
   const wanted = new Set(chosen);
