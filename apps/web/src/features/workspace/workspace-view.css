@@ -155,23 +155,3 @@
   --toggle-button-fg-selected: var(--foreground);
   border-radius: 8px;
 }
-
-/* 右侧索引按日期分组：缩略图之间插入“今天／昨天／月日”小标题；横排索引（≤1300px）不显示。 */
-.history-rail-day {
-  flex: none;
-  margin: 6px 0 0;
-  padding-inline: 3px;
-  color: #ffffff66;
-  font-size: 11px;
-  font-weight: var(--weight-regular);
-  line-height: 16px;
-  white-space: nowrap;
-}
-.history-rail-list > .history-rail-day:first-child {
-  margin-top: 0;
-}
-@media (max-width: 1300px) {
-  .history-rail-day {
-    display: none;
-  }
-}

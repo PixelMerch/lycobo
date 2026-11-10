@@ -231,3 +231,25 @@
 .history-thumbnail[aria-current="true"] {
   box-shadow: inset 0 0 0 2px var(--focus);
 }
+/* 图片取不到时的占位：保持图框尺寸，居中显示图标和“图片加载失败”；不能预览，也不显示下载和收藏。 */
+.generation-media-unavailable {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  background: var(--fill-faint);
+  color: #ffffff80;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+.generation-media-open.button:disabled:has(.generation-media-unavailable) {
+  opacity: 1;
+  cursor: default;
+}
+.history-thumbnail-unavailable {
+  color: #ffffff66;
+}

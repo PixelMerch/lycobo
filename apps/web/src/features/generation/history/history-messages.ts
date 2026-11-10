@@ -31,8 +31,6 @@ export const historyMessages = defineMessages({
     rail: "历史索引",
     openLibrary: "打开素材库",
     myAssets: "我的素材",
-    today: "今天",
-    yesterday: "昨天",
     deleteTitle: "删除这条历史记录？",
     deleteContent:
       "删除后将从历史列表移除，已保存的素材仍可在素材库查看。此操作不会取消生成或退还积分。",
@@ -71,6 +69,7 @@ export const historyMessages = defineMessages({
     submissionPending: "提交结果待确认，请在左侧确认上次提交。",
     taskUnreadable: "无法读取任务。",
     previewImage: (number: number) => `预览图片 ${number}`,
+    imageUnavailable: "图片加载失败",
     imageAlt: (prompt: string, number: number) => `${prompt}，图片${number}`,
     downloadOriginal: "下载原图",
     download: "下载",
@@ -108,8 +107,6 @@ export const historyMessages = defineMessages({
     rail: "History",
     openLibrary: "Open asset library",
     myAssets: "My assets",
-    today: "Today",
-    yesterday: "Yesterday",
     deleteTitle: "Delete this history record?",
     deleteContent:
       "It will be removed from the history list. Saved assets stay in the asset library. This doesn't cancel generation or refund credits.",
@@ -149,6 +146,7 @@ export const historyMessages = defineMessages({
     submissionPending: "The last submission is waiting to be confirmed. Confirm it on the left.",
     taskUnreadable: "Couldn't read the task.",
     previewImage: (number) => `Preview image ${number}`,
+    imageUnavailable: "Image unavailable",
     imageAlt: (prompt, number) => `${prompt}, image ${number}`,
     downloadOriginal: "Download original",
     download: "Download",

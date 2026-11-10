@@ -127,7 +127,8 @@ export function HistoryTaskActions({
           <Tooltip.Content placement="bottom">{t.edit}</Tooltip.Content>
         </Tooltip>
       )}
-      <Tooltip delay={0}>
+      {/* 单张重试按钮本身带文字，不再弹出同名提示，免得盖在失败说明上。 */}
+      <Tooltip delay={0} isDisabled={Boolean(item)}>
         <Button
           isIconOnly={!item}
           variant="tertiary"

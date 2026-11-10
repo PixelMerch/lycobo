@@ -34,7 +34,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--fill-strong);
+  /* 实色深灰整块盖住失败说明，半透明底会让说明文字透出来、和按钮叠在一起。 */
+  background: var(--surface-tertiary);
   opacity: 0;
   pointer-events: none;
   transition: opacity 140ms ease;
@@ -55,6 +56,7 @@
   .generation-retry-overlay {
     position: static;
     margin-top: 8px;
+    background: transparent;
     opacity: 1;
     pointer-events: auto;
   }

@@ -79,9 +79,10 @@ test("desktop keeps the tools in a left rail beside the settings panel and stack
   if (!prompt || !result) throw new Error("History card geometry missing");
   expect(result.y).toBeGreaterThan(prompt.y + prompt.height);
   expect(result.height).toBeCloseTo(320, 0);
-  const days = page.locator(".history-rail-day");
-  await expect(days).toHaveCount(2);
-  await expect(days.first()).toHaveText("今天");
+  // 模型下拉用共享毛玻璃（40px 背景模糊），后面的参数轨道不会透出来。
+  await page.locator(".model-select").click();
+  await expect(page.locator(".model-menu")).toHaveCSS("backdrop-filter", "blur(40px)");
+  await page.keyboard.press("Escape");
   // 紧凑视图把行高降到 240px，刷新后保持。
   await page
     .getByRole("radiogroup", { name: "历史视图", exact: true })
@@ -128,4 +129,23 @@ test("the settings panel collapses beside the tool rail and reopens for editing 
     .getByRole("menuitem", { name: "主图制作", exact: true })
     .click();
   await expect(composer).toBeVisible();
+});
+
+test("an image that cannot load shows a placeholder without preview, download or favorite", async ({
+  page,
+}) => {
+  await workspaceFixture(page);
+  await page.route("**/api/v1/image-assets/**/content*", (route) =>
+    route.fulfill({ status: 404, body: "" }),
+  );
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/commerce/create");
+  const media = page.locator(".generation-job").first().locator(".generation-media").first();
+  await expect(media.getByText("图片加载失败", { exact: true })).toBeVisible();
+  await expect(media.getByRole("button", { name: "图片加载失败", exact: true })).toBeDisabled();
+  await media.hover();
+  await expect(media.getByRole("button", { name: "下载原图", exact: true })).toHaveCount(0);
+  await expect(media.getByRole("button", { name: "收藏图片", exact: true })).toHaveCount(0);
+  // 右侧缩略图同样不显示浏览器破图和替代文字。
+  await expect(page.locator(".history-thumbnail-unavailable").first()).toBeVisible();
 });

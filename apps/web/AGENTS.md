@@ -22,7 +22,7 @@ navigation; never prefix API, WebSocket, image or font URLs. See docs/localized-
   for the shared control density and audit workflow. Use HeroUI size/variant/isIconOnly;
   geometry belongs to DESIGN.md tokens, not inline styles or a new AppButton wrapper.
   pnpm lint enforces scripts/check-ui-conventions.mjs; do not bypass its component checks.
-- All new and updated overlays (Modal, Drawer, Popover, Dropdown, Tooltip and Toast) use
+- All new and updated overlays (Modal, Drawer, Popover, Dropdown, Select menu, Tooltip and Toast) use
   the shared frosted-glass material in styles/overlay-glass.css and DESIGN.md. Preserve readable
   contrast, reduced-transparency fallback and native HeroUI focus handling; never add an opaque
   surface as a local default. The standalone login page uses the same glass material and swaps its two faces.

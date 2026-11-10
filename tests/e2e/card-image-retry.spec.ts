@@ -61,6 +61,13 @@ test("hover retries only the chosen unconfirmed image after its own confirmation
   await expect(card.locator(".generation-retry-overlay")).toHaveCSS("opacity", "0");
   await card.hover();
   await expect(card.locator(".generation-retry-overlay")).toHaveCSS("opacity", "1");
+  // 实色深灰盖住失败说明；按钮自带文字，不再弹出同名提示。
+  await expect(card.locator(".generation-retry-overlay")).toHaveCSS(
+    "background-color",
+    "rgb(43, 43, 43)",
+  );
+  await action.hover();
+  await expect(page.getByRole("tooltip")).toHaveCount(0);
   await expect(action).toBeEnabled();
   await action.click();
   const dialog = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
