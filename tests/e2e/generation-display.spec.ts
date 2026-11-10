@@ -166,7 +166,8 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     await expect(regenerate).toBeEnabled();
     await regenerate.click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    await page.getByRole("button", { name: "取消", exact: true }).click();
+    // 弹层外还有一个读屏用的隐藏“取消”（React Aria 的关闭按钮），所以只在弹窗里找取消按钮。
+    await page.getByRole("dialog").getByRole("button", { name: "取消", exact: true }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await page.screenshot({ path: `/tmp/lycobo-generation-${status}.png` });
   });
