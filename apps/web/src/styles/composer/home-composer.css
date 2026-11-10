@@ -425,11 +425,10 @@
   background: #505050;
   pointer-events: none;
 }
-.home-ratio-track .toggle-button {
+/* 比例格按类名匹配（不依赖界面语言）：48px 方格，图标在上、比例在下。 */
+.home-settings-options .home-ratio-track .toggle-button {
   flex: 0 0 48px;
   scroll-snap-align: start;
-}
-.home-settings-options [aria-label="画面比例"] .toggle-button {
   border-radius: 12px;
   height: 48px;
   min-height: 48px;
