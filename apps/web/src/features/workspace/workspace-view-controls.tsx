@@ -5,19 +5,17 @@ import {
   IconLayoutSidebarLeftExpand,
   IconSquare,
 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
-import { useNavigationType } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
 import { workspaceToolMessages } from "./workspace-tool-messages";
 import { useWorkspaceView } from "./workspace-view-preferences";
 
-/** 左侧工具栏底部的参数栏收起／展开按钮；收起后工具栏留着，仍能直接切换工具。 */
-export function ComposerCollapseToggle() {
+/** 左侧工具栏底部的收起／展开按钮：收起后工具栏只显示图标，参数栏不受影响。 */
+export function ToolRailCollapseToggle() {
   const t = useMessages(workspaceToolMessages);
-  const collapsed = useWorkspaceView((state) => state.composerCollapsed);
-  const setCollapsed = useWorkspaceView((state) => state.setComposerCollapsed);
-  const label = collapsed ? t.expandComposer : t.collapseComposer;
+  const collapsed = useWorkspaceView((state) => state.toolRailCollapsed);
+  const setCollapsed = useWorkspaceView((state) => state.setToolRailCollapsed);
+  const label = collapsed ? t.expandToolRail : t.collapseToolRail;
   return (
     <Tooltip delay={0}>
       <Button
@@ -80,15 +78,4 @@ export function HistoryDensityToggle() {
       ))}
     </ToggleButtonGroup>
   );
-}
-
-/** 从首页等别的页面跳进工作台时展开参数栏，先让用户看到带过来的草稿；刷新页面保持本机记住的状态。 */
-export function useRevealComposerOnEntry() {
-  const navigationType = useNavigationType();
-  // 只看进入工作台那一刻的跳转方式（刷新和前进后退是 POP），之后在工作台里切换工具不再自动展开。
-  const [entry] = useState(navigationType);
-  const setCollapsed = useWorkspaceView((state) => state.setComposerCollapsed);
-  useEffect(() => {
-    if (entry !== "POP") setCollapsed(false);
-  }, [entry, setCollapsed]);
 }

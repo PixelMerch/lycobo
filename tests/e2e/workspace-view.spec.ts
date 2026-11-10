@@ -64,9 +64,14 @@ test("desktop keeps the tools in a left rail beside the settings panel and stack
   const dock = await page.locator(".workspace-tool-dock").boundingBox();
   const composer = await page.locator(".composer-panel").boundingBox();
   if (!dock || !composer) throw new Error("Workspace geometry missing");
-  // 152px 竖排工具栏在最左侧、与参数栏顶边对齐，参数栏排在它右侧 12px 处，不再贴着页面边缘。
-  expect(dock.width).toBe(152);
+  // 168px 竖排工具栏在最左侧，参数栏排在它右侧 12px 处；两者顶边与“生成记录”标题文字对齐。
+  expect(dock.width).toBe(168);
   expect(dock.y).toBe(composer.y);
+  const title = await page.getByRole("heading", { name: "生成记录", exact: true }).boundingBox();
+  expect(Math.abs(composer.y - (title?.y ?? 0))).toBeLessThan(1);
+  const firstCard = await page.locator(".generation-job").first().boundingBox();
+  const firstThumb = await page.locator(".history-thumbnail").first().boundingBox();
+  expect(Math.abs((firstCard?.y ?? 0) - (firstThumb?.y ?? 0))).toBeLessThan(1);
   expect(composer.x - (dock.x + dock.width)).toBe(12);
   await expect(
     page.getByRole("navigation", { name: "电商创作工具" }).getByRole("button"),
@@ -94,41 +99,31 @@ test("desktop keeps the tools in a left rail beside the settings panel and stack
   expect(compact?.height).toBeCloseTo(240, 0);
 });
 
-test("the settings panel collapses beside the tool rail and reopens for editing or a new visit", async ({
-  page,
-}) => {
+test("the tool rail collapses to icons while the settings panel stays", async ({ page }) => {
   await workspaceFixture(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/commerce/create");
   const composer = page.locator(".composer-panel");
+  const dock = page.locator(".workspace-tool-dock");
+  const names = page.locator(".workspace-tool-dock .workspace-tool-name");
+  await expect(names.first()).toBeVisible();
+  await page.getByRole("button", { name: "收起工具栏", exact: true }).click();
+  // 收起后工具栏只剩 64px 宽的图标，参数栏照常显示；按钮名和悬停提示仍是工具名。
+  await expect.poll(async () => (await dock.boundingBox())?.width).toBe(64);
+  await expect(names.first()).toBeHidden();
   await expect(composer).toBeVisible();
-  await page.getByRole("button", { name: "收起参数栏", exact: true }).click();
-  await expect(composer).toBeHidden();
-  const expand = page.getByRole("button", { name: "展开参数栏", exact: true });
+  const expand = page.getByRole("button", { name: "展开工具栏", exact: true });
   await expect(expand).toHaveAttribute("aria-expanded", "false");
   await expect(expand).toBeFocused();
-  // 收起后工具栏还在，切换工具时参数栏保持收起。
   const tools = page.getByRole("navigation", { name: "电商创作工具" });
-  await tools.getByRole("button", { name: "家纺裂变", exact: true }).click();
-  await expect(page).toHaveURL(/\/commerce\/textile-set$/);
-  await expect(composer).toBeHidden();
-  await tools.getByRole("button", { name: "主图制作", exact: true }).click();
-  // 刷新保持收起；重新编辑会把输入带回参数栏，所以先展开。
+  await tools.getByRole("button", { name: "家纺裂变", exact: true }).hover();
+  await expect(page.getByRole("tooltip").filter({ hasText: "家纺裂变" })).toBeVisible();
+  // 刷新后保持收起，再点一次恢复名称。
   await page.reload();
-  await expect(composer).toBeHidden();
-  await page.getByRole("button", { name: "重新编辑", exact: true }).first().click();
-  await expect(composer).toBeVisible();
-  // 从别的页面点进工作台时也展开，让用户先看到草稿。
-  await page.getByRole("button", { name: "收起参数栏", exact: true }).click();
-  await expect(composer).toBeHidden();
-  const navigation = page.getByRole("navigation", { name: "主导航", exact: true });
-  await navigation.getByRole("link", { name: "首页", exact: true }).click();
-  await navigation.getByRole("button", { name: "电商", exact: true }).click();
-  await page
-    .getByRole("menu", { name: "电商" })
-    .getByRole("menuitem", { name: "主图制作", exact: true })
-    .click();
-  await expect(composer).toBeVisible();
+  await expect.poll(async () => (await dock.boundingBox())?.width).toBe(64);
+  await page.getByRole("button", { name: "展开工具栏", exact: true }).click();
+  await expect(names.first()).toBeVisible();
+  await expect.poll(async () => (await dock.boundingBox())?.width).toBe(168);
 });
 
 test("an image that cannot load shows a placeholder without preview, download or favorite", async ({
