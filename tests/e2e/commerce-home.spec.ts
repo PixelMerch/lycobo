@@ -389,7 +389,8 @@ test("wide home inspiration fills every column and clears the left dock", async 
   await page.setViewportSize({ width: 2400, height: 1100 });
   await page.goto("/");
   const gallery = page.getByRole("region", { name: "创作灵感", exact: true });
-  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(13);
+  // 瀑布流首屏先放 10 张，滚动后再加载。
+  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(10);
   await expect(gallery.getByText("示例素材 · 找到下一张商品图的方向")).toHaveCount(0);
   const layout = await gallery.evaluate((element) => {
     const home = element.closest(".commerce-home");
@@ -418,9 +419,12 @@ test("wide home inspiration fills every column and clears the left dock", async 
   await page.screenshot({ path: "/tmp/lycobo-inspiration-wide.png" });
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(gallery.locator(".home-inspiration-column")).toHaveCount(2);
-  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(13);
+  // 前面滚动时可能已加载过一批，这里只要求首屏的 10 张都还在。
+  await expect
+    .poll(() => gallery.locator(".home-inspiration-card").count())
+    .toBeGreaterThanOrEqual(10);
   await gallery.getByRole("tab", { name: "家纺展示", exact: true }).click();
-  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(4);
+  await expect(gallery.locator(".home-inspiration-card")).toHaveCount(6);
 });
 
 test("templates fill the prompt in place, confirm replacement and never submit paid work", async ({
