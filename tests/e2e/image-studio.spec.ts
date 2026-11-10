@@ -53,8 +53,8 @@ test("current draft, references and output choices follow model switches and sur
     .setInputFiles({ name: "quilt.png", mimeType: "image/png", buffer: png });
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await page.getByRole("button", { name: /创作模型/ }).click();
-  await expect(page.getByRole("option")).toHaveCount(4);
-  await page.getByRole("option", { name: "Banana 2.1", exact: true }).click();
+  await expect(page.getByRole("option")).toHaveCount(3);
+  await page.getByRole("option", { name: "Image 2.5", exact: true }).click();
   await expect(prompt).toHaveValue("保留我的商品草稿");
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await page.getByRole("button", { name: /创作模型/ }).click();
@@ -132,7 +132,7 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     await expect(dialog).toBeVisible();
     const box = await dialog.boundingBox();
     expect(box && box.x >= 0 && box.x + box.width <= width).toBe(true);
-    await dialog.getByRole("button", { name: /Banana 2.1/ }).click();
+    await dialog.getByRole("button", { name: /Image 2\.5/ }).click();
     await dialog.press("Escape");
     await page.getByRole("textbox", { name: "创作需求" }).fill("商品摄影");
     await page.getByRole("button", { name: "开始创作", exact: true }).click();
@@ -220,7 +220,7 @@ test("reference limit and clearing remain consistent when switching models", asy
   await expect(page.locator(".reference-number")).toHaveText(["1", "2", "3", "4"]);
   await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /创作模型/ }).click();
-  await page.getByRole("option", { name: "Banana 2.1", exact: true }).click();
+  await page.getByRole("option", { name: "Image 2.5", exact: true }).click();
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(page.locator(".reference-tile")).toHaveCount(4);
   await page.getByRole("button", { name: /创作模型/ }).click();
@@ -232,7 +232,7 @@ test("reference limit and clearing remain consistent when switching models", asy
   await expect(prompt).toHaveValue("保留提示词");
   await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /创作模型/ }).click();
-  await page.getByRole("option", { name: "Banana 2.1", exact: true }).click();
+  await page.getByRole("option", { name: "Image 2.5", exact: true }).click();
   await expect(page.locator(".reference-tile")).toHaveCount(0);
 });
 

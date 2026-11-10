@@ -109,7 +109,7 @@ test("home model settings can change resolution and count with animated selectio
   await page.goto("/");
   await page.getByRole("button", { name: "选择创作模型" }).click();
   const panel = page.getByRole("dialog", { name: "模型和画面设置" });
-  await panel.getByRole("button", { name: /Banana 2.1/ }).click();
+  await panel.getByRole("button", { name: /Image 2\.5/ }).click();
   const resolution = panel.getByRole("radio", { name: "2K", exact: true });
   await expect(resolution).toBeEnabled();
   await resolution.click();
