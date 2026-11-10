@@ -139,14 +139,52 @@ export type ImageSubmission = {
   localEdit?: import("@lycoboai/contracts").ImageLocalEdit;
   textileSet?: import("@lycoboai/contracts").TextileGeneration | undefined;
   variation?: import("@lycoboai/contracts").VariationGeneration | undefined;
+  /** 与 draft.references 顺序一致的角色；只在标了原图或风格时提供。 */
+  referenceRoles?: import("@lycoboai/contracts").ReferenceRole[] | undefined;
+  /** 套图计划每条方案要发送的参考图下标（从 0 开始）；上传后换成素材 ID。 */
+  itemReferences?: Record<string, number[]> | undefined;
 };
+
+/** 把每条方案的参考图下标换成上传后的素材 ID；没指定的方案保持原样，发送全部参考图。 */
+function withItemReferences(
+  variation: import("@lycoboai/contracts").VariationGeneration,
+  itemReferences: Record<string, number[]>,
+  referenceAssetIds: readonly string[],
+) {
+  return {
+    ...variation,
+    items: variation.items.map((item) => {
+      const indexes = itemReferences[item.id];
+      if (!indexes) return item;
+      return {
+        ...item,
+        referenceAssetIds: indexes.flatMap((index) => {
+          const id = referenceAssetIds[index];
+          return id ? [id] : [];
+        }),
+      };
+    }),
+  };
+}
 
 async function prepareSubmissionInput(
   client: QueryClient,
   scope: SessionScope,
-  { model, draft, localEdit, textileSet, variation }: ImageSubmission,
+  {
+    model,
+    draft,
+    localEdit,
+    textileSet,
+    variation,
+    referenceRoles,
+    itemReferences,
+  }: ImageSubmission,
 ) {
   const referenceAssetIds = await uploadImageReferences(client, scope, draft.references);
+  const plan =
+    variation && itemReferences
+      ? withItemReferences(variation, itemReferences, referenceAssetIds)
+      : variation;
   return imageGenerationInputSchema.parse({
     model,
     prompt: draft.prompt,
@@ -155,9 +193,10 @@ async function prepareSubmissionInput(
     aspectRatio: draft.ratio,
     count: Number(draft.count),
     referenceAssetIds,
+    ...(referenceRoles ? { referenceRoles } : {}),
     ...(localEdit ? { localEdit } : {}),
     ...(textileSet ? { textileSet } : {}),
-    ...(variation ? { variation } : {}),
+    ...(plan ? { variation: plan } : {}),
   });
 }
 

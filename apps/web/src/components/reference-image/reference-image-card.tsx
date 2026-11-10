@@ -1,5 +1,6 @@
 import { Button } from "@heroui/react";
 import { IconPencil, IconX } from "@tabler/icons-react";
+import type { ReactNode } from "react";
 import { UiIcon } from "../ui-icon";
 import "./reference-image-card.css";
 import { useMessages } from "../../i18n/messages";
@@ -17,6 +18,7 @@ export function ReferenceImageCard({
   onRemove,
   onReplace,
   isDisabled = false,
+  footer,
 }: {
   src: string;
   number: number;
@@ -25,6 +27,8 @@ export function ReferenceImageCard({
   onRemove: () => void;
   onReplace?: () => void;
   isDisabled?: boolean;
+  /** 贴在缩略图底部的附加控件（如参考图角色），由调用方提供。 */
+  footer?: ReactNode;
 }) {
   const t = useMessages(componentsMessages);
   const name = t.imageName(number);
@@ -66,6 +70,7 @@ export function ReferenceImageCard({
           {number}
         </span>
       )}
+      {footer}
     </div>
   );
 }

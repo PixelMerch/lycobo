@@ -8,6 +8,7 @@ import { useRequireLogin } from "../../auth/login-prompt";
 import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "../studio-state";
 import { readReferenceImages, referenceFileError } from "./read-reference-images";
 import { referenceDisplaySource } from "./reference-display";
+import { ReferenceRoleMenu } from "./reference-role-menu";
 import { referencesMessages } from "./references-messages";
 
 const ImageViewer = lazy(() =>
@@ -45,6 +46,8 @@ type PickerProps = {
   openRef?: RefObject<(() => void) | null>;
   compact?: boolean;
   disabled?: boolean;
+  /** 在缩略图上显示参考图角色（商品／原图／风格）；只用于主图制作与套图计划。 */
+  withRoles?: boolean;
   references: Draft["references"];
 } & (
   | { model: ModelId; prompt?: never; onChange?: never }
@@ -61,6 +64,7 @@ export function ReferencePicker({
   references,
   compact = false,
   disabled = false,
+  withRoles = false,
   limit = 5,
   label,
   addLabel,
@@ -144,6 +148,15 @@ export function ReferencePicker({
             number={index + 1}
             isDisabled={disabled || reading}
             onOpen={() => setPreview(index)}
+            footer={
+              withRoles ? (
+                <ReferenceRoleMenu
+                  imageId={image.id}
+                  name={t.imageName(index + 1)}
+                  isDisabled={disabled || reading}
+                />
+              ) : undefined
+            }
             onRemove={() => {
               const prompt = currentDraft()?.prompt ?? "";
               const remaining = references.filter((item) => item.id !== image.id);

@@ -28,6 +28,7 @@ export function SmartVariationPage() {
           <WorkspaceComposerTitle />
           <ReferencePicker
             compact
+            withRoles
             references={references}
             prompt={description}
             onChange={(references, description) => update({ references, description })}

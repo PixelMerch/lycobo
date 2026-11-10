@@ -27,6 +27,7 @@ import { qualityLabel } from "./quality-label";
 import { qualityMessages } from "./quality-messages";
 import { hasPromptDescription } from "./references/prompt-description";
 import { ReferencePicker } from "./references/reference-picker";
+import { submissionReferenceRoles } from "./references/reference-roles";
 import {
   type Draft,
   defaultDraft,
@@ -77,7 +78,7 @@ function Workspace({ model }: { model: ModelId }) {
     <section className="composer-panel" aria-label={t.composer}>
       <section className="composer-scroll" aria-label={t.parameters}>
         <WorkspaceComposerTitle />
-        <ReferencePicker compact model={model} references={draft.references} />
+        <ReferencePicker compact withRoles model={model} references={draft.references} />
         <ReferencePrompt
           className="prompt-field"
           label={t.prompt}
@@ -179,7 +180,8 @@ function useWorkspaceSubmission(
     setSubmissionPhase("submitting");
     revealNewestHistory();
     generate.mutate(
-      { model, draft },
+      // 标了原图或风格时一并提交角色，服务端据此告诉模型每张参考图的用途。
+      { model, draft, referenceRoles: submissionReferenceRoles(draft.references) },
       {
         onSuccess: () => {
           const cleared = !pending && useStudioStore.getState().drafts[model] === draft;

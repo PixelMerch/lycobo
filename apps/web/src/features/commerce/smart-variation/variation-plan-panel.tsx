@@ -3,6 +3,7 @@ import { IconCheck, IconTrash, IconX } from "@tabler/icons-react";
 import { useLayoutEffect, useRef } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
+import { PlanReferenceStrip } from "./plan-reference-strip";
 import { previewPlanItems } from "./plan-stream";
 import { useSmartVariationDraft } from "./smart-variation-state";
 import { useVariationGeneration } from "./use-variation-generation";
@@ -62,7 +63,7 @@ export function VariationPlanPanel({
   analysisError?: string | undefined;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { items, ratio, resolution, update } = useSmartVariationDraft();
+  const { items, references, ratio, resolution, update } = useSmartVariationDraft();
   const generation = useVariationGeneration();
   const previews = previewPlanItems(streamText);
   const showPreview = analyzing || !!analysisError;
@@ -161,6 +162,12 @@ export function VariationPlanPanel({
                     <UiIcon icon={IconTrash} />
                   </Button>
                 </div>
+                <PlanReferenceStrip
+                  itemId={item.id}
+                  planNumber={index + 1}
+                  prompt={item.prompt}
+                  references={references}
+                />
                 <PlanPrompt
                   value={item.prompt}
                   index={index}
