@@ -58,7 +58,12 @@ test("image actions download and toggle favorites; sticky history blocks scrolle
   await media.hover();
   const download = page.waitForEvent("download");
   await media.getByRole("button", { name: "下载原图", exact: true }).click();
-  expect((await download).suggestedFilename()).toBe(`${jobs[0]?.items[0]?.output_asset_id}.png`);
+  // 浏览器下载不经过 page.route，返回内容不受 fixture 控制；只核对下载的是这张图的原图地址。
+  const original = new URL((await download).url());
+  expect(original.pathname).toBe(
+    `/api/v1/image-assets/${jobs[0]?.items[0]?.output_asset_id}/content`,
+  );
+  expect(original.searchParams.get("download")).toBe("1");
   await page.mouse.move(0, 0);
   await expect(actions).toHaveCSS("opacity", "0");
   await media.getByRole("button", { name: "预览图片 1", exact: true }).focus();
