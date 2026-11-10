@@ -26,7 +26,8 @@ import {
   inspirationCategories,
 } from "./home-inspiration-data";
 import { homeInspirationMessages } from "./home-inspiration-messages";
-import { useInspirationColumns } from "./use-inspiration-columns";
+import { justifyRows } from "./justified-rows";
+import { useElementWidth } from "./use-element-width";
 import "./home-inspiration-gallery.css";
 
 // 卡片左下角的分类标签图标，与工作区工具图标保持同一风格。
@@ -36,6 +37,13 @@ const categoryIcons = {
   textile: IconLayoutCollage,
   creative: IconSparkles,
 } satisfies Record<HomeInspiration["category"], TablerIcon>;
+// 卡片宽高比（宽 ÷ 高），与 CSS 里各形状的 aspect-ratio 一致。
+const shapeAspect = { portrait: 4 / 5, square: 1, landscape: 4 / 3 } satisfies Record<
+  HomeInspiration["shape"],
+  number
+>;
+// 卡片之间的间距，与 CSS 的 4px 一致。
+const tileGap = 4;
 
 /** 展示灵感示例，用户确认后带入主图草稿，不自动提交任务。 */
 export function HomeInspirationGallery() {
@@ -50,7 +58,11 @@ export function HomeInspirationGallery() {
   const selected = inspirations.find((item) => item.id === selectedId) ?? null;
   const replacing = inspirations.find((item) => item.id === replacingId) ?? null;
   const visible = inspirations.filter((item) => category === "all" || item.category === category);
-  const columns = useInspirationColumns(visible);
+  const [setRowsElement, width] = useElementWidth<HTMLDivElement>();
+  const rows = justifyRows(
+    visible.map((item) => shapeAspect[item.shape]),
+    { width, gap: tileGap },
+  );
   function apply(item: HomeInspiration) {
     const { activeModel, updateDraft } = useStudioStore.getState();
     updateDraft(activeModel, { prompt: item.prompt });
@@ -94,17 +106,22 @@ export function HomeInspirationGallery() {
               ))}
             </Tabs.List>
           </Tabs.ListContainer>
-          <p className="home-inspiration-note">{t.note}</p>
         </div>
         <Tabs.Panel id={category}>
-          <div className="home-inspiration-grid">
-            {columns.map((column, columnIndex) => (
-              <div className="home-inspiration-column" key={column.id}>
-                {column.items.map((item, position) => (
+          {/* 等高行拼图：行的划分随容器宽度计算，每行左右占满、行内等高，整块底边齐平。 */}
+          <div ref={setRowsElement} className="home-inspiration-rows">
+            {rows.map((row) => (
+              <div
+                key={`${row.start}-${row.end}`}
+                className="home-inspiration-row"
+                data-filled={row.filled}
+                style={row.filled ? undefined : { height: row.height }}
+              >
+                {visible.slice(row.start, row.end).map((item, position) => (
                   <InspirationTile
                     key={item.id}
                     item={item}
-                    order={columnIndex + position}
+                    order={position}
                     onOpen={() => setSelectedId(item.id)}
                     onUse={() => use(item)}
                   />
@@ -153,6 +170,7 @@ function InspirationTile({
   return (
     <motion.div
       className="home-inspiration-tile"
+      data-shape={item.shape}
       initial={reduceMotion ? false : { opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.12 }}
@@ -165,7 +183,6 @@ function InspirationTile({
       <Button
         variant="tertiary"
         className="home-inspiration-card"
-        data-shape={item.shape}
         aria-label={t.view(item.title)}
         onPress={onOpen}
       >

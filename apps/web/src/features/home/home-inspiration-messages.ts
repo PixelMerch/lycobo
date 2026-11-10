@@ -15,7 +15,6 @@ export const homeInspirationMessages = defineMessages({
     },
     title: "创作灵感",
     categoryList: "灵感分类",
-    note: "AI 示例素材 · 挑一个风格，一键做同款",
     replaceTitle: "替换当前提示词？",
     replaceContent: "当前已有创作内容。替换提示词后，已添加的参考图和参数会保留。",
     replaceConfirm: "替换并进入",
@@ -107,7 +106,6 @@ export const homeInspirationMessages = defineMessages({
     },
     title: "Inspiration",
     categoryList: "Inspiration categories",
-    note: "AI-generated samples · Pick a style and make your own in one click",
     replaceTitle: "Replace the current prompt?",
     replaceContent:
       "You already have work in progress. Replacing the prompt keeps the reference images and settings you've added.",

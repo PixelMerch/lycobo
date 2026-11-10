@@ -1,4 +1,7 @@
-/* 创作灵感按 vidmuse 作品墙：距舞台 36px 的下划线分类（随页面滚动、不吸顶），下方 20px 起紧凑瀑布流。 */
+/*
+ * 创作灵感：距舞台 36px 的下划线分类（随页面滚动、不吸顶），下方 20px 起等高行拼图（用户 2026-11-10 选定）：
+ * 每行左右占满、行内等高，整块底边齐平；固定 13 张示例，不无限加载，页脚始终看得到。
+ */
 .home-inspiration {
   min-width: 0;
   margin: 36px 0 0;
@@ -49,35 +52,53 @@
   border-radius: 2px;
   background: #fff;
 }
-.home-inspiration-note {
-  flex: none;
-  margin: 0 0 8px;
-  color: #ffffff80;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
 .home-inspiration .tabs__panel {
   width: 100%;
   min-width: 0;
   margin-top: 0;
   padding: 20px 0 0;
 }
-.home-inspiration-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  align-items: start;
-  gap: 4px;
-}
-.home-inspiration-column {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
-}
 /* Lycobo 自己的悬停：卡片上移 4px、图片放大 1.04 倍，卡内升起玻璃面板（标题、两行提示词与青柠“做同款”）。 */
 .home-inspiration-tile {
   position: relative;
   min-width: 0;
   transition: translate 200ms ease;
+}
+/* 行的划分由 justified-rows.ts 按容器宽度计算；行间与图间 4px，与 tileGap 一致。 */
+.home-inspiration-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.home-inspiration-row {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
+/* 每张按宽高比分宽度（伸展系数 = 宽 ÷ 高），同一行因此等高。 */
+.home-inspiration-row > .home-inspiration-tile {
+  flex: 1 1 0;
+}
+.home-inspiration-row > .home-inspiration-tile:where([data-shape="portrait"]) {
+  flex-grow: 0.8;
+}
+.home-inspiration-row > .home-inspiration-tile:where([data-shape="landscape"]) {
+  flex-grow: calc(4 / 3);
+}
+/* 图片太少、占满会过高的一行：按计算出的行高靠左排。 */
+.home-inspiration-row:where([data-filled="false"]) > .home-inspiration-tile {
+  flex: none;
+  height: 100%;
+  aspect-ratio: 1;
+}
+.home-inspiration-row:where([data-filled="false"])
+  > .home-inspiration-tile:where([data-shape="portrait"]) {
+  aspect-ratio: 4 / 5;
+}
+.home-inspiration-row:where([data-filled="false"])
+  > .home-inspiration-tile:where([data-shape="landscape"]) {
+  aspect-ratio: 4 / 3;
 }
 .home-inspiration-card.button {
   position: relative;
@@ -111,10 +132,10 @@
   aspect-ratio: 1;
   object-fit: cover;
 }
-.home-inspiration-card:where([data-shape="portrait"]) img {
+.home-inspiration-tile:where([data-shape="portrait"]) img {
   aspect-ratio: 4 / 5;
 }
-.home-inspiration-card:where([data-shape="landscape"]) img {
+.home-inspiration-tile:where([data-shape="landscape"]) img {
   aspect-ratio: 4 / 3;
 }
 .home-inspiration-tag {
@@ -397,23 +418,10 @@
     background: var(--surface);
   }
 }
-@media (max-width: 1279px) {
-  .home-inspiration-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-@media (max-width: 1023px) {
-  .home-inspiration-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
 @media (max-width: 767px) {
   .home-inspiration {
     margin-top: 32px;
     padding: 0 20px 32px;
-  }
-  .home-inspiration-note {
-    display: none;
   }
   .home-inspiration .tabs__list {
     gap: 14px;
@@ -423,9 +431,6 @@
     padding-top: 12px;
     font-size: var(--text-base);
     line-height: var(--leading-base);
-  }
-  .home-inspiration-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .modal__dialog.home-inspiration-detail {
     border-radius: 22px;

@@ -15,6 +15,8 @@ type InspirationSample = {
 /** 按界面语言带上标题与提示词的灵感示例。 */
 export type HomeInspiration = InspirationSample & { title: string; prompt: string };
 
+// 顺序按等高行拼图安排：桌面第一行五张竖图、第二行四张方图、第三行方横竖方，
+// 五张米白家纺穿插在彩色图之间，不挤在一起。
 const inspirationSamples: InspirationSample[] = [
   {
     id: "water-perfume",
@@ -23,15 +25,27 @@ const inspirationSamples: InspirationSample[] = [
     shape: "portrait",
   },
   {
-    id: "cream-bedroom",
-    category: "scene",
-    image: "/studio/bedroom-thumb.webp",
-    shape: "square",
-  },
-  {
     id: "glass-flower",
     category: "creative",
     image: "/studio/models/banana-1.webp",
+    shape: "portrait",
+  },
+  {
+    id: "textile-front",
+    category: "textile",
+    image: "/studio/textile-views/front.webp",
+    shape: "portrait",
+  },
+  {
+    id: "fashion-blue",
+    category: "scene",
+    image: "/studio/models/image-2-5-1.webp",
+    shape: "portrait",
+  },
+  {
+    id: "amber-perfume",
+    category: "product",
+    image: "/studio/models/image-2-2.webp",
     shape: "portrait",
   },
   {
@@ -41,33 +55,27 @@ const inspirationSamples: InspirationSample[] = [
     shape: "square",
   },
   {
-    id: "fashion-blue",
-    category: "scene",
-    image: "/studio/models/image-2-5-1.webp",
-    shape: "portrait",
-  },
-  {
     id: "textile-pillow",
     category: "textile",
     image: "/studio/textile-views/pillow.webp",
     shape: "square",
   },
   {
-    id: "amber-perfume",
-    category: "product",
-    image: "/studio/models/image-2-2.webp",
-    shape: "portrait",
-  },
-  {
-    id: "bag-editorial",
-    category: "scene",
-    image: "/studio/models/image-2-5-2.webp",
-    shape: "portrait",
-  },
-  {
     id: "lavender-bedding",
     category: "textile",
     image: "/studio/lavender-thumb.webp",
+    shape: "square",
+  },
+  {
+    id: "textile-fabric",
+    category: "textile",
+    image: "/studio/textile-views/fabric.webp",
+    shape: "square",
+  },
+  {
+    id: "cream-bedroom",
+    category: "scene",
+    image: "/studio/bedroom-thumb.webp",
     shape: "square",
   },
   {
@@ -77,15 +85,9 @@ const inspirationSamples: InspirationSample[] = [
     shape: "landscape",
   },
   {
-    id: "textile-fabric",
-    category: "textile",
-    image: "/studio/textile-views/fabric.webp",
-    shape: "square",
-  },
-  {
-    id: "textile-front",
-    category: "textile",
-    image: "/studio/textile-views/front.webp",
+    id: "bag-editorial",
+    category: "scene",
+    image: "/studio/models/image-2-5-2.webp",
     shape: "portrait",
   },
   {
