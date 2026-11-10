@@ -1,7 +1,7 @@
 import { defineMessages } from "../../i18n/messages";
 
 /**
- * 首页四个创作模式的标语、上传列名称与输入提示，以及描述模板（按模板 id 查）。
+ * 首页四个创作模式的标语与输入提示、家纺裂变两行上传入口的名称，以及描述模板（按模板 id 查）。
  * 模板的描述会原样写进草稿、作为提示词提交，英文界面填入英文描述。
  */
 export const homeModeMessages = defineMessages({
@@ -12,35 +12,29 @@ export const homeModeMessages = defineMessages({
         sloganLead: "让每件商品，",
         sloganTail: "都有一张好主图",
         highlight: "好主图",
-        uploadMain: "商品图",
-        uploadExtra: "参考图",
         placeholder: "描述你想要的画面，输入 @ 引用已上传图片",
       },
       textile: {
         sloganLead: "一张家纺主图，",
         sloganTail: "裂变整套视角",
         highlight: "整套视角",
-        uploadMain: "家纺主图",
-        uploadExtra: "详情图",
         placeholder: "",
       },
       variation: {
         sloganLead: "整套商品图，",
         sloganTail: "先规划再生成",
         highlight: "先规划",
-        uploadMain: "商品图",
-        uploadExtra: "参考图",
         placeholder: "描述整套图片的用途、场景和卖点，输入 @ 引用商品图",
       },
       video: {
         sloganLead: "让商品图片，",
         sloganTail: "动起来讲卖点",
         highlight: "动起来",
-        uploadMain: "商品主图",
-        uploadExtra: "补充参考",
         placeholder: "描述画面主体、动作和镜头运动，例如：晨光卧室，镜头推近展示面料纹理",
       },
     },
+    /** 家纺裂变左侧两行上传入口；其他模式只在描述上方放一个添加参考图小格。 */
+    textileUpload: { main: "家纺主图", extra: "详情图" },
     templates: {
       white: {
         name: "白底主图",
@@ -106,24 +100,18 @@ export const homeModeMessages = defineMessages({
         sloganLead: "Every product deserves",
         sloganTail: "a main image that sells",
         highlight: "that sells",
-        uploadMain: "Product",
-        uploadExtra: "Reference",
         placeholder: "Describe the image you want; type @ to reference an uploaded image",
       },
       textile: {
         sloganLead: "One textile photo,",
         sloganTail: "a full set of angles",
         highlight: "full set of angles",
-        uploadMain: "Main image",
-        uploadExtra: "Details",
         placeholder: "",
       },
       variation: {
         sloganLead: "A full product image set,",
         sloganTail: "planned before it's made",
         highlight: "planned",
-        uploadMain: "Product",
-        uploadExtra: "Reference",
         placeholder:
           "Describe what the set is for, its scenes and selling points; type @ to reference a product image",
       },
@@ -131,12 +119,11 @@ export const homeModeMessages = defineMessages({
         sloganLead: "Let product photos",
         sloganTail: "move and sell",
         highlight: "move",
-        uploadMain: "Product",
-        uploadExtra: "Reference",
         placeholder:
           "Describe the subject, action and camera movement, e.g. a bedroom in morning light as the camera pushes in on the fabric",
       },
     },
+    textileUpload: { main: "Main image", extra: "Details" },
     templates: {
       white: {
         name: "White background",

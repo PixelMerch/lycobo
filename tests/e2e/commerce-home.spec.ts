@@ -20,9 +20,13 @@ test("home composer shares prompt and real reference drafts without submitting g
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles({ name: "product.png", mimeType: "image/png", buffer: png });
   await expect(page.locator(".reference-tile")).toHaveCount(1);
-  const uploadBox = await page.locator(".home-upload").boundingBox();
+  // 主图制作沿用改版前的参考图条：描述上方只有一个添加小格，没有“商品图／参考图”两行入口。
+  const referencesBox = await page.locator(".home-references").boundingBox();
   const promptBox = await page.getByRole("textbox", { name: "创作需求" }).boundingBox();
-  expect(uploadBox && promptBox && uploadBox.x + uploadBox.width <= promptBox.x).toBe(true);
+  expect(referencesBox && promptBox && referencesBox.y + referencesBox.height <= promptBox.y).toBe(
+    true,
+  );
+  await expect(page.getByRole("button", { name: /^(商品图|参考图)$/ })).toHaveCount(0);
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles([
@@ -453,6 +457,8 @@ test("textile mode selects views and opens the textile tool with the uploaded ma
   await mockImageApi(page);
   await page.goto("/?mode=textile");
   await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveCount(0);
+  // 只有家纺裂变保留左侧“家纺主图／详情图”两行上传入口。
+  await expect(page.getByRole("button", { name: "详情图", exact: true })).toBeVisible();
   const start = page.getByRole("button", { name: "开始创作", exact: true });
   await expect(start).toBeDisabled();
   const views = page.getByRole("toolbar", { name: "裂变视角" });

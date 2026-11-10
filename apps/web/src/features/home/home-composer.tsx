@@ -1,5 +1,5 @@
 import { Button } from "@heroui/react";
-import { IconPlus, IconSparkles } from "@tabler/icons-react";
+import { IconLayoutCollage, IconPhotoPlus, IconPlus, IconSparkles } from "@tabler/icons-react";
 import { type ReactNode, useRef } from "react";
 import { useNavigate } from "react-router";
 import { ReferencePrompt } from "../../components/reference-prompt/reference-prompt";
@@ -8,11 +8,11 @@ import { useMessages } from "../../i18n/messages";
 import { LoginRequiredInteraction } from "../auth/login-prompt";
 import type { PromptOptimizeTool } from "../generation/references/prompt-optimizer-client";
 import { ReferencePicker } from "../generation/references/reference-picker";
-import type { ReferenceImage } from "../generation/studio-state";
 import { useStudioStore } from "../generation/studio-state";
 import { homeMessages } from "./home-messages";
 import { HomeModelSettings } from "./home-model-settings";
 import type { HomeMode } from "./home-modes";
+import { homeModeMessages } from "./home-modes-messages";
 import { HomeTextileViews } from "./home-textile-views";
 import {
   type HomePromptDraft,
@@ -21,8 +21,6 @@ import {
   useVariationHomeDraft,
   useVideoHomeDraft,
 } from "./use-home-mode-draft";
-
-type OpenFiles = { current: (() => void) | null };
 
 /** 按当前模式组合首页创作框：只编辑对应工具的草稿，进入工作区前不提交任何任务。 */
 export function HomeComposer({ mode }: { mode: HomeMode }) {
@@ -35,23 +33,23 @@ export function HomeComposer({ mode }: { mode: HomeMode }) {
 function CreateComposer({ mode }: { mode: HomeMode }) {
   const model = useStudioStore((s) => s.activeModel);
   const draft = useCreateHomeDraft();
-  const openFiles = useRef<(() => void) | null>(null);
   return (
     <ComposerShell
       mode={mode}
       canStart={draft.canStart}
-      openFiles={openFiles}
-      upload={
-        <ReferencePicker
-          model={model}
-          references={draft.references}
-          limit={mode.uploadLimit}
-          addLabel={mode.upload[0].label}
-          addIcon={draft.references.length ? IconPlus : mode.upload[0].icon}
-          openRef={openFiles}
-        />
+      body={
+        <>
+          <div className="home-references">
+            <ReferencePicker
+              compact
+              model={model}
+              references={draft.references}
+              limit={mode.uploadLimit}
+            />
+          </div>
+          <ComposerPrompt mode={mode} draft={draft} optimizeTool="create" />
+        </>
       }
-      body={<ComposerPrompt mode={mode} draft={draft} optimizeTool="create" />}
       settings={<HomeModelSettings />}
     />
   );
@@ -76,70 +74,59 @@ function ControlledPromptComposer({
   draft: HomePromptDraft;
   optimizeTool: PromptOptimizeTool;
 }) {
-  const openFiles = useRef<(() => void) | null>(null);
   return (
     <ComposerShell
       mode={mode}
       canStart={draft.canStart}
-      openFiles={openFiles}
-      upload={
-        <ModeUpload
-          mode={mode}
-          references={draft.references}
-          prompt={draft.prompt}
-          onChange={draft.setReferences}
-          openFiles={openFiles}
-        />
+      body={
+        <>
+          <div className="home-references">
+            <ReferencePicker
+              compact
+              references={draft.references}
+              prompt={draft.prompt}
+              onChange={draft.setReferences}
+              limit={mode.uploadLimit}
+            />
+          </div>
+          <ComposerPrompt mode={mode} draft={draft} optimizeTool={optimizeTool} />
+        </>
       }
-      body={<ComposerPrompt mode={mode} draft={draft} optimizeTool={optimizeTool} />}
     />
   );
 }
 
+/** 家纺裂变保留左侧两行上传列：两行打开同一个文件选择框，第一张图在工具里作为主图。 */
 function TextileComposer({ mode }: { mode: HomeMode }) {
   const draft = useTextileHomeDraft();
+  const t = useMessages(homeModeMessages).textileUpload;
   const openFiles = useRef<(() => void) | null>(null);
   return (
     <ComposerShell
       mode={mode}
       canStart={draft.canStart}
-      openFiles={openFiles}
-      upload={
-        <ModeUpload
-          mode={mode}
-          references={draft.references}
-          prompt=""
-          onChange={draft.setReferences}
-          openFiles={openFiles}
-        />
+      aside={
+        <div className="home-upload">
+          <ReferencePicker
+            references={draft.references}
+            prompt=""
+            onChange={draft.setReferences}
+            limit={mode.uploadLimit}
+            addLabel={t.main}
+            addIcon={draft.references.length ? IconPlus : IconLayoutCollage}
+            openRef={openFiles}
+          />
+          <Button
+            variant="ghost"
+            className="home-upload-secondary"
+            onPress={() => openFiles.current?.()}
+          >
+            <UiIcon icon={IconPhotoPlus} size="action" />
+            {t.extra}
+          </Button>
+        </div>
       }
       body={<HomeTextileViews />}
-    />
-  );
-}
-
-function ModeUpload({
-  mode,
-  references,
-  prompt,
-  onChange,
-  openFiles,
-}: {
-  mode: HomeMode;
-  references: ReferenceImage[];
-  prompt: string;
-  onChange: (images: ReferenceImage[], prompt: string) => void;
-  openFiles: OpenFiles;
-}) {
-  return (
-    <ReferencePicker
-      references={references}
-      prompt={prompt}
-      onChange={onChange}
-      limit={mode.uploadLimit}
-      addLabel={mode.upload[0].label}
-      addIcon={references.length ? IconPlus : mode.upload[0].icon}
-      openRef={openFiles}
     />
   );
 }
@@ -176,38 +163,25 @@ function ComposerPrompt({
   );
 }
 
-/** 左侧两行上传列、右侧描述与操作；“开始创作”只进入对应工具，不提交付费任务。 */
+/** 左侧上传列（只有家纺裂变）、描述与右下角操作；“开始创作”只进入对应工具，不提交付费任务。 */
 function ComposerShell({
   mode,
-  upload,
+  aside,
   body,
   settings,
   canStart,
-  openFiles,
 }: {
   mode: HomeMode;
-  upload: ReactNode;
+  aside?: ReactNode;
   body: ReactNode;
   settings?: ReactNode;
   canStart: boolean;
-  openFiles: OpenFiles;
 }) {
   const navigate = useNavigate();
   const t = useMessages(homeMessages);
-  const secondary = mode.upload[1];
   return (
     <LoginRequiredInteraction className="home-composer">
-      <div className="home-upload">
-        {upload}
-        <Button
-          variant="ghost"
-          className="home-upload-secondary"
-          onPress={() => openFiles.current?.()}
-        >
-          <UiIcon icon={secondary.icon} size="action" />
-          {secondary.label}
-        </Button>
-      </div>
+      {aside}
       <div className="home-composer-body">
         {body}
         <div className="home-composer-tools">

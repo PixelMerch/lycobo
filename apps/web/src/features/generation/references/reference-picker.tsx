@@ -37,7 +37,7 @@ function promptWithoutReferences(prompt: string) {
 type PickerProps = {
   limit?: number;
   label?: string;
-  /** 上传按钮上的文字；首页按创作模式显示“商品图”“家纺主图”等。 */
+  /** 上传按钮上的文字；首页家纺裂变显示“家纺主图”。 */
   addLabel?: string;
   /** 上传按钮图标，默认加号。 */
   addIcon?: TablerIcon;

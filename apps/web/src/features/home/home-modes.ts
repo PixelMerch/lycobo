@@ -4,16 +4,11 @@ import {
   IconBulb,
   IconCameraRotate,
   IconConfetti,
-  IconFolder,
   IconHomeHeart,
-  IconLayoutCollage,
   IconListDetails,
   IconPackage,
-  IconPhoto,
-  IconPhotoPlus,
   IconPlant2,
   IconRotate360,
-  IconShoppingBag,
   IconSparkles,
   IconSunHigh,
   IconZoomIn,
@@ -50,27 +45,23 @@ const templateIcons: Record<TemplateId, TablerIcon> = {
   unboxing: IconPackage,
 };
 
-/** 每个模式的非文字设置：上传列两行的图标、上传上限与模板顺序；文字在 home-modes-messages.ts。 */
+/** 每个模式的非文字设置：上传上限与模板顺序；文字在 home-modes-messages.ts。 */
 type ModeSettings = {
-  uploadIcons: [TablerIcon, TablerIcon];
   uploadLimit: number;
   templates: TemplateId[];
 };
 
 const modeSettings: Record<HomeModeId, ModeSettings> = {
   create: {
-    uploadIcons: [IconShoppingBag, IconFolder],
     uploadLimit: 5,
     templates: ["white", "scene", "campaign", "poster", "closeup"],
   },
-  textile: { uploadIcons: [IconLayoutCollage, IconPhotoPlus], uploadLimit: 6, templates: [] },
+  textile: { uploadLimit: 6, templates: [] },
   variation: {
-    uploadIcons: [IconShoppingBag, IconFolder],
     uploadLimit: 5,
     templates: ["detailSet", "sellingPoints", "sceneSet", "angles"],
   },
   video: {
-    uploadIcons: [IconShoppingBag, IconPhoto],
     uploadLimit: storyboardOriginalImageLimit,
     templates: ["showcase", "mood", "macro", "unboxing"],
   },
@@ -88,11 +79,6 @@ function toHomeMode(tool: WorkspaceTool, locale: Locale) {
     slogan: [text.sloganLead, text.sloganTail],
     /** 标语第二段里用当前模式强调渐变突出的关键词。 */
     sloganHighlight: text.highlight,
-    /** 上传列的两行入口：两行都打开同一个文件选择框，第一张图在工具里作为主图。 */
-    upload: [
-      { label: text.uploadMain, icon: settings.uploadIcons[0] },
-      { label: text.uploadExtra, icon: settings.uploadIcons[1] },
-    ],
     uploadLimit: settings.uploadLimit,
     placeholder: text.placeholder,
     templates: settings.templates.map(

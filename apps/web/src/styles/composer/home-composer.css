@@ -1,4 +1,4 @@
-/* 首页创作框按 vidmuse“爆款广告”复刻：左侧两行上传列，右侧描述与右下角操作，配色换成本站青柠。 */
+/* 首页创作框：描述与右下角操作，参考图在描述上方；只有家纺裂变用左侧两行上传列。配色为本站青柠。 */
 .home-composer {
   position: relative;
   isolation: isolate;
@@ -15,7 +15,53 @@
   box-shadow: inset 0 0 0 1px #ffffff29;
 }
 
-/* 上传列：空白时两行入口，有图后按两列缩略图排列。 */
+/* 其他模式沿用改版前的参考图条：首格为虚线加号小格，缩略图依次排在其后。 */
+.home-references .reference-picker {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.home-references .field-title,
+.home-references .add-reference > span {
+  display: none;
+}
+.home-references .reference-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.home-references .reference-tile {
+  width: 57.12px;
+  height: 57.12px;
+  border-radius: 8px;
+}
+.home-references .reference-number {
+  font-size: 10px;
+  line-height: 14px;
+}
+.home-references .add-reference {
+  order: -1;
+  flex: none;
+  width: 57.12px;
+  min-width: 57.12px;
+  height: 57.12px;
+  min-height: 57.12px;
+  padding: 0;
+  border: 1px dashed #ffffff33;
+  border-radius: 12px;
+  background: #ffffff0a;
+  color: #d9d9de;
+}
+.home-references .add-reference:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
+  border-color: #ffffff59;
+  background: #ffffff14;
+}
+.home-references .field-error {
+  max-width: 360px;
+  margin-top: 8px;
+}
+
+/* 家纺裂变上传列：空白时两行入口，有图后按两列缩略图排列。 */
 .home-upload {
   --composer-group: #1c1c1c;
   display: flex;
