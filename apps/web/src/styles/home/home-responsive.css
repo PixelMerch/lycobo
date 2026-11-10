@@ -96,9 +96,11 @@
     gap: 12px;
     padding: 12px;
   }
-  .home-upload {
+  .home-upload,
+  .home-upload:has(.reference-tile) {
     flex-direction: row;
     width: 100%;
+    max-width: none;
     min-height: 0;
   }
   .home-upload .reference-picker {

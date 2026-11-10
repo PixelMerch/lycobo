@@ -25,6 +25,8 @@
 .home-textile-view-options.toggle-button-group {
   display: flex;
   flex-wrap: wrap;
+  /* HeroUI 分离式按钮组默认居中，这里与标题一起左对齐。 */
+  justify-content: flex-start;
   gap: 8px;
   padding: 0;
   border: 0;
