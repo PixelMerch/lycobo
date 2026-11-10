@@ -1,25 +1,33 @@
+import { IconCamera, IconLayoutCollage, IconWand } from "@tabler/icons-react";
 import { RouteLink } from "../../components/router-link";
+import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
 import { legalDocumentIds, legalPaths } from "../legal/legal-document";
 import { legalMessages } from "../legal/legal-messages";
 import { workspaceTools } from "../workspace/workspace-state";
 import { workspaceToolMessages } from "../workspace/workspace-tool-messages";
 import { siteFooterMessages } from "./site-footer-messages";
+import { SiteFooterSocials } from "./site-footer-socials";
 import "./site-footer.css";
 
-/**
- * 站点页脚（参考 lumalabs.ai 的安静页脚）：细线下左边是品牌、定位与版权，右边三列不带标题的链接，
- * 依次是四个工具、工作空间、协议与政策。只链接本站真实页面；首页与法律文本页共用。
- */
+const footerToolIcons = { create: IconCamera, textile: IconLayoutCollage, variation: IconWand };
+
+/** 用品牌社交标识与三组真实入口收尾，首页和法律文本页共用。 */
 export function SiteFooter() {
   const t = useMessages(siteFooterMessages);
   const legal = useMessages(legalMessages);
   const tools = useMessages(workspaceToolMessages).tools;
-  // 三列没有可见标题，用 aria-label 给读屏一个分组名。
   const columns = [
     {
       label: t.tools,
-      links: workspaceTools.map((tool) => ({ to: tool.path, label: tools[tool.id].name })),
+      // 视频尚未接入生产运行时，页脚只展示当前可用的图片创作入口。
+      links: workspaceTools
+        .filter((tool) => tool.id !== "video")
+        .map((tool) => ({
+          to: tool.path,
+          label: tools[tool.id].name,
+          icon: footerToolIcons[tool.id],
+        })),
     },
     {
       label: t.space,
@@ -41,19 +49,23 @@ export function SiteFooter() {
           <RouteLink to="/" className="site-footer-logo" aria-label={t.homeLink}>
             <img src="/brand/lycobo-reveal.svg" alt="Lycobo" width="168" height="45" />
           </RouteLink>
-          <p className="site-footer-tagline">{t.tagline}</p>
+          <SiteFooterSocials />
         </div>
         <nav className="site-footer-nav" aria-label={t.navigation}>
           {columns.map((column) => (
-            <ul key={column.label} className="site-footer-column" aria-label={column.label}>
-              {column.links.map((link) => (
-                <li key={link.to}>
-                  <RouteLink to={link.to} className="site-footer-link">
-                    {link.label}
-                  </RouteLink>
-                </li>
-              ))}
-            </ul>
+            <section key={column.label} className="site-footer-column" aria-label={column.label}>
+              <h2 className="site-footer-heading">{column.label}</h2>
+              <ul className="site-footer-links">
+                {column.links.map((link) => (
+                  <li key={link.to}>
+                    <RouteLink to={link.to} className="site-footer-link">
+                      {"icon" in link && <UiIcon icon={link.icon} size="default" />}
+                      {link.label}
+                    </RouteLink>
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
         </nav>
         <p className="site-footer-copyright">{t.copyright(new Date().getFullYear())}</p>

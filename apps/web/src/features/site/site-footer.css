@@ -1,8 +1,4 @@
-/*
- * 站点页脚（用户 2026-11-10 选定：参考 lumalabs.ai 的安静页脚，不沿用 vidmuse 的大字标与链接组标题）。
- * 与首页作品墙同一左右边界（左 116px、右 60px），一条 1px 细线分开；
- * 左边放大的品牌、定位与版权，右边三列不带标题的链接，大量留白，没有底色、光晕或装饰。
- */
+/* 页脚保留安静留白：左侧品牌与静态社交标识，右侧以标题和工具图标组织真实入口。 */
 .site-footer {
   padding: 72px 60px 0 116px;
 }
@@ -13,7 +9,7 @@
     "brand nav"
     "copyright nav";
   grid-template-rows: auto 1fr;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
   column-gap: 48px;
   padding: 88px 0 112px;
   border-top: 1px solid #ffffff1a;
@@ -29,34 +25,65 @@
   width: 168px;
   height: auto;
 }
-.site-footer-tagline {
-  margin-top: 20px;
-  color: #ffffff80;
-  font-size: var(--text-base);
-  line-height: 22px;
+.site-footer-socials {
+  display: flex;
+  gap: 16px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.site-footer-social {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: #ffffffb3;
 }
 .site-footer-nav {
   display: grid;
   grid-area: nav;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-content: start;
-  gap: 24px;
+  gap: 40px;
   padding-top: 6px;
 }
 .site-footer-column {
+  min-width: 0;
+}
+.site-footer-heading {
+  margin-bottom: 18px;
+  color: #ffffff80;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  line-height: 18px;
+}
+.site-footer-heading:lang(en) {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.site-footer-links {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 .site-footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
   color: #ffffffb3;
   font-size: var(--text-base);
-  line-height: 28px;
+  line-height: 22px;
   text-decoration: none;
   transition: color 160ms ease;
+}
+.site-footer-link .ui-icon {
+  flex: none;
+  color: #ffffff80;
 }
 .site-footer-link:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
   color: #fff;
@@ -99,8 +126,16 @@
   }
   .site-footer-nav {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px 16px;
+    gap: 32px 16px;
     padding-top: 0;
+  }
+  .site-footer-column:last-child {
+    grid-column: 1 / -1;
+  }
+  .site-footer-column:last-child .site-footer-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 16px;
   }
   .site-footer-link {
     display: inline-flex;
