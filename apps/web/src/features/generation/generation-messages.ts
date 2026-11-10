@@ -13,6 +13,8 @@ export const generationMessages = defineMessages({
     less: "收起",
     more: "更多",
     serviceUnavailable: "服务暂时不可用，请稍后重试。",
+    networkError: "网络连接中断，请检查网络后重试；若已提交生成，请先确认上次提交结果。",
+    requestTimeout: "请求超时，请稍后重试；若已提交生成，请先确认上次提交结果。",
     generationDisabled: "生图服务尚未启用",
     tooManyReferences: (max: number) => `当前模型最多支持 ${max} 张参考图，请减少后生成。`,
     noReferenceEditing: "当前模型暂不支持参考图编辑，请移除参考图后生成。",
@@ -37,7 +39,7 @@ export const generationMessages = defineMessages({
       400: "模型参数或参考图不受支持，请调整后重试。",
       409: "额度不足或提交参数冲突，请检查后重试。",
       413: "图片超过大小限制。",
-      503: "生图服务尚未启用，请检查服务端配置。",
+      503: "服务暂时不可用，请稍后重试。",
     },
     pendingUnreadable: "待确认的提交信息无法读取，请联系管理员核对历史记录。",
     uploadTooLarge: (position: number) =>
@@ -60,6 +62,10 @@ export const generationMessages = defineMessages({
     less: "Less",
     more: "More",
     serviceUnavailable: "The service is unavailable right now. Please try again later.",
+    networkError:
+      "The connection was interrupted. Check your network and try again. If you submitted a generation, confirm its status first.",
+    requestTimeout:
+      "The request timed out. Try again later. If you submitted a generation, confirm its status first.",
     generationDisabled: "Image generation isn't enabled yet",
     tooManyReferences: (max) =>
       `This model supports up to ${max} reference images. Remove some before generating.`,
@@ -86,7 +92,7 @@ export const generationMessages = defineMessages({
       400: "The model settings or reference images aren't supported. Adjust them and try again.",
       409: "Not enough credits, or the request conflicts with another. Check and try again.",
       413: "The image is over the size limit.",
-      503: "Image generation isn't enabled. Check the server configuration.",
+      503: "The service is unavailable right now. Please try again later.",
     },
     pendingUnreadable: "The pending submission can't be read. Ask an admin to check the history.",
     uploadTooLarge: (position) =>

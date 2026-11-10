@@ -23,13 +23,7 @@ export function isSignInError(error: unknown) {
 
 /** 调用图片接口：带会话续期与超时，失败时抛出 ImageApiError。 */
 export async function imageRequest(path: string, init: RequestInit = {}, timeoutMs = 30000) {
-  const response = await sessionFetch(`/api/v1/${path}`, {
-    ...init,
-    credentials: "same-origin",
-    signal: init.signal
-      ? AbortSignal.any([init.signal, AbortSignal.timeout(timeoutMs)])
-      : AbortSignal.timeout(timeoutMs),
-  });
+  const response = await fetchImageResponse(path, init, timeoutMs);
   if (!response.ok) {
     const t = currentMessages(generationMessages);
     const messages: Record<number, string> = t.httpErrors;
@@ -46,4 +40,21 @@ export async function imageRequest(path: string, init: RequestInit = {}, timeout
   if (normalized.headers.get("Content-Type")?.includes("application/json"))
     rememberImageDeliveries(await normalized.clone().json());
   return normalized;
+}
+
+/** 网络异常只转换提示，主动取消保持原样；付费请求不在此处自动重试。 */
+async function fetchImageResponse(path: string, init: RequestInit, timeoutMs: number) {
+  const signal = init.signal
+    ? AbortSignal.any([init.signal, AbortSignal.timeout(timeoutMs)])
+    : AbortSignal.timeout(timeoutMs);
+  try {
+    return await sessionFetch(`/api/v1/${path}`, { ...init, credentials: "same-origin", signal });
+  } catch (error) {
+    if (init.signal?.aborted) throw error;
+    const t = currentMessages(generationMessages);
+    if (error instanceof Error && error.name === "TimeoutError")
+      throw new ImageApiError(t.requestTimeout, 0);
+    if (error instanceof TypeError) throw new ImageApiError(t.networkError, 0);
+    throw error;
+  }
 }
