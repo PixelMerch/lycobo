@@ -1,9 +1,9 @@
 :root,
 .dark {
   color-scheme: dark;
-  /* 思源黑体随站点自托管（main.tsx 引入），Windows 与 Mac 显示一致；加载完成前与缺字时回退系统字体。 */
+  /* 普惠体四个字重按字符切片自托管；加载期间和缺字时保留系统字体回退。 */
   --font-sans:
-    "Noto Sans SC Variable", "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Microsoft YaHei",
+    "Alibaba PuHuiTi 3", "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Microsoft YaHei",
     "Noto Sans CJK SC", system-ui, -apple-system, "Segoe UI", sans-serif;
   --background: #0f0f0f;
   --foreground: #f2f2f2;
@@ -52,7 +52,7 @@
   --leading-lg: 24px;
   --leading-xl: 26px;
   --leading-2xl: 32px;
-  --weight-light: 300;
+  --weight-light: 400;
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;

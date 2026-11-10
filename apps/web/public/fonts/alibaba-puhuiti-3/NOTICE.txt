@@ -1,0 +1,12 @@
+阿里巴巴普惠体 3.0 / Alibaba PuHuiTi 3.0
+
+版权与相关权益归阿里巴巴（中国）有限公司所有。
+设计：Alibaba Design; Hanyi Fonts。
+官方字体文件版本：3.01。
+来源：https://www.alibabafonts.com/
+官方法律声明：https://www.yuque.com/yiguang-wkqc2/hgpff0/nus9wiinq4aeiegy
+
+本站使用官方55 Regular、65 Medium、75 SemiBold、85 Bold文件制作WOFF2网页切片，
+保留原字体版权及排版元数据，不单独销售或转授权字体，不声明与阿里巴巴存在合作、赞助或背书关系。
+源文件SHA256与字符分组见仓库 scripts/fonts/subsets.json，生成方式见 docs/fonts.md。
+字体使用受官方法律声明约束；本记录不替代或修改原始版权及授权条件。

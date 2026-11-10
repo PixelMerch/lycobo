@@ -177,7 +177,7 @@
 .topbar-nav .nav-row:is(.active, [aria-current="page"]) {
   background: transparent;
   color: #fff;
-  font-weight: 700;
+  font-weight: var(--weight-semibold);
 }
 .topbar-menu-chevron {
   flex: none;

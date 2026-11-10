@@ -110,7 +110,7 @@ body:has(.commerce-home) {
   padding: 0 0.08em;
   color: #f0f7e6;
   font-size: 60px;
-  font-weight: 700;
+  font-weight: var(--weight-semibold);
   line-height: 72px;
   letter-spacing: -0.025em;
   text-align: center;

@@ -21,10 +21,10 @@
 
 上游采用 MIT + Commons Clause，版权 David Haz (2026)。完整许可保留在 [React Bits 许可](licenses/react-bits.md)：允许作为应用、网站或产品的一部分使用，不允许出售或重新分发组件本身／组件包。本站仅将其用于首页背景，不提供 React Bits 组件或工具分发服务。
 
-## 思源黑体（Noto Sans SC）
+## 阿里巴巴普惠体 3.0
 
-界面字体使用思源黑体可变字体，经 npm 包 `@fontsource-variable/noto-sans-sc` 固定为 5.3.1 引入（`apps/web/src/main.tsx`），构建时随站点静态资源发布，不使用第三方字体 CDN。字体采用 SIL Open Font License 1.1，允许在网站中嵌入与随软件分发；包内附带的 LICENSE 保留原文，不单独出售字体文件。用户 2026-11-10 确认以它替换从未实际加载的阿里巴巴普惠体。
+用户于2026-11-10确认主站中英文统一使用阿里巴巴普惠体3.0，替换思源黑体。官方字体文件版本3.01，使用55 Regular、65 Medium、75 SemiBold、85 Bold，对应400／500／600／700。源文件从[阿里巴巴字体官网](https://www.alibabafonts.com/)提供的字体地址获取，SHA256固定在 `scripts/fonts/subsets.json`；四个字重均保留源字体版权与排版元数据，转换为同源加载的字符切片WOFF2，不附带完整TTF，不依赖字体CDN。来源及[官方法律声明](https://www.yuque.com/yiguang-wkqc2/hgpff0/nus9wiinq4aeiegy)见 `apps/web/public/fonts/alibaba-puhuiti-3/NOTICE.txt`，生成与验证见[字体维护](fonts.md)。
 
 ## 阿里巴巴普惠体 Logo 字标
 
-2026-11-10 用户确认将 A「显影」字标改为阿里巴巴普惠体 3.0 Bold，恢复常规 L 并增加图形与文字间距。字体从[官方站点](https://www.alibabafonts.com/)提供的 `AlibabaPuHuiTi-3-85-Bold.ttf` 获取，字体文件版本为 3.01；[法律声明](https://www.yuque.com/yiguang-wkqc2/hgpff0/nus9wiinq4aeiegy)与来源记录保存在 `apps/web/public/brand/AlibabaPuHuiTi-NOTICE.txt`。Logo 仅发布转曲后的 SVG 路径，不分发字体文件，不新增运行时字体或依赖；界面字体仍使用思源黑体。
+2026-11-10 用户确认将 A「显影」字标改为阿里巴巴普惠体 3.0 Bold，恢复常规 L 并增加图形与文字间距。Logo使用同一官方Bold源文件，单独发布转曲后的SVG路径，不增加字标字体下载；来源记录见 `apps/web/public/brand/AlibabaPuHuiTi-NOTICE.txt`。
