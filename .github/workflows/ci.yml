@@ -66,7 +66,7 @@ jobs:
           if [ -n "$BROWSER_GREP" ]; then
             pnpm test:e2e --shard=${{ matrix.shard }}/2 --grep "$BROWSER_GREP" --pass-with-no-tests
           else
-            pnpm test:e2e --shard=${{ matrix.shard }}/2
+            pnpm test:e2e:full --shard=${{ matrix.shard }}/2
           fi
   browser-result:
     name: ${{ github.event.action == 'edited' && !github.event.changes.base && 'Browser metadata only' || 'Browser' }}

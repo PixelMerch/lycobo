@@ -6,7 +6,8 @@
 - pnpm typecheck：所有 workspace 包 strict TypeScript。
 - pnpm test：契约、API、Worker 的单元行为。
 - pnpm build：实际前端和两个 Node 应用生产构建。
-- pnpm test:e2e：真实 Chromium 下接口连接、路由、禁用态与窄屏溢出。
+- pnpm test:e2e <spec 文件或 --grep>：定向浏览器测试；未指定范围会在启动浏览器前拒绝。
+- pnpm test:e2e:full：完整浏览器回归，仅用户明确要求全量或远程手动回归时执行。
 - pnpm test:integration：明确 opt-in 的隔离 PostgreSQL、队列、鉴权及持久事件集成验证。
 
 首次运行浏览器测试需 pnpm exec playwright install chromium。
@@ -30,16 +31,18 @@ CI 使用 pnpm exec playwright install --with-deps chromium。
 
 ## 本地开发与远程回归
 
+纯按钮外观、间距、颜色和文案改动无需 E2E，也不新增截图镜像测试。关键交互或已知回归按用例选择范围；不要为了修改按钮样式执行完整回归。`pnpm check` 不包含 Playwright，`pnpm check:release` 现在也只运行同一质量检查。
+
 日常 AI 开发默认执行 `pnpm check` 和 `git diff --check`，不在每次样式、文案或布局调整后运行本地全量 E2E。关键交互变化、已知回归或用户明确要求时，只运行相关浏览器用例；例如 `pnpm test:e2e tests/e2e/preview-workspace.spec.ts`。不为纯视觉数值补写镜像测试。
 
 按2026-10-31用户要求，浏览器验证改为手动运行，不阻塞日常提交、PR合并和main部署。自动CI保留Quality（lint、类型、单测、构建）及Infrastructure（数据库、队列、存储集成）。本地仅按需做定向浏览器验证，不默认运行全量。
 
 ## CI 浏览器检查
 
-| 触发场景                    | 浏览器范围                                           |
-| --------------------------- | ---------------------------------------------------- |
-| 推送 dev/main、普通或发布PR | 不自动运行                                           |
-| 手动运行 CI                 | 完整 `pnpm test:e2e`，可填写 `browser_grep` 定向诊断 |
+| 触发场景                    | 浏览器范围                                                |
+| --------------------------- | --------------------------------------------------------- |
+| 推送 dev/main、普通或发布PR | 不自动运行                                                |
+| 手动运行 CI                 | 完整 `pnpm test:e2e:full`，可填写 `browser_grep` 定向诊断 |
 
 浏览器用例及两分片汇总保持保留；手动运行时必须报告实际成败，不伪造通过。分支保护由GitHub配置决定，不使用管理员绕过。
 
@@ -85,7 +88,7 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 素材库筛选与收藏由 worker `test:images` 的 `verify-asset-library.ts` 在隔离 PostgreSQL 验证：功能、模型、收藏幂等与成员隔离、跨组织及过期素材拒绝、每位成员 1000 项上限。
 
-并行执行不同测试任务时，为每次运行设置独立 `--output=/tmp/<本次运行目录>`，避免 Playwright 清理其他运行的 trace。历史时间断言使用浏览器自身时区计算，不能写死本机的 UTC+8 时间。完整 `pnpm test:e2e` 由远程 CI 手动触发；本地复现可指定文件或用例，不能以跳过失败用例代替查明原因。
+并行执行不同测试任务时，为每次运行设置独立 `--output=/tmp/<本次运行目录>`，避免 Playwright 清理其他运行的 trace。历史时间断言使用浏览器自身时区计算，不能写死本机的 UTC+8 时间。完整 `pnpm test:e2e:full` 由远程 CI 手动触发；本地复现可指定文件或用例，不能以跳过失败用例代替查明原因。
 
 浏览器 fixture 有三处容易出错：内联图片必须是校验正确的真实图片，新版 Chromium 拒绝解码 CRC 损坏的 PNG，参考图会停在“无法解码”；`<a download>` 发起的下载不经过 `page.route`，要核对下载内容时像 `video-creation.spec.ts` 那样起本地 HTTP 服务，否则只核对下载地址；参考图最多三张并行上传、到达顺序不固定，fixture 要按上传内容（例如图片宽度）而不是到达顺序分配素材 ID。
 
