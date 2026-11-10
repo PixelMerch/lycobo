@@ -3,14 +3,14 @@ import type {
   ImageGenerationInput,
   ImageJob,
 } from "../../packages/contracts/src/images/image-generation";
-import { mockImageApi, mockImageEvents, modelDisplayNames, modelNames } from "./image-api-fixture";
+import { mockImageApi, mockImageEvents } from "./image-api-fixture";
 
 const png = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",
   "base64",
 );
 
-test("four public models submit at 1.5K, queued results become durable history and library assets", async ({
+test("each main image model submits at 1.5K, queued results become durable history and library assets", async ({
   page,
 }) => {
   await mockImageEvents(page);
@@ -87,21 +87,22 @@ test("four public models submit at 1.5K, queued results become durable history a
     });
   });
   await page.goto("/commerce/create");
-  for (const model of modelNames) {
+  // 主图制作只提供这三个型号：依次切换，每个提交一次。
+  const mainModels = [
+    { id: "gpt-image-2.6", name: "Image 2.6" },
+    { id: "gpt-image-2.5", name: "Image 2.5" },
+    { id: "gpt-image-2", name: "Image 2" },
+  ];
+  for (const model of mainModels) {
     await page.getByRole("button", { name: /创作模型/ }).click();
-    await page
-      .getByRole("option", {
-        name: modelDisplayNames[modelNames.indexOf(model)] ?? model,
-        exact: true,
-      })
-      .click();
-    await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill(`陶瓷杯 ${model}`);
+    await page.getByRole("option", { name: model.name, exact: true }).click();
+    await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill(`陶瓷杯 ${model.id}`);
     await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
     await expect(page.locator(".generation-job")).toHaveCount(submissions.length);
     await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue("");
     await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeDisabled();
   }
-  expect(submissions.map((input) => input.model)).toEqual(modelNames);
+  expect(submissions.map((input) => input.model)).toEqual(mainModels.map((model) => model.id));
   expect(
     submissions.every(
       (input) =>
@@ -113,15 +114,15 @@ test("four public models submit at 1.5K, queued results become durable history a
       new CustomEvent("fixture:realtime", { detail: { type: "resync", id: "1" } }),
     ),
   );
-  await expect(page.locator(".generation-results img")).toHaveCount(modelNames.length, {
+  await expect(page.locator(".generation-results img")).toHaveCount(mainModels.length, {
     timeout: 12000,
   });
   await page.reload();
-  await expect(page.locator(".generation-results img")).toHaveCount(modelNames.length);
+  await expect(page.locator(".generation-results img")).toHaveCount(mainModels.length);
   await page.getByRole("link", { name: "素材库", exact: true }).click();
-  await expect(page.locator(".asset-tile img")).toHaveCount(modelNames.length);
+  await expect(page.locator(".asset-tile img")).toHaveCount(mainModels.length);
   await page.reload();
-  await expect(page.locator(".asset-tile img")).toHaveCount(modelNames.length);
+  await expect(page.locator(".asset-tile img")).toHaveCount(mainModels.length);
 });
 
 for (const outcome of ["disconnect", "timeout", "auth"] as const) {
