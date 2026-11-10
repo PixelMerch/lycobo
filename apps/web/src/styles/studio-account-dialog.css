@@ -24,8 +24,6 @@
 }
 .account-avatar,
 .account-avatar .avatar__fallback {
-  background: var(--fill-selected);
-  color: #fff;
   font-weight: var(--weight-semibold);
 }
 .account-identity strong {

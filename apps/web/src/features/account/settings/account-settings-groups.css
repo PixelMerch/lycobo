@@ -14,8 +14,6 @@
   width: 64px;
   min-width: 64px;
   height: 64px;
-  background: #ffffff0f;
-  color: #fff;
   font-size: var(--text-2xl);
   font-weight: var(--weight-semibold);
 }
@@ -112,6 +110,48 @@
   font-variant-numeric: tabular-nums;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* 内容排在标签下方、占满整行的设置行（头像预设）。 */
+.settings-row.settings-row--stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-3);
+  padding-block: 14px;
+}
+/* 头像预设：一排 40px 圆形色块，选中加白色外圈，放不下时换行。 */
+.avatar-preset-picker.toggle-button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.avatar-preset-picker .avatar-preset-option.toggle-button {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 3px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+}
+.avatar-preset-picker .avatar-preset-option.toggle-button:is(:hover, [data-hovered="true"]) {
+  background: var(--fill-medium);
+}
+.avatar-preset-picker .avatar-preset-option.toggle-button[data-selected="true"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px #fff;
+}
+.avatar-preset-swatch {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: var(--text-base);
+  line-height: 1;
 }
 .settings-row-action {
   display: flex;

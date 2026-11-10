@@ -35,8 +35,6 @@
   min-width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: var(--app-primary-gradient);
-  color: var(--accent-foreground);
   font-size: var(--text-xl);
   font-weight: var(--weight-semibold);
 }

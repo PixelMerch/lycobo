@@ -1,4 +1,4 @@
-import { Avatar, Button, Dropdown, Separator } from "@heroui/react";
+import { Button, Dropdown, Separator } from "@heroui/react";
 import { IconLogout, IconPhoto, IconSettings } from "@tabler/icons-react";
 import { useRef } from "react";
 import { useNavigate } from "react-router";
@@ -10,6 +10,7 @@ import { useEnterpriseLogout, useEnterpriseSession } from "../../auth/auth-clien
 import { useOpenLogin } from "../../auth/login-prompt";
 import { roleLabel } from "../account-format";
 import { useAccountOverlays } from "../account-overlay-store";
+import { AccountAvatar } from "../avatar/account-avatar";
 import { AccountMessages } from "../notifications/account-messages";
 import { accountMenuMessages } from "./account-menu-messages";
 import "../account-common.css";
@@ -52,7 +53,6 @@ export function AccountMenu({
   useErrorToast(logout.error?.message);
   const account = session.data;
   if (!account) return null;
-  const initial = Array.from(account.account)[0]?.toUpperCase() ?? "";
   const go = (path: string) => {
     onNavigate?.();
     void navigate(path);
@@ -66,9 +66,7 @@ export function AccountMenu({
           className="account-trigger"
           aria-label={t.accountMenu(account.account)}
         >
-          <Avatar className="account-avatar" size="sm" aria-hidden="true">
-            <Avatar.Fallback>{initial}</Avatar.Fallback>
-          </Avatar>
+          <AccountAvatar account={account} size="sm" className="account-avatar" />
           {!inHeader && (
             <span className="account-trigger-name" title={account.account} aria-hidden="true">
               {account.account}
@@ -82,9 +80,7 @@ export function AccountMenu({
           isNonModal={false}
         >
           <div className="account-menu-identity">
-            <Avatar size="lg" className="account-menu-avatar" aria-hidden="true">
-              <Avatar.Fallback>{initial}</Avatar.Fallback>
-            </Avatar>
+            <AccountAvatar account={account} size="lg" className="account-menu-avatar" />
             <div className="account-menu-details">
               <strong className="account-menu-name" title={account.account}>
                 {account.account}

@@ -1,6 +1,8 @@
 import { toast } from "@heroui/react";
 import {
+  type AvatarPreset,
   apiErrorSchema,
+  enterpriseAvatarChangeSchema,
   enterpriseIdentitySchema,
   enterpriseLoginResponseSchema,
   enterprisePasswordChangeSchema,
@@ -116,6 +118,28 @@ async function clearEnterpriseSession(client: QueryClient) {
 }
 
 /** 修改密码：服务端会注销全部会话，这里同时清空本机的登录状态。 */
+/** 保存预设头像；成功后用服务端返回的身份更新登录状态，各处头像立即同步。 */
+export function useEnterpriseAvatar() {
+  const client = useQueryClient();
+  return useMutation({
+    retry: false,
+    mutationFn: async (avatarPreset: AvatarPreset | null) => {
+      const body = enterpriseAvatarChangeSchema.parse({ avatarPreset });
+      const response = await authRequest("avatar", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) throw new Error(await errorMessage(response));
+      // 返回内容不完整时给出通用提示，不把校验细节显示给用户。
+      const user = enterpriseIdentitySchema.safeParse(await response.json());
+      if (!user.success) throw new Error(currentMessages(authMessages).serviceUnavailable);
+      return user.data;
+    },
+    onSuccess: (user) => client.setQueryData(enterpriseSessionKey, user),
+  });
+}
+/** 修改密码；成功后清空登录状态，所有设备需要重新登录。 */
 export function useEnterprisePasswordChange() {
   const client = useQueryClient();
   return useMutation({

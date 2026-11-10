@@ -1,4 +1,4 @@
-import { Avatar, Button, Modal, Tabs } from "@heroui/react";
+import { Button, Modal, Tabs } from "@heroui/react";
 import type { EnterpriseIdentity } from "@lycoboai/contracts";
 import {
   IconChartBar,
@@ -16,6 +16,7 @@ import { useErrorToast } from "../../../lib/error-toast";
 import { useEnterpriseLogout, useEnterpriseSession } from "../../auth/auth-client";
 import { roleLabel } from "../account-format";
 import { useAccountOverlays } from "../account-overlay-store";
+import { AccountAvatar } from "../avatar/account-avatar";
 import { useWideViewport } from "../use-wide-viewport";
 import { AccountPasswordForm } from "./account-password-form";
 import { AccountPlanUsage } from "./account-plan-usage";
@@ -36,12 +37,9 @@ const sectionIcons: Record<SettingsSection, TablerIcon> = {
 /** 左侧栏顶部的身份：头像、账号与 UID · 角色。 */
 function SettingsIdentity({ account }: { account: EnterpriseIdentity }) {
   const locale = useLocale();
-  const initial = Array.from(account.account)[0]?.toUpperCase() ?? "";
   return (
     <div className="settings-identity">
-      <Avatar className="settings-identity-avatar" aria-hidden="true">
-        <Avatar.Fallback>{initial}</Avatar.Fallback>
-      </Avatar>
+      <AccountAvatar account={account} className="settings-identity-avatar" />
       <div className="settings-identity-text">
         <strong title={account.account}>{account.account}</strong>
         <span>
