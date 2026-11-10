@@ -153,7 +153,7 @@ test("main and optional detail images validate independently and clear without a
   await page
     .getByLabel("主图文件", { exact: true })
     .setInputFiles({ name: "broken.png", mimeType: "image/png", buffer: Buffer.from("not image") });
-  await expect(page.getByRole("alert")).toContainText("图片无法读取");
+  await expect(page.getByRole("alert")).toContainText("第 1 张图片无法解码");
   await expect(page.locator(".reference-tile")).toHaveCount(2);
   await page.getByRole("button", { name: "清除主图", exact: true }).click();
   await expect(page.getByRole("button", { name: "清除主图", exact: true })).toHaveCount(0);

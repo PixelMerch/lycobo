@@ -81,7 +81,7 @@ test("invalid references and limit errors do not destroy valid images", async ({
     mimeType: "image/png",
     buffer: Buffer.from("not an image"),
   });
-  await expect(page.getByRole("alert")).toContainText("图片无法读取");
+  await expect(page.getByRole("alert")).toContainText("第 1 张图片无法解码");
   await input.setInputFiles({ name: "valid.png", mimeType: "image/png", buffer: png });
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await input.setInputFiles([
