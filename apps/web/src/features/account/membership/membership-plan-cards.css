@@ -125,7 +125,7 @@
 .membership-plan-choice {
   display: flex;
   flex-direction: column;
-  border-radius: 22px;
+  border-radius: 24px;
   background: #ffffff0f;
 }
 .membership-quota-select {

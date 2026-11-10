@@ -5,15 +5,15 @@
   --font-sans:
     "Noto Sans SC Variable", "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Microsoft YaHei",
     "Noto Sans CJK SC", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --background: #0f0f12;
-  --foreground: #f3f1f7;
-  --surface: #17171b;
+  --background: #0f0f0f;
+  --foreground: #f2f2f2;
+  --surface: #171717;
   --surface-foreground: var(--foreground);
-  --surface-secondary: #202026;
+  --surface-secondary: #202020;
   --surface-secondary-foreground: var(--foreground);
-  --surface-tertiary: #2a2a32;
+  --surface-tertiary: #2b2b2b;
   --surface-tertiary-foreground: var(--foreground);
-  --overlay: #24242b;
+  --overlay: #252525;
   --app-dialog-background: #1a1a1a;
   --overlay-foreground: var(--foreground);
   /* HeroUI 默认填充（次要按钮、切换按钮、标签等）改用半透明白，不再是旧紫灰。 */
@@ -21,12 +21,12 @@
   --default-foreground: var(--foreground);
   --field-background: #ffffff0a;
   --field-foreground: var(--foreground);
-  --field-placeholder: #8b8794;
+  --field-placeholder: #898989;
   --field-border: #ffffff14;
   --field-border-hover: #ffffff29;
   --field-border-focus: #ffffff66;
   --field-border-width: 1px;
-  --muted: #aaa7b2;
+  --muted: #a8a8a8;
   --accent: #a8ff00;
   --accent-foreground: #142000;
   --accent-soft: #a8ff001f;
@@ -38,7 +38,7 @@
   --backdrop: #00000099;
   --overlay-shadow: 0 16px 48px #00000059;
   --radius: 8px;
-  --field-radius: 10px;
+  --field-radius: 12px;
   --text-xs: 12px;
   --text-sm: 13px;
   --text-base: 14px;
@@ -89,6 +89,15 @@
   --control-selected-fill: var(--fill-selected);
   --interaction-hover: var(--fill-faint);
   --interaction-active: var(--fill-medium);
+  /*
+   * 精致感基础修复（用户 2026-11-10）：圆角只用 4／6／8／12／16／18／20／24／28px、胶囊与圆形，
+   * 6px 与 18px 只用于嵌套推导（外圆角 = 内圆角 + 内边距）；阴影只用下面三档，主按钮悬停统一一圈淡青柠光。
+   * scripts/check-ui-conventions.mjs 会拦截新的离群圆角、偏色灰与文字透明度。
+   */
+  --shadow-sm: 0 2px 8px #00000066;
+  --shadow-md: 0 12px 32px #00000059;
+  --shadow-lg: 0 24px 64px #00000073;
+  --accent-glow: 0 0 16px #a8ff0020;
   --dismiss-target: 44px;
   --dismiss-disc: 33px;
   --dismiss-foreground: #ffffff;
@@ -283,7 +292,7 @@ small {
 .button--primary:is(:hover, [data-hovered="true"]),
 .primary-action:hover {
   filter: brightness(1.04);
-  box-shadow: 0 0 16px #a8ff0020;
+  box-shadow: var(--accent-glow);
 }
 .button--primary:is(:disabled, [data-disabled="true"]),
 .primary-action:disabled,

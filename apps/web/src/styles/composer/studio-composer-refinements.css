@@ -67,6 +67,8 @@
 .composer-panel .home-ratio-pager {
   position: relative;
   margin-bottom: 0;
+  border-radius: 16px;
+  background: var(--fill-soft);
 }
 .composer-panel .home-ratio-track {
   display: flex;
@@ -81,7 +83,7 @@
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   border-radius: 16px;
-  background: var(--fill-soft);
+  background: transparent;
 }
 .composer-panel .home-ratio-track::-webkit-scrollbar {
   display: none;
@@ -128,7 +130,7 @@
   border-radius: 50%;
   background: var(--fill-selected);
   color: #ddd;
-  box-shadow: 0 2px 8px #00000066;
+  box-shadow: var(--shadow-sm);
   z-index: 2;
 }
 .composer-panel .home-ratio-arrow.button:hover {
@@ -320,7 +322,7 @@
 .account-rows small {
   display: block;
   overflow-wrap: anywhere;
-  color: #a1a1aa;
+  color: #a2a2a2;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }

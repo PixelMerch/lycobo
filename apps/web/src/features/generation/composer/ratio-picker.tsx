@@ -209,7 +209,14 @@ export function HomeRatioPicker({
       <ToggleButtonGroup
         ref={trackRef}
         aria-label={t.frameRatio}
-        className="home-ratio-track"
+        // 标出两侧是否还有更多比例，CSS 让箭头下面的选项渐隐，箭头不再压住半个选项。
+        className={[
+          "home-ratio-track",
+          edges.start && "has-more-start",
+          edges.end && "has-more-end",
+        ]
+          .filter(Boolean)
+          .join(" ")}
         selectionMode="single"
         disallowEmptySelection
         selectedKeys={[value]}

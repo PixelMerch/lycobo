@@ -50,7 +50,7 @@
   border: 1px dashed #ffffff33;
   border-radius: 12px;
   background: #ffffff0a;
-  color: #d9d9de;
+  color: #d9d9d9;
 }
 .home-references .add-reference:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
   border-color: #ffffff59;
@@ -291,7 +291,7 @@
 }
 .home-submit.button[data-active="true"]:is(:hover, [data-hovered="true"]) {
   background: var(--app-primary-gradient);
-  box-shadow: 0 0 24px #a8ff0059;
+  box-shadow: var(--accent-glow);
   filter: brightness(1.04);
 }
 
@@ -302,7 +302,7 @@
   max-width: min(640px, calc(100vw - 32px));
   padding: 19px 21px;
   border: 0;
-  border-radius: 18px;
+  border-radius: 20px;
   color: #ddd;
 }
 .home-settings .popover__dialog {
@@ -400,7 +400,7 @@
   min-width: 0;
   height: 32px;
   border: 0;
-  border-radius: 18px;
+  border-radius: 999px;
   background: transparent;
   color: #aaa;
   padding: var(--space-1);
@@ -439,7 +439,13 @@
   position: relative;
   margin-bottom: 14px;
 }
+/* 轨道底色放在外层，选项渐隐时底色保持完整。 */
+.home-settings-options .home-ratio-pager {
+  border-radius: 16px;
+  background: var(--fill-soft);
+}
 .home-settings-options .home-ratio-track {
+  background: transparent;
   gap: 4px;
   padding: 4px;
   scroll-padding-inline: 4px;
@@ -472,7 +478,7 @@
   border-radius: 50%;
   background: var(--fill-selected);
   color: #ddd;
-  box-shadow: 0 2px 8px #00000066;
+  box-shadow: var(--shadow-sm);
   z-index: 2;
 }
 .home-ratio-arrow.button:hover {

@@ -6,7 +6,7 @@
 .preview-dot-surface {
   position: relative;
   isolation: isolate;
-  background-color: #0b0b0e;
+  background-color: #0b0b0b;
   background-image: radial-gradient(circle, #777 0.5px, transparent 0.8px);
   background-size: 21px 21px;
   background-position: -7.5px -7.5px;
@@ -75,7 +75,7 @@
   padding: 4px;
   border: 0;
   border-radius: 999px;
-  background: #17171b;
+  background: #171717;
 }
 .preview-canvas-toolbar .toggle-button-group,
 .preview-canvas-history {
@@ -117,9 +117,9 @@
   left: 0;
   width: 100%;
   border-radius: 999px;
-  background: #17171b;
+  background: #171717;
   text-align: center;
-  color: #8f8f98;
+  color: #909090;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
   white-space: nowrap;
@@ -176,7 +176,7 @@
   .preview-canvas-toolbar .toggle-button-group,
   .preview-canvas-history {
     flex-direction: row;
-    background: #29282f;
+    background: #292929;
   }
   .preview-canvas-toolbar .button,
   .preview-canvas-toolbar .toggle-button {

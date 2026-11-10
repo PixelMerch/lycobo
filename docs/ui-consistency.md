@@ -59,6 +59,7 @@ pnpm lint运行`scripts/check-ui-conventions.mjs`，以TypeScript AST识别组�
 - Radix、Headless UI、直接React Aria基础件等第二套primitives。
 - HeroUI Button/ToggleButton使用onClick或手写aria-pressed。
 - Button/ToggleButton中的内联尺寸、padding、radius。
+- CSS 中不在档位内的圆角（4／6／8／12／16／18／20／24／28px、999px、50%）、偏蓝紫的旧灰色，以及不在 40／50／60／70／80% 档位内的白色文字透明度（用户 2026-11-10 精致感基础修复后加入）。
 
 原生隐藏file input是文件选择的具名例外，可见入口仍为HeroUI Button。路由适配使用RouterLink，不重做链接键盘。图形编辑等HeroUI没有覆盖的领域按项目已有canvas组件执行。
 

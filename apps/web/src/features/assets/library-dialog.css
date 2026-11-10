@@ -23,7 +23,7 @@
   flex-direction: column;
   min-height: 0;
   height: 100%;
-  background: #0b0b0e;
+  background: #0b0b0b;
   will-change: transform;
 }
 /* 标题栏与应用顶部栏同高，标题与顶部栏内容处在同一垂直中线上。 */
@@ -67,7 +67,7 @@
   top: 0;
   z-index: 2;
   padding-bottom: var(--space-4);
-  background: #0b0b0e;
+  background: #0b0b0b;
 }
 @media (max-width: 767px) {
   .library-dialog .library-header {

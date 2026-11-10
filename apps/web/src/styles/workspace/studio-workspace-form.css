@@ -95,7 +95,7 @@
   right: 0;
   z-index: 1;
   border: 1px solid #ffffff59;
-  color: #ffffffa6;
+  color: #ffffffb3;
   background: var(--composer-group);
   box-shadow: 0 0 0 3px var(--composer-group);
   border-radius: 50%;
@@ -168,7 +168,7 @@
 }
 .parameter-options :is(.button, .toggle-button):disabled,
 .parameter-options :is(.button, .toggle-button)[data-disabled="true"] {
-  color: #8b8794;
+  color: #898989;
   background: transparent;
   opacity: 1;
   cursor: not-allowed;
@@ -204,11 +204,11 @@
 }
 .generation-submit.button:is(:hover, [data-hovered="true"]) {
   filter: brightness(1.04);
-  box-shadow: 0 0 16px #a8ff0020;
+  box-shadow: var(--accent-glow);
 }
 .generation-submit.button:is(:disabled, [data-disabled="true"]) {
   background: var(--fill-medium);
-  color: #8b8794;
+  color: #898989;
   filter: none;
   box-shadow: none;
 }

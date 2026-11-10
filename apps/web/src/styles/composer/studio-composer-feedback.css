@@ -9,6 +9,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
+  column-gap: 6px;
   row-gap: 2px;
 }
 .reference-picker .field-title small {
@@ -58,9 +59,9 @@
 
 @media (hover: hover) {
   .reference-tile .remove-reference:hover {
-    background: #121216e6;
+    background: #121212e6;
     border-color: #ffffff99;
-    color: #ffffffd9;
+    color: #ffffffcc;
   }
 }
 

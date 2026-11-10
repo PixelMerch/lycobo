@@ -60,7 +60,7 @@
   color: var(--accent-foreground);
 }
 .plan-usage-row .plan-usage-upgrade.button:is(:hover, [data-hovered="true"]) {
-  box-shadow: 0 0 24px #a8ff0059;
+  box-shadow: var(--accent-glow);
   filter: brightness(1.04);
 }
 .plan-usage-row .plan-usage-recharge.button {

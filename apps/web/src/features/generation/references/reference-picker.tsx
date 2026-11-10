@@ -99,11 +99,11 @@ export function ReferencePicker({
       <div className="field-title">
         <h2>
           {label ?? t.uploadLabel}
-          <small>
-            {t.limitBefore}
-            {limit}
-            {t.limitAfter}
+          {/* 用安静的“已传/上限”计数代替括号说明；完整句子留给读屏。 */}
+          <small className="reference-count" aria-hidden="true">
+            {references.length}/{limit}
           </small>
+          <span className="sr-only">{t.uploadCount(references.length, limit)}</span>
         </h2>
         <Button
           variant="tertiary"

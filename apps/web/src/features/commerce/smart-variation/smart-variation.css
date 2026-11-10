@@ -185,7 +185,7 @@
   font-size: var(--text-sm);
   color: #eee;
   border: 1px solid #ffffff12;
-  border-radius: 10px;
+  border-radius: 12px;
   line-height: var(--leading-sm);
 }
 .variation-plan-card textarea {
@@ -216,7 +216,7 @@
   flex-wrap: wrap;
 }
 .variation-plan-output > span {
-  color: #a1a1aa;
+  color: #a2a2a2;
   font-size: var(--text-sm);
   white-space: nowrap;
   line-height: var(--leading-sm);
@@ -231,7 +231,7 @@
 .variation-plan-empty {
   padding: 48px 0;
   text-align: center;
-  color: #a1a1aa;
+  color: #a2a2a2;
 }
 @media (max-width: 900px) {
   .variation-history-index {

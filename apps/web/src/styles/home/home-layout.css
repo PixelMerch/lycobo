@@ -165,7 +165,7 @@ body:has(.commerce-home) {
   transition: color 300ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .home-modes .tabs__tab:is(:hover, [data-hovered="true"]) {
-  color: #ffffffd9;
+  color: #ffffffcc;
   opacity: 1;
 }
 .home-modes .tabs__tab[data-selected="true"] {

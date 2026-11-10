@@ -9,7 +9,7 @@
   border-radius: 999px;
   box-shadow: none;
   background: #fff;
-  color: #0b0b0e;
+  color: #0b0b0b;
 }
 .header-login:hover,
 .header-login[data-hovered="true"] {
@@ -126,7 +126,7 @@
 }
 .login-face .login-submit:is(:hover, [data-hovered="true"]) {
   background: var(--app-primary-gradient);
-  box-shadow: 0 0 24px #a8ff0059;
+  box-shadow: var(--accent-glow);
   filter: brightness(1.04);
 }
 /* 第三方与邮箱登录接入前禁用，降低不透明度并在下方说明。 */

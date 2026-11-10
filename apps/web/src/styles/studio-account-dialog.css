@@ -34,14 +34,14 @@
 }
 .account-identity small {
   display: block;
-  color: #a1a1aa;
+  color: #a2a2a2;
 }
 .account-rows {
   display: grid;
   gap: 1px;
   margin: 16px 0 0;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--separator);
 }
 .account-rows > div {
@@ -53,7 +53,7 @@
   background: var(--fill-faint);
 }
 .account-rows dt {
-  color: #a1a1aa;
+  color: #a2a2a2;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }
@@ -68,7 +68,7 @@
   align-items: center;
   gap: 6px;
   margin: 12px 0 16px;
-  color: #a1a1aa;
+  color: #a2a2a2;
   font-size: var(--text-xs);
   line-height: 18px;
 }

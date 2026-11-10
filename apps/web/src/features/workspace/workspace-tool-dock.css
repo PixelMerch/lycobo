@@ -37,7 +37,6 @@
   .workspace-tool-preview-card
 )[data-tool="create"] {
   --tool-accent: #a8ff00;
-  --tool-ink: #142000;
   --tool-soft: #d4ff8a;
 }
 :is(
@@ -48,7 +47,6 @@
   .workspace-tool-preview-card
 )[data-tool="textile"] {
   --tool-accent: #ffb27a;
-  --tool-ink: #3d1a00;
   --tool-soft: #ffcfa8;
 }
 :is(
@@ -59,7 +57,6 @@
   .workspace-tool-preview-card
 )[data-tool="variation"] {
   --tool-accent: #4fe3b0;
-  --tool-ink: #00281b;
   --tool-soft: #9ff0d0;
 }
 :is(
@@ -70,7 +67,6 @@
   .workspace-tool-preview-card
 )[data-tool="video"] {
   --tool-accent: #7cc4ff;
-  --tool-ink: #00213a;
   --tool-soft: #b9e0ff;
 }
 .workspace-tool-symbol {
@@ -137,7 +133,13 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(180deg, #0f0f1200 28%, #0f0f12cc 100%);
+  /* 头图多为浅色床品，压暗加深到文字所在的下半部分，白字与说明在浅色图上也清楚。 */
+  background: linear-gradient(
+    180deg,
+    rgb(0 0 0 / 0%) 18%,
+    rgb(0 0 0 / 45%) 55%,
+    rgb(0 0 0 / 78%) 100%
+  );
 }
 .workspace-composer-hero-copy {
   position: absolute;
@@ -162,7 +164,8 @@
   margin: 0;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
-  color: #ffffffd9;
+  color: #ffffffcc;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 50%);
 }
 @media (max-width: 767px) {
   .workspace-composer-hero {
@@ -183,7 +186,7 @@
   box-sizing: border-box;
   padding: 6px;
   border-radius: 18px;
-  background: #141417;
+  background: #141414;
   box-shadow: none;
   overflow-x: auto;
   scrollbar-width: none;
@@ -201,7 +204,7 @@
   padding: 8px 16px 8px 8px;
   gap: 10px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 12px;
   text-align: left;
   color: var(--muted);
   background: transparent;
@@ -229,7 +232,7 @@
   height: 40px;
   border-radius: 12px;
   background: var(--fill-medium);
-  color: #d9d7de;
+  color: #d8d8d8;
   transition:
     transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
     background-color 180ms ease,
@@ -243,10 +246,11 @@
   background: var(--fill-strong);
   color: var(--tool-accent, #ffffff);
 }
+/* 当前工具用淡色强调底与强调色图标标出，不再用整块饱和色和彩色投影；工具配色仍可区分。 */
 .workspace-tool-shortcut.button[aria-current="page"] .workspace-tool-symbol {
-  background: var(--tool-accent);
-  color: var(--tool-ink);
-  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--tool-accent) 70%, transparent);
+  background: color-mix(in srgb, var(--tool-accent) 18%, transparent);
+  color: var(--tool-accent);
+  box-shadow: none;
 }
 @media (prefers-reduced-motion: no-preference) {
   .workspace-tool-shortcut.button[data-hovered="true"] .workspace-tool-symbol {
@@ -297,11 +301,11 @@
   max-width: calc(100vw - 24px);
   padding: 10px;
   border-radius: 16px;
-  background: #1a1a1e;
+  background: #1a1a1a;
   box-shadow:
     inset 0 0 0 1px #ffffff14,
     0 18px 40px -12px #000000cc;
-  color: #f3f1f7;
+  color: #f2f2f2;
   word-break: normal;
 }
 .workspace-tool-preview-card {
@@ -315,7 +319,7 @@
   grid-template-rows: repeat(2, 66px);
   gap: 4px;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 .workspace-tool-preview-media img {
   width: 100%;
@@ -332,8 +336,8 @@
   left: 6px;
   padding: 1px 6px;
   border-radius: 6px;
-  background: #0f0f12cc;
-  color: #f3f1f7;
+  background: #0f0f0fcc;
+  color: #f2f2f2;
   font-size: 11px;
   line-height: 16px;
 }
@@ -374,7 +378,7 @@
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  color: #d9d7de;
+  color: #d8d8d8;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
   counter-increment: preview-step;

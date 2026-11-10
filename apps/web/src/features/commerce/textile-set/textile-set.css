@@ -33,7 +33,7 @@
   height: auto;
   padding: 8px;
   border: 1px dashed #ffffff29;
-  border-radius: 10px;
+  border-radius: 12px;
   background: transparent;
   color: #aaa;
   white-space: normal;
@@ -102,7 +102,7 @@
   flex-direction: column;
   padding: 12px;
   border: 1px dashed #ffffff29;
-  border-radius: 10px;
+  border-radius: 12px;
   background: transparent;
   color: #aaa;
   font-size: var(--text-sm);
@@ -153,7 +153,7 @@
   border: 0;
   border-radius: 0 8px 0 8px;
   background: #1c1c1ce6;
-  color: #ffffffa6;
+  color: #ffffffb3;
   box-shadow: none;
   opacity: 0;
   pointer-events: none;
@@ -163,8 +163,8 @@
   pointer-events: auto;
 }
 .textile-selected-remove.button:is(:hover, [data-hovered="true"]) {
-  background: #121216e6;
-  color: #ffffffd9;
+  background: #121212e6;
+  color: #ffffffcc;
 }
 @media (hover: none) {
   .textile-selected-remove.button {
@@ -219,7 +219,7 @@ body:has(.textile-views-popover) :is(.composer-scroll, .results-panel, .history-
   border: 0;
   border-radius: 20px;
   background: var(--app-dialog-background);
-  box-shadow: 0 12px 40px #00000040;
+  box-shadow: var(--shadow-md);
 }
 .textile-views-popover:is([data-entering="true"], [data-exiting="true"]) {
   animation: none;

@@ -127,9 +127,8 @@ function Region({
         scaleY={1 / scale}
         listening={false}
       >
-        {/* Neutral dark chip: the number stays legible over both light and dark
-         * photos without adding a second brand accent to the canvas. */}
-        <Circle radius={12} fill="#17171be6" stroke="#ffffff4d" strokeWidth={1} />
+        {/* 中性深色圆片：编号在浅色和深色照片上都清楚，画布上不再多一种品牌色。 */}
+        <Circle radius={12} fill="#171717e6" stroke="#ffffff4d" strokeWidth={1} />
         <Text
           text={String(number)}
           x={-12}

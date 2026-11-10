@@ -19,7 +19,7 @@
   margin: 0;
   padding: 12px 14px;
   border-radius: 8px;
-  background: #111114;
+  background: #111111;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }
@@ -177,7 +177,7 @@
 }
 .video-preview-time {
   margin-left: 4px;
-  color: #ffffffd9;
+  color: #ffffffcc;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
   font-variant-numeric: tabular-nums;
@@ -253,7 +253,7 @@
   border: 0;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 1px 4px #00000066;
+  box-shadow: var(--shadow-sm);
   opacity: 0;
   transition:
     opacity 150ms ease,

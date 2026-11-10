@@ -54,7 +54,7 @@ body:has(.legal-page) {
   line-height: 40px;
 }
 .legal-meta {
-  color: #ffffff73;
+  color: #ffffff80;
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
 }

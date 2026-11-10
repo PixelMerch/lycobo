@@ -65,7 +65,7 @@
 }
 .settings-group-header p {
   margin: 2px 0 0;
-  color: #ffffff73;
+  color: #ffffff80;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }
@@ -97,7 +97,7 @@
   line-height: var(--leading-base);
 }
 .settings-row-hint {
-  color: #ffffff73;
+  color: #ffffff80;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }

@@ -38,7 +38,7 @@
   outline-offset: 2px;
 }
 .reference-tile.reference-image-card .reference-number {
-  color: #ffffffa6;
+  color: #ffffffb3;
   font-weight: var(--weight-regular);
   inset: 0 auto auto 0;
   display: grid;
@@ -95,7 +95,7 @@
   border: 0;
   border-radius: 8px 0 8px 0;
   background: #1c1c1ce6;
-  color: #ffffffa6;
+  color: #ffffffb3;
   box-shadow: none;
   opacity: 0;
   pointer-events: none;
@@ -105,8 +105,8 @@
   pointer-events: auto;
 }
 .reference-tile.reference-image-card .replace-reference.button:is(:hover, [data-hovered="true"]) {
-  background: #121216e6;
-  color: #ffffffd9;
+  background: #121212e6;
+  color: #ffffffcc;
 }
 @media (hover: none) {
   .reference-tile.reference-image-card .replace-reference.button {

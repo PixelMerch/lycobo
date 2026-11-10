@@ -18,7 +18,7 @@
 }
 /* 提示气泡只保留外投影，避免顶部内高光与细边叠加成双线。 */
 :root .tooltip {
-  box-shadow: 0 8px 24px #00000040;
+  box-shadow: var(--shadow-md);
 }
 /* 遮罩只调暗，避免在父层先模糊而截断弹层对页面的磨砂采样。 */
 :root :is(.modal__backdrop, .drawer__backdrop) {
