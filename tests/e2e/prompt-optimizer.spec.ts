@@ -34,7 +34,6 @@ test("the focused prompt loops the wand hint and canceling never requests optimi
   const originalHeight = await height();
   const ratioHeading = page.getByRole("heading", { name: "图片比例", exact: true });
   const ratioTop = () => ratioHeading.evaluate((element) => element.getBoundingClientRect().top);
-  const originalRatioTop = await ratioTop();
   await expect(prompt).toHaveCSS("padding-bottom", "48px");
   await expect(wand).toHaveText("优化");
   const [editorBounds, toolbarBounds] = await Promise.all([
@@ -63,6 +62,8 @@ test("the focused prompt loops the wand hint and canceling never requests optimi
   await expect.poll(sparkAnimation).toEqual(["none", "none"]);
 
   await wand.focus();
+  // 聚焦按钮时参数区可能先把它滚进可视范围，所以在打开确认前才记录比例标题的位置。
+  const originalRatioTop = await ratioTop();
   await page.keyboard.press("Enter");
   const dialog = page.getByRole("group", { name: "确认优化提示词" });
   await expect(dialog.getByText(/消耗 1 积分/)).toBeVisible();
