@@ -551,7 +551,7 @@ test("home uses Lycobo's own brand language instead of copying the reference loo
 test("home footer links only to real pages", async ({ page }) => {
   await mockImageApi(page);
   await page.goto("/");
-  const footer = page.locator(".home-footer");
+  const footer = page.locator(".site-footer");
   await footer.scrollIntoViewIfNeeded();
   const links = footer.getByRole("link");
   await expect(links).toHaveText([
@@ -563,6 +563,8 @@ test("home footer links only to real pages", async ({ page }) => {
     "工作区",
     "素材库",
     "会员订阅",
+    "用户协议",
+    "隐私政策",
   ]);
   const hrefs = await links.evaluateAll((items) => items.map((item) => item.getAttribute("href")));
   expect(hrefs).toEqual([
@@ -574,6 +576,8 @@ test("home footer links only to real pages", async ({ page }) => {
     "/workspace",
     "/assets",
     "/membership",
+    "/terms",
+    "/privacy",
   ]);
   await expect(footer).toContainText(`© ${new Date().getFullYear()} Lycobo。保留所有权利。`);
 });
