@@ -1,7 +1,7 @@
 import { Drawer } from "@heroui/react";
 import { IconFolderSparkle, IconMenu2, IconSmartHome, IconX } from "@tabler/icons-react";
 import { useState } from "react";
-import { Navigate, Outlet, useLocation } from "react-router";
+import { Navigate, Outlet } from "react-router";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
 import { AccountOverlayHost } from "../features/account/account-overlays";
@@ -17,6 +17,7 @@ import { shareProductReference, workspaceTools } from "../features/workspace/wor
 import { workspaceToolMessages } from "../features/workspace/workspace-tool-messages";
 import { toolIcons } from "../features/workspace/workspace-tool-symbol";
 import { useMessages } from "../i18n/messages";
+import { useAppLocation } from "../i18n/use-localized-navigation";
 import { CommerceNavMenu } from "./commerce-nav-menu";
 import { LanguageMenu } from "./language-menu";
 import { PageLoading } from "./page-loading";
@@ -34,7 +35,7 @@ const publicPaths = new Set<string>([
 
 /** 组合应用导航和业务区域，未登录时转往独立登录页面。 */
 export function StudioShell() {
-  const location = useLocation();
+  const location = useAppLocation();
   const { pathname } = location;
   const inWorkspace = isWorkspacePath(pathname);
   const session = useEnterpriseSession();
@@ -45,7 +46,12 @@ export function StudioShell() {
   const [menuOpen, setMenuOpen] = useState(false);
   const t = useMessages(shellMessages);
   if (routeNeedsLogin && !session.isPending)
-    return <Navigate to={loginHref(`${pathname}${location.search}${location.hash}`)} replace />;
+    return (
+      <Navigate
+        to={loginHref(`${location.pathnameWithLocale}${location.search}${location.hash}`)}
+        replace
+      />
+    );
   return (
     <div className="studio-app">
       <header className="topbar" data-scrolled={scrolled || undefined}>

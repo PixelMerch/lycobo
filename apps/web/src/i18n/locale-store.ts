@@ -1,7 +1,10 @@
 import { create } from "zustand";
 import { detectLocale, type Locale, parseLocale } from "./locale";
+import { localeFromPath } from "./locale-path";
 
 const storageKey = "lycobo.locale";
+const pathLocale =
+  typeof window === "undefined" ? null : localeFromPath(window.location?.pathname ?? "");
 
 // 隐私模式或禁用存储时读不到，按没有保存处理。
 function readSavedLocale() {
@@ -25,10 +28,10 @@ function browserLanguages() {
   return [navigator.language];
 }
 
-/** 当前界面语言：首次访问跟随浏览器语言，用户在语言菜单里选过之后记住选择。 */
+/** URL 语言优先；无前缀入口才使用已保存选择或浏览器语言。 */
 export const useLocaleStore = create<{ locale: Locale; setLocale: (locale: Locale) => void }>(
   (set) => ({
-    locale: readSavedLocale() ?? detectLocale(browserLanguages()),
+    locale: pathLocale ?? readSavedLocale() ?? detectLocale(browserLanguages()),
     setLocale: (locale) => {
       saveLocale(locale);
       set({ locale });

@@ -1,18 +1,18 @@
 import { Dropdown } from "@heroui/react";
 import { IconChevronDown } from "@tabler/icons-react";
-import { useLocation, useNavigate } from "react-router";
 import { UiIcon } from "../components/ui-icon";
 import { shareProductReference, workspaceTools } from "../features/workspace/workspace-state";
 import { workspaceToolMessages } from "../features/workspace/workspace-tool-messages";
 import { toolIcons } from "../features/workspace/workspace-tool-symbol";
 import { useMessages } from "../i18n/messages";
+import { useAppLocation, useAppNavigate } from "../i18n/use-localized-navigation";
 import { useHoverMenu } from "../lib/use-hover-menu";
 import { shellMessages } from "./shell-messages";
 
 /** 顶部栏“电商”入口：展开四个创作工具，选中后进入工具，并沿用工具坞只向空图片槽带图的规则。 */
 export function CommerceNavMenu({ active }: { active: boolean }) {
-  const { pathname } = useLocation();
-  const navigate = useNavigate();
+  const { pathname } = useAppLocation();
+  const navigate = useAppNavigate();
   const menu = useHoverMenu();
   const t = useMessages(shellMessages);
   const toolText = useMessages(workspaceToolMessages);

@@ -1,10 +1,10 @@
 import { Button } from "@heroui/react";
 import { IconLayoutCollage, IconPhotoPlus, IconPlus, IconSparkles } from "@tabler/icons-react";
 import { type ReactNode, useRef } from "react";
-import { useNavigate } from "react-router";
 import { ReferencePrompt } from "../../components/reference-prompt/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
+import { useAppNavigate } from "../../i18n/use-localized-navigation";
 import { LoginRequiredInteraction } from "../auth/login-prompt";
 import type { PromptOptimizeTool } from "../generation/references/prompt-optimizer-client";
 import { ReferencePicker } from "../generation/references/reference-picker";
@@ -177,7 +177,7 @@ function ComposerShell({
   settings?: ReactNode;
   canStart: boolean;
 }) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const t = useMessages(homeMessages);
   return (
     <LoginRequiredInteraction className="home-composer">

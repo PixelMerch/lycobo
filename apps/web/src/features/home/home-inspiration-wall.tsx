@@ -8,9 +8,9 @@ import {
 } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
+import { useAppNavigate } from "../../i18n/use-localized-navigation";
 import { SelectionHighlight } from "../generation/composer/selection-highlight";
 import {
   type HomeInspiration,
@@ -46,7 +46,7 @@ export function InspirationWall({
   onUse: (item: HomeInspiration) => void;
 }) {
   const t = useMessages(homeInspirationMessages);
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [category, setCategory] = useState<InspirationCategory>("all");
   const visible = items.filter((item) => category === "all" || item.category === category);
   const paging = useInspirationPaging(visible.length, category);

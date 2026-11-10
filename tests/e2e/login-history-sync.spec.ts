@@ -88,7 +88,7 @@ test("login returns to the target and logout keeps the draft without a document 
   await expect(page.locator(".generation-job")).toHaveCount(0);
   await expect(page.locator(".composer-panel")).toHaveCount(0);
   await dialog.getByRole("button", { name: "关闭登录", exact: true }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("登录后的创作草稿");
 });
 

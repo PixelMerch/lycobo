@@ -1,24 +1,31 @@
 import { Dropdown, type Selection } from "@heroui/react";
 import { IconChevronDown, IconWorld } from "@tabler/icons-react";
+import { useLocation, useNavigate } from "react-router";
 import { UiIcon } from "../components/ui-icon";
 import { localeNames, localeShortNames, locales, parseLocale } from "../i18n/locale";
+import { localizedPath } from "../i18n/locale-path";
 import { useLocaleStore } from "../i18n/locale-store";
 import { useMessages } from "../i18n/messages";
 import { useHoverMenu } from "../lib/use-hover-menu";
 import { shellMessages } from "./shell-messages";
 import "./language-menu.css";
 
-/** 顶部栏语言入口：悬停或点按展开，选中后整站立即换成该语言，并记住这次选择。 */
+/** 切换当前页面的语言路径，保留参数、历史状态与滚动位置。 */
 export function LanguageMenu() {
   const locale = useLocaleStore((state) => state.locale);
-  const setLocale = useLocaleStore((state) => state.setLocale);
+  const location = useLocation();
+  const navigate = useNavigate();
   const t = useMessages(shellMessages);
   const menu = useHoverMenu();
   function select(keys: Selection) {
     menu.close();
     if (keys === "all") return;
     const next = parseLocale(Array.from(keys)[0]);
-    if (next) setLocale(next);
+    if (!next || next === locale) return;
+    void navigate(localizedPath(`${location.pathname}${location.search}${location.hash}`, next), {
+      state: location.state,
+      preventScrollReset: true,
+    });
   }
   return (
     <Dropdown isOpen={menu.isOpen} onOpenChange={menu.onOpenChange}>

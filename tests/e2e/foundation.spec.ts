@@ -18,7 +18,7 @@ test("workspace entry opens creation with direct tool navigation", async ({ page
 
 test("old entry links recover to current home; malformed model is rejected", async ({ page }) => {
   await page.goto("/design/canvas?task=demo-skin");
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("让每件商品，都有一张好主图");
   await page.goto("/commerce/create/not%20a%20model");
   await expect(page.getByRole("heading", { name: "页面暂时无法打开" })).toBeVisible();

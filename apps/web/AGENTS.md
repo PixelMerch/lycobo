@@ -9,6 +9,9 @@ Keep route pages in src/features and shared application shell in src/app.
 Use concrete feature imports, route-level lazy loading and AbortSignal-aware requests.
 All API paths are relative /api; never read private runtime environment values.
 Local uploads stay preview-only until submission; the server validates and stores them.
+Page URLs use /zh-CN and /en prefixes. Use RouteLink and useAppNavigate for page navigation,
+and useAppLocation for business-path comparisons. Preserve locale on login and task-result
+navigation; never prefix API, WebSocket, image or font URLs. See docs/localized-routing.md.
 
 ## Frontend and design
 

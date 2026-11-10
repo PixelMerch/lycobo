@@ -199,7 +199,7 @@ for (const viewport of [
     });
     await close.click();
     await expect(dialog).toHaveCount(0);
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   });
 }
 
@@ -273,7 +273,7 @@ test("asset authorization failure requests reauthentication even with a cached i
     route.fulfill({ status: 401, json: apiFixture({}, 401) }),
   );
   await page.goto("/assets");
-  await expect(page).toHaveURL(/\/login\?returnTo=%2Fassets&reauth=1$/);
+  await expect(page).toHaveURL(/\/zh-CN\/login\?returnTo=%2Fzh-CN%2Fassets&reauth=1$/);
   await page.getByRole("button", { name: "企业账号登录", exact: true }).click();
   await expect(page.getByLabel("企业账号", { exact: true })).toBeFocused();
   await expect(page.locator(".asset-browser")).toHaveCount(0);
@@ -283,15 +283,15 @@ test("login return target survives refresh and rejects external destinations", a
   await page.goto("/commerce/create?task=fixture#result");
   await expect(page).toHaveURL(/\/login\?/);
   expect(new URL(page.url()).searchParams.get("returnTo")).toBe(
-    "/commerce/create?task=fixture#result",
+    "/zh-CN/commerce/create?task=fixture#result",
   );
   await page.reload();
   await expect(page.getByRole("button", { name: "企业账号登录", exact: true })).toBeVisible();
   expect(new URL(page.url()).searchParams.get("returnTo")).toBe(
-    "/commerce/create?task=fixture#result",
+    "/zh-CN/commerce/create?task=fixture#result",
   );
   await page.goto("/login?returnTo=https%3A%2F%2Fexample.com%2F");
-  const homeUrl = new URL("/", page.url()).href;
+  const homeUrl = new URL("/zh-CN", page.url()).href;
   await page.getByRole("button", { name: "关闭登录", exact: true }).click();
   await expect(page).toHaveURL(homeUrl);
 });

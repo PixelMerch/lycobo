@@ -1,12 +1,12 @@
 import { Button, Modal } from "@heroui/react";
 import { IconCopy } from "@tabler/icons-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
 import { ConfirmDialog } from "../../components/overlays/confirm-dialog";
 import { DialogClose } from "../../components/overlays/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
 import { useLocale } from "../../i18n/locale-store";
 import { useMessages } from "../../i18n/messages";
+import { useAppNavigate } from "../../i18n/use-localized-navigation";
 import { copyToClipboard } from "../../lib/clipboard";
 import { useRequireLogin } from "../auth/login-prompt";
 import { defaultDraft, useStudioStore } from "../generation/studio-state";
@@ -20,7 +20,7 @@ import "./home-inspiration-gallery.css";
  * 首页作品墙分批加载后给出“查看更多案例”；案例库页面传 library，一次显示全部。
  */
 export function HomeInspirationGallery({ library = false }: { library?: boolean }) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const requireLogin = useRequireLogin();
   const t = useMessages(homeInspirationMessages);
   const inspirations = homeInspirationsFor(useLocale());

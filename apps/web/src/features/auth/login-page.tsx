@@ -2,10 +2,13 @@ import { Button, Link } from "@heroui/react";
 import { IconBuilding, IconChevronRight, IconX } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
-import { Navigate, useNavigate, useSearchParams } from "react-router";
+import { Navigate, useSearchParams } from "react-router";
 import { PageLoading } from "../../app/page-loading";
 import { UiIcon } from "../../components/ui-icon";
+import { localizedPath } from "../../i18n/locale-path";
+import { useLocale } from "../../i18n/locale-store";
 import { useMessages } from "../../i18n/messages";
+import { useAppNavigate } from "../../i18n/use-localized-navigation";
 import { type LegalDocumentId, legalPaths } from "../legal/legal-document";
 import { legalMessages } from "../legal/legal-messages";
 import { useEnterpriseSession } from "./auth-client";
@@ -20,9 +23,10 @@ import "./login-page.css";
 /** 独立全屏登录页：丝绸背景上居中一张登录卡片，以翻面切换登录方式，不叠加两套表单。 */
 export function LoginPage() {
   const session = useEnterpriseSession();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [params] = useSearchParams();
-  const returnTo = safeLoginReturnTo(params.get("returnTo"));
+  const locale = useLocale();
+  const returnTo = localizedPath(safeLoginReturnTo(params.get("returnTo")), locale);
   if (session.isPending) return <PageLoading />;
   if (session.data && params.get("reauth") !== "1") return <Navigate to={returnTo} replace />;
   return (
@@ -119,9 +123,10 @@ function LoginCard({
 function LoginAgreement() {
   const t = useMessages(authMessages);
   const legal = useMessages(legalMessages);
+  const locale = useLocale();
   const link = (id: LegalDocumentId) => (
     <Link
-      href={legalPaths[id]}
+      href={localizedPath(legalPaths[id], locale)}
       target="_blank"
       rel="noopener noreferrer"
       className="login-agreement-link"

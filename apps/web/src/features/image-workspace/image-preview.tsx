@@ -2,10 +2,10 @@ import { Modal } from "@heroui/react";
 import { motion } from "motion/react";
 import type { RefObject } from "react";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
 import { ConfirmDialog } from "../../components/overlays/confirm-dialog";
 import { DialogClose } from "../../components/overlays/dialog-close";
 import { useCenteredDialogMotion } from "../../components/overlays/use-centered-dialog-motion";
+import { useAppNavigate } from "../../i18n/use-localized-navigation";
 import { useImageSession } from "../generation/generation-client";
 import { ImagePreviewRail } from "./image-preview-rail";
 import { repairDraftKey, useRepairDrafts } from "./local-edit/local-repair-state";
@@ -60,7 +60,7 @@ export function ImagePreviewDialog({
 }) {
   const t = useMessages(imageWorkspaceMessages);
   const images = originalImages;
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const historyTask = useRef<string | null>(null);
   const [repair, setRepair] = useState(false);
   const [exitConfirm, setExitConfirm] = useState(false);

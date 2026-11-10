@@ -359,7 +359,7 @@ test("home inspiration cards offer 做同款 by hover or keyboard without submit
   const makeOther = gallery.getByRole("button", { name: "做同款：原木与晨光", exact: true });
   await clickCenter(makeOther);
   await page.getByRole("button", { name: "保留当前内容", exact: true }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await hoverNearTop(other);
   await clickCenter(makeOther);
   await page.getByRole("button", { name: "替换并进入", exact: true }).click();
@@ -445,7 +445,7 @@ test("templates fill the prompt in place, confirm replacement and never submit p
   await templates.getByRole("button", { name: "场景主图", exact: true }).click();
   await page.getByRole("button", { name: "替换", exact: true }).click();
   await expect(prompt).toHaveValue(/真实自然的使用场景/);
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   expect(submissions).toBe(0);
 });
 
@@ -471,7 +471,7 @@ test("home modes keep each tool's draft and hand off to the matching workspace t
   await prompt.fill("镜头推近展示面料");
 
   await modes.getByRole("tab", { name: "主图制作" }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await expect(prompt).toHaveValue("主图描述");
   await modes.getByRole("tab", { name: "视频创作" }).click();
   await expect(prompt).toHaveValue("镜头推近展示面料");
@@ -588,7 +588,6 @@ test("home footer links only to real pages", async ({ page }) => {
     "主图制作",
     "家纺裂变",
     "套图计划",
-    "视频创作",
     "工作区",
     "素材库",
     "会员订阅",
@@ -597,16 +596,15 @@ test("home footer links only to real pages", async ({ page }) => {
   ]);
   const hrefs = await links.evaluateAll((items) => items.map((item) => item.getAttribute("href")));
   expect(hrefs).toEqual([
-    "/",
-    "/commerce/create",
-    "/commerce/textile-set",
-    "/commerce/smart-variation",
-    "/video",
-    "/workspace",
-    "/assets",
-    "/membership",
-    "/terms",
-    "/privacy",
+    "/zh-CN",
+    "/zh-CN/commerce/create",
+    "/zh-CN/commerce/textile-set",
+    "/zh-CN/commerce/smart-variation",
+    "/zh-CN/workspace",
+    "/zh-CN/assets",
+    "/zh-CN/membership",
+    "/zh-CN/terms",
+    "/zh-CN/privacy",
   ]);
   await expect(footer).toContainText(`© ${new Date().getFullYear()} Lycobo。保留所有权利。`);
 });

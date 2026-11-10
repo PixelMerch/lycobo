@@ -10,7 +10,7 @@ AI 开发按 [任务阅读索引](docs/ai-workflow.md) 读取相关目录和依�
 | apps/web/src/app                     | 路由、共享应用壳（studio-shell.tsx）、providers                                                |
 | apps/web/src/features                | 按业务功能组织：首页、身份、账户、素材、生图与图片编辑工作区                                   |
 | apps/web/src/lib                     | 浏览器 API 客户端与工具                                                                        |
-| apps/web/src/i18n                    | 界面语言：浏览器语言检测、语言存储、文案目录工具与 HeroUI 语言同步                             |
+| apps/web/src/i18n                    | 语言前缀、业务路径导航、语言偏好、文案目录与 HeroUI 语言同步；规则见 docs/localized-routing.md |
 | apps/web/src/styles                  | 共享设计 tokens 与全局基础样式                                                                 |
 | apps/api/src                         | Hono 入口、应用工厂、配置与组织隔离的生图 feature API                                          |
 | apps/assets/src                      | 隔离本地开发的 Node/S3 资源服务；生产资源由 Workers 签名校验后读取 R2，缺失变体通过 Queue 补齐 |

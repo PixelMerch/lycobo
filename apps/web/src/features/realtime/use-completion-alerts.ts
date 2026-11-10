@@ -1,15 +1,15 @@
 import { toast } from "@heroui/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { useNavigate } from "react-router";
 import { currentMessages } from "../../i18n/messages";
+import { useAppNavigate } from "../../i18n/use-localized-navigation";
 import { createCompletionAlerts } from "./completion-alerts";
 import { observeCompletedJobs } from "./completion-observer";
 import { realtimeMessages } from "./realtime-messages";
 
 /** 在应用壳维持提醒生命周期，查看结果只导航历史，不恢复或清空草稿。 */
 export function useCompletionAlerts(userId?: string, organizationId?: string) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const client = useQueryClient();
   useEffect(() => {
     if (!userId || !organizationId) return;

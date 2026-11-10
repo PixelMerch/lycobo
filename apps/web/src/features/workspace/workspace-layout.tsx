@@ -1,8 +1,9 @@
 import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { imageResolutionSchema, mainImageModelIds } from "@lycoboai/contracts";
 import { useEffect, useState } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router";
+import { Outlet } from "react-router";
 import { ConfirmDialog } from "../../components/overlays/confirm-dialog";
+import { useAppLocation, useAppNavigate } from "../../i18n/use-localized-navigation";
 import { useSmartVariationDraft } from "../commerce/smart-variation/smart-variation-state";
 import { useTextileSetDraft } from "../commerce/textile-set/textile-set-state";
 import { GenerationHistory } from "../generation/history/generation-history";
@@ -23,8 +24,8 @@ type RestoredTask = Parameters<HistoryRestore>[0];
 /** 组合工具与历史区域，显式结果定位不覆盖当前创作草稿。 */
 export function WorkspaceLayout() {
   const t = useMessages(workspaceToolMessages);
-  const { pathname, search } = useLocation();
-  const navigate = useNavigate();
+  const { pathname, search } = useAppLocation();
+  const navigate = useAppNavigate();
   const remember = useWorkspaceState((state) => state.setLastPath);
   const [mobilePanel, setMobilePanel] = useState(() =>
     new URLSearchParams(search).has("task") ? "history" : "form",

@@ -1,10 +1,10 @@
 import { Button, Dropdown, Separator } from "@heroui/react";
 import { IconLogout, IconPhoto, IconSettings } from "@tabler/icons-react";
 import { useRef } from "react";
-import { useNavigate } from "react-router";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
+import { useAppNavigate } from "../../../i18n/use-localized-navigation";
 import { useErrorToast } from "../../../lib/error-toast";
 import { useEnterpriseLogout, useEnterpriseSession } from "../../auth/auth-client";
 import { useOpenLogin } from "../../auth/login-prompt";
@@ -45,7 +45,7 @@ export function AccountMenu({
 }) {
   const session = useEnterpriseSession();
   const logout = useEnterpriseLogout();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const openSettings = useAccountOverlays((state) => state.openSettings);
   const t = useMessages(accountMenuMessages);

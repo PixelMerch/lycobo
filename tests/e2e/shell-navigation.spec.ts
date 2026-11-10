@@ -22,7 +22,7 @@ test("top navigation stays in one row and keeps drafts across desktop and mobile
   const main = await page.locator(".main-content").boundingBox();
   expect(main?.x).toBe(0);
   await navigation.getByRole("link", { name: "首页", exact: true }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   // 电商入口悬停或点击都展开四个工具，选择后回到原工具且草稿仍在。
   await commerce.hover();
   const tools = page.getByRole("menu", { name: "电商" });
@@ -73,7 +73,7 @@ for (const mobile of [false, true]) {
       const login = page.locator(".login-page");
       await expect(login).toBeVisible();
       await login.getByRole("button", { name: "关闭登录", exact: true }).click();
-      await expect(page).toHaveURL(/\/$/);
+      await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
     }
   });
 }
@@ -104,7 +104,7 @@ for (const path of [
     await expect(page.locator(".composer-panel, .asset-browser")).toHaveCount(0);
     expect(requests).toEqual([]);
     await login.getByRole("button", { name: "关闭登录", exact: true }).click();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   });
 }
 
@@ -148,7 +148,7 @@ for (const action of [
     await login.getByRole("button", { name: "关闭登录", exact: true }).click();
     await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("");
     await expect(page.locator(".reference-image-card")).toHaveCount(0);
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   });
 }
 
@@ -167,6 +167,6 @@ test("homepage inspirations remain browsable while applying a prompt requires lo
   const login = page.locator(".login-page");
   await expect(login).toBeVisible();
   await login.getByRole("button", { name: "关闭登录", exact: true }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("");
 });

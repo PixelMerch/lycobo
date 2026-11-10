@@ -6,7 +6,11 @@ export function safeLoginReturnTo(input: unknown): string {
   try {
     const url = new URL(input, loginOrigin);
     if (url.origin !== loginOrigin) return "/";
-    if (!/^\/(?:$|commerce(?:\/|$)|workspace$|assets$|video$|membership$)/.test(url.pathname))
+    if (
+      !/^\/(?:$|commerce(?:\/|$)|workspace$|assets$|video$|membership$|inspiration$)/.test(
+        withoutLocale(url.pathname),
+      )
+    )
       return "/";
     return `${url.pathname}${url.search}${url.hash}`;
   } catch {
@@ -15,6 +19,12 @@ export function safeLoginReturnTo(input: unknown): string {
 }
 
 /** 将原始目标地址带入独立登录页面，不把凭证或草稿写进地址。 */
-export function loginHref(returnTo: string): string {
-  return `/login?returnTo=${encodeURIComponent(safeLoginReturnTo(returnTo))}`;
+export function loginHref(
+  returnTo: string,
+  locale: Locale = localeFromPath(returnTo) ?? "en",
+): string {
+  return `${localizedPath("/login", locale)}?returnTo=${encodeURIComponent(safeLoginReturnTo(returnTo))}`;
 }
+
+import type { Locale } from "../../i18n/locale";
+import { localeFromPath, localizedPath, withoutLocale } from "../../i18n/locale-path";
