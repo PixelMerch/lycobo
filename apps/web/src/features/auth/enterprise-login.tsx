@@ -7,14 +7,7 @@ import {
   TextField,
   ToggleButton,
 } from "@heroui/react";
-import {
-  IconArrowLeft,
-  IconArrowRight,
-  IconEye,
-  IconEyeOff,
-  IconLock,
-  IconUser,
-} from "@tabler/icons-react";
+import { IconArrowLeft, IconArrowRight, IconEye, IconEyeOff } from "@tabler/icons-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { currentMessages, useMessages } from "../../i18n/messages";
@@ -132,9 +125,6 @@ function EnterpriseFields({ form }: { form: ReturnType<typeof useEnterpriseForm>
       >
         <Label>{t.account}</Label>
         <InputGroup className="login-input-group">
-          <InputGroup.Prefix>
-            <UiIcon icon={IconUser} />
-          </InputGroup.Prefix>
           <InputGroup.Input
             ref={form.accountInput}
             autoComplete="username"
@@ -158,9 +148,6 @@ function EnterpriseFields({ form }: { form: ReturnType<typeof useEnterpriseForm>
       >
         <Label>{t.password}</Label>
         <InputGroup className="login-input-group">
-          <InputGroup.Prefix>
-            <UiIcon icon={IconLock} />
-          </InputGroup.Prefix>
           <InputGroup.Input
             ref={form.passwordInput}
             autoComplete="current-password"

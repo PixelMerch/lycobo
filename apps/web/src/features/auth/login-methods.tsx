@@ -1,5 +1,5 @@
 import { Button, Description, InputGroup, Label, TextField } from "@heroui/react";
-import { IconBrandAppleFilled, IconBrandGoogleFilled, IconMail } from "@tabler/icons-react";
+import { IconBrandAppleFilled, IconBrandGoogleFilled } from "@tabler/icons-react";
 import { useId } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
@@ -21,14 +21,12 @@ export function LoginMethods() {
           {t.apple}
         </Button>
       </div>
-      <span className="login-divider">{t.orEmail}</span>
+      <span className="login-divider">{t.or}</span>
       <div className="login-fields login-email">
         <TextField name="email" type="email" isDisabled aria-describedby={unavailableId}>
-          <Label>{t.email}</Label>
+          {/* 邮箱框只显示占位文字，名称留给读屏软件。 */}
+          <Label className="visually-hidden">{t.email}</Label>
           <InputGroup className="login-input-group">
-            <InputGroup.Prefix>
-              <UiIcon icon={IconMail} />
-            </InputGroup.Prefix>
             <InputGroup.Input autoComplete="email" placeholder={t.emailPlaceholder} />
           </InputGroup>
         </TextField>
@@ -40,10 +38,10 @@ export function LoginMethods() {
         >
           {t.sendCode}
         </Button>
-        <Description id={unavailableId} className="login-unavailable">
-          {t.otherMethodsUnavailable}
-        </Description>
       </div>
+      <Description id={unavailableId} className="login-unavailable">
+        {t.otherMethodsUnavailable}
+      </Description>
     </div>
   );
 }
