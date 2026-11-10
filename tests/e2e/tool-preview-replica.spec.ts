@@ -6,7 +6,9 @@ const png = readFileSync(
   new URL("../../apps/web/public/studio/textile-views/front.webp", import.meta.url),
 );
 
-test("tool preview does not navigate or erase a draft and video has no entry", async ({ page }) => {
+test("tool menu hover stays quiet while the banner retains examples and drafts survive switching", async ({
+  page,
+}) => {
   await mockImageApi(page);
   await page.goto("/zh-CN/commerce/create");
   const prompt = page.locator("textarea").first();
@@ -17,12 +19,12 @@ test("tool preview does not navigate or erase a draft and video has no entry", a
   await page.mouse.move(600, 80);
   await rail.getByRole("button", { name: "家纺裂变", exact: true }).hover();
   const preview = page.locator(".workspace-tool-preview-card");
+  // 覆盖原来的300ms延迟，确认菜单不会稍后再弹出示例。
+  await page.waitForTimeout(450);
+  await expect(preview).toHaveCount(0);
+  await page.locator(".workspace-composer-hero").hover();
   await expect(preview).toBeVisible();
   await expect(preview).toContainText("效果示例");
-  await expect(preview).not.toContainText("正在使用");
-  await page.screenshot({
-    path: "/Users/ranen/.codex/visualizations/lycobo-custom-final/tool-preview.png",
-  });
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(prompt).toHaveValue("保留当前商品草稿");
   await page.keyboard.press("Escape");
@@ -81,6 +83,8 @@ test("reduced-motion keyboard preview is static and home hides video", async ({ 
     .locator(".workspace-tool-bar")
     .getByRole("button", { name: "复制爆款", exact: true });
   await button.focus();
+  await expect(page.locator(".workspace-tool-preview-card")).toHaveCount(0);
+  await page.locator(".workspace-composer-hero").focus();
   const preview = page.locator(".workspace-tool-preview-card");
   await expect(preview).toBeVisible();
   await expect(preview.locator(".workspace-tool-preview-source")).toBeHidden();

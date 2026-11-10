@@ -4,20 +4,21 @@ import { useMessages } from "../../i18n/messages";
 import { useAppLocation, useAppNavigate } from "../../i18n/use-localized-navigation";
 import { shareProductReference, toolForPath, visibleWorkspaceTools } from "./workspace-state";
 import { workspaceToolMessages } from "./workspace-tool-messages";
-import { WorkspaceToolPreview } from "./workspace-tool-preview";
 import { WorkspaceToolSymbol } from "./workspace-tool-symbol";
+import { useWorkspaceView } from "./workspace-view-preferences";
 
-/** 工具切换保留草稿，悬停或键盘聚焦显示动态商品示例。 */
+/** 工具切换不弹示例；收起时只提示名称，保留原有草稿切换规则。 */
 export function WorkspaceToolPicker() {
   const { pathname } = useAppLocation();
   const navigate = useAppNavigate();
   const current = toolForPath(pathname);
   const t = useMessages(workspaceToolMessages);
+  const collapsed = useWorkspaceView((state) => state.toolRailCollapsed);
   return (
     <MotionConfig reducedMotion="user">
       <motion.nav layoutScroll className="workspace-tool-bar" aria-label={t.toolBar}>
         {visibleWorkspaceTools.map((tool) => (
-          <Tooltip key={tool.id} delay={300} closeDelay={80}>
+          <Tooltip key={tool.id} delay={300} closeDelay={80} isDisabled={!collapsed}>
             <Button
               size="sm"
               variant="tertiary"
@@ -43,9 +44,7 @@ export function WorkspaceToolPicker() {
                 <span className="workspace-tool-name">{t.tools[tool.id].name}</span>
               </span>
             </Button>
-            <Tooltip.Content placement="right top" offset={10} className="workspace-tool-preview">
-              <WorkspaceToolPreview tool={tool} />
-            </Tooltip.Content>
+            <Tooltip.Content placement="right">{t.tools[tool.id].name}</Tooltip.Content>
           </Tooltip>
         ))}
       </motion.nav>

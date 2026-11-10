@@ -79,9 +79,9 @@
   margin-inline: 6px;
 }
 .unified-workspace .generation-job .model-tag {
-  background: color-mix(in srgb, var(--tool-accent) 15%, transparent);
-  color: var(--tool-soft);
-  font-weight: var(--weight-semibold);
+  background: var(--fill-medium);
+  color: #ffffff;
+  font-weight: var(--weight-medium);
 }
 .unified-workspace .generation-job :is(.model-tag, .prompt-toggle.button) {
   font-size: 11px;
