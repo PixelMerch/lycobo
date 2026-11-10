@@ -174,10 +174,10 @@ test("regenerate submits the original snapshot once and leaves the composer draf
   const confirm = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
   await expect(confirm).toBeVisible();
   await expect(confirm.locator(".confirm-dialog__content")).toHaveText("本次消耗 2 积分");
-  // The panel is a borderless black sheet on a blurred, veiled page, and both
-  // the dismiss action and the corner close glyph read as white on it.
-  await expect(confirm).toHaveCSS("border-top-width", "0px");
-  await expect(confirm).toHaveCSS("background-color", "rgb(0, 0, 0)");
+  // 确认面板使用共享深色玻璃（1px 细边、半透明深底、28px 模糊），取消文字和右上关闭图标在上面保持可读。
+  await expect(confirm).toHaveCSS("border-top-width", "1px");
+  await expect(confirm).toHaveCSS("background-color", "rgba(15, 15, 18, 0.42)");
+  await expect(confirm).toHaveCSS("backdrop-filter", "blur(28px) saturate(1.8)");
   await expect(confirm.locator(".confirm-dialog__content")).toHaveCSS(
     "color",
     "rgb(184, 184, 192)",

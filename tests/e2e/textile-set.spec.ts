@@ -203,8 +203,12 @@ for (const width of [2560, 1440, 390]) {
     }
     const box = await dialog.boundingBox();
     expect(box && box.x >= 0 && box.x + box.width <= width).toBeTruthy();
+    // 非模态浮层不加全屏遮罩；面板自身使用共享玻璃材质。
     await expect(page.locator(".modal__backdrop")).toHaveCount(0);
-    await expect(page.locator(".textile-views-popover")).toHaveCSS("backdrop-filter", "none");
+    await expect(page.locator(".textile-views-popover")).toHaveCSS(
+      "backdrop-filter",
+      "blur(28px) saturate(1.8)",
+    );
     const form = page.getByRole("region", { name: "家纺裂变参数", exact: true });
     expect(await form.evaluate((el) => el.closest('[aria-hidden="true"], [inert]') === null)).toBe(
       true,
