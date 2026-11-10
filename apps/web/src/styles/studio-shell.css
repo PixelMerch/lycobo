@@ -191,22 +191,22 @@
     transition: none;
   }
 }
-/* 顶部栏下拉（电商、积分）按 vidmuse：#FFFFFF14 底、40px 背景模糊、无描边、右下柔和投影。 */
+/* 顶部栏下拉（电商、语言、积分）用共享毛玻璃，按 vidmuse 不留描边。 */
 .header-menu.dropdown__popover {
   border: 0;
-  background: #ffffff14;
-  box-shadow: 24px 24px 48px rgb(0 0 0 / 15%);
-  -webkit-backdrop-filter: blur(40px);
-  backdrop-filter: blur(40px);
+  background: var(--glass-fill), var(--glass-tint);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }
 @supports not (backdrop-filter: blur(1px)) {
   .header-menu.dropdown__popover {
-    background: #1c1f1b;
+    background: var(--glass-fallback);
   }
 }
 @media (prefers-reduced-transparency: reduce) {
   .header-menu.dropdown__popover {
-    background: #1c1f1b;
+    background: var(--glass-fallback);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }

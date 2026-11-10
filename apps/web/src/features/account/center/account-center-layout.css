@@ -11,7 +11,7 @@
   height: min(760px, calc(100dvh - 48px));
   padding: var(--account-center-padding);
   background: var(--glass-fill), var(--glass-tint);
-  border-color: var(--glass-edge);
+  border-color: var(--glass-border);
   box-shadow: var(--glass-shadow);
   backdrop-filter: var(--glass-blur);
 }

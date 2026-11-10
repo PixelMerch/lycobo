@@ -22,10 +22,11 @@ Local uploads stay preview-only until submission; the server validates and store
 - All new and updated overlays (Modal, Drawer, Popover, Dropdown, Tooltip and Toast) use
   the shared frosted-glass material in styles/overlay-glass.css and DESIGN.md. Preserve readable
   contrast, reduced-transparency fallback and native HeroUI focus handling; never add an opaque
-  surface as a local default. The standalone login page uses the same dark-glass material and swaps its two faces.
+  surface as a local default. The standalone login page uses the same glass material and swaps its two faces.
   The full-screen membership page is an explicit exception: opaque background, no backdrop blur
-  or modal fade/scale transitions. One more named exception (2026-11-09): the top-bar dropdowns
-  (电商, language, credits) use the `header-menu` surface (#FFFFFF14, 40px blur, no edge). Add no others without a request.
+  or modal fade/scale transitions. Since 2026-11-10 (user) every overlay uses the lighter top-bar
+  menu glass (#FFFFFF14, 40px blur, no visible edge) through the `--glass-*` tokens; the `header-menu`
+  class only drops the transparent 1px border. Add no other materials without a request.
 - The home page borrows the vidmuse layout but must keep Lycobo's own character (user, 2026-11-09):
   upright slogan with a mode-gradient keyword, tool-accent mode tabs, lime-to-mint generation pills,
   in-card glass hover panels and our own wording. Do not copy reference-site styling, copy or assets.
