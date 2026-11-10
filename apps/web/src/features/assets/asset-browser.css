@@ -430,10 +430,10 @@
   margin-top: var(--space-4);
 }
 
-/* The page scrolls with the document; filters stop beneath the shared header. */
+/* 页面随文档滚动；筛选栏吸顶时顶部栏已离开顶部并收窄 4px，所以紧贴收窄后的底边，不留缝。 */
 .assets-page .asset-filters {
   position: sticky;
-  top: var(--header-height);
+  top: calc(var(--header-height) - 4px);
   z-index: 10;
   flex-wrap: wrap;
   padding-bottom: 16px;
