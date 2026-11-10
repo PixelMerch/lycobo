@@ -67,9 +67,8 @@
   background: var(--accent);
   box-shadow: none;
 }
-/* The panel is the scroll viewport. It reaches the dialog's right and bottom edges, so the
- * scrollbar sits at the edge and content scrolls out under the frame; 4px on the left keeps
- * focus rings unclipped. */
+/* 面板是滚动区域，延伸到弹窗右缘和底边，内容从外框下方滚出；左侧留 4px 不裁掉焦点环。
+ * 按用户要求不显示滚动条，滚轮、触控与键盘仍可滚动。 */
 .account-center-tabs > .tabs__panel {
   flex: 1;
   width: auto;
@@ -78,9 +77,10 @@
   padding: var(--space-5) var(--account-center-padding) var(--account-center-padding) 4px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--surface-tertiary) transparent;
-  scrollbar-gutter: stable;
+  scrollbar-width: none;
+}
+.account-center-tabs > .tabs__panel::-webkit-scrollbar {
+  display: none;
 }
 
 /* ---------- billing empty state ---------- */

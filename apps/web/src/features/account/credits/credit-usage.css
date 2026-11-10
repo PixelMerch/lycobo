@@ -65,7 +65,10 @@
   border: 1px solid #ffffff0f;
   border-radius: 14px;
   background: #ffffff08;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+}
+.credit-usage-list::-webkit-scrollbar {
+  display: none;
 }
 .credit-usage-row.disclosure {
   padding: 14px 16px;
