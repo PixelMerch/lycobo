@@ -13,7 +13,7 @@ test("home composer shares prompt and real reference drafts without submitting g
   await page.goto("/");
   await page.getByRole("textbox", { name: "创作需求" }).fill("为我的商品搭配自然光场景");
   const png = Buffer.from(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",
     "base64",
   );
   await page
@@ -140,7 +140,7 @@ test("duplicate reference uploads are filtered and announced", async ({ page }) 
   await mockImageApi(page);
   await page.goto("/");
   const png = Buffer.from(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",
     "base64",
   );
   const file = { name: "same.png", mimeType: "image/png", buffer: png };
