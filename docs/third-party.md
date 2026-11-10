@@ -25,6 +25,6 @@
 
 用户于2026-11-10确认主站中英文统一使用阿里巴巴普惠体3.0，替换思源黑体。官方字体文件版本3.01，使用55 Regular、65 Medium、75 SemiBold、85 Bold，对应400／500／600／700。源文件从[阿里巴巴字体官网](https://www.alibabafonts.com/)提供的字体地址获取，SHA256固定在 `scripts/fonts/subsets.json`；四个字重均保留源字体版权与排版元数据，转换为同源加载的字符切片WOFF2，不附带完整TTF，不依赖字体CDN。来源及[官方法律声明](https://www.yuque.com/yiguang-wkqc2/hgpff0/nus9wiinq4aeiegy)见 `apps/web/public/fonts/alibaba-puhuiti-3/NOTICE.txt`，生成与验证见[字体维护](fonts.md)。
 
-## 阿里巴巴普惠体 Logo 字标
+## Logo 图形与定制字标
 
-2026-11-10 用户确认将 A「显影」字标改为阿里巴巴普惠体 3.0 Bold，恢复常规 L 并增加图形与文字间距。Logo使用同一官方Bold源文件，单独发布转曲后的SVG路径，不增加字标字体下载；来源记录见 `apps/web/public/brand/AlibabaPuHuiTi-NOTICE.txt`。
+2026-11-10 用户确认保留 A「显影」图形，采用独立几何绘制的工具风格字标，名称为 Lycobo，去掉探索稿的 AI 标签。c／o／b 共用圆角矩形构造；Logo 不再使用第三方字体轮廓，也不加载字体文件。正文仍使用上述普惠体自托管切片，相关字体来源与授权记录继续保留。
