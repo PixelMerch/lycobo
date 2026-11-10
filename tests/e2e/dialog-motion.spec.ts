@@ -101,9 +101,9 @@ for (const activation of ["pointer", "virtual"] as const) {
     const previewFrames = exitFrames(page, ".image-preview");
     await page.keyboard.press("Escape");
     const frames = await previewFrames;
-    expect(frames.some((frame) => frame.scale > 0 && frame.scale < 0.95 && frame.opacity < 1)).toBe(
-      true,
-    );
+    // 关闭只轻微缩小（不小于 0.96）并淡出，不再从整屏缩到 0。
+    expect(frames.some((frame) => frame.scale < 1 && frame.opacity < 1)).toBe(true);
+    expect(frames.every((frame) => frame.scale >= 0.959)).toBe(true);
     expect(frames.every((frame) => Math.abs(frame.x) < 1 && Math.abs(frame.y) < 1)).toBe(true);
     await expect(page.getByRole("dialog", { name: "图片预览", exact: true })).toHaveCount(0);
     await expect(previewEntry).toBeFocused();
@@ -114,9 +114,8 @@ for (const activation of ["pointer", "virtual"] as const) {
     const libraryFrames = exitFrames(page, ".library-shell");
     await page.getByRole("button", { name: "关闭素材库", exact: true }).click();
     const library = await libraryFrames;
-    expect(
-      library.some((frame) => frame.scale > 0 && frame.scale < 0.95 && frame.opacity < 1),
-    ).toBe(true);
+    expect(library.some((frame) => frame.scale < 1 && frame.opacity < 1)).toBe(true);
+    expect(library.every((frame) => frame.scale >= 0.959)).toBe(true);
     expect(library.every((frame) => Math.abs(frame.x) < 1 && Math.abs(frame.y) < 1)).toBe(true);
     await expect(page.getByRole("dialog", { name: "素材库", exact: true })).toHaveCount(0);
     await expect(libraryEntry).toBeFocused();

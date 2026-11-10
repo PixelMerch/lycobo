@@ -756,7 +756,7 @@ HeroUI 是唯一交互基础：Button、ToggleButtonGroup、Select、Modal、Pop
 
 全屏关闭按钮共用 `DialogClose fullScreen`：图片详情、素材库弹窗、局部编辑与图片浏览统一为 28px 叉号、52×52px 点击区域、42×42px hover 圆底（图标 1.5 倍）。常态无背景，hover 不放大图标或改变位置；不允许页面各自重写尺寸。普通确认弹窗保留上方 22 / 44 / 33px 规格。
 
-共用 `useCenteredDialogMotion`：中心 scale 0 ↔ 1、opacity 0 ↔ 1、300ms、cubic-bezier(.215,.61,.355,1)。关闭动画结束再卸载和恢复焦点，嵌套层先返回上一级；不恢复从右向左滑入。
+共用 `useCenteredDialogMotion`（用户2026-11-10反馈原来从 scale 0 放大太快、看着头晕）：视口中心 scale 0.96 ↔ 1、opacity 0 ↔ 1；打开400ms cubic-bezier(.33,1,.68,1)，关闭300ms cubic-bezier(.4,0,.2,1)。全屏弹窗自带不透明底，不套用浮层毛玻璃的底色、投影与1px透明边框（否则四周透出细线、内容下移1px）。关闭动画结束再卸载和恢复焦点，嵌套层先返回上一级；不恢复从右向左滑入。
 
 图片详情的创意描述最多显示3行，超过3行显示“展开全部”，展开后显示“收起”；与历史提示词共用溢出测量和展开控件，复制始终复制全文。
 
