@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
-test("hover retries only the chosen image after confirming its own cost", async ({ page }) => {
+test("hover retries only the chosen unconfirmed image after its own confirmation", async ({
+  page,
+}) => {
   await mockImageApi(page);
   const input = {
     model: "gpt-image-2",
@@ -62,7 +64,11 @@ test("hover retries only the chosen image after confirming its own cost", async 
   await expect(action).toBeEnabled();
   await action.click();
   const dialog = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
-  await expect(dialog).toContainText("本次消耗 2 积分");
+  // 这一张结果待确认：先查询原任务，确认需要重新生成时才扣费，所以弹窗不显示金额。
+  await expect(dialog).toContainText(
+    "先查询原任务，已有结果将直接保存；确认需重新生成时才扣除积分。",
+  );
+  await expect(dialog).not.toContainText("本次消耗");
   expect(submissions).toHaveLength(0);
   await dialog.getByRole("button", { name: "取消", exact: true }).click();
   expect(submissions).toHaveLength(0);
