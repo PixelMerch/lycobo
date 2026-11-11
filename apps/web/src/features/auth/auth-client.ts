@@ -112,9 +112,12 @@ async function clearEnterpriseSession(client: QueryClient) {
   clearPreviewLinks();
   await client.cancelQueries();
   client.setQueryData(enterpriseSessionKey, null);
-  await client.resetQueries({
+  // 清除旧身份的缓存，避免尚未卸载的页面在退出后立即重查私有接口。
+  for (const query of client.getQueryCache().findAll({
     predicate: (query) => query.queryKey[0] !== enterpriseSessionKey[0],
-  });
+  })) {
+    query.reset();
+  }
 }
 
 /** 修改密码：服务端会注销全部会话，这里同时清空本机的登录状态。 */
