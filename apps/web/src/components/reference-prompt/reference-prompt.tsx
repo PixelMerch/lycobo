@@ -57,7 +57,7 @@ export function ReferencePrompt({
   autoGrowMinHeight?: number;
   isRequired?: boolean;
   onReferencesInsert?: (images: ReferenceImage[], prompt: string) => void;
-  unavailableReferenceIds?: readonly string[];
+  unavailableReferenceIds?: readonly string[] | undefined;
   /** 为这个工具的描述显示 AI 润色入口。 */
   optimizeTool?: PromptOptimizeTool;
 }) {
@@ -207,7 +207,11 @@ function PromptMentionPopover({
             <ReferenceMentionOptions
               maxReferences={maxReferences}
               references={references}
-              usedIds={new Set([...usedIds, ...(unavailableReferenceIds ?? [])])}
+              usedIds={
+                unavailableReferenceIds
+                  ? new Set([...usedIds, ...unavailableReferenceIds])
+                  : usedIds
+              }
               onSelect={insert}
               allowHistory={allowHistory}
             />
