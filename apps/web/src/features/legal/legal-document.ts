@@ -15,3 +15,8 @@ export type LegalSection = { heading: string; blocks: readonly LegalBlock[] };
 
 /** 一份法律文本：标题、导语与各节；编号由页面按顺序生成。 */
 export type LegalDocument = { title: string; intro: string; sections: readonly LegalSection[] };
+
+/** 章节定位使用稳定编号，切换界面语言后链接仍指向同一节。 */
+export function legalSectionId(document: LegalDocumentId, index: number) {
+  return `${document}-section-${index + 1}`;
+}

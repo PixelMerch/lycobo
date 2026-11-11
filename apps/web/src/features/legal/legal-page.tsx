@@ -1,13 +1,16 @@
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { RouteLink } from "../../components/router-link";
+import { useLocale } from "../../i18n/locale-store";
 import { type MessageCatalog, useMessages } from "../../i18n/messages";
 import { SiteFooter } from "../site/site-footer";
+import { LegalContents } from "./legal-contents";
 import {
   type LegalBlock,
   type LegalDocument,
   type LegalDocumentId,
   legalDocumentIds,
   legalPaths,
+  legalSectionId,
 } from "./legal-document";
 import { legalEntityMessages } from "./legal-entity-messages";
 import { legalMessages } from "./legal-messages";
@@ -30,48 +33,64 @@ export function PrivacyPage() {
   return <LegalPage id="privacy" />;
 }
 
-/** 一份法律文本的阅读页：顶部切换两份文本，正文按节编号排版，底部接站点页脚。 */
+/** 黑底法律阅读页：左侧目录、右侧正文，语言切换保留同一章节。 */
 function LegalPage({ id }: { id: LegalDocumentId }) {
   const t = useMessages(legalMessages);
   const entity = useMessages(legalEntityMessages);
   const legalDocument = useMessages(documents[id]);
-  // 从页脚点进来时窗口还停在原来的滚动位置；两份文本是不同路由，打开或切换都会重新挂载并回到顶部。
+  const locale = useLocale();
+  const documentKey = `${locale}:${id}`;
+  const previousDocument = useRef<string | null>(null);
+  // 首次打开支持章节直达；没有有效锚点时回到文档顶部。
   useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+    const target = document.getElementById(window.location.hash.slice(1));
+    if (target?.id.startsWith(`${id}-section-`))
+      target.scrollIntoView({ block: "start", behavior: "instant" });
+    else if (previousDocument.current !== documentKey)
+      window.scrollTo({ top: 0, behavior: "instant" });
+    previousDocument.current = documentKey;
+  }, [id, documentKey]);
   return (
     <div className="legal-page">
-      <article className="legal-document" aria-labelledby="legal-title">
-        <nav className="legal-switch" aria-label={t.navigation}>
-          {legalDocumentIds.map((documentId) => (
-            <RouteLink
-              key={documentId}
-              to={legalPaths[documentId]}
-              className="legal-switch-link"
-              nav
-              end
-            >
-              {t.names[documentId]}
-            </RouteLink>
-          ))}
-        </nav>
-        <h1 id="legal-title">{legalDocument.title}</h1>
-        <p className="legal-meta">
-          {t.updated(entity.updatedDate)} · {t.effective(entity.effectiveDate)}
-        </p>
-        <p className="legal-intro">{legalDocument.intro}</p>
-        {legalDocument.sections.map((section, index) => (
-          <section key={section.heading} className="legal-section">
-            <h2>{`${index + 1}. ${section.heading}`}</h2>
-            {section.blocks.map((block) => (
-              <LegalBlockView
-                key={typeof block === "string" ? block : block.join("\n")}
-                block={block}
-              />
+      <div className="legal-layout">
+        <aside className="legal-sidebar">
+          <LegalContents id={id} sections={legalDocument.sections} />
+        </aside>
+        <article className="legal-document" aria-labelledby="legal-title">
+          <nav className="legal-switch" aria-label={t.navigation}>
+            {legalDocumentIds.map((documentId) => (
+              <RouteLink
+                key={documentId}
+                to={legalPaths[documentId]}
+                className="legal-switch-link"
+                nav
+                end
+              >
+                {t.names[documentId]}
+              </RouteLink>
             ))}
-          </section>
-        ))}
-      </article>
+          </nav>
+          <h1 id="legal-title">{legalDocument.title}</h1>
+          <p className="legal-meta">
+            {t.updated(entity.updatedDate)} · {t.effective(entity.effectiveDate)}
+          </p>
+          <p className="legal-intro">{legalDocument.intro}</p>
+          {legalDocument.sections.map((section, index) => (
+            <section key={legalSectionId(id, index)} className="legal-section">
+              <h2
+                id={legalSectionId(id, index)}
+                tabIndex={-1}
+              >{`${index + 1}. ${section.heading}`}</h2>
+              {section.blocks.map((block) => (
+                <LegalBlockView
+                  key={typeof block === "string" ? block : block.join("\n")}
+                  block={block}
+                />
+              ))}
+            </section>
+          ))}
+        </article>
+      </div>
       <SiteFooter />
     </div>
   );
