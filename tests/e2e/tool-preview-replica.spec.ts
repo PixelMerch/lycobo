@@ -62,12 +62,12 @@ test("style matching requires both slots and submits their roles without a paid 
   const generate = page.getByRole("button", { name: /生成同风格图片/ });
   await expect(generate).toBeDisabled();
   await page
-    .getByRole("region", { name: "目标图（想参考的风格）", exact: true })
+    .getByRole("region", { name: "风格图", exact: true })
     .locator("input[type=file]")
     .setInputFiles({ name: "style.webp", mimeType: "image/webp", buffer: png });
   await expect(generate).toBeDisabled();
   await page
-    .getByRole("region", { name: "参考图（你的商品）", exact: true })
+    .getByRole("region", { name: "参考图", exact: true })
     .locator("input[type=file]")
     .setInputFiles(
       Array.from({ length: 10 }, (_, index) => ({
@@ -96,7 +96,7 @@ test("style matching requires both slots and submits their roles without a paid 
     );
   await expect(generate).toBeEnabled();
   await expect(generate).toContainText("20");
-  await page.getByRole("textbox", { name: "补充要求（选填）" }).fill("保留商品细节");
+  await page.getByRole("textbox", { name: "补充要求" }).fill("保留商品细节");
   await expect(page.getByRole("button", { name: /优化/, exact: false })).toBeVisible();
   await generate.click();
   await expect

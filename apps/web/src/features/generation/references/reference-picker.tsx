@@ -45,6 +45,8 @@ type PickerProps = {
   /** 让调用方的其他入口也能打开同一个文件选择框，仍先检查登录。 */
   openRef?: RefObject<(() => void) | null>;
   compact?: boolean;
+  isRequired?: boolean;
+  showCount?: boolean;
   disabled?: boolean;
   /** 在缩略图上显示参考图角色（商品／原图／风格）；只用于主图制作与套图计划。 */
   withRoles?: boolean;
@@ -58,11 +60,49 @@ type PickerProps = {
     }
 );
 
+function ReferencePickerTitle({
+  label,
+  count,
+  limit,
+  isRequired,
+  showCount,
+}: {
+  label: string;
+  count: number;
+  limit: number;
+  isRequired: boolean;
+  showCount: boolean;
+}) {
+  const t = useMessages(referencesMessages);
+  return (
+    <h2>
+      {label}
+      {/* 用安静的“已传/上限”计数代替括号说明；完整句子留给读屏。 */}
+      {isRequired && (
+        <>
+          <span className="required-indicator" aria-hidden="true">
+            *
+          </span>
+          <span className="sr-only">{t.required}</span>
+        </>
+      )}
+      {showCount && (
+        <small className="reference-count" aria-hidden="true">
+          {count}/{limit}
+        </small>
+      )}
+      <span className="sr-only">{t.uploadCount(count, limit)}</span>
+    </h2>
+  );
+}
+
 /** 参考图上传与预览：首页和各工具共用编号、删除及提示词引用的同步规则。 */
 export function ReferencePicker({
   model,
   references,
   compact = false,
+  isRequired = false,
+  showCount = true,
   disabled = false,
   withRoles = false,
   limit = 5,
@@ -101,14 +141,13 @@ export function ReferencePicker({
   return (
     <section className="reference-picker">
       <div className="field-title">
-        <h2>
-          {label ?? t.uploadLabel}
-          {/* 用安静的“已传/上限”计数代替括号说明；完整句子留给读屏。 */}
-          <small className="reference-count" aria-hidden="true">
-            {references.length}/{limit}
-          </small>
-          <span className="sr-only">{t.uploadCount(references.length, limit)}</span>
-        </h2>
+        <ReferencePickerTitle
+          label={label ?? t.uploadLabel}
+          count={references.length}
+          limit={limit}
+          isRequired={isRequired}
+          showCount={showCount}
+        />
         <Button
           variant="tertiary"
           className="clear-references"

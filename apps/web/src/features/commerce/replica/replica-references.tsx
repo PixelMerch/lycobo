@@ -1,4 +1,3 @@
-import "./replica.css";
 import { useMessages } from "../../../i18n/messages";
 import { ReferencePicker } from "../../generation/references/reference-picker";
 import { replicaMessages } from "./replica-messages";
@@ -14,12 +13,13 @@ export function ReplicaReferences() {
         <ReferencePicker
           compact
           label={t.target}
+          isRequired
+          showCount={false}
           limit={1}
           prompt=""
           references={target ? [target] : []}
           onChange={(images) => update({ target: images[0] ?? null })}
         />
-        <p className="replica-reference-hint">{t.targetHint}</p>
       </section>
       <section aria-label={t.product}>
         <ReferencePicker
@@ -30,7 +30,6 @@ export function ReplicaReferences() {
           references={products}
           onChange={(products) => update({ products })}
         />
-        <p className="replica-reference-hint">{t.productHint}</p>
       </section>
     </>
   );
