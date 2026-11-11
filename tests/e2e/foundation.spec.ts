@@ -13,7 +13,7 @@ test("workspace entry opens creation with direct tool navigation", async ({ page
     .getByRole("button", { name: "主图制作", exact: true })
     .click();
   await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: /^生成商品主图/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
 });
 
 test("old entry links recover to current home; malformed model is rejected", async ({ page }) => {

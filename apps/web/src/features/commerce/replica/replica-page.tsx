@@ -46,6 +46,10 @@ export function ReplicaPage() {
   useErrorToast(error ? errorMessage : null);
   const patchDraft = (patch: Partial<typeof draft>) => update({ draft: { ...draft, ...patch } });
   const submit = useReplicaSubmission(state, generate, !!pending, !!valid);
+  const isDisabled =
+    !session.isSuccess || generate.isPending || (anyPending && !pending) || (!pending && !valid);
+  const cost = imageUnitCredits * products.length;
+  const showCost = !isDisabled && !pending && cost > 0;
   return (
     <section className="composer-panel" aria-label={t.parameters}>
       <section className="composer-scroll">
@@ -82,30 +86,23 @@ export function ReplicaPage() {
         />
       </section>
       <div className="generate-area">
-        <p className="field-description">
-          {t.summary(products.length, imageUnitCredits * products.length)}
-        </p>
         <Button
           className="primary-action generation-submit"
           variant="primary"
           size="lg"
           fullWidth
-          isDisabled={
-            !session.isSuccess ||
-            generate.isPending ||
-            (anyPending && !pending) ||
-            (!pending && !valid)
-          }
+          isDisabled={isDisabled}
+          aria-description={showCost ? common.runCost(cost) : undefined}
           isPending={generate.isPending}
           onPress={submit}
         >
           {generate.isPending ? <Spinner size="sm" /> : null}
           {pending ? common.confirmLastSubmission : t.generate}
-          {!pending && (
-            <>
+          {showCost && (
+            <span className="generate-credit-cost" aria-hidden="true">
               <CreditCoin />
-              <span>{imageUnitCredits * products.length}</span>
-            </>
+              <span>{cost}</span>
+            </span>
           )}
         </Button>
       </div>

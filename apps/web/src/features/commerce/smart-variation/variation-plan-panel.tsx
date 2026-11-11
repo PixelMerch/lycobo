@@ -1,6 +1,7 @@
 import { Button, Checkbox, Input, Label, Spinner, TextArea, TextField } from "@heroui/react";
 import { IconCheck, IconTrash, IconX } from "@tabler/icons-react";
 import { useLayoutEffect, useRef } from "react";
+import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { PlanReferenceStrip } from "./plan-reference-strip";
@@ -185,23 +186,51 @@ export function VariationPlanPanel({
             {showPreview ? t.confirmAfterPlan : t.selectedCount(selectedCount)}
           </span>
         </div>
-        <Button
-          isDisabled={showPreview || !generation.canGenerate}
-          isPending={generation.submitting}
-          className="primary-action variation-generate"
-          onPress={() => {
-            void generation
-              .submit()
-              .then(() => onOpenChange(false))
-              .catch(() => undefined);
-          }}
-        >
-          {generation.submitting && (
-            <Spinner size="md" color="current" role="status" aria-label={t.submitting} />
-          )}
-          {generation.pending ? t.confirmLastSubmission : t.startGenerating(generation.cost)}
-        </Button>
+        <VariationGenerateButton
+          generation={generation}
+          showPreview={showPreview}
+          onComplete={() => onOpenChange(false)}
+        />
       </footer>
     </section>
+  );
+}
+
+function VariationGenerateButton({
+  generation,
+  showPreview,
+  onComplete,
+}: {
+  generation: ReturnType<typeof useVariationGeneration>;
+  showPreview: boolean;
+  onComplete: () => void;
+}) {
+  const t = useMessages(variationMessages);
+  const isDisabled = showPreview || !generation.canGenerate;
+  const showCost = !isDisabled && !generation.pending && generation.cost > 0;
+  return (
+    <Button
+      isDisabled={isDisabled}
+      aria-description={showCost ? t.runCost(generation.cost) : undefined}
+      isPending={generation.submitting}
+      className="primary-action variation-generate"
+      onPress={() => {
+        void generation
+          .submit()
+          .then(onComplete)
+          .catch(() => undefined);
+      }}
+    >
+      {generation.submitting && (
+        <Spinner size="md" color="current" role="status" aria-label={t.submitting} />
+      )}
+      {generation.pending ? t.confirmLastSubmission : t.startGenerating}
+      {showCost && (
+        <span className="generate-credit-cost" aria-hidden="true">
+          <CreditCoin />
+          <span>{generation.cost}</span>
+        </span>
+      )}
+    </Button>
   );
 }

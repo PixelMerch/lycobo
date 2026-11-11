@@ -68,7 +68,7 @@ test("image count stays visible and quality is available under more", async ({ p
   await expect(quality).toBeVisible();
   await count.getByRole("radio", { name: "3", exact: true }).click();
   await quality.getByRole("radio", { name: "高", exact: true }).click();
-  await expect(page.getByRole("button", { name: /生成商品主图/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "收起", exact: true }).click();
   await expect(count).toBeVisible();
   await expect(quality).toHaveCount(0);
@@ -88,7 +88,7 @@ test("main image submission keeps the user's full prompt without a purpose prefi
   const submission = page.waitForRequest(
     (request) => request.url().endsWith("/api/v1/image-tasks") && request.method() === "POST",
   );
-  await page.getByRole("button", { name: /生成商品主图/ }).click();
+  await page.getByRole("button", { name: "立即生成", exact: true }).click();
   expect((await submission).postDataJSON().prompt).toBe(description);
   await expect(prompt).toHaveValue("");
 });

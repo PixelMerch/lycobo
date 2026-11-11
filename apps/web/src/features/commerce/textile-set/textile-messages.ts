@@ -49,7 +49,7 @@ export const textileMessages = defineMessages({
     resolution: "Resolution",
     submitting: "Submitting the textile set task",
     confirmLastSubmission: "Confirm last submission",
-    generateNow: "Generate",
+    generateNow: "Generate now",
     confirmNoCharge: "Confirm the last submission; you won't be charged twice",
     runCost: (count, credits) =>
       `This run makes ${count} ${count === 1 ? "image" : "images"} and costs ${credits} credits`,

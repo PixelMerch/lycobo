@@ -1,7 +1,7 @@
 import { Button, Popover, Spinner, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { imageUnitCredits, publicImageResolutions } from "@lycoboai/contracts";
 import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
-import { type RefObject, useId, useRef, useState } from "react";
+import { type RefObject, useRef, useState } from "react";
 import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
@@ -24,7 +24,9 @@ export function TextileSetPage() {
   const t = useMessages(textileMessages);
   const viewsAnchor = useRef<HTMLDivElement>(null);
   const generation = useTextileGeneration();
-  const costDescriptionId = useId();
+  const cost = views.length * imageUnitCredits;
+  const showCost = generation.canGenerate && !generation.pending && cost > 0;
+  const costDescription = showCost ? t.runCost(views.length, cost) : undefined;
   return (
     <>
       <div ref={viewsAnchor} className="textile-views-anchor" aria-hidden="true" />
@@ -95,24 +97,19 @@ export function TextileSetPage() {
             isDisabled={!generation.canGenerate}
             isPending={generation.submitting}
             onPress={generation.submit}
-            aria-describedby={costDescriptionId}
+            aria-description={generation.pending ? t.confirmNoCharge : costDescription}
           >
             {generation.submitting && (
               <Spinner size="md" color="current" role="status" aria-label={t.submitting} />
             )}
             {generation.pending && !generation.submitting ? t.confirmLastSubmission : t.generateNow}
-            {(!generation.pending || generation.submitting) && (
+            {showCost && (
               <span className="generate-credit-cost" aria-hidden="true">
                 <CreditCoin />
-                <span>{views.length * imageUnitCredits}</span>
+                <span>{cost}</span>
               </span>
             )}
           </Button>
-          <span id={costDescriptionId} className="sr-only">
-            {generation.pending
-              ? t.confirmNoCharge
-              : t.runCost(views.length, views.length * imageUnitCredits)}
-          </span>
           {generation.unavailable && <p className="textile-service-status">{t.serviceDisabled}</p>}
         </div>
       </section>

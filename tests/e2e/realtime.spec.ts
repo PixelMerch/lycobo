@@ -388,7 +388,7 @@ for (const connected of [true, false]) {
       );
     const baselineWallets = wallets,
       baselineAssets = assets;
-    await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
+    await page.getByRole("button", { name: "立即生成", exact: true }).click();
     await expect.poll(() => wallets).toBe(baselineWallets + 1);
     await page.clock.install();
     await page.clock.fastForward(3000);

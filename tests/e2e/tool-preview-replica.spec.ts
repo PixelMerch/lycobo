@@ -59,7 +59,7 @@ test("style matching requires both slots and submits their roles without a paid 
   await page.goto("/zh-CN/commerce/replica");
   await expect(page.getByRole("radiogroup", { name: "生成张数" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Image 2.6/ })).toHaveCount(0);
-  const generate = page.getByRole("button", { name: /生成同风格图片/ });
+  const generate = page.getByRole("button", { name: /^立即生成/ });
   await expect(generate).toBeDisabled();
   await page
     .getByRole("region", { name: "风格图", exact: true })

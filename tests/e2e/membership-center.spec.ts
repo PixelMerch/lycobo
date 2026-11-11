@@ -104,7 +104,7 @@ for (const width of [1440, 320]) {
     await expect(membership).toHaveCount(0);
     await expect(credits).toBeFocused();
     await expect(draft).toHaveValue("保留创作草稿，不创建付费任务");
-    await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeEnabled();
     expect(writes).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,

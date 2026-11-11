@@ -19,7 +19,7 @@ export const generationMessages = defineMessages({
     tooManyReferences: (max: number) => `当前模型最多支持 ${max} 张参考图，请减少后生成。`,
     noReferenceEditing: "当前模型暂不支持参考图编辑，请移除参考图后生成。",
     confirmLastSubmission: "确认上次提交",
-    generateMainImage: "生成商品主图",
+    generateMainImage: "立即生成",
     runCost: (credits: number) => `本次生成消耗 ${credits} 币`,
     submitting: "正在上传并提交，请保持页面打开",
     submissionAccepted: "任务已提交，关闭页面也会继续处理。",
@@ -73,7 +73,7 @@ export const generationMessages = defineMessages({
     noReferenceEditing:
       "This model can't edit reference images yet. Remove them before generating.",
     confirmLastSubmission: "Confirm last submission",
-    generateMainImage: "Generate main image",
+    generateMainImage: "Generate now",
     runCost: (credits) => `This run costs ${credits} credits`,
     submitting: "Uploading and submitting. Keep this page open.",
     submissionAccepted: "Task submitted. Processing continues even if you close this page.",

@@ -44,7 +44,7 @@ for (const failure of [false, true]) {
     await expect(page.locator(".reference-tile")).toHaveCount(1);
     const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
     await prompt.fill("保留床品质感，生成明亮卧室商品主图");
-    await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
+    await page.getByRole("button", { name: "立即生成", exact: true }).click();
     await expect.poll(() => reads).toBeGreaterThan(0);
     expect(submissions).toBe(0);
     completed = true;

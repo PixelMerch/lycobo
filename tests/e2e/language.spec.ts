@@ -62,9 +62,7 @@ test.describe("English workspace", () => {
       "Product Video",
     ]);
     await expect(page.getByRole("textbox", { name: "Prompt" })).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Generate main image", exact: true }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Generate now", exact: true })).toBeVisible();
   });
 
   test("replaces Chinese server errors with English by error code", async ({ page }) => {

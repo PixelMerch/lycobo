@@ -24,7 +24,7 @@ test("a disabled service keeps references without claiming the model cannot edit
   await expect(
     page.getByText("当前模型暂不支持参考图编辑，请移除参考图后生成。", { exact: true }),
   ).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
 });
 
 test("running images animate with the model icon and stop for reduced motion", async ({ page }) => {

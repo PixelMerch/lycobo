@@ -12,7 +12,7 @@ test("create workspace fills the viewport and pins generation to the composer bo
   await page.goto("/commerce/create");
   const composer = page.getByRole("region", { name: "创作设置", exact: true });
   const results = page.getByRole("region", { name: "工作区历史记录", exact: true });
-  const generate = page.getByRole("button", { name: /生成商品主图/ });
+  const generate = page.getByRole("button", { name: "立即生成", exact: true });
   const composerBox = await composer.boundingBox();
   const resultsBox = await results.boundingBox();
   const buttonBox = await generate.boundingBox();
@@ -103,7 +103,7 @@ test("invalid references and limit errors do not destroy valid images", async ({
 
 test("text generation requires a prompt and an available model", async ({ page }) => {
   await page.goto("/commerce/create");
-  const generate = page.getByRole("button", { name: "生成商品主图", exact: true });
+  const generate = page.getByRole("button", { name: "立即生成", exact: true });
   await expect(generate).toBeDisabled();
   await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("米白陶瓷杯");
   await expect(generate).toBeEnabled();
@@ -174,7 +174,7 @@ test("extended ratios preserve selection and composer scroll stays independent",
     ratioPicker.getByRole("button", { name: "上一页画面比例", exact: true }),
   ).toBeVisible();
   const parameters = page.getByRole("region", { name: "创作参数", exact: true });
-  const generate = page.getByRole("button", { name: "生成商品主图", exact: true });
+  const generate = page.getByRole("button", { name: "立即生成", exact: true });
   const before = await generate.boundingBox();
   const pageScroll = await page.evaluate(() => window.scrollY);
   await parameters.hover();

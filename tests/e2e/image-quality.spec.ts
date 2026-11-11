@@ -21,7 +21,7 @@ for (const [label, quality] of [
     const submitted = page.waitForRequest(
       (request) => request.url().endsWith("/api/v1/image-tasks") && request.method() === "POST",
     );
-    await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
+    await page.getByRole("button", { name: "立即生成", exact: true }).click();
     expect((await submitted).postDataJSON()).toMatchObject({ quality });
   });
 }

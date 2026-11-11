@@ -225,6 +225,9 @@ function WorkspaceGeneration({
   const referencesSupported = supportsReferences(capabilities, draft.references.length);
   const t = useMessages(generationMessages);
   const actionLabel = pending && !activeSubmission ? t.confirmLastSubmission : t.generateMainImage;
+  const isDisabled = !canGenerate || activeSubmission;
+  const cost = imageUnitCredits * Number(draft.count);
+  const showCost = !isDisabled && !pending && cost > 0;
   return (
     <div className="generate-area">
       <ModelSelect
@@ -270,22 +273,18 @@ function WorkspaceGeneration({
         data-submitting={activeSubmission || undefined}
         isPending={activeSubmission}
         aria-label={actionLabel}
-        aria-description={
-          !pending && !activeSubmission
-            ? t.runCost(imageUnitCredits * Number(draft.count))
-            : undefined
-        }
-        isDisabled={!canGenerate || activeSubmission}
+        aria-description={showCost ? t.runCost(cost) : undefined}
+        isDisabled={isDisabled}
         onPress={submit}
       >
         {activeSubmission && (
           <Spinner size="md" color="current" role="status" aria-label={t.submitting} />
         )}
         {actionLabel}
-        {(!pending || activeSubmission) && (
+        {showCost && (
           <span className="generate-credit-cost" aria-hidden="true">
             <CreditCoin />
-            <span>{imageUnitCredits * Number(draft.count)}</span>
+            <span>{cost}</span>
           </span>
         )}
       </Button>
