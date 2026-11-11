@@ -2,6 +2,8 @@ import type { ImageJob } from "@lycoboai/contracts";
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { afterEach, expect, it, vi } from "vitest";
 import { imageRequest } from "../generation/generation-client";
+import { batchImageUpdates } from "../generation/image-event-updates";
+import type { ImageHistory } from "../generation/task-sync";
 import { refreshWithoutRealtime } from "./availability";
 import { connectRealtime } from "./connection";
 
@@ -25,6 +27,62 @@ class Socket {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
+});
+
+it("素材就绪事件只重新读取引用该素材的待处理任务，并更新历史中的签名", async () => {
+  vi.useFakeTimers();
+  const assetId = crypto.randomUUID();
+  const job: ImageJob = {
+    id: crypto.randomUUID(),
+    organization_id: crypto.randomUUID(),
+    user_id: crypto.randomUUID(),
+    model: "gpt-image-2",
+    prompt: "参考图",
+    resolution: "1K",
+    aspect_ratio: "1:1",
+    requested_count: 1,
+    status: "queued",
+    created_at: new Date().toISOString(),
+    completed_at: null,
+    input: {
+      model: "gpt-image-2",
+      prompt: "参考图片示例",
+      resolution: "1K",
+      aspectRatio: "1:1",
+      count: 1,
+      referenceAssetIds: [assetId],
+    },
+    items: [],
+    reference_deliveries: {},
+  };
+  const url = "https://media.example/reference";
+  const delivery = {
+    url,
+    thumbnail_url: url,
+    download_url: url,
+    expires_at: Math.floor(Date.now() / 1000) + 1800,
+  };
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const key = ["image-tasks", "variation"];
+  client.setQueryData<ImageHistory>(key, { pages: [{ data: [job] }], pageParams: [""] });
+  const request = vi.mocked(imageRequest).mockClear();
+  request.mockResolvedValueOnce(
+    Response.json({ ...job, reference_deliveries: { [assetId]: delivery } }),
+  );
+  const updates = batchImageUpdates(client, () => false);
+  updates.enqueue({ id: "1", kind: "asset", resourceId: crypto.randomUUID() });
+  await vi.advanceTimersByTimeAsync(150);
+  expect(request).not.toHaveBeenCalled();
+  updates.enqueue({ id: "2", kind: "asset", resourceId: assetId });
+  updates.enqueue({ id: "3", kind: "asset", resourceId: assetId });
+  await vi.advanceTimersByTimeAsync(150);
+  expect(request).toHaveBeenCalledExactlyOnceWith(`image-tasks/${job.id}`, {
+    signal: expect.any(AbortSignal),
+  });
+  expect(
+    client.getQueryData<ImageHistory>(key)?.pages[0]?.data[0]?.reference_deliveries?.[assetId],
+  ).toEqual(delivery);
+  client.clear();
 });
 it("coalesces a wallet event and the matching task update without canceling the active balance read", async () => {
   vi.useFakeTimers();
