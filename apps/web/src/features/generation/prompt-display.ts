@@ -1,4 +1,4 @@
-import type { ImageJob } from "@lycoboai/contracts";
+import { type ImageJob, imageUserPrompt } from "@lycoboai/contracts";
 import type { Locale } from "../../i18n/locale";
 import { workspaceToolMessages } from "../workspace/workspace-tool-messages";
 
@@ -8,16 +8,9 @@ import { workspaceToolMessages } from "../workspace/workspace-tool-messages";
  */
 export const textilePromptMarker = "家纺裂变";
 
-/** 从复制爆款的持久提示词中提取用户补充要求，保留其中的换行。 */
-export function replicaUserPrompt(prompt: string) {
-  return prompt.split("\n").slice(1).join("\n");
-}
-
-/** 历史记录展示提交时的用户内容，排除复制爆款模板与家纺固定标记。 */
-export function userHistoryPrompt(job: Pick<ImageJob, "prompt" | "input">) {
-  if (job.input?.replica) return replicaUserPrompt(job.prompt);
-  if (job.input?.textileSet && job.prompt === textilePromptMarker) return "";
-  return job.prompt;
+/** 历史优先读取独立用户字段，兼容尚未回填或旧版接口返回的任务。 */
+export function userHistoryPrompt(job: Pick<ImageJob, "prompt" | "input" | "user_prompt">) {
+  return job.user_prompt ?? imageUserPrompt(job.prompt, job.input);
 }
 
 /** 显示任务提示词：家纺裂变的固定标记换成当前语言的工具名称，用户写的提示词原样显示。 */

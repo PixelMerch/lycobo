@@ -1,8 +1,8 @@
 import {
-  type ImageGenerationInput,
-  imageGenerationInputSchema,
+  type ImageTaskSubmission,
   imageSubmissionResponseSchema,
   imageTaskRetrySchema,
+  imageTaskSubmissionSchema,
   imageUploadTicketSchema,
 } from "@lycoboai/contracts";
 import type { QueryClient } from "@tanstack/react-query";
@@ -20,7 +20,7 @@ const pendingStorageKey = (scope: SessionScope) =>
   `lycobo-pending-image-submission:${scope.organizationId}:${scope.userId}`;
 function pendingSubmission(pendingKey: string): {
   key: string;
-  input: ImageGenerationInput;
+  input: ImageTaskSubmission;
   retryJobId?: string | undefined;
   retryItemId?: string | undefined;
   source?: string | undefined;
@@ -44,7 +44,7 @@ function pendingSubmission(pendingKey: string): {
       "retryItemId" in value
         ? imageTaskRetrySchema.parse({ itemId: value.retryItemId }).itemId
         : undefined,
-    input: imageGenerationInputSchema.parse(value.input),
+    input: imageTaskSubmissionSchema.parse(value.input),
     source: "source" in value && typeof value.source === "string" ? value.source : undefined,
   };
 }
@@ -138,6 +138,8 @@ function uploadReference(
 export type ImageSubmission = {
   model: ModelId;
   draft: Draft;
+  /** 模型提示词包含系统模板时，另传编辑框中最终提交的文字。 */
+  userPrompt?: string | undefined;
   source?: string;
   retryJobId?: string;
   retryItemId?: string;
@@ -186,6 +188,7 @@ async function prepareSubmissionInput(
     referenceRoles,
     itemReferences,
     replica,
+    userPrompt,
   }: ImageSubmission,
 ) {
   const referenceAssetIds = await uploadImageReferences(client, scope, draft.references);
@@ -193,9 +196,10 @@ async function prepareSubmissionInput(
     variation && itemReferences
       ? withItemReferences(variation, itemReferences, referenceAssetIds)
       : variation;
-  return imageGenerationInputSchema.parse({
+  return imageTaskSubmissionSchema.parse({
     model,
     prompt: draft.prompt,
+    ...(userPrompt === undefined ? {} : { userPrompt }),
     resolution: draft.resolution,
     quality: draft.quality,
     aspectRatio: draft.ratio,

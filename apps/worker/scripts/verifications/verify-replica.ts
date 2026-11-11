@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   imageGenerationInputSchema,
   imageSubmissionResponseSchema,
+  imageTasksResponseSchema,
   unwrapApiData,
 } from "@lycoboai/contracts";
 import type { ImageRepository } from "@lycoboai/db";
@@ -38,7 +39,7 @@ export async function verifyReplica(
   });
   const input = imageGenerationInputSchema.parse({
     model: "gpt-image-2.6",
-    prompt: "style fixture",
+    prompt: "固定风格模板\n保留 @图片2 的颜色",
     replica: true,
     referenceAssetIds: ids,
     referenceRoles: ["style", ...ids.slice(1).map(() => "product" as const)],
@@ -51,13 +52,24 @@ export async function verifyReplica(
     "Idempotency-Key": crypto.randomUUID(),
   };
   const submit = () =>
-    app.request("/api/v1/image-tasks", { method: "POST", headers, body: JSON.stringify(input) });
+    app.request("/api/v1/image-tasks", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ ...input, userPrompt: "保留 @图片1 的颜色" }),
+    });
   const response = await submit();
   assert.equal(response.status, 202);
   const task = imageSubmissionResponseSchema.parse(unwrapApiData(await response.json()));
   assert.equal((await submit()).status, 200);
   assert.equal((await repository.wallet(owner)).balance, 0);
-  assert.equal((await repository.list(owner, 20, undefined, "replica"))[0]?.id, task.id);
+  const listing = await app.request("/api/v1/image-tasks?tool=replica", { headers });
+  assert.equal(listing.status, 200);
+  const [history] = imageTasksResponseSchema.parse(unwrapApiData(await listing.json())).data;
+  assert.ok(history);
+  assert.equal(history.id, task.id);
+  assert.equal(history.user_prompt, "保留 @图片1 的颜色");
+  assert.equal(history.prompt, input.prompt);
+  assert.deepEqual(history.input, input);
   assert.equal((await repository.list(owner, 20, undefined, "create")).length, 0);
   assert.equal((await repository.list(other, 20, undefined, "replica")).length, 0);
   const forbidden = await app.request("/api/v1/image-tasks", {

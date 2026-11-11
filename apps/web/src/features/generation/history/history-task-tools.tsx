@@ -3,6 +3,7 @@ import {
   type ImageJob,
   imageJobSchema,
   imageUnitCredits,
+  imageUserPrompt,
   publicImageModel,
   type TextileGeneration,
   type VariationGeneration,
@@ -26,7 +27,7 @@ import {
   usePendingSubmission,
 } from "../generation-client";
 import { modelCapabilities, supportsReferences } from "../models/model-capabilities";
-import { replicaUserPrompt, userHistoryPrompt } from "../prompt-display";
+import { userHistoryPrompt } from "../prompt-display";
 import { ReferenceThumbnails } from "../references/reference-thumbnails";
 import { type Draft, type ModelId, qualityLevels, useStudioStore } from "../studio-state";
 import { HistoryDownloadButton } from "./history-download-button";
@@ -85,7 +86,7 @@ async function taskDraft(
     textileSet: input.textileSet,
     variation: input.variation,
     draft: {
-      prompt: input.replica ? replicaUserPrompt(input.prompt) : input.prompt,
+      prompt: input.replica ? imageUserPrompt(input.prompt, input) : input.prompt,
       ratio: input.aspectRatio,
       resolution: input.resolution === "1K" ? "1.5K" : input.resolution,
       quality: draftQuality(input.quality),
@@ -269,6 +270,7 @@ function historyRetryPayload(
   return {
     ...restored,
     referenceRoles: job.input?.referenceRoles,
+    ...(job.input?.replica ? { userPrompt: userHistoryPrompt(job) } : {}),
     draft: job.input?.replica ? { ...restored.draft, prompt: job.input.prompt } : restored.draft,
     ...(source ? { source } : {}),
     ...retry,

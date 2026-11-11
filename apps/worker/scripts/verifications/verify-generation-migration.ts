@@ -86,8 +86,25 @@ export async function verifyGenerationMigration(databaseUrl: string) {
       jobId,
       itemId,
     );
-    // 先验证收缩，再验证后续追加迁移，便于定位失败阶段。
+    // 先验证收缩，再用旧数据验证追加迁移回填。
+    const promptFixtures = [
+      { input: { replica: true }, prompt: "系统模板\n保留商品颜色", userPrompt: "保留商品颜色" },
+      { input: { textileSet: {} }, prompt: "家纺自动说明", userPrompt: "" },
+      { input: { variation: {} }, prompt: "优化后的套图需求", userPrompt: "优化后的套图需求" },
+    ];
+    for (const fixture of promptFixtures)
+      await sql`insert into generation_jobs
+        (organization_id,user_id,idempotency_key,input_hash,input,model,prompt,resolution,aspect_ratio,requested_count,unit_credits)
+        values(${orgId},${userId},${crypto.randomUUID()},'fixture',${sql.json(fixture.input)},'fixture',${fixture.prompt},'1K','1:1',1,2)`;
     migrate();
+    const prompts =
+      await sql`select prompt,user_prompt from generation_jobs where organization_id=${orgId}`;
+    assert.equal(prompts.find((row) => row.prompt === "fixture")?.user_prompt, "fixture");
+    for (const fixture of promptFixtures)
+      assert.equal(
+        prompts.find((row) => row.prompt === fixture.prompt)?.user_prompt,
+        fixture.userPrompt,
+      );
     assert.equal(
       (await sql`select target_item_id from generation_retries where job_id=${jobId}`)[0]
         ?.target_item_id,
@@ -99,7 +116,7 @@ export async function verifyGenerationMigration(databaseUrl: string) {
       await tx`delete from generation_credit_ledger where organization_id=${orgId}`;
       await tx`delete from image_local_edits where job_id=${jobId}`;
       await tx`delete from generation_job_items where job_id=${jobId}`;
-      await tx`delete from generation_jobs where id=${jobId}`;
+      await tx`delete from generation_jobs where organization_id=${orgId}`;
       await tx`delete from generation_api_keys where organization_id=${orgId}`;
       await tx`delete from generation_events where organization_id=${orgId}`;
       await tx`delete from media_assets where id=${assetId}`;
