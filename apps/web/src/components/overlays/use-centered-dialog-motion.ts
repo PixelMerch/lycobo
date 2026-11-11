@@ -2,7 +2,7 @@ import { type MotionProps, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // 全屏弹窗只在视口中心轻微缩放并淡入淡出（用户 2026-11-10 反馈原来从 0 放大太快、看着头晕）：
-// 打开 400ms 减速，关闭 480ms 平缓淡出；关闭过程保持原尺寸。
+// 打开 400ms 减速，关闭时用 480ms 向中心收拢并淡出。
 const openTransition = { duration: 0.4, ease: [0.33, 1, 0.68, 1] } as const;
 const closeTransition = { duration: 0.48, ease: [0.45, 0, 0.55, 1] } as const;
 // 关闭动画没有发出完成事件时的兜底卸载时间，比关闭动画稍长。
@@ -38,7 +38,7 @@ export function useCenteredDialogMotion(onClose: () => void) {
     variants: {
       open: { scale: 1, opacity: 1, transition: reducedMotion ? instant : openTransition },
       initial: { scale: 0.96, opacity: 0 },
-      closed: { scale: 1, opacity: 0, transition: reducedMotion ? instant : closeTransition },
+      closed: { scale: 0, opacity: 0, transition: reducedMotion ? instant : closeTransition },
     },
     onAnimationComplete: (definition) => {
       if (definition === "closed" && closing.current) finishClose();

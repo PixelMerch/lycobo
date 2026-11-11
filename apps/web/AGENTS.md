@@ -27,7 +27,7 @@ navigation; never prefix API, WebSocket, image or font URLs. See docs/localized-
   contrast, reduced-transparency fallback and native HeroUI focus handling; never add an opaque
   surface as a local default. The standalone login page uses the same glass material and swaps its two faces.
   The full-screen membership page is an explicit exception: opaque background, no backdrop blur
-  or entry animation; closing uses the shared fade. Full-screen image browsing and image detail
+  or entry animation; closing uses the shared centered shrink and fade. Full-screen image browsing and image detail
   use a solid black stage, and account settings use the darker shared glass tint. Source, time and account language menus share the header language menu styles
   in `styles/choice-menu.css`. Other overlays use the default top-bar menu glass (#FFFFFF14,
   40px blur, no visible edge) through the `--glass-*` tokens. Add materials only by user request.
