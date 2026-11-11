@@ -1,11 +1,19 @@
-/* 积分明细弹窗：沿用账户弹窗的共享玻璃与标题栏，宽 min(760px, 视口减48px)；内容是工具条、记录卡片与分页。 */
+/* 加深弹窗外部阴影，减弱透过玻璃的背景细节。 */
+.account-backdrop.credit-usage-backdrop.modal__backdrop {
+  background: rgb(0 0 0 / 78%);
+}
 .account-dialog.credit-usage-dialog.modal__dialog {
   width: min(760px, calc(100vw - 48px));
   max-width: none;
+  height: min(740px, calc(100dvh - 48px));
+  --glass-shadow: 0 24px 64px rgb(0 0 0 / 65%);
   padding: var(--space-6);
 }
-.credit-usage-content.modal__body {
+.credit-usage-dialog .credit-usage-content.modal__body {
   display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
   flex-direction: column;
   gap: var(--space-4);
   color: var(--foreground);
@@ -15,6 +23,7 @@
 /* 工具条：左侧消耗／获得分段切换（与积分与账单的筛选同款），右侧当前可用积分。 */
 .credit-usage-toolbar {
   display: flex;
+  flex: none;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
@@ -57,9 +66,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 记录卡片：#FFFFFF08 轻透底、1px #FFFFFF0F 细边、14px 圆角，最高 60vh 内部滚动，行间 1px 分隔。 */
+/* 记录区填满工具条下方空间，只滚动列表内容。 */
 .credit-usage-list {
-  max-height: 60vh;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   border: 1px solid #ffffff0f;
@@ -184,54 +194,11 @@
   gap: 12px;
   margin: 0;
   padding: 32px 16px;
-  border: 1px solid #ffffff0f;
-  border-radius: 12px;
-  background: #ffffff08;
   color: var(--muted);
   text-align: center;
 }
 .credit-usage-status p {
   margin: 0;
-}
-
-/* 分页：居中，32px 方块、10px 圆角，悬停 #FFFFFF0A，当前页用选中填色。 */
-.credit-usage-pagination {
-  display: flex;
-  justify-content: center;
-}
-.credit-usage-pagination .pagination__content {
-  gap: 6px;
-}
-.credit-usage-pagination :is(.pagination__link, .pagination__previous, .pagination__next) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  min-width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 0;
-  border-radius: 12px;
-  background: transparent;
-  color: var(--muted);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  font-variant-numeric: tabular-nums;
-}
-.credit-usage-pagination
-  :is(.pagination__link, .pagination__previous, .pagination__next):is(
-    :hover,
-    [data-hovered="true"]
-  ):not([data-disabled="true"]) {
-  background: var(--interaction-hover);
-  color: var(--foreground);
-}
-.credit-usage-pagination .pagination__link[data-active="true"] {
-  background: var(--control-selected-fill);
-  color: #fff;
-}
-.credit-usage-pagination :is(.pagination__previous, .pagination__next)[data-disabled="true"] {
-  opacity: 0.35;
 }
 
 @media (max-width: 767px) {
@@ -241,11 +208,6 @@
   }
   .credit-usage-views .toggle-button {
     min-height: 44px;
-  }
-  .credit-usage-pagination :is(.pagination__link, .pagination__previous, .pagination__next) {
-    width: 44px;
-    min-width: 44px;
-    height: 44px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

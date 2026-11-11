@@ -7,6 +7,7 @@ import {
 import type { ClaimedImage, ImageRepository } from "@lycoboai/db";
 import type postgres from "postgres";
 
+/** 验证共享积分扣费、退款、游标和近半年收支查询。 */
 export async function verifyWallet(repository: ImageRepository, sql: postgres.Sql) {
   const owner = await repository.provision(
     `wallet:${crypto.randomUUID()}`,
@@ -48,9 +49,36 @@ export async function verifyWallet(repository: ImageRepository, sql: postgres.Sq
     await repository.finish(attempt, { errorCode: "FIXTURE_FAILED", unknown: false });
   }
   assert.equal((await repository.wallet(owner)).balance, before);
-  // An explicit user retry replaces an unresolved attempt; automatic workers
-  // still leave it untouched until that decision is made.
+  // 只有用户明确重试才替换待核对的尝试，后台会保留原状态。
   await verifyManualAndLegacyRetries(repository, input, sql, claim);
+  await verifyRecentWalletEntries(repository, sql);
+}
+
+async function verifyRecentWalletEntries(repository: ImageRepository, sql: postgres.Sql) {
+  const scope = await repository.provision(
+    `wallet-history:${crypto.randomUUID()}`,
+    "wallet-history-fixture",
+    10,
+  );
+  const [older] =
+    await sql`insert into wallet_entries (wallet_id,event_key,kind,amount,balance_after,created_at)
+    select id,'history-fixture','opening',1,1,now()-interval '7 months'
+    from organization_wallets where organization_id=${scope.organizationId} returning id::text`;
+  assert.ok(older);
+  const input = imageGenerationInputSchema.parse({
+    model: "gpt-image-2",
+    prompt: "history fixture",
+  });
+  await repository.create(scope, input, crypto.randomUUID());
+  const all = await repository.walletEntries(scope, 20);
+  assert.ok(all.some((entry) => entry.id === older.id));
+  const earned = await repository.walletEntries(scope, 20, undefined, "earned");
+  assert.equal(earned.length, 1);
+  assert.equal(earned[0]?.kind, "opening");
+  assert.notEqual(earned[0]?.id, older.id);
+  const spent = await repository.walletEntries(scope, 20, undefined, "spent");
+  assert.equal(spent.length, 1);
+  assert.equal(spent[0]?.kind, "consume");
 }
 
 async function verifyManualAndLegacyRetries(

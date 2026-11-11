@@ -218,7 +218,9 @@ function ledgerEntry(
   };
 }
 
-test("credit usage pages spent and earned records with expandable details", async ({ page }) => {
+test("credit usage scrolls by category at a fixed height with expandable details", async ({
+  page,
+}) => {
   await signIn(page);
   const spent = Array.from({ length: 23 }, (_, index) =>
     ledgerEntry(500 - index, "consume", -8, {
@@ -234,8 +236,13 @@ test("credit usage pages spent and earned records with expandable details", asyn
   ];
   const requests: string[] = [];
   await page.route("**/api/v1/wallet/entries?*", (route) => {
-    requests.push(new URL(route.request().url()).search);
-    return route.fulfill({ json: apiFixture({ data: entries }) });
+    const url = new URL(route.request().url());
+    requests.push(url.search);
+    const before = url.searchParams.get("before");
+    const spentView = url.searchParams.get("view") === "spent";
+    const data = entries.filter((entry) => (entry.kind === "consume") === spentView);
+    const batch = data.filter((entry) => !before || Number(entry.id) < Number(before));
+    return route.fulfill({ json: apiFixture({ data: batch.slice(0, 20) }) });
   });
   await page.goto("/commerce/create");
   const credits = page.locator(".topbar").getByRole("button", { name: "积分 200，免费版" });
@@ -243,20 +250,21 @@ test("credit usage pages spent and earned records with expandable details", asyn
   await page.getByRole("menuitem", { name: "积分明细", exact: true }).click();
   const usage = page.getByRole("dialog", { name: "积分明细", exact: true });
   const rows = usage.locator(".credit-usage-row");
-  await expect(rows).toHaveCount(10);
+  const list = usage.locator(".credit-usage-list");
+  await expect(rows).toHaveCount(20);
   await expect(rows.first()).toContainText("图片生成");
   await expect(rows.first()).toContainText("- 8");
-  // 一次读取 100 条；不足一批说明没有更早的记录，不再请求。
-  // 开发模式的 StrictMode 可能把首个请求取消后重发，所以按去重后的请求比较。
-  expect([...new Set(requests)]).toEqual(["?limit=100"]);
-  const pager = usage.getByRole("navigation", { name: "积分明细分页" });
-  await expect(pager.getByRole("button", { name: /^第 \d+ 页$/ })).toHaveCount(3);
-  await pager.getByRole("button", { name: "第 3 页", exact: true }).click();
-  await expect(rows).toHaveCount(3);
-  await expect(pager.getByRole("button", { name: "下一页", exact: true })).toBeDisabled();
+  const height = await usage.evaluate((element) => element.clientHeight);
+  await list.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expect(rows).toHaveCount(23);
+  await expect(usage.getByRole("navigation", { name: "积分明细分页" })).toHaveCount(0);
 
   await usage.getByRole("radio", { name: "获得", exact: true }).click();
   await expect(rows).toHaveCount(2);
+  expect(await usage.evaluate((element) => element.clientHeight)).toBe(height);
+  expect(await list.evaluate((element) => element.scrollTop)).toBe(0);
   await expect(rows.nth(0)).toContainText("生成失败退款");
   await expect(rows.nth(0)).toContainText("+ 8");
   await expect(rows.nth(1)).toContainText("充值到账");
@@ -267,33 +275,46 @@ test("credit usage pages spent and earned records with expandable details", asyn
   const details = rows.nth(1).locator(".credit-usage-detail");
   await expect(details).toHaveText(["说明充值订单 3F8A2C10", /^成员/, "变动后结余200"]);
   await expect(usage).toHaveCSS("outline-style", "none");
-  await page.screenshot({ path: "/tmp/lycobo-credit-usage.png" });
-  expect([...new Set(requests)]).toEqual(["?limit=100"]);
+  expect(await usage.evaluate((element) => element.clientHeight)).toBe(height);
+  expect([...new Set(requests)]).toEqual([
+    "?limit=20&view=spent",
+    "?limit=20&view=spent&before=481",
+    "?limit=20&view=earned",
+  ]);
   await usage.getByRole("button", { name: "关闭积分明细", exact: true }).click();
   await expect(credits).toBeFocused();
 });
 
-test("sparse earned records load older batches automatically", async ({ page }) => {
+test("credit usage keeps loaded rows when loading more fails and retries the cursor", async ({
+  page,
+}) => {
   await signIn(page);
-  const first = Array.from({ length: 100 }, (_, index) => ledgerEntry(900 - index, "consume", -2));
-  const older = [ledgerEntry(700, "checkin", 5), ledgerEntry(699, "opening", 100)];
-  const requests: string[] = [];
+  const first = Array.from({ length: 20 }, (_, index) => ledgerEntry(900 - index, "consume", -2));
+  let failed = false;
   await page.route("**/api/v1/wallet/entries?*", (route) => {
-    const search = new URL(route.request().url()).search;
-    requests.push(search);
-    const data = search.includes("before=801") ? older : first;
-    return route.fulfill({ json: apiFixture({ data }) });
+    const params = new URL(route.request().url()).searchParams;
+    if (!params.has("before")) return route.fulfill({ json: apiFixture({ data: first }) });
+    expect(params.get("before")).toBe("881");
+    if (!failed) {
+      failed = true;
+      return route.fulfill({ status: 503, json: apiFixture(null, 503) });
+    }
+    return route.fulfill({ json: apiFixture({ data: [ledgerEntry(880, "consume", -2)] }) });
   });
   await page.goto("/commerce/create");
   await page.locator(".topbar .header-credits").click();
   await page.getByRole("menuitem", { name: "积分明细", exact: true }).click();
   const usage = page.getByRole("dialog", { name: "积分明细", exact: true });
-  await expect(usage.locator(".credit-usage-row")).toHaveCount(10);
-  await usage.getByRole("radio", { name: "获得", exact: true }).click();
-  // 第一批全是消耗，切到获得时自动续读更早一批，凑出真实的获得记录。
-  await expect(usage.locator(".credit-usage-row")).toHaveCount(2);
-  await expect(usage.locator(".credit-usage-row").first()).toContainText("签到奖励");
-  expect([...new Set(requests)]).toEqual(["?limit=100", "?limit=100&before=801"]);
+  const rows = usage.locator(".credit-usage-row");
+  await expect(rows).toHaveCount(20);
+  await usage.locator(".credit-usage-list").evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  const retry = usage.getByRole("button", { name: "重新加载", exact: true });
+  await expect(retry).toBeVisible();
+  await expect(rows).toHaveCount(20);
+  await retry.click();
+  await expect(rows).toHaveCount(21);
 });
 
 test("direct membership visits have a safe return to the workspace", async ({ page }) => {

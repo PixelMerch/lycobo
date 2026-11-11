@@ -1,5 +1,6 @@
-import { Button, Disclosure, Pagination } from "@heroui/react";
+import { Button, Disclosure } from "@heroui/react";
 import { IconChevronRight } from "@tabler/icons-react";
+import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
 import type { Locale } from "../../../i18n/locale";
 import { useLocale } from "../../../i18n/locale-store";
@@ -14,59 +15,46 @@ import {
   usageTitle,
   type WalletEntry,
 } from "../account-format";
+import { useWalletEntries, type WalletEntryView } from "../wallet-client";
 import { creditsMessages } from "./credits-messages";
-import { type CreditUsage, pageWindow, type UsageView, useCreditUsage } from "./use-credit-usage";
 
-/** 当前视图的一页收支与分页；加载、失败和空状态如实说明，读取失败不显示成“没有记录”。 */
-export function CreditUsageList({ view }: { view: UsageView }) {
-  const usage = useCreditUsage(view);
+/** 在弹窗内部连续滚动收支，续读失败时保留已加载记录并支持重试。 */
+export function CreditUsageList({ view }: { view: WalletEntryView }) {
+  const entries = useWalletEntries(20, view);
   const session = useEnterpriseSession();
-  return (
-    <>
-      {usage.rows.length > 0 ? (
-        <div className="credit-usage-list">
-          {usage.rows.map((entry) => (
-            <UsageRow key={entry.id} entry={entry} currentUid={session.data?.uid} />
-          ))}
-        </div>
-      ) : (
-        <UsageStatus view={view} usage={usage} />
-      )}
-      {(usage.rows.length > 0 || usage.page > 1) && <UsagePagination usage={usage} />}
-    </>
-  );
-}
-
-function UsageStatus({ view, usage }: { view: UsageView; usage: CreditUsage }) {
   const t = useMessages(creditsMessages);
-  if (usage.isLoading)
-    return (
-      <p className="credit-usage-status" role="status">
-        {t.loadingRecords}
-      </p>
-    );
-  if (usage.isError)
-    return (
-      <div className="credit-usage-status" role="status">
-        <p>{t.recordsUnavailable}</p>
-        <Button size="sm" variant="secondary" onPress={usage.retry}>
-          {t.reload}
-        </Button>
-      </div>
-    );
-  if (usage.canLoadOlder)
-    return (
-      <div className="credit-usage-status" role="status">
-        <p>{t.noRecentRecords[view]}</p>
-        <Button size="sm" variant="secondary" onPress={usage.loadOlder}>
-          {t.showOlder}
-        </Button>
-      </div>
-    );
+  const rows = entries.data?.pages.flatMap((page) => page.data) ?? [];
+  const loadMore = () => entries.fetchNextPage({ cancelRefetch: false });
+  const retry = () => {
+    if (entries.isFetchNextPageError) void loadMore();
+    else void entries.refetch();
+  };
+  let status: string | undefined;
+  if (entries.isPending) status = t.loadingRecords;
+  else if (entries.isError) status = t.recordsUnavailable;
+  else if (!rows.length) status = t.noRecords[view];
   return (
-    <p className="credit-usage-status" role="status">
-      {t.noRecords[view]}
-    </p>
+    <div className="credit-usage-list">
+      {rows.map((entry) => (
+        <UsageRow key={entry.id} entry={entry} currentUid={session.data?.uid} />
+      ))}
+      {status && (
+        <div className="credit-usage-status" role="status">
+          <p>{status}</p>
+          {entries.isError && (
+            <Button size="sm" variant="secondary" onPress={retry}>
+              {t.reload}
+            </Button>
+          )}
+        </div>
+      )}
+      <InfiniteLoad
+        hasMore={entries.hasNextPage && !entries.isRefetching}
+        isLoading={entries.isFetchingNextPage}
+        isError={entries.isError}
+        onLoadMore={loadMore}
+      />
+    </div>
   );
 }
 
@@ -112,50 +100,5 @@ function UsageRow({ entry, currentUid }: { entry: WalletEntry; currentUid: strin
         </Disclosure.Body>
       </Disclosure.Content>
     </Disclosure>
-  );
-}
-
-function UsagePagination({ usage }: { usage: CreditUsage }) {
-  const t = useMessages(creditsMessages);
-  return (
-    <Pagination className="credit-usage-pagination" aria-label={t.pages}>
-      <Pagination.Content>
-        <Pagination.Item>
-          <Pagination.Previous
-            aria-label={t.previousPage}
-            isDisabled={usage.page <= 1}
-            onPress={() => usage.goTo(usage.page - 1)}
-          >
-            <Pagination.PreviousIcon />
-          </Pagination.Previous>
-        </Pagination.Item>
-        {pageWindow(usage.page, usage.pageCount).map((item) =>
-          typeof item === "string" ? (
-            <Pagination.Item key={item}>
-              <Pagination.Ellipsis />
-            </Pagination.Item>
-          ) : (
-            <Pagination.Item key={item}>
-              <Pagination.Link
-                aria-label={t.page(item)}
-                isActive={item === usage.page}
-                onPress={() => usage.goTo(item)}
-              >
-                {item}
-              </Pagination.Link>
-            </Pagination.Item>
-          ),
-        )}
-        <Pagination.Item>
-          <Pagination.Next
-            aria-label={t.nextPage}
-            isDisabled={!usage.canNext}
-            onPress={() => usage.goTo(usage.page + 1)}
-          >
-            <Pagination.NextIcon />
-          </Pagination.Next>
-        </Pagination.Item>
-      </Pagination.Content>
-    </Pagination>
   );
 }

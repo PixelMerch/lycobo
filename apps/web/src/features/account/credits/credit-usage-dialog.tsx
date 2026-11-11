@@ -4,18 +4,17 @@ import { useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { formatCredits } from "../account-format";
-import { useWallet } from "../wallet-client";
+import { useWallet, type WalletEntryView } from "../wallet-client";
 import { CreditUsageList } from "./credit-usage-list";
 import { creditsMessages } from "./credits-messages";
-import type { UsageView } from "./use-credit-usage";
 import "../account-panel.css";
 import "./credit-usage.css";
 
-const views: UsageView[] = ["spent", "earned"];
+const views: WalletEntryView[] = ["spent", "earned"];
 
-/** 积分明细弹窗：按消耗／获得两类分页列出企业共享积分的真实收支，逐条展开说明、成员与结余。 */
+/** 积分明细弹窗：滚动查看企业最近半年的积分消耗与获得，逐条展开说明、成员与结余。 */
 export function CreditUsageDialog({ onClose }: { onClose: () => void }) {
-  const [view, setView] = useState<UsageView>("spent");
+  const [view, setView] = useState<WalletEntryView>("spent");
   const wallet = useWallet();
   const t = useMessages(creditsMessages);
   return (
@@ -25,7 +24,7 @@ export function CreditUsageDialog({ onClose }: { onClose: () => void }) {
         if (!open) onClose();
       }}
     >
-      <Modal.Backdrop className="account-backdrop">
+      <Modal.Backdrop className="account-backdrop credit-usage-backdrop">
         <Modal.Container>
           <Modal.Dialog className="account-dialog credit-usage-dialog">
             <Modal.Header>
@@ -60,7 +59,7 @@ export function CreditUsageDialog({ onClose }: { onClose: () => void }) {
                   {t.availableAfter}
                 </span>
               </div>
-              {/* 切换视图时重新挂载列表，页码回到第一页。 */}
+              {/* 切换视图回到列表顶部，已读取的记录保留在查询缓存中。 */}
               <CreditUsageList key={view} view={view} />
             </Modal.Body>
           </Modal.Dialog>
