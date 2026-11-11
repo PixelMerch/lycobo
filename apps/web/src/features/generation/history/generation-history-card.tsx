@@ -13,7 +13,7 @@ import type { Locale } from "../../../i18n/locale";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
 import { textileViewMessages } from "../../commerce/textile-set/textile-view-messages";
-import { displayPrompt } from "../prompt-display";
+import { userHistoryPrompt } from "../prompt-display";
 import { historyMessages } from "./history-messages";
 
 type HistoryText = (typeof historyMessages)[Locale];
@@ -123,7 +123,7 @@ function HistoryResult({
           position={item.position}
           width={item.width}
           height={item.height}
-          prompt={displayPrompt(job.prompt, locale)}
+          prompt={userHistoryPrompt(job)}
           onPreview={(trigger) => onPreview(trigger, item.output_asset_id ?? "")}
         />
       ) : (
@@ -154,7 +154,7 @@ export function GenerationHistoryCard({
   onPreview: ShowPreview;
 }) {
   const t = useMessages(historyMessages);
-  const locale = useLocale();
+  const prompt = userHistoryPrompt(job);
   return (
     <article
       className="generation-job"
@@ -168,7 +168,7 @@ export function GenerationHistoryCard({
         {!compact && <HistoryTaskActions job={job} onRestore={onRestore} />}
       </header>
       {compact ? (
-        <p className="generation-prompt">{displayPrompt(job.prompt, locale)}</p>
+        prompt.trim() && <p className="generation-prompt">{prompt}</p>
       ) : (
         <HistoryPrompt job={job} />
       )}

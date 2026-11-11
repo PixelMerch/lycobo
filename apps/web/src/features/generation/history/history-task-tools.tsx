@@ -13,7 +13,6 @@ import { useEffect, useRef, useState } from "react";
 import { CollapsibleText } from "../../../components/collapsible-text";
 import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
-import { useLocale } from "../../../i18n/locale-store";
 import { currentMessages, useMessages } from "../../../i18n/messages";
 import { copyToClipboard } from "../../../lib/clipboard";
 import { useErrorToast } from "../../../lib/error-toast";
@@ -27,7 +26,7 @@ import {
   usePendingSubmission,
 } from "../generation-client";
 import { modelCapabilities, supportsReferences } from "../models/model-capabilities";
-import { displayPrompt } from "../prompt-display";
+import { replicaUserPrompt, userHistoryPrompt } from "../prompt-display";
 import { ReferenceThumbnails } from "../references/reference-thumbnails";
 import { type Draft, type ModelId, qualityLevels, useStudioStore } from "../studio-state";
 import { HistoryDownloadButton } from "./history-download-button";
@@ -36,18 +35,22 @@ import { historyMessages } from "./history-messages";
 /** 历史任务的提示词：可展开的正文、复制按钮与任务参考图。 */
 export function HistoryPrompt({ job }: { job: ImageJob }) {
   const t = useMessages(historyMessages);
-  const prompt = displayPrompt(job.prompt, useLocale());
+  const prompt = userHistoryPrompt(job);
   return (
     <div className="history-prompt">
-      <CollapsibleText text={prompt} id={`prompt-${job.id}`} className="generation-prompt" />
-      <Button
-        variant="secondary"
-        className="copy-prompt"
-        onPress={() => void copyToClipboard(prompt)}
-      >
-        <UiIcon icon={IconCopy} size="small" />
-        {t.copyPrompt}
-      </Button>
+      {prompt.trim() && (
+        <>
+          <CollapsibleText text={prompt} id={`prompt-${job.id}`} className="generation-prompt" />
+          <Button
+            variant="secondary"
+            className="copy-prompt"
+            onPress={() => void copyToClipboard(prompt)}
+          >
+            <UiIcon icon={IconCopy} size="small" />
+            {t.copyPrompt}
+          </Button>
+        </>
+      )}
       <ReferenceThumbnails ids={job.input?.referenceAssetIds ?? []} label={t.taskReferences} />
     </div>
   );
@@ -82,7 +85,7 @@ async function taskDraft(
     textileSet: input.textileSet,
     variation: input.variation,
     draft: {
-      prompt: input.replica ? input.prompt.split("\n").slice(1).join("\n") : input.prompt,
+      prompt: input.replica ? replicaUserPrompt(input.prompt) : input.prompt,
       ratio: input.aspectRatio,
       resolution: input.resolution === "1K" ? "1.5K" : input.resolution,
       quality: draftQuality(input.quality),
