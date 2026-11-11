@@ -36,9 +36,11 @@ export function referenceRoleNotes(input: ImageGenerationInput, sentIds: readonl
   const lines = sentIds.flatMap((id, index) => {
     const number = input.referenceAssetIds.indexOf(id) + 1;
     const role = roles[number - 1];
-    return role
-      ? [`第${index + 1}张图片是参考图${number}（@图片${number}）：${roleRules[role]}。`]
-      : [];
+    if (!role) return [];
+    // 复制爆款的模板规则来自任务提示词，旧任务仍按提交时保存的要求执行。
+    const rule =
+      input.replica && role === "style" ? "风格图，提供本次任务的视觉参考" : roleRules[role];
+    return [`第${index + 1}张图片是参考图${number}（@图片${number}）：${rule}。`];
   });
   return lines.length ? `参考图说明（按发送顺序）：\n${lines.join("\n")}` : "";
 }

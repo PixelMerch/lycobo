@@ -80,6 +80,10 @@ it("splits ten style matches into target/product pairs and rejects mismatched bi
     const output = textileItemInput(input, index);
     expect(output.referenceAssetIds).toEqual([ids[0], ids[index + 1]]);
     expect(output.count).toBe(1);
+    expect(output.prompt).toContain("第1张图片是参考图1（@图片1）：风格图");
+    expect(output.prompt).toContain(`第2张图片是参考图${index + 2}（@图片${index + 2}）：商品图`);
+    expect(output.prompt).not.toContain("不复制其中的商品或文字");
+    expect(output.prompt).toMatch(/保持商品$/);
   }
   expect(imageGenerationInputSchema.safeParse({ ...raw, count: 1 }).success).toBe(false);
   expect(imageGenerationInputSchema.safeParse({ ...raw, replica: undefined }).success).toBe(false);

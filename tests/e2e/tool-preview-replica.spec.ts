@@ -106,6 +106,7 @@ test("style matching requires both slots and submits their roles without a paid 
       referenceRoles: ["style", ...Array(10).fill("product")],
       model: "gpt-image-2.6",
       count: 10,
+      prompt: expect.stringContaining("以第一张图为版式模板"),
     });
   expect(statusReads).toBe(0);
   await expect(page.getByText("任务已提交，关闭页面也会继续处理。", { exact: true })).toBeVisible();
