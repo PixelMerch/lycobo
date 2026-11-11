@@ -1,5 +1,9 @@
 import { type ImageGenerationInput, type TextileViewId, textileViews } from "@lycoboai/contracts";
-import { itemReferenceAssetIds, referenceRoleNotes } from "./reference-roles";
+import {
+  itemReferenceAssetIds,
+  planItemReferenceNotes,
+  referenceRoleNotes,
+} from "./reference-roles";
 
 const cameras: Record<TextileViewId, string> = {
   "overhead-wide":
@@ -69,9 +73,9 @@ export function textileItemInput(
     const item = input.variation.items[position];
     if (!item) throw new Error("VARIATION_POSITION_INVALID");
     const { variation: _plan, referenceRoles: _roles, ...providerInput } = input;
-    // 方案指定了参考图时只发这些，并说明每张图的角色；旧方案仍发送全部参考图，提示词不变。
+    // 方案指定了参考图时只发这些，并说明每张图对应的编号（带角色时连同角色）；旧方案仍发送全部参考图，提示词不变。
     const referenceAssetIds = itemReferenceAssetIds(input, position);
-    const notes = referenceRoleNotes(input, referenceAssetIds);
+    const notes = planItemReferenceNotes(input, position, referenceAssetIds);
     return {
       ...providerInput,
       referenceAssetIds,
