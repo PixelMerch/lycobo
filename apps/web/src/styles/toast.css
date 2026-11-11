@@ -41,6 +41,7 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+
 /* Task status notices (local editing) use their own bottom-right region: they
  * are transient progress feedback, so they sit away from the picture and the
  * form and never push the centred copy toasts around. HeroUI positions toasts
@@ -103,5 +104,39 @@
     bottom: 16px;
     left: 16px;
     width: auto;
+  }
+}
+
+/* 完成提示用中性玻璃托住内容，绿色只用于成功图标。 */
+.toast-region--top .toast:has(.completion-toast-action) {
+  --glass-tint: var(--glass-dark-tint);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  column-gap: var(--space-3);
+  padding-block: var(--space-2);
+}
+.toast-region--top .toast:has(.completion-toast-action) .toast__title {
+  color: var(--foreground);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.toast-region--top .completion-toast-action {
+  grid-column: 3;
+  grid-row: 1;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+@media (max-width: 767px) {
+  .toast-region--top .completion-toast-action {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .toast-region--top .toast:has(.completion-toast-action) {
+    --glass-tint: var(--glass-fallback);
+  }
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .toast-region--top .toast:has(.completion-toast-action) {
+    --glass-tint: var(--glass-fallback);
   }
 }
