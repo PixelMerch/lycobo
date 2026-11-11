@@ -1,7 +1,7 @@
 import { Button, Popover, Spinner, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { imageUnitCredits, publicImageResolutions } from "@lycoboai/contracts";
 import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
-import { type RefObject, useRef, useState } from "react";
+import { type RefObject, useId, useRef, useState } from "react";
 import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
@@ -26,7 +26,9 @@ export function TextileSetPage() {
   const generation = useTextileGeneration();
   const cost = views.length * imageUnitCredits;
   const showCost = generation.canGenerate && !generation.pending && cost > 0;
+  const costDescriptionId = useId();
   const costDescription = showCost ? t.runCost(views.length, cost) : undefined;
+  const buttonDescription = generation.pending ? t.confirmNoCharge : costDescription;
   return (
     <>
       <div ref={viewsAnchor} className="textile-views-anchor" aria-hidden="true" />
@@ -97,7 +99,7 @@ export function TextileSetPage() {
             isDisabled={!generation.canGenerate}
             isPending={generation.submitting}
             onPress={generation.submit}
-            aria-description={generation.pending ? t.confirmNoCharge : costDescription}
+            aria-describedby={costDescriptionId}
           >
             {generation.submitting && (
               <Spinner size="md" color="current" role="status" aria-label={t.submitting} />
@@ -110,6 +112,9 @@ export function TextileSetPage() {
               </span>
             )}
           </Button>
+          <span id={costDescriptionId} className="sr-only">
+            {buttonDescription}
+          </span>
           {generation.unavailable && <p className="textile-service-status">{t.serviceDisabled}</p>}
         </div>
       </section>
