@@ -1,6 +1,6 @@
 # 发布与部署
 
-本地提交、远程推送和 PR 合并是不同动作。dev 合并到 main 后仅运行 CI，不自动创建版本或部署。GitHub Release、Cloudflare 部署和数据库迁移分别由用户明确授权后手动执行。
+dev 合并到 main 后先运行 CI。通过 GitHub Actions 的 Release 工作流发布正式版本后，自动部署该标签对应的提交到 Cloudflare。生产数据库迁移仍需单独确认和执行。
 
 ## 合并
 
@@ -26,7 +26,7 @@ Dependabot 从默认分支读取 `.github/dependabot.yml`，因此该配置推�
 ## 部署顺序
 
 1. 评估 expand/contract，手动应用经审查的 `packages/db/migrations/` 追加迁移；迁移必须兼容正在运行的代码。
-2. CI 通过且用户授权后，部署主站与独立图片 Worker；首次启用 DO 先部署主站命名空间，再部署消费者绑定。运行与验收见 [Cloudflare 部署](cloudflare-deployment.md)。
+2. main 的 CI 通过后，运行 Release 工作流。GitHub Release 发布成功后，先部署主站 Worker，再部署独立图片 Worker。运行与验收见 [Cloudflare 部署](cloudflare-deployment.md)。
 3. 验证健康、真实读写和错误率。
 4. 稳定后才清理旧字段/契约。
 
@@ -40,9 +40,9 @@ Dependabot 从默认分支读取 `.github/dependabot.yml`，因此该配置推�
 
 从 2026-11-06 起，`.github/workflows/release.yml` 仅保留 `workflow_dispatch`。合并、推送 main、CI 完成或推送 tag 均不自动创建 GitHub Release；已删除自动分配补丁版本的脚本。版本号由发布人明确填写，不修改已有标签或额外回写版本提交。
 
-手动入口：在 GitHub Actions 的 **Release → Run workflow** 选择 `main` 并填写 `vX.Y.Z`。目标提交必须属于 main 历史且对应 main push CI 成功。发布会生成标签、更新日志、作者与文件变更附件；浏览器端到端回归在独立的 CI 手动入口运行。相同版本已有 Release 时跳过，不覆盖其内容。
+手动入口：在 GitHub Actions 的 **Release → Run workflow** 选择 `main` 并填写 `vX.Y.Z`。目标提交必须属于 main 历史且对应 main push CI 成功。发布会生成标签、更新日志、作者与文件变更附件；浏览器端到端回归在独立的 CI 手动入口运行。
 
-Release 工作流只发布 GitHub Release。Cloudflare 的两个 Worker 使用受控 Wrangler 流程单独部署；产品公告在部署成功后由 `release.json` 与发布脚本写入，见 [实时推送](realtime.md)。
+Release 工作流发布成功后调用 `deploy-cloudflare.yml`。部署 job 核对最新正式版本的标签与构建提交，串行部署两个 Worker，检查活动配置与主站健康。部署失败可在原 Release 运行中选择 **Re-run failed jobs**，复用同一提交。通过 GitHub Releases 页面直接发布的版本不走这条流程。产品公告在部署成功后由 `release.json` 与发布脚本写入，见 [实时推送](realtime.md)。
 
 自动说明由 `scripts/release-notes.mjs` 从真实 Git 历史生成：
 
@@ -55,7 +55,7 @@ Release 工作流只发布 GitHub Release。Cloudflare 的两个 Worker 使用�
 
 工作流使用固定 SHA 的官方 Actions，只有发布 job 获得 `contents: write` 和 `actions: read`；
 无需另建 PAT，不执行来自 PR 的发布逻辑，不把输入拼进 shell 程序。已发布版本不覆盖，
-重复触发同一已发布版本会跳过；若创建成功但附件上传失败，先核对现有 Release 再修复缺失附件，
+重复触发同一已发布版本会跳过创建步骤。若创建成功但附件上传失败，先核对现有 Release 再修复缺失附件，
 不要删除或移动已发布 tag。工作流运行页保留执行人、目标提交和日志。
 
 本地可在不访问 GitHub、不创建 tag／Release 的情况下预览（输出不要提交）：
