@@ -77,6 +77,28 @@ describe("enterprise JWT login", () => {
       })?.secureCookie,
     ).toBe(true);
   });
+  it("只读取当前运行环境对应的第三方登录配置", () => {
+    const env = {
+      AUTH_JWT_SECRET: secret,
+      AUTH_TRUSTED_ORIGINS: "https://studio.example.com",
+      DEV_SUPABASE_AUTH_URL: "https://abcdefghijklmnopqrst.supabase.co",
+      DEV_SUPABASE_AUTH_PUBLISHABLE_KEY: "sb_publishable_fixture",
+      DEV_SUPABASE_AUTH_PROVIDERS: "google",
+    };
+    expect(readAuthConfig(env)?.oauth).toBeUndefined();
+    expect(readAuthConfig({ ...env, NODE_ENV: "development" })?.oauth?.providers).toEqual([
+      "google",
+    ]);
+    const production = readAuthConfig({
+      ...env,
+      SUPABASE_AUTH_URL: "https://abcdefghijklmnopqrst.supabase.co",
+      SUPABASE_AUTH_PUBLISHABLE_KEY: "sb_publishable_fixture",
+      SUPABASE_AUTH_PROVIDERS: "google,apple",
+      SUPABASE_EMAIL_TURNSTILE_SITE_KEY: "fixture-site-key",
+    });
+    expect(production?.oauth?.providers).toEqual(["google", "apple"]);
+    expect(production?.oauth?.emailTurnstileSiteKey).toBe("fixture-site-key");
+  });
   it("does not enumerate accounts, rate limits and refuses hostile origins before checking credentials", async () => {
     const { app, repository } = await fixture();
     const request = (account: string, password: string, requestOrigin = origin) =>

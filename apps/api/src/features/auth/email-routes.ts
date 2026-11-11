@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import { emailCodeSendSchema, emailCodeVerifySchema } from "@lycoboai/contracts";
 import { type Context, Hono } from "hono";
 import { trustedAuthRequest } from "./principal";
@@ -15,9 +16,9 @@ function limited(c: Context) {
   return c.json({ error: { code: "RATE_LIMITED", message: "请求过于频繁，请稍后再试" } }, 429);
 }
 
-function localAddress(c: Context<EmailEnv>) {
-  // 本地服务只使用可信连接地址。开发代理下共享同一来源配额，不接受客户端伪造的转发头。
-  return c.env?.incoming?.socket.remoteAddress ?? "local";
+function clientAddress(c: Context<EmailEnv>, auth: EnterpriseAuth) {
+  // Workers 只信任入口传入的 Cloudflare 连接地址，本地只读 Node 的连接信息。
+  return auth.config.edgeClientAddress ?? c.env?.incoming?.socket.remoteAddress ?? "local";
 }
 
 /** 提供同源邮箱验证码发送与登录，复用主站 HttpOnly 会话。 */
@@ -29,6 +30,8 @@ export function emailRoutes(
   const config = auth?.config.oauth;
   app.use("*", async (c, next) => {
     if (!auth || !config?.emailTurnstileSiteKey) return unavailable(c);
+    const edgeAddress = auth.config.edgeClientAddress;
+    if (edgeAddress !== undefined && !isIP(edgeAddress ?? "")) return unavailable(c);
     if (!c.req.header("Origin") || !trustedAuthRequest(c, auth))
       return c.json({ error: { code: "UNTRUSTED_ORIGIN", message: "请求来源不受信任" } }, 403);
     await next();
@@ -42,7 +45,8 @@ export function emailRoutes(
         400,
       );
     const { email, captchaToken } = input.data;
-    if (!(await auth.allowEmailCode(email, localAddress(c), "send"))) return limited(c);
+    const address = clientAddress(c, auth);
+    if (!(await auth.allowEmailCode(email, address, "send"))) return limited(c);
     const result = await sendSupabaseEmailCode(config, email, captchaToken);
     if (result === "limited") return limited(c);
     if (result === "captcha")
@@ -55,7 +59,8 @@ export function emailRoutes(
     if (!input.success)
       return c.json({ error: { code: "VALIDATION_ERROR", message: "请输入 6 位验证码" } }, 400);
     const { email, code } = input.data;
-    if (!(await auth.allowEmailCode(email, localAddress(c), "verify"))) return limited(c);
+    const address = clientAddress(c, auth);
+    if (!(await auth.allowEmailCode(email, address, "verify"))) return limited(c);
     const result = await verifySupabaseEmailCode(config, email, code);
     if (result.status === "limited") return limited(c);
     if (result.status === "unavailable") return unavailable(c);

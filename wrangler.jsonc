@@ -22,6 +22,8 @@
   },
   "vars": {
     "AUTH_TRUSTED_ORIGINS": "https://lycobo.com",
+    "SUPABASE_AUTH_URL": "https://uyfgzmqijdsesnlsiwqu.supabase.co",
+    "SUPABASE_AUTH_PROVIDERS": "google,apple",
     "ASSET_ALLOWED_ORIGINS": "https://lycobo.com",
     "ASSET_PUBLIC_ORIGIN": "https://media.lycobo.com",
     "ASSET_PATH_PREFIX": "/images/",

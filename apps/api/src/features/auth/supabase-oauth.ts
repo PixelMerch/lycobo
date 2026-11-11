@@ -18,18 +18,18 @@ export type SupabaseOAuthConfig = {
   emailTurnstileSiteKey?: string;
 };
 
-/** 只在本地显式配置 OAuth，避免发布旧代码时意外开放第三方登录。 */
+/** 按环境读取独立配置，缺少生产绑定时保持第三方入口关闭。 */
 export function readSupabaseOAuth(
   env: Record<string, string | undefined>,
 ): SupabaseOAuthConfig | undefined {
-  const providers = socialProviders.filter((provider) =>
-    env.DEV_SUPABASE_AUTH_PROVIDERS?.split(",").includes(provider),
-  );
-  const emailTurnstileSiteKey = env.DEV_SUPABASE_EMAIL_TURNSTILE_SITE_KEY?.trim();
-  if (env.NODE_ENV !== "development" || (!providers.length && !emailTurnstileSiteKey))
-    return undefined;
-  const url = new URL(env.DEV_SUPABASE_AUTH_URL ?? "");
-  const key = env.DEV_SUPABASE_AUTH_PUBLISHABLE_KEY ?? "";
+  const prefix = env.NODE_ENV === "development" ? "DEV_" : "";
+  const key = env[`${prefix}SUPABASE_AUTH_PUBLISHABLE_KEY`]?.trim();
+  if (!key) return undefined;
+  const enabled = env[`${prefix}SUPABASE_AUTH_PROVIDERS`]?.split(",").map((value) => value.trim());
+  const providers = socialProviders.filter((provider) => enabled?.includes(provider));
+  const emailTurnstileSiteKey = env[`${prefix}SUPABASE_EMAIL_TURNSTILE_SITE_KEY`]?.trim();
+  if (!providers.length && !emailTurnstileSiteKey) return undefined;
+  const url = new URL(env[`${prefix}SUPABASE_AUTH_URL`] ?? "");
   if (
     url.protocol !== "https:" ||
     !/^[a-z]{20}\.supabase\.co$/.test(url.hostname) ||

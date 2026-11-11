@@ -11,8 +11,9 @@ export type AuthConfig = {
   origins: string[];
   secureCookie: boolean;
   oauth?: SupabaseOAuthConfig;
+  edgeClientAddress?: string | null;
 };
-/** 读取主站 JWT、可信来源与本地第三方登录配置。 */
+/** 读取主站 JWT、可信来源与第三方登录配置。 */
 export function readAuthConfig(env: Record<string, string | undefined>): AuthConfig | undefined {
   if (!env.AUTH_JWT_SECRET) return undefined;
   if (Buffer.byteLength(env.AUTH_JWT_SECRET) < 32)
