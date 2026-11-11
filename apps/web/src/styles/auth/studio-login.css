@@ -133,8 +133,14 @@
     box-shadow 160ms ease,
     filter 160ms ease;
 }
-/* 登录提交中保持渐变原本的亮度，只用加载图标表示进行中。 */
-.login-face .login-submit[data-pending="true"] {
+/* 登录、发码与第三方跳转中保持按钮原本的亮度，只用加载图标表示进行中（同生成按钮）。 */
+.login-face
+  :is(
+    .login-social,
+    .login-email-submit,
+    .login-submit,
+    .login-email-actions .button
+  )[data-pending="true"] {
   opacity: 1;
   cursor: progress;
 }

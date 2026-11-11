@@ -62,9 +62,10 @@ async function completeOAuth(
     const session = identity && (await auth.socialLogin(identity));
     if (!session) return c.redirect(failurePath(returnTo));
     setSession(c, auth, session);
-    // 回到登录页完成站内跳转，使 Strict 会话 Cookie 在同站页面发起的请求中生效。
+    // 回到登录页完成站内跳转，使 Strict 会话 Cookie 在同站页面发起的请求中生效；
+    // oauth=success 只让登录页提示“登录成功”，登录状态仍以会话 Cookie 为准。
     const locale = /^\/zh-CN(?:\/|$)/.test(returnTo) ? "zh-CN" : "en";
-    return c.redirect(`/${locale}/login?${new URLSearchParams({ returnTo })}`);
+    return c.redirect(`/${locale}/login?${new URLSearchParams({ returnTo, oauth: "success" })}`);
   } catch {
     // 外部响应可能包含认证凭据，只给浏览器返回通用失败状态。
     return c.redirect(failurePath(returnTo));

@@ -1,4 +1,4 @@
-import { Button, Form, InputGroup, Label, TextField, toast } from "@heroui/react";
+import { Button, Form, InputGroup, Label, Spinner, TextField, toast } from "@heroui/react";
 import { type EnterpriseIdentity, emailCodeSendSchema } from "@lycoboai/contracts";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { currentMessages, useMessages } from "../../i18n/messages";
@@ -55,25 +55,30 @@ export function EmailLogin({
   const [sentEmail, setSentEmail] = useState("");
   const [code, setCode] = useState("");
   const [sending, setSending] = useState(false);
+  // 发码要等人机验证和邮件服务，可能要好几秒；在发出前同步记下，连点或连按回车也只发一封。
+  const sendingNow = useRef(false);
   const [error, setError] = useState("");
   const codeInput = useRef<HTMLInputElement>(null);
   const verify = useEmailCodeLogin();
   const cooldown = useResendCooldown();
   const { container, challenge } = useEmailTurnstile(siteKey);
   const pending = sending || verify.isPending;
+  // 主按钮只为自己的操作转圈：发码前是“发送验证码”，收到码后是“验证并登录”；重新发送在自己的按钮上转圈。
+  const submitPending = sentEmail ? verify.isPending : sending;
   const inputReady = sentEmail ? code.length === 6 : Boolean(email.trim()) && !cooldown.remaining;
   useEffect(() => {
     if (sentEmail) codeInput.current?.focus({ preventScroll: true });
   }, [sentEmail]);
 
   async function send() {
-    if (!siteKey || pending || cooldown.remaining) return;
+    if (!siteKey || sendingNow.current || verify.isPending || cooldown.remaining) return;
     setError("");
     const address = email.trim().toLowerCase();
     if (!emailCodeSendSchema.shape.email.safeParse(address).success) {
       setError(t.emailInvalid);
       return;
     }
+    sendingNow.current = true;
     setSending(true);
     try {
       const token = await challenge().catch(() => {
@@ -83,9 +88,11 @@ export function EmailLogin({
       setSentEmail(address);
       setCode("");
       cooldown.start();
+      toast.success(t.codeSent);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t.emailSendFailed);
     } finally {
+      sendingNow.current = false;
       setSending(false);
     }
   }
@@ -150,38 +157,23 @@ export function EmailLogin({
         </TextField>
       )}
       <div ref={container} className="login-email-challenge" />
-      <Button
-        type="submit"
-        size="lg"
-        className="login-email-submit"
-        isDisabled={!siteKey || !inputReady}
-        isPending={pending}
-      >
-        {sentEmail ? t.emailVerify : t.sendCode}
-      </Button>
+      <EmailSubmitButton
+        codeStep={Boolean(sentEmail)}
+        pending={submitPending}
+        isDisabled={!siteKey || !inputReady || (Boolean(sentEmail) && sending)}
+      />
       {sentEmail && (
-        <div className="login-email-actions">
-          <Button
-            variant="ghost"
-            size="sm"
-            isDisabled={pending}
-            onPress={() => {
-              setSentEmail("");
-              setCode("");
-              setError("");
-            }}
-          >
-            {t.changeEmail}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            isDisabled={pending || cooldown.remaining > 0}
-            onPress={() => void send()}
-          >
-            {cooldown.remaining ? t.resendIn(cooldown.remaining) : t.resendCode}
-          </Button>
-        </div>
+        <EmailCodeActions
+          sending={sending}
+          verifying={verify.isPending}
+          remaining={cooldown.remaining}
+          onChangeEmail={() => {
+            setSentEmail("");
+            setCode("");
+            setError("");
+          }}
+          onResend={() => void send()}
+        />
       )}
       {error && (
         <p className="login-unavailable" role="alert">
@@ -189,5 +181,71 @@ export function EmailLogin({
         </p>
       )}
     </Form>
+  );
+}
+
+/** 主按钮：发码前是“发送验证码”，收到码后是“验证并登录”；进行中文字不变，前面转圈（同生成按钮）。 */
+function EmailSubmitButton({
+  codeStep,
+  pending,
+  isDisabled,
+}: {
+  codeStep: boolean;
+  pending: boolean;
+  isDisabled: boolean;
+}) {
+  const t = useMessages(authMessages);
+  return (
+    <Button
+      type="submit"
+      size="lg"
+      className="login-email-submit"
+      isDisabled={isDisabled}
+      isPending={pending}
+    >
+      {pending && (
+        <Spinner
+          size="sm"
+          color="current"
+          role="status"
+          aria-label={codeStep ? t.signingIn : t.sendingCode}
+        />
+      )}
+      {codeStep ? t.emailVerify : t.sendCode}
+    </Button>
+  );
+}
+
+/** 收到验证码后的两个次要操作：更换邮箱与重新发送；重新发送时在按钮上转圈，免得用户以为没点到。 */
+function EmailCodeActions({
+  sending,
+  verifying,
+  remaining,
+  onChangeEmail,
+  onResend,
+}: {
+  sending: boolean;
+  verifying: boolean;
+  remaining: number;
+  onChangeEmail: () => void;
+  onResend: () => void;
+}) {
+  const t = useMessages(authMessages);
+  return (
+    <div className="login-email-actions">
+      <Button variant="ghost" size="sm" isDisabled={sending || verifying} onPress={onChangeEmail}>
+        {t.changeEmail}
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        isDisabled={verifying || remaining > 0}
+        isPending={sending}
+        onPress={onResend}
+      >
+        {sending && <Spinner size="sm" color="current" role="status" aria-label={t.sendingCode} />}
+        {remaining ? t.resendIn(remaining) : t.resendCode}
+      </Button>
+    </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   socialProvidersSchema,
 } from "@lycoboai/contracts";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { currentMessages } from "../../i18n/messages";
 import { normalizeApiResponse } from "../../lib/api-response";
 import { authMessages } from "./auth-messages";
@@ -43,9 +44,20 @@ export function useSocialLogin(returnTo: string) {
       window.location.assign(url);
     },
   });
+  // 从第三方授权页按“返回”回来时，页面可能直接从浏览器缓存恢复，清掉跳转状态，按钮不再一直转圈。
+  const { reset } = start;
+  useEffect(() => {
+    const restore = (event: PageTransitionEvent) => {
+      if (event.persisted) reset();
+    };
+    window.addEventListener("pageshow", restore);
+    return () => window.removeEventListener("pageshow", restore);
+  }, [reset]);
   return {
     providers: availability.data?.providers ?? [],
     emailSiteKey: availability.data?.emailTurnstileSiteKey,
     start,
+    // 从请求授权地址到页面离开都算“正在跳转”，被点的那个按钮一直转圈。
+    redirecting: start.isPending || start.isSuccess ? start.variables : undefined,
   };
 }

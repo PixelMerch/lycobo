@@ -157,6 +157,87 @@ test("pending enterprise login blocks repeat submissions and changing methods", 
   await expect(dialog.getByLabel("密码", { exact: true })).toHaveValue("");
 });
 
+test("sending an email code shows a spinner, sends once and confirms with a toast", async ({
+  page,
+}) => {
+  let release: () => void = () => undefined;
+  const responseReady = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let sends = 0;
+  // 人机验证脚本换成立即给令牌的替身，不访问 Cloudflare。
+  await page.route("https://challenges.cloudflare.com/turnstile/**", (route) =>
+    route.fulfill({
+      contentType: "text/javascript",
+      body: "window.turnstile={render:(el,o)=>{setTimeout(()=>o.callback('fixture-token'));return 'fixture'},remove:()=>{}};",
+    }),
+  );
+  await page.route("**/api/v1/auth/oauth/providers", (route) =>
+    route.fulfill({
+      json: apiFixture({ providers: [], emailTurnstileSiteKey: "fixture-site-key" }),
+    }),
+  );
+  await page.route("**/api/v1/auth/email/send", async (route) => {
+    sends++;
+    await responseReady;
+    await route.fulfill({ json: apiFixture({}) });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "登录领积分", exact: true }).click();
+  const dialog = page.locator(".login-page");
+  await dialog.getByRole("textbox", { name: "邮箱", exact: true }).fill("fixture@example.com");
+  await dialog.getByRole("button", { name: "发送验证码", exact: true }).click();
+  // 发送中文字不变、前面转圈，按钮保持原亮度；再按回车也不会再发一封。
+  await expect(dialog.getByRole("status", { name: "正在发送验证码" })).toBeVisible();
+  const sending = dialog.getByRole("button", { name: /发送验证码/ });
+  await expect(sending).toHaveAttribute("data-pending", "true");
+  await expect(sending).toHaveCSS("opacity", "1");
+  await page.keyboard.press("Enter");
+  expect(sends).toBe(1);
+  release();
+  await expect(page.getByText("验证码已发送，请查收邮箱", { exact: true })).toBeVisible();
+  await expect(
+    dialog.getByText("验证码已发送至 fixture@example.com", { exact: true }),
+  ).toBeVisible();
+  expect(sends).toBe(1);
+});
+
+test("social sign-in spins on the pressed button and confirms success on return", async ({
+  page,
+}) => {
+  let fail: () => void = () => undefined;
+  const failed = new Promise<void>((resolve) => {
+    fail = resolve;
+  });
+  await page.route("**/api/v1/auth/oauth/providers", (route) =>
+    route.fulfill({ json: apiFixture({ providers: ["google", "apple"] }) }),
+  );
+  await page.route("**/api/v1/auth/oauth/start", async (route) => {
+    await failed;
+    await route.fulfill({ status: 503, json: apiFixture({}, 503) });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "登录领积分", exact: true }).click();
+  const dialog = page.locator(".login-page");
+  await dialog.getByRole("button", { name: "使用 Google 登录", exact: true }).click();
+  // 被点的按钮转圈直到跳走，另一个暂时停用。
+  await expect(dialog.getByRole("status", { name: "正在登录" })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: /使用 Google 登录/ })).toHaveAttribute(
+    "data-pending",
+    "true",
+  );
+  await expect(dialog.getByRole("button", { name: "使用 Apple 登录", exact: true })).toBeDisabled();
+  fail();
+  await expect(dialog.getByText("第三方登录未完成，请重试。", { exact: true })).toBeVisible();
+  await expect(dialog.getByRole("status", { name: "正在登录" })).toHaveCount(0);
+
+  // 服务端完成第三方登录后带 oauth=success 回到登录页：提示“登录成功”再回到原页面。
+  await mockImageApi(page);
+  await page.goto("/zh-CN/login?returnTo=%2Fzh-CN&oauth=success");
+  await expect(page.getByText("登录成功", { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/zh-CN\/?$/);
+});
+
 test("reduced motion switches faces without a 3D transform", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/login");
@@ -259,6 +340,8 @@ test("enterprise login retains the existing request, session refresh and logout 
   await page.locator(".account-trigger").click();
   await page.getByRole("menuitem", { name: "退出登录", exact: true }).click();
   await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();
+  // 退出成功同样用顶部 Toast 告诉用户。
+  await expect(page.getByText("已退出登录", { exact: true })).toBeVisible();
 });
 
 test("asset authorization failure requests reauthentication even with a cached identity", async ({

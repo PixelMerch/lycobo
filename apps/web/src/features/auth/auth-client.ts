@@ -144,8 +144,10 @@ export function useEnterpriseLogout() {
       const response = await authRequest("logout", { method: "POST" });
       if (!response.ok) throw new Error(currentMessages(authMessages).logoutFailed);
     },
+    // 三处退出入口（账户菜单、设置侧栏、手机设置页）共用这里的提示，组件卸载后也会执行。
     onSuccess: async () => {
       await clearEnterpriseSession(client);
+      toast.success(currentMessages(authMessages).signedOut);
     },
   });
 }
