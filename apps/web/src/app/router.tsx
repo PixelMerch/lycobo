@@ -13,7 +13,7 @@ import {
   redirectToLocale,
 } from "./locale-route";
 import { PageLoading } from "./page-loading";
-import { PageNotFound, PageUnavailable } from "./page-states";
+import { PageNotFound, RouteErrorPage } from "./page-states";
 
 const localizedRoutes: RouteObject[] = [
   {
@@ -39,7 +39,7 @@ const localizedRoutes: RouteObject[] = [
   })),
   {
     HydrateFallback: PageLoading,
-    errorElement: <PageUnavailable />,
+    errorElement: <RouteErrorPage />,
     lazy: async () => ({
       Component: (await import("./studio-shell")).StudioShell,
     }),
@@ -162,13 +162,13 @@ export const router = createBrowserRouter([
     path: "/:locale",
     loader: loadRouteLocale,
     HydrateFallback: PageLoading,
-    errorElement: <PageNotFound />,
+    errorElement: <RouteErrorPage />,
     children: localizedRoutes,
   },
   {
     path: "*",
     loader: ({ request }) => redirectToLocale(request),
     HydrateFallback: PageLoading,
-    errorElement: <PageNotFound />,
+    errorElement: <RouteErrorPage />,
   },
 ]);
