@@ -79,12 +79,23 @@ export const socialAuthorizationSchema = z.object({ url: z.url({ protocol: /^htt
 /** OAuth 登录方式的标识。 */
 export type SocialProvider = (typeof socialProviders)[number];
 
+/** 昵称仅用于显示，支持多语言并拒绝控制字符。 */
+export const userNicknameSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .regex(/^[^\p{Cc}]+$/u);
+/** 昵称修改仅接受新值，用户身份由会话确定。 */
+export const userNicknameChangeSchema = z.object({ nickname: userNicknameSchema }).strict();
+
 export const enterpriseIdentitySchema = z.object({
   uid: userUidSchema.optional(),
   userId: z.uuid(),
   organizationId: z.uuid(),
   role: z.enum(["admin", "member"]),
   account: z.string(),
+  nickname: userNicknameSchema.nullable().optional(),
   loginMethod: z.literal("social").optional(),
   // 读取时接受任意短 id：新部署增加预设时，旧页面不会因为认不出而登录失败，只显示默认头像。
   avatarPreset: z.string().max(32).nullable().optional(),

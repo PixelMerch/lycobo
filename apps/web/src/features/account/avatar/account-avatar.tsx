@@ -1,5 +1,6 @@
 import { Avatar } from "@heroui/react";
 import { type AvatarPreset, avatarPresetIds, type EnterpriseIdentity } from "@lycoboai/contracts";
+import { accountDisplayName } from "../account-format";
 import "./account-avatar.css";
 
 /** 没选过或认不出的预设（例如新部署新增的 id）显示默认的青柠头像。 */
@@ -29,7 +30,7 @@ export function AccountAvatar({
       data-avatar-preset={avatarPresetOf(account.avatarPreset)}
       aria-hidden="true"
     >
-      <Avatar.Fallback>{accountInitial(account.account)}</Avatar.Fallback>
+      <Avatar.Fallback>{accountInitial(accountDisplayName(account))}</Avatar.Fallback>
     </Avatar>
   );
 }

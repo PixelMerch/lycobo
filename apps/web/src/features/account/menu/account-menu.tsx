@@ -8,7 +8,7 @@ import { useErrorToast } from "../../../lib/error-toast";
 import { useOpenAssetLibrary } from "../../assets/asset-library-store";
 import { useEnterpriseLogout, useEnterpriseSession } from "../../auth/auth-client";
 import { useOpenLogin } from "../../auth/login-prompt";
-import { roleLabel } from "../account-format";
+import { accountDisplayName, roleLabel } from "../account-format";
 import { useAccountOverlays } from "../account-overlay-store";
 import { AccountAvatar } from "../avatar/account-avatar";
 import { AccountMessages } from "../notifications/account-messages";
@@ -65,12 +65,16 @@ export function AccountMenu({
         <Dropdown.Trigger
           ref={triggerRef}
           className="account-trigger"
-          aria-label={t.accountMenu(account.account)}
+          aria-label={t.accountMenu(accountDisplayName(account))}
         >
           <AccountAvatar account={account} size="sm" className="account-avatar" />
           {!inHeader && (
-            <span className="account-trigger-name" title={account.account} aria-hidden="true">
-              {account.account}
+            <span
+              className="account-trigger-name"
+              title={accountDisplayName(account)}
+              aria-hidden="true"
+            >
+              {accountDisplayName(account)}
             </span>
           )}
         </Dropdown.Trigger>
@@ -83,8 +87,8 @@ export function AccountMenu({
           <div className="account-menu-identity">
             <AccountAvatar account={account} size="lg" className="account-menu-avatar" />
             <div className="account-menu-details">
-              <strong className="account-menu-name" title={account.account}>
-                {account.account}
+              <strong className="account-menu-name" title={accountDisplayName(account)}>
+                {accountDisplayName(account)}
               </strong>
               <span>
                 {account.uid ? `UID ${account.uid}` : "UID —"} · {roleLabel(account.role, locale)}

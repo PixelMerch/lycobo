@@ -15,7 +15,7 @@ import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { useEnterpriseLogout, useEnterpriseSession } from "../../auth/auth-client";
-import { roleLabel } from "../account-format";
+import { accountDisplayName, roleLabel } from "../account-format";
 import { useAccountOverlays } from "../account-overlay-store";
 import { AccountAvatar } from "../avatar/account-avatar";
 import { useWideViewport } from "../use-wide-viewport";
@@ -43,7 +43,7 @@ function SettingsIdentity({ account }: { account: EnterpriseIdentity }) {
     <div className="settings-identity">
       <AccountAvatar account={account} className="settings-identity-avatar" />
       <div className="settings-identity-text">
-        <strong title={account.account}>{account.account}</strong>
+        <strong title={accountDisplayName(account)}>{accountDisplayName(account)}</strong>
         <span>
           {account.uid ? `UID ${account.uid}` : "UID —"} ·{" "}
           {account.loginMethod === "social" ? t.personalAccount : roleLabel(account.role, locale)}

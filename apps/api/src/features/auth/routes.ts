@@ -3,6 +3,7 @@ import {
   enterpriseLocaleChangeSchema,
   enterpriseLoginSchema,
   enterprisePasswordChangeSchema,
+  userNicknameChangeSchema,
 } from "@lycoboai/contracts";
 import { type Context, Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
@@ -129,6 +130,17 @@ export function authRoutes(auth?: EnterpriseAuth) {
     if (!(await auth.setPreferredLocale(userId, preferredLocale)))
       return fail(c, "UNAUTHORIZED", "请先登录", 401);
     return c.json({ ...session.user, preferredLocale });
+  });
+  app.put("/nickname", async (c) => {
+    if (!auth) return fail(c, "AUTH_NOT_CONFIGURED", "登录服务尚未配置", 503);
+    const session = await enterprisePrincipal(c, auth);
+    if (!session) return fail(c, "UNAUTHORIZED", "请先登录", 401);
+    const input = userNicknameChangeSchema.safeParse(await c.req.json().catch(() => null));
+    if (!input.success) return fail(c, "VALIDATION_ERROR", "请输入 1 至 64 字符的昵称", 400);
+    const { nickname } = input.data;
+    if (!(await auth.setNickname(session.user.userId, nickname)))
+      return fail(c, "UNAUTHORIZED", "请先登录", 401);
+    return c.json({ ...session.user, nickname });
   });
   app.get("/session", async (c) => {
     if (!auth) return fail(c, "AUTH_NOT_CONFIGURED", "登录服务尚未配置", 503);

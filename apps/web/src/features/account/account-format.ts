@@ -1,8 +1,13 @@
-import type { walletEntriesSchema } from "@lycoboai/contracts";
+import type { EnterpriseIdentity, walletEntriesSchema } from "@lycoboai/contracts";
 import type { Locale } from "../../i18n/locale";
 import { accountFormatMessages } from "./account-format-messages";
 
 export type WalletEntry = ReturnType<typeof walletEntriesSchema.parse>["data"][number];
+
+/** 账户界面优先显示昵称，未填写时沿用登录账号。 */
+export function accountDisplayName(account: EnterpriseIdentity) {
+  return account.nickname ?? account.account;
+}
 
 /** 收支类型的名称。 */
 export const entryName = (entry: WalletEntry, locale: Locale) =>

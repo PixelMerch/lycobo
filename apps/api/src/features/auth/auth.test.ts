@@ -40,6 +40,7 @@ async function fixture(email = false) {
     changePassword: vi.fn(async () => true),
     setAvatarPreset: vi.fn(async () => true),
     setPreferredLocale: vi.fn(async () => true),
+    setNickname: vi.fn(async () => true),
   };
   const oauth = {
     origin: "https://fixture.supabase.co",

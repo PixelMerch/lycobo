@@ -49,9 +49,11 @@ export const users = pgTable(
     // 用户选择的预设头像 id；为空时显示默认头像。可选值由 API 校验，这里只限制格式。
     avatarPreset: text("avatar_preset"),
     preferredLocale: text("preferred_locale"),
+    nickname: text("nickname"),
     createdAt: createdAt(),
   },
   (t) => [
+    check("users_nickname_check", sql`char_length(btrim(${t.nickname})) between 1 and 64`),
     check("users_preferred_locale_check", sql`${t.preferredLocale} in ('zh-CN', 'en')`),
     check(
       "users_avatar_preset_check",

@@ -1,12 +1,13 @@
 import { createHash } from "node:crypto";
-import { type SocialProvider, socialProviders } from "@lycoboai/contracts";
+import { type SocialProvider, socialProviders, userNicknameSchema } from "@lycoboai/contracts";
 import { z } from "zod";
 
 const userResponse = z.object({
   user: z.object({
     id: z.uuid(),
     email: z.email().max(320).optional(),
-    identities: z.array(z.object({ provider: z.string() })),
+    identities: z.array(z.object({ provider: z.string(), identity_data: z.unknown().optional() })),
+    user_metadata: z.unknown().optional(),
   }),
 });
 
@@ -17,6 +18,17 @@ export type SupabaseOAuthConfig = {
   providers: SocialProvider[];
   emailTurnstileSiteKey?: string;
 };
+
+const profileName = z.object({ full_name: z.unknown().optional(), name: z.unknown().optional() });
+
+function nicknameFrom(metadata: unknown) {
+  const profile = profileName.safeParse(metadata);
+  if (!profile.success) return undefined;
+  return (
+    userNicknameSchema.safeParse(profile.data.full_name).data ??
+    userNicknameSchema.safeParse(profile.data.name).data
+  );
+}
 
 /** 按环境读取独立配置，缺少生产绑定时保持第三方入口关闭。 */
 export function readSupabaseOAuth(
@@ -79,10 +91,13 @@ export async function exchangeSupabaseCode(
   });
   if (!response.ok) return null;
   const data = userResponse.safeParse(await response.json());
-  if (
-    !data.success ||
-    !data.data.user.identities.some((identity) => identity.provider === provider)
-  )
-    return null;
-  return { externalId: data.data.user.id, email: data.data.user.email ?? null };
+  if (!data.success) return null;
+  const { user } = data.data;
+  const identity = user.identities.find((item) => item.provider === provider);
+  if (!identity) return null;
+  // Apple 网页 OAuth 常常没有姓名，只有当前身份确实提供时才自动填入。
+  const nickname =
+    nicknameFrom(identity.identity_data) ??
+    (provider === "google" ? nicknameFrom(user.user_metadata) : undefined);
+  return { externalId: user.id, email: user.email ?? null, ...(nickname && { nickname }) };
 }

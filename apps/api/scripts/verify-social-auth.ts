@@ -54,6 +54,7 @@ export async function verifySocialAuth(app: App, origin: string, enterpriseUserI
   const externalId = crypto.randomUUID();
   const google = await start(app, origin, "google");
   const apple = await start(app, origin, "apple");
+  const returningGoogle = await start(app, origin, "google");
   assert.notEqual(google.challenge, apple.challenge);
   const noFlow = await app.request("/api/v1/auth/oauth/callback?code=test-code");
   assert.match(noFlow.headers.get("location") ?? "", /oauth=failed/);
@@ -66,19 +67,36 @@ export async function verifySocialAuth(app: App, origin: string, enterpriseUserI
     );
     const payload = JSON.parse(String(options?.body));
     assert.equal(payload.auth_code, "test-code");
-    const expected = [google.challenge, apple.challenge][exchange++];
+    const expected = [google.challenge, apple.challenge, returningGoogle.challenge][exchange++];
     assert.equal(createHash("sha256").update(payload.code_verifier).digest("base64url"), expected);
     return Response.json({
       user: {
         id: externalId,
         email: "fixture-account@example.com",
-        identities: [{ provider: "google" }, { provider: "apple" }],
+        identities: [
+          { provider: "google", identity_data: { full_name: "Google Fixture" } },
+          { provider: "apple" },
+        ],
       },
     });
   };
   try {
     const first = await complete(app, google.flow);
+    assert.equal(first.user.nickname, "Google Fixture");
+    const rename = await app.request("/api/v1/auth/nickname", {
+      method: "PUT",
+      headers: { ...first.headers, Origin: origin, "Content-Type": "application/json" },
+      body: JSON.stringify({ nickname: "  我的昵称  " }),
+    });
+    assert.equal(rename.status, 200);
+    assert.equal(
+      enterpriseIdentitySchema.parse(unwrapApiData(await rename.json())).nickname,
+      "我的昵称",
+    );
     const second = await complete(app, apple.flow);
+    assert.equal(second.user.nickname, "我的昵称");
+    const returning = await complete(app, returningGoogle.flow);
+    assert.equal(returning.user.nickname, "我的昵称");
     assert.equal(first.user.userId, second.user.userId);
     assert.equal(first.user.uid, second.user.uid);
     assert.equal(first.user.organizationId, second.user.organizationId);
@@ -97,7 +115,7 @@ export async function verifySocialAuth(app: App, origin: string, enterpriseUserI
       (await app.request("/api/v1/auth/session", { headers: first.headers })).status,
       401,
     );
-    assert.equal(exchange, 2);
+    assert.equal(exchange, 3);
   } finally {
     globalThis.fetch = original;
   }

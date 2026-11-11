@@ -140,7 +140,7 @@ export function enterpriseAuth(repository: AuthRepository, config: AuthConfig) {
       return result ?? ({ error: "INVALID_CREDENTIALS" } as const);
     },
     /** 复用主站会话签发，不将 Supabase 的访问或刷新凭据写入浏览器。 */
-    socialLogin: (identity: { externalId: string; email: string | null }) =>
+    socialLogin: (identity: { externalId: string; email: string | null; nickname?: string }) =>
       createLoginSession((sessionId, expiresAt, refreshHash) =>
         repository.createSocialSession({ ...identity, sessionId, expiresAt, refreshHash }),
       ),
@@ -178,6 +178,8 @@ export function enterpriseAuth(repository: AuthRepository, config: AuthConfig) {
     /** 保存当前用户的预设头像；id 已由路由按契约校验。 */
     setAvatarPreset: (userId: string, avatarPreset: string | null) =>
       repository.setAvatarPreset(userId, avatarPreset),
+    /** 保存当前会话用户的昵称。 */
+    setNickname: (userId: string, nickname: string) => repository.setNickname(userId, nickname),
     /** 保存由会话确定的用户的界面语言。 */
     setPreferredLocale: (userId: string, locale: AccountLocale) =>
       repository.setPreferredLocale(userId, locale),

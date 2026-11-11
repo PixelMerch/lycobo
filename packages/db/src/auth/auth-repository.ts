@@ -20,11 +20,13 @@ const principalRow = z.object({
   account: z.string(),
   avatar_preset: z.string().nullable(),
   preferred_locale: z.enum(accountLocales).nullable(),
+  nickname: z.string().nullable(),
   social: z.boolean(),
 });
 export type EnterpriseCredential = z.infer<typeof accountRow>;
 export type EnterpriseIdentity = ImagePrincipal & {
   account: string;
+  nickname?: string | null;
   loginMethod?: "social";
   avatarPreset?: string | null;
   preferredLocale?: AccountLocale | null;
@@ -84,7 +86,7 @@ export function openAuthRepository(url: string, edge = false) {
     },
     async identity(sessionId: string): Promise<EnterpriseIdentity | null> {
       const rows = await sql`select coalesce(a.account,p.email,u.uid) as account,
-        u.id as user_id,m.organization_id,m.role,u.uid,u.avatar_preset,u.preferred_locale,
+        u.id as user_id,m.organization_id,m.role,u.uid,u.avatar_preset,u.preferred_locale,u.nickname,
         s.social_account_id is not null as social
         from enterprise_sessions s
         left join enterprise_accounts a on a.id=s.account_id and a.disabled_at is null and a.credential_version=s.credential_version
@@ -100,6 +102,7 @@ export function openAuthRepository(url: string, edge = false) {
         organizationId: row.organization_id,
         role: row.role,
         account: row.account,
+        nickname: row.nickname,
         ...(row.social ? { loginMethod: "social" as const } : {}),
         avatarPreset: row.avatar_preset,
         preferredLocale: row.preferred_locale,
@@ -118,6 +121,11 @@ export function openAuthRepository(url: string, edge = false) {
       return rows.length === 1;
     },
     /** 保存第三方登录会话，沿用主站的访问和刷新凭据。 */
+    /** 保存指定会话用户的站内昵称。 */
+    async setNickname(userId: string, nickname: string) {
+      const rows = await sql`update users set nickname=${nickname} where id=${userId} returning id`;
+      return rows.length === 1;
+    },
     createSocialSession: (input: Parameters<typeof createSocialSession>[1]) =>
       createSocialSession(sql, input),
     async rotateRefresh(currentHash: string, nextHash: string) {

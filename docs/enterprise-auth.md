@@ -113,3 +113,10 @@ API 实例不缓存会话校验结果：后台停用账号、替换凭据以及�
 - 主站的 Supabase 项目地址和允许的 OAuth 登录方式由 Wrangler 配置提供。向主站 Worker 版本单独注入 `SUPABASE_AUTH_PUBLISHABLE_KEY` 和 `SUPABASE_EMAIL_TURNSTILE_SITE_KEY`。前者是 Supabase 公开项目密钥，后者是 Cloudflare Turnstile 站点公钥。Google／Apple 客户端密钥、Resend SMTP 密钥和 Turnstile 验证密钥保存在 Supabase Auth。
 - Supabase Redirect URLs 应允许 `https://lycobo.com/api/v1/auth/oauth/callback`。Google Cloud OAuth 测试状态下，仅测试名单内的账号可使用 Google 登录。
 - Turnstile 线上组件须允许主站主机名，Workers 的邮件限流使用 Cloudflare 提供的连接 IP，缺失该地址时拒绝发码与校验。
+
+
+## 昵称
+
+迁移 0049 为业务表 `public.users` 添加可空的 `nickname`。Google 登录优先使用已验证身份返回的姓名；Apple 网页授权未返回姓名时保持为空。已有账号重新通过 Google 登录时只补齐空昵称。
+
+登录、续期和会话读取都会返回昵称。用户可在账户设置编辑，`PUT /api/v1/auth/nickname` 只更新当前会话对应的用户，接受 1–64 字符并去除首尾空白。昵称只参与展示，账号和 UID 继续使用各自字段。
