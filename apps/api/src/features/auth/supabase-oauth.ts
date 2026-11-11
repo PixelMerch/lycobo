@@ -73,7 +73,8 @@ export async function exchangeSupabaseCode(
     method: "POST",
     headers: { apikey: config.key, "Content-Type": "application/json" },
     body: JSON.stringify({ auth_code: code, code_verifier: verifier }),
-    redirect: "error",
+    // Workers 仅支持手动拒绝重定向，避免把认证数据转发到其他地址。
+    redirect: "manual",
     signal: AbortSignal.timeout(10000),
   });
   if (!response.ok) return null;

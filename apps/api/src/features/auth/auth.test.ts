@@ -334,6 +334,7 @@ describe("邮箱验证码登录", () => {
     expect(fetchProvider).toHaveBeenCalledWith(
       new URL("https://fixture.supabase.co/auth/v1/otp"),
       expect.objectContaining({
+        redirect: "manual",
         body: JSON.stringify({
           email: "test@example.com",
           create_user: true,

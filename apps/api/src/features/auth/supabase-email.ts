@@ -9,7 +9,8 @@ async function authPost(config: SupabaseOAuthConfig, path: string, input: object
     method: "POST",
     headers: { apikey: config.key, "Content-Type": "application/json" },
     body: JSON.stringify(input),
-    redirect: "error",
+    // Workers 仅支持手动拒绝重定向，避免把认证数据转发到其他地址。
+    redirect: "manual",
     signal: AbortSignal.timeout(10000),
   }).catch(() => null);
 }
