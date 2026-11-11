@@ -27,7 +27,7 @@ export function useCompletionAlerts(userId?: string, organizationId?: string) {
         const id = toast.success(title, {
           timeout: 10000,
           actionProps: {
-            className: "completion-toast-action",
+            className: "toast-compact-action",
             size: "sm",
             variant: "tertiary",
             children: t.viewResults,
