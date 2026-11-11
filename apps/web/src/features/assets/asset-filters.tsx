@@ -142,7 +142,7 @@ function AssetSourceMenu({
   const label = (entry: SourceKey) => (isSource(entry) ? t.sources[entry] : toolText[entry].name);
   const icon = (entry: SourceKey) => (isSource(entry) ? sourceIcons[entry] : toolIcons[entry]);
   const option = (entry: SourceKey, text: string) => (
-    <ListBox.Item className="model-options" key={entry} id={entry} textValue={text}>
+    <ListBox.Item key={entry} id={entry} textValue={text}>
       <UiIcon icon={icon(entry)} />
       <span>{text}</span>
       {entry === currentTool && <span className="asset-filter-now">{t.currentTool}</span>}
@@ -164,7 +164,7 @@ function AssetSourceMenu({
         <Select.Value>{() => label(key)}</Select.Value>
         <Select.Indicator />
       </Select.Trigger>
-      <Select.Popover className="model-menu asset-filter-menu" placement="bottom start">
+      <Select.Popover className="choice-menu" placement="bottom start" offset={4}>
         <ListBox aria-label={t.source}>
           {option("all", t.sources.all)}
           {option("uploads", t.sources.uploads)}
@@ -203,15 +203,10 @@ function AssetTimeMenu({
         <Select.Value>{() => t.times[time]}</Select.Value>
         <Select.Indicator />
       </Select.Trigger>
-      <Select.Popover className="model-menu asset-filter-menu" placement="bottom start">
+      <Select.Popover className="choice-menu" placement="bottom start" offset={4}>
         <ListBox aria-label={t.time}>
           {assetTimeRanges.map((option) => (
-            <ListBox.Item
-              className="model-options"
-              key={option}
-              id={option}
-              textValue={t.times[option]}
-            >
+            <ListBox.Item key={option} id={option} textValue={t.times[option]}>
               <span>{t.times[option]}</span>
               <ListBox.ItemIndicator />
             </ListBox.Item>

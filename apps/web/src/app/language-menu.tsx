@@ -41,7 +41,7 @@ export function LanguageMenu({ account }: { account: EnterpriseIdentity | null |
       </Dropdown.Trigger>
       <Dropdown.Popover
         ref={menu.popoverRef}
-        className="language-menu header-menu"
+        className="choice-menu"
         placement="bottom end"
         offset={4}
         isNonModal
@@ -57,12 +57,7 @@ export function LanguageMenu({ account }: { account: EnterpriseIdentity | null |
           {...(menu.openedByHover ? { autoFocus: false } : {})}
         >
           {locales.map((code) => (
-            <Dropdown.Item
-              key={code}
-              id={code}
-              textValue={localeNames[code]}
-              className="language-menu-item"
-            >
+            <Dropdown.Item key={code} id={code} textValue={localeNames[code]}>
               {/* 语言名用各自的文字书写，标出语言让读屏按正确的发音朗读。 */}
               <span lang={code}>{localeNames[code]}</span>
               <Dropdown.ItemIndicator />

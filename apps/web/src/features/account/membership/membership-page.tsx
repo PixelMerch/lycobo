@@ -1,6 +1,7 @@
 import { Modal } from "@heroui/react";
 import { IconX } from "@tabler/icons-react";
 import { useLocation } from "react-router";
+import { useDialogDismiss } from "../../../components/overlays/use-dialog-dismiss";
 import { UiIcon } from "../../../components/ui-icon";
 import { withoutLocale } from "../../../i18n/locale-path";
 import { useMessages } from "../../../i18n/messages";
@@ -12,14 +13,15 @@ import "./membership-page.css";
 /** 全屏展示会员方案，使用实色表面并保留当前页面草稿。 */
 export function MembershipDialog({ onClose }: { onClose: () => void }) {
   const t = useMessages(membershipMessages);
+  const dismiss = useDialogDismiss(onClose);
   return (
     <Modal
-      isOpen
+      isOpen={dismiss.isOpen}
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open) dismiss.requestClose();
       }}
     >
-      <Modal.Backdrop className="membership-backdrop">
+      <Modal.Backdrop onAnimationEnd={dismiss.onAnimationEnd} className="membership-backdrop">
         <Modal.Container className="membership-container">
           <Modal.Dialog className="membership-dialog">
             <Modal.Header className="membership-dialog-header">

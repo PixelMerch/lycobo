@@ -35,47 +35,6 @@
   transform: rotate(180deg);
 }
 
-/* 语言下拉：与“电商”下拉同一套尺寸，当前语言右侧显示青柠对勾。 */
-.language-menu {
-  min-width: 160px;
-  padding: 6px;
-  border-radius: 12px;
-}
-.language-menu .dropdown__menu {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 0;
-  outline: none;
-}
-.language-menu .language-menu-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  height: 44px;
-  min-height: 44px;
-  padding: 0 40px 0 16px;
-  border-radius: 6px;
-  color: #ffffffb3;
-  font-size: var(--text-base);
-  font-weight: var(--weight-medium);
-  line-height: 20px;
-  cursor: pointer;
-}
-.language-menu .language-menu-item:is([data-hovered="true"], [data-focused="true"]) {
-  background: #ffffff0f;
-  color: #fff;
-}
-.language-menu .language-menu-item[data-selected="true"] {
-  color: #fff;
-}
-/* HeroUI 默认把对勾放在左侧并给整行留出左边距，这里改到右侧，语言名左对齐。 */
-.language-menu .language-menu-item .menu-item__indicator {
-  inset-inline: auto 16px;
-  color: var(--accent);
-}
-
 /* 手机和 768–1023px 的窄桌面只留地球图标，给顶部导航让位；窄桌面仍是 40px 圆形按钮。 */
 @media (max-width: 1023px) {
   .language-trigger {

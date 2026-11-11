@@ -27,11 +27,10 @@ navigation; never prefix API, WebSocket, image or font URLs. See docs/localized-
   contrast, reduced-transparency fallback and native HeroUI focus handling; never add an opaque
   surface as a local default. The standalone login page uses the same glass material and swaps its two faces.
   The full-screen membership page is an explicit exception: opaque background, no backdrop blur
-  or modal fade/scale transitions. The asset library's source and time filter menus open over the
-  image grid and are the second exception (user, 2026-11-10): opaque #1F1F1F, no blur, excluded in
-  overlay-glass.css through `.asset-filter-menu`. Since 2026-11-10 (user) every other overlay uses the
-  lighter top-bar menu glass (#FFFFFF14, 40px blur, no visible edge) through the `--glass-*` tokens;
-  the `header-menu` class only drops the transparent 1px border. Add no other materials without a request.
+  or entry animation; closing uses the shared fade. Full-screen image browsing and image detail
+  use a solid black stage, and account settings use the darker shared glass tint. Source, time and account language menus share the header language menu styles
+  in `styles/choice-menu.css`. Other overlays use the default top-bar menu glass (#FFFFFF14,
+  40px blur, no visible edge) through the `--glass-*` tokens. Add materials only by user request.
 - The home page borrows the vidmuse layout but must keep Lycobo's own character (user, 2026-11-09):
   upright slogan with a mode-gradient keyword, tool-accent mode tabs, lime-to-mint generation pills,
   in-card glass hover panels and our own wording. Do not copy reference-site styling, copy or assets.

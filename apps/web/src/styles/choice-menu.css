@@ -1,0 +1,53 @@
+/* 单选菜单统一使用顶部栏语言下拉的尺寸、文字和选中提示。 */
+:root .choice-menu:is(.dropdown__popover, .select__popover) {
+  --glass-tint: var(--glass-dark-tint);
+  min-width: max(160px, var(--trigger-width, 0px));
+  padding: 6px;
+  border: 0;
+  border-radius: 12px;
+}
+.choice-menu :is(.dropdown__menu, .list-box, .list-box-section) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  outline: none;
+}
+.choice-menu :is(.dropdown__menu, .list-box) {
+  padding: 0;
+}
+.choice-menu :is(.menu-item, .list-box-item) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 40px 0 16px;
+  border-radius: 6px;
+  background: transparent;
+  color: #ffffffb3;
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: 20px;
+}
+.choice-menu :is(.menu-item, .list-box-item):is([data-selected="true"], [aria-selected="true"]) {
+  background: transparent;
+  color: #fff;
+}
+.choice-menu :is(.menu-item, .list-box-item):is([data-hovered="true"], [data-focused="true"]) {
+  background: #ffffff0f;
+  color: #fff;
+}
+.choice-menu :is(.menu-item__indicator, .list-box-item__indicator) {
+  inset-inline: auto 16px;
+  color: var(--accent);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  :root .choice-menu:is(.dropdown__popover, .select__popover) {
+    --glass-tint: var(--glass-fallback);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root .choice-menu:is(.dropdown__popover, .select__popover) {
+    --glass-tint: var(--glass-fallback);
+  }
+}

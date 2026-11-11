@@ -77,11 +77,7 @@ export function AccountSettingsProfile({
         />
       </SettingsGroup>
       <SettingsGroup title={t.preferences}>
-        <SettingsRow
-          label={t.language}
-          hint={t.languageHint}
-          action={<AccountLanguagePicker account={account} />}
-        />
+        <SettingsRow label={t.language} action={<AccountLanguagePicker account={account} />} />
       </SettingsGroup>
       <SettingsGroup title={t.enterpriseIdentity}>
         <SettingsRow label={t.identity} value={role} />

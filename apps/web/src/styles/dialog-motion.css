@@ -1,0 +1,25 @@
+@media (prefers-reduced-motion: no-preference) {
+  /* 普通弹窗由遮罩带着面板一起淡出，避免叠两层淡出或关闭时缩小。 */
+  :is(.modal__backdrop, .alert-dialog__backdrop):not(
+    .browse-image-backdrop,
+    .fullscreen-dialog__backdrop
+  )[data-exiting="true"] {
+    animation: heroui-overlay-fade-out var(--dialog-close-duration) var(--dialog-close-ease);
+  }
+  :is(.modal__container, .alert-dialog__container):not(
+    .browse-image-container,
+    .fullscreen-dialog__container
+  )[data-exiting="true"] {
+    animation: none;
+  }
+
+  /* 抽屉保持原方向，让面板和遮罩以同样的速度退场。 */
+  .drawer__backdrop[data-exiting="true"] {
+    transition-duration: var(--dialog-close-duration);
+    transition-timing-function: var(--dialog-close-ease);
+  }
+  .drawer__content {
+    --drawer-exit-duration: var(--dialog-close-duration);
+    --drawer-exit-ease: var(--dialog-close-ease);
+  }
+}
