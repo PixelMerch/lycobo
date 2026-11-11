@@ -210,10 +210,11 @@ function VariationGenerateButton({
   const showCost = !isDisabled && !generation.pending && generation.cost > 0;
   return (
     <Button
-      isDisabled={isDisabled}
+      isDisabled={isDisabled && !generation.submitting}
       aria-description={showCost ? t.runCost(generation.cost) : undefined}
       isPending={generation.submitting}
-      className="primary-action variation-generate"
+      data-submitting={generation.submitting || undefined}
+      className={`primary-action variation-generate${generation.submitting ? " generation-pending" : ""}`}
       onPress={() => {
         void generation
           .submit()

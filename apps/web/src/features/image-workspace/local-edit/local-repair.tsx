@@ -1,4 +1,4 @@
-import { Button } from "@heroui/react";
+import { Button, Spinner } from "@heroui/react";
 import { IconArrowLeft, IconPlus } from "@tabler/icons-react";
 import { CreditCoin } from "../../../components/credit-coin";
 import { DialogClose } from "../../../components/overlays/dialog-close";
@@ -98,14 +98,14 @@ export function LocalRepairPanel({
           fullWidth
           variant="primary"
           size="lg"
-          className="generation-submit repair-generate"
+          className={`generation-submit repair-generate${busy ? " generation-pending" : ""}`}
           data-submitting={busy || undefined}
           isPending={generate.isPending}
           isDisabled={!available || !image || busy || !canGenerate || (pending && !ownPending)}
           onPress={() => void submit()}
         >
-          {ownPending && t.confirmLastSubmission}
-          {!ownPending && (busy ? t.generating : t.generateNow)}
+          {busy && <Spinner size="md" color="current" role="status" aria-label={t.generating} />}
+          {ownPending ? t.confirmLastSubmission : t.generateNow}
           {!ownPending && !busy && models.data && (
             <span className="generate-credit-cost" aria-hidden="true">
               <CreditCoin />

@@ -1,9 +1,8 @@
-import { Button, Spinner } from "@heroui/react";
 import { imageUnitCredits } from "@lycoboai/contracts";
-import { CreditCoin } from "../../../components/credit-coin";
 import { ReferencePrompt } from "../../../components/reference-prompt/reference-prompt";
 import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
+import { GenerateButton } from "../../generation/composer/generate-button";
 import { ParameterGroup } from "../../generation/composer/parameter-group";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
 import {
@@ -86,25 +85,15 @@ export function ReplicaPage() {
         />
       </section>
       <div className="generate-area">
-        <Button
-          className="primary-action generation-submit"
-          variant="primary"
-          size="lg"
-          fullWidth
+        <GenerateButton
+          label={pending ? common.confirmLastSubmission : t.generate}
+          submitting={generate.isPending}
           isDisabled={isDisabled}
-          aria-description={showCost ? common.runCost(cost) : undefined}
-          isPending={generate.isPending}
+          submittingLabel={common.submitting}
+          cost={showCost ? cost : undefined}
+          costDescription={showCost ? common.runCost(cost) : undefined}
           onPress={submit}
-        >
-          {generate.isPending ? <Spinner size="sm" /> : null}
-          {pending ? common.confirmLastSubmission : t.generate}
-          {showCost && (
-            <span className="generate-credit-cost" aria-hidden="true">
-              <CreditCoin />
-              <span>{cost}</span>
-            </span>
-          )}
-        </Button>
+        />
       </div>
     </section>
   );

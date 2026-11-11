@@ -4,8 +4,10 @@ import {
   Form,
   InputGroup,
   Label,
+  Spinner,
   TextField,
   ToggleButton,
+  toast,
 } from "@heroui/react";
 import { IconArrowLeft, IconArrowRight, IconEye, IconEyeOff } from "@tabler/icons-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
@@ -36,8 +38,12 @@ export function EnterpriseLogin({
           className="login-submit"
           isPending={form.pending}
         >
-          {form.pending ? t.signingIn : t.signIn}
-          <UiIcon icon={IconArrowRight} />
+          {t.signIn}
+          {form.pending ? (
+            <Spinner size="sm" color="current" role="status" aria-label={t.signingIn} />
+          ) : (
+            <UiIcon icon={IconArrowRight} />
+          )}
         </Button>
       </Form>
       <Button
@@ -83,6 +89,7 @@ function useEnterpriseForm(onLoginSuccess: () => void) {
     setVisible(false);
     try {
       await login.mutateAsync(credentials);
+      toast.success(currentMessages(authMessages).signedIn);
       onLoginSuccess();
     } catch (cause) {
       setError(

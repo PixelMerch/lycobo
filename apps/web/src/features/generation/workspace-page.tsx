@@ -1,14 +1,14 @@
-import { Alert, Button, Spinner, Tooltip } from "@heroui/react";
+import { Alert, Button, Tooltip } from "@heroui/react";
 import { imageUnitCredits } from "@lycoboai/contracts";
 import { IconArrowBarToUp, IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
-import { CreditCoin } from "../../components/credit-coin";
 import { ReferencePrompt } from "../../components/reference-prompt/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
 import { useLocale } from "../../i18n/locale-store";
 import { currentMessages, useMessages } from "../../i18n/messages";
 import { useErrorToast } from "../../lib/error-toast";
 import { WorkspaceComposerTitle } from "../workspace/workspace-tool-symbol";
+import { GenerateButton } from "./composer/generate-button";
 import { ParameterGroup } from "./composer/parameter-group";
 import { HomeRatioPicker } from "./composer/ratio-picker";
 import {
@@ -265,29 +265,15 @@ function WorkspaceGeneration({
           </Alert.Content>
         </Alert>
       )}
-      <Button
-        variant="primary"
-        size="lg"
-        fullWidth
-        className={`primary-action generation-submit${activeSubmission ? " generation-pending" : ""}`}
-        data-submitting={activeSubmission || undefined}
-        isPending={activeSubmission}
-        aria-label={actionLabel}
-        aria-description={showCost ? t.runCost(cost) : undefined}
+      <GenerateButton
+        label={actionLabel}
+        submitting={activeSubmission}
         isDisabled={isDisabled}
+        submittingLabel={t.submitting}
+        cost={showCost ? cost : undefined}
+        costDescription={showCost ? t.runCost(cost) : undefined}
         onPress={submit}
-      >
-        {activeSubmission && (
-          <Spinner size="md" color="current" role="status" aria-label={t.submitting} />
-        )}
-        {actionLabel}
-        {showCost && (
-          <span className="generate-credit-cost" aria-hidden="true">
-            <CreditCoin />
-            <span>{cost}</span>
-          </span>
-        )}
-      </Button>
+      />
     </div>
   );
 }
