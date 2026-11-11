@@ -11,7 +11,6 @@ import { useOpenLogin } from "../../auth/login-prompt";
 import { accountDisplayName, roleLabel } from "../account-format";
 import { useAccountOverlays } from "../account-overlay-store";
 import { AccountAvatar } from "../avatar/account-avatar";
-import { AccountMessages } from "../notifications/account-messages";
 import { accountMenuMessages } from "./account-menu-messages";
 import "../account-common.css";
 import "./account-menu.css";
@@ -34,7 +33,7 @@ export function HeaderLogin() {
 
 /**
  * 账户菜单只保留身份、设置、个人作品与退出登录；会员、积分与账单都在账户设置里。
- * 桌面顶部栏只显示头像并向下展开；手机导航抽屉底部显示头像、昵称及消息，向上展开。
+ * 桌面顶部栏只显示头像并向下展开；手机导航抽屉底部显示头像和昵称，向上展开。
  */
 export function AccountMenu({
   onNavigate,
@@ -124,11 +123,6 @@ export function AccountMenu({
           </Dropdown.Menu>
         </Dropdown.Popover>
       </Dropdown>
-      {!inHeader && (
-        <div className="account-footer-tools">
-          <AccountMessages />
-        </div>
-      )}
     </div>
   );
 }

@@ -1,13 +1,16 @@
 import { defineMessages } from "../../../i18n/messages";
 
-/** 消息中心抽屉的文案；消息本身来自服务端，原样显示。 */
+/** 消息中心浮层的文案；消息本身来自服务端，原样显示。 */
 export const notificationsMessages = defineMessages({
   "zh-CN": {
     messagesTitle: "消息中心",
     messagesLabel: (unread: number) => `消息（${unread} 条未读）`,
     unreadCount: (unread: number) => `${unread} 条未读消息`,
-    messagesHint: "任务进展与系统消息",
-    close: (title: string) => `关闭${title}`,
+    systemNotifications: "系统通知",
+    updateNotifications: "更新通知",
+    noUpdates: "暂无更新通知",
+    updatesFailed: "更新通知加载失败",
+    version: (version: string) => `版本 ${version}`,
     messagesFailed: "消息加载失败",
     noMessages: "暂无消息",
     signInForMessages: "登录后可查看消息",
@@ -22,8 +25,11 @@ export const notificationsMessages = defineMessages({
     messagesTitle: "Messages",
     messagesLabel: (unread) => `Messages (${unread} unread)`,
     unreadCount: (unread) => `${unread} unread ${unread === 1 ? "message" : "messages"}`,
-    messagesHint: "Task progress and system messages",
-    close: (title) => `Close ${title.toLowerCase()}`,
+    systemNotifications: "System",
+    updateNotifications: "Updates",
+    noUpdates: "No updates yet",
+    updatesFailed: "Couldn’t load updates",
+    version: (version: string) => `Version ${version}`,
     messagesFailed: "Couldn't load messages",
     noMessages: "No messages yet",
     signInForMessages: "Sign in to see your messages",

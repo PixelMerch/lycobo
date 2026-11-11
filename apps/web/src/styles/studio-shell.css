@@ -338,10 +338,16 @@
     padding: 0 12px;
   }
 }
-/* 手机顶部栏：导航、更新消息与账户都收进导航抽屉，只保留菜单、Logo 和积分会员入口。 */
+/* 手机顶部栏保留消息入口，导航与账户收进导航抽屉。 */
 @media (max-width: 767px) {
-  .topbar :is(.topbar-nav, .header-news, .account-header) {
+  .topbar :is(.topbar-nav, .account-header) {
     display: none;
+  }
+  .header-news .account-footer-action.button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
   }
   .topbar .brand .lycobo-logo {
     width: 96px;
