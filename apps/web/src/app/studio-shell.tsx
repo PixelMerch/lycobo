@@ -119,20 +119,19 @@ export function StudioShell() {
           </RouteLink>
         </nav>
         <div className="header-actions">
+          {signedIn && (
+            <div className="header-news">
+              <AccountMessages />
+            </div>
+          )}
+          <LanguageMenu account={session.data} />
           {signedIn ? (
             <>
-              <div className="header-news">
-                <AccountMessages />
-              </div>
-              <LanguageMenu />
               <HeaderBenefits />
               <AccountMenu variant="header" />
             </>
           ) : (
-            <>
-              <LanguageMenu />
-              <HeaderLogin />
-            </>
+            <HeaderLogin />
           )}
         </div>
       </header>

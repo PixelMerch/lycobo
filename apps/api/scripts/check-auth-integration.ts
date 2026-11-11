@@ -132,6 +132,24 @@ try {
     const [otherUser] = await sql`select avatar_preset from users where id=${second.userId}`;
     assert.equal(otherUser?.avatar_preset ?? null, null);
     await assert.rejects(sql`update users set avatar_preset='Not Valid!' where id=${first.userId}`);
+    // 新会话仍能读取保存的语言，另一个用户保持原偏好。
+    assert.equal(session.preferredLocale, null);
+    const savedLocale = await app.request("/api/v1/auth/locale", {
+      method: "PUT",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ preferredLocale: "zh-CN" }),
+    });
+    assert.equal(savedLocale.status, 200);
+    const nextLogin = await login();
+    assert.equal(nextLogin.status, 200);
+    const nextUser = enterpriseLoginResponseSchema.parse(
+      unwrapApiData(await nextLogin.json()),
+    ).user;
+    assert.equal(nextUser.preferredLocale, "zh-CN");
+    assert.equal(nextUser.avatarPreset, "sky");
+    const [otherLocale] = await sql`select preferred_locale from users where id=${second.userId}`;
+    assert.equal(otherLocale?.preferred_locale, null);
+    await assert.rejects(sql`update users set preferred_locale='fr' where id=${first.userId}`);
     const cookie = response.headers.get("set-cookie")?.split(";")[0] ?? "";
     assert.equal((await app.request("/api/v1/image-models", { headers })).status, 200);
     assert.equal(

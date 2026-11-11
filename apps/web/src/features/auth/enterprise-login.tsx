@@ -9,6 +9,7 @@ import {
   ToggleButton,
   toast,
 } from "@heroui/react";
+import type { EnterpriseIdentity } from "@lycoboai/contracts";
 import { IconArrowLeft, IconArrowRight, IconEye, IconEyeOff } from "@tabler/icons-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
@@ -22,7 +23,7 @@ export function EnterpriseLogin({
   onLoginSuccess,
   onBack,
 }: {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (account: EnterpriseIdentity) => void;
   onBack: () => void;
 }) {
   const form = useEnterpriseForm(onLoginSuccess);
@@ -60,7 +61,7 @@ export function EnterpriseLogin({
   );
 }
 
-function useEnterpriseForm(onLoginSuccess: () => void) {
+function useEnterpriseForm(onLoginSuccess: (account: EnterpriseIdentity) => void) {
   const login = useEnterpriseLogin();
   const passwordInput = useRef<HTMLInputElement>(null);
   const accountInput = useRef<HTMLInputElement>(null);
@@ -88,9 +89,9 @@ function useEnterpriseForm(onLoginSuccess: () => void) {
     setPassword("");
     setVisible(false);
     try {
-      await login.mutateAsync(credentials);
+      const user = await login.mutateAsync(credentials);
       toast.success(currentMessages(authMessages).signedIn);
-      onLoginSuccess();
+      onLoginSuccess(user);
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : currentMessages(authMessages).serviceUnavailable,

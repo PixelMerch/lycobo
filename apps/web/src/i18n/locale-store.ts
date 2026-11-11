@@ -15,7 +15,8 @@ function readSavedLocale() {
   }
 }
 
-function saveLocale(locale: Locale) {
+/** 记住本机语言，供无前缀链接使用；当前页面语言仍由路由决定。 */
+export function rememberLocale(locale: Locale) {
   try {
     window.localStorage.setItem(storageKey, locale);
   } catch {
@@ -33,7 +34,7 @@ export const useLocaleStore = create<{ locale: Locale; setLocale: (locale: Local
   (set) => ({
     locale: pathLocale ?? readSavedLocale() ?? detectLocale(browserLanguages()),
     setLocale: (locale) => {
-      saveLocale(locale);
+      rememberLocale(locale);
       set({ locale });
     },
   }),

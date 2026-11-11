@@ -1,13 +1,24 @@
 import { toast } from "@heroui/react";
 import {
+  type AccountLocale,
   type AvatarPreset,
   apiErrorSchema,
+  type EnterpriseIdentity,
   enterpriseAvatarChangeSchema,
   enterpriseIdentitySchema,
+  enterpriseLocaleChangeSchema,
   enterpriseLoginResponseSchema,
   enterprisePasswordChangeSchema,
 } from "@lycoboai/contracts";
-import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type QueryClient,
+  useIsMutating,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { parseLocale } from "../../i18n/locale";
+import { rememberLocale } from "../../i18n/locale-store";
 import { currentMessages } from "../../i18n/messages";
 import { normalizeApiResponse } from "../../lib/api-response";
 import { reportRequestFailure } from "../../lib/request-diagnostics";
@@ -18,7 +29,8 @@ import { authMessages } from "./auth-messages";
 
 export const enterpriseSessionKey = ["enterprise-session"];
 async function authRequest(path: string, init: RequestInit = {}) {
-  const request = path === "session" ? sessionFetch : fetch;
+  const useSession = path === "session" || path === "locale";
+  const request = useSession ? sessionFetch : fetch;
   let response: Response;
   try {
     response = await request(`/api/v1/auth/${path}`, {
@@ -27,11 +39,11 @@ async function authRequest(path: string, init: RequestInit = {}) {
       signal: init.signal ?? AbortSignal.timeout(15000),
     });
   } catch (error) {
-    if (path !== "session" && !init.signal?.aborted)
+    if (!useSession && !init.signal?.aborted)
       reportRequestFailure(`/api/v1/auth/${path}`, init.method ?? "GET");
     throw error;
   }
-  if (path !== "session" && !response.ok)
+  if (!useSession && !response.ok)
     reportRequestFailure(`/api/v1/auth/${path}`, init.method ?? "GET", response);
   rememberSessionExpiry(response);
   return normalizeApiResponse(response);
@@ -66,6 +78,7 @@ export function useEnterpriseSession() {
     },
   });
 }
+/** 登录后同步账号偏好和会话，清理旧身份的业务查询。 */
 export function useEnterpriseLogin() {
   const client = useQueryClient();
   return useMutation({
@@ -78,15 +91,16 @@ export function useEnterpriseLogin() {
         body: JSON.stringify(input),
       });
       if (!response.ok) throw new Error(await errorMessage(response));
-      // The browser uses the HttpOnly JWT cookie. Never put accessToken in React state/storage.
+      // 浏览器通过 HttpOnly Cookie 使用凭据，前端只保留身份资料。
       return enterpriseLoginResponseSchema.parse(await response.json()).user;
     },
     onSuccess: async (user) => {
       clearPreviewLinks();
+      const savedLocale = parseLocale(user.preferredLocale);
+      if (savedLocale) rememberLocale(savedLocale);
       await client.cancelQueries();
       client.setQueryData(enterpriseSessionKey, user);
-      // Reset notifies mounted observers and refetches active queries with the new cookie.
-      // Removing queries leaves those observers attached to the previous login state.
+      // 重置会让已挂载的查询用新会话重查，避免继续订阅旧身份的数据。
       await client.resetQueries({
         predicate: (query) => query.queryKey[0] !== enterpriseSessionKey[0],
       });
@@ -120,7 +134,6 @@ async function clearEnterpriseSession(client: QueryClient) {
   }
 }
 
-/** 修改密码：服务端会注销全部会话，这里同时清空本机的登录状态。 */
 /** 保存预设头像；成功后用服务端返回的身份更新登录状态，各处头像立即同步。 */
 export function useEnterpriseAvatar() {
   const client = useQueryClient();
@@ -139,9 +152,53 @@ export function useEnterpriseAvatar() {
       if (!user.success) throw new Error(currentMessages(authMessages).serviceUnavailable);
       return user.data;
     },
-    onSuccess: (user) => client.setQueryData(enterpriseSessionKey, user),
+    onSuccess: (user) => updateSessionPreference(client, user, { avatarPreset: user.avatarPreset }),
   });
 }
+async function updateSessionPreference(
+  client: QueryClient,
+  user: EnterpriseIdentity,
+  preference: Pick<EnterpriseIdentity, "avatarPreset" | "preferredLocale">,
+) {
+  await client.cancelQueries({ queryKey: enterpriseSessionKey });
+  client.setQueryData<EnterpriseIdentity | null>(enterpriseSessionKey, (current) =>
+    current?.userId === user.userId ? { ...current, ...preference } : current,
+  );
+}
+
+const localeMutationKey = ["enterprise-locale"];
+
+/** 保存账号语言并同步会话；不同入口共享保存状态。 */
+export function useEnterpriseLocale(userId?: string) {
+  const client = useQueryClient();
+  const filter = { mutationKey: localeMutationKey };
+  const isSaving = useIsMutating(filter) > 0;
+  const mutation = useMutation({
+    ...filter,
+    retry: false,
+    mutationFn: async (preferredLocale: AccountLocale) => {
+      const body = enterpriseLocaleChangeSchema.parse({ preferredLocale });
+      const response = await authRequest("locale", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) throw new Error(await errorMessage(response));
+      const user = enterpriseIdentitySchema.safeParse(await response.json());
+      if (
+        !user.success ||
+        user.data.userId !== userId ||
+        user.data.preferredLocale !== preferredLocale
+      )
+        throw new Error(currentMessages(authMessages).serviceUnavailable);
+      return user.data;
+    },
+    onSuccess: (user) =>
+      updateSessionPreference(client, user, { preferredLocale: user.preferredLocale }),
+  });
+  return { mutation, isSaving };
+}
+
 /** 修改密码；成功后清空登录状态，所有设备需要重新登录。 */
 export function useEnterprisePasswordChange() {
   const client = useQueryClient();

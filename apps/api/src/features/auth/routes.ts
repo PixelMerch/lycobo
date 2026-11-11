@@ -1,5 +1,6 @@
 import {
   enterpriseAvatarChangeSchema,
+  enterpriseLocaleChangeSchema,
   enterpriseLoginSchema,
   enterprisePasswordChangeSchema,
 } from "@lycoboai/contracts";
@@ -37,7 +38,7 @@ function tokenResponse(
   return c.json(body);
 }
 type Env = { Variables: { requestId: string } };
-/** 企业账号的登录、刷新、改密、头像、会话与退出路由；未配置登录服务时统一返回 503。 */
+/** 企业账号的登录、刷新、改密、个人偏好、会话与退出路由；未配置登录服务时统一返回 503。 */
 export function authRoutes(auth?: EnterpriseAuth) {
   const app = new Hono<Env>();
   const fail = (
@@ -103,6 +104,18 @@ export function authRoutes(auth?: EnterpriseAuth) {
     if (!(await auth.setAvatarPreset(session.user.userId, avatarPreset)))
       return fail(c, "UNAUTHORIZED", "请先登录", 401);
     return c.json({ ...session.user, avatarPreset });
+  });
+  app.put("/locale", async (c) => {
+    if (!auth) return fail(c, "AUTH_NOT_CONFIGURED", "登录服务尚未配置", 503);
+    const session = await enterprisePrincipal(c, auth);
+    if (!session) return fail(c, "UNAUTHORIZED", "请先登录", 401);
+    const input = enterpriseLocaleChangeSchema.safeParse(await c.req.json().catch(() => null));
+    if (!input.success) return fail(c, "VALIDATION_ERROR", "请选择有效的界面语言", 400);
+    const { preferredLocale } = input.data;
+    const { userId } = session.user;
+    if (!(await auth.setPreferredLocale(userId, preferredLocale)))
+      return fail(c, "UNAUTHORIZED", "请先登录", 401);
+    return c.json({ ...session.user, preferredLocale });
   });
   app.get("/session", async (c) => {
     if (!auth) return fail(c, "AUTH_NOT_CONFIGURED", "登录服务尚未配置", 503);

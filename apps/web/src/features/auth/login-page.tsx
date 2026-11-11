@@ -1,14 +1,15 @@
 import { Button, Link } from "@heroui/react";
+import type { EnterpriseIdentity } from "@lycoboai/contracts";
 import { IconBuilding, IconChevronRight, IconX } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
-import { Navigate, useSearchParams } from "react-router";
+import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { PageLoading } from "../../app/page-loading";
 import { UiIcon } from "../../components/ui-icon";
+import { parseLocale } from "../../i18n/locale";
 import { localizedPath } from "../../i18n/locale-path";
 import { useLocale } from "../../i18n/locale-store";
 import { useMessages } from "../../i18n/messages";
-import { useAppNavigate } from "../../i18n/use-localized-navigation";
 import { type LegalDocumentId, legalPaths } from "../legal/legal-document";
 import { legalMessages } from "../legal/legal-messages";
 import { useEnterpriseSession } from "./auth-client";
@@ -23,21 +24,24 @@ import "./login-page.css";
 /** 独立全屏登录页：丝绸背景上居中一张登录卡片，以翻面切换登录方式，不叠加两套表单。 */
 export function LoginPage() {
   const session = useEnterpriseSession();
-  const navigate = useAppNavigate();
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const locale = useLocale();
-  const returnTo = localizedPath(safeLoginReturnTo(params.get("returnTo")), locale);
+  const returnTo = safeLoginReturnTo(params.get("returnTo"));
+  const destination = (user: EnterpriseIdentity) =>
+    localizedPath(returnTo, parseLocale(user.preferredLocale) ?? locale);
   if (session.isPending) return <PageLoading />;
-  if (session.data && params.get("reauth") !== "1") return <Navigate to={returnTo} replace />;
+  if (session.data && params.get("reauth") !== "1")
+    return <Navigate to={destination(session.data)} replace />;
   return (
     <main className="login-page" aria-labelledby="login-title">
       <LoginBackdrop />
       <LoginCard
         onClose={() => {
-          void navigate("/", { replace: true });
+          void navigate(localizedPath("/", locale), { replace: true });
         }}
-        onLoginSuccess={() => {
-          void navigate(returnTo, { replace: true });
+        onLoginSuccess={(user) => {
+          void navigate(destination(user), { replace: true });
         }}
       />
     </main>
@@ -50,7 +54,7 @@ function LoginCard({
   onLoginSuccess,
 }: {
   onClose: () => void;
-  onLoginSuccess: () => void;
+  onLoginSuccess: (account: EnterpriseIdentity) => void;
 }) {
   const [enterprise, setEnterprise] = useState(false);
   // 只有从企业账号表单返回时才把焦点放回入口；首次打开不把焦点给这个次要入口。
