@@ -10,7 +10,7 @@
       "**",
       "!!.agents/skills",
       "!!docs/design",
-      "!!pnpm-lock.yaml",
+      "!!**/pnpm-lock.yaml",
       "!!worker-configuration.d.ts",
       "!!packages/db/migrations"
     ]
@@ -90,7 +90,13 @@
   },
   "overrides": [
     {
-      "includes": ["**/*.test.ts", "**/*.test.tsx", "**/*.test.mjs", "tests/**"],
+      "includes": [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.test.mjs",
+        "tests/**",
+        ".github/ci/browser/tests/**"
+      ],
       "linter": {
         "rules": {
           "complexity": {

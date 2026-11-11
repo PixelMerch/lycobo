@@ -53,7 +53,7 @@ API 实例不缓存会话校验结果：后台停用账号、替换凭据以及�
 ## 验收
 
 - `pnpm check`：密码哈希、错误口令、伪造／过期／错误受众 JWT、Cookie 标志、来源校验、退出撤销等单元测试。
-- `pnpm test:e2e`：表单校验、接口错误、登录成功、刷新恢复和退出；浏览器 fixture 不代表服务端验证。
+- CI 浏览器回归覆盖表单校验、接口错误、登录成功、刷新恢复和退出；浏览器 fixture 不代表服务端验证。
 - `ALLOW_LOCAL_INTEGRATION=true pnpm --filter @lycoboai/api test:auth`：在 loopback PostgreSQL 创建独立临时数据库、执行全部迁移，验证账号、组织隔离、并发限流、禁用、重置与撤销，最后删除测试数据库和临时图片目录。不调用付费模型，不修改共享业务记录。
 - 根 `pnpm test:integration` 已串联上述鉴权测试及原 DB／图片任务测试。
 

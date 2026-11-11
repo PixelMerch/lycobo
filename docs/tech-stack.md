@@ -22,7 +22,7 @@
 | 后台          | Cloudflare Queues + PG outbox                 | PostgreSQL outbox、独立消费与 Cron 恢复 |
 | 文件          | 私有 R2 + Images binding                      | 按 UID 分目录，原图、预览与缩略图分开   |
 | 通知          | Durable Objects + 可休眠 WebSocket            | 主动推送与游标补齐；提示词优化使用 SSE  |
-| 检查          | Biome、Vitest、Playwright、commitlint         | 类型之外的规则、行为、浏览器与提交检查  |
+| 检查          | Biome、Vitest、commitlint；CI 使用 Playwright | 类型之外的规则、行为、浏览器与提交检查  |
 
 精确依赖版本以各 package.json 与 pnpm-lock.yaml 为准，不在此重复维护全部补丁号。
 所有直接依赖使用精确版本；更新通过独立 PR，检查 peer dependencies 与运行时。

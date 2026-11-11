@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import release from "../../release.json" with { type: "json" };
+import release from "../../../../release.json" with { type: "json" };
 
 /** 浏览器 fixture 只模拟传输，不访问付费模型或生产 DO。 */
 export async function mockRealtime(page: Page) {

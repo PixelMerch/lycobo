@@ -5,7 +5,7 @@
 ## 合并
 
 日常开发直接在本地 dev 进行，先 fetch 并在可快进时同步 origin/dev，保留本地工作；只有用户要求时才创建短分支。完成验证后默认只做本地提交。
-用户明确要求推送、PR 或合并后再执行；临时功能分支向 dev 提 PR，发布集成由 dev 向 main 提 PR，填写模板，运行 pnpm check；完整浏览器回归仅按需手动执行。
+用户明确要求推送、PR 或合并后再执行；临时功能分支向 dev 提 PR，发布集成由 dev 向 main 提 PR，填写模板，运行 pnpm check；浏览器回归仅在 GitHub Actions 手动执行。
 main 为稳定分支，只有用户明确要求发布集成时才由 dev 向 main 提 PR。
 契约/数据库/计费变更安排领域审查；合并前同步目标分支，不覆盖其他作者的迁移。
 PR 标题采用 Conventional Commits，合并前必须等 CI 通过并满足目标分支保护。
@@ -13,7 +13,7 @@ dev 到 main 使用 merge commit 保留提交祖先关系；普通功能 PR 可�
 dev 合并到 main 后，本地和远程都必须保留 main、dev，不使用 --delete-branch 删除 dev。同步对应本地分支后回到 dev 继续开发。
 分支清理始终排除 main、dev；用户要求清理时，只有确认已合入或已被替代的临时分支才可删除，不删除未核实合入的独立工作。
 
-Dependabot 的 npm 与 GitHub Actions 常规版本升级统一向 dev 提 PR，保留原有周期与分组。目标为 dev 的依赖 PR 做冒烟验证，推送 dev 后及发布集成的 dev → main PR 运行 Quality 与 Infrastructure 检查，完整浏览器回归仅手动运行，具体规则见 [测试说明](testing.md)。
+Dependabot 的 npm 与 GitHub Actions 常规版本升级统一向 dev 提 PR，保留原有周期与分组。目标为 dev 的依赖 PR 做冒烟验证，推送 dev 后及发布集成的 dev → main PR 运行 Quality 与 Infrastructure 检查，浏览器回归仅在 GitHub Actions 手动运行，具体规则见 [测试说明](testing.md)。
 Dependabot 从默认分支读取 `.github/dependabot.yml`，因此该配置推送到 dev 后，要在下一次获授权的 main 集成完成后才会正式生效。GitHub 的安全更新仍面向默认分支，不受 `target-branch` 控制；此类 PR 继续执行 main 的完整验证。
 
 ## 版本与构建
@@ -40,7 +40,7 @@ Dependabot 从默认分支读取 `.github/dependabot.yml`，因此该配置推�
 
 从 2026-11-06 起，`.github/workflows/release.yml` 仅保留 `workflow_dispatch`。合并、推送 main、CI 完成或推送 tag 均不自动创建 GitHub Release；已删除自动分配补丁版本的脚本。版本号由发布人明确填写，不修改已有标签或额外回写版本提交。
 
-手动入口：在 GitHub Actions 的 **Release → Run workflow** 选择 `main` 并填写 `vX.Y.Z`。目标提交必须属于 main 历史且对应 main push CI 成功。发布会生成标签、更新日志、作者与文件变更附件；完整 E2E 保持手动运行。相同版本已有 Release 时跳过，不覆盖其内容。
+手动入口：在 GitHub Actions 的 **Release → Run workflow** 选择 `main` 并填写 `vX.Y.Z`。目标提交必须属于 main 历史且对应 main push CI 成功。发布会生成标签、更新日志、作者与文件变更附件；浏览器端到端回归在独立的 CI 手动入口运行。相同版本已有 Release 时跳过，不覆盖其内容。
 
 Release 工作流只发布 GitHub Release。Cloudflare 的两个 Worker 使用受控 Wrangler 流程单独部署；产品公告在部署成功后由 `release.json` 与发布脚本写入，见 [实时推送](realtime.md)。
 

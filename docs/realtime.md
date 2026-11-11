@@ -37,7 +37,7 @@ API 写操作结束、提示词优化 SSE 关闭、图片 Queue 消费结束立�
 
 桌面通知在消息中心由用户点击开启，默认关闭；浏览器权限和本机成员偏好必须同时允许。拒绝权限时提供浏览器设置说明。桌面通知不包含提示词，点击后才回到结果。当前没有接入关闭网站后的 Web Push；页面冻结、操作系统勿扰和浏览器策略都可能延迟提醒。PostgreSQL `realtime_outbox.delivered_at` 是服务端批次投递确认，不是浏览器接收或渲染回执。
 
-定向回归：`pnpm exec playwright test tests/e2e/completion-alerts.spec.ts`，使用显式 fixture，不调用真实模型。
+CI 的完成通知浏览器回归使用显式 fixture，无需调用真实模型。
 
 ## 消息与版本
 

@@ -22,4 +22,4 @@
 
 ## 验证
 
-本地 `pnpm test:integration` 覆盖持久任务、钱包幂等和隔离供应商 fixture。`tests/e2e/video-creation.spec.ts` 等浏览器用例只使用 fixture 验证交互，不调用真实模型。完整浏览器回归仅按 [测试说明](testing.md) 手动运行。
+本地 `pnpm test:integration` 覆盖持久任务、钱包幂等和隔离供应商 fixture。CI 的 `video-creation.spec.ts` 等浏览器用例只使用 fixture 验证交互，不调用真实模型。

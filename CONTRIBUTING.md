@@ -57,7 +57,7 @@ pnpm check
 git diff --check
 ```
 
-纯外观和文案改动无需 E2E；关键交互变动只验证受影响用例。pnpm test:e2e 必须指定文件或 --grep；完整 E2E 使用 pnpm test:e2e:full，须用户明确要求，远程 CI 仍只手动触发。
+本地开发以 `pnpm check`、相关单元测试和页面目测验证改动。浏览器端到端回归只通过 GitHub Actions 手动执行，定向用例也在 CI 运行。详见[测试说明](docs/testing.md)。
 
 数据库/队列变更另跑隔离集成检查，详见 docs/testing.md。
 至少一位非作者审查；涉及鉴权、计费、迁移和存储权限时需熟悉该领域的审查者。

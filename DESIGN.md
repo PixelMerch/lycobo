@@ -1064,7 +1064,7 @@ HeroUI 是唯一交互基础：Button、ToggleButtonGroup、Select、Modal、Pop
 
 功能组件按职责复用：页面只组合布局和场景，组件承担完整功能单元，hook承担外部同步，查询客户端承担API与缓存；不以任意行数拆碎组件，不创建AppButton等第二套基础件。具体边界与验收步骤见 [UI一致性维护](docs/ui-consistency.md)。
 
-视觉变更须明确记录修改范围与原因；无视觉需求的重构应保持DOM语义、class、命中区、动画和文案。每次代码维护执行pnpm check与git diff --check；UI按变更范围执行定向浏览器验证，不默认运行本地全量E2E。报告真实结果，不把文档定稿当作全站生产验收。
+视觉变更须明确记录修改范围与原因；无视觉需求的重构应保持DOM语义、class、命中区、动画和文案。每次代码维护执行pnpm check与git diff --check；UI 本地按变更范围目测，自动化浏览器回归只在 GitHub Actions 运行。报告真实结果，不把文档定稿当作全站生产验收。
 
 
 ### 工具入口与效果预览（2026-11-10 本轮确认）

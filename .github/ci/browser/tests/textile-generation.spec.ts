@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 import {
   type ImageJob,
   imageGenerationInputSchema,
-} from "../../packages/contracts/src/images/image-generation";
-import { textileViews } from "../../packages/contracts/src/images/textile-generation";
+} from "../../../../packages/contracts/src/images/image-generation";
+import { textileViews } from "../../../../packages/contracts/src/images/textile-generation";
 import { apiFixture, mockImageEvents } from "./image-api-fixture";
 
 const png = Buffer.from(
