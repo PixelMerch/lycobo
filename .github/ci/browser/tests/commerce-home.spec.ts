@@ -261,7 +261,7 @@ test("home inspiration filters examples and confirms prompt replacement without 
   expect(submissions).toBe(0);
 });
 
-test("home inspiration loads two more batches on scroll, then links to the example library", async ({
+test("home inspiration loads two batches on scroll, then 查看更多灵感 loads the rest in place", async ({
   page,
 }) => {
   await mockImageApi(page);
@@ -283,11 +283,33 @@ test("home inspiration loads two more batches on scroll, then links to the examp
   await expect(more).toBeVisible();
   await page.mouse.wheel(0, 600);
   await expect(cards).toHaveCount(18);
-  await more.click();
+  // “查看更多灵感”在当前页接着加载，不跳转；键盘按下时焦点移到新出现的第一张，全部显示后按钮消失。
+  await more.focus();
+  await page.keyboard.press("Enter");
+  await expect(cards).toHaveCount(23);
+  await expect(page).not.toHaveURL(/inspiration/);
+  await expect(
+    gallery.getByRole("button", { name: "查看灵感：垂到地面的被子", exact: true }),
+  ).toBeFocused();
+  await expect(more).toHaveCount(0);
+});
+
+test("灵感 in the top bar opens the inspiration library with the new intro", async ({ page }) => {
+  await mockImageApi(page, { signedIn: false });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  const inspirationNav = page
+    .getByRole("navigation", { name: "主导航", exact: true })
+    .getByRole("link", { name: "灵感", exact: true });
+  await expect(inspirationNav).not.toHaveClass(/active/);
+  await inspirationNav.click();
   await expect(page).toHaveURL(/\/inspiration$/);
   await expect(page.getByRole("heading", { name: "灵感库", level: 1 })).toBeVisible();
+  await expect(inspirationNav).toHaveClass(/active/);
   await expect(page.locator(".home-inspiration-card")).toHaveCount(23);
-  await expect(page.getByRole("button", { name: "查看更多灵感", exact: true })).toHaveCount(0);
+  // 说明只引导“做同款”，不再写“AI 生成的示例，不是客户作品”。
+  await expect(page.getByText("挑一张喜欢的画面")).toBeVisible();
+  await expect(page.getByText("AI 生成的示例")).toHaveCount(0);
 });
 
 test("home inspiration cards offer 做同款 by hover or keyboard without submitting paid work", async ({

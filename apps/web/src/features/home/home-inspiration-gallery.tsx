@@ -17,7 +17,7 @@ import "./home-inspiration-gallery.css";
 
 /**
  * 展示灵感示例，用户确认后带入主图草稿，不自动提交任务。
- * 首页作品墙分批加载后给出“查看更多灵感”；灵感库页面和素材库的灵感库标签传 library，一次显示全部。
+ * 首页作品墙分批加载，“查看更多灵感”在当前页接着加载；灵感库页面和素材库的灵感库标签传 library，一次显示全部。
  * onApplied 在带着提示词去工作台后调用，素材库弹窗借此关闭自己。
  */
 export function HomeInspirationGallery({
