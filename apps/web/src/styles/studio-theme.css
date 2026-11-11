@@ -121,6 +121,10 @@
    * 8% 白底、40px 背景模糊、无描边、右下柔和投影。--glass-edge 仍是浮层内部细分隔线的颜色。
    */
   --glass-tint: transparent;
+  --glass-dark-tint: rgb(18 18 18 / 84%);
+  --image-preview-background: #000;
+  --dialog-close-duration: 480ms;
+  --dialog-close-ease: cubic-bezier(0.45, 0, 0.55, 1);
   --glass-fill: linear-gradient(#ffffff14, #ffffff14);
   --glass-border: transparent;
   --glass-edge: #ffffff1f;

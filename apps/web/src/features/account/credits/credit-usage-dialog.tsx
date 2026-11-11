@@ -1,6 +1,7 @@
 import { Modal, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { IconX } from "@tabler/icons-react";
 import { useState } from "react";
+import { useDialogDismiss } from "../../../components/overlays/use-dialog-dismiss";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { formatCredits } from "../account-format";
@@ -17,14 +18,18 @@ export function CreditUsageDialog({ onClose }: { onClose: () => void }) {
   const [view, setView] = useState<WalletEntryView>("spent");
   const wallet = useWallet();
   const t = useMessages(creditsMessages);
+  const dismiss = useDialogDismiss(onClose);
   return (
     <Modal
-      isOpen
+      isOpen={dismiss.isOpen}
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open) dismiss.requestClose();
       }}
     >
-      <Modal.Backdrop className="account-backdrop credit-usage-backdrop">
+      <Modal.Backdrop
+        onAnimationEnd={dismiss.onAnimationEnd}
+        className="account-backdrop credit-usage-backdrop"
+      >
         <Modal.Container>
           <Modal.Dialog className="account-dialog credit-usage-dialog">
             <Modal.Header>

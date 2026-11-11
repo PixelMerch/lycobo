@@ -3,28 +3,17 @@
   background: transparent;
   backdrop-filter: none;
 }
-/* The dim and blur share one static pseudo layer whose opacity alone animates.
- * The whole layer fades with the content surface, so the page darkens gradually
- * on open and restores gradually on close; unmounting only after that fade
- * removes the old pop from dimmed to undimmed. Blur is painted once and only
- * composited, never re-sampled per frame. */
+/* 纯黑遮罩单独淡出，与图片一起退场。 */
 .browse-image-backdrop::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: rgba(24, 24, 24, 0.5);
-  backdrop-filter: blur(20px);
-  /* Entrance: start on mount rather than an attribute, because HeroUI drops
-   * `data-entering` before the backdrop exists. Same 300ms curve as the surface
-   * scale so the page dims while the viewer grows. */
+  background: var(--image-preview-background);
   animation: browse-image-backdrop-in 300ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
 }
-/* Exit: fade the dim out over the surface exit so the page keeps showing
- * through the shrinking viewer instead of popping back at unmount. Slightly
- * shorter than the 300ms surface so the last frame is already clear. */
 .modal__backdrop.browse-image-backdrop[data-dialog-phase="closed"]::before {
-  animation: browse-image-backdrop-out 260ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
+  animation: browse-image-backdrop-out var(--dialog-close-duration) var(--dialog-close-ease) both;
 }
 @keyframes browse-image-backdrop-in {
   from {

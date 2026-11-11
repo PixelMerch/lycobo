@@ -10,6 +10,7 @@ import { useEnterpriseLogout } from "../../auth/auth-client";
 import { roleLabel } from "../account-format";
 import { AccountAvatar } from "../avatar/account-avatar";
 import { AvatarPresetPicker } from "./account-avatar-picker";
+import { AccountLanguagePicker } from "./account-language-picker";
 import { accountSettingsMessages } from "./account-settings-messages";
 import { SettingsGroup, SettingsRow } from "./account-settings-rows";
 
@@ -74,6 +75,9 @@ export function AccountSettingsProfile({
             )
           }
         />
+      </SettingsGroup>
+      <SettingsGroup title={t.preferences}>
+        <SettingsRow label={t.language} action={<AccountLanguagePicker account={account} />} />
       </SettingsGroup>
       <SettingsGroup title={t.enterpriseIdentity}>
         <SettingsRow label={t.identity} value={role} />

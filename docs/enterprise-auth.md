@@ -27,11 +27,12 @@ Compose 修改环境变量后运行 `docker compose up -d --no-deps --wait api`�
 | 方法与路径                         | 输入／行为                                                                                                                                                                            |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | POST /api/v1/auth/enterprise/login | JSON `{account,password}`；必须携带可信 Origin；成功返回 `{accessToken,tokenType:"Bearer",expiresIn:86400,refreshExpiresIn:2592000,user}` 并写 HttpOnly Cookie                        |
-| GET /api/v1/auth/session           | 验证 JWT 后返回 `{userId,organizationId,role,account}`，另带可选 `uid` 与 `avatarPreset`（未选择为 null）；未登录／过期返回 401                                                       |
+| GET /api/v1/auth/session           | 验证 JWT 后返回 `{userId,organizationId,role,account}`，另带可选 `uid`、`avatarPreset` 与 `preferredLocale`（偏好未选择为 null）；未登录／过期返回 401                                |
 | POST /api/v1/auth/refresh          | 仅接受可信 Origin 和 HttpOnly 刷新 Cookie；轮换刷新凭据并签发新访问 Token，返回同登录的字段；刷新 Token 不进入 JSON                                                                   |
 | POST /api/v1/auth/password         | 已登录；JSON `{currentPassword,newPassword}`，新密码 12–256 字符；验证旧密码，原子更新密码并撤销该账号全部会话                                                                        |
 | PUT /api/v1/auth/avatar            | 已登录；Cookie 写请求同样校验可信 Origin；JSON `{avatarPreset}` 只接受 12 个预设 id 或 null（恢复默认），未知 id 或多余字段返回 400；只更新当前会话用户，返回带 `avatarPreset` 的身份 |
 | POST /api/v1/auth/logout           | 撤销服务端会话并删除 Cookie；重复退出可安全返回 HTTP 200、code=0、data={}                                                                                                             |
+| PUT /api/v1/auth/locale            | 已登录且 Cookie 请求来源可信；只接受 `{"preferredLocale":"zh-CN"}` 或 `{"preferredLocale":"en"}`，按会话用户写入并返回更新后的身份                                                    |
 | POST /api/v1/image-session         | 企业模式下读取当前 JWT 身份，不再创建本地身份                                                                                                                                         |
 
 兼容性：`system/capabilities` 保留旧 foundation 字段和值，新增加可选 `enterprisePasswordLoginEnabled` 标记企业登录是否已配置，旧客户端可忽略该字段。
@@ -82,3 +83,7 @@ API 实例不缓存会话校验结果：后台停用账号、替换凭据以及�
 ## 前端设置
 
 账户菜单“设置”独立打开个人资料、登录与安全，以及企业管理员可见的企业成员分区。登录与安全调用既有`POST /api/v1/auth/password`，按当前密码和新密码提交，不发送确认密码；前端验证新密码长度及两次输入一致性，失败保留会话，成功清理当前登录查询、短期资源链接及续期状态并提示重新登录。密码仅存在当前表单及短生命周期mutation中，不写浏览器持久存储。头像只能从预设中选择（见上节“预设头像”）；设置不显示第三方账号绑定；企业子账号的主站接口尚未接入，相关入口保持禁用；成员页签可见性不代表已完成服务端成员管理权限。
+
+### 界面语言偏好
+
+迁移 0047 为 `users` 增加可空的 `preferred_locale`，只允许 `zh-CN` 与 `en`，旧账号保持 null。登录、续期及会话响应沿用同一身份查询，部署新 API 前须先应用迁移。登录成功时用已保存的语言打开原目标页面，保留查询参数和定位；普通访问时 URL 语言仍优先。账户设置和顶栏共用更新接口，账号语言与头像各自更新，访客语言仍保存在本机。

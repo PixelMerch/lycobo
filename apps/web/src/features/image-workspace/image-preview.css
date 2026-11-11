@@ -18,7 +18,7 @@
 .image-preview {
   /* Information, thumbnails and close control share their own inset; the canvas is edge-to-edge. */
   --image-preview-inset: 40px;
-  background: #0b0b0b;
+  background: var(--image-preview-background);
   display: grid;
   grid-template-columns: minmax(0, 1fr) 420px 96px;
   grid-template-rows: minmax(0, 1fr);

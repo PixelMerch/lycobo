@@ -1,5 +1,5 @@
 /* 浮层共用毛玻璃（与顶部栏下拉同款）；业务样式只负责布局，不再各自选择不透明底色。
- * 例外：会员全屏页，以及压在图片网格上打开的素材库筛选菜单（用户 2026-11-10 要求不透明深色底）。 */
+ * 例外：会员全屏页和全屏图片浏览使用实色底。 */
 :root
   :is(
     .modal__dialog,
@@ -10,7 +10,7 @@
     .tooltip,
     .alert-dialog,
     .toast
-  ):not(.membership-dialog, .header-menu, .asset-filter-menu),
+  ):not(.membership-dialog, .browse-image-dialog, .header-menu),
 :root .login-panel {
   background: var(--glass-fill), var(--glass-tint);
   border: 1px solid var(--glass-border);

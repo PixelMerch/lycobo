@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { type AccountLocale, accountLocales } from "@lycoboai/contracts";
 import postgres from "postgres";
 import { z } from "zod";
 import type { ImagePrincipal } from "../images/image-repository";
@@ -17,10 +18,15 @@ const principalRow = z.object({
   role: z.enum(["admin", "member"]),
   account: z.string(),
   avatar_preset: z.string().nullable(),
+  preferred_locale: z.enum(accountLocales).nullable(),
 });
 export type EnterpriseCredential = z.infer<typeof accountRow>;
-export type EnterpriseIdentity = ImagePrincipal & { account: string; avatarPreset?: string | null };
-/** 打开企业账号数据访问：登录限流、凭据、会话、身份、改密与预设头像。 */
+export type EnterpriseIdentity = ImagePrincipal & {
+  account: string;
+  avatarPreset?: string | null;
+  preferredLocale?: AccountLocale | null;
+};
+/** 打开企业账号数据访问：登录限流、凭据、会话、身份、改密与个人偏好。 */
 export function openAuthRepository(url: string, edge = false) {
   const sql = postgres(url, {
     max: edge ? 1 : 3,
@@ -65,7 +71,7 @@ export function openAuthRepository(url: string, edge = false) {
     },
     async identity(sessionId: string): Promise<EnterpriseIdentity | null> {
       const rows =
-        await sql`select a.account,a.user_id,a.organization_id,m.role,u.uid,u.avatar_preset from enterprise_sessions s
+        await sql`select a.account,a.user_id,a.organization_id,m.role,u.uid,u.avatar_preset,u.preferred_locale from enterprise_sessions s
         join enterprise_accounts a on a.id=s.account_id
         join users u on u.id=a.user_id
         join organization_members m on m.user_id=a.user_id and m.organization_id=a.organization_id
@@ -79,12 +85,19 @@ export function openAuthRepository(url: string, edge = false) {
         role: row.role,
         account: row.account,
         avatarPreset: row.avatar_preset,
+        preferredLocale: row.preferred_locale,
       };
     },
     /** 保存用户选择的预设头像；只按服务端解析出的 userId 更新。 */
     async setAvatarPreset(userId: string, avatarPreset: string | null) {
       const rows =
         await sql`update users set avatar_preset=${avatarPreset} where id=${userId} returning id`;
+      return rows.length === 1;
+    },
+    /** 保存当前用户的语言，只更新偏好列，避免覆盖并发保存的头像。 */
+    async setPreferredLocale(userId: string, locale: AccountLocale) {
+      const rows =
+        await sql`update users set preferred_locale=${locale} where id=${userId} returning id`;
       return rows.length === 1;
     },
     async rotateRefresh(currentHash: string, nextHash: string) {

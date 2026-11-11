@@ -37,6 +37,7 @@ async function fixture() {
     rotateRefresh: vi.fn(async () => null),
     changePassword: vi.fn(async () => true),
     setAvatarPreset: vi.fn(async () => true),
+    setPreferredLocale: vi.fn(async () => true),
   };
   const auth = enterpriseAuth(repository, { secret, origins: [origin], secureCookie: false });
   return { auth, repository, app: createApp(undefined, undefined, auth) };
@@ -84,6 +85,41 @@ describe("enterprise JWT login", () => {
     const limited = await request(user.account, "fixture-password-123");
     expect(limited.status).toBe(429);
     expect(limited.headers.get("retry-after")).toBe("900");
+  });
+  it("saves only a supported locale for the authenticated user", async () => {
+    const { app, auth, repository } = await fixture();
+    const login = await auth.login(user.account, "fixture-password-123");
+    if ("error" in login) throw new Error("fixture login failed");
+    const put = (body: unknown, headers: Record<string, string>) =>
+      app.request("/api/v1/auth/locale", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify(body),
+      });
+    const bearer = { Authorization: `Bearer ${login.accessToken}` };
+    expect((await put({ preferredLocale: "en" }, {})).status).toBe(401);
+    expect((await put({ preferredLocale: "fr" }, bearer)).status).toBe(400);
+    expect((await put({ preferredLocale: "en", userId: crypto.randomUUID() }, bearer)).status).toBe(
+      400,
+    );
+    expect(
+      (
+        await put(
+          { preferredLocale: "en" },
+          {
+            Cookie: `lycobo_enterprise_session=${login.accessToken}`,
+            Origin: "https://hostile.example",
+          },
+        )
+      ).status,
+    ).toBe(401);
+    const result = await put({ preferredLocale: "en" }, bearer);
+    expect(result.status).toBe(200);
+    expect(unwrapApiData(await result.json())).toMatchObject({
+      userId: user.userId,
+      preferredLocale: "en",
+    });
+    expect(repository.setPreferredLocale).toHaveBeenCalledExactlyOnceWith(user.userId, "en");
   });
   it("saves a preset avatar only for the session user and rejects unknown presets or hostile origins", async () => {
     const { app, auth, repository } = await fixture();

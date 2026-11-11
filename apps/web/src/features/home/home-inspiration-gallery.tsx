@@ -3,6 +3,7 @@ import { IconCopy } from "@tabler/icons-react";
 import { useId, useState } from "react";
 import { ConfirmDialog } from "../../components/overlays/confirm-dialog";
 import { DialogClose } from "../../components/overlays/dialog-close";
+import { useDialogDismiss } from "../../components/overlays/use-dialog-dismiss";
 import { UiIcon } from "../../components/ui-icon";
 import { useLocale } from "../../i18n/locale-store";
 import { useMessages } from "../../i18n/messages";
@@ -98,14 +99,15 @@ function InspirationDetail({
 }) {
   const requireLogin = useRequireLogin();
   const t = useMessages(homeInspirationMessages);
+  const dismiss = useDialogDismiss(onClose);
   return (
     <Modal
-      isOpen
+      isOpen={dismiss.isOpen}
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open) dismiss.requestClose();
       }}
     >
-      <Modal.Backdrop>
+      <Modal.Backdrop onAnimationEnd={dismiss.onAnimationEnd}>
         <Modal.Container size="lg" scroll="inside">
           <Modal.Dialog className="home-inspiration-detail" aria-label={t.details(item.title)}>
             {/* 示例图本身的颜色透过玻璃发光，每个详情弹窗都和它的图片相配。 */}

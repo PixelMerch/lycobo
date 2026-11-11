@@ -1,8 +1,10 @@
+import { type AccountLocale, accountLocales } from "@lycoboai/contracts";
+
 /** 站点支持的界面语言，第一项是中文。 */
-export const locales = ["zh-CN", "en"] as const;
+export const locales = accountLocales;
 
 /** 界面语言代码。 */
-export type Locale = (typeof locales)[number];
+export type Locale = AccountLocale;
 
 /** 语言菜单里的名称：每种语言用它自己的文字书写，看不懂当前界面的人也能认出来。 */
 export const localeNames: Record<Locale, string> = { "zh-CN": "简体中文", en: "English" };

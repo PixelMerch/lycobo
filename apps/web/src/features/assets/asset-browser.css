@@ -48,27 +48,13 @@
 .asset-filter-trigger[data-active="true"] .asset-filter-lead {
   color: var(--accent);
 }
-/* 来源菜单压在图片上打开（用户 2026-11-10 要求）：用不透明深色底，不透出下面图片的颜色。 */
-.select__popover.asset-filter-menu {
-  border: 0;
-  background: #1f1f1f;
-  box-shadow:
-    0 0 0 1px #ffffff14,
-    0 18px 48px #000000b3;
-}
-.asset-filter-menu .model-options {
-  gap: 10px;
-  min-width: 220px;
-  /* Shared menu row padding overrides HeroUI's indicator reservation. */
-  padding-inline-end: 36px;
-}
 .asset-filter-section {
   margin-top: var(--space-1);
   padding-top: var(--space-1);
   border-top: 1px solid #ffffff0f;
 }
 .asset-filter-heading {
-  padding: 6px 10px 4px;
+  padding: 6px 16px 4px;
   color: #ffffff66;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);

@@ -37,6 +37,17 @@ export type AvatarPreset = (typeof avatarPresetIds)[number];
 export const enterpriseAvatarChangeSchema = z
   .object({ avatarPreset: z.enum(avatarPresetIds).nullable() })
   .strict();
+/** 可保存到账号的界面语言。 */
+export const accountLocales = ["zh-CN", "en"] as const;
+/** 账号界面语言的代码。 */
+export type AccountLocale = (typeof accountLocales)[number];
+/** 语言更新只接受站点支持的值，身份始终来自会话。 */
+export const enterpriseLocaleChangeSchema = z
+  .object({
+    preferredLocale: z.enum(accountLocales),
+  })
+  .strict();
+
 export const enterpriseIdentitySchema = z.object({
   uid: userUidSchema.optional(),
   userId: z.uuid(),
@@ -45,6 +56,7 @@ export const enterpriseIdentitySchema = z.object({
   account: z.string(),
   // 读取时接受任意短 id：新部署增加预设时，旧页面不会因为认不出而登录失败，只显示默认头像。
   avatarPreset: z.string().max(32).nullable().optional(),
+  preferredLocale: z.string().max(32).nullable().optional(),
 });
 export const enterpriseLoginResponseSchema = z.object({
   accessToken: z.string(),
