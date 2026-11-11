@@ -17,11 +17,13 @@ export function AccountMessages({ signedIn }: { signedIn: boolean }) {
   const release = useSiteRelease().data?.release;
   const announced = useRef<string | undefined>(undefined);
   useEffect(() => {
-    const version = release?.version;
+    if (!release) return;
+    const { version, publishedAt } = release;
+    // 新版部署与公告发布之间，接口仍可能返回上一版公告。
     if (
-      !version ||
       version === import.meta.env.VITE_APP_RELEASE_VERSION ||
-      version === announced.current
+      version === announced.current ||
+      Date.parse(publishedAt) <= import.meta.env.VITE_APP_BUILD_TIME
     )
       return;
     announced.current = version;
