@@ -12,7 +12,9 @@ test("login returns to the target and logout keeps the draft without a document 
     account: "history-fixture",
   };
   let loggedIn = false;
+  let signedOut = false;
   let sessionRequests = 0;
+  let imageRequestsAfterLogout = 0;
   await page.route("**/api/v1/auth/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path.endsWith("/enterprise/login")) {
@@ -23,6 +25,7 @@ test("login returns to the target and logout keeps the draft without a document 
     }
     if (path.endsWith("/logout")) {
       loggedIn = false;
+      signedOut = true;
       return route.fulfill({ json: apiFixture({}) });
     }
     return route.fulfill({
@@ -32,6 +35,7 @@ test("login returns to the target and logout keeps the draft without a document 
   });
   await page.route("**/api/v1/image-session", (route) => {
     sessionRequests++;
+    if (signedOut) imageRequestsAfterLogout++;
     return route.fulfill({
       status: loggedIn ? 200 : 401,
       json: loggedIn
@@ -90,6 +94,8 @@ test("login returns to the target and logout keeps the draft without a document 
   await dialog.getByRole("button", { name: "关闭登录", exact: true }).click();
   await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("登录后的创作草稿");
+  expect(imageRequestsAfterLogout).toBe(0);
+  await expect(page.getByText("登录已过期，请重新登录。", { exact: true })).toHaveCount(0);
 });
 
 for (const layout of ["desktop", "mobile"] as const) {
