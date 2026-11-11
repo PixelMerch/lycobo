@@ -30,6 +30,6 @@
   },
   "devDependencies": {
     "tsx": "4.23.15",
-    "tsup": "8.5.1"
+    "tsup": "9.0.0"
   }
 }

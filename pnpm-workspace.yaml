@@ -9,3 +9,9 @@ onlyBuiltDependencies:
   - ffmpeg-static
 ignoredBuiltDependencies:
   - msgpackr-extract
+# 依赖安全修复（Dependabot）：只覆盖没有上游修复版的间接依赖。
+overrides:
+  # commitlint → ajv 引入的 fast-uri 低于 3.1.9 有 URI 解析漏洞；ajv 允许 ^3，直接用修复版。
+  "fast-uri@<3.1.9": "3.1.9"
+  # drizzle-kit 最新版仍依赖旧加载器 @esbuild-kit/core-utils，它把 esbuild 锁在有漏洞的 0.18；换成仓库已有的 0.25.12。
+  "@esbuild-kit/core-utils>esbuild": "0.25.12"
