@@ -129,6 +129,13 @@
   background: var(--interaction-active);
   color: var(--foreground);
 }
+/* 打开时主题色底配白色滑块（用户 2026-11-11 要求），不用 HeroUI 默认的深色滑块。 */
+.asset-favorite-filter.switch[data-selected="true"] .switch__control {
+  background-color: var(--accent);
+}
+.asset-favorite-filter.switch[data-selected="true"] .switch__thumb {
+  background-color: #fff;
+}
 .asset-favorite-filter .label {
   color: inherit;
   font: inherit;
