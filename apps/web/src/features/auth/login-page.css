@@ -36,3 +36,24 @@
     padding: 12px;
   }
 }
+
+/* 验证环节沿用登录卡片的间距，邮箱较长时自然换行。 */
+.login-email-recipient {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #ffffffb3;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.login-email-challenge:empty {
+  display: none;
+}
+
+.login-email-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px;
+}

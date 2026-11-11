@@ -15,7 +15,7 @@ import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { useEnterpriseLogout, useEnterpriseSession } from "../../auth/auth-client";
-import { roleLabel } from "../account-format";
+import { accountDisplayName, roleLabel } from "../account-format";
 import { useAccountOverlays } from "../account-overlay-store";
 import { AccountAvatar } from "../avatar/account-avatar";
 import { useWideViewport } from "../use-wide-viewport";
@@ -38,13 +38,15 @@ const sectionIcons: Record<SettingsSection, TablerIcon> = {
 /** 左侧栏顶部的身份：头像、账号与 UID · 角色。 */
 function SettingsIdentity({ account }: { account: EnterpriseIdentity }) {
   const locale = useLocale();
+  const t = useMessages(accountSettingsMessages);
   return (
     <div className="settings-identity">
       <AccountAvatar account={account} className="settings-identity-avatar" />
       <div className="settings-identity-text">
-        <strong title={account.account}>{account.account}</strong>
+        <strong title={accountDisplayName(account)}>{accountDisplayName(account)}</strong>
         <span>
-          {account.uid ? `UID ${account.uid}` : "UID —"} · {roleLabel(account.role, locale)}
+          {account.uid ? `UID ${account.uid}` : "UID —"} ·{" "}
+          {account.loginMethod === "social" ? t.personalAccount : roleLabel(account.role, locale)}
         </span>
       </div>
     </div>
@@ -103,7 +105,10 @@ export function AccountSettingsDialog({
   const wide = useWideViewport();
   const dismiss = useDialogDismiss(onClose);
   if (!account) return null;
-  const sections = settingsSections.filter((id) => id !== "members" || account.role === "admin");
+  const sections = settingsSections.filter((id) => {
+    if (id === "security" && account.loginMethod === "social") return false;
+    return id !== "members" || account.role === "admin";
+  });
   return (
     <Modal
       isOpen={dismiss.isOpen}
@@ -122,7 +127,7 @@ export function AccountSettingsDialog({
             </Modal.Header>
             <Modal.Body className="account-center">
               <Tabs
-                selectedKey={section}
+                selectedKey={sections.includes(section) ? section : "account"}
                 onSelectionChange={(key) => {
                   const next = sections.find((id) => id === key);
                   if (next) selectSection(next);

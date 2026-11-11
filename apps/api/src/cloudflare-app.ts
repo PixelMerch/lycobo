@@ -8,10 +8,15 @@ import { closeAfterStream } from "./cloudflare-response";
 import { enterpriseAuth, readAuthConfig } from "./features/auth/service";
 import { readWebhookConfig } from "./features/images/webhooks/provider-webhook";
 
+type AuthBindings = {
+  SUPABASE_AUTH_PUBLISHABLE_KEY?: string;
+  SUPABASE_EMAIL_TURNSTILE_SITE_KEY?: string;
+};
+
 /** 为每次请求组装 Hono API、鉴权和 Webhook 验签依赖。 */
 export async function serveCloudflareApi(
   request: Request,
-  env: CloudflareEnv,
+  env: CloudflareEnv & AuthBindings,
   background?: (work: Promise<void>) => void,
 ) {
   if (new URL(request.url).pathname === "/api/health/live") return createApp().fetch(request);
@@ -26,9 +31,16 @@ export async function serveCloudflareApi(
     const authConfig = readAuthConfig({
       AUTH_JWT_SECRET: env.AUTH_JWT_SECRET,
       AUTH_TRUSTED_ORIGINS: env.AUTH_TRUSTED_ORIGINS,
+      SUPABASE_AUTH_URL: env.SUPABASE_AUTH_URL,
+      SUPABASE_AUTH_PROVIDERS: env.SUPABASE_AUTH_PROVIDERS,
+      SUPABASE_AUTH_PUBLISHABLE_KEY: env.SUPABASE_AUTH_PUBLISHABLE_KEY,
+      SUPABASE_EMAIL_TURNSTILE_SITE_KEY: env.SUPABASE_EMAIL_TURNSTILE_SITE_KEY,
     });
     if (!authConfig) throw new Error("AUTH_CONFIGURATION_REQUIRED");
-    const auth = enterpriseAuth(authRepository, authConfig);
+    const auth = enterpriseAuth(authRepository, {
+      ...authConfig,
+      edgeClientAddress: request.headers.get("CF-Connecting-IP"),
+    });
     const webhook = readWebhookConfig(env);
     if (env.IMAGE_WEBHOOK_ENABLED === "true" && !webhook)
       throw new Error("WEBHOOK_CONFIGURATION_REQUIRED");

@@ -1,7 +1,7 @@
 import { enterpriseLoginResponseSchema, unwrapApiData } from "@lycoboai/contracts";
 import type { AuthRepository } from "@lycoboai/db";
 import { sign } from "hono/jwt";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { createApp } from "../../app";
 import { hashPassword, verifyPassword } from "./password";
@@ -15,7 +15,7 @@ const user = {
   role: "member" as const,
   account: "fixture-account",
 };
-async function fixture() {
+async function fixture(email = false) {
   const credential = {
     id: crypto.randomUUID(),
     account: user.account,
@@ -27,8 +27,10 @@ async function fixture() {
   const repository: AuthRepository = {
     close: vi.fn(),
     allowLogin: vi.fn(async () => true),
+    allowEmailCode: vi.fn(async () => true),
     credential: vi.fn(async (account) => (account === user.account ? credential : null)),
     createSession: vi.fn(async () => true),
+    createSocialSession: vi.fn(async () => true),
     identity: vi.fn(async () => (active ? user : null)),
     revoke: vi.fn(async () => {
       active = false;
@@ -38,8 +40,20 @@ async function fixture() {
     changePassword: vi.fn(async () => true),
     setAvatarPreset: vi.fn(async () => true),
     setPreferredLocale: vi.fn(async () => true),
+    setNickname: vi.fn(async () => true),
   };
-  const auth = enterpriseAuth(repository, { secret, origins: [origin], secureCookie: false });
+  const oauth = {
+    origin: "https://fixture.supabase.co",
+    key: "fixture-key",
+    providers: [],
+    emailTurnstileSiteKey: "fixture-sitekey",
+  };
+  const auth = enterpriseAuth(repository, {
+    secret,
+    origins: [origin],
+    secureCookie: false,
+    ...(email && { oauth }),
+  });
   return { auth, repository, app: createApp(undefined, undefined, auth) };
 }
 describe("enterprise JWT login", () => {
@@ -63,6 +77,28 @@ describe("enterprise JWT login", () => {
         AUTH_TRUSTED_ORIGINS: "https://studio.example.com",
       })?.secureCookie,
     ).toBe(true);
+  });
+  it("只读取当前运行环境对应的第三方登录配置", () => {
+    const env = {
+      AUTH_JWT_SECRET: secret,
+      AUTH_TRUSTED_ORIGINS: "https://studio.example.com",
+      DEV_SUPABASE_AUTH_URL: "https://abcdefghijklmnopqrst.supabase.co",
+      DEV_SUPABASE_AUTH_PUBLISHABLE_KEY: "sb_publishable_fixture",
+      DEV_SUPABASE_AUTH_PROVIDERS: "google",
+    };
+    expect(readAuthConfig(env)?.oauth).toBeUndefined();
+    expect(readAuthConfig({ ...env, NODE_ENV: "development" })?.oauth?.providers).toEqual([
+      "google",
+    ]);
+    const production = readAuthConfig({
+      ...env,
+      SUPABASE_AUTH_URL: "https://abcdefghijklmnopqrst.supabase.co",
+      SUPABASE_AUTH_PUBLISHABLE_KEY: "sb_publishable_fixture",
+      SUPABASE_AUTH_PROVIDERS: "google,apple",
+      SUPABASE_EMAIL_TURNSTILE_SITE_KEY: "fixture-site-key",
+    });
+    expect(production?.oauth?.providers).toEqual(["google", "apple"]);
+    expect(production?.oauth?.emailTurnstileSiteKey).toBe("fixture-site-key");
   });
   it("does not enumerate accounts, rate limits and refuses hostile origins before checking credentials", async () => {
     const { app, repository } = await fixture();
@@ -271,5 +307,63 @@ describe("enterprise JWT login", () => {
         await auth.authenticate(await sign({ ...valid, ...patch }, secret, "HS256")),
       ).toBeNull();
     }
+  });
+});
+
+describe("邮箱验证码登录", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  function request(app: Awaited<ReturnType<typeof fixture>>["app"], path: string, body: object) {
+    return app.request(`/api/v1/auth/email/${path}`, {
+      method: "POST",
+      headers: { Origin: origin, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+
+  it("要求验证码发送令牌，并在限流或验证失败时拒绝", async () => {
+    const { app, repository } = await fixture(true);
+    const fetchProvider = vi.fn(async () =>
+      Response.json({ error_code: "captcha_failed" }, { status: 400 }),
+    );
+    vi.stubGlobal("fetch", fetchProvider);
+    const email = " TEST@example.com ";
+    expect((await request(app, "send", { email })).status).toBe(400);
+    expect(fetchProvider).not.toHaveBeenCalled();
+    expect((await request(app, "send", { email, captchaToken: "invalid" })).status).toBe(400);
+    expect(repository.allowEmailCode).toHaveBeenCalledWith("test@example.com", "local", "send");
+    expect(fetchProvider).toHaveBeenCalledWith(
+      new URL("https://fixture.supabase.co/auth/v1/otp"),
+      expect.objectContaining({
+        redirect: "manual",
+        body: JSON.stringify({
+          email: "test@example.com",
+          create_user: true,
+          gotrue_meta_security: { captcha_token: "invalid" },
+        }),
+      }),
+    );
+    vi.mocked(repository.allowEmailCode).mockResolvedValue(false);
+    expect((await request(app, "send", { email, captchaToken: "another" })).status).toBe(429);
+    expect(fetchProvider).toHaveBeenCalledTimes(1);
+  });
+
+  it("只为 Supabase 验证过的邮箱签发站内会话", async () => {
+    const { app, repository } = await fixture(true);
+    const id = crypto.randomUUID();
+    const fetchProvider = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ error_code: "otp_expired" }, { status: 403 }))
+      .mockResolvedValueOnce(Response.json({ user: { id, email: "test@example.com" } }));
+    vi.stubGlobal("fetch", fetchProvider);
+    const body = { email: "test@example.com", code: "012345" };
+    expect((await request(app, "verify", body)).status).toBe(401);
+    expect(repository.createSocialSession).not.toHaveBeenCalled();
+    const login = await request(app, "verify", body);
+    expect(login.status).toBe(200);
+    expect(login.headers.getSetCookie().join(" ")).toContain("HttpOnly");
+    expect(repository.createSocialSession).toHaveBeenCalledWith(
+      expect.objectContaining({ externalId: id, email: body.email }),
+    );
   });
 });

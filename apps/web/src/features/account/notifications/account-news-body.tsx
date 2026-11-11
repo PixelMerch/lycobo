@@ -1,11 +1,11 @@
 import { Button } from "@heroui/react";
-import { IconBell } from "@tabler/icons-react";
+import { IconBell, IconSparkles } from "@tabler/icons-react";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
-import { useNotifications, useReadNotification } from "../../realtime/client";
+import { useNotifications, useReadNotification, useSiteRelease } from "../../realtime/client";
 import { DesktopNotificationControl } from "../../realtime/desktop-notification-control";
 import { notificationsMessages } from "./notifications-messages";
 
@@ -16,6 +16,47 @@ export function NotificationBody() {
       <DesktopNotificationControl />
       <NotificationMessages />
     </>
+  );
+}
+
+/** 展示站点发布服务提供的最新更新，复用实时连接已同步的版本缓存。 */
+export function ReleaseNotice() {
+  const updates = useSiteRelease();
+  const t = useMessages(notificationsMessages);
+  const locale = useLocale();
+  const release = updates.data?.release;
+  if (!release)
+    return (
+      <div className="account-news-empty">
+        <span>
+          <UiIcon icon={IconSparkles} size="illustration" />
+        </span>
+        <h3>{updates.isError ? t.updatesFailed : t.noUpdates}</h3>
+        {updates.isError && (
+          <Button size="sm" variant="tertiary" onPress={() => void updates.refetch()}>
+            {t.retry}
+          </Button>
+        )}
+      </div>
+    );
+  return (
+    <article className="account-message">
+      <span className="account-message-icon">
+        <UiIcon icon={IconSparkles} />
+      </span>
+      <div className="account-message-content">
+        <div className="account-message-heading">
+          <h3>{release.title}</h3>
+          <span className="account-message-status">{t.version(release.version)}</span>
+        </div>
+        <p>{release.description}</p>
+        <div className="account-message-footer">
+          <time dateTime={release.publishedAt}>
+            {new Date(release.publishedAt).toLocaleString(locale)}
+          </time>
+        </div>
+      </div>
+    </article>
   );
 }
 

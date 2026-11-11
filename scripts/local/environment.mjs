@@ -64,6 +64,14 @@ export function localEnvironment(source, docker = false, settings = source) {
     ])
       if (settings[key]) env[key] = settings[key];
   }
+  for (const key of [
+    "DEV_SUPABASE_AUTH_URL",
+    "DEV_SUPABASE_AUTH_PUBLISHABLE_KEY",
+    "DEV_SUPABASE_AUTH_PROVIDERS",
+    "DEV_SUPABASE_EMAIL_TURNSTILE_SITE_KEY",
+  ]) {
+    if (settings[key]) env[key] = settings[key];
+  }
   if (settings.VIDEO_REFERENCE_ORIGIN) env.VIDEO_REFERENCE_ORIGIN = settings.VIDEO_REFERENCE_ORIGIN;
   Object.assign(env, {
     APP_ENV: "development",

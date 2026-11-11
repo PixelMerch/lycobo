@@ -15,6 +15,7 @@ import postgres from "postgres";
 import { createApp } from "../src/app";
 import { hashPassword } from "../src/features/auth/password";
 import { enterpriseAuth } from "../src/features/auth/service";
+import { verifySocialAuth } from "./verify-social-auth";
 
 if (process.env.ALLOW_LOCAL_INTEGRATION !== "true")
   throw new Error("Explicit isolated test opt-in required");
@@ -83,6 +84,11 @@ try {
       secret: crypto.randomUUID() + crypto.randomUUID(),
       origins: [origin],
       secureCookie: false,
+      oauth: {
+        origin: "https://abcdefghijklmnopqrst.supabase.co",
+        key: "sb_publishable_fixture",
+        providers: ["google", "apple"],
+      },
     });
     const store = imageStore(directory);
     await store.ready();
@@ -112,6 +118,7 @@ try {
     assert.match(result.user.uid ?? "", /^[0-9]{10}$/);
     assert.equal(result.user.uid, first.uid);
     assert.notEqual(first.uid, second.uid);
+    await verifySocialAuth(app, origin, first.userId);
     const headers = { Authorization: `Bearer ${result.accessToken}` };
     const session = enterpriseIdentitySchema.parse(
       unwrapApiData(await (await app.request("/api/v1/auth/session", { headers })).json()),
@@ -336,6 +343,22 @@ try {
       Array.from({ length: 25 }, () => authDb?.allowLogin("rate-fixture")),
     );
     assert.equal(attempts.filter(Boolean).length, 10);
+    const sameMailbox = await Promise.all(
+      Array.from({ length: 10 }, (_, index) =>
+        authDb?.allowEmailCode("mailbox@example.invalid", `192.0.2.${index + 1}`, "send"),
+      ),
+    );
+    assert.equal(sameMailbox.filter(Boolean).length, 5);
+    const sameAddress = await Promise.all(
+      Array.from({ length: 20 }, (_, index) =>
+        authDb?.allowEmailCode(`mailbox-${index}@example.invalid`, "198.51.100.1", "send"),
+      ),
+    );
+    assert.equal(sameAddress.filter(Boolean).length, 15);
+    assert.equal(
+      await authDb?.allowEmailCode("mailbox@example.invalid", "192.0.2.1", "verify"),
+      true,
+    );
     console.info(
       "Enterprise auth integration passed: migrations, credentials, JWT, cookie/CSRF, tenant isolation, revocation and atomic limits",
     );

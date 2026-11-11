@@ -48,12 +48,55 @@ export const enterpriseLocaleChangeSchema = z
   })
   .strict();
 
+/** 首阶段接入的 Supabase OAuth 登录方式。 */
+export const socialProviders = ["google", "apple"] as const;
+/** OAuth 登录入口的参数。 */
+export const socialLoginInputSchema = z
+  .object({
+    provider: z.enum(socialProviders),
+    returnTo: z.string().max(900),
+  })
+  .strict();
+/** 服务端当前启用的第三方登录方式。 */
+export const socialProvidersSchema = z.object({
+  providers: z.array(z.enum(socialProviders)),
+  emailTurnstileSiteKey: z.string().min(1).optional(),
+});
+const emailAddress = z.string().trim().toLowerCase().max(254).email();
+/** 验证码发送请求必须包含 Cloudflare 的短期令牌。 */
+export const emailCodeSendSchema = z
+  .object({
+    email: emailAddress,
+    captchaToken: z.string().min(1).max(2048),
+  })
+  .strict();
+/** 验证码按字符串传输，保留前导零。 */
+export const emailCodeVerifySchema = z
+  .object({ email: emailAddress, code: z.string().regex(/^\d{6}$/) })
+  .strict();
+/** 允许浏览器导航的 HTTPS 授权地址。 */
+export const socialAuthorizationSchema = z.object({ url: z.url({ protocol: /^https$/ }) });
+/** OAuth 登录方式的标识。 */
+export type SocialProvider = (typeof socialProviders)[number];
+
+/** 昵称仅用于显示，支持多语言并拒绝控制字符。 */
+export const userNicknameSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .regex(/^[^\p{Cc}]+$/u);
+/** 昵称修改仅接受新值，用户身份由会话确定。 */
+export const userNicknameChangeSchema = z.object({ nickname: userNicknameSchema }).strict();
+
 export const enterpriseIdentitySchema = z.object({
   uid: userUidSchema.optional(),
   userId: z.uuid(),
   organizationId: z.uuid(),
   role: z.enum(["admin", "member"]),
   account: z.string(),
+  nickname: userNicknameSchema.nullable().optional(),
+  loginMethod: z.literal("social").optional(),
   // 读取时接受任意短 id：新部署增加预设时，旧页面不会因为认不出而登录失败，只显示默认头像。
   avatarPreset: z.string().max(32).nullable().optional(),
   preferredLocale: z.string().max(32).nullable().optional(),

@@ -1,15 +1,15 @@
-import { Button, Link } from "@heroui/react";
+import { Button, Link, toast } from "@heroui/react";
 import type { EnterpriseIdentity } from "@lycoboai/contracts";
 import { IconBuilding, IconChevronRight, IconX } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { PageLoading } from "../../app/page-loading";
 import { UiIcon } from "../../components/ui-icon";
 import { parseLocale } from "../../i18n/locale";
 import { localizedPath } from "../../i18n/locale-path";
 import { useLocale } from "../../i18n/locale-store";
-import { useMessages } from "../../i18n/messages";
+import { currentMessages, useMessages } from "../../i18n/messages";
 import { type LegalDocumentId, legalPaths } from "../legal/legal-document";
 import { legalMessages } from "../legal/legal-messages";
 import { useEnterpriseSession } from "./auth-client";
@@ -32,11 +32,18 @@ export function LoginPage() {
     localizedPath(returnTo, parseLocale(user.preferredLocale) ?? locale);
   if (session.isPending) return <PageLoading />;
   if (session.data && params.get("reauth") !== "1")
-    return <Navigate to={destination(session.data)} replace />;
+    return (
+      <SignedInRedirect
+        to={destination(session.data)}
+        socialSignedIn={params.get("oauth") === "success"}
+      />
+    );
   return (
     <main className="login-page" aria-labelledby="login-title">
       <LoginBackdrop />
       <LoginCard
+        returnTo={localizedPath(returnTo, locale)}
+        socialFailed={params.get("oauth") === "failed"}
         onClose={() => {
           void navigate(localizedPath("/", locale), { replace: true });
         }}
@@ -48,11 +55,30 @@ export function LoginPage() {
   );
 }
 
+/**
+ * 已登录时离开登录页。Google、Apple 登录由服务端带 oauth=success 跳回这里，
+ * 先用 Toast 提示“登录成功”，与邮箱、企业账号登录一致；其他情况直接离开、不提示。
+ */
+function SignedInRedirect({ to, socialSignedIn }: { to: string; socialSignedIn: boolean }) {
+  // 开发模式下 StrictMode 会把副作用跑两遍，记一笔避免弹出两条提示。
+  const announced = useRef(false);
+  useEffect(() => {
+    if (!socialSignedIn || announced.current) return;
+    announced.current = true;
+    toast.success(currentMessages(authMessages).signedIn);
+  }, [socialSignedIn]);
+  return <Navigate to={to} replace />;
+}
+
 /** 固定尺寸的登录卡片：正面依次为 Google、Apple、邮箱与企业账号入口，翻面后只显示企业账号表单。 */
 function LoginCard({
+  returnTo,
+  socialFailed,
   onClose,
   onLoginSuccess,
 }: {
+  returnTo: string;
+  socialFailed: boolean;
   onClose: () => void;
   onLoginSuccess: (account: EnterpriseIdentity) => void;
 }) {
@@ -99,7 +125,11 @@ function LoginCard({
               />
             ) : (
               <>
-                <LoginMethods />
+                <LoginMethods
+                  returnTo={returnTo}
+                  failed={socialFailed}
+                  onLoginSuccess={onLoginSuccess}
+                />
                 {/* 企业账号是次要入口，放在其他方式下方。 */}
                 <Button
                   variant="ghost"

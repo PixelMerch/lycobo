@@ -3,6 +3,7 @@ import { avatarPresetIds, type EnterpriseIdentity } from "@lycoboai/contracts";
 import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { useEnterpriseAvatar } from "../../auth/auth-client";
+import { accountDisplayName } from "../account-format";
 import { accountInitial, avatarPresetOf } from "../avatar/account-avatar";
 import { accountSettingsMessages } from "./account-settings-messages";
 
@@ -13,7 +14,7 @@ export function AvatarPresetPicker({ account }: { account: EnterpriseIdentity })
   useErrorToast(save.error?.message);
   const current = avatarPresetOf(account.avatarPreset);
   const shown = save.isPending && save.variables ? save.variables : current;
-  const initial = accountInitial(account.account);
+  const initial = accountInitial(accountDisplayName(account));
   return (
     <ToggleButtonGroup
       aria-label={t.avatar}

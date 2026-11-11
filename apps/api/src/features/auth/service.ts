@@ -4,8 +4,16 @@ import type { AuthRepository } from "@lycoboai/db";
 import { sign, verify } from "hono/jwt";
 import { z } from "zod";
 import { dummyPasswordHash, hashPassword, verifyPassword } from "./password";
+import { readSupabaseOAuth, type SupabaseOAuthConfig } from "./supabase-oauth";
 
-export type AuthConfig = { secret: string; origins: string[]; secureCookie: boolean };
+export type AuthConfig = {
+  secret: string;
+  origins: string[];
+  secureCookie: boolean;
+  oauth?: SupabaseOAuthConfig;
+  edgeClientAddress?: string | null;
+};
+/** 读取主站 JWT、可信来源与第三方登录配置。 */
 export function readAuthConfig(env: Record<string, string | undefined>): AuthConfig | undefined {
   if (!env.AUTH_JWT_SECRET) return undefined;
   if (Buffer.byteLength(env.AUTH_JWT_SECRET) < 32)
@@ -27,7 +35,8 @@ export function readAuthConfig(env: Record<string, string | undefined>): AuthCon
   }
   const secureCookie =
     env.NODE_ENV !== "development" || origins.some((origin) => origin.startsWith("https:"));
-  return { secret: env.AUTH_JWT_SECRET, origins, secureCookie };
+  const oauth = readSupabaseOAuth(env);
+  return { secret: env.AUTH_JWT_SECRET, origins, secureCookie, ...(oauth && { oauth }) };
 }
 const claimsSchema = z.object({
   sub: z.uuid(),
@@ -48,6 +57,19 @@ const refreshClaimsSchema = claimsSchema
     purpose: z.literal("enterprise-refresh"),
     nonce: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
   });
+async function readRefreshClaims(token: string, secret: string) {
+  if (token.length > 2048) return null;
+  try {
+    const claims = refreshClaimsSchema.parse(await verify(token, secret, "HS256"));
+    const now = Math.floor(Date.now() / 1000);
+    return claims.iat <= now && claims.exp > now && claims.exp - claims.iat <= refreshTokenLifetime
+      ? claims
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 /** 企业账号鉴权服务：签发与校验 JWT、刷新、改密、保存个人偏好与撤销会话。 */
 export function enterpriseAuth(repository: AuthRepository, config: AuthConfig) {
   const mintRefresh = (sessionId: string, expiresAt: Date) =>
@@ -64,20 +86,6 @@ export function enterpriseAuth(repository: AuthRepository, config: AuthConfig) {
       config.secret,
       "HS256",
     );
-  const refreshClaims = async (token: string) => {
-    if (token.length > 2048) return null;
-    try {
-      const claims = refreshClaimsSchema.parse(await verify(token, config.secret, "HS256"));
-      const now = Math.floor(Date.now() / 1000);
-      return claims.iat <= now &&
-        claims.exp > now &&
-        claims.exp - claims.iat <= refreshTokenLifetime
-        ? claims
-        : null;
-    } catch {
-      return null;
-    }
-  };
   const issue = async (sessionId: string, refreshToken: string, expiresAt: Date) => {
     const user = await repository.identity(sessionId);
     if (!user) return null;
@@ -108,6 +116,17 @@ export function enterpriseAuth(repository: AuthRepository, config: AuthConfig) {
       user,
     } as const;
   };
+  async function createLoginSession(
+    persist: (id: string, expiresAt: Date, hash: string) => Promise<boolean>,
+  ) {
+    const id = randomUUID();
+    const expiresAt = new Date((Math.floor(Date.now() / 1000) + refreshTokenLifetime) * 1000);
+    const refreshToken = await mintRefresh(id, expiresAt);
+    if (!(await persist(id, expiresAt, refreshHash(refreshToken)))) return null;
+    const result = await issue(id, refreshToken, expiresAt);
+    if (!result) await repository.revoke(id);
+    return result;
+  }
   return {
     config,
     async login(account: string, password: string) {
@@ -115,20 +134,21 @@ export function enterpriseAuth(repository: AuthRepository, config: AuthConfig) {
       const credential = await repository.credential(account);
       const valid = await verifyPassword(password, credential?.password_hash ?? dummyPasswordHash);
       if (!credential || !valid) return { error: "INVALID_CREDENTIALS" } as const;
-      const jti = randomUUID();
-      const expiresAt = new Date((Math.floor(Date.now() / 1000) + refreshTokenLifetime) * 1000);
-      const refreshToken = await mintRefresh(jti, expiresAt);
-      if (!(await repository.createSession(jti, credential, expiresAt, refreshHash(refreshToken))))
-        return { error: "INVALID_CREDENTIALS" } as const;
-      const result = await issue(jti, refreshToken, expiresAt);
-      if (!result) {
-        await repository.revoke(jti);
-        return { error: "INVALID_CREDENTIALS" } as const;
-      }
-      return result;
+      const result = await createLoginSession((id, expiresAt, hash) =>
+        repository.createSession(id, credential, expiresAt, hash),
+      );
+      return result ?? ({ error: "INVALID_CREDENTIALS" } as const);
     },
+    /** 复用主站会话签发，不将 Supabase 的访问或刷新凭据写入浏览器。 */
+    socialLogin: (identity: { externalId: string; email: string | null; nickname?: string }) =>
+      createLoginSession((sessionId, expiresAt, refreshHash) =>
+        repository.createSocialSession({ ...identity, sessionId, expiresAt, refreshHash }),
+      ),
+    /** 为邮箱验证码发送和校验分别应用来源及邮箱配额。 */
+    allowEmailCode: (email: string, address: string, action: "send" | "verify") =>
+      repository.allowEmailCode(email, address, action),
     async refresh(token: string) {
-      const claims = await refreshClaims(token);
+      const claims = await readRefreshClaims(token, config.secret);
       if (!claims) return null;
       const nextToken = await mintRefresh(claims.jti, new Date(claims.exp * 1000));
       const session = await repository.rotateRefresh(refreshHash(token), refreshHash(nextToken));
@@ -158,12 +178,14 @@ export function enterpriseAuth(repository: AuthRepository, config: AuthConfig) {
     /** 保存当前用户的预设头像；id 已由路由按契约校验。 */
     setAvatarPreset: (userId: string, avatarPreset: string | null) =>
       repository.setAvatarPreset(userId, avatarPreset),
+    /** 保存当前会话用户的昵称。 */
+    setNickname: (userId: string, nickname: string) => repository.setNickname(userId, nickname),
     /** 保存由会话确定的用户的界面语言。 */
     setPreferredLocale: (userId: string, locale: AccountLocale) =>
       repository.setPreferredLocale(userId, locale),
     async revokeRefresh(token: string) {
       // 刚轮换的凭据在退出时仍可撤销自己的会话，但永远不会再被接受用于续期，避免退出与刷新的竞争。
-      const claims = await refreshClaims(token);
+      const claims = await readRefreshClaims(token, config.secret);
       if (claims) await repository.revoke(claims.jti);
     },
     revoke: (id: string) => repository.revoke(id),

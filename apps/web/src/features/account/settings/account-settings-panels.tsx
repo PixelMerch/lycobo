@@ -7,10 +7,11 @@ import { useMessages } from "../../../i18n/messages";
 import { copyToClipboard } from "../../../lib/clipboard";
 import { useErrorToast } from "../../../lib/error-toast";
 import { useEnterpriseLogout } from "../../auth/auth-client";
-import { roleLabel } from "../account-format";
+import { accountDisplayName, roleLabel } from "../account-format";
 import { AccountAvatar } from "../avatar/account-avatar";
 import { AvatarPresetPicker } from "./account-avatar-picker";
 import { AccountLanguagePicker } from "./account-language-picker";
+import { AccountNicknameEditor } from "./account-nickname-editor";
 import { accountSettingsMessages } from "./account-settings-messages";
 import { SettingsGroup, SettingsRow } from "./account-settings-rows";
 
@@ -21,7 +22,7 @@ function ProfileHero({ account, role }: { account: EnterpriseIdentity; role: str
     <section className="settings-hero" aria-label={t.accountInfo}>
       <AccountAvatar account={account} className="settings-hero-avatar" />
       <div className="settings-hero-main">
-        <strong title={account.account}>{account.account}</strong>
+        <strong title={accountDisplayName(account)}>{accountDisplayName(account)}</strong>
         <div className="settings-hero-meta">
           <Chip size="sm" className="account-chip">
             {role}
@@ -46,7 +47,9 @@ export function AccountSettingsProfile({
 }) {
   const logout = useEnterpriseLogout();
   const t = useMessages(accountSettingsMessages);
-  const role = t.enterpriseRole(roleLabel(account.role, useLocale()));
+  const locale = useLocale();
+  const social = account.loginMethod === "social";
+  const role = social ? t.personalAccount : t.enterpriseRole(roleLabel(account.role, locale));
   useErrorToast(logout.error?.message);
   const uid = account.uid;
   return (
@@ -55,6 +58,9 @@ export function AccountSettingsProfile({
       <SettingsGroup title={t.basicInfo}>
         <SettingsRow label={t.avatar} hint={t.avatarHint}>
           <AvatarPresetPicker account={account} />
+        </SettingsRow>
+        <SettingsRow label={t.nickname}>
+          <AccountNicknameEditor key={account.userId} account={account} />
         </SettingsRow>
         <SettingsRow label={t.loginAccount} value={account.account} />
         <SettingsRow
@@ -79,9 +85,9 @@ export function AccountSettingsProfile({
       <SettingsGroup title={t.preferences}>
         <SettingsRow label={t.language} action={<AccountLanguagePicker account={account} />} />
       </SettingsGroup>
-      <SettingsGroup title={t.enterpriseIdentity}>
+      <SettingsGroup title={social ? t.identity : t.enterpriseIdentity}>
         <SettingsRow label={t.identity} value={role} />
-        <SettingsRow label={t.loginMethod} value={t.enterpriseLogin} />
+        <SettingsRow label={t.loginMethod} value={social ? t.socialLogin : t.enterpriseLogin} />
       </SettingsGroup>
       {withIdentity && (
         <div className="settings-footer">

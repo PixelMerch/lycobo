@@ -137,13 +137,6 @@
   }
 }
 
-.account-footer-tools {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  flex: none;
-  gap: 4px;
-}
 .account-footer-action {
   display: inline-flex;
   align-items: center;
