@@ -5,11 +5,12 @@
   pointer-events: none;
 }
 
-/* 继续使用共享毛玻璃，加深底色，减少亮图对消息文字的干扰。 */
+/* 与账户设置共用深色毛玻璃。 */
 :root .account-news-popover {
-  --glass-fill: linear-gradient(transparent, transparent);
-  --glass-tint: rgb(29 29 29 / 96%);
+  --glass-tint: var(--glass-dark-tint);
   width: min(380px, calc(100vw - 16px));
+  /* 扣除顶部栏、展开间距和一个顶部栏高度的底部留白。 */
+  height: calc(100dvh - 2 * var(--header-height) - 8px);
   padding: 0;
   border-radius: 24px;
   overflow: hidden;
@@ -27,32 +28,32 @@
 }
 .account-news-panel {
   width: 100%;
+  height: 100%;
   padding: 0;
 }
 .account-news-tabs.tabs {
   display: flex;
   flex-direction: column;
   gap: 0;
-  height: min(640px, calc(100dvh - var(--header-height) - 16px));
-  max-height: inherit;
+  height: 100%;
 }
 .account-news-tabs .tabs__list-container {
   flex: none;
   padding: var(--space-2);
-  border-bottom: 1px solid var(--glass-card-edge);
 }
 .account-news-tabs .tabs__list {
   display: flex;
   gap: var(--space-1);
   width: 100%;
-  min-height: 44px;
   padding: 0;
+  border: 0;
   background: transparent;
 }
 .account-news-tabs .tabs__tab {
   flex: 1;
   justify-content: center;
   gap: var(--space-2);
+  height: 44px;
   border-radius: 999px;
 }
 .account-news-tabs .tabs__tab[data-selected="true"] {
@@ -75,7 +76,11 @@
   padding: var(--space-4);
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: none;
   gap: var(--space-3);
+}
+.account-news-body::-webkit-scrollbar {
+  display: none;
 }
 .account-news-empty p {
   margin-top: var(--space-2);
@@ -130,7 +135,6 @@
   gap: var(--space-3);
   flex: none;
   padding: var(--space-4);
-  border: 1px solid var(--glass-card-edge);
   border-radius: 16px;
   background: var(--glass-card);
 }
@@ -166,11 +170,9 @@
   align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-4);
-  border: 1px solid transparent;
   border-radius: 16px;
 }
 .account-message[data-unread="true"] {
-  border-color: var(--glass-card-edge);
   background: var(--glass-card);
 }
 .account-message[data-unread="true"] .account-message-icon {

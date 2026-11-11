@@ -14,7 +14,10 @@ export const shellMessages = defineMessages({
     language: (name: string) => `语言：${name}`,
     chooseLanguage: "选择语言",
     pageUnavailable: "页面暂时无法打开",
+    pageUnavailableHint: "可以重新加载当前页面，或返回首页继续浏览。",
     pageNotFound: "页面不存在",
+    pageNotFoundHint: "请检查地址，或返回首页继续浏览。",
+    reloadPage: "重新加载",
     backHome: "返回首页",
   },
   en: {
@@ -29,7 +32,10 @@ export const shellMessages = defineMessages({
     language: (name) => `Language: ${name}`,
     chooseLanguage: "Choose language",
     pageUnavailable: "This page can't be opened right now",
+    pageUnavailableHint: "Reload this page or return to the homepage to keep browsing.",
     pageNotFound: "Page not found",
+    pageNotFoundHint: "Check the address or return to the homepage to keep browsing.",
+    reloadPage: "Reload page",
     backHome: "Back to home",
   },
 });

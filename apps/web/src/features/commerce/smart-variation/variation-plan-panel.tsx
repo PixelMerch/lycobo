@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef } from "react";
 import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
+import { usePlanUsage } from "./plan-image-bindings";
 import { PlanReferenceStrip } from "./plan-reference-strip";
 import { previewPlanItems } from "./plan-stream";
 import { useSmartVariationDraft } from "./smart-variation-state";
@@ -66,6 +67,7 @@ export function VariationPlanPanel({
 }) {
   const { items, references, ratio, resolution, update } = useSmartVariationDraft();
   const generation = useVariationGeneration();
+  const usage = usePlanUsage(references, items);
   const previews = previewPlanItems(streamText);
   const showPreview = analyzing || !!analysisError;
   const selectedCount = items.filter((item) => item.selected).length;
@@ -168,6 +170,7 @@ export function VariationPlanPanel({
                   planNumber={index + 1}
                   prompt={item.prompt}
                   references={references}
+                  usage={usage}
                 />
                 <PlanPrompt
                   value={item.prompt}

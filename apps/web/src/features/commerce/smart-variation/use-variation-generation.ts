@@ -10,10 +10,11 @@ import {
 import { revealNewestHistory } from "../../generation/history/history-navigation";
 import { modelCapabilities, supportsReferences } from "../../generation/models/model-capabilities";
 import {
-  submissionReferenceRoles,
-  useReferenceRoles,
-} from "../../generation/references/reference-roles";
-import { itemReferenceIndexes, usePlanBindings } from "./plan-image-bindings";
+  itemReferenceIndexes,
+  planSubmissionRoles,
+  usePlanBindings,
+  usePlanUsage,
+} from "./plan-image-bindings";
 import { useSmartVariationDraft } from "./smart-variation-state";
 
 /** 套图计划确认后的批量生成：每条方案提交一张图，提交前校验登录、模型与参考图。 */
@@ -26,10 +27,11 @@ export function useVariationGeneration() {
   const ownPending =
     pending && !!session.data && pendingSubmissionSource(session.data) === "smart-variation";
   const selected = draft.items.filter((item) => item.selected);
-  // 标了原图时，每条方案至少要用到一张图，避免不小心把一条方案变成不带参考图的生成。
-  const roles = useReferenceRoles((state) => state.roles);
+  // 原图按方案逐条对应时（用户标的或按提示词推断的），每条方案至少要用到一张图，
+  // 避免不小心把一条方案变成不带参考图的生成。用法按全部方案计算，取消勾选不改变其他方案的用图。
+  const usage = usePlanUsage(draft.references, draft.items);
   const bindings = usePlanBindings((state) => state.bindings);
-  const itemReferences = itemReferenceIndexes(selected, draft.references, roles, bindings);
+  const itemReferences = itemReferenceIndexes(selected, draft.references, usage, bindings);
   const everyItemHasImages =
     !itemReferences || selected.every((item) => (itemReferences[item.id]?.length ?? 0) > 0);
   const caps = modelCapabilities(models.data, "gpt-image-2.6", "create");
@@ -66,7 +68,7 @@ export function useVariationGeneration() {
           count: String(selected.length),
           quality: "medium",
         },
-        referenceRoles: submissionReferenceRoles(draft.references),
+        referenceRoles: planSubmissionRoles(draft.references, usage),
         itemReferences,
         ...(draft.planId
           ? {

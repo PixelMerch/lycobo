@@ -255,6 +255,9 @@
   align-items: center;
   gap: 12px;
 }
+.header-news[data-signed-in="false"] {
+  display: contents;
+}
 .header-news .account-footer-action.button {
   width: 40px;
   min-width: 40px;

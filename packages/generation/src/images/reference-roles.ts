@@ -44,3 +44,22 @@ export function referenceRoleNotes(input: ImageGenerationInput, sentIds: readonl
   });
   return lines.length ? `参考图说明（按发送顺序）：\n${lines.join("\n")}` : "";
 }
+
+/**
+ * 套图计划一条方案的参考图说明。任务带角色时按角色说明；方案自带用图而任务没有角色时
+ * （网页按提示词自动对应了原图），只把发送顺序对应回原编号，不加角色要求，免得和换色等调整冲突；
+ * 旧方案两样都没有，返回空字符串，提示词与以前一致。
+ */
+export function planItemReferenceNotes(
+  input: ImageGenerationInput,
+  position: number,
+  sentIds: readonly string[],
+) {
+  if (input.referenceRoles) return referenceRoleNotes(input, sentIds);
+  if (!input.variation?.items[position]?.referenceAssetIds) return "";
+  const lines = sentIds.map((id, index) => {
+    const number = input.referenceAssetIds.indexOf(id) + 1;
+    return `第${index + 1}张图片是参考图${number}（@图片${number}）。`;
+  });
+  return lines.length ? `参考图说明（按发送顺序）：\n${lines.join("\n")}` : "";
+}

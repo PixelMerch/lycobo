@@ -49,7 +49,6 @@ export const generationMessages = defineMessages({
     invalidLinkResponse: "图片链接响应无效。",
     imageUnavailable: "图片已失效或无权下载。",
     downloadLinkExpired: "图片下载链接已失效。",
-    newVersion: "网站有新版本可用，请先保存草稿，再刷新页面体验。",
   },
   en: {
     composer: "Creation settings",
@@ -104,6 +103,5 @@ export const generationMessages = defineMessages({
     invalidLinkResponse: "The image link response is invalid.",
     imageUnavailable: "The image has expired or you can't download it.",
     downloadLinkExpired: "The download link has expired.",
-    newVersion: "A new version of the site is available. Save your drafts, then refresh the page.",
   },
 });

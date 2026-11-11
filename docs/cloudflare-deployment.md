@@ -51,6 +51,8 @@ Secrets 使用受保护输入或忽略的临时文件配置；不能写入 Git�
 
 ## 发布顺序
 
+正式版本从 GitHub Actions 的 **Release → Run workflow** 发布。部署 job 使用 `cloudflare-production` 环境中的 `CLOUDFLARE_API_TOKEN`，按仓库 Wrangler 配置部署主站和图片 Worker。该环境只允许 main，数据库连接信息和应用密钥继续由 Cloudflare 管理。
+
 1. 按 AGENTS.md 核对目标账号、Worker、Git 版本、迁移和用户授权；`pnpm check` 与隔离验证通过后再发布。
 2. 有表结构变化时，先执行经审查的 PostgreSQL 追加迁移；应用不会自动 db push。
 3. `pnpm cf:types` 生成绑定类型，`pnpm build` 构建前端并分别 dry run 两个 Worker。

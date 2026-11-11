@@ -319,3 +319,67 @@ for (const path of ["/commerce/smart-variation", "/commerce/create"])
     await expect(prompt).toHaveValue("");
     expect(await prompt.evaluate((element) => element.getBoundingClientRect().height)).toBe(100);
   });
+
+test("a per-image plan sends each item only its own uploaded picture", async ({ page }) => {
+  // 用户 2026-11-11 反馈：几张图各改成 9:16 时每条都收到全部图片，结果都改成了第一张。
+  type Submitted = {
+    referenceAssetIds: string[];
+    referenceRoles?: unknown;
+    variation: { items: { referenceAssetIds?: string[] }[] };
+  };
+  let submitted: Submitted | undefined;
+  await page.route("**/api/v1/variation-plans", (route) => {
+    const input = route.request().postDataJSON();
+    return route.fulfill({
+      json: apiFixture({
+        id: crypto.randomUUID(),
+        status: "ready",
+        ...input,
+        items: [1, 2].map((number) => ({
+          id: crypto.randomUUID(),
+          title: `参考图${number}改为竖版`,
+          prompt: `将参考图${number}调整为9:16竖版构图，其他保持不变。`,
+        })),
+      }),
+    });
+  });
+  await page.route("**/api/v1/image-tasks", async (route) => {
+    if (route.request().method() !== "POST") return route.fallback();
+    submitted = route.request().postDataJSON();
+    await route.fulfill({
+      status: 202,
+      json: apiFixture({ id: crypto.randomUUID(), replayed: false }),
+    });
+  });
+  await page.goto("/commerce/smart-variation");
+  await page
+    .getByLabel("添加参考图片", { exact: true })
+    .setInputFiles(["apps/web/public/studio/bedroom.webp", "apps/web/public/studio/lavender.webp"]);
+  await expect(page.locator(".reference-tile")).toHaveCount(2);
+  await page
+    .getByRole("textbox", { name: "创作需求", exact: true })
+    .fill("图片比例变成9:16，其他保持不变");
+  await page.getByRole("button", { name: "立即生成", exact: true }).click();
+  const panel = page.getByRole("region", { name: "确认每张图的中文提示词", exact: true });
+  // 没有人标原图：方案 2 的“用图”只点亮第 2 张，第 1 张不发送。
+  const secondImages = panel.getByRole("toolbar", { name: "方案 2 用图", exact: true });
+  await expect(secondImages.getByRole("button", { name: "原图 2", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(secondImages.getByRole("button", { name: "原图 1", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  await panel.getByRole("button", { name: /开始生成/ }).click();
+  await expect.poll(() => submitted).toBeDefined();
+  const [first, second] = submitted?.referenceAssetIds ?? [];
+  expect(first).toBeTruthy();
+  expect(second).toBeTruthy();
+  // 没标角色时不带 referenceRoles，服务端只写编号说明，不加“保持颜色不变”这类要求。
+  expect(submitted?.referenceRoles).toBeUndefined();
+  expect(submitted?.variation.items.map((item) => item.referenceAssetIds)).toEqual([
+    [first],
+    [second],
+  ]);
+});

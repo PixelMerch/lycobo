@@ -50,7 +50,7 @@ curl http://127.0.0.1:8787/api/v1/image-tasks \
 
 ## 参考图角色与套图逐条参考图
 
-任务输入可选 `referenceRoles`（与 `referenceAssetIds` 一一对应，取值 `product`／`source`／`style`），只在用户标了原图或风格时出现；套图计划的方案可选 `referenceAssetIds`，必须是任务参考图的子集。Worker 通过 `itemReferenceAssetIds` 只发送这一条的图片，`textileItemInput` 在提示词前加按发送顺序的角色说明；字段缺省时发送全部参考图、提示词不变，旧任务与重试完全沿用原行为。
+任务输入可选 `referenceRoles`（与 `referenceAssetIds` 一一对应，取值 `product`／`source`／`style`），只在用户标了原图或风格时出现；套图计划的方案可选 `referenceAssetIds`，必须是任务参考图的子集。Worker 通过 `itemReferenceAssetIds` 只发送这一条的图片，`textileItemInput` 在提示词前加按发送顺序的角色说明；方案带 `referenceAssetIds` 而任务没有角色时（网页按提示词自动对应原图），说明只把发送顺序对应回“参考图N／@图片N”，不加角色要求。字段缺省时发送全部参考图、提示词不变，旧任务与重试完全沿用原行为。
 
 这两个字段是向后兼容的可选字段，但图片 Worker 用严格 schema 解析已存任务：发布时先部署图片 Worker，再部署主站，避免旧消费者读到新字段而让任务失败。
 

@@ -69,3 +69,11 @@ jobs:
             --notes-file "$RUNNER_TEMP/lycobo-release/notes.md" \
             "$RUNNER_TEMP/lycobo-release/CHANGELOG.md" \
             "$RUNNER_TEMP/lycobo-release/changes.json"
+  deploy:
+    name: Deploy Cloudflare
+    needs: release
+    permissions:
+      contents: read
+    uses: ./.github/workflows/deploy-cloudflare.yml
+    with:
+      version: ${{ inputs.version }}
