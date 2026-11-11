@@ -290,6 +290,24 @@ test("home inspiration loads two more batches on scroll, then links to the examp
   await expect(page.getByRole("button", { name: "查看更多灵感", exact: true })).toHaveCount(0);
 });
 
+test("灵感 in the top bar opens the inspiration library with the new intro", async ({ page }) => {
+  await mockImageApi(page, { signedIn: false });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  const inspirationNav = page
+    .getByRole("navigation", { name: "主导航", exact: true })
+    .getByRole("link", { name: "灵感", exact: true });
+  await expect(inspirationNav).not.toHaveClass(/active/);
+  await inspirationNav.click();
+  await expect(page).toHaveURL(/\/inspiration$/);
+  await expect(page.getByRole("heading", { name: "灵感库", level: 1 })).toBeVisible();
+  await expect(inspirationNav).toHaveClass(/active/);
+  await expect(page.locator(".home-inspiration-card")).toHaveCount(23);
+  // 说明只引导“做同款”，不再写“AI 生成的示例，不是客户作品”。
+  await expect(page.getByText("挑一张喜欢的画面")).toBeVisible();
+  await expect(page.getByText("AI 生成的示例")).toHaveCount(0);
+});
+
 test("home inspiration cards offer 做同款 by hover or keyboard without submitting paid work", async ({
   page,
 }) => {

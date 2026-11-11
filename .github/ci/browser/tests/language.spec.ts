@@ -20,7 +20,7 @@ test.describe("English browser", () => {
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page).toHaveTitle("Lycobo · E-commerce Creative Studio");
     const navigation = page.getByRole("navigation", { name: "Main navigation", exact: true });
-    await expect(navigation.locator(".nav-row")).toHaveText(["Home", "E-commerce"]);
+    await expect(navigation.locator(".nav-row")).toHaveText(["Home", "E-commerce", "Inspiration"]);
 
     const language = page.getByRole("button", { name: "Language: English", exact: true });
     await expect(language).toHaveText("EN");
@@ -36,11 +36,11 @@ test.describe("English browser", () => {
     await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
     await expect(page).toHaveTitle("Lycobo · 电商创作工作台");
     const chinese = page.getByRole("navigation", { name: "主导航", exact: true });
-    await expect(chinese.locator(".nav-row")).toHaveText(["首页", "电商"]);
+    await expect(chinese.locator(".nav-row")).toHaveText(["首页", "电商", "灵感"]);
 
     // 选择记在本机，刷新后不再跟随浏览器语言。
     await page.reload();
-    await expect(chinese.locator(".nav-row")).toHaveText(["首页", "电商"]);
+    await expect(chinese.locator(".nav-row")).toHaveText(["首页", "电商", "灵感"]);
     await expect(page.getByRole("button", { name: "语言：简体中文", exact: true })).toHaveText(
       "中文",
     );
@@ -88,7 +88,7 @@ test.describe("Japanese browser", () => {
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     const navigation = page.getByRole("navigation", { name: "Main navigation", exact: true });
-    await expect(navigation.locator(".nav-row")).toHaveText(["Home", "E-commerce"]);
+    await expect(navigation.locator(".nav-row")).toHaveText(["Home", "E-commerce", "Inspiration"]);
   });
 });
 

@@ -12,7 +12,7 @@ test("top navigation stays in one row and keeps drafts across desktop and mobile
   await expect(page.locator(".sidebar")).toHaveCount(0);
   const navigation = page.getByRole("navigation", { name: "主导航", exact: true });
   const rows = navigation.locator(".nav-row");
-  await expect(rows).toHaveText(["首页", "电商"]);
+  await expect(rows).toHaveText(["首页", "电商", "灵感"]);
   const tops = await rows.evaluateAll((nodes) =>
     nodes.map((node) => Math.round(node.getBoundingClientRect().top)),
   );
@@ -47,6 +47,7 @@ test("top navigation stays in one row and keeps drafts across desktop and mobile
     "家纺裂变",
     "套图计划",
     "视频创作",
+    "灵感",
     "素材库",
   ]);
   await mobile.getByRole("button", { name: "关闭导航", exact: true }).click();
