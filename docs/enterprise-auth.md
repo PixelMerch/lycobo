@@ -94,7 +94,7 @@ API 实例不缓存会话校验结果：后台停用账号、替换凭据以及�
 - 在 Supabase Auth 中启用对应供应商。Google OAuth 客户端和 Apple Services ID 注册 Supabase 的 `/auth/v1/callback`，Google 测试阶段把测试邮箱加入 Audience。Apple 网页 OAuth 的客户端密钥有有效期，在到期前重新签发并更新 Supabase。
 - 在 Supabase Auth 的 Redirect URLs 中添加实际本地访问地址，路径为 `/api/v1/auth/oauth/callback`。例如 `http://localhost:8081/api/v1/auth/oauth/callback`。该 Origin 同时必须列在本地 `AUTH_TRUSTED_ORIGINS` 中。
 - 参考 `.env.example`，只在本地忽略的 `.env` 中填写 Supabase 项目 URL、Publishable key 与已启用的供应商。Google 和 Apple 的客户端密钥由 Supabase Auth 保管。这些 `DEV_` 配置仅在 `NODE_ENV=development` 时读取。
-- 对本地 PostgreSQL 执行迁移 0048，然后以 `docker compose up -d --no-deps --wait --force-recreate studio` 载入配置。登录页从 `GET /api/v1/auth/oauth/providers` 读取可用入口。Hono 通过短期签名 Cookie 与 PKCE 交换验证 Supabase 身份，再签发 Lycobo 会话。
+- 对本地 PostgreSQL 执行迁移 0048，然后以 `docker compose up -d --no-deps --wait --force-recreate studio` 载入配置。登录页从 `GET /api/v1/auth/oauth/providers` 读取可用入口。Hono 通过短期签名 Cookie 与 PKCE 交换验证 Supabase 身份，再签发 Lycobo 会话。成功后回到 `/{语言}/login?returnTo=…&oauth=success`，登录页据此提示“登录成功”再跳往原目标；失败回到同一路径并带 `oauth=failed`。这个参数只决定提示，登录状态仍以会话 Cookie 为准。
 - 以 Supabase 用户 UUID 建立稳定关联，首次登录创建独立个人工作区和 10 位 Lycobo UID。若两个登录方式由 Supabase 解析为同一用户 UUID，则复用同一个本地账号。企业账号与已有 UID 沿用原记录，相同邮箱不会自动关联到企业账号。
 
 
