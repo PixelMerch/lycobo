@@ -19,7 +19,12 @@ import { modelCapabilities, supportsReferences } from "../../generation/models/m
 import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
 import { replicaMessages } from "./replica-messages";
 import { ReplicaReferences } from "./replica-references";
-import { replicaModel, useReplicaDraft } from "./replica-state";
+import {
+  replicaModel,
+  replicaProductLimit,
+  shiftReplicaPromptReferences,
+  useReplicaDraft,
+} from "./replica-state";
 
 /** 复制目标图的视觉风格，沿用现有素材上传、幂等提交、队列与计费链路。 */
 export function ReplicaPage() {
@@ -59,7 +64,12 @@ export function ReplicaPage() {
           label={t.prompt}
           value={draft.prompt}
           onChange={(prompt) => patchDraft({ prompt })}
-          references={[]}
+          references={products}
+          maxReferences={replicaProductLimit}
+          unavailableReferenceIds={target ? [target.id, target.assetId ?? target.id] : undefined}
+          onReferencesInsert={(images, prompt) =>
+            update({ products: [...products, ...images], draft: { ...draft, prompt } })
+          }
           placeholder={t.placeholder}
           maxLength={5000}
           optimizeTool="create"
@@ -119,7 +129,7 @@ function useReplicaSubmission(
         draft: {
           ...draft,
           count: String(products.length),
-          prompt: `${t.instruction}\n${draft.prompt}`,
+          prompt: `${t.instruction}\n${shiftReplicaPromptReferences(draft.prompt, 1)}`,
           references: target ? [target, ...products] : [],
         },
       },

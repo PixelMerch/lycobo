@@ -1,7 +1,7 @@
 import { imageResolutionSchema, mainImageModelIds } from "@lycoboai/contracts";
 import { useState } from "react";
 import { useAppNavigate } from "../../i18n/use-localized-navigation";
-import { useReplicaDraft } from "../commerce/replica/replica-state";
+import { shiftReplicaPromptReferences, useReplicaDraft } from "../commerce/replica/replica-state";
 import { useSmartVariationDraft } from "../commerce/smart-variation/smart-variation-state";
 import { useTextileSetDraft } from "../commerce/textile-set/textile-set-state";
 import type { HistoryRestore } from "../generation/history/history-task-tools";
@@ -16,7 +16,7 @@ export function useWorkspaceRestore(setMobilePanel: (value: string) => void) {
   const applyRestore = ({ model, draft, textileSet, variation, replica }: RestoredTask) => {
     if (replica) {
       useReplicaDraft.getState().update({
-        draft: { ...draft, count: "1" },
+        draft: { ...draft, count: "1", prompt: shiftReplicaPromptReferences(draft.prompt, -1) },
         target: draft.references[0] ?? null,
         products: draft.references.slice(1),
       });
