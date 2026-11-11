@@ -30,7 +30,7 @@ export function AssetsPage() {
             onChange={(next) => setSearch(filtersToSearch(next), { replace: true })}
           />
         }
-        inspiration={<HomeInspirationGallery library note={t.inspirationNote} />}
+        inspiration={<HomeInspirationGallery library />}
       />
     </section>
   );

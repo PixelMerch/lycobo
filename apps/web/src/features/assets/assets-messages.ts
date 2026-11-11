@@ -63,7 +63,6 @@ export const assetsMessages = defineMessages({
     libraryTitle: "素材库",
     myAssets: "我的素材",
     inspiration: "灵感库",
-    inspirationNote: "图片都是 AI 生成的示例，不是客户作品",
     closeLibrary: "关闭素材库",
   },
   en: {
@@ -127,7 +126,6 @@ export const assetsMessages = defineMessages({
     libraryTitle: "Asset library",
     myAssets: "My assets",
     inspiration: "Inspiration",
-    inspirationNote: "These are AI-generated samples, not customer work",
     closeLibrary: "Close asset library",
   },
 });

@@ -32,18 +32,16 @@ const categoryIcons = {
 
 /**
  * 作品墙：分类页签加瀑布流。首页先显示一部分、滚到底部再补两次，之后出现“查看更多灵感”进入灵感库；
- * 灵感库（library）一次显示全部，不再分批。note 是分类条右侧的一行说明，首页不传。
+ * 灵感库（library）一次显示全部，不再分批。
  */
 export function InspirationWall({
   items,
   library,
-  note,
   onOpen,
   onUse,
 }: {
   items: HomeInspiration[];
   library: boolean;
-  note?: string | undefined;
   onOpen: (item: HomeInspiration) => void;
   onUse: (item: HomeInspiration) => void;
 }) {
@@ -78,7 +76,6 @@ export function InspirationWall({
             ))}
           </Tabs.List>
         </Tabs.ListContainer>
-        {note && <p className="home-inspiration-note">{note}</p>}
       </div>
       <Tabs.Panel id={category}>
         <div className="home-inspiration-grid">

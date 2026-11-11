@@ -112,22 +112,3 @@
     height: 44px;
   }
 }
-/* 分类条右侧的说明（首页不显示，用户 2026-11-10 要求去掉）；手机放到分类下方一行。 */
-.asset-library-inspiration .home-inspiration-note {
-  margin: 0;
-  color: #ffffff66;
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-  text-align: right;
-}
-@media (max-width: 767px) {
-  .asset-library-inspiration .home-inspiration-bar {
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    padding-bottom: var(--space-2);
-  }
-  .asset-library-inspiration .home-inspiration-note {
-    width: 100%;
-    text-align: left;
-  }
-}

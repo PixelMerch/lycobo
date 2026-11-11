@@ -60,11 +60,7 @@ export function LibraryDialog({
                 inspiration={
                   // 首页作品墙也在页面上时，分类选中动画各走各的，不在两面墙之间飞过去。
                   <LayoutGroup id="asset-library-inspiration">
-                    <HomeInspirationGallery
-                      library
-                      note={t.inspirationNote}
-                      onApplied={requestClose}
-                    />
+                    <HomeInspirationGallery library onApplied={requestClose} />
                   </LayoutGroup>
                 }
               />
