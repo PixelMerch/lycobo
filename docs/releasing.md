@@ -42,7 +42,7 @@ Dependabot 从默认分支读取 `.github/dependabot.yml`，因此该配置推�
 
 手动入口：在 GitHub Actions 的 **Release → Run workflow** 选择 `main` 并填写 `vX.Y.Z`。目标提交必须属于 main 历史且对应 main push CI 成功。发布会生成标签、更新日志、作者与文件变更附件；浏览器端到端回归在独立的 CI 手动入口运行。
 
-Release 工作流发布成功后调用 `deploy-cloudflare.yml`。部署 job 核对最新正式版本的标签与构建提交，串行部署两个 Worker，检查活动配置与主站健康。部署失败可在原 Release 运行中选择 **Re-run failed jobs**，复用同一提交。通过 GitHub Releases 页面直接发布的版本不走这条流程。产品公告在部署成功后由 `release.json` 与发布脚本写入，见 [实时推送](realtime.md)。
+Release 工作流发布成功后调用 `deploy-cloudflare.yml`。部署 job 核对最新正式版本的标签与构建提交，串行部署两个 Worker，检查活动配置与主站健康。部署失败可在原 Release 运行中选择 **Re-run failed jobs**。如果需要先修复工作流，合入 main 后可在 **Deploy Cloudflare → Run workflow** 选择 main 并输入最新正式版本号，重新部署原标签。通过 GitHub Releases 页面直接发布的版本不会自动部署。产品公告在部署成功后由 `release.json` 与发布脚本写入，见 [实时推送](realtime.md)。
 
 自动说明由 `scripts/release-notes.mjs` 从真实 Git 历史生成：
 

@@ -74,6 +74,9 @@ jobs:
     needs: release
     permissions:
       contents: read
+      actions: read
     uses: ./.github/workflows/deploy-cloudflare.yml
+    secrets:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     with:
       version: ${{ inputs.version }}
