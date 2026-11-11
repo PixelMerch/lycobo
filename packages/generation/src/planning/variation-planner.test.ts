@@ -77,6 +77,10 @@ describe("variation planner", () => {
         { title: "a", prompt: "重复的商品摄影需求" },
         { title: "b", prompt: "重复的商品摄影需求" },
       ],
+      [
+        { title: "左侧场景", prompt: "参考图1，拍摄床品正面。" },
+        { title: "右侧场景", prompt: "参考图１, 拍摄床品正面!" },
+      ],
     ]) {
       await expect(
         planVariation(input, config, "key", undefined, async () => reply(items)),
