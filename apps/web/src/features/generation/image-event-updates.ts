@@ -1,7 +1,7 @@
 import { type imageEventSchema, imageJobSchema } from "@lycoboai/contracts";
 import type { QueryClient } from "@tanstack/react-query";
 import { imageRequest } from "./generation-client";
-import { cachedJob, replaceJob } from "./task-sync";
+import { cachedJob, jobsWaitingForReference, replaceJob } from "./task-sync";
 
 const fetchJob = (client: QueryClient, id: string) =>
   client.fetchQuery({
@@ -82,7 +82,10 @@ export function batchImageUpdates(client: QueryClient, isStopped: () => boolean)
     calibrate,
     enqueue(event: ReturnType<typeof imageEventSchema.parse>) {
       if (event.kind === "task") taskIds.add(event.resourceId);
-      else assetsChanged = true;
+      else {
+        assetsChanged = true;
+        for (const job of jobsWaitingForReference(client, event.resourceId)) taskIds.add(job.id);
+      }
       schedule();
     },
     cancel() {

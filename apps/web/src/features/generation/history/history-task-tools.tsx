@@ -37,6 +37,12 @@ import { historyMessages } from "./history-messages";
 export function HistoryPrompt({ job }: { job: ImageJob }) {
   const t = useMessages(historyMessages);
   const prompt = userHistoryPrompt(job);
+  const referenceIds = job.input?.referenceAssetIds ?? [];
+  const deliveries = job.reference_deliveries;
+  const pendingIds =
+    job.status === "queued" && deliveries
+      ? referenceIds.filter((id) => !deliveries[id])
+      : undefined;
   return (
     <div className="history-prompt">
       {prompt.trim() && (
@@ -52,7 +58,7 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
           </Button>
         </>
       )}
-      <ReferenceThumbnails ids={job.input?.referenceAssetIds ?? []} label={t.taskReferences} />
+      <ReferenceThumbnails ids={referenceIds} pendingIds={pendingIds} label={t.taskReferences} />
     </div>
   );
 }

@@ -13,6 +13,17 @@ export const cachedJob = (client: QueryClient, id: string) =>
   historyJobs(client).find((job) => job.id === id) ??
   client.getQueryData<ImageJob>(["image-task", id]);
 
+/** 找出缓存中仍在等待这张参考图的任务。 */
+export function jobsWaitingForReference(client: QueryClient, assetId: string) {
+  return historyJobs(client).filter(
+    (job) =>
+      job.status === "queued" &&
+      job.reference_deliveries !== undefined &&
+      !job.reference_deliveries[assetId] &&
+      job.input?.referenceAssetIds.includes(assetId),
+  );
+}
+
 /** 将推送后读取的任务同步到已加载历史，避免重载整个列表。 */
 export function replaceJob(client: QueryClient, job: ImageJob) {
   let found = false;
