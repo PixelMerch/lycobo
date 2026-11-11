@@ -58,7 +58,22 @@ export const socialLoginInputSchema = z
   })
   .strict();
 /** 服务端当前启用的第三方登录方式。 */
-export const socialProvidersSchema = z.object({ providers: z.array(z.enum(socialProviders)) });
+export const socialProvidersSchema = z.object({
+  providers: z.array(z.enum(socialProviders)),
+  emailTurnstileSiteKey: z.string().min(1).optional(),
+});
+const emailAddress = z.string().trim().toLowerCase().max(254).email();
+/** 验证码发送请求必须包含 Cloudflare 的短期令牌。 */
+export const emailCodeSendSchema = z
+  .object({
+    email: emailAddress,
+    captchaToken: z.string().min(1).max(2048),
+  })
+  .strict();
+/** 验证码按字符串传输，保留前导零。 */
+export const emailCodeVerifySchema = z
+  .object({ email: emailAddress, code: z.string().regex(/^\d{6}$/) })
+  .strict();
 /** 允许浏览器导航的 HTTPS 授权地址。 */
 export const socialAuthorizationSchema = z.object({ url: z.url({ protocol: /^https$/ }) });
 /** OAuth 登录方式的标识。 */

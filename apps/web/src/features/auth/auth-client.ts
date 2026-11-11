@@ -4,6 +4,7 @@ import {
   type AvatarPreset,
   apiErrorSchema,
   type EnterpriseIdentity,
+  emailCodeVerifySchema,
   enterpriseAvatarChangeSchema,
   enterpriseIdentitySchema,
   enterpriseLocaleChangeSchema,
@@ -94,19 +95,46 @@ export function useEnterpriseLogin() {
       // 浏览器通过 HttpOnly Cookie 使用凭据，前端只保留身份资料。
       return enterpriseLoginResponseSchema.parse(await response.json()).user;
     },
-    onSuccess: async (user) => {
-      clearPreviewLinks();
-      const savedLocale = parseLocale(user.preferredLocale);
-      if (savedLocale) rememberLocale(savedLocale);
-      await client.cancelQueries();
-      client.setQueryData(enterpriseSessionKey, user);
-      // 重置会让已挂载的查询用新会话重查，避免继续订阅旧身份的数据。
-      await client.resetQueries({
-        predicate: (query) => query.queryKey[0] !== enterpriseSessionKey[0],
-      });
-    },
+    onSuccess: (user) => syncLoginSession(client, user),
   });
 }
+
+async function syncLoginSession(client: QueryClient, user: EnterpriseIdentity) {
+  clearPreviewLinks();
+  const savedLocale = parseLocale(user.preferredLocale);
+  if (savedLocale) rememberLocale(savedLocale);
+  await client.cancelQueries();
+  client.setQueryData(enterpriseSessionKey, user);
+  // 重置会让已挂载的查询用新会话重查，避免继续订阅旧身份的数据。
+  await client.resetQueries({
+    predicate: (query) => query.queryKey[0] !== enterpriseSessionKey[0],
+  });
+}
+
+/** 验证邮箱验证码，并把返回的身份同步到共用登录会话。 */
+export function useEmailCodeLogin() {
+  const client = useQueryClient();
+  return useMutation({
+    retry: false,
+    gcTime: 0,
+    mutationFn: async (input: { email: string; code: string }) => {
+      const response = await authRequest("email/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(emailCodeVerifySchema.parse(input)),
+      });
+      const t = currentMessages(authMessages);
+      if (response.status === 429) throw new Error(t.emailRateLimited);
+      if (response.status === 401) throw new Error(t.emailCodeInvalid);
+      if (!response.ok) throw new Error(t.serviceUnavailable);
+      resetSessionRenewal();
+      rememberSessionExpiry(response);
+      return enterpriseIdentitySchema.parse(await response.json());
+    },
+    onSuccess: (user) => syncLoginSession(client, user),
+  });
+}
+
 /** 退出登录，成功后清空本机的登录状态与其他缓存。 */
 export function useEnterpriseLogout() {
   const client = useQueryClient();

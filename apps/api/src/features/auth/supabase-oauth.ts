@@ -15,6 +15,7 @@ export type SupabaseOAuthConfig = {
   origin: string;
   key: string;
   providers: SocialProvider[];
+  emailTurnstileSiteKey?: string;
 };
 
 /** 只在本地显式配置 OAuth，避免发布旧代码时意外开放第三方登录。 */
@@ -24,7 +25,9 @@ export function readSupabaseOAuth(
   const providers = socialProviders.filter((provider) =>
     env.DEV_SUPABASE_AUTH_PROVIDERS?.split(",").includes(provider),
   );
-  if (env.NODE_ENV !== "development" || !providers.length) return undefined;
+  const emailTurnstileSiteKey = env.DEV_SUPABASE_EMAIL_TURNSTILE_SITE_KEY?.trim();
+  if (env.NODE_ENV !== "development" || (!providers.length && !emailTurnstileSiteKey))
+    return undefined;
   const url = new URL(env.DEV_SUPABASE_AUTH_URL ?? "");
   const key = env.DEV_SUPABASE_AUTH_PUBLISHABLE_KEY ?? "";
   if (
@@ -34,7 +37,12 @@ export function readSupabaseOAuth(
     !/^sb_publishable_[\w-]+$/.test(key)
   )
     throw new Error("SUPABASE_OAUTH_CONFIG_INVALID");
-  return { origin: url.origin, key, providers };
+  return {
+    origin: url.origin,
+    key,
+    providers,
+    ...(emailTurnstileSiteKey && { emailTurnstileSiteKey }),
+  };
 }
 
 /** 使用 S256 将授权码绑定到本次浏览器发起的登录。 */

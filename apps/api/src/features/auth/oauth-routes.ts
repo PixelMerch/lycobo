@@ -78,7 +78,12 @@ export function oauthRoutes(
 ) {
   const app = new Hono();
   const config = auth?.config.oauth;
-  app.get("/providers", (c) => c.json({ providers: config?.providers ?? [] }));
+  app.get("/providers", (c) =>
+    c.json({
+      providers: config?.providers ?? [],
+      emailTurnstileSiteKey: config?.emailTurnstileSiteKey,
+    }),
+  );
   app.post("/start", async (c) => {
     if (!auth || !config)
       return c.json({ error: { code: "AUTH_NOT_CONFIGURED", message: "第三方登录暂未开放" } }, 503);

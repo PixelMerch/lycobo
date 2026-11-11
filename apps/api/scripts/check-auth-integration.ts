@@ -343,6 +343,22 @@ try {
       Array.from({ length: 25 }, () => authDb?.allowLogin("rate-fixture")),
     );
     assert.equal(attempts.filter(Boolean).length, 10);
+    const sameMailbox = await Promise.all(
+      Array.from({ length: 10 }, (_, index) =>
+        authDb?.allowEmailCode("mailbox@example.invalid", `192.0.2.${index + 1}`, "send"),
+      ),
+    );
+    assert.equal(sameMailbox.filter(Boolean).length, 5);
+    const sameAddress = await Promise.all(
+      Array.from({ length: 20 }, (_, index) =>
+        authDb?.allowEmailCode(`mailbox-${index}@example.invalid`, "198.51.100.1", "send"),
+      ),
+    );
+    assert.equal(sameAddress.filter(Boolean).length, 15);
+    assert.equal(
+      await authDb?.allowEmailCode("mailbox@example.invalid", "192.0.2.1", "verify"),
+      true,
+    );
     console.info(
       "Enterprise auth integration passed: migrations, credentials, JWT, cookie/CSRF, tenant isolation, revocation and atomic limits",
     );

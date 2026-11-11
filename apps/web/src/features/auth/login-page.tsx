@@ -105,7 +105,11 @@ function LoginCard({
               />
             ) : (
               <>
-                <LoginMethods returnTo={returnTo} failed={socialFailed} />
+                <LoginMethods
+                  returnTo={returnTo}
+                  failed={socialFailed}
+                  onLoginSuccess={onLoginSuccess}
+                />
                 {/* 企业账号是次要入口，放在其他方式下方。 */}
                 <Button
                   variant="ghost"

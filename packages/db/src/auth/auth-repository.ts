@@ -56,6 +56,16 @@ export function openAuthRepository(url: string, edge = false) {
       await sql`delete from login_rate_limits where window_start < now()-interval '1 day'`;
       return consume(key, 900, 10);
     },
+    /** 分别限制邮箱和连接来源，共用已有的原子计数表。 */
+    async allowEmailCode(email: string, address: string, action: "send" | "verify") {
+      const key = (kind: string, value: string) =>
+        createHash("sha256").update(`email-code:${action}:${kind}:${value}`).digest("hex");
+      // 先限制来源，避免同一连接靠变换邮箱大量创建计数项。
+      const sending = action === "send";
+      const window = sending ? 3600 : 600;
+      if (!(await consume(key("ip", address), window, sending ? 15 : 40))) return false;
+      return consume(key("email", email), window, sending ? 5 : 8);
+    },
     async credential(account: string): Promise<EnterpriseCredential | null> {
       const rows =
         await sql`select id,account,user_id,organization_id,password_hash from enterprise_accounts where account=${account} and disabled_at is null`;

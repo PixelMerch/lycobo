@@ -68,6 +68,7 @@ export function localEnvironment(source, docker = false, settings = source) {
     "DEV_SUPABASE_AUTH_URL",
     "DEV_SUPABASE_AUTH_PUBLISHABLE_KEY",
     "DEV_SUPABASE_AUTH_PROVIDERS",
+    "DEV_SUPABASE_EMAIL_TURNSTILE_SITE_KEY",
   ]) {
     if (settings[key]) env[key] = settings[key];
   }

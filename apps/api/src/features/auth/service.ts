@@ -143,6 +143,9 @@ export function enterpriseAuth(repository: AuthRepository, config: AuthConfig) {
       createLoginSession((sessionId, expiresAt, refreshHash) =>
         repository.createSocialSession({ ...identity, sessionId, expiresAt, refreshHash }),
       ),
+    /** 为邮箱验证码发送和校验分别应用来源及邮箱配额。 */
+    allowEmailCode: (email: string, address: string, action: "send" | "verify") =>
+      repository.allowEmailCode(email, address, action),
     async refresh(token: string) {
       const claims = await readRefreshClaims(token, config.secret);
       if (!claims) return null;

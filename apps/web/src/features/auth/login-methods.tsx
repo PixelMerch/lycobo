@@ -1,16 +1,24 @@
-import { Button, Description, InputGroup, Label, TextField } from "@heroui/react";
+import { Button, Description } from "@heroui/react";
+import type { EnterpriseIdentity } from "@lycoboai/contracts";
 import { IconBrandAppleFilled, IconBrandGoogleFilled } from "@tabler/icons-react";
-import { useId } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
 import { authMessages } from "./auth-messages";
+import { EmailLogin } from "./email-login";
 import { useSocialLogin } from "./social-login-client";
 
-/** 展示已配置的第三方登录，邮箱入口暂时停用。 */
-export function LoginMethods({ returnTo, failed }: { returnTo: string; failed: boolean }) {
-  const unavailableId = useId();
+/** 展示已配置的第三方和邮箱登录入口。 */
+export function LoginMethods({
+  returnTo,
+  failed,
+  onLoginSuccess,
+}: {
+  returnTo: string;
+  failed: boolean;
+  onLoginSuccess: (account: EnterpriseIdentity) => void;
+}) {
   const t = useMessages(authMessages);
-  const { providers, start } = useSocialLogin(returnTo);
+  const { providers, emailSiteKey, start } = useSocialLogin(returnTo);
   return (
     <div className="login-methods">
       <div className="login-social-methods">
@@ -41,26 +49,12 @@ export function LoginMethods({ returnTo, failed }: { returnTo: string; failed: b
         </p>
       )}
       <span className="login-divider">{t.or}</span>
-      <div className="login-fields login-email">
-        <TextField name="email" type="email" isDisabled aria-describedby={unavailableId}>
-          {/* 邮箱框只显示占位文字，名称留给读屏软件。 */}
-          <Label className="visually-hidden">{t.email}</Label>
-          <InputGroup className="login-input-group">
-            <InputGroup.Input autoComplete="email" placeholder={t.emailPlaceholder} />
-          </InputGroup>
-        </TextField>
-        <Button
-          size="lg"
-          className="login-email-submit"
-          isDisabled
-          aria-describedby={unavailableId}
-        >
-          {t.sendCode}
-        </Button>
-      </div>
-      <Description id={unavailableId} className="login-unavailable">
-        {providers.length ? t.emailUnavailable : t.otherMethodsUnavailable}
-      </Description>
+      <EmailLogin siteKey={emailSiteKey} onLoginSuccess={onLoginSuccess} />
+      {!emailSiteKey && (
+        <Description className="login-unavailable">
+          {providers.length ? t.emailUnavailable : t.otherMethodsUnavailable}
+        </Description>
+      )}
     </div>
   );
 }

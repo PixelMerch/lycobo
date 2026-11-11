@@ -6,6 +6,7 @@ import {
 } from "@lycoboai/contracts";
 import { type Context, Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { emailRoutes } from "./email-routes";
 import { oauthRoutes } from "./oauth-routes";
 import { enterpriseCookie, enterprisePrincipal, trustedAuthRequest } from "./principal";
 import type { EnterpriseAuth } from "./service";
@@ -50,6 +51,7 @@ type Env = { Variables: { requestId: string } };
 export function authRoutes(auth?: EnterpriseAuth) {
   const app = new Hono<Env>();
   app.route("/oauth", oauthRoutes(auth, setAuthCookies));
+  app.route("/email", emailRoutes(auth, setAuthCookies));
   const fail = (
     c: Context<Env>,
     code: string,

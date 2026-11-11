@@ -19,8 +19,8 @@ export function useSocialLogin(returnTo: string) {
       const response = await normalizeApiResponse(
         await fetch("/api/v1/auth/oauth/providers", { signal }),
       );
-      if (!response.ok) return [];
-      return socialProvidersSchema.parse(await response.json()).providers;
+      if (!response.ok) return { providers: [] };
+      return socialProvidersSchema.parse(await response.json());
     },
   });
   const start = useMutation({
@@ -43,5 +43,9 @@ export function useSocialLogin(returnTo: string) {
       window.location.assign(url);
     },
   });
-  return { providers: availability.data ?? [], start };
+  return {
+    providers: availability.data?.providers ?? [],
+    emailSiteKey: availability.data?.emailTurnstileSiteKey,
+    start,
+  };
 }

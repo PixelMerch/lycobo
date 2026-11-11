@@ -1,6 +1,6 @@
 # 企业账号密码登录
 
-实现：Hono API、PostgreSQL 账号与会话、HS256 JWT、Node.js scrypt 密码哈希。企业账号密码可用。Google 和 Apple 通过 Supabase Auth 在本地验证，邮箱验证码留待后续接入。
+实现：Hono API、PostgreSQL 账号与会话、HS256 JWT、Node.js scrypt 密码哈希。企业账号密码可用。Google、Apple 和邮箱验证码通过 Supabase Auth 在本地启用。
 
 ## 配置与创建账号
 
@@ -96,3 +96,12 @@ API 实例不缓存会话校验结果：后台停用账号、替换凭据以及�
 - 参考 `.env.example`，只在本地忽略的 `.env` 中填写 Supabase 项目 URL、Publishable key 与已启用的供应商。Google 和 Apple 的客户端密钥由 Supabase Auth 保管。应用仅在 `NODE_ENV=development` 时启用入口。
 - 对本地 PostgreSQL 执行迁移 0048，然后以 `docker compose up -d --no-deps --wait --force-recreate studio` 载入配置。登录页从 `GET /api/v1/auth/oauth/providers` 读取可用入口。Hono 通过短期签名 Cookie 与 PKCE 交换验证 Supabase 身份，再签发 Lycobo 会话。
 - 以 Supabase 用户 UUID 建立稳定关联，首次登录创建独立个人工作区和 10 位 Lycobo UID。若两个登录方式由 Supabase 解析为同一用户 UUID，则复用同一个本地账号。企业账号与已有 UID 沿用原记录，相同邮箱不会自动关联到企业账号。
+
+
+## 本地邮箱验证码
+
+1. Resend 验证发信子域并创建仅发送、限域的 API Key。在 Supabase Auth 的 SMTP Settings 使用 `smtp.resend.com:465`、用户名 `resend`、该密钥和品牌发件人 `Lycobo <no-reply@auth.lycobo.com>`。密钥只填 Supabase 控制台。
+2. 在 Supabase Auth 的 Emails 为 Magic link or OTP 与 Confirm sign up 保存同一份[英文验证码模板](auth/email-otp.html)，主题为 `Your Lycobo sign-in code`。首次使用与再次登录均发送 `{{ .Token }}`，邮箱验证码长度配置为 6 位。邮件统一用英文，站内登录界面继续跟随用户所选语言。
+3. Cloudflare Turnstile 本地组件只绑定 `localhost` 和 `127.0.0.1`。在 Supabase Auth 的 Attack Protection 选 Cloudflare Turnstile 并保存验证密钥。在本地 `.env` 填 `DEV_SUPABASE_EMAIL_TURNSTILE_SITE_KEY` 公开站点密钥并重新创建 studio 容器。
+4. 用户点击发码才加载 Turnstile。Hono 检查可信 Origin 并将一次性令牌交 Supabase 验证，Supabase 验证成功后才通过 Resend 发码。邮箱和连接地址分别按发送及验证限流。开发代理下连接地址使用实际代理地址，全部本地代理请求共用该地址的配额。
+5. 输入验证码后 Hono 采用 Supabase 返回的用户 UUID 复用本地账号与 10 位 UID。验证码与第三方认证共用主站会话签发；站内已有企业账号不会按邮箱自动关联。
