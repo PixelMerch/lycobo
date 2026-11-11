@@ -302,6 +302,7 @@ export const generationJobs = pgTable(
     providerModel: text("provider_model"),
     providerSnapshot: jsonb("provider_snapshot"),
     prompt: text("prompt").notNull(),
+    userPrompt: text("user_prompt"),
     resolution: text("resolution").notNull(),
     aspectRatio: text("aspect_ratio").notNull(),
     requestedCount: integer("requested_count").notNull(),

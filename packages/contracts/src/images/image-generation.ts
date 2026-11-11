@@ -167,6 +167,23 @@ export const imageGenerationInputSchema = z
       });
   });
 export type ImageGenerationInput = z.infer<typeof imageGenerationInputSchema>;
+
+/** 接收独立的用户文字；后台模型仍使用原有生成输入。 */
+export const imageTaskSubmissionSchema = imageGenerationInputSchema.safeExtend({
+  userPrompt: z.string().max(9000).optional(),
+});
+/** 图片任务提交请求，包含可选的用户提示词。 */
+export type ImageTaskSubmission = z.infer<typeof imageTaskSubmissionSchema>;
+
+/** 按旧任务快照的格式提取用户内容，供回填过渡期和旧客户端提交使用。 */
+export function imageUserPrompt(
+  prompt: string,
+  input?: Pick<ImageGenerationInput, "replica" | "textileSet">,
+) {
+  if (input?.replica) return prompt.split("\n").slice(1).join("\n");
+  if (input?.textileSet) return "";
+  return prompt;
+}
 export type ImageScope = { userId: string; organizationId: string };
 export type StoredImage = {
   id: string;
@@ -244,6 +261,7 @@ export const imageJobSchema = z.object({
   user_id: z.uuid(),
   model: imageModelCodeSchema,
   prompt: z.string(),
+  user_prompt: z.string().nullable().optional(),
   resolution: imageResolutionSchema,
   aspect_ratio: z.string(),
   requested_count: z.number(),

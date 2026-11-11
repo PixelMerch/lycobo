@@ -125,6 +125,7 @@ function useReplicaSubmission(
         model: replicaModel,
         source: "replica",
         replica: true,
+        userPrompt: draft.prompt,
         referenceRoles: ["style", ...products.map(() => "product" as const)],
         draft: {
           ...draft,

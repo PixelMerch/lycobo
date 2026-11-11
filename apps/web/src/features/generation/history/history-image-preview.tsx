@@ -1,7 +1,9 @@
 import type { ImageJob } from "@lycoboai/contracts";
 import { ImagePreviewDialog, type PreviewImage } from "../../image-workspace/image-preview";
 import { useImageHistory } from "../generation-client";
+import { userHistoryPrompt } from "../prompt-display";
 
+/** 组装历史图片预览，复制爆款的描述仅包含用户补充要求。 */
 export function historyPreviewImages(jobs: ImageJob[]): PreviewImage[] {
   return jobs.flatMap((job) =>
     job.items.flatMap((item) =>
@@ -16,7 +18,7 @@ export function historyPreviewImages(jobs: ImageJob[]): PreviewImage[] {
                 taskPublicId: job.public_id,
                 model: job.model,
                 createdAt: job.created_at,
-                prompt: job.prompt,
+                prompt: userHistoryPrompt(job),
                 references: job.input?.referenceAssetIds ?? [],
               },
             },
