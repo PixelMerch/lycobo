@@ -261,7 +261,7 @@ test("home inspiration filters examples and confirms prompt replacement without 
   expect(submissions).toBe(0);
 });
 
-test("home inspiration loads two more batches on scroll, then links to the example library", async ({
+test("home inspiration loads two batches on scroll, then 查看更多灵感 loads the rest in place", async ({
   page,
 }) => {
   await mockImageApi(page);
@@ -283,11 +283,15 @@ test("home inspiration loads two more batches on scroll, then links to the examp
   await expect(more).toBeVisible();
   await page.mouse.wheel(0, 600);
   await expect(cards).toHaveCount(18);
-  await more.click();
-  await expect(page).toHaveURL(/\/inspiration$/);
-  await expect(page.getByRole("heading", { name: "灵感库", level: 1 })).toBeVisible();
-  await expect(page.locator(".home-inspiration-card")).toHaveCount(23);
-  await expect(page.getByRole("button", { name: "查看更多灵感", exact: true })).toHaveCount(0);
+  // “查看更多灵感”在当前页接着加载，不跳转；键盘按下时焦点移到新出现的第一张，全部显示后按钮消失。
+  await more.focus();
+  await page.keyboard.press("Enter");
+  await expect(cards).toHaveCount(23);
+  await expect(page).not.toHaveURL(/inspiration/);
+  await expect(
+    gallery.getByRole("button", { name: "查看灵感：垂到地面的被子", exact: true }),
+  ).toBeFocused();
+  await expect(more).toHaveCount(0);
 });
 
 test("灵感 in the top bar opens the inspiration library with the new intro", async ({ page }) => {

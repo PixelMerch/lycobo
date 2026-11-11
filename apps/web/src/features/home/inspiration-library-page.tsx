@@ -8,7 +8,7 @@ import "./inspiration-library-page.css";
 /** 灵感库：一次显示全部灵感示例的瀑布流，与首页作品墙共用卡片、详情和“做同款”；未登录也能浏览。 */
 export function InspirationLibraryPage() {
   const t = useMessages(homeInspirationMessages);
-  // 从首页底部“查看更多灵感”进来时回到页面顶部。
+  // 在别的页面滚到半截时点顶部导航“灵感”进来，也从页面顶部开始看。
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);

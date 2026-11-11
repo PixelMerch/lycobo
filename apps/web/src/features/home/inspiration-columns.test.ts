@@ -47,10 +47,15 @@ describe("inspiration masonry", () => {
 });
 
 describe("home wall paging", () => {
-  it("shows 10 first, then two more batches of 4, and stops there", () => {
-    expect([0, 1, 2, 3].map((loads) => shownCount(23, loads))).toEqual([10, 14, 18, 18]);
+  it("shows 10 first, then scrolling adds two batches of 4 and stops there", () => {
+    expect([0, 1, 2].map((loads) => shownCount(23, loads))).toEqual([10, 14, 18]);
     expect(pagingFinished(23, 1)).toBe(false);
     expect(pagingFinished(23, 2)).toBe(true);
+  });
+
+  it("adds up to 10 more on the page for each 查看更多灵感 press", () => {
+    expect([3, 4, 5].map((loads) => shownCount(40, loads))).toEqual([28, 38, 40]);
+    expect(shownCount(23, 3)).toBe(23);
   });
 
   it("finishes at once when a category has no more cards to load", () => {
