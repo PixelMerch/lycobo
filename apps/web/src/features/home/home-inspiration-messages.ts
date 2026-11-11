@@ -30,7 +30,7 @@ export const homeInspirationMessages = defineMessages({
     copyPrompt: "复制提示词",
     more: "查看更多灵感",
     libraryTitle: "灵感库",
-    libraryIntro: "这里的图片都是 AI 生成的示例，不是客户作品。点“做同款”，带着提示词去创作。",
+    libraryIntro: "挑一张喜欢的画面，点“做同款”，带着它的提示词开始创作。",
     items: {
       "water-perfume": {
         title: "水光香氛",
@@ -175,8 +175,7 @@ export const homeInspirationMessages = defineMessages({
     copyPrompt: "Copy prompt",
     more: "View more inspiration",
     libraryTitle: "Inspiration",
-    libraryIntro:
-      "Every image here is an AI-generated sample, not customer work. Choose “Use this style” to start with its prompt.",
+    libraryIntro: "Find a look you like and choose “Use this style” to start with its prompt.",
     items: {
       "water-perfume": {
         title: "Perfume by the water",

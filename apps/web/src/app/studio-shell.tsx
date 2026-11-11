@@ -1,5 +1,5 @@
 import { Button, Drawer } from "@heroui/react";
-import { IconFolderSparkle, IconMenu2, IconSmartHome, IconX } from "@tabler/icons-react";
+import { IconBulb, IconFolderSparkle, IconMenu2, IconSmartHome, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { Navigate, Outlet } from "react-router";
 import { RouteLink } from "../components/router-link";
@@ -107,12 +107,16 @@ export function StudioShell() {
             height="32"
           />
         </RouteLink>
-        {/* 素材库不在顶部导航（用户 2026-11-10 要求）：从首页快捷入口、账户菜单等处直接打开弹窗。 */}
+        {/* 素材库不在顶部导航（用户 2026-11-10 要求）：从首页快捷入口、账户菜单等处直接打开弹窗。
+            “灵感”进入灵感库页面（用户 2026-11-11 要求）。 */}
         <nav className="topbar-nav" aria-label={t.mainNavigation}>
           <RouteLink nav to="/" end className="nav-row">
             {t.home}
           </RouteLink>
           <CommerceNavMenu active={inWorkspace} />
+          <RouteLink nav to={inspirationLibraryPath} end className="nav-row">
+            {t.inspiration}
+          </RouteLink>
         </nav>
         <div className="header-actions">
           {signedIn ? (
@@ -149,7 +153,7 @@ function RealtimeEvents() {
 }
 
 /**
- * 手机导航抽屉：首页、电商四个工具与素材库；切换工具时与工具坞一样只向空图片槽带图。
+ * 手机导航抽屉：首页、电商四个工具、灵感与素材库；切换工具时与工具坞一样只向空图片槽带图。
  * 素材库是弹窗，点它先收起抽屉再打开，不跳转页面。
  */
 function DrawerNavigation({ pathname, onNavigate }: { pathname: string; onNavigate: () => void }) {
@@ -178,6 +182,10 @@ function DrawerNavigation({ pathname, onNavigate }: { pathname: string; onNaviga
           <span className="nav-label">{toolText.tools[tool.id].name}</span>
         </RouteLink>
       ))}
+      <RouteLink nav to={inspirationLibraryPath} end className="nav-row" onClick={onNavigate}>
+        <UiIcon icon={IconBulb} size="default" />
+        <span className="nav-label">{t.inspiration}</span>
+      </RouteLink>
       <Button
         variant="ghost"
         className="nav-row"

@@ -159,6 +159,9 @@
     flex: 0 1 auto;
     min-width: 0;
   }
+}
+/* 768–1023px 的窄桌面也只显示积分数，不显示会员等级，给顶部导航让位（顶部导航加了“灵感”）。 */
+@media (max-width: 1023px) {
   .header-credits :is(.header-credits-divider, .header-credits-plan) {
     display: none;
   }

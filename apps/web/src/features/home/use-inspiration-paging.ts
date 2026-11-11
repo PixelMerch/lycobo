@@ -1,31 +1,37 @@
 import { useEffect, useRef, useState } from "react";
 
-// 首页作品墙先显示 10 张，滚到底部附近再补两次、每次 4 张，之后换成“查看更多灵感”。
+// 首页作品墙先显示 10 张，滚到底部附近再补两次、每次 4 张；之后换成“查看更多灵感”，
+// 每点一次在当前页再加 10 张，不跳转（用户 2026-11-11 要求）。
 const firstPage = 10;
-const pageStep = 4;
-const maxLoads = 2;
+const scrollStep = 4;
+const maxScrollLoads = 2;
+const moreStep = 10;
 // 补完一批后 600ms 内的滚动不再触发，一次快速滑动只算一次，第二批要再滚一次。
 const cooldownMs = 600;
 
-/** 已补 loads 次后首页应显示的张数，不超过总数。 */
+/** 已加载 loads 次后首页应显示的张数：前两次是滚动补的，之后每次是点“查看更多灵感”加的，不超过总数。 */
 export function shownCount(total: number, loads: number) {
-  return Math.min(total, firstPage + Math.min(loads, maxLoads) * pageStep);
+  const scrolled = Math.min(loads, maxScrollLoads) * scrollStep;
+  const pressed = Math.max(loads - maxScrollLoads, 0) * moreStep;
+  return Math.min(total, firstPage + scrolled + pressed);
 }
 
-/** 是否已经加载到头：补满两次，或者这个分类的示例已经全部显示。 */
+/** 滚动加载是否到头：补满两次，或者这个分类的示例已经全部显示。 */
 export function pagingFinished(total: number, loads: number) {
-  return loads >= maxLoads || shownCount(total, loads) >= total;
+  return loads >= maxScrollLoads || shownCount(total, loads) >= total;
 }
 
 /**
- * 首页作品墙的滚动加载：用户滚动时，底部哨兵进入视口（下方留 80px 余量）就补一批，最多两次；切换分类从头计算。
+ * 首页作品墙的分批加载：用户滚动时，底部哨兵进入视口（下方留 80px 余量）就补一批，最多两次；切换分类从头计算。
  * 只在滚动时判断，打开页面不会自动加载；补完一批后冷却 600ms，冷却后仍停在底部就接着补，最多两次。
+ * 滚动补完后由 loadMore（“查看更多灵感”）接着加载，页脚始终看得到。
  */
 export function useInspirationPaging(total: number, category: string) {
   const [state, setState] = useState({ category, loads: 0 });
   const loads = state.category === category ? state.loads : 0;
   const [sentinel, setSentinel] = useState<HTMLElement | null>(null);
   const finished = pagingFinished(total, loads);
+  const count = shownCount(total, loads);
   const lastLoadAt = useRef(0);
   useEffect(() => {
     if (!sentinel || finished) return;
@@ -60,5 +66,11 @@ export function useInspirationPaging(total: number, category: string) {
       window.clearTimeout(timer);
     };
   }, [sentinel, finished, category, loads]);
-  return { count: shownCount(total, loads), finished, sentinelRef: setSentinel };
+  return {
+    count,
+    finished,
+    hasMore: count < total,
+    loadMore: () => setState({ category, loads: loads + 1 }),
+    sentinelRef: setSentinel,
+  };
 }

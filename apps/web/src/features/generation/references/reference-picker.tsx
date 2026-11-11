@@ -1,6 +1,14 @@
 import { Alert, Button, toast } from "@heroui/react";
 import { IconPlus, IconTrash, type TablerIcon } from "@tabler/icons-react";
-import { lazy, type RefObject, Suspense, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  type RefObject,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { ReferenceImageCard } from "../../../components/reference-image/reference-image-card";
 import { UiIcon } from "../../../components/ui-icon";
 import { currentMessages, useMessages } from "../../../i18n/messages";
@@ -284,8 +292,13 @@ function useReferencePicker({
   const [reading, setReading] = useState(false);
   const [preview, setPreview] = useState<number | null>(null);
   const updateDraft = useStudioStore((s) => s.updateDraft);
+  const latestDraft = useRef({ references, prompt });
+  useLayoutEffect(() => {
+    // 压缩文件期间仍可编辑提示词和引用素材，完成后从最新草稿追加。
+    latestDraft.current = { references, prompt };
+  }, [references, prompt]);
   const currentDraft = () =>
-    model !== undefined ? useStudioStore.getState().drafts[model] : { references, prompt };
+    model !== undefined ? useStudioStore.getState().drafts[model] : latestDraft.current;
   function change(next: ReferenceImage[], text: string) {
     if (model !== undefined) updateDraft(model, { references: next, prompt: text });
     else onChange?.(next, text);

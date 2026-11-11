@@ -328,6 +328,16 @@
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }
+/* 768–1023px 的窄桌面：导航加了“灵感”后（用户 2026-11-11 要求）英文界面登录时放不下，
+   收紧顶部栏间距与导航项左右留白；语言入口、积分胶囊在各自样式里同时收起文字。1024px 以上不变。 */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .topbar {
+    gap: 16px;
+  }
+  .topbar-nav .nav-row {
+    padding: 0 12px;
+  }
+}
 /* 手机顶部栏：导航、更新消息与账户都收进导航抽屉，只保留菜单、Logo 和积分会员入口。 */
 @media (max-width: 767px) {
   .topbar :is(.topbar-nav, .header-news, .account-header) {

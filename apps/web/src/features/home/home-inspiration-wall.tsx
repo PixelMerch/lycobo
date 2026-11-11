@@ -7,10 +7,10 @@ import {
   type TablerIcon,
 } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
-import { useAppNavigate } from "../../i18n/use-localized-navigation";
 import { SelectionHighlight } from "../generation/composer/selection-highlight";
 import {
   type HomeInspiration,
@@ -19,7 +19,6 @@ import {
 } from "./home-inspiration-data";
 import { homeInspirationMessages } from "./home-inspiration-messages";
 import { distributeColumns, useColumnCount } from "./inspiration-columns";
-import { inspirationLibraryPath } from "./inspiration-path";
 import { useInspirationPaging } from "./use-inspiration-paging";
 
 // 卡片左下角的分类标签图标，与工作区工具图标保持同一风格。
@@ -31,8 +30,8 @@ const categoryIcons = {
 } satisfies Record<HomeInspiration["category"], TablerIcon>;
 
 /**
- * 作品墙：分类页签加瀑布流。首页先显示一部分、滚到底部再补两次，之后出现“查看更多灵感”进入灵感库；
- * 灵感库（library）一次显示全部，不再分批。
+ * 作品墙：分类页签加瀑布流。首页先显示一部分、滚到底部再补两次，之后点“查看更多灵感”在当前页接着加载，
+ * 全部显示后按钮消失；灵感库（library）一次显示全部，不再分批。
  */
 export function InspirationWall({
   items,
@@ -46,12 +45,20 @@ export function InspirationWall({
   onUse: (item: HomeInspiration) => void;
 }) {
   const t = useMessages(homeInspirationMessages);
-  const navigate = useAppNavigate();
   const [category, setCategory] = useState<InspirationCategory>("all");
+  const grid = useRef<HTMLDivElement>(null);
   const visible = items.filter((item) => category === "all" || item.category === category);
   const paging = useInspirationPaging(visible.length, category);
   const shown = library ? visible : visible.slice(0, paging.count);
   const columns = distributeColumns(shown, useColumnCount());
+  // “查看更多灵感”在当前页接着加载，不跳转（用户 2026-11-11 要求）。加载完最后一批按钮会消失，
+  // 用键盘或读屏点的，焦点移到新出现的第一张卡片；鼠标点击不移焦点，免得卡片亮起焦点框。
+  function showMore(byKeyboard: boolean) {
+    const firstNew = visible[shown.length];
+    flushSync(paging.loadMore);
+    if (!byKeyboard || !firstNew) return;
+    grid.current?.querySelector<HTMLElement>(`[data-inspiration-id="${firstNew.id}"]`)?.focus();
+  }
   return (
     <Tabs
       selectedKey={category}
@@ -78,7 +85,7 @@ export function InspirationWall({
         </Tabs.ListContainer>
       </div>
       <Tabs.Panel id={category}>
-        <div className="home-inspiration-grid">
+        <div ref={grid} className="home-inspiration-grid">
           {columns.map((column) => (
             <div className="home-inspiration-column" key={column.id}>
               {column.items.map((item, position) => (
@@ -96,9 +103,14 @@ export function InspirationWall({
         {!library && !paging.finished && (
           <div ref={paging.sentinelRef} className="home-inspiration-sentinel" aria-hidden="true" />
         )}
-        {!library && paging.finished && (
+        {!library && paging.finished && paging.hasMore && (
           <div className="home-inspiration-more">
-            <Button variant="secondary" onPress={() => void navigate(inspirationLibraryPath)}>
+            <Button
+              variant="secondary"
+              onPress={(event) =>
+                showMore(event.pointerType === "keyboard" || event.pointerType === "virtual")
+              }
+            >
               {t.more}
             </Button>
           </div>
@@ -146,6 +158,7 @@ function InspirationTile({
       <Button
         variant="tertiary"
         className="home-inspiration-card"
+        data-inspiration-id={item.id}
         aria-label={t.view(item.title)}
         onPress={onOpen}
       >

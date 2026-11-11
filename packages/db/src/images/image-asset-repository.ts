@@ -39,7 +39,13 @@ export function imageAssetRepository(sql: postgres.Sql) {
     ): Promise<Record<string, unknown>[]> {
       const favorite = sql`exists(select 1 from image_asset_favorites f where f.organization_id=a.organization_id
         and f.user_id=${scope.userId} and f.asset_id=a.id)`;
-      return sql`select a.public_id,a.id,a.kind,a.media_type as type,a.width,a.height,a.bytes,a.created_at,j.public_id as task_public_id,${publicModelSql} as model,j.prompt,
+      return sql`select a.public_id,a.id,a.kind,a.media_type as type,a.width,a.height,a.bytes,a.created_at,j.public_id as task_public_id,${publicModelSql} as model,
+        coalesce(j.user_prompt, case
+          when j.input->>'replica' = 'true' then
+            case when strpos(j.prompt, chr(10)) > 0 then substr(j.prompt, strpos(j.prompt, chr(10)) + 1) else '' end
+          when j.input ? 'textileSet' then ''
+          else j.prompt
+        end) as prompt,
         ${toolSql} as tool,${favorite} as favorite,
         (j.input->'video'->>'seconds')::integer as duration_seconds,j.resolution
         from media_assets a left join generation_job_items i on i.output_asset_id=a.id and i.organization_id=a.organization_id
