@@ -102,7 +102,7 @@ test("style match references add favorites to the product tray", async ({ page }
   await expect(prompt).toHaveValue("");
 });
 
-test("mention popup anchors below the green at-sign and directly inserts up to five images on mobile", async ({
+test("mention popup stays by the green at-sign and directly inserts up to five images on mobile", async ({
   page,
 }) => {
   await mockImageApi(page);
@@ -143,10 +143,12 @@ test("mention popup anchors below the green at-sign and directly inserts up to f
   await expect(at).toHaveCSS("color", "rgb(168, 255, 0)");
   const atBox = await at.boundingBox();
   const menuBox = await page.locator(".reference-mention-popover").boundingBox();
-  expect(atBox).not.toBeNull();
-  expect(menuBox).not.toBeNull();
-  expect((menuBox?.y ?? 0) - ((atBox?.y ?? 0) + (atBox?.height ?? 0))).toBeGreaterThanOrEqual(4);
-  expect((menuBox?.y ?? 0) - ((atBox?.y ?? 0) + (atBox?.height ?? 0))).toBeLessThan(20);
+  if (!atBox || !menuBox) throw new Error("Missing mention popup geometry");
+  const gap = Math.max(menuBox.y - atBox.y - atBox.height, atBox.y - menuBox.y - menuBox.height);
+  expect(gap).toBeGreaterThanOrEqual(4);
+  expect(gap).toBeLessThan(20);
+  expect(menuBox.y).toBeGreaterThanOrEqual(0);
+  expect(menuBox.y + menuBox.height).toBeLessThanOrEqual(844);
   await expect(menu.getByRole("button", { name: /^确认/ })).toHaveCount(0);
   const option = menu.getByRole("option").first();
   await search.focus();

@@ -198,7 +198,7 @@ function PromptMentionPopover({
       <Popover.Content
         triggerRef={mentionAnchor}
         placement="bottom start"
-        shouldFlip={false}
+        shouldFlip
         offset={8}
         className="reference-mention-popover"
       >

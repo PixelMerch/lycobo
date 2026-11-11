@@ -7,10 +7,10 @@ import {
   type TablerIcon,
 } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
-import { useAppNavigate } from "../../i18n/use-localized-navigation";
 import { SelectionHighlight } from "../generation/composer/selection-highlight";
 import {
   type HomeInspiration,
