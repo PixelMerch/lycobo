@@ -39,6 +39,7 @@ export function ReferencePrompt({
   autoGrowMinHeight,
   isRequired = false,
   onReferencesInsert,
+  unavailableReferenceIds,
   optimizeTool,
 }: {
   value: string;
@@ -56,6 +57,7 @@ export function ReferencePrompt({
   autoGrowMinHeight?: number;
   isRequired?: boolean;
   onReferencesInsert?: (images: ReferenceImage[], prompt: string) => void;
+  unavailableReferenceIds?: readonly string[] | undefined;
   /** 为这个工具的描述显示 AI 润色入口。 */
   optimizeTool?: PromptOptimizeTool;
 }) {
@@ -130,6 +132,7 @@ export function ReferencePrompt({
         references={references}
         maxReferences={maxReferences}
         allowHistory={Boolean(onReferencesInsert)}
+        unavailableReferenceIds={unavailableReferenceIds}
       />
     </>
   );
@@ -175,11 +178,13 @@ function PromptMentionPopover({
   references,
   maxReferences,
   allowHistory,
+  unavailableReferenceIds,
 }: {
   editor: ReturnType<typeof useReferencePrompt>;
   references: readonly PromptReference[];
   maxReferences: number;
   allowHistory: boolean;
+  unavailableReferenceIds: readonly string[] | undefined;
 }) {
   const t = useMessages(componentsMessages);
   const { mention, anchoredMention, setMention, mentionAnchor, usedIds, insert } = editor;
@@ -193,7 +198,7 @@ function PromptMentionPopover({
       <Popover.Content
         triggerRef={mentionAnchor}
         placement="bottom start"
-        shouldFlip={false}
+        shouldFlip
         offset={8}
         className="reference-mention-popover"
       >
@@ -202,7 +207,11 @@ function PromptMentionPopover({
             <ReferenceMentionOptions
               maxReferences={maxReferences}
               references={references}
-              usedIds={usedIds}
+              usedIds={
+                unavailableReferenceIds
+                  ? new Set([...usedIds, ...unavailableReferenceIds])
+                  : usedIds
+              }
               onSelect={insert}
               allowHistory={allowHistory}
             />

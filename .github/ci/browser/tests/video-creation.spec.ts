@@ -220,7 +220,9 @@ for (const width of [390, 1440]) {
     const playbackUrl = "http://127.0.0.1:5173/fixture-playback.mp4";
     let playbackReads = 0;
     let downloadReads = 0;
-    const bytes = await readFile(new URL("../fixtures/video-portrait.mp4", import.meta.url));
+    const bytes = await readFile(
+      new URL("../../../../tests/fixtures/video-portrait.mp4", import.meta.url),
+    );
     await page.route("**/fixture-playback.mp4", (route) => {
       playbackReads++;
       return route.fulfill({ status: 200, contentType: "video/mp4", body: bytes });
@@ -482,7 +484,9 @@ for (const width of [390, 1440]) {
 
 test("video detail switches through every video from the rail and arrow keys", async ({ page }) => {
   await mockCompletedVideos(page, ["W09VIDEO5", "W09VIDEO6", "W09VIDEO7"]);
-  const bytes = await readFile(new URL("../fixtures/video-portrait.mp4", import.meta.url));
+  const bytes = await readFile(
+    new URL("../../../../tests/fixtures/video-portrait.mp4", import.meta.url),
+  );
   await page.route(/fixture-W09VIDEO\d\.mp4$/, (route) =>
     route.fulfill({ contentType: "video/mp4", body: bytes }),
   );
@@ -519,7 +523,9 @@ for (const ranges of [true, false]) {
     page,
   }) => {
     await mockCompletedVideos(page, ["W09VIDEO3"]);
-    const bytes = await readFile(new URL("../fixtures/video-portrait.mp4", import.meta.url));
+    const bytes = await readFile(
+      new URL("../../../../tests/fixtures/video-portrait.mp4", import.meta.url),
+    );
     await page.route("**/fixture-W09VIDEO3.mp4", (route) => {
       const range = /^bytes=(\d+)-(\d*)$/.exec(route.request().headers().range ?? "");
       if (!ranges || !range)

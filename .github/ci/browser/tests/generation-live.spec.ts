@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import type {
   ImageGenerationInput,
   ImageJob,
-} from "../../packages/contracts/src/images/image-generation";
+} from "../../../../packages/contracts/src/images/image-generation";
 import { mockImageApi, mockImageEvents } from "./image-api-fixture";
 
 const png = Buffer.from(

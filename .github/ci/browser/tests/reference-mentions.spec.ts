@@ -67,7 +67,42 @@ for (const path of ["/commerce/create", "/commerce/smart-variation", "/"]) {
   });
 }
 
-test("mention popup anchors below the green at-sign and directly inserts up to five images on mobile", async ({
+test("style match references add favorites to the product tray", async ({ page }) => {
+  await mockImageApi(page);
+  const favorite = {
+    id: "00000000-0000-4000-8000-000000000017",
+    task_public_id: null,
+    public_id: "PAAAAAAA1",
+    kind: "output",
+    type: "image",
+    width: 512,
+    height: 512,
+    bytes: 1000,
+    created_at: "2026-11-11T00:00:00Z",
+    model: null,
+    prompt: null,
+    favorite: true,
+  };
+  await page.route("**/api/v1/image-assets?*", (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    return route.fulfill({ json: apiFixture({ data: params.has("favorite") ? [favorite] : [] }) });
+  });
+  await page.goto("/zh-CN/commerce/replica");
+  const prompt = page.locator(".prompt-field").getByRole("textbox");
+  await prompt.press("@");
+  const menu = page.getByRole("dialog", { name: "引用图片", exact: true });
+  await expect(menu.getByRole("tab", { name: "图片", exact: true })).toBeVisible();
+  await expect(menu.getByRole("tab", { name: "素材", exact: true })).toBeVisible();
+  await menu.getByRole("tab", { name: "收藏", exact: true }).click();
+  await menu.getByRole("option", { name: favorite.public_id }).click();
+  const products = page.getByRole("region", { name: "参考图", exact: true });
+  await expect(products.locator(".reference-tile")).toHaveCount(1);
+  await expect(prompt).toContainText("图片1");
+  await products.getByRole("button", { name: "清除全部参考图片", exact: true }).click();
+  await expect(prompt).toHaveValue("");
+});
+
+test("mention popup stays by the green at-sign and directly inserts up to five images on mobile", async ({
   page,
 }) => {
   await mockImageApi(page);
@@ -108,10 +143,12 @@ test("mention popup anchors below the green at-sign and directly inserts up to f
   await expect(at).toHaveCSS("color", "rgb(168, 255, 0)");
   const atBox = await at.boundingBox();
   const menuBox = await page.locator(".reference-mention-popover").boundingBox();
-  expect(atBox).not.toBeNull();
-  expect(menuBox).not.toBeNull();
-  expect((menuBox?.y ?? 0) - ((atBox?.y ?? 0) + (atBox?.height ?? 0))).toBeGreaterThanOrEqual(4);
-  expect((menuBox?.y ?? 0) - ((atBox?.y ?? 0) + (atBox?.height ?? 0))).toBeLessThan(20);
+  if (!atBox || !menuBox) throw new Error("Missing mention popup geometry");
+  const gap = Math.max(menuBox.y - atBox.y - atBox.height, atBox.y - menuBox.y - menuBox.height);
+  expect(gap).toBeGreaterThanOrEqual(4);
+  expect(gap).toBeLessThan(20);
+  expect(menuBox.y).toBeGreaterThanOrEqual(0);
+  expect(menuBox.y + menuBox.height).toBeLessThanOrEqual(844);
   await expect(menu.getByRole("button", { name: /^确认/ })).toHaveCount(0);
   const option = menu.getByRole("option").first();
   await search.focus();

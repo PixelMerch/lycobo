@@ -146,7 +146,10 @@ test("pending enterprise login blocks repeat submissions and changing methods", 
   await expect(
     dialog.getByRole("button", { name: "返回其他登录方式", exact: true }),
   ).toBeDisabled();
-  await expect(dialog.getByRole("button", { name: /登录中/ })).toBeDisabled();
+  // 提交中文字不变，箭头换成加载图标；不用“登录中…”这类省略号文案。
+  await expect(dialog.getByRole("button", { name: /登录企业账号/ })).toBeDisabled();
+  await expect(dialog.getByRole("status", { name: "正在登录" })).toBeVisible();
+  await expect(dialog.getByText(/登录中/)).toHaveCount(0);
   await page.keyboard.press("Enter");
   expect(submissions).toBe(1);
   release();
@@ -244,6 +247,8 @@ test("enterprise login retains the existing request, session refresh and logout 
   await dialog.getByLabel("密码", { exact: true }).fill("fixture-password");
   await dialog.getByRole("button", { name: "登录企业账号", exact: true }).click();
   await expect(dialog).toHaveCount(0);
+  // 登录成功用顶部 Toast 告诉用户。
+  await expect(page.getByText("登录成功", { exact: true })).toBeVisible();
   await expect(page.locator(".account-trigger")).toHaveAccessibleName("账户菜单：merchant-fixture");
   expect(
     await page.evaluate(() =>

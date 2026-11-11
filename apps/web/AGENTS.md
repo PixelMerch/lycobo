@@ -49,7 +49,7 @@ navigation; never prefix API, WebSocket, image or font URLs. See docs/localized-
   as permission to restyle it. Preserve the actual tokens: brand lime #A8FF00, HeroUI accent
   #A8FF00, lime-to-mint primary gradient (#A8FF00 → #54E6A5) with dark #142000 foreground and pill-shaped generation buttons.
   Image content stays primary. Do not reintroduce retired palettes or bonko branding.
-- Distinguish real image APIs from local examples and E2E fixtures. Never represent sample
+- Distinguish real image APIs from local examples and CI browser fixtures. Never represent sample
   content, client-only favorites or future payment/sign-in rewards as durable production services.
 - Keep page components focused on composition. Extract complete reusable features into components
   and external synchronization into hooks; preserve DOM semantics, classes, focus and paid-task
@@ -66,7 +66,7 @@ navigation; never prefix API, WebSocket, image or font URLs. See docs/localized-
   programmatic opens, and Chromium reports those moves as `:focus-visible`; suppress the ring for
   pointer focus (`data-focused` without `data-focus-visible`) and for HeroUI overlay containers
   (dialog, popover, dropdown menu). No purple box around the account capsule, menu list, row or
-  dialog after hover or click. Cover this with E2E assertions, not only CSS.
+  dialog after hover or click. Cover this in the CI browser suite. Run the suite only through GitHub Actions.
 - Signed in, the account avatar sits at the right end of the top bar and opens its menu downward on
   press, Enter or Space; on phones the account row sits at the foot of the navigation drawer and opens
   upward. Hovering does not open it. Keyboard focus enters the first row and returns to the trigger on close.

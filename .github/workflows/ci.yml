@@ -60,14 +60,18 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: cp .env.example .env
-      - run: pnpm exec playwright --version
+      - name: Install browser test dependencies
+        working-directory: .github/ci/browser
+        run: pnpm install --ignore-workspace --frozen-lockfile
+      - run: pnpm exec tsc -p .github/ci/browser/tsconfig.json
+      - run: .github/ci/browser/node_modules/.bin/playwright install chromium
       - name: Manual browser regression
         run: |
+          set -- --config=.github/ci/browser/playwright.config.ts --shard=${{ matrix.shard }}/2
           if [ -n "$BROWSER_GREP" ]; then
-            pnpm test:e2e --shard=${{ matrix.shard }}/2 --grep "$BROWSER_GREP" --pass-with-no-tests
-          else
-            pnpm test:e2e:full --shard=${{ matrix.shard }}/2
+            set -- "$@" --grep "$BROWSER_GREP" --pass-with-no-tests
           fi
+          .github/ci/browser/node_modules/.bin/playwright test "$@"
   browser-result:
     name: ${{ github.event.action == 'edited' && !github.event.changes.base && 'Browser metadata only' || 'Browser' }}
     needs: browser

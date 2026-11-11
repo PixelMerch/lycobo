@@ -1,9 +1,9 @@
-import { Button, Popover, Spinner, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { imageUnitCredits, publicImageResolutions } from "@lycoboai/contracts";
 import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { type RefObject, useId, useRef, useState } from "react";
-import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
+import { GenerateButton } from "../../generation/composer/generate-button";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../../generation/composer/selection-highlight";
 import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
@@ -91,27 +91,17 @@ export function TextileSetPage() {
           </fieldset>
         </div>
         <div className="generate-area">
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            className="primary-action generation-submit"
+          <GenerateButton
+            label={
+              generation.pending && !generation.submitting ? t.confirmLastSubmission : t.generateNow
+            }
+            submitting={generation.submitting}
             isDisabled={!generation.canGenerate}
-            isPending={generation.submitting}
+            submittingLabel={t.submitting}
+            cost={showCost ? cost : undefined}
+            describedBy={costDescriptionId}
             onPress={generation.submit}
-            aria-describedby={costDescriptionId}
-          >
-            {generation.submitting && (
-              <Spinner size="md" color="current" role="status" aria-label={t.submitting} />
-            )}
-            {generation.pending && !generation.submitting ? t.confirmLastSubmission : t.generateNow}
-            {showCost && (
-              <span className="generate-credit-cost" aria-hidden="true">
-                <CreditCoin />
-                <span>{cost}</span>
-              </span>
-            )}
-          </Button>
+          />
           <span id={costDescriptionId} className="sr-only">
             {buttonDescription}
           </span>

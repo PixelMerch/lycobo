@@ -1,6 +1,7 @@
-import { Button, Spinner, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { Button, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { useState } from "react";
 import { ReferencePrompt } from "../../../components/reference-prompt/reference-prompt";
+import { GenerateButton } from "../../generation/composer/generate-button";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
 import { SelectionHighlight } from "../../generation/composer/selection-highlight";
 import { ReferencePicker } from "../../generation/references/reference-picker";
@@ -94,23 +95,16 @@ export function SmartVariationPage() {
               {t.viewPlan}
             </Button>
           )}
-          <Button
+          <GenerateButton
+            label={t.generatePlan}
+            submitting={analysis.isPending}
             isDisabled={!analysis.canAnalyze}
-            isPending={analysis.isPending}
+            submittingLabel={t.generatingPlan}
             onPress={() => {
               setPlanOpen(true);
               analysis.mutate();
             }}
-            variant="primary"
-            size="lg"
-            fullWidth
-            className="primary-action generation-submit"
-          >
-            {analysis.isPending && (
-              <Spinner size="md" color="current" role="status" aria-label={t.generatingPlan} />
-            )}
-            {analysis.isPending ? t.generatingPlan : t.generatePlan}
-          </Button>
+          />
         </div>
       </section>
       <VariationPlanPanel

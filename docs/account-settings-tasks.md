@@ -162,17 +162,17 @@
 
 ### 代码定位与接口约束
 
-| 位置                                                                                   | 关注点                                                 |
-| -------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `apps/web/src/features/account/`                                                       | 设置弹窗、个人资料、改密、成员界面、账户菜单与账单回归 |
-| `apps/web/src/features/auth/`、`apps/web/src/lib/session-fetch.ts`                     | 登录、身份缓存、刷新、改密后清理与授权回调             |
-| `apps/web/src/app/`                                                                    | 全局登录门禁及首次改密呈现                             |
-| `apps/api/src/features/auth/`                                                          | 登录、会话、改密与服务端授权；相关新路由按领域拆分     |
-| `packages/contracts/src/auth/auth.ts`                                                  | 身份与鉴权契约；新字段兼容历史响应和发布顺序           |
-| `packages/db/src/auth/auth-repository.ts`                                              | 当前 PostgreSQL 鉴权持久化                             |
-| `packages/db/src/schema.ts`、`packages/db/migrations/`                                 | 当前表定义、追加迁移及服务端权限                       |
-| `apps/api/scripts/enterprise-account.ts`                                               | 既有受控创建/重置工具，不能作为公开成员接口直接暴露    |
-| `tests/e2e/account-settings.spec.ts`、`account-menu.spec.ts`、`account-center.spec.ts` | 既有交互回归入口                                       |
+| 位置                                                                         | 关注点                                                 |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `apps/web/src/features/account/`                                             | 设置弹窗、个人资料、改密、成员界面、账户菜单与账单回归 |
+| `apps/web/src/features/auth/`、`apps/web/src/lib/session-fetch.ts`           | 登录、身份缓存、刷新、改密后清理与授权回调             |
+| `apps/web/src/app/`                                                          | 全局登录门禁及首次改密呈现                             |
+| `apps/api/src/features/auth/`                                                | 登录、会话、改密与服务端授权；相关新路由按领域拆分     |
+| `packages/contracts/src/auth/auth.ts`                                        | 身份与鉴权契约；新字段兼容历史响应和发布顺序           |
+| `packages/db/src/auth/auth-repository.ts`                                    | 当前 PostgreSQL 鉴权持久化                             |
+| `packages/db/src/schema.ts`、`packages/db/migrations/`                       | 当前表定义、追加迁移及服务端权限                       |
+| `apps/api/scripts/enterprise-account.ts`                                     | 既有受控创建/重置工具，不能作为公开成员接口直接暴露    |
+| `account-settings.spec.ts`、`account-menu.spec.ts`、`account-center.spec.ts` | CI 交互回归用例                                        |
 
 新增接口路径和字段在实现时按现有领域命名确定，本任务书不宣称已有新接口。所有 JSON 继续由 createApp 统一包装 `request_id/code/message/data/error`，新增错误码在 contracts 登记；路由保持薄层，业务和持久化分离。业务权限来源于服务端身份，不能信任请求中的组织 ID、用户 ID 或对象 key。Cookie 写请求沿用可信 Origin/CSRF 防护；凭据、授权码、Token、签名 URL 和原始微信响应不得写日志。
 
@@ -197,4 +197,4 @@
 
 实施代码后运行 `pnpm check`。数据库与鉴权变更按 [测试说明](testing.md) 执行隔离集成，覆盖两个持久化路径、事务回滚、并发唯一性、幂等、强制改密门禁及会话撤销，禁止使用生产库。新增测试关注这些业务不变量和失败分支。
 
-浏览器只运行受影响的账号设置、账户菜单、账单及首次登录/微信流程定向用例，不默认运行完整本地 E2E；完整远程 E2E 维持手动触发。微信 fixture 通过不能代替真实扫码、回调与再次登录验收。交付中逐项列出实际执行结果、跳过检查和外部联调缺项；未完成的项目保持未勾选。
+账号设置、账户菜单、账单及首次登录／微信流程的浏览器回归在 GitHub Actions 手动运行，可按需筛选。微信 fixture 通过不能代替真实扫码、回调与再次登录验收。交付中逐项列出实际执行结果、跳过检查和外部联调缺项；未完成的项目保持未勾选。

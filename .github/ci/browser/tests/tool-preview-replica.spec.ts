@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
 const png = readFileSync(
-  new URL("../../apps/web/public/studio/textile-views/front.webp", import.meta.url),
+  new URL("../../../../apps/web/public/studio/textile-views/front.webp", import.meta.url),
 );
 
 test("tool menu hover stays quiet while the banner retains examples and drafts survive switching", async ({
@@ -75,7 +75,7 @@ test("style matching requires both slots and submits their roles without a paid 
         mimeType: "image/webp",
         buffer: readFileSync(
           new URL(
-            `../../apps/web/public/studio/textile-views/${
+            `../../../../apps/web/public/studio/textile-views/${
               [
                 "angled-level",
                 "angled-overhead",

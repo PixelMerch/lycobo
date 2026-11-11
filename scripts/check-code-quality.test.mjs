@@ -19,7 +19,7 @@ describe("excessLines", () => {
 
   it("does not limit tests or the database schema", () => {
     expect(excessLines("apps/web/src/a.test.ts", lines(900))).toBe(0);
-    expect(excessLines("tests/e2e/a.spec.ts", lines(900))).toBe(0);
+    expect(excessLines("tests/a.spec.ts", lines(900))).toBe(0);
     expect(excessLines("packages/db/src/schema.ts", lines(900))).toBe(0);
   });
 });

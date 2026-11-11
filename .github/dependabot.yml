@@ -1,7 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: npm
-    directory: /
+    directories: [/, /.github/ci/browser]
     target-branch: dev
     schedule:
       interval: weekly

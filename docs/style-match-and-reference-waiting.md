@@ -23,6 +23,6 @@
 
 共享契约增加可选标记及工具枚举，发布时先更新图片消费者，再更新主站（API 与前端一起）。不可先发布依赖待处理素材接收行为的前端。旧已部署版本不会因本地修改而自动变化。
 
-`pnpm check` 检查代码质量、类型、单元测试和构建。隔离图片集成新增 `verifyReplica` 和 `verifyReferenceWaiting`，验证工具隔离、归属拒绝、一次扣费、待处理时保持 queued、素材完成后长期保留与失败退款。`tests/e2e/tool-preview-replica.spec.ts` 使用本地 API fixture 检查双图必填、角色顺序、202 后无需查询上传状态即可提交、草稿保留、键盘预览和减少动态效果。未以真实付费模型验证生成质量。
+`pnpm check` 检查代码质量、类型、单元测试和构建。隔离图片集成新增 `verifyReplica` 和 `verifyReferenceWaiting`，验证工具隔离、归属拒绝、一次扣费、待处理时保持 queued、素材完成后长期保留与失败退款。CI 的 `tool-preview-replica.spec.ts` 使用 API fixture 检查双图必填、角色顺序、202 后无需查询上传状态即可提交、草稿保留、键盘预览和减少动态效果。未以真实付费模型验证生成质量。
 
 批量复制依赖追加迁移 `0045_replica_batch_count.sql`；发布时先执行数据库迁移，再部署图片Worker，最后部署主站。该迁移只扩展计数约束，不改写已有任务。

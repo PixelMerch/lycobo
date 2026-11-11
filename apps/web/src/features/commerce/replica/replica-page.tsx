@@ -1,9 +1,8 @@
-import { Button, Spinner } from "@heroui/react";
 import { imageUnitCredits } from "@lycoboai/contracts";
-import { CreditCoin } from "../../../components/credit-coin";
 import { ReferencePrompt } from "../../../components/reference-prompt/reference-prompt";
 import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
+import { GenerateButton } from "../../generation/composer/generate-button";
 import { ParameterGroup } from "../../generation/composer/parameter-group";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
 import {
@@ -20,7 +19,12 @@ import { modelCapabilities, supportsReferences } from "../../generation/models/m
 import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
 import { replicaMessages } from "./replica-messages";
 import { ReplicaReferences } from "./replica-references";
-import { replicaModel, useReplicaDraft } from "./replica-state";
+import {
+  replicaModel,
+  replicaProductLimit,
+  shiftReplicaPromptReferences,
+  useReplicaDraft,
+} from "./replica-state";
 
 /** 复制目标图的视觉风格，沿用现有素材上传、幂等提交、队列与计费链路。 */
 export function ReplicaPage() {
@@ -60,7 +64,12 @@ export function ReplicaPage() {
           label={t.prompt}
           value={draft.prompt}
           onChange={(prompt) => patchDraft({ prompt })}
-          references={[]}
+          references={products}
+          maxReferences={replicaProductLimit}
+          unavailableReferenceIds={target ? [target.id, target.assetId ?? target.id] : undefined}
+          onReferencesInsert={(images, prompt) =>
+            update({ products: [...products, ...images], draft: { ...draft, prompt } })
+          }
           placeholder={t.placeholder}
           maxLength={5000}
           optimizeTool="create"
@@ -86,25 +95,15 @@ export function ReplicaPage() {
         />
       </section>
       <div className="generate-area">
-        <Button
-          className="primary-action generation-submit"
-          variant="primary"
-          size="lg"
-          fullWidth
+        <GenerateButton
+          label={pending ? common.confirmLastSubmission : t.generate}
+          submitting={generate.isPending}
           isDisabled={isDisabled}
-          aria-description={showCost ? common.runCost(cost) : undefined}
-          isPending={generate.isPending}
+          submittingLabel={common.submitting}
+          cost={showCost ? cost : undefined}
+          costDescription={showCost ? common.runCost(cost) : undefined}
           onPress={submit}
-        >
-          {generate.isPending ? <Spinner size="sm" /> : null}
-          {pending ? common.confirmLastSubmission : t.generate}
-          {showCost && (
-            <span className="generate-credit-cost" aria-hidden="true">
-              <CreditCoin />
-              <span>{cost}</span>
-            </span>
-          )}
-        </Button>
+        />
       </div>
     </section>
   );
@@ -130,7 +129,7 @@ function useReplicaSubmission(
         draft: {
           ...draft,
           count: String(products.length),
-          prompt: `${t.instruction}\n${draft.prompt}`,
+          prompt: `${t.instruction}\n${shiftReplicaPromptReferences(draft.prompt, 1)}`,
           references: target ? [target, ...products] : [],
         },
       },

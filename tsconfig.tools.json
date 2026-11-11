@@ -4,5 +4,5 @@
     "types": ["node"],
     "lib": ["ES2023", "DOM"]
   },
-  "include": ["vitest.config.ts", "playwright.config.ts", "tests/**/*.ts"]
+  "include": ["vitest.config.ts"]
 }
