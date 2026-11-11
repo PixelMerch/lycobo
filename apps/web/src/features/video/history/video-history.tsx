@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { LibraryDialog } from "../../assets/library-dialog";
 import { AssetImage } from "../../generation/asset-image";
@@ -11,9 +12,11 @@ import { historyContentTop } from "../../generation/history/history-navigation";
 import { VideoProductionCard, videoProductionCardId } from "../production/video-production-card";
 import type { Production } from "../production/video-production-progress";
 import { useVideoTasks } from "../video-client";
+import { videoHistoryMessages } from "./video-history-messages";
 import { VideoTaskCard } from "./video-task-card";
 import { isVideoTaskActive } from "./video-task-status";
 
+/** 视频历史列表：正在制作的视频卡与已提交的视频任务。 */
 export function VideoHistory({
   onRestore,
   production,
@@ -21,6 +24,7 @@ export function VideoHistory({
   onRestore: () => void;
   production?: Production;
 }) {
+  const t = useMessages(videoHistoryMessages);
   const query = useVideoTasks();
   useErrorToast(query.error?.message);
   const tasks = query.data?.pages.flatMap((page) => page.data) ?? [];
@@ -29,7 +33,7 @@ export function VideoHistory({
     .filter((task) => task.status === "succeeded" || task.status === "failed")
     .map((task) => `${task.id}:${task.status}`)
     .join("|");
-  // Provider completions arrive through polling; synchronize the shared wallet and asset cache.
+  // 供应商的完成状态靠轮询得到，完成后同步刷新共享的余额与素材缓存。
   useEffect(() => {
     if (!settled) return;
     void client.invalidateQueries({ queryKey: ["wallet"] });
@@ -37,8 +41,8 @@ export function VideoHistory({
     void client.invalidateQueries({ queryKey: ["image-assets"] });
   }, [settled, client]);
   const videoId = production?.draft.progress.acceptedVideoId;
-  // A run is one history entry. It stays a local card until its task reaches this list, which
-  // the refetch after acceptance takes a moment to do; a task no longer listed drops the card.
+  // 一次制作就是一条历史；任务进入列表前先显示本地制作卡，接受后的重新查询需要一点时间。
+  // 列表里不再有这条任务时去掉制作卡。
   const unlisted = !tasks.some((task) => task.id === videoId);
   const productionCard =
     production &&
@@ -46,7 +50,7 @@ export function VideoHistory({
     (production.busy || production.needsResume || (videoId && query.isFetching)) ? (
       <VideoProductionCard production={production} />
     ) : null;
-  if (query.isLoading && !productionCard) return <Spinner aria-label="正在加载视频历史" />;
+  if (query.isLoading && !productionCard) return <Spinner aria-label={t.loading} />;
   if (query.isError && !query.data)
     return (
       <>
@@ -54,8 +58,8 @@ export function VideoHistory({
           <div className="generation-history video-history-list">{productionCard}</div>
         )}
         <EmptyState>
-          <p>视频历史暂不可用</p>
-          <Button onPress={() => void query.refetch()}>重试</Button>
+          <p>{t.unavailable}</p>
+          <Button onPress={() => void query.refetch()}>{t.retry}</Button>
         </EmptyState>
       </>
     );
@@ -63,7 +67,7 @@ export function VideoHistory({
     return (
       <EmptyState className="empty-state generation-empty-state">
         <UiIcon icon={IconMovie} size="illustration" />
-        <p>生成的视频会显示在这里</p>
+        <p>{t.empty}</p>
       </EmptyState>
     );
   return (
@@ -86,7 +90,9 @@ export function VideoHistory({
     </div>
   );
 }
+/** 视频历史索引栏：定位正在制作的视频和已有任务，打开素材库。 */
 export function VideoHistoryRail({ production }: { production: Production }) {
+  const t = useMessages(videoHistoryMessages);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const query = useVideoTasks();
@@ -109,15 +115,15 @@ export function VideoHistoryRail({ production }: { production: Production }) {
   };
   return (
     <>
-      <aside className="history-rail" aria-label="视频历史索引">
+      <aside className="history-rail" aria-label={t.rail}>
         <h2 className="history-rail-title">
           <Button
             variant="tertiary"
             className="history-rail-open"
-            aria-label="打开素材库"
+            aria-label={t.openLibrary}
             onPress={() => setLibraryOpen(true)}
           >
-            <span>我的素材</span>
+            <span>{t.myAssets}</span>
             <UiIcon icon={IconChevronRight} size="small" />
           </Button>
         </h2>
@@ -127,13 +133,13 @@ export function VideoHistoryRail({ production }: { production: Production }) {
               <Button
                 variant="tertiary"
                 className={`history-thumbnail${production.busy ? " generation-pending" : ""}`}
-                aria-label="定位正在制作的视频"
+                aria-label={t.locateProduction}
                 aria-current={currentId === videoProductionCardId ? "true" : "false"}
                 onPress={() => locate(videoProductionCardId)}
               >
                 {production.busy ? (
                   <span className="history-thumbnail-frame">
-                    <Spinner size="sm" aria-label="视频处理中" />
+                    <Spinner size="sm" aria-label={t.processing} />
                   </span>
                 ) : (
                   <UiIcon icon={IconMovie} size="action" />
@@ -146,7 +152,7 @@ export function VideoHistoryRail({ production }: { production: Production }) {
               <Button
                 variant="tertiary"
                 className={`history-thumbnail${isVideoTaskActive(task) ? " generation-pending" : ""}`}
-                aria-label={`定位视频：${task.public_id}`}
+                aria-label={t.locateVideo(task.public_id)}
                 aria-current={currentId === `video-task-${task.id}` ? "true" : "false"}
                 onPress={() => locate(`video-task-${task.id}`)}
               >
@@ -162,13 +168,14 @@ export function VideoHistoryRail({ production }: { production: Production }) {
 }
 
 function VideoTaskThumbnail({ task }: { task: Parameters<typeof isVideoTaskActive>[0] }) {
+  const t = useMessages(videoHistoryMessages);
   if (task.asset_id)
     return (
       <span className="history-thumbnail-frame">
         <AssetImage
           assetId={task.asset_id}
           thumbnail
-          alt={`视频 ${task.public_id} 封面`}
+          alt={t.videoCover(task.public_id)}
           loading="lazy"
         />
       </span>
@@ -176,7 +183,7 @@ function VideoTaskThumbnail({ task }: { task: Parameters<typeof isVideoTaskActiv
   if (isVideoTaskActive(task))
     return (
       <span className="history-thumbnail-frame">
-        <Spinner size="sm" aria-label="视频处理中" />
+        <Spinner size="sm" aria-label={t.processing} />
       </span>
     );
   return <UiIcon icon={IconMovie} size="action" />;

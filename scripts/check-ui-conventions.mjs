@@ -29,6 +29,79 @@ const geometry = new Set([
   "borderRadius",
 ]);
 
+// 精致感基础修复（用户 2026-11-10）后的样式档位：6px 与 18px 只给嵌套推导（外圆角 = 内圆角 + 内边距）。
+const allowedRadii = new Set([
+  "0",
+  "4px",
+  "6px",
+  "8px",
+  "12px",
+  "16px",
+  "18px",
+  "20px",
+  "24px",
+  "28px",
+  "999px",
+  "50%",
+  "inherit",
+]);
+// 文字用的白色透明度只保留 40／50／60／70／80% 五档。
+const allowedTextAlphas = new Set(["66", "80", "99", "b3", "cc"]);
+
+/** 判断是否为偏蓝紫的近灰色（旧版紫灰）：三个通道很接近，但蓝色最高。 */
+function isCoolGray(red, green, blue) {
+  const spread = Math.max(red, green, blue) - Math.min(red, green, blue);
+  return (
+    spread > 0 && spread <= 16 && Math.max(red, green, blue) < 250 && blue > green && blue >= red
+  );
+}
+
+/** 一行里不在档位内的圆角。 */
+function radiusProblems(text) {
+  const match = text.match(/border(?:-(?:top|bottom)-(?:left|right))?-radius:\s*([^;]+);/);
+  if (!match || match[1].trim().startsWith("var(")) return [];
+  return match[1]
+    .trim()
+    .split(/\s+/)
+    .filter((value) => !allowedRadii.has(value))
+    .map((value) => `圆角 ${value} 不在档位内（4/6/8/12/16/18/20/24/28px、999px、50%）。`);
+}
+
+/** 一行里偏蓝紫的灰色，十六进制与 rgb() 写法都检查。 */
+function grayProblems(text) {
+  const colors = [
+    ...[...text.matchAll(/(?<![\w-])#([0-9a-f]{6})(?:[0-9a-f]{2})?\b/gi)].map((match) => ({
+      label: match[0],
+      channels: [0, 2, 4].map((offset) => Number.parseInt(match[1].slice(offset, offset + 2), 16)),
+    })),
+    ...[...text.matchAll(/rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/g)].map((match) => ({
+      label: match[0],
+      channels: match.slice(1, 4).map(Number),
+    })),
+  ];
+  return colors
+    .filter(({ channels: [red, green, blue] }) => isCoolGray(red, green, blue))
+    .map(({ label }) => `${label} 是偏紫的旧灰色，改用中性灰或主题 token。`);
+}
+
+/** 一行里不在档位内的白色文字透明度。 */
+function textAlphaProblems(text) {
+  const match = text.match(/(?<![-\w])color:\s*#ffffff([0-9a-f]{2})\s*;/i);
+  if (!match?.[1] || allowedTextAlphas.has(match[1].toLowerCase())) return [];
+  return [`文字颜色 #ffffff${match[1]} 不在透明度档位内（40/50/60/70/80%）。`];
+}
+
+/** 检查一份 CSS：离群圆角、偏蓝紫的旧灰色与不在档位里的文字透明度。 */
+export function inspectStyleSource(source) {
+  return source
+    .split("\n")
+    .flatMap((text, index) =>
+      [...radiusProblems(text), ...grayProblems(text), ...textAlphaProblems(text)].map(
+        (message) => ({ line: index + 1, message }),
+      ),
+    );
+}
+
 /** Enforce component boundaries; visual values remain governed by DESIGN.md. */
 function checkButtonProps(node, attrs, component, file, report) {
   if (attrs.has("onClick")) report(node, "HeroUI 操作组件使用 onPress；切换组件使用 onChange。");
@@ -121,8 +194,12 @@ async function checkDirectory(directory) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const file = path.join(directory, entry.name);
     if (entry.isDirectory()) errors += await checkDirectory(file);
-    else if (file.endsWith(".tsx")) {
-      for (const violation of inspectUiSource(await readFile(file, "utf8"), file)) {
+    else if (file.endsWith(".tsx") || file.endsWith(".css")) {
+      const source = await readFile(file, "utf8");
+      const violations = file.endsWith(".css")
+        ? inspectStyleSource(source)
+        : inspectUiSource(source, file);
+      for (const violation of violations) {
         console.error(`${file}:${violation.line}: ${violation.message}`);
         errors++;
       }
@@ -133,5 +210,5 @@ async function checkDirectory(directory) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const errors = await checkDirectory("apps/web/src");
   if (errors) process.exitCode = 1;
-  else console.log("HeroUI component conventions passed.");
+  else console.log("HeroUI component and style conventions passed.");
 }

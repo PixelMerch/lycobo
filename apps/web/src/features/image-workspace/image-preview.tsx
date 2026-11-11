@@ -2,15 +2,17 @@ import { Modal } from "@heroui/react";
 import { motion } from "motion/react";
 import type { RefObject } from "react";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
 import { ConfirmDialog } from "../../components/overlays/confirm-dialog";
 import { DialogClose } from "../../components/overlays/dialog-close";
 import { useCenteredDialogMotion } from "../../components/overlays/use-centered-dialog-motion";
+import { useAppNavigate } from "../../i18n/use-localized-navigation";
 import { useImageSession } from "../generation/generation-client";
 import { ImagePreviewRail } from "./image-preview-rail";
 import { repairDraftKey, useRepairDrafts } from "./local-edit/local-repair-state";
 import "../../styles/fullscreen-dialog.css";
 import "./image-preview.css";
+import { useMessages } from "../../i18n/messages";
+import { imageWorkspaceMessages } from "./image-workspace-messages";
 
 const PreviewWorkspace = lazy(() => import("./preview-workspace"));
 
@@ -56,8 +58,9 @@ export function ImagePreviewDialog({
   onLoadMore?: () => Promise<unknown>;
   onViewHistory?: () => void;
 }) {
+  const t = useMessages(imageWorkspaceMessages);
   const images = originalImages;
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const historyTask = useRef<string | null>(null);
   const [repair, setRepair] = useState(false);
   const [exitConfirm, setExitConfirm] = useState(false);
@@ -102,7 +105,7 @@ export function ImagePreviewDialog({
     >
       <Modal.Backdrop className="fullscreen-dialog__backdrop image-preview-backdrop">
         <Modal.Container size="full" className="fullscreen-dialog__container">
-          <Modal.Dialog className="image-preview-dialog" aria-label="图片预览">
+          <Modal.Dialog className="image-preview-dialog" aria-label={t.preview}>
             <motion.div
               ref={surface}
               className="image-preview"
@@ -112,10 +115,10 @@ export function ImagePreviewDialog({
               <Suspense
                 fallback={
                   <div className="preview-workspace-loading" role="status">
-                    正在打开图片画布…
+                    {t.openingCanvas}
                     <DialogClose
                       fullScreen
-                      label="关闭图片预览"
+                      label={t.closePreview}
                       className="preview-loading-close"
                     />
                   </div>
@@ -148,9 +151,9 @@ export function ImagePreviewDialog({
             </motion.div>
             <ConfirmDialog
               isOpen={exitConfirm}
-              title="退出局部编辑？"
-              content="当前选区和修改说明不会保存，退出后会清空。"
-              closeLabel="关闭退出确认"
+              title={t.exitTitle}
+              content={t.exitContent}
+              closeLabel={t.closeExit}
               onCancel={() => setExitConfirm(false)}
               onConfirm={discardAndClose}
             />

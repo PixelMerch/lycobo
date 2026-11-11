@@ -1,0 +1,190 @@
+/* 超宽屏：工作区最宽为 1920 屏的内容宽度（1872px），更宽时三栏一起居中；1920 及以下不受影响。 */
+.unified-workspace {
+  max-width: 1872px;
+  margin-inline: auto;
+}
+@media (min-width: 1921px) {
+  .back-to-top-button {
+    right: calc(var(--content-padding) + 96px + 34px + 16px + (100% - 1920px) / 2);
+  }
+}
+
+/* 桌面（≥1024px）：工具坞改成参数栏左侧的竖排工具栏，和参数栏共用第一列；每项图标在左、名称在右，
+ * 名称单行显示（中文 168px、英文 224px 宽），收起后只剩 64px 宽的图标。历史上方是 48px 的“生成记录”
+ * 标题行，与右栏“我的素材”同一行：工具栏、参数栏的顶边和两个标题文字对齐，第一张任务卡和第一张
+ * 缩略图在标题行下方 12px 处对齐。
+ * 窄屏仍是历史上方的横排工具坞，不显示标题行。 */
+.workspace-history-heading {
+  display: none;
+}
+.workspace-history-title {
+  margin: 0;
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
+  font-weight: var(--weight-semibold);
+}
+.workspace-composer-toggle.button {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .workspace.unified-workspace {
+    --workspace-toolbar-height: 48px;
+    --workspace-tool-rail-width: 168px;
+    /* 左侧工具栏和参数栏的顶边与“生成记录”“我的素材”标题文字的顶边对齐（标题在 48px 行内居中）。 */
+    --workspace-column-top: calc((var(--workspace-toolbar-height) - var(--leading-base)) / 2);
+    grid-template-columns: calc(var(--workspace-tool-rail-width) + 12px + 300px) minmax(0, 1fr);
+  }
+  .workspace.unified-workspace:lang(en) {
+    --workspace-tool-rail-width: 224px;
+  }
+  .workspace.unified-workspace[data-tool-rail="collapsed"] {
+    --workspace-tool-rail-width: 64px;
+  }
+  .unified-workspace > :is(.composer-panel, .workspace-tool-dock) {
+    top: calc(var(--header-height) + var(--content-padding) + var(--workspace-column-top));
+    height: calc(
+      100dvh -
+      var(--header-height) -
+      2 *
+      var(--content-padding) -
+      var(--workspace-column-top)
+    );
+    max-height: calc(
+      100dvh -
+      var(--header-height) -
+      2 *
+      var(--content-padding) -
+      var(--workspace-column-top)
+    );
+    margin-top: var(--workspace-column-top);
+  }
+  .unified-workspace > .composer-panel {
+    margin-left: calc(var(--workspace-tool-rail-width) + 12px);
+  }
+  .unified-workspace .generation-history {
+    padding-top: 0;
+  }
+  .unified-workspace .history-rail-open.button {
+    font-weight: var(--weight-medium);
+  }
+  /* 右栏标题和列表之间本身有 6px 间距，再加 6px，第一张缩略图正好落在同一条顶边。 */
+  .unified-workspace .history-rail-title {
+    margin-bottom: 6px;
+  }
+  .workspace-history-heading {
+    display: flex;
+  }
+  .unified-workspace > .workspace-tool-dock {
+    grid-column: 1;
+    justify-self: start;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    width: var(--workspace-tool-rail-width);
+    padding: 6px 6px 10px;
+    border-radius: 20px;
+    background: #141414;
+  }
+  .unified-workspace > .workspace-tool-dock::before {
+    display: none;
+  }
+  .workspace-tool-dock .workspace-tool-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    width: 100%;
+    padding: 0;
+    background: transparent;
+    overflow: visible;
+  }
+  .workspace-tool-dock .workspace-tool-shortcut.button {
+    gap: 10px;
+    width: 100%;
+    padding: 8px 12px 8px 8px;
+  }
+  .workspace-tool-dock .workspace-tool-label {
+    min-width: 0;
+  }
+  .workspace-tool-dock .workspace-tool-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* 收起：只显示图标块，名称藏起来（按钮的可访问名称仍是工具名，悬停有提示）。 */
+  .unified-workspace[data-tool-rail="collapsed"] .workspace-tool-shortcut.button {
+    justify-content: center;
+    padding: 8px 0;
+  }
+  .unified-workspace[data-tool-rail="collapsed"] .workspace-tool-label {
+    display: none;
+  }
+  .workspace-composer-toggle.button {
+    display: inline-flex;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    /* 收起按钮放在工具栏底部右侧，与左侧图标块的内缩对称；收起成图标时居中。 */
+    align-self: flex-end;
+    margin: auto 8px 0 0;
+    border-radius: 12px;
+    background: transparent;
+    color: #ffffffb3;
+  }
+  .unified-workspace[data-tool-rail="collapsed"] .workspace-composer-toggle.button {
+    align-self: center;
+    margin-right: 0;
+  }
+  .workspace-composer-toggle.button:is([data-hovered="true"], [data-focus-visible="true"]) {
+    background: var(--fill-medium);
+    color: var(--foreground);
+  }
+}
+@media (min-width: 1301px) {
+  .workspace.unified-workspace {
+    grid-template-columns:
+      calc(var(--workspace-tool-rail-width) + 12px + 320px) minmax(0, 1fr)
+      var(--workspace-history-width);
+  }
+}
+@media (min-width: 1700px) {
+  .workspace.unified-workspace {
+    grid-template-columns:
+      calc(var(--workspace-tool-rail-width) + 12px + 360px) minmax(0, 1fr)
+      var(--workspace-history-width);
+  }
+}
+
+/* 紧凑视图：结果行高最多 240px，提示词两行，参考图 48px，一屏多看几组；手机不提供切换。 */
+@media (min-width: 768px) {
+  .unified-workspace[data-density="compact"] .proportional-results[data-count] > div {
+    --result-height: min(240px, 60dvh, calc(100cqw / var(--result-max-ratio)));
+  }
+  .unified-workspace[data-density="compact"] .history-prompt .prompt-collapsed {
+    -webkit-line-clamp: 2;
+  }
+  .unified-workspace[data-density="compact"] .history-prompt .generation-output-thumbnail {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+  }
+}
+.workspace-density-toggle.toggle-button-group {
+  flex: none;
+  gap: 2px;
+  margin-left: auto;
+  padding: 4px;
+  border-radius: 12px;
+  background: #141414;
+}
+.workspace-density-toggle .toggle-button {
+  --toggle-button-bg: transparent;
+  --toggle-button-bg-hover: #ffffff0a;
+  --toggle-button-bg-pressed: #ffffff0a;
+  --toggle-button-fg: #ffffff99;
+  --toggle-button-bg-selected: var(--fill-medium);
+  --toggle-button-bg-selected-hover: var(--fill-strong);
+  --toggle-button-bg-selected-pressed: var(--fill-strong);
+  --toggle-button-fg-selected: var(--foreground);
+  border-radius: 8px;
+}

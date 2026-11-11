@@ -13,8 +13,12 @@ import { PreviewCanvasToolbar } from "./preview-canvas-toolbar";
 import { PreviewDotGrid } from "./preview-dot-grid";
 import { previewDefaultZoom, previewMinZoom, usePreviewZoom } from "./use-preview-zoom";
 import "./preview-workspace.css";
+import { useLocale } from "../../i18n/locale-store";
+import { useMessages } from "../../i18n/messages";
+import { displayPrompt } from "../generation/prompt-display";
+import { imageWorkspaceMessages } from "./image-workspace-messages";
 
-/** One persistent image, viewport and tool dock; only its property panel changes. */
+/** 图片预览工作区：图片、视口与工具坞常驻，只切换右侧属性面板。 */
 export default function PreviewWorkspace({
   source,
   meta,
@@ -28,11 +32,12 @@ export default function PreviewWorkspace({
   onRepairChange: (repairing: boolean) => void;
   onPreview: (image: PreviewImage) => void;
 }) {
+  const t = useMessages(imageWorkspaceMessages);
   const catalog = useModelPresentation();
+  const locale = useLocale();
   const editor = useLocalRepair(source, meta, repairing ? "rect" : "select");
   const { zoom, setZoom, wheelZoom } = usePreviewZoom();
-  /* Task progress is announced in the bottom-right notice instead of the form,
-   * so the editor keeps only inputs and the submit action. */
+  /* 任务进度在右下角提示里播报，表单里只留输入和提交。 */
   useRepairNotice({
     jobId: editor.draft.jobId,
     status: editor.job.data?.status,
@@ -59,12 +64,12 @@ export default function PreviewWorkspace({
     setZoom(previewDefaultZoom);
     setPan({ x: 0, y: 0 });
   };
-  const size = source.width && source.height ? `${source.width} x ${source.height}` : "尺寸待同步";
+  const size = source.width && source.height ? `${source.width} x ${source.height}` : t.sizePending;
   return (
     <>
       <section
         className="image-preview-stage preview-canvas-stage preview-dot-surface"
-        aria-label="图片预览"
+        aria-label={t.preview}
         ref={stage}
       >
         <PreviewDotGrid stage={stage} />
@@ -78,7 +83,7 @@ export default function PreviewWorkspace({
         />
         <section
           className="image-preview-frame"
-          aria-label="图片画布"
+          aria-label={t.canvas}
           tabIndex={-1}
           data-zoomed={zoomed}
           data-pannable={!repairing || tool === "hand"}
@@ -93,7 +98,7 @@ export default function PreviewWorkspace({
           <AssetImage
             className="image-preview-image"
             assetId={source.id}
-            alt={meta.prompt || "生成图片"}
+            alt={meta.prompt ? displayPrompt(meta.prompt, locale) : t.generatedImage}
             draggable={false}
             style={{ scale: `${zoom / 100}`, translate: `${pan.x}px ${pan.y}px` }}
           />
@@ -131,7 +136,7 @@ export default function PreviewWorkspace({
         <ImagePreviewDetails
           source={source}
           meta={meta}
-          modelName={modelDisplayName(meta.model, catalog.data?.models ?? [])}
+          modelName={modelDisplayName(meta.model, catalog.data?.models ?? [], locale)}
           onRepair={enterRepair}
         />
       )}
@@ -245,15 +250,22 @@ function PreviewZoomBar({
   setZoom: ReturnType<typeof usePreviewZoom>["setZoom"];
   fit: () => void;
 }) {
+  const t = useMessages(imageWorkspaceMessages);
   return (
     <footer className="image-preview-bar">
       <span className="image-preview-bar-size">{size}</span>
-      <Button size="sm" variant="ghost" className="preview-fit" aria-label="适应画布" onPress={fit}>
-        适应画布
+      <Button
+        size="sm"
+        variant="ghost"
+        className="preview-fit"
+        aria-label={t.fitCanvas}
+        onPress={fit}
+      >
+        {t.fitCanvas}
       </Button>
       <Slider
         className="image-preview-zoom"
-        aria-label="缩放"
+        aria-label={t.zoom}
         minValue={previewMinZoom}
         maxValue={500}
         step={5}
@@ -265,7 +277,7 @@ function PreviewZoomBar({
           <Slider.Thumb />
         </Slider.Track>
       </Slider>
-      <output className="image-preview-zoom-value" aria-label="画布缩放比例">
+      <output className="image-preview-zoom-value" aria-label={t.zoomLevel}>
         {Math.round(zoom)}%
       </output>
     </footer>

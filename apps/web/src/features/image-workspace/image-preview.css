@@ -18,7 +18,7 @@
 .image-preview {
   /* Information, thumbnails and close control share their own inset; the canvas is edge-to-edge. */
   --image-preview-inset: 40px;
-  background: #0b0b0e;
+  background: #0b0b0b;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 420px 96px;
   grid-template-rows: minmax(0, 1fr);
@@ -79,7 +79,7 @@
   grid-row: 1;
   min-height: 0;
   padding: var(--image-preview-inset) var(--space-6) var(--space-6);
-  border-left: 1px solid #1f1f24;
+  border-left: 1px solid #1f1f1f;
   overflow-y: auto;
 }
 .image-preview-tools-footer {
@@ -92,8 +92,8 @@
   height: 40px;
   min-height: 40px;
   border: 0;
-  border-radius: 10px;
-  background: #2a2a2a;
+  border-radius: 12px;
+  background: var(--fill-medium);
   color: #fff;
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
@@ -101,7 +101,7 @@
   box-shadow: none;
 }
 .image-preview-edit-action.button:is(:hover, [data-hovered="true"]) {
-  background: var(--control-hover-fill);
+  background: var(--fill-strong);
   color: #fff;
 }
 @media (pointer: coarse), (max-width: 767px) {
@@ -177,7 +177,7 @@
   align-items: center;
   gap: 6px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #1f1f24;
+  border-bottom: 1px solid #1f1f1f;
   color: #8f8f8f;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
@@ -230,7 +230,7 @@
   margin: 0;
   padding: var(--space-3) 14px;
   border-radius: 8px;
-  background: #111114;
+  background: #111111;
   color: #cfcfcf;
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
@@ -240,7 +240,7 @@
 .image-preview-description-text {
   padding: 12px 14px;
   border-radius: 8px;
-  background: #111114;
+  background: #111111;
 }
 .image-preview-section .image-preview-prompt {
   padding: 0;
@@ -266,7 +266,7 @@
   min-height: 44px;
   padding: 8px 12px;
   border-radius: 999px;
-  background: #17171b;
+  background: #171717;
   color: #8f8f8f;
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
@@ -290,7 +290,7 @@
   height: 5.4px;
   border: 0;
   border-radius: 999px;
-  background: #3a3a42;
+  background: var(--fill-strong);
   box-shadow: none;
 }
 .image-preview-zoom .slider__fill {
@@ -302,8 +302,8 @@
   width: 13px;
   height: 13px;
   border: 1.5px solid #fff;
-  border-radius: 3px;
-  background: #0b0b0e;
+  border-radius: 4px;
+  background: #0b0b0b;
   box-shadow: none;
   transition: transform 140ms ease;
 }
@@ -334,7 +334,7 @@
   grid-row: 1;
   min-height: 0;
   padding: var(--image-preview-inset) 16px 24px;
-  border-left: 1px solid #1f1f24;
+  border-left: 1px solid #1f1f1f;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;

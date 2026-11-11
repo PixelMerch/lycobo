@@ -7,7 +7,7 @@ import { textileViews } from "../../packages/contracts/src/images/textile-genera
 import { apiFixture, mockImageEvents } from "./image-api-fixture";
 
 const png = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",
   "base64",
 );
 
@@ -22,7 +22,7 @@ test("textile angles submit one durable ten-image job and isolate history across
         eventsEnabled: true,
         editsEnabled: true,
         unitCredits: 2,
-        models: ["gpt-image-2", "gpt-image-2.5", "nano-banana-2.1"].map((id) => ({
+        models: ["gpt-image-2", "gpt-image-2.6", "nano-banana-2.1"].map((id) => ({
           id,
           enabledResolutions: ["1K", "1.5K", "2K", "4K"],
         })),
@@ -30,16 +30,17 @@ test("textile angles submit one durable ten-image job and isolate history across
     }),
   );
   const jobs: ImageJob[] = [];
-  const referenceIds: string[] = [];
-  const uploadedReferences: Buffer[] = [];
+  // 参考图最多三张并行上传，到达顺序不固定，所以按内容认图：只有主图会被压缩，详情图原样上传。
+  const uploads: { id: string; body: Buffer }[] = [];
+  const mainUploads = () => uploads.filter((upload) => !upload.body.equals(png));
+  const detailUploads = () => uploads.filter((upload) => upload.body.equals(png));
   await page.route("**/api/v1/image-assets", async (route) => {
     if (route.request().method() !== "POST")
       return route.fulfill({ json: apiFixture({ data: [] }) });
     const id = crypto.randomUUID();
     const body = route.request().postDataBuffer();
     if (!body) throw new Error("Missing reference upload");
-    uploadedReferences.push(body);
-    referenceIds.push(id);
+    uploads.push({ id, body });
     return route.fulfill({ json: apiFixture({ id }) });
   });
   await page.route("**/api/v1/image-assets/**/content*", (route) =>
@@ -51,8 +52,15 @@ test("textile angles submit one durable ten-image job and isolate history across
       const input = imageGenerationInputSchema.parse(route.request().postDataJSON());
       expect(input.textileSet?.views).toEqual(textileViews.map((view) => view.id));
       expect(input.count).toBe(10);
-      expect(input.referenceAssetIds).toEqual(referenceIds);
-      expect(input.model).toBe("gpt-image-2.5");
+      // 主图排在第一；五张详情图内容相同，彼此的顺序无法区分。
+      const [mainId, ...detailIds] = input.referenceAssetIds;
+      expect(mainId).toBe(mainUploads()[0]?.id);
+      expect([...detailIds].sort()).toEqual(
+        detailUploads()
+          .map((upload) => upload.id)
+          .sort(),
+      );
+      expect(input.model).toBe("gpt-image-2.6");
       expect(input.textileSet?.version).toBe(5);
       expect(input.resolution).toBe("2K");
       expect(input.quality).toBe("medium");
@@ -104,7 +112,7 @@ test("textile angles submit one durable ten-image job and isolate history across
     input.dispatchEvent(new Event("change", { bubbles: true }));
   });
   await expect(page.getByText("第 1 张图片超过单张 50 MB 的上限，当前为 51.00 MB。")).toBeVisible();
-  expect(uploadedReferences).toHaveLength(0);
+  expect(uploads).toHaveLength(0);
 
   const originalSize = await mainFile.evaluate(async (input: HTMLInputElement) => {
     const canvas = document.createElement("canvas");
@@ -149,8 +157,10 @@ test("textile angles submit one durable ten-image job and isolate history across
   await expect(submit).toBeEnabled();
   await submit.click();
   await expect(page.locator(".generation-job")).toHaveCount(1);
-  expect(referenceIds.length).toBe(6);
-  const compressed = uploadedReferences[0];
+  expect(uploads).toHaveLength(6);
+  expect(mainUploads()).toHaveLength(1);
+  expect(detailUploads()).toHaveLength(5);
+  const compressed = mainUploads()[0]?.body;
   if (!compressed) throw new Error("Missing compressed main image");
   expect(compressed.length).toBeLessThanOrEqual(5 * 1024 * 1024);
   const dimensions = await page.evaluate(async (encoded) => {
@@ -162,7 +172,6 @@ test("textile angles submit one durable ten-image job and isolate history across
   }, compressed.toString("base64"));
   expect(dimensions.width).toBeLessThanOrEqual(3840);
   expect(dimensions.height / dimensions.width).toBeCloseTo(3100 / 5600);
-  expect(uploadedReferences.slice(1)).toEqual(Array.from({ length: 5 }, () => png));
   await expect(page.locator(".reference-tile")).toHaveCount(0);
   await expect(page.locator(".textile-selected-view")).toHaveCount(0);
   await expect(page.getByRole("radio", { name: "2K", exact: true })).toHaveAttribute(

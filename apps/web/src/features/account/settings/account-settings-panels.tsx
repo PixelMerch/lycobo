@@ -1,26 +1,29 @@
-import { Avatar, Button, Chip } from "@heroui/react";
+import { Button, Chip } from "@heroui/react";
 import type { EnterpriseIdentity } from "@lycoboai/contracts";
 import { IconCopy, IconLogout, IconUsersGroup } from "@tabler/icons-react";
 import { UiIcon } from "../../../components/ui-icon";
+import { useLocale } from "../../../i18n/locale-store";
+import { useMessages } from "../../../i18n/messages";
 import { copyToClipboard } from "../../../lib/clipboard";
 import { useErrorToast } from "../../../lib/error-toast";
 import { useEnterpriseLogout } from "../../auth/auth-client";
 import { roleLabel } from "../account-format";
+import { AccountAvatar } from "../avatar/account-avatar";
+import { AvatarPresetPicker } from "./account-avatar-picker";
+import { accountSettingsMessages } from "./account-settings-messages";
 import { SettingsGroup, SettingsRow } from "./account-settings-rows";
 
-/** Large identity header at the top of the profile panel. */
-function ProfileHero({ account }: { account: EnterpriseIdentity }) {
-  const initial = Array.from(account.account)[0]?.toUpperCase() ?? "";
+/** 个人资料面板顶部的大号身份信息。 */
+function ProfileHero({ account, role }: { account: EnterpriseIdentity; role: string }) {
+  const t = useMessages(accountSettingsMessages);
   return (
-    <section className="settings-hero" aria-label="账号信息">
-      <Avatar className="settings-hero-avatar" aria-hidden="true">
-        <Avatar.Fallback>{initial}</Avatar.Fallback>
-      </Avatar>
+    <section className="settings-hero" aria-label={t.accountInfo}>
+      <AccountAvatar account={account} className="settings-hero-avatar" />
       <div className="settings-hero-main">
         <strong title={account.account}>{account.account}</strong>
         <div className="settings-hero-meta">
           <Chip size="sm" className="account-chip">
-            企业{roleLabel(account.role)}
+            {role}
           </Chip>
           <span>{account.uid ? `UID ${account.uid}` : "UID —"}</span>
         </div>
@@ -29,24 +32,30 @@ function ProfileHero({ account }: { account: EnterpriseIdentity }) {
   );
 }
 
-export function AccountSettingsProfile({ account }: { account: EnterpriseIdentity }) {
+/**
+ * 账户分区：基本资料（头像只能选预设）与企业身份。
+ * 手机没有左侧栏，withIdentity 时在顶部显示身份、底部放退出登录。
+ */
+export function AccountSettingsProfile({
+  account,
+  withIdentity,
+}: {
+  account: EnterpriseIdentity;
+  withIdentity: boolean;
+}) {
   const logout = useEnterpriseLogout();
+  const t = useMessages(accountSettingsMessages);
+  const role = t.enterpriseRole(roleLabel(account.role, useLocale()));
   useErrorToast(logout.error?.message);
   const uid = account.uid;
   return (
     <div className="account-settings-section">
-      <ProfileHero account={account} />
-      <SettingsGroup title="基本资料">
-        <SettingsRow
-          label="头像"
-          hint="头像上传暂未开放"
-          action={
-            <Button size="sm" variant="secondary" isDisabled>
-              上传头像
-            </Button>
-          }
-        />
-        <SettingsRow label="登录账号" value={account.account} />
+      {withIdentity && <ProfileHero account={account} role={role} />}
+      <SettingsGroup title={t.basicInfo}>
+        <SettingsRow label={t.avatar} hint={t.avatarHint}>
+          <AvatarPresetPicker account={account} />
+        </SettingsRow>
+        <SettingsRow label={t.loginAccount} value={account.account} />
         <SettingsRow
           label="UID"
           value={uid ?? "—"}
@@ -56,9 +65,9 @@ export function AccountSettingsProfile({ account }: { account: EnterpriseIdentit
                 isIconOnly
                 size="sm"
                 variant="ghost"
-                aria-label="复制 UID"
+                aria-label={t.copyUid}
                 className="settings-row-icon"
-                onPress={() => void copyToClipboard(uid, "UID 已复制")}
+                onPress={() => void copyToClipboard(uid, t.uidCopied)}
               >
                 <UiIcon icon={IconCopy} size="small" />
               </Button>
@@ -66,35 +75,39 @@ export function AccountSettingsProfile({ account }: { account: EnterpriseIdentit
           }
         />
       </SettingsGroup>
-      <SettingsGroup title="企业身份">
-        <SettingsRow label="身份" value={`企业${roleLabel(account.role)}`} />
-        <SettingsRow label="登录方式" value="企业账号登录" />
+      <SettingsGroup title={t.enterpriseIdentity}>
+        <SettingsRow label={t.identity} value={role} />
+        <SettingsRow label={t.loginMethod} value={t.enterpriseLogin} />
       </SettingsGroup>
-      <div className="settings-footer">
-        <Button
-          size="sm"
-          variant="secondary"
-          className="account-settings-logout"
-          isPending={logout.isPending}
-          onPress={() => logout.mutate()}
-        >
-          <UiIcon icon={IconLogout} size="small" />
-          退出登录
-        </Button>
-      </div>
+      {withIdentity && (
+        <div className="settings-footer">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="account-settings-logout"
+            isPending={logout.isPending}
+            onPress={() => logout.mutate()}
+          >
+            <UiIcon icon={IconLogout} size="small" />
+            {t.logout}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
 
+/** 企业成员面板：成员管理尚未开放，只说明用途。 */
 export function AccountSettingsMembers() {
+  const t = useMessages(accountSettingsMessages);
   return (
     <div className="account-settings-section">
       <SettingsGroup
-        title="企业成员"
-        description="管理员可为企业添加成员，成员共用企业积分。"
+        title={t.members}
+        description={t.membersDescription}
         action={
           <Button size="sm" variant="secondary" isDisabled>
-            添加子账号
+            {t.addMember}
           </Button>
         }
       >
@@ -102,8 +115,8 @@ export function AccountSettingsMembers() {
           <span className="settings-empty-mark" aria-hidden="true">
             <UiIcon icon={IconUsersGroup} size="action" />
           </span>
-          <strong>成员管理暂未开放</strong>
-          <p>开放后可在这里添加成员并查看成员列表。</p>
+          <strong>{t.membersUnavailable}</strong>
+          <p>{t.membersLater}</p>
         </div>
       </SettingsGroup>
     </div>

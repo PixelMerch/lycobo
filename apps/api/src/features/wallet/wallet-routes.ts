@@ -3,6 +3,7 @@ import type { Hono } from "hono";
 import { z } from "zod";
 import { type Env, fail, type ImageApiDependencies } from "../images/route-context";
 
+/** 注册共享积分余额、收支明细与充值订单的读取接口。 */
 export function registerImageWallet(app: Hono<Env>, deps: ImageApiDependencies) {
   app.get("/wallet", async (c) =>
     c.json({
@@ -14,6 +15,7 @@ export function registerImageWallet(app: Hono<Env>, deps: ImageApiDependencies) 
     const parsed = z
       .object({
         limit: z.coerce.number().int().min(1).max(100).default(20),
+        view: z.enum(["spent", "earned"]).optional(),
         before: z
           .string()
           .regex(/^[1-9][0-9]{0,18}$/)
@@ -27,6 +29,7 @@ export function registerImageWallet(app: Hono<Env>, deps: ImageApiDependencies) 
         c.get("principal"),
         parsed.data.limit,
         parsed.data.before,
+        parsed.data.view,
       ),
     });
   });

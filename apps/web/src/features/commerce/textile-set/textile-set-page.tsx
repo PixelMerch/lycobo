@@ -14,30 +14,39 @@ import { textileViewImages, textileViews } from "./textile-views";
 import { TextileViewsDialog } from "./textile-views-dialog";
 import { useTextileGeneration } from "./use-textile-generation";
 import "./textile-set.css";
+import { useMessages } from "../../../i18n/messages";
+import { textileMessages } from "./textile-messages";
+import { textileViewMessages } from "./textile-view-messages";
 
+/** 家纺裂变的参数面板：主图、详情图、裂变类型、比例与分辨率。 */
 export function TextileSetPage() {
   const { mainImage, detailImages, views, ratio, resolution, update } = useTextileSetDraft();
+  const t = useMessages(textileMessages);
   const viewsAnchor = useRef<HTMLDivElement>(null);
   const generation = useTextileGeneration();
+  const cost = views.length * imageUnitCredits;
+  const showCost = generation.canGenerate && !generation.pending && cost > 0;
   const costDescriptionId = useId();
+  const costDescription = showCost ? t.runCost(views.length, cost) : undefined;
+  const buttonDescription = generation.pending ? t.confirmNoCharge : costDescription;
   return (
     <>
       <div ref={viewsAnchor} className="textile-views-anchor" aria-hidden="true" />
-      <section className="composer-panel" aria-label="家纺裂变参数">
+      <section className="composer-panel" aria-label={t.parameters}>
         <div className="composer-scroll">
           <WorkspaceComposerTitle />
           <TextileImageField
-            label="主图"
+            label={t.mainImage}
             required
-            description="上传清晰的家纺主图，完整展示床品"
+            description={t.mainImageHint}
             exampleSrc="/studio/bedroom-thumb.webp"
             value={mainImage ? [mainImage] : []}
             onChange={(images) => update({ mainImage: images[0] ?? null })}
             number={1}
           />
           <TextileImageField
-            label="详情图"
-            description="补充面料、花型或床品局部细节"
+            label={t.detailImages}
+            description={t.detailImagesHint}
             exampleSrc="/studio/textile-views/fabric.webp"
             value={detailImages}
             maxImages={5}
@@ -45,17 +54,17 @@ export function TextileSetPage() {
             number={2}
           />
           <TextileViewField views={views} update={update} viewsAnchor={viewsAnchor} />
-          <section className="parameter-group" aria-label="图片比例">
+          <section className="parameter-group" aria-label={t.aspectRatio}>
             <div className="ratio-heading">
-              <h2>图片比例</h2>
+              <h2>{t.aspectRatio}</h2>
               <span className="muted">{ratio}</span>
             </div>
             <HomeRatioPicker value={ratio} onChange={(value) => update({ ratio: value })} />
           </section>
           <fieldset className="parameter-group">
-            <legend>分辨率</legend>
+            <legend>{t.resolution}</legend>
             <ToggleButtonGroup
-              aria-label="分辨率"
+              aria-label={t.resolution}
               className="parameter-options"
               isDetached
               disallowEmptySelection
@@ -93,24 +102,20 @@ export function TextileSetPage() {
             aria-describedby={costDescriptionId}
           >
             {generation.submitting && (
-              <Spinner size="md" color="current" role="status" aria-label="正在提交套图任务" />
+              <Spinner size="md" color="current" role="status" aria-label={t.submitting} />
             )}
-            {generation.pending && !generation.submitting ? "确认上次提交" : "立即生成"}
-            {(!generation.pending || generation.submitting) && (
+            {generation.pending && !generation.submitting ? t.confirmLastSubmission : t.generateNow}
+            {showCost && (
               <span className="generate-credit-cost" aria-hidden="true">
                 <CreditCoin />
-                <span>{views.length * imageUnitCredits}</span>
+                <span>{cost}</span>
               </span>
             )}
           </Button>
           <span id={costDescriptionId} className="sr-only">
-            {generation.pending
-              ? "确认上次提交，不会重复扣费"
-              : `本次生成 ${views.length} 张，消耗 ${views.length * imageUnitCredits} 积分`}
+            {buttonDescription}
           </span>
-          {generation.unavailable && (
-            <p className="textile-service-status">当前服务尚未启用参考图生成</p>
-          )}
+          {generation.unavailable && <p className="textile-service-status">{t.serviceDisabled}</p>}
         </div>
       </section>
     </>
@@ -129,22 +134,24 @@ function TextileViewField({
   const viewsTrigger = useRef<HTMLButtonElement>(null);
   const viewsPressWasOpen = useRef<boolean | null>(null);
   const [viewsOpen, setViewsOpen] = useState(false);
+  const t = useMessages(textileMessages);
+  const viewNames = useMessages(textileViewMessages);
   const selectedViews = textileViews.filter((view) => views.includes(view.id));
   return (
-    <section className="parameter-group textile-view-field" aria-label="裂变类型">
+    <section className="parameter-group textile-view-field" aria-label={t.viewTypes}>
       <div className="field-title">
         <h2>
           <span aria-hidden="true" className="textile-required">
             *
           </span>
-          裂变类型
+          {t.viewTypes}
         </h2>
         {selectedViews.length > 0 && (
           <Button
             variant="tertiary"
             size="sm"
             className="clear-references"
-            aria-label="清除裂变类型"
+            aria-label={t.clearViews}
             onPress={() => {
               update({ views: [] });
               setViewsOpen(false);
@@ -152,7 +159,7 @@ function TextileViewField({
             }}
           >
             <UiIcon icon={IconTrash} size="small" />
-            清除
+            {t.clear}
           </Button>
         )}
       </div>
@@ -172,13 +179,13 @@ function TextileViewField({
                 />
               )}
             </span>
-            <span className="textile-selected-name">{view.name}</span>
+            <span className="textile-selected-name">{viewNames[view.id]}</span>
             <Button
               isIconOnly
               size="sm"
               variant="tertiary"
               className="textile-selected-remove"
-              aria-label={`移除裂变类型：${view.name}`}
+              aria-label={t.removeView(viewNames[view.id])}
               onPress={() => {
                 update({ views: views.filter((id) => id !== view.id) });
                 viewsTrigger.current?.focus();
@@ -192,7 +199,7 @@ function TextileViewField({
           <Button
             ref={viewsTrigger}
             onPointerDown={() => {
-              // Blur may close the non-modal popover before this press completes.
+              // 失焦可能在这次按下完成前就关闭非模态弹层，先记住按下时的开合状态。
               viewsPressWasOpen.current = viewsOpen;
             }}
             onKeyDown={(event) => {
@@ -204,10 +211,10 @@ function TextileViewField({
             }}
             variant="tertiary"
             className="textile-view-trigger"
-            aria-label="选择裂变类型"
+            aria-label={t.chooseViews}
           >
             <UiIcon icon={IconPlus} size="action" />
-            {!selectedViews.length && <span>选择裂变类型</span>}
+            {!selectedViews.length && <span>{t.chooseViews}</span>}
           </Button>
           {viewsOpen && (
             <TextileViewsDialog

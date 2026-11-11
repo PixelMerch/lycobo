@@ -8,6 +8,7 @@ import {
   videoReferenceLimit,
 } from "@lycoboai/contracts";
 import type { QueryClient } from "@tanstack/react-query";
+import { currentMessages } from "../../../i18n/messages";
 import type { useEnterpriseSession } from "../../auth/auth-client";
 import {
   ImageApiError,
@@ -16,6 +17,7 @@ import {
   type useGenerateImage,
 } from "../../generation/generation-client";
 import type { Draft } from "../../generation/studio-state";
+import { videoMessages } from "../video-messages";
 import { type emptyStoryboard, originalReference } from "./storyboard-state";
 
 export const source = "tk-storyboard";
@@ -61,7 +63,7 @@ async function preparePlanAttempt({
       owner,
       current().references,
     );
-    if (!originalAssetId) throw new Error("请上传商品图片");
+    if (!originalAssetId) throw new Error(currentMessages(videoMessages).uploadProduct);
     attempt = {
       key: crypto.randomUUID(),
       input: {
@@ -81,6 +83,7 @@ async function preparePlanAttempt({
   return attempt;
 }
 
+/** 取得分镜画面方案：已有方案时直接读取，否则提交新请求；处理中时提示稍后继续。 */
 export async function prepareStoryboardPlan({
   current,
   update,
@@ -104,10 +107,11 @@ export async function prepareStoryboardPlan({
       if (definitive(error)) save({ planAttempt: undefined });
       throw error;
     }
-    if (snapshot.status === "running") throw new Error("正在准备画面，请稍后继续");
+    if (snapshot.status === "running")
+      throw new Error(currentMessages(videoMessages).preparingRetry);
     if (snapshot.status !== "ready" || snapshot.items.length !== current().count) {
       save({ planAttempt: undefined });
-      throw new Error("画面方案未完成，请稍后重试");
+      throw new Error(currentMessages(videoMessages).framePlanFailed);
     }
     save({ planId: snapshot.id, planAttempt: undefined });
   }
@@ -143,6 +147,7 @@ async function retryStoryboardFrame(
   }
 }
 
+/** 提交分镜关键帧的生成任务，并把排队状态写回视频草稿。 */
 export async function submitStoryboardFrames({
   current,
   save,
@@ -173,7 +178,7 @@ export async function submitStoryboardFrames({
     ratio: "9:16" as const,
     resolution,
     count: String(snapshot.items.length),
-    quality: "标准" as const,
+    quality: "medium" as const,
   };
   await retryStoryboardFrame(
     batchId,
@@ -187,7 +192,8 @@ export async function submitStoryboardFrames({
   );
   if (!batchId || ownImagePending) {
     assertOwner();
-    if (!ownImagePending && !configured) throw new Error("画面生成服务暂时不可用");
+    if (!ownImagePending && !configured)
+      throw new Error(currentMessages(videoMessages).frameServiceDown);
     const target = ownImagePending ? current().progress.imageTarget : "batch";
     const items =
       target === "batch" || !target
@@ -233,6 +239,7 @@ function completedShots(job: ImageJob, plan: VariationPlan, originalAssetIds: st
     .slice(0, Math.min(storyboardVideoShotLimit, videoReferenceLimit - originalAssetIds.length));
 }
 
+/** 等待分镜画面生成完成并逐步保存进度，超过 8 分钟时提示稍后继续。 */
 export async function waitForImages(
   id: string,
   plan: VariationPlan,
@@ -257,9 +264,10 @@ export async function waitForImages(
     if (ready) return shots;
     await new Promise((resolve) => setTimeout(resolve, 4000));
   }
-  throw new Error("画面仍在制作，请稍后点击继续生成");
+  throw new Error(currentMessages(videoMessages).framesStillRunning);
 }
 
+/** 根据分镜编写视频提示词，处理中时提示稍后继续。 */
 export async function prepareVideoPrompt({
   current,
   save,
@@ -298,11 +306,12 @@ export async function prepareVideoPrompt({
       if (definitive(error)) save({ optimization: undefined });
       throw error;
     }
-    if (optimized.status === "running") throw new Error("正在编写视频提示词，请稍后继续");
+    if (optimized.status === "running")
+      throw new Error(currentMessages(videoMessages).writingPrompt);
     prompt = optimized.status === "ready" ? optimized.items[0]?.prompt : undefined;
     if (!prompt) {
       save({ optimization: undefined });
-      throw new Error("视频提示词未完成，请稍后继续");
+      throw new Error(currentMessages(videoMessages).promptUnfinished);
     }
     save({ optimization: { ...attempt, prompt } });
   }

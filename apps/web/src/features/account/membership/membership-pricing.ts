@@ -1,9 +1,10 @@
 /** Oii public pricing, checked 2026-11-02 and re-checked 2026-11-03. Display only; no payment SKU. */
 export type MembershipCycle = "monthly" | "quarterly" | "yearly";
+/** 三种订阅周期及其月数；名称与价格单位在 membership-messages.ts。 */
 export const membershipCycles = [
-  { id: "yearly", label: "年付", months: 12, unit: "/ 年" },
-  { id: "quarterly", label: "季付", months: 3, unit: "/ 季" },
-  { id: "monthly", label: "月付", months: 1, unit: "/ 月" },
+  { id: "yearly", months: 12 },
+  { id: "quarterly", months: 3 },
+  { id: "monthly", months: 1 },
 ] as const;
 
 export interface MembershipPlan {

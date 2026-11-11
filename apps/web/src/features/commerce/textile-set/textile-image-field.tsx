@@ -11,6 +11,8 @@ import { referenceDisplaySource } from "../../generation/references/reference-di
 import type { ReferenceImage } from "../../generation/studio-state";
 // The field brings its own styles so other tools (视频创作) can reuse it.
 import "./textile-set.css";
+import { currentMessages, useMessages } from "../../../i18n/messages";
+import { textileMessages } from "./textile-messages";
 
 const ImageViewer = lazy(() =>
   import("../../../components/image-viewer/image-viewer").then((module) => ({
@@ -24,12 +26,9 @@ function textileUploadError(
   previousCount: number,
   maxImages: number,
 ) {
-  if (replacing && files.length > 1) {
-    return "每次只能上传一张图片。";
-  }
-  if (!replacing && previousCount + files.length > maxImages) {
-    return `详情图最多上传 ${maxImages} 张。`;
-  }
+  const t = currentMessages(textileMessages);
+  if (replacing && files.length > 1) return t.oneAtATime;
+  if (!replacing && previousCount + files.length > maxImages) return t.detailLimit(maxImages);
   return referenceFileError(files);
 }
 
@@ -44,30 +43,20 @@ function nextTextileImages(
   return first ? value.map((image, position) => (position === index ? first : image)) : value;
 }
 
-export function TextileImageField({
-  label,
-  required = false,
-  description,
-  exampleSrc,
+// 读取用户选中的文件：校验数量与格式，新增或替换指定位置的图片，读取期间显示“读取中”。
+function useTextileImageChooser({
   value,
   onChange,
-  number,
-  maxImages = 1,
+  maxImages,
 }: {
-  label: string;
-  required?: boolean;
-  description: string;
-  exampleSrc: string;
   value: ReferenceImage[];
   onChange: (value: ReferenceImage[]) => void;
-  number: number;
-  maxImages?: number;
+  maxImages: number;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const replacement = useRef<number | null>(null);
   const [reading, setReading] = useState(false);
   const [error, setError] = useState("");
-  const [preview, setPreview] = useState<number | null>(null);
   const multiple = maxImages > 1;
   function openPicker(index: number | null = null) {
     replacement.current = index;
@@ -92,11 +81,43 @@ export function TextileImageField({
       const next = nextTextileImages(value, images, index, multiple);
       if (next !== value) onChange(next);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "图片无法读取，请检查文件后重试。");
+      setError(
+        error instanceof Error ? error.message : currentMessages(textileMessages).unreadable,
+      );
     } finally {
       setReading(false);
     }
   }
+  return { input, reading, error, setError, multiple, openPicker, choose };
+}
+
+/** 家纺裂变的图片上传区：主图或详情图，可预览、替换和清除。 */
+export function TextileImageField({
+  label,
+  required = false,
+  description,
+  exampleSrc,
+  value,
+  onChange,
+  number,
+  maxImages = 1,
+}: {
+  label: string;
+  required?: boolean;
+  description: string;
+  exampleSrc: string;
+  value: ReferenceImage[];
+  onChange: (value: ReferenceImage[]) => void;
+  number: number;
+  maxImages?: number;
+}) {
+  const { input, reading, error, setError, multiple, openPicker, choose } = useTextileImageChooser({
+    value,
+    onChange,
+    maxImages,
+  });
+  const [preview, setPreview] = useState<number | null>(null);
+  const t = useMessages(textileMessages);
   return (
     <section className="reference-picker parameter-group textile-image-field" aria-label={label}>
       <div className="field-title">
@@ -107,14 +128,20 @@ export function TextileImageField({
             </span>
           )}
           {label}
-          {!required && <small>（可选，最多{maxImages}张）</small>}
+          {!required && (
+            <small>
+              {t.optionalLimitBefore}
+              {maxImages}
+              {t.optionalLimitAfter}
+            </small>
+          )}
         </h2>
         {value.length > 0 && (
           <Button
             variant="tertiary"
             size="sm"
             className="clear-references"
-            aria-label={`清除${label}`}
+            aria-label={t.clearField(label)}
             isDisabled={reading}
             onPress={() => {
               onChange([]);
@@ -123,7 +150,7 @@ export function TextileImageField({
             }}
           >
             <UiIcon icon={IconTrash} size="small" />
-            清除
+            {t.clear}
           </Button>
         )}
       </div>
@@ -132,7 +159,7 @@ export function TextileImageField({
         type="file"
         accept="image/png,image/jpeg,image/webp"
         className="visually-hidden"
-        aria-label={`${label}文件`}
+        aria-label={t.fieldFile(label)}
         required={required}
         multiple={multiple}
         disabled={reading}
@@ -164,7 +191,7 @@ export function TextileImageField({
             <Button
               variant="tertiary"
               className="textile-detail-add"
-              aria-label="添加详情图"
+              aria-label={t.addDetail}
               isDisabled={reading}
               onPress={() => openPicker()}
             >
@@ -192,7 +219,7 @@ export function TextileImageField({
             images={value.map((image, index) => ({
               src: referenceDisplaySource(image),
               thumbnailSrc: referenceDisplaySource(image, true),
-              alt: `${label}${index + 1}`,
+              alt: t.numbered(label, index + 1),
             }))}
             initialIndex={preview}
             onClose={() => setPreview(null)}
@@ -216,21 +243,22 @@ function TextileUploadExample({
   description: string;
   openPicker: () => void;
 }) {
+  const t = useMessages(textileMessages);
   return (
     <Button
       variant="tertiary"
       className="textile-upload-area"
-      aria-label={`上传${label}`}
+      aria-label={t.upload(label)}
       isDisabled={reading}
       onPress={openPicker}
     >
       <span className="textile-upload-example" aria-hidden="true">
         <img src={exampleSrc} alt="" width="108" height="144" decoding="async" draggable={false} />
-        <span>示例</span>
+        <span>{t.example}</span>
       </span>
       <span className="textile-upload-copy">
         <UiIcon icon={IconPlus} size="action" />
-        <span>{reading ? "读取中…" : description}</span>
+        <span>{reading ? t.reading : description}</span>
       </span>
     </Button>
   );

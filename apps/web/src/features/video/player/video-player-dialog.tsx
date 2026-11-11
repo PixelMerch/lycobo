@@ -14,6 +14,8 @@ import "../../../styles/fullscreen-dialog.css";
 import "../../image-workspace/image-preview.css";
 import "../../image-workspace/preview-workspace.css";
 import "../video.css";
+import { useMessages } from "../../../i18n/messages";
+import { videoPlayerMessages } from "./video-player-messages";
 
 export type PreviewVideo = {
   /** Asset id: covers, delivery and favorites all key on it. */
@@ -28,8 +30,9 @@ export type PreviewVideo = {
   params?: { label: string; value: string }[] | undefined;
 };
 
-/** Remounted per video, so each one signs its own link and starts from a fresh player. */
+/** 每个视频单独挂载，各自签发链接并从新的播放器开始。 */
 function VideoPreviewStage({ video }: { video: PreviewVideo }) {
+  const t = useMessages(videoPlayerMessages);
   const stage = useRef<HTMLElement>(null);
   const delivery = useQuery({
     queryKey: ["video-delivery", video.id],
@@ -46,12 +49,12 @@ function VideoPreviewStage({ video }: { video: PreviewVideo }) {
     <section
       ref={stage}
       className="image-preview-stage preview-dot-surface video-preview-stage"
-      aria-label="视频画面"
+      aria-label={t.frame}
     >
       <PreviewDotGrid stage={stage} />
       <VideoPlayer
         assetId={video.id}
-        title={video.taskPublicId ?? "视频预览"}
+        title={video.taskPublicId ?? t.preview}
         src={delivery.data?.url}
         unavailable={delivery.isError}
         aspect={video.aspect}
@@ -73,6 +76,7 @@ function ignoreRailKey(event: KeyboardEvent, target: HTMLElement) {
   return event.altKey || event.ctrlKey || event.metaKey || target.closest("input, textarea");
 }
 
+/** 全屏视频预览：左侧缩略图栏、中间播放器、右侧信息面板。 */
 export function VideoPlayerDialog({
   videos,
   initialId,
@@ -90,16 +94,17 @@ export function VideoPlayerDialog({
   isLoadMoreError?: boolean | undefined;
   onLoadMore?: (() => Promise<unknown>) | undefined;
 }) {
+  const t = useMessages(videoPlayerMessages);
   const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
   const surface = useRef<HTMLDivElement>(null);
-  // Tracked by id: a task finishing while this is open must not change the selection.
+  // 按 id 记住选中项：弹窗打开期间有任务完成，也不会改变当前选择。
   const [activeId, setActiveId] = useState(initialId);
   const index = Math.max(
     videos.findIndex((video) => video.id === activeId),
     0,
   );
   const active = videos[index];
-  // Up and down walk the rail. Left and right seek, unless the rail itself has focus.
+  // 上下键在缩略图栏里切换；左右键快进快退，焦点在缩略图栏时除外。
   useEffect(() => {
     const dialog = surface.current?.closest('[role="dialog"]');
     if (!dialog) return;
@@ -132,7 +137,7 @@ export function VideoPlayerDialog({
     >
       <Modal.Backdrop className="fullscreen-dialog__backdrop image-preview-backdrop">
         <Modal.Container size="full" className="fullscreen-dialog__container">
-          <Modal.Dialog className="image-preview-dialog" aria-label="视频预览">
+          <Modal.Dialog className="image-preview-dialog" aria-label={t.preview}>
             <motion.div
               ref={surface}
               className="image-preview"

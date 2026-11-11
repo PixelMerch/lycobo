@@ -12,18 +12,8 @@
   .account-center-dialog .modal__header {
     margin-bottom: var(--space-3);
   }
-  .account-center-tabs > .tabs__list-container .tabs__list {
+  .account-center-tabs .tabs__list-container .tabs__list {
     gap: 20px;
-  }
-  .account-profile-card {
-    padding: 10px 12px;
-  }
-  .account-copy.button {
-    width: 44px;
-    min-width: 44px;
-    height: 44px;
-    min-height: 44px;
-    margin-block: -10px;
   }
   .account-center-tabs .tabs__tab {
     min-height: 44px;

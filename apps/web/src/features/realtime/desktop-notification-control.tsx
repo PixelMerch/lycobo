@@ -2,8 +2,10 @@ import { Button } from "@heroui/react";
 import { IconBell } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
+import { useMessages } from "../../i18n/messages";
 import { useImageSession } from "../generation/generation-client";
 import { desktopNotificationsEnabled, setDesktopNotifications } from "./desktop-notifications";
+import { realtimeMessages } from "./realtime-messages";
 
 function permission() {
   return typeof Notification === "undefined" ? "unsupported" : Notification.permission;
@@ -11,6 +13,7 @@ function permission() {
 
 /** 只在用户点击时申请桌面通知权限，拒绝后提供浏览器设置说明。 */
 export function DesktopNotificationControl() {
+  const t = useMessages(realtimeMessages);
   const session = useImageSession().data;
   const scope = session ? `${session.organizationId}:${session.userId}` : "";
   const [enabled, setEnabled] = useState(() => desktopNotificationsEnabled(scope));
@@ -57,17 +60,17 @@ export function DesktopNotificationControl() {
       setPending(false);
     }
   };
-  let hint = "开启后，切到其他标签或应用时也能收到生成完成提醒。";
-  if (access === "unsupported") hint = "当前浏览器不支持桌面通知，仍可接收标签标题和站内提醒。";
-  if (access === "denied") hint = "通知权限已被阻止，请在浏览器的网站设置中允许通知后再开启。";
-  if (failed) hint = "未能开启桌面提醒，请检查浏览器权限和存储设置后重试。";
+  let hint = t.hintDefault;
+  if (access === "unsupported") hint = t.hintUnsupported;
+  if (access === "denied") hint = t.hintDenied;
+  if (failed) hint = t.hintFailed;
   return (
-    <section className="notification-preferences" aria-label="生成完成提醒">
+    <section className="notification-preferences" aria-label={t.alerts}>
       <span className="notification-preferences-icon">
         <UiIcon icon={IconBell} size="default" />
       </span>
       <div className="notification-preferences-copy">
-        <h3>桌面通知</h3>
+        <h3>{t.desktop}</h3>
         <p>{hint}</p>
       </div>
       <Button
@@ -77,7 +80,7 @@ export function DesktopNotificationControl() {
         isDisabled={!scope || access === "unsupported" || access === "denied"}
         onPress={() => void toggle()}
       >
-        {active ? "关闭桌面通知" : "开启桌面通知"}
+        {active ? t.turnOff : t.turnOn}
       </Button>
     </section>
   );

@@ -1,5 +1,7 @@
+import { currentMessages } from "../../../i18n/messages";
 import { readEventData } from "../../../lib/read-event-data";
 import { ImageApiError, imageRequest } from "../generation-client";
+import { referencesMessages } from "./references-messages";
 
 export const promptOptimizeCredits = 1;
 export type PromptOptimizeTool = "create" | "variation" | "video";
@@ -7,20 +9,21 @@ export type PromptOptimizeTool = "create" | "variation" | "video";
 export class PromptOptimizeRejected extends Error {}
 class PromptOptimizeError extends Error {}
 
-/** Forwards `delta` text until `complete`; a stream that ends any other way has failed. */
+/** 逐段转发优化结果直到 complete；以其他方式结束的流都算失败。 */
 export async function readOptimizedPrompt(response: Response, onText: (text: string) => void) {
   const reader = response.body?.getReader();
-  if (!reader) throw new PromptOptimizeError("优化结果为空，请稍后重试");
+  const t = currentMessages(referencesMessages);
+  if (!reader) throw new PromptOptimizeError(t.emptyResult);
   for await (const { event, data } of readEventData(reader)) {
-    if (event === "failed") throw new PromptOptimizeRejected("提示词优化失败，已退还积分");
-    if (event === "interrupted") throw new PromptOptimizeError("优化连接已中断，请重试以核对结果");
+    if (event === "failed") throw new PromptOptimizeRejected(t.optimizeRefunded);
+    if (event === "interrupted") throw new PromptOptimizeError(t.optimizeInterrupted);
     if (event !== "delta" && event !== "complete") continue;
     const text = promptEventText(data);
     if (text === undefined) continue;
     if (event === "complete") return text;
     onText(text);
   }
-  throw new PromptOptimizeError("连接已中断，请稍后重试");
+  throw new PromptOptimizeError(t.connectionLost);
 }
 
 function promptEventText(data: string) {
@@ -59,13 +62,15 @@ export async function requestPromptOptimization({
   return readOptimizedPrompt(response, onText);
 }
 
+/** 提示词优化失败时给用户看的说明。 */
 export function promptOptimizeFailure(error: unknown) {
-  if (error instanceof ImageApiError && error.status === 404) return "提示词优化暂未开放";
+  const t = currentMessages(referencesMessages);
+  if (error instanceof ImageApiError && error.status === 404) return t.optimizeUnavailable;
   if (
     error instanceof ImageApiError ||
     error instanceof PromptOptimizeError ||
     error instanceof PromptOptimizeRejected
   )
     return error.message;
-  return "提示词优化失败，请稍后重试";
+  return t.optimizeFailed;
 }

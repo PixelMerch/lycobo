@@ -2,31 +2,37 @@ import { Button, Tooltip } from "@heroui/react";
 import type { ImageJob } from "@lycoboai/contracts";
 import { IconAspectRatio } from "@tabler/icons-react";
 import { UiIcon } from "../../../components/ui-icon";
+import { useLocale } from "../../../i18n/locale-store";
+import { useMessages } from "../../../i18n/messages";
 import { copyToClipboard } from "../../../lib/clipboard";
+import { historyMessages } from "./history-messages";
 
 async function copyTaskId(id: string | undefined) {
   if (!id) return;
   await copyToClipboard(id);
 }
+/** 历史任务的信息行：工具或模型、时间、可复制的任务 ID、比例、分辨率与张数。 */
 export function HistoryTaskMeta({ job, modelName }: { job: ImageJob; modelName: string }) {
-  const imageModelName = job.input?.textileSet ? "家纺裂变" : modelName;
-  const taskModelName = job.input?.variation ? "套图计划" : imageModelName;
+  const t = useMessages(historyMessages);
+  const locale = useLocale();
+  const imageModelName = job.input?.textileSet ? t.textileSet : modelName;
+  const taskModelName = job.input?.variation ? t.variationPlan : imageModelName;
   return (
-    <dl className="generation-meta" aria-label="任务信息">
+    <dl className="generation-meta" aria-label={t.taskInfo}>
       <div>
-        <dt className="sr-only">模型</dt>
+        <dt className="sr-only">{t.model}</dt>
         <dd>
           <span className="model-tag">{taskModelName}</span>
         </dd>
       </div>
       <div>
-        <dt className="sr-only">时间</dt>
+        <dt className="sr-only">{t.time}</dt>
         <dd>
-          <time dateTime={job.created_at}>{new Date(job.created_at).toLocaleString("zh-CN")}</time>
+          <time dateTime={job.created_at}>{new Date(job.created_at).toLocaleString(locale)}</time>
         </dd>
       </div>
       <div className="generation-task-id-field">
-        <dt>任务ID：</dt>
+        <dt>{t.taskId}</dt>
         <dd>
           <Tooltip delay={0} isDisabled={!job.public_id}>
             <Button
@@ -34,28 +40,28 @@ export function HistoryTaskMeta({ job, modelName }: { job: ImageJob; modelName: 
               size="sm"
               className="generation-task-id"
               isDisabled={!job.public_id}
-              aria-label={job.public_id ? `复制任务 ID ${job.public_id}` : "任务 ID 待同步"}
+              aria-label={job.public_id ? t.copyTaskId(job.public_id) : t.taskIdPending}
               onPress={(event) => {
                 if (event.pointerType !== "mouse") void copyTaskId(job.public_id);
               }}
               onDoubleClick={() => void copyTaskId(job.public_id)}
             >
-              {job.public_id ?? "待同步"}
+              {job.public_id ?? t.pending}
             </Button>
-            <Tooltip.Content placement="top">双击复制任务 ID</Tooltip.Content>
+            <Tooltip.Content placement="top">{t.doubleClickToCopy}</Tooltip.Content>
           </Tooltip>
         </dd>
       </div>
       <div className="generation-meta-ratio">
-        <dt className="sr-only">比例</dt>
+        <dt className="sr-only">{t.ratio}</dt>
         <UiIcon icon={IconAspectRatio} size="small" />
         <dd>{job.aspect_ratio}</dd>
       </div>
       <div className="generation-meta-units">
-        <dt className="sr-only">分辨率与张数</dt>
+        <dt className="sr-only">{t.resolutionAndCount}</dt>
         <dd>{job.resolution}</dd>
         <span className="generation-meta-divider" aria-hidden="true" />
-        <dd>{job.requested_count} 张</dd>
+        <dd>{t.imageCount(job.requested_count)}</dd>
       </div>
     </dl>
   );

@@ -5,6 +5,8 @@ import {
   Link as RouterLink,
   NavLink as RouterNavLink,
 } from "react-router";
+import { localizedPath } from "../i18n/locale-path";
+import { useLocale } from "../i18n/locale-store";
 
 type RouteLinkProps = {
   to: string;
@@ -17,11 +19,7 @@ type RouteLinkProps = {
   nav?: boolean;
 };
 
-/**
- * Routes navigation through react-router while keeping HeroUI's link states.
- * Only the router's navigation primitive is reused here; no second link
- * component or press behaviour is implemented.
- */
+/** 站内链接沿用 HeroUI 交互，并统一携带当前语言前缀。 */
 export function RouteLink({
   to,
   children,
@@ -30,9 +28,10 @@ export function RouteLink({
   end,
   ...rest
 }: RouteLinkProps) {
+  const localizedTo = localizedPath(to, useLocale());
   return (
     <HeroLink
-      href={to}
+      href={localizedTo}
       className={className}
       {...rest}
       render={(renderProps) => {
@@ -50,12 +49,12 @@ export function RouteLink({
             }
             end={end ?? false}
             ref={linkRef}
-            to={to}
+            to={localizedTo}
           >
             {content}
           </RouterNavLink>
         ) : (
-          <RouterLink {...props} ref={linkRef} to={to}>
+          <RouterLink {...props} ref={linkRef} to={localizedTo}>
             {content}
           </RouterLink>
         );

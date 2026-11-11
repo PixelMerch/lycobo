@@ -169,7 +169,13 @@ test("logout closes the shared stream and removes prior identity data", async ({
   await expect(page.locator("html")).toHaveAttribute("data-ws-active", "1");
   await page.locator(".account-trigger").click();
   await page.getByRole("menuitem", { name: "退出登录", exact: true }).click();
+  // 工作区需要登录：退出后转到独立登录页，私有推送随之关闭。
+  await expect(page).toHaveURL(/\/login\?returnTo=/);
+  await expect(page.locator("html")).toHaveAttribute("data-ws-active", "0");
+  // 关闭登录页回到公开首页（不刷新页面），游客改用只含发布消息的公开推送。
+  await page.getByRole("button", { name: "关闭登录", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("data-ws-url", /realtime\/public/);
+  await expect(page.locator(".account-trigger")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();
 });
 
@@ -244,7 +250,7 @@ test("only wallet events refresh balance, task states do not duplicate the read"
   expect(wallets).toBe(baseline + 1);
 });
 
-test("release push preserves the draft and offers a deliberate refresh", async ({ page }) => {
+test("release push preserves the draft and asks the user to refresh", async ({ page }) => {
   await mockImageEvents(page);
   await page.goto("/commerce/create");
   const draft = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
@@ -272,11 +278,8 @@ test("release push preserves the draft and offers a deliberate refresh", async (
   );
   await expect(page.getByText(/网站有新版本可用/)).toBeVisible();
   await expect(draft).toHaveValue("更新提示到来时保留草稿");
-  await page.getByRole("button", { name: "更新记录（有新版本）", exact: true }).click();
-  const panel = page.getByRole("dialog", { name: "最近更新" });
-  await expect(panel.getByText("新的功能已上线")).toBeVisible();
-  await expect(panel.getByRole("button", { name: "刷新体验", exact: true })).toBeVisible();
-  await page.keyboard.press("Escape");
+  // 新版本只用 Toast 提示，顶部栏不再有更新记录入口，也不会自动刷新。
+  await expect(page.getByRole("button", { name: /^更新记录/ })).toHaveCount(0);
   await expect(draft).toHaveValue("更新提示到来时保留草稿");
 });
 
@@ -385,7 +388,7 @@ for (const connected of [true, false]) {
       );
     const baselineWallets = wallets,
       baselineAssets = assets;
-    await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
+    await page.getByRole("button", { name: "立即生成", exact: true }).click();
     await expect.poll(() => wallets).toBe(baselineWallets + 1);
     await page.clock.install();
     await page.clock.fastForward(3000);

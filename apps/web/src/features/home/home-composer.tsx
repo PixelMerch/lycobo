@@ -1,227 +1,202 @@
-import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { mainImageModelIds } from "@lycoboai/contracts";
-import { IconArrowUp, IconCheck, IconChevronDown } from "@tabler/icons-react";
-import { useNavigate } from "react-router";
+import { Button } from "@heroui/react";
+import { IconLayoutCollage, IconPhotoPlus, IconPlus, IconSparkles } from "@tabler/icons-react";
+import { type ReactNode, useRef } from "react";
 import { ReferencePrompt } from "../../components/reference-prompt/reference-prompt";
 import { UiIcon } from "../../components/ui-icon";
-import { useErrorToast } from "../../lib/error-toast";
-import { useEnterpriseSession } from "../auth/auth-client";
+import { useMessages } from "../../i18n/messages";
+import { useAppNavigate } from "../../i18n/use-localized-navigation";
 import { LoginRequiredInteraction } from "../auth/login-prompt";
-import { HomeRatioPicker } from "../generation/composer/ratio-picker";
-import { SelectionHighlight } from "../generation/composer/selection-highlight";
-import { ImageApiError, useImageModels } from "../generation/generation-client";
-import { ModelLogo, useModelPresentation } from "../generation/models/model-logos";
-import { hasPromptDescription } from "../generation/references/prompt-description";
+import type { PromptOptimizeTool } from "../generation/references/prompt-optimizer-client";
 import { ReferencePicker } from "../generation/references/reference-picker";
-import { defaultDraft, useStudioStore } from "../generation/studio-state";
+import { useStudioStore } from "../generation/studio-state";
+import { homeMessages } from "./home-messages";
+import { HomeModelSettings } from "./home-model-settings";
+import type { HomeMode } from "./home-modes";
+import { homeModeMessages } from "./home-modes-messages";
+import { HomeTextileViews } from "./home-textile-views";
+import {
+  type HomePromptDraft,
+  useCreateHomeDraft,
+  useTextileHomeDraft,
+  useVariationHomeDraft,
+  useVideoHomeDraft,
+} from "./use-home-mode-draft";
 
-/** 组合首页参考图、可伸展提示词与创作入口，沿用工作台草稿。 */
-export function HomeComposer() {
-  const presentation = useModelPresentation().data?.models ?? [];
-  const models = mainImageModelIds.flatMap((id) => presentation.filter((model) => model.id === id));
+/** 按当前模式组合首页创作框：只编辑对应工具的草稿，进入工作区前不提交任何任务。 */
+export function HomeComposer({ mode }: { mode: HomeMode }) {
+  if (mode.id === "textile") return <TextileComposer mode={mode} />;
+  if (mode.id === "variation") return <VariationComposer mode={mode} />;
+  if (mode.id === "video") return <VideoComposer mode={mode} />;
+  return <CreateComposer mode={mode} />;
+}
+
+function CreateComposer({ mode }: { mode: HomeMode }) {
   const model = useStudioStore((s) => s.activeModel);
-  const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
-  const updateDraft = useStudioStore((s) => s.updateDraft);
-  const setModel = useStudioStore((s) => s.setActiveModel);
-  const signedIn = !!useEnterpriseSession().data;
-  const catalog = useImageModels(signedIn);
-  const navigate = useNavigate();
-  const requestError =
-    catalog.error instanceof ImageApiError ? catalog.error.message : "服务暂时不可用，请稍后重试。";
-  const catalogError = catalog.isError ? requestError : null;
-  useErrorToast(catalogError);
-  const canSubmit = hasPromptDescription(draft.prompt) && draft.prompt.length <= 5000;
+  const draft = useCreateHomeDraft();
   return (
-    <LoginRequiredInteraction className="home-composer">
-      <div className="home-upload">
-        <ReferencePicker compact model={model} references={draft.references} />
-      </div>
-      <ReferencePrompt
-        className="home-prompt"
-        maxLength={5000}
-        showCount
-        autoGrow
-        isRequired
-        value={draft.prompt}
-        onChange={(prompt) => updateDraft(model, { prompt })}
-        onReferencesInsert={(images, prompt) =>
-          updateDraft(model, { references: [...draft.references, ...images], prompt })
-        }
-        references={draft.references}
-        placeholder="描述你想要的画面，输入 @ 引用已上传图片"
-        optimizeTool="create"
-      />
-      <div className="home-composer-tools">
-        <HomeModelSettings
-          model={model}
-          draft={draft}
-          models={models}
-          catalog={catalog}
-          updateDraft={updateDraft}
-          setModel={setModel}
-        />
-        <Button
-          isIconOnly
-          className="home-submit"
-          data-active={canSubmit || undefined}
-          isDisabled={!canSubmit}
-          aria-label="开始创作"
-          onPress={() => navigate("/commerce/create")}
-        >
-          <UiIcon icon={IconArrowUp} size="action" />
-        </Button>
-      </div>
-    </LoginRequiredInteraction>
+    <ComposerShell
+      mode={mode}
+      canStart={draft.canStart}
+      body={
+        <>
+          <div className="home-references">
+            <ReferencePicker
+              compact
+              model={model}
+              references={draft.references}
+              limit={mode.uploadLimit}
+            />
+          </div>
+          <ComposerPrompt mode={mode} draft={draft} optimizeTool="create" />
+        </>
+      }
+      settings={<HomeModelSettings />}
+    />
   );
 }
 
-function HomeModelSettings({
-  model,
+function VariationComposer({ mode }: { mode: HomeMode }) {
+  const draft = useVariationHomeDraft();
+  return <ControlledPromptComposer mode={mode} draft={draft} optimizeTool="variation" />;
+}
+
+function VideoComposer({ mode }: { mode: HomeMode }) {
+  const draft = useVideoHomeDraft();
+  return <ControlledPromptComposer mode={mode} draft={draft} optimizeTool="video" />;
+}
+
+function ControlledPromptComposer({
+  mode,
   draft,
-  models,
-  catalog,
-  updateDraft,
-  setModel,
+  optimizeTool,
 }: {
-  model: ReturnType<typeof useStudioStore.getState>["activeModel"];
-  draft: typeof defaultDraft;
-  models: NonNullable<ReturnType<typeof useModelPresentation>["data"]>["models"];
-  catalog: ReturnType<typeof useImageModels>;
-  updateDraft: ReturnType<typeof useStudioStore.getState>["updateDraft"];
-  setModel: ReturnType<typeof useStudioStore.getState>["setActiveModel"];
+  mode: HomeMode;
+  draft: HomePromptDraft;
+  optimizeTool: PromptOptimizeTool;
 }) {
-  const selectedModel = models.find((item) => item.id === model);
-  const resolutions = catalog.data?.models.find((item) => item.id === model)?.enabledResolutions;
   return (
-    <Popover>
-      <Button className="home-settings-trigger" variant="ghost" aria-label="选择创作模型">
-        <ModelLogo src={selectedModel?.logoUrl} size="compact" />
-        <span>{selectedModel?.name ?? "图片创作"}</span>
-        <span>·</span>
-        <span>{draft.ratio}</span>
-        <span>·</span>
-        <span>{draft.resolution}</span>
-        <span className="home-settings-chevron">
-          <UiIcon icon={IconChevronDown} size="small" />
-        </span>
-      </Button>
-      <Popover.Content className="home-settings" placement="bottom" offset={8}>
-        <Popover.Dialog aria-label="模型和画面设置">
-          <div className="home-settings-models">
-            <Popover.Heading>模型</Popover.Heading>
-            {models.map((item) => (
-              <ToggleButton
-                key={item.id}
-                variant="ghost"
-                className="home-model-option"
-                isSelected={item.id === model}
-                onPress={() => {
-                  if (item.id === model) return;
-                  const supported = catalog.data?.models.find(
-                    (entry) => entry.id === item.id,
-                  )?.enabledResolutions;
-                  updateDraft(item.id, {
-                    ...draft,
-                    resolution: supported?.some((value) => value === draft.resolution)
-                      ? draft.resolution
-                      : "1.5K",
-                  });
-                  setModel(item.id);
-                }}
-              >
-                <span className="home-model-check">
-                  {item.id === model ? (
-                    <UiIcon icon={IconCheck} />
-                  ) : (
-                    <span className="home-model-dot" aria-hidden="true" />
-                  )}
-                </span>
-                <span>
-                  <strong className="model-selector-name">
-                    <ModelLogo src={item.logoUrl} size="compact" />
-                    <span>{item.name}</span>
-                  </strong>
-                  <small>{item.description}</small>
-                </span>
-              </ToggleButton>
-            ))}
-          </div>
-          <div className="home-settings-options">
-            <div className="home-ratio-heading">
-              <h3>画面比例</h3>
-              <span className="home-ratio-current">{draft.ratio}</span>
-            </div>
-            <HomeRatioPicker
-              value={draft.ratio}
-              onChange={(ratio) => updateDraft(model, { ratio })}
+    <ComposerShell
+      mode={mode}
+      canStart={draft.canStart}
+      body={
+        <>
+          <div className="home-references">
+            <ReferencePicker
+              compact
+              references={draft.references}
+              prompt={draft.prompt}
+              onChange={draft.setReferences}
+              limit={mode.uploadLimit}
             />
-            <h3>图片分辨率</h3>
-            <ToggleButtonGroup
-              aria-label="图片分辨率"
-              selectionMode="single"
-              disallowEmptySelection
-              selectedKeys={[draft.resolution]}
-              onSelectionChange={(keys) => updateDraft(model, { resolution: String([...keys][0]) })}
-            >
-              {(["1.5K", "2K", "4K"] as const).map((resolution) => (
-                <ToggleButton
-                  id={resolution}
-                  key={resolution}
-                  isDisabled={resolutions !== undefined && !resolutions.includes(resolution)}
-                >
-                  {resolution === draft.resolution && (
-                    <SelectionHighlight
-                      layoutId="home-resolution-selection"
-                      layoutDependency={draft.resolution}
-                    />
-                  )}
-                  {resolution}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-            <h3>质量</h3>
-            <ToggleButtonGroup
-              aria-label="质量"
-              selectionMode="single"
-              disallowEmptySelection
-              selectedKeys={[draft.quality]}
-              onSelectionChange={(keys) => updateDraft(model, { quality: String([...keys][0]) })}
-            >
-              {["低", "标准", "高"].map((quality) => (
-                <ToggleButton id={quality} key={quality}>
-                  {quality === draft.quality && (
-                    <SelectionHighlight
-                      layoutId="home-quality-selection"
-                      layoutDependency={draft.quality}
-                    />
-                  )}
-                  {quality}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-            <h3>生成张数</h3>
-            <ToggleButtonGroup
-              aria-label="生成张数"
-              selectionMode="single"
-              disallowEmptySelection
-              selectedKeys={[draft.count]}
-              onSelectionChange={(keys) => updateDraft(model, { count: String([...keys][0]) })}
-            >
-              {["1", "2", "3", "4"].map((count) => (
-                <ToggleButton id={count} key={count}>
-                  {count === draft.count && (
-                    <SelectionHighlight
-                      layoutId="home-count-selection"
-                      layoutDependency={draft.count}
-                    />
-                  )}
-                  {count} 张
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
           </div>
-        </Popover.Dialog>
-      </Popover.Content>
-    </Popover>
+          <ComposerPrompt mode={mode} draft={draft} optimizeTool={optimizeTool} />
+        </>
+      }
+    />
+  );
+}
+
+/** 家纺裂变保留左侧两行上传列：两行打开同一个文件选择框，第一张图在工具里作为主图。 */
+function TextileComposer({ mode }: { mode: HomeMode }) {
+  const draft = useTextileHomeDraft();
+  const t = useMessages(homeModeMessages).textileUpload;
+  const openFiles = useRef<(() => void) | null>(null);
+  return (
+    <ComposerShell
+      mode={mode}
+      canStart={draft.canStart}
+      aside={
+        <div className="home-upload">
+          <ReferencePicker
+            references={draft.references}
+            prompt=""
+            onChange={draft.setReferences}
+            limit={mode.uploadLimit}
+            addLabel={t.main}
+            addIcon={draft.references.length ? IconPlus : IconLayoutCollage}
+            openRef={openFiles}
+          />
+          <Button
+            variant="ghost"
+            className="home-upload-secondary"
+            onPress={() => openFiles.current?.()}
+          >
+            <UiIcon icon={IconPhotoPlus} size="action" />
+            {t.extra}
+          </Button>
+        </div>
+      }
+      body={<HomeTextileViews />}
+    />
+  );
+}
+
+function ComposerPrompt({
+  mode,
+  draft,
+  optimizeTool,
+}: {
+  mode: HomeMode;
+  draft: HomePromptDraft;
+  optimizeTool: PromptOptimizeTool;
+}) {
+  return (
+    <ReferencePrompt
+      className="home-prompt"
+      maxLength={5000}
+      showCount
+      autoGrow
+      autoGrowMinHeight={82}
+      isRequired
+      value={draft.prompt}
+      onChange={draft.setPrompt}
+      onReferencesInsert={(images, prompt) => {
+        // @ 引用素材也算上传图片，超过当前模式的张数上限时不写入草稿。
+        if (draft.references.length + images.length > mode.uploadLimit) return;
+        draft.setReferences([...draft.references, ...images], prompt);
+      }}
+      references={draft.references}
+      maxReferences={mode.uploadLimit}
+      placeholder={mode.placeholder}
+      optimizeTool={optimizeTool}
+    />
+  );
+}
+
+/** 左侧上传列（只有家纺裂变）、描述与右下角操作；“开始创作”只进入对应工具，不提交付费任务。 */
+function ComposerShell({
+  mode,
+  aside,
+  body,
+  settings,
+  canStart,
+}: {
+  mode: HomeMode;
+  aside?: ReactNode;
+  body: ReactNode;
+  settings?: ReactNode;
+  canStart: boolean;
+}) {
+  const navigate = useAppNavigate();
+  const t = useMessages(homeMessages);
+  return (
+    <LoginRequiredInteraction className="home-composer">
+      {aside}
+      <div className="home-composer-body">
+        {body}
+        <div className="home-composer-tools">
+          {settings}
+          <Button
+            className="home-submit"
+            data-active={canStart || undefined}
+            isDisabled={!canStart}
+            onPress={() => void navigate(mode.path)}
+          >
+            <UiIcon icon={IconSparkles} size="small" />
+            {t.start}
+          </Button>
+        </div>
+      </div>
+    </LoginRequiredInteraction>
   );
 }

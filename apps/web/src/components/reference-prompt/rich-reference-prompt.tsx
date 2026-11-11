@@ -1,6 +1,9 @@
 import type { ClipboardEvent, RefObject } from "react";
+import { useMessages } from "../../i18n/messages";
+import { componentsMessages } from "../components-messages";
 import { readPrompt } from "./reference-prompt-dom";
 
+/** 带 @ 引用胶囊的富文本提示词输入框。 */
 export function RichReferencePrompt({
   editorRef,
   label,
@@ -26,6 +29,7 @@ export function RichReferencePrompt({
   handleRichInput: () => void;
   noteTextPaste: (text: string) => void;
 }) {
+  const t = useMessages(componentsMessages);
   function pasteText(event: ClipboardEvent<HTMLDivElement>) {
     event.preventDefault();
     const editor = editorRef.current;
@@ -52,7 +56,7 @@ export function RichReferencePrompt({
       ref={editorRef}
       role="textbox"
       tabIndex={0}
-      aria-label={label ?? "创作需求"}
+      aria-label={label ?? t.promptLabel}
       aria-multiline="true"
       aria-required={isRequired || undefined}
       aria-describedby={countId}

@@ -40,10 +40,10 @@ test("analysis requires text, preserves edited plans and submits only confirmed 
   await page.goto("/commerce/smart-variation");
   const description = page.getByRole("textbox", { name: "创作需求", exact: true });
   await description.fill("@");
-  await expect(page.getByRole("button", { name: "生成计划", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
   await page.reload();
   await description.fill("为杯子生成十种商品场景，保留主体");
-  await page.getByRole("button", { name: "生成计划", exact: true }).click();
+  await page.getByRole("button", { name: "立即生成", exact: true }).click();
   const dialog = page.getByRole("region", { name: "确认每张图的中文提示词", exact: true });
   await expect(dialog.locator(".variation-plan-card")).toHaveCount(10);
   expect(generations).toBe(0);
@@ -74,7 +74,7 @@ test("analysis requires text, preserves edited plans and submits only confirmed 
   await expect(dialog).toBeHidden();
   expect(generations).toBe(1);
   expect(submitted).toMatchObject({
-    model: "gpt-image-2.5",
+    model: "gpt-image-2.6",
     count: 8,
     prompt: "为杯子生成十种商品场景，保留主体",
     variation: {
@@ -92,7 +92,7 @@ for (const width of [1440, 390, 320])
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/commerce/smart-variation");
     await page.getByRole("textbox", { name: "创作需求", exact: true }).fill("为杯子生成十种场景");
-    await page.getByRole("button", { name: "生成计划", exact: true }).click();
+    await page.getByRole("button", { name: "立即生成", exact: true }).click();
     const dialog = page.getByRole("region", { name: "确认每张图的中文提示词", exact: true });
     await expect(dialog).toBeVisible();
     await expect(
@@ -129,7 +129,7 @@ test("plan actions are not covered by the page back-to-top button", async ({ pag
   await page.evaluate(() => window.scrollTo({ top: 400, behavior: "instant" }));
   const backToTop = page.getByRole("button", { name: "回到顶部", exact: true });
   await expect(backToTop).toBeVisible();
-  await page.getByRole("button", { name: "生成计划", exact: true }).click();
+  await page.getByRole("button", { name: "立即生成", exact: true }).click();
   const panel = page.getByRole("region", { name: "确认每张图的中文提示词", exact: true });
   await expect(panel).toBeVisible();
   await expect(backToTop).toBeHidden();
@@ -236,7 +236,7 @@ test("streams read-only plan cards before the saved plan becomes editable", asyn
   });
   await page.goto("/commerce/smart-variation");
   await page.getByRole("textbox", { name: "创作需求", exact: true }).fill("生成橙色商品图");
-  await page.getByRole("button", { name: "生成计划", exact: true }).click();
+  await page.getByRole("button", { name: "立即生成", exact: true }).click();
   const pending = page.getByRole("region", { name: "正在生成套图计划", exact: true });
   await expect(pending).toBeVisible();
   await expect(pending).toContainText("DeepSeek 正在读取网页内容");
@@ -261,7 +261,7 @@ test("failed webpage reading keeps the draft and permits a fresh retry", async (
   await page.goto("/commerce/smart-variation");
   const description = page.getByRole("textbox", { name: "创作需求", exact: true });
   await description.fill("参考 https://shop.example/item 生成一张图");
-  await page.getByRole("button", { name: "生成计划", exact: true }).click();
+  await page.getByRole("button", { name: "立即生成", exact: true }).click();
   await expect(page.locator(".variation-plan-stream-status")).toContainText("网页读取未完成");
   await expect(description).toHaveValue("参考 https://shop.example/item 生成一张图");
   await expect(page.getByRole("button", { name: /开始生成/ })).toBeDisabled();

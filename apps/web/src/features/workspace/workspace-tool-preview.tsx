@@ -1,28 +1,30 @@
+import { useMessages } from "../../i18n/messages";
 import type { workspaceTools } from "./workspace-state";
+import { workspaceToolMessages } from "./workspace-tool-messages";
+import "./workspace-tool-preview.css";
 
 type WorkspaceTool = (typeof workspaceTools)[number];
 
-/** Hover and keyboard-focus preview of a tool: sample results, its purpose and how to use it. */
-export function WorkspaceToolPreview({ tool, current }: { tool: WorkspaceTool; current: boolean }) {
+/** 用商品示例从单图展开成多图，预览只演示用途，不表示真实任务结果。 */
+export function WorkspaceToolPreview({ tool }: { tool: WorkspaceTool }) {
+  const t = useMessages(workspaceToolMessages);
   return (
-    <div className="workspace-tool-preview-card" data-tool={tool.id}>
-      <div className="workspace-tool-preview-media">
-        {tool.examples.map((src) => (
-          <img key={src} src={src} alt="" decoding="async" />
-        ))}
-        <span className="workspace-tool-preview-badge">示例效果</span>
+    <figure className="workspace-tool-preview-card" data-tool={tool.id}>
+      <div className="workspace-tool-preview-media" aria-hidden="true">
+        <div className="workspace-tool-preview-results">
+          {tool.examples.map((src) => (
+            <img key={src} src={src} alt="" decoding="async" />
+          ))}
+        </div>
+        <img
+          className="workspace-tool-preview-source"
+          src={tool.examples[0]}
+          alt=""
+          decoding="async"
+        />
+        <span className="workspace-tool-preview-badge">{t.sampleBadge}</span>
       </div>
-      <p className="workspace-tool-preview-title">
-        <strong>{tool.name}</strong>
-        {current && <span className="workspace-tool-preview-current">正在使用</span>}
-      </p>
-      <p className="workspace-tool-preview-summary">{tool.summary}</p>
-      <ol className="workspace-tool-preview-steps">
-        {tool.steps.map((step) => (
-          <li key={step}>{step}</li>
-        ))}
-      </ol>
-      {!current && <p className="workspace-tool-preview-hint">点击切换到此功能</p>}
-    </div>
+      <figcaption className="workspace-tool-preview-summary">{t.tools[tool.id].summary}</figcaption>
+    </figure>
   );
 }

@@ -4,7 +4,7 @@ import { mockImageApi } from "./image-api-fixture";
 test.use({ timezoneId: "Asia/Shanghai" });
 
 const png = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",
   "base64",
 );
 
@@ -141,7 +141,7 @@ test("generating returns the history and its thumbnail index to the newest task"
   await expect.poll(() => list.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("新的商品图");
-  await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
+  await page.getByRole("button", { name: "立即生成", exact: true }).click();
   await expect.poll(() => submissions).toBe(1);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   await expect.poll(() => list.evaluate((node) => node.scrollTop)).toBe(0);

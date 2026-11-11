@@ -4,6 +4,7 @@ import { recordImageEvent } from "./image-event-repository";
 import { imageQueryViews } from "./image-query-views";
 import { ImageRepositoryError } from "./image-repository-types";
 import type { imageSettlement } from "./image-settlement";
+/** 按组织与工具读取、归档图片历史。 */
 export function imageHistoryRepository(
   sql: postgres.Sql,
   expireTimedOut: ReturnType<typeof imageSettlement>["expireTimedOut"],
@@ -21,7 +22,7 @@ export function imageHistoryRepository(
       scope: ImageScope,
       limit: number,
       before?: string,
-      tool?: "create" | "textile" | "variation",
+      tool?: "create" | "textile" | "variation" | "replica",
     ) {
       await expireTimedOut(scope.organizationId);
       return sql`select ${jobView} from generation_jobs j where j.organization_id=${scope.organizationId} and j.archived_at is null and not (j.input ? 'video')

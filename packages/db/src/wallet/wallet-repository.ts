@@ -56,6 +56,7 @@ function checkRechargeOrder(
   return order;
 }
 
+/** 读取企业积分流水和充值订单，按幂等规则记录充值到账。 */
 export function walletRepository(sql: postgres.Sql) {
   return {
     async wallet(scope: ImageScope) {
@@ -69,10 +70,20 @@ export function walletRepository(sql: postgres.Sql) {
           .parse(row?.balance ?? 0),
       };
     },
-    async walletEntries(scope: ImageScope, limit: number, before?: string) {
+    async walletEntries(
+      scope: ImageScope,
+      limit: number,
+      before?: string,
+      view?: "spent" | "earned",
+    ) {
+      // 弹窗按类别查询最近六个月，账户设置仍使用完整流水。
+      const recent = view
+        ? sql`and (e.kind = 'consume') = ${view === "spent"} and e.created_at >= now() - interval '6 months'`
+        : sql``;
       return sql`select e.id::text,u.uid as user_uid,e.kind,e.amount,e.balance_after,e.job_id,j.public_id as task_id,e.item_id,e.recharge_id,e.created_at
         from wallet_entries e join organization_wallets w on w.id=e.wallet_id left join generation_jobs j on j.id=e.job_id left join users u on u.id=e.user_id
         where w.organization_id=${scope.organizationId}
+        ${recent}
         ${before ? sql`and e.id < ${before}::bigint` : sql``} order by e.id desc limit ${limit}`;
     },
     async rechargeOrders(scope: ImageScope, limit: number, before?: string) {
@@ -82,7 +93,7 @@ export function walletRepository(sql: postgres.Sql) {
         ${before ? sql`and (r.created_at,r.id)<(select created_at,id from recharge_orders where id=${before} and wallet_id=w.id)` : sql``}
         order by r.created_at desc,r.id desc limit ${limit}`;
     },
-    // Internal payment adapter only. Never expose credit amounts or settlement to browser callers.
+    // 只允许内部支付适配器创建充值单，浏览器不能指定到账积分或结算。
     async createRecharge(scope: ImageScope, raw: unknown) {
       const input = z
         .strictObject({
@@ -111,7 +122,7 @@ export function walletRepository(sql: postgres.Sql) {
         return { id: String(existing.id), replayed: true };
       });
     },
-    // Payment signature/merchant verification must happen in a future trusted adapter before this call.
+    // 调用前由可信支付适配器验证支付签名与商户身份。
     async settleRecharge(raw: unknown) {
       const input = z
         .strictObject({

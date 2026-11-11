@@ -10,7 +10,8 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     try {
-      if (url.pathname.startsWith("/api/")) return await serveCloudflareApi(request, env);
+      if (url.pathname.startsWith("/api/"))
+        return await serveCloudflareApi(request, env, (work) => ctx.waitUntil(work));
       if (url.pathname.startsWith(env.ASSET_PATH_PREFIX)) {
         if (url.pathname.includes(".mp4")) return new Response(null, { status: 404 });
         url.pathname = url.pathname.slice(env.ASSET_PATH_PREFIX.length - 1);

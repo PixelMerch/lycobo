@@ -8,7 +8,6 @@
   overflow: hidden auto;
   border: 1px solid #ffffff1f;
   border-radius: 16px;
-  background: #202020;
   scrollbar-width: thin;
   scrollbar-color: #ffffff33 transparent;
 }
@@ -107,9 +106,9 @@
 }
 .home-composer .home-prompt .reference-rich-editor.textarea {
   height: auto;
-  min-height: 138px;
+  min-height: 82px;
   max-height: 360px;
-  padding: 10px 12px;
+  padding: 4px 0 8px;
   line-height: 26px;
   overflow-y: auto;
   background: transparent;
@@ -123,7 +122,7 @@
   padding: 2px 6px 2px 2px;
   border-radius: 6px;
   color: #a8ff00;
-  background: #343434;
+  background: var(--fill-medium);
   font-size: var(--text-xs);
   line-height: 18px;
   white-space: nowrap;
@@ -416,7 +415,7 @@
 .reference-mention-options .input {
   min-width: 0;
   font-size: var(--text-xs);
-  background: #171719;
+  background: var(--field-background);
   line-height: var(--leading-xs);
 }
 .reference-mention-options .list-box-item span {
@@ -442,7 +441,7 @@
   color: #a8ff00;
 }
 .reference-mention-popover.popover {
-  box-shadow: 0 12px 32px #00000066;
+  box-shadow: var(--shadow-md);
 }
 .reference-mention-scroll::-webkit-scrollbar {
   width: 4px;

@@ -15,6 +15,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useRef, useSyncExternalStore } from "react";
+import { currentMessages } from "../../i18n/messages";
 import { useEnterpriseSession } from "../auth/auth-client";
 import {
   ImageApiError,
@@ -22,6 +23,7 @@ import {
   uploadImageReferences,
 } from "../generation/generation-client";
 import type { ReferenceImage } from "../generation/studio-state";
+import { videoMessages } from "./video-messages";
 import { clearSubmittedVideoDraft, useVideoDraft } from "./video-state";
 
 const pendingEvents = new EventTarget();
@@ -64,6 +66,7 @@ export function useVideoTasks() {
         : false,
   });
 }
+/** 提交视频任务：同一账号同时只允许一个提交，回执丢失时用同一个请求确认。 */
 export function useSubmitVideo(source?: "storyboard") {
   const client = useQueryClient();
   const session = useEnterpriseSession();
@@ -80,7 +83,7 @@ export function useSubmitVideo(source?: "storyboard") {
     mutationKey: ["submit-video"],
     retry: false,
     mutationFn: (args: VideoSubmission) => {
-      if (!session.data) throw new Error("请先登录");
+      if (!session.data) throw new Error(currentMessages(videoMessages).signInFirst);
       return submitVideoAttempt(args, session.data, source, storageKey, client);
     },
     onError: (error, { repairPending }) => {
@@ -110,7 +113,7 @@ export function useSubmitVideo(source?: "storyboard") {
     blockedByPending: pendingSource !== null && !hasPending,
     submitAsync: (args: Parameters<typeof mutation.mutateAsync>[0]) => {
       if (locked.current || activeSubmissions > 0)
-        return Promise.reject(new Error("正在提交，请稍候"));
+        return Promise.reject(new Error(currentMessages(videoMessages).submittingWait));
       locked.current = true;
       return mutation.mutateAsync(args);
     },
@@ -193,12 +196,14 @@ async function submitVideoAttempt(
   const pending = () => readPendingVideo(storageKey);
   const submittedDraft = useVideoDraft.getState();
   let attempt = pending();
-  if (attempt && attempt.source !== source) throw new Error("请回到视频创作确认上次提交");
+  if (attempt && attempt.source !== source)
+    throw new Error(currentMessages(videoMessages).confirmInVideo);
   const confirming = !!attempt;
   const original = repairPending ? attempt : null;
   if (!attempt || original) {
     const ids = await uploadImageReferences(client, owner, references);
-    if (pending()?.key !== attempt?.key) throw new Error("已有视频提交待确认，请稍后继续");
+    if (pending()?.key !== attempt?.key)
+      throw new Error(currentMessages(videoMessages).pendingVideo);
     attempt = buildVideoAttempt(input, ids, client, source, original?.key ?? crypto.randomUUID());
     if (!original) {
       sessionStorage.setItem(storageKey, JSON.stringify(attempt));
@@ -207,8 +212,7 @@ async function submitVideoAttempt(
   }
   const response = await sendVideoAttempt(attempt, original).catch((error: unknown) => {
     if (error instanceof ImageApiError && error.businessCode === "VIDEO_REFERENCES_UNAVAILABLE") {
-      // An initial rejection occurs before task creation. A confirmation may refer
-      // to a task accepted earlier, so its original key must stay intact.
+      // 首次提交被拒发生在创建任务之前；确认请求可能对应早先已接受的任务，原请求键必须保留。
       if (!confirming) {
         sessionStorage.removeItem(storageKey);
         notifyPending();

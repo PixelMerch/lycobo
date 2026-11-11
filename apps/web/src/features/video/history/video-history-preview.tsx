@@ -1,9 +1,12 @@
 import type { VideoTask } from "@lycoboai/contracts";
+import { currentMessages } from "../../../i18n/messages";
 import { type PreviewVideo, VideoPlayerDialog } from "../player/video-player-dialog";
 import { useVideoTasks } from "../video-client";
+import { videoHistoryMessages } from "./video-history-messages";
 
 function previewVideos(task: VideoTask): PreviewVideo[] {
   if (!task.asset_id || !task.delivery) return [];
+  const t = currentMessages(videoHistoryMessages);
   const { aspectRatio, seconds, referenceAssetIds } = task.input.video;
   const [width, height] = aspectRatio.split(":").map(Number);
   return [
@@ -16,9 +19,9 @@ function previewVideos(task: VideoTask): PreviewVideo[] {
       prompt: task.prompt,
       references: referenceAssetIds,
       params: [
-        { label: "画面比例", value: aspectRatio },
-        { label: "时长", value: `${seconds}秒` },
-        { label: "清晰度", value: "768p" },
+        { label: t.aspectRatio, value: aspectRatio },
+        { label: t.duration, value: t.seconds(seconds) },
+        { label: t.clarity, value: "768p" },
       ],
     },
   ];

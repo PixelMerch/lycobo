@@ -75,25 +75,29 @@ export async function standaloneModels(env: StandaloneModelEnvironment) {
     },
     capabilities: () =>
       Object.fromEntries(
-        ["create", "textile-set", "local-edit"].map((tool) => [
+        ["create", "textile-set", "local-edit", "replica"].map((tool) => [
           tool,
-          (tool === "create"
-            ? mainImageModelIds.map((id) => ({ id }))
-            : models.filter((model) => model.id !== "gpt-image-2.6")
-          ).map(({ id }) => ({
+          modelsForTool(tool).map(({ id }) => ({
             id,
             managed: true,
             enabledResolutions: imageResolutionSchema.options,
             editsEnabled: true,
-            maxReferences: 6,
+            maxReferences: tool === "replica" ? 11 : 6,
           })),
         ]),
       ),
     resolve: (input: ImageGenerationInput) => {
-      const snapshot = snapshots[input.model];
-      if (!snapshot || input.referenceAssetIds.length > snapshot.maxReferences)
+      // 专用工具共用上游渠道，旧任务的公开型号仍可用于幂等确认和重试。
+      const usesCommerceChannel = !!(input.replica || input.textileSet || input.variation);
+      const snapshot = snapshots[usesCommerceChannel ? "gpt-image-2.6" : input.model];
+      if (
+        !snapshot ||
+        input.referenceAssetIds.length > (input.replica ? 11 : snapshot.maxReferences)
+      )
         throw new Error("MODEL_CHANNEL_DISABLED");
-      return snapshot;
+      return usesCommerceChannel
+        ? { ...snapshot, upstreamModel: "gpt-image-2.6-sunburst" }
+        : snapshot;
     },
   };
 }
@@ -101,4 +105,12 @@ export async function standaloneModels(env: StandaloneModelEnvironment) {
 /** Key-scoped routing identifier; never expose the generation credential. */
 export function imageWebhookSource(key: string) {
   return createHash("sha256").update(`fluxport:${key}`).digest("hex");
+}
+
+/** 按工具公布可用能力，家纺裂变保留旧型号以支持历史记录与滚动发布。 */
+function modelsForTool(tool: string) {
+  if (tool === "replica") return [{ id: "gpt-image-2.6" }];
+  if (tool === "create") return mainImageModelIds.map((id) => ({ id }));
+  if (tool === "textile-set") return models;
+  return models.filter((model) => model.id !== "gpt-image-2.6");
 }

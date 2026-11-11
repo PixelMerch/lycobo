@@ -1,6 +1,7 @@
 import type { ImageJob } from "@lycoboai/contracts";
 import { QueryClient } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { useLocaleStore } from "../../i18n/locale-store";
 import { createCompletionAlerts } from "./completion-alerts";
 import { observeCompletedJobs } from "./completion-observer";
 import { setDesktopNotifications } from "./desktop-notifications";
@@ -16,6 +17,8 @@ const doc = Object.assign(new EventTarget(), {
 });
 let stored = new Map<string, string>();
 beforeEach(() => {
+  // 断言按中文标题编写，固定界面语言。
+  useLocaleStore.setState({ locale: "zh-CN" });
   stored = new Map();
   doc.title = "Lycobo · 电商创作工作台";
   doc.visibilityState = "visible";

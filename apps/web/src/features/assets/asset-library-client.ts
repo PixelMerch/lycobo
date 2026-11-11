@@ -7,82 +7,109 @@ import {
   imageAssetsResponseSchema,
 } from "@lycoboai/contracts";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { currentMessages } from "../../i18n/messages";
 import { useErrorToast } from "../../lib/error-toast";
 import { imageRequest, useImageSession } from "../generation/generation-client";
+import { assetsMessages } from "./assets-messages";
 
-export type AssetSource = "generated" | "uploads" | "favorites";
-export type AssetMediaType = "all" | "image" | "video";
-/** One filter set drives 素材库 and 我的素材; "all" means the filter is off. */
+/** 素材来源：全部、我上传的或 AI 生成；AI 生成还能按功能细分。 */
+export type AssetSource = "all" | "uploads" | "generated";
+/** 素材类型：一次只看图片或视频。 */
+export type AssetMediaType = "image" | "video";
+/** 时间范围：全部时间，或今天、最近 7／30／90 天（按本地日历日零点计算，含今天）。 */
+export type AssetTimeRange = "all" | "today" | "7" | "30" | "90";
+/** 我的素材的一组筛选，弹窗和素材库页面共用；都由接口在分页前执行。 */
 export type AssetLibraryFilters = {
   source: AssetSource;
+  /** 只在来源是 AI 生成时生效，"all" 表示不按功能筛选。 */
   tool: AssetTool | "all";
   type: AssetMediaType;
-  model: string;
-  time?: "all" | "today" | "7" | "30" | "90";
+  favorite: boolean;
+  /** 选了时间范围才按天分组；全部时间连续平铺。 */
+  time: AssetTimeRange;
 };
 
+/** 素材库页面的默认视图：全部来源、全部时间的图片。 */
 export const defaultAssetFilters: AssetLibraryFilters = {
-  source: "generated",
+  source: "all",
   tool: "all",
-  type: "all",
-  model: "all",
+  type: "image",
+  favorite: false,
+  time: "all",
 };
-const sources = ["generated", "uploads", "favorites"] as const;
-const mediaTypes = ["all", "image", "video"] as const;
+const sources = ["all", "uploads", "generated"] as const;
+/** 时间筛选的选项，顺序就是菜单里的顺序。 */
+export const assetTimeRanges = [
+  "all",
+  "today",
+  "7",
+  "30",
+  "90",
+] as const satisfies readonly AssetTimeRange[];
 const pageSize = 30;
 
-/** Uploads have no producing tool or model, so those filters never apply to them. */
-export const filtersApply = (filters: AssetLibraryFilters) => filters.source !== "uploads";
-
-export function sameFilters(left: AssetLibraryFilters, right: AssetLibraryFilters) {
-  return (
-    left.source === right.source &&
-    left.tool === right.tool &&
-    left.type === right.type &&
-    left.model === right.model &&
-    (left.time ?? "all") === (right.time ?? "all")
-  );
-}
-
-/** 素材库 keeps filters in its URL so reloads and shared links land on the same view. */
-export function filtersFromSearch(search: URLSearchParams): AssetLibraryFilters {
-  const pick = <T extends string>(values: readonly T[], value: string | null, fallback: T) =>
-    values.find((entry) => entry === value) ?? fallback;
-  const tool = assetToolSchema.safeParse(search.get("tool"));
-  const model = search.get("model");
-  const time = pick(["all", "today", "7", "30", "90"] as const, search.get("time"), "all");
+/** 从工作区打开时默认看当前功能生成的素材；视频创作默认看视频。 */
+export function toolAssetFilters(tool: AssetTool | undefined): AssetLibraryFilters {
+  if (!tool) return defaultAssetFilters;
   return {
-    ...(time !== "all" ? { time } : {}),
-    source: pick(sources, search.get("source"), "generated"),
-    tool: tool.success ? tool.data : "all",
-    type: pick(mediaTypes, search.get("type"), "all"),
-    model: model && /^[a-z0-9][a-z0-9.-]{0,79}$/i.test(model) ? model : "all",
+    ...defaultAssetFilters,
+    source: "generated",
+    tool,
+    type: tool === "video" ? "video" : "image",
   };
 }
+
+/**
+ * 素材库把筛选写进地址栏，刷新和分享的链接回到同一视图。带功能的链接一律落在 AI 生成；
+ * 改版前的“收藏素材”来源换成“仅看收藏”，已取消的模型筛选直接忽略。
+ */
+export function filtersFromSearch(search: URLSearchParams): AssetLibraryFilters {
+  const tool = assetToolSchema.safeParse(search.get("tool"));
+  const source = search.get("source");
+  const favorite = search.get("favorite") === "1" || source === "favorites";
+  const type = search.get("type") === "video" ? "video" : "image";
+  const time = assetTimeRanges.find((entry) => entry === search.get("time")) ?? "all";
+  if (tool.success) return { source: "generated", tool: tool.data, type, favorite, time };
+  return {
+    source: sources.find((entry) => entry === source) ?? "all",
+    tool: "all",
+    type,
+    favorite,
+    time,
+  };
+}
+
+/** 只写入与默认视图不同的筛选，默认视图的地址保持干净。 */
 export function filtersToSearch(filters: AssetLibraryFilters) {
   const search = new URLSearchParams();
-  if (filters.source !== "generated") search.set("source", filters.source);
-  if (filters.tool !== "all") search.set("tool", filters.tool);
-  if (filters.type !== "all") search.set("type", filters.type);
-  if (filters.model !== "all") search.set("model", filters.model);
-  if (filters.time && filters.time !== "all") search.set("time", filters.time);
+  if (filters.source !== "all") search.set("source", filters.source);
+  if (filters.source === "generated" && filters.tool !== "all") search.set("tool", filters.tool);
+  if (filters.type === "video") search.set("type", "video");
+  if (filters.time !== "all") search.set("time", filters.time);
+  if (filters.favorite) search.set("favorite", "1");
   return search;
 }
 
-function libraryQuery(filters: AssetLibraryFilters) {
-  const query = new URLSearchParams({ limit: String(pageSize), includeVideo: "true" });
+/** 时间范围的起点：本地日历日零点，“今天”从今天零点起，“最近 7 天”含今天共 7 天。 */
+export function timeRangeStart(time: Exclude<AssetTimeRange, "all">, now = new Date()) {
+  const since = new Date(now);
+  since.setHours(0, 0, 0, 0);
+  since.setDate(since.getDate() - (time === "today" ? 0 : Number(time) - 1));
+  return since;
+}
+
+/** 把筛选换成接口参数：来源对应素材用途（kind），功能只在 AI 生成时传，时间换成起始时刻。 */
+export function libraryQuery(filters: AssetLibraryFilters, now = new Date()) {
+  const query = new URLSearchParams({
+    limit: String(pageSize),
+    includeVideo: "true",
+    type: filters.type,
+  });
   if (filters.source === "generated") query.set("kind", "output");
   if (filters.source === "uploads") query.set("kind", "reference");
-  if (filters.source === "favorites") query.set("favorite", "true");
-  if (filters.type !== "all") query.set("type", filters.type);
-  if (filtersApply(filters) && filters.tool !== "all") query.set("tool", filters.tool);
-  if (filtersApply(filters) && filters.model !== "all") query.set("model", filters.model);
-  if (filters.time && filters.time !== "all") {
-    const since = new Date();
-    since.setHours(0, 0, 0, 0);
-    since.setDate(since.getDate() - (filters.time === "today" ? 0 : Number(filters.time) - 1));
-    query.set("since", since.toISOString());
-  }
+  if (filters.source === "generated" && filters.tool !== "all") query.set("tool", filters.tool);
+  if (filters.favorite) query.set("favorite", "true");
+  if (filters.time !== "all") query.set("since", timeRangeStart(filters.time, now).toISOString());
   return query;
 }
 
@@ -148,14 +175,15 @@ function useSetAssetFavorite() {
       return { previous };
     },
     onSuccess: (favorite) => {
-      toast.success(favorite ? "收藏成功" : "已取消收藏");
+      const t = currentMessages(assetsMessages);
+      toast.success(favorite ? t.favorited : t.unfavorited);
     },
     onError: (_error, _variables, context) => {
       client.setQueryData(favoritesKey, context?.previous);
     },
     onSettled: () => {
       void client.invalidateQueries({ queryKey: favoritesKey });
-      // Only lists filtered by favorite change membership; other views read stars from the ids.
+      // 只有按收藏筛选的列表成员会变；其他视图从收藏 id 读取星标状态。
       void client.invalidateQueries({
         queryKey: ["image-assets"],
         predicate: (query) => query.queryKey.some((part) => String(part).includes("favorite=true")),

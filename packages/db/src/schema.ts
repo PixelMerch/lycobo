@@ -36,16 +36,27 @@ export const publicIdentifiers = pgTable("public_identifiers", {
   value: text("value").primaryKey(),
   createdAt: createdAt(),
 });
-export const users = pgTable("users", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  uid: text("uid")
-    .notNull()
-    .unique()
-    .references(() => publicIdentifiers.value)
-    .default(sql`public.allocate_public_identifier('user')`),
-  authSubject: text("auth_subject").notNull().unique(),
-  createdAt: createdAt(),
-});
+export const users = pgTable(
+  "users",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    uid: text("uid")
+      .notNull()
+      .unique()
+      .references(() => publicIdentifiers.value)
+      .default(sql`public.allocate_public_identifier('user')`),
+    authSubject: text("auth_subject").notNull().unique(),
+    // 用户选择的预设头像 id；为空时显示默认头像。可选值由 API 校验，这里只限制格式。
+    avatarPreset: text("avatar_preset"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check(
+      "users_avatar_preset_check",
+      sql`${t.avatarPreset} is null or ${t.avatarPreset} ~ '^[a-z][a-z0-9-]{1,31}$'`,
+    ),
+  ],
+);
 export const projects = pgTable(
   "projects",
   {
@@ -313,7 +324,7 @@ export const generationJobs = pgTable(
     index("generation_jobs_member_idx").on(t.organizationId, t.userId),
     check(
       "generation_jobs_count_check",
-      sql`${t.requestedCount} between 1 and 20 and ${t.unitCredits} > 0 and (${t.requestedCount} <= 4 or (${t.requestedCount} <= 10 and ${t.input} ? 'textileSet') or ${t.input} ? 'variation')`,
+      sql`${t.requestedCount} between 1 and 20 and ${t.unitCredits} > 0 and (${t.requestedCount} <= 4 or (${t.requestedCount} <= 10 and ${t.input} ? 'textileSet') or ${t.input} ? 'variation' or (${t.requestedCount} <= 10 and ${t.input}->>'replica' = 'true' and jsonb_array_length(${t.input}->'referenceAssetIds') = ${t.requestedCount} + 1))`,
     ),
     check(
       "generation_jobs_status_check",

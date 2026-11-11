@@ -4,7 +4,7 @@
   padding-inline: var(--space-2);
   border-radius: 999px;
   background: #ffffff12;
-  color: #d9d7de;
+  color: #d8d8d8;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
   font-weight: var(--weight-medium);
@@ -16,7 +16,7 @@
   place-items: center;
   width: 32px;
   height: 32px;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #ffffff0d;
   color: #c8c8c8;
 }

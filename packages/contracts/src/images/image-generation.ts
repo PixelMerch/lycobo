@@ -59,6 +59,11 @@ export const imageLocalEditSchema = z
   });
 export type ImageLocalEdit = z.infer<typeof imageLocalEditSchema>;
 
+/** 参考图角色：商品保持外观不变、原图是要处理的图、风格只借鉴观感。 */
+export const referenceRoleSchema = z.enum(["product", "source", "style"]);
+/** 参考图角色。 */
+export type ReferenceRole = z.infer<typeof referenceRoleSchema>;
+
 export const imageGenerationInputSchema = z
   .strictObject({
     model: imageModelCodeSchema,
@@ -83,16 +88,40 @@ export const imageGenerationInputSchema = z
       .default("1:1"),
     referenceAssetIds: z
       .array(z.uuid())
-      .max(10)
+      .max(11)
       .default([])
       .refine((ids) => new Set(ids).size === ids.length, "Duplicate references"),
+    // 与 referenceAssetIds 一一对应的角色；只在用户标了原图或风格时出现，旧输入缺省、哈希不变。
+    referenceRoles: z.array(referenceRoleSchema).max(11).optional(),
     count: z.number().int().min(1).max(variationPlanLimit).default(1),
-    // Keep absent on legacy snapshots so their stored idempotency hashes remain valid.
+    // 旧任务快照里缺省，保持已存幂等哈希有效。
     quality: imageQualitySchema.optional(),
-    // Absent on legacy inputs, preserving their original idempotency hashes.
+    // 旧输入里缺省，保持原有幂等哈希不变。
     localEdit: imageLocalEditSchema.optional(),
     textileSet: textileGenerationSchema.optional(),
     variation: variationGenerationSchema.optional(),
+    // 新任务才携带标记，不改变已有任务的幂等输入。
+    replica: z.literal(true).optional(),
+  })
+  .superRefine((input, ctx) => {
+    if (!input.replica && input.referenceAssetIds.length > 10)
+      ctx.addIssue({ code: "custom", message: "Too many references" });
+    if (input.replica) {
+      const validRoles =
+        input.referenceRoles?.[0] === "style" &&
+        input.referenceRoles.slice(1).every((role) => role === "product");
+      const mixedTools = !!input.textileSet || !!input.variation || !!input.localEdit;
+      if (
+        input.referenceAssetIds.length < 2 ||
+        !validRoles ||
+        mixedTools ||
+        (input.referenceAssetIds.length > 2 && input.count !== input.referenceAssetIds.length - 1)
+      )
+        ctx.addIssue({
+          code: "custom",
+          message: "Style matching requires one style image and one output per product reference",
+        });
+    }
   })
   .superRefine((input, ctx) => {
     const maxTextileReferences = (input.textileSet?.version ?? 0) >= 2 ? 6 : 2;
@@ -101,7 +130,7 @@ export const imageGenerationInputSchema = z
         input.referenceAssetIds.length < 1 ||
         input.referenceAssetIds.length > maxTextileReferences ||
         !!input.localEdit
-      : input.count > 4;
+      : input.count > (input.replica ? 10 : 4);
     const invalidCount = input.variation
       ? input.count !== input.variation.items.length ||
         input.referenceAssetIds.length > 5 ||
@@ -114,6 +143,17 @@ export const imageGenerationInputSchema = z
         message:
           "Textile views require one output each and one main reference and up to five detail references; ordinary tasks allow four outputs",
       });
+
+    if (input.referenceRoles && input.referenceRoles.length !== input.referenceAssetIds.length)
+      ctx.addIssue({ code: "custom", message: "Reference roles must match references" });
+    const taskReferences = new Set(input.referenceAssetIds);
+    // 每条方案指定的参考图必须来自本任务，归属已随任务参考图一起校验。
+    if (
+      input.variation?.items.some((item) =>
+        item.referenceAssetIds?.some((id) => !taskReferences.has(id)),
+      )
+    )
+      ctx.addIssue({ code: "custom", message: "Plan item references must belong to the task" });
 
     if (
       input.localEdit &&
@@ -240,9 +280,9 @@ export type ImageJob = z.infer<typeof imageJobSchema>;
 export const imageTasksResponseSchema = z.object({ data: z.array(imageJobSchema) });
 export const assetTypeSchema = z.enum(["image", "video", "audio"]);
 export type AssetType = z.infer<typeof assetTypeSchema>;
-/** Workspace tools that create images; history and the asset library filter by them. */
-export const imageToolSchema = z.enum(["create", "textile", "variation"]);
-export const assetToolSchema = z.enum(["create", "textile", "variation", "video"]);
+/** 图片创作工具标识，用于历史和素材库的独立筛选。 */
+export const imageToolSchema = z.enum(["create", "textile", "variation", "replica"]);
+export const assetToolSchema = z.enum(["create", "textile", "variation", "replica", "video"]);
 export type AssetTool = z.infer<typeof assetToolSchema>;
 export type ImageTool = z.infer<typeof imageToolSchema>;
 /** Each member keeps at most this many favorites, so the favorite id list stays bounded. */

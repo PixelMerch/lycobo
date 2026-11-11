@@ -1,13 +1,22 @@
 import type { ImageJob } from "@lycoboai/contracts";
-import { type CompletedResult, claimCompletion, completionStorage } from "./completion-storage";
+import { documentTitle } from "../../i18n/document-locale";
+import { currentMessages } from "../../i18n/messages";
+import {
+  type CompletedResult,
+  claimCompletion,
+  completionReceiptLabel,
+  completionStorage,
+} from "./completion-storage";
 import { showDesktopCompletion } from "./desktop-notifications";
+import { realtimeMessages } from "./realtime-messages";
 
 /** 只生成本站历史定位，不携带图片签名、任务输入或恢复草稿指令。 */
 export function completedResult(job: ImageJob): CompletedResult {
   let path = "/commerce/create";
   if (job.input?.textileSet) path = "/commerce/textile-set";
+  if (job.input?.replica) path = "/commerce/replica";
   if (job.input?.variation) path = "/commerce/smart-variation";
-  return { id: job.id, path: `${path}?task=${job.id}`, label: "图片生成完成" };
+  return { id: job.id, path: `${path}?task=${job.id}`, label: completionReceiptLabel };
 }
 
 /** 只有任务结果确实处于当前可见区域时，才省略全局提示。 */
@@ -30,15 +39,15 @@ type Options = {
 export function createCompletionAlerts(options: Options) {
   const receipts = completionStorage(options.scope);
   const startedAt = Date.now();
-  const originalTitle = document.title;
   const notices = new Map<string, Notification>();
   let stopped = false;
   const updateTitle = () => {
     const count = receipts.read().pending.length;
+    // 恢复时按当前界面语言取标题，避免切换语言后又写回旧语言的标题。
     document.title =
       count && document.visibilityState === "hidden"
-        ? `（${count}）生成完成 · Lycobo`
-        : originalTitle;
+        ? currentMessages(realtimeMessages).titleCount(count)
+        : documentTitle();
   };
   const open = (result: CompletedResult) => {
     if (!stopped) options.open(result);
@@ -91,7 +100,7 @@ export function createCompletionAlerts(options: Options) {
     receive,
     stop() {
       stopped = true;
-      document.title = originalTitle;
+      document.title = documentTitle();
       for (const notice of notices.values()) notice.close();
       notices.clear();
       document.removeEventListener("visibilitychange", resume);

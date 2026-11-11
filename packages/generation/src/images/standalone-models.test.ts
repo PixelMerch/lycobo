@@ -21,7 +21,9 @@ it("routes all public models without any admin or database lookups", async () =>
     "gpt-image-2.5",
     "gpt-image-2",
   ]);
-  expect(config?.capabilities()["textile-set"]).toHaveLength(4);
+  expect(config?.capabilities()["textile-set"]?.map((model) => model.id)).toContain(
+    "gpt-image-2.6",
+  );
   const input = imageGenerationInputSchema.parse({
     model: "gpt-image-2.5",
     prompt: "商品摄影",
@@ -73,4 +75,53 @@ it("downloads standalone provider results without forwarding credentials to its 
       env.STANDALONE_IMAGE_API_KEY,
     ),
   ).rejects.toThrow("PROVIDER_UNTRUSTED_RESULT_URL");
+});
+
+it("uses 2.6 Sunburst for all three commerce tools while preserving normal main image routing", async () => {
+  const config = await standaloneModels(env);
+  const target = crypto.randomUUID();
+  const product = crypto.randomUUID();
+  const base = { prompt: "商品摄影", resolution: "4K", count: 1 };
+  const inputs = [
+    {
+      ...base,
+      model: "gpt-image-2.6",
+      replica: true,
+      referenceAssetIds: [target, product],
+      referenceRoles: ["style", "product"],
+    },
+    {
+      ...base,
+      model: "gpt-image-2.6",
+      textileSet: { version: 5, views: ["front"] },
+      referenceAssetIds: [product],
+    },
+    {
+      ...base,
+      model: "gpt-image-2.5",
+      textileSet: { version: 5, views: ["front"] },
+      referenceAssetIds: [product],
+    },
+    {
+      ...base,
+      model: "gpt-image-2.5",
+      variation: {
+        version: 1,
+        planId: crypto.randomUUID(),
+        items: [{ id: crypto.randomUUID(), title: "主图", prompt: "保留商品外观" }],
+      },
+    },
+  ];
+  for (const raw of inputs) {
+    const snapshot = config?.resolve(imageGenerationInputSchema.parse(raw));
+    expect(snapshot).toMatchObject({
+      model: "gpt-image-2.6",
+      upstreamModel: "gpt-image-2.6-sunburst",
+      adapter: "fluxport-images",
+    });
+  }
+  expect(
+    config?.resolve(imageGenerationInputSchema.parse({ ...base, model: "gpt-image-2.6" }))
+      .upstreamModel,
+  ).toBe("gpt-image-2.6");
 });

@@ -1,43 +1,45 @@
-import { EmptyState, Link } from "@heroui/react";
 import { mainImageModelIds } from "@lycoboai/contracts";
-import { createBrowserRouter, redirect } from "react-router";
+import { createBrowserRouter, type RouteObject } from "react-router";
 import {
   getRecentCommerceTool,
   rememberCommerceTool,
 } from "../features/commerce/commerce-preferences";
 import { useStudioStore } from "../features/generation/studio-state";
 import { useWorkspaceState } from "../features/workspace/workspace-state";
+import {
+  loadRouteLocale,
+  localizedRedirect,
+  normalizeInitialLocalePath,
+  redirectToLocale,
+} from "./locale-route";
 import { PageLoading } from "./page-loading";
+import { PageNotFound, PageUnavailable } from "./page-states";
 
-export const router = createBrowserRouter([
+const localizedRoutes: RouteObject[] = [
   {
-    path: "/login",
+    path: "login",
     HydrateFallback: PageLoading,
     lazy: async () => ({
       Component: (await import("../features/auth/login-page")).LoginPage,
     }),
   },
   {
-    path: "/chatdraw",
-    loader: ({ request }) => redirect(`/commerce/create${new URL(request.url).search}`),
+    path: "chatdraw",
+    loader: ({ request }) =>
+      localizedRedirect(request, `/commerce/create${new URL(request.url).search}`),
   },
   {
-    path: "/design/:view?",
-    loader: ({ params }) => redirect(params.view === "assets" ? "/assets" : "/"),
+    path: "design/:view?",
+    loader: ({ params, request }) =>
+      localizedRedirect(request, params.view === "assets" ? "/assets" : "/"),
   },
-  ...["history", "canvas", "projects", "inspiration", "templates", "library"].map((path) => ({
+  ...["history", "canvas", "projects", "templates", "library"].map<RouteObject>((path) => ({
     path,
-    loader: () => redirect("/"),
+    loader: ({ request }) => localizedRedirect(request, "/"),
   })),
   {
-    path: "/",
     HydrateFallback: PageLoading,
-    errorElement: (
-      <EmptyState className="empty-state">
-        <h1>页面暂时无法打开</h1>
-        <Link href="/">返回首页</Link>
-      </EmptyState>
-    ),
+    errorElement: <PageUnavailable />,
     lazy: async () => ({
       Component: (await import("./studio-shell")).StudioShell,
     }),
@@ -46,7 +48,10 @@ export const router = createBrowserRouter([
         index: true,
         lazy: async () => ({ Component: (await import("../features/home/home-page")).HomePage }),
       },
-      { path: "workspace", loader: () => redirect(useWorkspaceState.getState().lastPath) },
+      {
+        path: "workspace",
+        loader: ({ request }) => localizedRedirect(request, useWorkspaceState.getState().lastPath),
+      },
       {
         lazy: async () => ({
           Component: (await import("../features/workspace/workspace-layout")).WorkspaceLayout,
@@ -65,8 +70,14 @@ export const router = createBrowserRouter([
               if (!mainImageModelIds.some((id) => id === model) || !model)
                 throw new Response("Not found", { status: 404 });
               useStudioStore.getState().setActiveModel(model);
-              return redirect(`/commerce/create${new URL(request.url).search}`);
+              return localizedRedirect(request, `/commerce/create${new URL(request.url).search}`);
             },
+          },
+          {
+            path: "commerce/replica",
+            lazy: async () => ({
+              Component: (await import("../features/commerce/replica/replica-page")).ReplicaPage,
+            }),
           },
           {
             path: "video",
@@ -76,7 +87,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "commerce",
-            loader: () => redirect(getRecentCommerceTool().href),
+            loader: ({ request }) => localizedRedirect(request, getRecentCommerceTool().href),
           },
           {
             path: "commerce/textile-set",
@@ -116,14 +127,48 @@ export const router = createBrowserRouter([
         }),
       },
       {
+        path: "inspiration",
+        lazy: async () => ({
+          Component: (await import("../features/home/inspiration-library-page"))
+            .InspirationLibraryPage,
+        }),
+      },
+      {
+        path: "terms",
+        lazy: async () => ({
+          Component: (await import("../features/legal/legal-page")).TermsPage,
+        }),
+      },
+      {
+        path: "privacy",
+        lazy: async () => ({
+          Component: (await import("../features/legal/legal-page")).PrivacyPage,
+        }),
+      },
+      {
         path: "*",
-        element: (
-          <EmptyState className="empty-state">
-            <h1>页面不存在</h1>
-            <Link href="/">返回首页</Link>
-          </EmptyState>
-        ),
+        element: <PageNotFound />,
       },
     ],
+  },
+];
+
+normalizeInitialLocalePath();
+
+/** 语言作为共享父级参数，切换时保留当前页面、草稿与应用壳。 */
+export const router = createBrowserRouter([
+  {
+    id: "localized-app",
+    path: "/:locale",
+    loader: loadRouteLocale,
+    HydrateFallback: PageLoading,
+    errorElement: <PageNotFound />,
+    children: localizedRoutes,
+  },
+  {
+    path: "*",
+    loader: ({ request }) => redirectToLocale(request),
+    HydrateFallback: PageLoading,
+    errorElement: <PageNotFound />,
   },
 ]);

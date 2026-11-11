@@ -1,4 +1,7 @@
-/* Shared neutral feedback for settings and uploaded-image mentions. */
+/*
+ * 首页设置浮层、设置胶囊与 @ 引用菜单都叠在毛玻璃上：悬停、按下、选中用半透明白，
+ * 随玻璃底色变化，不出现与底色不搭的实色灰块。
+ */
 :is(.home-settings, .home-settings-trigger, .reference-mention-popover) {
   --studio-control-hover: var(--control-hover-fill);
   --studio-control-pressed: var(--control-pressed-fill);

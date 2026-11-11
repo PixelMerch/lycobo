@@ -45,7 +45,7 @@
   }
 }
 
-:is(.sidebar, .mobile-nav):has(.nav-row[aria-expanded="true"]) .nav-row[aria-current="page"] {
+:is(.topbar-nav, .mobile-nav):has(.nav-row[aria-expanded="true"]) .nav-row[aria-current="page"] {
   background: transparent;
   color: var(--shell-nav-foreground);
 }
@@ -93,14 +93,14 @@
 }
 /* Workspace parameter palette mirrors the home model settings. */
 .composer-panel .parameter-group {
-  background: #272727;
+  background: var(--fill-faint);
 }
 .composer-panel .parameter-options {
-  background: #343434;
+  background: var(--fill-soft);
   border-radius: 20px;
 }
 .composer-panel .parameter-options.ratio-options {
-  background: #343434;
+  background: var(--fill-soft);
 }
 .composer-panel .parameter-options :is(.button, .toggle-button) {
   color: #aaa;
@@ -108,22 +108,21 @@
 }
 .composer-panel .parameter-options :is(.button, .toggle-button)[data-selected="true"] {
   color: #eee;
-  background: #505050;
+  background: var(--control-selected-fill);
 }
 /* Unified workspace groups and model menu. */
 .composer-panel .reference-picker,
 .composer-panel .prompt-field,
 .composer-panel .model-field,
 .composer-panel .parameter-group {
-  background: #272727;
+  background: var(--fill-faint);
 }
 .composer-panel .model-select {
   color: #eee;
-  background: #343434;
+  background: var(--fill-soft);
   border-radius: 18px;
 }
 .model-menu {
-  background: #272727;
   border-radius: 12px;
 }
 .model-menu .model-options {
@@ -131,7 +130,7 @@
 }
 .model-menu .model-options[aria-selected="true"] {
   color: #eee;
-  background: #505050;
+  background: var(--control-selected-fill);
 }
 @media (hover: hover) {
   .model-menu .model-options:hover,
@@ -139,7 +138,7 @@
     background: var(--control-hover-fill);
   }
   .model-menu .model-options[aria-selected="true"]:hover {
-    background: #505050;
+    background: var(--control-selected-fill);
   }
 }
 .model-menu .model-options:focus-visible,
@@ -230,7 +229,7 @@
   min-width: 44px;
 }
 .ratio-popover .parameter-options :is(.button, .toggle-button)[data-selected="true"] {
-  background: var(--surface-tertiary);
+  background: var(--control-selected-fill);
 }
 @media (min-width: 768px) {
   .composer-panel {
@@ -274,13 +273,13 @@
 }
 .parameter-options.ratio-options .button[data-selected="true"] {
   color: var(--link);
-  background: var(--surface-tertiary);
+  background: var(--control-selected-fill);
 }
 .composer-panel
   .parameter-options.ratio-options
   :is(.button, .toggle-button)[data-selected="true"] {
   color: #eee;
-  background: #505050;
+  background: var(--control-selected-fill);
 }
 .ratio-popover {
   box-shadow: var(--overlay-shadow);
@@ -387,15 +386,15 @@
   transform: none;
 }
 .model-menu .model-options[aria-selected="true"] {
-  background: var(--surface-tertiary);
+  background: var(--control-selected-fill);
 }
 @media (hover: hover) {
   .model-menu .model-options:hover,
   .model-menu .model-options[data-hovered="true"] {
-    background: var(--surface-secondary);
+    background: var(--control-hover-fill);
   }
   .model-menu .model-options[aria-selected="true"]:hover {
-    background: var(--surface-tertiary);
+    background: var(--control-selected-fill);
   }
 }
 @media (max-width: 767px) {

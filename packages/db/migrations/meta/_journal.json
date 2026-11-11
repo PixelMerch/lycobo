@@ -309,6 +309,20 @@
       "when": 1793935940975,
       "tag": "0043_realtime_push",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1794280726355,
+      "tag": "0044_user_avatar_preset",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1794315924325,
+      "tag": "0045_replica_batch_count",
+      "breakpoints": true
     }
   ]
 }

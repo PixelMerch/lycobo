@@ -10,6 +10,7 @@ AI 开发按 [任务阅读索引](docs/ai-workflow.md) 读取相关目录和依�
 | apps/web/src/app                     | 路由、共享应用壳（studio-shell.tsx）、providers                                                |
 | apps/web/src/features                | 按业务功能组织：首页、身份、账户、素材、生图与图片编辑工作区                                   |
 | apps/web/src/lib                     | 浏览器 API 客户端与工具                                                                        |
+| apps/web/src/i18n                    | 语言前缀、业务路径导航、语言偏好、文案目录与 HeroUI 语言同步；规则见 docs/localized-routing.md |
 | apps/web/src/styles                  | 共享设计 tokens 与全局基础样式                                                                 |
 | apps/api/src                         | Hono 入口、应用工厂、配置与组织隔离的生图 feature API                                          |
 | apps/assets/src                      | 隔离本地开发的 Node/S3 资源服务；生产资源由 Workers 签名校验后读取 R2，缺失变体通过 Queue 补齐 |
@@ -60,43 +61,52 @@ apps/worker/
 
 ```text
 apps/web/src/
-├── app/                          # 路由、应用壳、providers
+├── app/                          # 路由、应用壳（顶部导航栏、“电商”与语言悬停下拉、手机导航抽屉）、providers
 ├── components/                   # 跨功能复用的 HeroUI 组合与图片浏览基础能力
+├── i18n/                         # 简体中文／English：语言检测与记忆、defineMessages 文案目录、页面 lang 与标题同步
 ├── lib/                          # 请求、会话、错误和剪贴板等通用能力
 ├── styles/                       # 共享 tokens、基础样式与全屏动效样式
 └── features/
     ├── auth/                     # 身份请求、独立全屏登录页及登录方式切换
     ├── account/                  # 共享钱包请求、账户格式化及浮层组装
-    │   ├── menu/                 # 侧栏账户菜单和顶部积分入口
-    │   ├── center/               # 账户中心、个人资料
+    │   ├── avatar/               # 预设头像配色与各处共用的账户头像
+    │   ├── menu/                 # 顶部栏账户头像菜单、手机抽屉账户行和积分入口
+    │   ├── center/               # 账户设置共用的弹窗外框、表格与窄屏样式
     │   ├── credits/              # 积分预览、明细、充值及订单
     │   ├── membership/           # 独立会员页和定价
-    │   ├── settings/             # 账户设置和密码表单
-    │   └── notifications/        # 消息中心和更新内容
+    │   ├── settings/             # 账户设置、预设头像选择和密码表单
+    │   └── notifications/        # 消息中心
     ├── workspace/                # 统一工作区布局、工具坞、跨工具草稿交接
     ├── commerce/                 # 家纺裂变、套图计划（方案规划、确认与生图）及本地会话草稿
     ├── video/                    # 视频页面、请求与草稿；history / player / production / storyboard 分职责
     ├── home/                     # 首页、共享创作输入与提示辅助
-    │   ├── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，use-inspiration-columns.ts 订阅断点并派生均衡瀑布流
-    │   └── home-grid-motion.tsx   # 按需加载的Grid Motion背景、视差与可见性暂停；参数在react-bit-config.ts
-    ├── assets/                   # 素材库页面、全屏我的素材与共用浏览组件（筛选、密度网格、收藏）
+    │   ├── home-modes.ts         # 四个创作模式的上传规则与模板顺序；标语、上传名称与模板文字在 home-modes-messages.ts
+    │   ├── home-composer.tsx     # 按模式组合参考图（家纺为左侧上传列）、描述区与“开始创作”；草稿读写在 use-home-mode-draft.ts
+    │   ├── home-templates.tsx    # 描述模板与替换确认；主图设置在 home-model-settings.tsx，家纺视角在 home-textile-views.tsx
+    │   ├── home-backdrop.tsx     # 首屏丝绸背景：每个模式一种缎面配色，切换页签时由首页触发涟漪
+    │   ├── silk/                 # React Bits Silk 移植：着色器、WebGL 渲染器、动画状态与组件（来源见第三方材料）
+    │   └── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，justified-rows.ts 按容器宽度（use-element-width.ts）算出等高行拼图
+    ├── site/                     # 站点页脚：首页与用户协议、隐私政策页共用
+    ├── legal/                    # 用户协议与隐私政策公开页；运营主体等待补信息集中在 legal-entity-messages.ts
+    ├── assets/                   # 素材库页面与工作区全屏素材库：我的素材／灵感库标签、筛选、瀑布流、多选批量下载与收藏
     ├── generation/               # 生图请求、事件、会话草稿及工作台页面
     │   ├── composer/             # 比例选择、参数选中背景、图片与视频共用的单选参数行
     │   ├── models/               # 模型展示资料、Logo 与下拉选择
-    │   ├── references/           # 共享参考图上传、`@` 引用与缩略图
+    │   ├── references/           # 共享参考图上传、`@` 引用、缩略图与参考图角色（reference-roles、reference-role-menu）
     │   └── history/              # 历史查询、任务信息、操作和定位
     └── image-workspace/          # 生成图详情、缩略图列表、统一画布与缩放
         └── local-edit/           # 局部修改面板、选区、草稿、提交及状态通知
 ```
 
 - `components` 中参考图输入、参考图卡片、图片浏览和通用弹层分别在 `reference-prompt`、`reference-image`、`image-viewer`、`overlays`；基础图标、路由链接等小型公共组件留在根目录。`styles` 中 `auth`、`composer`、`history`、`home`、`workspace` 按用途归类，共享材质、主题和基础样式留在根目录，CSS 导入顺序保持稳定。
+- 界面文案就近放在各功能的 `*-messages.ts`，用 `i18n/messages.ts` 的 `defineMessages` 同时写简体中文与英文两份，结构以中文版为准；组件用 `useMessages` 读取，组件之外用 `currentMessages`。
 - 先按业务功能归类，功能内部就近存放组件、hook、样式与单元测试；只有存在明确子职责时再增加目录，不为每个组件建立一层文件夹。
 - 保留描述性文件名和直接导入，不新增 `index.ts` 聚合出口，也不建立覆盖所有功能的 components/hooks/services 分类目录。浏览器端到端测试仍在根目录 `tests/e2e`。
 - 主导航统一使用工作区入口；`features/workspace` 组合参数子路由、随功能切换的历史及四个功能的直达工具栏；`workspace-tool-symbol.tsx` 共享功能入口与参数标题的图标身份，只使用Tabler矢量图标。
-- `features/auth/login-prompt.tsx` 共享登录导航与首页创作交互门禁；Header及首页操作前往懒加载的 `/login`，`login-navigation.ts` 校验站内返回地址。`login-page.tsx` 组合全屏背景、固定尺寸玻璃卡片与翻面；`login-methods.tsx` 如实展示尚未接入的入口，`enterprise-login.tsx` 保留真实密码认证。`app/studio-shell.tsx` 在登录状态确认前不挂载非首页业务内容，未登录时重定向；登录页不挂载应用壳或实时连接，回到业务页后按原有持久游标重连补齐。
-- `app/studio-shell.tsx` 组合导航、身份门禁、账户和生图事件；路由页面留在各 feature。首页、工作台和素材页继续由路由懒加载，`image-workspace/preview-workspace.tsx` 及 Konva 继续按预览需要加载。
+- `features/auth/login-prompt.tsx` 共享登录导航与首页创作交互门禁；Header及首页操作前往懒加载的 `/login`，`login-navigation.ts` 校验站内返回地址。`login-page.tsx` 在青柠丝绸背景（`login-backdrop.tsx`）上居中固定尺寸玻璃卡片并负责翻面，版式在同目录 `login-page.css`；`login-methods.tsx` 如实展示尚未接入的入口，`enterprise-login.tsx` 保留真实密码认证。`app/studio-shell.tsx` 在登录状态确认前不挂载非首页业务内容，未登录时重定向；登录页不挂载应用壳或实时连接，回到业务页后按原有持久游标重连补齐。
+- `app/studio-shell.tsx` 组合导航、身份门禁、账户和生图事件；`use-window-scrolled.ts` 提供页面是否离开顶部，顶部栏据此切换透明与滚动磨砂。路由页面留在各 feature。首页、工作台和素材页继续由路由懒加载，`image-workspace/preview-workspace.tsx` 及 Konva 继续按预览需要加载。
 - `generation/generation-client.ts` 维护现有生图、历史和素材 API 查询与缓存，被历史、素材库和编辑工作区直接引用；目录维护不改变 query key 或增加请求层。
-- `assets/asset-library-client.ts` 负责素材库查询（生成／上传／收藏与功能、类型、模型筛选，素材库页面写入地址栏）和服务端收藏：一个有上限的收藏 ID 查询供所有星标共用，切换乐观更新、失败回滚；`asset-browser.tsx` 组合页签、`asset-filters.tsx`、`asset-tile.tsx` 与现有图片预览，`asset-masonry.tsx` 订阅网格尺寸并组合原比例瀑布流，`asset-layout.ts` 提供按天分组与保持输入顺序的最短列定位纯函数。`assets-page.tsx` 与 `library-dialog.tsx`（我的素材，功能默认当前工具）只组合该浏览组件。
+- `assets/asset-library-client.ts` 负责素材库查询（来源含 AI 生成的功能、类型、时间与仅看收藏，素材库页面写入地址栏）和服务端收藏：一个有上限的收藏 ID 查询供所有星标共用，切换乐观更新、失败回滚；`asset-browser.tsx` 组合 `asset-filters.tsx`、`asset-selection.tsx`（多选与批量下载，打包在 `asset-archive.ts`）、`asset-tile.tsx` 与现有图片预览，`asset-masonry.tsx` 订阅网格宽度并组合原比例瀑布流，`asset-layout.ts` 提供列数、按天分组与保持输入顺序的最短列定位纯函数。`asset-library-tabs.tsx` 是“我的素材 / 灵感库”标签行；`assets-page.tsx` 与 `library-dialog.tsx`（工作区打开，来源默认当前功能）只组合标签、浏览组件与首页的灵感作品墙。生成记录整组下载与素材批量下载共用 `generation/original-download.ts` 读取原文件。
 - `generation/studio-state.ts` 保留原有客户端草稿、跨页面交互状态及样例定义，现有引用直接指向它；目录归类不把样例转换成持久服务，也不改变状态生命周期。
 - `image-workspace/local-edit` 负责编辑交互，调用生图请求；预览壳组合画布与编辑面板。底层请求不反向依赖页面。类型依赖继续使用 `import type`，不为目录入口建立运行时循环。
 - `styles/fullscreen-dialog.css` 是图片详情与素材库共用的全屏动效；各功能 CSS 随对应组件导入。目录维护保持 DOM、class、样式内容、文案及交互逻辑不变。
@@ -163,8 +173,8 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 功能组件使用直接依赖；服务端缓存属于TanStack Query，临时草稿与交互属于Zustand，纯展示组件从props获得数据。具体规则见[UI一致性维护](docs/ui-consistency.md)。
 
-- `features/account/menu/account-menu.tsx` 组合HeaderLogin与侧栏账户菜单；积分与账单、设置分别打开独立弹窗。`header-benefits.tsx` 保留余额概览与会员入口。`account-overlays.tsx` 通过Zustand记录弹窗及打开者，统一懒加载账单、设置和会员；关闭后各自恢复焦点，退出或改密成功清空状态。
-- `features/account/center/account-center-dialog.tsx` 承载积分明细、充值订单两个页签，默认打开积分明细；`account-settings-dialog.tsx` 承载个人资料、登录与安全及管理员可见的企业成员。`account-profile.tsx` 共用紧凑账号信息条；`account-password-form.tsx` 通过auth-client接入既有改密接口，成功清理登录状态。`account-settings-panels.tsx` 如实保留未接入的头像、微信、子账号入口。`account-format.ts` 提供格式化，`account-entry.tsx` 提供收支图标；各页签查询按需挂载。
+- `features/account/menu/account-menu.tsx` 组合HeaderLogin与账户菜单（桌面顶部栏头像、手机抽屉账户行）；菜单只保留设置、个人作品与退出登录。`header-benefits.tsx` 是顶部栏积分胶囊与积分菜单（按 vidmuse，悬停逻辑复用 `lib/use-hover-menu.ts`）；`credits/credit-usage-dialog.tsx`、`credit-usage-list.tsx` 与 `use-credit-usage.ts` 组成积分明细弹窗（视图筛选、按需续读与分页；从 Header 积分菜单打开）。`account-overlays.tsx` 通过Zustand记录弹窗及打开者，统一懒加载账户设置及叠在其上的充值、会员和积分明细；关闭后各自恢复焦点，退出或改密成功清空状态。
+- `features/account/settings/account-settings-dialog.tsx` 是账户设置：左侧身份、分区与退出登录，分区为账户、套餐与用量、登录与安全及管理员可见的企业成员（`settings-sections.ts`）。`account-plan-usage.tsx` 组合当前套餐与升级、企业共享积分与充值，以及在积分明细（`credits/credit-ledger.tsx`）与充值订单（`credits/recharge-orders.tsx`）之间切换的积分用量；`account-password-form.tsx` 通过auth-client接入既有改密接口，成功清理登录状态。`account-settings-panels.tsx` 组合账户分区并如实保留未接入的子账号入口；`account-avatar-picker.tsx` 是头像行的预设单选，点选即通过auth-client的 `PUT /api/v1/auth/avatar` 保存。`avatar/account-avatar.tsx` 是顶部栏、手机抽屉、账户菜单与设置共用的头像，按身份里的 `avatarPreset` 取 `account-avatar.css` 中的渐变，认不出时用默认青柠。`account-format.ts` 提供格式化，`account-entry.tsx` 提供收支图标；各页签查询按需挂载。
 - `features/account/membership/membership-page.tsx` 导出懒加载全屏 MembershipDialog，Header在当前工作区打开；/membership仅为旧链接兼容入口，不展示返回与明细按钮；`MembershipPlans` 管理分类、周期、档位和团队席位展示；标语单价、周期最低折扣、折扣标签、单位积分价与“积分单价最低”飘带均由 `membership-pricing.ts` 的纯函数从价格表推导，并由同目录单元测试覆盖；membership-details组合工具／协作能力与Tooltip，membership-faq用官方Accordion承载本站FAQ，`CreditPacks` 只管理所选包。`wallet-client.ts` 共享钱包查询，最近记录按需读取并缓存30秒，不新增轮询。未接入的会员、绑定、验证码及支付不会模拟成功。
 
 ## 数据库领域命名
@@ -190,6 +200,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 - 主站各模型入口共用 `useModelPresentation`，展示资料来自 `models/model-presentation.ts`。模型编码使用有格式限制的动态字符串，渠道与任务快照继续由服务端校验；新增模型未绑定渠道时不可生成，历史供应商别名保留兼容。
 - 共享列表分页在 `components/infinite-load.tsx`，组合 IntersectionObserver 与 HeroUI Spinner；主站分页列表统一复用，业务查询仍由各功能的 TanStack Query hook 管理。提示词有效描述判断在 `features/generation/references/prompt-description.ts`，首页与创作页共用。
 - 套图计划：`variation-planner.ts` 封装 OpenAI 兼容语言分析；`variation-service.ts` 负责参考素材归属校验与解密密钥；计划阶段仅优化文本和参考图编号，不读取或发送图片，参考图保留至实际生图阶段；`variation-repository.ts` 持久化计划和幂等状态。`model_planners` 独立配置语言模型；`generation_jobs.input.variation` 保存确认后的方案快照，Worker 每条方案只请求一张图。
+- 参考图角色与套图逐条参考图：前端 `features/generation/references/reference-roles.ts` 记录会话内角色、`reference-role-menu.tsx` 是缩略图角色胶囊，`features/commerce/smart-variation/plan-image-bindings.ts` 计算每条方案的用图、`plan-reference-strip.tsx` 显示并切换；服务端 `packages/generation/src/images/reference-roles.ts` 选出每条输出要发送的参考图并写角色说明，Worker 的 `provider-references.ts` 按它读取参考图。
 - 主站独立试用路由由 `packages/generation/src/images/standalone-models.ts` 定义；API/消费者将纯配置注入图片仓储，绕过后台模型目录、路由及语言模型设置读取。前端展示在 `models/model-presentation.ts`，Logo 位于 `apps/web/public/model-logos/`。不会删除后台表或改变鉴权/积分/素材持久化。
 - Cloudflare 入口为 `apps/api/src/cloudflare.ts`，API 组合在 `cloudflare-app.ts`；`apps/worker/src/cloudflare/cloudflare-consumer.ts` 处理 Queue/Cron，`cloudflare/cloudflare-runtime.ts` 创建调用级资源。PostgreSQL 与钱包仍由原生仓储维护，绑定与状态见 [Cloudflare 部署准备](docs/cloudflare-deployment.md)。
 - 图片回调接收位于 `apps/api/src/features/images/webhooks/provider-webhook.ts`；任务与事件的持久化关联位于 `packages/db/src/webhooks/provider-webhook-repository.ts`。前端主动推送、服务端超时补查和发布顺序见 [图片 Webhook](docs/image-webhooks.md)。
@@ -199,6 +210,6 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 图片存储的受限并行编排位于 `packages/storage/src/cloudflare/cloudflare-image-write.ts`，由 `cloudflare.ts` 调用；原图和两个变体完成后才返回，遥测只记录阶段与耗时。
 
-`apps/web/src/styles/overlay-glass.css` 统一 HeroUI 浮层的毛玻璃材质与减少透明回退；全屏会员页按具名例外使用稳定实底；消息中心布局与状态卡片由 `features/account/notifications/account-updates.css` 维护。
+`apps/web/src/styles/overlay-glass.css` 统一 HeroUI 浮层的毛玻璃材质与减少透明回退；全屏会员页按具名例外使用稳定实底；消息中心布局与状态卡片由 `features/account/notifications/account-messages.css` 维护。
 
 主图制作统一位于 `/commerce/create`，默认 `gpt-image-2.6`，模型选择按 2.6、2.5、2 排列。`mainImageModelIds` 统一前后端主图选项；历史展示资料和其他工具保留原有型号。首页与工作台共用草稿，首页提示词最多 5000 字，操作栏独立于自动伸展输入区。

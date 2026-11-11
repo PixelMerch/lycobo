@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mockImageApi } from "./image-api-fixture";
 
-test("workspace navigation remains compact and aligned across desktop and mobile", async ({
+test("top navigation stays in one row and keeps drafts across desktop and mobile", async ({
   page,
 }) => {
   await mockImageApi(page);
@@ -9,28 +9,46 @@ test("workspace navigation remains compact and aligned across desktop and mobile
   await page.goto("/commerce/create");
   const prompt = page.getByLabel("提示词", { exact: true });
   await prompt.fill("保留这份商品创作草稿");
-  const rows = page.locator(".sidebar nav .nav-row");
-  await expect(rows).toHaveText(["首页", "工作区", "素材库"]);
-  const positions = await rows.evaluateAll((nodes) =>
-    nodes.map((node) => ({
-      icon: node.querySelector(".ui-icon")?.getBoundingClientRect().x,
-      text: node.querySelector(".nav-label")?.getBoundingClientRect().x,
-    })),
+  await expect(page.locator(".sidebar")).toHaveCount(0);
+  const navigation = page.getByRole("navigation", { name: "主导航", exact: true });
+  const rows = navigation.locator(".nav-row");
+  await expect(rows).toHaveText(["首页", "电商"]);
+  const tops = await rows.evaluateAll((nodes) =>
+    nodes.map((node) => Math.round(node.getBoundingClientRect().top)),
   );
-  for (const position of positions) expect(position).toEqual(positions[0]);
-  await page.getByRole("button", { name: "收起导航栏", exact: true }).click();
-  await expect
-    .poll(async () => Math.round((await page.locator(".sidebar").boundingBox())?.width ?? 0))
-    .toBe(64);
-  const workspace = page.getByRole("link", { name: "工作区", exact: true });
-  await workspace.hover();
-  await expect(page.getByRole("tooltip", { name: "工作区", exact: true })).toBeVisible();
-  await workspace.click();
+  for (const top of tops) expect(top).toBe(tops[0]);
+  const commerce = navigation.getByRole("button", { name: "电商", exact: true });
+  await expect(commerce).toHaveClass(/active/);
+  const main = await page.locator(".main-content").boundingBox();
+  expect(main?.x).toBe(0);
+  await navigation.getByRole("link", { name: "首页", exact: true }).click();
+  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
+  // 电商入口鼠标经过不展开（免得挡住工作区），点击才展开四个工具；选择后回到原工具且草稿仍在。
+  await commerce.hover();
+  const tools = page.getByRole("menu", { name: "电商" });
+  await page.waitForTimeout(300);
+  await expect(tools).toHaveCount(0);
+  await commerce.click();
+  await expect(tools.getByRole("menuitem")).toHaveText([
+    "主图制作",
+    "家纺裂变",
+    "套图计划",
+    "视频创作",
+  ]);
+  await tools.getByRole("menuitem", { name: "主图制作", exact: true }).click();
+  await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(prompt).toHaveValue("保留这份商品创作草稿");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "打开导航", exact: true }).click();
   const mobile = page.locator(".mobile-nav");
-  await expect(mobile.locator("nav .nav-row")).toHaveText(["首页", "工作区", "素材库"]);
+  await expect(mobile.locator("nav .nav-row")).toHaveText([
+    "首页",
+    "主图制作",
+    "家纺裂变",
+    "套图计划",
+    "视频创作",
+    "素材库",
+  ]);
   await mobile.getByRole("button", { name: "关闭导航", exact: true }).click();
   await expect(prompt).toHaveValue("保留这份商品创作草稿");
 });
@@ -41,21 +59,27 @@ for (const mobile of [false, true]) {
   }) => {
     await mockImageApi(page, { signedIn: false });
     await page.setViewportSize(mobile ? { width: 390, height: 844 } : { width: 1584, height: 993 });
-    for (const entry of ["工作区", "素材库"]) {
+    // 顶部导航不再有素材库；手机抽屉里的素材库是打开弹窗的按钮，未登录时同样先去登录。
+    for (const entry of mobile ? ["主图制作", "素材库"] : ["主图制作"]) {
       await page.goto("/");
       if (mobile) await page.getByRole("button", { name: "打开导航", exact: true }).click();
-      const navigation = page.locator(mobile ? ".mobile-nav" : ".sidebar");
+      const navigation = page.locator(mobile ? ".mobile-nav" : ".topbar");
       await expect(navigation.getByRole("button", { name: "账户设置", exact: true })).toHaveCount(
         0,
       );
       await expect(navigation.getByRole("button", { name: "帮助中心", exact: true })).toHaveCount(
         0,
       );
-      await navigation.getByRole("link", { name: entry, exact: true }).click();
+      if (!mobile && entry === "主图制作") {
+        await navigation.getByRole("button", { name: "电商", exact: true }).click();
+        await page.getByRole("menuitem", { name: entry, exact: true }).click();
+      } else if (entry === "素材库")
+        await navigation.getByRole("button", { name: entry, exact: true }).click();
+      else await navigation.getByRole("link", { name: entry, exact: true }).click();
       const login = page.locator(".login-page");
       await expect(login).toBeVisible();
       await login.getByRole("button", { name: "关闭登录", exact: true }).click();
-      await expect(page).toHaveURL(/\/$/);
+      await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
     }
   });
 }
@@ -86,7 +110,7 @@ for (const path of [
     await expect(page.locator(".composer-panel, .asset-browser")).toHaveCount(0);
     expect(requests).toEqual([]);
     await login.getByRole("button", { name: "关闭登录", exact: true }).click();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   });
 }
 
@@ -117,7 +141,7 @@ for (const action of [
     if (action === "settings")
       await page.getByRole("button", { name: "选择创作模型", exact: true }).click();
     if (action === "shortcut")
-      await page.getByRole("button", { name: "商品主图", exact: true }).click();
+      await page.getByRole("button", { name: "白底主图", exact: true }).click();
     if (action === "file-input")
       await page.getByLabel("添加参考图片", { exact: true }).setInputFiles({
         name: "product.png",
@@ -130,7 +154,7 @@ for (const action of [
     await login.getByRole("button", { name: "关闭登录", exact: true }).click();
     await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("");
     await expect(page.locator(".reference-image-card")).toHaveCount(0);
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   });
 }
 
@@ -149,6 +173,6 @@ test("homepage inspirations remain browsable while applying a prompt requires lo
   const login = page.locator(".login-page");
   await expect(login).toBeVisible();
   await login.getByRole("button", { name: "关闭登录", exact: true }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("");
 });

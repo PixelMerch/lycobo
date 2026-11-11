@@ -1,47 +1,57 @@
 import { expect, type Locator, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
+/** 共享浮层玻璃：8% 白色渐变底（第二层是透明底色）与 40px 背景模糊。 */
 async function glass(panel: Locator) {
   await expect(panel).toBeVisible();
   await expect
     .poll(() => panel.evaluate((node) => getComputedStyle(node).backdropFilter))
-    .toContain("blur(28px)");
+    .toBe("blur(40px)");
   await expect
     .poll(() => panel.evaluate((node) => getComputedStyle(node).backgroundImage))
-    .toContain("linear-gradient");
+    .toBe("linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)), none");
 }
 for (const mobile of [false, true]) {
-  test(`credit overview retains glass, draft and focus ${mobile ? "mobile" : "desktop"}`, async ({
+  test(`credits menu uses the vidmuse header surface and keeps draft and focus ${mobile ? "mobile" : "desktop"}`, async ({
     page,
   }) => {
     await mockImageApi(page);
     if (mobile) await page.setViewportSize({ width: 393, height: 852 });
     await page.goto("/");
     const draft = page.getByRole("textbox", { name: "创作需求", exact: true });
-    await draft.fill("关闭积分概览后保留草稿");
-    const balance = page.locator(".header-balance");
-    await glass(page.locator(".header-benefits"));
-    await balance.click();
-    const panel = page.getByRole("dialog", { name: "积分概览", exact: true });
-    await glass(page.locator(".credit-preview-popover"));
-    await expect(panel.getByRole("button", { name: "充值积分", exact: true })).toBeVisible();
-    await expect(panel).toHaveCSS("outline-style", "none");
+    await draft.fill("关闭积分菜单后保留草稿");
+    const credits = page.locator(".header-credits");
+    // 积分胶囊按 vidmuse：#FFFFFF14 底、不加背景模糊。
+    await expect(credits).toHaveCSS("background-color", "rgba(255, 255, 255, 0.08)");
+    await expect(credits).toHaveCSS("backdrop-filter", "none");
+    await credits.focus();
+    await page.keyboard.press("Enter");
+    const menu = page.locator(".credits-menu");
+    // 顶部栏下拉与其他浮层同一套玻璃：#FFFFFF14 渐变底与 40px 背景模糊，只是不留描边。
+    await expect(menu).toHaveCSS(
+      "background-image",
+      "linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)), none",
+    );
+    await expect(menu).toHaveCSS("backdrop-filter", "blur(40px)");
+    await expect(menu).toHaveCSS("border-top-width", "0px");
+    await expect(page.getByRole("menuitem", { name: "开通会员", exact: true })).toBeVisible();
+    await expect(page.getByRole("menu")).toHaveCSS("outline-style", "none");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
     await page.screenshot({
-      path: `/tmp/lycobo-glass-credits-${mobile ? "mobile" : "desktop"}.png`,
+      path: `/tmp/lycobo-credits-menu-${mobile ? "mobile" : "desktop"}.png`,
     });
     const cdp = await page.context().newCDPSession(page);
     await cdp.send("Emulation.setEmulatedMedia", {
       features: [{ name: "prefers-reduced-transparency", value: "reduce" }],
     });
-    await expect(page.locator(".credit-preview-popover")).toHaveCSS("backdrop-filter", "none");
-    await expect(page.locator(".header-benefits")).toHaveCSS("backdrop-filter", "none");
+    await expect(menu).toHaveCSS("backdrop-filter", "none");
+    await expect(menu).toHaveCSS("background-color", "rgb(28, 31, 27)");
     await page.keyboard.press("Escape");
-    await expect(panel).toHaveCount(0);
-    await expect(balance).toBeFocused();
-    await expect(draft).toHaveValue("关闭积分概览后保留草稿");
+    await expect(menu).toHaveCount(0);
+    await expect(credits).toBeFocused();
+    await expect(draft).toHaveValue("关闭积分菜单后保留草稿");
   });
   test(`message center uses readable glass and retains read actions ${mobile ? "mobile" : "desktop"}`, async ({
     page,

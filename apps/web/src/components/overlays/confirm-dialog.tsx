@@ -2,6 +2,8 @@ import { Button, Modal } from "@heroui/react";
 import type { ReactNode } from "react";
 import { DialogClose } from "./dialog-close";
 import "./confirm-dialog.css";
+import { useMessages } from "../../i18n/messages";
+import { componentsMessages } from "../components-messages";
 
 type ConfirmDialogProps = {
   isOpen: boolean;
@@ -16,19 +18,20 @@ type ConfirmDialogProps = {
   onCancel: () => void;
 };
 
-/** Shared confirmation dialog; callers own open state and close in the callbacks. */
+/** 共用确认弹窗：调用方管理开关状态，并在回调里关闭。 */
 export function ConfirmDialog({
   isOpen,
   title,
   content,
-  confirmLabel = "确认",
-  cancelLabel = "取消",
-  closeLabel = "关闭确认弹窗",
+  confirmLabel,
+  cancelLabel,
+  closeLabel,
   tone = "default",
   isPending = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const t = useMessages(componentsMessages);
   return (
     <Modal
       isOpen={isOpen}
@@ -41,7 +44,7 @@ export function ConfirmDialog({
           <Modal.Dialog className="confirm-dialog" data-tone={tone}>
             <Modal.Header>
               <Modal.Heading>{title}</Modal.Heading>
-              <DialogClose label={closeLabel} />
+              <DialogClose label={closeLabel ?? t.closeConfirm} />
             </Modal.Header>
             <Modal.Body>
               <div className="confirm-dialog__content">{content}</div>
@@ -52,14 +55,14 @@ export function ConfirmDialog({
                   isDisabled={isPending}
                   onPress={onCancel}
                 >
-                  {cancelLabel}
+                  {cancelLabel ?? t.cancel}
                 </Button>
                 <Button
                   className="confirm-dialog__confirm"
                   isDisabled={isPending}
                   onPress={onConfirm}
                 >
-                  {confirmLabel}
+                  {confirmLabel ?? t.confirm}
                 </Button>
               </div>
             </Modal.Body>

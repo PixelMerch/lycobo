@@ -16,9 +16,11 @@ const principalRow = z.object({
   organization_id: z.uuid(),
   role: z.enum(["admin", "member"]),
   account: z.string(),
+  avatar_preset: z.string().nullable(),
 });
 export type EnterpriseCredential = z.infer<typeof accountRow>;
-export type EnterpriseIdentity = ImagePrincipal & { account: string };
+export type EnterpriseIdentity = ImagePrincipal & { account: string; avatarPreset?: string | null };
+/** 打开企业账号数据访问：登录限流、凭据、会话、身份、改密与预设头像。 */
 export function openAuthRepository(url: string, edge = false) {
   const sql = postgres(url, {
     max: edge ? 1 : 3,
@@ -40,7 +42,7 @@ export function openAuthRepository(url: string, edge = false) {
     close: () => sql.end({ timeout: 5 }),
     async allowLogin(account: string) {
       if (!(await consume("global", 60, 200))) return false;
-      // Hash the account identifier; never persist submitted passwords or raw request bodies.
+      // 只保存账号标识的哈希；不保存提交的密码或原始请求体。
       const key = createHash("sha256").update(account).digest("hex");
       await sql`delete from login_rate_limits where window_start < now()-interval '1 day'`;
       return consume(key, 900, 10);
@@ -63,7 +65,7 @@ export function openAuthRepository(url: string, edge = false) {
     },
     async identity(sessionId: string): Promise<EnterpriseIdentity | null> {
       const rows =
-        await sql`select a.account,a.user_id,a.organization_id,m.role,u.uid from enterprise_sessions s
+        await sql`select a.account,a.user_id,a.organization_id,m.role,u.uid,u.avatar_preset from enterprise_sessions s
         join enterprise_accounts a on a.id=s.account_id
         join users u on u.id=a.user_id
         join organization_members m on m.user_id=a.user_id and m.organization_id=a.organization_id
@@ -76,7 +78,14 @@ export function openAuthRepository(url: string, edge = false) {
         organizationId: row.organization_id,
         role: row.role,
         account: row.account,
+        avatarPreset: row.avatar_preset,
       };
+    },
+    /** 保存用户选择的预设头像；只按服务端解析出的 userId 更新。 */
+    async setAvatarPreset(userId: string, avatarPreset: string | null) {
+      const rows =
+        await sql`update users set avatar_preset=${avatarPreset} where id=${userId} returning id`;
+      return rows.length === 1;
     },
     async rotateRefresh(currentHash: string, nextHash: string) {
       const rows = await sql`update enterprise_sessions s set refresh_token_hash=${nextHash}
@@ -109,7 +118,7 @@ export function openAuthRepository(url: string, edge = false) {
       passwordHash: string,
     ) {
       await sql.begin(async (tx) => {
-        // An account cannot silently be reassigned to a different user/enterprise.
+        // 账号不能被悄悄改绑到其他用户或企业。
         const rows =
           await tx`insert into enterprise_accounts (account,user_id,organization_id,password_hash) values (${account},${userId},${organizationId},${passwordHash})
           on conflict (account) do update set password_hash=excluded.password_hash, credential_version=gen_random_uuid(), disabled_at=null

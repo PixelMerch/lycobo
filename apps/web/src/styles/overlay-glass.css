@@ -1,24 +1,26 @@
-/* 浮层共用材质；业务样式只负责布局，不再各自选择不透明底色。 */
+/* 浮层共用毛玻璃（与顶部栏下拉同款）；业务样式只负责布局，不再各自选择不透明底色。
+ * 例外：会员全屏页，以及压在图片网格上打开的素材库筛选菜单（用户 2026-11-10 要求不透明深色底）。 */
 :root
   :is(
     .modal__dialog,
     .drawer__dialog,
     .popover,
     .dropdown__popover,
+    .select__popover,
     .tooltip,
     .alert-dialog,
     .toast
-  ):not(.membership-dialog),
+  ):not(.membership-dialog, .header-menu, .asset-filter-menu),
 :root .login-panel {
   background: var(--glass-fill), var(--glass-tint);
-  border: 1px solid var(--glass-edge);
+  border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
 }
 /* 提示气泡只保留外投影，避免顶部内高光与细边叠加成双线。 */
 :root .tooltip {
-  box-shadow: 0 8px 24px #00000040;
+  box-shadow: var(--shadow-md);
 }
 /* 遮罩只调暗，避免在父层先模糊而截断弹层对页面的磨砂采样。 */
 :root :is(.modal__backdrop, .drawer__backdrop) {

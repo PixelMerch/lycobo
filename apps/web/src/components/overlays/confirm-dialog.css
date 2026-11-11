@@ -17,9 +17,9 @@
   padding: 0;
   /* A black panel stands apart from the neutral-grey blurred page behind it. */
   border: 0;
-  border-radius: 18px;
+  border-radius: 20px;
   background: #000;
-  box-shadow: 0 24px 64px #00000080;
+  box-shadow: var(--shadow-lg);
   color: #fff;
 }
 /* The Dialog node itself receives focus when it opens (and when a nested dialog
@@ -49,7 +49,7 @@
   grid-column: 1;
   min-width: 0;
   overflow-wrap: anywhere;
-  color: #b8b8c0;
+  color: #b9b9b9;
   font-size: var(--text-base);
   line-height: var(--leading-base);
   font-weight: var(--weight-regular);
@@ -83,7 +83,7 @@
  * and focus add a faint fill so it stays obviously clickable. */
 .confirm-dialog__cancel.button {
   background: transparent;
-  color: #b8b8c0;
+  color: #b9b9b9;
 }
 .confirm-dialog__cancel.button:is(:hover, [data-hovered="true"]) {
   background: #ffffff1f;

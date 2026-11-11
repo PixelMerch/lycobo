@@ -1,8 +1,7 @@
 .modal__backdrop.library-backdrop {
   background: transparent;
 }
-/* The panel owns the whole viewport on open: full height, full width, with the
- * sidebar hidden behind it. Clicking the rail entry goes straight to full screen. */
+/* 打开后面板占满整个视口，顶部导航栏留在其后；点击右栏入口直接进入全屏。 */
 .library-dialog {
   display: flex;
   align-self: flex-end;
@@ -24,70 +23,52 @@
   flex-direction: column;
   min-height: 0;
   height: 100%;
-  background: #0b0b0e;
+  background: #0b0b0b;
   will-change: transform;
 }
-/* Header shares the shell header height so the drawer title sits on the same
- * vertical centre as the sidebar logo and the page header. */
-.library-dialog .library-header {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: var(--space-2);
-  height: var(--header-height);
-  min-height: var(--header-height);
-  padding: 0 var(--space-6);
-  text-align: left;
+.library-shell .asset-library-tabs {
+  flex: 1;
+  min-height: 0;
 }
-/* Close sits on the left, next to the title, so the whole action area stays on
- * the same side as the filters below and lines up with the content padding. */
+/* 标签行与应用顶部栏同高，关闭按钮在“我的素材 / 灵感库”左侧，与下方内容的左边界对齐。 */
+.library-shell .asset-library-head {
+  padding: 0 var(--space-6);
+}
 .modal__close-trigger.library-close {
-  /* Pull the control out so the 28px glyph itself lines up with the content
-   * padding below instead of the button box. */
+  /* 按钮外扩，让 28px 的图形本身而不是按钮框与下方内容的左边界对齐。 */
   margin-inline-start: -12px;
 }
-.library-dialog .library-header .modal__heading {
-  color: #eee;
-  font-size: var(--text-xl);
-  line-height: var(--leading-xl);
-  font-weight: var(--weight-semibold);
-}
-.library-dialog .library-body {
+/* 当前标签的内容是滚动区域，筛选行吸在顶部，用同色不透明底遮住滚过的图片。 */
+.library-shell .asset-library-panel {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--space-4);
   min-height: 0;
-  /* HeroUI offsets the body by -3px for its inner padding; cancel it so the
-   * content lines up with the header and the close glyph. */
-  margin-inline: 0;
   padding: 0 var(--space-6) var(--space-6);
   overflow-y: auto;
 }
-.library-body .asset-filters {
+.library-shell .asset-filters {
   position: sticky;
   top: 0;
   z-index: 2;
-  padding-bottom: var(--space-4);
-  background: #0b0b0e;
+  background: #0b0b0b;
 }
 @media (max-width: 767px) {
-  .library-dialog .library-header {
+  .library-shell .asset-library-head {
     padding: 0 var(--space-4);
   }
-  .library-dialog .library-body {
+  .library-shell .asset-library-panel {
     padding: 0 var(--space-4) var(--space-4);
   }
 }
 
-/* Fill the remaining viewport so the empty illustration and caption stay centered. */
-.library-body .asset-browser,
-.library-body .asset-source-panel {
+/* 空列表占满剩余高度，图标与说明居中。 */
+.library-shell :is(.asset-browser, .asset-source-panel) {
   display: flex;
   flex: 1;
   flex-direction: column;
 }
-.library-body .asset-empty.empty-state {
+.library-shell .asset-empty.empty-state {
   flex: 1;
   min-height: 180px;
   justify-content: center;

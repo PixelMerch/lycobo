@@ -9,29 +9,29 @@ import {
 } from "@heroui/react";
 import { useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
+import { useLocale } from "../../../i18n/locale-store";
+import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { useEnterpriseSession } from "../../auth/auth-client";
 import { EntryMark } from "../account-entry";
 import {
   entryDetail,
-  entryNames,
+  entryName,
   formatCredits,
+  isPromptOptimization,
   memberLabel,
   recordTime,
   signedCredits,
 } from "../account-format";
 import { useWallet, useWalletEntries } from "../wallet-client";
+import { creditsMessages } from "./credits-messages";
 
-const kinds = [
-  { id: "all", name: "全部" },
-  { id: "consume", name: "积分消耗" },
-  { id: "refund", name: "失败退款" },
-  { id: "recharge", name: "充值到账" },
-  { id: "opening", name: "期初" },
-];
+const kinds = ["all", "consume", "refund", "recharge", "opening"] as const;
 
-/** Filters apply to loaded pages only; the ledger never infers totals from partial history. */
+/** 积分收支明细表：筛选只作用于已加载的记录，不从部分历史推算合计。 */
 export function CreditLedger() {
+  const t = useMessages(creditsMessages);
+  const locale = useLocale();
   const session = useEnterpriseSession();
   const wallet = useWallet();
   const entries = useWalletEntries();
@@ -46,38 +46,38 @@ export function CreditLedger() {
       (member === "all" || (entry.user_uid ?? "system") === member),
   );
   const currentUid = session.data?.uid;
-  const availableMessage = ledger.length ? "已加载记录中暂无此类型" : "暂无收支记录";
-  const errorMessage = entries.isError ? "收支记录暂时不可用" : availableMessage;
-  const entriesStatusText = entries.isPending ? "正在加载收支记录…" : errorMessage;
+  const availableMessage = ledger.length ? t.noEntriesOfKind : t.noEntries;
+  const errorMessage = entries.isError ? t.entriesUnavailable : availableMessage;
+  const entriesStatusText = entries.isPending ? t.loadingEntries : errorMessage;
   return (
-    <section className="account-ledger" aria-label="积分明细">
+    <section className="account-ledger" aria-label={t.creditHistory}>
       <div className="account-toolbar">
         <ToggleButtonGroup
-          aria-label="收支类型"
+          aria-label={t.entryKind}
           size="sm"
           selectionMode="single"
           disallowEmptySelection
           selectedKeys={[kind]}
           onSelectionChange={(keys) => {
-            const next = kinds.find((item) => keys.has(item.id));
-            if (next) setKind(next.id);
+            const next = kinds.find((id) => keys.has(id));
+            if (next) setKind(next);
           }}
           className="account-segment"
         >
-          {kinds.map((item) => (
-            <ToggleButton key={item.id} id={item.id}>
-              {item.name}
+          {kinds.map((id) => (
+            <ToggleButton key={id} id={id}>
+              {t.ledgerKinds[id]}
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
         {members.length > 1 && (
           <Select
-            aria-label="成员"
+            aria-label={t.member}
             value={member}
             onChange={(key) => setMember(String(key))}
             className="account-member-filter"
           >
-            <Label className="sr-only">成员</Label>
+            <Label className="sr-only">{t.member}</Label>
             <Select.Trigger>
               <Select.Value />
               <Select.Indicator />
@@ -86,7 +86,8 @@ export function CreditLedger() {
               <ListBox>
                 {["all", ...members].map((uid) => {
                   const memberId = uid === "system" ? null : uid;
-                  const name = uid === "all" ? "全部成员" : memberLabel(memberId, currentUid);
+                  const name =
+                    uid === "all" ? t.allMembers : memberLabel(memberId, currentUid, locale);
                   return (
                     <ListBox.Item key={uid} id={uid} textValue={name}>
                       {name}
@@ -99,23 +100,25 @@ export function CreditLedger() {
           </Select>
         )}
         <span className="account-toolbar-meta">
-          当前可用 <b>{wallet.data ? formatCredits(wallet.data.balance) : "—"}</b> 积分 · 已加载{" "}
-          {ledger.length} 条
+          {t.availableBefore}
+          <b>{wallet.data ? formatCredits(wallet.data.balance) : "—"}</b>
+          {t.availableAfter}
+          {t.loadedEntries(ledger.length)}
         </span>
       </div>
       <div className="account-table-card">
         <Table variant="secondary" className="account-table account-ledger-table">
           <Table.ScrollContainer>
-            <Table.Content aria-label="积分收支明细">
+            <Table.Content aria-label={t.entriesTable}>
               <Table.Header>
-                <Table.Column className="account-col-time">时间</Table.Column>
+                <Table.Column className="account-col-time">{t.columns.time}</Table.Column>
                 <Table.Column isRowHeader className="account-col-type">
-                  类型
+                  {t.columns.type}
                 </Table.Column>
-                <Table.Column className="account-col-detail">说明</Table.Column>
-                <Table.Column className="account-col-member">成员</Table.Column>
-                <Table.Column className="account-col-amount">积分变动</Table.Column>
-                <Table.Column className="account-col-after">结余</Table.Column>
+                <Table.Column className="account-col-detail">{t.columns.detail}</Table.Column>
+                <Table.Column className="account-col-member">{t.columns.member}</Table.Column>
+                <Table.Column className="account-col-amount">{t.columns.change}</Table.Column>
+                <Table.Column className="account-col-after">{t.columns.balance}</Table.Column>
               </Table.Header>
               <Table.Body
                 items={visible}
@@ -126,13 +129,15 @@ export function CreditLedger() {
                 )}
               >
                 {(entry) => {
-                  const detail = entryDetail(entry);
-                  const optimizationName = entry.kind === "consume" ? "积分消耗" : "积分退还";
-                  const name = detail === "提示词优化" ? optimizationName : entryNames[entry.kind];
+                  const optimizationName =
+                    entry.kind === "consume" ? t.optimizationSpent : t.optimizationReturned;
+                  const name = isPromptOptimization(entry)
+                    ? optimizationName
+                    : entryName(entry, locale);
                   return (
                     <Table.Row id={entry.id}>
                       <Table.Cell className="account-cell-time">
-                        {recordTime(entry.created_at)}
+                        {recordTime(entry.created_at, locale)}
                       </Table.Cell>
                       <Table.Cell className="account-cell-type">
                         <span className="account-entry-type">
@@ -140,9 +145,11 @@ export function CreditLedger() {
                           {name}
                         </span>
                       </Table.Cell>
-                      <Table.Cell className="account-cell-detail">{detail}</Table.Cell>
+                      <Table.Cell className="account-cell-detail">
+                        {entryDetail(entry, locale)}
+                      </Table.Cell>
                       <Table.Cell className="account-cell-member">
-                        {memberLabel(entry.user_uid, currentUid)}
+                        {memberLabel(entry.user_uid, currentUid, locale)}
                       </Table.Cell>
                       <Table.Cell
                         className={`account-cell-amount${entry.amount > 0 ? " is-positive" : ""}`}
@@ -150,7 +157,7 @@ export function CreditLedger() {
                         {signedCredits(entry.amount)}
                       </Table.Cell>
                       <Table.Cell className="account-cell-after">
-                        <span className="account-after-label">结余 </span>
+                        <span className="account-after-label">{t.balanceLabel}</span>
                         {formatCredits(entry.balance_after)}
                       </Table.Cell>
                     </Table.Row>
@@ -167,13 +174,10 @@ export function CreditLedger() {
             isError={entries.isError}
             onLoadMore={() => entries.fetchNextPage({ cancelRefetch: false })}
           />
-          <span>
-            显示 {visible.length} 条{entries.hasNextPage ? "，向下滚动加载更早记录" : ""} ·
-            筛选仅针对已加载的记录
-          </span>
+          <span>{t.shownEntries(visible.length, entries.hasNextPage)}</span>
           {entries.isError && (
             <Button size="sm" variant="secondary" onPress={() => void entries.refetch()}>
-              重新加载收支
+              {t.reloadEntries}
             </Button>
           )}
         </div>

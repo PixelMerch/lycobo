@@ -1,11 +1,15 @@
 import { publicImageModel } from "@lycoboai/contracts";
+import type { Locale } from "../../../i18n/locale";
+import { modelMessages } from "./model-messages";
 
-/** Resolve presentation only; keep the original model identifier in task/editor state. */
+/** 只换算显示名称；任务与编辑状态里仍保存原始模型 id。找不到名称时显示“图片创作”。 */
 export function modelDisplayName(
   id: string | null | undefined,
   models: readonly { id: string; name?: string | undefined }[],
+  locale: Locale,
 ) {
-  if (!id) return "图片创作";
+  const fallback = modelMessages[locale].fallbackName;
+  if (!id) return fallback;
   const model =
     models.find((model) => model.id === id) ??
     models.find((model) => model.id === publicImageModel(id));
@@ -13,5 +17,5 @@ export function modelDisplayName(
     "grok-imagine-image-2.0": "Grok 2",
     "seedream-5.0-pro": "Seedream 5.0 Pro",
   };
-  return model?.name?.trim() || retiredNames[id] || "图片创作";
+  return model?.name?.trim() || retiredNames[id] || fallback;
 }

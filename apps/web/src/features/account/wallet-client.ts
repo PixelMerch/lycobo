@@ -16,23 +16,32 @@ export function useWallet() {
       walletBalanceSchema.parse(await (await imageRequest("wallet", { signal })).json()),
   });
 }
-export function useWalletEntries() {
+/** 弹窗使用服务端的近半年消耗或获得视图。 */
+export type WalletEntryView = "spent" | "earned";
+
+/** 使用流水游标读取积分收支，按视图和批量大小独立缓存。 */
+export function useWalletEntries(pageSize = 20, view?: WalletEntryView) {
   const session = useImageSession();
   return useInfiniteQuery({
-    queryKey: ["wallet-entries", session.data?.organizationId, session.data?.userId],
+    queryKey: [
+      "wallet-entries",
+      session.data?.organizationId,
+      session.data?.userId,
+      pageSize,
+      view,
+    ],
     enabled: session.isSuccess,
     retry: false,
     staleTime: 30000,
     initialPageParam: "",
-    queryFn: async ({ signal, pageParam }) =>
-      walletEntriesSchema.parse(
-        await (
-          await imageRequest(`wallet/entries?limit=20${pageParam ? `&before=${pageParam}` : ""}`, {
-            signal,
-          })
-        ).json(),
-      ),
-    getNextPageParam: (page) => (page.data.length === 20 ? page.data.at(-1)?.id : undefined),
+    queryFn: async ({ signal, pageParam }) => {
+      const params = new URLSearchParams({ limit: String(pageSize) });
+      if (view) params.set("view", view);
+      if (pageParam) params.set("before", pageParam);
+      const response = await imageRequest(`wallet/entries?${params}`, { signal });
+      return walletEntriesSchema.parse(await response.json());
+    },
+    getNextPageParam: (page) => (page.data.length === pageSize ? page.data.at(-1)?.id : undefined),
   });
 }
 export function useRechargeOrders() {

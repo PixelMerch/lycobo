@@ -6,7 +6,8 @@
 - pnpm typecheck：所有 workspace 包 strict TypeScript。
 - pnpm test：契约、API、Worker 的单元行为。
 - pnpm build：实际前端和两个 Node 应用生产构建。
-- pnpm test:e2e：真实 Chromium 下接口连接、路由、禁用态与窄屏溢出。
+- pnpm test:e2e <spec 文件或 --grep>：定向浏览器测试；未指定范围会在启动浏览器前拒绝。
+- pnpm test:e2e:full：完整浏览器回归，仅用户明确要求全量或远程手动回归时执行。
 - pnpm test:integration：明确 opt-in 的隔离 PostgreSQL、队列、鉴权及持久事件集成验证。
 
 首次运行浏览器测试需 pnpm exec playwright install chromium。
@@ -30,16 +31,18 @@ CI 使用 pnpm exec playwright install --with-deps chromium。
 
 ## 本地开发与远程回归
 
+纯按钮外观、间距、颜色和文案改动无需 E2E，也不新增截图镜像测试。关键交互或已知回归按用例选择范围；不要为了修改按钮样式执行完整回归。`pnpm check` 不包含 Playwright，`pnpm check:release` 现在也只运行同一质量检查。
+
 日常 AI 开发默认执行 `pnpm check` 和 `git diff --check`，不在每次样式、文案或布局调整后运行本地全量 E2E。关键交互变化、已知回归或用户明确要求时，只运行相关浏览器用例；例如 `pnpm test:e2e tests/e2e/preview-workspace.spec.ts`。不为纯视觉数值补写镜像测试。
 
 按2026-10-31用户要求，浏览器验证改为手动运行，不阻塞日常提交、PR合并和main部署。自动CI保留Quality（lint、类型、单测、构建）及Infrastructure（数据库、队列、存储集成）。本地仅按需做定向浏览器验证，不默认运行全量。
 
 ## CI 浏览器检查
 
-| 触发场景                    | 浏览器范围                                           |
-| --------------------------- | ---------------------------------------------------- |
-| 推送 dev/main、普通或发布PR | 不自动运行                                           |
-| 手动运行 CI                 | 完整 `pnpm test:e2e`，可填写 `browser_grep` 定向诊断 |
+| 触发场景                    | 浏览器范围                                                |
+| --------------------------- | --------------------------------------------------------- |
+| 推送 dev/main、普通或发布PR | 不自动运行                                                |
+| 手动运行 CI                 | 完整 `pnpm test:e2e:full`，可填写 `browser_grep` 定向诊断 |
 
 浏览器用例及两分片汇总保持保留；手动运行时必须报告实际成败，不伪造通过。分支保护由GitHub配置决定，不使用管理员绕过。
 
@@ -81,11 +84,13 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 ## 工作台浏览器回归
 
-`tests/e2e/image-preview.spec.ts` 验证全屏预览、缩放拖动、移动布局和图片切换后的说明同步；`library-dialog.spec.ts` 验证我的素材默认当前工具、页签与功能／模型筛选在分页前请求、重置、上传页签禁用筛选、服务端收藏与失败回滚、带筛选进入素材库、按天分组与手机两列瀑布流，以及弹层焦点恢复。接口均由浏览器 fixture 拦截，不调用模型。
+`tests/e2e/image-preview.spec.ts` 验证全屏预览、缩放拖动、移动布局和图片切换后的说明同步；`library-dialog.spec.ts` 验证素材库弹窗默认当前功能、来源／时间／收藏筛选在分页前请求、不透明筛选菜单、选了时间才按天分组、多选单张直下与多张打包 ZIP、Esc 先退出多选、灵感库“做同款”带入提示词并关闭弹窗、页面标签与筛选写入地址栏、服务端收藏与失败回滚、手机两列瀑布流与底部操作条，以及弹层焦点恢复。接口均由浏览器 fixture 拦截，不调用模型。
 
 素材库筛选与收藏由 worker `test:images` 的 `verify-asset-library.ts` 在隔离 PostgreSQL 验证：功能、模型、收藏幂等与成员隔离、跨组织及过期素材拒绝、每位成员 1000 项上限。
 
-并行执行不同测试任务时，为每次运行设置独立 `--output=/tmp/<本次运行目录>`，避免 Playwright 清理其他运行的 trace。历史时间断言使用浏览器自身时区计算，不能写死本机的 UTC+8 时间。完整 `pnpm test:e2e` 由远程 CI 手动触发；本地复现可指定文件或用例，不能以跳过失败用例代替查明原因。
+并行执行不同测试任务时，为每次运行设置独立 `--output=/tmp/<本次运行目录>`，避免 Playwright 清理其他运行的 trace。历史时间断言使用浏览器自身时区计算，不能写死本机的 UTC+8 时间。完整 `pnpm test:e2e:full` 由远程 CI 手动触发；本地复现可指定文件或用例，不能以跳过失败用例代替查明原因。
+
+浏览器 fixture 有三处容易出错：内联图片必须是校验正确的真实图片，新版 Chromium 拒绝解码 CRC 损坏的 PNG，参考图会停在“无法解码”；`<a download>` 发起的下载不经过 `page.route`，要核对下载内容时像 `video-creation.spec.ts` 那样起本地 HTTP 服务，否则只核对下载地址；参考图最多三张并行上传、到达顺序不固定，fixture 要按上传内容（例如图片宽度）而不是到达顺序分配素材 ID。
 
 企业共享钱包测试纳入 worker test:images：verify-wallet.ts 验证主子账号并发扣款、固定单价、逐图退款、充值重复入账、账本不可修改和分页。wallet.spec.ts 验证账户中心真实接口契约（浏览器 fixture）。
 
@@ -113,6 +118,8 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 单图卡片重试由`card-image-retry.spec.ts`验证hover、键盘和触屏入口、单张金额确认、取消不提交、仅传itemId及丢失响应后刷新同键重放。隔离verify-textile-generation覆盖其他子项仍排队时仅替换选中未决项、另一个失败项不变、单次退款／扣费、同键换图拒绝与旧执行完成隔离。命名迁移回归先单独验证0015的数据保全，再应用后续扩展迁移，避免把新增可空列误判为旧数据变化。
 
 浏览器测试通过 `scripts/local/dev.mjs --api-only` 启动隔离 Node API，再由 Playwright 启动前端。
+
+界面有简体中文与英文两种语言，页面使用 `/zh-CN` 与 `/en` 前缀，URL语言优先于本机偏好；语言路径、登录返回与草稿保留的专用回归见 `tests/e2e/locale-routing.spec.ts`，规则见[页面语言路径](localized-routing.md)。`playwright.config.ts` 把浏览器语言固定为 `zh-CN`，现有用例按中文文案定位；英文界面由 `tests/e2e/language.spec.ts` 单独覆盖：英文浏览器默认英文、日文浏览器回退英文、语言入口位于积分或登录左侧、切换后刷新仍保持、英文工作台，以及服务端中文错误按错误代码换成英文说明。单元测试运行在 Node 中，默认语言为英文；断言中文文案的测试在 `beforeEach` 里用 `useLocaleStore.setState({ locale: "zh-CN" })` 固定语言。
 
 浏览器CI固定使用 `ubuntu-24.04`，避免 `ubuntu-latest` 切换系统版本后依赖／字体下载和渲染环境漂移；浏览器任务使用匹配Playwright 1.64.0的官方 `mcr.microsoft.com/playwright:v1.64.0-noble` 镜像并固定digest，内置Chromium及系统字体依赖，不在任务中重复执行apt下载；完整E2E范围不变。
 

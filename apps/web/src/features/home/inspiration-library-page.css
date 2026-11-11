@@ -1,0 +1,40 @@
+/* 灵感库：与首页作品墙同一左右边界（左 116px、右 60px），标题区在上，瀑布流与页脚在下。 */
+body:has(.inspiration-library) {
+  background: #0d100c;
+}
+.main-content:has(> .inspiration-library) {
+  padding: 0;
+}
+.inspiration-library {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - var(--header-height));
+}
+.inspiration-library-header {
+  padding: 48px 60px 0 116px;
+}
+.inspiration-library-header h1 {
+  color: #fff;
+  font-size: 32px;
+  font-weight: var(--weight-semibold);
+  line-height: 40px;
+}
+.inspiration-library-header p {
+  max-width: 640px;
+  margin-top: 12px;
+  color: #ffffff99;
+  font-size: var(--text-base);
+  line-height: 22px;
+}
+.inspiration-library > .site-footer {
+  margin-top: auto;
+}
+@media (max-width: 767px) {
+  .inspiration-library-header {
+    padding: 32px 20px 0;
+  }
+  .inspiration-library-header h1 {
+    font-size: 24px;
+    line-height: 32px;
+  }
+}

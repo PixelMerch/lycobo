@@ -48,6 +48,12 @@ curl http://127.0.0.1:8787/api/v1/image-tasks \
 
 服务端原图信息还保存在 media_assets：object_key、mime_type、bytes、width、height、sha256、组织、用户和创建时间。参考图上传接口请求体上限 10 MB，浏览器选图上限 50 MB；生成结果和规范化 PNG 上限 32MB，服务商 JSON 响应上限 45MB，避免高分辨率结果沿用上传体积限制。图片字节保存在私有存储，以服务端解析的 UID 分目录；数据库保存元数据和关联，不塞入 JSON 或队列消息。
 
+## 参考图角色与套图逐条参考图
+
+任务输入可选 `referenceRoles`（与 `referenceAssetIds` 一一对应，取值 `product`／`source`／`style`），只在用户标了原图或风格时出现；套图计划的方案可选 `referenceAssetIds`，必须是任务参考图的子集。Worker 通过 `itemReferenceAssetIds` 只发送这一条的图片，`textileItemInput` 在提示词前加按发送顺序的角色说明；字段缺省时发送全部参考图、提示词不变，旧任务与重试完全沿用原行为。
+
+这两个字段是向后兼容的可选字段，但图片 Worker 用严格 schema 解析已存任务：发布时先部署图片 Worker，再部署主站，避免旧消费者读到新字段而让任务失败。
+
 ## 任务与计费边界
 
 - generation_jobs 保存输入和逐图价格快照；generation_job_items 保存执行实例、租约和图片关联。
@@ -147,8 +153,15 @@ Worker 以 `Image generation stage timing` 输出结构化分段计时，包含 
 
 ## 素材库筛选与收藏
 
-2026-11-03 起，素材库页面与各工具右侧的“我的素材”使用上表的筛选和收藏接口。收藏存于 `image_asset_favorites`（组织、成员、素材联合主键，组合外键约束素材归属与成员关系，按成员与收藏时间建索引），按成员区分；数量上限在同一成员的事务级 advisory lock 内校验，并发收藏不会超出。工具由任务输入判定：含 `textileSet` 为家纺裂变，含 `variation` 为套图计划，其余为主图制作，与历史筛选一致。
+2026-11-03 起，素材库页面与各工具右侧的“我的素材”使用上表的筛选和收藏接口；2026-11-10 改版后来源“全部”不传 `kind`，“仅看收藏”传 `favorite=true`，前端不再传 `model`。收藏存于 `image_asset_favorites`（组织、成员、素材联合主键，组合外键约束素材归属与成员关系，按成员与收藏时间建索引），按成员区分；数量上限在同一成员的事务级 advisory lock 内校验，并发收藏不会超出。工具由任务输入判定：含 `textileSet` 为家纺裂变，含 `variation` 为套图计划，其余为主图制作，与历史筛选一致。
 
 迁移统一使用 `packages/db/migrations/0038_asset_favorites.sql` 及其后续追加迁移。先升级目标 PostgreSQL，再部署 API；主站和独立图片 Worker 共用同一条 Drizzle 迁移链，不在运行时修改结构。
 
 参考图单张原文件最多 50 MiB。浏览器把超过 5 MiB 的文件压缩为不超过 5 MiB 的上传副本，以减少网络传输，原文件保留在本地。副本最长边最多 3840 像素并保留透明通道。服务端再次校验并生成规范化 PNG，超过 4 MiB 时继续按比例缩小；该规则不应用于付费生成结果。不透明参考图发送中转站前可转 JPEG，透明图保持 PNG。
+
+
+## 文本规划与参考图并行
+
+POST /variation-plans 的可选 referenceCount 为 0–5，仅表达参考图数量；前端新计划发送 referenceAssetIds=[] 与实际 referenceCount，同时独立上传。模型只收到参考图编号。计划响应保留 referenceCount，旧客户端忽略新增字段；已有带素材 ID 的计划继续按原规则处理。
+
+确认生成时，image-tasks 必须携带已持久化素材 ID，事务内校验归属、有效期和数量后才扣费。数量型计划匹配上传后的素材数量，已绑定 ID 的旧计划仍要求 ID 和顺序一致。上传缓存按组织、用户、原图片 ID 隔离；上传错误不重复调用规划模型。该变更使用既有 JSON input，不新增迁移；部署需先更新服务端再发布新前端。

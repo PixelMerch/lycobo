@@ -52,19 +52,17 @@ async function configuredReferences(
       throw new ImageProviderError("PROVIDER_REFERENCE_URL_REQUIRED", false);
     return { bytes: [], urls: await requiredReferenceUrls(job, deps.repository, deliver) };
   }
-  if (
-    deliver &&
-    fixedFluxPort &&
-    snapshot.adapter === "fluxport-images" &&
-    providerModelForResolution(snapshot, job.input.resolution) === "gpt-image-2.5-sunburst"
-  ) {
+  const providerModel = providerModelForResolution(snapshot, job.input.resolution);
+  const usesSunburst =
+    providerModel === "gpt-image-2.5-sunburst" || providerModel === "gpt-image-2.6-sunburst";
+  if (deliver && fixedFluxPort && snapshot.adapter === "fluxport-images" && usesSunburst) {
     try {
       const urls = await mapProviderReferences(job, deps.repository, (asset) =>
         deliver(asset, !!job.input.localEdit),
       );
       return { bytes: [], urls };
     } catch {
-      // No paid request has been sent, so the same attempt can still use inline images.
+      // 尚未发出付费请求，同一次尝试仍可改用内嵌图片。
     }
   }
   return { bytes: await readProviderReferences(job, deps.repository, deps.store) };

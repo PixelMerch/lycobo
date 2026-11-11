@@ -1,12 +1,15 @@
 import { Alert, Button, toast } from "@heroui/react";
-import { IconPlus, IconTrash } from "@tabler/icons-react";
-import { lazy, Suspense, useRef, useState } from "react";
+import { IconPlus, IconTrash, type TablerIcon } from "@tabler/icons-react";
+import { lazy, type RefObject, Suspense, useEffect, useRef, useState } from "react";
 import { ReferenceImageCard } from "../../../components/reference-image/reference-image-card";
 import { UiIcon } from "../../../components/ui-icon";
+import { currentMessages, useMessages } from "../../../i18n/messages";
 import { useRequireLogin } from "../../auth/login-prompt";
 import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "../studio-state";
 import { readReferenceImages, referenceFileError } from "./read-reference-images";
 import { referenceDisplaySource } from "./reference-display";
+import { ReferenceRoleMenu } from "./reference-role-menu";
+import { referencesMessages } from "./references-messages";
 
 const ImageViewer = lazy(() =>
   import("../../../components/image-viewer/image-viewer").then((module) => ({
@@ -35,8 +38,18 @@ function promptWithoutReferences(prompt: string) {
 type PickerProps = {
   limit?: number;
   label?: string;
+  /** 上传按钮上的文字；首页家纺裂变显示“家纺主图”。 */
+  addLabel?: string;
+  /** 上传按钮图标，默认加号。 */
+  addIcon?: TablerIcon;
+  /** 让调用方的其他入口也能打开同一个文件选择框，仍先检查登录。 */
+  openRef?: RefObject<(() => void) | null>;
   compact?: boolean;
+  isRequired?: boolean;
+  showCount?: boolean;
   disabled?: boolean;
+  /** 在缩略图上显示参考图角色（商品／原图／风格）；只用于主图制作与套图计划。 */
+  withRoles?: boolean;
   references: Draft["references"];
 } & (
   | { model: ModelId; prompt?: never; onChange?: never }
@@ -47,13 +60,56 @@ type PickerProps = {
     }
 );
 
+function ReferencePickerTitle({
+  label,
+  count,
+  limit,
+  isRequired,
+  showCount,
+}: {
+  label: string;
+  count: number;
+  limit: number;
+  isRequired: boolean;
+  showCount: boolean;
+}) {
+  const t = useMessages(referencesMessages);
+  return (
+    <h2>
+      {label}
+      {/* 用安静的“已传/上限”计数代替括号说明；完整句子留给读屏。 */}
+      {isRequired && (
+        <>
+          <span className="required-indicator" aria-hidden="true">
+            *
+          </span>
+          <span className="sr-only">{t.required}</span>
+        </>
+      )}
+      {showCount && (
+        <small className="reference-count" aria-hidden="true">
+          {count}/{limit}
+        </small>
+      )}
+      <span className="sr-only">{t.uploadCount(count, limit)}</span>
+    </h2>
+  );
+}
+
+/** 参考图上传与预览：首页和各工具共用编号、删除及提示词引用的同步规则。 */
 export function ReferencePicker({
   model,
   references,
   compact = false,
+  isRequired = false,
+  showCount = true,
   disabled = false,
+  withRoles = false,
   limit = 5,
-  label = "上传图片",
+  label,
+  addLabel,
+  addIcon = IconPlus,
+  openRef,
   prompt = "",
   onChange,
 }: PickerProps) {
@@ -69,18 +125,33 @@ export function ReferencePicker({
     change,
     readFiles,
   } = useReferencePicker({ model, references, prompt, onChange, disabled, limit });
-  const addLabel = compact ? "上传商品图" : "添加图片";
+  const t = useMessages(referencesMessages);
+  const addText = addLabel ?? (compact ? t.uploadProduct : t.addImages);
+  const openFiles = () => {
+    if (requireLogin()) input.current?.click();
+  };
+  // 每次渲染后同步给调用方的额外入口，卸载时清空，避免指向已失效的输入框。
+  useEffect(() => {
+    if (!openRef) return;
+    openRef.current = openFiles;
+    return () => {
+      openRef.current = null;
+    };
+  });
   return (
     <section className="reference-picker">
       <div className="field-title">
-        <h2>
-          {label}
-          <small>（最多上传{limit}张参考图）</small>
-        </h2>
+        <ReferencePickerTitle
+          label={label ?? t.uploadLabel}
+          count={references.length}
+          limit={limit}
+          isRequired={isRequired}
+          showCount={showCount}
+        />
         <Button
           variant="tertiary"
           className="clear-references"
-          aria-label="清除全部参考图片"
+          aria-label={t.clearAll}
           isDisabled={disabled || reading || references.length === 0}
           onPress={() => {
             const prompt = currentDraft()?.prompt ?? "";
@@ -91,7 +162,7 @@ export function ReferencePicker({
           }}
         >
           <UiIcon icon={IconTrash} size="small" />
-          清除
+          {t.clear}
         </Button>
       </div>
       <input
@@ -99,7 +170,7 @@ export function ReferencePicker({
         type="file"
         accept="image/png,image/jpeg,image/webp"
         multiple
-        aria-label="添加参考图片"
+        aria-label={t.addReferenceImages}
         className="visually-hidden"
         disabled={disabled || reading || references.length >= limit}
         onChange={(event) => {
@@ -116,11 +187,20 @@ export function ReferencePicker({
             number={index + 1}
             isDisabled={disabled || reading}
             onOpen={() => setPreview(index)}
+            footer={
+              withRoles ? (
+                <ReferenceRoleMenu
+                  imageId={image.id}
+                  name={t.imageName(index + 1)}
+                  isDisabled={disabled || reading}
+                />
+              ) : undefined
+            }
             onRemove={() => {
               const prompt = currentDraft()?.prompt ?? "";
               const remaining = references.filter((item) => item.id !== image.id);
               change(remaining, promptAfterReferenceRemoval(prompt, index + 1));
-              // Keep an open preview valid after the removed image disappears.
+              // 删除图片后修正正在打开的预览序号，避免指向已移除的图片。
               setPreview((current) => previewAfterRemoval(current, index));
             }}
           />
@@ -130,13 +210,11 @@ export function ReferencePicker({
             variant="tertiary"
             className="add-reference"
             isDisabled={disabled || reading || references.length >= limit}
-            aria-label="添加参考图"
-            onPress={() => {
-              if (requireLogin()) input.current?.click();
-            }}
+            aria-label={t.addReference}
+            onPress={openFiles}
           >
-            <UiIcon icon={IconPlus} size={compact ? "default" : "action"} />
-            <span>{reading ? "读取中…" : addLabel}</span>
+            <UiIcon icon={addIcon} size={compact ? "default" : "action"} />
+            <span>{reading ? t.reading : addText}</span>
           </Button>
         ) : null}
       </div>
@@ -147,15 +225,14 @@ export function ReferencePicker({
           </Alert.Content>
         </Alert>
       ) : null}
-      {/* Uploaded drafts become previewable the moment they are added, reusing
-       * the shared viewer instead of a second image overlay. */}
+      {/* 图片加入草稿后即可预览，复用共享查看器，不另建图片浮层。 */}
       {preview !== null && references[preview] ? (
         <Suspense fallback={null}>
           <ImageViewer
             images={references.map((image, index) => ({
               src: referenceDisplaySource(image),
               thumbnailSrc: referenceDisplaySource(image, true),
-              alt: `图片${index + 1}`,
+              alt: t.imageName(index + 1),
             }))}
             initialIndex={preview}
             onClose={() => setPreview(null)}
@@ -214,10 +291,10 @@ function useReferencePicker({
     else onChange?.(next, text);
   }
   function appendImages(current: ReferenceImage[], unique: ReferenceImage[], duplicates: number) {
-    if (duplicates > 0) toast.warning("存在相同素材，已自动过滤");
+    if (duplicates > 0) toast.warning(currentMessages(referencesMessages).duplicatesFiltered);
     if (!unique.length) return;
     if (unique.length > limit - current.length) {
-      setError(`最多添加 ${limit} 张参考图，请减少文件后重试。`);
+      setError(currentMessages(referencesMessages).overLimit(limit));
       return;
     }
     change([...current, ...unique], currentDraft()?.prompt ?? "");
@@ -238,7 +315,9 @@ function useReferencePicker({
       const { unique, duplicates } = uniqueReferenceImages(current, images);
       appendImages(current, unique, duplicates);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "图片无法读取，请检查文件后重试。");
+      setError(
+        error instanceof Error ? error.message : currentMessages(referencesMessages).unreadable,
+      );
     } finally {
       setReading(false);
       clearReferenceInput(input.current);

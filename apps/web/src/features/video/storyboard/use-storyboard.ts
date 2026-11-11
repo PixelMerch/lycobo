@@ -2,11 +2,11 @@ import { toast } from "@heroui/react";
 import {
   imageUnitCredits,
   storyboardCapabilitiesSchema,
-  videoReferenceUnavailableMessage,
   videoUnitCredits,
 } from "@lycoboai/contracts";
 import { useIsMutating, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type RefObject, useEffect, useRef } from "react";
+import { currentMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { useEnterpriseSession } from "../../auth/auth-client";
 import {
@@ -18,6 +18,7 @@ import {
 } from "../../generation/generation-client";
 import { modelCapabilities, supportsReferences } from "../../generation/models/model-capabilities";
 import { useSubmitVideo, useVideoModel } from "../video-client";
+import { videoMessages } from "../video-messages";
 import { restoreVideoDraft, useVideoDraft } from "../video-state";
 import { hasStarted, isRunning, modelId, resolution, source } from "./storyboard-stages";
 import { emptyStoryboard, useStoryboardState } from "./storyboard-state";
@@ -274,11 +275,13 @@ function useStoryboardControls({
   useErrorToast(
     enabled
       ? (action.error?.message ??
-          (resumeBlockedByReferences ? videoReferenceUnavailableMessage : undefined))
+          (resumeBlockedByReferences
+            ? currentMessages(videoMessages).referencesUnavailable
+            : undefined))
       : undefined,
   );
   const busy = active || action.isPending;
-  // An ambiguous submission may already be charged; it has to be confirmed, not forgotten.
+  // 结果不明的提交可能已经扣费，必须确认，不能直接放弃。
   const canAbandon = !busy && hasStarted(progress) && !pendingVideo && !ownImagePending;
   const canRun = () => !lock.current && !active && !blocked && !!scope;
   const run = (input: ProductionInput) => {
@@ -299,7 +302,7 @@ function useStoryboardControls({
     },
     start: (input: Omit<ProductionInput, "retryPosition">) => {
       if (needsResume || !canRun()) return;
-      // Saved before the request so the new card never shows the previous run's content.
+      // 请求前先保存，新的制作卡不会显示上一次的内容。
       update({
         ...emptyStoryboard,
         ...input,
@@ -310,7 +313,7 @@ function useStoryboardControls({
     },
     resume: () => {
       if (resumeBlockedByReferences) {
-        toast.danger(videoReferenceUnavailableMessage);
+        toast.danger(currentMessages(videoMessages).referencesUnavailable);
         return;
       }
       run({ description: draft.description, references: draft.references });

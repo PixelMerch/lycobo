@@ -24,7 +24,7 @@ test("a disabled service keeps references without claiming the model cannot edit
   await expect(
     page.getByText("当前模型暂不支持参考图编辑，请移除参考图后生成。", { exact: true }),
   ).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
 });
 
 test("running images animate with the model icon and stop for reduced motion", async ({ page }) => {
@@ -71,9 +71,11 @@ test("running images animate with the model icon and stop for reduced motion", a
       width: element.getBoundingClientRect().width,
     })),
   );
-  // The five-column tile grid keeps a four-image task on one row of equal tiles.
-  expect(new Set(boxes.map((box) => box.top)).size).toBe(1);
+  // 四张占位等宽；左侧有工具栏后 1920 屏一行放不下四张 320px，按原顺序换行，不拉伸最后一行。
   expect(new Set(boxes.map((box) => Math.round(box.width))).size).toBe(1);
+  expect(boxes.map((box) => box.top)).toEqual(
+    [...boxes.map((box) => box.top)].sort((a, b) => a - b),
+  );
   const borderAngle = () =>
     placeholders
       .first()
@@ -148,10 +150,12 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     const box = await preview.boundingBox();
     const history = await page.locator(".generation-results").boundingBox();
     expect(box?.width).toBeLessThanOrEqual(history?.width ?? 0);
-    expect(box?.width).toBeCloseTo(400, 0);
-    expect(box?.height).toBeCloseTo(200, 0);
+    // 失败占位与成功结果同样按任务等高排列：桌面高 320px，宽度按请求的 1:1 比例。
+    expect(box?.width).toBeCloseTo(320, 0);
+    expect(box?.height).toBeCloseTo(320, 0);
     await expect(preview).toHaveCSS("border-top-width", "0px");
-    await expect(preview).toHaveCSS("background-color", "rgb(52, 52, 52)");
+    // 失败占位用 --fill-strong（12% 白）半透明底。
+    await expect(preview).toHaveCSS("background-color", "rgba(255, 255, 255, 0.12)");
     await expect(preview.getByRole("button", { name: "重试", exact: true })).toHaveCount(0);
     const message = preview.locator(".generation-failure-message");
     await expect(message).toHaveText(
@@ -165,7 +169,8 @@ for (const status of ["failed", "needs_reconciliation", "partially_failed"]) {
     await expect(regenerate).toBeEnabled();
     await regenerate.click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    await page.getByRole("button", { name: "取消", exact: true }).click();
+    // 弹层外还有一个读屏用的隐藏“取消”（React Aria 的关闭按钮），所以只在弹窗里找取消按钮。
+    await page.getByRole("dialog").getByRole("button", { name: "取消", exact: true }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await page.screenshot({ path: `/tmp/lycobo-generation-${status}.png` });
   });

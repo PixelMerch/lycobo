@@ -2,11 +2,13 @@ import { Button, Spinner } from "@heroui/react";
 import { IconMovie, IconPlayerPlayFilled, IconRefresh } from "@tabler/icons-react";
 import { type CSSProperties, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
 import { AssetImage } from "../../generation/asset-image";
 import { VideoHistoryPreview } from "../history/video-history-preview";
 import { formatVideoTime } from "./use-video-playback";
+import { videoPlayerMessages } from "./video-player-messages";
 
-/** Lists load a private still image; only opening the dialog requests the video. */
+/** 视频封面：列表只加载私有封面图，打开弹窗时才请求视频本身。 */
 export function VideoCover({
   assetId,
   title,
@@ -18,6 +20,7 @@ export function VideoCover({
   ratio: string;
   seconds: number;
 }) {
+  const t = useMessages(videoPlayerMessages);
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -34,7 +37,7 @@ export function VideoCover({
       <Button
         variant="ghost"
         className="video-cover"
-        aria-label={`预览视频：${title}`}
+        aria-label={t.previewVideo(title)}
         data-cover-loaded={loaded || undefined}
         data-cover-failed={failed || undefined}
         style={coverStyle}
@@ -45,7 +48,7 @@ export function VideoCover({
             key={attempt}
             assetId={assetId}
             thumbnail
-            alt={`${title}视频封面`}
+            alt={t.coverAlt(title)}
             loading="lazy"
             className="video-cover-image"
             onLoad={(event) => {
@@ -67,7 +70,7 @@ export function VideoCover({
             <UiIcon icon={failed ? IconMovie : IconPlayerPlayFilled} size="navigation" />
           )}
         </span>
-        {failed && <span className="video-cover-caption">封面暂不可用，点击预览视频</span>}
+        {failed && <span className="video-cover-caption">{t.coverUnavailable}</span>}
         <span className="video-cover-duration">{formatVideoTime(seconds)}</span>
       </Button>
       {failed && (
@@ -81,7 +84,7 @@ export function VideoCover({
           }}
         >
           <UiIcon icon={IconRefresh} size="small" />
-          重试封面
+          {t.retryCover}
         </Button>
       )}
       {open && <VideoHistoryPreview assetId={assetId} onClose={() => setOpen(false)} />}

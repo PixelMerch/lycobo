@@ -14,7 +14,8 @@ test("workspace switches tools without discarding drafts and remembers the curre
   await tools.getByRole("button", { name: "家纺裂变", exact: true }).click();
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
   await page.getByRole("link", { name: "首页", exact: true }).click();
-  await page.getByRole("link", { name: "工作区", exact: true }).click();
+  await page.getByRole("button", { name: "电商", exact: true }).click();
+  await page.getByRole("menuitem", { name: "家纺裂变", exact: true }).click();
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
   await tools.getByRole("button", { name: "主图制作", exact: true }).click();
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("保留我的商品草稿");

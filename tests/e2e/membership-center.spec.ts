@@ -32,13 +32,13 @@ for (const width of [1440, 320]) {
     const draft = page.getByLabel("提示词", { exact: true });
     await draft.fill("保留创作草稿，不创建付费任务");
     const header = page.locator(".topbar");
-    const balance = header.getByRole("button", { name: "积分 200，查看积分概览" });
-    await expect(balance).toBeVisible();
-    await balance.click();
-    await page
-      .getByRole("dialog", { name: "积分概览" })
-      .getByRole("button", { name: "充值积分", exact: true })
-      .click();
+    const credits = header.getByRole("button", { name: "积分 200，免费版" });
+    await expect(credits).toBeVisible();
+    // 积分菜单只有升级、余额、开通会员与积分明细；充值从账户菜单进入。
+    if (width < 768) await page.getByRole("button", { name: "打开导航", exact: true }).click();
+    const account = page.getByRole("button", { name: "账户菜单：membership-fixture", exact: true });
+    await account.click();
+    await page.getByRole("menuitem", { name: "充值积分", exact: true }).click();
     const recharge = page.getByRole("dialog", { name: "充值积分", exact: true });
     await expect(recharge).toBeVisible();
     await expect(recharge.getByRole("tab")).toHaveCount(0);
@@ -49,14 +49,17 @@ for (const width of [1440, 320]) {
     await expect(recharge.locator(".credit-order-rows")).toContainText("3,000");
     await expect(recharge.locator(".credit-order-after strong")).toContainText("3,200");
     await expect(recharge.getByRole("button", { name: "立即购买" })).toBeDisabled();
-    expect(ledgerReads).toBeGreaterThan(0);
+    // 打开积分菜单与充值都不读取收支流水。
+    expect(ledgerReads).toBe(0);
     await recharge.screenshot({ path: `/tmp/lycobo-redesign-recharge-${width}.png` });
     await expect(recharge.getByText("企业共享账户", { exact: true })).toHaveCount(0);
     await expect(recharge.getByRole("button", { name: "积分明细", exact: true })).toHaveCount(0);
     await page.keyboard.press("Escape");
-    await expect(balance).toBeFocused();
+    await expect(account).toBeFocused();
+    if (width < 768) await page.getByRole("button", { name: "关闭导航", exact: true }).click();
     await expect(draft).toHaveValue("保留创作草稿，不创建付费任务");
-    await header.getByRole("button", { name: "开通会员", exact: true }).click();
+    await credits.click();
+    await page.getByRole("menuitem", { name: "开通会员", exact: true }).click();
     await expect(page).toHaveURL(/\/commerce\/create$/);
     const membership = page.getByRole("dialog", { name: "会员订阅", exact: true });
     await expect(membership).toBeVisible();
@@ -99,9 +102,9 @@ for (const width of [1440, 320]) {
     await page.screenshot({ path: `/tmp/lycobo-redesign-membership-${width}.png` });
     await membership.getByRole("button", { name: "关闭会员订阅", exact: true }).click();
     await expect(membership).toHaveCount(0);
-    await expect(header.getByRole("button", { name: "开通会员", exact: true })).toBeFocused();
+    await expect(credits).toBeFocused();
     await expect(draft).toHaveValue("保留创作草稿，不创建付费任务");
-    await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeEnabled();
     expect(writes).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
@@ -109,72 +112,80 @@ for (const width of [1440, 320]) {
   });
 }
 
-test("credit preview opens only on press, shares reads and supports keyboard", async ({ page }) => {
+test("credits menu opens on hover without taking focus and works from the keyboard", async ({
+  page,
+}) => {
   await signIn(page);
-  let ledgerResponses = 0;
-  page.on("response", (response) => {
-    if (response.ok() && response.url().includes("/api/v1/wallet/entries")) ledgerResponses++;
+  let ledgerReads = 0;
+  page.on("request", (request) => {
+    if (request.url().includes("/api/v1/wallet/entries")) ledgerReads++;
   });
   await page.goto("/commerce/create");
-  const balance = page.locator(".topbar .header-balance");
-  await balance.hover();
-  await page.waitForTimeout(350);
-  await expect(page.getByRole("dialog", { name: "积分概览" })).toHaveCount(0);
-  await balance.click();
-  const preview = page.getByRole("dialog", { name: "积分概览" });
-  await expect(preview.getByText("暂无积分记录", { exact: true })).toBeVisible();
-  await preview.getByRole("button", { name: "全部明细" }).hover();
-  await expect(preview).toBeVisible();
-  await expect(preview).toHaveCSS("outline-style", "none");
-  await expect(page.locator("html")).toHaveCSS("overflow", "hidden");
-  await preview.screenshot({ path: "/tmp/lycobo-redesign-credit-preview.png" });
-  await preview.getByRole("button", { name: "全部明细" }).click();
-  // The full ledger opens in the account center dialog and reuses the preview's read.
-  const center = page.getByRole("dialog", { name: "积分与账单", exact: true });
-  await expect(center.getByText("暂无收支记录", { exact: true })).toBeVisible();
-  await expect(page).toHaveURL(/\/commerce\/create$/);
-  expect(ledgerResponses).toBe(1);
-  await page.keyboard.press("Escape");
-  await expect(center).toHaveCount(0);
-  await expect(balance).toBeFocused();
-  await page.mouse.move(500, 500);
-  await balance.focus();
+  const draft = page.getByLabel("提示词", { exact: true });
+  await draft.click();
+  const credits = page.locator(".topbar").getByRole("button", { name: "积分 200，免费版" });
+  // 按 vidmuse：悬停展开积分菜单，不抢走正在输入的焦点，也不读取流水。
+  await credits.hover();
+  // 菜单由触发按钮命名（React Aria 的 aria-labelledby）。
+  const menu = page.getByRole("menu", { name: "积分 200，免费版", exact: true });
+  await expect(menu).toBeVisible();
+  await expect(draft).toBeFocused();
+  await expect(menu.getByRole("menuitem")).toHaveText(["免费版升级", "开通会员", "积分明细"]);
+  await expect(menu.getByText("积分余额", { exact: true })).toBeVisible();
+  await expect(page.locator(".credits-menu-balance strong")).toHaveText("200");
+  await expect(credits).toHaveCSS("outline-style", "none");
+  expect(ledgerReads).toBe(0);
+  await page.mouse.move(400, 600);
+  await expect(menu).toHaveCount(0);
+
+  // 键盘：Enter 打开后焦点进入第一项，上下键移动，Enter 打开积分明细。
+  await credits.focus();
   await page.keyboard.press("Enter");
-  await expect(preview).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "免费版，升级", exact: true })).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowDown");
+  await expect(menu.getByRole("menuitem", { name: "积分明细", exact: true })).toBeFocused();
+  await page.keyboard.press("Enter");
+  const usage = page.getByRole("dialog", { name: "积分明细", exact: true });
+  await expect(usage).toBeVisible();
+  await expect(usage.getByText("暂无消耗记录", { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/commerce\/create$/);
   await page.keyboard.press("Escape");
-  await expect(balance).toBeFocused();
-  await page.keyboard.press("Space");
-  await expect(preview).toBeVisible();
-  // The modal underlay receives outside presses; background controls are inert.
-  await page.mouse.click(500, 500);
-  await expect(preview).toHaveCount(0);
-  await balance.click();
-  await expect(preview).toBeVisible();
-  await preview.getByRole("button", { name: "充值积分", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "充值积分", exact: true })).toBeVisible();
-  await expect(preview).toHaveCount(0);
+  await expect(usage).toHaveCount(0);
+  await expect(credits).toBeFocused();
+
+  // “升级”与“开通会员”都打开会员订阅，关闭后焦点回到积分胶囊。
+  await credits.click();
+  await menu.getByRole("menuitem", { name: "免费版，升级", exact: true }).click();
+  const membership = page.getByRole("dialog", { name: "会员订阅", exact: true });
+  await expect(membership).toBeVisible();
+  await membership.getByRole("button", { name: "关闭会员订阅", exact: true }).click();
+  await expect(credits).toBeFocused();
 });
 
-test("unavailable balance stays unknown in recharge instead of becoming zero", async ({ page }) => {
+test("unavailable balance stays unknown in the menu and recharge instead of becoming zero", async ({
+  page,
+}) => {
   await signIn(page);
   await page.route("**/api/v1/wallet", (route) =>
     route.fulfill({ status: 503, json: apiFixture({}, 503) }),
   );
   await page.goto("/");
-  const balance = page.locator(".topbar").getByRole("button", { name: "积分 —，查看积分概览" });
-  await expect(balance).toBeVisible();
-  await balance.click();
-  await page
-    .getByRole("dialog", { name: "积分概览" })
-    .getByRole("button", { name: "充值积分", exact: true })
-    .click();
+  const credits = page.locator(".topbar").getByRole("button", { name: "积分 —，免费版" });
+  await expect(credits).toBeVisible();
+  await credits.hover();
+  await expect(page.locator(".credits-menu-balance strong")).toHaveText("—");
+  await page.mouse.move(400, 600);
+  const account = page.getByRole("button", { name: "账户菜单：membership-fixture", exact: true });
+  await account.click();
+  await page.getByRole("menuitem", { name: "充值积分", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "充值积分", exact: true });
   await expect(dialog.getByRole("radio")).toHaveCount(9);
   // An unreadable balance never becomes 0 in the order preview.
   await expect(dialog.locator(".credit-order-after strong")).toHaveText("—");
   await expect(dialog.getByText("余额暂不可用，读取后显示", { exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(balance).toBeFocused();
+  await expect(account).toBeFocused();
 });
 
 test("signed-out header keeps login without inventing benefits", async ({ page }) => {
@@ -183,69 +194,127 @@ test("signed-out header keeps login without inventing benefits", async ({ page }
   await expect(
     page.locator(".topbar").getByRole("button", { name: "登录领积分", exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".header-benefits")).toHaveCount(0);
+  await expect(page.locator(".header-credits")).toHaveCount(0);
 });
 
-test("credit preview shows only three real entries and reopens from cache", async ({ page }) => {
-  await signIn(page);
-  const kinds = ["recharge", "consume", "refund", "opening"] as const;
-  const entries = kinds.map((kind, index) => ({
-    id: String(4 - index),
+function ledgerEntry(
+  id: number,
+  kind: string,
+  amount: number,
+  extra: Record<string, unknown> = {},
+) {
+  return {
+    id: String(id),
     user_uid: "0123456789",
     kind,
-    amount: index === 1 ? -2 : 2,
+    amount,
     balance_after: 200,
     job_id: null,
     task_id: null,
     item_id: null,
     recharge_id: null,
-    created_at: "2026-11-02T00:00:00Z",
-  }));
-  let reads = 0;
-  let orders = 0;
+    created_at: new Date(Date.UTC(2026, 10, 5, 10, 0) - (1000 - id) * 60000).toISOString(),
+    ...extra,
+  };
+}
+
+test("credit usage scrolls by category at a fixed height with expandable details", async ({
+  page,
+}) => {
+  await signIn(page);
+  const spent = Array.from({ length: 23 }, (_, index) =>
+    ledgerEntry(500 - index, "consume", -8, {
+      job_id: crypto.randomUUID(),
+      item_id: crypto.randomUUID(),
+      task_id: `W2611${1000 + index}`,
+    }),
+  );
+  const entries = [
+    ...spent,
+    ledgerEntry(400, "refund", 8, { job_id: crypto.randomUUID(), task_id: "W26110999" }),
+    ledgerEntry(399, "recharge", 1000, { recharge_id: "3f8a2c10-0000-4000-8000-000000000000" }),
+  ];
+  const requests: string[] = [];
   await page.route("**/api/v1/wallet/entries?*", (route) => {
-    reads++;
-    return route.fulfill({ json: apiFixture({ data: entries }) });
-  });
-  await page.route("**/api/v1/wallet/recharges?*", (route) => {
-    orders++;
-    return route.fulfill({ json: apiFixture({ data: [] }) });
+    const url = new URL(route.request().url());
+    requests.push(url.search);
+    const before = url.searchParams.get("before");
+    const spentView = url.searchParams.get("view") === "spent";
+    const data = entries.filter((entry) => (entry.kind === "consume") === spentView);
+    const batch = data.filter((entry) => !before || Number(entry.id) < Number(before));
+    return route.fulfill({ json: apiFixture({ data: batch.slice(0, 20) }) });
   });
   await page.goto("/commerce/create");
-  const balance = page.locator(".topbar .header-balance");
-  await expect(balance).toContainText("200");
-  expect(reads).toBe(0);
-  await balance.hover();
-  await page.waitForTimeout(350);
-  await expect(page.getByRole("dialog", { name: "积分概览" })).toHaveCount(0);
-  await balance.click();
-  const preview = page.getByRole("dialog", { name: "积分概览" });
-  await expect(preview.getByRole("listitem")).toHaveCount(3);
-  await expect(preview.getByText("充值到账", { exact: true })).toBeVisible();
-  await expect(preview.getByText("图片生成", { exact: true })).toBeVisible();
-  await expect(preview.getByText("生成失败退款", { exact: true })).toBeVisible();
-  await expect(preview.getByText("期初余额", { exact: true })).toHaveCount(0);
-  // StrictMode may cancel the first development request before restarting it.
-  // Cache reuse must add no request after the initial successful load.
-  expect(reads).toBeGreaterThan(0);
-  const initialReads = reads;
-  expect(orders).toBe(0);
-  await page.mouse.move(500, 500);
-  await expect(preview).toBeVisible();
-  const triggerBounds = await balance.boundingBox();
-  if (!triggerBounds) throw new Error("Missing credit trigger");
-  await page.mouse.click(
-    triggerBounds.x + triggerBounds.width / 2,
-    triggerBounds.y + triggerBounds.height / 2,
-  );
-  await expect(preview).toHaveCount(0);
-  await balance.click();
-  await expect(preview.getByRole("listitem")).toHaveCount(3);
-  expect(reads).toBe(initialReads);
-  await preview.getByRole("button", { name: "充值积分", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "充值积分", exact: true })).toBeVisible();
-  await expect(preview).toHaveCount(0);
-  expect(orders).toBe(0);
+  const credits = page.locator(".topbar").getByRole("button", { name: "积分 200，免费版" });
+  await credits.click();
+  await page.getByRole("menuitem", { name: "积分明细", exact: true }).click();
+  const usage = page.getByRole("dialog", { name: "积分明细", exact: true });
+  const rows = usage.locator(".credit-usage-row");
+  const list = usage.locator(".credit-usage-list");
+  await expect(rows).toHaveCount(20);
+  await expect(rows.first()).toContainText("图片生成");
+  await expect(rows.first()).toContainText("- 8");
+  const height = await usage.evaluate((element) => element.clientHeight);
+  await list.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expect(rows).toHaveCount(23);
+  await expect(usage.getByRole("navigation", { name: "积分明细分页" })).toHaveCount(0);
+
+  await usage.getByRole("radio", { name: "获得", exact: true }).click();
+  await expect(rows).toHaveCount(2);
+  expect(await usage.evaluate((element) => element.clientHeight)).toBe(height);
+  expect(await list.evaluate((element) => element.scrollTop)).toBe(0);
+  await expect(rows.nth(0)).toContainText("生成失败退款");
+  await expect(rows.nth(0)).toContainText("+ 8");
+  await expect(rows.nth(1)).toContainText("充值到账");
+  await expect(rows.nth(1)).toContainText("+ 1,000");
+  const recharge = rows.nth(1).getByRole("button");
+  await recharge.click();
+  await expect(recharge).toHaveAttribute("aria-expanded", "true");
+  const details = rows.nth(1).locator(".credit-usage-detail");
+  await expect(details).toHaveText(["说明充值订单 3F8A2C10", /^成员/, "变动后结余200"]);
+  await expect(usage).toHaveCSS("outline-style", "none");
+  expect(await usage.evaluate((element) => element.clientHeight)).toBe(height);
+  expect([...new Set(requests)]).toEqual([
+    "?limit=20&view=spent",
+    "?limit=20&view=spent&before=481",
+    "?limit=20&view=earned",
+  ]);
+  await usage.getByRole("button", { name: "关闭积分明细", exact: true }).click();
+  await expect(credits).toBeFocused();
+});
+
+test("credit usage keeps loaded rows when loading more fails and retries the cursor", async ({
+  page,
+}) => {
+  await signIn(page);
+  const first = Array.from({ length: 20 }, (_, index) => ledgerEntry(900 - index, "consume", -2));
+  let failed = false;
+  await page.route("**/api/v1/wallet/entries?*", (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    if (!params.has("before")) return route.fulfill({ json: apiFixture({ data: first }) });
+    expect(params.get("before")).toBe("881");
+    if (!failed) {
+      failed = true;
+      return route.fulfill({ status: 503, json: apiFixture(null, 503) });
+    }
+    return route.fulfill({ json: apiFixture({ data: [ledgerEntry(880, "consume", -2)] }) });
+  });
+  await page.goto("/commerce/create");
+  await page.locator(".topbar .header-credits").click();
+  await page.getByRole("menuitem", { name: "积分明细", exact: true }).click();
+  const usage = page.getByRole("dialog", { name: "积分明细", exact: true });
+  const rows = usage.locator(".credit-usage-row");
+  await expect(rows).toHaveCount(20);
+  await usage.locator(".credit-usage-list").evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  const retry = usage.getByRole("button", { name: "重新加载", exact: true });
+  await expect(retry).toBeVisible();
+  await expect(rows).toHaveCount(20);
+  await retry.click();
+  await expect(rows).toHaveCount(21);
 });
 
 test("direct membership visits have a safe return to the workspace", async ({ page }) => {
@@ -265,7 +334,8 @@ test("full-screen membership supports audiences, seats, explanations and FAQ wit
       writes.push(request.url());
   });
   await page.goto("/commerce/create");
-  await page.locator(".topbar").getByRole("button", { name: "开通会员", exact: true }).click();
+  await page.locator(".topbar .header-credits").click();
+  await page.getByRole("menuitem", { name: "开通会员", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "会员订阅", exact: true });
   await dialog.getByRole("tab", { name: "团队", exact: true }).hover();
   await expect(dialog.getByRole("tab", { name: "个人", exact: true })).toHaveAttribute(
@@ -310,7 +380,7 @@ test("full-screen membership supports audiences, seats, explanations and FAQ wit
   expect(writes).toEqual([]);
 });
 
-test("credit and account overlays block background wheel scrolling and restore it on close", async ({
+test("the account menu blocks background wheel scrolling and restores it on close", async ({
   page,
 }) => {
   await signIn(page);
@@ -327,12 +397,10 @@ test("credit and account overlays block background wheel scrolling and restore i
   const position = await background.evaluate((el) => el.scrollTop);
   const bounds = await background.boundingBox();
   if (!bounds) throw new Error("Missing composer scroll region");
-  for (const trigger of [
-    page.locator(".topbar .header-balance"),
-    page.locator(".sidebar .account-trigger"),
-  ]) {
+  // 积分菜单与“电商”一样是悬停菜单，不锁定滚动；账户菜单仍是模态菜单。
+  for (const trigger of [page.locator(".topbar .account-trigger")]) {
     await trigger.click();
-    const overlay = page.locator(".credit-preview-popover, .account-menu");
+    const overlay = page.locator(".account-menu");
     await expect(overlay).toBeVisible();
     await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
     await page.mouse.wheel(0, 350);

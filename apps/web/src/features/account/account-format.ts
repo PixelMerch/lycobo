@@ -1,65 +1,104 @@
 import type { walletEntriesSchema } from "@lycoboai/contracts";
+import type { Locale } from "../../i18n/locale";
+import { accountFormatMessages } from "./account-format-messages";
 
 export type WalletEntry = ReturnType<typeof walletEntriesSchema.parse>["data"][number];
 
-export const entryNames: Record<WalletEntry["kind"], string> = {
-  opening: "期初余额",
-  consume: "图片生成",
-  refund: "生成失败退款",
-  recharge: "充值到账",
-  checkin: "签到奖励",
-};
-export const orderStatuses = { pending: "待支付", paid: "已到账", closed: "已关闭" } as const;
-const roleNames: Record<string, string> = { member: "成员", admin: "管理员", owner: "拥有者" };
-export const roleLabel = (role: string) => roleNames[role] ?? role;
-const channelNames: Record<string, string> = {
-  manual: "人工充值",
-  wechat: "微信支付",
-  alipay: "支付宝",
-};
+/** 收支类型的名称。 */
+export const entryName = (entry: WalletEntry, locale: Locale) =>
+  accountFormatMessages[locale].entries[entry.kind];
+/** 充值订单状态的名称。 */
+export const orderStatusName = (status: "pending" | "paid" | "closed", locale: Locale) =>
+  accountFormatMessages[locale].orderStatuses[status];
+/** 企业角色的名称；未知角色原样显示。 */
+export function roleLabel(role: string, locale: Locale) {
+  const names: Record<string, string> = accountFormatMessages[locale].roles;
+  return names[role] ?? role;
+}
+/** 会员状态尚未接入、会员也还不能购买，所有账号都按免费版展示；接入后改为读取服务端会员等级。 */
+export const currentPlanName = (locale: Locale) => accountFormatMessages[locale].freePlan;
 
-export const formatCredits = (value: number) => value.toLocaleString("zh-CN");
+// 中文与英文的千分位写法相同，数字固定按英文格式化，不随界面语言变化。
+const numberFormat = new Intl.NumberFormat("en-US");
+/** 带千分位的数字，用于金额与数量。 */
+export const formatNumber = (value: number) => numberFormat.format(value);
+/** 积分数额，带千分位。 */
+export const formatCredits = (value: number) => numberFormat.format(value);
+/** 带正负号的积分变动，例如“+500”“-4”。 */
 export const signedCredits = (amount: number) =>
-  `${amount > 0 ? "+" : ""}${amount.toLocaleString("zh-CN")}`;
-/** Whole images the credits cover at the current price; never rounds a partial image up. */
+  `${amount > 0 ? "+" : ""}${numberFormat.format(amount)}`;
+/** 积分使用明细里的变动额：符号与数字之间留一个空格，例如“- 35”“+ 100”。 */
+export function usageAmount(amount: number) {
+  if (amount === 0) return "0";
+  return `${amount > 0 ? "+" : "-"} ${numberFormat.format(Math.abs(amount))}`;
+}
+/** 按当前单价能生成的整张图数，不足一张的部分不向上取整。 */
 export const imagesFor = (credits: number, unitCredits: number) =>
   unitCredits > 0 ? Math.floor(credits / unitCredits) : 0;
-export const channelName = (channel: string) => channelNames[channel] ?? channel;
-
-/** "我" for the signed-in member, the UID for teammates, and 系统 for unattributed entries. */
-export function memberLabel(uid: string | null, currentUid: string | undefined) {
-  if (!uid) return "系统";
-  return uid === currentUid ? "我" : `UID ${uid}`;
+/** 支付渠道的名称；未知渠道原样显示。 */
+export function channelName(channel: string, locale: Locale) {
+  const names: Record<string, string> = accountFormatMessages[locale].channels;
+  return names[channel] ?? channel;
 }
 
-export function entryDetail(entry: WalletEntry) {
-  if (entry.task_id) return `任务 ${entry.task_id}`;
-  if (!entry.job_id && !entry.item_id && (entry.kind === "consume" || entry.kind === "refund"))
-    return "提示词优化";
-  if (entry.recharge_id) return `充值订单 ${entry.recharge_id.slice(0, 8).toUpperCase()}`;
+/** 收支记录的成员：自己显示“我”，同事显示 UID，没有归属的记录显示“系统”。 */
+export function memberLabel(uid: string | null, currentUid: string | undefined, locale: Locale) {
+  const t = accountFormatMessages[locale];
+  if (!uid) return t.system;
+  return uid === currentUid ? t.me : t.uid(uid);
+}
+
+/** 没有生成任务、作品或单张图片的消耗与退还来自提示词优化。 */
+export function isPromptOptimization(entry: WalletEntry) {
+  if (entry.task_id || entry.job_id || entry.item_id) return false;
+  return entry.kind === "consume" || entry.kind === "refund";
+}
+
+/** 收支记录的来源：任务编号、提示词优化或充值订单号，都没有时显示“—”。 */
+export function entryDetail(entry: WalletEntry, locale: Locale) {
+  const t = accountFormatMessages[locale];
+  if (entry.task_id) return t.task(entry.task_id);
+  if (isPromptOptimization(entry)) return t.promptOptimization;
+  if (entry.recharge_id) return t.rechargeOrder(entry.recharge_id.slice(0, 8).toUpperCase());
   return "—";
 }
 
 const day = (date: Date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-const clock = new Intl.DateTimeFormat("zh-CN", {
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-});
-const monthDay = new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit" });
-const fullDate = new Intl.DateTimeFormat("zh-CN", {
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
 
-/** Ledger time with a relative day label, so loaded records read in order without totals. */
-export function recordTime(iso: string, now = new Date()) {
+const twoDigits = (value: number) => String(value).padStart(2, "0");
+
+/** 积分使用明细的完整本地时间，格式为“2026.11.05 18:19”。 */
+export function usageTime(iso: string) {
+  const date = new Date(iso);
+  const day = `${date.getFullYear()}.${twoDigits(date.getMonth() + 1)}.${twoDigits(date.getDate())}`;
+  return `${day} ${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`;
+}
+
+/** 积分使用明细的标题：没有生成任务的消耗与退还来自提示词优化，其余按收支类型命名。 */
+export function usageTitle(entry: WalletEntry, locale: Locale) {
+  const t = accountFormatMessages[locale];
+  if (!isPromptOptimization(entry)) return t.entries[entry.kind];
+  return entry.kind === "consume" ? t.promptOptimization : t.promptOptimizationRefund;
+}
+
+/** 账单时间：今天、昨天加时刻，更早的显示日期，按界面语言的日期写法。 */
+export function recordTime(iso: string, locale: Locale, now = new Date()) {
   const date = new Date(iso);
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
-  const time = clock.format(date);
-  if (day(date) === day(now)) return `今天 ${time}`;
-  if (day(date) === day(yesterday)) return `昨天 ${time}`;
-  return `${(date.getFullYear() === now.getFullYear() ? monthDay : fullDate).format(date)} ${time}`;
+  const t = accountFormatMessages[locale];
+  const time = new Intl.DateTimeFormat(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+  if (day(date) === day(now)) return t.today(time);
+  if (day(date) === day(yesterday)) return t.yesterday(time);
+  const sameYear = date.getFullYear() === now.getFullYear();
+  const dateFormat = new Intl.DateTimeFormat(locale, {
+    ...(sameYear ? {} : { year: "numeric" }),
+    month: "2-digit",
+    day: "2-digit",
+  });
+  return `${dateFormat.format(date)} ${time}`;
 }

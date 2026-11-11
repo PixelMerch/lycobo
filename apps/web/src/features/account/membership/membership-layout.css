@@ -1,6 +1,6 @@
 /* 全屏会员页使用稳定实底，仅正文滚动，避免玻璃采样随底页变化。 */
 .membership-backdrop {
-  background: #0f0f12;
+  background: #0f0f0f;
   backdrop-filter: none;
 }
 /* 全屏页面不沿用普通弹框的缩放与淡入，首帧就完整覆盖底页。 */
@@ -24,7 +24,7 @@
   overflow: hidden;
   border: 0;
   border-radius: 0;
-  background: #0f0f12;
+  background: #0f0f0f;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   box-shadow: none;
@@ -109,7 +109,7 @@
   color: #f4f5ef;
   font-size: clamp(28px, 3.2vw, 44px);
   line-height: 1.3;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   text-wrap: balance;
 }
@@ -125,7 +125,7 @@
   content: "";
   width: 3px;
   height: 0.8em;
-  border-radius: 2px;
+  border-radius: 999px;
   background: #ffffff3d;
 }
 .membership-hero-note {
@@ -165,7 +165,7 @@
   padding-inline: 24px;
   border-radius: 16px;
   background: transparent;
-  color: #a6a6ad;
+  color: #a7a7a7;
   transition: color 200ms ease;
 }
 .membership-switcher .tabs__tab:is(:hover, [data-hovered="true"]):not([data-selected="true"]) {

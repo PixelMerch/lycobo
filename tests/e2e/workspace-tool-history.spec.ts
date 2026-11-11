@@ -92,15 +92,19 @@ for (const width of [390, 1440]) {
     await page.evaluate(() => window.scrollTo(0, 600));
     await expect
       .poll(() =>
-        page.evaluate(() => {
-          const toolbar = document.querySelector(".workspace-history-heading");
-          const header = document.querySelector(".topbar");
-          return Math.abs(
-            (toolbar?.getBoundingClientRect().top ?? 0) -
-              (header?.getBoundingClientRect().bottom ?? 0) -
-              12,
-          );
-        }),
+        // 桌面历史上方是“生成记录”标题行，窄屏是横排工具坞。
+        page.evaluate(
+          (selector) => {
+            const toolbar = document.querySelector(selector);
+            const header = document.querySelector(".topbar");
+            return Math.abs(
+              (toolbar?.getBoundingClientRect().top ?? 0) -
+                (header?.getBoundingClientRect().bottom ?? 0) -
+                12,
+            );
+          },
+          width >= 1024 ? ".workspace-history-heading" : ".workspace-tool-dock",
+        ),
       )
       .toBeLessThan(1);
     if (width >= 768) {

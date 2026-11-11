@@ -4,9 +4,13 @@ import { IconCoins, IconMinus, IconPlus } from "@tabler/icons-react";
 import { useId, useState } from "react";
 import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
+import type { Locale } from "../../../i18n/locale";
+import { useMessages } from "../../../i18n/messages";
 import { SelectionHighlight } from "../../generation/composer/selection-highlight";
+import { formatNumber } from "../account-format";
 import { EnterpriseMembership, MembershipBenefits, MembershipInfo } from "./membership-details";
 import { MembershipFaq } from "./membership-faq";
+import { membershipMessages } from "./membership-messages";
 import {
   cheapestPlanId,
   creditPrice,
@@ -20,11 +24,8 @@ import {
   teamMembershipPricing,
 } from "./membership-pricing";
 
-const audiences = [
-  { id: "personal", label: "个人" },
-  { id: "team", label: "团队" },
-  { id: "enterprise", label: "企业" },
-] as const;
+const audiences = ["personal", "team", "enterprise"] as const;
+type MembershipText = (typeof membershipMessages)[Locale];
 
 // Every figure in the headline and badges is derived from the price table, never typed by hand.
 const lowestCredit = Math.min(
@@ -34,24 +35,23 @@ const lowestCredit = Math.min(
 );
 
 function MembershipHero() {
+  const t = useMessages(membershipMessages);
   return (
     <div className="membership-hero">
       <p className="membership-hero-title">
-        <span>全部图片工具通用</span>
-        <em>低至 ¥{lowestCredit.toFixed(3)} / 积分</em>
+        <span>{t.heroTitle}</span>
+        <em>{t.heroPrice(lowestCredit.toFixed(3))}</em>
       </p>
-      <p className="membership-hero-note">
-        会员每月获得积分额度，主图制作、家纺裂变与套图计划均可使用
-      </p>
+      <p className="membership-hero-note">{t.heroNote}</p>
     </div>
   );
 }
 
-/** Ribbon above a card: the cheapest credit wins; otherwise a plan with several tiers says so. */
-function planRibbon(plan: MembershipPlan, cheapest: string | undefined) {
-  if (plan.id === cheapest) return { tone: "best", text: "积分单价最低" } as const;
+/** 方案卡顶部的标签：积分单价最低的方案优先，其次是有多档额度可选的方案。 */
+function planRibbon(plan: MembershipPlan, cheapest: string | undefined, t: MembershipText) {
+  if (plan.id === cheapest) return { tone: "best", text: t.cheapestCredit } as const;
   if (plan.options.length > 1)
-    return { tone: "info", text: `${plan.options.length} 档额度可选` } as const;
+    return { tone: "info", text: t.tierCount(plan.options.length) } as const;
   return null;
 }
 
@@ -66,7 +66,9 @@ function MembershipPlanCards({
 }) {
   const [seats, setSeats] = useState<Record<string, number>>({});
   const [selected, setSelected] = useState<Record<string, number>>({ pro: 13550, apex: 31860 });
+  const t = useMessages(membershipMessages);
   const period = membershipCycles.find((item) => item.id === cycle) ?? membershipCycles[0];
+  const unit = t.cycleUnits[cycle];
   const cheapest = cheapestPlanId(plans, cycle);
   function changeSeats(id: string, value: number) {
     if (Number.isFinite(value)) setSeats((previous) => ({ ...previous, [id]: value }));
@@ -80,8 +82,8 @@ function MembershipPlanCards({
         const price = option[cycle];
         const seatCount = seats[plan.id] ?? 2;
         const discount = discountTenths(option, cycle);
-        const ribbon = planRibbon(plan, cheapest);
-        const seatLabel = team ? " / 席" : "";
+        const ribbon = planRibbon(plan, cheapest, t);
+        const seatLabel = team ? t.perSeat : "";
         return (
           <Card
             key={plan.id}
@@ -94,27 +96,29 @@ function MembershipPlanCards({
             <div className="membership-plan-body">
               <Card.Header>
                 <Card.Title>{plan.name}</Card.Title>
-                {discount < 10 && <span className="membership-plan-discount">{discount} 折</span>}
+                {discount < 10 && (
+                  <span className="membership-plan-discount">{t.discount(discount)}</span>
+                )}
               </Card.Header>
               <Card.Content>
                 <div className="membership-plan-price">
                   <strong>
                     <small>¥</small>
-                    {price.toLocaleString("zh-CN")}
+                    {formatNumber(price)}
                   </strong>
                   <span>
-                    {period.unit}
+                    {unit}
                     {seatLabel}
                   </span>
                   <s className="membership-original-price">
-                    <span className="visually-hidden">原价</span>¥
-                    {(option.original * period.months).toLocaleString("zh-CN")}
+                    <span className="visually-hidden">{t.originalPrice}</span>¥
+                    {formatNumber(option.original * period.months)}
                   </s>
                 </div>
                 {team && (
                   <div className="membership-seat-row">
                     <NumberField
-                      aria-label={`${plan.name}席位`}
+                      aria-label={t.seats(plan.name)}
                       minValue={2}
                       maxValue={99}
                       value={seatCount}
@@ -122,18 +126,17 @@ function MembershipPlanCards({
                       className="membership-seats"
                     >
                       <NumberField.Group>
-                        <NumberField.DecrementButton aria-label={`减少${plan.name}席位`}>
+                        <NumberField.DecrementButton aria-label={t.removeSeat(plan.name)}>
                           <UiIcon icon={IconMinus} size="small" />
                         </NumberField.DecrementButton>
                         <NumberField.Input />
-                        <NumberField.IncrementButton aria-label={`增加${plan.name}席位`}>
+                        <NumberField.IncrementButton aria-label={t.addSeat(plan.name)}>
                           <UiIcon icon={IconPlus} size="small" />
                         </NumberField.IncrementButton>
                       </NumberField.Group>
                     </NumberField>
                     <p className="membership-seat-total">
-                      {seatCount} 席位 · 合计 ¥{(price * seatCount).toLocaleString("zh-CN")}{" "}
-                      {period.unit}
+                      {t.seatTotal(seatCount, formatNumber(price * seatCount), unit)}
                     </p>
                   </div>
                 )}
@@ -149,28 +152,32 @@ function MembershipPlanCards({
                     variant={ribbon?.tone === "best" ? "primary" : "secondary"}
                     isDisabled
                     className="membership-plan-action"
-                    aria-label={`订阅${plan.name}`}
+                    aria-label={t.subscribeTo(plan.name)}
                   >
-                    订阅
+                    {t.subscribe}
                   </Button>
                 </div>
                 <div className="membership-plan-gift">
                   <div className="membership-plan-credits">
                     <CreditCoin size="default" />
-                    <strong>{option.credits.toLocaleString("zh-CN")}</strong>
-                    <span>/ 月{seatLabel}</span>
+                    <strong>{formatNumber(option.credits)}</strong>
+                    <span>
+                      {t.perMonth}
+                      {seatLabel}
+                    </span>
                   </div>
                   <p>
-                    ¥{Number((price / period.months).toFixed(1))} / 月，<em>1</em> 积分 ={" "}
+                    {t.monthlyCreditPrice(Number((price / period.months).toFixed(1)))}
+                    <em>1</em>
+                    {t.creditEquals}
                     <em>¥{creditPrice(option, cycle).toFixed(3)}</em>
                   </p>
                   <p className="membership-plan-estimate">
-                    {team ? "每席" : ""}约生成{" "}
-                    {Math.floor(option.credits / imageUnitCredits).toLocaleString("zh-CN")} 张图片
-                    <MembershipInfo label={`${plan.name}积分说明`}>
+                    {t.estimate(team, formatNumber(Math.floor(option.credits / imageUnitCredits)))}
+                    <MembershipInfo label={t.creditsInfo(plan.name)}>
                       {team
-                        ? `按每席每月积分、每张图片 ${imageUnitCredits} 积分估算；周期价格为每席费用，合计金额随席位数变化。`
-                        : `按每张图片 ${imageUnitCredits} 积分估算；实际消耗取决于模型、生成数量和参数。`}
+                        ? t.teamEstimateNote(imageUnitCredits)
+                        : t.personalEstimateNote(imageUnitCredits)}
                     </MembershipInfo>
                   </p>
                 </div>
@@ -184,13 +191,15 @@ function MembershipPlanCards({
   );
 }
 
+/** 会员方案：个人、团队与企业三类，个人和团队可切换周期；订阅尚未开放。 */
 export function MembershipPlans() {
+  const t = useMessages(membershipMessages);
   const [cycle, setCycle] = useState<MembershipCycle>("yearly");
   const [audience, setAudience] = useState("personal");
   const hintId = useId();
   const audiencePlans = audience === "team" ? teamMembershipPricing : membershipPricing;
   return (
-    <section className="membership-plans" aria-label="会员方案">
+    <section className="membership-plans" aria-label={t.plans}>
       <MembershipHero />
       <Tabs
         selectedKey={audience}
@@ -199,23 +208,23 @@ export function MembershipPlans() {
       >
         <div className="membership-switcher">
           <Tabs.ListContainer>
-            <Tabs.List aria-label="订阅类型">
-              {audiences.map((item) => (
-                <Tabs.Tab key={item.id} id={item.id}>
-                  {item.id === audience && (
+            <Tabs.List aria-label={t.audienceLabel}>
+              {audiences.map((id) => (
+                <Tabs.Tab key={id} id={id}>
+                  {id === audience && (
                     <SelectionHighlight
                       layoutId="membership-audience-selection"
                       layoutDependency={audience}
                     />
                   )}
-                  {item.label}
+                  {t.audiences[id]}
                 </Tabs.Tab>
               ))}
             </Tabs.List>
           </Tabs.ListContainer>
           {audience !== "enterprise" && (
             <ToggleButtonGroup
-              aria-label="会员周期"
+              aria-label={t.cycleLabel}
               data-cycle={cycle}
               selectedKeys={[cycle]}
               selectionMode="single"
@@ -227,9 +236,8 @@ export function MembershipPlans() {
                 if (next) setCycle(next.id);
               }}
             >
-              {/* React Aria renders Tabs' children twice to build the tab collection, so a
-                  shared motion layoutId here would hand off to the hidden copy. One persistent
-                  pill slides by CSS instead, on the dock's spring curve. */}
+              {/* React Aria 构建页签集合时会把子元素渲染两遍，共享 motion layoutId 会交给隐藏副本；
+                  这里改用一个常驻胶囊，以工具坞的弹簧曲线用 CSS 滑动。 */}
               <span className="membership-cycle-pill" aria-hidden="true" />
               {membershipCycles.map((item) => {
                 const discount = lowestDiscount(audiencePlans, item.id);
@@ -238,13 +246,13 @@ export function MembershipPlans() {
                   <ToggleButton
                     id={item.id}
                     key={item.id}
-                    aria-label={item.label}
+                    aria-label={t.cycles[item.id]}
                     {...(hint ? { "aria-describedby": hint } : {})}
                   >
-                    {item.label}
+                    {t.cycles[item.id]}
                     {hint && (
                       <span id={hint} className="membership-cycle-hint">
-                        最低 {discount} 折
+                        {t.lowestDiscount(discount)}
                       </span>
                     )}
                   </ToggleButton>
@@ -279,11 +287,12 @@ function PlanQuotaSelect({
   option: MembershipPlan["options"][number];
   onSelect: (credits: number) => void;
 }) {
+  const t = useMessages(membershipMessages);
   return (
     <div className="membership-quota-select">
       {plan.options.length > 1 ? (
         <ToggleButtonGroup
-          aria-label={`${plan.name}积分档位`}
+          aria-label={t.quotaTiers(plan.name)}
           size="sm"
           fullWidth
           selectionMode="single"
@@ -298,18 +307,18 @@ function PlanQuotaSelect({
             <ToggleButton
               key={item.credits}
               id={String(item.credits)}
-              aria-label={`${plan.name} ${item.credits}积分/月`}
+              aria-label={t.quotaTier(plan.name, item.credits)}
             >
               {index > 0 && <ToggleButtonGroup.Separator />}
               <UiIcon icon={IconCoins} size="small" />
-              {item.label}/月
+              {t.quotaPerMonth(item.label)}
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
       ) : (
         <span>
           <UiIcon icon={IconCoins} size="small" />
-          {option.label}/月
+          {t.quotaPerMonth(option.label)}
         </span>
       )}
     </div>

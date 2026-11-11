@@ -2,7 +2,7 @@ import { expect, type Page, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
 const png = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",
   "base64",
 );
 const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();
@@ -58,7 +58,6 @@ async function mockLibrary(page: Page, assets: ReturnType<typeof asset>[]) {
         (!query.get("since") || row.created_at >= (query.get("since") ?? "")) &&
         (!query.get("kind") || row.kind === query.get("kind")) &&
         (!query.get("tool") || row.tool === query.get("tool")) &&
-        (!query.get("model") || row.model?.startsWith(query.get("model") ?? "")) &&
         (!query.get("type") || row.type === query.get("type")) &&
         (query.get("favorite") !== "true" || favorites.has(row.id)),
     );
@@ -70,10 +69,46 @@ async function mockLibrary(page: Page, assets: ReturnType<typeof asset>[]) {
   return queries;
 }
 
-test("我的素材 only shows generated images while 素材库 retains its sources", async ({ page }) => {
+/** 像下载授权接口一样返回签名链接，链接背后是原文件。 */
+async function mockOriginals(page: Page) {
+  const counts = { deliveries: 0, originals: 0 };
+  await page.route("**/api/v1/image-assets/deliveries", (route) => {
+    counts.deliveries++;
+    const ids: string[] = route.request().postDataJSON().ids;
+    return route.fulfill({
+      json: {
+        data: ids.map((id) => {
+          const base = `https://assets.example.test/${id}`;
+          return {
+            id,
+            delivery: {
+              url: `${base}.preview.webp`,
+              thumbnail_url: `${base}.thumbnail.webp`,
+              download_url: `${base}.png?variant=download`,
+              expires_at: Math.floor(Date.now() / 1000) + 300,
+            },
+          };
+        }),
+      },
+    });
+  });
+  await page.route("https://assets.example.test/**", (route) => {
+    if (route.request().resourceType() !== "image") counts.originals++;
+    return route.fulfill({
+      contentType: "image/png",
+      body: png,
+      headers: { "Access-Control-Allow-Origin": "*" },
+    });
+  });
+  return counts;
+}
+
+test("我的素材 opens on the current tool and filters source, time and favorites before paging", async ({
+  page,
+}) => {
   const textile = asset("P11111111", { tool: "textile" });
-  const created = asset("P22222222", { tool: "create", model: "gpt-image-2" });
-  const upload = asset("P33333333", { kind: "reference", model: null });
+  const created = asset("P22222222", { tool: "create", hours: 30 });
+  const upload = asset("P33333333", { kind: "reference", model: null, hours: 50 });
   const queries = await mockLibrary(page, [textile, created, upload]);
   await page.setViewportSize({ width: 1328, height: 906 });
   await page.goto("/commerce/textile-set");
@@ -82,40 +117,63 @@ test("我的素材 only shows generated images while 素材库 retains its sourc
   // The library is lazy: browsing the workspace must not load every asset.
   expect(queries).toHaveLength(0);
   await entry.click();
-  const dialog = page.getByRole("dialog", { name: "我的素材", exact: true });
-  await expect(dialog.getByRole("heading", { name: "我的素材" })).toBeVisible();
-  // From the textile rail the 功能 filter starts on 家纺裂变 and the API filters before paging.
+  const dialog = page.getByRole("dialog", { name: "素材库", exact: true });
+  await expect(dialog.getByRole("tab", { name: "我的素材" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(dialog.getByRole("tab", { name: "灵感库" })).toBeVisible();
+  // From the textile rail the source starts on 家纺裂变 and the API filters before paging.
   const tiles = dialog.locator(".asset-tile");
   await expect(tiles).toHaveCount(1);
   expect(queries.at(-1)?.get("kind")).toBe("output");
-  expect(queries.at(-1)?.has("type")).toBe(false);
-  await expect(dialog.getByRole("tab")).toHaveCount(0);
-  await expect(dialog.getByRole("link", { name: "在素材库中查看" })).toHaveCount(0);
-  await expect(dialog.getByRole("radiogroup", { name: "类型" })).toHaveCount(0);
   expect(queries.at(-1)?.get("tool")).toBe("textile");
-  const gridColumns = () =>
-    dialog
-      .locator(".asset-density-grid")
-      .first()
-      .evaluate((grid) => getComputedStyle(grid).gridTemplateColumns.split(" ").length);
-  await expect.poll(gridColumns).toBe(8);
+  expect(queries.at(-1)?.get("type")).toBe("image");
+  // 全部时间是一整片瀑布流：不显示日期，也没有模型、密度和“已加载”数量。
   await expect(dialog.locator(".asset-day")).toHaveCount(0);
+  await expect(dialog.getByText(/已加载/)).toHaveCount(0);
+  await expect(dialog.getByRole("radio", { name: /每行/ })).toHaveCount(0);
+  await expect(tiles.locator(".model-tag")).toHaveCount(0);
+  const source = dialog.getByRole("button", { name: "家纺裂变 素材来源", exact: true });
+  await expect(source).toHaveAttribute("data-active", "true");
+  await source.click();
+  // 前三项固定，后面是 AI 生成的各个功能（随工具清单变化），当前功能标“当前”。
+  const options = page.getByRole("option");
+  await expect(options.nth(0)).toHaveText("全部来源");
+  await expect(options.nth(1)).toHaveText("我上传的");
+  await expect(options.nth(2)).toHaveText("全部 AI 生成");
+  await expect(page.getByRole("option", { name: /家纺裂变/ })).toContainText("当前");
+  // 菜单压在图片网格上打开，用不透明底，不透出图片的颜色。
+  const menu = page.locator(".asset-filter-menu");
+  await expect(menu).toHaveCSS("background-color", "rgb(31, 31, 31)");
+  await expect(menu).toHaveCSS("backdrop-filter", "none");
+  await page.getByRole("option", { name: "全部来源" }).click();
+  await expect(tiles).toHaveCount(3);
+  expect(queries.at(-1)?.has("kind")).toBe(false);
+  expect(queries.at(-1)?.has("tool")).toBe(false);
+  await expect(tiles.locator(".asset-tile-upload")).toHaveCount(1);
+  await dialog.getByRole("button", { name: "全部来源 素材来源", exact: true }).click();
+  await page.getByRole("option", { name: "我上传的" }).click();
+  await expect(tiles).toHaveCount(1);
+  expect(queries.at(-1)?.get("kind")).toBe("reference");
+  await expect(tiles.locator(".asset-tile-upload")).toHaveCount(0);
+  await dialog.getByRole("button", { name: "我上传的 素材来源", exact: true }).click();
+  await page.getByRole("option", { name: "全部 AI 生成" }).click();
+  await expect(tiles).toHaveCount(2);
+  expect(queries.at(-1)?.get("kind")).toBe("output");
+  expect(queries.at(-1)?.has("tool")).toBe(false);
+
+  // 只有选了时间范围才按天分组。
   await dialog.getByRole("button", { name: "全部时间 时间", exact: true }).click();
   await page.getByRole("option", { name: "最近 7 天", exact: true }).click();
-  await expect(dialog.locator(".asset-day")).toHaveCount(1);
+  await expect(dialog.locator(".asset-day")).toHaveCount(2);
   expect(queries.at(-1)?.get("since")).toBeTruthy();
-  await dialog.getByRole("button", { name: "重置筛选", exact: true }).click();
+  await dialog.getByRole("button", { name: "最近 7 天 时间", exact: true }).click();
+  await page.getByRole("option", { name: "全部时间", exact: true }).click();
+  // 切回看过的筛选时直接用缓存，列表回到不分日期的一整片瀑布流。
   await expect(dialog.locator(".asset-day")).toHaveCount(0);
-  await expect(dialog.getByRole("button", { name: "全部时间 时间", exact: true })).toBeVisible();
-  const queryCount = queries.length;
-  await dialog.getByRole("radio", { name: "中图，每行8张" }).click();
-  await expect.poll(gridColumns).toBe(8);
-  await dialog.getByRole("radio", { name: "小图，每行10张" }).click();
-  await expect.poll(gridColumns).toBe(10);
-  expect(queries).toHaveLength(queryCount);
-  await dialog.getByRole("radio", { name: "大图，每行6张" }).click();
-  await dialog.getByRole("button", { name: "全部类型 类型", exact: true }).click();
-  await page.getByRole("option", { name: "视频", exact: true }).click();
+
+  await dialog.getByRole("radio", { name: "视频" }).click();
   await expect(dialog.getByText("暂无视频素材")).toBeVisible();
   const empty = dialog.locator(".asset-empty");
   await expect(empty.locator("p")).toHaveCount(1);
@@ -131,62 +189,32 @@ test("我的素材 only shows generated images while 素材库 retains its sourc
       ),
     ).toBeLessThan(3);
   }
-  await dialog.getByRole("button", { name: "视频 类型", exact: true }).click();
-  await page.getByRole("option", { name: "图片", exact: true }).click();
-  await expect(tiles).toHaveCount(1);
-  expect(queries.at(-1)?.get("type")).toBe("image");
-  await dialog.getByRole("button", { name: "重置筛选", exact: true }).click();
-  const toolFilter = dialog.getByRole("button", { name: "家纺裂变 功能", exact: true });
-  await expect(toolFilter).toHaveAttribute("data-active", "true");
-  await expect(dialog.getByRole("button", { name: "查看图片：素材 P11111111" })).toBeVisible();
-  // Only generated pictures carry the shared model tag, named from the model catalog.
-  await expect(tiles.locator(".asset-tile-badge")).toHaveText("Image 2.5");
-  await expect(tiles.locator(".asset-tile-badge")).toHaveClass(/model-tag/);
-  await expect(dialog.locator(".library-shell")).toHaveCSS("transform", "none");
-  const edges = await page.evaluate(() => {
-    const left = (selector: string) =>
-      document.querySelector<HTMLElement>(selector)?.getBoundingClientRect().x ?? -1;
-    return {
-      close: left(".library-close svg"),
-      tile: left(".asset-tile"),
-    };
-  });
-  expect(edges.close).toBeCloseTo(edges.tile, 0);
-
-  await toolFilter.click();
-  await expect(page.getByRole("option")).toHaveText([
-    "全部功能",
-    "主图制作",
-    /家纺裂变\s*当前功能/,
-    "套图计划",
-    "视频创作",
-  ]);
-  await page.getByRole("option", { name: "全部功能" }).click();
+  await dialog.getByRole("radio", { name: "图片" }).click();
   await expect(tiles).toHaveCount(2);
-  expect(queries.at(-1)?.has("tool")).toBe(false);
-  await dialog.getByRole("button", { name: "全部模型 模型", exact: true }).click();
-  await page.getByRole("option", { name: "Image 2.5", exact: true }).click();
-  await expect(tiles).toHaveCount(1);
-  expect(queries.at(-1)?.get("model")).toBe("gpt-image-2.5");
-  // Reset returns to this tool's defaults (served from cache), not to every tool.
-  await dialog.getByRole("button", { name: "重置筛选", exact: true }).click();
-  await expect(toolFilter).toBeVisible();
-  await expect(dialog.getByRole("button", { name: "全部模型 模型", exact: true })).toBeVisible();
-  await expect(dialog.getByRole("button", { name: "查看图片：素材 P11111111" })).toBeVisible();
-  await expect(tiles).toHaveCount(1);
 
-  // Favorites are saved on the server; the star stays after the pointer leaves.
+  // Favorites are saved on the server; 仅看收藏 then asks the API for them only.
   await tiles.first().hover();
   await tiles.first().getByRole("button", { name: "收藏图片", exact: true }).click();
   await expect(
     tiles.first().getByRole("button", { name: "取消收藏", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
+  await dialog.getByText("仅看收藏", { exact: true }).click();
+  await expect(dialog.getByRole("switch", { name: "仅看收藏" })).toBeChecked();
+  await expect(tiles).toHaveCount(1);
+  expect(queries.at(-1)?.get("favorite")).toBe("true");
   // Away from pointer and focus, the saved star stays in the tile corner.
   await page.mouse.move(5, 5);
-  await dialog.getByRole("button", { name: "关闭我的素材", exact: true }).focus();
+  await dialog.getByRole("button", { name: "关闭素材库", exact: true }).focus();
   await expect(tiles.first().locator(".asset-tile-star")).toBeVisible();
+  await expect(dialog.locator(".library-shell")).toHaveCSS("transform", "none");
+  const edges = await page.evaluate(() => {
+    const left = (selector: string) =>
+      document.querySelector<HTMLElement>(selector)?.getBoundingClientRect().x ?? -1;
+    return { close: left(".library-close svg"), tile: left(".asset-tile") };
+  });
+  expect(edges.close).toBeCloseTo(edges.tile, 0);
 
-  await dialog.getByRole("button", { name: "关闭我的素材", exact: true }).click();
+  await dialog.getByRole("button", { name: "关闭素材库", exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await expect(entry).toBeFocused();
   await entry.click();
@@ -195,21 +223,120 @@ test("我的素材 only shows generated images while 素材库 retains its sourc
   expect([box?.x, box?.y, box?.width, box?.height].map((value) => Math.round(value ?? -1))).toEqual(
     [0, 0, 1328, 906],
   );
-  await page.screenshot({ path: "/tmp/library-drawer.png" });
-  await page.goto("/assets?tool=textile");
-  await expect(page).toHaveURL(/\/assets\?tool=textile$/);
-  await expect(page.getByRole("heading", { name: "素材库", level: 1 })).toBeVisible();
-  await expect(page.getByRole("tab")).toHaveCount(0);
-  await page.getByRole("button", { name: "生成素材 素材来源", exact: true }).click();
-  await page.getByRole("option", { name: "上传素材", exact: true }).click();
-  await expect(page.locator(".asset-tile")).toHaveCount(1);
-  await expect.poll(() => queries.at(-1)?.get("kind")).toBe("reference");
-  await page.getByRole("button", { name: "上传素材 素材来源", exact: true }).click();
-  await page.getByRole("option", { name: "生成素材", exact: true }).click();
-  await expect(page.getByRole("button", { name: "家纺裂变 功能", exact: true })).toBeVisible();
 });
 
-test("素材库 shares density and time filters with 我的素材", async ({ page }) => {
+test("多选 downloads one original directly, packs several into one ZIP and leaves on Esc", async ({
+  page,
+}) => {
+  const assets = [
+    asset("P10000001"),
+    asset("P10000002", { hours: 0.1 }),
+    asset("P10000003", { hours: 0.2 }),
+  ];
+  await mockLibrary(page, assets);
+  const counts = await mockOriginals(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/commerce/create");
+  await page.getByRole("button", { name: "打开素材库", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "素材库", exact: true });
+  const tiles = dialog.locator(".asset-tile");
+  await expect(tiles).toHaveCount(3);
+  // 悬停卡片左上的勾选圈直接进入多选，并选中这一张。
+  await tiles.nth(1).hover();
+  await tiles.nth(1).locator(".asset-tile-check").click();
+  const bar = dialog.getByRole("toolbar", { name: "多选操作" });
+  await expect(bar).toContainText("已选 1 项");
+  await expect(
+    dialog.getByRole("button", { name: "选择图片：素材 P10000002", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  // 只选 1 项时直接下载原文件，不打包。
+  const single = page.waitForEvent("download");
+  await bar.getByRole("button", { name: "下载 1 项", exact: true }).click();
+  const original = new URL((await single).url());
+  expect(original.pathname).toBe(`/api/v1/image-assets/${assets[1]?.id}/content`);
+  expect(original.searchParams.get("download")).toBe("1");
+  expect(counts.deliveries).toBe(0);
+
+  await bar.getByRole("button", { name: "全选", exact: true }).click();
+  await expect(bar).toContainText("已选 3 项");
+  await dialog.getByRole("button", { name: "选择图片：素材 P10000001", exact: true }).click();
+  await expect(bar).toContainText("已选 2 项");
+  const pending = page.waitForEvent("download");
+  await bar.getByRole("button", { name: "下载 2 项", exact: true }).click();
+  const download = await pending;
+  expect(download.suggestedFilename()).toMatch(/^我的素材-\d{8}-\d{4}\.zip$/);
+  const path = await download.path();
+  const { readFile } = await import("node:fs/promises");
+  if (!path) throw new Error("Download missing");
+  const bytes = await readFile(path);
+  expect(bytes.subarray(0, 2).toString()).toBe("PK");
+  expect(bytes.includes(Buffer.from("01-P10000002.png"))).toBe(true);
+  expect(bytes.includes(Buffer.from("02-P10000003.png"))).toBe(true);
+  expect(counts.originals).toBe(2);
+  expect(counts.deliveries).toBe(1);
+
+  // Esc 先退出多选，再按一次才关闭素材库。
+  await page.keyboard.press("Escape");
+  await expect(bar).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: "多选", exact: true })).toBeVisible();
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+});
+
+test("灵感库 inside the workspace library fills the prompt and closes the library", async ({
+  page,
+}) => {
+  await mockLibrary(page, [asset("P10000001")]);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/commerce/create");
+  await page.getByRole("button", { name: "打开素材库", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "素材库", exact: true });
+  await dialog.getByRole("tab", { name: "灵感库" }).click();
+  await expect(dialog.getByText("图片都是 AI 生成的示例，不是客户作品")).toHaveCount(0);
+  await dialog.getByRole("button", { name: "查看灵感：水光香氛", exact: true }).focus();
+  await page.keyboard.press("Tab");
+  await expect(dialog.getByRole("button", { name: "做同款：水光香氛", exact: true })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(dialog).toHaveCount(0);
+  await expect(page).toHaveURL(/\/commerce\/create$/);
+  await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
+    /将商品放在水边石台上/,
+  );
+});
+
+test("素材库 keeps its tab and filters in the address; older favorites links still work", async ({
+  page,
+}) => {
+  const queries = await mockLibrary(page, [
+    asset("P10000001"),
+    asset("P10000002", { kind: "reference", model: null }),
+  ]);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/assets?source=favorites");
+  await expect(page.getByRole("heading", { name: "素材库", level: 1 })).toBeAttached();
+  await expect(page.getByRole("switch", { name: "仅看收藏" })).toBeChecked();
+  await expect(page.getByText("还没有收藏的素材")).toBeVisible();
+  expect(queries.at(-1)?.get("favorite")).toBe("true");
+  expect(queries.at(-1)?.has("kind")).toBe(false);
+  await page.getByText("仅看收藏", { exact: true }).click();
+  await expect(page).toHaveURL(/\/assets$/);
+  await expect(page.locator(".asset-tile")).toHaveCount(2);
+  await page.getByRole("button", { name: "全部来源 素材来源", exact: true }).click();
+  await page.getByRole("option", { name: "我上传的" }).click();
+  await expect(page).toHaveURL(/\/assets\?source=uploads$/);
+  await page.getByRole("tab", { name: "灵感库" }).click();
+  await expect(page).toHaveURL(/\/assets\?source=uploads&tab=inspiration$/);
+  await expect(page.getByText("图片都是 AI 生成的示例，不是客户作品")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^查看灵感：/ }).first()).toBeVisible();
+  await page.getByRole("tab", { name: "我的素材" }).click();
+  await expect(page).toHaveURL(/\/assets\?source=uploads$/);
+  await expect(page.locator(".asset-tile")).toHaveCount(1);
+});
+
+test("素材库 keeps proportions on phones and docks the selection bar at the bottom", async ({
+  page,
+}) => {
   const assets = [
     asset("P10000001", { hours: 0 }, [1024, 1024]),
     asset("P10000002", { hours: 0.1 }, [960, 1280]),
@@ -217,44 +344,13 @@ test("素材库 shares density and time filters with 我的素材", async ({ pag
     asset("P10000004", { hours: 0.3 }, [1280, 960]),
     asset("P10000005", { hours: 0.4 }, [1024, 1024]),
     asset("P10000006", { hours: 0.5 }, [960, 1280]),
-    asset("P10000007", { hours: 30 }, [1024, 1024]),
   ];
   await mockLibrary(page, assets);
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/assets");
-  await expect(page.locator(".asset-tile")).toHaveCount(7);
-  await expect(page.locator(".asset-day")).toHaveCount(0);
-  await expect(page.locator(".asset-density-grid")).toHaveCSS(
-    "grid-template-columns",
-    /^(\S+ ){7}\S+$/,
-  );
-  await page.getByRole("button", { name: "全部时间 时间", exact: true }).click();
-  await page.getByRole("option", { name: "最近 7 天", exact: true }).click();
-  await expect(page.getByRole("heading", { name: /^今天/ })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /^昨天/ })).toBeVisible();
-  await page.locator(".asset-tile").first().hover();
-  await expect(page.locator(".asset-tile").first().locator(".asset-tile-foot")).toHaveCSS(
-    "opacity",
-    "1",
-  );
-  await page.getByRole("button", { name: "查看图片：素材 P10000001" }).click();
-  const preview = page.getByRole("dialog", { name: "图片预览", exact: true });
-  await expect(preview.locator(".image-preview-facts")).toContainText("图片ID：P10000001");
-  await page.keyboard.press("Escape");
-  await expect(preview).toHaveCount(0);
-  await page.getByRole("button", { name: "全部类型 类型", exact: true }).click();
-  await page.getByRole("option", { name: "视频", exact: true }).click();
-  await expect(page.getByText("暂无视频素材")).toBeVisible();
-  await page.getByRole("button", { name: "视频 类型", exact: true }).click();
-  await page.getByRole("option", { name: "图片", exact: true }).click();
-  await expect(page).toHaveURL(/type=image/);
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator(".asset-density-grid").first()).toHaveCSS(
-    "grid-template-columns",
-    /^\S+ \S+$/,
-  );
-  await expect(page.getByRole("button", { name: "图片 类型", exact: true })).toBeVisible();
-  const tiles = page.locator(".asset-density-grid").first().locator(".asset-tile");
+  await page.goto("/assets");
+  const grid = page.locator(".asset-grid");
+  await expect(grid).toHaveCSS("grid-template-columns", /^\S+ \S+$/);
+  const tiles = grid.locator(".asset-tile");
   await expect(tiles).toHaveCount(6);
   const boxes = await tiles.evaluateAll((nodes) =>
     nodes.map((node) => {
@@ -279,12 +375,45 @@ test("素材库 shares density and time filters with 我的素材", async ({ pag
     await tiles
       .locator(".asset-tile-open")
       .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("aria-label"))),
-  ).toEqual(assets.slice(0, 6).map((item) => `查看图片：${item.prompt}`));
-
+  ).toEqual(assets.map((item) => `查看图片：${item.prompt}`));
+  await page.getByRole("button", { name: "多选", exact: true }).click();
+  await page.getByRole("button", { name: "选择图片：素材 P10000001", exact: true }).click();
+  const bar = page.getByRole("toolbar", { name: "多选操作" });
+  await expect(bar).toContainText("已选 1 项");
+  const barBox = await bar.boundingBox();
+  expect(Math.round((barBox?.y ?? 0) + (barBox?.height ?? 0))).toBeLessThanOrEqual(844 - 16);
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
     .toBe(true);
-  await page.screenshot({ path: "/tmp/library-mobile.png" });
+});
+
+test("a tile whose image fails offers no download and is left out of select all", async ({
+  page,
+}) => {
+  const broken = asset("P55555555", { hours: 0.1 });
+  await mockLibrary(page, [asset("P55555551"), broken, asset("P55555553", { hours: 0.2 })]);
+  await page.route(`**/api/v1/image-assets/${broken.id}/content*`, (route) =>
+    route.fulfill({ status: 404, body: "" }),
+  );
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/assets");
+  const tile = page.locator(".asset-tile").filter({
+    has: page.getByRole("button", { name: "查看图片：素材 P55555555", exact: true }),
+  });
+  await expect(tile.getByText("图片加载失败")).toBeVisible();
+  await tile.hover();
+  // 图片打不开就不能下载：只保留来源与时间，不出现收藏、下载和勾选圈。
+  await expect(tile.locator(".asset-tile-foot")).toBeVisible();
+  await expect(tile.getByRole("button", { name: "下载原图", exact: true })).toHaveCount(0);
+  await expect(tile.getByRole("button", { name: "收藏图片", exact: true })).toHaveCount(0);
+  await expect(tile.locator(".asset-tile-check")).toHaveCount(0);
+  await page.getByRole("button", { name: "多选", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "选择图片：素材 P55555555", exact: true }),
+  ).toBeDisabled();
+  const bar = page.getByRole("toolbar", { name: "多选操作" });
+  await bar.getByRole("button", { name: "全选", exact: true }).click();
+  await expect(bar).toContainText("已选 2 项");
 });
 
 test("a refused favorite rolls the star back and explains the limit", async ({ page }) => {
@@ -325,7 +454,7 @@ test("我的素材 keeps filters visible while scrolling and separates the curre
   await page.setViewportSize({ width: 1328, height: 906 });
   await page.goto("/commerce/textile-set");
   await page.getByRole("button", { name: "打开素材库", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "我的素材", exact: true });
+  const dialog = page.getByRole("dialog", { name: "素材库", exact: true });
   await expect(dialog.locator(".asset-tile")).toHaveCount(48);
   await expect(dialog.locator(".library-shell")).toHaveCSS("transform", "none");
   const filters = dialog.locator(".asset-filters");
@@ -333,11 +462,11 @@ test("我的素材 keeps filters visible while scrolling and separates the curre
   await dialog.locator(".asset-tile").first().hover();
   await page.mouse.wheel(0, 600);
   await expect
-    .poll(() => dialog.locator(".library-body").evaluate((el) => el.scrollTop))
+    .poll(() => dialog.locator(".asset-library-panel").evaluate((el) => el.scrollTop))
     .toBeGreaterThan(100);
   const after = await filters.boundingBox();
   expect(after?.y).toBeCloseTo(before?.y ?? -1, 0);
-  await dialog.getByRole("button", { name: "家纺裂变 功能", exact: true }).click();
+  await dialog.getByRole("button", { name: "家纺裂变 素材来源", exact: true }).click();
   const selected = page.getByRole("option", { name: /家纺裂变/ });
   await expect(selected).toHaveAttribute("aria-selected", "true");
   const badge = await selected.locator(".asset-filter-now").boundingBox();
@@ -360,5 +489,5 @@ test("素材库 keeps source and filters below the header while scrolling", asyn
   await expect
     .poll(async () => Math.round((await page.locator(".asset-filters").boundingBox())?.y ?? -1))
     .toBe(60);
-  await expect(page.getByRole("button", { name: "生成素材 素材来源", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "全部来源 素材来源", exact: true })).toBeVisible();
 });

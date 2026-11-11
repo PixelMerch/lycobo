@@ -159,6 +159,7 @@ export async function verifyRetryRequest(
   );
 }
 
+/** 验证余额耗尽后的幂等提交与积分接口校验。 */
 export async function verifyExhaustedWallet(
   repository: ImageRepository,
   app: ReturnType<typeof createApp>,
@@ -166,7 +167,7 @@ export async function verifyExhaustedWallet(
   headers: Record<string, string>,
   key: string,
 ) {
-  // Retry the already-reserved idempotency key even when the available balance has become zero.
+  // 余额归零后仍允许确认已完成扣费的原请求。
   while ((await repository.wallet(first)).balance >= imageUnitCredits) {
     const count = Math.min(
       4,
@@ -188,6 +189,11 @@ export async function verifyExhaustedWallet(
   rechargeOrdersSchema.parse(
     unwrapApiData(await (await app.request("/api/v1/wallet/recharges", { headers })).json()),
   );
+  const spentResponse = await app.request("/api/v1/wallet/entries?view=spent&limit=1", { headers });
+  const spent = walletEntriesSchema.parse(unwrapApiData(await spentResponse.json()));
+  assert.equal(spent.data.length, 1);
+  assert.equal(spent.data[0]?.kind, "consume");
+  assert.equal((await app.request("/api/v1/wallet/entries?view=invalid", { headers })).status, 400);
   assert.equal((await app.request("/api/v1/wallet")).status, 401);
   assert.equal(
     (await app.request("/api/v1/wallet/entries?before=9999999999999999999", { headers })).status,

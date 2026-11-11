@@ -1,6 +1,9 @@
 import { Button, Toolbar, Tooltip } from "@heroui/react";
 import { IconRotate, IconRotateClockwise, IconZoomIn, IconZoomOut } from "@tabler/icons-react";
+import { useMessages } from "../../i18n/messages";
+import { componentsMessages } from "../components-messages";
 import { UiIcon } from "../ui-icon";
+/** 图片浏览工具栏：左右旋转与缩放。 */
 export function ImageViewerToolbar({
   ready,
   zoom,
@@ -12,46 +15,47 @@ export function ImageViewerToolbar({
   rotate: (degrees: number) => void;
   zoomStep: (delta: number) => void;
 }) {
+  const t = useMessages(componentsMessages);
   return (
-    <Toolbar className="browse-image-toolbar" aria-label="图片浏览工具" inert={!ready}>
+    <Toolbar className="browse-image-toolbar" aria-label={t.viewerTools} inert={!ready}>
       <Tooltip>
         <Button
           size="lg"
           variant="ghost"
           isIconOnly
-          aria-label="向左旋转"
+          aria-label={t.rotateLeft}
           onPress={() => rotate(-90)}
         >
           <UiIcon icon={IconRotate} size="action" />
         </Button>
-        <Tooltip.Content>向左旋转</Tooltip.Content>
+        <Tooltip.Content>{t.rotateLeft}</Tooltip.Content>
       </Tooltip>
       <Tooltip>
         <Button
           size="lg"
           variant="ghost"
           isIconOnly
-          aria-label="向右旋转"
+          aria-label={t.rotateRight}
           onPress={() => rotate(90)}
         >
           <UiIcon icon={IconRotateClockwise} size="action" />
         </Button>
-        <Tooltip.Content>向右旋转</Tooltip.Content>
+        <Tooltip.Content>{t.rotateRight}</Tooltip.Content>
       </Tooltip>
       <Tooltip>
         <Button
           size="lg"
           variant="ghost"
           isIconOnly
-          aria-label="缩小图片"
+          aria-label={t.zoomOutImage}
           isDisabled={zoom <= 25}
           onPress={() => zoomStep(-25)}
         >
           <UiIcon icon={IconZoomOut} size="action" />
         </Button>
-        <Tooltip.Content>缩小</Tooltip.Content>
+        <Tooltip.Content>{t.zoomOut}</Tooltip.Content>
       </Tooltip>
-      <output className="browse-image-position" aria-label="图片缩放比例" aria-live="polite">
+      <output className="browse-image-position" aria-label={t.zoomLevel} aria-live="polite">
         {Math.round(zoom)}%
       </output>
       <Tooltip>
@@ -59,13 +63,13 @@ export function ImageViewerToolbar({
           size="lg"
           variant="ghost"
           isIconOnly
-          aria-label="放大图片"
+          aria-label={t.zoomInImage}
           isDisabled={zoom >= 500}
           onPress={() => zoomStep(25)}
         >
           <UiIcon icon={IconZoomIn} size="action" />
         </Button>
-        <Tooltip.Content>放大</Tooltip.Content>
+        <Tooltip.Content>{t.zoomIn}</Tooltip.Content>
       </Tooltip>
     </Toolbar>
   );

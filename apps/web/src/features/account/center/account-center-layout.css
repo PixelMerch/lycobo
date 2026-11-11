@@ -1,4 +1,4 @@
-/* The profile and tabs stay fixed; only the selected panel scrolls.
+/* The section list stays fixed; only the selected panel scrolls.
  * Frosting belongs to the dialog, so its backdrop must not form a separate blur root. */
 .account-backdrop.modal__backdrop:has(.account-center-dialog) {
   backdrop-filter: none;
@@ -11,7 +11,7 @@
   height: min(760px, calc(100dvh - 48px));
   padding: var(--account-center-padding);
   background: var(--glass-fill), var(--glass-tint);
-  border-color: var(--glass-edge);
+  border-color: var(--glass-border);
   box-shadow: var(--glass-shadow);
   backdrop-filter: var(--glass-blur);
 }
@@ -29,74 +29,17 @@
   line-height: var(--leading-base);
 }
 
-/* ---------- profile ---------- */
-.account-profile-card {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: var(--space-3);
-  padding: 10px 14px;
-  border: 1px solid #ffffff0f;
-  border-radius: 14px;
-  background: var(--account-card-background);
-}
-.account-profile-avatar,
-.account-profile-avatar .avatar__fallback {
-  flex: none;
-  width: 32px;
-  min-width: 32px;
-  height: 32px;
-  background: #34343a;
-  color: #fff;
-  font-size: var(--text-base);
-  font-weight: var(--weight-semibold);
-}
-.account-profile-main {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 2px var(--space-3);
-  min-width: 0;
-}
-.account-profile-main > strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-  font-size: var(--text-base);
-  line-height: var(--leading-base);
-  font-weight: var(--weight-semibold);
-}
-.account-profile-meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-1) 10px;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  font-variant-numeric: tabular-nums;
-}
-.account-copy.button {
-  width: 24px;
-  min-width: 24px;
-  height: 24px;
-  min-height: 24px;
-  margin-left: -6px;
-  color: var(--muted);
-}
 /* ---------- tabs ---------- */
 .account-center-tabs {
   flex: 1;
   min-height: 0;
 }
-.account-center-tabs > .tabs__list-container {
+.account-center-tabs .tabs__list-container {
   flex: none;
   margin-top: var(--space-2);
   border-bottom: 1px solid var(--interaction-active);
 }
-.account-center-tabs > .tabs__list-container .tabs__list {
+.account-center-tabs .tabs__list-container .tabs__list {
   gap: 28px;
   padding: 0 4px;
   border: 0;
@@ -124,9 +67,8 @@
   background: var(--accent);
   box-shadow: none;
 }
-/* The panel is the scroll viewport. It reaches the dialog's right and bottom edges, so the
- * scrollbar sits at the edge and content scrolls out under the frame; 4px on the left keeps
- * focus rings unclipped. */
+/* 面板是滚动区域，延伸到弹窗右缘和底边，内容从外框下方滚出；左侧留 4px 不裁掉焦点环。
+ * 按用户要求不显示滚动条，滚轮、触控与键盘仍可滚动。 */
 .account-center-tabs > .tabs__panel {
   flex: 1;
   width: auto;
@@ -135,9 +77,10 @@
   padding: var(--space-5) var(--account-center-padding) var(--account-center-padding) 4px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--surface-tertiary) transparent;
-  scrollbar-gutter: stable;
+  scrollbar-width: none;
+}
+.account-center-tabs > .tabs__panel::-webkit-scrollbar {
+  display: none;
 }
 
 /* ---------- billing empty state ---------- */

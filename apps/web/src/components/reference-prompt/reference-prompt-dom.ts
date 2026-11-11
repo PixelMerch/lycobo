@@ -1,3 +1,11 @@
+import { currentMessages } from "../../i18n/messages";
+import { componentsMessages } from "../components-messages";
+
+// 引用胶囊上显示的名称：提示词里写作“@图片N”，界面按当前语言显示，例如英文为“Image N”。
+function chipLabel(token: string) {
+  return currentMessages(componentsMessages).imageName(Number(token.slice(3)));
+}
+
 /** Serialize chips back to the existing plain-text prompt contract. */
 export function readPrompt(node: Node): string {
   if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? "";
@@ -78,7 +86,12 @@ function editorMatches(
     tokens.length === chips.length &&
     chips.every((chip, index) => {
       const image = references[Number(tokens[index]?.slice(3)) - 1];
-      return chip.dataset.reference === tokens[index] && chip.dataset.imageId === image?.id;
+      // 名称也要一致：切换界面语言后重建胶囊，显示新语言的名称。
+      return (
+        chip.dataset.reference === tokens[index] &&
+        chip.dataset.imageId === image?.id &&
+        chip.lastElementChild?.textContent === chipLabel(tokens[index] ?? "")
+      );
     });
   let textOffset = 0;
   const plainMentions: number[] = [];
@@ -124,7 +137,7 @@ function buildPromptFragment(parts: string[], references: readonly PromptReferen
     thumbnail.src = image.src;
     thumbnail.alt = "";
     const name = document.createElement("span");
-    name.textContent = text.slice(1);
+    name.textContent = chipLabel(text);
     chip.append(thumbnail, name);
     fragment.append(chip);
   }

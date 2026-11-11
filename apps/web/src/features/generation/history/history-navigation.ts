@@ -1,14 +1,22 @@
-/** Shared viewport boundary for task navigation and scroll-based selection. */
+/** 历史上方的吸顶条：桌面是“生成记录”标题行，窄屏标题行隐藏，改用横排工具坞。 */
+function historyToolbar() {
+  for (const selector of [".workspace-history-heading", ".workspace-tool-dock"]) {
+    const element = document.querySelector<HTMLElement>(selector);
+    if (element && element.getClientRects().length > 0) return element;
+  }
+  return null;
+}
+
+/** 任务内容可见区的上边界：点缩略图定位和滚动选中当前任务共用这条线。 */
 export function historyContentTop() {
   const header = document.querySelector<HTMLElement>(".topbar");
-  const toolbar = document.querySelector<HTMLElement>(".workspace-history-heading");
+  const toolbar = historyToolbar();
   const toolbarHeight = toolbar?.getBoundingClientRect().height ?? 0;
   const title = document.querySelector<HTMLElement>(".workspace-tabs > .tabs__list-container");
   const headerBottom = header?.getBoundingClientRect().bottom ?? 0;
   const titleHeight = title?.getBoundingClientRect().height ?? 0;
   const gap = title ? Number.parseFloat(getComputedStyle(title).marginBottom) || 0 : 0;
-  // The title may not be stuck yet when navigating from the top of the page.
-  // Use its height at the sticky header boundary, not its current page offset.
+  // 从页面顶部开始定位时吸顶条可能还没贴住，按它吸顶后的位置计算，不用当前在页面里的位置。
   const toolbarTop = toolbar ? Number.parseFloat(getComputedStyle(toolbar).top) || 0 : 0;
   return (
     Math.max(headerBottom, toolbarTop) + toolbarHeight + (toolbar ? 12 : 0) + titleHeight + gap

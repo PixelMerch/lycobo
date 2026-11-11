@@ -1,21 +1,5 @@
-/** AI commerce navigation metadata. */
+/** 电商工具的 id 与地址，用于记住最近打开的工具；名称与介绍在工作区工具文案里。 */
 export const commerceTools = [
-  {
-    id: "textile-set",
-    name: "家纺裂变",
-    href: "/commerce/textile-set",
-    image: "/studio/set-thumb.webp",
-    description: "一张家纺主图，生成多视角与细节图",
-    capabilities: "多视角 · 细节特写",
-    status: "",
-  },
-  {
-    id: "smart-variation",
-    name: "套图计划",
-    href: "/commerce/smart-variation",
-    image: "/studio/bedroom-thumb.webp",
-    description: "先规划每张图的内容，确认后批量生成",
-    capabilities: "提示词编辑 · 方案确认",
-    status: "页面预览",
-  },
+  { id: "textile-set", href: "/commerce/textile-set" },
+  { id: "smart-variation", href: "/commerce/smart-variation" },
 ] as const;

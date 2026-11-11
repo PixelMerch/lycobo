@@ -4,25 +4,29 @@ import { IconArrowRight, IconCreditCard, IconInfoCircle } from "@tabler/icons-re
 import { useState } from "react";
 import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
 import { formatCredits, imagesFor } from "../account-format";
 import { useWallet } from "../wallet-client";
+import { creditsMessages } from "./credits-messages";
 
-// Visual proposals only; these are not purchasable SKUs or configured commercial terms.
+// 只是展示用的档位设想，不是可购买的商品，也不是已配置的商业条款。
 const packs = [500, 1500, 3000, 5000, 10000, 30000, 50000, 100000, 200000];
 const priceOf = (credits: number) => credits / 10;
 
+/** 充值积分包与订单预览；支付未接入，购买按钮保持禁用。 */
 export function CreditPacks() {
+  const t = useMessages(creditsMessages);
   const wallet = useWallet();
   const [selected, setSelected] = useState(500);
   const unit = wallet.data?.unitCredits ?? imageUnitCredits;
   const balance = wallet.data?.balance;
   return (
     <div className="credit-recharge">
-      <section className="credit-packs" aria-label="选择充值积分包">
+      <section className="credit-packs" aria-label={t.choosePack}>
         <ToggleButtonGroup
           fullWidth
           isDetached
-          aria-label="选择积分包"
+          aria-label={t.packs}
           selectionMode="single"
           disallowEmptySelection
           selectedKeys={[String(selected)]}
@@ -37,7 +41,11 @@ export function CreditPacks() {
               key={amount}
               id={String(amount)}
               className="credit-pack"
-              aria-label={`${formatCredits(amount)} 积分，示例价格 ${priceOf(amount)} 元，约 ${formatCredits(imagesFor(amount, unit))} 张`}
+              aria-label={t.packLabel(
+                formatCredits(amount),
+                priceOf(amount),
+                formatCredits(imagesFor(amount, unit)),
+              )}
             >
               <span className="credit-pack-value">
                 <CreditCoin size="default" />
@@ -45,33 +53,31 @@ export function CreditPacks() {
               </span>
               <span className="credit-pack-price">¥{formatCredits(priceOf(amount))}</span>
               <span className="credit-pack-yield">
-                约 {formatCredits(imagesFor(amount, unit))} 张
+                {t.aboutImages(formatCredits(imagesFor(amount, unit)))}
               </span>
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
-        <p className="credit-recharge-note">
-          积分用于创作消耗，充值积分不改变会员等级；生成失败的积分按张自动退回。
-        </p>
+        <p className="credit-recharge-note">{t.rechargeNote}</p>
       </section>
       <section className="credit-order" aria-labelledby="credit-order-heading">
-        <h3 id="credit-order-heading">订单预览</h3>
+        <h3 id="credit-order-heading">{t.orderPreview}</h3>
         <dl className="credit-order-rows">
           <div>
-            <dt>购买积分</dt>
+            <dt>{t.buyCredits}</dt>
             <dd>{formatCredits(selected)}</dd>
           </div>
           <div>
-            <dt>应付金额</dt>
+            <dt>{t.amountDue}</dt>
             <dd>¥{priceOf(selected).toFixed(2)}</dd>
           </div>
           <div>
-            <dt>单价</dt>
-            <dd>¥{(priceOf(selected) / selected).toFixed(2)} / 积分</dd>
+            <dt>{t.unitPrice}</dt>
+            <dd>{t.perCredit((priceOf(selected) / selected).toFixed(2))}</dd>
           </div>
         </dl>
         <div className="credit-order-after">
-          <span>充值后企业共享积分</span>
+          <span>{t.creditsAfter}</span>
           {balance === undefined ? (
             <strong>—</strong>
           ) : (
@@ -83,24 +89,24 @@ export function CreditPacks() {
           )}
           <small>
             {balance === undefined
-              ? "余额暂不可用，读取后显示"
-              : `约可生成 ${formatCredits(imagesFor(balance + selected, unit))} 张（每张 ${unit} 积分）`}
+              ? t.balanceUnavailable
+              : t.imagesAfter(formatCredits(imagesFor(balance + selected, unit)), unit)}
           </small>
         </div>
-        <p className="credit-order-label">支付方式</p>
+        <p className="credit-order-label">{t.paymentMethod}</p>
         <div className="credit-order-payment">
           <UiIcon icon={IconCreditCard} />
-          在线支付
+          {t.onlinePayment}
           <Chip size="sm" className="account-chip">
-            待开放
+            {t.comingSoon}
           </Chip>
         </div>
         <Button variant="primary" className="credit-pack-submit" isDisabled>
-          立即购买
+          {t.buyNow}
         </Button>
         <p className="credit-order-preview">
           <UiIcon icon={IconInfoCircle} size="small" />
-          积分档位与价格待公布，暂未开放购买
+          {t.notForSale}
         </p>
       </section>
     </div>

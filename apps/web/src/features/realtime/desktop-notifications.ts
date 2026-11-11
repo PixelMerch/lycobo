@@ -1,3 +1,6 @@
+import { currentMessages } from "../../i18n/messages";
+import { realtimeMessages } from "./realtime-messages";
+
 const preferenceKey = "lycobo:desktop-notifications:v1:";
 
 /** 读取本机成员偏好；获得浏览器权限并不代表用户开启了本功能。 */
@@ -29,10 +32,11 @@ export function showDesktopCompletion(scope: string, id: string, open: () => voi
   )
     return;
   try {
-    const notice = new Notification("Lycobo · 图片生成完成", {
-      body: "点击查看生成结果",
+    const t = currentMessages(realtimeMessages);
+    const notice = new Notification(t.noticeTitle, {
+      body: t.noticeBody,
       tag: `lycobo-completion-${scope}-${id}`,
-      icon: "/brand/lycobo-product-pilot-mark.svg",
+      icon: "/brand/lycobo-reveal-icon-192.png",
     });
     notice.onclick = () => {
       window.focus();

@@ -49,7 +49,7 @@
 }
 .account-member-filter .select__trigger {
   border: 0;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--account-card-background);
 }
 .account-table-card {
@@ -62,10 +62,17 @@
   border: 0;
   background: transparent;
 }
+/* 表格要在面板里放得下，不出现横向滚动条：单元格左右 12px，说明列占剩余宽度、放不下时省略。 */
+.account-table-card .table__scroll-container {
+  scrollbar-width: none;
+}
+.account-table-card .table__scroll-container::-webkit-scrollbar {
+  display: none;
+}
 .account-table.table-root .table__column {
-  padding: 11px var(--space-4);
+  padding: 11px var(--space-3);
   border-radius: 0;
-  background: #222226;
+  background: var(--fill-faint);
   color: var(--muted);
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
@@ -76,10 +83,10 @@
   content: none;
 }
 .account-table.table-root .table__row .table__cell {
-  padding: 11px var(--space-4);
+  padding: 11px var(--space-3);
   border-bottom: 1px solid #ffffff0f;
   background: transparent;
-  color: #e6e4ea;
+  color: #e5e5e5;
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
   white-space: nowrap;
@@ -117,7 +124,10 @@
 }
 .account-table.table-root .table__row .account-cell-detail {
   width: 100%;
-  color: #d9d7de;
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #d8d8d8;
 }
 .account-entry-type {
   display: inline-flex;

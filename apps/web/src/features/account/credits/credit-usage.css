@@ -1,0 +1,217 @@
+/* 加深弹窗外部阴影，减弱透过玻璃的背景细节。 */
+.account-backdrop.credit-usage-backdrop.modal__backdrop {
+  background: rgb(0 0 0 / 78%);
+}
+.account-dialog.credit-usage-dialog.modal__dialog {
+  width: min(760px, calc(100vw - 48px));
+  max-width: none;
+  height: min(740px, calc(100dvh - 48px));
+  --glass-shadow: 0 24px 64px rgb(0 0 0 / 65%);
+  padding: var(--space-6);
+}
+.credit-usage-dialog .credit-usage-content.modal__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  flex-direction: column;
+  gap: var(--space-4);
+  color: var(--foreground);
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+}
+/* 工具条：左侧消耗／获得分段切换（与积分与账单的筛选同款），右侧当前可用积分。 */
+.credit-usage-toolbar {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.credit-usage-views.toggle-button-group {
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: #ffffff08;
+}
+.credit-usage-views .toggle-button {
+  height: 30px;
+  min-height: 30px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+.credit-usage-views .toggle-button:is(:hover, [data-hovered="true"]):not([data-selected]) {
+  background: var(--interaction-hover);
+  color: var(--foreground);
+}
+.credit-usage-views .toggle-button[data-selected] {
+  background: var(--control-selected-fill);
+  color: #fff;
+}
+.credit-usage-balance {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.credit-usage-balance b {
+  color: var(--foreground);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 记录区填满工具条下方空间，只滚动列表内容。 */
+.credit-usage-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #ffffff0f;
+  border-radius: 16px;
+  background: #ffffff08;
+  scrollbar-width: none;
+}
+.credit-usage-list::-webkit-scrollbar {
+  display: none;
+}
+.credit-usage-row.disclosure {
+  padding: 14px 16px;
+}
+.credit-usage-row + .credit-usage-row {
+  border-top: 1px solid #ffffff0f;
+}
+.credit-usage-heading {
+  margin: 0;
+}
+.credit-usage-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+}
+.credit-usage-trigger[data-focus-visible="true"] {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+}
+.credit-usage-chevron {
+  flex: none;
+  color: var(--muted);
+  transition: transform 200ms ease;
+}
+.credit-usage-row[data-expanded="true"] .credit-usage-chevron {
+  transform: rotate(90deg);
+}
+.credit-usage-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.credit-usage-name {
+  overflow: hidden;
+  color: var(--foreground);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-base);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.credit-usage-time {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+/* 金额用等宽数字；获得为青柠（与积分与账单一致），消耗为白色。 */
+.credit-usage-amount {
+  flex: none;
+  margin-left: 8px;
+  color: var(--foreground);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-base);
+  font-variant-numeric: tabular-nums;
+}
+.credit-usage-amount[data-positive="true"] {
+  color: var(--accent);
+}
+/* 展开说明：缩进到标题下方，标签与数值之间用细虚线引导。 */
+.credit-usage-body.disclosure__body {
+  padding: 0;
+}
+.credit-usage-details {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding-left: 24px;
+}
+.credit-usage-detail {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.credit-usage-detail dt {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  color: var(--muted);
+}
+.credit-usage-detail dt::after {
+  flex: 1;
+  min-width: 24px;
+  border-top: 1px dashed #ffffff1a;
+  content: "";
+}
+.credit-usage-detail dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--foreground);
+  text-align: right;
+}
+.credit-usage-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 32px 16px;
+  color: var(--muted);
+  text-align: center;
+}
+.credit-usage-status p {
+  margin: 0;
+}
+
+@media (max-width: 767px) {
+  .account-dialog.credit-usage-dialog.modal__dialog {
+    width: calc(100vw - 24px);
+    padding: var(--space-4);
+  }
+  .credit-usage-views .toggle-button {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .credit-usage-chevron {
+    transition: none;
+  }
+}

@@ -4,17 +4,18 @@ import {
   type StoryboardRequest,
   type VariationPlan,
   variationPlanSchema,
-  videoReferenceUnavailableMessage,
   videoUnitCredits,
   walletBalanceSchema,
 } from "@lycoboai/contracts";
 import type { QueryClient } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import type { RefObject } from "react";
+import { currentMessages } from "../../../i18n/messages";
 import { enterpriseSessionKey, type useEnterpriseSession } from "../../auth/auth-client";
 import { imageRequest, type useGenerateImage } from "../../generation/generation-client";
 import type { ReferenceImage } from "../../generation/studio-state";
 import type { useSubmitVideo, useVideoModel } from "../video-client";
+import { videoMessages } from "../video-messages";
 import { clearSubmittedVideoDraft } from "../video-state";
 import {
   hasStarted,
@@ -35,6 +36,7 @@ type Draft = typeof emptyStoryboard;
 type Owner = NonNullable<ReturnType<typeof useEnterpriseSession>["data"]>;
 const automaticCost = emptyStoryboard.count * imageUnitCredits + videoUnitCredits;
 
+/** 分镜制作的执行环境：读写草稿、校验账号与保存进度。 */
 export function storyboardExecutionContext(
   scope: string,
   owner: Owner | undefined,
@@ -53,7 +55,7 @@ export function storyboardExecutionContext(
       identity.organizationId !== owner?.organizationId ||
       identity.userId !== owner.userId
     )
-      throw new Error("登录身份已变化，请回到原账号继续制作");
+      throw new Error(currentMessages(videoMessages).accountChanged);
   }
 
   async function planRequest(attempt: { key: string; input: StoryboardRequest }) {
@@ -77,8 +79,7 @@ export function storyboardExecutionContext(
 
   function finish(id: string) {
     const { progress } = current();
-    // The description and images stay until the next run so the card has content until the
-    // history list returns the new task.
+    // 描述和图片保留到下一次制作，历史列表返回新任务前制作卡仍有内容。
     update({
       submittedDraft: undefined,
       progress: { acceptedVideoId: id, frames: progress.frames },
@@ -97,18 +98,18 @@ async function assertCanStart(
   maxOriginalImages: number,
 ) {
   if (hasStarted(draft.progress)) return;
-  if (referenceImagesBlocked) throw new Error(videoReferenceUnavailableMessage);
+  if (referenceImagesBlocked) throw new Error(currentMessages(videoMessages).referencesUnavailable);
   if (!configured || pendingImage || referenceCount > maxOriginalImages)
-    throw new Error("暂时无法制作视频，请检查生成服务和待确认任务");
+    throw new Error(currentMessages(videoMessages).cannotProduce);
   const balance = walletBalanceSchema.parse(await (await imageRequest("wallet")).json());
   if (balance.balance < automaticCost)
-    throw new Error(`本次预计需要 ${automaticCost} 积分，请补充积分后再试`);
+    throw new Error(currentMessages(videoMessages).needCredits(automaticCost));
 }
 
 function storyboardOriginals(snapshot: VariationPlan, count: number): [string, ...string[]] {
   const [originalAssetId, ...additionalOriginalAssetIds] = snapshot.referenceAssetIds;
   if (snapshot.status !== "ready" || !originalAssetId || snapshot.items.length !== count)
-    throw new Error("画面资料不完整");
+    throw new Error(currentMessages(videoMessages).frameDataIncomplete);
   return [originalAssetId, ...additionalOriginalAssetIds];
 }
 
@@ -120,6 +121,7 @@ function handOffSubmittedDraft(draft: Draft, update: (patch: Partial<Draft>) => 
   }
 }
 
+/** 分镜制作的执行：依次准备画面、生成分镜、编写提示词并提交视频。 */
 export function useStoryboardAction({
   mutationKey,
   lock,
@@ -158,10 +160,11 @@ export function useStoryboardAction({
     mutationKey,
     retry: false,
     mutationFn: async (input: ProductionInput) => {
-      if (!owner) throw new Error("请先登录");
+      if (!owner) throw new Error(currentMessages(videoMessages).signInFirst);
       assertOwner();
       if (video.hasPending && !incompleteVideoPending) {
-        if (referenceImagesBlocked) throw new Error(videoReferenceUnavailableMessage);
+        if (referenceImagesBlocked)
+          throw new Error(currentMessages(videoMessages).referencesUnavailable);
         const result = await video.submitAsync({
           input: { prompt: "", seconds: draft.seconds, aspectRatio: "9:16" },
           references: [],
@@ -227,7 +230,8 @@ export function useStoryboardAction({
         shots,
       });
       assertOwner();
-      if (referenceImagesBlocked) throw new Error(videoReferenceUnavailableMessage);
+      if (referenceImagesBlocked)
+        throw new Error(currentMessages(videoMessages).referencesUnavailable);
       const result = await video.submitAsync({
         input: {
           prompt,
@@ -247,7 +251,7 @@ export function useStoryboardAction({
       finish(result.id);
     },
     onError: () => {
-      // Nothing durable exists yet: the draft is still in the form, so return to it.
+      // 还没有任何持久化内容，草稿仍在表单里，回到表单。
       if (!hasStarted(current().progress)) showPanel("form");
     },
     onSettled: () => {

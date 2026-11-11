@@ -3,66 +3,69 @@ import { IconReceipt } from "@tabler/icons-react";
 import { useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
+import { useLocale } from "../../../i18n/locale-store";
+import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
-import { channelName, formatCredits, orderStatuses, recordTime } from "../account-format";
+import { channelName, formatCredits, orderStatusName, recordTime } from "../account-format";
 import { useRechargeOrders } from "../wallet-client";
+import { creditsMessages } from "./credits-messages";
 
-const filters = [
-  { id: "all", name: "全部" },
-  { id: "paid", name: "已到账" },
-  { id: "pending", name: "待支付" },
-  { id: "closed", name: "已关闭" },
-];
+const filters = ["all", "paid", "pending", "closed"] as const;
 const statusColors = { paid: "success", pending: "warning", closed: "default" } as const;
 
+/** 充值订单表：按状态筛选已加载的订单，积分到账以收支明细为准。 */
 export function RechargeOrders() {
+  const t = useMessages(creditsMessages);
+  const locale = useLocale();
   const recharges = useRechargeOrders();
   const [status, setStatus] = useState("all");
   useErrorToast(recharges.error?.message);
   const orders = recharges.data?.pages.flatMap((page) => page.data) ?? [];
   const visible = orders.filter((order) => status === "all" || order.status === status);
-  const availableMessage = orders.length ? "已加载订单中暂无此状态" : "暂无充值订单";
-  const errorMessage = recharges.isError ? "订单记录暂时不可用" : availableMessage;
-  const rechargesStatusText = recharges.isPending ? "正在加载订单…" : errorMessage;
+  const availableMessage = orders.length ? t.noOrdersOfStatus : t.noOrders;
+  const errorMessage = recharges.isError ? t.ordersUnavailable : availableMessage;
+  const rechargesStatusText = recharges.isPending ? t.loadingOrders : errorMessage;
   return (
-    <section className="account-orders" aria-label="充值订单">
+    <section className="account-orders" aria-label={t.orders}>
       <div className="account-toolbar">
         <ToggleButtonGroup
-          aria-label="订单状态"
+          aria-label={t.orderStatus}
           size="sm"
           selectionMode="single"
           disallowEmptySelection
           selectedKeys={[status]}
           onSelectionChange={(keys) => {
-            const next = filters.find((item) => keys.has(item.id));
-            if (next) setStatus(next.id);
+            const next = filters.find((id) => keys.has(id));
+            if (next) setStatus(next);
           }}
           className="account-segment"
         >
-          {filters.map((item) => (
-            <ToggleButton key={item.id} id={item.id}>
-              {item.name}
+          {filters.map((id) => (
+            <ToggleButton key={id} id={id}>
+              {t.orderFilters[id]}
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
-        <span className="account-toolbar-meta">
-          积分到账以“积分明细”为准 · 已加载 {orders.length} 笔
-        </span>
+        <span className="account-toolbar-meta">{t.ordersMeta(orders.length)}</span>
       </div>
       <div className="account-table-card">
         <Table variant="secondary" className="account-table account-orders-table">
           <Table.ScrollContainer>
-            <Table.Content aria-label="充值订单记录">
+            <Table.Content aria-label={t.ordersTable}>
               <Table.Header>
-                <Table.Column className="account-col-time">下单时间</Table.Column>
+                <Table.Column className="account-col-time">{t.orderColumns.time}</Table.Column>
                 <Table.Column isRowHeader className="account-col-order">
-                  订单号
+                  {t.orderColumns.order}
                 </Table.Column>
-                <Table.Column className="account-col-credits">积分</Table.Column>
-                <Table.Column className="account-col-price">金额</Table.Column>
-                <Table.Column className="account-col-channel">渠道</Table.Column>
-                <Table.Column className="account-col-status">状态</Table.Column>
-                <Table.Column className="account-col-paid">到账时间</Table.Column>
+                <Table.Column className="account-col-credits">
+                  {t.orderColumns.credits}
+                </Table.Column>
+                <Table.Column className="account-col-price">{t.orderColumns.price}</Table.Column>
+                <Table.Column className="account-col-channel">
+                  {t.orderColumns.channel}
+                </Table.Column>
+                <Table.Column className="account-col-status">{t.orderColumns.status}</Table.Column>
+                <Table.Column className="account-col-paid">{t.orderColumns.paid}</Table.Column>
               </Table.Header>
               <Table.Body
                 items={visible}
@@ -75,19 +78,19 @@ export function RechargeOrders() {
                 {(order) => (
                   <Table.Row id={order.id}>
                     <Table.Cell className="account-cell-time">
-                      {recordTime(order.created_at)}
+                      {recordTime(order.created_at, locale)}
                     </Table.Cell>
                     <Table.Cell className="account-cell-order">
                       {order.id.slice(0, 8).toUpperCase()}
                     </Table.Cell>
                     <Table.Cell className="account-cell-credits">
-                      {formatCredits(order.credits)} 积分
+                      {t.orderCredits(formatCredits(order.credits))}
                     </Table.Cell>
                     <Table.Cell className="account-cell-price">
                       ¥{(order.amount_minor / 100).toFixed(2)}
                     </Table.Cell>
                     <Table.Cell className="account-cell-channel">
-                      {channelName(order.channel)}
+                      {channelName(order.channel, locale)}
                     </Table.Cell>
                     <Table.Cell className="account-cell-status">
                       <Chip
@@ -95,11 +98,11 @@ export function RechargeOrders() {
                         color={statusColors[order.status]}
                         className="account-status-chip"
                       >
-                        {orderStatuses[order.status]}
+                        {orderStatusName(order.status, locale)}
                       </Chip>
                     </Table.Cell>
                     <Table.Cell className="account-cell-paid">
-                      {order.paid_at ? recordTime(order.paid_at) : "—"}
+                      {order.paid_at ? recordTime(order.paid_at, locale) : "—"}
                     </Table.Cell>
                   </Table.Row>
                 )}
@@ -114,10 +117,10 @@ export function RechargeOrders() {
             isError={recharges.isError}
             onLoadMore={() => recharges.fetchNextPage({ cancelRefetch: false })}
           />
-          <span>显示 {visible.length} 笔 · 筛选仅针对已加载的订单</span>
+          <span>{t.shownOrders(visible.length)}</span>
           {recharges.isError && (
             <Button size="sm" variant="secondary" onPress={() => void recharges.refetch()}>
-              重新加载订单
+              {t.reloadOrders}
             </Button>
           )}
         </div>
@@ -125,8 +128,8 @@ export function RechargeOrders() {
       <div className="account-orders-note">
         <UiIcon icon={IconReceipt} size="navigation" />
         <div>
-          <strong>在线支付开通后，订单状态将实时同步</strong>
-          <p>当前订单由企业管理员充值生成；积分到账情况可在“积分明细”查看。</p>
+          <strong>{t.ordersNoteTitle}</strong>
+          <p>{t.ordersNote}</p>
         </div>
       </div>
     </section>

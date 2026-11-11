@@ -1,183 +1,89 @@
-import { Button, Modal, Tabs } from "@heroui/react";
+import { Button, Modal } from "@heroui/react";
 import { IconCopy } from "@tabler/icons-react";
-import { motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useId, useState } from "react";
 import { ConfirmDialog } from "../../components/overlays/confirm-dialog";
 import { DialogClose } from "../../components/overlays/dialog-close";
 import { UiIcon } from "../../components/ui-icon";
+import { useLocale } from "../../i18n/locale-store";
+import { useMessages } from "../../i18n/messages";
+import { useAppNavigate } from "../../i18n/use-localized-navigation";
 import { copyToClipboard } from "../../lib/clipboard";
 import { useRequireLogin } from "../auth/login-prompt";
-import { SelectionHighlight } from "../generation/composer/selection-highlight";
 import { defaultDraft, useStudioStore } from "../generation/studio-state";
-import {
-  type HomeInspiration,
-  homeInspirations,
-  type InspirationCategory,
-  inspirationCategories,
-} from "./home-inspiration-data";
-import { useInspirationColumns } from "./use-inspiration-columns";
+import { type HomeInspiration, homeInspirationsFor } from "./home-inspiration-data";
+import { homeInspirationMessages } from "./home-inspiration-messages";
+import { InspirationWall } from "./home-inspiration-wall";
 import "./home-inspiration-gallery.css";
 
-/** 展示灵感示例，用户确认后带入主图草稿，不自动提交任务。 */
-export function HomeInspirationGallery() {
-  const navigate = useNavigate();
+/**
+ * 展示灵感示例，用户确认后带入主图草稿，不自动提交任务。
+ * 首页作品墙分批加载后给出“查看更多灵感”；灵感库页面和素材库的灵感库标签传 library，一次显示全部。
+ * onApplied 在带着提示词去工作台后调用，素材库弹窗借此关闭自己。
+ */
+export function HomeInspirationGallery({
+  library = false,
+  onApplied,
+}: {
+  library?: boolean;
+  onApplied?: () => void;
+}) {
+  const navigate = useAppNavigate();
   const requireLogin = useRequireLogin();
-  const [category, setCategory] = useState<InspirationCategory>("全部");
-  const [selected, setSelected] = useState<HomeInspiration | null>(null);
-  const [replacing, setReplacing] = useState<HomeInspiration | null>(null);
-  const visible = homeInspirations.filter(
-    (item) => category === "全部" || item.category === category,
-  );
-  const columns = useInspirationColumns(visible);
+  const t = useMessages(homeInspirationMessages);
+  // 首页作品墙和素材库弹窗里的灵感库可能同时在页面上，标题 id 各用各的。
+  const titleId = useId();
+  const inspirations = homeInspirationsFor(useLocale());
+  // 记住示例 id 而不是文字，切换语言后弹窗里的标题和提示词跟着换。
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [replacingId, setReplacingId] = useState<string | null>(null);
+  const selected = inspirations.find((item) => item.id === selectedId) ?? null;
+  const replacing = inspirations.find((item) => item.id === replacingId) ?? null;
   function apply(item: HomeInspiration) {
     const { activeModel, updateDraft } = useStudioStore.getState();
     updateDraft(activeModel, { prompt: item.prompt });
-    setReplacing(null);
-    setSelected(null);
+    setReplacingId(null);
+    setSelectedId(null);
     void navigate("/commerce/create");
+    onApplied?.();
   }
   // 示例只填入提示词，进入工作台不上传示例或提交付费任务。
   function use(item: HomeInspiration) {
     if (!requireLogin()) return;
     const { activeModel, drafts } = useStudioStore.getState();
     const draft = drafts[activeModel] ?? defaultDraft;
-    if (draft.prompt.trim() && draft.prompt !== item.prompt) setReplacing(item);
+    if (draft.prompt.trim() && draft.prompt !== item.prompt) setReplacingId(item.id);
     else apply(item);
   }
   return (
-    <section className="home-inspiration" aria-labelledby="home-inspiration-title">
-      <Tabs
-        selectedKey={category}
-        onSelectionChange={(key) => {
-          const next = inspirationCategories.find((entry) => entry === key);
-          if (next) setCategory(next);
-        }}
-      >
-        <div className="home-inspiration-heading">
-          <h2 id="home-inspiration-title">创作灵感</h2>
-          <p>挑一个喜欢的风格，一键做同款</p>
-        </div>
-        <Tabs.ListContainer>
-          <Tabs.List aria-label="灵感分类">
-            {inspirationCategories.map((name) => (
-              <Tabs.Tab id={name} key={name}>
-                {name === category && (
-                  <SelectionHighlight
-                    layoutId="home-inspiration-selection"
-                    layoutDependency={category}
-                  />
-                )}
-                {name}
-              </Tabs.Tab>
-            ))}
-          </Tabs.List>
-        </Tabs.ListContainer>
-        <Tabs.Panel id={category}>
-          <div className="home-inspiration-grid">
-            {columns.map((column, columnIndex) => (
-              <div className="home-inspiration-column" key={column.id}>
-                {column.items.map((item, position) => (
-                  <InspirationTile
-                    key={item.id}
-                    item={item}
-                    order={columnIndex + position}
-                    onOpen={() => setSelected(item)}
-                    onUse={() => use(item)}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
-        </Tabs.Panel>
-      </Tabs>
+    <section className="home-inspiration" aria-labelledby={titleId}>
+      <h2 id={titleId} className="sr-only">
+        {t.title}
+      </h2>
+      <InspirationWall
+        items={inspirations}
+        library={library}
+        onOpen={(item) => setSelectedId(item.id)}
+        onUse={use}
+      />
       {selected && (
         <InspirationDetail
           item={selected}
-          onClose={() => setSelected(null)}
+          onClose={() => setSelectedId(null)}
           onUse={() => use(selected)}
         />
       )}
       <ConfirmDialog
         isOpen={replacing !== null}
-        title="替换当前提示词？"
-        content="当前已有创作内容。替换提示词后，已添加的参考图和参数会保留。"
-        confirmLabel="替换并进入"
-        cancelLabel="保留当前内容"
-        onCancel={() => setReplacing(null)}
+        title={t.replaceTitle}
+        content={t.replaceContent}
+        confirmLabel={t.replaceConfirm}
+        cancelLabel={t.keepCurrent}
+        onCancel={() => setReplacingId(null)}
         onConfirm={() => {
           if (replacing) apply(replacing);
         }}
       />
     </section>
-  );
-}
-
-/** The picture opens the detail; 做同款 is a sibling button, never nested inside the picture. */
-function InspirationTile({
-  item,
-  order,
-  onOpen,
-  onUse,
-}: {
-  item: HomeInspiration;
-  order: number;
-  onOpen: () => void;
-  onUse: () => void;
-}) {
-  const reduceMotion = useReducedMotion();
-  return (
-    <motion.div
-      className="home-inspiration-tile"
-      initial={reduceMotion ? false : { opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.12 }}
-      transition={{
-        duration: 0.5,
-        delay: Math.min(order, 6) * 0.05,
-        ease: [0.215, 0.61, 0.355, 1],
-      }}
-    >
-      <img
-        className="home-inspiration-glow"
-        src={item.image}
-        alt=""
-        loading="lazy"
-        decoding="async"
-      />
-      <Button
-        variant="tertiary"
-        className="home-inspiration-card"
-        data-shape={item.shape}
-        aria-label={`查看灵感：${item.title}`}
-        onPress={onOpen}
-      >
-        <img
-          src={item.image}
-          alt={item.title}
-          width="480"
-          height="480"
-          loading="lazy"
-          decoding="async"
-        />
-        <span className="home-inspiration-caption">
-          <strong>{item.title}</strong>
-        </span>
-      </Button>
-      <div className="home-inspiration-panel">
-        <strong aria-hidden="true">{item.title}</strong>
-        <p aria-hidden="true">{item.prompt}</p>
-        <Button
-          size="sm"
-          variant="primary"
-          className="home-inspiration-cta"
-          aria-label={`做同款：${item.title}`}
-          onPress={onUse}
-        >
-          做同款
-        </Button>
-      </div>
-    </motion.div>
   );
 }
 
@@ -191,6 +97,7 @@ function InspirationDetail({
   onUse: () => void;
 }) {
   const requireLogin = useRequireLogin();
+  const t = useMessages(homeInspirationMessages);
   return (
     <Modal
       isOpen
@@ -200,21 +107,21 @@ function InspirationDetail({
     >
       <Modal.Backdrop>
         <Modal.Container size="lg" scroll="inside">
-          <Modal.Dialog className="home-inspiration-detail" aria-label={`灵感详情：${item.title}`}>
-            {/* The example's own colours glow through the glass, so each detail matches its image. */}
+          <Modal.Dialog className="home-inspiration-detail" aria-label={t.details(item.title)}>
+            {/* 示例图本身的颜色透过玻璃发光，每个详情弹窗都和它的图片相配。 */}
             <img className="home-inspiration-ambient" src={item.image} alt="" />
             <Modal.Header>
               <Modal.Heading>{item.title}</Modal.Heading>
-              <DialogClose label="关闭灵感详情" />
+              <DialogClose label={t.closeDetails} />
             </Modal.Header>
             <Modal.Body>
               <div className="home-inspiration-detail-content">
                 <img src={item.image} alt={item.title} width="480" height="480" />
                 <div className="home-inspiration-description">
-                  <span>{item.category} · 示例素材</span>
-                  <h3>创作提示词</h3>
+                  <span>{t.sample(t.categories[item.category])}</span>
+                  <h3>{t.prompt}</h3>
                   <p className="home-inspiration-prompt">{item.prompt}</p>
-                  <p className="home-inspiration-hint">上传你的商品图，使用这段描述开始创作。</p>
+                  <p className="home-inspiration-hint">{t.hint}</p>
                   <div className="home-inspiration-actions">
                     <Button
                       variant="secondary"
@@ -223,10 +130,10 @@ function InspirationDetail({
                       }}
                     >
                       <UiIcon icon={IconCopy} size="small" />
-                      复制提示词
+                      {t.copyPrompt}
                     </Button>
                     <Button variant="primary" onPress={onUse}>
-                      做同款
+                      {t.use}
                     </Button>
                   </div>
                 </div>

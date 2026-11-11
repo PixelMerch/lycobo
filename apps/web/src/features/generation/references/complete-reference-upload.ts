@@ -3,9 +3,11 @@ import {
   imageUploadStatusSchema,
   imageUploadTicketSchema,
 } from "@lycoboai/contracts";
+import { currentMessages } from "../../../i18n/messages";
 import { ImageApiError, imageRequest } from "../image-request";
+import { referencesMessages } from "./references-messages";
 
-/** The existing submit flow waits for a real, persisted asset before using its ID. */
+/** 等参考图真正存好后再返回素材，提交流程只使用已持久化的素材 id。 */
 export async function completeReferenceUpload(response: Response) {
   const payload: unknown = await response.json();
   if (response.status !== 202) return imageUploadResponseSchema.parse(payload);
@@ -18,11 +20,15 @@ export async function completeReferenceUpload(response: Response) {
     if (result.status === "succeeded") return result.asset;
     if (result.status === "failed")
       throw new ImageApiError(
-        "参考图处理失败，请重新导出为 PNG、JPEG 或 WebP 后重试。",
+        currentMessages(referencesMessages).processingFailed,
         400,
         "INVALID_IMAGE",
       );
     await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   }
-  throw new ImageApiError("参考图仍在处理中，请稍后在素材库查看后重试。", 503, "UPLOAD_PENDING");
+  throw new ImageApiError(
+    currentMessages(referencesMessages).stillProcessing,
+    503,
+    "UPLOAD_PENDING",
+  );
 }

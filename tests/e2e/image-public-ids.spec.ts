@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { mockImageApi } from "./image-api-fixture";
 
 const png = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",
   "base64",
 );
 test("task and image IDs stay stable across history, reload and the asset library", async ({
@@ -78,7 +78,7 @@ test("task and image IDs stay stable across history, reload and the asset librar
   await expect(preview.locator(".image-preview-bar-id")).toHaveCount(0);
   await preview.getByRole("button", { name: "关闭图片预览", exact: true }).click();
   await expect(preview).toHaveCount(0);
-  await page.getByRole("link", { name: "素材库", exact: true }).click();
+  await page.goto("/assets");
   // 素材库 previews add the image's own ID; history previews keep only the task ID.
   await page.getByRole("button", { name: "查看图片：短编号示例", exact: true }).click();
   await expect(preview.locator(".image-preview-facts")).toContainText("图片ID：P82ZX19M4");

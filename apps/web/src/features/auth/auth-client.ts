@@ -1,16 +1,20 @@
 import { toast } from "@heroui/react";
 import {
+  type AvatarPreset,
   apiErrorSchema,
+  enterpriseAvatarChangeSchema,
   enterpriseIdentitySchema,
   enterpriseLoginResponseSchema,
   enterprisePasswordChangeSchema,
 } from "@lycoboai/contracts";
 import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { currentMessages } from "../../i18n/messages";
 import { normalizeApiResponse } from "../../lib/api-response";
 import { reportRequestFailure } from "../../lib/request-diagnostics";
+import { serverErrorMessage } from "../../lib/server-error";
 import { rememberSessionExpiry, resetSessionRenewal, sessionFetch } from "../../lib/session-fetch";
-
 import { clearPreviewLinks } from "../generation/preview-link-cache";
+import { authMessages } from "./auth-messages";
 
 export const enterpriseSessionKey = ["enterprise-session"];
 async function authRequest(path: string, init: RequestInit = {}) {
@@ -35,7 +39,7 @@ async function authRequest(path: string, init: RequestInit = {}) {
 async function errorMessage(response: Response) {
   const body: unknown = await response.json().catch(() => null);
   const envelope = apiErrorSchema.safeParse(body);
-  if (envelope.success) return envelope.data.message;
+  if (envelope.success) return serverErrorMessage(envelope.data);
   if (typeof body === "object" && body !== null && "error" in body) {
     const error = body.error;
     if (
@@ -46,8 +50,9 @@ async function errorMessage(response: Response) {
     )
       return error.message;
   }
-  return "登录服务暂时不可用，请稍后重试。";
+  return currentMessages(authMessages).serviceUnavailable;
 }
+/** 读取当前登录状态；未登录或登录服务未配置时返回 null。 */
 export function useEnterpriseSession() {
   return useQuery({
     queryKey: enterpriseSessionKey,
@@ -56,7 +61,7 @@ export function useEnterpriseSession() {
     queryFn: async ({ signal }) => {
       const response = await authRequest("session", { signal });
       if (response.status === 401 || response.status === 503) return null;
-      if (!response.ok) throw new Error("无法读取登录状态");
+      if (!response.ok) throw new Error(currentMessages(authMessages).sessionUnavailable);
       return enterpriseIdentitySchema.parse(await response.json());
     },
   });
@@ -88,13 +93,14 @@ export function useEnterpriseLogin() {
     },
   });
 }
+/** 退出登录，成功后清空本机的登录状态与其他缓存。 */
 export function useEnterpriseLogout() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async () => {
       resetSessionRenewal();
       const response = await authRequest("logout", { method: "POST" });
-      if (!response.ok) throw new Error("退出失败，请稍后重试");
+      if (!response.ok) throw new Error(currentMessages(authMessages).logoutFailed);
     },
     onSuccess: async () => {
       await clearEnterpriseSession(client);
@@ -111,7 +117,29 @@ async function clearEnterpriseSession(client: QueryClient) {
   });
 }
 
-/** The server revokes all sessions on password change; clear the current client session too. */
+/** 修改密码：服务端会注销全部会话，这里同时清空本机的登录状态。 */
+/** 保存预设头像；成功后用服务端返回的身份更新登录状态，各处头像立即同步。 */
+export function useEnterpriseAvatar() {
+  const client = useQueryClient();
+  return useMutation({
+    retry: false,
+    mutationFn: async (avatarPreset: AvatarPreset | null) => {
+      const body = enterpriseAvatarChangeSchema.parse({ avatarPreset });
+      const response = await authRequest("avatar", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) throw new Error(await errorMessage(response));
+      // 返回内容不完整时给出通用提示，不把校验细节显示给用户。
+      const user = enterpriseIdentitySchema.safeParse(await response.json());
+      if (!user.success) throw new Error(currentMessages(authMessages).serviceUnavailable);
+      return user.data;
+    },
+    onSuccess: (user) => client.setQueryData(enterpriseSessionKey, user),
+  });
+}
+/** 修改密码；成功后清空登录状态，所有设备需要重新登录。 */
 export function useEnterprisePasswordChange() {
   const client = useQueryClient();
   return useMutation({
@@ -128,7 +156,7 @@ export function useEnterprisePasswordChange() {
     },
     onSuccess: async () => {
       resetSessionRenewal();
-      toast.success("密码已修改，请重新登录");
+      toast.success(currentMessages(authMessages).passwordChanged);
       await clearEnterpriseSession(client);
     },
   });

@@ -1,7 +1,10 @@
 import { Label, Slider } from "@heroui/react";
 import { useState } from "react";
+import { useMessages } from "../../../i18n/messages";
+import { videoMessages } from "../video-messages";
 
 const ticks = Array.from({ length: 51 }, (_, index) => index);
+/** 视频时长滑块：5 到 30 秒，拖动时显示秒数。 */
 export function VideoDuration({
   value,
   onChange,
@@ -11,6 +14,7 @@ export function VideoDuration({
   disabled?: boolean;
   onChange: (value: number) => void;
 }) {
+  const t = useMessages(videoMessages);
   const [hover, setHover] = useState<number | null>(null);
   const [focused, setFocused] = useState(false);
   return (
@@ -22,9 +26,9 @@ export function VideoDuration({
       value={value}
       isDisabled={disabled}
       onChange={(next) => onChange(Number(next))}
-      aria-label="视频时长"
+      aria-label={t.duration}
     >
-      <Label>时长</Label>
+      <Label>{t.durationLabel}</Label>
       <div className="video-duration-row">
         <span className="video-duration-endpoint">5s</span>
         <Slider.Track
@@ -64,12 +68,12 @@ export function VideoDuration({
                     style={{ left: `${position * 100}%` }}
                     aria-hidden="true"
                   >
-                    {seconds}秒
+                    {t.seconds(seconds)}
                   </span>
                 )}
                 <Slider.Fill />
                 <Slider.Thumb
-                  aria-label={`视频时长：${value}秒`}
+                  aria-label={t.durationValue(value)}
                   onFocus={() => setFocused(true)}
                   onBlur={() => setFocused(false)}
                 />
@@ -78,7 +82,7 @@ export function VideoDuration({
           }}
         </Slider.Track>
         <span className="video-duration-endpoint">30s</span>
-        <Slider.Output className="video-duration-current">{value} 秒</Slider.Output>
+        <Slider.Output className="video-duration-current">{t.secondsOutput(value)}</Slider.Output>
       </div>
     </Slider>
   );

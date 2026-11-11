@@ -1,27 +1,27 @@
 import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { imageResolutionSchema, mainImageModelIds } from "@lycoboai/contracts";
 import { useEffect, useState } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router";
+import { Outlet } from "react-router";
 import { ConfirmDialog } from "../../components/overlays/confirm-dialog";
-import { useSmartVariationDraft } from "../commerce/smart-variation/smart-variation-state";
-import { useTextileSetDraft } from "../commerce/textile-set/textile-set-state";
+import { useAppLocation } from "../../i18n/use-localized-navigation";
 import { GenerationHistory } from "../generation/history/generation-history";
 import { HistoryIndex } from "../generation/history/history-index";
-import type { HistoryRestore } from "../generation/history/history-task-tools";
-import { useStudioStore } from "../generation/studio-state";
 import { BackToTopButton } from "../generation/workspace-page";
 import { VideoHistory, VideoHistoryRail } from "../video/history/video-history";
 import { StoryboardContext } from "../video/storyboard/storyboard-context";
 import { useStoryboard } from "../video/storyboard/use-storyboard";
+import { useWorkspaceRestore } from "./use-workspace-restore";
 import { toolForPath, useWorkspaceState } from "./workspace-state";
 import { WorkspaceToolPicker } from "./workspace-tool-picker";
 import "./workspace.css";
+import { useMessages } from "../../i18n/messages";
+import { workspaceToolMessages } from "./workspace-tool-messages";
+import { HistoryDensityToggle, ToolRailCollapseToggle } from "./workspace-view-controls";
+import { useWorkspaceView } from "./workspace-view-preferences";
 
-type RestoredTask = Parameters<HistoryRestore>[0];
 /** 组合工具与历史区域，显式结果定位不覆盖当前创作草稿。 */
 export function WorkspaceLayout() {
-  const { pathname, search } = useLocation();
-  const navigate = useNavigate();
+  const t = useMessages(workspaceToolMessages);
+  const { pathname, search } = useAppLocation();
   const remember = useWorkspaceState((state) => state.setLastPath);
   const [mobilePanel, setMobilePanel] = useState(() =>
     new URLSearchParams(search).has("task") ? "history" : "form",
@@ -29,75 +29,36 @@ export function WorkspaceLayout() {
   const currentTool = toolForPath(pathname);
   const historyTool = currentTool.id;
   const storyboard = useStoryboard(historyTool === "video", setMobilePanel);
-  const [restorePending, setRestorePending] = useState<RestoredTask | null>(null);
+  const { restore, restorePending, applyRestore, setRestorePending } =
+    useWorkspaceRestore(setMobilePanel);
   useEffect(() => {
     remember(pathname);
   }, [pathname, remember]);
   useEffect(() => {
     if (new URLSearchParams(search).has("task")) setMobilePanel("history");
   }, [search]);
-  const applyRestore = ({ model, draft, textileSet, variation }: RestoredTask) => {
-    if (variation) {
-      useSmartVariationDraft.getState().update({
-        planId: variation.planId,
-        description: draft.prompt,
-        references: draft.references,
-        ratio: draft.ratio,
-        resolution: draft.resolution,
-        items: variation.items.map((item) => ({ ...item, selected: true })),
-      });
-      void navigate("/commerce/smart-variation");
-    } else if (textileSet) {
-      useTextileSetDraft.getState().update({
-        mainImage: draft.references[0] ?? null,
-        detailImages: draft.references.slice(1, 6),
-        views: textileSet.views,
-        ratio: draft.ratio,
-        resolution: imageResolutionSchema.parse(draft.resolution),
-      });
-      void navigate("/commerce/textile-set");
-    } else {
-      const studio = useStudioStore.getState();
-      const targetModel = mainImageModelIds.some((id) => id === model)
-        ? model
-        : mainImageModelIds[0];
-      // 旧型号仍可浏览；重新创作时只带回草稿，使用当前可选型号。
-      studio.updateDraft(targetModel, draft);
-      studio.setActiveModel(targetModel);
-      void navigate("/commerce/create");
-    }
-    setRestorePending(null);
-    setMobilePanel("form");
-  };
-  const restore: HistoryRestore = (task) => {
-    const textile = useTextileSetDraft.getState();
-    const draft = useStudioStore.getState().drafts[task.model];
-    const variation = useSmartVariationDraft.getState();
-    const variationOccupied =
-      !!variation.description.trim() ||
-      variation.references.length > 0 ||
-      variation.items.length > 0;
-    const textileOccupied =
-      !!textile.mainImage || textile.detailImages.length > 0 || textile.views.length > 0;
-    const imageOccupied = !!draft?.prompt.trim() || !!draft?.references.length;
-    let occupied = imageOccupied;
-    if (task.variation) occupied = variationOccupied;
-    else if (task.textileSet) occupied = textileOccupied;
-    if (occupied) setRestorePending(task);
-    else applyRestore(task);
-  };
+  const toolRailCollapsed = useWorkspaceView((state) => state.toolRailCollapsed);
+  const density = useWorkspaceView((state) => state.density);
   return (
     <div
       data-mobile-panel={mobilePanel}
       data-tool={currentTool.id}
+      data-tool-rail={toolRailCollapsed ? "collapsed" : "expanded"}
+      data-density={historyTool === "video" ? undefined : density}
       className={`workspace unified-workspace${pathname.includes("textile-set") ? " textile-workspace" : ""}`}
     >
-      <div className="workspace-history-heading">
+      {/* 工具坞：桌面是参数栏左侧的竖排工具栏（底部按钮可收成只有图标），窄屏是历史上方的横排工具栏。 */}
+      <div className="workspace-tool-dock">
         <WorkspaceToolPicker />
+        <ToolRailCollapseToggle />
+      </div>
+      <div className="workspace-history-heading">
+        <h2 className="workspace-history-title">{t.historyHeading}</h2>
+        {historyTool !== "video" && <HistoryDensityToggle />}
       </div>
       <ToggleButtonGroup
         className="workspace-mobile-panels"
-        aria-label="工作区视图"
+        aria-label={t.workspaceViews}
         selectionMode="single"
         disallowEmptySelection
         selectedKeys={[mobilePanel]}
@@ -106,13 +67,13 @@ export function WorkspaceLayout() {
           if (key) setMobilePanel(String(key));
         }}
       >
-        <ToggleButton id="form">创作</ToggleButton>
-        <ToggleButton id="history">历史记录</ToggleButton>
+        <ToggleButton id="form">{t.createView}</ToggleButton>
+        <ToggleButton id="history">{t.historyView}</ToggleButton>
       </ToggleButtonGroup>
       <StoryboardContext.Provider value={storyboard}>
         <Outlet />
       </StoryboardContext.Provider>
-      <section className="results-panel" aria-label="工作区历史记录">
+      <section className="results-panel" aria-label={t.history}>
         {historyTool === "video" ? (
           <VideoHistory onRestore={() => setMobilePanel("form")} production={storyboard} />
         ) : (
@@ -127,9 +88,9 @@ export function WorkspaceLayout() {
       <BackToTopButton />
       <ConfirmDialog
         isOpen={restorePending !== null}
-        title="载入这次创作？"
-        content="当前工具还有未提交的内容，载入后将替换该工具的草稿。"
-        confirmLabel="载入"
+        title={t.restoreTitle}
+        content={t.restoreContent}
+        confirmLabel={t.restore}
         onCancel={() => setRestorePending(null)}
         onConfirm={() => {
           if (restorePending) applyRestore(restorePending);

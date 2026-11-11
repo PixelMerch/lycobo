@@ -9,6 +9,7 @@ import { imageAssetRepository } from "./image-asset-repository";
 import { imageExecutionRepository } from "./image-execution-repository";
 import { imageHistoryRepository } from "./image-history-repository";
 import { imageIdentityRepository } from "./image-identity-repository";
+import { imageReferenceWaiting } from "./image-reference-waiting";
 import { ImageRepositoryError, type IndependentModelConfiguration } from "./image-repository-types";
 import { imageSettlement } from "./image-settlement";
 import { imageSubmissionRepository } from "./image-submission-repository";
@@ -21,6 +22,7 @@ export {
   type IndependentModelConfiguration,
 } from "./image-repository-types";
 
+/** 为一次调用组装图片持久化能力，关闭时释放数据库连接。 */
 export function openImageRepository(
   url: string,
   edge = false,
@@ -39,6 +41,7 @@ export function openImageRepository(
   return {
     ...nativeProviderWebhooks(sql),
     ...imageIdentityRepository(sql),
+    ...imageReferenceWaiting(sql),
     ...imageSubmissionRepository(sql, settlement, independent),
     ...imageHistoryRepository(sql, settlement.expireTimedOut),
     ...imageAssetRepository(sql),

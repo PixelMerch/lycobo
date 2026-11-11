@@ -1,0 +1,37 @@
+import { defineMessages } from "../../../i18n/messages";
+
+/** 消息中心抽屉的文案；消息本身来自服务端，原样显示。 */
+export const notificationsMessages = defineMessages({
+  "zh-CN": {
+    messagesTitle: "消息中心",
+    messagesLabel: (unread: number) => `消息（${unread} 条未读）`,
+    unreadCount: (unread: number) => `${unread} 条未读消息`,
+    messagesHint: "任务进展与系统消息",
+    close: (title: string) => `关闭${title}`,
+    messagesFailed: "消息加载失败",
+    noMessages: "暂无消息",
+    signInForMessages: "登录后可查看消息",
+    messagesEmptyHint: "任务结果和系统通知会在这里显示",
+    retry: "重试",
+    read: "已读",
+    unread: "未读",
+    markRead: "标为已读",
+    retryMessages: "重试加载消息",
+  },
+  en: {
+    messagesTitle: "Messages",
+    messagesLabel: (unread) => `Messages (${unread} unread)`,
+    unreadCount: (unread) => `${unread} unread ${unread === 1 ? "message" : "messages"}`,
+    messagesHint: "Task progress and system messages",
+    close: (title) => `Close ${title.toLowerCase()}`,
+    messagesFailed: "Couldn't load messages",
+    noMessages: "No messages yet",
+    signInForMessages: "Sign in to see your messages",
+    messagesEmptyHint: "Task results and system notices will show up here",
+    retry: "Retry",
+    read: "Read",
+    unread: "Unread",
+    markRead: "Mark as read",
+    retryMessages: "Retry loading messages",
+  },
+});

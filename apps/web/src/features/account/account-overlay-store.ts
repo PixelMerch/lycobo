@@ -1,40 +1,35 @@
 import { create } from "zustand";
-import type { AccountCenterTab } from "./center/account-center-tabs";
+import type { SettingsSection } from "./settings/settings-sections";
 
-type AccountDialog = "recharge" | "membership" | "settings";
-export type AccountLayer = "center" | "dialog";
+type AccountDialog = "recharge" | "membership" | "usage";
+export type AccountLayer = "settings" | "dialog";
 
-/** Billing and settings are separate dialogs; each layer restores its own opener. */
+/** 账户设置是底层弹窗；充值、会员订阅与积分明细叠在它上面，每层关闭后把焦点还给各自的入口。 */
 export const useAccountOverlays = create<{
-  center: AccountCenterTab | null;
+  settings: SettingsSection | null;
   dialog: AccountDialog | null;
   openers: Record<AccountLayer, HTMLElement | null>;
-  openCenter: (tab: AccountCenterTab, opener?: HTMLElement | null) => void;
-  selectTab: (tab: AccountCenterTab) => void;
+  openSettings: (section: SettingsSection, opener?: HTMLElement | null) => void;
+  selectSection: (section: SettingsSection) => void;
   open: (dialog: AccountDialog, opener?: HTMLElement | null) => void;
   close: (layer: AccountLayer) => void;
   release: (layer: AccountLayer) => void;
   reset: () => void;
 }>((set) => ({
-  center: null,
+  settings: null,
   dialog: null,
-  openers: { center: null, dialog: null },
-  openCenter: (center, opener = null) => {
-    // Menus and popovers unmount their buttons; focus the surviving opener first so the modal
-    // records it as the place to return to.
+  openers: { settings: null, dialog: null },
+  openSettings: (settings, opener = null) => {
+    // 菜单和弹出层会卸载自己的按钮；先把焦点放回仍然存在的入口，弹窗关闭后才能回到这里。
     opener?.focus({ preventScroll: true });
-    set((state) => ({ center, dialog: null, openers: { ...state.openers, center: opener } }));
+    set((state) => ({ settings, dialog: null, openers: { ...state.openers, settings: opener } }));
   },
-  selectTab: (center) => set({ center }),
+  selectSection: (settings) => set({ settings }),
   open: (dialog, opener = null) => {
     opener?.focus({ preventScroll: true });
-    set((state) => ({
-      dialog,
-      ...(dialog === "settings" ? { center: null } : {}),
-      openers: { ...state.openers, dialog: opener },
-    }));
+    set((state) => ({ dialog, openers: { ...state.openers, dialog: opener } }));
   },
-  close: (layer) => set(layer === "center" ? { center: null } : { dialog: null }),
+  close: (layer) => set(layer === "settings" ? { settings: null } : { dialog: null }),
   release: (layer) => set((state) => ({ openers: { ...state.openers, [layer]: null } })),
-  reset: () => set({ center: null, dialog: null, openers: { center: null, dialog: null } }),
+  reset: () => set({ settings: null, dialog: null, openers: { settings: null, dialog: null } }),
 }));

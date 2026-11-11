@@ -31,7 +31,7 @@
 - **任务提交、计费、重试**：[API](../apps/api/AGENTS.md)、[Worker](../apps/worker/AGENTS.md)、[共享包](../packages/AGENTS.md)、[DB](../packages/db/AGENTS.md)；各层 `images`、`wallet`。阅读：[生图 API](image-generation-api.md)、[企业钱包](enterprise-wallet.md)、[服务端分层](node-ts-best-practices.md)。
 - **Webhook、无回调恢复**：API/Worker/共享包/DB 规则；`webhooks`、`images`、`queue`。阅读：[图片回调](image-webhooks.md)、生图 API 的相关生命周期、企业钱包的结算规则。
 - **图片上传、转换、媒体访问**：API/Worker/共享包/DB 中涉及的规则；`packages/storage/src`、图片素材仓储。阅读：[对象存储](s3-storage.md)、[Cloudflare 部署](cloudflare-deployment.md)「图片处理」「绑定与 Secrets」、生图 API 上传部分。
-- **主动推送、站内消息**：API/Worker/共享包/DB/Web 中涉及的规则；各层 `realtime`。阅读：[实时推送](realtime.md)；改提醒界面时读 DESIGN「右侧更新与消息」与「反馈、响应式与维护约束」。
+- **主动推送、站内消息**：API/Worker/共享包/DB/Web 中涉及的规则；各层 `realtime`。阅读：[实时推送](realtime.md)；改提醒界面时读 DESIGN「右侧消息」与「反馈、响应式与维护约束」。
 - **数据表、SQL、迁移**：共享包/DB 规则及调用方。阅读：PostgreSQL 技能、服务端分层、[数据库命名](database-naming.md)、对应业务文档。
 - **目录维护、公共代码重构**：被移动文件所在目录规则及导入方。阅读：[架构与目录](../PROJECT_STRUCTURE.md) 的相关目录和依赖方向、服务端分层；前端重构仍受 DESIGN 约束。
 - **发布、绑定、域名、回滚**：根规则；涉及运行单元的目录规则及 Wrangler 配置。阅读：[发布流程](releasing.md)、Cloudflare 部署；授权范围不由文档授予。
@@ -66,6 +66,12 @@
 - 提交 SHA 是仓库状态依据，不能填写尚不存在的提交。部署成功还需独立记录目标、活动版本及实际线上验证；本地构建通过不等于已部署。
 - 不传密钥、Cookie、用户提示词、素材、完整供应商响应、数据库导出或签名 URL。失败用错误码、经脱敏的必要堆栈和复现步骤说明。
 - 输出以结论、改动路径和验证结果为主；长日志只读需要的片段，失败原因不明确时继续展开。不要反复读取已确认且未改变的同一内容。
+
+## 浏览器验证的成本边界
+
+纯按钮外观、间距、颜色和文案不跑 E2E，也不为此新增截图用例。登录、付费提交、草稿恢复、键盘焦点等关键行为变动，选受影响的 spec 或 --grep 定向验证一次；只有用户明确要求完整回归时才运行全量。不要把“改了 UI”直接解释成“所有浏览器测试都要重跑”。
+
+开发时不以 check:release 代替定向测试；该命令现在只做 pnpm check。测试长日志重定向到本次 /tmp 文件，向对话输出结果摘要；失败再读取相关错误片段，不反复输出整份报告。
 
 ## 多 AI 与检查分工
 

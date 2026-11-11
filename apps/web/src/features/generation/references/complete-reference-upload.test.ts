@@ -1,6 +1,10 @@
-import { expect, it, vi } from "vitest";
+import { beforeEach, expect, it, vi } from "vitest";
+import { useLocaleStore } from "../../../i18n/locale-store";
 import { imageRequest } from "../image-request";
 import { completeReferenceUpload } from "./complete-reference-upload";
+
+// 断言按中文文案编写，固定界面语言。
+beforeEach(() => useLocaleStore.setState({ locale: "zh-CN" }));
 
 vi.mock("../image-request", () => ({
   imageRequest: vi.fn(),

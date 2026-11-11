@@ -51,6 +51,7 @@ export async function consumeCloudflareImages(
         let nextPollMs: number | undefined;
         await processImageItem(parsed.data.itemId, {
           repository: runtime.repository,
+          prepareReferences: (itemId) => prepareReferences(itemId, runtime),
           store: runtime.store,
           workerId: `cloudflare:${crypto.randomUUID()}`,
           standaloneKey: env.STANDALONE_IMAGE_API_KEY,
@@ -132,4 +133,18 @@ async function flushRealtime(env: CloudflareImageEnv) {
   } finally {
     await repository.close();
   }
+}
+
+/** 图片在 R2 中已接收时由后台等待，超时或确定失败才结束任务并退款。 */
+async function prepareReferences(
+  itemId: string,
+  runtime: Awaited<ReturnType<typeof openCloudflareRuntime>>,
+) {
+  const waiting = await runtime.repository.waitingReferenceUploads(itemId);
+  if (!waiting) return "ready";
+  // 有限等待防止损坏上传或消费者故障无限占住付费任务。
+  if (Date.now() - waiting.createdAt.getTime() > 15 * 60 * 1000) return "failed";
+  const statuses = await Promise.all(waiting.ids.map((id) => runtime.uploads.status(waiting, id)));
+  if (statuses.some((result) => !result || result.status === "failed")) return "failed";
+  return statuses.some((result) => result?.status === "pending") ? "pending" : "ready";
 }

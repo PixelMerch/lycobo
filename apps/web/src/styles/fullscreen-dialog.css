@@ -17,3 +17,13 @@
 .image-preview {
   transform-origin: 50% 50%;
 }
+
+/* 全屏弹窗自带不透明底，不套用浮层毛玻璃：去掉玻璃底、投影和 1px 透明边框，
+ * 否则四周会透出一圈细线，内容也会整体下移 1px、偏离视口中心。 */
+:root .modal__container.fullscreen-dialog__container .modal__dialog {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}

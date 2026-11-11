@@ -2,7 +2,7 @@ import { expect, type Page, test } from "@playwright/test";
 import { mockImageApi } from "./image-api-fixture";
 
 const png = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",
   "base64",
 );
 async function historyFixture(
@@ -131,7 +131,7 @@ test("edited history references and prompt survive all model switches", async ({
   const composer = page.getByRole("region", { name: "创作设置", exact: true });
   const reference = composer.locator(".reference-tile img").first();
   const source = await reference.getAttribute("src");
-  for (const model of ["Banana 2.1", "Image 2", "Image 2.5"]) {
+  for (const model of ["Image 2.6", "Image 2", "Image 2.5"]) {
     await page.getByRole("button", { name: /创作模型/ }).click();
     await page.getByRole("option", { name: model, exact: true }).click();
     await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(input.prompt);
@@ -146,7 +146,7 @@ test("edited history references and prompt survive all model switches", async ({
     );
   }
   await page.getByRole("button", { name: /创作模型/ }).click();
-  await page.getByRole("option", { name: "Banana 2.1", exact: true }).click();
+  await page.getByRole("option", { name: "Image 2.6", exact: true }).click();
   await page.getByRole("radio", { name: "4K", exact: true }).click();
   await page.getByRole("button", { name: /创作模型/ }).click();
   await page.getByRole("option", { name: "Image 2.5", exact: true }).click();
@@ -174,17 +174,20 @@ test("regenerate submits the original snapshot once and leaves the composer draf
   const confirm = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
   await expect(confirm).toBeVisible();
   await expect(confirm.locator(".confirm-dialog__content")).toHaveText("本次消耗 2 积分");
-  // The panel is a borderless black sheet on a blurred, veiled page, and both
-  // the dismiss action and the corner close glyph read as white on it.
-  await expect(confirm).toHaveCSS("border-top-width", "0px");
-  await expect(confirm).toHaveCSS("background-color", "rgb(0, 0, 0)");
+  // 确认面板使用共享浮层玻璃（8% 白底、40px 模糊、透明 1px 边），取消文字和右上关闭图标在上面保持可读。
+  await expect(confirm).toHaveCSS("border-top-width", "1px");
+  await expect(confirm).toHaveCSS(
+    "background-image",
+    "linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)), none",
+  );
+  await expect(confirm).toHaveCSS("backdrop-filter", "blur(40px)");
   await expect(confirm.locator(".confirm-dialog__content")).toHaveCSS(
     "color",
-    "rgb(184, 184, 192)",
+    "rgb(185, 185, 185)",
   );
   await expect(confirm.getByRole("button", { name: "取消", exact: true })).toHaveCSS(
     "color",
-    "rgb(184, 184, 192)",
+    "rgb(185, 185, 185)",
   );
   const closeRegenerate = confirm.getByRole("button", {
     name: "关闭重新生成确认",

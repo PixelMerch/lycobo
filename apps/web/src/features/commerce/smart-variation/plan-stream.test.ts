@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { useLocaleStore } from "../../../i18n/locale-store";
 import { previewPlanItems, readPlanResponse } from "./plan-stream";
+
+// 断言按中文文案编写，固定界面语言。
+beforeEach(() => useLocaleStore.setState({ locale: "zh-CN" }));
 
 describe("plan stream preview", () => {
   it("shows unfinished prompts and preserves escaped quotes across chunks", () => {

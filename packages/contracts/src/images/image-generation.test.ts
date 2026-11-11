@@ -9,6 +9,36 @@ import {
 } from "./image-generation";
 
 describe("image submission", () => {
+  it("accepts reference roles and plan item bindings only when they match the task", () => {
+    const ids = [crypto.randomUUID(), crypto.randomUUID()];
+    const base = { model: "gpt-image-2", prompt: "白底主图", referenceAssetIds: ids };
+    expect(
+      imageGenerationInputSchema.safeParse({ ...base, referenceRoles: ["product", "source"] })
+        .success,
+    ).toBe(true);
+    expect(
+      imageGenerationInputSchema.safeParse({ ...base, referenceRoles: ["product"] }).success,
+    ).toBe(false);
+    const plan = (referenceAssetIds: string[]) => ({
+      ...base,
+      model: "gpt-image-2.5",
+      count: 1,
+      variation: {
+        version: 1,
+        planId: crypto.randomUUID(),
+        items: [
+          {
+            id: crypto.randomUUID(),
+            title: "西语版",
+            prompt: "把参考图2翻译成西班牙语",
+            referenceAssetIds,
+          },
+        ],
+      },
+    });
+    expect(imageGenerationInputSchema.safeParse(plan([ids[1] ?? ""])).success).toBe(true);
+    expect(imageGenerationInputSchema.safeParse(plan([crypto.randomUUID()])).success).toBe(false);
+  });
   it("supports text generation without client-supplied identity", () => {
     expect(
       imageGenerationInputSchema.parse({ model: "gpt-image-2", prompt: " hello " }),

@@ -8,16 +8,21 @@ import type postgres from "postgres";
 import { recordImageEvent } from "./image-event-repository";
 import { imageQueryViews } from "./image-query-views";
 import { type AssetFilters, ImageRepositoryError } from "./image-repository-types";
+/** 按组织管理图片素材、工具来源与个人收藏。 */
 export function imageAssetRepository(sql: postgres.Sql) {
   const { publicModelSql, toolMatchSql } = imageQueryViews(sql);
   const toolSql = sql`case when j.id is null then null when j.input ? 'textileSet' then 'textile'
-    when j.input ? 'variation' then 'variation' when j.input ? 'video' then 'video' else 'create' end`;
+    when j.input ? 'replica' then 'replica' when j.input ? 'variation' then 'variation' when j.input ? 'video' then 'video' else 'create' end`;
   const visibleAssetSql = sql`(a.expires_at is null or a.expires_at>now()) and a.storage_deleted_at is null`;
   return {
     async addReference(scope: ImageScope, image: StoredImage) {
       await sql.begin(async (tx) => {
         await tx`insert into media_assets (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256,expires_at)
           values (${image.id},${scope.organizationId},${scope.userId},'reference','image',${image.objectKey},${image.mimeType},${image.width},${image.height},${image.bytes},${image.sha256},now()+interval '3 days') on conflict (id) do nothing`;
+        // 任务可以早于图片处理落库；已被任务引用的素材完成后直接转为长期保存。
+        await tx`update media_assets a set expires_at=null where a.id=${image.id} and a.organization_id=${scope.organizationId}
+          and exists(select 1 from generation_jobs j where j.organization_id=a.organization_id
+          and j.input->'referenceAssetIds' @> ${tx.json([image.id])}::jsonb)`;
         const [stored] =
           await tx`select id from media_assets where id=${image.id} and organization_id=${scope.organizationId} and user_id=${scope.userId} and sha256=${image.sha256} and object_key=${image.objectKey}`;
         if (!stored) throw new ImageRepositoryError("STATE_CONFLICT");
@@ -50,7 +55,7 @@ export function imageAssetRepository(sql: postgres.Sql) {
         ${before ? sql`and (a.created_at,a.id) < (select created_at,id from media_assets where id=${before} and organization_id=${scope.organizationId})` : sql``}
         order by a.created_at desc,a.id desc limit ${limit}`;
     },
-    /** Returns the stored state, or null when the asset is not visible to the organization. */
+    /** 返回收藏状态，素材对当前组织不可见时返回空值。 */
     async setAssetFavorite(scope: ImageScope, assetId: string, favorite: boolean) {
       return sql.begin(async (tx) => {
         const [asset] =
@@ -62,7 +67,7 @@ export function imageAssetRepository(sql: postgres.Sql) {
             and user_id=${scope.userId} and asset_id=${assetId}`;
           return false;
         }
-        // One member's favorite writes are serialized so the limit holds under concurrent requests.
+        // 同一成员的收藏写入串行化，避免并发请求突破数量上限。
         await tx`select pg_advisory_xact_lock(hashtextextended(${`${scope.organizationId}:${scope.userId}`},71421))`;
         const [existing] =
           await tx`select 1 from image_asset_favorites where organization_id=${scope.organizationId}

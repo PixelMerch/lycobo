@@ -1,0 +1,72 @@
+/*
+ * 预设头像配色：每个预设一组渐变起止色与首字母颜色。头像在各处尺寸不同，
+ * 颜色只在这里决定；没选过时组件给出 lime（品牌青柠到薄荷）。
+ */
+[data-avatar-preset] {
+  --avatar-from: #a8ff00;
+  --avatar-to: #54e6a5;
+  --avatar-ink: #142000;
+}
+[data-avatar-preset="mint"] {
+  --avatar-from: #4fe3b0;
+  --avatar-to: #1fae8a;
+  --avatar-ink: #00281b;
+}
+[data-avatar-preset="peach"] {
+  --avatar-from: #ffb27a;
+  --avatar-to: #ff7a59;
+  --avatar-ink: #3d1a00;
+}
+[data-avatar-preset="sky"] {
+  --avatar-from: #7cc4ff;
+  --avatar-to: #3d8bff;
+  --avatar-ink: #00213a;
+}
+[data-avatar-preset="sunset"] {
+  --avatar-from: #ffd36e;
+  --avatar-to: #ff8a3d;
+  --avatar-ink: #3d2000;
+}
+[data-avatar-preset="rose"] {
+  --avatar-from: #ff9fb2;
+  --avatar-to: #ff5c7a;
+  --avatar-ink: #3d000f;
+}
+[data-avatar-preset="teal"] {
+  --avatar-from: #5eead4;
+  --avatar-to: #14b8a6;
+  --avatar-ink: #002a26;
+}
+[data-avatar-preset="citrus"] {
+  --avatar-from: #e2ff7a;
+  --avatar-to: #b8e000;
+  --avatar-ink: #2a3300;
+}
+[data-avatar-preset="ocean"] {
+  --avatar-from: #67e8f9;
+  --avatar-to: #0891b2;
+  --avatar-ink: #002a33;
+}
+[data-avatar-preset="forest"] {
+  --avatar-from: #8ee08a;
+  --avatar-to: #2f9e44;
+  --avatar-ink: #0d2a10;
+}
+[data-avatar-preset="sand"] {
+  --avatar-from: #f0dfb8;
+  --avatar-to: #c9a86b;
+  --avatar-ink: #3a2a0a;
+}
+[data-avatar-preset="graphite"] {
+  --avatar-from: #c4c9c4;
+  --avatar-to: #6b736b;
+  --avatar-ink: #111511;
+}
+.avatar[data-avatar-preset],
+.avatar[data-avatar-preset] .avatar__fallback,
+.avatar-preset-swatch {
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--avatar-from), var(--avatar-to));
+  color: var(--avatar-ink);
+  font-weight: var(--weight-semibold);
+}

@@ -3,6 +3,7 @@ import {
   type ImageScope,
   providerOriginSchema,
   type VariationPlanInput,
+  variationPlanInputSchema,
   variationPlanItemSchema,
   variationPlanLimit,
   variationPlanSchema,
@@ -34,11 +35,10 @@ async function verifyPlanReferences(
   }
 }
 
+/** 按组织和用户保存规划请求、幂等结果及模型配置。 */
 export function variationRepository(sql: postgres.Sql) {
   const view = (row: postgres.Row) => {
-    const input = z
-      .object({ description: z.string(), referenceAssetIds: z.array(z.uuid()) })
-      .parse(row.input);
+    const input = variationPlanInputSchema.parse(row.input);
     return variationPlanSchema.parse({
       id: row.id,
       status: row.status,

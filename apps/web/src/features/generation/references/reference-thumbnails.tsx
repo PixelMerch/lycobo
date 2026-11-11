@@ -1,7 +1,9 @@
 import { Button } from "@heroui/react";
 import { lazy, Suspense, useRef, useState } from "react";
+import { useMessages } from "../../../i18n/messages";
 import { AssetImage } from "../asset-image";
 import { assetContentUrl } from "../generation-client";
+import { referencesMessages } from "./references-messages";
 
 const ImageViewer = lazy(() =>
   import("../../../components/image-viewer/image-viewer").then((module) => ({
@@ -9,17 +11,19 @@ const ImageViewer = lazy(() =>
   })),
 );
 
-/** Task references open the shared viewer at their position in this reference set. */
+/** 任务参考图缩略图：点开后在共享查看器里定位到这一张。 */
 export function ReferenceThumbnails({
   ids,
   label,
-  itemLabel = "参考图片",
+  itemLabel,
 }: {
   ids: string[];
   label?: string;
   itemLabel?: string;
 }) {
   const [preview, setPreview] = useState<number | null>(null);
+  const t = useMessages(referencesMessages);
+  const item = itemLabel ?? t.referenceImage;
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   if (ids.length === 0) return null;
   return (
@@ -36,12 +40,12 @@ export function ReferenceThumbnails({
             buttons.current[index]?.focus();
             setPreview(index);
           }}
-          aria-label={`查看${itemLabel} ${index + 1}`}
+          aria-label={t.viewItem(item, index + 1)}
         >
           <AssetImage
             assetId={id}
             thumbnail
-            alt={`${itemLabel} ${index + 1} 缩略图`}
+            alt={t.itemThumbnail(item, index + 1)}
             loading="lazy"
           />
         </Button>

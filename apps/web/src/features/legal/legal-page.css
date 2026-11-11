@@ -1,0 +1,214 @@
+/* 法律阅读区统一黑底灰白文字，目录与正文分栏，不使用品牌色光晕。 */
+html:has(.legal-page) {
+  scroll-behavior: smooth;
+}
+body:has(.legal-page) {
+  background: #000;
+}
+.main-content:has(> .legal-page) {
+  padding: 0;
+}
+.legal-page {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - var(--header-height));
+  background: #000;
+}
+.legal-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 704px);
+  justify-content: center;
+  align-items: start;
+  gap: 80px;
+  width: min(1100px, 100% - 96px);
+  margin: 0 auto;
+  padding: 56px 0 96px;
+}
+.legal-sidebar {
+  position: sticky;
+  top: calc(var(--header-height) + 32px);
+  max-height: calc(100dvh - var(--header-height) - 64px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.legal-contents-heading {
+  margin: 0 0 20px 12px;
+  color: #ffffff80;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: 20px;
+}
+.legal-contents-list {
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid #ffffff1a;
+  list-style: none;
+}
+.legal-contents-link {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-height: 36px;
+  margin-left: -1px;
+  padding: 8px 12px;
+  border-left: 2px solid transparent;
+  border-radius: 0 4px 4px 0;
+  color: #ffffff99;
+  font-size: var(--text-sm);
+  line-height: 20px;
+  text-decoration: none;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease;
+}
+.legal-contents-link:hover {
+  color: #fff;
+  background: #ffffff0a;
+}
+.legal-contents-link[aria-current="location"] {
+  border-left-color: #ffffffb3;
+  color: #fff;
+  background: #ffffff0a;
+}
+.legal-contents-number {
+  flex: none;
+  width: 18px;
+  color: #ffffff66;
+  font-variant-numeric: tabular-nums;
+}
+.legal-document {
+  min-width: 0;
+}
+.legal-switch {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--fill-soft);
+}
+.legal-switch-link {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 999px;
+  color: #ffffffb3;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+.legal-switch-link:is(:hover, :focus-visible) {
+  color: #fff;
+}
+.legal-switch-link.active {
+  background: var(--fill-strong);
+  color: #fff;
+}
+.legal-document h1 {
+  margin: 32px 0 8px;
+  font-size: 32px;
+  font-weight: var(--weight-semibold);
+  line-height: 40px;
+}
+.legal-meta {
+  color: #ffffff80;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.legal-intro {
+  margin-top: 24px;
+  color: #ffffffcc;
+  font-size: 15px;
+  line-height: 28px;
+}
+.legal-section {
+  margin-top: 40px;
+}
+.legal-section h2 {
+  scroll-margin-top: calc(var(--header-height) + 32px);
+  margin-bottom: 12px;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-xl);
+}
+.legal-section h2:focus {
+  outline: none;
+}
+.legal-section p,
+.legal-section li {
+  color: #ffffffb3;
+  font-size: 15px;
+  line-height: 28px;
+}
+/* 恢复语义列表的圆点，并与正文保持一致的中性灰。 */
+.legal-section ul {
+  margin: 0;
+  padding-left: 20px;
+  list-style: disc outside;
+}
+.legal-section :is(p, ul) + :is(p, ul) {
+  margin-top: 12px;
+}
+.legal-section li + li {
+  margin-top: 8px;
+}
+.legal-section li::marker {
+  color: #ffffffb3;
+}
+.legal-page > .site-footer {
+  margin-top: auto;
+}
+@media (max-width: 1023px) {
+  .legal-layout {
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: 32px;
+    width: calc(100% - 64px);
+  }
+}
+@media (max-width: 767px) {
+  .legal-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
+    width: calc(100% - 40px);
+    padding: 32px 0 64px;
+  }
+  .legal-sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+  .legal-contents-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-left: 0;
+  }
+  .legal-contents-heading {
+    margin-left: 0;
+    margin-bottom: 12px;
+  }
+  .legal-contents-link {
+    min-height: 44px;
+    margin-left: 0;
+    padding: 10px 8px;
+  }
+  .legal-switch-link {
+    height: 40px;
+  }
+  .legal-document h1 {
+    margin-top: 24px;
+    font-size: var(--text-page-mobile);
+    line-height: 30px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html:has(.legal-page) {
+    scroll-behavior: auto;
+  }
+  .legal-switch-link,
+  .legal-contents-link {
+    transition: none;
+  }
+}

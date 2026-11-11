@@ -1,13 +1,17 @@
 import { Spinner } from "@heroui/react";
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
+import { useMessages } from "../../i18n/messages";
 import { useErrorToast } from "../../lib/error-toast";
+import { componentsMessages } from "../components-messages";
 import { imageWheelFactor } from "./image-zoom-motion";
 import { useImageViewerZoom } from "./use-image-viewer-zoom";
 export type ViewerImage = { src: string; thumbnailSrc?: string; alt: string };
 type Point = { x: number; y: number };
 const origin = { x: 0, y: 0 };
 
+/** 图片浏览的画面状态：缩放、旋转、拖动、加载与失败提示。 */
 export function useImageViewerStage(active: ViewerImage | undefined) {
+  const t = useMessages(componentsMessages);
   const [angle, setAngle] = useState(0);
   const [pan, setPan] = useState<Point>(origin);
   const [dragging, setDragging] = useState(false);
@@ -39,9 +43,8 @@ export function useImageViewerStage(active: ViewerImage | undefined) {
   wheelZoom.current = ready
     ? (delta, ctrlKey) => zoomBy(imageWheelFactor(delta, ctrlKey))
     : () => undefined;
-  /* The first fitted frame must paint without transitions: `fit` starts at 1
-   * before the natural size is known, so an animated change would show the
-   * picture oversized for a moment when the viewer opens or switches images. */
+  /* 第一帧适配画面不能带过渡：拿到原图尺寸前 fit 为 1，带动画会让图片在打开或
+   * 切换时短暂显示得过大。 */
   useEffect(() => {
     if (!ready) {
       setAnimated(false);
@@ -67,7 +70,7 @@ export function useImageViewerStage(active: ViewerImage | undefined) {
       element.removeEventListener("wheel", wheel);
     };
   }, [area]);
-  useErrorToast(failed ? "图片加载失败，请关闭后重新打开。" : null);
+  useErrorToast(failed ? t.viewerLoadFailed : null);
   function reset() {
     resetZoom();
     setLoadedSrc(null);
@@ -112,6 +115,7 @@ export function useImageViewerStage(active: ViewerImage | undefined) {
   };
 }
 
+/** 图片浏览的画面区域：显示当前图片并处理拖动与滚轮缩放。 */
 export function ImageViewerStage({
   active,
   stage,
@@ -119,6 +123,7 @@ export function ImageViewerStage({
   active: ViewerImage;
   stage: ReturnType<typeof useImageViewerStage>;
 }) {
+  const t = useMessages(componentsMessages);
   const {
     ready,
     failed,
@@ -144,7 +149,7 @@ export function ImageViewerStage({
       ref={setArea}
       className="browse-image-area"
       aria-busy={!ready && !failed}
-      aria-label="浏览图片区域"
+      aria-label={t.viewerArea}
       data-zoomed={zoom > 100}
       data-dragging={dragging}
       onPointerDown={(event) => {
@@ -176,7 +181,9 @@ export function ImageViewerStage({
       onPointerCancel={endPan}
       onLostPointerCapture={endPan}
     >
-      {!ready && !failed && <Spinner className="browse-image-loading" aria-label="图片加载中" />}
+      {!ready && !failed && (
+        <Spinner className="browse-image-loading" aria-label={t.viewerLoading} />
+      )}
       <div className="browse-image-frame">
         <div
           className="browse-image-transform"

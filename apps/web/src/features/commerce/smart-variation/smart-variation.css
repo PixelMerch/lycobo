@@ -154,8 +154,96 @@
 }
 .variation-plan-card {
   padding: var(--space-4);
-  background: #222;
+  background: var(--fill-faint);
   border-radius: 16px;
+}
+/* 方案卡片里的“用图”一行：32px 缩略图；共用图常亮并标“共用”，原图按方案点选，未选的半透明。 */
+.plan-images {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 2px 0 8px;
+}
+.plan-images-label,
+.plan-images-group small {
+  color: #ffffff80;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+.plan-images-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.plan-images-group small {
+  margin-left: 2px;
+}
+/* 原图组用 HeroUI 多选组提供分组语义，去掉组件自带的轨道底色与内边距。 */
+.plan-images-group.toggle-button-group {
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.plan-image {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border-radius: 6px;
+}
+.plan-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.plan-image-number {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 6px 0 0 0;
+  background: #1c1c1ce6;
+  color: #fff;
+  font-size: var(--text-xs);
+  line-height: 16px;
+  text-align: center;
+}
+.plan-image.toggle-button {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  opacity: 0.4;
+  transition: opacity 160ms ease;
+}
+.plan-image.toggle-button:is(:hover, [data-hovered="true"]) {
+  opacity: 0.75;
+}
+.plan-image.toggle-button[data-selected="true"] {
+  opacity: 1;
+}
+.plan-image.toggle-button[data-selected="true"]::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px #fff;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .plan-image.toggle-button {
+    transition: none;
+  }
 }
 .variation-plan-card-heading {
   display: flex;
@@ -181,11 +269,11 @@
 }
 .variation-plan-card input,
 .variation-plan-card textarea {
-  background: #171717;
+  background: var(--fill-inset);
   font-size: var(--text-sm);
   color: #eee;
   border: 1px solid #ffffff12;
-  border-radius: 10px;
+  border-radius: 12px;
   line-height: var(--leading-sm);
 }
 .variation-plan-card textarea {
@@ -216,7 +304,7 @@
   flex-wrap: wrap;
 }
 .variation-plan-output > span {
-  color: #a1a1aa;
+  color: #a2a2a2;
   font-size: var(--text-sm);
   white-space: nowrap;
   line-height: var(--leading-sm);
@@ -231,7 +319,7 @@
 .variation-plan-empty {
   padding: 48px 0;
   text-align: center;
-  color: #a1a1aa;
+  color: #a2a2a2;
 }
 @media (max-width: 900px) {
   .variation-history-index {
@@ -293,7 +381,7 @@
 
 /* Selection is explicit; inactive plans stay editable but visually subdued. */
 .variation-plan-card[data-selected="false"] {
-  background: #1c1c1c;
+  background: transparent;
 }
 .variation-plan-card[data-selected="false"] :is(input, textarea) {
   color: #909090;
@@ -303,7 +391,7 @@
   color: var(--accent-foreground);
 }
 .variation-plan-card .checkbox__control {
-  background: #292929;
+  background: var(--fill-medium);
   border: 1px solid #ffffff26;
   color: #aaa;
 }
@@ -327,8 +415,7 @@
         var(--workspace-view-switch-height) +
         12px
       )
-      var(--content-padding) var(--content-padding)
-      calc(var(--sidebar-width) + var(--content-padding));
+      var(--content-padding) var(--content-padding) var(--content-padding);
     width: auto;
     height: auto;
     margin: 0;

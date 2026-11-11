@@ -8,10 +8,10 @@
   min-height: 0;
   background: var(--app-dialog-background);
   border-color: var(--interaction-active);
-  box-shadow: 0 24px 80px #00000066;
+  box-shadow: var(--shadow-lg);
 }
 .account-dialog {
-  --focus: #b8b8c0;
+  --focus: #b9b9b9;
   --field-border: #ffffff1f;
   --field-background: #ffffff05;
   --field-background-hover: var(--interaction-hover);
@@ -40,7 +40,7 @@
   height: 44px;
   border: 1px solid var(--interaction-active);
   border-radius: 12px;
-  background: #262626;
+  background: var(--field-background);
   box-shadow: none;
   color: #eee;
   font-size: var(--text-sm);
@@ -48,12 +48,12 @@
 }
 .account-field .input:is(:focus, :focus-visible, [data-focused="true"]) {
   border-color: #ffffff4d;
-  outline: 2px solid #a1a1aa;
+  outline: 2px solid #a2a2a2;
   outline-offset: 2px;
   box-shadow: none;
 }
 .account-field .description {
-  color: #a1a1aa;
+  color: #a2a2a2;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }

@@ -1,10 +1,14 @@
 import { Button, Checkbox, Input, Label, Spinner, TextArea, TextField } from "@heroui/react";
 import { IconCheck, IconTrash, IconX } from "@tabler/icons-react";
 import { useLayoutEffect, useRef } from "react";
+import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
+import { PlanReferenceStrip } from "./plan-reference-strip";
 import { previewPlanItems } from "./plan-stream";
 import { useSmartVariationDraft } from "./smart-variation-state";
 import { useVariationGeneration } from "./use-variation-generation";
+import { variationMessages } from "./variation-messages";
 
 function PlanPrompt({
   value,
@@ -15,6 +19,7 @@ function PlanPrompt({
   index: number;
   onChange: (value: string) => void;
 }) {
+  const t = useMessages(variationMessages);
   const ref = useRef<HTMLTextAreaElement>(null);
   useLayoutEffect(() => {
     const element = ref.current;
@@ -37,12 +42,13 @@ function PlanPrompt({
   }, [value]);
   return (
     <TextField value={value} onChange={onChange}>
-      <Label className="sr-only">方案 {index + 1} 提示词</Label>
+      <Label className="sr-only">{t.planPrompt(index + 1)}</Label>
       <TextArea ref={ref} rows={3} maxLength={4000} />
     </TextField>
   );
 }
 
+/** 套图计划确认面板：生成中显示流式预览，完成后可编辑、勾选和删除方案，再批量生成。 */
 export function VariationPlanPanel({
   isOpen,
   onOpenChange,
@@ -58,18 +64,17 @@ export function VariationPlanPanel({
   analysisError?: string | undefined;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { items, ratio, resolution, update } = useSmartVariationDraft();
+  const { items, references, ratio, resolution, update } = useSmartVariationDraft();
   const generation = useVariationGeneration();
   const previews = previewPlanItems(streamText);
   const showPreview = analyzing || !!analysisError;
   const selectedCount = items.filter((item) => item.selected).length;
+  const t = useMessages(variationMessages);
   const patchItem = (id: string, patch: Partial<(typeof items)[number]>) =>
     update({ items: items.map((item) => (item.id === id ? { ...item, ...patch } : item)) });
   if (!isOpen) return null;
-  const planningStatus = previews.length
-    ? "正在完善方案，完成后即可编辑确认…"
-    : "正在规划，请稍候…";
-  const analysisStatus = readingWeb ? "DeepSeek 正在读取网页内容…" : planningStatus;
+  const planningStatus = previews.length ? t.refining : t.planning;
+  const analysisStatus = readingWeb ? t.readingWeb : planningStatus;
   return (
     <section
       className="variation-plan-panel"
@@ -83,15 +88,13 @@ export function VariationPlanPanel({
     >
       <header className="variation-plan-header">
         <div>
-          <h2 id="variation-plan-heading">
-            {analyzing ? "正在生成套图计划" : "确认每张图的中文提示词"}
-          </h2>
+          <h2 id="variation-plan-heading">{analyzing ? t.generatingSet : t.confirmPrompts}</h2>
         </div>
         <Button
           isIconOnly
           variant="tertiary"
           className="dialog-close"
-          aria-label="关闭生成计划"
+          aria-label={t.closePlan}
           onPress={() => onOpenChange(false)}
         >
           <UiIcon icon={IconX} size="action" />
@@ -108,13 +111,13 @@ export function VariationPlanPanel({
                 <section
                   className="variation-plan-card"
                   key={item.id}
-                  aria-label={`生成中的方案 ${index + 1}`}
+                  aria-label={t.draftPlan(index + 1)}
                 >
                   <div className="variation-plan-card-heading">
                     <span className="variation-plan-number">{index + 1}</span>
-                    <h3>{item.title || "正在生成标题…"}</h3>
+                    <h3>{item.title || t.writingTitle}</h3>
                   </div>
-                  <p className="variation-plan-stream-prompt">{item.prompt || "正在编写提示词…"}</p>
+                  <p className="variation-plan-stream-prompt">{item.prompt || t.writingPrompt}</p>
                 </section>
               ))}
             </>
@@ -125,7 +128,7 @@ export function VariationPlanPanel({
                 className="variation-plan-card"
                 data-selected={item.selected}
                 key={item.id}
-                aria-label={`方案 ${index + 1}`}
+                aria-label={t.plan(index + 1)}
               >
                 <div className="variation-plan-card-heading">
                   <span className="variation-plan-number">{index + 1}</span>
@@ -134,7 +137,7 @@ export function VariationPlanPanel({
                     onChange={(title) => patchItem(item.id, { title })}
                     className="variation-plan-title"
                   >
-                    <Label className="sr-only">方案 {index + 1} 名称</Label>
+                    <Label className="sr-only">{t.planName(index + 1)}</Label>
                     <Input maxLength={40} />
                   </TextField>
                   <Checkbox
@@ -147,19 +150,25 @@ export function VariationPlanPanel({
                           <UiIcon icon={IconCheck} size="small" />
                         </Checkbox.Indicator>
                       </Checkbox.Control>
-                      <span className="sr-only">选择方案 {index + 1}</span>
+                      <span className="sr-only">{t.selectPlan(index + 1)}</span>
                     </Checkbox.Content>
                   </Checkbox>
                   <Button
                     isIconOnly
                     size="sm"
                     variant="tertiary"
-                    aria-label={`删除方案 ${index + 1}`}
+                    aria-label={t.deletePlan(index + 1)}
                     onPress={() => update({ items: items.filter((entry) => entry.id !== item.id) })}
                   >
                     <UiIcon icon={IconTrash} />
                   </Button>
                 </div>
+                <PlanReferenceStrip
+                  itemId={item.id}
+                  planNumber={index + 1}
+                  prompt={item.prompt}
+                  references={references}
+                />
                 <PlanPrompt
                   value={item.prompt}
                   index={index}
@@ -167,35 +176,61 @@ export function VariationPlanPanel({
                 />
               </section>
             ))}
-          {!showPreview && !items.length && (
-            <p className="variation-plan-empty">暂无方案，请重新生成计划。</p>
-          )}
+          {!showPreview && !items.length && <p className="variation-plan-empty">{t.noPlans}</p>}
         </div>
       </div>
       <footer className="variation-plan-footer">
         <div className="variation-plan-output">
           <span>
             {ratio} · {resolution} ·{" "}
-            {showPreview ? "计划完成后可确认生成" : `已选 ${selectedCount} 张`}
+            {showPreview ? t.confirmAfterPlan : t.selectedCount(selectedCount)}
           </span>
         </div>
-        <Button
-          isDisabled={showPreview || !generation.canGenerate}
-          isPending={generation.submitting}
-          className="primary-action variation-generate"
-          onPress={() => {
-            void generation
-              .submit()
-              .then(() => onOpenChange(false))
-              .catch(() => undefined);
-          }}
-        >
-          {generation.submitting && (
-            <Spinner size="md" color="current" role="status" aria-label="正在提交裂变任务" />
-          )}
-          {generation.pending ? "确认上次提交" : `开始生成 · ${generation.cost} 积分`}
-        </Button>
+        <VariationGenerateButton
+          generation={generation}
+          showPreview={showPreview}
+          onComplete={() => onOpenChange(false)}
+        />
       </footer>
     </section>
+  );
+}
+
+function VariationGenerateButton({
+  generation,
+  showPreview,
+  onComplete,
+}: {
+  generation: ReturnType<typeof useVariationGeneration>;
+  showPreview: boolean;
+  onComplete: () => void;
+}) {
+  const t = useMessages(variationMessages);
+  const isDisabled = showPreview || !generation.canGenerate;
+  const showCost = !isDisabled && !generation.pending && generation.cost > 0;
+  return (
+    <Button
+      isDisabled={isDisabled}
+      aria-description={showCost ? t.runCost(generation.cost) : undefined}
+      isPending={generation.submitting}
+      className="primary-action variation-generate"
+      onPress={() => {
+        void generation
+          .submit()
+          .then(onComplete)
+          .catch(() => undefined);
+      }}
+    >
+      {generation.submitting && (
+        <Spinner size="md" color="current" role="status" aria-label={t.submitting} />
+      )}
+      {generation.pending ? t.confirmLastSubmission : t.startGenerating}
+      {showCost && (
+        <span className="generate-credit-cost" aria-hidden="true">
+          <CreditCoin />
+          <span>{generation.cost}</span>
+        </span>
+      )}
+    </Button>
   );
 }

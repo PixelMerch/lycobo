@@ -2,11 +2,11 @@ import { type imageModelsResponseSchema, publicImageModel } from "@lycoboai/cont
 
 type ModelsResponse = ReturnType<typeof imageModelsResponseSchema.parse>;
 
-/** Tool capabilities are authoritative; the global edit flag only supports legacy responses. */
+/** 工具能力优先，旧响应才使用全局编辑开关和默认容量。 */
 export function modelCapabilities(
   data: ModelsResponse | undefined,
   model: string,
-  tool: "create" | "textile-set" | "local-edit",
+  tool: "create" | "textile-set" | "local-edit" | "replica",
 ) {
   if (!data?.enabled) return undefined;
   const candidates = data.tools ? data.tools[tool] : data.models;
@@ -14,7 +14,8 @@ export function modelCapabilities(
     candidates?.find((entry) => entry.id === model) ??
     candidates?.find((entry) => entry.id === publicImageModel(model));
   if (!match) return undefined;
-  const defaultMaxReferences = tool === "textile-set" ? 6 : 5;
+  let defaultMaxReferences = tool === "textile-set" ? 6 : 5;
+  if (tool === "replica") defaultMaxReferences = 11;
   return {
     enabledResolutions: match.enabledResolutions,
     editsEnabled:

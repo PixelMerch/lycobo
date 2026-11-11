@@ -1,48 +1,212 @@
-/* Xiaoyunque composer measurements: 1040 × 212, 28px radius, 14/21 type. */
-.home-start {
-  margin-top: var(--home-start-spacing, 120px);
-  margin-bottom: 48px;
-}
-.home-start h1.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-}
+/* 首页创作框：描述与右下角操作，参考图在描述上方；只有家纺裂变用左侧两行上传列。配色为本站青柠。 */
 .home-composer {
-  min-height: 212px;
+  position: relative;
+  isolation: isolate;
   display: flex;
+  gap: 20px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgb(30 34 30 / 82%);
+  box-shadow: inset 0 0 0 1px #ffffff14;
+  backdrop-filter: blur(40px);
+  transition: box-shadow 200ms ease;
+}
+.home-composer:focus-within {
+  box-shadow: inset 0 0 0 1px #ffffff29;
+}
+
+/* 其他模式沿用改版前的参考图条：首格为虚线加号小格，缩略图依次排在其后。 */
+.home-references .reference-picker {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.home-references .field-title,
+.home-references .add-reference > span {
+  display: none;
+}
+.home-references .reference-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.home-references .reference-tile {
+  width: 57.12px;
+  height: 57.12px;
+  border-radius: 8px;
+}
+.home-references .reference-number {
+  font-size: 10px;
+  line-height: 14px;
+}
+.home-references .add-reference {
+  order: -1;
+  flex: none;
+  width: 57.12px;
+  min-width: 57.12px;
+  height: 57.12px;
+  min-height: 57.12px;
+  padding: 0;
+  border: 1px dashed #ffffff33;
+  border-radius: 12px;
+  background: #ffffff0a;
+  color: #d9d9d9;
+}
+.home-references .add-reference:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
+  border-color: #ffffff59;
+  background: #ffffff14;
+}
+.home-references .field-error {
+  max-width: 360px;
+  margin-top: 8px;
+}
+
+/* 家纺裂变上传列：空白时两行单行文字入口，列宽随文字（中文 140px，英文略宽、不折行）；有图后按两列缩略图排列。 */
+.home-upload {
+  --composer-group: #1c1c1c;
+  display: flex;
+  flex: none;
   flex-direction: column;
-  padding: 12px 12px 10px;
-  background: var(--home-glass-fill), var(--home-glass-tint);
-  border: 1px solid var(--home-glass-edge);
-  border-radius: 28px;
-  box-shadow:
-    inset 0 1px 0 #ffffff26,
-    0 32px 80px -24px #000000b3;
-  backdrop-filter: blur(28px) saturate(180%);
-  transition: border-color 200ms ease;
+  width: max-content;
+  min-width: 140px;
+  max-width: 200px;
+  min-height: 164px;
+  overflow: hidden;
+  border: 1px solid #ffffff0a;
+  border-radius: 12px;
+  background: #ffffff14;
+  backdrop-filter: blur(15px);
+}
+.home-upload .reference-picker {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.home-upload .field-title {
+  display: none;
+}
+.home-upload .reference-grid {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr);
+}
+.home-upload .add-reference,
+.home-upload-secondary.button {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 81px;
+  aspect-ratio: auto;
+  padding: 0 16px;
+  gap: 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #fff;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-lg);
+}
+.home-upload .add-reference > span {
+  white-space: nowrap;
+  text-align: left;
+}
+.home-upload .add-reference:is(:hover, [data-hovered="true"], [data-focus-visible="true"]),
+.home-upload-secondary.button:is(:hover, [data-hovered="true"], [data-focus-visible="true"]) {
+  background: #ffffff0a;
+}
+/* 两行之间的细分隔线，左右各留 16px（与 vidmuse 一致，不贯穿整列）。 */
+.home-upload-secondary.button {
+  position: relative;
+  flex: 1;
+}
+.home-upload-secondary.button::before {
+  position: absolute;
+  top: 0;
+  right: 16px;
+  left: 16px;
+  height: 1px;
+  content: "";
+  background: #ffffff14;
+}
+.home-upload .field-error {
+  margin: 6px;
+}
+/* 有图后：固定 140px（缩略图不撑宽上传列），两列缩略图，添加块缩成虚线小格，第二行入口隐藏。 */
+.home-upload:has(.reference-tile) {
+  width: 140px;
+  padding: 6px;
+}
+.home-upload:has(.reference-tile) .home-upload-secondary {
+  display: none;
+}
+.home-upload .reference-grid:has(.reference-tile) {
+  flex: none;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 6px;
+}
+.home-upload .reference-grid:has(> .reference-tile:only-child) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.home-upload .reference-tile {
+  border-radius: 8px;
+}
+.home-upload .reference-number {
+  font-size: 10px;
+  line-height: 14px;
+}
+.home-upload .reference-grid:has(.reference-tile) .add-reference {
+  order: -1;
+  justify-content: center;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px dashed #ffffff33;
+  border-radius: 8px;
+}
+.home-upload .reference-grid:has(.reference-tile) .add-reference > span {
+  display: none;
+}
+
+/* 描述区：输入可自动增高，优化与字数在其下方，操作行固定在右下角。 */
+.home-composer-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
 }
 .home-prompt {
   flex: 1;
 }
+.home-prompt.text-field {
+  gap: 0;
+}
 .home-composer .home-prompt .textarea {
+  width: 100%;
   height: auto;
-  min-height: 138px;
+  min-height: 82px;
   max-height: 360px;
-  padding: 10px 12px;
+  padding: 4px 0 8px;
   overflow-y: auto;
   resize: none;
   border: 0;
-  border-radius: 12px;
+  border-radius: 0;
   outline: none;
   box-shadow: none;
   background: transparent;
+  caret-color: var(--accent);
   font: 400 14px / 21px var(--font-sans);
 }
-/* 输入内容独占第一行，操作区始终在其下方，不与文字叠放。 */
 .home-composer .home-prompt .prompt-editor {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -50,38 +214,26 @@
 }
 .home-composer .home-prompt .prompt-editor[data-auto-grow][data-count] .textarea {
   grid-column: 1 / -1;
-  padding-bottom: 10px;
+  padding-bottom: 8px;
 }
 .home-composer .home-prompt .prompt-optimize {
   position: static;
   grid-row: 2;
   grid-column: 1;
   min-width: 0;
-  margin-left: 4px;
+  margin-left: -8px;
 }
 .home-composer .home-prompt .prompt-meta {
   position: static;
   grid-row: 2;
   grid-column: 2;
   justify-self: end;
-  margin-right: 12px;
 }
 .home-composer .home-prompt .prompt-optimize[data-confirming="true"] {
   grid-column: 1 / -1;
-  margin-right: 4px;
-}
-@media (max-width: 767px) {
-  .home-composer .home-prompt .prompt-editor .textarea {
-    max-height: 260px;
-    font-size: 16px;
-  }
-}
-.home-composer:focus-within {
-  border-color: #ffffff38;
-  outline: none;
 }
 .home-composer .home-prompt .textarea::placeholder {
-  color: #ffffff85;
+  color: #ffffff66;
   font-weight: var(--weight-regular);
   opacity: 1;
 }
@@ -89,85 +241,75 @@
   outline: none;
   box-shadow: none;
 }
-/* The settings pill owns the row centre; the submit action docks to the right. */
 .home-composer-tools {
   display: flex;
   align-items: center;
-  justify-content: center;
-  position: relative;
-  gap: 8px;
-  min-height: 36px;
-  margin-top: 12px;
+  justify-content: flex-end;
+  gap: 12px;
+  min-height: 40px;
 }
-/* The chevron turns over when the settings popover opens, matching the sidebar. */
 .home-settings-chevron {
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
-  flex: none;
-  transition: transform 160ms ease;
+  color: #ffffffcc;
+  transition: transform 200ms ease;
 }
 .home-settings-trigger[aria-expanded="true"] .home-settings-chevron {
   transform: rotate(180deg);
 }
-@media (prefers-reduced-motion: reduce) {
-  .home-settings-chevron {
-    transition: none;
-  }
-}
+/* 设置胶囊：40px 透明底，悬停才出现浅底，与 vidmuse 的“时长／设置”胶囊一致。 */
 .home-settings-trigger.button {
-  height: 32px;
-  padding: 0 var(--space-3);
-  background: #ffffff14;
-  box-shadow: inset 0 0 0 1px #ffffff0f;
-  color: #e4e4e8;
+  height: 40px;
+  min-width: 0;
+  padding: 0 16px;
+  gap: 8px;
   border: 0;
   border-radius: 999px;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  gap: var(--space-2);
-  line-height: var(--leading-sm);
+  background: transparent;
+  box-shadow: none;
+  color: #fff;
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-base);
+  backdrop-filter: blur(15px);
 }
+/* “开始创作”用 Lycobo 生成按钮：青柠→薄荷渐变胶囊、#142000 字；未填写时降低不透明度。 */
 .home-submit.button {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
-  padding: 0;
+  height: 40px;
+  min-width: 0;
+  padding: 10px 20px;
+  gap: 4px;
   border: 0;
-  border-radius: 50%;
-  background: linear-gradient(120deg, #a8ff0026 0%, #54e6a526 100%);
-  box-shadow: inset 0 0 0 1px #a8ff0033;
-  color: #a8ff00b3;
+  border-radius: 28px;
+  background: var(--app-primary-gradient);
+  box-shadow: none;
+  color: var(--accent-foreground);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: 20px;
   transition:
-    filter 160ms ease,
+    opacity 160ms ease,
     box-shadow 160ms ease;
 }
-/* Idle keeps a brand tint rather than the shared disabled fade, so the action reads as ours. */
 .home-submit.button:is(:disabled, [data-disabled="true"]) {
-  opacity: 1;
-}
-.home-submit.button[data-active="true"] {
-  background: var(--app-primary-gradient);
-  box-shadow: 0 6px 20px -6px #a8ff0066;
-  color: var(--accent-foreground);
+  opacity: 0.4;
 }
 .home-submit.button[data-active="true"]:is(:hover, [data-hovered="true"]) {
   background: var(--app-primary-gradient);
-  box-shadow: 0 0 20px #a8ff0059;
+  box-shadow: var(--accent-glow);
   filter: brightness(1.04);
 }
+
+/* 模型和画面设置弹层（主图制作模式）。 */
 .home-settings.popover {
   width: fit-content;
   min-width: min(560px, calc(100vw - 32px));
   max-width: min(640px, calc(100vw - 32px));
   padding: 19px 21px;
   border: 0;
-  border-radius: 18px;
-  background: #272727;
+  border-radius: 20px;
   color: #ddd;
 }
 .home-settings .popover__dialog {
@@ -254,7 +396,7 @@
   padding: 3px;
   border: 0;
   border-radius: 20px;
-  background: #343434;
+  background: var(--fill-soft);
   margin-bottom: var(--space-3);
 }
 .home-settings-options .toggle-button-group:last-child {
@@ -265,7 +407,7 @@
   min-width: 0;
   height: 32px;
   border: 0;
-  border-radius: 18px;
+  border-radius: 999px;
   background: transparent;
   color: #aaa;
   padding: var(--space-1);
@@ -273,7 +415,7 @@
   line-height: var(--leading-sm);
 }
 .home-settings-options .toggle-button[data-selected] {
-  background: #505050;
+  background: var(--studio-control-selected);
   color: #eee;
   box-shadow: none;
 }
@@ -286,14 +428,13 @@
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: #505050;
+  background: var(--studio-control-selected);
   pointer-events: none;
 }
-.home-ratio-track .toggle-button {
+/* 比例格按类名匹配（不依赖界面语言）：48px 方格，图标在上、比例在下。 */
+.home-settings-options .home-ratio-track .toggle-button {
   flex: 0 0 48px;
   scroll-snap-align: start;
-}
-.home-settings-options [aria-label="画面比例"] .toggle-button {
   border-radius: 12px;
   height: 48px;
   min-height: 48px;
@@ -305,7 +446,13 @@
   position: relative;
   margin-bottom: 14px;
 }
+/* 轨道底色放在外层，选项渐隐时底色保持完整。 */
+.home-settings-options .home-ratio-pager {
+  border-radius: 16px;
+  background: var(--fill-soft);
+}
 .home-settings-options .home-ratio-track {
+  background: transparent;
   gap: 4px;
   padding: 4px;
   scroll-padding-inline: 4px;
@@ -336,13 +483,13 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: #4a4a4a;
+  background: var(--fill-selected);
   color: #ddd;
-  box-shadow: 0 2px 8px #00000066;
+  box-shadow: var(--shadow-sm);
   z-index: 2;
 }
 .home-ratio-arrow.button:hover {
-  background: #555;
+  background: var(--fill-bright);
 }
 .home-ratio-arrow-left {
   left: 6px;

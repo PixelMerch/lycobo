@@ -1,6 +1,8 @@
 import type Konva from "konva";
 import { useEffect, useRef, useState } from "react";
 import { Circle, Group, Layer, Rect, Stage, Text, Transformer } from "react-konva";
+import { useMessages } from "../../../i18n/messages";
+import { imageWorkspaceMessages } from "../image-workspace-messages";
 import { constrainRegion, type RepairRegion } from "./local-repair-state";
 
 type Point = { x: number; y: number };
@@ -125,9 +127,8 @@ function Region({
         scaleY={1 / scale}
         listening={false}
       >
-        {/* Neutral dark chip: the number stays legible over both light and dark
-         * photos without adding a second brand accent to the canvas. */}
-        <Circle radius={12} fill="#17171be6" stroke="#ffffff4d" strokeWidth={1} />
+        {/* 中性深色圆片：编号在浅色和深色照片上都清楚，画布上不再多一种品牌色。 */}
+        <Circle radius={12} fill="#171717e6" stroke="#ffffff4d" strokeWidth={1} />
         <Text
           text={String(number)}
           x={-12}
@@ -142,7 +143,9 @@ function Region({
   );
 }
 
+/** 局部编辑画布：显示原图并绘制、选择和拖动修改区域。 */
 export function RepairCanvas(props: Props) {
+  const t = useMessages(imageWorkspaceMessages);
   const { width, height, regions, selected, tool, disabled, onSelect, onChange, interactive } =
     props;
   const hand = tool === "hand";
@@ -154,7 +157,7 @@ export function RepairCanvas(props: Props) {
       ref={container}
       data-tool={hand ? "hand" : tool}
       data-interactive={interactive && !hand ? "true" : "false"}
-      aria-label="局部编辑画布"
+      aria-label={t.editCanvas}
     >
       <Stage
         width={viewport.width}

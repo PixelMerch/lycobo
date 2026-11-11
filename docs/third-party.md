@@ -15,8 +15,16 @@
 来源和准确 SHA 见 .agents/skills-lock.json，未经审查不变更原始材料。
 `apps/web/public/studio` 下的样例图由内置 image_gen 生成，不代表真实客户商品或生成结果；家纺裂变视角示例见[视角示例](textile-view-examples.md)。参考站研究不构成品牌素材授权。
 
-## React Bits 视觉效果
+## React Bits Silk
 
-首页图片背景参考[React Bits Grid Motion](https://www.reactbits.dev/backgrounds/grid-motion)的倾斜图片墙与交替漂移，来源[DavidHDev/react-bits](https://github.com/DavidHDev/react-bits/tree/4dc7b5b7772e1217c8fb8d2a7aa074302180e5b4/src/ts-default/Backgrounds/GridMotion)，核对commit `4dc7b5b7772e1217c8fb8d2a7aa074302180e5b4`。本地适配在`apps/web/src/features/home/home-grid-motion.tsx`及同名CSS中：保留上游行数、比例、间隔、圆角、角度、倾斜、速度、方向、鼠标视差、提亮、暗化、渐隐和灰度参数；限定为本站已有商品示例并铺在首页创作区后方，不提供编辑工具。适配严格索引检查、稳定节点key、页面隐藏暂停、动态减少运动偏好，以及顶部不渐隐以覆盖Header。所有页面参数由`react-bit-config.ts`提供。按需加载，无新增运行时依赖。首页旧Dot Grid与Rotating Text已移除，不影响图片详情的独立点阵实现。
+首页首屏的丝绸背景改编自 [React Bits Silk](https://reactbits.dev/backgrounds/silk)，来源 [DavidHDev/react-bits](https://github.com/DavidHDev/react-bits/tree/ed33ebe4acfe29e60fb759bcccc70a138ce2dcef/src/ts-default/Backgrounds/Silk)，固定 commit `ed33ebe4acfe29e60fb759bcccc70a138ce2dcef`。代码位于 `apps/web/src/features/home/silk/`：着色器算法保留原样，只去掉浅色模式、边缘渐隐与随机偏移；组件按本仓库规则重写为着色器、渲染器、动画状态与组件四个模块，去掉类型断言，增加配色平滑过渡、页签切换涟漪、每次挂载新建画布（避免复用已释放的 WebGL 上下文）与像素比上限，未增加第三方运行时依赖。
 
-上游采用MIT + Commons Clause，版权David Haz（2026）。完整许可保留在[React Bits许可](licenses/react-bits.md)：允许作为应用、网站或产品的一部分使用，不允许出售或重新分发组件本身／组件包。本站仅将其用于首页视觉，不提供React Bits组件或工具分发服务。图片为本站已有本地AI示例，来源说明仍由各示例文档维护。
+上游采用 MIT + Commons Clause，版权 David Haz (2026)。完整许可保留在 [React Bits 许可](licenses/react-bits.md)：允许作为应用、网站或产品的一部分使用，不允许出售或重新分发组件本身／组件包。本站仅将其用于首页背景，不提供 React Bits 组件或工具分发服务。
+
+## 阿里巴巴普惠体 3.0
+
+用户于2026-11-10确认主站中英文统一使用阿里巴巴普惠体3.0，替换思源黑体。官方字体文件版本3.01，使用55 Regular、65 Medium、75 SemiBold、85 Bold，对应400／500／600／700。源文件从[阿里巴巴字体官网](https://www.alibabafonts.com/)提供的字体地址获取，SHA256固定在 `scripts/fonts/subsets.json`；四个字重均保留源字体版权与排版元数据，转换为同源加载的字符切片WOFF2，不附带完整TTF，不依赖字体CDN。来源及[官方法律声明](https://www.yuque.com/yiguang-wkqc2/hgpff0/nus9wiinq4aeiegy)见 `apps/web/public/fonts/alibaba-puhuiti-3/NOTICE.txt`，生成与验证见[字体维护](fonts.md)。
+
+## Logo 图形与定制字标
+
+2026-11-10 用户确认保留 A「显影」图形，采用独立几何绘制的工具风格字标，名称为 Lycobo，去掉探索稿的 AI 标签。c／o／b 共用圆角矩形构造；Logo 不再使用第三方字体轮廓，也不加载字体文件。正文仍使用上述普惠体自托管切片，相关字体来源与授权记录继续保留。

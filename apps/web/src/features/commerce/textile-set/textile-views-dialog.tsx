@@ -4,8 +4,12 @@ import { type RefObject, useEffect, useRef, useState } from "react";
 import "../../../components/overlays/dialog-close.css";
 import "../../../components/overlays/confirm-dialog.css";
 import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
+import { textileMessages } from "./textile-messages";
+import { textileViewMessages } from "./textile-view-messages";
 import { type TextileViewId, textileViewImages, textileViews } from "./textile-views";
 
+/** 选择裂变视角的弹层：多选后确认，可重置为当前已选。 */
 export function TextileViewsDialog({
   anchorRef,
   triggerRef,
@@ -20,10 +24,11 @@ export function TextileViewsDialog({
   onClose: () => void;
 }) {
   const [pending, setPending] = useState(selected);
+  const t = useMessages(textileMessages);
+  const viewNames = useMessages(textileViewMessages);
   const popoverRef = useRef<HTMLElement>(null);
   useEffect(() => {
-    // Non-modal React Aria popovers dismiss on blur, but blank areas do not move focus.
-    // Keep its keyboard/focus behavior and also dismiss pointer presses outside.
+    // 非模态弹层在失焦时关闭，但点空白处不会移动焦点；保留键盘与焦点行为，另外让外部按下也关闭它。
     function dismissOutside(event: PointerEvent) {
       const path = event.composedPath();
       if (
@@ -49,21 +54,21 @@ export function TextileViewsDialog({
     >
       <Popover.Dialog className="textile-views-dialog">
         <div className="textile-views-header">
-          <Popover.Heading className="textile-views-title">裂变类型</Popover.Heading>
+          <Popover.Heading className="textile-views-title">{t.viewTypes}</Popover.Heading>
           <Button
             isIconOnly
             variant="tertiary"
             className="dialog-close"
-            aria-label="关闭裂变类型"
+            aria-label={t.closeViews}
             onPress={onClose}
           >
             <UiIcon icon={IconX} size="action" />
           </Button>
         </div>
         <div className="textile-views-body">
-          <p className="textile-view-count">已选 {pending.length} 个视角</p>
+          <p className="textile-view-count">{t.viewsSelected(pending.length)}</p>
           <ToggleButtonGroup
-            aria-label="裂变视角"
+            aria-label={t.views}
             className="textile-view-grid"
             selectionMode="multiple"
             selectedKeys={pending}
@@ -76,7 +81,7 @@ export function TextileViewsDialog({
                 key={view.id}
                 id={view.id}
                 className="textile-view-card"
-                aria-label={view.name}
+                aria-label={viewNames[view.id]}
               >
                 <span className="textile-view-example" aria-hidden="true">
                   {textileViewImages[view.id] && (
@@ -92,7 +97,7 @@ export function TextileViewsDialog({
                   )}
                 </span>
                 <span className="textile-view-copy">
-                  <strong>{view.name}</strong>
+                  <strong>{viewNames[view.id]}</strong>
                 </span>
                 {pending.includes(view.id) && (
                   <span className="textile-view-check">
@@ -110,7 +115,7 @@ export function TextileViewsDialog({
             className="confirm-dialog__cancel"
             onPress={() => setPending([])}
           >
-            重置
+            {t.reset}
           </Button>
           <Button
             variant="primary"
@@ -121,7 +126,7 @@ export function TextileViewsDialog({
               onClose();
             }}
           >
-            确认
+            {t.confirm}
           </Button>
         </div>
       </Popover.Dialog>

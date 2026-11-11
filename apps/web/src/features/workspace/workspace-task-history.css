@@ -54,7 +54,7 @@
   padding: var(--space-4);
   border: 0;
   border-radius: 20px;
-  background: #17171b;
+  background: #171717;
 }
 /* Task identity uses spacing; output parameters share symmetric dividers. */
 .unified-workspace .generation-job .generation-meta {
@@ -79,9 +79,9 @@
   margin-inline: 6px;
 }
 .unified-workspace .generation-job .model-tag {
-  background: color-mix(in srgb, var(--tool-accent) 15%, transparent);
-  color: var(--tool-soft);
-  font-weight: var(--weight-semibold);
+  background: var(--fill-medium);
+  color: #ffffff;
+  font-weight: var(--weight-medium);
 }
 .unified-workspace .generation-job :is(.model-tag, .prompt-toggle.button) {
   font-size: 11px;
@@ -159,7 +159,7 @@
 }
 .unified-workspace .generation-placeholder:not(.generation-failed) {
   border: 0;
-  background: #1c1c21;
+  background: var(--fill-faint);
 }
 .unified-workspace .generation-results:not([data-count="1"]) .generation-failure-message {
   font-size: var(--text-xs);
@@ -176,15 +176,15 @@
   max-width: calc(100% - 12px);
   padding: 1px 6px;
   border-radius: 6px;
-  background: #0f0f12cc;
-  color: #f3f1f7;
+  background: #0f0f0fcc;
+  color: #f2f2f2;
 }
 .unified-workspace .generation-results > div:has(> .textile-result-view) .generation-failed {
   padding: 30px 8px 8px;
 }
 .history-batch-progress {
   margin: 0 0 0 auto;
-  color: #d9d7de;
+  color: #d8d8d8;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
   font-variant-numeric: tabular-nums;
@@ -198,12 +198,12 @@
 .history-batch-toggle.button {
   justify-self: center;
   gap: 6px;
-  color: #d9d7de;
-  background: #202026;
+  color: #d8d8d8;
+  background: var(--fill-medium);
 }
 .history-batch-toggle.button[data-hovered="true"] {
   color: #ffffff;
-  background: #2a2a31;
+  background: var(--fill-strong);
 }
 @media (max-width: 767px) {
   .history-batch-progress {
@@ -224,7 +224,7 @@
   .unified-workspace > .composer-panel {
     grid-row: 1 / span 3;
   }
-  .workspace-history-heading {
+  :is(.workspace-tool-dock, .workspace-history-heading) {
     grid-row: 1 / span 3;
   }
   .unified-workspace > .history-rail {
@@ -233,7 +233,7 @@
   }
 }
 @media (max-width: 1023px) {
-  .workspace-history-heading {
+  .workspace-tool-dock {
     grid-column: 1 / -1;
     grid-row: 1 / span 4;
   }
@@ -254,7 +254,7 @@
     --workspace-view-switch-height: 56px;
     grid-template-columns: minmax(0, 1fr);
   }
-  .workspace-history-heading {
+  .workspace-tool-dock {
     gap: 12px;
     grid-row: 1 / span 3;
   }

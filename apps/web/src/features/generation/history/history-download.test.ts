@@ -38,8 +38,12 @@ function job(status = "partially_failed") {
   });
 }
 it("archives only successful originals in view order without altering their bytes", async () => {
-  const entries = historyDownloadEntries(job());
+  const entries = historyDownloadEntries(job(), "zh-CN");
   expect(entries.map((entry) => entry.name)).toEqual(["01-正面.png", "03-面料特写.png"]);
+  expect(historyDownloadEntries(job(), "en").map((entry) => entry.name)).toEqual([
+    "01-Front.png",
+    "03-Fabric close-up.png",
+  ]);
   const originals = [new Uint8Array([137, 80, 78, 71, 1]), new Uint8Array([137, 80, 78, 71, 2])];
   const reader = vi.fn().mockResolvedValueOnce(originals[0]).mockResolvedValueOnce(originals[1]);
   const zipped = await createHistoryArchive(entries, reader, new AbortController().signal);
@@ -51,17 +55,17 @@ it("archives only successful originals in view order without altering their byte
   expect(reader).toHaveBeenCalledTimes(2);
 });
 it("does not offer bulk downloads for unfinished or single-image jobs", () => {
-  expect(historyDownloadEntries(job("running"))).toEqual([]);
+  expect(historyDownloadEntries(job("running"), "zh-CN")).toEqual([]);
   const single = { ...job(), requested_count: 1 };
-  expect(historyDownloadEntries(single)).toEqual([]);
+  expect(historyDownloadEntries(single, "zh-CN")).toEqual([]);
   const pending = job();
   const first = pending.items[0];
   if (!first) throw new Error("Missing fixture item");
   first.status = "running";
-  expect(historyDownloadEntries(pending)).toEqual([]);
+  expect(historyDownloadEntries(pending, "zh-CN")).toEqual([]);
 });
 it("does not produce an incomplete archive after a failed or cancelled original request", async () => {
-  const entries = historyDownloadEntries(job());
+  const entries = historyDownloadEntries(job(), "zh-CN");
   const reader = vi
     .fn()
     .mockResolvedValueOnce(new Uint8Array([1]))

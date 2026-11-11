@@ -3,14 +3,14 @@ import type {
   ImageGenerationInput,
   ImageJob,
 } from "../../packages/contracts/src/images/image-generation";
-import { mockImageApi, mockImageEvents, modelDisplayNames, modelNames } from "./image-api-fixture";
+import { mockImageApi, mockImageEvents } from "./image-api-fixture";
 
 const png = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",
   "base64",
 );
 
-test("four public models submit at 1.5K, queued results become durable history and library assets", async ({
+test("each main image model submits at 1.5K, queued results become durable history and library assets", async ({
   page,
 }) => {
   await mockImageEvents(page);
@@ -87,21 +87,22 @@ test("four public models submit at 1.5K, queued results become durable history a
     });
   });
   await page.goto("/commerce/create");
-  for (const model of modelNames) {
+  // 主图制作只提供这三个型号：依次切换，每个提交一次。
+  const mainModels = [
+    { id: "gpt-image-2.6", name: "Image 2.6" },
+    { id: "gpt-image-2.5", name: "Image 2.5" },
+    { id: "gpt-image-2", name: "Image 2" },
+  ];
+  for (const model of mainModels) {
     await page.getByRole("button", { name: /创作模型/ }).click();
-    await page
-      .getByRole("option", {
-        name: modelDisplayNames[modelNames.indexOf(model)] ?? model,
-        exact: true,
-      })
-      .click();
-    await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill(`陶瓷杯 ${model}`);
-    await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
+    await page.getByRole("option", { name: model.name, exact: true }).click();
+    await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill(`陶瓷杯 ${model.id}`);
+    await page.getByRole("button", { name: "立即生成", exact: true }).click();
     await expect(page.locator(".generation-job")).toHaveCount(submissions.length);
     await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue("");
-    await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
   }
-  expect(submissions.map((input) => input.model)).toEqual(modelNames);
+  expect(submissions.map((input) => input.model)).toEqual(mainModels.map((model) => model.id));
   expect(
     submissions.every(
       (input) =>
@@ -113,15 +114,15 @@ test("four public models submit at 1.5K, queued results become durable history a
       new CustomEvent("fixture:realtime", { detail: { type: "resync", id: "1" } }),
     ),
   );
-  await expect(page.locator(".generation-results img")).toHaveCount(modelNames.length, {
+  await expect(page.locator(".generation-results img")).toHaveCount(mainModels.length, {
     timeout: 12000,
   });
   await page.reload();
-  await expect(page.locator(".generation-results img")).toHaveCount(modelNames.length);
-  await page.getByRole("link", { name: "素材库", exact: true }).click();
-  await expect(page.locator(".asset-tile img")).toHaveCount(modelNames.length);
+  await expect(page.locator(".generation-results img")).toHaveCount(mainModels.length);
+  await page.goto("/assets");
+  await expect(page.locator(".asset-tile img")).toHaveCount(mainModels.length);
   await page.reload();
-  await expect(page.locator(".asset-tile img")).toHaveCount(modelNames.length);
+  await expect(page.locator(".asset-tile img")).toHaveCount(mainModels.length);
 });
 
 for (const outcome of ["disconnect", "timeout", "auth"] as const) {
@@ -144,7 +145,7 @@ for (const outcome of ["disconnect", "timeout", "auth"] as const) {
     });
     await page.goto("/commerce/create");
     await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("保留同一次提交");
-    await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
+    await page.getByRole("button", { name: "立即生成", exact: true }).click();
     if (outcome === "auth") {
       // 401 发生在业务受理前，现有会话刷新可以安全地用原键自动重试。
       await expect.poll(() => keys.length).toBe(2);
@@ -158,7 +159,7 @@ for (const outcome of ["disconnect", "timeout", "auth"] as const) {
     );
     await page.reload();
     await page.getByRole("button", { name: "确认上次提交", exact: true }).click();
-    await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
     expect(keys).toHaveLength(2);
     expect(keys[0]).toBe(keys[1]);
     expect(bodies[0]).toBe(bodies[1]);
@@ -172,7 +173,7 @@ test("unavailable authentication does not show fabricated history or enable gene
   await page.route("**/api/v1/image-session", (route) => route.fulfill({ status: 401, json: {} }));
   await page.goto("/commerce/create");
   await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("陶瓷杯");
-  await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
   await expect(page.locator(".generation-results img")).toHaveCount(0);
   await expect(page.getByText("登录已过期，请重新登录工作台。").first()).toBeVisible();
 });
@@ -204,11 +205,11 @@ test("reference images are uploaded before submitting their server asset IDs", a
   await page
     .getByLabel(/^(提示词|制作要求)$/, { exact: true })
     .fill("保留杯子外形，放在白色置物架上");
-  await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
+  await page.getByRole("button", { name: "立即生成", exact: true }).click();
   await expect.poll(() => uploaded).toBe(true);
   await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue("");
   await expect(page.locator(".reference-tile")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
 });
 
 test("submission success preserves edits made while the request is pending", async ({ page }) => {
@@ -226,9 +227,9 @@ test("submission success preserves edits made while the request is pending", asy
   });
   await page.goto("/commerce/create");
   await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("提交的商品图");
-  await page.getByRole("button", { name: "生成商品主图", exact: true }).click();
-  await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeDisabled();
-  const submit = page.getByRole("button", { name: "生成商品主图", exact: true });
+  await page.getByRole("button", { name: "立即生成", exact: true }).click();
+  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
+  const submit = page.getByRole("button", { name: "立即生成", exact: true });
   await expect(submit.getByRole("status", { name: "正在提交生图任务" })).toBeVisible();
   await submit.evaluate((node) => {
     if (node instanceof HTMLButtonElement) {
@@ -241,7 +242,7 @@ test("submission success preserves edits made while the request is pending", asy
   await expect(page.getByText("已提交", { exact: true })).toHaveCount(0);
   await page.getByLabel(/^(提示词|制作要求)$/, { exact: true }).fill("下一张商品图的新要求");
   accept?.();
-  await expect(page.getByRole("button", { name: "生成商品主图", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeEnabled();
   await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
     "下一张商品图的新要求",
   );

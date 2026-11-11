@@ -17,7 +17,7 @@ import type { ImageStore } from "@lycoboai/storage/core";
 import type postgres from "postgres";
 import { createApp } from "../../../api/src/app";
 
-/** Paid upstream requests are replaced only in this disposable integration harness. */
+/** 在独立测试库中用模拟供应商验证计划保存、确认生成与权限边界。 */
 export async function verifyVariationPlans(
   repository: ImageRepository,
   sql: postgres.Sql,
@@ -125,6 +125,7 @@ export async function verifyVariationPlans(
     1000 - 20 * imageUnitCredits,
     "Uncertain analysis must not debit image credits",
   );
+  await verifyDeferredReferences(repository, owner, other, asset);
   await sql`delete from model_planners where tool='smart-variation'`;
 }
 
@@ -173,4 +174,51 @@ async function verifyConfirmedVariation(
     ),
     /STATE_CONFLICT/,
   );
+}
+
+/** 验证数量型计划最终绑定真实素材前不扣费，旧计划仍不能替换参考图。 */
+async function verifyDeferredReferences(
+  repository: ImageRepository,
+  owner: Awaited<ReturnType<ImageRepository["provision"]>>,
+  other: Awaited<ReturnType<ImageRepository["provision"]>>,
+  asset: StoredImage,
+) {
+  const input = { description: "并行上传的商品计划", referenceAssetIds: [], referenceCount: 1 };
+  const pending = await repository.variation.begin(owner, input, crypto.randomUUID());
+  const items = [
+    { id: crypto.randomUUID(), title: "商品", prompt: "参考图1，保留商品主体与材质，柔和光线。" },
+  ];
+  await repository.variation.finish(owner, pending.plan.id, items);
+  const plan = await repository.variation.get(owner, pending.plan.id);
+  assert.equal(plan?.referenceCount, 1);
+  const generation = imageGenerationInputSchema.parse({
+    model: "gpt-image-2.5",
+    prompt: input.description,
+    count: 1,
+    referenceAssetIds: [asset.id],
+    variation: { version: 1, planId: pending.plan.id, items },
+  });
+  const balance = (await repository.wallet(owner)).balance;
+  await assert.rejects(
+    repository.create(owner, { ...generation, referenceAssetIds: [] }, crypto.randomUUID()),
+    /REFERENCE_NOT_FOUND/,
+  );
+  await assert.rejects(
+    repository.create(
+      owner,
+      { ...generation, referenceAssetIds: [crypto.randomUUID()] },
+      crypto.randomUUID(),
+    ),
+    /REFERENCE_NOT_FOUND/,
+  );
+  await assert.rejects(
+    repository.create(other, generation, crypto.randomUUID()),
+    /REFERENCE_NOT_FOUND|STATE_CONFLICT/,
+  );
+  assert.equal((await repository.wallet(owner)).balance, balance);
+  const key = crypto.randomUUID();
+  const task = await repository.create(owner, generation, key);
+  assert.equal((await repository.create(owner, generation, key)).replayed, true);
+  assert.equal((await repository.wallet(owner)).balance, balance - imageUnitCredits);
+  assert.deepEqual((await repository.get(owner, task.id))?.input?.referenceAssetIds, [asset.id]);
 }

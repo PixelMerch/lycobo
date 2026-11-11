@@ -26,7 +26,7 @@ export function historyPreviewImages(jobs: ImageJob[]): PreviewImage[] {
   );
 }
 
-/** Keep the open gallery stable while SSE updates the shared history cache. */
+/** 实时事件更新历史缓存时保持已打开的图片预览稳定。 */
 export function HistoryImagePreview({
   images: initialImages,
   assetId,
@@ -34,7 +34,7 @@ export function HistoryImagePreview({
   tool = "create",
 }: {
   images: PreviewImage[];
-  tool?: "create" | "textile" | "variation" | "all";
+  tool?: "create" | "textile" | "variation" | "replica" | "all";
   assetId: string;
   onClose: () => void;
 }) {

@@ -8,6 +8,8 @@ import type { ReferenceImage } from "../../features/generation/studio-state";
 import "./reference-prompt.css";
 import "../studio-control-feedback.css";
 
+import { useMessages } from "../../i18n/messages";
+import { componentsMessages } from "../components-messages";
 import type { PromptReference } from "./reference-prompt-dom";
 import { RichReferencePrompt } from "./rich-reference-prompt";
 import { useReferencePrompt } from "./use-reference-prompt";
@@ -21,7 +23,7 @@ function textPasteHandler(
   };
 }
 
-/** Mentions refer to the current ordered reference list; no files are uploaded here. */
+/** 带 @ 引用的描述输入：引用指向当前按顺序排列的参考图，这里不上传任何文件。 */
 export function ReferencePrompt({
   value: draftValue,
   onChange,
@@ -34,6 +36,7 @@ export function ReferencePrompt({
   maxReferences = 5,
   showCount = false,
   autoGrow = false,
+  autoGrowMinHeight,
   isRequired = false,
   onReferencesInsert,
   optimizeTool,
@@ -49,11 +52,14 @@ export function ReferencePrompt({
   maxReferences?: number;
   showCount?: boolean;
   autoGrow?: boolean;
+  /** 自动增高时空白输入区的最小高度，默认 100px。 */
+  autoGrowMinHeight?: number;
   isRequired?: boolean;
   onReferencesInsert?: (images: ReferenceImage[], prompt: string) => void;
-  /** Shows the AI rewrite control for this tool's prompt. */
+  /** 为这个工具的描述显示 AI 润色入口。 */
   optimizeTool?: PromptOptimizeTool;
 }) {
+  const t = useMessages(componentsMessages);
   const optimizer = usePromptOptimizer({
     value: draftValue,
     onChange,
@@ -71,6 +77,7 @@ export function ReferencePrompt({
     maxLength,
     maxReferences,
     autoGrow,
+    autoGrowMinHeight,
     onReferencesInsert,
   });
   const noteTextPaste = textPasteHandler(optimizeTool, optimizer);
@@ -79,7 +86,7 @@ export function ReferencePrompt({
       <TextField
         isRequired={isRequired}
         className={className}
-        {...(label ? {} : { "aria-label": "创作需求" })}
+        {...(label ? {} : { "aria-label": t.promptLabel })}
       >
         {label && (
           <Label>
@@ -141,6 +148,7 @@ function PromptCount({
   busy: boolean;
   clear: () => void;
 }) {
+  const t = useMessages(componentsMessages);
   return (
     <div className="prompt-meta">
       {length > 0 && (
@@ -148,11 +156,11 @@ function PromptCount({
           variant="ghost"
           size="sm"
           className="prompt-clear"
-          aria-label="清空提示词"
+          aria-label={t.clearPrompt}
           isDisabled={busy}
           onPress={clear}
         >
-          清空
+          {t.clear}
         </Button>
       )}
       <span id={countId} className="prompt-count">
@@ -173,6 +181,7 @@ function PromptMentionPopover({
   maxReferences: number;
   allowHistory: boolean;
 }) {
+  const t = useMessages(componentsMessages);
   const { mention, anchoredMention, setMention, mentionAnchor, usedIds, insert } = editor;
   return (
     <Popover
@@ -188,7 +197,7 @@ function PromptMentionPopover({
         offset={8}
         className="reference-mention-popover"
       >
-        <Popover.Dialog aria-label="引用图片">
+        <Popover.Dialog aria-label={t.insertImage}>
           {mention && (
             <ReferenceMentionOptions
               maxReferences={maxReferences}
@@ -229,6 +238,7 @@ function PromptInput({
   placeholder: string;
   noteTextPaste: (text: string) => void;
 }) {
+  const t = useMessages(componentsMessages);
   if (editor.hasReferences)
     return (
       <RichReferencePrompt
@@ -248,7 +258,7 @@ function PromptInput({
   return (
     <TextArea
       ref={editor.ref}
-      aria-label={label ?? "创作需求"}
+      aria-label={label ?? t.promptLabel}
       aria-labelledby={labelId}
       aria-describedby={countId}
       aria-busy={busy || undefined}

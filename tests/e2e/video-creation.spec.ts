@@ -4,7 +4,7 @@ import { expect, type Page, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
 const png = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",
   "base64",
 );
 for (const width of [390, 1440]) {
@@ -165,12 +165,12 @@ test("video text-only submission is durable, uses the selected duration and does
   await expect(railSpinner).toHaveCSS("width", "16px");
   await expect(railSpinner).toHaveCSS("height", "16px");
   expect(imageSubmissions).toBe(0);
-  await expect(page.locator(".header-balance-value")).toHaveText("100");
+  await expect(page.locator(".header-credits-value")).toHaveText("100");
   await expect(page.getByRole("article", { name: "视频任务：W09VIDEO1" })).toContainText(
     "积分已退回",
     { timeout: 15000 },
   );
-  await expect(page.locator(".header-balance-value")).toHaveText("200");
+  await expect(page.locator(".header-credits-value")).toHaveText("200");
 });
 
 test("an ambiguous video submission retains its immutable idempotency key when the draft changes", async ({
@@ -630,9 +630,10 @@ test("asset grids defer video loading until the video preview opens", async ({ p
   expect(mediaReads).toBe(0);
   const card = page.locator(".asset-tile").filter({ has: tile });
   await expect(tile.locator(".video-cover-play")).toBeVisible();
-  await expect(card.locator(".asset-tile-badge")).toHaveText("视频创作");
   await expect(card.locator(".asset-tile-specs")).toHaveText("768p · 0:10");
-  await expect(card.locator(".asset-tile-meta")).toBeEmpty();
+  // 视频封面只显示规格，不显示来源与时间那一行，也不再贴模型角标。
+  await expect(card.locator(".asset-tile-foot")).toHaveCount(0);
+  await expect(card.locator(".model-tag")).toHaveCount(0);
   await tile.click();
   const preview = page.getByRole("dialog", { name: "视频预览", exact: true });
   await expect(preview.locator("video")).toBeVisible();

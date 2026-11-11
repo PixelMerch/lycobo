@@ -1,9 +1,11 @@
 import { Button } from "@heroui/react";
 import { IconChevronDown } from "@tabler/icons-react";
 import { useEffect, useId, useRef, useState } from "react";
+import { useMessages } from "../i18n/messages";
+import { componentsMessages } from "./components-messages";
 import { UiIcon } from "./ui-icon";
 
-/** History and image details share measured overflow and the same accessible toggle. */
+/** 可展开的长文本：历史与图片详情共用溢出测量和同一个可访问的展开按钮。 */
 export function CollapsibleText({
   text,
   id,
@@ -15,6 +17,7 @@ export function CollapsibleText({
   className: string;
   textContainerClassName?: string;
 }) {
+  const t = useMessages(componentsMessages);
   const generatedId = useId();
   const contentId = id ?? generatedId;
   const paragraph = useRef<HTMLParagraphElement>(null);
@@ -49,7 +52,7 @@ export function CollapsibleText({
           aria-controls={contentId}
           onPress={() => setExpanded(!expanded)}
         >
-          {expanded ? "收起" : "展开全部"}
+          {expanded ? t.collapse : t.expandAll}
           <UiIcon icon={IconChevronDown} size="small" />
         </Button>
       )}

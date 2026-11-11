@@ -10,6 +10,9 @@ describe("登录后的站内跳转", () => {
     "/workspace",
     "/video",
     "/membership",
+    "/en/commerce/create?task=fixture#result",
+    "/zh-CN/assets",
+    "/zh-CN/inspiration?category=product",
   ])("保留目标 %s", (path) => {
     expect(safeLoginReturnTo(path)).toBe(path);
     expect(new URL(loginHref(path), "https://lycobo.invalid").searchParams.get("returnTo")).toBe(
@@ -28,7 +31,17 @@ describe("登录后的站内跳转", () => {
     "/create",
     "/commerce/../../login",
     "/commerce/../../create",
+    "/en/login?returnTo=/en/login",
+    "/zh-CN/commerce/../../login",
+    "/en/api/v1/image-tasks",
+    "/en//example.com",
   ])("拒绝外站、旧路由和登录循环 %s", (path) => {
     expect(safeLoginReturnTo(path)).toBe("/");
+  });
+
+  it("登录地址继承目标语言，不把语言前缀当成返回权限", () => {
+    expect(loginHref("/zh-CN/assets")).toBe("/zh-CN/login?returnTo=%2Fzh-CN%2Fassets");
+    expect(safeLoginReturnTo("/zh-CN/create")).toBe("/");
+    expect(safeLoginReturnTo("/fr/assets")).toBe("/");
   });
 });

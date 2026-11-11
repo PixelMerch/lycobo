@@ -1,5 +1,4 @@
 import { expect, type Page, test } from "@playwright/test";
-import release from "../../release.json" with { type: "json" };
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
 async function signIn(page: Page, account: string) {
@@ -18,7 +17,7 @@ async function signIn(page: Page, account: string) {
 }
 
 for (const width of [1440, 320]) {
-  test(`signed-in account sits at the foot of the navigation and opens its menu upward at ${width}px`, async ({
+  test(`signed-in account opens from the top bar on desktop and the drawer foot on phones at ${width}px`, async ({
     page,
   }) => {
     const account = "13800138000";
@@ -27,43 +26,44 @@ for (const width of [1440, 320]) {
     await page.goto("/commerce/create");
     const draft = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
     await draft.fill("保留正在准备的商品图");
-    // The account stays in navigation; the header only adds shared credits and membership.
-    await expect(page.locator(".topbar .account-trigger")).toHaveCount(0);
+    const desktop = width >= 768;
+    // 桌面账户头像在顶部栏右侧；手机顶部栏只放积分与会员，账户在导航抽屉底部。
+    if (!desktop) await expect(page.locator(".topbar .account-trigger")).toBeHidden();
     await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toHaveCount(0);
     const openNavigation = async () => {
       if (width < 768) await page.getByRole("button", { name: "打开导航", exact: true }).click();
     };
     await openNavigation();
-    const navigation = page.locator(width < 768 ? ".mobile-nav" : ".sidebar");
+    const navigation = page.locator(desktop ? ".topbar" : ".mobile-nav");
     const trigger = navigation.getByRole("button", {
       name: `账户菜单：${account}`,
       exact: true,
     });
-    await expect(trigger.locator(".account-trigger-name")).toHaveText(account);
+    if (desktop) await expect(trigger.locator(".account-trigger-name")).toHaveCount(0);
+    else await expect(trigger.locator(".account-trigger-name")).toHaveText(account);
     await expect(trigger.locator(".account-credits")).toHaveCount(0);
     await expect(trigger.locator(".avatar")).toHaveCount(1);
     await expect(trigger).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-    await expect(navigation.locator(".account-footer")).toHaveCSS("border-top-width", "1px");
+    if (!desktop)
+      await expect(navigation.locator(".account-footer")).toHaveCSS("border-top-width", "1px");
     await expect(page.locator(".credit-pill")).toHaveCount(0);
     if (width < 768) await expect(page.locator(".drawer__backdrop")).toHaveCSS("opacity", "1");
     await navigation
-      .locator(".account-footer")
+      .locator(desktop ? ".account-header" : ".account-footer")
       .screenshot({ path: `/tmp/lycobo-footer-${width}.png` });
-    const updates = navigation.getByRole("button", { name: "更新记录", exact: true });
-    await updates.click();
-    const updatesPanel = page.getByRole("dialog", { name: "最近更新" });
-    await expect(updatesPanel).toBeVisible();
-    await expect(updatesPanel).toHaveCSS("width", `${Math.min(640, width)}px`);
-    await expect(page.locator(".drawer__backdrop").last()).toHaveCSS("opacity", "1");
-    await updatesPanel.screenshot({ path: `/tmp/lycobo-updates-${width}.png` });
-    await expect(updatesPanel.getByText(release.version, { exact: true })).toBeVisible();
-    await expect(updatesPanel.getByText("已更新至当前版本")).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(updatesPanel).toBeHidden();
-    await expect(updates).toBeFocused();
-    await navigation.getByRole("button", { name: /消息（.*未读）/ }).click();
+    // 顶部栏和手机抽屉只保留消息入口，不再有更新记录。
+    await expect(navigation.getByRole("button", { name: /^更新记录/ })).toHaveCount(0);
+    const messages = navigation.getByRole("button", { name: /消息（.*未读）/ });
+    await messages.click();
     const messagesPanel = page.getByRole("dialog", { name: "消息中心" });
+    await expect(messagesPanel).toBeVisible();
+    await expect(messagesPanel).toHaveCSS("width", `${Math.min(640, width)}px`);
+    await expect(page.locator(".drawer__backdrop").last()).toHaveCSS("opacity", "1");
     await expect(messagesPanel.getByText("暂无消息")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(messagesPanel).toBeHidden();
+    await expect(messages).toBeFocused();
+    await messages.click();
     const messageClose = messagesPanel.getByRole("button", { name: "关闭消息中心" });
     await messageClose.hover();
     await expect(messageClose).toHaveCSS("width", "44px");
@@ -100,7 +100,7 @@ for (const width of [1440, 320]) {
     await expect(trigger).toBeFocused();
     await expect(trigger).toHaveCSS("outline-style", "solid");
 
-    // A press opens the menu above the capsule; hovering alone does not.
+    // 按下才展开菜单：桌面在头像下方，手机在抽屉底部入口上方；悬停不展开。
     await trigger.hover();
     await expect(menu).toHaveCount(0);
     await trigger.click();
@@ -108,7 +108,11 @@ for (const width of [1440, 320]) {
     const popover = page.locator(".account-menu");
     await expect(popover).not.toHaveAttribute("data-entering", "true");
     const [menuBox, triggerBox] = [await popover.boundingBox(), await trigger.boundingBox()];
-    expect((menuBox?.y ?? 0) + (menuBox?.height ?? 0)).toBeLessThanOrEqual(triggerBox?.y ?? 0);
+    if (desktop)
+      expect(menuBox?.y ?? 0).toBeGreaterThanOrEqual(
+        (triggerBox?.y ?? 0) + (triggerBox?.height ?? 0),
+      );
+    else expect((menuBox?.y ?? 0) + (menuBox?.height ?? 0)).toBeLessThanOrEqual(triggerBox?.y ?? 0);
     expect(menuBox?.x).toBeGreaterThanOrEqual(0);
     expect((menuBox?.x ?? 0) + (menuBox?.width ?? 0)).toBeLessThanOrEqual(width);
     // Compact menu: the shared balance leads a small card, never a page-sized figure.
@@ -170,11 +174,15 @@ for (const width of [1440, 320]) {
     await expect(trigger).toBeFocused();
 
     await trigger.click();
+    const url = page.url();
     await menu.getByRole("menuitem", { name: "个人作品", exact: true }).click();
-    await expect(page).toHaveURL(/\/assets$/);
-    // Leaving through the menu also closes the mobile navigation drawer.
+    // 个人作品直接打开素材库弹窗，不离开当前页面；手机上同时收起导航抽屉。
+    const library = page.getByRole("dialog", { name: "素材库", exact: true });
+    await expect(library).toBeVisible();
+    expect(page.url()).toBe(url);
     await expect(page.locator(".mobile-nav")).toHaveCount(0);
-    await page.goBack();
+    await page.keyboard.press("Escape");
+    await expect(library).toHaveCount(0);
     await expect(draft).toHaveValue("保留正在准备的商品图");
     await expect
       .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
@@ -187,19 +195,6 @@ for (const width of [1440, 320]) {
     await page.screenshot({ path: `/tmp/lycoboai-account-menu-${width}.png` });
   });
 }
-
-test("the collapsed sidebar keeps the account as its avatar", async ({ page }) => {
-  await signIn(page, "collapsed-fixture");
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/commerce/create");
-  await page.getByRole("button", { name: "收起导航栏", exact: true }).click();
-  const trigger = page.getByRole("button", { name: "账户菜单：collapsed-fixture", exact: true });
-  await expect(trigger.locator(".account-trigger-name")).toBeHidden();
-  await expect(page.locator(".sidebar .account-footer-tools")).toBeHidden();
-  await expect.poll(async () => (await trigger.boundingBox())?.width).toBe(32);
-  await trigger.click();
-  await expect(page.getByRole("menu", { name: "账户菜单：collapsed-fixture" })).toBeVisible();
-});
 
 test.describe("touch", () => {
   test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
@@ -224,57 +219,76 @@ test.describe("touch", () => {
   });
 });
 
-test("account news slides from the right and respects reduced motion", async ({ page }) => {
+/** 等页面收到指定事件后逐帧记录消息面板的位置和遮罩不透明度，直到面板卸载。 */
+function sampleDrawer(page: Page, eventType: "click" | "keydown") {
+  return page.evaluate(async (type) => {
+    await new Promise<void>((resolve) =>
+      document.addEventListener(type, () => resolve(), { once: true, capture: true }),
+    );
+    const samples: { left: number; opacity: string }[] = [];
+    const start = performance.now();
+    while (performance.now() - start < 800) {
+      await new Promise(requestAnimationFrame);
+      const panel = document.querySelector(".account-news-panel");
+      const backdrop = document.querySelector(".account-news-backdrop");
+      if (panel && backdrop)
+        samples.push({
+          left: panel.getBoundingClientRect().left,
+          opacity: getComputedStyle(backdrop).opacity,
+        });
+      else if (samples.length) break;
+    }
+    return samples;
+  }, eventType);
+}
+
+test("message drawer slides as solid glass and closes from where it is", async ({ page }) => {
   await signIn(page, "13800138000");
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/commerce/create");
-  const motion = page.evaluate(async () => {
-    await new Promise<void>((resolve) =>
-      document.addEventListener("click", () => resolve(), { once: true, capture: true }),
-    );
-    const samples = [];
-    const start = performance.now();
-    while (performance.now() - start < 600) {
-      await new Promise(requestAnimationFrame);
-      const element = document.querySelector(".account-news-panel");
-      if (element)
-        samples.push({
-          left: element.getBoundingClientRect().left,
-          animations: (element.closest(".drawer__content")?.getAnimations() ?? []).map((item) => ({
-            duration: item.effect?.getTiming().duration,
-            state: item.playState,
-          })),
-        });
-    }
-    return samples;
-  });
-  await page.getByRole("button", { name: "更新记录", exact: true }).click();
-  const panel = page.getByRole("dialog", { name: "最近更新" });
-  const samples = await motion;
-  expect(
-    samples.some((sample) =>
-      sample.animations.some((animation) => Number(animation.duration) >= 400),
-    ),
-  ).toBe(true);
-  expect(samples.some((sample) => sample.left > 801)).toBe(true);
-  expect(samples.at(-1)?.left).toBeCloseTo(800, 0);
+  const opener = page.getByRole("button", { name: /消息（.*未读）/ });
+  const panel = page.getByRole("dialog", { name: "消息中心" });
+  // 遮罩全程保持不透明：面板是它的子元素，遮罩半透明会让毛玻璃透出清晰页面、结束时才突然变磨砂。
+  const opening = sampleDrawer(page, "click");
+  await opener.click();
+  const enter = await opening;
+  expect(enter.some((sample) => sample.left > 801)).toBe(true);
+  expect(enter.at(-1)?.left).toBeCloseTo(800, 0);
+  expect(enter.every((sample) => sample.opacity === "1")).toBe(true);
+  // 关闭是看得见的滑出，不是跟着遮罩一起淡没。
+  const closing = sampleDrawer(page, "keydown");
   await page.keyboard.press("Escape");
-  const exit = await panel.evaluate((element) => {
-    const content = element.closest(".drawer__content");
-    const animation = content?.getAnimations()[0];
-    return {
-      exiting: content?.getAttribute("data-exiting"),
-      duration: animation?.effect?.getTiming().duration,
-    };
-  });
-  expect(exit.exiting).toBe("true");
-  expect(Number(exit.duration)).toBeGreaterThanOrEqual(300);
+  const exit = await closing;
+  expect(exit.some((sample) => sample.left > 900 && sample.left < 1440)).toBe(true);
+  expect(exit.every((sample) => sample.opacity === "1")).toBe(true);
   await expect(panel).toBeHidden();
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.getByRole("button", { name: /消息（.*未读）/ }).click();
-  const messages = page.getByRole("dialog", { name: "消息中心" });
-  await expect(messages).toHaveCSS("transition-duration", "0s");
-  await expect(messages).toHaveCSS("translate", "none");
+
+  // 进场停在 120ms 时关闭：从当前位置滑出，不先跳回完全打开的位置，也不瞬间消失。
+  await opener.click();
+  await expect(panel).toBeVisible();
+  await page.evaluate(() => {
+    const entering = document.querySelector(".account-news-content")?.getAnimations() ?? [];
+    if (!entering.length) throw new Error("The drawer finished entering before the check");
+    for (const animation of entering) {
+      animation.pause();
+      animation.currentTime = 120;
+    }
+  });
+  const closingEarly = sampleDrawer(page, "keydown");
   await page.keyboard.press("Escape");
-  await expect(messages).toBeHidden();
+  await page.evaluate(() => {
+    for (const animation of document.querySelector(".account-news-content")?.getAnimations() ?? [])
+      animation.play();
+  });
+  const early = await closingEarly;
+  expect(early.some((sample) => sample.left < 1440)).toBe(true);
+  expect(early.every((sample) => sample.left > 820)).toBe(true);
+  await expect(panel).toBeHidden();
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await opener.click();
+  await expect(panel).toHaveCSS("transition-duration", "0s");
+  await expect(panel).toHaveCSS("translate", "none");
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeHidden();
 });

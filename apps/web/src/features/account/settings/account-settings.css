@@ -1,10 +1,10 @@
 @import "./account-settings-groups.css";
+@import "./account-plan-usage.css";
 
-/* Settings: frosted dialog, side section list on wide screens, grouped cards on the right. */
-.account-dialog.account-settings-dialog.modal__dialog {
-  width: min(800px, calc(100vw - 48px));
-  height: min(640px, calc(100dvh - 48px));
-}
+/*
+ * 账户设置：宽屏左侧栏依次为身份、分区列表与底部的退出登录，
+ * 右侧分区面板单独滚动、顶部居中显示分区标题；手机改为顶部页签。
+ */
 .settings-tabs .tabs__tab {
   gap: var(--space-2);
 }
@@ -13,14 +13,62 @@
   gap: var(--space-6);
   margin-top: var(--space-2);
 }
-.settings-tabs[data-orientation="vertical"] > .tabs__list-container {
+.settings-tabs[data-orientation="vertical"] > .settings-sidebar {
+  display: flex;
   flex: none;
-  width: 176px;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 220px;
+  min-height: 0;
+}
+.settings-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 4px var(--space-4);
+  border-bottom: 1px solid var(--glass-card-edge);
+}
+.settings-identity-avatar,
+.settings-identity-avatar .avatar__fallback {
+  flex: none;
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+}
+.settings-identity-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.settings-identity-text strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
+  font-weight: var(--weight-semibold);
+}
+.settings-identity-text span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #ffffff99;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-variant-numeric: tabular-nums;
+}
+.settings-tabs[data-orientation="vertical"] .tabs__list-container {
+  flex: 1;
+  width: 100%;
   margin: 0;
   border: 0;
   background: transparent;
 }
-.settings-tabs[data-orientation="vertical"] > .tabs__list-container .tabs__list {
+.settings-tabs[data-orientation="vertical"] .tabs__list-container .tabs__list {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -30,7 +78,7 @@
 }
 .settings-tabs[data-orientation="vertical"] .tabs__tab {
   justify-content: flex-start;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 12px;
   border-radius: 12px;
   color: var(--shell-nav-foreground);
@@ -43,18 +91,37 @@
 .settings-tabs[data-orientation="vertical"] .tabs__tab[data-selected="true"] {
   color: #fff;
 }
-/* The selection indicator becomes the active row fill instead of an underline. */
+/* 选中分区用整行浅底标出，不用下划线。 */
 .settings-tabs[data-orientation="vertical"] .tabs__indicator {
   inset: 0;
   height: auto;
   border-radius: 12px;
   background: var(--shell-nav-active);
 }
-/* Panel scrolls on its own; a hairline separates it from the section list. */
+.settings-sidebar-logout.button {
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  gap: var(--space-2);
+  border-radius: 12px;
+  color: #ffffffb3;
+}
+.settings-sidebar-logout.button:is(:hover, [data-hovered="true"]) {
+  color: #fff;
+}
+/* 右侧面板单独滚动，与左侧栏之间一条细线。 */
 .settings-tabs[data-orientation="vertical"] > .tabs__panel {
   margin: 0 calc(var(--account-center-padding) * -1) calc(var(--account-center-padding) * -1) 0;
   padding: 0 var(--account-center-padding) var(--account-center-padding) var(--space-6);
   border-left: 1px solid var(--glass-card-edge);
+}
+.settings-panel-title {
+  margin: 0 0 var(--space-6);
+  text-align: center;
+  font-size: var(--text-xl);
+  line-height: var(--leading-xl);
+  font-weight: var(--weight-semibold);
 }
 .settings-tabs[data-orientation="horizontal"] .tabs__tab .ui-icon {
   display: none;
@@ -85,13 +152,6 @@
   justify-content: flex-end;
 }
 @media (max-width: 767px) {
-  .account-dialog.account-settings-dialog.modal__dialog {
-    width: calc(100vw - 24px);
-    height: min(640px, calc(100dvh - 24px));
-  }
-  .account-settings-dialog .account-center-tabs > .tabs__list-container {
-    margin-top: 0;
-  }
   .account-password-form {
     padding: var(--space-3);
   }

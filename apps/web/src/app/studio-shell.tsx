@@ -1,102 +1,72 @@
-import { Button, Drawer, Tooltip } from "@heroui/react";
-import {
-  IconFolderSparkle,
-  IconLayoutSidebar,
-  IconLayoutSidebarRight,
-  IconMenu2,
-  IconShoppingBagSearch,
-  IconSmartHome,
-  IconX,
-} from "@tabler/icons-react";
-import { motion, useReducedMotion } from "motion/react";
-import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
-import { Navigate, Outlet, useLocation } from "react-router";
+import { Button, Drawer } from "@heroui/react";
+import { IconFolderSparkle, IconMenu2, IconSmartHome, IconX } from "@tabler/icons-react";
+import { useState } from "react";
+import { Navigate, Outlet } from "react-router";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
 import { AccountOverlayHost } from "../features/account/account-overlays";
 import { AccountMenu, HeaderLogin } from "../features/account/menu/account-menu";
 import { HeaderBenefits } from "../features/account/menu/header-benefits";
+import { AccountMessages } from "../features/account/notifications/account-messages";
+import { AssetLibraryHost } from "../features/assets/asset-library-host";
+import { useOpenAssetLibrary } from "../features/assets/asset-library-store";
 import { useEnterpriseSession } from "../features/auth/auth-client";
 import { loginHref } from "../features/auth/login-navigation";
 import { useImageEvents } from "../features/generation/use-image-events";
+import { inspirationLibraryPath } from "../features/home/inspiration-path";
+import { legalPaths } from "../features/legal/legal-document";
+import {
+  shareProductReference,
+  visibleWorkspaceTools,
+} from "../features/workspace/workspace-state";
+import { workspaceToolMessages } from "../features/workspace/workspace-tool-messages";
+import { toolIcons } from "../features/workspace/workspace-tool-symbol";
+import { useMessages } from "../i18n/messages";
+import { useAppLocation } from "../i18n/use-localized-navigation";
+import { CommerceNavMenu } from "./commerce-nav-menu";
+import { LanguageMenu } from "./language-menu";
 import { PageLoading } from "./page-loading";
+import { shellMessages } from "./shell-messages";
+import { useWindowScrolled } from "./use-window-scrolled";
 import "../styles/brand.css";
 
-export interface StudioShellContext {
-  setHomeHeaderOpaque: Dispatch<SetStateAction<boolean>>;
-}
+// 首页与用户协议、隐私政策不需要登录，其他页面未登录时先去登录。
+const publicPaths = new Set<string>([
+  "/",
+  inspirationLibraryPath,
+  legalPaths.terms,
+  legalPaths.privacy,
+]);
 
 /** 组合应用导航和业务区域，未登录时转往独立登录页面。 */
 export function StudioShell() {
-  const location = useLocation();
+  const location = useAppLocation();
   const { pathname } = location;
   const inWorkspace = isWorkspacePath(pathname);
   const session = useEnterpriseSession();
   const signedIn = !!session.data;
-  const protectedRoute = pathname !== "/";
+  const protectedRoute = !publicPaths.has(pathname);
   const routeNeedsLogin = protectedRoute && !signedIn;
-  const [homeHeaderOpaque, setHomeHeaderOpaque] = useState(false);
+  const scrolled = useWindowScrolled();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const reduceMotion = useReducedMotion();
-  const sidebarWidth = useSidebarWidth(sidebarCollapsed);
-  const nav = (
-    <StudioNavigation
-      collapsed={sidebarCollapsed}
-      inWorkspace={inWorkspace}
-      onNavigate={() => setMenuOpen(false)}
-    />
-  );
+  const t = useMessages(shellMessages);
   if (routeNeedsLogin && !session.isPending)
-    return <Navigate to={loginHref(`${pathname}${location.search}${location.hash}`)} replace />;
+    return (
+      <Navigate
+        to={loginHref(`${location.pathnameWithLocale}${location.search}${location.hash}`)}
+        replace
+      />
+    );
   return (
-    <motion.div
-      className="studio-app"
-      data-sidebar-collapsed={sidebarCollapsed}
-      data-home-header-opaque={pathname === "/" && homeHeaderOpaque}
-      animate={{ "--sidebar-width": sidebarWidth }}
-      transition={reduceMotion ? { duration: 0 } : { duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-    >
-      <aside className="sidebar" aria-label="主导航">
-        <div className="sidebar-header">
-          <RouteLink to="/" className="brand">
-            <img
-              className="lycobo-logo"
-              src="/brand/lycobo-product-pilot.svg"
-              alt="Lycobo"
-              width="120"
-              height="24"
-            />
-          </RouteLink>
-          <Button
-            isIconOnly
-            size="sm"
-            variant="ghost"
-            className="sidebar-toggle"
-            aria-label={sidebarCollapsed ? "展开导航栏" : "收起导航栏"}
-            aria-expanded={!sidebarCollapsed}
-            aria-controls="studio-sidebar-navigation"
-            onPress={() => setSidebarCollapsed((collapsed) => !collapsed)}
-          >
-            <img
-              className="sidebar-compact-mark"
-              src="/brand/lycobo-product-pilot-mark.svg"
-              alt=""
-              width="24"
-              height="24"
-            />
-            <UiIcon
-              icon={sidebarCollapsed ? IconLayoutSidebarRight : IconLayoutSidebar}
-              size="default"
-            />
-          </Button>
-        </div>
-        <nav id="studio-sidebar-navigation">{nav}</nav>
-        <div className="sidebar-bottom">{signedIn && <AccountMenu />}</div>
-      </aside>
-      <header className="topbar">
+    <div className="studio-app">
+      {/* 工作区里顶部栏固定为实色、滚动时不收窄；其他页面在顶部透明、滚动后变磨砂。 */}
+      <header
+        className="topbar"
+        data-scrolled={(scrolled && !inWorkspace) || undefined}
+        data-solid={inWorkspace || undefined}
+      >
         <Drawer isOpen={menuOpen} onOpenChange={setMenuOpen}>
-          <Drawer.Trigger className="mobile-menu icon-button" aria-label="打开导航">
+          <Drawer.Trigger className="mobile-menu icon-button" aria-label={t.openNavigation}>
             <UiIcon icon={IconMenu2} size="navigation" />
           </Drawer.Trigger>
           <Drawer.Backdrop>
@@ -106,18 +76,18 @@ export function StudioShell() {
                   <Drawer.Heading>
                     <img
                       className="lycobo-logo"
-                      src="/brand/lycobo-product-pilot.svg"
+                      src="/brand/lycobo-reveal.svg"
                       alt="Lycobo"
                       width="120"
-                      height="24"
+                      height="32"
                     />
                   </Drawer.Heading>
-                  <Drawer.CloseTrigger aria-label="关闭导航">
+                  <Drawer.CloseTrigger aria-label={t.closeNavigation}>
                     <UiIcon icon={IconX} size="action" />
                   </Drawer.CloseTrigger>
                 </Drawer.Header>
                 <Drawer.Body>
-                  <nav>{nav}</nav>
+                  <DrawerNavigation pathname={pathname} onNavigate={() => setMenuOpen(false)} />
                 </Drawer.Body>
                 {signedIn && (
                   <Drawer.Footer className="mobile-nav-account">
@@ -128,17 +98,48 @@ export function StudioShell() {
             </Drawer.Content>
           </Drawer.Backdrop>
         </Drawer>
-        <div className="header-actions">{signedIn ? <HeaderBenefits /> : <HeaderLogin />}</div>
+        <RouteLink to="/" className="brand">
+          <img
+            className="lycobo-logo"
+            src="/brand/lycobo-reveal.svg"
+            alt="Lycobo"
+            width="120"
+            height="32"
+          />
+        </RouteLink>
+        {/* 素材库不在顶部导航（用户 2026-11-10 要求）：从首页快捷入口、账户菜单等处直接打开弹窗。 */}
+        <nav className="topbar-nav" aria-label={t.mainNavigation}>
+          <RouteLink nav to="/" end className="nav-row">
+            {t.home}
+          </RouteLink>
+          <CommerceNavMenu active={inWorkspace} />
+        </nav>
+        <div className="header-actions">
+          {signedIn ? (
+            <>
+              <div className="header-news">
+                <AccountMessages />
+              </div>
+              <LanguageMenu />
+              <HeaderBenefits />
+              <AccountMenu variant="header" />
+            </>
+          ) : (
+            <>
+              <LanguageMenu />
+              <HeaderLogin />
+            </>
+          )}
+        </div>
       </header>
       <main className="main-content">
         {routeNeedsLogin && session.isPending && <PageLoading />}
-        {!routeNeedsLogin && (
-          <Outlet context={{ setHomeHeaderOpaque } satisfies StudioShellContext} />
-        )}
+        {!routeNeedsLogin && <Outlet />}
       </main>
       <RealtimeEvents />
       {signedIn && <AccountOverlayHost />}
-    </motion.div>
+      {signedIn && <AssetLibraryHost />}
+    </div>
   );
 }
 
@@ -147,60 +148,51 @@ function RealtimeEvents() {
   return null;
 }
 
-function useSidebarWidth(sidebarCollapsed: boolean) {
-  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
-  useEffect(() => {
-    const update = () => setViewportWidth(window.innerWidth);
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-  const expandedSidebarWidth = viewportWidth >= 1800 ? 288 : 274;
-  const desktopSidebarWidth = viewportWidth >= 2560 ? 320 : expandedSidebarWidth;
-  const expandedOrCollapsedWidth = sidebarCollapsed ? 64 : desktopSidebarWidth;
-  return viewportWidth < 768 ? "0px" : `${expandedOrCollapsedWidth}px`;
-}
-
-function StudioNavigation({
-  collapsed,
-  inWorkspace,
-  onNavigate,
-}: {
-  collapsed: boolean;
-  inWorkspace: boolean;
-  onNavigate: () => void;
-}) {
+/**
+ * 手机导航抽屉：首页、电商四个工具与素材库；切换工具时与工具坞一样只向空图片槽带图。
+ * 素材库是弹窗，点它先收起抽屉再打开，不跳转页面。
+ */
+function DrawerNavigation({ pathname, onNavigate }: { pathname: string; onNavigate: () => void }) {
+  const t = useMessages(shellMessages);
+  const toolText = useMessages(workspaceToolMessages);
+  const openLibrary = useOpenAssetLibrary();
   return (
-    <>
-      <Tooltip delay={300} isDisabled={!collapsed}>
-        <RouteLink nav to="/" end aria-label="首页" className="nav-row" onClick={onNavigate}>
-          <UiIcon icon={IconSmartHome} size="default" />
-          <span className="nav-label">首页</span>
-        </RouteLink>
-        <Tooltip.Content placement="right">首页</Tooltip.Content>
-      </Tooltip>
-      <Tooltip delay={300} isDisabled={!collapsed}>
+    <nav aria-label={t.mainNavigation}>
+      <RouteLink nav to="/" end className="nav-row" onClick={onNavigate}>
+        <UiIcon icon={IconSmartHome} size="default" />
+        <span className="nav-label">{t.home}</span>
+      </RouteLink>
+      <p className="nav-group-label">{t.commerce}</p>
+      {visibleWorkspaceTools.map((tool) => (
         <RouteLink
-          to="/workspace"
-          aria-label="工作区"
-          className={`nav-row${inWorkspace ? " active" : ""}`}
-          onClick={onNavigate}
+          key={tool.id}
+          nav
+          to={tool.path}
+          className="nav-row"
+          onClick={() => {
+            shareProductReference(pathname, tool.path);
+            onNavigate();
+          }}
         >
-          <UiIcon icon={IconShoppingBagSearch} size="default" />
-          <span className="nav-label">工作区</span>
+          <UiIcon icon={toolIcons[tool.id]} size="default" />
+          <span className="nav-label">{toolText.tools[tool.id].name}</span>
         </RouteLink>
-        <Tooltip.Content placement="right">工作区</Tooltip.Content>
-      </Tooltip>
-      <Tooltip delay={300} isDisabled={!collapsed}>
-        <RouteLink nav to="/assets" aria-label="素材库" className="nav-row" onClick={onNavigate}>
-          <UiIcon icon={IconFolderSparkle} size="default" />
-          <span className="nav-label">素材库</span>
-        </RouteLink>
-        <Tooltip.Content placement="right">素材库</Tooltip.Content>
-      </Tooltip>
-    </>
+      ))}
+      <Button
+        variant="ghost"
+        className="nav-row"
+        onPress={() => {
+          onNavigate();
+          openLibrary();
+        }}
+      >
+        <UiIcon icon={IconFolderSparkle} size="default" />
+        <span className="nav-label">{t.assets}</span>
+      </Button>
+    </nav>
   );
 }
 
 function isWorkspacePath(pathname: string) {
-  return pathname.startsWith("/commerce") || pathname === "/workspace";
+  return pathname.startsWith("/commerce") || pathname === "/workspace" || pathname === "/video";
 }

@@ -1,59 +1,67 @@
 import type { ImageAsset } from "@lycoboai/contracts";
 import { type CSSProperties, useLayoutEffect, useState } from "react";
-import { modelDisplayName } from "../generation/models/model-display-name";
-import type { useModelPresentation } from "../generation/models/model-logos";
-import { aspectRatio, masonryPositions } from "./asset-layout";
+import { aspectRatio, assetColumns, masonryPositions } from "./asset-layout";
+import type { AssetSelection } from "./asset-selection";
 import { AssetTile } from "./asset-tile";
 
-/** Explicit grid positions preserve DOM order, including when pagination appends assets. */
+/**
+ * 素材瀑布流：列数随素材区宽度变化（1920 屏 6 列、1440 屏 5 列、手机 2 列），用明确的网格位置
+ * 保持 DOM 顺序，分页追加素材时已显示的不移动。
+ */
 export function AssetMasonry({
   assets,
-  columns,
-  models,
+  showUploadTag,
+  selection,
+  unavailable,
   onOpen,
+  onUnavailable,
 }: {
   assets: ImageAsset[];
-  columns: number;
-  models: NonNullable<ReturnType<typeof useModelPresentation>["data"]>["models"];
+  showUploadTag: boolean;
+  selection: AssetSelection;
+  /** 缩略图加载失败的素材：不能下载，也不能被选中。 */
+  unavailable: ReadonlySet<string>;
   onOpen: (asset: ImageAsset) => void;
+  onUnavailable: (asset: ImageAsset) => void;
 }) {
   const [element, setElement] = useState<HTMLDivElement | null>(null);
-  const [geometry, setGeometry] = useState({ width: 0, columns, gap: 12 });
+  const [geometry, setGeometry] = useState({ width: 0, gap: 12 });
   useLayoutEffect(() => {
     if (!element) return;
     const measure = () => {
-      const css = getComputedStyle(element);
       const next = {
         width: element.getBoundingClientRect().width,
-        columns: Number.parseInt(css.getPropertyValue("--asset-layout-columns"), 10) || columns,
-        gap: Number.parseFloat(css.columnGap) || 0,
+        gap: Number.parseFloat(getComputedStyle(element).columnGap) || 0,
       };
       setGeometry((current) =>
-        current.width === next.width && current.columns === next.columns && current.gap === next.gap
-          ? current
-          : next,
+        current.width === next.width && current.gap === next.gap ? current : next,
       );
     };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(element);
-    window.addEventListener("resize", measure);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, [element, columns]);
-  const positions = masonryPositions(assets, geometry.width, geometry.columns, geometry.gap);
+    return () => observer.disconnect();
+  }, [element]);
+  const columns = assetColumns(geometry.width);
+  const positions = masonryPositions(assets, geometry.width, columns, geometry.gap);
   const style: CSSProperties & { "--asset-columns": number } = { "--asset-columns": columns };
   return (
-    <div className="asset-density-grid" style={style} ref={setElement}>
+    <div className="asset-grid" style={style} ref={setElement}>
       {assets.map((asset, index) => {
         const position = positions[index];
         return (
           <AssetTile
             key={asset.id}
             asset={asset}
-            modelName={modelDisplayName(asset.model, models)}
+            showUploadTag={showUploadTag}
+            unavailable={unavailable.has(asset.id)}
+            onUnavailable={() => onUnavailable(asset)}
+            selection={{
+              selecting: selection.selecting,
+              selected: selection.selected.has(asset.id),
+              onSelect: () =>
+                selection.selecting ? selection.toggle(asset.id) : selection.start(asset.id),
+            }}
             style={{
               aspectRatio: aspectRatio(asset),
               gridColumn: position?.column,

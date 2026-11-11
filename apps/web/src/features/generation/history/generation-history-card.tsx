@@ -1,19 +1,28 @@
 import { Button } from "@heroui/react";
-import { type ImageJob, textileViews } from "@lycoboai/contracts";
+import type { ImageJob } from "@lycoboai/contracts";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { type CSSProperties, Fragment } from "react";
 import { UiIcon } from "../../../components/ui-icon";
-import { GenerationLoading, statusLabel } from "../generation-status";
+import { GenerationLoading, useStatusLabel } from "../generation-status";
 import { historyResultRatio } from "./history-result-layout";
 import { HistoryTaskMeta } from "./history-task-meta";
 import { HistoryPrompt, HistoryTaskActions } from "./history-task-tools";
 import { ResultImage } from "./result-image";
 import "./history-result-layout.css";
+import type { Locale } from "../../../i18n/locale";
+import { useLocale } from "../../../i18n/locale-store";
+import { useMessages } from "../../../i18n/messages";
+import { textileViewMessages } from "../../commerce/textile-set/textile-view-messages";
+import { displayPrompt } from "../prompt-display";
+import { historyMessages } from "./history-messages";
+
+type HistoryText = (typeof historyMessages)[Locale];
 
 /** Batches of five or more report their progress; larger batches initially show twelve images. */
 const batchSize = 5;
 const batchFold = 12;
 function BatchProgress({ items }: { items: ImageJob["items"] }) {
+  const t = useMessages(historyMessages);
   const tally = (...statuses: ImageJob["items"][number]["status"][]) =>
     items.filter((item) => statuses.includes(item.status)).length;
   const done = tally("succeeded");
@@ -22,10 +31,10 @@ function BatchProgress({ items }: { items: ImageJob["items"] }) {
   const failed = tally("failed");
   const unresolved = tally("needs_reconciliation");
   const parts = [
-    `已完成 ${done}/${items.length}`,
-    running ? `生成中 ${running}` : "",
-    failed ? `失败 ${failed}` : "",
-    unresolved ? `待确认 ${unresolved}` : "",
+    t.progressDone(done, items.length),
+    running ? t.progressRunning(running) : "",
+    failed ? t.progressFailed(failed) : "",
+    unresolved ? t.progressUnresolved(unresolved) : "",
   ].filter(Boolean);
   return (
     <p className="history-batch-progress">
@@ -50,24 +59,25 @@ function placeholderClass(status: Item["status"]) {
   return "generation-placeholder";
 }
 
-function failureMessage(item: Item) {
-  if (item.status === "failed") return "任务未能完成，积分已退回，请您稍后重试。";
-  if (item.error_code === "PROVIDER_TIMEOUT")
-    return "生成超时，请重新生成。将先查询并恢复已有结果。";
-  return "生成结果和积分状态正在确认，请稍后查看。";
+function failureMessage(item: Item, t: HistoryText) {
+  if (item.status === "failed") return t.failedRefunded;
+  if (item.error_code === "PROVIDER_TIMEOUT") return t.timedOut;
+  return t.confirming;
 }
 
 function HistoryPlaceholder({ job, item }: { job: ImageJob; item: Item }) {
+  const t = useMessages(historyMessages);
+  const statusLabel = useStatusLabel();
   return (
     <div
       className={placeholderClass(item.status)}
       role="status"
-      aria-label={statusLabel[item.status]}
+      aria-label={statusLabel(item.status)}
     >
       {item.status === "running" || item.status === "queued" ? (
         <GenerationLoading />
       ) : (
-        <p className="generation-failure-message">{failureMessage(item)}</p>
+        <p className="generation-failure-message">{failureMessage(item, t)}</p>
       )}
       {(item.status === "failed" || item.status === "needs_reconciliation") && (
         <HistoryTaskActions job={job} item={item} />
@@ -85,6 +95,8 @@ function HistoryResult({
   item: Item;
   onPreview: ShowPreview;
 }) {
+  const locale = useLocale();
+  const textileView = job.input?.textileSet?.views[item.position];
   const style: CSSProperties & { "--result-ratio": number } = {
     "--result-ratio": historyResultRatio(job, item),
   };
@@ -101,13 +113,8 @@ function HistoryResult({
       {job.input?.variation && (
         <p className="textile-result-view">{job.input.variation.items[item.position]?.title}</p>
       )}
-      {job.input?.textileSet && (
-        <p className="textile-result-view">
-          {
-            textileViews.find((view) => view.id === job.input?.textileSet?.views[item.position])
-              ?.name
-          }
-        </p>
+      {textileView && (
+        <p className="textile-result-view">{textileViewMessages[locale][textileView]}</p>
       )}
       {item.output_asset_id ? (
         <ResultImage
@@ -116,7 +123,7 @@ function HistoryResult({
           position={item.position}
           width={item.width}
           height={item.height}
-          prompt={job.prompt}
+          prompt={displayPrompt(job.prompt, locale)}
           onPreview={(trigger) => onPreview(trigger, item.output_asset_id ?? "")}
         />
       ) : (
@@ -126,6 +133,7 @@ function HistoryResult({
   );
 }
 
+/** 一条生成历史：任务信息、提示词、操作与结果图片。 */
 export function GenerationHistoryCard({
   job,
   compact,
@@ -145,6 +153,8 @@ export function GenerationHistoryCard({
   toggleFold: () => void;
   onPreview: ShowPreview;
 }) {
+  const t = useMessages(historyMessages);
+  const locale = useLocale();
   return (
     <article
       className="generation-job"
@@ -157,7 +167,11 @@ export function GenerationHistoryCard({
         {!compact && job.items.length >= batchSize && <BatchProgress items={job.items} />}
         {!compact && <HistoryTaskActions job={job} onRestore={onRestore} />}
       </header>
-      {compact ? <p className="generation-prompt">{job.prompt}</p> : <HistoryPrompt job={job} />}
+      {compact ? (
+        <p className="generation-prompt">{displayPrompt(job.prompt, locale)}</p>
+      ) : (
+        <HistoryPrompt job={job} />
+      )}
       {!compact && (
         <div
           id={`results-${job.id}`}
@@ -185,7 +199,7 @@ export function GenerationHistoryCard({
           onPress={toggleFold}
         >
           <UiIcon icon={folded ? IconChevronDown : IconChevronUp} size="small" />
-          {folded ? `展开全部 ${job.items.length} 张` : "收起"}
+          {folded ? t.expandAll(job.items.length) : t.collapse}
         </Button>
       )}
     </article>

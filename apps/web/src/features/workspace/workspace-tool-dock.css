@@ -28,50 +28,10 @@
   :is(.reference-picker, .prompt-field, .model-field, .parameter-group) {
   background: transparent;
 }
-/* Each tool carries one accent: the current dock tile, its hover preview and history tags use it. */
-:is(
-  .unified-workspace,
-  .workspace-tool-shortcut,
-  .workspace-composer-hero,
-  .workspace-tool-symbol,
-  .workspace-tool-preview-card
-)[data-tool="create"] {
+/* 工作区只保留品牌青柠，不再按功能分配多种强调色。 */
+.unified-workspace {
   --tool-accent: #a8ff00;
-  --tool-ink: #142000;
-  --tool-soft: #d4ff8a;
-}
-:is(
-  .unified-workspace,
-  .workspace-tool-shortcut,
-  .workspace-composer-hero,
-  .workspace-tool-symbol,
-  .workspace-tool-preview-card
-)[data-tool="textile"] {
-  --tool-accent: #ffb27a;
-  --tool-ink: #3d1a00;
-  --tool-soft: #ffcfa8;
-}
-:is(
-  .unified-workspace,
-  .workspace-tool-shortcut,
-  .workspace-composer-hero,
-  .workspace-tool-symbol,
-  .workspace-tool-preview-card
-)[data-tool="variation"] {
-  --tool-accent: #4fe3b0;
-  --tool-ink: #00281b;
-  --tool-soft: #9ff0d0;
-}
-:is(
-  .unified-workspace,
-  .workspace-tool-shortcut,
-  .workspace-composer-hero,
-  .workspace-tool-symbol,
-  .workspace-tool-preview-card
-)[data-tool="video"] {
-  --tool-accent: #7cc4ff;
-  --tool-ink: #00213a;
-  --tool-soft: #b9e0ff;
+  --tool-soft: #ffffffb3;
 }
 .workspace-tool-symbol {
   display: inline-flex;
@@ -137,7 +97,13 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(180deg, #0f0f1200 28%, #0f0f12cc 100%);
+  /* 头图多为浅色床品，压暗加深到文字所在的下半部分，白字与说明在浅色图上也清楚。 */
+  background: linear-gradient(
+    180deg,
+    rgb(0 0 0 / 0%) 18%,
+    rgb(0 0 0 / 45%) 55%,
+    rgb(0 0 0 / 78%) 100%
+  );
 }
 .workspace-composer-hero-copy {
   position: absolute;
@@ -162,7 +128,8 @@
   margin: 0;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
-  color: #ffffffd9;
+  color: #ffffffcc;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 50%);
 }
 @media (max-width: 767px) {
   .workspace-composer-hero {
@@ -183,7 +150,7 @@
   box-sizing: border-box;
   padding: 6px;
   border-radius: 18px;
-  background: #141417;
+  background: #141414;
   box-shadow: none;
   overflow-x: auto;
   scrollbar-width: none;
@@ -201,7 +168,7 @@
   padding: 8px 16px 8px 8px;
   gap: 10px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 12px;
   text-align: left;
   color: var(--muted);
   background: transparent;
@@ -228,8 +195,8 @@
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: #202026;
-  color: #d9d7de;
+  background: transparent;
+  color: #ffffffb3;
   transition:
     transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
     background-color 180ms ease,
@@ -240,13 +207,14 @@
   transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .workspace-tool-shortcut.button[data-hovered="true"] .workspace-tool-symbol {
-  background: #26262d;
-  color: var(--tool-accent, #ffffff);
+  background: transparent;
+  color: #fff;
 }
+/* 选中项只点亮图标，避免行底与图标底叠成厚重的两层。 */
 .workspace-tool-shortcut.button[aria-current="page"] .workspace-tool-symbol {
-  background: var(--tool-accent);
-  color: var(--tool-ink);
-  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--tool-accent) 70%, transparent);
+  background: transparent;
+  color: var(--accent);
+  box-shadow: none;
 }
 @media (prefers-reduced-motion: no-preference) {
   .workspace-tool-shortcut.button[data-hovered="true"] .workspace-tool-symbol {
@@ -291,116 +259,11 @@
     transition: none;
   }
 }
-/* Hover or keyboard focus on a tool previews it: sample results, what it does and how to use it. */
-.tooltip.workspace-tool-preview {
-  width: 300px;
-  max-width: calc(100vw - 24px);
-  padding: 10px;
-  border-radius: 16px;
-  background: #1a1a1e;
-  box-shadow:
-    inset 0 0 0 1px #ffffff14,
-    0 18px 40px -12px #000000cc;
-  color: #f3f1f7;
-  word-break: normal;
-}
-.workspace-tool-preview-card {
-  display: grid;
-  gap: 8px;
-}
-.workspace-tool-preview-media {
-  position: relative;
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  grid-template-rows: repeat(2, 66px);
-  gap: 4px;
-  overflow: hidden;
-  border-radius: 10px;
-}
-.workspace-tool-preview-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  background: #ffffff;
-}
-.workspace-tool-preview-media img:first-child {
-  grid-row: 1 / span 2;
-}
-.workspace-tool-preview-badge {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  padding: 1px 6px;
-  border-radius: 6px;
-  background: #0f0f12cc;
-  color: #f3f1f7;
-  font-size: 11px;
-  line-height: 16px;
-}
-.workspace-tool-preview-card p {
-  margin: 0;
-}
-.workspace-tool-preview-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 2px;
-  font-size: var(--text-base);
-  line-height: var(--leading-base);
-}
-.workspace-tool-preview-current {
-  padding: 0 6px;
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--tool-accent) 15%, transparent);
-  color: var(--tool-soft);
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  font-weight: var(--weight-semibold);
-}
-.workspace-tool-preview-summary {
-  color: #c8c8c8;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
-.workspace-tool-preview-steps {
-  display: grid;
-  gap: 6px;
-  margin: 2px 0 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: preview-step;
-}
-.workspace-tool-preview-steps li {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  color: #d9d7de;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-  counter-increment: preview-step;
-}
-.workspace-tool-preview-steps li::before {
-  content: counter(preview-step);
-  display: inline-grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--tool-accent) 18%, transparent);
-  color: var(--tool-soft);
-  font-size: 11px;
-  font-weight: var(--weight-semibold);
-}
-.workspace-tool-preview-hint {
-  padding-top: 8px;
-  border-top: 1px solid #ffffff0f;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
-.workspace-history-heading {
+/* 历史上方的吸顶条：窄屏是工具坞，桌面是“生成记录”标题行（工具坞改成左侧竖排工具栏）。 */
+.workspace-tool-dock {
   container: workspace-dock / inline-size;
+}
+:is(.workspace-tool-dock, .workspace-history-heading) {
   display: flex;
   align-items: center;
   position: sticky;
@@ -415,7 +278,7 @@
   height: var(--workspace-toolbar-height);
   background: var(--background);
 }
-.workspace-history-heading::before {
+:is(.workspace-tool-dock, .workspace-history-heading)::before {
   content: "";
   position: absolute;
   inset: -12px 0 auto;

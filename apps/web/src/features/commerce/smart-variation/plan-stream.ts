@@ -1,5 +1,7 @@
 import { variationPlanSchema } from "@lycoboai/contracts";
+import { currentMessages } from "../../../i18n/messages";
 import { readEventData } from "../../../lib/read-event-data";
+import { variationMessages } from "./variation-messages";
 
 function readPlanStage(value: unknown) {
   if (!value || typeof value !== "object" || !("stage" in value)) return undefined;
@@ -10,11 +12,12 @@ function readPlanStage(value: unknown) {
 
 function readPlanText(value: unknown) {
   if (!value || typeof value !== "object" || !("text" in value) || typeof value.text !== "string") {
-    throw new Error("计划响应格式无效");
+    throw new Error(currentMessages(variationMessages).invalidResponse);
   }
   return value.text;
 }
 
+/** 读取套图计划的流式响应：逐段转发文字与阶段，complete 时返回完整计划。 */
 export async function readPlanResponse(
   response: Response,
   onText: (text: string) => void,
@@ -22,24 +25,25 @@ export async function readPlanResponse(
 ) {
   if (!response.headers.get("content-type")?.includes("text/event-stream"))
     return variationPlanSchema.parse(await response.json());
+  const t = currentMessages(variationMessages);
   const reader = response.body?.getReader();
-  if (!reader) throw new Error("计划响应为空，请稍后重试");
+  if (!reader) throw new Error(t.emptyResponse);
   let bytes = 0;
   const events = readEventData(reader, (size) => {
     bytes += size;
-    if (bytes > 1024 * 1024) throw new Error("计划内容过长，请缩小需求范围");
+    if (bytes > 1024 * 1024) throw new Error(t.tooLong);
   });
   for await (const { event, data } of events) {
     const value: unknown = JSON.parse(data);
     if (event === "complete") return variationPlanSchema.parse(value);
-    if (event === "failed") throw new Error("计划未完成，请稍后重试");
+    if (event === "failed") throw new Error(t.planFailed);
     if (event === "delta") onText(readPlanText(value));
     if (event === "status") {
       const stage = readPlanStage(value);
       if (stage) onStatus?.(stage);
     }
   }
-  throw new Error("连接已中断，请稍后继续获取计划");
+  throw new Error(t.connectionLost);
 }
 
 function readStringToken(text: string, start: number) {

@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { mockImageApi } from "./image-api-fixture";
 
 const png = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",
   "base64",
 );
 
@@ -153,7 +153,7 @@ test("main and optional detail images validate independently and clear without a
   await page
     .getByLabel("主图文件", { exact: true })
     .setInputFiles({ name: "broken.png", mimeType: "image/png", buffer: Buffer.from("not image") });
-  await expect(page.getByRole("alert")).toContainText("图片无法读取");
+  await expect(page.getByRole("alert")).toContainText("第 1 张图片无法解码");
   await expect(page.locator(".reference-tile")).toHaveCount(2);
   await page.getByRole("button", { name: "清除主图", exact: true }).click();
   await expect(page.getByRole("button", { name: "清除主图", exact: true })).toHaveCount(0);
@@ -203,8 +203,9 @@ for (const width of [2560, 1440, 390]) {
     }
     const box = await dialog.boundingBox();
     expect(box && box.x >= 0 && box.x + box.width <= width).toBeTruthy();
+    // 非模态浮层不加全屏遮罩；面板自身使用共享玻璃材质。
     await expect(page.locator(".modal__backdrop")).toHaveCount(0);
-    await expect(page.locator(".textile-views-popover")).toHaveCSS("backdrop-filter", "none");
+    await expect(page.locator(".textile-views-popover")).toHaveCSS("backdrop-filter", "blur(40px)");
     const form = page.getByRole("region", { name: "家纺裂变参数", exact: true });
     expect(await form.evaluate((el) => el.closest('[aria-hidden="true"], [inert]') === null)).toBe(
       true,

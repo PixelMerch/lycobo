@@ -3,9 +3,12 @@ import {
   imageGenerationInputSchema,
   imageSubmissionResponseSchema,
   imageTaskRetrySchema,
+  imageUploadTicketSchema,
 } from "@lycoboai/contracts";
 import type { QueryClient } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
+import { currentMessages } from "../../i18n/messages";
+import { generationMessages } from "./generation-messages";
 import { ImageApiError, imageRequest } from "./image-request";
 import { completeReferenceUpload } from "./references/complete-reference-upload";
 import { prepareReferenceUpload } from "./references/prepare-reference-upload";
@@ -32,7 +35,7 @@ function pendingSubmission(pendingKey: string): {
     typeof value.key !== "string" ||
     !("input" in value)
   )
-    throw new Error("待确认的提交信息无法读取，请联系管理员核对历史记录。");
+    throw new Error(currentMessages(generationMessages).pendingUnreadable);
   return {
     key: value.key,
     retryJobId:
@@ -67,52 +70,70 @@ export function usePendingSubmission(scope?: SessionScope) {
     () => false,
   );
 }
+/** 最多同时上传三张参考图，保留编号顺序并复用查询缓存，避免跨境等待逐张累加。 */
 export async function uploadImageReferences(
   client: QueryClient,
   scope: SessionScope,
   references: readonly ReferenceImage[],
 ) {
-  const referenceAssetIds: string[] = [];
-  for (const [index, reference] of references.entries()) {
-    if (reference.assetId) {
-      referenceAssetIds.push(reference.assetId);
-      continue;
-    }
-    const asset = await client.fetchQuery({
-      queryKey: ["reference-upload", scope.organizationId, scope.userId, reference.id],
-      staleTime: 2 * 24 * 60 * 60 * 1000,
-      gcTime: 2 * 24 * 60 * 60 * 1000,
-      retry: false,
-      queryFn: async () => {
-        const blob = await (
-          await fetch(reference.src, { signal: AbortSignal.timeout(30000) })
-        ).blob();
-        const position = index + 1;
-        const issue = referenceSizeError(blob.size, position);
-        if (issue) throw new Error(issue);
-        const prepared = await prepareReferenceUpload(blob, position);
-        const upload = await imageRequest("image-assets", {
-          method: "POST",
-          headers: { "Content-Type": prepared.type },
-          body: prepared,
-        }).catch((error: unknown) => {
-          if (error instanceof ImageApiError && [406, 413].includes(error.status)) {
-            throw new ImageApiError(
-              `第 ${position} 张图片超过当前上传入口允许的大小，请缩小图片后重试。`,
-              error.status,
-              error.businessCode,
-            );
-          }
-          throw error;
-        });
-        const uploaded = await completeReferenceUpload(upload);
-        void client.invalidateQueries({ queryKey: ["image-assets"] });
-        return uploaded;
-      },
-    });
-    referenceAssetIds.push(asset.id);
+  const ids: string[] = [];
+  for (let offset = 0; offset < references.length; offset += 3) {
+    const assets = await Promise.all(
+      references
+        .slice(offset, offset + 3)
+        .map((reference, index) =>
+          reference.assetId
+            ? Promise.resolve({ id: reference.assetId })
+            : uploadReference(client, scope, reference, offset + index),
+        ),
+    );
+    ids.push(...assets.map((asset) => asset.id));
   }
-  return referenceAssetIds;
+  return ids;
+}
+
+function uploadReference(
+  client: QueryClient,
+  scope: SessionScope,
+  reference: ReferenceImage,
+  index: number,
+) {
+  return client.fetchQuery({
+    queryKey: ["reference-upload", scope.organizationId, scope.userId, reference.id],
+    staleTime: 2 * 24 * 60 * 60 * 1000,
+    gcTime: 2 * 24 * 60 * 60 * 1000,
+    retry: false,
+    queryFn: async () => {
+      const blob = await (
+        await fetch(reference.src, { signal: AbortSignal.timeout(30000) })
+      ).blob();
+      const position = index + 1;
+      const issue = referenceSizeError(blob.size, position);
+      if (issue) throw new Error(issue);
+      const prepared = await prepareReferenceUpload(blob, position);
+      const upload = await imageRequest("image-assets", {
+        method: "POST",
+        headers: { "Content-Type": prepared.type },
+        body: prepared,
+      }).catch((error: unknown) => {
+        if (error instanceof ImageApiError && [406, 413].includes(error.status)) {
+          throw new ImageApiError(
+            currentMessages(generationMessages).uploadTooLarge(position),
+            error.status,
+            error.businessCode,
+          );
+        }
+        throw error;
+      });
+      // 202 表示原图与上传意图已持久化；由服务端等待处理，不再阻塞任务提交。
+      const uploaded =
+        upload.status === 202
+          ? { id: imageUploadTicketSchema.parse(await upload.json()).uploadId }
+          : await completeReferenceUpload(upload);
+      void client.invalidateQueries({ queryKey: ["image-assets"] });
+      return uploaded;
+    },
+  });
 }
 export type ImageSubmission = {
   model: ModelId;
@@ -123,35 +144,72 @@ export type ImageSubmission = {
   localEdit?: import("@lycoboai/contracts").ImageLocalEdit;
   textileSet?: import("@lycoboai/contracts").TextileGeneration | undefined;
   variation?: import("@lycoboai/contracts").VariationGeneration | undefined;
+  /** 与 draft.references 顺序一致的角色；只在标了原图或风格时提供。 */
+  /** 独立风格复制任务的标记，随输入落库以隔离历史。 */
+  replica?: true | undefined;
+  referenceRoles?: import("@lycoboai/contracts").ReferenceRole[] | undefined;
+  /** 套图计划每条方案要发送的参考图下标（从 0 开始）；上传后换成素材 ID。 */
+  itemReferences?: Record<string, number[]> | undefined;
 };
 
-function requestQuality(quality: string) {
-  if (quality === "低") return "low";
-  if (quality === "标准") return "medium";
-  if (quality === "高") return "high";
-  return quality;
+/** 把每条方案的参考图下标换成上传后的素材 ID；没指定的方案保持原样，发送全部参考图。 */
+function withItemReferences(
+  variation: import("@lycoboai/contracts").VariationGeneration,
+  itemReferences: Record<string, number[]>,
+  referenceAssetIds: readonly string[],
+) {
+  return {
+    ...variation,
+    items: variation.items.map((item) => {
+      const indexes = itemReferences[item.id];
+      if (!indexes) return item;
+      return {
+        ...item,
+        referenceAssetIds: indexes.flatMap((index) => {
+          const id = referenceAssetIds[index];
+          return id ? [id] : [];
+        }),
+      };
+    }),
+  };
 }
 
 async function prepareSubmissionInput(
   client: QueryClient,
   scope: SessionScope,
-  { model, draft, localEdit, textileSet, variation }: ImageSubmission,
+  {
+    model,
+    draft,
+    localEdit,
+    textileSet,
+    variation,
+    referenceRoles,
+    itemReferences,
+    replica,
+  }: ImageSubmission,
 ) {
   const referenceAssetIds = await uploadImageReferences(client, scope, draft.references);
+  const plan =
+    variation && itemReferences
+      ? withItemReferences(variation, itemReferences, referenceAssetIds)
+      : variation;
   return imageGenerationInputSchema.parse({
     model,
     prompt: draft.prompt,
     resolution: draft.resolution,
-    quality: requestQuality(draft.quality),
+    quality: draft.quality,
     aspectRatio: draft.ratio,
     count: Number(draft.count),
     referenceAssetIds,
+    ...(referenceRoles ? { referenceRoles } : {}),
+    ...(replica ? { replica } : {}),
     ...(localEdit ? { localEdit } : {}),
     ...(textileSet ? { textileSet } : {}),
-    ...(variation ? { variation } : {}),
+    ...(plan ? { variation: plan } : {}),
   });
 }
 
+/** 提交生图任务：先保存待确认的请求，回执丢失或刷新后用同一个请求确认，不重复扣费。 */
 export async function submitImage(
   client: QueryClient,
   scope: SessionScope,
@@ -161,11 +219,11 @@ export async function submitImage(
   const pendingKey = pendingStorageKey(scope);
   let pending = pendingSubmission(pendingKey);
   if (pending && pending.source !== source)
-    throw new Error("请先在原提交入口确认上次提交，再开始新的生成。");
+    throw new Error(currentMessages(generationMessages).confirmElsewhere);
   if (!pending) {
     const input = await prepareSubmissionInput(client, scope, submission);
     pending = { key: crypto.randomUUID(), input, source, retryJobId, retryItemId };
-    // Retain the same request after a lost response or reload: never create another paid task blindly.
+    // 回执丢失或刷新后保留同一个请求，绝不盲目再建一个付费任务。
     sessionStorage.setItem(pendingKey, JSON.stringify(pending));
     window.dispatchEvent(new Event(pendingEvent));
   }

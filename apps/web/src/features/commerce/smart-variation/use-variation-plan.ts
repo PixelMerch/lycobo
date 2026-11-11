@@ -1,5 +1,5 @@
 import { toast } from "@heroui/react";
-import { pendingVariationPlanSchema, variationCapabilitiesSchema } from "@lycoboai/contracts";
+import { variationCapabilitiesSchema } from "@lycoboai/contracts";
 import {
   type QueryClient,
   useIsMutating,
@@ -8,6 +8,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { type Dispatch, type SetStateAction, useRef, useState } from "react";
+import { currentMessages } from "../../../i18n/messages";
 import {
   imageRequest,
   uploadImageReferences,
@@ -15,36 +16,12 @@ import {
 } from "../../generation/generation-client";
 import { hasPromptDescription } from "../../generation/references/prompt-description";
 import { readPlanResponse } from "./plan-stream";
+import { preparePendingPlan } from "./prepare-pending-plan";
 import { useSmartVariationDraft } from "./smart-variation-state";
+import { variationMessages } from "./variation-messages";
 
 type SessionScope = { organizationId: string; userId: string };
 type VariationDraft = ReturnType<typeof useSmartVariationDraft.getState>;
-
-async function preparePendingPlan(
-  storageKey: string,
-  client: QueryClient,
-  scope: SessionScope,
-  draft: VariationDraft,
-) {
-  let saved: unknown = null;
-  try {
-    saved = JSON.parse(sessionStorage.getItem(storageKey) ?? "null");
-  } catch {
-    sessionStorage.removeItem(storageKey);
-  }
-  let pending = pendingVariationPlanSchema.safeParse(saved);
-  if (!pending.success) {
-    const referenceAssetIds = await uploadImageReferences(client, scope, draft.references);
-    const value = {
-      key: crypto.randomUUID(),
-      input: { description: draft.description, referenceAssetIds },
-    };
-    sessionStorage.setItem(storageKey, JSON.stringify(value));
-    pending = pendingVariationPlanSchema.safeParse(value);
-  }
-  if (!pending.success) throw new Error("分析请求无法保存");
-  return pending.data;
-}
 
 async function analyzeVariation(
   client: QueryClient,
@@ -54,7 +31,9 @@ async function analyzeVariation(
   setReadingWeb: (reading: boolean) => void,
 ) {
   const storageKey = `lycobo-variation-plan:${scope.organizationId}:${scope.userId}`;
-  const pending = await preparePendingPlan(storageKey, client, scope, draft);
+  const pending = preparePendingPlan(storageKey, draft, () =>
+    uploadImageReferences(client, scope, draft.references),
+  );
   const response = await imageRequest(
     "variation-plans",
     {
@@ -77,19 +56,16 @@ async function analyzeVariation(
       linkFailed = stage === "link_failed";
     },
   );
-  if (plan.status === "running") throw new Error("分析仍在处理，请稍后点击继续获取计划");
+  const t = currentMessages(variationMessages);
+  if (plan.status === "running") throw new Error(t.stillRunning);
   sessionStorage.removeItem(storageKey);
-  if (linkFailed)
-    throw new Error("网页读取未完成：请使用最多 3 个公开网页链接，或移除链接并粘贴商品信息后重试");
+  if (linkFailed) throw new Error(t.linkFailed);
   if (plan.status !== "ready")
-    throw new Error(
-      plan.status === "uncertain"
-        ? "分析结果待确认，请稍后再试"
-        : "分析未完成，请检查模型配置或稍后重试",
-    );
+    throw new Error(plan.status === "uncertain" ? t.uncertain : t.analysisFailed);
   return plan;
 }
 
+/** 并行准备参考图与文本计划，保留失败重试及草稿变更保护。 */
 export function useVariationPlan() {
   const session = useImageSession();
   const client = useQueryClient();
@@ -117,7 +93,7 @@ export function useVariationPlan() {
       return { description: draft.description, references: draft.references };
     },
     mutationFn: async () => {
-      if (!session.data) throw new Error("请先登录");
+      if (!session.data) throw new Error(currentMessages(variationMessages).signInFirst);
       return analyzeVariation(client, session.data, draft, setStreamText, setReadingWeb);
     },
     onSuccess: (plan, _variables, snapshot) => {
@@ -128,19 +104,23 @@ export function useVariationPlan() {
         current.references.some((image, index) => image.id !== snapshot.references[index]?.id) ||
         plan.description !== snapshot.description.trim()
       ) {
-        toast.info("计划已保存，当前需求已变化，请重新分析");
+        toast.info(currentMessages(variationMessages).briefChanged);
         return;
       }
       current.update({
         planId: plan.id,
         description: plan.description,
         items: plan.items.map((item) => ({ ...item, selected: true })),
-        references: plan.referenceAssetIds.map((assetId, index) => ({
-          id: assetId,
-          assetId,
-          src: snapshot.references[index]?.src ?? "",
-          name: snapshot.references[index]?.name ?? `图片${index + 1}`,
-        })),
+        references: plan.referenceAssetIds.length
+          ? plan.referenceAssetIds.map((assetId, index) => ({
+              id: assetId,
+              assetId,
+              src: snapshot.references[index]?.src ?? "",
+              name:
+                snapshot.references[index]?.name ??
+                currentMessages(variationMessages).imageName(index + 1),
+            }))
+          : snapshot.references,
       });
     },
     onError: (error) => toast.danger(error.message),
