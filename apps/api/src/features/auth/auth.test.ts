@@ -29,6 +29,7 @@ async function fixture() {
     allowLogin: vi.fn(async () => true),
     credential: vi.fn(async (account) => (account === user.account ? credential : null)),
     createSession: vi.fn(async () => true),
+    createSocialSession: vi.fn(async () => true),
     identity: vi.fn(async () => (active ? user : null)),
     revoke: vi.fn(async () => {
       active = false;

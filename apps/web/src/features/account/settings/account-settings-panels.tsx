@@ -46,7 +46,9 @@ export function AccountSettingsProfile({
 }) {
   const logout = useEnterpriseLogout();
   const t = useMessages(accountSettingsMessages);
-  const role = t.enterpriseRole(roleLabel(account.role, useLocale()));
+  const locale = useLocale();
+  const social = account.loginMethod === "social";
+  const role = social ? t.personalAccount : t.enterpriseRole(roleLabel(account.role, locale));
   useErrorToast(logout.error?.message);
   const uid = account.uid;
   return (
@@ -79,9 +81,9 @@ export function AccountSettingsProfile({
       <SettingsGroup title={t.preferences}>
         <SettingsRow label={t.language} action={<AccountLanguagePicker account={account} />} />
       </SettingsGroup>
-      <SettingsGroup title={t.enterpriseIdentity}>
+      <SettingsGroup title={social ? t.identity : t.enterpriseIdentity}>
         <SettingsRow label={t.identity} value={role} />
-        <SettingsRow label={t.loginMethod} value={t.enterpriseLogin} />
+        <SettingsRow label={t.loginMethod} value={social ? t.socialLogin : t.enterpriseLogin} />
       </SettingsGroup>
       {withIdentity && (
         <div className="settings-footer">

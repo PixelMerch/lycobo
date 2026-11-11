@@ -1,6 +1,6 @@
 # 企业账号密码登录
 
-实现：Hono API、PostgreSQL 账号与会话、HS256 JWT、Node.js scrypt 密码哈希。只接入企业账号密码，公众号扫码和短信尚未开放。
+实现：Hono API、PostgreSQL 账号与会话、HS256 JWT、Node.js scrypt 密码哈希。企业账号密码可用。Google 和 Apple 通过 Supabase Auth 在本地验证，邮箱验证码留待后续接入。
 
 ## 配置与创建账号
 
@@ -87,3 +87,12 @@ API 实例不缓存会话校验结果：后台停用账号、替换凭据以及�
 ### 界面语言偏好
 
 迁移 0047 为 `users` 增加可空的 `preferred_locale`，只允许 `zh-CN` 与 `en`，旧账号保持 null。登录、续期及会话响应沿用同一身份查询，部署新 API 前须先应用迁移。登录成功时用已保存的语言打开原目标页面，保留查询参数和定位；普通访问时 URL 语言仍优先。账户设置和顶栏共用更新接口，账号语言与头像各自更新，访客语言仍保存在本机。
+
+
+## 本地 Google 和 Apple 登录
+
+- 在 Supabase Auth 中启用对应供应商。Google OAuth 客户端和 Apple Services ID 注册 Supabase 的 `/auth/v1/callback`，Google 测试阶段把测试邮箱加入 Audience。Apple 网页 OAuth 的客户端密钥有有效期，在到期前重新签发并更新 Supabase。
+- 在 Supabase Auth 的 Redirect URLs 中添加实际本地访问地址，路径为 `/api/v1/auth/oauth/callback`。例如 `http://localhost:8081/api/v1/auth/oauth/callback`。该 Origin 同时必须列在本地 `AUTH_TRUSTED_ORIGINS` 中。
+- 参考 `.env.example`，只在本地忽略的 `.env` 中填写 Supabase 项目 URL、Publishable key 与已启用的供应商。Google 和 Apple 的客户端密钥由 Supabase Auth 保管。应用仅在 `NODE_ENV=development` 时启用入口。
+- 对本地 PostgreSQL 执行迁移 0048，然后以 `docker compose up -d --no-deps --wait --force-recreate studio` 载入配置。登录页从 `GET /api/v1/auth/oauth/providers` 读取可用入口。Hono 通过短期签名 Cookie 与 PKCE 交换验证 Supabase 身份，再签发 Lycobo 会话。
+- 以 Supabase 用户 UUID 建立稳定关联，首次登录创建独立个人工作区和 10 位 Lycobo UID。若两个登录方式由 Supabase 解析为同一用户 UUID，则复用同一个本地账号。企业账号与已有 UID 沿用原记录，相同邮箱不会自动关联到企业账号。

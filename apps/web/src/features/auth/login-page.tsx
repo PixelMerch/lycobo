@@ -37,6 +37,8 @@ export function LoginPage() {
     <main className="login-page" aria-labelledby="login-title">
       <LoginBackdrop />
       <LoginCard
+        returnTo={localizedPath(returnTo, locale)}
+        socialFailed={params.get("oauth") === "failed"}
         onClose={() => {
           void navigate(localizedPath("/", locale), { replace: true });
         }}
@@ -50,9 +52,13 @@ export function LoginPage() {
 
 /** 固定尺寸的登录卡片：正面依次为 Google、Apple、邮箱与企业账号入口，翻面后只显示企业账号表单。 */
 function LoginCard({
+  returnTo,
+  socialFailed,
   onClose,
   onLoginSuccess,
 }: {
+  returnTo: string;
+  socialFailed: boolean;
   onClose: () => void;
   onLoginSuccess: (account: EnterpriseIdentity) => void;
 }) {
@@ -99,7 +105,7 @@ function LoginCard({
               />
             ) : (
               <>
-                <LoginMethods />
+                <LoginMethods returnTo={returnTo} failed={socialFailed} />
                 {/* 企业账号是次要入口，放在其他方式下方。 */}
                 <Button
                   variant="ghost"

@@ -15,6 +15,7 @@ import postgres from "postgres";
 import { createApp } from "../src/app";
 import { hashPassword } from "../src/features/auth/password";
 import { enterpriseAuth } from "../src/features/auth/service";
+import { verifySocialAuth } from "./verify-social-auth";
 
 if (process.env.ALLOW_LOCAL_INTEGRATION !== "true")
   throw new Error("Explicit isolated test opt-in required");
@@ -83,6 +84,11 @@ try {
       secret: crypto.randomUUID() + crypto.randomUUID(),
       origins: [origin],
       secureCookie: false,
+      oauth: {
+        origin: "https://abcdefghijklmnopqrst.supabase.co",
+        key: "sb_publishable_fixture",
+        providers: ["google", "apple"],
+      },
     });
     const store = imageStore(directory);
     await store.ready();
@@ -112,6 +118,7 @@ try {
     assert.match(result.user.uid ?? "", /^[0-9]{10}$/);
     assert.equal(result.user.uid, first.uid);
     assert.notEqual(first.uid, second.uid);
+    await verifySocialAuth(app, origin, first.userId);
     const headers = { Authorization: `Bearer ${result.accessToken}` };
     const session = enterpriseIdentitySchema.parse(
       unwrapApiData(await (await app.request("/api/v1/auth/session", { headers })).json()),

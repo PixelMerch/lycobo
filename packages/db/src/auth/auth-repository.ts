@@ -3,6 +3,7 @@ import { type AccountLocale, accountLocales } from "@lycoboai/contracts";
 import postgres from "postgres";
 import { z } from "zod";
 import type { ImagePrincipal } from "../images/image-repository";
+import { createSocialSession } from "./social-account-repository";
 
 const accountRow = z.object({
   id: z.uuid(),
@@ -19,10 +20,12 @@ const principalRow = z.object({
   account: z.string(),
   avatar_preset: z.string().nullable(),
   preferred_locale: z.enum(accountLocales).nullable(),
+  social: z.boolean(),
 });
 export type EnterpriseCredential = z.infer<typeof accountRow>;
 export type EnterpriseIdentity = ImagePrincipal & {
   account: string;
+  loginMethod?: "social";
   avatarPreset?: string | null;
   preferredLocale?: AccountLocale | null;
 };
@@ -70,12 +73,15 @@ export function openAuthRepository(url: string, edge = false) {
       return rows.length === 1;
     },
     async identity(sessionId: string): Promise<EnterpriseIdentity | null> {
-      const rows =
-        await sql`select a.account,a.user_id,a.organization_id,m.role,u.uid,u.avatar_preset,u.preferred_locale from enterprise_sessions s
-        join enterprise_accounts a on a.id=s.account_id
-        join users u on u.id=a.user_id
-        join organization_members m on m.user_id=a.user_id and m.organization_id=a.organization_id
-        where s.id=${sessionId} and s.revoked_at is null and s.expires_at>now() and a.disabled_at is null and s.credential_version=a.credential_version`;
+      const rows = await sql`select coalesce(a.account,p.email,u.uid) as account,
+        u.id as user_id,m.organization_id,m.role,u.uid,u.avatar_preset,u.preferred_locale,
+        s.social_account_id is not null as social
+        from enterprise_sessions s
+        left join enterprise_accounts a on a.id=s.account_id and a.disabled_at is null and a.credential_version=s.credential_version
+        left join social_accounts p on p.id=s.social_account_id and p.disabled_at is null and p.credential_version=s.credential_version
+        join users u on u.id=coalesce(a.user_id,p.user_id)
+        join organization_members m on m.user_id=u.id and m.organization_id=coalesce(a.organization_id,p.organization_id)
+        where s.id=${sessionId} and s.revoked_at is null and s.expires_at>now()`;
       if (!rows[0]) return null;
       const row = principalRow.parse(rows[0]);
       return {
@@ -84,6 +90,7 @@ export function openAuthRepository(url: string, edge = false) {
         organizationId: row.organization_id,
         role: row.role,
         account: row.account,
+        ...(row.social ? { loginMethod: "social" as const } : {}),
         avatarPreset: row.avatar_preset,
         preferredLocale: row.preferred_locale,
       };
@@ -100,12 +107,20 @@ export function openAuthRepository(url: string, edge = false) {
         await sql`update users set preferred_locale=${locale} where id=${userId} returning id`;
       return rows.length === 1;
     },
+    /** 保存第三方登录会话，沿用主站的访问和刷新凭据。 */
+    createSocialSession: (input: Parameters<typeof createSocialSession>[1]) =>
+      createSocialSession(sql, input),
     async rotateRefresh(currentHash: string, nextHash: string) {
       const rows = await sql`update enterprise_sessions s set refresh_token_hash=${nextHash}
-        from enterprise_accounts a where s.refresh_token_hash=${currentHash}
-        and a.id=s.account_id and s.revoked_at is null and s.expires_at>now()
-        and a.disabled_at is null and s.credential_version=a.credential_version
-        and exists (select 1 from organization_members m where m.user_id=a.user_id and m.organization_id=a.organization_id)
+        where s.refresh_token_hash=${currentHash} and s.revoked_at is null and s.expires_at>now()
+        and (
+          exists (select 1 from enterprise_accounts a join organization_members m
+            on m.user_id=a.user_id and m.organization_id=a.organization_id
+            where a.id=s.account_id and a.disabled_at is null and a.credential_version=s.credential_version)
+          or exists (select 1 from social_accounts p join organization_members m
+            on m.user_id=p.user_id and m.organization_id=p.organization_id
+            where p.id=s.social_account_id and p.disabled_at is null and p.credential_version=s.credential_version)
+        )
         returning s.id,s.expires_at`;
       return rows[0]
         ? z.object({ id: z.uuid(), expires_at: z.coerce.date() }).parse(rows[0])

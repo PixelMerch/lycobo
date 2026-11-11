@@ -22,6 +22,7 @@ const auth: EnterpriseAuth = {
   changePassword: async () => false,
   setAvatarPreset: async () => false,
   setPreferredLocale: async () => false,
+  socialLogin: async () => null,
   revokeRefresh: async () => {},
   revoke: async () => {},
 };

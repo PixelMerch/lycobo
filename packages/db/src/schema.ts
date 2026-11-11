@@ -536,13 +536,34 @@ export const enterpriseAccounts = pgTable(
     ),
   ],
 );
+export const socialAccounts = pgTable(
+  "social_accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    supabaseUserId: uuid("supabase_user_id").notNull().unique(),
+    userId: uuid("user_id").notNull().unique(),
+    organizationId: uuid("organization_id").notNull(),
+    email: text("email"),
+    credentialVersion: uuid("credential_version").notNull().defaultRandom(),
+    disabledAt: timestamp("disabled_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.organizationId, t.userId],
+      foreignColumns: [organizationMembers.organizationId, organizationMembers.userId],
+      name: "social_account_member_fk",
+    }).onDelete("cascade"),
+  ],
+);
 export const enterpriseSessions = pgTable(
   "enterprise_sessions",
   {
     id: uuid("id").primaryKey(),
-    accountId: uuid("account_id")
-      .notNull()
-      .references(() => enterpriseAccounts.id, { onDelete: "cascade" }),
+    accountId: uuid("account_id").references(() => enterpriseAccounts.id, { onDelete: "cascade" }),
+    socialAccountId: uuid("social_account_id").references(() => socialAccounts.id, {
+      onDelete: "cascade",
+    }),
     credentialVersion: uuid("credential_version").notNull(),
     refreshTokenHash: text("refresh_token_hash").unique(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
@@ -551,6 +572,11 @@ export const enterpriseSessions = pgTable(
   },
   (t) => [
     index("enterprise_sessions_account_idx").on(t.accountId),
+    index("enterprise_sessions_social_account_idx").on(t.socialAccountId),
+    check(
+      "enterprise_sessions_one_account",
+      sql`(${t.accountId} is null) <> (${t.socialAccountId} is null)`,
+    ),
     index("enterprise_sessions_expiry_idx").on(t.expiresAt),
   ],
 );

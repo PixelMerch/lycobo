@@ -6,6 +6,7 @@ import {
 } from "@lycoboai/contracts";
 import { type Context, Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { oauthRoutes } from "./oauth-routes";
 import { enterpriseCookie, enterprisePrincipal, trustedAuthRequest } from "./principal";
 import type { EnterpriseAuth } from "./service";
 export const refreshCookie = "lycobo_enterprise_refresh";
@@ -16,31 +17,39 @@ function clearAuthCookies(c: Context, auth: EnterpriseAuth) {
   deleteCookie(c, refreshCookie, { ...flags, path: refreshPath });
   deleteCookie(c, "lycobo_image_session", { path: "/api" });
 }
-function tokenResponse(
+function setAuthCookies(
   c: Context,
   auth: EnterpriseAuth,
   result: NonNullable<Awaited<ReturnType<EnterpriseAuth["refresh"]>>>,
 ) {
-  const { refreshToken, ...body } = result;
   const flags = { httpOnly: true, secure: auth.config.secureCookie, sameSite: "Strict" } as const;
   setCookie(c, enterpriseCookie, result.accessToken, {
     ...flags,
     path: "/api",
     maxAge: result.expiresIn,
   });
-  setCookie(c, refreshCookie, refreshToken, {
+  setCookie(c, refreshCookie, result.refreshToken, {
     ...flags,
     path: refreshPath,
     maxAge: result.refreshExpiresIn,
   });
   deleteCookie(c, "lycobo_image_session", { path: "/api" });
   c.header("X-Auth-Expires-At", String(Math.floor(Date.now() / 1000) + result.expiresIn));
+}
+function tokenResponse(
+  c: Context,
+  auth: EnterpriseAuth,
+  result: NonNullable<Awaited<ReturnType<EnterpriseAuth["refresh"]>>>,
+) {
+  setAuthCookies(c, auth, result);
+  const { refreshToken: _, ...body } = result;
   return c.json(body);
 }
 type Env = { Variables: { requestId: string } };
 /** 企业账号的登录、刷新、改密、个人偏好、会话与退出路由；未配置登录服务时统一返回 503。 */
 export function authRoutes(auth?: EnterpriseAuth) {
   const app = new Hono<Env>();
+  app.route("/oauth", oauthRoutes(auth, setAuthCookies));
   const fail = (
     c: Context<Env>,
     code: string,
@@ -80,6 +89,8 @@ export function authRoutes(auth?: EnterpriseAuth) {
     if (!auth) return fail(c, "AUTH_NOT_CONFIGURED", "登录服务尚未配置", 503);
     const session = await enterprisePrincipal(c, auth);
     if (!session) return fail(c, "UNAUTHORIZED", "请先登录", 401);
+    if (session.user.loginMethod === "social")
+      return fail(c, "FORBIDDEN", "第三方账号密码由登录服务商管理", 403);
     const input = enterprisePasswordChangeSchema.safeParse(await c.req.json().catch(() => null));
     if (!input.success) return fail(c, "VALIDATION_ERROR", "新密码需为 12 至 256 个字符", 400);
     if (
