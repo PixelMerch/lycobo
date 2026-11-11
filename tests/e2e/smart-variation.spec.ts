@@ -74,7 +74,7 @@ test("analysis requires text, preserves edited plans and submits only confirmed 
   await expect(dialog).toBeHidden();
   expect(generations).toBe(1);
   expect(submitted).toMatchObject({
-    model: "gpt-image-2.5",
+    model: "gpt-image-2.6",
     count: 8,
     prompt: "为杯子生成十种商品场景，保留主体",
     variation: {

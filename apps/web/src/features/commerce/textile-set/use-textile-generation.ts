@@ -21,7 +21,7 @@ export function useTextileGeneration() {
   const pending = usePendingSubmission(session.data);
   const ownPending =
     pending && !!session.data && pendingSubmissionSource(session.data) === "textile-set";
-  const capabilities = modelCapabilities(models.data, "gpt-image-2.5", "textile-set");
+  const capabilities = modelCapabilities(models.data, "gpt-image-2.6", "textile-set");
   const resolutions = capabilities?.enabledResolutions ?? [];
   const configured =
     supportsReferences(capabilities, 1 + draft.detailImages.length) &&
@@ -49,7 +49,7 @@ export function useTextileGeneration() {
       revealNewestHistory();
       generation.mutate(
         {
-          model: "gpt-image-2.5",
+          model: "gpt-image-2.6",
           draft: input,
           source: "textile-set",
           textileSet: { version: 5, views: draft.views },

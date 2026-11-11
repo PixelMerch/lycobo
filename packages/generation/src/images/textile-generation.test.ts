@@ -121,7 +121,7 @@ it("routes every new textile resolution to the requested 4K channel and preserve
     }
   }
 });
-it("selects the public 2.5 model for v5 while keeping accepted v4 jobs unchanged", () => {
+it("preserves legacy textile inputs and accepts the public 2.6 model for new v5 jobs", () => {
   const original = imageGenerationInputSchema.parse({
     ...input(),
     resolution: "1K",
@@ -131,6 +131,8 @@ it("selects the public 2.5 model for v5 while keeping accepted v4 jobs unchanged
   expect(current.model).toBe("gpt-image-2.5");
   expect(current.count).toBe(10);
   expect(textileItemInput(current, 0)).toMatchObject({ model: "gpt-image-2.5", count: 1 });
+  const newJob = normalizeTextileGeneration({ ...original, model: "gpt-image-2.6" });
+  expect(textileItemInput(newJob, 0)).toMatchObject({ model: "gpt-image-2.6", count: 1 });
   expect(
     normalizeTextileGeneration({
       ...original,

@@ -53,10 +53,12 @@ export function registerImageTaskSubmission(app: Hono<Env>, deps: ImageApiDepend
     const taskInput = input.data.replica
       ? { ...input.data, model: "gpt-image-2.6", count: input.data.referenceAssetIds.length - 1 }
       : input.data;
+    // 旧客户端仍可用原始型号确认已接收的请求，实际渠道由任务类型决定。
+    const variationModel = taskInput.model === "gpt-image-2.6" ? taskInput.model : "gpt-image-2.5";
     const normalized = taskInput.variation
       ? {
           ...taskInput,
-          model: "gpt-image-2.5",
+          model: variationModel,
           quality: "medium" as const,
         }
       : normalizeTextileGeneration(taskInput);

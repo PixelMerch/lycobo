@@ -32,7 +32,7 @@ export function useVariationGeneration() {
   const itemReferences = itemReferenceIndexes(selected, draft.references, roles, bindings);
   const everyItemHasImages =
     !itemReferences || selected.every((item) => (itemReferences[item.id]?.length ?? 0) > 0);
-  const caps = modelCapabilities(models.data, "gpt-image-2.5", "create");
+  const caps = modelCapabilities(models.data, "gpt-image-2.6", "create");
   const configured =
     !!caps?.enabledResolutions.some((value) => value === draft.resolution) &&
     (!draft.references.length || supportsReferences(caps, draft.references.length));
@@ -56,7 +56,7 @@ export function useVariationGeneration() {
       if (!draft.planId && !ownPending) return;
       revealNewestHistory();
       await generation.mutateAsync({
-        model: "gpt-image-2.5",
+        model: "gpt-image-2.6",
         source: "smart-variation",
         draft: {
           references: draft.references,

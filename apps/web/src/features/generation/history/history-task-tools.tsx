@@ -219,7 +219,7 @@ function historyRetryPlan(
     targets.every((entry) => entry.status === "failed");
   const capabilities = modelCapabilities(
     models,
-    upgradeTextile ? "gpt-image-2.5" : job.model,
+    upgradeTextile ? "gpt-image-2.6" : job.model,
     historyModelOperation(job),
   );
   const configured =
@@ -255,7 +255,7 @@ function historyRetryPayload(
       : restored.textileSet.views;
     return {
       ...restored,
-      model: "gpt-image-2.5",
+      model: "gpt-image-2.6",
       draft: { ...restored.draft, count: String(views.length) },
       textileSet: { version: 5, views },
       source: "textile-set",

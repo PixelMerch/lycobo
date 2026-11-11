@@ -22,7 +22,7 @@ test("textile angles submit one durable ten-image job and isolate history across
         eventsEnabled: true,
         editsEnabled: true,
         unitCredits: 2,
-        models: ["gpt-image-2", "gpt-image-2.5", "nano-banana-2.1"].map((id) => ({
+        models: ["gpt-image-2", "gpt-image-2.6", "nano-banana-2.1"].map((id) => ({
           id,
           enabledResolutions: ["1K", "1.5K", "2K", "4K"],
         })),
@@ -60,7 +60,7 @@ test("textile angles submit one durable ten-image job and isolate history across
           .map((upload) => upload.id)
           .sort(),
       );
-      expect(input.model).toBe("gpt-image-2.5");
+      expect(input.model).toBe("gpt-image-2.6");
       expect(input.textileSet?.version).toBe(5);
       expect(input.resolution).toBe("2K");
       expect(input.quality).toBe("medium");

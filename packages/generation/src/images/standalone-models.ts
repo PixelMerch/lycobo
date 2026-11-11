@@ -87,14 +87,17 @@ export async function standaloneModels(env: StandaloneModelEnvironment) {
         ]),
       ),
     resolve: (input: ImageGenerationInput) => {
-      const snapshot = snapshots[input.model];
+      // 专用工具共用上游渠道，旧任务的公开型号仍可用于幂等确认和重试。
+      const usesCommerceChannel = !!(input.replica || input.textileSet || input.variation);
+      const snapshot = snapshots[usesCommerceChannel ? "gpt-image-2.6" : input.model];
       if (
         !snapshot ||
         input.referenceAssetIds.length > (input.replica ? 11 : snapshot.maxReferences)
       )
         throw new Error("MODEL_CHANNEL_DISABLED");
-      // 复制爆款固定使用专用上游型号，不改变主图制作的2.6渠道。
-      return input.replica ? { ...snapshot, upstreamModel: "gpt-image-2.6-sunburst" } : snapshot;
+      return usesCommerceChannel
+        ? { ...snapshot, upstreamModel: "gpt-image-2.6-sunburst" }
+        : snapshot;
     },
   };
 }
@@ -104,9 +107,10 @@ export function imageWebhookSource(key: string) {
   return createHash("sha256").update(`fluxport:${key}`).digest("hex");
 }
 
-/** 复制工具单独声明容量，不扩大主图制作的模型列表或参考图上限。 */
+/** 按工具公布可用能力，家纺裂变保留旧型号以支持历史记录与滚动发布。 */
 function modelsForTool(tool: string) {
   if (tool === "replica") return [{ id: "gpt-image-2.6" }];
   if (tool === "create") return mainImageModelIds.map((id) => ({ id }));
+  if (tool === "textile-set") return models;
   return models.filter((model) => model.id !== "gpt-image-2.6");
 }
