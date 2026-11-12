@@ -1,10 +1,10 @@
-/* 顶部栏积分胶囊按 vidmuse：40px 高、#FFFFFF14 底、左右 12px、gap 8px，悬停或展开时换成青柠 15% 底。 */
+/* 顶部栏积分胶囊按 vidmuse：与语言胶囊同高、#FFFFFF14 底、左右 12px、gap 8px，悬停或展开时换成青柠 15% 底。 */
 .header-credits {
   display: inline-flex;
   flex: none;
   align-items: center;
   gap: 8px;
-  height: 40px;
+  height: var(--shell-pill-height);
   min-width: 0;
   max-width: 240px;
   padding: 0 12px;

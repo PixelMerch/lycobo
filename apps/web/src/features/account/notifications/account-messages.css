@@ -8,25 +8,46 @@
 :root .account-news-popover {
   width: min(380px, calc(100vw - 16px));
   padding: 0;
-  border-radius: 24px;
-  overflow: hidden;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
   transform-origin: top right;
 }
 .account-news-panel {
-  width: 100%;
-  /* 短列表随内容收拢，长列表在浮层内滚动。 */
-  max-height: min(480px, calc(100dvh - 2 * var(--header-height) - 8px));
   padding: 0;
+}
+.account-news-surface {
+  /* 短列表随内容收拢，长列表和公告正文分别滚动。 */
+  max-height: min(480px, calc(100dvh - 2 * var(--header-height) - 8px));
+  min-width: 0;
+  border-radius: 24px;
+  overflow: hidden;
 }
 .account-news-tabs.tabs {
   display: flex;
   flex-direction: column;
   gap: 0;
-  max-height: inherit;
+}
+@media (min-width: 824px) {
+  :root .account-news-popover[data-detail-open="true"] {
+    width: min(788px, calc(100vw - 24px));
+  }
+  .account-news-popover[data-detail-open="true"] .account-news-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    align-items: start;
+    gap: var(--space-2);
+  }
+}
+@media (max-width: 823px) {
+  .account-news-popover[data-detail-open="true"] .account-news-tabs {
+    display: none;
+  }
 }
 .account-news-tabs .tabs__list-container {
   flex: none;
-  padding: var(--space-2);
+  padding: var(--space-1) var(--space-2) 0;
 }
 .account-news-tabs .tabs__list {
   display: flex;
@@ -40,12 +61,31 @@
   flex: 1;
   justify-content: center;
   gap: var(--space-2);
-  height: 44px;
+  position: relative;
+  isolation: isolate;
+  height: var(--shell-pill-height);
+  min-height: var(--shell-pill-height);
   border-radius: 999px;
 }
 .account-news-tabs .tabs__tab[data-selected="true"] {
-  background: #ffffff14;
+  background: transparent;
   color: var(--foreground);
+}
+.account-news-tabs .tabs__tab[data-selected="true"]::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--fill-medium);
+  content: "";
+}
+@media (max-width: 767px), (pointer: coarse) {
+  .account-news-tabs .tabs__tab {
+    min-height: 44px;
+  }
+  .account-news-tabs .tabs__tab[data-selected="true"]::before {
+    inset-block: 4px;
+  }
 }
 .account-news-count {
   padding: 0 6px;
@@ -96,7 +136,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 120px;
+  min-height: 92px;
   text-align: center;
 }
 .account-news-empty h3 {
@@ -170,5 +210,76 @@
   color: #ffffffb3;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
+  overflow-wrap: anywhere;
+}
+
+.account-release-summary.button {
+  width: 100%;
+  height: auto;
+  min-height: 44px;
+  justify-content: flex-start;
+  white-space: normal;
+  text-align: start;
+}
+.account-release-summary strong {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+.account-release-summary[aria-expanded="true"] {
+  background: var(--fill-medium);
+}
+.account-release-preview {
+  display: -webkit-box;
+  margin-block: var(--space-1);
+  overflow: hidden;
+  color: #ffffffb3;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow-wrap: anywhere;
+}
+.account-release-detail {
+  display: flex;
+  flex-direction: column;
+}
+.account-release-header {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4) 0;
+}
+.account-release-header h3 {
+  margin: var(--space-1) 0 0;
+  color: var(--foreground);
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
+  overflow-wrap: anywhere;
+}
+.account-release-header .button {
+  flex: none;
+}
+@media (max-width: 767px), (pointer: coarse) {
+  .account-release-header .button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+.account-release-body {
+  min-height: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.account-release-body p {
+  margin: 0 0 var(--space-4);
+  color: #ffffffcc;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  white-space: pre-wrap;
   overflow-wrap: anywhere;
 }

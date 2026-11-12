@@ -112,14 +112,14 @@
   min-height: 38px;
   padding: 8px 8px 8px 12px;
   gap: 12px;
-  border-radius: 16px;
+  border-radius: 6px;
   color: #fff;
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
   font-weight: var(--weight-regular);
 }
 .account-menu-row:is([data-hovered="true"], [data-focus-visible="true"]) {
-  background: var(--interaction-hover);
+  background: var(--fill-soft);
 }
 .account-menu .account-menu-separator {
   width: auto;
@@ -173,17 +173,17 @@
 .account-header .account-trigger {
   flex: none;
   justify-content: center;
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
-  min-height: 40px;
+  width: var(--shell-pill-height);
+  min-width: var(--shell-pill-height);
+  height: var(--shell-pill-height);
+  min-height: var(--shell-pill-height);
   padding: 0;
   border-radius: 50%;
 }
 .account-header .account-trigger .account-avatar {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
+  width: var(--shell-pill-height);
+  height: var(--shell-pill-height);
+  min-width: var(--shell-pill-height);
   font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
 }

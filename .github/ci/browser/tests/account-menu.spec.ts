@@ -52,6 +52,9 @@ for (const width of [1440, 320]) {
     await expect(panel.locator(".account-menu-details")).toContainText("UID 0123456789 · 管理员");
     await expect(panel).toHaveCSS("width", `${Math.min(280, width - 24)}px`);
     await expect(works).toHaveCSS("font-size", "13px");
+    await works.hover();
+    await expect(works).toHaveCSS("border-radius", "6px");
+    await expect(works).toHaveCSS("background-color", "rgba(255, 255, 255, 0.06)");
     await expect(works).toHaveCSS("min-height", desktop ? "38px" : "44px");
     await expect(panel.getByRole("switch", { name: "桌面通知", exact: true })).toHaveCount(0);
     expect(await panel.evaluate((element) => element.scrollWidth)).toBeLessThanOrEqual(
@@ -127,5 +130,41 @@ for (const width of [1440, 390]) {
     await page.keyboard.press("Escape");
     await expect(panel).toBeHidden();
     await expect(opener).toBeFocused();
+  });
+}
+
+for (const width of [1440, 390]) {
+  test(`the update summary opens the full notice at ${width}px`, async ({ page }) => {
+    await signIn(page, "release-fixture");
+    const release = {
+      version: "fixture-1",
+      title: "工作台更新公告",
+      description: `${"公告摘要包含近期更新。".repeat(22)}\n\n完整正文最后一段。`,
+      publishedAt: "2025-01-01T00:00:00.000Z",
+    };
+    await page.route("**/api/v1/realtime/release", (route) =>
+      route.fulfill({ json: apiFixture({ release }) }),
+    );
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/commerce/create");
+    await page.getByRole("button", { name: /^消息（/ }).click();
+    await page.getByRole("tab", { name: "更新通知", exact: true }).click();
+    const summary = page.getByRole("button", { name: release.title, exact: true });
+    const detail = page.getByRole("region", { name: release.title, exact: true });
+    await expect(detail).toBeHidden();
+    await summary.press("Enter");
+    await expect(detail).toContainText("完整正文最后一段。");
+    if (width < 824) await expect(summary).toBeHidden();
+    else {
+      const [detailBox, summaryBox] = await Promise.all([
+        detail.boundingBox(),
+        summary.boundingBox(),
+      ]);
+      if (!detailBox || !summaryBox) throw new Error("Missing update detail or summary");
+      expect(detailBox.x + detailBox.width).toBeLessThan(summaryBox.x);
+    }
+    await detail.getByRole("button", { name: "关闭更新详情", exact: true }).click();
+    await expect(detail).toBeHidden();
+    await expect(summary).toBeFocused();
   });
 }

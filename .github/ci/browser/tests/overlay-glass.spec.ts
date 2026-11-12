@@ -100,7 +100,7 @@ for (const mobile of [false, true]) {
     const opener = page.getByRole("button", { name: /^消息（/ });
     await opener.click();
     const panel = page.getByRole("dialog", { name: "消息中心", exact: true });
-    const surface = page.locator(".account-news-popover");
+    const surface = page.locator(".account-news-tabs");
     await glass(surface);
     await expect(surface).toHaveCSS("background-color", "rgba(18, 18, 18, 0.84)");
     await expect(panel.getByRole("tab", { name: /1 条未读消息/ })).toBeVisible();

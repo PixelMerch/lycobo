@@ -5,12 +5,13 @@
     .modal__dialog,
     .drawer__dialog,
     .popover,
+    .account-news-surface,
     .dropdown__popover,
     .select__popover,
     .tooltip,
     .alert-dialog,
     .toast
-  ):not(.membership-dialog, .browse-image-dialog),
+  ):not(.membership-dialog, .browse-image-dialog, .account-news-popover),
 :root .login-panel {
   background: var(--glass-fill), var(--glass-tint);
   border: 1px solid var(--glass-border);
@@ -20,7 +21,15 @@
 }
 /* 通知、账户与顶部栏入口沿用素材库来源菜单的深色毛玻璃。 */
 :root
-  :is(.choice-menu, .account-news-popover, .credits-menu, .account-menu, .account-settings-dialog) {
+  :is(
+    .choice-menu,
+    .topbar-menu,
+    .account-news-surface,
+    .account-news-tooltip,
+    .credits-menu,
+    .account-menu,
+    .account-settings-dialog
+  ) {
   --glass-tint: var(--glass-dark-tint);
 }
 :root .header-menu.dropdown__popover {

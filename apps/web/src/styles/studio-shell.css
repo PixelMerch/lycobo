@@ -229,7 +229,7 @@
 .topbar-menu .topbar-menu-item[data-current="true"] {
   color: #fff;
 }
-/* 右侧消息入口为 40px 圆形按钮。 */
+/* 右侧消息入口为 紧凑圆形按钮。 */
 .header-news {
   display: flex;
   align-items: center;
@@ -239,10 +239,10 @@
   display: contents;
 }
 .header-news .account-footer-action.button {
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
-  min-height: 40px;
+  width: var(--shell-pill-height);
+  min-width: var(--shell-pill-height);
+  height: var(--shell-pill-height);
+  min-height: var(--shell-pill-height);
   border-radius: 50%;
   background: #ffffff14;
   color: #ffffffcc;
