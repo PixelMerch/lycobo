@@ -128,17 +128,6 @@
   background: var(--accent);
 }
 
-/* 设置入口与消息列表分层，未读状态不再依赖重复的大按钮。 */
-.notification-preferences {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex: none;
-  padding: var(--space-4);
-  border-radius: 16px;
-  background: var(--glass-card);
-}
-.notification-preferences-icon,
 .account-message-icon {
   display: grid;
   place-items: center;
@@ -149,21 +138,10 @@
   color: var(--foreground);
   background: var(--glass-card);
 }
-.notification-preferences-copy {
-  flex: 1;
-  min-width: 0;
-}
-.notification-preferences h3,
 .account-message h3 {
   font-size: var(--text-base);
   line-height: var(--leading-base);
   font-weight: var(--weight-medium);
-}
-.notification-preferences p {
-  margin: var(--space-1) 0 0;
-  color: #ffffffb3;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
 }
 .account-message {
   display: flex;
@@ -207,15 +185,6 @@
   overflow-wrap: anywhere;
 }
 @media (max-width: 767px) {
-  .notification-preferences {
-    display: grid;
-    grid-template-columns: 32px minmax(0, 1fr);
-    align-items: start;
-  }
-  .notification-preferences > .button {
-    grid-column: 2;
-    justify-self: start;
-  }
   .account-message {
     padding: var(--space-3);
   }

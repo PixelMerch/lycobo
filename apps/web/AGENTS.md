@@ -69,7 +69,8 @@ navigation; never prefix API, WebSocket, image or font URLs. See docs/localized-
   dialog after hover or click. Cover this in the CI browser suite. Run the suite only through GitHub Actions.
 - Signed in, the account avatar sits at the right end of the top bar and opens its menu downward on
   press, Enter or Space; on phones the account row sits at the foot of the navigation drawer and opens
-  upward. Hovering does not open it. Keyboard focus enters the first row and returns to the trigger on close.
+  upward. Hovering does not open it. While open, Enter dismisses it and Space activates the focused
+  control. Keyboard focus enters the first row and returns to the trigger on close.
 - Preserve pending drafts when switching tasks. Never navigate users away when a background task completes.
 - Product screens use end-user language. Keep preview/debug/reset notes in developer documentation, not headers, cards or dialogs. Never infer production readiness from clean UI copy.
 - Match the measured shell rules in DESIGN.md: a sticky top bar (64px desktop, 60px mobile, transparent at the top and frosted 4px shorter once the page scrolls; workspace pages keep it solid and fixed, user 2026-11-10) modeled on the user-approved vidmuse header, 36px pill navigation items, a 电商 dropdown that opens on press only, 40px round utility buttons and avatar, and no left sidebar. Hover/active never change geometry; mobile targets stay 44px.

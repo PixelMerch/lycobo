@@ -6,18 +6,7 @@ import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { useNotifications, useReadNotification, useSiteRelease } from "../../realtime/client";
-import { DesktopNotificationControl } from "../../realtime/desktop-notification-control";
 import { notificationsMessages } from "./notifications-messages";
-
-/** 展示真实服务端消息和独立已读状态，不为消息导航或覆盖草稿。 */
-export function NotificationBody() {
-  return (
-    <>
-      <DesktopNotificationControl />
-      <NotificationMessages />
-    </>
-  );
-}
 
 /** 展示站点发布服务提供的最新更新，复用实时连接已同步的版本缓存。 */
 export function ReleaseNotice() {
@@ -60,7 +49,8 @@ export function ReleaseNotice() {
   );
 }
 
-function NotificationMessages() {
+/** 展示真实服务端消息和独立已读状态。 */
+export function NotificationBody() {
   const notifications = useNotifications();
   const read = useReadNotification();
   const t = useMessages(notificationsMessages);

@@ -102,7 +102,7 @@ for (const mobile of [false, true]) {
     const panel = page.getByRole("dialog", { name: "消息中心", exact: true });
     await glass(panel);
     await expect(panel.getByText("1 条未读消息", { exact: true })).toBeVisible();
-    await expect(panel.getByRole("heading", { name: "桌面通知", exact: true })).toBeVisible();
+    await expect(panel.getByText("桌面通知", { exact: true })).toHaveCount(0);
     await expect(panel.locator('.account-message[data-unread="true"]')).toHaveCount(1);
     await expect(panel.getByRole("button", { name: "标为已读", exact: true })).toHaveCount(1);
     await panel.screenshot({
