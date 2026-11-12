@@ -133,26 +133,29 @@
   min-height: 16px;
 }
 
-/* 首页滚动条：轨道透明、滑块半透明，避免在浅色区块右侧出现黑条。 */
+/* 首页滚动条：隐藏原生滚动槽，改用覆盖在页面上的浅色滑块。 */
 html:has(.vidmuse-landing) {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(255 255 255 / 28%) transparent;
+  scrollbar-width: none;
 }
 html:has(.vidmuse-landing)::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-  background: transparent;
+  display: none;
 }
-html:has(.vidmuse-landing)::-webkit-scrollbar-track {
-  background: transparent;
+.vm-overlay-scrollbar {
+  position: fixed;
+  z-index: 120;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 8px;
+  pointer-events: none;
 }
-html:has(.vidmuse-landing)::-webkit-scrollbar-thumb {
-  border: 2px solid transparent;
+.vm-overlay-scrollbar span {
+  position: absolute;
+  top: 0;
+  right: 1px;
+  display: block;
+  width: 6px;
   border-radius: 999px;
-  background: rgb(255 255 255 / 24%);
-  background-clip: padding-box;
-}
-html:has(.vidmuse-landing)::-webkit-scrollbar-thumb:hover {
-  background: rgb(255 255 255 / 38%);
-  background-clip: padding-box;
+  background: rgb(255 255 255 / 46%);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 4%);
 }
