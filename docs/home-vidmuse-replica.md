@@ -9,7 +9,7 @@
 - 首页路由 `/` 渲染 `apps/web/src/features/home/vidmuse/vidmuse-landing.tsx`，页面自带 header、footer 和 vidmuse 主题，应用壳顶部栏在首页隐藏。
 - 主题色已从 `#FB5123` 改为 Lycobo 青柠 `#A8FF00`，青柠底色上的按钮文字和图标使用深色 `#142000`。
 - 媒体资源在 `apps/web/public/vidmuse/`，组件和样式在 `apps/web/src/features/home/vidmuse/`。
-- 首屏中间使用 CSS 动画近似采集页的 Unicorn Studio Canvas 背景；两侧为黑色，并遵循 `prefers-reduced-motion`。
+- 首屏中间使用项目现有 Silk WebGL 渲染器（React Bits Silk 移植）近似采集页的 Unicorn Studio Canvas 背景；两侧和下缘用黑色渐隐收边，并遵循 `prefers-reduced-motion`。
 - 登录、上传、生成、计费、导航和语言切换目前没有接入业务；只保留页签切换、轮播、视频播放、点赞、模板填入等展示交互。
 - 旧首页的创作框、模式页签、灵感墙和快捷入口组件已移除；灵感库、登录等仍被其他页面使用的代码保留。
 
@@ -19,14 +19,14 @@
 
 已按采集数据修正：
 
-| 项目       | 采集值 / 处理                                                                  |
-| ---------- | ------------------------------------------------------------------------------ |
-| 工作流舞台 | 缩放 `0.935096`、可视高度 `778px`、滚动行程 `2790px`，滚动阈值同步为 `778`     |
-| 模板轮播   | 从 6 张补齐到 10 张，加入 Giant Glam、Flavor Burst、Red Carpet、Echoed Words   |
-| 视频重制   | 恢复标签上的 16×16 取消按钮和显示状态切换                                       |
-| Impact     | 补回 `data-campaign-reveal` 包裹，恢复全宽渐变背景上的内缩白色卡片              |
-| 输入框     | 去掉主题色描边和旋转渐变，发送按钮固定为 32×32 正圆                             |
-| 主题       | 橙红改为品牌青柠；CTA 线稿、生产时间卡片和引导光同步换色                       |
+| 项目       | 采集值 / 处理                                                                |
+| ---------- | ---------------------------------------------------------------------------- |
+| 工作流舞台 | 缩放 `0.935096`、可视高度 `778px`、滚动行程 `2790px`，滚动阈值同步为 `778`   |
+| 模板轮播   | 从 6 张补齐到 10 张，加入 Giant Glam、Flavor Burst、Red Carpet、Echoed Words |
+| 视频重制   | 恢复标签上的 16×16 取消按钮和显示状态切换                                    |
+| Impact     | 补回 `data-campaign-reveal` 包裹，恢复全宽渐变背景上的内缩白色卡片           |
+| 输入框     | 去掉主题色描边和旋转渐变，发送按钮固定为 32×32 正圆                          |
+| 主题       | 橙红改为品牌青柠；CTA 线稿、生产时间卡片和引导光同步换色                     |
 
 ## 改进建议
 
@@ -44,7 +44,7 @@
 ### P1：视觉与交互保真
 
 4. **首屏背景改用真实 Canvas 场景或定制着色器**  
-   采集文档只记录了 `CANVAS · Unicorn Studio Scene` 的尺寸，没有场景 shader、项目 ID 或动画参数，因此当前 CSS 只能是近似。若要 1:1，需要引入有授权的 Unicorn Studio 场景，或用 Canvas/WebGL 重写并记录性能与降级策略。
+   采集文档只记录了 `CANVAS · Unicorn Studio Scene` 的尺寸，没有场景 shader、项目 ID 或可再分发授权；当前用项目已有的 Silk WebGL 做近似。若要 1:1，需要引入有授权的 Unicorn Studio 场景，或继续用自有 Canvas/WebGL 着色器重写并记录性能与降级策略。
 
 5. **补齐工作流的可访问语义**  
    采集页使用 `role=tablist` / `role=tabpanel`；当前实现用 ToggleButtonGroup 完成视觉切换。建议改成 HeroUI Tabs 或补全 tab 语义、方向键切换和 `aria-controls`。
