@@ -112,8 +112,15 @@ for (const width of [1440, 390]) {
     const panel = page.getByRole("dialog", { name: "消息中心", exact: true });
     await opener.click();
     await expect(panel).toBeVisible();
+    const list = panel.locator(".account-news-tabs");
+    const headerHeight = await page.locator(".topbar").evaluate((element) => element.offsetHeight);
+    const bottomGap = () =>
+      list.evaluate((element) => innerHeight - element.getBoundingClientRect().bottom);
+    await expect.poll(bottomGap).toBeCloseTo(headerHeight, 0);
+    const listHeight = await list.evaluate((element) => element.offsetHeight);
     await panel.getByRole("tab", { name: "更新通知", exact: true }).click();
-    await expect(panel).toBeVisible();
+    await expect(list).toHaveCSS("height", `${listHeight}px`);
+    await expect.poll(bottomGap).toBeCloseTo(headerHeight, 0);
     await opener.click();
     await expect(panel).toBeHidden();
     await expect(opener).toHaveAttribute("aria-expanded", "false");

@@ -6,6 +6,12 @@
 }
 
 :root .account-news-popover {
+  --account-news-height: calc(
+    100dvh -
+    2 *
+    var(--account-news-header-height, var(--header-height)) -
+    8px
+  );
   width: min(380px, calc(100vw - 16px));
   padding: 0;
   border: 0;
@@ -14,17 +20,20 @@
   overflow: visible;
   transform-origin: top right;
 }
+/* 顶部栏收窄时，上下各预留一个收窄后的顶部栏高度。 */
+:root:has(.topbar[data-scrolled="true"]) .account-news-popover {
+  --account-news-header-height: calc(var(--header-height) - 4px);
+}
 .account-news-panel {
   padding: 0;
 }
 .account-news-surface {
-  /* 短列表随内容收拢，长列表和公告正文分别滚动。 */
-  max-height: min(480px, calc(100dvh - 2 * var(--header-height) - 8px));
   min-width: 0;
   border-radius: 24px;
   overflow: hidden;
 }
 .account-news-tabs.tabs {
+  height: var(--account-news-height);
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -244,6 +253,13 @@
 .account-release-detail {
   display: flex;
   flex-direction: column;
+  max-height: min(480px, var(--account-news-height));
+}
+@media (max-width: 823px) {
+  .account-release-detail {
+    height: var(--account-news-height);
+    max-height: none;
+  }
 }
 .account-release-header {
   display: flex;
