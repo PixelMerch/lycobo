@@ -6,9 +6,11 @@ import {
 } from "@lycoboai/contracts";
 import type { ImageRepository } from "@lycoboai/db";
 import { supportedResolutions, validateModelInput } from "@lycoboai/generation";
+import { dispatchImageOutbox, type ImageQueueJob } from "@lycoboai/queue";
 import type { ImageStore } from "@lycoboai/storage";
 import type postgres from "postgres";
 import { createApp } from "../../../api/src/app";
+import { prepareReferences } from "../../src/cloudflare/cloudflare-consumer";
 import { processImageItem } from "../../src/images/image-processor";
 
 /** 不依赖浏览器等待，验证已接收上传可先建任务，图片未就绪时不领取或调用供应商。 */
@@ -56,6 +58,14 @@ export async function verifyReferenceWaiting(
   assert.ok(item);
   const waiting = await repository.waitingReferenceUploads(item.id);
   assert.deepEqual(waiting?.ids, [uploadId]);
+  const runtime = {
+    repository,
+    uploads: {
+      status: async () => ({ status: "pending" as const }),
+    },
+  };
+  await sql`update generation_jobs set created_at=now()-interval '21 minutes' where id=${task.id}`;
+  assert.equal(await prepareReferences(item.id, runtime), "pending");
   let deferred = 0;
   await processImageItem(item.id, {
     repository,
@@ -63,7 +73,7 @@ export async function verifyReferenceWaiting(
     workerId: "waiting-fixture",
     overrides: {},
     editsEnabled: true,
-    prepareReferences: async () => "pending",
+    prepareReferences: (itemId) => prepareReferences(itemId, runtime),
     onDeferred: (ms) => {
       deferred = ms;
     },
@@ -71,9 +81,30 @@ export async function verifyReferenceWaiting(
   assert.equal(deferred, 15000);
   assert.equal((await repository.get(owner, task.id))?.status, "queued");
   assert.equal((await repository.wallet(owner)).balance, 18);
+  const sent: string[] = [];
+  const queue = {
+    send: async (message: ImageQueueJob) => {
+      if (message.itemId === item.id) sent.push(message.itemId);
+    },
+  };
+  await dispatchImageOutbox(repository, queue);
+  assert.equal(sent.length, 1);
+  await sql`update generation_outbox set next_attempt_at=now()-interval '1 minute' where item_id=${item.id}`;
+  await dispatchImageOutbox(repository, queue);
+  assert.equal(sent.length, 1);
+  await sql`update generation_outbox set next_attempt_at=now()-interval '6 minutes' where item_id=${item.id}`;
+  await dispatchImageOutbox(repository, queue);
+  assert.equal(sent.length, 2);
+  assert.equal(
+    await prepareReferences(item.id, { repository, uploads: { status: async () => null } }),
+    "failed",
+  );
+  await sql`update generation_jobs set created_at=now()-interval '31 minutes' where id=${task.id}`;
+  assert.equal(await prepareReferences(item.id, runtime), "failed");
   const asset = await store.put(owner, png, uploadId);
   await repository.addReference(owner, asset);
   assert.equal(await repository.waitingReferenceUploads(item.id), null);
+  assert.equal(await prepareReferences(item.id, runtime), "ready");
   const [stored] = await sql`select expires_at from media_assets where id=${uploadId}`;
   assert.equal(stored?.expires_at, null);
   const claimed = await repository.claim(item.id, "ready-fixture", 60000);
