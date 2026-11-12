@@ -4,7 +4,7 @@ import { defineMessages } from "../../../i18n/messages";
 export const vidmuseMessages = defineMessages({
   "zh-CN": {
     header: {
-      homeAria: "VidMuse 首页",
+      homeAria: "LYCOBO 首页",
       navAria: "产品首页",
       credits: "赚取积分",
       faq: "FAQ",
@@ -44,7 +44,7 @@ export const vidmuseMessages = defineMessages({
       started: "已开始生成，预计 1 分钟完成",
     },
     footer: {
-      homeAria: "VidMuse 首页",
+      homeAria: "LYCOBO 首页",
       tagline: "看见你的声音",
       navAria: "页脚导航",
       copyright: "© 2026 VidMuse AI。保留所有权利。",
@@ -68,7 +68,7 @@ export const vidmuseMessages = defineMessages({
   },
   en: {
     header: {
-      homeAria: "VidMuse home",
+      homeAria: "LYCOBO home",
       navAria: "Product home",
       credits: "Earn credits",
       faq: "FAQ",
@@ -108,7 +108,7 @@ export const vidmuseMessages = defineMessages({
       started: "Generation started, about 1 minute to finish",
     },
     footer: {
-      homeAria: "VidMuse home",
+      homeAria: "LYCOBO home",
       tagline: "See your voice",
       navAria: "Footer navigation",
       copyright: "© 2026 VidMuse AI. All rights reserved.",
