@@ -180,14 +180,22 @@
 .workspace-tool-shortcut.button:is([data-hovered="true"], [aria-current="page"]) {
   color: var(--foreground);
 }
-.workspace-tool-shortcut.button[data-hovered="true"]:not([aria-current="page"]) {
-  background: var(--interaction-hover);
-}
+/* 高亮在按钮内居中，工具坞的行高和点击区域保持稳定。 */
+.workspace-tool-shortcut.button::before,
 .workspace-tool-indicator {
   position: absolute;
   inset: 0;
   z-index: -1;
+  height: 50px;
+  margin-block: auto;
   border-radius: inherit;
+  pointer-events: none;
+}
+.workspace-tool-shortcut.button[data-hovered="true"]:not([aria-current="page"])::before {
+  background: var(--interaction-hover);
+  content: "";
+}
+.workspace-tool-indicator {
   background: linear-gradient(180deg, #ffffff17 0%, #ffffff0d 100%);
   box-shadow: none;
 }
