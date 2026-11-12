@@ -27,6 +27,8 @@ Node API、Sharp、S3 与 LISTEN/SSE 仅用于隔离本地开发及测试。生�
 
 任务、扣费和 outbox 在同一个 PostgreSQL 事务中提交。API 只投递已持久化的意图，独立消费者受租约、执行令牌和幂等约束保护；有歧义的供应商提交不能自动重投。
 
+图片队列每次消费一条消息，配置最多 8 个并发调用，兼顾积压处理和上游、数据库负载。首次投递失败仍由 outbox 租约恢复。已确认入队且仍在排队的项优先由 Queue 处理，outbox 在原到期时间后额外等待 5 分钟再补投。供应商结果查询和回调唤醒沿用原到期时间。
+
 `CLOUDFLARE_TASKS_SINCE=2026-11-06T02:05:11.556Z` 是固定接管时间，部署不能重置。任务认领、超时处理和恢复都保持该边界，防止旧执行被重新计费。当前两个 Worker 的 `CLOUDFLARE_GENERATION_ENABLED`、`CLOUDFLARE_CONSUMER_ENABLED` 与 `IMAGE_WEBHOOK_ENABLED` 均为 `true`。
 
 生图 Key 使用独立的 `lycobo-cloudflare`。Webhook 接收地址为 `https://lycobo.com/api/v1/webhooks/fluxport/images`，按原始请求体做 HMAC 签名与时间窗口校验。没有回调的中转站通过延迟消息查询原任务，不依赖浏览器保持在线，详见 [图片回调](image-webhooks.md)。

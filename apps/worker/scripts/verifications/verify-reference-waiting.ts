@@ -6,6 +6,7 @@ import {
 } from "@lycoboai/contracts";
 import type { ImageRepository } from "@lycoboai/db";
 import { supportedResolutions, validateModelInput } from "@lycoboai/generation";
+import { dispatchImageOutbox, type ImageQueueJob } from "@lycoboai/queue";
 import type { ImageStore } from "@lycoboai/storage";
 import type postgres from "postgres";
 import { createApp } from "../../../api/src/app";
@@ -80,6 +81,20 @@ export async function verifyReferenceWaiting(
   assert.equal(deferred, 15000);
   assert.equal((await repository.get(owner, task.id))?.status, "queued");
   assert.equal((await repository.wallet(owner)).balance, 18);
+  const sent: string[] = [];
+  const queue = {
+    send: async (message: ImageQueueJob) => {
+      if (message.itemId === item.id) sent.push(message.itemId);
+    },
+  };
+  await dispatchImageOutbox(repository, queue);
+  assert.equal(sent.length, 1);
+  await sql`update generation_outbox set next_attempt_at=now()-interval '1 minute' where item_id=${item.id}`;
+  await dispatchImageOutbox(repository, queue);
+  assert.equal(sent.length, 1);
+  await sql`update generation_outbox set next_attempt_at=now()-interval '6 minutes' where item_id=${item.id}`;
+  await dispatchImageOutbox(repository, queue);
+  assert.equal(sent.length, 2);
   assert.equal(
     await prepareReferences(item.id, { repository, uploads: { status: async () => null } }),
     "failed",
