@@ -5,18 +5,6 @@
 }
 
 /* 公告与页头强调。 */
-.vm-announcement {
-  background:
-    radial-gradient(60% 220% at 50% -40%, rgb(168 255 0 / 20%), transparent 62%),
-    linear-gradient(90deg, #12180c 0%, #0e100d 45%, #131a0e 100%);
-}
-.vm-try-now {
-  background: #a8ff00;
-  color: #142000;
-}
-.vm-try-now:hover {
-  background: #c6ff4d;
-}
 .vm-nav-badge {
   background: #a8ff00;
   color: #142000;
@@ -143,4 +131,28 @@
   height: 16px;
   min-width: 16px;
   min-height: 16px;
+}
+
+/* 首页滚动条：轨道透明、滑块半透明，避免在浅色区块右侧出现黑条。 */
+html:has(.vidmuse-landing) {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 28%) transparent;
+}
+html:has(.vidmuse-landing)::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background: transparent;
+}
+html:has(.vidmuse-landing)::-webkit-scrollbar-track {
+  background: transparent;
+}
+html:has(.vidmuse-landing)::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 24%);
+  background-clip: padding-box;
+}
+html:has(.vidmuse-landing)::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 38%);
+  background-clip: padding-box;
 }

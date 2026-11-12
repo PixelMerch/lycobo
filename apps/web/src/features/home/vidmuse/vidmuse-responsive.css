@@ -90,27 +90,8 @@
 }
 
 @media (max-width: 639px) {
-  .vm-announcement-inner {
-    gap: 10px;
-    font-size: 12px;
-  }
-
-  .vm-try-now {
-    height: 26px;
-    padding: 0 9px;
-    font-size: 11px;
-  }
-
-  .vm-announcement-close {
-    right: 8px;
-  }
-
   .vm-header-inner {
     padding: 0 12px;
-  }
-
-  .vm-announcement-close {
-    right: 8px;
   }
 
   .vm-logo-svg {

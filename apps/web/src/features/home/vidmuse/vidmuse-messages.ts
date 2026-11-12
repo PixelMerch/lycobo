@@ -4,9 +4,6 @@ import { defineMessages } from "../../../i18n/messages";
 export const vidmuseMessages = defineMessages({
   "zh-CN": {
     header: {
-      announcement: "Suno v6 现已上线 VidMuse！",
-      tryNow: "Try Now",
-      dismiss: "关闭公告",
       homeAria: "VidMuse 首页",
       navAria: "产品首页",
       credits: "赚取积分",
@@ -71,9 +68,6 @@ export const vidmuseMessages = defineMessages({
   },
   en: {
     header: {
-      announcement: "Suno v6 is now live on VidMuse!",
-      tryNow: "Try Now",
-      dismiss: "Dismiss announcement",
       homeAria: "VidMuse home",
       navAria: "Product home",
       credits: "Earn credits",
