@@ -1,10 +1,10 @@
-/* 顶部栏积分胶囊按 vidmuse：40px 高、#FFFFFF14 底、左右 12px、gap 8px，悬停或展开时换成青柠 15% 底。 */
+/* 顶部栏积分胶囊按 vidmuse：与语言胶囊同高、#FFFFFF14 底、左右 12px、gap 8px，悬停或展开时换成青柠 15% 底。 */
 .header-credits {
   display: inline-flex;
   flex: none;
   align-items: center;
   gap: 8px;
-  height: 40px;
+  height: var(--shell-pill-height);
   min-width: 0;
   max-width: 240px;
   padding: 0 12px;
@@ -53,7 +53,6 @@
 .credits-menu {
   min-width: 215px;
   padding: 8px;
-  border-radius: 12px;
 }
 .credits-menu .dropdown__menu {
   display: flex;
@@ -68,24 +67,20 @@
   gap: 4px;
   padding: 0;
 }
-/* 会员等级卡：44px、#FFFFFF14 底、6px 圆角，右侧 28px 青柠“升级”胶囊。 */
+/* 会员等级行沿用统一高亮底板，右侧保留青柠“升级”胶囊。 */
 .credits-menu .credits-menu-plan {
+  --menu-row-fill: var(--fill-medium);
+  --menu-row-hover-fill: var(--fill-strong);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 44px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  background: #ffffff14;
+  padding: 0 12px;
   color: #fff;
   font-size: var(--text-base);
   font-weight: var(--weight-medium);
   line-height: 20px;
   cursor: pointer;
-}
-.credits-menu .credits-menu-plan:is([data-hovered="true"], [data-focused="true"]) {
-  background: #ffffff1f;
 }
 .credits-menu-upgrade {
   display: inline-flex;
@@ -122,15 +117,12 @@
   font-weight: var(--weight-medium);
   font-variant-numeric: tabular-nums;
 }
-/* 操作行：37px 高、左右 16px、20px 图标、#FFFFFF66 文字，悬停或聚焦只提亮文字到 #FFFFFFCC。 */
+/* 操作行沿用素材库菜单行高，悬停和键盘聚焦使用同一浅底。 */
 .credits-menu .credits-menu-action {
   display: flex;
   align-items: center;
   gap: 12px;
-  height: 37px;
-  min-height: 37px;
-  padding: 8px 16px;
-  border-radius: 6px;
+  padding: 0 16px;
   background: transparent;
   color: #ffffff66;
   font-size: var(--text-base);
@@ -140,12 +132,7 @@
   transition: color 200ms ease;
 }
 .credits-menu .credits-menu-action:is([data-hovered="true"], [data-focused="true"]) {
-  background: transparent;
   color: #ffffffcc;
-}
-/* 键盘聚焦额外给出浅底，指针悬停仍只提亮文字。 */
-.credits-menu .credits-menu-action[data-focus-visible="true"] {
-  background: #ffffff0f;
 }
 
 /* 手机只显示积分图标与余额（同 vidmuse），触控目标不小于 44px。 */

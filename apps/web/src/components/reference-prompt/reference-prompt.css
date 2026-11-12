@@ -39,7 +39,6 @@
 }
 .reference-mention-popover .list-box-item {
   background: transparent;
-  min-height: 40px;
   padding: 4px 8px;
   gap: 8px;
   border-radius: 8px;
@@ -70,15 +69,9 @@
   color: #aaa;
   line-height: var(--leading-xs);
 }
-@media (pointer: coarse) {
-  .reference-mention-popover .list-box-item {
-    min-height: 44px;
-  }
-}
 .reference-mention-popover .list-box-item[data-focus-visible] {
   outline: none;
   box-shadow: none;
-  background: var(--control-hover-fill);
 }
 
 .reference-mention-popover.popover,
