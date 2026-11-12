@@ -209,6 +209,12 @@
   border: 0;
   border-radius: 50%;
 }
+.vm-techniqueChip button svg {
+  display: block;
+  width: 10px;
+  height: 10px;
+  margin: 0;
+}
 
 /* 首页滚动条：隐藏原生滚动槽，改用覆盖在页面上的浅色滑块。 */
 html:has(.vidmuse-landing) {
