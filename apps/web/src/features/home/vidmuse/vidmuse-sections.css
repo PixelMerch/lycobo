@@ -83,6 +83,12 @@
   display: contents;
 }
 
+.vm-cases > .vm-sectionHeading,
+.vm-formatsHeading > .vm-sectionHeading {
+  font-size: 16px;
+  line-height: 24px;
+}
+
 .vm-formatsTrack .vm-formatCard img {
   position: absolute;
   inset: 0;
@@ -92,6 +98,7 @@
 }
 
 .vm-formatCard {
+  gap: 8px;
   white-space: normal;
   text-align: left;
   color: #fff;

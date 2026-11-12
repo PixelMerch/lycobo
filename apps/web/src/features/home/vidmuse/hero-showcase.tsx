@@ -1,5 +1,7 @@
 import { ToggleButton } from "@heroui/react";
-import { useEffect, useRef, useState } from "react";
+import { useReducedMotion } from "motion/react";
+import { useEffect, useState } from "react";
+import { useHeroPlayback } from "./use-hero-playback";
 
 const examples = [
   {
@@ -163,11 +165,11 @@ function RoasCard() {
   );
 }
 
-function TimeSavedCard({ active }: { active: boolean }) {
+function TimeSavedCard({ active, reducedMotion }: { active: boolean; reducedMotion: boolean }) {
   const [fill, setFill] = useState(0);
 
   useEffect(() => {
-    if (!active) {
+    if (!active || reducedMotion) {
       setFill(0);
       return;
     }
@@ -192,13 +194,14 @@ function TimeSavedCard({ active }: { active: boolean }) {
       window.clearTimeout(timer);
       cancelAnimationFrame(frame);
     };
-  }, [active]);
+  }, [active, reducedMotion]);
 
-  const progress = Math.round(fill * 97);
+  const displayedFill = reducedMotion ? 1 : fill;
+  const progress = Math.round(displayedFill * 97);
   const radius = 28.3262;
   const circumference = 2 * Math.PI * radius;
   // 与参考图一致：停在 97% 时保留顶部一小段装饰缺口。
-  const ringRatio = fill * 0.97 * 0.91;
+  const ringRatio = displayedFill * 0.97 * 0.91;
   const startAngle = -79.2;
   const startRad = (startAngle * Math.PI) / 180;
   const startX = 33.5 + radius * Math.cos(startRad);
@@ -301,28 +304,21 @@ function TotalSales() {
 export function HeroShowcase() {
   const [active, setActive] = useState(0);
   const [liked, setLiked] = useState(false);
-  const [cycle, setCycle] = useState(0);
-  const timerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    timerRef.current = window.setInterval(() => {
-      setActive((value) => (value + 1) % examples.length);
-      setCycle((value) => value + 1);
-    }, 6000);
-    return () => {
-      if (timerRef.current) window.clearInterval(timerRef.current);
-    };
-  }, []);
+  const reducedMotion = useReducedMotion() ?? false;
+  const { stageRef, playing } = useHeroPlayback(active, reducedMotion);
 
   const selectExample = (index: number) => {
     setActive(index);
-    setCycle((value) => value + 1);
     setLiked(false);
   };
 
   return (
-    <section aria-label="Campaign examples" className="vm-showcase" data-motion-active>
+    <section
+      aria-label="Campaign examples"
+      className="vm-showcase"
+      data-motion-active={playing}
+      ref={stageRef}
+    >
       {examples.map((example, index) => (
         <div
           aria-hidden={active !== index}
@@ -335,7 +331,6 @@ export function HeroShowcase() {
           <div className="vm-socialCase">
             <video
               aria-label={example.label}
-              autoPlay
               loop
               muted
               playsInline
@@ -359,7 +354,7 @@ export function HeroShowcase() {
           {example.id === "fashion" && (
             <>
               <RoasCard />
-              <TimeSavedCard active={active === index} />
+              <TimeSavedCard active={active === index} reducedMotion={reducedMotion} />
               <LivePill />
             </>
           )}
@@ -385,7 +380,10 @@ export function HeroShowcase() {
           >
             <span className="vm-exampleTrack">
               {active === index && (
-                <span className="vm-exampleProgress" key={`${example.id}-${cycle}`} />
+                <span
+                  className="vm-exampleProgress"
+                  onAnimationEnd={() => selectExample((index + 1) % examples.length)}
+                />
               )}
             </span>
           </ToggleButton>

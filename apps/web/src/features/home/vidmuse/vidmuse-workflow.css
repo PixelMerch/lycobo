@@ -11,12 +11,24 @@
 
 .vm-workflowRail {
   --workflow-base-height: 832px;
-  --workflow-scale: 0.935096;
-  --workflow-height: 778px;
-  --workflow-width: calc(100% / 0.935096);
+  --workflow-scale: 0.951923;
+  --workflow-height: 792px;
+  --workflow-width: calc(100% / 0.951923);
   --workflow-top: 96px;
-  --workflow-travel: 2790px;
+  --workflow-travel: 2835px;
   outline: none;
+}
+
+/* 手动模式沿内容自然排版，避免保留用于吸顶切换的空白行程。 */
+.vm-workflowRail[data-scroll-enabled="false"],
+.vm-workflowRail[data-scroll-enabled="false"] .vm-workflowPin {
+  height: auto;
+}
+
+.vm-workflowRail[data-scroll-enabled="false"] .vm-workflow {
+  width: 100%;
+  height: auto;
+  transform: none;
 }
 
 .vm-workflowBody {

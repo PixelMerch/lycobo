@@ -21,6 +21,10 @@
 
 上游采用 MIT + Commons Clause，版权 David Haz (2026)。完整许可保留在 [React Bits 许可](licenses/react-bits.md)：允许作为应用、网站或产品的一部分使用，不允许出售或重新分发组件本身／组件包。本站仅将其用于首页背景，不提供 React Bits 组件或工具分发服务。
 
+## VidMuse 首屏场景的本地预览
+
+Page Take 导出中的 `scenes/01-0130-hero-scene/` 包含 Unicorn Studio 2.5.2 运行时、场景参数和贴图。需要复查时，把该目录完整复制为 `apps/web/.vidmuse-scene/`，然后启动前端开发服务器。开发服务器按需提供场景包，项目的 Git 和生产构建均排除该目录。
+
 ## 阿里巴巴普惠体 3.0
 
 用户于2026-11-10确认主站中英文统一使用阿里巴巴普惠体3.0，替换思源黑体。官方字体文件版本3.01，使用55 Regular、65 Medium、75 SemiBold、85 Bold，对应400／500／600／700。源文件从[阿里巴巴字体官网](https://www.alibabafonts.com/)提供的字体地址获取，SHA256固定在 `scripts/fonts/subsets.json`；四个字重均保留源字体版权与排版元数据，转换为同源加载的字符切片WOFF2，不附带完整TTF，不依赖字体CDN。来源及[官方法律声明](https://www.yuque.com/yiguang-wkqc2/hgpff0/nus9wiinq4aeiegy)见 `apps/web/public/fonts/alibaba-puhuiti-3/NOTICE.txt`，生成与验证见[字体维护](fonts.md)。

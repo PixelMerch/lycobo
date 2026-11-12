@@ -9,7 +9,7 @@ import { SiteHeader } from "./site-header";
 import { Workflow } from "./workflow";
 import "./vidmuse.css";
 
-/** 首页 vidmuse 复刻：保留参考页的头尾、橙红主题和全部展示区块；暂不接入真实生成。 */
+/** 首页展示原型：组合参考页的区块与 Lycobo 品牌主题。 */
 export function VidmuseLanding() {
   return (
     <MotionConfig reducedMotion="user">

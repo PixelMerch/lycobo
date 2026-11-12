@@ -11,14 +11,16 @@ export function Formats() {
     const track = trackRef.current;
     if (!track) return;
     if (direction < 0 && track.scrollLeft < 8) {
-      track.scrollTo({ left: track.scrollWidth, behavior: "smooth" });
+      track.scrollTo({ left: track.scrollWidth });
       return;
     }
     if (direction > 0 && track.scrollLeft + track.clientWidth >= track.scrollWidth - 8) {
-      track.scrollTo({ left: 0, behavior: "smooth" });
+      track.scrollTo({ left: 0 });
       return;
     }
-    track.scrollBy({ left: direction * 292, behavior: "smooth" });
+    const card = track.firstElementChild;
+    const step = card?.getBoundingClientRect().width ?? 292;
+    track.scrollBy({ left: direction * step });
   };
 
   return (

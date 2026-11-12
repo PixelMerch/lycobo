@@ -16,6 +16,7 @@ test-results/
 
 # Local design iteration memory
 .finesse/
+/apps/web/.vidmuse-scene/
 
 # Private image data and isolated integration configuration.
 /data/

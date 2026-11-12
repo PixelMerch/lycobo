@@ -12,6 +12,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { useMessages } from "../../../i18n/messages";
+import { HeroScene } from "./hero-scene";
 import { HeroShowcase } from "./hero-showcase";
 import { vidmuseMessages } from "./vidmuse-messages";
 
@@ -52,6 +53,7 @@ export function Hero() {
   return (
     <section aria-labelledby="campaign-hero-title" className="vm-hero" id="top">
       <div aria-hidden="true" className="vm-heroGradient">
+        {import.meta.env.DEV && <HeroScene />}
         <span className="vm-heroEdge" />
       </div>
       <div className="vm-heroInner">

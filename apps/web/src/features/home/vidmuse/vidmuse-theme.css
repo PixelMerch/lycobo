@@ -162,6 +162,18 @@
     linear-gradient(90deg, #0c0c0c 0%, transparent 22%, transparent 78%, #0c0c0c 100%),
     linear-gradient(180deg, #0c0c0c 0%, transparent 16%, transparent 70%, #0c0c0c 100%);
 }
+/* 场景使用参考页的容器裁切，CSS 光带只在场景未就绪时作为后备。 */
+.vm-heroGradient:has(> .vm-heroScene[data-ready="true"]) {
+  background:
+    radial-gradient(at 22% 16%, #743720, transparent 74%),
+    radial-gradient(at 78% 10%, #304e67, transparent 76%), #111111;
+}
+.vm-heroGradient:has(> .vm-heroScene[data-ready="true"])::before,
+.vm-heroGradient:has(> .vm-heroScene[data-ready="true"])::after,
+.vm-heroGradient:has(> .vm-heroScene[data-ready="true"]) .vm-heroEdge {
+  visibility: hidden;
+  animation: none;
+}
 @keyframes vm-hero-drift {
   0% {
     opacity: 0.8;

@@ -341,8 +341,20 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .vm-casesCarousel {
+    overflow-x: auto;
+  }
+
   .vm-casesTrack {
     animation: none;
+  }
+
+  .vm-casesSet[aria-hidden="true"] {
+    display: none;
+  }
+
+  .vm-formatsTrack {
+    scroll-behavior: auto;
   }
 
   html {
