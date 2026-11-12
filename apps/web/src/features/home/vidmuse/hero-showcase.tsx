@@ -213,7 +213,7 @@ function TimeSavedCard({ active }: { active: boolean }) {
             cy="33.5"
             fill="none"
             r={radius}
-            stroke="#0F1214"
+            stroke="#142000"
             strokeOpacity="0.2"
             strokeWidth="10.3476"
           />
@@ -222,14 +222,14 @@ function TimeSavedCard({ active }: { active: boolean }) {
             cy="33.5"
             fill="none"
             r={radius}
-            stroke="#FFE7CC"
+            stroke="#EAFFCC"
             strokeDasharray={circumference}
             strokeDashoffset={circumference * (1 - ringRatio)}
             strokeLinecap="round"
             strokeWidth="10.3476"
             transform={`rotate(${startAngle} 33.5 33.5)`}
           />
-          <circle cx={startX} cy={startY} fill="#FFE7CC" r="5.1738" />
+          <circle cx={startX} cy={startY} fill="#EAFFCC" r="5.1738" />
         </svg>
         <b>{progress}%</b>
       </i>

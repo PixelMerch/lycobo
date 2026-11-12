@@ -1,0 +1,115 @@
+/* 品牌主题覆盖：把复刻页的橙红主色换成 Lycobo 青柠，同时保持原有版式和图片内容。 */
+.vidmuse-landing {
+  --vm-red: #a8ff00;
+  --vm-red-hover: #c6ff4d;
+}
+
+/* 公告与页头强调。 */
+.vm-announcement {
+  background:
+    radial-gradient(60% 220% at 50% -40%, rgb(168 255 0 / 20%), transparent 62%),
+    linear-gradient(90deg, #12180c 0%, #0e100d 45%, #131a0e 100%);
+}
+.vm-try-now {
+  background: #a8ff00;
+  color: #142000;
+}
+.vm-try-now:hover {
+  background: #c6ff4d;
+}
+.vm-nav-badge {
+  background: #a8ff00;
+  color: #142000;
+}
+.vm-icon-btn--square {
+  color: #a8ff00;
+}
+.vm-icon-btn:hover,
+.vm-menu-btn:hover,
+.vm-lang-btn:hover,
+.vm-pill-btn:hover {
+  background: rgb(168 255 0 / 14%);
+  color: #fff;
+}
+.vm-login.button {
+  background: #a8ff00;
+  color: #142000;
+}
+.vm-login.button:is(:hover, [data-hovered="true"]) {
+  background: #c6ff4d;
+  color: #142000;
+}
+
+/* 首屏氛围：把暖橙光换成橄榄与薄荷光。 */
+.vm-heroGradient {
+  background:
+    radial-gradient(at 22% 16%, #3f4a12, transparent 74%),
+    radial-gradient(at 74% 16%, #54e6a51f, transparent 45%),
+    radial-gradient(at 78% 10%, #1f3b2a, transparent 76%), #111111;
+}
+
+/* 工作流、输入框与结尾行动区。 */
+.vm-researchEyebrow {
+  background: #a8ff00;
+  color: #142000;
+}
+.vm-composerHost[data-guide-active="true"] .vm-composer:after {
+  background: conic-gradient(
+    from var(--campaign-guide-light-angle),
+    transparent 0deg 35deg,
+    #a8ff002e 70deg,
+    #c6ff4d 100deg,
+    #eaffccb3 120deg,
+    transparent 165deg 215deg,
+    #a8ff002e 250deg,
+    #c6ff4d 280deg,
+    #eaffccb3 300deg,
+    transparent 345deg
+  );
+}
+.vm-composerActions button {
+  background: #a8ff00;
+  color: #142000;
+}
+.vm-composerActions button > svg {
+  color: #142000;
+}
+.vm-composerActions button:not(:disabled):hover {
+  background: #c6ff4d;
+}
+.vm-composerActions button:disabled {
+  background: #a8ff00;
+}
+.vm-formatCta {
+  background: #a8ff00;
+  color: #142000;
+}
+.vm-timeSaved {
+  background: #a8ff00;
+  color: #142000;
+}
+.vm-advantage {
+  background: #a8ff00;
+  color: #142000;
+}
+.vm-startButton.button {
+  background: #a8ff00;
+  color: #142000;
+}
+.vm-startButton.button:is(:hover, [data-hovered="true"]) {
+  background: #c6ff4d;
+  color: #142000;
+}
+.vm-startButton.button:hover {
+  box-shadow: 0 10px 24px #a8ff0059;
+}
+
+/* 模板区背景与线稿跟随品牌色。 */
+.vm-formats {
+  background:
+    radial-gradient(58% 120% at 16% 0%, #a8ff0029, transparent 62%),
+    radial-gradient(52% 100% at 100% 24%, #54e6a52e, transparent 62%), #111111;
+}
+.vm-ctaArtwork img {
+  filter: hue-rotate(66deg) saturate(1.1) brightness(0.96);
+}
