@@ -139,4 +139,24 @@ export const campaignFormats: CampaignFormat[] = [
     description: "Let Football Superstars Take Your Product to the World Cup Stage",
     image: "/vidmuse/template-worldcup.webp",
   },
+  {
+    title: "Giant Glam",
+    description: "Eye-catching models, product in the spotlight.",
+    image: "/vidmuse/giant-glam.webp",
+  },
+  {
+    title: "Flavor Burst",
+    description: "Dynamic layers, instant impact. A visual burst of pure taste.",
+    image: "/vidmuse/flavor-burst.webp",
+  },
+  {
+    title: "Red Carpet",
+    description: "Grammy Red Carpet Walk",
+    image: "/vidmuse/red-carpet.webp",
+  },
+  {
+    title: "Echoed Words",
+    description: "Turn a powerful line into an iconic quote with cinematic documentary visuals.",
+    image: "/vidmuse/echoed-words.webp",
+  },
 ];

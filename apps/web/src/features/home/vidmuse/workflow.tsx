@@ -226,7 +226,7 @@ export function Workflow() {
       const rect = rail.getBoundingClientRect();
       const top = rect.top + window.scrollY;
       const start = top - 96;
-      const travel = Math.max(1, rect.height - 792);
+      const travel = Math.max(1, rect.height - 778);
       const progress = (window.scrollY - start) / travel;
       if (progress < 0.2) setStep("research");
       else if (progress < 0.36) setStep("summarize");
@@ -246,7 +246,7 @@ export function Workflow() {
     if (!desktop || !rail) return;
     const rect = rail.getBoundingClientRect();
     const top = rect.top + window.scrollY;
-    const travel = Math.max(1, rect.height - 792);
+    const travel = Math.max(1, rect.height - 778);
     const target = steps.find((item) => item.id === next)?.progress ?? 0;
     lockRef.current = Date.now() + 900;
     window.scrollTo({ top: top - 96 + travel * target, behavior: "smooth" });

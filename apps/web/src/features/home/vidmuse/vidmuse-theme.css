@@ -196,3 +196,11 @@
     animation: none;
   }
 }
+
+/* 视频重制标签的关闭按钮保持 16px 圆点。 */
+.vm-techniqueChip button {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+}

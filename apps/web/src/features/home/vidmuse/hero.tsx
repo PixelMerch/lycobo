@@ -7,6 +7,7 @@ import {
   IconPlus,
   IconSettings,
   IconShoppingBag,
+  IconX,
 } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
@@ -20,6 +21,7 @@ const ratios = ["9:16", "16:9", "1:1", "4:5"];
 export function Hero() {
   const t = useMessages(vidmuseMessages).hero;
   const [prompt, setPrompt] = useState("");
+  const [techniqueVisible, setTechniqueVisible] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [productOpen, setProductOpen] = useState(false);
   const [ratio, setRatio] = useState("9:16");
@@ -31,6 +33,7 @@ export function Hero() {
       const detail: { title?: unknown; description?: unknown } = event.detail;
       if (typeof detail.title !== "string" || typeof detail.description !== "string") return;
       setPrompt(t.remixPrompt(detail.title, detail.description));
+      setTechniqueVisible(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
       window.setTimeout(() => promptRef.current?.focus(), 650);
     };
@@ -95,7 +98,18 @@ export function Hero() {
                   <div className="vm-promptEditor">
                     <div className="vm-promptField">
                       <div className="vm-promptChips">
-                        <span className="vm-techniqueChip">{t.videoChip}</span>
+                        {techniqueVisible && (
+                          <span className="vm-techniqueChip">
+                            {t.videoChip}
+                            <Button
+                              isIconOnly
+                              aria-label={t.removeChip}
+                              onPress={() => setTechniqueVisible(false)}
+                            >
+                              <IconX size={10} />
+                            </Button>
+                          </span>
+                        )}
                       </div>
                       <TextArea
                         aria-label={t.describe}
