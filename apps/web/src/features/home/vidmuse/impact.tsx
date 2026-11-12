@@ -4,7 +4,7 @@ import { impactStats } from "./content";
 /** 复刻页 Campaign impact 拼贴：悬停展开由 CSS 控制，滚动视差保留 motion。 */
 export function Impact() {
   return (
-    <div>
+    <div data-campaign-reveal="">
       <section className="vm-impact">
         <div className="vm-collage">
           <div className="vm-impactMock">
