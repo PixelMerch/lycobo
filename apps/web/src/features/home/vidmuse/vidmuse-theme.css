@@ -54,18 +54,7 @@
   color: #142000;
 }
 .vm-composerHost[data-guide-active="true"] .vm-composer:after {
-  background: conic-gradient(
-    from var(--campaign-guide-light-angle),
-    transparent 0deg 35deg,
-    #a8ff002e 70deg,
-    #c6ff4d 100deg,
-    #eaffccb3 120deg,
-    transparent 165deg 215deg,
-    #a8ff002e 250deg,
-    #c6ff4d 280deg,
-    #eaffccb3 300deg,
-    transparent 345deg
-  );
+  display: none;
 }
 .vm-composerActions button {
   background: #a8ff00;
@@ -112,4 +101,98 @@
 }
 .vm-ctaArtwork img {
   filter: hue-rotate(66deg) saturate(1.1) brightness(0.96);
+}
+
+/* 输入框外圈引导光仍沿用复刻页的橙色描边，这里统一成青柠。 */
+.vm-composerHost[data-guide-active="true"] .vm-composer {
+  border-color: #ffffff14;
+  box-shadow: 0 18px 56px #00000038;
+}
+
+/* 发送按钮在 HeroUI 下被最小宽度撑成胶囊，这里保持正方形圆形。 */
+.vm-composerActions button {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 50%;
+}
+
+/* 首屏背景：两侧保持纯黑，中间一层缓慢流动的青柠/薄荷光，替代静态大渐变。 */
+.vm-heroGradient {
+  overflow: hidden;
+  background: #0c0c0c;
+}
+.vm-heroGradient::before,
+.vm-heroGradient::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.vm-heroGradient::before {
+  top: -26%;
+  left: 14%;
+  width: 64%;
+  height: 118%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 42% 45%, #a8ff0052, transparent 58%),
+    radial-gradient(circle at 62% 52%, #54e6a53d, transparent 62%);
+  filter: blur(70px);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 22%, #000 78%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 22%, #000 78%, transparent 100%);
+  animation: vm-hero-drift 22s ease-in-out infinite alternate;
+}
+.vm-heroGradient::after {
+  top: -40%;
+  left: 30%;
+  width: 46%;
+  height: 150%;
+  background: linear-gradient(
+    118deg,
+    transparent 18%,
+    #c6ff4d1f 44%,
+    #54e6a533 52%,
+    transparent 76%
+  );
+  filter: blur(46px);
+  transform: rotate(16deg);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 28%, #000 72%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 28%, #000 72%, transparent 100%);
+  animation: vm-hero-sheen 18s ease-in-out infinite alternate;
+}
+@keyframes vm-hero-drift {
+  0% {
+    opacity: 0.72;
+    transform: translate3d(-5%, -2%, 0) scale(1);
+  }
+  55% {
+    opacity: 1;
+    transform: translate3d(4%, 3%, 0) scale(1.08);
+  }
+  100% {
+    opacity: 0.8;
+    transform: translate3d(8%, -2%, 0) scale(1.03);
+  }
+}
+@keyframes vm-hero-sheen {
+  0% {
+    opacity: 0.35;
+    transform: translate3d(-10%, -4%, 0) rotate(16deg) scale(1);
+  }
+  50% {
+    opacity: 0.78;
+    transform: translate3d(6%, 2%, 0) rotate(20deg) scale(1.08);
+  }
+  100% {
+    opacity: 0.45;
+    transform: translate3d(12%, -3%, 0) rotate(14deg) scale(1.03);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vm-heroGradient::before,
+  .vm-heroGradient::after {
+    animation: none;
+  }
 }
