@@ -41,7 +41,7 @@ CI 的完成通知浏览器回归使用显式 fixture，无需调用真实模型
 
 ## 消息与版本
 
-`GET /api/v1/notifications?before=<uuid>` 每页最多 100 条，仅当前组织中该用户可见的消息；未读总数独立计算。`POST /api/v1/notifications/:id/read` 幂等保存个人已读并推送到同用户其他连接。顶部栏消息中心以非模态浮层打开，默认系统通知，滚动读取后续页。更新标签读取版本缓存，错误可以重试。
+`GET /api/v1/notifications?before=<uuid>` 每页最多 100 条，仅当前组织中该用户可见的消息；未读总数独立计算。`POST /api/v1/notifications/:id/read` 幂等保存个人已读并推送到同用户其他连接。顶部栏消息中心以非模态浮层打开，默认系统通知，滚动读取后续页。更新标签读取版本缓存，错误可以重试。本地 Node 入口复用公告、通知列表和已读 HTTP 路由；实时 WebSocket 握手和推送由 Workers 的 Durable Objects 提供。
 
 `release.json` 是本次产品发布摘要，Vite 把 version 固化为当前页面版本。两个 Worker 部署成功后才执行：
 

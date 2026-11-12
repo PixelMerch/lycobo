@@ -24,4 +24,4 @@ Docker 开发可使用 `docker compose up --build`，对外前端端口8081；�
 
 日常运行 `pnpm check`。隔离集成和手动浏览器检查见 [测试说明](testing.md)。
 
-本地 Node 入口用于隔离 API、数据库和消费者验证；可休眠 WebSocket、R2、Images 和 Queue 的平台行为使用 `pnpm test:cloudflare` 验证。新环境从当前迁移链初始化，版本发布见[发布与部署](releasing.md)。
+本地 Node 入口用于隔离 API、数据库和消费者验证。消息中心通过 HTTP 读取本地数据库中的系统通知和版本公告，并按当前会话保存已读状态；可休眠 WebSocket、R2、Images 和 Queue 的平台行为使用 `pnpm test:cloudflare` 验证。新环境从当前迁移链初始化，版本发布见[发布与部署](releasing.md)。

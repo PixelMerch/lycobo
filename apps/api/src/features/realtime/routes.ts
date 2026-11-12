@@ -8,14 +8,41 @@ import type { RealtimeHub } from "./object";
 
 export type RealtimeDependencies = {
   repository: RealtimeRepository;
-  hubs: DurableObjectNamespace<RealtimeHub>;
-  auth: EnterpriseAuth;
+  hubs?: DurableObjectNamespace<RealtimeHub>;
+  auth: EnterpriseAuth | undefined;
 };
 
-/** 提供严格同源的实时连接、持久消息与已读操作，身份由服务端会话解析。 */
+/** 提供版本公告与个人通知；Workers 还接入同源实时连接。 */
 export function realtimeRoutes({ repository, hubs, auth }: RealtimeDependencies) {
   const app = new Hono();
   app.get("/realtime/release", async (c) => c.json({ release: await repository.release() }));
+  if (hubs && auth) app.route("/", realtimeConnections(repository, hubs, auth));
+  app.get("/notifications", async (c) => {
+    const session = auth && (await enterprisePrincipal(c, auth));
+    if (!session) return c.json({ error: { code: "UNAUTHORIZED", message: "请先登录" } }, 401);
+    const before = z.uuid().optional().safeParse(c.req.query("before"));
+    if (!before.success)
+      return c.json({ error: { code: "VALIDATION_ERROR", message: "消息游标无效" } }, 400);
+    return c.json(await repository.notifications(session.user, before.data));
+  });
+  app.post("/notifications/:id/read", async (c) => {
+    const session = auth && (await enterprisePrincipal(c, auth));
+    if (!session) return c.json({ error: { code: "UNAUTHORIZED", message: "请先登录" } }, 401);
+    const id = z.uuid().safeParse(c.req.param("id"));
+    if (!id.success)
+      return c.json({ error: { code: "VALIDATION_ERROR", message: "消息不存在" } }, 400);
+    await repository.read(session.user, id.data);
+    return c.json({});
+  });
+  return app;
+}
+
+function realtimeConnections(
+  repository: RealtimeRepository,
+  hubs: DurableObjectNamespace<RealtimeHub>,
+  auth: EnterpriseAuth,
+) {
+  const app = new Hono();
   app.get("/realtime/:channel", async (c) => {
     if (!trustedAuthRequest(c, auth))
       return c.json({ error: { code: "UNTRUSTED_ORIGIN", message: "请求来源不受信任" } }, 403);
@@ -57,23 +84,6 @@ export function realtimeRoutes({ repository, hubs, auth }: RealtimeDependencies)
       headers: new Headers(response.headers),
       webSocket: response.webSocket,
     });
-  });
-  app.get("/notifications", async (c) => {
-    const session = await enterprisePrincipal(c, auth);
-    if (!session) return c.json({ error: { code: "UNAUTHORIZED", message: "请先登录" } }, 401);
-    const before = z.uuid().optional().safeParse(c.req.query("before"));
-    if (!before.success)
-      return c.json({ error: { code: "VALIDATION_ERROR", message: "消息游标无效" } }, 400);
-    return c.json(await repository.notifications(session.user, before.data));
-  });
-  app.post("/notifications/:id/read", async (c) => {
-    const session = await enterprisePrincipal(c, auth);
-    if (!session) return c.json({ error: { code: "UNAUTHORIZED", message: "请先登录" } }, 401);
-    const id = z.uuid().safeParse(c.req.param("id"));
-    if (!id.success)
-      return c.json({ error: { code: "VALIDATION_ERROR", message: "消息不存在" } }, 400);
-    await repository.read(session.user, id.data);
-    return c.json({});
   });
   return app;
 }
