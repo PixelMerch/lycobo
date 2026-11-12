@@ -1,35 +1,27 @@
 /*
- * 首页设置浮层、设置胶囊与 @ 引用菜单都叠在毛玻璃上：悬停、按下、选中用半透明白，
+ * 首页设置浮层和设置胶囊叠在毛玻璃上：悬停、按下、选中用半透明白，
  * 随玻璃底色变化，不出现与底色不搭的实色灰块。
  */
-:is(.home-settings, .home-settings-trigger, .reference-mention-popover) {
+:is(.home-settings, .home-settings-trigger) {
   --studio-control-hover: var(--control-hover-fill);
   --studio-control-pressed: var(--control-pressed-fill);
   --studio-control-selected: var(--control-selected-fill);
 }
-:is(
-  .home-settings-trigger.button,
-  .home-settings .toggle-button,
-  .reference-mention-popover .list-box-item
-) {
+:is(.home-settings-trigger.button, .home-settings .toggle-button) {
   transition:
     background-color 140ms ease,
     scale 100ms ease;
 }
 @media (hover: hover) {
-  :is(
-    .home-settings-trigger.button,
-    .home-settings .toggle-button,
-    .reference-mention-popover .list-box-item
-  ):not(:disabled):not([data-disabled]):not(.home-model-option):is(:hover, [data-hovered]) {
+  :is(.home-settings-trigger.button, .home-settings .toggle-button):not(:disabled):not(
+    [data-disabled]
+  ):not(.home-model-option):is(:hover, [data-hovered]) {
     background: var(--studio-control-hover);
   }
 }
-:is(
-  .home-settings-trigger.button,
-  .home-settings .toggle-button,
-  .reference-mention-popover .list-box-item
-):not(:disabled):not([data-disabled]):not(.home-model-option)[data-focus-visible] {
+:is(.home-settings-trigger.button, .home-settings .toggle-button):not(:disabled):not(
+  [data-disabled]
+):not(.home-model-option)[data-focus-visible] {
   background: var(--studio-control-hover);
 }
 .home-settings
@@ -40,20 +32,14 @@
   ) {
   background: var(--studio-control-selected);
 }
-:is(
-  .home-settings-trigger.button,
-  .home-settings .toggle-button,
-  .reference-mention-popover .list-box-item
-):not(:disabled):not([data-disabled]):not(.home-model-option):is(:active, [data-pressed]) {
+:is(.home-settings-trigger.button, .home-settings .toggle-button):not(:disabled):not(
+  [data-disabled]
+):not(.home-model-option):is(:active, [data-pressed]) {
   background: var(--studio-control-pressed);
   scale: 1;
 }
 @media (prefers-reduced-motion: reduce) {
-  :is(
-    .home-settings-trigger.button,
-    .home-settings .toggle-button,
-    .reference-mention-popover .list-box-item
-  ) {
+  :is(.home-settings-trigger.button, .home-settings .toggle-button) {
     transition: none;
     scale: 1;
   }

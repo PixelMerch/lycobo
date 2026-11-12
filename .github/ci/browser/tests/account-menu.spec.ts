@@ -53,8 +53,14 @@ for (const width of [1440, 320]) {
     await expect(panel).toHaveCSS("width", `${Math.min(280, width - 24)}px`);
     await expect(works).toHaveCSS("font-size", "13px");
     await works.hover();
-    await expect(works).toHaveCSS("border-radius", "6px");
-    await expect(works).toHaveCSS("background-color", "rgba(255, 255, 255, 0.06)");
+    await expect
+      .poll(() =>
+        works.evaluate((row) => {
+          const highlight = getComputedStyle(row, "::before");
+          return [highlight.height, highlight.borderRadius, highlight.backgroundColor];
+        }),
+      )
+      .toEqual(["36px", "12px", "rgba(255, 255, 255, 0.06)"]);
     await expect(works).toHaveCSS("height", "44px");
     await expect(panel.getByRole("switch", { name: "桌面通知", exact: true })).toHaveCount(0);
     expect(await panel.evaluate((element) => element.scrollWidth)).toBeLessThanOrEqual(

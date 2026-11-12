@@ -68,22 +68,20 @@
   gap: 4px;
   padding: 0;
 }
-/* 会员等级卡：44px、#FFFFFF14 底、6px 圆角，右侧 28px 青柠“升级”胶囊。 */
+/* 会员等级行沿用统一高亮底板，右侧保留青柠“升级”胶囊。 */
 .credits-menu .credits-menu-plan {
+  --menu-row-fill: var(--fill-medium);
+  --menu-row-hover-fill: var(--fill-strong);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 0 12px;
-  background: #ffffff14;
   color: #fff;
   font-size: var(--text-base);
   font-weight: var(--weight-medium);
   line-height: 20px;
   cursor: pointer;
-}
-.credits-menu .credits-menu-plan:is([data-hovered="true"], [data-focused="true"]) {
-  background: #ffffff1f;
 }
 .credits-menu-upgrade {
   display: inline-flex;
@@ -135,7 +133,6 @@
   transition: color 200ms ease;
 }
 .credits-menu .credits-menu-action:is([data-hovered="true"], [data-focused="true"]) {
-  background: var(--fill-soft);
   color: #ffffffcc;
 }
 

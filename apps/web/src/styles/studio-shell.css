@@ -220,7 +220,6 @@
   cursor: pointer;
 }
 .topbar-menu .topbar-menu-item:is([data-hovered="true"], [data-focused="true"]) {
-  background: #ffffff0f;
   color: #fff;
 }
 .topbar-menu .topbar-menu-item[data-current="true"] {

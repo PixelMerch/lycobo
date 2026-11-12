@@ -116,9 +116,6 @@
   line-height: var(--leading-sm);
   font-weight: var(--weight-regular);
 }
-.account-menu-row:is([data-hovered="true"], [data-focus-visible="true"]) {
-  background: var(--fill-soft);
-}
 .account-menu .account-menu-separator {
   width: auto;
   margin: 8px 12px;

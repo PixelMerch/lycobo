@@ -1,12 +1,37 @@
-/* 顶部栏菜单操作行与素材库来源菜单共用高亮尺寸。 */
-:is(
-  .choice-menu :is(.menu-item, .list-box-item),
-  .topbar-menu .topbar-menu-item,
-  .account-menu .account-menu-row,
-  .credits-menu :is(.credits-menu-plan, .credits-menu-action)
-) {
+/* 下拉菜单用独立高亮底板，保持 44px 点击区和 36px 可见高度。 */
+:root
+  :is(
+    .dropdown__popover .menu-item,
+    .select__popover .list-box-item,
+    .account-menu .account-menu-row,
+    .reference-mention-popover .list-box-item
+  ) {
+  position: relative;
+  isolation: isolate;
   min-height: 44px;
-  border-radius: 6px;
+
+  &::before {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline: 0;
+    z-index: -1;
+    height: 36px;
+    border-radius: 12px;
+    background: var(--menu-row-fill, transparent);
+    transform: translateY(-50%);
+    pointer-events: none;
+    content: "";
+  }
+
+  &:not([data-disabled="true"]):is(
+      [data-hovered="true"],
+      [data-focused="true"],
+      [data-focus-visible="true"],
+      :focus-visible
+    ) {
+    --menu-row-fill: var(--menu-row-hover-fill, var(--fill-soft));
+    background: transparent;
+  }
 }
 
 /* 单选菜单统一使用顶部栏语言下拉的尺寸、文字和选中提示。 */
@@ -41,7 +66,6 @@
   color: #fff;
 }
 .choice-menu :is(.menu-item, .list-box-item):is([data-hovered="true"], [data-focused="true"]) {
-  background: #ffffff0f;
   color: #fff;
 }
 .choice-menu :is(.menu-item__indicator, .list-box-item__indicator) {

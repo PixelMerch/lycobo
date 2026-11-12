@@ -45,7 +45,6 @@
   align-items: flex-start;
   gap: 8px;
   padding: 8px 36px 8px 10px;
-  border-radius: 6px;
 }
 /* 对勾放在右侧，不压住角色说明；工作区内用白色，不再加一处青柠。 */
 .reference-role-menu .reference-role-option .menu-item__indicator {
