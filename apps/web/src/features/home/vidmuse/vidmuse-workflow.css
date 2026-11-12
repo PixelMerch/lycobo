@@ -10,7 +10,12 @@
 }
 
 .vm-workflowRail {
+  --workflow-base-height: 832px;
+  --workflow-scale: 0.951923;
+  --workflow-height: 792px;
+  --workflow-width: calc(100% / 0.951923);
   --workflow-top: 96px;
+  --workflow-travel: 2835px;
   outline: none;
 }
 

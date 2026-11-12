@@ -79,6 +79,10 @@
   flex: 0 0 276px;
 }
 
+.vm-formatsSet {
+  display: contents;
+}
+
 .vm-formatsTrack .vm-formatCard img {
   position: absolute;
   inset: 0;
@@ -312,4 +316,18 @@
   color: #fff;
   font-size: 12px;
   box-shadow: none;
+}
+
+/* HeroUI 按钮自带的按压缩放会改变参考页的悬停阻尼，这里保持原生卡片的过渡。 */
+.vm-formatCard.button {
+  background: #202020;
+  transition: none;
+}
+.vm-formatCard.button:is(:hover, [data-hovered="true"]),
+.vm-formatCard.button:active {
+  background: #202020;
+  transform: none;
+}
+.vm-galleryControls .button:active {
+  transform: none;
 }

@@ -44,6 +44,9 @@ export function Formats() {
           <div className="vm-formatsCarousel">
             <div className="vm-formatsTrack" ref={trackRef}>
               <FormatSet />
+              <div className="vm-formatsSet" inert>
+                <FormatSet duplicate />
+              </div>
             </div>
           </div>
         </section>
