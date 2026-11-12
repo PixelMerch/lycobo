@@ -1,0 +1,370 @@
+/* 复刻页窄屏与减少动态修正。 */
+
+/* ------------------------------------------------------------------ */
+/* Responsive                                                         */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 1400px) {
+  .vm-nav-link {
+    padding: 0 14px;
+  }
+
+  .vm-formatsTrack {
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 1180px) {
+  .vm-pill-btn span {
+    display: none;
+  }
+
+  .vm-pill-btn {
+    width: 36px;
+    padding: 0;
+  }
+
+  .vm-nav {
+    margin-left: 8px;
+  }
+
+  .vm-nav-link {
+    padding: 0 10px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .vm-nav {
+    display: none;
+  }
+
+  .vm-menu-btn {
+    display: grid;
+  }
+
+  .vm-icon-btn,
+  .vm-lang-btn {
+    display: none;
+  }
+
+  .vm-footerGrid {
+    gap: 40px;
+  }
+}
+
+@media (max-width: 900px) {
+  .vm-workflowRail {
+    height: auto;
+  }
+
+  .vm-workflowPin {
+    position: relative;
+    height: auto;
+    top: auto;
+  }
+
+  .vm-workflow {
+    width: 100%;
+    height: auto;
+    transform: none;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .vm-workflowBody {
+    zoom: 1;
+  }
+
+  .vm-formatsTrack {
+    padding-left: 0;
+  }
+
+  .vm-footerGrid {
+    grid-template-columns: 1fr;
+    padding: 48px 0;
+  }
+
+  .vm-footer-inner {
+    padding: 0 24px;
+  }
+}
+
+@media (max-width: 639px) {
+  .vm-announcement-inner {
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .vm-try-now {
+    height: 26px;
+    padding: 0 9px;
+    font-size: 11px;
+  }
+
+  .vm-announcement-close {
+    right: 8px;
+  }
+
+  .vm-header-inner {
+    padding: 0 12px;
+  }
+
+  .vm-announcement-close {
+    right: 8px;
+  }
+
+  .vm-logo-svg {
+    width: 96px;
+    height: 29px;
+  }
+
+  .vm-pill-btn {
+    display: none;
+  }
+
+  .vm-login.button {
+    width: 72px;
+    padding: 0 10px;
+  }
+
+  .vm-composerHost[data-expanded="true"] {
+    width: 100%;
+  }
+
+  .vm-composerHost[data-expanded="true"] .vm-addReference button {
+    width: 46px;
+    height: 46px;
+  }
+
+  .vm-composerHost[data-expanded="true"] .vm-addReference {
+    width: 54px;
+  }
+
+  .vm-promptField {
+    height: 150px;
+  }
+
+  .vm-heroCopy h1 {
+    font-size: 30px;
+  }
+
+  .vm-promptField textarea {
+    font-size: 13px;
+  }
+
+  .vm-workflow {
+    border-width: 4px;
+    padding: 16px 12px 24px;
+  }
+
+  .vm-competitors {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .vm-competitor {
+    height: auto;
+  }
+
+  .vm-competitorImage {
+    height: 170px;
+  }
+
+  .vm-researchDemo {
+    max-width: 100%;
+  }
+
+  .vm-analysisResult {
+    height: auto;
+    min-height: 52px;
+    white-space: normal;
+    padding: 12px 18px;
+    font-size: 14px;
+    gap: 8px;
+  }
+
+  .vm-kitTrigger.button {
+    height: auto;
+    min-height: 44px;
+    flex-wrap: wrap;
+    row-gap: 4px;
+    padding: 9px 12px;
+  }
+
+  .vm-kitChevron {
+    margin-left: auto;
+  }
+
+  .vm-workflowTabs {
+    width: 100%;
+    height: 42px;
+  }
+
+  .vm-workflow[data-step] .vm-workflowTabs button {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+    height: 42px;
+    font-size: 12px;
+  }
+
+  .vm-workflowIndicator {
+    width: calc((100% - 12px) / 3);
+    height: 42px;
+  }
+
+  .vm-workflowTabs[data-step="summarize"] .vm-workflowIndicator {
+    transform: translateX(calc(100% + 6px));
+  }
+
+  .vm-workflowTabs[data-step="create"] .vm-workflowIndicator {
+    transform: translateX(calc(200% + 12px));
+  }
+
+  .vm-workflowPanel {
+    padding-top: 8px;
+  }
+
+  .vm-summary {
+    width: 100%;
+    height: auto;
+    left: 0;
+    transform: none;
+    position: relative;
+    padding-top: 12px;
+  }
+
+  .vm-scoreRing {
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 240px;
+    margin: 0 auto;
+  }
+
+  .vm-summaryVideo {
+    position: absolute;
+    top: 44px;
+    left: 50%;
+    width: 126px;
+    height: 180px;
+    margin: 0;
+    transform: translateX(-50%);
+  }
+
+  .vm-summaryVideo > i,
+  .vm-summaryVideo > video {
+    top: 14px;
+    height: 166px;
+  }
+
+  .vm-summaryVideo > i:first-child,
+  .vm-summaryVideo > i:nth-child(2) {
+    top: 14px;
+    height: 166px;
+  }
+
+  .vm-videoToggle {
+    top: 14px;
+    height: 166px;
+  }
+
+  .vm-scoreCards {
+    position: relative;
+    margin-top: 28px;
+  }
+
+  .vm-scoreCards {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .vm-scoreCard,
+  .vm-scoreCard[data-score] {
+    position: relative;
+    top: 0;
+    left: 0;
+    width: auto;
+    height: auto;
+    opacity: 1;
+    transform: none;
+  }
+
+  .vm-scoreCard:last-child {
+    grid-column: span 2;
+  }
+
+  .vm-createKit {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    width: 100%;
+    height: auto;
+  }
+
+  .vm-folder {
+    width: 220px;
+    margin: 0 auto;
+  }
+
+  .vm-kitBody .vm-kitThumbnails {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .vm-kitBody .vm-feedExamples {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vm-kitBody .vm-coverExamples {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .vm-kitBody .vm-ctaExamples {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vm-impact {
+    padding: 24px 16px 32px;
+  }
+
+  .vm-impactCopy > h2 {
+    font-size: 28px;
+  }
+
+  .vm-formatsHeading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .vm-galleryControls {
+    display: none;
+  }
+
+  .vm-ctaCopy {
+    padding: 48px 28px;
+  }
+
+  .vm-ctaCopy h2 {
+    font-size: 32px;
+  }
+
+  .vm-footerNav {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .vm-footerGrid {
+    padding: 40px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vm-casesTrack {
+    animation: none;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}

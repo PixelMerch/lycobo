@@ -1,0 +1,430 @@
+/* VidMuse 复刻页基础、公告与导航；主题色沿用复刻页橙红。 */
+
+@property --campaign-guide-light-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* 落地页独占复刻页主题；隐藏应用壳头部，不改其他页面的导航。 */
+.vidmuse-landing {
+  --app-font-family:
+    var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --vm-red: #fb5123;
+  --vm-red-hover: #fc744f;
+  --vm-ink: #111111;
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  background: #111111;
+  color: #fff;
+  color-scheme: dark;
+  font-family: var(--app-font-family);
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.vidmuse-landing *,
+.vidmuse-landing *::before,
+.vidmuse-landing *::after {
+  box-sizing: border-box;
+}
+
+.vidmuse-landing :is(button, input, textarea) {
+  font-family: inherit;
+}
+
+.vidmuse-landing :is(button) {
+  cursor: pointer;
+}
+
+.vidmuse-landing :is(img, video) {
+  display: block;
+}
+
+.studio-app:has(.vidmuse-landing) .topbar {
+  display: none;
+}
+
+.main-content:has(> .vidmuse-landing) {
+  padding: 0;
+}
+
+.vm-page {
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+.vm-main {
+  position: relative;
+  z-index: 1;
+}
+
+.cn-button {
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+}
+
+.cn-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+}
+
+.cn-gradient-border {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Announcement + header                                              */
+/* ------------------------------------------------------------------ */
+
+.vm-announcement {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(60% 220% at 50% -40%, rgba(251, 81, 35, 0.28), transparent 62%),
+    linear-gradient(90deg, #1d110d 0%, #100e0d 45%, #1c110e 100%);
+  color: #fff;
+}
+
+.vm-announcement-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  width: 100%;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.vm-try-now {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: #fff;
+  color: #111;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.vm-try-now:hover {
+  background: #f1f1f1;
+  transform: translateY(-1px);
+}
+
+.vm-try-now svg {
+  width: 13px;
+  height: 13px;
+}
+
+.vm-announcement-close {
+  position: absolute;
+  right: 22px;
+  top: 50%;
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.72);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.vm-announcement-close:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.vm-header-shell {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+}
+
+.vm-header-blur {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 57px;
+  pointer-events: none;
+  background: transparent;
+  transition:
+    height 0.3s ease,
+    background-color 0.3s ease,
+    backdrop-filter 0.3s ease;
+}
+
+.vm-header-shell.is-scrolled .vm-header-blur {
+  height: 60px;
+  background: rgba(0, 0, 0, 0.12);
+  -webkit-backdrop-filter: blur(80px);
+  backdrop-filter: blur(80px);
+}
+
+.vm-header {
+  position: relative;
+  z-index: 20;
+  width: 100%;
+  height: 57px;
+  transition: height 0.3s ease;
+}
+
+.vm-header-shell.is-scrolled .vm-header {
+  height: 60px;
+}
+
+.vm-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  padding: 0 12px;
+}
+
+.vm-logo {
+  display: flex;
+  align-items: center;
+  flex: none;
+  color: #fff;
+  text-decoration: none;
+}
+
+.vm-logo-svg {
+  width: 108px;
+  height: 33px;
+  color: #fff;
+}
+
+.vm-header-left {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  min-width: 0;
+  flex: 1;
+}
+
+.vm-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.vm-nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 20px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.vm-nav-link:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.vm-nav-link.is-active {
+  color: #fff;
+  font-weight: 600;
+}
+
+.vm-nav-badge {
+  position: absolute;
+  top: -6px;
+  right: 0;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 17px;
+  padding: 2px 5px;
+  border-radius: 8px 8px 8px 0;
+  background: var(--vm-red);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.vm-utilities {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.vm-icon-btn,
+.vm-menu-btn {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.72);
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.vm-icon-btn:hover,
+.vm-menu-btn:hover {
+  background: rgba(251, 81, 35, 0.15);
+  color: #fff;
+}
+
+.vm-icon-btn--square {
+  color: #fb6a42;
+}
+
+.vm-lang-btn,
+.vm-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  font-weight: 500;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.vm-lang-btn {
+  width: 79px;
+  padding: 0;
+}
+
+.vm-pill-btn {
+  padding: 0 13px;
+}
+
+.vm-lang-btn:hover,
+.vm-pill-btn:hover {
+  background: rgba(251, 81, 35, 0.15);
+  color: #fff;
+}
+
+.vm-login.button {
+  width: 100px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  --button-bg: var(--vm-red);
+  --button-bg-hover: var(--vm-red-hover);
+  --button-bg-pressed: var(--vm-red-hover);
+  --button-fg: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.vm-menu-btn {
+  display: none;
+}
+
+.vm-mobile-nav {
+  position: absolute;
+  top: 100%;
+  left: 8px;
+  right: 8px;
+  z-index: 40;
+  display: grid;
+  gap: 2px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: rgba(17, 17, 17, 0.96);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
+.vm-mobile-nav a {
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 15px;
+  text-decoration: none;
+}
+
+.vm-mobile-nav a.is-active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.vm-mobile-actions {
+  display: flex;
+  padding: 8px 4px 4px;
+}
+
+/* HeroUI 按钮默认使用站内渐变，这里覆盖成复刻页橙红。 */
+.vm-login.button {
+  background: var(--vm-red);
+  background-image: none;
+  color: #fff;
+}
+.vm-login.button:is(:hover, [data-hovered="true"]) {
+  background: var(--vm-red-hover);
+  background-image: none;
+}
+.vm-startButton.button {
+  background: var(--vm-red);
+  background-image: none;
+  color: #fff;
+}
+.vm-startButton.button:is(:hover, [data-hovered="true"]) {
+  background: var(--vm-red-hover);
+  background-image: none;
+}

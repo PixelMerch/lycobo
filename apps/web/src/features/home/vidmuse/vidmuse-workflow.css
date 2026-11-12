@@ -1,0 +1,407 @@
+/* 工作流三步与数据面板。 */
+
+/* ------------------------------------------------------------------ */
+/* Workflow                                                           */
+/* ------------------------------------------------------------------ */
+
+.vm-workflowRail[data-scroll-enabled="true"] .vm-workflowPin {
+  position: sticky;
+  top: var(--workflow-top, 96px);
+}
+
+.vm-workflowRail {
+  --workflow-top: 96px;
+  outline: none;
+}
+
+.vm-workflowBody {
+  position: relative;
+}
+
+.vm-workflowTabs button {
+  border: 0;
+  background: transparent;
+  color: #7a7a7a;
+  font-family: inherit;
+  font-weight: 500;
+  border-radius: 16px;
+  transition: color 0.25s ease;
+}
+
+.vm-workflowTabs button[data-active],
+.vm-workflowTabs button[data-selected="true"] {
+  color: var(--vm-ink);
+}
+
+.vm-kitRows.accordion {
+  background: transparent;
+}
+
+.vm-workflowTabs button:focus-visible {
+  outline: 2px solid rgba(251, 81, 35, 0.5);
+  outline-offset: 2px;
+}
+
+.vm-workflowPanel {
+  min-height: 0;
+}
+
+.vm-workflowPanel[hidden] {
+  display: none;
+}
+
+.vm-researchBackground img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vm-researchDemo {
+  position: relative;
+  max-width: 672px;
+}
+
+.vm-competitor {
+  border: 1px solid #e5e5e5;
+}
+
+.vm-researchDemo[data-research-stage="done"] .vm-competitor[aria-pressed="true"] {
+  border-color: #fbb4a8;
+}
+
+.vm-signal > span {
+  display: grid;
+  gap: 4px;
+}
+
+.vm-signal i {
+  max-width: 100%;
+}
+
+/* Bars only fill after the panel enters the viewport */
+.vm-researchDemo .vm-signal i {
+  animation: none;
+  transform: scaleX(0);
+}
+
+.vm-researchDemo[data-phase="bars"] .vm-signal i,
+.vm-researchDemo[data-phase="line"] .vm-signal i,
+.vm-researchDemo[data-phase="done"] .vm-signal i {
+  animation: vm-bar-fill 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.04s both;
+}
+
+.vm-researchDemo[data-phase="bars"] .vm-signal i:nth-child(2),
+.vm-researchDemo[data-phase="line"] .vm-signal i:nth-child(2),
+.vm-researchDemo[data-phase="done"] .vm-signal i:nth-child(2) {
+  animation-delay: 0.11s;
+}
+
+.vm-researchDemo[data-phase="bars"] .vm-signal i:nth-child(3),
+.vm-researchDemo[data-phase="line"] .vm-signal i:nth-child(3),
+.vm-researchDemo[data-phase="done"] .vm-signal i:nth-child(3) {
+  animation-delay: 0.18s;
+}
+
+@keyframes vm-bar-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.vm-researchDemo[data-research-active] .vm-analysisDots i {
+  display: block;
+}
+
+.vm-researchDemo .vm-analysisLine {
+  opacity: 0;
+  animation: none;
+  clip-path: inset(0 100% 0 0);
+}
+
+.vm-researchDemo[data-phase="line"] .vm-analysisLine,
+.vm-researchDemo[data-phase="done"] .vm-analysisLine {
+  opacity: 1;
+  animation: vm-line-draw 0.48s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes vm-line-draw {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.vm-analysisResult > span:first-child {
+  display: inline-block;
+}
+
+.vm-analysisResult[data-stage="done"] {
+  background: #fff;
+}
+
+.vm-summaryVideo video {
+  background: #ddd;
+}
+
+.vm-summary[data-summary-active] .vm-summaryVideo > i {
+  display: block;
+}
+
+.vm-scoreRing img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.vm-scoreCard > div {
+  min-width: 0;
+}
+
+.vm-scoreCard {
+  cursor: default;
+}
+
+.vm-videoToggle {
+  border: 0;
+}
+
+.vm-kitRowsWrap {
+  min-width: 0;
+}
+
+/* HeroUI accordion → reference kit rows */
+.vm-kitRows.accordion {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  contain: none;
+}
+
+.vm-kitRow.accordion__item {
+  background: #fff;
+  border-radius: 16px;
+  padding: 0;
+  box-shadow: 0 6px 16px -4px rgba(28, 41, 59, 0.06);
+  transition: box-shadow 0.3s ease;
+}
+
+.vm-kitRow.accordion__item::after {
+  display: none;
+}
+
+.vm-kitRow .accordion__heading {
+  margin: 0;
+  display: flex;
+}
+
+.vm-kitBody .vm-kitThumbnails {
+  grid-template-columns: repeat(6, 56px);
+  justify-content: start;
+}
+
+.vm-kitRow.accordion__item[data-expanded="true"],
+.vm-kitRow.accordion__item:hover {
+  box-shadow: 0 10px 24px -4px rgba(28, 41, 59, 0.12);
+}
+
+.vm-kitTrigger.button {
+  display: flex;
+  width: 100%;
+  height: 44px;
+  min-height: 44px;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--vm-ink);
+  font-size: 12px;
+  font-weight: 400;
+  text-align: left;
+  white-space: normal;
+  --button-bg: transparent;
+  --button-bg-hover: transparent;
+  --button-bg-pressed: transparent;
+  --button-fg: var(--vm-ink);
+}
+
+.vm-kitTrigger.button:hover {
+  background: transparent;
+}
+
+.vm-kitTrigger.button:active {
+  transform: none;
+}
+
+.vm-kitTrigger b {
+  font-weight: 600;
+}
+
+.vm-kitTrigger > span:not(.vm-kitChevron) {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border: 1px solid rgba(22, 22, 22, 0.15);
+  border-radius: 999px;
+  color: rgba(22, 22, 22, 0.6);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.vm-kitTrigger em,
+.vm-kitTrigger.button em {
+  margin-left: auto;
+  margin-right: 0;
+  min-width: 22px;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.vm-kitChevron,
+.vm-kitChevron.accordion__indicator {
+  width: 14px;
+  height: 14px;
+  margin-inline-start: 0;
+  color: #7a7a7a;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vm-kitChevron[data-expanded="true"] {
+  transform: rotate(180deg);
+}
+
+.vm-kitRow .vm-kitContent.accordion__panel {
+  display: block;
+  height: var(--disclosure-panel-height);
+  overflow: clip;
+  opacity: 0;
+  transition:
+    height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.25s ease;
+}
+
+.vm-kitRow .vm-kitContent.accordion__panel[data-expanded="true"] {
+  opacity: 1;
+}
+
+.vm-kitRow .accordion__body {
+  padding: 0;
+}
+
+.vm-kitBody {
+  padding: 0;
+  margin: 4px 16px 11px;
+  color: var(--vm-ink);
+}
+
+.vm-kitBody * {
+  color: inherit;
+}
+
+.vm-kitBody .vm-kitThumbnails,
+.vm-kitBody .vm-feedExamples,
+.vm-kitBody .vm-coverExamples,
+.vm-kitBody .vm-ctaExamples {
+  display: grid;
+}
+
+.vm-kitBody .vm-kitThumbnails {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.vm-kitBody .vm-feedExamples {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.vm-kitBody .vm-coverExamples {
+  grid-template-columns: repeat(5, minmax(0, 80px));
+  justify-content: space-between;
+}
+
+.vm-kitBody .vm-ctaExamples {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.vm-workflowPanel .vm-kitBody .vm-kitThumbnails > i,
+.vm-workflowPanel .vm-kitBody .vm-feedExamples > i,
+.vm-workflowPanel .vm-kitBody .vm-coverExamples > i,
+.vm-workflowPanel .vm-kitBody .vm-ctaExamples > i {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  min-width: 0;
+}
+
+.vm-workflowPanel .vm-kitBody .vm-kitThumbnails > i {
+  aspect-ratio: 9 / 16;
+}
+
+.vm-workflowPanel .vm-kitBody .vm-feedExamples > i {
+  aspect-ratio: 4 / 5;
+}
+
+.vm-workflowPanel .vm-kitBody .vm-coverExamples > i {
+  aspect-ratio: 1;
+}
+
+.vm-workflowPanel .vm-kitBody .vm-ctaExamples > i {
+  aspect-ratio: 3;
+}
+
+.vm-kitBody .vm-kitThumbnails img,
+.vm-kitBody .vm-feedExamples img,
+.vm-kitBody .vm-coverExamples img,
+.vm-kitBody .vm-ctaExamples img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vm-kitBody .vm-ctaExamples img,
+.vm-kitBody .vm-coverExamples img {
+  object-fit: contain;
+}
+
+.vm-kitBody .vm-kitThumbnails i > span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  width: 30px;
+  height: 30px;
+  translate: -50% -50%;
+  border: 0.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.16);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.vm-kitBody .vm-kitThumbnails i > span img {
+  object-fit: contain;
+}
+
+.vm-copyExamples {
+  max-height: 178px;
+  overflow-y: auto;
+}
+
+.vm-copyExamples h4 {
+  margin: 0 0 6px;
+}

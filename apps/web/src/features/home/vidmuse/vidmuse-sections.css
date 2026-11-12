@@ -1,0 +1,315 @@
+/* Impact、模板、CTA 与页脚。 */
+
+/* ------------------------------------------------------------------ */
+/* Impact                                                             */
+/* ------------------------------------------------------------------ */
+
+.vm-collage > .vm-impactSelfie,
+.vm-collage > .vm-impactTweet,
+.vm-collage > .vm-impactPoster {
+  transition: none;
+  will-change: transform;
+}
+
+.vm-impactMock img,
+.vm-impactSelfie > img,
+.vm-impactTweet img,
+.vm-impactPoster img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.vm-impactSelfie > img,
+.vm-impactTweet img,
+.vm-impactPoster img {
+  object-fit: cover;
+}
+
+.vm-impactSelfie i {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.vm-impactSelfie i img {
+  width: 34px;
+  height: 34px;
+}
+
+.vm-impactCopy > h2 {
+  font-size: 36px;
+}
+
+.vm-impactStats {
+  margin: 46px 0 0;
+}
+
+.vm-impactStats dd {
+  margin-left: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Formats                                                            */
+/* ------------------------------------------------------------------ */
+
+.vm-formatsCarousel {
+  width: 100%;
+  overflow: hidden;
+}
+
+.vm-formatsTrack {
+  display: flex;
+  width: 100%;
+  overflow-x: auto;
+  padding-left: 0;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+}
+
+.vm-formatsTrack::-webkit-scrollbar {
+  display: none;
+}
+
+.vm-formatItem {
+  flex: 0 0 276px;
+}
+
+.vm-formatsTrack .vm-formatCard img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vm-formatCard {
+  white-space: normal;
+  text-align: left;
+  color: #fff;
+  background: #202020;
+  border: 0;
+  width: 100%;
+  padding: 0;
+  display: block;
+  cursor: pointer;
+}
+
+.vm-formatBody {
+  display: block;
+}
+
+.vm-templateTitle {
+  display: block;
+}
+
+.vm-formatMore {
+  display: grid;
+}
+
+.vm-formatCta {
+  display: flex;
+}
+
+.vm-galleryControls button {
+  border: 0;
+  color: #fff;
+}
+
+.vm-galleryControls button:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+/* ------------------------------------------------------------------ */
+/* Final CTA                                                          */
+/* ------------------------------------------------------------------ */
+
+.vm-cta .vm-ctaArtwork img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vm-startButton.button {
+  height: 49.4px;
+  margin-top: 28px;
+  padding: 10.4px 20.8px;
+  border-radius: 12px;
+  --button-bg: var(--vm-red);
+  --button-bg-hover: var(--vm-red-hover);
+  --button-bg-pressed: var(--vm-red-hover);
+  --button-fg: #fff;
+  color: #fff;
+  font-size: 18.2px;
+  line-height: 27.3px;
+  font-weight: 500;
+}
+
+.vm-startButton.button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(251, 81, 35, 0.35);
+}
+
+/* ------------------------------------------------------------------ */
+/* Footer                                                             */
+/* ------------------------------------------------------------------ */
+
+.vm-footer {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+}
+
+.vm-footer-inner {
+  max-width: 2028px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+.vm-footerGrid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 610px;
+  gap: 0;
+  width: 100%;
+  padding: 64px 0;
+}
+
+.vm-footerBrand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.vm-footerLogo {
+  width: 108px;
+  height: 33px;
+  color: #fff;
+}
+
+.vm-footerBrand p {
+  margin: 14px 0 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+}
+
+.vm-socials {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.vm-socials a {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.72);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.vm-socials a:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.vm-footer .vm-socials img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.vm-footerNav {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr auto;
+  gap: 0;
+}
+
+.vm-footerNav h3 {
+  margin: 0 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.vm-footerNav a {
+  display: block;
+  width: fit-content;
+  margin-bottom: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+
+.vm-footerNav a:hover {
+  color: #fff;
+}
+
+.vm-footerBottom {
+  padding: 22px 0 28px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.vm-footerBottom p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 13px;
+}
+
+/* 交互细节：案例横滑悬停暂停，拼贴卡悬停展开由 CSS 完成。 */
+.vm-casesCarousel:hover .vm-casesTrack {
+  animation-play-state: paused;
+}
+.vm-collage:hover .vm-impactSelfie {
+  transform: translate(-34px, -6px) rotate(-6deg) scale(1.07);
+}
+.vm-collage:hover .vm-impactTweet {
+  transform: translate(40px, -6px) rotate(13deg) scale(1.06);
+}
+.vm-collage:hover .vm-impactPoster {
+  transform: translate(36px, 0) rotate(3deg) scale(1.06);
+}
+.vm-productField {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.45);
+}
+.vm-productField .vm-productInput {
+  flex: 1;
+  min-width: 0;
+}
+.vm-productField .input,
+.vm-productField .text-field {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.vm-productField input {
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 12px;
+  box-shadow: none;
+}
