@@ -106,31 +106,108 @@
   border-radius: 50%;
 }
 
-/* 首屏背景：WebGL 丝绸铺满，左右和下方用黑色渐隐收边。 */
+/* 首屏背景：两侧和上下黑色收边，中间持续流动的青柠/薄荷光带。 */
 .vm-heroGradient {
   background: #0c0c0c;
   overflow: hidden;
 }
+.vm-heroGradient::before,
 .vm-heroGradient::after {
   position: absolute;
-  z-index: 1;
-  inset: 0;
   content: "";
   pointer-events: none;
-  background:
-    linear-gradient(90deg, #0c0c0c 0%, transparent 24%, transparent 76%, #0c0c0c 100%),
-    linear-gradient(180deg, #0c0c0c 0%, transparent 18%, transparent 72%, #0c0c0c 100%);
+  will-change: transform, opacity;
 }
-.vm-heroGradient .silk-background {
-  opacity: 0.82;
+.vm-heroGradient::before {
+  z-index: 1;
+  top: -28%;
+  left: 13%;
+  width: 68%;
+  height: 122%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 42% 44%, #a8ff005c, transparent 58%),
+    radial-gradient(circle at 64% 54%, #54e6a547, transparent 62%);
+  filter: blur(66px);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 20%, #000 80%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 20%, #000 80%, transparent 100%);
+  animation: vm-hero-drift 19s ease-in-out infinite alternate;
+}
+.vm-heroGradient::after {
+  z-index: 2;
+  top: -46%;
+  left: 27%;
+  width: 52%;
+  height: 160%;
+  background: linear-gradient(
+    116deg,
+    transparent 14%,
+    #c6ff4d29 36%,
+    #a8ff0040 48%,
+    #54e6a552 58%,
+    transparent 82%
+  );
+  filter: blur(44px);
+  transform: rotate(15deg);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 24%, #000 76%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 24%, #000 76%, transparent 100%);
+  animation: vm-hero-sheen 13s ease-in-out infinite alternate;
+}
+.vm-heroEdge {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, #0c0c0c 0%, transparent 22%, transparent 78%, #0c0c0c 100%),
+    linear-gradient(180deg, #0c0c0c 0%, transparent 16%, transparent 70%, #0c0c0c 100%);
+}
+@keyframes vm-hero-drift {
+  0% {
+    opacity: 0.8;
+    transform: translate3d(-6%, -2%, 0) scale(1);
+  }
+  55% {
+    opacity: 1;
+    transform: translate3d(4%, 3%, 0) scale(1.08);
+  }
+  100% {
+    opacity: 0.84;
+    transform: translate3d(9%, -2%, 0) scale(1.03);
+  }
+}
+@keyframes vm-hero-sheen {
+  0% {
+    opacity: 0.45;
+    transform: translate3d(-12%, -4%, 0) rotate(15deg) scale(1);
+  }
+  50% {
+    opacity: 0.88;
+    transform: translate3d(7%, 2%, 0) rotate(20deg) scale(1.08);
+  }
+  100% {
+    opacity: 0.52;
+    transform: translate3d(14%, -3%, 0) rotate(13deg) scale(1.03);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vm-heroGradient::before,
+  .vm-heroGradient::after {
+    animation: none;
+  }
 }
 
 /* 视频重制标签的关闭按钮保持 16px 圆点。 */
 .vm-techniqueChip button {
+  flex: none;
   width: 16px;
   height: 16px;
   min-width: 16px;
   min-height: 16px;
+  margin-right: -3px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
 }
 
 /* 首页滚动条：隐藏原生滚动槽，改用覆盖在页面上的浅色滑块。 */
@@ -158,4 +235,21 @@ html:has(.vidmuse-landing)::-webkit-scrollbar {
   border-radius: 999px;
   background: rgb(255 255 255 / 46%);
   box-shadow: 0 0 0 1px rgb(0 0 0 / 4%);
+}
+
+/* 模板区左右箭头保持 28px 正圆，不让 HeroUI 的最小宽度撑成胶囊。 */
+.vm-galleryControls .button {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+/* 描述输入框不使用主题色焦点描边，只保留光标和玻璃底板。 */
+.vm-promptTextarea:is(:focus, :focus-visible) {
+  border: 0;
+  outline: none;
+  box-shadow: none;
 }

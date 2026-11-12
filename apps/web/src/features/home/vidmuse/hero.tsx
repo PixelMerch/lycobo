@@ -12,12 +12,10 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { useMessages } from "../../../i18n/messages";
-import { SilkBackground } from "../silk/silk-background";
 import { HeroShowcase } from "./hero-showcase";
 import { vidmuseMessages } from "./vidmuse-messages";
 
 const ratios = ["9:16", "16:9", "1:1", "4:5"];
-const heroSilk = { color: "#131a0b", sheen: "#9be622" };
 
 /** 复刻页首屏：标语、画面比例/产品详情弹层与右侧示例；暂不提交真实生成任务。 */
 export function Hero() {
@@ -54,7 +52,7 @@ export function Hero() {
   return (
     <section aria-labelledby="campaign-hero-title" className="vm-hero" id="top">
       <div aria-hidden="true" className="vm-heroGradient">
-        <SilkBackground palette={heroSilk} />
+        <span className="vm-heroEdge" />
       </div>
       <div className="vm-heroInner">
         <div className="vm-heroCopy">
