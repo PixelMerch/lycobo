@@ -1,6 +1,5 @@
 /* 单选菜单统一使用顶部栏语言下拉的尺寸、文字和选中提示。 */
 :root .choice-menu:is(.dropdown__popover, .select__popover) {
-  --glass-tint: var(--glass-dark-tint);
   min-width: max(160px, var(--trigger-width, 0px));
   padding: 6px;
   border: 0;
@@ -39,15 +38,4 @@
 .choice-menu :is(.menu-item__indicator, .list-box-item__indicator) {
   inset-inline: auto 16px;
   color: var(--accent);
-}
-
-@supports not (backdrop-filter: blur(1px)) {
-  :root .choice-menu:is(.dropdown__popover, .select__popover) {
-    --glass-tint: var(--glass-fallback);
-  }
-}
-@media (prefers-reduced-transparency: reduce) {
-  :root .choice-menu:is(.dropdown__popover, .select__popover) {
-    --glass-tint: var(--glass-fallback);
-  }
 }

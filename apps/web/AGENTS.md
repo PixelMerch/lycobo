@@ -28,9 +28,10 @@ navigation; never prefix API, WebSocket, image or font URLs. See docs/localized-
   surface as a local default. The standalone login page uses the same glass material and swaps its two faces.
   The full-screen membership page is an explicit exception: opaque background, no backdrop blur
   or entry animation; closing uses the shared centered shrink and fade. Full-screen image browsing and image detail
-  use a solid black stage, and account settings use the darker shared glass tint. Source, time and account language menus share the header language menu styles
-  in `styles/choice-menu.css`. Other overlays use the default top-bar menu glass (#FFFFFF14,
-  40px blur, no visible edge) through the `--glass-*` tokens. Add materials only by user request.
+  use a solid black stage. The message center, language, credits, avatar menu, and account settings use the
+  same dark glass as the asset source menu. Source, time and account language menus share the selection
+  styles in `styles/choice-menu.css`. Other overlays use the default glass through the `--glass-*` tokens.
+  Add materials only by user request.
 - The home page borrows the vidmuse layout but must keep Lycobo's own character (user, 2026-11-09):
   upright slogan with a mode-gradient keyword, tool-accent mode tabs, lime-to-mint generation pills,
   in-card glass hover panels and our own wording. Do not copy reference-site styling, copy or assets.

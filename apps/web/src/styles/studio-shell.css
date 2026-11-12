@@ -195,26 +195,6 @@
     transition: none;
   }
 }
-/* 顶部栏下拉（电商、语言、积分）用共享毛玻璃，按 vidmuse 不留描边。 */
-.header-menu.dropdown__popover {
-  border: 0;
-  background: var(--glass-fill), var(--glass-tint);
-  box-shadow: var(--glass-shadow);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-}
-@supports not (backdrop-filter: blur(1px)) {
-  .header-menu.dropdown__popover {
-    background: var(--glass-fallback);
-  }
-}
-@media (prefers-reduced-transparency: reduce) {
-  .header-menu.dropdown__popover {
-    background: var(--glass-fallback);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}
 /* “电商”下拉：四个工具各一行，图标与文字间距 8px。 */
 .topbar-menu {
   min-width: 160px;

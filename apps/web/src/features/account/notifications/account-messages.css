@@ -5,24 +5,12 @@
   pointer-events: none;
 }
 
-/* 与账户设置共用深色毛玻璃。 */
 :root .account-news-popover {
-  --glass-tint: var(--glass-dark-tint);
   width: min(380px, calc(100vw - 16px));
   padding: 0;
   border-radius: 24px;
   overflow: hidden;
   transform-origin: top right;
-}
-@media (prefers-reduced-transparency: reduce) {
-  :root .account-news-popover {
-    --glass-tint: var(--glass-fallback);
-  }
-}
-@supports not (backdrop-filter: blur(1px)) {
-  :root .account-news-popover {
-    --glass-tint: var(--glass-fallback);
-  }
 }
 .account-news-panel {
   width: 100%;
