@@ -212,10 +212,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 48px;
-  min-height: 48px;
-  padding: 6px 16px;
-  border-radius: 6px;
+  padding: 0 16px;
   color: #ffffffb3;
   font-size: var(--text-base);
   font-weight: var(--weight-medium);

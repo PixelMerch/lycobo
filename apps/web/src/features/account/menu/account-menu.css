@@ -109,10 +109,8 @@
   justify-content: flex-start;
   align-items: center;
   width: 100%;
-  min-height: 38px;
-  padding: 8px 8px 8px 12px;
+  padding: 0 8px 0 12px;
   gap: 12px;
-  border-radius: 6px;
   color: #fff;
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
@@ -126,13 +124,6 @@
   margin: 8px 12px;
   background: var(--interaction-active);
 }
-@media (max-width: 767px), (pointer: coarse) {
-  .account-menu-row {
-    min-height: 44px;
-    padding-block: 12px;
-  }
-}
-
 .account-footer-action {
   display: inline-flex;
   align-items: center;

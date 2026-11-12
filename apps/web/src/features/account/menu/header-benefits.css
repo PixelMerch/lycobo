@@ -74,9 +74,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 44px;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 0 12px;
   background: #ffffff14;
   color: #fff;
   font-size: var(--text-base);
@@ -122,15 +120,12 @@
   font-weight: var(--weight-medium);
   font-variant-numeric: tabular-nums;
 }
-/* 操作行：37px 高、左右 16px、20px 图标、#FFFFFF66 文字，悬停或聚焦只提亮文字到 #FFFFFFCC。 */
+/* 操作行沿用素材库菜单行高，悬停和键盘聚焦使用同一浅底。 */
 .credits-menu .credits-menu-action {
   display: flex;
   align-items: center;
   gap: 12px;
-  height: 37px;
-  min-height: 37px;
-  padding: 8px 16px;
-  border-radius: 6px;
+  padding: 0 16px;
   background: transparent;
   color: #ffffff66;
   font-size: var(--text-base);
@@ -140,12 +135,8 @@
   transition: color 200ms ease;
 }
 .credits-menu .credits-menu-action:is([data-hovered="true"], [data-focused="true"]) {
-  background: transparent;
+  background: var(--fill-soft);
   color: #ffffffcc;
-}
-/* 键盘聚焦额外给出浅底，指针悬停仍只提亮文字。 */
-.credits-menu .credits-menu-action[data-focus-visible="true"] {
-  background: #ffffff0f;
 }
 
 /* 手机只显示积分图标与余额（同 vidmuse），触控目标不小于 44px。 */

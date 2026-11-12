@@ -55,7 +55,7 @@ for (const width of [1440, 320]) {
     await works.hover();
     await expect(works).toHaveCSS("border-radius", "6px");
     await expect(works).toHaveCSS("background-color", "rgba(255, 255, 255, 0.06)");
-    await expect(works).toHaveCSS("min-height", desktop ? "38px" : "44px");
+    await expect(works).toHaveCSS("height", "44px");
     await expect(panel.getByRole("switch", { name: "桌面通知", exact: true })).toHaveCount(0);
     expect(await panel.evaluate((element) => element.scrollWidth)).toBeLessThanOrEqual(
       await panel.evaluate((element) => element.clientWidth),

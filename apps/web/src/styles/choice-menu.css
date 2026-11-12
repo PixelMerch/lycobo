@@ -1,3 +1,14 @@
+/* 顶部栏菜单操作行与素材库来源菜单共用高亮尺寸。 */
+:is(
+  .choice-menu :is(.menu-item, .list-box-item),
+  .topbar-menu .topbar-menu-item,
+  .account-menu .account-menu-row,
+  .credits-menu :is(.credits-menu-plan, .credits-menu-action)
+) {
+  min-height: 44px;
+  border-radius: 6px;
+}
+
 /* 单选菜单统一使用顶部栏语言下拉的尺寸、文字和选中提示。 */
 :root .choice-menu:is(.dropdown__popover, .select__popover) {
   min-width: max(160px, var(--trigger-width, 0px));
@@ -18,9 +29,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 44px;
   padding: 0 40px 0 16px;
-  border-radius: 6px;
   background: transparent;
   color: #ffffffb3;
   font-size: var(--text-base);
