@@ -12,6 +12,8 @@ import { processImageItem } from "../images/image-processor";
 import { type CloudflareImageEnv, openCloudflareRuntime } from "./cloudflare-runtime";
 import { processCloudflareVariants } from "./cloudflare-variants";
 
+const REFERENCE_WAIT_LIMIT_MS = 30 * 60 * 1000;
+
 /** 独立消费图片消息，传输失败可重试，付费尝试始终受数据库领取保护。 */
 export async function consumeCloudflareImages(
   batch: MessageBatch<unknown>,
@@ -136,15 +138,21 @@ async function flushRealtime(env: CloudflareImageEnv) {
 }
 
 /** 图片在 R2 中已接收时由后台等待，超时或确定失败才结束任务并退款。 */
-async function prepareReferences(
+export async function prepareReferences(
   itemId: string,
-  runtime: Awaited<ReturnType<typeof openCloudflareRuntime>>,
+  runtime: {
+    repository: Pick<
+      Awaited<ReturnType<typeof openCloudflareRuntime>>["repository"],
+      "waitingReferenceUploads"
+    >;
+    uploads: Pick<Awaited<ReturnType<typeof openCloudflareRuntime>>["uploads"], "status">;
+  },
 ) {
   const waiting = await runtime.repository.waitingReferenceUploads(itemId);
   if (!waiting) return "ready";
-  // 有限等待防止损坏上传或消费者故障无限占住付费任务。
-  if (Date.now() - waiting.createdAt.getTime() > 15 * 60 * 1000) return "failed";
   const statuses = await Promise.all(waiting.ids.map((id) => runtime.uploads.status(waiting, id)));
   if (statuses.some((result) => !result || result.status === "failed")) return "failed";
-  return statuses.some((result) => result?.status === "pending") ? "pending" : "ready";
+  if (!statuses.some((result) => result?.status === "pending")) return "ready";
+  // 参考图与生成共用队列，积压时原图入库可能超过 15 分钟。
+  return Date.now() - waiting.createdAt.getTime() >= REFERENCE_WAIT_LIMIT_MS ? "failed" : "pending";
 }
