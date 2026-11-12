@@ -9,8 +9,6 @@
 :root .account-news-popover {
   --glass-tint: var(--glass-dark-tint);
   width: min(380px, calc(100vw - 16px));
-  /* 扣除顶部栏、展开间距和一个顶部栏高度的底部留白。 */
-  height: calc(100dvh - 2 * var(--header-height) - 8px);
   padding: 0;
   border-radius: 24px;
   overflow: hidden;
@@ -28,14 +26,15 @@
 }
 .account-news-panel {
   width: 100%;
-  height: 100%;
+  /* 短列表随内容收拢，长列表在浮层内滚动。 */
+  max-height: min(480px, calc(100dvh - 2 * var(--header-height) - 8px));
   padding: 0;
 }
 .account-news-tabs.tabs {
   display: flex;
   flex-direction: column;
   gap: 0;
-  height: 100%;
+  max-height: inherit;
 }
 .account-news-tabs .tabs__list-container {
   flex: none;
@@ -70,14 +69,14 @@
 }
 .account-news-body.tabs__panel {
   display: flex;
-  flex: 1;
+  flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
-  padding: var(--space-4);
+  padding: var(--space-2);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
-  gap: var(--space-3);
+  gap: var(--space-1);
 }
 .account-news-body::-webkit-scrollbar {
   display: none;
@@ -92,15 +91,15 @@
   display: grid;
   place-items: center;
   flex: none;
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: #ffffff0a;
   color: #a2a2a2;
 }
 .account-news-empty h3 {
-  font-size: var(--text-lg);
-  line-height: var(--leading-lg);
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
   font-weight: var(--weight-semibold);
 }
 .account-news-empty {
@@ -113,7 +112,7 @@
   text-align: center;
 }
 .account-news-empty h3 {
-  margin-top: var(--space-4);
+  margin-top: var(--space-2);
 }
 .account-footer-action {
   position: relative;
@@ -132,23 +131,24 @@
   display: grid;
   place-items: center;
   flex: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
   color: var(--foreground);
   background: var(--glass-card);
 }
 .account-message h3 {
-  font-size: var(--text-base);
-  line-height: var(--leading-base);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  overflow-wrap: anywhere;
   font-weight: var(--weight-medium);
 }
 .account-message {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border-radius: 16px;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: 12px;
 }
 .account-message[data-unread="true"] {
   background: var(--glass-card);
@@ -166,7 +166,7 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-1) var(--space-2);
 }
 .account-message-status,
 .account-message-footer {
@@ -178,14 +178,9 @@
   color: var(--accent);
 }
 .account-message p {
-  margin: var(--space-2) 0 var(--space-3);
+  margin: var(--space-1) 0;
   color: #ffffffb3;
-  font-size: var(--text-base);
-  line-height: var(--leading-base);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   overflow-wrap: anywhere;
-}
-@media (max-width: 767px) {
-  .account-message {
-    padding: var(--space-3);
-  }
 }

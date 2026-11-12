@@ -158,7 +158,9 @@ test("visible other page offers a result without navigating and desktop permissi
   await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   const account = page.getByRole("button", { name: /^账户菜单：/ });
   await account.click();
-  const desktopNotifications = page.getByRole("switch", { name: "桌面通知", exact: true });
+  await page.getByRole("button", { name: "设置", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "账户设置", exact: true });
+  const desktopNotifications = settings.getByRole("switch", { name: "桌面通知", exact: true });
   await expect(desktopNotifications).not.toBeChecked();
   await desktopNotifications.press("Space");
   await expect(page.locator("html")).toHaveAttribute("data-permission-requests", "1");
@@ -168,8 +170,8 @@ test("visible other page offers a result without navigating and desktop permissi
   await desktopNotifications.press("Space");
   await expect(desktopNotifications).toBeChecked();
   await expect(page.locator("html")).toHaveAttribute("data-permission-requests", "1");
-  await page.keyboard.press("Enter");
-  await expect(desktopNotifications).toBeHidden();
+  await page.keyboard.press("Escape");
+  await expect(settings).toBeHidden();
   await expect(page.locator("html")).not.toHaveAttribute("data-desktop-notices");
   await hidden(page, true);
   const second = crypto.randomUUID();

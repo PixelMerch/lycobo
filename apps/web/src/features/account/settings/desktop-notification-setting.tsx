@@ -1,17 +1,20 @@
-import { Description, Label, Switch } from "@heroui/react";
-import { IconBell } from "@tabler/icons-react";
+import { Switch } from "@heroui/react";
 import { useEffect, useState } from "react";
-import { UiIcon } from "../../components/ui-icon";
-import { useMessages } from "../../i18n/messages";
-import { desktopNotificationsEnabled, setDesktopNotifications } from "./desktop-notifications";
-import { realtimeMessages } from "./realtime-messages";
+import { useMessages } from "../../../i18n/messages";
+import {
+  desktopNotificationsEnabled,
+  setDesktopNotifications,
+} from "../../realtime/desktop-notifications";
+import { realtimeMessages } from "../../realtime/realtime-messages";
+
+import { SettingsRow } from "./account-settings-rows";
 
 function permission() {
   return typeof Notification === "undefined" ? "unsupported" : Notification.permission;
 }
 
 /** 只在用户点击时申请桌面通知权限，拒绝后提供浏览器设置说明。 */
-export function DesktopNotificationControl({ scope }: { scope: string }) {
+export function DesktopNotificationSetting({ scope }: { scope: string }) {
   const t = useMessages(realtimeMessages);
   const [enabled, setEnabled] = useState(() => desktopNotificationsEnabled(scope));
   const [access, setAccess] = useState(permission);
@@ -54,31 +57,30 @@ export function DesktopNotificationControl({ scope }: { scope: string }) {
       setPending(false);
     }
   };
-  let hint: string | undefined;
+  let hint = "";
   if (access === "unsupported") hint = t.hintUnsupported;
   if (access === "denied") hint = t.hintDenied;
   if (failed) hint = t.hintFailed;
   return (
-    <Switch
-      size="sm"
-      className="account-notification-switch"
-      isSelected={active}
-      isDisabled={access === "unsupported" || access === "denied"}
-      isReadOnly={pending}
-      onChange={(next) => void toggle(next)}
-    >
-      <Switch.Content className="account-menu-row">
-        <UiIcon icon={IconBell} size="small" />
-        <Label>{t.desktop}</Label>
-        <Switch.Control>
-          <Switch.Thumb />
-        </Switch.Control>
-      </Switch.Content>
-      {hint && (
-        <Description className="account-notification-hint" aria-live="polite">
-          {hint}
-        </Description>
-      )}
-    </Switch>
+    <SettingsRow
+      label={t.desktop}
+      hint={hint}
+      action={
+        <Switch
+          size="sm"
+          aria-label={t.desktop}
+          isSelected={active}
+          isDisabled={access === "unsupported" || access === "denied"}
+          isReadOnly={pending}
+          onChange={(next) => void toggle(next)}
+        >
+          <Switch.Content className="settings-notification-switch">
+            <Switch.Control>
+              <Switch.Thumb />
+            </Switch.Control>
+          </Switch.Content>
+        </Switch>
+      }
+    />
   );
 }

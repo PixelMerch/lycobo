@@ -18,7 +18,7 @@ export function ReleaseNotice() {
     return (
       <div className="account-news-empty">
         <span>
-          <UiIcon icon={IconSparkles} size="illustration" />
+          <UiIcon icon={IconSparkles} size="default" />
         </span>
         <h3>{updates.isError ? t.updatesFailed : t.noUpdates}</h3>
         {updates.isError && (
@@ -31,7 +31,7 @@ export function ReleaseNotice() {
   return (
     <article className="account-message">
       <span className="account-message-icon">
-        <UiIcon icon={IconSparkles} />
+        <UiIcon icon={IconSparkles} size="small" />
       </span>
       <div className="account-message-content">
         <div className="account-message-heading">
@@ -61,7 +61,7 @@ export function NotificationBody() {
     return (
       <div className="account-news-empty">
         <span>
-          <UiIcon icon={IconBell} size="illustration" />
+          <UiIcon icon={IconBell} size="default" />
         </span>
         <h3>{notifications.isError ? t.messagesFailed : t.noMessages}</h3>
         <p>{notifications.isPending ? t.signInForMessages : t.messagesEmptyHint}</p>
@@ -77,7 +77,7 @@ export function NotificationBody() {
       {messages.map((message) => (
         <article className="account-message" data-unread={!message.read} key={message.id}>
           <span className="account-message-icon">
-            <UiIcon icon={IconBell} size="default" />
+            <UiIcon icon={IconBell} size="small" />
           </span>
           <div className="account-message-content">
             <div className="account-message-heading">

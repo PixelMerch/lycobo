@@ -8,7 +8,6 @@ import { useErrorToast } from "../../../lib/error-toast";
 import { useOpenAssetLibrary } from "../../assets/asset-library-store";
 import { useEnterpriseLogout, useEnterpriseSession } from "../../auth/auth-client";
 import { useOpenLogin } from "../../auth/login-prompt";
-import { DesktopNotificationControl } from "../../realtime/desktop-notification-control";
 import { accountDisplayName, roleLabel } from "../account-format";
 import { useAccountOverlays } from "../account-overlay-store";
 import { AccountAvatar } from "../avatar/account-avatar";
@@ -33,7 +32,7 @@ export function HeaderLogin() {
 }
 
 /**
- * 账户菜单提供设置、个人作品、桌面通知与退出登录。
+ * 账户菜单提供设置、个人作品与退出登录。
  * 桌面顶部栏只显示头像并向下展开；手机导航抽屉底部显示头像和昵称，向上展开。
  */
 export function AccountMenu({
@@ -60,7 +59,6 @@ export function AccountMenu({
     openLibrary(triggerRef.current);
   };
   const inHeader = variant === "header";
-  const notificationScope = `${account.organizationId}:${account.userId}`;
   return (
     <div
       className={inHeader ? "account-header" : "account-footer"}
@@ -118,7 +116,7 @@ export function AccountMenu({
               openSettings("account", triggerRef.current);
             }}
           >
-            <UiIcon icon={IconSettings} size="small" />
+            <UiIcon icon={IconSettings} />
             {t.settings}
           </Button>
           <Button
@@ -130,10 +128,9 @@ export function AccountMenu({
               openWorks();
             }}
           >
-            <UiIcon icon={IconPhoto} size="small" />
+            <UiIcon icon={IconPhoto} />
             {t.works}
           </Button>
-          <DesktopNotificationControl key={notificationScope} scope={notificationScope} />
           <Separator className="account-menu-separator" />
           <Button
             className="account-menu-row"
@@ -145,7 +142,7 @@ export function AccountMenu({
               logout.mutate();
             }}
           >
-            <UiIcon icon={IconLogout} size="small" />
+            <UiIcon icon={IconLogout} />
             {logout.isPending ? t.loggingOut : t.logout}
           </Button>
         </Popover.Content>

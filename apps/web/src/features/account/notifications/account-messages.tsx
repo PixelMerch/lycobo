@@ -13,7 +13,24 @@ export function AccountMessages({ signedIn }: { signedIn: boolean }) {
   const t = useMessages(notificationsMessages);
   const notifications = useNotifications();
   const anchor = useRef<HTMLSpanElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLElement>(null);
   const [section, setSection] = useState<"system" | "updates" | null>(null);
+  const isOpen = section !== null;
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // 非模态浮层不会因点击没有焦点的空白处而自动关闭。
+    function dismissOnOutsideClick(event: MouseEvent) {
+      const path = event.composedPath();
+      if (panel.current && path.includes(panel.current)) return;
+      if (trigger.current && path.includes(trigger.current)) return;
+      setSection(null);
+    }
+
+    document.addEventListener("click", dismissOnOutsideClick, true);
+    return () => document.removeEventListener("click", dismissOnOutsideClick, true);
+  }, [isOpen]);
   const release = useSiteRelease().data?.release;
   const announced = useRef<string | undefined>(undefined);
   useEffect(() => {
@@ -45,11 +62,12 @@ export function AccountMessages({ signedIn }: { signedIn: boolean }) {
   const unread = notifications.data?.pages[0]?.unread ?? 0;
   const label = t.messagesLabel(unread);
   return (
-    <Popover isOpen={section !== null} onOpenChange={(open) => setSection(open ? "system" : null)}>
+    <Popover isOpen={isOpen} onOpenChange={(open) => setSection(open ? "system" : null)}>
       <span ref={anchor} className="account-news-anchor" aria-hidden="true" />
       {signedIn && (
         <Tooltip delay={200}>
           <Button
+            ref={trigger}
             isIconOnly
             size="sm"
             variant="tertiary"
@@ -63,6 +81,7 @@ export function AccountMessages({ signedIn }: { signedIn: boolean }) {
         </Tooltip>
       )}
       <Popover.Content
+        ref={panel}
         className="account-news-popover"
         triggerRef={anchor}
         placement="bottom end"
@@ -70,6 +89,7 @@ export function AccountMessages({ signedIn }: { signedIn: boolean }) {
         containerPadding={8}
         shouldFlip={false}
         isNonModal
+        shouldCloseOnInteractOutside={(element) => !trigger.current?.contains(element)}
       >
         <Popover.Dialog className="account-news-panel" aria-label={t.messagesTitle}>
           <Tabs
