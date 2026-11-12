@@ -125,7 +125,18 @@ for (const width of [1440, 390]) {
       list.evaluate((element) => innerHeight - element.getBoundingClientRect().bottom);
     await expect.poll(bottomGap).toBeCloseTo(headerHeight, 0);
     const listHeight = await list.evaluate((element) => element.offsetHeight);
-    await panel.getByRole("tab", { name: "更新通知", exact: true }).click();
+    const updatesTab = panel.getByRole("tab", { name: "更新通知", exact: true });
+    await expect(list.locator(".tabs__list-container")).toHaveCSS("border-bottom-width", "1px");
+    await updatesTab.hover();
+    await expect
+      .poll(() =>
+        updatesTab.evaluate((tab) => {
+          const highlight = getComputedStyle(tab, "::before");
+          return [highlight.height, highlight.backgroundColor];
+        }),
+      )
+      .toEqual(["32px", "rgba(255, 255, 255, 0.06)"]);
+    await updatesTab.click();
     await expect(list).toHaveCSS("height", `${listHeight}px`);
     await expect.poll(bottomGap).toBeCloseTo(headerHeight, 0);
     await opener.click();

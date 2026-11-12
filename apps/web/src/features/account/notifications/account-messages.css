@@ -56,7 +56,8 @@
 }
 .account-news-tabs .tabs__list-container {
   flex: none;
-  padding: var(--space-1) var(--space-2) 0;
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--glass-card-edge);
 }
 .account-news-tabs .tabs__list {
   display: flex;
@@ -80,20 +81,29 @@
   background: transparent;
   color: var(--foreground);
 }
-.account-news-tabs .tabs__tab[data-selected="true"]::before {
+.account-news-tabs .tabs__tab::before {
   position: absolute;
   z-index: -1;
-  inset: 0;
+  inset-block-start: 50%;
+  inset-inline: 0;
+  height: 32px;
   border-radius: inherit;
-  background: var(--fill-medium);
+  transform: translateY(-50%);
+  pointer-events: none;
   content: "";
+}
+.account-news-tabs .tabs__tab[data-selected="true"]::before {
+  background: var(--fill-medium);
+}
+.account-news-tabs .tabs__tab[data-hovered="true"]:not([data-selected="true"]) {
+  opacity: 1;
+}
+.account-news-tabs .tabs__tab[data-hovered="true"]:not([data-selected="true"])::before {
+  background: var(--fill-soft);
 }
 @media (max-width: 767px), (pointer: coarse) {
   .account-news-tabs .tabs__tab {
     min-height: 44px;
-  }
-  .account-news-tabs .tabs__tab[data-selected="true"]::before {
-    inset-block: 4px;
   }
 }
 .account-news-count {
