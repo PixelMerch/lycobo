@@ -122,9 +122,6 @@
   background: var(--fill-soft);
   border-radius: 18px;
 }
-.model-menu {
-  border-radius: 12px;
-}
 .model-menu .model-options {
   color: #ddd;
 }
@@ -343,7 +340,6 @@
   max-width: calc(100vw - 24px);
   padding: 0;
   border: 0;
-  border-radius: 6px;
   background: var(--field-background);
   box-shadow: var(--overlay-shadow);
   overflow: hidden;

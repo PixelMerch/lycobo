@@ -51,6 +51,7 @@ for (const width of [1440, 320]) {
     await trigger.click();
     await expect(panel.locator(".account-menu-details")).toContainText("UID 0123456789 · 管理员");
     await expect(panel).toHaveCSS("width", `${Math.min(280, width - 24)}px`);
+    await expect(panel).toHaveCSS("border-radius", "12px");
     await expect(works).toHaveCSS("font-size", "13px");
     await works.hover();
     await expect

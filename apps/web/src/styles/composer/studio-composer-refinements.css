@@ -26,9 +26,6 @@
 .composer-panel .model-field .model-select[data-focus-visible="true"] {
   background: var(--control-hover-fill);
 }
-.model-menu {
-  border-radius: 12px;
-}
 .model-menu .model-options {
   color: #ddd;
 }

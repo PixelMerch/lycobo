@@ -199,7 +199,6 @@
 .topbar-menu {
   min-width: 160px;
   padding: 6px;
-  border-radius: 12px;
 }
 .topbar-menu .dropdown__menu {
   display: flex;
