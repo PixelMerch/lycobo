@@ -1,3 +1,15 @@
+.main-content:has(> .lycobo-home) {
+  padding: 0;
+}
+
+html:has(.lycobo-home) {
+  scrollbar-width: none;
+}
+
+html:has(.lycobo-home)::-webkit-scrollbar {
+  display: none;
+}
+
 .lycobo-home {
   background: #0b0d0b;
 }
