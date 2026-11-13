@@ -1,6 +1,8 @@
 import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import {
   IconArrowUp,
+  IconBrandAmazon,
+  IconBrandTiktok,
   IconCircleCheckFilled,
   IconHeart,
   IconMessageCircle,
@@ -34,7 +36,7 @@ const examples = [
     visits: [1500, 1680],
   },
   {
-    id: "drink",
+    id: "blender",
     platform: "Temu",
     price: "$12.99",
     compareAt: "$19.99",
@@ -57,6 +59,21 @@ function exampleImage(id: HeroExampleId, phase: "before" | "after") {
   return `/landing/showcase/${id}-${phase}.webp`;
 }
 
+/** 平台彩色标记：用品牌色和图标代替纯文字，提高扫读和识别速度。 */
+function PlatformMark({ id }: { id: HeroExampleId }) {
+  if (id === "bedding") {
+    return <UiIcon className="lp-platformLogo" icon={IconBrandTiktok} size="navigation" />;
+  }
+  if (id === "fashion") {
+    return <UiIcon className="lp-platformLogo" icon={IconBrandAmazon} size="navigation" />;
+  }
+  return (
+    <span aria-hidden="true" className="lp-platformLogo lp-platformLogo--temu">
+      T
+    </span>
+  );
+}
+
 /** 在标题上方用移动取景框标示当前平台。 */
 export function HeroPlatforms({
   active,
@@ -69,33 +86,48 @@ export function HeroPlatforms({
   const focusId = useId();
   const reducedMotion = useReducedMotion();
   return (
-    <ToggleButtonGroup
-      aria-label={t.platforms}
-      className="lp-platforms"
-      disallowEmptySelection
-      isDetached
-      selectedKeys={[active]}
-      selectionMode="single"
-      onSelectionChange={(keys) => {
-        const [key] = keys;
-        const example = examples.find(({ id }) => id === key);
-        if (example) onSelect(example.id);
-      }}
-    >
-      {examples.map(({ id, platform }) => (
-        <ToggleButton className="lp-platform" id={id} key={id}>
-          {active === id && (
-            <motion.span
-              aria-hidden="true"
-              className="lp-platformFocus"
-              {...(reducedMotion ? {} : { layoutId: focusId })}
-              transition={{ duration: 0.35 }}
-            />
-          )}
-          {platform}
-        </ToggleButton>
-      ))}
-    </ToggleButtonGroup>
+    <div className="lp-platformsWrap">
+      <span className="lp-platformsLabel">{t.publishTo}</span>
+      <ToggleButtonGroup
+        aria-label={t.platforms}
+        className="lp-platforms"
+        disallowEmptySelection
+        isDetached
+        selectedKeys={[active]}
+        selectionMode="single"
+        onSelectionChange={(keys) => {
+          const [key] = keys;
+          const example = examples.find(({ id }) => id === key);
+          if (example) onSelect(example.id);
+        }}
+      >
+        {examples.map(({ id, platform }) => (
+          <ToggleButton
+            className="lp-platform"
+            data-platform={id}
+            id={id}
+            key={id}
+            aria-label={platform}
+          >
+            {active === id && (
+              <motion.span
+                aria-hidden="true"
+                className="lp-platformFocus"
+                {...(reducedMotion ? {} : { layoutId: focusId })}
+                transition={{ duration: 0.35 }}
+              >
+                <i />
+                <i />
+                <i />
+                <i />
+              </motion.span>
+            )}
+            <PlatformMark id={id} />
+            <span className="lp-platformName">{platform}</span>
+          </ToggleButton>
+        ))}
+      </ToggleButtonGroup>
+    </div>
   );
 }
 
@@ -200,7 +232,7 @@ function PlatformPreview({ example }: { example: Example }) {
             <span className="lp-previewCta">{t.platformUi.addToCart}</span>
           </>
         )}
-        {example.id === "drink" && (
+        {example.id === "blender" && (
           <>
             <span className="lp-previewPrice">
               <strong>{example.price}</strong>

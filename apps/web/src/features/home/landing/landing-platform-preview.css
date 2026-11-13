@@ -44,7 +44,7 @@
   background: #fff;
 }
 
-.lp-storeOutput[data-platform="drink"] .lp-storePreviewFrame {
+.lp-storeOutput[data-platform="blender"] .lp-storePreviewFrame {
   aspect-ratio: 3 / 4;
   background: #fff8f3;
 }
@@ -74,7 +74,7 @@
   width: 30%;
 }
 
-.lp-storeSlide[data-platform="drink"] .lp-storeOutput {
+.lp-storeSlide[data-platform="blender"] .lp-storeOutput {
   right: 2%;
   width: 28%;
 }
@@ -195,7 +195,7 @@
   display: none;
 }
 
-.lp-storeOutput[data-platform="drink"] .lp-previewPlatform {
+.lp-storeOutput[data-platform="blender"] .lp-previewPlatform {
   background: #fb7701;
   color: #fff;
 }
@@ -210,7 +210,7 @@
 }
 
 .lp-storeOutput[data-platform="fashion"] .lp-previewMeta,
-.lp-storeOutput[data-platform="drink"] .lp-previewMeta {
+.lp-storeOutput[data-platform="blender"] .lp-previewMeta {
   color: #1a1a1a;
   background: #f3f2ee;
   margin-top: 4px;
@@ -246,7 +246,7 @@
   align-items: baseline;
 }
 
-.lp-storeOutput[data-platform="drink"] .lp-previewPrice strong {
+.lp-storeOutput[data-platform="blender"] .lp-previewPrice strong {
   color: #d94b00;
   font-size: 14px;
   font-weight: 700;
@@ -285,7 +285,7 @@
   color: #111;
 }
 
-.lp-storePlatformBadge[data-platform="drink"] {
+.lp-storePlatformBadge[data-platform="blender"] {
   background: #fb7701;
   color: #fff;
 }

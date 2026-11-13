@@ -1,37 +1,148 @@
+.lp-platformsWrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 26px;
+}
+
+.lp-platformsLabel {
+  flex: none;
+  color: #ffffff66;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1;
+}
+
 .lp-platforms {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 24px;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 0;
 }
 
 .lp-platforms .lp-platform {
   position: relative;
-  min-height: 44px;
-  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
   background: transparent;
-  color: #fffb;
+  color: #ffffffcc;
   font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   transition:
     color 300ms,
+    opacity 300ms,
     filter 300ms;
+}
+
+.lp-platforms .lp-platform > :not(.lp-platformFocus) {
+  position: relative;
+  z-index: 1;
+}
+
+.lp-platformLogo {
+  display: inline-grid;
+  fill: currentColor;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+
+.lp-platformLogo--temu {
+  border-radius: 6px;
+  background: #fb7701;
+  color: #fff;
+  font-family: var(--app-font-family);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.lp-platforms .lp-platform[data-platform="bedding"] .lp-platformLogo {
+  color: #fff;
+  filter: drop-shadow(1px 0 4px #25f4ee80) drop-shadow(-1px 0 4px #fe2c5580);
+}
+
+.lp-platforms .lp-platform[data-platform="fashion"] .lp-platformLogo {
+  color: #ff9900;
+}
+
+.lp-platforms .lp-platform[data-platform="blender"] .lp-platformLogo {
+  color: #fb7701;
+}
+
+.lp-platforms .lp-platform[data-platform="blender"] .lp-platformLogo--temu {
+  color: #fff;
+}
+
+.lp-platforms .lp-platform[data-platform="bedding"] .lp-platformLogo path {
+  fill: currentColor;
 }
 
 .lp-platforms .lp-platform[data-selected] {
   color: #fff;
 }
 
+/* True Focus：未选中平台虚化，选中平台清晰并出现四角取景框。 */
 .lp-platforms .lp-platform:not([data-selected], :hover, :focus-visible) {
-  filter: blur(0.65px);
+  opacity: 0.52;
+  filter: blur(1.6px);
+}
+
+.lp-platforms .lp-platform:is(:hover, :focus-visible) {
+  opacity: 1;
+  filter: none;
 }
 
 .lp-platformFocus {
   position: absolute;
-  inset: 3px 0;
+  z-index: 0;
+  inset: -7px -9px;
   pointer-events: none;
-  border: 1px solid #a8ff0080;
-  border-radius: 8px;
-  background: #a8ff000a;
+}
+
+.lp-platformFocus i {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: #a8ff00;
+  border-style: solid;
+}
+
+.lp-platformFocus i:nth-child(1) {
+  top: 0;
+  left: 0;
+  border-width: 1.5px 0 0 1.5px;
+  border-top-left-radius: 4px;
+}
+
+.lp-platformFocus i:nth-child(2) {
+  top: 0;
+  right: 0;
+  border-width: 1.5px 1.5px 0 0;
+  border-top-right-radius: 4px;
+}
+
+.lp-platformFocus i:nth-child(3) {
+  bottom: 0;
+  left: 0;
+  border-width: 0 0 1.5px 1.5px;
+  border-bottom-left-radius: 4px;
+}
+
+.lp-platformFocus i:nth-child(4) {
+  right: 0;
+  bottom: 0;
+  border-width: 0 1.5px 1.5px 0;
+  border-bottom-right-radius: 4px;
 }
 
 .lp-storeShowcase {
@@ -263,9 +374,16 @@
 }
 
 @media (max-width: 639px) {
+  .lp-platformsWrap {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
   .lp-platforms {
-    gap: 4px;
-    margin-bottom: 12px;
+    gap: 12px;
+    margin-bottom: 0;
   }
 
   .lp-platforms .lp-platform {

@@ -4,6 +4,7 @@ import { defineMessages } from "../../../i18n/messages";
 export const showcaseMessages = defineMessages({
   "zh-CN": {
     platforms: "选择电商平台",
+    publishTo: "发布到",
     showcase: "商品图片前后对比",
     demoData: "演示数据",
     viewSales: "查看演示订单对比",
@@ -37,17 +38,18 @@ export const showcaseMessages = defineMessages({
         after: "欧美模特穿着的街拍成片",
         preview: "Amazon 商品图预览",
       },
-      drink: {
-        name: "青柠气泡水",
-        format: "夏日冰饮场景图",
-        before: "青柠气泡水罐的白底原图",
-        after: "沙滩冰块上的成片",
+      blender: {
+        name: "便携榨汁杯",
+        format: "厨房场景图",
+        before: "奶油色榨汁杯的白底原图",
+        after: "水果与奶昔旁的厨房成片",
         preview: "Temu 商品图预览",
       },
     },
   },
   en: {
     platforms: "Choose a marketplace",
+    publishTo: "Publish to",
     showcase: "Product photo before and after",
     demoData: "Demo data",
     viewSales: "Compare demo orders",
@@ -81,11 +83,11 @@ export const showcaseMessages = defineMessages({
         after: "Finished street-style photo of a Western model in the red jacket",
         preview: "Amazon listing image preview",
       },
-      drink: {
-        name: "Lime sparkling water",
-        format: "Summer lifestyle image",
-        before: "Original white-background photo of the lime can",
-        after: "Finished beach photo of the lime can on ice",
+      blender: {
+        name: "Portable blender",
+        format: "Kitchen lifestyle image",
+        before: "Original white-background photo of the cream blender",
+        after: "Finished kitchen photo with fruit and a smoothie",
         preview: "Temu listing image preview",
       },
     },
