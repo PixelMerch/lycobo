@@ -44,12 +44,12 @@
 
 ## 3. 首屏对比动画
 
-第一帧先展示同一套蓝被的普通照片，随后一条竖线从左往右揭开商品图。可先看[原图与成片并排稿](design/home-lycobo-assets/blue-quilt-before-after.jpg)。借鉴参考图三的图文层级，上方放产品标题与套件组成，下方以真实比例展示床品。普通照片和商品图使用同一画幅、机位与裁切基准，保留蓝色、菱格绗缝和两只枕套。变化集中在光线、画面整理和信息排版。示例采用「蓝色绗缝三件套」与「1 条被子 · 2 只枕套」，沿用参考图三的西语排版方向，用本示例的产品信息。
+第一帧从普通床品照片切换到一张完整的卖点商品图。[查看原图与成片](design/home-lycobo-assets/blue-quilt-product-pair.jpg)。同一套雾蓝被保留菱格绗缝、包边与两只枕套。成片重新安排商品位置，采用暖色窗光，在顶部排出西语标题、套件组成和带引线的圆形绗缝特写。版式参考了用户给的卖点图，交付图由 `gen-image` 独立生成。图上的卖点限定为可从样图确认的套件组成和绗缝外观。
 
-- 默认展示原图约 0.9 秒，竖线用约 1.2 秒揭开成片，随后停留在成片。回到这一帧时由用户选择重播。
-- 支持拖动、点击定位与键盘方向键，拖动时暂停轮播。保留「原图」「商品图」标签，减少动态模式默认用静态对比，可通过按钮切换。
-- 首页接入时可用两张同尺寸图叠放并裁切上层，文字由中英文案目录提供。移动端用相同裁切，给拖柄留足触控面积。
-- [对比动画预览](design/home-lycobo-assets/blue-quilt-comparison.gif) 为离线演示，使用独立工具生成的示意原图与商品图素材，体现交互节奏；首页实现时再按上述规则制作可拖动的对比。
+- 两张图使用同一个 4:5 展示框。完整商品图含顶部标题和细节圈，移动端也按全图展示。
+- 首次先展示原图约 1 秒，竖线用约 1.2 秒揭开成片，随后停在成片。切回此帧时由用户选择重播。
+- 支持拖动、点击定位与键盘方向键，操作时暂停轮播。保留「原图」「商品图」标签，减少动态模式用按钮切换两张静态图。
+- [扫线动画预览](design/home-lycobo-assets/blue-quilt-product-reveal.gif) 用于评审节奏。首屏正式接入时使用两张静态图实现可拖动对比。
 
 ## 4. 素材清单
 
@@ -58,9 +58,8 @@
 | 素材 | 画幅 | 用途 |
 | --- | --- | --- |
 | [暖铜暗色背景](design/home-lycobo-assets/hero-atmosphere.webp) | 3:2 | 首屏背景，窄屏检查裁切与文字对比。 |
-| [普通照片](design/home-lycobo-assets/blue-quilt-before.webp) | 9:16 | 首屏对比的起始画面。 |
-| [商品图底图](design/home-lycobo-assets/blue-quilt-after-scene.webp) | 9:16 | 首屏对比成片，顶部预留排版空间。 |
-| [西语商品图排版样稿](design/home-lycobo-assets/blue-quilt-listing.webp) | 9:16 | 动画预览用成片，参考图三的信息层级。 |
+| [普通蓝被照片](design/home-lycobo-assets/blue-quilt-product-source.webp) | 4:5 | 首屏对比的起始画面。 |
+| [蓝被卖点商品图](design/home-lycobo-assets/blue-quilt-product-listing.webp) | 4:5 | 首屏对比的成片，包含主图、套件组成和绗缝放大图。 |
 | [蓝被卧室场景](design/home-lycobo-assets/blue-quilt-hero.webp) | 2:3 | 首屏第一帧与暖光卧室示例。 |
 | [蓝被三件套主图](design/home-lycobo-assets/blue-quilt-packshot.webp) | 1:1 | 电商白底风格主图、套图计划的输入示意。 |
 | [蓝被俯拍](design/home-lycobo-assets/blue-quilt-overhead.webp) | 1:1 | 家纺多视角、同款拼贴。 |
