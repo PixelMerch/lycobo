@@ -115,7 +115,7 @@ export function StudioShell() {
         <RouteLink to="/" className="brand">
           <img className="lycobo-logo" alt="Lycobo" {...logo} />
         </RouteLink>
-        <HeaderNavigation commerceHeader={commerceHeader} />
+        <HeaderNavigation commerceHeader={commerceHeader} inWorkspace={inWorkspace} />
         <HeaderActions
           commerceHeader={commerceHeader}
           inWorkspace={inWorkspace}
@@ -133,18 +133,26 @@ export function StudioShell() {
   );
 }
 
-function HeaderNavigation({ commerceHeader }: { commerceHeader: boolean }) {
+/** 工作区内的工具切换由工具坞负责。 */
+function HeaderNavigation({
+  commerceHeader,
+  inWorkspace,
+}: {
+  commerceHeader: boolean;
+  inWorkspace: boolean;
+}) {
   const t = useMessages(shellMessages);
   return (
     <nav className="topbar-nav" aria-label={t.mainNavigation}>
       <RouteLink nav to="/" end className="nav-row">
         {t.home}
       </RouteLink>
-      <CommerceNavMenu homeGlass={commerceHeader} />
+      {!inWorkspace && <CommerceNavMenu homeGlass={commerceHeader} />}
     </nav>
   );
 }
 
+/** 顶栏保留通用入口，工作区入口仅在外部页面显示。 */
 function HeaderActions({
   commerceHeader,
   inWorkspace,
@@ -154,25 +162,25 @@ function HeaderActions({
   inWorkspace: boolean;
   account: ReturnType<typeof useEnterpriseSession>["data"];
 }) {
-  const { pathname, search, hash } = useAppLocation();
   const navigate = useAppNavigate();
   const t = useMessages(shellMessages);
   const controls = (
     <>
-      <Tooltip delay={200}>
-        <Button
-          isIconOnly
-          size="sm"
-          variant="tertiary"
-          aria-label={t.workspace}
-          className="header-workspace"
-          aria-current={inWorkspace ? "page" : false}
-          onPress={() => void navigate(inWorkspace ? `${pathname}${search}${hash}` : "/workspace")}
-        >
-          <UiIcon icon={IconSpaces} size="navigation" />
-        </Button>
-        <Tooltip.Content placement="bottom">{t.workspace}</Tooltip.Content>
-      </Tooltip>
+      {!inWorkspace && (
+        <Tooltip delay={200}>
+          <Button
+            isIconOnly
+            size="sm"
+            variant="tertiary"
+            aria-label={t.workspace}
+            className="header-workspace"
+            onPress={() => void navigate("/workspace")}
+          >
+            <UiIcon icon={IconSpaces} size="navigation" />
+          </Button>
+          <Tooltip.Content placement="bottom">{t.workspace}</Tooltip.Content>
+        </Tooltip>
+      )}
       <LanguageMenu account={account} homeGlass={commerceHeader} />
     </>
   );
@@ -208,7 +216,7 @@ function RealtimeEvents() {
   return null;
 }
 
-/** 手机抽屉提供与桌面同样的工作区和专区工具入口。 */
+/** 手机抽屉与桌面导航遵循相同的工作区入口规则。 */
 function DrawerNavigation({
   inWorkspace,
   onNavigate,
@@ -218,7 +226,6 @@ function DrawerNavigation({
   onNavigate: () => void;
   commerceHeader: boolean;
 }) {
-  const { pathname, search, hash } = useAppLocation();
   const t = useMessages(shellMessages);
   const toolText = useMessages(workspaceToolMessages);
   const openLibrary = useOpenAssetLibrary();
@@ -228,30 +235,28 @@ function DrawerNavigation({
         <UiIcon icon={IconSmartHome} size="default" />
         <span className="nav-label">{t.home}</span>
       </RouteLink>
-      <RouteLink
-        nav
-        end
-        to={inWorkspace ? `${pathname}${search}${hash}` : "/workspace"}
-        className="nav-row"
-        onClick={onNavigate}
-      >
-        <UiIcon icon={IconSpaces} size="default" />
-        <span className="nav-label">{t.workspace}</span>
-      </RouteLink>
-      <p className="nav-group-label">{t.commerce}</p>
-      {commerceTools.map((tool) => (
-        <RouteLink
-          key={tool.id}
-          to={commerceToolHref(tool.id)}
-          className="nav-row"
-          onClick={onNavigate}
-        >
-          <UiIcon icon={toolIcons[tool.id]} size="default" />
-          <span className="nav-label">
-            {tool.id === "replica" ? t.replica : toolText.tools[tool.id].name}
-          </span>
-        </RouteLink>
-      ))}
+      {!inWorkspace && (
+        <>
+          <RouteLink to="/workspace" className="nav-row" onClick={onNavigate}>
+            <UiIcon icon={IconSpaces} size="default" />
+            <span className="nav-label">{t.workspace}</span>
+          </RouteLink>
+          <p className="nav-group-label">{t.commerce}</p>
+          {commerceTools.map((tool) => (
+            <RouteLink
+              key={tool.id}
+              to={commerceToolHref(tool.id)}
+              className="nav-row"
+              onClick={onNavigate}
+            >
+              <UiIcon icon={toolIcons[tool.id]} size="default" />
+              <span className="nav-label">
+                {tool.id === "replica" ? t.replica : toolText.tools[tool.id].name}
+              </span>
+            </RouteLink>
+          ))}
+        </>
+      )}
       {commerceHeader ? (
         <HomeHeaderUtilities onNavigate={onNavigate} />
       ) : (

@@ -467,7 +467,7 @@
   color: #ffffffcc;
 }
 
-.header-workspace.button:is(:hover, [aria-current="page"]) {
+.header-workspace.button:hover {
   background: #ffffff24;
   color: #fff;
 }

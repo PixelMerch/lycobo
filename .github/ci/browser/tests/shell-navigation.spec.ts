@@ -12,20 +12,20 @@ test("top navigation stays in one row and keeps drafts across desktop and mobile
   await expect(page.locator(".sidebar")).toHaveCount(0);
   const navigation = page.getByRole("navigation", { name: "主导航", exact: true });
   const rows = navigation.locator(".nav-row");
+  await expect(rows).toHaveText(["首页"]);
+  const workspace = page.locator(".topbar").getByRole("button", { name: "工作区", exact: true });
+  await expect(workspace).toHaveCount(0);
+  const main = await page.locator(".main-content").boundingBox();
+  expect(main?.x).toBe(0);
+  await navigation.getByRole("link", { name: "首页", exact: true }).click();
+  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await expect(rows).toHaveText(["首页", "电商"]);
+  await expect(workspace).toBeVisible();
   const tops = await rows.evaluateAll((nodes) =>
     nodes.map((node) => Math.round(node.getBoundingClientRect().top)),
   );
   for (const top of tops) expect(top).toBe(tops[0]);
   const commerce = navigation.getByRole("button", { name: "电商", exact: true });
-  await expect(page.getByRole("button", { name: "工作区", exact: true })).toHaveAttribute(
-    "aria-current",
-    "page",
-  );
-  const main = await page.locator(".main-content").boundingBox();
-  expect(main?.x).toBe(0);
-  await navigation.getByRole("link", { name: "首页", exact: true }).click();
-  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await commerce.click();
   const tools = page.getByRole("menu", { name: "电商功能" });
   await expect(tools.getByRole("menuitem")).toHaveText([
@@ -46,15 +46,8 @@ test("top navigation stays in one row and keeps drafts across desktop and mobile
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "打开导航", exact: true }).click();
   const mobile = page.locator(".mobile-nav");
-  await expect(mobile.locator("nav .nav-row")).toHaveText([
-    "首页",
-    "工作区",
-    "主图制作",
-    "家纺裂变",
-    "套图计划",
-    "爆款复制",
-    "素材库",
-  ]);
+  await expect(mobile.locator("nav .nav-row")).toHaveText(["首页"]);
+  await expect(mobile.getByRole("button", { name: "素材库", exact: true })).toBeVisible();
   await mobile.getByRole("button", { name: "关闭导航", exact: true }).click();
   await expect(prompt).toHaveValue("保留这份商品创作草稿");
 });

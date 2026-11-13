@@ -15,6 +15,7 @@ import { toolForPath } from "./workspace-state";
 import { WorkspaceToolPicker } from "./workspace-tool-picker";
 import "./workspace.css";
 import { useMessages } from "../../i18n/messages";
+import { WorkspaceScrollbar } from "./workspace-scrollbar";
 import { workspaceToolMessages } from "./workspace-tool-messages";
 import { HistoryDensityToggle, ToolRailCollapseToggle } from "./workspace-view-controls";
 import { useWorkspaceView } from "./workspace-view-preferences";
@@ -41,6 +42,7 @@ export function WorkspaceLayout() {
   const density = useWorkspaceView((state) => state.density);
   return (
     <div
+      id="commerce-workspace"
       data-mobile-panel={mobilePanel}
       data-tool={currentTool.id}
       data-tool-rail={toolRailCollapsed ? "collapsed" : "expanded"}
@@ -86,6 +88,7 @@ export function WorkspaceLayout() {
         <HistoryIndex key={historyTool} tool={historyTool} />
       )}
       <BackToTopButton />
+      <WorkspaceScrollbar />
       <ConfirmDialog
         isOpen={restorePending !== null}
         title={t.restoreTitle}
