@@ -1,6 +1,6 @@
-import { VidmuseLanding } from "./vidmuse/vidmuse-landing";
+import { HomeLanding } from "./landing/landing-page";
 
-/** 首页：完整使用 vidmuse 复刻页的头尾、主题和区块，暂不接入站内真实功能。 */
+/** 首页：在应用壳导航下展示复刻版内容区与页脚。 */
 export function HomePage() {
-  return <VidmuseLanding />;
+  return <HomeLanding />;
 }

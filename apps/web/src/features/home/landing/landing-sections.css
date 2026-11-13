@@ -4,25 +4,25 @@
 /* Impact                                                             */
 /* ------------------------------------------------------------------ */
 
-.vm-collage > .vm-impactSelfie,
-.vm-collage > .vm-impactTweet,
-.vm-collage > .vm-impactPoster {
+.lp-collage > .lp-impactSelfie,
+.lp-collage > .lp-impactTweet,
+.lp-collage > .lp-impactPoster {
   transition: transform 750ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vm-collage > .vm-impactSelfie,
-  .vm-collage > .vm-impactTweet,
-  .vm-collage > .vm-impactPoster {
+  .lp-collage > .lp-impactSelfie,
+  .lp-collage > .lp-impactTweet,
+  .lp-collage > .lp-impactPoster {
     transition: none;
   }
 }
 
-.vm-impactMock img,
-.vm-impactSelfie > img,
-.vm-impactTweet img,
-.vm-impactPoster img {
+.lp-impactMock img,
+.lp-impactSelfie > img,
+.lp-impactTweet img,
+.lp-impactPoster img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -30,33 +30,33 @@
   object-fit: contain;
 }
 
-.vm-impactSelfie > img,
-.vm-impactTweet img,
-.vm-impactPoster img {
+.lp-impactSelfie > img,
+.lp-impactTweet img,
+.lp-impactPoster img {
   object-fit: cover;
 }
 
-.vm-impactSelfie i {
+.lp-impactSelfie i {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
 }
 
-.vm-impactSelfie i img {
+.lp-impactSelfie i img {
   width: 34px;
   height: 34px;
 }
 
-.vm-impactCopy > h2 {
+.lp-impactCopy > h2 {
   font-size: 36px;
 }
 
-.vm-impactStats {
+.lp-impactStats {
   margin: 46px 0 0;
 }
 
-.vm-impactStats dd {
+.lp-impactStats dd {
   margin-left: 0;
 }
 
@@ -64,12 +64,12 @@
 /* Formats                                                            */
 /* ------------------------------------------------------------------ */
 
-.vm-formatsCarousel {
+.lp-formatsCarousel {
   width: 100%;
   overflow: hidden;
 }
 
-.vm-formatsTrack {
+.lp-formatsTrack {
   display: flex;
   width: 100%;
   overflow-x: auto;
@@ -78,25 +78,25 @@
   overscroll-behavior-x: contain;
 }
 
-.vm-formatsTrack::-webkit-scrollbar {
+.lp-formatsTrack::-webkit-scrollbar {
   display: none;
 }
 
-.vm-formatItem {
+.lp-formatItem {
   flex: 0 0 276px;
 }
 
-.vm-formatsSet {
+.lp-formatsSet {
   display: contents;
 }
 
-.vm-cases > .vm-sectionHeading,
-.vm-formatsHeading > .vm-sectionHeading {
+.lp-cases > .lp-sectionHeading,
+.lp-formatsHeading > .lp-sectionHeading {
   font-size: 16px;
   line-height: 24px;
 }
 
-.vm-formatsTrack .vm-formatCard img {
+.lp-formatsTrack .lp-formatCard img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -104,7 +104,7 @@
   object-fit: cover;
 }
 
-.vm-formatCard {
+.lp-formatCard {
   gap: 8px;
   white-space: normal;
   text-align: left;
@@ -117,28 +117,28 @@
   cursor: pointer;
 }
 
-.vm-formatBody {
+.lp-formatBody {
   display: block;
 }
 
-.vm-templateTitle {
+.lp-templateTitle {
   display: block;
 }
 
-.vm-formatMore {
+.lp-formatMore {
   display: grid;
 }
 
-.vm-formatCta {
+.lp-formatCta {
   display: flex;
 }
 
-.vm-galleryControls button {
+.lp-galleryControls button {
   border: 0;
   color: #fff;
 }
 
-.vm-galleryControls button:disabled {
+.lp-galleryControls button:disabled {
   cursor: default;
   opacity: 0.35;
 }
@@ -147,7 +147,7 @@
 /* Final CTA                                                          */
 /* ------------------------------------------------------------------ */
 
-.vm-cta .vm-ctaArtwork img {
+.lp-cta .lp-ctaArtwork img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -155,14 +155,14 @@
   object-fit: cover;
 }
 
-.vm-startButton.button {
+.lp-startButton.button {
   height: 49.4px;
   margin-top: 28px;
   padding: 10.4px 20.8px;
   border-radius: 12px;
-  --button-bg: var(--vm-red);
-  --button-bg-hover: var(--vm-red-hover);
-  --button-bg-pressed: var(--vm-red-hover);
+  --button-bg: var(--lp-red);
+  --button-bg-hover: var(--lp-red-hover);
+  --button-bg-pressed: var(--lp-red-hover);
   --button-fg: #fff;
   color: #fff;
   font-size: 18.2px;
@@ -170,7 +170,7 @@
   font-weight: 500;
 }
 
-.vm-startButton.button:hover {
+.lp-startButton.button:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 24px rgba(251, 81, 35, 0.35);
 }
@@ -179,7 +179,7 @@
 /* Footer                                                             */
 /* ------------------------------------------------------------------ */
 
-.vm-footer {
+.lp-footer {
   position: relative;
   z-index: 1;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -187,13 +187,13 @@
   color: #fff;
 }
 
-.vm-footer-inner {
+.lp-footer-inner {
   max-width: 2028px;
   margin: 0 auto;
   padding: 0 40px;
 }
 
-.vm-footerGrid {
+.lp-footerGrid {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) 610px;
   gap: 0;
@@ -201,31 +201,31 @@
   padding: 64px 0;
 }
 
-.vm-footerBrand {
+.lp-footerBrand {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
 
-.vm-footerLogo {
-  width: 108px;
-  height: 33px;
+.lp-footerLogo {
+  width: 90px;
+  height: auto;
   color: #fff;
 }
 
-.vm-footerBrand p {
+.lp-footerBrand p {
   margin: 14px 0 0;
   color: rgba(255, 255, 255, 0.5);
   font-size: 13px;
 }
 
-.vm-socials {
+.lp-socials {
   display: flex;
   gap: 12px;
   margin-top: 24px;
 }
 
-.vm-socials a {
+.lp-socials a {
   display: grid;
   place-items: center;
   width: 36px;
@@ -238,30 +238,30 @@
     color 0.2s ease;
 }
 
-.vm-socials a:hover {
+.lp-socials a:hover {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
 }
 
-.vm-footer .vm-socials img {
+.lp-footer .lp-socials img {
   width: 16px;
   height: 16px;
   object-fit: contain;
 }
 
-.vm-footerNav {
+.lp-footerNav {
   display: grid;
   grid-template-columns: 1.2fr 1fr auto;
   gap: 0;
 }
 
-.vm-footerNav h3 {
+.lp-footerNav h3 {
   margin: 0 0 16px;
   font-size: 14px;
   font-weight: 500;
 }
 
-.vm-footerNav a {
+.lp-footerNav a {
   display: block;
   width: fit-content;
   margin-bottom: 12px;
@@ -271,35 +271,35 @@
   transition: color 0.18s ease;
 }
 
-.vm-footerNav a:hover {
+.lp-footerNav a:hover {
   color: #fff;
 }
 
-.vm-footerBottom {
+.lp-footerBottom {
   padding: 22px 0 28px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.vm-footerBottom p {
+.lp-footerBottom p {
   margin: 0;
   color: rgba(255, 255, 255, 0.35);
   font-size: 13px;
 }
 
 /* 交互细节：案例横滑悬停暂停，拼贴卡悬停展开由 CSS 完成。 */
-.vm-casesCarousel:hover .vm-casesTrack {
+.lp-casesCarousel:hover .lp-casesTrack {
   animation-play-state: paused;
 }
-.vm-collage:hover .vm-impactSelfie {
+.lp-collage:hover .lp-impactSelfie {
   transform: translate(-4px, -4px) rotate(-10deg);
 }
-.vm-collage:hover .vm-impactTweet {
+.lp-collage:hover .lp-impactTweet {
   transform: translate(4px, -4px) rotate(10deg);
 }
-.vm-collage:hover .vm-impactPoster {
+.lp-collage:hover .lp-impactPoster {
   transform: translate(3px, 4px) rotate(1deg);
 }
-.vm-productField {
+.lp-productField {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -310,19 +310,19 @@
   background: rgba(255, 255, 255, 0.05);
   color: rgba(255, 255, 255, 0.45);
 }
-.vm-productField .vm-productInput {
+.lp-productField .lp-productInput {
   flex: 1;
   min-width: 0;
 }
-.vm-productField .input,
-.vm-productField .text-field {
+.lp-productField .input,
+.lp-productField .text-field {
   min-height: 0;
   padding: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
 }
-.vm-productField input {
+.lp-productField input {
   height: 32px;
   padding: 0;
   border: 0;
@@ -333,15 +333,15 @@
 }
 
 /* HeroUI 按钮自带的按压缩放会改变参考页的悬停阻尼，这里保持原生卡片的过渡。 */
-.vm-formatCard.button {
+.lp-formatCard.button {
   background: #202020;
   transition: none;
 }
-.vm-formatCard.button:is(:hover, [data-hovered="true"]),
-.vm-formatCard.button:active {
+.lp-formatCard.button:is(:hover, [data-hovered="true"]),
+.lp-formatCard.button:active {
   background: #202020;
   transform: none;
 }
-.vm-galleryControls .button:active {
+.lp-galleryControls .button:active {
   transform: none;
 }

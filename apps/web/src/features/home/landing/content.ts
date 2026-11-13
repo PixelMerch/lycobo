@@ -7,67 +7,67 @@ export interface CaseCard {
 }
 
 export const caseCards: CaseCard[] = [
-  { title: "E-commerce Visuals", image: "/vidmuse/case-ecommerce.webp", format: "compact" },
-  { title: "Brand Kits", image: "/vidmuse/case-brand-kits.webp", format: "wide" },
-  { title: "Real Estate Video Tours", image: "/vidmuse/case-realestate.webp", format: "mid" },
-  { title: "UGC Shorts", image: "/vidmuse/case-ugc.webp", format: "mid" },
-  { title: "Product Demos", image: "/vidmuse/case-demos.webp", format: "mid" },
-  { title: "In-feed Ads", image: "/vidmuse/case-infeed.webp", format: "mid" },
-  { title: "Brand Showcase", image: "/vidmuse/template-luxury.webp", format: "compact" },
-  { title: "Influencer Reviews", image: "/vidmuse/template-thread.webp", format: "mid" },
-  { title: "Promo Ads", image: "/vidmuse/template-outfit.webp", format: "mid" },
-  { title: "Social Ads", image: "/vidmuse/post-pic.webp", format: "mid" },
+  { title: "E-commerce Visuals", image: "/landing/case-ecommerce.webp", format: "compact" },
+  { title: "Brand Kits", image: "/landing/case-brand-kits.webp", format: "wide" },
+  { title: "Real Estate Video Tours", image: "/landing/case-realestate.webp", format: "mid" },
+  { title: "UGC Shorts", image: "/landing/case-ugc.webp", format: "mid" },
+  { title: "Product Demos", image: "/landing/case-demos.webp", format: "mid" },
+  { title: "In-feed Ads", image: "/landing/case-infeed.webp", format: "mid" },
+  { title: "Brand Showcase", image: "/landing/template-luxury.webp", format: "compact" },
+  { title: "Influencer Reviews", image: "/landing/template-thread.webp", format: "mid" },
+  { title: "Promo Ads", image: "/landing/template-outfit.webp", format: "mid" },
+  { title: "Social Ads", image: "/landing/post-pic.webp", format: "mid" },
 ];
 
 export const competitors = [
   {
     id: "A",
     label: "Your product",
-    image: "/vidmuse/can-a.webp",
+    image: "/landing/can-a.webp",
     note: "Hook +12 · Proof +8",
     bars: [45, 65, 85],
   },
   {
     id: "B",
     label: "Competitor B",
-    image: "/vidmuse/can-b.webp",
+    image: "/landing/can-b.webp",
     note: "vs you · Hook −12 · Proof −8",
     bars: [38, 52, 71],
   },
   {
     id: "C",
     label: "Competitor C",
-    image: "/vidmuse/can-c.webp",
+    image: "/landing/can-c.webp",
     note: "vs you · Hook −18 · Offer −6",
     bars: [30, 46, 58],
   },
   {
     id: "D",
     label: "Competitor D",
-    image: "/vidmuse/can-d.webp",
+    image: "/landing/can-d.webp",
     note: "vs you · Pacing −9 · CTA −11",
     bars: [42, 55, 62],
   },
 ];
 
 export const scoreCards = [
-  { score: 86, dimension: "CTA", caption: "Drive action", icon: "/vidmuse/score-cta.svg" },
+  { score: 86, dimension: "CTA", caption: "Drive action", icon: "/landing/score-cta.svg" },
   {
     score: 82,
     dimension: "Offer",
     caption: "Make it compelling",
     weakest: true,
-    icon: "/vidmuse/score-offer.svg",
+    icon: "/landing/score-offer.svg",
   },
-  { score: 94, dimension: "Hook", caption: "Stop the scroll", icon: "/vidmuse/score-hook.svg" },
-  { score: 89, dimension: "Pacing", caption: "Keep attention", icon: "/vidmuse/score-pacing.svg" },
-  { score: 91, dimension: "Proof", caption: "Build trust", icon: "/vidmuse/score-proof.svg" },
+  { score: 94, dimension: "Hook", caption: "Stop the scroll", icon: "/landing/score-hook.svg" },
+  { score: 89, dimension: "Pacing", caption: "Keep attention", icon: "/landing/score-pacing.svg" },
+  { score: 91, dimension: "Proof", caption: "Build trust", icon: "/landing/score-proof.svg" },
 ];
 
-export const kitVideos = [1, 2, 3, 4, 5, 6].map((n) => `/vidmuse/create-video-${n}.webp`);
-export const kitFeeds = [1, 2, 3, 4].map((n) => `/vidmuse/kit-feed-${n}.webp`);
-export const kitCovers = [1, 2, 4, 5, 6, 8, 9].map((n) => `/vidmuse/kit-cover-${n}.webp`);
-export const kitCtas = [1, 2, 3, 4, 5, 6].map((n) => `/vidmuse/kit-cta-${n}.webp`);
+export const kitVideos = [1, 2, 3, 4, 5, 6].map((n) => `/landing/create-video-${n}.webp`);
+export const kitFeeds = [1, 2, 3, 4].map((n) => `/landing/kit-feed-${n}.webp`);
+export const kitCovers = [1, 2, 4, 5, 6, 8, 9].map((n) => `/landing/kit-cover-${n}.webp`);
+export const kitCtas = [1, 2, 3, 4, 5, 6].map((n) => `/landing/kit-cta-${n}.webp`);
 
 export const copyVariants = [
   {
@@ -97,9 +97,9 @@ export const copyVariants = [
 ];
 
 export const impactStats = [
-  { value: "45%", label: "Lower CPA", icon: "/vidmuse/ic-cpa.svg" },
-  { value: "3X", label: "Higher return on ad spend", icon: "/vidmuse/ic-roas.svg" },
-  { value: "97%", label: "Less production time", icon: "/vidmuse/ic-time.svg" },
+  { value: "45%", label: "Lower CPA", icon: "/landing/ic-cpa.svg" },
+  { value: "3X", label: "Higher return on ad spend", icon: "/landing/ic-roas.svg" },
+  { value: "97%", label: "Less production time", icon: "/landing/ic-time.svg" },
 ];
 
 export interface CampaignFormat {
@@ -112,51 +112,51 @@ export const campaignFormats: CampaignFormat[] = [
   {
     title: "Luxury Product Model Showcase",
     description: "Turn Your Product into a High-End Cinematic Ad",
-    image: "/vidmuse/template-luxury.webp",
+    image: "/landing/template-luxury.webp",
   },
   {
     title: "Thread to Tread",
     description: "A creation story for your product.",
-    image: "/vidmuse/template-thread.webp",
+    image: "/landing/template-thread.webp",
   },
   {
     title: "Turn Illustrations into 3D Products",
     description: "Showcase Your Product with Creative Illustrations",
-    image: "/vidmuse/template-illustrations.webp",
+    image: "/landing/template-illustrations.webp",
   },
   {
     title: "Outfit Switch",
     description: "Turn one portrait into a seamless outfit transition video.",
-    image: "/vidmuse/template-outfit.webp",
+    image: "/landing/template-outfit.webp",
   },
   {
     title: "Trendy Top Showcase",
     description: "From a single thread to a statement piece.",
-    image: "/vidmuse/template-trendy.webp",
+    image: "/landing/template-trendy.webp",
   },
   {
     title: "World Cup Goal Moments Product Showcase",
     description: "Let Football Superstars Take Your Product to the World Cup Stage",
-    image: "/vidmuse/template-worldcup.webp",
+    image: "/landing/template-worldcup.webp",
   },
   {
     title: "Giant Glam",
     description: "Eye-catching models, product in the spotlight.",
-    image: "/vidmuse/giant-glam.webp",
+    image: "/landing/giant-glam.webp",
   },
   {
     title: "Flavor Burst",
     description: "Dynamic layers, instant impact. A visual burst of pure taste.",
-    image: "/vidmuse/flavor-burst.webp",
+    image: "/landing/flavor-burst.webp",
   },
   {
     title: "Red Carpet",
     description: "Grammy Red Carpet Walk",
-    image: "/vidmuse/red-carpet.webp",
+    image: "/landing/red-carpet.webp",
   },
   {
     title: "Echoed Words",
     description: "Turn a powerful line into an iconic quote with cinematic documentary visuals.",
-    image: "/vidmuse/echoed-words.webp",
+    image: "/landing/echoed-words.webp",
   },
 ];

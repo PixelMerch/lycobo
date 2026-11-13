@@ -5,33 +5,33 @@ import { impactStats } from "./content";
 export function Impact() {
   return (
     <div data-campaign-reveal="">
-      <section className="vm-impact">
-        <div className="vm-collage">
-          <div className="vm-impactMock">
-            <img alt="Product campaign on mobile" src="/vidmuse/mock.png" />
+      <section className="lp-impact">
+        <div className="lp-collage">
+          <div className="lp-impactMock">
+            <img alt="Product campaign on mobile" src="/landing/mock.png" />
           </div>
-          <div className="vm-impactSelfie">
-            <img alt="Creator video example" src="/vidmuse/imp-selfie.webp" />
+          <div className="lp-impactSelfie">
+            <img alt="Creator video example" src="/landing/imp-selfie.webp" />
             <i>
-              <img alt="" src="/vidmuse/play.svg" />
+              <img alt="" src="/landing/play.svg" />
             </i>
           </div>
-          <div className="vm-impactTweet">
-            <img alt="Product social post" src="/vidmuse/imp-tweet.webp" />
+          <div className="lp-impactTweet">
+            <img alt="Product social post" src="/landing/imp-tweet.webp" />
           </div>
-          <div className="vm-impactPoster">
-            <img alt="Sportswear campaign poster" src="/vidmuse/imp-poster.webp" />
+          <div className="lp-impactPoster">
+            <img alt="Sportswear campaign poster" src="/landing/imp-poster.webp" />
           </div>
         </div>
 
-        <div className="vm-impactCopy">
-          <span className="cn-badge vm-impactEyebrow">Campaign impact</span>
+        <div className="lp-impactCopy">
+          <span className="cn-badge lp-impactEyebrow">Campaign impact</span>
           <h2>Create More, Test Faster</h2>
           <p>
             Turn every winning insight into more creative tests — with less time between idea,
             launch and learning.
           </p>
-          <dl className="vm-impactStats">
+          <dl className="lp-impactStats">
             {impactStats.map((stat, index) => (
               <motion.div
                 initial={{ opacity: 0, y: 18 }}

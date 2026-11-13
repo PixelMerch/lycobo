@@ -1,4 +1,4 @@
-/* 顶部栏积分胶囊按 vidmuse：与语言胶囊同高、#FFFFFF14 底、左右 12px、gap 8px，悬停或展开时换成青柠 15% 底。 */
+/* 顶部栏积分胶囊按参考站：与语言胶囊同高、#FFFFFF14 底、左右 12px、gap 8px，悬停或展开时换成青柠 15% 底。 */
 .header-credits {
   display: inline-flex;
   flex: none;
@@ -135,7 +135,7 @@
   color: #ffffffcc;
 }
 
-/* 手机只显示积分图标与余额（同 vidmuse），触控目标不小于 44px。 */
+/* 手机只显示积分图标与余额（同参考站），触控目标不小于 44px。 */
 @media (max-width: 767px), (pointer: coarse) {
   .header-credits {
     min-height: 44px;

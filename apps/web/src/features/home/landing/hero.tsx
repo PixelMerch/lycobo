@@ -9,41 +9,27 @@ import {
   IconShoppingBag,
   IconX,
 } from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { useMessages } from "../../../i18n/messages";
-import { HeroScene } from "./hero-scene";
+import { GradientWaves } from "../gradient-waves/gradient-waves";
 import { HeroShowcase } from "./hero-showcase";
-import { vidmuseMessages } from "./vidmuse-messages";
+import { landingMessages } from "./landing-messages";
 
 const ratios = ["9:16", "16:9", "1:1", "4:5"];
 
-/** 首屏背景：开发服务器优先挂载采集场景，其他环境使用同源循环视频兜底。 */
+/** 首屏背景：React Bits GradientWaves；无 WebGL2 时由 CSS 渐变兜底。 */
 function HeroBackdrop() {
-  const reduced = useReducedMotion();
   return (
-    <div aria-hidden="true" className="vm-heroGradient">
-      {import.meta.env.DEV && <HeroScene />}
-      <video
-        autoPlay={!reduced}
-        className="vm-heroBackgroundVideo"
-        disablePictureInPicture
-        loop
-        muted
-        playsInline
-        poster="/vidmuse/hero-bg-poster.webp"
-        preload="auto"
-        tabIndex={-1}
-      >
-        <source src="/vidmuse/hero-bg.mp4" type="video/mp4" />
-      </video>
+    <div aria-hidden="true" className="lp-heroGradient">
+      <GradientWaves />
     </div>
   );
 }
 
 /** 复刻页首屏：标语、画面比例/产品详情弹层与右侧示例；暂不提交真实生成任务。 */
 export function Hero() {
-  const t = useMessages(vidmuseMessages).hero;
+  const t = useMessages(landingMessages).hero;
   const [prompt, setPrompt] = useState("");
   const [techniqueVisible, setTechniqueVisible] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -65,26 +51,26 @@ export function Hero() {
       window.scrollTo({ top: 0, behavior: "smooth" });
       window.setTimeout(() => promptRef.current?.focus(), 650);
     };
-    window.addEventListener("vm:remix", onRemix);
-    window.addEventListener("vm:focus-composer", onFocusComposer);
+    window.addEventListener("lp:remix", onRemix);
+    window.addEventListener("lp:focus-composer", onFocusComposer);
     return () => {
-      window.removeEventListener("vm:remix", onRemix);
-      window.removeEventListener("vm:focus-composer", onFocusComposer);
+      window.removeEventListener("lp:remix", onRemix);
+      window.removeEventListener("lp:focus-composer", onFocusComposer);
     };
   }, [t]);
 
   return (
-    <section aria-labelledby="campaign-hero-title" className="vm-hero" id="top">
+    <section aria-labelledby="campaign-hero-title" className="lp-hero" id="top">
       <HeroBackdrop />
-      <div className="vm-heroInner">
-        <div className="vm-heroCopy">
+      <div className="lp-heroInner">
+        <div className="lp-heroCopy">
           <motion.div
             animate={{ opacity: 1, y: 0 }}
-            className="vm-heroGlyph"
+            className="lp-heroGlyph"
             initial={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
           >
-            <img alt="" src="/vidmuse/glyph.svg" />
+            <img alt="" src="/landing/glyph.svg" />
           </motion.div>
           <motion.h1
             animate={{ opacity: 1, y: 0 }}
@@ -99,31 +85,31 @@ export function Hero() {
             initial={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
           >
-            VidMuse researches what works, rebuilds the winning logic, and generates every asset
-            your campaign needs.
+            Research what works, rebuild the winning logic, and generate every asset your campaign
+            needs.
           </motion.p>
 
           <motion.div
             animate={{ opacity: 1, y: 0 }}
-            className="vm-heroPrompt"
+            className="lp-heroPrompt"
             initial={{ opacity: 0, y: 24 }}
             transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
           >
-            <div className="vm-composerHost" data-expanded="true" data-guide-active="true">
-              <section className="vm-composer">
+            <div className="lp-composerHost" data-expanded="true" data-guide-active="true">
+              <section className="lp-composer">
                 <span aria-hidden="true" className="cn-gradient-border" />
-                <div className="vm-composerInputRow">
-                  <div className="vm-addReference">
+                <div className="lp-composerInputRow">
+                  <div className="lp-addReference">
                     <Button isIconOnly aria-label={t.addMedia} className="cn-button">
                       <IconPlus size={20} />
                     </Button>
                   </div>
 
-                  <div className="vm-promptEditor">
-                    <div className="vm-promptField">
-                      <div className="vm-promptChips">
+                  <div className="lp-promptEditor">
+                    <div className="lp-promptField">
+                      <div className="lp-promptChips">
                         {techniqueVisible && (
-                          <span className="vm-techniqueChip">
+                          <span className="lp-techniqueChip">
                             {t.videoChip}
                             <Button
                               isIconOnly
@@ -137,7 +123,7 @@ export function Hero() {
                       </div>
                       <TextArea
                         aria-label={t.describe}
-                        className="vm-promptTextarea"
+                        className="lp-promptTextarea"
                         placeholder={t.placeholder}
                         ref={promptRef}
                         value={prompt}
@@ -147,8 +133,8 @@ export function Hero() {
                   </div>
                 </div>
 
-                <div className="vm-composerToolbar">
-                  <div className="vm-composerOptions">
+                <div className="lp-composerToolbar">
+                  <div className="lp-composerOptions">
                     <Button className="cn-button" onPress={() => setProductOpen((value) => !value)}>
                       <IconShoppingBag size={16} />
                       <span>{t.product}</span>
@@ -169,7 +155,7 @@ export function Hero() {
                       />
                     </Button>
                   </div>
-                  <div className="vm-composerActions">
+                  <div className="lp-composerActions">
                     <Button isIconOnly aria-label={t.create} className="cn-button">
                       <IconArrowUp size={18} />
                     </Button>
@@ -180,13 +166,13 @@ export function Hero() {
                   {settingsOpen && (
                     <motion.div
                       animate={{ opacity: 1, y: 0 }}
-                      className="vm-composerPopover"
+                      className="lp-composerPopover"
                       exit={{ opacity: 0, y: 6 }}
                       initial={{ opacity: 0, y: 6 }}
                       transition={{ duration: 0.18 }}
                     >
                       <b>{t.ratio}</b>
-                      <div className="vm-ratioRow">
+                      <div className="lp-ratioRow">
                         {ratios.map((item) => (
                           <Button
                             className={ratio === item ? "is-active" : ""}
@@ -206,21 +192,21 @@ export function Hero() {
                   {productOpen && (
                     <motion.div
                       animate={{ opacity: 1, y: 0 }}
-                      className="vm-composerPopover vm-productPopover"
+                      className="lp-composerPopover lp-productPopover"
                       exit={{ opacity: 0, y: 6 }}
                       initial={{ opacity: 0, y: 6 }}
                       transition={{ duration: 0.18 }}
                     >
                       <b>{t.product}</b>
-                      <div className="vm-productField">
+                      <div className="lp-productField">
                         <IconLink size={14} />
                         <Input
                           aria-label={t.linkPlaceholder}
-                          className="vm-productInput"
+                          className="lp-productInput"
                           placeholder={t.linkPlaceholder}
                         />
                       </div>
-                      <Button className="vm-ghostAction">
+                      <Button className="lp-ghostAction">
                         <IconPhotoPlus size={14} />
                         {t.uploadProduct}
                       </Button>

@@ -1,6 +1,7 @@
 import { Dropdown } from "@heroui/react";
-import { IconChevronDown } from "@tabler/icons-react";
+import { IconBulb, IconChevronDown } from "@tabler/icons-react";
 import { UiIcon } from "../components/ui-icon";
+import { inspirationLibraryPath } from "../features/home/inspiration-path";
 import {
   shareProductReference,
   visibleWorkspaceTools,
@@ -13,17 +14,30 @@ import { useHoverMenu } from "../lib/use-hover-menu";
 import { shellMessages } from "./shell-messages";
 
 /**
- * 顶部栏“电商”入口：点击或按键展开四个创作工具，选中后进入工具，并沿用工具坞只向空图片槽带图的规则。
- * 鼠标经过不展开，免得移向工作区时弹出的菜单挡住参数栏和任务。
+ * 顶部栏“电商”入口：鼠标悬停或点击/按键展开创作工具，选中后沿用工具坞只向空图片槽带图的规则。
+ * 悬停展开不抢占焦点；移出入口或菜单后短暂延时收起。
  */
-export function CommerceNavMenu({ active }: { active: boolean }) {
+export function CommerceNavMenu({
+  active,
+  tools = visibleWorkspaceTools,
+  includeInspiration = false,
+}: {
+  active: boolean;
+  tools?: typeof visibleWorkspaceTools;
+  includeInspiration?: boolean;
+}) {
   const { pathname } = useAppLocation();
   const navigate = useAppNavigate();
   const menu = useHoverMenu();
   const t = useMessages(shellMessages);
   const toolText = useMessages(workspaceToolMessages);
   function openTool(key: string | number) {
-    const tool = visibleWorkspaceTools.find((item) => item.id === key);
+    if (includeInspiration && key === "inspiration") {
+      menu.close();
+      void navigate(inspirationLibraryPath);
+      return;
+    }
+    const tool = tools.find((item) => item.id === key);
     if (!tool) return;
     menu.close();
     shareProductReference(pathname, tool.path);
@@ -34,19 +48,29 @@ export function CommerceNavMenu({ active }: { active: boolean }) {
       <Dropdown.Trigger
         ref={menu.triggerRef}
         className={`nav-row topbar-menu-trigger${active ? " active" : ""}`}
+        onHoverStart={(event) => {
+          if (event.pointerType === "mouse") menu.openOnHover();
+        }}
+        onHoverEnd={menu.closeSoon}
       >
         <span className="nav-label">{t.commerce}</span>
         <UiIcon icon={IconChevronDown} size="small" className="topbar-menu-chevron" />
       </Dropdown.Trigger>
       <Dropdown.Popover
         ref={menu.popoverRef}
-        className="topbar-menu header-menu"
+        className={`topbar-menu header-menu${includeInspiration ? " home-header-glass" : ""}`}
         placement="bottom start"
         offset={4}
         isNonModal
+        onPointerEnter={menu.cancelClose}
+        onPointerLeave={menu.closeSoon}
       >
-        <Dropdown.Menu aria-label={t.commerceTools} onAction={openTool}>
-          {visibleWorkspaceTools.map((tool) => (
+        <Dropdown.Menu
+          aria-label={t.commerceTools}
+          onAction={openTool}
+          {...(menu.openedByHover ? { autoFocus: false } : {})}
+        >
+          {tools.map((tool) => (
             <Dropdown.Item
               key={tool.id}
               id={tool.id}
@@ -58,6 +82,12 @@ export function CommerceNavMenu({ active }: { active: boolean }) {
               <span>{toolText.tools[tool.id].name}</span>
             </Dropdown.Item>
           ))}
+          {includeInspiration && (
+            <Dropdown.Item id="inspiration" textValue={t.inspiration} className="topbar-menu-item">
+              <UiIcon icon={IconBulb} size="navigation" />
+              <span>{t.inspiration}</span>
+            </Dropdown.Item>
+          )}
         </Dropdown.Menu>
       </Dropdown.Popover>
     </Dropdown>

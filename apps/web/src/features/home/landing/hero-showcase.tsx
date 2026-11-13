@@ -6,24 +6,24 @@ import { useHeroPlayback } from "./use-hero-playback";
 const examples = [
   {
     id: "skincare",
-    video: "/vidmuse/skincare.mp4",
-    poster: "/vidmuse/skincare.jpg",
+    video: "/landing/skincare.mp4",
+    poster: "/landing/skincare.jpg",
     label: "Beauty creator holding a skincare serum",
     rail: ["12.8k", "186", "942"],
     stats: ["Increase Sales"],
   },
   {
     id: "fashion",
-    video: "/vidmuse/fashion.mp4",
-    poster: "/vidmuse/fashion.jpg",
+    video: "/landing/fashion.mp4",
+    poster: "/landing/fashion.jpg",
     label: "Fashion creator in a yellow suit",
     rail: ["24.6k", "328", "1.6k"],
     stats: ["3.8k live watching"],
   },
   {
     id: "collectible",
-    video: "/vidmuse/collectible.mp4",
-    poster: "/vidmuse/collectible.jpg",
+    video: "/landing/collectible.mp4",
+    poster: "/landing/collectible.jpg",
     label: "Pastel collectible character",
     rail: ["18.3k", "264", "1.2k"],
     stats: ["$6.2k"],
@@ -32,19 +32,19 @@ const examples = [
 
 function SocialAuthor() {
   return (
-    <div className="vm-socialAuthor">
-      <span className="vm-authorAvatar">
-        <img alt="" src="/vidmuse/avatar-base.svg" />
-        <span className="vm-authorAvatarMark">
-          <img alt="" src="/vidmuse/avatar-mark.svg" />
+    <div className="lp-socialAuthor">
+      <span className="lp-authorAvatar">
+        <img alt="" src="/landing/avatar-base.svg" />
+        <span className="lp-authorAvatarMark">
+          <img alt="" src="/landing/avatar-mark.svg" />
         </span>
-        <img alt="" src="/vidmuse/avatar-ring.svg" />
+        <img alt="" src="/landing/avatar-ring.svg" />
       </span>
       <span>
-        <span className="vm-authorName">
-          VidMuse
-          <span className="vm-verified">
-            <img alt="" src="/vidmuse/verified.svg" />
+        <span className="lp-authorName">
+          Lycobo
+          <span className="lp-verified">
+            <img alt="" src="/landing/verified.svg" />
           </span>
         </span>
         <small>Sponsored</small>
@@ -55,28 +55,28 @@ function SocialAuthor() {
 
 function SocialRail({ counts }: { counts: readonly string[] }) {
   return (
-    <div className="vm-socialRail">
+    <div className="lp-socialRail">
       <span>
         <i>
-          <img alt="" src="/vidmuse/heart.svg" />
+          <img alt="" src="/landing/heart.svg" />
         </i>
         {counts[0]}
       </span>
       <span>
         <i>
-          <img alt="" src="/vidmuse/comment.svg" />
+          <img alt="" src="/landing/comment.svg" />
         </i>
         {counts[1]}
       </span>
       <span>
         <i>
-          <img alt="" src="/vidmuse/share.svg" />
+          <img alt="" src="/landing/share.svg" />
         </i>
         {counts[2]}
       </span>
       <span>
         <i>
-          <img alt="" src="/vidmuse/more.svg" />
+          <img alt="" src="/landing/more.svg" />
         </i>
       </span>
     </div>
@@ -85,19 +85,19 @@ function SocialRail({ counts }: { counts: readonly string[] }) {
 
 function FunnelCard() {
   return (
-    <div className="vm-funnel">
+    <div className="lp-funnel">
       <strong>Funnel Conversion</strong>
-      <div className="vm-funnelPanel">
-        <div className="vm-funnelHead">
+      <div className="lp-funnelPanel">
+        <div className="lp-funnelHead">
           <span>Conversion</span>
           <span>Added to cart</span>
         </div>
-        <div className="vm-funnelNumbers">
+        <div className="lp-funnelNumbers">
           <span>
             <b>86%</b>
             <em>
               <i>
-                <img alt="" src="/vidmuse/up-arrow.svg" />
+                <img alt="" src="/landing/up-arrow.svg" />
               </i>
               9%
             </em>
@@ -107,19 +107,19 @@ function FunnelCard() {
             <b>79%</b>
             <em>
               <i>
-                <img alt="" src="/vidmuse/up-arrow.svg" />
+                <img alt="" src="/landing/up-arrow.svg" />
               </i>
               6%
             </em>
             <small>Last 4 weeks</small>
           </span>
         </div>
-        <div className="vm-funnelCharts">
+        <div className="lp-funnelCharts">
           <i>
-            <img alt="" src="/vidmuse/chart-blue.svg" />
+            <img alt="" src="/landing/chart-blue.svg" />
           </i>
           <i>
-            <img alt="" src="/vidmuse/chart-purple.svg" />
+            <img alt="" src="/landing/chart-purple.svg" />
           </i>
         </div>
       </div>
@@ -129,11 +129,11 @@ function FunnelCard() {
 
 function EngagementCard() {
   return (
-    <div className="vm-engagement">
+    <div className="lp-engagement">
       <span>Engagement</span>
       <strong>+48%</strong>
       <i>
-        <img alt="" src="/vidmuse/eng-arrow.svg" />
+        <img alt="" src="/landing/eng-arrow.svg" />
       </i>
     </div>
   );
@@ -141,9 +141,9 @@ function EngagementCard() {
 
 function SalesPill() {
   return (
-    <div className="vm-salesPill">
+    <div className="lp-salesPill">
       <i>
-        <img alt="" src="/vidmuse/check-circle.svg" />
+        <img alt="" src="/landing/check-circle.svg" />
       </i>
       Increase Sales
     </div>
@@ -152,10 +152,10 @@ function SalesPill() {
 
 function RoasCard() {
   return (
-    <div className="vm-roas">
+    <div className="lp-roas">
       <small>
         <i>
-          <img alt="" src="/vidmuse/up-arrow.svg" />
+          <img alt="" src="/landing/up-arrow.svg" />
         </i>
         ROAS
       </small>
@@ -208,9 +208,9 @@ function TimeSavedCard({ active, reducedMotion }: { active: boolean; reducedMoti
   const startY = 33.5 + radius * Math.sin(startRad);
 
   return (
-    <div className="vm-timeSaved">
+    <div className="lp-timeSaved">
       <i>
-        <svg aria-hidden="true" className="vm-productionRing" viewBox="0 0 67 67">
+        <svg aria-hidden="true" className="lp-productionRing" viewBox="0 0 67 67">
           <circle
             cx="33.5"
             cy="33.5"
@@ -246,9 +246,9 @@ function TimeSavedCard({ active, reducedMotion }: { active: boolean; reducedMoti
 
 function LivePill() {
   return (
-    <div className="vm-livePill">
+    <div className="lp-livePill">
       <i>
-        <img alt="" src="/vidmuse/live-circle.svg" />
+        <img alt="" src="/landing/live-circle.svg" />
       </i>
       3.8k live watching
     </div>
@@ -257,26 +257,26 @@ function LivePill() {
 
 function PostCard({ liked, onLike }: { liked: boolean; onLike: () => void }) {
   return (
-    <div className="vm-post">
+    <div className="lp-post">
       <div>
-        <img alt="Creator holding the collectible character" src="/vidmuse/post-pic.webp" />
+        <img alt="Creator holding the collectible character" src="/landing/post-pic.webp" />
       </div>
       <span>
         <ToggleButton
           aria-label="Like campaign example"
-          className="vm-postLike"
+          className="lp-postLike"
           isSelected={liked}
           onChange={onLike}
         >
           <i>
-            <img alt="" src="/vidmuse/ig-heart.svg" />
+            <img alt="" src="/landing/ig-heart.svg" />
           </i>
         </ToggleButton>
         <i>
-          <img alt="" src="/vidmuse/ig-comment.svg" />
+          <img alt="" src="/landing/ig-comment.svg" />
         </i>
         <i>
-          <img alt="" src="/vidmuse/ig-share.svg" />
+          <img alt="" src="/landing/ig-share.svg" />
         </i>
       </span>
     </div>
@@ -285,15 +285,15 @@ function PostCard({ liked, onLike }: { liked: boolean; onLike: () => void }) {
 
 function RatingPill() {
   return (
-    <div className="vm-rating">
-      <img alt="Five star campaign rating" src="/vidmuse/bubble.svg" />
+    <div className="lp-rating">
+      <img alt="Five star campaign rating" src="/landing/bubble.svg" />
     </div>
   );
 }
 
 function TotalSales() {
   return (
-    <div className="vm-totalSales">
+    <div className="lp-totalSales">
       Total Sales
       <strong>$6.2k</strong>
     </div>
@@ -315,20 +315,20 @@ export function HeroShowcase() {
   return (
     <section
       aria-label="Campaign examples"
-      className="vm-showcase"
+      className="lp-showcase"
       data-motion-active={playing}
       ref={stageRef}
     >
       {examples.map((example, index) => (
         <div
           aria-hidden={active !== index}
-          className="vm-example"
+          className="lp-example"
           data-active={active === index}
           data-example={example.id}
           inert={active !== index || undefined}
           key={example.id}
         >
-          <div className="vm-socialCase">
+          <div className="lp-socialCase">
             <video
               aria-label={example.label}
               loop
@@ -369,19 +369,19 @@ export function HeroShowcase() {
         </div>
       ))}
 
-      <section aria-label="Choose campaign example" className="vm-exampleDots">
+      <section aria-label="Choose campaign example" className="lp-exampleDots">
         {examples.map((example, index) => (
           <ToggleButton
             aria-label={`Show ${example.id} example`}
-            className="vm-exampleDot"
+            className="lp-exampleDot"
             isSelected={active === index}
             key={example.id}
             onChange={() => selectExample(index)}
           >
-            <span className="vm-exampleTrack">
+            <span className="lp-exampleTrack">
               {active === index && (
                 <span
-                  className="vm-exampleProgress"
+                  className="lp-exampleProgress"
                   onAnimationEnd={() => selectExample((index + 1) % examples.length)}
                 />
               )}

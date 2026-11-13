@@ -5,12 +5,12 @@ import { motion } from "motion/react";
 export function FinalCta() {
   return (
     <div>
-      <section aria-labelledby="campaign-cta-title" className="vm-finalCta" id="start">
-        <div aria-hidden="true" className="vm-ctaArtwork">
-          <img alt="" src="/vidmuse/cta-bg.svg" />
+      <section aria-labelledby="campaign-cta-title" className="lp-finalCta" id="start">
+        <div aria-hidden="true" className="lp-ctaArtwork">
+          <img alt="" src="/landing/cta-bg.svg" />
         </div>
-        <div className="vm-ctaCopy">
-          <span className="cn-badge vm-ctaEyebrow">Ready when you are</span>
+        <div className="lp-ctaCopy">
+          <span className="cn-badge lp-ctaEyebrow">Ready when you are</span>
           <h2 id="campaign-cta-title">Your next campaign starts with one product link.</h2>
           <p>No creative team required. Review and edit every asset before export.</p>
           <motion.div
@@ -20,8 +20,8 @@ export function FinalCta() {
             whileInView={{ opacity: 1, y: 0 }}
           >
             <Button
-              className="vm-startButton"
-              onPress={() => window.dispatchEvent(new Event("vm:focus-composer"))}
+              className="lp-startButton"
+              onPress={() => window.dispatchEvent(new Event("lp:focus-composer"))}
             >
               Start Creating
             </Button>

@@ -1,9 +1,0 @@
-/* VidMuse 复刻页样式入口；按区块拆分，保持单文件长度可控。 */
-@import "./vidmuse-campaign.css";
-@import "./vidmuse-base.css";
-@import "./vidmuse-hero.css";
-@import "./vidmuse-cases.css";
-@import "./vidmuse-workflow.css";
-@import "./vidmuse-sections.css";
-@import "./vidmuse-responsive.css";
-@import "./vidmuse-source.css";

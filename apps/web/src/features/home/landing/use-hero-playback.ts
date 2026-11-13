@@ -7,7 +7,7 @@ export function useHeroPlayback(active: number, reducedMotion: boolean) {
 
   useEffect(() => {
     const stage = stageRef.current;
-    const video = stage?.querySelectorAll<HTMLVideoElement>(".vm-example video").item(active);
+    const video = stage?.querySelectorAll<HTMLVideoElement>(".lp-example video").item(active);
     if (!stage || !video || reducedMotion) {
       setPlaying(false);
       return;

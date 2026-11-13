@@ -10,7 +10,13 @@ import { type Release, ReleaseDetail, ReleaseNotice } from "./release-notice";
 import "./account-messages.css";
 
 /** 顶部消息入口和版本提醒共用导航下方的消息浮层。 */
-export function AccountMessages({ signedIn }: { signedIn: boolean }) {
+export function AccountMessages({
+  signedIn,
+  showTrigger = signedIn,
+}: {
+  signedIn: boolean;
+  showTrigger?: boolean;
+}) {
   const t = useMessages(notificationsMessages);
   const notifications = useNotifications();
   const anchor = useRef<HTMLSpanElement>(null);
@@ -60,7 +66,7 @@ export function AccountMessages({ signedIn }: { signedIn: boolean }) {
       }}
     >
       <span ref={anchor} className="account-news-anchor" aria-hidden="true" />
-      {signedIn && (
+      {showTrigger && (
         <Tooltip delay={200}>
           <Button
             ref={trigger}

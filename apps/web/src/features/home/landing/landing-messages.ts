@@ -1,30 +1,8 @@
 import { defineMessages } from "../../../i18n/messages";
 
-/** 首页 vidmuse 复刻的导航、输入框与页脚文案；其余展示文案沿用复刻页的英文示例。 */
-export const vidmuseMessages = defineMessages({
+/** 首页参考站复刻的输入框与页脚文案；其余展示文案沿用复刻页的英文示例。 */
+export const landingMessages = defineMessages({
   "zh-CN": {
-    header: {
-      homeAria: "LYCOBO 首页",
-      navAria: "产品首页",
-      credits: "赚取积分",
-      faq: "FAQ",
-      language: "语言: 简体中文",
-      languageShort: "CN",
-      assets: "素材",
-      projects: "项目",
-      login: "登录",
-      openMenu: "打开菜单",
-      closeMenu: "关闭菜单",
-      nav: [
-        { label: "Musi", href: "#" },
-        { label: "音乐视频", href: "#", hasMenu: true },
-        { label: "爆款广告", href: "#", hasMenu: true, active: true },
-        { label: "动画&包装", href: "#", badge: "新功能" },
-        { label: "应用中心", href: "#" },
-        { label: "自由画布", href: "#" },
-        { label: "实验室", href: "#", hasMenu: true },
-      ],
-    },
     hero: {
       remixPrompt: (title: string, description: string) =>
         `复刻「${title}」广告风格：${description}`,
@@ -47,14 +25,14 @@ export const vidmuseMessages = defineMessages({
       homeAria: "LYCOBO 首页",
       tagline: "看见你的声音",
       navAria: "页脚导航",
-      copyright: "© 2026 VidMuse AI。保留所有权利。",
+      copyright: "© 2026 Lycobo。保留所有权利。",
       socials: {
         wechat: "欢迎加入微信社区",
-        discord: "在 Discord 关注 VidMuse",
-        instagram: "在 Instagram 关注 VidMuse",
-        youtube: "在 YouTube 关注 VidMuse",
-        tiktok: "在 TikTok 关注 VidMuse",
-        x: "在 X 关注 VidMuse",
+        discord: "在 Discord 关注 Lycobo",
+        instagram: "在 Instagram 关注 Lycobo",
+        youtube: "在 YouTube 关注 Lycobo",
+        tiktok: "在 TikTok 关注 Lycobo",
+        x: "在 X 关注 Lycobo",
       },
       columns: [
         { title: "功能", links: ["音乐视频生成器", "技能", "CLI", "更新日志"] },
@@ -67,28 +45,6 @@ export const vidmuseMessages = defineMessages({
     },
   },
   en: {
-    header: {
-      homeAria: "LYCOBO home",
-      navAria: "Product home",
-      credits: "Earn credits",
-      faq: "FAQ",
-      language: "Language: English",
-      languageShort: "EN",
-      assets: "Assets",
-      projects: "Projects",
-      login: "Sign in",
-      openMenu: "Open menu",
-      closeMenu: "Close menu",
-      nav: [
-        { label: "Musi", href: "#" },
-        { label: "Music video", href: "#", hasMenu: true },
-        { label: "Winning ads", href: "#", hasMenu: true, active: true },
-        { label: "Animation & packaging", href: "#", badge: "New" },
-        { label: "App center", href: "#" },
-        { label: "Free canvas", href: "#" },
-        { label: "Lab", href: "#", hasMenu: true },
-      ],
-    },
     hero: {
       remixPrompt: (title: string, description: string) =>
         `Recreate the "${title}" ad style: ${description}`,
@@ -111,14 +67,14 @@ export const vidmuseMessages = defineMessages({
       homeAria: "LYCOBO home",
       tagline: "See your voice",
       navAria: "Footer navigation",
-      copyright: "© 2026 VidMuse AI. All rights reserved.",
+      copyright: "© 2026 Lycobo. All rights reserved.",
       socials: {
         wechat: "Join the WeChat community",
-        discord: "Follow VidMuse on Discord",
-        instagram: "Follow VidMuse on Instagram",
-        youtube: "Follow VidMuse on YouTube",
-        tiktok: "Follow VidMuse on TikTok",
-        x: "Follow VidMuse on X",
+        discord: "Follow Lycobo on Discord",
+        instagram: "Follow Lycobo on Instagram",
+        youtube: "Follow Lycobo on YouTube",
+        tiktok: "Follow Lycobo on TikTok",
+        x: "Follow Lycobo on X",
       },
       columns: [
         { title: "Features", links: ["Music video generator", "Skills", "CLI", "Changelog"] },

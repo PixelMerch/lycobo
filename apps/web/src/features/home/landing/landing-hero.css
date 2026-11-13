@@ -4,40 +4,40 @@
 /* Hero composer                                                      */
 /* ------------------------------------------------------------------ */
 
-.vm-composerHost[data-guide-active="true"] .vm-composer {
+.lp-composerHost[data-guide-active="true"] .lp-composer {
   border-color: rgba(255, 112, 73, 0.45);
   box-shadow:
     0 0 0 1px rgba(255, 112, 73, 0.16),
     0 18px 56px rgba(0, 0, 0, 0.22);
 }
 
-.vm-composerInputRow {
+.lp-composerInputRow {
   position: relative;
   z-index: 1;
 }
 
-.vm-composerActions button {
+.lp-composerActions button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   text-align: center;
 }
 
-.vm-composerActions button svg {
+.lp-composerActions button svg {
   margin: 0;
   flex: none;
 }
 
-.vm-addReference button {
+.lp-addReference button {
   display: grid;
   place-items: center;
 }
 
-.vm-addReference input {
+.lp-addReference input {
   display: none;
 }
 
-.vm-promptField {
+.lp-promptField {
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -45,7 +45,7 @@
   padding: 22px 0 8px;
 }
 
-.vm-promptChips {
+.lp-promptChips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -53,8 +53,8 @@
   max-width: 100%;
 }
 
-.vm-techniqueChip,
-.vm-fileChip {
+.lp-techniqueChip,
+.lp-fileChip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -67,8 +67,8 @@
   white-space: nowrap;
 }
 
-.vm-techniqueChip button,
-.vm-fileChip button {
+.lp-techniqueChip button,
+.lp-fileChip button {
   display: grid;
   place-items: center;
   width: 16px;
@@ -80,13 +80,13 @@
   color: rgba(255, 255, 255, 0.72);
 }
 
-.vm-techniqueChip button:hover,
-.vm-fileChip button:hover {
+.lp-techniqueChip button:hover,
+.lp-fileChip button:hover {
   background: rgba(255, 255, 255, 0.3);
   color: #fff;
 }
 
-.vm-promptField textarea {
+.lp-promptField textarea {
   flex: 1;
   min-width: 0;
   height: 100%;
@@ -101,11 +101,11 @@
   letter-spacing: 0;
 }
 
-.vm-promptField textarea::placeholder {
+.lp-promptField textarea::placeholder {
   color: rgba(255, 255, 255, 0.4);
 }
 
-.vm-composerPopover {
+.lp-composerPopover {
   position: absolute;
   left: 12px;
   bottom: 58px;
@@ -122,22 +122,22 @@
   backdrop-filter: blur(20px);
 }
 
-.vm-composerPopover b {
+.lp-composerPopover b {
   font-size: 13px;
   font-weight: 500;
 }
 
-.vm-composerPopover small {
+.lp-composerPopover small {
   color: rgba(255, 255, 255, 0.45);
   font-size: 11px;
 }
 
-.vm-ratioRow {
+.lp-ratioRow {
   display: flex;
   gap: 6px;
 }
 
-.vm-ratioRow button {
+.lp-ratioRow button {
   flex: 1;
   height: 30px;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -147,13 +147,13 @@
   font-size: 12px;
 }
 
-.vm-ratioRow button.is-active {
+.lp-ratioRow button.is-active {
   border-color: rgba(251, 81, 35, 0.55);
   background: rgba(251, 81, 35, 0.18);
   color: #fff;
 }
 
-.vm-productPopover label {
+.lp-productPopover label {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -165,7 +165,7 @@
   color: rgba(255, 255, 255, 0.45);
 }
 
-.vm-productPopover input {
+.lp-productPopover input {
   flex: 1;
   min-width: 0;
   border: 0;
@@ -175,7 +175,7 @@
   font-size: 12px;
 }
 
-.vm-ghostAction {
+.lp-ghostAction {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -187,18 +187,18 @@
   font-size: 12px;
 }
 
-.vm-ghostAction:hover {
+.lp-ghostAction:hover {
   color: #fff;
 }
 
-.vm-toast {
+.lp-toast {
   position: absolute;
   top: calc(100% + 10px);
   left: 0;
   z-index: 10;
 }
 
-.vm-toast span {
+.lp-toast span {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -211,7 +211,7 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
-.vm-socialRail > span {
+.lp-socialRail > span {
   display: grid;
   justify-items: center;
   gap: 2px;
@@ -219,39 +219,39 @@
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
-.vm-exampleDot {
+.lp-exampleDot {
   position: relative;
 }
 
-.vm-exampleTrack {
+.lp-exampleTrack {
   left: 0;
   right: 0;
 }
 
-.vm-productionRing {
+.lp-productionRing {
   display: block;
   width: 100%;
   height: 100%;
 }
 
-.vm-timeSaved > i > b {
+.lp-timeSaved > i > b {
   z-index: 1;
 }
 
-.vm-socialAuthor > span:last-child {
+.lp-socialAuthor > span:last-child {
   display: flex;
   flex-direction: column;
   gap: 1px;
   line-height: 1.15;
 }
 
-.vm-authorName {
+.lp-authorName {
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
 
-.vm-socialCase video {
+.lp-socialCase video {
   position: absolute;
   inset: 0;
   width: 100%;

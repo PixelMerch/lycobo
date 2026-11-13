@@ -5,65 +5,29 @@
 /* ------------------------------------------------------------------ */
 
 @media (max-width: 1400px) {
-  .vm-nav-link {
-    padding: 0 14px;
-  }
-
-  .vm-formatsTrack {
+  .lp-formatsTrack {
     padding-left: 0;
   }
 }
 
-@media (max-width: 1180px) {
-  .vm-pill-btn span {
-    display: none;
-  }
-
-  .vm-pill-btn {
-    width: 36px;
-    padding: 0;
-  }
-
-  .vm-nav {
-    margin-left: 8px;
-  }
-
-  .vm-nav-link {
-    padding: 0 10px;
-  }
-}
-
 @media (max-width: 1024px) {
-  .vm-nav {
-    display: none;
-  }
-
-  .vm-menu-btn {
-    display: grid;
-  }
-
-  .vm-icon-btn,
-  .vm-lang-btn {
-    display: none;
-  }
-
-  .vm-footerGrid {
+  .lp-footerGrid {
     gap: 40px;
   }
 }
 
 @media (max-width: 900px) {
-  .vm-workflowRail {
+  .lp-workflowRail {
     height: auto;
   }
 
-  .vm-workflowPin {
+  .lp-workflowPin {
     position: relative;
     height: auto;
     top: auto;
   }
 
-  .vm-workflow {
+  .lp-workflow {
     width: 100%;
     height: auto;
     transform: none;
@@ -71,91 +35,73 @@
     overflow: hidden;
   }
 
-  .vm-workflowBody {
+  .lp-workflowBody {
     zoom: 1;
   }
 
-  .vm-formatsTrack {
+  .lp-formatsTrack {
     padding-left: 0;
   }
 
-  .vm-footerGrid {
+  .lp-footerGrid {
     grid-template-columns: 1fr;
     padding: 48px 0;
   }
 
-  .vm-footer-inner {
+  .lp-footer-inner {
     padding: 0 24px;
   }
 }
 
 @media (max-width: 639px) {
-  .vm-header-inner {
-    padding: 0 12px;
-  }
-
-  .vm-logo-svg {
-    width: 96px;
-    height: 29px;
-  }
-
-  .vm-pill-btn {
-    display: none;
-  }
-
-  .vm-login.button {
-    width: 72px;
-    padding: 0 10px;
-  }
-
-  .vm-composerHost[data-expanded="true"] {
+  .lp-composerHost[data-expanded="true"] {
     width: 100%;
   }
 
-  .vm-composerHost[data-expanded="true"] .vm-addReference button {
+  .lp-composerHost[data-expanded="true"] .lp-addReference button {
     width: 46px;
     height: 46px;
   }
 
-  .vm-composerHost[data-expanded="true"] .vm-addReference {
+  .lp-composerHost[data-expanded="true"] .lp-addReference {
     width: 54px;
   }
 
-  .vm-promptField {
+  .lp-promptField {
     height: 150px;
   }
 
-  .vm-heroCopy h1 {
+  .lp-heroCopy h1 {
     font-size: 30px;
   }
 
-  .vm-promptField textarea {
+  .lp-promptField textarea {
     font-size: 13px;
   }
 
-  .vm-workflow {
+  .lp-workflow {
     border-width: 4px;
     padding: 16px 12px 24px;
   }
 
-  .vm-competitors {
+  .lp-competitors {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
   }
 
-  .vm-competitor {
+  .lp-competitor {
     height: auto;
   }
 
-  .vm-competitorImage {
+  .lp-competitorImage {
     height: 170px;
   }
 
-  .vm-researchDemo {
+  .lp-researchDemo {
     max-width: 100%;
   }
 
-  .vm-analysisResult {
+  .lp-analysisResult {
     height: auto;
     min-height: 52px;
     white-space: normal;
@@ -164,7 +110,7 @@
     gap: 8px;
   }
 
-  .vm-kitTrigger.button {
+  .lp-kitTrigger.button {
     height: auto;
     min-height: 44px;
     flex-wrap: wrap;
@@ -172,16 +118,16 @@
     padding: 9px 12px;
   }
 
-  .vm-kitChevron {
+  .lp-kitChevron {
     margin-left: auto;
   }
 
-  .vm-workflowTabs {
+  .lp-workflowTabs {
     width: 100%;
     height: 42px;
   }
 
-  .vm-workflow[data-step] .vm-workflowTabs button {
+  .lp-workflow[data-step] .lp-workflowTabs button {
     flex: 1 1 0;
     min-width: 0;
     width: auto;
@@ -189,24 +135,24 @@
     font-size: 12px;
   }
 
-  .vm-workflowIndicator {
+  .lp-workflowIndicator {
     width: calc((100% - 12px) / 3);
     height: 42px;
   }
 
-  .vm-workflowTabs[data-step="summarize"] .vm-workflowIndicator {
+  .lp-workflowTabs[data-step="summarize"] .lp-workflowIndicator {
     transform: translateX(calc(100% + 6px));
   }
 
-  .vm-workflowTabs[data-step="create"] .vm-workflowIndicator {
+  .lp-workflowTabs[data-step="create"] .lp-workflowIndicator {
     transform: translateX(calc(200% + 12px));
   }
 
-  .vm-workflowPanel {
+  .lp-workflowPanel {
     padding-top: 8px;
   }
 
-  .vm-summary {
+  .lp-summary {
     width: 100%;
     height: auto;
     left: 0;
@@ -215,7 +161,7 @@
     padding-top: 12px;
   }
 
-  .vm-scoreRing {
+  .lp-scoreRing {
     position: relative;
     top: 0;
     left: 0;
@@ -224,7 +170,7 @@
     margin: 0 auto;
   }
 
-  .vm-summaryVideo {
+  .lp-summaryVideo {
     position: absolute;
     top: 44px;
     left: 50%;
@@ -234,36 +180,36 @@
     transform: translateX(-50%);
   }
 
-  .vm-summaryVideo > i,
-  .vm-summaryVideo > video {
+  .lp-summaryVideo > i,
+  .lp-summaryVideo > video {
     top: 14px;
     height: 166px;
   }
 
-  .vm-summaryVideo > i:first-child,
-  .vm-summaryVideo > i:nth-child(2) {
+  .lp-summaryVideo > i:first-child,
+  .lp-summaryVideo > i:nth-child(2) {
     top: 14px;
     height: 166px;
   }
 
-  .vm-videoToggle {
+  .lp-videoToggle {
     top: 14px;
     height: 166px;
   }
 
-  .vm-scoreCards {
+  .lp-scoreCards {
     position: relative;
     margin-top: 28px;
   }
 
-  .vm-scoreCards {
+  .lp-scoreCards {
     display: grid;
     width: 100%;
     grid-template-columns: 1fr 1fr;
   }
 
-  .vm-scoreCard,
-  .vm-scoreCard[data-score] {
+  .lp-scoreCard,
+  .lp-scoreCard[data-score] {
     position: relative;
     top: 0;
     left: 0;
@@ -273,87 +219,87 @@
     transform: none;
   }
 
-  .vm-scoreCard:last-child {
+  .lp-scoreCard:last-child {
     grid-column: span 2;
   }
 
-  .vm-createKit {
+  .lp-createKit {
     grid-template-columns: 1fr;
     gap: 24px;
     width: 100%;
     height: auto;
   }
 
-  .vm-folder {
+  .lp-folder {
     width: 220px;
     margin: 0 auto;
   }
 
-  .vm-kitBody .vm-kitThumbnails {
+  .lp-kitBody .lp-kitThumbnails {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .vm-kitBody .vm-feedExamples {
+  .lp-kitBody .lp-feedExamples {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .vm-kitBody .vm-coverExamples {
+  .lp-kitBody .lp-coverExamples {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .vm-kitBody .vm-ctaExamples {
+  .lp-kitBody .lp-ctaExamples {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .vm-impact {
+  .lp-impact {
     padding: 24px 16px 32px;
   }
 
-  .vm-impactCopy > h2 {
+  .lp-impactCopy > h2 {
     font-size: 28px;
   }
 
-  .vm-formatsHeading {
+  .lp-formatsHeading {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .vm-galleryControls {
+  .lp-galleryControls {
     display: none;
   }
 
-  .vm-ctaCopy {
+  .lp-ctaCopy {
     padding: 48px 28px;
   }
 
-  .vm-ctaCopy h2 {
+  .lp-ctaCopy h2 {
     font-size: 32px;
   }
 
-  .vm-footerNav {
+  .lp-footerNav {
     grid-template-columns: 1fr 1fr;
     gap: 24px;
   }
 
-  .vm-footerGrid {
+  .lp-footerGrid {
     padding: 40px 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vm-casesCarousel {
+  .lp-casesCarousel {
     overflow-x: auto;
   }
 
-  .vm-casesTrack {
+  .lp-casesTrack {
     animation: none;
   }
 
-  .vm-casesSet[aria-hidden="true"] {
+  .lp-casesSet[aria-hidden="true"] {
     display: none;
   }
 
-  .vm-formatsTrack {
+  .lp-formatsTrack {
     scroll-behavior: auto;
   }
 

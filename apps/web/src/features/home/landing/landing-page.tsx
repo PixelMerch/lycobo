@@ -4,18 +4,16 @@ import { FinalCta } from "./final-cta";
 import { Formats } from "./formats";
 import { Hero } from "./hero";
 import { SiteFooter } from "./site-footer";
-import { SiteHeader } from "./site-header";
 import { Workflow } from "./workflow";
-import "./vidmuse.css";
+import "./landing.css";
 
 /** 首页展示原型：组合参考页的区块与 Lycobo 品牌主题。 */
-export function VidmuseLanding() {
+export function HomeLanding() {
   return (
     <MotionConfig reducedMotion="user">
-      <div className="vidmuse-landing">
-        <div className="vm-page" data-vm-theme="figma">
-          <SiteHeader />
-          <main className="vm-main">
+      <div className="landing-page">
+        <div className="lp-page" data-lp-theme="figma">
+          <main className="lp-main">
             <Hero />
             <Cases />
             <Workflow />

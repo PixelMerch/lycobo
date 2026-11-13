@@ -32,7 +32,7 @@ navigation; never prefix API, WebSocket, image or font URLs. See docs/localized-
   same dark glass as the asset source menu. Source, time and account language menus share the selection
   styles in `styles/choice-menu.css`. Other overlays use the default glass through the `--glass-*` tokens.
   Add materials only by user request.
-- The home page borrows the vidmuse layout but must keep Lycobo's own character (user, 2026-11-09):
+- The home page borrows the reference site's layout but must keep Lycobo's own character (user, 2026-11-09):
   upright slogan with a mode-gradient keyword, tool-accent mode tabs, lime-to-mint generation pills,
   in-card glass hover panels and our own wording. Do not copy reference-site styling, copy or assets.
   The hero background is the React Bits Silk port in features/home/silk (no runtime dependency): keep it
@@ -74,7 +74,7 @@ navigation; never prefix API, WebSocket, image or font URLs. See docs/localized-
   control. Keyboard focus enters the first row and returns to the trigger on close.
 - Preserve pending drafts when switching tasks. Never navigate users away when a background task completes.
 - Product screens use end-user language. Keep preview/debug/reset notes in developer documentation, not headers, cards or dialogs. Never infer production readiness from clean UI copy.
-- Match the measured shell rules in DESIGN.md: a sticky top bar (64px desktop, 60px mobile, transparent at the top and frosted 4px shorter once the page scrolls; workspace pages keep it solid and fixed, user 2026-11-10) modeled on the user-approved vidmuse header, 36px pill navigation items, a 电商 dropdown that opens on press only, 36px desktop utility controls and avatar, and no left sidebar. Hover/active never change geometry; mobile targets stay 44px.
+- Match the measured shell rules in DESIGN.md: a sticky top bar (64px desktop, 60px mobile, transparent at the top and frosted 4px shorter once the page scrolls; workspace pages keep it solid and fixed, user 2026-11-10) modeled on the user-approved reference header, 36px pill navigation items, a 电商 dropdown that opens on press only, 36px desktop utility controls and avatar, and no left sidebar. Hover/active never change geometry; mobile targets stay 44px.
 - Use Tabler business icons through components/ui-icon.tsx. Sizes: 14 / 18 / 20 / 22 / 28px, stroke 2. Keep icon sizing independent of compact control geometry; do not add another icon library. Credits use Tabler IconCoins (no bitmap coin) and close controls use Tabler IconX; never keep hand-drawn, bitmap or second-library icons.
 - Navigation text uses neutral gray-white: default #FFFFFF99, hover fill #FFFFFF0A with #FFFFFFCC text, current page bold white. Do not restore purple navigation labels. Chevrons rotate on expansion and respect reduced motion. Tool selectors use spacing instead of extra divider lines.
 - The UI is bilingual (user, 2026-11-09): Simplified Chinese and English. Every user-facing string, accessible

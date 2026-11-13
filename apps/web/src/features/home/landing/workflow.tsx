@@ -97,26 +97,26 @@ function ResearchPanel() {
     <>
       <h3>Competitor analysis</h3>
       <div
-        className="vm-researchDemo"
+        className="lp-researchDemo"
         data-phase={phase}
         data-research-active="true"
         data-research-stage={stage}
         ref={demoRef}
       >
-        <div className="vm-competitors">
+        <div className="lp-competitors">
           {competitors.map((competitor, index) => (
             <ToggleButton
               aria-label={`Compare ${competitor.label}`}
-              className="vm-competitor"
+              className="lp-competitor"
               isSelected={selected === index}
               key={competitor.id}
               onChange={() => setSelected(index)}
             >
-              <span className="vm-competitorImage">
+              <span className="lp-competitorImage">
                 <img alt={competitor.label} src={competitor.image} />
               </span>
-              {index === 0 && <span className="vm-yourProduct">Your product</span>}
-              <span className="vm-signal">
+              {index === 0 && <span className="lp-yourProduct">Your product</span>}
+              <span className="lp-signal">
                 <b>{competitor.id}</b>
                 <span>
                   {competitor.bars.map((width) => (
@@ -125,12 +125,12 @@ function ResearchPanel() {
                 </span>
               </span>
               <small>{competitor.note}</small>
-              <span className="vm-advantage">{competitor.note}</span>
+              <span className="lp-advantage">{competitor.note}</span>
             </ToggleButton>
           ))}
         </div>
-        <div className="vm-analysisLine" />
-        <p className="vm-analysisResult" data-stage={stage}>
+        <div className="lp-analysisLine" />
+        <p className="lp-analysisResult" data-stage={stage}>
           <AnimatePresence initial={false} mode="wait">
             <motion.span
               animate={{ opacity: 1, y: 0 }}
@@ -145,7 +145,7 @@ function ResearchPanel() {
             </motion.span>
           </AnimatePresence>
           {stage === "analyzing" && (
-            <span className="vm-analysisDots">
+            <span className="lp-analysisDots">
               <i />
               <i />
               <i />
@@ -176,14 +176,14 @@ function SummarizePanel() {
   return (
     <>
       <h3>See what makes ads win</h3>
-      <div className="vm-summary" data-summary-active="true">
-        <div className="vm-scoreRing">
+      <div className="lp-summary" data-summary-active="true">
+        <div className="lp-scoreRing">
           {scoreCards.map((card) => (
             <img alt="" data-dimension={card.dimension} key={card.dimension} src={card.icon} />
           ))}
         </div>
 
-        <div className="vm-summaryVideo">
+        <div className="lp-summaryVideo">
           <i />
           <i />
           <video
@@ -195,21 +195,21 @@ function SummarizePanel() {
             onPlay={() => setPlaying(true)}
             playsInline
             ref={videoRef}
-            src="/vidmuse/summarize.mp4"
+            src="/landing/summarize.mp4"
           />
           <Button
             isIconOnly
             aria-label={playing ? "Pause campaign video" : "Play campaign video"}
-            className="vm-videoToggle"
+            className="lp-videoToggle"
             onPress={toggle}
           >
             <span>{playing ? <IconPlayerPause size={18} /> : <IconPlayerPlay size={18} />}</span>
           </Button>
         </div>
 
-        <div className="vm-scoreCards">
+        <div className="lp-scoreCards">
           {scoreCards.map((card) => (
-            <div className="vm-scoreCard" data-score={card.dimension} key={card.dimension}>
+            <div className="lp-scoreCard" data-score={card.dimension} key={card.dimension}>
               <strong>
                 {card.score}
                 <small>score</small>
@@ -288,28 +288,28 @@ export function Workflow() {
   };
 
   return (
-    <section aria-labelledby="campaign-research-title" className="vm-research" id="research">
-      <div aria-hidden="true" className="vm-researchBackground">
-        <img alt="" src="/vidmuse/research-bg.webp" />
+    <section aria-labelledby="campaign-research-title" className="lp-research" id="research">
+      <div aria-hidden="true" className="lp-researchBackground">
+        <img alt="" src="/landing/research-bg.webp" />
       </div>
 
-      <div className="vm-researchHeading">
-        <span className="cn-badge vm-researchEyebrow">From research to ready-to-run</span>
+      <div className="lp-researchHeading">
+        <span className="cn-badge lp-researchEyebrow">From research to ready-to-run</span>
         <h2 id="campaign-research-title">Research the Winners, Ship the Whole Campaign</h2>
         <p>
-          VidMuse analyzes competitor ads, rebuilds the patterns behind their performance, and
-          generates ready-to-test videos, images, hooks, copy, covers and CTAs for every platform in
-          one click.
+          Analyze competitor ads, rebuild the patterns behind their performance, and generate
+          ready-to-test videos, images, hooks, copy, covers and CTAs for every platform in one
+          click.
         </p>
       </div>
 
-      <div className="vm-workflowRail" data-scroll-enabled={desktop} ref={railRef}>
-        <div className="vm-workflowPin">
-          <div className="vm-workflow" id="campaign-workflow" data-step={step}>
-            <div className="vm-workflowBody">
+      <div className="lp-workflowRail" data-scroll-enabled={desktop} ref={railRef}>
+        <div className="lp-workflowPin">
+          <div className="lp-workflow" id="campaign-workflow" data-step={step}>
+            <div className="lp-workflowBody">
               <ToggleButtonGroup
                 aria-label="Campaign workflow"
-                className="vm-workflowTabs"
+                className="lp-workflowTabs"
                 data-step={step}
                 disallowEmptySelection
                 isDetached
@@ -321,7 +321,7 @@ export function Workflow() {
                   if (found) selectStep(found.id);
                 }}
               >
-                <span aria-hidden="true" className="vm-workflowIndicator" />
+                <span aria-hidden="true" className="lp-workflowIndicator" />
                 {steps.map((item) => (
                   <ToggleButton id={item.id} key={item.id}>
                     {item.label}
@@ -330,7 +330,7 @@ export function Workflow() {
               </ToggleButtonGroup>
 
               <AnimatePresence mode="wait">
-                <motion.div {...PANEL_MOTION} className="vm-workflowPanel" key={step}>
+                <motion.div {...PANEL_MOTION} className="lp-workflowPanel" key={step}>
                   {step === "research" && <ResearchPanel />}
                   {step === "summarize" && <SummarizePanel />}
                   {step === "create" && (

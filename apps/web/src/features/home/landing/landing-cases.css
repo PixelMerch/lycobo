@@ -4,33 +4,33 @@
 /* Case marquee                                                       */
 /* ------------------------------------------------------------------ */
 
-.vm-cases {
+.lp-cases {
   position: relative;
   overflow: hidden;
 }
 
-.vm-casesCarousel {
+.lp-casesCarousel {
   width: 100%;
   overflow: hidden;
 }
 
-.vm-casesTrack {
+.lp-casesTrack {
   display: flex;
   width: max-content;
-  animation: vm-case-marquee 56s linear infinite;
+  animation: lp-case-marquee 56s linear infinite;
   will-change: transform;
 }
 
-.vm-casesTrack[data-paused="true"] {
+.lp-casesTrack[data-paused="true"] {
   animation-play-state: paused;
 }
 
-.vm-casesSet {
+.lp-casesSet {
   display: flex;
   align-items: stretch;
 }
 
-.vm-caseCard img {
+.lp-caseCard img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -38,23 +38,23 @@
   object-fit: cover;
 }
 
-.vm-caseItem {
+.lp-caseItem {
   flex: none;
 }
 
-.vm-caseItem[data-format="mid"] {
+.lp-caseItem[data-format="mid"] {
   flex-basis: calc(var(--case-height) * 222 / 278);
 }
 
-.vm-caseItem[data-format="wide"] {
+.lp-caseItem[data-format="wide"] {
   flex-basis: calc(var(--case-height) * 494 / 278);
 }
 
-.vm-caseItem:not([data-format]) {
+.lp-caseItem:not([data-format]) {
   flex-basis: calc(var(--case-height) * 156 / 278);
 }
 
-@keyframes vm-case-marquee {
+@keyframes lp-case-marquee {
   from {
     transform: translate3d(0, 0, 0);
   }
