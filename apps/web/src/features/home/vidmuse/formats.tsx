@@ -10,11 +10,14 @@ const autoScrollSpeed = 26;
 export function Formats() {
   const trackRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const resumeAtRef = useRef(0);
 
   useEffect(() => {
     const track = trackRef.current;
     const carousel = carouselRef.current;
-    if (!track || !carousel) return;
+    const section = sectionRef.current;
+    if (!track || !carousel || !section) return;
     if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
@@ -31,7 +34,8 @@ export function Formats() {
     const tick = (now: number) => {
       const elapsed = Math.min(64, now - previous);
       previous = now;
-      if (!paused && visible && !document.hidden) {
+      const manualPause = now < resumeAtRef.current;
+      if (!paused && !manualPause && visible && !document.hidden) {
         const half = track.scrollWidth / 2;
         if (half > track.clientWidth) {
           const next = track.scrollLeft + (elapsed * autoScrollSpeed) / 1000;
@@ -48,48 +52,51 @@ export function Formats() {
       paused = false;
     };
     const resumeAfterFocus = (event: FocusEvent) => {
-      if (!(event.relatedTarget instanceof Node) || !carousel.contains(event.relatedTarget)) {
+      if (!(event.relatedTarget instanceof Node) || !section.contains(event.relatedTarget)) {
         paused = false;
       }
     };
 
+    section.addEventListener("focusin", pause);
+    section.addEventListener("focusout", resumeAfterFocus);
     carousel.addEventListener("pointerenter", pause);
     carousel.addEventListener("pointerleave", resume);
-    carousel.addEventListener("focusin", pause);
-    carousel.addEventListener("focusout", resumeAfterFocus);
     frame = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(frame);
       visibility.disconnect();
+      section.removeEventListener("focusin", pause);
+      section.removeEventListener("focusout", resumeAfterFocus);
       carousel.removeEventListener("pointerenter", pause);
       carousel.removeEventListener("pointerleave", resume);
-      carousel.removeEventListener("focusin", pause);
-      carousel.removeEventListener("focusout", resumeAfterFocus);
     };
   }, []);
 
   const scroll = (direction: number) => {
     const track = trackRef.current;
     if (!track) return;
-    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ? "auto"
-      : "smooth";
+    resumeAtRef.current = performance.now() + 800;
     if (direction < 0 && track.scrollLeft < 8) {
-      track.scrollTo({ left: track.scrollWidth, behavior });
+      track.scrollTo({ left: track.scrollWidth });
       return;
     }
     if (direction > 0 && track.scrollLeft + track.clientWidth >= track.scrollWidth - 8) {
-      track.scrollTo({ left: 0, behavior });
+      track.scrollTo({ left: 0 });
       return;
     }
     const card = track.firstElementChild;
     const step = card?.getBoundingClientRect().width ?? 292;
-    track.scrollBy({ left: direction * step, behavior });
+    track.scrollBy({ left: direction * step });
   };
 
   return (
     <div>
-      <section aria-labelledby="campaign-formats-title" className="vm-formats" id="formats">
+      <section
+        aria-labelledby="campaign-formats-title"
+        className="vm-formats"
+        id="formats"
+        ref={sectionRef}
+      >
         <section aria-label="Campaign creative formats">
           <div className="vm-formatsHeading">
             <div className="vm-sectionHeading">
