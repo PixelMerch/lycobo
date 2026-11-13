@@ -9,7 +9,7 @@ import {
   IconShoppingBag,
   IconX,
 } from "@tabler/icons-react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { useMessages } from "../../../i18n/messages";
 import { HeroScene } from "./hero-scene";
@@ -17,6 +17,29 @@ import { HeroShowcase } from "./hero-showcase";
 import { vidmuseMessages } from "./vidmuse-messages";
 
 const ratios = ["9:16", "16:9", "1:1", "4:5"];
+
+/** 首屏背景：开发服务器优先挂载采集场景，其他环境使用同源循环视频兜底。 */
+function HeroBackdrop() {
+  const reduced = useReducedMotion();
+  return (
+    <div aria-hidden="true" className="vm-heroGradient">
+      {import.meta.env.DEV && <HeroScene />}
+      <video
+        autoPlay={!reduced}
+        className="vm-heroBackgroundVideo"
+        disablePictureInPicture
+        loop
+        muted
+        playsInline
+        poster="/vidmuse/hero-bg-poster.webp"
+        preload="auto"
+        tabIndex={-1}
+      >
+        <source src="/vidmuse/hero-bg.mp4" type="video/mp4" />
+      </video>
+    </div>
+  );
+}
 
 /** 复刻页首屏：标语、画面比例/产品详情弹层与右侧示例；暂不提交真实生成任务。 */
 export function Hero() {
@@ -52,10 +75,7 @@ export function Hero() {
 
   return (
     <section aria-labelledby="campaign-hero-title" className="vm-hero" id="top">
-      <div aria-hidden="true" className="vm-heroGradient">
-        {import.meta.env.DEV && <HeroScene />}
-        <span className="vm-heroEdge" />
-      </div>
+      <HeroBackdrop />
       <div className="vm-heroInner">
         <div className="vm-heroCopy">
           <motion.div
