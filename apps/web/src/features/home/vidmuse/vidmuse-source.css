@@ -108,33 +108,10 @@
   border-radius: 50%;
 }
 
-/* 覆盖式滚动条：隐藏原生轨道，滑块直接浮在页面内容上，不占右侧宽度。 */
-@media (hover: hover) and (pointer: fine) {
-  .vm-scrollbar-hidden {
-    scrollbar-width: none;
-  }
-  .vm-scrollbar-hidden::-webkit-scrollbar {
-    display: none;
-  }
+/* 首页不显示滚动条，滚轮、键盘、触控板与触屏滚动保持可用。 */
+html:has(.vidmuse-landing) {
+  scrollbar-width: none;
 }
-.vm-overlay-scrollbar {
-  position: fixed;
-  z-index: 9999;
-  top: 0;
-  right: 4px;
-  bottom: 0;
-  width: 6px;
-  pointer-events: none;
-}
-.vm-overlay-scrollbar span {
-  display: block;
-  width: 100%;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.46);
-  mix-blend-mode: difference;
-}
-@media (hover: none), (pointer: coarse) {
-  .vm-overlay-scrollbar {
-    display: none;
-  }
+html:has(.vidmuse-landing)::-webkit-scrollbar {
+  display: none;
 }

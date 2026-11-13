@@ -3,7 +3,6 @@ import { Cases } from "./cases";
 import { FinalCta } from "./final-cta";
 import { Formats } from "./formats";
 import { Hero } from "./hero";
-import { LandingScrollbar } from "./landing-scrollbar";
 import { SiteFooter } from "./site-footer";
 import { SiteHeader } from "./site-header";
 import { Workflow } from "./workflow";
@@ -25,7 +24,6 @@ export function VidmuseLanding() {
           </main>
           <SiteFooter />
         </div>
-        <LandingScrollbar />
       </div>
     </MotionConfig>
   );
