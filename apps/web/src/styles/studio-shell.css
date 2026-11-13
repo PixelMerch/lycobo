@@ -444,3 +444,38 @@
     width: 90px;
   }
 }
+
+.header-workspace.button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  height: 36px;
+  padding-inline: 12px;
+  border-radius: 12px;
+  background: #ffffff14;
+  color: #ffffffcc;
+}
+
+.header-workspace.button:is(:hover, [aria-current="page"]) {
+  background: #ffffff24;
+  color: #fff;
+}
+
+@media (max-width: 1100px) {
+  .header-workspace.button {
+    min-width: 36px;
+    padding-inline: 8px;
+  }
+
+  .header-workspace span {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .header-actions .header-workspace.button {
+    display: none;
+  }
+}

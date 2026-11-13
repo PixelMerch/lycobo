@@ -1,13 +1,62 @@
 import { Button } from "@heroui/react";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
-import { useEffect, useRef } from "react";
-import { campaignFormats } from "./content";
+import { useEffect, useRef, useState } from "react";
+import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
+import { useMessages } from "../../../i18n/messages";
+import { useAppNavigate } from "../../../i18n/use-localized-navigation";
+import { useRequireLogin } from "../../auth/login-prompt";
+import { useStudioStore } from "../../generation/studio-state";
+import { homeInspirationMessages } from "../home-inspiration-messages";
+import { type CampaignFormat, campaignFormats } from "./content";
 
 /** 模板横滑的自动滚动速度，按像素每秒计算，保持缓慢移动。 */
 const autoScrollSpeed = 26;
 
 /** 复刻页模板横滑：缓慢自动向左滚动，也可点击箭头切换；暂不生成真实广告。 */
 export function Formats() {
+  const remix = useTemplateRemix();
+  const { trackRef, carouselRef, sectionRef, scroll } = useFormatCarousel();
+  return (
+    <div>
+      <section
+        aria-labelledby="campaign-formats-title"
+        className="lp-formats"
+        id="formats"
+        ref={sectionRef}
+      >
+        <section aria-label="Campaign creative formats">
+          <div className="lp-formatsHeading">
+            <div className="lp-sectionHeading">
+              <span className="cn-badge lp-formatEyebrow">Proven formats, ready to remix</span>
+              <h2 id="campaign-formats-title">Product in, ads out</h2>
+              <p>Choose a proven format. Rebuild it around your product in minutes.</p>
+            </div>
+            <div className="lp-galleryControls">
+              <Button isIconOnly aria-label="Previous campaign format" onPress={() => scroll(-1)}>
+                <IconChevronLeft size={14} />
+              </Button>
+              <Button isIconOnly aria-label="Next campaign format" onPress={() => scroll(1)}>
+                <IconChevronRight size={14} />
+              </Button>
+            </div>
+          </div>
+
+          <div className="lp-formatsCarousel" ref={carouselRef}>
+            <div className="lp-formatsTrack" ref={trackRef}>
+              <FormatSet onRemix={remix.select} />
+              <div className="lp-formatsSet" inert>
+                <FormatSet duplicate onRemix={remix.select} />
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+      {remix.dialog}
+    </div>
+  );
+}
+
+function useFormatCarousel() {
   const trackRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
@@ -89,46 +138,16 @@ export function Formats() {
     track.scrollBy({ left: direction * step });
   };
 
-  return (
-    <div>
-      <section
-        aria-labelledby="campaign-formats-title"
-        className="lp-formats"
-        id="formats"
-        ref={sectionRef}
-      >
-        <section aria-label="Campaign creative formats">
-          <div className="lp-formatsHeading">
-            <div className="lp-sectionHeading">
-              <span className="cn-badge lp-formatEyebrow">Proven formats, ready to remix</span>
-              <h2 id="campaign-formats-title">Product in, ads out</h2>
-              <p>Choose a proven format. Rebuild it around your product in minutes.</p>
-            </div>
-            <div className="lp-galleryControls">
-              <Button isIconOnly aria-label="Previous campaign format" onPress={() => scroll(-1)}>
-                <IconChevronLeft size={14} />
-              </Button>
-              <Button isIconOnly aria-label="Next campaign format" onPress={() => scroll(1)}>
-                <IconChevronRight size={14} />
-              </Button>
-            </div>
-          </div>
-
-          <div className="lp-formatsCarousel" ref={carouselRef}>
-            <div className="lp-formatsTrack" ref={trackRef}>
-              <FormatSet />
-              <div className="lp-formatsSet" inert>
-                <FormatSet duplicate />
-              </div>
-            </div>
-          </div>
-        </section>
-      </section>
-    </div>
-  );
+  return { trackRef, carouselRef, sectionRef, scroll };
 }
 
-function FormatSet({ duplicate = false }: { duplicate?: boolean }) {
+function FormatSet({
+  duplicate = false,
+  onRemix,
+}: {
+  duplicate?: boolean;
+  onRemix: (format: CampaignFormat) => void;
+}) {
   return (
     <>
       {campaignFormats.map((format) => (
@@ -137,13 +156,7 @@ function FormatSet({ duplicate = false }: { duplicate?: boolean }) {
             aria-hidden={duplicate || undefined}
             aria-label={`Remix ${format.title}`}
             className="lp-formatCard"
-            onPress={() =>
-              window.dispatchEvent(
-                new CustomEvent("lp:remix", {
-                  detail: { title: format.title, description: format.description },
-                }),
-              )
-            }
+            onPress={() => onRemix(format)}
           >
             <img alt="" src={format.image} />
             <span className="lp-formatBody">
@@ -158,4 +171,42 @@ function FormatSet({ duplicate = false }: { duplicate?: boolean }) {
       ))}
     </>
   );
+}
+
+/** 选用模板时进入主图工作区，替换已有提示词前先确认。 */
+function useTemplateRemix() {
+  const requireLogin = useRequireLogin();
+  const navigate = useAppNavigate();
+  const t = useMessages(homeInspirationMessages);
+  const [pending, setPending] = useState<CampaignFormat | null>(null);
+
+  function apply(format: CampaignFormat) {
+    const { activeModel, updateDraft } = useStudioStore.getState();
+    updateDraft(activeModel, { prompt: format.description });
+    setPending(null);
+    void navigate("/commerce/create");
+  }
+
+  function select(format: CampaignFormat) {
+    if (!requireLogin()) return;
+    const { activeModel, drafts } = useStudioStore.getState();
+    const existing = drafts[activeModel]?.prompt.trim();
+    if (existing && existing !== format.description) setPending(format);
+    else apply(format);
+  }
+
+  const dialog = (
+    <ConfirmDialog
+      isOpen={pending !== null}
+      title={t.replaceTitle}
+      content={t.replaceContent}
+      confirmLabel={t.replaceConfirm}
+      cancelLabel={t.keepCurrent}
+      onCancel={() => setPending(null)}
+      onConfirm={() => {
+        if (pending) apply(pending);
+      }}
+    />
+  );
+  return { select, dialog };
 }

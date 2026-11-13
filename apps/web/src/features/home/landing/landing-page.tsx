@@ -1,4 +1,6 @@
 import { MotionConfig } from "motion/react";
+import { useAppLocation } from "../../../i18n/use-localized-navigation";
+import { commerceToolFromSearch } from "../../commerce/commerce-tools";
 import { Cases } from "./cases";
 import { FinalCta } from "./final-cta";
 import { Formats } from "./formats";
@@ -7,19 +9,20 @@ import { SiteFooter } from "./site-footer";
 import { Workflow } from "./workflow";
 import "./landing.css";
 
-/** 首页展示原型：组合参考页的区块与 Lycobo 品牌主题。 */
-export function HomeLanding() {
+/** 电商专区保留既有展示区块，首屏按地址选择创作工具。 */
+export function CommerceLanding() {
+  const tool = commerceToolFromSearch(useAppLocation().search);
   return (
     <MotionConfig reducedMotion="user">
       <div className="landing-page">
         <div className="lp-page" data-lp-theme="figma">
-          <main className="lp-main">
-            <Hero />
+          <div className="lp-main">
+            <Hero tool={tool} />
             <Cases />
             <Workflow />
             <Formats />
             <FinalCta />
-          </main>
+          </div>
           <SiteFooter />
         </div>
       </div>

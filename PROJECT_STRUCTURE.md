@@ -80,10 +80,8 @@ apps/web/src/
     ├── commerce/                 # 家纺裂变、套图计划（方案规划、确认与生图）及本地会话草稿
     ├── video/                    # 视频页面、请求与草稿；history / player / production / storyboard 分职责
     ├── home/                     # 首页、共享创作输入与提示辅助
-    │   ├── home-modes.ts         # 四个创作模式的上传规则与模板顺序；标语、上传名称与模板文字在 home-modes-messages.ts
-    │   ├── home-composer.tsx     # 按模式组合参考图（家纺为左侧上传列）、描述区与“开始创作”；草稿读写在 use-home-mode-draft.ts
-    │   ├── home-templates.tsx    # 描述模板与替换确认；主图设置在 home-model-settings.tsx，家纺视角在 home-textile-views.tsx
-    │   ├── home-backdrop.tsx     # 首屏丝绸背景：每个模式一种缎面配色，切换页签时由首页触发涟漪
+    │   ├── home-page.tsx        # 品牌首页、专区与工作区入口
+    │   ├── landing/             # 电商专区 Hero、工具展示卡与原案例区块
     │   ├── silk/                 # React Bits Silk 移植：着色器、WebGL 渲染器、动画状态与组件（来源见第三方材料）
     │   └── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，justified-rows.ts 按容器宽度（use-element-width.ts）算出等高行拼图
     ├── site/                     # 站点页脚：首页与用户协议、隐私政策页共用

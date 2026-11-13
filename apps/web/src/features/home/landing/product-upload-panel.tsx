@@ -1,128 +1,68 @@
-import { Button, TextArea, toast } from "@heroui/react";
+import { TextArea } from "@heroui/react";
 import {
+  IconAdjustmentsHorizontal,
   IconArrowUp,
-  IconAspectRatio,
-  IconPhotoPlus,
   IconPlus,
-  IconSettings,
   IconShoppingBag,
 } from "@tabler/icons-react";
-import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router";
+import { RouteLink } from "../../../components/router-link";
+import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
+import type { CommerceTool } from "../../commerce/commerce-tools";
 import { landingMessages } from "./landing-messages";
 
-/** 首屏产品上传卡：选择本地产品图、填写场景描述，演示版不提交真实生成。 */
-export function ProductUploadPanel() {
-  const t = useMessages(landingMessages).hero;
-  const [scene, setScene] = useState("");
-  const [preview, setPreview] = useState<string | null>(null);
-  const input = useRef<HTMLInputElement>(null);
-  const textarea = useRef<HTMLTextAreaElement>(null);
+/** 展示当前电商工具与创作入口；输入框只做本地展示，不提交真实任务。 */
+export function ProductUploadPanel({ tool }: { tool: CommerceTool }) {
+  const t = useMessages(landingMessages).composer;
+  const [prompt, setPrompt] = useState("");
+  const location = useLocation();
+  const panel = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const onRemix = (event: Event) => {
-      if (!(event instanceof CustomEvent)) return;
-      const detail: { title?: unknown; description?: unknown } = event.detail;
-      if (typeof detail.title !== "string" || typeof detail.description !== "string") return;
-      setScene(t.remixPrompt(detail.title, detail.description));
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      window.setTimeout(() => textarea.current?.focus(), 650);
-    };
-    const onFocus = () => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      window.setTimeout(() => textarea.current?.focus(), 650);
-    };
-    window.addEventListener("lp:remix", onRemix);
-    window.addEventListener("lp:focus-composer", onFocus);
-    return () => {
-      window.removeEventListener("lp:remix", onRemix);
-      window.removeEventListener("lp:focus-composer", onFocus);
-    };
-  }, [t]);
+    if (location.hash === "#commerce-composer") {
+      panel.current?.scrollIntoView({ block: "nearest" });
+    }
+  }, [location]);
 
   useEffect(() => {
-    return () => {
-      if (preview) URL.revokeObjectURL(preview);
-    };
-  }, [preview]);
-
-  function openPicker() {
-    input.current?.click();
-  }
-
-  function selectFile(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setPreview(URL.createObjectURL(file));
-    event.target.value = "";
-  }
+    const showEntry = () => panel.current?.scrollIntoView({ block: "center" });
+    window.addEventListener("lp:focus-composer", showEntry);
+    return () => window.removeEventListener("lp:focus-composer", showEntry);
+  }, []);
 
   return (
-    <section aria-label={t.uploadPhoto} className="lp-uploadPanel">
-      <input
-        accept="image/png,image/jpeg,image/webp"
-        aria-label={t.uploadPhoto}
-        className="visually-hidden"
-        onChange={selectFile}
-        ref={input}
-        type="file"
-      />
-
-      <div className="lp-uploadComposer">
-        <Button
-          isIconOnly
-          aria-label={preview ? t.replacePhoto : t.uploadPhoto}
-          className="lp-uploadAdd"
-          onPress={openPicker}
-        >
-          {preview ? (
-            <>
-              <img alt="" src={preview} />
-              <span>{t.replacePhoto}</span>
-            </>
-          ) : (
-            <IconPlus aria-hidden="true" size={24} />
-          )}
-        </Button>
-
-        <TextArea
-          aria-label={t.sceneLabel}
-          className="lp-uploadText"
-          placeholder={t.scenePlaceholder}
-          ref={textarea}
-          value={scene}
-          onChange={(event) => setScene(event.target.value)}
-        />
+    <section id="commerce-composer" className="lp-uploadPanel" aria-label={t.start} ref={panel}>
+      <div className="lp-promptRow">
+        <RouteLink aria-label={t.addMedia} className="lp-workspaceAdd" to={tool.href}>
+          <UiIcon icon={IconPlus} size="action" />
+        </RouteLink>
+        <div className="lp-promptEditor">
+          <span className="lp-modeChip">{t.replica}</span>
+          <TextArea
+            aria-label={t.placeholder}
+            className="lp-promptInput"
+            placeholder={t.placeholder}
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+          />
+        </div>
       </div>
-
-      <div className="lp-uploadToolbar">
-        <div className="lp-uploadChips">
-          <Button className="lp-uploadChip" onPress={openPicker}>
-            <IconPhotoPlus aria-hidden="true" size={15} />
-            <span>{preview ? t.replacePhoto : t.uploadPhoto}</span>
-          </Button>
-          <span className="lp-uploadChip">
-            <IconShoppingBag aria-hidden="true" size={15} />
-            <span>{t.product}</span>
+      <div className="lp-promptFooter">
+        <div className="lp-promptChips">
+          <span>
+            <UiIcon icon={IconShoppingBag} size="small" />
+            {t.product}
           </span>
-          <span className="lp-uploadChip">
-            <IconAspectRatio aria-hidden="true" size={15} />
-            <span>{t.formatChip}</span>
-          </span>
-          <span className="lp-uploadChip">
-            <IconSettings aria-hidden="true" size={15} />
-            <span>{t.settings}</span>
+          <span>
+            <UiIcon icon={IconAdjustmentsHorizontal} size="small" />
+            {t.settings}
           </span>
         </div>
-        <Button
-          isIconOnly
-          aria-label={t.generateProduct}
-          className="lp-generateButton"
-          isDisabled={!preview}
-          onPress={() => toast.info(t.demoNotice)}
-        >
-          <IconArrowUp aria-hidden="true" size={18} />
-        </Button>
+        <RouteLink aria-label={t.start} className="lp-workspaceCta" to={tool.href}>
+          <UiIcon icon={IconArrowUp} size="default" />
+        </RouteLink>
       </div>
     </section>
   );

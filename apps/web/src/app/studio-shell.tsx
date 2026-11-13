@@ -1,5 +1,11 @@
 import { Button, Drawer } from "@heroui/react";
-import { IconBulb, IconFolderSparkle, IconMenu2, IconSmartHome, IconX } from "@tabler/icons-react";
+import {
+  IconFolderSparkle,
+  IconMenu2,
+  IconSmartHome,
+  IconSpaces,
+  IconX,
+} from "@tabler/icons-react";
 import { useState } from "react";
 import { Navigate, Outlet } from "react-router";
 import { RouteLink } from "../components/router-link";
@@ -12,17 +18,14 @@ import { AssetLibraryHost } from "../features/assets/asset-library-host";
 import { useOpenAssetLibrary } from "../features/assets/asset-library-store";
 import { useEnterpriseSession } from "../features/auth/auth-client";
 import { loginHref } from "../features/auth/login-navigation";
+import { commercePath, commerceToolHref, commerceTools } from "../features/commerce/commerce-tools";
 import { useImageEvents } from "../features/generation/use-image-events";
 import { inspirationLibraryPath } from "../features/home/inspiration-path";
 import { legalPaths } from "../features/legal/legal-document";
-import {
-  shareProductReference,
-  visibleWorkspaceTools,
-} from "../features/workspace/workspace-state";
 import { workspaceToolMessages } from "../features/workspace/workspace-tool-messages";
 import { toolIcons } from "../features/workspace/workspace-tool-symbol";
 import { useMessages } from "../i18n/messages";
-import { useAppLocation } from "../i18n/use-localized-navigation";
+import { useAppLocation, useAppNavigate } from "../i18n/use-localized-navigation";
 import { CommerceNavMenu } from "./commerce-nav-menu";
 import { HomeHeaderUtilities } from "./home-header-utilities";
 import { LanguageMenu } from "./language-menu";
@@ -34,12 +37,12 @@ import "../styles/brand.css";
 // 首页与用户协议、隐私政策不需要登录，其他页面未登录时先去登录。
 const publicPaths = new Set<string>([
   "/",
+  commercePath,
   inspirationLibraryPath,
   legalPaths.terms,
   legalPaths.privacy,
 ]);
 
-const homeWorkspaceTools = visibleWorkspaceTools.filter((tool) => tool.id !== "replica");
 const headerLogos = {
   home: { src: "/brand/lycobo-landing.svg", width: 90, height: 28 },
   studio: { src: "/brand/lycobo-reveal.svg", width: 120, height: 32 },
@@ -49,9 +52,8 @@ const headerLogos = {
 export function StudioShell() {
   const location = useAppLocation();
   const { pathname } = location;
-  const isHome = pathname === "/";
-  const tools = isHome ? homeWorkspaceTools : visibleWorkspaceTools;
-  const logo = headerLogos[isHome ? "home" : "studio"];
+  const landing = pathname === "/" || pathname === commercePath;
+  const logo = headerLogos[landing ? "home" : "studio"];
   const inWorkspace = isWorkspacePath(pathname);
   const session = useEnterpriseSession();
   const signedIn = !!session.data;
@@ -72,7 +74,7 @@ export function StudioShell() {
       {/* 工作区里顶部栏固定为实色、滚动时不收窄；其他页面在顶部透明、滚动后变磨砂。 */}
       <header
         className="topbar"
-        data-landing={isHome || undefined}
+        data-landing={landing || undefined}
         data-scrolled={(scrolled && !inWorkspace) || undefined}
         data-solid={inWorkspace || undefined}
       >
@@ -93,9 +95,8 @@ export function StudioShell() {
                 </Drawer.Header>
                 <Drawer.Body>
                   <DrawerNavigation
-                    pathname={pathname}
-                    tools={tools}
-                    isHome={isHome}
+                    inWorkspace={inWorkspace}
+                    landing={landing}
                     onNavigate={() => setMenuOpen(false)}
                   />
                 </Drawer.Body>
@@ -111,8 +112,8 @@ export function StudioShell() {
         <RouteLink to="/" className="brand">
           <img className="lycobo-logo" alt="Lycobo" {...logo} />
         </RouteLink>
-        <HeaderNavigation isHome={isHome} inWorkspace={inWorkspace} tools={tools} />
-        <HeaderActions isHome={isHome} account={session.data} />
+        <HeaderNavigation landing={landing} />
+        <HeaderActions landing={landing} inWorkspace={inWorkspace} account={session.data} />
       </header>
       <main className="main-content">
         {routeNeedsLogin && session.isPending && <PageLoading />}
@@ -125,51 +126,58 @@ export function StudioShell() {
   );
 }
 
-function HeaderNavigation({
-  isHome,
-  inWorkspace,
-  tools,
-}: {
-  isHome: boolean;
-  inWorkspace: boolean;
-  tools: typeof visibleWorkspaceTools;
-}) {
+function HeaderNavigation({ landing }: { landing: boolean }) {
   const t = useMessages(shellMessages);
   return (
     <nav className="topbar-nav" aria-label={t.mainNavigation}>
       <RouteLink nav to="/" end className="nav-row">
         {t.home}
       </RouteLink>
-      <CommerceNavMenu active={inWorkspace} tools={tools} includeInspiration={isHome} />
-      {!isHome && (
-        <RouteLink nav to={inspirationLibraryPath} end className="nav-row">
-          {t.inspiration}
-        </RouteLink>
-      )}
+      <CommerceNavMenu landing={landing} />
     </nav>
   );
 }
 
 function HeaderActions({
-  isHome,
+  landing,
+  inWorkspace,
   account,
 }: {
-  isHome: boolean;
+  landing: boolean;
+  inWorkspace: boolean;
   account: ReturnType<typeof useEnterpriseSession>["data"];
 }) {
-  const language = <LanguageMenu account={account} homeGlass={isHome} />;
+  const { pathname, search, hash } = useAppLocation();
+  const navigate = useAppNavigate();
+  const t = useMessages(shellMessages);
+  const controls = (
+    <>
+      <Button
+        aria-label={t.workspace}
+        className="header-workspace"
+        aria-current={inWorkspace ? "page" : false}
+        onPress={() => void navigate(inWorkspace ? `${pathname}${search}${hash}` : "/workspace")}
+      >
+        <UiIcon icon={IconSpaces} size="navigation" />
+        <span>{t.workspace}</span>
+      </Button>
+      <LanguageMenu account={account} homeGlass={landing} />
+    </>
+  );
   const messages = (
     <div className="header-news" data-signed-in={!!account}>
-      <AccountMessages signedIn={!!account} showTrigger={isHome || !!account} />
+      <AccountMessages signedIn={!!account} showTrigger={landing || !!account} />
     </div>
   );
   return (
     <div className="header-actions">
-      {!isHome && messages}
-      {isHome ? (
-        <HomeHeaderUtilities messages={messages}>{language}</HomeHeaderUtilities>
+      {landing ? (
+        <HomeHeaderUtilities messages={messages}>{controls}</HomeHeaderUtilities>
       ) : (
-        language
+        <>
+          {messages}
+          {controls}
+        </>
       )}
       {account ? (
         <>
@@ -188,21 +196,17 @@ function RealtimeEvents() {
   return null;
 }
 
-/**
- * 手机导航抽屉：首页、电商工具、灵感与素材库；切换工具时与工具坞一样只向空图片槽带图。
- * 素材库是弹窗，点它先收起抽屉再打开，不跳转页面。
- */
+/** 手机抽屉提供与桌面同样的工作区和专区工具入口。 */
 function DrawerNavigation({
-  pathname,
+  inWorkspace,
   onNavigate,
-  tools,
-  isHome,
+  landing,
 }: {
-  pathname: string;
+  inWorkspace: boolean;
   onNavigate: () => void;
-  tools: typeof visibleWorkspaceTools;
-  isHome: boolean;
+  landing: boolean;
 }) {
+  const { pathname, search, hash } = useAppLocation();
   const t = useMessages(shellMessages);
   const toolText = useMessages(workspaceToolMessages);
   const openLibrary = useOpenAssetLibrary();
@@ -212,27 +216,31 @@ function DrawerNavigation({
         <UiIcon icon={IconSmartHome} size="default" />
         <span className="nav-label">{t.home}</span>
       </RouteLink>
+      <RouteLink
+        nav
+        end
+        to={inWorkspace ? `${pathname}${search}${hash}` : "/workspace"}
+        className="nav-row"
+        onClick={onNavigate}
+      >
+        <UiIcon icon={IconSpaces} size="default" />
+        <span className="nav-label">{t.workspace}</span>
+      </RouteLink>
       <p className="nav-group-label">{t.commerce}</p>
-      {tools.map((tool) => (
+      {commerceTools.map((tool) => (
         <RouteLink
           key={tool.id}
-          nav
-          to={tool.path}
+          to={commerceToolHref(tool.id)}
           className="nav-row"
-          onClick={() => {
-            shareProductReference(pathname, tool.path);
-            onNavigate();
-          }}
+          onClick={onNavigate}
         >
           <UiIcon icon={toolIcons[tool.id]} size="default" />
-          <span className="nav-label">{toolText.tools[tool.id].name}</span>
+          <span className="nav-label">
+            {tool.id === "replica" ? t.replica : toolText.tools[tool.id].name}
+          </span>
         </RouteLink>
       ))}
-      <RouteLink nav to={inspirationLibraryPath} end className="nav-row" onClick={onNavigate}>
-        <UiIcon icon={IconBulb} size="default" />
-        <span className="nav-label">{t.inspiration}</span>
-      </RouteLink>
-      {isHome ? (
+      {landing ? (
         <HomeHeaderUtilities onNavigate={onNavigate} />
       ) : (
         <Button
@@ -252,5 +260,7 @@ function DrawerNavigation({
 }
 
 function isWorkspacePath(pathname: string) {
-  return pathname.startsWith("/commerce") || pathname === "/workspace" || pathname === "/video";
+  return (
+    pathname.startsWith(`${commercePath}/`) || pathname === "/workspace" || pathname === "/video"
+  );
 }

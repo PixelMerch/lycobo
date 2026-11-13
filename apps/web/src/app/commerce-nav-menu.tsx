@@ -1,11 +1,12 @@
 import { Dropdown } from "@heroui/react";
-import { IconBulb, IconChevronDown } from "@tabler/icons-react";
+import { IconChevronDown } from "@tabler/icons-react";
 import { UiIcon } from "../components/ui-icon";
-import { inspirationLibraryPath } from "../features/home/inspiration-path";
 import {
-  shareProductReference,
-  visibleWorkspaceTools,
-} from "../features/workspace/workspace-state";
+  commercePath,
+  commerceToolFromSearch,
+  commerceToolHref,
+  commerceTools,
+} from "../features/commerce/commerce-tools";
 import { workspaceToolMessages } from "../features/workspace/workspace-tool-messages";
 import { toolIcons } from "../features/workspace/workspace-tool-symbol";
 import { useMessages } from "../i18n/messages";
@@ -13,36 +14,22 @@ import { useAppLocation, useAppNavigate } from "../i18n/use-localized-navigation
 import { useHoverMenu } from "../lib/use-hover-menu";
 import { shellMessages } from "./shell-messages";
 
-/**
- * 顶部栏“电商”入口：鼠标悬停或点击/按键展开创作工具，选中后沿用工具坞只向空图片槽带图的规则。
- * 悬停展开不抢占焦点；移出入口或菜单后短暂延时收起。
- */
-export function CommerceNavMenu({
-  active,
-  tools = visibleWorkspaceTools,
-  includeInspiration = false,
-}: {
-  active: boolean;
-  tools?: typeof visibleWorkspaceTools;
-  includeInspiration?: boolean;
-}) {
-  const { pathname } = useAppLocation();
+/** 顶部电商菜单只列出可用的电商工具。 */
+export function CommerceNavMenu({ landing }: { landing: boolean }) {
+  const { pathname, search } = useAppLocation();
   const navigate = useAppNavigate();
   const menu = useHoverMenu();
   const t = useMessages(shellMessages);
   const toolText = useMessages(workspaceToolMessages);
-  function openTool(key: string | number) {
-    if (includeInspiration && key === "inspiration") {
-      menu.close();
-      void navigate(inspirationLibraryPath);
-      return;
-    }
-    const tool = tools.find((item) => item.id === key);
-    if (!tool) return;
+  const active = pathname === commercePath;
+  const selected = commerceToolFromSearch(search).id;
+
+  function openEntry(key: string | number) {
     menu.close();
-    shareProductReference(pathname, tool.path);
-    void navigate(tool.path);
+    const tool = commerceTools.find(({ id }) => id === key);
+    if (tool) void navigate(commerceToolHref(tool.id));
   }
+
   return (
     <Dropdown isOpen={menu.isOpen} onOpenChange={menu.onOpenChange}>
       <Dropdown.Trigger
@@ -58,7 +45,7 @@ export function CommerceNavMenu({
       </Dropdown.Trigger>
       <Dropdown.Popover
         ref={menu.popoverRef}
-        className={`topbar-menu header-menu${includeInspiration ? " home-header-glass" : ""}`}
+        className={`topbar-menu header-menu${landing ? " home-header-glass" : ""}`}
         placement="bottom start"
         offset={4}
         isNonModal
@@ -67,27 +54,21 @@ export function CommerceNavMenu({
       >
         <Dropdown.Menu
           aria-label={t.commerceTools}
-          onAction={openTool}
+          onAction={openEntry}
           {...(menu.openedByHover ? { autoFocus: false } : {})}
         >
-          {tools.map((tool) => (
+          {commerceTools.map((tool) => (
             <Dropdown.Item
               key={tool.id}
               id={tool.id}
-              textValue={toolText.tools[tool.id].name}
+              textValue={tool.id === "replica" ? t.replica : toolText.tools[tool.id].name}
               className="topbar-menu-item"
-              data-current={pathname === tool.path || undefined}
+              data-current={(active && selected === tool.id) || undefined}
             >
               <UiIcon icon={toolIcons[tool.id]} size="navigation" />
-              <span>{toolText.tools[tool.id].name}</span>
+              <span>{tool.id === "replica" ? t.replica : toolText.tools[tool.id].name}</span>
             </Dropdown.Item>
           ))}
-          {includeInspiration && (
-            <Dropdown.Item id="inspiration" textValue={t.inspiration} className="topbar-menu-item">
-              <UiIcon icon={IconBulb} size="navigation" />
-              <span>{t.inspiration}</span>
-            </Dropdown.Item>
-          )}
         </Dropdown.Menu>
       </Dropdown.Popover>
     </Dropdown>

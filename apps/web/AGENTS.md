@@ -38,12 +38,10 @@ navigation; never prefix API, WebSocket, image or font URLs. See docs/localized-
   The hero background is the React Bits Silk port in features/home/silk (no runtime dependency): keep it
   decorative, paused offscreen or in background tabs, static under reduced motion, and keep its
   third-party notice and pinned commit current when it changes.
-- Follow PRD.md for navigation: the top bar shows Home, 电商 (a dropdown with the four tools:
-  main image, textile variation, image-set plan, video) and 灵感, which opens /inspiration (user, 2026-11-11);
-  the home wall's “查看更多灵感” loads more cards in place instead of navigating. The asset library is not in the top bar
-  (user, 2026-11-10): the home shortcuts, phone drawer, account menu, footer and workspace rail open
-  it as a full-screen dialog without changing the page; /assets stays for existing links. Inside the
-  workspace the tool dock still switches tools (a left rail on desktop). TK has no current navigation entry.
+- Follow PRD.md for navigation: Home is the brand entry, E-commerce opens the public hub
+  and its four tool previews, and Workspace opens the last-used commerce tool.
+  On mobile, Workspace is in the navigation drawer. The asset library uses the existing
+  full-screen dialog; /assets stays for existing links. The workspace dock switches real tools.
 - DESIGN.md is the sole visual specification. The user approved and froze the current UI on
   2026-10-22. Documentation, cleanup and component refactors must preserve its appearance;
   a new visual change requires a new explicit design request. Do not reinterpret skill recommendations
