@@ -5,7 +5,7 @@ import {
   IconPlus,
   IconShoppingBag,
 } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { type RefObject, useEffect } from "react";
 import { useLocation } from "react-router";
 import { RouteLink } from "../../../components/router-link";
 import { UiIcon } from "../../../components/ui-icon";
@@ -14,26 +14,24 @@ import type { CommerceTool } from "../../commerce/commerce-tools";
 import { landingMessages } from "./landing-messages";
 
 /** 展示当前电商工具与创作入口；输入框只做本地展示，不提交真实任务。 */
-export function ProductUploadPanel({ tool }: { tool: CommerceTool }) {
+export function ProductUploadPanel({
+  panelRef,
+  tool,
+}: {
+  panelRef: RefObject<HTMLElement | null>;
+  tool: CommerceTool;
+}) {
   const t = useMessages(landingMessages).composer;
-  const [prompt, setPrompt] = useState("");
   const location = useLocation();
-  const panel = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (location.hash === "#commerce-composer") {
-      panel.current?.scrollIntoView({ block: "nearest" });
+      panelRef.current?.scrollIntoView({ block: "nearest" });
     }
-  }, [location]);
-
-  useEffect(() => {
-    const showEntry = () => panel.current?.scrollIntoView({ block: "center" });
-    window.addEventListener("lp:focus-composer", showEntry);
-    return () => window.removeEventListener("lp:focus-composer", showEntry);
-  }, []);
+  }, [location, panelRef]);
 
   return (
-    <section id="commerce-composer" className="lp-uploadPanel" aria-label={t.start} ref={panel}>
+    <section id="commerce-composer" className="lp-uploadPanel" aria-label={t.start} ref={panelRef}>
       <div className="lp-promptRow">
         <RouteLink aria-label={t.addMedia} className="lp-workspaceAdd" to={tool.href}>
           <UiIcon icon={IconPlus} size="action" />
@@ -44,8 +42,6 @@ export function ProductUploadPanel({ tool }: { tool: CommerceTool }) {
             aria-label={t.placeholder}
             className="lp-promptInput"
             placeholder={t.placeholder}
-            value={prompt}
-            onChange={(event) => setPrompt(event.target.value)}
           />
         </div>
       </div>

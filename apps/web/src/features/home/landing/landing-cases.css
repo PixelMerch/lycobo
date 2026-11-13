@@ -21,10 +21,6 @@
   will-change: transform;
 }
 
-.lp-casesTrack[data-paused="true"] {
-  animation-play-state: paused;
-}
-
 .lp-casesSet {
   display: flex;
   align-items: stretch;

@@ -106,7 +106,9 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  flex: none;
   gap: 8px;
+  max-width: 100%;
 }
 
 .lp-promptChips span {

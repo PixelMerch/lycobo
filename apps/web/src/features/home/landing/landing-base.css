@@ -1,11 +1,5 @@
 /* 首页复刻页基础；内容区主题色沿用复刻页橙红。 */
 
-@property --campaign-guide-light-angle {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
-
 /* 落地页独占复刻内容区主题。 */
 .landing-page {
   --app-font-family:
@@ -59,25 +53,10 @@
   z-index: 1;
 }
 
-.cn-button {
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  padding: 0;
-}
-
 .cn-badge {
   display: inline-flex;
   align-items: center;
   width: fit-content;
-}
-
-.cn-gradient-border {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
 }
 
 /* 首页内容区按钮使用复刻页橙红。 */

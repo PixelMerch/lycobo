@@ -1,9 +1,10 @@
 import { motion } from "motion/react";
-import { useState } from "react";
+import { type RefObject, useState } from "react";
 import { useMessages } from "../../../i18n/messages";
 import type { CommerceTool } from "../../commerce/commerce-tools";
 import { GradientWaves } from "../gradient-waves/gradient-waves";
-import { type HeroExampleId, HeroPlatforms, HeroShowcase } from "./hero-showcase";
+import { HeroPlatforms, HeroShowcase } from "./hero-showcase";
+import type { HeroExampleId } from "./hero-showcase-data";
 import { landingMessages } from "./landing-messages";
 import { ProductUploadPanel } from "./product-upload-panel";
 
@@ -17,7 +18,13 @@ function HeroBackdrop() {
 }
 
 /** 电商专区首屏展示创作入口与平台商品图前后对比。 */
-export function Hero({ tool }: { tool: CommerceTool }) {
+export function Hero({
+  composerRef,
+  tool,
+}: {
+  composerRef: RefObject<HTMLElement | null>;
+  tool: CommerceTool;
+}) {
   const t = useMessages(landingMessages).hero;
   const [example, setExample] = useState<HeroExampleId>("bedding");
 
@@ -43,7 +50,7 @@ export function Hero({ tool }: { tool: CommerceTool }) {
           </motion.p>
 
           <HeroPlatforms active={example} onSelect={setExample} />
-          <ProductUploadPanel tool={tool} />
+          <ProductUploadPanel panelRef={composerRef} tool={tool} />
         </div>
 
         <motion.div

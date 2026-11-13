@@ -147,14 +147,6 @@
 /* Final CTA                                                          */
 /* ------------------------------------------------------------------ */
 
-.lp-cta .lp-ctaArtwork img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .lp-startButton.button {
   height: 49.4px;
   margin-top: 28px;
@@ -298,38 +290,6 @@
 }
 .lp-collage:hover .lp-impactPoster {
   transform: translate(3px, 4px) rotate(1deg);
-}
-.lp-productField {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.45);
-}
-.lp-productField .lp-productInput {
-  flex: 1;
-  min-width: 0;
-}
-.lp-productField .input,
-.lp-productField .text-field {
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-}
-.lp-productField input {
-  height: 32px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #fff;
-  font-size: 12px;
-  box-shadow: none;
 }
 
 /* HeroUI 按钮自带的按压缩放会改变参考页的悬停阻尼，这里保持原生卡片的过渡。 */

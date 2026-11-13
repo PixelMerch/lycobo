@@ -39,10 +39,6 @@
     zoom: 1;
   }
 
-  .lp-formatsTrack {
-    padding-left: 0;
-  }
-
   .lp-footerGrid {
     grid-template-columns: 1fr;
     padding: 48px 0;
@@ -54,29 +50,8 @@
 }
 
 @media (max-width: 639px) {
-  .lp-composerHost[data-expanded="true"] {
-    width: 100%;
-  }
-
-  .lp-composerHost[data-expanded="true"] .lp-addReference button {
-    width: 46px;
-    height: 46px;
-  }
-
-  .lp-composerHost[data-expanded="true"] .lp-addReference {
-    width: 54px;
-  }
-
-  .lp-promptField {
-    height: 150px;
-  }
-
   .lp-heroCopy h1 {
     font-size: 30px;
-  }
-
-  .lp-promptField textarea {
-    font-size: 13px;
   }
 
   .lp-workflow {

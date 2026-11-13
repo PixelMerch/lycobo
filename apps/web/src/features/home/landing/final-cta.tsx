@@ -1,8 +1,8 @@
 import { Button } from "@heroui/react";
 import { motion } from "motion/react";
 
-/** 复刻页结尾行动区：按钮只把焦点带回首屏输入框。 */
-export function FinalCta() {
+/** 电商专区结尾入口将创作展示卡滚动到视口中央。 */
+export function FinalCta({ onStart }: { onStart: () => void }) {
   return (
     <div>
       <section aria-labelledby="campaign-cta-title" className="lp-finalCta" id="start">
@@ -19,10 +19,7 @@ export function FinalCta() {
             viewport={{ once: true }}
             whileInView={{ opacity: 1, y: 0 }}
           >
-            <Button
-              className="lp-startButton"
-              onPress={() => window.dispatchEvent(new Event("lp:focus-composer"))}
-            >
+            <Button className="lp-startButton" onPress={onStart}>
               Start Creating
             </Button>
           </motion.div>

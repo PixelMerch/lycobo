@@ -7,8 +7,6 @@ import { examples, type HeroExampleId, nextExample } from "./hero-showcase-data"
 import { showcaseMessages } from "./hero-showcase-messages";
 import { useHeroPlayback } from "./use-hero-playback";
 
-export type { HeroExampleId } from "./hero-showcase-data";
-
 /** 在标题上方用移动取景框标示当前平台。 */
 export function HeroPlatforms({
   active,
