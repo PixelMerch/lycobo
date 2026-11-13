@@ -1,0 +1,158 @@
+/* 首页完全按参考站采集页复刻：黑底、橙红主题和源页控件。 */
+.landing-page,
+.lp-page {
+  background: #000;
+}
+
+/* 首屏背景使用 React Bits GradientWaves；容器保留绿黑渐变作为 WebGL 后备。 */
+.lp-heroGradient {
+  overflow: hidden;
+  background: #030604;
+  -webkit-mask-image: linear-gradient(#000 68%, transparent 100%);
+  mask-image: linear-gradient(#000 68%, transparent 100%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-heroGradient > .gradient-waves {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+/* 左侧和底部压暗，保证文案、创作框在浅色波峰前仍有足够对比。 */
+.lp-heroGradient::after {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(3, 7, 3, 0.76) 0%, rgba(3, 7, 3, 0.34) 38%, transparent 68%),
+    linear-gradient(
+      180deg,
+      rgba(3, 7, 3, 0.18),
+      transparent 32%,
+      transparent 72%,
+      rgba(3, 7, 3, 0.36)
+    );
+  content: "";
+  pointer-events: none;
+}
+
+/* 模板轮播箭头保持源页 28px 正圆，避免 HeroUI 最小宽度撑成胶囊。 */
+.lp-galleryControls .button {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+/* 源页的视频重制标签：右上角悬浮 16px 圆形取消按钮。 */
+.lp-techniqueChip {
+  position: relative;
+  height: 28px;
+  gap: 0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: rgba(135, 135, 168, 0.15);
+  color: #fff;
+}
+.lp-techniqueChip button {
+  position: absolute;
+  z-index: 2;
+  top: -8px;
+  right: -8px;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  backdrop-filter: blur(2px);
+}
+.lp-techniqueChip button svg {
+  display: block;
+  width: 10px;
+  height: 10px;
+  margin: 0;
+}
+
+/* 描述输入框沿用源页的无主题色焦点，只保留光标。 */
+.lp-promptTextarea:is(:focus, :focus-visible) {
+  border: 0;
+  outline: none;
+  box-shadow: none;
+}
+
+/* 标签的取消按钮浮在输入区上沿，父级不能裁切它；需覆盖展开态的编辑器裁切规则。 */
+.lp-composerHost[data-expanded="true"] .lp-promptEditor > .lp-promptField {
+  overflow: visible;
+}
+
+/* 发送按钮保持源页 32px 正圆，覆盖 HeroUI 图标按钮的 36px 最小宽度。 */
+.lp-composerActions button {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  background: linear-gradient(120deg, #a8ff00, #54e6a5);
+  color: #142000;
+}
+.lp-composerActions button > svg {
+  color: #142000;
+}
+.lp-composerActions button:not(:disabled):hover {
+  background: linear-gradient(120deg, #a8ff00, #54e6a5);
+  filter: brightness(1.06);
+}
+.lp-composerActions button:disabled {
+  background: linear-gradient(120deg, #a8ff00, #54e6a5);
+  color: #142000;
+}
+
+/* 创作框使用品牌荧光绿：深色玻璃底、荧光绿引导光和薄荷内发光。 */
+.lp-composer {
+  background: rgba(20, 25, 17, 0.5);
+}
+.lp-composerHost {
+  --product-stack-back: #1d2a12;
+  --product-stack-middle: #2d401b;
+  --product-stack-hover-border: rgba(168, 255, 0, 0.6);
+  --product-stack-hover-glow: rgba(168, 255, 0, 0.4);
+}
+.lp-composerHost[data-guide-active="true"] .lp-composer {
+  border-color: rgba(168, 255, 0, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(168, 255, 0, 0.14),
+    0 18px 56px rgba(0, 0, 0, 0.22);
+}
+.lp-composerHost[data-guide-active="true"] .lp-composer:after {
+  background: conic-gradient(
+    from var(--campaign-guide-light-angle),
+    transparent 0deg 35deg,
+    #a8ff002e 70deg,
+    #54e6a5 100deg,
+    #d9ffb3b3 120deg,
+    transparent 165deg 215deg,
+    #a8ff002e 250deg,
+    #54e6a5 280deg,
+    #d9ffb3b3 300deg,
+    transparent 345deg
+  );
+}
+
+/* 首页不显示滚动条，滚轮、键盘、触控板与触屏滚动保持可用。 */
+html:has(.landing-page) {
+  scrollbar-width: none;
+}
+html:has(.landing-page)::-webkit-scrollbar {
+  display: none;
+}
