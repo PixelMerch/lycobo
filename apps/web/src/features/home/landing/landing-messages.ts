@@ -1,9 +1,11 @@
 import { defineMessages } from "../../../i18n/messages";
 
-/** 首页参考站复刻的输入框与页脚文案；其余展示文案沿用复刻页的英文示例。 */
+/** 首页首屏、输入框与页脚的中英文文案。 */
 export const landingMessages = defineMessages({
   "zh-CN": {
     hero: {
+      title: "一张普通商品图，做成精美卖点图",
+      description: "用 LYCOBO 做出可上架的主图、场景图和细节图，让顾客一眼看懂商品卖点。",
       remixPrompt: (title: string, description: string) =>
         `复刻「${title}」广告风格：${description}`,
       addMedia: "添加媒体",
@@ -46,6 +48,9 @@ export const landingMessages = defineMessages({
   },
   en: {
     hero: {
+      title: "From a plain photo to a standout product image",
+      description:
+        "Create listing-ready main images, lifestyle shots, and close-ups with LYCOBO. Show shoppers what makes your product worth buying.",
       remixPrompt: (title: string, description: string) =>
         `Recreate the "${title}" ad style: ${description}`,
       addMedia: "Add media",

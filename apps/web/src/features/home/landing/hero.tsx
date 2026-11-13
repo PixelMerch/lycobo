@@ -78,15 +78,14 @@ export function Hero() {
             initial={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.12 }}
           >
-            MAKE ADS THAT CONVERT
+            {t.title}
           </motion.h1>
           <motion.p
             animate={{ opacity: 1, y: 0 }}
             initial={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
           >
-            Research what works, rebuild the winning logic, and generate every asset your campaign
-            needs.
+            {t.description}
           </motion.p>
 
           <motion.div
