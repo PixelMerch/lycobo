@@ -64,14 +64,6 @@ export function Hero() {
       <HeroBackdrop />
       <div className="lp-heroInner">
         <div className="lp-heroCopy">
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            className="lp-heroGlyph"
-            initial={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
-          >
-            <img alt="" src="/landing/glyph.svg" />
-          </motion.div>
           <motion.h1
             animate={{ opacity: 1, y: 0 }}
             id="campaign-hero-title"
