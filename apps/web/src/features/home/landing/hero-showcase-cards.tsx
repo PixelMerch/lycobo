@@ -1,6 +1,4 @@
-import { Button, Popover } from "@heroui/react";
 import {
-  IconArrowUp,
   IconCircleCheckFilled,
   IconHeart,
   IconMessageCircle,
@@ -12,80 +10,7 @@ import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { type Example, exampleImage } from "./hero-showcase-data";
 import { showcaseMessages } from "./hero-showcase-messages";
-
-function SalesPreview({
-  example,
-  onInspect,
-}: {
-  example: Example;
-  onInspect: (open: boolean) => void;
-}) {
-  const t = useMessages(showcaseMessages);
-  const change = Math.round(((example.orders[1] - example.orders[0]) / example.orders[0]) * 100);
-  return (
-    <div className="lp-metricStack">
-      <Popover onOpenChange={onInspect}>
-        <Button aria-label={t.viewSales} className="lp-storeSales lp-roasCard" variant="tertiary">
-          <span className="lp-roasTop">
-            <UiIcon icon={IconArrowUp} size="small" /> {t.platformUi.roas}
-          </span>
-          <strong>4.2X</strong>
-          <small>{t.platformUi.roasCaption}</small>
-          <em>
-            {t.demoData} · +{change}% {t.orders}
-          </em>
-        </Button>
-        <Popover.Content className="lp-storeSalesPopover" placement="bottom end">
-          <Popover.Dialog aria-label={t.viewSales}>
-            <table>
-              <caption>{t.period}</caption>
-              <thead>
-                <tr>
-                  <th scope="col">{t.metric}</th>
-                  <th scope="col">{t.before}</th>
-                  <th scope="col">{t.after}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <th scope="row">{t.platformUi.roas}</th>
-                  <td>3.6X</td>
-                  <td>4.2X</td>
-                </tr>
-                <tr>
-                  <th scope="row">{t.visits}</th>
-                  <td>{example.visits[0]}</td>
-                  <td>{example.visits[1]}</td>
-                </tr>
-                <tr>
-                  <th scope="row">{t.orders}</th>
-                  <td>{example.orders[0]}</td>
-                  <td>{example.orders[1]}</td>
-                </tr>
-                <tr>
-                  <th scope="row">{t.platformUi.conversion}</th>
-                  <td>79%</td>
-                  <td>86%</td>
-                </tr>
-                <tr>
-                  <th scope="row">{t.platformUi.rating}</th>
-                  <td>4.6</td>
-                  <td>4.9</td>
-                </tr>
-              </tbody>
-            </table>
-          </Popover.Dialog>
-        </Popover.Content>
-      </Popover>
-      <span className="lp-metricLivePill">
-        <i>
-          <UiIcon icon={IconArrowUp} size="small" />
-        </i>
-        {t.platformUi.liveWatching}
-      </span>
-    </div>
-  );
-}
+import { ShowcaseMetrics } from "./hero-showcase-metrics";
 
 /** 平台预览卡：用少量平台 UI 让用户看清图片会发布到哪里。 */
 function PlatformPreview({ example }: { example: Example }) {
@@ -108,7 +33,7 @@ function PlatformPreview({ example }: { example: Example }) {
             <div className="lp-previewRail">
               <span>
                 <UiIcon icon={IconHeart} size="small" />
-                <small>18.3k</small>
+                <small>2.4k</small>
               </span>
               <span>
                 <UiIcon icon={IconMessageCircle} size="small" />
@@ -126,7 +51,6 @@ function PlatformPreview({ example }: { example: Example }) {
             </div>
           </div>
         )}
-        <span className="lp-previewPlatform">{example.platform}</span>
       </div>
       <div className="lp-previewMeta">
         {example.id === "bedding" && <span>{copy.preview}</span>}
@@ -173,10 +97,12 @@ function ProductPreview({
   example,
   onInspect,
   onImageSettled,
+  ready,
 }: {
   example: Example;
   onInspect: (open: boolean) => void;
   onImageSettled: () => void;
+  ready: boolean;
 }) {
   const t = useMessages(showcaseMessages);
   const copy = t.examples[example.id];
@@ -203,6 +129,7 @@ function ProductPreview({
         />
         <span aria-hidden="true" className="lp-storeSweep" />
         <span className="lp-storePlatformBadge" data-platform={example.id}>
+          <img alt="" className="lp-storeBadgeLogo" src={example.logo} width="14" height="14" />
           {example.platform}
         </span>
         <figcaption>
@@ -211,7 +138,7 @@ function ProductPreview({
         </figcaption>
       </figure>
       <PlatformPreview example={example} />
-      <SalesPreview example={example} onInspect={onInspect} />
+      <ShowcaseMetrics example={example} onInspect={onInspect} ready={ready} />
     </>
   );
 }
@@ -225,11 +152,13 @@ export function ShowcaseSlide({
   onInspect: (open: boolean) => void;
 }) {
   const [settledImages, setSettledImages] = useState(0);
+  const ready = settledImages >= 2;
   return (
-    <div className="lp-storeSlide" data-platform={example.id} data-ready={settledImages >= 2}>
+    <div className="lp-storeSlide" data-platform={example.id} data-ready={ready}>
       <ProductPreview
         example={example}
         onInspect={onInspect}
+        ready={ready}
         onImageSettled={() => setSettledImages((count) => count + 1)}
       />
     </div>

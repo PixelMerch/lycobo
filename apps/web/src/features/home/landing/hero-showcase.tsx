@@ -1,8 +1,6 @@
 import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { IconBrandAmazon, IconBrandTiktok } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useId, useState } from "react";
-import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { ShowcaseSlide } from "./hero-showcase-cards";
 import { examples, type HeroExampleId, nextExample } from "./hero-showcase-data";
@@ -10,28 +8,6 @@ import { showcaseMessages } from "./hero-showcase-messages";
 import { useHeroPlayback } from "./use-hero-playback";
 
 export type { HeroExampleId } from "./hero-showcase-data";
-
-/** 平台彩色标记：用品牌色和图标代替纯文字，提高扫读和识别速度。 */
-function PlatformMark({ id }: { id: HeroExampleId }) {
-  if (id === "bedding") {
-    return <UiIcon className="lp-platformLogo" icon={IconBrandTiktok} size="navigation" />;
-  }
-  if (id === "fashion") {
-    return <UiIcon className="lp-platformLogo" icon={IconBrandAmazon} size="navigation" />;
-  }
-  if (id === "serum") {
-    return (
-      <span aria-hidden="true" className="lp-platformLogo lp-platformLogo--shopify">
-        S
-      </span>
-    );
-  }
-  return (
-    <span aria-hidden="true" className="lp-platformLogo lp-platformLogo--temu">
-      T
-    </span>
-  );
-}
 
 /** 在标题上方用移动取景框标示当前平台。 */
 export function HeroPlatforms({
@@ -60,7 +36,7 @@ export function HeroPlatforms({
           if (example) onSelect(example.id);
         }}
       >
-        {examples.map(({ id, platform }) => (
+        {examples.map(({ id, platform, logo }) => (
           <ToggleButton
             className="lp-platform"
             data-platform={id}
@@ -81,7 +57,7 @@ export function HeroPlatforms({
                 <i />
               </motion.span>
             )}
-            <PlatformMark id={id} />
+            <img alt="" className="lp-platformLogo" src={logo} width="20" height="20" />
             <span className="lp-platformName">{platform}</span>
           </ToggleButton>
         ))}

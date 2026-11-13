@@ -185,28 +185,6 @@
   line-height: 1.2;
 }
 
-.lp-previewPlatform {
-  position: absolute;
-  z-index: 1;
-  top: 6px;
-  left: 6px;
-  padding: 3px 6px;
-  border-radius: 6px;
-  background: #fff;
-  color: #161616;
-  font-size: 8px;
-  font-weight: 700;
-}
-
-.lp-storeOutput[data-platform="bedding"] .lp-previewPlatform {
-  display: none;
-}
-
-.lp-storeOutput[data-platform="blender"] .lp-previewPlatform {
-  background: #fb7701;
-  color: #fff;
-}
-
 .lp-previewMeta {
   display: grid;
   gap: 3px;
@@ -269,6 +247,9 @@
 }
 
 .lp-storePlatformBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   position: absolute;
   z-index: 2;
   top: 14px;
@@ -280,6 +261,10 @@
   line-height: 1.2;
   letter-spacing: 0.01em;
   backdrop-filter: blur(10px);
+}
+
+.lp-storeBadgeLogo {
+  object-fit: contain;
 }
 
 .lp-storePlatformBadge[data-platform="bedding"] {
@@ -319,11 +304,6 @@
   width: 28%;
 }
 
-.lp-storeOutput[data-platform="serum"] .lp-previewPlatform {
-  background: #95bf47;
-  color: #fff;
-}
-
 .lp-storeOutput[data-platform="serum"] .lp-previewMeta {
   color: #1a1a1a;
   background: #f3f2ee;
@@ -343,6 +323,6 @@
 }
 
 .lp-storePlatformBadge[data-platform="serum"] {
-  background: #95bf47;
+  background: #161913e6;
   color: #fff;
 }

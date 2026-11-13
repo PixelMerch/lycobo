@@ -49,57 +49,10 @@
 }
 
 .lp-platformLogo {
-  display: inline-grid;
-  fill: currentColor;
-  place-items: center;
   flex: none;
   width: 20px;
   height: 20px;
-}
-
-.lp-platformLogo--temu {
-  border-radius: 6px;
-  background: #fb7701;
-  color: #fff;
-  font-family: var(--app-font-family);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.lp-platformLogo--shopify {
-  border-radius: 6px;
-  background: #95bf47;
-  color: #fff;
-  font-family: var(--app-font-family);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.lp-platforms .lp-platform[data-platform="bedding"] .lp-platformLogo {
-  color: #fff;
-  filter: drop-shadow(1px 0 4px #25f4ee80) drop-shadow(-1px 0 4px #fe2c5580);
-}
-
-.lp-platforms .lp-platform[data-platform="fashion"] .lp-platformLogo {
-  color: #ff9900;
-}
-
-.lp-platforms .lp-platform[data-platform="blender"] .lp-platformLogo {
-  color: #fb7701;
-}
-
-.lp-platforms .lp-platform[data-platform="serum"] .lp-platformLogo {
-  color: #95bf47;
-}
-
-.lp-platforms .lp-platform[data-platform="blender"] .lp-platformLogo--temu {
-  color: #fff;
-}
-
-.lp-platforms .lp-platform[data-platform="bedding"] .lp-platformLogo path {
-  fill: currentColor;
+  object-fit: contain;
 }
 
 .lp-platforms .lp-platform[data-selected] {
@@ -108,8 +61,8 @@
 
 /* True Focus：未选中平台虚化，选中平台清晰并出现四角取景框。 */
 .lp-platforms .lp-platform:not([data-selected], :hover, :focus-visible) {
-  opacity: 0.52;
-  filter: blur(1.6px);
+  opacity: 0.7;
+  filter: blur(1px);
 }
 
 .lp-platforms .lp-platform:is(:hover, :focus-visible) {
@@ -120,7 +73,7 @@
 .lp-platformFocus {
   position: absolute;
   z-index: 0;
-  inset: -7px -9px;
+  inset: -3px -8px;
   pointer-events: none;
 }
 
@@ -128,7 +81,7 @@
   position: absolute;
   width: 8px;
   height: 8px;
-  border-color: #a8ff00;
+  border-color: #fff;
   border-style: solid;
 }
 
@@ -185,7 +138,7 @@
   box-shadow: 0 24px 52px #0006;
 }
 
-.lp-storePhoto img {
+.lp-storePhoto > img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -194,7 +147,7 @@
 }
 
 .lp-storeSlide[data-ready="true"] .lp-storeBefore {
-  animation: lp-store-reveal 1.45s cubic-bezier(0.65, 0, 0.35, 1) 0.7s both;
+  animation: lp-store-reveal 1.05s cubic-bezier(0.65, 0, 0.35, 1) 0.45s both;
 }
 
 .lp-storeSweep {
@@ -207,7 +160,7 @@
 }
 
 .lp-storeSlide[data-ready="true"] .lp-storeSweep {
-  animation: lp-store-sweep 1.45s cubic-bezier(0.65, 0, 0.35, 1) 0.7s both;
+  animation: lp-store-sweep 1.05s cubic-bezier(0.65, 0, 0.35, 1) 0.45s both;
 }
 
 .lp-storePhoto figcaption {
@@ -230,7 +183,7 @@
   color: #fffd;
 }
 
-/* 轮播入口沿用三段短条，点击区域大于可见线条。 */
+/* 四个案例各占一段短条，点击区域大于可见线条。 */
 .lp-storeDots {
   position: absolute;
   inset: auto 0 0 auto;
@@ -275,10 +228,11 @@
 }
 
 :where(.lp-storeSlide[data-ready="true"]) + .lp-storeDots .lp-storeProgress {
-  animation: lp-store-progress 8s linear both;
+  animation: lp-store-progress 5.5s linear both;
 }
 
-.lp-storeShowcase[data-playing="false"] .lp-storeProgress,
+.lp-storeShowcase[data-playing="false"]
+  :is(.lp-storeProgress, .lp-storeBefore, .lp-storeSweep, .lp-storeOutput, .lp-metricBars i),
 .lp-storeDots:is(:hover, :focus-within) .lp-storeProgress {
   animation-play-state: paused;
 }
@@ -353,10 +307,6 @@
   .lp-storePhoto {
     bottom: 14%;
   }
-
-  .lp-storeSlide .lp-storeSales {
-    bottom: 23%;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -364,7 +314,9 @@
     transition: none;
   }
 
-  .lp-storeShowcase :is(.lp-storeBefore, .lp-storeSweep, .lp-storeOutput, .lp-storeSales) {
+  .lp-storeShowcase
+    .lp-storeSlide
+    :is(.lp-storeBefore, .lp-storeSweep, .lp-storeOutput, .lp-storeSales) {
     animation: none;
     opacity: 1;
   }
