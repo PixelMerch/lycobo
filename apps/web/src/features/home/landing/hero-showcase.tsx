@@ -1,394 +1,235 @@
-import { ToggleButton } from "@heroui/react";
-import { useReducedMotion } from "motion/react";
-import { useEffect, useState } from "react";
+import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { IconArrowDown } from "@tabler/icons-react";
+import { motion, useReducedMotion } from "motion/react";
+import { useId, useState } from "react";
+import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
+import { showcaseMessages } from "./hero-showcase-messages";
 import { useHeroPlayback } from "./use-hero-playback";
 
 const examples = [
-  {
-    id: "skincare",
-    video: "/landing/skincare.mp4",
-    poster: "/landing/skincare.jpg",
-    label: "Beauty creator holding a skincare serum",
-    rail: ["12.8k", "186", "942"],
-    stats: ["Increase Sales"],
-  },
-  {
-    id: "fashion",
-    video: "/landing/fashion.mp4",
-    poster: "/landing/fashion.jpg",
-    label: "Fashion creator in a yellow suit",
-    rail: ["24.6k", "328", "1.6k"],
-    stats: ["3.8k live watching"],
-  },
-  {
-    id: "collectible",
-    video: "/landing/collectible.mp4",
-    poster: "/landing/collectible.jpg",
-    label: "Pastel collectible character",
-    rail: ["18.3k", "264", "1.2k"],
-    stats: ["$6.2k"],
-  },
+  { id: "fashion", platform: "TikTok Shop", orders: [24, 32], visits: [1200, 1280] },
+  { id: "audio", platform: "Amazon", orders: [40, 49], visits: [1600, 1750] },
+  { id: "bedding", platform: "Temu", orders: [31, 39], visits: [1550, 1560] },
 ] as const;
 
-function SocialAuthor() {
-  return (
-    <div className="lp-socialAuthor">
-      <span className="lp-authorAvatar">
-        <img alt="" src="/landing/avatar-base.svg" />
-        <span className="lp-authorAvatarMark">
-          <img alt="" src="/landing/avatar-mark.svg" />
-        </span>
-        <img alt="" src="/landing/avatar-ring.svg" />
-      </span>
-      <span>
-        <span className="lp-authorName">
-          Lycobo
-          <span className="lp-verified">
-            <img alt="" src="/landing/verified.svg" />
-          </span>
-        </span>
-        <small>Sponsored</small>
-      </span>
-    </div>
-  );
+type Example = (typeof examples)[number];
+export type HeroExampleId = Example["id"];
+
+function nextExample(active: HeroExampleId) {
+  const index = examples.findIndex((example) => example.id === active);
+  return examples[(index + 1) % examples.length]?.id ?? examples[0].id;
 }
 
-function SocialRail({ counts }: { counts: readonly string[] }) {
-  return (
-    <div className="lp-socialRail">
-      <span>
-        <i>
-          <img alt="" src="/landing/heart.svg" />
-        </i>
-        {counts[0]}
-      </span>
-      <span>
-        <i>
-          <img alt="" src="/landing/comment.svg" />
-        </i>
-        {counts[1]}
-      </span>
-      <span>
-        <i>
-          <img alt="" src="/landing/share.svg" />
-        </i>
-        {counts[2]}
-      </span>
-      <span>
-        <i>
-          <img alt="" src="/landing/more.svg" />
-        </i>
-      </span>
-    </div>
-  );
+function exampleImage(id: HeroExampleId, phase: "before" | "after") {
+  return `/landing/showcase/${id}-${phase}.webp`;
 }
 
-function FunnelCard() {
+/** 在标题上方用移动取景框标示当前平台。 */
+export function HeroPlatforms({
+  active,
+  onSelect,
+}: {
+  active: HeroExampleId;
+  onSelect: (id: HeroExampleId) => void;
+}) {
+  const t = useMessages(showcaseMessages);
+  const focusId = useId();
+  const reducedMotion = useReducedMotion();
   return (
-    <div className="lp-funnel">
-      <strong>Funnel Conversion</strong>
-      <div className="lp-funnelPanel">
-        <div className="lp-funnelHead">
-          <span>Conversion</span>
-          <span>Added to cart</span>
-        </div>
-        <div className="lp-funnelNumbers">
-          <span>
-            <b>86%</b>
-            <em>
-              <i>
-                <img alt="" src="/landing/up-arrow.svg" />
-              </i>
-              9%
-            </em>
-            <small>Last 4 weeks</small>
-          </span>
-          <span>
-            <b>79%</b>
-            <em>
-              <i>
-                <img alt="" src="/landing/up-arrow.svg" />
-              </i>
-              6%
-            </em>
-            <small>Last 4 weeks</small>
-          </span>
-        </div>
-        <div className="lp-funnelCharts">
-          <i>
-            <img alt="" src="/landing/chart-blue.svg" />
-          </i>
-          <i>
-            <img alt="" src="/landing/chart-purple.svg" />
-          </i>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function EngagementCard() {
-  return (
-    <div className="lp-engagement">
-      <span>Engagement</span>
-      <strong>+48%</strong>
-      <i>
-        <img alt="" src="/landing/eng-arrow.svg" />
-      </i>
-    </div>
-  );
-}
-
-function SalesPill() {
-  return (
-    <div className="lp-salesPill">
-      <i>
-        <img alt="" src="/landing/check-circle.svg" />
-      </i>
-      Increase Sales
-    </div>
-  );
-}
-
-function RoasCard() {
-  return (
-    <div className="lp-roas">
-      <small>
-        <i>
-          <img alt="" src="/landing/up-arrow.svg" />
-        </i>
-        ROAS
-      </small>
-      <strong>4.2X</strong>
-      <span>Higher return on ad spend</span>
-    </div>
-  );
-}
-
-function TimeSavedCard({ active, reducedMotion }: { active: boolean; reducedMotion: boolean }) {
-  const [fill, setFill] = useState(0);
-
-  useEffect(() => {
-    if (!active || reducedMotion) {
-      setFill(0);
-      return;
-    }
-    let frame = 0;
-    let timer = 0;
-    const duration = 1500;
-    // 慢起、中段加速、慢收尾，完成一整圈顺时针播放。
-    const easeInOutCubic = (value: number) =>
-      value < 0.5 ? 4 * value * value * value : 1 - (-2 * value + 2) ** 3 / 2;
-
-    timer = window.setTimeout(() => {
-      const start = performance.now();
-      const tick = (now: number) => {
-        const elapsed = Math.min(1, (now - start) / duration);
-        setFill(easeInOutCubic(elapsed));
-        if (elapsed < 1) frame = requestAnimationFrame(tick);
-      };
-      frame = requestAnimationFrame(tick);
-    }, 120);
-
-    return () => {
-      window.clearTimeout(timer);
-      cancelAnimationFrame(frame);
-    };
-  }, [active, reducedMotion]);
-
-  const displayedFill = reducedMotion ? 1 : fill;
-  const progress = Math.round(displayedFill * 97);
-  const radius = 28.3262;
-  const circumference = 2 * Math.PI * radius;
-  // 与参考图一致：停在 97% 时保留顶部一小段装饰缺口。
-  const ringRatio = displayedFill * 0.97 * 0.91;
-  const startAngle = -79.2;
-  const startRad = (startAngle * Math.PI) / 180;
-  const startX = 33.5 + radius * Math.cos(startRad);
-  const startY = 33.5 + radius * Math.sin(startRad);
-
-  return (
-    <div className="lp-timeSaved">
-      <i>
-        <svg aria-hidden="true" className="lp-productionRing" viewBox="0 0 67 67">
-          <circle
-            cx="33.5"
-            cy="33.5"
-            fill="none"
-            r={radius}
-            stroke="#0F1214"
-            strokeOpacity="0.2"
-            strokeWidth="10.3476"
-          />
-          <circle
-            cx="33.5"
-            cy="33.5"
-            fill="none"
-            r={radius}
-            stroke="#FFE7CC"
-            strokeDasharray={circumference}
-            strokeDashoffset={circumference * (1 - ringRatio)}
-            strokeLinecap="round"
-            strokeWidth="10.3476"
-            transform={`rotate(${startAngle} 33.5 33.5)`}
-          />
-          <circle cx={startX} cy={startY} fill="#FFE7CC" r="5.1738" />
-        </svg>
-        <b>{progress}%</b>
-      </i>
-      <span>
-        Production time
-        <small>Less production time</small>
-      </span>
-    </div>
-  );
-}
-
-function LivePill() {
-  return (
-    <div className="lp-livePill">
-      <i>
-        <img alt="" src="/landing/live-circle.svg" />
-      </i>
-      3.8k live watching
-    </div>
-  );
-}
-
-function PostCard({ liked, onLike }: { liked: boolean; onLike: () => void }) {
-  return (
-    <div className="lp-post">
-      <div>
-        <img alt="Creator holding the collectible character" src="/landing/post-pic.webp" />
-      </div>
-      <span>
-        <ToggleButton
-          aria-label="Like campaign example"
-          className="lp-postLike"
-          isSelected={liked}
-          onChange={onLike}
-        >
-          <i>
-            <img alt="" src="/landing/ig-heart.svg" />
-          </i>
+    <ToggleButtonGroup
+      aria-label={t.platforms}
+      className="lp-platforms"
+      disallowEmptySelection
+      isDetached
+      selectedKeys={[active]}
+      selectionMode="single"
+      onSelectionChange={(keys) => {
+        const [key] = keys;
+        const example = examples.find(({ id }) => id === key);
+        if (example) onSelect(example.id);
+      }}
+    >
+      {examples.map(({ id, platform }) => (
+        <ToggleButton className="lp-platform" id={id} key={id}>
+          {active === id && (
+            <motion.span
+              aria-hidden="true"
+              className="lp-platformFocus"
+              {...(reducedMotion ? {} : { layoutId: focusId })}
+              transition={{ duration: 0.35 }}
+            />
+          )}
+          {platform}
         </ToggleButton>
-        <i>
-          <img alt="" src="/landing/ig-comment.svg" />
-        </i>
-        <i>
-          <img alt="" src="/landing/ig-share.svg" />
-        </i>
-      </span>
-    </div>
+      ))}
+    </ToggleButtonGroup>
   );
 }
 
-function RatingPill() {
+function SalesPreview({
+  example,
+  onInspect,
+}: {
+  example: Example;
+  onInspect: (open: boolean) => void;
+}) {
+  const t = useMessages(showcaseMessages);
+  const change = Math.round(((example.orders[1] - example.orders[0]) / example.orders[0]) * 100);
   return (
-    <div className="lp-rating">
-      <img alt="Five star campaign rating" src="/landing/bubble.svg" />
-    </div>
+    <Popover onOpenChange={onInspect}>
+      <Button aria-label={t.viewSales} className="lp-storeSales" variant="tertiary">
+        <span>{t.demoData}</span>
+        <strong>+{change}%</strong>
+        <span>
+          {t.orders} <UiIcon icon={IconArrowDown} size="small" />
+        </span>
+      </Button>
+      <Popover.Content className="lp-storeSalesPopover" placement="bottom end">
+        <Popover.Dialog aria-label={t.viewSales}>
+          <table>
+            <caption>{t.period}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{t.metric}</th>
+                <th scope="col">{t.before}</th>
+                <th scope="col">{t.after}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">{t.visits}</th>
+                <td>{example.visits[0]}</td>
+                <td>{example.visits[1]}</td>
+              </tr>
+              <tr>
+                <th scope="row">{t.orders}</th>
+                <td>{example.orders[0]}</td>
+                <td>{example.orders[1]}</td>
+              </tr>
+            </tbody>
+          </table>
+        </Popover.Dialog>
+      </Popover.Content>
+    </Popover>
   );
 }
 
-function TotalSales() {
+function ProductPreview({
+  example,
+  onInspect,
+  onImageSettled,
+}: {
+  example: Example;
+  onInspect: (open: boolean) => void;
+  onImageSettled: () => void;
+}) {
+  const t = useMessages(showcaseMessages);
+  const copy = t.examples[example.id];
   return (
-    <div className="lp-totalSales">
-      Total Sales
-      <strong>$6.2k</strong>
+    <>
+      <figure className="lp-storePhoto">
+        <img
+          alt={copy.after}
+          className="lp-storeAfter"
+          onLoad={onImageSettled}
+          onError={onImageSettled}
+          src={exampleImage(example.id, "after")}
+          width="720"
+          height="960"
+        />
+        <img
+          alt={copy.before}
+          className="lp-storeBefore"
+          onLoad={onImageSettled}
+          onError={onImageSettled}
+          src={exampleImage(example.id, "before")}
+          width="720"
+          height="960"
+        />
+        <span aria-hidden="true" className="lp-storeSweep" />
+        <figcaption>
+          <strong>{copy.name}</strong>
+          <span>{copy.format}</span>
+        </figcaption>
+      </figure>
+      <div className="lp-storeOutput">
+        <img alt="" src={exampleImage(example.id, "after")} width="720" height="960" />
+        <span>{copy.preview}</span>
+      </div>
+      <SalesPreview example={example} onInspect={onInspect} />
+    </>
+  );
+}
+
+function ShowcaseSlide({
+  example,
+  onInspect,
+}: {
+  example: Example;
+  onInspect: (open: boolean) => void;
+}) {
+  const [settledImages, setSettledImages] = useState(0);
+  return (
+    <div className="lp-storeSlide" data-platform={example.id} data-ready={settledImages >= 2}>
+      <ProductPreview
+        example={example}
+        onInspect={onInspect}
+        onImageSettled={() => setSettledImages((count) => count + 1)}
+      />
     </div>
   );
 }
 
-/** 首屏右侧三组社媒广告示例轮播与浮层数据。 */
-export function HeroShowcase() {
-  const [active, setActive] = useState(0);
-  const [liked, setLiked] = useState(false);
+/** 展示原创商品成片、平台预览与标明来源的演示订单数据。 */
+export function HeroShowcase({
+  active,
+  onSelect,
+}: {
+  active: HeroExampleId;
+  onSelect: (id: HeroExampleId) => void;
+}) {
+  const t = useMessages(showcaseMessages);
   const reducedMotion = useReducedMotion() ?? false;
-  const { stageRef, playing } = useHeroPlayback(active, reducedMotion);
-
-  const selectExample = (index: number) => {
-    setActive(index);
-    setLiked(false);
-  };
+  const [inspected, setInspected] = useState<HeroExampleId | null>(null);
+  const { stageRef, inView } = useHeroPlayback();
+  const example = examples.find(({ id }) => active === id) ?? examples[0];
+  const playing = inspected !== active && !reducedMotion && inView;
 
   return (
     <section
-      aria-label="Campaign examples"
-      className="lp-showcase"
-      data-motion-active={playing}
+      aria-label={t.showcase}
+      className="lp-storeShowcase"
+      data-playing={playing}
       ref={stageRef}
     >
-      {examples.map((example, index) => (
-        <div
-          aria-hidden={active !== index}
-          className="lp-example"
-          data-active={active === index}
-          data-example={example.id}
-          inert={active !== index || undefined}
-          key={example.id}
-        >
-          <div className="lp-socialCase">
-            <video
-              aria-label={example.label}
-              loop
-              muted
-              playsInline
-              poster={example.poster}
-              preload="metadata"
-            >
-              <source src={example.video} type="video/mp4" />
-            </video>
-            <SocialAuthor />
-            <SocialRail counts={example.rail} />
-          </div>
-
-          {example.id === "skincare" && (
-            <>
-              <FunnelCard />
-              <EngagementCard />
-              <SalesPill />
-            </>
-          )}
-
-          {example.id === "fashion" && (
-            <>
-              <RoasCard />
-              <TimeSavedCard active={active === index} reducedMotion={reducedMotion} />
-              <LivePill />
-            </>
-          )}
-
-          {example.id === "collectible" && (
-            <>
-              <PostCard liked={liked} onLike={() => setLiked((value) => !value)} />
-              <RatingPill />
-              <TotalSales />
-            </>
-          )}
-        </div>
-      ))}
-
-      <section aria-label="Choose campaign example" className="lp-exampleDots">
-        {examples.map((example, index) => (
+      <ShowcaseSlide
+        key={active}
+        example={example}
+        onInspect={(open) => setInspected(open ? active : null)}
+      />
+      <fieldset aria-label={t.platforms} className="lp-storeDots">
+        {examples.map(({ id, platform }) => (
           <ToggleButton
-            aria-label={`Show ${example.id} example`}
-            className="lp-exampleDot"
-            isSelected={active === index}
-            key={example.id}
-            onChange={() => selectExample(index)}
+            aria-label={platform}
+            className="lp-storeDot"
+            isSelected={active === id}
+            key={id}
+            onChange={() => onSelect(id)}
           >
-            <span className="lp-exampleTrack">
-              {active === index && (
+            <span aria-hidden="true" className="lp-storeTrack">
+              {active === id && (
                 <span
-                  className="lp-exampleProgress"
-                  onAnimationEnd={() => selectExample((index + 1) % examples.length)}
+                  className="lp-storeProgress"
+                  onAnimationEnd={() => {
+                    if (playing) onSelect(nextExample(active));
+                  }}
                 />
               )}
             </span>
           </ToggleButton>
         ))}
-      </section>
+      </fieldset>
     </section>
   );
 }

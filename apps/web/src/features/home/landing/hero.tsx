@@ -13,7 +13,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { useMessages } from "../../../i18n/messages";
 import { GradientWaves } from "../gradient-waves/gradient-waves";
-import { HeroShowcase } from "./hero-showcase";
+import { type HeroExampleId, HeroPlatforms, HeroShowcase } from "./hero-showcase";
 import { landingMessages } from "./landing-messages";
 
 const ratios = ["9:16", "16:9", "1:1", "4:5"];
@@ -30,6 +30,7 @@ function HeroBackdrop() {
 /** 复刻页首屏：标语、画面比例/产品详情弹层与右侧示例；暂不提交真实生成任务。 */
 export function Hero() {
   const t = useMessages(landingMessages).hero;
+  const [example, setExample] = useState<HeroExampleId>("fashion");
   const [prompt, setPrompt] = useState("");
   const [techniqueVisible, setTechniqueVisible] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -64,6 +65,7 @@ export function Hero() {
       <HeroBackdrop />
       <div className="lp-heroInner">
         <div className="lp-heroCopy">
+          <HeroPlatforms active={example} onSelect={setExample} />
           <motion.h1
             animate={{ opacity: 1, y: 0 }}
             id="campaign-hero-title"
@@ -214,7 +216,7 @@ export function Hero() {
           initial={{ opacity: 0, x: 24 }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
         >
-          <HeroShowcase />
+          <HeroShowcase active={example} onSelect={setExample} />
         </motion.div>
       </div>
     </section>

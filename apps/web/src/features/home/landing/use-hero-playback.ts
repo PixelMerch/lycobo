@@ -1,36 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 
-/** 只播放视口中当前选中的样片，并同步暂停离开视口的轮播。 */
-export function useHeroPlayback(active: number, reducedMotion: boolean) {
+/** 轮播离开视口或标签页进入后台时暂停。 */
+export function useHeroPlayback() {
   const stageRef = useRef<HTMLElement>(null);
-  const [playing, setPlaying] = useState(false);
-
+  const [inView, setInView] = useState(false);
   useEffect(() => {
     const stage = stageRef.current;
-    const video = stage?.querySelectorAll<HTMLVideoElement>(".lp-example video").item(active);
-    if (!stage || !video || reducedMotion) {
-      setPlaying(false);
-      return;
-    }
-    let inView = false;
-    function updatePlayback() {
-      const visible = inView && !document.hidden;
-      setPlaying(visible);
-      if (visible) void video?.play().catch(() => undefined);
-      else video?.pause();
+    if (!stage) return;
+    let intersecting = false;
+    function update() {
+      setInView(intersecting && !document.hidden);
     }
     const observer = new IntersectionObserver(([entry]) => {
-      inView = entry?.isIntersecting ?? false;
-      updatePlayback();
+      intersecting = entry?.isIntersecting ?? false;
+      update();
     });
     observer.observe(stage);
-    document.addEventListener("visibilitychange", updatePlayback);
+    document.addEventListener("visibilitychange", update);
     return () => {
       observer.disconnect();
-      document.removeEventListener("visibilitychange", updatePlayback);
-      video.pause();
+      document.removeEventListener("visibilitychange", update);
     };
-  }, [active, reducedMotion]);
-
-  return { stageRef, playing };
+  }, []);
+  return { stageRef, inView };
 }

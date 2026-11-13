@@ -1,0 +1,352 @@
+.lp-platforms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.lp-platforms .lp-platform {
+  position: relative;
+  min-height: 44px;
+  padding: 0 12px;
+  background: transparent;
+  color: #fffb;
+  font-size: 14px;
+  transition:
+    color 300ms,
+    filter 300ms;
+}
+
+.lp-platforms .lp-platform[data-selected] {
+  color: #fff;
+}
+
+.lp-platforms .lp-platform:not([data-selected], :hover, :focus-visible) {
+  filter: blur(0.65px);
+}
+
+.lp-platformFocus {
+  position: absolute;
+  inset: 3px 0;
+  pointer-events: none;
+  border: 1px solid #a8ff0080;
+  border-radius: 8px;
+  background: #a8ff000a;
+}
+
+.lp-storeShowcase {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  max-width: 678px;
+  margin-inline: auto;
+  aspect-ratio: 678 / 535;
+  container-type: inline-size;
+}
+
+.lp-storeSlide {
+  position: absolute;
+  inset: 0;
+}
+
+.lp-storePhoto {
+  position: absolute;
+  inset: 0 24% 8% 16%;
+  overflow: hidden;
+  margin: 0;
+  border-radius: 20px;
+  background: #20241f;
+  box-shadow: 0 24px 52px #0006;
+}
+
+.lp-storePhoto img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lp-storeSlide[data-ready="true"] .lp-storeBefore {
+  animation: lp-store-reveal 1.45s cubic-bezier(0.65, 0, 0.35, 1) 0.7s both;
+}
+
+.lp-storeSweep {
+  opacity: 0;
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: #d6ffad;
+  box-shadow: 0 0 14px 2px #a8ff0099;
+}
+
+.lp-storeSlide[data-ready="true"] .lp-storeSweep {
+  animation: lp-store-sweep 1.45s cubic-bezier(0.65, 0, 0.35, 1) 0.7s both;
+}
+
+.lp-storePhoto figcaption {
+  position: absolute;
+  inset: auto 0 0;
+  display: grid;
+  gap: 3px;
+  padding: 28px 16px 16px;
+  color: #fff;
+  background: linear-gradient(transparent, #000b);
+}
+
+.lp-storePhoto strong {
+  font-size: clamp(14px, 3.6cqw, 23px);
+  font-weight: 600;
+}
+
+.lp-storePhoto figcaption :where(span) {
+  font-size: clamp(11px, 2.2cqw, 14px);
+  color: #fffd;
+}
+
+.lp-storeOutput {
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  top: 8%;
+  width: 29%;
+  display: grid;
+  gap: 6px;
+  padding: 6px;
+  background: #f3f2ee;
+  color: #161913;
+  border-radius: 12px;
+  box-shadow: 0 14px 40px #0005;
+  opacity: 0;
+}
+
+.lp-storeOutput img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 5 / 4;
+  object-fit: cover;
+  object-position: center 40%;
+  border-radius: 8px;
+}
+
+.lp-storeSlide[data-platform="fashion"] .lp-storeOutput {
+  right: 3%;
+  width: 24%;
+}
+
+.lp-storeSlide[data-platform="fashion"] .lp-storeOutput img {
+  aspect-ratio: 9 / 16;
+}
+
+.lp-storeOutput span {
+  font-size: clamp(10px, 2.2cqw, 13px);
+  font-weight: 600;
+  line-height: 1.25;
+  padding: 0 4px 4px;
+}
+
+.lp-storeSlide .lp-storeSales {
+  position: absolute;
+  z-index: 2;
+  bottom: 19%;
+  left: 0;
+  height: auto;
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  padding: clamp(8px, 2.3cqw, 15px);
+  border-radius: 16px;
+  background: #cbf3d8;
+  color: #163323;
+  text-align: start;
+  box-shadow: 0 12px 35px #0004;
+  opacity: 0;
+}
+
+.lp-storeSlide[data-ready="true"] .lp-storeOutput {
+  animation: lp-store-card-in 520ms ease-out 1.65s both;
+}
+
+.lp-storeSlide[data-ready="true"] .lp-storeSales {
+  animation: lp-store-card-in 520ms ease-out 1.95s both;
+}
+
+.lp-storeSales strong {
+  font-size: clamp(18px, 5cqw, 35px);
+  line-height: 1.1;
+  font-weight: 600;
+}
+
+.lp-storeSales span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: clamp(10px, 2.2cqw, 13px);
+}
+
+.lp-storeSalesPopover table {
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 8px 12px 12px;
+  color: #fff;
+}
+
+.lp-storeSalesPopover caption {
+  padding: 6px 8px;
+  color: #fffc;
+  text-align: start;
+}
+
+.lp-storeSalesPopover :is(th, td) {
+  padding: 5px 8px;
+  border-bottom: 1px solid #fff2;
+  text-align: start;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 轮播入口沿用三段短条，点击区域大于可见线条。 */
+.lp-storeDots {
+  position: absolute;
+  inset: auto 0 0 auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  gap: 8px;
+}
+
+.lp-storeDots .lp-storeDot {
+  position: relative;
+  min-width: 0;
+  width: 36px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.lp-storeTrack {
+  position: absolute;
+  inset: 50% 0 auto;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #ffffff73;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.lp-storeDot[data-selected] .lp-storeTrack {
+  background: #ffffffa6;
+}
+
+.lp-storeProgress {
+  display: block;
+  height: 100%;
+  background: #fff;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+:where(.lp-storeSlide[data-ready="true"]) + .lp-storeDots .lp-storeProgress {
+  animation: lp-store-progress 8s linear both;
+}
+
+.lp-storeShowcase[data-playing="false"] .lp-storeProgress,
+.lp-storeDots:is(:hover, :focus-within) .lp-storeProgress {
+  animation-play-state: paused;
+}
+
+@keyframes lp-store-reveal {
+  from {
+    clip-path: inset(0);
+  }
+  to {
+    clip-path: inset(0 0 0 100%);
+  }
+}
+
+@keyframes lp-store-sweep {
+  0% {
+    opacity: 0;
+    left: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  86% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    left: 100%;
+  }
+}
+
+@keyframes lp-store-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes lp-store-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (max-width: 639px) {
+  .lp-platforms {
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+
+  .lp-platforms .lp-platform {
+    padding-inline: 8px;
+  }
+
+  .lp-storeShowcase {
+    aspect-ratio: 1;
+  }
+
+  .lp-storePhoto {
+    bottom: 14%;
+  }
+
+  .lp-storeSlide .lp-storeSales {
+    bottom: 23%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-platforms .lp-platform {
+    transition: none;
+  }
+
+  .lp-storeShowcase :is(.lp-storeBefore, .lp-storeSweep, .lp-storeOutput, .lp-storeSales) {
+    animation: none;
+    opacity: 1;
+  }
+
+  .lp-storeBefore {
+    clip-path: inset(0 0 0 100%);
+  }
+
+  .lp-storeShowcase .lp-storeSweep {
+    display: none;
+  }
+
+  :where(.lp-storeSlide[data-ready="true"]) + .lp-storeDots .lp-storeProgress {
+    animation: none;
+    transform: none;
+  }
+}
