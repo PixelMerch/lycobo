@@ -15,6 +15,12 @@ export const showcaseMessages = defineMessages({
     visits: "商品访问量",
     orders: "支付订单",
     platformUi: {
+      roas: "ROAS",
+      roasCaption: "Higher return on ad spend",
+      liveWatching: "3.8k live watching",
+      conversion: "转化率",
+      addedToCart: "加入购物车",
+      rating: "评分",
       sponsored: "赞助内容",
       shopNow: "立即购买",
       addToCart: "加入购物车",
@@ -25,10 +31,10 @@ export const showcaseMessages = defineMessages({
     },
     examples: {
       bedding: {
-        name: "鼠尾草绿绗缝床品",
+        name: "焦糖橙绗缝床品",
         format: "卧室场景图",
-        before: "折叠的鼠尾草绿床品原图",
-        after: "铺在现代卧室床上的成片",
+        before: "折叠的焦糖橙床品原图",
+        after: "铺在卧室床上的成片",
         preview: "TikTok 竖屏发布预览",
       },
       fashion: {
@@ -60,6 +66,12 @@ export const showcaseMessages = defineMessages({
     visits: "Product visits",
     orders: "Paid orders",
     platformUi: {
+      roas: "ROAS",
+      roasCaption: "Higher return on ad spend",
+      liveWatching: "3.8k live watching",
+      conversion: "Conversion",
+      addedToCart: "Added to cart",
+      rating: "Rating",
       sponsored: "Sponsored",
       shopNow: "Shop now",
       addToCart: "Add to cart",
@@ -70,10 +82,10 @@ export const showcaseMessages = defineMessages({
     },
     examples: {
       bedding: {
-        name: "Sage quilted bedding",
+        name: "Burnt-orange pintuck bedding",
         format: "Bedroom scene",
-        before: "Original photo of the folded sage bedding",
-        after: "Finished bedroom photo featuring the sage bedding",
+        before: "Original photo of the folded burnt-orange bedding",
+        after: "Finished bedroom photo featuring the burnt-orange bedding",
         preview: "TikTok portrait post preview",
       },
       fashion: {

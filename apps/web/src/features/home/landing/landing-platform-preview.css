@@ -157,6 +157,13 @@
   align-items: start;
 }
 
+.lp-previewStars {
+  color: #ffd166;
+  font-size: 7px;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
 .lp-previewFooter b {
   overflow: hidden;
   font-size: 9px;

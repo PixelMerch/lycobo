@@ -141,41 +141,67 @@ function SalesPreview({
   const t = useMessages(showcaseMessages);
   const change = Math.round(((example.orders[1] - example.orders[0]) / example.orders[0]) * 100);
   return (
-    <Popover onOpenChange={onInspect}>
-      <Button aria-label={t.viewSales} className="lp-storeSales" variant="tertiary">
-        <span>{t.demoData}</span>
-        <strong>+{change}%</strong>
-        <span>
-          {t.orders} <UiIcon icon={IconArrowUp} size="small" />
-        </span>
-      </Button>
-      <Popover.Content className="lp-storeSalesPopover" placement="bottom end">
-        <Popover.Dialog aria-label={t.viewSales}>
-          <table>
-            <caption>{t.period}</caption>
-            <thead>
-              <tr>
-                <th scope="col">{t.metric}</th>
-                <th scope="col">{t.before}</th>
-                <th scope="col">{t.after}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th scope="row">{t.visits}</th>
-                <td>{example.visits[0]}</td>
-                <td>{example.visits[1]}</td>
-              </tr>
-              <tr>
-                <th scope="row">{t.orders}</th>
-                <td>{example.orders[0]}</td>
-                <td>{example.orders[1]}</td>
-              </tr>
-            </tbody>
-          </table>
-        </Popover.Dialog>
-      </Popover.Content>
-    </Popover>
+    <div className="lp-metricStack">
+      <Popover onOpenChange={onInspect}>
+        <Button aria-label={t.viewSales} className="lp-storeSales lp-roasCard" variant="tertiary">
+          <span className="lp-roasTop">
+            <UiIcon icon={IconArrowUp} size="small" /> {t.platformUi.roas}
+          </span>
+          <strong>4.2X</strong>
+          <small>{t.platformUi.roasCaption}</small>
+          <em>
+            {t.demoData} · +{change}% {t.orders}
+          </em>
+        </Button>
+        <Popover.Content className="lp-storeSalesPopover" placement="bottom end">
+          <Popover.Dialog aria-label={t.viewSales}>
+            <table>
+              <caption>{t.period}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{t.metric}</th>
+                  <th scope="col">{t.before}</th>
+                  <th scope="col">{t.after}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">{t.platformUi.roas}</th>
+                  <td>3.6X</td>
+                  <td>4.2X</td>
+                </tr>
+                <tr>
+                  <th scope="row">{t.visits}</th>
+                  <td>{example.visits[0]}</td>
+                  <td>{example.visits[1]}</td>
+                </tr>
+                <tr>
+                  <th scope="row">{t.orders}</th>
+                  <td>{example.orders[0]}</td>
+                  <td>{example.orders[1]}</td>
+                </tr>
+                <tr>
+                  <th scope="row">{t.platformUi.conversion}</th>
+                  <td>79%</td>
+                  <td>86%</td>
+                </tr>
+                <tr>
+                  <th scope="row">{t.platformUi.rating}</th>
+                  <td>4.6</td>
+                  <td>4.9</td>
+                </tr>
+              </tbody>
+            </table>
+          </Popover.Dialog>
+        </Popover.Content>
+      </Popover>
+      <span className="lp-metricLivePill">
+        <i>
+          <UiIcon icon={IconArrowUp} size="small" />
+        </i>
+        {t.platformUi.liveWatching}
+      </span>
+    </div>
   );
 }
 
@@ -212,6 +238,7 @@ function PlatformPreview({ example }: { example: Example }) {
               </span>
             </div>
             <div className="lp-previewFooter">
+              <span className="lp-previewStars">★★★★★</span>
               <b>{copy.name}</b>
               <span>{t.platformUi.shopNow}</span>
             </div>
