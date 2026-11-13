@@ -156,11 +156,12 @@
     padding-top: 2px;
   }
 
-  .lp-modeChip {
-    margin-top: 0;
+  .lp-promptInput {
+    width: 100%;
+    min-height: 84px;
   }
 
-  .lp-promptInput {
-    min-height: 84px;
+  .lp-modeChip {
+    margin-top: 0;
   }
 }

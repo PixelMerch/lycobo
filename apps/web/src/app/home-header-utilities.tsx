@@ -1,4 +1,4 @@
-import { Button, Popover } from "@heroui/react";
+import { Button, Tooltip } from "@heroui/react";
 import { IconBook, IconFolder, IconGift } from "@tabler/icons-react";
 import { type ReactNode, useRef } from "react";
 import { UiIcon } from "../components/ui-icon";
@@ -27,21 +27,24 @@ export function HomeHeaderUtilities({
 
   return (
     <div className="home-header-utilities">
-      <Button
-        ref={gift}
-        isIconOnly
-        size="sm"
-        variant="tertiary"
-        aria-label={t.benefits}
-        className="home-header-tool"
-        onPress={() => {
-          onNavigate?.();
-          if (requireLogin()) openAccount("membership", onNavigate ? null : gift.current);
-        }}
-      >
-        <UiIcon icon={IconGift} size="navigation" />
-      </Button>
-      <Popover>
+      <Tooltip delay={200}>
+        <Button
+          ref={gift}
+          isIconOnly
+          size="sm"
+          variant="tertiary"
+          aria-label={t.benefits}
+          className="home-header-tool"
+          onPress={() => {
+            onNavigate?.();
+            if (requireLogin()) openAccount("membership", onNavigate ? null : gift.current);
+          }}
+        >
+          <UiIcon icon={IconGift} size="navigation" />
+        </Button>
+        <Tooltip.Content placement="bottom">{t.benefits}</Tooltip.Content>
+      </Tooltip>
+      <Tooltip delay={200}>
         <Button
           isIconOnly
           size="sm"
@@ -51,16 +54,15 @@ export function HomeHeaderUtilities({
         >
           <UiIcon icon={IconBook} size="navigation" />
         </Button>
-        <Popover.Content className="home-header-glass" placement="bottom end" offset={8}>
-          <Popover.Dialog className="home-header-help" aria-label={t.creationHelp}>
-            <ul>
-              {t.creationHelpItems.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </Popover.Dialog>
-        </Popover.Content>
-      </Popover>
+        <Tooltip.Content className="home-header-help" placement="bottom end">
+          <b>{t.creationHelp}</b>
+          <ul>
+            {t.creationHelpItems.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </Tooltip.Content>
+      </Tooltip>
       {messages}
       {children}
       <Button
