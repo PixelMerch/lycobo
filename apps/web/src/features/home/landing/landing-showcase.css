@@ -67,6 +67,16 @@
   line-height: 1;
 }
 
+.lp-platformLogo--shopify {
+  border-radius: 6px;
+  background: #95bf47;
+  color: #fff;
+  font-family: var(--app-font-family);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .lp-platforms .lp-platform[data-platform="bedding"] .lp-platformLogo {
   color: #fff;
   filter: drop-shadow(1px 0 4px #25f4ee80) drop-shadow(-1px 0 4px #fe2c5580);
@@ -78,6 +88,10 @@
 
 .lp-platforms .lp-platform[data-platform="blender"] .lp-platformLogo {
   color: #fb7701;
+}
+
+.lp-platforms .lp-platform[data-platform="serum"] .lp-platformLogo {
+  color: #95bf47;
 }
 
 .lp-platforms .lp-platform[data-platform="blender"] .lp-platformLogo--temu {
@@ -214,125 +228,6 @@
 .lp-storePhoto figcaption :where(span) {
   font-size: clamp(11px, 2.2cqw, 14px);
   color: #fffd;
-}
-
-.lp-metricStack {
-  position: absolute;
-  z-index: 3;
-  top: 17%;
-  left: 7%;
-  display: grid;
-  gap: 10px;
-  justify-items: start;
-}
-
-.lp-storeSlide .lp-storeSales {
-  display: grid;
-  justify-items: start;
-  gap: 2px;
-  width: clamp(150px, 28cqw, 190px);
-  height: auto;
-  min-height: 0;
-  padding: clamp(10px, 2.4cqw, 15px);
-  border-radius: 18px;
-  background: #bcdaf9;
-  color: #111111;
-  text-align: start;
-  box-shadow: 0 14px 38px #0005;
-  opacity: 0;
-}
-
-.lp-storeSlide[data-ready="true"] .lp-storeOutput {
-  animation: lp-store-card-in 520ms ease-out 1.65s both;
-}
-
-.lp-storeSlide[data-ready="true"] .lp-storeSales {
-  animation: lp-store-card-in 520ms ease-out 1.95s both;
-}
-
-.lp-roasTop {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: #d1ffd8;
-  color: #327d6a;
-  font-size: 9px;
-  font-weight: 600;
-  line-height: 1;
-}
-
-.lp-storeSales strong {
-  margin-top: 5px;
-  font-size: clamp(24px, 5.6cqw, 34px);
-  line-height: 1;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-.lp-roasCard small {
-  color: #242424cc;
-  font-size: 10px;
-  line-height: 1.25;
-}
-
-.lp-roasCard em {
-  margin-top: 4px;
-  color: #24242499;
-  font-size: 9px;
-  font-style: normal;
-  line-height: 1.2;
-}
-
-.lp-metricLivePill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 12px 4px 4px;
-  border-radius: 999px;
-  background: #fff;
-  color: #161616;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.2;
-  box-shadow: 0 10px 28px #0004;
-  opacity: 0;
-}
-
-.lp-metricLivePill i {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(120deg, #a8ff00, #4fe3b0);
-  color: #142000;
-}
-
-.lp-storeSlide[data-ready="true"] .lp-metricLivePill {
-  animation: lp-store-card-in 520ms ease-out 2.15s both;
-}
-
-.lp-storeSalesPopover table {
-  border-collapse: collapse;
-  font-size: 13px;
-  margin: 8px 12px 12px;
-  color: #fff;
-}
-
-.lp-storeSalesPopover caption {
-  padding: 6px 8px;
-  color: #fffc;
-  text-align: start;
-}
-
-.lp-storeSalesPopover :is(th, td) {
-  padding: 5px 8px;
-  border-bottom: 1px solid #fff2;
-  text-align: start;
-  font-variant-numeric: tabular-nums;
 }
 
 /* 轮播入口沿用三段短条，点击区域大于可见线条。 */

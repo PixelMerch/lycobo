@@ -44,6 +44,13 @@ export const showcaseMessages = defineMessages({
         after: "欧美模特穿着的街拍成片",
         preview: "Amazon 商品图预览",
       },
+      serum: {
+        name: "维生素 C 精华",
+        format: "卫浴场景图",
+        before: "琥珀色精华瓶的白底原图",
+        after: "大理石台面上的精华成片",
+        preview: "Shopify 商品页预览",
+      },
       blender: {
         name: "便携榨汁杯",
         format: "厨房场景图",
@@ -94,6 +101,13 @@ export const showcaseMessages = defineMessages({
         before: "Original photo of the red jacket on a hanger",
         after: "Finished street-style photo of a Western model in the red jacket",
         preview: "Amazon listing image preview",
+      },
+      serum: {
+        name: "Vitamin C serum",
+        format: "Bathroom scene",
+        before: "Original white-background photo of the amber serum bottle",
+        after: "Finished serum photo on a marble counter",
+        preview: "Shopify product page preview",
       },
       blender: {
         name: "Portable blender",

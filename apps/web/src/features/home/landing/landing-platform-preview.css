@@ -308,3 +308,41 @@
     font-size: 7px;
   }
 }
+
+.lp-storeOutput[data-platform="serum"] .lp-storePreviewFrame {
+  aspect-ratio: 1;
+  background: #fff;
+}
+
+.lp-storeSlide[data-platform="serum"] .lp-storeOutput {
+  right: 2%;
+  width: 28%;
+}
+
+.lp-storeOutput[data-platform="serum"] .lp-previewPlatform {
+  background: #95bf47;
+  color: #fff;
+}
+
+.lp-storeOutput[data-platform="serum"] .lp-previewMeta {
+  color: #1a1a1a;
+  background: #f3f2ee;
+  margin-top: 4px;
+  padding: 7px 8px 8px;
+  border-radius: 8px;
+}
+
+.lp-storeOutput[data-platform="serum"] .lp-previewMeta b {
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.lp-storeOutput[data-platform="serum"] .lp-previewMeta strong {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.lp-storePlatformBadge[data-platform="serum"] {
+  background: #95bf47;
+  color: #fff;
+}
