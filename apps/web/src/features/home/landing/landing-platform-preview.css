@@ -1,0 +1,303 @@
+.lp-storeOutput {
+  position: absolute;
+  z-index: 2;
+  top: 8%;
+  right: 1%;
+  width: 30%;
+  display: grid;
+  gap: 0;
+  padding: 0;
+  background: transparent;
+  color: #161913;
+  border-radius: 12px;
+  box-shadow: 0 14px 40px #0005;
+  opacity: 0;
+  overflow: visible;
+}
+
+/* 平台预览卡：主图之外再给一张带平台 UI 的成片，避免只看到一张孤立图片。 */
+.lp-storePhoto {
+  z-index: 0;
+}
+
+.lp-storeOutput {
+  z-index: 2;
+  overflow: visible;
+  background: transparent;
+  padding: 0;
+  gap: 0;
+}
+
+.lp-storePreviewFrame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #111;
+}
+
+.lp-storeOutput[data-platform="bedding"] .lp-storePreviewFrame {
+  aspect-ratio: 9 / 16;
+}
+
+.lp-storeOutput[data-platform="fashion"] .lp-storePreviewFrame {
+  aspect-ratio: 1;
+  background: #fff;
+}
+
+.lp-storeOutput[data-platform="drink"] .lp-storePreviewFrame {
+  aspect-ratio: 3 / 4;
+  background: #fff8f3;
+}
+
+.lp-storeOutput .lp-storePreviewFrame img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  object-fit: cover;
+  object-position: center 35%;
+  border-radius: 0;
+}
+
+.lp-storeOutput[data-platform="bedding"] .lp-storePreviewFrame img {
+  object-position: center 32%;
+}
+
+.lp-storeSlide[data-platform="bedding"] .lp-storeOutput {
+  right: 1%;
+  width: 30%;
+}
+
+.lp-storeSlide[data-platform="fashion"] .lp-storeOutput {
+  right: 1%;
+  width: 30%;
+}
+
+.lp-storeSlide[data-platform="drink"] .lp-storeOutput {
+  right: 2%;
+  width: 28%;
+}
+
+.lp-previewChrome {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 9px 8px;
+  color: #fff;
+  pointer-events: none;
+  background: linear-gradient(#0008, transparent 26%, transparent 58%, #000c);
+}
+
+.lp-previewHeader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.lp-previewAvatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #f7f4ea;
+  color: #111;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.lp-previewAuthor {
+  display: grid;
+  min-width: 0;
+  line-height: 1.1;
+}
+
+.lp-previewAuthor b {
+  overflow: hidden;
+  font-size: 9px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lp-previewAuthor small {
+  font-size: 7px;
+  color: #ffffffb3;
+}
+
+.lp-previewRail {
+  position: absolute;
+  right: 7px;
+  bottom: 44%;
+  display: grid;
+  gap: 9px;
+  justify-items: center;
+  font-size: 7px;
+}
+
+.lp-previewRail span {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+}
+
+.lp-previewRail small {
+  font-size: 7px;
+  color: #fff;
+}
+
+.lp-previewFooter {
+  display: grid;
+  gap: 4px;
+  align-items: start;
+}
+
+.lp-previewFooter b {
+  overflow: hidden;
+  font-size: 9px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lp-previewFooter span,
+.lp-previewCta {
+  display: inline-flex;
+  width: fit-content;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: #a8ff00;
+  color: #142000;
+  font-size: 7px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.lp-previewPlatform {
+  position: absolute;
+  z-index: 1;
+  top: 6px;
+  left: 6px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: #fff;
+  color: #161616;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.lp-storeOutput[data-platform="bedding"] .lp-previewPlatform {
+  display: none;
+}
+
+.lp-storeOutput[data-platform="drink"] .lp-previewPlatform {
+  background: #fb7701;
+  color: #fff;
+}
+
+.lp-previewMeta {
+  display: grid;
+  gap: 3px;
+  padding: 6px 2px 2px;
+  color: #fff;
+  font-size: 8px;
+  line-height: 1.2;
+}
+
+.lp-storeOutput[data-platform="fashion"] .lp-previewMeta,
+.lp-storeOutput[data-platform="drink"] .lp-previewMeta {
+  color: #1a1a1a;
+  background: #f3f2ee;
+  margin-top: 4px;
+  padding: 7px 8px 8px;
+  border-radius: 8px;
+}
+
+.lp-storeOutput[data-platform="fashion"] .lp-previewMeta b {
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.lp-previewRating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: #f5a623;
+  font-size: 8px;
+}
+
+.lp-previewRating small {
+  color: #6b6b6b;
+}
+
+.lp-storeOutput[data-platform="fashion"] .lp-previewMeta strong {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.lp-previewPrice {
+  display: flex;
+  gap: 5px;
+  align-items: baseline;
+}
+
+.lp-storeOutput[data-platform="drink"] .lp-previewPrice strong {
+  color: #d94b00;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.lp-previewPrice del {
+  color: #8a8a8a;
+  font-size: 8px;
+}
+
+.lp-previewMeta .lp-previewCta {
+  margin-top: 2px;
+}
+
+.lp-storePlatformBadge {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  left: 14px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  backdrop-filter: blur(10px);
+}
+
+.lp-storePlatformBadge[data-platform="bedding"] {
+  background: #000000a6;
+  color: #fff;
+}
+
+.lp-storePlatformBadge[data-platform="fashion"] {
+  background: #ffffffe6;
+  color: #111;
+}
+
+.lp-storePlatformBadge[data-platform="drink"] {
+  background: #fb7701;
+  color: #fff;
+}
+
+@media (max-width: 639px) {
+  .lp-storePlatformBadge {
+    top: 10px;
+    left: 10px;
+    font-size: 9px;
+  }
+
+  .lp-previewMeta {
+    font-size: 7px;
+  }
+}

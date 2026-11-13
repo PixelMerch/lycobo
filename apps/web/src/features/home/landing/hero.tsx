@@ -30,7 +30,7 @@ function HeroBackdrop() {
 /** 复刻页首屏：标语、画面比例/产品详情弹层与右侧示例；暂不提交真实生成任务。 */
 export function Hero() {
   const t = useMessages(landingMessages).hero;
-  const [example, setExample] = useState<HeroExampleId>("fashion");
+  const [example, setExample] = useState<HeroExampleId>("bedding");
   const [prompt, setPrompt] = useState("");
   const [techniqueVisible, setTechniqueVisible] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);

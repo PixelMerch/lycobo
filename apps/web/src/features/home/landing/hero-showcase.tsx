@@ -1,5 +1,12 @@
 import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { IconArrowDown } from "@tabler/icons-react";
+import {
+  IconArrowUp,
+  IconCircleCheckFilled,
+  IconHeart,
+  IconMessageCircle,
+  IconSend,
+  IconStarFilled,
+} from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useId, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
@@ -8,9 +15,34 @@ import { showcaseMessages } from "./hero-showcase-messages";
 import { useHeroPlayback } from "./use-hero-playback";
 
 const examples = [
-  { id: "fashion", platform: "TikTok Shop", orders: [24, 32], visits: [1200, 1280] },
-  { id: "audio", platform: "Amazon", orders: [40, 49], visits: [1600, 1750] },
-  { id: "bedding", platform: "Temu", orders: [31, 39], visits: [1550, 1560] },
+  {
+    id: "bedding",
+    platform: "TikTok Shop",
+    price: "$59.99",
+    rating: "4.9",
+    reviews: "1,284",
+    orders: [22, 31],
+    visits: [1100, 1240],
+  },
+  {
+    id: "fashion",
+    platform: "Amazon",
+    price: "$89.99",
+    rating: "4.8",
+    reviews: "2,106",
+    orders: [35, 44],
+    visits: [1500, 1680],
+  },
+  {
+    id: "drink",
+    platform: "Temu",
+    price: "$12.99",
+    compareAt: "$19.99",
+    rating: "4.7",
+    reviews: "8,942",
+    orders: [28, 37],
+    visits: [1350, 1460],
+  },
 ] as const;
 
 type Example = (typeof examples)[number];
@@ -82,7 +114,7 @@ function SalesPreview({
         <span>{t.demoData}</span>
         <strong>+{change}%</strong>
         <span>
-          {t.orders} <UiIcon icon={IconArrowDown} size="small" />
+          {t.orders} <UiIcon icon={IconArrowUp} size="small" />
         </span>
       </Button>
       <Popover.Content className="lp-storeSalesPopover" placement="bottom end">
@@ -112,6 +144,76 @@ function SalesPreview({
         </Popover.Dialog>
       </Popover.Content>
     </Popover>
+  );
+}
+
+/** 平台预览卡：用少量平台 UI 让用户看清图片会发布到哪里。 */
+function PlatformPreview({ example }: { example: Example }) {
+  const t = useMessages(showcaseMessages);
+  const copy = t.examples[example.id];
+  return (
+    <div className="lp-storeOutput" data-platform={example.id}>
+      <div className="lp-storePreviewFrame">
+        <img alt="" src={exampleImage(example.id, "after")} width="720" height="960" />
+        {example.id === "bedding" && (
+          <div aria-hidden="true" className="lp-previewChrome lp-previewTikTok">
+            <div className="lp-previewHeader">
+              <span className="lp-previewAvatar">L</span>
+              <span className="lp-previewAuthor">
+                <b>Lycobo</b>
+                <small>{t.platformUi.sponsored}</small>
+              </span>
+              <UiIcon icon={IconCircleCheckFilled} size="small" />
+            </div>
+            <div className="lp-previewRail">
+              <span>
+                <UiIcon icon={IconHeart} size="small" />
+                <small>18.3k</small>
+              </span>
+              <span>
+                <UiIcon icon={IconMessageCircle} size="small" />
+                <small>264</small>
+              </span>
+              <span>
+                <UiIcon icon={IconSend} size="small" />
+                <small>1.2k</small>
+              </span>
+            </div>
+            <div className="lp-previewFooter">
+              <b>{copy.name}</b>
+              <span>{t.platformUi.shopNow}</span>
+            </div>
+          </div>
+        )}
+        <span className="lp-previewPlatform">{example.platform}</span>
+      </div>
+      <div className="lp-previewMeta">
+        {example.id === "bedding" && <span>{copy.preview}</span>}
+        {example.id === "fashion" && (
+          <>
+            <b>{copy.name}</b>
+            <span className="lp-previewRating">
+              <UiIcon icon={IconStarFilled} size="small" />
+              {example.rating} <small>({example.reviews})</small>
+            </span>
+            <strong>{example.price}</strong>
+            <span className="lp-previewCta">{t.platformUi.addToCart}</span>
+          </>
+        )}
+        {example.id === "drink" && (
+          <>
+            <span className="lp-previewPrice">
+              <strong>{example.price}</strong>
+              <del>{example.compareAt}</del>
+            </span>
+            <span>
+              {t.platformUi.off} · {t.platformUi.sold}
+            </span>
+            <span className="lp-previewCta">{t.platformUi.freeShipping}</span>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -148,15 +250,15 @@ function ProductPreview({
           height="960"
         />
         <span aria-hidden="true" className="lp-storeSweep" />
+        <span className="lp-storePlatformBadge" data-platform={example.id}>
+          {example.platform}
+        </span>
         <figcaption>
           <strong>{copy.name}</strong>
           <span>{copy.format}</span>
         </figcaption>
       </figure>
-      <div className="lp-storeOutput">
-        <img alt="" src={exampleImage(example.id, "after")} width="720" height="960" />
-        <span>{copy.preview}</span>
-      </div>
+      <PlatformPreview example={example} />
       <SalesPreview example={example} onInspect={onInspect} />
     </>
   );

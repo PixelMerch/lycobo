@@ -104,53 +104,11 @@
   color: #fffd;
 }
 
-.lp-storeOutput {
-  position: absolute;
-  z-index: 1;
-  right: 0;
-  top: 8%;
-  width: 29%;
-  display: grid;
-  gap: 6px;
-  padding: 6px;
-  background: #f3f2ee;
-  color: #161913;
-  border-radius: 12px;
-  box-shadow: 0 14px 40px #0005;
-  opacity: 0;
-}
-
-.lp-storeOutput img {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 5 / 4;
-  object-fit: cover;
-  object-position: center 40%;
-  border-radius: 8px;
-}
-
-.lp-storeSlide[data-platform="fashion"] .lp-storeOutput {
-  right: 3%;
-  width: 24%;
-}
-
-.lp-storeSlide[data-platform="fashion"] .lp-storeOutput img {
-  aspect-ratio: 9 / 16;
-}
-
-.lp-storeOutput span {
-  font-size: clamp(10px, 2.2cqw, 13px);
-  font-weight: 600;
-  line-height: 1.25;
-  padding: 0 4px 4px;
-}
-
 .lp-storeSlide .lp-storeSales {
   position: absolute;
-  z-index: 2;
-  bottom: 19%;
-  left: 0;
+  z-index: 3;
+  top: 20%;
+  left: 8%;
   height: auto;
   display: grid;
   justify-items: start;
