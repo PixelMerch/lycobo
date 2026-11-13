@@ -15,7 +15,7 @@ import { useHoverMenu } from "../lib/use-hover-menu";
 import { shellMessages } from "./shell-messages";
 
 /** 顶部电商菜单只列出可用的电商工具。 */
-export function CommerceNavMenu({ landing }: { landing: boolean }) {
+export function CommerceNavMenu({ homeGlass }: { homeGlass: boolean }) {
   const { pathname, search } = useAppLocation();
   const navigate = useAppNavigate();
   const menu = useHoverMenu();
@@ -45,7 +45,7 @@ export function CommerceNavMenu({ landing }: { landing: boolean }) {
       </Dropdown.Trigger>
       <Dropdown.Popover
         ref={menu.popoverRef}
-        className={`topbar-menu header-menu${landing ? " home-header-glass" : ""}`}
+        className={`topbar-menu header-menu${homeGlass ? " home-header-glass" : ""}`}
         placement="bottom start"
         offset={4}
         isNonModal

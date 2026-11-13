@@ -161,12 +161,12 @@
 .topbar .brand {
   flex: none;
 }
-.topbar[data-landing="true"] .brand {
+.topbar[data-commerce-header="true"] .brand {
   align-items: center;
   height: 36px;
   display: flex;
 }
-.topbar[data-landing="true"] .brand .lycobo-logo {
+.topbar[data-commerce-header="true"] .brand .lycobo-logo {
   width: 90px;
   transform: translateY(-2px);
 }
@@ -290,7 +290,7 @@
   flex: none;
   margin-inline-start: auto;
 }
-.topbar[data-landing="true"] .header-login.button {
+.topbar[data-commerce-header="true"] .header-login.button {
   height: 36px;
   min-height: 36px;
 }
@@ -299,7 +299,7 @@
   align-items: center;
   gap: inherit;
 }
-.topbar[data-landing="true"]
+.topbar[data-commerce-header="true"]
   :is(
     .home-header-tool.button,
     .language-trigger,
@@ -309,10 +309,10 @@
   ) {
   border-radius: 12px;
 }
-.topbar[data-landing="true"]
+.topbar[data-commerce-header="true"]
   .topbar-nav
   .nav-row:is(:hover, [data-hovered="true"], [aria-expanded="true"]),
-.topbar[data-landing="true"]
+.topbar[data-commerce-header="true"]
   :is(.home-header-tool, .language-trigger, .header-credits, .header-news .button):is(
     :hover,
     [data-hovered="true"],
@@ -375,7 +375,7 @@
   min-height: 44px;
 }
 @media (max-width: 1100px) {
-  .topbar[data-landing="true"] .home-header-tool-label {
+  .topbar[data-commerce-header="true"] .home-header-tool-label {
     display: none;
   }
 }
@@ -440,7 +440,7 @@
   .topbar .brand .lycobo-logo {
     width: 96px;
   }
-  .topbar[data-landing="true"] .brand .lycobo-logo {
+  .topbar[data-commerce-header="true"] .brand .lycobo-logo {
     width: 90px;
   }
 }
@@ -449,10 +449,12 @@
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 6px;
-  min-height: 36px;
+  justify-content: center;
+  width: 36px;
+  min-width: 36px;
   height: 36px;
-  padding-inline: 12px;
+  min-height: 36px;
+  padding: 0;
   border-radius: 12px;
   background: #ffffff14;
   color: #ffffffcc;
@@ -461,17 +463,6 @@
 .header-workspace.button:is(:hover, [aria-current="page"]) {
   background: #ffffff24;
   color: #fff;
-}
-
-@media (max-width: 1100px) {
-  .header-workspace.button {
-    min-width: 36px;
-    padding-inline: 8px;
-  }
-
-  .header-workspace span {
-    display: none;
-  }
 }
 
 @media (max-width: 767px) {

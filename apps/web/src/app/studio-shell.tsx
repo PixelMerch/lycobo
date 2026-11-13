@@ -1,4 +1,4 @@
-import { Button, Drawer } from "@heroui/react";
+import { Button, Drawer, Tooltip } from "@heroui/react";
 import {
   IconFolderSparkle,
   IconMenu2,
@@ -47,14 +47,16 @@ const headerLogos = {
   home: { src: "/brand/lycobo-landing.svg", width: 90, height: 28 },
   studio: { src: "/brand/lycobo-reveal.svg", width: 120, height: 32 },
 };
+const landingPaths = new Set<string>(["/", commercePath]);
 
 /** 组合应用导航和业务区域，未登录时转往独立登录页面。 */
 export function StudioShell() {
   const location = useAppLocation();
   const { pathname } = location;
-  const landing = pathname === "/" || pathname === commercePath;
-  const logo = headerLogos[landing ? "home" : "studio"];
+  const landing = landingPaths.has(pathname);
   const inWorkspace = isWorkspacePath(pathname);
+  const commerceHeader = landing || inWorkspace;
+  const logo = headerLogos[commerceHeader ? "home" : "studio"];
   const session = useEnterpriseSession();
   const signedIn = !!session.data;
   const protectedRoute = !publicPaths.has(pathname);
@@ -74,6 +76,7 @@ export function StudioShell() {
       {/* 工作区里顶部栏固定为实色、滚动时不收窄；其他页面在顶部透明、滚动后变磨砂。 */}
       <header
         className="topbar"
+        data-commerce-header={commerceHeader || undefined}
         data-landing={landing || undefined}
         data-scrolled={(scrolled && !inWorkspace) || undefined}
         data-solid={inWorkspace || undefined}
@@ -96,7 +99,7 @@ export function StudioShell() {
                 <Drawer.Body>
                   <DrawerNavigation
                     inWorkspace={inWorkspace}
-                    landing={landing}
+                    commerceHeader={commerceHeader}
                     onNavigate={() => setMenuOpen(false)}
                   />
                 </Drawer.Body>
@@ -112,8 +115,12 @@ export function StudioShell() {
         <RouteLink to="/" className="brand">
           <img className="lycobo-logo" alt="Lycobo" {...logo} />
         </RouteLink>
-        <HeaderNavigation landing={landing} />
-        <HeaderActions landing={landing} inWorkspace={inWorkspace} account={session.data} />
+        <HeaderNavigation commerceHeader={commerceHeader} />
+        <HeaderActions
+          commerceHeader={commerceHeader}
+          inWorkspace={inWorkspace}
+          account={session.data}
+        />
       </header>
       <main className="main-content">
         {routeNeedsLogin && session.isPending && <PageLoading />}
@@ -126,24 +133,24 @@ export function StudioShell() {
   );
 }
 
-function HeaderNavigation({ landing }: { landing: boolean }) {
+function HeaderNavigation({ commerceHeader }: { commerceHeader: boolean }) {
   const t = useMessages(shellMessages);
   return (
     <nav className="topbar-nav" aria-label={t.mainNavigation}>
       <RouteLink nav to="/" end className="nav-row">
         {t.home}
       </RouteLink>
-      <CommerceNavMenu landing={landing} />
+      <CommerceNavMenu homeGlass={commerceHeader} />
     </nav>
   );
 }
 
 function HeaderActions({
-  landing,
+  commerceHeader,
   inWorkspace,
   account,
 }: {
-  landing: boolean;
+  commerceHeader: boolean;
   inWorkspace: boolean;
   account: ReturnType<typeof useEnterpriseSession>["data"];
 }) {
@@ -152,26 +159,31 @@ function HeaderActions({
   const t = useMessages(shellMessages);
   const controls = (
     <>
-      <Button
-        aria-label={t.workspace}
-        className="header-workspace"
-        aria-current={inWorkspace ? "page" : false}
-        onPress={() => void navigate(inWorkspace ? `${pathname}${search}${hash}` : "/workspace")}
-      >
-        <UiIcon icon={IconSpaces} size="navigation" />
-        <span>{t.workspace}</span>
-      </Button>
-      <LanguageMenu account={account} homeGlass={landing} />
+      <Tooltip delay={200}>
+        <Button
+          isIconOnly
+          size="sm"
+          variant="tertiary"
+          aria-label={t.workspace}
+          className="header-workspace"
+          aria-current={inWorkspace ? "page" : false}
+          onPress={() => void navigate(inWorkspace ? `${pathname}${search}${hash}` : "/workspace")}
+        >
+          <UiIcon icon={IconSpaces} size="navigation" />
+        </Button>
+        <Tooltip.Content placement="bottom">{t.workspace}</Tooltip.Content>
+      </Tooltip>
+      <LanguageMenu account={account} homeGlass={commerceHeader} />
     </>
   );
   const messages = (
     <div className="header-news" data-signed-in={!!account}>
-      <AccountMessages signedIn={!!account} showTrigger={landing || !!account} />
+      <AccountMessages signedIn={!!account} showTrigger={commerceHeader || !!account} />
     </div>
   );
   return (
     <div className="header-actions">
-      {landing ? (
+      {commerceHeader ? (
         <HomeHeaderUtilities messages={messages}>{controls}</HomeHeaderUtilities>
       ) : (
         <>
@@ -200,11 +212,11 @@ function RealtimeEvents() {
 function DrawerNavigation({
   inWorkspace,
   onNavigate,
-  landing,
+  commerceHeader,
 }: {
   inWorkspace: boolean;
   onNavigate: () => void;
-  landing: boolean;
+  commerceHeader: boolean;
 }) {
   const { pathname, search, hash } = useAppLocation();
   const t = useMessages(shellMessages);
@@ -240,7 +252,7 @@ function DrawerNavigation({
           </span>
         </RouteLink>
       ))}
-      {landing ? (
+      {commerceHeader ? (
         <HomeHeaderUtilities onNavigate={onNavigate} />
       ) : (
         <Button
