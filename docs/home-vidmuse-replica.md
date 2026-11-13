@@ -7,9 +7,9 @@
 ## 当前状态
 
 - 首页路由 `/` 渲染 `apps/web/src/features/home/vidmuse/vidmuse-landing.tsx`，页面自带 header、footer 和 vidmuse 主题，应用壳顶部栏在首页隐藏。
-- 主题色已从 `#FB5123` 改为 Lycobo 青柠 `#A8FF00`，青柠底色上的按钮文字和图标使用深色 `#142000`。
+- 主题色使用采集页的橙红 `#FB5123`（悬停 `#FC744F`），按钮文字和图标为白色；页面底色为黑色。
 - 媒体资源在 `apps/web/public/vidmuse/`，组件和样式在 `apps/web/src/features/home/vidmuse/`。
-- 首屏中间使用 CSS 动态光带近似采集页的 Unicorn Studio Canvas 背景；两侧和下缘用黑色渐隐收边，并遵循 `prefers-reduced-motion`。
+- 首屏在开发环境挂载本地采集的 Unicorn Studio 场景（`apps/web/.vidmuse-scene`），生产构建使用同源循环视频 `hero-bg.mp4` 与静态封面兜底；遵循 `prefers-reduced-motion`。
 - 登录、上传、生成、计费、导航和语言切换目前没有接入业务；只保留页签切换、轮播、视频播放、点赞、模板填入等展示交互。
 - 旧首页的创作框、模式页签、灵感墙和快捷入口组件已移除；灵感库、登录等仍被其他页面使用的代码保留。
 
@@ -26,7 +26,7 @@
 | 视频重制   | 恢复标签上的 16×16 取消按钮和显示状态切换                                    |
 | Impact     | 补回 `data-campaign-reveal` 包裹，恢复全宽渐变背景上的内缩白色卡片           |
 | 输入框     | 去掉主题色描边和旋转渐变，发送按钮固定为 32×32 正圆                          |
-| 主题       | 橙红改为品牌青柠；CTA 线稿、生产时间卡片和引导光同步换色                     |
+| 主题       | 使用采集页橙红主题；CTA 线稿、生产时间卡片和引导光保持源页颜色               |
 
 ## 改进建议
 
@@ -43,8 +43,8 @@
 
 ### P1：视觉与交互保真
 
-4. **首屏背景改用真实 Canvas 场景或定制着色器**  
-   采集文档只记录了 `CANVAS · Unicorn Studio Scene` 的尺寸，没有场景 shader、项目 ID 或可再分发授权；当前用 CSS 光带做近似。若要 1:1，需要引入有授权的 Unicorn Studio 场景，或继续用自有 Canvas/WebGL 着色器重写并记录性能与降级策略。
+4. **确认首屏场景授权与发布方案**
+   开发环境已挂载采集包的 Unicorn Studio 场景，生产构建使用同源循环视频兜底。场景、视频和模板图的再分发授权仍需确认；若要生产环境也使用实时 Canvas，需要补齐场景包和运行时授权。
 
 5. **补齐工作流的可访问语义**  
    采集页使用 `role=tablist` / `role=tabpanel`；当前实现用 ToggleButtonGroup 完成视觉切换。建议改成 HeroUI Tabs 或补全 tab 语义、方向键切换和 `aria-controls`。
@@ -82,7 +82,7 @@
 - [ ] 文案与 Lycobo 实际能力一致，演示数据有明确标注
 - [ ] 素材、字体、视频和第三方运行时授权已确认
 - [ ] 首页壳层、导航、登录和语言切换决策已确认
-- [ ] 首屏背景方案（Canvas / CSS）和性能预算已确认
+- [ ] 首屏实时场景或视频兜底的授权、性能和降级方案已确认
 - [ ] 工作流、模板轮播、Impact 在桌面和手机布局通过目测
 - [ ] reduced-motion 下无必须依赖动画才能理解的内容
 - [ ] `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` 通过
