@@ -91,3 +91,50 @@
   outline: none;
   box-shadow: none;
 }
+
+/* 标签的取消按钮浮在输入区上沿，父级不能裁切它；需覆盖展开态的编辑器裁切规则。 */
+.vm-composerHost[data-expanded="true"] .vm-promptEditor > .vm-promptField {
+  overflow: visible;
+}
+
+/* 发送按钮保持源页 32px 正圆，覆盖 HeroUI 图标按钮的 36px 最小宽度。 */
+.vm-composerActions button {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+/* 覆盖式滚动条：隐藏原生轨道，滑块直接浮在页面内容上，不占右侧宽度。 */
+@media (hover: hover) and (pointer: fine) {
+  .vm-scrollbar-hidden {
+    scrollbar-width: none;
+  }
+  .vm-scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+}
+.vm-overlay-scrollbar {
+  position: fixed;
+  z-index: 9999;
+  top: 0;
+  right: 4px;
+  bottom: 0;
+  width: 6px;
+  pointer-events: none;
+}
+.vm-overlay-scrollbar span {
+  display: block;
+  width: 100%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.46);
+  mix-blend-mode: difference;
+}
+@media (hover: none), (pointer: coarse) {
+  .vm-overlay-scrollbar {
+    display: none;
+  }
+}

@@ -1,26 +1,90 @@
 import { Button } from "@heroui/react";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { campaignFormats } from "./content";
 
-/** 复刻页模板横滑：点击把模板描述写进首屏输入框，暂不生成真实广告。 */
+/** 模板横滑的自动滚动速度，按像素每秒计算，保持缓慢移动。 */
+const autoScrollSpeed = 26;
+
+/** 复刻页模板横滑：缓慢自动向左滚动，也可点击箭头切换；暂不生成真实广告。 */
 export function Formats() {
   const trackRef = useRef<HTMLDivElement>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    const carousel = carouselRef.current;
+    if (!track || !carousel) return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let frame = 0;
+    let previous = performance.now();
+    let paused = false;
+    let visible = false;
+
+    const visibility = new IntersectionObserver((entries) => {
+      visible = entries.some((entry) => entry.isIntersecting);
+    });
+    visibility.observe(carousel);
+
+    const tick = (now: number) => {
+      const elapsed = Math.min(64, now - previous);
+      previous = now;
+      if (!paused && visible && !document.hidden) {
+        const half = track.scrollWidth / 2;
+        if (half > track.clientWidth) {
+          const next = track.scrollLeft + (elapsed * autoScrollSpeed) / 1000;
+          track.scrollLeft = next >= half ? next - half : next;
+        }
+      }
+      frame = requestAnimationFrame(tick);
+    };
+
+    const pause = () => {
+      paused = true;
+    };
+    const resume = () => {
+      paused = false;
+    };
+    const resumeAfterFocus = (event: FocusEvent) => {
+      if (!(event.relatedTarget instanceof Node) || !carousel.contains(event.relatedTarget)) {
+        paused = false;
+      }
+    };
+
+    carousel.addEventListener("pointerenter", pause);
+    carousel.addEventListener("pointerleave", resume);
+    carousel.addEventListener("focusin", pause);
+    carousel.addEventListener("focusout", resumeAfterFocus);
+    frame = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(frame);
+      visibility.disconnect();
+      carousel.removeEventListener("pointerenter", pause);
+      carousel.removeEventListener("pointerleave", resume);
+      carousel.removeEventListener("focusin", pause);
+      carousel.removeEventListener("focusout", resumeAfterFocus);
+    };
+  }, []);
 
   const scroll = (direction: number) => {
     const track = trackRef.current;
     if (!track) return;
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "auto"
+      : "smooth";
     if (direction < 0 && track.scrollLeft < 8) {
-      track.scrollTo({ left: track.scrollWidth });
+      track.scrollTo({ left: track.scrollWidth, behavior });
       return;
     }
     if (direction > 0 && track.scrollLeft + track.clientWidth >= track.scrollWidth - 8) {
-      track.scrollTo({ left: 0 });
+      track.scrollTo({ left: 0, behavior });
       return;
     }
     const card = track.firstElementChild;
     const step = card?.getBoundingClientRect().width ?? 292;
-    track.scrollBy({ left: direction * step });
+    track.scrollBy({ left: direction * step, behavior });
   };
 
   return (
@@ -43,7 +107,7 @@ export function Formats() {
             </div>
           </div>
 
-          <div className="vm-formatsCarousel">
+          <div className="vm-formatsCarousel" ref={carouselRef}>
             <div className="vm-formatsTrack" ref={trackRef}>
               <FormatSet />
               <div className="vm-formatsSet" inert>
