@@ -28,6 +28,7 @@ AI 接手先看 [按任务阅读与交接](ai-workflow.md)，需要时使用 [�
 | 图片回调             | [图片 Webhook](image-webhooks.md)                                        |
 | 视频创作             | [视频接入](video-generation.md)                                          |
 | 电商专区参考         | [电商专区与参考页说明](home-replica.md)                                  |
+| 电商专区内容改造任务 | [给 DeepSeek 的内容、图片与页脚需求（待实施）](../ds.md)                 |
 | 首页内容替换方案     | [LYCOBO 首页内容与素材方案](home-lycobo-content-plan.md)                 |
 | 套图计划与链接分析   | [套图计划](product-variation-plan.md)                                    |
 | 家纺裂变             | [家纺生成](textile-generation.md) · [视角示例](textile-view-examples.md) |
