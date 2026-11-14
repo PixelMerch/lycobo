@@ -1,18 +1,38 @@
 import { Accordion } from "@heroui/react";
 import { motion } from "motion/react";
-import { copyVariants, kitCovers, kitCtas, kitFeeds, kitVideos } from "./content";
+import type { ReactNode } from "react";
+import { useMessages } from "../../../i18n/messages";
+import { resultGroups, resultImageCount } from "./commerce-content";
+import { KitSpecs } from "./kit-specs";
+import { workflowMessages } from "./workflow-messages";
 
-const coverImages = kitCovers;
+const groups = Object.fromEntries(resultGroups.map((group) => [group.id, group.images]));
 
-function PlayGlyph() {
+function Chevron() {
   return (
-    <span>
-      <img alt="" src="/landing/create-play.svg" />
-    </span>
+    <Accordion.Indicator className="lp-kitChevron">
+      <svg aria-hidden="true" fill="none" viewBox="0 0 16 16">
+        <path
+          d="m12.8 6.1-4.663 4.8L3.2 6.1"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.5"
+        />
+      </svg>
+    </Accordion.Indicator>
   );
 }
 
-function FolderVisual() {
+function FolderVisual({
+  title,
+  subtitle,
+  count,
+}: {
+  title: string;
+  subtitle: string;
+  count: string;
+}) {
   return (
     <motion.div
       animate={{ opacity: 1, y: 0 }}
@@ -31,26 +51,80 @@ function FolderVisual() {
         ))}
       </div>
       <div className="lp-folderFront">
-        <b>Social Publishing Kits</b>
-        <span>One-click launch kits</span>
+        <b>{title}</b>
+        <span>{subtitle}</span>
         <p>
-          <strong>36</strong> Assets
+          <strong>{resultImageCount}</strong>
+          {count}
         </p>
       </div>
     </motion.div>
   );
 }
 
+function KitRow({
+  id,
+  title,
+  note,
+  count,
+  children,
+}: {
+  id: string;
+  title: string;
+  note: string;
+  count: number;
+  children: ReactNode;
+}) {
+  return (
+    <Accordion.Item className="lp-kitRow" id={id}>
+      <Accordion.Heading>
+        <Accordion.Trigger className="lp-kitTrigger">
+          <b>{title}</b>
+          <span>{note}</span>
+          <em>{count}</em>
+          <Chevron />
+        </Accordion.Trigger>
+      </Accordion.Heading>
+      <Accordion.Panel className="lp-kitContent">
+        <Accordion.Body className="lp-kitBody">{children}</Accordion.Body>
+      </Accordion.Panel>
+    </Accordion.Item>
+  );
+}
+
+function ImageGrid({
+  images,
+  variant,
+  alt,
+}: {
+  images: string[] | undefined;
+  variant: "shots" | "details";
+  alt: string;
+}) {
+  return (
+    <div className={variant === "shots" ? "lp-kitThumbnails" : "lp-coverExamples"}>
+      {(images ?? []).map((src) => (
+        <i key={src}>
+          <img alt={alt} loading="lazy" src={src} />
+        </i>
+      ))}
+    </div>
+  );
+}
+
 interface KitPanelProps {
   expandedKey: string;
   onExpandedChange: (key: string) => void;
+  onHold?: () => void;
+  onRelease?: () => void;
 }
 
-/** 工作流第三步的 Campaign Kit 折叠列表与示例缩略图。 */
-export function KitPanel({ expandedKey, onExpandedChange }: KitPanelProps) {
+/** 工作流第三步：按用途分组的 12 张示例与 Create 规格选择。 */
+export function KitPanel({ expandedKey, onExpandedChange, onHold, onRelease }: KitPanelProps) {
+  const t = useMessages(workflowMessages).create;
   return (
     <div className="lp-createKit">
-      <FolderVisual />
+      <FolderVisual count={t.countUnit} subtitle={t.folderSubtitle} title={t.folderTitle} />
 
       <div className="lp-kitRowsWrap">
         <Accordion
@@ -63,169 +137,54 @@ export function KitPanel({ expandedKey, onExpandedChange }: KitPanelProps) {
           }}
           variant="surface"
         >
-          <Accordion.Item className="lp-kitRow" id="videos">
-            <Accordion.Heading>
-              <Accordion.Trigger className="lp-kitTrigger">
-                <b>Videos · 9:16</b>
-                <span>TikTok / Reels</span>
-                <em>6</em>
-                <Accordion.Indicator className="lp-kitChevron">
-                  <svg aria-hidden="true" fill="none" viewBox="0 0 16 16">
-                    <path
-                      d="m12.8 6.1-4.663 4.8L3.2 6.1"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.5"
-                    />
-                  </svg>
-                </Accordion.Indicator>
-              </Accordion.Trigger>
-            </Accordion.Heading>
-            <Accordion.Panel className="lp-kitContent">
-              <Accordion.Body className="lp-kitBody">
-                <div className="lp-kitThumbnails">
-                  {kitVideos.map((src) => (
-                    <i key={src}>
-                      <img alt="Campaign video cover" src={src} />
-                      <PlayGlyph />
-                    </i>
-                  ))}
-                </div>
-              </Accordion.Body>
-            </Accordion.Panel>
-          </Accordion.Item>
-
-          <Accordion.Item className="lp-kitRow" id="feed">
-            <Accordion.Heading>
-              <Accordion.Trigger className="lp-kitTrigger">
-                <b>Feed · 4:5</b>
-                <span>Meta Feed</span>
-                <em>4</em>
-                <Accordion.Indicator className="lp-kitChevron">
-                  <svg aria-hidden="true" fill="none" viewBox="0 0 16 16">
-                    <path
-                      d="m12.8 6.1-4.663 4.8L3.2 6.1"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.5"
-                    />
-                  </svg>
-                </Accordion.Indicator>
-              </Accordion.Trigger>
-            </Accordion.Heading>
-            <Accordion.Panel className="lp-kitContent">
-              <Accordion.Body className="lp-kitBody">
-                <div className="lp-feedExamples">
-                  {kitFeeds.map((src) => (
-                    <i key={src}>
-                      <img alt="Campaign feed creative" src={src} />
-                    </i>
-                  ))}
-                </div>
-              </Accordion.Body>
-            </Accordion.Panel>
-          </Accordion.Item>
-
-          <Accordion.Item className="lp-kitRow" id="covers">
-            <Accordion.Heading>
-              <Accordion.Trigger className="lp-kitTrigger">
-                <b>Covers · 1:1</b>
-                <span>Cover Options</span>
-                <em>8</em>
-                <Accordion.Indicator className="lp-kitChevron">
-                  <svg aria-hidden="true" fill="none" viewBox="0 0 16 16">
-                    <path
-                      d="m12.8 6.1-4.663 4.8L3.2 6.1"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.5"
-                    />
-                  </svg>
-                </Accordion.Indicator>
-              </Accordion.Trigger>
-            </Accordion.Heading>
-            <Accordion.Panel className="lp-kitContent">
-              <Accordion.Body className="lp-kitBody">
-                <div className="lp-coverExamples">
-                  {coverImages.map((src) => (
-                    <i key={src}>
-                      <img alt="Campaign cover option" src={src} />
-                    </i>
-                  ))}
-                </div>
-              </Accordion.Body>
-            </Accordion.Panel>
-          </Accordion.Item>
-
-          <Accordion.Item className="lp-kitRow" id="copy">
-            <Accordion.Heading>
-              <Accordion.Trigger className="lp-kitTrigger">
-                <b>Copy Variants</b>
-                <span>Hook + Caption + Headline</span>
-                <em>12</em>
-                <Accordion.Indicator className="lp-kitChevron">
-                  <svg aria-hidden="true" fill="none" viewBox="0 0 16 16">
-                    <path
-                      d="m12.8 6.1-4.663 4.8L3.2 6.1"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.5"
-                    />
-                  </svg>
-                </Accordion.Indicator>
-              </Accordion.Trigger>
-            </Accordion.Heading>
-            <Accordion.Panel className="lp-kitContent">
-              <Accordion.Body className="lp-kitBody">
-                <div className="lp-copyExamples">
-                  {copyVariants.map((group) => (
-                    <section key={group.group}>
-                      <h4>{group.group}</h4>
-                      {group.items.map((item) => (
-                        <p key={item}>{item}</p>
-                      ))}
-                    </section>
-                  ))}
-                </div>
-              </Accordion.Body>
-            </Accordion.Panel>
-          </Accordion.Item>
-
-          <Accordion.Item className="lp-kitRow" id="cta">
-            <Accordion.Heading>
-              <Accordion.Trigger className="lp-kitTrigger">
-                <b>CTA Variants</b>
-                <span>Meta Feed</span>
-                <em>6</em>
-                <Accordion.Indicator className="lp-kitChevron">
-                  <svg aria-hidden="true" fill="none" viewBox="0 0 16 16">
-                    <path
-                      d="m12.8 6.1-4.663 4.8L3.2 6.1"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.5"
-                    />
-                  </svg>
-                </Accordion.Indicator>
-              </Accordion.Trigger>
-            </Accordion.Heading>
-            <Accordion.Panel className="lp-kitContent">
-              <Accordion.Body className="lp-kitBody">
-                <div className="lp-ctaExamples">
-                  {kitCtas.map((src, index) => (
-                    <i key={src}>
-                      <img alt={`CTA variant ${index + 1}`} src={src} />
-                    </i>
-                  ))}
-                </div>
-              </Accordion.Body>
-            </Accordion.Panel>
-          </Accordion.Item>
+          <KitRow
+            count={groups.hero?.length ?? 0}
+            id="hero"
+            note={t.rows.hero.note}
+            title={t.rows.hero.title}
+          >
+            <ImageGrid alt={t.rows.hero.title} images={groups.hero} variant="shots" />
+          </KitRow>
+          <KitRow
+            count={groups.lifestyle?.length ?? 0}
+            id="lifestyle"
+            note={t.rows.lifestyle.note}
+            title={t.rows.lifestyle.title}
+          >
+            <ImageGrid alt={t.rows.lifestyle.title} images={groups.lifestyle} variant="shots" />
+          </KitRow>
+          <KitRow
+            count={groups.details?.length ?? 0}
+            id="details"
+            note={t.rows.details.note}
+            title={t.rows.details.title}
+          >
+            <ImageGrid alt={t.rows.details.title} images={groups.details} variant="details" />
+          </KitRow>
+          <KitRow
+            count={groups.colors?.length ?? 0}
+            id="colors"
+            note={t.rows.colors.note}
+            title={t.rows.colors.title}
+          >
+            <ImageGrid alt={t.rows.colors.title} images={groups.colors} variant="details" />
+            <p className="lp-colorsNote">{t.colorsNote}</p>
+          </KitRow>
+          <KitRow
+            count={groups.settings?.length ?? 0}
+            id="settings"
+            note={t.rows.settings.note}
+            title={t.rows.settings.title}
+          >
+            <div
+              onBlurCapture={onRelease}
+              onFocusCapture={onHold}
+              onPointerEnter={onHold}
+              onPointerLeave={onRelease}
+            >
+              <KitSpecs />
+            </div>
+          </KitRow>
         </Accordion>
       </div>
     </div>

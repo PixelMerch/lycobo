@@ -1,8 +1,11 @@
 import { Button } from "@heroui/react";
 import { motion } from "motion/react";
+import { useMessages } from "../../../i18n/messages";
+import { sectionsMessages } from "./sections-messages";
 
 /** 电商专区结尾入口将创作展示卡滚动到视口中央。 */
 export function FinalCta({ onStart }: { onStart: () => void }) {
+  const t = useMessages(sectionsMessages).cta;
   return (
     <div>
       <section aria-labelledby="campaign-cta-title" className="lp-finalCta" id="start">
@@ -10,9 +13,9 @@ export function FinalCta({ onStart }: { onStart: () => void }) {
           <img alt="" src="/landing/cta-bg.svg" />
         </div>
         <div className="lp-ctaCopy">
-          <span className="cn-badge lp-ctaEyebrow">Ready when you are</span>
-          <h2 id="campaign-cta-title">Your next campaign starts with one product link.</h2>
-          <p>No creative team required. Review and edit every asset before export.</p>
+          <span className="cn-badge lp-ctaEyebrow">{t.eyebrow}</span>
+          <h2 id="campaign-cta-title">{t.title}</h2>
+          <p>{t.description}</p>
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.55, delay: 0.15 }}
@@ -20,7 +23,7 @@ export function FinalCta({ onStart }: { onStart: () => void }) {
             whileInView={{ opacity: 1, y: 0 }}
           >
             <Button className="lp-startButton" onPress={onStart}>
-              Start Creating
+              {t.button}
             </Button>
           </motion.div>
         </div>

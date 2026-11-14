@@ -9,7 +9,7 @@ export const workflowSteps: { id: Step; label: string; progress: number }[] = [
   { id: "create", label: "Create", progress: 0.46 },
 ];
 
-const kitKeys = ["videos", "feed", "covers", "copy", "cta"] as const;
+const kitKeys = ["hero", "lifestyle", "details", "colors", "settings"] as const;
 const workflowBaseHeight = 832;
 const workflowTop = 96;
 
@@ -40,7 +40,7 @@ function workflowScroll(rail: HTMLDivElement) {
 function kitKeyForProgress(progress: number) {
   const createProgress = Math.min(1, Math.max(0, (progress - 0.36) / 0.64));
   const index = Math.min(kitKeys.length - 1, Math.floor(createProgress * kitKeys.length));
-  return kitKeys[index] ?? "videos";
+  return kitKeys[index] ?? "hero";
 }
 
 function stepForProgress(progress: number): Step {
@@ -52,7 +52,8 @@ function stepForProgress(progress: number): Step {
 export function useWorkflowScroll() {
   const railRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<Step>("research");
-  const [kitKey, setKitKey] = useState<string>("videos");
+  const [kitKey, setKitKey] = useState<string>("hero");
+  const holdRef = useRef(false);
   const [desktop, setDesktop] = useState(true);
   const lockRef = useRef(0);
 
@@ -78,7 +79,7 @@ export function useWorkflowScroll() {
   useEffect(() => {
     if (!desktop) return;
     const onScroll = () => {
-      if (Date.now() < lockRef.current) return;
+      if (holdRef.current || Date.now() < lockRef.current) return;
       const rail = railRef.current;
       if (!rail) return;
       const geometry = workflowScroll(rail);
@@ -108,5 +109,12 @@ export function useWorkflowScroll() {
     window.scrollTo({ top: geometry.start + geometry.travel * target, behavior: "smooth" });
   };
 
-  return { railRef, step, kitKey, setKitKey, desktop, selectStep };
+  const hold = () => {
+    holdRef.current = true;
+  };
+  const release = () => {
+    holdRef.current = false;
+  };
+
+  return { railRef, step, kitKey, setKitKey, desktop, selectStep, hold, release };
 }

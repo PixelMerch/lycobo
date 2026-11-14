@@ -279,7 +279,8 @@
 }
 
 /* 交互细节：案例横滑悬停暂停，拼贴卡悬停展开由 CSS 完成。 */
-.lp-casesCarousel:hover .lp-casesTrack {
+.lp-casesCarousel:hover .lp-casesTrack,
+.lp-casesCarousel:focus-within .lp-casesTrack {
   animation-play-state: paused;
 }
 .lp-collage:hover .lp-impactSelfie {
@@ -304,4 +305,49 @@
 }
 .lp-galleryControls .button:active {
   transform: none;
+}
+
+/* 商品图拼贴：图标与静态社交标识。 */
+.lp-impactStats i {
+  display: grid;
+  place-items: center;
+  color: #111111;
+}
+
+.lp-socials .lp-socialMark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.lp-footerNav .lp-footerLink.button {
+  display: block;
+  width: fit-content;
+  height: auto;
+  min-height: 0;
+  margin-bottom: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: inherit;
+  text-align: left;
+}
+
+.lp-footerNav .lp-footerLink.button:hover {
+  background: transparent;
+  color: #fff;
+}
+
+@media (max-width: 639px) {
+  .lp-formatCard .lp-formatCta {
+    height: 34px;
+    margin-top: 8px;
+  }
 }

@@ -23,25 +23,36 @@ export const landingMessages = defineMessages({
     },
     footer: {
       homeAria: "LYCOBO 首页",
-      tagline: "看见你的声音",
+      tagline: "为商品，做好每一张图",
       navAria: "页脚导航",
       copyright: "© 2026 Lycobo。保留所有权利。",
       socials: {
-        wechat: "欢迎加入微信社区",
-        discord: "在 Discord 关注 Lycobo",
-        instagram: "在 Instagram 关注 Lycobo",
-        youtube: "在 YouTube 关注 Lycobo",
-        tiktok: "在 TikTok 关注 Lycobo",
-        x: "在 X 关注 Lycobo",
+        wechat: "微信",
+        discord: "Discord",
+        instagram: "Instagram",
+        youtube: "YouTube",
+        tiktok: "TikTok",
+        x: "X",
       },
-      columns: [
-        { title: "功能", links: ["音乐视频生成器", "技能", "CLI", "更新日志"] },
-        { title: "资源", links: ["博客", "用户指南", "FAQ"] },
-        {
-          title: "法律",
-          links: ["授权许可", "免责声明", "使用政策", "争议政策", "隐私政策", "服务条款"],
+      columns: {
+        createImages: {
+          title: "图片创作",
+          links: {
+            create: "主图制作",
+            textile: "家纺裂变",
+            variation: "套图计划",
+            replica: "复制爆款",
+          },
         },
-      ],
+        space: {
+          title: "工作空间",
+          links: { workspace: "工作区", assets: "素材库", inspiration: "灵感库" },
+        },
+        legal: {
+          title: "法律",
+          links: { terms: "用户协议", privacy: "隐私政策" },
+        },
+      },
     },
   },
   en: {
@@ -65,25 +76,36 @@ export const landingMessages = defineMessages({
     },
     footer: {
       homeAria: "LYCOBO home",
-      tagline: "See your voice",
+      tagline: "Better images for your products",
       navAria: "Footer navigation",
       copyright: "© 2026 Lycobo. All rights reserved.",
       socials: {
-        wechat: "Join the WeChat community",
-        discord: "Follow Lycobo on Discord",
-        instagram: "Follow Lycobo on Instagram",
-        youtube: "Follow Lycobo on YouTube",
-        tiktok: "Follow Lycobo on TikTok",
-        x: "Follow Lycobo on X",
+        wechat: "WeChat",
+        discord: "Discord",
+        instagram: "Instagram",
+        youtube: "YouTube",
+        tiktok: "TikTok",
+        x: "X",
       },
-      columns: [
-        { title: "Features", links: ["Music video generator", "Skills", "CLI", "Changelog"] },
-        { title: "Resources", links: ["Blog", "User guide", "FAQ"] },
-        {
-          title: "Legal",
-          links: ["License", "Disclaimer", "Usage policy", "Dispute policy", "Privacy", "Terms"],
+      columns: {
+        createImages: {
+          title: "Create images",
+          links: {
+            create: "Main Image",
+            textile: "Textile Set",
+            variation: "Image Set Planner",
+            replica: "Style Match",
+          },
         },
-      ],
+        space: {
+          title: "Your space",
+          links: { workspace: "Workspace", assets: "Assets", inspiration: "Inspiration" },
+        },
+        legal: {
+          title: "Legal",
+          links: { terms: "Terms of Service", privacy: "Privacy Policy" },
+        },
+      },
     },
   },
 });
