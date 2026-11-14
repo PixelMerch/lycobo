@@ -65,8 +65,6 @@ export const commerceShowcaseMessages = defineMessages({
     gallery: {
       label: "创作起点",
       title: "商品还能这样拍",
-      pause: "暂停案例滚动",
-      play: "继续案例滚动",
       previous: "向前浏览案例",
       next: "向后浏览案例",
       description: "选一种画面，把创作要求带入工作区",
@@ -137,8 +135,6 @@ export const commerceShowcaseMessages = defineMessages({
     gallery: {
       label: "Starting points",
       title: "More ways to show your product",
-      pause: "Pause gallery",
-      play: "Resume gallery",
       previous: "Previous examples",
       next: "Next examples",
       description: "Pick a look to bring its creative brief into your workspace",
