@@ -6,6 +6,8 @@ import { RouteLink } from "../../../components/router-link";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { textileFeatureMessages } from "./textile-feature-messages";
+import { TextileScrollBoard } from "./textile-scroll-board";
+import { useTextileScroll } from "./use-textile-scroll";
 
 const views = ["front", "pillow", "fabric", "bed-end"] as const;
 const transition = { duration: 0.5, ease: [0.22, 1, 0.36, 1] } as const;
@@ -14,10 +16,11 @@ const ImageViewer = lazy(async () => {
   return { default: module.ImageViewer };
 });
 
-/** 以同系列家纺视角、展开动效和全屏浏览展示床品出图用途。 */
+/** 以滚动套图舞台与手动视角选择展示家纺用途，小屏保留直接浏览。 */
 export function TextileFeature() {
   const t = useMessages(textileFeatureMessages);
   const reducedMotion = useReducedMotion();
+  const story = useTextileScroll();
   const [selected, setSelected] = useState<(typeof views)[number]>("front");
   const [open, setOpen] = useState(false);
   const images = [selected, ...views.filter((view) => view !== selected)].map((view) => ({
@@ -25,51 +28,66 @@ export function TextileFeature() {
     alt: t.views[view].title,
   }));
   return (
-    <section className="commerce-textile" aria-labelledby="commerce-textile-title">
-      <div className="commerce-section">
-        <div className="commerce-textile-heading">
-          <h2 id="commerce-textile-title">{t.title}</h2>
-          <div>
-            <p>{t.description}</p>
-            <RouteLink className="commerce-textile-action" to="/commerce/textile-set">
-              {t.action}
-              <UiIcon icon={IconArrowUpRight} />
-            </RouteLink>
+    <section
+      ref={story.target}
+      data-scroll-story={story.enabled}
+      className="commerce-textile"
+      aria-labelledby="commerce-textile-title"
+    >
+      <div className="commerce-textile-pin">
+        <div className="commerce-section">
+          <div className="commerce-textile-heading">
+            <h2 id="commerce-textile-title">{t.title}</h2>
+            <div>
+              <p>{t.description}</p>
+              <RouteLink className="commerce-textile-action" to="/commerce/textile-set">
+                {t.action}
+                <UiIcon icon={IconArrowUpRight} />
+              </RouteLink>
+            </div>
           </div>
+          {story.enabled ? (
+            <TextileScrollBoard
+              selected={selected}
+              onOpen={() => setOpen(true)}
+              progress={story.progress}
+            />
+          ) : (
+            <TextileBoard selected={selected} onOpen={() => setOpen(true)} />
+          )}
+          <ToggleButtonGroup
+            className="commerce-textile-tabs"
+            aria-label={t.choose}
+            selectedKeys={[selected]}
+            selectionMode="single"
+            disallowEmptySelection
+            isDetached
+            onSelectionChange={(keys) => {
+              const next = views.find((view) => keys.has(view));
+              if (next) setSelected(next);
+            }}
+          >
+            {views.map((view) => (
+              <ToggleButton id={view} key={view}>
+                {t.views[view].title}
+                {selected === view && (
+                  <motion.span
+                    className="commerce-textile-track"
+                    layoutId="textile-track"
+                    transition={reducedMotion ? { duration: 0 } : transition}
+                  />
+                )}
+              </ToggleButton>
+            ))}
+          </ToggleButtonGroup>
+          <p
+            id="commerce-textile-description"
+            className="commerce-textile-current"
+            aria-live="polite"
+          >
+            {t.views[selected].description}
+          </p>
         </div>
-        <TextileBoard selected={selected} onOpen={() => setOpen(true)} />
-        <ToggleButtonGroup
-          className="commerce-textile-tabs"
-          aria-label={t.choose}
-          selectedKeys={[selected]}
-          selectionMode="single"
-          disallowEmptySelection
-          isDetached
-          onSelectionChange={(keys) => {
-            const next = views.find((view) => keys.has(view));
-            if (next) setSelected(next);
-          }}
-        >
-          {views.map((view) => (
-            <ToggleButton id={view} key={view}>
-              {t.views[view].title}
-              {selected === view && (
-                <motion.span
-                  className="commerce-textile-track"
-                  layoutId="textile-track"
-                  transition={reducedMotion ? { duration: 0 } : transition}
-                />
-              )}
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
-        <p
-          id="commerce-textile-description"
-          className="commerce-textile-current"
-          aria-live="polite"
-        >
-          {t.views[selected].description}
-        </p>
       </div>
       {open && (
         <Suspense fallback={null}>
