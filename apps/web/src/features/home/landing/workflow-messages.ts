@@ -63,7 +63,7 @@ export const workflowMessages = defineMessages({
         "当前草稿已有内容。继续后会把比例和分辨率改为此处选择，已有商品图和提示词保留。",
       replaceConfirm: "替换并进入",
       keepCurrent: "保留当前规格",
-      sampleMark: "效果示例",
+      framePreview: "画幅预览",
     },
   },
   en: {
@@ -127,7 +127,7 @@ export const workflowMessages = defineMessages({
         "This draft already has content. Continuing changes its ratio and resolution while keeping the existing product images and prompt.",
       replaceConfirm: "Replace and continue",
       keepCurrent: "Keep current settings",
-      sampleMark: "Sample result",
+      framePreview: "Frame preview",
     },
   },
 });

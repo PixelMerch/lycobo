@@ -45,82 +45,11 @@ export const caseCards: CaseCard[] = [
   { id: "tableware", image: asset("p10-tableware-hero"), format: "mid" },
 ];
 
-export type WorkflowAssetId = "full" | "lid" | "body" | "scene";
-
-export interface WorkflowAsset {
-  id: WorkflowAssetId;
-  image: string;
-}
-
-/** 第一步的四张同款素材；场景参考只解释使用环境。 */
-export const workflowAssets: WorkflowAsset[] = [
-  { id: "full", image: asset("p02-blender-hero") },
-  { id: "lid", image: asset("p02-lid") },
-  { id: "body", image: asset("p02-body") },
-  { id: "scene", image: asset("p02-kitchen") },
-];
-
-export type PlanCardId = "hero" | "lifestyle" | "lid" | "body" | "composition";
-
-export interface PlanCard {
-  id: PlanCardId;
-  index: string;
-  image: string;
-}
-
-/** 第二步的五项方案，顺序即 01–05 编号。 */
-export const planCards: PlanCard[] = [
-  { id: "hero", index: "01", image: asset("p02-blender-hero") },
-  { id: "lifestyle", index: "02", image: asset("p02-kitchen") },
-  { id: "lid", index: "03", image: asset("p02-lid") },
-  { id: "body", index: "04", image: asset("p02-body") },
-  { id: "composition", index: "05", image: asset("p02-ratio-3x4") },
-];
-
-export const comparison = {
-  reference: asset("p02-reference"),
-  result: asset("p02-kitchen"),
-};
-
-export type ResultGroupId = "hero" | "lifestyle" | "details" | "colors" | "settings";
-
-export interface ResultGroup {
-  id: ResultGroupId;
-  images: string[];
-}
-
-/** 第三步的 12 张示例按用途分组；数量由真实文件计算。 */
-export const resultGroups: ResultGroup[] = [
-  { id: "hero", images: [asset("p02-blender-hero"), asset("p02-hero2")] },
-  { id: "lifestyle", images: [asset("p02-kitchen"), asset("p02-scene2")] },
-  { id: "details", images: [asset("p02-lid"), asset("p02-body")] },
-  {
-    id: "colors",
-    images: [asset("p02-blender-hero"), asset("p02-color-sage"), asset("p02-color-blue")],
-  },
-  {
-    id: "settings",
-    images: [asset("p02-blender-hero"), asset("p02-ratio-3x4"), asset("p02-ratio-9x16")],
-  },
-];
-
-export const resultImageCount = resultGroups.reduce(
-  (total, group) => total + group.images.length,
-  0,
-);
-
 /** Create 规格示例按画幅索引；未列出的比例在固定预览槽内显示画框。 */
 export const ratioPreviewImages: Record<string, string> = {
   "1:1": asset("p02-blender-hero"),
   "3:4": asset("p02-ratio-3x4"),
   "9:16": asset("p02-ratio-9x16"),
-};
-
-export const impactImages = {
-  hero: asset("p06-tote-hero"),
-  scene: asset("p06-scene"),
-  hardware: asset("p06-ring"),
-  leather: asset("p06-leather"),
 };
 
 export type FormatTool = "create" | "variation" | "replica" | "textile";

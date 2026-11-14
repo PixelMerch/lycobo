@@ -1,0 +1,141 @@
+import { defineMessages } from "../../../i18n/messages";
+
+/** 电商产品介绍的效果对比、套图说明与创作入口文案。 */
+export const commerceShowcaseMessages = defineMessages({
+  "zh-CN": {
+    intro: "从商品照开始",
+    title: "为商品，换个好场景",
+    description: "调整背景、光线与构图，让主图更干净，让场景更自然",
+    examples: "选择商品图效果",
+    reference: "商品原图",
+    result: "生成效果",
+    create: "制作我的商品图",
+    comparisons: {
+      studio: {
+        label: "产品主图",
+        title: "把光线留给商品",
+        description: "用简洁背景与细腻光影，呈现瓶身轮廓和材质",
+        alt: "琥珀色精华瓶的商品参考与棚拍效果",
+      },
+      scene: {
+        label: "生活场景",
+        title: "让商品走进使用场景",
+        description: "从桌面参考照，到自然光下的厨房场景",
+        alt: "同款便携榨汁杯的商品参考与厨房场景",
+      },
+      apparel: {
+        label: "服装展示",
+        title: "从一件衣服，到穿着效果",
+        description: "参考商品外观，展示版型、穿着与细节",
+        alt: "浅色外套的商品参考与模特穿着效果",
+      },
+    },
+    set: {
+      label: "套图计划",
+      title: "主图、细节、场景。\n成套制作。",
+      description: "主图、材质特写、使用场景。先确认每张图的方案，再生成一套有共同风格的商品图",
+      steps: ["上传商品参考", "确认套图方案", "逐张生成图片"],
+      action: "开始制作套图",
+      open: "查看服装细节套图",
+      full: "整体穿着",
+      zipper: "拉链细节",
+      fabric: "面料纹理",
+      scene: "使用场景",
+      alt: "同款浅色运动外套的穿着图、拉链、面料与室外场景",
+    },
+    tools: {
+      textile: {
+        title: "家纺裂变",
+        description: "选好视角，补齐床品的全景与细节",
+        action: "制作家纺图片",
+        alt: "米白条纹床品在自然光卧室中的整体展示",
+      },
+      replica: {
+        title: "复制爆款",
+        description: "上传风格图和商品图，参考版式制作自己的图片",
+        action: "参考风格创作",
+        alt: "具有留白与柔和光影的香水产品构图参考",
+      },
+    },
+    specs: {
+      label: "输出规格",
+      title: "用合适的画幅，\n展示你的商品",
+      description: "方形主图、竖版详情、横向展示。选择比例与分辨率，带入工作区继续制作",
+    },
+    gallery: {
+      label: "创作起点",
+      title: "看看你的商品，还能怎么拍",
+      description: "选一种画面，把创作要求带入工作区",
+    },
+    cta: { title: "下一组商品图，从这里开始", action: "开始创作" },
+  },
+  en: {
+    intro: "Start with a product photo",
+    title: "Your product. A new setting.",
+    description: "Explore backgrounds, light and composition for studio shots and natural scenes",
+    examples: "Choose a product image example",
+    reference: "Product reference",
+    result: "Generated result",
+    create: "Create my product image",
+    comparisons: {
+      studio: {
+        label: "Studio shots",
+        title: "Let the light do the work",
+        description: "Simple backgrounds and considered light bring out shape and texture",
+        alt: "Amber serum bottle reference and studio result",
+      },
+      scene: {
+        label: "Lifestyle scenes",
+        title: "Put your product in context",
+        description: "From a tabletop reference to a naturally lit kitchen scene",
+        alt: "Portable blender reference and kitchen scene",
+      },
+      apparel: {
+        label: "Apparel",
+        title: "From garment to worn look",
+        description: "Use your product as a reference for fit, styling and details",
+        alt: "Light jacket reference and model wearing the jacket",
+      },
+    },
+    set: {
+      label: "Image Set Planner",
+      title: "One product.\nA complete image set.",
+      description:
+        "Hero shots, texture close-ups and everyday scenes. Review each image plan, then create a coordinated set",
+      steps: ["Add product references", "Review your image plan", "Generate individual images"],
+      action: "Plan an image set",
+      open: "View the apparel image set",
+      full: "Worn look",
+      zipper: "Zipper detail",
+      fabric: "Fabric texture",
+      scene: "In context",
+      alt: "The same light jacket worn, with zipper, fabric and outdoor details",
+    },
+    tools: {
+      textile: {
+        title: "Textile Set",
+        description: "Choose views to show bedding from the full scene to the details",
+        action: "Create textile images",
+        alt: "Cream striped bedding in a naturally lit bedroom",
+      },
+      replica: {
+        title: "Style Match",
+        description: "Add a style image and your product to create an image around that layout",
+        action: "Create from a style",
+        alt: "Perfume product composition with soft light and open space",
+      },
+    },
+    specs: {
+      label: "Output settings",
+      title: "The right frame\nfor your product.",
+      description:
+        "Square hero shots, portrait details and wide compositions. Choose your ratio and resolution, then continue in the workspace",
+    },
+    gallery: {
+      label: "Starting points",
+      title: "Find another angle for your product",
+      description: "Pick a look to bring its creative brief into your workspace",
+    },
+    cta: { title: "Your next product image set starts here", action: "Start creating" },
+  },
+});

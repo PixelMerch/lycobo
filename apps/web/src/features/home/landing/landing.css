@@ -1,9 +1,6 @@
 /* 首页复刻页样式入口；按区块拆分，保持单文件长度可控。 */
 @import "./landing-campaign.css";
 @import "./landing-base.css";
-@import "./landing-cases.css";
-@import "./landing-workflow.css";
-@import "./landing-sections.css";
 @import "./landing-responsive.css";
 @import "./landing-source.css";
 @import "./landing-showcase.css";
@@ -11,4 +8,8 @@
 @import "./landing-metrics.css";
 @import "./landing-upload.css";
 
-@import "./landing-plan.css";
+@import "./commerce-gallery.css";
+@import "./commerce-showcase.css";
+@import "./commerce-controls.css";
+
+@import "./commerce-textile.css";

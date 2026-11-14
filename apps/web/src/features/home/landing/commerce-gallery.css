@@ -1,0 +1,79 @@
+/* 模板画廊与收尾创作入口。 */
+.commerce-gallery {
+  padding-block: 32px 96px;
+}
+.commerce-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 20px;
+  row-gap: 28px;
+}
+.commerce-template.button {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: start;
+  gap: 12px;
+  background: transparent;
+  color: #31362c;
+  width: 100%;
+  height: auto;
+  padding: 0;
+  border-radius: 8px;
+  box-shadow: none;
+  white-space: normal;
+}
+.commerce-template-image {
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #e6e6df;
+}
+.commerce-template-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.commerce-template-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  text-align: left;
+  padding: 0 2px 8px;
+  font-size: 13px;
+  font-weight: 400;
+}
+.commerce-template-caption svg {
+  color: #8a9082;
+  flex-shrink: 0;
+}
+.commerce-template:hover .commerce-template-caption {
+  color: #526d28;
+}
+.commerce-final {
+  background: #dbe7c9;
+  border-top: 1px solid #e2e5d9;
+  padding-block: 56px;
+}
+.commerce-final > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+}
+.commerce-final h2 {
+  font-size: clamp(24px, 2.6vw, 34px);
+}
+.commerce-primary.button {
+  background: #263322;
+  color: #fff;
+  border-radius: 8px;
+  min-height: 48px;
+  padding-inline: 24px;
+  box-shadow: none;
+  flex-shrink: 0;
+}
+.commerce-primary.button:hover {
+  background: #3c4e32;
+}

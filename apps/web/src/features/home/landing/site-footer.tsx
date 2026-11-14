@@ -9,48 +9,27 @@ import { inspirationLibraryPath } from "../inspiration-path";
 import { BrandLogo } from "./brand-logo";
 import { landingMessages } from "./landing-messages";
 
-const socials = [
-  { id: "wechat", icon: "/landing/social-wechat.svg" },
-  { id: "discord", icon: "/landing/social-discord.svg" },
-  { id: "instagram", icon: "/landing/social-instagram.svg" },
-  { id: "youtube", icon: "/landing/social-youtube.svg" },
-  { id: "tiktok", icon: "/landing/social-tiktok.svg" },
-  { id: "x", icon: "/landing/social-x.svg" },
-] as const;
-
 const toolHref = (id: "create" | "textile" | "variation" | "replica") =>
   commerceTools.find((tool) => tool.id === id)?.href ?? "/commerce";
 
-/** 电商专区页脚：真实工具、空间与法律入口，未配置的社交项只作静态标识。 */
+/** 电商专区页脚：品牌与真实工具、空间及法律入口，省略未配置的社交账号。 */
 export function SiteFooter() {
   const t = useMessages(landingMessages).footer;
   const requireLogin = useRequireLogin();
   const openLibrary = useOpenAssetLibrary();
   const links = t.columns;
   return (
-    <footer className="lp-footer">
-      <div className="lp-footer-inner">
-        <div className="lp-footerGrid">
-          <div className="lp-footerBrand">
-            <RouteLink aria-label={t.homeAria} className="lp-footerBrandLink" to="/">
-              <BrandLogo className="lp-footerLogo" title={t.homeAria} />
+    <footer className="commerce-footer">
+      <div className="commerce-footer-inner">
+        <div className="commerce-footerGrid">
+          <div className="commerce-footerBrand">
+            <RouteLink aria-label={t.homeAria} className="commerce-footerBrandLink" to="/">
+              <BrandLogo className="commerce-footerLogo" title={t.homeAria} />
             </RouteLink>
             <p>{t.tagline}</p>
-            <div className="lp-socials">
-              {socials.map((social) => (
-                <span
-                  aria-label={t.socials[social.id]}
-                  className="lp-socialMark"
-                  key={social.id}
-                  role="img"
-                >
-                  <img alt="" src={social.icon} />
-                </span>
-              ))}
-            </div>
           </div>
 
-          <nav aria-label={t.navAria} className="lp-footerNav">
+          <nav aria-label={t.navAria} className="commerce-footerNav">
             <div>
               <h3>{links.createImages.title}</h3>
               <RouteLink to={toolHref("create")}>{links.createImages.links.create}</RouteLink>
@@ -62,7 +41,7 @@ export function SiteFooter() {
               <h3>{links.space.title}</h3>
               <RouteLink to="/workspace">{links.space.links.workspace}</RouteLink>
               <Button
-                className="lp-footerLink"
+                className="commerce-footerLink"
                 variant="ghost"
                 onPress={() => {
                   if (!requireLogin()) return;
@@ -81,7 +60,7 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <div className="lp-footerBottom">
+        <div className="commerce-footerBottom">
           <p>{t.copyright}</p>
         </div>
       </div>

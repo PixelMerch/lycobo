@@ -1,112 +1,88 @@
-import { Button } from "@heroui/react";
-import { lazy, Suspense, useState } from "react";
+import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { IconArrowRight } from "@tabler/icons-react";
+import { motion, useReducedMotion } from "motion/react";
+import { useState } from "react";
+import { RouteLink } from "../../../components/router-link";
+import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
-import { casesMessages } from "./cases-messages";
-import { type CaseCard, caseCards } from "./commerce-content";
+import { commerceShowcaseMessages } from "./commerce-showcase-messages";
 
-const ImageViewer = lazy(async () => {
-  const module = await import("../../../components/image-viewer/image-viewer");
-  return { default: module.ImageViewer };
-});
+const examples = [
+  { id: "studio", reference: "p01-reference", result: "p01-serum-hero" },
+  { id: "scene", reference: "p02-reference", result: "p02-kitchen" },
+  { id: "apparel", reference: "p11-jacket-mother", result: "p11-worn" },
+] as const;
 
-/** 单张案例卡：宽卡可带整体图与细节组图，并复用全屏图片浏览器查看。 */
-function CaseItem({
-  card,
-  duplicate,
-  onOpen,
-}: {
-  card: CaseCard;
-  duplicate: boolean;
-  onOpen?: () => void;
-}) {
-  const t = useMessages(casesMessages);
-  const copy = t.cards[card.id];
-  const visual = card.details ? (
-    <div className="lp-caseDetail">
-      <img alt={copy.alt} className="lp-caseDetailMain" src={card.image} />
-      <div className="lp-caseDetailGrid">
-        {card.details.map((detail) => (
-          <img alt={t.detailAlt[detail.id]} key={detail.id} loading="lazy" src={detail.image} />
-        ))}
-      </div>
-    </div>
-  ) : (
-    <img alt={copy.alt} loading="lazy" src={card.image} />
-  );
-  const body = (
-    <>
-      {visual}
-      <div>
-        <b>{copy.title}</b>
-      </div>
-    </>
-  );
-  return (
-    <div className="lp-caseItem" data-format={card.format === "compact" ? undefined : card.format}>
-      {onOpen && !duplicate ? (
-        <Button
-          aria-label={t.openDetails(copy.title)}
-          className="lp-caseCard lp-caseCardButton"
-          onPress={onOpen}
-        >
-          {body}
-        </Button>
-      ) : (
-        <div className="lp-caseCard">{body}</div>
-      )}
-    </div>
-  );
-}
-
-function CaseTrack({ duplicate = false, onOpen }: { duplicate?: boolean; onOpen?: () => void }) {
-  return (
-    <div aria-hidden={duplicate || undefined} className="lp-casesSet" inert={duplicate}>
-      {caseCards.map((card) => (
-        <CaseItem
-          card={card}
-          duplicate={duplicate}
-          key={card.id}
-          {...(card.id === "jacket" && !duplicate ? { onOpen } : {})}
-        />
-      ))}
-    </div>
-  );
-}
-
-/** 商品图案例横滑：两组相同内容首尾衔接，悬停由 CSS 暂停。 */
+/** 用并排的商品参考与成片展示三种真实图片用途。 */
 export function Cases() {
-  const t = useMessages(casesMessages);
-  const [jacketOpen, setJacketOpen] = useState(false);
-  const jacket = caseCards.find((card) => card.id === "jacket");
-  const viewerImages = jacket?.details
-    ? [
-        { src: jacket.image, alt: t.cards.jacket.alt },
-        ...jacket.details.map((detail) => ({
-          src: detail.image,
-          alt: t.detailAlt[detail.id],
-        })),
-        { src: "/landing/commerce/p11-jacket-mother.webp", alt: t.referenceAlt },
-      ]
-    : [];
+  const t = useMessages(commerceShowcaseMessages);
+  const [selected, setSelected] = useState<(typeof examples)[number]>(examples[0]);
+  const reducedMotion = useReducedMotion();
+  const copy = t.comparisons[selected.id];
   return (
-    <section aria-labelledby="campaign-cases-title" className="lp-cases">
-      <div className="lp-sectionHeading">
-        <span className="cn-badge lp-eyebrow">{t.eyebrow}</span>
-        <h2 id="campaign-cases-title">{t.title}</h2>
-        <p>{t.description}</p>
-      </div>
-
-      <div className="lp-casesCarousel">
-        <div className="lp-casesTrack">
-          <CaseTrack onOpen={() => setJacketOpen(true)} />
-          <CaseTrack duplicate />
+    <section
+      className="commerce-section commerce-comparison"
+      aria-labelledby="commerce-results-title"
+    >
+      <div className="commerce-section-heading">
+        <div>
+          <h2 id="commerce-results-title">{t.title}</h2>
+          <p className="commerce-description">{t.description}</p>
         </div>
       </div>
-      {jacketOpen && viewerImages.length > 0 && (
-        <Suspense fallback={null}>
-          <ImageViewer images={viewerImages} onClose={() => setJacketOpen(false)} />
-        </Suspense>
-      )}
+      <ToggleButtonGroup
+        aria-label={t.examples}
+        className="commerce-example-tabs"
+        disallowEmptySelection
+        isDetached
+        selectedKeys={[selected.id]}
+        selectionMode="single"
+        onSelectionChange={(keys) => {
+          const next = examples.find((example) => keys.has(example.id));
+          if (next) setSelected(next);
+        }}
+      >
+        {examples.map((example) => (
+          <ToggleButton id={example.id} key={example.id}>
+            {t.comparisons[example.id].label}
+          </ToggleButton>
+        ))}
+      </ToggleButtonGroup>
+      <motion.div
+        key={selected.id}
+        className="commerce-comparison-stage"
+        initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <figure className="commerce-reference">
+          <img
+            src={`/landing/commerce/${selected.reference}.webp`}
+            alt={`${t.reference} · ${copy.alt}`}
+            loading="lazy"
+          />
+          <figcaption>{t.reference}</figcaption>
+        </figure>
+        <div className="commerce-comparison-arrow" aria-hidden="true">
+          <UiIcon icon={IconArrowRight} size="action" />
+        </div>
+        <figure className="commerce-result">
+          <img
+            src={`/landing/commerce/${selected.result}.webp`}
+            alt={`${t.result} · ${copy.alt}`}
+            loading="lazy"
+          />
+          <figcaption>{t.result}</figcaption>
+        </figure>
+        <div className="commerce-comparison-copy">
+          <h3>{copy.title}</h3>
+          <p>{copy.description}</p>
+          <RouteLink className="commerce-text-link" to="/commerce/create">
+            {t.create}
+            <UiIcon icon={IconArrowRight} />
+          </RouteLink>
+        </div>
+      </motion.div>
     </section>
   );
 }

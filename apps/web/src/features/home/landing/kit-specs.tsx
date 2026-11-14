@@ -15,7 +15,7 @@ import { ratioPreviewImages } from "./commerce-content";
 import { rememberSpec, type Spec, specRatios, takeSpec } from "./spec-intent";
 import { workflowMessages } from "./workflow-messages";
 
-/** Create 折叠行内的画幅、分辨率、输出尺寸与工作区交接。 */
+/** 独立输出面板提供画幅、分辨率、输出尺寸与工作区交接。 */
 export function KitSpecs() {
   const t = useMessages(workflowMessages).create;
   const session = useEnterpriseSession();
@@ -65,24 +65,33 @@ export function KitSpecs() {
   }
 
   return (
-    <div className="lp-specs">
-      <div className="lp-specsPreview">
-        <span className="lp-specsMark">{t.sampleMark}</span>
-        <div className="lp-specsFrame" style={{ aspectRatio: ratio.replace(":", " / ") }}>
+    <div className="commerce-specs">
+      <div className="commerce-specsPreview">
+        <div
+          className="commerce-specsFrame"
+          style={{
+            aspectRatio: ratio.replace(":", " / "),
+            width: `min(100%, calc(var(--commerce-preview-edge) * ${Math.min(1, dimensions.width / dimensions.height)}))`,
+          }}
+        >
           {preview ? (
             <img alt={t.ratioPreview(ratio)} src={preview} />
           ) : (
-            <span>{t.ratioPreview(ratio)}</span>
+            <img
+              alt={t.ratioPreview(ratio)}
+              src="/landing/commerce/p02-kitchen.webp"
+              loading="lazy"
+            />
           )}
         </div>
       </div>
 
-      <div className="lp-specsControls">
-        <section className="lp-specsGroup">
+      <div className="commerce-specsControls">
+        <section className="commerce-specsGroup">
           <h4>{t.ratio}</h4>
           <ToggleButtonGroup
             aria-label={t.ratio}
-            className="lp-specsOptions"
+            className="commerce-specsOptions"
             disallowEmptySelection
             isDetached
             selectedKeys={[ratio]}
@@ -100,11 +109,11 @@ export function KitSpecs() {
           </ToggleButtonGroup>
         </section>
 
-        <section className="lp-specsGroup">
+        <section className="commerce-specsGroup">
           <h4>{t.resolution}</h4>
           <ToggleButtonGroup
             aria-label={t.resolution}
-            className="lp-specsOptions lp-specsResolutions"
+            className="commerce-specsOptions commerce-specsResolutions"
             disallowEmptySelection
             isDetached
             selectedKeys={[resolution]}
@@ -123,14 +132,13 @@ export function KitSpecs() {
           </ToggleButtonGroup>
         </section>
 
-        <p aria-live="polite" className="lp-specsSize">
+        <p aria-live="polite" className="commerce-specsSize">
           <span>{t.outputSize}</span>
           <strong>{t.dimensions(dimensions.width, dimensions.height)}</strong>
         </p>
 
-        <div className="lp-specsAction">
+        <div className="commerce-specsAction">
           <Button onPress={create}>{t.action}</Button>
-          <small>{t.actionHint}</small>
         </div>
       </div>
 

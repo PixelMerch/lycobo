@@ -7,10 +7,11 @@ import { FinalCta } from "./final-cta";
 import { Formats } from "./formats";
 import { Hero } from "./hero";
 import { SiteFooter } from "./site-footer";
+import { TextileFeature } from "./textile-feature";
 import { Workflow } from "./workflow";
 import "./landing.css";
 
-/** 电商专区保留既有展示区块，首屏按地址选择创作工具。 */
+/** 电商专区保留首屏，以下用效果对比与工具展示说明商品图创作能力。 */
 export function CommerceLanding() {
   const tool = commerceToolFromSearch(useAppLocation().search);
   const composerRef = useRef<HTMLElement>(null);
@@ -20,10 +21,13 @@ export function CommerceLanding() {
         <div className="lp-page">
           <div className="lp-main">
             <Hero composerRef={composerRef} tool={tool} />
-            <Cases />
-            <Workflow />
-            <Formats />
-            <FinalCta onStart={() => composerRef.current?.scrollIntoView({ block: "center" })} />
+            <div className="commerce-body">
+              <TextileFeature />
+              <Cases />
+              <Workflow />
+              <Formats />
+              <FinalCta onStart={() => composerRef.current?.scrollIntoView({ block: "center" })} />
+            </div>
           </div>
           <SiteFooter />
         </div>

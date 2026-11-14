@@ -1,10 +1,7 @@
-/* 首页完全按参考站采集页复刻：黑底、橙红主题和源页控件。 */
 .landing-page,
 .lp-page {
   background: #000;
 }
-
-/* 首屏背景使用 React Bits GradientWaves；容器保留绿黑渐变作为 WebGL 后备。 */
 .lp-heroGradient {
   overflow: hidden;
   background: #030604;
@@ -17,7 +14,6 @@
     opacity: 1;
   }
 }
-/* 左侧和底部压暗，保证文案、创作框在浅色波峰前仍有足够对比。 */
 .lp-heroGradient::after {
   position: absolute;
   z-index: 2;
@@ -34,18 +30,6 @@
   content: "";
   pointer-events: none;
 }
-
-/* 模板轮播箭头保持源页 28px 正圆，避免 HeroUI 最小宽度撑成胶囊。 */
-.lp-galleryControls .button {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  min-height: 28px;
-  padding: 0;
-  border-radius: 50%;
-}
-
-/* 首页不显示滚动条，滚轮、键盘、触控板与触屏滚动保持可用。 */
 html:has(.landing-page) {
   scrollbar-width: none;
 }

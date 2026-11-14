@@ -1,33 +1,21 @@
 import { Button } from "@heroui/react";
-import { motion } from "motion/react";
+import { IconArrowRight } from "@tabler/icons-react";
+import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
-import { sectionsMessages } from "./sections-messages";
+import { commerceShowcaseMessages } from "./commerce-showcase-messages";
 
-/** 电商专区结尾入口将创作展示卡滚动到视口中央。 */
+/** 结尾以单一创作入口回到首屏，保留用户当前选择的工具。 */
 export function FinalCta({ onStart }: { onStart: () => void }) {
-  const t = useMessages(sectionsMessages).cta;
+  const t = useMessages(commerceShowcaseMessages).cta;
   return (
-    <div>
-      <section aria-labelledby="campaign-cta-title" className="lp-finalCta" id="start">
-        <div aria-hidden="true" className="lp-ctaArtwork">
-          <img alt="" src="/landing/cta-bg.svg" />
-        </div>
-        <div className="lp-ctaCopy">
-          <span className="cn-badge lp-ctaEyebrow">{t.eyebrow}</span>
-          <h2 id="campaign-cta-title">{t.title}</h2>
-          <p>{t.description}</p>
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            transition={{ duration: 0.55, delay: 0.15 }}
-            viewport={{ once: true }}
-            whileInView={{ opacity: 1, y: 0 }}
-          >
-            <Button className="lp-startButton" onPress={onStart}>
-              {t.button}
-            </Button>
-          </motion.div>
-        </div>
-      </section>
-    </div>
+    <section className="commerce-final" aria-labelledby="commerce-cta-title">
+      <div className="commerce-section">
+        <h2 id="commerce-cta-title">{t.title}</h2>
+        <Button size="lg" className="commerce-primary" onPress={onStart}>
+          {t.action}
+          <UiIcon icon={IconArrowRight} />
+        </Button>
+      </div>
+    </section>
   );
 }
