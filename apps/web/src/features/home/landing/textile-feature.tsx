@@ -7,7 +7,7 @@ import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { textileFeatureMessages } from "./textile-feature-messages";
 import { TextileScrollBoard } from "./textile-scroll-board";
-import { useTextileScroll } from "./use-textile-scroll";
+import { useCommerceScroll } from "./use-commerce-scroll";
 
 const views = ["front", "pillow", "fabric", "bed-end"] as const;
 const transition = { duration: 0.5, ease: [0.22, 1, 0.36, 1] } as const;
@@ -20,7 +20,7 @@ const ImageViewer = lazy(async () => {
 export function TextileFeature() {
   const t = useMessages(textileFeatureMessages);
   const reducedMotion = useReducedMotion();
-  const story = useTextileScroll();
+  const story = useCommerceScroll();
   const [selected, setSelected] = useState<(typeof views)[number]>("front");
   const [open, setOpen] = useState(false);
   const images = [selected, ...views.filter((view) => view !== selected)].map((view) => ({
