@@ -1,9 +1,7 @@
-import { IconArrowUpRight } from "@tabler/icons-react";
 import { lazy, Suspense, useState } from "react";
-import { RouteLink } from "../../../components/router-link";
-import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { casesMessages } from "./cases-messages";
+import { CommerceBackdrop } from "./commerce-backdrop";
 import { caseCards } from "./commerce-content";
 import { commerceShowcaseMessages } from "./commerce-showcase-messages";
 import { ImageSetBoard } from "./image-set-board";
@@ -37,16 +35,10 @@ export function ImageSetFeature() {
       aria-labelledby="commerce-set-title"
     >
       <div className="commerce-scroll-pin">
-        <div className="commerce-section">
+        <CommerceBackdrop progress={story.progress} enabled={story.enabled} tone="set" />
+        <div className="commerce-section commerce-story-card">
           <div className="commerce-story-heading">
             <h2 id="commerce-set-title">{t.title}</h2>
-            <div className="commerce-story-intro">
-              <p className="commerce-description">{t.description}</p>
-              <RouteLink to="/commerce/smart-variation" className="commerce-text-link">
-                {t.action}
-                <UiIcon icon={IconArrowUpRight} />
-              </RouteLink>
-            </div>
           </div>
           <ImageSetBoard story={story} onOpen={() => setOpen(true)} />
         </div>

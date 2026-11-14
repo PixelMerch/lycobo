@@ -1,56 +1,3 @@
-/* 模板画廊与收尾创作入口。 */
-.commerce-gallery {
-  padding-block: 32px 96px;
-}
-.commerce-gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  column-gap: 20px;
-  row-gap: 28px;
-}
-.commerce-template.button {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: start;
-  gap: 12px;
-  background: transparent;
-  color: #31362c;
-  width: 100%;
-  height: auto;
-  padding: 0;
-  border-radius: 8px;
-  box-shadow: none;
-  white-space: normal;
-}
-.commerce-template-image {
-  aspect-ratio: 4 / 5;
-  overflow: hidden;
-  border-radius: 8px;
-  background: #e6e6df;
-}
-.commerce-template-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.commerce-template-caption {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  align-items: center;
-  text-align: left;
-  padding: 0 2px 8px;
-  font-size: 13px;
-  font-weight: 400;
-}
-.commerce-template-caption svg {
-  color: #8a9082;
-  flex-shrink: 0;
-}
-.commerce-template:hover .commerce-template-caption {
-  color: #526d28;
-}
 .commerce-final {
   background: #dbe7c9;
   border-top: 1px solid #e2e5d9;
@@ -76,4 +23,81 @@
 }
 .commerce-primary.button:hover {
   background: #3c4e32;
+}
+/* 案例按统一竖幅横向排列，不复制交互节点；到两端后自动折返。 */
+.commerce-gallery {
+  padding-block: 80px;
+  background: #191e1b;
+  color: #f3f2e9;
+}
+.commerce-gallery-controls {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.commerce-gallery-controls .button {
+  background: #ffffff12;
+  color: #f3f2e9;
+  border-radius: 50%;
+  min-width: 44px;
+  min-height: 44px;
+}
+.commerce-gallery-rail {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 8px max(24px, calc((100vw - 1280px) / 2)) 12px;
+  overscroll-behavior-x: contain;
+}
+.commerce-gallery-rail::-webkit-scrollbar {
+  display: none;
+}
+.commerce-template.button {
+  position: relative;
+  display: block;
+  flex: 0 0 clamp(240px, 23vw, 340px);
+  height: auto;
+  aspect-ratio: 3 / 4;
+  padding: 0;
+  background: #29312b;
+  color: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  white-space: normal;
+  box-shadow: none;
+}
+.commerce-template-image,
+.commerce-template-image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.commerce-template-caption {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 64px 20px 20px;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  font-size: 16px;
+  background: linear-gradient(transparent, #000a);
+}
+.commerce-template-caption svg {
+  flex-shrink: 0;
+}
+@media (max-width: 600px) {
+  .commerce-gallery {
+    padding-block: 48px;
+  }
+  .commerce-gallery-rail {
+    gap: 16px;
+    padding-inline: 20px;
+  }
+  .commerce-template.button {
+    flex-basis: 72vw;
+  }
 }

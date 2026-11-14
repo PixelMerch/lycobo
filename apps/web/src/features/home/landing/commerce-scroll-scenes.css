@@ -28,21 +28,6 @@
   font-size: clamp(36px, 3.5vw, 56px);
   line-height: 1.15;
 }
-.commerce-story-intro {
-  max-width: 360px;
-}
-.commerce-story-intro .commerce-description {
-  margin-top: 0;
-  margin-bottom: 12px;
-  font-size: 14px;
-}
-.commerce-story-note {
-  color: var(--commerce-muted);
-  font-size: 14px;
-  line-height: 1.8;
-  margin-top: 24px;
-  text-align: center;
-}
 .commerce-comparison-board {
   position: relative;
   width: min(100%, 1100px);
@@ -195,10 +180,6 @@
     bottom: 8px;
     padding: 6px 8px;
     font-size: 11px;
-  }
-  .commerce-story-note {
-    text-align: left;
-    margin-top: 20px;
   }
   .commerce-set-board.button {
     height: 440px;

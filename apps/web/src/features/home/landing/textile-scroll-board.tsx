@@ -23,10 +23,13 @@ export function TextileScrollBoard({ selected, onOpen, progress }: StoryProps) {
           className="commerce-textile-story-open"
           variant="ghost"
           aria-label={t.open}
-          aria-describedby="commerce-textile-description"
           onPress={onOpen}
         >
-          <img
+          <motion.img
+            key={selected}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.24 }}
             src={`/studio/textile-views/${selected}.webp`}
             alt={t.views[selected].title}
             loading="lazy"

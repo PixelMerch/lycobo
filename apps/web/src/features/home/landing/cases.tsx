@@ -1,25 +1,24 @@
-import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { IconArrowUpRight } from "@tabler/icons-react";
-import { useState } from "react";
-import { RouteLink } from "../../../components/router-link";
-import { UiIcon } from "../../../components/ui-icon";
+import { motion } from "motion/react";
 import { useMessages } from "../../../i18n/messages";
+import { CommerceBackdrop } from "./commerce-backdrop";
 import { commerceShowcaseMessages } from "./commerce-showcase-messages";
 import { ComparisonBoard } from "./comparison-board";
 import { useCommerceScroll } from "./use-commerce-scroll";
+import { useScrollChapter } from "./use-scroll-chapter";
 
 const examples = [
   { id: "studio", reference: "p01-reference", result: "p01-serum-hero" },
   { id: "scene", reference: "p02-reference", result: "p02-kitchen" },
   { id: "apparel", reference: "p11-jacket-mother", result: "p11-worn" },
 ] as const;
+const thresholds = [0.36, 0.68] as const;
 
-/** 原图退至一侧、成片随滚动展开，品类选择始终由用户控制。 */
+/** 滚动依次切换三组成片对比；小屏和减少动态效果时完整顺序呈现。 */
 export function Cases() {
   const t = useMessages(commerceShowcaseMessages);
-  const [selected, setSelected] = useState<(typeof examples)[number]>(examples[0]);
   const story = useCommerceScroll();
-  const copy = t.comparisons[selected.id];
+  const chapter = useScrollChapter(story.progress, thresholds);
+  const selected = examples[chapter] ?? examples[0];
   return (
     <section
       ref={story.target}
@@ -28,36 +27,36 @@ export function Cases() {
       aria-labelledby="commerce-results-title"
     >
       <div className="commerce-scroll-pin">
-        <div className="commerce-section">
+        <CommerceBackdrop progress={story.progress} enabled={story.enabled} tone="comparison" />
+        <div className="commerce-section commerce-story-card">
           <div className="commerce-story-heading">
             <h2 id="commerce-results-title">{t.title}</h2>
-            <RouteLink className="commerce-text-link" to="/commerce/create">
-              {t.create}
-              <UiIcon icon={IconArrowUpRight} />
-            </RouteLink>
           </div>
-          <ToggleButtonGroup
-            aria-label={t.examples}
-            className="commerce-example-tabs"
-            disallowEmptySelection
-            isDetached
-            selectedKeys={[selected.id]}
-            selectionMode="single"
-            onSelectionChange={(keys) => {
-              const next = examples.find((example) => keys.has(example.id));
-              if (next) setSelected(next);
-            }}
-          >
-            {examples.map((example) => (
-              <ToggleButton id={example.id} key={example.id}>
-                {t.comparisons[example.id].label}
-              </ToggleButton>
-            ))}
-          </ToggleButtonGroup>
-          <ComparisonBoard example={selected} alt={copy.alt} story={story} />
-          <p className="commerce-story-note" aria-live="polite">
-            {copy.description}
-          </p>
+          {story.enabled ? (
+            <motion.div
+              key={selected.id}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.24 }}
+            >
+              <ComparisonBoard
+                example={selected}
+                alt={t.comparisons[selected.id].alt}
+                story={story}
+              />
+            </motion.div>
+          ) : (
+            <div className="commerce-comparison-list">
+              {examples.map((example) => (
+                <ComparisonBoard
+                  key={example.id}
+                  example={example}
+                  alt={t.comparisons[example.id].alt}
+                  story={story}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

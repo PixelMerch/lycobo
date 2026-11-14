@@ -1,0 +1,72 @@
+/* 圆角摄影卡片位于随滚动换色的底幕上，卡片内仅保留标题和图片。 */
+.commerce-scroll-pin,
+.commerce-textile-pin {
+  position: relative;
+  isolation: isolate;
+}
+.commerce-story-backdrop,
+.commerce-story-backdrop > div {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.commerce-story-backdrop {
+  z-index: -1;
+}
+.commerce-story-card.commerce-section {
+  width: min(1360px, calc(100% - 64px));
+  padding: 32px 40px 40px;
+  border: 1px solid #ffffffa6;
+  border-radius: 28px;
+  background: #ffffff61;
+  box-shadow: 0 20px 60px #29312b08;
+}
+.commerce-textile .commerce-story-card {
+  background: #ffffff0a;
+  border-color: #ffffff26;
+}
+.commerce-story-card .commerce-story-heading,
+.commerce-story-card .commerce-textile-heading {
+  display: block;
+  margin-bottom: 36px;
+  text-align: center;
+}
+.commerce-story-card h2,
+.commerce-textile[data-scroll-story="true"] .commerce-story-card h2 {
+  font-size: clamp(32px, 3vw, 44px);
+  line-height: 1.2;
+}
+.commerce-story-card .commerce-textile-story,
+.commerce-story-card .commerce-comparison-board {
+  height: clamp(300px, calc(100svh - 340px), 520px);
+}
+.commerce-story-card .commerce-set-board {
+  height: clamp(320px, calc(100svh - 344px), 520px);
+  margin-top: 40px;
+}
+.commerce-comparison[data-scroll-story="true"] {
+  height: calc(100svh + 1800px);
+}
+.commerce-comparison-list {
+  display: grid;
+  gap: 48px;
+}
+@media (max-width: 1099px), (max-height: 759px), (prefers-reduced-motion: reduce) {
+  .commerce-story-card .commerce-comparison-board {
+    height: auto;
+  }
+}
+@media (max-width: 600px) {
+  .commerce-story-card.commerce-section {
+    width: calc(100% - 24px);
+    padding: 28px 16px;
+    border-radius: 20px;
+  }
+  .commerce-story-card h2 {
+    font-size: 28px;
+  }
+  .commerce-story-card .commerce-set-board {
+    height: 400px;
+    margin-top: 28px;
+  }
+}

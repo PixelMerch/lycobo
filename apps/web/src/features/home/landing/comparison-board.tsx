@@ -16,13 +16,13 @@ export function ComparisonBoard({
   story: ReturnType<typeof useCommerceScroll>;
 }) {
   const t = useMessages(commerceShowcaseMessages);
-  const referenceX = useTransform(story.progress, [0.05, 0.52], ["105%", "0%"]);
-  const referenceScale = useTransform(story.progress, [0.05, 0.52], [1.4, 1]);
-  const resultX = useTransform(story.progress, [0.22, 0.82], ["32%", "0%"]);
-  const resultY = useTransform(story.progress, [0.22, 0.82], [64, 0]);
-  const resultScale = useTransform(story.progress, [0.22, 0.82], [0.88, 1]);
-  const resultOpacity = useTransform(story.progress, [0.22, 0.44], [0, 1]);
-  const arrowOpacity = useTransform(story.progress, [0.48, 0.7], [0, 1]);
+  const referenceX = useTransform(story.progress, [0.02, 0.16], ["105%", "0%"]);
+  const referenceScale = useTransform(story.progress, [0.02, 0.16], [1.4, 1]);
+  const resultX = useTransform(story.progress, [0.06, 0.24], ["32%", "0%"]);
+  const resultY = useTransform(story.progress, [0.06, 0.24], [64, 0]);
+  const resultScale = useTransform(story.progress, [0.06, 0.24], [0.88, 1]);
+  const resultOpacity = useTransform(story.progress, [0.06, 0.16], [0, 1]);
+  const arrowOpacity = useTransform(story.progress, [0.14, 0.22], [0, 1]);
   return (
     <div className="commerce-comparison-board">
       <motion.figure

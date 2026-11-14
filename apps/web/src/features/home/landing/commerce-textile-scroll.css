@@ -1,4 +1,4 @@
-/* 单一固定舞台用滚动时间线解释家纺套图，不接管滚轮或自动修改视角选择。 */
+/* 固定舞台以原生滚动推进家纺套图，视角由共享章节逻辑切换。 */
 .commerce-textile[data-scroll-story="true"] {
   position: relative;
   height: calc(100svh + 1200px);
@@ -25,19 +25,6 @@
 .commerce-textile[data-scroll-story="true"] .commerce-textile-heading p {
   font-size: 14px;
   max-width: 360px;
-}
-.commerce-textile[data-scroll-story="true"] .commerce-textile-action.link {
-  margin-top: 12px;
-}
-.commerce-textile[data-scroll-story="true"] .commerce-textile-tabs {
-  margin-top: 20px;
-}
-.commerce-textile[data-scroll-story="true"] .commerce-textile-tabs .toggle-button {
-  min-height: 52px;
-  padding-block: 12px;
-}
-.commerce-textile[data-scroll-story="true"] .commerce-textile-current {
-  margin-top: 4px;
 }
 .commerce-textile-story {
   position: relative;
