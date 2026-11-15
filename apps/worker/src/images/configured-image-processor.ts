@@ -139,16 +139,12 @@ async function settleConfiguredFailure(
   error: unknown,
 ) {
   const known = error instanceof ImageProviderError;
-  if (
-    poll &&
-    Date.now() < state.deadlineAt.getTime() &&
-    state.pollFailures < 4 &&
-    !stopsPolling(error)
-  ) {
+  if (poll && Date.now() < state.deadlineAt.getTime() && !stopsPolling(error)) {
+    // 已有供应商任务号，核查期限内只重试读取，指数退避最多增长到一分钟。
     const delayMs = Math.min(
       60000,
       Math.max(
-        5000 * 2 ** state.pollFailures,
+        5000 * 2 ** Math.min(state.pollFailures, 4),
         error instanceof ProviderPollError ? error.delayMs : 0,
       ),
     );
@@ -163,6 +159,7 @@ async function settleConfiguredFailure(
   });
 }
 
+/** 执行配置渠道的提交或结果读取，读取失败时只重查原任务。 */
 export async function processConfiguredImage(job: ClaimedImage, deps: ConfiguredImageDependencies) {
   const state = job.configuredProvider;
   if (!state) throw new Error("PROVIDER_SNAPSHOT_REQUIRED");
@@ -176,6 +173,16 @@ export async function processConfiguredImage(job: ClaimedImage, deps: Configured
     const started = performance.now();
     try {
       return await operation();
+    } catch (error) {
+      if (stage === "image_storage") {
+        // Cloudflare 数字错误码不包含图片内容或供应商地址。
+        const serviceCode =
+          error instanceof Error && "code" in error && typeof error.code === "number"
+            ? error.code
+            : undefined;
+        console.warn({ event: "IMAGE_STORAGE_FAILED", itemId: job.itemId, serviceCode });
+      }
+      throw error;
     } finally {
       report({ stage, durationMs: Math.round(performance.now() - started) });
     }
@@ -205,8 +212,7 @@ export async function processConfiguredImage(job: ClaimedImage, deps: Configured
     if (result.kind === "pending") {
       return await time("provider_receipt", () => deferPendingImage(job, deps, state, result));
     }
-    // A paid slot requests n=1; surplus provider outputs must not discard its usable result.
-    // Preserve stable provider order and deliver one image without creating extra charges/items.
+    // 每个扣费项交付供应商返回的第一张图片，多余结果不会生成额外扣费项。
     const output = result.outputs[0];
     if (!output) throw new ImageProviderError("PROVIDER_EMPTY_IMAGE", true);
     const bytes = await time("provider_download", () =>
