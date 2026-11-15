@@ -32,6 +32,14 @@ export default {
     const codec = cloudflareImages(env.IMAGES);
     const metadata = await codec.info(bytes);
     const preview = await codec.variant(bytes, "preview");
+    const limitedCodec = cloudflareImages({
+      info: (stream) => env.IMAGES.info(stream),
+      input: () => {
+        throw Object.assign(new Error("fixture"), { code: 9422 });
+      },
+    });
+    const fallback = await limitedCodec.encode(preview);
+    const fallbackMetadata = await codec.info(fallback);
     await env.MEDIA.put("fixture.webp", preview);
     const stored = await env.MEDIA.head("fixture.webp");
     const runId = crypto.randomUUID();
@@ -41,6 +49,7 @@ export default {
       passwordVerified: true,
       width: metadata.width,
       storedBytes: stored?.size,
+      quotaFallbackFormat: fallbackMetadata.format,
     });
   },
   async queue(batch, env) {

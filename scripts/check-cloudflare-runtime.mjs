@@ -59,6 +59,7 @@ try {
   assert.equal(result.passwordVerified, true);
   assert.equal(result.width, 2);
   assert(result.storedBytes > 0);
+  assert(["image/png", "png"].includes(result.quotaFallbackFormat));
   let queueCompleted = false;
   for (let attempt = 0; attempt < 30; attempt++) {
     const status = await (
