@@ -62,7 +62,7 @@ test("running images animate with the model icon and stop for reduced motion", a
   await expect(loading.first().locator("svg")).toHaveClass(/icon-sparkles/);
   const placeholders = page.locator(".generation-placeholder");
   await expect(placeholders).toHaveCount(4);
-  await expect(placeholders).toHaveText(["", "", "", ""]);
+  await expect(placeholders).toHaveText(["处理中", "排队中", "排队中", "排队中"]);
   await expect(page.locator('.generation-results [aria-label="排队中"]')).toHaveCount(3);
   await expect(page.locator(".history-thumbnail .generation-loading-icon")).toBeVisible();
   const boxes = await placeholders.evaluateAll((elements) =>

@@ -183,6 +183,11 @@
   text-align: center;
   overflow-wrap: anywhere;
 }
+.generation-pending-label {
+  color: var(--muted);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
 .generation-loading-icon {
   position: relative;
   display: flex;
