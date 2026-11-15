@@ -1,6 +1,6 @@
 # 页面语言路径
 
-页面使用 `/zh-CN` 与 `/en` 前缀，首页分别为 `/zh-CN`、`/en`；工作台示例为 `/zh-CN/commerce/create`。名称、图标、字体与页面布局不因这次路由迁移改变。
+页面使用 `/zh-CN` 与 `/en` 前缀，首页分别为 `/zh-CN`、`/en`；工作台示例为 `/zh-CN/commerce/create`。电商专区示例为 `/zh-CN/commerce?tool=textile`；工作区快捷入口为 `/zh-CN/workspace`，恢复最近使用的电商工具。
 
 ## 规则
 

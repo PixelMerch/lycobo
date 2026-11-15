@@ -91,7 +91,7 @@
   outline-offset: -1px;
 }
 /*
- * 顶部栏按用户指定的 vidmuse 首页复刻：左侧 Logo 与导航，右侧圆形工具按钮、积分胶囊和头像。
+ * 顶部栏按用户指定的参考站首页复刻：左侧 Logo 与导航，右侧圆形工具按钮、积分胶囊和头像。
  * 页面在顶部时透明；一离开顶部就收窄 4px 并铺半透明磨砂，下方 4px 外边距抵消收窄，页面内容不跳动。
  */
 .topbar {
@@ -149,8 +149,26 @@
     backdrop-filter: none;
   }
 }
+.topbar[data-landing="true"] {
+  margin-bottom: calc(-1 * var(--header-height));
+}
+.topbar[data-landing="true"][data-scrolled="true"] {
+  margin-bottom: calc(4px - var(--header-height));
+}
+.topbar[data-landing="true"] + .main-content .lp-hero {
+  padding-top: calc(72px + var(--header-height));
+}
 .topbar .brand {
   flex: none;
+}
+.topbar[data-commerce-header="true"] .brand {
+  align-items: center;
+  height: 36px;
+  display: flex;
+}
+.topbar[data-commerce-header="true"] .brand .lycobo-logo {
+  width: 90px;
+  transform: translateY(-2px);
 }
 .topbar-nav {
   display: flex;
@@ -195,31 +213,10 @@
     transition: none;
   }
 }
-/* 顶部栏下拉（电商、语言、积分）用共享毛玻璃，按 vidmuse 不留描边。 */
-.header-menu.dropdown__popover {
-  border: 0;
-  background: var(--glass-fill), var(--glass-tint);
-  box-shadow: var(--glass-shadow);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-}
-@supports not (backdrop-filter: blur(1px)) {
-  .header-menu.dropdown__popover {
-    background: var(--glass-fallback);
-  }
-}
-@media (prefers-reduced-transparency: reduce) {
-  .header-menu.dropdown__popover {
-    background: var(--glass-fallback);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}
 /* “电商”下拉：四个工具各一行，图标与文字间距 8px。 */
 .topbar-menu {
   min-width: 160px;
   padding: 6px;
-  border-radius: 12px;
 }
 .topbar-menu .dropdown__menu {
   display: flex;
@@ -232,10 +229,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 48px;
-  min-height: 48px;
-  padding: 6px 16px;
-  border-radius: 6px;
+  padding: 0 16px;
   color: #ffffffb3;
   font-size: var(--text-base);
   font-weight: var(--weight-medium);
@@ -243,13 +237,12 @@
   cursor: pointer;
 }
 .topbar-menu .topbar-menu-item:is([data-hovered="true"], [data-focused="true"]) {
-  background: #ffffff0f;
   color: #fff;
 }
 .topbar-menu .topbar-menu-item[data-current="true"] {
   color: #fff;
 }
-/* 右侧消息入口为 40px 圆形按钮。 */
+/* 右侧消息入口为 紧凑圆形按钮。 */
 .header-news {
   display: flex;
   align-items: center;
@@ -259,10 +252,10 @@
   display: contents;
 }
 .header-news .account-footer-action.button {
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
-  min-height: 40px;
+  width: var(--shell-pill-height);
+  min-width: var(--shell-pill-height);
+  height: var(--shell-pill-height);
+  min-height: var(--shell-pill-height);
   border-radius: 50%;
   background: #ffffff14;
   color: #ffffffcc;
@@ -271,7 +264,7 @@
   background: #ffffff24;
   color: #fff;
 }
-/* 未登录时顶部栏右侧只放“登录领积分”胶囊。 */
+/* 登录按钮沿用品牌主色。 */
 .topbar .header-login.button {
   height: 40px;
   min-height: 40px;
@@ -296,6 +289,102 @@
   gap: 12px;
   flex: none;
   margin-inline-start: auto;
+}
+.topbar[data-commerce-header="true"] .header-login.button {
+  height: 36px;
+  min-height: 36px;
+}
+.header-actions .home-header-utilities {
+  display: flex;
+  align-items: center;
+  gap: inherit;
+}
+.topbar[data-commerce-header="true"]
+  :is(
+    .home-header-tool.button,
+    .language-trigger,
+    .header-credits,
+    .header-login.button,
+    .header-news .button
+  ) {
+  border-radius: 12px;
+}
+.topbar[data-commerce-header="true"]
+  .topbar-nav
+  .nav-row:is(:hover, [data-hovered="true"], [aria-expanded="true"]),
+.topbar[data-commerce-header="true"]
+  :is(.home-header-tool, .language-trigger, .header-credits, .header-news .button):is(
+    :hover,
+    [data-hovered="true"],
+    [aria-expanded="true"]
+  ) {
+  background-color: #ffffff1f;
+  backdrop-filter: blur(16px);
+}
+:root :is(.topbar-menu, .choice-menu, .popover).home-header-glass {
+  --glass-tint: rgb(27 25 24 / 54%);
+  --glass-blur: blur(32px);
+  border-radius: 12px;
+}
+:root :is(.topbar-menu, .choice-menu).home-header-glass {
+  --glass-fill: linear-gradient(#ffffff1f, #ffffff1f);
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root :is(.topbar-menu, .popover).home-header-glass {
+    --glass-tint: var(--glass-fallback);
+    --glass-blur: none;
+  }
+}
+.home-header-tool.button {
+  height: var(--shell-pill-height);
+  min-height: var(--shell-pill-height);
+  padding-inline: 12px;
+  border-radius: 12px;
+  background: #ffffff14;
+  color: #fffd;
+}
+.home-header-tool.button:is(:hover, [data-hovered="true"]) {
+  background: #ffffff24;
+  color: #fff;
+}
+.home-header-tool.button.button--icon-only {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+}
+.home-header-help {
+  max-width: min(320px, calc(100vw - 24px));
+  padding: 12px 16px;
+  font-size: var(--text-base);
+}
+.home-header-help b {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.home-header-help ul {
+  display: grid;
+  gap: 8px;
+}
+.mobile-nav .home-header-utilities {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.mobile-nav .home-header-tool.button {
+  width: 100%;
+  min-height: 44px;
+}
+@media (max-width: 1100px) {
+  .topbar[data-commerce-header="true"] .home-header-tool-label {
+    display: none;
+  }
 }
 .mobile-menu {
   display: none;
@@ -343,6 +432,9 @@
 }
 /* 手机顶部栏保留消息入口，导航与账户收进导航抽屉。 */
 @media (max-width: 767px) {
+  .header-actions .home-header-tool.button {
+    display: none;
+  }
   .topbar :is(.topbar-nav, .account-header) {
     display: none;
   }
@@ -354,5 +446,34 @@
   }
   .topbar .brand .lycobo-logo {
     width: 96px;
+  }
+  .topbar[data-commerce-header="true"] .brand .lycobo-logo {
+    width: 90px;
+  }
+}
+
+.header-workspace.button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 12px;
+  background: #ffffff14;
+  color: #ffffffcc;
+}
+
+.header-workspace.button:hover {
+  background: #ffffff24;
+  color: #fff;
+}
+
+@media (max-width: 767px) {
+  .header-actions .header-workspace.button {
+    display: none;
   }
 }

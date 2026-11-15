@@ -18,7 +18,7 @@ import { historyMessages } from "./history-messages";
 
 type HistoryText = (typeof historyMessages)[Locale];
 
-/** Batches of five or more report their progress; larger batches initially show twelve images. */
+/** 五张起显示批量进度，超过十二张默认折叠。 */
 const batchSize = 5;
 const batchFold = 12;
 function BatchProgress({ items }: { items: ImageJob["items"] }) {
@@ -27,11 +27,13 @@ function BatchProgress({ items }: { items: ImageJob["items"] }) {
     items.filter((item) => statuses.includes(item.status)).length;
   const done = tally("succeeded");
   if (done === items.length) return null;
-  const running = tally("queued", "running");
+  const queued = tally("queued");
+  const running = tally("running");
   const failed = tally("failed");
   const unresolved = tally("needs_reconciliation");
   const parts = [
     t.progressDone(done, items.length),
+    queued ? t.progressQueued(queued) : "",
     running ? t.progressRunning(running) : "",
     failed ? t.progressFailed(failed) : "",
     unresolved ? t.progressUnresolved(unresolved) : "",
@@ -68,14 +70,17 @@ function failureMessage(item: Item, t: HistoryText) {
 function HistoryPlaceholder({ job, item }: { job: ImageJob; item: Item }) {
   const t = useMessages(historyMessages);
   const statusLabel = useStatusLabel();
+  const pending = item.status === "running" || item.status === "queued";
+  const label = item.status === "running" ? t.processing : statusLabel(item.status);
   return (
-    <div
-      className={placeholderClass(item.status)}
-      role="status"
-      aria-label={statusLabel(item.status)}
-    >
-      {item.status === "running" || item.status === "queued" ? (
-        <GenerationLoading />
+    <div className={placeholderClass(item.status)} role="status" aria-label={label}>
+      {pending ? (
+        <>
+          <GenerationLoading />
+          <span className="generation-pending-label" aria-hidden="true">
+            {label}
+          </span>
+        </>
       ) : (
         <p className="generation-failure-message">{failureMessage(item, t)}</p>
       )}

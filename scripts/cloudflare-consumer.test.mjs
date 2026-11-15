@@ -4,20 +4,25 @@ import {
   dispatchCloudflareImages,
 } from "../apps/worker/src/cloudflare/cloudflare-consumer";
 import { openCloudflareRuntime } from "../apps/worker/src/cloudflare/cloudflare-runtime";
+import { processCloudflareVariants } from "../apps/worker/src/cloudflare/cloudflare-variants";
 import { processImageItem } from "../apps/worker/src/images/image-processor";
+import { openRealtimeRepository } from "../packages/db/src/index";
 
 vi.mock("../packages/db/src/index", async (importOriginal) => ({
   ...(await importOriginal()),
-  openRealtimeRepository: () => ({
+  openRealtimeRepository: vi.fn(() => ({
     pending: async () => [],
     prune: async () => undefined,
     close: async () => undefined,
-  }),
+  })),
 }));
 vi.mock("../apps/worker/src/cloudflare/cloudflare-runtime", () => ({
   openCloudflareRuntime: vi.fn(),
 }));
 vi.mock("../apps/worker/src/images/image-processor", () => ({ processImageItem: vi.fn() }));
+vi.mock("../apps/worker/src/cloudflare/cloudflare-variants", () => ({
+  processCloudflareVariants: vi.fn(),
+}));
 
 it("processes uploads but never starts, scans or settles paid work while generation is disabled", async () => {
   const process = vi.fn(async () => undefined);
@@ -47,6 +52,7 @@ it("processes uploads but never starts, scans or settles paid work while generat
   expect(uploaded.ack).toHaveBeenCalledOnce();
   expect(paid.retry).toHaveBeenCalledExactlyOnceWith({ delaySeconds: 60 });
   expect(processImageItem).not.toHaveBeenCalled();
+  expect(openRealtimeRepository).toHaveBeenCalledTimes(1);
   await dispatchCloudflareImages(env);
   expect(expireClaims).not.toHaveBeenCalled();
   expect(leaseOutbox).not.toHaveBeenCalled();
@@ -83,6 +89,53 @@ it.each([
     expect(send).toHaveBeenCalledExactlyOnceWith(body, { delaySeconds: scenario.delaySeconds });
     expect(message.ack).toHaveBeenCalledOnce();
     expect(message.retry).not.toHaveBeenCalled();
+    expect(openRealtimeRepository).toHaveBeenCalledTimes(1);
     expect(close).toHaveBeenCalledOnce();
   },
 );
+
+it("skips realtime queries for variant repairs and closes the runtime", async () => {
+  const close = vi.fn(async () => undefined);
+  vi.mocked(openCloudflareRuntime).mockResolvedValue({ repository: { close } });
+  const env = { CLOUDFLARE_CONSUMER_ENABLED: "true" };
+  const body = {
+    version: 1,
+    assetId: crypto.randomUUID(),
+    organizationId: crypto.randomUUID(),
+  };
+  const message = { body, ack: vi.fn(), retry: vi.fn() };
+  await consumeCloudflareImages({ messages: [message] }, env);
+  expect(processCloudflareVariants).toHaveBeenCalledOnce();
+  expect(message.ack).toHaveBeenCalledOnce();
+  expect(openRealtimeRepository).not.toHaveBeenCalled();
+  expect(close).toHaveBeenCalledOnce();
+});
+
+it("flushes events after partial task failure and closes the runtime even if realtime setup fails", async () => {
+  const close = vi.fn(async () => undefined);
+  vi.mocked(openCloudflareRuntime).mockResolvedValue({
+    repository: { close },
+    store: {},
+    policy: {},
+  });
+  vi.mocked(processImageItem).mockRejectedValueOnce(new Error("STORAGE_UNAVAILABLE"));
+  vi.mocked(openRealtimeRepository).mockImplementationOnce(() => {
+    throw new Error("DB_UNAVAILABLE");
+  });
+  const message = {
+    body: { version: 1, itemId: crypto.randomUUID() },
+    ack: vi.fn(),
+    retry: vi.fn(),
+  };
+  const env = {
+    HYPERDRIVE: { connectionString: "fixture-only" },
+    CLOUDFLARE_CONSUMER_ENABLED: "true",
+    CLOUDFLARE_GENERATION_ENABLED: "true",
+  };
+  await expect(consumeCloudflareImages({ messages: [message] }, env)).rejects.toThrow(
+    "DB_UNAVAILABLE",
+  );
+  expect(message.retry).toHaveBeenCalledExactlyOnceWith({ delaySeconds: 30 });
+  expect(openRealtimeRepository).toHaveBeenCalledOnce();
+  expect(close).toHaveBeenCalledOnce();
+});

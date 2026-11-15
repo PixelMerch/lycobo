@@ -1,4 +1,3 @@
-import { create } from "zustand";
 import { useReplicaDraft } from "../commerce/replica/replica-state";
 import { useSmartVariationDraft } from "../commerce/smart-variation/smart-variation-state";
 import { useTextileSetDraft } from "../commerce/textile-set/textile-set-state";
@@ -71,14 +70,6 @@ export const visibleWorkspaceTools = workspaceTools.filter((tool) => tool.id !==
 /** 根据业务路径找到当前工具。 */
 export const toolForPath = (path: string) =>
   workspaceTools.find((tool) => tool.path === path) ?? workspaceTools[0];
-export const useWorkspaceState = create<{
-  lastPath: string;
-  setLastPath: (path: string) => void;
-}>((set) => ({
-  lastPath: "/commerce/create",
-  setLastPath: (lastPath) => set({ lastPath }),
-}));
-
 function referencesForPath(path: string) {
   if (path === "/commerce/textile-set") {
     const textile = useTextileSetDraft.getState();

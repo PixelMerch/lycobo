@@ -1,0 +1,424 @@
+/* 工作流三步与数据面板。 */
+
+/* ------------------------------------------------------------------ */
+/* Workflow                                                           */
+/* ------------------------------------------------------------------ */
+
+.lp-workflowRail[data-scroll-enabled="true"] .lp-workflowPin {
+  position: sticky;
+  top: var(--workflow-top, 96px);
+}
+
+.lp-workflowRail {
+  --workflow-base-height: 832px;
+  --workflow-scale: 0.951923;
+  --workflow-height: 792px;
+  --workflow-width: calc(100% / 0.951923);
+  --workflow-top: 96px;
+  --workflow-travel: 2835px;
+  outline: none;
+}
+
+/* 手动模式沿内容自然排版，避免保留用于吸顶切换的空白行程。 */
+.lp-workflowRail[data-scroll-enabled="false"],
+.lp-workflowRail[data-scroll-enabled="false"] .lp-workflowPin {
+  height: auto;
+}
+
+.lp-workflowRail[data-scroll-enabled="false"] .lp-workflow {
+  width: 100%;
+  height: auto;
+  transform: none;
+}
+
+.lp-workflowBody {
+  position: relative;
+}
+
+.lp-workflowTabs button {
+  border: 0;
+  background: transparent;
+  color: #7a7a7a;
+  font-family: inherit;
+  font-weight: 500;
+  border-radius: 16px;
+  transition: color 0.25s ease;
+}
+
+.lp-workflowTabs button[data-active],
+.lp-workflowTabs button[data-selected="true"] {
+  color: var(--lp-ink);
+}
+
+.lp-kitRows.accordion {
+  background: transparent;
+}
+
+.lp-workflowTabs button:focus-visible {
+  outline: 2px solid rgba(251, 81, 35, 0.5);
+  outline-offset: 2px;
+}
+
+.lp-workflowPanel {
+  min-height: 0;
+}
+
+.lp-workflowPanel[hidden] {
+  display: none;
+}
+
+.lp-researchBackground img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lp-researchDemo {
+  position: relative;
+  max-width: 672px;
+}
+
+.lp-competitor {
+  border: 1px solid #e5e5e5;
+}
+
+.lp-researchDemo[data-research-stage="done"] .lp-competitor[aria-pressed="true"] {
+  border-color: #fbb4a8;
+}
+
+.lp-signal > span {
+  display: grid;
+  gap: 4px;
+}
+
+.lp-signal i {
+  max-width: 100%;
+}
+
+/* Bars only fill after the panel enters the viewport */
+.lp-researchDemo .lp-signal i {
+  animation: none;
+  transform: scaleX(0);
+}
+
+.lp-researchDemo[data-phase="bars"] .lp-signal i,
+.lp-researchDemo[data-phase="line"] .lp-signal i,
+.lp-researchDemo[data-phase="done"] .lp-signal i {
+  animation: lp-bar-fill 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.04s both;
+}
+
+.lp-researchDemo[data-phase="bars"] .lp-signal i:nth-child(2),
+.lp-researchDemo[data-phase="line"] .lp-signal i:nth-child(2),
+.lp-researchDemo[data-phase="done"] .lp-signal i:nth-child(2) {
+  animation-delay: 0.11s;
+}
+
+.lp-researchDemo[data-phase="bars"] .lp-signal i:nth-child(3),
+.lp-researchDemo[data-phase="line"] .lp-signal i:nth-child(3),
+.lp-researchDemo[data-phase="done"] .lp-signal i:nth-child(3) {
+  animation-delay: 0.18s;
+}
+
+@keyframes lp-bar-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.lp-researchDemo[data-research-active] .lp-analysisDots i {
+  display: block;
+}
+
+.lp-researchDemo .lp-analysisLine {
+  opacity: 0;
+  animation: none;
+  clip-path: inset(0 100% 0 0);
+}
+
+.lp-researchDemo[data-phase="line"] .lp-analysisLine,
+.lp-researchDemo[data-phase="done"] .lp-analysisLine {
+  opacity: 1;
+  animation: lp-line-draw 0.48s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes lp-line-draw {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.lp-analysisResult > span:first-child {
+  display: inline-block;
+}
+
+.lp-analysisResult[data-stage="done"] {
+  background: #fff;
+}
+
+.lp-summaryVideo video {
+  background: #ddd;
+}
+
+.lp-summary[data-summary-active] .lp-summaryVideo > i {
+  display: block;
+}
+
+.lp-scoreRing img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.lp-scoreCard > div {
+  min-width: 0;
+}
+
+.lp-scoreCard {
+  cursor: default;
+}
+
+.lp-videoToggle {
+  border: 0;
+}
+
+.lp-kitRowsWrap {
+  min-width: 0;
+}
+
+/* HeroUI accordion → reference kit rows */
+.lp-kitRows.accordion {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  contain: none;
+}
+
+.lp-kitRow.accordion__item {
+  background: #fff;
+  border-radius: 16px;
+  padding: 0;
+  box-shadow: 0 6px 16px -4px rgba(28, 41, 59, 0.06);
+  transition: box-shadow 0.3s ease;
+}
+
+.lp-kitRow.accordion__item::after {
+  display: none;
+}
+
+.lp-kitRow .accordion__heading {
+  margin: 0;
+  display: flex;
+}
+
+.lp-kitBody .lp-kitThumbnails {
+  grid-template-columns: repeat(6, 56px);
+  justify-content: start;
+}
+
+.lp-kitRow.accordion__item[data-expanded="true"],
+.lp-kitRow.accordion__item:hover {
+  box-shadow: 0 10px 24px -4px rgba(28, 41, 59, 0.12);
+}
+
+.lp-kitTrigger.button {
+  display: flex;
+  width: 100%;
+  height: 44px;
+  min-height: 44px;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--lp-ink);
+  font-size: 12px;
+  font-weight: 400;
+  text-align: left;
+  white-space: normal;
+  --button-bg: transparent;
+  --button-bg-hover: transparent;
+  --button-bg-pressed: transparent;
+  --button-fg: var(--lp-ink);
+}
+
+.lp-kitTrigger.button:hover {
+  background: transparent;
+}
+
+.lp-kitTrigger.button:active {
+  transform: none;
+}
+
+.lp-kitTrigger b {
+  font-weight: 600;
+}
+
+.lp-kitTrigger > span:not(.lp-kitChevron) {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border: 1px solid rgba(22, 22, 22, 0.15);
+  border-radius: 999px;
+  color: rgba(22, 22, 22, 0.6);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.lp-kitTrigger em,
+.lp-kitTrigger.button em {
+  margin-left: auto;
+  margin-right: 0;
+  min-width: 22px;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.lp-kitChevron,
+.lp-kitChevron.accordion__indicator {
+  width: 14px;
+  height: 14px;
+  margin-inline-start: 0;
+  color: #7a7a7a;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lp-kitChevron[data-expanded="true"] {
+  transform: rotate(180deg);
+}
+
+.lp-kitRow .lp-kitContent.accordion__panel {
+  display: block;
+  height: var(--disclosure-panel-height);
+  overflow: clip;
+  opacity: 0;
+  transition:
+    height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.25s ease;
+}
+
+.lp-kitRow .lp-kitContent.accordion__panel[data-expanded="true"] {
+  opacity: 1;
+}
+
+.lp-kitRow .accordion__body {
+  padding: 0;
+}
+
+.lp-kitBody {
+  padding: 0;
+  margin: 4px 16px 11px;
+  color: var(--lp-ink);
+}
+
+.lp-kitBody * {
+  color: inherit;
+}
+
+.lp-kitBody .lp-kitThumbnails,
+.lp-kitBody .lp-feedExamples,
+.lp-kitBody .lp-coverExamples,
+.lp-kitBody .lp-ctaExamples {
+  display: grid;
+}
+
+.lp-kitBody .lp-kitThumbnails {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.lp-kitBody .lp-feedExamples {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.lp-kitBody .lp-coverExamples {
+  grid-template-columns: repeat(5, minmax(0, 80px));
+  justify-content: space-between;
+}
+
+.lp-kitBody .lp-ctaExamples {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lp-workflowPanel .lp-kitBody .lp-kitThumbnails > i,
+.lp-workflowPanel .lp-kitBody .lp-feedExamples > i,
+.lp-workflowPanel .lp-kitBody .lp-coverExamples > i,
+.lp-workflowPanel .lp-kitBody .lp-ctaExamples > i {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  min-width: 0;
+}
+
+.lp-workflowPanel .lp-kitBody .lp-kitThumbnails > i {
+  aspect-ratio: 9 / 16;
+}
+
+.lp-workflowPanel .lp-kitBody .lp-feedExamples > i {
+  aspect-ratio: 4 / 5;
+}
+
+.lp-workflowPanel .lp-kitBody .lp-coverExamples > i {
+  aspect-ratio: 1;
+}
+
+.lp-workflowPanel .lp-kitBody .lp-ctaExamples > i {
+  aspect-ratio: 3;
+}
+
+.lp-kitBody .lp-kitThumbnails img,
+.lp-kitBody .lp-feedExamples img,
+.lp-kitBody .lp-coverExamples img,
+.lp-kitBody .lp-ctaExamples img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lp-kitBody .lp-ctaExamples img,
+.lp-kitBody .lp-coverExamples img {
+  object-fit: contain;
+}
+
+.lp-kitBody .lp-kitThumbnails i > span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  width: 30px;
+  height: 30px;
+  translate: -50% -50%;
+  border: 0.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.16);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.lp-kitBody .lp-kitThumbnails i > span img {
+  object-fit: contain;
+}
+
+.lp-copyExamples {
+  max-height: 178px;
+  overflow-y: auto;
+}
+
+.lp-copyExamples h4 {
+  margin: 0 0 6px;
+}

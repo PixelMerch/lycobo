@@ -1,6 +1,6 @@
 import type { ImageObjectBucket } from "../buckets/object-bucket";
-import type { ImageStorageTiming } from "../images/core";
-import { displayObjectKey, displayVariants } from "../images/image-variants";
+import type { ImageOutputSize, ImageStorageTiming } from "../images/core";
+import { type DisplayVariant, displayObjectKey, displayVariants } from "../images/image-variants";
 import type { cloudflareImages } from "./cloudflare-images";
 
 type Codec = ReturnType<typeof cloudflareImages>;
@@ -25,11 +25,11 @@ export async function timeImageWrite<T>(
 }
 
 /** 原始付费结果与规范化并行，但失败返回前仍等待源图写入完成。 */
-export async function preserveAndNormalize(
+export async function preserveAndNormalize<T>(
   bucket: ImageObjectBucket,
   key: string,
   input: Uint8Array,
-  normalize: () => Promise<Uint8Array>,
+  normalize: () => Promise<T>,
   report?: Timing,
 ) {
   const [source, normalized] = await Promise.allSettled([
@@ -55,21 +55,32 @@ export async function persistImageOutput(
   key: string,
   data: Uint8Array,
   report: Timing,
+  dimensions?: ImageOutputSize,
 ) {
-  const writes = await Promise.allSettled([
+  const encode = (variant: DisplayVariant) => {
+    const { width, height, quality } = displayVariants[variant];
+    // 入库前已确认尺寸和格式，派生图直接使用已校验的 PNG。
+    return timeImageWrite(
+      "image_variant_encode",
+      () => codec.encode(data, width, height, "image/webp", quality),
+      report,
+    );
+  };
+  // 小图在两个档位都无需缩放，复用清晰度更高的 WebP。
+  const shared =
+    dimensions &&
+    dimensions.width <= displayVariants.thumbnail.width &&
+    dimensions.height <= displayVariants.thumbnail.height
+      ? encode("preview")
+      : undefined;
+  const [original, ...variants] = await Promise.allSettled([
     timeImageWrite(
       "image_original_put",
       () => bucket.put(key, data, { httpMetadata: { contentType: "image/png" } }),
       report,
     ),
     ...(["thumbnail", "preview"] as const).map(async (variant) => {
-      const { width, height, quality } = displayVariants[variant];
-      // 调用方已验证同一份规范化图片，不为每个变体重复读取元信息。
-      const bytes = await timeImageWrite(
-        "image_variant_encode",
-        () => codec.encode(data, width, height, "image/webp", quality),
-        report,
-      );
+      const bytes = await (shared ?? encode(variant));
       await timeImageWrite(
         "image_variant_put",
         () =>
@@ -80,7 +91,8 @@ export async function persistImageOutput(
       );
     }),
   ]);
-  // 等待所有分支结束后才返回失败，保留源图，防止后台写入越过消费生命周期。
-  const failed = writes.find((write) => write.status === "rejected");
-  if (failed?.status === "rejected") throw failed.reason;
+  if (original.status === "rejected") throw original.reason;
+  // 原图已保存，后续访问可按需补齐展示变体。
+  if (variants.some((variant) => variant.status === "rejected"))
+    console.warn("IMAGE_DISPLAY_VARIANT_UNAVAILABLE");
 }

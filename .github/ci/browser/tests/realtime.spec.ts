@@ -168,7 +168,7 @@ test("logout closes the shared stream and removes prior identity data", async ({
   await expect(page.locator(".account-trigger")).toHaveAccessibleName(`账户菜单：${user.account}`);
   await expect(page.locator("html")).toHaveAttribute("data-ws-active", "1");
   await page.locator(".account-trigger").click();
-  await page.getByRole("menuitem", { name: "退出登录", exact: true }).click();
+  await page.getByRole("button", { name: "退出登录", exact: true }).click();
   // 工作区需要登录：退出后转到独立登录页，私有推送随之关闭。
   await expect(page).toHaveURL(/\/login\?returnTo=/);
   await expect(page.locator("html")).toHaveAttribute("data-ws-active", "0");

@@ -14,6 +14,7 @@ import { AccountLanguagePicker } from "./account-language-picker";
 import { AccountNicknameEditor } from "./account-nickname-editor";
 import { accountSettingsMessages } from "./account-settings-messages";
 import { SettingsGroup, SettingsRow } from "./account-settings-rows";
+import { DesktopNotificationSetting } from "./desktop-notification-setting";
 
 /** 个人资料面板顶部的大号身份信息。 */
 function ProfileHero({ account, role }: { account: EnterpriseIdentity; role: string }) {
@@ -52,6 +53,7 @@ export function AccountSettingsProfile({
   const role = social ? t.personalAccount : t.enterpriseRole(roleLabel(account.role, locale));
   useErrorToast(logout.error?.message);
   const uid = account.uid;
+  const notificationScope = `${account.organizationId}:${account.userId}`;
   return (
     <div className="account-settings-section">
       {withIdentity && <ProfileHero account={account} role={role} />}
@@ -84,6 +86,7 @@ export function AccountSettingsProfile({
       </SettingsGroup>
       <SettingsGroup title={t.preferences}>
         <SettingsRow label={t.language} action={<AccountLanguagePicker account={account} />} />
+        <DesktopNotificationSetting key={notificationScope} scope={notificationScope} />
       </SettingsGroup>
       <SettingsGroup title={social ? t.identity : t.enterpriseIdentity}>
         <SettingsRow label={t.identity} value={role} />

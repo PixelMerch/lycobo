@@ -4,7 +4,7 @@
   flex: none;
   align-items: center;
   gap: 6px;
-  height: 40px;
+  height: var(--shell-pill-height);
   padding: 0 12px;
   border: 0;
   border-radius: 999px;
@@ -35,11 +35,11 @@
   transform: rotate(180deg);
 }
 
-/* 手机和 768–1023px 的窄桌面只留地球图标，给顶部导航让位；窄桌面仍是 40px 圆形按钮。 */
+/* 手机和 768–1023px 的窄桌面只留地球图标，给顶部导航让位；窄桌面仍用同高圆形按钮。 */
 @media (max-width: 1023px) {
   .language-trigger {
     justify-content: center;
-    width: 40px;
+    width: var(--shell-pill-height);
     padding: 0;
   }
   .language-trigger :is(.language-trigger-name, .language-trigger-chevron) {

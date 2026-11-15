@@ -2,7 +2,6 @@ import type { ImagesBinding } from "@cloudflare/workers-types";
 import { imageLimits } from "@lycoboai/contracts";
 import { z } from "zod";
 import { ImageValidationError } from "../images/core";
-import { displayVariants } from "../images/image-variants";
 
 const maxBindingBytes = 20 * 1024 * 1024;
 const bytesStream = (bytes: Uint8Array) =>
@@ -87,11 +86,6 @@ export function cloudflareImages(images: Pick<ImagesBinding, "info" | "input">) 
         );
       }
       throw new ImageValidationError("INVALID_IMAGE");
-    },
-    async variant(bytes: Uint8Array, variant: "thumbnail" | "preview") {
-      await info(bytes);
-      const { width, height, quality } = displayVariants[variant];
-      return encode(bytes, width, height, "image/webp", quality);
     },
   };
 }

@@ -1,10 +1,49 @@
+/* 头像菜单与下拉选择浮层沿用电商菜单的外框圆角。 */
+:root :is(.dropdown__popover, .select__popover, .account-menu) {
+  border-radius: 12px;
+}
+
+/* 下拉菜单用独立高亮底板，保持 44px 点击区和 36px 可见高度。 */
+:root
+  :is(
+    .dropdown__popover .menu-item,
+    .select__popover .list-box-item,
+    .account-menu .account-menu-row,
+    .reference-mention-popover .list-box-item
+  ) {
+  position: relative;
+  isolation: isolate;
+  min-height: 44px;
+
+  &::before {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline: 0;
+    z-index: -1;
+    height: 36px;
+    border-radius: 12px;
+    background: var(--menu-row-fill, transparent);
+    transform: translateY(-50%);
+    pointer-events: none;
+    content: "";
+  }
+
+  &:not([data-disabled="true"]):is(
+      [data-hovered="true"],
+      [data-focused="true"],
+      [data-focus-visible="true"],
+      :focus-visible
+    ) {
+    --menu-row-fill: var(--menu-row-hover-fill, var(--fill-soft));
+    background: transparent;
+  }
+}
+
 /* 单选菜单统一使用顶部栏语言下拉的尺寸、文字和选中提示。 */
 :root .choice-menu:is(.dropdown__popover, .select__popover) {
-  --glass-tint: var(--glass-dark-tint);
   min-width: max(160px, var(--trigger-width, 0px));
   padding: 6px;
   border: 0;
-  border-radius: 12px;
 }
 .choice-menu :is(.dropdown__menu, .list-box, .list-box-section) {
   display: flex;
@@ -19,9 +58,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 44px;
   padding: 0 40px 0 16px;
-  border-radius: 6px;
   background: transparent;
   color: #ffffffb3;
   font-size: var(--text-base);
@@ -33,21 +70,9 @@
   color: #fff;
 }
 .choice-menu :is(.menu-item, .list-box-item):is([data-hovered="true"], [data-focused="true"]) {
-  background: #ffffff0f;
   color: #fff;
 }
 .choice-menu :is(.menu-item__indicator, .list-box-item__indicator) {
   inset-inline: auto 16px;
   color: var(--accent);
-}
-
-@supports not (backdrop-filter: blur(1px)) {
-  :root .choice-menu:is(.dropdown__popover, .select__popover) {
-    --glass-tint: var(--glass-fallback);
-  }
-}
-@media (prefers-reduced-transparency: reduce) {
-  :root .choice-menu:is(.dropdown__popover, .select__popover) {
-    --glass-tint: var(--glass-fallback);
-  }
 }
