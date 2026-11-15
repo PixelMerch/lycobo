@@ -34,6 +34,15 @@ async function normalizeOutput(
   if (!outputSize) return codec.encode(input);
   if (source.width < outputSize.width - 15 || source.height < outputSize.height - 15)
     throw new ImageValidationError("OUTPUT_RESOLUTION_TOO_SMALL");
+  // 已符合交付尺寸的 PNG 不需要调用付费转码；检查完整 IEND，避免交付截断的响应。
+  const withinTolerance =
+    source.width <= outputSize.width + 15 && source.height <= outputSize.height + 15;
+  if (
+    withinTolerance &&
+    (source.format === "image/png" || source.format === "png") &&
+    hasPngEnd(input)
+  )
+    return input;
   if (source.width < outputSize.width || source.height < outputSize.height)
     return codec.encode(input);
   return codec.encode(
@@ -46,7 +55,13 @@ async function normalizeOutput(
   );
 }
 
-/** 保存规范化图片及完整展示变体，失败时保留供应商源图。 */
+function hasPngEnd(input: Uint8Array) {
+  // PNG 的 IEND 块长度为 0，类型和 CRC 固定。
+  const end = [0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130];
+  return end.every((byte, index) => input[input.length - end.length + index] === byte);
+}
+
+/** 持久化原图并生成展示变体，原图处理失败时保留供应商源图。 */
 export function cloudflareImageStore(
   bucket: ImageObjectBucket,
   images: Pick<ImagesBinding, "info" | "input">,
@@ -88,7 +103,14 @@ export function cloudflareImageStore(
       if (metadata.width > 8192 || metadata.height > 8192)
         throw new ImageValidationError("INVALID_IMAGE");
       await persistImageOutput(bucket, codec, key, data, onTiming);
-      await timeImageWrite("image_source_delete", () => bucket.delete(`${key}.source`), onTiming);
+      await timeImageWrite(
+        "image_source_delete",
+        () => bucket.delete(`${key}.source`),
+        onTiming,
+      ).catch(() => {
+        // 原图已持久化，暂存副本清理异常不能撤销交付。
+        console.warn("IMAGE_SOURCE_CLEANUP_FAILED", id);
+      });
       return {
         id,
         objectKey: key,

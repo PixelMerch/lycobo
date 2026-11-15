@@ -87,6 +87,33 @@ it("rejects oversized and animated input before invoking Images", async () => {
   await expect(codec.info(animated)).rejects.toThrow("INVALID_IMAGE");
   expect(f.info).not.toHaveBeenCalled();
 });
+it("delivers the original provider PNG when Images transformations are unavailable", async () => {
+  const f = imagesFixture();
+  const output = vi.fn(() => {
+    throw new Error("IMAGE_TRANSFORM_UNAVAILABLE");
+  });
+  const put = vi.fn<ImageObjectBucket["put"]>(async () => undefined);
+  const remove = vi.fn(async () => {});
+  const bucket: ImageObjectBucket = {
+    put,
+    delete: remove,
+    head: async () => null,
+    get: async () => null,
+  };
+  const binding = { ...f.binding, input: output };
+  const store = cloudflareImageStore(bucket, binding, async () => "1234567890");
+  const scope = { userId: crypto.randomUUID(), organizationId: crypto.randomUUID() };
+  const bytes = await sharp({
+    create: { width: 705, height: 1254, channels: 3, background: "white" },
+  })
+    .png()
+    .toBuffer();
+  const asset = await store.put(scope, bytes, undefined, { width: 705, height: 1254 });
+  expect(asset).toMatchObject({ width: 705, height: 1254, bytes: bytes.length });
+  expect(put).toHaveBeenCalledWith(asset.objectKey, bytes, expect.anything());
+  expect(remove).toHaveBeenCalledWith(`${asset.objectKey}.source`);
+  expect(output).toHaveBeenCalledTimes(2);
+});
 it("keeps the received provider source if image conversion fails", async () => {
   const f = imagesFixture();
   f.info.mockRejectedValueOnce(new Error("decode failed"));
