@@ -273,19 +273,19 @@ async function serveMissingVariant(
   { key, allowed }: AuthorizedAsset,
 ) {
   const head = request.method === "HEAD";
-  if (!head) {
-    const repair = options.queueVariant?.(key).catch(() => {
-      console.warn("ASSET_VARIANT_QUEUE_UNAVAILABLE");
-    });
-    if (repair && options.background) options.background(repair);
-    else await repair;
-  }
   const original = head ? await options.bucket.head(key) : await options.bucket.get(key);
   if (!original)
     return new Response(null, {
       status: 503,
       headers: { "Retry-After": "2", "Cache-Control": "no-store" },
     });
+  if (!head && options.queueVariant) {
+    const repair = queueVariantRepair(request, options, key).catch(() => {
+      console.warn("ASSET_VARIANT_QUEUE_UNAVAILABLE");
+    });
+    if (options.background) options.background(repair);
+    else await repair;
+  }
   // 一直沿用本次预览签名和来源校验，原图回退不占用派生图缓存。
   const headers = new Headers({
     "Content-Type": "image/png",
@@ -298,6 +298,16 @@ async function serveMissingVariant(
   });
   setOrigin(headers, request, allowed);
   return new Response("body" in original ? original.body : null, { headers });
+}
+
+async function queueVariantRepair(request: Request, options: PrivateAssetOptions, key: string) {
+  const marker = new Request(new URL(`/_asset-repair/${key}`, request.url));
+  if (await options.cache?.match(marker).catch(() => undefined)) return;
+  await options.queueVariant?.(key);
+  // 同一素材的两个展示变体共用短期标记；仅入队成功后写入，缓存不可用时仍可恢复。
+  await options.cache
+    ?.put(marker, new Response(null, { headers: { "Cache-Control": "public, max-age=30" } }))
+    .catch(() => undefined);
 }
 
 function cacheImageResponse(

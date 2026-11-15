@@ -6,8 +6,7 @@ import {
   imageQueueJobSchema,
   imageVariantJobSchema,
 } from "@lycoboai/queue";
-import { uploadJobSchema } from "@lycoboai/storage/uploads";
-import { z } from "zod";
+import { recoverCloudflareUploads, uploadJobSchema } from "@lycoboai/storage/uploads";
 import { processImageItem } from "../images/image-processor";
 import { type CloudflareImageEnv, openCloudflareRuntime } from "./cloudflare-runtime";
 import { processCloudflareVariants } from "./cloudflare-variants";
@@ -94,40 +93,19 @@ export async function dispatchCloudflareImages(env: CloudflareImageEnv) {
       await runtime.repository.expireClaims();
       await dispatchImageOutbox(runtime.repository, env.IMAGE_QUEUE);
     }
-    await recoverUploads(env, runtime.uploads.recover);
+    await recoverCloudflareUploads(env.MEDIA, runtime.uploads.recover);
   } finally {
-    await flushRealtime(env);
+    await flushRealtime(env, true);
     await runtime.repository.close();
   }
 }
 
-async function recoverUploads(env: CloudflareImageEnv, recover: (id: string) => Promise<void>) {
-  const stored = await env.MEDIA.get("_upload-scan-cursor");
-  const cursor = stored ? await stored.text() : undefined;
-  const page = await env.MEDIA.list({
-    prefix: "_uploads/",
-    limit: 100,
-    ...(cursor ? { cursor } : {}),
-  });
-  for (const object of page.objects) {
-    if (object.key.endsWith(".bin") && object.uploaded.getTime() < Date.now() - 86400000) {
-      await env.MEDIA.delete(object.key);
-      continue;
-    }
-    if (!object.key.endsWith(".json")) continue;
-    const id = z.uuid().safeParse(object.key.slice(9, -5));
-    if (id.success) await recover(id.data);
-  }
-  if (page.truncated) await env.MEDIA.put("_upload-scan-cursor", page.cursor);
-  else await env.MEDIA.delete("_upload-scan-cursor");
-}
-
-/** 每次消费完成立即推送，Cron 同时补偿 API 或 Queue 中断留下的意图。 */
-async function flushRealtime(env: CloudflareImageEnv) {
+/** 消费后立即推送，Cron 补偿未送达意图并集中清理历史。 */
+async function flushRealtime(env: CloudflareImageEnv, prune = false) {
   const repository = openRealtimeRepository(env.HYPERDRIVE.connectionString);
   try {
     await dispatchRealtime(repository, env.REALTIME);
-    await repository.prune();
+    if (prune) await repository.prune();
   } catch {
     console.error("REALTIME_DISPATCH_FAILED");
   } finally {
