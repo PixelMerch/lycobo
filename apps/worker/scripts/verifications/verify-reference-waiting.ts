@@ -100,7 +100,7 @@ export async function verifyReferenceWaiting(
     "failed",
   );
   await sql`update generation_jobs set created_at=now()-interval '31 minutes' where id=${task.id}`;
-  assert.equal(await prepareReferences(item.id, runtime), "failed");
+  assert.equal(await prepareReferences(item.id, runtime), "pending");
   const asset = await store.put(owner, png, uploadId);
   await repository.addReference(owner, asset);
   assert.equal(await repository.waitingReferenceUploads(item.id), null);

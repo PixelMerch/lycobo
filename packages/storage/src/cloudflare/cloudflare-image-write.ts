@@ -56,7 +56,7 @@ export async function persistImageOutput(
   data: Uint8Array,
   report: Timing,
 ) {
-  const writes = await Promise.allSettled([
+  const [original, ...variants] = await Promise.allSettled([
     timeImageWrite(
       "image_original_put",
       () => bucket.put(key, data, { httpMetadata: { contentType: "image/png" } }),
@@ -80,7 +80,8 @@ export async function persistImageOutput(
       );
     }),
   ]);
-  // 等待所有分支结束后才返回失败，保留源图，防止后台写入越过消费生命周期。
-  const failed = writes.find((write) => write.status === "rejected");
-  if (failed?.status === "rejected") throw failed.reason;
+  if (original.status === "rejected") throw original.reason;
+  // 原图已保存，后续访问可按需补齐展示变体。
+  if (variants.some((variant) => variant.status === "rejected"))
+    console.warn("IMAGE_DISPLAY_VARIANT_UNAVAILABLE");
 }
