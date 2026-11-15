@@ -5,7 +5,43 @@ import { batchImageUpdates } from "../generation/image-event-updates";
 import { setRealtimeReady } from "./availability";
 import { applyResourceEvent, batchResourceUpdates } from "./resource-updates";
 
-/** 共享单条连接；断线与恢复前台时按游标重连，不定时查询业务 API。 */
+function openSocket(privateChannel: boolean, cursor: string) {
+  const url = new URL(`/api/v1/realtime/${privateChannel ? "connect" : "public"}`, location.href);
+  url.protocol = location.protocol === "https:" ? "wss:" : "ws:";
+  url.searchParams.set("cursor", cursor);
+  return new WebSocket(url);
+}
+
+function watchRealtimeResume(
+  readState: () => {
+    socket: WebSocket | undefined;
+    lastPong: number;
+    renewAt: number;
+    stopped: boolean;
+  },
+  reconnect: () => void,
+) {
+  const resume = () => {
+    const { socket, lastPong, renewAt, stopped } = readState();
+    if (document.visibilityState === "hidden" || stopped) return;
+    // 切换标签页不打断仍有心跳的连接；冻结后的过期凭证仍须重新握手。
+    if (
+      socket?.readyState === WebSocket.OPEN &&
+      Date.now() - lastPong < 60000 &&
+      Date.now() < renewAt
+    )
+      return;
+    reconnect();
+  };
+  window.addEventListener("online", resume);
+  document.addEventListener("visibilitychange", resume);
+  return () => {
+    window.removeEventListener("online", resume);
+    document.removeEventListener("visibilitychange", resume);
+  };
+}
+
+/** 共享单条连接，保留健康连接并在断线或到期时按游标恢复。 */
 export function connectRealtime(client: QueryClient, privateChannel: boolean) {
   let stopped = false;
   let socket: WebSocket | undefined;
@@ -16,6 +52,7 @@ export function connectRealtime(client: QueryClient, privateChannel: boolean) {
   let reconnect: ReturnType<typeof setTimeout> | undefined;
   let heartbeat: ReturnType<typeof setInterval> | undefined;
   let expiry: ReturnType<typeof setTimeout> | undefined;
+  let renewAt = 0;
   let lastPong = Date.now();
   const updates = batchImageUpdates(client, () => stopped);
   const resources = batchResourceUpdates(client, () => stopped);
@@ -30,6 +67,7 @@ export function connectRealtime(client: QueryClient, privateChannel: boolean) {
     epoch++;
     if (connectedAt !== undefined && Date.now() - connectedAt >= 60000) failures = 0;
     connectedAt = undefined;
+    renewAt = 0;
     clearInterval(heartbeat);
     clearTimeout(expiry);
     if (socket) {
@@ -64,7 +102,8 @@ export function connectRealtime(client: QueryClient, privateChannel: boolean) {
         client.setQueryData(["site-release"], { release: frame.release });
         clearTimeout(expiry);
         // 到期前重新握手，通过现有 HttpOnly 刷新机制续期，不在消息里携带令牌。
-        expiry = setTimeout(restart, Math.max(1000, frame.expiresAt - Date.now() - 60000));
+        renewAt = frame.expiresAt - 60000;
+        expiry = setTimeout(restart, Math.max(1000, renewAt - Date.now()));
         connectedAt = Date.now();
       } else if (BigInt(frame.cursor) > BigInt(cursor)) {
         apply(frame.event);
@@ -91,10 +130,7 @@ export function connectRealtime(client: QueryClient, privateChannel: boolean) {
     const generation = ++epoch;
     if (renew && privateChannel && !(await renewIdentity(generation))) return;
     if (stopped || generation !== epoch) return;
-    const url = new URL(`/api/v1/realtime/${privateChannel ? "connect" : "public"}`, location.href);
-    url.protocol = location.protocol === "https:" ? "wss:" : "ws:";
-    url.searchParams.set("cursor", cursor);
-    const active = new WebSocket(url);
+    const active = openSocket(privateChannel, cursor);
     socket = active;
     lastPong = Date.now();
     active.onmessage = (message) => {
@@ -111,14 +147,14 @@ export function connectRealtime(client: QueryClient, privateChannel: boolean) {
       if (active.readyState === WebSocket.OPEN) active.send("ping");
     }, 20000);
   };
-  const resume = () => {
-    if (document.visibilityState === "hidden" || stopped) return;
-    clearTimeout(reconnect);
-    reconnect = undefined;
-    restart();
-  };
-  window.addEventListener("online", resume);
-  document.addEventListener("visibilitychange", resume);
+  const stopResume = watchRealtimeResume(
+    () => ({ socket, lastPong, renewAt, stopped }),
+    () => {
+      clearTimeout(reconnect);
+      reconnect = undefined;
+      restart();
+    },
+  );
   void connect().catch(restart);
   return () => {
     stopped = true;
@@ -126,7 +162,6 @@ export function connectRealtime(client: QueryClient, privateChannel: boolean) {
     restart();
     updates.cancel();
     resources.cancel();
-    window.removeEventListener("online", resume);
-    document.removeEventListener("visibilitychange", resume);
+    stopResume();
   };
 }

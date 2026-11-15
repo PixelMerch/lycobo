@@ -1,5 +1,11 @@
-import { Button, Drawer } from "@heroui/react";
-import { IconBulb, IconFolderSparkle, IconMenu2, IconSmartHome, IconX } from "@tabler/icons-react";
+import { Button, Drawer, Tooltip } from "@heroui/react";
+import {
+  IconFolderSparkle,
+  IconMenu2,
+  IconSmartHome,
+  IconSpaces,
+  IconX,
+} from "@tabler/icons-react";
 import { useState } from "react";
 import { Navigate, Outlet } from "react-router";
 import { RouteLink } from "../components/router-link";
@@ -12,18 +18,16 @@ import { AssetLibraryHost } from "../features/assets/asset-library-host";
 import { useOpenAssetLibrary } from "../features/assets/asset-library-store";
 import { useEnterpriseSession } from "../features/auth/auth-client";
 import { loginHref } from "../features/auth/login-navigation";
+import { commercePath, commerceToolHref, commerceTools } from "../features/commerce/commerce-tools";
 import { useImageEvents } from "../features/generation/use-image-events";
 import { inspirationLibraryPath } from "../features/home/inspiration-path";
 import { legalPaths } from "../features/legal/legal-document";
-import {
-  shareProductReference,
-  visibleWorkspaceTools,
-} from "../features/workspace/workspace-state";
 import { workspaceToolMessages } from "../features/workspace/workspace-tool-messages";
 import { toolIcons } from "../features/workspace/workspace-tool-symbol";
 import { useMessages } from "../i18n/messages";
-import { useAppLocation } from "../i18n/use-localized-navigation";
+import { useAppLocation, useAppNavigate } from "../i18n/use-localized-navigation";
 import { CommerceNavMenu } from "./commerce-nav-menu";
+import { HomeHeaderUtilities } from "./home-header-utilities";
 import { LanguageMenu } from "./language-menu";
 import { PageLoading } from "./page-loading";
 import { shellMessages } from "./shell-messages";
@@ -33,16 +37,26 @@ import "../styles/brand.css";
 // 首页与用户协议、隐私政策不需要登录，其他页面未登录时先去登录。
 const publicPaths = new Set<string>([
   "/",
+  commercePath,
   inspirationLibraryPath,
   legalPaths.terms,
   legalPaths.privacy,
 ]);
 
+const headerLogos = {
+  home: { src: "/brand/lycobo-landing.svg", width: 90, height: 28 },
+  studio: { src: "/brand/lycobo-reveal.svg", width: 120, height: 32 },
+};
+const landingPaths = new Set<string>(["/", commercePath]);
+
 /** 组合应用导航和业务区域，未登录时转往独立登录页面。 */
 export function StudioShell() {
   const location = useAppLocation();
   const { pathname } = location;
+  const landing = landingPaths.has(pathname);
   const inWorkspace = isWorkspacePath(pathname);
+  const commerceHeader = landing || inWorkspace;
+  const logo = headerLogos[commerceHeader ? "home" : "studio"];
   const session = useEnterpriseSession();
   const signedIn = !!session.data;
   const protectedRoute = !publicPaths.has(pathname);
@@ -62,6 +76,8 @@ export function StudioShell() {
       {/* 工作区里顶部栏固定为实色、滚动时不收窄；其他页面在顶部透明、滚动后变磨砂。 */}
       <header
         className="topbar"
+        data-commerce-header={commerceHeader || undefined}
+        data-landing={landing || undefined}
         data-scrolled={(scrolled && !inWorkspace) || undefined}
         data-solid={inWorkspace || undefined}
       >
@@ -74,20 +90,18 @@ export function StudioShell() {
               <Drawer.Dialog className="mobile-nav">
                 <Drawer.Header>
                   <Drawer.Heading>
-                    <img
-                      className="lycobo-logo"
-                      src="/brand/lycobo-reveal.svg"
-                      alt="Lycobo"
-                      width="120"
-                      height="32"
-                    />
+                    <img className="lycobo-logo" alt="Lycobo" {...logo} />
                   </Drawer.Heading>
                   <Drawer.CloseTrigger aria-label={t.closeNavigation}>
                     <UiIcon icon={IconX} size="action" />
                   </Drawer.CloseTrigger>
                 </Drawer.Header>
                 <Drawer.Body>
-                  <DrawerNavigation pathname={pathname} onNavigate={() => setMenuOpen(false)} />
+                  <DrawerNavigation
+                    inWorkspace={inWorkspace}
+                    commerceHeader={commerceHeader}
+                    onNavigate={() => setMenuOpen(false)}
+                  />
                 </Drawer.Body>
                 {signedIn && (
                   <Drawer.Footer className="mobile-nav-account">
@@ -99,39 +113,14 @@ export function StudioShell() {
           </Drawer.Backdrop>
         </Drawer>
         <RouteLink to="/" className="brand">
-          <img
-            className="lycobo-logo"
-            src="/brand/lycobo-reveal.svg"
-            alt="Lycobo"
-            width="120"
-            height="32"
-          />
+          <img className="lycobo-logo" alt="Lycobo" {...logo} />
         </RouteLink>
-        {/* 素材库不在顶部导航（用户 2026-11-10 要求）：从首页快捷入口、账户菜单等处直接打开弹窗。
-            “灵感”进入灵感库页面（用户 2026-11-11 要求）。 */}
-        <nav className="topbar-nav" aria-label={t.mainNavigation}>
-          <RouteLink nav to="/" end className="nav-row">
-            {t.home}
-          </RouteLink>
-          <CommerceNavMenu active={inWorkspace} />
-          <RouteLink nav to={inspirationLibraryPath} end className="nav-row">
-            {t.inspiration}
-          </RouteLink>
-        </nav>
-        <div className="header-actions">
-          <div className="header-news" data-signed-in={signedIn}>
-            <AccountMessages signedIn={signedIn} />
-          </div>
-          <LanguageMenu account={session.data} />
-          {signedIn ? (
-            <>
-              <HeaderBenefits />
-              <AccountMenu variant="header" />
-            </>
-          ) : (
-            <HeaderLogin />
-          )}
-        </div>
+        <HeaderNavigation commerceHeader={commerceHeader} inWorkspace={inWorkspace} />
+        <HeaderActions
+          commerceHeader={commerceHeader}
+          inWorkspace={inWorkspace}
+          account={session.data}
+        />
       </header>
       <main className="main-content">
         {routeNeedsLogin && session.isPending && <PageLoading />}
@@ -144,16 +133,99 @@ export function StudioShell() {
   );
 }
 
+/** 工作区内的工具切换由工具坞负责。 */
+function HeaderNavigation({
+  commerceHeader,
+  inWorkspace,
+}: {
+  commerceHeader: boolean;
+  inWorkspace: boolean;
+}) {
+  const t = useMessages(shellMessages);
+  return (
+    <nav className="topbar-nav" aria-label={t.mainNavigation}>
+      <RouteLink nav to="/" end className="nav-row">
+        {t.home}
+      </RouteLink>
+      {!inWorkspace && <CommerceNavMenu homeGlass={commerceHeader} />}
+    </nav>
+  );
+}
+
+/** 顶栏保留通用入口，工作区入口仅在外部页面显示。 */
+function HeaderActions({
+  commerceHeader,
+  inWorkspace,
+  account,
+}: {
+  commerceHeader: boolean;
+  inWorkspace: boolean;
+  account: ReturnType<typeof useEnterpriseSession>["data"];
+}) {
+  const navigate = useAppNavigate();
+  const t = useMessages(shellMessages);
+  const controls = (
+    <>
+      {!inWorkspace && (
+        <Tooltip delay={200}>
+          <Button
+            isIconOnly
+            size="sm"
+            variant="tertiary"
+            aria-label={t.workspace}
+            className="header-workspace"
+            onPress={() => void navigate("/workspace")}
+          >
+            <UiIcon icon={IconSpaces} size="navigation" />
+          </Button>
+          <Tooltip.Content placement="bottom">{t.workspace}</Tooltip.Content>
+        </Tooltip>
+      )}
+      <LanguageMenu account={account} homeGlass={commerceHeader} />
+    </>
+  );
+  const messages = (
+    <div className="header-news" data-signed-in={!!account}>
+      <AccountMessages signedIn={!!account} showTrigger={commerceHeader || !!account} />
+    </div>
+  );
+  return (
+    <div className="header-actions">
+      {commerceHeader ? (
+        <HomeHeaderUtilities messages={messages}>{controls}</HomeHeaderUtilities>
+      ) : (
+        <>
+          {messages}
+          {controls}
+        </>
+      )}
+      {account ? (
+        <>
+          <HeaderBenefits />
+          <AccountMenu variant="header" />
+        </>
+      ) : (
+        <HeaderLogin />
+      )}
+    </div>
+  );
+}
+
 function RealtimeEvents() {
   useImageEvents();
   return null;
 }
 
-/**
- * 手机导航抽屉：首页、电商四个工具、灵感与素材库；切换工具时与工具坞一样只向空图片槽带图。
- * 素材库是弹窗，点它先收起抽屉再打开，不跳转页面。
- */
-function DrawerNavigation({ pathname, onNavigate }: { pathname: string; onNavigate: () => void }) {
+/** 手机抽屉与桌面导航遵循相同的工作区入口规则。 */
+function DrawerNavigation({
+  inWorkspace,
+  onNavigate,
+  commerceHeader,
+}: {
+  inWorkspace: boolean;
+  onNavigate: () => void;
+  commerceHeader: boolean;
+}) {
   const t = useMessages(shellMessages);
   const toolText = useMessages(workspaceToolMessages);
   const openLibrary = useOpenAssetLibrary();
@@ -163,41 +235,49 @@ function DrawerNavigation({ pathname, onNavigate }: { pathname: string; onNaviga
         <UiIcon icon={IconSmartHome} size="default" />
         <span className="nav-label">{t.home}</span>
       </RouteLink>
-      <p className="nav-group-label">{t.commerce}</p>
-      {visibleWorkspaceTools.map((tool) => (
-        <RouteLink
-          key={tool.id}
-          nav
-          to={tool.path}
+      {!inWorkspace && (
+        <>
+          <RouteLink to="/workspace" className="nav-row" onClick={onNavigate}>
+            <UiIcon icon={IconSpaces} size="default" />
+            <span className="nav-label">{t.workspace}</span>
+          </RouteLink>
+          <p className="nav-group-label">{t.commerce}</p>
+          {commerceTools.map((tool) => (
+            <RouteLink
+              key={tool.id}
+              to={commerceToolHref(tool.id)}
+              className="nav-row"
+              onClick={onNavigate}
+            >
+              <UiIcon icon={toolIcons[tool.id]} size="default" />
+              <span className="nav-label">
+                {tool.id === "replica" ? t.replica : toolText.tools[tool.id].name}
+              </span>
+            </RouteLink>
+          ))}
+        </>
+      )}
+      {commerceHeader ? (
+        <HomeHeaderUtilities onNavigate={onNavigate} />
+      ) : (
+        <Button
+          variant="ghost"
           className="nav-row"
-          onClick={() => {
-            shareProductReference(pathname, tool.path);
+          onPress={() => {
             onNavigate();
+            openLibrary();
           }}
         >
-          <UiIcon icon={toolIcons[tool.id]} size="default" />
-          <span className="nav-label">{toolText.tools[tool.id].name}</span>
-        </RouteLink>
-      ))}
-      <RouteLink nav to={inspirationLibraryPath} end className="nav-row" onClick={onNavigate}>
-        <UiIcon icon={IconBulb} size="default" />
-        <span className="nav-label">{t.inspiration}</span>
-      </RouteLink>
-      <Button
-        variant="ghost"
-        className="nav-row"
-        onPress={() => {
-          onNavigate();
-          openLibrary();
-        }}
-      >
-        <UiIcon icon={IconFolderSparkle} size="default" />
-        <span className="nav-label">{t.assets}</span>
-      </Button>
+          <UiIcon icon={IconFolderSparkle} size="default" />
+          <span className="nav-label">{t.assets}</span>
+        </Button>
+      )}
     </nav>
   );
 }
 
 function isWorkspacePath(pathname: string) {
-  return pathname.startsWith("/commerce") || pathname === "/workspace" || pathname === "/video";
+  return (
+    pathname.startsWith(`${commercePath}/`) || pathname === "/workspace" || pathname === "/video"
+  );
 }

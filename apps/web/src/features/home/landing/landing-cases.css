@@ -1,0 +1,64 @@
+/* 案例画廊续。 */
+
+/* ------------------------------------------------------------------ */
+/* Case marquee                                                       */
+/* ------------------------------------------------------------------ */
+
+.lp-cases {
+  position: relative;
+  overflow: hidden;
+}
+
+.lp-casesCarousel {
+  width: 100%;
+  overflow: hidden;
+}
+
+.lp-casesTrack {
+  display: flex;
+  width: max-content;
+  animation: lp-case-marquee 56s linear infinite;
+  will-change: transform;
+}
+
+.lp-casesTrack[data-paused="true"] {
+  animation-play-state: paused;
+}
+
+.lp-casesSet {
+  display: flex;
+  align-items: stretch;
+}
+
+.lp-caseCard img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lp-caseItem {
+  flex: none;
+}
+
+.lp-caseItem[data-format="mid"] {
+  flex-basis: calc(var(--case-height) * 222 / 278);
+}
+
+.lp-caseItem[data-format="wide"] {
+  flex-basis: calc(var(--case-height) * 494 / 278);
+}
+
+.lp-caseItem:not([data-format]) {
+  flex-basis: calc(var(--case-height) * 156 / 278);
+}
+
+@keyframes lp-case-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}

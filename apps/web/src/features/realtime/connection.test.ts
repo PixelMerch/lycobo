@@ -96,6 +96,39 @@ it("reconnects with the last cursor and cancels timers on sign out", async () =>
   await vi.advanceTimersByTimeAsync(120000);
   expect(FakeSocket.instances).toHaveLength(count);
 });
+it("keeps a healthy connection when returning to the foreground or receiving online events", async () => {
+  const client = new QueryClient();
+  const stop = connectRealtime(client, true);
+  const socket = current();
+  socket.receive(ready("17", false));
+  const invalidate = vi.spyOn(client, "invalidateQueries");
+  for (let index = 0; index < 5; index++) {
+    document.dispatchEvent(new Event("visibilitychange"));
+    window.dispatchEvent(new Event("online"));
+  }
+  await vi.advanceTimersByTimeAsync(1500);
+  expect(socket.close).not.toHaveBeenCalled();
+  expect(FakeSocket.instances).toHaveLength(1);
+  expect(imageRequest).not.toHaveBeenCalled();
+  expect(invalidate).not.toHaveBeenCalled();
+  stop();
+});
+it.each(["heartbeat", "expiry"])("reconnects after suspension when %s is stale", async (reason) => {
+  const stop = connectRealtime(new QueryClient(), true);
+  const socket = current();
+  const expiresAt = Date.now() + (reason === "expiry" ? 120000 : 86400000);
+  socket.receive({ ...ready("17", false), expiresAt });
+  // 推进时钟但不执行定时器，模拟浏览器冻结后台页面后恢复。
+  vi.setSystemTime(Date.now() + 65000);
+  if (reason === "expiry") socket.onmessage?.({ data: "pong" });
+  document.dispatchEvent(new Event("visibilitychange"));
+  expect(socket.close).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(1500);
+  expect(FakeSocket.instances).toHaveLength(2);
+  expect(current().url.searchParams.get("cursor")).toBe("17");
+  expect(imageRequest).toHaveBeenCalledTimes(1);
+  stop();
+});
 it("updates the release cache without reloading or changing the draft route", () => {
   const client = new QueryClient();
   const stop = connectRealtime(client, false);

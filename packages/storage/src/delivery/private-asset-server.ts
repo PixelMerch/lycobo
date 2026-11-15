@@ -254,12 +254,9 @@ async function readImageObject(
   if (request.method === "HEAD") return bucket.head(objectKey);
   const object = await bucket.get(objectKey);
   if (object || variant === "download") return object;
-  if (options.queueVariant) {
-    await options.queueVariant(key);
-    return null;
-  }
+  if (options.queueVariant) return null;
   if (!options.createVariant) return object;
-  // Backfill a missing display variant only after authorization.
+  // 通过预览授权后才补建缺失的展示图。
   const original = await bucket.get(key);
   if (!original) return null;
   const resized = await options.createVariant(
@@ -268,6 +265,49 @@ async function readImageObject(
   );
   await bucket.put(objectKey, resized, { httpMetadata: { contentType: "image/webp" } });
   return bucket.get(objectKey);
+}
+
+async function serveMissingVariant(
+  request: Request,
+  options: PrivateAssetOptions,
+  { key, allowed }: AuthorizedAsset,
+) {
+  const head = request.method === "HEAD";
+  const original = head ? await options.bucket.head(key) : await options.bucket.get(key);
+  if (!original)
+    return new Response(null, {
+      status: 503,
+      headers: { "Retry-After": "2", "Cache-Control": "no-store" },
+    });
+  if (!head && options.queueVariant) {
+    const repair = queueVariantRepair(request, options, key).catch(() => {
+      console.warn("ASSET_VARIANT_QUEUE_UNAVAILABLE");
+    });
+    if (options.background) options.background(repair);
+    else await repair;
+  }
+  // 一直沿用本次预览签名和来源校验，原图回退不占用派生图缓存。
+  const headers = new Headers({
+    "Content-Type": "image/png",
+    "Content-Length": String(original.size),
+    "Content-Disposition": "inline",
+    "Cache-Control": "private, no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+    Vary: "Origin, Referer, Sec-Fetch-Dest",
+  });
+  setOrigin(headers, request, allowed);
+  return new Response("body" in original ? original.body : null, { headers });
+}
+
+async function queueVariantRepair(request: Request, options: PrivateAssetOptions, key: string) {
+  const marker = new Request(new URL(`/_asset-repair/${key}`, request.url));
+  if (await options.cache?.match(marker).catch(() => undefined)) return;
+  await options.queueVariant?.(key);
+  // 同一素材的两个展示变体共用短期标记；仅入队成功后写入，缓存不可用时仍可恢复。
+  await options.cache
+    ?.put(marker, new Response(null, { headers: { "Cache-Control": "public, max-age=30" } }))
+    .catch(() => undefined);
 }
 
 function cacheImageResponse(
@@ -301,7 +341,7 @@ async function serveImage(
   requestOrigin: string,
 ) {
   const { key, variant, expires, allowed } = asset;
-  // Authenticate before every cache lookup. Signatures never fragment the object cache.
+  // 每次读缓存前验证签名，同一对象的不同签名共用缓存。
   const displayVariant = variant === "thumbnail" ? "thumbnail" : "preview";
   const objectKey = variant === "download" ? key : displayObjectKey(key, displayVariant);
   const cacheUrl = new URL(`/_objects/${objectKey}`, requestOrigin);
@@ -310,13 +350,11 @@ async function serveImage(
   const hit = !!response;
   if (!response) {
     const object = await readImageObject(request, options, key, objectKey, variant);
-    if (!object)
-      return options.queueVariant
-        ? new Response(null, {
-            status: 503,
-            headers: { "Retry-After": "2", "Cache-Control": "no-store" },
-          })
-        : fail(404);
+    if (!object) {
+      if (options.queueVariant && variant !== "download")
+        return serveMissingVariant(request, options, asset);
+      return fail(404);
+    }
     response = cacheImageResponse(request, options, cacheKey, variant, object);
   }
   const headers = new Headers(response.headers);

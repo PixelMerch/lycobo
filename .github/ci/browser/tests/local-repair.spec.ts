@@ -23,7 +23,7 @@ test("multiple repair regions retain original coordinates, submit one image and 
             height: 1024,
             bytes: 1024,
             created_at: "2026-10-21T01:00:00.000Z",
-            model: "gpt-image-2",
+            model: "gpt-image-2.6",
             prompt: "原始商品图",
           },
         ],
@@ -66,7 +66,7 @@ test("multiple repair regions retain original coordinates, submit one image and 
         public_id: "WREPAIR01",
         organization_id: crypto.randomUUID(),
         user_id: crypto.randomUUID(),
-        model: "gpt-image-2",
+        model: "gpt-image-2.5",
         prompt: "局部修改版",
         resolution: "1K",
         aspect_ratio: "1:1",
@@ -145,6 +145,7 @@ test("multiple repair regions retain original coordinates, submit one image and 
   await generateButton.click();
   await expect(viewer.getByRole("button", { name: "确认上次提交", exact: true })).toBeVisible();
   expect(submitted).toMatchObject({
+    model: "gpt-image-2.5",
     count: 1,
     referenceAssetIds: [sourceId],
     resolution: "1.5K",
