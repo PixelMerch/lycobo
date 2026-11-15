@@ -21,11 +21,13 @@ export async function consumeCloudflareImages(
     return;
   }
   const runtime = await openCloudflareRuntime(env);
+  let needsRealtime = false;
   try {
     for (const message of batch.messages) {
       try {
         const upload = uploadJobSchema.safeParse(message.body);
         if (upload.success) {
+          needsRealtime = true;
           await runtime.uploads.process(upload.data.uploadId);
           message.ack();
           continue;
@@ -48,6 +50,7 @@ export async function consumeCloudflareImages(
           continue;
         }
         let nextPollMs: number | undefined;
+        needsRealtime = true;
         await processImageItem(parsed.data.itemId, {
           repository: runtime.repository,
           prepareReferences: (itemId) => prepareReferences(itemId, runtime),
@@ -78,8 +81,8 @@ export async function consumeCloudflareImages(
       }
     }
   } finally {
-    await flushRealtime(env);
-    await runtime.repository.close();
+    // 纯变体修复只写 R2，不产生业务事件；其余任务即使部分失败也立即尝试投递。
+    await closeAfterRealtime(runtime, env, { enabled: needsRealtime });
   }
 }
 
@@ -95,13 +98,29 @@ export async function dispatchCloudflareImages(env: CloudflareImageEnv) {
     }
     await recoverCloudflareUploads(env.MEDIA, runtime.uploads.recover);
   } finally {
-    await flushRealtime(env, true);
+    await closeAfterRealtime(runtime, env, { prune: true });
+  }
+}
+
+async function closeAfterRealtime(
+  runtime: Awaited<ReturnType<typeof openCloudflareRuntime>>,
+  env: CloudflareImageEnv,
+  options: { prune?: boolean; enabled?: boolean },
+) {
+  try {
+    await flushRealtime(env, options);
+  } finally {
+    // 推送连接初始化失败时，也必须释放本次消费者的数据库客户端。
     await runtime.repository.close();
   }
 }
 
 /** 消费后立即推送，Cron 补偿未送达意图并集中清理历史。 */
-async function flushRealtime(env: CloudflareImageEnv, prune = false) {
+async function flushRealtime(
+  env: CloudflareImageEnv,
+  { prune = false, enabled = true }: { prune?: boolean; enabled?: boolean } = {},
+) {
+  if (!enabled) return;
   const repository = openRealtimeRepository(env.HYPERDRIVE.connectionString);
   try {
     await dispatchRealtime(repository, env.REALTIME);
