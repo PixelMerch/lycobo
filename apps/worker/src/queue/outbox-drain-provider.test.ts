@@ -239,12 +239,30 @@ it.each([false, true])(
       "provider_submit",
       "provider_receipt",
     ]);
-    // Recovery past the deadline still reads the accepted task once; it never submits again.
     const state = job.configuredProvider;
     if (!state) throw new Error("fixture");
     state.phase = "polling";
     state.taskId = "fixture-task";
     state.statusPath = "/v1/images/tasks/fixture-task";
+    // 供应商已接单，连续查询失败后仍在核查期限内，应继续读取同一任务。
+    state.pollFailures = 4;
+    request.mockResolvedValue(new Response(null, { status: 503 }));
+    await processConfiguredImage(job, {
+      repository,
+      store,
+      standaloneKey: "fixture",
+      request,
+      onDeferred,
+    });
+    expect(repository.deferProvider).toHaveBeenCalledExactlyOnceWith(
+      job,
+      state.taskId,
+      state.statusPath,
+      60000,
+      true,
+    );
+    expect(repository.finish).not.toHaveBeenCalled();
+    // 期限过后仍允许最后一次读取原任务，不能重发付费请求。
     state.deadlineAt = new Date(Date.now() - 1000);
     request.mockResolvedValue(Response.json({ status: "running" }));
     await processConfiguredImage(job, {
@@ -254,7 +272,7 @@ it.each([false, true])(
       request,
       onDeferred,
     });
-    expect(request.mock.calls.map(([, init]) => init?.method)).toEqual(["POST", "GET"]);
+    expect(request.mock.calls.map(([, init]) => init?.method)).toEqual(["POST", "GET", "GET"]);
     expect(repository.finish).toHaveBeenCalledWith(job, expect.objectContaining({ unknown: true }));
   },
 );

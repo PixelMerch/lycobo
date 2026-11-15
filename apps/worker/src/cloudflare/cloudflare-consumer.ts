@@ -12,8 +12,6 @@ import { processImageItem } from "../images/image-processor";
 import { type CloudflareImageEnv, openCloudflareRuntime } from "./cloudflare-runtime";
 import { processCloudflareVariants } from "./cloudflare-variants";
 
-const REFERENCE_WAIT_LIMIT_MS = 30 * 60 * 1000;
-
 /** 独立消费图片消息，传输失败可重试，付费尝试始终受数据库领取保护。 */
 export async function consumeCloudflareImages(
   batch: MessageBatch<unknown>,
@@ -137,7 +135,7 @@ async function flushRealtime(env: CloudflareImageEnv) {
   }
 }
 
-/** 图片在 R2 中已接收时由后台等待，超时或确定失败才结束任务并退款。 */
+/** 参考图上传意图有效时继续排队，确定失败或意图失效才结束。 */
 export async function prepareReferences(
   itemId: string,
   runtime: {
@@ -152,7 +150,6 @@ export async function prepareReferences(
   if (!waiting) return "ready";
   const statuses = await Promise.all(waiting.ids.map((id) => runtime.uploads.status(waiting, id)));
   if (statuses.some((result) => !result || result.status === "failed")) return "failed";
-  if (!statuses.some((result) => result?.status === "pending")) return "ready";
-  // 参考图与生成共用队列，积压时原图入库可能超过 15 分钟。
-  return Date.now() - waiting.createdAt.getTime() >= REFERENCE_WAIT_LIMIT_MS ? "failed" : "pending";
+  // 队列积压不影响上传有效期，交给 R2 上传意图判断是否过期。
+  return statuses.some((result) => result?.status === "pending") ? "pending" : "ready";
 }
