@@ -139,16 +139,12 @@ async function settleConfiguredFailure(
   error: unknown,
 ) {
   const known = error instanceof ImageProviderError;
-  if (
-    poll &&
-    Date.now() < state.deadlineAt.getTime() &&
-    state.pollFailures < 4 &&
-    !stopsPolling(error)
-  ) {
+  if (poll && Date.now() < state.deadlineAt.getTime() && !stopsPolling(error)) {
+    // 已有供应商任务号，核查期限内只重试读取，指数退避最多增长到一分钟。
     const delayMs = Math.min(
       60000,
       Math.max(
-        5000 * 2 ** state.pollFailures,
+        5000 * 2 ** Math.min(state.pollFailures, 4),
         error instanceof ProviderPollError ? error.delayMs : 0,
       ),
     );

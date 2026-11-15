@@ -55,7 +55,7 @@
         "queue": "lycobo-images",
         "max_batch_size": 1,
         "max_batch_timeout": 1,
-        "max_concurrency": 8,
+        "max_concurrency": 1,
         "max_retries": 3,
         "retry_delay": 30,
         "dead_letter_queue": "lycobo-images-dead"
