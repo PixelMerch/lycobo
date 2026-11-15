@@ -68,19 +68,17 @@ for (const width of [390, 1440, 1920, 2560]) {
     expect(baseline.left).toBeCloseTo(mobile ? 0 : 12, 0);
     expect(baseline.scrollbar).toBe(0);
     await trigger.click();
-    const menu = page.getByRole("menu", { name: `账户菜单：${account.account}`, exact: true });
+    const menu = page.getByRole("dialog", { name: `账户菜单：${account.account}`, exact: true });
     await expect(menu).toBeVisible();
     expect(await measure()).toEqual(baseline);
     // 按坐标点击：Playwright 的 locator.click 会先自行滚动页面，顶部栏随之进入滚动状态而收窄，干扰这里的位移比较。
-    const recharge = await menu
-      .getByRole("menuitem", { name: "充值积分", exact: true })
-      .boundingBox();
-    if (!recharge) throw new Error("Missing recharge item");
-    await page.mouse.click(recharge.x + recharge.width / 2, recharge.y + recharge.height / 2);
-    const dialog = page.getByRole("dialog", { name: "充值积分", exact: true });
+    const settings = await menu.getByRole("button", { name: "设置", exact: true }).boundingBox();
+    if (!settings) throw new Error("Missing settings item");
+    await page.mouse.click(settings.x + settings.width / 2, settings.y + settings.height / 2);
+    const dialog = page.getByRole("dialog", { name: "账户设置", exact: true });
     await expect(dialog).toBeVisible();
     expect(await measure()).toEqual(baseline);
-    await dialog.getByRole("button", { name: "关闭充值积分", exact: true }).click();
+    await dialog.getByRole("button", { name: "关闭账户设置", exact: true }).click();
     await expect(dialog).toHaveCount(0);
     expect(await measure()).toEqual(baseline);
     await expect(trigger).toBeFocused();

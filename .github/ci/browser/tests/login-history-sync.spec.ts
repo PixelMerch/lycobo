@@ -87,7 +87,7 @@ test("login returns to the target and logout keeps the draft without a document 
   expect(await page.evaluate(() => performance.timeOrigin)).toBe(initialDocument);
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await page.locator(".account-trigger").click();
-  await page.getByRole("menuitem", { name: "退出登录", exact: true }).click();
+  await page.getByRole("button", { name: "退出登录", exact: true }).click();
   await expect(dialog).toBeVisible();
   await expect(page.locator(".generation-job")).toHaveCount(0);
   await expect(page.locator(".composer-panel")).toHaveCount(0);

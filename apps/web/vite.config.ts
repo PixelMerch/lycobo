@@ -2,6 +2,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import release from "../../release.json" with { type: "json" };
+
 export default defineConfig({
   define: {
     "import.meta.env.VITE_APP_RELEASE_VERSION": JSON.stringify(release.version),

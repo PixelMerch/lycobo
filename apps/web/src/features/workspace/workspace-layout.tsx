@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Outlet } from "react-router";
 import { ConfirmDialog } from "../../components/overlays/confirm-dialog";
 import { useAppLocation } from "../../i18n/use-localized-navigation";
+import { rememberCommercePath } from "../commerce/commerce-preferences";
 import { GenerationHistory } from "../generation/history/generation-history";
 import { HistoryIndex } from "../generation/history/history-index";
 import { BackToTopButton } from "../generation/workspace-page";
@@ -10,10 +11,11 @@ import { VideoHistory, VideoHistoryRail } from "../video/history/video-history";
 import { StoryboardContext } from "../video/storyboard/storyboard-context";
 import { useStoryboard } from "../video/storyboard/use-storyboard";
 import { useWorkspaceRestore } from "./use-workspace-restore";
-import { toolForPath, useWorkspaceState } from "./workspace-state";
+import { toolForPath } from "./workspace-state";
 import { WorkspaceToolPicker } from "./workspace-tool-picker";
 import "./workspace.css";
 import { useMessages } from "../../i18n/messages";
+import { WorkspaceScrollbar } from "./workspace-scrollbar";
 import { workspaceToolMessages } from "./workspace-tool-messages";
 import { HistoryDensityToggle, ToolRailCollapseToggle } from "./workspace-view-controls";
 import { useWorkspaceView } from "./workspace-view-preferences";
@@ -22,7 +24,6 @@ import { useWorkspaceView } from "./workspace-view-preferences";
 export function WorkspaceLayout() {
   const t = useMessages(workspaceToolMessages);
   const { pathname, search } = useAppLocation();
-  const remember = useWorkspaceState((state) => state.setLastPath);
   const [mobilePanel, setMobilePanel] = useState(() =>
     new URLSearchParams(search).has("task") ? "history" : "form",
   );
@@ -32,8 +33,8 @@ export function WorkspaceLayout() {
   const { restore, restorePending, applyRestore, setRestorePending } =
     useWorkspaceRestore(setMobilePanel);
   useEffect(() => {
-    remember(pathname);
-  }, [pathname, remember]);
+    rememberCommercePath(pathname);
+  }, [pathname]);
   useEffect(() => {
     if (new URLSearchParams(search).has("task")) setMobilePanel("history");
   }, [search]);
@@ -41,6 +42,7 @@ export function WorkspaceLayout() {
   const density = useWorkspaceView((state) => state.density);
   return (
     <div
+      id="commerce-workspace"
       data-mobile-panel={mobilePanel}
       data-tool={currentTool.id}
       data-tool-rail={toolRailCollapsed ? "collapsed" : "expanded"}
@@ -86,6 +88,7 @@ export function WorkspaceLayout() {
         <HistoryIndex key={historyTool} tool={historyTool} />
       )}
       <BackToTopButton />
+      <WorkspaceScrollbar />
       <ConfirmDialog
         isOpen={restorePending !== null}
         title={t.restoreTitle}

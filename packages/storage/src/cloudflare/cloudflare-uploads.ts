@@ -1,3 +1,4 @@
+import type { R2ListOptions, R2Object } from "@cloudflare/workers-types";
 import type { ImageScope, StoredImage } from "@lycoboai/contracts";
 import { z } from "zod";
 import type { ImageObjectBucket } from "../buckets/object-bucket";
@@ -18,8 +19,56 @@ type UploadRepository = {
   asset(scope: ImageScope, id: string): Promise<StoredImage | null>;
   addReference(scope: ImageScope, image: StoredImage): Promise<void>;
 };
+type UploadRecoveryBucket = {
+  get(key: string): Promise<{ text(): Promise<string> } | null>;
+  list(
+    options: R2ListOptions,
+  ): Promise<
+    { objects: Pick<R2Object, "key" | "uploaded" | "customMetadata">[] } & (
+      | { truncated: true; cursor: string }
+      | { truncated: false }
+    )
+  >;
+  put(key: string, cursor: string): Promise<unknown>;
+  delete(key: string): Promise<void>;
+};
 
-/** Durable R2 intents are only for unpaid uploads. Paid generation keeps its PG outbox. */
+function isCurrentTerminalReceipt(metadata: R2Object["customMetadata"], now: number) {
+  const { status, expiresAt } = metadata ?? {};
+  return (status === "succeeded" || status === "failed") && Number(expiresAt) > now;
+}
+
+/** 从 R2 列表恢复待处理上传并清理到期意图，旧回执沿用正文检查。 */
+export async function recoverCloudflareUploads(
+  bucket: UploadRecoveryBucket,
+  recover: (id: string) => Promise<void>,
+) {
+  const cursorKey = "_upload-scan-cursor";
+  const stored = await bucket.get(cursorKey);
+  const cursor = stored ? await stored.text() : undefined;
+  const page = await bucket.list({
+    prefix: "_uploads/",
+    limit: 100,
+    include: ["customMetadata"],
+    ...(cursor ? { cursor } : {}),
+  });
+  const now = Date.now();
+  for (const object of page.objects) {
+    if (object.key.endsWith(".bin") && object.uploaded.getTime() < now - 86400000) {
+      await bucket.delete(object.key);
+      continue;
+    }
+    if (!object.key.endsWith(".json")) continue;
+    // 已完成且未到期的回执供用户确认，无须每分钟再读取一次正文。
+    if (isCurrentTerminalReceipt(object.customMetadata, now)) continue;
+    const id = z.uuid().safeParse(object.key.slice("_uploads/".length, -".json".length));
+    if (id.success) await recover(id.data);
+  }
+  if (page.truncated) await bucket.put(cursorKey, page.cursor);
+  else if (stored) await bucket.delete(cursorKey);
+}
+
+/** 使用 R2 保存免费参考图上传意图，付费生图继续使用 PostgreSQL outbox。 */
 export function cloudflareUploads(
   bucket: ImageObjectBucket,
   queue: { send(body: unknown): Promise<unknown> },
@@ -29,6 +78,7 @@ export function cloudflareUploads(
   const write = (intent: UploadIntent) =>
     bucket.put(intentKey(intent.id), new TextEncoder().encode(JSON.stringify(intent)), {
       httpMetadata: { contentType: "application/json" },
+      customMetadata: { status: intent.status, expiresAt: String(intent.expiresAt) },
     });
   async function read(id: string) {
     const object = await bucket.get(intentKey(id));

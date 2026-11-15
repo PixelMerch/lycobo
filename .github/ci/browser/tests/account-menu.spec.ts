@@ -17,278 +17,185 @@ async function signIn(page: Page, account: string) {
 }
 
 for (const width of [1440, 320]) {
-  test(`signed-in account opens from the top bar on desktop and the drawer foot on phones at ${width}px`, async ({
-    page,
-  }) => {
-    const account = "13800138000";
+  test(`account controls fit the panel and Enter dismisses at ${width}px`, async ({ page }) => {
+    const account = "account-fixture";
     await signIn(page, account);
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/commerce/create");
     const draft = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
     await draft.fill("保留正在准备的商品图");
     const desktop = width >= 768;
-    // 桌面账户头像在顶部栏右侧；手机顶部栏只放积分与会员，账户在导航抽屉底部。
-    if (!desktop) await expect(page.locator(".topbar .account-trigger")).toBeHidden();
-    await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toHaveCount(0);
     const openNavigation = async () => {
-      if (width < 768) await page.getByRole("button", { name: "打开导航", exact: true }).click();
+      if (!desktop) await page.getByRole("button", { name: "打开导航", exact: true }).click();
     };
     await openNavigation();
-    const navigation = page.locator(desktop ? ".topbar" : ".mobile-nav");
-    const trigger = navigation.getByRole("button", {
-      name: `账户菜单：${account}`,
-      exact: true,
-    });
-    if (desktop) await expect(trigger.locator(".account-trigger-name")).toHaveCount(0);
-    else await expect(trigger.locator(".account-trigger-name")).toHaveText(account);
-    await expect(trigger.locator(".account-credits")).toHaveCount(0);
-    await expect(trigger.locator(".avatar")).toHaveCount(1);
-    await expect(trigger).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-    if (!desktop)
-      await expect(navigation.locator(".account-footer")).toHaveCSS("border-top-width", "1px");
-    await expect(page.locator(".credit-pill")).toHaveCount(0);
-    if (width < 768) await expect(page.locator(".drawer__backdrop")).toHaveCSS("opacity", "1");
-    await navigation
-      .locator(desktop ? ".account-header" : ".account-footer")
-      .screenshot({ path: `/tmp/lycobo-footer-${width}.png` });
-    // 顶部栏和手机抽屉只保留消息入口，不再有更新记录。
-    await expect(navigation.getByRole("button", { name: /^更新记录/ })).toHaveCount(0);
-    const messages = navigation.getByRole("button", { name: /消息（.*未读）/ });
-    await messages.click();
-    const messagesPanel = page.getByRole("dialog", { name: "消息中心" });
-    await expect(messagesPanel).toBeVisible();
-    await expect(messagesPanel).toHaveCSS("width", `${Math.min(640, width)}px`);
-    await expect(page.locator(".drawer__backdrop").last()).toHaveCSS("opacity", "1");
-    await expect(messagesPanel.getByText("暂无消息")).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(messagesPanel).toBeHidden();
-    await expect(messages).toBeFocused();
-    await messages.click();
-    const messageClose = messagesPanel.getByRole("button", { name: "关闭消息中心" });
-    await messageClose.hover();
-    await expect(messageClose).toHaveCSS("width", "44px");
-    await expect(messageClose.locator("svg")).toHaveCSS("width", "22px");
-    await expect(messageClose).toHaveCSS("outline-style", "none");
-    const closeHover = await messageClose.evaluate(
-      (element) => getComputedStyle(element).backgroundImage,
-    );
-    await messagesPanel.screenshot({ path: `/tmp/lycobo-message-close-${width}.png` });
-    await messageClose.click();
-    await expect(messagesPanel).toBeHidden();
+
+    const label = `账户菜单：${account}`;
+    const trigger = page.getByRole("button", { name: label, exact: true });
+    const panel = page.getByRole("dialog", { name: label, exact: true });
+    const settings = panel.getByRole("button", { name: "设置", exact: true });
+    const works = panel.getByRole("button", { name: "个人作品", exact: true });
+    await trigger.hover();
+    await expect(panel).toBeHidden();
 
     await trigger.focus();
     await page.keyboard.press("Enter");
-    const menu = page.getByRole("menu", { name: `账户菜单：${account}`, exact: true });
-    // The menu is the account center's shortcut: credit actions, membership, then destinations.
-    await expect(menu.getByRole("menuitem")).toHaveText([
-      "充值积分",
-      "积分明细",
-      /会员\s*未开通\s*查看方案/,
-      "积分与账单",
-      "个人作品",
-      "设置",
-      "退出登录",
-    ]);
-    await expect(page.locator(".account-menu-name")).toHaveText(account);
-    await expect(page.locator(".account-menu-details")).toContainText("UID 0123456789 · 管理员");
-    await expect(page.locator("html")).toHaveCSS("overflow", "hidden");
-    await expect(menu.getByRole("separator")).toHaveCount(1);
-    // Keyboard focus draws the purple ring; pointer focus never does.
-    await expect(menu.getByRole("menuitem").first()).toHaveCSS("outline-style", "solid");
-    await page.keyboard.press("Escape");
-    await expect(menu).toHaveCount(0);
+    await expect(settings).toBeFocused();
+    await works.hover();
+    await page.keyboard.press("Enter");
+    await expect(panel).toBeHidden();
     await expect(trigger).toBeFocused();
-    await expect(trigger).toHaveCSS("outline-style", "solid");
+    await expect(page.getByRole("dialog", { name: "账户设置", exact: true })).toBeHidden();
+    await expect(page.getByRole("dialog", { name: "素材库", exact: true })).toBeHidden();
 
-    // 按下才展开菜单：桌面在头像下方，手机在抽屉底部入口上方；悬停不展开。
-    await trigger.hover();
-    await expect(menu).toHaveCount(0);
     await trigger.click();
-    await expect(menu).toBeVisible();
-    const popover = page.locator(".account-menu");
-    await expect(popover).not.toHaveAttribute("data-entering", "true");
-    const [menuBox, triggerBox] = [await popover.boundingBox(), await trigger.boundingBox()];
-    if (desktop)
-      expect(menuBox?.y ?? 0).toBeGreaterThanOrEqual(
-        (triggerBox?.y ?? 0) + (triggerBox?.height ?? 0),
-      );
-    else expect((menuBox?.y ?? 0) + (menuBox?.height ?? 0)).toBeLessThanOrEqual(triggerBox?.y ?? 0);
-    expect(menuBox?.x).toBeGreaterThanOrEqual(0);
-    expect((menuBox?.x ?? 0) + (menuBox?.width ?? 0)).toBeLessThanOrEqual(width);
-    // Compact menu: the shared balance leads a small card, never a page-sized figure.
-    await expect(popover).toHaveCSS("width", `${Math.min(280, width - 24)}px`);
-    await expect(popover.locator(".account-menu-balance strong")).toHaveCSS("font-size", "18px");
-    await expect(popover.locator(".account-menu-balance small")).toHaveText(
-      "每张 2 积分 · 约可生成 100 张",
+    await expect(panel.locator(".account-menu-details")).toContainText("UID 0123456789 · 管理员");
+    await expect(panel).toHaveCSS("width", `${Math.min(280, width - 24)}px`);
+    await expect(panel).toHaveCSS("border-radius", "12px");
+    await expect(works).toHaveCSS("font-size", "13px");
+    await works.hover();
+    await expect
+      .poll(() =>
+        works.evaluate((row) => {
+          const highlight = getComputedStyle(row, "::before");
+          return [highlight.height, highlight.borderRadius, highlight.backgroundColor];
+        }),
+      )
+      .toEqual(["36px", "12px", "rgba(255, 255, 255, 0.06)"]);
+    await expect(works).toHaveCSS("height", "44px");
+    await expect(panel.getByRole("switch", { name: "桌面通知", exact: true })).toHaveCount(0);
+    expect(await panel.evaluate((element) => element.scrollWidth)).toBeLessThanOrEqual(
+      await panel.evaluate((element) => element.clientWidth),
     );
-    // Credits use the shared Tabler coin instead of the retired bitmap.
-    await expect(popover.locator(".account-menu-balance .credit-coin")).toHaveCSS("width", "18px");
-    // HeroUI focuses the menu container and the hovered row for assistive tech.
-    // Neither may paint the global purple ring around the list or the row.
-    await expect(popover.locator(".dropdown__menu")).toHaveCSS("outline-style", "none");
-    const hovered = menu.getByRole("menuitem", { name: "积分与账单", exact: true });
-    await hovered.hover();
-    await expect(hovered).toHaveCSS("outline-style", "none");
-    await page.keyboard.press("Escape");
-    await expect(menu).toHaveCount(0);
-
-    // Recharge opens over the current page; closing returns focus to the account row.
-    await trigger.click();
-    await menu.getByRole("menuitem", { name: "充值积分", exact: true }).click();
-    const recharge = page.getByRole("dialog", { name: "充值积分", exact: true });
-    await expect(recharge).toBeVisible();
-    // The dialog container takes programmatic focus without a purple frame.
-    await expect(recharge).toHaveCSS("outline-style", "none");
-    // 充值弹窗沿用共享毛玻璃，不能回退到旧的实底材质。
-    await expect(recharge).toHaveCSS("backdrop-filter", /blur\(/);
-    const rechargeClose = recharge.getByRole("button", { name: "关闭充值积分" });
-    await rechargeClose.hover();
-    await expect(rechargeClose).toHaveCSS("background-image", closeHover);
-    await expect(rechargeClose).toHaveCSS("width", "44px");
-    await expect(recharge.getByRole("button", { name: "立即购买", exact: true })).toBeDisabled();
-    await rechargeClose.click();
-    await expect(recharge).toHaveCount(0);
-    // On phones the drawer stays open beneath the overlay, so focus returns there too.
-    await expect(trigger).toBeFocused();
-
-    // The account center opens above the current page (and above the phone drawer, like
-    // recharge); closing it returns focus to the account row and keeps the creative draft.
-    await trigger.click();
-    await menu.getByRole("menuitem", { name: "设置", exact: true }).click();
-    const settings = page.getByRole("dialog", { name: "设置", exact: true });
-    await expect(settings.getByRole("tab", { name: "个人资料", selected: true })).toBeVisible();
-    await expect(settings.locator(".settings-hero-meta")).toContainText("UID 0123456789");
-    await expect(page).toHaveURL(/\/commerce\/create$/);
-    const centerClose = settings.getByRole("button", { name: "关闭设置" });
-    await expect(centerClose).toHaveCSS("width", "44px");
-    await centerClose.click();
-    await expect(settings).toHaveCount(0);
-    await expect(trigger).toBeFocused();
-    await expect(draft).toHaveValue("保留正在准备的商品图");
-    await trigger.click();
-    await menu.getByRole("menuitem", { name: "积分与账单", exact: true }).click();
-    const center = page.getByRole("dialog", { name: "积分与账单", exact: true });
-    await expect(center.getByRole("tab", { name: "积分明细", selected: true })).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(center).toHaveCount(0);
-    await expect(trigger).toBeFocused();
-
-    await trigger.click();
-    const url = page.url();
-    await menu.getByRole("menuitem", { name: "个人作品", exact: true }).click();
-    // 个人作品直接打开素材库弹窗，不离开当前页面；手机上同时收起导航抽屉。
+    await expect(panel.getByRole("separator")).toHaveCount(1);
+    const [panelBox, triggerBox] = await Promise.all([panel.boundingBox(), trigger.boundingBox()]);
+    if (!panelBox || !triggerBox) throw new Error("Missing account panel or trigger");
+    if (desktop) expect(panelBox.y).toBeGreaterThanOrEqual(triggerBox.y + triggerBox.height);
+    else expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(triggerBox.y);
+    await works.click();
     const library = page.getByRole("dialog", { name: "素材库", exact: true });
     await expect(library).toBeVisible();
-    expect(page.url()).toBe(url);
-    await expect(page.locator(".mobile-nav")).toHaveCount(0);
+    await expect(page).toHaveURL(/\/commerce\/create$/);
     await page.keyboard.press("Escape");
-    await expect(library).toHaveCount(0);
+    await expect(library).toBeHidden();
     await expect(draft).toHaveValue("保留正在准备的商品图");
-    await expect
-      .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
-      .toBe(true);
+
     await openNavigation();
-    await trigger.click();
-    await expect(menu).toBeVisible();
-    await expect(popover).toHaveCSS("opacity", "1");
-    await popover.screenshot({ path: `/tmp/lycobo-typography-account-menu-${width}.png` });
-    await page.screenshot({ path: `/tmp/lycoboai-account-menu-${width}.png` });
+    await trigger.focus();
+    await page.keyboard.press("Space");
+    await expect(settings).toBeFocused();
+    await page.keyboard.press("Space");
+    const center = page.getByRole("dialog", { name: "账户设置", exact: true });
+    await expect(center).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(center).toBeHidden();
+    await expect(trigger).toBeFocused();
   });
 }
 
 test.describe("touch", () => {
   test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
 
-  test("tapping the capsule opens the menu and a row opens the account center", async ({
-    page,
-  }) => {
+  test("tapping the avatar opens the account controls", async ({ page }) => {
     await signIn(page, "touch-fixture");
     await page.goto("/commerce/create");
     await page.getByRole("button", { name: "打开导航", exact: true }).tap();
-    const trigger = page.getByRole("button", { name: "账户菜单：touch-fixture", exact: true });
-    await trigger.tap();
-    const menu = page.getByRole("menu", { name: "账户菜单：touch-fixture", exact: true });
-    await expect(menu).toBeVisible();
-    await expect(page.locator(".account-menu")).not.toHaveAttribute("data-entering", "true");
-    const item = menu.getByRole("menuitem", { name: "积分与账单", exact: true });
-    const box = await item.boundingBox();
-    if (!box) throw new Error("Missing account menu row");
-    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
-    await expect(page.getByRole("dialog", { name: "积分与账单", exact: true })).toBeVisible();
-    await expect(page).toHaveURL(/\/commerce\/create$/);
+    const label = "账户菜单：touch-fixture";
+    await page.getByRole("button", { name: label, exact: true }).tap();
+    const panel = page.getByRole("dialog", { name: label, exact: true });
+    await panel.getByRole("button", { name: "设置", exact: true }).tap();
+    await expect(page.getByRole("dialog", { name: "账户设置", exact: true })).toBeVisible();
   });
 });
 
-/** 等页面收到指定事件后逐帧记录消息面板的位置和遮罩不透明度，直到面板卸载。 */
-function sampleDrawer(page: Page, eventType: "click" | "keydown") {
-  return page.evaluate(async (type) => {
-    await new Promise<void>((resolve) =>
-      document.addEventListener(type, () => resolve(), { once: true, capture: true }),
-    );
-    const samples: { left: number; opacity: string }[] = [];
-    const start = performance.now();
-    while (performance.now() - start < 800) {
-      await new Promise(requestAnimationFrame);
-      const panel = document.querySelector(".account-news-panel");
-      const backdrop = document.querySelector(".account-news-backdrop");
-      if (panel && backdrop)
-        samples.push({
-          left: panel.getBoundingClientRect().left,
-          opacity: getComputedStyle(backdrop).opacity,
-        });
-      else if (samples.length) break;
-    }
-    return samples;
-  }, eventType);
+for (const width of [1440, 390]) {
+  test(`the bell toggles messages and an outside click dismisses them at ${width}px`, async ({
+    page,
+  }) => {
+    await signIn(page, "messages-fixture");
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/commerce/create");
+    const opener = page.getByRole("button", { name: /^消息（/ });
+    const panel = page.getByRole("dialog", { name: "消息中心", exact: true });
+    await opener.click();
+    await expect(panel).toBeVisible();
+    const list = panel.locator(".account-news-tabs");
+    const headerHeight = await page.locator(".topbar").evaluate((element) => {
+      if (!(element instanceof HTMLElement)) throw new Error("EXPECTED_HTML_TOPBAR");
+      return element.offsetHeight;
+    });
+    const bottomGap = () =>
+      list.evaluate((element) => innerHeight - element.getBoundingClientRect().bottom);
+    await expect.poll(bottomGap).toBeCloseTo(headerHeight, 0);
+    const listHeight = await list.evaluate((element) => {
+      if (!(element instanceof HTMLElement)) throw new Error("EXPECTED_HTML_MESSAGE_LIST");
+      return element.offsetHeight;
+    });
+    const updatesTab = panel.getByRole("tab", { name: "更新通知", exact: true });
+    await expect(list.locator(".tabs__list-container")).toHaveCSS("border-bottom-width", "1px");
+    await updatesTab.hover();
+    await expect
+      .poll(() =>
+        updatesTab.evaluate((tab) => {
+          const highlight = getComputedStyle(tab, "::before");
+          return [highlight.height, highlight.backgroundColor];
+        }),
+      )
+      .toEqual(["32px", "rgba(255, 255, 255, 0.06)"]);
+    await updatesTab.click();
+    await expect(list).toHaveCSS("height", `${listHeight}px`);
+    await expect.poll(bottomGap).toBeCloseTo(headerHeight, 0);
+    await opener.click();
+    await expect(panel).toBeHidden();
+    await expect(opener).toHaveAttribute("aria-expanded", "false");
+
+    await opener.click();
+    await expect(panel.getByRole("tab", { name: /^系统通知/, selected: true })).toBeVisible();
+    const bounds = await panel.boundingBox();
+    if (!bounds) throw new Error("Missing messages panel");
+    await page.mouse.click(width / 2, Math.ceil(bounds.y + bounds.height) + 8);
+    await expect(panel).toBeHidden();
+
+    await opener.click();
+    await expect(panel).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(panel).toBeHidden();
+    await expect(opener).toBeFocused();
+  });
 }
 
-test("message drawer slides as solid glass and closes from where it is", async ({ page }) => {
-  await signIn(page, "13800138000");
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/commerce/create");
-  const opener = page.getByRole("button", { name: /消息（.*未读）/ });
-  const panel = page.getByRole("dialog", { name: "消息中心" });
-  // 遮罩全程保持不透明：面板是它的子元素，遮罩半透明会让毛玻璃透出清晰页面、结束时才突然变磨砂。
-  const opening = sampleDrawer(page, "click");
-  await opener.click();
-  const enter = await opening;
-  expect(enter.some((sample) => sample.left > 801)).toBe(true);
-  expect(enter.at(-1)?.left).toBeCloseTo(800, 0);
-  expect(enter.every((sample) => sample.opacity === "1")).toBe(true);
-  // 关闭是看得见的滑出，不是跟着遮罩一起淡没。
-  const closing = sampleDrawer(page, "keydown");
-  await page.keyboard.press("Escape");
-  const exit = await closing;
-  expect(exit.some((sample) => sample.left > 900 && sample.left < 1440)).toBe(true);
-  expect(exit.every((sample) => sample.opacity === "1")).toBe(true);
-  await expect(panel).toBeHidden();
-
-  // 进场停在 120ms 时关闭：从当前位置滑出，不先跳回完全打开的位置，也不瞬间消失。
-  await opener.click();
-  await expect(panel).toBeVisible();
-  await page.evaluate(() => {
-    const entering = document.querySelector(".account-news-content")?.getAnimations() ?? [];
-    if (!entering.length) throw new Error("The drawer finished entering before the check");
-    for (const animation of entering) {
-      animation.pause();
-      animation.currentTime = 120;
+for (const width of [1440, 390]) {
+  test(`the update summary opens the full notice at ${width}px`, async ({ page }) => {
+    await signIn(page, "release-fixture");
+    const release = {
+      version: "fixture-1",
+      title: "工作台更新公告",
+      description: `${"公告摘要包含近期更新。".repeat(22)}\n\n完整正文最后一段。`,
+      publishedAt: "2025-01-01T00:00:00.000Z",
+    };
+    await page.route("**/api/v1/realtime/release", (route) =>
+      route.fulfill({ json: apiFixture({ release }) }),
+    );
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/commerce/create");
+    await page.getByRole("button", { name: /^消息（/ }).click();
+    await page.getByRole("tab", { name: "更新通知", exact: true }).click();
+    const summary = page.getByRole("button", { name: release.title, exact: true });
+    const detail = page.getByRole("region", { name: release.title, exact: true });
+    await expect(detail).toBeHidden();
+    await summary.press("Enter");
+    await expect(detail).toContainText("完整正文最后一段。");
+    if (width < 824) await expect(summary).toBeHidden();
+    else {
+      const [detailBox, summaryBox] = await Promise.all([
+        detail.boundingBox(),
+        summary.boundingBox(),
+      ]);
+      if (!detailBox || !summaryBox) throw new Error("Missing update detail or summary");
+      expect(detailBox.x + detailBox.width).toBeLessThan(summaryBox.x);
     }
+    await detail.getByRole("button", { name: "关闭更新详情", exact: true }).click();
+    await expect(detail).toBeHidden();
+    await expect(summary).toBeFocused();
   });
-  const closingEarly = sampleDrawer(page, "keydown");
-  await page.keyboard.press("Escape");
-  await page.evaluate(() => {
-    for (const animation of document.querySelector(".account-news-content")?.getAnimations() ?? [])
-      animation.play();
-  });
-  const early = await closingEarly;
-  expect(early.some((sample) => sample.left < 1440)).toBe(true);
-  expect(early.every((sample) => sample.left > 820)).toBe(true);
-  await expect(panel).toBeHidden();
-
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await opener.click();
-  await expect(panel).toHaveCSS("transition-duration", "0s");
-  await expect(panel).toHaveCSS("translate", "none");
-  await page.keyboard.press("Escape");
-  await expect(panel).toBeHidden();
-});
+}

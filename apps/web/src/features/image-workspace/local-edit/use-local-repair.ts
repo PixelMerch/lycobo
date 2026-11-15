@@ -13,8 +13,7 @@ import {
   usePendingSubmission,
 } from "../../generation/generation-client";
 import { modelCapabilities, supportsReferences } from "../../generation/models/model-capabilities";
-import { isModelId } from "../../generation/studio-state";
-import type { PreviewImage, PreviewMeta } from "../image-preview";
+import type { PreviewImage } from "../image-preview";
 import { imageWorkspaceMessages } from "../image-workspace-messages";
 import {
   emptyRepairDraft,
@@ -25,7 +24,10 @@ import {
   useRepairDrafts,
 } from "./local-repair-state";
 
-export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialTool = "select") {
+const repairModel = "gpt-image-2.5";
+
+/** 管理局部编辑选区，并用专用模型提交新任务。 */
+export function useLocalRepair(source: PreviewImage, initialTool = "select") {
   const { image, imageError } = useRepairImage(source.id);
   const {
     key,
@@ -47,14 +49,14 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
   const width = source.width ?? image?.naturalWidth ?? 1;
   const height = source.height ?? image?.naturalHeight ?? 1;
   const output = repairOutput(width, height);
-  const model = isModelId(meta.model) ? meta.model : "gpt-image-2";
-  const capabilities = modelCapabilities(models.data, model, "local-edit");
+  const capabilities = modelCapabilities(models.data, repairModel, "local-edit");
+  // 待确认任务重放已保存的请求，不受新任务的模型能力限制。
   const available =
     inputsReady &&
-    supportsReferences(capabilities, 1) &&
-    capabilities?.enabledResolutions.includes(output.resolution);
-  /* The button carries readiness: at least one region, each with a description.
-   * That replaces a separate validation message and a click that goes nowhere. */
+    (ownPending ||
+      (supportsReferences(capabilities, 1) &&
+        !!capabilities?.enabledResolutions.includes(output.resolution)));
+  // 新任务至少需要一个选区，且每个选区都要填写修改说明。
   const canGenerate =
     ownPending ||
     (draft.regions.length > 0 && draft.regions.every((region) => region.prompt.trim().length > 0));
@@ -84,7 +86,6 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
       canGenerate,
     ownPending,
     generate,
-    model,
     assetId: source.id,
     regions: draft.regions,
     width,
@@ -102,7 +103,6 @@ export function useLocalRepair(source: PreviewImage, meta: PreviewMeta, initialT
     width,
     height,
     output,
-    model,
     models,
     available,
     busy,
@@ -187,7 +187,6 @@ function useRepairSubmission({
   ready,
   ownPending,
   generate,
-  model,
   assetId,
   regions,
   width,
@@ -198,7 +197,6 @@ function useRepairSubmission({
   ready: boolean;
   ownPending: boolean;
   generate: ReturnType<typeof useGenerateImage>;
-  model: Parameters<typeof generate.mutateAsync>[0]["model"];
   assetId: string;
   regions: RepairRegion[];
   width: number;
@@ -214,7 +212,7 @@ function useRepairSubmission({
     submissionLock.current = true;
     try {
       const submitted = await generate.mutateAsync({
-        model,
+        model: repairModel,
         source: `repair:${assetId}`,
         localEdit: { sourceAssetId: assetId, width, height, regions: regions },
         draft: {

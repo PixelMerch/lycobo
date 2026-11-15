@@ -69,6 +69,7 @@ async function settleImageResult(
   }
 }
 
+/** 管理生图执行、补投租约及结果结算。 */
 export function imageExecutionRepository(
   sql: postgres.Sql,
   settlement: ReturnType<typeof imageSettlement>,
@@ -77,11 +78,17 @@ export function imageExecutionRepository(
 ) {
   const { refreshJob, refund } = settlement;
   return {
-    async leaseOutbox() {
+    async leaseOutbox(transport: "local" | "queue" = "local") {
       return sql.begin(async (tx) => {
+        // 为已确认的首次投递预留消费时间，避免积压时反复复制排队消息。
+        const recoveryWindow =
+          transport === "queue"
+            ? tx`and (i.status<>'queued' or o.dispatched_at is null or o.next_attempt_at<=now()-interval '5 minutes')`
+            : tx``;
         const rows =
           await tx`select o.id,o.item_id from generation_outbox o join generation_job_items i on i.id=o.item_id
           where ${tasksSince ? sql`i.created_at>=${tasksSince} and` : sql``} (i.status='queued' or (i.status='running' and exists(select 1 from provider_executions e where e.item_id=i.id and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now())))) and o.next_attempt_at<=now() and (o.lease_expires_at is null or o.lease_expires_at<now())
+          ${recoveryWindow}
           order by o.next_attempt_at limit 20 for update of o skip locked`;
         const result: Array<{ id: string; itemId: string; leaseToken: string }> = [];
         for (const row of rows) {
@@ -106,7 +113,7 @@ export function imageExecutionRepository(
         const [candidate] =
           await tx`select job_id from generation_job_items where id=${itemId} ${tasksSince ? tx`and created_at>=${tasksSince}` : tx``} and (status='queued' or (status='running' and exists(select 1 from provider_executions e where e.item_id=${itemId} and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now()))))`;
         if (!candidate) return null;
-        // Match completion/reconciliation lock order to avoid sibling-item deadlocks.
+        // 与完成结算和人工核对使用相同的加锁顺序，避免同一任务的子项死锁。
         await tx`select id from generation_jobs where id=${candidate.job_id} for update`;
         const [row] =
           await tx`select i.id,i.position,i.job_id,j.organization_id,j.user_id,j.input,j.provider_model,j.provider_snapshot,e.phase,e.task_id,e.status_path,e.deadline_at,e.poll_failures from generation_job_items i join generation_jobs j on j.id=i.job_id left join provider_executions e on e.item_id=i.id

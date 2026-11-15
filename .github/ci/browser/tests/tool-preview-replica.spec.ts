@@ -109,7 +109,7 @@ test("style matching requires both slots and submits their roles without a paid 
       prompt: expect.stringContaining("以第一张图为版式模板"),
     });
   expect(statusReads).toBe(0);
-  await expect(page.getByText("任务已提交，关闭页面也会继续处理。", { exact: true })).toBeVisible();
+  await expect(page.getByText("任务已入队，关闭页面后仍会处理。", { exact: true })).toBeVisible();
 });
 
 test("reduced-motion keyboard preview is static and home hides video", async ({ page }) => {
@@ -119,6 +119,12 @@ test("reduced-motion keyboard preview is static and home hides video", async ({ 
   const button = page
     .locator(".workspace-tool-bar")
     .getByRole("button", { name: "复制爆款", exact: true });
+  await expect(page.locator(".workspace-tool-indicator")).toHaveCSS("height", "50px");
+  await button.hover();
+  await expect
+    .poll(() => button.evaluate((element) => getComputedStyle(element, "::before").height))
+    .toBe("50px");
+  await expect(button).toHaveCSS("height", "56px");
   await button.focus();
   await expect(page.locator(".workspace-tool-preview-card")).toHaveCount(0);
   await page.locator(".workspace-composer-hero").focus();

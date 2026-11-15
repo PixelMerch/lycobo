@@ -80,10 +80,8 @@ apps/web/src/
     ├── commerce/                 # 家纺裂变、套图计划（方案规划、确认与生图）及本地会话草稿
     ├── video/                    # 视频页面、请求与草稿；history / player / production / storyboard 分职责
     ├── home/                     # 首页、共享创作输入与提示辅助
-    │   ├── home-modes.ts         # 四个创作模式的上传规则与模板顺序；标语、上传名称与模板文字在 home-modes-messages.ts
-    │   ├── home-composer.tsx     # 按模式组合参考图（家纺为左侧上传列）、描述区与“开始创作”；草稿读写在 use-home-mode-draft.ts
-    │   ├── home-templates.tsx    # 描述模板与替换确认；主图设置在 home-model-settings.tsx，家纺视角在 home-textile-views.tsx
-    │   ├── home-backdrop.tsx     # 首屏丝绸背景：每个模式一种缎面配色，切换页签时由首页触发涟漪
+    │   ├── home-page.tsx        # 品牌首页、专区与工作区入口
+    │   ├── landing/             # 电商专区 Hero、工具展示卡与原案例区块
     │   ├── silk/                 # React Bits Silk 移植：着色器、WebGL 渲染器、动画状态与组件（来源见第三方材料）
     │   └── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，justified-rows.ts 按容器宽度（use-element-width.ts）算出等高行拼图
     ├── site/                     # 站点页脚：首页与用户协议、隐私政策页共用
@@ -151,7 +149,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 接口、工作台和登录的实现范围，以及供应商、存储等外部验收边界见 [生图 API 文档](docs/image-generation-api.md)。
 
-实时推送入口为 apps/api/src/features/realtime/（Hono 鉴权路由和 RealtimeHub DO）；apps/web/src/features/realtime/ 管理共享可休眠 WebSocket、消息与版本缓存；completion-observer.ts 观察现有任务缓存，completion-alerts.ts 与 completion-storage.ts 管理后台标题、完成提示及跨标签回执，desktop-notification-control.tsx 提供手动桌面通知开关。任务、积分与消息的可靠事件使用 packages/db/src/realtime/realtime-repository.ts 和 realtime-schema.ts；API 与图片消费者通过 packages/queue/src/realtime.ts 投递。断线按游标回放，过期游标定向校准，不启用任务 API 定时轮询；提示词优化继续 SSE。详见 docs/realtime.md。
+实时推送入口为 apps/api/src/features/realtime/（Hono 鉴权路由和 RealtimeHub DO）；apps/web/src/features/realtime/ 管理共享可休眠 WebSocket、消息与版本缓存；completion-observer.ts 观察现有任务缓存，completion-alerts.ts 与 completion-storage.ts 管理后台标题、完成提示及跨标签回执，features/account/settings/desktop-notification-setting.tsx 在账户偏好设置中提供手动桌面通知开关。任务、积分与消息的可靠事件使用 packages/db/src/realtime/realtime-repository.ts 和 realtime-schema.ts；API 与图片消费者通过 packages/queue/src/realtime.ts 投递。断线按游标回放，过期游标定向校准，不启用任务 API 定时轮询；提示词优化继续 SSE。详见 docs/realtime.md。
 
 - packages/db/src/wallet/wallet-repository.ts：企业共享钱包、充值订单与只读账务查询。数据表与扣费规则见 [企业钱包](docs/enterprise-wallet.md)。
 
@@ -173,7 +171,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 功能组件使用直接依赖；服务端缓存属于TanStack Query，临时草稿与交互属于Zustand，纯展示组件从props获得数据。具体规则见[UI一致性维护](docs/ui-consistency.md)。
 
-- `features/account/menu/account-menu.tsx` 组合HeaderLogin与账户菜单（桌面顶部栏头像、手机抽屉账户行）；菜单只保留设置、个人作品与退出登录。`header-benefits.tsx` 是顶部栏积分胶囊与积分菜单（按 vidmuse，悬停逻辑复用 `lib/use-hover-menu.ts`）；`credits/credit-usage-dialog.tsx`、`credit-usage-list.tsx` 与 `use-credit-usage.ts` 组成积分明细弹窗（视图筛选、按需续读与分页；从 Header 积分菜单打开）。`account-overlays.tsx` 通过Zustand记录弹窗及打开者，统一懒加载账户设置及叠在其上的充值、会员和积分明细；关闭后各自恢复焦点，退出或改密成功清空状态。
+- `features/account/menu/account-menu.tsx` 组合HeaderLogin与账户菜单（桌面顶部栏头像、手机抽屉账户行）；菜单提供设置、个人作品与退出登录。`header-benefits.tsx` 是顶部栏积分胶囊与积分菜单（按参考站，悬停逻辑复用 `lib/use-hover-menu.ts`）；`credits/credit-usage-dialog.tsx`、`credit-usage-list.tsx` 与 `use-credit-usage.ts` 组成积分明细弹窗（视图筛选、按需续读与分页；从 Header 积分菜单打开）。`account-overlays.tsx` 通过Zustand记录弹窗及打开者，统一懒加载账户设置及叠在其上的充值、会员和积分明细；关闭后各自恢复焦点，退出或改密成功清空状态。
 - `features/account/settings/account-settings-dialog.tsx` 是账户设置：左侧身份、分区与退出登录，分区为账户、套餐与用量、登录与安全及管理员可见的企业成员（`settings-sections.ts`）。`account-plan-usage.tsx` 组合当前套餐与升级、企业共享积分与充值，以及在积分明细（`credits/credit-ledger.tsx`）与充值订单（`credits/recharge-orders.tsx`）之间切换的积分用量；`account-password-form.tsx` 通过auth-client接入既有改密接口，成功清理登录状态。`account-settings-panels.tsx` 组合账户分区并如实保留未接入的子账号入口；`account-avatar-picker.tsx` 是头像行的预设单选，点选即通过auth-client的 `PUT /api/v1/auth/avatar` 保存。`account-language-picker.tsx` 与顶栏菜单复用 `use-account-language.ts`，已登录时通过 `PUT /api/v1/auth/locale` 保存语言偏好，再切换当前路由。`avatar/account-avatar.tsx` 是顶部栏、手机抽屉、账户菜单与设置共用的头像，按身份里的 `avatarPreset` 取 `account-avatar.css` 中的渐变，认不出时用默认青柠。`account-format.ts` 提供格式化，`account-entry.tsx` 提供收支图标；各页签查询按需挂载。
 - `features/account/membership/membership-page.tsx` 导出懒加载全屏 MembershipDialog，Header在当前工作区打开；/membership仅为旧链接兼容入口，不展示返回与明细按钮；`MembershipPlans` 管理分类、周期、档位和团队席位展示；标语单价、周期最低折扣、折扣标签、单位积分价与“积分单价最低”飘带均由 `membership-pricing.ts` 的纯函数从价格表推导，并由同目录单元测试覆盖；membership-details组合工具／协作能力与Tooltip，membership-faq用官方Accordion承载本站FAQ，`CreditPacks` 只管理所选包。`wallet-client.ts` 共享钱包查询，最近记录按需读取并缓存30秒，不新增轮询。未接入的会员、绑定、验证码及支付不会模拟成功。
 
