@@ -3,7 +3,6 @@ import { imageLimits } from "@lycoboai/contracts";
 import { z } from "zod";
 import { ImageValidationError } from "../images/core";
 import { displayVariants } from "../images/image-variants";
-import { encodeWithoutImages } from "./cloudflare-image-fallback";
 
 const maxBindingBytes = 20 * 1024 * 1024;
 const bytesStream = (bytes: Uint8Array) =>
@@ -30,7 +29,7 @@ function containsAnimation(bytes: Uint8Array) {
   return false;
 }
 
-/** 使用 Images 处理图片，额度耗尽时在 Worker 内转换中小图片。 */
+/** Images handles decoding; application limits and animation rejection stay explicit. */
 export function cloudflareImages(images: Pick<ImagesBinding, "info" | "input">) {
   async function info(bytes: Uint8Array) {
     if (!bytes.length || bytes.length > maxBindingBytes || containsAnimation(bytes))
@@ -65,32 +64,13 @@ export function cloudflareImages(images: Pick<ImagesBinding, "info" | "input">) 
     quality?: number,
     fit: "scale-down" | "contain" = "scale-down",
   ) {
-    const target = width && height ? { width, height } : undefined;
-    let output: Uint8Array;
-    try {
-      const handle = images.input(bytesStream(bytes));
-      if (target) handle.transform({ ...target, fit, background: "transparent" });
-      const result = await handle.output({ format, ...(quality ? { quality } : {}), anim: false });
-      output = new Uint8Array(await result.response().arrayBuffer());
-    } catch (error) {
-      output = await encodeOnQuotaError(error, bytes, target, format);
-    }
+    const handle = images.input(bytesStream(bytes));
+    if (width && height) handle.transform({ width, height, fit, background: "transparent" });
+    const result = await handle.output({ format, ...(quality ? { quality } : {}), anim: false });
+    const output = new Uint8Array(await result.response().arrayBuffer());
     if (!output.length || output.length > imageLimits.outputBytes)
       throw new ImageValidationError("INVALID_IMAGE");
     return output;
-  }
-  async function encodeOnQuotaError(
-    error: unknown,
-    bytes: Uint8Array,
-    target: { width: number; height: number } | undefined,
-    format: "image/png" | "image/webp",
-  ) {
-    // 仅对转换额度错误启用本地降级，元数据校验不消耗转换额度。
-    const failure = z.object({ code: z.literal(9422) }).safeParse(error);
-    if (!failure.success) throw error;
-    const fallback = await encodeWithoutImages(bytes, await info(bytes), target, format);
-    if (!fallback) throw error;
-    return fallback;
   }
   return {
     info,
