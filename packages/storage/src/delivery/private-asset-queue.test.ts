@@ -46,3 +46,45 @@ it("enqueues missing variants only after signature/source validation and never d
   expect(queueVariant).toHaveBeenCalledExactlyOnceWith(key);
   expect(bucket.put).not.toHaveBeenCalled();
 });
+
+it("serves a private original while a missing preview waits for repair", async () => {
+  const key = `1234567890/${crypto.randomUUID()}/${crypto.randomUUID()}.png`;
+  const secret = "fixture-private-asset-queue-secret-0001";
+  const links = await assetDeliverySigner("https://media.example.test", secret)(key);
+  const body = new Uint8Array([1, 2, 3]);
+  const accessHeaders = { Origin: "https://app.example.test" };
+  const queueVariant = vi.fn(async () => {
+    throw new Error("QUEUE_TEMPORARILY_UNAVAILABLE");
+  });
+  const bucket = {
+    get: vi.fn(async (objectKey: string) =>
+      objectKey === key
+        ? {
+            size: body.length,
+            body: new ReadableStream<Uint8Array>({
+              start(controller) {
+                controller.enqueue(body);
+                controller.close();
+              },
+            }),
+            arrayBuffer: async () => body.buffer,
+          }
+        : null,
+    ),
+    head: vi.fn(async () => null),
+    put: vi.fn(async () => undefined),
+    delete: vi.fn(async () => undefined),
+  };
+  const response = await servePrivateAsset(new Request(links.url, { headers: accessHeaders }), {
+    bucket,
+    signingSecret: secret,
+    allowedOrigins: accessHeaders.Origin,
+    queueVariant,
+  });
+  expect(response.status).toBe(200);
+  expect(response.headers.get("Content-Type")).toBe("image/png");
+  expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+  expect(response.headers.get("Access-Control-Allow-Origin")).toBe(accessHeaders.Origin);
+  expect(new Uint8Array(await response.arrayBuffer())).toEqual(body);
+  expect(queueVariant).toHaveBeenCalledExactlyOnceWith(key);
+});
