@@ -5,41 +5,59 @@
   pointer-events: none;
 }
 
-/* 与账户设置共用深色毛玻璃。 */
 :root .account-news-popover {
-  --glass-tint: var(--glass-dark-tint);
+  --account-news-height: calc(
+    100dvh -
+    2 *
+    var(--account-news-header-height, var(--header-height)) -
+    8px
+  );
   width: min(380px, calc(100vw - 16px));
-  /* 扣除顶部栏、展开间距和一个顶部栏高度的底部留白。 */
-  height: calc(100dvh - 2 * var(--header-height) - 8px);
   padding: 0;
-  border-radius: 24px;
-  overflow: hidden;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
   transform-origin: top right;
 }
-@media (prefers-reduced-transparency: reduce) {
-  :root .account-news-popover {
-    --glass-tint: var(--glass-fallback);
-  }
-}
-@supports not (backdrop-filter: blur(1px)) {
-  :root .account-news-popover {
-    --glass-tint: var(--glass-fallback);
-  }
+/* 顶部栏收窄时，上下各预留一个收窄后的顶部栏高度。 */
+:root:has(.topbar[data-scrolled="true"]) .account-news-popover {
+  --account-news-header-height: calc(var(--header-height) - 4px);
 }
 .account-news-panel {
-  width: 100%;
-  height: 100%;
   padding: 0;
 }
+.account-news-surface {
+  min-width: 0;
+  border-radius: 24px;
+  overflow: hidden;
+}
 .account-news-tabs.tabs {
+  height: var(--account-news-height);
   display: flex;
   flex-direction: column;
   gap: 0;
-  height: 100%;
+}
+@media (min-width: 824px) {
+  :root .account-news-popover[data-detail-open="true"] {
+    width: min(788px, calc(100vw - 24px));
+  }
+  .account-news-popover[data-detail-open="true"] .account-news-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    align-items: start;
+    gap: var(--space-2);
+  }
+}
+@media (max-width: 823px) {
+  .account-news-popover[data-detail-open="true"] .account-news-tabs {
+    display: none;
+  }
 }
 .account-news-tabs .tabs__list-container {
   flex: none;
-  padding: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--glass-card-edge);
 }
 .account-news-tabs .tabs__list {
   display: flex;
@@ -53,12 +71,40 @@
   flex: 1;
   justify-content: center;
   gap: var(--space-2);
-  height: 44px;
+  position: relative;
+  isolation: isolate;
+  height: var(--shell-pill-height);
+  min-height: var(--shell-pill-height);
   border-radius: 999px;
 }
 .account-news-tabs .tabs__tab[data-selected="true"] {
-  background: #ffffff14;
+  background: transparent;
   color: var(--foreground);
+}
+.account-news-tabs .tabs__tab::before {
+  position: absolute;
+  z-index: -1;
+  inset-block-start: 50%;
+  inset-inline: 0;
+  height: 32px;
+  border-radius: inherit;
+  transform: translateY(-50%);
+  pointer-events: none;
+  content: "";
+}
+.account-news-tabs .tabs__tab[data-selected="true"]::before {
+  background: var(--fill-medium);
+}
+.account-news-tabs .tabs__tab[data-hovered="true"]:not([data-selected="true"]) {
+  opacity: 1;
+}
+.account-news-tabs .tabs__tab[data-hovered="true"]:not([data-selected="true"])::before {
+  background: var(--fill-soft);
+}
+@media (max-width: 767px), (pointer: coarse) {
+  .account-news-tabs .tabs__tab {
+    min-height: 44px;
+  }
 }
 .account-news-count {
   padding: 0 6px;
@@ -70,14 +116,14 @@
 }
 .account-news-body.tabs__panel {
   display: flex;
-  flex: 1;
+  flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
-  padding: var(--space-4);
+  padding: var(--space-2);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
-  gap: var(--space-3);
+  gap: var(--space-1);
 }
 .account-news-body::-webkit-scrollbar {
   display: none;
@@ -92,15 +138,15 @@
   display: grid;
   place-items: center;
   flex: none;
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: #ffffff0a;
   color: #a2a2a2;
 }
 .account-news-empty h3 {
-  font-size: var(--text-lg);
-  line-height: var(--leading-lg);
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
   font-weight: var(--weight-semibold);
 }
 .account-news-empty {
@@ -109,11 +155,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 120px;
+  min-height: 92px;
   text-align: center;
 }
 .account-news-empty h3 {
-  margin-top: var(--space-4);
+  margin-top: var(--space-2);
 }
 .account-footer-action {
   position: relative;
@@ -128,49 +174,28 @@
   background: var(--accent);
 }
 
-/* 设置入口与消息列表分层，未读状态不再依赖重复的大按钮。 */
-.notification-preferences {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex: none;
-  padding: var(--space-4);
-  border-radius: 16px;
-  background: var(--glass-card);
-}
-.notification-preferences-icon,
 .account-message-icon {
   display: grid;
   place-items: center;
   flex: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
   color: var(--foreground);
   background: var(--glass-card);
 }
-.notification-preferences-copy {
-  flex: 1;
-  min-width: 0;
-}
-.notification-preferences h3,
 .account-message h3 {
-  font-size: var(--text-base);
-  line-height: var(--leading-base);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  overflow-wrap: anywhere;
   font-weight: var(--weight-medium);
-}
-.notification-preferences p {
-  margin: var(--space-1) 0 0;
-  color: #ffffffb3;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
 }
 .account-message {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border-radius: 16px;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: 12px;
 }
 .account-message[data-unread="true"] {
   background: var(--glass-card);
@@ -188,7 +213,7 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-1) var(--space-2);
 }
 .account-message-status,
 .account-message-footer {
@@ -200,23 +225,87 @@
   color: var(--accent);
 }
 .account-message p {
-  margin: var(--space-2) 0 var(--space-3);
+  margin: var(--space-1) 0;
   color: #ffffffb3;
-  font-size: var(--text-base);
-  line-height: var(--leading-base);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   overflow-wrap: anywhere;
 }
-@media (max-width: 767px) {
-  .notification-preferences {
-    display: grid;
-    grid-template-columns: 32px minmax(0, 1fr);
-    align-items: start;
+
+.account-release-summary.button {
+  width: 100%;
+  height: auto;
+  min-height: 44px;
+  justify-content: flex-start;
+  white-space: normal;
+  text-align: start;
+}
+.account-release-summary strong {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+.account-release-summary[aria-expanded="true"] {
+  background: var(--fill-medium);
+}
+.account-release-preview {
+  display: -webkit-box;
+  margin-block: var(--space-1);
+  overflow: hidden;
+  color: #ffffffb3;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow-wrap: anywhere;
+}
+.account-release-detail {
+  display: flex;
+  flex-direction: column;
+  max-height: min(480px, var(--account-news-height));
+}
+@media (max-width: 823px) {
+  .account-release-detail {
+    height: var(--account-news-height);
+    max-height: none;
   }
-  .notification-preferences > .button {
-    grid-column: 2;
-    justify-self: start;
+}
+.account-release-header {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4) 0;
+}
+.account-release-header h3 {
+  margin: var(--space-1) 0 0;
+  color: var(--foreground);
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
+  overflow-wrap: anywhere;
+}
+.account-release-header .button {
+  flex: none;
+}
+@media (max-width: 767px), (pointer: coarse) {
+  .account-release-header .button {
+    min-width: 44px;
+    min-height: 44px;
   }
-  .account-message {
-    padding: var(--space-3);
-  }
+}
+.account-release-body {
+  min-height: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.account-release-body p {
+  margin: 0 0 var(--space-4);
+  color: #ffffffcc;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

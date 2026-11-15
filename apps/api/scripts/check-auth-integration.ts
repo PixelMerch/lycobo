@@ -9,7 +9,7 @@ import {
   enterpriseLoginResponseSchema,
   unwrapApiData,
 } from "@lycoboai/contracts";
-import { openAuthRepository, openImageRepository } from "@lycoboai/db";
+import { openAuthRepository, openImageRepository, openRealtimeRepository } from "@lycoboai/db";
 import { imageStore } from "@lycoboai/storage";
 import postgres from "postgres";
 import { createApp } from "../src/app";
@@ -32,6 +32,7 @@ testUrl.pathname = `/${dbName}`;
 const directory = await mkdtemp(path.join(tmpdir(), "lycobo-auth-test-"));
 let authDb: ReturnType<typeof openAuthRepository> | undefined;
 let images: ReturnType<typeof openImageRepository> | undefined;
+let realtime: ReturnType<typeof openRealtimeRepository> | undefined;
 try {
   await admin.unsafe(`create database "${dbName}"`);
   const root = fileURLToPath(new URL("../../../", import.meta.url).href);
@@ -43,6 +44,7 @@ try {
   if (migrated.status !== 0) throw new Error("Isolated migration failed");
   authDb = openAuthRepository(testUrl.href);
   images = openImageRepository(testUrl.href);
+  realtime = openRealtimeRepository(testUrl.href);
   const sql = postgres(testUrl.href, { max: 5 });
   try {
     const patterns = { user: /^[0-9]{10}$/, task: /^W[0-9A-Z]{8}$/, image: /^P[0-9A-Z]{8}$/ };
@@ -104,6 +106,9 @@ try {
         resolutions: () => ["1K"],
       },
       auth,
+      undefined,
+      undefined,
+      { repository: realtime, auth },
     );
     const login = () =>
       app.request("/api/v1/auth/enterprise/login", {
@@ -158,6 +163,20 @@ try {
     assert.equal(otherLocale?.preferred_locale, null);
     await assert.rejects(sql`update users set preferred_locale='fr' where id=${first.userId}`);
     const cookie = response.headers.get("set-cookie")?.split(";")[0] ?? "";
+    // 本地没有 DO，公告仍公开可读，通知列表仍要求有效会话。
+    const release = await app.request("/api/v1/realtime/release");
+    assert.equal(release.status, 200);
+    assert.deepEqual(unwrapApiData(await release.json()), { release: null });
+    assert.equal((await app.request("/api/v1/notifications")).status, 401);
+    const notifications = await app.request("/api/v1/notifications", {
+      headers: { Cookie: cookie },
+    });
+    assert.equal(notifications.status, 200);
+    assert.deepEqual(unwrapApiData(await notifications.json()), {
+      data: [],
+      unread: 0,
+      nextCursor: null,
+    });
     assert.equal((await app.request("/api/v1/image-models", { headers })).status, 200);
     assert.equal(
       (
@@ -366,7 +385,7 @@ try {
     await sql.end({ timeout: 5 });
   }
 } finally {
-  await Promise.all([authDb?.close(), images?.close()]);
+  await Promise.all([authDb?.close(), images?.close(), realtime?.close()]);
   await admin.unsafe(`drop database if exists "${dbName}"`);
   await admin.end({ timeout: 5 });
   await rm(directory, { recursive: true, force: true });

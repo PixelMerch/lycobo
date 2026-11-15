@@ -177,17 +177,28 @@
     background-color 180ms ease,
     color 180ms ease;
 }
-.workspace-tool-shortcut.button:is([data-hovered="true"], [aria-current="page"]) {
+.workspace-tool-shortcut.button[data-hovered="true"] {
   color: var(--foreground);
 }
-.workspace-tool-shortcut.button[data-hovered="true"]:not([aria-current="page"]) {
-  background: var(--interaction-hover);
+.workspace-tool-shortcut.button[aria-current="page"] {
+  color: #fff;
 }
+/* 高亮在按钮内居中，工具坞的行高和点击区域保持稳定。 */
+.workspace-tool-shortcut.button::before,
 .workspace-tool-indicator {
   position: absolute;
   inset: 0;
   z-index: -1;
+  height: 50px;
+  margin-block: auto;
   border-radius: inherit;
+  pointer-events: none;
+}
+.workspace-tool-shortcut.button[data-hovered="true"]:not([aria-current="page"])::before {
+  background: var(--interaction-hover);
+  content: "";
+}
+.workspace-tool-indicator {
   background: linear-gradient(180deg, #ffffff17 0%, #ffffff0d 100%);
   box-shadow: none;
 }
@@ -206,15 +217,10 @@
 .workspace-tool-shortcut .workspace-tool-symbol > .ui-icon {
   transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.workspace-tool-shortcut.button[data-hovered="true"] .workspace-tool-symbol {
+.workspace-tool-shortcut.button:is([data-hovered="true"], [aria-current="page"])
+  .workspace-tool-symbol {
   background: transparent;
   color: #fff;
-}
-/* 选中项只点亮图标，避免行底与图标底叠成厚重的两层。 */
-.workspace-tool-shortcut.button[aria-current="page"] .workspace-tool-symbol {
-  background: transparent;
-  color: var(--accent);
-  box-shadow: none;
 }
 @media (prefers-reduced-motion: no-preference) {
   .workspace-tool-shortcut.button[data-hovered="true"] .workspace-tool-symbol {

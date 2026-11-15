@@ -35,7 +35,7 @@ export default function PreviewWorkspace({
   const t = useMessages(imageWorkspaceMessages);
   const catalog = useModelPresentation();
   const locale = useLocale();
-  const editor = useLocalRepair(source, meta, repairing ? "rect" : "select");
+  const editor = useLocalRepair(source, repairing ? "rect" : "select");
   const { zoom, setZoom, wheelZoom } = usePreviewZoom();
   /* 任务进度在右下角提示里播报，表单里只留输入和提交。 */
   useRepairNotice({

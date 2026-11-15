@@ -26,8 +26,8 @@ async function openSettings(page: Page) {
   if ((page.viewportSize()?.width ?? 1440) < 768)
     await page.getByRole("button", { name: "打开导航", exact: true }).click();
   await page.getByRole("button", { name: "账户菜单：settings-fixture", exact: true }).click();
-  await page.getByRole("menuitem", { name: "设置", exact: true }).click();
-  const settings = page.getByRole("dialog", { name: "设置", exact: true });
+  await page.locator(".account-menu").getByRole("button", { name: "设置", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "账户设置", exact: true });
   await expect(settings).toBeVisible();
   await expect(page.locator(".modal__container").filter({ has: settings })).not.toHaveAttribute(
     "data-entering",

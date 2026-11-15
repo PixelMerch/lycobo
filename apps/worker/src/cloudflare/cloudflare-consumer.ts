@@ -6,8 +6,7 @@ import {
   imageQueueJobSchema,
   imageVariantJobSchema,
 } from "@lycoboai/queue";
-import { uploadJobSchema } from "@lycoboai/storage/uploads";
-import { z } from "zod";
+import { recoverCloudflareUploads, uploadJobSchema } from "@lycoboai/storage/uploads";
 import { processImageItem } from "../images/image-processor";
 import { type CloudflareImageEnv, openCloudflareRuntime } from "./cloudflare-runtime";
 import { processCloudflareVariants } from "./cloudflare-variants";
@@ -22,11 +21,13 @@ export async function consumeCloudflareImages(
     return;
   }
   const runtime = await openCloudflareRuntime(env);
+  let needsRealtime = false;
   try {
     for (const message of batch.messages) {
       try {
         const upload = uploadJobSchema.safeParse(message.body);
         if (upload.success) {
+          needsRealtime = true;
           await runtime.uploads.process(upload.data.uploadId);
           message.ack();
           continue;
@@ -49,6 +50,7 @@ export async function consumeCloudflareImages(
           continue;
         }
         let nextPollMs: number | undefined;
+        needsRealtime = true;
         await processImageItem(parsed.data.itemId, {
           repository: runtime.repository,
           prepareReferences: (itemId) => prepareReferences(itemId, runtime),
@@ -79,8 +81,8 @@ export async function consumeCloudflareImages(
       }
     }
   } finally {
-    await flushRealtime(env);
-    await runtime.repository.close();
+    // 纯变体修复只写 R2，不产生业务事件；其余任务即使部分失败也立即尝试投递。
+    await closeAfterRealtime(runtime, env, { enabled: needsRealtime });
   }
 }
 
@@ -94,40 +96,35 @@ export async function dispatchCloudflareImages(env: CloudflareImageEnv) {
       await runtime.repository.expireClaims();
       await dispatchImageOutbox(runtime.repository, env.IMAGE_QUEUE);
     }
-    await recoverUploads(env, runtime.uploads.recover);
+    await recoverCloudflareUploads(env.MEDIA, runtime.uploads.recover);
   } finally {
-    await flushRealtime(env);
+    await closeAfterRealtime(runtime, env, { prune: true });
+  }
+}
+
+async function closeAfterRealtime(
+  runtime: Awaited<ReturnType<typeof openCloudflareRuntime>>,
+  env: CloudflareImageEnv,
+  options: { prune?: boolean; enabled?: boolean },
+) {
+  try {
+    await flushRealtime(env, options);
+  } finally {
+    // 推送连接初始化失败时，也必须释放本次消费者的数据库客户端。
     await runtime.repository.close();
   }
 }
 
-async function recoverUploads(env: CloudflareImageEnv, recover: (id: string) => Promise<void>) {
-  const stored = await env.MEDIA.get("_upload-scan-cursor");
-  const cursor = stored ? await stored.text() : undefined;
-  const page = await env.MEDIA.list({
-    prefix: "_uploads/",
-    limit: 100,
-    ...(cursor ? { cursor } : {}),
-  });
-  for (const object of page.objects) {
-    if (object.key.endsWith(".bin") && object.uploaded.getTime() < Date.now() - 86400000) {
-      await env.MEDIA.delete(object.key);
-      continue;
-    }
-    if (!object.key.endsWith(".json")) continue;
-    const id = z.uuid().safeParse(object.key.slice(9, -5));
-    if (id.success) await recover(id.data);
-  }
-  if (page.truncated) await env.MEDIA.put("_upload-scan-cursor", page.cursor);
-  else await env.MEDIA.delete("_upload-scan-cursor");
-}
-
-/** 每次消费完成立即推送，Cron 同时补偿 API 或 Queue 中断留下的意图。 */
-async function flushRealtime(env: CloudflareImageEnv) {
+/** 消费后立即推送，Cron 补偿未送达意图并集中清理历史。 */
+async function flushRealtime(
+  env: CloudflareImageEnv,
+  { prune = false, enabled = true }: { prune?: boolean; enabled?: boolean } = {},
+) {
+  if (!enabled) return;
   const repository = openRealtimeRepository(env.HYPERDRIVE.connectionString);
   try {
     await dispatchRealtime(repository, env.REALTIME);
-    await repository.prune();
+    if (prune) await repository.prune();
   } catch {
     console.error("REALTIME_DISPATCH_FAILED");
   } finally {
@@ -135,16 +132,21 @@ async function flushRealtime(env: CloudflareImageEnv) {
   }
 }
 
-/** 图片在 R2 中已接收时由后台等待，超时或确定失败才结束任务并退款。 */
-async function prepareReferences(
+/** 参考图上传意图有效时继续排队，确定失败或意图失效才结束。 */
+export async function prepareReferences(
   itemId: string,
-  runtime: Awaited<ReturnType<typeof openCloudflareRuntime>>,
+  runtime: {
+    repository: Pick<
+      Awaited<ReturnType<typeof openCloudflareRuntime>>["repository"],
+      "waitingReferenceUploads"
+    >;
+    uploads: Pick<Awaited<ReturnType<typeof openCloudflareRuntime>>["uploads"], "status">;
+  },
 ) {
   const waiting = await runtime.repository.waitingReferenceUploads(itemId);
   if (!waiting) return "ready";
-  // 有限等待防止损坏上传或消费者故障无限占住付费任务。
-  if (Date.now() - waiting.createdAt.getTime() > 15 * 60 * 1000) return "failed";
   const statuses = await Promise.all(waiting.ids.map((id) => runtime.uploads.status(waiting, id)));
   if (statuses.some((result) => !result || result.status === "failed")) return "failed";
+  // 队列积压不影响上传有效期，交给 R2 上传意图判断是否过期。
   return statuses.some((result) => result?.status === "pending") ? "pending" : "ready";
 }

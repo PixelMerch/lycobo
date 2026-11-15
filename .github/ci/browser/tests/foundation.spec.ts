@@ -6,6 +6,10 @@ test("workspace entry opens creation with direct tool navigation", async ({ page
   await page.goto("/");
   await page.getByRole("button", { name: "电商", exact: true }).click();
   await page.getByRole("menuitem", { name: "主图制作", exact: true }).click();
+  await expect(page).toHaveURL(/\/commerce\?tool=create#commerce-composer$/);
+  const preview = page.locator("#commerce-composer");
+  await expect(preview.getByRole("textbox")).toHaveCount(0);
+  await preview.getByRole("link", { name: "进入工作区", exact: true }).last().click();
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(page.getByRole("button", { name: "全部工具", exact: true })).toHaveCount(0);
   await page

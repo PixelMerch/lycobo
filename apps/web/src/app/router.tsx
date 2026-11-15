@@ -1,11 +1,7 @@
 import { mainImageModelIds } from "@lycoboai/contracts";
 import { createBrowserRouter, type RouteObject } from "react-router";
-import {
-  getRecentCommerceTool,
-  rememberCommerceTool,
-} from "../features/commerce/commerce-preferences";
+import { getRecentCommercePath } from "../features/commerce/commerce-preferences";
 import { useStudioStore } from "../features/generation/studio-state";
-import { useWorkspaceState } from "../features/workspace/workspace-state";
 import {
   loadRouteLocale,
   localizedRedirect,
@@ -50,7 +46,13 @@ const localizedRoutes: RouteObject[] = [
       },
       {
         path: "workspace",
-        loader: ({ request }) => localizedRedirect(request, useWorkspaceState.getState().lastPath),
+        loader: ({ request }) => localizedRedirect(request, getRecentCommercePath()),
+      },
+      {
+        path: "commerce",
+        lazy: async () => ({
+          Component: (await import("../features/home/landing/landing-page")).CommerceLanding,
+        }),
       },
       {
         lazy: async () => ({
@@ -86,15 +88,7 @@ const localizedRoutes: RouteObject[] = [
             }),
           },
           {
-            path: "commerce",
-            loader: ({ request }) => localizedRedirect(request, getRecentCommerceTool().href),
-          },
-          {
             path: "commerce/textile-set",
-            loader: () => {
-              rememberCommerceTool("textile-set");
-              return null;
-            },
             lazy: async () => ({
               Component: (await import("../features/commerce/textile-set/textile-set-page"))
                 .TextileSetPage,
@@ -102,10 +96,6 @@ const localizedRoutes: RouteObject[] = [
           },
           {
             path: "commerce/smart-variation",
-            loader: () => {
-              rememberCommerceTool("smart-variation");
-              return null;
-            },
             lazy: async () => ({
               Component: (await import("../features/commerce/smart-variation/smart-variation-page"))
                 .SmartVariationPage,

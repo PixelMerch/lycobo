@@ -107,6 +107,7 @@
   --shell-nav-hover: var(--interaction-hover);
   --shell-nav-active: var(--interaction-active);
   --shell-nav-height: 40px;
+  --shell-pill-height: 36px;
   --control-height-sm: 32px;
   --control-height-md: 36px;
   --control-height-lg: 40px;

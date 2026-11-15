@@ -13,15 +13,18 @@ export interface ImageQueueSender {
   send(message: ImageQueueJob): Promise<unknown>;
 }
 export interface OutboxRepository {
-  leaseOutbox(): Promise<Array<{ id: string; itemId: string; leaseToken: string }>>;
+  leaseOutbox(
+    transport: "queue",
+  ): Promise<Array<{ id: string; itemId: string; leaseToken: string }>>;
   ackOutbox(id: string, leaseToken: string): Promise<void>;
 }
+/** 向持久队列投递已领取的意图，发送成功后才确认租约。 */
 export async function dispatchImageOutbox(repository: OutboxRepository, queue: ImageQueueSender) {
-  const events = await repository.leaseOutbox();
+  const events = await repository.leaseOutbox("queue");
   let sent = 0;
   for (const event of events) {
     await queue.send(imageQueueJobSchema.parse({ version: 1, itemId: event.itemId }));
-    // A send/ack crash may deliver twice. The database claim prevents duplicate paid calls.
+    // 发送后确认前中断可能重复投递，由数据库认领阻止重复调用付费模型。
     await repository.ackOutbox(event.id, event.leaseToken);
     sent++;
   }

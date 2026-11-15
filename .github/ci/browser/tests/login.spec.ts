@@ -338,7 +338,7 @@ test("enterprise login retains the existing request, session refresh and logout 
   ).toBe(false);
   await page.reload();
   await page.locator(".account-trigger").click();
-  await page.getByRole("menuitem", { name: "退出登录", exact: true }).click();
+  await page.getByRole("button", { name: "退出登录", exact: true }).click();
   await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();
   // 退出成功同样用顶部 Toast 告诉用户。
   await expect(page.getByText("已退出登录", { exact: true })).toBeVisible();

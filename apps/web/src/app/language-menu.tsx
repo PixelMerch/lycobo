@@ -11,7 +11,13 @@ import { shellMessages } from "./shell-messages";
 import "./language-menu.css";
 
 /** 切换当前页面的语言路径，保留参数、历史状态与滚动位置。 */
-export function LanguageMenu({ account }: { account: EnterpriseIdentity | null | undefined }) {
+export function LanguageMenu({
+  account,
+  homeGlass = false,
+}: {
+  account: EnterpriseIdentity | null | undefined;
+  homeGlass?: boolean;
+}) {
   const locale = useLocaleStore((state) => state.locale);
   const { changeLanguage, isSaving } = useAccountLanguage(account ?? undefined);
   const t = useMessages(shellMessages);
@@ -41,7 +47,7 @@ export function LanguageMenu({ account }: { account: EnterpriseIdentity | null |
       </Dropdown.Trigger>
       <Dropdown.Popover
         ref={menu.popoverRef}
-        className="choice-menu"
+        className={`choice-menu${homeGlass ? " home-header-glass" : ""}`}
         placement="bottom end"
         offset={4}
         isNonModal
