@@ -3,7 +3,9 @@ import { realtimeRuntime } from "./realtime-runtime.mjs";
 export { RealtimeHub } from "../../apps/api/src/features/realtime/object";
 
 import { hashPassword, verifyPassword } from "../../apps/api/src/features/auth/password";
+import { processCloudflareVariants } from "../../apps/worker/src/cloudflare/cloudflare-variants";
 import { cloudflareImages } from "../../packages/storage/src/cloudflare/cloudflare-images";
+import { recoverCloudflareUploads } from "../../packages/storage/src/cloudflare/cloudflare-uploads";
 import { optimizerRuntimeProbe } from "./optimizer-runtime.mjs";
 
 /** 隔离本地运行时探测，不进入生产 Worker，也不调用真实付费模型。 */
@@ -31,10 +33,39 @@ export default {
     );
     const codec = cloudflareImages(env.IMAGES);
     const metadata = await codec.info(bytes);
-    const preview = await codec.variant(bytes, "preview");
-    await env.MEDIA.put("fixture.webp", preview);
-    const stored = await env.MEDIA.head("fixture.webp");
+    let transformations = 0;
+    const runtime = {
+      repository: { asset: async () => ({ objectKey: "fixture.png" }) },
+      store: { read: async () => bytes },
+      bucket: env.MEDIA,
+    };
+    const job = { assetId: crypto.randomUUID(), organizationId: crypto.randomUUID() };
+    const binding = {
+      IMAGES: {
+        info: (stream) => env.IMAGES.info(stream),
+        input: (stream) => {
+          transformations++;
+          return env.IMAGES.input(stream);
+        },
+      },
+    };
+    await processCloudflareVariants(job, binding, runtime);
+    await processCloudflareVariants(job, binding, runtime);
+    if (transformations !== 1) throw new Error("DUPLICATE_VARIANT_TRANSFORM");
+    const stored = await env.MEDIA.get("fixture.preview.webp");
+    const thumbnail = await env.MEDIA.get("fixture.thumbnail.webp");
+    if (!stored || !thumbnail) throw new Error("VARIANT_MISSING");
+    const previewInfo = await codec.info(new Uint8Array(await stored.arrayBuffer()));
+    const thumbnailInfo = await codec.info(new Uint8Array(await thumbnail.arrayBuffer()));
+    if (previewInfo.format !== "image/webp" || thumbnailInfo.width !== 2)
+      throw new Error("VARIANT_FORMAT_MISMATCH");
     const runId = crypto.randomUUID();
+    await env.MEDIA.put(`_uploads/${runId}.json`, "{}", {
+      customMetadata: { status: "succeeded", expiresAt: String(Date.now() + 60_000) },
+    });
+    await recoverCloudflareUploads(env.MEDIA, async () => {
+      throw new Error("TERMINAL_UPLOAD_WAS_RECOVERED");
+    });
     await env.IMAGE_QUEUE.send({ runId });
     return Response.json({
       runId,

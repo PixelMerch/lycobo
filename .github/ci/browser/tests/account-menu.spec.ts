@@ -120,11 +120,17 @@ for (const width of [1440, 390]) {
     await opener.click();
     await expect(panel).toBeVisible();
     const list = panel.locator(".account-news-tabs");
-    const headerHeight = await page.locator(".topbar").evaluate((element) => element.offsetHeight);
+    const headerHeight = await page.locator(".topbar").evaluate((element) => {
+      if (!(element instanceof HTMLElement)) throw new Error("EXPECTED_HTML_TOPBAR");
+      return element.offsetHeight;
+    });
     const bottomGap = () =>
       list.evaluate((element) => innerHeight - element.getBoundingClientRect().bottom);
     await expect.poll(bottomGap).toBeCloseTo(headerHeight, 0);
-    const listHeight = await list.evaluate((element) => element.offsetHeight);
+    const listHeight = await list.evaluate((element) => {
+      if (!(element instanceof HTMLElement)) throw new Error("EXPECTED_HTML_MESSAGE_LIST");
+      return element.offsetHeight;
+    });
     const updatesTab = panel.getByRole("tab", { name: "更新通知", exact: true });
     await expect(list.locator(".tabs__list-container")).toHaveCSS("border-bottom-width", "1px");
     await updatesTab.hover();

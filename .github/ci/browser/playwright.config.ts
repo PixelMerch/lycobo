@@ -22,11 +22,14 @@ export default defineConfig({
       command: "node scripts/local/dev.mjs --api-only",
       cwd: repoRoot,
       url: "http://127.0.0.1:8787/api/health/live",
+      // 让本地入口先清理独立子进程，避免强杀入口后遗留进程阻塞测试退出。
+      gracefulShutdown: { signal: "SIGTERM", timeout: 5000 },
     },
     {
       command: "pnpm --filter @lycoboai/web dev",
       cwd: repoRoot,
       url: "http://127.0.0.1:5173",
+      gracefulShutdown: { signal: "SIGTERM", timeout: 5000 },
     },
   ],
 });

@@ -3,12 +3,15 @@ import type { ImageScope, StoredImage } from "@lycoboai/contracts";
 import { describe, expect, it, vi } from "vitest";
 import type { ImageObjectBucket } from "../buckets/object-bucket";
 import { type ImageStore, ImageValidationError } from "../images/core";
-import { cloudflareUploads } from "./cloudflare-uploads";
+import { cloudflareUploads, recoverCloudflareUploads } from "./cloudflare-uploads";
 
 function fixture() {
   const scope = { userId: crypto.randomUUID(), organizationId: crypto.randomUUID() };
   const files = new Map<string, Uint8Array>();
   const assets = new Map<string, StoredImage>();
+  const putObject = vi.fn<ImageObjectBucket["put"]>(async (key, value) => {
+    files.set(key, value);
+  });
   const bucket: ImageObjectBucket = {
     async head(key) {
       const value = files.get(key);
@@ -24,9 +27,7 @@ function fixture() {
         arrayBuffer: () => response.arrayBuffer(),
       };
     },
-    async put(key, value) {
-      files.set(key, value);
-    },
+    put: putObject,
     async delete(keys) {
       for (const key of Array.isArray(keys) ? keys : [keys]) files.delete(key);
     },
@@ -63,11 +64,42 @@ function fixture() {
     repository,
     store,
     put,
+    putObject,
     uploads: cloudflareUploads(bucket, queue, repository, store),
   };
 }
 
 describe("queued reference upload", () => {
+  it("skips terminal receipt bodies and recovers pending, expired and legacy receipts", async () => {
+    const now = Date.now();
+    const receipt = (status?: string, expiry = now + 60_000) => {
+      const id = crypto.randomUUID();
+      return {
+        id,
+        key: `_uploads/${id}.json`,
+        uploaded: new Date(now),
+        ...(status ? { customMetadata: { status, expiresAt: String(expiry) } } : {}),
+      };
+    };
+    const completed = receipt("succeeded");
+    const failed = receipt("failed");
+    const pending = receipt("pending");
+    const expired = receipt("succeeded", now - 60_000);
+    const legacy = receipt();
+    const remove = vi.fn(async (_key: string) => undefined);
+    const recover = vi.fn(async (_id: string) => undefined);
+    const list = vi.fn(async () => ({
+      objects: [completed, failed, pending, expired, legacy],
+      truncated: false as const,
+    }));
+    await recoverCloudflareUploads(
+      { get: async () => null, list, put: async () => undefined, delete: remove },
+      recover,
+    );
+    expect(list).toHaveBeenCalledWith(expect.objectContaining({ include: ["customMetadata"] }));
+    expect(recover.mock.calls).toEqual([[pending.id], [expired.id], [legacy.id]]);
+    expect(remove).not.toHaveBeenCalled();
+  });
   it("does not register or process an asset in the HTTP enqueue path, and rejects other owners", async () => {
     const f = fixture();
     const id = await f.uploads.enqueue(f.scope, new Uint8Array([1]));
@@ -77,6 +109,13 @@ describe("queued reference upload", () => {
     expect(f.repository.addReference).not.toHaveBeenCalled();
     await f.uploads.process(id);
     expect((await f.uploads.status(f.scope, id))?.status).toBe("succeeded");
+    expect(f.putObject).toHaveBeenCalledWith(
+      `_uploads/${id}.json`,
+      expect.any(Uint8Array),
+      expect.objectContaining({
+        customMetadata: { status: "succeeded", expiresAt: expect.stringMatching(/^\d+$/) },
+      }),
+    );
     expect(f.files.has(`_uploads/${id}.bin`)).toBe(false);
     await f.uploads.process(id);
     expect(f.repository.addReference).toHaveBeenCalledOnce();

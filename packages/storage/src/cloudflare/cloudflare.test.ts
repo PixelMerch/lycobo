@@ -114,6 +114,7 @@ it.each([undefined, { width: 705, height: 1254 }])(
     expect(asset).toMatchObject({ width: 705, height: 1254, bytes: bytes.length });
     expect(put).toHaveBeenCalledWith(asset.objectKey, bytes, expect.anything());
     expect(remove).toHaveBeenCalledWith(`${asset.objectKey}.source`);
+    expect(f.info).toHaveBeenCalledTimes(1);
     expect(output).toHaveBeenCalledTimes(2);
   },
 );
