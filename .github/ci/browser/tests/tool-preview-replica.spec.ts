@@ -109,7 +109,7 @@ test("style matching requires both slots and submits their roles without a paid 
       prompt: expect.stringContaining("以第一张图为版式模板"),
     });
   expect(statusReads).toBe(0);
-  await expect(page.getByText("任务已提交，关闭页面也会继续处理。", { exact: true })).toBeVisible();
+  await expect(page.getByText("任务已入队，关闭页面后仍会处理。", { exact: true })).toBeVisible();
 });
 
 test("reduced-motion keyboard preview is static and home hides video", async ({ page }) => {

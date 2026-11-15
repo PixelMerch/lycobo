@@ -31,18 +31,15 @@ async function normalizeOutput(
   outputSize?: ImageOutputSize,
 ) {
   const source = await codec.info(input);
-  if (!outputSize) return codec.encode(input);
+  const isCompletePng =
+    (source.format === "image/png" || source.format === "png") && hasPngEnd(input);
+  if (!outputSize) return isCompletePng ? input : codec.encode(input);
   if (source.width < outputSize.width - 15 || source.height < outputSize.height - 15)
     throw new ImageValidationError("OUTPUT_RESOLUTION_TOO_SMALL");
   // 已符合交付尺寸的 PNG 不需要调用付费转码；检查完整 IEND，避免交付截断的响应。
   const withinTolerance =
     source.width <= outputSize.width + 15 && source.height <= outputSize.height + 15;
-  if (
-    withinTolerance &&
-    (source.format === "image/png" || source.format === "png") &&
-    hasPngEnd(input)
-  )
-    return input;
+  if (withinTolerance && isCompletePng) return input;
   if (source.width < outputSize.width || source.height < outputSize.height)
     return codec.encode(input);
   return codec.encode(
