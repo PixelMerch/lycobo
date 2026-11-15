@@ -4,6 +4,8 @@ export { RealtimeHub } from "../../apps/api/src/features/realtime/object";
 
 import { hashPassword, verifyPassword } from "../../apps/api/src/features/auth/password";
 import { cloudflareImages } from "../../packages/storage/src/cloudflare/cloudflare-images";
+import { recoverCloudflareUploads } from "../../packages/storage/src/cloudflare/cloudflare-uploads";
+import { displayVariants } from "../../packages/storage/src/images/image-variants";
 import { optimizerRuntimeProbe } from "./optimizer-runtime.mjs";
 
 /** 隔离本地运行时探测，不进入生产 Worker，也不调用真实付费模型。 */
@@ -31,10 +33,17 @@ export default {
     );
     const codec = cloudflareImages(env.IMAGES);
     const metadata = await codec.info(bytes);
-    const preview = await codec.variant(bytes, "preview");
+    const { width, height, quality } = displayVariants.preview;
+    const preview = await codec.encode(bytes, width, height, "image/webp", quality);
     await env.MEDIA.put("fixture.webp", preview);
     const stored = await env.MEDIA.head("fixture.webp");
     const runId = crypto.randomUUID();
+    await env.MEDIA.put(`_uploads/${runId}.json`, "{}", {
+      customMetadata: { status: "succeeded", expiresAt: String(Date.now() + 60_000) },
+    });
+    await recoverCloudflareUploads(env.MEDIA, async () => {
+      throw new Error("TERMINAL_UPLOAD_WAS_RECOVERED");
+    });
     await env.IMAGE_QUEUE.send({ runId });
     return Response.json({
       runId,

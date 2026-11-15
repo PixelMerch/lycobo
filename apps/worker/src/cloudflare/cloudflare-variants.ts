@@ -1,5 +1,5 @@
 import { cloudflareImages } from "@lycoboai/storage/cloudflare";
-import { displayObjectKey } from "@lycoboai/storage/variants";
+import { displayObjectKey, displayVariants } from "@lycoboai/storage/variants";
 import type { CloudflareImageEnv, openCloudflareRuntime } from "./cloudflare-runtime";
 
 /** 查询素材归属后补齐展示变体，原图与已有变体保持不变。 */
@@ -14,12 +14,20 @@ export async function processCloudflareVariants(
     job.assetId,
   );
   if (!asset) return;
+  const variants = await Promise.all(
+    (["thumbnail", "preview"] as const).map(async (variant) => {
+      const key = displayObjectKey(asset.objectKey, variant);
+      return { key, variant, exists: Boolean(await runtime.bucket.head(key)) };
+    }),
+  );
+  const missing = variants.filter(({ exists }) => !exists);
+  if (missing.length === 0) return;
   const codec = cloudflareImages(env.IMAGES);
   const bytes = await runtime.store.read(asset);
-  for (const variant of ["thumbnail", "preview"] as const) {
-    const key = displayObjectKey(asset.objectKey, variant);
-    if (await runtime.bucket.head(key)) continue;
-    await runtime.bucket.put(key, await codec.variant(bytes, variant), {
+  await codec.info(bytes);
+  for (const { key, variant } of missing) {
+    const { width, height, quality } = displayVariants[variant];
+    await runtime.bucket.put(key, await codec.encode(bytes, width, height, "image/webp", quality), {
       httpMetadata: { contentType: "image/webp" },
     });
   }
