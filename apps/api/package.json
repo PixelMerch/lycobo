@@ -15,7 +15,7 @@
     "test:events": "node --env-file-if-exists=../../.env --import tsx scripts/check-image-events-integration.ts"
   },
   "dependencies": {
-    "hono": "4.13.14",
+    "hono": "4.13.17",
     "@hono/node-server": "2.1.5",
     "@hono/zod-validator": "0.9.1",
     "pino": "10.4.0",
