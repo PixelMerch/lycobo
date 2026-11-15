@@ -39,6 +39,19 @@ it("starts original and both variant writes together, and awaits every successfu
   release.resolve();
   await work;
 });
+it("encodes a small image once and writes both WebP variants", async () => {
+  const bucket = bucketFixture();
+  const encode = vi.fn(async () => bytes);
+  await persistImageOutput(bucket, { encode }, key, bytes, undefined, { width: 480, height: 320 });
+  expect(encode).toHaveBeenCalledTimes(1);
+  expect(bucket.put).toHaveBeenCalledTimes(3);
+  expect(bucket.put).toHaveBeenCalledWith(key.replace(".png", ".thumbnail.webp"), bytes, {
+    httpMetadata: { contentType: "image/webp" },
+  });
+  expect(bucket.put).toHaveBeenCalledWith(key.replace(".png", ".preview.webp"), bytes, {
+    httpMetadata: { contentType: "image/webp" },
+  });
+});
 it("waits for remaining writes when the original fails", async () => {
   const bucket = bucketFixture();
   const release = deferred();
