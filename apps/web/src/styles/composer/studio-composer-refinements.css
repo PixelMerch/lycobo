@@ -26,37 +26,13 @@
 .composer-panel .model-field .model-select[data-focus-visible="true"] {
   background: var(--control-hover-fill);
 }
-.model-menu {
-  border-radius: 12px;
-}
 .model-menu .model-options {
   color: #ddd;
 }
 .model-menu .model-options[aria-selected="true"] {
+  --menu-row-fill: var(--control-selected-fill);
+  --menu-row-hover-fill: var(--control-selected-fill);
   color: #eee;
-  background: var(--control-selected-fill);
-}
-@media (hover: hover) {
-  .model-menu .model-options:hover,
-  .model-menu .model-options[data-hovered="true"] {
-    background: var(--control-hover-fill);
-  }
-  .model-menu .model-options[aria-selected="true"]:hover {
-    background: var(--control-selected-fill);
-  }
-}
-.model-menu .model-options:focus-visible {
-  background: var(--control-hover-fill);
-}
-.model-menu
-  .model-options[aria-selected="true"]:is(
-    :hover,
-    [data-hovered],
-    [data-focused],
-    [data-focus-visible]
-  ) {
-  color: #eee;
-  background: var(--control-selected-fill);
 }
 
 /* Workspace ratio pager mirrors the home ratio selector. */

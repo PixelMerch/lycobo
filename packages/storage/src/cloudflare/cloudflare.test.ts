@@ -87,16 +87,34 @@ it("rejects oversized and animated input before invoking Images", async () => {
   await expect(codec.info(animated)).rejects.toThrow("INVALID_IMAGE");
   expect(f.info).not.toHaveBeenCalled();
 });
-it("keeps the received provider source if image conversion fails", async () => {
-  const f = imagesFixture();
-  f.info.mockRejectedValueOnce(new Error("decode failed"));
-  const put = vi.fn<ImageObjectBucket["put"]>(async () => undefined);
-  const bucket = { put } as unknown as ImageObjectBucket;
-  const store = cloudflareImageStore(bucket, f.binding, async () => "1234567890");
-  const bytes = new Uint8Array([1, 2, 3]);
-  await expect(
-    store.put({ userId: crypto.randomUUID(), organizationId: crypto.randomUUID() }, bytes),
-  ).rejects.toThrow();
-  expect(put.mock.calls[0]?.[0]).toMatch(/\.png\.source$/);
-  expect(put.mock.calls[0]?.[1]).toEqual(bytes);
-});
+it.each([undefined, { width: 705, height: 1254 }])(
+  "delivers the original provider PNG when Images transformations are unavailable (%j)",
+  async (outputSize) => {
+    const f = imagesFixture();
+    const output = vi.fn(() => {
+      throw new Error("IMAGE_TRANSFORM_UNAVAILABLE");
+    });
+    const put = vi.fn<ImageObjectBucket["put"]>(async () => undefined);
+    const remove = vi.fn(async () => {});
+    const bucket: ImageObjectBucket = {
+      put,
+      delete: remove,
+      head: async () => null,
+      get: async () => null,
+    };
+    const binding = { ...f.binding, input: output };
+    const store = cloudflareImageStore(bucket, binding, async () => "1234567890");
+    const scope = { userId: crypto.randomUUID(), organizationId: crypto.randomUUID() };
+    const bytes = await sharp({
+      create: { width: 705, height: 1254, channels: 3, background: "white" },
+    })
+      .png()
+      .toBuffer();
+    const asset = await store.put(scope, bytes, undefined, outputSize);
+    expect(asset).toMatchObject({ width: 705, height: 1254, bytes: bytes.length });
+    expect(put).toHaveBeenCalledWith(asset.objectKey, bytes, expect.anything());
+    expect(remove).toHaveBeenCalledWith(`${asset.objectKey}.source`);
+    expect(f.info).toHaveBeenCalledTimes(1);
+    expect(output).toHaveBeenCalledTimes(2);
+  },
+);

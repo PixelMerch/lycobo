@@ -1,22 +1,39 @@
-/* 浮层共用毛玻璃（与顶部栏下拉同款）；业务样式只负责布局，不再各自选择不透明底色。
+/* 浮层共用毛玻璃，业务样式只负责布局。
  * 例外：会员全屏页和全屏图片浏览使用实色底。 */
 :root
   :is(
     .modal__dialog,
     .drawer__dialog,
     .popover,
+    .account-news-surface,
     .dropdown__popover,
     .select__popover,
     .tooltip,
     .alert-dialog,
     .toast
-  ):not(.membership-dialog, .browse-image-dialog, .header-menu),
+  ):not(.membership-dialog, .browse-image-dialog, .account-news-popover),
 :root .login-panel {
   background: var(--glass-fill), var(--glass-tint);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
+}
+/* 通知、账户与顶部栏入口沿用素材库来源菜单的深色毛玻璃。 */
+:root
+  :is(
+    .choice-menu,
+    .topbar-menu,
+    .account-news-surface,
+    .account-news-tooltip,
+    .credits-menu,
+    .account-menu,
+    .account-settings-dialog
+  ) {
+  --glass-tint: var(--glass-dark-tint);
+}
+:root .header-menu.dropdown__popover {
+  border: 0;
 }
 /* 提示气泡只保留外投影，避免顶部内高光与细边叠加成双线。 */
 :root .tooltip {
@@ -31,6 +48,7 @@
   :root {
     --glass-fill: linear-gradient(transparent, transparent);
     --glass-tint: var(--glass-fallback);
+    --glass-dark-tint: var(--glass-fallback);
   }
   :root .login-panel {
     --glass-tint: var(--glass-fallback);
@@ -41,6 +59,7 @@
   :root .login-panel {
     --glass-fill: linear-gradient(transparent, transparent);
     --glass-tint: var(--glass-fallback);
+    --glass-dark-tint: var(--glass-fallback);
     --glass-blur: none;
   }
 }

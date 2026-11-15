@@ -117,7 +117,7 @@ async function deliverRealtime(
   realtime: ReturnType<typeof openRealtimeRepository>,
   env: CloudflareEnv,
 ) {
-  if (["GET", "HEAD"].includes(request.method)) return;
+  if (["GET", "HEAD", "OPTIONS"].includes(request.method)) return;
   try {
     await dispatchRealtime(realtime, env.REALTIME);
   } catch {

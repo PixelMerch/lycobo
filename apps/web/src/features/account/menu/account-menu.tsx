@@ -1,6 +1,6 @@
-import { Button, Dropdown, Separator } from "@heroui/react";
+import { Button, Popover, Separator } from "@heroui/react";
 import { IconLogout, IconPhoto, IconSettings } from "@tabler/icons-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
@@ -32,7 +32,7 @@ export function HeaderLogin() {
 }
 
 /**
- * 账户菜单只保留身份、设置、个人作品与退出登录；会员、积分与账单都在账户设置里。
+ * 账户菜单提供设置、个人作品与退出登录。
  * 桌面顶部栏只显示头像并向下展开；手机导航抽屉底部显示头像和昵称，向上展开。
  */
 export function AccountMenu({
@@ -45,6 +45,7 @@ export function AccountMenu({
   const session = useEnterpriseSession();
   const logout = useEnterpriseLogout();
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const [isOpen, setOpen] = useState(false);
   const openSettings = useAccountOverlays((state) => state.openSettings);
   const openLibrary = useOpenAssetLibrary();
   const t = useMessages(accountMenuMessages);
@@ -59,9 +60,20 @@ export function AccountMenu({
   };
   const inHeader = variant === "header";
   return (
-    <div className={inHeader ? "account-header" : "account-footer"}>
-      <Dropdown>
-        <Dropdown.Trigger
+    <div
+      className={inHeader ? "account-header" : "account-footer"}
+      onKeyDownCapture={(event) => {
+        // 面板展开时，回车只关闭面板，避免直接执行获得焦点的操作。
+        if (!isOpen || event.key !== "Enter" || event.nativeEvent.isComposing) return;
+        event.preventDefault();
+        event.stopPropagation();
+        setOpen(false);
+      }}
+    >
+      <Popover isOpen={isOpen} onOpenChange={setOpen}>
+        <Button
+          size="sm"
+          variant="ghost"
           ref={triggerRef}
           className="account-trigger"
           aria-label={t.accountMenu(accountDisplayName(account))}
@@ -76,12 +88,12 @@ export function AccountMenu({
               {accountDisplayName(account)}
             </span>
           )}
-        </Dropdown.Trigger>
-        <Dropdown.Popover
+        </Button>
+        <Popover.Content
           className="account-menu"
           placement={inHeader ? "bottom end" : "top start"}
           offset={8}
-          isNonModal={false}
+          aria-label={t.accountMenu(accountDisplayName(account))}
         >
           <div className="account-menu-identity">
             <AccountAvatar account={account} size="lg" className="account-menu-avatar" />
@@ -94,35 +106,47 @@ export function AccountMenu({
               </span>
             </div>
           </div>
-          <Dropdown.Menu
-            disabledKeys={logout.isPending ? ["logout"] : []}
-            onAction={(key) => {
-              // 账户设置叠在手机导航抽屉之上，关闭后焦点回到头像入口。
-              if (key === "settings") openSettings("account", triggerRef.current);
-              else if (key === "works") openWorks();
-              else if (key === "logout") logout.mutate();
+          <Button
+            className="account-menu-row"
+            size="sm"
+            variant="ghost"
+            autoFocus
+            onPress={() => {
+              setOpen(false);
+              openSettings("account", triggerRef.current);
             }}
           >
-            <Dropdown.Section aria-label={t.personalSpace}>
-              <Dropdown.Item id="settings" textValue={t.settings}>
-                <UiIcon icon={IconSettings} />
-                <span>{t.settings}</span>
-              </Dropdown.Item>
-              <Dropdown.Item id="works" textValue={t.works}>
-                <UiIcon icon={IconPhoto} />
-                <span>{t.works}</span>
-              </Dropdown.Item>
-            </Dropdown.Section>
-            <Separator className="account-menu-separator" />
-            <Dropdown.Section aria-label={t.accountActions}>
-              <Dropdown.Item id="logout" textValue={t.logout}>
-                <UiIcon icon={IconLogout} />
-                <span>{logout.isPending ? t.loggingOut : t.logout}</span>
-              </Dropdown.Item>
-            </Dropdown.Section>
-          </Dropdown.Menu>
-        </Dropdown.Popover>
-      </Dropdown>
+            <UiIcon icon={IconSettings} />
+            {t.settings}
+          </Button>
+          <Button
+            className="account-menu-row"
+            size="sm"
+            variant="ghost"
+            onPress={() => {
+              setOpen(false);
+              openWorks();
+            }}
+          >
+            <UiIcon icon={IconPhoto} />
+            {t.works}
+          </Button>
+          <Separator className="account-menu-separator" />
+          <Button
+            className="account-menu-row"
+            size="sm"
+            variant="ghost"
+            isDisabled={logout.isPending}
+            onPress={() => {
+              setOpen(false);
+              logout.mutate();
+            }}
+          >
+            <UiIcon icon={IconLogout} />
+            {logout.isPending ? t.loggingOut : t.logout}
+          </Button>
+        </Popover.Content>
+      </Popover>
     </div>
   );
 }

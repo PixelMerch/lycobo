@@ -1,7 +1,7 @@
 import { expect, type Locator, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
-/** 共享浮层玻璃：8% 白色渐变底（第二层是透明底色）与 40px 背景模糊。 */
+/** 共享浮层玻璃：8% 白色渐变底与 40px 背景模糊。 */
 async function glass(panel: Locator) {
   await expect(panel).toBeVisible();
   await expect
@@ -27,14 +27,16 @@ for (const mobile of [false, true]) {
     await credits.focus();
     await page.keyboard.press("Enter");
     const menu = page.locator(".credits-menu");
-    // 顶部栏下拉与其他浮层同一套玻璃：#FFFFFF14 渐变底与 40px 背景模糊，只是不留描边。
+    // 积分下拉使用素材库来源菜单同款深色毛玻璃。
+    await expect(menu).toHaveCSS("background-color", "rgba(18, 18, 18, 0.84)");
     await expect(menu).toHaveCSS(
       "background-image",
       "linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)), none",
     );
     await expect(menu).toHaveCSS("backdrop-filter", "blur(40px)");
     await expect(menu).toHaveCSS("border-top-width", "0px");
-    await expect(page.getByRole("menuitem", { name: "开通会员", exact: true })).toBeVisible();
+    const action = menu.getByRole("menuitem", { name: "开通会员", exact: true });
+    await expect(action).toHaveCSS("height", "44px");
     await expect(page.getByRole("menu")).toHaveCSS("outline-style", "none");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
@@ -96,13 +98,14 @@ for (const mobile of [false, true]) {
     });
     if (mobile) await page.setViewportSize({ width: 393, height: 852 });
     await page.goto("/");
-    if (mobile) await page.getByRole("button", { name: "打开导航", exact: true }).click();
     const opener = page.getByRole("button", { name: /^消息（/ });
     await opener.click();
     const panel = page.getByRole("dialog", { name: "消息中心", exact: true });
-    await glass(panel);
-    await expect(panel.getByText("1 条未读消息", { exact: true })).toBeVisible();
-    await expect(panel.getByRole("heading", { name: "桌面通知", exact: true })).toBeVisible();
+    const surface = page.locator(".account-news-tabs");
+    await glass(surface);
+    await expect(surface).toHaveCSS("background-color", "rgba(18, 18, 18, 0.84)");
+    await expect(panel.getByRole("tab", { name: /1 条未读消息/ })).toBeVisible();
+    await expect(panel.getByText("桌面通知", { exact: true })).toHaveCount(0);
     await expect(panel.locator('.account-message[data-unread="true"]')).toHaveCount(1);
     await expect(panel.getByRole("button", { name: "标为已读", exact: true })).toHaveCount(1);
     await panel.screenshot({
@@ -118,13 +121,33 @@ for (const mobile of [false, true]) {
     await cdp.send("Emulation.setEmulatedMedia", {
       features: [{ name: "prefers-reduced-transparency", value: "reduce" }],
     });
-    await expect
-      .poll(() => panel.evaluate((node) => getComputedStyle(node).backdropFilter))
-      .toBe("none");
-    await panel.getByRole("button", { name: "关闭消息中心", exact: true }).click();
+    await expect(surface).toHaveCSS("backdrop-filter", "none");
+    await expect(surface).toHaveCSS("background-color", "rgb(28, 31, 27)");
+    await opener.click();
+    await expect(panel).toBeHidden();
     await expect(opener).toBeFocused();
   });
 }
+test("language, avatar and account settings share the source menu tint", async ({ page }) => {
+  await mockImageApi(page);
+  await page.goto("/");
+  await page.locator(".language-trigger").press("Enter");
+  const language = page.locator(".choice-menu");
+  await glass(language);
+  await expect(language).toHaveCSS("background-color", "rgba(18, 18, 18, 0.84)");
+  await page.keyboard.press("Escape");
+  await expect(language).toBeHidden();
+
+  await page.locator(".account-header .account-trigger").click();
+  const account = page.locator(".account-menu");
+  await glass(account);
+  await expect(account).toHaveCSS("background-color", "rgba(18, 18, 18, 0.84)");
+  await account.getByRole("button", { name: "设置", exact: true }).click();
+  const settings = page.locator(".account-settings-dialog");
+  await glass(settings);
+  await expect(settings).toHaveCSS("background-color", "rgba(18, 18, 18, 0.84)");
+});
+
 test("login adopts dark glass without changing form semantics", async ({ page }) => {
   await mockImageApi(page, { signedIn: false });
   await page.goto("/");

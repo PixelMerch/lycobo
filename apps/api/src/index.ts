@@ -1,6 +1,11 @@
 import { isAbsolute } from "node:path";
 import { serve } from "@hono/node-server";
-import { openAuthRepository, openImageEventFeed, openImageRepository } from "@lycoboai/db";
+import {
+  openAuthRepository,
+  openImageEventFeed,
+  openImageRepository,
+  openRealtimeRepository,
+} from "@lycoboai/db";
 import {
   readImagePolicy,
   standaloneModels,
@@ -25,6 +30,7 @@ if (!["127.0.0.1", "localhost", "postgres"].includes(url.hostname))
   throw new Error("LOCAL_DATABASE_REQUIRED");
 const policy = readImagePolicy({});
 const repository = openImageRepository(url.href, false, await standaloneModels(process.env));
+const realtime = openRealtimeRepository(url.href);
 const authConfig = readAuthConfig(process.env);
 const authRepository = authConfig ? openAuthRepository(url.href) : undefined;
 const auth = authRepository && authConfig ? enterpriseAuth(authRepository, authConfig) : undefined;
@@ -63,6 +69,9 @@ const app = createApp(
     resolutions: (model) => supportedResolutions(model, policy.overrides),
   },
   auth,
+  undefined,
+  undefined,
+  { repository: realtime, auth },
 );
 const server = serve({ fetch: app.fetch, hostname: env.API_HOST, port: env.API_PORT });
 let closing = false;
@@ -70,7 +79,12 @@ function shutdown() {
   if (closing) return;
   closing = true;
   server.close(() => {
-    void Promise.all([repository.close(), authRepository?.close(), events?.close()]).catch(() => {
+    void Promise.all([
+      repository.close(),
+      authRepository?.close(),
+      events?.close(),
+      realtime.close(),
+    ]).catch(() => {
       process.exitCode = 1;
     });
   });

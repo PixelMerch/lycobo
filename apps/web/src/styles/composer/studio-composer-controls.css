@@ -122,30 +122,9 @@
   background: var(--fill-soft);
   border-radius: 18px;
 }
-.model-menu {
-  border-radius: 12px;
-}
 .model-menu .model-options {
   color: #ddd;
 }
-.model-menu .model-options[aria-selected="true"] {
-  color: #eee;
-  background: var(--control-selected-fill);
-}
-@media (hover: hover) {
-  .model-menu .model-options:hover,
-  .model-menu .model-options[data-hovered="true"] {
-    background: var(--control-hover-fill);
-  }
-  .model-menu .model-options[aria-selected="true"]:hover {
-    background: var(--control-selected-fill);
-  }
-}
-.model-menu .model-options:focus-visible,
-.model-menu .model-options[data-focus-visible="true"] {
-  background: var(--control-hover-fill);
-}
-
 .main-content:has(> .workspace) {
   --content-padding: var(--workspace-padding);
   padding: var(--content-padding);
@@ -361,7 +340,6 @@
   max-width: calc(100vw - 24px);
   padding: 0;
   border: 0;
-  border-radius: 6px;
   background: var(--field-background);
   box-shadow: var(--overlay-shadow);
   overflow: hidden;
@@ -374,8 +352,6 @@
   margin-top: 0;
 }
 .model-menu .model-options {
-  height: 40px;
-  min-height: 40px;
   padding: 8px 10px;
   border-radius: 0;
   background: transparent;
@@ -385,30 +361,11 @@
   font-weight: var(--weight-regular);
   transform: none;
 }
-.model-menu .model-options[aria-selected="true"] {
-  background: var(--control-selected-fill);
-}
-@media (hover: hover) {
-  .model-menu .model-options:hover,
-  .model-menu .model-options[data-hovered="true"] {
-    background: var(--control-hover-fill);
-  }
-  .model-menu .model-options[aria-selected="true"]:hover {
-    background: var(--control-selected-fill);
-  }
-}
 @media (max-width: 767px) {
-  .composer-panel .model-field .model-select,
-  .model-menu .model-options {
+  .composer-panel .model-field .model-select {
     height: 44px;
     min-height: 44px;
   }
-}
-
-.model-menu .model-options:focus-visible,
-.model-menu .model-options[data-focus-visible="true"] {
-  outline: none;
-  background: color-mix(in srgb, var(--surface-tertiary) 92%, var(--foreground));
 }
 
 .model-field .model-select .select__value {

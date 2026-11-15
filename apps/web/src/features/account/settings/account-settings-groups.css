@@ -158,6 +158,12 @@
   flex: none;
   align-items: center;
 }
+.settings-notification-switch {
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin-block: -10px;
+}
 .account-language-picker {
   min-width: 9rem;
 }
