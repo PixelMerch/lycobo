@@ -1,51 +1,71 @@
 import { IconArrowUpRight } from "@tabler/icons-react";
+import { motion } from "motion/react";
 import { RouteLink } from "../../../components/router-link";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { commerceShowcaseMessages } from "./commerce-showcase-messages";
-import { ImageSetFeature } from "./image-set-feature";
 import { KitSpecs } from "./kit-specs";
 
-/** 以构图参考介绍复制爆款的用途，并进入现有工具。 */
+/** 以完整保留画幅的竖版双图参考介绍复制爆款，并直达对应工具。 */
 function SpecialistTools() {
-  const t = useMessages(commerceShowcaseMessages).tools;
-  const tools = [{ id: "replica", image: "p07-perfume-hero", path: "/commerce/replica" }] as const;
+  const t = useMessages(commerceShowcaseMessages).tools.replica;
   return (
-    <div className="commerce-section commerce-specialists">
-      {tools.map((tool) => (
-        <article className="commerce-specialist" key={tool.id}>
-          <div className="commerce-specialist-image">
-            <img src={`/landing/commerce/${tool.image}.webp`} alt={t[tool.id].alt} loading="lazy" />
-          </div>
-          <div>
-            <h3>{t[tool.id].title}</h3>
-            <p>{t[tool.id].description}</p>
-            <RouteLink to={tool.path} className="commerce-text-link">
-              {t[tool.id].action}
-              <UiIcon icon={IconArrowUpRight} />
-            </RouteLink>
-          </div>
-        </article>
-      ))}
-    </div>
+    <section
+      className="commerce-section commerce-specialists"
+      aria-labelledby="commerce-replica-title"
+    >
+      <div className="commerce-specialist">
+        <div className="commerce-specialist-media">
+          <motion.figure
+            className="commerce-specialist-primary"
+            initial={{ opacity: 0, y: 28, rotate: -8 }}
+            whileInView={{ opacity: 1, y: 0, rotate: -4 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <img src="/landing/commerce/p07-perfume-hero.webp" alt={t.alt} loading="lazy" />
+          </motion.figure>
+          <motion.figure
+            className="commerce-specialist-secondary"
+            initial={{ opacity: 0, y: 40, rotate: 8 }}
+            whileInView={{ opacity: 1, y: 0, rotate: 4 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <img
+              src="/landing/commerce/p10-tableware-hero.webp"
+              alt={t.secondaryAlt}
+              loading="lazy"
+            />
+          </motion.figure>
+        </div>
+        <div className="commerce-specialist-copy">
+          <h2 id="commerce-replica-title">{t.title}</h2>
+          <p>{t.description}</p>
+          <RouteLink to="/commerce/replica" className="commerce-text-link">
+            {t.action}
+            <UiIcon icon={IconArrowUpRight} />
+          </RouteLink>
+        </div>
+      </div>
+    </section>
   );
 }
 
-/** 以套图、专用工具与可操作的输出规格介绍完整图片制作能力。 */
+/** 以套图、构图复刻与可操作的输出规格介绍完整图片制作能力。 */
 export function Workflow() {
   const t = useMessages(commerceShowcaseMessages).specs;
   return (
     <>
-      <ImageSetFeature />
       <SpecialistTools />
-      <section className="commerce-section commerce-output" aria-labelledby="commerce-output-title">
-        <div className="commerce-section-heading">
-          <div>
+      <section className="commerce-output" aria-labelledby="commerce-output-title">
+        <div className="commerce-section">
+          <div className="commerce-output-heading">
             <h2 id="commerce-output-title">{t.title}</h2>
+            <p className="commerce-description">{t.description}</p>
           </div>
-          <p className="commerce-description">{t.description}</p>
+          <KitSpecs />
         </div>
-        <KitSpecs />
       </section>
     </>
   );

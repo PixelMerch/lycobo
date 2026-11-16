@@ -69,71 +69,76 @@ export type FormatId =
 export interface CampaignFormat {
   id: FormatId;
   image: string;
+  collage?: readonly [string, string, string];
   tool: FormatTool;
   action: "use" | "open";
   ratio?: string;
 }
 
-/** 十张 9:16 模板只保留图片、工具与动作，展示文案和提示词都在消息目录。 */
+const textileAsset = (name: string) => `/studio/textile-views/${name}.webp`;
+
+/** 画廊卡片混合单张成片与多图组合，展示文案和提示词都在消息目录。 */
 export const campaignFormats: CampaignFormat[] = [
   {
     id: "studio",
-    image: asset("t01-clean-studio"),
+    image: asset("p01-serum-hero"),
     tool: "create",
     action: "use",
   },
   {
     id: "everyday",
-    image: asset("t02-everyday-setting"),
+    image: asset("p02-kitchen"),
     tool: "create",
     action: "use",
   },
   {
+    id: "image-set",
+    image: asset("p06-tote-hero"),
+    collage: [asset("p06-tote-hero"), asset("p06-scene"), asset("p06-ring")],
+    tool: "variation",
+    action: "use",
+  },
+  {
     id: "footwear",
-    image: asset("t03-footwear-display"),
+    image: asset("p03-sneaker-hero"),
     tool: "create",
     action: "use",
   },
   {
     id: "texture",
-    image: asset("t04-texture-closeup"),
+    image: asset("p06-leather"),
     tool: "create",
     action: "use",
     ratio: "1:1",
   },
   {
     id: "food",
-    image: asset("t05-food-still-life"),
+    image: asset("p05-coffee-hero"),
     tool: "create",
     action: "use",
   },
   {
-    id: "image-set",
-    image: asset("t06-product-image-set"),
-    tool: "variation",
-    action: "use",
-  },
-  {
-    id: "style-reference",
-    image: asset("t07-style-reference"),
-    tool: "replica",
-    action: "open",
-  },
-  {
     id: "textile-angles",
-    image: asset("t08-textile-angles"),
+    image: textileAsset("front"),
+    collage: [textileAsset("front"), textileAsset("pillow"), textileAsset("fabric")],
     tool: "textile",
     action: "open",
   },
   {
+    id: "style-reference",
+    image: asset("p10-tableware-hero"),
+    tool: "replica",
+    action: "open",
+  },
+  {
     id: "backgrounds",
-    image: asset("t09-background-variations"),
+    image: asset("p04-headphones-hero"),
     tool: "variation",
     action: "use",
   },
   {
     id: "portrait",
-    image: asset("t10-portrait-composition"),
+    image: asset("p07-perfume-hero"),
     tool: "create",
     action: "use",
     ratio: "9:16",

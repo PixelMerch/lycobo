@@ -1,133 +1,269 @@
-/* 结尾与页脚形成同一深色区域，保留单个明确的创作动作。 */
+/* 画廊承接首屏暗色渐变，结尾行动面板与页脚分层收束。 */
+.commerce-gallery {
+  scroll-margin-top: 96px;
+  padding-block: 72px 88px;
+  background:
+    radial-gradient(ellipse at 20% 58%, #a94c65b3, transparent 52%),
+    radial-gradient(ellipse at 80% 55%, #476ac7b3, transparent 52%), #111111;
+  color: #f3f2e9;
+}
+
+.commerce-gallery-heading {
+  display: grid;
+  gap: 10px;
+}
+
+.commerce-gallery-heading h2 {
+  font-size: clamp(2rem, 1.5rem + 1.6vw, 2.75rem);
+  line-height: 1.24;
+  letter-spacing: -0.025em;
+  font-weight: 500;
+}
+
+.commerce-gallery-subtitle {
+  color: #ffffff99;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.commerce-gallery-controls {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.commerce-gallery-controls .button {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  border: 1px solid #ffffff24;
+  background: #ffffff12;
+  color: #f3f2e9;
+  box-shadow: none;
+}
+
+.commerce-gallery-controls .button:hover {
+  background: #ffffff24;
+  border-color: #ffffff40;
+}
+
+.commerce-gallery-rail {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 8px max(40px, calc((100% - 1320px) / 2)) 16px;
+  overscroll-behavior-x: contain;
+}
+
+.commerce-gallery-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.commerce-gallery-group {
+  display: flex;
+  flex: none;
+  align-items: stretch;
+  gap: 20px;
+  padding-right: 20px;
+}
+
+.commerce-template.button {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  width: clamp(236px, 19vw, 288px);
+  height: clamp(360px, 30vw, 440px);
+  padding: 0;
+  background: #1d221e;
+  color: #fff;
+  border-radius: 16px;
+  overflow: clip;
+  white-space: normal;
+  box-shadow: none;
+}
+
+.commerce-template-wide.button {
+  width: clamp(348px, 29vw, 444px);
+}
+
+.commerce-template-image,
+.commerce-template-image img,
+.commerce-template-cell img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.commerce-template-collage {
+  display: grid;
+  grid-template-columns: 1.2fr 0.85fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  padding: 4px;
+  background: #1a201c;
+}
+
+.commerce-template-cell {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 12px;
+  overflow: clip;
+}
+
+.commerce-template-cell:first-child {
+  grid-row: 1 / 3;
+}
+
+.commerce-template-caption {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 52px 18px 16px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 500;
+  background: linear-gradient(180deg, transparent, #0a0d0bcc);
+}
+
+.commerce-template-caption svg {
+  flex-shrink: 0;
+}
+
 .commerce-final {
   background: #111612;
   color: #f3f2e9;
-  padding-block: 104px;
+  padding-block: 88px 24px;
 }
-.commerce-final > div {
+
+.commerce-final-panel {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 40px;
-  text-align: center;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 56px 64px;
+  border-radius: 24px;
+  border: 1px solid #28322a;
+  background: linear-gradient(145deg, #1a231c 0%, #131915 100%);
 }
-.commerce-final h2 {
-  max-width: 720px;
-  font-size: clamp(36px, 4.5vw, 64px);
+
+.commerce-final-panel h2 {
+  max-width: 640px;
+  font-size: clamp(1.875rem, 1.35rem + 1.8vw, 2.75rem);
+  line-height: 1.24;
+  letter-spacing: -0.025em;
+  font-weight: 500;
 }
+
+.commerce-final-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
 .commerce-primary.button {
   min-height: 48px;
   padding-inline: 28px;
   background: linear-gradient(120deg, #a8ff00, #54e6a5);
   color: #142000;
   border-radius: 999px;
+  font-weight: 600;
   box-shadow: none;
 }
+
 .commerce-primary.button:hover {
   filter: brightness(1.04);
 }
-@media (max-width: 600px) {
-  .commerce-final {
-    padding-block: 72px;
-  }
-  .commerce-final > div {
-    gap: 28px;
-  }
-}
-/* 案例图带使用等宽副本首尾接续，循环归位保持相同画面与方向。 */
-.commerce-gallery {
-  scroll-margin-top: 96px;
-  padding-block: 32px 88px;
-  background: #080b09;
-  color: #f3f2e9;
-}
-.commerce-gallery-controls {
-  display: flex;
-  gap: 16px;
-  flex-shrink: 0;
-}
-.commerce-gallery-controls .button {
-  background: #ffffff24;
-  color: #f3f2e9;
-  border-radius: 50%;
-  min-width: 48px;
+
+.commerce-final-secondary.link {
+  display: inline-flex;
+  align-items: center;
   min-height: 48px;
+  padding-inline: 22px;
+  border-radius: 999px;
+  border: 1px solid #ffffff29;
+  color: #ffffffcc;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
 }
-.commerce-gallery-rail {
-  display: flex;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding: 8px max(24px, calc((100vw - 1280px) / 2)) 12px;
-  overscroll-behavior-x: contain;
-}
-.commerce-gallery-group {
-  display: flex;
-  flex: none;
-  gap: 24px;
-  padding-right: 24px;
-}
-.commerce-gallery-controls .button:hover {
-  background: #ffffff38;
-}
-.commerce-gallery-rail::-webkit-scrollbar {
-  display: none;
-}
-.commerce-template.button {
-  position: relative;
-  display: block;
-  flex: 0 0 auto;
-  width: clamp(220px, 19vw, 300px);
-  height: auto;
-  aspect-ratio: 3 / 4;
-  padding: 0;
-  background: #29312b;
+
+.commerce-final-secondary.link:hover {
+  border-color: #ffffff52;
   color: #fff;
-  border-radius: 16px;
-  overflow: hidden;
-  white-space: normal;
-  box-shadow: none;
 }
-.commerce-template-image,
-.commerce-template-image img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-.commerce-template-caption {
-  position: absolute;
-  inset: auto 0 0;
-  padding: 64px 20px 20px;
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 12px;
-  text-align: left;
-  font-size: 16px;
-  background: linear-gradient(transparent, #000a);
-}
-.commerce-template-caption svg {
-  flex-shrink: 0;
-}
-@media (max-width: 600px) {
-  .commerce-gallery {
-    padding-block: 24px 56px;
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .commerce-template-image img,
+  .commerce-template-cell img {
+    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
   }
+
+  .commerce-template.button:hover img {
+    transform: scale(1.025);
+  }
+}
+
+@media (max-width: 900px) {
   .commerce-gallery-rail {
-    padding-inline: 20px;
+    padding-inline: 24px;
   }
-  .commerce-template.button {
-    width: 64vw;
+
+  .commerce-final-panel {
+    padding: 40px 36px;
   }
 }
 
 @media (max-width: 600px) {
-  .commerce-gallery-group {
-    gap: 16px;
-    padding-right: 16px;
+  .commerce-gallery {
+    padding-block: 48px 56px;
   }
-  .commerce-gallery-controls .button {
-    min-width: 48px;
-    min-height: 48px;
+
+  .commerce-gallery-subtitle {
+    font-size: 14px;
+  }
+
+  .commerce-gallery-controls {
+    gap: 8px;
+  }
+
+  .commerce-gallery-rail {
+    padding-inline: 20px;
+  }
+
+  .commerce-gallery-group {
+    gap: 14px;
+    padding-right: 14px;
+  }
+
+  .commerce-template.button {
+    width: 224px;
+    height: 340px;
+  }
+
+  .commerce-template-wide.button {
+    width: 312px;
+  }
+
+  .commerce-final {
+    padding-block: 56px 16px;
+  }
+
+  .commerce-final-panel {
+    padding: 32px 24px;
+    border-radius: 20px;
+    gap: 24px;
+  }
+
+  .commerce-final-actions {
+    width: 100%;
   }
 }

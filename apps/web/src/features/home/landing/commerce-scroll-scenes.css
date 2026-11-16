@@ -1,178 +1,227 @@
-/* 只有前后对比保留短固定段落；后续套图直接完整呈现，避免连续的滚动大卡片。 */
-.commerce-comparison {
+.commerce-landing.lp-page {
+  overflow: clip;
+}
+
+/* 每章用原生滚动驱动步骤，舞台吸顶但不捕获滚轮或改变导航。 */
+.commerce-scroll-story {
   position: relative;
-  padding-block: 104px;
-  scroll-margin-top: 64px;
+  min-height: 180svh;
+  scroll-margin-top: 80px;
 }
-.commerce-comparison[data-scroll-story="true"] {
-  height: calc(100svh + 720px);
-  padding: 0;
+
+.commerce-comparison {
+  min-height: 220svh;
+  background: linear-gradient(120deg, #f7d9c7, #ecd8e6 52%, #d9d5f2);
 }
-.commerce-comparison[data-scroll-story="true"] .commerce-scroll-pin {
+
+.commerce-story-sticky {
   position: sticky;
-  top: 64px;
-  height: calc(100svh - 64px);
+  top: 80px;
+  min-height: calc(100svh - 80px);
   display: flex;
   align-items: center;
-  padding-block: 48px;
+  padding-block: 36px;
 }
+
 .commerce-comparison-layout {
   display: grid;
-  grid-template-columns: 0.8fr 1.7fr;
-  align-items: center;
-  gap: 56px;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  padding: 32px 48px;
+  border: 1px solid #fff;
+  border-radius: 28px;
+  background: #ffffff33;
+  box-shadow: 0 24px 64px #53395514;
 }
-.commerce-story-heading h2 {
-  font-size: clamp(32px, 3.3vw, 48px);
-  line-height: 1.3;
+
+.commerce-comparison-intro {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px 32px;
+}
+
+.commerce-comparison-intro h2 {
+  grid-column: 1 / -1;
+}
+
+.commerce-comparison-intro .commerce-description {
+  margin: 0;
+  max-width: none;
+}
+
+.commerce-comparison-tabs,
+.commerce-family-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 999px;
+  background: #49334c0d;
+}
+
+.commerce-comparison-tabs .toggle-button,
+.commerce-family-tabs .toggle-button {
+  min-height: 44px;
+  padding-inline: 22px;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  border: 0;
+  font-size: 14px;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+.commerce-comparison-tabs .toggle-button[data-selected="true"],
+.commerce-family-tabs .toggle-button[data-selected="true"] {
+  color: #242424;
+  background: #fff;
+  box-shadow: 0 2px 8px #35243814;
+}
+
+.commerce-comparison-note {
+  font-size: 14px;
+  color: #6b5b67;
+}
+
+.commerce-comparison-stage {
+  min-width: 0;
 }
 .commerce-comparison-board {
   display: grid;
-  grid-template-columns: 0.68fr 32px 1.25fr;
+  grid-template-columns: 0.7fr 64px 1.3fr;
   align-items: center;
-  gap: 20px;
-  min-width: 0;
+  gap: 24px;
+  max-width: 820px;
+  margin-inline: auto;
 }
+
 .commerce-comparison-board figure {
   min-width: 0;
   margin: 0;
 }
-.commerce-comparison-board img {
-  width: 100%;
-  object-fit: cover;
-  border-radius: 12px;
-  background: #efede7;
+.commerce-comparison-frame {
+  overflow: clip;
+  background: #faf9f6;
+  border: 6px solid #fff;
+  border-radius: 20px;
+  box-shadow: 0 24px 64px #53395526;
 }
-.commerce-comparison-original img {
+
+.commerce-comparison-original {
+  transform: rotate(-6deg);
+}
+.commerce-comparison-original .commerce-comparison-frame {
   aspect-ratio: 1;
 }
-.commerce-comparison-finished img {
-  height: clamp(360px, calc(100svh - 260px), 560px);
+.commerce-comparison-finished .commerce-comparison-frame {
+  height: clamp(240px, 39svh, 410px);
+  aspect-ratio: 4 / 3;
 }
-.commerce-comparison-board figcaption {
-  margin-top: 16px;
-  color: #656b5e;
-  font-size: 13px;
-}
-.commerce-comparison-direction {
-  color: #79816f;
-}
-.commerce-comparison-list {
-  display: grid;
-  gap: 48px;
-}
-.commerce-set {
-  background: #191e1b;
-  color: #f3f2e9;
-  padding-block: 96px 104px;
-}
-.commerce-set .commerce-story-heading {
-  margin-bottom: 48px;
-}
-.commerce-set-board.button {
-  display: grid;
-  grid-template-columns: 1fr 0.65fr 1.05fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 20px;
-  width: 100%;
-  height: 560px;
-  padding: 0;
-  border: 0;
-  border-radius: 12px;
-  background: transparent;
-  overflow: visible;
-  box-shadow: none;
-}
-.commerce-set-photo {
-  display: block;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-  border-radius: 12px;
-}
-.commerce-set-photo img {
+.commerce-comparison-frame img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.commerce-set-lead {
-  grid-column: 1;
-  grid-row: 1 / 3;
+.commerce-comparison-board figcaption {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 13px;
+  color: #5b4b58;
 }
-.commerce-set-zipper {
-  grid-column: 2;
-  grid-row: 1;
+.commerce-comparison-direction {
+  display: flex;
+  justify-content: center;
+  color: #866f82;
 }
-.commerce-set-fabric {
-  grid-column: 2;
-  grid-row: 2;
-}
-.commerce-set-scene {
-  grid-column: 3;
-  grid-row: 1 / 3;
-  height: 84%;
-  align-self: end;
-}
-@media (max-width: 1099px), (max-height: 759px), (prefers-reduced-motion: reduce) {
+
+@media (max-width: 900px) {
   .commerce-comparison-layout {
-    grid-template-columns: 1fr;
-    gap: 48px;
+    padding: 24px;
+  }
+  .commerce-comparison-intro {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+  }
+  .commerce-comparison-intro h2 {
+    width: 100%;
+  }
+  .commerce-comparison-intro .commerce-description {
+    display: none;
   }
   .commerce-comparison-board {
-    max-width: 860px;
-    width: 100%;
-    margin-inline: auto;
-  }
-  .commerce-comparison-finished img {
-    height: auto;
-    aspect-ratio: 4 / 5;
-  }
-}
-@media (max-width: 900px) {
-  .commerce-set-board.button {
-    height: 440px;
+    grid-template-columns: 0.7fr 24px 1.3fr;
     gap: 16px;
   }
 }
+
 @media (max-width: 600px) {
-  .commerce-comparison,
-  .commerce-set {
-    padding-block: 56px;
+  .commerce-scroll-story {
+    min-height: 170svh;
   }
-  .commerce-story-heading h2 {
-    font-size: 32px;
+  .commerce-comparison {
+    min-height: 210svh;
+  }
+  .commerce-story-sticky {
+    top: 64px;
+    min-height: calc(100svh - 64px);
+    padding-block: 20px;
   }
   .commerce-comparison-layout {
-    gap: 32px;
+    padding: 20px 14px;
+    border-radius: 20px;
+    gap: 20px;
+  }
+  .commerce-comparison-intro h2 {
+    font-size: 26px;
+  }
+  .commerce-comparison-tabs {
+    width: 100%;
+  }
+  .commerce-comparison-tabs .toggle-button {
+    flex: 1;
+    padding-inline: 8px;
+    font-size: 12px;
+  }
+  .commerce-comparison-note {
+    display: none;
   }
   .commerce-comparison-board {
-    grid-template-columns: 0.7fr 20px 1.2fr;
-    gap: 12px;
+    grid-template-columns: 0.65fr 16px 1.35fr;
+    gap: 8px;
   }
-  .commerce-comparison-direction svg {
-    width: 18px;
-    height: 18px;
+  .commerce-comparison-frame {
+    border-width: 4px;
+    border-radius: 12px;
+  }
+  .commerce-comparison-finished .commerce-comparison-frame {
+    height: clamp(180px, 32svh, 270px);
+    aspect-ratio: auto;
   }
   .commerce-comparison-board figcaption {
     font-size: 12px;
-    margin-top: 12px;
   }
-  .commerce-set .commerce-story-heading {
-    margin-bottom: 28px;
+}
+
+@media (max-height: 650px) and (min-width: 601px) {
+  .commerce-story-sticky {
+    padding-block: 16px;
   }
-  .commerce-set-board.button {
-    grid-template-columns: 1.2fr 0.8fr;
-    grid-template-rows: 1fr 1fr 1fr;
-    height: 520px;
+  .commerce-comparison-layout {
+    padding-block: 16px;
     gap: 12px;
   }
-  .commerce-set-scene {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    height: 100%;
+  .commerce-comparison-intro .commerce-description,
+  .commerce-comparison-note {
+    display: none;
   }
-  .commerce-set-scene img {
-    object-position: center 18%;
+  .commerce-comparison-finished .commerce-comparison-frame {
+    height: 210px;
   }
+}
+
+.commerce-comparison-finished img {
+  object-fit: contain;
+  background: #ede2d4;
 }

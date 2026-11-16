@@ -18,11 +18,11 @@ export function CommerceLanding() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="landing-page">
-        <div className="lp-page">
+        <div className="lp-page commerce-landing">
           <div className="lp-main">
             <Hero composerRef={composerRef} tool={tool} />
+            <Formats />
             <div className="commerce-body">
-              <Formats />
               <Cases />
               <TextileFeature />
               <Workflow />

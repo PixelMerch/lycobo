@@ -11,7 +11,7 @@ function subscribeReducedMotion(notify: () => void) {
 const readReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /** 单向循环图带保留原生触摸与箭头浏览，悬停、焦点和后台状态暂停自动推进。 */
-export function useGalleryAutoplay() {
+export function useGalleryAutoplay(paused = false) {
   const rail = useRef<HTMLElement>(null);
   const visible = useInView(rail);
   const reduced = useSyncExternalStore(subscribeReducedMotion, readReducedMotion, () => true);
@@ -20,7 +20,7 @@ export function useGalleryAutoplay() {
   useEffect(() => {
     const element = rail.current;
     if (!element) return;
-    const loop = createGalleryLoop(element, reduced, visible, () => {
+    const loop = createGalleryLoop(element, reduced, visible && !paused, () => {
       const current = interaction.current;
       return current.hovered || current.focused || current.dragging;
     });
@@ -37,7 +37,7 @@ export function useGalleryAutoplay() {
       window.removeEventListener("pointerup", releasePointer);
       window.removeEventListener("pointercancel", releasePointer);
     };
-  }, [visible, reduced]);
+  }, [visible, reduced, paused]);
   return {
     rail,
     reduced,

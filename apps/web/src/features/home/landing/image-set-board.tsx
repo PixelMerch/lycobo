@@ -1,24 +1,76 @@
-import { Button } from "@heroui/react";
-import { useMessages } from "../../../i18n/messages";
-import { commerceShowcaseMessages } from "./commerce-showcase-messages";
+import { Button, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { motion } from "motion/react";
+import { useState } from "react";
 
-const photos = [
-  { view: "lead", image: "worn", label: "full" },
-  { view: "zipper", image: "zipper", label: "zipper" },
-  { view: "fabric", image: "fabric", label: "fabric" },
-  { view: "scene", image: "scene", label: "scene" },
-] as const;
+export interface ShowcaseImage {
+  src: string;
+  alt: string;
+}
 
-/** 穿着、工艺与场景同时呈现，整组打开现有图片浏览器。 */
-export function ImageSetBoard({ onOpen }: { onOpen: () => void }) {
-  const t = useMessages(commerceShowcaseMessages).set;
+/** 同款主图配扇形细节卡，独立按钮避免叠放图片遮挡点击区域。 */
+export function ImageSetBoard({
+  images,
+  onOpen,
+  label,
+}: {
+  images: ShowcaseImage[];
+  onOpen: () => void;
+  label: string;
+}) {
+  const [selected, setSelected] = useState(0);
+  const image = images[selected] ?? images[0];
   return (
-    <Button variant="ghost" className="commerce-set-board" aria-label={t.open} onPress={onOpen}>
-      {photos.map(({ view, image, label }) => (
-        <span key={view} className={`commerce-set-photo commerce-set-${view}`}>
-          <img src={`/landing/commerce/p11-${image}.webp`} alt={t[label]} loading="lazy" />
-        </span>
-      ))}
-    </Button>
+    <div className="commerce-set-board">
+      <Button variant="ghost" className="commerce-set-main" aria-label={label} onPress={onOpen}>
+        <motion.img
+          key={image?.src}
+          src={image?.src}
+          alt={image?.alt}
+          loading="lazy"
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+        />
+        <span className="commerce-set-caption">{image?.alt}</span>
+      </Button>
+      <div className="commerce-set-fan" aria-hidden="true">
+        {images.slice(1).map((photo, index) => (
+          <motion.div
+            className="commerce-fan-card"
+            key={photo.src}
+            initial={{ opacity: 0, rotate: 0, x: 0, y: 32 }}
+            whileInView={{
+              opacity: 1,
+              rotate: (index - 1) * 13,
+              x: (index - 1) * 78,
+              y: Math.abs(index - 1) * 20,
+            }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.6, delay: index * 0.08 }}
+          >
+            <img src={photo.src} alt="" loading="lazy" />
+          </motion.div>
+        ))}
+      </div>
+      <ToggleButtonGroup
+        className="commerce-set-views"
+        aria-label={label}
+        isDetached
+        selectionMode="single"
+        disallowEmptySelection
+        selectedKeys={[String(selected)]}
+        onSelectionChange={(keys) => {
+          const [key] = keys;
+          const index = Number(key);
+          if (images[index]) setSelected(index);
+        }}
+      >
+        {images.map((photo, index) => (
+          <ToggleButton key={photo.src} id={String(index)}>
+            {photo.alt}
+          </ToggleButton>
+        ))}
+      </ToggleButtonGroup>
+    </div>
   );
 }

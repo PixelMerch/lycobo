@@ -29,7 +29,7 @@ AI 接手先看 [按任务阅读与交接](ai-workflow.md)，需要时使用 [�
 | 视频创作             | [视频接入](video-generation.md)                                          |
 | 电商专区参考         | [电商专区与参考页说明](home-replica.md)                                  |
 | 电商专区素材         | [专区素材清单](landing-assets.md)                                        |
-| 电商专区内容改造任务 | [内容、图片与页脚任务书（已实施，保留验收依据）](../ds.md)               |
+| 电商专区内容改造任务 | [电商专区设计与素材边界](home-replica.md)                                |
 | 首页内容替换方案     | [LYCOBO 首页内容与素材方案](home-lycobo-content-plan.md)                 |
 | 套图计划与链接分析   | [套图计划](product-variation-plan.md)                                    |
 | 家纺裂变             | [家纺生成](textile-generation.md) · [视角示例](textile-view-examples.md) |

@@ -5,7 +5,7 @@
 - 生成工具：本地 `gen-image` 命令行工具（仓库外的素材流水线）
 - 实际模型：`gpt-image-2.6-sunburst`
 - 生成日期：2026-11-14
-- 生产提示词：P01–P11 与对比图按 [任务书](../ds.md) 第 6 节执行，统一附加 6.1 节通用约束；模板提示词维护在 `apps/web/src/features/home/landing/sections-messages.ts`。
+- 生产提示词：P01–P11 与对比图为项目既有生成素材，当前复用范围见 [专区说明](home-replica.md)；模板提示词维护在 `apps/web/src/features/home/landing/sections-messages.ts`。
 - 存放目录：`apps/web/public/landing/commerce/`；网页使用 82% 质量的 WebP，原始 PNG 母图只留在本地生成目录。
 - 裁切：案例和模板由 `object-fit: cover` 或 ImageMagick 安全裁切；未做旧图改名或截图复用。
 

@@ -1,53 +1,60 @@
-/* 留白组织商品图与工具内容，不用重复大卡片切割整页。 */
+/* 统一内容容器与浅色展示节奏，不用重复外框卡片切割页面。 */
 .commerce-body {
   background: #faf9f6;
   color: #242820;
   color-scheme: light;
-  --commerce-muted: #63695d;
+  --commerce-muted: #5d6357;
   --commerce-line: #dedfd8;
 }
+
+.commerce-body ::selection {
+  background: #c5e5a4;
+  color: #1e2a18;
+}
+
 .commerce-section {
-  width: min(1280px, calc(100% - 96px));
+  width: min(1320px, calc(100% - 80px));
   margin-inline: auto;
   scroll-margin-top: 72px;
 }
+
 .commerce-section-heading {
   display: flex;
   justify-content: space-between;
-  align-items: end;
-  gap: 40px;
-  margin-bottom: 36px;
+  align-items: flex-end;
+  gap: 32px;
+  margin-bottom: 32px;
 }
+
 .commerce-body h2 {
-  font-size: clamp(32px, 3.5vw, 48px);
-  line-height: 1.3;
+  font-size: clamp(1.875rem, 1.35rem + 1.6vw, 2.75rem);
+  line-height: 1.26;
   letter-spacing: -0.025em;
   font-weight: 500;
   white-space: pre-line;
   text-wrap: balance;
 }
+
 .commerce-body h3 {
-  font-size: 24px;
-  line-height: 1.4;
+  font-size: 22px;
+  line-height: 1.38;
   letter-spacing: -0.02em;
   font-weight: 500;
 }
+
 .commerce-description {
-  max-width: 520px;
-  margin-top: 16px;
+  max-width: 480px;
+  margin-top: 14px;
   font-size: 15px;
-  line-height: 1.8;
+  line-height: 1.75;
   color: var(--commerce-muted);
 }
-.commerce-section-heading > .commerce-description {
-  max-width: 340px;
-  margin-top: 0;
-}
+
 .commerce-text-link.link {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  color: #272d21;
+  gap: 10px;
+  color: #242a1e;
   font-size: 14px;
   font-weight: 500;
   text-decoration: underline;
@@ -55,112 +62,140 @@
   min-height: 44px;
   white-space: normal;
 }
+
 .commerce-text-link.link:hover {
-  color: #526d28;
+  color: #4f6b25;
 }
+
 .commerce-specialists {
   padding-block: 104px;
+  background: linear-gradient(130deg, #d3ebf4, #dbe4f0);
+  width: 100%;
+  padding-inline: max(40px, calc((100% - 1280px) / 2));
 }
+
 .commerce-specialist {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
   align-items: center;
-  gap: 96px;
+  gap: 80px;
 }
-.commerce-specialist-image {
-  height: 520px;
-  overflow: hidden;
-  border-radius: 12px;
+
+.commerce-specialist-media {
+  display: grid;
+  grid-template-columns: 0.78fr 1fr;
+  align-items: end;
+  gap: 20px;
 }
-.commerce-specialist-image img {
+
+.commerce-specialist-primary,
+.commerce-specialist-secondary {
+  margin: 0;
+  border-radius: 16px;
+  overflow: clip;
+  background: #eceae3;
+  border: 6px solid #fff;
+  box-shadow: 0 24px 64px #394c6826;
+}
+
+.commerce-specialist-primary {
+  aspect-ratio: 9 / 16;
+}
+
+.commerce-specialist-secondary {
+  aspect-ratio: 4 / 5;
+}
+
+.commerce-specialist-primary img,
+.commerce-specialist-secondary img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 46%;
 }
-.commerce-specialist h3 {
-  font-size: clamp(32px, 3vw, 44px);
-  white-space: pre-line;
-  line-height: 1.3;
-  text-wrap: balance;
+
+.commerce-specialist-copy {
+  max-width: 440px;
 }
-.commerce-specialist p {
+
+.commerce-specialist-copy p {
   color: var(--commerce-muted);
   font-size: 15px;
-  line-height: 1.8;
-  margin: 24px 0;
-  max-width: 320px;
+  line-height: 1.75;
+  margin: 18px 0 24px;
+  max-width: 380px;
 }
+
 .commerce-output {
-  padding-block: 80px 104px;
+  padding-block: 96px 104px;
+  background: linear-gradient(120deg, #ded6f0, #f1d6dd 65%, #f8dece);
   border-top: 1px solid var(--commerce-line);
 }
-.commerce-body ::selection {
-  background: #c5e5a4;
-  color: #1e2a18;
+
+.commerce-output-heading {
+  margin-bottom: 40px;
+  max-width: 560px;
 }
+
 @media (max-width: 900px) {
   .commerce-section {
     width: calc(100% - 48px);
   }
+
   .commerce-section-heading {
     gap: 24px;
-    align-items: start;
+    align-items: flex-start;
   }
+
+  .commerce-specialists {
+    padding-block: 72px;
+  }
+
   .commerce-specialist {
-    gap: 40px;
+    grid-template-columns: 1fr;
+    gap: 36px;
   }
-  .commerce-specialist-image {
-    height: 400px;
+
+  .commerce-specialist-media {
+    max-width: 560px;
+  }
+
+  .commerce-output {
+    padding-block: 72px 80px;
   }
 }
+
 @media (max-width: 600px) {
   .commerce-section {
     width: calc(100% - 40px);
   }
+
   .commerce-section-heading {
-    flex-wrap: wrap;
-    gap: 24px;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
+    align-items: flex-end;
   }
-  .commerce-gallery .commerce-section-heading {
-    flex-wrap: nowrap;
-    align-items: end;
-  }
-  .commerce-gallery .commerce-section-heading h2 {
-    font-size: 28px;
-  }
-  .commerce-gallery-controls {
-    gap: 8px;
-  }
+
   .commerce-specialists {
     padding-block: 56px;
   }
+
   .commerce-specialist {
-    grid-template-columns: 1fr;
-    gap: 32px;
+    gap: 28px;
   }
-  .commerce-specialist-image {
-    height: auto;
-    aspect-ratio: 4 / 3;
+
+  .commerce-specialist-media {
+    gap: 12px;
   }
+
+  .commerce-specialist-primary,
+  .commerce-specialist-secondary {
+    border-radius: 12px;
+  }
+
   .commerce-output {
     padding-block: 56px;
   }
-}
-@media (hover: hover) and (pointer: fine) {
-  .commerce-template-image img {
-    transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .commerce-template:hover img {
-    transform: scale(1.025);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .commerce-template-image img {
-    transition: none;
-  }
-  .commerce-template:hover img {
-    transform: none;
+
+  .commerce-output-heading {
+    margin-bottom: 28px;
   }
 }

@@ -1,42 +1,65 @@
+import { IconArrowUpRight } from "@tabler/icons-react";
 import { lazy, Suspense, useState } from "react";
+import { RouteLink } from "../../../components/router-link";
+import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { casesMessages } from "./cases-messages";
-import { caseCards } from "./commerce-content";
 import { commerceShowcaseMessages } from "./commerce-showcase-messages";
 import { ImageSetBoard } from "./image-set-board";
+import { textileFeatureMessages } from "./textile-feature-messages";
 
 const ImageViewer = lazy(async () => {
   const module = await import("../../../components/image-viewer/image-viewer");
   return { default: module.ImageViewer };
 });
 
-/** 用完整的摄影图组展示服装套图，点击浏览全部八张素材。 */
-export function ImageSetFeature() {
+/** 使用项目已有的同款家纺或外套素材呈现套图，并保留真实创作与放大入口。 */
+export function ImageSetFeature({ apparel }: { apparel: boolean }) {
   const t = useMessages(commerceShowcaseMessages).set;
   const cases = useMessages(casesMessages);
+  const textile = useMessages(textileFeatureMessages);
   const [open, setOpen] = useState(false);
-  const jacket = caseCards.find((card) => card.id === "jacket");
-  const images = [
-    { src: "/landing/commerce/p11-worn.webp", alt: cases.cards.jacket.alt },
-    ...(jacket?.details ?? []).map((detail) => ({
-      src: detail.image,
-      alt: cases.detailAlt[detail.id],
-    })),
-    { src: "/landing/commerce/p11-jacket-mother.webp", alt: cases.referenceAlt },
-  ];
+  const images = apparel
+    ? [
+        { src: "/landing/commerce/p11-worn.webp", alt: t.full },
+        { src: "/landing/commerce/p11-zipper.webp", alt: t.zipper },
+        { src: "/landing/commerce/p11-fabric.webp", alt: t.fabric },
+        { src: "/landing/commerce/p11-scene.webp", alt: t.scene },
+      ]
+    : (["front", "pillow", "fabric", "bed-end"] as const).map((view) => ({
+        src: `/studio/textile-views/${view}.webp`,
+        alt: textile.views[view].title,
+      }));
+  const viewerImages = apparel
+    ? [
+        ...images,
+        ...(["collar", "cuff", "pocket"] as const).map((view) => ({
+          src: `/landing/commerce/p11-${view}.webp`,
+          alt: cases.detailAlt[view],
+        })),
+        { src: "/landing/commerce/p11-jacket-mother.webp", alt: cases.referenceAlt },
+      ]
+    : images;
   return (
-    <section className="commerce-set" aria-labelledby="commerce-set-title">
-      <div className="commerce-section">
-        <div className="commerce-story-heading">
-          <h2 id="commerce-set-title">{t.title}</h2>
-        </div>
-        <ImageSetBoard onOpen={() => setOpen(true)} />
-      </div>
+    <>
+      <ImageSetBoard
+        key={String(apparel)}
+        images={images}
+        label={apparel ? t.open : textile.open}
+        onOpen={() => setOpen(true)}
+      />
+      <RouteLink
+        to={apparel ? "/commerce/smart-variation" : "/commerce/textile-set"}
+        className="commerce-set-link"
+      >
+        {apparel ? t.action : textile.action}
+        <UiIcon icon={IconArrowUpRight} />
+      </RouteLink>
       {open && (
         <Suspense fallback={null}>
-          <ImageViewer images={images} onClose={() => setOpen(false)} />
+          <ImageViewer images={viewerImages} onClose={() => setOpen(false)} />
         </Suspense>
       )}
-    </section>
+    </>
   );
 }

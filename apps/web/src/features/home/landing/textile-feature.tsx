@@ -1,49 +1,44 @@
-import { Button } from "@heroui/react";
-import { lazy, Suspense, useState } from "react";
+import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { useMessages } from "../../../i18n/messages";
-import { textileFeatureMessages } from "./textile-feature-messages";
+import { commerceShowcaseMessages } from "./commerce-showcase-messages";
+import { ImageSetFeature } from "./image-set-feature";
+import { useShowcaseScroll } from "./use-showcase-scroll";
 
-const views = ["front", "pillow", "fabric", "bed-end"] as const;
-const ImageViewer = lazy(async () => {
-  const module = await import("../../../components/image-viewer/image-viewer");
-  return { default: module.ImageViewer };
-});
-
-/** 家纺以整幅卧室照片与三张细节构成展页，所有视角可直接打开浏览。 */
+/** 家纺与服装随页面滚动自动衔接，向上回滚可重看上一套商品。 */
 export function TextileFeature() {
-  const t = useMessages(textileFeatureMessages);
-  const [viewerStart, setViewerStart] = useState<(typeof views)[number] | null>(null);
-  const images = [
-    viewerStart ?? "front",
-    ...views.filter((view) => view !== (viewerStart ?? "front")),
-  ].map((view) => ({ src: `/studio/textile-views/${view}.webp`, alt: t.views[view].title }));
+  const t = useMessages(commerceShowcaseMessages).set;
+  const chapter = useShowcaseScroll(2);
+  const apparel = chapter.active === 1;
   return (
-    <section className="commerce-textile" aria-labelledby="commerce-textile-title">
-      <div className="commerce-section commerce-textile-layout">
-        <div className="commerce-textile-heading">
-          <h2 id="commerce-textile-title">{t.title}</h2>
+    <section
+      ref={chapter.section}
+      className="commerce-sets-story commerce-scroll-story"
+      data-family={apparel ? "apparel" : "textile"}
+      aria-labelledby="commerce-set-title"
+    >
+      <div className="commerce-story-sticky">
+        <div className="commerce-section">
+          <div className="commerce-set-header">
+            <h2 id="commerce-set-title">{t.title}</h2>
+            <ToggleButtonGroup
+              className="commerce-family-tabs"
+              aria-label={t.choose}
+              isDetached
+              selectionMode="single"
+              disallowEmptySelection
+              selectedKeys={[String(chapter.active)]}
+              onSelectionChange={(keys) => {
+                const [key] = keys;
+                if (key === "0" || key === "1") chapter.select(Number(key));
+              }}
+            >
+              <ToggleButton id="0">{t.textile}</ToggleButton>
+              <ToggleButton id="1">{t.apparel}</ToggleButton>
+            </ToggleButtonGroup>
+          </div>
+          <ImageSetFeature apparel={apparel} />
         </div>
-        {views.map((view) => (
-          <Button
-            key={view}
-            className={`commerce-textile-view commerce-textile-view-${view}`}
-            variant="ghost"
-            onPress={() => setViewerStart(view)}
-            aria-label={`${t.open} · ${t.views[view].title}`}
-          >
-            <img
-              src={`/studio/textile-views/${view}.webp`}
-              alt={t.views[view].title}
-              loading="lazy"
-            />
-          </Button>
-        ))}
       </div>
-      {viewerStart && (
-        <Suspense fallback={null}>
-          <ImageViewer images={images} onClose={() => setViewerStart(null)} />
-        </Suspense>
-      )}
     </section>
   );
 }

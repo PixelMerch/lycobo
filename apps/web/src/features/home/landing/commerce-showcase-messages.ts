@@ -4,7 +4,7 @@ import { defineMessages } from "../../../i18n/messages";
 export const commerceShowcaseMessages = defineMessages({
   "zh-CN": {
     intro: "从商品照开始",
-    title: "同一件商品，\n换一种呈现。",
+    title: "一张商品图，不止一种表达。",
     description: "调整背景、光线与构图，让主图更干净，让场景更自然",
     examples: "选择商品图效果",
     reference: "商品原图",
@@ -32,7 +32,10 @@ export const commerceShowcaseMessages = defineMessages({
     },
     set: {
       label: "套图计划",
-      title: "主图之外，\n细节也要到位。",
+      title: "一套画面，保持同一种风格。",
+      choose: "选择套图类别",
+      textile: "家纺",
+      apparel: "服装",
       description: "确认方案，再制作主图、细节与场景",
       steps: ["上传商品参考", "确认套图方案", "逐张生成图片"],
       action: "开始制作套图",
@@ -55,6 +58,7 @@ export const commerceShowcaseMessages = defineMessages({
         description: "上传风格图和商品图，参考版式制作自己的图片",
         action: "参考风格创作",
         alt: "具有留白与柔和光影的香水产品构图参考",
+        secondaryAlt: "浅米色桌面上的陶瓷餐具静物构图参考",
       },
     },
     specs: {
@@ -64,12 +68,14 @@ export const commerceShowcaseMessages = defineMessages({
     },
     gallery: {
       label: "创作起点",
-      title: "商品还能这样拍",
+      title: "让商品，成为画面主角。",
+      pause: "暂停案例轮播",
+      play: "继续案例轮播",
       previous: "向前浏览案例",
       next: "向后浏览案例",
       description: "选一种画面，把创作要求带入工作区",
     },
-    cta: { title: "你的商品，下一张好图。", action: "开始创作" },
+    cta: { title: "你的商品，下一张好图。", action: "开始创作", workspace: "进入工作区" },
   },
   en: {
     intro: "Start with a product photo",
@@ -101,7 +107,10 @@ export const commerceShowcaseMessages = defineMessages({
     },
     set: {
       label: "Image Set Planner",
-      title: "The whole look.\nEvery detail.",
+      title: "One collection. One visual language.",
+      choose: "Choose an image collection",
+      textile: "Bedding",
+      apparel: "Apparel",
       description: "Review the plan. Create hero shots, details and scenes.",
       steps: ["Add product references", "Review your image plan", "Generate individual images"],
       action: "Plan an image set",
@@ -124,6 +133,7 @@ export const commerceShowcaseMessages = defineMessages({
         description: "Add a style image and your product to create an image around that layout",
         action: "Create from a style",
         alt: "Perfume product composition with soft light and open space",
+        secondaryAlt: "Ceramic tableware composition on a warm tabletop",
       },
     },
     specs: {
@@ -134,10 +144,16 @@ export const commerceShowcaseMessages = defineMessages({
     gallery: {
       label: "Starting points",
       title: "More ways to show your product",
+      pause: "Pause examples",
+      play: "Resume examples",
       previous: "Previous examples",
       next: "Next examples",
       description: "Pick a look to bring its creative brief into your workspace",
     },
-    cta: { title: "Your product. Your next great image.", action: "Start creating" },
+    cta: {
+      title: "Your product. Your next great image.",
+      action: "Start creating",
+      workspace: "Open workspace",
+    },
   },
 });

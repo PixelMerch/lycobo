@@ -1,5 +1,12 @@
 import { Button } from "@heroui/react";
-import { IconArrowUpRight, IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+import {
+  IconArrowUpRight,
+  IconChevronLeft,
+  IconChevronRight,
+  IconPlayerPause,
+  IconPlayerPlay,
+} from "@tabler/icons-react";
+import { useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { campaignFormats } from "./commerce-content";
@@ -13,12 +20,26 @@ export function Formats() {
   const remix = useTemplateRemix();
   const t = useMessages(sectionsMessages).formats;
   const heading = useMessages(commerceShowcaseMessages).gallery;
-  const gallery = useGalleryAutoplay();
+  const [paused, setPaused] = useState(false);
+  const gallery = useGalleryAutoplay(paused);
   return (
     <section className="commerce-gallery" id="formats" aria-labelledby="commerce-gallery-title">
       <div className="commerce-section commerce-section-heading">
-        <h2 id="commerce-gallery-title">{heading.title}</h2>
+        <div className="commerce-gallery-heading">
+          <h2 id="commerce-gallery-title">{heading.title}</h2>
+          <p className="commerce-gallery-subtitle">{heading.description}</p>
+        </div>
         <div className="commerce-gallery-controls">
+          {!gallery.reduced && (
+            <Button
+              isIconOnly
+              variant="ghost"
+              aria-label={paused ? heading.play : heading.pause}
+              onPress={() => setPaused(!paused)}
+            >
+              <UiIcon icon={paused ? IconPlayerPlay : IconPlayerPause} />
+            </Button>
+          )}
           <Button
             isIconOnly
             variant="ghost"
@@ -66,14 +87,26 @@ export function Formats() {
                 variant="ghost"
                 excludeFromTabOrder={copy !== 1}
                 preventFocusOnPress={copy !== 1}
-                className="commerce-template"
+                className={
+                  format.collage ? "commerce-template commerce-template-wide" : "commerce-template"
+                }
                 key={format.id}
                 aria-label={t.namedAction(t.cards[format.id].title)}
                 onPress={() => remix.select(format)}
               >
-                <span className="commerce-template-image">
-                  <img src={format.image} alt="" loading="lazy" />
-                </span>
+                {format.collage ? (
+                  <span className="commerce-template-collage">
+                    {format.collage.map((src) => (
+                      <span className="commerce-template-cell" key={src}>
+                        <img src={src} alt="" loading="lazy" />
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  <span className="commerce-template-image">
+                    <img src={format.image} alt="" loading="lazy" />
+                  </span>
+                )}
                 <span className="commerce-template-caption">
                   <span>{t.cards[format.id].title}</span>
                   <UiIcon icon={IconArrowUpRight} />
