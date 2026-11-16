@@ -1,13 +1,4 @@
-/* 固定商品轮廓，依次揭示两种场景；一次演示在五秒内结束并保留成片。 */
-.commerce-comparison-board[data-case="scene"]
-  .commerce-comparison-finished
-  .commerce-comparison-frame {
-  width: min(100%, 39svh);
-  height: auto;
-  aspect-ratio: 1;
-  margin-inline: auto;
-}
-
+/* 同款商品在固定画幅中揭示场景，不改变主体比例。 */
 .commerce-scene-demo {
   position: relative;
   width: 100%;

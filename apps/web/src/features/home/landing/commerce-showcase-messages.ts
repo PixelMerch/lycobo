@@ -4,8 +4,8 @@ import { defineMessages } from "../../../i18n/messages";
 export const commerceShowcaseMessages = defineMessages({
   "zh-CN": {
     intro: "从商品照开始",
-    title: "一张商品图，不止一种表达。",
-    description: "调整背景、光线与构图，让主图更干净，让场景更自然",
+    title: "同一件商品，\n换个好场景。",
+    description: "从干净主图到生活场景，让顾客看见商品的不同一面",
     examples: "选择商品图效果",
     reference: "商品原图",
     result: "生成效果",
@@ -32,7 +32,7 @@ export const commerceShowcaseMessages = defineMessages({
     },
     set: {
       label: "套图计划",
-      title: "一套画面，保持同一种风格。",
+      title: "主图到细节，\n成套展示。",
       choose: "选择套图类别",
       textile: "家纺",
       apparel: "服装",
@@ -102,7 +102,7 @@ export const commerceShowcaseMessages = defineMessages({
     },
     set: {
       label: "Image Set Planner",
-      title: "One collection. One visual language.",
+      title: "From the full picture.\nTo the finest detail.",
       choose: "Choose an image collection",
       textile: "Bedding",
       apparel: "Apparel",

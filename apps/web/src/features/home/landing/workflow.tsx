@@ -4,7 +4,6 @@ import { RouteLink } from "../../../components/router-link";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { commerceShowcaseMessages } from "./commerce-showcase-messages";
-import { ProductStory } from "./product-story";
 
 /** 以完整保留画幅的竖版双图参考介绍复制爆款，并直达对应工具。 */
 function SpecialistTools() {
@@ -18,8 +17,8 @@ function SpecialistTools() {
         <div className="commerce-specialist-media">
           <motion.figure
             className="commerce-specialist-primary"
-            initial={{ opacity: 0, y: 28, rotate: -8 }}
-            whileInView={{ opacity: 1, y: 0, rotate: -4 }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
@@ -27,8 +26,8 @@ function SpecialistTools() {
           </motion.figure>
           <motion.figure
             className="commerce-specialist-secondary"
-            initial={{ opacity: 0, y: 40, rotate: 8 }}
-            whileInView={{ opacity: 1, y: 0, rotate: 4 }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
@@ -52,12 +51,7 @@ function SpecialistTools() {
   );
 }
 
-/** 以构图复刻入口与连续商品演示介绍图片制作能力。 */
+/** 以实际构图参考与复制爆款入口介绍风格创作。 */
 export function Workflow() {
-  return (
-    <>
-      <SpecialistTools />
-      <ProductStory />
-    </>
-  );
+  return <SpecialistTools />;
 }

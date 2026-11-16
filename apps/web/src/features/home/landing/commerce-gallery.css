@@ -1,10 +1,8 @@
-/* 画廊承接首屏暗色渐变，结尾行动面板与页脚分层收束。 */
+/* 画廊以中性深色承接功能展示，结尾行动面板与页脚分层收束。 */
 .commerce-gallery {
   scroll-margin-top: 96px;
   padding-block: 72px 88px;
-  background:
-    radial-gradient(ellipse at 20% 58%, #a94c65b3, transparent 52%),
-    radial-gradient(ellipse at 80% 55%, #476ac7b3, transparent 52%), #111111;
+  background: #181c17;
   color: #f3f2e9;
 }
 

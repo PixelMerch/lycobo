@@ -21,11 +21,11 @@ export function CommerceLanding() {
         <div className="lp-page commerce-landing">
           <div className="lp-main">
             <Hero composerRef={composerRef} tool={tool} />
-            <Formats />
             <div className="commerce-body">
               <Cases />
               <TextileFeature />
               <Workflow />
+              <Formats />
               <FinalCta onStart={() => composerRef.current?.scrollIntoView({ block: "center" })} />
             </div>
           </div>

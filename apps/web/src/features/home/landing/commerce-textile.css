@@ -1,39 +1,36 @@
-/* 深梅色背景承托同款套图，家纺和服装在同一滚动舞台中依次展示。 */
+/* 同款套图以完整画面呈现，避免扇形叠卡遮挡商品细节。 */
 .commerce-sets-story {
-  background: radial-gradient(ellipse at 80% 50%, #58324b, transparent 70%), #251b24;
-  color: #faf5f0;
+  background: #20281f;
+  color: #f3f1eb;
 }
 .commerce-set-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   gap: 32px;
   margin-bottom: 32px;
 }
 .commerce-set-header h2 {
-  max-width: 820px;
-}
-.commerce-family-tabs {
-  border: 1px solid #ffffff33;
-  flex-shrink: 0;
+  font-size: clamp(34px, 3.4vw, 54px);
+  line-height: 1.18;
 }
 .commerce-set-board {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 24px 40px;
-  align-items: center;
+  grid-template-columns: 1.08fr 1fr;
+  gap: 20px 24px;
+  align-items: stretch;
 }
 .commerce-set-main.button {
   width: 100%;
-  height: clamp(260px, 46svh, 470px);
+  height: min(48svh, 520px);
   min-width: 0;
   padding: 0;
   position: relative;
-  border-radius: 24px;
-  overflow: clip;
-  background: #362a32;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #303a2d;
   border: 0;
-  box-shadow: 0 24px 64px #00000033;
+  box-shadow: none;
 }
 .commerce-set-main img {
   width: 100%;
@@ -43,33 +40,41 @@
 .commerce-set-caption {
   position: absolute;
   inset: auto 0 0;
-  padding: 36px 24px 18px;
+  padding: 36px 20px 16px;
   text-align: left;
   color: #fff;
-  background: linear-gradient(transparent, #141414b3);
-  font-size: 14px;
+  background: linear-gradient(transparent, #141414a6);
+  font-size: 13px;
 }
 .commerce-set-fan {
-  position: relative;
-  height: 340px;
   display: grid;
-  place-items: center;
-  pointer-events: none;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 16px;
+  min-height: 0;
 }
 .commerce-fan-card {
-  position: absolute;
-  width: 210px;
-  height: 280px;
-  padding: 6px;
-  border-radius: 20px;
-  background: #f4eae2;
-  box-shadow: 0 24px 64px #00000033;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+}
+.commerce-fan-card:last-child {
+  grid-column: 1 / -1;
 }
 .commerce-fan-card img {
+  position: absolute;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 16px;
+}
+.commerce-fan-card span {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 24px 12px 10px;
+  font-size: 12px;
+  color: white;
+  background: linear-gradient(transparent, #141414a6);
 }
 .commerce-sets-story[data-family="apparel"] .commerce-set-main img {
   object-fit: contain;
@@ -78,116 +83,83 @@
 .commerce-set-views {
   grid-column: 1 / -1;
   display: flex;
-  justify-content: center;
   flex-wrap: wrap;
   gap: 8px;
 }
 .commerce-set-views .toggle-button {
-  border-radius: 999px;
+  border-radius: 4px;
   min-height: 44px;
-  padding-inline: 20px;
-  background: #ffffff0d;
-  border: 1px solid #ffffff33;
-  color: #ffffffb3;
+  padding-inline: 16px;
+  background: transparent;
+  border: 1px solid #53604e;
+  color: #c5ccbf;
   box-shadow: none;
+  font-size: 13px;
 }
 .commerce-set-views .toggle-button[data-selected="true"] {
-  background: #f4eae2;
-  color: #30222d;
+  background: #f3f1eb;
+  color: #20281f;
   border-color: transparent;
 }
 .commerce-set-link.link {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
   width: fit-content;
-  margin: 16px auto 0;
+  margin-top: 16px;
   min-height: 44px;
-  color: #fff;
+  color: #f3f1eb;
   font-size: 14px;
   text-decoration: underline;
   text-underline-offset: 6px;
 }
-
-@media (max-width: 900px) {
-  .commerce-set-header {
-    gap: 20px;
-  }
-  .commerce-set-board {
-    gap: 20px;
-  }
-  .commerce-fan-card {
-    width: 150px;
-    height: 220px;
-  }
-}
 @media (max-width: 600px) {
   .commerce-set-header {
-    display: block;
-    margin-bottom: 18px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 20px;
   }
   .commerce-set-header h2 {
-    font-size: 26px;
-  }
-  .commerce-family-tabs {
-    width: fit-content;
-    margin-top: 16px;
+    font-size: 30px;
+    white-space: normal;
   }
   .commerce-set-board {
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
-    gap: 16px 0;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 12px;
   }
   .commerce-set-main.button {
-    height: clamp(190px, 31svh, 280px);
-    border-radius: 16px;
+    height: 32svh;
   }
   .commerce-set-fan {
-    height: 210px;
-    overflow: clip;
-  }
-  .commerce-fan-card {
-    width: 100px;
-    height: 150px;
-    padding: 4px;
-    border-radius: 12px;
-  }
-  .commerce-fan-card img {
-    border-radius: 8px;
-  }
-  .commerce-set-caption {
-    font-size: 12px;
-    padding: 28px 12px 12px;
+    gap: 8px;
   }
   .commerce-set-views {
     gap: 6px;
   }
   .commerce-set-views .toggle-button {
-    padding-inline: 12px;
+    padding-inline: 10px;
     font-size: 12px;
   }
-  .commerce-set-link.link {
-    margin-top: 8px;
+  .commerce-set-caption {
+    padding-inline: 12px;
+  }
+  .commerce-fan-card span {
+    font-size: 10px;
+    padding-inline: 6px;
   }
 }
 @media (max-height: 650px) and (min-width: 601px) {
+  .commerce-set-header h2 {
+    font-size: 32px;
+  }
   .commerce-set-header {
     margin-bottom: 16px;
   }
   .commerce-set-main.button {
-    height: 240px;
-  }
-  .commerce-set-fan {
-    height: 240px;
-  }
-  .commerce-fan-card {
-    width: 140px;
-    height: 190px;
-  }
-  .commerce-set-board {
-    row-gap: 12px;
+    height: 38svh;
   }
   .commerce-set-link.link {
-    margin-top: 0;
+    margin-top: 4px;
   }
 }

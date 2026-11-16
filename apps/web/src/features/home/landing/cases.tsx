@@ -24,10 +24,12 @@ export function Cases() {
       ref={chapter.section}
       className="commerce-comparison commerce-scroll-story"
       aria-labelledby="commerce-results-title"
+      data-case={selected.id}
     >
       <div className="commerce-story-sticky">
         <div className="commerce-section commerce-comparison-layout">
           <div className="commerce-comparison-intro">
+            <span className="commerce-editorial-label">{t.intro}</span>
             <h2 id="commerce-results-title">{t.title}</h2>
             <p className="commerce-description">{t.description}</p>
             <ToggleButtonGroup

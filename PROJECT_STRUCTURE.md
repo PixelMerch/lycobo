@@ -81,7 +81,7 @@ apps/web/src/
     ├── video/                    # 视频页面、请求与草稿；history / player / production / storyboard 分职责
     ├── home/                     # 首页、共享创作输入与提示辅助
     │   ├── home-page.tsx        # 品牌首页、专区与工作区入口
-    │   ├── landing/             # 电商专区首屏、模板画廊、效果对比、家纺与服装套图、product-story 商品连续演示；商品展示由 use-showcase-scroll.ts 按滚动阈值推进，图带横移在 use-gallery-autoplay.ts；草稿带入在 use-template-remix.tsx
+    │   ├── landing/             # 电商专区首屏、模板画廊、效果对比、家纺与服装套图与风格参考；商品展示由 use-showcase-scroll.ts 按滚动阈值推进，图带横移在 use-gallery-autoplay.ts；草稿带入在 use-template-remix.tsx
     │   ├── silk/                 # React Bits Silk 移植：着色器、WebGL 渲染器、动画状态与组件（来源见第三方材料）
     │   └── home-inspiration-gallery.tsx # 首页灵感筛选、示例预览、提示词带入；素材定义在 home-inspiration-data.ts，justified-rows.ts 按容器宽度（use-element-width.ts）算出等高行拼图
     ├── site/                     # 站点页脚：首页与用户协议、隐私政策页共用

@@ -7,7 +7,7 @@ export interface ShowcaseImage {
   alt: string;
 }
 
-/** 主图先落定再从主图方向展开细节卡，让套图关系可见且保留独立选择器。 */
+/** 主图与完整细节组成编辑式套图，细节沿阅读顺序展开并保留独立选择器。 */
 export function ImageSetBoard({
   images,
   onOpen,
@@ -28,8 +28,8 @@ export function ImageSetBoard({
           src={image?.src}
           alt={image?.alt}
           loading="lazy"
-          initial={{ opacity: 0, scale: 0.97 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.4 }}
         />
         <span className="commerce-set-caption">{image?.alt}</span>
@@ -39,25 +39,17 @@ export function ImageSetBoard({
           <motion.div
             className="commerce-fan-card"
             key={photo.src}
-            initial={
-              reducedMotion ? false : { opacity: 0, rotate: -6, x: -130, y: 12, scale: 0.94 }
-            }
-            whileInView={{
-              opacity: 1,
-              rotate: (index - 1) * 13,
-              x: (index - 1) * 78,
-              y: Math.abs(index - 1) * 20,
-              scale: 1,
-            }}
-            viewport={{ once: true, amount: 0.2 }}
+            initial={reducedMotion ? false : { opacity: 0, x: -24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
             transition={{
-              type: "spring",
-              duration: reducedMotion ? 0 : 0.8,
-              bounce: 0.1,
-              delay: reducedMotion ? 0 : 0.55 + index * 0.18,
+              duration: reducedMotion ? 0 : 0.72,
+              ease: [0.23, 1, 0.32, 1],
+              delay: reducedMotion ? 0 : index * 0.08,
             }}
           >
             <img src={photo.src} alt="" loading="lazy" />
+            <span>{photo.alt}</span>
           </motion.div>
         ))}
       </div>

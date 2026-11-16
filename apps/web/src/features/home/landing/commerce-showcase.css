@@ -69,7 +69,7 @@
 
 .commerce-specialists {
   padding-block: 104px;
-  background: linear-gradient(130deg, #d3ebf4, #dbe4f0);
+  background: #eceee6;
   width: 100%;
   padding-inline: max(40px, calc((100% - 1280px) / 2));
 }
@@ -91,11 +91,11 @@
 .commerce-specialist-primary,
 .commerce-specialist-secondary {
   margin: 0;
-  border-radius: 16px;
+  border-radius: 6px;
   overflow: clip;
   background: #eceae3;
-  border: 6px solid #fff;
-  box-shadow: 0 24px 64px #394c6826;
+  border: 0;
+  box-shadow: none;
 }
 
 .commerce-specialist-primary {
@@ -104,6 +104,7 @@
 
 .commerce-specialist-secondary {
   aspect-ratio: 4 / 5;
+  margin-bottom: 64px;
 }
 
 .commerce-specialist-primary img,
