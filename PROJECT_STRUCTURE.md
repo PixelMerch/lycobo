@@ -118,6 +118,8 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 前端由 Vite 打包，Node API 由 tsup 打包；本地开发使用隔离 Node 进程、PostgreSQL 与私有 S3。
 这些包 private，不是可直接发布到 npm 的编译 SDK。
 
+工作区当前使用 React/Vite 客户端渲染，TanStack Query 管服务端数据，Zustand 管本地交互。后续公开页需要预渲染时优先考虑静态生成；画布、上传和创作工作区仍在客户端运行。运行时、界面库和工具链的精确版本以各级 `package.json` 与 `pnpm-lock.yaml` 为准；直接依赖固定版本，升级单独验证 peer dependencies 与运行时。
+
 ## 进程与服务
 
 本地入口为 `scripts/local/dev.mjs`：Vite、Node API、独立 PG outbox 消费者和图片服务。业务基础设施固定使用本地 PostgreSQL 与私有 S3；详见 [本地开发](docs/development.md)。

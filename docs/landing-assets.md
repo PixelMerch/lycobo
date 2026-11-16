@@ -1,11 +1,13 @@
 # 电商专区素材清单
 
-本清单记录 2026-11-14 电商专区 Hero 下方改造使用的示例图片。图片是 LYCOBO 的展示素材，不是客户订单、真实评价或已保存的用户素材。
+本清单记录电商专区示例的来源。页面在 `/commerce`，实现位于 `apps/web/src/features/home/landing/`，现行视觉见 [DESIGN](../DESIGN.md#5-品牌首页与电商专区)。图片是展示素材，不代表客户订单、真实评价或在线生成。
+
+参考沿革：早期版式参考 VidMuse winning-ads 与用户确认的 [Figma Make 原型](https://www.figma.com/make/SZ7mUN04H1uhrlbjGheg2D/Build-Lycobo-Ecommerce-Landing)。随后采用 Lovart 的成套作品组织、FLORA 的输入与结果关系、Recraft 的大图比例。保留 Lycobo 品牌、原有 Hero 和真实工具入口。参考用于构图和交互研究，第三方素材边界见[来源声明](third-party.md)。
 
 - 生成工具：本地 `gen-image` 命令行工具（仓库外的素材流水线）
 - 实际模型：`gpt-image-2.6-sunburst`
 - 生成日期：2026-11-14
-- 生产提示词：P01–P11 与对比图为项目既有生成素材，当前复用范围见 [专区说明](home-replica.md)；模板提示词维护在 `apps/web/src/features/home/landing/sections-messages.ts`。
+- 生产提示词：P01–P11 与对比图为项目既有生成素材；模板提示词维护在 `apps/web/src/features/home/landing/sections-messages.ts`。
 - 存放目录：`apps/web/public/landing/commerce/`；网页使用 82% 质量的 WebP，原始 PNG 母图只留在本地生成目录。
 - 裁切：案例和模板由 `object-fit: cover` 或 ImageMagick 安全裁切；未做旧图改名或截图复用。
 

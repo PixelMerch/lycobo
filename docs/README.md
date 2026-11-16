@@ -1,6 +1,6 @@
 # 项目文档
 
-产品范围见 [PRD](../PRD.md)，视觉与交互以 [DESIGN](../DESIGN.md) 为唯一规范，代码目录与依赖方向见 [PROJECT_STRUCTURE](../PROJECT_STRUCTURE.md)。本目录只保留当前实现说明和维护手册。
+产品范围见 [PRD](../PRD.md)，视觉与交互以 [DESIGN](../DESIGN.md) 为唯一规范，代码目录与依赖方向见 [PROJECT_STRUCTURE](../PROJECT_STRUCTURE.md)。以下索引包含当前实现、维护手册与仍有效的待开发任务。
 
 ## 开发入口
 
@@ -8,11 +8,10 @@ AI 接手先看 [按任务阅读与交接](ai-workflow.md)，需要时使用 [�
 
 | 需要做什么              | 文档                                                                         |
 | ----------------------- | ---------------------------------------------------------------------------- |
-| 启动本地环境、配置服务  | [本地开发](development.md) · [技术栈](tech-stack.md)                         |
+| 启动本地环境、配置服务  | [本地开发](development.md) · [架构与目录](../PROJECT_STRUCTURE.md)                         |
 | 选择组件、统一界面      | [HeroUI 组件清单](heroui-components.md) · [UI 一致性](ui-consistency.md)     |
 | 代码规则与质量门禁      | [代码质量约束](code-quality.md)                                              |
 | 服务端结构与中文注释    | [Node + TypeScript 最佳实践](node-ts-best-practices.md)                      |
-| 学习 TypeScript 和 Node | [学习文档](learning-path.md)                                                 |
 | 验证改动                | [测试说明](testing.md)                                                       |
 | 提交、发布与回滚        | [发布流程](releasing.md) · [Cloudflare 运行与部署](cloudflare-deployment.md) |
 
@@ -27,10 +26,7 @@ AI 接手先看 [按任务阅读与交接](ai-workflow.md)，需要时使用 [�
 | 实时消息与版本更新   | [实时推送](realtime.md)                                                  |
 | 图片回调             | [图片 Webhook](image-webhooks.md)                                        |
 | 视频创作             | [视频接入](video-generation.md)                                          |
-| 电商专区参考         | [电商专区与参考页说明](home-replica.md)                                  |
 | 电商专区素材         | [专区素材清单](landing-assets.md)                                        |
-| 电商专区内容改造任务 | [电商专区设计与素材边界](home-replica.md)                                |
-| 首页内容替换方案     | [LYCOBO 首页内容与素材方案](home-lycobo-content-plan.md)                 |
 | 套图计划与链接分析   | [套图计划](product-variation-plan.md)                                    |
 | 家纺裂变             | [家纺生成](textile-generation.md) · [视角示例](textile-view-examples.md) |
 | 多区域图片修改       | [局部编辑](local-image-repair.md)                                        |
