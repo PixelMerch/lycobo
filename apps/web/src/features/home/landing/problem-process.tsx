@@ -1,107 +1,86 @@
-import { useEffect, useRef } from "react";
+import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { useMessages } from "../../../i18n/messages";
+import { commerceShowcaseMessages } from "./commerce-showcase-messages";
 import { processMessages } from "./process-messages";
+import { ProductFrame } from "./product-frame";
+import { useShowcaseScroll } from "./use-showcase-scroll";
 import "./commerce-process.css";
 
-const secondaryViews = ["scene", "detail"] as const;
+const scrollMedia =
+  "(min-width: 901px) and (min-height: 660px) and (prefers-reduced-motion: no-preference)";
+const views = ["original", "studio", "scene", "detail"] as const;
 
-/** 用灰阶图解展示同款商品从原图到主图、场景和细节的关系。 */
+/** 桌面用固定舞台推进商品图流程，窄屏按实际顺序展示全部步骤。 */
 export function ProblemProcess() {
   const t = useMessages(processMessages);
-  const board = useProcessReveal();
+  const { shots } = useMessages(commerceShowcaseMessages);
+  const chapter = useShowcaseScroll(views.length, scrollMedia);
+  const current = views[chapter.active] ?? views[0];
 
   return (
     <section
+      ref={chapter.section}
       id="problem-and-workflow"
       className="commerce-process"
       aria-labelledby="commerce-process-title"
+      data-step={chapter.active}
     >
-      <div className="commerce-section">
-        <h2 id="commerce-process-title" className="commerce-process-title">
-          <span>{t.title.lead}</span> <span>{t.title.continuation}</span>
-        </h2>
-        <div ref={board} className="commerce-process-board">
-          <ProcessFrame kind="original" label={t.frames.original} />
-          <span aria-hidden="true" className="commerce-process-connector" />
-          <div className="commerce-process-results">
-            <ProcessFrame kind="main" label={t.frames.main} />
-            <div className="commerce-process-variants">
-              {secondaryViews.map((view) => (
-                <ProcessFrame key={view} kind={view} label={t.frames[view]} />
+      <div className="commerce-section commerce-process-pin">
+        <h2 id="commerce-process-title">{t.title}</h2>
+        <div className="commerce-process-stage">
+          <div className="commerce-process-copy">
+            <ToggleButtonGroup
+              className="commerce-process-steps"
+              aria-label={t.stepsLabel}
+              orientation="vertical"
+              isDetached
+              selectionMode="single"
+              disallowEmptySelection
+              selectedKeys={[String(chapter.active)]}
+              onSelectionChange={(keys) => {
+                const [key] = keys;
+                const index = Number(key);
+                if (views[index]) chapter.select(index);
+              }}
+            >
+              {t.steps.map((step, index) => (
+                <ToggleButton id={String(index)} key={step.title}>
+                  {step.title}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+            <p>{t.steps[chapter.active]?.description}</p>
+          </div>
+          <figure className="commerce-process-visual">
+            <div className="commerce-process-layers">
+              {views.map((view) => (
+                <ProductFrame
+                  key={view}
+                  view={view}
+                  className={view === current ? "is-current" : ""}
+                />
               ))}
             </div>
-          </div>
+            <figcaption>{shots[current]}</figcaption>
+          </figure>
+          <figure className="commerce-process-source">
+            <ProductFrame view="original" />
+            <figcaption>{shots.original}</figcaption>
+          </figure>
         </div>
-        <ol aria-label={t.stepsLabel} className="commerce-process-steps">
-          {t.steps.map((step) => (
-            <li key={step}>{step}</li>
+        <ol className="commerce-process-list">
+          {views.map((view, index) => (
+            <li key={view}>
+              <h3>{t.steps[index]?.title}</h3>
+              <p>{t.steps[index]?.description}</p>
+              <figure>
+                <ProductFrame view={view} />
+                <figcaption>{shots[view]}</figcaption>
+              </figure>
+            </li>
           ))}
         </ol>
       </div>
     </section>
   );
-}
-
-function ProcessFrame({
-  kind,
-  label,
-}: {
-  kind: "original" | "main" | (typeof secondaryViews)[number];
-  label: string;
-}) {
-  return (
-    <figure className={`commerce-process-figure commerce-process-${kind}`}>
-      <div className="commerce-process-plane" aria-hidden="true">
-        <span />
-      </div>
-      <figcaption>{label}</figcaption>
-    </figure>
-  );
-}
-
-function useProcessReveal() {
-  const board = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const element = board.current;
-    if (
-      !element ||
-      typeof IntersectionObserver === "undefined" ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
-      element.getBoundingClientRect().bottom <= 0
-    )
-      return;
-
-    element.dataset.reveal = "pending";
-
-    const cleanUp = () => {
-      observer.disconnect();
-      window.removeEventListener("scroll", finishIfPassed);
-    };
-
-    const finishIfPassed = () => {
-      // 快速跨过图组时直接显示终态，回看无需补播。
-      if (element.getBoundingClientRect().bottom > 0) return;
-      delete element.dataset.reveal;
-      cleanUp();
-    };
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry || entry.intersectionRatio < 0.2) return;
-        element.dataset.reveal = "playing";
-        cleanUp();
-      },
-      { threshold: 0.2 },
-    );
-
-    window.addEventListener("scroll", finishIfPassed, { passive: true });
-    observer.observe(element);
-    return () => {
-      cleanUp();
-      delete element.dataset.reveal;
-    };
-  }, []);
-
-  return board;
 }

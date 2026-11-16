@@ -1,55 +1,45 @@
-/* 画廊以中性深色承接功能展示，结尾行动面板与页脚分层收束。 */
+/* 画廊图注贴近素材区域，收尾以橄榄绿衔接深色页脚。 */
 .commerce-gallery {
-  scroll-margin-top: 96px;
-  padding-block: 72px 88px;
-  background: #181c17;
-  color: #f3f2e9;
+  scroll-margin-top: 80px;
+  padding-block: clamp(64px, 8vw, 112px);
 }
 
 .commerce-gallery-heading {
   display: grid;
-  gap: 10px;
-}
-
-.commerce-gallery-heading h2 {
-  font-size: clamp(2rem, 1.5rem + 1.6vw, 2.75rem);
-  line-height: 1.24;
-  letter-spacing: -0.025em;
-  font-weight: 500;
+  gap: 8px;
 }
 
 .commerce-gallery-subtitle {
-  color: #ffffff99;
+  color: var(--commerce-muted);
   font-size: 15px;
   line-height: 1.6;
 }
 
 .commerce-gallery-controls {
   display: flex;
-  gap: 12px;
   flex-shrink: 0;
+  gap: 8px;
 }
 
 .commerce-gallery-controls .button {
   min-width: 44px;
   min-height: 44px;
   border-radius: 50%;
-  border: 1px solid #ffffff24;
-  background: #ffffff12;
-  color: #f3f2e9;
+  border: 1px solid #c7cabd;
+  background: transparent;
+  color: #242820;
   box-shadow: none;
 }
 
 .commerce-gallery-controls .button:hover {
-  background: #ffffff24;
-  border-color: #ffffff40;
+  background: #e8e9de;
 }
 
 .commerce-gallery-rail {
   display: flex;
   overflow-x: auto;
   scrollbar-width: none;
-  padding: 8px max(40px, calc((100% - 1320px) / 2)) 16px;
+  padding: 8px max(48px, calc((100% - 1300px) / 2)) 16px;
   overscroll-behavior-x: contain;
 }
 
@@ -66,50 +56,54 @@
 }
 
 .commerce-template.button {
-  position: relative;
-  display: block;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   flex: 0 0 auto;
-  width: clamp(236px, 19vw, 288px);
-  height: clamp(360px, 30vw, 440px);
+  width: clamp(224px, 19vw, 288px);
+  height: clamp(330px, 29vw, 440px);
   padding: 0;
-  background: #1d221e;
-  color: #fff;
-  border-radius: 16px;
-  overflow: clip;
+  border-radius: 0;
+  color: #242820;
+  background: transparent;
   white-space: normal;
   box-shadow: none;
 }
 
 .commerce-template-wide.button {
-  width: clamp(348px, 29vw, 444px);
+  width: clamp(342px, 29vw, 440px);
 }
 
 .commerce-template-image,
-.commerce-template-image img,
-.commerce-template-cell img {
+.commerce-template-collage {
   width: 100%;
   height: 100%;
+  min-height: 0;
+  border-radius: 8px;
+  overflow: clip;
+  background: #c8c7b9;
+}
+
+.commerce-template-image,
+.commerce-template-cell {
   display: block;
-  object-fit: cover;
 }
 
 .commerce-template-collage {
   display: grid;
   grid-template-columns: 1.2fr 0.85fr;
   grid-template-rows: 1fr 1fr;
-  gap: 4px;
-  width: 100%;
-  height: 100%;
-  padding: 4px;
-  background: #1a201c;
+  gap: 3px;
 }
 
 .commerce-template-cell {
-  display: block;
   min-width: 0;
   min-height: 0;
-  border-radius: 12px;
   overflow: clip;
+  background: #babbac;
+}
+
+.commerce-template-cell:nth-child(2) {
+  background: #d9d5c7;
 }
 
 .commerce-template-cell:first-child {
@@ -117,60 +111,59 @@
 }
 
 .commerce-template-caption {
-  position: absolute;
-  inset: auto 0 0;
-  padding: 52px 18px 16px;
+  width: 100%;
+  min-height: 44px;
+  padding-block: 8px;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   text-align: left;
-  font-size: 15px;
-  font-weight: 500;
-  background: linear-gradient(180deg, transparent, #0a0d0bcc);
+  font-size: 14px;
 }
 
 .commerce-template-caption svg {
   flex-shrink: 0;
 }
 
+.commerce-template.button:hover .commerce-template-caption {
+  color: #4f6b25;
+}
+
 .commerce-final {
-  background: #111612;
-  color: #f3f2e9;
-  padding-block: 88px 24px;
+  background: var(--commerce-olive);
+  color: var(--commerce-light);
+  padding-block: clamp(64px, 8vw, 112px);
 }
 
 .commerce-final-panel {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
   align-items: center;
-  justify-content: space-between;
-  gap: 32px;
-  padding: 56px 64px;
-  border-radius: 24px;
-  border: 1px solid #28322a;
-  background: linear-gradient(145deg, #1a231c 0%, #131915 100%);
+  gap: clamp(28px, 5.2vw, 84px);
 }
 
-.commerce-final-panel h2 {
-  max-width: 640px;
-  font-size: clamp(1.875rem, 1.35rem + 1.8vw, 2.75rem);
-  line-height: 1.24;
-  letter-spacing: -0.025em;
-  font-weight: 500;
+.commerce-final-copy h2 {
+  max-width: 15ch;
+  font-size: clamp(36px, 4.8vw, 70px);
 }
 
 .commerce-final-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.commerce-final-image {
+  aspect-ratio: 4 / 3;
 }
 
 .commerce-primary.button {
   min-height: 48px;
   padding-inline: 28px;
-  background: linear-gradient(120deg, #a8ff00, #54e6a5);
+  background: #c9ee97;
   color: #142000;
   border-radius: 999px;
   font-weight: 600;
@@ -178,59 +171,37 @@
 }
 
 .commerce-primary.button:hover {
-  filter: brightness(1.04);
+  background: #d8f4b1;
 }
 
 .commerce-final-secondary.link {
   display: inline-flex;
   align-items: center;
   min-height: 48px;
-  padding-inline: 22px;
-  border-radius: 999px;
-  border: 1px solid #ffffff29;
   color: #ffffffcc;
   font-size: 14px;
   font-weight: 500;
-  text-decoration: none;
+  text-decoration: underline;
+  text-underline-offset: 6px;
 }
 
 .commerce-final-secondary.link:hover {
-  border-color: #ffffff52;
   color: #fff;
-}
-
-@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .commerce-template-image img,
-  .commerce-template-cell img {
-    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .commerce-template.button:hover img {
-    transform: scale(1.025);
-  }
 }
 
 @media (max-width: 900px) {
   .commerce-gallery-rail {
     padding-inline: 24px;
   }
-
-  .commerce-final-panel {
-    padding: 40px 36px;
-  }
 }
 
 @media (max-width: 600px) {
   .commerce-gallery {
-    padding-block: 48px 56px;
+    padding-block: 52px 66px;
   }
 
   .commerce-gallery-subtitle {
     font-size: 14px;
-  }
-
-  .commerce-gallery-controls {
-    gap: 8px;
   }
 
   .commerce-gallery-rail {
@@ -244,24 +215,18 @@
 
   .commerce-template.button {
     width: 224px;
-    height: 340px;
+    height: 320px;
   }
 
   .commerce-template-wide.button {
-    width: 312px;
+    width: 280px;
   }
 
   .commerce-final {
-    padding-block: 56px 16px;
+    padding-block: 54px;
   }
 
   .commerce-final-panel {
-    padding: 32px 24px;
-    border-radius: 20px;
-    gap: 24px;
-  }
-
-  .commerce-final-actions {
-    width: 100%;
+    grid-template-columns: 1fr;
   }
 }

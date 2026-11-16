@@ -1,0 +1,105 @@
+/* 各画幅共用杯盖、杯身与底座，检查图片留白与裁切时能认出同款商品。 */
+.commerce-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 6px;
+  min-width: 0;
+  background: var(--frame-background, #c9c8bd);
+  color: #31352b;
+}
+
+.commerce-frame::before {
+  content: "";
+  position: absolute;
+  inset: var(--frame-horizon, 73%) 0 0;
+  z-index: -1;
+  background: var(--frame-surface, #b8b7aa);
+}
+
+.commerce-frame-product {
+  position: relative;
+  display: grid;
+  grid-template-rows: 17fr 64fr 19fr;
+  width: auto;
+  height: 65%;
+  aspect-ratio: 0.44;
+  border: 1px solid #4446394f;
+  border-radius: 12px;
+  transform: var(--frame-position, none);
+}
+
+.commerce-frame-product::after {
+  position: absolute;
+  content: "";
+  inset: 12% -14% auto auto;
+  width: 17%;
+  height: 30%;
+  border: 2px solid #56584c8f;
+  border-radius: 50%;
+  rotate: -16deg;
+}
+
+.commerce-frame-lid {
+  border-radius: 12px 12px 0 0;
+  border-bottom: 1px solid #41453965;
+  background: #e9e7db;
+}
+
+.commerce-frame-jar {
+  background: #ffffff30;
+}
+
+.commerce-frame-base {
+  display: grid;
+  place-items: center;
+  border-radius: 0 0 12px 12px;
+  border-top: 1px solid #41453965;
+  background: #d9d7ca;
+}
+
+.commerce-frame-base::after {
+  content: "";
+  width: 16%;
+  aspect-ratio: 1;
+  border: 1px solid #696b5c93;
+  border-radius: 50%;
+}
+
+.commerce-frame[data-view="original"] {
+  --frame-background: #ccc7bd;
+  --frame-surface: #bcb7ad;
+  --frame-horizon: 79%;
+}
+
+.commerce-frame[data-view="studio"] {
+  --frame-background: #d6d3c7;
+  --frame-surface: #c3c0b1;
+}
+
+.commerce-frame[data-view="scene"] {
+  --frame-background: #adaf9f;
+  --frame-surface: #c5c2b0;
+  --frame-position: translate(14%, 4%);
+}
+
+.commerce-frame[data-view="alternate"] {
+  --frame-background: #c9c4b8;
+  --frame-surface: #b7b1a2;
+  --frame-position: translateX(-18%);
+}
+
+.commerce-frame:is([data-view="detail"], [data-view="base"]) {
+  --frame-background: #a8a899;
+  --frame-surface: #b5b3a5;
+  --frame-horizon: 81%;
+  --frame-position: translateY(62%) scale(2.65);
+}
+
+.commerce-frame[data-view="base"] {
+  --frame-background: #bfc0af;
+  --frame-surface: #aaa998;
+  --frame-position: translateY(-64%) scale(2.25);
+}

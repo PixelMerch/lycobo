@@ -8,18 +8,25 @@ export function showcaseStep(top: number, height: number, viewport: number, coun
 }
 
 /** 滚动跨越章节阈值时切换展示，手动选择保留到下一个阈值，不拦截页面滚动。 */
-export function useShowcaseScroll(count: number) {
+export function useShowcaseScroll(count: number, scrollMedia?: string) {
   const section = useRef<HTMLElement>(null);
   const [active, setActive] = useState(0);
   useEffect(() => {
     const element = section.current;
     if (!element) return;
+    const media = scrollMedia ? window.matchMedia(scrollMedia) : undefined;
     let frame = 0;
-    let last = -1;
+    let last: number | null = -1;
+    const syncMedia = () => {
+      if (media?.matches !== false || last === null) return;
+      last = null;
+      setActive(count - 1);
+    };
+    syncMedia();
     let visible = false;
     const update = () => {
       frame = 0;
-      if (!visible || document.hidden) return;
+      if (!visible || document.hidden || media?.matches === false) return;
       const rect = element.getBoundingClientRect();
       const next = showcaseStep(rect.top, rect.height, window.innerHeight, count);
       if (next !== last) {
@@ -35,16 +42,20 @@ export function useShowcaseScroll(count: number) {
       schedule();
     });
     observer.observe(element);
+    media?.addEventListener("change", syncMedia);
+    media?.addEventListener("change", schedule);
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
     document.addEventListener("visibilitychange", schedule);
     return () => {
       observer.disconnect();
+      media?.removeEventListener("change", syncMedia);
+      media?.removeEventListener("change", schedule);
       cancelAnimationFrame(frame);
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
       document.removeEventListener("visibilitychange", schedule);
     };
-  }, [count]);
+  }, [count, scrollMedia]);
   return { section, active, select: setActive };
 }

@@ -1,195 +1,149 @@
-/* 固定图框和图注，公开预览只在图面上体现结果逐步出现。 */
+/* 固定图框里的四种画面共用同一条滚动时间线。 */
 .commerce-process {
-  color-scheme: light;
-  background: #f3f1eb;
-  color: #242820;
-  padding: clamp(64px, 8.1vw, 116px) 0 clamp(56px, 6.2vw, 88px);
+  background: var(--commerce-olive);
+  color: var(--commerce-light);
+  --commerce-muted: #d0d7c7;
+  padding-block: clamp(56px, 6vw, 92px);
   scroll-margin-top: 80px;
 }
-.commerce-process .commerce-process-title {
-  max-width: 880px;
-  margin: 0 0 32px;
-  font-size: clamp(32px, 3.4vw, 48px);
-  font-weight: 500;
-  line-height: 1.2;
-  letter-spacing: -0.025em;
-  text-wrap: balance;
+
+.commerce-process-pin h2 {
+  margin-bottom: 32px;
 }
 
-.commerce-process-title > span {
-  display: inline-block;
+.commerce-process-stage {
+  display: none;
 }
-.commerce-process-board {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(24px, 5vw, 64px) minmax(0, 3fr);
-  gap: clamp(12px, 1.8vw, 24px);
-  align-items: center;
+
+.commerce-process-copy p,
+.commerce-process-list p {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--commerce-muted);
 }
-.commerce-process-results {
-  display: grid;
-  grid-template-columns: minmax(0, 1.47fr) minmax(0, 1fr);
-  gap: 12px;
-}
-.commerce-process-variants {
-  display: grid;
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-.commerce-process-figure {
-  margin: 0;
-  min-width: 0;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: 6px;
-}
-.commerce-process-main {
-  min-height: clamp(300px, 34vw, 462px);
-}
-.commerce-process-original {
-  width: min(100%, 256px);
-  justify-self: start;
-}
-.commerce-process-plane {
-  position: relative;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border-radius: 6px;
-  background: #d8d7d3;
-}
-.commerce-process-plane span {
-  width: 27%;
-  height: 60%;
-  border: 1px solid #8e918a;
-  border-radius: 4px;
-  background: #b2b3ad;
-}
-.commerce-process-original .commerce-process-plane {
-  aspect-ratio: 1;
-  background: #e2e1dd;
-}
-.commerce-process-main .commerce-process-plane {
-  background: #d3d3cf;
-}
-.commerce-process-scene .commerce-process-plane {
-  background: linear-gradient(#dcdcd8 72%, #c8c9c3 72%);
-}
-.commerce-process-scene .commerce-process-plane span {
-  width: 21%;
-  height: 66%;
-}
-.commerce-process-detail .commerce-process-plane span {
-  width: 55%;
-  height: 115%;
-  transform: translate(15%, 16%);
-}
-.commerce-process-figure figcaption {
-  color: #52564e;
-  font-size: 13px;
-  line-height: 18px;
-}
-.commerce-process-connector {
-  height: 1px;
-  background: #91958a;
-  position: relative;
-  margin-bottom: 24px;
-}
-.commerce-process-connector::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  top: -3px;
-  width: 7px;
-  height: 7px;
-  border-top: 1px solid #777c70;
-  border-right: 1px solid #777c70;
-  transform: rotate(45deg);
-}
+
 .commerce-process-steps {
-  list-style: none;
-  padding: 18px 0 0;
-  margin: 28px 0 0;
-  border-top: 1px solid var(--commerce-line);
   display: flex;
-  gap: 12px 24px;
-  flex-wrap: wrap;
-  color: #41463d;
-  font-size: 14px;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  padding: 0;
+  gap: 0;
+  border-top: 1px solid #ffffff33;
 }
-.commerce-process-steps li + li::before {
-  content: "→";
-  display: inline-block;
-  margin-inline-end: 24px;
-  color: #74796e;
+
+.commerce-process-steps .toggle-button {
+  width: 100%;
+  min-height: 47px;
+  padding: 10px 0;
+  justify-content: space-between;
+  text-align: left;
+  color: #dde2d6;
+  border: 0;
+  border-bottom: 1px solid #ffffff33;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
 }
-@media (max-width: 800px) {
-  .commerce-process-main {
-    min-height: clamp(230px, 42vw, 330px);
-  }
+
+.commerce-process-steps .toggle-button[data-selected="true"] {
+  color: #d6f298;
+  border-color: #afcd89;
 }
-@media (max-width: 600px) {
+
+.commerce-process-copy p {
+  margin-top: 16px;
+  min-height: 4lh;
+}
+
+.commerce-process-layers {
+  display: grid;
+  aspect-ratio: 6 / 5;
+}
+
+.commerce-process-layers .commerce-frame {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+}
+
+.commerce-process-layers .commerce-frame.is-current {
+  opacity: 1;
+}
+
+.commerce-process-source .commerce-frame {
+  aspect-ratio: 1;
+  border: 1px solid #ffffff3b;
+}
+
+.commerce-process-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.commerce-process-list li {
+  padding-top: 18px;
+  border-top: 1px solid #ffffff33;
+}
+
+.commerce-process-list h3 {
+  font-size: 23px;
+  color: #fff;
+}
+
+.commerce-process-list p {
+  margin: 8px 0 16px;
+}
+
+.commerce-process-list .commerce-frame {
+  aspect-ratio: 6 / 5;
+}
+
+@media (min-width: 901px) and (min-height: 660px) and (prefers-reduced-motion: no-preference) {
   .commerce-process {
-    scroll-margin-top: 64px;
-  }
-  .commerce-process .commerce-process-title {
-    margin-bottom: 24px;
-    font-size: 28px;
-  }
-  .commerce-process-board {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 14px;
-  }
-  .commerce-process-original {
-    width: 32%;
-  }
-  .commerce-process-results {
-    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
-    gap: 8px;
-  }
-  .commerce-process-variants {
-    gap: 8px;
-  }
-  .commerce-process-connector {
-    width: 1px;
-    height: 16px;
-    margin: 0 0 0 16%;
-  }
-  .commerce-process-connector::after {
-    top: auto;
-    bottom: 0;
-    right: -3px;
-    transform: rotate(135deg);
-  }
-  .commerce-process-steps {
-    margin-top: 20px;
-    gap: 8px 10px;
-    font-size: 12px;
-  }
-  .commerce-process-steps li + li::before {
-    margin-inline-end: 10px;
-  }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .commerce-process-board[data-reveal="pending"] .commerce-process-results .commerce-process-plane {
-    opacity: 0.15;
+    min-height: calc(100svh + 470px);
+    padding-block: 54px;
   }
 
-  .commerce-process-board[data-reveal="playing"] .commerce-process-main .commerce-process-plane {
-    animation: commerce-process-appear 180ms ease-out both;
+  .commerce-process-pin {
+    position: sticky;
+    top: 112px;
   }
 
-  .commerce-process-board[data-reveal="playing"]
-    .commerce-process-variants
-    .commerce-process-plane {
-    animation: commerce-process-appear 160ms ease-out 60ms both;
+  .commerce-process-stage {
+    display: grid;
+    grid-template-columns: minmax(210px, 0.75fr) minmax(0, 1.65fr) minmax(76px, 0.35fr);
+    align-items: end;
+    gap: clamp(14px, 3vw, 44px);
+    padding-top: 22px;
+    border-top: 1px solid #ffffff33;
+  }
+
+  .commerce-process-copy {
+    align-self: center;
+  }
+
+  .commerce-process-visual {
+    justify-self: center;
+    width: min(100%, calc((100svh - 350px) * 1.2));
+  }
+
+  .commerce-process-list {
+    display: none;
   }
 }
 
-@keyframes commerce-process-appear {
-  from {
-    opacity: 0.15;
+@media (max-width: 600px) {
+  .commerce-process-list {
+    grid-template-columns: 1fr;
+    gap: 24px;
   }
-  to {
-    opacity: 1;
+
+  .commerce-process-pin h2 {
+    margin-bottom: 26px;
   }
 }

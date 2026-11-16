@@ -23,9 +23,6 @@ export function SiteFooter() {
       <div className="commerce-footer-inner">
         <div className="commerce-footerGrid">
           <div className="commerce-footerBrand">
-            <RouteLink aria-label={t.homeAria} className="commerce-footerBrandLink" to="/">
-              <BrandLogo className="commerce-footerLogo" title={t.homeAria} />
-            </RouteLink>
             <p>{t.tagline}</p>
           </div>
 
@@ -59,6 +56,10 @@ export function SiteFooter() {
             </div>
           </nav>
         </div>
+
+        <RouteLink aria-label={t.homeAria} className="commerce-footerBrandLink" to="/">
+          <BrandLogo className="commerce-footerLogo" title={t.homeAria} />
+        </RouteLink>
 
         <div className="commerce-footerBottom">
           <p>{t.copyright}</p>

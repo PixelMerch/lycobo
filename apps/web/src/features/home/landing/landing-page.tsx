@@ -2,17 +2,17 @@ import { MotionConfig } from "motion/react";
 import { useRef } from "react";
 import { useAppLocation } from "../../../i18n/use-localized-navigation";
 import { commerceToolFromSearch } from "../../commerce/commerce-tools";
-import { Cases } from "./cases";
 import { FinalCta } from "./final-cta";
 import { Formats } from "./formats";
 import { Hero } from "./hero";
+import { ImageSetFeature } from "./image-set-feature";
 import { ProblemProcess } from "./problem-process";
+import { ProductIntro } from "./product-intro";
+import { ProductScenes } from "./product-scenes";
 import { SiteFooter } from "./site-footer";
-import { TextileFeature } from "./textile-feature";
-import { Workflow } from "./workflow";
 import "./landing.css";
 
-/** 电商专区从商品画廊进入效果对比、细节套图与创作入口。 */
+/** 电商专区从首屏进入同款商品的流程、样片、模板与创作入口。 */
 export function CommerceLanding() {
   const tool = commerceToolFromSearch(useAppLocation().search);
   const composerRef = useRef<HTMLElement>(null);
@@ -23,10 +23,10 @@ export function CommerceLanding() {
           <div className="lp-main">
             <Hero composerRef={composerRef} tool={tool} />
             <div className="commerce-body">
+              <ProductIntro />
               <ProblemProcess />
-              <Cases />
-              <TextileFeature />
-              <Workflow />
+              <ProductScenes />
+              <ImageSetFeature />
               <Formats />
               <FinalCta onStart={() => composerRef.current?.scrollIntoView({ block: "center" })} />
             </div>

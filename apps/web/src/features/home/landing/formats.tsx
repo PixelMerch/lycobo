@@ -9,18 +9,42 @@ import {
 import { useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
-import { campaignFormats } from "./commerce-content";
+import { type CampaignFormat, campaignFormats, type FormatId } from "./commerce-content";
 import { commerceShowcaseMessages } from "./commerce-showcase-messages";
+import { ProductFrame, type ProductView } from "./product-frame";
 import { sectionsMessages } from "./sections-messages";
 import { useGalleryAutoplay } from "./use-gallery-autoplay";
 import { useTemplateRemix } from "./use-template-remix";
 
-/** 三组首尾衔接的案例图带连续横移，辅助副本仅供指针操作，键盘只浏览中间一组。 */
+const exampleViews: Partial<Record<FormatId, ProductView>> = {
+  studio: "studio",
+  everyday: "scene",
+  texture: "detail",
+  backgrounds: "alternate",
+};
+
+function TemplatePreview({ format }: { format: CampaignFormat }) {
+  const view = exampleViews[format.id];
+  if (view) return <ProductFrame view={view} className="commerce-template-image" />;
+  if (!format.collage) return <span className="commerce-template-image" aria-hidden="true" />;
+
+  return (
+    <span className="commerce-template-collage" aria-hidden="true">
+      {format.id === "image-set"
+        ? (["studio", "scene", "detail"] as const).map((shot) => (
+            <ProductFrame key={shot} view={shot} className="commerce-template-cell" />
+          ))
+        : format.collage.map((src) => <span className="commerce-template-cell" key={src} />)}
+    </span>
+  );
+}
+
+/** 模板图带默认静止，保留手动浏览、轮播开关和现有创作跳转。 */
 export function Formats() {
   const remix = useTemplateRemix();
   const t = useMessages(sectionsMessages).formats;
   const heading = useMessages(commerceShowcaseMessages).gallery;
-  const [paused, setPaused] = useState(false);
+  const [paused, setPaused] = useState(true);
   const gallery = useGalleryAutoplay(paused);
   return (
     <section className="commerce-gallery" id="formats" aria-labelledby="commerce-gallery-title">
@@ -94,19 +118,7 @@ export function Formats() {
                 aria-label={t.namedAction(t.cards[format.id].title)}
                 onPress={() => remix.select(format)}
               >
-                {format.collage ? (
-                  <span className="commerce-template-collage">
-                    {format.collage.map((src) => (
-                      <span className="commerce-template-cell" key={src}>
-                        <img src={src} alt="" loading="lazy" />
-                      </span>
-                    ))}
-                  </span>
-                ) : (
-                  <span className="commerce-template-image">
-                    <img src={format.image} alt="" loading="lazy" />
-                  </span>
-                )}
+                <TemplatePreview format={format} />
                 <span className="commerce-template-caption">
                   <span>{t.cards[format.id].title}</span>
                   <UiIcon icon={IconArrowUpRight} />

@@ -1,129 +1,168 @@
-/* 统一内容容器与浅色展示节奏，不用重复外框卡片切割页面。 */
+/* 电商正文沿用纸面与橄榄绿，场景色集中在图框内。 */
+.commerce-landing.lp-page {
+  overflow: clip;
+}
+
 .commerce-body {
-  background: #faf9f6;
-  color: #242820;
+  background: #f1ede4;
+  color: #20271c;
   color-scheme: light;
-  --commerce-muted: #5d6357;
-  --commerce-line: #dedfd8;
+  --commerce-paper: #f1ede4;
+  --commerce-sage: #e1e5d6;
+  --commerce-olive: #293326;
+  --commerce-muted: #515948;
+  --commerce-light: #f5f2e9;
+  --commerce-heading-size: clamp(36px, 5vw, 76px);
 }
 
 .commerce-body ::selection {
-  background: #c5e5a4;
+  background: #c6eba0;
   color: #1e2a18;
 }
 
 .commerce-section {
-  width: min(1320px, calc(100% - 80px));
+  width: min(1300px, calc(100% - 96px));
   margin-inline: auto;
-  scroll-margin-top: 72px;
 }
 
 .commerce-section-heading {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  gap: 32px;
+  gap: 24px;
   margin-bottom: 32px;
 }
 
 .commerce-body h2 {
-  font-size: clamp(1.875rem, 1.35rem + 1.6vw, 2.75rem);
-  line-height: 1.26;
-  letter-spacing: -0.025em;
+  font-size: var(--commerce-heading-size);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
   font-weight: 500;
   white-space: pre-line;
   text-wrap: balance;
 }
 
-.commerce-body h3 {
-  font-size: 22px;
-  line-height: 1.38;
-  letter-spacing: -0.02em;
-  font-weight: 500;
+.commerce-body figure {
+  margin: 0;
+  min-width: 0;
 }
 
-.commerce-description {
-  max-width: 480px;
-  margin-top: 14px;
-  font-size: 15px;
-  line-height: 1.75;
+.commerce-body figcaption {
+  margin-top: 8px;
+  font-size: 13px;
   color: var(--commerce-muted);
 }
 
 .commerce-text-link.link {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  color: #242a1e;
-  font-size: 14px;
+  gap: 8px;
+  min-height: 44px;
+  width: fit-content;
+  color: inherit;
+  font-size: 15px;
   font-weight: 500;
   text-decoration: underline;
   text-underline-offset: 6px;
-  min-height: 44px;
   white-space: normal;
 }
 
 .commerce-text-link.link:hover {
-  color: #4f6b25;
+  color: #4d652c;
 }
 
-.commerce-specialists {
-  padding-block: 104px;
-  background: #eceee6;
-  width: 100%;
-  padding-inline: max(40px, calc((100% - 1280px) / 2));
+.commerce-intro {
+  padding-block: clamp(62px, 7.6vw, 115px) clamp(72px, 8vw, 120px);
 }
 
-.commerce-specialist {
-  display: grid;
-  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
-  align-items: center;
-  gap: 80px;
+.commerce-intro-copy {
+  margin-inline: auto;
+  text-align: center;
 }
 
-.commerce-specialist-media {
-  display: grid;
-  grid-template-columns: 0.78fr 1fr;
-  align-items: end;
-  gap: 20px;
-}
-
-.commerce-specialist-primary,
-.commerce-specialist-secondary {
-  margin: 0;
-  border-radius: 6px;
-  overflow: clip;
-  background: #eceae3;
-  border: 0;
-  box-shadow: none;
-}
-
-.commerce-specialist-primary {
-  aspect-ratio: 9 / 16;
-}
-
-.commerce-specialist-secondary {
-  aspect-ratio: 4 / 5;
-  margin-bottom: 64px;
-}
-
-.commerce-specialist-primary img,
-.commerce-specialist-secondary img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.commerce-specialist-copy {
-  max-width: 440px;
-}
-
-.commerce-specialist-copy p {
+.commerce-intro-copy p,
+.commerce-scenes-copy p,
+.commerce-set-header p {
   color: var(--commerce-muted);
-  font-size: 15px;
-  line-height: 1.75;
-  margin: 18px 0 24px;
-  max-width: 380px;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.commerce-intro-copy p {
+  max-width: 48ch;
+  margin: 16px auto 0;
+}
+
+.commerce-intro-spread {
+  display: grid;
+  grid-template-columns: minmax(0, 0.66fr) minmax(0, 1.22fr) minmax(0, 0.7fr);
+  gap: clamp(12px, 3.6vw, 56px);
+  align-items: start;
+  max-width: 1070px;
+  margin: clamp(28px, 4.8vw, 68px) auto 0;
+}
+
+.commerce-intro-spread > figure[data-view="original"] {
+  margin-top: 18%;
+}
+
+.commerce-intro-spread > figure[data-view="detail"] {
+  margin-top: 38%;
+  --commerce-intro-ratio: 5 / 4;
+}
+
+.commerce-intro-spread .commerce-frame {
+  aspect-ratio: var(--commerce-intro-ratio, 1);
+}
+
+.commerce-scenes {
+  background: var(--commerce-paper);
+  padding-block: clamp(70px, 9vw, 128px);
+}
+
+.commerce-scenes-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(240px, 0.88fr);
+  grid-template-areas: "photos copy";
+  align-items: center;
+  gap: clamp(36px, 6vw, 88px);
+}
+
+.commerce-scenes-copy {
+  grid-area: copy;
+}
+
+.commerce-scenes-copy p {
+  margin-block: 20px 14px;
+  max-width: 34ch;
+}
+
+.commerce-scenes-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 22px;
+}
+
+.commerce-scenes-photos {
+  grid-area: photos;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.76fr);
+  align-items: center;
+  gap: clamp(12px, 2.4vw, 32px);
+}
+
+.commerce-scenes-photos .commerce-frame {
+  aspect-ratio: 4 / 5;
+}
+
+.commerce-scenes-photos figure:last-child .commerce-frame {
+  aspect-ratio: 1;
+}
+
+@media (min-width: 901px) {
+  .commerce-scenes-copy {
+    --commerce-heading-size: clamp(36px, 4.2vw, 62px);
+  }
 }
 
 @media (max-width: 900px) {
@@ -131,22 +170,9 @@
     width: calc(100% - 48px);
   }
 
-  .commerce-section-heading {
-    gap: 24px;
-    align-items: flex-start;
-  }
-
-  .commerce-specialists {
-    padding-block: 72px;
-  }
-
-  .commerce-specialist {
+  .commerce-scenes-layout {
     grid-template-columns: 1fr;
-    gap: 36px;
-  }
-
-  .commerce-specialist-media {
-    max-width: 560px;
+    grid-template-areas: "copy" "photos";
   }
 }
 
@@ -156,24 +182,29 @@
   }
 
   .commerce-section-heading {
-    margin-bottom: 24px;
-    align-items: flex-end;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 22px;
   }
 
-  .commerce-specialists {
-    padding-block: 56px;
+  .commerce-body {
+    --commerce-heading-size: clamp(34px, 9vw, 50px);
   }
 
-  .commerce-specialist {
-    gap: 28px;
+  .commerce-intro-copy {
+    text-align: left;
   }
 
-  .commerce-specialist-media {
-    gap: 12px;
+  .commerce-intro-spread {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.3fr);
   }
 
-  .commerce-specialist-primary,
-  .commerce-specialist-secondary {
-    border-radius: 12px;
+  .commerce-intro-spread > figure[data-view="original"] {
+    margin-top: 35%;
+  }
+
+  .commerce-intro-spread > figure[data-view="detail"] {
+    display: none;
   }
 }
