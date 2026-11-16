@@ -6,14 +6,14 @@
 
 AI 接手先看 [按任务阅读与交接](ai-workflow.md)，需要时使用 [任务模板](templates/ai-task.md) 和 [交接模板](templates/ai-handoff.md)。
 
-| 需要做什么              | 文档                                                                         |
-| ----------------------- | ---------------------------------------------------------------------------- |
-| 启动本地环境、配置服务  | [本地开发](development.md) · [架构与目录](../PROJECT_STRUCTURE.md)                         |
-| 选择组件、统一界面      | [HeroUI 组件清单](heroui-components.md) · [UI 一致性](ui-consistency.md)     |
-| 代码规则与质量门禁      | [代码质量约束](code-quality.md)                                              |
-| 服务端结构与中文注释    | [Node + TypeScript 最佳实践](node-ts-best-practices.md)                      |
-| 验证改动                | [测试说明](testing.md)                                                       |
-| 提交、发布与回滚        | [发布流程](releasing.md) · [Cloudflare 运行与部署](cloudflare-deployment.md) |
+| 需要做什么             | 文档                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------- |
+| 启动本地环境、配置服务 | [本地开发](development.md) · [架构与目录](../PROJECT_STRUCTURE.md)           |
+| 选择组件、统一界面     | [HeroUI 组件清单](heroui-components.md) · [UI 一致性](ui-consistency.md)     |
+| 代码规则与质量门禁     | [代码质量约束](code-quality.md)                                              |
+| 服务端结构与中文注释   | [Node + TypeScript 最佳实践](node-ts-best-practices.md)                      |
+| 验证改动               | [测试说明](testing.md)                                                       |
+| 提交、发布与回滚       | [发布流程](releasing.md) · [Cloudflare 运行与部署](cloudflare-deployment.md) |
 
 ## 功能与接口
 

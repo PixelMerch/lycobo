@@ -1,39 +1,17 @@
-import { MotionConfig } from "motion/react";
-import { useRef } from "react";
-import { useAppLocation } from "../../../i18n/use-localized-navigation";
-import { commerceToolFromSearch } from "../../commerce/commerce-tools";
-import { FinalCta } from "./final-cta";
-import { Formats } from "./formats";
-import { Hero } from "./hero";
-import { ImageSetFeature } from "./image-set-feature";
-import { ProblemProcess } from "./problem-process";
-import { ProductIntro } from "./product-intro";
-import { ProductScenes } from "./product-scenes";
-import { SiteFooter } from "./site-footer";
-import "./landing.css";
+import { useMessages } from "../../../i18n/messages";
+import { referenceMessages } from "./reference-messages";
+import "./reference.css";
 
-/** 电商专区从首屏进入同款商品的流程、样片、模板与创作入口。 */
+/** 独立呈现用户提供的原版复刻稿，隔离参考页脚本与 Lycobo 业务会话。 */
 export function CommerceLanding() {
-  const tool = commerceToolFromSearch(useAppLocation().search);
-  const composerRef = useRef<HTMLElement>(null);
+  const t = useMessages(referenceMessages);
   return (
-    <MotionConfig reducedMotion="user">
-      <div className="landing-page">
-        <div className="lp-page commerce-landing">
-          <div className="lp-main">
-            <Hero composerRef={composerRef} tool={tool} />
-            <div className="commerce-body">
-              <ProductIntro />
-              <ProblemProcess />
-              <ProductScenes />
-              <ImageSetFeature />
-              <Formats />
-              <FinalCta onStart={() => composerRef.current?.scrollIntoView({ block: "center" })} />
-            </div>
-          </div>
-          <SiteFooter />
-        </div>
-      </div>
-    </MotionConfig>
+    <iframe
+      className="openart-reference"
+      title={t.title}
+      src="/openart-reference/index.html"
+      sandbox="allow-scripts"
+      referrerPolicy="no-referrer"
+    />
   );
 }

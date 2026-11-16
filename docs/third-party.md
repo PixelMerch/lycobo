@@ -21,9 +21,13 @@
 
 上游采用 MIT + Commons Clause，版权 David Haz (2026)。完整许可保留在 [React Bits 许可](licenses/react-bits.md)：允许作为应用、网站或产品的一部分使用，不允许出售或重新分发组件本身／组件包。本站仅将其用于首页背景，不提供 React Bits 组件或工具分发服务。
 
-## React Bits Gradient Waves
+## OpenArt 页面参考
 
-首页首屏的缎面光波背景改编自 [React Bits Gradient Waves](https://reactbits.dev/backgrounds/gradient-waves)，来源 [DavidHDev/react-bits](https://github.com/DavidHDev/react-bits/tree/ed33ebe4acfe29e60fb759bcccc70a138ce2dcef/src/ts-default/Backgrounds/GradientWaves)，固定 commit `ed33ebe4acfe29e60fb759bcccc70a138ce2dcef`。代码位于 `apps/web/src/features/home/gradient-waves/`：保留射线步进与缎面光波着色器，去掉鼠标视差和点击涟漪，按本仓库规则拆分为着色器、渲染器和组件；增加离屏／后台暂停、像素比上限、移动端低质量档和减少动态效果静态帧，未增加第三方运行时依赖。
+2026-11-16 用户提供本地 `page-take/recordings/openairt/source/`，并明确要求先完全复刻，再改为自己的品牌。`apps/web/public/openart-reference/index.html` 是从该录制文档生成的隔离参考稿，保留 OpenArt 的 HTML/CSS、导航与交互动效脚本、字标及 Bricolage Grotesque/Inter 录制字体；照片与视频替换为灰阶占位。
+
+快照只保留导航、Director 案例带、功能演示、FAQ 与主页动效脚本，剔除统计、广告、归因和远程加载器；禁止网络连接、表单提交与打开外部窗口。原站内容、模型、优惠和评价属于 OpenArt，不能转述为 Lycobo 的产品事实。没有声称原站代码或商标属于本项目，也未作公开发布。后续正式品牌版需替换原站内容与标识，并按项目组件和双语规范实现。
+
+用户明确批准 Biome 仅排除这一个生成 HTML；应用容器与其他代码不豁免。旧电商首屏的 Gradient Waves 组件随整页重做移除，React Bits Silk 仍用于其他页面，许可继续保留。
 
 ## 阿里巴巴普惠体 3.0
 

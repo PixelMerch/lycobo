@@ -4,18 +4,18 @@
 
 ## 按任务读取
 
-| 任务 | 阅读入口 |
-| --- | --- |
-| 产品范围 | [PRD](../PRD.md) 的定位、状态标记与对应功能。新增入口、模型、计费或外部能力时核对实现与规划边界。 |
-| 前端页面、布局或文案 | [Web 规则](../apps/web/AGENTS.md)、[DESIGN](../DESIGN.md) 的定稿边界与对应章节。涉及共享 token、控件或反馈时补读相应规则；浮层补读材质、关闭、焦点和具名例外。新建控件先查 [HeroUI 清单](heroui-components.md) 与 [UI 一致性](ui-consistency.md)。 |
-| 登录、账户、鉴权 | 涉及的 Web/API/DB 规则、[企业鉴权](enterprise-auth.md)、[返回规范](api-response.md)。改登录外观读 DESIGN「登录」；[账号设置任务书](account-settings-tasks.md) 含待开发项。 |
+| 任务                   | 阅读入口                                                                                                                                                                                                                                                                                              |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 产品范围               | [PRD](../PRD.md) 的定位、状态标记与对应功能。新增入口、模型、计费或外部能力时核对实现与规划边界。                                                                                                                                                                                                     |
+| 前端页面、布局或文案   | [Web 规则](../apps/web/AGENTS.md)、[DESIGN](../DESIGN.md) 的定稿边界与对应章节。涉及共享 token、控件或反馈时补读相应规则；浮层补读材质、关闭、焦点和具名例外。新建控件先查 [HeroUI 清单](heroui-components.md) 与 [UI 一致性](ui-consistency.md)。                                                    |
+| 登录、账户、鉴权       | 涉及的 Web/API/DB 规则、[企业鉴权](enterprise-auth.md)、[返回规范](api-response.md)。改登录外观读 DESIGN「登录」；[账号设置任务书](account-settings-tasks.md) 含待开发项。                                                                                                                            |
 | 提交、计费、重试、回调 | [API](../apps/api/AGENTS.md)、[Worker](../apps/worker/AGENTS.md)、[共享包](../packages/AGENTS.md)、[DB](../packages/db/AGENTS.md) 中涉及的规则。按需读 [生图 API](image-generation-api.md)、[企业钱包](enterprise-wallet.md)、[图片回调](image-webhooks.md) 与 [业务测试索引](business-test-map.md)。 |
-| 上传、转换、媒体访问 | [对象存储](s3-storage.md)、[Cloudflare 部署](cloudflare-deployment.md) 的图片处理与绑定、生图 API 上传部分。实现从 `packages/storage/src` 和图片素材仓储查起。 |
-| 主动推送、站内消息 | 各层 `realtime`、[实时推送](realtime.md) 与 [业务测试索引](business-test-map.md)。UI 读 DESIGN「右侧消息」与「反馈、响应式与维护约束」。 |
-| SQL、表、迁移 | [DB 规则](../packages/db/AGENTS.md)、PostgreSQL 技能、[数据库命名](database-naming.md) 和对应业务文档。追查访问者和消费者。 |
-| API、Worker、包与重构 | [架构与目录](../PROJECT_STRUCTURE.md) 中涉及的目录和依赖方向、[服务端分层与中文注释](node-ts-best-practices.md)。 |
-| 发布、绑定、域名、回滚 | [发布流程](releasing.md)、[Cloudflare 部署](cloudflare-deployment.md)、对应 Wrangler 配置。 |
-| 文档维护 | [文档索引](README.md) 与主题唯一来源。核对本地引用和对应实现。 |
+| 上传、转换、媒体访问   | [对象存储](s3-storage.md)、[Cloudflare 部署](cloudflare-deployment.md) 的图片处理与绑定、生图 API 上传部分。实现从 `packages/storage/src` 和图片素材仓储查起。                                                                                                                                        |
+| 主动推送、站内消息     | 各层 `realtime`、[实时推送](realtime.md) 与 [业务测试索引](business-test-map.md)。UI 读 DESIGN「右侧消息」与「反馈、响应式与维护约束」。                                                                                                                                                              |
+| SQL、表、迁移          | [DB 规则](../packages/db/AGENTS.md)、PostgreSQL 技能、[数据库命名](database-naming.md) 和对应业务文档。追查访问者和消费者。                                                                                                                                                                           |
+| API、Worker、包与重构  | [架构与目录](../PROJECT_STRUCTURE.md) 中涉及的目录和依赖方向、[服务端分层与中文注释](node-ts-best-practices.md)。                                                                                                                                                                                     |
+| 发布、绑定、域名、回滚 | [发布流程](releasing.md)、[Cloudflare 部署](cloudflare-deployment.md)、对应 Wrangler 配置。                                                                                                                                                                                                           |
+| 文档维护               | [文档索引](README.md) 与主题唯一来源。核对本地引用和对应实现。                                                                                                                                                                                                                                        |
 
 用 `rg -n '^#{1,4} ' DESIGN.md` 定位标题，再读需要的范围。后端改动若影响界面状态或交互，也要读对应视觉规则。技能只读适用的 SKILL.md 和本次需要的参考。既有规则、接口与业务事实以原处为准。
 

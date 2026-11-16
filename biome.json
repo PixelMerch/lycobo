@@ -12,7 +12,8 @@
       "!!docs/design",
       "!!**/pnpm-lock.yaml",
       "!!worker-configuration.d.ts",
-      "!!packages/db/migrations"
+      "!!packages/db/migrations",
+      "!!apps/web/public/openart-reference/index.html"
     ]
   },
   "formatter": {
