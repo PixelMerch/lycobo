@@ -25,14 +25,6 @@
   margin-inline: auto;
 }
 
-.commerce-section-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 24px;
-  margin-bottom: 32px;
-}
-
 .commerce-body h2 {
   font-size: var(--commerce-heading-size);
   line-height: 1.05;
@@ -179,13 +171,6 @@
 @media (max-width: 600px) {
   .commerce-section {
     width: calc(100% - 40px);
-  }
-
-  .commerce-section-heading {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 14px;
-    margin-bottom: 22px;
   }
 
   .commerce-body {

@@ -29,10 +29,6 @@ export const commerceShowcaseMessages = defineMessages({
     },
     gallery: {
       title: "选一个画面，开始制作",
-      pause: "暂停案例轮播",
-      play: "开始案例轮播",
-      previous: "向前浏览案例",
-      next: "向后浏览案例",
       description: "从模板带入创作要求，到工作区换成自己的商品。",
     },
     cta: { title: "下一套图，\n从你的商品开始", action: "开始创作", workspace: "进入工作区" },
@@ -67,10 +63,6 @@ export const commerceShowcaseMessages = defineMessages({
     },
     gallery: {
       title: "Pick a look to start with",
-      pause: "Pause examples",
-      play: "Play examples",
-      previous: "Previous examples",
-      next: "Next examples",
       description: "Bring a creative brief into the workspace and add your own product.",
     },
     cta: {

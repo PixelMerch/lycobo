@@ -7,6 +7,7 @@
 .commerce-gallery-heading {
   display: grid;
   gap: 8px;
+  margin-bottom: 32px;
 }
 
 .commerce-gallery-subtitle {
@@ -15,44 +16,14 @@
   line-height: 1.6;
 }
 
-.commerce-gallery-controls {
-  display: flex;
-  flex-shrink: 0;
-  gap: 8px;
-}
-
-.commerce-gallery-controls .button {
-  min-width: 44px;
-  min-height: 44px;
-  border-radius: 50%;
-  border: 1px solid #c7cabd;
-  background: transparent;
-  color: #242820;
-  box-shadow: none;
-}
-
-.commerce-gallery-controls .button:hover {
-  background: #e8e9de;
-}
-
 .commerce-gallery-rail {
   display: flex;
+  gap: 20px;
   overflow-x: auto;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: #aab09d transparent;
   padding: 8px max(48px, calc((100% - 1300px) / 2)) 16px;
   overscroll-behavior-x: contain;
-}
-
-.commerce-gallery-rail::-webkit-scrollbar {
-  display: none;
-}
-
-.commerce-gallery-group {
-  display: flex;
-  flex: none;
-  align-items: stretch;
-  gap: 20px;
-  padding-right: 20px;
 }
 
 .commerce-template.button {
@@ -116,14 +87,8 @@
   padding-block: 8px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
   text-align: left;
   font-size: 14px;
-}
-
-.commerce-template-caption svg {
-  flex-shrink: 0;
 }
 
 .commerce-template.button:hover .commerce-template-caption {
@@ -204,13 +169,13 @@
     font-size: 14px;
   }
 
-  .commerce-gallery-rail {
-    padding-inline: 20px;
+  .commerce-gallery-heading {
+    margin-bottom: 22px;
   }
 
-  .commerce-gallery-group {
+  .commerce-gallery-rail {
     gap: 14px;
-    padding-right: 14px;
+    padding-inline: 20px;
   }
 
   .commerce-template.button {
