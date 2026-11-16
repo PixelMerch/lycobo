@@ -4,6 +4,7 @@ import { useMessages } from "../../../i18n/messages";
 import { commerceShowcaseMessages } from "./commerce-showcase-messages";
 import { processMessages } from "./process-messages";
 import { ProductFrame } from "./product-frame";
+import { ProductProcessStage } from "./product-process-stage";
 import { useShowcaseScroll } from "./use-showcase-scroll";
 import "./commerce-process.css";
 
@@ -11,7 +12,7 @@ const scrollMedia =
   "(min-width: 901px) and (min-height: 660px) and (prefers-reduced-motion: no-preference)";
 const views = ["original", "studio", "scene", "detail"] as const;
 
-/** 桌面用固定舞台推进商品图流程，窄屏按实际顺序展示全部步骤。 */
+/** 桌面跟随滚动，窄屏可点选步骤，减少动态效果时按顺序展示静态图。 */
 export function ProblemProcess() {
   const t = useMessages(processMessages);
   const { shots } = useMessages(commerceShowcaseMessages);
@@ -56,15 +57,7 @@ export function ProblemProcess() {
             <p>{t.steps[chapter.active]?.description}</p>
           </div>
           <figure className="commerce-process-visual">
-            <div className="commerce-shot-layers commerce-process-layers">
-              {views.map((view) => (
-                <ProductFrame
-                  key={view}
-                  view={view}
-                  className={view === current ? "is-current" : ""}
-                />
-              ))}
-            </div>
+            <ProductProcessStage progress={chapter.progress} />
             <figcaption>{shots[current]}</figcaption>
           </figure>
           <figure className="commerce-process-source">

@@ -12,7 +12,9 @@
 }
 
 .commerce-process-stage {
-  display: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
 }
 
 .commerce-process-copy p,
@@ -23,12 +25,11 @@
 }
 
 .commerce-process-steps {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   width: 100%;
   padding: 0;
-  gap: 0;
+  gap: 0 16px;
   border-top: 1px solid #ffffff33;
 }
 
@@ -52,12 +53,65 @@
 }
 
 .commerce-process-copy p {
-  margin-top: 16px;
-  min-height: 4lh;
+  margin-top: 12px;
+  min-height: 3lh;
 }
 
-.commerce-process-layers {
+.commerce-process-visual {
+  grid-row: 2;
+}
+
+.commerce-process-source {
+  display: none;
+}
+
+.commerce-process-frame {
+  position: relative;
+  overflow: hidden;
   aspect-ratio: 6 / 5;
+  border-radius: 6px;
+  background: #b5b1a3;
+}
+
+.commerce-process-lighting,
+.commerce-process-setting,
+.commerce-process-object {
+  position: absolute;
+  inset: 0;
+}
+
+.commerce-process-lighting {
+  background: linear-gradient(148deg, #f0e7ce, #b7aa90 78%);
+}
+
+.commerce-process-setting {
+  background: linear-gradient(#7e8d70 80%, #cfc2a3 80%);
+}
+
+.commerce-process-setting::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    124deg,
+    transparent 22%,
+    #f6efd459 22% 39%,
+    transparent 39% 45%,
+    #f6efd43b 45% 61%,
+    transparent 61%
+  );
+}
+
+.commerce-process-object {
+  display: grid;
+  place-items: center;
+}
+
+.commerce-process-crop {
+  position: absolute;
+  inset: 22% 44% 12% 20%;
+  border: 1px solid #fff9;
+  border-radius: 4px;
 }
 
 .commerce-process-progress {
@@ -79,7 +133,7 @@
 }
 
 .commerce-process-list {
-  display: grid;
+  display: none;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 22px;
   margin: 0;
@@ -107,7 +161,7 @@
 
 @media (min-width: 901px) and (min-height: 660px) and (prefers-reduced-motion: no-preference) {
   .commerce-process {
-    min-height: calc(100svh + 470px);
+    min-height: calc(100svh + 720px);
     padding-block: 54px;
   }
 
@@ -117,7 +171,6 @@
   }
 
   .commerce-process-stage {
-    display: grid;
     grid-template-columns: minmax(210px, 0.75fr) minmax(0, 1.65fr) minmax(76px, 0.35fr);
     align-items: end;
     gap: 20px clamp(14px, 3vw, 44px);
@@ -127,13 +180,28 @@
     align-self: center;
   }
 
+  .commerce-process-steps {
+    grid-template-columns: 1fr;
+  }
+
   .commerce-process-visual {
+    grid-row: auto;
     justify-self: center;
     width: min(100%, calc((100svh - 350px) * 1.2));
   }
 
-  .commerce-process-list {
+  .commerce-process-source {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .commerce-process-stage {
     display: none;
+  }
+
+  .commerce-process-list {
+    display: grid;
   }
 }
 

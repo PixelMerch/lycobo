@@ -1,4 +1,4 @@
-import { useMotionValue } from "motion/react";
+import { animate, useMotionValue } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 function showcaseProgress(top: number, height: number, viewport: number) {
@@ -21,6 +21,7 @@ export function useShowcaseScroll(count: number, scrollMedia?: string) {
   const [active, setActive] = useState(0);
   const progress = useMotionValue(0);
   const manuallySelected = useRef(false);
+  const stepAnimation = useRef<{ stop: () => void } | null>(null);
 
   useEffect(() => {
     const element = section.current;
@@ -29,11 +30,7 @@ export function useShowcaseScroll(count: number, scrollMedia?: string) {
     let frame = 0;
     let last: number | null = -1;
     const syncMedia = () => {
-      if (media?.matches !== false || last === null) return;
-      last = null;
-      manuallySelected.current = false;
-      progress.set(1);
-      setActive(count - 1);
+      if (media?.matches === false) last = null;
     };
     syncMedia();
     let visible = false;
@@ -46,6 +43,7 @@ export function useShowcaseScroll(count: number, scrollMedia?: string) {
       if (next !== last) {
         last = next;
         manuallySelected.current = false;
+        stepAnimation.current?.stop();
         setActive(next);
       }
       if (!manuallySelected.current) progress.set(position);
@@ -68,6 +66,7 @@ export function useShowcaseScroll(count: number, scrollMedia?: string) {
       media?.removeEventListener("change", syncMedia);
       media?.removeEventListener("change", schedule);
       cancelAnimationFrame(frame);
+      stepAnimation.current?.stop();
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
       document.removeEventListener("visibilitychange", schedule);
@@ -76,7 +75,11 @@ export function useShowcaseScroll(count: number, scrollMedia?: string) {
 
   const select = (step: number) => {
     manuallySelected.current = true;
-    progress.set((step + 0.5) / count);
+    stepAnimation.current?.stop();
+    stepAnimation.current = animate(progress, (step + 0.5) / count, {
+      duration: 0.7,
+      ease: [0.4, 0, 0.2, 1],
+    });
     setActive(step);
   };
 
