@@ -3,30 +3,28 @@ import { defineMessages } from "../../../i18n/messages";
 /** 电商产品介绍的效果对比、套图说明与创作入口文案。 */
 export const commerceShowcaseMessages = defineMessages({
   "zh-CN": {
-    intro: "从商品照开始",
-    title: "同一件商品，\n换个好场景。",
-    description: "从干净主图到生活场景，让顾客看见商品的不同一面",
+    title: "从商品原图到上架图",
     examples: "选择商品图效果",
-    reference: "商品原图",
+    reference: "原图",
     result: "生成效果",
     create: "制作我的商品图",
     comparisons: {
       studio: {
         label: "产品主图",
         title: "把光线留给商品",
-        description: "干净背景，细腻光影",
+        description: "拉近构图，突出瓶身与光影",
         alt: "琥珀色精华瓶的商品参考与棚拍效果",
       },
       scene: {
         label: "生活场景",
         title: "让商品走进使用场景",
-        description: "同款商品，不同场景与光线",
+        description: "同一台榨汁杯，切换三种布景",
         alt: "同款便携榨汁杯的影棚、厨房与玫瑰色场景",
       },
       apparel: {
         label: "服装展示",
         title: "从一件衣服，到穿着效果",
-        description: "从商品外观，到模特穿着",
+        description: "从外套原图到模特上身",
         alt: "浅色外套的商品参考与模特穿着效果",
       },
     },
@@ -73,30 +71,28 @@ export const commerceShowcaseMessages = defineMessages({
     cta: { title: "你的商品，下一张好图。", action: "开始创作", workspace: "进入工作区" },
   },
   en: {
-    intro: "Start with a product photo",
-    title: "Same product.\nA different setting.",
-    description: "Explore backgrounds, light and composition for studio shots and natural scenes",
+    title: "From product photo to listing image",
     examples: "Choose a product image example",
-    reference: "Product reference",
-    result: "Generated result",
+    reference: "Original",
+    result: "Result",
     create: "Create my product image",
     comparisons: {
       studio: {
         label: "Studio shots",
         title: "Let the light do the work",
-        description: "Clean backgrounds. Considered light.",
+        description: "A tighter crop shows the bottle and its shadow",
         alt: "Amber serum bottle reference and studio result",
       },
       scene: {
         label: "Lifestyle scenes",
         title: "Put your product in context",
-        description: "One product, different settings and light.",
+        description: "The same blender in three settings",
         alt: "The same portable blender in studio, kitchen, and rose settings",
       },
       apparel: {
         label: "Apparel",
         title: "From garment to worn look",
-        description: "From a product reference to a worn look.",
+        description: "See how the jacket looks on a model",
         alt: "Light jacket reference and model wearing the jacket",
       },
     },

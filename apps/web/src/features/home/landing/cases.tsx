@@ -29,9 +29,7 @@ export function Cases() {
       <div className="commerce-story-sticky">
         <div className="commerce-section commerce-comparison-layout">
           <div className="commerce-comparison-intro">
-            <span className="commerce-editorial-label">{t.intro}</span>
             <h2 id="commerce-results-title">{t.title}</h2>
-            <p className="commerce-description">{t.description}</p>
             <ToggleButtonGroup
               aria-label={t.examples}
               className="commerce-comparison-tabs"
