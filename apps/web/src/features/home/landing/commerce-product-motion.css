@@ -1,0 +1,52 @@
+/* 固定商品轮廓，依次揭示两种场景；一次演示在五秒内结束并保留成片。 */
+.commerce-comparison-board[data-case="scene"]
+  .commerce-comparison-finished
+  .commerce-comparison-frame {
+  width: min(100%, 39svh);
+  height: auto;
+  aspect-ratio: 1;
+  margin-inline: auto;
+}
+
+.commerce-scene-demo {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.commerce-scene-demo img {
+  position: absolute;
+  inset: 0;
+  object-fit: contain;
+}
+
+.commerce-scene-demo img:nth-child(n + 2) {
+  clip-path: inset(0 100% 0 0);
+  animation: commerce-scene-reveal 1.1s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+  animation-delay: 0.9s;
+  animation-play-state: paused;
+}
+
+.commerce-scene-demo img:nth-child(3) {
+  animation-delay: 3s;
+}
+
+.commerce-scene-demo[data-playing="true"] img {
+  animation-play-state: running;
+}
+
+@keyframes commerce-scene-reveal {
+  to {
+    clip-path: inset(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .commerce-scene-demo img:nth-child(n + 2) {
+    animation: none;
+  }
+  .commerce-scene-demo img:last-child {
+    clip-path: none;
+  }
+}

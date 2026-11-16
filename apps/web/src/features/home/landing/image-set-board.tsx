@@ -1,5 +1,5 @@
 import { Button, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 
 export interface ShowcaseImage {
@@ -7,7 +7,7 @@ export interface ShowcaseImage {
   alt: string;
 }
 
-/** 同款主图配扇形细节卡，独立按钮避免叠放图片遮挡点击区域。 */
+/** 主图先落定再从主图方向展开细节卡，让套图关系可见且保留独立选择器。 */
 export function ImageSetBoard({
   images,
   onOpen,
@@ -18,6 +18,7 @@ export function ImageSetBoard({
   label: string;
 }) {
   const [selected, setSelected] = useState(0);
+  const reducedMotion = useReducedMotion();
   const image = images[selected] ?? images[0];
   return (
     <div className="commerce-set-board">
@@ -38,15 +39,23 @@ export function ImageSetBoard({
           <motion.div
             className="commerce-fan-card"
             key={photo.src}
-            initial={{ opacity: 0, rotate: 0, x: 0, y: 32 }}
+            initial={
+              reducedMotion ? false : { opacity: 0, rotate: -6, x: -130, y: 12, scale: 0.94 }
+            }
             whileInView={{
               opacity: 1,
               rotate: (index - 1) * 13,
               x: (index - 1) * 78,
               y: Math.abs(index - 1) * 20,
+              scale: 1,
             }}
             viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.6, delay: index * 0.08 }}
+            transition={{
+              type: "spring",
+              duration: reducedMotion ? 0 : 0.8,
+              bounce: 0.1,
+              delay: reducedMotion ? 0 : 0.55 + index * 0.18,
+            }}
           >
             <img src={photo.src} alt="" loading="lazy" />
           </motion.div>

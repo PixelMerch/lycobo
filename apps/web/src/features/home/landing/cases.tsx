@@ -10,7 +10,7 @@ import { useShowcaseScroll } from "./use-showcase-scroll";
 
 const examples = [
   { id: "studio", reference: "p01-reference", result: "p01-serum-hero" },
-  { id: "scene", reference: "p02-reference", result: "p02-kitchen" },
+  { id: "scene", reference: "p02-blender-hero", result: "p02-kitchen" },
   { id: "apparel", reference: "p11-jacket-mother", result: "p11-worn" },
 ] as const;
 
@@ -58,9 +58,9 @@ export function Cases() {
 
           <motion.div
             key={selected.id}
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2 }}
             className="commerce-comparison-stage"
           >
             <ComparisonBoard example={selected} alt={t.comparisons[selected.id].alt} />

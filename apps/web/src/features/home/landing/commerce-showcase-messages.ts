@@ -20,8 +20,8 @@ export const commerceShowcaseMessages = defineMessages({
       scene: {
         label: "生活场景",
         title: "让商品走进使用场景",
-        description: "从桌面原图，到自然光厨房",
-        alt: "同款便携榨汁杯的商品参考与厨房场景",
+        description: "同款商品，不同场景与光线",
+        alt: "同款便携榨汁杯的影棚、厨房与玫瑰色场景",
       },
       apparel: {
         label: "服装展示",
@@ -95,8 +95,8 @@ export const commerceShowcaseMessages = defineMessages({
       scene: {
         label: "Lifestyle scenes",
         title: "Put your product in context",
-        description: "From tabletop to a sunlit kitchen.",
-        alt: "Portable blender reference and kitchen scene",
+        description: "One product, different settings and light.",
+        alt: "The same portable blender in studio, kitchen, and rose settings",
       },
       apparel: {
         label: "Apparel",
