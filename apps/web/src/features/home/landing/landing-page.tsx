@@ -6,6 +6,7 @@ import { Cases } from "./cases";
 import { FinalCta } from "./final-cta";
 import { Formats } from "./formats";
 import { Hero } from "./hero";
+import { ProblemProcess } from "./problem-process";
 import { SiteFooter } from "./site-footer";
 import { TextileFeature } from "./textile-feature";
 import { Workflow } from "./workflow";
@@ -22,6 +23,7 @@ export function CommerceLanding() {
           <div className="lp-main">
             <Hero composerRef={composerRef} tool={tool} />
             <div className="commerce-body">
+              <ProblemProcess />
               <Cases />
               <TextileFeature />
               <Workflow />
