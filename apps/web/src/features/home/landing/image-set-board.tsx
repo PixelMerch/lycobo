@@ -1,52 +1,27 @@
-import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { useState } from "react";
+import { motion } from "motion/react";
+import { useRef } from "react";
 import { ProductFrame, type ProductView } from "./product-frame";
+import { useCommerceScrollReveal } from "./use-commerce-scroll-reveal";
 
-/** 用相邻缩略图切换同款套图的主画面。 */
+/** 主图与同款局部同时陈列，滚动即可看到所有画面。 */
 export function ImageSetBoard({
   views,
   labels,
-  chooseLabel,
 }: {
-  views: readonly [ProductView, ...ProductView[]];
+  views: readonly ProductView[];
   labels: Record<ProductView, string>;
-  chooseLabel: string;
 }) {
-  const [selected, setSelected] = useState<ProductView>(views[0]);
+  const board = useRef<HTMLDivElement>(null);
+  const reveal = useCommerceScrollReveal(board, 78, 0.95, "center center");
 
   return (
-    <div className="commerce-set-board">
-      <figure className="commerce-set-figure">
-        <div className="commerce-shot-layers commerce-set-layers">
-          {views.map((view) => (
-            <ProductFrame
-              key={view}
-              view={view}
-              className={view === selected ? "is-current" : ""}
-            />
-          ))}
-        </div>
-        <figcaption>{labels[selected]}</figcaption>
-      </figure>
-      <ToggleButtonGroup
-        className="commerce-set-views"
-        aria-label={chooseLabel}
-        isDetached
-        selectionMode="single"
-        disallowEmptySelection
-        selectedKeys={[selected]}
-        onSelectionChange={(keys) => {
-          const view = views.find((item) => keys.has(item));
-          if (view) setSelected(view);
-        }}
-      >
-        {views.map((view) => (
-          <ToggleButton className="commerce-set-view" key={view} id={view}>
-            <ProductFrame view={view} />
-            <span>{labels[view]}</span>
-          </ToggleButton>
-        ))}
-      </ToggleButtonGroup>
-    </div>
+    <motion.div ref={board} className="commerce-set-board" style={reveal}>
+      {views.map((view) => (
+        <figure key={view}>
+          <ProductFrame view={view} />
+          <figcaption>{labels[view]}</figcaption>
+        </figure>
+      ))}
+    </motion.div>
   );
 }

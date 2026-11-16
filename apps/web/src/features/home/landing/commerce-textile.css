@@ -1,86 +1,55 @@
-/* 套图预览用一张整图配四个局部选择，留出可比较的画面尺寸。 */
+/* 主图与细节组成同一图组，所有视角直接陈列。 */
 .commerce-sets-story {
-  background: var(--commerce-sage);
+  background: var(--commerce-surface);
   padding-block: clamp(64px, 8vw, 112px);
 }
 
 .commerce-set-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(230px, 0.6fr);
+  display: flex;
+  justify-content: space-between;
   align-items: end;
-  gap: clamp(24px, 5vw, 72px);
-  margin-bottom: 30px;
+  gap: 24px;
+  margin-bottom: 32px;
 }
 
-.commerce-set-header p {
-  margin-bottom: 8px;
-  max-width: 36ch;
+.commerce-set-header .link {
+  flex-shrink: 0;
 }
 
 .commerce-set-board {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-  align-items: start;
-  gap: clamp(16px, 3vw, 44px);
+  grid-template-columns: minmax(0, 2.1fr) repeat(2, minmax(0, 0.85fr));
+  gap: clamp(12px, 2vw, 24px);
 }
 
-.commerce-set-layers {
-  aspect-ratio: 4 / 3;
+.commerce-set-board figure:first-child {
+  grid-row: span 2;
+  --commerce-set-ratio: 5 / 4;
 }
 
-.commerce-set-views {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  width: 100%;
-  gap: 14px;
-  padding: 0;
+.commerce-set-board figure:last-child {
+  grid-column: span 2;
+  --commerce-set-ratio: 2 / 1;
 }
 
-.commerce-set-view.toggle-button {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-content: start;
-  justify-items: stretch;
-  gap: 7px;
-  width: 100%;
-  min-height: 44px;
-  min-width: 0;
-  height: auto;
-  padding: 0 0 8px;
-  border: 0;
-  border-bottom: 1px solid #a9ae9d;
-  border-radius: 0;
-  background: transparent;
-  color: #48503f;
-  text-align: left;
-  white-space: normal;
-  box-shadow: none;
+.commerce-set-board .commerce-frame {
+  aspect-ratio: var(--commerce-set-ratio, 1);
 }
 
-.commerce-set-view.toggle-button[data-selected="true"] {
-  border-color: #4b6137;
-  color: #23311a;
-  background: transparent;
-  box-shadow: none;
-}
+@media (max-width: 740px) {
+  .commerce-set-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
 
-.commerce-set-view .commerce-frame {
-  aspect-ratio: 5 / 4;
-}
-
-@media (max-width: 600px) {
-  .commerce-set-header,
   .commerce-set-board {
-    grid-template-columns: 1fr;
-    gap: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .commerce-set-views {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .commerce-set-view.toggle-button {
-    font-size: 11px;
+  .commerce-set-board figure:first-child {
+    grid-column: span 2;
+    grid-row: auto;
   }
 }

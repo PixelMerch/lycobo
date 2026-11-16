@@ -1,6 +1,4 @@
-import { IconArrowUpRight } from "@tabler/icons-react";
 import { RouteLink } from "../../../components/router-link";
-import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { commerceShowcaseMessages } from "./commerce-showcase-messages";
 import { ImageSetBoard } from "./image-set-board";
@@ -16,15 +14,11 @@ export function ImageSetFeature() {
       <div className="commerce-section">
         <div className="commerce-set-header">
           <h2 id="commerce-set-title">{set.title}</h2>
-          <div>
-            <p>{set.description}</p>
-            <RouteLink to="/commerce/smart-variation" className="commerce-text-link">
-              {set.action}
-              <UiIcon icon={IconArrowUpRight} />
-            </RouteLink>
-          </div>
+          <RouteLink to="/commerce/smart-variation" className="commerce-text-link">
+            {set.action}
+          </RouteLink>
         </div>
-        <ImageSetBoard views={views} labels={shots} chooseLabel={set.views} />
+        <ImageSetBoard views={views} labels={shots} />
       </div>
     </section>
   );

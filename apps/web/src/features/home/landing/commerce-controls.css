@@ -1,7 +1,8 @@
 /* 页脚收敛为品牌与真实导航，不再展示未配置的社交入口。 */
 .commerce-footer {
-  background: #181e16;
-  color: #e4e8dd;
+  background: #000;
+  color: #f5f5f5;
+  --focus: #f5f5f5;
   padding: 52px 0 28px;
 }
 
@@ -30,7 +31,7 @@
 .commerce-footerBrand p {
   max-width: 27ch;
   font-size: 18px;
-  color: #b7b9b1;
+  color: #b0b0b0;
 }
 
 .commerce-footerNav {
@@ -50,7 +51,7 @@
   margin-bottom: 6px;
   font-size: 13px;
   font-weight: 500;
-  color: #e4e8dd;
+  color: #f5f5f5;
 }
 
 .commerce-footerNav .link,
@@ -60,7 +61,7 @@
   border-radius: 0;
   height: auto;
   min-height: 28px;
-  color: #b7b9b1;
+  color: #b0b0b0;
   font-size: 14px;
   font-weight: 400;
   text-decoration: none;

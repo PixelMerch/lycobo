@@ -1,31 +1,67 @@
-import { useInView } from "motion/react";
-import { useRef } from "react";
+import { motion, useScroll, useTransform } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import { useMessages } from "../../../i18n/messages";
 import { commerceShowcaseMessages } from "./commerce-showcase-messages";
 import { ProductFrame } from "./product-frame";
+import "./commerce-intro.css";
 
-const views = ["original", "studio", "detail"] as const;
+const views = ["original", "studio", "scene", "detail"] as const;
+const scrollMedia = "(min-height: 560px) and (prefers-reduced-motion: no-preference)";
 
-/** 在 Hero 后用同款商品建立原图、主图与特写的关系。 */
+/** 垂直滚动依次带过同款商品的四张横幅，再接回正文。 */
 export function ProductIntro() {
   const { intro, shots } = useMessages(commerceShowcaseMessages);
-  const spread = useRef<HTMLDivElement>(null);
-  const revealed = useInView(spread, { once: true, margin: "0px 0px -10% 0px" });
+  const section = useRef<HTMLElement>(null);
+  const windowRef = useRef<HTMLDivElement>(null);
+  const rail = useRef<HTMLDivElement>(null);
+  const [travel, setTravel] = useState(0);
+  const { scrollYProgress } = useScroll({ target: section, offset: ["start 72px", "end end"] });
+  const x = useTransform(scrollYProgress, [0, 0.06, 0.94, 1], [0, 0, -travel, -travel]);
+
+  useEffect(() => {
+    const viewport = windowRef.current;
+    const track = rail.current;
+    if (!viewport || !track) return;
+    const media = window.matchMedia(scrollMedia);
+    const measure = () => {
+      setTravel(media.matches ? Math.max(0, track.scrollWidth - viewport.clientWidth) : 0);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(viewport);
+    observer.observe(track);
+    media.addEventListener("change", measure);
+    measure();
+    return () => {
+      observer.disconnect();
+      media.removeEventListener("change", measure);
+    };
+  }, []);
+
+  const scrollable = travel > 0;
 
   return (
-    <section className="commerce-intro" aria-labelledby="commerce-intro-title">
-      <div className="commerce-section">
-        <div className="commerce-intro-copy">
+    <section
+      ref={section}
+      className="commerce-intro"
+      aria-labelledby="commerce-intro-title"
+      style={scrollable ? { minHeight: `calc(100svh + ${Math.round(travel * 0.72)}px)` } : {}}
+    >
+      <div className="commerce-intro-sticky">
+        <div className="commerce-section commerce-intro-copy">
           <h2 id="commerce-intro-title">{intro.title}</h2>
-          <p>{intro.description}</p>
         </div>
-        <div ref={spread} className="commerce-intro-spread" data-revealed={revealed}>
-          {views.map((view) => (
-            <figure key={view} data-view={view}>
-              <ProductFrame view={view} />
-              <figcaption>{shots[view]}</figcaption>
-            </figure>
-          ))}
+        <div ref={windowRef} className="commerce-intro-window">
+          <motion.div ref={rail} className="commerce-intro-rail" style={{ x }}>
+            {views.map((view) => (
+              <figure key={view}>
+                <ProductFrame view={view} />
+                <figcaption>{shots[view]}</figcaption>
+              </figure>
+            ))}
+          </motion.div>
+        </div>
+        <div className="commerce-section commerce-intro-progress" aria-hidden="true">
+          <motion.span style={{ scaleX: scrollYProgress }} />
         </div>
       </div>
     </section>

@@ -1,4 +1,4 @@
-import { animate, useMotionValue } from "motion/react";
+import { useMotionValue } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 function showcaseProgress(top: number, height: number, viewport: number) {
@@ -15,24 +15,18 @@ export function showcaseStep(top: number, height: number, viewport: number, coun
   return stepAt(showcaseProgress(top, height, viewport), count);
 }
 
-/** 滚动跨越章节阈值时切换展示，手动选择保留到下一个阈值，不拦截页面滚动。 */
+/** 同步原生滚动进度，只在跨越章节阈值时更新当前步骤。 */
 export function useShowcaseScroll(count: number, scrollMedia?: string) {
   const section = useRef<HTMLElement>(null);
   const [active, setActive] = useState(0);
   const progress = useMotionValue(0);
-  const manuallySelected = useRef(false);
-  const stepAnimation = useRef<{ stop: () => void } | null>(null);
 
   useEffect(() => {
     const element = section.current;
     if (!element) return;
     const media = scrollMedia ? window.matchMedia(scrollMedia) : undefined;
     let frame = 0;
-    let last: number | null = -1;
-    const syncMedia = () => {
-      if (media?.matches === false) last = null;
-    };
-    syncMedia();
+    let last = -1;
     let visible = false;
     const update = () => {
       frame = 0;
@@ -42,11 +36,9 @@ export function useShowcaseScroll(count: number, scrollMedia?: string) {
       const next = stepAt(position, count);
       if (next !== last) {
         last = next;
-        manuallySelected.current = false;
-        stepAnimation.current?.stop();
         setActive(next);
       }
-      if (!manuallySelected.current) progress.set(position);
+      progress.set(position);
     };
     const schedule = () => {
       if (!frame && visible) frame = requestAnimationFrame(update);
@@ -56,32 +48,19 @@ export function useShowcaseScroll(count: number, scrollMedia?: string) {
       schedule();
     });
     observer.observe(element);
-    media?.addEventListener("change", syncMedia);
     media?.addEventListener("change", schedule);
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
     document.addEventListener("visibilitychange", schedule);
     return () => {
       observer.disconnect();
-      media?.removeEventListener("change", syncMedia);
       media?.removeEventListener("change", schedule);
       cancelAnimationFrame(frame);
-      stepAnimation.current?.stop();
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
       document.removeEventListener("visibilitychange", schedule);
     };
   }, [count, progress, scrollMedia]);
 
-  const select = (step: number) => {
-    manuallySelected.current = true;
-    stepAnimation.current?.stop();
-    stepAnimation.current = animate(progress, (step + 0.5) / count, {
-      duration: 0.7,
-      ease: [0.4, 0, 0.2, 1],
-    });
-    setActive(step);
-  };
-
-  return { section, active, progress, select };
+  return { section, active, progress };
 }

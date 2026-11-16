@@ -1,8 +1,7 @@
 /* 固定图框里的四种画面共用同一条滚动时间线。 */
 .commerce-process {
-  background: var(--commerce-olive);
+  background: var(--commerce-surface);
   color: var(--commerce-light);
-  --commerce-muted: #d0d7c7;
   padding-block: clamp(56px, 6vw, 92px);
   scroll-margin-top: 80px;
 }
@@ -12,53 +11,39 @@
 }
 
 .commerce-process-stage {
-  display: grid;
+  display: none;
   grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 
-.commerce-process-copy p,
-.commerce-process-list p {
-  font-size: 15px;
-  line-height: 1.65;
-  color: var(--commerce-muted);
-}
-
 .commerce-process-steps {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   width: 100%;
+  margin: 0;
   padding: 0;
-  gap: 0 16px;
-  border-top: 1px solid #ffffff33;
+  gap: 0 12px;
+  list-style: none;
 }
 
-.commerce-process-steps .toggle-button {
-  width: 100%;
-  min-height: 47px;
-  padding: 10px 0;
-  justify-content: space-between;
-  text-align: left;
-  color: #dde2d6;
-  border: 0;
+.commerce-process-steps li {
+  padding: 9px 0;
+  color: #b0b0b0;
   border-bottom: 1px solid #ffffff33;
-  background: transparent;
-  border-radius: 0;
-  box-shadow: none;
+  font-size: 13px;
+  line-height: 1.3;
+  text-wrap: balance;
 }
 
-.commerce-process-steps .toggle-button[data-selected="true"] {
-  color: #d6f298;
-  border-color: #afcd89;
-}
-
-.commerce-process-copy p {
-  margin-top: 12px;
-  min-height: 3lh;
+.commerce-process-steps li[aria-current="step"] {
+  color: #f5f5f5;
+  border-color: #fff;
 }
 
 .commerce-process-visual {
   grid-row: 2;
+  justify-self: center;
+  width: min(100%, calc((100svh - 250px) * 1.2));
 }
 
 .commerce-process-source {
@@ -70,7 +55,7 @@
   overflow: hidden;
   aspect-ratio: 6 / 5;
   border-radius: 6px;
-  background: #b5b1a3;
+  background: #b1b1b1;
 }
 
 .commerce-process-lighting,
@@ -81,11 +66,11 @@
 }
 
 .commerce-process-lighting {
-  background: linear-gradient(148deg, #f0e7ce, #b7aa90 78%);
+  background: linear-gradient(148deg, #e7e7e7, #ababab 78%);
 }
 
 .commerce-process-setting {
-  background: linear-gradient(#7e8d70 80%, #cfc2a3 80%);
+  background: linear-gradient(#888888 80%, #c3c3c3 80%);
 }
 
 .commerce-process-setting::after {
@@ -95,9 +80,9 @@
   background: linear-gradient(
     124deg,
     transparent 22%,
-    #f6efd459 22% 39%,
+    #efefef59 22% 39%,
     transparent 39% 45%,
-    #f6efd43b 45% 61%,
+    #efefef3b 45% 61%,
     transparent 61%
   );
 }
@@ -123,7 +108,7 @@
 .commerce-process-progress span {
   display: block;
   height: 100%;
-  background: #c9ee97;
+  background: #fff;
   transform-origin: left;
 }
 
@@ -133,7 +118,7 @@
 }
 
 .commerce-process-list {
-  display: none;
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 22px;
   margin: 0;
@@ -147,31 +132,42 @@
 }
 
 .commerce-process-list h3 {
+  margin-bottom: 12px;
   font-size: 23px;
   color: #fff;
-}
-
-.commerce-process-list p {
-  margin: 8px 0 16px;
 }
 
 .commerce-process-list .commerce-frame {
   aspect-ratio: 6 / 5;
 }
 
-@media (min-width: 901px) and (min-height: 660px) and (prefers-reduced-motion: no-preference) {
+@media (min-height: 560px) and (prefers-reduced-motion: no-preference) {
   .commerce-process {
-    min-height: calc(100svh + 720px);
-    padding-block: 54px;
+    min-height: calc(100svh + 700px);
+    padding-block: 52px;
   }
 
   .commerce-process-pin {
     position: sticky;
+    top: 72px;
+  }
+
+  .commerce-process-stage {
+    display: grid;
+  }
+
+  .commerce-process-list {
+    display: none;
+  }
+}
+
+@media (min-width: 901px) and (min-height: 660px) and (prefers-reduced-motion: no-preference) {
+  .commerce-process-pin {
     top: 112px;
   }
 
   .commerce-process-stage {
-    grid-template-columns: minmax(210px, 0.75fr) minmax(0, 1.65fr) minmax(76px, 0.35fr);
+    grid-template-columns: minmax(160px, 0.65fr) minmax(0, 1.85fr) minmax(76px, 0.35fr);
     align-items: end;
     gap: 20px clamp(14px, 3vw, 44px);
   }
@@ -186,22 +182,11 @@
 
   .commerce-process-visual {
     grid-row: auto;
-    justify-self: center;
     width: min(100%, calc((100svh - 350px) * 1.2));
   }
 
   .commerce-process-source {
     display: block;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .commerce-process-stage {
-    display: none;
-  }
-
-  .commerce-process-list {
-    display: grid;
   }
 }
 
@@ -212,6 +197,10 @@
   }
 
   .commerce-process-pin h2 {
-    margin-bottom: 26px;
+    margin-bottom: 20px;
+  }
+
+  .commerce-process-steps li {
+    font-size: 12px;
   }
 }

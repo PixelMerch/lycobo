@@ -1,4 +1,6 @@
 import { Button } from "@heroui/react";
+import { motion } from "motion/react";
+import { useRef } from "react";
 import { RouteLink } from "../../../components/router-link";
 import { useMessages } from "../../../i18n/messages";
 import { useOpenAssetLibrary } from "../../assets/asset-library-store";
@@ -8,6 +10,7 @@ import { legalPaths } from "../../legal/legal-document";
 import { inspirationLibraryPath } from "../inspiration-path";
 import { BrandLogo } from "./brand-logo";
 import { landingMessages } from "./landing-messages";
+import { useCommerceScrollReveal } from "./use-commerce-scroll-reveal";
 
 const toolHref = (id: "create" | "textile" | "variation" | "replica") =>
   commerceTools.find((tool) => tool.id === id)?.href ?? "/commerce";
@@ -18,6 +21,8 @@ export function SiteFooter() {
   const requireLogin = useRequireLogin();
   const openLibrary = useOpenAssetLibrary();
   const links = t.columns;
+  const brand = useRef<HTMLDivElement>(null);
+  const reveal = useCommerceScrollReveal(brand, 42, 0.92);
   return (
     <footer className="commerce-footer">
       <div className="commerce-footer-inner">
@@ -57,9 +62,11 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <RouteLink aria-label={t.homeAria} className="commerce-footerBrandLink" to="/">
-          <BrandLogo className="commerce-footerLogo" title={t.homeAria} />
-        </RouteLink>
+        <motion.div ref={brand} style={reveal}>
+          <RouteLink aria-label={t.homeAria} className="commerce-footerBrandLink" to="/">
+            <BrandLogo className="commerce-footerLogo" title={t.homeAria} />
+          </RouteLink>
+        </motion.div>
 
         <div className="commerce-footerBottom">
           <p>{t.copyright}</p>

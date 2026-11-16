@@ -1,9 +1,14 @@
 import { Button } from "@heroui/react";
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+import { motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
+import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { type CampaignFormat, campaignFormats, type FormatId } from "./commerce-content";
 import { commerceShowcaseMessages } from "./commerce-showcase-messages";
 import { ProductFrame, type ProductView } from "./product-frame";
 import { sectionsMessages } from "./sections-messages";
+import { useCommerceScrollReveal } from "./use-commerce-scroll-reveal";
 import { useTemplateRemix } from "./use-template-remix";
 
 const exampleViews: Partial<Record<FormatId, ProductView>> = {
@@ -34,13 +39,72 @@ export function Formats() {
   const remix = useTemplateRemix();
   const t = useMessages(sectionsMessages).formats;
   const heading = useMessages(commerceShowcaseMessages).gallery;
+  const rail = useRef<HTMLDivElement>(null);
+  const reveal = useCommerceScrollReveal(rail, 58, 1, "start center");
+  const [edges, setEdges] = useState({ start: true, end: false });
+
+  useEffect(() => {
+    const element = rail.current;
+    if (!element) return;
+    const update = () => {
+      const start = element.scrollLeft < 2;
+      const end = element.scrollWidth - element.clientWidth - element.scrollLeft < 2;
+      setEdges((current) =>
+        start === current.start && end === current.end ? current : { start, end },
+      );
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    element.addEventListener("scroll", update, { passive: true });
+    update();
+    return () => {
+      observer.disconnect();
+      element.removeEventListener("scroll", update);
+    };
+  }, []);
+
+  function turnPage(direction: number) {
+    const element = rail.current;
+    if (!element) return;
+    const style = getComputedStyle(element);
+    const pageWidth =
+      element.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    element.scrollBy({ left: direction * pageWidth });
+  }
+
   return (
     <section className="commerce-gallery" id="formats" aria-labelledby="commerce-gallery-title">
       <div className="commerce-section commerce-gallery-heading">
         <h2 id="commerce-gallery-title">{heading.title}</h2>
-        <p className="commerce-gallery-subtitle">{heading.description}</p>
+        <div className="commerce-gallery-controls">
+          <Button
+            isIconOnly
+            variant="ghost"
+            aria-label={heading.previous}
+            aria-controls="commerce-gallery-rail"
+            isDisabled={edges.start}
+            onPress={() => turnPage(-1)}
+          >
+            <UiIcon icon={IconChevronLeft} />
+          </Button>
+          <Button
+            isIconOnly
+            variant="ghost"
+            aria-label={heading.next}
+            aria-controls="commerce-gallery-rail"
+            isDisabled={edges.end}
+            onPress={() => turnPage(1)}
+          >
+            <UiIcon icon={IconChevronRight} />
+          </Button>
+        </div>
       </div>
-      <div className="commerce-gallery-rail">
+      <motion.div
+        id="commerce-gallery-rail"
+        ref={rail}
+        className="commerce-gallery-rail"
+        style={reveal}
+      >
         {campaignFormats.map((format) => (
           <Button
             variant="ghost"
@@ -55,7 +119,7 @@ export function Formats() {
             <span className="commerce-template-caption">{t.cards[format.id].title}</span>
           </Button>
         ))}
-      </div>
+      </motion.div>
       {remix.dialog}
     </section>
   );

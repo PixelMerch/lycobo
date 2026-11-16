@@ -1,23 +1,23 @@
-/* 电商正文沿用纸面与橄榄绿，场景色集中在图框内。 */
+/* 黑色正文与商品画面的亮部形成对比，分段只用近黑层级。 */
 .commerce-landing.lp-page {
   overflow: clip;
 }
 
 .commerce-body {
-  background: #f1ede4;
-  color: #20271c;
-  color-scheme: light;
-  --commerce-paper: #f1ede4;
-  --commerce-sage: #e1e5d6;
-  --commerce-olive: #293326;
-  --commerce-muted: #515948;
-  --commerce-light: #f5f2e9;
+  background: #000;
+  color: #f5f5f5;
+  color-scheme: dark;
+  --commerce-base: #000;
+  --commerce-surface: #0d0d0d;
+  --commerce-muted: #b0b0b0;
+  --commerce-light: #f5f5f5;
+  --focus: #f5f5f5;
   --commerce-heading-size: clamp(36px, 5vw, 76px);
 }
 
 .commerce-body ::selection {
-  background: #c6eba0;
-  color: #1e2a18;
+  background: #ededed;
+  color: #141414;
 }
 
 .commerce-section {
@@ -60,55 +60,11 @@
 }
 
 .commerce-text-link.link:hover {
-  color: #4d652c;
-}
-
-.commerce-intro {
-  padding-block: clamp(62px, 7.6vw, 115px) clamp(72px, 8vw, 120px);
-}
-
-.commerce-intro-copy {
-  margin-inline: auto;
-  text-align: center;
-}
-
-.commerce-intro-copy p,
-.commerce-scenes-copy p,
-.commerce-set-header p {
-  color: var(--commerce-muted);
-  line-height: 1.65;
-  text-wrap: pretty;
-}
-
-.commerce-intro-copy p {
-  max-width: 48ch;
-  margin: 16px auto 0;
-}
-
-.commerce-intro-spread {
-  display: grid;
-  grid-template-columns: minmax(0, 0.66fr) minmax(0, 1.22fr) minmax(0, 0.7fr);
-  gap: clamp(12px, 3.6vw, 56px);
-  align-items: start;
-  max-width: 1070px;
-  margin: clamp(28px, 4.8vw, 68px) auto 0;
-}
-
-.commerce-intro-spread > figure[data-view="original"] {
-  margin-top: 18%;
-}
-
-.commerce-intro-spread > figure[data-view="detail"] {
-  margin-top: 38%;
-  --commerce-intro-ratio: 5 / 4;
-}
-
-.commerce-intro-spread .commerce-frame {
-  aspect-ratio: var(--commerce-intro-ratio, 1);
+  color: #fff;
 }
 
 .commerce-scenes {
-  background: var(--commerce-paper);
+  background: var(--commerce-base);
   padding-block: clamp(70px, 9vw, 128px);
 }
 
@@ -124,15 +80,11 @@
   grid-area: copy;
 }
 
-.commerce-scenes-copy p {
-  margin-block: 20px 14px;
-  max-width: 34ch;
-}
-
 .commerce-scenes-links {
   display: flex;
   flex-wrap: wrap;
   gap: 0 22px;
+  margin-top: 20px;
 }
 
 .commerce-scenes-photos {
@@ -175,21 +127,5 @@
 
   .commerce-body {
     --commerce-heading-size: clamp(34px, 9vw, 50px);
-  }
-
-  .commerce-intro-copy {
-    text-align: left;
-  }
-
-  .commerce-intro-spread {
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.3fr);
-  }
-
-  .commerce-intro-spread > figure[data-view="original"] {
-    margin-top: 35%;
-  }
-
-  .commerce-intro-spread > figure[data-view="detail"] {
-    display: none;
   }
 }
