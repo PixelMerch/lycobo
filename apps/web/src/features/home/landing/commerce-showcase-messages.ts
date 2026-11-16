@@ -4,7 +4,7 @@ import { defineMessages } from "../../../i18n/messages";
 export const commerceShowcaseMessages = defineMessages({
   "zh-CN": {
     intro: "从商品照开始",
-    title: "为商品，换个好场景",
+    title: "同一件商品，\n换一种呈现。",
     description: "调整背景、光线与构图，让主图更干净，让场景更自然",
     examples: "选择商品图效果",
     reference: "商品原图",
@@ -32,7 +32,7 @@ export const commerceShowcaseMessages = defineMessages({
     },
     set: {
       label: "套图计划",
-      title: "一款商品，\n一整套好图",
+      title: "主图之外，\n细节也要到位。",
       description: "确认方案，再制作主图、细节与场景",
       steps: ["上传商品参考", "确认套图方案", "逐张生成图片"],
       action: "开始制作套图",
@@ -51,7 +51,7 @@ export const commerceShowcaseMessages = defineMessages({
         alt: "米白条纹床品在自然光卧室中的整体展示",
       },
       replica: {
-        title: "复制爆款",
+        title: "喜欢这个构图？\n换成你的商品。",
         description: "上传风格图和商品图，参考版式制作自己的图片",
         action: "参考风格创作",
         alt: "具有留白与柔和光影的香水产品构图参考",
@@ -59,8 +59,8 @@ export const commerceShowcaseMessages = defineMessages({
     },
     specs: {
       label: "输出规格",
-      title: "用合适的画幅，\n展示你的商品",
-      description: "方形主图、竖版详情、横向展示。选择比例与分辨率，带入工作区继续制作",
+      title: "选好画幅，准备上架。",
+      description: "方形主图、竖版详情、横向展示。",
     },
     gallery: {
       label: "创作起点",
@@ -69,11 +69,11 @@ export const commerceShowcaseMessages = defineMessages({
       next: "向后浏览案例",
       description: "选一种画面，把创作要求带入工作区",
     },
-    cta: { title: "下一组商品图，从这里开始", action: "开始创作" },
+    cta: { title: "你的商品，下一张好图。", action: "开始创作" },
   },
   en: {
     intro: "Start with a product photo",
-    title: "Your product. A new setting.",
+    title: "Same product.\nA different setting.",
     description: "Explore backgrounds, light and composition for studio shots and natural scenes",
     examples: "Choose a product image example",
     reference: "Product reference",
@@ -101,7 +101,7 @@ export const commerceShowcaseMessages = defineMessages({
     },
     set: {
       label: "Image Set Planner",
-      title: "One product.\nA complete image set.",
+      title: "The whole look.\nEvery detail.",
       description: "Review the plan. Create hero shots, details and scenes.",
       steps: ["Add product references", "Review your image plan", "Generate individual images"],
       action: "Plan an image set",
@@ -120,7 +120,7 @@ export const commerceShowcaseMessages = defineMessages({
         alt: "Cream striped bedding in a naturally lit bedroom",
       },
       replica: {
-        title: "Style Match",
+        title: "Love the composition?\nMake it yours.",
         description: "Add a style image and your product to create an image around that layout",
         action: "Create from a style",
         alt: "Perfume product composition with soft light and open space",
@@ -128,9 +128,8 @@ export const commerceShowcaseMessages = defineMessages({
     },
     specs: {
       label: "Output settings",
-      title: "The right frame\nfor your product.",
-      description:
-        "Square hero shots, portrait details and wide compositions. Choose your ratio and resolution, then continue in the workspace",
+      title: "Find your frame.",
+      description: "Square hero shots. Portrait details. Wide compositions.",
     },
     gallery: {
       label: "Starting points",
@@ -139,6 +138,6 @@ export const commerceShowcaseMessages = defineMessages({
       next: "Next examples",
       description: "Pick a look to bring its creative brief into your workspace",
     },
-    cta: { title: "Your next product image set starts here", action: "Start creating" },
+    cta: { title: "Your product. Your next great image.", action: "Start creating" },
   },
 });

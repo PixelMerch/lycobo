@@ -1,6 +1,5 @@
 import { motion } from "motion/react";
 import { useMessages } from "../../../i18n/messages";
-import { CommerceBackdrop } from "./commerce-backdrop";
 import { commerceShowcaseMessages } from "./commerce-showcase-messages";
 import { ComparisonBoard } from "./comparison-board";
 import { useCommerceScroll } from "./use-commerce-scroll";
@@ -27,8 +26,7 @@ export function Cases() {
       aria-labelledby="commerce-results-title"
     >
       <div className="commerce-scroll-pin">
-        <CommerceBackdrop progress={story.progress} enabled={story.enabled} tone="comparison" />
-        <div className="commerce-section commerce-story-card">
+        <div className="commerce-section commerce-comparison-layout">
           <div className="commerce-story-heading">
             <h2 id="commerce-results-title">{t.title}</h2>
           </div>

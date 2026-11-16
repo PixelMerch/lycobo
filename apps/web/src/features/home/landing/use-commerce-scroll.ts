@@ -13,7 +13,7 @@ function subscribe(onChange: () => void) {
 const getSnapshot = () => window.matchMedia(storyQuery).matches;
 const getServerSnapshot = () => false;
 
-/** 统一三个摄影展台的原生滚动进度与静态回退条件。 */
+/** 管理商品对比的原生滚动进度与静态回退条件。 */
 export function useCommerceScroll() {
   const target = useRef<HTMLElement>(null);
   const enabled = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);

@@ -1,33 +1,44 @@
+/* 结尾与页脚形成同一深色区域，保留单个明确的创作动作。 */
 .commerce-final {
-  background: #dbe7c9;
-  border-top: 1px solid #e2e5d9;
-  padding-block: 56px;
+  background: #111612;
+  color: #f3f2e9;
+  padding-block: 104px;
 }
 .commerce-final > div {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 32px;
+  gap: 40px;
+  text-align: center;
 }
 .commerce-final h2 {
-  font-size: clamp(24px, 2.6vw, 34px);
+  max-width: 720px;
+  font-size: clamp(36px, 4.5vw, 64px);
 }
 .commerce-primary.button {
-  background: #263322;
-  color: #fff;
-  border-radius: 8px;
   min-height: 48px;
-  padding-inline: 24px;
+  padding-inline: 28px;
+  background: linear-gradient(120deg, #a8ff00, #54e6a5);
+  color: #142000;
+  border-radius: 999px;
   box-shadow: none;
-  flex-shrink: 0;
 }
 .commerce-primary.button:hover {
-  background: #3c4e32;
+  filter: brightness(1.04);
+}
+@media (max-width: 600px) {
+  .commerce-final {
+    padding-block: 72px;
+  }
+  .commerce-final > div {
+    gap: 28px;
+  }
 }
 /* 案例图带使用等宽副本首尾接续，循环归位保持相同画面与方向。 */
 .commerce-gallery {
-  padding-block: 80px;
-  background: #191e1b;
+  scroll-margin-top: 96px;
+  padding-block: 32px 88px;
+  background: #080b09;
   color: #f3f2e9;
 }
 .commerce-gallery-controls {
@@ -39,8 +50,8 @@
   background: #ffffff24;
   color: #f3f2e9;
   border-radius: 50%;
-  min-width: 56px;
-  min-height: 56px;
+  min-width: 48px;
+  min-height: 48px;
 }
 .commerce-gallery-rail {
   display: flex;
@@ -65,9 +76,9 @@
   position: relative;
   display: block;
   flex: 0 0 auto;
-  width: clamp(300px, 28vw, 420px);
+  width: clamp(220px, 19vw, 300px);
   height: auto;
-  aspect-ratio: 2 / 3;
+  aspect-ratio: 3 / 4;
   padding: 0;
   background: #29312b;
   color: #fff;
@@ -100,13 +111,13 @@
 }
 @media (max-width: 600px) {
   .commerce-gallery {
-    padding-block: 48px;
+    padding-block: 24px 56px;
   }
   .commerce-gallery-rail {
     padding-inline: 20px;
   }
   .commerce-template.button {
-    width: 80vw;
+    width: 64vw;
   }
 }
 

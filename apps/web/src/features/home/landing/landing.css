@@ -1,4 +1,4 @@
-/* 首页复刻页样式入口；按区块拆分，保持单文件长度可控。 */
+/* 电商展示页按首屏、案例与工具组织样式。 */
 @import "./landing-campaign.css";
 @import "./landing-base.css";
 @import "./landing-responsive.css";
@@ -14,8 +14,4 @@
 
 @import "./commerce-textile.css";
 
-@import "./commerce-textile-scroll.css";
-
 @import "./commerce-scroll-scenes.css";
-
-@import "./commerce-story-cards.css";

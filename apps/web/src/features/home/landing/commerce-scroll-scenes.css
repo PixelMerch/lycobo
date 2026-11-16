@@ -1,214 +1,178 @@
-/* 三段摄影叙事共用留白和图片材质，动效由各自用途决定。 */
-.commerce-scroll-section {
+/* 只有前后对比保留短固定段落；后续套图直接完整呈现，避免连续的滚动大卡片。 */
+.commerce-comparison {
   position: relative;
-  padding-block: 96px;
+  padding-block: 104px;
   scroll-margin-top: 64px;
 }
-.commerce-scroll-section[data-scroll-story="true"] {
-  height: calc(100svh + 960px);
-  padding-block: 0;
+.commerce-comparison[data-scroll-story="true"] {
+  height: calc(100svh + 720px);
+  padding: 0;
 }
-.commerce-scroll-section[data-scroll-story="true"] .commerce-scroll-pin {
+.commerce-comparison[data-scroll-story="true"] .commerce-scroll-pin {
   position: sticky;
   top: 64px;
   height: calc(100svh - 64px);
   display: flex;
   align-items: center;
-  padding-block: 40px;
-  overflow: clip;
+  padding-block: 48px;
 }
-.commerce-story-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 48px;
-  margin-bottom: 36px;
+.commerce-comparison-layout {
+  display: grid;
+  grid-template-columns: 0.8fr 1.7fr;
+  align-items: center;
+  gap: 56px;
 }
 .commerce-story-heading h2 {
-  font-size: clamp(36px, 3.5vw, 56px);
-  line-height: 1.15;
+  font-size: clamp(32px, 3.3vw, 48px);
+  line-height: 1.3;
 }
 .commerce-comparison-board {
-  position: relative;
-  width: min(100%, 1100px);
-  height: clamp(320px, calc(100svh - 364px), 520px);
-  margin-inline: auto;
-  isolation: isolate;
+  display: grid;
+  grid-template-columns: 0.68fr 32px 1.25fr;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
 }
 .commerce-comparison-board figure {
-  position: absolute;
-  overflow: hidden;
-  border-radius: 12px;
+  min-width: 0;
   margin: 0;
 }
-.commerce-comparison-original {
-  width: 28%;
-  aspect-ratio: 1;
-  left: 6%;
-  top: 20%;
-  z-index: 2;
-  background: #eeece5;
-}
-.commerce-comparison-finished {
-  left: 48%;
-  width: 44%;
-  height: 100%;
-  top: 0;
-  background: #eeece5;
-}
-.commerce-comparison-board img,
-.commerce-set-board img {
+.commerce-comparison-board img {
   width: 100%;
-  height: 100%;
   object-fit: cover;
+  border-radius: 12px;
+  background: #efede7;
 }
-.commerce-comparison-board figcaption,
-.commerce-set-photo > span {
-  position: absolute;
-  bottom: 16px;
-  left: 16px;
-  padding: 8px 12px;
-  color: #34352e;
-  background: #f3f1e9;
-  border-radius: 6px;
+.commerce-comparison-original img {
+  aspect-ratio: 1;
+}
+.commerce-comparison-finished img {
+  height: clamp(360px, calc(100svh - 260px), 560px);
+}
+.commerce-comparison-board figcaption {
+  margin-top: 16px;
+  color: #656b5e;
   font-size: 13px;
-  line-height: 1.4;
-  pointer-events: none;
 }
 .commerce-comparison-direction {
-  position: absolute;
-  left: 39%;
-  top: 48%;
-  color: #89917d;
+  color: #79816f;
+}
+.commerce-comparison-list {
+  display: grid;
+  gap: 48px;
 }
 .commerce-set {
-  background: #eeede7;
+  background: #191e1b;
+  color: #f3f2e9;
+  padding-block: 96px 104px;
+}
+.commerce-set .commerce-story-heading {
+  margin-bottom: 48px;
 }
 .commerce-set-board.button {
-  position: relative;
-  display: block;
-  width: min(100%, 1100px);
-  height: clamp(360px, calc(100svh - 344px), 560px);
-  margin: 56px auto 0;
+  display: grid;
+  grid-template-columns: 1fr 0.65fr 1.05fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+  height: 560px;
   padding: 0;
   border: 0;
   border-radius: 12px;
   background: transparent;
   overflow: visible;
-  white-space: normal;
   box-shadow: none;
-  isolation: isolate;
 }
 .commerce-set-photo {
-  position: absolute;
   display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
   border-radius: 12px;
 }
-.commerce-set-lead {
-  left: 34%;
-  top: 0;
-  width: 32%;
+.commerce-set-photo img {
+  width: 100%;
   height: 100%;
-  z-index: 3;
+  object-fit: cover;
 }
-.commerce-set-zipper,
-.commerce-set-fabric {
-  left: 0;
-  width: 31%;
-  height: 47%;
+.commerce-set-lead {
+  grid-column: 1;
+  grid-row: 1 / 3;
 }
 .commerce-set-zipper {
-  top: 0;
+  grid-column: 2;
+  grid-row: 1;
 }
 .commerce-set-fabric {
-  bottom: 0;
+  grid-column: 2;
+  grid-row: 2;
 }
 .commerce-set-scene {
-  left: 69%;
-  width: 31%;
-  height: 88%;
-  bottom: 0;
-}
-.commerce-set + .commerce-specialists {
-  padding-top: 96px;
+  grid-column: 3;
+  grid-row: 1 / 3;
+  height: 84%;
+  align-self: end;
 }
 @media (max-width: 1099px), (max-height: 759px), (prefers-reduced-motion: reduce) {
+  .commerce-comparison-layout {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
   .commerce-comparison-board {
-    display: grid;
-    grid-template-columns: 0.72fr 40px 1.2fr;
-    align-items: center;
-    gap: 24px;
-    height: auto;
-    max-width: 960px;
-  }
-  .commerce-comparison-board figure,
-  .commerce-comparison-direction {
-    position: relative;
+    max-width: 860px;
     width: 100%;
+    margin-inline: auto;
+  }
+  .commerce-comparison-finished img {
     height: auto;
-    inset: auto;
-  }
-  .commerce-comparison-direction {
-    display: grid;
-    place-items: center;
-  }
-  .commerce-comparison-finished {
     aspect-ratio: 4 / 5;
   }
 }
-@media (max-width: 600px) {
-  .commerce-scroll-section {
-    padding-block: 56px;
+@media (max-width: 900px) {
+  .commerce-set-board.button {
+    height: 440px;
+    gap: 16px;
   }
-  .commerce-story-heading {
-    flex-direction: column;
-    align-items: start;
-    gap: 20px;
-    margin-bottom: 24px;
+}
+@media (max-width: 600px) {
+  .commerce-comparison,
+  .commerce-set {
+    padding-block: 56px;
   }
   .commerce-story-heading h2 {
     font-size: 32px;
   }
-  .commerce-comparison-board {
-    grid-template-columns: 0.75fr 16px 1.2fr;
-    gap: 8px;
+  .commerce-comparison-layout {
+    gap: 32px;
   }
-  .commerce-comparison-board figcaption,
-  .commerce-set-photo > span {
-    left: 8px;
-    bottom: 8px;
-    padding: 6px 8px;
-    font-size: 11px;
+  .commerce-comparison-board {
+    grid-template-columns: 0.7fr 20px 1.2fr;
+    gap: 12px;
+  }
+  .commerce-comparison-direction svg {
+    width: 18px;
+    height: 18px;
+  }
+  .commerce-comparison-board figcaption {
+    font-size: 12px;
+    margin-top: 12px;
+  }
+  .commerce-set .commerce-story-heading {
+    margin-bottom: 28px;
   }
   .commerce-set-board.button {
-    height: 440px;
-    margin-top: 28px;
-  }
-  .commerce-set-lead {
-    left: 0;
-    width: 55%;
-    height: 65%;
-  }
-  .commerce-set-zipper,
-  .commerce-set-fabric {
-    left: 58%;
-    width: 42%;
-    height: 31%;
-  }
-  .commerce-set-fabric {
-    top: 34%;
-    bottom: auto;
+    grid-template-columns: 1.2fr 0.8fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    height: 520px;
+    gap: 12px;
   }
   .commerce-set-scene {
-    left: 0;
-    width: 100%;
-    height: 32%;
+    grid-column: 1 / -1;
+    grid-row: 3;
+    height: 100%;
   }
   .commerce-set-scene img {
-    object-position: center 12%;
-  }
-  .commerce-set + .commerce-specialists {
-    padding-top: 56px;
+    object-position: center 18%;
   }
 }

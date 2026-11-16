@@ -1,42 +1,88 @@
-/* 家纺只保留标题与图片，静态回退一次展示全部视角。 */
+/* 家纺如同摄影画册：全景占一整页，标题与局部在另一侧自然成组。 */
 .commerce-textile {
-  scroll-margin-top: 64px;
-  background: #232a25;
-  color: #f3f2e9;
-  padding-block: 64px;
+  padding-block: 104px;
+  background: #eae8e1;
+  color: #292d25;
+}
+.commerce-textile-layout {
+  display: grid;
+  grid-template-columns: 1.3fr repeat(3, 0.4fr);
+  grid-template-rows: 1fr 0.9fr;
+  gap: 20px;
+  align-items: stretch;
 }
 .commerce-textile-heading {
-  margin-bottom: 32px;
+  grid-column: 2 / 5;
+  grid-row: 1;
+  align-self: center;
+  padding: 24px 0 24px 36px;
 }
 .commerce-textile-heading h2 {
-  font-size: clamp(36px, 3.5vw, 56px);
-  line-height: 1.15;
+  font-size: clamp(32px, 3.5vw, 48px);
+  line-height: 1.3;
 }
-.commerce-textile-static {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-.commerce-textile-static .button {
+.commerce-textile-view.button {
   display: block;
   width: 100%;
-  height: auto;
-  aspect-ratio: 1;
+  height: 100%;
+  min-width: 0;
   padding: 0;
   background: transparent;
   border-radius: 12px;
   overflow: hidden;
 }
-.commerce-textile-static img {
+.commerce-textile-view img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+.commerce-textile-view-front.button {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  height: 600px;
+  margin-right: 16px;
+}
+.commerce-textile-view-pillow,
+.commerce-textile-view-fabric,
+.commerce-textile-view-bed-end {
+  grid-row: 2;
+}
+@media (max-width: 900px) {
+  .commerce-textile {
+    padding-block: 72px;
+  }
+  .commerce-textile-layout {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: auto;
+    gap: 16px;
+  }
+  .commerce-textile-heading {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    padding: 0 0 12px;
+  }
+  .commerce-textile-view-front.button {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    margin: 0;
+  }
+  .commerce-textile-view-pillow,
+  .commerce-textile-view-fabric,
+  .commerce-textile-view-bed-end {
+    grid-row: 3;
+    aspect-ratio: 3 / 4;
+  }
+}
 @media (max-width: 600px) {
   .commerce-textile {
-    padding-block: 40px;
+    padding-block: 56px;
   }
-  .commerce-textile-static {
+  .commerce-textile-layout {
     gap: 8px;
+  }
+  .commerce-textile-heading h2 {
+    font-size: 32px;
   }
 }
