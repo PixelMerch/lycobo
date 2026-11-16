@@ -1,0 +1,4 @@
+interface:
+  display_name: "E-commerce Landing"
+  short_description: "按设计令牌、线框确认和逐区块实现流程，设计与审查电商生图落地页"
+  default_prompt: "使用 $ecommerce-landing 优化本项目的电商落地页，遵守指定范围，先给出 Design Token 提案供我确认。"
