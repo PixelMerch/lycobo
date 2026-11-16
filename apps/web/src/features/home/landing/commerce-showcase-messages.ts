@@ -61,11 +61,6 @@ export const commerceShowcaseMessages = defineMessages({
         secondaryAlt: "浅米色桌面上的陶瓷餐具静物构图参考",
       },
     },
-    specs: {
-      label: "输出规格",
-      title: "选好画幅，准备上架。",
-      description: "方形主图、竖版详情、横向展示。",
-    },
     gallery: {
       label: "创作起点",
       title: "让商品，成为画面主角。",
@@ -135,11 +130,6 @@ export const commerceShowcaseMessages = defineMessages({
         alt: "Perfume product composition with soft light and open space",
         secondaryAlt: "Ceramic tableware composition on a warm tabletop",
       },
-    },
-    specs: {
-      label: "Output settings",
-      title: "Find your frame.",
-      description: "Square hero shots. Portrait details. Wide compositions.",
     },
     gallery: {
       label: "Starting points",

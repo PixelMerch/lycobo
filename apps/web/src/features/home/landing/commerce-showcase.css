@@ -125,17 +125,6 @@
   max-width: 380px;
 }
 
-.commerce-output {
-  padding-block: 96px 104px;
-  background: linear-gradient(120deg, #ded6f0, #f1d6dd 65%, #f8dece);
-  border-top: 1px solid var(--commerce-line);
-}
-
-.commerce-output-heading {
-  margin-bottom: 40px;
-  max-width: 560px;
-}
-
 @media (max-width: 900px) {
   .commerce-section {
     width: calc(100% - 48px);
@@ -157,10 +146,6 @@
 
   .commerce-specialist-media {
     max-width: 560px;
-  }
-
-  .commerce-output {
-    padding-block: 72px 80px;
   }
 }
 
@@ -189,13 +174,5 @@
   .commerce-specialist-primary,
   .commerce-specialist-secondary {
     border-radius: 12px;
-  }
-
-  .commerce-output {
-    padding-block: 56px;
-  }
-
-  .commerce-output-heading {
-    margin-bottom: 28px;
   }
 }

@@ -45,13 +45,6 @@ export const caseCards: CaseCard[] = [
   { id: "tableware", image: asset("p10-tableware-hero"), format: "mid" },
 ];
 
-/** Create 规格示例按画幅索引；未列出的比例在固定预览槽内显示画框。 */
-export const ratioPreviewImages: Record<string, string> = {
-  "1:1": asset("p02-blender-hero"),
-  "3:4": asset("p02-ratio-3x4"),
-  "9:16": asset("p02-ratio-9x16"),
-};
-
 export type FormatTool = "create" | "variation" | "replica" | "textile";
 
 export type FormatId =

@@ -4,7 +4,7 @@ import { RouteLink } from "../../../components/router-link";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { commerceShowcaseMessages } from "./commerce-showcase-messages";
-import { KitSpecs } from "./kit-specs";
+import { ProductStory } from "./product-story";
 
 /** 以完整保留画幅的竖版双图参考介绍复制爆款，并直达对应工具。 */
 function SpecialistTools() {
@@ -52,21 +52,12 @@ function SpecialistTools() {
   );
 }
 
-/** 以套图、构图复刻与可操作的输出规格介绍完整图片制作能力。 */
+/** 以构图复刻入口与连续商品演示介绍图片制作能力。 */
 export function Workflow() {
-  const t = useMessages(commerceShowcaseMessages).specs;
   return (
     <>
       <SpecialistTools />
-      <section className="commerce-output" aria-labelledby="commerce-output-title">
-        <div className="commerce-section">
-          <div className="commerce-output-heading">
-            <h2 id="commerce-output-title">{t.title}</h2>
-            <p className="commerce-description">{t.description}</p>
-          </div>
-          <KitSpecs />
-        </div>
-      </section>
+      <ProductStory />
     </>
   );
 }
