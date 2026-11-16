@@ -1,4 +1,5 @@
 import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { motion } from "motion/react";
 import { useMessages } from "../../../i18n/messages";
 import { commerceShowcaseMessages } from "./commerce-showcase-messages";
 import { processMessages } from "./process-messages";
@@ -28,6 +29,9 @@ export function ProblemProcess() {
       <div className="commerce-section commerce-process-pin">
         <h2 id="commerce-process-title">{t.title}</h2>
         <div className="commerce-process-stage">
+          <div className="commerce-process-progress" aria-hidden="true">
+            <motion.span style={{ scaleX: chapter.progress }} />
+          </div>
           <div className="commerce-process-copy">
             <ToggleButtonGroup
               className="commerce-process-steps"
@@ -52,7 +56,7 @@ export function ProblemProcess() {
             <p>{t.steps[chapter.active]?.description}</p>
           </div>
           <figure className="commerce-process-visual">
-            <div className="commerce-process-layers">
+            <div className="commerce-shot-layers commerce-process-layers">
               {views.map((view) => (
                 <ProductFrame
                   key={view}

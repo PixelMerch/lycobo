@@ -1,5 +1,7 @@
 import { Button } from "@heroui/react";
 import { IconArrowRight } from "@tabler/icons-react";
+import { useInView } from "motion/react";
+import { useRef } from "react";
 import { RouteLink } from "../../../components/router-link";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
@@ -9,10 +11,12 @@ import { ProductFrame } from "./product-frame";
 /** 以同款主图承接创作入口，可回到首屏或直达工作区。 */
 export function FinalCta({ onStart }: { onStart: () => void }) {
   const t = useMessages(commerceShowcaseMessages).cta;
+  const panel = useRef<HTMLDivElement>(null);
+  const revealed = useInView(panel, { once: true, amount: 0.3 });
   return (
     <section className="commerce-final" aria-labelledby="commerce-cta-title">
       <div className="commerce-section">
-        <div className="commerce-final-panel">
+        <div ref={panel} className="commerce-final-panel" data-revealed={revealed}>
           <div className="commerce-final-copy">
             <h2 id="commerce-cta-title">{t.title}</h2>
             <div className="commerce-final-actions">

@@ -57,18 +57,20 @@
 }
 
 .commerce-process-layers {
-  display: grid;
   aspect-ratio: 6 / 5;
 }
 
-.commerce-process-layers .commerce-frame {
-  grid-area: 1 / 1;
-  opacity: 0;
-  transition: opacity 180ms ease-out;
+.commerce-process-progress {
+  height: 2px;
+  grid-column: 1 / -1;
+  background: #ffffff33;
 }
 
-.commerce-process-layers .commerce-frame.is-current {
-  opacity: 1;
+.commerce-process-progress span {
+  display: block;
+  height: 100%;
+  background: #c9ee97;
+  transform-origin: left;
 }
 
 .commerce-process-source .commerce-frame {
@@ -118,9 +120,7 @@
     display: grid;
     grid-template-columns: minmax(210px, 0.75fr) minmax(0, 1.65fr) minmax(76px, 0.35fr);
     align-items: end;
-    gap: clamp(14px, 3vw, 44px);
-    padding-top: 22px;
-    border-top: 1px solid #ffffff33;
+    gap: 20px clamp(14px, 3vw, 44px);
   }
 
   .commerce-process-copy {

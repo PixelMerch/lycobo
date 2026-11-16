@@ -1,4 +1,6 @@
 import { IconArrowUpRight } from "@tabler/icons-react";
+import { useInView } from "motion/react";
+import { useRef } from "react";
 import { RouteLink } from "../../../components/router-link";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
@@ -10,6 +12,8 @@ const views = ["scene", "alternate"] as const;
 /** 并排呈现同款商品的两种布景，并连接现有创作工具。 */
 export function ProductScenes() {
   const { scenes, shots } = useMessages(commerceShowcaseMessages);
+  const photos = useRef<HTMLDivElement>(null);
+  const revealed = useInView(photos, { once: true, margin: "0px 0px -10% 0px" });
 
   return (
     <section className="commerce-scenes" aria-labelledby="commerce-results-title">
@@ -28,7 +32,7 @@ export function ProductScenes() {
             </RouteLink>
           </div>
         </div>
-        <div className="commerce-scenes-photos">
+        <div ref={photos} className="commerce-scenes-photos" data-revealed={revealed}>
           {views.map((view) => (
             <figure key={view}>
               <ProductFrame view={view} />

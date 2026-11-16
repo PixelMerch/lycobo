@@ -24,7 +24,7 @@
   gap: clamp(16px, 3vw, 44px);
 }
 
-.commerce-set-figure > .commerce-frame {
+.commerce-set-layers {
   aspect-ratio: 4 / 3;
 }
 

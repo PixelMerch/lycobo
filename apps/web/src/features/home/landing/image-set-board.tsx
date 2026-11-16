@@ -17,7 +17,15 @@ export function ImageSetBoard({
   return (
     <div className="commerce-set-board">
       <figure className="commerce-set-figure">
-        <ProductFrame view={selected} />
+        <div className="commerce-shot-layers commerce-set-layers">
+          {views.map((view) => (
+            <ProductFrame
+              key={view}
+              view={view}
+              className={view === selected ? "is-current" : ""}
+            />
+          ))}
+        </div>
         <figcaption>{labels[selected]}</figcaption>
       </figure>
       <ToggleButtonGroup
