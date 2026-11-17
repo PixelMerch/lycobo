@@ -1,4 +1,5 @@
 import type { Locale } from "../../../i18n/locale";
+import { initializeLandingScrollbar } from "./landing-scrollbar";
 
 const htmlEntities: Record<string, string> = {
   "&": "&amp;",
@@ -15,6 +16,7 @@ export function renderLandingDocument(
   locale: Locale,
 ) {
   return template
+    .replace("__LYCOBO_SCROLLBAR_SCRIPT__", `(${initializeLandingScrollbar.toString()})();`)
     .replaceAll("__LYCOBO_LOCALE__", locale)
     .replace(/__LYCOBO_(HTML|JS)_([a-zA-Z0-9]+)__/g, (_, context: string, key: string) => {
       const message = messages[key];
