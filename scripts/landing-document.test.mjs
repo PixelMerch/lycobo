@@ -48,18 +48,20 @@ describe("localized landing document", () => {
   });
 
   it.each(["zh-CN", "en"])(
-    "renders three %s comparisons with distinct source and result images",
+    "renders one %s comparison with three distinct outputs and their captions",
     (locale) => {
       const copy = landingCopy(locale);
       const document = renderLandingDocument(template, copy, locale);
       const showcase = document.match(/data-landing-showreel[\s\S]*?<\/section>/)?.[0];
       const images = [...(showcase ?? "").matchAll(/src="(data:image\/webp;base64,[^"]+)"/g)];
-      expect(new Set(images.map((image) => image[1])).size).toBe(6);
-      for (const name of ["Quilt", "Blender", "Fashion"]) {
+      expect(images).toHaveLength(4);
+      expect(new Set(images.map((image) => image[1])).size).toBe(4);
+      expect(showcase?.match(/data-showreel-detail/g)).toHaveLength(3);
+      for (const name of ["Bedroom", "Sofa", "Texture"]) {
         expect(showcase).toContain(`<figcaption>${copy[`heroShowreel${name}Label`]}</figcaption>`);
       }
-      expect(showcase).toContain(`<span>${copy.heroSourceLabel}</span>`);
-      expect(showcase).toContain(`<span>${copy.heroShowreelResultLabel}</span>`);
+      expect(showcase).toContain(`>${copy.heroShowreelSourceLabel}</figcaption>`);
+      expect(showcase).toContain(`>${copy.heroShowreelResultLabel}</p>`);
       expect(showcase).not.toContain("<button");
       expect(showcase).not.toContain("<canvas");
       expect(showcase).not.toContain("<video");

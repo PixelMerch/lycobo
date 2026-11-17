@@ -5,11 +5,10 @@ import setImage from "../../../../public/landing/comforter-set.webp?inline";
 import sourceImage from "../../../../public/landing/comforter-source.webp?inline";
 import stitchImage from "../../../../public/landing/comforter-stitch.webp?inline";
 import studioImage from "../../../../public/landing/comforter-studio.webp?inline";
-import quiltImage from "../../../../public/landing/commerce-quilt.webp?inline";
-import blenderResult from "../../../../public/landing/showcase/blender-after.webp?inline";
-import blenderSource from "../../../../public/landing/showcase/blender-before.webp?inline";
-import fashionResult from "../../../../public/landing/showcase/fashion-after.webp?inline";
-import fashionSource from "../../../../public/landing/showcase/fashion-before.webp?inline";
+import throwBedroom from "../../../../public/landing/showcase/mint-throw-bedroom.webp?inline";
+import throwSofa from "../../../../public/landing/showcase/mint-throw-sofa.webp?inline";
+import throwSource from "../../../../public/landing/showcase/mint-throw-source.webp?inline";
+import throwTexture from "../../../../public/landing/showcase/mint-throw-texture.webp?inline";
 import type { Locale } from "../../../i18n/locale";
 import { initializeLandingBrandScroll } from "./landing-brand-scroll";
 import { initializeLandingFeatureScroll } from "./landing-feature-scroll";
@@ -23,17 +22,16 @@ import { initializeLandingShowcaseScroll } from "./landing-showcase-scroll";
 
 const heroImages: Record<string, string> = {
   drape: drapeImage,
-  blendersource: blenderSource,
-  blenderresult: blenderResult,
-  fashionsource: fashionSource,
-  fashionresult: fashionResult,
   folded: foldedImage,
-  quilt: quiltImage,
   room: roomImage,
   set: setImage,
   source: sourceImage,
   stitch: stitchImage,
   studio: studioImage,
+  throwbedroom: throwBedroom,
+  throwsofa: throwSofa,
+  throwsource: throwSource,
+  throwtexture: throwTexture,
 };
 
 const hero = heroTemplate.replace(/__LYCOBO_HERO_([a-z]+)__/g, (marker, name: string) => {
