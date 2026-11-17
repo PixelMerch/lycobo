@@ -1,5 +1,7 @@
-.lycobo-hero {
+.lycobo-hero,
+.lycobo-showreel {
   --hero-paper: #f3f0ec;
+  --showreel-handoff: clamp(120px, 20svh, 210px);
 }
 
 .lycobo-showreel {
@@ -108,8 +110,14 @@
   height: calc(var(--showreel-stage-height) + clamp(730px, 117svh, 1120px));
 }
 
+.lycobo-hero[data-motion]:has(+ .lycobo-showreel[data-showreel-motion]) {
+  height: calc(100svh + var(--hero-scroll) + var(--showreel-handoff));
+}
+
 .lycobo-hero[data-motion] + .lycobo-showreel[data-showreel-motion] {
-  margin-top: calc(-1 * clamp(32px, 7svh, 78px));
+  --showreel-stage-height: 100svh;
+  margin-top: calc(-100svh - var(--showreel-handoff));
+  background: transparent;
 }
 
 [data-showreel-motion] .lycobo-showreel-stage {
@@ -120,6 +128,10 @@
   height: var(--showreel-stage-height);
   padding-block: 80px 25px;
   overflow: clip;
+}
+
+.lycobo-hero[data-motion] + .lycobo-showreel[data-showreel-motion] .lycobo-showreel-stage {
+  background: rgb(9 10 10 / var(--showreel-cover, 0));
 }
 
 [data-showreel-motion] .lycobo-showreel-media {

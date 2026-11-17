@@ -36,15 +36,18 @@ export function initializeLandingShowreel() {
     if (progress === lastProgress) return;
     lastProgress = progress;
 
-    // 画框经过舞台上缘后继续下落，在镜头推进前归位。
-    const landing = ease(progress, 0.23, 0.49);
+    // 套图停留时，同一视口逐渐变暗，宽屏画面顺势显现。
+    const landing = ease(progress, 0.06, 0.27);
     const forward = ease(progress, 0.35, 0.57);
     const detail = ease(progress, 0.48, 0.59);
     const reveal = ease(progress, 0.59, 0.74);
     const cardEntry = ease(progress, 0.76, 0.88);
     const cardScroll = ease(progress, 0.81, 0.99);
 
-    media.style.transform = `translate3d(0,${-31 * (1 - landing)}svh,0) scale(${0.965 + 0.035 * landing})`;
+    const cover = ease(progress, 0, 0.155);
+    stage.style.setProperty("--showreel-cover", String(cover));
+    media.style.opacity = String(ease(progress, 0.055, 0.22));
+    media.style.transform = `translate3d(0,${-8 * (1 - landing)}px,0) scale(${0.955 + 0.045 * landing})`;
     room.style.transform = `scale(${1.02 + forward * 0.18}) translateX(${-2.8 * forward}%)`;
     macro.style.opacity = String(detail);
     macro.style.transform = `translate3d(${3 * (1 - detail)}%,0,0) scale(${1.02 + 0.075 * detail})`;
@@ -57,17 +60,18 @@ export function initializeLandingShowreel() {
   };
 
   const measure = () => {
+    const linked = section.previousElementSibling?.hasAttribute("data-motion");
     section.toggleAttribute("data-showreel-motion", viewport.matches);
     cardWindow.tabIndex = viewport.matches ? -1 : 0;
     if (!viewport.matches) {
       travel = 0;
-      for (const element of [media, title, room, macro, studio, light, cards, track]) {
+      for (const element of [stage, media, title, room, macro, studio, light, cards, track]) {
         element.removeAttribute("style");
       }
       return;
     }
     travel = Math.max(1, section.clientHeight - stage.clientHeight);
-    approach = innerHeight * 0.48;
+    approach = linked ? 0 : innerHeight * 0.48;
     cardTravel = Math.max(0, track.offsetWidth - cardWindow.clientWidth);
     lastProgress = Number.NaN;
     draw();
