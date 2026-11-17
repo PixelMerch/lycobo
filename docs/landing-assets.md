@@ -11,15 +11,15 @@
 - 存放目录：`apps/web/public/landing/commerce/`；网页使用 82% 质量的 WebP，原始 PNG 母图只留在本地生成目录。
 - 裁切：案例和模板由 `object-fit: cover` 或 ImageMagick 安全裁切；未做旧图改名或截图复用。
 
-## 当前原版复刻稿
+## 当前品牌替换稿
 
-用户于 2026-11-16 明确选择先完整复刻 OpenArt，再进行 Lycobo 品牌改造。当前 `/commerce` 加载 `apps/web/public/openart-reference/index.html`，源材料为用户提供的 `page-take/recordings/openairt/source/`。
+用户于 2026-11-16 明确选择先完整复刻 OpenArt，再进行 Lycobo 品牌改造。2026-11-17 已替换 Lycobo 标识和双语文案，保留布局、动画和灰阶占位。当前 `/commerce` 本地化后加载 `apps/web/public/openart-reference/index.html`，源材料为用户提供的 `page-take/recordings/openairt/source/`。
 
 - 照片、视频封面与功能演示媒体全部使用灰阶 SVG 占位；保留原图位的尺寸、比例、裁切和动效容器。
-- OpenArt 标志、页脚大字标、UI 图标与录制字体用于原版尺寸核对，未作为 Lycobo 品牌资产。
+- 导航、主视觉和页脚字标复用现有 `brand/lycobo-landing.svg`；原版客户、媒体、模型标识使用灰阶占位，不宣称合作关系。界面图标与录制字体仍限制在隔离模板内。
 - 不生成素材、不下载新照片，不播放录制站的原视频；滚动形变、卡片轮播和主题切换保留。
 - 旧商品媒体继续留在 `public/landing/commerce/`，当前参考稿不使用，也不删除。
-- 后续先完成品牌和文案替换，再按确定图位逐张生成商品素材；视觉规则以 [DESIGN](../DESIGN.md#5-品牌首页与电商专区) 为准。
+- 后续按确定图位逐张生成商品素材；视觉规则以 [DESIGN](../DESIGN.md#5-品牌首页与电商专区) 为准。
 
 下面保留已有素材库及制作来源，供后续选图和生成核对。
 

@@ -14,3 +14,8 @@ body:has(.openart-reference) .topbar {
   border: 0;
   background: #090a0a;
 }
+.landing-load-state {
+  display: grid;
+  place-items: center;
+  color: #f5f5f5;
+}
