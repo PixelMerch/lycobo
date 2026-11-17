@@ -1,4 +1,5 @@
 import type { Locale } from "../../../i18n/locale";
+import { initializeLandingFeatureScroll } from "./landing-feature-scroll";
 import { initializeLandingScrollbar } from "./landing-scrollbar";
 
 const htmlEntities: Record<string, string> = {
@@ -16,6 +17,10 @@ export function renderLandingDocument(
   locale: Locale,
 ) {
   return template
+    .replace(
+      "__LYCOBO_FEATURE_SCROLL_SCRIPT__",
+      `window.addEventListener("load", ${initializeLandingFeatureScroll.toString()}, { once: true });`,
+    )
     .replace("__LYCOBO_SCROLLBAR_SCRIPT__", `(${initializeLandingScrollbar.toString()})();`)
     .replaceAll("__LYCOBO_LOCALE__", locale)
     .replace(/__LYCOBO_(HTML|JS)_([a-zA-Z0-9]+)__/g, (_, context: string, key: string) => {
