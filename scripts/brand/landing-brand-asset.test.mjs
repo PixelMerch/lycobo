@@ -31,7 +31,7 @@ it("loads the shipped Rive and reverses the C morph without leaving residual tra
     expect(positions[0]).toEqual(positions[4]);
     expect(positions[1]).toEqual(positions[3]);
     expect(positions[0]?.x).toBeCloseTo(168);
-    expect(positions[2]?.x).toBeCloseTo(390);
+    expect(positions[2]?.x).toBeCloseTo(320);
     expect(positions[2]?.rotation).toBeCloseTo(-Math.PI / 4);
   } finally {
     animation.delete();

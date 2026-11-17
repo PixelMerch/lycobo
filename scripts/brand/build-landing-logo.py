@@ -163,7 +163,7 @@ def build():
             start = resample([(x-168, y-92) for x, y in contours[0]], 100)
             end = resample(focus_contour(), 100)
             shape, vertices = writer.shape('c-to-focus', [start], 168, 92)
-            writer.track(shape, 13, [(0, 168), (18, 168), (90, 390), (120, 390)])
+            writer.track(shape, 13, [(0, 168), (18, 168), (90, 320), (120, 320)])
             writer.track(shape, 14, [(0, 92), (18, 92), (90, 83.4), (120, 83.4)])
             writer.track(shape, 15, [(0, 0), (42, 0), (108, -math.pi/4), (120, -math.pi/4)])
             for vertex, a, b in zip(vertices[0], start, end):
@@ -178,7 +178,7 @@ def build():
         shift = 22 if letter < 2 else -40 - 8*letter
         writer.track(shape, 13, [(0, 0), (delay, 0), (delay+48, shift), (120, shift)])
     # 圆点与环共享旋转中心，最后出现于右上方。
-    rotation = writer.component(2, {4: 'focus-dot-orbit', 5: 0, 13: 390, 14: 83.4})
+    rotation = writer.component(2, {4: 'focus-dot-orbit', 5: 0, 13: 320, 14: 83.4})
     points = [(41.8+11*math.cos(i*math.tau/48), 11*math.sin(i*math.tau/48))
               for i in range(48)]
     dot, _ = writer.shape('focus-dot', [points], parent=rotation)

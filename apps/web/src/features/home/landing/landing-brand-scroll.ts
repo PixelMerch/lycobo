@@ -3,7 +3,7 @@ export function initializeLandingBrandScroll() {
   const wordmarks = document.querySelectorAll<HTMLElement>(".lycobo-nav-wordmark");
   const symbols = document.querySelectorAll<HTMLElement>(".lycobo-nav-mark");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const scrollDistance = 300;
+  const scrollDistance = 500;
   let frame = 0;
   let riveReady = false;
   const navigation = document.querySelector<HTMLElement>("[data-nav-items]");
@@ -50,8 +50,8 @@ export function initializeLandingBrandScroll() {
     }
     for (const symbol of symbols) {
       symbol.style.opacity = String(Math.max(0, (progress - 0.35) / 0.65));
-      // 图形右边缘与原字标接近，菜单不移动；减少动态效果时固定在终点淡入。
-      const shift = window.innerWidth < 768 ? 61.58 : 78.57;
+      // 缩短图形右移距离，为固定菜单保留间距；减少动态效果时固定在终点淡入。
+      const shift = window.innerWidth < 768 ? 48.1 : 61.36;
       symbol.style.transform = reducedMotion.matches
         ? `translateX(${shift}px)`
         : `translateX(${shift * progress}px) rotate(${-45 * progress}deg)`;
