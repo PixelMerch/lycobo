@@ -50,7 +50,11 @@ export function initializeLandingBrandScroll() {
     }
     for (const symbol of symbols) {
       symbol.style.opacity = String(Math.max(0, (progress - 0.35) / 0.65));
-      symbol.style.transform = reducedMotion.matches ? "none" : `rotate(${-45 * progress}deg)`;
+      // 图形右边缘与原字标接近，菜单不移动；减少动态效果时固定在终点淡入。
+      const shift = window.innerWidth < 768 ? 61.58 : 78.57;
+      symbol.style.transform = reducedMotion.matches
+        ? `translateX(${shift}px)`
+        : `translateX(${shift * progress}px) rotate(${-45 * progress}deg)`;
     }
   }
 
