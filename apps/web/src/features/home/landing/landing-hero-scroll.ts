@@ -1,4 +1,4 @@
-/** 让首屏的七张照片随滚动逐一落到套图中的对应画框。 */
+/** 让首屏的七张照片随滚动逐步归位，展开完整的套图。 */
 export function initializeLandingHeroScroll() {
   const hero = document.querySelector<HTMLElement>("[data-landing-hero]");
   const stage = hero?.querySelector<HTMLElement>(".lycobo-hero-stage");
@@ -8,15 +8,13 @@ export function initializeLandingHeroScroll() {
     const name = start.dataset.heroPhoto;
     const end = hero.querySelector<HTMLElement>(`[data-hero-slot="${name}"]`);
     const visual = start.querySelector<HTMLElement>(".lycobo-hero-visual");
-    const image = visual?.querySelector("img");
-    if (!end || !visual || !image) return [];
+    if (!end || !visual) return [];
     return [
       {
         start,
         end,
         visual,
-        image,
-        main: name === "studio",
+        revealedOnScroll: start.hasAttribute("data-hero-reveal"),
         from: new DOMRect(),
         to: new DOMRect(),
       },
@@ -24,7 +22,7 @@ export function initializeLandingHeroScroll() {
   });
 
   const viewport = matchMedia(
-    "(min-width: 960px) and (min-height: 660px), (min-width: 350px) and (max-width: 959px) and (min-height: 720px)",
+    "(min-width: 960px) and (min-height: 660px), (min-width: 350px) and (max-width: 959px) and (min-height: 700px)",
   );
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   let frame = 0;
@@ -42,17 +40,17 @@ export function initializeLandingHeroScroll() {
     if (progress === drawnProgress) return;
     drawnProgress = progress;
     const breathing = 1 - ease(progress, 0.02, 0.29);
-    const defocus = 1 - ease(progress, 0.04, 0.82);
     stage.style.setProperty("--hero-breath-strength", String(breathing));
     stage.toggleAttribute("data-breath-settled", breathing === 0);
-    stage.style.setProperty("--hero-defocus", String(defocus));
-    stage.toggleAttribute("data-hero-focused", defocus === 0);
-    stage.style.setProperty("--hero-copy-opacity", String(1 - ease(progress, 0.04, 0.25)));
-    stage.style.setProperty("--hero-results-opacity", String(ease(progress, 0.61, 0.99)));
+    stage.style.setProperty("--hero-opening-opacity", String(1 - ease(progress, 0.03, 0.3)));
+    stage.style.setProperty("--hero-gallery-opacity", String(ease(progress, 0.24, 0.8)));
+    stage.style.setProperty("--hero-results-opacity", String(ease(progress, 0.67, 0.94)));
 
-    for (const [index, { from, to, visual, main }] of pairs.entries()) {
-      const offset = main ? 0 : index * 0.015;
-      const t = ease(progress, 0.12 + offset, 0.89 + offset);
+    for (const [index, { start, from, to, visual, revealedOnScroll }] of pairs.entries()) {
+      const offset = index * 0.028;
+      const t = ease(progress, 0.08 + offset, 0.8 + offset);
+      const reveal = ease(progress, 0.32 + offset, 0.63 + offset);
+      if (revealedOnScroll) start.style.setProperty("--hero-reveal-opacity", String(reveal));
       const x = (to.left - from.left) * t;
       const y = (to.top - from.top) * t;
       // 只改变独立画框的裁切尺寸，图片继续按原比例填充。
@@ -88,11 +86,10 @@ export function initializeLandingHeroScroll() {
     frame = 0;
     stage.style.removeProperty("--hero-breath-strength");
     stage.removeAttribute("data-breath-settled");
-    stage.style.removeProperty("--hero-defocus");
-    stage.removeAttribute("data-hero-focused");
-    for (const { visual, end, image } of pairs) {
+    for (const { start, visual, end } of pairs) {
+      start.style.removeProperty("--hero-reveal-opacity");
       visual.removeAttribute("style");
-      if (!end.firstChild) end.append(image.cloneNode());
+      if (!end.firstChild) end.append(visual.cloneNode(true));
     }
   };
 

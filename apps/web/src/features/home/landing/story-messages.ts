@@ -3,9 +3,13 @@ import { defineMessages } from "../../../i18n/messages";
 /** 电商落地页的产品展示双语文案。 */
 export const storyMessages = defineMessages({
   "zh-CN": {
-    copy115: "一张原图，",
-    copy116: "一整套上架图",
+    copy115: "一张商品照，",
+    copy116: "生成一整套电商图",
     heroSet: "上架套图",
+    heroSourceLabel: "商品原图",
+    heroDrapeLabel: "垂坠效果",
+    heroFoldedLabel: "折叠厚度",
+    heroDetailNote: "被角包边",
     copy119: "立刻创作",
     copy120: "开始制作",
     copy121: "从商品展示，到细节说明",
@@ -86,8 +90,12 @@ export const storyMessages = defineMessages({
   },
   en: {
     copy115: "One product photo.",
-    copy116: "A complete listing set.",
-    heroSet: "Product Listing Images",
+    copy116: "A complete set of listing images.",
+    heroSet: "Listing Image Set",
+    heroSourceLabel: "Original Photo",
+    heroDrapeLabel: "Drape",
+    heroFoldedLabel: "Folded Profile",
+    heroDetailNote: "Piped Edges",
     copy119: "Create Now",
     copy120: "Create Images",
     copy121: "From the full product to the finest detail",

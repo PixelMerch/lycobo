@@ -1,7 +1,7 @@
-import bindingImage from "../../../../public/landing/comforter-binding.webp?inline";
 import drapeImage from "../../../../public/landing/comforter-drape.webp?inline";
 import foldedImage from "../../../../public/landing/comforter-folded.webp?inline";
 import roomImage from "../../../../public/landing/comforter-room.webp?inline";
+import setImage from "../../../../public/landing/comforter-set.webp?inline";
 import sourceImage from "../../../../public/landing/comforter-source.webp?inline";
 import stitchImage from "../../../../public/landing/comforter-stitch.webp?inline";
 import studioImage from "../../../../public/landing/comforter-studio.webp?inline";
@@ -14,10 +14,10 @@ import { initializeLandingHeroScroll } from "./landing-hero-scroll";
 import { initializeLandingScrollbar } from "./landing-scrollbar";
 
 const heroImages: Record<string, string> = {
-  binding: bindingImage,
   drape: drapeImage,
   folded: foldedImage,
   room: roomImage,
+  set: setImage,
   source: sourceImage,
   stitch: stitchImage,
   studio: studioImage,

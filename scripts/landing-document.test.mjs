@@ -39,7 +39,7 @@ describe("localized landing document", () => {
     const document = renderLandingDocument(template, landingCopy("zh-CN"), "zh-CN");
     const photos = Array.from(
       document.matchAll(
-        /data-hero-photo="([a-z]+)">\s*<div[^>]*>\s*<img src="(data:image\/webp;base64,[^"]+)"/g,
+        /data-hero-photo="([a-z]+)"[^>]*>\s*<figure[^>]*>\s*<img src="(data:image\/webp;base64,[^"]+)"/g,
       ),
     );
     const slots = Array.from(document.matchAll(/data-hero-slot="([a-z]+)"/g), (match) => match[1]);
