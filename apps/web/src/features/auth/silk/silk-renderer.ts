@@ -23,7 +23,7 @@ export type SilkFrame = {
   sheenColor: Rgb;
 };
 
-/** 首页使用的一套固定外观参数。 */
+/** 丝绸背景使用的一套固定外观参数。 */
 export type SilkLook = {
   scale: number;
   rotation: number;

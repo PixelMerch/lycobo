@@ -5,7 +5,7 @@ import { useState } from "react";
 import { DialogClose } from "../../components/overlays/dialog-close";
 import { useCenteredDialogMotion } from "../../components/overlays/use-centered-dialog-motion";
 import "../../styles/fullscreen-dialog.css";
-import { HomeInspirationGallery } from "../home/home-inspiration-gallery";
+import { HomeInspirationGallery } from "../inspiration/home-inspiration-gallery";
 import { AssetBrowser } from "./asset-browser";
 import { toolAssetFilters } from "./asset-library-client";
 import { type AssetLibraryTab, AssetLibraryTabs } from "./asset-library-tabs";
@@ -60,7 +60,7 @@ export function LibraryDialog({
                 inspiration={
                   // 首页作品墙也在页面上时，分类选中动画各走各的，不在两面墙之间飞过去。
                   <LayoutGroup id="asset-library-inspiration">
-                    <HomeInspirationGallery library onApplied={requestClose} />
+                    <HomeInspirationGallery onApplied={requestClose} />
                   </LayoutGroup>
                 }
               />

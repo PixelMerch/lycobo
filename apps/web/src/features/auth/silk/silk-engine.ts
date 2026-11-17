@@ -1,7 +1,7 @@
 import { type Rgb, type SilkInput, SilkMotion, type SilkPointer } from "./silk-motion";
 import { createSilkRenderer, type SilkLook } from "./silk-renderer";
 
-// 首页取值：褶皱斜向流动、光泽与柔光适中，颗粒略弱，避免抢正文。
+// 登录背景取值：褶皱斜向流动、光泽与柔光适中，颗粒略弱，避免抢正文。
 const look: SilkLook = {
   scale: 1,
   rotation: 0.35,

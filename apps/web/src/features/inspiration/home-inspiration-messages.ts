@@ -1,7 +1,7 @@
 import { defineMessages } from "../../i18n/messages";
 
 /**
- * 首页灵感示例的文案：分类名称、示例标题与提示词（按示例 id 查），以及列表和详情弹窗的界面文字。
+ * 灵感库示例的文案：分类名称、示例标题与提示词（按示例 id 查），以及列表和详情弹窗的界面文字。
  * 提示词会原样写进主图草稿，英文界面填入英文提示词。
  */
 export const homeInspirationMessages = defineMessages({
@@ -28,7 +28,6 @@ export const homeInspirationMessages = defineMessages({
     prompt: "创作提示词",
     hint: "上传你的商品图，使用这段描述开始创作。",
     copyPrompt: "复制提示词",
-    more: "查看更多灵感",
     libraryTitle: "灵感库",
     libraryIntro: "挑一张喜欢的画面，点“做同款”，带着它的提示词开始创作。",
     items: {
@@ -173,7 +172,6 @@ export const homeInspirationMessages = defineMessages({
     prompt: "Prompt",
     hint: "Upload your product photo and start creating with this description.",
     copyPrompt: "Copy prompt",
-    more: "View more inspiration",
     libraryTitle: "Inspiration",
     libraryIntro: "Find a look you like and choose “Use this style” to start with its prompt.",
     items: {

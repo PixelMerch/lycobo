@@ -1,6 +1,6 @@
 # 电商专区素材清单
 
-本清单记录电商专区示例的来源。页面在 `/commerce`，实现位于 `apps/web/src/features/home/landing/`，现行视觉见 [DESIGN](../DESIGN.md#5-品牌首页与电商专区)。图片是展示素材，不代表客户订单、真实评价或在线生成。
+本清单记录电商专区示例的来源。当前页面在 `/zh-CN`、`/en` 首页，实现位于 `apps/web/src/features/home/landing/`，现行视觉见 [DESIGN](../DESIGN.md#5-品牌首页与电商专区)。图片是展示素材，不代表客户订单、真实评价或在线生成。
 
 参考沿革：早期版式参考 VidMuse winning-ads 与用户确认的 [Figma Make 原型](https://www.figma.com/make/SZ7mUN04H1uhrlbjGheg2D/Build-Lycobo-Ecommerce-Landing)。随后采用 Lovart 的成套作品组织、FLORA 的输入与结果关系、Recraft 的大图比例。保留 Lycobo 品牌、原有 Hero 和真实工具入口。参考用于构图和交互研究，第三方素材边界见[来源声明](third-party.md)。
 
@@ -13,7 +13,7 @@
 
 ## 当前品牌替换稿
 
-用户于 2026-11-16 明确选择先完整复刻 OpenArt，再进行 Lycobo 品牌改造。2026-11-17 已替换 Lycobo 标识和双语文案，保留布局、动画和灰阶占位。当前 `/commerce` 本地化后加载 `apps/web/public/openart-reference/index.html`，源材料为用户提供的 `page-take/recordings/openairt/source/`。
+用户于 2026-11-16 明确选择先完整复刻 OpenArt，再进行 Lycobo 品牌改造。2026-11-17 已替换 Lycobo 标识和双语文案，保留布局、动画和灰阶占位。当前语言首页加载 `apps/web/public/openart-reference/index.html`，源材料为用户提供的 `page-take/recordings/openairt/source/`。
 
 - 照片、视频封面与功能演示媒体全部使用灰阶 SVG 占位；保留原图位的尺寸、比例、裁切和动效容器。
 - 导航、主视觉和页脚字标复用现有 `brand/lycobo-landing.svg`；原版客户、媒体、模型标识使用灰阶占位，不宣称合作关系。界面图标保留，字体统一为自托管阿里巴巴普惠体 3.0，并将所需字形嵌入隔离模板。

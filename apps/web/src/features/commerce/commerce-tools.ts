@@ -1,5 +1,5 @@
-/** 电商专区地址，用于公开浏览、工具选择和登录返回。 */
-export const commercePath = "/commerce";
+/** 电商落地页统一使用首页地址，真实工具继续使用各自工作区路径。 */
+export const commercePath = "/";
 
 /** 可从专区开始的工具及其工作区地址，保留已保存的工具标识。 */
 export const commerceTools = [
@@ -18,7 +18,7 @@ export function commerceToolFromSearch(search: string): CommerceTool {
   return commerceTools.find((tool) => tool.id === id) ?? commerceTools[0];
 }
 
-/** 生成可分享的工具地址，指定从菜单进入时定位到创作框。 */
+/** 生成首页工具来源地址，保留已有工具参数与定位片段。 */
 export function commerceToolHref(id: CommerceToolId) {
   return `${commercePath}?tool=${id}#commerce-composer`;
 }

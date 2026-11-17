@@ -6,28 +6,22 @@ async function switchLanguage(page: Page, language: string) {
   await page.getByRole("menuitemradio", { name: language, exact: true }).click();
 }
 
-test("explicit language wins over storage and switching keeps the home draft and query", async ({
+test("homepage language follows the URL and switching preserves query and history", async ({
   page,
 }) => {
   await mockImageApi(page);
   await page.addInitScript(() => localStorage.setItem("lycobo.locale", "zh-CN"));
-  await page.goto("/en?category=product#inspiration");
+  await page.goto("/en?tool=create#commerce-composer");
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
-  const prompt = page.locator(".home-composer textarea");
-  await prompt.fill("A product photo draft that must survive a language switch");
-  await prompt.evaluate((element) => element.setAttribute("data-locale-draft-probe", "kept"));
-  await expect(page.locator("html")).toHaveAttribute("data-ws-total", /\d+/);
-  const connections = await page.locator("html").getAttribute("data-ws-total");
-  await switchLanguage(page, "简体中文");
-  await expect(page).toHaveURL(/\/zh-CN\?category=product#inspiration$/);
-  await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
-  await expect(prompt).toHaveValue("A product photo draft that must survive a language switch");
-  await expect(prompt).toHaveAttribute("data-locale-draft-probe", "kept");
-  await expect(page.locator("html")).toHaveAttribute("data-ws-total", connections ?? "");
-  await expect(page.locator(".site-footer-logo")).toHaveAttribute("href", "/zh-CN");
+  const landing = page.frameLocator("iframe.openart-reference");
+  await expect(landing.locator("html")).toHaveAttribute("lang", "en");
+  await page.locator(".landing-language-control .language-trigger").click();
+  await page.getByRole("menuitemradio", { name: "简体中文", exact: true }).click();
+  await expect(page).toHaveURL(/\/zh-CN\?tool=create#commerce-composer$/);
+  await expect(landing.locator("html")).toHaveAttribute("lang", "zh-CN");
   await page.goBack();
-  await expect(page.locator("html")).toHaveAttribute("lang", "en");
-  await expect(prompt).toHaveAttribute("data-locale-draft-probe", "kept");
+  await expect(page).toHaveURL(/\/en\?tool=create#commerce-composer$/);
+  await expect(landing.locator("html")).toHaveAttribute("lang", "en");
 });
 
 test("workspace language switch preserves draft and routes tool navigation in the selected language", async ({

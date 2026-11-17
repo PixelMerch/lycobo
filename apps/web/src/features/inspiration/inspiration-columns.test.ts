@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { distributeColumns } from "./inspiration-columns";
-import { pagingFinished, shownCount } from "./use-inspiration-paging";
 
 const shapes = [
   "portrait",
@@ -43,23 +42,5 @@ describe("inspiration masonry", () => {
     );
     expect(first?.items.map((item) => item.id)).toEqual(["tall"]);
     expect(second?.items.map((item) => item.id)).toEqual(["wide", "next"]);
-  });
-});
-
-describe("home wall paging", () => {
-  it("shows 10 first, then scrolling adds two batches of 4 and stops there", () => {
-    expect([0, 1, 2].map((loads) => shownCount(23, loads))).toEqual([10, 14, 18]);
-    expect(pagingFinished(23, 1)).toBe(false);
-    expect(pagingFinished(23, 2)).toBe(true);
-  });
-
-  it("adds up to 10 more on the page for each 查看更多灵感 press", () => {
-    expect([3, 4, 5].map((loads) => shownCount(40, loads))).toEqual([28, 38, 40]);
-    expect(shownCount(23, 3)).toBe(23);
-  });
-
-  it("finishes at once when a category has no more cards to load", () => {
-    expect(shownCount(6, 0)).toBe(6);
-    expect(pagingFinished(6, 0)).toBe(true);
   });
 });

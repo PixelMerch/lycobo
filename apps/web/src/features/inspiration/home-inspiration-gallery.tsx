@@ -18,20 +18,14 @@ import "./home-inspiration-gallery.css";
 
 /**
  * 展示灵感示例，用户确认后带入主图草稿，不自动提交任务。
- * 首页作品墙分批加载，“查看更多灵感”在当前页接着加载；灵感库页面和素材库的灵感库标签传 library，一次显示全部。
+ * 灵感库页面和素材库的灵感标签共用完整列表。
  * onApplied 在带着提示词去工作台后调用，素材库弹窗借此关闭自己。
  */
-export function HomeInspirationGallery({
-  library = false,
-  onApplied,
-}: {
-  library?: boolean;
-  onApplied?: () => void;
-}) {
+export function HomeInspirationGallery({ onApplied }: { onApplied?: () => void }) {
   const navigate = useAppNavigate();
   const requireLogin = useRequireLogin();
   const t = useMessages(homeInspirationMessages);
-  // 首页作品墙和素材库弹窗里的灵感库可能同时在页面上，标题 id 各用各的。
+  // 灵感库页面和素材库弹窗可能同时挂载，标题 id 各用各的。
   const titleId = useId();
   const inspirations = homeInspirationsFor(useLocale());
   // 记住示例 id 而不是文字，切换语言后弹窗里的标题和提示词跟着换。
@@ -60,12 +54,7 @@ export function HomeInspirationGallery({
       <h2 id={titleId} className="sr-only">
         {t.title}
       </h2>
-      <InspirationWall
-        items={inspirations}
-        library={library}
-        onOpen={(item) => setSelectedId(item.id)}
-        onUse={use}
-      />
+      <InspirationWall items={inspirations} onOpen={(item) => setSelectedId(item.id)} onUse={use} />
       {selected && (
         <InspirationDetail
           item={selected}

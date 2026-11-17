@@ -6,6 +6,7 @@ import {
   loadRouteLocale,
   localizedRedirect,
   normalizeInitialLocalePath,
+  redirectCommerceToHome,
   redirectToLocale,
 } from "./locale-route";
 import { PageLoading } from "./page-loading";
@@ -42,7 +43,9 @@ const localizedRoutes: RouteObject[] = [
     children: [
       {
         index: true,
-        lazy: async () => ({ Component: (await import("../features/home/home-page")).HomePage }),
+        lazy: async () => ({
+          Component: (await import("../features/home/landing/landing-page")).LandingPage,
+        }),
       },
       {
         path: "workspace",
@@ -50,9 +53,7 @@ const localizedRoutes: RouteObject[] = [
       },
       {
         path: "commerce",
-        lazy: async () => ({
-          Component: (await import("../features/home/landing/landing-page")).CommerceLanding,
-        }),
+        loader: ({ request }) => redirectCommerceToHome(request),
       },
       {
         lazy: async () => ({
@@ -119,7 +120,7 @@ const localizedRoutes: RouteObject[] = [
       {
         path: "inspiration",
         lazy: async () => ({
-          Component: (await import("../features/home/inspiration-library-page"))
+          Component: (await import("../features/inspiration/inspiration-library-page"))
             .InspirationLibraryPage,
         }),
       },

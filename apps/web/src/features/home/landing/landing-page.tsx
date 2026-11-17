@@ -15,8 +15,8 @@ async function loadLandingTemplate(signal: AbortSignal) {
   return response.text();
 }
 
-/** 在隔离模板中呈现 Lycobo 双语内容，保留已确认的布局与滚动动效。 */
-export function CommerceLanding() {
+/** 在语言首页呈现 Lycobo 双语落地页，保留已确认的布局与滚动动效。 */
+export function LandingPage() {
   const locale = useLocale();
   const t = useMessages(referenceMessages);
   const {

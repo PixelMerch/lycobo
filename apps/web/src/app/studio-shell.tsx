@@ -20,7 +20,7 @@ import { useEnterpriseSession } from "../features/auth/auth-client";
 import { loginHref } from "../features/auth/login-navigation";
 import { commercePath, commerceToolHref, commerceTools } from "../features/commerce/commerce-tools";
 import { useImageEvents } from "../features/generation/use-image-events";
-import { inspirationLibraryPath } from "../features/home/inspiration-path";
+import { inspirationLibraryPath } from "../features/inspiration/inspiration-path";
 import { legalPaths } from "../features/legal/legal-document";
 import { workspaceToolMessages } from "../features/workspace/workspace-tool-messages";
 import { toolIcons } from "../features/workspace/workspace-tool-symbol";
@@ -36,7 +36,6 @@ import "../styles/brand.css";
 
 // 首页与用户协议、隐私政策不需要登录，其他页面未登录时先去登录。
 const publicPaths = new Set<string>([
-  "/",
   commercePath,
   inspirationLibraryPath,
   legalPaths.terms,
@@ -47,13 +46,12 @@ const headerLogos = {
   home: { src: "/brand/lycobo-landing.svg", width: 90, height: 28 },
   studio: { src: "/brand/lycobo-reveal.svg", width: 120, height: 32 },
 };
-const landingPaths = new Set<string>(["/", commercePath]);
 
 /** 组合应用导航和业务区域，未登录时转往独立登录页面。 */
 export function StudioShell() {
   const location = useAppLocation();
   const { pathname } = location;
-  const landing = landingPaths.has(pathname);
+  const landing = pathname === commercePath;
   const inWorkspace = isWorkspacePath(pathname);
   const commerceHeader = landing || inWorkspace;
   const logo = headerLogos[commerceHeader ? "home" : "studio"];
@@ -278,6 +276,8 @@ function DrawerNavigation({
 
 function isWorkspacePath(pathname: string) {
   return (
-    pathname.startsWith(`${commercePath}/`) || pathname === "/workspace" || pathname === "/video"
+    commerceTools.some((tool) => pathname === tool.href || pathname.startsWith(`${tool.href}/`)) ||
+    pathname === "/workspace" ||
+    pathname === "/video"
   );
 }
