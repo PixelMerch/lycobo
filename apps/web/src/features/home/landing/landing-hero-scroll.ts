@@ -42,8 +42,11 @@ export function initializeLandingHeroScroll() {
     if (progress === drawnProgress) return;
     drawnProgress = progress;
     const breathing = 1 - ease(progress, 0.02, 0.29);
+    const defocus = 1 - ease(progress, 0.04, 0.82);
     stage.style.setProperty("--hero-breath-strength", String(breathing));
     stage.toggleAttribute("data-breath-settled", breathing === 0);
+    stage.style.setProperty("--hero-defocus", String(defocus));
+    stage.toggleAttribute("data-hero-focused", defocus === 0);
     stage.style.setProperty("--hero-copy-opacity", String(1 - ease(progress, 0.04, 0.25)));
     stage.style.setProperty("--hero-results-opacity", String(ease(progress, 0.61, 0.99)));
 
@@ -85,6 +88,8 @@ export function initializeLandingHeroScroll() {
     frame = 0;
     stage.style.removeProperty("--hero-breath-strength");
     stage.removeAttribute("data-breath-settled");
+    stage.style.removeProperty("--hero-defocus");
+    stage.removeAttribute("data-hero-focused");
     for (const { visual, end, image } of pairs) {
       visual.removeAttribute("style");
       if (!end.firstChild) end.append(image.cloneNode());
