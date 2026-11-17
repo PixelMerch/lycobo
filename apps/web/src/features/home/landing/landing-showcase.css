@@ -1,0 +1,189 @@
+.lycobo-hero {
+  --hero-paper: #f3f0ec;
+}
+
+.lycobo-showreel {
+  --showreel-stage-height: 100svh;
+  position: relative;
+  background: #090a0a;
+  color: #f5f3f1;
+}
+
+.lycobo-showreel-stage {
+  padding: clamp(58px, 10svh, 126px) clamp(18px, 5vw, 96px);
+}
+
+.lycobo-showreel-media {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(8px, 1vw, 14px);
+  max-width: 1320px;
+  margin-inline: auto;
+}
+
+.lycobo-showreel h2 {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  inset-inline: 0;
+  display: grid;
+  align-items: end;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin: 0;
+  padding: clamp(12px, 3.6vw, 56px);
+  border-radius: 18px;
+  background: linear-gradient(180deg, transparent 51%, rgb(9 10 10 / 72%));
+  font-size: clamp(27px, 5.55vw, 92px);
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.lycobo-showreel-room {
+  grid-column: 1 / -1;
+}
+
+.lycobo-showreel-media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 18px;
+  background: #241a16;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.lycobo-showreel-light {
+  display: none;
+}
+
+.lycobo-showreel-cards {
+  display: grid;
+  grid-column: 1 / -1;
+  align-content: center;
+  min-width: 0;
+  padding: clamp(14px, 4cqw, 42px);
+  border-radius: 18px;
+  background: #211715;
+}
+
+.lycobo-showreel-card-window {
+  min-width: 0;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-color: #a3998f transparent;
+  scrollbar-width: thin;
+}
+
+.lycobo-showreel-card-window:focus-visible {
+  outline: 2px solid #c9a691;
+  outline-offset: 3px;
+}
+
+.lycobo-showreel-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: clamp(215px, 76vw, 400px);
+  width: max-content;
+  gap: clamp(8px, 1.25vw, 20px);
+}
+
+.lycobo-showreel-track img {
+  border-radius: 12px;
+  aspect-ratio: 1;
+  object-fit: contain;
+  scroll-snap-align: start;
+}
+
+.lycobo-showreel-note {
+  margin: 10px 0 0;
+  color: #e1d0c7;
+  font-size: 12px;
+  text-align: right;
+}
+
+.lycobo-showreel[data-showreel-motion] {
+  height: calc(var(--showreel-stage-height) + clamp(730px, 117svh, 1120px));
+}
+
+.lycobo-hero[data-motion] + .lycobo-showreel[data-showreel-motion] {
+  margin-top: calc(-1 * clamp(32px, 7svh, 78px));
+}
+
+[data-showreel-motion] .lycobo-showreel-stage {
+  position: sticky;
+  top: 0;
+  display: grid;
+  align-content: center;
+  height: var(--showreel-stage-height);
+  padding-block: 80px 25px;
+  overflow: clip;
+}
+
+[data-showreel-motion] .lycobo-showreel-media {
+  display: block;
+  width: 100%;
+  max-width: min(1320px, calc((100svh - 132px) * 16 / 9));
+  overflow: clip;
+  border-radius: 18px;
+  background: #161110;
+  aspect-ratio: 16 / 9;
+}
+
+[data-showreel-motion] .lycobo-showreel-media > div > img {
+  height: 100%;
+  border-radius: 0;
+}
+
+[data-showreel-motion] .lycobo-showreel-light {
+  display: block;
+  background: linear-gradient(90deg, transparent 47%, rgb(255 237 199 / 73%) 50%, transparent 53%);
+  pointer-events: none;
+}
+
+[data-showreel-motion] .lycobo-showreel-room,
+[data-showreel-motion] .lycobo-showreel-macro,
+[data-showreel-motion] .lycobo-showreel-studio,
+[data-showreel-motion] .lycobo-showreel-light {
+  position: absolute;
+  inset: 0;
+}
+
+[data-showreel-motion] .lycobo-showreel-cards {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+}
+
+[data-showreel-motion] .lycobo-showreel-card-window {
+  container-type: inline-size;
+  overflow: clip;
+}
+
+[data-showreel-motion] .lycobo-showreel-track {
+  grid-auto-columns: calc((100cqw - 2 * clamp(8px, 1.25vw, 20px)) / 3);
+}
+
+@media (max-width: 700px) {
+  .lycobo-showreel {
+    --showreel-stage-height: 70svh;
+  }
+
+  [data-showreel-motion] .lycobo-showreel-media {
+    aspect-ratio: 4 / 3;
+  }
+
+  [data-showreel-motion] .lycobo-showreel-media img {
+    object-position: 58% center;
+  }
+
+  [data-showreel-motion] h2 {
+    aspect-ratio: 4 / 3;
+  }
+
+  [data-showreel-motion] .lycobo-showreel-track {
+    grid-auto-columns: min(70cqw, 222px);
+  }
+}

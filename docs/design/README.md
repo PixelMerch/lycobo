@@ -14,3 +14,5 @@
 
 - [耳机 Hero 方向稿](../../apps/web/public/landing/headphones-hero-preview.webp)：2026-11-17 生成的中性灰整合素材，仅保留为独立图片的美术参考，已退出页面。
 - 当前 Hero 使用同一款圣诞红床被的七张独立 gen-images 素材：[商品原图](../../apps/web/public/landing/comforter-source.webp)、[暖灰棚拍主图](../../apps/web/public/landing/comforter-studio.webp)、[圣诞卧室场景](../../apps/web/public/landing/comforter-room.webp)、[包边放大图](../../apps/web/public/landing/comforter-stitch.webp)、[垂坠效果](../../apps/web/public/landing/comforter-drape.webp)、[折叠厚度](../../apps/web/public/landing/comforter-folded.webp)、[套件组合](../../apps/web/public/landing/comforter-set.webp)。包边详情由页面排版合成，商品原图在两段画面持续用于对比。
+
+- 套图之后的滚动画面将中文或英文尺寸、套件、工艺成片滑入同一画框，源于 gen-images；尺寸为演示数据。动画复用同款红被的[圣诞卧室](../../apps/web/public/landing/comforter-room.webp)、[包边特写](../../apps/web/public/landing/comforter-stitch.webp)与[棚拍主图](../../apps/web/public/landing/comforter-studio.webp)。

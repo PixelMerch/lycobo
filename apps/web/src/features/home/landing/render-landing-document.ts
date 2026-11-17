@@ -1,5 +1,11 @@
 import drapeImage from "../../../../public/landing/comforter-drape.webp?inline";
 import foldedImage from "../../../../public/landing/comforter-folded.webp?inline";
+import detailEnglish from "../../../../public/landing/comforter-info-detail-en.webp?inline";
+import detailChinese from "../../../../public/landing/comforter-info-detail-zh.webp?inline";
+import setEnglish from "../../../../public/landing/comforter-info-set-en.webp?inline";
+import setChinese from "../../../../public/landing/comforter-info-set-zh.webp?inline";
+import sizeEnglish from "../../../../public/landing/comforter-info-size-en.webp?inline";
+import sizeChinese from "../../../../public/landing/comforter-info-size-zh.webp?inline";
 import roomImage from "../../../../public/landing/comforter-room.webp?inline";
 import setImage from "../../../../public/landing/comforter-set.webp?inline";
 import sourceImage from "../../../../public/landing/comforter-source.webp?inline";
@@ -12,6 +18,13 @@ import heroStyles from "./landing-hero.css?raw";
 import heroTemplate from "./landing-hero.html?raw";
 import { initializeLandingHeroScroll } from "./landing-hero-scroll";
 import { initializeLandingScrollbar } from "./landing-scrollbar";
+import showcaseStyles from "./landing-showcase.css?raw";
+import { initializeLandingShowreel } from "./landing-showcase-motion";
+
+const specsImages: Record<Locale, Record<string, string>> = {
+  "zh-CN": { size: sizeChinese, set: setChinese, detail: detailChinese },
+  en: { size: sizeEnglish, set: setEnglish, detail: detailEnglish },
+};
 
 const heroImages: Record<string, string> = {
   drape: drapeImage,
@@ -42,11 +55,16 @@ export function renderLandingDocument(
   locale: Locale,
 ) {
   return template
-    .replace("__LYCOBO_HERO_STYLE__", () => heroStyles)
+    .replace("__LYCOBO_HERO_STYLE__", () => heroStyles + showcaseStyles)
     .replace("__LYCOBO_HERO__", () => hero)
     .replace(
+      /__LYCOBO_SPECS_([a-z]+)__/g,
+      (marker, name: string) => specsImages[locale][name] ?? marker,
+    )
+    .replace(
       "__LYCOBO_HERO_SCROLL_SCRIPT__",
-      () => `(${initializeLandingHeroScroll.toString()})();`,
+      () => `(${initializeLandingHeroScroll.toString()})();
+(${initializeLandingShowreel.toString()})();`,
     )
     .replace(
       "__LYCOBO_BRAND_SCROLL_SCRIPT__",

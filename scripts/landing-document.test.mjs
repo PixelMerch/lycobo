@@ -47,6 +47,23 @@ describe("localized landing document", () => {
     expect(slots.sort()).toEqual(photos.map((match) => match[1]).sort());
   });
 
+  it("embeds localized product images and three scroll-driven showcase frames", () => {
+    const localizedImages = ["zh-CN", "en"].map((locale) => {
+      const document = renderLandingDocument(template, landingCopy(locale), locale);
+      const track = document.match(/data-showreel-track>([\s\S]*?)<\/div>/)?.[1];
+      const images = [...(track ?? "").matchAll(/src="(data:image\/webp;base64,[^"]+)"/g)];
+      expect(new Set(images.map((match) => match[1])).size).toBe(3);
+      const frames = [
+        ...document.matchAll(
+          /data-showreel-(?:room|macro|studio)>\s*<img src="(data:image\/webp;base64,[^"]+)"/g,
+        ),
+      ];
+      expect(new Set(frames.map((match) => match[1])).size).toBe(3);
+      return images.map((match) => match[1]);
+    });
+    expect(new Set(localizedImages.flat()).size).toBe(6);
+  });
+
   it("rejects missing copy instead of rendering template markers", () => {
     expect(() => renderLandingDocument("__LYCOBO_HTML_unknown__", {}, "en")).toThrow(
       "Missing landing message: unknown",
