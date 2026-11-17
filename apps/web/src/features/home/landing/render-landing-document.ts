@@ -14,7 +14,7 @@ const hero = heroTemplate
   .replaceAll("__LYCOBO_HERO_SCENE__", sceneImage)
   .replaceAll("__LYCOBO_HERO_STUDIO__", studioImage)
   .replaceAll("__LYCOBO_HERO_DETAIL__", detailImage)
-  .replace("__LYCOBO_HERO_SOURCE__", sourceImage);
+  .replaceAll("__LYCOBO_HERO_SOURCE__", sourceImage);
 
 const htmlEntities: Record<string, string> = {
   "&": "&amp;",

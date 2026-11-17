@@ -2,9 +2,10 @@
 export function initializeLandingHeroScroll() {
   const hero = document.querySelector<HTMLElement>("[data-landing-hero]");
   const stage = hero?.querySelector<HTMLElement>(".lycobo-hero-stage");
+  const photos = hero?.querySelector<HTMLElement>(".lycobo-hero-strip");
   const start = hero?.querySelector<HTMLElement>("[data-hero-studio-start]");
   const end = hero?.querySelector<HTMLElement>("[data-hero-studio-end]");
-  if (!hero || !stage || !start || !end) return;
+  if (!hero || !stage || !photos || !start || !end) return;
 
   const root = document.documentElement;
   const viewport = window.matchMedia(
@@ -12,12 +13,20 @@ export function initializeLandingHeroScroll() {
   );
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let frame = 0;
+  let breath = 1;
   let geometry = { x: 0, y: 0, scale: 1, travel: 1, drift: 0 };
 
   function ease(progress: number, from: number, to: number) {
     const value = Math.max(0, Math.min(1, (progress - from) / (to - from)));
     return value * value * (3 - 2 * value);
   }
+
+  const updateBreath = (strength: number) => {
+    if (breath === strength) return;
+    breath = strength;
+    photos.style.setProperty("--hero-breath-strength", String(breath));
+    photos.toggleAttribute("data-breath-settled", breath === 0);
+  };
 
   const render = () => {
     frame = 0;
@@ -27,6 +36,8 @@ export function initializeLandingHeroScroll() {
     const drift = ease(progress, 0.03, 0.76) * geometry.drift;
     const panel = ease(progress, 0.23, 0.86);
 
+    // 浮动逐渐归零，棚拍沿滚动轨迹接到套图区的固定画框。
+    updateBreath(1 - ease(progress, 0.02, 0.33));
     hero.style.setProperty("--hero-studio-x", `${geometry.x * studio}px`);
     hero.style.setProperty("--hero-studio-y", `${geometry.y * studio}px`);
     hero.style.setProperty("--hero-studio-scale", String(1 + (geometry.scale - 1) * studio));
@@ -69,6 +80,7 @@ export function initializeLandingHeroScroll() {
     }
     window.cancelAnimationFrame(frame);
     frame = 0;
+    updateBreath(1);
     root.removeAttribute("data-lycobo-hero-light");
   };
 
@@ -79,5 +91,8 @@ export function initializeLandingHeroScroll() {
   const observeLayout = new ResizeObserver(measure);
   observeLayout.observe(start);
   observeLayout.observe(end);
+  new IntersectionObserver(([entry]) => {
+    photos.toggleAttribute("data-breath-offscreen", !entry?.isIntersecting);
+  }).observe(stage);
   configure();
 }

@@ -8,23 +8,26 @@
 }
 
 .lycobo-hero-opening {
+  position: relative;
   display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: clamp(24px, 4.4vh, 54px);
-  min-height: calc(100svh - 80px);
+  place-items: center;
+  min-height: max(560px, calc(100svh - 80px));
   padding: 36px var(--hero-gutter) 48px;
+  overflow: clip;
   background: var(--hero-dark);
   color: #fff;
 }
 
 .lycobo-hero-copy {
+  position: relative;
+  z-index: 2;
+  width: min(48vw, 880px);
   text-align: center;
 }
 
 .lycobo-hero-copy h1 {
   margin: 0;
-  font-size: clamp(35px, min(5.2vw, 8.2svh), 80px);
+  font-size: clamp(30px, min(4.2vw, 8.2svh), 80px);
   font-weight: 700;
   line-height: 1.12;
 }
@@ -79,16 +82,6 @@
   }
 }
 
-.lycobo-hero-strip {
-  display: grid;
-  grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.35fr) minmax(0, 1.18fr) minmax(0, 0.78fr);
-  align-items: end;
-  gap: clamp(8px, 1vw, 18px);
-  width: 100%;
-  max-width: min(1512px, calc((100svh - 300px) * 3.6));
-  margin-inline: auto;
-}
-
 .lycobo-hero-tile,
 .lycobo-hero-studio,
 .lycobo-hero-result-image {
@@ -104,18 +97,6 @@
   object-position: center 30%;
 }
 
-.lycobo-hero-tile-source {
-  height: 85%;
-}
-
-.lycobo-hero-tile-scene {
-  height: 76%;
-}
-
-.lycobo-hero-tile-detail {
-  height: 62%;
-}
-
 .lycobo-hero-strip img,
 .lycobo-hero-set img {
   position: absolute;
@@ -129,6 +110,145 @@
 
 .lycobo-hero-tile-detail img {
   object-position: 62% center;
+}
+
+.lycobo-hero-tile-band,
+.lycobo-hero-tile-earcup {
+  display: none;
+  overflow: clip;
+  border-radius: var(--hero-radius);
+}
+
+@media (min-width: 768px) {
+  .lycobo-hero-strip {
+    position: absolute;
+    inset: 0;
+    max-width: 1800px;
+    margin-inline: auto;
+  }
+
+  .lycobo-hero-strip > div {
+    position: absolute;
+  }
+
+  .lycobo-hero-tile-source {
+    top: max(90px, 13%);
+    left: 7%;
+    width: min(14%, 27svh);
+    aspect-ratio: 4 / 5;
+  }
+
+  .lycobo-hero-strip .lycobo-hero-studio {
+    z-index: 1;
+    bottom: 20%;
+    left: 2%;
+    width: min(23%, 46svh);
+  }
+
+  .lycobo-hero-tile-scene {
+    top: max(86px, 11%);
+    right: 4%;
+    width: min(25%, 48svh);
+    aspect-ratio: 8 / 5;
+  }
+
+  .lycobo-hero-tile-detail {
+    right: 7%;
+    bottom: 8%;
+    width: min(17%, 34svh);
+    aspect-ratio: 6 / 5;
+  }
+}
+
+@media (min-width: 1150px) {
+  .lycobo-hero-tile-band,
+  .lycobo-hero-tile-earcup {
+    display: block;
+  }
+
+  .lycobo-hero-tile-band {
+    top: max(104px, 17%);
+    left: 48%;
+    width: min(18%, 34svh);
+    aspect-ratio: 2.2;
+  }
+
+  .lycobo-hero-tile-band img {
+    object-position: center 15%;
+    filter: brightness(0.76);
+  }
+
+  .lycobo-hero-tile-earcup {
+    right: -3%;
+    bottom: 5%;
+    width: min(14%, 29svh);
+    aspect-ratio: 5 / 6;
+  }
+
+  .lycobo-hero-tile-earcup img {
+    inset: auto 0 0 auto;
+    width: 145%;
+    height: 145%;
+    object-position: right bottom;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lycobo-hero-strip img {
+    animation: lycobo-hero-breathe var(--hero-breath-duration, 8s) cubic-bezier(0.77, 0, 0.175, 1)
+      var(--hero-breath-offset, 0s) infinite;
+  }
+
+  .lycobo-hero-tile-source {
+    --hero-breath-duration: 7s;
+    --hero-breath-lift: 12px;
+    --hero-breath-offset: -2s;
+  }
+
+  .lycobo-hero-strip .lycobo-hero-studio {
+    --hero-breath-duration: 9s;
+    --hero-breath-lift: 14px;
+    --hero-breath-offset: -0.6s;
+  }
+
+  .lycobo-hero-tile-scene {
+    --hero-breath-duration: 8.5s;
+    --hero-breath-lift: 11px;
+    --hero-breath-offset: -4s;
+  }
+
+  .lycobo-hero-tile-detail {
+    --hero-breath-duration: 7.5s;
+    --hero-breath-lift: 9px;
+    --hero-breath-offset: -5.3s;
+  }
+
+  .lycobo-hero-tile-band {
+    --hero-breath-duration: 8.2s;
+    --hero-breath-offset: -3s;
+  }
+
+  .lycobo-hero-tile-earcup {
+    --hero-breath-duration: 9.2s;
+    --hero-breath-offset: -4.8s;
+  }
+
+  .lycobo-hero-strip:is([data-breath-settled], [data-breath-offscreen]) img {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes lycobo-hero-breathe {
+  from,
+  to {
+    translate: 0 0;
+    scale: 1;
+  }
+
+  50% {
+    translate: 0 calc(-1 * var(--hero-breath-lift, 10px) * var(--hero-breath-strength, 1));
+    scale: calc(1 + 0.012 * var(--hero-breath-strength, 1));
+  }
 }
 
 .lycobo-hero-results {
@@ -212,7 +332,7 @@
 
 [data-motion] .lycobo-hero-opening {
   z-index: 2;
-  padding-block: 82px 44px;
+  padding-block: 54px 102px;
   pointer-events: none;
 }
 
@@ -227,10 +347,6 @@
 
 [data-motion] .lycobo-hero-tile-source {
   transform: translate3d(var(--hero-drift-left, 0px), 0, 0);
-}
-
-[data-motion] .lycobo-hero-tile-detail {
-  translate: var(--hero-drift-right, 0px);
 }
 
 [data-motion] [data-hero-studio-start] img {
@@ -255,16 +371,26 @@
   .lycobo-hero-set {
     max-width: 1180px;
   }
-
-  .lycobo-hero-strip {
-    max-width: 1200px;
-  }
 }
 
 @media (max-width: 767px) {
   .lycobo-hero-opening {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    grid-template-areas:
+      "source scene"
+      "copy copy"
+      "studio detail";
+    align-content: center;
+    gap: clamp(10px, 2.1svh, 24px);
     min-height: auto;
     padding-block: 34px 38px;
+    padding-inline: max(20px, calc((100% - 500px) / 2));
+  }
+
+  .lycobo-hero-copy {
+    grid-area: copy;
+    width: 100%;
+    margin-block: 10px 16px;
   }
 
   .lycobo-hero-copy h1 {
@@ -277,25 +403,36 @@
     font-size: 14px;
   }
 
-  .lycobo-hero-strip,
   .lycobo-hero-set {
     max-width: 510px;
   }
 
   .lycobo-hero-strip {
-    grid-template-columns: 0.85fr 1.15fr;
-    align-items: stretch;
+    display: contents;
   }
 
-  .lycobo-hero-tile {
+  .lycobo-hero-strip > div {
     width: 100%;
-    height: auto;
     min-height: 0;
   }
 
-  .lycobo-hero-tile-detail,
+  .lycobo-hero-tile-source {
+    grid-area: source;
+    aspect-ratio: 6 / 5;
+  }
+
   .lycobo-hero-tile-scene {
-    aspect-ratio: 4 / 3;
+    grid-area: scene;
+    aspect-ratio: 8 / 5;
+  }
+
+  .lycobo-hero-strip .lycobo-hero-studio {
+    grid-area: studio;
+  }
+
+  .lycobo-hero-tile-detail {
+    grid-area: detail;
+    aspect-ratio: 7 / 5;
   }
 
   .lycobo-hero-results {
@@ -317,9 +454,5 @@
 
   [data-motion] .lycobo-hero-opening {
     padding-block: 42px 64px;
-  }
-
-  [data-motion] .lycobo-hero-tile-scene {
-    transform: translate3d(var(--hero-drift-left, 0px), 0, 0);
   }
 }
