@@ -81,23 +81,13 @@
     <div class="lycobo-showreel-media" data-showreel-media>
       <h2 id="lycobo-showreel-heading">__LYCOBO_HTML_heroShowreelTitle__</h2>
       <div class="lycobo-showreel-room" data-showreel-room>
-        <img src="__LYCOBO_HERO_room__" alt="__LYCOBO_HTML_heroRoomAlt__" width="1280" height="1024" loading="lazy">
+        <img src="__LYCOBO_HERO_model__" alt="__LYCOBO_HTML_heroModelAlt__" width="1536" height="864" loading="lazy">
       </div>
-      <div class="lycobo-showreel-macro" data-showreel-macro>
-        <img src="__LYCOBO_HERO_stitch__" alt="__LYCOBO_HTML_heroStitchAlt__" width="1280" height="1024" loading="lazy">
-      </div>
-      <div class="lycobo-showreel-studio" data-showreel-studio>
-        <img src="__LYCOBO_HERO_studio__" alt="__LYCOBO_HTML_heroStudioAlt__" width="1280" height="1280" loading="lazy">
-      </div>
-      <div class="lycobo-showreel-light" data-showreel-light aria-hidden="true"></div>
-      <section class="lycobo-showreel-cards" data-showreel-cards aria-label="__LYCOBO_HTML_heroSpecsTitle__">
-        <div class="lycobo-showreel-card-window" data-showreel-card-window>
-          <div class="lycobo-showreel-track" data-showreel-track>
-            <img src="__LYCOBO_SPECS_size__" alt="__LYCOBO_HTML_heroSpecsSizeAlt__" width="960" height="960">
-            <img src="__LYCOBO_SPECS_set__" alt="__LYCOBO_HTML_heroSpecsSetAlt__" width="960" height="960">
-            <img src="__LYCOBO_SPECS_detail__" alt="__LYCOBO_HTML_heroSpecsDetailAlt__" width="960" height="960">
-          </div>
-        </div>
+      <section class="lycobo-showreel-specs" data-showreel-specs aria-label="__LYCOBO_HTML_heroSpecsTitle__">
+        <picture>
+          <source media="(max-width: 700px)" srcset="__LYCOBO_SPECS_tall__" width="900" height="990">
+          <img src="__LYCOBO_SPECS_wide__" alt="__LYCOBO_HTML_heroSpecsSheetAlt__" width="1440" height="810" loading="lazy">
+        </picture>
         <p class="lycobo-showreel-note">__LYCOBO_HTML_heroSpecsExample__</p>
       </section>
     </div>

@@ -99,7 +99,7 @@ export const storyMessages = defineMessages({
     heroDrapeLabel: "Drape",
     heroFoldedLabel: "Folded Profile",
     heroDetailNote: "Piped Edges",
-    heroSpecsTitle: "Product specification images",
+    heroSpecsTitle: "Product specification image",
     heroSpecsExample: "Dimensions shown are for illustration",
     heroShowreelTitle: "From Scene to Detail",
     copy119: "Create Now",

@@ -1,14 +1,13 @@
 import drapeImage from "../../../../public/landing/comforter-drape.webp?inline";
 import foldedImage from "../../../../public/landing/comforter-folded.webp?inline";
-import detailEnglish from "../../../../public/landing/comforter-info-detail-en.webp?inline";
-import detailChinese from "../../../../public/landing/comforter-info-detail-zh.webp?inline";
-import setEnglish from "../../../../public/landing/comforter-info-set-en.webp?inline";
-import setChinese from "../../../../public/landing/comforter-info-set-zh.webp?inline";
-import sizeEnglish from "../../../../public/landing/comforter-info-size-en.webp?inline";
-import sizeChinese from "../../../../public/landing/comforter-info-size-zh.webp?inline";
+import modelImage from "../../../../public/landing/comforter-lifestyle-model.webp?inline";
 import roomImage from "../../../../public/landing/comforter-room.webp?inline";
 import setImage from "../../../../public/landing/comforter-set.webp?inline";
 import sourceImage from "../../../../public/landing/comforter-source.webp?inline";
+import specsEnglish from "../../../../public/landing/comforter-spec-sheet-en.webp?inline";
+import specsTallEnglish from "../../../../public/landing/comforter-spec-sheet-en-tall.webp?inline";
+import specsChinese from "../../../../public/landing/comforter-spec-sheet-zh.webp?inline";
+import specsTallChinese from "../../../../public/landing/comforter-spec-sheet-zh-tall.webp?inline";
 import stitchImage from "../../../../public/landing/comforter-stitch.webp?inline";
 import studioImage from "../../../../public/landing/comforter-studio.webp?inline";
 import type { Locale } from "../../../i18n/locale";
@@ -22,13 +21,14 @@ import showcaseStyles from "./landing-showcase.css?raw";
 import { initializeLandingShowreel } from "./landing-showcase-motion";
 
 const specsImages: Record<Locale, Record<string, string>> = {
-  "zh-CN": { size: sizeChinese, set: setChinese, detail: detailChinese },
-  en: { size: sizeEnglish, set: setEnglish, detail: detailEnglish },
+  "zh-CN": { wide: specsChinese, tall: specsTallChinese },
+  en: { wide: specsEnglish, tall: specsTallEnglish },
 };
 
 const heroImages: Record<string, string> = {
   drape: drapeImage,
   folded: foldedImage,
+  model: modelImage,
   room: roomImage,
   set: setImage,
   source: sourceImage,

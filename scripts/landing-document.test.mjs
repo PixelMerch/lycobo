@@ -47,21 +47,25 @@ describe("localized landing document", () => {
     expect(slots.sort()).toEqual(photos.map((match) => match[1]).sort());
   });
 
-  it("embeds localized product images and three scroll-driven showcase frames", () => {
+  it("embeds a responsive localized product sheet and the model scene", () => {
     const localizedImages = ["zh-CN", "en"].map((locale) => {
       const document = renderLandingDocument(template, landingCopy(locale), locale);
-      const track = document.match(/data-showreel-track>([\s\S]*?)<\/div>/)?.[1];
-      const images = [...(track ?? "").matchAll(/src="(data:image\/webp;base64,[^"]+)"/g)];
-      expect(new Set(images.map((match) => match[1])).size).toBe(3);
-      const frames = [
-        ...document.matchAll(
-          /data-showreel-(?:room|macro|studio)>\s*<img src="(data:image\/webp;base64,[^"]+)"/g,
-        ),
+      const picture = document.match(
+        /data-showreel-specs[^>]*>\s*<picture>([\s\S]*?)<\/picture>/,
+      )?.[1];
+      const images = [
+        ...(picture ?? "").matchAll(/src(?:set)?="(data:image\/webp;base64,[^"]+)"/g),
       ];
-      expect(new Set(frames.map((match) => match[1])).size).toBe(3);
+      expect(images).toHaveLength(2);
+      expect(picture).toContain('media="(max-width: 700px)"');
+      const scene = document.match(
+        /data-showreel-room>\s*<img src="(data:image\/webp;base64,[^"]+)"/,
+      );
+      expect(scene?.[1]).toBeDefined();
+      expect(picture).not.toContain(scene?.[1]);
       return images.map((match) => match[1]);
     });
-    expect(new Set(localizedImages.flat()).size).toBe(6);
+    expect(new Set(localizedImages.flat()).size).toBe(4);
   });
 
   it("rejects missing copy instead of rendering template markers", () => {
