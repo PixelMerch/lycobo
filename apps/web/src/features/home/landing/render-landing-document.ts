@@ -6,18 +6,27 @@ import sourceImage from "../../../../public/landing/comforter-source.webp?inline
 import stitchImage from "../../../../public/landing/comforter-stitch.webp?inline";
 import studioImage from "../../../../public/landing/comforter-studio.webp?inline";
 import quiltImage from "../../../../public/landing/commerce-quilt.webp?inline";
+import blenderResult from "../../../../public/landing/showcase/blender-after.webp?inline";
+import blenderSource from "../../../../public/landing/showcase/blender-before.webp?inline";
+import fashionResult from "../../../../public/landing/showcase/fashion-after.webp?inline";
+import fashionSource from "../../../../public/landing/showcase/fashion-before.webp?inline";
 import type { Locale } from "../../../i18n/locale";
 import { initializeLandingBrandScroll } from "./landing-brand-scroll";
 import { initializeLandingFeatureScroll } from "./landing-feature-scroll";
 import heroStyles from "./landing-hero.css?raw";
 import heroTemplate from "./landing-hero.html?raw";
 import { initializeLandingHeroScroll } from "./landing-hero-scroll";
+import { initializeLandingNavBridge } from "./landing-nav-bridge";
 import { initializeLandingScrollbar } from "./landing-scrollbar";
 import showcaseStyles from "./landing-showcase.css?raw";
-import { initializeLandingShowcaseAction } from "./landing-showcase-action";
+import { initializeLandingShowcaseScroll } from "./landing-showcase-scroll";
 
 const heroImages: Record<string, string> = {
   drape: drapeImage,
+  blendersource: blenderSource,
+  blenderresult: blenderResult,
+  fashionsource: fashionSource,
+  fashionresult: fashionResult,
   folded: foldedImage,
   quilt: quiltImage,
   room: roomImage,
@@ -51,11 +60,12 @@ export function renderLandingDocument(
     .replace(
       "__LYCOBO_HERO_SCROLL_SCRIPT__",
       () => `(${initializeLandingHeroScroll.toString()})();
-(${initializeLandingShowcaseAction.toString()})();`,
+(${initializeLandingShowcaseScroll.toString()})();`,
     )
     .replace(
       "__LYCOBO_BRAND_SCROLL_SCRIPT__",
-      `window.addEventListener("load", ${initializeLandingBrandScroll.toString()}, { once: true });`,
+      `window.addEventListener("load", ${initializeLandingBrandScroll.toString()}, { once: true });
+window.addEventListener("load", ${initializeLandingNavBridge.toString()}, { once: true });`,
     )
     .replace(
       "__LYCOBO_FEATURE_SCROLL_SCRIPT__",

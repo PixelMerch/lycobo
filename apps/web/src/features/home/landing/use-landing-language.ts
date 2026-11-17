@@ -22,6 +22,14 @@ export function readLandingHeader(data: unknown) {
 
 type LandingHeader = NonNullable<ReturnType<typeof readLandingHeader>>;
 
+/** 只接受隔离首页请求的站内路径，避免面版把用户带到任意地址。 */
+export function readLandingNavigation(data: unknown) {
+  if (!data || typeof data !== "object") return null;
+  if (!("type" in data) || data.type !== "lycobo:navigate") return null;
+  if (!("path" in data) || data.path !== "/free-canvas") return null;
+  return "/free-canvas";
+}
+
 function sameAnchor(previous: LandingHeader | null, next: LandingHeader) {
   return (
     previous?.x === next.x &&
@@ -34,6 +42,37 @@ function sameAnchor(previous: LandingHeader | null, next: LandingHeader) {
 
 function messageType(data: unknown) {
   return data && typeof data === "object" && "type" in data ? data.type : undefined;
+}
+
+/** 按类型分发隔离首页消息；未知或非法内容一律忽略。 */
+function handleFrameMessage(
+  data: unknown,
+  handlers: {
+    openWorkspace: () => void;
+    dismissLanguage: () => void;
+    navigate: (path: string) => void;
+    updateScroll: (scrollY: number) => void;
+    updateAnchor: (anchor: LandingHeader) => void;
+  },
+) {
+  const type = messageType(data);
+  if (type === "lycobo:open-workspace") {
+    handlers.openWorkspace();
+    return;
+  }
+  if (type === "lycobo:dismiss-language") {
+    handlers.dismissLanguage();
+    return;
+  }
+  if (type === "lycobo:navigate") {
+    const path = readLandingNavigation(data);
+    if (path) handlers.navigate(path);
+    return;
+  }
+  const next = readLandingHeader(data);
+  if (!next) return;
+  handlers.updateScroll(next.scrollY);
+  handlers.updateAnchor(next);
 }
 
 /** 处理隔离首页的导航消息，并在语言切换后恢复滚动位置。 */
@@ -49,21 +88,18 @@ export function useLandingLanguage() {
     function receiveHeader(event: MessageEvent<unknown>) {
       // sandbox 来源为 null，只信任本组件持有的实际窗口。
       if (!frameRef.current || event.source !== frameRef.current.contentWindow) return;
-      const data = event.data;
-      const type = messageType(data);
-      if (type === "lycobo:open-workspace") {
-        void navigate("/workspace");
-        return;
-      }
-      if (type === "lycobo:dismiss-language") {
-        setDismissVersion((version) => version + 1);
-        return;
-      }
-      const next = readLandingHeader(data);
-      if (!next) return;
-      currentScroll.current = next.scrollY;
-      // 滚动位置只存 ref，避免每次滚动都重新渲染菜单。
-      setAnchor((previous) => (sameAnchor(previous, next) ? previous : next));
+      handleFrameMessage(event.data, {
+        openWorkspace: () => void navigate("/workspace"),
+        dismissLanguage: () => setDismissVersion((version) => version + 1),
+        navigate: (path) => void navigate(path),
+        updateScroll: (scrollY) => {
+          // 滚动位置只存 ref，避免每次滚动都重新渲染菜单。
+          currentScroll.current = scrollY;
+        },
+        updateAnchor: (next) => {
+          setAnchor((previous) => (sameAnchor(previous, next) ? previous : next));
+        },
+      });
     }
     window.addEventListener("message", receiveHeader);
     return () => window.removeEventListener("message", receiveHeader);

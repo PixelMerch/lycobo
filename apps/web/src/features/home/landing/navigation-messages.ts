@@ -9,7 +9,8 @@ export const navigationMessages = defineMessages({
     copy003: "功能",
     copy004: "工作流程",
     copy005: "创作指南",
-    copy006: "常见问题",
+    // 模板导航第 6 项（原常见问题）改为自由画布入口，桌面与手机共用此文案。
+    copy006: "自由画布",
     copy007: "工作区",
     copy008: "更多",
     copy009: "开始创作",
@@ -125,7 +126,7 @@ export const navigationMessages = defineMessages({
     copy003: "Features",
     copy004: "Workflow",
     copy005: "Resources",
-    copy006: "FAQ",
+    copy006: "Free canvas",
     copy007: "Workspace",
     copy008: "More",
     copy009: "Start Creating",

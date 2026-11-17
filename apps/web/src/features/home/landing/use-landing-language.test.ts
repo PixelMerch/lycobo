@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readLandingHeader } from "./use-landing-language";
+import { readLandingHeader, readLandingNavigation } from "./use-landing-language";
 
 const header = {
   type: "lycobo:header",
@@ -37,5 +37,26 @@ describe("landing header messages", () => {
     { ...header, height: "44" },
   ])("ignores malformed geometry: %j", (data) => {
     expect(readLandingHeader(data)).toBeNull();
+  });
+});
+
+describe("landing navigation messages", () => {
+  it("accepts the free canvas entry from the isolated navigation", () => {
+    expect(readLandingNavigation({ type: "lycobo:navigate", path: "/free-canvas" })).toBe(
+      "/free-canvas",
+    );
+  });
+
+  it.each([
+    null,
+    "free-canvas",
+    {},
+    { type: "lycobo:header", path: "/free-canvas" },
+    { type: "lycobo:navigate" },
+    { type: "lycobo:navigate", path: "/commerce/create" },
+    { type: "lycobo:navigate", path: "https://example.com" },
+    { type: "lycobo:navigate", path: "/free-canvas?next=https://example.com" },
+  ])("ignores other navigation requests: %j", (data) => {
+    expect(readLandingNavigation(data)).toBeNull();
   });
 });
