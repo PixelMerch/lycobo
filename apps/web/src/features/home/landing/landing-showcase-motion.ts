@@ -20,6 +20,7 @@ export function initializeLandingShowreel() {
   let travel = 0;
   let approach = 0;
   let cardTravel = 0;
+  let dropDistance = 0;
   let lastProgress = Number.NaN;
 
   function ease(progress: number, start: number, end: number) {
@@ -36,18 +37,20 @@ export function initializeLandingShowreel() {
     if (progress === lastProgress) return;
     lastProgress = progress;
 
-    // 套图停留时，同一视口逐渐变暗，宽屏画面顺势显现。
-    const landing = ease(progress, 0.06, 0.27);
-    const forward = ease(progress, 0.35, 0.57);
+    // 画框从舞台上缘落下时，露在画框外的套图继续变暗。
+    const landing = ease(progress, 0.08, 0.31);
+    const rebound = ease(progress, 0.31, 0.36);
+    const settle = ease(progress, 0.36, 0.4);
+    const verticalOffset = -dropDistance * (1 - landing) + 15 * landing - 21 * rebound + 6 * settle;
+    const forward = ease(progress, 0.4, 0.57);
     const detail = ease(progress, 0.48, 0.59);
     const reveal = ease(progress, 0.59, 0.74);
     const cardEntry = ease(progress, 0.76, 0.88);
     const cardScroll = ease(progress, 0.81, 0.99);
 
-    const cover = ease(progress, 0, 0.155);
+    const cover = 0.76 * ease(progress, 0, 0.12) + 0.24 * ease(progress, 0.12, 0.31);
     stage.style.setProperty("--showreel-cover", String(cover));
-    media.style.opacity = String(ease(progress, 0.055, 0.22));
-    media.style.transform = `translate3d(0,${-8 * (1 - landing)}px,0) scale(${0.955 + 0.045 * landing})`;
+    media.style.transform = `translate3d(0,${verticalOffset}px,0)`;
     room.style.transform = `scale(${1.02 + forward * 0.18}) translateX(${-2.8 * forward}%)`;
     macro.style.opacity = String(detail);
     macro.style.transform = `translate3d(${3 * (1 - detail)}%,0,0) scale(${1.02 + 0.075 * detail})`;
@@ -72,6 +75,7 @@ export function initializeLandingShowreel() {
     }
     travel = Math.max(1, section.clientHeight - stage.clientHeight);
     approach = linked ? 0 : innerHeight * 0.48;
+    dropDistance = media.offsetTop + media.offsetHeight;
     cardTravel = Math.max(0, track.offsetWidth - cardWindow.clientWidth);
     lastProgress = Number.NaN;
     draw();

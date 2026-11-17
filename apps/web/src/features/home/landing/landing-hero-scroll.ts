@@ -21,7 +21,6 @@ export function initializeLandingHeroScroll() {
     ];
   });
 
-  const showreel = hero.nextElementSibling;
   const viewport = matchMedia(
     "(min-width: 960px) and (min-height: 660px), (min-width: 350px) and (max-width: 959px) and (min-height: 700px)",
   );
@@ -67,10 +66,7 @@ export function initializeLandingHeroScroll() {
 
   const measure = () => {
     if (!hero.hasAttribute("data-motion")) return;
-    const span = showreel?.hasAttribute("data-showreel-motion")
-      ? showreel.getBoundingClientRect().top - hero.getBoundingClientRect().top
-      : hero.clientHeight - stage.clientHeight;
-    travel = Math.max(1, span * 0.82);
+    travel = Math.max(1, (hero.clientHeight - stage.clientHeight) * 0.82);
     drawnProgress = -1;
     for (const pair of pairs) {
       pair.from = pair.start.getBoundingClientRect();
@@ -101,9 +97,7 @@ export function initializeLandingHeroScroll() {
   addEventListener("resize", measure, { passive: true });
   viewport.addEventListener("change", configure);
   reducedMotion.addEventListener("change", configure);
-  const observer = new ResizeObserver(measure);
-  observer.observe(stage);
-  observer.observe(hero);
+  new ResizeObserver(measure).observe(stage);
   new IntersectionObserver(([entry]) => {
     stage.toggleAttribute("data-breath-offscreen", !entry?.isIntersecting);
   }).observe(stage);

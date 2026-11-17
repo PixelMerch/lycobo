@@ -1,13 +1,13 @@
-.lycobo-hero,
-.lycobo-showreel {
+.lycobo-landing-feature {
   --hero-paper: #f3f0ec;
-  --showreel-handoff: clamp(120px, 20svh, 210px);
+  background: var(--hero-paper);
 }
 
 .lycobo-showreel {
+  --showreel-backdrop: 9 10 10;
   --showreel-stage-height: 100svh;
   position: relative;
-  background: #090a0a;
+  background: rgb(var(--showreel-backdrop));
   color: #f5f3f1;
 }
 
@@ -68,7 +68,7 @@
   min-width: 0;
   padding: clamp(14px, 4cqw, 42px);
   border-radius: 18px;
-  background: #211715;
+  background: rgb(var(--showreel-backdrop));
 }
 
 .lycobo-showreel-card-window {
@@ -110,13 +110,9 @@
   height: calc(var(--showreel-stage-height) + clamp(730px, 117svh, 1120px));
 }
 
-.lycobo-hero[data-motion]:has(+ .lycobo-showreel[data-showreel-motion]) {
-  height: calc(100svh + var(--hero-scroll) + var(--showreel-handoff));
-}
-
 .lycobo-hero[data-motion] + .lycobo-showreel[data-showreel-motion] {
   --showreel-stage-height: 100svh;
-  margin-top: calc(-100svh - var(--showreel-handoff));
+  margin-top: -100svh;
   background: transparent;
 }
 
@@ -131,7 +127,7 @@
 }
 
 .lycobo-hero[data-motion] + .lycobo-showreel[data-showreel-motion] .lycobo-showreel-stage {
-  background: rgb(9 10 10 / var(--showreel-cover, 0));
+  background: rgb(var(--showreel-backdrop) / var(--showreel-cover, 0));
 }
 
 [data-showreel-motion] .lycobo-showreel-media {
