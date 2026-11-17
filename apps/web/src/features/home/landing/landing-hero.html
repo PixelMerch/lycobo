@@ -80,30 +80,34 @@
   <div class="lycobo-showreel-stage">
     <div class="lycobo-showreel-entrance" data-showreel-entrance>
       <h2 class="lycobo-showreel-heading" id="lycobo-showreel-heading">__LYCOBO_HTML_heroShowreelTitle__</h2>
-      <div class="lycobo-showreel-comparison">
-        <figure class="lycobo-showreel-source">
-          <figcaption class="lycobo-showreel-label">__LYCOBO_HTML_heroShowreelSourceLabel__</figcaption>
-          <div class="lycobo-showreel-tile">
+      <div>
+        <div class="lycobo-showreel-labels">
+          <span id="lycobo-showreel-source-label">__LYCOBO_HTML_heroShowreelSourceLabel__</span>
+          <span id="lycobo-showreel-results-label">__LYCOBO_HTML_heroShowreelResultLabel__</span>
+        </div>
+        <div class="lycobo-showreel-comparison" data-showreel-comparison>
+          <input class="lycobo-showreel-range" type="range" min="0" max="100" value="37" aria-label="__LYCOBO_HTML_heroShowreelSliderLabel__" data-showreel-range hidden>
+          <div class="lycobo-showreel-divider" aria-hidden="true"><span>↔</span></div>
+          <figure class="lycobo-showreel-source" aria-labelledby="lycobo-showreel-source-label">
             <img src="__LYCOBO_HERO_throwsource__" alt="__LYCOBO_HTML_heroShowreelSourceAlt__" width="760" height="760" fetchpriority="low" decoding="async">
-          </div>
-        </figure>
-        <section class="lycobo-showreel-results" aria-labelledby="lycobo-showreel-results-label">
-          <p class="lycobo-showreel-label" id="lycobo-showreel-results-label">__LYCOBO_HTML_heroShowreelResultLabel__</p>
-          <div class="lycobo-showreel-grid">
-            <figure class="lycobo-showreel-tile lycobo-showreel-primary" data-showreel-detail>
-              <img src="__LYCOBO_HERO_throwbedroom__" alt="__LYCOBO_HTML_heroShowreelBedroomAlt__" width="760" height="760" fetchpriority="low" decoding="async">
-              <figcaption>__LYCOBO_HTML_heroShowreelBedroomLabel__</figcaption>
-            </figure>
-            <figure class="lycobo-showreel-tile" data-showreel-detail>
-              <img src="__LYCOBO_HERO_throwsofa__" alt="__LYCOBO_HTML_heroShowreelSofaAlt__" width="760" height="760" fetchpriority="low" decoding="async">
-              <figcaption>__LYCOBO_HTML_heroShowreelSofaLabel__</figcaption>
-            </figure>
-            <figure class="lycobo-showreel-tile" data-showreel-detail>
-              <img src="__LYCOBO_HERO_throwtexture__" alt="__LYCOBO_HTML_heroShowreelTextureAlt__" width="760" height="760" fetchpriority="low" decoding="async">
-              <figcaption>__LYCOBO_HTML_heroShowreelTextureLabel__</figcaption>
-            </figure>
-          </div>
-        </section>
+          </figure>
+          <section class="lycobo-showreel-results" aria-labelledby="lycobo-showreel-results-label">
+            <div class="lycobo-showreel-grid">
+              <figure class="lycobo-showreel-tile lycobo-showreel-primary" data-showreel-detail>
+                <img src="__LYCOBO_HERO_throwbedroom__" alt="__LYCOBO_HTML_heroShowreelBedroomAlt__" width="760" height="760" fetchpriority="low" decoding="async">
+                <figcaption>__LYCOBO_HTML_heroShowreelBedroomLabel__</figcaption>
+              </figure>
+              <figure class="lycobo-showreel-tile" data-showreel-detail>
+                <img src="__LYCOBO_HERO_throwsofa__" alt="__LYCOBO_HTML_heroShowreelSofaAlt__" width="760" height="760" fetchpriority="low" decoding="async">
+                <figcaption>__LYCOBO_HTML_heroShowreelSofaLabel__</figcaption>
+              </figure>
+              <figure class="lycobo-showreel-tile" data-showreel-detail>
+                <img src="__LYCOBO_HERO_throwtexture__" alt="__LYCOBO_HTML_heroShowreelTextureAlt__" width="760" height="760" fetchpriority="low" decoding="async">
+                <figcaption>__LYCOBO_HTML_heroShowreelTextureLabel__</figcaption>
+              </figure>
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   </div>

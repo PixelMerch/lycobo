@@ -10,6 +10,17 @@ export function initializeLandingShowcaseScroll() {
   );
   if (!section || !stage || !entrance) return;
 
+  const comparison = section.querySelector<HTMLElement>("[data-showreel-comparison]");
+  const slider = comparison?.querySelector<HTMLInputElement>("[data-showreel-range]");
+  if (comparison && slider) {
+    slider.hidden = false;
+    slider.addEventListener("input", () => {
+      comparison.style.setProperty("--comparison-progress", String(slider.valueAsNumber / 100));
+      comparison.toggleAttribute("data-showreel-source-hidden", slider.valueAsNumber === 0);
+      comparison.toggleAttribute("data-showreel-results-hidden", slider.valueAsNumber === 100);
+    });
+  }
+
   const motion = window.matchMedia(
     "(prefers-reduced-motion: no-preference) and (min-height: 540px) and (min-width: 621px)",
   );

@@ -60,8 +60,10 @@ describe("localized landing document", () => {
       for (const name of ["Bedroom", "Sofa", "Texture"]) {
         expect(showcase).toContain(`<figcaption>${copy[`heroShowreel${name}Label`]}</figcaption>`);
       }
-      expect(showcase).toContain(`>${copy.heroShowreelSourceLabel}</figcaption>`);
-      expect(showcase).toContain(`>${copy.heroShowreelResultLabel}</p>`);
+      expect(showcase).toContain(`>${copy.heroShowreelSourceLabel}</span>`);
+      expect(showcase).toContain(`>${copy.heroShowreelResultLabel}</span>`);
+      expect(showcase).toContain('type="range" min="0" max="100" value="37"');
+      expect(showcase).toContain(`aria-label="${copy.heroShowreelSliderLabel}"`);
       expect(showcase).not.toContain("<button");
       expect(showcase).not.toContain("<canvas");
       expect(showcase).not.toContain("<video");
