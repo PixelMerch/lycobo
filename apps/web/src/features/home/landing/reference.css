@@ -19,3 +19,93 @@ body:has(.openart-reference) .topbar {
   place-items: center;
   color: #f5f5f5;
 }
+
+/* 入口与模板导航对齐；交互与浮层由宿主的 HeroUI 语言菜单负责。 */
+.landing-language-control {
+  position: fixed;
+  z-index: 50;
+  color: #ffffffcc;
+}
+.landing-language-control[data-theme="light"] {
+  color: #090a0ac7;
+}
+.landing-language-control .language-trigger {
+  justify-content: center;
+  width: 100%;
+  height: 44px;
+  gap: 12px;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font-size: 16px;
+  line-height: 24px;
+  transition:
+    color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.landing-language-control .language-trigger > svg:first-child {
+  display: none;
+}
+.landing-language-control .language-trigger :is(.language-trigger-name, .language-trigger-chevron) {
+  display: inline-flex;
+}
+.landing-language-control .language-trigger-chevron {
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.landing-language-control
+  .language-trigger:is(:hover, [data-hovered="true"], [aria-expanded="true"]) {
+  background: #ffffff0a;
+  color: #fff;
+}
+.landing-language-control[data-theme="light"]
+  .language-trigger:is(:hover, [data-hovered="true"], [aria-expanded="true"]) {
+  background: #090a0a0d;
+  color: #090a0a;
+}
+.landing-language-control .language-trigger[data-focus-visible="true"] {
+  outline: 1px solid currentColor;
+}
+.landing-language-popover .menu-item__indicator {
+  color: #fff;
+}
+:root .landing-language-popover.choice-menu.home-header-glass {
+  --glass-tint: rgb(9 10 10 / 82%);
+  --glass-fill: linear-gradient(transparent, transparent);
+  --glass-blur: blur(14px);
+  border: 1px solid #ffffff14;
+}
+@media (max-width: 767px) {
+  .landing-language-control .language-trigger {
+    font-size: 14px;
+  }
+}
+
+/* 与原导航保持即时展开，不叠加组件库的缩放入场。 */
+.landing-language-control .language-trigger:is(:active, [data-pressed="true"]) {
+  transform: none;
+}
+:root .landing-language-popover.dropdown__popover {
+  animation: none;
+  transition: none;
+}
+:root .landing-language-popover.dropdown__popover .menu-item::before {
+  height: 44px;
+  border-radius: 12px;
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.landing-language-popover .menu-item {
+  --menu-row-hover-fill: #ffffff0f;
+  height: 44px;
+  align-items: center;
+  padding: 0 40px 0 12px;
+  font-size: 16px;
+  line-height: 24px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-language-control .language-trigger,
+  .landing-language-control .language-trigger-chevron,
+  :root .landing-language-popover.dropdown__popover .menu-item::before {
+    transition: none;
+  }
+}

@@ -14,32 +14,56 @@ import "./language-menu.css";
 export function LanguageMenu({
   account,
   homeGlass = false,
+  onBeforeChange,
+  popoverClassName = "",
+  hoverCloseDelay,
+  popoverOffset = 4,
+  onMenuOpen,
+  dismissVersion = 0,
 }: {
   account: EnterpriseIdentity | null | undefined;
   homeGlass?: boolean;
+  onBeforeChange?: () => void;
+  popoverClassName?: string;
+  hoverCloseDelay?: number;
+  popoverOffset?: number;
+  onMenuOpen?: () => void;
+  dismissVersion?: number;
 }) {
   const locale = useLocaleStore((state) => state.locale);
   const { changeLanguage, isSaving } = useAccountLanguage(account ?? undefined);
   const t = useMessages(shellMessages);
-  const menu = useHoverMenu();
+  const menu = useHoverMenu(hoverCloseDelay, dismissVersion);
   function select(keys: Selection) {
     menu.close();
     if (keys === "all") return;
     const next = parseLocale(Array.from(keys)[0]);
     if (!next || next === locale) return;
+    onBeforeChange?.();
     changeLanguage(next);
   }
   return (
-    <Dropdown isOpen={menu.isOpen} onOpenChange={menu.onOpenChange}>
+    <Dropdown
+      isOpen={menu.isOpen}
+      onOpenChange={(open) => {
+        menu.onOpenChange(open);
+        if (open) onMenuOpen?.();
+      }}
+    >
       <Dropdown.Trigger
         ref={menu.triggerRef}
         className="language-trigger"
         isDisabled={isSaving}
         aria-label={t.language(localeNames[locale])}
-        onHoverStart={(event) => {
-          if (event.pointerType === "mouse") menu.openOnHover();
+        onPointerEnter={(event) => {
+          if (event.pointerType === "mouse") {
+            menu.openOnHover();
+            onMenuOpen?.();
+          }
         }}
-        onHoverEnd={menu.closeSoon}
+        onPointerLeave={(event) => {
+          if (event.pointerType === "mouse") menu.closeSoon();
+        }}
       >
         <UiIcon icon={IconWorld} size="navigation" />
         <span className="language-trigger-name">{localeShortNames[locale]}</span>
@@ -47,9 +71,9 @@ export function LanguageMenu({
       </Dropdown.Trigger>
       <Dropdown.Popover
         ref={menu.popoverRef}
-        className={`choice-menu${homeGlass ? " home-header-glass" : ""}`}
+        className={`choice-menu${homeGlass ? " home-header-glass" : ""} ${popoverClassName}`}
         placement="bottom end"
-        offset={4}
+        offset={popoverOffset}
         isNonModal
         onPointerEnter={menu.cancelClose}
         onPointerLeave={menu.closeSoon}

@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { LanguageMenu } from "../../../app/language-menu";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
 import { landingCopy } from "./landing-copy";
 import { referenceMessages } from "./reference-messages";
 import { renderLandingDocument } from "./render-landing-document";
+import { useLandingLanguage } from "./use-landing-language";
 import "./reference.css";
 
 async function loadLandingTemplate(signal: AbortSignal) {
@@ -17,6 +19,14 @@ async function loadLandingTemplate(signal: AbortSignal) {
 export function CommerceLanding() {
   const locale = useLocale();
   const t = useMessages(referenceMessages);
+  const {
+    frameRef,
+    anchor,
+    dismissVersion,
+    prepareLanguageChange,
+    restoreScroll,
+    closeNavigation,
+  } = useLandingLanguage();
   const { data, isError } = useQuery({
     queryKey: ["commerce-landing-template"],
     queryFn: ({ signal }) => loadLandingTemplate(signal),
@@ -34,12 +44,34 @@ export function CommerceLanding() {
     );
   }
   return (
-    <iframe
-      className="openart-reference"
-      title={t.title}
-      srcDoc={document}
-      sandbox="allow-scripts"
-      referrerPolicy="no-referrer"
-    />
+    <>
+      <iframe
+        ref={frameRef}
+        onLoad={restoreScroll}
+        className="openart-reference"
+        title={t.title}
+        srcDoc={document}
+        sandbox="allow-scripts"
+        referrerPolicy="no-referrer"
+      />
+      {anchor && (
+        <div
+          className="landing-language-control"
+          data-theme={anchor.theme}
+          style={{ left: anchor.x, top: anchor.y, width: anchor.width, height: anchor.height }}
+        >
+          <LanguageMenu
+            dismissVersion={dismissVersion}
+            account={null}
+            homeGlass
+            onBeforeChange={prepareLanguageChange}
+            popoverClassName="landing-language-popover"
+            hoverCloseDelay={100}
+            popoverOffset={18}
+            onMenuOpen={closeNavigation}
+          />
+        </div>
+      )}
+    </>
   );
 }
