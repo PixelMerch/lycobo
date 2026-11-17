@@ -48,29 +48,24 @@ describe("localized landing document", () => {
   });
 
   it.each(["zh-CN", "en"])(
-    "renders three %s product pairs in one labeled comparison card",
+    "renders three %s comparisons with distinct source and result images",
     (locale) => {
       const copy = landingCopy(locale);
       const document = renderLandingDocument(template, copy, locale);
       const showcase = document.match(/data-landing-showreel[\s\S]*?<\/section>/)?.[0];
       const images = [...(showcase ?? "").matchAll(/src="(data:image\/webp;base64,[^"]+)"/g)];
       expect(new Set(images.map((image) => image[1])).size).toBe(6);
-      expect(showcase?.match(/data-comparison-item=/g)).toHaveLength(3);
-      expect(showcase?.match(/data-comparison-host /g)).toHaveLength(1);
-      expect(showcase).toContain(`<span>${copy.heroShowreelSourceLabel}</span>`);
+      for (const name of ["Quilt", "Blender", "Fashion"]) {
+        expect(showcase).toContain(`<figcaption>${copy[`heroShowreel${name}Label`]}</figcaption>`);
+      }
+      expect(showcase).toContain(`<span>${copy.heroSourceLabel}</span>`);
       expect(showcase).toContain(`<span>${copy.heroShowreelResultLabel}</span>`);
+      expect(showcase).not.toContain("<button");
+      expect(showcase).not.toContain("<canvas");
+      expect(showcase).not.toContain("<video");
       expect(document).toContain("media-src data: blob:;");
     },
   );
-
-  it("inlines the compiled comparison without creating a script tag from bundled text", () => {
-    const document = renderLandingDocument(template, landingCopy("en"), "en", {
-      script: 'window.fixture = "</script>";',
-      css: ".fixture{display:grid}",
-    });
-    expect(document).toContain('window.fixture = "<\\/script>";');
-    expect(document).toContain(".fixture{display:grid}");
-  });
 
   it("rejects missing copy instead of rendering template markers", () => {
     expect(() => renderLandingDocument("__LYCOBO_HTML_unknown__", {}, "en")).toThrow(
