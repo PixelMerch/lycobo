@@ -13,4 +13,4 @@
 - [Lycobo 落地页 Logo 定稿](brand/lycobo-focus-approved.png)：2026-11-17 确认的 C「聚焦」图形，搭配用户提供截图中的宽体圆角字形重绘全小写 lycobo，采用纯白组合标识；正式资源为 `apps/web/public/brand/lycobo-landing.svg`，适用于当前落地页，规则见 DESIGN.md 第 5.1 节。导航使用自有 `apps/web/public/brand/lycobo-navigation.riv` 完成字母 c 到图形的滚动形变，生成脚本为 `scripts/brand/build-landing-logo.py`，维护规则见 DESIGN.md 第 5.2 节。
 
 - [耳机 Hero 方向稿](../../apps/web/public/landing/headphones-hero-preview.webp)：2026-11-17 生成的中性灰整合素材，仅保留为独立图片的美术参考，已退出页面。
-- 当前 Hero 使用独立生成的[棚拍主图](../../apps/web/public/landing/headphones-studio.webp)、[商品原图](../../apps/web/public/landing/headphones-source.webp)、[桌面场景](../../apps/web/public/landing/headphones-desktop.webp)与[材质特写](../../apps/web/public/landing/headphones-detail.webp)。均由 gen-image 基于同一耳机方向稿生成；保留原八图环绕和滚动动画，仅替换图像。
+- 当前 Hero 使用独立生成的[棚拍主图](../../apps/web/public/landing/headphones-studio.webp)、[商品原图](../../apps/web/public/landing/headphones-source.webp)、[桌面场景](../../apps/web/public/landing/headphones-desktop.webp)与[材质特写](../../apps/web/public/landing/headphones-detail.webp)。均由 gen-image 基于同一耳机方向稿生成；四张图组成黑底横向样张，棚拍图随滚动放大至浅色套图区。

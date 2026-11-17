@@ -3,10 +3,12 @@ import { defineMessages } from "../../../i18n/messages";
 /** 电商落地页的产品展示双语文案。 */
 export const storyMessages = defineMessages({
   "zh-CN": {
-    copy115: "一款商品",
-    copy116: "从原图到",
-    copy117: "上架图片",
-    copy118: "用商品原图制作主图、场景图与详情图，让每一张图片服务于商品展示。",
+    copy115: "一张原图，",
+    copy116: "一整套上架图",
+    heroSet: "耳机上架套图",
+    heroStudio: "棚拍主图",
+    heroScene: "场景图",
+    heroDetail: "材质特写",
     copy119: "开始制作商品图",
     copy120: "开始制作",
     copy121: "从商品展示，到细节说明",
@@ -86,10 +88,12 @@ export const storyMessages = defineMessages({
     copy190: "圈定需要修改的区域并描述要求，完成后检查周围细节。",
   },
   en: {
-    copy115: "ONE PRODUCT.",
-    copy116: "FROM PHOTO TO",
-    copy117: "LISTING IMAGES.",
-    copy118: "Create hero images, lifestyle scenes, and product details from your product photos.",
+    copy115: "One product photo.",
+    copy116: "A complete listing set.",
+    heroSet: "Headphone listing images",
+    heroStudio: "Studio shot",
+    heroScene: "Lifestyle scene",
+    heroDetail: "Material close-up",
     copy119: "Create Product Images",
     copy120: "Create Images",
     copy121: "From the full product to the finest detail",
