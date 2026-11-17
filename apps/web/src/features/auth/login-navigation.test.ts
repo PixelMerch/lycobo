@@ -13,6 +13,8 @@ describe("登录后的站内跳转", () => {
     "/en/commerce/create?task=fixture#result",
     "/zh-CN/assets",
     "/zh-CN/inspiration?category=product",
+    "/free-canvas",
+    "/zh-CN/free-canvas",
   ])("保留目标 %s", (path) => {
     expect(safeLoginReturnTo(path)).toBe(path);
     expect(new URL(loginHref(path), "https://lycobo.invalid").searchParams.get("returnTo")).toBe(

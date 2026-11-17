@@ -105,6 +105,12 @@ const localizedRoutes: RouteObject[] = [
         ],
       },
       {
+        path: "free-canvas",
+        lazy: async () => ({
+          Component: (await import("../features/free-canvas/free-canvas-page")).FreeCanvasPage,
+        }),
+      },
+      {
         path: "membership",
         lazy: async () => ({
           Component: (await import("../features/account/membership/membership-page"))

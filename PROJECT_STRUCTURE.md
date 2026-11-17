@@ -79,6 +79,7 @@ apps/web/src/
     │   └── notifications/        # 消息中心
     ├── workspace/                # 统一工作区布局、工具坞、跨工具草稿交接
     ├── commerce/                 # 家纺裂变、套图计划（方案规划、确认与生图）及本地会话草稿
+    ├── free-canvas/              # 自由画布：Konva 舞台、画布状态与本机存储，生成结果放回画布
     ├── video/                    # 视频页面、请求与草稿；history / player / production / storyboard 分职责
     ├── home/                     # 仅保留当前首页落地页
     │   └── landing/              # 当前布局、双语文案、隔离模板与滚动动画；品牌 Rive 由宿主 Canvas 按隔离页进度绘制

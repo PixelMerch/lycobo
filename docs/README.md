@@ -27,6 +27,7 @@ AI 接手先看 [按任务阅读与交接](ai-workflow.md)，需要时使用 [�
 | 图片回调             | [图片 Webhook](image-webhooks.md)                                        |
 | 视频创作             | [视频接入](video-generation.md)                                          |
 | 电商专区素材         | [专区素材清单](landing-assets.md)                                        |
+| 自由画布             | [自由画布](free-canvas.md)                                               |
 | 套图计划与链接分析   | [套图计划](product-variation-plan.md)                                    |
 | 家纺裂变             | [家纺生成](textile-generation.md) · [视角示例](textile-view-examples.md) |
 | 多区域图片修改       | [局部编辑](local-image-repair.md)                                        |

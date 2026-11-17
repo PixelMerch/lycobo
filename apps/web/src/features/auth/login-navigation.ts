@@ -7,7 +7,7 @@ export function safeLoginReturnTo(input: unknown): string {
     const url = new URL(input, loginOrigin);
     if (url.origin !== loginOrigin) return "/";
     if (
-      !/^\/(?:$|commerce(?:\/|$)|workspace$|assets$|video$|membership$|inspiration$)/.test(
+      !/^\/(?:$|commerce(?:\/|$)|workspace$|assets$|video$|membership$|inspiration$|free-canvas$)/.test(
         withoutLocale(url.pathname),
       )
     )

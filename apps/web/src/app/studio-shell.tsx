@@ -1,5 +1,6 @@
 import { Button, Drawer, Tooltip } from "@heroui/react";
 import {
+  IconBrush,
   IconFolderSparkle,
   IconMenu2,
   IconSmartHome,
@@ -19,6 +20,7 @@ import { useOpenAssetLibrary } from "../features/assets/asset-library-store";
 import { useEnterpriseSession } from "../features/auth/auth-client";
 import { loginHref } from "../features/auth/login-navigation";
 import { commercePath, commerceToolHref, commerceTools } from "../features/commerce/commerce-tools";
+import { freeCanvasPath } from "../features/free-canvas/free-canvas-path";
 import { useImageEvents } from "../features/generation/use-image-events";
 import { inspirationLibraryPath } from "../features/inspiration/inspiration-path";
 import { legalPaths } from "../features/legal/legal-document";
@@ -146,6 +148,9 @@ function HeaderNavigation({
         {t.home}
       </RouteLink>
       {!inWorkspace && <CommerceNavMenu homeGlass={commerceHeader} />}
+      <RouteLink nav to={freeCanvasPath} className="nav-row">
+        {t.freeCanvas}
+      </RouteLink>
     </nav>
   );
 }
@@ -255,6 +260,10 @@ function DrawerNavigation({
           ))}
         </>
       )}
+      <RouteLink to={freeCanvasPath} className="nav-row" onClick={onNavigate}>
+        <UiIcon icon={IconBrush} size="default" />
+        <span className="nav-label">{t.freeCanvas}</span>
+      </RouteLink>
       {commerceHeader ? (
         <HomeHeaderUtilities onNavigate={onNavigate} />
       ) : (
@@ -278,6 +287,7 @@ function isWorkspacePath(pathname: string) {
   return (
     commerceTools.some((tool) => pathname === tool.href || pathname.startsWith(`${tool.href}/`)) ||
     pathname === "/workspace" ||
-    pathname === "/video"
+    pathname === "/video" ||
+    pathname === freeCanvasPath
   );
 }
