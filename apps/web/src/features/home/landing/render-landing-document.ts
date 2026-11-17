@@ -1,4 +1,5 @@
 import type { Locale } from "../../../i18n/locale";
+import { initializeLandingBrandScroll } from "./landing-brand-scroll";
 import { initializeLandingFeatureScroll } from "./landing-feature-scroll";
 import { initializeLandingScrollbar } from "./landing-scrollbar";
 
@@ -17,6 +18,10 @@ export function renderLandingDocument(
   locale: Locale,
 ) {
   return template
+    .replace(
+      "__LYCOBO_BRAND_SCROLL_SCRIPT__",
+      `window.addEventListener("load", ${initializeLandingBrandScroll.toString()}, { once: true });`,
+    )
     .replace(
       "__LYCOBO_FEATURE_SCROLL_SCRIPT__",
       `window.addEventListener("load", ${initializeLandingFeatureScroll.toString()}, { once: true });`,

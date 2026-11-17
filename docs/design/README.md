@@ -9,3 +9,5 @@
 参考站实测和交互研究的结论已写入 DESIGN.md，已实现的设计图不再保留，需要时从 Git 历史找回。不要重新以静态图维护第二份产品规范。新增参考只保留支撑当前决策的必要证据，先更新本索引并检查引用。
 
 开发、组件、接口与测试入口见[文档索引](../README.md)。
+
+- [Lycobo 落地页 Logo 定稿](brand/lycobo-focus-approved.png)：2026-11-17 确认的 C「聚焦」图形，搭配用户提供截图中的宽体圆角字形重绘全小写 lycobo，采用纯白组合标识；正式资源为 `apps/web/public/brand/lycobo-landing.svg`，适用于当前落地页，规则见 DESIGN.md 第 5.1 节。
