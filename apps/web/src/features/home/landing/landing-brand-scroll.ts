@@ -36,7 +36,7 @@ export function initializeLandingBrandScroll() {
       // 使用贴合字标的固定占位，滚动只改变图形，菜单始终保持原位。
       slot.style.width = "112px";
     }
-    if (navigation) navigation.style.marginLeft = "0px";
+    if (navigation) navigation.style.marginLeft = "16px";
     report(progress);
     renderFallback(progress);
   }
