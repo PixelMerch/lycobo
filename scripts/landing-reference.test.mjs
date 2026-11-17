@@ -6,7 +6,8 @@ const container = readFileSync("apps/web/src/features/home/landing/landing-page.
 
 describe("OpenArt reference isolation", () => {
   it("keeps recorded motion sections without remote scripts or media", () => {
-    expect(reference).toContain('id="lycobo-product-hero"');
+    expect(reference).toContain('id="oah-gather-hero"');
+    expect(reference).toContain('id="oah-morph-image"');
     expect(reference).toContain('id="oah-use-cases-grid"');
     expect(reference).toContain('id="oah-models"');
     expect(reference).not.toMatch(/<script\b[^>]*\bsrc=/i);

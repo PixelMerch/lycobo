@@ -12,7 +12,6 @@ export const accessibilityMessages = defineMessages({
     prompt5: "展示这款床品的面料细节…",
     prompt1: "为这款商品制作一张白底主图…",
     prompt3: "用我提供的卖点制作详情图…",
-    heroHeadphones: "石墨灰耳机的商品原图、棚拍主图、桌面场景与材质特写",
     image372: "商品图片",
     image373: "商品图片",
     image374: "商品图片",
@@ -118,8 +117,6 @@ export const accessibilityMessages = defineMessages({
     prompt5: "Show the fabric details of this bedding...",
     prompt1: "Create a white-background product image...",
     prompt3: "Create a detail image with my product copy...",
-    heroHeadphones:
-      "Graphite headphones in a source photo, studio shot, desktop scene and material close-up",
     image372: "Product image",
     image373: "Product image",
     image374: "Product image",
