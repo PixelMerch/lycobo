@@ -54,8 +54,8 @@ function ImageNode({
         width={item.width}
         height={item.height}
         rotation={item.rotation}
-        fill="#E9E6DC"
-        stroke={selected ? "#6F7D52" : "#D6D2C4"}
+        fill="#1E1E1E"
+        stroke={selected ? "#A8FF00" : "#FFFFFF1F"}
         strokeWidth={selected ? 2 : 1}
         onClick={onSelect}
         onTap={onSelect}
@@ -118,7 +118,7 @@ function TextNode({
         fontSize={item.fontSize ?? (note ? 15 : 28)}
         lineHeight={1.45}
         fontStyle={note ? "normal" : "bold"}
-        fill="#242820"
+        fill={note ? "#242820" : "#F2F2F2"}
         wrap="word"
         onClick={onSelect}
         onTap={onSelect}
@@ -262,7 +262,7 @@ export function FreeCanvasStage({
             y={-4000}
             width={8000}
             height={8000}
-            fill="#F7F5F0"
+            fill="#0B0B0B"
             onClick={() => onSelect(null)}
             onTap={() => onSelect(null)}
           />
@@ -292,8 +292,8 @@ export function FreeCanvasStage({
               anchorSize={9}
               anchorCornerRadius={4}
               anchorFill="#FFFFFF"
-              anchorStroke="#6F7D52"
-              borderStroke="#6F7D52"
+              anchorStroke="#A8FF00"
+              borderStroke="#A8FF00"
               boundBoxFunc={(old, next) => (next.width < 24 || next.height < 24 ? old : next)}
               onTransformEnd={() => {
                 if (!selectedId) return;

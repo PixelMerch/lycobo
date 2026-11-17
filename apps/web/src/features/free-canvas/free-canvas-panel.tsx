@@ -1,14 +1,19 @@
 import { Button, TextArea, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { imageUnitCredits } from "@lycoboai/contracts";
-import { IconArrowBackUp, IconArrowsMaximize } from "@tabler/icons-react";
+import {
+  IconArrowDown,
+  IconArrowForwardUp,
+  IconArrowUp,
+  IconCopy,
+  IconTrash,
+} from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
+import { CreditCoin } from "../../components/credit-coin";
 import { UiIcon } from "../../components/ui-icon";
 import { useLocale } from "../../i18n/locale-store";
 import { currentMessages, useMessages } from "../../i18n/messages";
 import { useErrorToast } from "../../lib/error-toast";
 import { assetContentUrl, rememberImageDeliveries } from "../generation/asset-delivery-client";
-import { GenerateButton } from "../generation/composer/generate-button";
-import { ParameterGroup } from "../generation/composer/parameter-group";
 import {
   ImageApiError,
   imageRequest,
@@ -84,180 +89,6 @@ function requestError(
   return null;
 }
 
-/** 选中项：文字内容与层级、复制、删除操作。 */
-function SelectionSection({
-  selected,
-  onUpdate,
-  onRemove,
-  onForward,
-  onBackward,
-  onDuplicate,
-  onAddLocalImage,
-}: {
-  selected: FreeCanvasItem | null;
-  onUpdate: (patch: Partial<Omit<FreeCanvasItem, "id">>) => void;
-  onRemove: () => void;
-  onForward: () => void;
-  onBackward: () => void;
-  onDuplicate: () => void;
-  onAddLocalImage: () => void;
-}) {
-  const t = useMessages(freeCanvasMessages);
-  const label = selected?.kind === "note" ? t.noteContent : t.textContent;
-  return (
-    <section className="free-canvas-section">
-      <h2>{t.selection}</h2>
-      {selected ? (
-        <>
-          {selected.kind !== "image" && (
-            <div className="free-canvas-field">
-              <span>{label}</span>
-              <TextArea
-                aria-label={label}
-                className="free-canvas-text"
-                placeholder={selected.kind === "note" ? t.notePlaceholder : t.textPlaceholder}
-                value={selected.text ?? ""}
-                onChange={(event) => onUpdate({ text: event.target.value })}
-              />
-            </div>
-          )}
-          <fieldset className="free-canvas-actions">
-            <legend className="sr-only">{t.actions}</legend>
-            <Button size="sm" variant="tertiary" onPress={onBackward}>
-              <UiIcon icon={IconArrowBackUp} size="small" />
-              {t.backward}
-            </Button>
-            <Button size="sm" variant="tertiary" onPress={onDuplicate}>
-              {t.duplicate}
-            </Button>
-            <Button size="sm" variant="tertiary" onPress={onForward}>
-              <UiIcon icon={IconArrowsMaximize} size="small" />
-              {t.forward}
-            </Button>
-            <Button size="sm" variant="danger" onPress={onRemove}>
-              {t.remove}
-            </Button>
-          </fieldset>
-        </>
-      ) : (
-        <p className="free-canvas-note">{t.empty}</p>
-      )}
-      <Button className="free-canvas-add" size="sm" variant="tertiary" onPress={onAddLocalImage}>
-        {t.addImage}
-      </Button>
-      <p className="free-canvas-note">{t.uploadHint}</p>
-    </section>
-  );
-}
-
-/** 生成区：模型、提示词、比例、分辨率与提交。 */
-function GeneratorSection({ onInsertImage }: { onInsertImage: (item: FreeCanvasItem) => void }) {
-  const t = useMessages(freeCanvasMessages);
-  const locale = useLocale();
-  const catalog = useModelPresentation();
-  const model = useStudioStore((state) => state.activeModel);
-  const setActiveModel = useStudioStore((state) => state.setActiveModel);
-  const models = (catalog.data?.models ?? []).filter((entry) => entry.id !== "nano-banana-2.1");
-  const [prompt, setPrompt] = useState("");
-  const [ratio, setRatio] = useState("1:1");
-  const [resolution, setResolution] = useState<string>("1.5K");
-  const session = useImageSession();
-  const capabilities = useImageModels();
-  const submission = useCanvasGeneration({ prompt, ratio, resolution, model, onInsertImage });
-  useErrorToast(requestError(submission, capabilities));
-  const enabled = modelCapabilities(capabilities.data, model, "create")?.enabledResolutions ?? [];
-  const canGenerate =
-    session.isSuccess &&
-    !!capabilities.data?.enabled &&
-    prompt.trim().length > 0 &&
-    !submission.waiting &&
-    enabled.some((value) => value === resolution);
-
-  return (
-    <section className="free-canvas-section">
-      <h2>{t.generator}</h2>
-      <section aria-label={t.model} className="free-canvas-field">
-        <span>{t.model}</span>
-        <ToggleButtonGroup
-          aria-label={t.model}
-          className="free-canvas-models"
-          disallowEmptySelection
-          isDetached
-          selectedKeys={[model]}
-          selectionMode="single"
-          onSelectionChange={(keys) => {
-            const [next] = keys;
-            if (isModelId(next)) setActiveModel(next);
-          }}
-        >
-          {models.map((entry) => (
-            <ToggleButton id={entry.id} key={entry.id}>
-              {modelDisplayName(entry.id, models, locale) || entry.id}
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
-      </section>
-      <div className="free-canvas-field">
-        <span>{t.prompt}</span>
-        <TextArea
-          aria-label={t.prompt}
-          className="free-canvas-text"
-          placeholder={t.promptPlaceholder}
-          value={prompt}
-          onChange={(event) => setPrompt(event.target.value)}
-        />
-      </div>
-      <section aria-label={t.ratio} className="free-canvas-field">
-        <span>{t.ratio}</span>
-        <ToggleButtonGroup
-          aria-label={t.ratio}
-          className="free-canvas-ratios"
-          disallowEmptySelection
-          isDetached
-          selectedKeys={[ratio]}
-          selectionMode="single"
-          onSelectionChange={(keys) => {
-            const [next] = keys;
-            const value = ratios.find((item) => item === next);
-            if (value) setRatio(value);
-          }}
-        >
-          {ratios.map((value) => (
-            <ToggleButton id={value} key={value}>
-              {value}
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
-      </section>
-      <ParameterGroup
-        disabledValues={resolutions.filter((value) => !enabled.some((item) => item === value))}
-        label={t.resolution}
-        onChange={setResolution}
-        selectionId="free-canvas-resolution"
-        value={resolution}
-        values={resolutions}
-      />
-      <p className="free-canvas-note">{t.countNote}</p>
-      <div className="free-canvas-generate">
-        <GenerateButton
-          cost={imageUnitCredits}
-          isDisabled={!canGenerate}
-          label={submission.waiting ? t.generating : t.generate}
-          onPress={() => submission.submit(canGenerate)}
-          submitting={submission.waiting}
-          submittingLabel={t.generating}
-        />
-      </div>
-      {submission.status && (
-        <p aria-live="polite" className="free-canvas-note">
-          {submission.status}
-        </p>
-      )}
-      <p className="free-canvas-note">{t.persistence}</p>
-    </section>
-  );
-}
-
 /** 提交画布内生成并轮询结果；成功后把图片插入画布。 */
 function useCanvasGeneration({
   prompt,
@@ -328,30 +159,194 @@ function useCanvasGeneration({
   return { waiting, status, submit, error: generate.error };
 }
 
-/** 画布右侧面板：选中项操作与模型生成。 */
-export function FreeCanvasPanel(props: {
-  selected: FreeCanvasItem | null;
+/** 左侧浮动创作卡：提示词、模型、比例、分辨率与发送按钮。 */
+export function FreeCanvasComposer({
+  onInsertImage,
+}: {
+  onInsertImage: (item: FreeCanvasItem) => void;
+}) {
+  const t = useMessages(freeCanvasMessages);
+  const locale = useLocale();
+  const catalog = useModelPresentation();
+  const model = useStudioStore((state) => state.activeModel);
+  const setActiveModel = useStudioStore((state) => state.setActiveModel);
+  const models = (catalog.data?.models ?? []).filter((entry) => entry.id !== "nano-banana-2.1");
+  const [prompt, setPrompt] = useState("");
+  const [ratio, setRatio] = useState("1:1");
+  const [resolution, setResolution] = useState<string>("1.5K");
+  const session = useImageSession();
+  const capabilities = useImageModels();
+  const submission = useCanvasGeneration({ prompt, ratio, resolution, model, onInsertImage });
+  useErrorToast(requestError(submission, capabilities));
+  const enabled = modelCapabilities(capabilities.data, model, "create")?.enabledResolutions ?? [];
+  const canGenerate =
+    session.isSuccess &&
+    !!capabilities.data?.enabled &&
+    prompt.trim().length > 0 &&
+    !submission.waiting &&
+    enabled.some((value) => value === resolution);
+
+  return (
+    <aside aria-label={t.generator} className="fc-dock">
+      <div className="fc-dock-body">
+        <TextArea
+          aria-label={t.prompt}
+          className="fc-prompt"
+          placeholder={t.promptPlaceholder}
+          value={prompt}
+          onChange={(event) => setPrompt(event.target.value)}
+        />
+        <div className="fc-dock-group">
+          <span className="fc-label">{t.model}</span>
+          <ToggleButtonGroup
+            aria-label={t.model}
+            className="fc-models"
+            disallowEmptySelection
+            isDetached
+            selectedKeys={[model]}
+            selectionMode="single"
+            onSelectionChange={(keys) => {
+              const [next] = keys;
+              if (isModelId(next)) setActiveModel(next);
+            }}
+          >
+            {models.map((entry) => (
+              <ToggleButton id={entry.id} key={entry.id}>
+                {modelDisplayName(entry.id, models, locale) || entry.id}
+              </ToggleButton>
+            ))}
+          </ToggleButtonGroup>
+        </div>
+        <div className="fc-dock-group">
+          <span className="fc-label">{t.ratio}</span>
+          <ToggleButtonGroup
+            aria-label={t.ratio}
+            className="fc-ratios"
+            disallowEmptySelection
+            isDetached
+            selectedKeys={[ratio]}
+            selectionMode="single"
+            onSelectionChange={(keys) => {
+              const [next] = keys;
+              const value = ratios.find((item) => item === next);
+              if (value) setRatio(value);
+            }}
+          >
+            {ratios.map((value) => (
+              <ToggleButton id={value} key={value}>
+                {value}
+              </ToggleButton>
+            ))}
+          </ToggleButtonGroup>
+        </div>
+        <div className="fc-dock-group">
+          <span className="fc-label">{t.resolution}</span>
+          <ToggleButtonGroup
+            aria-label={t.resolution}
+            className="fc-resolutions"
+            disallowEmptySelection
+            isDetached
+            selectedKeys={[resolution]}
+            selectionMode="single"
+            onSelectionChange={(keys) => {
+              const [next] = keys;
+              const value = resolutions.find((item) => item === next);
+              if (value) setResolution(value);
+            }}
+          >
+            {resolutions.map((value) => (
+              <ToggleButton
+                id={value}
+                key={value}
+                isDisabled={!enabled.some((item) => item === value)}
+              >
+                {value}
+              </ToggleButton>
+            ))}
+          </ToggleButtonGroup>
+        </div>
+        {submission.status && (
+          <p aria-live="polite" className="fc-status">
+            {submission.status}
+          </p>
+        )}
+      </div>
+      <div className="fc-dock-footer">
+        <span aria-hidden="true" className="fc-cost">
+          <CreditCoin />
+          <span>{imageUnitCredits}</span>
+        </span>
+        <Button
+          aria-label={submission.waiting ? t.generating : t.generate}
+          className="fc-send"
+          isIconOnly
+          isDisabled={!canGenerate}
+          isPending={submission.waiting}
+          onPress={() => submission.submit(canGenerate)}
+        >
+          <UiIcon icon={IconArrowUp} size="action" />
+        </Button>
+      </div>
+    </aside>
+  );
+}
+
+/** 选中项检查器：文字内容与层级、复制、删除。 */
+export function FreeCanvasInspector({
+  selected,
+  onUpdate,
+  onRemove,
+  onForward,
+  onBackward,
+  onDuplicate,
+}: {
+  selected: FreeCanvasItem;
   onUpdate: (patch: Partial<Omit<FreeCanvasItem, "id">>) => void;
   onRemove: () => void;
   onForward: () => void;
   onBackward: () => void;
   onDuplicate: () => void;
-  onInsertImage: (item: FreeCanvasItem) => void;
-  onAddLocalImage: () => void;
 }) {
   const t = useMessages(freeCanvasMessages);
+  const label = selected.kind === "note" ? t.noteContent : t.textContent;
   return (
-    <aside aria-label={t.panelAria} className="free-canvas-panel">
-      <SelectionSection
-        onAddLocalImage={props.onAddLocalImage}
-        onBackward={props.onBackward}
-        onDuplicate={props.onDuplicate}
-        onForward={props.onForward}
-        onRemove={props.onRemove}
-        onUpdate={props.onUpdate}
-        selected={props.selected}
-      />
-      <GeneratorSection onInsertImage={props.onInsertImage} />
+    <aside aria-label={t.selection} className="fc-inspector">
+      <h2 className="fc-inspector-title">{t.selection}</h2>
+      {selected.kind !== "image" && (
+        <TextArea
+          aria-label={label}
+          className="fc-inspector-text"
+          placeholder={selected.kind === "note" ? t.notePlaceholder : t.textPlaceholder}
+          value={selected.text ?? ""}
+          onChange={(event) => onUpdate({ text: event.target.value })}
+        />
+      )}
+      <fieldset aria-label={t.actions} className="fc-inspector-actions">
+        <Button
+          isIconOnly
+          aria-label={t.backward}
+          onPress={onBackward}
+          size="sm"
+          variant="tertiary"
+        >
+          <UiIcon icon={IconArrowDown} size="small" />
+        </Button>
+        <Button isIconOnly aria-label={t.forward} onPress={onForward} size="sm" variant="tertiary">
+          <UiIcon icon={IconArrowForwardUp} size="small" />
+        </Button>
+        <Button
+          isIconOnly
+          aria-label={t.duplicate}
+          onPress={onDuplicate}
+          size="sm"
+          variant="tertiary"
+        >
+          <UiIcon icon={IconCopy} size="small" />
+        </Button>
+        <Button isIconOnly aria-label={t.remove} onPress={onRemove} size="sm" variant="danger">
+          <UiIcon icon={IconTrash} size="small" />
+        </Button>
+      </fieldset>
     </aside>
   );
 }

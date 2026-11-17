@@ -22,13 +22,19 @@
 
 ## 结构
 
-- `free-canvas-page.tsx`：页面组合、本地文件选择与本机存储同步。
-- `free-canvas-toolbar.tsx`：工具切换、缩放与视图重置。
+- `free-canvas-page.tsx`：页面组合、顶部筛选条、本地文件选择与本机存储同步。
+- `free-canvas-toolbar.tsx`：底部浮动工具条（选择、移动、文字、便签、添加图片）。
 - `free-canvas-stage.tsx`：Konva 舞台、图片加载、选择、拖动、变换与滚轮缩放。
-- `free-canvas-panel.tsx`：选中项操作与模型生成面板，包含任务轮询。
+- `free-canvas-panel.tsx`：左侧浮动创作卡、右上选中项检查器，以及生成任务轮询。
 - `free-canvas-state.ts`：Zustand 画布状态，只保存编辑态。
 - `free-canvas-storage.ts`：本机存储的读取与写入，带结构校验。
 - `free-canvas-messages.ts`：中英文文案。
+
+## 外观
+
+- 深色画布工作台：画布 `#0B0B0B`，面板 `#141414`，细线 `#FFFFFF14`；荧光绿只用于选中框与主操作。
+- 顶部筛选条（全部／图片／文字／便签）加「上传」，右侧缩放控件；筛选只影响显示，不删除节点。
+- 左侧 340px 浮动创作卡：提示词、模型、比例、分辨率与圆形发送按钮；底部居中 40px 圆形工具条；选中节点时右上出现检查器。
 
 ## 交互
 
