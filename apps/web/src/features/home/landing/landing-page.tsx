@@ -1,3 +1,4 @@
+import comparisonBundle from "virtual:landing-comparison-client";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { LanguageMenu } from "../../../app/language-menu";
@@ -34,7 +35,8 @@ export function LandingPage() {
     staleTime: Infinity,
   });
   const document = useMemo(
-    () => (data ? renderLandingDocument(data, landingCopy(locale), locale) : undefined),
+    () =>
+      data ? renderLandingDocument(data, landingCopy(locale), locale, comparisonBundle) : undefined,
     [data, locale],
   );
   if (!document) {

@@ -5,11 +5,12 @@ import setImage from "../../../../public/landing/comforter-set.webp?inline";
 import sourceImage from "../../../../public/landing/comforter-source.webp?inline";
 import stitchImage from "../../../../public/landing/comforter-stitch.webp?inline";
 import studioImage from "../../../../public/landing/comforter-studio.webp?inline";
-import quiltImage from "../../../../public/landing/commerce-quilt.webp?inline";
-import blenderResult from "../../../../public/landing/showcase/blender-after.webp?inline";
-import blenderSource from "../../../../public/landing/showcase/blender-before.webp?inline";
-import fashionResult from "../../../../public/landing/showcase/fashion-after.webp?inline";
-import fashionSource from "../../../../public/landing/showcase/fashion-before.webp?inline";
+import blenderSource from "../../../../public/landing/showcase/cream-blender-snapshot.webp?inline";
+import blenderResult from "../../../../public/landing/showcase/cream-blender-white.webp?inline";
+import fashionSource from "../../../../public/landing/showcase/ivory-jacket-snapshot.webp?inline";
+import fashionResult from "../../../../public/landing/showcase/ivory-jacket-white.webp?inline";
+import beddingSource from "../../../../public/landing/showcase/sage-bedding-snapshot.webp?inline";
+import beddingResult from "../../../../public/landing/showcase/sage-bedding-white.webp?inline";
 import type { Locale } from "../../../i18n/locale";
 import { initializeLandingBrandScroll } from "./landing-brand-scroll";
 import { initializeLandingFeatureScroll } from "./landing-feature-scroll";
@@ -19,16 +20,16 @@ import { initializeLandingHeroScroll } from "./landing-hero-scroll";
 import { initializeLandingNavBridge } from "./landing-nav-bridge";
 import { initializeLandingScrollbar } from "./landing-scrollbar";
 import showcaseStyles from "./landing-showcase.css?raw";
-import { initializeLandingShowcaseScroll } from "./landing-showcase-scroll";
 
 const heroImages: Record<string, string> = {
-  drape: drapeImage,
-  blendersource: blenderSource,
+  beddingresult: beddingResult,
+  beddingsource: beddingSource,
   blenderresult: blenderResult,
-  fashionsource: fashionSource,
+  blendersource: blenderSource,
+  drape: drapeImage,
   fashionresult: fashionResult,
+  fashionsource: fashionSource,
   folded: foldedImage,
-  quilt: quiltImage,
   room: roomImage,
   set: setImage,
   source: sourceImage,
@@ -53,15 +54,11 @@ export function renderLandingDocument(
   template: string,
   messages: Record<string, string>,
   locale: Locale,
+  comparison?: { script: string; css: string },
 ) {
   return template
-    .replace("__LYCOBO_HERO_STYLE__", () => heroStyles + showcaseStyles)
+    .replace("__LYCOBO_HERO_STYLE__", () => heroStyles + showcaseStyles + (comparison?.css ?? ""))
     .replace("__LYCOBO_HERO__", () => hero)
-    .replace(
-      "__LYCOBO_HERO_SCROLL_SCRIPT__",
-      () => `(${initializeLandingHeroScroll.toString()})();
-(${initializeLandingShowcaseScroll.toString()})();`,
-    )
     .replace(
       "__LYCOBO_BRAND_SCROLL_SCRIPT__",
       `window.addEventListener("load", ${initializeLandingBrandScroll.toString()}, { once: true });
@@ -84,5 +81,9 @@ window.addEventListener("load", ${initializeLandingNavBridge.toString()}, { once
           .replaceAll("\u2029", "\\u2029");
       }
       return message.replace(/[&<>"']/g, (character) => htmlEntities[character] ?? character);
+    })
+    .replace("__LYCOBO_HERO_SCROLL_SCRIPT__", () => {
+      const script = comparison?.script.replace(/<\/script/gi, "<\\/script") ?? "";
+      return `(${initializeLandingHeroScroll.toString()})();\n${script}`;
     });
 }

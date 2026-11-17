@@ -2,6 +2,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import release from "../../release.json" with { type: "json" };
+import { landingComparisonBundle } from "./build/landing-comparison-bundle";
 
 export default defineConfig({
   define: {
@@ -11,6 +12,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    landingComparisonBundle(),
     {
       name: "compose-access-urls",
       configureServer(server) {
