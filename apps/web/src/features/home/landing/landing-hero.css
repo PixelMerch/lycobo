@@ -129,11 +129,9 @@
 [data-hero-slot="drape"] {
   --hero-photo-area: drape;
 }
-
 [data-hero-slot="folded"] {
   --hero-photo-area: folded;
 }
-
 [data-hero-slot="set"] {
   --hero-photo-area: set;
 }
@@ -165,8 +163,17 @@
   object-position: center 37%;
 }
 
+.lycobo-hero-frame .lycobo-hero-visual::after {
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 clamp(24px, 4vw, 68px) rgb(0 0 0 / 58%);
+  opacity: calc(1 - var(--hero-photo-paper, 0));
+  content: "";
+}
+
 .lycobo-hero-caption {
   position: absolute;
+  z-index: 1;
   bottom: clamp(6px, 1vw, 13px);
   left: clamp(6px, 1vw, 13px);
   max-width: calc(100% - 12px);
@@ -203,6 +210,7 @@
 
 .lycobo-hero-detail-note {
   position: absolute;
+  z-index: 1;
   right: 3%;
   bottom: 8%;
   width: 48%;
@@ -278,6 +286,7 @@
 }
 
 [data-motion] .lycobo-hero-opening {
+  --hero-photo-paper: var(--hero-gallery-opacity, 0);
   z-index: 2;
   pointer-events: none;
 }
