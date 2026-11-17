@@ -76,7 +76,7 @@ class RiveWriter:
             for prop, values in props.items():
                 self.record(26, {53: prop})
                 for frame, value in values:
-                    self.record(30, {67: frame, 68: 2, 69: 2 if prop == 18 else 1, 70: value})
+                    self.record(30, {67: frame, 68: 1, 70: value})
         TARGET.write_bytes(self.data)
 
 
@@ -151,9 +151,7 @@ def build():
     writer = RiveWriter()
     writer.record(23, {})
     writer.component(1, {4: 'Lycobo navigation', 7: 602, 8: 176})
-    # 使用 animate 技能指定的形变曲线，插值仍由滚动位置决定。
-    writer.component(28, {63: .77, 64: 0, 65: .175, 66: 1})
-    writer.component(28, {63: .23, 64: 1, 65: .32, 66: 1})
+    # 滚动直接驱动线性插值，避免缓动曲线把变化挤在少量滚动距离内。
     paths = ET.parse(SOURCE).getroot().findall('.//{http://www.w3.org/2000/svg}path')[1:]
     for letter, path in enumerate(paths):
         contours = read_contours(path.attrib['d'])
@@ -163,27 +161,29 @@ def build():
             start = resample([(x-168, y-92) for x, y in contours[0]], 100)
             end = resample(focus_contour(), 100)
             shape, vertices = writer.shape('c-to-focus', [start], 168, 92)
-            writer.track(shape, 13, [(0, 168), (18, 168), (90, 320), (120, 320)])
-            writer.track(shape, 14, [(0, 92), (18, 92), (90, 83.4), (120, 83.4)])
-            writer.track(shape, 15, [(0, 0), (42, 0), (108, -math.pi/4), (120, -math.pi/4)])
+            writer.track(shape, 13, [(0, 168), (8, 168), (112, 320), (120, 320)])
+            writer.track(shape, 14, [(0, 92), (8, 92), (112, 83.4), (120, 83.4)])
+            writer.track(shape, 15, [(0, 0), (16, 0), (112, -math.pi/4), (120, -math.pi/4)])
             for vertex, a, b in zip(vertices[0], start, end):
                 for axis, prop in enumerate([24, 25]):
-                    writer.track(vertex, prop, [(0, a[axis]), (24, a[axis]),
-                                               (90, b[axis]), (120, b[axis])])
+                    writer.track(vertex, prop, [(0, a[axis]), (8, a[axis]),
+                                               (112, b[axis]), (120, b[axis])])
             continue
         shape, _ = writer.shape('lycobo-' + str(letter), contours)
-        # 从右向左收拢；左侧字母提前让位，保留 C 作为全过程的视觉锚点。
+        # 两侧字母向外轻移并淡出，为持续变形的 C 留出空间。
         delay = {0: 0, 1: 5, 3: 12, 4: 6, 5: 0}[letter]
-        writer.track(shape, 18, [(0, 1), (delay+8, 1), (delay+42, 0), (120, 0)])
-        shift = 22 if letter < 2 else -40 - 8*letter
-        writer.track(shape, 13, [(0, 0), (delay, 0), (delay+48, shift), (120, shift)])
-    # 圆点与环共享旋转中心，最后出现于右上方。
-    rotation = writer.component(2, {4: 'focus-dot-orbit', 5: 0, 13: 320, 14: 83.4})
+        writer.track(shape, 18, [(0, 1), (delay+8, 1), (delay+76, 0), (120, 0)])
+        shift = -22 if letter < 2 else 36
+        writer.track(shape, 13, [(0, 0), (delay, 0), (delay+84, shift), (120, shift)])
+    # 圆点跟随环的平移与旋转，在文字退场期间逐渐显现，避免独立跳出。
+    rotation = writer.component(2, {4: 'focus-dot-orbit', 5: 0, 13: 168, 14: 92})
+    writer.track(rotation, 13, [(0, 168), (8, 168), (112, 320), (120, 320)])
+    writer.track(rotation, 14, [(0, 92), (8, 92), (112, 83.4), (120, 83.4)])
     points = [(41.8+11*math.cos(i*math.tau/48), 11*math.sin(i*math.tau/48))
               for i in range(48)]
     dot, _ = writer.shape('focus-dot', [points], parent=rotation)
-    writer.track(rotation, 15, [(0, 0), (42, 0), (108, -math.pi/4), (120, -math.pi/4)])
-    writer.track(dot, 18, [(0, 0), (68, 0), (108, 1), (120, 1)])
+    writer.track(rotation, 15, [(0, 0), (16, 0), (112, -math.pi/4), (120, -math.pi/4)])
+    writer.track(dot, 18, [(0, 0), (36, 0), (112, 1), (120, 1)])
     writer.finish()
     print(f'{TARGET.relative_to(ROOT)}: {TARGET.stat().st_size} bytes')
 
