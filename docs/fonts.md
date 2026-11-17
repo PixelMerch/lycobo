@@ -29,3 +29,17 @@
 ## 验证范围
 
 本次以桌面与手机视口检查中文、英文、导航及输入区；不调用真实付费模型，字体外观以页面目测验收。字体构建脚本自身校验数据完整性，浏览器检查是否实际使用目标字体与按需下载。
+
+## 电商落地页隔离模板
+
+`/commerce` 与主站统一使用普惠体。模板保持 sandbox 与禁止网络请求的 CSP，因此不能直接继承宿主页的字体声明。`scripts/fonts/embed-landing-fonts.py` 从已有 WOFF2 切片中提取落地页中英文文案源码字符的超集，保留字体名称与许可元数据，再以内联 data URI 写入模板；不修改主站原始切片或共享 token。
+
+排版源为 `apps/web/src/features/home/landing/landing-typography.css`：Hero 700、章节标题 600、导航和按钮及卡片标题 500、正文 400，Hero 行高 1.12，中文标题不加负字距。SVG 字标保持原样。
+
+修改落地页文案或排版源后，用安装了本目录固定字体依赖的隔离 Python 环境执行：
+
+```sh
+python scripts/fonts/embed-landing-fonts.py
+```
+
+只重建 `public/openart-reference/index.html` 中标记的字体块；脚本验证裁切后字形不丢失，保留页面布局与动画。随后检查中英文和手机显示，执行常规项目检查。该步骤仅在维护字体块时运行，不加入应用启动或部署流程。

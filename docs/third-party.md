@@ -23,9 +23,11 @@
 
 ## OpenArt 页面参考
 
-2026-11-16 用户提供本地 `page-take/recordings/openairt/source/`，并明确要求先完全复刻，再改为自己的品牌。`apps/web/public/openart-reference/index.html` 是从该录制文档生成的隔离参考稿，保留 OpenArt 的 HTML/CSS、导航与交互动效脚本及 Bricolage Grotesque/Inter 录制字体；照片与视频替换为灰阶占位。
+2026-11-16 用户提供本地 `page-take/recordings/openairt/source/`，并明确要求先完全复刻，再改为自己的品牌。`apps/web/public/openart-reference/index.html` 是从该录制文档生成的隔离参考稿，保留 OpenArt 的 HTML/CSS、导航与交互动效脚本；照片与视频替换为灰阶占位。
 
 快照只保留导航、Director 案例带、功能演示、FAQ 与主页动效脚本，剔除统计、广告、归因和远程加载器；禁止网络连接、表单提交与打开外部窗口。原站内容、模型、优惠和评价属于 OpenArt，不能转述为 Lycobo 的产品事实。没有声称原站代码或商标属于本项目，也未作公开发布。2026-11-17 按用户要求将文案与字标替换为 Lycobo：文案放入项目中英文目录，模板只保留内容键；原版客户标识、评价与星级不再呈现，原版字标路径改为本项目 SVG。布局及动画仍来自上述录制，不因品牌替换而改变来源；真实业务操作尚未接入。
+
+2026-11-17 字体统一为项目已有阿里巴巴普惠体 3.0，录制的 Bricolage Grotesque/Inter 字体文件已移除；隔离模板使用文案字形子集，许可元数据保留。
 
 用户明确批准 Biome 仅排除这一个生成 HTML；应用容器与其他代码不豁免。旧电商首屏的 Gradient Waves 组件随整页重做移除，React Bits Silk 仍用于其他页面，许可继续保留。
 

@@ -57,7 +57,7 @@
 
 ## 3. 排版、图标与基础控件
 
-中英文使用自托管阿里巴巴普惠体 3.0（3.01），统一引用 `--font-sans`，`--shell-font-family` 为别名。400／500／600 为常用字重，少量重点和会员价格用 700，专区 Hero 用 500。不合成字重。数字用 `tabular-nums`，标题字距以具名规格为准，其余中文正文不加字距。缺字按 PingFang SC、HarmonyOS Sans SC、MiSans、Microsoft YaHei、Noto Sans CJK SC、系统字体回退。切片与缓存见[字体维护](docs/fonts.md)。
+中英文使用自托管阿里巴巴普惠体 3.0（3.01），统一引用 `--font-sans`，`--shell-font-family` 为别名。400／500／600 为常用字重，少量重点和会员价格用 700，电商落地页 Hero 用 700。不合成字重。数字用 `tabular-nums`，标题字距以具名规格为准，其余中文正文不加字距。缺字按 PingFang SC、HarmonyOS Sans SC、MiSans、Microsoft YaHei、Noto Sans CJK SC、系统字体回退。切片与缓存见[字体维护](docs/fonts.md)。
 
 | Token         | 字号 / 行高 | 用途                                   |
 | ------------- | ----------- | -------------------------------------- |
@@ -198,7 +198,8 @@ HeroUI 是唯一交互基础：Button、ToggleButtonGroup、Select、Modal、Pop
 `/commerce` 全屏呈现隔离参考稿，业务 Header 不叠加到原版导航。2026-11-17 按用户要求移除顶部限时优惠公告，导航直接贴顶，不保留公告空位。结构依次为：导航 → 八图环绕 Hero → 主视觉放大与大字 → 图片用途横向带 → 弧形案例带与打字提示 → 3D 案例轮播 → 功能导航 → 六组交错图文演示 → 环绕图片用途卡片区 → 工具切换演示 → 双向商品用途带 → 双列 FAQ → 创作灵感卡片 → CTA → 渐变 Footer 与巨型字标。
 
 - 深色基底 `#090A0A`、浅色 `#F4F7FA`、强调色 `#FB23C2`；颜色以录制样式为准。
-- 参考稿自带录制的 Bricolage Grotesque 与 Inter，完全限制在隔离文档；Lycobo 共享字体和 token 不变。
+- 2026-11-17 用户确认落地页中英文统一使用阿里巴巴普惠体 3.0（3.01）。Hero 700、章节标题 600、导航／按钮／卡片标题 500、正文 400；不合成字重。Hero 行高 1.12，中文标题取消原版负字距，保持原有字号、布局与动画。Lycobo SVG 字标不变。
+- 隔离模板嵌入仓库现有字体的文案字形子集，不加载 Inter 或 Bricolage Grotesque，不放宽网络 CSP。文案更新后用 `scripts/fonts/embed-landing-fonts.py` 重建字体块，操作见[字体维护](docs/fonts.md)。
 - 原版客户与媒体标识用灰阶图形占位替换；评价卡改为商品图用途说明，删除姓名、评价来源、星级和引用符号，保持卡片容器与横向运动。
 - 1440×900 为主要核对视口；保留原版的移动端媒体查询和减少动态效果规则，不另创断点或改排版。
 

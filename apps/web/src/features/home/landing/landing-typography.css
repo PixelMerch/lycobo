@@ -1,0 +1,37 @@
+/* 字体切片由 scripts/fonts/embed-landing-fonts.py 写入隔离模板。 */
+html,
+html[data-oah-rhythm="v1"] {
+  --font-sans:
+    "Alibaba PuHuiTi 3", "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono: var(--font-sans);
+}
+
+body,
+body * {
+  font-family: var(--font-sans);
+  font-synthesis: none;
+}
+
+body {
+  font-weight: 400;
+}
+
+h2,
+.oah-director-heading text {
+  font-weight: 600;
+}
+
+h3,
+h4,
+button,
+a,
+.oah-use-case-title text {
+  font-weight: 500;
+}
+
+html body .oah-gather-heading {
+  font-weight: 700;
+  line-height: 1.12;
+}
