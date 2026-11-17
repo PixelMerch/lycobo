@@ -81,7 +81,7 @@ apps/web/src/
     ├── commerce/                 # 家纺裂变、套图计划（方案规划、确认与生图）及本地会话草稿
     ├── video/                    # 视频页面、请求与草稿；history / player / production / storyboard 分职责
     ├── home/                     # 仅保留当前首页落地页
-    │   └── landing/              # 当前布局、动画、双语文案与样式；从 public/openart-reference/index.html 读取隔离模板
+    │   └── landing/              # 当前布局、双语文案、隔离模板与滚动动画；品牌 Rive 由宿主 Canvas 按隔离页进度绘制
     ├── inspiration/              # 灵感库页面、示例数据与作品墙；素材库复用同一浏览组件
     ├── site/                     # 站点页脚：首页与用户协议、隐私政策页共用
     ├── legal/                    # 用户协议与隐私政策公开页；运营主体等待补信息集中在 legal-entity-messages.ts

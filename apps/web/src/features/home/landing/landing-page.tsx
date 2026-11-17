@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { LanguageMenu } from "../../../app/language-menu";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
+import { LandingBrandCanvas } from "./landing-brand-canvas";
 import { landingCopy } from "./landing-copy";
 import { referenceMessages } from "./reference-messages";
 import { renderLandingDocument } from "./render-landing-document";
@@ -54,6 +55,7 @@ export function LandingPage() {
         sandbox="allow-scripts"
         referrerPolicy="no-referrer"
       />
+      <LandingBrandCanvas frameRef={frameRef} document={document} />
       {anchor && (
         <div
           className="landing-language-control"

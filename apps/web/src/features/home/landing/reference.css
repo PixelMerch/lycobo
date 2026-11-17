@@ -109,3 +109,11 @@ body:has(.openart-reference) .topbar {
     transition: none;
   }
 }
+
+/* Rive 只覆盖品牌图像，指针与键盘仍由隔离页的原始链接处理。 */
+.landing-brand-canvas {
+  position: fixed;
+  z-index: 49;
+  pointer-events: none;
+  visibility: hidden;
+}
