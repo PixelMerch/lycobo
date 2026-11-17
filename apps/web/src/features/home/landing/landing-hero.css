@@ -14,19 +14,21 @@
   display: grid;
   align-content: center;
   justify-items: center;
-  gap: clamp(22px, 4svh, 48px);
   min-height: max(600px, calc(100svh - 72px));
+  overflow: clip;
   padding: clamp(54px, 8svh, 96px) var(--hero-gutter) clamp(24px, 5svh, 60px);
 }
 
 .lycobo-hero-copy {
-  width: 100%;
+  position: relative;
+  z-index: 2;
+  width: min(49vw, 850px);
   text-align: center;
 }
 
 .lycobo-hero-copy h1 {
   margin: 0;
-  font-size: clamp(32px, min(4.9vw, 7.5svh), 76px);
+  font-size: clamp(31px, min(4.35vw, 8.2svh), 76px);
   font-weight: 700;
   line-height: 1.08;
 }
@@ -81,26 +83,17 @@
   }
 }
 
-.lycobo-hero-photos,
+.lycobo-hero-photos {
+  position: absolute;
+  inset: 0;
+  max-width: 1720px;
+  margin-inline: auto;
+}
+
 .lycobo-hero-results-content {
   position: relative;
   width: 100%;
   max-width: 1320px;
-}
-
-.lycobo-hero-photos {
-  display: grid;
-  max-width: min(1320px, 155svh);
-  grid-template-columns: minmax(0, 0.65fr) clamp(24px, 3.7vw, 56px) minmax(0, 1.32fr) minmax(
-      0,
-      0.86fr
-    );
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  grid-template-areas:
-    "source arrow studio room"
-    "source arrow studio stitch";
-  gap: var(--hero-gap);
-  height: clamp(245px, 48svh, 510px);
 }
 
 .lycobo-hero-frame,
@@ -143,33 +136,6 @@
 
 [data-hero-slot="set"] {
   --hero-photo-area: set;
-}
-
-.lycobo-hero-arrow {
-  display: grid;
-  grid-area: arrow;
-  place-items: center;
-  color: #b7b2ad;
-  opacity: var(--hero-opening-opacity, 1);
-}
-
-.lycobo-hero-arrow-stroke {
-  position: relative;
-  width: clamp(12px, 2.1vw, 32px);
-  height: 1px;
-  background: currentColor;
-}
-
-.lycobo-hero-arrow-stroke::after {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  width: 8px;
-  height: 8px;
-  border-top: 1px solid;
-  border-right: 1px solid;
-  transform: translateY(-50%) rotate(45deg);
-  content: "";
 }
 
 .lycobo-hero-visual {
@@ -292,10 +258,6 @@
   aspect-ratio: 2.35;
 }
 
-[data-hero-reveal] {
-  display: none;
-}
-
 .lycobo-hero[data-motion] {
   height: calc(100svh + var(--hero-scroll));
 }
@@ -337,35 +299,94 @@
   display: none;
 }
 
-[data-motion] [data-hero-reveal] {
-  position: absolute;
-  top: 56%;
-  left: 60%;
-  display: block;
-  width: 13%;
-  height: 34%;
-  opacity: var(--hero-reveal-opacity, 0);
+@media (min-width: 960px) {
+  .lycobo-hero-frame {
+    position: absolute;
+    width: var(--hero-frame-width);
+    aspect-ratio: var(--hero-frame-ratio, 1);
+  }
+
+  [data-hero-photo="source"] {
+    --hero-frame-width: min(14%, 25svh);
+    --hero-breath-lift: 14px;
+    --hero-breath-period: 7.6s;
+    --hero-breath-delay: -1.5s;
+    top: max(93px, 16%);
+    left: 5%;
+  }
+
+  [data-hero-photo="studio"] {
+    --hero-frame-width: min(28%, 46svh);
+    --hero-frame-ratio: 1.16;
+    --hero-breath-lift: 19px;
+    --hero-breath-period: 9.2s;
+    --hero-breath-delay: -2.8s;
+    z-index: 1;
+    bottom: 10%;
+    left: 0;
+  }
+
+  [data-hero-photo="room"] {
+    --hero-frame-width: min(31%, 51svh);
+    --hero-frame-ratio: 1.42;
+    --hero-breath-lift: 18px;
+    --hero-breath-period: 8.4s;
+    --hero-breath-delay: -1s;
+    top: max(88px, 12%);
+    right: -0.5%;
+  }
+
+  [data-hero-photo="stitch"] {
+    --hero-frame-width: min(22%, 36svh);
+    --hero-frame-ratio: 1.58;
+    --hero-breath-lift: 13px;
+    --hero-breath-period: 8.8s;
+    --hero-breath-delay: -5s;
+    z-index: 1;
+    right: 4.5%;
+    bottom: 12%;
+  }
+
+  [data-hero-photo="drape"] {
+    --hero-frame-width: min(15%, 25svh);
+    --hero-frame-ratio: 1.26;
+    --hero-breath-delay: -4.3s;
+    right: 21%;
+    bottom: 5%;
+  }
+
+  [data-hero-photo="folded"] {
+    --hero-frame-width: min(15%, 26svh);
+    --hero-frame-ratio: 1.42;
+    --hero-breath-delay: -6s;
+    bottom: 5%;
+    left: 26%;
+  }
+
+  [data-hero-photo="set"] {
+    --hero-frame-width: min(15%, 25svh);
+    --hero-frame-ratio: 1.5;
+    --hero-breath-delay: -3.6s;
+    top: max(88px, 10%);
+    left: 36%;
+  }
+
+  [data-motion] [data-hero-reveal] .lycobo-hero-caption {
+    opacity: var(--hero-reveal-opacity, 0);
+  }
+
+  [data-motion] [data-hero-reveal] .lycobo-hero-visual {
+    opacity: calc(0.83 + 0.17 * var(--hero-reveal-opacity, 0));
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .lycobo-hero-visual {
-    animation: lycobo-hero-breathe 7.5s ease-in-out var(--hero-breath-delay, 0s) infinite;
-  }
-
-  [data-hero-photo="studio"] {
-    --hero-breath-delay: -2s;
-  }
-
-  [data-hero-photo="room"] {
-    --hero-breath-delay: -4s;
-  }
-
-  [data-hero-photo="stitch"] {
-    --hero-breath-delay: -5.5s;
+    animation: lycobo-hero-breathe var(--hero-breath-period, 8s) ease-in-out
+      var(--hero-breath-delay, 0s) infinite;
   }
 
   [data-hero-slot] .lycobo-hero-visual,
-  [data-hero-reveal] .lycobo-hero-visual,
   .lycobo-hero-stage:is([data-breath-settled], [data-breath-offscreen]) .lycobo-hero-visual {
     animation: none;
   }
@@ -375,24 +396,34 @@
   from,
   to {
     translate: 0 0;
+    scale: 1;
   }
 
   50% {
-    translate: 0 calc(-5px * var(--hero-breath-strength, 1));
-  }
-}
-
-@media (min-width: 960px) {
-  html[lang="zh-CN"] .lycobo-hero-copy h1 span {
-    display: inline;
+    translate: 0 calc(-1 * var(--hero-breath-lift, 10px) * var(--hero-breath-strength, 1));
+    scale: calc(1 + 0.025 * var(--hero-breath-strength, 1));
   }
 }
 
 @media (max-width: 959px) {
   .lycobo-hero-opening {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-rows: clamp(100px, 18svh, 180px) auto clamp(124px, 20svh, 220px);
+    grid-template-areas:
+      "source source . room room room"
+      "copy copy copy copy copy copy"
+      "studio studio studio stitch stitch stitch";
+    justify-items: stretch;
+    gap: clamp(10px, 2svh, 20px);
     min-height: auto;
     padding-inline: max(18px, calc((100% - 560px) / 2));
-    padding-bottom: clamp(44px, 12svh, 104px);
+    padding-bottom: clamp(35px, 11svh, 96px);
+  }
+
+  .lycobo-hero-copy {
+    grid-area: copy;
+    width: 100%;
+    margin-block: 12px 18px;
   }
 
   .lycobo-hero-copy h1 {
@@ -406,12 +437,33 @@
   }
 
   .lycobo-hero-photos {
-    grid-template-columns: minmax(0, 0.76fr) 15px minmax(0, 1.25fr);
-    grid-template-rows: minmax(0, 1.15fr) minmax(0, 1fr);
-    grid-template-areas:
-      "source arrow studio"
-      "room room stitch";
-    height: clamp(220px, 48svh, 390px);
+    display: contents;
+  }
+
+  [data-hero-photo="room"] {
+    --hero-breath-delay: -2s;
+  }
+
+  [data-hero-photo="studio"] {
+    --hero-breath-delay: -4s;
+  }
+
+  [data-hero-photo="stitch"] {
+    --hero-breath-delay: -5.5s;
+  }
+
+  [data-hero-reveal] {
+    display: none;
+  }
+
+  [data-motion] [data-hero-reveal] {
+    position: absolute;
+    top: 59%;
+    left: 58%;
+    display: block;
+    width: 23%;
+    height: 12%;
+    opacity: var(--hero-reveal-opacity, 0);
   }
 
   .lycobo-hero-results-content {
