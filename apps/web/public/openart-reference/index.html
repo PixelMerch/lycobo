@@ -1741,16 +1741,16 @@ function toggleFAQ(id) {
 </style>
 <script>__LYCOBO_FEATURE_SCROLL_SCRIPT__</script>
 <style>
-/* 图形常驻，文字独立退场；导航保留固定占位。 */
+/* 文字与图形共享左侧起点，按滚动进度交接，导航保留固定占位。 */
 [data-nav-logo] .lycobo-nav-lockup { position: relative; display: block; width: 148px; height: 44px; }
 [data-nav-logo] .lycobo-nav-lockup img { position: absolute; inset: 0; display: block; width: 100% !important; height: 100% !important; object-fit: contain; }
-[data-nav-logo] .lycobo-nav-mark { clip-path: inset(0 77% 0 0); transform-origin: 11.7% 47.4%; }
-[data-nav-logo] .lycobo-nav-wordmark { clip-path: inset(0 0 0 24%); opacity: 1; transform: translateX(0); }
+[data-nav-logo] .lycobo-nav-mark { clip-path: inset(0 77% 0 0); opacity: 0; transform-origin: 11.7% 47.4%; }
+[data-nav-logo] .lycobo-nav-wordmark { clip-path: inset(0 0 0 24%); opacity: 1; transform: translateX(-23%); }
 @media (max-width: 767px) {
   [data-nav-logo] .lycobo-nav-lockup { width: 116px; height: 34px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  [data-nav-logo] .lycobo-nav-wordmark { transition: none; transform: none; }
+  [data-nav-logo] .lycobo-nav-wordmark { transition: none; transform: translateX(-23%); }
 }
 </style>
 <script>__LYCOBO_BRAND_SCROLL_SCRIPT__</script>
