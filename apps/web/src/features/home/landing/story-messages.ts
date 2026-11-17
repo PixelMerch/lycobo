@@ -5,10 +5,7 @@ export const storyMessages = defineMessages({
   "zh-CN": {
     copy115: "一张原图，",
     copy116: "一整套上架图",
-    heroSet: "耳机上架套图",
-    heroStudio: "棚拍主图",
-    heroScene: "场景图",
-    heroDetail: "材质特写",
+    heroSet: "上架套图",
     copy119: "立刻创作",
     copy120: "开始制作",
     copy121: "从商品展示，到细节说明",
@@ -90,10 +87,7 @@ export const storyMessages = defineMessages({
   en: {
     copy115: "One product photo.",
     copy116: "A complete listing set.",
-    heroSet: "Headphone listing images",
-    heroStudio: "Studio shot",
-    heroScene: "Lifestyle scene",
-    heroDetail: "Material close-up",
+    heroSet: "Product Listing Images",
     copy119: "Create Now",
     copy120: "Create Images",
     copy121: "From the full product to the finest detail",

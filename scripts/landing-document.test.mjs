@@ -35,6 +35,18 @@ describe("localized landing document", () => {
     expect(new Script(`${script}\ntext;`).runInNewContext()).toBe(message);
   });
 
+  it("gives each of the seven distinct hero images exactly one destination", () => {
+    const document = renderLandingDocument(template, landingCopy("zh-CN"), "zh-CN");
+    const photos = Array.from(
+      document.matchAll(
+        /data-hero-photo="([a-z]+)">\s*<div[^>]*>\s*<img src="(data:image\/webp;base64,[^"]+)"/g,
+      ),
+    );
+    const slots = Array.from(document.matchAll(/data-hero-slot="([a-z]+)"/g), (match) => match[1]);
+    expect(new Set(photos.map((match) => match[2])).size).toBe(7);
+    expect(slots.sort()).toEqual(photos.map((match) => match[1]).sort());
+  });
+
   it("rejects missing copy instead of rendering template markers", () => {
     expect(() => renderLandingDocument("__LYCOBO_HTML_unknown__", {}, "en")).toThrow(
       "Missing landing message: unknown",

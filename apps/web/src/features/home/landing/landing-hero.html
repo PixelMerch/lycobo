@@ -10,49 +10,41 @@
           __LYCOBO_HTML_copy119__
         </button>
       </div>
-      <div class="lycobo-hero-strip">
-        <div class="lycobo-hero-tile lycobo-hero-tile-source">
-          <img src="__LYCOBO_HERO_SOURCE__" alt="__LYCOBO_HTML_heroSourceAlt__" width="1024" height="1408">
+      <div class="lycobo-hero-photos">
+        <div class="lycobo-hero-frame" data-hero-photo="source">
+          <div class="lycobo-hero-visual"><img src="__LYCOBO_HERO_source__" alt="__LYCOBO_HTML_heroSourceAlt__" width="1024" height="1280"></div>
         </div>
-        <div class="lycobo-hero-studio" data-hero-studio-start>
-          <img src="__LYCOBO_HERO_STUDIO__" alt="__LYCOBO_HTML_heroStudioAlt__" width="1024" height="1024" fetchpriority="high">
+        <div class="lycobo-hero-frame" data-hero-photo="studio">
+          <div class="lycobo-hero-visual"><img src="__LYCOBO_HERO_studio__" alt="__LYCOBO_HTML_heroStudioAlt__" width="1152" height="1536" fetchpriority="high"></div>
         </div>
-        <div class="lycobo-hero-tile lycobo-hero-tile-scene">
-          <img src="__LYCOBO_HERO_SCENE__" alt="__LYCOBO_HTML_heroSceneAlt__" width="1408" height="1024">
+        <div class="lycobo-hero-frame" data-hero-photo="room">
+          <div class="lycobo-hero-visual"><img src="__LYCOBO_HERO_room__" alt="__LYCOBO_HTML_heroRoomAlt__" width="1536" height="1024"></div>
         </div>
-        <div class="lycobo-hero-tile lycobo-hero-tile-detail">
-          <img src="__LYCOBO_HERO_DETAIL__" alt="__LYCOBO_HTML_heroDetailAlt__" width="1408" height="1024">
+        <div class="lycobo-hero-frame" data-hero-photo="drape">
+          <div class="lycobo-hero-visual"><img src="__LYCOBO_HERO_drape__" alt="__LYCOBO_HTML_heroDrapeAlt__" width="1280" height="1024"></div>
         </div>
-        <div class="lycobo-hero-tile lycobo-hero-tile-band" aria-hidden="true">
-          <img src="__LYCOBO_HERO_SOURCE__" alt="" width="1024" height="1408">
+        <div class="lycobo-hero-frame" data-hero-photo="folded">
+          <div class="lycobo-hero-visual"><img src="__LYCOBO_HERO_folded__" alt="__LYCOBO_HTML_heroFoldedAlt__" width="1152" height="1024"></div>
         </div>
-        <div class="lycobo-hero-tile lycobo-hero-tile-earcup" aria-hidden="true">
-          <img src="__LYCOBO_HERO_STUDIO__" alt="" width="1024" height="1024">
+        <div class="lycobo-hero-frame" data-hero-photo="stitch">
+          <div class="lycobo-hero-visual"><img src="__LYCOBO_HERO_stitch__" alt="__LYCOBO_HTML_heroStitchAlt__" width="1152" height="1024"></div>
+        </div>
+        <div class="lycobo-hero-frame" data-hero-photo="binding">
+          <div class="lycobo-hero-visual"><img src="__LYCOBO_HERO_binding__" alt="__LYCOBO_HTML_heroBindingAlt__" width="1152" height="1024"></div>
         </div>
       </div>
     </div>
-
-    <section class="lycobo-hero-results" aria-label="__LYCOBO_HTML_heroSet__">
+    <section class="lycobo-hero-results" aria-labelledby="lycobo-set-heading">
+      <h2 id="lycobo-set-heading">__LYCOBO_HTML_heroSet__</h2>
       <div class="lycobo-hero-set">
-        <figure class="lycobo-hero-result">
-          <div class="lycobo-hero-studio" data-hero-studio-end>
-            <img src="__LYCOBO_HERO_STUDIO__" alt="__LYCOBO_HTML_heroStudioAlt__" width="1024" height="1024">
-          </div>
-          <figcaption>__LYCOBO_HTML_heroStudio__</figcaption>
-        </figure>
-        <div class="lycobo-hero-pair">
-          <figure class="lycobo-hero-result">
-            <div class="lycobo-hero-result-image">
-              <img src="__LYCOBO_HERO_SCENE__" alt="__LYCOBO_HTML_heroSceneAlt__" width="1408" height="1024">
-            </div>
-            <figcaption>__LYCOBO_HTML_heroScene__</figcaption>
-          </figure>
-          <figure class="lycobo-hero-result">
-            <div class="lycobo-hero-result-image">
-              <img src="__LYCOBO_HERO_DETAIL__" alt="__LYCOBO_HTML_heroDetailAlt__" width="1408" height="1024">
-            </div>
-            <figcaption>__LYCOBO_HTML_heroDetail__</figcaption>
-          </figure>
+        <div data-hero-slot="studio"></div>
+        <div class="lycobo-hero-set-grid">
+          <div data-hero-slot="source"></div>
+          <div data-hero-slot="room"></div>
+          <div data-hero-slot="drape"></div>
+          <div data-hero-slot="folded"></div>
+          <div data-hero-slot="stitch"></div>
+          <div data-hero-slot="binding"></div>
         </div>
       </div>
     </section>

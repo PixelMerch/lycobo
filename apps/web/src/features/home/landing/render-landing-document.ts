@@ -1,7 +1,10 @@
-import sceneImage from "../../../../public/landing/headphones-desktop.webp?inline";
-import detailImage from "../../../../public/landing/headphones-detail.webp?inline";
-import sourceImage from "../../../../public/landing/headphones-source.webp?inline";
-import studioImage from "../../../../public/landing/headphones-studio.webp?inline";
+import bindingImage from "../../../../public/landing/comforter-binding.webp?inline";
+import drapeImage from "../../../../public/landing/comforter-drape.webp?inline";
+import foldedImage from "../../../../public/landing/comforter-folded.webp?inline";
+import roomImage from "../../../../public/landing/comforter-room.webp?inline";
+import sourceImage from "../../../../public/landing/comforter-source.webp?inline";
+import stitchImage from "../../../../public/landing/comforter-stitch.webp?inline";
+import studioImage from "../../../../public/landing/comforter-studio.webp?inline";
 import type { Locale } from "../../../i18n/locale";
 import { initializeLandingBrandScroll } from "./landing-brand-scroll";
 import { initializeLandingFeatureScroll } from "./landing-feature-scroll";
@@ -10,11 +13,19 @@ import heroTemplate from "./landing-hero.html?raw";
 import { initializeLandingHeroScroll } from "./landing-hero-scroll";
 import { initializeLandingScrollbar } from "./landing-scrollbar";
 
-const hero = heroTemplate
-  .replaceAll("__LYCOBO_HERO_SCENE__", sceneImage)
-  .replaceAll("__LYCOBO_HERO_STUDIO__", studioImage)
-  .replaceAll("__LYCOBO_HERO_DETAIL__", detailImage)
-  .replaceAll("__LYCOBO_HERO_SOURCE__", sourceImage);
+const heroImages: Record<string, string> = {
+  binding: bindingImage,
+  drape: drapeImage,
+  folded: foldedImage,
+  room: roomImage,
+  source: sourceImage,
+  stitch: stitchImage,
+  studio: studioImage,
+};
+
+const hero = heroTemplate.replace(/__LYCOBO_HERO_([a-z]+)__/g, (marker, name: string) => {
+  return heroImages[name] ?? marker;
+});
 
 const htmlEntities: Record<string, string> = {
   "&": "&amp;",

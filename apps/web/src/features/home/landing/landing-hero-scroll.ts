@@ -1,98 +1,103 @@
-/** 将样张退场、棚拍放大和浅色套图交接绑定到原生滚动进度。 */
+/** 让首屏的七张照片随滚动逐一落到套图中的对应画框。 */
 export function initializeLandingHeroScroll() {
   const hero = document.querySelector<HTMLElement>("[data-landing-hero]");
   const stage = hero?.querySelector<HTMLElement>(".lycobo-hero-stage");
-  const photos = hero?.querySelector<HTMLElement>(".lycobo-hero-strip");
-  const start = hero?.querySelector<HTMLElement>("[data-hero-studio-start]");
-  const end = hero?.querySelector<HTMLElement>("[data-hero-studio-end]");
-  if (!hero || !stage || !photos || !start || !end) return;
+  if (!hero || !stage) return;
 
-  const root = document.documentElement;
-  const viewport = window.matchMedia(
-    "(min-width: 768px) and (min-height: 660px), (min-width: 360px) and (max-width: 767px) and (min-height: 710px)",
+  const pairs = [...hero.querySelectorAll<HTMLElement>("[data-hero-photo]")].flatMap((start) => {
+    const name = start.dataset.heroPhoto;
+    const end = hero.querySelector<HTMLElement>(`[data-hero-slot="${name}"]`);
+    const visual = start.querySelector<HTMLElement>(".lycobo-hero-visual");
+    const image = visual?.querySelector("img");
+    if (!end || !visual || !image) return [];
+    return [
+      {
+        start,
+        end,
+        visual,
+        image,
+        main: name === "studio",
+        from: new DOMRect(),
+        to: new DOMRect(),
+      },
+    ];
+  });
+
+  const viewport = matchMedia(
+    "(min-width: 960px) and (min-height: 660px), (min-width: 350px) and (max-width: 959px) and (min-height: 720px)",
   );
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   let frame = 0;
-  let breath = 1;
-  let geometry = { x: 0, y: 0, scale: 1, travel: 1, drift: 0 };
+  let drawnProgress = -1;
+  let travel = 1;
 
-  function ease(progress: number, from: number, to: number) {
-    const value = Math.max(0, Math.min(1, (progress - from) / (to - from)));
-    return value * value * (3 - 2 * value);
+  function ease(progress: number, start: number, end: number) {
+    const t = Math.max(0, Math.min(1, (progress - start) / (end - start)));
+    return t * t * (3 - 2 * t);
   }
-
-  const updateBreath = (strength: number) => {
-    if (breath === strength) return;
-    breath = strength;
-    photos.style.setProperty("--hero-breath-strength", String(breath));
-    photos.toggleAttribute("data-breath-settled", breath === 0);
-  };
 
   const render = () => {
     frame = 0;
-    const bounds = hero.getBoundingClientRect();
-    const progress = Math.max(0, Math.min(1, -bounds.top / geometry.travel));
-    const studio = ease(progress, 0.07, 0.95);
-    const drift = ease(progress, 0.03, 0.76) * geometry.drift;
-    const panel = ease(progress, 0.23, 0.86);
+    const progress = Math.max(0, Math.min(1, -hero.getBoundingClientRect().top / travel));
+    if (progress === drawnProgress) return;
+    drawnProgress = progress;
+    const breathing = 1 - ease(progress, 0.02, 0.29);
+    stage.style.setProperty("--hero-breath-strength", String(breathing));
+    stage.toggleAttribute("data-breath-settled", breathing === 0);
+    stage.style.setProperty("--hero-copy-opacity", String(1 - ease(progress, 0.04, 0.25)));
+    stage.style.setProperty("--hero-results-opacity", String(ease(progress, 0.61, 0.99)));
 
-    // 浮动逐渐归零，棚拍沿滚动轨迹接到套图区的固定画框。
-    updateBreath(1 - ease(progress, 0.02, 0.33));
-    hero.style.setProperty("--hero-studio-x", `${geometry.x * studio}px`);
-    hero.style.setProperty("--hero-studio-y", `${geometry.y * studio}px`);
-    hero.style.setProperty("--hero-studio-scale", String(1 + (geometry.scale - 1) * studio));
-    hero.style.setProperty("--hero-drift-left", `${-drift}px`);
-    hero.style.setProperty("--hero-drift-right", `${drift}px`);
-    hero.style.setProperty("--hero-copy-opacity", String(1 - ease(progress, 0.03, 0.27)));
-    hero.style.setProperty("--hero-tile-opacity", String(1 - ease(progress, 0.23, 0.73)));
-    hero.style.setProperty("--hero-panel-scale", String(1 - panel));
-    hero.style.setProperty("--hero-panel-opacity", String(1 - ease(progress, 0.46, 0.86)));
-    hero.style.setProperty("--hero-result-opacity", String(ease(progress, 0.64, 0.99)));
-    root.toggleAttribute("data-lycobo-hero-light", bounds.bottom > 80 && panel > 0.68);
+    for (const [index, { from, to, visual, main }] of pairs.entries()) {
+      const offset = main ? 0 : index * 0.015;
+      const t = ease(progress, 0.12 + offset, 0.89 + offset);
+      const x = (to.left - from.left) * t;
+      const y = (to.top - from.top) * t;
+      // 只改变独立画框的裁切尺寸，图片继续按原比例填充。
+      visual.style.width = `${from.width + (to.width - from.width) * t}px`;
+      visual.style.height = `${from.height + (to.height - from.height) * t}px`;
+      visual.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    }
   };
 
   const schedule = () => {
-    if (hero.hasAttribute("data-motion") && !frame) frame = window.requestAnimationFrame(render);
+    if (hero.hasAttribute("data-motion") && !frame) frame = requestAnimationFrame(render);
   };
 
   const measure = () => {
     if (!hero.hasAttribute("data-motion")) return;
-    const first = start.getBoundingClientRect();
-    const last = end.getBoundingClientRect();
-    if (!first.width || !last.width) return;
-    geometry = {
-      x: last.left - first.left,
-      y: last.top - first.top,
-      scale: last.width / first.width,
-      // 预留末段，让白底套图停留片刻后随正文自然离场。
-      travel: (hero.clientHeight - stage.clientHeight) * 0.82,
-      drift: stage.clientWidth * 0.23,
-    };
+    travel = Math.max(1, (hero.clientHeight - stage.clientHeight) * 0.82);
+    drawnProgress = -1;
+    for (const pair of pairs) {
+      pair.from = pair.start.getBoundingClientRect();
+      pair.to = pair.end.getBoundingClientRect();
+    }
     schedule();
   };
 
   const configure = () => {
-    const enabled = viewport.matches && !reducedMotion.matches;
+    const enabled = viewport.matches && !reducedMotion.matches && pairs.length === 7;
     hero.toggleAttribute("data-motion", enabled);
     if (enabled) {
       measure();
       return;
     }
-    window.cancelAnimationFrame(frame);
+    cancelAnimationFrame(frame);
     frame = 0;
-    updateBreath(1);
-    root.removeAttribute("data-lycobo-hero-light");
+    stage.style.removeProperty("--hero-breath-strength");
+    stage.removeAttribute("data-breath-settled");
+    for (const { visual, end, image } of pairs) {
+      visual.removeAttribute("style");
+      if (!end.firstChild) end.append(image.cloneNode());
+    }
   };
 
-  window.addEventListener("scroll", schedule, { passive: true });
-  window.addEventListener("resize", measure, { passive: true });
+  addEventListener("scroll", schedule, { passive: true });
+  addEventListener("resize", measure, { passive: true });
   viewport.addEventListener("change", configure);
   reducedMotion.addEventListener("change", configure);
-  const observeLayout = new ResizeObserver(measure);
-  observeLayout.observe(start);
-  observeLayout.observe(end);
+  new ResizeObserver(measure).observe(stage);
   new IntersectionObserver(([entry]) => {
-    photos.toggleAttribute("data-breath-offscreen", !entry?.isIntersecting);
+    stage.toggleAttribute("data-breath-offscreen", !entry?.isIntersecting);
   }).observe(stage);
   configure();
 }
