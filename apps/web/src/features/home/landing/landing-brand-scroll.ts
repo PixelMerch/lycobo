@@ -17,7 +17,7 @@ export function initializeLandingBrandScroll() {
         type: "lycobo:brand",
         x: rect.x,
         y: rect.y,
-        width: window.innerWidth < 768 ? 116 : 148,
+        width: window.innerWidth < 768 ? 128 : 164,
         height: rect.height,
         progress,
         theme:
@@ -51,7 +51,7 @@ export function initializeLandingBrandScroll() {
     for (const symbol of symbols) {
       symbol.style.opacity = String(Math.max(0, (progress - 0.35) / 0.65));
       // 缩短图形右移距离，为固定菜单保留间距；减少动态效果时固定在终点淡入。
-      const shift = window.innerWidth < 768 ? 48.1 : 61.36;
+      const shift = window.innerWidth < 768 ? 53.07 : 68;
       symbol.style.transform = reducedMotion.matches
         ? `translateX(${shift}px)`
         : `translateX(${shift * progress}px) rotate(${-45 * progress}deg)`;
