@@ -161,29 +161,27 @@ def build():
             start = resample([(x-168, y-92) for x, y in contours[0]], 100)
             end = resample(focus_contour(), 100)
             shape, vertices = writer.shape('c-to-focus', [start], 168, 92)
-            writer.track(shape, 13, [(0, 168), (8, 168), (112, 320), (120, 320)])
-            writer.track(shape, 14, [(0, 92), (8, 92), (112, 83.4), (120, 83.4)])
-            writer.track(shape, 15, [(0, 0), (16, 0), (112, -math.pi/4), (120, -math.pi/4)])
+            writer.track(shape, 13, [(0, 168), (36, 168), (112, 320), (120, 320)])
+            writer.track(shape, 14, [(0, 92), (36, 92), (112, 83.4), (120, 83.4)])
+            writer.track(shape, 15, [(0, 0), (42, 0), (112, -math.pi/4), (120, -math.pi/4)])
             for vertex, a, b in zip(vertices[0], start, end):
                 for axis, prop in enumerate([24, 25]):
-                    writer.track(vertex, prop, [(0, a[axis]), (8, a[axis]),
+                    writer.track(vertex, prop, [(0, a[axis]), (36, a[axis]),
                                                (112, b[axis]), (120, b[axis])])
             continue
         shape, _ = writer.shape('lycobo-' + str(letter), contours)
-        # 两侧字母向外轻移并淡出，为持续变形的 C 留出空间。
-        delay = {0: 0, 1: 5, 3: 12, 4: 6, 5: 0}[letter]
-        writer.track(shape, 18, [(0, 1), (delay+8, 1), (delay+76, 0), (120, 0)])
-        shift = -22 if letter < 2 else 36
-        writer.track(shape, 13, [(0, 0), (delay, 0), (delay+84, shift), (120, shift)])
-    # 圆点跟随环的平移与旋转，在文字退场期间逐渐显现，避免独立跳出。
+        # 其他字母先原地淡出，C 保持可见；退场完成后再变形与右移。
+        delay = {0: 4, 1: 0, 3: 0, 4: 2, 5: 4}[letter]
+        writer.track(shape, 18, [(0, 1), (delay+4, 1), (36, 0), (120, 0)])
+    # 圆点跟随环的平移与旋转，在文字退场后逐渐显现，避免独立跳出。
     rotation = writer.component(2, {4: 'focus-dot-orbit', 5: 0, 13: 168, 14: 92})
-    writer.track(rotation, 13, [(0, 168), (8, 168), (112, 320), (120, 320)])
-    writer.track(rotation, 14, [(0, 92), (8, 92), (112, 83.4), (120, 83.4)])
+    writer.track(rotation, 13, [(0, 168), (36, 168), (112, 320), (120, 320)])
+    writer.track(rotation, 14, [(0, 92), (36, 92), (112, 83.4), (120, 83.4)])
     points = [(41.8+11*math.cos(i*math.tau/48), 11*math.sin(i*math.tau/48))
               for i in range(48)]
     dot, _ = writer.shape('focus-dot', [points], parent=rotation)
-    writer.track(rotation, 15, [(0, 0), (16, 0), (112, -math.pi/4), (120, -math.pi/4)])
-    writer.track(dot, 18, [(0, 0), (36, 0), (112, 1), (120, 1)])
+    writer.track(rotation, 15, [(0, 0), (42, 0), (112, -math.pi/4), (120, -math.pi/4)])
+    writer.track(dot, 18, [(0, 0), (64, 0), (112, 1), (120, 1)])
     writer.finish()
     print(f'{TARGET.relative_to(ROOT)}: {TARGET.stat().st_size} bytes')
 
