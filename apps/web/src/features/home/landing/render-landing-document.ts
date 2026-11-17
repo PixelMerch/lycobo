@@ -1,15 +1,11 @@
 import drapeImage from "../../../../public/landing/comforter-drape.webp?inline";
 import foldedImage from "../../../../public/landing/comforter-folded.webp?inline";
-import modelImage from "../../../../public/landing/comforter-lifestyle-model.webp?inline";
 import roomImage from "../../../../public/landing/comforter-room.webp?inline";
 import setImage from "../../../../public/landing/comforter-set.webp?inline";
 import sourceImage from "../../../../public/landing/comforter-source.webp?inline";
-import specsEnglish from "../../../../public/landing/comforter-spec-sheet-en.webp?inline";
-import specsTallEnglish from "../../../../public/landing/comforter-spec-sheet-en-tall.webp?inline";
-import specsChinese from "../../../../public/landing/comforter-spec-sheet-zh.webp?inline";
-import specsTallChinese from "../../../../public/landing/comforter-spec-sheet-zh-tall.webp?inline";
 import stitchImage from "../../../../public/landing/comforter-stitch.webp?inline";
 import studioImage from "../../../../public/landing/comforter-studio.webp?inline";
+import quiltImage from "../../../../public/landing/commerce-quilt.webp?inline";
 import type { Locale } from "../../../i18n/locale";
 import { initializeLandingBrandScroll } from "./landing-brand-scroll";
 import { initializeLandingFeatureScroll } from "./landing-feature-scroll";
@@ -18,17 +14,12 @@ import heroTemplate from "./landing-hero.html?raw";
 import { initializeLandingHeroScroll } from "./landing-hero-scroll";
 import { initializeLandingScrollbar } from "./landing-scrollbar";
 import showcaseStyles from "./landing-showcase.css?raw";
-import { initializeLandingShowreel } from "./landing-showcase-motion";
-
-const specsImages: Record<Locale, Record<string, string>> = {
-  "zh-CN": { wide: specsChinese, tall: specsTallChinese },
-  en: { wide: specsEnglish, tall: specsTallEnglish },
-};
+import { initializeLandingShowcaseAction } from "./landing-showcase-action";
 
 const heroImages: Record<string, string> = {
   drape: drapeImage,
   folded: foldedImage,
-  model: modelImage,
+  quilt: quiltImage,
   room: roomImage,
   set: setImage,
   source: sourceImage,
@@ -58,13 +49,9 @@ export function renderLandingDocument(
     .replace("__LYCOBO_HERO_STYLE__", () => heroStyles + showcaseStyles)
     .replace("__LYCOBO_HERO__", () => hero)
     .replace(
-      /__LYCOBO_SPECS_([a-z]+)__/g,
-      (marker, name: string) => specsImages[locale][name] ?? marker,
-    )
-    .replace(
       "__LYCOBO_HERO_SCROLL_SCRIPT__",
       () => `(${initializeLandingHeroScroll.toString()})();
-(${initializeLandingShowreel.toString()})();`,
+(${initializeLandingShowcaseAction.toString()})();`,
     )
     .replace(
       "__LYCOBO_BRAND_SCROLL_SCRIPT__",

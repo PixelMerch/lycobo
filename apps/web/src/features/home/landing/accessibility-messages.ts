@@ -19,9 +19,7 @@ export const accessibilityMessages = defineMessages({
     heroFoldedAlt: "从侧面看折叠后的红色床被",
     heroStitchAlt: "放大展示被角包边与绗缝针脚",
     heroSetAlt: "折叠的红色床被与两只配套枕套",
-    heroModelAlt: "暖色卧室中，坐在床沿的模特抚平红色绗缝床被",
-    heroSpecsSheetAlt:
-      "红色床品详情图，展示 200 × 230 厘米的红被、一床被子和两只枕套，以及方格绗缝和同色包边",
+    heroShowreelQuiltAlt: "暗色棚景中铺开的红色方格绗缝被",
     strip: "商品图片用途",
     previous: "上一组",
     next: "下一组",
@@ -126,9 +124,7 @@ export const accessibilityMessages = defineMessages({
     heroFoldedAlt: "Side view of the folded red comforter",
     heroStitchAlt: "Magnified view of the piping and stitches at the comforter corner",
     heroSetAlt: "Folded red comforter with two matching pillow shams",
-    heroModelAlt: "A model seated on the bed smooths the red quilted comforter in a sunlit bedroom",
-    heroSpecsSheetAlt:
-      "Red bedding detail image showing a 200 × 230 cm comforter, a set with one comforter and two shams, box quilting, and a matching piped edge",
+    heroShowreelQuiltAlt: "Red box-quilted comforter in a dark studio",
     strip: "Product image uses",
     previous: "Previous group",
     next: "Next group",

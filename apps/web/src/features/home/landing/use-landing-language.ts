@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useAppNavigate } from "../../../i18n/use-localized-navigation";
 
 type HeaderFields = Record<"type" | "x" | "y" | "width" | "height" | "scrollY" | "theme", unknown>;
 
@@ -21,8 +22,23 @@ export function readLandingHeader(data: unknown) {
 
 type LandingHeader = NonNullable<ReturnType<typeof readLandingHeader>>;
 
-/** 将隔离导航的占位位置同步给宿主菜单，语言切换后恢复模板滚动。 */
+function sameAnchor(previous: LandingHeader | null, next: LandingHeader) {
+  return (
+    previous?.x === next.x &&
+    previous.y === next.y &&
+    previous.width === next.width &&
+    previous.height === next.height &&
+    previous.theme === next.theme
+  );
+}
+
+function messageType(data: unknown) {
+  return data && typeof data === "object" && "type" in data ? data.type : undefined;
+}
+
+/** 处理隔离首页的导航消息，并在语言切换后恢复滚动位置。 */
 export function useLandingLanguage() {
+  const navigate = useAppNavigate();
   const frameRef = useRef<HTMLIFrameElement>(null);
   const currentScroll = useRef(0);
   const pendingScroll = useRef<number | null>(null);
@@ -34,31 +50,24 @@ export function useLandingLanguage() {
       // sandbox 来源为 null，只信任本组件持有的实际窗口。
       if (!frameRef.current || event.source !== frameRef.current.contentWindow) return;
       const data = event.data;
-      if (data && typeof data === "object" && "type" in data) {
-        if (data.type === "lycobo:dismiss-language") {
-          setDismissVersion((version) => version + 1);
-          return;
-        }
+      const type = messageType(data);
+      if (type === "lycobo:open-workspace") {
+        void navigate("/workspace");
+        return;
+      }
+      if (type === "lycobo:dismiss-language") {
+        setDismissVersion((version) => version + 1);
+        return;
       }
       const next = readLandingHeader(data);
       if (!next) return;
       currentScroll.current = next.scrollY;
       // 滚动位置只存 ref，避免每次滚动都重新渲染菜单。
-      setAnchor((previous) => {
-        if (
-          previous?.x === next.x &&
-          previous.y === next.y &&
-          previous.width === next.width &&
-          previous.height === next.height &&
-          previous.theme === next.theme
-        )
-          return previous;
-        return next;
-      });
+      setAnchor((previous) => (sameAnchor(previous, next) ? previous : next));
     }
     window.addEventListener("message", receiveHeader);
     return () => window.removeEventListener("message", receiveHeader);
-  }, []);
+  }, [navigate]);
 
   function prepareLanguageChange() {
     pendingScroll.current = currentScroll.current;

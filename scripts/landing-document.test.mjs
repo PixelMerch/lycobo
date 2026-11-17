@@ -47,26 +47,21 @@ describe("localized landing document", () => {
     expect(slots.sort()).toEqual(photos.map((match) => match[1]).sort());
   });
 
-  it("embeds a responsive localized product sheet and the model scene", () => {
-    const localizedImages = ["zh-CN", "en"].map((locale) => {
-      const document = renderLandingDocument(template, landingCopy(locale), locale);
-      const picture = document.match(
-        /data-showreel-specs[^>]*>\s*<picture>([\s\S]*?)<\/picture>/,
-      )?.[1];
-      const images = [
-        ...(picture ?? "").matchAll(/src(?:set)?="(data:image\/webp;base64,[^"]+)"/g),
-      ];
-      expect(images).toHaveLength(2);
-      expect(picture).toContain('media="(max-width: 700px)"');
-      const scene = document.match(
-        /data-showreel-room>\s*<img src="(data:image\/webp;base64,[^"]+)"/,
-      );
-      expect(scene?.[1]).toBeDefined();
-      expect(picture).not.toContain(scene?.[1]);
-      return images.map((match) => match[1]);
-    });
-    expect(new Set(localizedImages.flat()).size).toBe(4);
-  });
+  it.each(["zh-CN", "en"])(
+    "renders the %s bedding photograph and its local creation action",
+    (locale) => {
+      const copy = landingCopy(locale);
+      const document = renderLandingDocument(template, copy, locale);
+      const showcase = document.match(/data-landing-showreel[\s\S]*?<\/section>/)?.[0];
+      const images = [...(showcase ?? "").matchAll(/src="(data:image\/webp;base64,[^"]+)"/g)];
+      expect(new Set(images.map((image) => image[1])).size).toBe(1);
+      expect(showcase).toContain(`alt="${copy.heroShowreelQuiltAlt}"`);
+      expect(showcase).toContain(`data-showreel-create>${copy.copy119}`);
+      expect(showcase).not.toContain("<canvas");
+      expect(showcase).not.toContain("<video");
+      expect(document).toContain("media-src data: blob:;");
+    },
+  );
 
   it("rejects missing copy instead of rendering template markers", () => {
     expect(() => renderLandingDocument("__LYCOBO_HTML_unknown__", {}, "en")).toThrow(
