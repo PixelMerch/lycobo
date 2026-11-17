@@ -43,7 +43,9 @@ export function initializeLandingHeroScroll() {
     stage.style.setProperty("--hero-breath-strength", String(breathing));
     stage.toggleAttribute("data-breath-settled", breathing === 0);
     stage.style.setProperty("--hero-opening-opacity", String(1 - ease(progress, 0.03, 0.3)));
-    stage.style.setProperty("--hero-gallery-opacity", String(ease(progress, 0.24, 0.8)));
+    const paperOpacity = ease(progress, 0.24, 0.8);
+    stage.style.setProperty("--hero-gallery-opacity", String(paperOpacity));
+    hero.toggleAttribute("data-hero-gallery-settled", paperOpacity === 1);
     stage.style.setProperty("--hero-results-opacity", String(ease(progress, 0.67, 0.94)));
 
     for (const [index, { start, from, to, visual, revealedOnScroll }] of pairs.entries()) {

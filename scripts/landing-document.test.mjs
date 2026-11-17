@@ -48,15 +48,19 @@ describe("localized landing document", () => {
   });
 
   it.each(["zh-CN", "en"])(
-    "renders the %s bedding photograph and its local creation action",
+    "renders three %s comparisons with distinct source and result images",
     (locale) => {
       const copy = landingCopy(locale);
       const document = renderLandingDocument(template, copy, locale);
       const showcase = document.match(/data-landing-showreel[\s\S]*?<\/section>/)?.[0];
       const images = [...(showcase ?? "").matchAll(/src="(data:image\/webp;base64,[^"]+)"/g)];
-      expect(new Set(images.map((image) => image[1])).size).toBe(1);
-      expect(showcase).toContain(`alt="${copy.heroShowreelQuiltAlt}"`);
-      expect(showcase).toContain(`data-showreel-create>${copy.copy119}`);
+      expect(new Set(images.map((image) => image[1])).size).toBe(6);
+      for (const name of ["Quilt", "Blender", "Fashion"]) {
+        expect(showcase).toContain(`<figcaption>${copy[`heroShowreel${name}Label`]}</figcaption>`);
+      }
+      expect(showcase).toContain(`<span>${copy.heroSourceLabel}</span>`);
+      expect(showcase).toContain(`<span>${copy.heroShowreelResultLabel}</span>`);
+      expect(showcase).not.toContain("<button");
       expect(showcase).not.toContain("<canvas");
       expect(showcase).not.toContain("<video");
       expect(document).toContain("media-src data: blob:;");
