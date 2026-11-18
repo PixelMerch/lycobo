@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img">
+  <title>Lycobo</title>
+  <rect width="256" height="256" rx="48" fill="#000000"/>
+  <g fill="#FFFFFF" transform="translate(16 16) scale(.875)">
+    <path d="M211.14 80A96 96 0 1 0 211.14 176L176.5 156A56 56 0 1 1 176.5 100Z"/>
+    <circle cx="204" cy="128" r="20"/>
+  </g>
+</svg>
