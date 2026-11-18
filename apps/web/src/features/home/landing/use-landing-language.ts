@@ -22,12 +22,13 @@ export function readLandingHeader(data: unknown) {
 
 type LandingHeader = NonNullable<ReturnType<typeof readLandingHeader>>;
 
-/** 只接受隔离首页请求的站内路径，避免面版把用户带到任意地址。 */
+/** 校验隔离首页请求的导航路径，只允许已接通的站内入口。 */
 export function readLandingNavigation(data: unknown) {
   if (!data || typeof data !== "object") return null;
   if (!("type" in data) || data.type !== "lycobo:navigate") return null;
-  if (!("path" in data) || data.path !== "/free-canvas") return null;
-  return "/free-canvas";
+  if (!("path" in data)) return null;
+  const { path } = data;
+  return path === "/free-canvas" || path === "/commerce/create" ? path : null;
 }
 
 function sameAnchor(previous: LandingHeader | null, next: LandingHeader) {

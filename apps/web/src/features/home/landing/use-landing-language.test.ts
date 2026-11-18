@@ -41,11 +41,12 @@ describe("landing header messages", () => {
 });
 
 describe("landing navigation messages", () => {
-  it("accepts the free canvas entry from the isolated navigation", () => {
-    expect(readLandingNavigation({ type: "lycobo:navigate", path: "/free-canvas" })).toBe(
-      "/free-canvas",
-    );
-  });
+  it.each(["/free-canvas", "/commerce/create"])(
+    "accepts the isolated navigation entry %s",
+    (path) => {
+      expect(readLandingNavigation({ type: "lycobo:navigate", path })).toBe(path);
+    },
+  );
 
   it.each([
     null,
@@ -53,7 +54,7 @@ describe("landing navigation messages", () => {
     {},
     { type: "lycobo:header", path: "/free-canvas" },
     { type: "lycobo:navigate" },
-    { type: "lycobo:navigate", path: "/commerce/create" },
+    { type: "lycobo:navigate", path: "/commerce/smart-variation" },
     { type: "lycobo:navigate", path: "https://example.com" },
     { type: "lycobo:navigate", path: "/free-canvas?next=https://example.com" },
   ])("ignores other navigation requests: %j", (data) => {
