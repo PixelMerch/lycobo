@@ -22,7 +22,8 @@ body:has(.openart-reference) .topbar {
 
 :is(.landing-header-controls, .landing-control-popover) {
   --landing-control-height: 44px;
-  --landing-control-fill-height: 36px;
+  --landing-control-fill-height: 40px;
+  --landing-control-fill-radius: 8px;
   --landing-control-font-size: 14px;
   --landing-control-line-height: 20px;
 }
@@ -79,7 +80,7 @@ body:has(.openart-reference) .topbar {
   :is(.language-trigger, .header-credits, .account-trigger, .header-creation-guide.button) {
   height: var(--landing-control-height);
   min-height: var(--landing-control-height);
-  border-radius: 8px;
+  border-radius: var(--landing-control-fill-radius);
   background: transparent;
   color: inherit;
   font-size: var(--landing-control-font-size);
@@ -114,9 +115,18 @@ body:has(.openart-reference) .topbar {
   height: var(--landing-control-height);
   min-height: var(--landing-control-height);
 }
+.landing-header-controls .header-creation-guide.button::before {
+  width: var(--landing-control-fill-height);
+  margin-inline: auto;
+}
 .landing-account-controls .account-header .account-trigger {
   width: var(--landing-control-height);
   min-width: var(--landing-control-height);
+}
+.landing-account-controls .account-trigger .account-avatar {
+  width: var(--landing-control-fill-height);
+  min-width: var(--landing-control-fill-height);
+  height: var(--landing-control-fill-height);
 }
 .landing-language-control .language-trigger {
   justify-content: center;
@@ -238,7 +248,7 @@ body:has(.openart-reference) .topbar {
 }
 :root .landing-control-popover :is(.menu-item, .account-menu-row)::before {
   height: var(--landing-control-fill-height);
-  border-radius: 12px;
+  border-radius: var(--landing-control-fill-radius);
   transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 :root .landing-language-popover .menu-item {
