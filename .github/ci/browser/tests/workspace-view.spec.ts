@@ -65,7 +65,7 @@ test("desktop keeps the tools in a left rail beside the settings panel and stack
   const composer = await page.locator(".composer-panel").boundingBox();
   if (!dock || !composer) throw new Error("Workspace geometry missing");
   // 168px 竖排工具栏在最左侧，参数栏排在它右侧 12px 处；两者顶边与“生成记录”标题文字对齐。
-  expect(dock.width).toBe(168);
+  expect(dock.width).toBe(200);
   expect(dock.y).toBe(composer.y);
   const title = await page.getByRole("heading", { name: "生成记录", exact: true }).boundingBox();
   expect(Math.abs(composer.y - (title?.y ?? 0))).toBeLessThan(1);
@@ -129,7 +129,7 @@ test("the tool rail collapses to icons while the settings panel stays", async ({
   await expect.poll(async () => (await dock.boundingBox())?.width).toBe(64);
   await page.getByRole("button", { name: "展开工具栏", exact: true }).click();
   await expect(names.first()).toBeVisible();
-  await expect.poll(async () => (await dock.boundingBox())?.width).toBe(168);
+  await expect.poll(async () => (await dock.boundingBox())?.width).toBe(200);
 });
 
 test("an image that cannot load shows a placeholder without preview, download or favorite", async ({

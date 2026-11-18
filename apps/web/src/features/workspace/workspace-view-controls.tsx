@@ -5,16 +5,18 @@ import {
   IconLayoutSidebarLeftExpand,
   IconSquare,
 } from "@tabler/icons-react";
+import { useRef } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
 import { workspaceToolMessages } from "./workspace-tool-messages";
 import { useWorkspaceView } from "./workspace-view-preferences";
 
-/** 左侧工具栏底部的收起／展开按钮：收起后工具栏只显示图标，参数栏不受影响。 */
+/** 左侧工具栏切换按钮，通过短暂波纹反馈收展。 */
 export function ToolRailCollapseToggle() {
   const t = useMessages(workspaceToolMessages);
   const collapsed = useWorkspaceView((state) => state.toolRailCollapsed);
   const setCollapsed = useWorkspaceView((state) => state.setToolRailCollapsed);
+  const activeRipple = useRef<Animation | null>(null);
   const label = collapsed ? t.expandToolRail : t.collapseToolRail;
   return (
     <Tooltip delay={0}>
@@ -25,7 +27,29 @@ export function ToolRailCollapseToggle() {
         className="workspace-composer-toggle"
         aria-label={label}
         aria-expanded={!collapsed}
-        onPress={() => setCollapsed(!collapsed)}
+        onPress={(event) => {
+          setCollapsed(!collapsed);
+          activeRipple.current?.cancel();
+          if (
+            event.pointerType === "keyboard" ||
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ) {
+            return;
+          }
+          const ripple = event.target
+            .closest(".workspace-tool-dock")
+            ?.querySelector(".workspace-tool-rail-ripple");
+          activeRipple.current =
+            ripple?.animate(
+              [
+                { opacity: 0, scale: "1" },
+                { opacity: 0.65, scale: "1.02 1.12", offset: 0.3 },
+                { opacity: 0.25, scale: "1.05 1.04", offset: 0.6 },
+                { opacity: 0, scale: "1.12 1.24" },
+              ],
+              { duration: 280, easing: "cubic-bezier(0.23, 1, 0.32, 1)" },
+            ) ?? null;
+        }}
       >
         <UiIcon
           icon={collapsed ? IconLayoutSidebarLeftExpand : IconLayoutSidebarLeftCollapse}

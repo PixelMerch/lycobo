@@ -122,7 +122,7 @@ test("reduced-motion keyboard preview is static and home hides video", async ({ 
   await expect(button).toHaveAttribute("data-current", "true");
   await button.hover();
   await expect(page.locator(".workspace-tool-submenu")).toBeVisible();
-  await expect(button).toHaveCSS("height", "56px");
+  await expect(button).toHaveCSS("height", "50px");
   await page.keyboard.press("Escape");
   await button.focus();
   await expect(page.locator(".workspace-tool-preview-card")).toHaveCount(0);

@@ -1,5 +1,5 @@
 import { Button, Dropdown, Header } from "@heroui/react";
-import { IconBrush, IconChevronRight, IconFolder } from "@tabler/icons-react";
+import { IconBrush, IconChevronRight, IconFolder, IconPhoto } from "@tabler/icons-react";
 import { useState, useSyncExternalStore } from "react";
 import { shellMessages } from "../../app/shell-messages";
 import { UiIcon } from "../../components/ui-icon";
@@ -124,6 +124,9 @@ function WorkspaceCategoryMenu({
         }}
         onHoverEnd={menu.closeSoon}
       >
+        {currentTool && category.label === currentCategory && (
+          <span className="workspace-tool-rail-ripple" aria-hidden="true" />
+        )}
         <UiIcon icon={category.icon} size="navigation" />
         <span className="workspace-tool-label">{label}</span>
         <UiIcon icon={IconChevronRight} size="small" className="workspace-tool-chevron" />
@@ -167,6 +170,20 @@ function WorkspaceCategoryMenu({
                     data-current={item === currentEntry || undefined}
                     className="workspace-tool-menu-item"
                   >
+                    <span className="workspace-tool-preview-thumb" aria-hidden="true">
+                      {item.preview ? (
+                        <img
+                          src={item.preview}
+                          alt=""
+                          width={52}
+                          height={36}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <UiIcon icon={IconPhoto} size="navigation" />
+                      )}
+                    </span>
                     <span className="workspace-tool-menu-copy">
                       <span>{name}</span>
                       {description && (
