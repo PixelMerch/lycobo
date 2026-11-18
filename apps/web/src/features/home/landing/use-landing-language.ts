@@ -1,23 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 import { useAppNavigate } from "../../../i18n/use-localized-navigation";
 
-type HeaderFields = Record<"type" | "x" | "y" | "width" | "height" | "scrollY" | "theme", unknown>;
+type HeaderFields = Record<
+  "type" | "x" | "y" | "width" | "height" | "scrollY" | "theme" | "menuOpen" | "signedIn",
+  unknown
+>;
 
 function hasHeaderFields(data: unknown): data is HeaderFields {
   if (!data || typeof data !== "object") return false;
-  return ["type", "x", "y", "width", "height", "scrollY", "theme"].every((key) => key in data);
+  return ["type", "x", "y", "width", "height", "scrollY", "theme", "menuOpen", "signedIn"].every(
+    (key) => key in data,
+  );
 }
 
 /** 校验隔离模板报告的导航位置，拒绝非有限坐标及未知主题。 */
 export function readLandingHeader(data: unknown) {
   if (!hasHeaderFields(data) || data.type !== "lycobo:header") return null;
-  const { x, y, width, height, scrollY, theme } = data;
+  const { x, y, width, height, scrollY, theme, menuOpen, signedIn } = data;
   if (typeof x !== "number" || typeof y !== "number" || typeof width !== "number") return null;
   if (typeof height !== "number" || typeof scrollY !== "number") return null;
   if (![x, y, width, height, scrollY].every(Number.isFinite)) return null;
-  if (width <= 0 || width > 200 || height <= 0 || height > 100 || scrollY < 0) return null;
+  if (width <= 0 || width > 400 || height <= 0 || height > 100 || scrollY < 0) return null;
   if (theme !== "light" && theme !== "dark") return null;
-  return { x, y, width, height, scrollY, theme };
+  if (typeof menuOpen !== "boolean" || typeof signedIn !== "boolean") return null;
+  return { x, y, width, height, scrollY, theme, menuOpen, signedIn };
 }
 
 type LandingHeader = NonNullable<ReturnType<typeof readLandingHeader>>;
@@ -28,7 +34,9 @@ export function readLandingNavigation(data: unknown) {
   if (!("type" in data) || data.type !== "lycobo:navigate") return null;
   if (!("path" in data)) return null;
   const { path } = data;
-  return path === "/free-canvas" || path === "/commerce/create" ? path : null;
+  return path === "/free-canvas" || path === "/commerce/create" || path === "/workspace"
+    ? path
+    : null;
 }
 
 function sameAnchor(previous: LandingHeader | null, next: LandingHeader) {
@@ -37,7 +45,9 @@ function sameAnchor(previous: LandingHeader | null, next: LandingHeader) {
     previous.y === next.y &&
     previous.width === next.width &&
     previous.height === next.height &&
-    previous.theme === next.theme
+    previous.theme === next.theme &&
+    previous.menuOpen === next.menuOpen &&
+    previous.signedIn === next.signedIn
   );
 }
 
@@ -49,7 +59,6 @@ function messageType(data: unknown) {
 function handleFrameMessage(
   data: unknown,
   handlers: {
-    openWorkspace: () => void;
     dismissLanguage: () => void;
     navigate: (path: string) => void;
     updateScroll: (scrollY: number) => void;
@@ -57,10 +66,6 @@ function handleFrameMessage(
   },
 ) {
   const type = messageType(data);
-  if (type === "lycobo:open-workspace") {
-    handlers.openWorkspace();
-    return;
-  }
   if (type === "lycobo:dismiss-language") {
     handlers.dismissLanguage();
     return;
@@ -76,8 +81,8 @@ function handleFrameMessage(
   handlers.updateAnchor(next);
 }
 
-/** 处理隔离首页的导航消息，并在语言切换后恢复滚动位置。 */
-export function useLandingLanguage() {
+/** 同步隔离首页的导航位置、会话布局和语言切换后的滚动位置。 */
+export function useLandingLanguage(signedIn: boolean) {
   const navigate = useAppNavigate();
   const frameRef = useRef<HTMLIFrameElement>(null);
   const currentScroll = useRef(0);
@@ -86,11 +91,14 @@ export function useLandingLanguage() {
   const [dismissVersion, setDismissVersion] = useState(0);
 
   useEffect(() => {
+    frameRef.current?.contentWindow?.postMessage({ type: "lycobo:account-layout", signedIn }, "*");
+  }, [signedIn]);
+
+  useEffect(() => {
     function receiveHeader(event: MessageEvent<unknown>) {
       // sandbox 来源为 null，只信任本组件持有的实际窗口。
       if (!frameRef.current || event.source !== frameRef.current.contentWindow) return;
       handleFrameMessage(event.data, {
-        openWorkspace: () => void navigate("/workspace"),
         dismissLanguage: () => setDismissVersion((version) => version + 1),
         navigate: (path) => void navigate(path),
         updateScroll: (scrollY) => {
@@ -114,13 +122,13 @@ export function useLandingLanguage() {
     frameRef.current?.contentWindow?.postMessage({ type: "lycobo:close-navigation" }, "*");
   }
 
-  function restoreScroll() {
+  function syncFrame() {
+    // 模板只收到布局标记，身份与余额由宿主直接渲染。
+    const frame = frameRef.current?.contentWindow;
+    frame?.postMessage({ type: "lycobo:account-layout", signedIn }, "*");
     if (pendingScroll.current === null) return;
     // 只向指定的隔离窗口发送非敏感位置，不扩大 sandbox 权限。
-    frameRef.current?.contentWindow?.postMessage(
-      { type: "lycobo:restore-scroll", scrollY: pendingScroll.current },
-      "*",
-    );
+    frame?.postMessage({ type: "lycobo:restore-scroll", scrollY: pendingScroll.current }, "*");
     pendingScroll.current = null;
   }
 
@@ -129,7 +137,7 @@ export function useLandingLanguage() {
     anchor,
     dismissVersion,
     prepareLanguageChange,
-    restoreScroll,
+    syncFrame,
     closeNavigation,
   };
 }

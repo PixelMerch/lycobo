@@ -9,6 +9,8 @@ const header = {
   height: 44,
   scrollY: 240,
   theme: "dark",
+  menuOpen: false,
+  signedIn: false,
 };
 
 describe("landing header messages", () => {
@@ -20,7 +22,15 @@ describe("landing header messages", () => {
       height: 44,
       scrollY: 240,
       theme,
+      menuOpen: false,
+      signedIn: false,
     });
+  });
+
+  it("accepts the wider signed-in layout and mobile menu state", () => {
+    expect(
+      readLandingHeader({ ...header, width: 368, signedIn: true, menuOpen: true }),
+    ).toMatchObject({ width: 368, signedIn: true, menuOpen: true });
   });
 
   it.each([
@@ -35,13 +45,15 @@ describe("landing header messages", () => {
     { ...header, width: 0 },
     { ...header, width: 1000 },
     { ...header, height: "44" },
+    { ...header, menuOpen: "false" },
+    { ...header, signedIn: 1 },
   ])("ignores malformed geometry: %j", (data) => {
     expect(readLandingHeader(data)).toBeNull();
   });
 });
 
 describe("landing navigation messages", () => {
-  it.each(["/free-canvas", "/commerce/create"])(
+  it.each(["/free-canvas", "/commerce/create", "/workspace"])(
     "accepts the isolated navigation entry %s",
     (path) => {
       expect(readLandingNavigation({ type: "lycobo:navigate", path })).toBe(path);

@@ -21,6 +21,14 @@ describe("localized landing document", () => {
       for (const link of mainImageLinks ?? []) {
         expect(link).toContain(`href="/${locale}/commerce/create"`);
       }
+      const workspaceLinks = document.match(/<a\b[^>]*data-landing-path="\/workspace"[^>]*>/g);
+      expect(workspaceLinks).toHaveLength(3);
+      expect(document).not.toContain('data-pageforge-source="enterprise"');
+      expect(document).not.toContain('id="nav-panel-3"');
+      expect(document).not.toContain('data-acc-idx="3"');
+      for (const link of workspaceLinks ?? []) {
+        expect(link).toContain(`href="/${locale}/workspace"`);
+      }
       for (const match of document.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) {
         expect(() => new Script(match[1])).not.toThrow();
       }

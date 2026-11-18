@@ -1,10 +1,10 @@
 import { Button, Popover, Separator } from "@heroui/react";
 import { IconLogout, IconPhoto, IconSettings } from "@tabler/icons-react";
-import { useRef, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
+import { useHoverMenu } from "../../../lib/use-hover-menu";
 import { useOpenAssetLibrary } from "../../assets/asset-library-store";
 import { useEnterpriseLogout, useEnterpriseSession } from "../../auth/auth-client";
 import { useOpenLogin } from "../../auth/login-prompt";
@@ -37,15 +37,22 @@ export function HeaderLogin() {
  */
 export function AccountMenu({
   onNavigate,
+  hover = false,
+  dismissVersion,
+  popoverClassName,
+  popoverOffset = 8,
   variant = "footer",
 }: {
   onNavigate?: () => void;
+  hover?: boolean;
+  dismissVersion?: number;
+  popoverClassName?: string;
+  popoverOffset?: number;
   variant?: "header" | "footer";
 }) {
   const session = useEnterpriseSession();
   const logout = useEnterpriseLogout();
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [isOpen, setOpen] = useState(false);
+  const menu = useHoverMenu(160, dismissVersion);
   const openSettings = useAccountOverlays((state) => state.openSettings);
   const openLibrary = useOpenAssetLibrary();
   const t = useMessages(accountMenuMessages);
@@ -56,27 +63,34 @@ export function AccountMenu({
   // 个人作品就是素材库弹窗；手机上先收起导航抽屉，关闭后焦点回到头像入口。
   const openWorks = () => {
     onNavigate?.();
-    openLibrary(triggerRef.current);
+    openLibrary(menu.triggerRef.current);
   };
   const inHeader = variant === "header";
   return (
     <div
       className={inHeader ? "account-header" : "account-footer"}
       onKeyDownCapture={(event) => {
+        if (event.key === "Escape" && menu.isOpen) menu.close();
         // 面板展开时，回车只关闭面板，避免直接执行获得焦点的操作。
-        if (!isOpen || event.key !== "Enter" || event.nativeEvent.isComposing) return;
+        if (!menu.isOpen || event.key !== "Enter" || event.nativeEvent.isComposing) return;
         event.preventDefault();
         event.stopPropagation();
-        setOpen(false);
+        menu.close();
       }}
     >
-      <Popover isOpen={isOpen} onOpenChange={setOpen}>
+      <Popover isOpen={menu.isOpen} onOpenChange={menu.onOpenChange}>
         <Button
           size="sm"
           variant="ghost"
-          ref={triggerRef}
+          ref={menu.triggerRef}
           className="account-trigger"
           aria-label={t.accountMenu(accountDisplayName(account))}
+          onPointerEnter={(event) => {
+            if (hover && event.pointerType === "mouse") menu.openOnHover();
+          }}
+          onPointerLeave={(event) => {
+            if (hover && event.pointerType === "mouse") menu.closeSoon();
+          }}
         >
           <AccountAvatar account={account} size="sm" className="account-avatar" />
           {!inHeader && (
@@ -90,10 +104,14 @@ export function AccountMenu({
           )}
         </Button>
         <Popover.Content
-          className="account-menu"
+          ref={menu.popoverRef}
+          className={`account-menu${popoverClassName ? ` ${popoverClassName}` : ""}`}
           placement={inHeader ? "bottom end" : "top start"}
-          offset={8}
+          offset={popoverOffset}
           aria-label={t.accountMenu(accountDisplayName(account))}
+          isNonModal={hover}
+          onPointerEnter={hover ? menu.cancelClose : undefined}
+          onPointerLeave={hover ? menu.closeSoon : undefined}
         >
           <div className="account-menu-identity">
             <AccountAvatar account={account} size="lg" className="account-menu-avatar" />
@@ -110,10 +128,10 @@ export function AccountMenu({
             className="account-menu-row"
             size="sm"
             variant="ghost"
-            autoFocus
+            autoFocus={!menu.openedByHover}
             onPress={() => {
-              setOpen(false);
-              openSettings("account", triggerRef.current);
+              menu.close();
+              openSettings("account", menu.triggerRef.current);
             }}
           >
             <UiIcon icon={IconSettings} />
@@ -124,7 +142,7 @@ export function AccountMenu({
             size="sm"
             variant="ghost"
             onPress={() => {
-              setOpen(false);
+              menu.close();
               openWorks();
             }}
           >
@@ -138,7 +156,7 @@ export function AccountMenu({
             variant="ghost"
             isDisabled={logout.isPending}
             onPress={() => {
-              setOpen(false);
+              menu.close();
               logout.mutate();
             }}
           >

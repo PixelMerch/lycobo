@@ -4,7 +4,7 @@
 
 - Check Git status, applicable AGENTS.md files, [engineering index](docs/README.md) and the relevant implementation before editing. Preserve unrelated work and approved UI. Read the applicable [skills](.agents/skills) for React, HeroUI, PostgreSQL, security-sensitive work or landing design. Verify installed APIs, pin direct dependencies and keep Vite/TanStack Query. Keep skill versions locked and review upstream changes before updating.
 - Use English identifiers and rules, Chinese team docs and code comments. Add a purpose comment to new or changed exported functions, classes and React components. Explain non-obvious permissions, billing, idempotency, retries and timeouts. Follow [server layering and comment rules](docs/node-ts-best-practices.md).
-- Follow [Web rules](apps/web/AGENTS.md) for bilingual, accessible UI. Keep copy that helps users act or understand an outcome. Omit decorative labels and repeated instructions. Product artwork can carry concise selling points. Tie all claims to actual capabilities and keep fixtures distinct from real results.
+- Follow [Web rules](apps/web/AGENTS.md) for bilingual, accessible UI and [design rules](DESIGN.md) for the surfaces they cover. Keep copy that helps users act or understand an outcome. Omit decorative labels and repeated instructions. Product artwork can carry concise selling points. Tie all claims to actual capabilities and keep fixtures distinct from real results.
 - Use the sibling `gen-image` CLI (`../gen-image/generate.mjs` and its local `.env`) for all contributor AI images and reference-based edits. Report a blocker if unavailable. In-app generation follows the runtime rules.
 
 ## Runtime and data
@@ -26,9 +26,10 @@
 
 Work through this list before resuming landing-page design. Mark an entry complete when its destination and behavior have been checked.
 
-- [ ] Verify Start Creating, Workspace and Free Canvas.
+- [x] Verify Start Creating opens sign-in with a workspace return path.
+- [ ] Verify Free Canvas.
 - [x] Verify the landing menu's Hero Images link opens Main Image on desktop and mobile.
 - [ ] Verify Image Set Planner, Textile Variations and Style Match.
-- [ ] Audit Image Types, Features, Workflow and Resources for missing or duplicate destinations.
+- [ ] Audit Image Types, Features and Resources for missing or duplicate destinations.
 - [ ] Verify the menu in both languages and on desktop and mobile.
 - [ ] Validate upload, generation, results, download and failure recovery for each tool in the appropriate test environment.

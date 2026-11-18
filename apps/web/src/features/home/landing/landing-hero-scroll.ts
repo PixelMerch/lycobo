@@ -3,6 +3,7 @@ export function initializeLandingHeroScroll() {
   const hero = document.querySelector<HTMLElement>("[data-landing-hero]");
   const stage = hero?.querySelector<HTMLElement>(".lycobo-hero-stage");
   if (!hero || !stage) return;
+  const openingCopy = stage.querySelector(".lycobo-hero-copy");
 
   const pairs = [...hero.querySelectorAll<HTMLElement>("[data-hero-photo]")].flatMap((start) => {
     const name = start.dataset.heroPhoto;
@@ -42,7 +43,9 @@ export function initializeLandingHeroScroll() {
     const breathing = 1 - ease(progress, 0.02, 0.29);
     stage.style.setProperty("--hero-breath-strength", String(breathing));
     stage.toggleAttribute("data-breath-settled", breathing === 0);
-    stage.style.setProperty("--hero-opening-opacity", String(1 - ease(progress, 0.03, 0.3)));
+    const openingOpacity = 1 - ease(progress, 0.03, 0.3);
+    stage.style.setProperty("--hero-opening-opacity", String(openingOpacity));
+    openingCopy?.toggleAttribute("inert", openingOpacity === 0);
     const paperOpacity = ease(progress, 0.24, 0.8);
     stage.style.setProperty("--hero-gallery-opacity", String(paperOpacity));
     hero.toggleAttribute("data-hero-gallery-settled", paperOpacity === 1);
@@ -88,6 +91,7 @@ export function initializeLandingHeroScroll() {
     frame = 0;
     stage.style.removeProperty("--hero-breath-strength");
     stage.removeAttribute("data-breath-settled");
+    openingCopy?.removeAttribute("inert");
     for (const { start, visual, end } of pairs) {
       start.style.removeProperty("--hero-reveal-opacity");
       visual.removeAttribute("style");
