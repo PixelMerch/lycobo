@@ -17,24 +17,50 @@
 
 ## React Bits Silk
 
-登录页的丝绸背景改编自 [React Bits Silk](https://reactbits.dev/backgrounds/silk)，来源 [DavidHDev/react-bits](https://github.com/DavidHDev/react-bits/tree/ed33ebe4acfe29e60fb759bcccc70a138ce2dcef/src/ts-default/Backgrounds/Silk)，固定 commit `ed33ebe4acfe29e60fb759bcccc70a138ce2dcef`。代码位于 `apps/web/src/features/auth/silk/`：着色器算法保留原样，只去掉浅色模式、边缘渐隐与随机偏移；组件按本仓库规则重写为着色器、渲染器、动画状态与组件四个模块，去掉类型断言，增加配色平滑过渡、页签切换涟漪、每次挂载新建画布（避免复用已释放的 WebGL 上下文）与像素比上限，未增加第三方运行时依赖。
-
-上游采用 MIT + Commons Clause，版权 David Haz (2026)。完整许可保留在 [React Bits 许可](licenses/react-bits.md)：允许作为应用、网站或产品的一部分使用，不允许出售或重新分发组件本身／组件包。本站仅将其用于首页背景，不提供 React Bits 组件或工具分发服务。
+登录页背景的着色器来自 [React Bits Silk](https://github.com/DavidHDev/react-bits/tree/ed33ebe4acfe29e60fb759bcccc70a138ce2dcef/src/ts-default/Backgrounds/Silk)，实现位于 `apps/web/src/features/auth/silk/`。使用 MIT + Commons Clause，保留 David Haz (2026) 的版权及[许可原文](#react-bits-许可原文)。
 
 ## OpenArt 页面参考
 
-2026-11-16 用户提供本地 `page-take/recordings/openairt/source/`，并明确要求先完全复刻，再改为自己的品牌。`apps/web/public/openart-reference/index.html` 是从该录制文档生成的隔离参考稿，保留 OpenArt 的 HTML/CSS、导航与交互动效脚本；照片与视频替换为灰阶占位。
-
-快照只保留导航、Director 案例带、功能演示、FAQ 与主页动效脚本，剔除统计、广告、归因和远程加载器；禁止网络连接、表单提交与打开外部窗口。原站内容、模型、优惠和评价属于 OpenArt，不能转述为 Lycobo 的产品事实。没有声称原站代码或商标属于本项目，也未作公开发布。2026-11-17 按用户要求将文案与字标替换为 Lycobo：文案放入项目中英文目录，模板只保留内容键；原版客户标识、评价与星级不再呈现，原版字标路径改为本项目 SVG。布局及动画仍来自上述录制，不因品牌替换而改变来源；真实业务操作尚未接入。
-
-2026-11-17 字体统一为项目已有阿里巴巴普惠体 3.0，录制的 Bricolage Grotesque/Inter 字体文件已移除；隔离模板使用文案字形子集，许可元数据保留。
-
-用户明确批准 Biome 仅排除这一个生成 HTML；应用容器与其他代码不豁免。旧电商首屏的 Gradient Waves 组件随整页重做移除，React Bits Silk 仍用于其他页面，许可继续保留。
+`apps/web/public/openart-reference/index.html` 源于本地 `page-take/recordings/openairt/source/` 的 OpenArt 录制。模板仍含该来源的导航、布局和交互动效。Lycobo 的文案、品牌与自托管字体在项目内维护。原站素材、模型、统计、评价及商标不可用于 Lycobo 宣传。模板以 sandbox 和 CSP 隔离，禁止远程加载、表单提交和打开外部窗口。已批准的 Biome 例外仅适用于这份生成 HTML。
 
 ## 阿里巴巴普惠体 3.0
 
-用户于2026-11-10确认主站中英文统一使用阿里巴巴普惠体3.0，替换思源黑体。官方字体文件版本3.01，使用55 Regular、65 Medium、75 SemiBold、85 Bold，对应400／500／600／700。源文件从[阿里巴巴字体官网](https://www.alibabafonts.com/)提供的字体地址获取，SHA256固定在 `scripts/fonts/subsets.json`；四个字重均保留源字体版权与排版元数据，转换为同源加载的字符切片WOFF2，不附带完整TTF，不依赖字体CDN。来源及[官方法律声明](https://www.yuque.com/yiguang-wkqc2/hgpff0/nus9wiinq4aeiegy)见 `apps/web/public/fonts/alibaba-puhuiti-3/NOTICE.txt`，生成与验证见[字体维护](fonts.md)。
+用户于2026-11-10确认主站中英文统一使用阿里巴巴普惠体3.0，替换思源黑体。官方字体文件版本3.01，使用55 Regular、65 Medium、75 SemiBold、85 Bold，对应400／500／600／700。源文件从[阿里巴巴字体官网](https://www.alibabafonts.com/)提供的字体地址获取，SHA256固定在 `scripts/fonts/subsets.json`；四个字重均保留源字体版权与排版元数据，转换为同源加载的字符切片WOFF2，不附带完整TTF，不依赖字体CDN。来源及[官方法律声明](https://www.yuque.com/yiguang-wkqc2/hgpff0/nus9wiinq4aeiegy)见 `apps/web/public/fonts/alibaba-puhuiti-3/NOTICE.txt`，生成与验证见[字体维护](heroui-components.md#自托管字体)。
 
 ## Logo 图形与定制字标
 
 2026-11-10 用户确认保留 A「显影」图形，采用独立几何绘制的工具风格字标，名称为 Lycobo，去掉探索稿的 AI 标签。c／o／b 共用圆角矩形构造；Logo 不再使用第三方字体轮廓，也不加载字体文件。正文仍使用上述普惠体自托管切片，相关字体来源与授权记录继续保留。
+
+## React Bits 许可原文
+
+```text
+MIT + Commons Clause License Condition v1.0
+
+Copyright (c) 2026 David Haz
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, and distribute the Software **as part of an application, website, or product**, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+## Commons Clause Restriction
+
+You may use this Software, including for any commercial purpose, **so long as you do not sell, sublicense, or redistribute the components themselves-whether alone, in a bundle, or as a ported version.**
+
+The same restriction covers the React Bits tools (Background Studio, Texture Lab, Shape Magic, Center Stage, Sound Lab and any tools added later) and the sounds in the sound library. **You may not sell, sublicense, or redistribute the tools or the sounds themselves, or offer the tools or a substantially similar copy of them as a hosted service-whether alone, in a bundle, or as a ported version.**
+
+What you make with the tools is yours to use. You can use exported code, images, videos, and audio files in any personal or commercial application, website, or product, including paid ones. **You may not sell or redistribute the exports on their own, either individually or as the product itself, such as a sound, texture, background, or template pack.**
+
+## No Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```

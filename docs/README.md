@@ -1,11 +1,9 @@
 # 工程文档
 
-协作规则与 Header 待办见 [AGENTS.md](../AGENTS.md)。代码入口见 [项目结构](../PROJECT_STRUCTURE.md)。
+从 [AGENTS.md](../AGENTS.md) 查看协作规则和 Header 待办，从 [项目结构](../PROJECT_STRUCTURE.md) 找到代码入口。
 
-| 需要查什么       | 文档                                                                                                                                                        |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 开发、测试与发布 | [本地开发](development.md) · [测试](testing.md) · [质量门禁](code-quality.md) · [发布与回滚](releasing.md) · [Cloudflare](cloudflare-deployment.md)         |
-| 代码约定         | [服务端分层](node-ts-best-practices.md) · [API 响应](api-response.md) · [Web 规则](../apps/web/AGENTS.md) · [组件](heroui-components.md) · [字体](fonts.md) |
-| 权限、计费与数据 | [鉴权](enterprise-auth.md) · [钱包](enterprise-wallet.md) · [实时消息](realtime.md) · [对象存储](s3-storage.md) · [数据库恢复](database-backup.md)          |
-| 生成与故障恢复   | [生成 API](image-generation-api.md) · [模型服务](model-services.md) · [回调](image-webhooks.md) · [视频](video-generation.md)                               |
-| 许可             | [第三方材料](third-party.md) · [React Bits](licenses/react-bits.md)                                                                                         |
+- **准备开发** — [本地环境、S3 与数据库恢复](development.md) · [测试与验收](testing.md) · [代码质量门禁](code-quality.md)
+- **查实现约定** — [服务端与 API 响应](node-ts-best-practices.md) · [Web 组件与字体](heroui-components.md) · [实时推送](realtime.md)
+- **处理账号与生成** — [鉴权](enterprise-auth.md) · [钱包与计费](enterprise-wallet.md) · [生成任务与回调](image-generation-api.md) · [模型配置](model-services.md)
+- **发布或排查生产问题** — [Cloudflare 部署与回滚](releasing.md)
+- **查素材和依赖来源** — [第三方声明与许可](third-party.md)

@@ -22,7 +22,7 @@ Compose 修改环境变量后运行 `docker compose up -d --no-deps --wait api`�
 
 ## 接口
 
-所有 JSON 响应遵循 [统一返回格式](api-response.md)，下表业务结果均放在顶层 data 内。登录令牌读取 data.accessToken，用户信息读取 data.user。
+所有 JSON 响应遵循 [统一返回格式](node-ts-best-practices.md#api-响应)，下表业务结果均放在顶层 data 内。登录令牌读取 data.accessToken，用户信息读取 data.user。
 
 | 方法与路径                         | 输入／行为                                                                                                                                                                            |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -101,7 +101,7 @@ API 实例不缓存会话校验结果：后台停用账号、替换凭据以及�
 ## 本地邮箱验证码
 
 1. Resend 验证发信子域并创建仅发送、限域的 API Key。在 Supabase Auth 的 SMTP Settings 使用 `smtp.resend.com:465`、用户名 `resend`、该密钥和品牌发件人 `Lycobo <no-reply@auth.lycobo.com>`。密钥只填 Supabase 控制台。
-2. 在 Supabase Auth 的 Emails 为 Magic link or OTP 与 Confirm sign up 保存同一份[英文验证码模板](auth/email-otp.html)，主题为 `Your Lycobo sign-in code`。首次使用与再次登录均发送 `{{ .Token }}`，邮箱验证码长度配置为 6 位。邮件统一用英文，站内登录界面继续跟随用户所选语言。
+2. 在 Supabase Auth 的 Emails 为 Magic link or OTP 与 Confirm sign up 保存同一份[英文验证码模板](email-otp.html)，主题为 `Your Lycobo sign-in code`。首次使用与再次登录均发送 `{{ .Token }}`，邮箱验证码长度配置为 6 位。邮件统一用英文，站内登录界面继续跟随用户所选语言。
 3. Cloudflare Turnstile 本地组件只绑定 `localhost` 和 `127.0.0.1`。在 Supabase Auth 的 Attack Protection 选 Cloudflare Turnstile 并保存验证密钥。在本地 `.env` 填 `DEV_SUPABASE_EMAIL_TURNSTILE_SITE_KEY` 公开站点密钥并重新创建 studio 容器。
 4. 用户点击发码才加载 Turnstile。Hono 检查可信 Origin 并将一次性令牌交 Supabase 验证，Supabase 验证成功后才通过 Resend 发码。邮箱和连接地址分别按发送及验证限流。开发代理下连接地址使用实际代理地址，全部本地代理请求共用该地址的配额。
 5. 输入验证码后 Hono 采用 Supabase 返回的用户 UUID 复用本地账号与 10 位 UID。验证码与第三方认证共用主站会话签发；站内已有企业账号不会按邮箱自动关联。
