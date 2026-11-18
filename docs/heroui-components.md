@@ -2,7 +2,7 @@
 
 本文件记录 `@heroui/react` 3.2.7 实际导出的组件能力，供实现前查阅。
 规则只有一条：**交互能力在下面的清单里已经存在时，直接组合官方组件，不要自己实现。**
-CSS 仍负责主题与尺寸，见 [DESIGN.md](../DESIGN.md)。
+CSS 负责主题与尺寸，约定见 [Web 规则](../apps/web/AGENTS.md)。
 
 清单由 `apps/web/node_modules/@heroui/react/dist/components` 的实际目录整理，
 不是上游文档的推测。升级 `@heroui/react` 后必须重新核对本文件。
@@ -78,7 +78,7 @@ CSS 仍负责主题与尺寸，见 [DESIGN.md](../DESIGN.md)。
 
 ## 共享图片浏览
 
-`apps/web/src/components/image-viewer/image-viewer.tsx` 导出 `ImageViewer` 与 `ViewerImage`。传入 `images: { src, alt }[]`、`initialIndex` 和 `onClose`，调用方保留缩略图入口并在打开前聚焦它。支持多图切换、左右旋转、按钮／滚轮缩放、放大拖动、Escape 与嵌套弹层焦点返回。历史记录及图片详情参考图通过 ReferenceThumbnails 按需加载此组件。尺寸与视觉遵循 DESIGN.md 的通用图片浏览章节；只改变浏览状态，不写回素材。
+`apps/web/src/components/image-viewer/image-viewer.tsx` 导出 `ImageViewer` 与 `ViewerImage`。传入 `images: { src, alt }[]`、`initialIndex` 和 `onClose`，调用方保留缩略图入口并在打开前聚焦它。支持多图切换、左右旋转、按钮／滚轮缩放、放大拖动、Escape 与嵌套弹层焦点返回。历史记录及图片详情参考图通过 ReferenceThumbnails 按需加载此组件。使用共享图片浏览样式，只改变浏览状态。
 
 ## 状态与数据展示
 
@@ -111,15 +111,13 @@ CSS 仍负责主题与尺寸，见 [DESIGN.md](../DESIGN.md)。
 - HeroUI 未提供的能力（文件选择、图形编辑）才允许使用原生元素，
   并且仍以 HeroUI `Button` 作为可见入口。
 
-## 与 DESIGN.md 的关系
+## 样式来源
 
-包括账户表单的中性焦点、登录深色玻璃和不同关闭规格在内，所有局部视觉规则只在 DESIGN.md 维护。
-DESIGN.md 决定视觉与几何，本文件决定“用什么组件”与“不要自己实现什么”。
-两者冲突时以 DESIGN.md 的视觉规范为准，但不得据此重新手写交互组件。
+账户焦点、登录玻璃和关闭按钮规格沿用既有组件及共享样式。
 
 ## 按钮统一入口与检查
 
-按钮档位、padding、圆角的唯一数值表在 [DESIGN.md 的基础控件规范](../DESIGN.md#3-排版图标与基础控件)；不要在本文件另建一套数值。
+按钮尺寸、内边距和圆角复用共享控件 token。
 使用 Button 的 size="sm" / "md" / "lg" 与 isIconOnly，不以业务主色推断按钮一定需要更大 padding。
 切换使用 ToggleButton／ToggleButtonGroup，导航当前项使用 aria-current。
-审查步骤见 [UI 一致性维护](ui-consistency.md)，pnpm lint 自动运行 AST 组件检查。
+`pnpm lint` 自动运行 AST 组件检查。

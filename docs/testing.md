@@ -8,7 +8,7 @@
 - pnpm build：实际前端和两个 Node 应用生产构建。
 - pnpm test:integration：明确 opt-in 的隔离 PostgreSQL、队列、鉴权及持久事件集成验证。
 
-关键计费、恢复、推送规则与测试证据范围见[关键业务验证索引](business-test-map.md)，其中待验证场景不代表已覆盖。
+付费任务的回归验证重点是并发扣款、认领、显式重试和迟到结果。结合隔离数据库、loopback provider 和对象存储验证回调与查询并发、存储完成后中断、数据库完成后消息重投，以及断线恢复和事件去重。报告具体断言与执行环境。
 
 ## 按改动选择验证
 
@@ -49,7 +49,7 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 ## 手动验收
 
-按 DESIGN.md 检查 390/768/1280/1440px、键盘操作、焦点返回、错误与空状态。
+按现有界面与 [Web 规则](../apps/web/AGENTS.md) 检查 390/768/1280/1440px、键盘操作、焦点返回、错误与空状态。
 真实生图需使用明确授权的测试账户和限额，记录 provider 返回和结果存储证据。
 不要把模拟完成动画或静态图称为端到端生成测试。
 
@@ -104,7 +104,7 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 浏览器 CI 通过隔离 Node API 和 Vite 运行站点。
 
-界面有简体中文与英文两种语言，页面使用 `/zh-CN` 与 `/en` 前缀，URL语言优先于本机偏好；语言路径、登录返回与草稿保留的专用回归见 `locale-routing.spec.ts`，规则见[页面语言路径](localized-routing.md)。`playwright.config.ts` 把浏览器语言固定为 `zh-CN`，现有用例按中文文案定位；英文界面由 `language.spec.ts` 单独覆盖：英文浏览器默认英文、日文浏览器回退英文、语言入口位于积分或登录左侧、切换后刷新仍保持、英文工作台，以及服务端中文错误按错误代码换成英文说明。单元测试运行在 Node 中，默认语言为英文；断言中文文案的测试在 `beforeEach` 里用 `useLocaleStore.setState({ locale: "zh-CN" })` 固定语言。
+界面有简体中文与英文两种语言，页面使用 `/zh-CN` 与 `/en` 前缀，URL语言优先于本机偏好；语言路径、登录返回与草稿保留的专用回归见 `locale-routing.spec.ts`，规则见 [Web 规则](../apps/web/AGENTS.md)。`playwright.config.ts` 把浏览器语言固定为 `zh-CN`，现有用例按中文文案定位；英文界面由 `language.spec.ts` 单独覆盖：英文浏览器默认英文、日文浏览器回退英文、语言入口位于积分或登录左侧、切换后刷新仍保持、英文工作台，以及服务端中文错误按错误代码换成英文说明。单元测试运行在 Node 中，默认语言为英文；断言中文文案的测试在 `beforeEach` 里用 `useLocaleStore.setState({ locale: "zh-CN" })` 固定语言。
 
 浏览器 CI 使用固定的 Ubuntu 24.04 和 Playwright 容器镜像，并在任务内准备与锁定依赖匹配的 Chromium。
 

@@ -165,3 +165,26 @@ Worker 以 `Image generation stage timing` 输出结构化分段计时，包含 
 POST /variation-plans 的可选 referenceCount 为 0–5，仅表达参考图数量；前端新计划发送 referenceAssetIds=[] 与实际 referenceCount，同时独立上传。模型只收到参考图编号。计划响应保留 referenceCount，旧客户端忽略新增字段；已有带素材 ID 的计划继续按原规则处理。
 
 确认生成时，image-tasks 必须携带已持久化素材 ID，事务内校验归属、有效期和数量后才扣费。数量型计划匹配上传后的素材数量，已绑定 ID 的旧计划仍要求 ID 和顺序一致。上传缓存按组织、用户、原图片 ID 隔离；上传错误不重复调用规划模型。该变更使用既有 JSON input，不新增迁移；部署需先更新服务端再发布新前端。
+
+## 电商工具的任务差异
+
+### 套图计划
+
+- `/commerce/smart-variation` 的 `POST /api/v1/variation-plans` 支持 JSON 和 `Accept: text/event-stream`。流顺序为 `started`、`delta`、`complete`，异常为 `failed`。只有持久化完成的计划可编辑和确认，规划阶段不扣生图积分。同一幂等键重放不重复请求模型，断流继续保留原请求键。
+- 规划模型只接收文字和参考图编号。用户确认后，服务端验证计划及素材归属，为每条方案发送独立提示词和绑定的图片。商品图和风格图可以共用，原图按确认的逐条绑定发送。已有任务缺少逐条绑定时沿用完整参考图列表。
+- 链接分析最多读取 3 个去重的 HTTP/HTTPS 地址，只通过已配置的官方 DeepSeek Fetch 端点读取正文。总超时 15 秒，响应上限 1 MiB，每页正文最多 10,000 字符。拒绝凭据、非标准端口和 IP，禁止转发密钥或跟随跳转。成功正文仅在组织和用户级进程缓存 5 分钟。读取失败停止规划，可在界面重新提交需求。状态事件 `reading`、`planning`、`link_failed` 供客户端展示阶段。
+
+### 家纺裂变
+
+- `/commerce/textile-set` 提交一张主图、最多五张详情参考和 1–10 个视角。API 固定模型、质量和模板，Worker 按稳定 `position` 分别提交 `n=1`。模板及版本在 `packages/generation/src/images/textile-generation.ts`。新任务保存 v5 快照，使用后台 `textile-set/gpt-image-2.5` 渠道。缺少渠道在扣款前拒绝。
+- 已接收任务保留旧版输入与定价。v1–v4 的确定失败图经确认可按 v5 单独创建替换任务，待核对结果仍按原流程处理。历史按 `tool` 在分页前筛选，局部失败保留成功图。FluxPort 图片编辑按渠道配置使用 Data URI，可处理 200 同步结果或 202 任务回执，优先查询 `status_url` 并兼容 `poll_url`。
+
+### 复制爆款与待处理参考图
+
+- `/commerce/replica` 接收一张版式参考和最多十张商品参考。每个输出只使用版式图和对应商品图，费用按商品图数量计算。新任务带有 `replica: true`，旧输入与幂等哈希不变。历史通过 `generation_jobs.user_prompt` 保存用户文字。部署相关版本时先迁移 `0045_replica_batch_count` 和 `0046_user_prompt`，再部署图片消费者及主站。
+- 浏览器在获得私有 R2 的上传票据后可直接提交任务。API 在事务外验证上传意图、身份与归属。Queue 等素材可用后再领取供应商执行，处理中每 15 秒复查，未就绪时不创建付费尝试。失效或明确失败按既有幂等退款规则处理。引用已接受的图片长期保留；恢复依赖 R2 意图与 PG outbox/Cron。
+
+### 局部编辑
+
+- `POST /api/v1/image-tasks` 接收可选 `localEdit` 快照、一个源图和一张输出。最多八个矩形，每项说明最多 900 字。服务端验证真实原图尺寸及组织归属。坐标与文字编排到现有提示词，实际调用不使用严格蒙版。
+- `image_local_edits` 与任务、扣费和 outbox 同事务提交。身份限定的 `GET /api/v1/image-assets/:id/latest-edit` 返回最近任务或空值。浏览器优先保留会话草稿，恢复前禁止提交。响应不明时同键确认原请求。旧任务缺少结构化快照时不推测原图关系。

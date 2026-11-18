@@ -2,7 +2,7 @@
 
 ## 开始工作
 
-1. 阅读 AGENTS，按 [AI 任务索引](docs/ai-workflow.md) 读取对应目录规则和设计/架构章节。
+1. 阅读 AGENTS，按 [工程文档索引](docs/README.md) 读取对应目录规则和工程文档。
 2. 使用固定 Node/pnpm；首次安装或依赖/锁文件变化后执行 pnpm install --frozen-lockfile，避免每个小任务重复安装。
 3. 默认直接在本地 dev 开发，开始前检查状态、fetch origin，并在可快进时同步 origin/dev；保留本地未提交内容与提交。只有用户明确要求时才创建额外分支或 worktree。
 4. 一次提交解决一个完整问题。完成验证后默认只提交本地；推送、PR、合并与发布需要明确授权。
@@ -48,7 +48,7 @@ GitHub 使用 squash merge 时，PR 标题也必须满足该规范，CI 会检�
 修改根依赖/锁文件、contracts、DB schema/migrations、共享 tokens 前，在 PR/任务中声明影响。
 同一个数据库迁移序列由一位作者协调；合并前先同步 dev，按最新 schema 重新生成尚未合并的迁移。
 已经合并的迁移绝不改写。不要手工拼接 lockfile；解决 package.json 后用固定 pnpm 重建并审查差异。
-组件约定见 DESIGN.md，不能各自引入不同 UI 库。
+组件按 [Web 规则](apps/web/AGENTS.md) 使用项目现有 UI 库。技能快照和锁文件一起维护。更新时审查上游差异、许可和网络操作，固定来源版本。
 
 ## 合并检查
 

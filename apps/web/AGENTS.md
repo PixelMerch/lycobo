@@ -1,18 +1,17 @@
 # Web rules
 
-Root AGENTS.md applies. Read the React and HeroUI skills and use the
-[task map](../../docs/ai-workflow.md#按任务读取) to open the relevant
-[DESIGN.md](../../DESIGN.md) sections, including named exceptions. DESIGN is the sole
-visual specification. Preserve the approved UI during cleanup or refactors.
+Root AGENTS.md applies. Read the React and HeroUI skills. Use the existing
+styles, shared tokens and named exceptions as the reference when preserving approved UI.
 
 ## Components and data
 
 - Use installed HeroUI v3 APIs for interactive controls. Check the [component inventory](../../docs/heroui-components.md)
-  and [UI guidelines](../../docs/ui-consistency.md). Compose official components with size/variant/isIconOnly.
+  and compose official components with size/variant/isIconOnly.
   Use shared tokens and overlay styles. No second primitive system, base-control wrappers, homemade
   dialogs, focus traps or keyboard menus. Keep scripts/check-ui-conventions.mjs enabled.
-- Use Tabler via UiIcon. Follow DESIGN for sizes, glass materials, navigation, focus and named exceptions.
+- Use Tabler via UiIcon. Use existing shared sizes, glass materials, navigation and focus styles.
   Keep accessible names, keyboard focus, semantic controls, reduced motion and narrow-screen behavior.
+  Preserve existing overlay dimensions and tokens. Prefer hover feedback that keeps geometry stable.
   Cover keyboard-only brand focus and React Aria hover/programmatic focus behavior in the CI browser suite.
 - Route pages live in src/features and the shared shell in src/app. Use concrete imports, lazy routes
   for heavy canvas/editor pages and AbortSignal-aware API requests. Full-resolution originals stay out of grid cards.
@@ -21,9 +20,7 @@ visual specification. Preserve the approved UI during cleanup or refactors.
   Preserve DOM semantics, classes, focus and paid-task behavior during refactors.
 - APIs use relative /api paths. Local upload previews stay local until submission; the server
   validates and stores files. Public demos and CI fixtures are distinct from image APIs and durable services.
-- Use locale-prefixed page URLs, RouteLink, useAppNavigate and useAppLocation. Preserve locale on
-  login and result links; never prefix API, WebSocket, image or font URLs. Follow [locale routing](../../docs/localized-routing.md).
-  Preserve pending drafts across tools and keep users on their current page when a background task finishes.
+- Use locale-prefixed page URLs and RouteLink, useAppNavigate and useAppLocation. Explicit URL locale wins over saved preference and browser default. Preserve path, query, hash, history state, scroll, drafts and live connections on language changes. Read the current locale on navigation, and validate login returns against allowed business paths. Keep API, WebSocket and asset paths unprefixed. Keep users on their current page when a background task finishes.
 
 ## UI text
 

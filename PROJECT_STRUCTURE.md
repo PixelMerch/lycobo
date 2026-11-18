@@ -3,14 +3,14 @@
 已完成的一次性迁移工具与旧平台资料已清理；当前数据库初始化只使用 Drizzle 追加迁移链。
 `lycobo` 提供前端、Hono API 和签名媒体；`lycobo-images` 独立运行图片 Queue 与恢复 Cron。配置分别为根 `wrangler.jsonc` 和 `wrangler.images.jsonc`，可独立发布和回滚。代码同仓不表示进程合并或强制一起发布。
 
-AI 开发按 [任务阅读索引](docs/ai-workflow.md) 读取相关目录和依赖方向，再追查调用方，不必为每个小任务全文读取本模块清单。根及相关目录 AGENTS 的要求仍全部适用。
+AI 开发按 [工程文档索引](docs/README.md) 读取相关目录和依赖方向，再追查调用方，不必为每个小任务全文读取本模块清单。根及相关目录 AGENTS 的要求仍全部适用。
 
 | 路径                                 | 职责                                                                                           |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | apps/web/src/app                     | 路由、共享应用壳（studio-shell.tsx）、providers                                                |
 | apps/web/src/features                | 按业务功能组织：首页、身份、账户、素材、生图与图片编辑工作区                                   |
 | apps/web/src/lib                     | 浏览器 API 客户端与工具                                                                        |
-| apps/web/src/i18n                    | 语言前缀、业务路径导航、语言偏好、文案目录与 HeroUI 语言同步；规则见 docs/localized-routing.md |
+| apps/web/src/i18n                    | 语言前缀、业务路径导航、语言偏好、文案目录与 HeroUI 语言同步；规则见 apps/web/AGENTS.md        |
 | apps/web/src/styles                  | 共享设计 tokens 与全局基础样式                                                                 |
 | apps/api/src                         | Hono 入口、应用工厂、配置与组织隔离的生图 feature API                                          |
 | apps/assets/src                      | 隔离本地开发的 Node/S3 资源服务；生产资源由 Workers 签名校验后读取 R2，缺失变体通过 Queue 补齐 |
@@ -22,7 +22,6 @@ AI 开发按 [任务阅读索引](docs/ai-workflow.md) 读取相关目录和依�
 | packages/storage                     | 私有 R2、Images binding 与 Queue 上传；Node Sharp/S3 仅供隔离开发和测试                        |
 | scripts/check-cloudflare-runtime.mjs | 隔离 workerd、Images/R2 与密码验证                                                             |
 | .github/ci/browser                   | 仅由 GitHub Actions 运行的浏览器关键路径验收                                                   |
-| docs/design                          | 规范仍在引用的品牌素材                                                                         |
 | .agents/skills                       | 锁定来源的团队技能快照                                                                         |
 
 生图接口在 `apps/api/src/features/images/routes.ts` 统一注册会话、鉴权中间件和错误处理。任务、素材、规划、事件、模型和钱包由各自的路由模块注册到同一个 Hono 实例，业务服务和持久化仍在各自的层中。
@@ -157,7 +156,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 ## 前端组件边界
 
-当前UI按[设计定稿](DESIGN.md)维护；组件拆分不得改变外观。公共组件在`apps/web/src/components`，场景功能按职责放在`features/<domain>`，避免在页面内重复实现上传、确认、图片浏览及操作。
+组件拆分保留当前界面，遵循 [Web 规则](apps/web/AGENTS.md)。公共组件在`apps/web/src/components`，场景功能按职责放在`features/<domain>`，避免在页面内重复实现上传、确认、图片浏览及操作。
 
 - `GenerationHistory`：历史查询、空态、活动任务同步及预览入口。`HistoryImagePreview` 维护跨任务成功图片的稳定快照和分页；`ImagePreviewRail` 封装缩略图选择、高亮及自动定位。
 - `HistoryTaskMeta`：模型、时间、任务编号复制和输出参数。`components/collapsible-text.tsx` 共用历史提示词与详情创意描述的溢出测量、展开／收起和可访问状态；行数由各场景样式定义。
@@ -171,7 +170,9 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 - `useLocalRepair`：身份隔离草稿、最近一次已提交编辑的服务端恢复、选区历史和原有幂等提交／结果状态；`RepairCanvas`：原图坐标系上的透明选区交互层，不独立管理缩放或替换原图。
 - `components/overlays/use-centered-dialog-motion`：预览和全屏素材库的公共开关动画，不通过feature转发导入。
 
-功能组件使用直接依赖；服务端缓存属于TanStack Query，临时草稿与交互属于Zustand，纯展示组件从props获得数据。具体规则见[UI一致性维护](docs/ui-consistency.md)。
+自由画布位于 `/free-canvas`，由 Konva 管理视图，节点保存到本机 `lycobo:free-canvas:items`。本地图片保留浏览器预览，生成使用既有登录门禁、图片任务和计费流程。具体实现和单测在 `apps/web/src/features/free-canvas/`。
+
+功能组件使用直接依赖；服务端缓存属于TanStack Query，临时草稿与交互属于Zustand，纯展示组件从props获得数据。具体规则见 [Web 规则](apps/web/AGENTS.md)。
 
 - `features/account/menu/account-menu.tsx` 组合HeaderLogin与账户菜单（桌面顶部栏头像、手机抽屉账户行）；菜单提供设置、个人作品与退出登录。`header-benefits.tsx` 是顶部栏积分胶囊与积分菜单（按参考站，悬停逻辑复用 `lib/use-hover-menu.ts`）；`credits/credit-usage-dialog.tsx`、`credit-usage-list.tsx` 与 `use-credit-usage.ts` 组成积分明细弹窗（视图筛选、按需续读与分页；从 Header 积分菜单打开）。`account-overlays.tsx` 通过Zustand记录弹窗及打开者，统一懒加载账户设置及叠在其上的充值、会员和积分明细；关闭后各自恢复焦点，退出或改密成功清空状态。
 - `features/account/settings/account-settings-dialog.tsx` 是账户设置：左侧身份、分区与退出登录，分区为账户、套餐与用量、登录与安全及管理员可见的企业成员（`settings-sections.ts`）。`account-plan-usage.tsx` 组合当前套餐与升级、企业共享积分与充值，以及在积分明细（`credits/credit-ledger.tsx`）与充值订单（`credits/recharge-orders.tsx`）之间切换的积分用量；`account-password-form.tsx` 通过auth-client接入既有改密接口，成功清理登录状态。`account-settings-panels.tsx` 组合账户分区并如实保留未接入的子账号入口；`account-avatar-picker.tsx` 是头像行的预设单选，点选即通过auth-client的 `PUT /api/v1/auth/avatar` 保存。`account-language-picker.tsx` 与顶栏菜单复用 `use-account-language.ts`，已登录时通过 `PUT /api/v1/auth/locale` 保存语言偏好，再切换当前路由。`avatar/account-avatar.tsx` 是顶部栏、手机抽屉、账户菜单与设置共用的头像，按身份里的 `avatarPreset` 取 `account-avatar.css` 中的渐变，认不出时用默认青柠。`account-format.ts` 提供格式化，`account-entry.tsx` 提供收支图标；各页签查询按需挂载。
@@ -180,7 +181,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 ## 数据库领域命名
 
 通用素材实体使用 `media_assets`（Drizzle `mediaAssets`），生成任务及其执行、投递、重试、事件、令牌和任务账本统一使用 `generation_*`；图片选区编辑扩展保留 `image_local_edits`。
-表职责与媒体扩展边界见 [数据库命名](docs/database-naming.md)。
+表命名与媒体扩展边界见 [DB 规则](packages/db/AGENTS.md)。
 
 ## 质量门禁
 
