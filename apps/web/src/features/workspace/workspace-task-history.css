@@ -267,3 +267,39 @@
     grid-row: 3;
   }
 }
+.workspace[data-tool="create"] {
+  --image-history-brand: #fb5123;
+}
+.workspace[data-tool="create"] .history-rail .history-thumbnail.button {
+  padding: 1px;
+  border: 2px solid var(--border);
+  box-shadow: none;
+}
+.workspace[data-tool="create"] .history-rail .history-thumbnail.button[aria-current="true"] {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    linear-gradient(
+      120deg,
+      var(--image-history-brand),
+      color-mix(in srgb, var(--image-history-brand), white 28%)
+    )
+    border-box;
+}
+.workspace[data-tool="create"] .history-rail .history-thumbnail.button:focus-visible {
+  outline-color: var(--image-history-brand);
+}
+.workspace[data-tool="create"] .infinite-load .spinner {
+  color: var(--foreground);
+}
+.workspace[data-tool="create"] .history-batch-toggle.button {
+  color: var(--image-history-brand);
+  background: var(--surface-secondary);
+}
+.workspace[data-tool="create"] .history-batch-toggle.button:is(:hover, [data-hovered="true"]) {
+  color: var(--image-history-brand);
+  background: var(--surface-tertiary);
+}
+.workspace[data-tool="create"] .prompt-toggle.button {
+  color: var(--image-history-brand);
+}
