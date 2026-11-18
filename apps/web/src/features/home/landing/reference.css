@@ -30,6 +30,7 @@ body:has(.openart-reference) .topbar {
 /* 账户与语言控件对齐模板的占位区，保持菜单与账户数据在宿主页面。 */
 .landing-header-controls {
   --landing-control-gap: 8px;
+  --landing-text-control-padding: 12px;
   --landing-control-color: #ffffffcc;
   --landing-control-hover-color: #fff;
   --landing-control-fill: #ffffff14;
@@ -49,7 +50,7 @@ body:has(.openart-reference) .topbar {
   --landing-control-hover-fill: #090a0a18;
 }
 .landing-language-control {
-  flex: 0 0 96px;
+  flex: none;
 }
 .landing-account-controls {
   display: flex;
@@ -95,6 +96,9 @@ body:has(.openart-reference) .topbar {
   position: relative;
   isolation: isolate;
 }
+.landing-header-controls :is(.language-trigger, .header-credits) {
+  padding-inline: var(--landing-text-control-padding);
+}
 .landing-header-controls
   :is(.language-trigger, .header-credits, .header-creation-guide.button)::before {
   position: absolute;
@@ -130,9 +134,7 @@ body:has(.openart-reference) .topbar {
 }
 .landing-language-control .language-trigger {
   justify-content: center;
-  width: 100%;
-  gap: 6px;
-  padding: 0 8px;
+  width: auto;
 }
 .landing-language-control .language-trigger > svg:first-child {
   flex: none;
@@ -210,13 +212,20 @@ body:has(.openart-reference) .topbar {
 @media (max-width: 767px) {
   .landing-header-controls {
     --landing-control-gap: 4px;
+    --landing-text-control-padding: 6px;
   }
   .landing-account-controls .header-credits {
     gap: 4px;
-    padding-inline: 6px;
   }
   .landing-language-control {
     flex-basis: 44px;
+  }
+  .landing-language-control .language-trigger {
+    width: 100%;
+  }
+  .landing-header-controls .language-trigger::before {
+    width: var(--landing-control-fill-height);
+    margin-inline: auto;
   }
   .landing-language-control
     .language-trigger
@@ -227,9 +236,6 @@ body:has(.openart-reference) .topbar {
 @media (max-width: 374px) {
   .landing-header-controls:has(.landing-account-controls) .landing-language-control {
     flex-basis: 40px;
-  }
-  .landing-header-controls:has(.landing-account-controls) .language-trigger {
-    padding-inline: 4px;
   }
   .landing-header-controls .header-creation-guide {
     display: none;
