@@ -45,7 +45,7 @@
     "@commitlint/config-conventional": "21.2.4",
     "@types/node": "24.19.2",
     "lint-staged": "17.6.0",
-    "typescript": "5.9.3",
+    "typescript": "7.0.2",
     "vitest": "5.1.0",
     "wrangler": "4.158.0"
   },
