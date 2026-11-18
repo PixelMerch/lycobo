@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { expect, type Page, test } from "@playwright/test";
-import { apiFixture, mockImageApi } from "./image-api-fixture";
+import { apiFixture, chooseWorkspaceTool, mockImageApi } from "./image-api-fixture";
 
 const png = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",
@@ -86,7 +86,7 @@ for (const width of [390, 1440]) {
     await page.mouse.up();
     await expect(slider).toHaveValue("30");
     await expect(composer.getByRole("button", { name: /立即生成.*100/ })).toBeEnabled();
-    await tools.getByRole("button", { name: "主图制作", exact: true }).click();
+    await chooseWorkspaceTool(page, "主图制作");
     await tools.getByRole("button", { name: "视频创作", exact: true }).click();
     await expect(prompt).toHaveValue("镜头缓慢推近，床品在晨光中展开");
     await expect(composer.getByRole("slider")).toHaveValue("30");

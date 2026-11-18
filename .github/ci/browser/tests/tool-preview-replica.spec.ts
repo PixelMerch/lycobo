@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { apiFixture, mockImageApi } from "./image-api-fixture";
+import { apiFixture, chooseWorkspaceTool, mockImageApi } from "./image-api-fixture";
 
 const png = readFileSync(
   new URL("../../../../apps/web/public/studio/textile-views/front.webp", import.meta.url),
@@ -17,7 +17,7 @@ test("tool menu hover stays quiet while the banner retains examples and drafts s
   await expect(rail.getByRole("button", { name: "商品视频" })).toHaveCount(0);
   // 先在工具外移动鼠标，模拟用户从输入模式切回指针模式。
   await page.mouse.move(600, 80);
-  await rail.getByRole("button", { name: "家纺裂变", exact: true }).hover();
+  await rail.getByRole("button", { name: "功能", exact: true }).hover();
   const preview = page.locator(".workspace-tool-preview-card");
   // 覆盖原来的300ms延迟，确认菜单不会稍后再弹出示例。
   await page.waitForTimeout(450);
@@ -28,9 +28,9 @@ test("tool menu hover stays quiet while the banner retains examples and drafts s
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(prompt).toHaveValue("保留当前商品草稿");
   await page.keyboard.press("Escape");
-  await rail.getByRole("button", { name: "复制爆款", exact: true }).click();
+  await chooseWorkspaceTool(page, "复制爆款");
   await expect(page).toHaveURL(/\/commerce\/replica$/);
-  await rail.getByRole("button", { name: "主图制作", exact: true }).click();
+  await chooseWorkspaceTool(page, "主图制作");
   await expect(prompt).toHaveValue("保留当前商品草稿");
 });
 
@@ -118,13 +118,12 @@ test("reduced-motion keyboard preview is static and home hides video", async ({ 
   await page.goto("/zh-CN/commerce/create");
   const button = page
     .locator(".workspace-tool-bar")
-    .getByRole("button", { name: "复制爆款", exact: true });
-  await expect(page.locator(".workspace-tool-indicator")).toHaveCSS("height", "50px");
+    .getByRole("button", { name: "电商工具", exact: true });
+  await expect(button).toHaveAttribute("data-current", "true");
   await button.hover();
-  await expect
-    .poll(() => button.evaluate((element) => getComputedStyle(element, "::before").height))
-    .toBe("50px");
+  await expect(page.locator(".workspace-tool-submenu")).toBeVisible();
   await expect(button).toHaveCSS("height", "56px");
+  await page.keyboard.press("Escape");
   await button.focus();
   await expect(page.locator(".workspace-tool-preview-card")).toHaveCount(0);
   await page.locator(".workspace-composer-hero").focus();

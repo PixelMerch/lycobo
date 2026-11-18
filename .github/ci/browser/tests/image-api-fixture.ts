@@ -80,3 +80,17 @@ export async function mockImageApi(page: Page, { signedIn = true } = {}) {
 export async function mockImageEvents(page: Page) {
   await mockImageApi(page);
 }
+
+// 通过工具类别打开侧边菜单，再切换到真实工作区。
+export async function chooseWorkspaceTool(
+  page: Page,
+  tool: "主图制作" | "复制爆款" | "家纺裂变" | "套图计划",
+) {
+  const group = tool === "主图制作" ? "电商工具" : "功能";
+  const label = tool === "主图制作" ? "商品主图" : tool;
+  await page
+    .getByRole("navigation", { name: "电商创作工具" })
+    .getByRole("button", { name: group, exact: true })
+    .click();
+  await page.getByRole("menuitem", { name: label, exact: true }).click();
+}

@@ -75,7 +75,7 @@ test("desktop keeps the tools in a left rail beside the settings panel and stack
   expect(composer.x - (dock.x + dock.width)).toBe(12);
   await expect(
     page.getByRole("navigation", { name: "电商创作工具" }).getByRole("button"),
-  ).toHaveCount(4);
+  ).toHaveCount(5);
   await expect(page.getByRole("heading", { name: "生成记录", exact: true })).toBeVisible();
   // 任务卡保持上方信息、下方结果，单张结果高 320px。
   const first = page.locator(".generation-job").first();
@@ -105,22 +105,25 @@ test("the tool rail collapses to icons while the settings panel stays", async ({
   await page.goto("/commerce/create");
   const composer = page.locator(".composer-panel");
   const dock = page.locator(".workspace-tool-dock");
-  const names = page.locator(".workspace-tool-dock .workspace-tool-name");
+  const names = page.locator(".workspace-tool-dock .workspace-tool-label");
   const tools = page.getByRole("navigation", { name: "电商创作工具" });
   await expect(names.first()).toBeVisible();
   expect((await tools.getByRole("button").first().boundingBox())?.y).toBe(
     (await composer.boundingBox())?.y,
   );
   await page.getByRole("button", { name: "收起工具栏", exact: true }).click();
-  // 收起后工具栏只剩 64px 宽的图标，参数栏照常显示；按钮名和悬停提示仍是工具名。
+  // 收起后工具栏只剩 64px 宽的图标，按钮保留类别名，参数栏照常显示。
   await expect.poll(async () => (await dock.boundingBox())?.width).toBe(64);
   await expect(names.first()).toBeHidden();
   await expect(composer).toBeVisible();
   const expand = page.getByRole("button", { name: "展开工具栏", exact: true });
   await expect(expand).toHaveAttribute("aria-expanded", "false");
   await expect(expand).toBeFocused();
-  await tools.getByRole("button", { name: "家纺裂变", exact: true }).hover();
-  await expect(page.getByRole("tooltip").filter({ hasText: "家纺裂变" })).toBeVisible();
+  await tools.getByRole("button", { name: "功能", exact: true }).click();
+  const submenu = page.getByRole("menu", { name: "功能", exact: true });
+  await expect(submenu.getByRole("menuitem", { name: "家纺裂变", exact: true })).toBeVisible();
+  await expect(page.locator(".workspace-tool-submenu")).toHaveAttribute("data-placement", "right");
+  await page.keyboard.press("Escape");
   // 刷新后保持收起，再点一次恢复名称。
   await page.reload();
   await expect.poll(async () => (await dock.boundingBox())?.width).toBe(64);

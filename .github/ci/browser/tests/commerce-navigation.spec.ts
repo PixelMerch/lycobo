@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockImageApi } from "./image-api-fixture";
+import { chooseWorkspaceTool, mockImageApi } from "./image-api-fixture";
 
 test.beforeEach(async ({ page }) => {
   await mockImageApi(page);
@@ -10,13 +10,12 @@ test("workspace switches tools without discarding drafts and remembers the curre
 }) => {
   await page.goto("/commerce/create");
   await page.getByLabel("提示词", { exact: true }).fill("保留我的商品草稿");
-  const tools = page.getByRole("navigation", { name: "电商创作工具" });
-  await tools.getByRole("button", { name: "家纺裂变", exact: true }).click();
+  await chooseWorkspaceTool(page, "家纺裂变");
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
   await page.getByRole("link", { name: "首页", exact: true }).click();
   await page.goto("/workspace");
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
-  await tools.getByRole("button", { name: "主图制作", exact: true }).click();
+  await chooseWorkspaceTool(page, "主图制作");
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("保留我的商品草稿");
 });
 
@@ -59,10 +58,9 @@ test("tool-scoped history follows navigation and preserves the main-image draft"
   await page.goto("/commerce/create");
   await page.getByLabel("提示词", { exact: true }).fill("保留商品描述");
   await expect(page.getByRole("combobox", { name: "历史工具筛选" })).toHaveCount(0);
-  const tools = page.getByRole("navigation", { name: "电商创作工具" });
-  await tools.getByRole("button", { name: "家纺裂变", exact: true }).click();
+  await chooseWorkspaceTool(page, "家纺裂变");
   await expect.poll(() => filters.includes("textile")).toBe(true);
-  await tools.getByRole("button", { name: "主图制作", exact: true }).click();
+  await chooseWorkspaceTool(page, "主图制作");
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("保留商品描述");
   expect(filters).not.toContain("all");

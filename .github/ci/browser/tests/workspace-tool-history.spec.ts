@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { apiFixture, mockImageApi } from "./image-api-fixture";
+import { apiFixture, chooseWorkspaceTool, mockImageApi } from "./image-api-fixture";
 
 for (const width of [390, 1440]) {
   test(`workspace tools keep their own history and stay below the header at ${width}px`, async ({
@@ -59,7 +59,7 @@ for (const width of [390, 1440]) {
     // Switching controls never display help; the composer banner owns it.
     const textileShortcut = page
       .getByRole("navigation", { name: "电商创作工具" })
-      .getByRole("button", { name: "家纺裂变", exact: true });
+      .getByRole("button", { name: "功能", exact: true });
     await textileShortcut.hover();
     const preview = page.getByRole("tooltip");
     await expect(preview).toHaveCount(0);
@@ -80,7 +80,7 @@ for (const width of [390, 1440]) {
     await expect(page).toHaveURL(/\/commerce\/create$/);
     await page.mouse.move(0, 0);
     const dock = page.getByRole("navigation", { name: "电商创作工具" });
-    await expect(dock.getByRole("button")).toHaveCount(4);
+    await expect(dock.getByRole("button")).toHaveCount(5);
     await expect(dock.getByRole("button", { name: "全部工具", exact: true })).toHaveCount(0);
     await expect(page.getByRole("dialog", { name: "选择工具" })).toHaveCount(0);
     if (width >= 1440) {
@@ -96,7 +96,7 @@ for (const width of [390, 1440]) {
         page.evaluate(
           (selector) => {
             const toolbar = document.querySelector(selector);
-            const header = document.querySelector(".topbar");
+            const header = document.querySelector(".workspace-site-header");
             return Math.abs(
               (toolbar?.getBoundingClientRect().top ?? 0) -
                 (header?.getBoundingClientRect().bottom ?? 0) -
@@ -128,20 +128,17 @@ for (const width of [390, 1440]) {
       expect(metaTop).toBeGreaterThanOrEqual((heading?.y ?? 0) + (heading?.height ?? 0));
     }
     await page.screenshot({ path: `/tmp/lycobo-workspace-tools-${width}.png` });
-    await page
-      .getByRole("navigation", { name: "电商创作工具" })
-      .getByRole("button", { name: "家纺裂变", exact: true })
-      .click();
+    await chooseWorkspaceTool(page, "家纺裂变");
     await expect(page).toHaveURL(/textile-set/);
     await expect(page.getByRole("tooltip")).toHaveCount(0);
     await expect(page.locator(".unified-workspace")).toHaveAttribute("data-tool", "textile");
     await expect(page.locator(".workspace-composer-title")).toHaveText("家纺裂变");
     await expect(
       page.getByRole("navigation", { name: "电商创作工具" }).getByRole("button", {
-        name: "家纺裂变",
+        name: "功能",
         exact: true,
       }),
-    ).toHaveAttribute("aria-current", "page");
+    ).toHaveAttribute("data-current", "true");
     await expect(page.locator(".composer-panel")).toContainText("详情图");
     await expect(page.locator(".composer-panel")).toContainText("裂变类型");
     // The panel hero follows the tool: its own example photo, name and purpose.
@@ -161,10 +158,7 @@ for (const width of [390, 1440]) {
         page.locator(".history-rail-item").first().getByRole("button").first(),
       ).toHaveAccessibleName(`查看任务 ${textileJobs[0]?.id}`);
     }
-    await page
-      .getByRole("navigation", { name: "电商创作工具" })
-      .getByRole("button", { name: "套图计划", exact: true })
-      .click();
+    await chooseWorkspaceTool(page, "套图计划");
     await expect(page.locator(".workspace-composer-title")).toHaveText("套图计划");
     await expect(page.locator(".unified-workspace")).toHaveAttribute("data-tool", "variation");
     await expect(page.locator(".generation-job")).toHaveCount(0);
@@ -175,10 +169,7 @@ for (const width of [390, 1440]) {
     expect(requested).not.toContain("null");
     if (width >= 768) {
       await expect(page.getByRole("textbox", { name: "创作需求" })).toBeVisible();
-      await page
-        .getByRole("navigation", { name: "电商创作工具" })
-        .getByRole("button", { name: "主图制作", exact: true })
-        .click();
+      await chooseWorkspaceTool(page, "主图制作");
       await expect(page.locator(".workspace-composer-title")).toHaveText("主图制作");
       await expect(page.getByRole("textbox", { name: "提示词", exact: true })).toHaveValue(prompt);
     }

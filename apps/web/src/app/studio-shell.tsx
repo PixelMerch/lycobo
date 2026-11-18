@@ -29,10 +29,10 @@ import { toolIcons } from "../features/workspace/workspace-tool-symbol";
 import { useMessages } from "../i18n/messages";
 import { useAppLocation, useAppNavigate } from "../i18n/use-localized-navigation";
 import { CommerceNavMenu } from "./commerce-nav-menu";
-import { HomeHeaderUtilities } from "./home-header-utilities";
 import { LanguageMenu } from "./language-menu";
 import { PageLoading } from "./page-loading";
 import { shellMessages } from "./shell-messages";
+import { SiteHeaderControls } from "./site-header-controls";
 import { useWindowScrolled } from "./use-window-scrolled";
 import "../styles/brand.css";
 
@@ -44,26 +44,19 @@ const publicPaths = new Set<string>([
   legalPaths.privacy,
 ]);
 
-const headerLogos = {
-  home: { src: "/brand/lycobo-landing.svg", width: 90, height: 28 },
-  studio: { src: "/brand/lycobo-reveal.svg", width: 120, height: 32 },
-};
+const studioLogo = { src: "/brand/lycobo-reveal.svg", width: 120, height: 32 };
 
 /** 组合应用导航和业务区域，未登录时转往独立登录页面。 */
 export function StudioShell() {
   const location = useAppLocation();
   const { pathname } = location;
+  const t = useMessages(shellMessages);
   const landing = pathname === commercePath;
-  const inWorkspace = isWorkspacePath(pathname);
-  const commerceHeader = landing || inWorkspace;
-  const logo = headerLogos[commerceHeader ? "home" : "studio"];
+  const workspace = isWorkspacePath(pathname);
   const session = useEnterpriseSession();
   const signedIn = !!session.data;
   const protectedRoute = !publicPaths.has(pathname);
   const routeNeedsLogin = protectedRoute && !signedIn;
-  const scrolled = useWindowScrolled();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const t = useMessages(shellMessages);
   if (routeNeedsLogin && !session.isPending)
     return (
       <Navigate
@@ -72,56 +65,16 @@ export function StudioShell() {
       />
     );
   return (
-    <div className="studio-app">
-      {/* 工作区里顶部栏固定为实色、滚动时不收窄；其他页面在顶部透明、滚动后变磨砂。 */}
-      <header
-        className="topbar"
-        data-commerce-header={commerceHeader || undefined}
-        data-landing={landing || undefined}
-        data-scrolled={(scrolled && !inWorkspace) || undefined}
-        data-solid={inWorkspace || undefined}
-      >
-        <Drawer isOpen={menuOpen} onOpenChange={setMenuOpen}>
-          <Drawer.Trigger className="mobile-menu icon-button" aria-label={t.openNavigation}>
-            <UiIcon icon={IconMenu2} size="navigation" />
-          </Drawer.Trigger>
-          <Drawer.Backdrop>
-            <Drawer.Content placement="left">
-              <Drawer.Dialog className="mobile-nav">
-                <Drawer.Header>
-                  <Drawer.Heading>
-                    <img className="lycobo-logo" alt="Lycobo" {...logo} />
-                  </Drawer.Heading>
-                  <Drawer.CloseTrigger aria-label={t.closeNavigation}>
-                    <UiIcon icon={IconX} size="action" />
-                  </Drawer.CloseTrigger>
-                </Drawer.Header>
-                <Drawer.Body>
-                  <DrawerNavigation
-                    inWorkspace={inWorkspace}
-                    commerceHeader={commerceHeader}
-                    onNavigate={() => setMenuOpen(false)}
-                  />
-                </Drawer.Body>
-                {signedIn && (
-                  <Drawer.Footer className="mobile-nav-account">
-                    <AccountMenu onNavigate={() => setMenuOpen(false)} />
-                  </Drawer.Footer>
-                )}
-              </Drawer.Dialog>
-            </Drawer.Content>
-          </Drawer.Backdrop>
-        </Drawer>
-        <RouteLink to="/" className="brand">
-          <img className="lycobo-logo" alt="Lycobo" {...logo} />
-        </RouteLink>
-        <HeaderNavigation commerceHeader={commerceHeader} inWorkspace={inWorkspace} />
-        <HeaderActions
-          commerceHeader={commerceHeader}
-          inWorkspace={inWorkspace}
-          account={session.data}
-        />
-      </header>
+    <div className="studio-app" data-workspace-site-header={workspace || undefined}>
+      {workspace && session.data && (
+        <header className="workspace-site-header">
+          <RouteLink to="/" className="workspace-site-brand" aria-label={t.home}>
+            <img src="/brand/lycobo-landing.svg" width={155} height={46} alt="Lycobo" />
+          </RouteLink>
+          <SiteHeaderControls account={session.data} />
+        </header>
+      )}
+      {!landing && !workspace && <StudioHeader account={session.data} />}
       <main className="main-content">
         {routeNeedsLogin && session.isPending && <PageLoading />}
         {!routeNeedsLogin && <Outlet />}
@@ -133,21 +86,58 @@ export function StudioShell() {
   );
 }
 
-/** 工作区内的工具切换由工具坞负责。 */
-function HeaderNavigation({
-  commerceHeader,
-  inWorkspace,
-}: {
-  commerceHeader: boolean;
-  inWorkspace: boolean;
-}) {
+/** 其余页面保留原工作区和账户导航。 */
+function StudioHeader({ account }: { account: ReturnType<typeof useEnterpriseSession>["data"] }) {
+  const scrolled = useWindowScrolled();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const t = useMessages(shellMessages);
+  return (
+    <header className="topbar" data-scrolled={scrolled || undefined}>
+      <Drawer isOpen={menuOpen} onOpenChange={setMenuOpen}>
+        <Drawer.Trigger className="mobile-menu icon-button" aria-label={t.openNavigation}>
+          <UiIcon icon={IconMenu2} size="navigation" />
+        </Drawer.Trigger>
+        <Drawer.Backdrop>
+          <Drawer.Content placement="left">
+            <Drawer.Dialog className="mobile-nav">
+              <Drawer.Header>
+                <Drawer.Heading>
+                  <img className="lycobo-logo" alt="Lycobo" {...studioLogo} />
+                </Drawer.Heading>
+                <Drawer.CloseTrigger aria-label={t.closeNavigation}>
+                  <UiIcon icon={IconX} size="action" />
+                </Drawer.CloseTrigger>
+              </Drawer.Header>
+              <Drawer.Body>
+                <DrawerNavigation onNavigate={() => setMenuOpen(false)} />
+              </Drawer.Body>
+              {account && (
+                <Drawer.Footer className="mobile-nav-account">
+                  <AccountMenu onNavigate={() => setMenuOpen(false)} />
+                </Drawer.Footer>
+              )}
+            </Drawer.Dialog>
+          </Drawer.Content>
+        </Drawer.Backdrop>
+      </Drawer>
+      <RouteLink to="/" className="brand">
+        <img className="lycobo-logo" alt="Lycobo" {...studioLogo} />
+      </RouteLink>
+      <HeaderNavigation />
+      <HeaderActions account={account} />
+    </header>
+  );
+}
+
+/** 站内常规页面的主导航。 */
+function HeaderNavigation() {
   const t = useMessages(shellMessages);
   return (
     <nav className="topbar-nav" aria-label={t.mainNavigation}>
       <RouteLink nav to="/" end className="nav-row">
         {t.home}
       </RouteLink>
-      {!inWorkspace && <CommerceNavMenu homeGlass={commerceHeader} />}
+      <CommerceNavMenu homeGlass={false} />
       <RouteLink nav to={freeCanvasPath} className="nav-row">
         {t.freeCanvas}
       </RouteLink>
@@ -155,53 +145,29 @@ function HeaderNavigation({
   );
 }
 
-/** 顶栏保留通用入口，工作区入口仅在外部页面显示。 */
-function HeaderActions({
-  commerceHeader,
-  inWorkspace,
-  account,
-}: {
-  commerceHeader: boolean;
-  inWorkspace: boolean;
-  account: ReturnType<typeof useEnterpriseSession>["data"];
-}) {
+/** 常规页面的工作区、语言和账户入口。 */
+function HeaderActions({ account }: { account: ReturnType<typeof useEnterpriseSession>["data"] }) {
   const navigate = useAppNavigate();
   const t = useMessages(shellMessages);
-  const controls = (
-    <>
-      {!inWorkspace && (
-        <Tooltip delay={200}>
-          <Button
-            isIconOnly
-            size="sm"
-            variant="tertiary"
-            aria-label={t.workspace}
-            className="header-workspace"
-            onPress={() => void navigate("/workspace")}
-          >
-            <UiIcon icon={IconSpaces} size="navigation" />
-          </Button>
-          <Tooltip.Content placement="bottom">{t.workspace}</Tooltip.Content>
-        </Tooltip>
-      )}
-      <LanguageMenu account={account} homeGlass={commerceHeader} />
-    </>
-  );
-  const messages = (
-    <div className="header-news" data-signed-in={!!account}>
-      <AccountMessages signedIn={!!account} showTrigger={commerceHeader || !!account} />
-    </div>
-  );
   return (
     <div className="header-actions">
-      {commerceHeader ? (
-        <HomeHeaderUtilities messages={messages}>{controls}</HomeHeaderUtilities>
-      ) : (
-        <>
-          {messages}
-          {controls}
-        </>
-      )}
+      <div className="header-news" data-signed-in={!!account}>
+        <AccountMessages signedIn={!!account} showTrigger={!!account} />
+      </div>
+      <Tooltip delay={200}>
+        <Button
+          isIconOnly
+          size="sm"
+          variant="tertiary"
+          aria-label={t.workspace}
+          className="header-workspace"
+          onPress={() => void navigate("/workspace")}
+        >
+          <UiIcon icon={IconSpaces} size="navigation" />
+        </Button>
+        <Tooltip.Content placement="bottom">{t.workspace}</Tooltip.Content>
+      </Tooltip>
+      <LanguageMenu account={account} />
       {account ? (
         <>
           <HeaderBenefits />
@@ -219,16 +185,8 @@ function RealtimeEvents() {
   return null;
 }
 
-/** 手机抽屉与桌面导航遵循相同的工作区入口规则。 */
-function DrawerNavigation({
-  inWorkspace,
-  onNavigate,
-  commerceHeader,
-}: {
-  inWorkspace: boolean;
-  onNavigate: () => void;
-  commerceHeader: boolean;
-}) {
+/** 常规页面的手机导航抽屉。 */
+function DrawerNavigation({ onNavigate }: { onNavigate: () => void }) {
   const t = useMessages(shellMessages);
   const toolText = useMessages(workspaceToolMessages);
   const openLibrary = useOpenAssetLibrary();
@@ -238,47 +196,39 @@ function DrawerNavigation({
         <UiIcon icon={IconSmartHome} size="default" />
         <span className="nav-label">{t.home}</span>
       </RouteLink>
-      {!inWorkspace && (
-        <>
-          <RouteLink to="/workspace" className="nav-row" onClick={onNavigate}>
-            <UiIcon icon={IconSpaces} size="default" />
-            <span className="nav-label">{t.workspace}</span>
-          </RouteLink>
-          <p className="nav-group-label">{t.commerce}</p>
-          {commerceTools.map((tool) => (
-            <RouteLink
-              key={tool.id}
-              to={commerceToolHref(tool.id)}
-              className="nav-row"
-              onClick={onNavigate}
-            >
-              <UiIcon icon={toolIcons[tool.id]} size="default" />
-              <span className="nav-label">
-                {tool.id === "replica" ? t.replica : toolText.tools[tool.id].name}
-              </span>
-            </RouteLink>
-          ))}
-        </>
-      )}
+      <RouteLink to="/workspace" className="nav-row" onClick={onNavigate}>
+        <UiIcon icon={IconSpaces} size="default" />
+        <span className="nav-label">{t.workspace}</span>
+      </RouteLink>
+      <p className="nav-group-label">{t.commerce}</p>
+      {commerceTools.map((tool) => (
+        <RouteLink
+          key={tool.id}
+          to={commerceToolHref(tool.id)}
+          className="nav-row"
+          onClick={onNavigate}
+        >
+          <UiIcon icon={toolIcons[tool.id]} size="default" />
+          <span className="nav-label">
+            {tool.id === "replica" ? t.replica : toolText.tools[tool.id].name}
+          </span>
+        </RouteLink>
+      ))}
       <RouteLink to={freeCanvasPath} className="nav-row" onClick={onNavigate}>
         <UiIcon icon={IconBrush} size="default" />
         <span className="nav-label">{t.freeCanvas}</span>
       </RouteLink>
-      {commerceHeader ? (
-        <HomeHeaderUtilities onNavigate={onNavigate} />
-      ) : (
-        <Button
-          variant="ghost"
-          className="nav-row"
-          onPress={() => {
-            onNavigate();
-            openLibrary();
-          }}
-        >
-          <UiIcon icon={IconFolderSparkle} size="default" />
-          <span className="nav-label">{t.assets}</span>
-        </Button>
-      )}
+      <Button
+        variant="ghost"
+        className="nav-row"
+        onPress={() => {
+          onNavigate();
+          openLibrary();
+        }}
+      >
+        <UiIcon icon={IconFolderSparkle} size="default" />
+        <span className="nav-label">{t.assets}</span>
+      </Button>
     </nav>
   );
 }

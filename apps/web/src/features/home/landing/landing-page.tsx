@@ -1,11 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { HeaderCreationGuide } from "../../../app/home-header-utilities";
-import { LanguageMenu } from "../../../app/language-menu";
+import { SiteHeaderControls } from "../../../app/site-header-controls";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
-import { AccountMenu } from "../../account/menu/account-menu";
-import { HeaderBenefits } from "../../account/menu/header-benefits";
 import { useEnterpriseSession } from "../../auth/auth-client";
 import { LandingBrandCanvas } from "./landing-brand-canvas";
 import { landingCopy } from "./landing-copy";
@@ -13,8 +10,6 @@ import { referenceMessages } from "./reference-messages";
 import { renderLandingDocument } from "./render-landing-document";
 import { useLandingLanguage } from "./use-landing-language";
 import "./reference.css";
-
-const headerPopoverOffset = 18;
 
 async function loadLandingTemplate(signal: AbortSignal) {
   const response = await fetch("/openart-reference/index.html", { signal });
@@ -58,46 +53,14 @@ export function LandingPage() {
       />
       <LandingBrandCanvas frameRef={frameRef} document={document} />
       {anchor && !anchor.menuOpen && (
-        <div
-          className="landing-header-controls"
-          data-theme={anchor.theme}
+        <SiteHeaderControls
+          account={anchor.signedIn ? account : undefined}
+          dismissVersion={dismissVersion}
+          onLanguageChange={prepareLanguageChange}
+          onMenuOpen={closeNavigation}
+          theme={anchor.theme}
           style={{ left: anchor.x, top: anchor.y, width: anchor.width, height: anchor.height }}
-        >
-          <HeaderCreationGuide
-            dismissVersion={dismissVersion}
-            onMenuOpen={closeNavigation}
-            popoverClassName="landing-control-popover"
-            popoverOffset={headerPopoverOffset}
-          />
-          <div className="landing-language-control">
-            <LanguageMenu
-              dismissVersion={dismissVersion}
-              account={account}
-              homeGlass
-              onBeforeChange={prepareLanguageChange}
-              popoverClassName="landing-control-popover landing-language-popover"
-              hoverCloseDelay={100}
-              popoverOffset={headerPopoverOffset}
-              onMenuOpen={closeNavigation}
-            />
-          </div>
-          {account && anchor.signedIn && (
-            <div className="landing-account-controls">
-              <HeaderBenefits
-                dismissVersion={dismissVersion}
-                popoverClassName="landing-control-popover"
-                popoverOffset={headerPopoverOffset}
-              />
-              <AccountMenu
-                hover
-                dismissVersion={dismissVersion}
-                variant="header"
-                popoverClassName="landing-control-popover"
-                popoverOffset={headerPopoverOffset}
-              />
-            </div>
-          )}
-        </div>
+        />
       )}
     </>
   );

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { apiFixture, mockImageApi } from "./image-api-fixture";
+import { apiFixture, chooseWorkspaceTool, mockImageApi } from "./image-api-fixture";
 
 test.beforeEach(async ({ page }) => {
   await mockImageApi(page);
@@ -58,14 +58,8 @@ test("analysis requires text, preserves edited plans and submits only confirmed 
   await dialog.getByRole("button", { name: "删除方案 3", exact: true }).click();
   await expect(dialog).toContainText("已选 8 张");
   await dialog.getByRole("button", { name: "关闭生成计划", exact: true }).click();
-  await page
-    .getByRole("navigation", { name: "电商创作工具" })
-    .getByRole("button", { name: "主图制作", exact: true })
-    .click();
-  await page
-    .getByRole("navigation", { name: "电商创作工具" })
-    .getByRole("button", { name: "套图计划", exact: true })
-    .click();
+  await chooseWorkspaceTool(page, "主图制作");
+  await chooseWorkspaceTool(page, "套图计划");
   await page.getByRole("button", { name: "查看生成计划", exact: true }).click();
   await expect(dialog.getByRole("textbox", { name: "方案 1 名称", exact: true })).toHaveValue(
     "橙色桌面",

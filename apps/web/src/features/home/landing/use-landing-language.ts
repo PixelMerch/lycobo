@@ -23,7 +23,7 @@ export function readLandingHeader(data: unknown) {
   if (width <= 0 || width > 400 || height <= 0 || height > 100 || scrollY < 0) return null;
   if (theme !== "light" && theme !== "dark") return null;
   if (typeof menuOpen !== "boolean" || typeof signedIn !== "boolean") return null;
-  return { x, y, width, height, scrollY, theme, menuOpen, signedIn };
+  return { x, y, width, height, scrollY, theme, menuOpen, signedIn } as const;
 }
 
 type LandingHeader = NonNullable<ReturnType<typeof readLandingHeader>>;

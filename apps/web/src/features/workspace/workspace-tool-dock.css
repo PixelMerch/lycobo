@@ -137,9 +137,7 @@
     top: calc(var(--header-height) + 48px - var(--composer-hero-height));
   }
 }
-/* The tool switcher is one dock: icon tile and name per tool. The current
- * tool sits on a pill that slides between tools; hovering lifts the tile in the tool's accent
- * while help belongs to the composer banner. Geometry never changes. */
+/* 一级工具类别和直接入口共用一组尺寸与悬停样式。 */
 .workspace-tool-bar {
   display: flex;
   align-items: center;
@@ -158,10 +156,12 @@
 .workspace-tool-bar::-webkit-scrollbar {
   display: none;
 }
-.workspace-tool-shortcut.button {
+.workspace-tool-shortcut:is(.button, .workspace-tool-group) {
   position: relative;
   isolation: isolate;
+  display: flex;
   flex-shrink: 0;
+  align-items: center;
   justify-content: flex-start;
   height: 56px;
   min-height: 56px;
@@ -177,70 +177,99 @@
     background-color 180ms ease,
     color 180ms ease;
 }
-.workspace-tool-shortcut.button[data-hovered="true"] {
+.workspace-tool-shortcut:is(.button, .workspace-tool-group)[data-hovered="true"] {
   color: var(--foreground);
 }
-.workspace-tool-shortcut.button[aria-current="page"] {
-  color: #fff;
+.workspace-tool-shortcut:is(.button, .workspace-tool-group):is(
+  [data-current="true"],
+  [aria-expanded="true"]
+) {
+  color: var(--foreground);
+  background: var(--fill-medium);
 }
-/* 高亮在按钮内居中，工具坞的行高和点击区域保持稳定。 */
-.workspace-tool-shortcut.button::before,
-.workspace-tool-indicator {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  height: 50px;
-  margin-block: auto;
-  border-radius: inherit;
-  pointer-events: none;
+.workspace-tool-chevron {
+  margin-inline-start: auto;
 }
-.workspace-tool-shortcut.button[data-hovered="true"]:not([aria-current="page"])::before {
-  background: var(--interaction-hover);
-  content: "";
+:root .workspace-tool-submenu.dropdown__popover {
+  --glass-tint: var(--surface);
+  --glass-fill: none;
+  --glass-blur: none;
+  width: min(720px, calc(100vw - 32px));
+  padding: 10px;
+  border: 1px solid var(--border);
 }
-.workspace-tool-indicator {
-  background: linear-gradient(180deg, #ffffff17 0%, #ffffff0d 100%);
-  box-shadow: none;
+.workspace-tool-submenu .dropdown__menu {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  max-height: min(560px, 68dvh);
+  overflow: auto;
 }
-.workspace-tool-shortcut .workspace-tool-symbol {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: transparent;
-  color: #ffffffb3;
-  transition:
-    transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    background-color 180ms ease,
-    color 180ms ease,
-    box-shadow 240ms ease;
+.workspace-tool-submenu .menu-section {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
 }
-.workspace-tool-shortcut .workspace-tool-symbol > .ui-icon {
-  transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+.workspace-tool-submenu .menu-section[data-wide] {
+  grid-column: span 2;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-.workspace-tool-shortcut.button:is([data-hovered="true"], [aria-current="page"])
-  .workspace-tool-symbol {
-  background: transparent;
-  color: #fff;
+.workspace-tool-submenu[data-single-section] .menu-section[data-wide] {
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
-@media (prefers-reduced-motion: no-preference) {
-  .workspace-tool-shortcut.button[data-hovered="true"] .workspace-tool-symbol {
-    transform: none;
+.workspace-tool-section-label {
+  grid-column: 1 / -1;
+  padding: 8px 12px 2px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.workspace-tool-menu-item {
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 20px;
+}
+.workspace-tool-menu-item[data-disabled="true"] {
+  opacity: 1;
+  color: var(--muted);
+}
+.workspace-tool-menu-item:not([data-disabled]):is(
+  [data-hovered="true"],
+  [data-focused="true"],
+  [data-current="true"]
+) {
+  background: var(--fill-medium);
+}
+.workspace-tool-menu-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.workspace-tool-description {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+@media (max-width: 767px) {
+  .workspace-tool-submenu .dropdown__menu {
+    grid-template-columns: minmax(0, 1fr);
   }
-  .workspace-tool-shortcut.button[data-hovered="true"] .workspace-tool-symbol > .ui-icon {
-    transform: none;
+  .workspace-tool-submenu .menu-section[data-wide] {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr);
   }
-  .workspace-tool-shortcut.button[data-pressed="true"] .workspace-tool-symbol {
-    transform: scale(0.92);
-    transition-duration: 90ms;
+  .workspace-tool-submenu[data-single-section] .menu-section[data-wide] {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 .workspace-tool-label {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex: 1;
   min-width: 0;
-}
-.workspace-tool-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: var(--text-base);
   line-height: var(--leading-base);
   font-weight: var(--weight-semibold);
@@ -252,16 +281,14 @@
     .workspace-tool-bar {
       gap: 4px;
     }
-    .workspace-tool-shortcut.button {
+    .workspace-tool-shortcut:is(.button, .workspace-tool-group) {
       gap: 8px;
       padding-right: 8px;
     }
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .workspace-tool-shortcut.button,
-  .workspace-tool-shortcut .workspace-tool-symbol,
-  .workspace-tool-shortcut .workspace-tool-symbol > .ui-icon {
+  .workspace-tool-shortcut:is(.button, .workspace-tool-group) {
     transition: none;
   }
 }

@@ -56,10 +56,11 @@ test.describe("English workspace", () => {
     await page.goto("/commerce/create");
     const tools = page.getByRole("navigation", { name: "E-commerce tools", exact: true });
     await expect(tools.getByRole("button")).toHaveText([
-      "Main Image",
-      "Textile Set",
-      "Image Set Planner",
-      "Product Video",
+      "Commerce Tools",
+      "Image Types",
+      "Features",
+      "Free canvas",
+      "Assets",
     ]);
     await expect(page.getByRole("textbox", { name: "Prompt" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Generate now", exact: true })).toBeVisible();

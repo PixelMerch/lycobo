@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockImageApi, modelDisplayNames } from "./image-api-fixture";
+import { chooseWorkspaceTool, mockImageApi, modelDisplayNames } from "./image-api-fixture";
 
 test.beforeEach(async ({ page }) => {
   await mockImageApi(page);
@@ -150,10 +150,7 @@ for (const width of [320, 390, 768, 1024, 1440]) {
 
 test("tool shortcuts open their workspace", async ({ page }) => {
   await page.goto("/commerce/create");
-  await page
-    .getByRole("navigation", { name: "电商创作工具" })
-    .getByRole("button", { name: "主图制作", exact: true })
-    .click();
+  await chooseWorkspaceTool(page, "主图制作");
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
 });

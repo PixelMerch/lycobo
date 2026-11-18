@@ -137,7 +137,7 @@
     background: transparent;
     overflow: visible;
   }
-  .workspace-tool-dock .workspace-tool-shortcut.button {
+  .workspace-tool-dock .workspace-tool-shortcut:is(.button, .workspace-tool-group) {
     gap: 10px;
     width: 100%;
     padding: 8px 12px 8px 8px;
@@ -145,17 +145,14 @@
   .workspace-tool-dock .workspace-tool-label {
     min-width: 0;
   }
-  .workspace-tool-dock .workspace-tool-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  /* 收起：只显示图标块，名称藏起来（按钮的可访问名称仍是工具名，悬停有提示）。 */
-  .unified-workspace[data-tool-rail="collapsed"] .workspace-tool-shortcut.button {
+  /* 收起后仅显示图标，按钮仍保留可访问名称。 */
+  .unified-workspace[data-tool-rail="collapsed"]
+    .workspace-tool-shortcut:is(.button, .workspace-tool-group) {
     justify-content: center;
     padding: 8px 0;
   }
-  .unified-workspace[data-tool-rail="collapsed"] .workspace-tool-label {
+  .unified-workspace[data-tool-rail="collapsed"]
+    :is(.workspace-tool-label, .workspace-tool-chevron) {
     display: none;
   }
   .workspace-composer-toggle.button {
