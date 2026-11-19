@@ -310,7 +310,7 @@
   line-height: var(--leading-sm);
 }
 .variation-generate {
-  --app-primary-gradient: var(--studio-accent);
+  --app-primary-gradient: var(--studio-accent-gradient);
   border-radius: 999px;
 }
 /* 提交中保持主操作底色和加载反馈，与其他生成按钮一致。 */

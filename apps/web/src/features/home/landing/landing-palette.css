@@ -92,13 +92,13 @@ body,
 }
 
 :is([data-navv3-cta], #navv3-mobile-menu [data-pageforge-source="start_for_free"], #cta a) {
-  background: var(--studio-accent);
+  background: var(--studio-accent-gradient);
   color: var(--studio-canvas);
 }
 
 :is([data-navv3-cta], #navv3-mobile-menu [data-pageforge-source="start_for_free"], #cta a):hover,
 .lycobo-hero-cta:hover {
-  background: color-mix(in srgb, var(--studio-accent) 92%, white);
+  filter: brightness(1.04);
 }
 
 body :focus-visible {

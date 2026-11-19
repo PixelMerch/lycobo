@@ -2,5 +2,6 @@
 :root {
   --studio-canvas: #121212;
   --studio-primary-action: #f2f1ee;
-  --studio-accent: #c8f038;
+  --studio-accent: #a8ff00;
+  --studio-accent-gradient: linear-gradient(110deg, var(--studio-accent), #59e6a2);
 }
