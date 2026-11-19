@@ -21,6 +21,8 @@ CSS 负责主题与尺寸，约定见 [Web 规则](../apps/web/AGENTS.md)。
 参数互斥选项（分辨率、张数、图片比例）必须用 `ToggleButtonGroup` + `ToggleButton`，
 不要用 `Button` 配 `aria-pressed` 手写单选。
 
+单行参数使用弹簧滑动底板时，在按钮之后追加 [SelectionPill](../apps/web/src/components/selection-pill.tsx)，传入当前选中的 `value`。按钮组负责值和键盘交互，组件统一管理选中底色和弹簧，底板按选中按钮的尺寸与圆角绘制。禁用值隐藏底板。
+
 ## 输入与表单
 
 | 组件                                                                                                                 | 用途                       |

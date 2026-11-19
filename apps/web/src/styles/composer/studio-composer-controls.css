@@ -97,14 +97,14 @@
 }
 .composer-panel .parameter-options {
   background: var(--fill-soft);
-  border-radius: 20px;
+  border-radius: var(--control-radius);
 }
 .composer-panel .parameter-options.ratio-options {
   background: var(--fill-soft);
 }
 .composer-panel .parameter-options :is(.button, .toggle-button) {
   color: #aaa;
-  border-radius: 18px;
+  border-radius: var(--control-radius);
 }
 .composer-panel .parameter-options :is(.button, .toggle-button)[data-selected="true"] {
   color: var(--control-selected-foreground);
@@ -120,7 +120,7 @@
 .composer-panel .model-select {
   color: #eee;
   background: var(--fill-soft);
-  border-radius: 18px;
+  border-radius: var(--control-radius);
 }
 .model-menu .model-options {
   color: #ddd;
@@ -338,7 +338,7 @@
   width: max-content;
   min-width: var(--trigger-width);
   max-width: calc(100vw - 24px);
-  padding: 0;
+  padding: var(--choice-menu-inset);
   border: 0;
   background: var(--field-background);
   box-shadow: var(--overlay-shadow);
@@ -352,7 +352,7 @@
   margin-top: 0;
 }
 .model-menu .model-options {
-  padding: 8px 10px;
+  padding: 8px var(--control-padding-md);
   border-radius: 0;
   background: transparent;
   color: var(--foreground);

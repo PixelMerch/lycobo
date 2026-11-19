@@ -120,6 +120,7 @@
   --control-padding-lg: 16px;
   --control-gap: 6px;
   --control-radius: 8px;
+  --choice-menu-inset: 6px;
   /*
    * 所有浮层共用的毛玻璃（用户 2026-11-10 要求统一为顶部栏积分菜单同款）：
    * 8% 白底、40px 背景模糊、无描边、右下柔和投影。--glass-edge 仍是浮层内部细分隔线的颜色。

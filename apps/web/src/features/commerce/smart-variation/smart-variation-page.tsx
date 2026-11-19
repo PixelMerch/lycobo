@@ -1,9 +1,9 @@
 import { Button, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { useState } from "react";
 import { ReferencePrompt } from "../../../components/reference-prompt/reference-prompt";
+import { SelectionPill } from "../../../components/selection-pill";
 import { GenerateButton } from "../../generation/composer/generate-button";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
-import { SelectionHighlight } from "../../generation/composer/selection-highlight";
 import { ReferencePicker } from "../../generation/references/reference-picker";
 import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
 import { useSmartVariationDraft } from "./smart-variation-state";
@@ -55,7 +55,11 @@ export function SmartVariationPage() {
               <h2>{t.aspectRatio}</h2>
               <span className="ratio-current">{ratio}</span>
             </div>
-            <HomeRatioPicker value={ratio} onChange={(value) => update({ ratio: value })} />
+            <HomeRatioPicker
+              stretchSelection
+              value={ratio}
+              onChange={(value) => update({ ratio: value })}
+            />
           </section>
           <section className="parameter-group">
             <div className="field-title">
@@ -75,12 +79,10 @@ export function SmartVariationPage() {
             >
               {["1.5K", "2K", "4K"].map((value) => (
                 <ToggleButton key={value} id={value}>
-                  {resolution === value && (
-                    <SelectionHighlight layoutId="smart-variation-resolution" />
-                  )}
                   <span>{value}</span>
                 </ToggleButton>
               ))}
+              <SelectionPill value={resolution} />
             </ToggleButtonGroup>
           </section>
         </div>

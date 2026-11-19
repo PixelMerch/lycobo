@@ -1,0 +1,15 @@
+.toggle-button-group:has(> .selection-pill) {
+  position: relative;
+  isolation: isolate;
+}
+.toggle-button-group:has(> .selection-pill) > .toggle-button[data-selected="true"] {
+  background: transparent;
+}
+.selection-pill {
+  position: absolute;
+  inset: 0 auto auto 0;
+  z-index: -1;
+  visibility: hidden;
+  background: var(--control-selected-fill);
+  pointer-events: none;
+}

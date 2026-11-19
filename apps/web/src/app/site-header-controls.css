@@ -3,7 +3,7 @@
 :is(.landing-header-controls, .landing-control-popover) {
   --landing-control-height: 44px;
   --landing-control-fill-height: var(--control-height-md);
-  --landing-control-fill-radius: 8px;
+  --landing-control-fill-radius: var(--control-radius);
   --landing-control-font-size: 14px;
   --landing-control-line-height: 20px;
 }
@@ -219,7 +219,7 @@
   --glass-fill: linear-gradient(transparent, transparent);
   --glass-blur: var(--site-header-menu-blur);
   border: 1px solid #ffffff14;
-  padding: 6px;
+  padding: var(--choice-menu-inset);
   animation: none;
   transition: none;
   scale: none;
@@ -283,16 +283,16 @@
 /* 所有菜单使用同样大小的悬停底板，语言的选中标记仍单独留位。 */
 :root .landing-control-popover :is(.menu-item, .account-menu-row) {
   --menu-row-hover-fill: var(--site-header-menu-hover-fill);
+  --menu-row-radius: var(--landing-control-fill-radius);
   height: var(--landing-control-height);
   align-items: center;
-  padding-inline: 12px;
+  padding-inline: var(--control-padding-md);
   font-size: var(--landing-control-font-size);
   font-weight: 500;
   line-height: var(--landing-control-line-height);
 }
 :root .landing-control-popover :is(.menu-item, .account-menu-row)::before {
   height: var(--landing-control-fill-height);
-  border-radius: var(--landing-control-fill-radius);
   transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 :root .landing-language-popover .menu-item {

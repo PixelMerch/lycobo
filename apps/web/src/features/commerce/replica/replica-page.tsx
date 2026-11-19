@@ -81,13 +81,16 @@ export function ReplicaPage() {
             <h2>{common.aspectRatio}</h2>
             <span>{draft.ratio}</span>
           </div>
-          <HomeRatioPicker value={draft.ratio} onChange={(ratio) => patchDraft({ ratio })} />
+          <HomeRatioPicker
+            stretchSelection
+            value={draft.ratio}
+            onChange={(ratio) => patchDraft({ ratio })}
+          />
         </section>
         <ParameterGroup
           label={common.resolution}
           values={["1.5K", "2K", "4K"]}
           value={draft.resolution}
-          selectionId="replica-resolution"
           disabledValues={["1.5K", "2K", "4K"].filter(
             (value) => !capabilities?.enabledResolutions.some((enabled) => enabled === value),
           )}

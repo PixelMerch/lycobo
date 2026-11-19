@@ -103,6 +103,7 @@ function Workspace({ model }: { model: ModelId }) {
           </div>
           <HomeRatioPicker
             value={draft.ratio}
+            stretchSelection
             onChange={(ratio) => updateDraft(model, { ratio })}
           />
         </section>
@@ -110,7 +111,6 @@ function Workspace({ model }: { model: ModelId }) {
           label={t.resolution}
           values={resolutions}
           value={draft.resolution}
-          selectionId="resolution"
           disabledValues={resolutions.filter(
             (value) => !enabledResolutions.some((enabled) => enabled === value),
           )}
@@ -120,7 +120,6 @@ function Workspace({ model }: { model: ModelId }) {
           label={t.imageCount}
           values={["1", "2", "3", "4"]}
           value={draft.count}
-          selectionId="count"
           onChange={(count) => updateDraft(model, { count })}
         />
         {showMore && (
@@ -128,7 +127,6 @@ function Workspace({ model }: { model: ModelId }) {
             label={qualityMessages[locale].title}
             values={qualityLevels}
             value={draft.quality}
-            selectionId="quality"
             optionLabel={(level) => qualityLabel(locale, level)}
             onChange={(value) => updateDraft(model, { quality: value })}
           />

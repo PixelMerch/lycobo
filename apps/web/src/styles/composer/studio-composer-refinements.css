@@ -20,7 +20,7 @@
 .composer-panel .model-field .model-select {
   color: #eee;
   background: var(--fill-soft);
-  border-radius: 18px;
+  border-radius: var(--control-radius);
 }
 .composer-panel .model-field .model-select:focus-visible,
 .composer-panel .model-field .model-select[data-focus-visible="true"] {
@@ -28,10 +28,11 @@
 }
 .model-menu .model-options {
   color: #ddd;
+  --menu-row-hover-fill: var(--site-header-menu-hover-fill, var(--fill-soft));
+  --menu-row-radius: var(--control-radius);
 }
 .model-menu .model-options[aria-selected="true"] {
   --menu-row-fill: var(--control-selected-fill);
-  --menu-row-hover-fill: var(--control-selected-fill);
   color: #eee;
 }
 
@@ -43,8 +44,11 @@
 .composer-panel .home-ratio-pager {
   position: relative;
   margin-bottom: 0;
-  border-radius: 16px;
+  border-radius: var(--ratio-control-radius, 16px);
   background: var(--fill-soft);
+}
+.composer-panel .home-ratio-pager:has(.selection-pill) {
+  --ratio-control-radius: var(--control-radius);
 }
 .composer-panel .home-ratio-track {
   display: flex;
@@ -58,7 +62,7 @@
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
-  border-radius: 16px;
+  border-radius: inherit;
   background: transparent;
 }
 .composer-panel .home-ratio-track::-webkit-scrollbar {
@@ -72,10 +76,13 @@
   gap: 1px;
   padding: 3px 2px;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--ratio-control-radius, 12px);
   background: transparent;
   color: #aaa;
   scroll-snap-align: start;
+}
+.composer-panel .home-ratio-track .ratio-option-visual {
+  border-radius: inherit;
 }
 .composer-panel .home-ratio-track .toggle-button[data-selected="true"] {
   color: var(--control-selected-foreground);
@@ -280,7 +287,7 @@
   overflow-y: auto;
   resize: vertical;
   background: var(--field-background);
-  border-radius: 12px;
+  border-radius: var(--control-radius);
 }
 @media (max-width: 767px) {
   .composer-panel .prompt-field > label,

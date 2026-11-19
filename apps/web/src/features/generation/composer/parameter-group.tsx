@@ -1,13 +1,12 @@
 import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { SelectionHighlight } from "./selection-highlight";
+import { SelectionPill } from "../../../components/selection-pill";
 
-/** 创作参数里的一行单选，图片与视频工具共用；optionLabel 把选项值换成显示名称。 */
+/** 创作参数的单选按钮组，支持禁用选项和自定义显示名称。 */
 export function ParameterGroup({
   label,
   values,
   value,
   onChange,
-  selectionId,
   disabledValues = [],
   optionLabel = (option) => option,
 }: {
@@ -15,7 +14,6 @@ export function ParameterGroup({
   values: readonly string[];
   disabledValues?: readonly string[];
   value: string;
-  selectionId: string;
   onChange: (value: string) => void;
   optionLabel?: (option: string) => string;
 }) {
@@ -36,15 +34,12 @@ export function ParameterGroup({
       >
         {values.map((option) => (
           <ToggleButton key={option} id={option} isDisabled={disabledValues.includes(option)}>
-            {option === value && (
-              <SelectionHighlight
-                layoutId={`workspace-${selectionId}-selection`}
-                layoutDependency={value}
-              />
-            )}
             <span>{optionLabel(option)}</span>
           </ToggleButton>
         ))}
+        {values.includes(value) && !disabledValues.includes(value) && (
+          <SelectionPill value={value} />
+        )}
       </ToggleButtonGroup>
     </fieldset>
   );

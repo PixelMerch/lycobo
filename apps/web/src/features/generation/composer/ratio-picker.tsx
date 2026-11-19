@@ -9,6 +9,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { SelectionPill } from "../../../components/selection-pill";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { composerMessages } from "./composer-messages";
@@ -147,9 +148,11 @@ export function HomeRatioPicker({
   value,
   onChange,
   ratios = homeRatios,
+  stretchSelection = false,
 }: {
   value: string;
   ratios?: readonly string[];
+  stretchSelection?: boolean;
   onChange: (ratio: string) => void;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -228,7 +231,7 @@ export function HomeRatioPicker({
         {ratios.map((ratio) => (
           <ToggleButton key={ratio} id={ratio}>
             <span className="ratio-option-visual">
-              {ratio === value && (
+              {!stretchSelection && ratio === value && (
                 <SelectionHighlight layoutId="home-ratio-selection" layoutDependency={value} />
               )}
               <RatioPreview ratio={ratio} />
@@ -236,6 +239,7 @@ export function HomeRatioPicker({
             </span>
           </ToggleButton>
         ))}
+        {stretchSelection && <SelectionPill value={value} />}
       </ToggleButtonGroup>
       {edges.start && (
         <Button

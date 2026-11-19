@@ -21,7 +21,7 @@
     inset-inline: 0;
     z-index: -1;
     height: 36px;
-    border-radius: 12px;
+    border-radius: var(--menu-row-radius, 12px);
     background: var(--menu-row-fill, transparent);
     transform: translateY(-50%);
     pointer-events: none;
@@ -42,7 +42,7 @@
 /* 单选菜单统一使用顶部栏语言下拉的尺寸、文字和选中提示。 */
 :root .choice-menu:is(.dropdown__popover, .select__popover) {
   min-width: max(160px, var(--trigger-width, 0px));
-  padding: 6px;
+  padding: var(--choice-menu-inset);
   border: 0;
 }
 .choice-menu :is(.dropdown__menu, .list-box, .list-box-section) {

@@ -139,11 +139,12 @@
 }
 .unified-workspace .prompt-field .prompt-editor {
   --prompt-optimize-ink: var(--accent-soft-foreground);
-  border-radius: 12px;
+  border-radius: var(--control-radius);
+  outline: var(--field-border-width) solid var(--field-border);
+  outline-offset: calc(-1 * var(--field-border-width));
 }
 .unified-workspace .prompt-field .prompt-editor:has(> :is(textarea, .reference-rich-editor):focus) {
-  outline: 1px solid var(--accent);
-  outline-offset: -1px;
+  outline-color: var(--field-border-focus);
 }
 .unified-workspace .prompt-field :is(textarea, .reference-rich-editor) {
   cursor: text;
@@ -306,6 +307,11 @@
   filter: brightness(1.12);
 }
 @media (forced-colors: active) {
+  .unified-workspace
+    .prompt-field
+    .prompt-editor:has(> :is(textarea, .reference-rich-editor):focus) {
+    outline-color: Highlight;
+  }
   .prompt-optimize-label {
     background: none;
     color: ButtonText;

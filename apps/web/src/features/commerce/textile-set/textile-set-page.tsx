@@ -2,10 +2,10 @@ import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react"
 import { imageUnitCredits, publicImageResolutions } from "@lycoboai/contracts";
 import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { type RefObject, useId, useRef, useState } from "react";
+import { SelectionPill } from "../../../components/selection-pill";
 import { UiIcon } from "../../../components/ui-icon";
 import { GenerateButton } from "../../generation/composer/generate-button";
 import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
-import { SelectionHighlight } from "../../generation/composer/selection-highlight";
 import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
 
 import { TextileImageField } from "./textile-image-field";
@@ -59,7 +59,11 @@ export function TextileSetPage() {
               <h2>{t.aspectRatio}</h2>
               <span className="muted">{ratio}</span>
             </div>
-            <HomeRatioPicker value={ratio} onChange={(value) => update({ ratio: value })} />
+            <HomeRatioPicker
+              stretchSelection
+              value={ratio}
+              onChange={(value) => update({ ratio: value })}
+            />
           </section>
           <fieldset className="parameter-group">
             <legend>{t.resolution}</legend>
@@ -81,12 +85,10 @@ export function TextileSetPage() {
                   id={value}
                   isDisabled={!generation.resolutions.includes(value)}
                 >
-                  {value === resolution && (
-                    <SelectionHighlight layoutId="textile-resolution-selection" />
-                  )}
                   <span>{value}</span>
                 </ToggleButton>
               ))}
+              {generation.resolutions.includes(resolution) && <SelectionPill value={resolution} />}
             </ToggleButtonGroup>
           </fieldset>
         </div>
