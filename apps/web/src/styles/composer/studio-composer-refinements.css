@@ -47,7 +47,7 @@
   background: var(--fill-soft);
 }
 .composer-panel .home-ratio-pager:has(.selection-pill) {
-  --ratio-control-radius: var(--control-pill-radius);
+  --ratio-control-radius: var(--control-radius);
 }
 .composer-panel .home-ratio-track {
   display: flex;
