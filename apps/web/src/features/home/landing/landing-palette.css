@@ -76,6 +76,10 @@ body,
   color: #f2f1ee;
 }
 
+.oah-features-switch-icon img {
+  filter: invert(1);
+}
+
 .oah-features-switch.is-active,
 .oah-studio-feature-item [data-oah-studio-feature-trigger][aria-selected="true"] {
   background: var(--studio-selected-fill);
