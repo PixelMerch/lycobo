@@ -17,7 +17,7 @@ export function initializeLandingBrandScroll() {
         type: "lycobo:brand",
         x: rect.x,
         y: rect.y,
-        width: window.innerWidth < 768 ? 121.8 : 155.4,
+        width: wordmarks[0]?.getBoundingClientRect().width ?? rect.width,
         height: rect.height,
         progress,
         theme:
@@ -33,8 +33,6 @@ export function initializeLandingBrandScroll() {
     const progress = Math.max(0, Math.min(1, window.scrollY / scrollDistance));
     if (slot) {
       slot.style.opacity = riveReady && !reducedMotion.matches ? "0" : "1";
-      // 使用贴合字标的固定占位，滚动只改变图形，菜单始终保持原位。
-      slot.style.width = "112px";
     }
     if (navigation) navigation.style.marginLeft = "16px";
     report(progress);

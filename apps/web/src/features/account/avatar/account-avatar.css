@@ -3,8 +3,8 @@
  * 颜色只在这里决定；没选过时组件给出 lime（品牌青柠到薄荷）。
  */
 [data-avatar-preset] {
-  --avatar-from: #a8ff00;
-  --avatar-to: #54e6a5;
+  --avatar-from: var(--brand);
+  --avatar-to: var(--brand-light);
   --avatar-ink: #142000;
 }
 [data-avatar-preset="mint"] {

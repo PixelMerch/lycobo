@@ -175,14 +175,14 @@
   line-height: var(--leading-base);
 }
 .prompt-toggle {
-  color: #a8ff00;
+  color: var(--brand);
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }
 .prompt-toggle:hover,
 .prompt-toggle[data-hovered="true"],
 .prompt-toggle[data-focus-visible="true"] {
-  color: #a8ff00;
+  color: var(--brand);
 }
 .copy-prompt.button {
   height: 28px;
@@ -287,12 +287,12 @@
   border-radius: inherit;
   background: conic-gradient(
     from var(--generation-angle),
-    #a8ff0026 0deg,
-    #a8ff0026 235deg,
-    #a8ff0080 280deg,
-    #a8ff00 325deg,
-    #54e6a5 345deg,
-    #a8ff0026 360deg
+    color-mix(in srgb, var(--brand) 15%, transparent) 0deg,
+    color-mix(in srgb, var(--brand) 15%, transparent) 235deg,
+    color-mix(in srgb, var(--brand) 50%, transparent) 280deg,
+    var(--brand) 325deg,
+    var(--brand-light) 345deg,
+    color-mix(in srgb, var(--brand) 15%, transparent) 360deg
   );
   mask:
     linear-gradient(#fff 0 0) content-box,

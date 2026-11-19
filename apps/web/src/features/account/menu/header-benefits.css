@@ -1,4 +1,4 @@
-/* 顶部栏积分胶囊按参考站：与语言胶囊同高、#FFFFFF14 底、左右 12px、gap 8px，悬停或展开时换成青柠 15% 底。 */
+/* 顶栏积分胶囊与语言入口对齐，悬停或展开时使用半透明主题底色。 */
 .header-credits {
   display: inline-flex;
   flex: none;
@@ -21,7 +21,7 @@
   transition: background-color 200ms ease;
 }
 .header-credits:is(:hover, [data-hovered="true"], [aria-expanded="true"]) {
-  background: rgb(168 255 0 / 15%);
+  background: color-mix(in srgb, var(--brand) 15%, transparent);
 }
 .header-credits[data-focus-visible="true"] {
   outline: 1px solid #ffffff66;

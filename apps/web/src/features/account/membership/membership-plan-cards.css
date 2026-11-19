@@ -28,16 +28,16 @@
   }
   .membership-plan.card:hover {
     transform: translateY(-6px);
-    border-color: #a8ff00a6;
+    border-color: color-mix(in srgb, var(--brand) 65%, transparent);
     box-shadow:
-      0 0 0 1px #a8ff00a6,
-      0 24px 48px -24px #a8ff0059;
+      0 0 0 1px color-mix(in srgb, var(--brand) 65%, transparent),
+      0 24px 48px -24px color-mix(in srgb, var(--brand) 35%, transparent);
   }
   .membership-plan[data-ribbon="best"].card:hover {
     border-color: var(--accent);
     box-shadow:
       0 0 0 1px var(--accent),
-      0 24px 48px -20px #a8ff0073;
+      0 24px 48px -20px color-mix(in srgb, var(--brand) 45%, transparent);
   }
 }
 .membership-plan[data-ribbon="best"].card {
@@ -197,7 +197,7 @@
   .membership-plan[data-ribbon="best"] .membership-plan-action.button:hover {
     background: var(--accent);
     filter: brightness(1.04);
-    box-shadow: 0 8px 24px -8px #a8ff00b3;
+    box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--brand) 70%, transparent);
   }
 }
 .membership-plan-gift {

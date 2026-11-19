@@ -1,4 +1,4 @@
-/* 登录页版式：全屏青柠丝绸背景，登录卡片在页面正中，不放其他文字。 */
+/* 登录页版式：全屏紫色丝绸背景，登录卡片居中。 */
 .login-page {
   position: relative;
   isolation: isolate;
@@ -7,17 +7,23 @@
   min-height: 100dvh;
   padding: 24px;
   overflow: hidden;
-  background: #0d100c;
+  background: var(--background);
   color: var(--foreground);
 }
-/* 丝绸铺在固定背景层上；不支持 WebGL2 时只剩这层青柠柔光渐变。 */
+/* 不支持 WebGL2 时，固定背景层使用品牌色柔光渐变。 */
 .login-backdrop {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
-  background: radial-gradient(60% 70% at 50% 40%, #a8ff0026 0%, transparent 70%), #0d100c;
+  background:
+    radial-gradient(
+      60% 70% at 50% 40%,
+      color-mix(in srgb, var(--brand) 15%, transparent) 0%,
+      transparent 70%
+    ),
+    var(--background);
 }
 /* 卡片四周压暗一圈，让居中的卡片更突出。 */
 .login-backdrop::after {
@@ -27,8 +33,8 @@
   content: "";
   background: radial-gradient(
     70% 70% at 50% 50%,
-    rgb(13 16 12 / 20%) 30%,
-    rgb(13 16 12 / 60%) 100%
+    color-mix(in srgb, var(--background) 20%, transparent) 30%,
+    color-mix(in srgb, var(--background) 60%, transparent) 100%
   );
 }
 @media (max-width: 600px) {

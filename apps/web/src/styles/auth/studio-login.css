@@ -191,7 +191,7 @@
   color: #ffffffb3;
 }
 .login-fields .login-input-group:focus-within {
-  border-color: #a8ff0080;
+  border-color: color-mix(in srgb, var(--brand) 50%, transparent);
 }
 .login-fields .login-input-group .input-group__input {
   min-width: 0;

@@ -276,22 +276,22 @@
   border-color: transparent;
   background:
     linear-gradient(var(--surface), var(--surface)) padding-box,
-    linear-gradient(120deg, var(--workspace-brand), var(--workspace-brand-light)) border-box;
+    linear-gradient(120deg, var(--brand), var(--brand-light)) border-box;
 }
 .workspace[data-tool="create"] .history-rail .history-thumbnail.button:focus-visible {
-  outline-color: var(--workspace-brand);
+  outline-color: var(--brand-light);
 }
 .workspace[data-tool="create"] .infinite-load .spinner {
   color: var(--foreground);
 }
 .workspace[data-tool="create"] .history-batch-toggle.button {
-  color: var(--workspace-brand);
+  color: var(--brand-light);
   background: var(--surface-secondary);
 }
 .workspace[data-tool="create"] .history-batch-toggle.button:is(:hover, [data-hovered="true"]) {
-  color: var(--workspace-brand);
+  color: var(--brand-light);
   background: var(--surface-tertiary);
 }
 .workspace[data-tool="create"] .prompt-toggle.button {
-  color: var(--workspace-brand);
+  color: var(--brand-light);
 }

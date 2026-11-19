@@ -53,8 +53,16 @@
   overscroll-behavior: contain;
   padding: 64px 40px 64px;
   background:
-    radial-gradient(40% 360px at 0 0, #a8ff002e, transparent),
-    radial-gradient(40% 360px at 100% 0, #54e6a52e, transparent);
+    radial-gradient(
+      40% 360px at 0 0,
+      color-mix(in srgb, var(--brand) 18%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      40% 360px at 100% 0,
+      color-mix(in srgb, var(--brand-light) 18%, transparent),
+      transparent
+    );
   background-attachment: local;
   background-repeat: no-repeat;
   scrollbar-width: none;

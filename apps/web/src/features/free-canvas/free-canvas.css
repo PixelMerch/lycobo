@@ -11,7 +11,7 @@
   --fc-text: #f2f2f2;
   --fc-muted: #a8a8a8;
   --fc-quiet: #808080;
-  --fc-accent: #a8ff00;
+  --fc-accent: var(--brand);
   position: relative;
   height: calc(100dvh - var(--header-height, 64px));
   overflow: hidden;

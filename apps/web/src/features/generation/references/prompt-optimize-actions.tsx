@@ -105,7 +105,10 @@ export function PromptOptimizeActions({
                 <defs>
                   <linearGradient id={gradientId} x2="100%" y2="55%">
                     <stop stopColor="var(--prompt-optimize-ink, var(--accent))" />
-                    <stop offset="100%" stopColor="var(--prompt-optimize-ink, #54e6a5)" />
+                    <stop
+                      offset="100%"
+                      stopColor="var(--prompt-optimize-ink, var(--brand-light))"
+                    />
                   </linearGradient>
                 </defs>
               </UiIcon>

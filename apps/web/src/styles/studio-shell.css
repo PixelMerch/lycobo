@@ -130,7 +130,7 @@
   background: rgb(30 35 29 / 38%);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
-  box-shadow: 0 3.45px 29.785px rgb(168 255 0 / 3%);
+  box-shadow: 0 3.45px 29.785px color-mix(in srgb, var(--brand) 3%, transparent);
 }
 /* 工作区：顶部栏始终是页面底色的实色，不随滚动收窄或变磨砂，下方吸顶的参数栏和工具栏位置固定。 */
 .topbar[data-solid="true"]::before {

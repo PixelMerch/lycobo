@@ -180,11 +180,11 @@
   border-radius: 50%;
   background: var(--fc-accent);
   background-image: none;
-  color: #142000;
-  --button-bg: #a8ff00;
+  color: var(--accent-foreground);
+  --button-bg: var(--brand);
   --button-bg-hover: #b8ff2a;
   --button-bg-pressed: #b8ff2a;
-  --button-fg: #142000;
+  --button-fg: var(--accent-foreground);
 }
 
 .fc-send.button:is(:disabled, [data-disabled="true"]) {
@@ -306,11 +306,11 @@
   border-radius: 999px;
   background: var(--fc-accent);
   background-image: none;
-  color: #142000;
-  --button-bg: #a8ff00;
+  color: var(--accent-foreground);
+  --button-bg: var(--brand);
   --button-bg-hover: #b8ff2a;
   --button-bg-pressed: #b8ff2a;
-  --button-fg: #142000;
+  --button-fg: var(--accent-foreground);
 }
 
 .fc-tool-divider {

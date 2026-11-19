@@ -46,7 +46,11 @@
 }
 .credit-pack[data-selected] {
   border-color: var(--accent);
-  background: linear-gradient(160deg, #a8ff001f 0%, var(--fill-faint) 72%);
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--brand) 12%, transparent) 0%,
+    var(--fill-faint) 72%
+  );
 }
 .credit-pack-value {
   display: flex;
@@ -115,9 +119,9 @@
   gap: 4px;
   margin-top: var(--space-3);
   padding: 14px;
-  border: 1px solid #a8ff0026;
+  border: 1px solid color-mix(in srgb, var(--brand) 15%, transparent);
   border-radius: 16px;
-  background: #a8ff000d;
+  background: color-mix(in srgb, var(--brand) 5%, transparent);
 }
 .credit-order-after > span,
 .credit-order-after small {
