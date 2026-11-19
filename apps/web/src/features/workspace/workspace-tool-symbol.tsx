@@ -34,6 +34,9 @@ export function WorkspaceComposerTitle() {
   const heroRef = useComposerHeroScroll(tool.id);
   const t = useMessages(workspaceToolMessages);
   const text = t.tools[tool.id];
+  const workflows = { replica: t.styleMatchExample, variation: t.imageSetExample };
+  const workflow =
+    tool.id === "replica" || tool.id === "variation" ? workflows[tool.id] : undefined;
   const title = (
     <div ref={heroRef} className="workspace-composer-hero-copy">
       <h2 className="workspace-composer-title">{text.name}</h2>
@@ -67,7 +70,19 @@ export function WorkspaceComposerTitle() {
             ))}
           </div>
         ) : (
-          <img className="workspace-composer-hero-image" src={tool.hero} alt="" decoding="async" />
+          <img
+            className="workspace-composer-hero-image"
+            src={tool.hero}
+            alt={workflow?.alt ?? ""}
+            decoding="async"
+          />
+        )}
+        {workflow && (
+          <div className="workspace-composer-workflow-labels" aria-hidden="true">
+            {workflow.captions.map((label) => (
+              <span key={label}>{label}</span>
+            ))}
+          </div>
         )}
         {title}
       </Tooltip.Trigger>

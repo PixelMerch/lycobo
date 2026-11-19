@@ -17,6 +17,15 @@
   border-radius: 12px;
   background: #202020;
 }
+.workspace-tool-preview-media:has(.workspace-tool-preview-workflow) {
+  aspect-ratio: 16 / 7;
+}
+.workspace-tool-preview-workflow {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .workspace-tool-preview-results {
   position: absolute;
   inset: 0;

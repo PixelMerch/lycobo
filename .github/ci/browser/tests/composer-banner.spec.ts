@@ -73,7 +73,7 @@ for (const path of ["/commerce/create", "/commerce/textile-set", "/commerce/smar
     const start = await scroller.evaluate(
       (element) => element.getBoundingClientRect().top + window.scrollY,
     );
-    const collapsedTop = start + (isMain ? 128 : 100) - 60;
+    const collapsedTop = start + (path === "/commerce/textile-set" ? 100 : 128) - 60;
     await page.evaluate((top) => window.scrollTo({ top, behavior: "instant" }), collapsedTop);
     await expect(hero).toHaveAttribute("data-collapsed", "true");
     expect(await hero.evaluate((element) => element.getBoundingClientRect().bottom)).toBeCloseTo(

@@ -7,6 +7,14 @@ export const workspaceToolMessages = defineMessages({
     sampleBadge: "效果示例",
     usageGuide: (name: string) => `${name}使用说明`,
     mainImageExampleAlt: "运动鞋广告示例，橙色跑鞋配 MOVE BOLD 大字",
+    imageSetExample: {
+      alt: "同一个紫色背包的商品主图、背负场景和拉链特写",
+      captions: ["主图", "场景图", "细节图"],
+    },
+    styleMatchExample: {
+      alt: "以蓝黄色音箱广告为风格参考，将橙色耳机原图做成同风格广告",
+      captions: ["风格参考", "我的商品", "成图"],
+    },
     workspaceViews: "工作区视图",
     createView: "创作",
     historyView: "历史记录",
@@ -63,6 +71,14 @@ export const workspaceToolMessages = defineMessages({
     sampleBadge: "Sample results",
     usageGuide: (name) => `How to use ${name}`,
     mainImageExampleAlt: "Running shoe campaign with an orange sneaker and the headline MOVE BOLD",
+    imageSetExample: {
+      alt: "Catalog photo, lifestyle photo and zipper close-up of the same purple backpack",
+      captions: ["Main image", "Lifestyle", "Detail"],
+    },
+    styleMatchExample: {
+      alt: "Orange headphones styled to match the blue-and-yellow lighting and composition of a speaker ad",
+      captions: ["Style reference", "My product", "Result"],
+    },
     workspaceViews: "Workspace views",
     createView: "Create",
     historyView: "History",

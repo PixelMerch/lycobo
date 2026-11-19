@@ -17,12 +17,12 @@ export const workspaceToolCategories = [
         heading: "listingImages",
         entries: [
           { tool: "create", preview: "/landing/comforter-studio.webp" },
-          { tool: "variation", preview: "/studio/tool-heroes/variation.webp" },
+          { tool: "variation", preview: "/studio/tool-heroes/image-set-backpack.webp" },
         ],
       },
       {
         heading: "photography",
-        entries: [{ tool: "replica", preview: "/studio/samples/sunlit-handbag.webp" }],
+        entries: [{ tool: "replica", preview: "/studio/tool-heroes/style-match-headphones.webp" }],
       },
     ],
   },

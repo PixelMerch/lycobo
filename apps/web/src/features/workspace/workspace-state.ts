@@ -37,7 +37,7 @@ export const workspaceTools = [
   {
     id: "variation",
     path: dashboardToolPaths.variation,
-    hero: "/studio/tool-heroes/variation.webp",
+    hero: "/studio/tool-heroes/image-set-backpack.webp",
     examples: [
       "/studio/bedroom-thumb.webp",
       "/studio/lavender-thumb.webp",
@@ -47,7 +47,7 @@ export const workspaceTools = [
   {
     id: "replica",
     path: dashboardToolPaths.replica,
-    hero: "/studio/tool-heroes/create.webp",
+    hero: "/studio/tool-heroes/style-match-headphones.webp",
     examples: [
       "/studio/textile-views/front.webp",
       "/studio/textile-views/pillow.webp",
