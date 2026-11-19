@@ -80,9 +80,6 @@
 .header-workspace.link:is(:focus-visible, [data-focus-visible="true"]) {
   outline: 1px solid currentColor;
 }
-.landing-account-controls .header-credits .credit-coin {
-  color: currentColor;
-}
 .landing-account-controls .header-credits-divider {
   background: currentColor;
   opacity: 0.2;

@@ -1,6 +1,5 @@
 import { Dropdown, Header } from "@heroui/react";
-import { IconCrown, IconFileInvoice } from "@tabler/icons-react";
-import { CreditCoin } from "../../../components/credit-coin";
+import { IconCrown, IconFileInvoice, IconSparkle } from "@tabler/icons-react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
@@ -49,7 +48,9 @@ export function HeaderBenefits({
         }}
         onHoverEnd={menu.closeSoon}
       >
-        <CreditCoin />
+        <span className="header-credit-icon" aria-hidden="true">
+          <UiIcon icon={IconSparkle} size="small" />
+        </span>
         <span className="header-credits-value">{balance}</span>
         <span className="header-credits-divider" aria-hidden="true" />
         <span className="header-credits-plan">{plan}</span>
