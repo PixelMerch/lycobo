@@ -20,7 +20,6 @@
 .composer-panel .model-field .model-select {
   color: #eee;
   background: var(--fill-soft);
-  border-radius: var(--control-radius);
 }
 .composer-panel .model-field .model-select:focus-visible,
 .composer-panel .model-field .model-select[data-focus-visible="true"] {
