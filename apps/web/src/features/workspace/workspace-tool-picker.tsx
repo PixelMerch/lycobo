@@ -1,19 +1,19 @@
 import { Button, Dropdown, Header, Tooltip } from "@heroui/react";
 import {
   IconBrush,
+  IconChevronDown,
   IconChevronRight,
   IconFolder,
   IconPhoto,
   IconShirt,
   IconSparkles,
 } from "@tabler/icons-react";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { shellMessages } from "../../app/shell-messages";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
 import { useAppLocation, useAppNavigate } from "../../i18n/use-localized-navigation";
 import { freeCanvasPath } from "../../lib/dashboard-paths";
-import { useHoverMenu } from "../../lib/use-hover-menu";
 import { useOpenAssetLibrary } from "../assets/asset-library-store";
 import { inspirationLibraryPath } from "../inspiration/inspiration-path";
 import { workspaceRailLabelStyle } from "./workspace-rail-motion";
@@ -32,7 +32,7 @@ function subscribeToDockLayout(change: () => void) {
   return () => query.removeEventListener("change", change);
 }
 
-/** 工作区沿用首页的工具分类，桌面端悬停后向右展开。 */
+/** 工作区沿用首页的工具分类，通过点击或键盘展开。 */
 export function WorkspaceToolPicker() {
   const navigate = useAppNavigate();
   const t = useMessages(workspaceToolMessages);
@@ -59,22 +59,15 @@ export function WorkspaceToolPicker() {
   ];
 
   return (
-    <nav
-      id="workspace-tool-navigation"
-      className="workspace-tool-bar"
-      aria-label={t.toolBar}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") setOpenCategory(null);
-      }}
-    >
+    <nav id="workspace-tool-navigation" className="workspace-tool-bar" aria-label={t.toolBar}>
       {workspaceToolCategories.map((category, index) => (
         <WorkspaceCategoryMenu
           key={category.label}
           category={category}
-          active={openCategory === category.label}
+          isOpen={openCategory === category.label}
           side={wideViewport}
           index={index}
-          activate={() => setOpenCategory(category.label)}
+          setOpenCategory={setOpenCategory}
         />
       ))}
       {shortcuts.map(({ id, icon, label, action }, index) => (
@@ -99,24 +92,25 @@ export function WorkspaceToolPicker() {
   );
 }
 
-/** 桌面悬停不抢焦点，选择真实目标后才切换工作区。 */
+/** 使用同一个菜单入口处理指针和键盘操作，选择工具后切换工作区。 */
 function WorkspaceCategoryMenu({
   category,
-  active,
+  isOpen,
   side,
   index,
-  activate,
+  setOpenCategory,
 }: {
   category: WorkspaceToolCategory;
-  active: boolean;
+  isOpen: boolean;
   side: boolean;
   index: number;
-  activate: () => void;
+  setOpenCategory: React.Dispatch<React.SetStateAction<WorkspaceToolCategory["label"] | null>>;
 }) {
   const { pathname } = useAppLocation();
   const navigate = useAppNavigate();
   const t = useMessages(workspaceToolMessages);
-  const menu = useHoverMenu();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLElement>(null);
   const label = t.navigation[category.label];
   const entries = category.sections.flatMap((section) => section.entries);
   const currentTool = visibleWorkspaceTools.find(
@@ -124,10 +118,22 @@ function WorkspaceCategoryMenu({
   );
   const isCurrentCategory = entries.some((entry) => entry.tool === currentTool?.id);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    // 非模态菜单允许继续操作工作台，补上点按空白处收起。
+    function dismissOutside(event: PointerEvent) {
+      const path = event.composedPath();
+      if (triggerRef.current && path.includes(triggerRef.current)) return;
+      if (popoverRef.current && path.includes(popoverRef.current)) return;
+      setOpenCategory((current) => (current === category.label ? null : current));
+    }
+    document.addEventListener("pointerdown", dismissOutside, true);
+    return () => document.removeEventListener("pointerdown", dismissOutside, true);
+  }, [category.label, isOpen, setOpenCategory]);
+
   function selectEntry(key: string | number) {
     const tool = visibleWorkspaceTools.find((item) => item.id === key);
     if (!tool) return;
-    menu.close();
     if (tool.id === currentTool?.id) return;
     shareProductReference(pathname, tool.path);
     void navigate(tool.path);
@@ -135,45 +141,44 @@ function WorkspaceCategoryMenu({
 
   return (
     <Dropdown
-      isOpen={active && menu.isOpen}
-      onOpenChange={(open) => {
-        menu.onOpenChange(open);
-        if (open) activate();
-      }}
+      isOpen={isOpen}
+      onOpenChange={(nextOpen) =>
+        setOpenCategory((current) => {
+          if (nextOpen) return category.label;
+          return current === category.label ? null : current;
+        })
+      }
     >
       <Dropdown.Trigger
-        ref={menu.triggerRef}
+        ref={triggerRef}
         className="workspace-tool-shortcut workspace-tool-group"
         style={workspaceRailLabelStyle(index)}
         aria-label={label}
         data-current={isCurrentCategory || undefined}
-        onHoverStart={(event) => {
-          if (!side || event.pointerType !== "mouse") return;
-          menu.openOnHover();
-          activate();
+        onPointerDownCapture={(event) => {
+          if (!isOpen || event.button !== 0 || event.pointerType === "touch") return;
+          // 菜单默认会在鼠标或触控笔按下时打开，重复点击时先收起。
+          event.preventDefault();
+          event.stopPropagation();
+          setOpenCategory(null);
         }}
-        onHoverEnd={menu.closeSoon}
       >
         {isCurrentCategory && <span className="workspace-tool-rail-ripple" aria-hidden="true" />}
         <UiIcon icon={categoryIcons[category.label]} size="navigation" />
         <span className="workspace-tool-label">{label}</span>
-        <UiIcon icon={IconChevronRight} size="small" className="workspace-tool-chevron" />
+        <span className="workspace-tool-chevron">
+          <UiIcon icon={side ? IconChevronRight : IconChevronDown} size="small" />
+        </span>
       </Dropdown.Trigger>
       <Dropdown.Popover
-        ref={menu.popoverRef}
+        ref={popoverRef}
         className="workspace-tool-submenu"
         data-single-section={category.sections.length === 1 || undefined}
         placement={side ? "right top" : "bottom start"}
         offset={8}
         isNonModal
-        onPointerEnter={menu.cancelClose}
-        onPointerLeave={menu.closeSoon}
       >
-        <Dropdown.Menu
-          aria-label={label}
-          onAction={selectEntry}
-          {...(menu.openedByHover ? { autoFocus: false } : {})}
-        >
+        <Dropdown.Menu aria-label={label} onAction={selectEntry}>
           {category.sections.map((section) => (
             <Dropdown.Section key={section.heading} aria-label={t.navigation[section.heading]}>
               <Header className="workspace-tool-section-label">

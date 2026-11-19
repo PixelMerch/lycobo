@@ -6,22 +6,26 @@ const png = readFileSync(
   new URL("../../../../apps/web/public/studio/textile-views/front.webp", import.meta.url),
 );
 
-test("tool menu hover stays quiet while the main image banner and drafts survive switching", async ({
-  page,
-}) => {
+test("tool menu opens on click and drafts survive switching", async ({ page }) => {
   await mockImageApi(page);
   await page.goto("/zh-CN/commerce/create");
   const prompt = page.locator("textarea").first();
   await prompt.fill("保留当前商品草稿");
   const rail = page.getByRole("navigation", { name: "电商创作工具", exact: true });
   await expect(rail.getByRole("button", { name: "商品视频" })).toHaveCount(0);
-  // 先在工具外移动鼠标，模拟用户从输入模式切回指针模式。
-  await page.mouse.move(600, 80);
-  await rail.getByRole("button", { name: "商品图片", exact: true }).hover();
+  const trigger = rail.getByRole("button", { name: "商品图片", exact: true });
+  const menu = page.getByRole("menu", { name: "商品图片", exact: true });
+  const arrow = trigger.locator(".workspace-tool-chevron .ui-icon");
   const preview = page.locator(".workspace-tool-preview-card");
-  // 覆盖原来的300ms延迟，确认菜单不会稍后再弹出示例。
-  await page.waitForTimeout(450);
-  await expect(preview).toHaveCount(0);
+  await trigger.hover();
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(menu).toHaveCount(0);
+  await trigger.click();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await expect(menu).toBeVisible();
+  await expect(arrow).toHaveCSS("transform", "matrix(-1, 0, 0, -1, 0, 0)");
+  await page.mouse.move(0, 0);
+  await expect(menu).toBeVisible();
   const banner = page.locator(".workspace-composer-hero");
   await expect(banner.locator("img")).toHaveCount(1);
   const bannerImage = banner.getByRole("img", { name: /橙色跑鞋/ });
@@ -30,7 +34,10 @@ test("tool menu hover stays quiet while the main image banner and drafts survive
   await expect(thumbnail).toHaveAttribute("src", (await bannerImage.getAttribute("src")) ?? "");
   await expect(thumbnail).toHaveCSS("width", "72px");
   await expect(thumbnail).toHaveCSS("height", "50px");
-  await page.keyboard.press("Escape");
+  await trigger.click();
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(menu).toHaveCount(0);
+  await expect(arrow).toHaveCSS("transform", "none");
   await banner.hover();
   await expect(preview).toHaveCount(0);
   await expect(page).toHaveURL(/\/commerce\/create$/);
@@ -130,11 +137,17 @@ test("reduced-motion tool menu stays available without a duplicate banner previe
     .locator(".workspace-tool-bar")
     .getByRole("button", { name: "商品图片", exact: true });
   await expect(button).toHaveAttribute("data-current", "true");
-  await button.hover();
+  await button.focus();
+  await page.keyboard.press("Enter");
   await expect(page.locator(".workspace-tool-submenu")).toBeVisible();
   await expect(button).toHaveCSS("height", "50px");
+  await expect(button.locator(".workspace-tool-chevron .ui-icon")).toHaveCSS(
+    "transition-duration",
+    "0s",
+  );
   await page.keyboard.press("Escape");
-  await button.focus();
+  await expect(button).toBeFocused();
+  await expect(button).toHaveAttribute("aria-expanded", "false");
   await expect(page.locator(".workspace-tool-preview-card")).toHaveCount(0);
   const banner = page.locator(".workspace-composer-hero");
   await expect(banner.getByRole("heading", { name: "复制爆款", exact: true })).toBeVisible();
