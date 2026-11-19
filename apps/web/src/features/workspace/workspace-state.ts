@@ -10,7 +10,7 @@ export const workspaceTools = [
   {
     id: "create",
     path: dashboardToolPaths.create,
-    hero: "/studio/tool-heroes/create.webp",
+    hero: "/studio/tool-heroes/creation-gallery.webp",
     examples: [
       "/studio/models/image-2-1.webp",
       "/studio/models/image-2-3.webp",

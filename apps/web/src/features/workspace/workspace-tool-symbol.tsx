@@ -27,7 +27,7 @@ export function WorkspaceToolSymbol({ tool }: { tool: ToolId }) {
   );
 }
 
-/** 参数面板显示工具用途，主图制作以一张创意场景图演示生成效果。 */
+/** 参数面板以标题和示例图说明当前工具的用途。 */
 export function WorkspaceComposerTitle() {
   const { pathname } = useAppLocation();
   const tool = toolForPath(pathname);
@@ -37,24 +37,19 @@ export function WorkspaceComposerTitle() {
   const title = (
     <div ref={heroRef} className="workspace-composer-hero-copy">
       <h2 className="workspace-composer-title">{text.name}</h2>
-      <p>{tool.id === "create" ? t.mainImageDescription : text.summary}</p>
+      {tool.id !== "create" && <p>{text.summary}</p>}
     </div>
   );
   if (tool.id === "create") {
     return (
-      <header
-        className="workspace-composer-hero workspace-composer-hero--feature"
-        data-tool={tool.id}
-      >
-        {title}
+      <header className="workspace-composer-hero" data-tool={tool.id}>
         <img
-          className="workspace-composer-feature-image"
-          src="/studio/models/banana-2.webp"
-          width={480}
-          height={360}
+          className="workspace-composer-hero-image"
+          src={tool.hero}
           alt={t.mainImageExampleAlt}
           decoding="async"
         />
+        {title}
       </header>
     );
   }

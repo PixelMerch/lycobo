@@ -27,7 +27,6 @@ import { qualityLabel } from "./quality-label";
 import { qualityMessages } from "./quality-messages";
 import { hasPromptDescription } from "./references/prompt-description";
 import { ReferencePicker } from "./references/reference-picker";
-import { submissionReferenceRoles } from "./references/reference-roles";
 import { referencesMessages } from "./references/references-messages";
 import {
   type Draft,
@@ -82,7 +81,6 @@ function Workspace({ model }: { model: ModelId }) {
         <WorkspaceComposerTitle />
         <ReferencePicker
           compact
-          withRoles
           label={referenceText.addReference}
           addLabel={referenceText.addReference}
           model={model}
@@ -187,8 +185,7 @@ function useWorkspaceSubmission(
     setSubmissionPhase("submitting");
     revealNewestHistory();
     generate.mutate(
-      // 标了原图或风格时一并提交角色，服务端据此告诉模型每张参考图的用途。
-      { model, draft, referenceRoles: submissionReferenceRoles(draft.references) },
+      { model, draft },
       {
         onSuccess: () => {
           const cleared = !pending && useStudioStore.getState().drafts[model] === draft;

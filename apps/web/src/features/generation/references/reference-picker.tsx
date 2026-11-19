@@ -56,7 +56,7 @@ type PickerProps = {
   isRequired?: boolean;
   showCount?: boolean;
   disabled?: boolean;
-  /** 在缩略图上显示参考图角色（商品／原图／风格）；只用于主图制作与套图计划。 */
+  /** 在套图计划里按方案选择原图，或标记整套共用的商品图与风格图。 */
   withRoles?: boolean;
   references: Draft["references"];
 } & (

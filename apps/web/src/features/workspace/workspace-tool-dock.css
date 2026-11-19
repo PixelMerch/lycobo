@@ -135,33 +135,20 @@
   }
 }
 
-.workspace-composer-hero--feature {
-  --feature-image-width: 42%;
+.workspace-composer-hero[data-tool="create"]::after {
+  /* 标题所在的留白保持对比度，右侧作品保留原色。 */
+  background: linear-gradient(90deg, rgb(15 28 28 / 25%), transparent 62%);
 }
-.workspace-composer-hero--feature::after {
-  inset: 8px 12px;
-  border-radius: var(--field-radius);
-  background: var(--fill-faint);
+.workspace-composer-hero[data-tool="create"] .workspace-composer-hero-image {
+  object-position: center bottom;
 }
-.workspace-composer-feature-image {
-  position: absolute;
-  inset-block: 20px;
-  inset-inline-end: 24px;
-  width: var(--feature-image-width);
-  height: calc(var(--composer-hero-height) - 40px);
-  border-radius: var(--field-radius);
-  object-fit: cover;
-  opacity: calc(1 - var(--hero-collapse));
+.workspace-composer-hero[data-tool="create"] .workspace-composer-hero-copy {
+  grid-template-rows: auto;
 }
-.workspace-composer-hero--feature .workspace-composer-hero-copy {
-  inset-inline-start: 24px;
-  inset-inline-end: calc(var(--feature-image-width) + 36px);
-  bottom: calc(32px - 22px * var(--hero-collapse));
-  grid-template-rows: 28px calc(36px * (1 - var(--hero-collapse)));
-}
-.workspace-composer-hero--feature p {
-  color: var(--muted);
-  text-shadow: none;
+.workspace-composer-hero[data-tool="create"] .workspace-composer-title {
+  color: var(--foreground);
+  font-size: calc(var(--text-xl) + 2px * (1 - var(--hero-collapse)));
+  line-height: var(--leading-xl);
 }
 
 /* 一级工具类别和直接入口共用一组尺寸与悬停样式。 */

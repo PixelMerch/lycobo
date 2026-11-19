@@ -6,7 +6,7 @@ const png = readFileSync(
   new URL("../../../../apps/web/public/studio/textile-views/front.webp", import.meta.url),
 );
 
-test("tool menu hover stays quiet while the banner retains examples and drafts survive switching", async ({
+test("tool menu hover stays quiet while the main image banner and drafts survive switching", async ({
   page,
 }) => {
   await mockImageApi(page);
@@ -22,9 +22,11 @@ test("tool menu hover stays quiet while the banner retains examples and drafts s
   // 覆盖原来的300ms延迟，确认菜单不会稍后再弹出示例。
   await page.waitForTimeout(450);
   await expect(preview).toHaveCount(0);
-  await page.locator(".workspace-composer-hero").hover();
-  await expect(preview).toBeVisible();
-  await expect(preview).toContainText("效果示例");
+  const banner = page.locator(".workspace-composer-hero");
+  await expect(banner.locator("img")).toHaveCount(1);
+  await expect(banner.getByRole("img", { name: /层叠作品卡片/ })).toBeVisible();
+  await banner.hover();
+  await expect(preview).toHaveCount(0);
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(prompt).toHaveValue("保留当前商品草稿");
   await page.keyboard.press("Escape");
@@ -115,7 +117,7 @@ test("style matching requires both slots and submits their roles without a paid 
 test("reduced-motion keyboard preview is static and home hides video", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await mockImageApi(page);
-  await page.goto("/zh-CN/commerce/create");
+  await page.goto("/zh-CN/commerce/replica");
   const button = page
     .locator(".workspace-tool-bar")
     .getByRole("button", { name: "商品图片", exact: true });
