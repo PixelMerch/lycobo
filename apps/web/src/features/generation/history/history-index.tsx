@@ -166,7 +166,7 @@ function HistoryIndexEntry({
     <div className="history-rail-item">
       <Button
         variant="tertiary"
-        className={`history-thumbnail${failed ? " history-failure-thumbnail" : ""}${generating ? " generation-pending" : ""}`}
+        className={`history-thumbnail${failed ? " history-failure-thumbnail" : ""}`}
         aria-label={t.viewTask(failed, job.id)}
         aria-current={selectedId === job.id ? "true" : "false"}
         onPress={() => onSelect(job)}

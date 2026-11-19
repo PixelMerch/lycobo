@@ -271,9 +271,13 @@
   inherits: false;
 }
 .generation-pending {
+  --pending-border-color: var(--brand);
+  --pending-border-highlight: var(--brand-light);
   position: relative;
 }
 .generation-placeholder.generation-pending {
+  --pending-border-color: var(--studio-accent);
+  --pending-border-highlight: #59e6a2;
   aspect-ratio: 1;
   min-height: 0;
   border-color: transparent;
@@ -287,12 +291,12 @@
   border-radius: inherit;
   background: conic-gradient(
     from var(--generation-angle),
-    color-mix(in srgb, var(--brand) 15%, transparent) 0deg,
-    color-mix(in srgb, var(--brand) 15%, transparent) 235deg,
-    color-mix(in srgb, var(--brand) 50%, transparent) 280deg,
-    var(--brand) 325deg,
-    var(--brand-light) 345deg,
-    color-mix(in srgb, var(--brand) 15%, transparent) 360deg
+    color-mix(in srgb, var(--pending-border-color) 15%, transparent) 0deg,
+    color-mix(in srgb, var(--pending-border-color) 15%, transparent) 235deg,
+    color-mix(in srgb, var(--pending-border-color) 50%, transparent) 280deg,
+    var(--pending-border-color) 325deg,
+    var(--pending-border-highlight) 345deg,
+    color-mix(in srgb, var(--pending-border-color) 15%, transparent) 360deg
   );
   mask:
     linear-gradient(#fff 0 0) content-box,

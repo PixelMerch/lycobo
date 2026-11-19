@@ -191,7 +191,7 @@
 .generation-loading-icon {
   position: relative;
   display: flex;
-  color: var(--focus);
+  color: var(--studio-accent);
   animation: generation-breathe 2.8s ease-in-out infinite;
 }
 .generation-loading-icon::before,
