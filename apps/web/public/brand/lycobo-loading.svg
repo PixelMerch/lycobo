@@ -1,18 +1,48 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="16 16 224 224" fill="#fff" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-48 16 352 224" fill="#fff" role="img">
   <title>Lycobo</title>
   <style>
+    .bean { opacity: 0; }
+
     @media (prefers-reduced-motion: no-preference) {
-      .mark {
+      .mark, .bean, .dot {
+        transform-box: fill-box;
         transform-origin: center;
-        animation: turn 1.4s linear infinite;
+        animation-duration: 2.4s;
+        animation-iteration-count: infinite;
+        animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
       }
-      @keyframes turn {
-        to { transform: rotate(360deg); }
+
+      .mark { animation-name: bite; }
+      .bean-first { animation-name: first-bean; }
+      .bean-second { animation-name: second-bean; }
+      .dot { animation-name: settle-dot; }
+
+      @keyframes bite {
+        0%, 14%, 26%, 31%, 44%, 49%, 63%, 100% { transform: none; }
+        20%, 37%, 55% { transform: translateX(7px) scale(1.03, 0.9); }
+      }
+      @keyframes first-bean {
+        0% { opacity: 0; transform: scale(0.4); }
+        9%, 14% { opacity: 1; transform: none; }
+        22%, 100% { opacity: 0; transform: translateX(-54px) scale(0.15); }
+      }
+      @keyframes second-bean {
+        0% { opacity: 0; transform: scale(0.4); }
+        9%, 14% { opacity: 1; transform: none; }
+        25%, 31% { opacity: 1; transform: translateX(-42px); }
+        39%, 100% { opacity: 0; transform: translateX(-96px) scale(0.15); }
+      }
+      @keyframes settle-dot {
+        0%, 65%, 100% { transform: none; }
+        9%, 14% { transform: translateX(84px) scale(0.65); }
+        25%, 31% { transform: translateX(42px) scale(0.65); }
+        43%, 49% { transform: scale(0.65); }
+        56% { transform: translateX(-23px) scale(0.42); }
       }
     }
   </style>
-  <g class="mark">
-    <path d="M211.14 80A96 96 0 1 0 211.14 176L176.5 156A56 56 0 1 1 176.5 100Z"/>
-    <circle cx="204" cy="128" r="20"/>
-  </g>
+  <path class="mark" d="M211.14 80A96 96 0 1 0 211.14 176L188.62 163A70 70 0 1 1 188.62 93Z"/>
+  <circle class="bean bean-first" cx="204" cy="128" r="12"/>
+  <circle class="bean bean-second" cx="246" cy="128" r="12"/>
+  <circle class="dot" cx="204" cy="128" r="16"/>
 </svg>
