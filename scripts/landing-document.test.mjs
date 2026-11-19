@@ -15,19 +15,19 @@ describe("localized landing document", () => {
       expect(document).toContain(`lang="${locale}"`);
       expect(document).not.toMatch(/Trustpilot|support@openart|10M\+|40 free credits/);
       const mainImageLinks = document.match(
-        /<a\b[^>]*data-landing-path="\/commerce\/create"[^>]*>/g,
+        /<a\b[^>]*data-landing-path="\/dashboard\/commerce\/create"[^>]*>/g,
       );
       expect(mainImageLinks).toHaveLength(2);
       for (const link of mainImageLinks ?? []) {
-        expect(link).toContain(`href="/${locale}/commerce/create"`);
+        expect(link).toContain(`href="/${locale}/dashboard/commerce/create"`);
       }
-      const workspaceLinks = document.match(/<a\b[^>]*data-landing-path="\/workspace"[^>]*>/g);
+      const workspaceLinks = document.match(/<a\b[^>]*data-landing-path="\/dashboard"[^>]*>/g);
       expect(workspaceLinks).toHaveLength(3);
       expect(document).not.toContain('data-pageforge-source="enterprise"');
       expect(document).not.toContain('id="nav-panel-3"');
       expect(document).not.toContain('data-acc-idx="3"');
       for (const link of workspaceLinks ?? []) {
-        expect(link).toContain(`href="/${locale}/workspace"`);
+        expect(link).toContain(`href="/${locale}/dashboard"`);
       }
       for (const match of document.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) {
         expect(() => new Script(match[1])).not.toThrow();

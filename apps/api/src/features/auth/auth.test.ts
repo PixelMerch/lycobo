@@ -45,7 +45,7 @@ async function fixture(email = false) {
   const oauth = {
     origin: "https://fixture.supabase.co",
     key: "fixture-key",
-    providers: [],
+    providers: ["google" as const],
     emailTurnstileSiteKey: "fixture-sitekey",
   };
   const auth = enterpriseAuth(repository, {
@@ -307,6 +307,35 @@ describe("enterprise JWT login", () => {
         await auth.authenticate(await sign({ ...valid, ...patch }, secret, "HS256")),
       ).toBeNull();
     }
+  });
+});
+
+describe("第三方登录工作区回跳", () => {
+  it.each([
+    [
+      "/zh-CN/dashboard/commerce/create?task=fixture#result",
+      "/zh-CN/dashboard/commerce/create?task=fixture#result",
+    ],
+    ["/en/dashboard", "/en/dashboard"],
+    ["/en/dashboard/login", "/en"],
+    ["//external.example/en/dashboard", "/en"],
+  ])("只保留受支持的目标 %s", async (returnTo, expected) => {
+    const { app } = await fixture(true);
+    const start = await app.request("/api/v1/auth/oauth/start", {
+      method: "POST",
+      headers: { Origin: origin, "Content-Type": "application/json" },
+      body: JSON.stringify({ provider: "google", returnTo }),
+    });
+    expect(start.status).toBe(200);
+    const cookie = start.headers.getSetCookie()[0]?.split(";", 1)[0] ?? "";
+    // 不提供供应商授权码，检查签名流程保留的返回地址，不调用外部服务。
+    const callback = await app.request("/api/v1/auth/oauth/callback", {
+      headers: { Cookie: cookie },
+    });
+    expect(callback.status).toBe(302);
+    const location = new URL(callback.headers.get("Location") ?? "", origin);
+    expect(location.searchParams.get("returnTo")).toBe(expected);
+    expect(location.searchParams.get("oauth")).toBe("failed");
   });
 });
 

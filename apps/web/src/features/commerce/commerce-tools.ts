@@ -1,12 +1,13 @@
+import { dashboardToolPaths } from "../../lib/dashboard-paths";
 /** 电商落地页统一使用首页地址，真实工具继续使用各自工作区路径。 */
 export const commercePath = "/";
 
 /** 可从专区开始的工具及其工作区地址，保留已保存的工具标识。 */
 export const commerceTools = [
-  { id: "create", href: "/commerce/create" },
-  { id: "textile", href: "/commerce/textile-set", legacyId: "textile-set" },
-  { id: "variation", href: "/commerce/smart-variation", legacyId: "smart-variation" },
-  { id: "replica", href: "/commerce/replica" },
+  { id: "create", href: dashboardToolPaths.create },
+  { id: "textile", href: dashboardToolPaths.textile, legacyId: "textile-set" },
+  { id: "variation", href: dashboardToolPaths.variation, legacyId: "smart-variation" },
+  { id: "replica", href: dashboardToolPaths.replica },
 ] as const;
 
 export type CommerceTool = (typeof commerceTools)[number];

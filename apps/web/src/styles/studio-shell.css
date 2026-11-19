@@ -451,29 +451,3 @@
     width: 90px;
   }
 }
-
-.header-workspace.button {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
-  min-height: 36px;
-  padding: 0;
-  border-radius: 12px;
-  background: #ffffff14;
-  color: #ffffffcc;
-}
-
-.header-workspace.button:hover {
-  background: #ffffff24;
-  color: #fff;
-}
-
-@media (max-width: 767px) {
-  .header-actions .header-workspace.button {
-    display: none;
-  }
-}

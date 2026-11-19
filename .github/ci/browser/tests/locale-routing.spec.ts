@@ -38,16 +38,15 @@ test("workspace language switch preserves draft and routes tool navigation in th
   await prompt.fill("保留这个商品图草稿");
   await prompt.evaluate((element) => element.setAttribute("data-locale-draft-probe", "kept"));
   await switchLanguage(page, "English");
-  await expect(page).toHaveURL(/\/en\/commerce\/create\?view=fixture#draft$/);
+  await expect(page).toHaveURL(/\/en\/dashboard\/commerce\/create\?view=fixture#draft$/);
   await expect(page.getByRole("textbox", { name: "Prompt", exact: true })).toHaveValue(
     "保留这个商品图草稿",
   );
   await expect(page.locator('[data-locale-draft-probe="kept"]')).toBeVisible();
-  await page
-    .getByRole("navigation", { name: "Main navigation", exact: true })
-    .getByRole("link", { name: "Assets", exact: true })
-    .click();
-  await expect(page).toHaveURL(/\/en\/assets$/);
+  await expect(page.locator(".workspace-site-header .header-workspace")).toHaveAttribute(
+    "href",
+    "/en/dashboard",
+  );
   expect(localizedApiRequests).toEqual([]);
 });
 
@@ -58,7 +57,7 @@ test("unprefixed protected links preserve their query through localized login", 
   await page.goto("/commerce/create?task=fixture#result");
   await expect(page).toHaveURL(/\/zh-CN\/login\?/);
   expect(new URL(page.url()).searchParams.get("returnTo")).toBe(
-    "/zh-CN/commerce/create?task=fixture#result",
+    "/zh-CN/dashboard/commerce/create?task=fixture#result",
   );
   await expect(page.getByRole("heading", { name: "登录 Lycobo", exact: true })).toBeVisible();
   await expect(page.locator(".login-agreement a").first()).toHaveAttribute("href", "/zh-CN/terms");

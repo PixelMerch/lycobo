@@ -1,3 +1,4 @@
+import { dashboardToolPaths } from "../../lib/dashboard-paths";
 import { useReplicaDraft } from "../commerce/replica/replica-state";
 import { useSmartVariationDraft } from "../commerce/smart-variation/smart-variation-state";
 import { useTextileSetDraft } from "../commerce/textile-set/textile-set-state";
@@ -8,7 +9,7 @@ import { useVideoDraft } from "../video/video-state";
 export const workspaceTools = [
   {
     id: "create",
-    path: "/commerce/create",
+    path: dashboardToolPaths.create,
     hero: "/studio/tool-heroes/create.webp",
     examples: [
       "/studio/models/image-2-1.webp",
@@ -18,7 +19,7 @@ export const workspaceTools = [
   },
   {
     id: "textile",
-    path: "/commerce/textile-set",
+    path: dashboardToolPaths.textile,
     hero: "/studio/tool-heroes/textile.webp",
     bannerImages: [
       "/studio/textile-views/front.webp",
@@ -35,7 +36,7 @@ export const workspaceTools = [
   },
   {
     id: "variation",
-    path: "/commerce/smart-variation",
+    path: dashboardToolPaths.variation,
     hero: "/studio/tool-heroes/variation.webp",
     examples: [
       "/studio/bedroom-thumb.webp",
@@ -45,7 +46,7 @@ export const workspaceTools = [
   },
   {
     id: "replica",
-    path: "/commerce/replica",
+    path: dashboardToolPaths.replica,
     hero: "/studio/tool-heroes/create.webp",
     examples: [
       "/studio/textile-views/front.webp",
@@ -55,7 +56,7 @@ export const workspaceTools = [
   },
   {
     id: "video",
-    path: "/video",
+    path: dashboardToolPaths.video,
     hero: "/studio/tool-heroes/video.webp",
     examples: [
       "/studio/models/image-2-5-2.webp",
@@ -69,17 +70,17 @@ export const visibleWorkspaceTools = workspaceTools.filter((tool) => tool.id !==
 
 /** 根据业务路径找到当前工具。 */
 export const toolForPath = (path: string) =>
-  workspaceTools.find((tool) => tool.path === path) ?? workspaceTools[0];
+  workspaceTools.find((tool) => tool.path === path.replace(/\/+$/, "")) ?? workspaceTools[0];
 function referencesForPath(path: string) {
-  if (path === "/commerce/textile-set") {
+  if (path === dashboardToolPaths.textile) {
     const textile = useTextileSetDraft.getState();
     return [textile.mainImage, ...textile.detailImages].filter((image) => image !== null);
   }
-  if (path === "/commerce/smart-variation") return useSmartVariationDraft.getState().references;
-  if (path === "/commerce/replica") {
+  if (path === dashboardToolPaths.variation) return useSmartVariationDraft.getState().references;
+  if (path === dashboardToolPaths.replica) {
     return useReplicaDraft.getState().products;
   }
-  if (path === "/video") {
+  if (path === dashboardToolPaths.video) {
     const video = useVideoDraft.getState();
     return [video.firstFrame, video.lastFrame, ...video.extraReferences].filter(
       (image) => image !== null,
@@ -99,18 +100,18 @@ export function shareProductReference(from: string, to: string) {
   const mainImage = references[0];
   if (!mainImage) return;
   const destinationHasReferences = !!studio.drafts[studio.activeModel]?.references.length;
-  if (to === "/commerce/replica" && !useReplicaDraft.getState().products.length) {
+  if (to === dashboardToolPaths.replica && !useReplicaDraft.getState().products.length) {
     useReplicaDraft.getState().update({ products: [mainImage] });
-  } else if (to === "/commerce/create" && !destinationHasReferences) {
+  } else if (to === dashboardToolPaths.create && !destinationHasReferences) {
     studio.updateDraft(studio.activeModel, { references: references.slice(0, 5) });
-  } else if (to === "/commerce/textile-set" && !textile.mainImage) {
+  } else if (to === dashboardToolPaths.textile && !textile.mainImage) {
     textile.update({
       mainImage,
       ...(textile.detailImages.length ? {} : { detailImages: references.slice(1, 6) }),
     });
-  } else if (to === "/commerce/smart-variation" && !variation.references.length) {
+  } else if (to === dashboardToolPaths.variation && !variation.references.length) {
     variation.update({ references: references.slice(0, 5) });
-  } else if (to === "/video" && !video.firstFrame) {
+  } else if (to === dashboardToolPaths.video && !video.firstFrame) {
     video.update({ firstFrame: mainImage, reuseReferences: false });
   }
 }

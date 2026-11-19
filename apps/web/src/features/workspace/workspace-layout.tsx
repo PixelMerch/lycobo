@@ -33,8 +33,8 @@ export function WorkspaceLayout() {
   const { restore, restorePending, applyRestore, setRestorePending } =
     useWorkspaceRestore(setMobilePanel);
   useEffect(() => {
-    rememberCommercePath(pathname);
-  }, [pathname]);
+    rememberCommercePath(currentTool.path);
+  }, [currentTool.path]);
   useEffect(() => {
     if (new URLSearchParams(search).has("task")) setMobilePanel("history");
   }, [search]);

@@ -1,4 +1,4 @@
-import { Button, Drawer, Tooltip } from "@heroui/react";
+import { Button, Drawer } from "@heroui/react";
 import {
   IconBrush,
   IconFolderSparkle,
@@ -20,19 +20,19 @@ import { useOpenAssetLibrary } from "../features/assets/asset-library-store";
 import { useEnterpriseSession } from "../features/auth/auth-client";
 import { loginHref } from "../features/auth/login-navigation";
 import { commercePath, commerceToolHref, commerceTools } from "../features/commerce/commerce-tools";
-import { freeCanvasPath } from "../features/free-canvas/free-canvas-path";
 import { useImageEvents } from "../features/generation/use-image-events";
 import { inspirationLibraryPath } from "../features/inspiration/inspiration-path";
 import { legalPaths } from "../features/legal/legal-document";
 import { workspaceToolMessages } from "../features/workspace/workspace-tool-messages";
 import { toolIcons } from "../features/workspace/workspace-tool-symbol";
 import { useMessages } from "../i18n/messages";
-import { useAppLocation, useAppNavigate } from "../i18n/use-localized-navigation";
+import { useAppLocation } from "../i18n/use-localized-navigation";
+import { dashboardPath, freeCanvasPath, isDashboardPath } from "../lib/dashboard-paths";
 import { CommerceNavMenu } from "./commerce-nav-menu";
 import { LanguageMenu } from "./language-menu";
 import { PageLoading } from "./page-loading";
 import { shellMessages } from "./shell-messages";
-import { SiteHeaderControls } from "./site-header-controls";
+import { SiteHeaderControls, WorkspaceHeaderLink } from "./site-header-controls";
 import { useWindowScrolled } from "./use-window-scrolled";
 import "../styles/brand.css";
 
@@ -52,7 +52,7 @@ export function StudioShell() {
   const { pathname } = location;
   const t = useMessages(shellMessages);
   const landing = pathname === commercePath;
-  const workspace = isWorkspacePath(pathname);
+  const workspace = isDashboardPath(pathname);
   const session = useEnterpriseSession();
   const signedIn = !!session.data;
   const protectedRoute = !publicPaths.has(pathname);
@@ -147,29 +147,15 @@ function HeaderNavigation() {
 
 /** 常规页面的工作区、语言和账户入口。 */
 function HeaderActions({ account }: { account: ReturnType<typeof useEnterpriseSession>["data"] }) {
-  const navigate = useAppNavigate();
-  const t = useMessages(shellMessages);
   return (
     <div className="header-actions">
       <div className="header-news" data-signed-in={!!account}>
         <AccountMessages signedIn={!!account} showTrigger={!!account} />
       </div>
-      <Tooltip delay={200}>
-        <Button
-          isIconOnly
-          size="sm"
-          variant="tertiary"
-          aria-label={t.workspace}
-          className="header-workspace"
-          onPress={() => void navigate("/workspace")}
-        >
-          <UiIcon icon={IconSpaces} size="navigation" />
-        </Button>
-        <Tooltip.Content placement="bottom">{t.workspace}</Tooltip.Content>
-      </Tooltip>
       <LanguageMenu account={account} />
       {account ? (
         <>
+          <WorkspaceHeaderLink />
           <HeaderBenefits />
           <AccountMenu variant="header" />
         </>
@@ -196,7 +182,7 @@ function DrawerNavigation({ onNavigate }: { onNavigate: () => void }) {
         <UiIcon icon={IconSmartHome} size="default" />
         <span className="nav-label">{t.home}</span>
       </RouteLink>
-      <RouteLink to="/workspace" className="nav-row" onClick={onNavigate}>
+      <RouteLink to={dashboardPath} className="nav-row" onClick={onNavigate}>
         <UiIcon icon={IconSpaces} size="default" />
         <span className="nav-label">{t.workspace}</span>
       </RouteLink>
@@ -230,14 +216,5 @@ function DrawerNavigation({ onNavigate }: { onNavigate: () => void }) {
         <span className="nav-label">{t.assets}</span>
       </Button>
     </nav>
-  );
-}
-
-function isWorkspacePath(pathname: string) {
-  return (
-    commerceTools.some((tool) => pathname === tool.href || pathname.startsWith(`${tool.href}/`)) ||
-    pathname === "/workspace" ||
-    pathname === "/video" ||
-    pathname === freeCanvasPath
   );
 }

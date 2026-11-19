@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAppNavigate } from "../../../i18n/use-localized-navigation";
+import { dashboardPath, dashboardToolPaths, freeCanvasPath } from "../../../lib/dashboard-paths";
 
 type HeaderFields = Record<
   "type" | "x" | "y" | "width" | "height" | "scrollY" | "theme" | "menuOpen" | "signedIn",
@@ -20,7 +21,7 @@ export function readLandingHeader(data: unknown) {
   if (typeof x !== "number" || typeof y !== "number" || typeof width !== "number") return null;
   if (typeof height !== "number" || typeof scrollY !== "number") return null;
   if (![x, y, width, height, scrollY].every(Number.isFinite)) return null;
-  if (width <= 0 || width > 400 || height <= 0 || height > 100 || scrollY < 0) return null;
+  if (width <= 0 || width > 480 || height <= 0 || height > 100 || scrollY < 0) return null;
   if (theme !== "light" && theme !== "dark") return null;
   if (typeof menuOpen !== "boolean" || typeof signedIn !== "boolean") return null;
   return { x, y, width, height, scrollY, theme, menuOpen, signedIn } as const;
@@ -34,7 +35,7 @@ export function readLandingNavigation(data: unknown) {
   if (!("type" in data) || data.type !== "lycobo:navigate") return null;
   if (!("path" in data)) return null;
   const { path } = data;
-  return path === "/free-canvas" || path === "/commerce/create" || path === "/workspace"
+  return path === freeCanvasPath || path === dashboardToolPaths.create || path === dashboardPath
     ? path
     : null;
 }

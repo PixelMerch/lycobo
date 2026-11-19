@@ -71,7 +71,7 @@ curl http://127.0.0.1:8787/api/v1/image-tasks \
 
 ## 工作台接入
 
-- `/commerce/create` 调用真实提交接口；支持纯文生图，参考图先上传并校验，再以资产 ID 提交。新草稿默认 1.5K。
+- `/dashboard/commerce/create` 调用真实提交接口；支持纯文生图，参考图先上传并校验，再以资产 ID 提交。新草稿默认 1.5K。
 - 历史、右侧索引与素材库不轮询列表；生产状态由 WebSocket 事件触发任务详情读取并定向更新缓存，支持游标加载更多。列表使用提前生成的 512px 缩略图，下载读取原图。
 - 提交响应不确定时，浏览器会按用户和组织在 sessionStorage 保留同一请求快照与幂等编号，刷新后通过“确认上次提交”复用请求；不会自动重新生成。已运行但结果不确定的任务不自动重发；用户可以明确确认后在原记录重试，先结束旧尝试并退回原扣款，再提交新尝试，操作与未知结果依据可审计。管理员核对入口仍保留。
 - `GET /api/v1/image-assets?limit=30&before=UUID` 返回组织内素材和短期签名链接。API 批量解析对象位置，主站 Worker 验证签名、过期时间与来源后读取私有 R2。原图、预览和缩略图分别存储，派生变体缺失时交给图片 Queue 补齐；浏览器按签名有效期缓存。配置见 [Cloudflare 部署](releasing.md#cloudflare-运行与部署)。
@@ -170,18 +170,18 @@ POST /variation-plans 的可选 referenceCount 为 0–5，仅表达参考图数
 
 ### 套图计划
 
-- `/commerce/smart-variation` 的 `POST /api/v1/variation-plans` 支持 JSON 和 `Accept: text/event-stream`。流顺序为 `started`、`delta`、`complete`，异常为 `failed`。只有持久化完成的计划可编辑和确认，规划阶段不扣生图积分。同一幂等键重放不重复请求模型，断流继续保留原请求键。
+- `/dashboard/commerce/smart-variation` 的 `POST /api/v1/variation-plans` 支持 JSON 和 `Accept: text/event-stream`。流顺序为 `started`、`delta`、`complete`，异常为 `failed`。只有持久化完成的计划可编辑和确认，规划阶段不扣生图积分。同一幂等键重放不重复请求模型，断流继续保留原请求键。
 - 规划模型只接收文字和参考图编号。用户确认后，服务端验证计划及素材归属，为每条方案发送独立提示词和绑定的图片。商品图和风格图可以共用，原图按确认的逐条绑定发送。已有任务缺少逐条绑定时沿用完整参考图列表。
 - 链接分析最多读取 3 个去重的 HTTP/HTTPS 地址，只通过已配置的官方 DeepSeek Fetch 端点读取正文。总超时 15 秒，响应上限 1 MiB，每页正文最多 10,000 字符。拒绝凭据、非标准端口和 IP，禁止转发密钥或跟随跳转。成功正文仅在组织和用户级进程缓存 5 分钟。读取失败停止规划，可在界面重新提交需求。状态事件 `reading`、`planning`、`link_failed` 供客户端展示阶段。
 
 ### 家纺裂变
 
-- `/commerce/textile-set` 提交一张主图、最多五张详情参考和 1–10 个视角。API 固定模型、质量和模板，Worker 按稳定 `position` 分别提交 `n=1`。模板及版本在 `packages/generation/src/images/textile-generation.ts`。新任务保存 v5 快照，使用后台 `textile-set/gpt-image-2.5` 渠道。缺少渠道在扣款前拒绝。
+- `/dashboard/commerce/textile-set` 提交一张主图、最多五张详情参考和 1–10 个视角。API 固定模型、质量和模板，Worker 按稳定 `position` 分别提交 `n=1`。模板及版本在 `packages/generation/src/images/textile-generation.ts`。新任务保存 v5 快照，使用后台 `textile-set/gpt-image-2.5` 渠道。缺少渠道在扣款前拒绝。
 - 已接收任务保留旧版输入与定价。v1–v4 的确定失败图经确认可按 v5 单独创建替换任务，待核对结果仍按原流程处理。历史按 `tool` 在分页前筛选，局部失败保留成功图。FluxPort 图片编辑按渠道配置使用 Data URI，可处理 200 同步结果或 202 任务回执，优先查询 `status_url` 并兼容 `poll_url`。
 
 ### 复制爆款与待处理参考图
 
-- `/commerce/replica` 接收一张版式参考和最多十张商品参考。每个输出只使用版式图和对应商品图，费用按商品图数量计算。新任务带有 `replica: true`，旧输入与幂等哈希不变。历史通过 `generation_jobs.user_prompt` 保存用户文字。部署相关版本时先迁移 `0045_replica_batch_count` 和 `0046_user_prompt`，再部署图片消费者及主站。
+- `/dashboard/commerce/replica` 接收一张版式参考和最多十张商品参考。每个输出只使用版式图和对应商品图，费用按商品图数量计算。新任务带有 `replica: true`，旧输入与幂等哈希不变。历史通过 `generation_jobs.user_prompt` 保存用户文字。部署相关版本时先迁移 `0045_replica_batch_count` 和 `0046_user_prompt`，再部署图片消费者及主站。
 - 浏览器在获得私有 R2 的上传票据后可直接提交任务。API 在事务外验证上传意图、身份与归属。Queue 等素材可用后再领取供应商执行，处理中每 15 秒复查，未就绪时不创建付费尝试。失效或明确失败按既有幂等退款规则处理。引用已接受的图片长期保留；恢复依赖 R2 意图与 PG outbox/Cron。
 
 ### 局部编辑

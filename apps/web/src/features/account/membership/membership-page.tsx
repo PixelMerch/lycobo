@@ -6,6 +6,7 @@ import { UiIcon } from "../../../components/ui-icon";
 import { withoutLocale } from "../../../i18n/locale-path";
 import { useMessages } from "../../../i18n/messages";
 import { useAppNavigate } from "../../../i18n/use-localized-navigation";
+import { dashboardPath, isDashboardPath } from "../../../lib/dashboard-paths";
 import { membershipMessages } from "./membership-messages";
 import { MembershipPlans } from "./membership-plans";
 import "./membership-page.css";
@@ -50,8 +51,9 @@ export function MembershipPage() {
     state !== null &&
     "returnTo" in state &&
     typeof state.returnTo === "string" &&
-    /^\/(?:$|commerce(?:[/?]|$)|assets(?:[/?]|$))/.test(withoutLocale(state.returnTo))
+    (isDashboardPath(withoutLocale(state.returnTo).split(/[?#]/, 1)[0] ?? "") ||
+      /^\/(?:$|commerce(?:[/?]|$)|assets(?:[/?]|$))/.test(withoutLocale(state.returnTo)))
       ? state.returnTo
-      : "/workspace";
+      : dashboardPath;
   return <MembershipDialog onClose={() => navigate(returnTo, { replace: true })} />;
 }

@@ -6,6 +6,7 @@ import { ConfirmDialog } from "../../components/overlays/confirm-dialog";
 import { DialogClose } from "../../components/overlays/dialog-close";
 import { useCenteredDialogMotion } from "../../components/overlays/use-centered-dialog-motion";
 import { useAppNavigate } from "../../i18n/use-localized-navigation";
+import { dashboardToolPaths } from "../../lib/dashboard-paths";
 import { useImageSession } from "../generation/generation-client";
 import { ImagePreviewRail } from "./image-preview-rail";
 import { repairDraftKey, useRepairDrafts } from "./local-edit/local-repair-state";
@@ -68,7 +69,7 @@ export function ImagePreviewDialog({
     onClose();
     if (historyTask.current) {
       onViewHistory?.();
-      void navigate(`/commerce/create?task=${encodeURIComponent(historyTask.current)}`);
+      void navigate(`${dashboardToolPaths.create}?task=${encodeURIComponent(historyTask.current)}`);
     }
   });
   const [index, setIndex] = useState(Math.min(Math.max(initialIndex, 0), images.length - 1));

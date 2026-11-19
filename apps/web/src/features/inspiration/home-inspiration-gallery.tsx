@@ -9,6 +9,7 @@ import { useLocale } from "../../i18n/locale-store";
 import { useMessages } from "../../i18n/messages";
 import { useAppNavigate } from "../../i18n/use-localized-navigation";
 import { copyToClipboard } from "../../lib/clipboard";
+import { dashboardToolPaths } from "../../lib/dashboard-paths";
 import { useRequireLogin } from "../auth/login-prompt";
 import { defaultDraft, useStudioStore } from "../generation/studio-state";
 import { type HomeInspiration, homeInspirationsFor } from "./home-inspiration-data";
@@ -38,7 +39,7 @@ export function HomeInspirationGallery({ onApplied }: { onApplied?: () => void }
     updateDraft(activeModel, { prompt: item.prompt });
     setReplacingId(null);
     setSelectedId(null);
-    void navigate("/commerce/create");
+    void navigate(dashboardToolPaths.create);
     onApplied?.();
   }
   // 示例只填入提示词，进入工作台不上传示例或提交付费任务。

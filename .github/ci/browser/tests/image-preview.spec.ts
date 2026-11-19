@@ -83,7 +83,7 @@ test("library and history images open an in-page full-screen viewer", async ({ p
     "border-radius",
     "8px",
   );
-  expect(new URL(page.url()).pathname).toBe("/commerce/create");
+  expect(new URL(page.url()).pathname).toMatch(/\/(?:en|zh-CN)\/dashboard\/commerce\/create$/);
   // The redundant bottom download row is gone; the icon actions stay in the panel.
   await expect(historyDialog.locator(".image-preview-actions")).toHaveCount(0);
   await expect(

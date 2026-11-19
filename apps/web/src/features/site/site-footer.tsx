@@ -3,6 +3,7 @@ import { IconCamera, IconCopy, IconLayoutCollage, IconWand } from "@tabler/icons
 import { RouteLink } from "../../components/router-link";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
+import { dashboardAssetsPath, dashboardPath } from "../../lib/dashboard-paths";
 import { useOpenAssetLibrary } from "../assets/asset-library-store";
 import { legalDocumentIds, legalPaths } from "../legal/legal-document";
 import { legalMessages } from "../legal/legal-messages";
@@ -40,9 +41,9 @@ export function SiteFooter() {
     {
       label: t.space,
       links: [
-        { to: "/workspace", label: t.links.workspace },
+        { to: dashboardPath, label: t.links.workspace },
         // 素材库是弹窗，点它直接打开，不跳转页面。
-        { to: "/assets", label: t.links.assets, opensLibrary: true },
+        { to: dashboardAssetsPath, label: t.links.assets, opensLibrary: true },
         { to: "/membership", label: t.links.membership },
       ],
     },

@@ -1,16 +1,32 @@
 import { mainImageModelIds } from "@lycoboai/contracts";
-import { createBrowserRouter, type RouteObject } from "react-router";
+import { createBrowserRouter, type LoaderFunctionArgs, type RouteObject } from "react-router";
 import { getRecentCommercePath } from "../features/commerce/commerce-preferences";
 import { useStudioStore } from "../features/generation/studio-state";
+import {
+  dashboardAssetsPath,
+  dashboardPages,
+  dashboardPath,
+  dashboardToolPaths,
+  freeCanvasPath,
+} from "../lib/dashboard-paths";
 import {
   loadRouteLocale,
   localizedRedirect,
   normalizeInitialLocalePath,
   redirectCommerceToHome,
+  redirectPreservingLocation,
   redirectToLocale,
 } from "./locale-route";
 import { PageLoading } from "./page-loading";
 import { PageNotFound, RouteErrorPage } from "./page-states";
+
+function redirectMainImageModel({ params, request }: LoaderFunctionArgs) {
+  const model = params.model === "gpt-image" ? "gpt-image-2" : params.model;
+  if (!model || !mainImageModelIds.some((id) => id === model))
+    throw new Response("Not found", { status: 404 });
+  useStudioStore.getState().setActiveModel(model);
+  return redirectPreservingLocation(request, dashboardToolPaths.create);
+}
 
 const localizedRoutes: RouteObject[] = [
   {
@@ -22,14 +38,25 @@ const localizedRoutes: RouteObject[] = [
   },
   {
     path: "chatdraw",
-    loader: ({ request }) =>
-      localizedRedirect(request, `/commerce/create${new URL(request.url).search}`),
+    loader: ({ request }) => redirectPreservingLocation(request, dashboardToolPaths.create),
   },
   {
     path: "design/:view?",
     loader: ({ params, request }) =>
-      localizedRedirect(request, params.view === "assets" ? "/assets" : "/"),
+      redirectPreservingLocation(request, params.view === "assets" ? dashboardAssetsPath : "/"),
   },
+  ...dashboardPages.map<RouteObject>((target) => ({
+    path: target.slice(dashboardPath.length + 1),
+    loader: ({ request }) => redirectPreservingLocation(request, target),
+  })),
+  ...["workspace", dashboardPath.slice(1)].map<RouteObject>((path) => ({
+    path,
+    loader: ({ request }) => redirectPreservingLocation(request, getRecentCommercePath()),
+  })),
+  ...["commerce/create", dashboardToolPaths.create.slice(1)].map<RouteObject>((path) => ({
+    path: `${path}/:model`,
+    loader: redirectMainImageModel,
+  })),
   ...["history", "canvas", "projects", "templates", "library"].map<RouteObject>((path) => ({
     path,
     loader: ({ request }) => localizedRedirect(request, "/"),
@@ -48,10 +75,6 @@ const localizedRoutes: RouteObject[] = [
         }),
       },
       {
-        path: "workspace",
-        loader: ({ request }) => localizedRedirect(request, getRecentCommercePath()),
-      },
-      {
         path: "commerce",
         loader: ({ request }) => redirectCommerceToHome(request),
       },
@@ -61,42 +84,32 @@ const localizedRoutes: RouteObject[] = [
         }),
         children: [
           {
-            path: "commerce/create",
+            path: dashboardToolPaths.create.slice(1),
             lazy: async () => ({
               Component: (await import("../features/generation/workspace-page")).WorkspacePage,
             }),
           },
           {
-            path: "commerce/create/:model",
-            loader: ({ params, request }) => {
-              const model = params.model === "gpt-image" ? "gpt-image-2" : params.model;
-              if (!mainImageModelIds.some((id) => id === model) || !model)
-                throw new Response("Not found", { status: 404 });
-              useStudioStore.getState().setActiveModel(model);
-              return localizedRedirect(request, `/commerce/create${new URL(request.url).search}`);
-            },
-          },
-          {
-            path: "commerce/replica",
+            path: dashboardToolPaths.replica.slice(1),
             lazy: async () => ({
               Component: (await import("../features/commerce/replica/replica-page")).ReplicaPage,
             }),
           },
           {
-            path: "video",
+            path: dashboardToolPaths.video.slice(1),
             lazy: async () => ({
               Component: (await import("../features/video/video-page")).VideoPage,
             }),
           },
           {
-            path: "commerce/textile-set",
+            path: dashboardToolPaths.textile.slice(1),
             lazy: async () => ({
               Component: (await import("../features/commerce/textile-set/textile-set-page"))
                 .TextileSetPage,
             }),
           },
           {
-            path: "commerce/smart-variation",
+            path: dashboardToolPaths.variation.slice(1),
             lazy: async () => ({
               Component: (await import("../features/commerce/smart-variation/smart-variation-page"))
                 .SmartVariationPage,
@@ -105,7 +118,7 @@ const localizedRoutes: RouteObject[] = [
         ],
       },
       {
-        path: "free-canvas",
+        path: freeCanvasPath.slice(1),
         lazy: async () => ({
           Component: (await import("../features/free-canvas/free-canvas-page")).FreeCanvasPage,
         }),
@@ -118,7 +131,7 @@ const localizedRoutes: RouteObject[] = [
         }),
       },
       {
-        path: "assets",
+        path: dashboardAssetsPath.slice(1),
         lazy: async () => ({
           Component: (await import("../features/assets/assets-page")).AssetsPage,
         }),

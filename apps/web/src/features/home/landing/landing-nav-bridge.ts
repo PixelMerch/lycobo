@@ -12,7 +12,7 @@ export function initializeLandingNavBridge() {
     entry.removeAttribute("role");
     entry.removeAttribute("data-pageforge-source");
     entry.setAttribute("href", "#");
-    entry.setAttribute("data-landing-path", "/free-canvas");
+    entry.setAttribute("data-landing-path", "/dashboard/free-canvas");
     entry.querySelector(".nav-chevron")?.remove();
     // 复制节点以移除模板脚本已有的下拉监听。
     entry.replaceWith(entry.cloneNode(true));

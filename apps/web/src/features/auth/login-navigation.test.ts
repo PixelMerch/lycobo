@@ -15,6 +15,10 @@ describe("登录后的站内跳转", () => {
     "/zh-CN/inspiration?category=product",
     "/free-canvas",
     "/zh-CN/free-canvas",
+    "/en/dashboard",
+    "/zh-CN/dashboard/commerce/create?task=fixture#result",
+    "/en/dashboard/free-canvas",
+    "/zh-CN/dashboard/assets",
   ])("保留目标 %s", (path) => {
     expect(safeLoginReturnTo(path)).toBe(path);
     expect(new URL(loginHref(path), "https://lycobo.invalid").searchParams.get("returnTo")).toBe(
@@ -37,6 +41,8 @@ describe("登录后的站内跳转", () => {
     "/zh-CN/commerce/../../login",
     "/en/api/v1/image-tasks",
     "/en//example.com",
+    "/en/dashboard/login",
+    "/en/dashboard/../login",
   ])("拒绝外站、旧路由和登录循环 %s", (path) => {
     expect(safeLoginReturnTo(path)).toBe("/");
   });

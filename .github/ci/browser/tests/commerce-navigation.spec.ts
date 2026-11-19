@@ -41,7 +41,7 @@ test("legacy commerce links redirect to the homepage and workspace routes remain
   await expect(page).toHaveURL(/\/zh-CN\?tool=replica#commerce-composer$/);
   await expect(page.locator("iframe.openart-reference")).toBeVisible();
   await page.goto("/zh-CN/commerce/replica");
-  await expect(page).toHaveURL(/\/zh-CN\/commerce\/replica$/);
+  await expect(page).toHaveURL(/\/zh-CN\/dashboard\/commerce\/replica$/);
   await page.goto("/workspace");
   await expect(page).toHaveURL(/\/commerce\/replica$/);
 });

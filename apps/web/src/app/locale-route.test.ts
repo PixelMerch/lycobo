@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { commerceToolHref, commerceTools } from "../features/commerce/commerce-tools";
-import { redirectCommerceToHome } from "./locale-route";
+import { redirectCommerceToHome, redirectPreservingLocation } from "./locale-route";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -32,10 +32,22 @@ describe("legacy commerce landing redirect", () => {
   it("points public tool links to the homepage while preserving workspace routes", () => {
     expect(commerceToolHref("create")).toBe("/?tool=create#commerce-composer");
     expect(commerceTools.map((tool) => tool.href)).toEqual([
-      "/commerce/create",
-      "/commerce/textile-set",
-      "/commerce/smart-variation",
-      "/commerce/replica",
+      "/dashboard/commerce/create",
+      "/dashboard/commerce/textile-set",
+      "/dashboard/commerce/smart-variation",
+      "/dashboard/commerce/replica",
     ]);
   });
+});
+
+it("preserves legacy workspace query and fragment when redirecting to the dashboard", () => {
+  const pathname = "/en/commerce/create";
+  vi.stubGlobal("window", { location: { pathname, search: "?task=fixture", hash: "#result" } });
+  const response = redirectPreservingLocation(
+    new Request(`http://localhost${pathname}?task=fixture`),
+    "/dashboard/commerce/create",
+  );
+  expect(response.headers.get("Location")).toBe(
+    "/en/dashboard/commerce/create?task=fixture#result",
+  );
 });

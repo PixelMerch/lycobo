@@ -99,7 +99,7 @@ apps/web/src/
 - 界面文案就近放在各功能的 `*-messages.ts`，用 `i18n/messages.ts` 的 `defineMessages` 同时写简体中文与英文两份，结构以中文版为准；组件用 `useMessages` 读取，组件之外用 `currentMessages`。
 - 先按业务功能归类，功能内部就近存放组件、hook、样式与单元测试；只有存在明确子职责时再增加目录，不为每个组件建立一层文件夹。
 - 保留描述性文件名和直接导入，不新增 `index.ts` 聚合出口，也不建立覆盖所有功能的 components/hooks/services 分类目录。
-- 主导航统一使用工作区入口；`features/workspace` 组合参数子路由、随功能切换的历史及四个功能的直达工具栏；`workspace-tool-symbol.tsx` 共享功能入口与参数标题的图标身份，只使用Tabler矢量图标。
+- 已登录顶栏的「工作区」指向 `/:locale/dashboard`，按最近使用的工具打开，首次进入默认主图制作。创作工具、自由画布和素材页统一使用 `/dashboard` 前缀，旧地址保留语言、查询参数与定位后跳到新地址。`features/workspace` 组合参数子路由、随功能切换的历史及工具栏。
 - `features/auth/login-prompt.tsx` 共享登录导航与首页创作交互门禁；Header及首页操作前往懒加载的 `/login`，`login-navigation.ts` 校验站内返回地址。`login-page.tsx` 在青柠丝绸背景（`login-backdrop.tsx`）上居中固定尺寸玻璃卡片并负责翻面，版式在同目录 `login-page.css`；`login-methods.tsx` 按服务端可用状态展示 Google、Apple 与邮箱入口，`social-login-client.ts` 发起本地 Supabase OAuth，`email-login.tsx` 处理邮箱验证码与 Turnstile，`enterprise-login.tsx` 保留真实密码认证。`app/studio-shell.tsx` 在登录状态确认前不挂载非首页业务内容，未登录时重定向；登录页不挂载应用壳或实时连接，回到业务页后按原有持久游标重连补齐。
 - `app/studio-shell.tsx` 组合导航、身份门禁、账户和生图事件；`use-window-scrolled.ts` 提供页面是否离开顶部，顶部栏据此切换透明与滚动磨砂。路由页面留在各 feature。首页、工作台和素材页继续由路由懒加载，`image-workspace/preview-workspace.tsx` 及 Konva 继续按预览需要加载。
 - `generation/generation-client.ts` 维护现有生图、历史和素材 API 查询与缓存，被历史、素材库和编辑工作区直接引用；目录维护不改变 query key 或增加请求层。
@@ -170,7 +170,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 - `useLocalRepair`：身份隔离草稿、最近一次已提交编辑的服务端恢复、选区历史和原有幂等提交／结果状态；`RepairCanvas`：原图坐标系上的透明选区交互层，不独立管理缩放或替换原图。
 - `components/overlays/use-centered-dialog-motion`：预览和全屏素材库的公共开关动画，不通过feature转发导入。
 
-自由画布位于 `/free-canvas`，由 Konva 管理视图，节点保存到本机 `lycobo:free-canvas:items`。本地图片保留浏览器预览，生成使用既有登录门禁、图片任务和计费流程。具体实现和单测在 `apps/web/src/features/free-canvas/`。
+自由画布位于 `/dashboard/free-canvas`，由 Konva 管理视图，节点保存到本机 `lycobo:free-canvas:items`。本地图片保留浏览器预览，生成使用既有登录门禁、图片任务和计费流程。具体实现和单测在 `apps/web/src/features/free-canvas/`。
 
 功能组件使用直接依赖；服务端缓存属于TanStack Query，临时草稿与交互属于Zustand，纯展示组件从props获得数据。具体规则见 [Web 规则](apps/web/AGENTS.md)。
 
@@ -213,4 +213,4 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 `apps/web/src/styles/overlay-glass.css` 统一 HeroUI 浮层的毛玻璃材质与减少透明回退；全屏会员页按具名例外使用稳定实底；消息中心布局与状态卡片由 `features/account/notifications/account-messages.css` 维护。
 
-主图制作统一位于 `/commerce/create`，默认 `gpt-image-2.6`，模型选择按 2.6、2.5、2 排列。`mainImageModelIds` 统一前后端主图选项；历史展示资料和其他工具保留原有型号。首页与工作台共用草稿，首页提示词最多 5000 字，操作栏独立于自动伸展输入区。
+主图制作统一位于 `/dashboard/commerce/create`，默认 `gpt-image-2.6`，模型选择按 2.6、2.5、2 排列。`mainImageModelIds` 统一前后端主图选项；历史展示资料和其他工具保留原有型号。首页与工作台共用草稿，首页提示词最多 5000 字，操作栏独立于自动伸展输入区。

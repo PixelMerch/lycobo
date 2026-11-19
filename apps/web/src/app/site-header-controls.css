@@ -41,6 +41,40 @@
 .landing-account-controls .header-credits {
   flex-shrink: 1;
 }
+.header-workspace.link {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: var(--control-gap);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.header-actions .header-workspace.link {
+  height: var(--control-height-md);
+  padding-inline: var(--control-padding-md);
+  border-radius: var(--control-radius);
+  background: var(--control-hover-fill);
+  color: var(--foreground);
+}
+.header-actions .header-workspace.link:is(:hover, [data-hovered="true"]) {
+  background: var(--control-pressed-fill);
+}
+@media (max-width: 1319px) {
+  .header-workspace.link {
+    width: var(--control-touch-target);
+  }
+  .header-workspace.link > span {
+    display: none;
+  }
+  .landing-header-controls .header-workspace::before {
+    width: var(--landing-control-fill-height);
+    margin-inline: auto;
+  }
+}
+.header-workspace.link:is(:focus-visible, [data-focus-visible="true"]) {
+  outline: 1px solid currentColor;
+}
 .landing-account-controls .header-credits .credit-coin {
   color: currentColor;
 }
@@ -56,7 +90,13 @@
   font-size: var(--landing-control-font-size);
 }
 .landing-header-controls
-  :is(.language-trigger, .header-credits, .account-trigger, .header-creation-guide.button) {
+  :is(
+    .language-trigger,
+    .header-credits,
+    .account-trigger,
+    .header-creation-guide.button,
+    .header-workspace
+  ) {
   height: var(--landing-control-height);
   min-height: var(--landing-control-height);
   border-radius: var(--landing-control-fill-radius);
@@ -70,15 +110,21 @@
     color 150ms cubic-bezier(0.4, 0, 0.2, 1),
     background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
-.landing-header-controls :is(.language-trigger, .header-credits, .header-creation-guide.button) {
+.landing-header-controls
+  :is(.language-trigger, .header-credits, .header-creation-guide.button, .header-workspace) {
   position: relative;
   isolation: isolate;
 }
-.landing-header-controls :is(.language-trigger, .header-credits) {
+.landing-header-controls :is(.language-trigger, .header-credits, .header-workspace) {
   padding-inline: var(--landing-text-control-padding);
 }
 .landing-header-controls
-  :is(.language-trigger, .header-credits, .header-creation-guide.button)::before {
+  :is(
+    .language-trigger,
+    .header-credits,
+    .header-creation-guide.button,
+    .header-workspace
+  )::before {
   position: absolute;
   z-index: -1;
   inset-inline: 0;
@@ -124,7 +170,7 @@
   transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .landing-header-controls
-  :is(.language-trigger, .header-credits, .header-creation-guide.button):is(
+  :is(.language-trigger, .header-credits, .header-creation-guide.button, .header-workspace):is(
     :hover,
     [data-hovered="true"],
     [aria-expanded="true"]
@@ -133,7 +179,7 @@
   color: var(--landing-control-hover-color);
 }
 .landing-header-controls
-  :is(.language-trigger, .header-credits, .header-creation-guide.button):is(
+  :is(.language-trigger, .header-credits, .header-creation-guide.button, .header-workspace):is(
     :hover,
     [data-hovered="true"],
     [aria-expanded="true"]
@@ -154,7 +200,8 @@
     .language-trigger,
     .header-credits,
     .account-trigger,
-    .header-creation-guide
+    .header-creation-guide,
+    .header-workspace
   )[data-focus-visible="true"] {
   outline: 1px solid currentColor;
 }
@@ -219,6 +266,12 @@
     display: none;
   }
 }
+@media (max-width: 399px) {
+  .landing-header-controls:has(.landing-account-controls):not(.workspace-site-header *)
+    .header-creation-guide {
+    display: none;
+  }
+}
 
 /* 所有菜单使用同样大小的悬停底板，语言的选中标记仍单独留位。 */
 :root .landing-control-popover :is(.menu-item, .account-menu-row) {
@@ -255,9 +308,20 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .landing-header-controls
-    :is(.language-trigger, .header-credits, .account-trigger, .header-creation-guide),
+    :is(
+      .language-trigger,
+      .header-credits,
+      .account-trigger,
+      .header-creation-guide,
+      .header-workspace
+    ),
   .landing-header-controls
-    :is(.language-trigger, .header-credits, .header-creation-guide.button)::before,
+    :is(
+      .language-trigger,
+      .header-credits,
+      .header-creation-guide.button,
+      .header-workspace
+    )::before,
   .landing-language-control .language-trigger-chevron,
   :root .landing-control-popover :is(.menu-item, .account-menu-row)::before {
     transition: none;
