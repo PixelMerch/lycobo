@@ -165,7 +165,7 @@
   padding: 8px 16px 8px 8px;
   gap: 10px;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--field-radius);
   text-align: left;
   color: var(--muted);
   background: transparent;
@@ -183,7 +183,7 @@
   width: 100%;
   max-width: 100%;
   margin-inline: auto;
-  border-radius: var(--radius);
+  border-radius: inherit;
   transform: translateY(-50%);
   pointer-events: none;
   transition: background-color 150ms ease;
@@ -212,13 +212,13 @@
   [aria-expanded="true"],
   :focus-visible
 )::before {
-  background-color: var(--fill-strong);
+  background-color: var(--fill-selected);
 }
 .workspace-tool-shortcut:is(.button, .workspace-tool-group)[data-current="true"] {
   color: var(--control-selected-foreground);
 }
 .workspace-tool-shortcut[data-current="true"]::before {
-  background-color: var(--control-selected-fill);
+  background-color: var(--fill-bright);
 }
 .workspace-tool-chevron {
   margin-inline-start: auto;

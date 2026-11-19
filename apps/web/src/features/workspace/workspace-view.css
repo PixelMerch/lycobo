@@ -146,7 +146,6 @@
   .workspace-tool-dock .workspace-tool-shortcut:is(.button, .workspace-tool-group) {
     gap: 10px;
     width: 100%;
-    border-radius: var(--control-pill-radius);
     padding-block: 8px;
     padding-inline: calc(16px - 8px * var(--workspace-tool-rail-inset-progress))
       calc(12px * var(--workspace-tool-rail-inset-progress));
@@ -155,7 +154,6 @@
   .workspace-tool-dock .workspace-tool-shortcut::before,
   .workspace-tool-dock .workspace-tool-rail-ripple {
     width: calc(100% - 12px * (1 - var(--workspace-tool-rail-inset-progress)));
-    border-radius: inherit;
   }
   .workspace-tool-dock :is(.workspace-tool-label, .workspace-tool-chevron) {
     visibility: visible;

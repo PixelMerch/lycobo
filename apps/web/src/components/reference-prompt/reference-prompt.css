@@ -142,12 +142,7 @@
 }
 .unified-workspace .prompt-field .prompt-editor {
   --prompt-optimize-ink: var(--accent-soft-foreground);
-  border-radius: var(--control-radius);
-  outline: var(--field-border-width) solid var(--field-border);
-  outline-offset: calc(-1 * var(--field-border-width));
-}
-.unified-workspace .prompt-field .prompt-editor:has(> :is(textarea, .reference-rich-editor):focus) {
-  outline-color: var(--field-border-focus);
+  border-radius: var(--field-radius);
 }
 .unified-workspace .prompt-field :is(textarea, .reference-rich-editor) {
   cursor: text;
@@ -313,7 +308,8 @@
   .unified-workspace
     .prompt-field
     .prompt-editor:has(> :is(textarea, .reference-rich-editor):focus) {
-    outline-color: Highlight;
+    outline: var(--field-border-width) solid Highlight;
+    outline-offset: calc(-1 * var(--field-border-width));
   }
   .prompt-optimize-label {
     background: none;
