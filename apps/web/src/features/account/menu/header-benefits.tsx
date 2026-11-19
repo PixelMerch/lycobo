@@ -48,9 +48,7 @@ export function HeaderBenefits({
         }}
         onHoverEnd={menu.closeSoon}
       >
-        <span className="header-credit-icon" aria-hidden="true">
-          <UiIcon icon={IconSparkle} size="small" />
-        </span>
+        <UiIcon icon={IconSparkle} size="default" />
         <span className="header-credits-value">{balance}</span>
         <span className="header-credits-divider" aria-hidden="true" />
         <span className="header-credits-plan">{plan}</span>
