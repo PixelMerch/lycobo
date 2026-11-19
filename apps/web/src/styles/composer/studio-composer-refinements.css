@@ -138,7 +138,7 @@
   background: transparent;
 }
 .unified-workspace .composer-panel :is(.home-ratio-pager, .parameter-options) {
-  --focus: var(--studio-accent);
+  --focus: var(--foreground);
 }
 .unified-workspace .composer-panel .parameter-options :is(:disabled, [data-disabled="true"]) {
   color: var(--field-placeholder);

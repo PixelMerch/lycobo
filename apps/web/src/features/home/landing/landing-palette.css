@@ -19,8 +19,8 @@ body,
 
 .oah-director-section {
   --oah-dir-bg: var(--studio-canvas);
-  --oah-dir-pink: var(--studio-accent);
-  --oah-dir-pink-light: var(--studio-accent);
+  --oah-dir-pink: var(--studio-primary-action);
+  --oah-dir-pink-light: var(--studio-primary-action);
 }
 
 .oah-director-section::before {
@@ -43,7 +43,7 @@ body,
 
 .faq-answer[data-astro-cid-h4zmggu3] a,
 .faq-answer[data-astro-cid-h4zmggu3] a:hover {
-  color: var(--studio-accent);
+  color: var(--studio-primary-action);
 }
 
 .oah-news-card:hover {
@@ -82,25 +82,25 @@ body,
 
 .oah-features-switch.is-active,
 .oah-studio-feature-item [data-oah-studio-feature-trigger][aria-selected="true"] {
-  background: var(--studio-selected-fill);
-  color: var(--studio-accent);
+  background: #ffffff29;
+  color: var(--studio-primary-action);
 }
 
 .oah-features-switch.is-active .oah-features-switch-title,
 .oah-studio-feature-trigger[aria-selected="true"] .oah-studio-feature-title {
-  color: var(--studio-accent);
+  color: var(--studio-primary-action);
 }
 
 :is([data-navv3-cta], #navv3-mobile-menu [data-pageforge-source="start_for_free"], #cta a) {
-  background: var(--studio-primary-action);
+  background: var(--studio-accent);
   color: var(--studio-canvas);
 }
 
 :is([data-navv3-cta], #navv3-mobile-menu [data-pageforge-source="start_for_free"], #cta a):hover,
 .lycobo-hero-cta:hover {
-  background: color-mix(in srgb, var(--studio-primary-action) 92%, white);
+  background: color-mix(in srgb, var(--studio-accent) 92%, white);
 }
 
 body :focus-visible {
-  outline-color: var(--studio-accent);
+  outline-color: var(--studio-primary-action);
 }

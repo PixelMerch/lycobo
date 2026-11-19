@@ -2,6 +2,5 @@
 :root {
   --studio-canvas: #121212;
   --studio-primary-action: #f2f1ee;
-  --studio-accent: #7dabef;
-  --studio-selected-fill: color-mix(in srgb, var(--studio-accent) 16%, transparent);
+  --studio-accent: #c8f038;
 }

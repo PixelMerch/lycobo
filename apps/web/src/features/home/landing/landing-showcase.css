@@ -154,7 +154,7 @@
 }
 
 .lycobo-showreel-range:focus-visible + .lycobo-showreel-divider span {
-  outline: 2px solid var(--studio-accent);
+  outline: 2px solid var(--studio-primary-action);
   outline-offset: 2px;
 }
 

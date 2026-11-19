@@ -140,12 +140,10 @@
 }
 :root:has(.openart-reference, .studio-app[data-workspace-site-header]) {
   --background: var(--studio-canvas);
-  --brand: var(--studio-accent);
-  --brand-light: var(--studio-accent);
+  --brand: var(--foreground);
+  --brand-light: var(--foreground);
   --accent-foreground: var(--studio-canvas);
   --app-primary-gradient: var(--studio-primary-action);
-  --control-selected-fill: var(--studio-selected-fill);
-  --control-selected-foreground: var(--studio-accent);
 }
 * {
   box-sizing: border-box;
