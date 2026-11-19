@@ -66,23 +66,24 @@
 .workspace-composer-toggle.button {
   display: none;
 }
-@property --workspace-tool-rail-width {
-  syntax: "<length>";
+@property --workspace-tool-rail-progress {
+  syntax: "<number>";
   inherits: true;
-  initial-value: 200px;
+  initial-value: 1;
 }
 @media (min-width: 1024px) {
   .workspace.unified-workspace {
     --workspace-toolbar-height: 48px;
-    --workspace-tool-rail-width: 200px;
-    --workspace-rail-transition: 280ms cubic-bezier(0.23, 1, 0.32, 1);
+    --workspace-tool-rail-progress: 1;
+    --workspace-tool-rail-width: calc(64px + 136px * var(--workspace-tool-rail-progress));
+    --workspace-tool-rail-inset-progress: clamp(0, var(--workspace-tool-rail-progress), 1);
     /* 左侧工具栏和参数栏的顶边与“生成记录”“我的素材”标题文字的顶边对齐（标题在 48px 行内居中）。 */
     --workspace-column-top: calc((var(--workspace-toolbar-height) - var(--leading-base)) / 2);
     grid-template-columns: calc(var(--workspace-tool-rail-width) + 12px + 300px) minmax(0, 1fr);
-    transition: --workspace-tool-rail-width var(--workspace-rail-transition);
+    transition: --workspace-tool-rail-progress var(--workspace-rail-width-spring);
   }
   .workspace.unified-workspace[data-tool-rail="collapsed"] {
-    --workspace-tool-rail-width: 64px;
+    --workspace-tool-rail-progress: 0;
   }
   .unified-workspace > :is(.composer-panel, .workspace-tool-dock) {
     top: calc(var(--header-height) + var(--content-padding) + var(--workspace-column-top));
@@ -139,31 +140,40 @@
     width: 100%;
     padding: 0;
     background: transparent;
-    overflow: visible;
+    overflow-x: clip;
+    overflow-y: visible;
   }
   .workspace-tool-dock .workspace-tool-shortcut:is(.button, .workspace-tool-group) {
     gap: 10px;
     width: 100%;
-    padding: 8px 12px 8px 8px;
+    border-radius: var(--control-pill-radius);
+    padding-block: 8px;
+    padding-inline: calc(16px - 8px * var(--workspace-tool-rail-inset-progress))
+      calc(12px * var(--workspace-tool-rail-inset-progress));
+  }
+  /* 底板跟着工具栏宽度缩到 40px，同时留住原来的选中态。 */
+  .workspace-tool-dock .workspace-tool-shortcut::before,
+  .workspace-tool-dock .workspace-tool-rail-ripple {
+    width: calc(100% - 12px * (1 - var(--workspace-tool-rail-inset-progress)));
+    border-radius: inherit;
+  }
+  .workspace-tool-dock :is(.workspace-tool-label, .workspace-tool-chevron) {
+    visibility: visible;
+    opacity: 1;
+    translate: 0;
     transition:
-      color 150ms ease,
-      padding-inline-start var(--workspace-rail-transition);
-  }
-  .workspace-tool-dock .workspace-tool-label {
-    min-width: 0;
-  }
-  /* 收起后仅显示图标，按钮仍保留可访问名称。 */
-  .unified-workspace[data-tool-rail="collapsed"]
-    .workspace-tool-shortcut:is(.button, .workspace-tool-group) {
-    padding: 8px 0 8px 16px;
-  }
-  .unified-workspace[data-tool-rail="collapsed"] .workspace-tool-shortcut::before,
-  .unified-workspace[data-tool-rail="collapsed"] .workspace-tool-rail-ripple {
-    width: 40px;
+      opacity var(--workspace-rail-label-spring),
+      translate var(--workspace-rail-label-spring),
+      visibility 0s;
+    transition-delay: var(--workspace-rail-label-delay);
   }
   .unified-workspace[data-tool-rail="collapsed"]
+    .workspace-tool-dock
     :is(.workspace-tool-label, .workspace-tool-chevron) {
-    display: none;
+    visibility: hidden;
+    opacity: 0;
+    translate: -10px;
+    transition-delay: 0s, 0s, var(--workspace-rail-label-duration);
   }
   .workspace-composer-toggle.button {
     display: inline-flex;
@@ -173,23 +183,35 @@
     min-width: 40px;
     /* 收起按钮放在工具栏底部右侧，与左侧图标块的内缩对称；收起成图标时居中。 */
     align-self: flex-end;
-    margin: auto 8px 0 0;
-    border-radius: 12px;
+    margin-block: auto 0;
+    margin-inline-end: calc(6px + 2px * var(--workspace-tool-rail-inset-progress));
+    border-radius: var(--control-pill-radius);
     background: transparent;
-    color: #ffffffb3;
+    color: #fff;
   }
-  .unified-workspace[data-tool-rail="collapsed"] .workspace-composer-toggle.button {
-    align-self: center;
-    margin-right: 0;
+  .workspace-tool-toggle-icon {
+    display: inline-grid;
+  }
+  .workspace-tool-toggle-icon .ui-icon {
+    grid-area: 1 / 1;
+    transition: opacity var(--workspace-rail-icon-spring);
+  }
+  .workspace-composer-toggle[aria-expanded="true"] .workspace-tool-expand-icon,
+  .workspace-composer-toggle[aria-expanded="false"] .workspace-tool-collapse-icon {
+    opacity: 0;
   }
   .workspace-composer-toggle.button:is([data-hovered="true"], [data-focus-visible="true"]) {
     background: var(--fill-medium);
-    color: var(--foreground);
   }
 }
 @media (prefers-reduced-motion: reduce) and (min-width: 1024px) {
-  .workspace.unified-workspace {
-    --workspace-rail-transition: 0ms;
+  .workspace.unified-workspace,
+  .workspace-tool-dock :is(.workspace-tool-label, .workspace-tool-chevron),
+  .unified-workspace[data-tool-rail="collapsed"]
+    .workspace-tool-dock
+    :is(.workspace-tool-label, .workspace-tool-chevron),
+  .workspace-tool-toggle-icon .ui-icon {
+    transition: none;
   }
 }
 @media (min-width: 1301px) {

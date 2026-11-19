@@ -1,5 +1,5 @@
-import { spring } from "motion";
 import type { CSSProperties } from "react";
+import { cssSpring } from "../css-spring";
 
 // DesignBookmark 共享参数，菜单和胶囊用现有 Motion 生成曲线。
 export const mentionSprings = {
@@ -9,10 +9,6 @@ export const mentionSprings = {
   lead: { type: "spring", stiffness: 620, damping: 36 },
   trail: { type: "spring", stiffness: 190, damping: 19 },
 } as const;
-
-function cssSpring(parameters: { stiffness: number; damping: number }) {
-  return spring({ keyframes: [0, 1], restDelta: 0.02, restSpeed: 0.2, ...parameters }).toString();
-}
 
 export const mentionMotionStyle: CSSProperties & Record<`--mention-${string}`, string> = {
   "--mention-soft-spring": cssSpring(mentionSprings.soft),

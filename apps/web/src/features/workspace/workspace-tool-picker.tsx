@@ -1,4 +1,4 @@
-import { Button, Dropdown, Header } from "@heroui/react";
+import { Button, Dropdown, Header, Tooltip } from "@heroui/react";
 import {
   IconBrush,
   IconChevronRight,
@@ -16,13 +16,16 @@ import { freeCanvasPath } from "../../lib/dashboard-paths";
 import { useHoverMenu } from "../../lib/use-hover-menu";
 import { useOpenAssetLibrary } from "../assets/asset-library-store";
 import { inspirationLibraryPath } from "../inspiration/inspiration-path";
+import { workspaceRailLabelStyle } from "./workspace-rail-motion";
 import { shareProductReference, visibleWorkspaceTools } from "./workspace-state";
 import { type WorkspaceToolCategory, workspaceToolCategories } from "./workspace-tool-categories";
 import { workspaceToolMessages } from "./workspace-tool-messages";
+import { useWorkspaceView } from "./workspace-view-preferences";
 
 const sideDockQuery = "(min-width: 1024px)";
 const isSideDock = () => window.matchMedia(sideDockQuery).matches;
 const categoryIcons = { productImages: IconPhoto, categoryTools: IconShirt };
+const firstShortcutIndex = workspaceToolCategories.length;
 function subscribeToDockLayout(change: () => void) {
   const query = window.matchMedia(sideDockQuery);
   query.addEventListener("change", change);
@@ -35,56 +38,63 @@ export function WorkspaceToolPicker() {
   const t = useMessages(workspaceToolMessages);
   const shell = useMessages(shellMessages);
   const wideViewport = useSyncExternalStore(subscribeToDockLayout, isSideDock);
+  const collapsed = useWorkspaceView((state) => state.toolRailCollapsed);
+  const showShortcutTooltips = wideViewport && collapsed;
   const openLibrary = useOpenAssetLibrary();
   const [openCategory, setOpenCategory] = useState<WorkspaceToolCategory["label"] | null>(null);
+  const shortcuts = [
+    {
+      id: "examples",
+      icon: IconSparkles,
+      label: t.navigation.examples,
+      action: () => void navigate(inspirationLibraryPath),
+    },
+    {
+      id: "canvas",
+      icon: IconBrush,
+      label: shell.freeCanvas,
+      action: () => void navigate(freeCanvasPath),
+    },
+    { id: "assets", icon: IconFolder, label: shell.assets, action: () => openLibrary() },
+  ];
 
   return (
     <nav
+      id="workspace-tool-navigation"
       className="workspace-tool-bar"
       aria-label={t.toolBar}
       onKeyDown={(event) => {
         if (event.key === "Escape") setOpenCategory(null);
       }}
     >
-      {workspaceToolCategories.map((category) => (
+      {workspaceToolCategories.map((category, index) => (
         <WorkspaceCategoryMenu
           key={category.label}
           category={category}
           active={openCategory === category.label}
           side={wideViewport}
+          index={index}
           activate={() => setOpenCategory(category.label)}
         />
       ))}
-      <Button
-        size="sm"
-        variant="tertiary"
-        className="workspace-tool-shortcut"
-        aria-label={t.navigation.examples}
-        onPress={() => void navigate(inspirationLibraryPath)}
-      >
-        <UiIcon icon={IconSparkles} size="navigation" />
-        <span className="workspace-tool-label">{t.navigation.examples}</span>
-      </Button>
-      <Button
-        size="sm"
-        variant="tertiary"
-        className="workspace-tool-shortcut"
-        aria-label={shell.freeCanvas}
-        onPress={() => void navigate(freeCanvasPath)}
-      >
-        <UiIcon icon={IconBrush} size="navigation" />
-        <span className="workspace-tool-label">{shell.freeCanvas}</span>
-      </Button>
-      <Button
-        size="sm"
-        variant="tertiary"
-        className="workspace-tool-shortcut"
-        aria-label={shell.assets}
-        onPress={() => openLibrary()}
-      >
-        <UiIcon icon={IconFolder} size="navigation" />
-        <span className="workspace-tool-label">{shell.assets}</span>
-      </Button>
+      {shortcuts.map(({ id, icon, label, action }, index) => (
+        <Tooltip key={id} delay={300} closeDelay={0} isDisabled={!showShortcutTooltips}>
+          <Button
+            size="sm"
+            variant="tertiary"
+            className="workspace-tool-shortcut"
+            style={workspaceRailLabelStyle(firstShortcutIndex + index)}
+            aria-label={label}
+            onPress={action}
+          >
+            <UiIcon icon={icon} size="navigation" />
+            <span className="workspace-tool-label">{label}</span>
+          </Button>
+          <Tooltip.Content placement="right" offset={8}>
+            {label}
+          </Tooltip.Content>
+        </Tooltip>
+      ))}
     </nav>
   );
 }
@@ -94,11 +104,13 @@ function WorkspaceCategoryMenu({
   category,
   active,
   side,
+  index,
   activate,
 }: {
   category: WorkspaceToolCategory;
   active: boolean;
   side: boolean;
+  index: number;
   activate: () => void;
 }) {
   const { pathname } = useAppLocation();
@@ -132,6 +144,7 @@ function WorkspaceCategoryMenu({
       <Dropdown.Trigger
         ref={menu.triggerRef}
         className="workspace-tool-shortcut workspace-tool-group"
+        style={workspaceRailLabelStyle(index)}
         aria-label={label}
         data-current={isCurrentCategory || undefined}
         onHoverStart={(event) => {

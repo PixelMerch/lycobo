@@ -1,8 +1,8 @@
 import { Button, ToggleButton, ToggleButtonGroup, Tooltip } from "@heroui/react";
 import {
   IconLayoutGrid,
-  IconLayoutSidebarLeftCollapse,
-  IconLayoutSidebarLeftExpand,
+  IconLayoutSidebar,
+  IconLayoutSidebarRight,
   IconSquare,
 } from "@tabler/icons-react";
 import { useRef } from "react";
@@ -11,7 +11,7 @@ import { useMessages } from "../../i18n/messages";
 import { workspaceToolMessages } from "./workspace-tool-messages";
 import { useWorkspaceView } from "./workspace-view-preferences";
 
-/** 左侧工具栏切换按钮，通过短暂波纹反馈收展。 */
+/** 切换左侧工具栏，图标随状态切换，指针操作时反馈短暂波纹。 */
 export function ToolRailCollapseToggle() {
   const t = useMessages(workspaceToolMessages);
   const collapsed = useWorkspaceView((state) => state.toolRailCollapsed);
@@ -27,6 +27,7 @@ export function ToolRailCollapseToggle() {
         className="workspace-composer-toggle"
         aria-label={label}
         aria-expanded={!collapsed}
+        aria-controls="workspace-tool-navigation"
         onPress={(event) => {
           setCollapsed(!collapsed);
           activeRipple.current?.cancel();
@@ -51,10 +52,10 @@ export function ToolRailCollapseToggle() {
             ) ?? null;
         }}
       >
-        <UiIcon
-          icon={collapsed ? IconLayoutSidebarLeftExpand : IconLayoutSidebarLeftCollapse}
-          size="default"
-        />
+        <span className="workspace-tool-toggle-icon" aria-hidden="true">
+          <UiIcon icon={IconLayoutSidebar} className="workspace-tool-collapse-icon" />
+          <UiIcon icon={IconLayoutSidebarRight} className="workspace-tool-expand-icon" />
+        </span>
       </Button>
       <Tooltip.Content placement="right">{label}</Tooltip.Content>
     </Tooltip>

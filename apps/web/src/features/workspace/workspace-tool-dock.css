@@ -186,9 +186,7 @@
   border-radius: var(--radius);
   transform: translateY(-50%);
   pointer-events: none;
-  transition:
-    background-color 150ms ease,
-    width var(--workspace-rail-transition, 0ms);
+  transition: background-color 150ms ease;
 }
 .workspace-tool-shortcut::before {
   content: "";

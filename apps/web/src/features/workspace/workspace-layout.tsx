@@ -15,6 +15,7 @@ import { toolForPath } from "./workspace-state";
 import { WorkspaceToolPicker } from "./workspace-tool-picker";
 import "./workspace.css";
 import { useMessages } from "../../i18n/messages";
+import { workspaceRailMotionStyle } from "./workspace-rail-motion";
 import { WorkspaceScrollbar } from "./workspace-scrollbar";
 import { workspaceToolMessages } from "./workspace-tool-messages";
 import { HistoryDensityToggle, ToolRailCollapseToggle } from "./workspace-view-controls";
@@ -48,6 +49,7 @@ export function WorkspaceLayout() {
       data-tool-rail={toolRailCollapsed ? "collapsed" : "expanded"}
       data-density={historyTool === "video" ? undefined : density}
       className={`workspace unified-workspace${pathname.includes("textile-set") ? " textile-workspace" : ""}`}
+      style={workspaceRailMotionStyle}
     >
       {/* 工具坞：桌面是参数栏左侧的竖排工具栏（底部按钮可收成只有图标），窄屏是历史上方的横排工具栏。 */}
       <div className="workspace-tool-dock">
