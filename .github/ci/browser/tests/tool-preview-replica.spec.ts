@@ -24,7 +24,7 @@ test("tool menu hover stays quiet while the main image banner and drafts survive
   await expect(preview).toHaveCount(0);
   const banner = page.locator(".workspace-composer-hero");
   await expect(banner.locator("img")).toHaveCount(1);
-  await expect(banner.getByRole("img", { name: /层叠作品卡片/ })).toBeVisible();
+  await expect(banner.getByRole("img", { name: /橙色跑鞋/ })).toBeVisible();
   await banner.hover();
   await expect(preview).toHaveCount(0);
   await expect(page).toHaveURL(/\/commerce\/create$/);

@@ -136,11 +136,11 @@
 }
 
 .workspace-composer-hero[data-tool="create"]::after {
-  /* 标题所在的留白保持对比度，右侧作品保留原色。 */
-  background: linear-gradient(90deg, rgb(15 28 28 / 25%), transparent 62%);
+  /* 只压暗底部的工具标题区域，保留海报大字和跑鞋的颜色。 */
+  background: linear-gradient(0deg, rgb(7 18 31 / 50%), transparent 32%);
 }
 .workspace-composer-hero[data-tool="create"] .workspace-composer-hero-image {
-  object-position: center bottom;
+  object-position: center top;
 }
 .workspace-composer-hero[data-tool="create"] .workspace-composer-hero-copy {
   grid-template-rows: auto;
@@ -149,6 +149,11 @@
   color: var(--foreground);
   font-size: calc(var(--text-xl) + 2px * (1 - var(--hero-collapse)));
   line-height: var(--leading-xl);
+}
+@media (max-width: 767px) {
+  .workspace-composer-hero[data-tool="create"] {
+    --composer-hero-height: 160px;
+  }
 }
 
 /* 一级工具类别和直接入口共用一组尺寸与悬停样式。 */
