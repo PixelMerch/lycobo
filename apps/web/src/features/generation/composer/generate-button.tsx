@@ -97,7 +97,6 @@ export function GenerateButton({
       >
         <GenerationButtonMotion
           phase={state}
-          submittingLabel={t.submittingShort}
           successLabel={feedbackLabel}
           reducedMotion={reducedMotion}
         >

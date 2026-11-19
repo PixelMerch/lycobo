@@ -135,8 +135,14 @@ export function useImageAssets({
     getNextPageParam: (last) => (last.data.length === 30 ? last.data.at(-1)?.id : undefined),
   });
 }
-/** 提交生图任务：同一账号同时只允许一个提交，成功后刷新余额与历史。 */
-export function useGenerateImage(enabled = true) {
+/** 提交生图任务，刷新余额与记录，并按入口选择成功反馈。 */
+export function useGenerateImage({
+  enabled = true,
+  successFeedback = "toast",
+}: {
+  enabled?: boolean;
+  successFeedback?: "toast" | "button";
+} = {}) {
   const session = useImageSession(enabled);
   const client = useQueryClient();
   const locked = useRef(false);
@@ -154,7 +160,8 @@ export function useGenerateImage(enabled = true) {
       locked.current = false;
     },
     onSuccess: () => {
-      toast.success(currentMessages(generationMessages).submissionAccepted);
+      if (successFeedback === "toast")
+        toast.success(currentMessages(generationMessages).submissionAccepted);
       // 账本事件与提交回执属于同一次变更，在线时交由唯一推送通道刷新余额。
       refreshWithoutRealtime(client, "wallet", "wallet-entries");
       void client.invalidateQueries({ queryKey: ["image-tasks"] });

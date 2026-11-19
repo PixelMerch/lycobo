@@ -169,6 +169,8 @@ test("analysis shows progress, blocks repeated presses and opens normalized plan
     await expect(page.getByRole("region", { name: "正在生成套图计划", exact: true })).toBeVisible();
     await expect(button).toBeDisabled();
     await expect(button).toHaveAttribute("data-submit-state", "loading");
+    await expect(button.locator(".spinner")).toBeVisible();
+    await expect(button).toHaveText("");
     await expect(page.locator(".variation-submit > [role=status]")).toHaveText("正在生成计划");
     await button.evaluate((node) => {
       if (node instanceof HTMLButtonElement) {

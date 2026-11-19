@@ -22,7 +22,7 @@ export function useVariationGeneration() {
   const draft = useSmartVariationDraft();
   const session = useImageSession();
   const models = useImageModels();
-  const generation = useGenerateImage();
+  const generation = useGenerateImage({ successFeedback: "button" });
   const pending = usePendingSubmission(session.data);
   const ownPending =
     pending && !!session.data && pendingSubmissionSource(session.data) === "smart-variation";

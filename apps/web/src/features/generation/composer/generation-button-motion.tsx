@@ -17,13 +17,11 @@ const checkSpring = { type: "spring", stiffness: 120, damping: 20, delay: 0.15 }
 export function GenerationButtonMotion({
   phase,
   reducedMotion,
-  submittingLabel,
   successLabel,
   children,
 }: {
   phase: SubmissionPhase;
   reducedMotion: boolean;
-  submittingLabel: string;
   successLabel: string;
   children: ReactNode;
 }) {
@@ -37,12 +35,7 @@ export function GenerationButtonMotion({
       transition={reducedMotion ? noMotion : contentTransitions[phase]}
     >
       {phase === "idle" && children}
-      {phase === "loading" && (
-        <>
-          {!reducedMotion && <Spinner size="sm" color="current" />}
-          {submittingLabel}
-        </>
-      )}
+      {phase === "loading" && <Spinner size="sm" color="current" />}
       {phase === "success" && (
         <>
           <svg

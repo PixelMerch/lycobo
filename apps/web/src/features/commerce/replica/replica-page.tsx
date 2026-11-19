@@ -34,7 +34,7 @@ export function ReplicaPage() {
   const common = useMessages(generationMessages);
   const models = useImageModels();
   const session = useImageSession();
-  const generate = useGenerateImage();
+  const generate = useGenerateImage({ successFeedback: "button" });
   const anyPending = usePendingSubmission(session.data);
   const pending =
     anyPending && !!session.data && pendingSubmissionSource(session.data) === "replica";

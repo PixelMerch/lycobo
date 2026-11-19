@@ -54,7 +54,7 @@ function Workspace({ model }: { model: ModelId }) {
   const inputId = useRef<HTMLTextAreaElement>(null);
   const session = useImageSession();
   const modelQuery = useImageModels();
-  const generate = useGenerateImage();
+  const generate = useGenerateImage({ successFeedback: "button" });
   const [showMore, setShowMore] = useState(false);
   useErrorToast(modelQuery.isError ? imageErrorMessage(modelQuery.error) : null);
   const submissionError = generate.isError ? imageErrorMessage(generate.error) : null;

@@ -260,7 +260,7 @@ function useRepairTasks(assetId: string, imageError: string | null) {
   const draft = localDraft ?? emptyRepairDraft;
   const update = useRepairDrafts((state) => state.update);
   const models = useImageModels();
-  const generate = useGenerateImage();
+  const generate = useGenerateImage({ successFeedback: "button" });
   const pending = usePendingSubmission(session.data);
   const ownPending =
     !!session.data && pending && pendingSubmissionSource(session.data) === `repair:${assetId}`;
@@ -278,7 +278,7 @@ function useRepairTasks(assetId: string, imageError: string | null) {
     const saved = latest.data?.job;
     const edit = saved?.input?.localEdit;
     if (!saved || !edit || localDraft || useRepairDrafts.getState().drafts[key]) return;
-    // A saved submission is history, not an unsaved editing draft.
+    // 已提交的任务只恢复为历史记录，编辑区从空白草稿开始。
     update(key, { regions: [], jobId: saved.id });
     setSelected(null);
   }, [latest.data, key, update, localDraft]);
