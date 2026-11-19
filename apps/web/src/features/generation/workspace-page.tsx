@@ -28,6 +28,7 @@ import { qualityMessages } from "./quality-messages";
 import { hasPromptDescription } from "./references/prompt-description";
 import { ReferencePicker } from "./references/reference-picker";
 import { submissionReferenceRoles } from "./references/reference-roles";
+import { referencesMessages } from "./references/references-messages";
 import {
   type Draft,
   defaultDraft,
@@ -47,6 +48,7 @@ export function WorkspacePage() {
 function Workspace({ model }: { model: ModelId }) {
   const locale = useLocale();
   const t = useMessages(generationMessages);
+  const referenceText = useMessages(referencesMessages);
   const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const visitModel = useStudioStore((s) => s.visitModel);
@@ -78,7 +80,13 @@ function Workspace({ model }: { model: ModelId }) {
     <section className="composer-panel" aria-label={t.composer}>
       <section className="composer-scroll" aria-label={t.parameters}>
         <WorkspaceComposerTitle />
-        <ReferencePicker compact withRoles model={model} references={draft.references} />
+        <ReferencePicker
+          compact
+          withRoles
+          label={referenceText.uploadProduct}
+          model={model}
+          references={draft.references}
+        />
         <ReferencePrompt
           className="prompt-field"
           label={t.prompt}
