@@ -17,7 +17,7 @@ test("tool menu hover stays quiet while the banner retains examples and drafts s
   await expect(rail.getByRole("button", { name: "商品视频" })).toHaveCount(0);
   // 先在工具外移动鼠标，模拟用户从输入模式切回指针模式。
   await page.mouse.move(600, 80);
-  await rail.getByRole("button", { name: "功能", exact: true }).hover();
+  await rail.getByRole("button", { name: "商品图片", exact: true }).hover();
   const preview = page.locator(".workspace-tool-preview-card");
   // 覆盖原来的300ms延迟，确认菜单不会稍后再弹出示例。
   await page.waitForTimeout(450);
@@ -118,7 +118,7 @@ test("reduced-motion keyboard preview is static and home hides video", async ({ 
   await page.goto("/zh-CN/commerce/create");
   const button = page
     .locator(".workspace-tool-bar")
-    .getByRole("button", { name: "电商工具", exact: true });
+    .getByRole("button", { name: "商品图片", exact: true });
   await expect(button).toHaveAttribute("data-current", "true");
   await button.hover();
   await expect(page.locator(".workspace-tool-submenu")).toBeVisible();

@@ -53,12 +53,17 @@ describe("landing header messages", () => {
 });
 
 describe("landing navigation messages", () => {
-  it.each(["/dashboard/free-canvas", "/dashboard/commerce/create", "/dashboard"])(
-    "accepts the isolated navigation entry %s",
-    (path) => {
-      expect(readLandingNavigation({ type: "lycobo:navigate", path })).toBe(path);
-    },
-  );
+  it.each([
+    "/dashboard/free-canvas",
+    "/dashboard/commerce/create",
+    "/dashboard/commerce/smart-variation",
+    "/dashboard/commerce/replica",
+    "/dashboard/commerce/textile-set",
+    "/dashboard",
+    "/inspiration",
+  ])("accepts the isolated navigation entry %s", (path) => {
+    expect(readLandingNavigation({ type: "lycobo:navigate", path })).toBe(path);
+  });
 
   it.each([
     null,
@@ -66,7 +71,7 @@ describe("landing navigation messages", () => {
     {},
     { type: "lycobo:header", path: "/dashboard/free-canvas" },
     { type: "lycobo:navigate" },
-    { type: "lycobo:navigate", path: "/dashboard/commerce/smart-variation" },
+    { type: "lycobo:navigate", path: "/dashboard/video" },
     { type: "lycobo:navigate", path: "https://example.com" },
     { type: "lycobo:navigate", path: "/dashboard/free-canvas?next=https://example.com" },
   ])("ignores other navigation requests: %j", (data) => {

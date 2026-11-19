@@ -19,16 +19,18 @@ test("workspace switches tools without discarding drafts and remembers the curre
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("保留我的商品草稿");
 });
 
-test("switching to video creation does not trigger paid work", async ({ page }) => {
+test("video is absent from the tool menu and its direct route does not trigger paid work", async ({
+  page,
+}) => {
   const submissions: string[] = [];
   page.on("request", (r) => {
     if (r.method() === "POST" && r.url().includes("image-tasks")) submissions.push(r.url());
   });
   await page.goto("/commerce/create");
-  await page
-    .getByRole("navigation", { name: "电商创作工具" })
-    .getByRole("button", { name: "视频创作", exact: true })
-    .click();
+  await expect(
+    page.getByRole("navigation", { name: "电商创作工具" }).getByRole("button", { name: /视频/ }),
+  ).toHaveCount(0);
+  await page.goto("/zh-CN/dashboard/video");
   await expect(page).toHaveURL(/\/video$/);
   await expect(page.getByRole("button", { name: /立即生成.*100/ })).toBeDisabled();
   expect(submissions).toEqual([]);

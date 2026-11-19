@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useAppNavigate } from "../../../i18n/use-localized-navigation";
-import { dashboardPath, dashboardToolPaths, freeCanvasPath } from "../../../lib/dashboard-paths";
+import { dashboardPath, freeCanvasPath } from "../../../lib/dashboard-paths";
+import { commerceTools } from "../../commerce/commerce-tools";
+import { inspirationLibraryPath } from "../../inspiration/inspiration-path";
 
 type HeaderFields = Record<
   "type" | "x" | "y" | "width" | "height" | "scrollY" | "theme" | "menuOpen" | "signedIn",
@@ -35,7 +37,11 @@ export function readLandingNavigation(data: unknown) {
   if (!("type" in data) || data.type !== "lycobo:navigate") return null;
   if (!("path" in data)) return null;
   const { path } = data;
-  return path === freeCanvasPath || path === dashboardToolPaths.create || path === dashboardPath
+  return typeof path === "string" &&
+    (path === freeCanvasPath ||
+      path === dashboardPath ||
+      path === inspirationLibraryPath ||
+      commerceTools.some((tool) => tool.href === path))
     ? path
     : null;
 }

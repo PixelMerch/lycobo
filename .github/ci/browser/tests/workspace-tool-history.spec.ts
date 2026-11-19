@@ -59,7 +59,7 @@ for (const width of [390, 1440]) {
     // Switching controls never display help; the composer banner owns it.
     const textileShortcut = page
       .getByRole("navigation", { name: "电商创作工具" })
-      .getByRole("button", { name: "功能", exact: true });
+      .getByRole("button", { name: "品类工具", exact: true });
     await textileShortcut.hover();
     const preview = page.getByRole("tooltip");
     await expect(preview).toHaveCount(0);
@@ -135,7 +135,7 @@ for (const width of [390, 1440]) {
     await expect(page.locator(".workspace-composer-title")).toHaveText("家纺裂变");
     await expect(
       page.getByRole("navigation", { name: "电商创作工具" }).getByRole("button", {
-        name: "功能",
+        name: "品类工具",
         exact: true,
       }),
     ).toHaveAttribute("data-current", "true");

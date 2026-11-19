@@ -86,11 +86,16 @@ export async function chooseWorkspaceTool(
   page: Page,
   tool: "主图制作" | "复制爆款" | "家纺裂变" | "套图计划",
 ) {
-  const group = tool === "主图制作" ? "电商工具" : "功能";
-  const label = tool === "主图制作" ? "商品主图" : tool;
+  const group = tool === "家纺裂变" ? "品类工具" : "商品图片";
+  const labels = {
+    主图制作: "商品主图",
+    复制爆款: "复制爆款",
+    家纺裂变: "家纺套图",
+    套图计划: "商品套图",
+  };
   await page
     .getByRole("navigation", { name: "电商创作工具" })
     .getByRole("button", { name: group, exact: true })
     .click();
-  await page.getByRole("menuitem", { name: label, exact: true }).click();
+  await page.getByRole("menuitem", { name: labels[tool], exact: true }).click();
 }

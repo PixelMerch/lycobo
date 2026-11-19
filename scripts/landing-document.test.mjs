@@ -14,13 +14,20 @@ describe("localized landing document", () => {
       expect(document).not.toContain("__LYCOBO_");
       expect(document).toContain(`lang="${locale}"`);
       expect(document).not.toMatch(/Trustpilot|support@openart|10M\+|40 free credits/);
-      const mainImageLinks = document.match(
-        /<a\b[^>]*data-landing-path="\/dashboard\/commerce\/create"[^>]*>/g,
-      );
-      expect(mainImageLinks).toHaveLength(2);
-      for (const link of mainImageLinks ?? []) {
-        expect(link).toContain(`href="/${locale}/dashboard/commerce/create"`);
+      const menuLinks = [...document.matchAll(/<a\b[^>]*data-landing-path="([^"]+)"[^>]*>/g)];
+      for (const path of [
+        "/dashboard/commerce/create",
+        "/dashboard/commerce/smart-variation",
+        "/dashboard/commerce/replica",
+        "/dashboard/commerce/textile-set",
+        "/inspiration",
+        "/dashboard/free-canvas",
+      ]) {
+        const links = menuLinks.filter((link) => link[1] === path);
+        expect(links).toHaveLength(2);
+        for (const [markup] of links) expect(markup).toContain(`href="/${locale}${path}"`);
       }
+      expect(menuLinks.map((link) => link[1])).not.toContain("/dashboard/video");
       const workspaceLinks = document.match(/<a\b[^>]*data-landing-path="\/dashboard"[^>]*>/g);
       expect(workspaceLinks).toHaveLength(3);
       expect(document).not.toContain('data-pageforge-source="enterprise"');

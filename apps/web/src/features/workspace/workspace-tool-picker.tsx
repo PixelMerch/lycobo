@@ -1,5 +1,12 @@
 import { Button, Dropdown, Header } from "@heroui/react";
-import { IconBrush, IconChevronRight, IconFolder, IconPhoto } from "@tabler/icons-react";
+import {
+  IconBrush,
+  IconChevronRight,
+  IconFolder,
+  IconPhoto,
+  IconShirt,
+  IconSparkles,
+} from "@tabler/icons-react";
 import { useState, useSyncExternalStore } from "react";
 import { shellMessages } from "../../app/shell-messages";
 import { UiIcon } from "../../components/ui-icon";
@@ -8,20 +15,21 @@ import { useAppLocation, useAppNavigate } from "../../i18n/use-localized-navigat
 import { freeCanvasPath } from "../../lib/dashboard-paths";
 import { useHoverMenu } from "../../lib/use-hover-menu";
 import { useOpenAssetLibrary } from "../assets/asset-library-store";
-import { navigationMessages } from "../home/landing/navigation-messages";
+import { inspirationLibraryPath } from "../inspiration/inspiration-path";
 import { shareProductReference, visibleWorkspaceTools } from "./workspace-state";
 import { type WorkspaceToolCategory, workspaceToolCategories } from "./workspace-tool-categories";
 import { workspaceToolMessages } from "./workspace-tool-messages";
 
 const sideDockQuery = "(min-width: 1024px)";
 const isSideDock = () => window.matchMedia(sideDockQuery).matches;
+const categoryIcons = { productImages: IconPhoto, categoryTools: IconShirt };
 function subscribeToDockLayout(change: () => void) {
   const query = window.matchMedia(sideDockQuery);
   query.addEventListener("change", change);
   return () => query.removeEventListener("change", change);
 }
 
-/** 首页的三类功能在工作区左侧，桌面端悬停后向右展开。 */
+/** 工作区沿用首页的工具分类，桌面端悬停后向右展开。 */
 export function WorkspaceToolPicker() {
   const navigate = useAppNavigate();
   const t = useMessages(workspaceToolMessages);
@@ -47,6 +55,16 @@ export function WorkspaceToolPicker() {
           activate={() => setOpenCategory(category.label)}
         />
       ))}
+      <Button
+        size="sm"
+        variant="tertiary"
+        className="workspace-tool-shortcut"
+        aria-label={t.navigation.examples}
+        onPress={() => void navigate(inspirationLibraryPath)}
+      >
+        <UiIcon icon={IconSparkles} size="navigation" />
+        <span className="workspace-tool-label">{t.navigation.examples}</span>
+      </Button>
       <Button
         size="sm"
         variant="tertiary"
@@ -85,21 +103,20 @@ function WorkspaceCategoryMenu({
 }) {
   const { pathname } = useAppLocation();
   const navigate = useAppNavigate();
-  const copy = useMessages(navigationMessages);
   const t = useMessages(workspaceToolMessages);
   const menu = useHoverMenu();
-  const label = copy[category.label];
+  const label = t.navigation[category.label];
   const entries = category.sections.flatMap((section) => section.entries);
-  const currentTool = visibleWorkspaceTools.find((tool) => tool.path === pathname);
-  const currentEntry = currentTool && entries.find((entry) => entry.tool === currentTool.id);
-  const currentCategory = currentTool?.id === "create" ? "copy001" : "copy003";
+  const currentTool = visibleWorkspaceTools.find(
+    (tool) => tool.path === pathname.replace(/\/+$/, ""),
+  );
+  const isCurrentCategory = entries.some((entry) => entry.tool === currentTool?.id);
 
   function selectEntry(key: string | number) {
-    const entry = entries.find((item) => item.label === key);
-    const tool = visibleWorkspaceTools.find((item) => item.id === entry?.tool);
+    const tool = visibleWorkspaceTools.find((item) => item.id === key);
     if (!tool) return;
     menu.close();
-    if (tool.path === pathname) return;
+    if (tool.id === currentTool?.id) return;
     shareProductReference(pathname, tool.path);
     void navigate(tool.path);
   }
@@ -116,7 +133,7 @@ function WorkspaceCategoryMenu({
         ref={menu.triggerRef}
         className="workspace-tool-shortcut workspace-tool-group"
         aria-label={label}
-        data-current={(currentTool && category.label === currentCategory) || undefined}
+        data-current={isCurrentCategory || undefined}
         onHoverStart={(event) => {
           if (!side || event.pointerType !== "mouse") return;
           menu.openOnHover();
@@ -124,10 +141,8 @@ function WorkspaceCategoryMenu({
         }}
         onHoverEnd={menu.closeSoon}
       >
-        {currentTool && category.label === currentCategory && (
-          <span className="workspace-tool-rail-ripple" aria-hidden="true" />
-        )}
-        <UiIcon icon={category.icon} size="navigation" />
+        {isCurrentCategory && <span className="workspace-tool-rail-ripple" aria-hidden="true" />}
+        <UiIcon icon={categoryIcons[category.label]} size="navigation" />
         <span className="workspace-tool-label">{label}</span>
         <UiIcon icon={IconChevronRight} size="small" className="workspace-tool-chevron" />
       </Dropdown.Trigger>
@@ -143,52 +158,40 @@ function WorkspaceCategoryMenu({
       >
         <Dropdown.Menu
           aria-label={label}
-          disabledKeys={entries.filter((item) => !item.tool).map((item) => item.label)}
           onAction={selectEntry}
           {...(menu.openedByHover ? { autoFocus: false } : {})}
         >
           {category.sections.map((section) => (
-            <Dropdown.Section
-              key={section.heading ?? category.label}
-              aria-label={section.heading ? copy[section.heading] : label}
-              data-wide={section.entries.length > 6 || undefined}
-            >
-              {section.heading && (
-                <Header className="workspace-tool-section-label">{copy[section.heading]}</Header>
-              )}
+            <Dropdown.Section key={section.heading} aria-label={t.navigation[section.heading]}>
+              <Header className="workspace-tool-section-label">
+                {t.navigation[section.heading]}
+              </Header>
               {section.entries.map((item) => {
-                const name = item.label === "styleMatch" ? t.tools.replica.name : copy[item.label];
-                const description = item.description
-                  ? copy[item.description]
-                  : item.tool && t.tools[item.tool].summary;
+                const name = t.navigation.tools[item.tool];
                 return (
                   <Dropdown.Item
-                    key={item.label}
-                    id={item.label}
+                    key={item.tool}
+                    id={item.tool}
                     textValue={name}
                     aria-label={name}
-                    data-current={item === currentEntry || undefined}
+                    data-current={item.tool === currentTool?.id || undefined}
                     className="workspace-tool-menu-item"
                   >
                     <span className="workspace-tool-preview-thumb" aria-hidden="true">
-                      {item.preview ? (
-                        <img
-                          src={item.preview}
-                          alt=""
-                          width={52}
-                          height={36}
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      ) : (
-                        <UiIcon icon={IconPhoto} size="navigation" />
-                      )}
+                      <img
+                        src={item.preview}
+                        alt=""
+                        width={52}
+                        height={36}
+                        loading="lazy"
+                        decoding="async"
+                      />
                     </span>
                     <span className="workspace-tool-menu-copy">
                       <span>{name}</span>
-                      {description && (
-                        <span className="workspace-tool-description">{description}</span>
-                      )}
+                      <span className="workspace-tool-description">
+                        {t.tools[item.tool].summary}
+                      </span>
                     </span>
                   </Dropdown.Item>
                 );

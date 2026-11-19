@@ -19,12 +19,13 @@ test.describe("English browser", () => {
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page).toHaveTitle("Lycobo · E-commerce Creative Studio");
-    const navigation = page.getByRole("navigation", { name: "Main navigation", exact: true });
-    await expect(navigation.locator(".nav-row")).toHaveText(["Home", "E-commerce", "Inspiration"]);
+    const navigation = page.frameLocator("iframe.openart-reference").locator("[data-nav-items]");
+    const items = navigation.locator(".nav-item:not([data-nav-more]) > a");
+    await expect(items).toHaveText(["Product Images", "Category Tools", "Examples", "Free canvas"]);
 
     const language = page.getByRole("button", { name: "Language: English", exact: true });
     await expect(language).toHaveText("EN");
-    await expectLeftOf(page, ".language-trigger", ".header-credits");
+    await expectLeftOf(page, ".header-workspace", ".header-credits");
     await language.click();
     const menu = page.getByRole("menu", { name: "Language: English" });
     await expect(menu.getByRole("menuitemradio")).toHaveText(["简体中文", "English"]);
@@ -35,12 +36,11 @@ test.describe("English browser", () => {
     await menu.getByRole("menuitemradio", { name: "简体中文" }).click();
     await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
     await expect(page).toHaveTitle("Lycobo · 电商创作工作台");
-    const chinese = page.getByRole("navigation", { name: "主导航", exact: true });
-    await expect(chinese.locator(".nav-row")).toHaveText(["首页", "电商", "灵感"]);
+    await expect(items).toHaveText(["商品图片", "品类工具", "效果案例", "自由画布"]);
 
     // 选择记在本机，刷新后不再跟随浏览器语言。
     await page.reload();
-    await expect(chinese.locator(".nav-row")).toHaveText(["首页", "电商", "灵感"]);
+    await expect(items).toHaveText(["商品图片", "品类工具", "效果案例", "自由画布"]);
     await expect(page.getByRole("button", { name: "语言：简体中文", exact: true })).toHaveText(
       "中文",
     );
@@ -56,9 +56,9 @@ test.describe("English workspace", () => {
     await page.goto("/commerce/create");
     const tools = page.getByRole("navigation", { name: "E-commerce tools", exact: true });
     await expect(tools.getByRole("button")).toHaveText([
-      "Commerce Tools",
-      "Image Types",
-      "Features",
+      "Product Images",
+      "Category Tools",
+      "Examples",
       "Free canvas",
       "Assets",
     ]);
@@ -88,8 +88,13 @@ test.describe("Japanese browser", () => {
     await mockImageApi(page, { signedIn: false });
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
-    const navigation = page.getByRole("navigation", { name: "Main navigation", exact: true });
-    await expect(navigation.locator(".nav-row")).toHaveText(["Home", "E-commerce", "Inspiration"]);
+    const navigation = page.frameLocator("iframe.openart-reference").locator("[data-nav-items]");
+    await expect(navigation.locator(".nav-item:not([data-nav-more]) > a")).toHaveText([
+      "Product Images",
+      "Category Tools",
+      "Examples",
+      "Free canvas",
+    ]);
   });
 });
 

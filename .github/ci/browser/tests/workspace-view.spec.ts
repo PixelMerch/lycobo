@@ -119,9 +119,9 @@ test("the tool rail collapses to icons while the settings panel stays", async ({
   const expand = page.getByRole("button", { name: "展开工具栏", exact: true });
   await expect(expand).toHaveAttribute("aria-expanded", "false");
   await expect(expand).toBeFocused();
-  await tools.getByRole("button", { name: "功能", exact: true }).click();
-  const submenu = page.getByRole("menu", { name: "功能", exact: true });
-  await expect(submenu.getByRole("menuitem", { name: "家纺裂变", exact: true })).toBeVisible();
+  await tools.getByRole("button", { name: "品类工具", exact: true }).click();
+  const submenu = page.getByRole("menu", { name: "品类工具", exact: true });
+  await expect(submenu.getByRole("menuitem", { name: "家纺套图", exact: true })).toBeVisible();
   await expect(page.locator(".workspace-tool-submenu")).toHaveAttribute("data-placement", "right");
   await page.keyboard.press("Escape");
   // 刷新后保持收起，再点一次恢复名称。

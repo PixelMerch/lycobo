@@ -16,6 +16,7 @@ import heroStyles from "./landing-hero.css?raw";
 import heroTemplate from "./landing-hero.html?raw";
 import { initializeLandingHeroScroll } from "./landing-hero-scroll";
 import { initializeLandingNavBridge } from "./landing-nav-bridge";
+import { renderLandingNavigation } from "./landing-navigation";
 import { initializeLandingScrollbar } from "./landing-scrollbar";
 import showcaseStyles from "./landing-showcase.css?raw";
 import { initializeLandingShowcaseScroll } from "./landing-showcase-scroll";
@@ -45,6 +46,8 @@ const htmlEntities: Record<string, string> = {
   '"': "&quot;",
   "'": "&#39;",
 };
+const escapeHtml = (text: string) =>
+  text.replace(/[&<>"']/g, (character) => htmlEntities[character] ?? character);
 
 /** 按 HTML 与脚本字符串的上下文转义文案，避免文案改变隔离模板的结构。 */
 export function renderLandingDocument(
@@ -52,7 +55,11 @@ export function renderLandingDocument(
   messages: Record<string, string>,
   locale: Locale,
 ) {
+  const navigation = renderLandingNavigation(locale, escapeHtml);
   return template
+    .replace("__LYCOBO_DESKTOP_NAV_ITEMS__", () => navigation.desktop)
+    .replace("__LYCOBO_NAV_PANELS__", () => navigation.panels)
+    .replace("__LYCOBO_MOBILE_NAV_ITEMS__", () => navigation.mobile)
     .replace("__LYCOBO_HERO_STYLE__", () => heroStyles + showcaseStyles)
     .replace("__LYCOBO_HERO__", () => hero)
     .replace(
@@ -81,6 +88,6 @@ window.addEventListener("load", ${initializeLandingNavBridge.toString()}, { once
           .replaceAll("\u2028", "\\u2028")
           .replaceAll("\u2029", "\\u2029");
       }
-      return message.replace(/[&<>"']/g, (character) => htmlEntities[character] ?? character);
+      return escapeHtml(message);
     });
 }

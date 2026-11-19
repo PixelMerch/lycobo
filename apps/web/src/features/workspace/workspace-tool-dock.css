@@ -226,14 +226,16 @@
   --glass-tint: var(--surface);
   --glass-fill: none;
   --glass-blur: none;
-  container: workspace-submenu / inline-size;
-  width: min(720px, calc(100vw - 32px));
+  width: min(620px, calc(100vw - 32px));
   padding: 10px;
   border: 1px solid var(--border);
 }
+:root .workspace-tool-submenu[data-single-section].dropdown__popover {
+  width: min(320px, calc(100vw - 32px));
+}
 .workspace-tool-submenu .dropdown__menu {
   display: grid;
-  grid-template-columns: repeat(var(--workspace-menu-columns, 3), minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   max-height: min(560px, 68dvh);
   overflow: auto;
@@ -244,26 +246,8 @@
   gap: 2px;
   min-width: 0;
 }
-.workspace-tool-submenu .menu-section[data-wide] {
-  grid-column: span 2;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-.workspace-tool-submenu[data-single-section] .menu-section[data-wide] {
-  grid-column: 1 / -1;
-  grid-template-columns: repeat(var(--workspace-menu-columns, 3), minmax(0, 1fr));
-}
-@media (min-width: 1024px) {
-  :root .workspace-tool-submenu.dropdown__popover {
-    width: min(1120px, calc(100vw - 248px));
-  }
-}
-@container workspace-submenu (min-width: 880px) {
-  .workspace-tool-submenu .dropdown__menu {
-    --workspace-menu-columns: 4;
-  }
-  .workspace-tool-submenu .dropdown__menu:has(> .menu-section:nth-child(4)) {
-    --workspace-menu-columns: 5;
-  }
+.workspace-tool-submenu[data-single-section] .dropdown__menu {
+  grid-template-columns: minmax(0, 1fr);
 }
 .workspace-tool-section-label {
   grid-column: 1 / -1;
@@ -294,11 +278,6 @@
   height: auto;
   transform: none;
 }
-.workspace-tool-menu-item[data-disabled="true"] {
-  opacity: 1;
-  color: var(--muted);
-  pointer-events: auto;
-}
 .workspace-tool-menu-item[data-current="true"] .workspace-tool-menu-copy > span:first-child {
   font-weight: var(--weight-semibold);
 }
@@ -312,7 +291,7 @@
   )::before {
   background-color: var(--fill-strong);
 }
-.workspace-tool-menu-item:not([data-disabled="true"]):is(
+.workspace-tool-menu-item:is(
     :hover,
     [data-hovered="true"],
     [data-focus-visible="true"],
@@ -348,13 +327,6 @@
 }
 @media (max-width: 767px) {
   .workspace-tool-submenu .dropdown__menu {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .workspace-tool-submenu .menu-section[data-wide] {
-    grid-column: 1 / -1;
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .workspace-tool-submenu[data-single-section] .menu-section[data-wide] {
     grid-template-columns: minmax(0, 1fr);
   }
 }

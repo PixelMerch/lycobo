@@ -27,9 +27,9 @@
 Work through this list before resuming landing-page design. Mark an entry complete when its destination and behavior have been checked.
 
 - [x] Verify Start Creating opens sign-in with a workspace return path.
-- [ ] Verify Free Canvas.
+- [x] Verify Free Canvas navigation.
 - [x] Verify the landing menu's Hero Images link opens Main Image on desktop and mobile.
 - [ ] Verify Image Set Planner, Textile Variations and Style Match.
-- [ ] Audit Image Types, Features and Resources for missing or duplicate destinations.
+- [x] Verify the Product Images and Category Tools menus expose only working destinations.
 - [ ] Verify the menu in both languages and on desktop and mobile.
 - [ ] Validate upload, generation, results, download and failure recovery for each tool in the appropriate test environment.

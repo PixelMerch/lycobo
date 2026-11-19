@@ -20,6 +20,20 @@ export const workspaceToolMessages = defineMessages({
     historyDensity: "历史视图",
     largeView: "大图",
     compactView: "紧凑",
+    navigation: {
+      productImages: "商品图片",
+      categoryTools: "品类工具",
+      listingImages: "上架用图",
+      photography: "拍摄风格",
+      textiles: "家纺",
+      examples: "效果案例",
+      tools: {
+        create: "商品主图",
+        variation: "商品套图",
+        replica: "复制爆款",
+        textile: "家纺套图",
+      },
+    },
     tools: {
       create: {
         name: "主图制作",
@@ -61,6 +75,20 @@ export const workspaceToolMessages = defineMessages({
     historyDensity: "History view",
     largeView: "Large",
     compactView: "Compact",
+    navigation: {
+      productImages: "Product Images",
+      categoryTools: "Category Tools",
+      listingImages: "Listing Images",
+      photography: "Photography Styles",
+      textiles: "Home Textiles",
+      examples: "Examples",
+      tools: {
+        create: "Product Main Image",
+        variation: "Product Image Set",
+        replica: "Style Match",
+        textile: "Home Textile Image Set",
+      },
+    },
     tools: {
       create: {
         name: "Main Image",
