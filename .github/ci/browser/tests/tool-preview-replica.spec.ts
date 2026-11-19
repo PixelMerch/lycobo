@@ -24,7 +24,13 @@ test("tool menu hover stays quiet while the main image banner and drafts survive
   await expect(preview).toHaveCount(0);
   const banner = page.locator(".workspace-composer-hero");
   await expect(banner.locator("img")).toHaveCount(1);
-  await expect(banner.getByRole("img", { name: /橙色跑鞋/ })).toBeVisible();
+  const bannerImage = banner.getByRole("img", { name: /橙色跑鞋/ });
+  await expect(bannerImage).toBeVisible();
+  const thumbnail = page.getByRole("menuitem", { name: "商品主图", exact: true }).locator("img");
+  await expect(thumbnail).toHaveAttribute("src", (await bannerImage.getAttribute("src")) ?? "");
+  await expect(thumbnail).toHaveCSS("width", "72px");
+  await expect(thumbnail).toHaveCSS("height", "50px");
+  await page.keyboard.press("Escape");
   await banner.hover();
   await expect(preview).toHaveCount(0);
   await expect(page).toHaveURL(/\/commerce\/create$/);
@@ -114,7 +120,9 @@ test("style matching requires both slots and submits their roles without a paid 
   await expect(page.getByText("任务已入队，关闭页面后仍会处理。", { exact: true })).toBeVisible();
 });
 
-test("reduced-motion keyboard preview is static and home hides video", async ({ page }) => {
+test("reduced-motion tool menu stays available without a duplicate banner preview", async ({
+  page,
+}) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await mockImageApi(page);
   await page.goto("/zh-CN/commerce/replica");
@@ -128,10 +136,14 @@ test("reduced-motion keyboard preview is static and home hides video", async ({ 
   await page.keyboard.press("Escape");
   await button.focus();
   await expect(page.locator(".workspace-tool-preview-card")).toHaveCount(0);
-  await page.locator(".workspace-composer-hero").focus();
-  const preview = page.locator(".workspace-tool-preview-card");
-  await expect(preview).toBeVisible();
-  await expect(preview.locator(".workspace-tool-preview-source")).toBeHidden();
+  const banner = page.locator(".workspace-composer-hero");
+  await expect(banner.getByRole("heading", { name: "复制爆款", exact: true })).toBeVisible();
+  await expect(banner.getByRole("img", { name: /橙色耳机/ })).toBeVisible();
+  await expect(banner).not.toContainText(/风格参考|我的商品|成图/);
+  await banner.hover();
+  // 覆盖旧浮层的延迟，确认离开菜单后没有第二张示例图弹出。
+  await page.waitForTimeout(450);
+  await expect(page.locator(".workspace-tool-preview-card")).toHaveCount(0);
   await page.goto("/zh-CN");
   await expect(page.getByRole("tab", { name: "商品视频" })).toHaveCount(0);
 });

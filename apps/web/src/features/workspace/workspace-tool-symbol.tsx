@@ -1,4 +1,3 @@
-import { Tooltip } from "@heroui/react";
 import { IconCamera, IconCopy, IconLayoutCollage, IconMovie, IconWand } from "@tabler/icons-react";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
@@ -6,7 +5,6 @@ import { useAppLocation } from "../../i18n/use-localized-navigation";
 import { useComposerHeroScroll } from "./use-composer-hero-scroll";
 import { toolForPath, type workspaceTools } from "./workspace-state";
 import { workspaceToolMessages } from "./workspace-tool-messages";
-import { WorkspaceToolPreview } from "./workspace-tool-preview";
 
 type ToolId = (typeof workspaceTools)[number]["id"];
 /** 工作区工具与素材库功能筛选共用的业务图标。 */
@@ -27,68 +25,38 @@ export function WorkspaceToolSymbol({ tool }: { tool: ToolId }) {
   );
 }
 
-/** 参数面板以标题和示例图说明当前工具的用途。 */
+/** 用横幅内的示例图和文字说明当前工具的用途。 */
 export function WorkspaceComposerTitle() {
   const { pathname } = useAppLocation();
   const tool = toolForPath(pathname);
   const heroRef = useComposerHeroScroll(tool.id);
   const t = useMessages(workspaceToolMessages);
   const text = t.tools[tool.id];
-  const workflows = { replica: t.styleMatchExample, variation: t.imageSetExample };
-  const workflow =
-    tool.id === "replica" || tool.id === "variation" ? workflows[tool.id] : undefined;
-  const title = (
-    <div ref={heroRef} className="workspace-composer-hero-copy">
-      <h2 className="workspace-composer-title">{text.name}</h2>
-      {tool.id !== "create" && <p>{text.summary}</p>}
-    </div>
-  );
-  if (tool.id === "create") {
-    return (
-      <header className="workspace-composer-hero" data-tool={tool.id}>
+  const artworkAlt: Partial<Record<ToolId, string>> = {
+    create: t.mainImageExampleAlt,
+    variation: t.imageSetExampleAlt,
+    replica: t.styleMatchExampleAlt,
+  };
+  return (
+    <header className="workspace-composer-hero" data-tool={tool.id}>
+      {tool.id === "textile" ? (
+        <div className="workspace-composer-hero-collage" aria-hidden="true">
+          {tool.bannerImages.map((src) => (
+            <img key={src} src={src} alt="" decoding="async" />
+          ))}
+        </div>
+      ) : (
         <img
           className="workspace-composer-hero-image"
           src={tool.hero}
-          alt={t.mainImageExampleAlt}
+          alt={artworkAlt[tool.id] ?? ""}
           decoding="async"
         />
-        {title}
-      </header>
-    );
-  }
-  return (
-    <Tooltip key={tool.id} delay={350} closeDelay={80}>
-      <Tooltip.Trigger
-        className="workspace-composer-hero"
-        data-tool={tool.id}
-        aria-label={t.usageGuide(text.name)}
-      >
-        {tool.id === "textile" ? (
-          <div className="workspace-composer-hero-collage" aria-hidden="true">
-            {tool.bannerImages.map((src) => (
-              <img key={src} src={src} alt="" decoding="async" />
-            ))}
-          </div>
-        ) : (
-          <img
-            className="workspace-composer-hero-image"
-            src={tool.hero}
-            alt={workflow?.alt ?? ""}
-            decoding="async"
-          />
-        )}
-        {workflow && (
-          <div className="workspace-composer-workflow-labels" aria-hidden="true">
-            {workflow.captions.map((label) => (
-              <span key={label}>{label}</span>
-            ))}
-          </div>
-        )}
-        {title}
-      </Tooltip.Trigger>
-      <Tooltip.Content placement="right top" offset={10} className="workspace-tool-preview">
-        <WorkspaceToolPreview tool={tool} />
-      </Tooltip.Content>
-    </Tooltip>
+      )}
+      <div ref={heroRef} className="workspace-composer-hero-copy">
+        <h2 className="workspace-composer-title">{text.name}</h2>
+        {tool.id !== "create" && <p>{text.summary}</p>}
+      </div>
+    </header>
   );
 }

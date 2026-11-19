@@ -56,7 +56,7 @@ for (const width of [390, 1440]) {
     await expect(page.locator(".generation-job")).toHaveCount(4);
     await page.evaluate(() => document.fonts.ready);
     await page.mouse.move(0, 0);
-    // Switching controls never display help; the composer banner owns it.
+    // 工具菜单和表单横幅均不重复弹出示例卡片。
     const textileShortcut = page
       .getByRole("navigation", { name: "电商创作工具" })
       .getByRole("button", { name: "品类工具", exact: true });
@@ -66,14 +66,7 @@ for (const width of [390, 1440]) {
     if (width >= 768) {
       const banner = page.locator(".workspace-composer-hero");
       await banner.hover();
-      await expect(preview).toContainText("一张图讲清卖点");
-      await expect(preview.getByRole("listitem")).toHaveCount(3);
-      await expect(preview).not.toContainText("点击切换到此功能");
-      const bannerBounds = await banner.boundingBox();
-      const previewBounds = await preview.boundingBox();
-      expect(previewBounds?.x).toBeGreaterThanOrEqual(
-        (bannerBounds?.x ?? 0) + (bannerBounds?.width ?? 0),
-      );
+      await expect(banner.getByRole("img", { name: /橙色跑鞋/ })).toBeVisible();
       await page.keyboard.press("Escape");
       await expect(preview).toHaveCount(0);
     }
@@ -149,7 +142,7 @@ for (const width of [390, 1440]) {
       "src",
       "/studio/textile-views/front.webp",
     );
-    await expect(hero).toContainText("一张主图，延展多视角与细节图");
+    await expect(hero).toContainText("一张家纺图，生成多角度和细节图");
     await expect(page.locator(".generation-history")).toContainText("textile记录");
     await expect(page.locator(".generation-history")).not.toContainText("create记录");
     if (width >= 768) {

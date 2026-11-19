@@ -194,8 +194,8 @@ function WorkspaceCategoryMenu({
                       <img
                         src={item.preview}
                         alt=""
-                        width={52}
-                        height={36}
+                        width={72}
+                        height={50}
                         loading="lazy"
                         decoding="async"
                       />

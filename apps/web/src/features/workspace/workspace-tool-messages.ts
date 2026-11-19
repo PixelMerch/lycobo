@@ -1,20 +1,12 @@
 import { defineMessages } from "../../i18n/messages";
 
-/** 电商工具的通俗名称与一句话用途，供导航、参数区和示例预览共用。 */
+/** 电商工具的名称与一句话用途，供导航和参数区共用。 */
 export const workspaceToolMessages = defineMessages({
   "zh-CN": {
     toolBar: "电商创作工具",
-    sampleBadge: "效果示例",
-    usageGuide: (name: string) => `${name}使用说明`,
     mainImageExampleAlt: "运动鞋广告示例，橙色跑鞋配 MOVE BOLD 大字",
-    imageSetExample: {
-      alt: "同一个紫色背包的商品主图、背负场景和拉链特写",
-      captions: ["主图", "场景图", "细节图"],
-    },
-    styleMatchExample: {
-      alt: "以蓝黄色音箱广告为风格参考，将橙色耳机原图做成同风格广告",
-      captions: ["风格参考", "我的商品", "成图"],
-    },
+    imageSetExampleAlt: "同一个紫色背包的商品主图、背负场景和拉链特写",
+    styleMatchExampleAlt: "以蓝黄色音箱广告为风格参考，将橙色耳机原图做成同风格广告",
     workspaceViews: "工作区视图",
     createView: "创作",
     historyView: "历史记录",
@@ -58,7 +50,7 @@ export const workspaceToolMessages = defineMessages({
       },
       replica: {
         name: "复制爆款",
-        summary: "参考目标图风格，生成自己的商品图",
+        summary: "用参考图的风格生成商品图",
       },
       video: {
         name: "商品视频",
@@ -68,17 +60,11 @@ export const workspaceToolMessages = defineMessages({
   },
   en: {
     toolBar: "E-commerce tools",
-    sampleBadge: "Sample results",
-    usageGuide: (name) => `How to use ${name}`,
     mainImageExampleAlt: "Running shoe campaign with an orange sneaker and the headline MOVE BOLD",
-    imageSetExample: {
-      alt: "Catalog photo, lifestyle photo and zipper close-up of the same purple backpack",
-      captions: ["Main image", "Lifestyle", "Detail"],
-    },
-    styleMatchExample: {
-      alt: "Orange headphones styled to match the blue-and-yellow lighting and composition of a speaker ad",
-      captions: ["Style reference", "My product", "Result"],
-    },
+    imageSetExampleAlt:
+      "Catalog photo, lifestyle photo and zipper close-up of the same purple backpack",
+    styleMatchExampleAlt:
+      "Orange headphones styled to match the blue-and-yellow lighting and composition of a speaker ad",
     workspaceViews: "Workspace views",
     createView: "Create",
     historyView: "History",
@@ -122,7 +108,7 @@ export const workspaceToolMessages = defineMessages({
       },
       replica: {
         name: "Style Match",
-        summary: "Give your product the look of a reference image",
+        summary: "Apply a reference style to your product",
       },
       video: {
         name: "Product Video",

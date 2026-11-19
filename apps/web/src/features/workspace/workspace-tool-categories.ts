@@ -1,5 +1,13 @@
 import type { CommerceToolId } from "../commerce/commerce-tools";
 
+/** 创作表单和工具菜单使用同一份示例图地址。 */
+export const workspaceToolHeroImages = {
+  create: "/studio/tool-heroes/running-shoe-campaign.webp",
+  variation: "/studio/tool-heroes/image-set-backpack.webp",
+  replica: "/studio/tool-heroes/style-match-headphones.webp",
+  textile: "/studio/tool-heroes/textile.webp",
+} as const satisfies Record<CommerceToolId, string>;
+
 type ToolCategory = {
   label: "productImages" | "categoryTools";
   sections: readonly {
@@ -16,13 +24,13 @@ export const workspaceToolCategories = [
       {
         heading: "listingImages",
         entries: [
-          { tool: "create", preview: "/landing/comforter-studio.webp" },
-          { tool: "variation", preview: "/studio/tool-heroes/image-set-backpack.webp" },
+          { tool: "create", preview: workspaceToolHeroImages.create },
+          { tool: "variation", preview: workspaceToolHeroImages.variation },
         ],
       },
       {
         heading: "photography",
-        entries: [{ tool: "replica", preview: "/studio/tool-heroes/style-match-headphones.webp" }],
+        entries: [{ tool: "replica", preview: workspaceToolHeroImages.replica }],
       },
     ],
   },
@@ -31,7 +39,7 @@ export const workspaceToolCategories = [
     sections: [
       {
         heading: "textiles",
-        entries: [{ tool: "textile", preview: "/studio/tool-heroes/textile.webp" }],
+        entries: [{ tool: "textile", preview: workspaceToolHeroImages.textile }],
       },
     ],
   },
