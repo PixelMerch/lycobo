@@ -19,7 +19,7 @@
   --lycobo-nav-highlight-height: 36px;
   --lycobo-nav-highlight-radius: 8px;
   --lycobo-nav-highlight: var(--site-header-menu-hover-fill);
-  --lycobo-nav-trigger-highlight: var(--site-header-trigger-hover-fill);
+  --lycobo-nav-trigger-highlight: var(--site-header-nav-hover-fill);
 }
 html:is([data-oah-theme="light"], :has([data-navv3-root][data-navv3-surface="solid-light"])) {
   --lycobo-nav-highlight: #090a0a0d;
@@ -56,6 +56,7 @@ html :is([data-nav-items] > .nav-item > a, .nav-panel .lycobo-nav-action)[href]:
 }
 [data-nav-items] > .nav-item > a {
   --lycobo-nav-highlight: var(--lycobo-nav-trigger-highlight);
+  --lycobo-nav-highlight-radius: 999px;
   padding-block: 0;
 }
 [data-nav-items] > .nav-item > a[aria-current="page"] { font-weight: 600; }

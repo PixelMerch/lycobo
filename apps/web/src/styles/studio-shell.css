@@ -182,7 +182,7 @@
   min-height: 36px;
   padding: 0 20px;
   gap: 4px;
-  border-radius: 999px;
+  border-radius: var(--control-pill-radius);
   background: transparent;
   color: #ffffff99;
   font-size: var(--text-base);
@@ -192,12 +192,11 @@
 .topbar-nav .nav-row::before {
   display: none;
 }
-.topbar-nav .nav-row:is(:hover, [data-hovered="true"], [aria-expanded="true"]) {
-  background: #ffffff0a;
+.topbar-nav .nav-row:is(:hover, [data-hovered="true"], [aria-expanded="true"], :focus-visible) {
+  background: var(--site-header-nav-hover-fill);
   color: #ffffffcc;
 }
 .topbar-nav .nav-row:is(.active, [aria-current="page"]) {
-  background: transparent;
   color: #fff;
   font-weight: var(--weight-semibold);
 }

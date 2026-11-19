@@ -10,6 +10,7 @@
 /* 账户与语言控件对齐模板的占位区，保持菜单与账户数据在宿主页面。 */
 .landing-header-controls {
   --landing-control-gap: 8px;
+  --landing-control-fill-radius: var(--control-pill-radius);
   --landing-text-control-padding: 12px;
   --landing-control-color: #ffffffcc;
   --landing-control-hover-color: #fff;
@@ -218,7 +219,7 @@
   --glass-tint: var(--site-header-menu-background);
   --glass-fill: linear-gradient(transparent, transparent);
   --glass-blur: var(--site-header-menu-blur);
-  border: 1px solid #ffffff14;
+  border: 0;
   padding: var(--choice-menu-inset);
   animation: none;
   transition: none;
