@@ -172,6 +172,7 @@
   display: inline-flex;
 }
 .landing-language-control .language-trigger-chevron {
+  scale: 0.8;
   transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .landing-header-controls
