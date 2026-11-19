@@ -104,8 +104,8 @@ export function PromptOptimizeActions({
               <UiIcon icon={IconWand} size="small" color={`url(#${gradientId})`}>
                 <defs>
                   <linearGradient id={gradientId} x2="100%" y2="55%">
-                    <stop stopColor="var(--accent)" />
-                    <stop offset="100%" stopColor="#54e6a5" />
+                    <stop stopColor="var(--prompt-optimize-ink, var(--accent))" />
+                    <stop offset="100%" stopColor="var(--prompt-optimize-ink, #54e6a5)" />
                   </linearGradient>
                 </defs>
               </UiIcon>

@@ -1,11 +1,22 @@
 /* Each ecommerce tool shows its own history in the shared workspace. */
 .unified-workspace {
   position: relative;
+  --workspace-brand: #fb5123;
+  --workspace-brand-light: color-mix(in srgb, var(--workspace-brand) 72%, white);
+  --tool-soft: #ffffffb3;
   --workspace-toolbar-height: 68px;
   --workspace-view-switch-height: 0px;
   grid-template-rows: var(--workspace-toolbar-height) auto;
 }
 .unified-workspace > .composer-panel {
+  --accent: var(--workspace-brand);
+  --accent-foreground: var(--surface);
+  --accent-soft: color-mix(in srgb, var(--workspace-brand) 16%, transparent);
+  --accent-soft-foreground: var(--workspace-brand-light);
+  --app-primary-gradient: linear-gradient(120deg, var(--accent), var(--workspace-brand-light));
+  --accent-glow: 0 0 16px var(--accent-soft);
+  --focus: var(--accent);
+  --link: var(--accent-soft-foreground);
   gap: 12px;
 }
 .unified-workspace .composer-scroll {
@@ -27,11 +38,6 @@
   .composer-panel
   :is(.reference-picker, .prompt-field, .model-field, .parameter-group) {
   background: transparent;
-}
-/* 工作区只保留品牌青柠，不再按功能分配多种强调色。 */
-.unified-workspace {
-  --tool-accent: #a8ff00;
-  --tool-soft: #ffffffb3;
 }
 .workspace-tool-symbol {
   display: inline-flex;
@@ -323,7 +329,7 @@
   )
   .workspace-tool-menu-copy
   > span:first-child {
-  color: #fb5123;
+  color: var(--workspace-brand);
 }
 .workspace-tool-preview-thumb {
   display: grid;
