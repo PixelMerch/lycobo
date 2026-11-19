@@ -9,6 +9,7 @@ import throwBedroom from "../../../../public/landing/showcase/mint-throw-bedroom
 import throwSofa from "../../../../public/landing/showcase/mint-throw-sofa.webp?inline";
 import throwSource from "../../../../public/landing/showcase/mint-throw-source.webp?inline";
 import throwTexture from "../../../../public/landing/showcase/mint-throw-texture.webp?inline";
+import headerAppearance from "../../../app/site-header-appearance.css?raw";
 import type { Locale } from "../../../i18n/locale";
 import { initializeLandingBrandScroll } from "./landing-brand-scroll";
 import { initializeLandingFeatureScroll } from "./landing-feature-scroll";
@@ -60,6 +61,7 @@ export function renderLandingDocument(
     .replace("__LYCOBO_DESKTOP_NAV_ITEMS__", () => navigation.desktop)
     .replace("__LYCOBO_NAV_PANELS__", () => navigation.panels)
     .replace("__LYCOBO_MOBILE_NAV_ITEMS__", () => navigation.mobile)
+    .replace("__LYCOBO_HEADER_APPEARANCE__", () => headerAppearance)
     .replace("__LYCOBO_HERO_STYLE__", () => heroStyles + showcaseStyles)
     .replace("__LYCOBO_HERO__", () => hero)
     .replace(

@@ -1,3 +1,5 @@
+@import "./site-header-appearance.css";
+
 :is(.landing-header-controls, .landing-control-popover) {
   --landing-control-height: 44px;
   --landing-control-fill-height: var(--control-height-md);
@@ -12,7 +14,7 @@
   --landing-control-color: #ffffffcc;
   --landing-control-hover-color: #fff;
   --landing-control-fill: var(--fill-faint);
-  --landing-control-hover-fill: var(--fill-strong);
+  --landing-control-hover-fill: var(--site-header-trigger-hover-fill);
   --landing-control-edge: var(--fill-medium);
   position: fixed;
   z-index: 50;
@@ -26,7 +28,7 @@
   --landing-control-color: #090a0ac7;
   --landing-control-hover-color: #090a0a;
   --landing-control-fill: #090a0a0d;
-  --landing-control-hover-fill: #090a0a18;
+  --landing-control-hover-fill: var(--site-header-light-trigger-hover-fill);
   --landing-control-edge: #ffffffb3;
 }
 .landing-language-control {
@@ -211,10 +213,10 @@
 .landing-language-popover .menu-item__indicator {
   color: #fff;
 }
-:root .landing-control-popover:is(.dropdown__popover, .account-menu) {
-  --glass-tint: rgb(9 10 10 / 82%);
+:root .landing-control-popover:is(.dropdown__popover, .account-menu, .home-header-help) {
+  --glass-tint: var(--site-header-menu-background);
   --glass-fill: linear-gradient(transparent, transparent);
-  --glass-blur: blur(14px);
+  --glass-blur: var(--site-header-menu-blur);
   border: 1px solid #ffffff14;
   padding: 6px;
   animation: none;
@@ -229,8 +231,9 @@
   color: #fff;
   font-size: inherit;
 }
-.landing-control-popover.home-header-help {
+:root .landing-control-popover.home-header-help {
   padding: 12px;
+  border-radius: 12px;
   font-size: var(--landing-control-font-size);
   line-height: var(--landing-control-line-height);
 }
@@ -278,7 +281,7 @@
 
 /* 所有菜单使用同样大小的悬停底板，语言的选中标记仍单独留位。 */
 :root .landing-control-popover :is(.menu-item, .account-menu-row) {
-  --menu-row-hover-fill: #ffffff0f;
+  --menu-row-hover-fill: var(--site-header-menu-hover-fill);
   height: var(--landing-control-height);
   align-items: center;
   padding-inline: 12px;
@@ -302,12 +305,6 @@
   min-height: var(--landing-control-height);
   align-items: center;
   padding: 0 12px;
-}
-@media (prefers-reduced-transparency: reduce) {
-  :root .landing-control-popover:is(.dropdown__popover, .account-menu) {
-    --glass-tint: #171717;
-    --glass-blur: none;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .landing-header-controls

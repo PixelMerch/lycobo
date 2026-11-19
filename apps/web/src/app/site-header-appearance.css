@@ -1,0 +1,22 @@
+/* 宿主顶栏和隔离首页共用下拉材质及悬停颜色。 */
+:root {
+  --site-header-trigger-hover-fill: var(--fill-strong, #ffffff1f);
+  --site-header-light-trigger-hover-fill: #090a0a18;
+  --site-header-menu-hover-fill: #ffffff0f;
+  --site-header-menu-background: rgb(9 10 10 / 82%);
+  --site-header-menu-blur: blur(14px);
+  --site-header-menu-shadow: var(--glass-shadow, 24px 24px 48px rgb(0 0 0 / 15%));
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --site-header-menu-background: #171717;
+    --site-header-menu-blur: none;
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  :root {
+    --site-header-menu-background: #171717;
+  }
+}
