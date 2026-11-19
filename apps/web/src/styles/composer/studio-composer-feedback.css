@@ -40,9 +40,6 @@
     background: var(--surface-tertiary);
   }
 }
-.prompt-field textarea {
-  caret-color: var(--accent);
-}
 .prompt-field textarea:focus,
 .prompt-field textarea:focus-visible,
 .prompt-field textarea[data-focused="true"] {

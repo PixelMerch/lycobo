@@ -153,8 +153,11 @@ test("mention popup stays by the green at-sign and directly inserts up to five i
   const option = menu.getByRole("option").first();
   await search.focus();
   await expect(option).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  const highlight = menu.locator(".reference-mention-highlight");
+  await expect(highlight).toHaveCSS("opacity", "0");
   await option.hover();
-  await expect(option).toHaveCSS("background-color", "rgb(60, 60, 60)");
+  await expect(option).toHaveAttribute("data-hovered", "true");
+  await expect(highlight).toHaveCSS("opacity", "1");
   await page.screenshot({ path: "/tmp/lycobo-reference-direct-mobile.png" });
   for (let index = 0; index < 5; index++) {
     if (index > 0) {

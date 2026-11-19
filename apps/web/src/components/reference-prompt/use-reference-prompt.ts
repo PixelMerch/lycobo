@@ -9,6 +9,7 @@ import {
 import type { ReferenceImage } from "../../features/generation/studio-state";
 import {
   focusPrompt,
+  type MentionInsertion,
   type PromptReference,
   readPrompt,
   referenceFor,
@@ -55,6 +56,7 @@ function useControlledPrompt({
   references,
   cursorRef,
   focusPending,
+  pendingInsertion,
 }: {
   richRef: RefObject<HTMLDivElement | null>;
   ref: RefObject<HTMLTextAreaElement | null>;
@@ -63,16 +65,28 @@ function useControlledPrompt({
   references: readonly PromptReference[];
   cursorRef: RefObject<number>;
   focusPending: RefObject<boolean>;
+  pendingInsertion: RefObject<MentionInsertion | null>;
 }) {
   useLayoutEffect(() => {
     const editor = richRef.current;
-    if (editor)
-      synchronizePrompt(editor, value, parts, references, cursorRef.current, focusPending.current);
+    if (editor) {
+      const insertion = pendingInsertion.current;
+      synchronizePrompt(
+        editor,
+        value,
+        parts,
+        references,
+        cursorRef.current,
+        focusPending.current,
+        insertion?.value === value ? insertion : null,
+      );
+      pendingInsertion.current = null;
+    }
     if (!focusPending.current) return;
     const offset = cursorRef.current;
     focusPrompt(editor, ref.current, offset);
     focusPending.current = false;
-    // Re-apply the caret after the mention popover restores focus on close.
+    // 引用弹层恢复焦点后，再把光标放回刚插入的图片后。
     requestAnimationFrame(() => focusPrompt(richRef.current, ref.current, offset));
   });
 }
@@ -105,11 +119,21 @@ export function useReferencePrompt({
   const richRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef(0);
   const focusPending = useRef(false);
+  const pendingInsertion = useRef<MentionInsertion | null>(null);
   const parts = Array.from(value.matchAll(/@图片[1-9]\d*|[^@]+|@/g), (match) => match[0]);
   const hasReferences = value.includes("@");
   const mentionAnchor = useRef<HTMLElement | null>(null);
   const [anchoredMention, setAnchoredMention] = useState<number | null>(null);
-  useControlledPrompt({ richRef, ref, value, parts, references, cursorRef, focusPending });
+  useControlledPrompt({
+    richRef,
+    ref,
+    value,
+    parts,
+    references,
+    cursorRef,
+    focusPending,
+    pendingInsertion,
+  });
   useAutoGrow(richRef, value, autoGrow && hasReferences, autoGrowMinHeight);
   useAutoGrow(ref, value, autoGrow && !hasReferences, autoGrowMinHeight);
   const [mention, setMention] = useState<{ start: number; end: number } | null>(null);
@@ -178,6 +202,7 @@ export function useReferencePrompt({
     const next = value.slice(0, mention.start) + text + value.slice(mention.end);
     if (next.length > maxLength) return;
     cursorRef.current = mention.start + text.length;
+    pendingInsertion.current = { start: mention.start, end: cursorRef.current, value: next };
     focusPending.current = true;
     if (added.length) onReferencesInsert?.(added, next);
     else onChange(next);

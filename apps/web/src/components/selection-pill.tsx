@@ -1,30 +1,12 @@
 import { cancelFrame, frame } from "motion";
 import { motion, useMotionValue, useReducedMotion } from "motion/react";
 import { useCallback, useLayoutEffect, useRef } from "react";
+import { springAt, stepSpring } from "./highlight-spring";
 import "./selection-pill.css";
 
 // 沿用 DesignBookmark 的前后缘刚度，降低阻尼以明显呈现回弹。
 const leadingEdge = { stiffness: 620, damping: 30 };
 const trailingEdge = { stiffness: 190, damping: 15 };
-
-function springAt(position: number) {
-  return { position, target: position, velocity: 0, parameters: leadingEdge };
-}
-
-function stepSpring(edge: ReturnType<typeof springAt>, frameSeconds: number) {
-  // 限制长帧推进量并拆成四个小步，恢复可见时仍能看到前后缘的拉伸。
-  const step = frameSeconds / 4;
-  const { stiffness, damping } = edge.parameters;
-  for (let index = 0; index < 4; index += 1) {
-    const acceleration = stiffness * (edge.target - edge.position) - damping * edge.velocity;
-    edge.velocity += acceleration * step;
-    edge.position += edge.velocity * step;
-  }
-  if (Math.abs(edge.target - edge.position) > 0.1 || Math.abs(edge.velocity) > 0.5) return false;
-  edge.position = edge.target;
-  edge.velocity = 0;
-  return true;
-}
 
 function measureSelection(group: HTMLElement) {
   const selected = group.querySelector<HTMLButtonElement>(
@@ -56,7 +38,7 @@ export function SelectionPill({ value }: { value: string }) {
   const pillRef = useRef<HTMLSpanElement>(null);
   const previousValue = useRef(value);
   const previousBounds = useRef<ReturnType<typeof measureSelection>>(null);
-  const edges = useRef({ left: springAt(0), right: springAt(0) });
+  const edges = useRef({ left: springAt(0, leadingEdge), right: springAt(0, leadingEdge) });
   const reduceMotion = useReducedMotion();
   const clipPath = useMotionValue("inset(50%)");
 
@@ -64,10 +46,9 @@ export function SelectionPill({ value }: { value: string }) {
     function advanceFrame({ delta }: { delta: number }) {
       const bounds = previousBounds.current;
       if (!bounds) return;
-      const seconds = Math.min(delta / 1000, 1 / 30);
       const spring = edges.current;
-      const leftSettled = stepSpring(spring.left, seconds);
-      const rightSettled = stepSpring(spring.right, seconds);
+      const leftSettled = stepSpring(spring.left, delta);
+      const rightSettled = stepSpring(spring.right, delta);
       clipPath.set(
         selectionClip(bounds.width, bounds.radius, spring.left.position, spring.right.position),
       );
@@ -97,7 +78,10 @@ export function SelectionPill({ value }: { value: string }) {
       previousBounds.current = bounds;
       if (snap || reduceMotion || oldLeft === undefined || oldLeft === bounds.left) {
         cancelFrame(advance);
-        edges.current = { left: springAt(bounds.left), right: springAt(bounds.right) };
+        edges.current = {
+          left: springAt(bounds.left, leadingEdge),
+          right: springAt(bounds.right, leadingEdge),
+        };
         clipPath.set(selectionClip(bounds.width, bounds.radius, bounds.left, bounds.right));
       } else {
         const spring = edges.current;
