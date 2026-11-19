@@ -137,14 +137,8 @@
   color: #eee;
   background: transparent;
 }
-.unified-workspace .composer-panel :is(.home-ratio-track, .parameter-options) {
-  --control-selected-fill: var(--accent-soft);
-}
-.unified-workspace
-  .composer-panel
-  :is(.home-ratio-track, .parameter-options)
-  :is(.button, .toggle-button)[data-selected="true"]:not(:disabled, [data-disabled="true"]) {
-  color: var(--accent-soft-foreground);
+.unified-workspace .composer-panel :is(.home-ratio-pager, .parameter-options) {
+  --focus: var(--foreground);
 }
 .unified-workspace .composer-panel .parameter-options :is(:disabled, [data-disabled="true"]) {
   color: var(--field-placeholder);
