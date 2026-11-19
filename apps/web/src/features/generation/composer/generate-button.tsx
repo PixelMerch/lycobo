@@ -1,10 +1,11 @@
 import { Button, Spinner } from "@heroui/react";
-import { CreditCoin } from "../../../components/credit-coin";
+import { IconSparkle } from "@tabler/icons-react";
+import { UiIcon } from "../../../components/ui-icon";
 
 /**
  * 电商工作区各功能共用的生成按钮（用户 2026-11-11 要求四个功能点击后的反馈一致）：点击后立刻进入提交中，
  * 保持主题色底，文字前出现旋转加载图标，外圈以中性色提示处理中，请求结束前不再响应点击。
- * 提交成功由共用的“任务已提交”Toast 提示。
+ * 提交成功使用共用的“任务已提交”提示，积分星芒随按钮文字着色。
  */
 export function GenerateButton({
   label,
@@ -48,7 +49,7 @@ export function GenerateButton({
       {label}
       {cost !== undefined && (
         <span className="generate-credit-cost" aria-hidden="true">
-          <CreditCoin />
+          <UiIcon icon={IconSparkle} />
           <span>{cost}</span>
         </span>
       )}

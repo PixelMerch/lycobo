@@ -1,6 +1,5 @@
 import { Button, Spinner } from "@heroui/react";
-import { IconArrowLeft, IconPlus } from "@tabler/icons-react";
-import { CreditCoin } from "../../../components/credit-coin";
+import { IconArrowLeft, IconPlus, IconSparkle } from "@tabler/icons-react";
 import { DialogClose } from "../../../components/overlays/dialog-close";
 import { UiIcon } from "../../../components/ui-icon";
 import type { PreviewImage } from "../image-preview";
@@ -108,7 +107,7 @@ export function LocalRepairPanel({
           {ownPending ? t.confirmLastSubmission : t.generateNow}
           {!ownPending && !busy && models.data && (
             <span className="generate-credit-cost" aria-hidden="true">
-              <CreditCoin />
+              <UiIcon icon={IconSparkle} />
               <span>{models.data.unitCredits}</span>
             </span>
           )}

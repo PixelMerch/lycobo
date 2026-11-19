@@ -216,9 +216,6 @@
 .credit-coin {
   display: block;
 }
-.generation-submit.button:is(:disabled, [data-disabled="true"]) .credit-coin {
-  opacity: 0.5;
-}
 /* 提交中保持原本亮度：HeroUI 会把进行中的按钮当作 aria-disabled 降低不透明度，这里恢复。 */
 .generation-submit.button:is([data-submitting="true"], [data-pending="true"]) {
   background: var(--app-primary-gradient);

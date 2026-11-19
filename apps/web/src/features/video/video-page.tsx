@@ -1,7 +1,8 @@
 import { Button, Spinner } from "@heroui/react";
 import { storyboardOriginalImageLimit, videoUnitCredits } from "@lycoboai/contracts";
-import { CreditCoin } from "../../components/credit-coin";
+import { IconSparkle } from "@tabler/icons-react";
 import { ReferencePrompt } from "../../components/reference-prompt/reference-prompt";
+import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
 import { HomeRatioPicker } from "../generation/composer/ratio-picker";
 import { revealNewestHistory } from "../generation/history/history-navigation";
@@ -187,7 +188,7 @@ function VideoGeneration({
         {previousVideo ?? submitLabel}
         {!previousVideo && (
           <span className="generate-credit-cost">
-            <CreditCoin size="default" />
+            <UiIcon icon={IconSparkle} />
             {automatic ? automaticVideoCost : videoUnitCredits}
           </span>
         )}
