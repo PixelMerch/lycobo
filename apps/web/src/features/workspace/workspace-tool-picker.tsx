@@ -1,4 +1,4 @@
-import { Button, Dropdown, Header, Tooltip } from "@heroui/react";
+import { Button, CloseButton, Dropdown, Header, Tooltip } from "@heroui/react";
 import {
   IconBrush,
   IconChevronDown,
@@ -7,6 +7,7 @@ import {
   IconPhoto,
   IconShirt,
   IconSparkles,
+  IconX,
 } from "@tabler/icons-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { shellMessages } from "../../app/shell-messages";
@@ -192,6 +193,7 @@ function WorkspaceCategoryMenu({
                     id={item.tool}
                     textValue={name}
                     aria-label={name}
+                    data-tool={item.tool}
                     data-current={item.tool === currentTool?.id || undefined}
                     className="workspace-tool-menu-item"
                   >
@@ -217,6 +219,16 @@ function WorkspaceCategoryMenu({
             </Dropdown.Section>
           ))}
         </Dropdown.Menu>
+        <CloseButton
+          className="workspace-tool-submenu-close"
+          aria-label={t.closeToolMenu}
+          onPress={() => {
+            setOpenCategory(null);
+            triggerRef.current?.focus({ preventScroll: true });
+          }}
+        >
+          <UiIcon icon={IconX} size="default" />
+        </CloseButton>
       </Dropdown.Popover>
     </Dropdown>
   );

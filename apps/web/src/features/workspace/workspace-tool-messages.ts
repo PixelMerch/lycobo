@@ -4,7 +4,8 @@ import { defineMessages } from "../../i18n/messages";
 export const workspaceToolMessages = defineMessages({
   "zh-CN": {
     toolBar: "电商创作工具",
-    mainImageExampleAlt: "运动鞋广告示例，橙色跑鞋配 MOVE BOLD 大字",
+    mainImageExampleAlt: "深蓝色棚拍背景里的橙色跑鞋",
+    textileExampleAlt: "同一款红色方格被的主图、侧面、俯拍、折叠和包边细节",
     imageSetExampleAlt: "同一个紫色背包的商品主图、背负场景和拉链特写",
     styleMatchExampleAlt: "以蓝黄色音箱广告为风格参考，将橙色耳机原图做成同风格广告",
     workspaceViews: "工作区视图",
@@ -18,12 +19,13 @@ export const workspaceToolMessages = defineMessages({
     pageScroll: "滚动工作区",
     collapseToolRail: "收起工具栏",
     expandToolRail: "展开工具栏",
+    closeToolMenu: "关闭工具菜单",
     historyDensity: "历史视图",
     largeView: "大图",
     compactView: "紧凑",
     navigation: {
       productImages: "商品图片",
-      categoryTools: "品类工具",
+      categoryTools: "家纺裂变",
       listingImages: "上架用图",
       photography: "拍摄风格",
       textiles: "家纺",
@@ -38,7 +40,7 @@ export const workspaceToolMessages = defineMessages({
     tools: {
       create: {
         name: "主图制作",
-        summary: "一张商品照，做出上架好图",
+        summary: "输入描述生成图片，支持参考图",
       },
       textile: {
         name: "家纺裂变",
@@ -60,7 +62,9 @@ export const workspaceToolMessages = defineMessages({
   },
   en: {
     toolBar: "E-commerce tools",
-    mainImageExampleAlt: "Running shoe campaign with an orange sneaker and the headline MOVE BOLD",
+    mainImageExampleAlt: "Orange running shoe photographed against a deep blue studio backdrop",
+    textileExampleAlt:
+      "Five views of the same red quilt: front, side, overhead, folded, and seam detail",
     imageSetExampleAlt:
       "Catalog photo, lifestyle photo and zipper close-up of the same purple backpack",
     styleMatchExampleAlt:
@@ -76,12 +80,13 @@ export const workspaceToolMessages = defineMessages({
     pageScroll: "Scroll workspace",
     collapseToolRail: "Collapse tools",
     expandToolRail: "Expand tools",
+    closeToolMenu: "Close tool menu",
     historyDensity: "History view",
     largeView: "Large",
     compactView: "Compact",
     navigation: {
       productImages: "Product Images",
-      categoryTools: "Category Tools",
+      categoryTools: "Textile Variations",
       listingImages: "Listing Images",
       photography: "Photography Styles",
       textiles: "Home Textiles",
@@ -96,7 +101,7 @@ export const workspaceToolMessages = defineMessages({
     tools: {
       create: {
         name: "Main Image",
-        summary: "Turn a product photo into a listing hero",
+        summary: "Generate from text with optional references",
       },
       textile: {
         name: "Textile Set",

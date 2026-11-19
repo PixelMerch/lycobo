@@ -21,7 +21,12 @@ test.describe("English browser", () => {
     await expect(page).toHaveTitle("Lycobo · E-commerce Creative Studio");
     const navigation = page.frameLocator("iframe.openart-reference").locator("[data-nav-items]");
     const items = navigation.locator(".nav-item:not([data-nav-more]) > a");
-    await expect(items).toHaveText(["Product Images", "Category Tools", "Examples", "Free canvas"]);
+    await expect(items).toHaveText([
+      "Product Images",
+      "Textile Variations",
+      "Examples",
+      "Free canvas",
+    ]);
 
     const language = page.getByRole("button", { name: "Language: English", exact: true });
     await expect(language).toHaveText("EN");
@@ -36,11 +41,11 @@ test.describe("English browser", () => {
     await menu.getByRole("menuitemradio", { name: "简体中文" }).click();
     await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
     await expect(page).toHaveTitle("Lycobo · 电商创作工作台");
-    await expect(items).toHaveText(["商品图片", "品类工具", "效果案例", "自由画布"]);
+    await expect(items).toHaveText(["商品图片", "家纺裂变", "效果案例", "自由画布"]);
 
     // 选择记在本机，刷新后不再跟随浏览器语言。
     await page.reload();
-    await expect(items).toHaveText(["商品图片", "品类工具", "效果案例", "自由画布"]);
+    await expect(items).toHaveText(["商品图片", "家纺裂变", "效果案例", "自由画布"]);
     await expect(page.getByRole("button", { name: "语言：简体中文", exact: true })).toHaveText(
       "中文",
     );
@@ -57,7 +62,7 @@ test.describe("English workspace", () => {
     const tools = page.getByRole("navigation", { name: "E-commerce tools", exact: true });
     await expect(tools.getByRole("button")).toHaveText([
       "Product Images",
-      "Category Tools",
+      "Textile Variations",
       "Examples",
       "Free canvas",
       "Assets",
@@ -91,7 +96,7 @@ test.describe("Japanese browser", () => {
     const navigation = page.frameLocator("iframe.openart-reference").locator("[data-nav-items]");
     await expect(navigation.locator(".nav-item:not([data-nav-more]) > a")).toHaveText([
       "Product Images",
-      "Category Tools",
+      "Textile Variations",
       "Examples",
       "Free canvas",
     ]);

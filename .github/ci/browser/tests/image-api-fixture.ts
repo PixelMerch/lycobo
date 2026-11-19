@@ -86,7 +86,7 @@ export async function chooseWorkspaceTool(
   page: Page,
   tool: "主图制作" | "复制爆款" | "家纺裂变" | "套图计划",
 ) {
-  const group = tool === "家纺裂变" ? "品类工具" : "商品图片";
+  const group = tool === "家纺裂变" ? "家纺裂变" : "商品图片";
   const labels = {
     主图制作: "商品主图",
     复制爆款: "复制爆款",

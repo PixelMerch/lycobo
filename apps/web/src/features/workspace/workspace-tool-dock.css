@@ -56,37 +56,30 @@
   background: var(--surface);
   /* No transform: sticky position must remain exact while scrolling. */
 }
-.workspace-composer-hero-image,
+.workspace-composer-hero-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.workspace-composer-hero > .workspace-composer-hero-image,
 .workspace-composer-hero-collage,
 .workspace-composer-hero::after {
   opacity: calc(1 - var(--hero-collapse));
 }
-.workspace-composer-hero-image {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+.workspace-composer-hero > .workspace-composer-hero-image,
 .workspace-composer-hero-collage {
   position: absolute;
   inset: 0;
   z-index: -2;
+}
+.workspace-composer-hero-collage {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
   grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: 0;
+  gap: 2px;
 }
-.workspace-composer-hero-collage img {
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  min-width: 0;
-  display: block;
-  object-fit: cover;
-}
-.workspace-composer-hero-collage img:first-child {
+.workspace-composer-hero-collage .workspace-composer-hero-image:first-child {
   grid-row: 1 / -1;
 }
 .workspace-composer-hero::after {
@@ -94,7 +87,7 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  /* 头图多为浅色床品，压暗加深到文字所在的下半部分，白字与说明在浅色图上也清楚。 */
+  /* 用底部渐变保证白色标题和说明在示例图上易读。 */
   background: linear-gradient(
     180deg,
     rgb(0 0 0 / 0%) 18%,
@@ -136,25 +129,21 @@
 }
 
 .workspace-composer-hero[data-tool="create"]::after {
-  /* 只压暗底部的工具标题区域，保留海报大字和跑鞋的颜色。 */
+  /* 在文字底部补一层暗色，保留跑鞋的高光。 */
   background: linear-gradient(0deg, rgb(7 18 31 / 50%), transparent 32%);
 }
 .workspace-composer-hero[data-tool="create"] .workspace-composer-hero-image {
   object-position: center top;
 }
-.workspace-composer-hero[data-tool="create"] .workspace-composer-hero-copy {
-  grid-template-rows: auto;
-}
-.workspace-composer-hero[data-tool="create"] .workspace-composer-title {
-  color: var(--foreground);
-  font-size: calc(var(--text-xl) + 2px * (1 - var(--hero-collapse)));
-  line-height: var(--leading-xl);
-}
 @media (max-width: 767px) {
   .workspace-composer-hero[data-tool="create"] {
     --composer-hero-height: 160px;
   }
-  .workspace-composer-hero:is([data-tool="replica"], [data-tool="variation"]) {
+  .workspace-composer-hero:is(
+    [data-tool="replica"],
+    [data-tool="variation"],
+    [data-tool="textile"]
+  ) {
     --composer-hero-height: 148px;
   }
 }
@@ -256,13 +245,23 @@
 .workspace-tool-group[aria-expanded="true"] .workspace-tool-chevron > .ui-icon {
   transform: rotate(180deg);
 }
+/* 保持页面和各栏的滚动位置，只让打开的工具菜单内部滚动。 */
+html:has(.workspace-tool-group[aria-expanded="true"]),
+body:has(.workspace-tool-group[aria-expanded="true"])
+  .unified-workspace
+  :is(.composer-scroll, .results-panel, .history-rail-list, .variation-plan-body) {
+  overflow: hidden;
+}
+body:has(.workspace-tool-group[aria-expanded="true"]) .workspace-scrollbar {
+  visibility: hidden;
+}
 :root .workspace-tool-submenu.dropdown__popover {
-  --glass-tint: var(--surface);
-  --glass-fill: none;
-  --glass-blur: none;
+  --glass-tint: var(--site-header-menu-background);
+  --glass-fill: linear-gradient(transparent, transparent);
+  --glass-blur: var(--site-header-menu-blur);
   width: min(620px, calc(100vw - 32px));
   padding: 10px;
-  border: 1px solid var(--border);
+  border: 0;
 }
 :root .workspace-tool-submenu[data-single-section].dropdown__popover {
   width: min(320px, calc(100vw - 32px));
@@ -273,6 +272,7 @@
   gap: 12px;
   max-height: min(560px, 68dvh);
   overflow: auto;
+  overscroll-behavior: contain;
 }
 .workspace-tool-submenu .menu-section {
   display: grid;
@@ -283,8 +283,18 @@
 .workspace-tool-submenu[data-single-section] .dropdown__menu {
   grid-template-columns: minmax(0, 1fr);
 }
+.workspace-tool-submenu .workspace-tool-submenu-close {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: 4px;
+  inset-inline-end: 6px;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--control-pill-radius);
+}
 .workspace-tool-section-label {
   grid-column: 1 / -1;
+  min-height: 38px;
   padding: 8px 12px 2px;
   color: var(--muted);
   font-size: var(--text-xs);
@@ -353,6 +363,9 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+.workspace-tool-menu-item[data-tool="create"] .workspace-tool-preview-thumb img {
+  object-position: right center;
 }
 .workspace-tool-menu-copy {
   display: grid;

@@ -59,7 +59,7 @@ for (const width of [390, 1440]) {
     // 工具菜单和表单横幅均不重复弹出示例卡片。
     const textileShortcut = page
       .getByRole("navigation", { name: "电商创作工具" })
-      .getByRole("button", { name: "品类工具", exact: true });
+      .getByRole("button", { name: "家纺裂变", exact: true });
     await textileShortcut.hover();
     const preview = page.getByRole("tooltip");
     await expect(preview).toHaveCount(0);
@@ -128,7 +128,7 @@ for (const width of [390, 1440]) {
     await expect(page.locator(".workspace-composer-title")).toHaveText("家纺裂变");
     await expect(
       page.getByRole("navigation", { name: "电商创作工具" }).getByRole("button", {
-        name: "品类工具",
+        name: "家纺裂变",
         exact: true,
       }),
     ).toHaveAttribute("data-current", "true");
@@ -137,10 +137,11 @@ for (const width of [390, 1440]) {
     // The panel hero follows the tool: its own example photo, name and purpose.
     const hero = page.locator(".workspace-composer-hero");
     await expect(hero).toHaveAttribute("data-tool", "textile");
-    await expect(hero.locator(".workspace-composer-hero-collage img")).toHaveCount(5);
-    await expect(hero.locator("img").first()).toHaveAttribute(
+    const collage = hero.getByRole("img", { name: /同一款红色方格被/ });
+    await expect(collage.locator("img")).toHaveCount(5);
+    await expect(collage.locator("img").first()).toHaveAttribute(
       "src",
-      "/studio/textile-views/front.webp",
+      "/landing/comforter-studio.webp",
     );
     await expect(hero).toContainText("一张家纺图，生成多角度和细节图");
     await expect(page.locator(".generation-history")).toContainText("textile记录");

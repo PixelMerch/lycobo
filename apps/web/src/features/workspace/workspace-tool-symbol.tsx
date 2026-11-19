@@ -40,9 +40,19 @@ export function WorkspaceComposerTitle() {
   return (
     <header className="workspace-composer-hero" data-tool={tool.id}>
       {tool.id === "textile" ? (
-        <div className="workspace-composer-hero-collage" aria-hidden="true">
+        <div
+          className="workspace-composer-hero-collage"
+          role="img"
+          aria-label={t.textileExampleAlt}
+        >
           {tool.bannerImages.map((src) => (
-            <img key={src} src={src} alt="" decoding="async" />
+            <img
+              className="workspace-composer-hero-image"
+              key={src}
+              src={src}
+              alt=""
+              decoding="async"
+            />
           ))}
         </div>
       ) : (
@@ -55,7 +65,7 @@ export function WorkspaceComposerTitle() {
       )}
       <div ref={heroRef} className="workspace-composer-hero-copy">
         <h2 className="workspace-composer-title">{text.name}</h2>
-        {tool.id !== "create" && <p>{text.summary}</p>}
+        <p>{text.summary}</p>
       </div>
     </header>
   );

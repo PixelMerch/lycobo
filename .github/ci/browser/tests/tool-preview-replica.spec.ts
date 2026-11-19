@@ -23,6 +23,9 @@ test("tool menu opens on click and drafts survive switching", async ({ page }) =
   await trigger.click();
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
   await expect(menu).toBeVisible();
+  await expect(page.locator("html")).toHaveCSS("overflow-y", "hidden");
+  await expect(page.locator(".composer-scroll")).toHaveCSS("overflow-y", "hidden");
+  await expect(menu).toHaveCSS("overflow-y", "auto");
   await expect(arrow).toHaveCSS("transform", "matrix(-1, 0, 0, -1, 0, 0)");
   await page.mouse.move(0, 0);
   await expect(menu).toBeVisible();
@@ -38,6 +41,11 @@ test("tool menu opens on click and drafts survive switching", async ({ page }) =
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
   await expect(menu).toHaveCount(0);
   await expect(arrow).toHaveCSS("transform", "none");
+  await trigger.click();
+  await page.getByRole("button", { name: "关闭工具菜单", exact: true }).click();
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator("html")).not.toHaveCSS("overflow-y", "hidden");
+  await expect(trigger).toBeFocused();
   await banner.hover();
   await expect(preview).toHaveCount(0);
   await expect(page).toHaveURL(/\/commerce\/create$/);

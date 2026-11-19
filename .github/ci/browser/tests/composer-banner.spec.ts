@@ -10,8 +10,7 @@ for (const path of ["/commerce/create", "/commerce/textile-set", "/commerce/smar
     await page.goto(path);
     const scroll = page.locator(".composer-scroll");
     const hero = page.locator(".workspace-composer-hero");
-    const isMain = path === "/commerce/create";
-    const decoration = hero.locator(isMain ? "img" : "p");
+    const description = hero.locator("p");
     await expect(hero).toHaveAttribute("data-collapsed", "false");
     const measure = () =>
       scroll.evaluate((element) => {
@@ -35,7 +34,7 @@ for (const path of ["/commerce/create", "/commerce/textile-set", "/commerce/smar
     expect(collapsed.top).toBe(120);
     expect(collapsed.contentTop).toBeCloseTo(initial.contentTop - 120, 0);
     expect(collapsed.visibleHero).toBeCloseTo(48, 0);
-    await expect(decoration).toHaveCSS("opacity", "0");
+    await expect(description).toHaveCSS("opacity", "0");
     await expect(hero.locator("h2")).toBeInViewport();
     // Crossing the collapse boundary in either direction must not alter scroll offset or content height.
     for (const top of [98, 101, 99, 105, 0]) {
@@ -44,7 +43,7 @@ for (const path of ["/commerce/create", "/commerce/textile-set", "/commerce/smar
       expect((await measure()).height).toBe(initial.height);
     }
     await expect(hero).toHaveAttribute("data-collapsed", "false");
-    await expect(decoration).toHaveCSS("opacity", "1");
+    await expect(description).toHaveCSS("opacity", "1");
     expect((await measure()).visibleHero).toBeCloseTo(148, 0);
     await page
       .locator(".results-panel")
@@ -66,23 +65,22 @@ for (const path of ["/commerce/create", "/commerce/textile-set", "/commerce/smar
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
     }
     const hero = page.locator(".workspace-composer-hero");
-    const isMain = path === "/commerce/create";
-    const decoration = hero.locator(isMain ? "img" : "p");
+    const description = hero.locator("p");
     const scroller = page.locator(".composer-scroll");
     await expect(hero).toHaveAttribute("data-collapsed", "false");
     const start = await scroller.evaluate(
       (element) => element.getBoundingClientRect().top + window.scrollY,
     );
-    const collapsedTop = start + (path === "/commerce/textile-set" ? 100 : 128) - 60;
+    const collapsedTop = start + 128 - 60;
     await page.evaluate((top) => window.scrollTo({ top, behavior: "instant" }), collapsedTop);
     await expect(hero).toHaveAttribute("data-collapsed", "true");
     expect(await hero.evaluate((element) => element.getBoundingClientRect().bottom)).toBeCloseTo(
       108,
       0,
     );
-    await expect(decoration).toHaveCSS("opacity", "0");
+    await expect(description).toHaveCSS("opacity", "0");
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
     await expect(hero).toHaveAttribute("data-collapsed", "false");
-    await expect(decoration).toHaveCSS("opacity", "1");
+    await expect(description).toHaveCSS("opacity", "1");
   });
 }

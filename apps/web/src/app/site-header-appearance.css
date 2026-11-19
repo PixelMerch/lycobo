@@ -4,7 +4,7 @@
   --site-header-trigger-hover-fill: var(--fill-strong, #ffffff1f);
   --site-header-light-trigger-hover-fill: #090a0a18;
   --site-header-menu-hover-fill: #ffffff0f;
-  --site-header-menu-background: rgb(50 50 50 / 78%);
+  --site-header-menu-background: rgb(50 50 50 / 90%);
   --site-header-menu-blur: blur(14px);
   --site-header-menu-shadow: var(--glass-shadow, 24px 24px 48px rgb(0 0 0 / 15%));
 }

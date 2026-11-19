@@ -17,11 +17,11 @@ export const workspaceTools = [
     id: "textile",
     path: dashboardToolPaths.textile,
     bannerImages: [
-      "/studio/textile-views/front.webp",
-      "/studio/textile-views/angled-level.webp",
-      "/studio/textile-views/pillow.webp",
-      "/studio/textile-views/bed-end.webp",
-      "/studio/textile-views/fabric.webp",
+      workspaceToolHeroImages.textile,
+      "/landing/comforter-drape.webp",
+      "/landing/comforter-source.webp",
+      "/landing/comforter-folded.webp",
+      "/landing/comforter-stitch.webp",
     ],
   },
   {
