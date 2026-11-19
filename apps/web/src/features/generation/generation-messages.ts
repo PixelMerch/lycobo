@@ -6,7 +6,7 @@ export const generationMessages = defineMessages({
     composer: "创作设置",
     parameters: "创作参数",
     prompt: "提示词",
-    promptPlaceholder: "描述商品、场景或需要调整的细节，输入 @ 引用商品图",
+    promptPlaceholder: "描述你想生成的图片，输入 @ 引用参考图",
     aspectRatio: "图片比例",
     resolution: "分辨率",
     imageCount: "生成张数",
@@ -54,8 +54,7 @@ export const generationMessages = defineMessages({
     composer: "Creation settings",
     parameters: "Creation options",
     prompt: "Prompt",
-    promptPlaceholder:
-      "Describe the product, the scene or the details to change; type @ to reference a product image",
+    promptPlaceholder: "Describe the image you want to create. Type @ to include a reference.",
     aspectRatio: "Aspect ratio",
     resolution: "Resolution",
     imageCount: "Number of images",

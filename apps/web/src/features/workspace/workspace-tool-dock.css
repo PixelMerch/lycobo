@@ -135,57 +135,33 @@
   }
 }
 
-.workspace-composer-hero--comparison::after {
-  content: none;
+.workspace-composer-hero--feature {
+  --feature-image-width: 42%;
 }
-.workspace-composer-hero--comparison .workspace-composer-title {
-  position: absolute;
-  inset: 0 0 auto;
-  z-index: 1;
-  padding: 10px 16px 6px;
-  background: var(--surface);
-  /* 横幅仍吸顶收成 48px，标题补偿被裁去的距离。 */
-  transform: translateY(calc((var(--composer-hero-height) - 48px) * var(--hero-collapse)));
-}
-.workspace-composer-comparison {
-  --comparison-image-height: calc(var(--composer-hero-height) - 64px);
-  --comparison-columns: var(--comparison-image-height) 20px minmax(0, 1fr);
-  display: grid;
-  grid-template-columns: var(--comparison-columns);
-  align-items: center;
-  gap: 4px 8px;
-  margin: 42px 16px 0;
-}
-.workspace-composer-comparison img {
-  display: block;
-  width: 100%;
-  height: var(--comparison-image-height);
+.workspace-composer-hero--feature::after {
+  inset: 8px 12px;
   border-radius: var(--field-radius);
-  background: var(--surface-secondary);
+  background: var(--fill-faint);
+}
+.workspace-composer-feature-image {
+  position: absolute;
+  inset-block: 20px;
+  inset-inline-end: 24px;
+  width: var(--feature-image-width);
+  height: calc(var(--composer-hero-height) - 40px);
+  border-radius: var(--field-radius);
   object-fit: cover;
-  object-position: center 58%;
-}
-.workspace-composer-comparison > .ui-icon {
-  justify-self: center;
-  color: var(--muted);
-}
-.workspace-composer-comparison > :is(img, .ui-icon) {
   opacity: calc(1 - var(--hero-collapse));
 }
-.workspace-composer-comparison figcaption {
-  grid-column: 1 / -1;
+.workspace-composer-hero--feature .workspace-composer-hero-copy {
+  inset-inline-start: 24px;
+  inset-inline-end: calc(var(--feature-image-width) + 36px);
+  bottom: calc(32px - 22px * var(--hero-collapse));
+  grid-template-rows: 28px calc(36px * (1 - var(--hero-collapse)));
 }
-.workspace-composer-comparison figcaption p {
-  display: grid;
-  grid-template-columns: var(--comparison-columns);
-  gap: 8px;
-  margin: 0;
+.workspace-composer-hero--feature p {
   color: var(--muted);
-  text-align: center;
   text-shadow: none;
-}
-.workspace-composer-comparison figcaption span:last-child {
-  grid-column: 3;
 }
 
 /* 一级工具类别和直接入口共用一组尺寸与悬停样式。 */

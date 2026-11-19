@@ -1,12 +1,5 @@
 import { Tooltip } from "@heroui/react";
-import {
-  IconArrowRight,
-  IconCamera,
-  IconCopy,
-  IconLayoutCollage,
-  IconMovie,
-  IconWand,
-} from "@tabler/icons-react";
+import { IconCamera, IconCopy, IconLayoutCollage, IconMovie, IconWand } from "@tabler/icons-react";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
 import { useAppLocation } from "../../i18n/use-localized-navigation";
@@ -34,46 +27,35 @@ export function WorkspaceToolSymbol({ tool }: { tool: ToolId }) {
   );
 }
 
-/** 参数面板显示工具用途，主图制作直接展示同一商品的原图与成图。 */
+/** 参数面板显示工具用途，主图制作以一张创意场景图演示生成效果。 */
 export function WorkspaceComposerTitle() {
   const { pathname } = useAppLocation();
   const tool = toolForPath(pathname);
   const heroRef = useComposerHeroScroll(tool.id);
   const t = useMessages(workspaceToolMessages);
   const text = t.tools[tool.id];
+  const title = (
+    <div ref={heroRef} className="workspace-composer-hero-copy">
+      <h2 className="workspace-composer-title">{text.name}</h2>
+      <p>{tool.id === "create" ? t.mainImageDescription : text.summary}</p>
+    </div>
+  );
   if (tool.id === "create") {
-    const example = t.mainImageExample;
     return (
-      <div
-        ref={heroRef}
-        className="workspace-composer-hero workspace-composer-hero--comparison"
+      <header
+        className="workspace-composer-hero workspace-composer-hero--feature"
         data-tool={tool.id}
       >
-        <h2 className="workspace-composer-title">{text.name}</h2>
-        <figure className="workspace-composer-comparison" aria-label={example.label}>
-          <img
-            src="/landing/showcase/mint-throw-source.webp"
-            width={760}
-            height={760}
-            alt={example.sourceAlt}
-            decoding="async"
-          />
-          <UiIcon icon={IconArrowRight} size="small" />
-          <img
-            src="/landing/showcase/mint-throw-sofa.webp"
-            width={760}
-            height={760}
-            alt={example.resultAlt}
-            decoding="async"
-          />
-          <figcaption>
-            <p aria-hidden="true">
-              <span>{example.source}</span>
-              <span>{example.result}</span>
-            </p>
-          </figcaption>
-        </figure>
-      </div>
+        {title}
+        <img
+          className="workspace-composer-feature-image"
+          src="/studio/models/banana-2.webp"
+          width={480}
+          height={360}
+          alt={t.mainImageExampleAlt}
+          decoding="async"
+        />
+      </header>
     );
   }
   return (
@@ -92,10 +74,7 @@ export function WorkspaceComposerTitle() {
         ) : (
           <img className="workspace-composer-hero-image" src={tool.hero} alt="" decoding="async" />
         )}
-        <div ref={heroRef} className="workspace-composer-hero-copy">
-          <h2 className="workspace-composer-title">{text.name}</h2>
-          <p>{text.summary}</p>
-        </div>
+        {title}
       </Tooltip.Trigger>
       <Tooltip.Content placement="right top" offset={10} className="workspace-tool-preview">
         <WorkspaceToolPreview tool={tool} />

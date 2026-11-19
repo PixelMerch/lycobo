@@ -83,7 +83,8 @@ function Workspace({ model }: { model: ModelId }) {
         <ReferencePicker
           compact
           withRoles
-          label={referenceText.uploadProduct}
+          label={referenceText.addReference}
+          addLabel={referenceText.addReference}
           model={model}
           references={draft.references}
         />
