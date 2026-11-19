@@ -46,7 +46,7 @@ const publicPaths = new Set<string>([
 
 const studioLogo = { src: "/brand/lycobo-reveal.svg", width: 120, height: 32 };
 
-/** 组合应用导航和业务区域，未登录时转往独立登录页面。 */
+/** 按页面组合导航和业务区域，未登录时转往独立登录页面。 */
 export function StudioShell() {
   const location = useAppLocation();
   const { pathname } = location;
@@ -71,7 +71,7 @@ export function StudioShell() {
           <RouteLink to="/" className="workspace-site-brand" aria-label={t.home}>
             <img src="/brand/lycobo-landing.svg" width={155} height={46} alt="Lycobo" />
           </RouteLink>
-          <SiteHeaderControls account={session.data} />
+          <SiteHeaderControls account={session.data} showWorkspaceLink={false} />
         </header>
       )}
       {!landing && !workspace && <StudioHeader account={session.data} />}

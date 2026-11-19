@@ -14,12 +14,13 @@ import "./site-header-controls.css";
 
 const popoverOffset = 18;
 
-/** 首页与创作页共用创作指南、语言、工作区、积分和账户控件。 */
+/** 首页与创作页共用顶栏控件，创作页可省略工作区入口。 */
 export function SiteHeaderControls({
   account,
   dismissVersion = 0,
   onLanguageChange,
   onMenuOpen,
+  showWorkspaceLink = true,
   style,
   theme = "dark",
 }: {
@@ -27,6 +28,7 @@ export function SiteHeaderControls({
   dismissVersion?: number;
   onLanguageChange?: () => void;
   onMenuOpen?: () => void;
+  showWorkspaceLink?: boolean;
   style?: CSSProperties;
   theme?: "light" | "dark";
 }) {
@@ -53,7 +55,7 @@ export function SiteHeaderControls({
       </div>
       {account && (
         <div className="landing-account-controls">
-          <WorkspaceHeaderLink />
+          {showWorkspaceLink && <WorkspaceHeaderLink />}
           <HeaderBenefits
             dismissVersion={dismissVersion}
             popoverClassName="landing-control-popover"
