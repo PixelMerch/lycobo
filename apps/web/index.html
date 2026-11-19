@@ -9,7 +9,15 @@
     <link rel="icon" type="image/svg+xml" href="/brand/lycobo-focus-favicon.svg" sizes="any" />
     <link rel="apple-touch-icon" href="/brand/lycobo-reveal-apple-touch.png" />
     <link rel="manifest" href="/brand/site.webmanifest" />
+    <link rel="stylesheet" href="/src/styles/loading.css" />
     <title>Lycobo · 电商创作工作台</title>
   </head>
-  <body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body>
+  <body>
+    <div id="root">
+      <div class="loading-state" role="status" aria-busy="true" aria-label="Lycobo">
+        <img class="loading-state-mark" src="/brand/lycobo-loading.svg" width="56" height="56" alt="" />
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
