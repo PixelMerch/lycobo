@@ -206,9 +206,9 @@ function useRepairSubmission({
 }) {
   const submissionLock = useRef(false);
   return async () => {
-    if (submissionLock.current || !ready) return;
+    if (submissionLock.current || !ready) return false;
     const prompt = repairPrompt(regions, width, height);
-    if (!ownPending && prompt.length > 9000) return;
+    if (!ownPending && prompt.length > 9000) return false;
     submissionLock.current = true;
     try {
       const submitted = await generate.mutateAsync({
@@ -232,8 +232,10 @@ function useRepairSubmission({
         },
       });
       onAccepted(submitted.id);
+      return true;
     } catch {
       /* 共享的错误提示与待提交记录会保留这次付费请求的原样，这里不再重复处理。 */
+      return false;
     } finally {
       submissionLock.current = false;
     }

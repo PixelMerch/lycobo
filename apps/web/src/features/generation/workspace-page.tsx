@@ -173,38 +173,19 @@ function useWorkspaceSubmission(
   pending: boolean,
 ) {
   const updateDraft = useStudioStore((state) => state.updateDraft);
-  const [submissionPhase, setSubmissionPhase] = useState<"idle" | "submitting" | "settled">("idle");
-  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(
-    () => () => {
-      if (settleTimer.current) clearTimeout(settleTimer.current);
-    },
-    [],
-  );
-  const submit = () => {
-    setSubmissionPhase("submitting");
+  return async () => {
     revealNewestHistory();
-    generate.mutate(
+    await generate.mutateAsync(
       { model, draft },
       {
         onSuccess: () => {
-          const cleared = !pending && useStudioStore.getState().drafts[model] === draft;
-          if (cleared) {
+          if (!pending && useStudioStore.getState().drafts[model] === draft)
             updateDraft(model, { prompt: "", references: [] });
-            setSubmissionPhase("settled");
-            if (settleTimer.current) clearTimeout(settleTimer.current);
-            settleTimer.current = setTimeout(() => {
-              setSubmissionPhase("idle");
-            }, 600);
-          } else {
-            setSubmissionPhase("idle");
-          }
         },
-        onError: () => setSubmissionPhase("idle"),
       },
     );
+    return true;
   };
-  return { submit, activeSubmission: submissionPhase !== "idle" || generate.isPending };
 }
 
 function WorkspaceGeneration({
@@ -222,7 +203,8 @@ function WorkspaceGeneration({
   pending: boolean;
   canGenerate: boolean;
 }) {
-  const { submit, activeSubmission } = useWorkspaceSubmission(model, draft, generate, pending);
+  const submit = useWorkspaceSubmission(model, draft, generate, pending);
+  const activeSubmission = generate.isPending;
   const updateDraft = useStudioStore((state) => state.updateDraft);
   const setActiveModel = useStudioStore((state) => state.setActiveModel);
   const capabilities = modelCapabilities(modelQuery.data, model, "create");

@@ -186,9 +186,10 @@
 }
 .generation-submit.button {
   --app-primary-gradient: var(--studio-accent-gradient);
+  --generate-button-height: 44px;
   width: 100%;
-  height: 44px;
-  min-height: 44px;
+  height: var(--generate-button-height);
+  min-height: var(--generate-button-height);
   border: 0;
   border-radius: var(--control-pill-radius);
   padding-inline: var(--control-padding-lg);

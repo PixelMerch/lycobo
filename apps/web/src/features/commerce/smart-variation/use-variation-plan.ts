@@ -135,10 +135,11 @@ export function useVariationPlan() {
     streamText,
     readingWeb,
     isPending: busy,
-    mutate: (...args: Parameters<typeof mutation.mutate>) => {
-      if (locked.current || busy) return;
+    submit: async () => {
+      if (locked.current || busy) return false;
       locked.current = true;
-      mutation.mutate(...args);
+      const plan = await mutation.mutateAsync();
+      return useSmartVariationDraft.getState().planId === plan.id;
     },
     enabled: capabilities.data?.enabled ?? false,
     canAnalyze:

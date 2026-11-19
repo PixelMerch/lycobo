@@ -1,9 +1,9 @@
-import { Button, Checkbox, Input, Label, Spinner, TextArea, TextField } from "@heroui/react";
+import { Button, Checkbox, Input, Label, TextArea, TextField } from "@heroui/react";
 import { IconCheck, IconTrash, IconX } from "@tabler/icons-react";
 import { useLayoutEffect, useRef } from "react";
-import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
+import { GenerateButton } from "../../generation/composer/generate-button";
 import { usePlanUsage } from "./plan-image-bindings";
 import { PlanReferenceStrip } from "./plan-reference-strip";
 import { previewPlanItems } from "./plan-stream";
@@ -212,29 +212,16 @@ function VariationGenerateButton({
   const isDisabled = showPreview || !generation.canGenerate;
   const showCost = !isDisabled && !generation.pending && generation.cost > 0;
   return (
-    <Button
-      isDisabled={isDisabled && !generation.submitting}
-      aria-description={showCost ? t.runCost(generation.cost) : undefined}
-      isPending={generation.submitting}
-      data-submitting={generation.submitting || undefined}
-      className={`primary-action variation-generate${generation.submitting ? " generation-pending" : ""}`}
-      onPress={() => {
-        void generation
-          .submit()
-          .then(onComplete)
-          .catch(() => undefined);
-      }}
-    >
-      {generation.submitting && (
-        <Spinner size="md" color="current" role="status" aria-label={t.submitting} />
-      )}
-      {generation.pending ? t.confirmLastSubmission : t.startGenerating}
-      {showCost && (
-        <span className="generate-credit-cost" aria-hidden="true">
-          <CreditCoin />
-          <span>{generation.cost}</span>
-        </span>
-      )}
-    </Button>
+    <GenerateButton
+      compact
+      label={generation.pending ? t.confirmLastSubmission : t.startGenerating}
+      submitting={generation.submitting}
+      isDisabled={isDisabled}
+      submittingLabel={t.submitting}
+      cost={showCost ? generation.cost : undefined}
+      costDescription={showCost ? t.runCost(generation.cost) : undefined}
+      onPress={generation.submit}
+      onSuccessFeedbackEnd={onComplete}
+    />
   );
 }

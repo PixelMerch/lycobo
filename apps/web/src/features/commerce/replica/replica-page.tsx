@@ -121,9 +121,9 @@ function useReplicaSubmission(
 ) {
   const { draft, target, products, update } = state;
   const t = useMessages(replicaMessages);
-  const submit = () => {
-    if (!pending && !valid) return;
-    generate.mutate(
+  return async () => {
+    if (!pending && !valid) return false;
+    await generate.mutateAsync(
       {
         model: replicaModel,
         source: "replica",
@@ -151,6 +151,6 @@ function useReplicaSubmission(
         },
       },
     );
+    return true;
   };
-  return submit;
 }

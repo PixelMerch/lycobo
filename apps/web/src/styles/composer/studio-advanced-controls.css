@@ -137,8 +137,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .generation-submit .spinner,
-  .variation-generate .spinner {
+  .generation-submit .spinner {
     animation: none;
   }
 }

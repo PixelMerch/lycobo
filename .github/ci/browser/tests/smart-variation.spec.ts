@@ -168,11 +168,8 @@ test("analysis shows progress, blocks repeated presses and opens normalized plan
   try {
     await expect(page.getByRole("region", { name: "正在生成套图计划", exact: true })).toBeVisible();
     await expect(button).toBeDisabled();
-    // 生成中文字不变，只出现加载图标（读屏说明“正在生成计划”），也不显示成禁用的灰色。
-    await expect(button.getByRole("status", { name: "正在生成计划" })).toBeVisible();
-    await expect(button).toContainText("立即生成");
-    await expect(button).not.toContainText("正在生成计划");
-    await expect(button).toHaveAttribute("data-submitting", "true");
+    await expect(button).toHaveAttribute("data-submit-state", "loading");
+    await expect(page.locator(".variation-submit > [role=status]")).toHaveText("正在生成计划");
     await button.evaluate((node) => {
       if (node instanceof HTMLButtonElement) {
         node.click();
@@ -186,6 +183,8 @@ test("analysis shows progress, blocks repeated presses and opens normalized plan
   await expect(
     page.getByRole("region", { name: "确认每张图的中文提示词", exact: true }),
   ).toBeVisible();
+  await expect(button).toHaveAttribute("data-submit-state", "success");
+  await expect(button).toHaveAccessibleName("方案已生成");
   expect(calls).toBe(1);
 });
 

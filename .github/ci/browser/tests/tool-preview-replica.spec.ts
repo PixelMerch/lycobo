@@ -132,7 +132,7 @@ test("style matching requires both slots and submits their roles without a paid 
       prompt: expect.stringContaining("以第一张图为版式模板"),
     });
   expect(statusReads).toBe(0);
-  await expect(page.getByText("任务已入队，关闭页面后仍会处理。", { exact: true })).toBeVisible();
+  await expect(page.getByText("已提交，可在生成记录中查看进度。", { exact: true })).toBeVisible();
 });
 
 test("reduced-motion tool menu stays available without a duplicate banner preview", async ({

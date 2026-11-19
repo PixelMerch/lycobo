@@ -1,0 +1,52 @@
+.generation-submit.animated-generate.button {
+  position: relative;
+  background: transparent;
+  opacity: 1;
+}
+
+.generation-submit.animated-generate-compact.button {
+  --generate-button-height: var(--control-height-md);
+  width: auto;
+  min-width: min(100%, 168px);
+}
+
+.generation-submit.animated-generate.button[data-submit-state="loading"] {
+  cursor: progress;
+}
+
+.generation-submit.animated-generate.button:not([data-submit-state="idle"]),
+.generation-submit.animated-generate.button:disabled {
+  filter: none;
+  box-shadow: none;
+}
+
+.generate-motion {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background: var(--app-primary-gradient);
+  pointer-events: none;
+}
+
+.animated-generate[data-submit-state="idle"]:is(:disabled, [data-disabled="true"])
+  .generate-motion {
+  background: var(--fill-medium);
+}
+
+.generate-motion-success-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--studio-accent);
+}
+
+.generate-motion-content {
+  grid-area: 1 / 1;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}

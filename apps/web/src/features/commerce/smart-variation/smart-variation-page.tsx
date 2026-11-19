@@ -102,9 +102,10 @@ export function SmartVariationPage() {
             submitting={analysis.isPending}
             isDisabled={!analysis.canAnalyze}
             submittingLabel={t.generatingPlan}
-            onPress={() => {
+            successLabel={t.planReady}
+            onPress={async () => {
               setPlanOpen(true);
-              analysis.mutate();
+              return analysis.submit();
             }}
           />
         </div>

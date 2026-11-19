@@ -36,7 +36,7 @@ export function useTextileGeneration() {
       !generation.isPending &&
       (ownPending || (!pending && configured && !!draft.mainImage && draft.views.length > 0)),
     unavailable: session.isSuccess && models.isSuccess && !configured,
-    submit: () => {
+    submit: async () => {
       const references = [draft.mainImage, ...draft.detailImages].filter((image) => image !== null);
       const input: Draft = {
         prompt: textilePromptMarker,
@@ -47,7 +47,7 @@ export function useTextileGeneration() {
         references,
       };
       revealNewestHistory();
-      generation.mutate(
+      await generation.mutateAsync(
         {
           model: "gpt-image-2.6",
           draft: input,
@@ -66,6 +66,7 @@ export function useTextileGeneration() {
           },
         },
       );
+      return true;
     },
   };
 }

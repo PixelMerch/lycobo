@@ -309,18 +309,6 @@
   white-space: nowrap;
   line-height: var(--leading-sm);
 }
-.variation-generate {
-  --app-primary-gradient: var(--studio-accent-gradient);
-  border-radius: 999px;
-}
-/* 提交中保持主操作底色和加载反馈，与其他生成按钮一致。 */
-.primary-action.variation-generate:is([data-submitting="true"], [data-pending="true"]) {
-  background: var(--app-primary-gradient);
-  color: var(--accent-foreground);
-  filter: none;
-  opacity: 1;
-  cursor: progress;
-}
 .variation-plan-availability {
   width: 100%;
   text-align: right;

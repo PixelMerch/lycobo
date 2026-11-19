@@ -55,7 +55,7 @@ export function useVariationGeneration() {
           everyItemHasImages &&
           selected.every((item) => item.title.trim() && item.prompt.trim().length >= 5))),
     async submit() {
-      if (!draft.planId && !ownPending) return;
+      if (!draft.planId && !ownPending) return false;
       revealNewestHistory();
       await generation.mutateAsync({
         model: "gpt-image-2.6",
@@ -83,6 +83,7 @@ export function useVariationGeneration() {
       const current = useSmartVariationDraft.getState();
       if (current.items === draft.items && current.description === draft.description)
         current.update({ description: "", references: [], items: [], planId: null });
+      return true;
     },
   };
 }

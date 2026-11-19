@@ -22,7 +22,9 @@ export const generationMessages = defineMessages({
     generateMainImage: "立即生成",
     runCost: (credits: number) => `本次生成消耗 ${credits} 币`,
     submitting: "正在上传并提交，请保持页面打开",
-    submissionAccepted: "任务已入队，关闭页面后仍会处理。",
+    submittingShort: "提交中…",
+    submitted: "已提交",
+    submissionAccepted: "已提交，可在生成记录中查看进度。",
     backToTop: "回到顶部",
     statuses: {
       queued: "排队中",
@@ -74,7 +76,9 @@ export const generationMessages = defineMessages({
     generateMainImage: "Generate now",
     runCost: (credits) => `This run costs ${credits} credits`,
     submitting: "Uploading and submitting. Keep this page open.",
-    submissionAccepted: "Task queued. Processing continues if you close this page.",
+    submittingShort: "Submitting…",
+    submitted: "Submitted",
+    submissionAccepted: "Submitted. Check progress in your generation history.",
     backToTop: "Back to top",
     statuses: {
       queued: "Queued",
