@@ -89,6 +89,7 @@
   --control-hover-fill: var(--fill-medium);
   --control-pressed-fill: var(--fill-strong);
   --control-selected-fill: var(--fill-selected);
+  --control-selected-foreground: var(--foreground);
   --interaction-hover: var(--fill-faint);
   --interaction-active: var(--fill-medium);
   /*
@@ -136,6 +137,15 @@
   --glass-fallback: #1c1f1b;
   --glass-card: #ffffff08;
   --glass-card-edge: #ffffff0f;
+}
+:root:has(.openart-reference, .studio-app[data-workspace-site-header]) {
+  --background: var(--studio-canvas);
+  --brand: var(--studio-accent);
+  --brand-light: var(--studio-accent);
+  --accent-foreground: var(--studio-canvas);
+  --app-primary-gradient: var(--studio-primary-action);
+  --control-selected-fill: var(--studio-selected-fill);
+  --control-selected-foreground: var(--studio-accent);
 }
 * {
   box-sizing: border-box;

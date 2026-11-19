@@ -184,7 +184,7 @@
   overflow-wrap: anywhere;
 }
 .generation-pending-label {
-  color: var(--muted);
+  color: var(--focus);
   text-align: center;
   overflow-wrap: anywhere;
 }

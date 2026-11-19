@@ -78,7 +78,7 @@
   scroll-snap-align: start;
 }
 .composer-panel .home-ratio-track .toggle-button[data-selected="true"] {
-  color: #eee;
+  color: var(--control-selected-foreground);
   background: transparent;
 }
 .composer-panel .home-ratio-track .toggle-selection {
@@ -134,11 +134,11 @@
   pointer-events: none;
 }
 .composer-panel .parameter-options :is(.button, .toggle-button)[data-selected="true"] {
-  color: #eee;
+  color: var(--control-selected-foreground);
   background: transparent;
 }
 .unified-workspace .composer-panel :is(.home-ratio-pager, .parameter-options) {
-  --focus: var(--foreground);
+  --focus: var(--studio-accent);
 }
 .unified-workspace .composer-panel .parameter-options :is(:disabled, [data-disabled="true"]) {
   color: var(--field-placeholder);

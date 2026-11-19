@@ -1,0 +1,7 @@
+/* 隔离首页和创作工作区共用的画布、主操作及强调色。 */
+:root {
+  --studio-canvas: #121212;
+  --studio-primary-action: #f2f1ee;
+  --studio-accent: #7dabef;
+  --studio-selected-fill: color-mix(in srgb, var(--studio-accent) 16%, transparent);
+}

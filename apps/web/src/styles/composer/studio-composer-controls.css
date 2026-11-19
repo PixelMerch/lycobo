@@ -107,7 +107,7 @@
   border-radius: 18px;
 }
 .composer-panel .parameter-options :is(.button, .toggle-button)[data-selected="true"] {
-  color: #eee;
+  color: var(--control-selected-foreground);
   background: var(--control-selected-fill);
 }
 /* Unified workspace groups and model menu. */
@@ -257,7 +257,7 @@
 .composer-panel
   .parameter-options.ratio-options
   :is(.button, .toggle-button)[data-selected="true"] {
-  color: #eee;
+  color: var(--control-selected-foreground);
   background: var(--control-selected-fill);
 }
 .ratio-popover {

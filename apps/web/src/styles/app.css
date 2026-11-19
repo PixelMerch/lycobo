@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@heroui/styles";
+@import "./studio-palette.css";
 @import "./studio-theme.css";
 @import "./studio-shell.css";
 @import "./studio-landing-and-overlays.css";

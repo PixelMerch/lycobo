@@ -11,6 +11,7 @@ import throwSource from "../../../../public/landing/showcase/mint-throw-source.w
 import throwTexture from "../../../../public/landing/showcase/mint-throw-texture.webp?inline";
 import headerAppearance from "../../../app/site-header-appearance.css?raw";
 import type { Locale } from "../../../i18n/locale";
+import studioPalette from "../../../styles/studio-palette.css?raw";
 import { initializeLandingBrandScroll } from "./landing-brand-scroll";
 import { initializeLandingFeatureScroll } from "./landing-feature-scroll";
 import heroStyles from "./landing-hero.css?raw";
@@ -18,6 +19,7 @@ import heroTemplate from "./landing-hero.html?raw";
 import { initializeLandingHeroScroll } from "./landing-hero-scroll";
 import { initializeLandingNavBridge } from "./landing-nav-bridge";
 import { renderLandingNavigation } from "./landing-navigation";
+import landingPalette from "./landing-palette.css?raw";
 import { initializeLandingScrollbar } from "./landing-scrollbar";
 import showcaseStyles from "./landing-showcase.css?raw";
 import { initializeLandingShowcaseScroll } from "./landing-showcase-scroll";
@@ -61,7 +63,9 @@ export function renderLandingDocument(
     .replace("__LYCOBO_DESKTOP_NAV_ITEMS__", () => navigation.desktop)
     .replace("__LYCOBO_NAV_PANELS__", () => navigation.panels)
     .replace("__LYCOBO_MOBILE_NAV_ITEMS__", () => navigation.mobile)
-    .replace("__LYCOBO_HEADER_APPEARANCE__", () => headerAppearance)
+    .replace("__LYCOBO_LANDING_APPEARANCE__", () =>
+      [studioPalette, headerAppearance, landingPalette].join("\n"),
+    )
     .replace("__LYCOBO_HERO_STYLE__", () => heroStyles + showcaseStyles)
     .replace("__LYCOBO_HERO__", () => hero)
     .replace(

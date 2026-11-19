@@ -7,7 +7,7 @@
   font-weight: var(--weight-semibold);
 }
 .workspace-tabs .tabs__tab[data-selected="true"] {
-  color: #eee;
+  color: var(--control-selected-foreground);
 }
 .workspace-tabs .tabs__indicator {
   display: none;

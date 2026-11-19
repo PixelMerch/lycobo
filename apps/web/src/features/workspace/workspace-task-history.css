@@ -192,6 +192,9 @@
 .history-batch-progress > span {
   white-space: nowrap;
 }
+.history-batch-progress > span:first-child {
+  color: var(--studio-accent);
+}
 .history-batch-progress + .history-task-actions {
   margin-left: 0;
 }
@@ -273,10 +276,7 @@
   box-shadow: none;
 }
 .workspace[data-tool="create"] .history-rail .history-thumbnail.button[aria-current="true"] {
-  border-color: transparent;
-  background:
-    linear-gradient(var(--surface), var(--surface)) padding-box,
-    linear-gradient(120deg, var(--brand), var(--brand-light)) border-box;
+  border-color: var(--studio-accent);
 }
 .workspace[data-tool="create"] .history-rail .history-thumbnail.button:focus-visible {
   outline-color: var(--brand-light);

@@ -1,13 +1,11 @@
 .lycobo-landing-feature {
-  --hero-paper: #f3f0ec;
-  background: var(--hero-paper);
+  background: var(--studio-canvas);
 }
 
 .lycobo-showreel {
-  --showreel-dark: #090a0a;
   position: relative;
   padding-block: clamp(42px, 6svh, 72px) clamp(38px, 5svh, 66px);
-  background: var(--showreel-dark);
+  background: var(--studio-canvas);
   color: #f5f3f1;
 }
 
@@ -156,7 +154,7 @@
 }
 
 .lycobo-showreel-range:focus-visible + .lycobo-showreel-divider span {
-  outline: 2px solid #090a0a;
+  outline: 2px solid var(--studio-accent);
   outline-offset: 2px;
 }
 
@@ -222,11 +220,6 @@
     --showreel-overlap: calc(100svh - 90px);
   }
 
-  .lycobo-hero[data-motion][data-hero-gallery-settled] {
-    /* 套图铺满后，让滚动区边缘与交接处共用纸色。 */
-    background: var(--hero-paper);
-  }
-
   [data-showreel-motion]::after {
     display: block;
     height: clamp(380px, 64svh, 620px);
@@ -243,7 +236,7 @@
     position: absolute;
     z-index: -1;
     inset: -100svh 0 0;
-    background: var(--showreel-dark);
+    background: var(--studio-canvas);
     opacity: var(--showreel-cover, 0);
     pointer-events: none;
     content: "";

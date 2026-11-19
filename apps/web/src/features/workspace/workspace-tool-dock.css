@@ -208,9 +208,6 @@
   background: transparent;
   transform: none;
 }
-.workspace-tool-shortcut[data-current="true"]::before {
-  background-color: var(--fill-medium);
-}
 .workspace-tool-shortcut:is(
   [data-hovered="true"],
   [data-focus-visible="true"],
@@ -218,6 +215,12 @@
   :focus-visible
 )::before {
   background-color: var(--fill-strong);
+}
+.workspace-tool-shortcut:is(.button, .workspace-tool-group)[data-current="true"] {
+  color: var(--control-selected-foreground);
+}
+.workspace-tool-shortcut[data-current="true"]::before {
+  background-color: var(--control-selected-fill);
 }
 .workspace-tool-chevron {
   margin-inline-start: auto;
@@ -279,6 +282,7 @@
   transform: none;
 }
 .workspace-tool-menu-item[data-current="true"] .workspace-tool-menu-copy > span:first-child {
+  color: var(--control-selected-foreground);
   font-weight: var(--weight-semibold);
 }
 :root
@@ -290,6 +294,9 @@
     :focus-visible
   )::before {
   background-color: var(--fill-strong);
+}
+:root .workspace-tool-submenu .workspace-tool-menu-item[data-current="true"]::before {
+  background-color: var(--control-selected-fill);
 }
 .workspace-tool-menu-item:is(
     :hover,

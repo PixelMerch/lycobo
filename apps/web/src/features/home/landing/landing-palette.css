@@ -1,0 +1,102 @@
+/* 录制模板的页面底色、按钮和选中反馈沿用工作区配色。 */
+:root {
+  color-scheme: dark;
+  --oah-page-theme-bg: var(--studio-canvas);
+  --oah-testimonials-theme-bg: var(--studio-canvas);
+  --oah-testimonials-theme-bg-rgb: 18 18 18;
+  --oah-testimonials-theme-text: #f2f2f2;
+  --oah-testimonials-theme-muted: #a8a8a8;
+  --oah-testimonials-card-bg: #171717;
+  --oah-testimonials-card-border: #ffffff1f;
+  --oah-testimonials-cta-bg: #ffffff1f;
+}
+
+body,
+:is(.oah-social-proof-section, .oah-news-section, #navv3-mobile-menu, #navv3-mobile-menu > .sticky),
+.footer-v3[data-footerv3-variant="dark"][data-astro-cid-jfcdznaq] {
+  background: var(--studio-canvas);
+}
+
+.oah-director-section {
+  --oah-dir-bg: var(--studio-canvas);
+  --oah-dir-pink: var(--studio-accent);
+  --oah-dir-pink-light: var(--studio-accent);
+}
+
+.oah-director-section::before {
+  background: none;
+}
+
+.oah-director-grad {
+  background-image: linear-gradient(90deg, var(--studio-primary-action), #a8a8a8);
+}
+
+.oah-director-prompt-send {
+  background-image: none;
+  background-color: var(--studio-primary-action);
+}
+
+.faq-heading-accent[data-astro-cid-h4zmggu3] {
+  color: var(--studio-primary-action);
+  -webkit-text-fill-color: var(--studio-primary-action);
+}
+
+.faq-answer[data-astro-cid-h4zmggu3] a,
+.faq-answer[data-astro-cid-h4zmggu3] a:hover {
+  color: var(--studio-accent);
+}
+
+.oah-news-card:hover {
+  background: #ffffff14;
+}
+
+.oah-tv2-stars[data-astro-cid-y2hyjyh7] {
+  color: var(--studio-primary-action);
+}
+
+.oah-tv2-card[data-astro-cid-y2hyjyh7]:hover {
+  background: #ffffff14;
+  box-shadow: none;
+}
+
+:is(.oah-features-intro, .oah-more-features-section),
+:is(.oah-features-intro-heading, .oah-more-features-h2),
+.oah-features-switch-title {
+  color: #f2f1ee;
+}
+
+:is(.oah-features-intro-heading, .oah-more-features-h2) span:last-child,
+:is(.oah-features-intro-sub, .oah-more-features-sub) {
+  color: #a8a8a8;
+}
+
+.oah-features-switch,
+.oah-features-switch:hover {
+  background: #ffffff14;
+  color: #f2f1ee;
+}
+
+.oah-features-switch.is-active,
+.oah-studio-feature-item [data-oah-studio-feature-trigger][aria-selected="true"] {
+  background: var(--studio-selected-fill);
+  color: var(--studio-accent);
+}
+
+.oah-features-switch.is-active .oah-features-switch-title,
+.oah-studio-feature-trigger[aria-selected="true"] .oah-studio-feature-title {
+  color: var(--studio-accent);
+}
+
+:is([data-navv3-cta], #navv3-mobile-menu [data-pageforge-source="start_for_free"], #cta a) {
+  background: var(--studio-primary-action);
+  color: var(--studio-canvas);
+}
+
+:is([data-navv3-cta], #navv3-mobile-menu [data-pageforge-source="start_for_free"], #cta a):hover,
+.lycobo-hero-cta:hover {
+  background: color-mix(in srgb, var(--studio-primary-action) 92%, white);
+}
+
+body :focus-visible {
+  outline-color: var(--studio-accent);
+}
