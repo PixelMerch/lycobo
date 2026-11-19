@@ -54,41 +54,25 @@ html :is([data-nav-items] > .nav-item > a, .nav-panel .lycobo-nav-action)[href]:
 }
 [data-nav-items] > .nav-item > a { padding-block: 0; }
 [data-nav-items] > .nav-item > a[aria-current="page"] { font-weight: 600; }
-.nav-panel .lycobo-menu-row { padding: 0 12px; }
-.nav-panel .lycobo-menu-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 8px 12px;
-}
-.nav-panel a.lycobo-menu-card::before {
-  inset-block: 0;
-  height: auto;
-  transform: none;
-}
-.nav-panel .lycobo-menu-card > p { max-width: 100%; margin: 0; }
-.nav-panel .lycobo-menu-card > p:first-child { overflow: hidden; }
-.nav-panel .lycobo-menu-card > p:last-child {
-  display: -webkit-box;
-  overflow: hidden;
-  font-size: 12px;
-  line-height: 16px;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
 .lycobo-tools-panel {
-  background: rgba(9,10,10,.94);
-  border-block: 1px solid #ffffff14;
+  width: max-content;
+  min-width: 200px;
+  max-width: calc(100vw - 16px);
+  padding: 6px;
+  border: 1px solid #ffffff14;
+  border-radius: 12px;
+  background: #202020;
+  box-shadow: 0 12px 32px #00000059;
 }
-.lycobo-tools-panel-content {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
-  max-width: 860px;
-  margin-inline: auto;
-  padding: 20px 28px;
+.lycobo-tools-panel::after {
+  position: absolute;
+  inset: -8px 0 auto;
+  height: 8px;
+  content: "";
 }
+.lycobo-tool-link { display: flex; align-items: center; gap: 10px; padding-inline: 12px; }
+.lycobo-tool-link svg { flex: none; opacity: .74; }
+.lycobo-tool-link:focus-visible { outline: 1px solid currentColor; outline-offset: -4px; border-radius: 10px; }
 .lycobo-tools-heading { padding: 4px 12px; font-size: 12px; color: #a8a8a8; }
 .nav-chevron, .mob-acc-chevron { display: inline-flex; }
 .mob-acc-trigger[aria-expanded="true"] .mob-acc-chevron { transform: rotate(180deg); }
@@ -1191,14 +1175,11 @@ __LYCOBO_HTML_copy008__
   var hideTimer = null;
   var currentIdx = null;
 
-  var navEl = document.querySelector('nav');
-
   // === Elastic overflow ("__LYCOBO_JS_copy008__") menu ===
   // When the row of nav items can't fit horizontally, hide lowest-priority
   // items (right-most by default) and surface them in a "__LYCOBO_JS_copy008__" dropdown.
   var navItemsList = document.querySelector('[data-nav-items]');
   var moreLi = document.querySelector('[data-nav-more]');
-  var morePanel = document.querySelector('[data-nav-panel-more]');
   var morePanelList = document.querySelector('[data-nav-panel-more-list]');
 
   // More needs an explicit click action as well as pointer hover.
@@ -1209,12 +1190,21 @@ __LYCOBO_HTML_copy008__
     else showPanel('more');
   });
 
-  function positionMorePanel() {
-    if (!morePanel || !moreLi) return;
-    var rect = moreLi.getBoundingClientRect();
-    morePanel.style.top = getNavBottom() + 'px';
-    morePanel.style.left = '';
-    morePanel.style.right = Math.max(8, window.innerWidth - rect.right) + 'px';
+  function positionNavPanel() {
+    if (currentIdx === null) return;
+    var panel = document.getElementById('nav-panel-' + currentIdx);
+    if (!panel || panel.classList.contains('hidden')) return;
+    var anchor = navItemsList.querySelector('[data-nav-idx="' + currentIdx + '"]');
+    if (anchor && anchor.classList.contains('hidden')) anchor = moreLi;
+    if (!anchor || !anchor.getClientRects().length) {
+      hideAll();
+      return;
+    }
+    var rect = anchor.getBoundingClientRect();
+    var width = panel.offsetWidth;
+    var left = currentIdx === 'more' ? rect.right - width : rect.left;
+    panel.style.left = Math.max(8, Math.min(left, window.innerWidth - width - 8)) + 'px';
+    panel.style.top = rect.bottom + 8 + 'px';
   }
 
   function buildMoreEntry(li) {
@@ -1225,7 +1215,7 @@ __LYCOBO_HTML_copy008__
     var idx = li.getAttribute('data-nav-idx');
     var hasChildren = !!document.getElementById('nav-panel-' + idx);
     var entry = document.createElement('li');
-    // For items with mega-menu children, send the click to the original panel
+    // For items with a submenu, send the click to the original panel
     // by mirroring the trigger; for plain links, just navigate.
     entry.innerHTML =
       '<a href="' + href + '" data-more-entry-idx="' + (idx || '') + '" ' +
@@ -1240,7 +1230,7 @@ __LYCOBO_HTML_copy008__
     var landingPath = a.getAttribute('data-landing-path');
     if (landingPath) inner.setAttribute('data-landing-path', landingPath);
     if (hasChildren) {
-      // Open the original mega menu for non-navigating parent entries.
+      // Open the original panel for non-navigating parent entries.
       inner.addEventListener('click', function(e) {
         if (!href || href === '#') {
           e.preventDefault();
@@ -1307,18 +1297,19 @@ __LYCOBO_HTML_copy008__
     }
   }
 
+  function syncDesktopNavigation() {
+    reflow();
+    positionNavPanel();
+  }
+
   // Observe the items row + window for resize-driven reflow
   if ('ResizeObserver' in window && navItemsList) {
-    var ro = new ResizeObserver(function() { reflow(); });
+    var ro = new ResizeObserver(syncDesktopNavigation);
     ro.observe(navItemsList);
   }
-  window.addEventListener('resize', function() { reflow(); positionMorePanel(); });
+  window.addEventListener('resize', syncDesktopNavigation);
   // Initial reflow after layout settles
-  requestAnimationFrame(function() { requestAnimationFrame(reflow); });
-
-  function getNavBottom() {
-    return navEl ? navEl.getBoundingClientRect().bottom : 60;
-  }
+  requestAnimationFrame(function() { requestAnimationFrame(syncDesktopNavigation); });
 
   function pauseNavFeaturedVideos(scope) {
     var root = scope || document;
@@ -1355,8 +1346,6 @@ __LYCOBO_HTML_copy008__
     });
     var panel = document.getElementById('nav-panel-' + idx);
     if (panel) {
-      panel.style.top = getNavBottom() + 'px';
-      if (idx === 'more') positionMorePanel();
       panel.classList.remove('hidden');
       playNavFeaturedVideos(panel);
     }
@@ -1367,6 +1356,7 @@ __LYCOBO_HTML_copy008__
       if (trigger) trigger.setAttribute('aria-expanded', 'true');
       if (svg) svg.style.transform = 'rotate(180deg)';
     }
+    positionNavPanel();
   }
 
   function hideAll() {
@@ -1451,15 +1441,7 @@ __LYCOBO_HTML_copy008__
   });
 
   // Update panel position on scroll (nav sticky position changes)
-  window.addEventListener('scroll', function() {
-    if (currentIdx !== null) {
-      var panel = document.getElementById('nav-panel-' + currentIdx);
-      if (panel && !panel.classList.contains('hidden')) {
-        panel.style.top = getNavBottom() + 'px';
-        if (currentIdx === 'more') positionMorePanel();
-      }
-    }
-  }, { passive: true });
+  window.addEventListener('scroll', positionNavPanel, { passive: true });
 
   // 语言和账户控件由宿主渲染，模板只负责占位并报告位置。
   var headerControls = document.querySelector('[data-lycobo-header-controls]');

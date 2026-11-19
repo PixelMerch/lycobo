@@ -28,6 +28,18 @@ describe("localized landing document", () => {
         for (const [markup] of links) expect(markup).toContain(`href="/${locale}${path}"`);
       }
       expect(menuLinks.map((link) => link[1])).not.toContain("/dashboard/video");
+      for (const [index, paths] of [
+        [0, ["create", "smart-variation", "replica"]],
+        [1, ["textile-set"]],
+      ]) {
+        const panel = document.match(
+          new RegExp(`id="nav-panel-${index}"[^>]*>[\\s\\S]*?</div>`),
+        )?.[0];
+        expect(panel?.match(/data-landing-path="\/dashboard\/commerce\/([^"]+)"/g)).toEqual(
+          paths.map((path) => `data-landing-path="/dashboard/commerce/${path}"`),
+        );
+        expect(panel?.match(/<svg[^>]*aria-hidden="true"/g)).toHaveLength(paths.length);
+      }
       const workspaceLinks = document.match(/<a\b[^>]*data-landing-path="\/dashboard"[^>]*>/g);
       expect(workspaceLinks).toHaveLength(3);
       expect(document).not.toContain('data-pageforge-source="enterprise"');
