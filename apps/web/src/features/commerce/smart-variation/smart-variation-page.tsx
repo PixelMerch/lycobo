@@ -67,7 +67,7 @@ export function SmartVariationPage() {
             </div>
             <ToggleButtonGroup
               aria-label={t.resolution}
-              className="parameter-options"
+              className="parameter-options parameter-options-pill"
               isDetached
               selectionMode="single"
               disallowEmptySelection

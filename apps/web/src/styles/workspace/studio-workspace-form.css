@@ -190,7 +190,7 @@
   height: 44px;
   min-height: 44px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--control-pill-radius);
   padding-inline: var(--control-padding-lg);
   gap: 8px;
   background: var(--app-primary-gradient);

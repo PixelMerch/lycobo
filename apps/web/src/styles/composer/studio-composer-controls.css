@@ -110,6 +110,10 @@
   color: var(--control-selected-foreground);
   background: var(--control-selected-fill);
 }
+.composer-panel .parameter-options.parameter-options-pill,
+.composer-panel .parameter-options.parameter-options-pill > .toggle-button {
+  border-radius: var(--control-pill-radius);
+}
 /* Unified workspace groups and model menu. */
 .composer-panel .reference-picker,
 .composer-panel .prompt-field,

@@ -22,7 +22,7 @@ export function ParameterGroup({
       <legend>{label}</legend>
       <ToggleButtonGroup
         aria-label={label}
-        className="parameter-options"
+        className="parameter-options parameter-options-pill"
         disallowEmptySelection
         isDetached
         selectedKeys={[value]}

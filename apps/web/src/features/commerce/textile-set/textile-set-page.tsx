@@ -69,7 +69,7 @@ export function TextileSetPage() {
             <legend>{t.resolution}</legend>
             <ToggleButtonGroup
               aria-label={t.resolution}
-              className="parameter-options"
+              className="parameter-options parameter-options-pill"
               isDetached
               disallowEmptySelection
               selectionMode="single"
