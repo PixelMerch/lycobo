@@ -1,8 +1,9 @@
 import { Button, Disclosure, Spinner, Tooltip } from "@heroui/react";
 import type { VideoTask } from "@lycoboai/contracts";
-import { IconAspectRatio, IconChevronDown, IconCopy, IconMovie } from "@tabler/icons-react";
+import { IconAspectRatio, IconChevronDown, IconMovie } from "@tabler/icons-react";
 import { useState } from "react";
 import { CollapsibleText } from "../../../components/collapsible-text";
+import { CopyButton } from "../../../components/copy-button";
 import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
@@ -190,14 +191,7 @@ export function VideoHistoryPrompt({ text, copyLabel }: { text: string; copyLabe
   return (
     <>
       <CollapsibleText text={text} className="generation-prompt" />
-      <Button
-        variant="secondary"
-        className="copy-prompt"
-        onPress={() => void copyToClipboard(text)}
-      >
-        <UiIcon icon={IconCopy} size="small" />
-        {copyLabel ?? t.copyPrompt}
-      </Button>
+      <CopyButton className="copy-prompt" text={text} label={copyLabel ?? t.copyPrompt} />
     </>
   );
 }

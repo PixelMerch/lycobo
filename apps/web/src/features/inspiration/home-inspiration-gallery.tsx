@@ -1,14 +1,12 @@
 import { Button, Modal } from "@heroui/react";
-import { IconCopy } from "@tabler/icons-react";
 import { useId, useState } from "react";
+import { CopyButton } from "../../components/copy-button";
 import { ConfirmDialog } from "../../components/overlays/confirm-dialog";
 import { DialogClose } from "../../components/overlays/dialog-close";
 import { useDialogDismiss } from "../../components/overlays/use-dialog-dismiss";
-import { UiIcon } from "../../components/ui-icon";
 import { useLocale } from "../../i18n/locale-store";
 import { useMessages } from "../../i18n/messages";
 import { useAppNavigate } from "../../i18n/use-localized-navigation";
-import { copyToClipboard } from "../../lib/clipboard";
 import { dashboardToolPaths } from "../../lib/dashboard-paths";
 import { useRequireLogin } from "../auth/login-prompt";
 import { defaultDraft, useStudioStore } from "../generation/studio-state";
@@ -115,15 +113,7 @@ function InspirationDetail({
                   <p className="home-inspiration-prompt">{item.prompt}</p>
                   <p className="home-inspiration-hint">{t.hint}</p>
                   <div className="home-inspiration-actions">
-                    <Button
-                      variant="secondary"
-                      onPress={() => {
-                        if (requireLogin()) void copyToClipboard(item.prompt);
-                      }}
-                    >
-                      <UiIcon icon={IconCopy} size="small" />
-                      {t.copyPrompt}
-                    </Button>
+                    <CopyButton text={item.prompt} label={t.copyPrompt} canCopy={requireLogin} />
                     <Button variant="primary" onPress={onUse}>
                       {t.use}
                     </Button>
