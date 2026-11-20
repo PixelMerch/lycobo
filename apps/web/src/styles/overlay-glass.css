@@ -25,7 +25,7 @@
   --glass-fill: linear-gradient(transparent, transparent);
   --glass-blur: var(--site-header-menu-blur);
 }
-/* 通知、账户、灵感详情与顶部栏入口沿用素材库来源菜单的深色毛玻璃。 */
+/* 通知、账户、普通确认弹框、灵感详情与顶部栏入口共用深色毛玻璃。 */
 :root
   :is(
     .choice-menu,
@@ -35,13 +35,14 @@
     .credits-menu,
     .account-menu,
     .account-settings-dialog,
+    .confirm-dialog,
     .home-inspiration-detail
   ) {
   --glass-tint: var(--glass-dark-tint);
 }
 @supports (backdrop-filter: blur(1px)) {
   @media not (prefers-reduced-transparency: reduce) {
-    :root .home-inspiration-detail {
+    :root :is(.home-inspiration-detail, .confirm-dialog) {
       --glass-tint: color-mix(in srgb, var(--glass-dark-tint) 92%, transparent);
     }
   }

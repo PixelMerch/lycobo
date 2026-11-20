@@ -1,26 +1,8 @@
-/* A dark veil suppresses bright page content behind the confirmation. Keep
- * the existing blur on a static layer so the fade stays visually stable. */
-.modal__backdrop.confirm-dialog__backdrop {
-  background: transparent;
-  backdrop-filter: none;
-}
-.confirm-dialog__backdrop::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: rgba(32, 32, 32, 0.82);
-  backdrop-filter: blur(20px);
-}
 .confirm-dialog {
   width: min(480px, calc(100vw - 32px));
   padding: 0;
-  /* A black panel stands apart from the neutral-grey blurred page behind it. */
-  border: 0;
   border-radius: 20px;
-  background: #000;
-  box-shadow: var(--shadow-lg);
-  color: #fff;
+  color: var(--foreground);
 }
 /* The Dialog node itself receives focus when it opens (and when a nested dialog
  * closes). It is a container, not a control, so the shared purple ring must not

@@ -129,8 +129,6 @@
   --glass-tint: transparent;
   --glass-dark-tint: rgb(18 18 18 / 84%);
   --image-preview-background: #000;
-  --dialog-close-duration: 480ms;
-  --dialog-close-ease: cubic-bezier(0.45, 0, 0.55, 1);
   --glass-fill: linear-gradient(#ffffff14, #ffffff14);
   --glass-border: transparent;
   --glass-edge: #ffffff1f;

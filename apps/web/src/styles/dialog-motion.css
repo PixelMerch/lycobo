@@ -1,42 +1,21 @@
-@media (prefers-reduced-motion: no-preference) {
-  /* 遮罩统一淡出，面板围绕自身中心收拢。 */
-  :is(.modal__backdrop, .alert-dialog__backdrop):not(
-    .browse-image-backdrop,
-    .fullscreen-dialog__backdrop
-  )[data-exiting="true"] {
-    animation: heroui-overlay-fade-out var(--dialog-close-duration) var(--dialog-close-ease);
-  }
-  :is(.modal__container, .alert-dialog__container):not(
-    .browse-image-container,
-    .fullscreen-dialog__container
-  )[data-exiting="true"] {
-    animation: none;
-  }
-  :is(.modal__container, .alert-dialog__container):not(
-      .browse-image-container,
-      .fullscreen-dialog__container
-    )[data-exiting="true"]
-    > :is(.modal__dialog, .alert-dialog) {
-    transform-origin: center;
-    animation: dialog-close-to-center var(--dialog-close-duration) var(--dialog-close-ease) both;
-  }
-
-  /* 抽屉保持原方向，让面板和遮罩以同样的速度退场。 */
-  .drawer__backdrop[data-exiting="true"] {
-    transition-duration: var(--dialog-close-duration);
-    transition-timing-function: var(--dialog-close-ease);
-  }
-  .drawer__content {
-    --drawer-exit-duration: var(--dialog-close-duration);
-    --drawer-exit-ease: var(--dialog-close-ease);
-  }
+/* 关闭时同步移除遮罩和内容，立即归还焦点与滚动。 */
+:is(
+  .modal__backdrop,
+  .modal__container,
+  .alert-dialog__backdrop,
+  .alert-dialog__container,
+  .drawer__backdrop,
+  .drawer__content
+)[data-exiting="true"],
+.drawer__content[data-exiting="true"] .drawer__dialog {
+  animation: none;
+  transition: none;
+  visibility: hidden;
 }
 
-@keyframes dialog-close-to-center {
-  from {
-    scale: 1;
-  }
-  to {
-    scale: 0;
-  }
+/* 遮罩和容器淡入时会改变磨砂的采样范围，文字与底板需要同帧出现。 */
+.modal__backdrop[data-entering="true"]:has(:is(.home-inspiration-detail, .confirm-dialog)),
+.modal__container[data-entering="true"]:has(> :is(.home-inspiration-detail, .confirm-dialog)) {
+  animation: none;
+  opacity: 1;
 }

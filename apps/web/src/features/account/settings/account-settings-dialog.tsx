@@ -9,7 +9,6 @@ import {
   IconX,
   type TablerIcon,
 } from "@tabler/icons-react";
-import { useDialogDismiss } from "../../../components/overlays/use-dialog-dismiss";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
@@ -103,7 +102,6 @@ export function AccountSettingsDialog({
   const selectSection = useAccountOverlays((state) => state.selectSection);
   const t = useMessages(accountSettingsMessages);
   const wide = useWideViewport();
-  const dismiss = useDialogDismiss(onClose);
   if (!account) return null;
   const sections = settingsSections.filter((id) => {
     if (id === "security" && account.loginMethod === "social") return false;
@@ -111,12 +109,12 @@ export function AccountSettingsDialog({
   });
   return (
     <Modal
-      isOpen={dismiss.isOpen}
+      isOpen
       onOpenChange={(open) => {
-        if (!open) dismiss.requestClose();
+        if (!open) onClose();
       }}
     >
-      <Modal.Backdrop onAnimationEnd={dismiss.onAnimationEnd} className="account-backdrop">
+      <Modal.Backdrop className="account-backdrop">
         <Modal.Container>
           <Modal.Dialog className="account-dialog account-center-dialog account-settings-dialog">
             <Modal.Header>

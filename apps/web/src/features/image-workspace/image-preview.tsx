@@ -4,7 +4,7 @@ import type { RefObject } from "react";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "../../components/overlays/confirm-dialog";
 import { DialogClose } from "../../components/overlays/dialog-close";
-import { useCenteredDialogMotion } from "../../components/overlays/use-centered-dialog-motion";
+import { useCenteredDialogEntrance } from "../../components/overlays/use-centered-dialog-entrance";
 import { useAppNavigate } from "../../i18n/use-localized-navigation";
 import { dashboardToolPaths } from "../../lib/dashboard-paths";
 import { useImageSession } from "../generation/generation-client";
@@ -65,13 +65,15 @@ export function ImagePreviewDialog({
   const historyTask = useRef<string | null>(null);
   const [repair, setRepair] = useState(false);
   const [exitConfirm, setExitConfirm] = useState(false);
-  const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(() => {
+  const surfaceMotion = useCenteredDialogEntrance();
+  function closePreview() {
+    const taskId = historyTask.current;
     onClose();
-    if (historyTask.current) {
+    if (taskId) {
       onViewHistory?.();
-      void navigate(`${dashboardToolPaths.create}?task=${encodeURIComponent(historyTask.current)}`);
+      void navigate(`${dashboardToolPaths.create}?task=${encodeURIComponent(taskId)}`);
     }
-  });
+  }
   const [index, setIndex] = useState(Math.min(Math.max(initialIndex, 0), images.length - 1));
   const surface = useRef<HTMLDivElement>(null);
   const active = images[index];
@@ -90,7 +92,7 @@ export function ImagePreviewDialog({
     setExitConfirm(false);
     if (draftKey) useRepairDrafts.getState().clear(draftKey);
     setRepair(false);
-    requestClose();
+    closePreview();
   };
   return (
     <Modal
@@ -101,18 +103,13 @@ export function ImagePreviewDialog({
           setExitConfirm(true);
           return;
         }
-        requestClose();
+        closePreview();
       }}
     >
       <Modal.Backdrop className="fullscreen-dialog__backdrop image-preview-backdrop">
         <Modal.Container size="full" className="fullscreen-dialog__container">
           <Modal.Dialog className="image-preview-dialog" aria-label={t.preview}>
-            <motion.div
-              ref={surface}
-              className="image-preview"
-              data-dialog-phase={phase}
-              {...surfaceMotion}
-            >
+            <motion.div ref={surface} className="image-preview" {...surfaceMotion}>
               <Suspense
                 fallback={
                   <div className="preview-workspace-loading" role="status">
@@ -135,7 +132,7 @@ export function ImagePreviewDialog({
                     if (!image.meta?.taskId) return;
                     historyTask.current = image.meta.taskId;
                     setRepair(false);
-                    requestClose();
+                    closePreview();
                   }}
                 />
               </Suspense>

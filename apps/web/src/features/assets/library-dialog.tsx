@@ -3,7 +3,7 @@ import type { AssetTool } from "@lycoboai/contracts";
 import { LayoutGroup, motion } from "motion/react";
 import { useState } from "react";
 import { DialogClose } from "../../components/overlays/dialog-close";
-import { useCenteredDialogMotion } from "../../components/overlays/use-centered-dialog-motion";
+import { useCenteredDialogEntrance } from "../../components/overlays/use-centered-dialog-entrance";
 import "../../styles/fullscreen-dialog.css";
 import { HomeInspirationGallery } from "../inspiration/home-inspiration-gallery";
 import { AssetBrowser } from "./asset-browser";
@@ -28,12 +28,12 @@ export function LibraryDialog({
   const [tab, setTab] = useState<AssetLibraryTab>("mine");
   const [selecting, setSelecting] = useState(false);
   const t = useMessages(assetsMessages);
-  const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
+  const surfaceMotion = useCenteredDialogEntrance();
   return (
     <Modal
       isOpen
       onOpenChange={(open) => {
-        if (!open) requestClose();
+        if (!open) onClose();
       }}
     >
       <Modal.Backdrop
@@ -42,7 +42,7 @@ export function LibraryDialog({
       >
         <Modal.Container size="full" className="fullscreen-dialog__container">
           <Modal.Dialog className="library-dialog" aria-label={t.libraryTitle}>
-            <motion.div className="library-shell" data-dialog-phase={phase} {...surfaceMotion}>
+            <motion.div className="library-shell" {...surfaceMotion}>
               <AssetLibraryTabs
                 tab={tab}
                 onTabChange={setTab}
@@ -53,14 +53,14 @@ export function LibraryDialog({
                     currentTool={tool}
                     headingLevel={3}
                     onChange={setFilters}
-                    onViewHistory={requestClose}
+                    onViewHistory={onClose}
                     onSelectingChange={setSelecting}
                   />
                 }
                 inspiration={
                   // 首页作品墙也在页面上时，分类选中动画各走各的，不在两面墙之间飞过去。
                   <LayoutGroup id="asset-library-inspiration">
-                    <HomeInspirationGallery onApplied={requestClose} />
+                    <HomeInspirationGallery onApplied={onClose} />
                   </LayoutGroup>
                 }
               />
