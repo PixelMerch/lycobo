@@ -1,5 +1,3 @@
-@import "./site-header-appearance.css";
-
 :is(.landing-header-controls, .landing-control-popover) {
   --landing-control-height: 44px;
   --landing-control-fill-height: var(--control-height-md);
