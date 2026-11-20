@@ -340,28 +340,8 @@
   justify-content: space-between;
   gap: 12px;
   height: var(--header-height);
-  padding-inline: 28px;
   background: var(--studio-canvas);
 }
 .workspace-site-header > .landing-header-controls {
   min-width: 0;
-}
-.workspace-site-header .workspace-site-brand {
-  display: inline-flex;
-  flex: none;
-  width: 112px;
-  height: 46px;
-}
-.workspace-site-brand > img {
-  flex: none;
-  transform: translateX(-23%);
-}
-@media (max-width: 767px) {
-  .workspace-site-header {
-    padding-inline: 8px;
-  }
-  .workspace-site-header .workspace-site-brand {
-    width: 90px;
-    height: 36px;
-  }
 }

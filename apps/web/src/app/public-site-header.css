@@ -4,7 +4,6 @@
 }
 .topbar.public-site-header {
   gap: 16px;
-  padding-inline: 28px;
 }
 .topbar.public-site-header[data-landing-frame] {
   position: fixed;
@@ -20,15 +19,7 @@
   backdrop-filter: var(--site-header-scroll-blur);
   box-shadow: none;
 }
-.public-site-brand.link {
-  position: relative;
-  display: block;
-  flex: none;
-  width: 112px;
-  height: 46px;
-}
 .public-site-brand-art {
-  --site-brand-wordmark-offset: -3%;
   position: relative;
   display: block;
   height: 100%;
@@ -59,7 +50,6 @@
 }
 .public-site-wordmark {
   opacity: clamp(0, calc(1 - var(--site-brand-progress, 0) / 0.65), 1);
-  transform: translateX(calc(-23% + var(--site-brand-wordmark-offset)));
 }
 .public-site-header[data-landing-frame] .public-site-wordmark {
   translate: calc(-8px * var(--site-brand-progress, 0));
@@ -131,25 +121,10 @@
   }
 }
 @media (max-width: 767px) {
-  .topbar.public-site-header {
-    padding-inline: 8px;
-  }
-  .public-site-brand.link {
-    width: 72px;
-    height: 36px;
-  }
   .public-site-actions {
     gap: 4px;
   }
   .public-site-header .landing-account-controls .account-header {
     display: flex;
-  }
-}
-@media (max-width: 374px) {
-  .topbar.public-site-header {
-    padding-inline: 4px;
-  }
-  .public-site-brand.link {
-    width: 66px;
   }
 }

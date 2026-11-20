@@ -71,6 +71,24 @@ export function PublicSiteHeader({
       data-landing-frame={!!landingFrame || undefined}
       data-signed-in={!!account || undefined}
     >
+      <RouteLink
+        to="/"
+        className="public-site-brand"
+        aria-label={t.home}
+        onClick={() => {
+          if (frameRef) scrollLandingFrame(frameRef, 0);
+        }}
+      >
+        <span ref={brandRef} className="public-site-brand-art" aria-hidden="true">
+          <img className="public-site-wordmark" src="/brand/lycobo-landing.svg" alt="" />
+          {landingFrame && (
+            <>
+              <img className="public-site-symbol" src="/brand/lycobo-landing.svg" alt="" />
+              <canvas ref={canvasRef} />
+            </>
+          )}
+        </span>
+      </RouteLink>
       <Drawer isOpen={menuOpen} onOpenChange={setMenuOpen}>
         <Drawer.Trigger className="mobile-menu icon-button" aria-label={t.openNavigation}>
           <UiIcon icon={IconMenu2} size="navigation" />
@@ -104,24 +122,6 @@ export function PublicSiteHeader({
           </Drawer.Content>
         </Drawer.Backdrop>
       </Drawer>
-      <RouteLink
-        to="/"
-        className="public-site-brand"
-        aria-label={t.home}
-        onClick={() => {
-          if (frameRef) scrollLandingFrame(frameRef, 0);
-        }}
-      >
-        <span ref={brandRef} className="public-site-brand-art" aria-hidden="true">
-          <img className="public-site-wordmark" src="/brand/lycobo-landing.svg" alt="" />
-          {landingFrame && (
-            <>
-              <img className="public-site-symbol" src="/brand/lycobo-landing.svg" alt="" />
-              <canvas ref={canvasRef} />
-            </>
-          )}
-        </span>
-      </RouteLink>
       <PublicSiteNavigation dismissVersion={dismissVersion} />
       <div className="public-site-actions">
         <SiteHeaderControls

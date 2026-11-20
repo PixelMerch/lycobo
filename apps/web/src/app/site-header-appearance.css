@@ -13,6 +13,17 @@
 :is(.public-site-brand-art, .workspace-site-brand) {
   --site-brand-art-width: 155px;
   --site-brand-wordmark-scale: 0.88;
+  --site-brand-wordmark-offset: -3%;
+}
+:is(.topbar.public-site-header, .workspace-site-header) {
+  padding-inline: 28px;
+}
+:is(.public-site-brand, .workspace-site-brand).link {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 112px;
+  height: 46px;
 }
 .public-site-brand-art > :is(img, canvas),
 .workspace-site-brand > img {
@@ -25,14 +36,28 @@
 .workspace-site-brand > img {
   clip-path: inset(0 0 0 24%);
   transform-origin: left center;
+  transform: translateX(calc(-23% + var(--site-brand-wordmark-offset)));
   scale: var(--site-brand-wordmark-scale);
 }
 @media (max-width: 767px) {
+  :is(.topbar.public-site-header, .workspace-site-header) {
+    padding-inline: 8px;
+  }
+  :is(.public-site-brand, .workspace-site-brand).link {
+    width: 72px;
+    height: 36px;
+  }
   :is(.public-site-brand-art, .workspace-site-brand) {
     --site-brand-art-width: 122px;
   }
 }
 @media (max-width: 374px) {
+  :is(.topbar.public-site-header, .workspace-site-header) {
+    padding-inline: 4px;
+  }
+  :is(.public-site-brand, .workspace-site-brand).link {
+    width: 66px;
+  }
   :is(.public-site-brand-art, .workspace-site-brand) {
     --site-brand-art-width: 100px;
   }

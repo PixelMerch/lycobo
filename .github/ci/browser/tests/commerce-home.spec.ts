@@ -343,6 +343,31 @@ test("homepage Inspiration opens the matching public header with a fixed wordmar
   await expect(pill).not.toHaveCSS("clip-path", startingClip);
 });
 
+for (const width of [390, 1440]) {
+  test(`the wordmark stays aligned when opening Main Image at ${width}px`, async ({ page }) => {
+    await mockImageApi(page);
+    await page.setViewportSize({ width, height: 900 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    const wordmark = page.locator(".public-site-wordmark");
+    await expect(wordmark).toBeVisible();
+    const homePosition = await wordmark.boundingBox();
+    if (width === 390) {
+      await page.getByRole("button", { name: "打开导航", exact: true }).click();
+      const menu = page.locator(".public-site-mobile-nav");
+      await menu.getByRole("button", { name: "商品图片", exact: true }).click();
+      await menu.getByRole("link", { name: "商品主图", exact: true }).click();
+    } else {
+      await page.getByRole("button", { name: "商品图片", exact: true }).click();
+      await page.getByRole("menuitem", { name: "商品主图", exact: true }).click();
+    }
+    await expect(page).toHaveURL(/\/dashboard\/commerce\/create$/);
+    const workspaceWordmark = page.locator(".workspace-site-brand > img");
+    await expect(workspaceWordmark).toBeVisible();
+    expect(await workspaceWordmark.boundingBox()).toEqual(homePosition);
+  });
+}
+
 test("inspiration library cards offer 做同款 by hover or keyboard without submitting paid work", async ({
   page,
 }) => {
