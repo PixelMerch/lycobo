@@ -1,8 +1,9 @@
 import { Button, EmptyState, Tabs } from "@heroui/react";
 import { IconSearchOff } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { CommandButton } from "../../components/command-button";
+import { InfiniteLoad } from "../../components/infinite-load";
 import { SelectionPill } from "../../components/selection-pill";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
@@ -14,32 +15,43 @@ import {
 import { homeInspirationMessages } from "./home-inspiration-messages";
 import { distributeColumns, useColumnCount } from "./inspiration-columns";
 
-/** 灵感库按分类呈现完整瀑布流，复用详情与做同款操作。 */
+const firstBatchSize = 12;
+const nextBatchSize = 6;
+
+/** 按分类和搜索结果分批展示瀑布流，独立灵感库为滚入视口的卡片播放入场。 */
 export function InspirationWall({
   items,
+  animateOnScroll,
   onOpen,
   onUse,
 }: {
   items: HomeInspiration[];
+  animateOnScroll: boolean;
   onOpen: (item: HomeInspiration) => void;
   onUse: (item: HomeInspiration) => void;
 }) {
   const t = useMessages(homeInspirationMessages);
+  const reduceMotion = useReducedMotion();
+  const animateEntrance = animateOnScroll && !reduceMotion;
   const [category, setCategory] = useState<InspirationCategory>("all");
   const [query, setQuery] = useState("");
+  const [limit, setLimit] = useState(firstBatchSize);
+  const loadMore = useCallback(() => setLimit(limit + nextBatchSize), [limit]);
   const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
   const visible = items.filter((item) => {
     if (category !== "all" && item.category !== category) return false;
     const text = `${item.title} ${t.categories[item.category]} ${item.prompt}`.toLocaleLowerCase();
     return words.every((word) => text.includes(word));
   });
-  const columns = distributeColumns(visible, useColumnCount());
+  const columns = distributeColumns(visible.slice(0, limit), useColumnCount());
   return (
     <Tabs
       selectedKey={category}
       onSelectionChange={(key) => {
         const next = inspirationCategories.find((entry) => entry === key);
-        if (next) setCategory(next);
+        if (!next) return;
+        setCategory(next);
+        setLimit(firstBatchSize);
       }}
     >
       <div className="home-inspiration-bar">
@@ -66,7 +78,10 @@ export function InspirationWall({
           placeholder={t.searchPlaceholder}
           closeLabel={t.closeSearch}
           query={query}
-          onQueryChange={setQuery}
+          onQueryChange={(next) => {
+            setQuery(next);
+            setLimit(firstBatchSize);
+          }}
         />
       </div>
       <Tabs.Panel id={category}>
@@ -84,6 +99,8 @@ export function InspirationWall({
                   key={item.id}
                   item={item}
                   order={position}
+                  animateEntrance={animateEntrance}
+                  text={t}
                   onOpen={() => onOpen(item)}
                   onUse={() => onUse(item)}
                 />
@@ -91,6 +108,7 @@ export function InspirationWall({
             </div>
           ))}
         </div>
+        <InfiniteLoad hasMore={limit < visible.length} isLoading={false} onLoadMore={loadMore} />
       </Tabs.Panel>
     </Tabs>
   );
@@ -100,34 +118,40 @@ export function InspirationWall({
 function InspirationTile({
   item,
   order,
+  animateEntrance,
+  text,
   onOpen,
   onUse,
 }: {
   item: HomeInspiration;
   order: number;
+  animateEntrance: boolean;
+  text: (typeof homeInspirationMessages)["zh-CN"];
   onOpen: () => void;
   onUse: () => void;
 }) {
-  const reduceMotion = useReducedMotion();
-  const t = useMessages(homeInspirationMessages);
+  // 素材库切换时直接挂载卡片，避免同时启动入场动画与视口监听。
+  const Tile = animateEntrance ? motion.div : "div";
   return (
-    <motion.div
+    <Tile
       className="home-inspiration-tile"
       data-shape={item.shape}
-      initial={reduceMotion ? false : { opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.12 }}
-      transition={{
-        duration: 0.5,
-        delay: Math.min(order, 6) * 0.05,
-        ease: [0.215, 0.61, 0.355, 1],
-      }}
+      {...(animateEntrance && {
+        initial: { opacity: 0, y: 24 },
+        whileInView: { opacity: 1, y: 0 },
+        viewport: { once: true, amount: 0.12 },
+        transition: {
+          duration: 0.5,
+          delay: Math.min(order, 6) * 0.05,
+          ease: [0.215, 0.61, 0.355, 1],
+        },
+      })}
     >
       <Button
         variant="tertiary"
         className="home-inspiration-card"
         data-inspiration-id={item.id}
-        aria-label={t.view(item.title)}
+        aria-label={text.view(item.title)}
         onPress={onOpen}
       >
         <img
@@ -148,11 +172,11 @@ function InspirationTile({
         size="sm"
         variant="primary"
         className="home-inspiration-cta"
-        aria-label={t.useNamed(item.title)}
+        aria-label={text.useNamed(item.title)}
         onPress={onUse}
       >
-        {t.use}
+        {text.use}
       </Button>
-    </motion.div>
+    </Tile>
   );
 }

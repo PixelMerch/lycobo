@@ -15,7 +15,7 @@ type InspirationSample = {
 /** 按界面语言带上标题与提示词的灵感示例。 */
 export type HomeInspiration = InspirationSample & { title: string; prompt: string };
 
-// 顺序按瀑布流安排：竖、方、横交替，米白家纺穿插在彩色图之间；首页先显示前 10 张，向下滚动再各补 4 张。
+// 顺序按瀑布流安排：竖、方、横交替，米白家纺穿插在彩色图之间。
 // samples/ 下的图切自 commerce-atlas.webp（内置 imagegen 生成的示例图集，见 docs/image-studio-implementation.md）。
 const inspirationSamples: InspirationSample[] = [
   {

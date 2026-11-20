@@ -319,7 +319,12 @@ test("灵感库 inside the workspace library fills the prompt and closes the lib
   await expect(dialog.locator(".home-inspiration-card")).toHaveCount(1);
   await searchbox.press("Escape");
   await expect(dialog).toBeVisible();
-  await expect(dialog.locator(".home-inspiration-card")).toHaveCount(23);
+  const cards = dialog.locator(".home-inspiration-card");
+  await expect.poll(() => cards.count()).toBeGreaterThan(1);
+  await expect(dialog.locator(".home-inspiration-tile").first()).not.toHaveAttribute(
+    "style",
+    /opacity|transform/,
+  );
   await dialog.getByRole("button", { name: "查看灵感：水光香氛", exact: true }).focus();
   await page.keyboard.press("Tab");
   await expect(dialog.getByRole("button", { name: "做同款：水光香氛", exact: true })).toBeFocused();

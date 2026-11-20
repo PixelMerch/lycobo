@@ -258,37 +258,32 @@ test("home inspiration filters examples and replaces the prompt without submitti
   expect(submissions).toBe(0);
 });
 
-test("home inspiration loads two batches on scroll, then 查看更多灵感 loads the rest in place", async ({
-  page,
-}) => {
-  await mockImageApi(page);
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/");
-  const gallery = page.getByRole("region", { name: "创作灵感", exact: true });
+test("inspiration loads another batch when the bottom reaches the viewport", async ({ page }) => {
+  await mockImageApi(page, { signedIn: false });
+  await page.setViewportSize({ width: 1280, height: 600 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/inspiration");
+  const gallery = page.getByRole("region", { name: "灵感库", exact: true });
   const cards = gallery.locator(".home-inspiration-card");
-  await expect(cards).toHaveCount(10);
-  const more = gallery.getByRole("button", { name: "查看更多灵感", exact: true });
-  await expect(more).toHaveCount(0);
-  await gallery.scrollIntoViewIfNeeded();
-  // 每次滚到作品墙底部补 4 张，最多补两次，然后出现“查看更多灵感”。
-  for (const expected of [14, 18]) {
-    await expect(async () => {
-      await page.mouse.wheel(0, 600);
-      await expect(cards).toHaveCount(expected, { timeout: 1000 });
-    }).toPass();
+  const sentinel = gallery.locator(".infinite-load");
+  const firstCard = gallery.getByRole("button", { name: "查看灵感：水光香氛", exact: true });
+  const firstCardPosition = () =>
+    firstCard.evaluate((card) => {
+      const grid = card.closest(".home-inspiration-grid");
+      if (!grid) throw new Error("Missing inspiration grid");
+      const frame = grid.getBoundingClientRect();
+      const tile = card.getBoundingClientRect();
+      return { x: tile.x - frame.x, y: tile.y - frame.y };
+    });
+
+  await expect(cards).toHaveCount(12);
+  const originalPosition = await firstCardPosition();
+  for (const count of [18, 23]) {
+    await sentinel.scrollIntoViewIfNeeded();
+    await expect(cards).toHaveCount(count);
   }
-  await expect(more).toBeVisible();
-  await page.mouse.wheel(0, 600);
-  await expect(cards).toHaveCount(18);
-  // “查看更多灵感”在当前页接着加载，不跳转；键盘按下时焦点移到新出现的第一张，全部显示后按钮消失。
-  await more.focus();
-  await page.keyboard.press("Enter");
-  await expect(cards).toHaveCount(23);
-  await expect(page).not.toHaveURL(/inspiration/);
-  await expect(
-    gallery.getByRole("button", { name: "查看灵感：垂到地面的被子", exact: true }),
-  ).toBeFocused();
-  await expect(more).toHaveCount(0);
+  expect(await firstCardPosition()).toEqual(originalPosition);
+  await expect(sentinel).toHaveCount(0);
 });
 
 test("homepage Inspiration opens the matching public header with a fixed wordmark", async ({
@@ -326,7 +321,6 @@ test("homepage Inspiration opens the matching public header with a fixed wordmar
   expect(await wordmark.boundingBox()).toEqual(wordmarkOnHome);
   await expect(header.locator(".public-site-symbol")).toHaveCount(0);
   await page.evaluate(() => window.scrollTo(0, 0));
-  await expect(page.locator(".home-inspiration-card")).toHaveCount(23);
   await expect(page.locator(".home-inspiration-column")).toHaveCount(6);
   await expect(page.getByText("挑一张喜欢的画面")).toHaveCount(0);
   await expect(page.getByText("AI 生成的示例")).toHaveCount(0);
@@ -440,9 +434,9 @@ test("inspiration library cards offer 做同款 by hover or keyboard without sub
   await expect(prompt).toHaveValue(/将商品放在水边石台上/);
 
   await page.goBack();
-  const other = tileOf("原木与晨光");
+  const other = tileOf("玻璃花的想象");
   await hoverNearTop(other);
-  const makeOther = gallery.getByRole("button", { name: "做同款：原木与晨光", exact: true });
+  const makeOther = gallery.getByRole("button", { name: "做同款：玻璃花的想象", exact: true });
   await clickCenter(makeOther);
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(prompt).not.toHaveValue(/将商品放在水边石台上/);
@@ -453,6 +447,7 @@ test("inspiration search expands in place and Escape resets results and focus", 
   page,
 }) => {
   await mockImageApi(page, { signedIn: false });
+  await page.setViewportSize({ width: 1280, height: 600 });
   await page.goto("/inspiration");
   const search = page.getByRole("button", { name: "搜索灵感", exact: true });
   const cards = page.locator(".home-inspiration-card");
@@ -460,7 +455,7 @@ test("inspiration search expands in place and Escape resets results and focus", 
   const field = page.getByRole("searchbox", { name: "搜索灵感", exact: true });
   await expect(field).toBeFocused();
   await expect(field).toHaveCSS("border-top-width", "0px");
-  await field.fill("水光香氛");
+  await field.fill("俯拍整床");
   await expect(cards).toHaveCount(1);
   await expect(cards.locator(".home-inspiration-tag")).toHaveCount(0);
   await field.fill("no-existing-work-123");
@@ -471,7 +466,7 @@ test("inspiration search expands in place and Escape resets results and focus", 
   );
   await field.press("Escape");
   await expect(search).toBeFocused();
-  await expect(cards).toHaveCount(23);
+  await expect(cards).toHaveCount(12);
 });
 
 test("inspiration filters stay fixed below the header while browsing", async ({ page }) => {

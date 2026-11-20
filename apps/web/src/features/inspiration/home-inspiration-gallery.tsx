@@ -51,6 +51,7 @@ export function HomeInspirationGallery({
       </Heading>
       <InspirationWall
         items={inspirations}
+        animateOnScroll={standalone}
         onOpen={(item) => setSelectedId(item.id)}
         onUse={applyInspiration}
       />
