@@ -42,6 +42,10 @@
 .home-inspiration-column {
   gap: 4px;
 }
+.home-inspiration-tile {
+  /* 将与图片按钮并列的「做同款」定位在当前卡片内。 */
+  position: relative;
+}
 .home-inspiration-card.button {
   position: relative;
   display: block;

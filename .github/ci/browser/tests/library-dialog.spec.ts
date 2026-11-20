@@ -325,9 +325,23 @@ test("灵感库 inside the workspace library fills the prompt and closes the lib
     "style",
     /opacity|transform/,
   );
-  await dialog.getByRole("button", { name: "查看灵感：水光香氛", exact: true }).focus();
+  const inspiration = dialog.getByRole("button", { name: "查看灵感：水光香氛", exact: true });
+  const useInspiration = dialog.getByRole("button", { name: "做同款：水光香氛", exact: true });
+  await inspiration.focus();
   await page.keyboard.press("Tab");
-  await expect(dialog.getByRole("button", { name: "做同款：水光香氛", exact: true })).toBeFocused();
+  await expect(useInspiration).toBeFocused();
+  await expect(useInspiration).toHaveCSS("opacity", "1");
+  const imageBounds = await inspiration.boundingBox();
+  const actionBounds = await useInspiration.boundingBox();
+  if (!imageBounds || !actionBounds) throw new Error("Missing inspiration card or action bounds");
+  expect(actionBounds.x).toBeGreaterThan(imageBounds.x);
+  expect(actionBounds.y).toBeGreaterThan(imageBounds.y);
+  expect(actionBounds.x + actionBounds.width).toBeLessThanOrEqual(
+    imageBounds.x + imageBounds.width,
+  );
+  expect(actionBounds.y + actionBounds.height).toBeLessThanOrEqual(
+    imageBounds.y + imageBounds.height,
+  );
   await page.keyboard.press("Enter");
   await expect(dialog).toHaveCount(0);
   await expect(page).toHaveURL(/\/commerce\/create$/);
