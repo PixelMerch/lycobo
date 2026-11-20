@@ -1,5 +1,5 @@
-/** 在隔离落地页内覆盖原生滚动条，保持 window 滚动作为现有动画的唯一进度来源。 */
-export function initializeLandingScrollbar() {
+/** 在文档右侧叠加浮动滚动条，同步页面滚动并返回卸载清理函数。 */
+export function initializePageScrollbar() {
   const rail = document.createElement("div");
   const spacer = document.createElement("div");
   rail.className = "lycobo-page-scrollbar";
@@ -32,4 +32,11 @@ export function initializeLandingScrollbar() {
   const observer = new ResizeObserver(resize);
   observer.observe(document.body);
   resize();
+  return () => {
+    observer.disconnect();
+    window.removeEventListener("scroll", followPage);
+    rail.removeEventListener("scroll", followRail);
+    window.removeEventListener("resize", resize);
+    rail.remove();
+  };
 }

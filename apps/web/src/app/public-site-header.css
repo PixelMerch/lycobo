@@ -1,7 +1,4 @@
 /* 首页与灵感库共用顶栏布局；首页的滚动区由隔离文档提供。 */
-:root:has(.studio-app[data-public-site-header]) {
-  scrollbar-gutter: stable;
-}
 .topbar.public-site-header {
   gap: 16px;
 }

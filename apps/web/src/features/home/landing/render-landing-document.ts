@@ -9,6 +9,8 @@ import throwBedroom from "../../../../public/landing/showcase/mint-throw-bedroom
 import throwSofa from "../../../../public/landing/showcase/mint-throw-sofa.webp?inline";
 import throwSource from "../../../../public/landing/showcase/mint-throw-source.webp?inline";
 import throwTexture from "../../../../public/landing/showcase/mint-throw-texture.webp?inline";
+import { initializePageScrollbar } from "../../../components/page-scrollbar";
+import pageScrollbarStyle from "../../../components/page-scrollbar.css?raw";
 import type { Locale } from "../../../i18n/locale";
 import studioPalette from "../../../styles/studio-palette.css?raw";
 import { initializeLandingFeatureScroll } from "./landing-feature-scroll";
@@ -17,7 +19,6 @@ import heroStyles from "./landing-hero.css?raw";
 import heroTemplate from "./landing-hero.html?raw";
 import { initializeLandingHeroScroll } from "./landing-hero-scroll";
 import landingPalette from "./landing-palette.css?raw";
-import { initializeLandingScrollbar } from "./landing-scrollbar";
 import showcaseStyles from "./landing-showcase.css?raw";
 import { initializeLandingShowcaseScroll } from "./landing-showcase-scroll";
 
@@ -72,7 +73,8 @@ export function renderLandingDocument(
       "__LYCOBO_FEATURE_SCROLL_SCRIPT__",
       `window.addEventListener("load", ${initializeLandingFeatureScroll.toString()}, { once: true });`,
     )
-    .replace("__LYCOBO_SCROLLBAR_SCRIPT__", `(${initializeLandingScrollbar.toString()})();`)
+    .replace("__LYCOBO_SCROLLBAR_STYLE__", () => pageScrollbarStyle)
+    .replace("__LYCOBO_SCROLLBAR_SCRIPT__", () => `(${initializePageScrollbar.toString()})();`)
     .replaceAll("__LYCOBO_LOCALE__", locale)
     .replace(/__LYCOBO_(HTML|JS)_([a-zA-Z0-9]+)__/g, (_, context: string, key: string) => {
       const message = messages[key];

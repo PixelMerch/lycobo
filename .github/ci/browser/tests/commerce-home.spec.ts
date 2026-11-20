@@ -477,6 +477,9 @@ test("inspiration search expands in place and Escape resets results and focus", 
 test("inspiration filters stay fixed below the header while browsing", async ({ page }) => {
   await mockImageApi(page, { signedIn: false });
   await page.goto("/inspiration");
+  const scrollbar = page.locator("body > .lycobo-page-scrollbar");
+  await expect(scrollbar).toHaveCSS("position", "fixed");
+  await expect(page.locator("html")).toHaveCSS("scrollbar-width", "none");
   const toolbar = page.locator(".home-inspiration-bar");
   await expect(toolbar).toBeInViewport();
   await expect(toolbar).toHaveCSS("padding-bottom", "12px");
@@ -491,6 +494,9 @@ test("inspiration filters stay fixed below the header while browsing", async ({ 
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
   await expect(toolbar).toBeInViewport();
   expect(await toolbar.boundingBox()).toEqual(before);
+  await expect
+    .poll(() => scrollbar.evaluate((rail) => Math.abs(rail.scrollTop - window.scrollY)))
+    .toBeLessThanOrEqual(1);
   expect(
     await toolbar.evaluate((element, x) => {
       const { bottom } = element.getBoundingClientRect();
