@@ -16,7 +16,7 @@ export const homeInspirationMessages = defineMessages({
     title: "创作灵感",
     categoryList: "灵感分类",
     replaceTitle: "替换当前提示词？",
-    replaceContent: "当前已有创作内容。替换提示词后，已添加的参考图和参数会保留。",
+    replaceContent: "参考图和参数会保留。",
     replaceConfirm: "替换并进入",
     keepCurrent: "保留当前内容",
     view: (title: string) => `查看灵感：${title}`,
@@ -159,8 +159,7 @@ export const homeInspirationMessages = defineMessages({
     title: "Inspiration",
     categoryList: "Inspiration categories",
     replaceTitle: "Replace the current prompt?",
-    replaceContent:
-      "You already have work in progress. Replacing the prompt keeps the reference images and settings you've added.",
+    replaceContent: "Your reference images and settings stay.",
     replaceConfirm: "Replace and open",
     keepCurrent: "Keep current",
     view: (title) => `View inspiration: ${title}`,

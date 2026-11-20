@@ -30,8 +30,8 @@ export const videoMessages = defineMessages({
     videoReferences: "视频参考图",
     referenceThumbnail: (number: number) => `参考图片 ${number} 缩略图`,
     abandonTitle: "放弃这次制作？",
-    abandonCharged: "不会再提交视频，已扣的画面积分不退回。场景描述和商品图会回到创作区。",
-    abandonFree: "还没有开始生成画面，不会扣积分。场景描述和商品图会回到创作区。",
+    abandonCharged: "保留描述和商品图，已扣积分不退。",
+    abandonFree: "保留描述和商品图，本次不扣积分。",
     keep: "保留",
     steps: ["创建分镜画面", "编写视频提示词", "生成视频"],
     shot: (number: number) => `分镜 ${number}`,
@@ -109,10 +109,8 @@ export const videoMessages = defineMessages({
     videoReferences: "Video reference images",
     referenceThumbnail: (number) => `Reference image ${number} thumbnail`,
     abandonTitle: "Abandon this production?",
-    abandonCharged:
-      "The video won't be submitted and credits already charged for frames aren't refunded. The scene description and product images return to the editor.",
-    abandonFree:
-      "No frames have been generated yet, so nothing is charged. The scene description and product images return to the editor.",
+    abandonCharged: "Your description and product images stay. No credits are refunded.",
+    abandonFree: "Your description and product images stay. No credits are charged.",
     keep: "Keep",
     steps: ["Create storyboard frames", "Write the video prompt", "Generate the video"],
     shot: (number) => `Shot ${number}`,

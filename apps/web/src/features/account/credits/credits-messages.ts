@@ -51,7 +51,7 @@ export const creditsMessages = defineMessages({
     packLabel: (credits: string, price: number, images: string) =>
       `${credits} 积分，示例价格 ${price} 元，约 ${images} 张`,
     aboutImages: (count: string) => `约 ${count} 张`,
-    rechargeNote: "积分用于创作消耗，充值积分不改变会员等级；生成失败的积分按张自动退回。",
+    rechargeNote: "充值不影响会员等级。生成失败按张退积分。",
     orderPreview: "订单预览",
     buyCredits: "购买积分",
     amountDue: "应付金额",
@@ -141,8 +141,7 @@ export const creditsMessages = defineMessages({
     packLabel: (credits, price, images) =>
       `${credits} credits, sample price ¥${price}, about ${images} images`,
     aboutImages: (count) => `About ${count} images`,
-    rechargeNote:
-      "Credits pay for generation. Buying credits does not change your membership tier; credits for failed images are refunded automatically.",
+    rechargeNote: "Top-ups keep your membership tier. Credits for failed images are refunded.",
     orderPreview: "Order preview",
     buyCredits: "Credits",
     amountDue: "Amount due",
