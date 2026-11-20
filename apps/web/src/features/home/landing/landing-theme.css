@@ -1,0 +1,11 @@
+/* 首页宿主和隔离正文共用浅色语义变量，不覆盖工作区主题。 */
+:root {
+  --landing-canvas: #fafafa;
+  --landing-surface: #fff;
+  --landing-subtle: #f2f2f2;
+  --landing-foreground: #1a1a1a;
+  --landing-muted: #626262;
+  --landing-border: #dedede;
+  --landing-action-foreground: #121212;
+  --landing-focus: #262626;
+}

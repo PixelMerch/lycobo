@@ -1,0 +1,92 @@
+/* 菜单通过 Portal 挂到宿主；仅首页存在时启用浅色，离开首页立即恢复站内深色。 */
+:root:has(.public-site-header[data-landing-frame]) {
+  --site-header-button-fill: #00000008;
+  --site-header-nav-hover-fill: #0000000f;
+  --site-header-menu-hover-fill: #0000000a;
+  --site-header-scroll-background: var(--landing-canvas);
+  --site-header-scroll-blur: none;
+  --site-header-menu-background: var(--landing-surface);
+  --site-header-menu-blur: none;
+
+  :is(.public-site-header, .landing-control-popover, .mobile-nav, .account-menu) {
+    color-scheme: light;
+    --foreground: var(--landing-foreground);
+    --surface: var(--landing-surface);
+    --surface-foreground: var(--landing-foreground);
+    --overlay-foreground: var(--landing-foreground);
+    --muted: var(--landing-muted);
+    --accent: var(--landing-foreground);
+    --control-selected-foreground: var(--landing-foreground);
+    --shell-nav-foreground: var(--landing-foreground);
+    --shell-nav-hover: var(--site-header-nav-hover-fill);
+    --shell-nav-active: var(--site-header-nav-hover-fill);
+    --fill-soft: var(--site-header-menu-hover-fill);
+    --interaction-active: var(--landing-border);
+    --dismiss-foreground: var(--landing-foreground);
+    --dismiss-hover: var(--site-header-nav-hover-fill);
+    --glass-tint: var(--landing-surface);
+    --glass-fill: linear-gradient(transparent, transparent);
+    --glass-border: var(--landing-border);
+    --glass-blur: none;
+    --glass-shadow: 0 12px 32px rgb(0 0 0 / 8%);
+    color: var(--landing-foreground);
+  }
+
+  .public-site-header {
+    background: var(--landing-canvas);
+  }
+
+  .public-site-header[data-scrolled="true"]::before {
+    border-bottom: 1px solid var(--landing-border);
+  }
+
+  /* 保留 Rive 与静态回退的同一轮廓和滚动进度，只将白色字形绘制为黑色。 */
+  .public-site-brand-art,
+  .mobile-nav .lycobo-logo {
+    filter: brightness(0);
+  }
+
+  .landing-header-controls {
+    --landing-control-color: var(--landing-foreground);
+    --landing-control-hover-color: var(--landing-foreground);
+  }
+
+  :is(.public-site-header, .mobile-nav) .nav-row,
+  .landing-control-popover :is(.menu-item, .credits-menu-balance strong),
+  .account-menu-row {
+    color: var(--landing-foreground);
+  }
+
+  .mobile-nav .nav-group-label {
+    color: var(--landing-muted);
+  }
+
+  :is(.public-site-header, .mobile-nav)
+    :is(.nav-row, .public-site-brand):is(:focus-visible, [data-focus-visible="true"]) {
+    outline: 2px solid var(--landing-focus);
+    outline-offset: 2px;
+  }
+
+  .public-site-start.link {
+    color: var(--landing-action-foreground);
+  }
+
+  .landing-account-controls .account-avatar[data-avatar-preset] {
+    --avatar-ink: var(--landing-foreground);
+  }
+
+  .landing-control-popover .credits-menu-plan {
+    --menu-row-fill: var(--landing-subtle);
+  }
+
+  .landing-control-popover .credits-menu-upgrade {
+    background: var(--landing-subtle);
+    color: var(--landing-foreground);
+  }
+
+  .account-menu-details > span,
+  .account-footer-action,
+  .landing-control-popover .credits-menu-balance {
+    color: var(--landing-muted);
+  }
+}

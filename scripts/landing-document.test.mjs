@@ -8,24 +8,26 @@ const template = readFileSync("apps/web/public/openart-reference/index.html", "u
 
 describe("localized landing document", () => {
   it.each(["zh-CN", "en"])(
-    "renders complete %s content with executable motion scripts",
+    "renders the compact %s page with safe navigation and working scripts",
     (locale) => {
-      const document = renderLandingDocument(template, landingCopy(locale), locale);
+      const copy = landingCopy(locale);
+      const document = renderLandingDocument(template, copy, locale);
       expect(document).not.toContain("__LYCOBO_");
       expect(document).toContain(`lang="${locale}"`);
       expect(document).not.toMatch(/Trustpilot|support@openart|10M\+|40 free credits/);
-      expect(document).not.toMatch(/<nav\b[^>]*data-navv3-root/);
+      expect(document.match(/<section\b/g)).toHaveLength(3);
+      expect(document).toContain(copy.heroLineOne);
+      expect(document).toContain(copy.sceneTitle);
+      expect(document).toContain(copy.setTitle);
       const links = [...document.matchAll(/<a\b[^>]*data-landing-path="([^"]+)"[^>]*>/g)];
       expect(links.map((link) => link[1])).toEqual([
         "/dashboard",
         "/dashboard/commerce/create",
+        "/dashboard/commerce/create",
+        "/dashboard/commerce/create",
         "/dashboard/commerce/smart-variation",
-        "/dashboard/commerce/replica",
-        "/dashboard/commerce/textile-set",
+        "/dashboard/commerce/smart-variation",
         "/dashboard",
-        "/inspiration",
-        "/dashboard/free-canvas",
-        "/dashboard/assets",
         "/membership",
         "/terms",
         "/privacy",
@@ -33,9 +35,10 @@ describe("localized landing document", () => {
         "mailto:suport@lycobo.com",
       ]);
       for (const [tag, path] of links) {
-        const href = path.startsWith("/") ? `/${locale}${path}` : path;
-        expect(tag).toContain(`href="${href}"`);
+        expect(tag).toContain(`href="${path.startsWith("/") ? `/${locale}${path}` : path}"`);
       }
+      const photos = [...document.matchAll(/src="(data:image\/webp;base64,[^"]+)"/g)];
+      expect(new Set(photos.map((photo) => photo[1])).size).toBe(4);
       for (const match of document.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) {
         expect(() => new Script(match[1])).not.toThrow();
       }
@@ -56,44 +59,6 @@ describe("localized landing document", () => {
     expect(script).toBeDefined();
     expect(new Script(`${script}\ntext;`).runInNewContext()).toBe(message);
   });
-
-  it.each(["zh-CN", "en"])("renders the original and result in the %s hero", (locale) => {
-    const copy = landingCopy(locale);
-    const document = renderLandingDocument(template, copy, locale);
-    const hero = document.match(/<section class="lycobo-hero"[\s\S]*?<\/section>/)?.[0] ?? "";
-    const photos = [...hero.matchAll(/src="(data:image\/webp;base64,[^"]+)"/g)];
-    expect(photos).toHaveLength(2);
-    expect(new Set(photos.map((photo) => photo[1])).size).toBe(2);
-    expect(hero).toContain(`>${copy.heroHeading}</h1>`);
-    expect(hero).toContain(`>${copy.heroScrollHint}</span>`);
-    expect(hero).not.toContain('type="range"');
-    expect(hero).toContain(`<figcaption>${copy.heroSourceLabel}</figcaption>`);
-    expect(hero).toContain(`<figcaption>${copy.heroResultLabel}</figcaption>`);
-  });
-
-  it.each(["zh-CN", "en"])(
-    "renders one %s comparison with three distinct outputs and their captions",
-    (locale) => {
-      const copy = landingCopy(locale);
-      const document = renderLandingDocument(template, copy, locale);
-      const showcase = document.match(/data-landing-showreel[\s\S]*?<\/section>/)?.[0];
-      const images = [...(showcase ?? "").matchAll(/src="(data:image\/webp;base64,[^"]+)"/g)];
-      expect(images).toHaveLength(4);
-      expect(new Set(images.map((image) => image[1])).size).toBe(4);
-      expect(showcase?.match(/data-showreel-detail/g)).toHaveLength(3);
-      for (const name of ["Bedroom", "Sofa", "Texture"]) {
-        expect(showcase).toContain(`<figcaption>${copy[`heroShowreel${name}Label`]}</figcaption>`);
-      }
-      expect(showcase).toContain(`>${copy.heroShowreelSourceLabel}</span>`);
-      expect(showcase).toContain(`>${copy.heroShowreelResultLabel}</span>`);
-      expect(showcase).toContain('type="range" min="0" max="100" value="37"');
-      expect(showcase).toContain(`aria-label="${copy.heroShowreelSliderLabel}"`);
-      expect(showcase).not.toContain("<button");
-      expect(showcase).not.toContain("<canvas");
-      expect(showcase).not.toContain("<video");
-      expect(document).toContain("media-src data: blob:;");
-    },
-  );
 
   it("rejects missing copy instead of rendering template markers", () => {
     expect(() => renderLandingDocument("__LYCOBO_HTML_unknown__", {}, "en")).toThrow(

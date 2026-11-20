@@ -1,6 +1,10 @@
+@import "./landing-theme.css";
+@import "./landing-header-theme.css";
+
 /* 隔离正文占据视口，宿主顶栏覆盖在内容上方。 */
 body:has(.openart-reference) {
   overflow: hidden;
+  background: var(--landing-canvas);
 }
 .openart-reference {
   position: fixed;
@@ -9,14 +13,14 @@ body:has(.openart-reference) {
   width: 100vw;
   height: 100dvh;
   border: 0;
-  background: var(--studio-canvas);
+  background: var(--landing-canvas);
 }
 .openart-reference.loading-state {
   z-index: 10;
-  background: var(--studio-canvas);
+  background: var(--landing-canvas);
 }
 .landing-load-state {
   display: grid;
   place-items: center;
-  color: #f5f5f5;
+  color: var(--landing-foreground);
 }

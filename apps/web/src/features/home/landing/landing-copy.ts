@@ -1,21 +1,14 @@
 import type { Locale } from "../../../i18n/locale";
 import { siteFooterMessages } from "../../site/site-footer-messages";
 import { siteFooterSupportEmail } from "../../site/site-footer-navigation";
-import { accessibilityMessages } from "./accessibility-messages";
-import { guidanceMessages } from "./guidance-messages";
-import { navigationMessages } from "./navigation-messages";
-import { storyMessages } from "./story-messages";
+import { landingMessages } from "./landing-messages";
 
-/** 将各段双语文案汇总给隔离模板，原版动效读取已本地化的内容。 */
+/** 将三段首页的简短文案与共用版权信息交给隔离正文。 */
 export function landingCopy(locale: Locale): Record<string, string> {
   const footer = siteFooterMessages[locale];
   return {
-    ...navigationMessages[locale],
-    ...storyMessages[locale],
-    ...guidanceMessages[locale],
-    ...accessibilityMessages[locale],
+    ...landingMessages[locale],
     footerNavigation: footer.navigation,
-    footerSocials: footer.socials,
     footerSupportEmail: siteFooterSupportEmail,
     footerCopyright: footer.copyright(new Date().getFullYear()),
   };

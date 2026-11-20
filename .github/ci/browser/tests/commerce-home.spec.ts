@@ -650,7 +650,7 @@ test("textile mode selects views and opens the textile tool with the uploaded ma
 });
 
 for (const width of [1440, 390]) {
-  test(`header frosts once the page leaves the top without moving content at ${width}px`, async ({
+  test(`header stays light after scrolling without moving content at ${width}px`, async ({
     page,
   }) => {
     await mockImageApi(page);
@@ -676,12 +676,12 @@ for (const width of [1440, 390]) {
     expect(await surface()).toEqual({ background: "rgba(0, 0, 0, 0)", blur: "none" });
     expect(await height()).toBe(60);
     const top = await startTop();
-    // 隔离正文滚动后共用顶栏铺 38% 炭黑磨砂，布局保持原位。
+    // 首页滚动后使用浅色实底和细分隔线，顶栏与正文布局保持原位。
     await scroll(400);
     await expect(header).toHaveAttribute("data-scrolled", "true");
     await expect.poll(surface).toEqual({
-      background: "color(srgb 0.0705882 0.0705882 0.0705882 / 0.38)",
-      blur: "blur(8px)",
+      background: "rgb(250, 250, 250)",
+      blur: "none",
     });
     expect(await height()).toBe(60);
     expect(await startTop()).toBe(top);
@@ -728,35 +728,20 @@ test("home footer links only to real pages", async ({ page }) => {
   await page.goto("/");
   const footer = page.frameLocator("iframe.openart-reference").locator(".site-footer");
   await footer.scrollIntoViewIfNeeded();
-  await expect(footer.getByRole("heading")).toHaveText(["创作工具", "工作空间", "协议与政策"]);
+  await expect(footer.getByRole("navigation")).toBeVisible();
   const links = footer.getByRole("link");
-  await expect(links).toHaveText([
-    "主图制作",
-    "套图计划",
-    "复制爆款",
-    "家纺裂变",
-    "工作区",
-    "灵感库",
-    "自由画布",
-    "素材库",
-    "会员订阅",
-    "用户协议",
-    "隐私政策",
-    "退款政策",
-    "suport@lycobo.com",
-  ]);
+  await expect(links).toHaveText(["用户协议", "隐私政策", "退款政策", "suport@lycobo.com"]);
   await expect(footer.getByRole("link", { name: "退款政策", exact: true })).toHaveAttribute(
     "href",
     "https://bonko.fun/refund-policy",
   );
   await expect(footer.getByRole("img", { name: "Lycobo", exact: true })).toBeVisible();
-  await expect(footer.getByRole("img", { name: /社媒图标/ })).toBeVisible();
   await expect(
     footer.getByRole("link", { name: "suport@lycobo.com", exact: true }),
   ).toHaveAttribute("href", "mailto:suport@lycobo.com");
   await expect(footer).toContainText(`© ${new Date().getFullYear()} Lycobo`);
-  await footer.getByRole("link", { name: "复制爆款", exact: true }).click();
-  await expect(page).toHaveURL(/\/zh-CN\/dashboard\/commerce\/replica$/);
+  await footer.getByRole("link", { name: "用户协议", exact: true }).click();
+  await expect(page).toHaveURL(/\/zh-CN\/terms$/);
 });
 
 test("phones get the vidmuse bottom bar with labelled shortcuts", async ({ page }) => {

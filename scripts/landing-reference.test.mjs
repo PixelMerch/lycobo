@@ -4,14 +4,16 @@ import { describe, expect, it } from "vitest";
 const reference = readFileSync("apps/web/public/openart-reference/index.html", "utf8");
 const container = readFileSync("apps/web/src/features/home/landing/landing-page.tsx", "utf8");
 
-describe("OpenArt reference isolation", () => {
-  it("keeps recorded motion sections without remote scripts or media", () => {
+describe("Landing document isolation", () => {
+  it("keeps the compact product showcase without remote scripts or media", () => {
     expect(reference).toContain("__LYCOBO_HERO__");
-    expect(reference).toContain("__LYCOBO_SHOWCASE_SCRIPT__");
-    expect(reference).toContain('id="oah-use-cases-grid"');
-    expect(reference).toContain('id="oah-models"');
+    expect(reference).toContain("__LYCOBO_MOTION_SCRIPT__");
+    expect(reference).toContain('class="landing-case-grid"');
+    expect(reference).toContain('class="landing-close"');
     expect(reference).not.toMatch(/<script\b[^>]*\bsrc=/i);
-    expect(reference).not.toMatch(/<(img|video|source)\b[^>]*\bsrc="(?!data:)/i);
+    expect(reference).not.toMatch(
+      /<(img|video|source)\b[^>]*\bsrc="(?!data:|__LYCOBO_IMAGE_(?:scene|set)__")/i,
+    );
     expect(reference).not.toMatch(/<link\b/i);
     expect(reference).not.toMatch(/<iframe\b/i);
   });

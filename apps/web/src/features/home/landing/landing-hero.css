@@ -1,223 +1,147 @@
 .lycobo-hero {
-  --hero-gutter: clamp(20px, 5vw, 88px);
-  --hero-radius: 12px;
-  padding-block: clamp(32px, 5svh, 64px) 32px;
-  background: var(--studio-canvas);
-  color: var(--studio-primary-action);
-}
-
-.lycobo-hero-layout {
-  display: grid;
-  gap: clamp(22px, 3vw, 36px);
-  width: min(calc(100% - var(--hero-gutter) * 2), 1080px);
+  position: relative;
+  max-width: calc(var(--landing-content) + var(--landing-gutter) * 2);
   margin-inline: auto;
+  padding: calc(var(--studio-header-height) + clamp(36px, 4.8vw, 72px)) var(--landing-gutter)
+    clamp(88px, 12vw, 160px);
 }
-
-.lycobo-hero-copy {
+.landing-heading-row {
   display: flex;
-  align-items: end;
   justify-content: space-between;
-  gap: 16px 24px;
+  align-items: end;
+  gap: 32px;
+  margin-bottom: clamp(30px, 4vw, 56px);
 }
-
-.lycobo-hero-copy h1 {
-  margin: 0;
-  font-size: clamp(35px, 4vw, 60px);
-  font-weight: 700;
-  line-height: 1.1;
-  text-wrap: balance;
-}
-
-.lycobo-hero-cta {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  min-block-size: 48px;
-  padding-inline: 20px;
-  border-radius: var(--hero-radius);
-  background: var(--studio-accent-gradient);
-  color: var(--studio-canvas);
-  font-size: 16px;
+.landing-heading-row h1 {
+  flex: 1;
+  font-size: clamp(48px, 5.6vw, 86px);
   font-weight: 600;
-  text-decoration: none;
+  line-height: 1.08;
+  letter-spacing: -0.045em;
 }
-
-.lycobo-hero-cta:focus-visible {
-  outline: 2px solid var(--studio-accent);
-  outline-offset: 4px;
-}
-
-.lycobo-hero-comparison {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 7fr);
-  aspect-ratio: 1.8;
-  overflow: clip;
-  border-radius: var(--hero-radius);
-  background: #fefefe;
-}
-
-.lycobo-hero-image {
-  position: relative;
-  min-inline-size: 0;
-  min-block-size: 0;
-  margin: 0;
-  overflow: hidden;
-}
-
-.lycobo-hero-image img {
+.landing-heading-row h1 > span {
   display: block;
-  inline-size: 100%;
-  block-size: 100%;
 }
-
-.lycobo-hero-original img {
-  object-fit: contain;
+.landing-hero-intro {
+  display: grid;
+  justify-items: start;
+  gap: 20px;
+  max-width: 300px;
+  padding-bottom: 5px;
 }
-
-.lycobo-hero-result img {
+.landing-hero-intro p {
+  max-width: 28ch;
+  color: var(--landing-muted);
+  font-size: 16px;
+  line-height: 1.6;
+}
+.landing-hero-stage {
+  position: relative;
+  display: block;
+  aspect-ratio: 1.9;
+  overflow: clip;
+  border-radius: 16px;
+  background: #e4e4e4;
+  transform-origin: center top;
+}
+.landing-campaign-image {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  object-position: center 57%;
 }
-
-.lycobo-hero-image figcaption {
+.landing-source-proof {
   position: absolute;
-  inset: auto auto 14px 14px;
-  padding: 5px 10px;
+  left: clamp(16px, 2.6vw, 40px);
+  bottom: clamp(16px, 2.6vw, 40px);
+  width: clamp(90px, 12vw, 172px);
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--landing-surface);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 16%);
+  color: var(--landing-foreground);
+}
+.landing-source-proof img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
   border-radius: 6px;
-  background: rgb(18 18 18 / 84%);
-  color: #fff;
+}
+.landing-source-proof figcaption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 5px 0;
   font-size: 12px;
   font-weight: 500;
-  line-height: 1.25;
-  white-space: nowrap;
 }
-
-.lycobo-hero-result figcaption {
-  inset-inline: auto 14px;
+.landing-image-label {
+  position: absolute;
+  right: clamp(16px, 2.6vw, 40px);
+  bottom: clamp(16px, 2.6vw, 40px);
+  display: grid;
+  gap: 3px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgb(0 0 0 / 74%);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.4;
 }
-
-.lycobo-hero-reveal {
-  display: none;
+.landing-image-label span:last-child {
+  font-size: 11px;
+  color: #d0d0d0;
 }
-
-@supports (animation-timeline: scroll(root block)) and (animation-range: 0px 320px) {
-  @media (prefers-reduced-motion: no-preference) and (min-height: 580px) {
-    .lycobo-hero {
-      --hero-reveal-distance: clamp(260px, 46svh, 420px);
-      padding-block: 0;
-    }
-
-    .lycobo-hero::after {
-      display: block;
-      block-size: var(--hero-reveal-distance);
-      content: "";
-    }
-
-    .lycobo-hero-layout {
-      position: sticky;
-      inset-block-start: var(--studio-header-height);
-      padding-block: clamp(32px, 5svh, 64px) 32px;
-    }
-
-    .lycobo-hero-comparison {
-      max-block-size: calc(100svh - var(--studio-header-height) - 154px);
-    }
-
-    .lycobo-hero-reveal {
-      position: absolute;
-      inset: 0;
-      display: block;
-      clip-path: polygon(-12% 0, 100% 0, 89% 100%, -12% 100%);
-      animation-name: lycobo-hero-reveal;
-      pointer-events: none;
-    }
-
-    .lycobo-hero-reveal::after {
-      position: absolute;
-      inset: 0;
-      clip-path: polygon(calc(100% - 3px) 0, 100% 0, 89% 100%, calc(89% - 3px) 100%);
-      background: var(--studio-accent);
-      content: "";
-    }
-
-    .lycobo-hero-reveal-content {
-      display: grid;
-      block-size: 100%;
-      justify-items: center;
-      align-content: center;
-      gap: 14px;
-      background: var(--studio-canvas);
-      animation-name: lycobo-hero-counter-slide;
-    }
-
-    .lycobo-hero-reveal-original {
-      inline-size: clamp(158px, 28vw, 340px);
-      aspect-ratio: 1;
-      border-radius: var(--hero-radius);
-      background: #fefefe var(--hero-original) center / contain no-repeat;
-    }
-
-    .lycobo-hero-reveal-content span {
-      color: var(--studio-primary-action);
-      font-size: 13px;
-      line-height: 1.4;
-    }
-
-    .lycobo-hero-reveal,
-    .lycobo-hero-reveal-content {
-      animation-duration: auto;
-      animation-timing-function: linear;
-      animation-fill-mode: both;
-      animation-timeline: scroll(root block);
-      animation-range: 16px calc(var(--hero-reveal-distance) - 12px);
-    }
+@media (max-width: 767px) {
+  .landing-heading-row {
+    flex-direction: column;
+    align-items: start;
+    gap: 24px;
+  }
+  .landing-heading-row h1 {
+    font-size: clamp(44px, 8vw, 62px);
+    letter-spacing: -0.035em;
+  }
+  .landing-hero-intro {
+    max-width: none;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+  }
+  .landing-hero-intro p {
+    font-size: 14px;
+  }
+  .landing-hero-intro .landing-action {
+    gap: 16px;
+    min-height: 48px;
+    padding-inline: 20px;
+  }
+  .landing-hero-stage {
+    aspect-ratio: 1.05;
+    border-radius: 12px;
+  }
+  .landing-campaign-image {
+    object-position: 58% center;
+  }
+  .landing-source-proof {
+    width: 92px;
+    padding: 5px;
+    border-radius: 8px;
+  }
+  .landing-image-label {
+    padding: 7px 10px;
+    font-size: 12px;
   }
 }
-
-/* 两层反向移动，原图保持位置，斜线只负责遮挡和揭示。 */
-@keyframes lycobo-hero-reveal {
-  from {
-    transform: translateX(-12%);
+@media (max-width: 420px) {
+  .landing-hero-intro {
+    display: flex;
+    align-items: start;
+    flex-direction: column;
+    gap: 16px;
   }
-
-  to {
-    transform: translateX(-100%);
-  }
-}
-
-@keyframes lycobo-hero-counter-slide {
-  from {
-    transform: translateX(12%);
-  }
-
-  to {
-    transform: translateX(100%);
-  }
-}
-
-@media (max-width: 760px) {
-  .lycobo-hero {
-    --hero-reveal-distance: clamp(210px, 34svh, 280px);
-  }
-
-  .lycobo-hero-copy {
-    display: grid;
-    justify-items: start;
-  }
-
-  .lycobo-hero-comparison {
-    aspect-ratio: 1;
-  }
-
-  .lycobo-hero-image figcaption {
-    inset: auto auto 8px 8px;
-    padding: 4px 6px;
-    font-size: 11px;
-  }
-
-  .lycobo-hero-result figcaption {
-    inset-inline: auto 8px;
+  .landing-hero-intro p {
+    max-width: 30ch;
   }
 }

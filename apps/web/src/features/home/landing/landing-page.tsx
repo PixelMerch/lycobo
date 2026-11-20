@@ -18,7 +18,7 @@ async function loadLandingTemplate(signal: AbortSignal) {
   return response.text();
 }
 
-/** 在语言首页呈现 Lycobo 双语落地页，保留已确认的布局与滚动动效。 */
+/** 呈现以三组商品图为核心的双语首页，保留站内导航和语言切换的滚动位置。 */
 export function LandingPage() {
   const locale = useLocale();
   const t = useMessages(referenceMessages);

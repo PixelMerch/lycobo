@@ -27,9 +27,11 @@
 
 灵感库的搜索按钮使用 [DesignBookmark Command button](https://designbookmark.com/motion-src/react/command-button.tsx) 标注为 MIT 的动效参数。组件位于 `apps/web/src/components/command-button.tsx`，使用项目控件和文案重新实现。
 
-## OpenArt 页面参考
+## 首页展示素材与历史参考
 
-`apps/web/public/openart-reference/index.html` 源于本地 `page-take/recordings/openairt/source/` 的 OpenArt 录制。模板仍含该来源的导航、布局和交互动效。Lycobo 的文案、品牌与自托管字体在项目内维护。原站素材、模型、统计、评价及商标不可用于 Lycobo 宣传。模板以 sandbox 和 CSP 隔离，禁止远程加载、表单提交和打开外部窗口。已批准的 Biome 例外仅适用于这份生成 HTML。
+当前首页已改为 Lycobo 自有的三段商品案例结构，`apps/web/public/openart-reference/index.html` 仅保留历史容器路径，不再使用 OpenArt 录制的布局、媒体或动画。保留 sandbox 与 CSP 隔离，禁止远程脚本、远程图片、表单提交和弹出外部窗口。
+
+2026-11-20 新首页配图按用户本次明确要求使用内置图片生成工具制作，未调用项目生成 CLI。运动鞋原图与广告图、耳机前后对照、护肤品套图均为展示素材，不代表客户商品或生产生成任务。来源与提示词见[配图说明](../apps/web/public/landing/campaign/README.md)。
 
 ## 阿里巴巴普惠体 3.0
 
