@@ -284,36 +284,16 @@
   }
 }
 
-/* The only glass dialog so far. The HeroUI backdrop already blurs the page and is a
- * backdrop root, so the panel tints that blur instead of adding a filter of its own. */
 .modal__dialog.home-inspiration-detail {
-  position: relative;
   overflow: hidden;
   width: min(960px, calc(100vw - 32px));
   max-width: 960px;
-  border: 1px solid #ffffff24;
-  border-radius: 28px;
-  background: linear-gradient(180deg, #ffffff12, #ffffff05), rgb(15 15 15 / 58%);
-  box-shadow:
-    inset 0 1px 0 #ffffff2e,
-    0 40px 120px -20px #000000d9;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border-radius: 24px;
 }
-.home-inspiration-ambient {
-  position: absolute;
-  inset: -20%;
-  z-index: 0;
-  width: 140%;
-  max-width: none;
-  height: 140%;
-  object-fit: cover;
-  filter: blur(70px) saturate(1.6) brightness(0.62);
-  opacity: 0.34;
-  pointer-events: none;
-}
-.home-inspiration-detail .modal__header,
-.home-inspiration-detail .modal__body {
-  position: relative;
-  z-index: 1;
+.home-inspiration-detail :is(.modal__header, .modal__body) {
+  padding: 0;
 }
 .home-inspiration-detail .modal__header {
   flex-direction: row;
@@ -335,17 +315,14 @@
   border-radius: 16px;
   object-fit: contain;
 }
-.home-inspiration-description {
-  padding: var(--space-2) 0;
-}
 .home-inspiration-description > span {
-  color: #ffffffcc;
+  color: var(--muted);
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
 }
 .home-inspiration-description h3 {
   margin: 20px 0 10px;
-  color: #ffffffcc;
+  color: var(--foreground);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   line-height: var(--leading-sm);
@@ -353,16 +330,15 @@
 .home-inspiration-prompt {
   margin: 0;
   padding: 14px 16px;
-  border-radius: 16px;
-  color: #fff;
-  background: #ffffff0f;
-  box-shadow: inset 0 0 0 1px #ffffff14;
+  border-radius: var(--field-radius);
+  color: var(--foreground);
+  background: var(--fill-soft);
   font-size: var(--text-base);
   line-height: var(--leading-base);
 }
 .home-inspiration-hint {
   margin: var(--space-4) 0 0;
-  color: #ffffffcc;
+  color: var(--muted);
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
 }
@@ -370,19 +346,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 24px;
-}
-.home-inspiration-actions .button {
-  height: 40px;
-  border: 0;
-  border-radius: 999px;
-}
-.home-inspiration-actions .button--secondary {
-  color: #fff;
-  background: #ffffff14;
-}
-.home-inspiration-actions .button--secondary:is(:hover, [data-hovered="true"]) {
-  background: #ffffff1f;
+  margin-top: var(--space-4);
 }
 /* 减少动态效果时直接显示面板和光晕，图片不放大。 */
 @media (prefers-reduced-motion: reduce) {
@@ -400,7 +364,6 @@
 }
 /* 减少透明度时改用实色，保证文字可读。 */
 @media (prefers-reduced-transparency: reduce) {
-  .home-inspiration-ambient,
   .home-inspiration-glow {
     display: none;
   }
@@ -408,9 +371,6 @@
   .home-inspiration-panel {
     background: #1c1c1c;
     backdrop-filter: none;
-  }
-  .modal__dialog.home-inspiration-detail {
-    background: var(--surface);
   }
 }
 @media (max-width: 767px) {
@@ -431,7 +391,7 @@
     line-height: var(--leading-base);
   }
   .modal__dialog.home-inspiration-detail {
-    border-radius: 24px;
+    padding: var(--space-4);
   }
   .home-inspiration-detail-content {
     grid-template-columns: 1fr;
@@ -442,6 +402,5 @@
   }
   .home-inspiration-actions .button {
     flex: 1 1 0;
-    height: 44px;
   }
 }

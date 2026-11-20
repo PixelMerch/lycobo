@@ -25,7 +25,7 @@
   --glass-fill: linear-gradient(transparent, transparent);
   --glass-blur: var(--site-header-menu-blur);
 }
-/* 通知、账户与顶部栏入口沿用素材库来源菜单的深色毛玻璃。 */
+/* 通知、账户、灵感详情与顶部栏入口沿用素材库来源菜单的深色毛玻璃。 */
 :root
   :is(
     .choice-menu,
@@ -34,7 +34,8 @@
     .account-news-tooltip,
     .credits-menu,
     .account-menu,
-    .account-settings-dialog
+    .account-settings-dialog,
+    .home-inspiration-detail
   ) {
   --glass-tint: var(--glass-dark-tint);
 }

@@ -241,7 +241,8 @@ test("home inspiration filters examples and confirms prompt replacement without 
   await expect(gallery.locator(".home-inspiration-card")).toHaveCount(6);
   await gallery.getByRole("button", { name: "查看灵感：枕间细节", exact: true }).click();
   const detail = page.getByRole("dialog", { name: "灵感详情：枕间细节", exact: true });
-  await expect(detail.getByText("家纺展示 · 示例素材")).toBeVisible();
+  await expect(detail.getByText("家纺展示", { exact: true })).toBeVisible();
+  await expect(detail.getByText("示例素材", { exact: false })).toHaveCount(0);
   const heading = await detail.getByRole("heading", { name: "枕间细节" }).boundingBox();
   const close = await detail
     .getByRole("button", { name: "关闭灵感详情", exact: true })

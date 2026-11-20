@@ -88,6 +88,7 @@ export function HomeInspirationGallery({
   );
 }
 
+/** 用共用弹框展示灵感图和创作提示词。 */
 function InspirationDetail({
   item,
   onClose,
@@ -110,8 +111,6 @@ function InspirationDetail({
       <Modal.Backdrop onAnimationEnd={dismiss.onAnimationEnd}>
         <Modal.Container size="lg" scroll="inside">
           <Modal.Dialog className="home-inspiration-detail" aria-label={t.details(item.title)}>
-            {/* 示例图本身的颜色透过玻璃发光，每个详情弹窗都和它的图片相配。 */}
-            <img className="home-inspiration-ambient" src={item.image} alt="" />
             <Modal.Header>
               <Modal.Heading>{item.title}</Modal.Heading>
               <DialogClose label={t.closeDetails} />
@@ -120,7 +119,7 @@ function InspirationDetail({
               <div className="home-inspiration-detail-content">
                 <img src={item.image} alt={item.title} width="480" height="480" />
                 <div className="home-inspiration-description">
-                  <span>{t.sample(t.categories[item.category])}</span>
+                  <span>{t.categories[item.category]}</span>
                   <h3>{t.prompt}</h3>
                   <p className="home-inspiration-prompt">{item.prompt}</p>
                   <p className="home-inspiration-hint">{t.hint}</p>
