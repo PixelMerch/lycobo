@@ -10,7 +10,7 @@ describe("Landing document isolation", () => {
     expect(reference).toContain("__LYCOBO_HERO__");
     expect(reference).toContain("__LYCOBO_MOTION_SCRIPT__");
     expect(reference).toContain('class="landing-case-grid"');
-    expect(reference).toContain('class="landing-close"');
+    expect(reference).toContain("__LYCOBO_FAQ__");
     expect(reference).not.toMatch(/<script\b[^>]*\bsrc=/i);
     expect(reference + features).not.toMatch(
       /<(img|video|source)\b[^>]*\bsrc="(?!data:|__LYCOBO_IMAGE_(?:scene|set|collection|textile|optimize)__")/i,

@@ -22,6 +22,11 @@ describe("localized landing document", () => {
       expect(document).toContain(copy.collectionDescription);
       expect(document).toContain(copy.textileDescription);
       expect(document).toContain(copy.promptAfter);
+      expect(document).toContain(copy.faqCreditsAnswer);
+      expect(document).toContain(copy.faqFailureAnswer);
+      expect(document).not.toContain("Next up:");
+      expect(document.match(/<details\b/g)).toHaveLength(6);
+      expect(document).not.toMatch(/<details\b[^>]*\bopen(?:\s|=|>)/);
       const links = [...document.matchAll(/<a\b[^>]*data-landing-path="([^"]+)"[^>]*>/g)];
       expect(links.map((link) => link[1])).toEqual([
         "/dashboard",
@@ -34,7 +39,6 @@ describe("localized landing document", () => {
         "/dashboard/commerce/textile-set",
         "/dashboard/commerce/create",
         "/dashboard",
-        "/membership",
         "/terms",
         "/privacy",
         "https://bonko.fun/refund-policy",

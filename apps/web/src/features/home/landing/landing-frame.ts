@@ -19,6 +19,11 @@ export function scrollLandingFrame(frameRef: LandingFrame["frameRef"], scrollY: 
   frameRef.current?.contentWindow?.postMessage({ type: "lycobo:restore-scroll", scrollY }, "*");
 }
 
+/** 通过固定命令定位首页常见问题，滚动距离由隔离正文自己的布局决定。 */
+export function scrollLandingFaq(frameRef: LandingFrame["frameRef"]) {
+  frameRef.current?.contentWindow?.postMessage("lycobo:landing-faq-request", "*");
+}
+
 /** 读取隔离首页的滚动距离，拒绝非有限数值和负值。 */
 export function readLandingScroll(data: unknown) {
   if (

@@ -1,4 +1,4 @@
-import { Disclosure, Dropdown } from "@heroui/react";
+import { Button, Disclosure, Dropdown } from "@heroui/react";
 import { IconChevronDown } from "@tabler/icons-react";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
@@ -15,13 +15,15 @@ import { dashboardToolPaths, freeCanvasPath } from "../lib/dashboard-paths";
 import { useHoverMenu } from "../lib/use-hover-menu";
 import { shellMessages } from "./shell-messages";
 
-/** 公共顶栏按工作区工具目录显示桌面下拉和手机折叠菜单。 */
+/** 公共顶栏显示工具目录；首页额外提供桌面与手机共用的 FAQ 定位入口。 */
 export function PublicSiteNavigation({
   onNavigate,
   dismissVersion = 0,
+  onFaq,
 }: {
   onNavigate?: () => void;
   dismissVersion?: number;
+  onFaq?: (() => void) | undefined;
 }) {
   const t = useMessages(shellMessages);
   const linkEvents = onNavigate ? { onClick: onNavigate } : {};
@@ -47,6 +49,18 @@ export function PublicSiteNavigation({
       <RouteLink nav to={freeCanvasPath} className="nav-row" {...linkEvents}>
         {t.freeCanvas}
       </RouteLink>
+      {onFaq && (
+        <Button
+          variant="ghost"
+          className="nav-row public-site-faq"
+          onPress={() => {
+            onNavigate?.();
+            onFaq();
+          }}
+        >
+          {t.faq}
+        </Button>
+      )}
     </nav>
   );
 }

@@ -69,6 +69,18 @@
 .public-site-desktop-nav .nav-row {
   padding-inline: 12px;
 }
+.public-site-faq.button {
+  font-weight: 500;
+}
+@media (max-width: 1159px) {
+  .public-site-header[data-landing-frame] .mobile-menu {
+    display: inline-flex;
+    flex: none;
+  }
+  .public-site-header[data-landing-frame] .public-site-desktop-nav {
+    display: none;
+  }
+}
 .public-site-actions {
   display: flex;
   align-items: center;

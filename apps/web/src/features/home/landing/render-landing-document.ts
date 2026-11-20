@@ -10,6 +10,8 @@ import { initializePageScrollbar } from "../../../components/page-scrollbar";
 import pageScrollbarStyle from "../../../components/page-scrollbar.css?raw";
 import type { Locale } from "../../../i18n/locale";
 import studioPalette from "../../../styles/studio-palette.css?raw";
+import faqStyles from "./landing-faq.css?raw";
+import faqTemplate from "./landing-faq.html?raw";
 import featureStyles from "./landing-features.css?raw";
 import featureTemplate from "./landing-features.html?raw";
 import footerTemplate from "./landing-footer.html?raw";
@@ -52,9 +54,10 @@ export function renderLandingDocument(
     .replace("__LYCOBO_LANDING_APPEARANCE__", () =>
       [studioPalette, landingTheme, landingPalette, motionStyles].join("\n"),
     )
-    .replace("__LYCOBO_HERO_STYLE__", () => heroStyles + showcaseStyles + featureStyles)
+    .replace("__LYCOBO_HERO_STYLE__", () => heroStyles + showcaseStyles + featureStyles + faqStyles)
     .replace("__LYCOBO_HERO__", () => heroTemplate)
     .replace("__LYCOBO_FEATURES__", () => featureTemplate)
+    .replace("__LYCOBO_FAQ__", () => faqTemplate)
     .replace("__LYCOBO_FOOTER__", () => footerTemplate)
     .replaceAll("__LYCOBO_FOOTER_WORDMARK__", () => escapeHtml(footerWordmark))
     .replace(/__LYCOBO_IMAGE_([a-z]+)__/g, (marker, name: string) => landingImages[name] ?? marker)

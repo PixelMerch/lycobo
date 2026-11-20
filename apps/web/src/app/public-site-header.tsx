@@ -8,6 +8,7 @@ import type { useEnterpriseSession } from "../features/auth/auth-client";
 import {
   type LandingFrame,
   readLandingScroll,
+  scrollLandingFaq,
   scrollLandingFrame,
 } from "../features/home/landing/landing-frame";
 import { navigationMessages } from "../features/home/landing/navigation-messages";
@@ -19,7 +20,7 @@ import { SiteHeaderControls } from "./site-header-controls";
 import { usePublicHeaderBrand } from "./use-public-header-brand";
 import "./public-site-header.css";
 
-/** 首页与灵感库共用导航和账户入口，首页滚动时切换品牌图形。 */
+/** 首页与灵感库共用导航和账户入口，首页额外同步滚动品牌并定位 FAQ。 */
 export function PublicSiteHeader({
   account,
   landingFrame,
@@ -64,6 +65,7 @@ export function PublicSiteHeader({
   }, [frameRef, scheduleDraw]);
 
   const closeMenu = () => setMenuOpen(false);
+  const openFaq = frameRef ? () => scrollLandingFaq(frameRef) : undefined;
   return (
     <header
       ref={headerRef}
@@ -111,7 +113,7 @@ export function PublicSiteHeader({
                 </Drawer.CloseTrigger>
               </Drawer.Header>
               <Drawer.Body>
-                <PublicSiteNavigation onNavigate={closeMenu} />
+                <PublicSiteNavigation onNavigate={closeMenu} onFaq={openFaq} />
               </Drawer.Body>
               {account && (
                 <Drawer.Footer className="mobile-nav-account">
@@ -122,7 +124,7 @@ export function PublicSiteHeader({
           </Drawer.Content>
         </Drawer.Backdrop>
       </Drawer>
-      <PublicSiteNavigation dismissVersion={dismissVersion} />
+      <PublicSiteNavigation dismissVersion={dismissVersion} onFaq={openFaq} />
       <div className="public-site-actions">
         <SiteHeaderControls
           account={account}

@@ -1,4 +1,4 @@
-/** 隔离正文向宿主报告滚动位置、正文点按以及创作入口。 */
+/** 隔离正文报告滚动与导航，只接收宿主发来的位置恢复及 FAQ 定位命令。 */
 export function initializeLandingFrameBridge() {
   let frame = 0;
 
@@ -25,6 +25,15 @@ export function initializeLandingFrameBridge() {
     if (event.source !== parent) return;
     if (event.data === "lycobo:landing-scroll-request") {
       reportScroll();
+      return;
+    }
+    if (event.data === "lycobo:landing-faq-request") {
+      void document.fonts.ready.then(() => {
+        const faq = document.querySelector<HTMLElement>("#faq");
+        const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        faq?.querySelector<HTMLElement>("#faq-title")?.focus({ preventScroll: true });
+        faq?.scrollIntoView({ behavior: reduced ? "instant" : "smooth", block: "start" });
+      });
       return;
     }
     const data = event.data;

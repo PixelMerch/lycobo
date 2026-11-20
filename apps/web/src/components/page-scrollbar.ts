@@ -1,4 +1,4 @@
-/** 叠加浮动滚动条并同步文档或指定面板的滚动，返回卸载清理函数。 */
+/** 同步文档或面板的浮动滚动条，忽略同步回声以保留原生平滑滚动。 */
 export function initializePageScrollbar(panel?: HTMLElement, label?: string) {
   const scroller = panel ?? document.scrollingElement ?? document.documentElement;
   const scrollEvents = panel ?? window;
@@ -16,13 +16,18 @@ export function initializePageScrollbar(panel?: HTMLElement, label?: string) {
   }
   rail.append(spacer);
   (panel?.parentElement ?? document.body).append(rail);
+  let mirroredTop = rail.scrollTop;
 
   // 滚轮、键盘和触摸仍滚动页面；浮动轨道仅提供浏览器原生的拖动入口。
   function followPage() {
-    if (Math.abs(rail.scrollTop - scroller.scrollTop) > 1) rail.scrollTop = scroller.scrollTop;
+    if (Math.abs(rail.scrollTop - scroller.scrollTop) <= 1) return;
+    rail.scrollTop = scroller.scrollTop;
+    mirroredTop = rail.scrollTop;
   }
 
   function followRail() {
+    // 轨道的异步 scroll 回声可能晚于页面下一帧，不能用旧位置打断正在进行的平滑滚动。
+    if (Math.abs(rail.scrollTop - mirroredTop) <= 1) return;
     if (Math.abs(scroller.scrollTop - rail.scrollTop) > 1) {
       scrollEvents.scrollTo({ top: rail.scrollTop, behavior: "instant" });
     }

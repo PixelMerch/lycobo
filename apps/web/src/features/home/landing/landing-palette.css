@@ -81,39 +81,6 @@ a:focus-visible {
 :is(.lycobo-hero, .landing-feature-optimize) .landing-action:focus-visible {
   outline-color: var(--landing-surface);
 }
-.landing-close {
-  position: relative;
-  display: grid;
-  justify-items: center;
-  gap: 28px;
-  padding: clamp(72px, 9vw, 128px) var(--landing-gutter);
-  background: var(--landing-subtle);
-  color: var(--landing-foreground);
-  text-align: center;
-}
-.landing-close h2 {
-  font-size: clamp(36px, 4.8vw, 64px);
-  font-weight: 500;
-  line-height: 1.12;
-  letter-spacing: -0.035em;
-}
-.landing-close h2 > span {
-  display: block;
-}
-.landing-close-actions {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-}
-.landing-plans {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  color: var(--landing-muted);
-}
-.landing-plans:hover {
-  color: var(--landing-foreground);
-}
 .landing-footer {
   position: relative;
   display: block;
@@ -156,9 +123,6 @@ a:focus-visible {
   color: var(--landing-foreground);
 }
 @media (max-width: 620px) {
-  .landing-close-actions {
-    gap: 24px;
-  }
   .landing-footer-top,
   .landing-footer-bottom {
     align-items: flex-start;
