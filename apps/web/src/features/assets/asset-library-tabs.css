@@ -12,6 +12,8 @@
   height: var(--header-height);
 }
 .asset-library-entry-tabs.tabs__list {
+  position: relative;
+  isolation: isolate;
   align-self: center;
   gap: var(--space-5);
   padding: 0;
@@ -23,21 +25,24 @@
   padding-inline: 0;
   border-radius: 0;
   background: transparent;
-  font-size: var(--text-base);
-  line-height: var(--leading-base);
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
   white-space: nowrap;
 }
 .asset-library-entry-tabs .tabs__tab:is(:hover, [data-hovered="true"], [data-selected="true"]) {
   background: transparent;
   color: var(--foreground);
 }
-.asset-library-entry-tabs .tabs__indicator {
-  top: auto;
-  bottom: var(--space-2);
+.asset-library-entry-tabs .selection-pill {
+  background: transparent;
+}
+.asset-library-entry-tabs .selection-pill::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: var(--space-2);
   height: 2px;
-  border-radius: var(--control-pill-radius);
   background: var(--foreground);
-  box-shadow: none;
 }
 .asset-library-panel.tabs__panel {
   min-width: 0;

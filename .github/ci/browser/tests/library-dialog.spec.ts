@@ -293,18 +293,18 @@ test("灵感库 inside the workspace library fills the prompt and closes the lib
   await page.goto("/commerce/create");
   await page.getByRole("button", { name: "打开素材库", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "素材库", exact: true });
+  const entryTabs = dialog.getByRole("tablist", { name: "素材库", exact: true });
+  const underline = entryTabs.locator(".selection-pill");
+  await expect(underline).toHaveCSS("visibility", "visible");
+  const initialUnderline = await underline.evaluate((line) => getComputedStyle(line).clipPath);
   await dialog.getByRole("tab", { name: "灵感库" }).click();
   await expect(dialog.getByText("挑一张喜欢的画面")).toHaveCount(0);
   await expect(dialog.locator(".asset-library-head .tabs__list")).toHaveCSS(
     "border-bottom-width",
     "0px",
   );
-  const entryTabs = dialog.getByRole("tablist", { name: "素材库", exact: true });
   await expect(entryTabs).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  await expect(entryTabs.locator('[data-selected="true"] .tabs__indicator')).toHaveCSS(
-    "height",
-    "2px",
-  );
+  await expect(underline).not.toHaveCSS("clip-path", initialUnderline);
   await expect(entryTabs).toHaveCSS("height", "44px");
   await expect(dialog.locator(".home-inspiration-bar .pill-tab-list")).toHaveCSS("height", "44px");
   await expect(dialog.locator(".home-inspiration-card").first()).toHaveCSS("border-radius", "6px");

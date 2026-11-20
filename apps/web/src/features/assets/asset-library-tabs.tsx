@@ -1,5 +1,6 @@
 import { Tabs } from "@heroui/react";
 import type { ReactNode } from "react";
+import { SelectionPill } from "../../components/selection-pill";
 import { useMessages } from "../../i18n/messages";
 import { assetsMessages } from "./assets-messages";
 import "./asset-library-tabs.css";
@@ -14,7 +15,7 @@ export function assetLibraryTab(value: unknown): AssetLibraryTab {
 }
 
 /**
- * 素材库弹窗和页面共用文字标签与滑动下划线，只渲染当前标签的内容。
+ * 素材库弹窗和页面共用文字标签，下划线沿用分类的弹簧动效。
  * 弹窗的关闭按钮放在标题栏末端。
  */
 export function AssetLibraryTabs({
@@ -39,11 +40,19 @@ export function AssetLibraryTabs({
       onSelectionChange={(key) => onTabChange(assetLibraryTab(key))}
     >
       <div className="asset-library-head">
-        <Tabs.List className="asset-library-entry-tabs" aria-label={t.libraryTitle}>
+        <Tabs.List
+          className="asset-library-entry-tabs"
+          aria-label={t.libraryTitle}
+          render={({ children, ...props }) => (
+            <div {...props}>
+              {children}
+              <SelectionPill value={tab} />
+            </div>
+          )}
+        >
           {tabs.map((id) => (
             <Tabs.Tab key={id} id={id}>
               {id === "mine" ? t.myAssets : t.inspiration}
-              <Tabs.Indicator />
             </Tabs.Tab>
           ))}
         </Tabs.List>
