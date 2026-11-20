@@ -45,6 +45,7 @@ export function LibraryDialog({
             <motion.div className="library-shell" {...surfaceMotion}>
               <AssetLibraryTabs
                 tab={tab}
+                floatingScrollbar
                 onTabChange={setTab}
                 endAction={
                   <DialogClose fullScreen label={t.closeLibrary} className="library-close" />

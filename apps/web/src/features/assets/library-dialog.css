@@ -41,6 +41,17 @@
 .modal__close-trigger.library-close {
   margin-inline-start: auto;
 }
+.library-shell .asset-library-panels {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.library-shell .lycobo-page-scrollbar--panel {
+  position: absolute;
+  z-index: 3;
+}
 /* 当前标签的内容是滚动区域，筛选行吸在顶部，用同色不透明底遮住滚过的图片。 */
 .library-shell .asset-library-panel {
   display: flex;
@@ -49,6 +60,11 @@
   min-height: 0;
   padding: 0 var(--space-6) var(--space-6);
   overflow-y: auto;
+  scrollbar-width: none;
+  scrollbar-gutter: auto;
+}
+.library-shell .asset-library-panel::-webkit-scrollbar {
+  display: none;
 }
 .library-shell :is(.asset-filters, .home-inspiration-bar) {
   position: sticky;

@@ -1,5 +1,7 @@
 import { Tabs } from "@heroui/react";
 import type { ReactNode } from "react";
+import { initializePageScrollbar } from "../../components/page-scrollbar";
+import "../../components/page-scrollbar.css";
 import { SelectionPill } from "../../components/selection-pill";
 import { useMessages } from "../../i18n/messages";
 import { assetsMessages } from "./assets-messages";
@@ -9,6 +11,10 @@ import "./asset-library-tabs.css";
 export type AssetLibraryTab = "mine" | "inspiration";
 const tabs = ["mine", "inspiration"] as const satisfies readonly AssetLibraryTab[];
 
+function mountPanelScrollbar(panel: HTMLDivElement | null) {
+  if (panel) return initializePageScrollbar(panel);
+}
+
 /** 把地址栏或外部传来的值收成素材库的标签，认不出时回到我的素材。 */
 export function assetLibraryTab(value: unknown): AssetLibraryTab {
   return tabs.find((tab) => tab === value) ?? "mine";
@@ -16,22 +22,25 @@ export function assetLibraryTab(value: unknown): AssetLibraryTab {
 
 /**
  * 素材库弹窗和页面共用文字标签，下划线沿用分类的弹簧动效。
- * 弹窗的关闭按钮放在标题栏末端。
+ * 弹窗的关闭按钮放在标题栏末端，浮动滚动条跟随当前面板。
  */
 export function AssetLibraryTabs({
   tab,
   endAction,
+  floatingScrollbar = false,
   mine,
   inspiration,
   onTabChange,
 }: {
   tab: AssetLibraryTab;
   endAction?: ReactNode;
+  floatingScrollbar?: boolean;
   mine: ReactNode;
   inspiration: ReactNode;
   onTabChange: (tab: AssetLibraryTab) => void;
 }) {
   const t = useMessages(assetsMessages);
+  const panelRef = floatingScrollbar ? mountPanelScrollbar : undefined;
   return (
     <Tabs
       className="asset-library-tabs"
@@ -58,12 +67,22 @@ export function AssetLibraryTabs({
         </Tabs.List>
         {endAction}
       </div>
-      <Tabs.Panel id="mine" className="asset-library-panel">
-        {mine}
-      </Tabs.Panel>
-      <Tabs.Panel id="inspiration" className="asset-library-panel asset-library-inspiration">
-        {inspiration}
-      </Tabs.Panel>
+      <div className="asset-library-panels">
+        <Tabs.Panel
+          ref={tab === "mine" ? panelRef : undefined}
+          id="mine"
+          className="asset-library-panel"
+        >
+          {mine}
+        </Tabs.Panel>
+        <Tabs.Panel
+          ref={tab === "inspiration" ? panelRef : undefined}
+          id="inspiration"
+          className="asset-library-panel asset-library-inspiration"
+        >
+          {inspiration}
+        </Tabs.Panel>
+      </div>
     </Tabs>
   );
 }

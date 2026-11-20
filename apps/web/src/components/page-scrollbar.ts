@@ -1,40 +1,49 @@
-/** 在文档右侧叠加浮动滚动条，同步页面滚动并返回卸载清理函数。 */
-export function initializePageScrollbar() {
+/** 叠加浮动滚动条并同步文档或指定面板的滚动，返回卸载清理函数。 */
+export function initializePageScrollbar(panel?: HTMLElement) {
+  const scroller = panel ?? document.scrollingElement ?? document.documentElement;
+  const scrollEvents = panel ?? window;
   const rail = document.createElement("div");
   const spacer = document.createElement("div");
   rail.className = "lycobo-page-scrollbar";
+  if (panel) rail.classList.add("lycobo-page-scrollbar--panel");
   rail.setAttribute("aria-hidden", "true");
   rail.tabIndex = -1;
   rail.append(spacer);
-  document.body.append(rail);
+  (panel?.parentElement ?? document.body).append(rail);
 
   // 滚轮、键盘和触摸仍滚动页面；浮动轨道仅提供浏览器原生的拖动入口。
   function followPage() {
-    if (Math.abs(rail.scrollTop - window.scrollY) > 1) rail.scrollTop = window.scrollY;
+    if (Math.abs(rail.scrollTop - scroller.scrollTop) > 1) rail.scrollTop = scroller.scrollTop;
   }
 
   function followRail() {
-    if (Math.abs(window.scrollY - rail.scrollTop) > 1) {
-      window.scrollTo({ top: rail.scrollTop, behavior: "instant" });
+    if (Math.abs(scroller.scrollTop - rail.scrollTop) > 1) {
+      scrollEvents.scrollTo({ top: rail.scrollTop, behavior: "instant" });
     }
   }
 
   function resize() {
-    const height = document.documentElement.scrollHeight;
+    const height = scroller.scrollHeight;
     spacer.style.height = `${height}px`;
-    rail.hidden = height <= window.innerHeight;
+    rail.hidden = height <= scroller.clientHeight;
     followPage();
   }
 
-  window.addEventListener("scroll", followPage, { passive: true });
+  scrollEvents.addEventListener("scroll", followPage, { passive: true });
   rail.addEventListener("scroll", followRail, { passive: true });
   window.addEventListener("resize", resize, { passive: true });
   const observer = new ResizeObserver(resize);
-  observer.observe(document.body);
+  if (panel) {
+    // 面板高度固定，分页追加或筛选会改变内部列表高度。
+    observer.observe(panel);
+    for (const content of panel.children) observer.observe(content);
+  } else {
+    observer.observe(document.body);
+  }
   resize();
   return () => {
     observer.disconnect();
-    window.removeEventListener("scroll", followPage);
+    scrollEvents.removeEventListener("scroll", followPage);
     rail.removeEventListener("scroll", followRail);
     window.removeEventListener("resize", resize);
     rail.remove();

@@ -1,9 +1,9 @@
 /* 轨道覆盖在页面上，正文不为原生滚动条预留宽度。 */
-html:has(.lycobo-page-scrollbar) {
+html:has(> body > .lycobo-page-scrollbar) {
   scrollbar-width: none;
   scrollbar-gutter: auto;
 }
-html:has(.lycobo-page-scrollbar)::-webkit-scrollbar {
+html:has(> body > .lycobo-page-scrollbar)::-webkit-scrollbar {
   display: none;
 }
 .lycobo-page-scrollbar {

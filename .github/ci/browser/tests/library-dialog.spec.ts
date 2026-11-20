@@ -488,6 +488,12 @@ test("我的素材 keeps filters visible while scrolling and separates the curre
   const dialog = page.getByRole("dialog", { name: "素材库", exact: true });
   await expect(dialog.locator(".asset-tile")).toHaveCount(48);
   await expect(dialog.locator(".library-shell")).toHaveCSS("transform", "none");
+  const panel = dialog.locator(".asset-library-panel");
+  const scrollbar = dialog.locator(".lycobo-page-scrollbar--panel");
+  await expect(scrollbar).toBeVisible();
+  await expect(scrollbar).toHaveCSS("position", "absolute");
+  await expect(panel).toHaveCSS("scrollbar-width", "none");
+  expect(await panel.evaluate((element) => element.offsetWidth - element.clientWidth)).toBe(0);
   const filters = dialog.locator(".asset-filters");
   await expect(filters).toHaveCSS("border-bottom-width", "0px");
   await expect(filters).toHaveCSS("padding-bottom", "20px");
@@ -497,9 +503,19 @@ test("我的素材 keeps filters visible while scrolling and separates the curre
   expect(gridAtRest.y).toBeCloseTo(before.y + before.height);
   await dialog.locator(".asset-tile").first().hover();
   await page.mouse.wheel(0, 600);
+  await expect.poll(() => panel.evaluate((el) => el.scrollTop)).toBeGreaterThan(100);
   await expect
-    .poll(() => dialog.locator(".asset-library-panel").evaluate((el) => el.scrollTop))
-    .toBeGreaterThan(100);
+    .poll(async () =>
+      Math.abs(
+        (await panel.evaluate((el) => el.scrollTop)) -
+          (await scrollbar.evaluate((el) => el.scrollTop)),
+      ),
+    )
+    .toBeLessThanOrEqual(1);
+  await scrollbar.evaluate((element) => {
+    element.scrollTop = 160;
+  });
+  await expect.poll(() => panel.evaluate((el) => el.scrollTop)).toBe(160);
   expect(await filters.boundingBox()).toEqual(before);
   expect(
     await filters.evaluate((element, x) => {
