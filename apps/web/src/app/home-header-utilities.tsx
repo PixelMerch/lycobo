@@ -8,25 +8,17 @@ import { shellMessages } from "./shell-messages";
 /** 以鼠标悬停或点按打开共用的创作指南。 */
 export function HeaderCreationGuide({
   dismissVersion,
-  onMenuOpen,
   popoverClassName,
   popoverOffset = 4,
 }: {
   dismissVersion?: number;
-  onMenuOpen?: () => void;
   popoverClassName?: string;
   popoverOffset?: number;
 } = {}) {
   const t = useMessages(shellMessages);
   const menu = useHoverMenu(160, dismissVersion);
   return (
-    <Popover
-      isOpen={menu.isOpen}
-      onOpenChange={(open) => {
-        menu.onOpenChange(open);
-        if (open) onMenuOpen?.();
-      }}
-    >
+    <Popover isOpen={menu.isOpen} onOpenChange={menu.onOpenChange}>
       <Button
         ref={menu.triggerRef}
         isIconOnly
@@ -35,9 +27,7 @@ export function HeaderCreationGuide({
         aria-label={t.creationHelp}
         className="home-header-tool header-creation-guide"
         onPointerEnter={(event) => {
-          if (event.pointerType !== "mouse") return;
-          menu.openOnHover();
-          onMenuOpen?.();
+          if (event.pointerType === "mouse") menu.openOnHover();
         }}
         onPointerLeave={(event) => {
           if (event.pointerType === "mouse") menu.closeSoon();

@@ -1,0 +1,152 @@
+/* 首页与灵感库共用顶栏布局；首页的滚动区由隔离文档提供。 */
+:root:has(.studio-app[data-public-site-header]) {
+  scrollbar-gutter: stable;
+}
+.topbar.public-site-header {
+  gap: 16px;
+  padding-inline: 28px;
+}
+.topbar.public-site-header[data-landing-frame] {
+  position: fixed;
+  inset-inline: 0;
+}
+.topbar.public-site-header[data-scrolled="true"] {
+  height: var(--header-height);
+  margin-bottom: 0;
+}
+.topbar.public-site-header[data-scrolled="true"]::before {
+  background: var(--site-header-scroll-background);
+  -webkit-backdrop-filter: var(--site-header-scroll-blur);
+  backdrop-filter: var(--site-header-scroll-blur);
+  box-shadow: none;
+}
+.public-site-brand.link {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 112px;
+  height: 46px;
+}
+.public-site-brand-art {
+  position: relative;
+  display: block;
+  height: 100%;
+}
+.public-site-brand-art > :is(img, canvas) {
+  position: absolute;
+  inset: 0;
+  width: 155px;
+  max-width: none;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.public-site-brand-art > canvas {
+  visibility: hidden;
+}
+.public-site-brand-art[data-rive-ready] > img {
+  visibility: hidden;
+}
+.public-site-brand-art[data-rive-ready] > canvas {
+  visibility: visible;
+}
+.public-site-wordmark {
+  clip-path: inset(0 0 0 24%);
+  opacity: clamp(0, calc(1 - var(--site-brand-progress, 0) / 0.65), 1);
+  transform: translateX(calc(-23% - 8px * var(--site-brand-progress, 0)));
+}
+.public-site-symbol {
+  clip-path: inset(0 77% 0 0);
+  transform-origin: 11.7% 47.4%;
+  opacity: clamp(0, calc((var(--site-brand-progress, 0) - 0.35) / 0.65), 1);
+  transform: translateX(calc(41.5% * var(--site-brand-progress, 0)))
+    rotate(calc(-45deg * var(--site-brand-progress, 0)));
+}
+@media (prefers-reduced-motion: reduce) {
+  .public-site-wordmark {
+    transform: translateX(-23%);
+  }
+  .public-site-symbol {
+    transform: translateX(41.5%);
+  }
+}
+.public-site-desktop-nav .nav-row {
+  padding-inline: 12px;
+}
+.public-site-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-inline-start: auto;
+}
+.public-site-start.link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  height: var(--control-height-md);
+  padding-inline: var(--control-padding-md);
+  border-radius: 12px;
+  background: var(--studio-accent-gradient);
+  color: var(--studio-canvas);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+.public-site-mobile-nav .nav-row {
+  white-space: normal;
+}
+.public-site-mobile-nav .disclosure__trigger {
+  justify-content: space-between;
+}
+@media (max-width: 1023px) {
+  .topbar.public-site-header {
+    gap: 6px;
+  }
+  .public-site-header .mobile-menu {
+    display: inline-flex;
+    flex: none;
+  }
+  .public-site-header .public-site-desktop-nav {
+    display: none;
+  }
+}
+@media (max-width: 1279px) {
+  .public-site-header[data-signed-in="true"] .mobile-menu {
+    display: inline-flex;
+    flex: none;
+  }
+  .public-site-header[data-signed-in="true"] .public-site-desktop-nav {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  .topbar.public-site-header {
+    padding-inline: 8px;
+  }
+  .public-site-brand.link {
+    width: 72px;
+    height: 36px;
+  }
+  .public-site-brand-art > :is(img, canvas) {
+    width: 122px;
+  }
+  .public-site-actions {
+    gap: 4px;
+  }
+  .public-site-header .landing-account-controls .account-header {
+    display: flex;
+  }
+}
+@media (max-width: 374px) {
+  .topbar.public-site-header {
+    padding-inline: 4px;
+  }
+  .public-site-brand.link {
+    width: 66px;
+  }
+  .public-site-brand-art > :is(img, canvas) {
+    width: 100px;
+  }
+}

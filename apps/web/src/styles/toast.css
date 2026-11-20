@@ -6,7 +6,7 @@
 }
 .toast {
   --glass-fill: none;
-  --glass-tint: var(--site-header-nav-hover-fill);
+  --glass-tint: #1e1e1e;
   inset-inline: auto;
   left: 50%;
   width: max-content;

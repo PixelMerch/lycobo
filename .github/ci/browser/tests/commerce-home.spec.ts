@@ -294,18 +294,37 @@ test("home inspiration loads two batches on scroll, then 查看更多灵感 load
   await expect(more).toHaveCount(0);
 });
 
-test("灵感 in the top bar opens the inspiration library with the new intro", async ({ page }) => {
+test("homepage Examples opens the matching public header and reveals the brand on scroll", async ({
+  page,
+}) => {
   await mockImageApi(page, { signedIn: false });
   await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  const inspirationNav = page
-    .getByRole("navigation", { name: "主导航", exact: true })
-    .getByRole("link", { name: "灵感", exact: true });
-  await expect(inspirationNav).not.toHaveClass(/active/);
-  await inspirationNav.click();
+  const header = page.locator(".public-site-header");
+  const logo = header.locator(".public-site-brand");
+  const actions = header.locator(".public-site-actions");
+  await expect(header.getByRole("link", { name: "开始创作", exact: true })).toBeVisible();
+  const logoOnHome = await logo.boundingBox();
+  const actionsOnHome = await actions.boundingBox();
+  await header.getByRole("link", { name: "效果案例", exact: true }).click();
   await expect(page).toHaveURL(/\/inspiration$/);
   await expect(page.getByRole("heading", { name: "灵感库", level: 1 })).toBeVisible();
-  await expect(inspirationNav).toHaveClass(/active/);
+  expect(await logo.boundingBox()).toEqual(logoOnHome);
+  expect(await actions.boundingBox()).toEqual(actionsOnHome);
+  await expect(header.getByRole("link", { name: "效果案例", exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await expect(header.getByRole("link", { name: "开始创作", exact: true })).toHaveAttribute(
+    "href",
+    /\/dashboard$/,
+  );
+  await expect(header.locator(".public-site-symbol")).toHaveCSS("opacity", "0");
+  await page.evaluate(() => window.scrollTo(0, 600));
+  await expect(header.locator(".public-site-symbol")).toHaveCSS("opacity", "1");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(header.locator(".public-site-symbol")).toHaveCSS("opacity", "0");
   await expect(page.locator(".home-inspiration-card")).toHaveCount(23);
   // 说明只引导“做同款”，不再写“AI 生成的示例，不是客户作品”。
   await expect(page.getByText("挑一张喜欢的画面")).toBeVisible();
@@ -543,31 +562,38 @@ for (const width of [1440, 390]) {
     await mockImageApi(page);
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/");
-    const header = page.locator(".topbar");
+    const header = page.locator(".public-site-header");
+    const frame = page.frameLocator("iframe.openart-reference");
+    const scroll = (top: number) =>
+      frame.locator("html").evaluate((element, scrollY) => {
+        element.ownerDocument.defaultView?.scrollTo(0, scrollY);
+      }, top);
     const surface = () =>
       header.evaluate((element) => {
         const style = getComputedStyle(element, "::before");
         return { background: style.backgroundColor, blur: style.backdropFilter };
       });
     const height = () => header.evaluate((element) => element.getBoundingClientRect().height);
-    const start = page.locator(".home-start");
+    const start = frame.locator(".lycobo-hero-cta");
     const startTop = () =>
       start.evaluate((element) => element.getBoundingClientRect().top + window.scrollY);
     await expect(start).toBeVisible();
     await expect(header).not.toHaveAttribute("data-scrolled");
     expect(await surface()).toEqual({ background: "rgba(0, 0, 0, 0)", blur: "none" });
-    const full = width < 768 ? 60 : 64;
-    expect(await height()).toBe(full);
+    expect(await height()).toBe(60);
     const top = await startTop();
-    // 按 vidmuse：一离开顶部就铺 38% 深色磨砂、收窄 4px，外边距补齐，页面内容不跳动。
-    await page.evaluate(() => window.scrollTo(0, 400));
+    // 隔离正文滚动后共用顶栏铺 38% 炭黑磨砂，布局保持原位。
+    await scroll(400);
     await expect(header).toHaveAttribute("data-scrolled", "true");
-    await expect.poll(surface).toEqual({ background: "rgba(30, 35, 29, 0.38)", blur: "blur(8px)" });
-    await expect.poll(height).toBe(full - 4);
+    await expect.poll(surface).toEqual({
+      background: "color(srgb 0.0705882 0.0705882 0.0705882 / 0.38)",
+      blur: "blur(8px)",
+    });
+    expect(await height()).toBe(60);
     expect(await startTop()).toBe(top);
     expect(await header.evaluate((element) => element.getBoundingClientRect().top)).toBe(0);
     await page.screenshot({ path: `/tmp/lycobo-home-header-frosted-${width}.png` });
-    await page.evaluate(() => window.scrollTo(0, 0));
+    await scroll(0);
     await expect(header).not.toHaveAttribute("data-scrolled");
     await expect.poll(surface).toEqual({ background: "rgba(0, 0, 0, 0)", blur: "none" });
   });

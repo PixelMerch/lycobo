@@ -1,4 +1,4 @@
-/* 顶栏积分胶囊与语言入口对齐，悬停或展开时使用半透明主题底色。 */
+/* 顶栏积分胶囊与语言入口共用半透明底色。 */
 .header-credits {
   display: inline-flex;
   flex: none;
@@ -10,7 +10,7 @@
   padding: 0 12px;
   border: 0;
   border-radius: 999px;
-  background: #ffffff14;
+  background: var(--site-header-button-fill);
   color: #ffffffcc;
   font-family: var(--shell-font-family);
   font-size: var(--text-base);
@@ -21,7 +21,7 @@
   transition: background-color 200ms ease;
 }
 .header-credits:is(:hover, [data-hovered="true"], [aria-expanded="true"]) {
-  background: color-mix(in srgb, var(--brand) 15%, transparent);
+  background: var(--site-header-nav-hover-fill);
 }
 .header-credits[data-focus-visible="true"] {
   outline: 1px solid #ffffff66;

@@ -7,7 +7,7 @@ import {
   IconSpaces,
   IconX,
 } from "@tabler/icons-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Navigate, Outlet } from "react-router";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
@@ -21,6 +21,7 @@ import { useEnterpriseSession } from "../features/auth/auth-client";
 import { loginHref } from "../features/auth/login-navigation";
 import { commercePath, commerceToolHref, commerceTools } from "../features/commerce/commerce-tools";
 import { useImageEvents } from "../features/generation/use-image-events";
+import type { LandingFrame } from "../features/home/landing/landing-frame";
 import { inspirationLibraryPath } from "../features/inspiration/inspiration-path";
 import { legalPaths } from "../features/legal/legal-document";
 import { workspaceToolMessages } from "../features/workspace/workspace-tool-messages";
@@ -31,6 +32,7 @@ import { dashboardPath, freeCanvasPath, isDashboardPath } from "../lib/dashboard
 import { CommerceNavMenu } from "./commerce-nav-menu";
 import { LanguageMenu } from "./language-menu";
 import { PageLoading } from "./page-loading";
+import { PublicSiteHeader } from "./public-site-header";
 import { shellMessages } from "./shell-messages";
 import { SiteHeaderControls, WorkspaceHeaderLink } from "./site-header-controls";
 import { useWindowScrolled } from "./use-window-scrolled";
@@ -51,8 +53,12 @@ export function StudioShell() {
   const location = useAppLocation();
   const { pathname } = location;
   const t = useMessages(shellMessages);
-  const landing = pathname === commercePath;
   const workspace = isDashboardPath(pathname);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const pendingScroll = useRef<number | null>(null);
+  const landingFrame: LandingFrame | undefined =
+    pathname === commercePath ? { frameRef, pendingScroll } : undefined;
+  const publicNavigation = !!landingFrame || pathname === inspirationLibraryPath;
   const session = useEnterpriseSession();
   const signedIn = !!session.data;
   const protectedRoute = !publicPaths.has(pathname);
@@ -65,7 +71,11 @@ export function StudioShell() {
       />
     );
   return (
-    <div className="studio-app" data-workspace-site-header={workspace || undefined}>
+    <div
+      className="studio-app"
+      data-workspace-site-header={workspace || undefined}
+      data-public-site-header={publicNavigation || undefined}
+    >
       {workspace && session.data && (
         <header className="workspace-site-header">
           <RouteLink to="/" className="workspace-site-brand" aria-label={t.home}>
@@ -74,10 +84,17 @@ export function StudioShell() {
           <SiteHeaderControls account={session.data} showWorkspaceLink={false} />
         </header>
       )}
-      {!landing && !workspace && <StudioHeader account={session.data} />}
+      {publicNavigation && (
+        <PublicSiteHeader
+          account={session.data}
+          landingFrame={landingFrame}
+          showStartCreating={!session.isPending && !signedIn}
+        />
+      )}
+      {!publicNavigation && !workspace && <StudioHeader account={session.data} />}
       <main className="main-content">
         {routeNeedsLogin && session.isPending && <PageLoading />}
-        {!routeNeedsLogin && <Outlet />}
+        {!routeNeedsLogin && <Outlet context={landingFrame} />}
       </main>
       <RealtimeEvents />
       {signedIn && <AccountOverlayHost />}
@@ -86,7 +103,7 @@ export function StudioShell() {
   );
 }
 
-/** 其余页面保留原工作区和账户导航。 */
+/** 常规页面沿用站内导航和账户入口。 */
 function StudioHeader({ account }: { account: ReturnType<typeof useEnterpriseSession>["data"] }) {
   const scrolled = useWindowScrolled();
   const [menuOpen, setMenuOpen] = useState(false);

@@ -217,7 +217,7 @@
   [aria-expanded="true"],
   :focus-visible
 )::before {
-  background-color: var(--site-header-nav-hover-fill);
+  background-color: var(--fill-medium);
 }
 .workspace-tool-shortcut:is(.button, .workspace-tool-group)[data-current="true"] {
   color: var(--control-selected-foreground);

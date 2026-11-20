@@ -1,14 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
-import { SiteHeaderControls } from "../../../app/site-header-controls";
+import { useEffect, useMemo } from "react";
+import { useOutletContext } from "react-router";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
-import { useEnterpriseSession } from "../../auth/auth-client";
-import { LandingBrandCanvas } from "./landing-brand-canvas";
+import { useAppNavigate } from "../../../i18n/use-localized-navigation";
 import { landingCopy } from "./landing-copy";
+import { type LandingFrame, readLandingNavigation, scrollLandingFrame } from "./landing-frame";
 import { referenceMessages } from "./reference-messages";
 import { renderLandingDocument } from "./render-landing-document";
-import { useLandingLanguage } from "./use-landing-language";
 import "./reference.css";
 
 async function loadLandingTemplate(signal: AbortSignal) {
@@ -21,9 +20,8 @@ async function loadLandingTemplate(signal: AbortSignal) {
 export function LandingPage() {
   const locale = useLocale();
   const t = useMessages(referenceMessages);
-  const { data: account } = useEnterpriseSession();
-  const { frameRef, anchor, dismissVersion, prepareLanguageChange, syncFrame, closeNavigation } =
-    useLandingLanguage(!!account);
+  const { frameRef, pendingScroll } = useOutletContext<LandingFrame>();
+  const navigate = useAppNavigate();
   const { data, isError } = useQuery({
     queryKey: ["commerce-landing-template"],
     queryFn: ({ signal }) => loadLandingTemplate(signal),
@@ -33,6 +31,31 @@ export function LandingPage() {
     () => (data ? renderLandingDocument(data, landingCopy(locale), locale) : undefined),
     [data, locale],
   );
+  useEffect(() => {
+    function followLink(event: MessageEvent<unknown>) {
+      // sandbox 的来源为 null，只接收本页所持窗口的消息。
+      if (event.source !== frameRef.current?.contentWindow) return;
+      const path = readLandingNavigation(event.data);
+      if (path) void navigate(path);
+    }
+    window.addEventListener("message", followLink);
+    return () => window.removeEventListener("message", followLink);
+  }, [frameRef, navigate]);
+
+  useEffect(
+    () => () => {
+      pendingScroll.current = null;
+    },
+    [pendingScroll],
+  );
+
+  function restoreScroll() {
+    const scrollY = pendingScroll.current;
+    if (scrollY === null) return;
+    pendingScroll.current = null;
+    scrollLandingFrame(frameRef, scrollY);
+  }
+
   if (!document) {
     return (
       <div className="openart-reference landing-load-state" role="status">
@@ -41,26 +64,14 @@ export function LandingPage() {
     );
   }
   return (
-    <>
-      <iframe
-        ref={frameRef}
-        onLoad={syncFrame}
-        className="openart-reference"
-        title={t.title}
-        srcDoc={document}
-        sandbox="allow-scripts"
-        referrerPolicy="no-referrer"
-      />
-      <LandingBrandCanvas frameRef={frameRef} document={document} />
-      {anchor && !anchor.menuOpen && (
-        <SiteHeaderControls
-          account={anchor.signedIn ? account : undefined}
-          dismissVersion={dismissVersion}
-          onLanguageChange={prepareLanguageChange}
-          onMenuOpen={closeNavigation}
-          style={{ left: anchor.x, top: anchor.y, width: anchor.width, height: anchor.height }}
-        />
-      )}
-    </>
+    <iframe
+      ref={frameRef}
+      onLoad={restoreScroll}
+      className="openart-reference"
+      title={t.title}
+      srcDoc={document}
+      sandbox="allow-scripts"
+      referrerPolicy="no-referrer"
+    />
   );
 }

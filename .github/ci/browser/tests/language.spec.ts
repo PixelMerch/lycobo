@@ -19,8 +19,7 @@ test.describe("English browser", () => {
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page).toHaveTitle("Lycobo · E-commerce Creative Studio");
-    const navigation = page.frameLocator("iframe.openart-reference").locator("[data-nav-items]");
-    const items = navigation.locator(".nav-item:not([data-nav-more]) > a");
+    const items = page.locator(".public-site-desktop-nav > .nav-row");
     await expect(items).toHaveText([
       "Product Images",
       "Textile Variations",
@@ -93,8 +92,7 @@ test.describe("Japanese browser", () => {
     await mockImageApi(page, { signedIn: false });
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
-    const navigation = page.frameLocator("iframe.openart-reference").locator("[data-nav-items]");
-    await expect(navigation.locator(".nav-item:not([data-nav-more]) > a")).toHaveText([
+    await expect(page.locator(".public-site-desktop-nav > .nav-row")).toHaveText([
       "Product Images",
       "Textile Variations",
       "Examples",
@@ -104,14 +102,16 @@ test.describe("Japanese browser", () => {
 });
 
 for (const width of [320, 1440]) {
-  test(`Chinese browser shows the language entry left of login at ${width}px`, async ({ page }) => {
+  test(`Chinese browser shows the language entry left of Start Creating at ${width}px`, async ({
+    page,
+  }) => {
     await mockImageApi(page, { signedIn: false });
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
     const language = page.getByRole("button", { name: "语言：简体中文", exact: true });
     await expect(language).toBeVisible();
-    await expectLeftOf(page, ".language-trigger", ".header-login");
+    await expectLeftOf(page, ".language-trigger", ".public-site-start");
     // 手机只留地球图标，顶部栏不能被挤出横向滚动。
     if (width < 768) {
       await expect(language.locator(".language-trigger-name")).toBeHidden();

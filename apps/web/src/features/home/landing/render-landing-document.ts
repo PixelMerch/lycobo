@@ -9,16 +9,13 @@ import throwBedroom from "../../../../public/landing/showcase/mint-throw-bedroom
 import throwSofa from "../../../../public/landing/showcase/mint-throw-sofa.webp?inline";
 import throwSource from "../../../../public/landing/showcase/mint-throw-source.webp?inline";
 import throwTexture from "../../../../public/landing/showcase/mint-throw-texture.webp?inline";
-import headerAppearance from "../../../app/site-header-appearance.css?raw";
 import type { Locale } from "../../../i18n/locale";
 import studioPalette from "../../../styles/studio-palette.css?raw";
-import { initializeLandingBrandScroll } from "./landing-brand-scroll";
 import { initializeLandingFeatureScroll } from "./landing-feature-scroll";
+import { initializeLandingFrameBridge } from "./landing-frame-bridge";
 import heroStyles from "./landing-hero.css?raw";
 import heroTemplate from "./landing-hero.html?raw";
 import { initializeLandingHeroScroll } from "./landing-hero-scroll";
-import { initializeLandingNavBridge } from "./landing-nav-bridge";
-import { renderLandingNavigation } from "./landing-navigation";
 import landingPalette from "./landing-palette.css?raw";
 import { initializeLandingScrollbar } from "./landing-scrollbar";
 import showcaseStyles from "./landing-showcase.css?raw";
@@ -58,14 +55,8 @@ export function renderLandingDocument(
   messages: Record<string, string>,
   locale: Locale,
 ) {
-  const navigation = renderLandingNavigation(locale, escapeHtml);
   return template
-    .replace("__LYCOBO_DESKTOP_NAV_ITEMS__", () => navigation.desktop)
-    .replace("__LYCOBO_NAV_PANELS__", () => navigation.panels)
-    .replace("__LYCOBO_MOBILE_NAV_ITEMS__", () => navigation.mobile)
-    .replace("__LYCOBO_LANDING_APPEARANCE__", () =>
-      [studioPalette, headerAppearance, landingPalette].join("\n"),
-    )
+    .replace("__LYCOBO_LANDING_APPEARANCE__", () => [studioPalette, landingPalette].join("\n"))
     .replace("__LYCOBO_HERO_STYLE__", () => heroStyles + showcaseStyles)
     .replace("__LYCOBO_HERO__", () => hero)
     .replace(
@@ -74,9 +65,8 @@ export function renderLandingDocument(
 (${initializeLandingShowcaseScroll.toString()})();`,
     )
     .replace(
-      "__LYCOBO_BRAND_SCROLL_SCRIPT__",
-      `window.addEventListener("load", ${initializeLandingBrandScroll.toString()}, { once: true });
-window.addEventListener("load", ${initializeLandingNavBridge.toString()}, { once: true });`,
+      "__LYCOBO_LANDING_FRAME_SCRIPT__",
+      () => `(${initializeLandingFrameBridge.toString()})();`,
     )
     .replace(
       "__LYCOBO_FEATURE_SCROLL_SCRIPT__",

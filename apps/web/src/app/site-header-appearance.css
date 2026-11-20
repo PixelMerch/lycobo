@@ -1,15 +1,19 @@
-/* 宿主顶栏和隔离首页共用下拉材质及悬停颜色。 */
+/* 站点顶栏、工作区工具和菜单共用交互配色。 */
 :root {
-  --site-header-nav-hover-fill: #1e1e1e;
-  --workspace-tool-selected-fill: #262626;
+  --site-header-button-fill: var(--fill-medium, #ffffff14);
+  --site-header-nav-hover-fill: #ffffff24;
+  --workspace-tool-selected-fill: #303030;
+  --site-header-scroll-background: color-mix(in srgb, var(--studio-canvas) 38%, transparent);
+  --site-header-scroll-blur: blur(8px);
   --site-header-menu-hover-fill: #ffffff0f;
   --site-header-menu-background: rgb(50 50 50 / 90%);
   --site-header-menu-blur: blur(14px);
-  --site-header-menu-shadow: var(--glass-shadow, 24px 24px 48px rgb(0 0 0 / 15%));
 }
 
 @media (prefers-reduced-transparency: reduce) {
   :root {
+    --site-header-scroll-background: var(--studio-canvas);
+    --site-header-scroll-blur: none;
     --site-header-menu-background: #2b2b2b;
     --site-header-menu-blur: none;
   }
@@ -17,6 +21,7 @@
 
 @supports not (backdrop-filter: blur(1px)) {
   :root {
+    --site-header-scroll-background: var(--studio-canvas);
     --site-header-menu-background: #2b2b2b;
   }
 }

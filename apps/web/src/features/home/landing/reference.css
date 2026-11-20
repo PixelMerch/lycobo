@@ -1,4 +1,4 @@
-/* 复刻稿独立占据视口，避免业务导航和样式改变原版布局。 */
+/* 隔离正文占据视口，宿主顶栏覆盖在内容上方。 */
 body:has(.openart-reference) {
   overflow: hidden;
 }
@@ -6,7 +6,7 @@ body:has(.openart-reference) {
   position: fixed;
   inset: 0;
   z-index: 10;
-  width: 100%;
+  width: 100vw;
   height: 100dvh;
   border: 0;
   background: var(--studio-canvas);
@@ -15,12 +15,4 @@ body:has(.openart-reference) {
   display: grid;
   place-items: center;
   color: #f5f5f5;
-}
-
-/* Rive 只覆盖品牌图像，指针与键盘仍由隔离页的原始链接处理。 */
-.landing-brand-canvas {
-  position: fixed;
-  z-index: 49;
-  pointer-events: none;
-  visibility: hidden;
 }

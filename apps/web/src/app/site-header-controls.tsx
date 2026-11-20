@@ -1,5 +1,4 @@
 import { IconLayoutDashboard } from "@tabler/icons-react";
-import type { CSSProperties } from "react";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
 import { AccountMenu } from "../features/account/menu/account-menu";
@@ -14,28 +13,22 @@ import "./site-header-controls.css";
 
 const popoverOffset = 18;
 
-/** 首页与创作页共用顶栏控件，创作页可省略工作区入口。 */
+/** 首页、灵感库与创作页共用的顶栏控件，创作页可省略工作区入口。 */
 export function SiteHeaderControls({
   account,
   dismissVersion = 0,
   onLanguageChange,
-  onMenuOpen,
   showWorkspaceLink = true,
-  style,
 }: {
   account: ReturnType<typeof useEnterpriseSession>["data"];
   dismissVersion?: number;
   onLanguageChange?: () => void;
-  onMenuOpen?: () => void;
   showWorkspaceLink?: boolean;
-  style?: CSSProperties;
 }) {
-  const menuCallbacks = onMenuOpen ? { onMenuOpen } : {};
   return (
-    <div className="landing-header-controls" style={style}>
+    <div className="landing-header-controls">
       <HeaderCreationGuide
         dismissVersion={dismissVersion}
-        {...menuCallbacks}
         popoverClassName="landing-control-popover"
         popoverOffset={popoverOffset}
       />
@@ -48,7 +41,6 @@ export function SiteHeaderControls({
           popoverClassName="landing-control-popover landing-language-popover"
           hoverCloseDelay={100}
           popoverOffset={popoverOffset}
-          {...menuCallbacks}
         />
       </div>
       {account && (

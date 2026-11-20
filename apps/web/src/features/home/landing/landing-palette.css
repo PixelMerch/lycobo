@@ -12,9 +12,13 @@
 }
 
 body,
-:is(.oah-social-proof-section, .oah-news-section, #navv3-mobile-menu, #navv3-mobile-menu > .sticky),
+:is(.oah-social-proof-section, .oah-news-section),
 .footer-v3[data-footerv3-variant="dark"][data-astro-cid-jfcdznaq] {
   background: var(--studio-canvas);
+}
+
+.lycobo-header-spacer {
+  height: var(--studio-header-height);
 }
 
 .oah-director-section {
@@ -91,12 +95,12 @@ body,
   color: var(--studio-primary-action);
 }
 
-:is([data-navv3-cta], #navv3-mobile-menu [data-pageforge-source="start_for_free"], #cta a) {
+#cta a {
   background: var(--studio-accent-gradient);
   color: var(--studio-canvas);
 }
 
-:is([data-navv3-cta], #navv3-mobile-menu [data-pageforge-source="start_for_free"], #cta a):hover,
+#cta a:hover,
 .lycobo-hero-cta:hover {
   filter: brightness(1.04);
 }

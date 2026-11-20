@@ -140,7 +140,7 @@
   --glass-card: #ffffff08;
   --glass-card-edge: #ffffff0f;
 }
-:root:has(.openart-reference, .studio-app[data-workspace-site-header]) {
+:root:has(.studio-app:is([data-workspace-site-header], [data-public-site-header])) {
   --background: var(--studio-canvas);
   --brand: var(--foreground);
   --brand-light: var(--foreground);

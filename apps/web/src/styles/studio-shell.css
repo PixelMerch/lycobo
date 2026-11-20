@@ -256,11 +256,11 @@
   height: var(--shell-pill-height);
   min-height: var(--shell-pill-height);
   border-radius: 50%;
-  background: #ffffff14;
+  background: var(--site-header-button-fill);
   color: #ffffffcc;
 }
 .header-news .account-footer-action.button:is(:hover, [data-hovered="true"]) {
-  background: #ffffff24;
+  background: var(--site-header-nav-hover-fill);
   color: #fff;
 }
 /* 登录按钮沿用品牌主色。 */

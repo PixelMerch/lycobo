@@ -5,15 +5,13 @@
   --landing-control-font-size: 14px;
   --landing-control-line-height: 20px;
 }
-/* 账户与语言控件对齐模板的占位区，保持菜单与账户数据在宿主页面。 */
+/* 账户与语言控件用于公共顶栏和工作区顶栏。 */
 .landing-header-controls {
   --landing-control-gap: 8px;
   --landing-control-fill-radius: var(--control-pill-radius);
   --landing-text-control-padding: 12px;
   --landing-control-color: #ffffffcc;
   --landing-control-hover-color: #fff;
-  position: fixed;
-  z-index: 50;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -47,11 +45,11 @@
   height: var(--control-height-md);
   padding-inline: var(--control-padding-md);
   border-radius: var(--control-radius);
-  background: var(--control-hover-fill);
+  background: var(--site-header-button-fill);
   color: var(--foreground);
 }
 .header-actions .header-workspace.link:is(:hover, [data-hovered="true"]) {
-  background: var(--control-pressed-fill);
+  background: var(--site-header-nav-hover-fill);
 }
 @media (max-width: 1319px) {
   .header-workspace.link {
@@ -80,7 +78,10 @@
   font-size: var(--landing-control-font-size);
 }
 .landing-account-controls .account-avatar[data-avatar-preset] {
-  --avatar-from: var(--workspace-tool-selected-fill);
+  --avatar-from: var(--site-header-button-fill);
+}
+.landing-account-controls .account-avatar[data-avatar-preset] .avatar__fallback {
+  background: transparent;
 }
 .landing-header-controls
   :is(
@@ -122,8 +123,9 @@
   inset-block-start: 50%;
   height: var(--landing-control-fill-height);
   border-radius: inherit;
-  background: var(--workspace-tool-selected-fill);
+  background: var(--site-header-button-fill);
   transform: translateY(-50%);
+  transition: background-color 150ms ease;
   pointer-events: none;
   content: "";
 }
@@ -169,6 +171,15 @@
   background: transparent;
   color: var(--landing-control-hover-color);
 }
+.landing-header-controls
+  :is(.language-trigger, .header-credits, .header-creation-guide.button, .header-workspace):is(
+    :hover,
+    [data-hovered="true"],
+    [aria-expanded="true"],
+    [data-focus-visible="true"]
+  )::before {
+  background-color: var(--site-header-nav-hover-fill);
+}
 .landing-account-controls
   .account-trigger:is(
     :hover,
@@ -177,6 +188,16 @@
     [aria-expanded="true"]
   ) {
   background: transparent;
+}
+.landing-account-controls
+  .account-trigger:is(
+    :hover,
+    [data-hovered="true"],
+    [aria-expanded="true"],
+    [data-focus-visible="true"]
+  )
+  .account-avatar[data-avatar-preset] {
+  --avatar-from: var(--site-header-nav-hover-fill);
 }
 .landing-header-controls
   :is(
@@ -293,15 +314,22 @@
       .header-creation-guide,
       .header-workspace
     ),
+  .landing-header-controls
+    :is(
+      .language-trigger,
+      .header-credits,
+      .header-creation-guide.button,
+      .header-workspace
+    )::before,
   .landing-language-control .language-trigger-chevron,
   :root .landing-control-popover :is(.menu-item, .account-menu-row)::before {
     transition: none;
   }
 }
 
-/* 工作区和首页共享控件；工作区的顶栏本身占据正常页面空间。 */
-.studio-app[data-workspace-site-header] {
-  --header-height: 60px;
+/* 工作区顶栏占据正常页面空间，公共页面共用右侧控件。 */
+.studio-app:is([data-workspace-site-header], [data-public-site-header]) {
+  --header-height: var(--studio-header-height);
 }
 .workspace-site-header {
   position: sticky;
@@ -316,7 +344,6 @@
   background: var(--studio-canvas);
 }
 .workspace-site-header > .landing-header-controls {
-  position: static;
   min-width: 0;
 }
 .workspace-site-header .workspace-site-brand {

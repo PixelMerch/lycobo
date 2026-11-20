@@ -18,7 +18,6 @@ export function LanguageMenu({
   popoverClassName = "",
   hoverCloseDelay,
   popoverOffset = 4,
-  onMenuOpen,
   dismissVersion = 0,
 }: {
   account: EnterpriseIdentity | null | undefined;
@@ -27,7 +26,6 @@ export function LanguageMenu({
   popoverClassName?: string;
   hoverCloseDelay?: number;
   popoverOffset?: number;
-  onMenuOpen?: () => void;
   dismissVersion?: number;
 }) {
   const locale = useLocaleStore((state) => state.locale);
@@ -43,23 +41,14 @@ export function LanguageMenu({
     changeLanguage(next);
   }
   return (
-    <Dropdown
-      isOpen={menu.isOpen}
-      onOpenChange={(open) => {
-        menu.onOpenChange(open);
-        if (open) onMenuOpen?.();
-      }}
-    >
+    <Dropdown isOpen={menu.isOpen} onOpenChange={menu.onOpenChange}>
       <Dropdown.Trigger
         ref={menu.triggerRef}
         className="language-trigger"
         isDisabled={isSaving}
         aria-label={t.language(localeNames[locale])}
         onPointerEnter={(event) => {
-          if (event.pointerType === "mouse") {
-            menu.openOnHover();
-            onMenuOpen?.();
-          }
+          if (event.pointerType === "mouse") menu.openOnHover();
         }}
         onPointerLeave={(event) => {
           if (event.pointerType === "mouse") menu.closeSoon();

@@ -81,7 +81,7 @@ apps/web/src/
     ├── free-canvas/              # 自由画布：Konva 舞台、画布状态与本机存储，生成结果放回画布
     ├── video/                    # 视频页面、请求与草稿；history / player / production / storyboard 分职责
     ├── home/                     # 仅保留当前首页落地页
-    │   └── landing/              # 当前布局、双语文案、隔离模板与滚动动画；品牌 Rive 由宿主 Canvas 按隔离页进度绘制
+    │   └── landing/              # 双语正文、隔离模板与正文滚动动画；向宿主报告滚动位置
     ├── inspiration/              # 灵感库页面、示例数据与作品墙；素材库复用同一浏览组件
     ├── site/                     # 站点页脚：首页与用户协议、隐私政策页共用
     ├── legal/                    # 用户协议与隐私政策公开页；运营主体等待补信息集中在 legal-entity-messages.ts
@@ -102,6 +102,7 @@ apps/web/src/
 - 已登录顶栏的「工作区」指向 `/:locale/dashboard`，按最近使用的工具打开，首次进入默认主图制作。创作工具、自由画布和素材页统一使用 `/dashboard` 前缀，旧地址保留语言、查询参数与定位后跳到新地址。`features/workspace` 组合参数子路由、随功能切换的历史及工具栏。
 - `features/auth/login-prompt.tsx` 共享登录导航与首页创作交互门禁；Header及首页操作前往懒加载的 `/login`，`login-navigation.ts` 校验站内返回地址。`login-page.tsx` 在青柠丝绸背景（`login-backdrop.tsx`）上居中固定尺寸玻璃卡片并负责翻面，版式在同目录 `login-page.css`；`login-methods.tsx` 按服务端可用状态展示 Google、Apple 与邮箱入口，`social-login-client.ts` 发起本地 Supabase OAuth，`email-login.tsx` 处理邮箱验证码与 Turnstile，`enterprise-login.tsx` 保留真实密码认证。`app/studio-shell.tsx` 在登录状态确认前不挂载非首页业务内容，未登录时重定向；登录页不挂载应用壳或实时连接，回到业务页后按原有持久游标重连补齐。
 - `app/studio-shell.tsx` 组合导航、身份门禁、账户和生图事件；`use-window-scrolled.ts` 提供页面是否离开顶部，顶部栏据此切换透明与滚动磨砂。路由页面留在各 feature。首页、工作台和素材页继续由路由懒加载，`image-workspace/preview-workspace.tsx` 及 Konva 继续按预览需要加载。
+- 首页与灵感库在 `StudioShell` 中共用 `PublicSiteHeader`。`PublicSiteNavigation` 使用工作区目录生成桌面下拉与手机折叠菜单，`SiteHeaderControls` 也供工作区使用。共用顶栏根据宿主或隔离正文的滚动距离绘制 Rive 品牌时间轴。
 - `generation/generation-client.ts` 维护现有生图、历史和素材 API 查询与缓存，被历史、素材库和编辑工作区直接引用；目录维护不改变 query key 或增加请求层。
 - `assets/asset-library-client.ts` 负责素材库查询（来源含 AI 生成的功能、类型、时间与仅看收藏，素材库页面写入地址栏）和服务端收藏：一个有上限的收藏 ID 查询供所有星标共用，切换乐观更新、失败回滚；`asset-browser.tsx` 组合 `asset-filters.tsx`、`asset-selection.tsx`（多选与批量下载，打包在 `asset-archive.ts`）、`asset-tile.tsx` 与现有图片预览，`asset-masonry.tsx` 订阅网格宽度并组合原比例瀑布流，`asset-layout.ts` 提供列数、按天分组与保持输入顺序的最短列定位纯函数。`asset-library-tabs.tsx` 是“我的素材 / 灵感库”标签行；`assets-page.tsx` 与 `library-dialog.tsx`（工作区打开，来源默认当前功能）只组合标签、浏览组件与灵感库的作品墙。生成记录整组下载与素材批量下载共用 `generation/original-download.ts` 读取原文件。
 - `generation/studio-state.ts` 保留原有客户端草稿、跨页面交互状态及样例定义，现有引用直接指向它；目录归类不把样例转换成持久服务，也不改变状态生命周期。
