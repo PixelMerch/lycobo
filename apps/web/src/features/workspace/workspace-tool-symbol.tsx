@@ -1,5 +1,4 @@
 import { IconCamera, IconCopy, IconLayoutCollage, IconMovie, IconWand } from "@tabler/icons-react";
-import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
 import { useAppLocation } from "../../i18n/use-localized-navigation";
 import { useComposerHeroScroll } from "./use-composer-hero-scroll";
@@ -15,15 +14,6 @@ export const toolIcons = {
   replica: IconCopy,
   video: IconMovie,
 };
-
-/** 工具入口使用统一线性图标，颜色由当前状态决定。 */
-export function WorkspaceToolSymbol({ tool }: { tool: ToolId }) {
-  return (
-    <span className="workspace-tool-symbol" data-tool={tool} aria-hidden="true">
-      <UiIcon icon={toolIcons[tool]} size="navigation" />
-    </span>
-  );
-}
 
 /** 用横幅内的示例图和文字说明当前工具的用途。 */
 export function WorkspaceComposerTitle() {

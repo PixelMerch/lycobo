@@ -35,12 +35,6 @@
   color: var(--muted);
 }
 
-.video-ratio h2 {
-  margin: 0 0 10px;
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-  font-weight: var(--weight-medium);
-}
 .video-duration-slider.slider {
   display: flex;
   flex-direction: column;
@@ -136,9 +130,6 @@
   cursor: ew-resize;
 }
 
-.video-ratio .ratio-heading h2 {
-  margin: 0;
-}
 .video-duration-slider .video-duration-current {
   display: flex;
   align-items: center;

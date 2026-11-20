@@ -1,158 +1,43 @@
-import { Button, Popover, ToggleButton, ToggleButtonGroup, Toolbar } from "@heroui/react";
-import { IconChevronLeft, IconChevronRight, IconLayersIntersect, IconX } from "@tabler/icons-react";
-import {
-  type Key,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { Button, ToggleButton, ToggleButtonGroup, Toolbar } from "@heroui/react";
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { SelectionPill } from "../../../components/selection-pill";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { composerMessages } from "./composer-messages";
-import { SelectionHighlight } from "./selection-highlight";
 
-const commonRatios = ["1:1", "16:9", "2:1", "3:2", "4:3"];
-const additionalRatios = ["21:9", "9:16", "1:2", "2:3", "3:4", "9:21"];
 const homeRatios = ["1:1", "2:3", "3:2", "9:16", "16:9", "3:4", "4:3", "21:9"];
 
-function subscribeRatioViewport(onChange: () => void) {
-  const media = window.matchMedia("(min-width: 900px)");
-  media.addEventListener("change", onChange);
-  return () => media.removeEventListener("change", onChange);
-}
-const getRatioViewport = () => window.matchMedia("(min-width: 900px)").matches;
-const getServerRatioViewport = () => false;
-
-/** 工作台与首页设置共用的图片比例选择器。 */
-export function RatioPicker({
+/** 创作工具共用的比例字段，统一标题、当前值和翻页选项。 */
+export function AspectRatioField({
+  label,
   value,
+  ratios = homeRatios,
   onChange,
 }: {
+  label: string;
   value: string;
+  ratios?: readonly string[];
   onChange: (ratio: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const groupRef = useRef<HTMLElement>(null);
-  const t = useMessages(composerMessages);
-  const wideViewport = useSyncExternalStore(
-    subscribeRatioViewport,
-    getRatioViewport,
-    getServerRatioViewport,
-  );
-  const extendedSelected = additionalRatios.includes(value);
-  const select = (keys: Set<Key>) => {
-    const [next] = [...keys];
-    if (next === undefined) return;
-    onChange(String(next));
-    if (additionalRatios.includes(String(next))) setOpen(false);
-  };
   return (
-    <section ref={groupRef} className="parameter-group ratio-group" aria-label={t.aspectRatio}>
+    <section className="parameter-group ratio-group" aria-label={label}>
       <div className="ratio-heading">
-        <h2>{t.aspectRatio}</h2>
-        <Popover isOpen={open} onOpenChange={setOpen}>
-          <Button className="ratio-expand" variant="tertiary" aria-label={t.expandRatios}>
-            <span>{value}</span>
-            <span className="ratio-chevron">
-              <UiIcon icon={IconChevronRight} size="small" />
-            </span>
-          </Button>
-          <Popover.Content
-            triggerRef={groupRef}
-            placement={wideViewport ? "right top" : "bottom start"}
-            offset={wideViewport ? 32 : 8}
-            shouldFlip={!wideViewport}
-            className="ratio-popover"
-          >
-            <Popover.Dialog className="ratio-popover-dialog" aria-label={t.moreRatios}>
-              <div className="ratio-popover-heading">
-                <Popover.Heading>{t.aspectRatio}</Popover.Heading>
-                <Button
-                  isIconOnly
-                  variant="tertiary"
-                  className="icon-button ratio-close"
-                  aria-label={t.closeRatios}
-                  onPress={() => setOpen(false)}
-                >
-                  <span className="ratio-close-visual">
-                    <UiIcon icon={IconX} />
-                  </span>
-                </Button>
-              </div>
-              <ToggleButtonGroup
-                aria-label={t.moreRatios}
-                className="parameter-options ratio-options ratio-extra-options"
-                disallowEmptySelection
-                isDetached
-                selectedKeys={extendedSelected ? [value] : []}
-                selectionMode="single"
-                onSelectionChange={select}
-              >
-                {additionalRatios.map((ratio) => (
-                  <ToggleButton key={ratio} id={ratio}>
-                    <RatioPreview ratio={ratio} />
-                    <span>{ratio}</span>
-                  </ToggleButton>
-                ))}
-              </ToggleButtonGroup>
-            </Popover.Dialog>
-          </Popover.Content>
-        </Popover>
+        <h2>{label}</h2>
+        <span className="ratio-current">{value}</span>
       </div>
-      <div className="parameter-options ratio-options">
-        <ToggleButtonGroup
-          aria-label={t.commonRatios}
-          className="ratio-common-options"
-          disallowEmptySelection
-          isDetached
-          selectedKeys={commonRatios.includes(value) ? [value] : []}
-          selectionMode="single"
-          onSelectionChange={select}
-        >
-          {commonRatios.map((ratio) => (
-            <ToggleButton key={ratio} id={ratio}>
-              <RatioPreview ratio={ratio} />
-              <span>{ratio}</span>
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
-        <Button
-          className="ratio-more"
-          variant="tertiary"
-          aria-label={t.moreRatios}
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          data-selected={extendedSelected || undefined}
-          onPress={() => setOpen(true)}
-        >
-          {extendedSelected ? (
-            <RatioPreview ratio={value} />
-          ) : (
-            <span className="ratio-preview ratio-more-icon">
-              <UiIcon icon={IconLayersIntersect} />
-            </span>
-          )}
-          <span>{extendedSelected ? value : t.more}</span>
-        </Button>
-      </div>
+      <RatioOptions value={value} ratios={ratios} onChange={onChange} />
     </section>
   );
 }
 
-/** 首页设置里可横向翻页的图片比例选择器。 */
-export function HomeRatioPicker({
+function RatioOptions({
   value,
   onChange,
-  ratios = homeRatios,
-  stretchSelection = false,
+  ratios,
 }: {
   value: string;
-  ratios?: readonly string[];
-  stretchSelection?: boolean;
+  ratios: readonly string[];
   onChange: (ratio: string) => void;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -231,15 +116,12 @@ export function HomeRatioPicker({
         {ratios.map((ratio) => (
           <ToggleButton key={ratio} id={ratio}>
             <span className="ratio-option-visual">
-              {!stretchSelection && ratio === value && (
-                <SelectionHighlight layoutId="home-ratio-selection" layoutDependency={value} />
-              )}
               <RatioPreview ratio={ratio} />
               {ratio}
             </span>
           </ToggleButton>
         ))}
-        {stretchSelection && <SelectionPill value={value} />}
+        <SelectionPill value={value} />
       </ToggleButtonGroup>
       {edges.start && (
         <Button
@@ -269,7 +151,7 @@ export function HomeRatioPicker({
   );
 }
 
-export function RatioPreview({ ratio }: { ratio: string }) {
+function RatioPreview({ ratio }: { ratio: string }) {
   const [horizontal = 1, vertical = 1] = ratio.split(":").map(Number);
   const proportion = horizontal / vertical;
   const width = 24 * Math.min(1, proportion);

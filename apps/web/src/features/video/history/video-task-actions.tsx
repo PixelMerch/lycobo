@@ -1,12 +1,13 @@
 import { Button, Link, Tooltip } from "@heroui/react";
 import { type VideoTask, videoUnitCredits } from "@lycoboai/contracts";
 import { IconDownload, IconEdit, IconRefresh } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { assetContentUrl } from "../../generation/generation-client";
+import { useHistoryActionsWidth } from "../../generation/history/use-history-actions-width";
 import { useSubmitVideo, useVideoModel } from "../video-client";
 import { videoHistoryMessages } from "./video-history-messages";
 
@@ -14,24 +15,7 @@ import { videoHistoryMessages } from "./video-history-messages";
 export function VideoTaskActions({ task, onEdit }: { task: VideoTask; onEdit: () => void }) {
   const t = useMessages(videoHistoryMessages);
   const [confirm, setConfirm] = useState(false);
-  const actionsRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const actions = actionsRef.current;
-    const article = actions?.closest<HTMLElement>(".generation-job");
-    if (!actions || !article) return;
-    const measure = () =>
-      article.style.setProperty(
-        "--history-actions-width",
-        `${actions.getBoundingClientRect().width}px`,
-      );
-    const observer = new ResizeObserver(measure);
-    observer.observe(actions);
-    measure();
-    return () => {
-      observer.disconnect();
-      article.style.removeProperty("--history-actions-width");
-    };
-  }, []);
+  const actionsRef = useHistoryActionsWidth();
   const submission = useSubmitVideo();
   const model = useVideoModel();
   useErrorToast(submission.error?.message);

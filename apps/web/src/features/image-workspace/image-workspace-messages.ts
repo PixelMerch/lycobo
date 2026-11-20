@@ -5,17 +5,7 @@ export const imageWorkspaceMessages = defineMessages({
   "zh-CN": {
     info: "图片信息",
     closePreview: "关闭图片预览",
-    unfavorite: "取消收藏",
-    favoriteImage: "收藏图片",
-    favorite: "收藏",
-    download: "下载",
-    taskId: "任务ID：",
-    copyTaskId: (id: string) => `复制任务 ID ${id}`,
-    imageId: "图片ID：",
-    copyImageId: (id: string) => `复制图片 ID ${id}`,
-    description: "创意描述",
-    copyDescription: "复制创意描述",
-    references: "参考图",
+    favoriteAsset: "收藏图片",
     localEdit: "局部编辑",
     rail: {
       image: {
@@ -76,17 +66,7 @@ export const imageWorkspaceMessages = defineMessages({
   en: {
     info: "Image information",
     closePreview: "Close image preview",
-    unfavorite: "Remove from favorites",
-    favoriteImage: "Add to favorites",
-    favorite: "Favorite",
-    download: "Download",
-    taskId: "Task ID: ",
-    copyTaskId: (id) => `Copy task ID ${id}`,
-    imageId: "Image ID: ",
-    copyImageId: (id) => `Copy image ID ${id}`,
-    description: "Description",
-    copyDescription: "Copy description",
-    references: "References",
+    favoriteAsset: "Add to favorites",
     localEdit: "Edit area",
     rail: {
       image: {

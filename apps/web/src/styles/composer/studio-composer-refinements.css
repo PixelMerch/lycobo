@@ -35,7 +35,7 @@
   color: #eee;
 }
 
-/* Workspace ratio pager mirrors the home ratio selector. */
+/* 工作区比例选项和滑动底板沿用同一个圆角。 */
 .home-ratio-pager.toolbar {
   display: block;
   width: 100%;
@@ -43,11 +43,8 @@
 .composer-panel .home-ratio-pager {
   position: relative;
   margin-bottom: 0;
-  border-radius: var(--ratio-control-radius, 16px);
+  border-radius: var(--field-radius);
   background: var(--fill-soft);
-}
-.composer-panel .home-ratio-pager:has(.selection-pill) {
-  --ratio-control-radius: var(--field-radius);
 }
 .composer-panel .home-ratio-track {
   display: flex;
@@ -75,7 +72,7 @@
   gap: 1px;
   padding: 3px 2px;
   border: 0;
-  border-radius: var(--ratio-control-radius, 12px);
+  border-radius: inherit;
   background: transparent;
   color: #aaa;
   scroll-snap-align: start;
@@ -86,14 +83,6 @@
 .composer-panel .home-ratio-track .toggle-button[data-selected="true"] {
   color: var(--control-selected-foreground);
   background: transparent;
-}
-.composer-panel .home-ratio-track .toggle-selection {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background: var(--control-selected-fill);
-  pointer-events: none;
 }
 .composer-panel .home-ratio-track .ratio-preview {
   width: 20px;
@@ -131,14 +120,6 @@
 }
 
 /* Workspace selection and hover feedback mirrors the home controls. */
-.composer-panel .parameter-options .toggle-selection {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background: var(--control-selected-fill);
-  pointer-events: none;
-}
 .composer-panel .parameter-options :is(.button, .toggle-button)[data-selected="true"] {
   color: var(--control-selected-foreground);
   background: transparent;
@@ -149,13 +130,6 @@
 .unified-workspace .composer-panel .parameter-options :is(:disabled, [data-disabled="true"]) {
   color: var(--field-placeholder);
   background: transparent;
-}
-.unified-workspace
-  .composer-panel
-  .parameter-options
-  :is(:disabled, [data-disabled="true"])
-  .toggle-selection {
-  display: none;
 }
 @media (hover: hover) {
   .composer-panel
@@ -245,33 +219,11 @@
 .composer-panel .reference-picker,
 .composer-panel .prompt-field,
 .composer-panel .parameter-group {
-  padding: var(--space-2);
-}
-.composer-panel .generate-area {
-  margin-top: 8px;
-}
-
-.composer-panel .model-field,
-.composer-panel .reference-picker,
-.composer-panel .prompt-field,
-.composer-panel .parameter-group {
   padding: var(--space-3);
-}
-.composer-panel .prompt-field textarea {
-  min-height: 110px;
-}
-.composer-panel .generate-area {
-  margin-top: 6px;
 }
 
 .composer-panel .parameter-group legend {
   margin-bottom: 6px;
-}
-.composer-panel .prompt-field textarea {
-  min-height: 80px;
-}
-.composer-panel .generate-area {
-  margin-top: 4px;
 }
 
 .composer-panel .ratio-heading {

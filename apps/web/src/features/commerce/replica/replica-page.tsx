@@ -1,10 +1,10 @@
-import { imageUnitCredits } from "@lycoboai/contracts";
+import { imageUnitCredits, publicImageResolutions } from "@lycoboai/contracts";
 import { ReferencePrompt } from "../../../components/reference-prompt/reference-prompt";
 import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { GenerateButton } from "../../generation/composer/generate-button";
 import { ParameterGroup } from "../../generation/composer/parameter-group";
-import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
+import { AspectRatioField } from "../../generation/composer/ratio-picker";
 import {
   ImageApiError,
   pendingSubmissionSource,
@@ -76,22 +76,16 @@ export function ReplicaPage() {
           showCount
           autoGrow
         />
-        <section className="parameter-group ratio-group" aria-label={common.aspectRatio}>
-          <div className="ratio-heading">
-            <h2>{common.aspectRatio}</h2>
-            <span>{draft.ratio}</span>
-          </div>
-          <HomeRatioPicker
-            stretchSelection
-            value={draft.ratio}
-            onChange={(ratio) => patchDraft({ ratio })}
-          />
-        </section>
+        <AspectRatioField
+          label={common.aspectRatio}
+          value={draft.ratio}
+          onChange={(ratio) => patchDraft({ ratio })}
+        />
         <ParameterGroup
           label={common.resolution}
-          values={["1.5K", "2K", "4K"]}
+          values={publicImageResolutions}
           value={draft.resolution}
-          disabledValues={["1.5K", "2K", "4K"].filter(
+          disabledValues={publicImageResolutions.filter(
             (value) => !capabilities?.enabledResolutions.some((enabled) => enabled === value),
           )}
           onChange={(resolution) => patchDraft({ resolution })}

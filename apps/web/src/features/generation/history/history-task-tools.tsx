@@ -8,14 +8,12 @@ import {
   type TextileGeneration,
   type VariationGeneration,
 } from "@lycoboai/contracts";
-import { IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
+import { IconEdit, IconRefresh } from "@tabler/icons-react";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
-import { CollapsibleText } from "../../../components/collapsible-text";
+import { useState } from "react";
 import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
 import { currentMessages, useMessages } from "../../../i18n/messages";
-import { copyToClipboard } from "../../../lib/clipboard";
 import { useErrorToast } from "../../../lib/error-toast";
 import {
   assetContentUrl,
@@ -32,6 +30,8 @@ import { ReferenceThumbnails } from "../references/reference-thumbnails";
 import { type Draft, type ModelId, qualityLevels, useStudioStore } from "../studio-state";
 import { HistoryDownloadButton } from "./history-download-button";
 import { historyMessages } from "./history-messages";
+import { HistoryPromptContent } from "./history-prompt-content";
+import { useHistoryActionsWidth } from "./use-history-actions-width";
 
 /** 历史任务的提示词：可展开的正文、复制按钮与任务参考图。 */
 export function HistoryPrompt({ job }: { job: ImageJob }) {
@@ -45,19 +45,7 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
       : undefined;
   return (
     <div className="history-prompt">
-      {prompt.trim() && (
-        <>
-          <CollapsibleText text={prompt} id={`prompt-${job.id}`} className="generation-prompt" />
-          <Button
-            variant="secondary"
-            className="copy-prompt"
-            onPress={() => void copyToClipboard(prompt)}
-          >
-            <UiIcon icon={IconCopy} size="small" />
-            {t.copyPrompt}
-          </Button>
-        </>
-      )}
+      {prompt.trim() && <HistoryPromptContent text={prompt} id={`prompt-${job.id}`} />}
       <ReferenceThumbnails ids={referenceIds} pendingIds={pendingIds} label={t.taskReferences} />
     </div>
   );
@@ -116,7 +104,7 @@ export function HistoryTaskActions({
   onRestore?: HistoryRestore | undefined;
   item?: ImageJob["items"][number] | undefined;
 }) {
-  const actionsRef = useHistoryActionsWidth(item);
+  const actionsRef = useHistoryActionsWidth(!item);
   const [regenerateOpen, setRegenerateOpen] = useState(false);
   const { generation, loading, blocked, configured, regenerateContent, regenerate, edit } =
     useHistoryTaskActions(job, item, onRestore);
@@ -185,29 +173,6 @@ function historyTaskSource(job: ImageJob) {
   if (job.input?.replica) return "replica";
   if (job.input?.textileSet) return "textile-set";
   return job.input?.variation ? "smart-variation" : undefined;
-}
-
-function useHistoryActionsWidth(item: HistoryItem | undefined) {
-  const actionsRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (item) return;
-    const actions = actionsRef.current;
-    const article = actions?.closest<HTMLElement>(".generation-job");
-    if (!actions || !article) return;
-    const measure = () =>
-      article.style.setProperty(
-        "--history-actions-width",
-        `${actions.getBoundingClientRect().width}px`,
-      );
-    const observer = new ResizeObserver(measure);
-    observer.observe(actions);
-    measure();
-    return () => {
-      observer.disconnect();
-      article.style.removeProperty("--history-actions-width");
-    };
-  }, [item]);
-  return actionsRef;
 }
 
 function historyRetryPlan(

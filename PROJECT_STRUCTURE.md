@@ -87,9 +87,9 @@ apps/web/src/
     ├── legal/                    # 用户协议与隐私政策公开页；运营主体等待补信息集中在 legal-entity-messages.ts
     ├── assets/                   # 素材库页面与工作区全屏素材库：我的素材／灵感库标签、筛选、瀑布流、多选批量下载与收藏
     ├── generation/               # 生图请求、事件、会话草稿及工作台页面
-    │   ├── composer/             # 比例选择、参数选中背景、图片与视频共用的单选参数行
+    │   ├── composer/             # 共用比例字段、单选参数行、选中底板与提交按钮
     │   ├── models/               # 模型展示资料、Logo 与下拉选择
-    │   ├── references/           # 共享参考图上传、`@` 引用、缩略图与参考图角色（reference-roles、reference-role-menu）
+    │   ├── references/           # 共享参考图上传、`@` 引用与缩略图
     │   └── history/              # 历史查询、任务信息、操作和定位
     └── image-workspace/          # 生成图详情、缩略图列表、统一画布与缩放
         └── local-edit/           # 局部修改面板、选区、草稿、提交及状态通知
@@ -162,7 +162,9 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 - `HistoryTaskMeta`：模型、时间、任务编号复制和输出参数。`components/collapsible-text.tsx` 共用历史提示词与详情创意描述的溢出测量、展开／收起和可访问状态；行数由各场景样式定义。
 - `components/image-viewer/image-zoom-motion`：详情和参考图浏览共用滚轮灵敏度、输入限幅及缓动公式；`usePreviewZoom` 管理详情缩放目标、动画帧和滑块直接操作。
 - `ResultImage`：生成图预览入口、下载和收藏；`generation-status`共用阶段标签和图标。
-- `HistoryIndex`：右侧历史定位、选中滚动与我的素材入口。
+- `HistoryRail` 提供图像与视频历史共用的标题、素材入口与滚动容器。`HistoryIndex` 负责图片索引的选中与定位，历史卡片统一用 `useHistoryActionsWidth` 为顶部操作预留宽度。
+- `HistoryPromptContent` 组合可展开正文与 `CopyPromptButton`，复制入口在历史与灵感详情中共用顶部反馈。
+- `AssetPreviewDetails` 共用图片和视频的素材信息、收藏、下载、复制与参考图。图片详情追加局部编辑，视频详情追加视频参数。
 - `ReferencePicker` / `ReferenceImageCard` / `ReferencePrompt`：共享上传、缩略图、图片引用。
 - `components/image-viewer/image-viewer.tsx`：参考图浏览；`ImagePreviewDialog`：生成图详情壳、跨图切换和关闭。
 - `PreviewDotGrid`：画布背景的静态点阵与鼠标波纹，按需绘制、尊重减少动态效果，不参与图片和选区的指针操作。
@@ -201,7 +203,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 - 主站各模型入口共用 `useModelPresentation`，展示资料来自 `models/model-presentation.ts`。模型编码使用有格式限制的动态字符串，渠道与任务快照继续由服务端校验；新增模型未绑定渠道时不可生成，历史供应商别名保留兼容。
 - 共享列表分页在 `components/infinite-load.tsx`，组合 IntersectionObserver 与 HeroUI Spinner；主站分页列表统一复用，业务查询仍由各功能的 TanStack Query hook 管理。提示词有效描述判断在 `features/generation/references/prompt-description.ts`，首页与创作页共用。
 - 套图计划：`variation-planner.ts` 封装 OpenAI 兼容语言分析；`variation-service.ts` 负责参考素材归属校验与解密密钥；计划阶段仅优化文本和参考图编号，不读取或发送图片，参考图保留至实际生图阶段；`variation-repository.ts` 持久化计划和幂等状态。`model_planners` 独立配置语言模型；`generation_jobs.input.variation` 保存确认后的方案快照，Worker 每条方案只请求一张图。
-- 参考图角色与套图逐条参考图：前端 `features/generation/references/reference-roles.ts` 记录会话内角色、`reference-role-menu.tsx` 是缩略图角色胶囊，`features/commerce/smart-variation/plan-image-bindings.ts` 计算每条方案的用图（没标原图时按全部方案提示词推断逐条对应的原图）、`plan-reference-strip.tsx` 显示并切换；服务端 `packages/generation/src/images/reference-roles.ts` 选出每条输出要发送的参考图并写角色或编号说明，Worker 的 `provider-references.ts` 按它读取参考图。
+- 套图逐条参考图：`features/commerce/smart-variation/plan-image-bindings.ts` 计算每条方案的用图，`plan-reference-strip.tsx` 显示并切换。服务端 `packages/generation/src/images/reference-roles.ts` 决定每条输出使用的参考图并保留历史角色兼容，Worker 的 `provider-references.ts` 按它读取参考图。
 - 主站独立试用路由由 `packages/generation/src/images/standalone-models.ts` 定义；API/消费者将纯配置注入图片仓储，绕过后台模型目录、路由及语言模型设置读取。前端展示在 `models/model-presentation.ts`，Logo 位于 `apps/web/public/model-logos/`。不会删除后台表或改变鉴权/积分/素材持久化。
 - Cloudflare 入口为 `apps/api/src/cloudflare.ts`，API 组合在 `cloudflare-app.ts`；`apps/worker/src/cloudflare/cloudflare-consumer.ts` 处理 Queue/Cron，`cloudflare/cloudflare-runtime.ts` 创建调用级资源。PostgreSQL 与钱包仍由原生仓储维护，绑定与状态见 [Cloudflare 部署准备](docs/releasing.md#cloudflare-运行与部署)。
 - 图片回调接收位于 `apps/api/src/features/images/webhooks/provider-webhook.ts`；任务与事件的持久化关联位于 `packages/db/src/webhooks/provider-webhook-repository.ts`。前端主动推送、服务端超时补查和发布顺序见 [图片 Webhook](docs/image-generation-api.md#图片-webhook-与延迟查询)。

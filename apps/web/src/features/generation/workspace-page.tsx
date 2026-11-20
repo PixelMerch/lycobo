@@ -1,5 +1,5 @@
 import { Alert, Button, Tooltip } from "@heroui/react";
-import { imageUnitCredits } from "@lycoboai/contracts";
+import { imageUnitCredits, publicImageResolutions } from "@lycoboai/contracts";
 import { IconArrowBarToUp, IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { ReferencePrompt } from "../../components/reference-prompt/reference-prompt";
@@ -10,7 +10,7 @@ import { useErrorToast } from "../../lib/error-toast";
 import { WorkspaceComposerTitle } from "../workspace/workspace-tool-symbol";
 import { GenerateButton } from "./composer/generate-button";
 import { ParameterGroup } from "./composer/parameter-group";
-import { HomeRatioPicker } from "./composer/ratio-picker";
+import { AspectRatioField } from "./composer/ratio-picker";
 import {
   ImageApiError,
   useGenerateImage,
@@ -37,7 +37,6 @@ import {
 } from "./studio-state";
 
 const promptLimit = 5000;
-const resolutions = ["1.5K", "2K", "4K"] as const;
 
 /** 主图制作工作台：按当前模型读写草稿。 */
 export function WorkspacePage() {
@@ -103,22 +102,16 @@ function Workspace({ model }: { model: ModelId }) {
           showCount
           autoGrow
         />
-        <section className="parameter-group ratio-group" aria-label={t.aspectRatio}>
-          <div className="ratio-heading">
-            <h2>{t.aspectRatio}</h2>
-            <span className="ratio-current">{draft.ratio}</span>
-          </div>
-          <HomeRatioPicker
-            value={draft.ratio}
-            stretchSelection
-            onChange={(ratio) => updateDraft(model, { ratio })}
-          />
-        </section>
+        <AspectRatioField
+          label={t.aspectRatio}
+          value={draft.ratio}
+          onChange={(ratio) => updateDraft(model, { ratio })}
+        />
         <ParameterGroup
           label={t.resolution}
-          values={resolutions}
+          values={publicImageResolutions}
           value={draft.resolution}
-          disabledValues={resolutions.filter(
+          disabledValues={publicImageResolutions.filter(
             (value) => !enabledResolutions.some((enabled) => enabled === value),
           )}
           onChange={(resolution) => updateDraft(model, { resolution })}

@@ -1,14 +1,14 @@
 import { Button, Disclosure, Spinner, Tooltip } from "@heroui/react";
 import type { VideoTask } from "@lycoboai/contracts";
-import { IconAspectRatio, IconChevronDown, IconCopy, IconMovie } from "@tabler/icons-react";
+import { IconAspectRatio, IconChevronDown, IconMovie } from "@tabler/icons-react";
 import { useState } from "react";
-import { CollapsibleText } from "../../../components/collapsible-text";
 import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
 import { currentMessages, useMessages } from "../../../i18n/messages";
 import { copyToClipboard } from "../../../lib/clipboard";
 import { assetContentUrl } from "../../generation/generation-client";
+import { HistoryPromptContent } from "../../generation/history/history-prompt-content";
 import { ReferenceThumbnails } from "../../generation/references/reference-thumbnails";
 import { VideoCover } from "../player/video-cover";
 import { type Production, VideoProductionProgress } from "../production/video-production-progress";
@@ -155,7 +155,7 @@ export function VideoTaskCard({
         />
       </header>
       <div className="history-prompt">
-        <VideoHistoryPrompt text={task.input.storyboard?.description ?? task.prompt} />
+        <HistoryPromptContent text={task.input.storyboard?.description ?? task.prompt} />
         <ReferenceThumbnails
           ids={
             task.input.storyboard
@@ -181,24 +181,6 @@ export function VideoTaskCard({
         onConfirm={restore}
       />
     </article>
-  );
-}
-
-/** 视频任务的提示词：可展开的正文与复制按钮。 */
-export function VideoHistoryPrompt({ text, copyLabel }: { text: string; copyLabel?: string }) {
-  const t = useMessages(videoHistoryMessages);
-  return (
-    <>
-      <CollapsibleText text={text} className="generation-prompt" />
-      <Button
-        variant="secondary"
-        className="copy-prompt"
-        onPress={() => void copyToClipboard(text)}
-      >
-        <UiIcon icon={IconCopy} size="small" />
-        {copyLabel ?? t.copyPrompt}
-      </Button>
-    </>
   );
 }
 
@@ -229,7 +211,7 @@ function VideoStoryboardDetails({
             {isExpanded && (
               <Disclosure.Body className="history-prompt">
                 <h4 className="video-history-content-label">{t.aiDescription}</h4>
-                <VideoHistoryPrompt text={task.prompt} copyLabel={t.copyAiDescription} />
+                <HistoryPromptContent text={task.prompt} copyLabel={t.copyAiDescription} />
                 <h4 className="video-history-content-label">{t.storyboardImages}</h4>
                 <ReferenceThumbnails
                   ids={input.referenceAssetIds.slice(originalCount)}

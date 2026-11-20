@@ -1,5 +1,5 @@
 import { Button, EmptyState, Spinner } from "@heroui/react";
-import { IconChevronRight, IconMovie } from "@tabler/icons-react";
+import { IconMovie } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
@@ -8,7 +8,8 @@ import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { LibraryDialog } from "../../assets/library-dialog";
 import { AssetImage } from "../../generation/asset-image";
-import { historyContentTop } from "../../generation/history/history-navigation";
+import { scrollToHistoryCard } from "../../generation/history/history-navigation";
+import { HistoryRail } from "../../generation/history/history-rail";
 import { VideoProductionCard, videoProductionCardId } from "../production/video-production-card";
 import type { Production } from "../production/video-production-progress";
 import { useVideoTasks } from "../video-client";
@@ -106,62 +107,44 @@ export function VideoHistoryRail({ production }: { production: Production }) {
   const currentId = entryIds.includes(activeId ?? "") ? activeId : entryIds[0];
   const locate = (id: string) => {
     setActiveId(id);
-    const target = document.getElementById(id);
-    if (target)
-      window.scrollTo({
-        top: Math.max(0, window.scrollY + target.getBoundingClientRect().top - historyContentTop()),
-        behavior: "instant",
-      });
+    scrollToHistoryCard(id);
   };
   return (
     <>
-      <aside className="history-rail" aria-label={t.rail}>
-        <h2 className="history-rail-title">
-          <Button
-            variant="tertiary"
-            className="history-rail-open"
-            aria-label={t.openLibrary}
-            onPress={() => setLibraryOpen(true)}
-          >
-            <span>{t.myAssets}</span>
-            <UiIcon icon={IconChevronRight} size="small" />
-          </Button>
-        </h2>
-        <div className="history-rail-list">
-          {producing && (
-            <div className="history-rail-item">
-              <Button
-                variant="tertiary"
-                className={`history-thumbnail${production.busy ? " generation-pending" : ""}`}
-                aria-label={t.locateProduction}
-                aria-current={currentId === videoProductionCardId ? "true" : "false"}
-                onPress={() => locate(videoProductionCardId)}
-              >
-                {production.busy ? (
-                  <span className="history-thumbnail-frame">
-                    <Spinner size="sm" aria-label={t.processing} />
-                  </span>
-                ) : (
-                  <UiIcon icon={IconMovie} size="action" />
-                )}
-              </Button>
-            </div>
-          )}
-          {tasks.map((task) => (
-            <div className="history-rail-item" key={task.id}>
-              <Button
-                variant="tertiary"
-                className={`history-thumbnail${isVideoTaskActive(task) ? " generation-pending" : ""}`}
-                aria-label={t.locateVideo(task.public_id)}
-                aria-current={currentId === `video-task-${task.id}` ? "true" : "false"}
-                onPress={() => locate(`video-task-${task.id}`)}
-              >
-                <VideoTaskThumbnail task={task} />
-              </Button>
-            </div>
-          ))}
-        </div>
-      </aside>
+      <HistoryRail label={t.rail} onOpenLibrary={() => setLibraryOpen(true)}>
+        {producing && (
+          <div className="history-rail-item">
+            <Button
+              variant="tertiary"
+              className={`history-thumbnail${production.busy ? " generation-pending" : ""}`}
+              aria-label={t.locateProduction}
+              aria-current={currentId === videoProductionCardId ? "true" : "false"}
+              onPress={() => locate(videoProductionCardId)}
+            >
+              {production.busy ? (
+                <span className="history-thumbnail-frame">
+                  <Spinner size="sm" aria-label={t.processing} />
+                </span>
+              ) : (
+                <UiIcon icon={IconMovie} size="action" />
+              )}
+            </Button>
+          </div>
+        )}
+        {tasks.map((task) => (
+          <div className="history-rail-item" key={task.id}>
+            <Button
+              variant="tertiary"
+              className={`history-thumbnail${isVideoTaskActive(task) ? " generation-pending" : ""}`}
+              aria-label={t.locateVideo(task.public_id)}
+              aria-current={currentId === `video-task-${task.id}` ? "true" : "false"}
+              onPress={() => locate(`video-task-${task.id}`)}
+            >
+              <VideoTaskThumbnail task={task} />
+            </Button>
+          </div>
+        ))}
+      </HistoryRail>
       {libraryOpen && <LibraryDialog tool="video" onClose={() => setLibraryOpen(false)} />}
     </>
   );

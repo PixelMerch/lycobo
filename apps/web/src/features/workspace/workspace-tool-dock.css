@@ -30,15 +30,6 @@
   :is(.reference-picker, .prompt-field, .model-field, .parameter-group) {
   background: transparent;
 }
-.workspace-tool-symbol {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-  color: inherit;
-}
 /* The panel opens with the tool's example photo; it bleeds to the panel's rounded top edge. */
 .workspace-composer-hero {
   --composer-hero-height: 148px;

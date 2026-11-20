@@ -1,6 +1,6 @@
 import { Button, toast } from "@heroui/react";
 import type { ImageJob } from "@lycoboai/contracts";
-import { IconChevronRight, IconPhotoOff, IconPhotoX, IconTrash } from "@tabler/icons-react";
+import { IconPhotoOff, IconPhotoX, IconTrash } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
@@ -17,6 +17,7 @@ import { useModelPresentation } from "../models/model-logos";
 import { useStudioStore } from "../studio-state";
 import { historyMessages } from "./history-messages";
 import { scrollToHistoryTask } from "./history-navigation";
+import { HistoryRail } from "./history-rail";
 
 /** 历史索引栏：缩略图列表、删除与打开素材库。 */
 export function HistoryIndex({
@@ -51,43 +52,33 @@ export function HistoryIndex({
   }, [selectedId]);
   return (
     <>
-      {/* 标题放在滚动区外，列表滚动时不会被带走。 */}
-      <aside className="history-rail" aria-label={tool === "textile" ? t.textileRail : t.rail}>
-        <h2 className="history-rail-title">
-          <Button
-            variant="tertiary"
-            className="history-rail-open"
-            aria-label={t.openLibrary}
-            onPress={() => setLibraryOpen(true)}
-          >
-            <span>{t.myAssets}</span>
-            <UiIcon icon={IconChevronRight} size="small" />
-          </Button>
-        </h2>
-        <div className="history-rail-list" ref={rail}>
-          {!query.isLoading && (
-            <HistoryIndexEntries
-              jobs={jobs}
-              selectedId={selectedId}
-              modelName={(job) => modelDisplayName(job.model, catalog.data?.models ?? [], locale)}
-              onSelect={(job) => {
-                setActiveId(job.id);
-                scrollToHistoryTask(job.id);
-              }}
-              onDelete={(job) => {
-                deletion.reset();
-                setDeleteId(job.id);
-              }}
-            />
-          )}
-          <InfiniteLoad
-            hasMore={query.hasNextPage}
-            isLoading={query.isFetchingNextPage}
-            isError={query.isError}
-            onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
+      <HistoryRail
+        label={tool === "textile" ? t.textileRail : t.rail}
+        onOpenLibrary={() => setLibraryOpen(true)}
+        listRef={rail}
+      >
+        {!query.isLoading && (
+          <HistoryIndexEntries
+            jobs={jobs}
+            selectedId={selectedId}
+            modelName={(job) => modelDisplayName(job.model, catalog.data?.models ?? [], locale)}
+            onSelect={(job) => {
+              setActiveId(job.id);
+              scrollToHistoryTask(job.id);
+            }}
+            onDelete={(job) => {
+              deletion.reset();
+              setDeleteId(job.id);
+            }}
           />
-        </div>
-      </aside>
+        )}
+        <InfiniteLoad
+          hasMore={query.hasNextPage}
+          isLoading={query.isFetchingNextPage}
+          isError={query.isError}
+          onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
+        />
+      </HistoryRail>
       <ConfirmDialog
         isOpen={deleteId !== null}
         title={t.deleteTitle}

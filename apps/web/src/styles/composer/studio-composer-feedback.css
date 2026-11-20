@@ -84,39 +84,3 @@
     padding-block: 0;
   }
 }
-
-.ratio-chevron {
-  display: inline-flex;
-  color: var(--muted);
-  transition: transform 160ms ease;
-}
-.ratio-expand[aria-expanded="true"] .ratio-chevron {
-  transform: rotate(180deg);
-}
-.ratio-close-visual {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  transition: background-color 150ms ease;
-}
-@media (hover: hover) {
-  .ratio-popover .ratio-close:hover {
-    background: transparent;
-    color: #ffffff;
-  }
-  .ratio-close:hover .ratio-close-visual {
-    background: var(--interaction-active);
-  }
-}
-.ratio-close:active .ratio-close-visual,
-.ratio-close[data-pressed="true"] .ratio-close-visual {
-  background: var(--surface-secondary);
-}
-@media (prefers-reduced-motion: reduce) {
-  .ratio-chevron,
-  .ratio-close-visual {
-    transition: none;
-  }
-}

@@ -2,7 +2,7 @@ import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { SelectionPill } from "../../../components/selection-pill";
 
 /** 创作参数的单选按钮组，支持禁用选项和自定义显示名称。 */
-export function ParameterGroup({
+export function ParameterGroup<Value extends string>({
   label,
   values,
   value,
@@ -11,11 +11,11 @@ export function ParameterGroup({
   optionLabel = (option) => option,
 }: {
   label: string;
-  values: readonly string[];
-  disabledValues?: readonly string[];
-  value: string;
-  onChange: (value: string) => void;
-  optionLabel?: (option: string) => string;
+  values: readonly Value[];
+  disabledValues?: readonly Value[];
+  value: Value;
+  onChange: (value: Value) => void;
+  optionLabel?: (option: Value) => string;
 }) {
   return (
     <fieldset className="parameter-group">
@@ -28,8 +28,8 @@ export function ParameterGroup({
         selectedKeys={[value]}
         selectionMode="single"
         onSelectionChange={(keys) => {
-          const [next] = [...keys];
-          if (next !== undefined) onChange(String(next));
+          const next = values.find((option) => keys.has(option));
+          if (next !== undefined) onChange(next);
         }}
       >
         {values.map((option) => (

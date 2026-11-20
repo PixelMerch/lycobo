@@ -1,11 +1,11 @@
-import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { Button, Popover } from "@heroui/react";
 import { imageUnitCredits, publicImageResolutions } from "@lycoboai/contracts";
 import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { type RefObject, useId, useRef, useState } from "react";
-import { SelectionPill } from "../../../components/selection-pill";
 import { UiIcon } from "../../../components/ui-icon";
 import { GenerateButton } from "../../generation/composer/generate-button";
-import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
+import { ParameterGroup } from "../../generation/composer/parameter-group";
+import { AspectRatioField } from "../../generation/composer/ratio-picker";
 import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
 
 import { TextileImageField } from "./textile-image-field";
@@ -54,43 +54,20 @@ export function TextileSetPage() {
             number={2}
           />
           <TextileViewField views={views} update={update} viewsAnchor={viewsAnchor} />
-          <section className="parameter-group" aria-label={t.aspectRatio}>
-            <div className="ratio-heading">
-              <h2>{t.aspectRatio}</h2>
-              <span className="muted">{ratio}</span>
-            </div>
-            <HomeRatioPicker
-              stretchSelection
-              value={ratio}
-              onChange={(value) => update({ ratio: value })}
-            />
-          </section>
-          <fieldset className="parameter-group">
-            <legend>{t.resolution}</legend>
-            <ToggleButtonGroup
-              aria-label={t.resolution}
-              className="parameter-options parameter-options-pill"
-              isDetached
-              disallowEmptySelection
-              selectionMode="single"
-              selectedKeys={[resolution]}
-              onSelectionChange={(keys) => {
-                const next = publicImageResolutions.find((value) => keys.has(value));
-                if (next) update({ resolution: next });
-              }}
-            >
-              {publicImageResolutions.map((value) => (
-                <ToggleButton
-                  key={value}
-                  id={value}
-                  isDisabled={!generation.resolutions.includes(value)}
-                >
-                  <span>{value}</span>
-                </ToggleButton>
-              ))}
-              {generation.resolutions.includes(resolution) && <SelectionPill value={resolution} />}
-            </ToggleButtonGroup>
-          </fieldset>
+          <AspectRatioField
+            label={t.aspectRatio}
+            value={ratio}
+            onChange={(value) => update({ ratio: value })}
+          />
+          <ParameterGroup
+            label={t.resolution}
+            values={publicImageResolutions}
+            value={resolution}
+            disabledValues={publicImageResolutions.filter(
+              (value) => !generation.resolutions.includes(value),
+            )}
+            onChange={(resolution) => update({ resolution })}
+          />
         </div>
         <div className="generate-area">
           <GenerateButton

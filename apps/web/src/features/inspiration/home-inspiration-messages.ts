@@ -27,7 +27,6 @@ export const homeInspirationMessages = defineMessages({
     sample: (category: string) => `${category} · 示例素材`,
     prompt: "创作提示词",
     hint: "上传你的商品图，使用这段描述开始创作。",
-    copyPrompt: "复制提示词",
     libraryTitle: "灵感库",
     libraryIntro: "挑一张喜欢的画面，点“做同款”，带着它的提示词开始创作。",
     items: {
@@ -170,7 +169,6 @@ export const homeInspirationMessages = defineMessages({
     sample: (category) => `${category} · Sample`,
     prompt: "Prompt",
     hint: "Upload your product photo and start creating with this description.",
-    copyPrompt: "Copy prompt",
     libraryTitle: "Inspiration",
     libraryIntro: "Find a look you like and choose “Use this style” to start with its prompt.",
     items: {
