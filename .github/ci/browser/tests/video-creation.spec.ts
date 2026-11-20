@@ -579,73 +579,54 @@ for (const ranges of [true, false]) {
   });
 }
 
-test("asset grids defer video loading until the video preview opens", async ({ page }) => {
+test("the asset library ignores retired video filters and displays only images", async ({
+  page,
+}) => {
   await mockImageApi(page);
-  const id = crypto.randomUUID();
-  const bytes = await readFile(new URL("../fixtures/video-playback.mp4", import.meta.url));
-  const delivery = {
-    url: "http://127.0.0.1:5173/fixture-video.mp4",
-    thumbnail_url: "http://127.0.0.1:5173/fixture-cover.webp",
-    download_url: "http://127.0.0.1:5173/fixture-video.mp4",
-    expires_at: 9999999999,
+  const common = {
+    task_public_id: "W12345678",
+    kind: "output",
+    width: 64,
+    height: 64,
+    bytes: 100,
+    created_at: new Date().toISOString(),
+    model: null,
   };
-  await page.route("**/fixture-cover.webp", (route) =>
-    route.fulfill({ contentType: "image/png", body: png }),
-  );
-  let mediaReads = 0;
-  await page.route("**/fixture-video.mp4", (route) => {
-    mediaReads++;
-    return route.fulfill({ contentType: "video/mp4", body: bytes });
-  });
-  await page.route("**/api/v1/image-assets?**", (route) =>
-    route.fulfill({
+  let filters = new URLSearchParams();
+  await page.route("**/api/v1/image-assets?**", (route) => {
+    filters = new URL(route.request().url()).searchParams;
+    return route.fulfill({
       json: apiFixture({
         data: [
           {
-            id,
-            public_id: "PCNLH66GX",
-            task_public_id: "W12345678",
-            kind: "output",
+            ...common,
+            id: crypto.randomUUID(),
             type: "video",
             tool: "video",
-            width: 64,
-            height: 64,
-            bytes: bytes.length,
-            created_at: new Date().toISOString(),
-            model: null,
-            prompt: "素材库视频fixture",
-            duration_seconds: 10,
-            resolution: "768p",
-            delivery,
+            prompt: "旧视频素材",
+          },
+          {
+            ...common,
+            id: crypto.randomUUID(),
+            type: "image",
+            tool: "create",
+            prompt: "测试图片素材",
           },
         ],
       }),
-    }),
-  );
-  await page.route(`**/api/v1/image-assets/${id}/delivery`, (route) =>
-    route.fulfill({ json: apiFixture({ id, delivery }) }),
-  );
-  await page.route(`**/api/v1/image-assets/${id}/content?thumbnail=1`, (route) =>
+    });
+  });
+  await page.route("**/api/v1/image-assets/*/content?thumbnail=1", (route) =>
     route.fulfill({ contentType: "image/png", body: png }),
   );
-  await page.goto("/assets?type=video");
-  const tile = page.getByRole("button", { name: "查看视频：素材库视频fixture", exact: true });
-  await expect(tile).toBeVisible();
-  await expect(tile.locator("img")).toHaveCount(1);
-  await expect(tile.locator("video")).toHaveCount(0);
-  expect(mediaReads).toBe(0);
-  const card = page.locator(".asset-tile").filter({ has: tile });
-  await expect(tile.locator(".video-cover-play")).toBeVisible();
-  await expect(card.locator(".asset-tile-specs")).toHaveText("768p · 0:10");
-  // 视频封面只显示规格，不显示来源与时间那一行，也不再贴模型角标。
-  await expect(card.locator(".asset-tile-foot")).toHaveCount(0);
-  await expect(card.locator(".model-tag")).toHaveCount(0);
-  await tile.click();
-  const preview = page.getByRole("dialog", { name: "视频预览", exact: true });
-  await expect(preview.locator("video")).toBeVisible();
-  await expect.poll(() => mediaReads).toBeGreaterThan(0);
-  await preview.getByRole("button", { name: "关闭视频预览", exact: true }).click();
-  await expect(tile).toBeFocused();
+  await page.goto("/zh-CN/dashboard/assets?type=video&tool=video");
+  await expect(
+    page.getByRole("button", { name: "查看图片：测试图片素材", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".asset-tile")).toHaveCount(1);
+  expect(filters.get("type")).toBe("image");
+  expect(filters.has("tool")).toBe(false);
+  expect(filters.has("includeVideo")).toBe(false);
 });
 
 for (const editWhilePending of [false, true]) {

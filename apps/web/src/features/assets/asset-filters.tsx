@@ -1,18 +1,8 @@
-import {
-  Header,
-  Label,
-  ListBox,
-  Select,
-  Switch,
-  ToggleButton,
-  ToggleButtonGroup,
-} from "@heroui/react";
-import type { AssetTool } from "@lycoboai/contracts";
+import { Header, Label, ListBox, Select, Switch } from "@heroui/react";
+import type { AssetTool, ImageTool } from "@lycoboai/contracts";
 import {
   IconCalendar,
   IconLayoutGrid,
-  IconMovie,
-  IconPhoto,
   IconSparkles,
   IconUpload,
   type TablerIcon,
@@ -22,12 +12,11 @@ import { UiIcon } from "../../components/ui-icon";
 import type { Locale } from "../../i18n/locale";
 import { currentLocale } from "../../i18n/locale-store";
 import { useMessages } from "../../i18n/messages";
-import { workspaceTools } from "../workspace/workspace-state";
+import { visibleWorkspaceTools } from "../workspace/workspace-state";
 import { workspaceToolMessages } from "../workspace/workspace-tool-messages";
 import { toolIcons } from "../workspace/workspace-tool-symbol";
 import {
   type AssetLibraryFilters,
-  type AssetMediaType,
   type AssetSource,
   type AssetTimeRange,
   assetTimeRanges,
@@ -36,13 +25,13 @@ import { assetsMessages } from "./assets-messages";
 
 /** 素材所属工具的名称；未知工具显示“生成”。 */
 export function assetToolName(tool: AssetTool, locale: Locale = currentLocale()) {
-  const known = workspaceTools.find((entry) => entry.id === tool);
+  const known = visibleWorkspaceTools.find((entry) => entry.id === tool);
   if (!known) return assetsMessages[locale].generatedFallback;
   return workspaceToolMessages[locale].tools[known.id].name;
 }
 
 // 来源菜单的一项：全部来源、我上传的、全部 AI 生成，或者 AI 生成里的某个功能。
-type SourceKey = AssetSource | AssetTool;
+type SourceKey = AssetSource | ImageTool;
 const sourceIcons = {
   all: IconLayoutGrid,
   uploads: IconUpload,
@@ -52,12 +41,8 @@ const sourceKeys: SourceKey[] = [
   "all",
   "uploads",
   "generated",
-  ...workspaceTools.map((tool) => tool.id),
+  ...visibleWorkspaceTools.map((tool) => tool.id),
 ];
-const mediaTypes = [
-  { id: "image", icon: IconPhoto },
-  { id: "video", icon: IconMovie },
-] as const satisfies readonly { id: AssetMediaType; icon: TablerIcon }[];
 
 const isSource = (key: SourceKey): key is AssetSource =>
   key === "all" || key === "uploads" || key === "generated";
@@ -71,7 +56,7 @@ function filtersForKey(key: SourceKey): Pick<AssetLibraryFilters, "source" | "to
 }
 
 /**
- * 我的素材的筛选行：图片或视频、来源（AI 生成可直接选功能）、时间、仅看收藏，末尾放多选入口或多选操作条；
+ * 我的素材的筛选行：来源（AI 生成可直接选功能）、时间、仅看收藏，末尾放多选入口或多选操作条；
  * 改动任一项都会从头分页。
  */
 export function AssetFilters({
@@ -89,24 +74,6 @@ export function AssetFilters({
   const set = (patch: Partial<AssetLibraryFilters>) => onChange({ ...filters, ...patch });
   return (
     <div className="asset-filters">
-      <ToggleButtonGroup
-        aria-label={t.type}
-        selectionMode="single"
-        disallowEmptySelection
-        selectedKeys={[filters.type]}
-        onSelectionChange={(keys) => {
-          const type = mediaTypes.find((entry) => keys.has(entry.id));
-          if (type) set({ type: type.id });
-        }}
-        className="asset-segment"
-      >
-        {mediaTypes.map((type) => (
-          <ToggleButton key={type.id} id={type.id}>
-            <UiIcon icon={type.icon} size="small" />
-            {t.mediaTypes[type.id]}
-          </ToggleButton>
-        ))}
-      </ToggleButtonGroup>
       <AssetSourceMenu filters={filters} currentTool={currentTool} onChange={set} />
       <AssetTimeMenu time={filters.time} onChange={(time) => set({ time })} />
       <Switch
@@ -171,7 +138,7 @@ function AssetSourceMenu({
           <ListBox.Section className="asset-filter-section">
             <Header className="asset-filter-heading">{t.sources.generated}</Header>
             {option("generated", t.allGenerated)}
-            {workspaceTools.map((tool) => option(tool.id, toolText[tool.id].name))}
+            {visibleWorkspaceTools.map((tool) => option(tool.id, toolText[tool.id].name))}
           </ListBox.Section>
         </ListBox>
       </Select.Popover>

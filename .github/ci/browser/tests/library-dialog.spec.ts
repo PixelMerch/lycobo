@@ -129,6 +129,8 @@ test("我的素材 opens on the current tool and filters source, time and favori
   expect(queries.at(-1)?.get("kind")).toBe("output");
   expect(queries.at(-1)?.get("tool")).toBe("textile");
   expect(queries.at(-1)?.get("type")).toBe("image");
+  expect(queries.at(-1)?.has("includeVideo")).toBe(false);
+  await expect(dialog.getByRole("radio", { name: /^(图片|视频)$/ })).toHaveCount(0);
   // 全部时间是一整片瀑布流：不显示日期，也没有模型、密度和“已加载”数量。
   await expect(dialog.locator(".asset-day")).toHaveCount(0);
   await expect(dialog.getByText(/已加载/)).toHaveCount(0);
@@ -142,11 +144,9 @@ test("我的素材 opens on the current tool and filters source, time and favori
   await expect(options.nth(0)).toHaveText("全部来源");
   await expect(options.nth(1)).toHaveText("我上传的");
   await expect(options.nth(2)).toHaveText("全部 AI 生成");
+  await expect(page.getByRole("option", { name: "商品视频", exact: true })).toHaveCount(0);
   await expect(page.getByRole("option", { name: /家纺裂变/ })).toContainText("当前");
-  // 菜单压在图片网格上打开，用不透明底，不透出图片的颜色。
-  const menu = page.locator(".asset-filter-menu");
-  await expect(menu).toHaveCSS("background-color", "rgb(31, 31, 31)");
-  await expect(menu).toHaveCSS("backdrop-filter", "none");
+  await expect(page.getByRole("listbox", { name: "素材来源" })).toBeVisible();
   await page.getByRole("option", { name: "全部来源" }).click();
   await expect(tiles).toHaveCount(3);
   expect(queries.at(-1)?.has("kind")).toBe(false);
@@ -173,8 +173,9 @@ test("我的素材 opens on the current tool and filters source, time and favori
   // 切回看过的筛选时直接用缓存，列表回到不分日期的一整片瀑布流。
   await expect(dialog.locator(".asset-day")).toHaveCount(0);
 
-  await dialog.getByRole("radio", { name: "视频" }).click();
-  await expect(dialog.getByText("暂无视频素材")).toBeVisible();
+  const favoritesLabel = dialog.getByText("仅看收藏", { exact: true });
+  await favoritesLabel.click();
+  await expect(dialog.getByText("还没有收藏的素材")).toBeVisible();
   const empty = dialog.locator(".asset-empty");
   await expect(empty.locator("p")).toHaveCount(1);
   await expect(empty.locator("h2, button")).toHaveCount(0);
@@ -189,7 +190,7 @@ test("我的素材 opens on the current tool and filters source, time and favori
       ),
     ).toBeLessThan(3);
   }
-  await dialog.getByRole("radio", { name: "图片" }).click();
+  await favoritesLabel.click();
   await expect(tiles).toHaveCount(2);
 
   // Favorites are saved on the server; 仅看收藏 then asks the API for them only.

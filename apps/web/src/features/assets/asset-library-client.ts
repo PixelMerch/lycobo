@@ -3,8 +3,9 @@ import {
   type AssetTool,
   assetFavoriteIdsResponseSchema,
   assetFavoriteResponseSchema,
-  assetToolSchema,
+  type ImageTool,
   imageAssetsResponseSchema,
+  imageToolSchema,
 } from "@lycoboai/contracts";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { currentMessages } from "../../i18n/messages";
@@ -14,16 +15,13 @@ import { assetsMessages } from "./assets-messages";
 
 /** 素材来源：全部、我上传的或 AI 生成；AI 生成还能按功能细分。 */
 export type AssetSource = "all" | "uploads" | "generated";
-/** 素材类型：一次只看图片或视频。 */
-export type AssetMediaType = "image" | "video";
 /** 时间范围：全部时间，或今天、最近 7／30／90 天（按本地日历日零点计算，含今天）。 */
 export type AssetTimeRange = "all" | "today" | "7" | "30" | "90";
 /** 我的素材的一组筛选，弹窗和素材库页面共用；都由接口在分页前执行。 */
 export type AssetLibraryFilters = {
   source: AssetSource;
   /** 只在来源是 AI 生成时生效，"all" 表示不按功能筛选。 */
-  tool: AssetTool | "all";
-  type: AssetMediaType;
+  tool: ImageTool | "all";
   favorite: boolean;
   /** 选了时间范围才按天分组；全部时间连续平铺。 */
   time: AssetTimeRange;
@@ -33,7 +31,6 @@ export type AssetLibraryFilters = {
 export const defaultAssetFilters: AssetLibraryFilters = {
   source: "all",
   tool: "all",
-  type: "image",
   favorite: false,
   time: "all",
 };
@@ -48,32 +45,29 @@ export const assetTimeRanges = [
 ] as const satisfies readonly AssetTimeRange[];
 const pageSize = 30;
 
-/** 从工作区打开时默认看当前功能生成的素材；视频创作默认看视频。 */
+/** 从工作区打开时默认看当前图片工具的素材。 */
 export function toolAssetFilters(tool: AssetTool | undefined): AssetLibraryFilters {
-  if (!tool) return defaultAssetFilters;
+  if (!tool || tool === "video") return defaultAssetFilters;
   return {
     ...defaultAssetFilters,
     source: "generated",
     tool,
-    type: tool === "video" ? "video" : "image",
   };
 }
 
 /**
  * 素材库把筛选写进地址栏，刷新和分享的链接回到同一视图。带功能的链接一律落在 AI 生成；
- * 改版前的“收藏素材”来源换成“仅看收藏”，已取消的模型筛选直接忽略。
+ * 兼容旧收藏链接，忽略已停用的类型和模型筛选。
  */
 export function filtersFromSearch(search: URLSearchParams): AssetLibraryFilters {
-  const tool = assetToolSchema.safeParse(search.get("tool"));
+  const tool = imageToolSchema.safeParse(search.get("tool"));
   const source = search.get("source");
   const favorite = search.get("favorite") === "1" || source === "favorites";
-  const type = search.get("type") === "video" ? "video" : "image";
   const time = assetTimeRanges.find((entry) => entry === search.get("time")) ?? "all";
-  if (tool.success) return { source: "generated", tool: tool.data, type, favorite, time };
+  if (tool.success) return { source: "generated", tool: tool.data, favorite, time };
   return {
     source: sources.find((entry) => entry === source) ?? "all",
     tool: "all",
-    type,
     favorite,
     time,
   };
@@ -84,7 +78,6 @@ export function filtersToSearch(filters: AssetLibraryFilters) {
   const search = new URLSearchParams();
   if (filters.source !== "all") search.set("source", filters.source);
   if (filters.source === "generated" && filters.tool !== "all") search.set("tool", filters.tool);
-  if (filters.type === "video") search.set("type", "video");
   if (filters.time !== "all") search.set("time", filters.time);
   if (filters.favorite) search.set("favorite", "1");
   return search;
@@ -98,12 +91,11 @@ export function timeRangeStart(time: Exclude<AssetTimeRange, "all">, now = new D
   return since;
 }
 
-/** 把筛选换成接口参数：来源对应素材用途（kind），功能只在 AI 生成时传，时间换成起始时刻。 */
+/** 分页前固定只查图片，并应用来源、功能、时间和收藏筛选。 */
 export function libraryQuery(filters: AssetLibraryFilters, now = new Date()) {
   const query = new URLSearchParams({
     limit: String(pageSize),
-    includeVideo: "true",
-    type: filters.type,
+    type: "image",
   });
   if (filters.source === "generated") query.set("kind", "output");
   if (filters.source === "uploads") query.set("kind", "reference");
@@ -113,12 +105,12 @@ export function libraryQuery(filters: AssetLibraryFilters, now = new Date()) {
   return query;
 }
 
-/** Filters run on the server before pagination; pages load as the list scrolls. */
+/** 服务端筛选后分页，滚动时加载下一页。 */
 export function useAssetLibrary(filters: AssetLibraryFilters) {
   const session = useImageSession();
   const query = libraryQuery(filters);
   return useInfiniteQuery({
-    // Shares the image-assets prefix, so new-asset events refresh every open view.
+    // 素材更新时，用共享的查询键前缀刷新已打开的列表。
     queryKey: ["image-assets", "library", query.toString()],
     enabled: session.isSuccess,
     initialPageParam: "",
@@ -137,7 +129,7 @@ export function useAssetLibrary(filters: AssetLibraryFilters) {
 const favoritesKey = ["image-asset-favorites"] as const;
 const toSet = (ids: string[]) => new Set(ids);
 
-/** The member's favorites are one bounded id list shared by every star in the app. */
+/** 读取成员收藏的素材 ID，供各入口的收藏状态共用。 */
 export function useFavoriteAssetIds() {
   const session = useImageSession();
   return useQuery({
@@ -192,7 +184,7 @@ function useSetAssetFavorite() {
   });
 }
 
-/** Star state for one asset; the server flag covers the moment before the id list loads. */
+/** 读取和切换单条素材的收藏状态，列表加载前使用素材自带的状态。 */
 export function useAssetFavorite(assetId: string, initial = false) {
   const favorites = useFavoriteAssetIds();
   const save = useSetAssetFavorite();

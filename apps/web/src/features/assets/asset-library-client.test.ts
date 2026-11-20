@@ -14,12 +14,11 @@ describe("asset library filters", () => {
     const changed = {
       source: "generated",
       tool: "textile",
-      type: "video",
       favorite: true,
       time: "30",
     } as const;
     const search = filtersToSearch(changed);
-    expect(search.toString()).toBe("source=generated&tool=textile&type=video&time=30&favorite=1");
+    expect(search.toString()).toBe("source=generated&tool=textile&time=30&favorite=1");
     expect(filtersFromSearch(search)).toEqual(changed);
   });
 
@@ -36,11 +35,16 @@ describe("asset library filters", () => {
     expect(filtersFromSearch(new URLSearchParams("source=other&time=365"))).toEqual(
       defaultAssetFilters,
     );
+    expect(filtersFromSearch(new URLSearchParams("tool=video&type=video&favorite=1"))).toEqual({
+      ...defaultAssetFilters,
+      favorite: true,
+    });
   });
 
-  it("asks the API for the chosen source, tool, type, favorites and time before paging", () => {
+  it("asks the API for images and applies the remaining filters before paging", () => {
     const all = libraryQuery(defaultAssetFilters);
     expect(all.get("type")).toBe("image");
+    expect(all.has("includeVideo")).toBe(false);
     expect(all.has("kind")).toBe(false);
     expect(all.has("since")).toBe(false);
     expect(libraryQuery({ ...defaultAssetFilters, source: "uploads" }).get("kind")).toBe(
@@ -68,13 +72,13 @@ describe("asset library filters", () => {
     expect(timeRangeStart("30", now)).toEqual(new Date(2026, 9, 12));
   });
 
-  it("opens the workspace library on the current tool, videos for 视频创作", () => {
+  it("opens the library on the current image tool or defaults to all images", () => {
     expect(toolAssetFilters(undefined)).toEqual(defaultAssetFilters);
     expect(toolAssetFilters("textile")).toEqual({
       ...defaultAssetFilters,
       source: "generated",
       tool: "textile",
     });
-    expect(toolAssetFilters("video").type).toBe("video");
+    expect(toolAssetFilters("video")).toEqual(defaultAssetFilters);
   });
 });

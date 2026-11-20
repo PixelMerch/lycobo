@@ -1,10 +1,9 @@
 /* 素材卡（素材库 素材网格）：平时只有图片；悬停或键盘聚焦时左上勾选圈、右上收藏和下载、
- * 底部来源与时间；多选时勾选圈常驻，选中的卡片有 2px 青柠内框。 */
+ * 底部来源与时间；多选时勾选圈常驻，选中的卡片有 2px 主题渐变内框。 */
 .asset-tile {
   position: relative;
   flex: none;
   overflow: hidden;
-  container-type: inline-size;
   border-radius: 12px;
   background: #171717;
 }
@@ -27,9 +26,6 @@
   object-fit: contain;
   transition: transform 240ms ease;
 }
-.asset-tile[data-media-type="video"] .asset-tile-open img {
-  object-fit: cover;
-}
 .asset-tile:has(.asset-tile-open[data-focus-visible="true"]) {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
@@ -46,14 +42,19 @@
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }
-/* 选中的卡片：青柠内框压在图片上面、勾选圈下面。 */
+/* 保留图片可见，主题渐变只显示在勾选圈下方的内框。 */
 .asset-tile[data-selected="true"]::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 1;
+  padding: 2px;
   border-radius: inherit;
-  box-shadow: inset 0 0 0 2px var(--accent);
+  background: var(--studio-accent-gradient);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
   pointer-events: none;
 }
 .asset-tile-check.toggle-button {
@@ -75,8 +76,8 @@
   transition: opacity 160ms ease;
 }
 .asset-tile-check.toggle-button[data-selected] {
-  border-color: var(--accent);
-  background: var(--accent);
+  border-color: var(--studio-accent);
+  background: var(--studio-accent);
   color: var(--accent-foreground);
 }
 .asset-tile[data-selecting="true"] .asset-tile-check {
@@ -111,23 +112,6 @@
   color: #fff;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
-  pointer-events: none;
-}
-/* 视频规格常驻封面左下角。 */
-.asset-tile-specs {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  z-index: 1;
-  padding: 1px 6px;
-  border-radius: 6px;
-  background: #00000073;
-  backdrop-filter: blur(8px);
-  color: #fff;
-  font-size: 11px;
-  line-height: 16px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
   pointer-events: none;
 }
 .asset-tile-actions {
@@ -198,12 +182,6 @@
 }
 .asset-tile:not([data-selecting="true"]):focus-within :is(.asset-tile-star, .asset-tile-upload) {
   display: none;
-}
-/* 小卡片放不下视频规格和两个按钮。 */
-@container (max-width: 160px) {
-  .asset-tile:is(:hover, :focus-within) .asset-tile-specs {
-    opacity: 0;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .asset-tile-open img,
