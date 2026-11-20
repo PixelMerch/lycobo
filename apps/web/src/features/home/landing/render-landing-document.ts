@@ -1,3 +1,4 @@
+import footerWordmark from "../../../../public/brand/lycobo-footer-wordmark.svg?inline";
 import drapeImage from "../../../../public/landing/comforter-drape.webp?inline";
 import foldedImage from "../../../../public/landing/comforter-folded.webp?inline";
 import roomImage from "../../../../public/landing/comforter-room.webp?inline";
@@ -13,7 +14,9 @@ import { initializePageScrollbar } from "../../../components/page-scrollbar";
 import pageScrollbarStyle from "../../../components/page-scrollbar.css?raw";
 import type { Locale } from "../../../i18n/locale";
 import studioPalette from "../../../styles/studio-palette.css?raw";
+import footerStyles from "../../site/site-footer.css?raw";
 import { initializeLandingFeatureScroll } from "./landing-feature-scroll";
+import footerTemplate from "./landing-footer.html?raw";
 import { initializeLandingFrameBridge } from "./landing-frame-bridge";
 import heroStyles from "./landing-hero.css?raw";
 import heroTemplate from "./landing-hero.html?raw";
@@ -57,9 +60,13 @@ export function renderLandingDocument(
   locale: Locale,
 ) {
   return template
-    .replace("__LYCOBO_LANDING_APPEARANCE__", () => [studioPalette, landingPalette].join("\n"))
+    .replace("__LYCOBO_LANDING_APPEARANCE__", () =>
+      [studioPalette, landingPalette, footerStyles].join("\n"),
+    )
     .replace("__LYCOBO_HERO_STYLE__", () => heroStyles + showcaseStyles)
     .replace("__LYCOBO_HERO__", () => hero)
+    .replace("__LYCOBO_FOOTER__", () => footerTemplate)
+    .replace("__LYCOBO_FOOTER_WORDMARK__", () => escapeHtml(footerWordmark))
     .replace(
       "__LYCOBO_HERO_SCROLL_SCRIPT__",
       () => `(${initializeLandingHeroScroll.toString()})();

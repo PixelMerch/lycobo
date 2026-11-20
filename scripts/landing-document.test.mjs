@@ -16,8 +16,8 @@ describe("localized landing document", () => {
       expect(document).not.toMatch(/Trustpilot|support@openart|10M\+|40 free credits/);
       expect(document).not.toMatch(/<nav\b[^>]*data-navv3-root/);
       const links = [...document.matchAll(/<a\b[^>]*data-landing-path="([^"]+)"[^>]*>/g)];
-      expect(links.map((link) => link[1])).toEqual(["/dashboard"]);
-      expect(links[0]?.[0]).toContain(`href="/${locale}/dashboard"`);
+      expect(links.map((link) => link[1])).toEqual(["/dashboard", "/terms", "/privacy"]);
+      for (const [tag, path] of links) expect(tag).toContain(`href="/${locale}${path}"`);
       for (const match of document.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) {
         expect(() => new Script(match[1])).not.toThrow();
       }

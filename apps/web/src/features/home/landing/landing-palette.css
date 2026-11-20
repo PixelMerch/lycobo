@@ -12,8 +12,7 @@
 }
 
 body,
-:is(.oah-social-proof-section, .oah-news-section),
-.footer-v3[data-footerv3-variant="dark"][data-astro-cid-jfcdznaq] {
+:is(.oah-social-proof-section, .oah-news-section) {
   background: var(--studio-canvas);
 }
 

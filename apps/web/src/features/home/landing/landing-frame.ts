@@ -1,5 +1,8 @@
 import type { RefObject } from "react";
 import { dashboardPath } from "../../../lib/dashboard-paths";
+import { legalPaths } from "../../legal/legal-document";
+
+const landingDestinations = new Set<string>([dashboardPath, ...Object.values(legalPaths)]);
 
 /** 宿主与隔离首页共用的窗口引用和待恢复位置。 */
 export type LandingFrame = {
@@ -26,9 +29,10 @@ export function readLandingScroll(data: unknown) {
   return typeof scrollY === "number" && Number.isFinite(scrollY) && scrollY >= 0 ? scrollY : null;
 }
 
-/** 隔离正文只允许通过宿主打开创作工作区。 */
+/** 隔离正文只允许通过宿主打开已列出的工作区和协议页。 */
 export function readLandingNavigation(data: unknown) {
   if (!data || typeof data !== "object" || !("type" in data) || data.type !== "lycobo:navigate")
     return null;
-  return "path" in data && data.path === dashboardPath ? dashboardPath : null;
+  const path = "path" in data ? data.path : null;
+  return typeof path === "string" && landingDestinations.has(path) ? path : null;
 }

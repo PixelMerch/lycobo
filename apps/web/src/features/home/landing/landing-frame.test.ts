@@ -13,10 +13,8 @@ describe("landing frame messages", () => {
     },
   );
 
-  it("accepts the hero action for the workspace", () => {
-    expect(readLandingNavigation({ type: "lycobo:navigate", path: "/dashboard" })).toBe(
-      "/dashboard",
-    );
+  it.each(["/dashboard", "/terms", "/privacy"])("accepts the public route %s", (path) => {
+    expect(readLandingNavigation({ type: "lycobo:navigate", path })).toBe(path);
   });
 
   it.each([
@@ -26,6 +24,7 @@ describe("landing frame messages", () => {
     { type: "lycobo:navigate" },
     { type: "lycobo:navigate", path: "https://example.com" },
     { type: "lycobo:navigate", path: "/dashboard?next=https://example.com" },
+    { type: "lycobo:navigate", path: "/terms?next=https://example.com" },
     { type: "lycobo:navigate", path: "/dashboard/free-canvas" },
   ])("rejects other navigation messages: %j", (data) => {
     expect(readLandingNavigation(data)).toBeNull();

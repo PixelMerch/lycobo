@@ -726,33 +726,16 @@ test("home uses Lycobo's own brand language instead of copying the reference loo
 test("home footer links only to real pages", async ({ page }) => {
   await mockImageApi(page);
   await page.goto("/");
-  const footer = page.locator(".site-footer");
+  const footer = page.frameLocator("iframe.openart-reference").locator(".site-footer");
   await footer.scrollIntoViewIfNeeded();
   const links = footer.getByRole("link");
-  await expect(links).toHaveText([
-    "",
-    "主图制作",
-    "家纺裂变",
-    "套图计划",
-    "工作区",
-    "会员订阅",
-    "用户协议",
-    "隐私政策",
-  ]);
+  await expect(links).toHaveText(["用户协议", "隐私政策"]);
   const hrefs = await links.evaluateAll((items) => items.map((item) => item.getAttribute("href")));
-  expect(hrefs).toEqual([
-    "/zh-CN",
-    "/zh-CN/commerce/create",
-    "/zh-CN/commerce/textile-set",
-    "/zh-CN/commerce/smart-variation",
-    "/zh-CN/workspace",
-    "/zh-CN/membership",
-    "/zh-CN/terms",
-    "/zh-CN/privacy",
-  ]);
-  // 页脚的素材库是打开弹窗的按钮，不再链接到素材库页面。
-  await expect(footer.getByRole("button", { name: "素材库", exact: true })).toBeVisible();
-  await expect(footer).toContainText(`© ${new Date().getFullYear()} Lycobo。保留所有权利。`);
+  expect(hrefs).toEqual(["/zh-CN/terms", "/zh-CN/privacy"]);
+  await expect(footer.getByRole("img", { name: "Lycobo", exact: true })).toBeVisible();
+  await expect(footer).toContainText(`© ${new Date().getFullYear()} Lycobo`);
+  await footer.getByRole("link", { name: "隐私政策", exact: true }).click();
+  await expect(page).toHaveURL(/\/zh-CN\/privacy$/);
 });
 
 test("phones get the vidmuse bottom bar with labelled shortcuts", async ({ page }) => {
