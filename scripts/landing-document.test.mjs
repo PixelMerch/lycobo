@@ -30,6 +30,7 @@ describe("localized landing document", () => {
         "/terms",
         "/privacy",
         "https://bonko.fun/refund-policy",
+        "mailto:suport@lycobo.com",
       ]);
       for (const [tag, path] of links) {
         const href = path.startsWith("/") ? `/${locale}${path}` : path;

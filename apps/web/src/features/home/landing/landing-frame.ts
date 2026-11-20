@@ -1,9 +1,10 @@
 import type { RefObject } from "react";
 import { dashboardPath } from "../../../lib/dashboard-paths";
-import { siteFooterGroups } from "../../site/site-footer-navigation";
+import { siteFooterGroups, siteFooterSupportHref } from "../../site/site-footer-navigation";
 
 const landingDestinations = new Set([
   dashboardPath,
+  siteFooterSupportHref,
   ...siteFooterGroups("en").flatMap(({ links }) => links.map(({ path }) => path)),
 ]);
 

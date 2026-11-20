@@ -1,5 +1,5 @@
+import footerSocials from "../../../../public/brand/lycobo-footer-socials.svg?inline";
 import footerWordmark from "../../../../public/brand/lycobo-footer-wordmark.svg?inline";
-import footerBrand from "../../../../public/brand/lycobo-landing.svg?inline";
 import drapeImage from "../../../../public/landing/comforter-drape.webp?inline";
 import foldedImage from "../../../../public/landing/comforter-folded.webp?inline";
 import roomImage from "../../../../public/landing/comforter-room.webp?inline";
@@ -81,8 +81,8 @@ export function renderLandingDocument(
     .replace("__LYCOBO_HERO_STYLE__", () => heroStyles + showcaseStyles)
     .replace("__LYCOBO_HERO__", () => hero)
     .replace("__LYCOBO_FOOTER__", () => footerTemplate)
-    .replace("__LYCOBO_FOOTER_BRAND__", () => escapeHtml(footerBrand))
-    .replace("__LYCOBO_FOOTER_WORDMARK__", () => escapeHtml(footerWordmark))
+    .replaceAll("__LYCOBO_FOOTER_WORDMARK__", () => escapeHtml(footerWordmark))
+    .replace("__LYCOBO_FOOTER_SOCIALS__", () => escapeHtml(footerSocials))
     .replace("__LYCOBO_FOOTER_GROUPS__", () => renderFooterGroups(locale))
     .replace(
       "__LYCOBO_HERO_SCROLL_SCRIPT__",

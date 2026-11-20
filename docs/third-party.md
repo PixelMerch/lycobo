@@ -15,6 +15,8 @@
 来源和准确 SHA 见 .agents/skills-lock.json，未经审查不变更原始材料。
 `apps/web/public/studio` 下的样例图由内置 image_gen 生成，不代表真实客户商品或生成结果。参考站研究不构成品牌素材授权。
 
+页脚的社媒图标取自项目已安装的 Tabler Icons 3.51.0。MIT 许可原文随 [SVG](../apps/web/public/brand/lycobo-footer-socials.svg) 保留。
+
 ## React Bits Silk
 
 登录页背景的着色器来自 [React Bits Silk](https://github.com/DavidHDev/react-bits/tree/ed33ebe4acfe29e60fb759bcccc70a138ce2dcef/src/ts-default/Backgrounds/Silk)，实现位于 `apps/web/src/features/auth/silk/`。使用 MIT + Commons Clause，保留 David Haz (2026) 的版权及[许可原文](#react-bits-许可原文)。

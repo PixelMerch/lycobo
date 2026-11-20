@@ -4,7 +4,7 @@ import { useOutletContext } from "react-router";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
 import { useAppNavigate } from "../../../i18n/use-localized-navigation";
-import { refundPolicyUrl } from "../../site/site-footer-navigation";
+import { refundPolicyUrl, siteFooterSupportHref } from "../../site/site-footer-navigation";
 import { landingCopy } from "./landing-copy";
 import { type LandingFrame, readLandingNavigation, scrollLandingFrame } from "./landing-frame";
 import { referenceMessages } from "./reference-messages";
@@ -37,7 +37,7 @@ export function LandingPage() {
       // sandbox 的来源为 null，只接收本页所持窗口的消息。
       if (event.source !== frameRef.current?.contentWindow) return;
       const path = readLandingNavigation(event.data);
-      if (path === refundPolicyUrl) window.location.assign(path);
+      if (path === refundPolicyUrl || path === siteFooterSupportHref) window.location.assign(path);
       else if (path) void navigate(path);
     }
     window.addEventListener("message", followLink);

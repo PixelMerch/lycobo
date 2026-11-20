@@ -7,6 +7,7 @@ export const siteFooterMessages = defineMessages({
     tools: "创作工具",
     workspace: "工作空间",
     refundPolicy: "退款政策",
+    socials: "社媒图标：X、YouTube、Instagram、TikTok",
     copyright: (year: number) => `© ${year} Lycobo`,
   },
   en: {
@@ -14,6 +15,7 @@ export const siteFooterMessages = defineMessages({
     tools: "Create",
     workspace: "Workspace",
     refundPolicy: "Refund policy",
+    socials: "Social media logos: X, YouTube, Instagram, TikTok",
     copyright: (year: number) => `© ${year} Lycobo`,
   },
 });

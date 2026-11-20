@@ -743,12 +743,17 @@ test("home footer links only to real pages", async ({ page }) => {
     "用户协议",
     "隐私政策",
     "退款政策",
+    "suport@lycobo.com",
   ]);
   await expect(footer.getByRole("link", { name: "退款政策", exact: true })).toHaveAttribute(
     "href",
     "https://bonko.fun/refund-policy",
   );
   await expect(footer.getByRole("img", { name: "Lycobo", exact: true })).toBeVisible();
+  await expect(footer.getByRole("img", { name: /社媒图标/ })).toBeVisible();
+  await expect(
+    footer.getByRole("link", { name: "suport@lycobo.com", exact: true }),
+  ).toHaveAttribute("href", "mailto:suport@lycobo.com");
   await expect(footer).toContainText(`© ${new Date().getFullYear()} Lycobo`);
   await footer.getByRole("link", { name: "复制爆款", exact: true }).click();
   await expect(page).toHaveURL(/\/zh-CN\/dashboard\/commerce\/replica$/);

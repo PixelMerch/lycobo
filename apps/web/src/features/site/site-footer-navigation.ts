@@ -18,6 +18,10 @@ const toolIds = ["create", "variation", "replica", "textile"] as const;
 /** 页脚指向用户提供的退款政策页面。 */
 export const refundPolicyUrl = "https://bonko.fun/refund-policy";
 
+/** 页脚显示的客服邮箱及其邮件链接使用同一个地址。 */
+export const siteFooterSupportEmail = "suport@lycobo.com";
+export const siteFooterSupportHref = `mailto:${siteFooterSupportEmail}`;
+
 /** 为首页与站内页脚提供同一组可访问的功能和协议入口。 */
 export function siteFooterGroups(locale: Locale) {
   const t = siteFooterMessages[locale];

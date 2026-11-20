@@ -1,5 +1,6 @@
 import type { Locale } from "../../../i18n/locale";
 import { siteFooterMessages } from "../../site/site-footer-messages";
+import { siteFooterSupportEmail } from "../../site/site-footer-navigation";
 import { accessibilityMessages } from "./accessibility-messages";
 import { guidanceMessages } from "./guidance-messages";
 import { navigationMessages } from "./navigation-messages";
@@ -14,6 +15,8 @@ export function landingCopy(locale: Locale): Record<string, string> {
     ...guidanceMessages[locale],
     ...accessibilityMessages[locale],
     footerNavigation: footer.navigation,
+    footerSocials: footer.socials,
+    footerSupportEmail: siteFooterSupportEmail,
     footerCopyright: footer.copyright(new Date().getFullYear()),
   };
 }
