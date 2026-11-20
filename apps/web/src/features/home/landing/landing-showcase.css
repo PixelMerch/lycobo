@@ -1,48 +1,36 @@
 .landing-work {
   position: relative;
-  padding: clamp(60px, 6vw, 96px) var(--landing-gutter) clamp(80px, 10vw, 160px);
-  background: var(--landing-blue);
-  color: var(--landing-on-dark);
+  z-index: 1;
+  padding: clamp(72px, 8vw, 120px) var(--landing-gutter);
+  background: var(--landing-surface);
+  color: var(--landing-foreground);
 }
 .landing-work-title {
   max-width: var(--landing-content);
-  margin: 0 auto clamp(40px, 6vw, 88px);
-  font-size: clamp(38px, 5.2vw, 80px);
-  font-weight: 600;
-  line-height: 1.12;
-  letter-spacing: -0.035em;
+  margin: 0 auto clamp(32px, 4vw, 56px);
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 500;
+  line-height: 1.22;
+  letter-spacing: -0.025em;
   white-space: pre-line;
-}
-/* 与背景同色的文字底片隔开穿行色环，保证任意滚动位置的可读性。 */
-.landing-work-title > span,
-.landing-case-caption > div {
-  background: var(--landing-blue);
-  box-shadow:
-    12px 0 var(--landing-blue),
-    -12px 0 var(--landing-blue);
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
 }
 .landing-case-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(64px, 8vw, 120px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
   max-width: var(--landing-content);
   margin-inline: auto;
 }
 .landing-case {
   min-width: 0;
-  width: 85%;
-}
-.landing-case-set {
-  margin-left: auto;
 }
 .landing-case-art {
   position: relative;
   display: block;
   overflow: clip;
-  border-radius: 16px;
-  background: var(--landing-ink);
+  border-radius: 20px;
+  background: var(--landing-subtle);
+  transform-origin: center bottom;
 }
 .landing-case-art > img {
   width: 100%;
@@ -52,67 +40,69 @@
 }
 .landing-case-label {
   position: absolute;
-  right: 20px;
-  bottom: 20px;
-  padding: 6px 10px;
+  right: 16px;
+  bottom: 16px;
+  padding: 4px 8px;
   border-radius: 6px;
-  background: rgb(0 0 0 / 74%);
+  background: rgb(0 0 0 / 68%);
   color: #fff;
   font-size: 11px;
 }
 .landing-case-caption {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  margin-top: 22px;
+  align-items: end;
+  gap: 24px;
+  margin-top: 24px;
+  padding-inline: 4px;
 }
 .landing-case-caption p {
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.5;
-  color: var(--landing-on-dark-muted);
+  color: var(--landing-muted);
   margin-bottom: 8px;
 }
 .landing-case-caption h3 {
-  font-size: clamp(23px, 2.6vw, 36px);
-  line-height: 1.25;
+  font-size: clamp(20px, 1.8vw, 26px);
+  line-height: 1.35;
   font-weight: 500;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 .landing-case-caption > a {
   flex: none;
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border: 1px solid #ffffff66;
-  border-radius: 50%;
-  background: var(--landing-blue);
-  font-size: 25px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--landing-border);
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
   transition: background-color 180ms ease;
 }
-.landing-case-caption > a:hover {
-  background: #ffffff1f;
+@media (hover: hover) and (pointer: fine) {
+  .landing-case-caption > a:hover {
+    background: var(--landing-subtle);
+  }
+}
+@media (max-width: 1100px) {
+  .landing-case-caption {
+    align-items: start;
+    flex-direction: column;
+    gap: 12px;
+  }
 }
 @media (max-width: 767px) {
-  .landing-case {
-    width: 100%;
+  .landing-case-grid {
+    grid-template-columns: 1fr;
+    gap: 48px;
   }
   .landing-case-art {
-    border-radius: 12px;
-  }
-  .landing-case-label {
-    right: 12px;
-    bottom: 12px;
+    border-radius: 16px;
   }
   .landing-case-caption {
-    margin-top: 16px;
-  }
-  .landing-case-caption h3 {
-    font-size: 22px;
-  }
-  .landing-case-caption > a {
-    width: 44px;
-    height: 44px;
+    margin-top: 18px;
   }
 }

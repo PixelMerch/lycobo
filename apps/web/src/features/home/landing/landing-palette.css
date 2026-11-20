@@ -1,4 +1,4 @@
-/* 三段首页共享排版与按钮；颜色随滚动背景衔接，静态模式保留完整对比度。 */
+/* 沉浸首屏与白底案例共享紧凑排版，按钮只保留动作名称。 */
 * {
   box-sizing: border-box;
 }
@@ -35,35 +35,59 @@ main {
   overflow: clip;
 }
 :root {
-  --landing-gutter: clamp(20px, 4.4vw, 72px);
-  --landing-content: 1560px;
+  --landing-gutter: clamp(20px, 5.6vw, 88px);
+  --landing-content: 1400px;
   --landing-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-  --landing-blue: #172be8;
-  --landing-ink: #111;
-  --landing-on-dark: #fff;
-  --landing-on-dark-muted: #d0d0d0;
 }
 .landing-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 32px;
-  min-height: 52px;
-  padding: 0 24px;
+  min-height: 44px;
+  padding: 0 22px;
   border-radius: 999px;
   background: var(--studio-accent);
   color: var(--landing-action-foreground);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
+  line-height: 20px;
   white-space: nowrap;
-  transition: background-color 180ms ease;
+  transition:
+    background-color 180ms ease,
+    transform 160ms var(--landing-ease-out);
 }
-.landing-action > span {
-  font-size: 24px;
-  line-height: 1;
+.landing-action-label {
+  position: relative;
+  display: block;
+  overflow: clip;
 }
-.landing-action:hover {
-  background: #baff35;
+.landing-action-label > span {
+  display: block;
+  transition:
+    transform 260ms var(--landing-ease-out),
+    opacity 220ms ease;
+}
+.landing-action-label > span[aria-hidden] {
+  position: absolute;
+  inset: 0;
+  transform: translateY(110%);
+  opacity: 0;
+}
+.landing-action:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .landing-action:hover {
+    background: #baff35;
+  }
+  .landing-action:hover .landing-action-label > span:first-child {
+    transform: translateY(-110%);
+    opacity: 0;
+  }
+  .landing-action:hover .landing-action-label > span[aria-hidden] {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 a:focus-visible {
   outline: 2px solid currentColor;
@@ -73,15 +97,15 @@ a:focus-visible {
   position: relative;
   display: grid;
   justify-items: center;
-  gap: 36px;
-  padding: clamp(88px, 12vw, 180px) var(--landing-gutter);
-  background: var(--landing-ink);
-  color: var(--landing-on-dark);
+  gap: 28px;
+  padding: clamp(72px, 9vw, 128px) var(--landing-gutter);
+  background: var(--landing-subtle);
+  color: var(--landing-foreground);
   text-align: center;
 }
 .landing-close h2 {
-  font-size: clamp(44px, 6.8vw, 104px);
-  font-weight: 600;
+  font-size: clamp(36px, 4.8vw, 64px);
+  font-weight: 500;
   line-height: 1.12;
   letter-spacing: -0.035em;
 }
@@ -97,17 +121,17 @@ a:focus-visible {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  color: var(--landing-on-dark-muted);
+  color: var(--landing-muted);
 }
 .landing-plans:hover {
-  color: var(--landing-on-dark);
+  color: var(--landing-foreground);
 }
 .landing-footer {
   position: relative;
   display: block;
   padding: 0 var(--landing-gutter) 28px;
-  background: var(--landing-ink);
-  color: var(--landing-on-dark-muted);
+  background: var(--landing-surface);
+  color: var(--landing-muted);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -123,12 +147,12 @@ a:focus-visible {
 }
 .landing-footer-top {
   padding-block: 28px 14px;
-  border-top: 1px solid #ffffff29;
+  border-top: 1px solid var(--landing-border);
 }
 .landing-footer-top img {
   width: 112px;
   height: auto;
-  filter: brightness(0) invert(1);
+  filter: brightness(0);
 }
 .landing-footer nav {
   display: flex;
@@ -141,7 +165,7 @@ a:focus-visible {
   min-height: 44px;
 }
 .landing-footer a:hover {
-  color: var(--landing-on-dark);
+  color: var(--landing-foreground);
 }
 @media (max-width: 620px) {
   .landing-close-actions {
@@ -162,5 +186,19 @@ a:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+  .landing-action,
+  .landing-action-label > span {
+    transition: none;
+  }
+  .landing-action:active {
+    transform: none;
+  }
+  .landing-action .landing-action-label > span:first-child {
+    transform: none;
+    opacity: 1;
+  }
+  .landing-action .landing-action-label > span[aria-hidden] {
+    display: none;
   }
 }

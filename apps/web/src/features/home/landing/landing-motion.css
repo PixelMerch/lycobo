@@ -1,60 +1,53 @@
-/* 背景与轨道由同一滚动进度驱动；所有内容默认可见，脚本失败也不会留下空白。 */
-.landing-backdrop {
-  display: none;
-  position: fixed;
-  z-index: -1;
-  inset: 0;
-  overflow: clip;
-  pointer-events: none;
-  background: var(--landing-canvas);
+/* 首屏停驻期间让商品画面推进；静态模式不保留额外滚动距离。 */
+body[data-motion-ready] .lycobo-hero {
+  height: 145svh;
+  min-height: 986px;
 }
-.landing-backdrop-blue,
-.landing-backdrop-ink {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
+body[data-motion-ready] .landing-hero-stage {
+  position: sticky;
+  top: 0;
 }
-.landing-backdrop-blue {
-  background: var(--landing-blue);
+body[data-motion-ready] .landing-heading-line > span {
+  animation: landing-title-enter 850ms var(--landing-ease-out) both;
 }
-.landing-backdrop-ink {
-  background: var(--landing-ink);
+body[data-motion-ready] .landing-heading-line:nth-child(2) > span {
+  animation-delay: 70ms;
 }
-.landing-orbit {
-  position: absolute;
-  top: -15vh;
-  left: 0;
-  width: 105vw;
-  height: 105vw;
-  border: clamp(60px, 10vw, 160px) solid var(--studio-accent);
-  border-radius: 50%;
-  opacity: 0;
-}
-.landing-orbit-secondary {
-  width: 80vw;
-  height: 80vw;
-  border-color: #ff6738;
-}
-body[data-motion-ready] {
-  background: transparent;
-}
-body[data-motion-ready] .landing-backdrop {
-  display: block;
-}
-body[data-motion-ready] :is(.landing-work, .landing-close, .landing-footer) {
-  background: transparent;
+body[data-motion-ready] .landing-hero-intro {
+  animation: landing-copy-enter 700ms 180ms var(--landing-ease-out) both;
 }
 [data-reveal] {
   transition:
-    opacity 600ms var(--landing-ease-out),
-    transform 600ms var(--landing-ease-out);
+    opacity 650ms var(--landing-ease-out),
+    transform 650ms var(--landing-ease-out);
 }
 [data-reveal-pending] {
   opacity: 0;
-  transform: translateY(40px);
+  transform: translateY(32px);
 }
-.landing-case-set[data-reveal] {
-  transition-delay: 80ms;
+@keyframes landing-title-enter {
+  from {
+    transform: translateY(110%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes landing-copy-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 767px) {
+  body[data-motion-ready] .lycobo-hero {
+    height: 135svh;
+    min-height: 918px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   [data-reveal] {
@@ -63,14 +56,5 @@ body[data-motion-ready] :is(.landing-work, .landing-close, .landing-footer) {
   [data-reveal-pending] {
     opacity: 1;
     transform: none;
-  }
-}
-@media (max-width: 767px) {
-  .landing-orbit {
-    width: 150vw;
-    height: 150vw;
-  }
-  [data-reveal-pending] {
-    transform: translateY(24px);
   }
 }

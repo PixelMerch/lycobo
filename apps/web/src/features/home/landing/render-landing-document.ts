@@ -12,6 +12,7 @@ import { initializeLandingFrameBridge } from "./landing-frame-bridge";
 import heroStyles from "./landing-hero.css?raw";
 import heroTemplate from "./landing-hero.html?raw";
 import motionStyles from "./landing-motion.css?raw";
+import { createLandingMotionTimeline } from "./landing-motion-timeline";
 import landingPalette from "./landing-palette.css?raw";
 import { initializeLandingMotion } from "./landing-showcase";
 import showcaseStyles from "./landing-showcase.css?raw";
@@ -48,7 +49,10 @@ export function renderLandingDocument(
     .replace("__LYCOBO_FOOTER__", () => footerTemplate)
     .replaceAll("__LYCOBO_FOOTER_WORDMARK__", () => escapeHtml(footerWordmark))
     .replace(/__LYCOBO_IMAGE_([a-z]+)__/g, (marker, name: string) => landingImages[name] ?? marker)
-    .replace("__LYCOBO_MOTION_SCRIPT__", () => `(${initializeLandingMotion.toString()})();`)
+    .replace(
+      "__LYCOBO_MOTION_SCRIPT__",
+      () => `(${initializeLandingMotion.toString()})(${createLandingMotionTimeline.toString()});`,
+    )
     .replace(
       "__LYCOBO_LANDING_FRAME_SCRIPT__",
       () => `(${initializeLandingFrameBridge.toString()})();`,

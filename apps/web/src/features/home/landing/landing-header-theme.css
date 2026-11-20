@@ -1,4 +1,4 @@
-/* 菜单通过 Portal 挂到宿主；仅首页存在时启用浅色，离开首页立即恢复站内深色。 */
+/* 首屏导航浮在商品画面上，滚动后切换浅色实底；菜单始终保留清晰的浅色表面。 */
 :root:has(.public-site-header[data-landing-frame]) {
   --site-header-button-fill: #00000008;
   --site-header-nav-hover-fill: #0000000f;
@@ -88,5 +88,33 @@
   .account-footer-action,
   .landing-control-popover .credits-menu-balance {
     color: var(--landing-muted);
+  }
+
+  .public-site-header:not([data-scrolled="true"]) {
+    --site-header-button-fill: #ffffff14;
+    --site-header-nav-hover-fill: #ffffff1f;
+    --dismiss-foreground: #fff;
+    --dismiss-hover: #ffffff1f;
+    --shell-nav-foreground: #fff;
+    background: transparent;
+    color: #fff;
+  }
+
+  .public-site-header:not([data-scrolled="true"]) .nav-row {
+    color: #fff;
+  }
+
+  .public-site-header:not([data-scrolled="true"])
+    :is(.nav-row, .public-site-brand):is(:focus-visible, [data-focus-visible="true"]) {
+    outline-color: #fff;
+  }
+
+  .public-site-header:not([data-scrolled="true"]) .public-site-brand-art {
+    filter: brightness(0) invert(1);
+  }
+
+  .public-site-header:not([data-scrolled="true"]) .landing-header-controls {
+    --landing-control-color: #fff;
+    --landing-control-hover-color: #fff;
   }
 }

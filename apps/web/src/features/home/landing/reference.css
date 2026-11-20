@@ -13,11 +13,11 @@ body:has(.openart-reference) {
   width: 100vw;
   height: 100dvh;
   border: 0;
-  background: var(--landing-canvas);
+  background: #0c1830;
 }
 .openart-reference.loading-state {
   z-index: 10;
-  background: var(--landing-canvas);
+  background: #0c1830;
 }
 .landing-load-state {
   display: grid;

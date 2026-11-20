@@ -29,7 +29,7 @@
 
 ## 首页展示素材与历史参考
 
-当前首页已改为 Lycobo 自有的三段商品案例结构，`apps/web/public/openart-reference/index.html` 仅保留历史容器路径，不再使用 OpenArt 录制的布局、媒体或动画。保留 sandbox 与 CSP 隔离，禁止远程脚本、远程图片、表单提交和弹出外部窗口。
+当前首页以 [Ideogram](https://ideogram.ai/) 的满幅图片、紧凑按钮和白底案例为视觉参考，结构、代码与商品图片由 Lycobo 自行实现。当前页面保持自有的三段商品案例结构，`apps/web/public/openart-reference/index.html` 仅保留历史容器路径，不再使用 OpenArt 录制的布局、媒体或动画。保留 sandbox 与 CSP 隔离，禁止远程脚本、远程图片、表单提交和弹出外部窗口。
 
 2026-11-20 新首页配图按用户本次明确要求使用内置图片生成工具制作，未调用项目生成 CLI。运动鞋原图与广告图、耳机前后对照、护肤品套图均为展示素材，不代表客户商品或生产生成任务。来源与提示词见[配图说明](../apps/web/public/landing/campaign/README.md)。
 

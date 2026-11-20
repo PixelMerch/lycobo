@@ -158,7 +158,7 @@ CSS 负责主题与尺寸，约定见 [Web 规则](../apps/web/AGENTS.md)。
 
 首页落地页与主站统一使用普惠体。模板保持 sandbox 与禁止网络请求的 CSP，因此不能直接继承宿主页的字体声明。`scripts/fonts/embed-landing-fonts.py` 从已有 WOFF2 切片中提取落地页中英文文案源码字符的超集，保留字体名称与许可元数据，再以内联 data URI 写入模板；不修改主站原始切片或共享 token。
 
-排版源为 `apps/web/src/features/home/landing/landing-typography.css`：Hero 与章节标题 600、导航和按钮及卡片标题 500、正文 400；新版首页 Hero 行高 1.08，按中英文和视口检查字距。SVG 字标保持原样。
+排版源为 `apps/web/src/features/home/landing/landing-typography.css`：首页 Hero、章节标题、导航、按钮及卡片标题 500、正文 400；新版首页 Hero 行高 1.12（手机 1.14），按中英文和视口检查字距。SVG 字标保持原样。
 
 修改落地页文案或排版源后，用安装了本目录固定字体依赖的隔离 Python 环境执行：
 

@@ -1,65 +1,48 @@
-/** 将滚动映射为背景换场、轨道转动和商品画幅展开；减少动态效果时直接展示静态内容。 */
-export function initializeLandingMotion() {
-  const hero = document.querySelector<HTMLElement>(".landing-hero-stage");
-  const work = document.querySelector<HTMLElement>(".landing-work");
-  const close = document.querySelector<HTMLElement>(".landing-close");
-  const blue = document.querySelector<HTMLElement>(".landing-backdrop-blue");
-  const ink = document.querySelector<HTMLElement>(".landing-backdrop-ink");
-  const orbit = document.querySelector<HTMLElement>(".landing-orbit");
-  const secondary = document.querySelector<HTMLElement>(".landing-orbit-secondary");
-  if (!hero || !work || !close || !blue || !ink || !orbit || !secondary) return;
+import type { createLandingMotionTimeline } from "./landing-motion-timeline";
 
+/** 调度滚动绘制与入场观察，在偏好变化和页面退出时清理动效，不接管浏览器滚动。 */
+export function initializeLandingMotion(createTimeline: typeof createLandingMotionTimeline) {
+  const timeline = createTimeline();
+  if (!timeline) return;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   const reveals = [...document.querySelectorAll<HTMLElement>("[data-reveal]")];
-  const clamp = (value: number) => Math.max(0, Math.min(1, value));
-  let frame = 0;
   let observer: IntersectionObserver | undefined;
-  let workTop = 0;
-  let closeTop = 0;
-  let viewport = window.innerHeight;
+  let frame = 0;
+  let previousTime = 0;
+  let current = window.scrollY;
+  let disposed = false;
 
   function measure() {
-    if (!work || !close) return;
-    viewport = window.innerHeight;
-    workTop = work.getBoundingClientRect().top + window.scrollY;
-    closeTop = close.getBoundingClientRect().top + window.scrollY;
+    if (disposed) return;
+    timeline?.measure();
+    current = window.scrollY;
     schedule();
   }
 
-  function draw() {
+  function draw(time: number) {
     frame = 0;
-    if (reduced.matches || !hero || !blue || !ink || !orbit || !secondary) return;
-    const scroll = window.scrollY;
-    const opening = clamp(scroll / (viewport * 0.65));
-    // 实色幕布先于下一段文字进入视口，保持首屏洁净和换场中的文字对比度。
-    const blueOffset = Math.max(0, workTop - scroll - viewport * 0.25);
-    const inkOffset = Math.max(0, closeTop - scroll);
-    const blueProgress = clamp(1 - blueOffset / viewport);
-    const inkProgress = clamp(1 - inkOffset / viewport);
-    blue.style.opacity = "1";
-    ink.style.opacity = "1";
-    blue.style.transform = `translate3d(0, ${blueOffset}px, 0)`;
-    ink.style.transform = `translate3d(0, ${inkOffset}px, 0)`;
-    hero.style.transform = `perspective(1600px) rotateX(${5 * (1 - opening)}deg) rotateZ(${-2 * (1 - opening)}deg) scale(${0.94 + opening * 0.06})`;
-    const travel = clamp((scroll - workTop + viewport) / Math.max(closeTop - workTop, viewport));
-    const orbitPresence = blueProgress * (1 - inkProgress) * opening;
-    orbit.style.opacity = String(orbitPresence);
-    orbit.style.transform = `translate3d(${45 - travel * 85}vw, ${-20 + travel * 65}vh, 0) rotateX(55deg) rotateZ(${travel * 210 - 30}deg) scale(${0.8 + travel * 0.8})`;
-    secondary.style.opacity = String(orbitPresence * 0.7);
-    secondary.style.transform = `translate3d(${-35 + travel * 100}vw, ${40 - travel * 60}vh, 0) rotateX(65deg) rotateZ(${-travel * 160}deg)`;
+    if (reduced.matches || disposed) return;
+    const delta = previousTime ? Math.min(time - previousTime, 40) : 16;
+    previousTime = time;
+    // 仅平滑视觉层；停止输入后迅速收敛，避免持续占用渲染帧。
+    current += (window.scrollY - current) * (1 - Math.exp(-delta / 65));
+    timeline?.draw(current);
+    if (Math.abs(window.scrollY - current) > 0.15) schedule();
+    else previousTime = 0;
   }
 
   function schedule() {
-    if (!frame && !reduced.matches) frame = requestAnimationFrame(draw);
+    if (!frame && !reduced.matches && !disposed) frame = requestAnimationFrame(draw);
   }
 
   function configure() {
     observer?.disconnect();
     cancelAnimationFrame(frame);
     frame = 0;
+    previousTime = 0;
     document.body.toggleAttribute("data-motion-ready", !reduced.matches);
     if (reduced.matches) {
-      hero?.style.removeProperty("transform");
+      timeline?.reset();
       for (const element of reveals) element.removeAttribute("data-reveal-pending");
       return;
     }
@@ -71,10 +54,10 @@ export function initializeLandingMotion() {
           observer?.unobserve(entry.target);
         }
       },
-      { threshold: 0.08 },
+      { threshold: 0.1 },
     );
     for (const element of reveals) {
-      if (element.getBoundingClientRect().top > viewport) {
+      if (element.getBoundingClientRect().top > window.innerHeight) {
         element.setAttribute("data-reveal-pending", "");
         observer.observe(element);
       }
@@ -86,15 +69,21 @@ export function initializeLandingMotion() {
   window.addEventListener("scroll", schedule, { passive: true });
   window.addEventListener("resize", measure, { passive: true });
   window.addEventListener("load", measure, { once: true });
+  document.addEventListener("focusin", schedule);
+  document.addEventListener("focusout", schedule);
   reduced.addEventListener("change", configure);
   void document.fonts.ready.then(measure);
   window.addEventListener(
     "pagehide",
     () => {
+      disposed = true;
       observer?.disconnect();
       cancelAnimationFrame(frame);
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", measure);
+      window.removeEventListener("load", measure);
+      document.removeEventListener("focusin", schedule);
+      document.removeEventListener("focusout", schedule);
       reduced.removeEventListener("change", configure);
     },
     { once: true },

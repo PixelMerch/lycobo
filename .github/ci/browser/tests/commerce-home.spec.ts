@@ -650,7 +650,7 @@ test("textile mode selects views and opens the textile tool with the uploaded ma
 });
 
 for (const width of [1440, 390]) {
-  test(`header stays light after scrolling without moving content at ${width}px`, async ({
+  test(`header switches to a light surface without shifting controls at ${width}px`, async ({
     page,
   }) => {
     await mockImageApi(page);
@@ -668,15 +668,15 @@ for (const width of [1440, 390]) {
         return { background: style.backgroundColor, blur: style.backdropFilter };
       });
     const height = () => header.evaluate((element) => element.getBoundingClientRect().height);
-    const start = frame.locator(".lycobo-hero-cta");
-    const startTop = () =>
-      start.evaluate((element) => element.getBoundingClientRect().top + window.scrollY);
-    await expect(start).toBeVisible();
+    const brand = page.locator(".public-site-brand");
+    const brandTop = () =>
+      brand.evaluate((element) => element.getBoundingClientRect().top + window.scrollY);
+    await expect(brand).toBeVisible();
     await expect(header).not.toHaveAttribute("data-scrolled");
     expect(await surface()).toEqual({ background: "rgba(0, 0, 0, 0)", blur: "none" });
     expect(await height()).toBe(60);
-    const top = await startTop();
-    // 首页滚动后使用浅色实底和细分隔线，顶栏与正文布局保持原位。
+    const top = await brandTop();
+    // 商品画面随滚动变化，但共用顶栏的位置保持稳定。
     await scroll(400);
     await expect(header).toHaveAttribute("data-scrolled", "true");
     await expect.poll(surface).toEqual({
@@ -684,9 +684,9 @@ for (const width of [1440, 390]) {
       blur: "none",
     });
     expect(await height()).toBe(60);
-    expect(await startTop()).toBe(top);
+    expect(await brandTop()).toBe(top);
     expect(await header.evaluate((element) => element.getBoundingClientRect().top)).toBe(0);
-    await page.screenshot({ path: `/tmp/lycobo-home-header-frosted-${width}.png` });
+    await page.screenshot({ path: `/tmp/lycobo-home-header-surface-${width}.png` });
     await scroll(0);
     await expect(header).not.toHaveAttribute("data-scrolled");
     await expect.poll(surface).toEqual({ background: "rgba(0, 0, 0, 0)", blur: "none" });
