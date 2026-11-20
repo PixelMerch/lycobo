@@ -5,8 +5,17 @@ import { historyMessages } from "./history/history-messages";
 /** 读到的一份原始文件：文件字节和响应声明的类型。 */
 export type OriginalFile = { bytes: Uint8Array; type: string };
 
+/** 每块读到的字节数，以及响应声明的总字节数。未知大小时总数为零。 */
+export type OriginalChunkObserver = (bytes: number, total: number) => void;
+
 /** 把响应体读进内存，累计超过 remaining 字节就停下并报“太大”，不让浏览器内存失控。 */
-async function readLimited(body: ReadableStream<Uint8Array>, remaining: number, tooLarge: string) {
+async function readLimited(
+  body: ReadableStream<Uint8Array>,
+  remaining: number,
+  tooLarge: string,
+  contentLength: number,
+  onChunk?: OriginalChunkObserver,
+) {
   const reader = body.getReader();
   const chunks: Uint8Array[] = [];
   let size = 0;
@@ -16,6 +25,7 @@ async function readLimited(body: ReadableStream<Uint8Array>, remaining: number, 
       if (done) break;
       size += value.byteLength;
       if (size > remaining) throw new Error(tooLarge);
+      onChunk?.(value.byteLength, contentLength);
       chunks.push(value);
     }
   } finally {
@@ -40,6 +50,7 @@ export async function readOriginal(
   remaining: number,
   signal: AbortSignal,
   accept: readonly string[] = ["image/"],
+  onChunk?: OriginalChunkObserver,
 ): Promise<OriginalFile> {
   const delivery = await resolveDownloadDelivery(id, signal);
   const response = await fetch(delivery.download_url, {
@@ -51,8 +62,9 @@ export async function readOriginal(
   const type = response.headers.get("Content-Type") ?? "";
   if (!response.ok || !accept.some((prefix) => type.startsWith(prefix)) || !response.body)
     throw new Error(t.downloadFailed);
-  if (Number(response.headers.get("Content-Length")) > remaining) throw new Error(t.tooLarge);
-  const bytes = await readLimited(response.body, remaining, t.tooLarge);
+  const contentLength = Number(response.headers.get("Content-Length")) || 0;
+  if (contentLength > remaining) throw new Error(t.tooLarge);
+  const bytes = await readLimited(response.body, remaining, t.tooLarge, contentLength, onChunk);
   if (!bytes.byteLength) throw new Error(t.downloadFailed);
   return { bytes, type };
 }

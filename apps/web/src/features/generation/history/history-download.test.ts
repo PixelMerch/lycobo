@@ -64,6 +64,86 @@ it("does not offer bulk downloads for unfinished or single-image jobs", () => {
   first.status = "running";
   expect(historyDownloadEntries(pending, "zh-CN")).toEqual([]);
 });
+
+it("downloads three originals at a time and reports packing only after the last read", async () => {
+  const entries = Array.from({ length: 5 }, (_, index) => ({
+    id: String(index),
+    name: `image-${index}.png`,
+  }));
+  const releases: (() => void)[] = [];
+  const originals = entries.map(
+    (_entry, index) =>
+      new Promise<Uint8Array>((resolve) => {
+        releases.push(() => resolve(new Uint8Array([index, index])));
+      }),
+  );
+  const progress: number[] = [];
+  const onPacking = vi.fn();
+  const reader = vi.fn(
+    (
+      id: string,
+      _remaining: number,
+      _signal: AbortSignal,
+      onChunk?: (bytes: number, total: number) => void,
+    ) => {
+      onChunk?.(1, 2);
+      const download = originals[Number(id)];
+      if (!download) throw new Error("Missing fixture");
+      return download;
+    },
+  );
+  const download = createHistoryArchive(entries, reader, new AbortController().signal, {
+    onProgress: (fraction: number) => progress.push(fraction),
+    onPacking,
+  });
+  try {
+    expect(reader).toHaveBeenCalledTimes(3);
+    expect(progress.at(-1)).toBeCloseTo(0.3);
+    releases[2]?.();
+    releases[0]?.();
+    await vi.waitFor(() => expect(reader).toHaveBeenCalledTimes(5));
+    expect(onPacking).not.toHaveBeenCalled();
+  } finally {
+    for (const release of releases) release();
+  }
+  const files = unzipSync(await download);
+  expect(progress).toEqual([...progress].sort((a, b) => a - b));
+  expect(progress.at(-1)).toBe(1);
+  expect(onPacking).toHaveBeenCalledOnce();
+  expect(Object.keys(files)).toEqual(entries.map((entry) => entry.name));
+});
+
+it("counts in-flight chunks toward the shared limit and cancels other reads", async () => {
+  const entries = historyDownloadEntries(job(), "zh-CN");
+  const signals: AbortSignal[] = [];
+  const onPacking = vi.fn();
+  const reader = vi.fn(
+    async (
+      _id: string,
+      _remaining: number,
+      signal: AbortSignal,
+      onChunk: (bytes: number, total: number) => void,
+    ) => {
+      signals.push(signal);
+      onChunk(130 * 1024 * 1024, 0);
+      await new Promise<void>((resolve) =>
+        signal.addEventListener("abort", () => resolve(), { once: true }),
+      );
+      signal.throwIfAborted();
+      return new Uint8Array();
+    },
+  );
+  await expect(
+    createHistoryArchive(entries, reader, new AbortController().signal, {
+      onProgress: vi.fn(),
+      onPacking,
+    }),
+  ).rejects.toThrow();
+  expect(signals).toHaveLength(2);
+  expect(signals.every((signal) => signal.aborted)).toBe(true);
+  expect(onPacking).not.toHaveBeenCalled();
+});
+
 it("does not produce an incomplete archive after a failed or cancelled original request", async () => {
   const entries = historyDownloadEntries(job(), "zh-CN");
   const reader = vi
