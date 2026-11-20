@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { useOutletContext } from "react-router";
+import { LoadingState } from "../../../components/loading-state";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
 import { useAppNavigate } from "../../../i18n/use-localized-navigation";
@@ -59,9 +60,10 @@ export function LandingPage() {
   }
 
   if (!document) {
+    if (!isError) return <LoadingState className="openart-reference" label={t.loading} />;
     return (
       <div className="openart-reference landing-load-state" role="status">
-        {isError ? t.unavailable : t.loading}
+        {t.unavailable}
       </div>
     );
   }

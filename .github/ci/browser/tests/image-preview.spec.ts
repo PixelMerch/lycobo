@@ -76,6 +76,9 @@ test("library and history images open an in-page full-screen viewer", async ({ p
     const spinner = historyDialog.locator(".image-preview-frame .loading-state-spinner");
     await expect(spinner).toBeVisible();
     await expect(spinner).toHaveCSS("width", "30px");
+    const loading = historyDialog.locator(".image-preview-frame .loading-state");
+    await expect(loading).toHaveAccessibleName("图片加载中");
+    await expect(loading).toHaveText("");
   } finally {
     releaseImage();
   }

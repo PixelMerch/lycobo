@@ -15,7 +15,11 @@ export function LoadingState({ label, className, size = "lg" }: LoadingStateProp
   const t = useMessages(componentsMessages);
   const pixels = loaderSizes[size];
   return (
-    <div className={className ? `loading-state ${className}` : "loading-state"} role="status">
+    <div
+      className={className ? `loading-state ${className}` : "loading-state"}
+      role="status"
+      aria-label={label ?? t.loading}
+    >
       <span className="loading-state-animation" aria-hidden="true">
         <HashLoader className="loading-state-spinner" color="#A8FF00" size={pixels} />
       </span>
@@ -24,7 +28,6 @@ export function LoadingState({ label, className, size = "lg" }: LoadingStateProp
         style={{ fontSize: pixels }}
         aria-hidden="true"
       />
-      <span className="visually-hidden">{label ?? t.loading}</span>
     </div>
   );
 }

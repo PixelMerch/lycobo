@@ -11,6 +11,10 @@ body:has(.openart-reference) {
   border: 0;
   background: var(--studio-canvas);
 }
+.openart-reference.loading-state {
+  z-index: 10;
+  background: var(--studio-canvas);
+}
 .landing-load-state {
   display: grid;
   place-items: center;
