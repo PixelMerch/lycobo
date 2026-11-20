@@ -1,10 +1,9 @@
 import { useCallback, useSyncExternalStore } from "react";
 
-// 卡片高宽比（高 ÷ 宽），与 CSS 里各形状的 aspect-ratio 一致；另加约 16px 卡片间距折算到列宽的比例。
+// 卡片高宽比（高 ÷ 宽），与 CSS 里各形状的 aspect-ratio 一致；另计入卡片间距。
 const heightByShape = { portrait: 1.25, square: 1, landscape: 0.75 } as const;
 const gapRatio = 0.06;
-const defaultBreakpoints = [768, 1024, 1280];
-const libraryBreakpoints = [640, 900, 1120, 1360, 1640];
+const breakpoints = [640, 900, 1120, 1360, 1640];
 
 type Shaped = { shape: keyof typeof heightByShape };
 /** 瀑布流的一列：稳定的 id 与按顺序放进来的卡片。 */
@@ -36,19 +35,15 @@ function breakpointQuery(width: number) {
   return window.matchMedia(`(min-width: ${width}px)`);
 }
 
-/** 按视口更新瀑布流列数，独立灵感库在宽屏可展示更多列。 */
-export function useColumnCount(standalone: boolean) {
-  const breakpoints = standalone ? libraryBreakpoints : defaultBreakpoints;
-  const subscribe = useCallback(
-    (onChange: () => void) => {
-      const queries = breakpoints.map(breakpointQuery);
-      for (const query of queries) query.addEventListener("change", onChange);
-      return () => {
-        for (const query of queries) query.removeEventListener("change", onChange);
-      };
-    },
-    [breakpoints],
-  );
+/** 按视口更新灵感库瀑布流列数。 */
+export function useColumnCount() {
+  const subscribe = useCallback((onChange: () => void) => {
+    const queries = breakpoints.map(breakpointQuery);
+    for (const query of queries) query.addEventListener("change", onChange);
+    return () => {
+      for (const query of queries) query.removeEventListener("change", onChange);
+    };
+  }, []);
   return useSyncExternalStore(
     subscribe,
     () => 2 + breakpoints.filter((width) => breakpointQuery(width).matches).length,

@@ -295,6 +295,27 @@ test("灵感库 inside the workspace library fills the prompt and closes the lib
   const dialog = page.getByRole("dialog", { name: "素材库", exact: true });
   await dialog.getByRole("tab", { name: "灵感库" }).click();
   await expect(dialog.getByText("挑一张喜欢的画面")).toHaveCount(0);
+  await expect(dialog.locator(".asset-library-head .tabs__list")).toHaveCSS(
+    "border-bottom-width",
+    "0px",
+  );
+  await expect(dialog.locator(".asset-library-head .selection-pill")).toHaveCSS(
+    "visibility",
+    "visible",
+  );
+  await expect(dialog.locator(".home-inspiration-card").first()).toHaveCSS("border-radius", "6px");
+  await expect(dialog.locator(".home-inspiration-grid")).toHaveCSS("gap", "4px");
+  await expect(dialog.locator(".home-inspiration-bar .selection-pill")).toHaveCSS(
+    "visibility",
+    "visible",
+  );
+  await dialog.getByRole("button", { name: "搜索灵感", exact: true }).click();
+  const searchbox = dialog.getByRole("searchbox", { name: "搜索灵感" });
+  await searchbox.fill("水光香氛");
+  await expect(dialog.locator(".home-inspiration-card")).toHaveCount(1);
+  await searchbox.press("Escape");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator(".home-inspiration-card")).toHaveCount(23);
   await dialog.getByRole("button", { name: "查看灵感：水光香氛", exact: true }).focus();
   await page.keyboard.press("Tab");
   await expect(dialog.getByRole("button", { name: "做同款：水光香氛", exact: true })).toBeFocused();

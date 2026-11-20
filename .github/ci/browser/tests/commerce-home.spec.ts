@@ -224,7 +224,7 @@ test("image mentions insert at the cursor and preserve surrounding text", async 
   await expect(workspacePrompt).toHaveText("图片1 ");
 });
 
-test("home inspiration filters examples and confirms prompt replacement without submitting paid work", async ({
+test("home inspiration filters examples and replaces the prompt without submitting paid work", async ({
   page,
 }) => {
   await mockImageApi(page);
@@ -251,10 +251,6 @@ test("home inspiration filters examples and confirms prompt replacement without 
   expect(close.x).toBeGreaterThan(heading.x + heading.width);
   expect(close.y).toBeLessThan(heading.y + heading.height);
   await detail.getByRole("button", { name: "做同款", exact: true }).click();
-  await page.getByRole("button", { name: "保留当前内容", exact: true }).click();
-  await expect(detail).toBeVisible();
-  await detail.getByRole("button", { name: "做同款", exact: true }).click();
-  await page.getByRole("button", { name: "替换并进入", exact: true }).click();
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toHaveValue(
     /基于参考床品拍摄枕头特写/,
@@ -418,6 +414,17 @@ test("inspiration library cards offer 做同款 by hover or keyboard without sub
   await clickCenter(panel);
   const detail = page.getByRole("dialog", { name: "灵感详情：水光香氛", exact: true });
   await expect(detail).toBeVisible();
+  const insets = await detail.evaluate((dialog) => {
+    const title = dialog.querySelector(".modal__heading");
+    const photo = dialog.querySelector(".home-inspiration-detail-content > img");
+    if (!title || !photo) throw new Error("Missing inspiration detail content");
+    const frame = dialog.getBoundingClientRect();
+    return {
+      top: title.getBoundingClientRect().top - frame.top,
+      bottom: frame.bottom - photo.getBoundingClientRect().bottom,
+    };
+  });
+  expect(insets.top).toBeCloseTo(insets.bottom);
   await detail.getByRole("button", { name: "关闭灵感详情", exact: true }).click();
   await expect(detail).toBeHidden();
 
@@ -437,11 +444,6 @@ test("inspiration library cards offer 做同款 by hover or keyboard without sub
   await hoverNearTop(other);
   const makeOther = gallery.getByRole("button", { name: "做同款：原木与晨光", exact: true });
   await clickCenter(makeOther);
-  await page.getByRole("button", { name: "保留当前内容", exact: true }).click();
-  await expect(page).toHaveURL(/\/inspiration$/);
-  await hoverNearTop(other);
-  await clickCenter(makeOther);
-  await page.getByRole("button", { name: "替换并进入", exact: true }).click();
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(prompt).not.toHaveValue(/将商品放在水边石台上/);
   expect(submissions).toBe(0);

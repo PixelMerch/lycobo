@@ -23,12 +23,16 @@
   flex-direction: column;
   min-height: 0;
   height: 100%;
-  background: #0b0b0b;
+  --library-background: #0b0b0b;
+  background: var(--library-background);
   will-change: transform;
 }
 .library-shell .asset-library-tabs {
   flex: 1;
   min-height: 0;
+}
+.library-shell:has(.asset-library-tabs[data-library-tab="inspiration"]) {
+  --library-background: var(--studio-canvas);
 }
 /* 标签行与应用顶部栏同高，关闭按钮在“我的素材 / 灵感库”左侧，与下方内容的左边界对齐。 */
 .library-shell .asset-library-head {
@@ -47,11 +51,11 @@
   padding: 0 var(--space-6) var(--space-6);
   overflow-y: auto;
 }
-.library-shell .asset-filters {
+.library-shell :is(.asset-filters, .home-inspiration-bar) {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: #0b0b0b;
+  background: var(--library-background);
 }
 @media (max-width: 767px) {
   .library-shell .asset-library-head {

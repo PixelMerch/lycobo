@@ -1,6 +1,6 @@
 import { Modal } from "@heroui/react";
 import type { AssetTool } from "@lycoboai/contracts";
-import { LayoutGroup, motion } from "motion/react";
+import { motion } from "motion/react";
 import { useState } from "react";
 import { DialogClose } from "../../components/overlays/dialog-close";
 import { useCenteredDialogEntrance } from "../../components/overlays/use-centered-dialog-entrance";
@@ -57,12 +57,7 @@ export function LibraryDialog({
                     onSelectingChange={setSelecting}
                   />
                 }
-                inspiration={
-                  // 首页作品墙也在页面上时，分类选中动画各走各的，不在两面墙之间飞过去。
-                  <LayoutGroup id="asset-library-inspiration">
-                    <HomeInspirationGallery onApplied={onClose} />
-                  </LayoutGroup>
-                }
+                inspiration={<HomeInspirationGallery onApplied={onClose} />}
               />
             </motion.div>
           </Modal.Dialog>

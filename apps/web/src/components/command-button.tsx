@@ -27,18 +27,24 @@ function contentMotion(active: boolean, reduced: boolean | null) {
 }
 
 function isCommandActivation(event: KeyboardEvent, modifier: boolean, key: boolean) {
-  const insideDialog = event.target instanceof Element && event.target.closest('[role="dialog"]');
   return (
     event.type === "keydown" &&
     modifier &&
     key &&
-    !insideDialog &&
     !event.repeat &&
     !event.defaultPrevented &&
     !event.isComposing &&
     !event.altKey &&
     !event.shiftKey
   );
+}
+
+function receivesShortcut(search: HTMLElement | null, target: EventTarget | null) {
+  if (!search?.isConnected || search.closest('[aria-hidden="true"], [inert], [hidden]'))
+    return false;
+  const dialog = target instanceof Element ? target.closest('[role="dialog"]') : null;
+  // 弹窗里的搜索只处理自身弹窗收到的快捷键。
+  return dialog === search.closest('[role="dialog"]');
 }
 
 function useCommandKeys(
@@ -52,7 +58,7 @@ function useCommandKeys(
   );
   const [held, setHeld] = useState<"modifier" | "shortcut" | null>(null);
   const handleKeys = useEffectEvent((event: KeyboardEvent) => {
-    if (!root.current?.isConnected) return;
+    if (!receivesShortcut(root.current, event.target)) return;
     const modifier = apple ? event.metaKey : event.ctrlKey;
     const key = event.code === "KeyK" || event.key.toLowerCase() === "k";
     let next: typeof held = null;

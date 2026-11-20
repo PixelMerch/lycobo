@@ -13,3 +13,37 @@
   background: var(--control-selected-fill);
   pointer-events: none;
 }
+
+/* 使用滑动选中底板的标签无下划线。 */
+.pill-tab-list.tabs__list {
+  position: relative;
+  isolation: isolate;
+  width: max-content;
+  gap: 6px;
+  padding: 4px 2px;
+  border: 0;
+}
+.pill-tab-list .tabs__tab {
+  flex: none;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--fill-faint);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-xs);
+  white-space: nowrap;
+}
+.pill-tab-list .tabs__tab:is(:hover, [data-hovered="true"]) {
+  background: var(--control-hover-fill);
+  color: var(--foreground);
+}
+.pill-tab-list .tabs__tab[data-selected="true"] {
+  background: transparent;
+  color: var(--foreground);
+}
+.pill-tab-list .tabs__indicator {
+  display: none;
+}

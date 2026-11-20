@@ -291,10 +291,16 @@
   }
 }
 
-/* ---------- 素材库页面：随文档滚动，筛选栏吸在收窄 4px 后的顶部栏下方 ---------- */
-.assets-page .asset-filters {
+/* 素材库整页随文档滚动，入口标签与当前筛选栏依次吸顶。 */
+.assets-page .asset-library-head {
   position: sticky;
-  top: calc(var(--header-height) - 4px);
+  top: var(--header-height);
+  z-index: 11;
+  background: var(--background);
+}
+.assets-page :is(.asset-filters, .home-inspiration-bar) {
+  position: sticky;
+  top: calc(2 * var(--header-height));
   z-index: 10;
   background: var(--background);
 }

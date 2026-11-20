@@ -1,19 +1,11 @@
 import { Button, EmptyState, Tabs } from "@heroui/react";
-import {
-  IconCamera,
-  IconLayoutCollage,
-  IconPhoto,
-  IconSearchOff,
-  IconSparkles,
-  type TablerIcon,
-} from "@tabler/icons-react";
+import { IconSearchOff } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { CommandButton } from "../../components/command-button";
 import { SelectionPill } from "../../components/selection-pill";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
-import { SelectionHighlight } from "../generation/composer/selection-highlight";
 import {
   type HomeInspiration,
   type InspirationCategory,
@@ -22,23 +14,13 @@ import {
 import { homeInspirationMessages } from "./home-inspiration-messages";
 import { distributeColumns, useColumnCount } from "./inspiration-columns";
 
-// 卡片左下角的分类标签图标，与工作区工具图标保持同一风格。
-const categoryIcons = {
-  product: IconCamera,
-  scene: IconPhoto,
-  textile: IconLayoutCollage,
-  creative: IconSparkles,
-} satisfies Record<HomeInspiration["category"], TablerIcon>;
-
 /** 灵感库按分类呈现完整瀑布流，复用详情与做同款操作。 */
 export function InspirationWall({
   items,
-  standalone,
   onOpen,
   onUse,
 }: {
   items: HomeInspiration[];
-  standalone: boolean;
   onOpen: (item: HomeInspiration) => void;
   onUse: (item: HomeInspiration) => void;
 }) {
@@ -51,15 +33,7 @@ export function InspirationWall({
     const text = `${item.title} ${t.categories[item.category]} ${item.prompt}`.toLocaleLowerCase();
     return words.every((word) => text.includes(word));
   });
-  const columns = distributeColumns(visible, useColumnCount(standalone));
-  const tabs = inspirationCategories.map((id) => (
-    <Tabs.Tab id={id} key={id}>
-      {!standalone && id === category && (
-        <SelectionHighlight layoutId="home-inspiration-selection" layoutDependency={category} />
-      )}
-      {t.categories[id]}
-    </Tabs.Tab>
-  ));
+  const columns = distributeColumns(visible, useColumnCount());
   return (
     <Tabs
       selectedKey={category}
@@ -69,34 +43,31 @@ export function InspirationWall({
       }}
     >
       <div className="home-inspiration-bar">
-        {standalone ? (
-          <div className="home-inspiration-filter-scroll">
-            <Tabs.List
-              aria-label={t.categoryList}
-              render={({ children, ...props }) => (
-                <div {...props}>
-                  {children}
-                  <SelectionPill value={category} />
-                </div>
-              )}
-            >
-              {tabs}
-            </Tabs.List>
-          </div>
-        ) : (
-          <Tabs.ListContainer>
-            <Tabs.List aria-label={t.categoryList}>{tabs}</Tabs.List>
-          </Tabs.ListContainer>
-        )}
-        {standalone && (
-          <CommandButton
-            label={t.search}
-            placeholder={t.searchPlaceholder}
-            closeLabel={t.closeSearch}
-            query={query}
-            onQueryChange={setQuery}
-          />
-        )}
+        <div className="home-inspiration-filter-scroll">
+          <Tabs.List
+            className="pill-tab-list"
+            aria-label={t.categoryList}
+            render={({ children, ...props }) => (
+              <div {...props}>
+                {children}
+                <SelectionPill value={category} />
+              </div>
+            )}
+          >
+            {inspirationCategories.map((id) => (
+              <Tabs.Tab id={id} key={id}>
+                {t.categories[id]}
+              </Tabs.Tab>
+            ))}
+          </Tabs.List>
+        </div>
+        <CommandButton
+          label={t.search}
+          placeholder={t.searchPlaceholder}
+          closeLabel={t.closeSearch}
+          query={query}
+          onQueryChange={setQuery}
+        />
       </div>
       <Tabs.Panel id={category}>
         {!visible.length && (
@@ -113,7 +84,6 @@ export function InspirationWall({
                   key={item.id}
                   item={item}
                   order={position}
-                  standalone={standalone}
                   onOpen={() => onOpen(item)}
                   onUse={() => onUse(item)}
                 />
@@ -130,13 +100,11 @@ export function InspirationWall({
 function InspirationTile({
   item,
   order,
-  standalone,
   onOpen,
   onUse,
 }: {
   item: HomeInspiration;
   order: number;
-  standalone: boolean;
   onOpen: () => void;
   onUse: () => void;
 }) {
@@ -155,14 +123,6 @@ function InspirationTile({
         ease: [0.215, 0.61, 0.355, 1],
       }}
     >
-      {/* 光晕：示例图自己的颜色在卡片四周晕开，只作装饰。 */}
-      <img
-        className="home-inspiration-glow"
-        src={item.image}
-        alt=""
-        loading="lazy"
-        decoding="async"
-      />
       <Button
         variant="tertiary"
         className="home-inspiration-card"
@@ -178,19 +138,12 @@ function InspirationTile({
           loading="lazy"
           decoding="async"
         />
-        {!standalone && (
-          <span className="home-inspiration-tag">
-            <UiIcon icon={categoryIcons[item.category]} size="small" />
-            {t.categories[item.category]}
-          </span>
-        )}
-        {/* 悬停时卡内升起玻璃面板；面板属于卡片按钮，点它也打开详情。 */}
+        {/* 卡片内的标题与图片一起打开详情。 */}
         <span className="home-inspiration-panel" aria-hidden="true">
           <strong>{item.title}</strong>
-          <span className="home-inspiration-panel-prompt">{item.prompt}</span>
         </span>
       </Button>
-      {/* “做同款”与卡片按钮并列（按钮不能嵌套），定位在玻璃面板左下角。 */}
+      {/* “做同款”与卡片按钮并列（按钮不能嵌套），定位在图片左下角。 */}
       <Button
         size="sm"
         variant="primary"

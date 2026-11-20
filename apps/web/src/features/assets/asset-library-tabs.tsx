@@ -1,5 +1,6 @@
 import { Tabs } from "@heroui/react";
 import type { ReactNode } from "react";
+import { SelectionPill } from "../../components/selection-pill";
 import { useMessages } from "../../i18n/messages";
 import { assetsMessages } from "./assets-messages";
 import "./asset-library-tabs.css";
@@ -34,21 +35,28 @@ export function AssetLibraryTabs({
   return (
     <Tabs
       className="asset-library-tabs"
+      data-library-tab={tab}
       selectedKey={tab}
       onSelectionChange={(key) => onTabChange(assetLibraryTab(key))}
     >
       <div className="asset-library-head">
         {lead}
-        <Tabs.ListContainer>
-          <Tabs.List aria-label={t.libraryTitle}>
-            {tabs.map((id) => (
-              <Tabs.Tab key={id} id={id}>
-                {id === "mine" ? t.myAssets : t.inspiration}
-                <Tabs.Indicator />
-              </Tabs.Tab>
-            ))}
-          </Tabs.List>
-        </Tabs.ListContainer>
+        <Tabs.List
+          className="pill-tab-list"
+          aria-label={t.libraryTitle}
+          render={({ children, ...props }) => (
+            <div {...props}>
+              {children}
+              <SelectionPill value={tab} />
+            </div>
+          )}
+        >
+          {tabs.map((id) => (
+            <Tabs.Tab key={id} id={id}>
+              {id === "mine" ? t.myAssets : t.inspiration}
+            </Tabs.Tab>
+          ))}
+        </Tabs.List>
       </div>
       <Tabs.Panel id="mine" className="asset-library-panel">
         {mine}
