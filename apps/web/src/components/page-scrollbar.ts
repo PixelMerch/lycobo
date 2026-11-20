@@ -29,9 +29,10 @@ export function initializePageScrollbar(panel?: HTMLElement, label?: string) {
   }
 
   function resize() {
-    const height = scroller.scrollHeight;
-    spacer.style.height = `${height}px`;
-    rail.hidden = height <= scroller.clientHeight;
+    const range = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    rail.hidden = range === 0;
+    // 轨道可能短于视口，仍让滑块覆盖原滚动容器的完整行程。
+    spacer.style.height = `${rail.clientHeight + range}px`;
     followPage();
   }
 
@@ -39,6 +40,7 @@ export function initializePageScrollbar(panel?: HTMLElement, label?: string) {
   rail.addEventListener("scroll", followRail, { passive: true });
   window.addEventListener("resize", resize, { passive: true });
   const observer = new ResizeObserver(resize);
+  observer.observe(rail);
   if (panel) {
     // 面板高度固定，分页追加或筛选会改变内部列表高度。
     observer.observe(panel);

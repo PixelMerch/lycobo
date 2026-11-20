@@ -52,6 +52,20 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await expect(articles).toHaveCount(3);
   const scrollbar = page.getByRole("region", { name: "滚动工作区", exact: true });
   await expect(scrollbar).toHaveCSS("position", "fixed");
+  const assetEntry = page.getByRole("button", { name: "打开素材库", exact: true });
+  const trackBounds = await scrollbar.boundingBox();
+  const assetEntryBounds = await assetEntry.boundingBox();
+  if (!trackBounds || !assetEntryBounds)
+    throw new Error("Missing history scrollbar or assets entry");
+  expect(Math.abs(trackBounds.y - assetEntryBounds.y)).toBeLessThanOrEqual(1);
+  await expect
+    .poll(() =>
+      scrollbar.evaluate((rail) => {
+        const page = document.documentElement;
+        return rail.scrollHeight - rail.clientHeight - (page.scrollHeight - page.clientHeight);
+      }),
+    )
+    .toBe(0);
   await expect(page.locator("html")).toHaveCSS("scrollbar-width", "none");
   expect(await page.evaluate(() => innerWidth - document.documentElement.clientWidth)).toBe(0);
   await expect(page.getByRole("button", { name: "回到顶部", exact: true })).toHaveCount(0);

@@ -10,6 +10,16 @@
   }
 }
 
+@media (min-width: 1301px) {
+  body:has(.unified-workspace) > .lycobo-page-scrollbar {
+    inset-block-start: calc(
+      var(--studio-header-height) +
+      var(--workspace-padding) +
+      var(--workspace-column-top)
+    );
+  }
+}
+
 /* 桌面（≥1024px）：工具坞改成参数栏左侧的竖排工具栏，和参数栏共用第一列；每项图标在左、名称在右，
  * 名称单行显示（展开宽 200px），收起后只剩 64px 宽的图标。历史上方是 48px 的“生成记录”
  * 标题行，与右栏“我的素材”同一行：工具栏、参数栏的顶边和两个标题文字对齐，第一张任务卡和第一张
@@ -33,13 +43,19 @@
   initial-value: 1;
 }
 @media (min-width: 1024px) {
+  body:has(.unified-workspace) {
+    --workspace-desktop-toolbar-height: 48px;
+    /* 左侧栏和右侧浮动滚动条与「我的素材」标题文字对齐。 */
+    --workspace-column-top: calc(
+      (var(--workspace-desktop-toolbar-height) - var(--leading-base)) /
+      2
+    );
+  }
   .workspace.unified-workspace {
-    --workspace-toolbar-height: 48px;
+    --workspace-toolbar-height: var(--workspace-desktop-toolbar-height);
     --workspace-tool-rail-progress: 1;
     --workspace-tool-rail-width: calc(64px + 136px * var(--workspace-tool-rail-progress));
     --workspace-tool-rail-inset-progress: clamp(0, var(--workspace-tool-rail-progress), 1);
-    /* 左侧工具栏和参数栏的顶边与“生成记录”“我的素材”标题文字的顶边对齐（标题在 48px 行内居中）。 */
-    --workspace-column-top: calc((var(--workspace-toolbar-height) - var(--leading-base)) / 2);
     grid-template-columns: calc(var(--workspace-tool-rail-width) + 12px + 300px) minmax(0, 1fr);
     transition: --workspace-tool-rail-progress var(--workspace-rail-width-spring);
   }
