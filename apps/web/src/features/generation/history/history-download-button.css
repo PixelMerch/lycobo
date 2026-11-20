@@ -12,8 +12,7 @@
 .history-download-fill {
   position: absolute;
   inset: 0;
-  background: var(--studio-accent-gradient);
-  opacity: 0.26;
+  background: var(--fill-strong);
   pointer-events: none;
   transform-origin: left;
 }
