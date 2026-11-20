@@ -119,8 +119,8 @@ function InspirationDetail({
               <div className="home-inspiration-detail-content">
                 <img src={item.image} alt={item.title} width="480" height="480" />
                 <div className="home-inspiration-description">
-                  <span>{t.categories[item.category]}</span>
                   <div className="home-inspiration-prompt-group">
+                    <span>{t.categories[item.category]}</span>
                     <h3>{t.prompt}</h3>
                     <p className="home-inspiration-prompt">{item.prompt}</p>
                   </div>

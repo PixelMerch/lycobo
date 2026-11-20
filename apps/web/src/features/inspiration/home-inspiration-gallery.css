@@ -286,8 +286,8 @@
 
 .modal__dialog.home-inspiration-detail {
   overflow: hidden;
-  width: min(960px, calc(100vw - 32px));
-  max-width: 960px;
+  width: min(840px, calc(100vw - 32px));
+  max-width: 840px;
   gap: var(--space-4);
   padding: var(--space-6);
   border-radius: 24px;
@@ -307,15 +307,15 @@
 }
 .home-inspiration-detail-content {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-  gap: var(--space-8);
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+  gap: var(--space-6);
   align-items: start;
 }
 .home-inspiration-detail-content > img {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 60vh;
+  max-height: min(60vh, 380px);
   border-radius: 16px;
   object-fit: contain;
 }
@@ -323,17 +323,16 @@
   align-self: stretch;
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-4);
 }
 .home-inspiration-prompt-group,
 .home-inspiration-detail-footer {
   display: grid;
-  gap: var(--space-3);
 }
 .home-inspiration-prompt-group {
-  margin-block: auto;
+  gap: var(--space-2);
 }
-.home-inspiration-description > span {
+.home-inspiration-prompt-group > span {
   color: var(--muted);
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
@@ -355,6 +354,8 @@
   line-height: var(--leading-lg);
 }
 .home-inspiration-detail-footer {
+  gap: var(--space-3);
+  margin-block-start: auto;
   padding-block-start: var(--space-4);
   border-block-start: 1px solid var(--separator);
 }
@@ -422,11 +423,10 @@
     grid-template-columns: 1fr;
     gap: var(--space-4);
   }
-  .home-inspiration-description {
-    gap: var(--space-4);
-  }
   .home-inspiration-detail-content > img {
-    max-height: 40vh;
+    justify-self: center;
+    max-width: 280px;
+    max-height: min(40vh, 280px);
   }
   .home-inspiration-actions .button {
     flex: 1 1 0;
