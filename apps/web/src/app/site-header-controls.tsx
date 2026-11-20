@@ -22,7 +22,6 @@ export function SiteHeaderControls({
   onMenuOpen,
   showWorkspaceLink = true,
   style,
-  theme = "dark",
 }: {
   account: ReturnType<typeof useEnterpriseSession>["data"];
   dismissVersion?: number;
@@ -30,11 +29,10 @@ export function SiteHeaderControls({
   onMenuOpen?: () => void;
   showWorkspaceLink?: boolean;
   style?: CSSProperties;
-  theme?: "light" | "dark";
 }) {
   const menuCallbacks = onMenuOpen ? { onMenuOpen } : {};
   return (
-    <div className="landing-header-controls" data-theme={theme} style={style}>
+    <div className="landing-header-controls" style={style}>
       <HeaderCreationGuide
         dismissVersion={dismissVersion}
         {...menuCallbacks}

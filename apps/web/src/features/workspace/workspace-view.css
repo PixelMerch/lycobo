@@ -254,9 +254,11 @@
   --toggle-button-bg-hover: #ffffff0a;
   --toggle-button-bg-pressed: #ffffff0a;
   --toggle-button-fg: #ffffff99;
-  --toggle-button-bg-selected: var(--fill-medium);
-  --toggle-button-bg-selected-hover: var(--fill-strong);
-  --toggle-button-bg-selected-pressed: var(--fill-strong);
-  --toggle-button-fg-selected: var(--foreground);
   border-radius: 8px;
+}
+:is(.workspace-density-toggle, .workspace-mobile-panels) .toggle-button {
+  --toggle-button-bg-selected: var(--workspace-tool-selected-fill);
+  --toggle-button-bg-selected-hover: var(--workspace-tool-selected-fill);
+  --toggle-button-bg-selected-pressed: var(--workspace-tool-selected-fill);
+  --toggle-button-fg-selected: var(--foreground);
 }

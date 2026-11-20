@@ -232,7 +232,7 @@
   color: var(--control-selected-foreground);
 }
 .workspace-tool-shortcut[data-current="true"]::before {
-  background-color: var(--fill-medium);
+  background-color: var(--workspace-tool-selected-fill);
 }
 .workspace-tool-chevron {
   display: inline-flex;

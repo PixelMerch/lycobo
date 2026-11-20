@@ -58,7 +58,6 @@ export function LandingPage() {
           dismissVersion={dismissVersion}
           onLanguageChange={prepareLanguageChange}
           onMenuOpen={closeNavigation}
-          theme={anchor.theme}
           style={{ left: anchor.x, top: anchor.y, width: anchor.width, height: anchor.height }}
         />
       )}

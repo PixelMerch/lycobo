@@ -1,8 +1,7 @@
 /* 宿主顶栏和隔离首页共用下拉材质及悬停颜色。 */
 :root {
   --site-header-nav-hover-fill: #1e1e1e;
-  --site-header-trigger-hover-fill: var(--fill-strong, #ffffff1f);
-  --site-header-light-trigger-hover-fill: #090a0a18;
+  --workspace-tool-selected-fill: #262626;
   --site-header-menu-hover-fill: #ffffff0f;
   --site-header-menu-background: rgb(50 50 50 / 90%);
   --site-header-menu-blur: blur(14px);
