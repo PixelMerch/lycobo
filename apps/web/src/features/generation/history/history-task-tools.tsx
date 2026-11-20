@@ -8,14 +8,14 @@ import {
   type TextileGeneration,
   type VariationGeneration,
 } from "@lycoboai/contracts";
-import { IconEdit, IconRefresh } from "@tabler/icons-react";
+import { IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { CollapsibleText } from "../../../components/collapsible-text";
-import { CopyButton } from "../../../components/copy-button";
 import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
 import { currentMessages, useMessages } from "../../../i18n/messages";
+import { copyToClipboard } from "../../../lib/clipboard";
 import { useErrorToast } from "../../../lib/error-toast";
 import {
   assetContentUrl,
@@ -48,7 +48,14 @@ export function HistoryPrompt({ job }: { job: ImageJob }) {
       {prompt.trim() && (
         <>
           <CollapsibleText text={prompt} id={`prompt-${job.id}`} className="generation-prompt" />
-          <CopyButton className="copy-prompt" text={prompt} label={t.copyPrompt} />
+          <Button
+            variant="secondary"
+            className="copy-prompt"
+            onPress={() => void copyToClipboard(prompt)}
+          >
+            <UiIcon icon={IconCopy} size="small" />
+            {t.copyPrompt}
+          </Button>
         </>
       )}
       <ReferenceThumbnails ids={referenceIds} pendingIds={pendingIds} label={t.taskReferences} />
