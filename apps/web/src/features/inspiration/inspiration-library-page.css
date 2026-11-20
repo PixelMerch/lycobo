@@ -1,7 +1,11 @@
 /* 独立灵感库将导航、筛选和搜索固定在同一炭黑表面。 */
 :root:has(.inspiration-library) {
   --inspiration-toolbar-height: 56px;
-  scroll-padding-top: calc(var(--studio-header-height) + var(--inspiration-toolbar-height));
+  scroll-padding-top: calc(
+    var(--studio-header-height) +
+    var(--inspiration-toolbar-height) +
+    var(--space-3)
+  );
 }
 .studio-app:has(.inspiration-library) > .topbar.public-site-header::before {
   background: var(--studio-canvas);
@@ -19,14 +23,13 @@
 }
 .inspiration-library .home-inspiration {
   margin: 0;
-  padding: var(--inspiration-toolbar-height) 28px 40px;
+  padding: calc(var(--inspiration-toolbar-height) + var(--space-3)) 28px 40px;
 }
 .inspiration-library .home-inspiration-bar {
   position: fixed;
   top: var(--header-height);
   inset-inline: 0;
   z-index: 14;
-  height: var(--inspiration-toolbar-height);
   padding-inline: 28px;
   background: var(--studio-canvas);
 }
@@ -38,7 +41,7 @@
     --inspiration-toolbar-height: 52px;
   }
   .inspiration-library .home-inspiration {
-    padding: var(--inspiration-toolbar-height) 12px 32px;
+    padding: calc(var(--inspiration-toolbar-height) + var(--space-3)) 12px 32px;
   }
   .inspiration-library .home-inspiration-bar {
     padding-inline: 12px;

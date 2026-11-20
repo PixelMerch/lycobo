@@ -43,7 +43,7 @@ export function InspirationWall({
       }}
     >
       <div className="home-inspiration-bar">
-        <div className="home-inspiration-filter-scroll">
+        <div className="pill-scroll">
           <Tabs.List
             className="pill-tab-list"
             aria-label={t.categoryList}

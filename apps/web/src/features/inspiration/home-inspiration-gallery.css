@@ -13,13 +13,9 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  min-height: var(--inspiration-toolbar-height, 56px);
-}
-.home-inspiration-filter-scroll {
-  min-width: 0;
-  margin-inline-start: -2px;
-  overflow-x: auto;
-  scrollbar-width: none;
+  min-height: calc(var(--inspiration-toolbar-height, 56px) + var(--space-3));
+  /* 留白随筛选栏固定，作品滚过时仍与控件保持同样的距离。 */
+  padding-block-end: var(--space-3);
 }
 .home-inspiration-no-results {
   min-height: clamp(260px, 50dvh, 480px);
@@ -29,7 +25,7 @@
   width: 100%;
   min-width: 0;
   margin-top: 0;
-  padding: 12px 0 0;
+  padding: 0;
 }
 /* 每列平分可用宽度，行列间距一致。 */
 .home-inspiration-grid {
@@ -269,7 +265,7 @@
     padding: 0 20px 32px;
   }
   .home-inspiration-bar {
-    min-height: var(--inspiration-toolbar-height, 52px);
+    min-height: calc(var(--inspiration-toolbar-height, 52px) + var(--space-3));
   }
   .home-inspiration-grid,
   .home-inspiration-column {

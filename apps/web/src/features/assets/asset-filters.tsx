@@ -56,8 +56,8 @@ function filtersForKey(key: SourceKey): Pick<AssetLibraryFilters, "source" | "to
 }
 
 /**
- * 我的素材的筛选行：来源（AI 生成可直接选功能）、时间、仅看收藏，末尾放多选入口或多选操作条；
- * 改动任一项都会从头分页。
+ * 我的素材的来源、时间和收藏共用筛选底板，末尾放多选操作。
+ * 改动任一筛选项都会从头分页。
  */
 export function AssetFilters({
   filters,
@@ -74,20 +74,24 @@ export function AssetFilters({
   const set = (patch: Partial<AssetLibraryFilters>) => onChange({ ...filters, ...patch });
   return (
     <div className="asset-filters">
-      <AssetSourceMenu filters={filters} currentTool={currentTool} onChange={set} />
-      <AssetTimeMenu time={filters.time} onChange={(time) => set({ time })} />
-      <Switch
-        className="asset-favorite-filter"
-        isSelected={filters.favorite}
-        onChange={(favorite) => set({ favorite })}
-      >
-        <Switch.Content>
-          <Label>{t.favoritesOnly}</Label>
-          <Switch.Control>
-            <Switch.Thumb />
-          </Switch.Control>
-        </Switch.Content>
-      </Switch>
+      <div className="pill-scroll">
+        <div className="pill-control-group">
+          <AssetSourceMenu filters={filters} currentTool={currentTool} onChange={set} />
+          <AssetTimeMenu time={filters.time} onChange={(time) => set({ time })} />
+          <Switch
+            className="asset-favorite-filter"
+            isSelected={filters.favorite}
+            onChange={(favorite) => set({ favorite })}
+          >
+            <Switch.Content>
+              <Label>{t.favoritesOnly}</Label>
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+            </Switch.Content>
+          </Switch>
+        </div>
+      </div>
       <span className="asset-filters-end">{trailing}</span>
     </div>
   );

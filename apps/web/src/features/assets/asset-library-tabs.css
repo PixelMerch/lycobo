@@ -1,4 +1,4 @@
-/* 素材库入口使用共用圆角轨道和滑动选中底板。 */
+/* 素材库入口用文字和滑动下划线。 */
 .asset-library-tabs.tabs {
   display: flex;
   flex-direction: column;
@@ -11,25 +11,33 @@
   gap: var(--space-3);
   height: var(--header-height);
 }
-.asset-library-head .pill-tab-list.tabs__list {
+.asset-library-entry-tabs.tabs__list {
   align-self: center;
-  gap: 0;
-  padding: var(--space-1);
-  border-radius: var(--control-pill-radius);
-  background: var(--fill-soft);
-}
-.asset-library-head .pill-tab-list.tabs__list .tabs__tab {
-  height: var(--control-height-md);
-  padding-inline: var(--space-4);
+  gap: var(--space-5);
+  padding: 0;
+  border: 0;
   background: transparent;
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
 }
-.asset-library-head .pill-tab-list .tabs__tab[data-selected="true"] {
-  color: var(--studio-canvas);
+.asset-library-entry-tabs .tabs__tab {
+  height: calc(var(--control-height-md) + 2 * var(--space-1));
+  padding-inline: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  white-space: nowrap;
 }
-.asset-library-head .selection-pill {
-  --control-selected-fill: var(--studio-primary-action);
+.asset-library-entry-tabs .tabs__tab:is(:hover, [data-hovered="true"], [data-selected="true"]) {
+  background: transparent;
+  color: var(--foreground);
+}
+.asset-library-entry-tabs .tabs__indicator {
+  top: auto;
+  bottom: var(--space-2);
+  height: 2px;
+  border-radius: var(--control-pill-radius);
+  background: var(--foreground);
+  box-shadow: none;
 }
 .asset-library-panel.tabs__panel {
   min-width: 0;
@@ -45,6 +53,9 @@
 @media (max-width: 767px) {
   .asset-library-head {
     gap: var(--space-2);
+  }
+  .asset-library-entry-tabs .tabs__tab {
+    height: calc(var(--dismiss-target) + 2 * var(--space-1));
   }
   .asset-library-inspiration .home-inspiration {
     padding: 0 0 var(--space-4);

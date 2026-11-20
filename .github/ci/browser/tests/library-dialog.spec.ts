@@ -299,10 +299,14 @@ test("灵感库 inside the workspace library fills the prompt and closes the lib
     "border-bottom-width",
     "0px",
   );
-  await expect(dialog.locator(".asset-library-head .selection-pill")).toHaveCSS(
-    "visibility",
-    "visible",
+  const entryTabs = dialog.getByRole("tablist", { name: "素材库", exact: true });
+  await expect(entryTabs).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(entryTabs.locator('[data-selected="true"] .tabs__indicator')).toHaveCSS(
+    "height",
+    "2px",
   );
+  await expect(entryTabs).toHaveCSS("height", "44px");
+  await expect(dialog.locator(".home-inspiration-bar .pill-tab-list")).toHaveCSS("height", "44px");
   await expect(dialog.locator(".home-inspiration-card").first()).toHaveCSS("border-radius", "6px");
   await expect(dialog.locator(".home-inspiration-grid")).toHaveCSS("gap", "4px");
   await expect(dialog.locator(".home-inspiration-bar .selection-pill")).toHaveCSS(
@@ -480,14 +484,24 @@ test("我的素材 keeps filters visible while scrolling and separates the curre
   await expect(dialog.locator(".asset-tile")).toHaveCount(48);
   await expect(dialog.locator(".library-shell")).toHaveCSS("transform", "none");
   const filters = dialog.locator(".asset-filters");
+  await expect(filters).toHaveCSS("border-bottom-width", "0px");
+  await expect(filters).toHaveCSS("padding-bottom", "20px");
   const before = await filters.boundingBox();
+  const gridAtRest = await dialog.locator(".asset-grid").boundingBox();
+  if (!before || !gridAtRest) throw new Error("Missing asset filters or grid");
+  expect(gridAtRest.y).toBeCloseTo(before.y + before.height);
   await dialog.locator(".asset-tile").first().hover();
   await page.mouse.wheel(0, 600);
   await expect
     .poll(() => dialog.locator(".asset-library-panel").evaluate((el) => el.scrollTop))
     .toBeGreaterThan(100);
-  const after = await filters.boundingBox();
-  expect(after?.y).toBeCloseTo(before?.y ?? -1, 0);
+  expect(await filters.boundingBox()).toEqual(before);
+  expect(
+    await filters.evaluate((element, x) => {
+      const { bottom } = element.getBoundingClientRect();
+      return document.elementFromPoint(x, bottom - 8) === element;
+    }, gridAtRest.x + 8),
+  ).toBe(true);
   await dialog.getByRole("button", { name: "家纺裂变 素材来源", exact: true }).click();
   const selected = page.getByRole("option", { name: /家纺裂变/ });
   await expect(selected).toHaveAttribute("aria-selected", "true");

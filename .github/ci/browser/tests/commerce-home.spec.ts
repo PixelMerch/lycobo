@@ -479,12 +479,24 @@ test("inspiration filters stay fixed below the header while browsing", async ({ 
   await page.goto("/inspiration");
   const toolbar = page.locator(".home-inspiration-bar");
   await expect(toolbar).toBeInViewport();
+  await expect(toolbar).toHaveCSS("padding-bottom", "12px");
+  const grid = page.locator(".home-inspiration-grid");
+  await expect(grid).toBeInViewport();
   const before = await toolbar.boundingBox();
+  const gridAtRest = await grid.boundingBox();
+  if (!before || !gridAtRest) throw new Error("Missing inspiration toolbar or grid");
+  expect(gridAtRest.y).toBeCloseTo(before.y + before.height);
   await page.mouse.move(200, 400);
   await page.mouse.wheel(0, 450);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
   await expect(toolbar).toBeInViewport();
-  expect((await toolbar.boundingBox())?.y).toBe(before?.y);
+  expect(await toolbar.boundingBox()).toEqual(before);
+  expect(
+    await toolbar.evaluate((element, x) => {
+      const { bottom } = element.getBoundingClientRect();
+      return document.elementFromPoint(x, bottom - 6) === element;
+    }, gridAtRest.x + 8),
+  ).toBe(true);
   await expect(page.getByRole("search", { name: "搜索灵感" })).toBeInViewport();
   await page.keyboard.press("ControlOrMeta+k");
   await expect(page.getByRole("searchbox", { name: "搜索灵感", exact: true })).toBeFocused();
