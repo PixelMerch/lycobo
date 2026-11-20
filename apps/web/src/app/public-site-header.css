@@ -28,6 +28,7 @@
   height: 46px;
 }
 .public-site-brand-art {
+  --site-brand-wordmark-offset: -3%;
   position: relative;
   display: block;
   height: 100%;
@@ -40,6 +41,10 @@
 .public-site-brand-art > canvas {
   visibility: hidden;
   transform-origin: left center;
+  /* Rive 自带字形的基础偏移，只补齐起点和静态字标的差值。 */
+  transform: translateX(
+    calc(var(--site-brand-wordmark-offset) * (1 - var(--site-brand-progress, 0)))
+  );
   scale: calc(
     var(--site-brand-wordmark-scale) +
     (1 - var(--site-brand-wordmark-scale)) *
@@ -54,11 +59,10 @@
 }
 .public-site-wordmark {
   opacity: clamp(0, calc(1 - var(--site-brand-progress, 0) / 0.65), 1);
-  transform: translateX(calc(-23% - 8px * var(--site-brand-progress, 0)));
+  transform: translateX(calc(-23% + var(--site-brand-wordmark-offset)));
 }
-.public-site-header:not([data-landing-frame]) .public-site-wordmark {
-  /* 静态字标的可见左缘对齐顶栏内边距。 */
-  transform: translateX(-26%);
+.public-site-header[data-landing-frame] .public-site-wordmark {
+  translate: calc(-8px * var(--site-brand-progress, 0));
 }
 .public-site-symbol {
   clip-path: inset(0 77% 0 0);
@@ -68,8 +72,8 @@
     rotate(calc(-45deg * var(--site-brand-progress, 0)));
 }
 @media (prefers-reduced-motion: reduce) {
-  .public-site-wordmark {
-    transform: translateX(-23%);
+  .public-site-header[data-landing-frame] .public-site-wordmark {
+    translate: none;
   }
   .public-site-symbol {
     transform: translateX(41.5%);

@@ -303,9 +303,11 @@ test("homepage Inspiration opens the matching public header with a fixed wordmar
   await page.goto("/");
   const header = page.locator(".public-site-header");
   const logo = header.locator(".public-site-brand");
+  const wordmark = logo.locator(".public-site-wordmark");
   const actions = header.locator(".public-site-actions");
   await expect(header.getByRole("link", { name: "开始创作", exact: true })).toBeVisible();
   const logoOnHome = await logo.boundingBox();
+  const wordmarkOnHome = await wordmark.boundingBox();
   const actionsOnHome = await actions.boundingBox();
   await header.getByRole("link", { name: "灵感库", exact: true }).click();
   await expect(page).toHaveURL(/\/inspiration$/);
@@ -320,12 +322,11 @@ test("homepage Inspiration opens the matching public header with a fixed wordmar
     "href",
     /\/dashboard$/,
   );
-  const wordmark = header.locator(".public-site-wordmark");
   await expect(wordmark).toHaveCSS("opacity", "1");
-  const wordmarkAtTop = await wordmark.boundingBox();
+  expect(await wordmark.boundingBox()).toEqual(wordmarkOnHome);
   await page.evaluate(() => window.scrollTo(0, 600));
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
-  expect(await wordmark.boundingBox()).toEqual(wordmarkAtTop);
+  expect(await wordmark.boundingBox()).toEqual(wordmarkOnHome);
   await expect(header.locator(".public-site-symbol")).toHaveCount(0);
   await page.evaluate(() => window.scrollTo(0, 0));
   await expect(page.locator(".home-inspiration-card")).toHaveCount(23);
