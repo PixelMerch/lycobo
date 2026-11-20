@@ -16,7 +16,6 @@ import { useRequireLogin } from "../../auth/login-prompt";
 import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "../studio-state";
 import { readReferenceImages, referenceFileError } from "./read-reference-images";
 import { referenceDisplaySource } from "./reference-display";
-import { ReferenceRoleMenu } from "./reference-role-menu";
 import { referencesMessages } from "./references-messages";
 
 const ImageViewer = lazy(() =>
@@ -25,7 +24,7 @@ const ImageViewer = lazy(() =>
   })),
 );
 
-/** Drop the removed image mention and renumber later mentions to the new order. */
+/** 删除图片引用，并按新顺序调整后续引用的编号。 */
 function promptAfterReferenceRemoval(prompt: string, removedNumber: number) {
   return prompt
     .replace(new RegExp(`@图片${removedNumber}(?!\\d)`, "g"), "")
@@ -56,8 +55,6 @@ type PickerProps = {
   isRequired?: boolean;
   showCount?: boolean;
   disabled?: boolean;
-  /** 在套图计划里按方案选择原图，或标记整套共用的商品图与风格图。 */
-  withRoles?: boolean;
   references: Draft["references"];
 } & (
   | { model: ModelId; prompt?: never; onChange?: never }
@@ -112,7 +109,6 @@ export function ReferencePicker({
   isRequired = false,
   showCount = true,
   disabled = false,
-  withRoles = false,
   limit = 5,
   label,
   addLabel,
@@ -195,15 +191,6 @@ export function ReferencePicker({
             number={index + 1}
             isDisabled={disabled || reading}
             onOpen={() => setPreview(index)}
-            footer={
-              withRoles ? (
-                <ReferenceRoleMenu
-                  imageId={image.id}
-                  name={t.imageName(index + 1)}
-                  isDisabled={disabled || reading}
-                />
-              ) : undefined
-            }
             onRemove={() => {
               const prompt = currentDraft()?.prompt ?? "";
               const remaining = references.filter((item) => item.id !== image.id);

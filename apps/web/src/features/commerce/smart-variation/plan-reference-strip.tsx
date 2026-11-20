@@ -6,7 +6,7 @@ import { type PlanUsage, planImages, usePlanBindings } from "./plan-image-bindin
 import { variationMessages } from "./variation-messages";
 
 /**
- * 方案卡片里的“用图”一行：商品和风格图共用，原图（标的或按提示词推断的）按方案逐张对应，点按可切换。
+ * 方案卡片里的“用图”一行：共用图直接显示，逐条对应的原图可点按切换。
  * 生成时每条方案只发送这一行里点亮的图片。
  */
 export function PlanReferenceStrip({
@@ -26,7 +26,7 @@ export function PlanReferenceStrip({
   const override = usePlanBindings((state) => state.bindings[itemId]);
   const setBinding = usePlanBindings((state) => state.setBinding);
   if (!references.length) return null;
-  const { shared, sources, bound } = planImages(references, usage, prompt, override);
+  const { shared, sources, bound } = planImages(usage, prompt, override);
   const imageOf = (number: number) => references[number - 1];
   function select(keys: Selection) {
     if (keys === "all") return;

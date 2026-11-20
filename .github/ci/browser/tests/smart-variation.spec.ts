@@ -351,12 +351,15 @@ test("a per-image plan sends each item only its own uploaded picture", async ({ 
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles(["apps/web/public/studio/bedroom.webp", "apps/web/public/studio/lavender.webp"]);
   await expect(page.locator(".reference-tile")).toHaveCount(2);
+  await expect(
+    page.locator(".reference-tile").getByRole("button", { name: /更改角色/ }),
+  ).toHaveCount(0);
   await page
     .getByRole("textbox", { name: "创作需求", exact: true })
     .fill("图片比例变成9:16，其他保持不变");
   await page.getByRole("button", { name: "立即生成", exact: true }).click();
   const panel = page.getByRole("region", { name: "确认每张图的中文提示词", exact: true });
-  // 没有人标原图：方案 2 的“用图”只点亮第 2 张，第 1 张不发送。
+  // 方案 2 的“用图”按提示词只点亮第 2 张，第 1 张不发送。
   const secondImages = panel.getByRole("toolbar", { name: "方案 2 用图", exact: true });
   await expect(secondImages.getByRole("button", { name: "原图 2", exact: true })).toHaveAttribute(
     "aria-pressed",
