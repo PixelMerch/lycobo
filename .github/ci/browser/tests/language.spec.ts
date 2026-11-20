@@ -23,7 +23,7 @@ test.describe("English browser", () => {
     await expect(items).toHaveText([
       "Product Images",
       "Textile Variations",
-      "Examples",
+      "Inspiration",
       "Free canvas",
     ]);
 
@@ -40,11 +40,11 @@ test.describe("English browser", () => {
     await menu.getByRole("menuitemradio", { name: "简体中文" }).click();
     await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
     await expect(page).toHaveTitle("Lycobo · 电商创作工作台");
-    await expect(items).toHaveText(["商品图片", "家纺裂变", "效果案例", "自由画布"]);
+    await expect(items).toHaveText(["商品图片", "家纺裂变", "灵感库", "自由画布"]);
 
     // 选择记在本机，刷新后不再跟随浏览器语言。
     await page.reload();
-    await expect(items).toHaveText(["商品图片", "家纺裂变", "效果案例", "自由画布"]);
+    await expect(items).toHaveText(["商品图片", "家纺裂变", "灵感库", "自由画布"]);
     await expect(page.getByRole("button", { name: "语言：简体中文", exact: true })).toHaveText(
       "中文",
     );
@@ -62,7 +62,7 @@ test.describe("English workspace", () => {
     await expect(tools.getByRole("button")).toHaveText([
       "Product Images",
       "Textile Variations",
-      "Examples",
+      "Inspiration",
       "Free canvas",
       "Assets",
     ]);
@@ -95,7 +95,7 @@ test.describe("Japanese browser", () => {
     await expect(page.locator(".public-site-desktop-nav > .nav-row")).toHaveText([
       "Product Images",
       "Textile Variations",
-      "Examples",
+      "Inspiration",
       "Free canvas",
     ]);
   });

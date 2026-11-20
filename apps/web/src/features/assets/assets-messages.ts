@@ -1,3 +1,4 @@
+import { shellMessages } from "../../app/shell-messages";
 import { defineMessages } from "../../i18n/messages";
 
 /** 素材库的文案：标签、筛选、空状态、日期分组、素材卡、多选下载与收藏提示。 */
@@ -61,7 +62,7 @@ export const assetsMessages = defineMessages({
     libraryTitle: "素材库",
     openLibrary: "打开素材库",
     myAssets: "我的素材",
-    inspiration: "灵感库",
+    inspiration: shellMessages["zh-CN"].inspiration,
     closeLibrary: "关闭素材库",
   },
   en: {
@@ -123,7 +124,7 @@ export const assetsMessages = defineMessages({
     libraryTitle: "Asset library",
     openLibrary: "Open asset library",
     myAssets: "My assets",
-    inspiration: "Inspiration",
+    inspiration: shellMessages.en.inspiration,
     closeLibrary: "Close asset library",
   },
 });

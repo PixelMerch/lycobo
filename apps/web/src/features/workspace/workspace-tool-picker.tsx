@@ -45,9 +45,9 @@ export function WorkspaceToolPicker() {
   const [openCategory, setOpenCategory] = useState<WorkspaceToolCategory["label"] | null>(null);
   const shortcuts = [
     {
-      id: "examples",
+      id: "inspiration",
       icon: IconSparkles,
-      label: t.navigation.examples,
+      label: shell.inspiration,
       action: () => void navigate(inspirationLibraryPath),
     },
     {

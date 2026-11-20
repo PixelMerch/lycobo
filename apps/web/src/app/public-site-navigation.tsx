@@ -24,7 +24,6 @@ export function PublicSiteNavigation({
   dismissVersion?: number;
 }) {
   const t = useMessages(shellMessages);
-  const { navigation } = useMessages(workspaceToolMessages);
   const linkEvents = onNavigate ? { onClick: onNavigate } : {};
   return (
     <nav
@@ -43,7 +42,7 @@ export function PublicSiteNavigation({
         ),
       )}
       <RouteLink nav end to={inspirationLibraryPath} className="nav-row" {...linkEvents}>
-        {navigation.examples}
+        {t.inspiration}
       </RouteLink>
       <RouteLink nav to={freeCanvasPath} className="nav-row" {...linkEvents}>
         {t.freeCanvas}

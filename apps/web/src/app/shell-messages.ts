@@ -8,7 +8,7 @@ export const shellMessages = defineMessages({
     commerceTools: "电商功能",
     workspace: "工作区",
     replica: "爆款复制",
-    inspiration: "灵感",
+    inspiration: "灵感库",
     assets: "素材库",
     projects: "项目",
     benefits: "会员权益",

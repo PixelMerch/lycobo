@@ -29,7 +29,6 @@ export const workspaceToolMessages = defineMessages({
       listingImages: "上架用图",
       photography: "拍摄风格",
       textiles: "家纺",
-      examples: "效果案例",
       tools: {
         create: "商品主图",
         variation: "商品套图",
@@ -90,7 +89,6 @@ export const workspaceToolMessages = defineMessages({
       listingImages: "Listing Images",
       photography: "Photography Styles",
       textiles: "Home Textiles",
-      examples: "Examples",
       tools: {
         create: "Product Main Image",
         variation: "Product Image Set",

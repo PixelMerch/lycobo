@@ -294,7 +294,7 @@ test("home inspiration loads two batches on scroll, then 查看更多灵感 load
   await expect(more).toHaveCount(0);
 });
 
-test("homepage Examples opens the matching public header and reveals the brand on scroll", async ({
+test("homepage Inspiration opens the matching public header and reveals the brand on scroll", async ({
   page,
 }) => {
   await mockImageApi(page, { signedIn: false });
@@ -307,12 +307,12 @@ test("homepage Examples opens the matching public header and reveals the brand o
   await expect(header.getByRole("link", { name: "开始创作", exact: true })).toBeVisible();
   const logoOnHome = await logo.boundingBox();
   const actionsOnHome = await actions.boundingBox();
-  await header.getByRole("link", { name: "效果案例", exact: true }).click();
+  await header.getByRole("link", { name: "灵感库", exact: true }).click();
   await expect(page).toHaveURL(/\/inspiration$/);
   await expect(page.getByRole("heading", { name: "灵感库", level: 1 })).toBeVisible();
   expect(await logo.boundingBox()).toEqual(logoOnHome);
   expect(await actions.boundingBox()).toEqual(actionsOnHome);
-  await expect(header.getByRole("link", { name: "效果案例", exact: true })).toHaveAttribute(
+  await expect(header.getByRole("link", { name: "灵感库", exact: true })).toHaveAttribute(
     "aria-current",
     "page",
   );
