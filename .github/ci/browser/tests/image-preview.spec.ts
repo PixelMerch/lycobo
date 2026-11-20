@@ -73,9 +73,9 @@ test("library and history images open an in-page full-screen viewer", async ({ p
   );
   try {
     await page.getByRole("button", { name: "预览图片 2", exact: true }).click();
-    await expect(
-      historyDialog.locator('.image-preview-frame img[src="/brand/lycobo-loading.svg"]'),
-    ).toBeVisible();
+    const spinner = historyDialog.locator(".image-preview-frame .loading-state-spinner");
+    await expect(spinner).toBeVisible();
+    await expect(spinner).toHaveCSS("width", "30px");
   } finally {
     releaseImage();
   }

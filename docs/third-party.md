@@ -17,6 +17,8 @@
 
 页脚的社媒图标取自项目已安装的 Tabler Icons 3.51.0。MIT 许可原文随 [SVG](../apps/web/public/brand/lycobo-footer-socials.svg) 保留。
 
+全局加载动画使用 [react-spinners](https://github.com/davidhu2000/react-spinners) 0.17.1 的 `HashLoader`，依赖遵循 MIT 许可。
+
 ## React Bits Silk
 
 登录页背景的着色器来自 [React Bits Silk](https://github.com/DavidHDev/react-bits/tree/ed33ebe4acfe29e60fb759bcccc70a138ce2dcef/src/ts-default/Backgrounds/Silk)，实现位于 `apps/web/src/features/auth/silk/`。使用 MIT + Commons Clause，保留 David Haz (2026) 的版权及[许可原文](#react-bits-许可原文)。
