@@ -34,13 +34,12 @@
 .library-shell:has(.asset-library-tabs[data-library-tab="inspiration"]) {
   --library-background: var(--studio-canvas);
 }
-/* 标签行与应用顶部栏同高，关闭按钮在“我的素材 / 灵感库”左侧，与下方内容的左边界对齐。 */
+/* 标签行与应用顶部栏同高，关闭按钮靠右。 */
 .library-shell .asset-library-head {
   padding: 0 var(--space-6);
 }
 .modal__close-trigger.library-close {
-  /* 按钮外扩，让 28px 的图形本身而不是按钮框与下方内容的左边界对齐。 */
-  margin-inline-start: -12px;
+  margin-inline-start: auto;
 }
 /* 当前标签的内容是滚动区域，筛选行吸在顶部，用同色不透明底遮住滚过的图片。 */
 .library-shell .asset-library-panel {

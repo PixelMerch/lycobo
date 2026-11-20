@@ -15,18 +15,18 @@ export function assetLibraryTab(value: unknown): AssetLibraryTab {
 }
 
 /**
- * 素材库的标签行与内容，弹窗和素材库页面共用：标签就是标题，lead 放在标签前面（弹窗的关闭按钮），
- * 只渲染当前标签的内容。
+ * 素材库弹窗和页面共用分段标签，只渲染当前标签的内容。
+ * 弹窗的关闭按钮放在标题栏末端。
  */
 export function AssetLibraryTabs({
   tab,
-  lead,
+  endAction,
   mine,
   inspiration,
   onTabChange,
 }: {
   tab: AssetLibraryTab;
-  lead?: ReactNode;
+  endAction?: ReactNode;
   mine: ReactNode;
   inspiration: ReactNode;
   onTabChange: (tab: AssetLibraryTab) => void;
@@ -40,7 +40,6 @@ export function AssetLibraryTabs({
       onSelectionChange={(key) => onTabChange(assetLibraryTab(key))}
     >
       <div className="asset-library-head">
-        {lead}
         <Tabs.List
           className="pill-tab-list"
           aria-label={t.libraryTitle}
@@ -57,6 +56,7 @@ export function AssetLibraryTabs({
             </Tabs.Tab>
           ))}
         </Tabs.List>
+        {endAction}
       </div>
       <Tabs.Panel id="mine" className="asset-library-panel">
         {mine}

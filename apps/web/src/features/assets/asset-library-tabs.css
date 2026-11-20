@@ -1,4 +1,4 @@
-/* 素材库入口使用与灵感分类相同的滑动选中底板。 */
+/* 素材库入口使用共用圆角轨道和滑动选中底板。 */
 .asset-library-tabs.tabs {
   display: flex;
   flex-direction: column;
@@ -10,6 +10,26 @@
   align-items: center;
   gap: var(--space-3);
   height: var(--header-height);
+}
+.asset-library-head .pill-tab-list.tabs__list {
+  align-self: center;
+  gap: 0;
+  padding: var(--space-1);
+  border-radius: var(--control-pill-radius);
+  background: var(--fill-soft);
+}
+.asset-library-head .pill-tab-list.tabs__list .tabs__tab {
+  height: var(--control-height-md);
+  padding-inline: var(--space-4);
+  background: transparent;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.asset-library-head .pill-tab-list .tabs__tab[data-selected="true"] {
+  color: var(--studio-canvas);
+}
+.asset-library-head .selection-pill {
+  --control-selected-fill: var(--studio-primary-action);
 }
 .asset-library-panel.tabs__panel {
   min-width: 0;

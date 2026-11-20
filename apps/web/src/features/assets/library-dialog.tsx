@@ -46,7 +46,9 @@ export function LibraryDialog({
               <AssetLibraryTabs
                 tab={tab}
                 onTabChange={setTab}
-                lead={<DialogClose fullScreen label={t.closeLibrary} className="library-close" />}
+                endAction={
+                  <DialogClose fullScreen label={t.closeLibrary} className="library-close" />
+                }
                 mine={
                   <AssetBrowser
                     filters={filters}
