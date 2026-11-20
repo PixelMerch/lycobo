@@ -13,7 +13,13 @@ describe("landing frame messages", () => {
     },
   );
 
-  it.each(["/dashboard", "/terms", "/privacy"])("accepts the public route %s", (path) => {
+  it.each([
+    "/dashboard",
+    "/dashboard/commerce/replica",
+    "/dashboard/free-canvas",
+    "/terms",
+    "https://bonko.fun/refund-policy",
+  ])("accepts the listed route %s", (path) => {
     expect(readLandingNavigation({ type: "lycobo:navigate", path })).toBe(path);
   });
 
@@ -23,9 +29,10 @@ describe("landing frame messages", () => {
     { type: "lycobo:landing-scroll", path: "/dashboard" },
     { type: "lycobo:navigate" },
     { type: "lycobo:navigate", path: "https://example.com" },
+    { type: "lycobo:navigate", path: "https://bonko.fun/refund-policy?next=https://example.com" },
     { type: "lycobo:navigate", path: "/dashboard?next=https://example.com" },
     { type: "lycobo:navigate", path: "/terms?next=https://example.com" },
-    { type: "lycobo:navigate", path: "/dashboard/free-canvas" },
+    { type: "lycobo:navigate", path: "/dashboard/video" },
   ])("rejects other navigation messages: %j", (data) => {
     expect(readLandingNavigation(data)).toBeNull();
   });

@@ -1,4 +1,5 @@
 import footerWordmark from "../../../../public/brand/lycobo-footer-wordmark.svg?inline";
+import footerBrand from "../../../../public/brand/lycobo-landing.svg?inline";
 import drapeImage from "../../../../public/landing/comforter-drape.webp?inline";
 import foldedImage from "../../../../public/landing/comforter-folded.webp?inline";
 import roomImage from "../../../../public/landing/comforter-room.webp?inline";
@@ -13,8 +14,10 @@ import throwTexture from "../../../../public/landing/showcase/mint-throw-texture
 import { initializePageScrollbar } from "../../../components/page-scrollbar";
 import pageScrollbarStyle from "../../../components/page-scrollbar.css?raw";
 import type { Locale } from "../../../i18n/locale";
+import { localizedPath } from "../../../i18n/locale-path";
 import studioPalette from "../../../styles/studio-palette.css?raw";
 import footerStyles from "../../site/site-footer.css?raw";
+import { siteFooterGroups } from "../../site/site-footer-navigation";
 import { initializeLandingFeatureScroll } from "./landing-feature-scroll";
 import footerTemplate from "./landing-footer.html?raw";
 import { initializeLandingFrameBridge } from "./landing-frame-bridge";
@@ -53,6 +56,18 @@ const htmlEntities: Record<string, string> = {
 const escapeHtml = (text: string) =>
   text.replace(/[&<>"']/g, (character) => htmlEntities[character] ?? character);
 
+function renderFooterGroups(locale: Locale) {
+  return siteFooterGroups(locale)
+    .map(({ title, links }) => {
+      const items = links.map(({ path, label }) => {
+        const href = escapeHtml(localizedPath(path, locale));
+        return `<li><a href="${href}" data-landing-path="${escapeHtml(path)}">${escapeHtml(label)}</a></li>`;
+      });
+      return `<div><h2>${escapeHtml(title)}</h2><ul class="site-footer-links">${items.join("")}</ul></div>`;
+    })
+    .join("\n");
+}
+
 /** 按 HTML 与脚本字符串的上下文转义文案，避免文案改变隔离模板的结构。 */
 export function renderLandingDocument(
   template: string,
@@ -66,7 +81,9 @@ export function renderLandingDocument(
     .replace("__LYCOBO_HERO_STYLE__", () => heroStyles + showcaseStyles)
     .replace("__LYCOBO_HERO__", () => hero)
     .replace("__LYCOBO_FOOTER__", () => footerTemplate)
+    .replace("__LYCOBO_FOOTER_BRAND__", () => escapeHtml(footerBrand))
     .replace("__LYCOBO_FOOTER_WORDMARK__", () => escapeHtml(footerWordmark))
+    .replace("__LYCOBO_FOOTER_GROUPS__", () => renderFooterGroups(locale))
     .replace(
       "__LYCOBO_HERO_SCROLL_SCRIPT__",
       () => `(${initializeLandingHeroScroll.toString()})();

@@ -1,13 +1,19 @@
 import { defineMessages } from "../../i18n/messages";
 
-/** 页脚导航的名称与版权，协议名称由法律页面提供。 */
+/** 页脚分组、导航名称和版权文案。 */
 export const siteFooterMessages = defineMessages({
   "zh-CN": {
     navigation: "页脚导航",
+    tools: "创作工具",
+    workspace: "工作空间",
+    refundPolicy: "退款政策",
     copyright: (year: number) => `© ${year} Lycobo`,
   },
   en: {
     navigation: "Footer navigation",
+    tools: "Create",
+    workspace: "Workspace",
+    refundPolicy: "Refund policy",
     copyright: (year: number) => `© ${year} Lycobo`,
   },
 });

@@ -728,14 +728,30 @@ test("home footer links only to real pages", async ({ page }) => {
   await page.goto("/");
   const footer = page.frameLocator("iframe.openart-reference").locator(".site-footer");
   await footer.scrollIntoViewIfNeeded();
+  await expect(footer.getByRole("heading")).toHaveText(["创作工具", "工作空间", "协议与政策"]);
   const links = footer.getByRole("link");
-  await expect(links).toHaveText(["用户协议", "隐私政策"]);
-  const hrefs = await links.evaluateAll((items) => items.map((item) => item.getAttribute("href")));
-  expect(hrefs).toEqual(["/zh-CN/terms", "/zh-CN/privacy"]);
+  await expect(links).toHaveText([
+    "主图制作",
+    "套图计划",
+    "复制爆款",
+    "家纺裂变",
+    "工作区",
+    "灵感库",
+    "自由画布",
+    "素材库",
+    "会员订阅",
+    "用户协议",
+    "隐私政策",
+    "退款政策",
+  ]);
+  await expect(footer.getByRole("link", { name: "退款政策", exact: true })).toHaveAttribute(
+    "href",
+    "https://bonko.fun/refund-policy",
+  );
   await expect(footer.getByRole("img", { name: "Lycobo", exact: true })).toBeVisible();
   await expect(footer).toContainText(`© ${new Date().getFullYear()} Lycobo`);
-  await footer.getByRole("link", { name: "隐私政策", exact: true }).click();
-  await expect(page).toHaveURL(/\/zh-CN\/privacy$/);
+  await footer.getByRole("link", { name: "复制爆款", exact: true }).click();
+  await expect(page).toHaveURL(/\/zh-CN\/dashboard\/commerce\/replica$/);
 });
 
 test("phones get the vidmuse bottom bar with labelled shortcuts", async ({ page }) => {

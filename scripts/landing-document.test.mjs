@@ -16,8 +16,25 @@ describe("localized landing document", () => {
       expect(document).not.toMatch(/Trustpilot|support@openart|10M\+|40 free credits/);
       expect(document).not.toMatch(/<nav\b[^>]*data-navv3-root/);
       const links = [...document.matchAll(/<a\b[^>]*data-landing-path="([^"]+)"[^>]*>/g)];
-      expect(links.map((link) => link[1])).toEqual(["/dashboard", "/terms", "/privacy"]);
-      for (const [tag, path] of links) expect(tag).toContain(`href="/${locale}${path}"`);
+      expect(links.map((link) => link[1])).toEqual([
+        "/dashboard",
+        "/dashboard/commerce/create",
+        "/dashboard/commerce/smart-variation",
+        "/dashboard/commerce/replica",
+        "/dashboard/commerce/textile-set",
+        "/dashboard",
+        "/inspiration",
+        "/dashboard/free-canvas",
+        "/dashboard/assets",
+        "/membership",
+        "/terms",
+        "/privacy",
+        "https://bonko.fun/refund-policy",
+      ]);
+      for (const [tag, path] of links) {
+        const href = path.startsWith("/") ? `/${locale}${path}` : path;
+        expect(tag).toContain(`href="${href}"`);
+      }
       for (const match of document.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) {
         expect(() => new Script(match[1])).not.toThrow();
       }
