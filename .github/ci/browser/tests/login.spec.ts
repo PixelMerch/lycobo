@@ -58,6 +58,11 @@ test("enterprise flip hides the other methods, keeps card height and clears pass
   const account = page.getByLabel("企业账号", { exact: true });
   const password = page.getByLabel("密码", { exact: true });
   await expect(account).toBeFocused();
+  await expect(account).toHaveCSS("caret-color", "rgb(168, 255, 0)");
+  await expect(panel.locator(".login-submit")).toHaveCSS(
+    "background-image",
+    /linear-gradient\(110deg, rgb\(168, 255, 0\), rgb\(89, 230, 162\)\)/,
+  );
   await expect(page.getByRole("button", { name: "使用 Google 登录", exact: true })).toHaveCount(0);
   await expect(page.getByLabel("邮箱", { exact: true })).toHaveCount(0);
   expect((await panel.boundingBox())?.height).toBe(height);

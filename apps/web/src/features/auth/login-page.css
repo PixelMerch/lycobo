@@ -1,5 +1,10 @@
-/* 登录页版式：全屏紫色丝绸背景，登录卡片居中。 */
+/* 登录页使用工作区的主题色和主操作渐变。 */
 .login-page {
+  --accent: var(--studio-accent);
+  --accent-foreground: var(--studio-canvas);
+  --accent-glow: 0 0 16px color-mix(in srgb, var(--studio-accent) 12%, transparent);
+  --app-primary-gradient: var(--studio-accent-gradient);
+  --focus: var(--studio-accent);
   position: relative;
   isolation: isolate;
   display: grid;
@@ -20,7 +25,7 @@
   background:
     radial-gradient(
       60% 70% at 50% 40%,
-      color-mix(in srgb, var(--brand) 15%, transparent) 0%,
+      color-mix(in srgb, var(--studio-accent) 15%, transparent) 0%,
       transparent 70%
     ),
     var(--background);

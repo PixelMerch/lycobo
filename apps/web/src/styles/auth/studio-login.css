@@ -191,7 +191,7 @@
   color: #ffffffb3;
 }
 .login-fields .login-input-group:focus-within {
-  border-color: color-mix(in srgb, var(--brand) 50%, transparent);
+  border-color: color-mix(in srgb, var(--studio-accent) 50%, transparent);
 }
 .login-fields .login-input-group .input-group__input {
   min-width: 0;
@@ -204,7 +204,7 @@
   font-size: var(--text-base);
   line-height: var(--leading-base);
   color: var(--foreground);
-  caret-color: var(--foreground);
+  caret-color: var(--studio-accent);
 }
 .login-fields .login-input-group input::placeholder {
   color: var(--field-placeholder);
