@@ -2,7 +2,7 @@
 .landing-pricing {
   scroll-margin-top: var(--studio-header-height);
   padding: clamp(72px, 8vw, 120px) var(--landing-gutter);
-  background: var(--landing-subtle);
+  background: var(--landing-canvas);
   color: var(--landing-foreground);
 }
 .landing-pricing-inner {
@@ -60,7 +60,7 @@
   align-items: center;
   padding: 26px 8px 22px;
   border-radius: 12px;
-  background: #e5e5e5;
+  background: #242424;
   cursor: pointer;
   transition:
     background-color 180ms ease,
@@ -141,8 +141,8 @@
   flex-direction: column;
   padding: clamp(28px, 3vw, 44px);
   border-radius: 20px;
-  background: var(--landing-foreground);
-  color: var(--landing-surface);
+  background: var(--landing-subtle);
+  color: var(--landing-foreground);
 }
 .landing-pricing-order-caption,
 .landing-pricing-amount span,
@@ -181,12 +181,12 @@
   width: 100%;
   margin-top: auto;
   border: 0;
-  background: var(--landing-subtle);
-  color: var(--landing-foreground);
+  background: #333;
+  color: var(--landing-muted);
   cursor: not-allowed;
 }
 .landing-pricing-buy:disabled {
-  background: var(--landing-subtle);
+  background: #333;
   color: var(--landing-muted);
   transform: none;
 }
@@ -200,7 +200,7 @@
 }
 @media (hover: hover) and (pointer: fine) {
   .landing-pricing-option:not(:has(input:checked)):hover {
-    background: #d9d9d9;
+    background: #303030;
   }
 }
 @media (max-width: 767px) {

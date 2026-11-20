@@ -3,8 +3,8 @@
   --review-surface: #232323;
   --review-muted: #b0b0b0;
   padding-block: clamp(72px, 8vw, 120px);
-  background: var(--landing-foreground);
-  color: var(--landing-subtle);
+  background: var(--landing-surface);
+  color: var(--landing-foreground);
 }
 .landing-reviews-heading {
   position: relative;
@@ -30,7 +30,7 @@
   mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
 }
 .landing-review-row:focus-visible {
-  outline: 2px solid var(--landing-subtle);
+  outline: 2px solid var(--landing-focus);
 }
 .landing-review-track {
   display: flex;
@@ -80,7 +80,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--landing-foreground);
+  background: var(--landing-canvas);
   font-size: 14px;
   font-weight: 500;
 }

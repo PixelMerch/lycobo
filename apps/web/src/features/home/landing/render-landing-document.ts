@@ -16,6 +16,7 @@ import featureStyles from "./landing-features.css?raw";
 import featureTemplate from "./landing-features.html?raw";
 import footerStyles from "./landing-footer.css?raw";
 import footerTemplate from "./landing-footer.html?raw";
+import { initializeLandingFooterOverlay } from "./landing-footer-overlay";
 import { initializeLandingFrameBridge } from "./landing-frame-bridge";
 import heroStyles from "./landing-hero.css?raw";
 import heroTemplate from "./landing-hero.html?raw";
@@ -82,7 +83,9 @@ export function renderLandingDocument(
     .replace(/__LYCOBO_IMAGE_([a-z]+)__/g, (marker, name: string) => landingImages[name] ?? marker)
     .replace(
       "__LYCOBO_MOTION_SCRIPT__",
-      () => `(${initializeLandingMotion.toString()})(${createLandingMotionTimeline.toString()});`,
+      () =>
+        `(${initializeLandingMotion.toString()})(${createLandingMotionTimeline.toString()});
+        (${initializeLandingFooterOverlay.toString()})();`,
     )
     .replace(
       "__LYCOBO_LANDING_FRAME_SCRIPT__",

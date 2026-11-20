@@ -1,16 +1,22 @@
-/* 浅灰页脚与白色 FAQ 分层，左侧品牌版权、右侧导航和通栏灰色字标共同收尾。 */
+/* 炭灰页脚作为前层覆盖黑底 FAQ，品牌、导航和通栏字标随背景一起上移。 */
 .landing-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
   padding: clamp(64px, 7vw, 104px) var(--landing-gutter) 0;
   overflow: clip;
   background: var(--landing-subtle);
   color: var(--landing-foreground);
 }
 .landing-footer-inner {
+  flex: 1;
   display: grid;
   grid-template-columns: minmax(0, 0.34fr) minmax(0, 0.66fr);
   grid-template-areas: "brand groups" "signature signature";
   gap: clamp(72px, 9vw, 128px) 48px;
   max-width: var(--landing-content);
+  width: 100%;
   margin-inline: auto;
 }
 .landing-footer-identity {
@@ -19,7 +25,7 @@
 .landing-footer-brand {
   width: 144px;
   height: auto;
-  filter: brightness(0);
+  filter: brightness(0) invert(1);
 }
 .landing-footer-groups {
   grid-area: groups;
@@ -70,29 +76,11 @@
   width: 100%;
   height: auto;
   margin-bottom: -4%;
-  opacity: 0.45;
 }
-/* 浏览器滚动时间轴随页脚进入视口推进，FAQ 展开改变高度时也无需重新测量。 */
-@supports (animation-timeline: view()) {
-  .landing-footer {
-    view-timeline-name: --landing-footer-entry;
-    view-timeline-axis: block;
-  }
-  .landing-footer-inner {
-    animation: landing-footer-rise 1s linear both;
-    animation-timeline: --landing-footer-entry;
-    animation-range: entry 0% entry 100%;
-  }
-  .landing-footer-inner:focus-within {
-    animation: none;
-  }
-}
-@keyframes landing-footer-rise {
-  from {
-    transform: translate3d(0, clamp(64px, 12vh, 160px), 0);
-  }
-  to {
-    transform: translate3d(0, 0, 0);
+/* 至少覆盖完整阅读视口，避免短页脚到页底时仍露出后层 FAQ。 */
+@media (prefers-reduced-motion: no-preference) {
+  body[data-footer-overlay] .landing-footer {
+    min-height: calc(100svh - var(--studio-header-height));
   }
 }
 @media (hover: hover) and (pointer: fine) {
@@ -118,9 +106,6 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .landing-footer-inner {
-    animation: none;
-  }
   .landing-footer a {
     transition: none;
   }

@@ -78,8 +78,8 @@
   line-height: 1.5;
 }
 .landing-feature-optimize {
-  background: var(--landing-foreground);
-  color: var(--landing-surface);
+  background: var(--landing-surface);
+  color: var(--landing-foreground);
 }
 .landing-feature-optimize :is(.landing-feature-label, .landing-feature-description) {
   color: rgb(255 255 255 / 70%);
@@ -99,7 +99,7 @@
   border-left: 1px solid rgb(255 255 255 / 40%);
 }
 .landing-prompt-example > div:last-child {
-  border-left-color: var(--landing-surface);
+  border-left-color: var(--landing-foreground);
 }
 .landing-prompt-example dt {
   margin-bottom: 6px;
@@ -107,7 +107,7 @@
   font-size: 11px;
 }
 .landing-prompt-example > div:last-child dt {
-  color: var(--landing-surface);
+  color: var(--landing-foreground);
 }
 .landing-prompt-example dd {
   margin: 0;

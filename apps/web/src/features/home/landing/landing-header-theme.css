@@ -1,15 +1,13 @@
-/* 首屏导航浮在商品画面上，滚动后切换浅色实底；菜单始终保留清晰的浅色表面。 */
+/* 首页顶栏与菜单保留黑色透明和磨砂，品牌及控件为白色。 */
 :root:has(.public-site-header[data-landing-frame]) {
-  --site-header-button-fill: #00000008;
-  --site-header-nav-hover-fill: #0000000f;
-  --site-header-menu-hover-fill: #0000000a;
-  --site-header-scroll-background: var(--landing-canvas);
-  --site-header-scroll-blur: none;
-  --site-header-menu-background: var(--landing-surface);
-  --site-header-menu-blur: none;
+  --site-header-button-fill: #ffffff0d;
+  --site-header-nav-hover-fill: #ffffff14;
+  --site-header-menu-hover-fill: #ffffff0f;
+  --site-header-menu-background: var(--glass-dark-tint);
+  --site-header-menu-blur: blur(14px);
 
   :is(.public-site-header, .landing-control-popover, .mobile-nav, .account-menu) {
-    color-scheme: light;
+    color-scheme: dark;
     --foreground: var(--landing-foreground);
     --surface: var(--landing-surface);
     --surface-foreground: var(--landing-foreground);
@@ -24,26 +22,22 @@
     --interaction-active: var(--landing-border);
     --dismiss-foreground: var(--landing-foreground);
     --dismiss-hover: var(--site-header-nav-hover-fill);
-    --glass-tint: var(--landing-surface);
+    --glass-tint: var(--site-header-menu-background);
     --glass-fill: linear-gradient(transparent, transparent);
-    --glass-border: var(--landing-border);
-    --glass-blur: none;
+    --glass-border: transparent;
+    --glass-blur: var(--site-header-menu-blur);
     --glass-shadow: 0 12px 32px rgb(0 0 0 / 8%);
     color: var(--landing-foreground);
   }
 
   .public-site-header {
-    background: var(--landing-canvas);
+    background: transparent;
   }
 
-  .public-site-header[data-scrolled="true"]::before {
-    border-bottom: 1px solid var(--landing-border);
-  }
-
-  /* 保留 Rive 与静态回退的同一轮廓和滚动进度，只将白色字形绘制为黑色。 */
+  /* Rive 与静态回退统一使用白色字形，保持原有轮廓和滚动进度。 */
   .public-site-brand-art,
   .mobile-nav .lycobo-logo {
-    filter: brightness(0);
+    filter: brightness(0) invert(1);
   }
 
   .landing-header-controls {
@@ -68,6 +62,7 @@
   }
 
   .public-site-start.link {
+    border-radius: 999px;
     background: var(--landing-foreground);
     color: var(--landing-surface);
   }
@@ -98,43 +93,16 @@
   .landing-control-popover .credits-menu-balance {
     color: var(--landing-muted);
   }
-
-  .public-site-header:not([data-scrolled="true"]) {
-    --site-header-button-fill: #ffffff14;
-    --site-header-nav-hover-fill: #ffffff1f;
-    --dismiss-foreground: #fff;
-    --dismiss-hover: #ffffff1f;
-    --shell-nav-foreground: #fff;
-    background: transparent;
-    color: #fff;
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root:has(.public-site-header[data-landing-frame]) {
+    --site-header-menu-background: var(--landing-subtle);
+    --site-header-menu-blur: none;
   }
-
-  .public-site-header:not([data-scrolled="true"]) .nav-row {
-    color: #fff;
-  }
-
-  .public-site-header:not([data-scrolled="true"]) .public-site-start.link {
-    background: var(--landing-surface);
-    color: var(--landing-foreground);
-    outline-color: var(--landing-surface);
-  }
-
-  .public-site-header:not([data-scrolled="true"])
-    .public-site-start.link:is(:hover, [data-hovered="true"]) {
-    background: var(--landing-inverse-action-hover);
-  }
-
-  .public-site-header:not([data-scrolled="true"])
-    :is(.nav-row, .public-site-brand):is(:focus-visible, [data-focus-visible="true"]) {
-    outline-color: #fff;
-  }
-
-  .public-site-header:not([data-scrolled="true"]) .public-site-brand-art {
-    filter: brightness(0) invert(1);
-  }
-
-  .public-site-header:not([data-scrolled="true"]) .landing-header-controls {
-    --landing-control-color: #fff;
-    --landing-control-hover-color: #fff;
+}
+@supports not (backdrop-filter: blur(1px)) {
+  :root:has(.public-site-header[data-landing-frame]) {
+    --site-header-menu-background: var(--landing-subtle);
+    --site-header-menu-blur: none;
   }
 }

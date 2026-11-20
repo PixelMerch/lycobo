@@ -1,6 +1,6 @@
 .lycobo-hero {
   position: relative;
-  background: #0c1830;
+  background: var(--landing-canvas);
   color: #fff;
 }
 .landing-hero-stage {
@@ -74,7 +74,7 @@
   border: 1px solid #ffffff29;
   border-radius: 12px;
   background: #fff;
-  color: var(--landing-foreground);
+  color: var(--landing-action-foreground);
 }
 .landing-source-proof img {
   width: 100%;

@@ -1,9 +1,28 @@
 /* 隔离 HTML 使用浏览器原生折叠语义，保持键盘可用并渐进增强展开动画。 */
-.landing-faq {
+.landing-faq-stage {
   scroll-margin-top: var(--studio-header-height);
+  isolation: isolate;
+}
+.landing-faq {
   padding: clamp(72px, 8vw, 120px) var(--landing-gutter);
   background: var(--landing-surface);
   color: var(--landing-foreground);
+}
+/* 重叠区为 FAQ 提供停驻距离，负边距让 footer 从原位置上推，不额外拉长页面。 */
+@media (prefers-reduced-motion: no-preference) {
+  body[data-footer-overlay] .landing-faq-stage {
+    margin-bottom: calc(var(--studio-header-height) - 100svh);
+  }
+  body[data-footer-overlay] .landing-faq-stage::after {
+    display: block;
+    height: calc(100svh - var(--studio-header-height));
+    content: "";
+  }
+  body[data-footer-overlay] .landing-faq {
+    position: sticky;
+    top: min(var(--studio-header-height), calc(100svh - var(--landing-faq-height, 100svh)));
+    min-height: calc(100svh - var(--studio-header-height));
+  }
 }
 .landing-faq-inner {
   display: grid;

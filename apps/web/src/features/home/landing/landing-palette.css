@@ -1,9 +1,9 @@
-/* 沉浸首屏与白底案例共享紧凑排版，按钮只保留动作名称。 */
+/* 沉浸首屏与黑底案例共享紧凑排版，按钮只保留动作名称。 */
 * {
   box-sizing: border-box;
 }
 html {
-  color-scheme: light;
+  color-scheme: dark;
   scroll-behavior: smooth;
 }
 body {
@@ -59,16 +59,9 @@ main {
 .landing-action:active {
   transform: scale(0.97);
 }
-:is(.lycobo-hero, .landing-feature-optimize) .landing-action {
-  background: var(--landing-surface);
-  color: var(--landing-foreground);
-}
 @media (hover: hover) and (pointer: fine) {
   .landing-action:hover {
     background: var(--landing-action-hover);
-  }
-  :is(.lycobo-hero, .landing-feature-optimize) .landing-action:hover {
-    background: var(--landing-inverse-action-hover);
   }
 }
 a:focus-visible {
@@ -77,9 +70,6 @@ a:focus-visible {
 }
 .landing-action:focus-visible {
   outline-color: var(--landing-focus);
-}
-:is(.lycobo-hero, .landing-feature-optimize) .landing-action:focus-visible {
-  outline-color: var(--landing-surface);
 }
 @media (prefers-reduced-motion: reduce) {
   html {
