@@ -141,7 +141,6 @@
   caret-color: transparent;
 }
 .unified-workspace .prompt-field .prompt-editor {
-  --prompt-optimize-ink: var(--accent-soft-foreground);
   border-radius: var(--field-radius);
 }
 .unified-workspace .prompt-field :is(textarea, .reference-rich-editor) {
@@ -182,7 +181,7 @@
   color: #808080;
   background: transparent;
 }
-/* 提示词优化沿用所在表单的强调色。 */
+/* 提示词优化用主题绿文字和图标，按钮底板透明。 */
 .prompt-optimize {
   position: absolute;
   bottom: 6px;
@@ -199,12 +198,18 @@
   height: 24px;
   padding: 0 8px;
   border-radius: 999px;
-  color: var(--accent);
+  color: var(--studio-accent);
   background: transparent;
   line-height: var(--leading-xs);
 }
-.prompt-optimize-button.button:is(:hover, :active, [data-hovered="true"], [data-pressed="true"]) {
-  color: var(--accent);
+.prompt-optimize-button.button:is(
+  :hover,
+  :active,
+  [data-hovered="true"],
+  [data-pressed="true"],
+  [data-focus-visible="true"]
+) {
+  color: var(--studio-accent);
   background: transparent;
 }
 .prompt-optimize[data-confirming="true"] {
@@ -269,24 +274,6 @@
   position: relative;
   display: inline-flex;
 }
-.prompt-optimize-label {
-  background: var(--app-primary-gradient);
-  background-clip: text;
-  color: transparent;
-}
-.unified-workspace .prompt-field .prompt-optimize-button.button {
-  color: var(--prompt-optimize-ink);
-  background: var(--accent-soft);
-}
-.unified-workspace
-  .prompt-field
-  .prompt-optimize-button.button:is(:hover, [data-hovered="true"], [data-pressed="true"]) {
-  background: color-mix(in srgb, var(--accent) 24%, transparent);
-}
-.unified-workspace .prompt-field .prompt-optimize-label {
-  background: none;
-  color: inherit;
-}
 .unified-workspace .prompt-field :is(.prompt-count, .prompt-clear.button:not(:disabled)) {
   color: var(--muted);
 }
@@ -311,13 +298,6 @@
     outline: var(--field-border-width) solid Highlight;
     outline-offset: calc(-1 * var(--field-border-width));
   }
-  .prompt-optimize-label {
-    background: none;
-    color: ButtonText;
-  }
-  .prompt-optimize-wand > .ui-icon {
-    stroke: ButtonText;
-  }
 }
 @media (prefers-reduced-motion: no-preference) {
   .prompt-editor:has(> :is(textarea, .reference-rich-editor):focus)
@@ -335,7 +315,7 @@
     pointer-events: none;
     content: "";
     clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
-    background: var(--app-primary-gradient);
+    background: currentColor;
     animation: prompt-wand-spark 2.4s 70ms ease-out infinite both;
   }
   .prompt-editor:has(> :is(textarea, .reference-rich-editor):focus) .prompt-optimize-wand::after {
