@@ -56,23 +56,6 @@ main {
     background-color 180ms ease,
     transform 160ms var(--landing-ease-out);
 }
-.landing-action-label {
-  position: relative;
-  display: block;
-  overflow: clip;
-}
-.landing-action-label > span {
-  display: block;
-  transition:
-    transform 260ms var(--landing-ease-out),
-    opacity 220ms ease;
-}
-.landing-action-label > span[aria-hidden] {
-  position: absolute;
-  inset: 0;
-  transform: translateY(110%);
-  opacity: 0;
-}
 .landing-action:active {
   transform: scale(0.97);
 }
@@ -82,18 +65,10 @@ main {
 }
 @media (hover: hover) and (pointer: fine) {
   .landing-action:hover {
-    background: var(--landing-focus);
+    background: var(--landing-action-hover);
   }
   :is(.lycobo-hero, .landing-feature-optimize) .landing-action:hover {
-    background: var(--landing-subtle);
-  }
-  .landing-action:hover .landing-action-label > span:first-child {
-    transform: translateY(-110%);
-    opacity: 0;
-  }
-  .landing-action:hover .landing-action-label > span[aria-hidden] {
-    transform: translateY(0);
-    opacity: 1;
+    background: var(--landing-inverse-action-hover);
   }
 }
 a:focus-visible {
@@ -200,18 +175,10 @@ a:focus-visible {
   html {
     scroll-behavior: auto;
   }
-  .landing-action,
-  .landing-action-label > span {
+  .landing-action {
     transition: none;
   }
   .landing-action:active {
     transform: none;
-  }
-  .landing-action .landing-action-label > span:first-child {
-    transform: none;
-    opacity: 1;
-  }
-  .landing-action .landing-action-label > span[aria-hidden] {
-    display: none;
   }
 }

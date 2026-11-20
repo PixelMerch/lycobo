@@ -99,7 +99,7 @@
   border-left: 1px solid rgb(255 255 255 / 40%);
 }
 .landing-prompt-example > div:last-child {
-  border-left-color: var(--studio-accent);
+  border-left-color: var(--landing-surface);
 }
 .landing-prompt-example dt {
   margin-bottom: 6px;
@@ -107,7 +107,7 @@
   font-size: 11px;
 }
 .landing-prompt-example > div:last-child dt {
-  color: var(--studio-accent);
+  color: var(--landing-surface);
 }
 .landing-prompt-example dd {
   margin: 0;

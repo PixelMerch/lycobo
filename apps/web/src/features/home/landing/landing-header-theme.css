@@ -73,7 +73,7 @@
   }
 
   .public-site-start.link:is(:hover, [data-hovered="true"]) {
-    background: var(--landing-focus);
+    background: var(--landing-action-hover);
   }
 
   .public-site-start.link:is(:focus-visible, [data-focus-visible="true"]) {
@@ -121,7 +121,7 @@
 
   .public-site-header:not([data-scrolled="true"])
     .public-site-start.link:is(:hover, [data-hovered="true"]) {
-    background: var(--landing-subtle);
+    background: var(--landing-inverse-action-hover);
   }
 
   .public-site-header:not([data-scrolled="true"])
