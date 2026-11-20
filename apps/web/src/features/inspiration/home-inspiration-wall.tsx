@@ -178,10 +178,12 @@ function InspirationTile({
           loading="lazy"
           decoding="async"
         />
-        <span className="home-inspiration-tag">
-          {!standalone && <UiIcon icon={categoryIcons[item.category]} size="small" />}
-          {standalone ? item.title : t.categories[item.category]}
-        </span>
+        {!standalone && (
+          <span className="home-inspiration-tag">
+            <UiIcon icon={categoryIcons[item.category]} size="small" />
+            {t.categories[item.category]}
+          </span>
+        )}
         {/* 悬停时卡内升起玻璃面板；面板属于卡片按钮，点它也打开详情。 */}
         <span className="home-inspiration-panel" aria-hidden="true">
           <strong>{item.title}</strong>

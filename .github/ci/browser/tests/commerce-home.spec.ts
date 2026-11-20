@@ -459,7 +459,7 @@ test("inspiration search expands in place and Escape resets results and focus", 
   await expect(field).toHaveCSS("border-top-width", "0px");
   await field.fill("水光香氛");
   await expect(cards).toHaveCount(1);
-  await expect(cards.locator(".home-inspiration-tag")).toHaveText("水光香氛");
+  await expect(cards.locator(".home-inspiration-tag")).toHaveCount(0);
   await field.fill("no-existing-work-123");
   const empty = page.locator(".home-inspiration-no-results");
   await expect(empty.locator(".ui-icon")).toBeVisible();

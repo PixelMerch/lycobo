@@ -75,13 +75,6 @@
 .inspiration-library .home-inspiration-card.button {
   border-radius: 6px;
 }
-.inspiration-library .home-inspiration-tag {
-  display: block;
-  width: max-content;
-  overflow: hidden;
-  line-height: 28px;
-  text-overflow: ellipsis;
-}
 .inspiration-library .home-inspiration-no-results {
   min-height: clamp(260px, 50dvh, 480px);
   font-size: var(--text-sm);
