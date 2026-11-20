@@ -29,7 +29,6 @@ export const homeInspirationMessages = defineMessages({
     prompt: "创作提示词",
     hint: "上传你的商品图，使用这段描述开始创作。",
     libraryTitle: shellMessages["zh-CN"].inspiration,
-    libraryIntro: "挑一张喜欢的画面，点“做同款”，带着它的提示词开始创作。",
     items: {
       "water-perfume": {
         title: "水光香氛",
@@ -171,7 +170,6 @@ export const homeInspirationMessages = defineMessages({
     prompt: "Prompt",
     hint: "Upload your product photo and start creating with this description.",
     libraryTitle: shellMessages.en.inspiration,
-    libraryIntro: "Find a look you like and choose “Use this style” to start with its prompt.",
     items: {
       "water-perfume": {
         title: "Perfume by the water",

@@ -309,7 +309,7 @@ test("homepage Inspiration opens the matching public header and reveals the bran
   const actionsOnHome = await actions.boundingBox();
   await header.getByRole("link", { name: "灵感库", exact: true }).click();
   await expect(page).toHaveURL(/\/inspiration$/);
-  await expect(page.getByRole("heading", { name: "灵感库", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "灵感库", level: 1 })).toHaveClass("sr-only");
   expect(await logo.boundingBox()).toEqual(logoOnHome);
   expect(await actions.boundingBox()).toEqual(actionsOnHome);
   await expect(header.getByRole("link", { name: "灵感库", exact: true })).toHaveAttribute(
@@ -326,12 +326,20 @@ test("homepage Inspiration opens the matching public header and reveals the bran
   await page.evaluate(() => window.scrollTo(0, 0));
   await expect(header.locator(".public-site-symbol")).toHaveCSS("opacity", "0");
   await expect(page.locator(".home-inspiration-card")).toHaveCount(23);
-  // 说明只引导“做同款”，不再写“AI 生成的示例，不是客户作品”。
-  await expect(page.getByText("挑一张喜欢的画面")).toBeVisible();
+  await expect(page.locator(".home-inspiration-column")).toHaveCount(6);
+  await expect(page.getByText("挑一张喜欢的画面")).toHaveCount(0);
   await expect(page.getByText("AI 生成的示例")).toHaveCount(0);
+  const tabs = page.getByRole("tablist", { name: "灵感分类" });
+  const pill = tabs.locator(".selection-pill");
+  await expect(pill).toHaveCSS("visibility", "visible");
+  const startingClip = await pill.evaluate((element) => getComputedStyle(element).clipPath);
+  const creative = tabs.getByRole("tab", { name: "创意视觉" });
+  await creative.click();
+  await expect(creative).toHaveAttribute("aria-selected", "true");
+  await expect(pill).not.toHaveCSS("clip-path", startingClip);
 });
 
-test("home inspiration cards offer 做同款 by hover or keyboard without submitting paid work", async ({
+test("inspiration library cards offer 做同款 by hover or keyboard without submitting paid work", async ({
   page,
 }) => {
   await mockImageApi(page);
@@ -340,8 +348,8 @@ test("home inspiration cards offer 做同款 by hover or keyboard without submit
     if (request.method() === "POST" && new URL(request.url()).pathname.endsWith("/image-tasks"))
       submissions++;
   });
-  await page.goto("/");
-  const gallery = page.getByRole("region", { name: "创作灵感", exact: true });
+  await page.goto("/inspiration");
+  const gallery = page.getByRole("region", { name: "灵感库", exact: true });
   const tileOf = (title: string) =>
     gallery.locator(".home-inspiration-tile").filter({
       has: page.getByRole("button", { name: `查看灵感：${title}`, exact: true }),
@@ -400,7 +408,7 @@ test("home inspiration cards offer 做同款 by hover or keyboard without submit
   const makeOther = gallery.getByRole("button", { name: "做同款：原木与晨光", exact: true });
   await clickCenter(makeOther);
   await page.getByRole("button", { name: "保留当前内容", exact: true }).click();
-  await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
+  await expect(page).toHaveURL(/\/inspiration$/);
   await hoverNearTop(other);
   await clickCenter(makeOther);
   await page.getByRole("button", { name: "替换并进入", exact: true }).click();
@@ -409,13 +417,13 @@ test("home inspiration cards offer 做同款 by hover or keyboard without submit
   expect(submissions).toBe(0);
 });
 
-test.describe("touch home inspiration", () => {
+test.describe("touch inspiration library", () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
 
   test("taps open the detail because touch has no hover panel", async ({ page }) => {
     await mockImageApi(page);
-    await page.goto("/");
-    const gallery = page.getByRole("region", { name: "创作灵感", exact: true });
+    await page.goto("/inspiration");
+    const gallery = page.getByRole("region", { name: "灵感库", exact: true });
     const card = gallery.getByRole("button", { name: "查看灵感：水光香氛", exact: true });
     await expect(card).toBeVisible({ timeout: 15000 });
     await expect(gallery.getByRole("button", { name: /^做同款：/ })).toHaveCount(0);

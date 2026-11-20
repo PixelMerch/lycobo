@@ -8,6 +8,7 @@ import {
 } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
+import { SelectionPill } from "../../components/selection-pill";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
 import { SelectionHighlight } from "../generation/composer/selection-highlight";
@@ -30,17 +31,27 @@ const categoryIcons = {
 /** 灵感库按分类呈现完整瀑布流，复用详情与做同款操作。 */
 export function InspirationWall({
   items,
+  standalone,
   onOpen,
   onUse,
 }: {
   items: HomeInspiration[];
+  standalone: boolean;
   onOpen: (item: HomeInspiration) => void;
   onUse: (item: HomeInspiration) => void;
 }) {
   const t = useMessages(homeInspirationMessages);
   const [category, setCategory] = useState<InspirationCategory>("all");
   const visible = items.filter((item) => category === "all" || item.category === category);
-  const columns = distributeColumns(visible, useColumnCount());
+  const columns = distributeColumns(visible, useColumnCount(standalone));
+  const tabs = inspirationCategories.map((id) => (
+    <Tabs.Tab id={id} key={id}>
+      {!standalone && id === category && (
+        <SelectionHighlight layoutId="home-inspiration-selection" layoutDependency={category} />
+      )}
+      {t.categories[id]}
+    </Tabs.Tab>
+  ));
   return (
     <Tabs
       selectedKey={category}
@@ -50,21 +61,25 @@ export function InspirationWall({
       }}
     >
       <div className="home-inspiration-bar">
-        <Tabs.ListContainer>
-          <Tabs.List aria-label={t.categoryList}>
-            {inspirationCategories.map((id) => (
-              <Tabs.Tab id={id} key={id}>
-                {id === category && (
-                  <SelectionHighlight
-                    layoutId="home-inspiration-selection"
-                    layoutDependency={category}
-                  />
-                )}
-                {t.categories[id]}
-              </Tabs.Tab>
-            ))}
-          </Tabs.List>
-        </Tabs.ListContainer>
+        {standalone ? (
+          <div className="home-inspiration-filter-scroll">
+            <Tabs.List
+              aria-label={t.categoryList}
+              render={({ children, ...props }) => (
+                <div {...props}>
+                  {children}
+                  <SelectionPill value={category} />
+                </div>
+              )}
+            >
+              {tabs}
+            </Tabs.List>
+          </div>
+        ) : (
+          <Tabs.ListContainer>
+            <Tabs.List aria-label={t.categoryList}>{tabs}</Tabs.List>
+          </Tabs.ListContainer>
+        )}
       </div>
       <Tabs.Panel id={category}>
         <div className="home-inspiration-grid">

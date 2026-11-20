@@ -20,10 +20,17 @@ import "./home-inspiration-gallery.css";
  * 灵感库页面和素材库的灵感标签共用完整列表。
  * onApplied 在带着提示词去工作台后调用，素材库弹窗借此关闭自己。
  */
-export function HomeInspirationGallery({ onApplied }: { onApplied?: () => void }) {
+export function HomeInspirationGallery({
+  onApplied,
+  standalone = false,
+}: {
+  onApplied?: () => void;
+  standalone?: boolean;
+}) {
   const navigate = useAppNavigate();
   const requireLogin = useRequireLogin();
   const t = useMessages(homeInspirationMessages);
+  const Heading = standalone ? "h1" : "h2";
   // 灵感库页面和素材库弹窗可能同时挂载，标题 id 各用各的。
   const titleId = useId();
   const inspirations = homeInspirationsFor(useLocale());
@@ -50,10 +57,15 @@ export function HomeInspirationGallery({ onApplied }: { onApplied?: () => void }
   }
   return (
     <section className="home-inspiration" aria-labelledby={titleId}>
-      <h2 id={titleId} className="sr-only">
-        {t.title}
-      </h2>
-      <InspirationWall items={inspirations} onOpen={(item) => setSelectedId(item.id)} onUse={use} />
+      <Heading id={titleId} className="sr-only">
+        {standalone ? t.libraryTitle : t.title}
+      </Heading>
+      <InspirationWall
+        items={inspirations}
+        standalone={standalone}
+        onOpen={(item) => setSelectedId(item.id)}
+        onUse={use}
+      />
       {selected && (
         <InspirationDetail
           item={selected}

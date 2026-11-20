@@ -9,13 +9,16 @@ const leadingEdge = { stiffness: 620, damping: 30 };
 const trailingEdge = { stiffness: 190, damping: 15 };
 
 function measureSelection(group: HTMLElement) {
-  const selected = group.querySelector<HTMLButtonElement>(
-    ':scope > button[data-selected="true"]:not(:disabled, [data-disabled="true"])',
+  const options = Array.from(
+    group.querySelectorAll<HTMLElement>(':scope > :is(button, [role="tab"])'),
+  );
+  const selected = options.find((option) =>
+    option.matches('[data-selected="true"]:not(:disabled, [data-disabled="true"])'),
   );
   if (!selected?.offsetWidth) return null;
 
   // 相对按钮组的坐标包含横向滚动内容，底板会随比例列表一起滚动。
-  const last = group.querySelector<HTMLButtonElement>(":scope > button:last-of-type");
+  const last = options.at(-1);
   return {
     width: Math.max(group.clientWidth, last ? last.offsetLeft + last.offsetWidth : 0),
     left: selected.offsetLeft,
@@ -33,7 +36,7 @@ function selectionClip(width: number, radius: string, left: number, right: numbe
   return `inset(0 ${end}px 0 ${start}px round ${radius})`;
 }
 
-/** 在单选按钮组内滑动选中底板，两侧用独立弹簧保留拉伸效果。 */
+/** 在单选按钮组和标签栏滑动选中底板，两侧用独立弹簧保留拉伸效果。 */
 export function SelectionPill({ value }: { value: string }) {
   const pillRef = useRef<HTMLSpanElement>(null);
   const previousValue = useRef(value);

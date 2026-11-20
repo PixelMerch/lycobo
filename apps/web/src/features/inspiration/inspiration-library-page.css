@@ -1,7 +1,4 @@
-/* 灵感库：与首页作品墙同一左右边界（左 116px、右 60px），标题区在上，瀑布流与页脚在下。 */
-body:has(.inspiration-library) {
-  background: #0d100c;
-}
+/* 独立灵感库让分类与作品紧接顶栏，作品墙从首屏开始。 */
 .main-content:has(> .inspiration-library) {
   padding: 0;
 }
@@ -10,31 +7,86 @@ body:has(.inspiration-library) {
   flex-direction: column;
   min-height: calc(100dvh - var(--header-height));
 }
-.inspiration-library-header {
-  padding: 48px 60px 0 116px;
+.inspiration-library .home-inspiration {
+  margin: 0;
+  padding: 8px 28px 40px;
 }
-.inspiration-library-header h1 {
-  color: #fff;
-  font-size: 32px;
-  font-weight: var(--weight-semibold);
-  line-height: 40px;
+.inspiration-library .home-inspiration-bar {
+  min-height: 44px;
 }
-.inspiration-library-header p {
-  max-width: 640px;
-  margin-top: 12px;
-  color: #ffffff99;
-  font-size: var(--text-base);
-  line-height: 22px;
+.home-inspiration-filter-scroll {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.inspiration-library .home-inspiration .tabs__list {
+  position: relative;
+  isolation: isolate;
+  width: max-content;
+  gap: 6px;
+  padding: 4px 2px;
+}
+.inspiration-library .home-inspiration .tabs__tab {
+  flex: none;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--fill-faint);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-xs);
+  white-space: nowrap;
+}
+.inspiration-library .home-inspiration .tabs__tab:is(:hover, [data-hovered="true"]) {
+  background: var(--control-hover-fill);
+  color: var(--foreground);
+}
+.inspiration-library .home-inspiration .tabs__tab[data-selected="true"] {
+  background: transparent;
+  color: var(--foreground);
+}
+.inspiration-library .home-inspiration .tabs__panel {
+  padding-top: 12px;
+}
+.inspiration-library :is(.home-inspiration-grid, .home-inspiration-column) {
+  gap: 8px;
+}
+.inspiration-library .home-inspiration-card.button {
+  border-radius: 8px;
+}
+.inspiration-library :is(.home-inspiration-glow, .home-inspiration-panel-prompt) {
+  display: none;
+}
+.inspiration-library .home-inspiration-panel {
+  inset: auto 0 0;
+  padding: 22px 10px 46px;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(transparent, rgb(12 12 12 / 92%));
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.inspiration-library .home-inspiration-cta.button {
+  bottom: 10px;
+  left: 10px;
+  height: 32px;
+  min-height: 32px;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .inspiration-library .home-inspiration-panel {
+    background: var(--studio-canvas);
+  }
 }
 .inspiration-library > .site-footer {
   margin-top: auto;
 }
 @media (max-width: 767px) {
-  .inspiration-library-header {
-    padding: 32px 20px 0;
+  .inspiration-library .home-inspiration {
+    padding: 6px 12px 32px;
   }
-  .inspiration-library-header h1 {
-    font-size: 24px;
-    line-height: 32px;
+  .inspiration-library :is(.home-inspiration-grid, .home-inspiration-column) {
+    gap: 6px;
   }
 }

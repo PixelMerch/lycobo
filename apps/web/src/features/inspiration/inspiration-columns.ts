@@ -1,10 +1,10 @@
-import { useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 // 卡片高宽比（高 ÷ 宽），与 CSS 里各形状的 aspect-ratio 一致；另加约 16px 卡片间距折算到列宽的比例。
 const heightByShape = { portrait: 1.25, square: 1, landscape: 0.75 } as const;
 const gapRatio = 0.06;
-// 列数断点与 CSS 一致：手机 2 列，≥768px 3 列，≥1024px 4 列，≥1280px 5 列。
-const breakpoints = ["(min-width: 768px)", "(min-width: 1024px)", "(min-width: 1280px)"];
+const defaultBreakpoints = [768, 1024, 1280];
+const libraryBreakpoints = [640, 900, 1120, 1360, 1640];
 
 type Shaped = { shape: keyof typeof heightByShape };
 /** 瀑布流的一列：稳定的 id 与按顺序放进来的卡片。 */
@@ -32,19 +32,26 @@ export function distributeColumns<T extends Shaped>(
   return columns.map(({ id, items: columnItems }) => ({ id, items: columnItems }));
 }
 
-function subscribe(onChange: () => void) {
-  const queries = breakpoints.map((query) => window.matchMedia(query));
-  for (const query of queries) query.addEventListener("change", onChange);
-  return () => {
-    for (const query of queries) query.removeEventListener("change", onChange);
-  };
+function breakpointQuery(width: number) {
+  return window.matchMedia(`(min-width: ${width}px)`);
 }
 
-function currentColumnCount() {
-  return 2 + breakpoints.filter((query) => window.matchMedia(query).matches).length;
-}
-
-/** 当前视口下瀑布流的列数，跨断点时更新。 */
-export function useColumnCount() {
-  return useSyncExternalStore(subscribe, currentColumnCount, () => 4);
+/** 按视口更新瀑布流列数，独立灵感库在宽屏可展示更多列。 */
+export function useColumnCount(standalone: boolean) {
+  const breakpoints = standalone ? libraryBreakpoints : defaultBreakpoints;
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const queries = breakpoints.map(breakpointQuery);
+      for (const query of queries) query.addEventListener("change", onChange);
+      return () => {
+        for (const query of queries) query.removeEventListener("change", onChange);
+      };
+    },
+    [breakpoints],
+  );
+  return useSyncExternalStore(
+    subscribe,
+    () => 2 + breakpoints.filter((width) => breakpointQuery(width).matches).length,
+    () => 4,
+  );
 }
