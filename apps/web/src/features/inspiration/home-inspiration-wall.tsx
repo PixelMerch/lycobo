@@ -1,8 +1,9 @@
-import { Button, Tabs } from "@heroui/react";
+import { Button, EmptyState, Tabs } from "@heroui/react";
 import {
   IconCamera,
   IconLayoutCollage,
   IconPhoto,
+  IconSearchOff,
   IconSparkles,
   type TablerIcon,
 } from "@tabler/icons-react";
@@ -99,9 +100,10 @@ export function InspirationWall({
       </div>
       <Tabs.Panel id={category}>
         {!visible.length && (
-          <p className="home-inspiration-no-results" role="status">
-            {t.noSearchResults}
-          </p>
+          <EmptyState className="empty-state home-inspiration-no-results">
+            <UiIcon icon={IconSearchOff} size="illustration" />
+            <p role="status">{t.noSearchResults}</p>
+          </EmptyState>
         )}
         <div className="home-inspiration-grid">
           {columns.map((column) => (

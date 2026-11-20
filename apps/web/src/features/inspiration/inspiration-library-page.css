@@ -82,9 +82,8 @@
   line-height: 28px;
   text-overflow: ellipsis;
 }
-.home-inspiration-no-results {
-  padding: 32px 0;
-  color: var(--muted);
+.inspiration-library .home-inspiration-no-results {
+  min-height: clamp(260px, 50dvh, 480px);
   font-size: var(--text-sm);
 }
 .inspiration-library :is(.home-inspiration-glow, .home-inspiration-panel-prompt) {

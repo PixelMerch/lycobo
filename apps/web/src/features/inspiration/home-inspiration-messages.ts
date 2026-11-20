@@ -29,10 +29,10 @@ export const homeInspirationMessages = defineMessages({
     prompt: "创作提示词",
     hint: "上传你的商品图，使用这段描述开始创作。",
     libraryTitle: shellMessages["zh-CN"].inspiration,
-    search: "搜索作品",
-    searchPlaceholder: "搜索作品标题或关键词",
+    search: "搜索灵感",
+    searchPlaceholder: "搜索灵感标题或关键词",
     closeSearch: "关闭搜索",
-    noSearchResults: "没有找到匹配的作品",
+    noSearchResults: "未找到匹配的灵感，试试其他关键词或切换分类。",
     items: {
       "water-perfume": {
         title: "水光香氛",
@@ -174,10 +174,10 @@ export const homeInspirationMessages = defineMessages({
     prompt: "Prompt",
     hint: "Upload your product photo and start creating with this description.",
     libraryTitle: shellMessages.en.inspiration,
-    search: "Search works",
+    search: "Search inspiration",
     searchPlaceholder: "Search titles or keywords",
     closeSearch: "Close search",
-    noSearchResults: "No matching works",
+    noSearchResults: "No matches. Try another keyword or switch categories.",
     items: {
       "water-perfume": {
         title: "Perfume by the water",

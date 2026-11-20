@@ -451,17 +451,21 @@ test("inspiration search expands in place and Escape resets results and focus", 
 }) => {
   await mockImageApi(page, { signedIn: false });
   await page.goto("/inspiration");
-  const search = page.getByRole("button", { name: "搜索作品", exact: true });
+  const search = page.getByRole("button", { name: "搜索灵感", exact: true });
   const cards = page.locator(".home-inspiration-card");
   await search.click();
-  const field = page.getByRole("searchbox", { name: "搜索作品", exact: true });
+  const field = page.getByRole("searchbox", { name: "搜索灵感", exact: true });
   await expect(field).toBeFocused();
   await expect(field).toHaveCSS("border-top-width", "0px");
   await field.fill("水光香氛");
   await expect(cards).toHaveCount(1);
   await expect(cards.locator(".home-inspiration-tag")).toHaveText("水光香氛");
   await field.fill("no-existing-work-123");
-  await expect(page.getByText("没有找到匹配的作品", { exact: true })).toBeVisible();
+  const empty = page.locator(".home-inspiration-no-results");
+  await expect(empty.locator(".ui-icon")).toBeVisible();
+  await expect(empty.getByRole("status")).toHaveText(
+    "未找到匹配的灵感，试试其他关键词或切换分类。",
+  );
   await field.press("Escape");
   await expect(search).toBeFocused();
   await expect(cards).toHaveCount(23);
@@ -478,9 +482,9 @@ test("inspiration filters stay fixed below the header while browsing", async ({ 
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
   await expect(toolbar).toBeInViewport();
   expect((await toolbar.boundingBox())?.y).toBe(before?.y);
-  await expect(page.getByRole("search", { name: "搜索作品" })).toBeInViewport();
+  await expect(page.getByRole("search", { name: "搜索灵感" })).toBeInViewport();
   await page.keyboard.press("ControlOrMeta+k");
-  await expect(page.getByRole("searchbox", { name: "搜索作品", exact: true })).toBeFocused();
+  await expect(page.getByRole("searchbox", { name: "搜索灵感", exact: true })).toBeFocused();
 });
 
 test.describe("touch inspiration library", () => {
