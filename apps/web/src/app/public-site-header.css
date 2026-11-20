@@ -35,14 +35,16 @@
 .public-site-brand-art > :is(img, canvas) {
   position: absolute;
   inset: 0;
-  width: 155px;
-  max-width: none;
-  height: 100%;
-  object-fit: contain;
   pointer-events: none;
 }
 .public-site-brand-art > canvas {
   visibility: hidden;
+  transform-origin: left center;
+  scale: calc(
+    var(--site-brand-wordmark-scale) +
+    (1 - var(--site-brand-wordmark-scale)) *
+    var(--site-brand-progress, 0)
+  );
 }
 .public-site-brand-art[data-rive-ready] > img {
   visibility: hidden;
@@ -51,7 +53,6 @@
   visibility: visible;
 }
 .public-site-wordmark {
-  clip-path: inset(0 0 0 24%);
   opacity: clamp(0, calc(1 - var(--site-brand-progress, 0) / 0.65), 1);
   transform: translateX(calc(-23% - 8px * var(--site-brand-progress, 0)));
 }
@@ -129,9 +130,6 @@
     width: 72px;
     height: 36px;
   }
-  .public-site-brand-art > :is(img, canvas) {
-    width: 122px;
-  }
   .public-site-actions {
     gap: 4px;
   }
@@ -145,8 +143,5 @@
   }
   .public-site-brand.link {
     width: 66px;
-  }
-  .public-site-brand-art > :is(img, canvas) {
-    width: 100px;
   }
 }

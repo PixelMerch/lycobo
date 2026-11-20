@@ -352,12 +352,8 @@
   width: 112px;
   height: 46px;
 }
-.workspace-site-brand img {
+.workspace-site-brand > img {
   flex: none;
-  width: 155px;
-  height: 100%;
-  object-fit: contain;
-  clip-path: inset(0 0 0 24%);
   transform: translateX(-23%);
 }
 @media (max-width: 767px) {
@@ -367,8 +363,5 @@
   .workspace-site-header .workspace-site-brand {
     width: 90px;
     height: 36px;
-  }
-  .workspace-site-brand img {
-    width: 122px;
   }
 }

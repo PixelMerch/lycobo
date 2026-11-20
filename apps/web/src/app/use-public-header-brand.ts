@@ -29,9 +29,9 @@ export function usePublicHeaderBrand(
       const progress = Math.max(0, Math.min(1, scroll.current / 500));
       if (progress > 0) header.dataset.scrolled = "true";
       else delete header.dataset.scrolled;
+      brand.style.setProperty("--site-brand-progress", String(progress));
       const riveReady = !!renderer && !reducedMotion.matches;
       if (riveReady) renderer?.draw(progress, canvas.clientWidth, canvas.clientHeight);
-      else brand.style.setProperty("--site-brand-progress", String(progress));
       brand.toggleAttribute("data-rive-ready", riveReady);
     }
 

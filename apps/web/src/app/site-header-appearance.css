@@ -1,4 +1,4 @@
-/* 站点顶栏、工作区工具和菜单共用交互配色。 */
+/* 站点顶栏与工作区共用品牌尺寸和交互配色。 */
 :root {
   --site-header-button-fill: var(--fill-medium, #ffffff14);
   --site-header-nav-hover-fill: #ffffff24;
@@ -8,6 +8,34 @@
   --site-header-menu-hover-fill: #ffffff0f;
   --site-header-menu-background: rgb(50 50 50 / 90%);
   --site-header-menu-blur: blur(14px);
+}
+
+:is(.public-site-brand-art, .workspace-site-brand) {
+  --site-brand-art-width: 155px;
+  --site-brand-wordmark-scale: 0.88;
+}
+.public-site-brand-art > :is(img, canvas),
+.workspace-site-brand > img {
+  width: var(--site-brand-art-width);
+  max-width: none;
+  height: 100%;
+  object-fit: contain;
+}
+.public-site-wordmark,
+.workspace-site-brand > img {
+  clip-path: inset(0 0 0 24%);
+  transform-origin: left center;
+  scale: var(--site-brand-wordmark-scale);
+}
+@media (max-width: 767px) {
+  :is(.public-site-brand-art, .workspace-site-brand) {
+    --site-brand-art-width: 122px;
+  }
+}
+@media (max-width: 374px) {
+  :is(.public-site-brand-art, .workspace-site-brand) {
+    --site-brand-art-width: 100px;
+  }
 }
 
 @media (prefers-reduced-transparency: reduce) {
