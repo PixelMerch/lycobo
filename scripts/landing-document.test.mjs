@@ -57,16 +57,18 @@ describe("localized landing document", () => {
     expect(new Script(`${script}\ntext;`).runInNewContext()).toBe(message);
   });
 
-  it("gives each of the seven distinct hero images exactly one destination", () => {
-    const document = renderLandingDocument(template, landingCopy("zh-CN"), "zh-CN");
-    const photos = Array.from(
-      document.matchAll(
-        /data-hero-photo="([a-z]+)"[^>]*>\s*<figure[^>]*>\s*<img src="(data:image\/webp;base64,[^"]+)"/g,
-      ),
-    );
-    const slots = Array.from(document.matchAll(/data-hero-slot="([a-z]+)"/g), (match) => match[1]);
-    expect(new Set(photos.map((match) => match[2])).size).toBe(7);
-    expect(slots.sort()).toEqual(photos.map((match) => match[1]).sort());
+  it.each(["zh-CN", "en"])("renders the original and result in the %s hero", (locale) => {
+    const copy = landingCopy(locale);
+    const document = renderLandingDocument(template, copy, locale);
+    const hero = document.match(/<section class="lycobo-hero"[\s\S]*?<\/section>/)?.[0] ?? "";
+    const photos = [...hero.matchAll(/src="(data:image\/webp;base64,[^"]+)"/g)];
+    expect(photos).toHaveLength(2);
+    expect(new Set(photos.map((photo) => photo[1])).size).toBe(2);
+    expect(hero).toContain(`>${copy.heroHeading}</h1>`);
+    expect(hero).toContain(`>${copy.heroScrollHint}</span>`);
+    expect(hero).not.toContain('type="range"');
+    expect(hero).toContain(`<figcaption>${copy.heroSourceLabel}</figcaption>`);
+    expect(hero).toContain(`<figcaption>${copy.heroResultLabel}</figcaption>`);
   });
 
   it.each(["zh-CN", "en"])(

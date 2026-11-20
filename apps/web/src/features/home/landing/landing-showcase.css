@@ -206,48 +206,6 @@
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  [data-showreel-motion] {
-    --showreel-overlap: clamp(180px, 43svh, 320px);
-    z-index: 1;
-    margin-block-start: calc(-1 * var(--showreel-overlap));
-    padding-block: 0;
-    background: transparent;
-  }
-
-  .lycobo-hero[data-motion] + [data-showreel-motion] {
-    /* 套图画面解除粘滞并向上离开时，下方画框接着入场。 */
-    --showreel-overlap: calc(100svh - 90px);
-  }
-
-  [data-showreel-motion]::after {
-    display: block;
-    height: clamp(380px, 64svh, 620px);
-    content: "";
-  }
-
-  [data-showreel-motion] .lycobo-showreel-stage {
-    position: sticky;
-    top: 66px;
-    min-height: calc(100svh - 66px);
-  }
-
-  [data-showreel-motion] .lycobo-showreel-stage::before {
-    position: absolute;
-    z-index: -1;
-    inset: -100svh 0 0;
-    background: var(--studio-canvas);
-    opacity: var(--showreel-cover, 0);
-    pointer-events: none;
-    content: "";
-  }
-
-  [data-showreel-motion] .lycobo-showreel-entrance {
-    width: min(100%, 1240px, calc((100svh - 200px) * 2.45));
-    opacity: 0;
-  }
-}
-
 @media (max-width: 620px) {
   .lycobo-showreel-comparison {
     aspect-ratio: 1.1;

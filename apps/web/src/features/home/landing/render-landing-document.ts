@@ -1,16 +1,11 @@
 import footerSocials from "../../../../public/brand/lycobo-footer-socials.svg?inline";
 import footerWordmark from "../../../../public/brand/lycobo-footer-wordmark.svg?inline";
-import drapeImage from "../../../../public/landing/comforter-drape.webp?inline";
-import foldedImage from "../../../../public/landing/comforter-folded.webp?inline";
-import roomImage from "../../../../public/landing/comforter-room.webp?inline";
-import setImage from "../../../../public/landing/comforter-set.webp?inline";
-import sourceImage from "../../../../public/landing/comforter-source.webp?inline";
-import stitchImage from "../../../../public/landing/comforter-stitch.webp?inline";
-import studioImage from "../../../../public/landing/comforter-studio.webp?inline";
 import throwBedroom from "../../../../public/landing/showcase/mint-throw-bedroom.webp?inline";
 import throwSofa from "../../../../public/landing/showcase/mint-throw-sofa.webp?inline";
 import throwSource from "../../../../public/landing/showcase/mint-throw-source.webp?inline";
 import throwTexture from "../../../../public/landing/showcase/mint-throw-texture.webp?inline";
+import citrusResult from "../../../../public/studio/samples/citrus-splash.webp?inline";
+import citrusSource from "../../../../public/studio/samples/white-soda.webp?inline";
 import { initializePageScrollbar } from "../../../components/page-scrollbar";
 import pageScrollbarStyle from "../../../components/page-scrollbar.css?raw";
 import type { Locale } from "../../../i18n/locale";
@@ -23,19 +18,13 @@ import footerTemplate from "./landing-footer.html?raw";
 import { initializeLandingFrameBridge } from "./landing-frame-bridge";
 import heroStyles from "./landing-hero.css?raw";
 import heroTemplate from "./landing-hero.html?raw";
-import { initializeLandingHeroScroll } from "./landing-hero-scroll";
 import landingPalette from "./landing-palette.css?raw";
+import { initializeLandingShowcase } from "./landing-showcase";
 import showcaseStyles from "./landing-showcase.css?raw";
-import { initializeLandingShowcaseScroll } from "./landing-showcase-scroll";
 
-const heroImages: Record<string, string> = {
-  drape: drapeImage,
-  folded: foldedImage,
-  room: roomImage,
-  set: setImage,
-  source: sourceImage,
-  stitch: stitchImage,
-  studio: studioImage,
+const landingImages: Record<string, string> = {
+  citrusresult: citrusResult,
+  citrussource: citrusSource,
   throwbedroom: throwBedroom,
   throwsofa: throwSofa,
   throwsource: throwSource,
@@ -43,7 +32,7 @@ const heroImages: Record<string, string> = {
 };
 
 const hero = heroTemplate.replace(/__LYCOBO_HERO_([a-z]+)__/g, (marker, name: string) => {
-  return heroImages[name] ?? marker;
+  return landingImages[name] ?? marker;
 });
 
 const htmlEntities: Record<string, string> = {
@@ -84,11 +73,7 @@ export function renderLandingDocument(
     .replaceAll("__LYCOBO_FOOTER_WORDMARK__", () => escapeHtml(footerWordmark))
     .replace("__LYCOBO_FOOTER_SOCIALS__", () => escapeHtml(footerSocials))
     .replace("__LYCOBO_FOOTER_GROUPS__", () => renderFooterGroups(locale))
-    .replace(
-      "__LYCOBO_HERO_SCROLL_SCRIPT__",
-      () => `(${initializeLandingHeroScroll.toString()})();
-(${initializeLandingShowcaseScroll.toString()})();`,
-    )
+    .replace("__LYCOBO_SHOWCASE_SCRIPT__", () => `(${initializeLandingShowcase.toString()})();`)
     .replace(
       "__LYCOBO_LANDING_FRAME_SCRIPT__",
       () => `(${initializeLandingFrameBridge.toString()})();`,
