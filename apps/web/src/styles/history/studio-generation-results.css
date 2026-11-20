@@ -95,6 +95,9 @@
 .generation-media-open.button:is(:hover, [data-hovered="true"]) {
   background: transparent;
 }
+.generation-media-open.button:is(:focus-visible:not([data-focused]), [data-focus-visible="true"]) {
+  outline-color: var(--studio-accent);
+}
 .generation-media-actions {
   position: absolute;
   inset: auto auto 6px 50%;

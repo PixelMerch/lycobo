@@ -267,17 +267,6 @@
     grid-row: 3;
   }
 }
-.unified-workspace .history-rail .history-thumbnail.button[aria-current="true"] {
-  padding: 1px;
-  border: 2px solid transparent;
-  background:
-    linear-gradient(var(--surface), var(--surface)) padding-box,
-    var(--studio-accent-gradient) border-box;
-  box-shadow: none;
-}
-.workspace[data-tool="create"] .history-rail .history-thumbnail.button:focus-visible {
-  outline-color: var(--brand-light);
-}
 .workspace[data-tool="create"] .infinite-load .spinner {
   color: var(--foreground);
 }

@@ -1,5 +1,7 @@
 import { Button, Slider } from "@heroui/react";
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
+import { componentsMessages } from "../../components/components-messages";
+import { LoadingState } from "../../components/loading-state";
 import { AssetImage } from "../generation/asset-image";
 import { modelDisplayName } from "../generation/models/model-display-name";
 import { useModelPresentation } from "../generation/models/model-logos";
@@ -95,12 +97,11 @@ export default function PreviewWorkspace({
           onPointerCancel={endPan}
           onLostPointerCapture={endPan}
         >
-          <AssetImage
-            className="image-preview-image"
+          <PreviewSourceImage
             assetId={source.id}
             alt={meta.prompt ? displayPrompt(meta.prompt, locale) : t.generatedImage}
-            draggable={false}
-            style={{ scale: `${zoom / 100}`, translate: `${pan.x}px ${pan.y}px` }}
+            zoom={zoom}
+            pan={pan}
           />
           {editor.image && (
             <RepairCanvas
@@ -141,6 +142,45 @@ export default function PreviewWorkspace({
         />
       )}
       <RepairNoticeRegion />
+    </>
+  );
+}
+
+function PreviewSourceImage({
+  assetId,
+  alt,
+  zoom,
+  pan,
+}: {
+  assetId: string;
+  alt: string;
+  zoom: number;
+  pan: { x: number; y: number };
+}) {
+  const t = useMessages(componentsMessages);
+  const [loading, setLoading] = useState(true);
+  const settle = () => setLoading(false);
+  return (
+    <>
+      <AssetImage
+        className="image-preview-image"
+        assetId={assetId}
+        alt={alt}
+        draggable={false}
+        style={{
+          scale: `${zoom / 100}`,
+          translate: `${pan.x}px ${pan.y}px`,
+          visibility: loading ? "hidden" : undefined,
+        }}
+        onLoad={settle}
+        onUnavailable={settle}
+        fallback={
+          <p className="image-preview-load-failed" role="status">
+            {t.viewerLoadFailed}
+          </p>
+        }
+      />
+      {loading && <LoadingState className="image-preview-loading" label={t.viewerLoading} />}
     </>
   );
 }

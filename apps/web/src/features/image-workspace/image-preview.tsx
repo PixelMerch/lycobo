@@ -2,6 +2,7 @@ import { Modal } from "@heroui/react";
 import { motion } from "motion/react";
 import type { RefObject } from "react";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { LoadingState } from "../../components/loading-state";
 import { ConfirmDialog } from "../../components/overlays/confirm-dialog";
 import { DialogClose } from "../../components/overlays/dialog-close";
 import { useCenteredDialogEntrance } from "../../components/overlays/use-centered-dialog-entrance";
@@ -112,8 +113,8 @@ export function ImagePreviewDialog({
             <motion.div ref={surface} className="image-preview" {...surfaceMotion}>
               <Suspense
                 fallback={
-                  <div className="preview-workspace-loading" role="status">
-                    {t.openingCanvas}
+                  <div className="preview-workspace-loading">
+                    <LoadingState className="image-preview-loading" label={t.openingCanvas} />
                     <DialogClose
                       fullScreen
                       label={t.closePreview}

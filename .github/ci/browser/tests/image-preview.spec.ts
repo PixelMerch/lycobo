@@ -60,8 +60,27 @@ test("library and history images open an in-page full-screen viewer", async ({ p
 
   // History results open the viewer in place instead of a new browser tab.
   const historyDialog = page.getByRole("dialog", { name: "图片预览", exact: true });
-  await page.getByRole("button", { name: "预览图片 2", exact: true }).click();
+  let releaseImage = () => {};
+  const imagePending = new Promise<void>((resolve) => {
+    releaseImage = resolve;
+  });
+  await page.route(
+    `**/api/v1/image-assets/${job.items[1]?.output_asset_id}/content`,
+    async (route) => {
+      await imagePending;
+      await route.fallback();
+    },
+  );
+  try {
+    await page.getByRole("button", { name: "预览图片 2", exact: true }).click();
+    await expect(
+      historyDialog.locator('.image-preview-frame img[src="/brand/lycobo-loading.svg"]'),
+    ).toBeVisible();
+  } finally {
+    releaseImage();
+  }
   await expect(historyDialog).toBeVisible();
+  await expect(historyDialog.locator(".image-preview-loading")).toHaveCount(0);
   await expect(historyDialog.locator(".image-preview")).toHaveCSS("transform", "none");
   const historyBox = await historyDialog.boundingBox();
   expect(historyBox?.width).toBe(1328);
@@ -77,6 +96,20 @@ test("library and history images open an in-page full-screen viewer", async ({ p
     "aria-current",
     "true",
   );
+  await expect(historyDialog.locator('.image-preview-thumb[aria-current="true"]')).toHaveCSS(
+    "border-top-width",
+    "2px",
+  );
+  await expect(historyDialog.locator('.image-preview-thumb[aria-current="false"]')).toHaveCSS(
+    "border-top-width",
+    "0px",
+  );
+  const favorite = historyDialog.locator(".image-preview-tool[aria-pressed]");
+  await favorite.click();
+  await favorite.hover();
+  await expect(favorite).toHaveCSS("color", "rgb(168, 255, 0)");
+  await favorite.click();
+  await expect(favorite).toHaveAttribute("aria-pressed", "false");
   // The main picture stays square; rail thumbnails share the history geometry.
   await expect(historyDialog.locator(".image-preview-image")).toHaveCSS("border-radius", "0px");
   await expect(historyDialog.locator(".image-preview-thumb").first()).toHaveCSS(
