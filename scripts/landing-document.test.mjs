@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { Script } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { landingCopy } from "../apps/web/src/features/home/landing/landing-copy.ts";
+import { readLandingNavigation } from "../apps/web/src/features/home/landing/landing-frame.ts";
 import { renderLandingDocument } from "../apps/web/src/features/home/landing/render-landing-document.ts";
 
 const template = readFileSync("apps/web/public/openart-reference/index.html", "utf8");
@@ -39,13 +40,21 @@ describe("localized landing document", () => {
         "/dashboard/commerce/textile-set",
         "/dashboard/commerce/create",
         "/dashboard",
+        "/dashboard/commerce/create",
+        "/dashboard/commerce/smart-variation",
+        "/dashboard/commerce/textile-set",
+        "/dashboard/commerce/replica",
+        "/dashboard",
+        "/dashboard/free-canvas",
+        "/dashboard/assets",
+        "/inspiration",
         "/terms",
         "/privacy",
         "https://bonko.fun/refund-policy",
-        "mailto:suport@lycobo.com",
       ]);
       for (const [tag, path] of links) {
         expect(tag).toContain(`href="${path.startsWith("/") ? `/${locale}${path}` : path}"`);
+        expect(readLandingNavigation({ type: "lycobo:navigate", path })).toBe(path);
       }
       const photos = [...document.matchAll(/src="(data:image\/webp;base64,[^"]+)"/g)];
       expect(new Set(photos.map((photo) => photo[1])).size).toBe(7);

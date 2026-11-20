@@ -81,60 +81,6 @@ a:focus-visible {
 :is(.lycobo-hero, .landing-feature-optimize) .landing-action:focus-visible {
   outline-color: var(--landing-surface);
 }
-.landing-footer {
-  position: relative;
-  display: block;
-  padding: 0 var(--landing-gutter) 28px;
-  background: var(--landing-surface);
-  color: var(--landing-muted);
-  font-size: 13px;
-  line-height: 1.5;
-}
-.landing-footer-top,
-.landing-footer-bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  max-width: var(--landing-content);
-  margin-inline: auto;
-}
-.landing-footer-top {
-  padding-block: 28px 14px;
-  border-top: 1px solid var(--landing-border);
-}
-.landing-footer-top img {
-  width: 112px;
-  height: auto;
-  filter: brightness(0);
-}
-.landing-footer nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-}
-.landing-footer a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-}
-.landing-footer a:hover {
-  color: var(--landing-foreground);
-}
-@media (max-width: 620px) {
-  .landing-footer-top,
-  .landing-footer-bottom {
-    align-items: flex-start;
-  }
-  .landing-footer-top {
-    flex-direction: column;
-    gap: 12px;
-  }
-  .landing-footer-bottom {
-    gap: 0;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

@@ -5,7 +5,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("landing FAQ scroll command", () => {
   it.each([false, true])(
-    "accepts only the host and respects reduced motion: %s",
+    "accepts the host and footer anchor, with reduced motion: %s",
     async (reduced) => {
       const focus = vi.fn();
       const scrollIntoView = vi.fn();
@@ -37,6 +37,21 @@ describe("landing FAQ scroll command", () => {
         behavior: reduced ? "instant" : "smooth",
         block: "start",
       });
+
+      class AnchorTarget {
+        closest(selector) {
+          return selector === 'a[data-landing-anchor="faq"]' ? this : null;
+        }
+      }
+      vi.stubGlobal("Element", AnchorTarget);
+      const click = new Event("click", { cancelable: true });
+      Object.defineProperty(click, "target", { value: new AnchorTarget() });
+      document.dispatchEvent(click);
+      await Promise.resolve();
+      expect(click.defaultPrevented).toBe(true);
+      expect(scrollIntoView).toHaveBeenCalledTimes(2);
+      expect(focus).toHaveBeenCalledTimes(2);
+      expect(parent.postMessage).toHaveBeenCalledTimes(1);
     },
   );
 });

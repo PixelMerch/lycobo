@@ -14,6 +14,7 @@ import faqStyles from "./landing-faq.css?raw";
 import faqTemplate from "./landing-faq.html?raw";
 import featureStyles from "./landing-features.css?raw";
 import featureTemplate from "./landing-features.html?raw";
+import footerStyles from "./landing-footer.css?raw";
 import footerTemplate from "./landing-footer.html?raw";
 import { initializeLandingFrameBridge } from "./landing-frame-bridge";
 import heroStyles from "./landing-hero.css?raw";
@@ -44,7 +45,7 @@ const htmlEntities: Record<string, string> = {
 const escapeHtml = (text: string) =>
   text.replace(/[&<>"']/g, (character) => htmlEntities[character] ?? character);
 
-/** 将本地图片、配色和滚动脚本内联到隔离首页，并按上下文转义中英文文案。 */
+/** 将首页各区块的图片、样式和滚动脚本内联到隔离正文，并转义中英文文案。 */
 export function renderLandingDocument(
   template: string,
   messages: Record<string, string>,
@@ -54,7 +55,9 @@ export function renderLandingDocument(
     .replace("__LYCOBO_LANDING_APPEARANCE__", () =>
       [studioPalette, landingTheme, landingPalette, motionStyles].join("\n"),
     )
-    .replace("__LYCOBO_HERO_STYLE__", () => heroStyles + showcaseStyles + featureStyles + faqStyles)
+    .replace("__LYCOBO_HERO_STYLE__", () =>
+      [heroStyles, showcaseStyles, featureStyles, faqStyles, footerStyles].join("\n"),
+    )
     .replace("__LYCOBO_HERO__", () => heroTemplate)
     .replace("__LYCOBO_FEATURES__", () => featureTemplate)
     .replace("__LYCOBO_FAQ__", () => faqTemplate)
