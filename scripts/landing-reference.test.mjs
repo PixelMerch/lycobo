@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const reference = readFileSync("apps/web/public/openart-reference/index.html", "utf8");
+const features = readFileSync("apps/web/src/features/home/landing/landing-features.html", "utf8");
 const container = readFileSync("apps/web/src/features/home/landing/landing-page.tsx", "utf8");
 
 describe("Landing document isolation", () => {
@@ -11,8 +12,8 @@ describe("Landing document isolation", () => {
     expect(reference).toContain('class="landing-case-grid"');
     expect(reference).toContain('class="landing-close"');
     expect(reference).not.toMatch(/<script\b[^>]*\bsrc=/i);
-    expect(reference).not.toMatch(
-      /<(img|video|source)\b[^>]*\bsrc="(?!data:|__LYCOBO_IMAGE_(?:scene|set)__")/i,
+    expect(reference + features).not.toMatch(
+      /<(img|video|source)\b[^>]*\bsrc="(?!data:|__LYCOBO_IMAGE_(?:scene|set|collection|textile|optimize)__")/i,
     );
     expect(reference).not.toMatch(/<link\b/i);
     expect(reference).not.toMatch(/<iframe\b/i);

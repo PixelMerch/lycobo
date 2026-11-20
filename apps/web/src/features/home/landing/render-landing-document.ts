@@ -1,12 +1,17 @@
 import footerWordmark from "../../../../public/brand/lycobo-footer-wordmark.svg?inline";
+import optimizeImage from "../../../../public/landing/campaign/espresso-prompt.webp?inline";
+import collectionImage from "../../../../public/landing/campaign/handbag-collection.webp?inline";
 import sceneImage from "../../../../public/landing/campaign/headphones-scene.webp?inline";
 import setImage from "../../../../public/landing/campaign/skincare-set.webp?inline";
 import shoeImage from "../../../../public/landing/campaign/sneaker-campaign.webp?inline";
 import sourceImage from "../../../../public/landing/campaign/sneaker-source.webp?inline";
+import textileImage from "../../../../public/landing/campaign/textile-views.webp?inline";
 import { initializePageScrollbar } from "../../../components/page-scrollbar";
 import pageScrollbarStyle from "../../../components/page-scrollbar.css?raw";
 import type { Locale } from "../../../i18n/locale";
 import studioPalette from "../../../styles/studio-palette.css?raw";
+import featureStyles from "./landing-features.css?raw";
+import featureTemplate from "./landing-features.html?raw";
 import footerTemplate from "./landing-footer.html?raw";
 import { initializeLandingFrameBridge } from "./landing-frame-bridge";
 import heroStyles from "./landing-hero.css?raw";
@@ -23,6 +28,9 @@ const landingImages: Record<string, string> = {
   source: sourceImage,
   scene: sceneImage,
   set: setImage,
+  collection: collectionImage,
+  textile: textileImage,
+  optimize: optimizeImage,
 };
 const htmlEntities: Record<string, string> = {
   "&": "&amp;",
@@ -44,8 +52,9 @@ export function renderLandingDocument(
     .replace("__LYCOBO_LANDING_APPEARANCE__", () =>
       [studioPalette, landingTheme, landingPalette, motionStyles].join("\n"),
     )
-    .replace("__LYCOBO_HERO_STYLE__", () => heroStyles + showcaseStyles)
+    .replace("__LYCOBO_HERO_STYLE__", () => heroStyles + showcaseStyles + featureStyles)
     .replace("__LYCOBO_HERO__", () => heroTemplate)
+    .replace("__LYCOBO_FEATURES__", () => featureTemplate)
     .replace("__LYCOBO_FOOTER__", () => footerTemplate)
     .replaceAll("__LYCOBO_FOOTER_WORDMARK__", () => escapeHtml(footerWordmark))
     .replace(/__LYCOBO_IMAGE_([a-z]+)__/g, (marker, name: string) => landingImages[name] ?? marker)

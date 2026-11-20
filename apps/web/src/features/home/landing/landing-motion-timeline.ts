@@ -41,7 +41,7 @@ export function createLandingMotionTimeline() {
     const narrow = window.innerWidth < 768;
     for (const [index, item] of cases.entries()) {
       if (!item.art || !item.image) continue;
-      const offset = narrow ? 0 : index * 64;
+      const offset = narrow ? 0 : (index % 2) * 64;
       const entered = clamp((scroll + viewport * 0.94 - item.top - offset) / (viewport * 0.65));
       const remaining = (1 - entered) ** 2;
       item.art.style.transform = `translate3d(0, ${remaining * (narrow ? 44 : 88)}px, 0) scale(${1 - remaining * 0.06})`;

@@ -68,7 +68,16 @@
   }
 
   .public-site-start.link {
-    color: var(--landing-action-foreground);
+    background: var(--landing-foreground);
+    color: var(--landing-surface);
+  }
+
+  .public-site-start.link:is(:hover, [data-hovered="true"]) {
+    background: var(--landing-focus);
+  }
+
+  .public-site-start.link:is(:focus-visible, [data-focus-visible="true"]) {
+    outline-color: var(--landing-focus);
   }
 
   .landing-account-controls .account-avatar[data-avatar-preset] {
@@ -102,6 +111,17 @@
 
   .public-site-header:not([data-scrolled="true"]) .nav-row {
     color: #fff;
+  }
+
+  .public-site-header:not([data-scrolled="true"]) .public-site-start.link {
+    background: var(--landing-surface);
+    color: var(--landing-foreground);
+    outline-color: var(--landing-surface);
+  }
+
+  .public-site-header:not([data-scrolled="true"])
+    .public-site-start.link:is(:hover, [data-hovered="true"]) {
+    background: var(--landing-subtle);
   }
 
   .public-site-header:not([data-scrolled="true"])

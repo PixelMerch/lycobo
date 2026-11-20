@@ -1,6 +1,6 @@
 import { defineMessages } from "../../../i18n/messages";
 
-/** 精简首页用商品原图和成图说明能力，文字只保留标题、标签与入口。 */
+/** 首页用大图和简短流程介绍套图、家纺裂变与提示词优化，区分演示和真实操作入口。 */
 export const landingMessages = defineMessages({
   "zh-CN": {
     pageTitle: "Lycobo · 让商品图出彩",
@@ -23,6 +23,33 @@ export const landingMessages = defineMessages({
     setAlt: "同一组蓝色护肤品的广告主图、质地特写和俯拍套图",
     sceneLabel: "场景创作",
     setLabel: "商品套图",
+    collectionTitle: "从一张商品照，\n到一整套上架图。",
+    collectionDescription: "告诉 AI 你的用途、场景和卖点，先规划整套图片，再逐张调整提示词与用图。",
+    collectionStepOne: "描述整套图片的创作需求",
+    collectionStepTwo: "编辑方案，指定每张图的参考图",
+    collectionStepThree: "勾选需要的方案，批量生成",
+    collectionAlt: "同一只红色手袋的广告主图、皮革与锁扣特写、俯拍商品图",
+    textileLabel: "家纺裂变",
+    textileTitle: "一张家纺主图，\n展开更多视角。",
+    textileDescription: "上传主图，补充面料与花型细节。选择需要的视角，生成整套家纺展示图。",
+    textileViewsLabel: "可选的家纺裂变视角",
+    textileViewFront: "正面展示",
+    textileViewOverhead: "俯拍视角",
+    textileViewAngled: "45° 平拍",
+    textileViewDetail: "面料特写",
+    textileAction: "开始家纺裂变",
+    textileAlt: "同一款蓝白条纹床品的卧室展示、俯拍视角和面料包边细节",
+    optimizeLabel: "AI 提示词优化",
+    optimizeTitle: "把一句想法，\n变成清晰的提示词。",
+    optimizeDescription:
+      "补充构图、光线与商品呈现方式，保留你的原意。优化后可以继续编辑，也可以撤销。",
+    promptBeforeLabel: "你的想法 · 示例",
+    promptBefore: "给咖啡机拍一张有质感的广告图。",
+    promptAfterLabel: "优化后的描述 · 示例",
+    promptAfter:
+      "镀铬咖啡机置于酒红色台面，丝绸背景衬托金属质感。左上方硬光勾勒机身，杯口升起细微蒸汽。",
+    optimizeAction: "体验 AI 优化",
+    optimizeAlt: "镀铬咖啡机置于酒红丝绸场景，侧光勾勒金属反射，红色杯口升起蒸汽",
     closeLineOne: "下一张，",
     closeLineTwo: "换你的商品。",
     plansAction: "查看方案",
@@ -52,6 +79,38 @@ export const landingMessages = defineMessages({
     setAlt: "Campaign, texture close-up, and overhead images of the same blue skincare products",
     sceneLabel: "Scene creation",
     setLabel: "Product image sets",
+    collectionTitle: "One product photo.\nA whole set to sell it.",
+    collectionDescription:
+      "Describe your scenes, selling points, and where the images will go. Plan the set, then refine each prompt and reference.",
+    collectionStepOne: "Describe what your image set needs",
+    collectionStepTwo: "Edit each plan and choose its references",
+    collectionStepThree: "Select your plans and generate together",
+    collectionAlt:
+      "The same red handbag in a campaign image, leather and clasp close-up, and overhead product shot",
+    textileLabel: "Textile variations",
+    textileTitle: "One textile photo.\nMore ways to see it.",
+    textileDescription:
+      "Upload a main image and add fabric or pattern details. Choose your views to create a complete textile image set.",
+    textileViewsLabel: "Available textile variation views",
+    textileViewFront: "Front view",
+    textileViewOverhead: "Overhead",
+    textileViewAngled: "45° eye level",
+    textileViewDetail: "Fabric detail",
+    textileAction: "Create Textile Variations",
+    textileAlt:
+      "The same blue-and-ivory striped bedding in a bedroom, an overhead view, and a fabric detail",
+    optimizeLabel: "AI prompt optimization",
+    optimizeTitle: "A simple idea.\nA clearer prompt.",
+    optimizeDescription:
+      "Add composition, lighting, and product details while keeping your intent. Keep editing the result, or undo it.",
+    promptBeforeLabel: "Your idea · Example",
+    promptBefore: "Make a polished campaign image for this espresso machine.",
+    promptAfterLabel: "Refined prompt · Example",
+    promptAfter:
+      "A chrome espresso machine on a burgundy counter, framed by silk. Hard light from the upper left shapes the metal, with a wisp of steam above the cup.",
+    optimizeAction: "Try AI Optimization",
+    optimizeAlt:
+      "A chrome espresso machine against burgundy silk, with hard side lighting and steam rising above a red cup",
     closeLineOne: "Next up:",
     closeLineTwo: "your product.",
     plansAction: "View Plans",

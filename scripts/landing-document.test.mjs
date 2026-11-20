@@ -8,17 +8,20 @@ const template = readFileSync("apps/web/public/openart-reference/index.html", "u
 
 describe("localized landing document", () => {
   it.each(["zh-CN", "en"])(
-    "renders the compact %s page with safe navigation and working scripts",
+    "renders the %s product showcase with safe navigation and working scripts",
     (locale) => {
       const copy = landingCopy(locale);
       const document = renderLandingDocument(template, copy, locale);
       expect(document).not.toContain("__LYCOBO_");
       expect(document).toContain(`lang="${locale}"`);
       expect(document).not.toMatch(/Trustpilot|support@openart|10M\+|40 free credits/);
-      expect(document.match(/<section\b/g)).toHaveLength(3);
+      expect(document.match(/<section\b/g)).toHaveLength(6);
       expect(document).toContain(copy.heroLineOne);
       expect(document).toContain(copy.sceneTitle);
       expect(document).toContain(copy.setTitle);
+      expect(document).toContain(copy.collectionDescription);
+      expect(document).toContain(copy.textileDescription);
+      expect(document).toContain(copy.promptAfter);
       const links = [...document.matchAll(/<a\b[^>]*data-landing-path="([^"]+)"[^>]*>/g)];
       expect(links.map((link) => link[1])).toEqual([
         "/dashboard",
@@ -27,6 +30,9 @@ describe("localized landing document", () => {
         "/dashboard/commerce/create",
         "/dashboard/commerce/smart-variation",
         "/dashboard/commerce/smart-variation",
+        "/dashboard/commerce/smart-variation",
+        "/dashboard/commerce/textile-set",
+        "/dashboard/commerce/create",
         "/dashboard",
         "/membership",
         "/terms",
@@ -38,7 +44,7 @@ describe("localized landing document", () => {
         expect(tag).toContain(`href="${path.startsWith("/") ? `/${locale}${path}` : path}"`);
       }
       const photos = [...document.matchAll(/src="(data:image\/webp;base64,[^"]+)"/g)];
-      expect(new Set(photos.map((photo) => photo[1])).size).toBe(4);
+      expect(new Set(photos.map((photo) => photo[1])).size).toBe(7);
       for (const match of document.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) {
         expect(() => new Script(match[1])).not.toThrow();
       }

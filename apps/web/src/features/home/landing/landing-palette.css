@@ -46,8 +46,8 @@ main {
   min-height: 44px;
   padding: 0 22px;
   border-radius: 999px;
-  background: var(--studio-accent);
-  color: var(--landing-action-foreground);
+  background: var(--landing-foreground);
+  color: var(--landing-surface);
   font-size: 14px;
   font-weight: 500;
   line-height: 20px;
@@ -76,9 +76,16 @@ main {
 .landing-action:active {
   transform: scale(0.97);
 }
+:is(.lycobo-hero, .landing-feature-optimize) .landing-action {
+  background: var(--landing-surface);
+  color: var(--landing-foreground);
+}
 @media (hover: hover) and (pointer: fine) {
   .landing-action:hover {
-    background: #baff35;
+    background: var(--landing-focus);
+  }
+  :is(.lycobo-hero, .landing-feature-optimize) .landing-action:hover {
+    background: var(--landing-subtle);
   }
   .landing-action:hover .landing-action-label > span:first-child {
     transform: translateY(-110%);
@@ -92,6 +99,12 @@ main {
 a:focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 6px;
+}
+.landing-action:focus-visible {
+  outline-color: var(--landing-focus);
+}
+:is(.lycobo-hero, .landing-feature-optimize) .landing-action:focus-visible {
+  outline-color: var(--landing-surface);
 }
 .landing-close {
   position: relative;
