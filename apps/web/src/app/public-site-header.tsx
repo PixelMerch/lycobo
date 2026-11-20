@@ -101,9 +101,9 @@ export function PublicSiteHeader({
                   <img
                     className="lycobo-logo"
                     alt="Lycobo"
-                    src="/brand/lycobo-reveal.svg"
+                    src="/brand/lycobo-landing.svg"
                     width={120}
-                    height={32}
+                    height={35}
                   />
                 </Drawer.Heading>
                 <Drawer.CloseTrigger aria-label={t.closeNavigation}>

@@ -51,7 +51,7 @@
   color: var(--foreground);
   backface-visibility: hidden;
 }
-/* 顶部居中：青柠圆形标志与登录标题，不加副标题。 */
+/* 顶部居中：白色 C 标志与登录标题。 */
 .login-header {
   display: flex;
   flex-direction: column;

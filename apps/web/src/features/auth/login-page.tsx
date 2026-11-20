@@ -110,7 +110,7 @@ function LoginCard({
         >
           <header className="login-header">
             <span className="login-logo-badge" aria-hidden="true">
-              <img src="/brand/lycobo-reveal-mark.svg" alt="" width="56" height="56" />
+              <img src="/brand/lycobo-focus-mark.svg" alt="" width="56" height="56" />
             </span>
             <h1 id="login-title">{enterprise ? t.enterpriseTitle : t.title}</h1>
           </header>

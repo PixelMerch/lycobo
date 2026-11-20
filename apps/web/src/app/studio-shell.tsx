@@ -46,7 +46,7 @@ const publicPaths = new Set<string>([
   legalPaths.privacy,
 ]);
 
-const studioLogo = { src: "/brand/lycobo-reveal.svg", width: 120, height: 32 };
+const studioLogo = { src: "/brand/lycobo-landing.svg", width: 120, height: 35 };
 
 /** 按页面组合导航和业务区域，未登录时转往独立登录页面。 */
 export function StudioShell() {

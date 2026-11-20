@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/brand/lycobo-reveal.svg">
-    <img src="apps/web/public/brand/lycobo-reveal-black.svg" alt="Lycobo" width="240">
+    <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/brand/lycobo-landing.svg">
+    <img src="apps/web/public/brand/lycobo-landing-black.svg" alt="Lycobo" width="240">
   </picture>
 </p>
 
