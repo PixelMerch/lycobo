@@ -16,13 +16,16 @@ describe("localized landing document", () => {
       expect(document).not.toContain("__LYCOBO_");
       expect(document).toContain(`lang="${locale}"`);
       expect(document).not.toMatch(/Trustpilot|support@openart|10M\+|40 free credits/);
-      expect(document.match(/<section\b/g)).toHaveLength(6);
+      expect(document.match(/<section\b/g)).toHaveLength(9);
       expect(document).toContain(copy.heroLineOne);
       expect(document).toContain(copy.sceneTitle);
       expect(document).toContain(copy.setTitle);
       expect(document).toContain(copy.collectionDescription);
       expect(document).toContain(copy.textileDescription);
       expect(document).toContain(copy.promptAfter);
+      expect(document).toContain(copy.review1Quote);
+      expect(document).toContain(copy.review8Name);
+      expect(document.match(/class="landing-review-card"/g)).toHaveLength(8);
       expect(document).toContain(copy.faqCreditsAnswer);
       expect(document).toContain(copy.faqFailureAnswer);
       expect(document).not.toContain("Next up:");

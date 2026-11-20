@@ -81,7 +81,7 @@ apps/web/src/
     ├── free-canvas/              # 自由画布：Konva 舞台、画布状态与本机存储，生成结果放回画布
     ├── video/                    # 视频页面、请求与草稿；history / player / production / storyboard 分职责
     ├── home/                     # 仅保留当前首页落地页
-    │   └── landing/              # 商品案例、套图/裂变/AI优化、积分FAQ、双语隔离正文和滚动背景
+    │   └── landing/              # 商品案例、套图/裂变/AI优化、评价滚动、积分FAQ与双语隔离正文
     ├── inspiration/              # 灵感库页面、示例数据与作品墙；素材库复用同一浏览组件
     ├── site/                     # 灵感库与协议页共用页脚；首页复用版权和客服信息
     ├── legal/                    # 用户协议与隐私政策公开页；运营主体等待补信息集中在 legal-entity-messages.ts
