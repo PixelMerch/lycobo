@@ -50,12 +50,19 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await page.goto("/commerce/create");
   const articles = page.locator(".generation-job");
   await expect(articles).toHaveCount(3);
+  const scrollbar = page.getByRole("region", { name: "滚动工作区", exact: true });
+  await expect(scrollbar).toHaveCSS("position", "fixed");
+  await expect(page.locator("html")).toHaveCSS("scrollbar-width", "none");
+  expect(await page.evaluate(() => innerWidth - document.documentElement.clientWidth)).toBe(0);
   await expect(page.getByRole("button", { name: "回到顶部", exact: true })).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: `查看任务 ${jobs[0]?.id}`, exact: true }),
   ).toHaveAttribute("aria-current", "true");
   const target = page.getByRole("button", { name: `查看任务 ${jobs[1]?.id}`, exact: true });
   await target.click();
+  await expect
+    .poll(() => scrollbar.evaluate((rail) => Math.abs(rail.scrollTop - window.scrollY)))
+    .toBeLessThanOrEqual(1);
   await expect(target).toHaveAttribute("aria-current", "true");
   await expect(articles.nth(1)).toHaveAttribute("data-active", "true");
   const metadataClearance = () =>
@@ -114,6 +121,10 @@ test("history thumbnails locate tasks, track scrolling and keep metadata visible
   await expect(page.getByRole("region", { name: "工作区历史记录" })).toBeVisible();
   await expect(page.locator(".history-rail")).toBeHidden();
   await expect(articles).toHaveCount(3);
+  expect(await page.evaluate(() => innerWidth - document.documentElement.clientWidth)).toBe(0);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await scrollbar.press("PageDown");
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 });
 
 test("generating returns the history and its thumbnail index to the newest task", async ({

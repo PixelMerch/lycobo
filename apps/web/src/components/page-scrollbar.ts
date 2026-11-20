@@ -1,13 +1,19 @@
 /** 叠加浮动滚动条并同步文档或指定面板的滚动，返回卸载清理函数。 */
-export function initializePageScrollbar(panel?: HTMLElement) {
+export function initializePageScrollbar(panel?: HTMLElement, label?: string) {
   const scroller = panel ?? document.scrollingElement ?? document.documentElement;
   const scrollEvents = panel ?? window;
   const rail = document.createElement("div");
   const spacer = document.createElement("div");
   rail.className = "lycobo-page-scrollbar";
   if (panel) rail.classList.add("lycobo-page-scrollbar--panel");
-  rail.setAttribute("aria-hidden", "true");
-  rail.tabIndex = -1;
+  if (label) {
+    rail.setAttribute("role", "region");
+    rail.setAttribute("aria-label", label);
+    rail.tabIndex = 0;
+  } else {
+    rail.setAttribute("aria-hidden", "true");
+    rail.tabIndex = -1;
+  }
   rail.append(spacer);
   (panel?.parentElement ?? document.body).append(rail);
 

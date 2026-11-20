@@ -243,7 +243,7 @@ body:has(.workspace-tool-group[aria-expanded="true"])
   :is(.composer-scroll, .results-panel, .history-rail-list, .variation-plan-body) {
   overflow: hidden;
 }
-body:has(.workspace-tool-group[aria-expanded="true"]) .workspace-scrollbar {
+body:has(.workspace-tool-group[aria-expanded="true"]) > .lycobo-page-scrollbar {
   visibility: hidden;
 }
 :root .workspace-tool-submenu.dropdown__popover {

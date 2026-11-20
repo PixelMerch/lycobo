@@ -4,45 +4,6 @@
   margin-inline: auto;
 }
 
-/* 右侧素材栏旁的滑块叠在背景上，窄屏沿用系统滚动条。 */
-.workspace-scrollbar {
-  display: none;
-}
-@media (min-width: 1301px) {
-  html:has(.unified-workspace) {
-    scrollbar-width: none;
-  }
-  html:has(.unified-workspace)::-webkit-scrollbar {
-    display: none;
-  }
-  .workspace-scrollbar {
-    position: fixed;
-    z-index: 14;
-    inset-block: calc(var(--header-height) + var(--content-padding) + var(--workspace-column-top))
-      var(--content-padding);
-    inset-inline-end: max(3px, calc((100% - 1872px) / 2 - 10px));
-    display: block;
-    width: 8px;
-    pointer-events: none;
-  }
-  .workspace-scrollbar[inert] {
-    visibility: hidden;
-  }
-  .workspace-scrollbar-thumb {
-    width: 100%;
-    border-radius: 999px;
-    background: #ffffff59;
-    cursor: grab;
-    pointer-events: auto;
-    touch-action: none;
-  }
-  .workspace-scrollbar-thumb:is(:hover, :active, :focus-visible) {
-    background: #ffffff8c;
-  }
-  .workspace-scrollbar-thumb:active {
-    cursor: grabbing;
-  }
-}
 @media (min-width: 1921px) {
   .back-to-top-button {
     right: calc(var(--content-padding) + 96px + 34px + 16px + (100% - 1920px) / 2);
