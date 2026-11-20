@@ -267,11 +267,6 @@
     grid-row: 3;
   }
 }
-.workspace[data-tool="create"] .history-rail .history-thumbnail.button {
-  padding: 1px;
-  border: 2px solid var(--border);
-  box-shadow: none;
-}
 .unified-workspace .history-rail .history-thumbnail.button[aria-current="true"] {
   padding: 1px;
   border: 2px solid transparent;

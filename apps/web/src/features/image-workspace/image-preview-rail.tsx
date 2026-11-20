@@ -2,7 +2,7 @@ import { Button } from "@heroui/react";
 import { useLayoutEffect, useRef } from "react";
 import { InfiniteLoad } from "../../components/infinite-load";
 import { useMessages } from "../../i18n/messages";
-import { AssetImage } from "../generation/asset-image";
+import { HistoryAssetThumbnail } from "../generation/history/history-asset-thumbnail";
 import type { PreviewImage } from "./image-preview";
 import { imageWorkspaceMessages } from "./image-workspace-messages";
 
@@ -63,9 +63,7 @@ export function ImagePreviewRail({
           aria-current={position === index ? "true" : "false"}
           onPress={() => onSelect(position)}
         >
-          <span className="history-thumbnail-frame">
-            <AssetImage assetId={image.id} thumbnail alt={copy.alt(position + 1)} loading="lazy" />
-          </span>
+          <HistoryAssetThumbnail assetId={image.id} alt={copy.alt(position + 1)} />
         </Button>
       ))}
       <InfiniteLoad

@@ -1,6 +1,6 @@
 import { Button, toast } from "@heroui/react";
 import type { ImageJob } from "@lycoboai/contracts";
-import { IconPhotoOff, IconPhotoX, IconTrash } from "@tabler/icons-react";
+import { IconPhotoX, IconTrash } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
@@ -9,12 +9,12 @@ import { useLocale } from "../../../i18n/locale-store";
 import { currentMessages, useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { LibraryDialog } from "../../assets/library-dialog";
-import { AssetImage } from "../asset-image";
 import { useDeleteHistoryTask, useImageHistory } from "../generation-client";
 import { GenerationLoading, useStatusLabel } from "../generation-status";
 import { modelDisplayName } from "../models/model-display-name";
 import { useModelPresentation } from "../models/model-logos";
 import { useStudioStore } from "../studio-state";
+import { HistoryAssetThumbnail } from "./history-asset-thumbnail";
 import { historyMessages } from "./history-messages";
 import { scrollToHistoryTask } from "./history-navigation";
 import { HistoryRail } from "./history-rail";
@@ -220,19 +220,6 @@ function HistoryIndexThumbnail({
         <GenerationLoading />
       </span>
     );
-  if (image)
-    return (
-      <span className="history-thumbnail-frame">
-        <AssetImage
-          assetId={image}
-          thumbnail
-          alt={modelName}
-          loading="lazy"
-          fallback={
-            <UiIcon icon={IconPhotoOff} size="action" className="history-thumbnail-unavailable" />
-          }
-        />
-      </span>
-    );
+  if (image) return <HistoryAssetThumbnail assetId={image} alt={modelName} />;
   return <span>{statusLabel(job.status)}</span>;
 }

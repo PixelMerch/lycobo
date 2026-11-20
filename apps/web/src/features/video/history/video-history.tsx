@@ -7,7 +7,7 @@ import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { LibraryDialog } from "../../assets/library-dialog";
-import { AssetImage } from "../../generation/asset-image";
+import { HistoryAssetThumbnail } from "../../generation/history/history-asset-thumbnail";
 import { scrollToHistoryCard } from "../../generation/history/history-navigation";
 import { HistoryRail } from "../../generation/history/history-rail";
 import { VideoProductionCard, videoProductionCardId } from "../production/video-production-card";
@@ -153,16 +153,7 @@ export function VideoHistoryRail({ production }: { production: Production }) {
 function VideoTaskThumbnail({ task }: { task: Parameters<typeof isVideoTaskActive>[0] }) {
   const t = useMessages(videoHistoryMessages);
   if (task.asset_id)
-    return (
-      <span className="history-thumbnail-frame">
-        <AssetImage
-          assetId={task.asset_id}
-          thumbnail
-          alt={t.videoCover(task.public_id)}
-          loading="lazy"
-        />
-      </span>
-    );
+    return <HistoryAssetThumbnail assetId={task.asset_id} alt={t.videoCover(task.public_id)} />;
   if (isVideoTaskActive(task))
     return (
       <span className="history-thumbnail-frame">
