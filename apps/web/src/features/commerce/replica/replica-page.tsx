@@ -16,6 +16,7 @@ import {
 import { generationMessages } from "../../generation/generation-messages";
 import { revealNewestHistory } from "../../generation/history/history-navigation";
 import { modelCapabilities, supportsReferences } from "../../generation/models/model-capabilities";
+import { WorkspaceComposerScroll } from "../../workspace/workspace-composer-scroll";
 import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
 import { replicaMessages } from "./replica-messages";
 import { ReplicaReferences } from "./replica-references";
@@ -56,7 +57,7 @@ export function ReplicaPage() {
   const showCost = !isDisabled && !pending && cost > 0;
   return (
     <section className="composer-panel" aria-label={t.parameters}>
-      <section className="composer-scroll">
+      <WorkspaceComposerScroll>
         <WorkspaceComposerTitle />
         <ReplicaReferences />
         <ReferencePrompt
@@ -90,7 +91,7 @@ export function ReplicaPage() {
           )}
           onChange={(resolution) => patchDraft({ resolution })}
         />
-      </section>
+      </WorkspaceComposerScroll>
       <div className="generate-area">
         <GenerateButton
           label={pending ? common.confirmLastSubmission : t.generate}

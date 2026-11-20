@@ -113,11 +113,26 @@
   max-width: 100%;
 }
 
+.composer-scroll-frame {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+.composer-scroll-frame > .lycobo-page-scrollbar--panel {
+  position: absolute;
+  z-index: 4;
+}
 .composer-scroll {
+  min-height: 0;
+  min-width: 0;
+}
+.composer-scroll-content {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-height: 0;
   min-width: 0;
 }
 .ratio-heading {
@@ -146,12 +161,11 @@
     flex: 1;
     overflow-y: auto;
     overscroll-behavior-y: contain;
-    scrollbar-width: thin;
-    scrollbar-color: var(--surface-tertiary) transparent;
-    scrollbar-gutter: stable;
+    scrollbar-width: none;
+    scrollbar-gutter: auto;
   }
-  .composer-scroll > * {
-    flex-shrink: 0;
+  .composer-scroll::-webkit-scrollbar {
+    display: none;
   }
   .composer-panel .generate-area {
     flex: none;

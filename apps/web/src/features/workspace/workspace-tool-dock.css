@@ -10,15 +10,20 @@
   --accent-soft: color-mix(in srgb, var(--brand) 16%, transparent);
   gap: 12px;
 }
-.unified-workspace .composer-scroll {
+.unified-workspace .composer-scroll-frame {
   margin: -12px -12px 0;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+}
+.unified-workspace .composer-scroll {
   padding-inline: 12px;
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
   scroll-padding-top: 60px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+}
+.unified-workspace .composer-scroll-content {
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
 }
 .unified-workspace .composer-panel .generate-area {
   display: flex;
@@ -243,7 +248,10 @@ body:has(.workspace-tool-group[aria-expanded="true"])
   :is(.composer-scroll, .results-panel, .history-rail-list, .variation-plan-body) {
   overflow: hidden;
 }
-body:has(.workspace-tool-group[aria-expanded="true"]) > .lycobo-page-scrollbar {
+body:has(.workspace-tool-group[aria-expanded="true"]) > .lycobo-page-scrollbar,
+body:has(:is(.workspace-tool-group[aria-expanded="true"], .textile-views-popover))
+  .composer-scroll-frame
+  > .lycobo-page-scrollbar--panel {
   visibility: hidden;
 }
 :root .workspace-tool-submenu.dropdown__popover {

@@ -6,6 +6,7 @@ import { UiIcon } from "../../../components/ui-icon";
 import { GenerateButton } from "../../generation/composer/generate-button";
 import { ParameterGroup } from "../../generation/composer/parameter-group";
 import { AspectRatioField } from "../../generation/composer/ratio-picker";
+import { WorkspaceComposerScroll } from "../../workspace/workspace-composer-scroll";
 import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
 
 import { TextileImageField } from "./textile-image-field";
@@ -33,7 +34,7 @@ export function TextileSetPage() {
     <>
       <div ref={viewsAnchor} className="textile-views-anchor" aria-hidden="true" />
       <section className="composer-panel" aria-label={t.parameters}>
-        <div className="composer-scroll">
+        <WorkspaceComposerScroll>
           <WorkspaceComposerTitle />
           <TextileImageField
             label={t.mainImage}
@@ -68,7 +69,7 @@ export function TextileSetPage() {
             )}
             onChange={(resolution) => update({ resolution })}
           />
-        </div>
+        </WorkspaceComposerScroll>
         <div className="generate-area">
           <GenerateButton
             label={

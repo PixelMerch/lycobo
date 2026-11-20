@@ -6,6 +6,7 @@ import { GenerateButton } from "../../generation/composer/generate-button";
 import { ParameterGroup } from "../../generation/composer/parameter-group";
 import { AspectRatioField } from "../../generation/composer/ratio-picker";
 import { ReferencePicker } from "../../generation/references/reference-picker";
+import { WorkspaceComposerScroll } from "../../workspace/workspace-composer-scroll";
 import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
 import { useSmartVariationDraft } from "./smart-variation-state";
 import { useVariationPlan } from "./use-variation-plan";
@@ -26,7 +27,7 @@ export function SmartVariationPage() {
   return (
     <>
       <section className="composer-panel" aria-label={t.parameters}>
-        <div className="composer-scroll">
+        <WorkspaceComposerScroll>
           <WorkspaceComposerTitle />
           <ReferencePicker
             compact
@@ -61,7 +62,7 @@ export function SmartVariationPage() {
             value={resolution}
             onChange={(resolution) => update({ resolution })}
           />
-        </div>
+        </WorkspaceComposerScroll>
         <div className="generate-area variation-submit">
           {planId && (
             <Button

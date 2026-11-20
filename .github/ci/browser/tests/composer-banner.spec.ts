@@ -9,6 +9,10 @@ for (const path of ["/commerce/create", "/commerce/textile-set", "/commerce/smar
     await mockImageApi(page);
     await page.goto(path);
     const scroll = page.locator(".composer-scroll");
+    const scrollbar = page.locator(".composer-scroll-frame > .lycobo-page-scrollbar--panel");
+    await expect(scrollbar).toBeVisible();
+    await expect(scroll).toHaveCSS("scrollbar-width", "none");
+    expect(await scroll.evaluate((panel) => panel.offsetWidth - panel.clientWidth)).toBe(0);
     const hero = page.locator(".workspace-composer-hero");
     const description = hero.locator("p");
     await expect(hero).toHaveAttribute("data-collapsed", "false");
@@ -26,7 +30,9 @@ for (const path of ["/commerce/create", "/commerce/textile-set", "/commerce/smar
       });
     const initial = await measure();
     expect(initial.visibleHero).toBeCloseTo(148, 0);
-    await scroll.evaluate((element) => element.scrollTo({ top: 120, behavior: "instant" }));
+    await scrollbar.evaluate((element) => {
+      element.scrollTop = 120;
+    });
     await expect(hero).toHaveAttribute("data-collapsed", "true");
     await page.screenshot({ path: test.info().outputPath("collapsed.png") });
     const collapsed = await measure();
@@ -40,6 +46,7 @@ for (const path of ["/commerce/create", "/commerce/textile-set", "/commerce/smar
     for (const top of [98, 101, 99, 105, 0]) {
       await scroll.evaluate((element, top) => element.scrollTo({ top, behavior: "instant" }), top);
       await expect.poll(async () => (await measure()).top).toBe(top);
+      await expect.poll(() => scrollbar.evaluate((element) => element.scrollTop)).toBe(top);
       expect((await measure()).height).toBe(initial.height);
     }
     await expect(hero).toHaveAttribute("data-collapsed", "false");
