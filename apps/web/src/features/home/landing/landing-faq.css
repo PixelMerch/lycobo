@@ -23,25 +23,13 @@
 .landing-faq h2:focus {
   outline: none;
 }
-.landing-faq-pricing {
-  max-width: 320px;
-  margin: 36px 0 26px;
+.landing-faq-intro .landing-action {
+  margin-top: 28px;
 }
-.landing-faq-pricing-title {
-  margin-bottom: 14px;
-  font-size: 22px;
-  font-weight: 500;
-  line-height: 1.4;
-  white-space: pre-line;
-}
-.landing-faq-pricing > p:last-child,
 .landing-faq-answer p {
   color: var(--landing-muted);
   font-size: 14px;
   line-height: 1.8;
-}
-.landing-faq-pricing > p:last-child {
-  text-wrap: balance;
 }
 .landing-faq-item {
   border-top: 1px solid var(--landing-border);
@@ -120,13 +108,6 @@
   .landing-faq-inner {
     grid-template-columns: 1fr;
     gap: 48px;
-  }
-  .landing-faq-pricing {
-    max-width: 420px;
-    margin-block: 24px;
-  }
-  .landing-faq-pricing-title {
-    font-size: 20px;
   }
   .landing-faq-item summary {
     font-size: 16px;

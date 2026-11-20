@@ -22,6 +22,8 @@ import heroTemplate from "./landing-hero.html?raw";
 import motionStyles from "./landing-motion.css?raw";
 import { createLandingMotionTimeline } from "./landing-motion-timeline";
 import landingPalette from "./landing-palette.css?raw";
+import pricingStyles from "./landing-pricing.css?raw";
+import { landingPricingSelectionStyles, renderLandingPricing } from "./landing-pricing-template";
 import reviewsStyles from "./landing-reviews.css?raw";
 import { initializeLandingReviews } from "./landing-reviews-motion";
 import { renderLandingReviews } from "./landing-reviews-template";
@@ -59,13 +61,21 @@ export function renderLandingDocument(
       [studioPalette, landingTheme, landingPalette, motionStyles].join("\n"),
     )
     .replace("__LYCOBO_HERO_STYLE__", () =>
-      [heroStyles, showcaseStyles, featureStyles, reviewsStyles, faqStyles, footerStyles].join(
-        "\n",
-      ),
+      [
+        heroStyles,
+        showcaseStyles,
+        featureStyles,
+        reviewsStyles,
+        pricingStyles,
+        landingPricingSelectionStyles(),
+        faqStyles,
+        footerStyles,
+      ].join("\n"),
     )
     .replace("__LYCOBO_HERO__", () => heroTemplate)
     .replace("__LYCOBO_FEATURES__", () => featureTemplate)
     .replace("__LYCOBO_REVIEWS__", renderLandingReviews)
+    .replace("__LYCOBO_PRICING__", () => renderLandingPricing(locale))
     .replace("__LYCOBO_FAQ__", () => faqTemplate)
     .replace("__LYCOBO_FOOTER__", () => footerTemplate)
     .replaceAll("__LYCOBO_FOOTER_WORDMARK__", () => escapeHtml(footerWordmark))

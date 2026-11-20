@@ -1,11 +1,9 @@
 import { defineMessages } from "../../../i18n/messages";
 
-/** 首页常见问题只说明已接通的创作流程与积分规则，不宣传会员或未开放的支付价格。 */
+/** 首页常见问题说明已接通的创作流程与积分规则，购买档位由独立 Pricing 区承载。 */
 export const landingFaqMessages = defineMessages({
   "zh-CN": {
     faqTitle: "常见问题",
-    faqPricingTitle: "充值积分，\n按次创作。",
-    faqPricingDescription: "无需会员订阅。按需补充积分，创作前确认本次用量。",
     faqImagesQuestion: "需要准备什么样的商品图？",
     faqImagesAnswer:
       "选择清晰、主体完整的商品图。需要呈现面料、花型或局部细节时，可以补充对应的参考图。",
@@ -27,9 +25,6 @@ export const landingFaqMessages = defineMessages({
   },
   en: {
     faqTitle: "Frequently asked\nquestions",
-    faqPricingTitle: "Top up credits.\nCreate as you go.",
-    faqPricingDescription:
-      "No membership subscription. Add credits as needed and check the cost before each run.",
     faqImagesQuestion: "What kind of product photos should I upload?",
     faqImagesAnswer:
       "Use a clear photo with the whole product visible. Add reference images when you need to show fabric, patterns, or specific details.",

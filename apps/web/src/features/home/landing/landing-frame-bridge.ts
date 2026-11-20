@@ -1,4 +1,4 @@
-/** 隔离正文报告导航，并让顶栏与页脚共用 FAQ 定位，避免锚点离开 srcdoc。 */
+/** 隔离正文报告导航，并让顶栏与页脚共用 Pricing、FAQ 定位，避免锚点离开 srcdoc。 */
 export function initializeLandingFrameBridge() {
   let frame = 0;
 
@@ -7,13 +7,27 @@ export function initializeLandingFrameBridge() {
     parent.postMessage({ type: "lycobo:landing-scroll", scrollY: window.scrollY }, "*");
   }
 
-  function scrollFaq() {
+  function scrollSection(section: "pricing" | "faq") {
     void document.fonts.ready.then(() => {
-      const faq = document.querySelector<HTMLElement>("#faq");
+      const target = document.getElementById(section);
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      faq?.querySelector<HTMLElement>("#faq-title")?.focus({ preventScroll: true });
-      faq?.scrollIntoView({ behavior: reduced ? "instant" : "smooth", block: "start" });
+      document.getElementById(`${section}-title`)?.focus({ preventScroll: true });
+      target?.scrollIntoView({ behavior: reduced ? "instant" : "smooth", block: "start" });
     });
+  }
+
+  function restoreScroll(data: unknown) {
+    if (
+      !data ||
+      typeof data !== "object" ||
+      !("type" in data) ||
+      data.type !== "lycobo:restore-scroll"
+    )
+      return;
+    if (!("scrollY" in data)) return;
+    const { scrollY } = data;
+    if (typeof scrollY !== "number" || !Number.isFinite(scrollY) || scrollY < 0) return;
+    void document.fonts.ready.then(() => window.scrollTo({ top: scrollY, behavior: "instant" }));
   }
 
   window.addEventListener(
@@ -37,27 +51,23 @@ export function initializeLandingFrameBridge() {
       return;
     }
     if (event.data === "lycobo:landing-faq-request") {
-      scrollFaq();
+      scrollSection("faq");
       return;
     }
-    const data = event.data;
-    if (
-      !data ||
-      typeof data !== "object" ||
-      !("type" in data) ||
-      data.type !== "lycobo:restore-scroll"
-    )
+    if (event.data === "lycobo:landing-pricing-request") {
+      scrollSection("pricing");
       return;
-    if (!("scrollY" in data)) return;
-    const { scrollY } = data;
-    if (typeof scrollY !== "number" || !Number.isFinite(scrollY) || scrollY < 0) return;
-    void document.fonts.ready.then(() => window.scrollTo({ top: scrollY, behavior: "instant" }));
+    }
+    restoreScroll(event.data);
   });
   document.addEventListener("click", (event) => {
     if (!(event.target instanceof Element)) return;
-    if (event.target.closest('a[data-landing-anchor="faq"]')) {
+    const anchor = event.target
+      .closest("a[data-landing-anchor]")
+      ?.getAttribute("data-landing-anchor");
+    if (anchor === "faq" || anchor === "pricing") {
       event.preventDefault();
-      scrollFaq();
+      scrollSection(anchor);
       return;
     }
     const path = event.target.closest("a[data-landing-path]")?.getAttribute("data-landing-path");

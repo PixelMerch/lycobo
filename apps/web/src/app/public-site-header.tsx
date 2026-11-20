@@ -8,8 +8,8 @@ import type { useEnterpriseSession } from "../features/auth/auth-client";
 import {
   type LandingFrame,
   readLandingScroll,
-  scrollLandingFaq,
   scrollLandingFrame,
+  scrollLandingSection,
 } from "../features/home/landing/landing-frame";
 import { navigationMessages } from "../features/home/landing/navigation-messages";
 import { useMessages } from "../i18n/messages";
@@ -20,7 +20,7 @@ import { SiteHeaderControls } from "./site-header-controls";
 import { usePublicHeaderBrand } from "./use-public-header-brand";
 import "./public-site-header.css";
 
-/** 首页与灵感库共用导航和账户入口，首页额外同步滚动品牌并定位 FAQ。 */
+/** 首页与灵感库共用导航和账户入口，首页额外同步滚动品牌并定位积分价格及 FAQ。 */
 export function PublicSiteHeader({
   account,
   landingFrame,
@@ -65,7 +65,9 @@ export function PublicSiteHeader({
   }, [frameRef, scheduleDraw]);
 
   const closeMenu = () => setMenuOpen(false);
-  const openFaq = frameRef ? () => scrollLandingFaq(frameRef) : undefined;
+  const openSection = frameRef
+    ? (section: "pricing" | "faq") => scrollLandingSection(frameRef, section)
+    : undefined;
   return (
     <header
       ref={headerRef}
@@ -113,7 +115,7 @@ export function PublicSiteHeader({
                 </Drawer.CloseTrigger>
               </Drawer.Header>
               <Drawer.Body>
-                <PublicSiteNavigation onNavigate={closeMenu} onFaq={openFaq} />
+                <PublicSiteNavigation onNavigate={closeMenu} onSection={openSection} />
               </Drawer.Body>
               {account && (
                 <Drawer.Footer className="mobile-nav-account">
@@ -124,7 +126,7 @@ export function PublicSiteHeader({
           </Drawer.Content>
         </Drawer.Backdrop>
       </Drawer>
-      <PublicSiteNavigation dismissVersion={dismissVersion} onFaq={openFaq} />
+      <PublicSiteNavigation dismissVersion={dismissVersion} onSection={openSection} />
       <div className="public-site-actions">
         <SiteHeaderControls
           account={account}

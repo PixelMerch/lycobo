@@ -69,7 +69,7 @@
 .public-site-desktop-nav .nav-row {
   padding-inline: 12px;
 }
-.public-site-faq.button {
+.public-site-section.button {
   font-weight: 500;
 }
 @media (max-width: 1159px) {

@@ -1,63 +1,30 @@
-import { Button, Chip, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { Button, Chip } from "@heroui/react";
 import { imageUnitCredits } from "@lycoboai/contracts";
 import { IconArrowRight, IconCreditCard, IconInfoCircle } from "@tabler/icons-react";
 import { useState } from "react";
-import { CreditCoin } from "../../../components/credit-coin";
 import { UiIcon } from "../../../components/ui-icon";
+import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
 import { formatCredits, imagesFor } from "../account-format";
 import { useWallet } from "../wallet-client";
+import { CreditPackChoices } from "./credit-pack-choices";
+import { creditPackDisplay, creditPacks, defaultCreditPack } from "./credit-pack-pricing";
 import { creditsMessages } from "./credits-messages";
 
-// 只是展示用的档位设想，不是可购买的商品，也不是已配置的商业条款。
-const packs = [500, 1500, 3000, 5000, 10000, 30000, 50000, 100000, 200000];
-const priceOf = (credits: number) => credits / 10;
-
-/** 充值积分包与订单预览；支付未接入，购买按钮保持禁用。 */
+/** 充值展示与首页一致的美元积分包和余额估算；支付未接入，购买按钮保持禁用。 */
 export function CreditPacks() {
   const t = useMessages(creditsMessages);
   const wallet = useWallet();
-  const [selected, setSelected] = useState(500);
+  const locale = useLocale();
+  const [selected, setSelected] = useState<number>(defaultCreditPack.credits);
   const unit = wallet.data?.unitCredits ?? imageUnitCredits;
   const balance = wallet.data?.balance;
+  const pack = creditPacks.find(({ credits }) => credits === selected) ?? defaultCreditPack;
+  const display = creditPackDisplay(pack, locale, unit);
   return (
     <div className="credit-recharge">
       <section className="credit-packs" aria-label={t.choosePack}>
-        <ToggleButtonGroup
-          fullWidth
-          isDetached
-          aria-label={t.packs}
-          selectionMode="single"
-          disallowEmptySelection
-          selectedKeys={[String(selected)]}
-          onSelectionChange={(keys) => {
-            const next = packs.find((amount) => keys.has(String(amount)));
-            if (next) setSelected(next);
-          }}
-          className="credit-pack-grid"
-        >
-          {packs.map((amount) => (
-            <ToggleButton
-              key={amount}
-              id={String(amount)}
-              className="credit-pack"
-              aria-label={t.packLabel(
-                formatCredits(amount),
-                priceOf(amount),
-                formatCredits(imagesFor(amount, unit)),
-              )}
-            >
-              <span className="credit-pack-value">
-                <CreditCoin size="default" />
-                <strong>{formatCredits(amount)}</strong>
-              </span>
-              <span className="credit-pack-price">¥{formatCredits(priceOf(amount))}</span>
-              <span className="credit-pack-yield">
-                {t.aboutImages(formatCredits(imagesFor(amount, unit)))}
-              </span>
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
+        <CreditPackChoices selected={selected} unitCredits={unit} onSelect={setSelected} />
         <p className="credit-recharge-note">{t.rechargeNote}</p>
       </section>
       <section className="credit-order" aria-labelledby="credit-order-heading">
@@ -69,11 +36,11 @@ export function CreditPacks() {
           </div>
           <div>
             <dt>{t.amountDue}</dt>
-            <dd>¥{priceOf(selected).toFixed(2)}</dd>
+            <dd>{display.price} USD</dd>
           </div>
           <div>
             <dt>{t.unitPrice}</dt>
-            <dd>{t.perCredit((priceOf(selected) / selected).toFixed(2))}</dd>
+            <dd>{t.perCredit(display.rate)}</dd>
           </div>
         </dl>
         <div className="credit-order-after">

@@ -72,7 +72,7 @@ apps/web/src/
     │   ├── avatar/               # 预设头像配色与各处共用的账户头像
     │   ├── menu/                 # 顶部栏账户头像菜单、手机抽屉账户行和积分入口
     │   ├── center/               # 账户设置共用的弹窗外框、表格与窄屏样式
-    │   ├── credits/              # 积分预览、明细、充值及订单
+    │   ├── credits/              # 共用美元积分包目录、明细、充值预览及订单
     │   ├── membership/           # 独立会员页和定价
     │   ├── settings/             # 账户设置、预设头像选择和密码表单
     │   └── notifications/        # 消息中心
@@ -81,7 +81,7 @@ apps/web/src/
     ├── free-canvas/              # 自由画布：Konva 舞台、画布状态与本机存储，生成结果放回画布
     ├── video/                    # 视频页面、请求与草稿；history / player / production / storyboard 分职责
     ├── home/                     # 仅保留当前首页落地页
-    │   └── landing/              # 商品案例、套图/裂变/AI优化、评价滚动、积分FAQ与双语隔离正文
+    │   └── landing/              # 商品案例、套图/裂变/AI优化、评价、积分价格、FAQ与双语隔离正文
     ├── inspiration/              # 灵感库页面、示例数据与作品墙；素材库复用同一浏览组件
     ├── site/                     # 灵感库与协议页共用页脚；首页复用版权和客服信息
     ├── legal/                    # 用户协议与隐私政策公开页；运营主体等待补信息集中在 legal-entity-messages.ts
