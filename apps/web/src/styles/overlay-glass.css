@@ -39,6 +39,13 @@
   ) {
   --glass-tint: var(--glass-dark-tint);
 }
+@supports (backdrop-filter: blur(1px)) {
+  @media not (prefers-reduced-transparency: reduce) {
+    :root .home-inspiration-detail {
+      --glass-tint: color-mix(in srgb, var(--glass-dark-tint) 92%, transparent);
+    }
+  }
+}
 :root .header-menu.dropdown__popover {
   border: 0;
 }

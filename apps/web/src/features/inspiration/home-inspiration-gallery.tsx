@@ -120,14 +120,18 @@ function InspirationDetail({
                 <img src={item.image} alt={item.title} width="480" height="480" />
                 <div className="home-inspiration-description">
                   <span>{t.categories[item.category]}</span>
-                  <h3>{t.prompt}</h3>
-                  <p className="home-inspiration-prompt">{item.prompt}</p>
-                  <p className="home-inspiration-hint">{t.hint}</p>
-                  <div className="home-inspiration-actions">
-                    <CopyPromptButton text={item.prompt} canCopy={requireLogin} />
-                    <Button variant="primary" onPress={onUse}>
-                      {t.use}
-                    </Button>
+                  <div className="home-inspiration-prompt-group">
+                    <h3>{t.prompt}</h3>
+                    <p className="home-inspiration-prompt">{item.prompt}</p>
+                  </div>
+                  <div className="home-inspiration-detail-footer">
+                    <p className="home-inspiration-hint">{t.hint}</p>
+                    <div className="home-inspiration-actions">
+                      <CopyPromptButton text={item.prompt} canCopy={requireLogin} />
+                      <Button variant="primary" onPress={onUse}>
+                        {t.use}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>

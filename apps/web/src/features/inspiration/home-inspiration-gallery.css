@@ -299,12 +299,16 @@
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--space-4);
+}
+.home-inspiration-detail .dialog-close {
+  /* 补偿图标在关闭热区中的内缩，使叉号与内容右缘齐平。 */
+  margin-inline-end: -18px;
 }
 .home-inspiration-detail-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: var(--space-8);
   align-items: start;
 }
 .home-inspiration-detail-content > img {
@@ -315,13 +319,27 @@
   border-radius: 16px;
   object-fit: contain;
 }
+.home-inspiration-description {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.home-inspiration-prompt-group,
+.home-inspiration-detail-footer {
+  display: grid;
+  gap: var(--space-3);
+}
+.home-inspiration-prompt-group {
+  margin-block: auto;
+}
 .home-inspiration-description > span {
   color: var(--muted);
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
 }
 .home-inspiration-description h3 {
-  margin: 20px 0 10px;
+  margin: 0;
   color: var(--foreground);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
@@ -329,15 +347,19 @@
 }
 .home-inspiration-prompt {
   margin: 0;
-  padding: 14px 16px;
+  padding: var(--space-4);
   border-radius: var(--field-radius);
   color: var(--foreground);
   background: var(--fill-soft);
   font-size: var(--text-base);
-  line-height: var(--leading-base);
+  line-height: var(--leading-lg);
+}
+.home-inspiration-detail-footer {
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--separator);
 }
 .home-inspiration-hint {
-  margin: var(--space-4) 0 0;
+  margin: 0;
   color: var(--muted);
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
@@ -345,8 +367,8 @@
 .home-inspiration-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: var(--space-4);
+  justify-content: flex-end;
+  gap: var(--space-2);
 }
 /* 减少动态效果时直接显示面板和光晕，图片不放大。 */
 @media (prefers-reduced-motion: reduce) {
@@ -393,9 +415,15 @@
   .modal__dialog.home-inspiration-detail {
     padding: var(--space-4);
   }
+  .home-inspiration-detail .dialog-close {
+    margin-inline-end: calc(-1 * var(--space-4));
+  }
   .home-inspiration-detail-content {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: var(--space-4);
+  }
+  .home-inspiration-description {
+    gap: var(--space-4);
   }
   .home-inspiration-detail-content > img {
     max-height: 40vh;
