@@ -1,10 +1,11 @@
 import { type RefObject, useCallback, useEffect, useRef } from "react";
 import type { createLandingBrandRenderer } from "../features/home/landing/landing-brand-renderer";
 
-/** 将首页和灵感库的滚动位置绘制到同一品牌时间轴，并保留静态素材回退。 */
+/** 将首页的滚动位置绘制到品牌时间轴，并保留静态素材回退。 */
 export function usePublicHeaderBrand(
   headerRef: RefObject<HTMLElement | null>,
   scroll: RefObject<number>,
+  animated: boolean,
 ) {
   const brandRef = useRef<HTMLSpanElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -15,7 +16,7 @@ export function usePublicHeaderBrand(
     const canvas = canvasRef.current;
     const brand = brandRef.current;
     const header = headerRef.current;
-    if (!canvas || !brand || !header) return;
+    if (!animated || !canvas || !brand || !header) return;
 
     const abort = new AbortController();
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -65,8 +66,11 @@ export function usePublicHeaderBrand(
       window.removeEventListener("resize", requestDraw);
       reducedMotion.removeEventListener("change", requestDraw);
       renderer?.dispose();
+      delete header.dataset.scrolled;
+      brand.style.removeProperty("--site-brand-progress");
+      brand.removeAttribute("data-rive-ready");
     };
-  }, [headerRef, scroll]);
+  }, [animated, headerRef, scroll]);
 
   return { brandRef, canvasRef, scheduleDraw };
 }

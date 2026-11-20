@@ -8,6 +8,7 @@ import {
 } from "@tabler/icons-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
+import { CommandButton } from "../../components/command-button";
 import { SelectionPill } from "../../components/selection-pill";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
@@ -42,7 +43,13 @@ export function InspirationWall({
 }) {
   const t = useMessages(homeInspirationMessages);
   const [category, setCategory] = useState<InspirationCategory>("all");
-  const visible = items.filter((item) => category === "all" || item.category === category);
+  const [query, setQuery] = useState("");
+  const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+  const visible = items.filter((item) => {
+    if (category !== "all" && item.category !== category) return false;
+    const text = `${item.title} ${t.categories[item.category]} ${item.prompt}`.toLocaleLowerCase();
+    return words.every((word) => text.includes(word));
+  });
   const columns = distributeColumns(visible, useColumnCount(standalone));
   const tabs = inspirationCategories.map((id) => (
     <Tabs.Tab id={id} key={id}>
@@ -80,8 +87,22 @@ export function InspirationWall({
             <Tabs.List aria-label={t.categoryList}>{tabs}</Tabs.List>
           </Tabs.ListContainer>
         )}
+        {standalone && (
+          <CommandButton
+            label={t.search}
+            placeholder={t.searchPlaceholder}
+            closeLabel={t.closeSearch}
+            query={query}
+            onQueryChange={setQuery}
+          />
+        )}
       </div>
       <Tabs.Panel id={category}>
+        {!visible.length && (
+          <p className="home-inspiration-no-results" role="status">
+            {t.noSearchResults}
+          </p>
+        )}
         <div className="home-inspiration-grid">
           {columns.map((column) => (
             <div className="home-inspiration-column" key={column.id}>
@@ -90,6 +111,7 @@ export function InspirationWall({
                   key={item.id}
                   item={item}
                   order={position}
+                  standalone={standalone}
                   onOpen={() => onOpen(item)}
                   onUse={() => onUse(item)}
                 />
@@ -106,11 +128,13 @@ export function InspirationWall({
 function InspirationTile({
   item,
   order,
+  standalone,
   onOpen,
   onUse,
 }: {
   item: HomeInspiration;
   order: number;
+  standalone: boolean;
   onOpen: () => void;
   onUse: () => void;
 }) {
@@ -153,8 +177,8 @@ function InspirationTile({
           decoding="async"
         />
         <span className="home-inspiration-tag">
-          <UiIcon icon={categoryIcons[item.category]} size="small" />
-          {t.categories[item.category]}
+          {!standalone && <UiIcon icon={categoryIcons[item.category]} size="small" />}
+          {standalone ? item.title : t.categories[item.category]}
         </span>
         {/* 悬停时卡内升起玻璃面板；面板属于卡片按钮，点它也打开详情。 */}
         <span className="home-inspiration-panel" aria-hidden="true">

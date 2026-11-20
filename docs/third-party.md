@@ -19,6 +19,10 @@
 
 登录页背景的着色器来自 [React Bits Silk](https://github.com/DavidHDev/react-bits/tree/ed33ebe4acfe29e60fb759bcccc70a138ce2dcef/src/ts-default/Backgrounds/Silk)，实现位于 `apps/web/src/features/auth/silk/`。使用 MIT + Commons Clause，保留 David Haz (2026) 的版权及[许可原文](#react-bits-许可原文)。
 
+## DesignBookmark Command button
+
+灵感库的搜索按钮使用 [DesignBookmark Command button](https://designbookmark.com/motion-src/react/command-button.tsx) 标注为 MIT 的动效参数。组件位于 `apps/web/src/components/command-button.tsx`，使用项目控件和文案重新实现。
+
 ## OpenArt 页面参考
 
 `apps/web/public/openart-reference/index.html` 源于本地 `page-take/recordings/openairt/source/` 的 OpenArt 录制。模板仍含该来源的导航、布局和交互动效。Lycobo 的文案、品牌与自托管字体在项目内维护。原站素材、模型、统计、评价及商标不可用于 Lycobo 宣传。模板以 sandbox 和 CSP 隔离，禁止远程加载、表单提交和打开外部窗口。已批准的 Biome 例外仅适用于这份生成 HTML。

@@ -1,4 +1,14 @@
-/* 独立灵感库让分类与作品紧接顶栏，作品墙从首屏开始。 */
+/* 独立灵感库将导航、筛选和搜索固定在同一炭黑表面。 */
+:root:has(.inspiration-library) {
+  --inspiration-toolbar-height: 56px;
+  scroll-padding-top: calc(var(--studio-header-height) + var(--inspiration-toolbar-height));
+}
+.studio-app:has(.inspiration-library) > .topbar.public-site-header::before {
+  background: var(--studio-canvas);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
 .main-content:has(> .inspiration-library) {
   padding: 0;
 }
@@ -9,13 +19,22 @@
 }
 .inspiration-library .home-inspiration {
   margin: 0;
-  padding: 8px 28px 40px;
+  padding: var(--inspiration-toolbar-height) 28px 40px;
 }
 .inspiration-library .home-inspiration-bar {
-  min-height: 44px;
+  --command-field-width: min(300px, 52vw);
+  position: fixed;
+  top: var(--header-height);
+  inset-inline: 0;
+  z-index: 14;
+  gap: 8px;
+  height: var(--inspiration-toolbar-height);
+  padding-inline: 28px;
+  background: var(--studio-canvas);
 }
 .home-inspiration-filter-scroll {
   min-width: 0;
+  margin-inline-start: -2px;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -51,10 +70,22 @@
   padding-top: 12px;
 }
 .inspiration-library :is(.home-inspiration-grid, .home-inspiration-column) {
-  gap: 8px;
+  gap: 4px;
 }
 .inspiration-library .home-inspiration-card.button {
-  border-radius: 8px;
+  border-radius: 6px;
+}
+.inspiration-library .home-inspiration-tag {
+  display: block;
+  width: max-content;
+  overflow: hidden;
+  line-height: 28px;
+  text-overflow: ellipsis;
+}
+.home-inspiration-no-results {
+  padding: 32px 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
 }
 .inspiration-library :is(.home-inspiration-glow, .home-inspiration-panel-prompt) {
   display: none;
@@ -83,10 +114,16 @@
   margin-top: auto;
 }
 @media (max-width: 767px) {
+  :root:has(.inspiration-library) {
+    --inspiration-toolbar-height: 52px;
+  }
   .inspiration-library .home-inspiration {
-    padding: 6px 12px 32px;
+    padding: var(--inspiration-toolbar-height) 12px 32px;
+  }
+  .inspiration-library .home-inspiration-bar {
+    padding-inline: 12px;
   }
   .inspiration-library :is(.home-inspiration-grid, .home-inspiration-column) {
-    gap: 6px;
+    gap: 3px;
   }
 }

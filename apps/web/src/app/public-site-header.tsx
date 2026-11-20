@@ -19,7 +19,7 @@ import { SiteHeaderControls } from "./site-header-controls";
 import { usePublicHeaderBrand } from "./use-public-header-brand";
 import "./public-site-header.css";
 
-/** 首页与灵感库共用导航、品牌动效、移动菜单和账户入口。 */
+/** 首页与灵感库共用导航和账户入口，首页滚动时切换品牌图形。 */
 export function PublicSiteHeader({
   account,
   landingFrame,
@@ -35,28 +35,27 @@ export function PublicSiteHeader({
   const scroll = useRef(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [dismissVersion, setDismissVersion] = useState(0);
-  const { brandRef, canvasRef, scheduleDraw } = usePublicHeaderBrand(headerRef, scroll);
+  const { brandRef, canvasRef, scheduleDraw } = usePublicHeaderBrand(
+    headerRef,
+    scroll,
+    !!landingFrame,
+  );
   const frameRef = landingFrame?.frameRef;
 
   useEffect(() => {
+    if (!frameRef) return;
+
     function update(scrollY: number) {
       scroll.current = scrollY;
       scheduleDraw();
     }
 
-    if (!frameRef) {
-      const read = () => update(window.scrollY);
-      read();
-      window.addEventListener("scroll", read, { passive: true });
-      return () => window.removeEventListener("scroll", read);
-    }
-
-    function receive(event: MessageEvent<unknown>) {
-      if (event.source !== frameRef?.current?.contentWindow) return;
+    const receive = (event: MessageEvent<unknown>) => {
+      if (event.source !== frameRef.current?.contentWindow) return;
       if (event.data === "lycobo:landing-pointerdown") setDismissVersion((version) => version + 1);
       const position = readLandingScroll(event.data);
       if (position !== null) update(position);
-    }
+    };
 
     update(0);
     window.addEventListener("message", receive);
@@ -115,8 +114,12 @@ export function PublicSiteHeader({
       >
         <span ref={brandRef} className="public-site-brand-art" aria-hidden="true">
           <img className="public-site-wordmark" src="/brand/lycobo-landing.svg" alt="" />
-          <img className="public-site-symbol" src="/brand/lycobo-landing.svg" alt="" />
-          <canvas ref={canvasRef} />
+          {landingFrame && (
+            <>
+              <img className="public-site-symbol" src="/brand/lycobo-landing.svg" alt="" />
+              <canvas ref={canvasRef} />
+            </>
+          )}
         </span>
       </RouteLink>
       <PublicSiteNavigation dismissVersion={dismissVersion} />

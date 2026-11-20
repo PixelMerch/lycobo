@@ -294,7 +294,7 @@ test("home inspiration loads two batches on scroll, then 查看更多灵感 load
   await expect(more).toHaveCount(0);
 });
 
-test("homepage Inspiration opens the matching public header and reveals the brand on scroll", async ({
+test("homepage Inspiration opens the matching public header with a fixed wordmark", async ({
   page,
 }) => {
   await mockImageApi(page, { signedIn: false });
@@ -320,11 +320,14 @@ test("homepage Inspiration opens the matching public header and reveals the bran
     "href",
     /\/dashboard$/,
   );
-  await expect(header.locator(".public-site-symbol")).toHaveCSS("opacity", "0");
+  const wordmark = header.locator(".public-site-wordmark");
+  await expect(wordmark).toHaveCSS("opacity", "1");
+  const wordmarkAtTop = await wordmark.boundingBox();
   await page.evaluate(() => window.scrollTo(0, 600));
-  await expect(header.locator(".public-site-symbol")).toHaveCSS("opacity", "1");
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
+  expect(await wordmark.boundingBox()).toEqual(wordmarkAtTop);
+  await expect(header.locator(".public-site-symbol")).toHaveCount(0);
   await page.evaluate(() => window.scrollTo(0, 0));
-  await expect(header.locator(".public-site-symbol")).toHaveCSS("opacity", "0");
   await expect(page.locator(".home-inspiration-card")).toHaveCount(23);
   await expect(page.locator(".home-inspiration-column")).toHaveCount(6);
   await expect(page.getByText("挑一张喜欢的画面")).toHaveCount(0);
@@ -415,6 +418,43 @@ test("inspiration library cards offer 做同款 by hover or keyboard without sub
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(prompt).not.toHaveValue(/将商品放在水边石台上/);
   expect(submissions).toBe(0);
+});
+
+test("inspiration search expands in place and Escape resets results and focus", async ({
+  page,
+}) => {
+  await mockImageApi(page, { signedIn: false });
+  await page.goto("/inspiration");
+  const search = page.getByRole("button", { name: "搜索作品", exact: true });
+  const cards = page.locator(".home-inspiration-card");
+  await search.click();
+  const field = page.getByRole("searchbox", { name: "搜索作品", exact: true });
+  await expect(field).toBeFocused();
+  await expect(field).toHaveCSS("border-top-width", "0px");
+  await field.fill("水光香氛");
+  await expect(cards).toHaveCount(1);
+  await expect(cards.locator(".home-inspiration-tag")).toHaveText("水光香氛");
+  await field.fill("no-existing-work-123");
+  await expect(page.getByText("没有找到匹配的作品", { exact: true })).toBeVisible();
+  await field.press("Escape");
+  await expect(search).toBeFocused();
+  await expect(cards).toHaveCount(23);
+});
+
+test("inspiration filters stay fixed below the header while browsing", async ({ page }) => {
+  await mockImageApi(page, { signedIn: false });
+  await page.goto("/inspiration");
+  const toolbar = page.locator(".home-inspiration-bar");
+  await expect(toolbar).toBeInViewport();
+  const before = await toolbar.boundingBox();
+  await page.mouse.move(200, 400);
+  await page.mouse.wheel(0, 450);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
+  await expect(toolbar).toBeInViewport();
+  expect((await toolbar.boundingBox())?.y).toBe(before?.y);
+  await expect(page.getByRole("search", { name: "搜索作品" })).toBeInViewport();
+  await page.keyboard.press("ControlOrMeta+k");
+  await expect(page.getByRole("searchbox", { name: "搜索作品", exact: true })).toBeFocused();
 });
 
 test.describe("touch inspiration library", () => {
