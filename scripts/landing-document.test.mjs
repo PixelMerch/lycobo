@@ -28,12 +28,13 @@ describe("localized landing document", () => {
       expect(document.match(/class="landing-review-card"/g)).toHaveLength(8);
       expect(document).toContain(copy.pricingTitle);
       expect(document).toContain(copy.pricingUnavailable);
-      expect(document).toContain('value="3000" checked');
-      expect(document.match(/name="credit-pack"/g)).toHaveLength(3);
+      expect(document.match(/class="landing-pricing-card"/g)).toHaveLength(4);
+      expect(document).not.toContain('name="credit-pack"');
       expect(document.match(/class="landing-action landing-pricing-buy" disabled/g)).toHaveLength(
-        3,
+        4,
       );
-      for (const price of ["$29.90", "$59.90", "$99.90"]) expect(document).toContain(price);
+      for (const price of ["$9.90", "$29.90", "$59.90", "$99.90"])
+        expect(document).toContain(price);
       expect(document).toContain(copy.faqCreditsAnswer);
       expect(document).toContain(copy.faqFailureAnswer);
       expect(document).not.toContain("Next up:");

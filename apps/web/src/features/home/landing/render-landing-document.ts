@@ -24,7 +24,7 @@ import motionStyles from "./landing-motion.css?raw";
 import { createLandingMotionTimeline } from "./landing-motion-timeline";
 import landingPalette from "./landing-palette.css?raw";
 import pricingStyles from "./landing-pricing.css?raw";
-import { landingPricingSelectionStyles, renderLandingPricing } from "./landing-pricing-template";
+import { renderLandingPricing } from "./landing-pricing-template";
 import reviewsStyles from "./landing-reviews.css?raw";
 import { initializeLandingReviews } from "./landing-reviews-motion";
 import { renderLandingReviews } from "./landing-reviews-template";
@@ -68,7 +68,6 @@ export function renderLandingDocument(
         featureStyles,
         reviewsStyles,
         pricingStyles,
-        landingPricingSelectionStyles(),
         faqStyles,
         footerStyles,
       ].join("\n"),
