@@ -256,9 +256,6 @@ body:has(.workspace-tool-group[aria-expanded="true"]) .workspace-scrollbar {
   visibility: hidden;
 }
 :root .workspace-tool-submenu.dropdown__popover {
-  --glass-tint: var(--site-header-menu-background);
-  --glass-fill: linear-gradient(transparent, transparent);
-  --glass-blur: var(--site-header-menu-blur);
   width: min(620px, calc(100vw - 32px));
   padding: 10px;
   border: 0;

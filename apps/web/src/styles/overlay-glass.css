@@ -19,6 +19,12 @@
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
 }
+/* 工作区工具菜单与提示词的图片引用面板共用顶栏菜单材质。 */
+:root :is(.workspace-tool-submenu.dropdown__popover, .reference-mention-popover.popover) {
+  --glass-tint: var(--site-header-menu-background);
+  --glass-fill: linear-gradient(transparent, transparent);
+  --glass-blur: var(--site-header-menu-blur);
+}
 /* 通知、账户与顶部栏入口沿用素材库来源菜单的深色毛玻璃。 */
 :root
   :is(
