@@ -7,7 +7,6 @@ import { UiIcon } from "../../components/ui-icon";
 import { useLocale } from "../../i18n/locale-store";
 import { currentMessages, useMessages } from "../../i18n/messages";
 import { useErrorToast } from "../../lib/error-toast";
-import { WorkspaceComposerScroll } from "../workspace/workspace-composer-scroll";
 import { WorkspaceComposerTitle } from "../workspace/workspace-tool-symbol";
 import { GenerateButton } from "./composer/generate-button";
 import { ParameterGroup } from "./composer/parameter-group";
@@ -77,7 +76,7 @@ function Workspace({ model }: { model: ModelId }) {
   }, [model, visitModel]);
   return (
     <section className="composer-panel" aria-label={t.composer}>
-      <WorkspaceComposerScroll label={t.parameters}>
+      <section className="composer-scroll" aria-label={t.parameters}>
         <WorkspaceComposerTitle />
         <ReferencePicker
           compact
@@ -142,7 +141,7 @@ function Workspace({ model }: { model: ModelId }) {
           {showMore ? t.less : t.more}
           <UiIcon icon={showMore ? IconChevronUp : IconChevronDown} size="small" />
         </Button>
-      </WorkspaceComposerScroll>
+      </section>
       <WorkspaceGeneration
         model={model}
         draft={draft}

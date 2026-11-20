@@ -359,13 +359,6 @@
   }
 }
 
-.composer-scroll {
-  scrollbar-width: none;
-}
-.composer-scroll::-webkit-scrollbar {
-  display: none;
-}
-
 /* ---------------------------------------------------------------------------
    HeroUI composition details
    Official primitives keep their interaction behaviour; only theme and geometry

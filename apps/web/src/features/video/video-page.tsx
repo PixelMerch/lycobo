@@ -8,7 +8,6 @@ import { AspectRatioField } from "../generation/composer/ratio-picker";
 import { revealNewestHistory } from "../generation/history/history-navigation";
 import { hasPromptDescription } from "../generation/references/prompt-description";
 import { ReferencePicker } from "../generation/references/reference-picker";
-import { WorkspaceComposerScroll } from "../workspace/workspace-composer-scroll";
 import { WorkspaceComposerTitle } from "../workspace/workspace-tool-symbol";
 import { VideoDuration } from "./production/video-duration";
 import { useStoryboardWorkspace } from "./storyboard/storyboard-context";
@@ -44,7 +43,7 @@ export function VideoPage() {
   const referenceLimit = Math.max(production.maxOriginalImages, references.length);
   return (
     <section className="composer-panel video-composer" aria-label={t.parameters}>
-      <WorkspaceComposerScroll>
+      <div className="composer-scroll">
         <WorkspaceComposerTitle />
         <ReferencePicker
           compact
@@ -92,7 +91,7 @@ export function VideoPage() {
             />
           </>
         )}
-      </WorkspaceComposerScroll>
+      </div>
       <VideoGeneration
         draft={draft}
         references={references}
