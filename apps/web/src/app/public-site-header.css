@@ -96,11 +96,17 @@
   height: var(--control-height-md);
   padding-inline: var(--control-padding-md);
   border-radius: 12px;
-  background: var(--studio-accent-gradient);
+  background: #f2f2f2;
   color: var(--studio-canvas);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   white-space: nowrap;
+}
+@media (hover: hover) and (pointer: fine) {
+  .public-site-start.link:hover {
+    background: #d4d4d4;
+    text-decoration: none;
+  }
 }
 .public-site-mobile-nav .nav-row {
   white-space: normal;
