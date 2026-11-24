@@ -6,27 +6,23 @@ import {
   dashboardToolPaths,
   freeCanvasPath,
 } from "../../lib/dashboard-paths";
-import { membershipMessages } from "../account/membership/membership-messages";
 import { inspirationLibraryPath } from "../inspiration/inspiration-path";
-import { legalDocumentIds, legalPaths } from "../legal/legal-document";
-import { legalMessages } from "../legal/legal-messages";
+import { legalPaths } from "../legal/legal-document";
 import { workspaceToolMessages } from "../workspace/workspace-tool-messages";
 import { siteFooterMessages } from "./site-footer-messages";
 
-const toolIds = ["create", "variation", "replica", "textile"] as const;
+const toolIds = ["create", "variation", "textile", "replica"] as const;
 
 /** 页脚指向用户提供的退款政策页面。 */
 export const refundPolicyUrl = "https://bonko.fun/refund-policy";
 
-/** 页脚显示的客服邮箱及其邮件链接使用同一个地址。 */
-export const siteFooterSupportEmail = "suport@lycobo.com";
-export const siteFooterSupportHref = `mailto:${siteFooterSupportEmail}`;
+/** 非首页的页脚通过带锚点的主页地址进入常见问题。 */
+export const siteFooterFaqPath = "/#faq";
 
-/** 为首页与站内页脚提供同一组可访问的功能和协议入口。 */
+/** 首页、灵感库和协议页使用同一组双语入口。 */
 export function siteFooterGroups(locale: Locale) {
   const t = siteFooterMessages[locale];
   const shell = shellMessages[locale];
-  const legal = legalMessages[locale];
   const { tools } = workspaceToolMessages[locale];
   return [
     {
@@ -37,17 +33,23 @@ export function siteFooterGroups(locale: Locale) {
       title: t.workspace,
       links: [
         { path: dashboardPath, label: shell.workspace },
-        { path: inspirationLibraryPath, label: shell.inspiration },
         { path: freeCanvasPath, label: shell.freeCanvas },
         { path: dashboardAssetsPath, label: shell.assets },
-        { path: "/membership", label: membershipMessages[locale].title },
       ],
     },
     {
-      title: legal.navigation,
+      title: t.resources,
       links: [
-        ...legalDocumentIds.map((id) => ({ path: legalPaths[id], label: legal.names[id] })),
-        { path: refundPolicyUrl, label: t.refundPolicy },
+        { path: inspirationLibraryPath, label: shell.inspiration },
+        { path: siteFooterFaqPath, label: t.faq },
+      ],
+    },
+    {
+      title: t.policies,
+      links: [
+        { path: legalPaths.terms, label: t.terms },
+        { path: legalPaths.privacy, label: t.privacy },
+        { path: refundPolicyUrl, label: t.refunds },
       ],
     },
   ];

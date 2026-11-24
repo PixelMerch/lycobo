@@ -4,10 +4,15 @@ import { useOutletContext } from "react-router";
 import { LoadingState } from "../../../components/loading-state";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
-import { useAppNavigate } from "../../../i18n/use-localized-navigation";
-import { refundPolicyUrl, siteFooterSupportHref } from "../../site/site-footer-navigation";
+import { useAppLocation, useAppNavigate } from "../../../i18n/use-localized-navigation";
+import { refundPolicyUrl } from "../../site/site-footer-navigation";
 import { landingCopy } from "./landing-copy";
-import { type LandingFrame, readLandingNavigation, scrollLandingFrame } from "./landing-frame";
+import {
+  type LandingFrame,
+  readLandingNavigation,
+  scrollLandingFrame,
+  scrollLandingSection,
+} from "./landing-frame";
 import { referenceMessages } from "./reference-messages";
 import { renderLandingDocument } from "./render-landing-document";
 import "./reference.css";
@@ -23,6 +28,7 @@ export function LandingPage() {
   const locale = useLocale();
   const t = useMessages(referenceMessages);
   const { frameRef, pendingScroll } = useOutletContext<LandingFrame>();
+  const { hash } = useAppLocation();
   const navigate = useAppNavigate();
   const { data, isError } = useQuery({
     queryKey: ["commerce-landing-template"],
@@ -38,7 +44,7 @@ export function LandingPage() {
       // sandbox 的来源为 null，只接收本页所持窗口的消息。
       if (event.source !== frameRef.current?.contentWindow) return;
       const path = readLandingNavigation(event.data);
-      if (path === refundPolicyUrl || path === siteFooterSupportHref) window.location.assign(path);
+      if (path === refundPolicyUrl) window.location.assign(path);
       else if (path) void navigate(path);
     }
     window.addEventListener("message", followLink);
@@ -54,9 +60,12 @@ export function LandingPage() {
 
   function restoreScroll() {
     const scrollY = pendingScroll.current;
-    if (scrollY === null) return;
-    pendingScroll.current = null;
-    scrollLandingFrame(frameRef, scrollY);
+    if (scrollY !== null) {
+      pendingScroll.current = null;
+      scrollLandingFrame(frameRef, scrollY);
+    } else if (hash === "#faq") {
+      scrollLandingSection(frameRef, "faq");
+    }
   }
 
   if (!document) {

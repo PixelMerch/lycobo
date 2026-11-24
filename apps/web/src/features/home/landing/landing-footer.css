@@ -1,112 +1,11 @@
-/* 炭灰页脚作为前层覆盖黑底 FAQ，品牌、导航和通栏字标随背景一起上移。 */
+/* 首页单独保留页脚覆盖 FAQ 的停驻效果。 */
 .landing-footer {
   position: relative;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
-  padding: clamp(64px, 7vw, 104px) var(--landing-gutter) 0;
-  overflow: clip;
-  background: var(--landing-subtle);
-  color: var(--landing-foreground);
-}
-.landing-footer-inner {
-  flex: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 0.34fr) minmax(0, 0.66fr);
-  grid-template-areas: "brand groups" "signature signature";
-  gap: clamp(72px, 9vw, 128px) 48px;
-  max-width: var(--landing-content);
-  width: 100%;
-  margin-inline: auto;
-}
-.landing-footer-identity {
-  grid-area: brand;
-}
-.landing-footer-brand {
-  width: 144px;
-  height: auto;
-  filter: brightness(0) invert(1);
-}
-.landing-footer-groups {
-  grid-area: groups;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: clamp(16px, 2.4vw, 36px);
-}
-.landing-footer-group h2 {
-  margin-bottom: 12px;
-  color: var(--landing-muted);
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.5;
-}
-.landing-footer-group ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.landing-footer a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding-block: 8px;
-  font-size: 15px;
-  font-weight: 400;
-  line-height: 1.5;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 5px;
-  transition: color 180ms ease;
-}
-.landing-footer a:focus-visible {
-  outline-color: var(--landing-focus);
-  outline-offset: 3px;
-}
-.landing-footer-identity p {
-  margin-top: 22px;
-  color: var(--landing-muted);
-  font-size: 13px;
-  line-height: 1.5;
-}
-.landing-footer-signature {
-  grid-area: signature;
-  align-self: end;
-  overflow: clip;
-}
-.landing-footer-signature img {
-  width: 100%;
-  height: auto;
-  margin-bottom: -4%;
 }
 /* 至少覆盖完整阅读视口，避免短页脚到页底时仍露出后层 FAQ。 */
 @media (prefers-reduced-motion: no-preference) {
   body[data-footer-overlay] .landing-footer {
     min-height: calc(100svh - var(--studio-header-height));
-  }
-}
-@media (hover: hover) and (pointer: fine) {
-  .landing-footer a:hover {
-    color: var(--landing-action-hover);
-    text-decoration-line: underline;
-  }
-}
-@media (max-width: 1023px) {
-  .landing-footer-inner {
-    grid-template-columns: 1fr;
-    grid-template-areas: "brand" "groups" "signature";
-    gap: 48px;
-  }
-}
-@media (max-width: 620px) {
-  .landing-footer-brand {
-    width: 128px;
-  }
-  .landing-footer-groups {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 32px 24px;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .landing-footer a {
-    transition: none;
   }
 }

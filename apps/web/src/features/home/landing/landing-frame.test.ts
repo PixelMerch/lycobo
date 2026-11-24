@@ -18,8 +18,8 @@ describe("landing frame messages", () => {
     "/dashboard/commerce/replica",
     "/dashboard/free-canvas",
     "/terms",
+    "/privacy",
     "https://bonko.fun/refund-policy",
-    "mailto:suport@lycobo.com",
   ])("accepts the listed route %s", (path) => {
     expect(readLandingNavigation({ type: "lycobo:navigate", path })).toBe(path);
   });
@@ -30,7 +30,8 @@ describe("landing frame messages", () => {
     { type: "lycobo:landing-scroll", path: "/dashboard" },
     { type: "lycobo:navigate" },
     { type: "lycobo:navigate", path: "https://example.com" },
-    { type: "lycobo:navigate", path: "mailto:other@example.com" },
+    { type: "lycobo:navigate", path: "mailto:suport@lycobo.com" },
+    { type: "lycobo:navigate", path: "/membership" },
     { type: "lycobo:navigate", path: "https://bonko.fun/refund-policy?next=https://example.com" },
     { type: "lycobo:navigate", path: "/dashboard?next=https://example.com" },
     { type: "lycobo:navigate", path: "/terms?next=https://example.com" },

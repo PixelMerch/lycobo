@@ -10,12 +10,12 @@ import { initializePageScrollbar } from "../../../components/page-scrollbar";
 import pageScrollbarStyle from "../../../components/page-scrollbar.css?raw";
 import type { Locale } from "../../../i18n/locale";
 import studioPalette from "../../../styles/studio-palette.css?raw";
+import siteFooterStyles from "../../site/site-footer.css?raw";
 import faqStyles from "./landing-faq.css?raw";
 import faqTemplate from "./landing-faq.html?raw";
 import featureStyles from "./landing-features.css?raw";
 import featureTemplate from "./landing-features.html?raw";
 import footerStyles from "./landing-footer.css?raw";
-import footerTemplate from "./landing-footer.html?raw";
 import { initializeLandingFooterOverlay } from "./landing-footer-overlay";
 import { initializeLandingFrameBridge } from "./landing-frame-bridge";
 import heroStyles from "./landing-hero.css?raw";
@@ -31,6 +31,7 @@ import { renderLandingReviews } from "./landing-reviews-template";
 import { initializeLandingMotion } from "./landing-showcase";
 import showcaseStyles from "./landing-showcase.css?raw";
 import landingTheme from "./landing-theme.css?raw";
+import { renderLandingFooter } from "./render-landing-footer";
 
 const landingImages: Record<string, string> = {
   shoe: shoeImage,
@@ -69,6 +70,7 @@ export function renderLandingDocument(
         reviewsStyles,
         pricingStyles,
         faqStyles,
+        siteFooterStyles,
         footerStyles,
       ].join("\n"),
     )
@@ -77,8 +79,7 @@ export function renderLandingDocument(
     .replace("__LYCOBO_REVIEWS__", renderLandingReviews)
     .replace("__LYCOBO_PRICING__", () => renderLandingPricing(locale))
     .replace("__LYCOBO_FAQ__", () => faqTemplate)
-    .replace("__LYCOBO_FOOTER__", () => footerTemplate)
-    .replaceAll("__LYCOBO_FOOTER_WORDMARK__", () => escapeHtml(footerWordmark))
+    .replace("__LYCOBO_FOOTER__", () => renderLandingFooter(locale, footerWordmark, escapeHtml))
     .replace(/__LYCOBO_IMAGE_([a-z]+)__/g, (marker, name: string) => landingImages[name] ?? marker)
     .replace(
       "__LYCOBO_MOTION_SCRIPT__",

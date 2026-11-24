@@ -723,25 +723,41 @@ test("home uses Lycobo's own brand language instead of copying the reference loo
   await expect(avatar.locator(".avatar__fallback")).toHaveCSS("border-top-left-radius", "50%");
 });
 
-test("home footer links only to real pages", async ({ page }) => {
+test("home and legal pages share the public footer and link to FAQ", async ({ page }) => {
   await mockImageApi(page);
   await page.goto("/");
   const footer = page.frameLocator("iframe.openart-reference").locator(".site-footer");
   await footer.scrollIntoViewIfNeeded();
   await expect(footer.getByRole("navigation")).toBeVisible();
   const links = footer.getByRole("link");
-  await expect(links).toHaveText(["用户协议", "隐私政策", "退款政策", "suport@lycobo.com"]);
+  const labels = [
+    "主图制作",
+    "套图计划",
+    "家纺裂变",
+    "复制爆款",
+    "工作区",
+    "自由画布",
+    "素材库",
+    "灵感库",
+    "常见问题",
+    "用户协议",
+    "隐私政策",
+    "退款政策",
+  ];
+  await expect(links).toHaveText(labels);
   await expect(footer.getByRole("link", { name: "退款政策", exact: true })).toHaveAttribute(
     "href",
     "https://bonko.fun/refund-policy",
   );
   await expect(footer.getByRole("img", { name: "Lycobo", exact: true })).toBeVisible();
-  await expect(
-    footer.getByRole("link", { name: "suport@lycobo.com", exact: true }),
-  ).toHaveAttribute("href", "mailto:suport@lycobo.com");
   await expect(footer).toContainText(`© ${new Date().getFullYear()} Lycobo`);
   await footer.getByRole("link", { name: "用户协议", exact: true }).click();
   await expect(page).toHaveURL(/\/zh-CN\/terms$/);
+  const legalFooter = page.locator("footer.site-footer");
+  await expect(legalFooter.getByRole("link")).toHaveText(labels);
+  await legalFooter.getByRole("link", { name: "常见问题", exact: true }).click();
+  await expect(page).toHaveURL(/\/zh-CN#faq$/);
+  await expect(page.frameLocator("iframe.openart-reference").locator("#faq-title")).toBeFocused();
 });
 
 test("phones get the vidmuse bottom bar with labelled shortcuts", async ({ page }) => {

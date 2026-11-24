@@ -50,9 +50,6 @@ export const landingMessages = defineMessages({
       "镀铬咖啡机置于酒红色台面，丝绸背景衬托金属质感。左上方硬光勾勒机身，杯口升起细微蒸汽。",
     optimizeAction: "体验 AI 优化",
     optimizeAlt: "镀铬咖啡机置于酒红丝绸场景，侧光勾勒金属反射，红色杯口升起蒸汽",
-    footerTerms: "用户协议",
-    footerPrivacy: "隐私政策",
-    footerRefund: "退款政策",
   },
   en: {
     pageTitle: "Lycobo · Product photos that stand out",
@@ -108,8 +105,5 @@ export const landingMessages = defineMessages({
     optimizeAction: "Try AI Optimization",
     optimizeAlt:
       "A chrome espresso machine against burgundy silk, with hard side lighting and steam rising above a red cup",
-    footerTerms: "Terms",
-    footerPrivacy: "Privacy",
-    footerRefund: "Refunds",
   },
 });

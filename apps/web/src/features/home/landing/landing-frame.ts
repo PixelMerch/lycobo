@@ -1,11 +1,12 @@
 import type { RefObject } from "react";
 import { dashboardPath } from "../../../lib/dashboard-paths";
-import { siteFooterGroups, siteFooterSupportHref } from "../../site/site-footer-navigation";
+import { siteFooterFaqPath, siteFooterGroups } from "../../site/site-footer-navigation";
 
 const landingDestinations = new Set([
   dashboardPath,
-  siteFooterSupportHref,
-  ...siteFooterGroups("en").flatMap(({ links }) => links.map(({ path }) => path)),
+  ...siteFooterGroups("en").flatMap(({ links }) =>
+    links.filter(({ path }) => path !== siteFooterFaqPath).map(({ path }) => path),
+  ),
 ]);
 
 /** 宿主与隔离首页共用的窗口引用和待恢复位置。 */
