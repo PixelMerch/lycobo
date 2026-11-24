@@ -15,12 +15,27 @@ describe("localized landing document", () => {
       const document = renderLandingDocument(template, copy, locale);
       expect(document).not.toContain("__LYCOBO_");
       expect(document).toContain(`lang="${locale}"`);
-      expect(document).not.toMatch(/Trustpilot|support@openart|10M\+|40 free credits/);
+      expect(document).not.toMatch(/Trustpilot|support@openart|10M\+|40 free credits|AI-generated/);
       expect(document.match(/<section\b/g)).toHaveLength(10);
       expect(document).toContain(copy.heroLineOne);
       expect(document).toContain(copy.sceneTitle);
       expect(document).toContain(copy.setTitle);
       expect(document).toContain(copy.collectionDescription);
+      const features = [
+        ...document.matchAll(/<ol class="landing-feature-steps">([\s\S]*?)<\/ol>/g),
+      ];
+      expect(
+        features.flatMap(([, list]) =>
+          [...list.matchAll(/<h3>(.*?)<\/h3>/g)].map((step) => step[1]),
+        ),
+      ).toEqual([
+        copy.collectionStepOneTitle,
+        copy.collectionStepTwoTitle,
+        copy.collectionStepThreeTitle,
+        copy.textileStepOneTitle,
+        copy.textileStepTwoTitle,
+        copy.textileStepThreeTitle,
+      ]);
       expect(document).toContain(copy.textileDescription);
       expect(document).toContain(copy.promptAfter);
       expect(document).toContain(copy.review1Quote);
@@ -69,7 +84,7 @@ describe("localized landing document", () => {
         expect(readLandingNavigation({ type: "lycobo:navigate", path })).toBe(path);
       }
       const photos = [...document.matchAll(/src="(data:image\/webp;base64,[^"]+)"/g)];
-      expect(new Set(photos.map((photo) => photo[1])).size).toBe(7);
+      expect(new Set(photos.map((photo) => photo[1])).size).toBe(8);
       for (const match of document.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) {
         expect(() => new Script(match[1])).not.toThrow();
       }

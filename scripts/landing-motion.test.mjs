@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createLandingFeatureMotion } from "../apps/web/src/features/home/landing/landing-feature-motion.ts";
 import { createLandingMotionTimeline } from "../apps/web/src/features/home/landing/landing-motion-timeline.ts";
 import { initializeLandingMotion } from "../apps/web/src/features/home/landing/landing-showcase.ts";
+
+const createTimeline = () => createLandingMotionTimeline(createLandingFeatureMotion);
 
 function motionEnvironment(reduce = false) {
   const frames = new Map();
@@ -10,8 +13,11 @@ function motionEnvironment(reduce = false) {
     offsetHeight: height,
     attributes: new Set(),
     style: {
+      setProperty(name, value) {
+        this[name] = value;
+      },
       removeProperty(name) {
-        delete this[name.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())];
+        delete this[name];
       },
     },
     contains(target) {
@@ -30,13 +36,14 @@ function motionEnvironment(reduce = false) {
     },
   });
   const hero = node(1160);
+  const stage = node(800);
   const heading = node();
   const art = node();
   const source = node();
   const reveal = node(0, 1600);
   const elements = new Map([
     [".lycobo-hero", hero],
-    [".landing-hero-stage", node(800)],
+    [".landing-hero-stage", stage],
     [".landing-hero-art", art],
     [".landing-heading-row", heading],
     [".landing-source-proof", source],
@@ -72,6 +79,7 @@ function motionEnvironment(reduce = false) {
   vi.stubGlobal("cancelAnimationFrame", (id) => frames.delete(id));
   return {
     hero,
+    stage,
     heading,
     art,
     source,
@@ -97,13 +105,15 @@ afterEach(() => vi.unstubAllGlobals());
 describe("landing motion accessibility and lifecycle", () => {
   it("keeps focused hero actions visible after the scroll transition", async () => {
     const env = motionEnvironment();
-    initializeLandingMotion(createLandingMotionTimeline);
+    initializeLandingMotion(createTimeline);
     await Promise.resolve();
     env.settle();
+    expect(env.stage.style["--landing-hero-blend"]).toBe("0");
     env.window.scrollY = 600;
     env.window.dispatchEvent(new Event("scroll"));
     env.settle();
     expect(env.heading.style.opacity).toBe("0");
+    expect(env.stage.style["--landing-hero-blend"]).toBe("1");
     env.document.activeElement = env.hero;
     env.document.dispatchEvent(new Event("focusin"));
     env.settle();
@@ -113,7 +123,7 @@ describe("landing motion accessibility and lifecycle", () => {
 
   it("removes transforms, hidden content and extra scroll space when motion is reduced", async () => {
     const env = motionEnvironment();
-    initializeLandingMotion(createLandingMotionTimeline);
+    initializeLandingMotion(createTimeline);
     await Promise.resolve();
     env.settle();
     expect(env.document.body.attributes.has("data-motion-ready")).toBe(true);
@@ -122,13 +132,14 @@ describe("landing motion accessibility and lifecycle", () => {
     env.media.dispatchEvent(new Event("change"));
     expect(env.document.body.attributes.has("data-motion-ready")).toBe(false);
     expect(env.art.style.transform).toBeUndefined();
+    expect(env.stage.style["--landing-hero-blend"]).toBeUndefined();
     expect(env.reveal.attributes.has("data-reveal-pending")).toBe(false);
     expect(env.frames.size).toBe(0);
   });
 
   it("does not restart rendering after pagehide, including a pending font callback", async () => {
     const env = motionEnvironment();
-    initializeLandingMotion(createLandingMotionTimeline);
+    initializeLandingMotion(createTimeline);
     env.window.dispatchEvent(new Event("pagehide"));
     await Promise.resolve();
     env.window.dispatchEvent(new Event("resize"));

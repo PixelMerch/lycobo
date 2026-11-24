@@ -40,42 +40,127 @@
 }
 .landing-feature-steps {
   display: grid;
-  gap: 14px;
   margin: 24px 0 0;
   padding: 0;
-  list-style: none;
-  counter-reset: landing-step;
 }
 .landing-feature-steps li {
   display: flex;
   align-items: baseline;
-  gap: 16px;
+  gap: 14px;
+  padding-block: 12px;
+  border-top: 1px solid var(--landing-border);
   font-size: 14px;
   line-height: 1.5;
-  counter-increment: landing-step;
 }
-.landing-feature-steps li::before {
-  content: counter(landing-step, decimal-leading-zero);
+.landing-feature-steps li > span {
   color: var(--landing-muted);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
+.landing-feature-steps h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.landing-feature-steps p {
+  margin: 2px 0 0;
+  color: var(--landing-muted);
+}
+.landing-feature-track .landing-action {
+  margin-top: 14px;
+}
+.landing-feature:is(.landing-feature-set, .landing-feature-textile) {
+  position: relative;
+  isolation: isolate;
+}
+.landing-feature-track::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0 calc(-1 * var(--landing-gutter));
+  background: radial-gradient(
+    ellipse 85% 48% at var(--landing-feature-wash-position, 28%) 50%,
+    var(--landing-feature-wash-color, #361c22),
+    transparent
+  );
+  opacity: var(--landing-feature-wash, 0);
+  pointer-events: none;
+  content: "";
+}
+.landing-feature-track {
+  position: relative;
+}
+.landing-feature-art {
+  margin: 0;
+}
+.landing-feature-frame {
+  position: relative;
+  transform: scale(calc(1 + var(--landing-feature-crop, 0) * var(--landing-feature-zoom, 0.46)));
+  transform-origin: left center;
+}
+.landing-feature-frame img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1.5;
+  object-fit: cover;
+}
+/* 两块遮罩对应三联图右侧的第二、第三个画面，不重复加载素材。 */
+.landing-feature-frame::before,
+.landing-feature-frame::after {
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  width: var(--landing-feature-inset-width, 50%);
+  height: 50%;
+  background: var(--landing-surface);
+  pointer-events: none;
+  content: "";
+}
+.landing-feature-frame::before {
+  top: 0;
+  opacity: calc((1 - var(--landing-feature-second, 1)) * 0.93);
+}
+.landing-feature-frame::after {
+  bottom: 0;
+  opacity: calc((1 - var(--landing-feature-third, 1)) * 0.93);
+}
+body[data-motion-ready] .landing-feature-track:not(:focus-within) .landing-feature-steps li {
+  opacity: var(--landing-feature-step, 1);
+}
+.landing-feature-track:focus-within .landing-feature-frame {
+  transform: none;
+}
+.landing-feature-track:focus-within .landing-feature-frame::before,
+.landing-feature-track:focus-within .landing-feature-frame::after {
+  opacity: 0;
+}
+@media (min-width: 901px) and (min-height: 720px) {
+  body[data-motion-ready] .landing-feature-track > .landing-feature-inner {
+    position: sticky;
+    top: 104px;
+  }
+  body[data-motion-ready] .landing-feature-track::after {
+    display: block;
+    height: clamp(360px, 64svh, 560px);
+    content: "";
+  }
+}
 .landing-feature-textile {
+  --landing-feature-inset-width: 45%;
+  --landing-feature-zoom: 0.36;
+  --landing-feature-wash-color: #1d2a45;
+  --landing-feature-wash-position: 72%;
   background: var(--landing-surface);
 }
 .landing-feature-textile .landing-feature-inner {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
 }
-.landing-feature-views {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 22px;
-  margin: 26px 0 0;
-  padding: 18px 0 0;
-  border-top: 1px solid var(--landing-border);
-  list-style: none;
-  font-size: 13px;
-  line-height: 1.5;
+.landing-feature-textile .landing-feature-art {
+  grid-column: 2;
+  grid-row: 1;
+}
+.landing-feature-textile .landing-feature-copy {
+  grid-column: 1;
+  grid-row: 1;
 }
 .landing-feature-optimize {
   background: var(--landing-surface);
@@ -118,11 +203,14 @@
     grid-template-columns: 1fr;
     gap: 32px;
   }
-  .landing-feature-textile .landing-case-art {
-    grid-row: 1;
+  .landing-feature-textile :is(.landing-feature-art, .landing-feature-copy) {
+    grid-area: auto;
   }
   .landing-feature-copy {
     max-width: 620px;
+  }
+  .landing-feature-frame {
+    --landing-feature-zoom: 0.24;
   }
   .landing-feature h2 {
     font-size: clamp(28px, 5vw, 40px);

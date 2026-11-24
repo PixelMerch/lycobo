@@ -1,7 +1,9 @@
 import type { createLandingMotionTimeline } from "./landing-motion-timeline";
 
 /** 调度滚动绘制与入场观察，在偏好变化和页面退出时清理动效，不接管浏览器滚动。 */
-export function initializeLandingMotion(createTimeline: typeof createLandingMotionTimeline) {
+export function initializeLandingMotion(
+  createTimeline: () => ReturnType<typeof createLandingMotionTimeline>,
+) {
   const timeline = createTimeline();
   if (!timeline) return;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");

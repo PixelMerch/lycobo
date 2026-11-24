@@ -1,8 +1,9 @@
 import footerWordmark from "../../../../public/brand/lycobo-footer-wordmark.svg?inline";
 import optimizeImage from "../../../../public/landing/campaign/espresso-prompt.webp?inline";
 import collectionImage from "../../../../public/landing/campaign/handbag-collection.webp?inline";
-import sceneImage from "../../../../public/landing/campaign/headphones-scene.webp?inline";
-import setImage from "../../../../public/landing/campaign/skincare-set.webp?inline";
+import setImage from "../../../../public/landing/campaign/lamp-image-set.webp?inline";
+import sceneImage from "../../../../public/landing/campaign/lamp-scene.webp?inline";
+import lampSourceImage from "../../../../public/landing/campaign/lamp-source.webp?inline";
 import heroImage from "../../../../public/landing/campaign/surfboard-campaign.webp?inline";
 import heroSourceImage from "../../../../public/landing/campaign/surfboard-source.webp?inline";
 import textileImage from "../../../../public/landing/campaign/textile-views.webp?inline";
@@ -13,6 +14,7 @@ import studioPalette from "../../../styles/studio-palette.css?raw";
 import siteFooterStyles from "../../site/site-footer.css?raw";
 import faqStyles from "./landing-faq.css?raw";
 import faqTemplate from "./landing-faq.html?raw";
+import { createLandingFeatureMotion } from "./landing-feature-motion";
 import featureStyles from "./landing-features.css?raw";
 import featureTemplate from "./landing-features.html?raw";
 import footerStyles from "./landing-footer.css?raw";
@@ -30,6 +32,7 @@ import { initializeLandingReviews } from "./landing-reviews-motion";
 import { renderLandingReviews } from "./landing-reviews-template";
 import { initializeLandingMotion } from "./landing-showcase";
 import showcaseStyles from "./landing-showcase.css?raw";
+import showcaseTemplate from "./landing-showcase.html?raw";
 import landingTheme from "./landing-theme.css?raw";
 import { renderLandingFooter } from "./render-landing-footer";
 
@@ -38,6 +41,7 @@ const landingImages: Record<string, string> = {
   source: heroSourceImage,
   scene: sceneImage,
   set: setImage,
+  lamp: lampSourceImage,
   collection: collectionImage,
   textile: textileImage,
   optimize: optimizeImage,
@@ -75,6 +79,7 @@ export function renderLandingDocument(
       ].join("\n"),
     )
     .replace("__LYCOBO_HERO__", () => heroTemplate)
+    .replace("__LYCOBO_SHOWCASE__", () => showcaseTemplate)
     .replace("__LYCOBO_FEATURES__", () => featureTemplate)
     .replace("__LYCOBO_REVIEWS__", renderLandingReviews)
     .replace("__LYCOBO_PRICING__", () => renderLandingPricing(locale))
@@ -84,7 +89,7 @@ export function renderLandingDocument(
     .replace(
       "__LYCOBO_MOTION_SCRIPT__",
       () =>
-        `(${initializeLandingMotion.toString()})(${createLandingMotionTimeline.toString()});
+        `(${initializeLandingMotion.toString()})(() => (${createLandingMotionTimeline.toString()})(${createLandingFeatureMotion.toString()}));
         (${initializeLandingFooterOverlay.toString()})();`,
     )
     .replace(
