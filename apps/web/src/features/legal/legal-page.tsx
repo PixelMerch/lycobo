@@ -15,13 +15,15 @@ import {
 import { legalEntityMessages } from "./legal-entity-messages";
 import { legalMessages } from "./legal-messages";
 import { privacyMessages } from "./privacy-messages";
+import { refundMessages } from "./refund-messages";
 import { termsMessages } from "./terms-messages";
 import "./legal-page.css";
 
-const documents = { terms: termsMessages, privacy: privacyMessages } satisfies Record<
-  LegalDocumentId,
-  MessageCatalog<LegalDocument>
->;
+const documents = {
+  terms: termsMessages,
+  privacy: privacyMessages,
+  refunds: refundMessages,
+} satisfies Record<LegalDocumentId, MessageCatalog<LegalDocument>>;
 
 /** 用户协议页面，公开访问。 */
 export function TermsPage() {
@@ -33,12 +35,19 @@ export function PrivacyPage() {
   return <LegalPage id="privacy" />;
 }
 
+/** 积分退款政策页面，公开访问。 */
+export function RefundPage() {
+  return <LegalPage id="refunds" />;
+}
+
 /** 黑底法律阅读页：左侧目录、右侧正文，语言切换保留同一章节。 */
 function LegalPage({ id }: { id: LegalDocumentId }) {
   const t = useMessages(legalMessages);
   const entity = useMessages(legalEntityMessages);
   const legalDocument = useMessages(documents[id]);
   const locale = useLocale();
+  const effectiveDate =
+    legalDocument.effectiveDate === undefined ? entity.effectiveDate : legalDocument.effectiveDate;
   const documentKey = `${locale}:${id}`;
   const previousDocument = useRef<string | null>(null);
   // 首次打开支持章节直达；没有有效锚点时回到文档顶部。
@@ -72,7 +81,8 @@ function LegalPage({ id }: { id: LegalDocumentId }) {
           </nav>
           <h1 id="legal-title">{legalDocument.title}</h1>
           <p className="legal-meta">
-            {t.updated(entity.updatedDate)} · {t.effective(entity.effectiveDate)}
+            {t.updated(legalDocument.updatedDate ?? entity.updatedDate)}
+            {effectiveDate && ` · ${t.effective(effectiveDate)}`}
           </p>
           <p className="legal-intro">{legalDocument.intro}</p>
           {legalDocument.sections.map((section, index) => (

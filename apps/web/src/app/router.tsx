@@ -150,6 +150,12 @@ const localizedRoutes: RouteObject[] = [
         }),
       },
       {
+        path: "refund-policy",
+        lazy: async () => ({
+          Component: (await import("../features/legal/legal-page")).RefundPage,
+        }),
+      },
+      {
         path: "privacy",
         lazy: async () => ({
           Component: (await import("../features/legal/legal-page")).PrivacyPage,

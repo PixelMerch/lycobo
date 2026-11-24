@@ -38,12 +38,13 @@ import { SiteHeaderControls, WorkspaceHeaderLink } from "./site-header-controls"
 import { useWindowScrolled } from "./use-window-scrolled";
 import "../styles/brand.css";
 
-// 首页与用户协议、隐私政策不需要登录，其他页面未登录时先去登录。
+// 首页与协议政策页公开访问，其他页面未登录时先去登录。
 const publicPaths = new Set<string>([
   commercePath,
   inspirationLibraryPath,
   legalPaths.terms,
   legalPaths.privacy,
+  legalPaths.refunds,
 ]);
 
 const studioLogo = { src: "/brand/lycobo-landing.svg", width: 120, height: 35 };

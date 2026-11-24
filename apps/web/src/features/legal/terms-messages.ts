@@ -12,6 +12,7 @@ const en = legalEntityMessages.en;
 export const termsMessages = defineMessages<LegalDocument>({
   "zh-CN": {
     title: "用户协议",
+    updatedDate: "2026 年 11 月 24 日",
     intro: `欢迎使用 Lycobo（以下简称“本服务”）。本服务由${zh.company}（以下简称“我们”）运营。本协议约定你与我们之间使用本服务的权利和义务，请在使用前仔细阅读。你登录或使用本服务，即表示已阅读并同意本协议；如不同意，请停止使用。`,
     sections: [
       {
@@ -37,6 +38,7 @@ export const termsMessages = defineMessages<LegalDocument>({
             "图片生成等功能按页面公示的价格扣除积分，提交前会显示所需积分。",
             "生成明确失败的任务会自动退回对应积分；结果暂时无法确认的任务会保留待核对，不会自动重新提交或重复扣费。",
             "积分属于企业账户，只能用于本服务，不能兑换现金，也不能转让给其他企业。",
+            "购买积分的退款申请按本站退款政策处理。该笔购买中的积分一经使用，该笔购买即不支持退款，包括其中尚未使用的剩余积分；法律另有强制规定的除外。",
             "充值、会员订阅等付费功能开放后，按届时页面公示的规则执行。",
           ],
         ],
@@ -97,6 +99,7 @@ export const termsMessages = defineMessages<LegalDocument>({
   },
   en: {
     title: "Terms of Service",
+    updatedDate: "November 24, 2026",
     intro: `Welcome to Lycobo (the "Service"). The Service is operated by ${en.company} ("we" or "us"). These terms set out your rights and obligations when you use the Service, so please read them carefully. By signing in to or using the Service, you agree to these terms. If you do not agree, please stop using the Service.`,
     sections: [
       {
@@ -122,6 +125,7 @@ export const termsMessages = defineMessages<LegalDocument>({
             "Image generation and other features deduct credits at the prices shown on the site. You see the credits required before you submit.",
             "Credits for tasks that clearly fail are refunded automatically. Tasks whose result cannot be confirmed yet are held for review and are never resubmitted or charged again automatically.",
             "Credits belong to the team account, can only be used for the Service, and cannot be exchanged for cash or transferred to another team.",
+            "Refund requests for purchased credits are governed by our Refund Policy. Once any credits from a purchase have been used, that purchase is non-refundable, including its remaining unused credits, except where mandatory law requires otherwise.",
             "Once paid features such as top-ups and memberships open, the rules shown on the site at that time apply.",
           ],
         ],

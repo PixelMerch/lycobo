@@ -62,7 +62,7 @@ describe("localized landing document", () => {
         "/inspiration",
         "/terms",
         "/privacy",
-        "https://bonko.fun/refund-policy",
+        "/refund-policy",
       ]);
       for (const [tag, path] of links) {
         expect(tag).toContain(`href="${path.startsWith("/") ? `/${locale}${path}` : path}"`);

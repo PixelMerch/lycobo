@@ -1,9 +1,8 @@
-import { Link } from "@heroui/react";
 import { RouteLink } from "../../components/router-link";
 import { useLocale } from "../../i18n/locale-store";
 import { useMessages } from "../../i18n/messages";
 import { siteFooterMessages } from "./site-footer-messages";
-import { refundPolicyUrl, siteFooterGroups } from "./site-footer-navigation";
+import { siteFooterGroups } from "./site-footer-navigation";
 import "./site-footer.css";
 
 const wordmark = { src: "/brand/lycobo-footer-wordmark.svg", width: 429, height: 108 };
@@ -26,11 +25,7 @@ export function SiteFooter() {
               <ul>
                 {links.map(({ path, label }) => (
                   <li key={path}>
-                    {path === refundPolicyUrl ? (
-                      <Link href={path}>{label}</Link>
-                    ) : (
-                      <RouteLink to={path}>{label}</RouteLink>
-                    )}
+                    <RouteLink to={path}>{label}</RouteLink>
                   </li>
                 ))}
               </ul>

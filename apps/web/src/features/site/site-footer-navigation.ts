@@ -13,9 +13,6 @@ import { siteFooterMessages } from "./site-footer-messages";
 
 const toolIds = ["create", "variation", "textile", "replica"] as const;
 
-/** 页脚指向用户提供的退款政策页面。 */
-export const refundPolicyUrl = "https://bonko.fun/refund-policy";
-
 /** 非首页的页脚通过带锚点的主页地址进入常见问题。 */
 export const siteFooterFaqPath = "/#faq";
 
@@ -49,7 +46,7 @@ export function siteFooterGroups(locale: Locale) {
       links: [
         { path: legalPaths.terms, label: t.terms },
         { path: legalPaths.privacy, label: t.privacy },
-        { path: refundPolicyUrl, label: t.refunds },
+        { path: legalPaths.refunds, label: t.refunds },
       ],
     },
   ];
