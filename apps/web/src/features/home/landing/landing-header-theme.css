@@ -93,6 +93,15 @@
     color: var(--landing-muted);
   }
 }
+/* 工具菜单在首屏透出图片色彩，并用更强的磨砂保留文字对比。 */
+@supports (backdrop-filter: blur(1px)) {
+  @media not (prefers-reduced-transparency: reduce) {
+    :root:has(.public-site-header[data-landing-frame]) .topbar-menu.landing-control-popover {
+      --site-header-menu-background: color-mix(in srgb, var(--landing-surface) 64%, transparent);
+      --site-header-menu-blur: blur(20px);
+    }
+  }
+}
 @media (prefers-reduced-transparency: reduce) {
   :root:has(.public-site-header[data-landing-frame]) {
     --site-header-menu-background: var(--landing-subtle);
