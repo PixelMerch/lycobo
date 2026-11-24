@@ -88,7 +88,7 @@
     .language-trigger,
     .header-credits,
     .account-trigger,
-    .header-creation-guide.button,
+    .header-creation-guide.link,
     .header-workspace
   ) {
   height: var(--landing-control-height);
@@ -103,7 +103,7 @@
   transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .landing-header-controls
-  :is(.language-trigger, .header-credits, .header-creation-guide.button, .header-workspace) {
+  :is(.language-trigger, .header-credits, .header-creation-guide.link, .header-workspace) {
   position: relative;
   isolation: isolate;
 }
@@ -111,12 +111,7 @@
   padding-inline: var(--landing-text-control-padding);
 }
 .landing-header-controls
-  :is(
-    .language-trigger,
-    .header-credits,
-    .header-creation-guide.button,
-    .header-workspace
-  )::before {
+  :is(.language-trigger, .header-credits, .header-creation-guide.link, .header-workspace)::before {
   position: absolute;
   z-index: -1;
   inset-inline: 0;
@@ -129,13 +124,18 @@
   pointer-events: none;
   content: "";
 }
-.landing-header-controls .header-creation-guide.button.button--icon-only {
+.landing-header-controls .header-creation-guide.link {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
   width: var(--landing-control-height);
   min-width: var(--landing-control-height);
   height: var(--landing-control-height);
   min-height: var(--landing-control-height);
 }
-.landing-header-controls .header-creation-guide.button::before {
+.landing-header-controls .header-creation-guide.link::before {
   width: var(--landing-control-fill-height);
   margin-inline: auto;
 }
@@ -163,7 +163,7 @@
   transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .landing-header-controls
-  :is(.language-trigger, .header-credits, .header-creation-guide.button, .header-workspace):is(
+  :is(.language-trigger, .header-credits, .header-creation-guide.link, .header-workspace):is(
     :hover,
     [data-hovered="true"],
     [aria-expanded="true"]
@@ -172,7 +172,7 @@
   color: var(--landing-control-hover-color);
 }
 .landing-header-controls
-  :is(.language-trigger, .header-credits, .header-creation-guide.button, .header-workspace):is(
+  :is(.language-trigger, .header-credits, .header-creation-guide.link, .header-workspace):is(
     :hover,
     [data-hovered="true"],
     [aria-expanded="true"],
@@ -212,7 +212,7 @@
 .landing-language-popover .menu-item__indicator {
   color: var(--control-selected-foreground);
 }
-:root .landing-control-popover:is(.dropdown__popover, .account-menu, .home-header-help) {
+:root .landing-control-popover:is(.dropdown__popover, .account-menu) {
   --glass-tint: var(--site-header-menu-background);
   --glass-fill: linear-gradient(transparent, transparent);
   --glass-blur: var(--site-header-menu-blur);
@@ -228,15 +228,6 @@
 .landing-control-popover .credits-menu-upgrade {
   background: #ffffff14;
   color: #fff;
-  font-size: inherit;
-}
-:root .landing-control-popover.home-header-help {
-  padding: 12px;
-  border-radius: 12px;
-  font-size: var(--landing-control-font-size);
-  line-height: var(--landing-control-line-height);
-}
-.landing-control-popover.home-header-help b {
   font-size: inherit;
 }
 @media (max-width: 767px) {
@@ -315,12 +306,7 @@
       .header-workspace
     ),
   .landing-header-controls
-    :is(
-      .language-trigger,
-      .header-credits,
-      .header-creation-guide.button,
-      .header-workspace
-    )::before,
+    :is(.language-trigger, .header-credits, .header-creation-guide.link, .header-workspace)::before,
   .landing-language-control .language-trigger-chevron,
   :root .landing-control-popover :is(.menu-item, .account-menu-row)::before {
     transition: none;

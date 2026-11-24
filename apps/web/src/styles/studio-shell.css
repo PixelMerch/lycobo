@@ -293,26 +293,15 @@
   height: 36px;
   min-height: 36px;
 }
-.header-actions .home-header-utilities {
-  display: flex;
-  align-items: center;
-  gap: inherit;
-}
 .topbar[data-commerce-header="true"]
-  :is(
-    .home-header-tool.button,
-    .language-trigger,
-    .header-credits,
-    .header-login.button,
-    .header-news .button
-  ) {
+  :is(.language-trigger, .header-credits, .header-login.button, .header-news .button) {
   border-radius: 12px;
 }
 .topbar[data-commerce-header="true"]
   .topbar-nav
   .nav-row:is(:hover, [data-hovered="true"], [aria-expanded="true"]),
 .topbar[data-commerce-header="true"]
-  :is(.home-header-tool, .language-trigger, .header-credits, .header-news .button):is(
+  :is(.language-trigger, .header-credits, .header-news .button):is(
     :hover,
     [data-hovered="true"],
     [aria-expanded="true"]
@@ -332,57 +321,6 @@
   :root :is(.topbar-menu, .popover).home-header-glass {
     --glass-tint: var(--glass-fallback);
     --glass-blur: none;
-  }
-}
-.home-header-tool.button {
-  height: var(--shell-pill-height);
-  min-height: var(--shell-pill-height);
-  padding-inline: 12px;
-  border-radius: 12px;
-  background: #ffffff14;
-  color: #fffd;
-}
-.home-header-tool.button:is(:hover, [data-hovered="true"]) {
-  background: #ffffff24;
-  color: #fff;
-}
-.home-header-tool.button.button--icon-only {
-  flex: none;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
-  padding: 0;
-}
-.home-header-help {
-  max-width: min(320px, calc(100vw - 24px));
-  padding: 12px 16px;
-  font-size: var(--text-base);
-}
-.home-header-help b {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.home-header-help ul {
-  display: grid;
-  gap: 8px;
-}
-.mobile-nav .home-header-utilities {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 12px;
-}
-.mobile-nav .home-header-tool.button {
-  width: 100%;
-  min-height: 44px;
-}
-@media (max-width: 1100px) {
-  .topbar[data-commerce-header="true"] .home-header-tool-label {
-    display: none;
   }
 }
 .mobile-menu {
@@ -431,9 +369,6 @@
 }
 /* 手机顶部栏保留消息入口，导航与账户收进导航抽屉。 */
 @media (max-width: 767px) {
-  .header-actions .home-header-tool.button {
-    display: none;
-  }
   .topbar :is(.topbar-nav, .account-header) {
     display: none;
   }

@@ -13,11 +13,6 @@ export const shellMessages = defineMessages({
     projects: "项目",
     benefits: "会员权益",
     creationHelp: "创作指南",
-    creationHelpItems: [
-      "主图制作：上传参考图，描述想要的画面。",
-      "家纺裂变：上传床品图，选择需要的视角。",
-      "套图计划：先确认方案，再生成套图。",
-    ],
     mainNavigation: "主导航",
     openNavigation: "打开导航",
     closeNavigation: "关闭导航",
@@ -44,11 +39,6 @@ export const shellMessages = defineMessages({
     projects: "Projects",
     benefits: "Membership benefits",
     creationHelp: "Creation guide",
-    creationHelpItems: [
-      "Main image: add a reference and describe the image you want.",
-      "Textile variations: upload a bedding photo and choose your angles.",
-      "Image set plan: review your plan before generating the set.",
-    ],
     mainNavigation: "Main navigation",
     openNavigation: "Open navigation",
     closeNavigation: "Close navigation",

@@ -21,6 +21,7 @@ import { useEnterpriseSession } from "../features/auth/auth-client";
 import { loginHref } from "../features/auth/login-navigation";
 import { commercePath, commerceToolHref, commerceTools } from "../features/commerce/commerce-tools";
 import { useImageEvents } from "../features/generation/use-image-events";
+import { creationGuidePath } from "../features/guide/creation-guide-path";
 import type { LandingFrame } from "../features/home/landing/landing-frame";
 import { inspirationLibraryPath } from "../features/inspiration/inspiration-path";
 import { legalPaths } from "../features/legal/legal-document";
@@ -38,10 +39,11 @@ import { SiteHeaderControls, WorkspaceHeaderLink } from "./site-header-controls"
 import { useWindowScrolled } from "./use-window-scrolled";
 import "../styles/brand.css";
 
-// 首页与协议政策页公开访问，其他页面未登录时先去登录。
+// 首页、灵感库、创作指南和协议政策页公开访问，业务工具需要登录。
 const publicPaths = new Set<string>([
   commercePath,
   inspirationLibraryPath,
+  creationGuidePath,
   legalPaths.terms,
   legalPaths.privacy,
   legalPaths.refunds,
@@ -59,7 +61,8 @@ export function StudioShell() {
   const pendingScroll = useRef<number | null>(null);
   const landingFrame: LandingFrame | undefined =
     pathname === commercePath ? { frameRef, pendingScroll } : undefined;
-  const publicNavigation = !!landingFrame || pathname === inspirationLibraryPath;
+  const publicNavigation =
+    !!landingFrame || pathname === inspirationLibraryPath || pathname === creationGuidePath;
   const session = useEnterpriseSession();
   const signedIn = !!session.data;
   const protectedRoute = !publicPaths.has(pathname);

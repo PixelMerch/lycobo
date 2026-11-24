@@ -82,6 +82,7 @@ apps/web/src/
     ├── video/                    # 视频页面、请求与草稿；history / player / production / storyboard 分职责
     ├── home/                     # 仅保留当前首页落地页
     │   └── landing/              # 商品案例、套图/裂变/AI优化、评价、积分价格、FAQ与双语隔离正文
+    ├── guide/                    # 双语创作指南、公开路由与工具章节
     ├── inspiration/              # 灵感库页面、示例数据与作品墙；素材库复用同一浏览组件
     ├── site/                     # 首页、灵感库与协议页共用页脚样式、文案和导航目录
     ├── legal/                    # 用户协议、隐私及积分退款政策公开页；运营主体等待补信息集中在 legal-entity-messages.ts

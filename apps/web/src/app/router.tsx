@@ -2,6 +2,7 @@ import { mainImageModelIds } from "@lycoboai/contracts";
 import { createBrowserRouter, type LoaderFunctionArgs, type RouteObject } from "react-router";
 import { getRecentCommercePath } from "../features/commerce/commerce-preferences";
 import { useStudioStore } from "../features/generation/studio-state";
+import { creationGuidePath } from "../features/guide/creation-guide-path";
 import {
   dashboardAssetsPath,
   dashboardPages,
@@ -141,6 +142,12 @@ const localizedRoutes: RouteObject[] = [
         lazy: async () => ({
           Component: (await import("../features/inspiration/inspiration-library-page"))
             .InspirationLibraryPage,
+        }),
+      },
+      {
+        path: creationGuidePath.slice(1),
+        lazy: async () => ({
+          Component: (await import("../features/guide/creation-guide-page")).CreationGuidePage,
         }),
       },
       {

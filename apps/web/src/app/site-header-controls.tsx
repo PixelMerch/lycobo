@@ -1,12 +1,12 @@
-import { IconLayoutDashboard } from "@tabler/icons-react";
+import { IconBook, IconLayoutDashboard } from "@tabler/icons-react";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
 import { AccountMenu } from "../features/account/menu/account-menu";
 import { HeaderBenefits } from "../features/account/menu/header-benefits";
 import type { useEnterpriseSession } from "../features/auth/auth-client";
+import { creationGuidePath } from "../features/guide/creation-guide-path";
 import { useMessages } from "../i18n/messages";
 import { dashboardPath } from "../lib/dashboard-paths";
-import { HeaderCreationGuide } from "./home-header-utilities";
 import { LanguageMenu } from "./language-menu";
 import { shellMessages } from "./shell-messages";
 import "./site-header-controls.css";
@@ -25,13 +25,16 @@ export function SiteHeaderControls({
   onLanguageChange?: () => void;
   showWorkspaceLink?: boolean;
 }) {
+  const t = useMessages(shellMessages);
   return (
     <div className="landing-header-controls">
-      <HeaderCreationGuide
-        dismissVersion={dismissVersion}
-        popoverClassName="landing-control-popover"
-        popoverOffset={popoverOffset}
-      />
+      <RouteLink
+        to={creationGuidePath}
+        className="header-creation-guide"
+        aria-label={t.creationHelp}
+      >
+        <UiIcon icon={IconBook} size="navigation" />
+      </RouteLink>
       <div className="landing-language-control">
         <LanguageMenu
           dismissVersion={dismissVersion}
