@@ -87,22 +87,6 @@
   font-size: 12px;
   line-height: 1.5;
 }
-.landing-image-label {
-  position: absolute;
-  right: var(--landing-gutter);
-  bottom: 62px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: #fff;
-}
-.landing-image-label span {
-  padding-left: 12px;
-  border-left: 1px solid #ffffff66;
-  color: #ffffffcc;
-}
 .lycobo-hero a:focus-visible {
   outline-color: #fff;
 }
@@ -110,6 +94,14 @@
   .landing-hero-stage {
     min-height: 680px;
     height: 100svh;
+  }
+  .landing-hero-art {
+    background: #071a2d;
+  }
+  .landing-campaign-image {
+    height: 78%;
+    object-position: 80% top;
+    mask-image: linear-gradient(#000 85%, transparent);
   }
   .landing-heading-row {
     width: calc(100% - var(--landing-gutter) * 2);
@@ -140,10 +132,6 @@
     border-radius: 8px;
   }
   .landing-source-proof figcaption {
-    font-size: 11px;
-  }
-  .landing-image-label {
-    bottom: 22px;
     font-size: 11px;
   }
 }

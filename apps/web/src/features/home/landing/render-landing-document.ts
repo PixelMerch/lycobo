@@ -3,8 +3,8 @@ import optimizeImage from "../../../../public/landing/campaign/espresso-prompt.w
 import collectionImage from "../../../../public/landing/campaign/handbag-collection.webp?inline";
 import sceneImage from "../../../../public/landing/campaign/headphones-scene.webp?inline";
 import setImage from "../../../../public/landing/campaign/skincare-set.webp?inline";
-import shoeImage from "../../../../public/landing/campaign/sneaker-campaign.webp?inline";
-import sourceImage from "../../../../public/landing/campaign/sneaker-source.webp?inline";
+import heroImage from "../../../../public/landing/campaign/surfboard-campaign.webp?inline";
+import heroSourceImage from "../../../../public/landing/campaign/surfboard-source.webp?inline";
 import textileImage from "../../../../public/landing/campaign/textile-views.webp?inline";
 import { initializePageScrollbar } from "../../../components/page-scrollbar";
 import pageScrollbarStyle from "../../../components/page-scrollbar.css?raw";
@@ -34,8 +34,8 @@ import landingTheme from "./landing-theme.css?raw";
 import { renderLandingFooter } from "./render-landing-footer";
 
 const landingImages: Record<string, string> = {
-  shoe: shoeImage,
-  source: sourceImage,
+  hero: heroImage,
+  source: heroSourceImage,
   scene: sceneImage,
   set: setImage,
   collection: collectionImage,
