@@ -95,7 +95,7 @@
   flex: none;
   height: var(--control-height-md);
   padding-inline: var(--control-padding-md);
-  border-radius: 12px;
+  border-radius: 999px;
   background: #f2f2f2;
   color: var(--studio-canvas);
   font-size: var(--text-sm);

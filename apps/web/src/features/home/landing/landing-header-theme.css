@@ -62,7 +62,6 @@
   }
 
   .public-site-start.link {
-    border-radius: 999px;
     background: var(--landing-foreground);
     color: var(--landing-surface);
   }
