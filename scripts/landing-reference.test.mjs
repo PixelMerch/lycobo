@@ -4,6 +4,10 @@ import { describe, expect, it } from "vitest";
 const reference = readFileSync("apps/web/public/openart-reference/index.html", "utf8");
 const features = readFileSync("apps/web/src/features/home/landing/landing-features.html", "utf8");
 const showcase = readFileSync("apps/web/src/features/home/landing/landing-showcase.html", "utf8");
+const planner = readFileSync(
+  "apps/web/src/features/home/landing/landing-planner-preview.html",
+  "utf8",
+);
 const container = readFileSync("apps/web/src/features/home/landing/landing-page.tsx", "utf8");
 
 describe("Landing document isolation", () => {
@@ -11,11 +15,12 @@ describe("Landing document isolation", () => {
     expect(reference).toContain("__LYCOBO_HERO__");
     expect(reference).toContain("__LYCOBO_MOTION_SCRIPT__");
     expect(reference).toContain("__LYCOBO_SHOWCASE__");
-    expect(showcase).toContain('class="landing-case-grid"');
+    expect(showcase).toContain('type="range"');
+    expect(features).toContain("__LYCOBO_PLANNER_PREVIEW__");
     expect(reference).toContain("__LYCOBO_FAQ__");
     expect(reference).not.toMatch(/<script\b[^>]*\bsrc=/i);
-    expect(reference + showcase + features).not.toMatch(
-      /<(img|video|source)\b[^>]*\bsrc="(?!data:|__LYCOBO_IMAGE_(?:scene|set|lamp|collection|textile|optimize)__")/i,
+    expect(reference + showcase + planner + features).not.toMatch(
+      /<(img|video|source)\b[^>]*\bsrc="(?!data:|__LYCOBO_IMAGE_(?:scene|lamp|handbag|collection|textile|optimize)__")/i,
     );
     expect(reference).not.toMatch(/<link\b/i);
     expect(reference).not.toMatch(/<iframe\b/i);

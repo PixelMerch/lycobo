@@ -1,31 +1,31 @@
-/** 同步绘制套图和家纺的分步说明与三联画，兼顾短视口的自然滚动。 */
+/** 同步绘制家纺分步说明与三联画，兼顾短视口的自然滚动。 */
 export function createLandingFeatureMotion() {
   const clamp = (value: number) => Math.max(0, Math.min(1, value));
-  const features = [...document.querySelectorAll<HTMLElement>(".landing-feature-track")].flatMap(
-    (track) => {
-      const panel = track.querySelector<HTMLElement>(".landing-feature-inner");
-      const art = track.querySelector<HTMLElement>(".landing-feature-art");
-      if (!panel || !art) return [];
-      const steps = [...track.querySelectorAll<HTMLElement>(".landing-feature-steps li")].map(
-        (element) => ({ element, top: 0 }),
-      );
-      return [
-        {
-          track,
-          panel,
-          art,
-          steps,
-          start: 0,
-          end: 0,
-          artTop: 0,
-          artHeight: 1,
-          distance: 1,
-          pinned: false,
-          lastScroll: Number.NaN,
-        },
-      ];
-    },
-  );
+  const features = [
+    ...document.querySelectorAll<HTMLElement>(".landing-feature-textile .landing-feature-track"),
+  ].flatMap((track) => {
+    const panel = track.querySelector<HTMLElement>(".landing-feature-inner");
+    const art = track.querySelector<HTMLElement>(".landing-feature-art");
+    if (!panel || !art) return [];
+    const steps = [...track.querySelectorAll<HTMLElement>(".landing-feature-steps li")].map(
+      (element) => ({ element, top: 0 }),
+    );
+    return [
+      {
+        track,
+        panel,
+        art,
+        steps,
+        start: 0,
+        end: 0,
+        artTop: 0,
+        artHeight: 1,
+        distance: 1,
+        pinned: false,
+        lastScroll: Number.NaN,
+      },
+    ];
+  });
   let viewport = 0;
   const artProperties = [
     "--landing-feature-second",

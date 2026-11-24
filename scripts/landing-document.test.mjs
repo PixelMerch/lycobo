@@ -19,8 +19,12 @@ describe("localized landing document", () => {
       expect(document.match(/<section\b/g)).toHaveLength(10);
       expect(document).toContain(copy.heroLineOne);
       expect(document).toContain(copy.sceneTitle);
-      expect(document).toContain(copy.setTitle);
-      expect(document).toContain(copy.collectionDescription);
+      expect(document).toContain(copy.comparisonControl);
+      expect(document).toContain(copy.plannerPromptHeading);
+      expect(document).toContain(copy.plannerBriefExample);
+      expect(document).toContain(copy.plannerPromptDetail);
+      expect(document.match(/name="landing-plan-phase"/g)).toHaveLength(3);
+      expect(document.match(/name="landing-plan-shot"/g)).toHaveLength(3);
       const features = [
         ...document.matchAll(/<ol class="landing-feature-steps">([\s\S]*?)<\/ol>/g),
       ];
@@ -28,14 +32,7 @@ describe("localized landing document", () => {
         features.flatMap(([, list]) =>
           [...list.matchAll(/<h3>(.*?)<\/h3>/g)].map((step) => step[1]),
         ),
-      ).toEqual([
-        copy.collectionStepOneTitle,
-        copy.collectionStepTwoTitle,
-        copy.collectionStepThreeTitle,
-        copy.textileStepOneTitle,
-        copy.textileStepTwoTitle,
-        copy.textileStepThreeTitle,
-      ]);
+      ).toEqual([copy.textileStepOneTitle, copy.textileStepTwoTitle, copy.textileStepThreeTitle]);
       expect(document).toContain(copy.textileDescription);
       expect(document).toContain(copy.promptAfter);
       expect(document).toContain(copy.review1Quote);
@@ -60,9 +57,6 @@ describe("localized landing document", () => {
         "/dashboard",
         "/dashboard/commerce/create",
         "/dashboard/commerce/create",
-        "/dashboard/commerce/create",
-        "/dashboard/commerce/smart-variation",
-        "/dashboard/commerce/smart-variation",
         "/dashboard/commerce/smart-variation",
         "/dashboard/commerce/textile-set",
         "/dashboard/commerce/create",

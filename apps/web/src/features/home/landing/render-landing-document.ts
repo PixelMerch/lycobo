@@ -1,7 +1,7 @@
 import footerWordmark from "../../../../public/brand/lycobo-footer-wordmark.svg?inline";
 import optimizeImage from "../../../../public/landing/campaign/espresso-prompt.webp?inline";
 import collectionImage from "../../../../public/landing/campaign/handbag-collection.webp?inline";
-import setImage from "../../../../public/landing/campaign/lamp-image-set.webp?inline";
+import handbagSource from "../../../../public/landing/campaign/handbag-source.webp?inline";
 import sceneImage from "../../../../public/landing/campaign/lamp-scene.webp?inline";
 import lampSourceImage from "../../../../public/landing/campaign/lamp-source.webp?inline";
 import heroImage from "../../../../public/landing/campaign/surfboard-campaign.webp?inline";
@@ -12,6 +12,7 @@ import pageScrollbarStyle from "../../../components/page-scrollbar.css?raw";
 import type { Locale } from "../../../i18n/locale";
 import studioPalette from "../../../styles/studio-palette.css?raw";
 import siteFooterStyles from "../../site/site-footer.css?raw";
+import { createLandingDemoMotion } from "./landing-demo-motion";
 import faqStyles from "./landing-faq.css?raw";
 import faqTemplate from "./landing-faq.html?raw";
 import { createLandingFeatureMotion } from "./landing-feature-motion";
@@ -25,6 +26,8 @@ import heroTemplate from "./landing-hero.html?raw";
 import motionStyles from "./landing-motion.css?raw";
 import { createLandingMotionTimeline } from "./landing-motion-timeline";
 import landingPalette from "./landing-palette.css?raw";
+import plannerStyles from "./landing-planner-preview.css?raw";
+import plannerTemplate from "./landing-planner-preview.html?raw";
 import pricingStyles from "./landing-pricing.css?raw";
 import { renderLandingPricing } from "./landing-pricing-template";
 import reviewsStyles from "./landing-reviews.css?raw";
@@ -40,7 +43,7 @@ const landingImages: Record<string, string> = {
   hero: heroImage,
   source: heroSourceImage,
   scene: sceneImage,
-  set: setImage,
+  handbag: handbagSource,
   lamp: lampSourceImage,
   collection: collectionImage,
   textile: textileImage,
@@ -71,6 +74,7 @@ export function renderLandingDocument(
         heroStyles,
         showcaseStyles,
         featureStyles,
+        plannerStyles,
         reviewsStyles,
         pricingStyles,
         faqStyles,
@@ -81,6 +85,7 @@ export function renderLandingDocument(
     .replace("__LYCOBO_HERO__", () => heroTemplate)
     .replace("__LYCOBO_SHOWCASE__", () => showcaseTemplate)
     .replace("__LYCOBO_FEATURES__", () => featureTemplate)
+    .replace("__LYCOBO_PLANNER_PREVIEW__", () => plannerTemplate)
     .replace("__LYCOBO_REVIEWS__", renderLandingReviews)
     .replace("__LYCOBO_PRICING__", () => renderLandingPricing(locale))
     .replace("__LYCOBO_FAQ__", () => faqTemplate)
@@ -89,7 +94,8 @@ export function renderLandingDocument(
     .replace(
       "__LYCOBO_MOTION_SCRIPT__",
       () =>
-        `(${initializeLandingMotion.toString()})(() => (${createLandingMotionTimeline.toString()})(${createLandingFeatureMotion.toString()}));
+        `(${initializeLandingMotion.toString()})(() =>
+          (${createLandingMotionTimeline.toString()})(${createLandingFeatureMotion.toString()}, ${createLandingDemoMotion.toString()}));
         (${initializeLandingFooterOverlay.toString()})();`,
     )
     .replace(

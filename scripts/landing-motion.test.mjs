@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createLandingDemoMotion } from "../apps/web/src/features/home/landing/landing-demo-motion.ts";
 import { createLandingFeatureMotion } from "../apps/web/src/features/home/landing/landing-feature-motion.ts";
 import { createLandingMotionTimeline } from "../apps/web/src/features/home/landing/landing-motion-timeline.ts";
 import { initializeLandingMotion } from "../apps/web/src/features/home/landing/landing-showcase.ts";
 
-const createTimeline = () => createLandingMotionTimeline(createLandingFeatureMotion);
+const createTimeline = () =>
+  createLandingMotionTimeline(createLandingFeatureMotion, createLandingDemoMotion);
 
 function motionEnvironment(reduce = false) {
   const frames = new Map();
@@ -103,6 +105,31 @@ function motionEnvironment(reduce = false) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("landing motion accessibility and lifecycle", () => {
+  it("keeps the user's comparison position during scrolling and motion changes", () => {
+    const env = motionEnvironment();
+    const control = Object.assign(new EventTarget(), { hidden: true, valueAsNumber: 57 });
+    const art = {
+      getBoundingClientRect: () => ({ top: 1000 }),
+      offsetHeight: 500,
+      querySelector: () => control,
+      style: { setProperty: vi.fn() },
+    };
+    const query = env.document.querySelector;
+    env.document.querySelector = (selector) =>
+      selector === ".landing-comparison-art" ? art : query(selector);
+    const demo = createLandingDemoMotion();
+    demo.measure(0, 800);
+    demo.draw(850);
+    expect(control.hidden).toBe(false);
+    expect(control.valueAsNumber).toBe(52);
+    control.valueAsNumber = 42;
+    control.dispatchEvent(new Event("input"));
+    demo.draw(0);
+    demo.reset();
+    expect(art.style.setProperty).toHaveBeenLastCalledWith("--landing-comparison-cut", "42%");
+    expect(control.valueAsNumber).toBe(42);
+  });
+
   it("keeps focused hero actions visible after the scroll transition", async () => {
     const env = motionEnvironment();
     initializeLandingMotion(createTimeline);
