@@ -132,13 +132,16 @@ test("an unavailable balance does not hide credit packs", async ({ page }) => {
   await expect(credits).toBeFocused();
 });
 
-test("signed-out header keeps login without inventing benefits", async ({ page }) => {
+test("signed-out header opens login and hides the credit top-up", async ({ page }) => {
   await mockImageApi(page, { signedIn: false });
-  await page.goto("/");
-  await expect(
-    page.locator(".topbar").getByRole("button", { name: "登录领积分", exact: true }),
-  ).toBeVisible();
-  await expect(page.locator(".header-credits")).toHaveCount(0);
+  await page.goto("/zh-CN");
+  const header = page.locator(".topbar");
+  const start = header.getByRole("link", { name: "开始创作", exact: true });
+  await expect(start).toBeVisible();
+  await expect(header.locator(".header-credits, .header-credit-purchase")).toHaveCount(0);
+  await start.click();
+  await expect(page.locator(".login-page")).toBeVisible();
+  expect(new URL(page.url()).searchParams.get("returnTo")).toMatch(/^\/zh-CN\/dashboard(?:\/|$)/);
 });
 
 function ledgerEntry(
