@@ -8,7 +8,7 @@ import { CreditPacks } from "./credit-packs";
 import { creditsMessages } from "./credits-messages";
 import "./credit-recharge.css";
 
-/** 从应用内打开全屏充值弹框，沿用独立充值页的积分包。 */
+/** 为已登录用户展示全屏充值弹框和积分包。 */
 export function RechargeDialog({ onClose }: { onClose: () => void }) {
   const t = useMessages(creditsMessages);
   const surfaceMotion = useCenteredDialogEntrance();

@@ -72,7 +72,7 @@ apps/web/src/
     │   ├── avatar/               # 预设头像配色与各处共用的账户头像
     │   ├── menu/                 # 顶部栏账户头像菜单、手机抽屉账户行和积分入口
     │   ├── center/               # 账户设置共用的弹窗外框、表格与窄屏样式
-    │   ├── credits/              # 共用美元积分包目录、明细、充值页面及订单
+    │   ├── credits/              # 美元积分包、明细、充值弹框及订单
     │   ├── settings/             # 账户设置、预设头像选择和密码表单
     │   └── notifications/        # 消息中心
     ├── workspace/                # 统一工作区布局、工具坞、跨工具草稿交接
@@ -179,7 +179,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 - `features/account/menu/account-menu.tsx` 组合HeaderLogin与账户菜单（桌面顶部栏头像、手机抽屉账户行）；菜单提供设置、个人作品与退出登录。`header-benefits.tsx` 是顶部栏积分胶囊与积分菜单（按参考站，悬停逻辑复用 `lib/use-hover-menu.ts`）；`credits/credit-usage-dialog.tsx`、`credit-usage-list.tsx` 与 `use-credit-usage.ts` 组成积分明细弹窗（视图筛选、按需续读与分页；从 Header 积分菜单打开）。`account-overlays.tsx` 通过Zustand记录弹窗及打开者，统一懒加载账户设置及叠在其上的充值和积分明细；关闭后各自恢复焦点，退出或改密成功清空状态。
 - `features/account/settings/account-settings-dialog.tsx` 是账户设置：左侧身份、分区与退出登录，分区为账户、积分与账单、登录与安全及管理员可见的企业成员（`settings-sections.ts`）。`account-plan-usage.tsx` 展示企业共享积分与充值入口，以及在积分明细（`credits/credit-ledger.tsx`）与充值订单（`credits/recharge-orders.tsx`）之间切换的积分用量；`account-password-form.tsx` 通过auth-client接入既有改密接口，成功清理登录状态。`account-settings-panels.tsx` 组合账户分区并如实保留未接入的子账号入口；`account-avatar-picker.tsx` 是头像行的预设单选，点选即通过auth-client的 `PUT /api/v1/auth/avatar` 保存。`account-language-picker.tsx` 与顶栏菜单复用 `use-account-language.ts`，已登录时通过 `PUT /api/v1/auth/locale` 保存语言偏好，再切换当前路由。`avatar/account-avatar.tsx` 是顶部栏、手机抽屉、账户菜单与设置共用的头像，按身份里的 `avatarPreset` 取 `account-avatar.css` 中的渐变，认不出时用默认青柠。`account-format.ts` 提供格式化，`account-entry.tsx` 提供收支图标；各页签查询按需挂载。
-- `features/account/credits/credits-dialog.tsx` 提供应用内全屏充值弹框，`recharge-page.tsx` 是公开充值页面。两者复用 `CreditPacks` 的五档目录和活动倒计时，卡片按价格类型及金额匹配 Creem 托管付款链接。在线积分履约待接入，订单与流水仅供查看。
+- `features/account/credits/credits-dialog.tsx` 为已登录用户提供全屏充值弹框，`CreditPacks` 展示五档目录和活动倒计时，卡片按价格类型及金额匹配 Creem 托管付款链接。在线积分履约待接入，订单与流水仅供查看。
 
 ## 数据库领域命名
 

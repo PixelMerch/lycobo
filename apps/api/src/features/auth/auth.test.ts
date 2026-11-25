@@ -379,6 +379,8 @@ describe("第三方登录工作区回跳", () => {
       "/zh-CN/dashboard/commerce/create?task=fixture#result",
     ],
     ["/en/dashboard", "/en/dashboard"],
+    ["/zh-CN/recharge?source=footer#packs", "/en"],
+    ["/zh-CN/membership", "/en"],
     ["/en/dashboard/login", "/en"],
     ["//external.example/en/dashboard", "/en"],
   ])("只保留受支持的目标 %s", async (returnTo, expected) => {

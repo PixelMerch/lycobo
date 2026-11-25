@@ -25,7 +25,7 @@ function safeReturnTo(input: string) {
   if (!localePrefix) return "/en";
   const path = url.pathname.slice(localePrefix.length).replace(/\/$/, "");
   if (
-    !/^(?:$|\/(?:commerce(?:\/|$)|workspace$|assets$|video$|membership$|inspiration$|free-canvas$))/.test(
+    !/^(?:$|\/(?:commerce(?:\/|$)|workspace$|assets$|video$|inspiration$|free-canvas$))/.test(
       path,
     ) &&
     !/^\/dashboard(?:\/(?:commerce\/(?:create|replica|textile-set|smart-variation)|video|free-canvas|assets))?$/.test(
