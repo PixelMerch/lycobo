@@ -39,7 +39,8 @@ test("homepage language follows the URL and switching preserves query, history, 
   await expect(page).toHaveURL(/\/zh-CN\?tool=create#commerce-composer$/);
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
   await expect(title).toContainText("让你的商品图");
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(500);
+  // 双语文字高度不同，浏览器的滚动锚点可能小幅调整像素值；阅读位置仍应留在原区域。
+  await expect.poll(() => page.evaluate(() => Math.abs(window.scrollY - 500))).toBeLessThan(40);
   await page.goBack();
   await expect(page).toHaveURL(/\/en\?tool=create#commerce-composer$/);
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
