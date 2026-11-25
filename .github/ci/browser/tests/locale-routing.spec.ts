@@ -6,6 +6,23 @@ async function switchLanguage(page: Page, language: string) {
   await page.getByRole("menuitemradio", { name: language, exact: true }).click();
 }
 
+test("the homepage language menu stays anchored while scrolling under the pointer", async ({
+  page,
+}) => {
+  await mockImageApi(page, { signedIn: false });
+  await page.goto("/en");
+  const trigger = page.locator(".language-trigger");
+  const option = page.getByRole("menuitemradio", { name: "English", exact: true });
+  await trigger.hover();
+  await option.hover();
+  await page.mouse.wheel(0, 600);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await expect(option).toBeInViewport();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await page.mouse.move(320, 260);
+  await expect(option).toBeHidden();
+});
+
 test("homepage language follows the URL and switching preserves query, history, and scroll", async ({
   page,
 }) => {

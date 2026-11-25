@@ -144,6 +144,10 @@
   min-width: var(--landing-control-fill-height);
   height: var(--landing-control-fill-height);
 }
+/* 下拉随吸顶按钮定位，页面滚动时不会被正文带走。 */
+.landing-language-control {
+  position: relative;
+}
 .landing-language-control .language-trigger {
   justify-content: center;
   width: auto;
