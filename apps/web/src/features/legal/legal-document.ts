@@ -11,8 +11,8 @@ export type LegalDocumentId = keyof typeof legalPaths;
 /** 页面上协议与政策的排列顺序。 */
 export const legalDocumentIds: readonly LegalDocumentId[] = ["terms", "privacy", "refunds"];
 
-/** 正文里的一块：字符串是一段文字，数组是一组列表项。 */
-export type LegalBlock = string | readonly string[];
+/** 正文区块可以是段落、列表或用于联系和查阅政策的链接。 */
+export type LegalBlock = string | readonly string[] | { label: string; href: string };
 
 /** 一节：小标题与按顺序排列的段落或列表。 */
 export type LegalSection = { heading: string; blocks: readonly LegalBlock[] };
@@ -21,8 +21,8 @@ export type LegalSection = { heading: string; blocks: readonly LegalBlock[] };
 export type LegalDocument = {
   title: string;
   intro: string;
-  updatedDate?: string;
-  effectiveDate?: string | null;
+  updatedDate: string;
+  effectiveDate?: string;
   sections: readonly LegalSection[];
 };
 

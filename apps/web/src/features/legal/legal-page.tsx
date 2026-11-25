@@ -1,3 +1,4 @@
+import { Link } from "@heroui/react";
 import { useLayoutEffect, useRef } from "react";
 import { RouteLink } from "../../components/router-link";
 import { useLocale } from "../../i18n/locale-store";
@@ -12,7 +13,6 @@ import {
   legalPaths,
   legalSectionId,
 } from "./legal-document";
-import { legalEntityMessages } from "./legal-entity-messages";
 import { legalMessages } from "./legal-messages";
 import { privacyMessages } from "./privacy-messages";
 import { refundMessages } from "./refund-messages";
@@ -43,11 +43,8 @@ export function RefundPage() {
 /** 黑底法律阅读页：左侧目录、右侧正文，语言切换保留同一章节。 */
 function LegalPage({ id }: { id: LegalDocumentId }) {
   const t = useMessages(legalMessages);
-  const entity = useMessages(legalEntityMessages);
   const legalDocument = useMessages(documents[id]);
   const locale = useLocale();
-  const effectiveDate =
-    legalDocument.effectiveDate === undefined ? entity.effectiveDate : legalDocument.effectiveDate;
   const documentKey = `${locale}:${id}`;
   const previousDocument = useRef<string | null>(null);
   // 首次打开支持章节直达；没有有效锚点时回到文档顶部。
@@ -81,8 +78,8 @@ function LegalPage({ id }: { id: LegalDocumentId }) {
           </nav>
           <h1 id="legal-title">{legalDocument.title}</h1>
           <p className="legal-meta">
-            {t.updated(legalDocument.updatedDate ?? entity.updatedDate)}
-            {effectiveDate && ` · ${t.effective(effectiveDate)}`}
+            {t.updated(legalDocument.updatedDate)}
+            {legalDocument.effectiveDate && ` · ${t.effective(legalDocument.effectiveDate)}`}
           </p>
           <p className="legal-intro">{legalDocument.intro}</p>
           {legalDocument.sections.map((section, index) => (
@@ -92,10 +89,7 @@ function LegalPage({ id }: { id: LegalDocumentId }) {
                 tabIndex={-1}
               >{`${index + 1}. ${section.heading}`}</h2>
               {section.blocks.map((block) => (
-                <LegalBlockView
-                  key={typeof block === "string" ? block : block.join("\n")}
-                  block={block}
-                />
+                <LegalBlockView key={JSON.stringify(block)} block={block} />
               ))}
             </section>
           ))}
@@ -106,9 +100,19 @@ function LegalPage({ id }: { id: LegalDocumentId }) {
   );
 }
 
-/** 正文的一块：一段文字，或一组列表项。 */
+/** 渲染政策正文、列表及可访问的站内外链接。 */
 function LegalBlockView({ block }: { block: LegalBlock }) {
   if (typeof block === "string") return <p>{block}</p>;
+  if ("href" in block)
+    return (
+      <p>
+        {block.href.startsWith("/") ? (
+          <RouteLink to={block.href}>{block.label}</RouteLink>
+        ) : (
+          <Link href={block.href}>{block.label}</Link>
+        )}
+      </p>
+    );
   return (
     <ul>
       {block.map((item) => (

@@ -145,6 +145,11 @@ body:has(.legal-page) {
   font-size: 15px;
   line-height: 28px;
 }
+.legal-section p > .link {
+  color: #f2f2f2;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
 /* 恢复语义列表的圆点，并与正文保持一致的中性灰。 */
 .legal-section ul {
   margin: 0;
