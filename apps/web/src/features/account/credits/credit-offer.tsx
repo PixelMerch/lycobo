@@ -22,7 +22,7 @@ export function useCreditOffer() {
   return { includeOffer: isActive, seconds };
 }
 
-/** 在充值页面展示活动倒计时。 */
+/** 在充值弹框展示活动倒计时。 */
 export function CreditOffer({ seconds }: { seconds: number }) {
   const t = useMessages(creditsMessages);
   const parts = [

@@ -1,5 +1,5 @@
 /* 浮层共用毛玻璃，业务样式只负责布局。
- * 例外：会员全屏页和全屏图片浏览使用实色底。 */
+ * 例外：充值弹框和全屏图片浏览使用实色底。 */
 :root
   :is(
     .modal__dialog,
@@ -11,7 +11,7 @@
     .tooltip,
     .alert-dialog,
     .toast
-  ):not(.membership-dialog, .browse-image-dialog, .account-news-popover) {
+  ):not(.credit-recharge-dialog, .browse-image-dialog, .account-news-popover) {
   background: var(--glass-fill), var(--glass-tint);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);

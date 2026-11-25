@@ -1,22 +1,3 @@
-.main-content:has(> .credit-recharge-page) {
-  padding: 0;
-}
-.credit-recharge-page {
-  min-height: calc(100dvh - var(--studio-header-height));
-  padding: 24px var(--public-site-header-gutter) clamp(44px, 8vw, 96px);
-  background: #0b0b0b;
-}
-.credit-recharge-back.link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  color: var(--foreground);
-  text-decoration: none;
-}
-.credit-recharge-back.link:is(:hover, [data-hovered="true"]) {
-  color: var(--muted);
-}
 .credit-recharge-backdrop.modal__backdrop {
   background: transparent;
   animation: none;
@@ -56,7 +37,7 @@
   max-width: 1360px;
   margin-inline: auto;
 }
-.credit-recharge-heading:is(header, .modal__header) {
+.credit-recharge-heading.modal__header {
   position: relative;
   display: grid;
   flex: none;
@@ -65,7 +46,7 @@
   padding: clamp(26px, 5vw, 64px) 40px 28px;
   text-align: center;
 }
-.credit-recharge-heading :is(h1, .modal__heading) {
+.credit-recharge-heading .modal__heading {
   margin: 0;
   color: #f4f4f4;
   font-size: clamp(26px, 4vw, 44px);
@@ -291,12 +272,6 @@
   }
   .credit-pack {
     min-height: 290px;
-  }
-}
-@media (max-width: 414px) {
-  /* 独立充值页已提供购买入口，窄屏顶栏省去重复入口以保留导航和账户按钮。 */
-  .studio-app:has(.credit-recharge-page) > .public-site-header .header-credit-controls {
-    display: none;
   }
 }
 @media (max-width: 374px) {

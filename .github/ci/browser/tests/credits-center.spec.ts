@@ -262,19 +262,12 @@ test("credit usage keeps loaded rows when loading more fails and retries the cur
 });
 
 for (const path of ["/recharge", "/membership"]) {
-  test(`direct route ${path} shows credit packs to visitors without opening a dialog`, async ({
-    page,
-  }) => {
+  test(`retired credit route ${path} shows page not found`, async ({ page }) => {
     await mockImageApi(page, { signedIn: false });
     await page.goto(`/en${path}`);
-    const recharge = page.getByRole("article", { name: "Buy credits", exact: true });
-    await expect(recharge.getByRole("listitem")).toHaveCount(5);
+    await expect(page.locator(".route-status")).toBeVisible();
+    await expect(page.locator(".credit-pack")).toHaveCount(0);
     await expect(page.locator(".login-page")).toHaveCount(0);
-    await expect(
-      recharge.getByRole("button", { name: "Buy 102 credits", exact: true }),
-    ).toBeDisabled();
-    await recharge.getByRole("link", { name: "Back", exact: true }).click();
-    await expect(page).toHaveURL(/\/en\/?$/);
   });
 }
 

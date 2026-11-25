@@ -12,7 +12,6 @@ import { Navigate, Outlet } from "react-router";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
 import { AccountOverlayHost } from "../features/account/account-overlays";
-import { rechargePath } from "../features/account/credits/recharge-navigation";
 import { AccountMenu, HeaderLogin } from "../features/account/menu/account-menu";
 import { HeaderBenefits } from "../features/account/menu/header-benefits";
 import { AccountMessages } from "../features/account/notifications/account-messages";
@@ -47,8 +46,6 @@ const publicPaths = new Set<string>([
   legalPaths.terms,
   legalPaths.privacy,
   legalPaths.refunds,
-  rechargePath,
-  "/membership",
 ]);
 
 const studioLogo = { src: "/brand/lycobo-landing.svg", width: 120, height: 35 };
