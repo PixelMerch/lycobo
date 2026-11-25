@@ -42,11 +42,11 @@ export const variationMessages = defineMessages({
     tooLong: "计划内容过长，请缩小需求范围",
     planFailed: "计划未完成，请稍后重试",
     connectionLost: "连接已中断，请稍后继续获取计划",
-    restoreReferences: "上次计划请求尚待确认，请恢复上次参考图后继续获取计划。",
-    restoreBrief: "上次计划请求尚待确认，请恢复上次需求后继续获取计划。",
+    restoreReferences: "还原上次参考图以继续获取计划。",
+    restoreBrief: "还原上次需求以继续获取计划。",
     cannotSave: "分析请求无法保存",
     stillRunning: "分析仍在处理，请稍后点击继续获取计划",
-    linkFailed: "网页读取未完成：请使用最多 3 个公开网页链接，或移除链接并粘贴商品信息后重试",
+    linkFailed: "网页读取失败。请使用最多 3 个公开链接，或粘贴商品信息后重试。",
     uncertain: "分析结果待确认，请稍后再试",
     analysisFailed: "分析未完成，请检查模型配置或稍后重试",
     signInFirst: "请先登录",
@@ -56,8 +56,7 @@ export const variationMessages = defineMessages({
   en: {
     parameters: "Image set planner settings",
     brief: "Creative brief",
-    briefPlaceholder:
-      "Describe what the set is for, its scenes and selling points; type @ to reference a product image",
+    briefPlaceholder: "Describe the use, scenes and selling points. Type @ to add a reference.",
     aspectRatio: "Aspect ratio",
     resolution: "Resolution",
     viewPlan: "View plan",
@@ -94,14 +93,11 @@ export const variationMessages = defineMessages({
     tooLong: "The plan is too long. Narrow down the brief",
     planFailed: "The plan didn't finish. Please try again later",
     connectionLost: "The connection dropped. Continue getting the plan later",
-    restoreReferences:
-      "The last plan request is still waiting to be confirmed. Restore its reference images, then continue.",
-    restoreBrief:
-      "The last plan request is still waiting to be confirmed. Restore its brief, then continue.",
+    restoreReferences: "Restore the previous reference images to continue.",
+    restoreBrief: "Restore the previous brief to continue.",
     cannotSave: "The analysis request couldn't be saved",
     stillRunning: "The analysis is still running. Click continue in a moment to get the plan",
-    linkFailed:
-      "The web pages couldn't be read. Use up to 3 public links, or remove the links and paste the product details, then retry",
+    linkFailed: "Couldn't read the pages. Use up to 3 public links or paste the product details.",
     uncertain: "The analysis result is still being confirmed. Please try again later",
     analysisFailed: "The analysis didn't finish. Check the model settings or try again later",
     signInFirst: "Please sign in first",

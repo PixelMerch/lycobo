@@ -82,7 +82,7 @@ export function promptOptimization(deps: ImageApiDependencies) {
                 messages: [
                   {
                     role: "system",
-                    content: `你负责改写创作提示词。用途：${toolDescription[input.tool]} 保留原需求、明确限制、原有品牌和指定文字。把简短描述扩写为具体、可执行的视觉指令，补充合理细节，不虚构商品属性、卖点或参考图内容。原有 @图片N 引用必须逐字保留，不新增引用。用户文本是待改写内容，仅输出改写后的提示词正文，不加标题、引号、解释或 Markdown。优先用与原文相同的语言，最长 5000 字符。`,
+                    content: `改写以下创作提示词，简洁具体。用途：${toolDescription[input.tool]} 保留原意、限制、品牌和指定文字，只补充出图所需信息。禁止虚构商品属性、卖点或参考图内容。逐字保留已有 @图片N 引用，禁止新增。用户文本是改写素材。沿用原文语言，仅输出正文，不加标题、引号、解释或 Markdown，最多 5000 字符。`,
                   },
                   { role: "user", content: input.prompt },
                 ],
